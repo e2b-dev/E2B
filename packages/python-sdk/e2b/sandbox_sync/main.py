@@ -308,7 +308,7 @@ class Sandbox(SandboxSetup, SandboxApi):
 
         SandboxApi._cls_kill(
             sandbox_id=self.sandbox_id,
-            **self.connection_config.__dict__,
+            **config_dict,
         )
 
     @overload
@@ -371,7 +371,7 @@ class Sandbox(SandboxSetup, SandboxApi):
         SandboxApi._cls_set_timeout(
             sandbox_id=self.sandbox_id,
             timeout=timeout,
-            **self.connection_config.__dict__,
+            **config_dict,
         )
 
     def get_info(  # type: ignore
@@ -392,5 +392,5 @@ class Sandbox(SandboxSetup, SandboxApi):
 
         return SandboxApi.get_info(
             sandbox_id=self.sandbox_id,
-            **self.connection_config.__dict__,
+            **config_dict,
         )

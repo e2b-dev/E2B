@@ -407,5 +407,5 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
 
         return await SandboxApi.get_info(
             sandbox_id=self.sandbox_id,
-            **self.connection_config.__dict__,
+            **config_dict,
         )
