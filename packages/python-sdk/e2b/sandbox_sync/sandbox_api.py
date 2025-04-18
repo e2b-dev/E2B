@@ -85,7 +85,6 @@ class SandboxPaginator:
             res = get_v2_sandboxes.sync_detailed(
                 client=api_client,
                 metadata=metadata if metadata else UNSET,
-                state=self.query.state if self.query and self.query.state else UNSET,
                 limit=self.limit if self.limit else UNSET,
                 next_token=self._next_token if self._next_token else UNSET,
             )
