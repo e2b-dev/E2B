@@ -12,7 +12,6 @@ def test_watch_directory_changes(sandbox: Sandbox):
     sandbox.files.make_dir(dirname)
     sandbox.files.write(f"{dirname}/{filename}", content)
 
-
     handle = sandbox.files.watch_dir(dirname)
     sandbox.files.write(f"{dirname}/{filename}", content)
 

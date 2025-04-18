@@ -4,7 +4,10 @@ from typing import Any, TypeVar, cast
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
-from ..models.template_build_status import TemplateBuildStatus, check_template_build_status
+from ..models.template_build_status import (
+    TemplateBuildStatus,
+    check_template_build_status,
+)
 
 T = TypeVar("T", bound="TemplateBuild")
 
