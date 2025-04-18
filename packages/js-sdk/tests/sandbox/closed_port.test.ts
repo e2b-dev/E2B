@@ -4,7 +4,10 @@ import { Sandbox } from '../../src/index.js'
 import { isDebug, template, wait } from '../setup.js'
 
 test.skipIf(isDebug)('closed port in SDK', async () => {
-  const sbx = await Sandbox.create(template, { timeoutMs: 60_000 })
+  const sbx = await Sandbox.create(template, {
+    autoPause: true,
+    timeoutMs: 60_000,
+  })
   const goodPort = 8000
 
   await sbx.commands.run(`python -m http.server ${goodPort}`, {
@@ -47,7 +50,10 @@ test.skipIf(isDebug)('closed port in SDK', async () => {
 })
 
 test.skipIf(isDebug)('closed port in browser  ', async () => {
-  const sbx = await Sandbox.create(template, { timeoutMs: 60_000 })
+  const sbx = await Sandbox.create(template, {
+    autoPause: true,
+    timeoutMs: 60_000,
+  })
   const goodPort = 8000
 
   await sbx.commands.run(`python -m http.server ${goodPort}`, {

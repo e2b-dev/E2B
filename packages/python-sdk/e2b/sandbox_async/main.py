@@ -1,16 +1,17 @@
 import logging
-from typing import Dict, Optional, TypedDict, overload, Literal
+from typing import Dict, List, Literal, Optional, TypedDict, overload
 
 import httpx
 from e2b.connection_config import ConnectionConfig
 from e2b.envd.api import ENVD_API_HEALTH_ROUTE, ahandle_envd_api_exception
-from e2b.exceptions import format_request_timeout_error
+from e2b.exceptions import SandboxException, format_request_timeout_error
 from e2b.sandbox.main import SandboxSetup
 from e2b.sandbox.utils import class_method_variant
 from e2b.sandbox_async.commands.command import Commands
 from e2b.sandbox_async.commands.pty import Pty
 from e2b.sandbox_async.filesystem.filesystem import Filesystem
-from e2b.sandbox_async.sandbox_api import SandboxApi, SandboxInfo
+from e2b.sandbox_async.sandbox_api import SandboxApi, SandboxInfo, SandboxMetrics
+from packaging.version import Version
 from typing_extensions import Unpack
 
 logger = logging.getLogger(__name__)
@@ -170,8 +171,8 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
     @classmethod
     async def create(
         cls,
-        auto_pause: Literal[True],
         template: Optional[str] = None,
+        auto_pause: Optional[bool] = None,
         timeout: Optional[int] = None,
         metadata: Optional[Dict[str, str]] = None,
         envs: Optional[Dict[str, str]] = None,
@@ -197,9 +198,6 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
 
         Use this method instead of using the constructor to create a new sandbox.
         """
-
-        if not auto_pause:
-            raise ValueError("auto_pause must be True")
 
         connection_config = ConnectionConfig(
             api_key=api_key,
@@ -238,7 +236,7 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
     async def connect(
         cls,
         sandbox_id: str,
-        auto_pause: Literal[True],
+        auto_pause: Optional[bool] = None,
         api_key: Optional[str] = None,
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
@@ -271,9 +269,6 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
         # Another code block
         same_sandbox = await AsyncSandbox.connect(sandbox_id)
         """
-
-        if not auto_pause:
-            raise ValueError("auto_pause must be True")
 
         timeout = timeout or cls.default_sandbox_timeout
         auto_pause = auto_pause or cls.default_sandbox_auto_pause
@@ -449,6 +444,68 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
         )
 
         return self.sandbox_id
+
+    @overload
+    async def get_metrics(
+        self, request_timeout: Optional[float] = None
+    ) -> List[SandboxMetrics]:
+        """
+        Get the metrics of the current sandbox.
+
+        :param request_timeout: Timeout for the request in **seconds**
+
+        :return: List of sandbox metrics containing CPU and memory usage information
+        """
+        ...
+
+    @overload
+    @staticmethod
+    async def get_metrics(
+        sandbox_id: str,
+        api_key: Optional[str] = None,
+        domain: Optional[str] = None,
+        debug: Optional[bool] = None,
+        request_timeout: Optional[float] = None,
+    ) -> List[SandboxMetrics]:
+        """
+        Get the metrics of the sandbox specified by sandbox ID.
+
+        :param sandbox_id: Sandbox ID
+        :param api_key: E2B API Key to use for authentication, defaults to `E2B_API_KEY` environment variable
+        :param request_timeout: Timeout for the request in **seconds**
+
+        :return: List of sandbox metrics containing CPU and memory usage information
+        """
+        ...
+
+    @class_method_variant("_cls_get_metrics")
+    async def get_metrics(  # type: ignore
+        self,
+        request_timeout: Optional[float] = None,
+    ) -> List[SandboxMetrics]:
+        """
+        Get the metrics of the current sandbox.
+
+        :param request_timeout: Timeout for the request in **seconds**
+
+        :return: List of sandbox metrics containing CPU and memory usage information
+        """
+        if self._envd_version and Version(self._envd_version) < Version("0.1.5"):
+            raise SandboxException(
+                "Metrics are not supported in this version of the sandbox, please rebuild your template."
+            )
+        config_dict = self.connection_config.__dict__
+        config_dict.pop("access_token", None)
+        config_dict.pop("api_url", None)
+        config_dict.pop("headers", None)
+
+        if request_timeout:
+            config_dict["request_timeout"] = request_timeout
+
+        return await SandboxApi._cls_get_metrics(
+            sandbox_id=self.sandbox_id,
+            **self.connection_config.__dict__,
+        )
 
     async def get_info(  # type: ignore
         self,

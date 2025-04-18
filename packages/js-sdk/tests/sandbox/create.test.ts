@@ -23,8 +23,9 @@ test.skipIf(isDebug)('metadata', async () => {
   const sbx = await Sandbox.create(template, { timeoutMs: 5_000, metadata, autoPause: true })
 
   try {
-    const sbxs = await Sandbox.list()
-    const sbxInfo = sbxs.find((s) => s.sandboxId === sbx.sandboxId)
+    const paginator = Sandbox.list()
+    const sandboxes = await paginator.nextItems()
+    const sbxInfo = sandboxes.find((s) => s.sandboxId === sbx.sandboxId)
 
     assert.deepEqual(sbxInfo?.metadata, metadata)
   } finally {

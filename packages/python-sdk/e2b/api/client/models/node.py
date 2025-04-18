@@ -4,7 +4,7 @@ from typing import Any, TypeVar
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
-from ..models.node_status import NodeStatus
+from ..models.node_status import NodeStatus, check_node_status
 
 T = TypeVar("T", bound="Node")
 
@@ -44,7 +44,7 @@ class Node:
 
         sandbox_starting_count = self.sandbox_starting_count
 
-        status = self.status.value
+        status: str = self.status
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
@@ -77,7 +77,7 @@ class Node:
 
         sandbox_starting_count = d.pop("sandboxStartingCount")
 
-        status = NodeStatus(d.pop("status"))
+        status = check_node_status(d.pop("status"))
 
         node = cls(
             allocated_cpu=allocated_cpu,
