@@ -4,10 +4,10 @@ from typing import TYPE_CHECKING, Any, TypeVar, cast
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
-from ..models.node_status import NodeStatus
+from ..models.node_status import NodeStatus, check_node_status
 
 if TYPE_CHECKING:
-    from ..models.running_sandbox import RunningSandbox
+    from ..models.listed_sandbox import ListedSandbox
 
 
 T = TypeVar("T", bound="NodeDetail")
@@ -20,14 +20,14 @@ class NodeDetail:
         cached_builds (list[str]): List of cached builds id on the node
         create_fails (int): Number of sandbox create fails
         node_id (str): Identifier of the node
-        sandboxes (list['RunningSandbox']): List of sandboxes running on the node
+        sandboxes (list['ListedSandbox']): List of sandboxes running on the node
         status (NodeStatus): Status of the node
     """
 
     cached_builds: list[str]
     create_fails: int
     node_id: str
-    sandboxes: list["RunningSandbox"]
+    sandboxes: list["ListedSandbox"]
     status: NodeStatus
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
@@ -43,7 +43,7 @@ class NodeDetail:
             sandboxes_item = sandboxes_item_data.to_dict()
             sandboxes.append(sandboxes_item)
 
-        status = self.status.value
+        status: str = self.status
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
@@ -60,8 +60,8 @@ class NodeDetail:
         return field_dict
 
     @classmethod
-    def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
-        from ..models.running_sandbox import RunningSandbox
+    def from_dict(cls: type[T], src_dict: dict[str, Any]) -> T:
+        from ..models.listed_sandbox import ListedSandbox
 
         d = dict(src_dict)
         cached_builds = cast(list[str], d.pop("cachedBuilds"))
@@ -73,11 +73,11 @@ class NodeDetail:
         sandboxes = []
         _sandboxes = d.pop("sandboxes")
         for sandboxes_item_data in _sandboxes:
-            sandboxes_item = RunningSandbox.from_dict(sandboxes_item_data)
+            sandboxes_item = ListedSandbox.from_dict(sandboxes_item_data)
 
             sandboxes.append(sandboxes_item)
 
-        status = NodeStatus(d.pop("status"))
+        status = check_node_status(d.pop("status"))
 
         node_detail = cls(
             cached_builds=cached_builds,

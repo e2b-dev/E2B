@@ -1,5 +1,7 @@
 import { createConnectTransport } from '@connectrpc/connect-web'
 
+import { compareVersions } from 'compare-versions'
+import { components } from '../api'
 import {
   ConnectionConfig,
   ConnectionOpts,
@@ -10,7 +12,6 @@ import { createRpcLogger } from '../logs'
 import { Commands, Pty } from './commands'
 import { Filesystem } from './filesystem'
 import { SandboxApi } from './sandboxApi'
-
 /**
  * Options for creating a new Sandbox.
  */
@@ -140,6 +141,7 @@ export class Sandbox extends SandboxApi {
       },
       {
         version: opts?.envdVersion,
+        version: opts?.envdVersion,
       }
     )
     this.files = new Filesystem(
@@ -205,6 +207,15 @@ export class Sandbox extends SandboxApi {
     const config = new ConnectionConfig(sandboxOpts)
 
     if (config.debug) {
+      return new this({
+        sandboxId: 'debug_sandbox_id',
+        ...config,
+      }) as InstanceType<S>
+    } else {
+      const sandbox = await this.createSandbox(
+        template,
+        sandboxOpts?.timeoutMs ?? this.defaultSandboxTimeoutMs,
+        sandboxOpts
       return new this({
         sandboxId: 'debug_sandbox_id',
         ...config,
@@ -329,6 +340,31 @@ export class Sandbox extends SandboxApi {
     }
 
     return true
+  }
+
+  /**
+   * Get the metrics of the sandbox.
+   *
+   * @param timeoutMs timeout in **milliseconds**.
+   * @param opts connection options.
+   *
+   * @returns metrics of the sandbox.
+   */
+  async getMetrics(
+    opts?: Pick<SandboxOpts, 'requestTimeoutMs'>
+  ): Promise<components['schemas']['SandboxMetric'][]> {
+    if (
+      this.envdApi.version &&
+      compareVersions(this.envdApi.version, '0.1.5') < 0
+    ) {
+      throw new Error(
+        'Metrics are not supported in this version of the sandbox, please rebuild your template.'
+      )
+    }
+    return await Sandbox.getMetrics(this.sandboxId, {
+      ...this.connectionConfig,
+      ...opts,
+    })
   }
 
   /**

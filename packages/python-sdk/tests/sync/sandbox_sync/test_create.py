@@ -2,7 +2,7 @@ import pytest
 
 from time import sleep
 
-from e2b import Sandbox
+from e2b import Sandbox, SandboxListQuery
 
 
 @pytest.mark.skip_debug()
@@ -25,9 +25,12 @@ def test_metadata(template):
     )
 
     try:
-        sbxs = Sandbox.list()
+        paginator = Sandbox.list(
+            query=SandboxListQuery(metadata={"test-key": "test-value"})
+        )
+        sandboxes = paginator.next_items()
 
-        for sbx_info in sbxs:
+        for sbx_info in sandboxes:
             if sbx.sandbox_id == sbx_info.sandbox_id:
                 assert sbx_info.metadata is not None
                 assert sbx_info.metadata["test-key"] == "test-value"

@@ -1,11 +1,10 @@
 from http import HTTPStatus
-from typing import Any, Optional, Union
+from typing import Any, Optional, Union, cast
 
 import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
-from ...models.error import Error
 from ...models.resumed_sandbox import ResumedSandbox
 from ...models.sandbox import Sandbox
 from ...types import Response
@@ -34,7 +33,7 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Optional[Union[Error, Sandbox]]:
+) -> Optional[Union[Any, Sandbox]]:
     if response.status_code == 201:
         response_201 = Sandbox.from_dict(response.json())
 

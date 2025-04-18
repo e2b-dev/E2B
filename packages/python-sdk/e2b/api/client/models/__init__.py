@@ -3,6 +3,7 @@
 from .created_access_token import CreatedAccessToken
 from .created_team_api_key import CreatedTeamAPIKey
 from .error import Error
+from .listed_sandbox import ListedSandbox
 from .new_access_token import NewAccessToken
 from .new_sandbox import NewSandbox
 from .new_team_api_key import NewTeamAPIKey
@@ -15,12 +16,12 @@ from .post_sandboxes_sandbox_id_refreshes_body import (
 )
 from .post_sandboxes_sandbox_id_timeout_body import PostSandboxesSandboxIDTimeoutBody
 from .resumed_sandbox import ResumedSandbox
-from .running_sandbox import RunningSandbox
 from .running_sandbox_with_metrics import RunningSandboxWithMetrics
 from .sandbox import Sandbox
 from .sandbox_log import SandboxLog
 from .sandbox_logs import SandboxLogs
 from .sandbox_metric import SandboxMetric
+from .sandbox_state import SandboxState
 from .team import Team
 from .team_api_key import TeamAPIKey
 from .team_user import TeamUser
@@ -35,6 +36,7 @@ __all__ = (
     "CreatedAccessToken",
     "CreatedTeamAPIKey",
     "Error",
+    "ListedSandbox",
     "NewAccessToken",
     "NewSandbox",
     "NewTeamAPIKey",
@@ -45,12 +47,12 @@ __all__ = (
     "PostSandboxesSandboxIDRefreshesBody",
     "PostSandboxesSandboxIDTimeoutBody",
     "ResumedSandbox",
-    "RunningSandbox",
     "RunningSandboxWithMetrics",
     "Sandbox",
     "SandboxLog",
     "SandboxLogs",
     "SandboxMetric",
+    "SandboxState",
     "Team",
     "TeamAPIKey",
     "TeamUser",

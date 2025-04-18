@@ -8,8 +8,10 @@ def test_watch_directory_changes(sandbox: Sandbox):
     filename = "test_watch.txt"
     content = "This file will be watched."
 
+    sandbox.files.remove(dirname)
     sandbox.files.make_dir(dirname)
     sandbox.files.write(f"{dirname}/{filename}", content)
+
 
     handle = sandbox.files.watch_dir(dirname)
     sandbox.files.write(f"{dirname}/{filename}", content)
