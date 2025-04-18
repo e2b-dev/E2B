@@ -280,53 +280,7 @@ export class SandboxApi {
       ...(res.data.alias && { name: res.data.alias }),
       metadata: res.data.metadata ?? {},
       startedAt: new Date(res.data.startedAt),
-      endAt: new Date(res.data.endAt),
-    }
-  }
-
-  /**
-   * Get sandbox information like sandbox ID, template, metadata, started at/end at date.
-   *
-   * @param sandboxId sandbox ID.
-   * @param opts connection options.
-   *
-   * @returns sandbox information.
-   */
-  static async getInfo(
-    sandboxId: string,
-    opts?: SandboxApiOpts
-  ): Promise<SandboxInfo> {
-    const config = new ConnectionConfig(opts)
-    const client = new ApiClient(config)
-
-    const res = await client.api.GET('/sandboxes/{sandboxID}', {
-      params: {
-        path: {
-          sandboxID: sandboxId,
-        },
-      },
-      signal: config.getSignal(opts?.requestTimeoutMs),
-    })
-
-    const err = handleApiError(res)
-    if (err) {
-      throw err
-    }
-
-    if (!res.data) {
-      throw new Error('Sandbox not found')
-    }
-
-    return {
-      sandboxId: this.getSandboxId({
-        sandboxId: res.data.sandboxID,
-        clientId: res.data.clientID,
-      }),
-      templateId: res.data.templateID,
-      ...(res.data.alias && { name: res.data.alias }),
-      metadata: res.data.metadata ?? {},
-      startedAt: new Date(res.data.startedAt),
-      endAt: new Date(res.data.endAt),
+      state: res.data.state,
     }
   }
 
@@ -425,9 +379,8 @@ export class SandboxApi {
         },
       },
       body: {
-        autoPause: false,
-        timeout: this.timeoutToSeconds(timeoutMs),
         autoPause: autoPause,
+        timeout: this.timeoutToSeconds(timeoutMs),
       },
       signal: config.getSignal(opts?.requestTimeoutMs),
     })
@@ -457,10 +410,6 @@ export class SandboxApi {
       metadata?: Record<string, string>
       envs?: Record<string, string>
     }
-  ): Promise<{
-    sandboxId: string
-    envdVersion: string
-  }> {
   ): Promise<{
     sandboxId: string
     envdVersion: string

@@ -141,7 +141,6 @@ export class Sandbox extends SandboxApi {
       },
       {
         version: opts?.envdVersion,
-        version: opts?.envdVersion,
       }
     )
     this.files = new Filesystem(
@@ -215,15 +214,7 @@ export class Sandbox extends SandboxApi {
       const sandbox = await this.createSandbox(
         template,
         sandboxOpts?.timeoutMs ?? this.defaultSandboxTimeoutMs,
-        sandboxOpts
-      return new this({
-        sandboxId: 'debug_sandbox_id',
-        ...config,
-      }) as InstanceType<S>
-    } else {
-      const sandbox = await this.createSandbox(
-        template,
-        sandboxOpts?.timeoutMs ?? this.defaultSandboxTimeoutMs,
+        true,
         sandboxOpts
       )
       return new this({ ...sandbox, ...config }) as InstanceType<S>

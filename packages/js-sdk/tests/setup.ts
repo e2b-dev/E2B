@@ -21,6 +21,7 @@ export const sandboxTest = base.extend<SandboxFixture>({
   sandbox: [
     async ({ sandboxType }, use) => {
       const sandbox = await Sandbox.create(template, {
+        autoPause: true,
         metadata: { sandboxType },
       })
       try {

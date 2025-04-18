@@ -22,7 +22,10 @@ sandboxTest.skipIf(isDebug)(
   'list sandboxes with filter',
   async ({ sandboxType }) => {
     const uniqueId = Date.now().toString()
-    const extraSbx = await Sandbox.create({ metadata: { uniqueId } })
+    const extraSbx = await Sandbox.create({
+      autoPause: true,
+      metadata: { uniqueId },
+    })
 
     try {
       const paginator = Sandbox.list({
@@ -41,7 +44,10 @@ sandboxTest.skipIf(isDebug)(
 sandboxTest.skipIf(isDebug)(
   'list running sandboxes',
   async ({ sandboxType }) => {
-    const extraSbx = await Sandbox.create({ metadata: { sandboxType } })
+    const extraSbx = await Sandbox.create({
+      autoPause: true,
+      metadata: { sandboxType },
+    })
 
     try {
       const paginator = Sandbox.list({
@@ -66,7 +72,10 @@ sandboxTest.skipIf(isDebug)(
   'list paused sandboxes',
   async ({ sandboxType }) => {
     // Create and pause a sandbox
-    const extraSbx = await Sandbox.create({ metadata: { sandboxType } })
+    const extraSbx = await Sandbox.create({
+      autoPause: true,
+      metadata: { sandboxType },
+    })
     await extraSbx.pause()
 
     try {
@@ -93,7 +102,10 @@ sandboxTest.skipIf(isDebug)(
   'paginate running sandboxes',
   async ({ sandbox, sandboxType }) => {
     // Create extra sandboxes
-    const extraSbx = await Sandbox.create({ metadata: { sandboxType } })
+    const extraSbx = await Sandbox.create({
+      autoPause: true,
+      metadata: { sandboxType },
+    })
 
     try {
       // Test pagination with limit
@@ -132,7 +144,10 @@ sandboxTest.skipIf(isDebug)(
     await sandbox.pause()
 
     // Create extra paused sandbox
-    const extraSbx = await Sandbox.create({ metadata: { sandboxType } })
+    const extraSbx = await Sandbox.create({
+      autoPause: true,
+      metadata: { sandboxType },
+    })
     await extraSbx.pause()
     const extraSbxId = extraSbx.sandboxId.split('-')[0]
 
@@ -170,7 +185,10 @@ sandboxTest.skipIf(isDebug)(
   'paginate running and paused sandboxes',
   async ({ sandbox, sandboxType }) => {
     // Create extra sandbox
-    const extraSbx = await Sandbox.create({ metadata: { sandboxType } })
+    const extraSbx = await Sandbox.create({
+      autoPause: true,
+      metadata: { sandboxType },
+    })
     const extraSbxId = extraSbx.sandboxId.split('-')[0]
 
     // Pause the extra sandbox

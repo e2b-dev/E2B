@@ -31,6 +31,7 @@ sandboxTest.skipIf(isDebug)(
 
     const cmd = await sandbox.commands.run('echo "$TEST_VAR"')
 
+    try {
       assert.equal(cmd.exitCode, 0)
       assert.equal(cmd.stdout.trim(), 'sfisback')
     } catch {
@@ -166,24 +167,33 @@ sandboxTest.skipIf(isDebug)(
   }
 )
 
-sandboxTest.skipIf(isDebug)('resume a sandbox with auto pause', async ({ sandbox }) => {
-  await sandbox.pause()
+sandboxTest.skipIf(isDebug)(
+  'resume a sandbox with auto pause',
+  async ({ sandbox }) => {
+    await sandbox.pause()
 
-  const timeout = 1_000
-  const sbxResumed = await Sandbox.connect(sandbox.sandboxId, { timeoutMs: timeout, autoPause: true })
-  await sbxResumed.files.write('test.txt', 'test')
+    const timeout = 1_000
+    const sbxResumed = await Sandbox.connect(sandbox.sandboxId, {
+      timeoutMs: timeout,
+      autoPause: true,
+    })
+    await sbxResumed.files.write('test.txt', 'test')
 
-  // Wait for the sandbox to pause and create snapshot
-  await wait(timeout + 5_000)
+    // Wait for the sandbox to pause and create snapshot
+    await wait(timeout + 5_000)
 
-  const sbxResumed2 = await Sandbox.connect(sandbox.sandboxId, { timeoutMs: timeout, autoPause: true })
+    const sbxResumed2 = await Sandbox.connect(sandbox.sandboxId, {
+      timeoutMs: timeout,
+      autoPause: true,
+    })
 
-  try {
-    await expect(sbxResumed2.files.read('test.txt')).resolves.toEqual('test')
-  } finally {
-    await sbxResumed2.kill()
+    try {
+      await expect(sbxResumed2.files.read('test.txt')).resolves.toEqual('test')
+    } finally {
+      await sbxResumed2.kill()
+    }
   }
-})
+)
 
 sandboxTest.skipIf(isDebug)(
   'pause and resume a sandbox while flushing the filesystem cache',
@@ -195,11 +205,15 @@ sandboxTest.skipIf(isDebug)(
 
     // sync: from the man page: flush file system buffers. Force changed blocks to disk, update the super block
     // echo 3 > /proc/sys/vm/drop_cache: from the kernel docs: this will cause the kernel to free pagecache, dentries and inodes
-    await sandbox.commands.run('sync && echo 3 | sudo tee /proc/sys/vm/drop_caches')
+    await sandbox.commands.run(
+      'sync && echo 3 | sudo tee /proc/sys/vm/drop_caches'
+    )
 
     await sandbox.pause()
 
-    const resumedSbx = await Sandbox.connect(sandbox.sandboxId, {autoPause: true})
+    const resumedSbx = await Sandbox.connect(sandbox.sandboxId, {
+      autoPause: true,
+    })
 
     const contentAfter = await resumedSbx.files.read(testPath)
 
