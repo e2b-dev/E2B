@@ -31,6 +31,7 @@ from .api import (
 )
 from .connection_config import (
     ConnectionConfig,
+    ProxyTypes,
 )
 from .exceptions import (
     SandboxException,

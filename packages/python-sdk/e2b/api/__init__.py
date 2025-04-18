@@ -1,9 +1,9 @@
 import json
 import logging
-from dataclasses import dataclass
-
 from typing import Optional
 from httpx import Limits
+from dataclasses import dataclass
+
 
 from e2b.api.client.client import AuthenticatedClient
 from e2b.connection_config import ConnectionConfig
@@ -97,6 +97,7 @@ class ApiClient(AuthenticatedClient):
                     "request": [self._log_request],
                     "response": [self._log_response],
                 },
+                "proxy": config.proxy,
                 "limits": limits,
             },
             headers=headers,

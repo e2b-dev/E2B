@@ -1,7 +1,6 @@
 import urllib.parse
 
-from httpx import HTTPTransport
-from typing import Optional, Dict, List, Tuple
+from typing import Optional, Dict, List
 from packaging.version import Version
 
 from e2b.sandbox.sandbox_api import SandboxInfo, SandboxApiBase, SandboxQuery
@@ -15,7 +14,7 @@ from e2b.api.client.api.sandboxes import (
     delete_sandboxes_sandbox_id,
     post_sandboxes,
 )
-from e2b.connection_config import ConnectionConfig
+from e2b.connection_config import ConnectionConfig, ProxyTypes
 from e2b.api import handle_api_exception
 
 
@@ -29,6 +28,7 @@ class SandboxApi(SandboxApiBase):
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
         headers: Optional[Dict[str, str]] = None,
+        proxy: Optional[ProxyTypes] = None,
     ) -> List[SandboxInfo]:
         """
         List all running sandboxes.
@@ -39,6 +39,7 @@ class SandboxApi(SandboxApiBase):
         :param debug: Enable debug mode, all requested are then sent to localhost
         :param request_timeout: Timeout for the request in **seconds**
         :param headers: Additional headers to send with the request
+        :param proxy: Proxy to use for the request
 
         :return: List of running sandboxes
         """
@@ -48,6 +49,7 @@ class SandboxApi(SandboxApiBase):
             debug=debug,
             request_timeout=request_timeout,
             headers=headers,
+            proxy=proxy,
         )
 
         # Convert filters to the format expected by the API
@@ -98,6 +100,7 @@ class SandboxApi(SandboxApiBase):
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
         headers: Optional[Dict[str, str]] = None,
+        proxy: Optional[ProxyTypes] = None,
     ) -> SandboxInfo:
         """
         Get the sandbox info.
@@ -116,6 +119,7 @@ class SandboxApi(SandboxApiBase):
             debug=debug,
             request_timeout=request_timeout,
             headers=headers,
+            proxy=proxy,
         )
 
         with ApiClient(
@@ -156,6 +160,7 @@ class SandboxApi(SandboxApiBase):
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
         headers: Optional[Dict[str, str]] = None,
+        proxy: Optional[ProxyTypes] = None,
     ) -> bool:
         config = ConnectionConfig(
             api_key=api_key,
@@ -163,6 +168,7 @@ class SandboxApi(SandboxApiBase):
             debug=debug,
             request_timeout=request_timeout,
             headers=headers,
+            proxy=proxy,
         )
 
         if config.debug:
@@ -196,6 +202,7 @@ class SandboxApi(SandboxApiBase):
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
         headers: Optional[Dict[str, str]] = None,
+        proxy: Optional[ProxyTypes] = None,
     ) -> None:
         config = ConnectionConfig(
             api_key=api_key,
@@ -203,6 +210,7 @@ class SandboxApi(SandboxApiBase):
             debug=debug,
             request_timeout=request_timeout,
             headers=headers,
+            proxy=proxy,
         )
 
         if config.debug:
@@ -234,6 +242,7 @@ class SandboxApi(SandboxApiBase):
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
         headers: Optional[Dict[str, str]] = None,
+        proxy: Optional[ProxyTypes] = None,
     ) -> SandboxCreateResponse:
         config = ConnectionConfig(
             api_key=api_key,
@@ -241,6 +250,7 @@ class SandboxApi(SandboxApiBase):
             debug=debug,
             request_timeout=request_timeout,
             headers=headers,
+            proxy=proxy,
         )
 
         with ApiClient(

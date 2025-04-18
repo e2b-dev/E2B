@@ -1,8 +1,9 @@
 import logging
+import httpx
+
 from typing import Dict, Optional, overload
 
-import httpx
-from e2b.connection_config import ConnectionConfig
+from e2b.connection_config import ConnectionConfig, ProxyTypes
 from e2b.envd.api import ENVD_API_HEALTH_ROUTE, handle_envd_api_exception
 from e2b.exceptions import SandboxException, format_request_timeout_error
 from e2b.sandbox.main import SandboxSetup
@@ -97,6 +98,7 @@ class Sandbox(SandboxSetup, SandboxApi):
         debug: Optional[bool] = None,
         sandbox_id: Optional[str] = None,
         request_timeout: Optional[float] = None,
+        proxy: Optional[ProxyTypes] = None,
     ):
         """
         Create a new sandbox.
@@ -109,6 +111,7 @@ class Sandbox(SandboxSetup, SandboxApi):
         :param envs: Custom environment variables for the sandbox
         :param api_key: E2B API Key to use for authentication, defaults to `E2B_API_KEY` environment variable
         :param request_timeout: Timeout for the request in **seconds**
+        :param proxy: Proxy to use for the request and for the **requests made to the returned sandbox**
 
         :return: sandbox instance for the new sandbox
         """
@@ -125,6 +128,7 @@ class Sandbox(SandboxSetup, SandboxApi):
             domain=domain,
             debug=debug,
             request_timeout=request_timeout,
+            proxy=proxy,
         )
 
         if self.connection_config.debug:
@@ -145,13 +149,14 @@ class Sandbox(SandboxSetup, SandboxApi):
                 domain=domain,
                 debug=debug,
                 request_timeout=request_timeout,
+                proxy=proxy,
             )
             self._sandbox_id = response.sandbox_id
             self._envd_version = response.envd_version
 
         self._envd_api_url = f"{'http' if self.connection_config.debug else 'https'}://{self.get_host(self.envd_port)}"
 
-        self._transport = TransportWithLogger(limits=self._limits)
+        self._transport = TransportWithLogger(limits=self._limits, proxy=proxy)
         self._envd_api = httpx.Client(
             base_url=self.envd_api_url,
             transport=self._transport,
@@ -218,6 +223,7 @@ class Sandbox(SandboxSetup, SandboxApi):
         api_key: Optional[str] = None,
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
+        proxy: Optional[ProxyTypes] = None,
     ):
         """
         Connects to an existing Sandbox.
@@ -225,6 +231,7 @@ class Sandbox(SandboxSetup, SandboxApi):
 
         :param sandbox_id: Sandbox ID
         :param api_key: E2B API Key to use for authentication, defaults to `E2B_API_KEY` environment variable
+        :param proxy: Proxy to use for the request and for the **requests made to the returned sandbox**
 
         :return: sandbox instance for the existing sandbox
 
@@ -242,6 +249,7 @@ class Sandbox(SandboxSetup, SandboxApi):
             api_key=api_key,
             domain=domain,
             debug=debug,
+            proxy=proxy,
         )
 
     def __enter__(self):
