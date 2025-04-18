@@ -268,7 +268,3 @@ class SandboxApi(SandboxApiBase):
                 ),
                 envd_version=res.parsed.envd_version,
             )
-
-    @staticmethod
-    def _get_sandbox_id(sandbox_id: str, client_id: str) -> str:
-        return f"{sandbox_id}-{client_id}"
