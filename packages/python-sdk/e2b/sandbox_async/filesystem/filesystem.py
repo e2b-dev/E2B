@@ -254,6 +254,7 @@ class Filesystem:
     async def list(
         self,
         path: str,
+        depth: Optional[int] = 1,
         user: Username = "user",
         request_timeout: Optional[float] = None,
     ) -> List[EntryInfo]:
@@ -261,6 +262,7 @@ class Filesystem:
         List entries in a directory.
 
         :param path: Path to the directory
+        :param depth: Depth of the directory to list
         :param user: Run the operation as this user
         :param request_timeout: Timeout for the request in **seconds**
 
@@ -268,7 +270,7 @@ class Filesystem:
         """
         try:
             res = await self._rpc.alist_dir(
-                filesystem_pb2.ListDirRequest(path=path),
+                filesystem_pb2.ListDirRequest(path=path, depth=depth),
                 request_timeout=self._connection_config.get_request_timeout(
                     request_timeout
                 ),

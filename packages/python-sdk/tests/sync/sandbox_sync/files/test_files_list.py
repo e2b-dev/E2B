@@ -1,18 +1,18 @@
 import uuid
 
-from e2b import AsyncSandbox, FileType
+from e2b import Sandbox, FileType
 
 
-async def test_list_directory(async_sandbox: AsyncSandbox):
+def test_list_directory(sandbox: Sandbox):
     parent_dir_name = f"test_directory_{uuid.uuid4()}"
 
-    await async_sandbox.files.make_dir(parent_dir_name)
-    await async_sandbox.files.make_dir(f"{parent_dir_name}/subdir1")
-    await async_sandbox.files.make_dir(f"{parent_dir_name}/subdir2")
-    await async_sandbox.files.make_dir(f"{parent_dir_name}/subdir1/subdir1_1")
-    await async_sandbox.files.make_dir(f"{parent_dir_name}/subdir1/subdir1_2")
-    await async_sandbox.files.make_dir(f"{parent_dir_name}/subdir2/subdir2_1")
-    await async_sandbox.files.make_dir(f"{parent_dir_name}/subdir2/subdir2_2")
+    sandbox.files.make_dir(parent_dir_name)
+    sandbox.files.make_dir(f"{parent_dir_name}/subdir1")
+    sandbox.files.make_dir(f"{parent_dir_name}/subdir2")
+    sandbox.files.make_dir(f"{parent_dir_name}/subdir1/subdir1_1")
+    sandbox.files.make_dir(f"{parent_dir_name}/subdir1/subdir1_2")
+    sandbox.files.make_dir(f"{parent_dir_name}/subdir2/subdir2_1")
+    sandbox.files.make_dir(f"{parent_dir_name}/subdir2/subdir2_2")
 
     test_cases = [
         {
@@ -71,7 +71,7 @@ async def test_list_directory(async_sandbox: AsyncSandbox):
     for test_case in test_cases:
         if "expect_error" in test_case:
             try:
-                await async_sandbox.files.list(
+                sandbox.files.list(
                     parent_dir_name,
                     depth=(
                         test_case["depth"] if test_case["depth"] is not None else None
@@ -85,7 +85,7 @@ async def test_list_directory(async_sandbox: AsyncSandbox):
                 continue
         else:
             # Get files list with specified depth (or default if None)
-            files = await async_sandbox.files.list(
+            files = sandbox.files.list(
                 parent_dir_name,
                 depth=test_case["depth"] if test_case["depth"] is not None else None,
             )
@@ -98,4 +98,4 @@ async def test_list_directory(async_sandbox: AsyncSandbox):
                 assert files[i].name == expected_name
 
     # Cleanup
-    await async_sandbox.files.remove(parent_dir_name)
+    sandbox.files.remove(parent_dir_name)
