@@ -72,7 +72,7 @@ sandboxTest('list directory', async ({ sandbox }) => {
       try {
         await sandbox.files.list(
           parentDirName,
-          testCase.depth !== undefined ? testCase.depth : undefined
+          testCase.depth !== undefined ? { depth: testCase.depth } : undefined
         )
         assert.fail('Expected error but none was thrown')
       } catch (err) {
@@ -85,7 +85,7 @@ sandboxTest('list directory', async ({ sandbox }) => {
     } else {
       const files = await sandbox.files.list(
         parentDirName,
-        testCase.depth !== undefined ? testCase.depth : undefined
+        testCase.depth !== undefined ? { depth: testCase.depth } : undefined
       )
       assert.equal(files.length, testCase.expectedLen)
 

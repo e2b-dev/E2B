@@ -87,6 +87,13 @@ export interface FilesystemRequestOpts
   user?: Username
 }
 
+export interface FilesystemListOpts extends FilesystemRequestOpts {
+  /**
+   * Depth of the directory to list.
+   */
+  depth?: number
+}
+
 /**
  * Options for watching a directory.
  */
@@ -335,17 +342,12 @@ export class Filesystem {
    * List entries in a directory.
    *
    * @param path path to the directory.
-   * @param depth depth of the directory to list.
    * @param opts connection options.
    *
    * @returns list of entries in the sandbox filesystem directory.
    */
-  async list(
-    path: string,
-    depth?: number,
-    opts?: FilesystemRequestOpts
-  ): Promise<EntryInfo[]> {
-    if (typeof depth === 'number' && depth < 0) {
+  async list(path: string, opts?: FilesystemListOpts): Promise<EntryInfo[]> {
+    if (typeof opts?.depth === 'number' && opts.depth < 0) {
       throw new InvalidArgumentError('depth should be a positive number')
     }
 
@@ -353,7 +355,7 @@ export class Filesystem {
       const res = await this.rpc.listDir(
         {
           path,
-          depth: depth ?? 1,
+          depth: opts?.depth ?? 1,
         },
         {
           headers: authenticationHeader(opts?.user),
