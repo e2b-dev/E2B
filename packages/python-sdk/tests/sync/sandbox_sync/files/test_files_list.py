@@ -1,6 +1,6 @@
 import uuid
 
-from e2b import Sandbox, FileType
+from e2b import Sandbox
 
 
 def test_list_directory(sandbox: Sandbox):
@@ -59,43 +59,32 @@ def test_list_directory(sandbox: Sandbox):
                 "subdir2_2",
             ],
         },
-        {
-            "name": "negative depth should error",
-            "depth": -1,
-            "expected_len": 0,
-            "expected_files": [],
-            "expect_error": "Value out of range",
-        },
     ]
 
     for test_case in test_cases:
-        if "expect_error" in test_case:
-            try:
-                sandbox.files.list(
-                    parent_dir_name,
-                    depth=(
-                        test_case["depth"] if test_case["depth"] is not None else None
-                    ),
-                )
-                assert False, "Expected error but none was thrown"
-            except Exception as err:
-                assert test_case["expect_error"] in str(
-                    err
-                ), f'expected error message to include "{test_case["expect_error"]}"'
-                continue
-        else:
-            # Get files list with specified depth (or default if None)
-            files = sandbox.files.list(
-                parent_dir_name,
-                depth=test_case["depth"] if test_case["depth"] is not None else None,
-            )
+        files = sandbox.files.list(
+            parent_dir_name,
+            depth=test_case["depth"] if test_case["depth"] is not None else None,
+        )
 
-            # Verify number of files
-            assert len(files) == test_case["expected_len"]
+        assert len(files) == test_case["expected_len"]
 
-            # Verify file names match expected order
-            for i, expected_name in enumerate(test_case["expected_files"]):
-                assert files[i].name == expected_name
+        for i, expected_name in enumerate(test_case["expected_files"]):
+            assert files[i].name == expected_name
 
-    # Cleanup
+    sandbox.files.remove(parent_dir_name)
+
+
+def test_list_directory_error_cases(sandbox: Sandbox):
+    parent_dir_name = f"test_directory_{uuid.uuid4()}"
+    sandbox.files.make_dir(parent_dir_name)
+
+    try:
+        sandbox.files.list(parent_dir_name, depth=-1)
+        assert False, "Expected error but none was thrown"
+    except Exception as err:
+        assert (
+            "Value out of range" in str(err)
+        ), 'expected error message to include "Value out of range"'
+
     sandbox.files.remove(parent_dir_name)

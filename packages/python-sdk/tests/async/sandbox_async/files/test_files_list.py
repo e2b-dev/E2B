@@ -59,43 +59,32 @@ async def test_list_directory(async_sandbox: AsyncSandbox):
                 "subdir2_2",
             ],
         },
-        {
-            "name": "negative depth should error",
-            "depth": -1,
-            "expected_len": 0,
-            "expected_files": [],
-            "expect_error": "Value out of range",
-        },
     ]
 
     for test_case in test_cases:
-        if "expect_error" in test_case:
-            try:
-                await async_sandbox.files.list(
-                    parent_dir_name,
-                    depth=(
-                        test_case["depth"] if test_case["depth"] is not None else None
-                    ),
-                )
-                assert False, "Expected error but none was thrown"
-            except Exception as err:
-                assert test_case["expect_error"] in str(
-                    err
-                ), f'expected error message to include "{test_case["expect_error"]}"'
-                continue
-        else:
-            # Get files list with specified depth (or default if None)
-            files = await async_sandbox.files.list(
-                parent_dir_name,
-                depth=test_case["depth"] if test_case["depth"] is not None else None,
-            )
+        files = await async_sandbox.files.list(
+            parent_dir_name,
+            depth=test_case["depth"] if test_case["depth"] is not None else None,
+        )
 
-            # Verify number of files
-            assert len(files) == test_case["expected_len"]
+        assert len(files) == test_case["expected_len"]
 
-            # Verify file names match expected order
-            for i, expected_name in enumerate(test_case["expected_files"]):
-                assert files[i].name == expected_name
+        for i, expected_name in enumerate(test_case["expected_files"]):
+            assert files[i].name == expected_name
 
-    # Cleanup
+    await async_sandbox.files.remove(parent_dir_name)
+
+
+async def test_list_directory_error_cases(async_sandbox: AsyncSandbox):
+    parent_dir_name = f"test_directory_{uuid.uuid4()}"
+    await async_sandbox.files.make_dir(parent_dir_name)
+
+    try:
+        await async_sandbox.files.list(parent_dir_name, depth=-1)
+        assert False, "Expected error but none was thrown"
+    except Exception as err:
+        assert (
+            "Value out of range" in str(err)
+        ), 'expected error message to include "Value out of range"'
+
     await async_sandbox.files.remove(parent_dir_name)
