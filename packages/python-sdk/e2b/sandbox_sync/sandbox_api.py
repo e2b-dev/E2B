@@ -138,37 +138,6 @@ class SandboxApi(SandboxApiBase):
         )
 
     @classmethod
-    def _list_iterator(
-        cls,
-        query: Optional[SandboxListQuery] = None,
-        api_key: Optional[str] = None,
-        domain: Optional[str] = None,
-        debug: Optional[bool] = None,
-        request_timeout: Optional[float] = None,
-        limit: Optional[int] = None,
-        next_token: Optional[str] = None,
-    ) -> Generator[SandboxInfo, None, None]:
-        next_page = True
-        token = next_token
-
-        while next_page:
-            result = cls.list(
-                query=query,
-                api_key=api_key,
-                domain=domain,
-                debug=debug,
-                request_timeout=request_timeout,
-                limit=limit,
-                next_token=token,
-            )
-
-            next_page = result.has_next
-            token = result.next_token
-
-            for sandbox in result.next_items():
-                yield sandbox
-
-    @classmethod
     def get_info(
         cls,
         sandbox_id: str,
