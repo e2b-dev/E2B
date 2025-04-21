@@ -22,12 +22,9 @@ def _get_kwargs(
 
     params["metadata"] = metadata
 
-    json_state: Union[Unset, list[str]] = UNSET
+    json_state: Union[Unset, str] = UNSET
     if not isinstance(state, Unset):
-        json_state = []
-        for state_item_data in state:
-            state_item: str = state_item_data
-            json_state.append(state_item)
+        json_state = ",".join(state_item for state_item in state)
 
     params["state"] = json_state
 
