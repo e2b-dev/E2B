@@ -69,6 +69,10 @@ export interface SandboxInfo {
   state: 'running' | 'paused'
 }
 
+export interface SandboxInfoWithDate extends SandboxInfo {
+  endAt: Date
+}
+
 export class SandboxPaginator {
   private options: SandboxListOpts
   private _hasNext: boolean
@@ -249,7 +253,7 @@ export class SandboxApi {
   static async getInfo(
     sandboxId: string,
     opts?: SandboxApiOpts
-  ): Promise<SandboxInfo> {
+  ): Promise<SandboxInfoWithDate> {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
 
@@ -280,6 +284,7 @@ export class SandboxApi {
       ...(res.data.alias && { name: res.data.alias }),
       metadata: res.data.metadata ?? {},
       startedAt: new Date(res.data.startedAt),
+      endAt: new Date(res.data.endAt),
       state: res.data.state,
     }
   }
