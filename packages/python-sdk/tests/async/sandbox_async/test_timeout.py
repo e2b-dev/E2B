@@ -27,4 +27,4 @@ async def test_shorten_then_lengthen_timeout(async_sandbox: AsyncSandbox):
 @pytest.mark.skip_debug()
 async def test_get_timeout(async_sandbox: AsyncSandbox):
     info = await async_sandbox.get_info()
-    assert isinstance(info.started_at, datetime)
+    assert isinstance(info.end_at, datetime)
