@@ -2,9 +2,9 @@ import { assert, onTestFinished } from 'vitest'
 
 import { sandboxTest } from '../../setup.js'
 
-sandboxTest('list directory', async ({ sandbox }) => {
-  const parentDirName = 'test_directory'
+const parentDirName = 'test_directory'
 
+sandboxTest('list directory', async ({ sandbox }) => {
   await sandbox.files.makeDir(parentDirName)
   await sandbox.files.makeDir(`${parentDirName}/subdir1`)
   await sandbox.files.makeDir(`${parentDirName}/subdir2`)
@@ -58,41 +58,36 @@ sandboxTest('list directory', async ({ sandbox }) => {
         'subdir2_2',
       ],
     },
-    {
-      name: 'negative depth should error',
-      depth: -1,
-      expectedLen: 0,
-      expectedFiles: [],
-      expectError: 'depth should be a positive number',
-    },
   ]
 
   for (const testCase of testCases) {
-    if (testCase.expectError) {
-      try {
-        await sandbox.files.list(
-          parentDirName,
-          testCase.depth !== undefined ? { depth: testCase.depth } : undefined
-        )
-        assert.fail('Expected error but none was thrown')
-      } catch (err) {
-        assert.ok(
-          err.message.includes(testCase.expectError),
-          `expected error message to include "${testCase.expectError}"`
-        )
-        continue
-      }
-    } else {
-      const files = await sandbox.files.list(
-        parentDirName,
-        testCase.depth !== undefined ? { depth: testCase.depth } : undefined
-      )
-      assert.equal(files.length, testCase.expectedLen)
+    const files = await sandbox.files.list(
+      parentDirName,
+      testCase.depth !== undefined ? { depth: testCase.depth } : undefined
+    )
+    assert.equal(files.length, testCase.expectedLen)
 
-      for (let i = 0; i < testCase.expectedFiles.length; i++) {
-        assert.equal(files[i].name, testCase.expectedFiles[i])
-      }
+    for (let i = 0; i < testCase.expectedFiles.length; i++) {
+      assert.equal(files[i].name, testCase.expectedFiles[i])
     }
+  }
+
+  onTestFinished(() => {
+    sandbox.files.remove(parentDirName)
+  })
+})
+
+sandboxTest('list directory with invalid depth', async ({ sandbox }) => {
+  await sandbox.files.makeDir(parentDirName)
+
+  try {
+    await sandbox.files.list(parentDirName, { depth: -1 })
+    assert.fail('Expected error but none was thrown')
+  } catch (err) {
+    assert.ok(
+      err.message.includes('depth should be a positive number'),
+      'expected error message to include "depth should be a positive number"'
+    )
   }
 
   onTestFinished(() => {
