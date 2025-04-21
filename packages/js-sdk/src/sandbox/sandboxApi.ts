@@ -64,13 +64,14 @@ export interface SandboxInfo {
   startedAt: Date
 
   /**
+   * Sandbox end time.
+   */
+  endAt: Date
+
+  /**
    * Sandbox state.
    */
   state: 'running' | 'paused'
-}
-
-export interface SandboxInfoWithDate extends SandboxInfo {
-  endAt: Date
 }
 
 export class SandboxPaginator {
@@ -253,7 +254,7 @@ export class SandboxApi {
   static async getInfo(
     sandboxId: string,
     opts?: SandboxApiOpts
-  ): Promise<SandboxInfoWithDate> {
+  ): Promise<SandboxInfo> {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
 
