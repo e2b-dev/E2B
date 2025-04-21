@@ -159,7 +159,7 @@ sandboxTest.skipIf(isDebug)(
       assert.equal(sandboxes2[0].state, 'paused')
       assert.isFalse(paginator.hasNext)
       assert.equal(paginator.nextToken, undefined)
-      assert.equal(sandboxes2[0].sandboxId.startsWith(extraSbxId), true)
+      assert.equal(sandboxes2[0].sandboxId.startsWith(sandboxId), true)
     } finally {
       await extraSbx.kill()
     }
