@@ -79,12 +79,13 @@ def test_list_directory_error_cases(sandbox: Sandbox):
     parent_dir_name = f"test_directory_{uuid.uuid4()}"
     sandbox.files.make_dir(parent_dir_name)
 
+    expected_error_message = "depth should be a positive number"
     try:
         sandbox.files.list(parent_dir_name, depth=-1)
         assert False, "Expected error but none was thrown"
     except Exception as err:
-        assert (
-            "Value out of range" in str(err)
-        ), 'expected error message to include "Value out of range"'
+        assert expected_error_message in str(
+            err
+        ), f'expected error message to include "{expected_error_message}"'
 
     sandbox.files.remove(parent_dir_name)

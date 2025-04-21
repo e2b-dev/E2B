@@ -8,7 +8,7 @@ import httpx
 from packaging.version import Version
 
 from e2b.envd.versions import ENVD_VERSION_RECURSIVE_WATCH
-from e2b.exceptions import TemplateException
+from e2b.exceptions import TemplateException, InvalidArgumentException
 from e2b.connection_config import (
     ConnectionConfig,
     Username,
@@ -264,6 +264,9 @@ class Filesystem:
 
         :return: List of entries in the directory
         """
+        if depth is not None and depth < 0:
+            raise InvalidArgumentException("depth should be a positive number")
+
         try:
             res = self._rpc.list_dir(
                 filesystem_pb2.ListDirRequest(path=path, depth=depth),

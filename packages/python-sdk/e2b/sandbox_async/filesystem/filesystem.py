@@ -4,7 +4,6 @@ from io import IOBase
 from packaging.version import Version
 from typing import AsyncIterator, IO, List, Literal, Optional, overload, Union
 from e2b.sandbox.filesystem.filesystem import WriteEntry
-
 import e2b_connect as connect
 from e2b.connection_config import (
     ConnectionConfig,
@@ -16,7 +15,7 @@ from e2b.envd.api import ENVD_API_FILES_ROUTE, ahandle_envd_api_exception
 from e2b.envd.filesystem import filesystem_connect, filesystem_pb2
 from e2b.envd.rpc import authentication_header, handle_rpc_exception
 from e2b.envd.versions import ENVD_VERSION_RECURSIVE_WATCH
-from e2b.exceptions import SandboxException, TemplateException
+from e2b.exceptions import SandboxException, TemplateException, InvalidArgumentException
 from e2b.sandbox.filesystem.filesystem import EntryInfo, map_file_type
 from e2b.sandbox.filesystem.watch_handle import FilesystemEvent
 from e2b.sandbox_async.filesystem.watch_handle import AsyncWatchHandle
@@ -268,6 +267,9 @@ class Filesystem:
 
         :return: List of entries in the directory
         """
+        if depth is not None and depth < 0:
+            raise InvalidArgumentException("depth should be a positive number")
+
         try:
             res = await self._rpc.alist_dir(
                 filesystem_pb2.ListDirRequest(path=path, depth=depth),
