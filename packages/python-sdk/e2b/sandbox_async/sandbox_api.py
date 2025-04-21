@@ -85,6 +85,7 @@ class AsyncSandboxPaginator:
             res = await get_v2_sandboxes.asyncio_detailed(
                 client=api_client,
                 metadata=metadata if metadata else UNSET,
+                state=self.query.state if self.query.state else UNSET,
                 limit=self.limit if self.limit else UNSET,
                 next_token=self._next_token if self._next_token else UNSET,
             )
@@ -179,74 +180,7 @@ class SandboxApi(SandboxApiBase):
             if res.parsed is None:
                 raise Exception("Body of the request is None")
 
-            return SandboxInfo(
-                sandbox_id=SandboxApi._get_sandbox_id(
-                    res.parsed.sandbox_id,
-                    res.parsed.client_id,
-                ),
-                template_id=res.parsed.template_id,
-                name=res.parsed.alias if isinstance(res.parsed.alias, str) else None,
-                metadata=(
-                    res.parsed.metadata if isinstance(res.parsed.metadata, dict) else {}
-                ),
-                started_at=res.parsed.started_at,
-                state=res.parsed.state,
-            )
-
-    @classmethod
-    async def get_info(
-        cls,
-        sandbox_id: str,
-        api_key: Optional[str] = None,
-        domain: Optional[str] = None,
-        debug: Optional[bool] = None,
-        request_timeout: Optional[float] = None,
-        headers: Optional[Dict[str, str]] = None,
-    ) -> SandboxInfo:
-        """
-        Get the sandbox info.
-        :param sandbox_id: Sandbox ID
-        :param api_key: API key to use for authentication, defaults to `E2B_API_KEY` environment variable
-        :param domain: Domain to use for the request, defaults to `E2B_DOMAIN` environment variable
-        :param debug: Debug mode, defaults to `E2B_DEBUG` environment variable
-        :param request_timeout: Timeout for the request in **seconds**
-        :param headers: Additional headers to send with the request
-
-        :return: Sandbox info
-        """
-        config = ConnectionConfig(
-            api_key=api_key,
-            domain=domain,
-            debug=debug,
-            request_timeout=request_timeout,
-            headers=headers,
-        )
-
-        async with AsyncApiClient(config) as api_client:
-            res = await get_sandboxes_sandbox_id.asyncio_detailed(
-                sandbox_id,
-                client=api_client,
-            )
-
-            if res.status_code >= 300 or isinstance(res.parsed, Error):
-                raise handle_api_exception(res)
-
-            if res.parsed is None:
-                raise Exception("Body of the request is None")
-
-            return SandboxInfo(
-                sandbox_id=SandboxApi._get_sandbox_id(
-                    res.parsed.sandbox_id,
-                    res.parsed.client_id,
-                ),
-                template_id=res.parsed.template_id,
-                name=res.parsed.alias if isinstance(res.parsed.alias, str) else None,
-                metadata=(
-                    res.parsed.metadata if isinstance(res.parsed.metadata, dict) else {}
-                ),
-                started_at=res.parsed.started_at,
-                state=res.parsed.state,
-            )
+            return SandboxInfo.from_listed_sandbox(res.parsed)
 
     @classmethod
     async def _cls_kill(

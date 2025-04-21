@@ -85,6 +85,7 @@ class SandboxPaginator:
             res = get_v2_sandboxes.sync_detailed(
                 client=api_client,
                 metadata=metadata if metadata else UNSET,
+                state=self.query.state if self.query.state else UNSET,
                 limit=self.limit if self.limit else UNSET,
                 next_token=self._next_token if self._next_token else UNSET,
             )
@@ -210,19 +211,7 @@ class SandboxApi(SandboxApiBase):
             if res.parsed is None:
                 raise Exception("Body of the request is None")
 
-            return SandboxInfo(
-                sandbox_id=SandboxApi._get_sandbox_id(
-                    res.parsed.sandbox_id,
-                    res.parsed.client_id,
-                ),
-                template_id=res.parsed.template_id,
-                name=res.parsed.alias if isinstance(res.parsed.alias, str) else None,
-                metadata=(
-                    res.parsed.metadata if isinstance(res.parsed.metadata, dict) else {}
-                ),
-                started_at=res.parsed.started_at,
-                state=res.parsed.state,
-            )
+            return SandboxInfo.from_listed_sandbox(res.parsed)
 
     @classmethod
     def _cls_kill(

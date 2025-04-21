@@ -23,6 +23,8 @@ class SandboxInfo:
     """Saved sandbox metadata."""
     started_at: datetime
     """Sandbox start time."""
+    end_at: datetime
+    """Sandbox end time."""
     state: SandboxState
     """Sandbox state."""
 
@@ -43,6 +45,7 @@ class SandboxInfo:
                 else {}
             ),
             started_at=listed_sandbox.started_at,
+            end_at=listed_sandbox.end_at,
             state=listed_sandbox.state,
         )
 
