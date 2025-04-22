@@ -120,6 +120,7 @@ class Filesystem:
             ENVD_API_FILES_ROUTE,
             params={"path": path, "username": user},
             timeout=self._connection_config.get_request_timeout(request_timeout),
+            headers=self._base_headers()
         )
 
         err = await ahandle_envd_api_exception(r)
@@ -233,6 +234,7 @@ class Filesystem:
             files=httpx_files,
             params=params,
             timeout=self._connection_config.get_request_timeout(request_timeout),
+            headers=self._base_headers()
         )
 
         err = await ahandle_envd_api_exception(r)
@@ -276,7 +278,10 @@ class Filesystem:
                 request_timeout=self._connection_config.get_request_timeout(
                     request_timeout
                 ),
-                headers=authentication_header(user),
+                headers={
+                   **self._base_headers(),
+                   **authentication_header(user),
+                }
             )
 
             entries: List[EntryInfo] = []
@@ -313,7 +318,10 @@ class Filesystem:
                 request_timeout=self._connection_config.get_request_timeout(
                     request_timeout
                 ),
-                headers=authentication_header(user),
+                headers={
+                   **self._base_headers(),
+                   **authentication_header(user),
+                }
             )
 
             return True
@@ -343,7 +351,10 @@ class Filesystem:
                 request_timeout=self._connection_config.get_request_timeout(
                     request_timeout
                 ),
-                headers=authentication_header(user),
+                headers={
+                   **self._base_headers(),
+                   **authentication_header(user),
+                }
             )
         except Exception as e:
             raise handle_rpc_exception(e)
@@ -374,7 +385,10 @@ class Filesystem:
                 request_timeout=self._connection_config.get_request_timeout(
                     request_timeout
                 ),
-                headers=authentication_header(user),
+                headers={
+                    **self._base_headers(),
+                    **authentication_header(user),
+                }
             )
 
             return EntryInfo(
@@ -406,7 +420,10 @@ class Filesystem:
                 request_timeout=self._connection_config.get_request_timeout(
                     request_timeout
                 ),
-                headers=authentication_header(user),
+                headers={
+                    **self._base_headers(),
+                    **authentication_header(user),
+                }
             )
 
             return True
@@ -456,6 +473,7 @@ class Filesystem:
             ),
             timeout=timeout,
             headers={
+                **self._base_headers(),
                 **authentication_header(user),
                 KEEPALIVE_PING_HEADER: str(KEEPALIVE_PING_INTERVAL_SEC),
             },
@@ -472,3 +490,6 @@ class Filesystem:
             return AsyncWatchHandle(events=events, on_event=on_event, on_exit=on_exit)
         except Exception as e:
             raise handle_rpc_exception(e)
+
+    def _base_headers(self) -> dict:
+        return self._connection_config.headers or {}

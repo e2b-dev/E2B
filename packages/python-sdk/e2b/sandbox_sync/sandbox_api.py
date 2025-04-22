@@ -87,6 +87,8 @@ class SandboxApi(SandboxApiBase):
                     ),
                     started_at=sandbox.started_at,
                     end_at=sandbox.end_at,
+                    envd_version=sandbox.envd_version,
+                    envd_access_token=sandbox.envd_access_token,
                 )
                 for sandbox in res.parsed
             ]
@@ -149,6 +151,8 @@ class SandboxApi(SandboxApiBase):
                 ),
                 started_at=res.parsed.started_at,
                 end_at=res.parsed.end_at,
+                envd_access_token=res.parsed.envd_access_token,
+                envd_version=res.parsed.envd_version,
             )
 
     @classmethod
@@ -237,6 +241,7 @@ class SandboxApi(SandboxApiBase):
         timeout: int,
         metadata: Optional[Dict[str, str]] = None,
         env_vars: Optional[Dict[str, str]] = None,
+        secure: Optional[bool] = None,
         api_key: Optional[str] = None,
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
@@ -263,6 +268,7 @@ class SandboxApi(SandboxApiBase):
                     metadata=metadata or {},
                     timeout=timeout,
                     env_vars=env_vars or {},
+                    secure=secure or False,
                 ),
                 client=api_client,
             )
@@ -291,4 +297,5 @@ class SandboxApi(SandboxApiBase):
                     res.parsed.client_id,
                 ),
                 envd_version=res.parsed.envd_version,
+                envd_access_token=res.parsed.envd_access_token,
             )

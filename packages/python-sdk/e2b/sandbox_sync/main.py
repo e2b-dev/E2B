@@ -3,6 +3,7 @@ import httpx
 
 from typing import Dict, Optional, overload
 
+from e2b.api.client.types import Unset
 from e2b.connection_config import ConnectionConfig, ProxyTypes
 from e2b.envd.api import ENVD_API_HEALTH_ROUTE, handle_envd_api_exception
 from e2b.exceptions import SandboxException, format_request_timeout_error
@@ -93,12 +94,15 @@ class Sandbox(SandboxSetup, SandboxApi):
         timeout: Optional[int] = None,
         metadata: Optional[Dict[str, str]] = None,
         envs: Optional[Dict[str, str]] = None,
+        secrue: Optional[bool] = None,
         api_key: Optional[str] = None,
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
         sandbox_id: Optional[str] = None,
         request_timeout: Optional[float] = None,
         proxy: Optional[ProxyTypes] = None,
+        envd_access_token: Optional[str] = None,
+        envd_version: Optional[str] = None,
     ):
         """
         Create a new sandbox.
@@ -123,20 +127,16 @@ class Sandbox(SandboxSetup, SandboxApi):
                 "Use Sandbox.connect method instead.",
             )
 
-        self._connection_config = ConnectionConfig(
-            api_key=api_key,
-            domain=domain,
-            debug=debug,
-            request_timeout=request_timeout,
-            proxy=proxy,
-        )
+        connection_headers = {}
 
-        if self.connection_config.debug:
+        if debug:
             self._sandbox_id = "debug_sandbox_id"
             self._envd_version = None
+            self._envd_access_token = None
         elif sandbox_id is not None:
             self._sandbox_id = sandbox_id
-            self._envd_version = None
+            self._envd_version = envd_version
+            self._envd_access_token = envd_access_token
         else:
             template = template or self.default_template
             timeout = timeout or self.default_sandbox_timeout
@@ -149,14 +149,29 @@ class Sandbox(SandboxSetup, SandboxApi):
                 domain=domain,
                 debug=debug,
                 request_timeout=request_timeout,
+                secure=secrue or False,
                 proxy=proxy,
             )
             self._sandbox_id = response.sandbox_id
             self._envd_version = response.envd_version
 
-        self._envd_api_url = f"{'http' if self.connection_config.debug else 'https'}://{self.get_host(self.envd_port)}"
+            if response.envd_access_token is not None and not isinstance(response.envd_access_token, Unset):
+                self._envd_access_token = response.envd_access_token
+                connection_headers["X-Access-Token"] = response.envd_access_token
+            else:
+                self._envd_access_token = None
 
         self._transport = TransportWithLogger(limits=self._limits, proxy=proxy)
+        self._connection_config = ConnectionConfig(
+            api_key=api_key,
+            domain=domain,
+            debug=debug,
+            request_timeout=request_timeout,
+            headers=connection_headers,
+            proxy=proxy,
+        )
+
+        self._envd_api_url = f"{'http' if self.connection_config.debug else 'https'}://{self.get_host(self.envd_port)}"
         self._envd_api = httpx.Client(
             base_url=self.envd_api_url,
             transport=self._transport,
@@ -244,12 +259,18 @@ class Sandbox(SandboxSetup, SandboxApi):
         same_sandbox = Sandbox.connect(sandbox_id)
         ```
         """
+
+        response = SandboxApi.get_info(sandbox_id)
+
+
         return cls(
             sandbox_id=sandbox_id,
             api_key=api_key,
             domain=domain,
             debug=debug,
             proxy=proxy,
+            envd_version=response.envd_version,
+            envd_access_token=response.envd_access_token,
         )
 
     def __enter__(self):
