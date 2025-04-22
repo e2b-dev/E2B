@@ -4,6 +4,7 @@ import httpx
 from typing import Dict, Optional, TypedDict, overload
 from typing_extensions import Unpack
 
+from e2b.api.client.types import Unset
 from e2b.connection_config import ConnectionConfig, ProxyTypes
 from e2b.envd.api import ENVD_API_HEALTH_ROUTE, ahandle_envd_api_exception
 from e2b.exceptions import format_request_timeout_error
@@ -32,6 +33,7 @@ class AsyncTransportWithLogger(httpx.AsyncHTTPTransport):
 class AsyncSandboxOpts(TypedDict):
     sandbox_id: str
     envd_version: Optional[str]
+    envd_access_token: Optional[str]
     connection_config: ConnectionConfig
 
 
@@ -105,6 +107,7 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
 
         self._envd_api_url = f"{'http' if self.connection_config.debug else 'https'}://{self.get_host(self.envd_port)}"
         self._envd_version = opts["envd_version"]
+        self._envd_access_token = opts["envd_access_token"]
 
         self._transport = AsyncTransportWithLogger(
             limits=self._limits, proxy=self._connection_config.proxy
@@ -180,6 +183,7 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
         proxy: Optional[ProxyTypes] = None,
+        secure: Optional[bool] = None,
     ):
         """
         Create a new sandbox.
@@ -198,17 +202,12 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
 
         Use this method instead of using the constructor to create a new sandbox.
         """
-        connection_config = ConnectionConfig(
-            api_key=api_key,
-            domain=domain,
-            debug=debug,
-            request_timeout=request_timeout,
-            proxy=proxy,
-        )
+        connection_headers = {"x": "b"}
 
-        if connection_config.debug:
+        if debug:
             sandbox_id = "debug_sandbox_id"
             envd_version = None
+            envd_access_token = None
         else:
             response = await SandboxApi._create_sandbox(
                 template=template or cls.default_template,
@@ -219,14 +218,29 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
                 debug=debug,
                 request_timeout=request_timeout,
                 env_vars=envs,
+                secure=secure,
                 proxy=proxy,
             )
             sandbox_id = response.sandbox_id
             envd_version = response.envd_version
+            envd_access_token = response.envd_access_token
+
+            if envd_access_token is not None and not isinstance(envd_access_token, Unset):
+                  connection_headers["X-Access-Token"] = envd_access_token
+
+        connection_config = ConnectionConfig(
+            api_key=api_key,
+            domain=domain,
+            debug=debug,
+            request_timeout=request_timeout,
+            headers=connection_headers,
+            proxy=proxy,
+        )
 
         return cls(
             sandbox_id=sandbox_id,
             envd_version=envd_version,
+            envd_access_token=envd_access_token,
             connection_config=connection_config,
         )
 
@@ -264,9 +278,12 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
             proxy=proxy,
         )
 
+        response = await SandboxApi.get_info(sandbox_id)
+
         return cls(
             sandbox_id=sandbox_id,
-            envd_version=None,
+            envd_version=response.envd_version,
+            envd_access_token=response.envd_access_token,
             connection_config=connection_config,
         )
 
