@@ -60,6 +60,12 @@ class ApiClient {
         }),
         ...config.headers,
       },
+      querySerializer: {
+        array: {
+          style: 'form',
+          explode: false,
+        },
+      },
     })
 
     if (config.logger) {

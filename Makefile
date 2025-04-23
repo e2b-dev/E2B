@@ -15,6 +15,7 @@ generate-js:
 	cd packages/js-sdk && pnpm generate-envd-api
 	cd spec/envd && buf generate --template buf-js.gen.yaml
 
+# `brew install protobuf` beforehand
 generate-python:
 	if [ ! -f "/go/bin/protoc-gen-connect-python" ]; then \
 		$(MAKE) -C packages/connect-python build; \
