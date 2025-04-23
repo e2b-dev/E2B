@@ -6,7 +6,7 @@ import imgChart from '@/images/analyze-data-chart.png'
 You can use E2B Sandbox to run AI-generated code to analyze data. Here's how the AI data analysis workflow usually looks like:
 1. Your user has a dataset in CSV format or other formats.
 2. You prompt the LLM to generate code (usually Python) based on the user's data.
-3. The sandbox runs the AU-generated code and returns the results.
+3. The sandbox runs the AI-generated code and returns the results.
 4. You display the results to the user.
 
 ---
@@ -462,7 +462,7 @@ with open("../dataset.csv", "rb") as f:
 
 def run_ai_generated_code(ai_generated_code: str):
     print('Running the code in the sandbox....')
-    execution = sbx.notebook.exec_cell(ai_generated_code)
+    execution = sbx.run_code(ai_generated_code)
     print('Code execution finished!')
 
     # First let's check if the code ran successfully.

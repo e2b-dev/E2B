@@ -1,7 +1,6 @@
 #!/usr/bin/env -S node --enable-source-maps
 
-import * as updateNotifier from 'update-notifier'
-
+import updateNotifier from 'update-notifier'
 import * as commander from 'commander'
 import * as packageJSON from '../package.json'
 import { program } from './commands'
@@ -9,11 +8,10 @@ import { commands2md } from './utils/commands2md'
 
 export const pkg = packageJSON
 
-updateNotifier
-  .default({
-    pkg,
-    updateCheckInterval: 1000 * 60 * 60 * 8, // 8 hours
-  })
+updateNotifier({
+  pkg,
+  updateCheckInterval:1000 * 60 * 60 * 8, // 8 hours
+})
   .notify()
 
 const prog = program.version(

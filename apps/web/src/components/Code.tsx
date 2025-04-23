@@ -1,13 +1,19 @@
 'use client'
 
 import Image from 'next/image'
-import { Children, createContext, isValidElement, useContext, useEffect, useRef, useState } from 'react'
+import {
+  Children,
+  createContext,
+  isValidElement,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from 'react'
 import { Tab } from '@headlessui/react'
 import clsx from 'clsx'
 import { create } from 'zustand'
-import {
-  Terminal,
-} from 'lucide-react'
+import { Terminal } from 'lucide-react'
 
 import { CopyButton } from '@/components/CopyButton'
 import { LangShort, languageNames } from '@/utils/consts'
@@ -18,8 +24,8 @@ export function getPanelTitle({
   title,
   language,
 }: {
-  title?: string;
-  language?: string;
+  title?: string
+  language?: string
 }) {
   if (title) {
     return title
@@ -48,24 +54,29 @@ function renderLanguageLogo(props: any) {
   return null
 }
 
-
 function CodePanel({
   children,
   code,
 }: {
-  children: React.ReactNode;
-  code?: string;
-  lang?: LangShort;
-  isRunnable?: boolean;
+  children: React.ReactNode
+  code?: string
+  lang?: LangShort
+  isRunnable?: boolean
 }) {
   const child = Children.only(children)
   if (isValidElement(child)) code = (child.props as any).code ?? code // Get code from child if available
 
   if (!code) {
     throw new Error(
-      '`CodePanel` requires a `code` prop, or a child with a `code` prop.',
+      '`CodePanel` requires a `code` prop, or a child with a `code` prop.'
     )
   }
+
+  // Remove shiki highlight comments for copying
+  const cleanCode = code.replace(
+    / +\/\/ \$HighlightLine$|\s*# \$HighlightLine$/gm,
+    ''
+  )
 
   return (
     <div className="group relative dark:bg-white/2.5">
@@ -75,15 +86,13 @@ function CodePanel({
         right-3
         top-[-40px]
       "
-      >
-      </div>
+      ></div>
 
       <pre className="overflow-x-auto p-4 text-xs text-white">{children}</pre>
-      <CopyButton code={code} />
+      <CopyButton code={cleanCode} />
     </div>
   )
 }
-
 
 export function CodeGroupHeader({
   title,
@@ -91,17 +100,16 @@ export function CodeGroupHeader({
   selectedIndex,
   isTerminalCommand,
 }: {
-  title: string;
-  children: React.ReactNode;
-  selectedIndex: number;
-  isTerminalCommand?: boolean;
+  title: string
+  children: React.ReactNode
+  selectedIndex: number
+  isTerminalCommand?: boolean
 }) {
   const hasTabs = Children.count(children) > 1
   if (!title && !hasTabs && !isTerminalCommand) return null
 
   return (
-    <div
-      className="flex min-h-[calc(theme(spacing.12)+1px)] flex-wrap items-center justify-between gap-x-4 border-b border-zinc-800 bg-transparent">
+    <div className="flex min-h-[calc(theme(spacing.12)+1px)] flex-wrap items-center justify-between gap-x-4 border-b border-zinc-800 bg-transparent">
       <div className="flex flex-col items-start w-full">
         {hasTabs && (
           <Tab.List className="w-full border-b border-white/5 -mb-px flex gap-4 text-xs font-medium">
@@ -114,7 +122,7 @@ export function CodeGroupHeader({
                   'border-b py-3 transition ui-not-focus-visible:outline-none',
                   childIndex === selectedIndex
                     ? 'border-brand-500 text-brand-400'
-                    : 'border-transparent text-zinc-400 hover:text-zinc-300',
+                    : 'border-transparent text-zinc-400 hover:text-zinc-300'
                 )}
               >
                 <div
@@ -126,7 +134,11 @@ export function CodeGroupHeader({
                 "
                 >
                   {renderLanguageLogo(isValidElement(child) ? child.props : {})}
-                  {extractPanelProps(isValidElement(child) ? child.props : {} as any).language}
+                  {
+                    extractPanelProps(
+                      isValidElement(child) ? child.props : ({} as any)
+                    ).language
+                  }
                 </div>
               </Tab>
             ))}
@@ -145,12 +157,18 @@ export function CodeGroupHeader({
               <>
                 {selectedIndex === childIndex && (
                   <>
-                    {extractPanelProps(isValidElement(child) ? child.props : {} as any).description && (
+                    {extractPanelProps(
+                      isValidElement(child) ? child.props : ({} as any)
+                    ).description && (
                       <span
                         id={`description-${childIndex}`}
                         className="text-xs font-medium text-white font-mono p-2"
                       >
-                        {extractPanelProps(isValidElement(child) ? child.props : {} as any).description}
+                        {
+                          extractPanelProps(
+                            isValidElement(child) ? child.props : ({} as any)
+                          ).description
+                        }
                       </span>
                     )}
                   </>
@@ -162,11 +180,10 @@ export function CodeGroupHeader({
 
         {isTerminalCommand && (
           <div className="flex items-center justify-start space-x-2 p-2">
-            <Terminal
-              className="text-white"
-              size={18}
-            />
-            <span className="text-xs font-mono font-medium text-white">Terminal</span>
+            <Terminal className="text-white" size={18} />
+            <span className="text-xs font-mono font-medium text-white">
+              Terminal
+            </span>
           </div>
         )}
       </div>
@@ -245,15 +262,15 @@ function usePreventLayoutShift() {
 }
 
 const usePreferredLanguageStore = create<{
-  preferredLanguages: Array<string>;
-  addPreferredLanguage: (language: string) => void;
+  preferredLanguages: Array<string>
+  addPreferredLanguage: (language: string) => void
 }>()((set) => ({
   preferredLanguages: [],
   addPreferredLanguage: (language) =>
     set((state) => ({
       preferredLanguages: [
         ...state.preferredLanguages.filter(
-          (preferredLanguage) => preferredLanguage !== language,
+          (preferredLanguage) => preferredLanguage !== language
         ),
         language,
       ],
@@ -265,7 +282,7 @@ export function useTabGroupProps(availableLanguages: Array<string>) {
     usePreferredLanguageStore()
   const [selectedIndex, setSelectedIndex] = useState(0)
   const activeLanguage = [...availableLanguages].sort(
-    (a, z) => preferredLanguages.indexOf(z) - preferredLanguages.indexOf(a),
+    (a, z) => preferredLanguages.indexOf(z) - preferredLanguages.indexOf(a)
   )[0]
 
   const languageIndex = availableLanguages.indexOf(activeLanguage)
@@ -280,7 +297,7 @@ export function useTabGroupProps(availableLanguages: Array<string>) {
     selectedIndex,
     onChange: (newSelectedIndex: number) => {
       preventLayoutShift(() =>
-        addPreferredLanguage(availableLanguages[newSelectedIndex]),
+        addPreferredLanguage(availableLanguages[newSelectedIndex])
       )
     },
   }
@@ -297,17 +314,17 @@ export function CodeGroup({
   path,
   ...props
 }: React.ComponentPropsWithoutRef<typeof CodeGroupPanels> & {
-  title?: string;
-  isTerminalCommand?: boolean;
-  isFileName?: boolean;
-  path?: string; // For analytics
+  title?: string
+  isTerminalCommand?: boolean
+  isFileName?: boolean
+  path?: string // For analytics
 }) {
   const hasTabs = Children.count(children) > 1
   const containerClassName =
     'not-prose my-6 overflow-hidden rounded-2xl bg-zinc-900 shadow-md dark:ring-1 dark:ring-white/10'
   const languages =
     Children.map(children, (child) =>
-      getPanelTitle(isValidElement(child) ? child.props : {}),
+      getPanelTitle(isValidElement(child) ? child.props : {})
     ) ?? []
   const tabGroupProps = useTabGroupProps(languages)
 
@@ -324,9 +341,11 @@ export function CodeGroup({
 
   return (
     <CodeGroupContext.Provider
-      value={{
-        path,
-      } as any}
+      value={
+        {
+          path,
+        } as any
+      }
     >
       {hasTabs ? (
         <Tab.Group {...tabGroupProps} className={containerClassName}>
@@ -357,7 +376,7 @@ export function Code({
   if (isGrouped) {
     if (typeof children !== 'string') {
       throw new Error(
-        '`Code` children must be a string when nested inside a `CodeGroup`.',
+        '`Code` children must be a string when nested inside a `CodeGroup`.'
       )
     }
     return <code {...props} dangerouslySetInnerHTML={{ __html: children }} />
@@ -385,7 +404,7 @@ export function Pre({
 export function CodeGroupAutoload({ children, isRunnable = false }) {
   if (!children) {
     console.warn(
-      'CodeGroupAutoload: No children provided - something is wrong with your MDX file',
+      'CodeGroupAutoload: No children provided - something is wrong with your MDX file'
     )
     return null
   }

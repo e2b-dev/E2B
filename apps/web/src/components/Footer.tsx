@@ -105,7 +105,7 @@ function SmallPrint() {
         </p>
       </div>
       <div className="flex gap-4">
-        <SocialLink href="https://x.com/e2b_dev" icon={TwitterIcon}>
+        <SocialLink href="https://x.com/e2b" icon={TwitterIcon}>
           Follow us on X (f.k.a. Twitter)
         </SocialLink>
         <SocialLink href="https://github.com/e2b-dev" icon={GitHubIcon}>

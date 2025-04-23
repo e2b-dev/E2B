@@ -7,6 +7,7 @@ import { usePathname } from 'next/navigation'
 import { Footer } from '@/components/Footer'
 import { DocsNavigation, SdkRefNavigation } from '@/components/Navigation'
 import { Section, SectionProvider } from '@/components/SectionProvider'
+import { Search } from './Search'
 
 export function Layout({
   children,
@@ -19,7 +20,6 @@ export function Layout({
   const relativePathname = pathname?.replace(new RegExp('^/docs'), '')
   const isDocs = pathname?.startsWith('/docs')
   const isApiRef = pathname?.startsWith('/docs/sdk-reference')
-  const isDashboard = pathname?.startsWith('/dashboard')
 
   return (
     <SectionProvider
@@ -30,15 +30,14 @@ export function Layout({
           'lg:ml-[var(--sidebar-nav-width)]': isDocs,
         })}
       >
-        {!isDashboard && (
-          <motion.header
-            layoutScroll
-            className="contents lg:pointer-events-none lg:fixed lg:inset-0 lg:z-40 lg:flex lg:top-[60px]"
-          >
-            {isDocs && (
-              <div
-                id="sidebar"
-                className="
+        <motion.header
+          layoutScroll
+          className="contents lg:pointer-events-none lg:fixed lg:inset-0 lg:z-40 lg:flex lg:top-[60px]"
+        >
+          {isDocs && (
+            <div
+              id="sidebar"
+              className="
                 lg:pointer-events-auto
                 scrollbar-thin
                 scrollbar-thumb-scrollbar
@@ -51,14 +50,14 @@ export function Layout({
                 border-white/10
                 lg:pb-4
               "
-              >
-                <div className="hidden lg:block lg:mt-4">
-                  {isApiRef ? <SdkRefNavigation /> : <DocsNavigation />}
-                </div>
+            >
+              <div className="hidden space-y-4 lg:block lg:mt-4">
+                <Search />
+                {isApiRef ? <SdkRefNavigation /> : <DocsNavigation />}
               </div>
-            )}
-          </motion.header>
-        )}
+            </div>
+          )}
+        </motion.header>
         {isDocs && (
           <div
             className="

@@ -5,6 +5,8 @@ declare module '@/mdx/search.mjs' {
     url: string
     title: string
     pageTitle?: string
+    preview?: string
+    badge?: 'Legacy'
   }
 
   export function search(query: string, options?: SearchOptions): Array<Result>

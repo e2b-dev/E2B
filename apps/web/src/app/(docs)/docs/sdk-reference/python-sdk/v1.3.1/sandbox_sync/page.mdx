@@ -1,0 +1,979 @@
+
+
+
+## CommandHandle
+
+```python
+class CommandHandle()
+```
+
+Command execution handle.
+
+It provides methods for waiting for the command to finish, retrieving stdout/stderr, and killing the command.
+
+
+### pid
+
+```python
+@property
+def pid()
+```
+
+Command process ID.
+
+
+### \_\_iter\_\_
+
+```python
+def __iter__()
+```
+
+Iterate over the command output.
+
+**Returns**:
+
+Generator of command outputs
+
+
+### disconnect
+
+```python
+def disconnect() -> None
+```
+
+Disconnect from the command.
+
+The command is not killed, but SDK stops receiving events from the command.
+You can reconnect to the command using `sandbox.commands.connect` method.
+
+
+### wait
+
+```python
+def wait(on_pty: Optional[Callable[[PtyOutput], None]] = None,
+         on_stdout: Optional[Callable[[str], None]] = None,
+         on_stderr: Optional[Callable[[str], None]] = None) -> CommandResult
+```
+
+Wait for the command to finish and returns the result.
+
+If the command exits with a non-zero exit code, it throws a `CommandExitException`.
+
+**Arguments**:
+
+- `on_pty`: Callback for pty output
+- `on_stdout`: Callback for stdout output
+- `on_stderr`: Callback for stderr output
+
+**Returns**:
+
+`CommandResult` result of command execution
+
+
+### kill
+
+```python
+def kill() -> bool
+```
+
+Kills the command.
+
+It uses `SIGKILL` signal to kill the command.
+
+**Returns**:
+
+Whether the command was killed successfully
+
+
+
+
+## Pty
+
+```python
+class Pty()
+```
+
+Module for interacting with PTYs (pseudo-terminals) in the sandbox.
+
+
+### kill
+
+```python
+def kill(pid: int, request_timeout: Optional[float] = None) -> bool
+```
+
+Kill PTY.
+
+**Arguments**:
+
+- `pid`: Process ID of the PTY
+- `request_timeout`: Timeout for the request in **seconds**
+
+**Returns**:
+
+`true` if the PTY was killed, `false` if the PTY was not found
+
+
+### send\_stdin
+
+```python
+def send_stdin(pid: int,
+               data: bytes,
+               request_timeout: Optional[float] = None) -> None
+```
+
+Send input to a PTY.
+
+**Arguments**:
+
+- `pid`: Process ID of the PTY
+- `data`: Input data to send
+- `request_timeout`: Timeout for the request in **seconds**
+
+
+### create
+
+```python
+def create(size: PtySize,
+           user: Username = "user",
+           cwd: Optional[str] = None,
+           envs: Optional[Dict[str, str]] = None,
+           timeout: Optional[float] = 60,
+           request_timeout: Optional[float] = None) -> CommandHandle
+```
+
+Start a new PTY (pseudo-terminal).
+
+**Arguments**:
+
+- `size`: Size of the PTY
+- `user`: User to use for the PTY
+- `cwd`: Working directory for the PTY
+- `envs`: Environment variables for the PTY
+- `timeout`: Timeout for the PTY in **seconds**
+- `request_timeout`: Timeout for the request in **seconds**
+
+**Returns**:
+
+Handle to interact with the PTY
+
+
+### resize
+
+```python
+def resize(pid: int,
+           size: PtySize,
+           request_timeout: Optional[float] = None) -> None
+```
+
+Resize PTY.
+
+Call this when the terminal window is resized and the number of columns and rows has changed.
+
+**Arguments**:
+
+- `pid`: Process ID of the PTY
+- `size`: New size of the PTY
+- `request_timeout`: Timeout for the request in **seconds**s
+
+
+
+
+## Commands
+
+```python
+class Commands()
+```
+
+Module for executing commands in the sandbox.
+
+
+### list
+
+```python
+def list(request_timeout: Optional[float] = None) -> List[ProcessInfo]
+```
+
+Lists all running commands and PTY sessions.
+
+**Arguments**:
+
+- `request_timeout`: Timeout for the request in **seconds**
+
+**Returns**:
+
+List of running commands and PTY sessions
+
+
+### kill
+
+```python
+def kill(pid: int, request_timeout: Optional[float] = None) -> bool
+```
+
+Kills a running command specified by its process ID.
+
+It uses `SIGKILL` signal to kill the command.
+
+**Arguments**:
+
+- `pid`: Process ID of the command. You can get the list of processes using `sandbox.commands.list()`
+- `request_timeout`: Timeout for the request in **seconds**
+
+**Returns**:
+
+`True` if the command was killed, `False` if the command was not found
+
+
+### send\_stdin
+
+```python
+def send_stdin(pid: int, data: str, request_timeout: Optional[float] = None)
+```
+
+Send data to command stdin.
+
+:param pid Process ID of the command. You can get the list of processes using `sandbox.commands.list()`.
+:param data: Data to send to the command
+:param request_timeout: Timeout for the request in **seconds**
+
+
+
+### run
+
+```python
+@overload
+def run(cmd: str,
+        background: Union[Literal[False], None] = None,
+        envs: Optional[Dict[str, str]] = None,
+        user: Username = "user",
+        cwd: Optional[str] = None,
+        on_stdout: Optional[Callable[[str], None]] = None,
+        on_stderr: Optional[Callable[[str], None]] = None,
+        timeout: Optional[float] = 60,
+        request_timeout: Optional[float] = None) -> CommandResult
+```
+
+Start a new command and wait until it finishes executing.
+
+**Arguments**:
+
+- `cmd`: Command to execute
+- `background`: **`False` if the command should be executed in the foreground**, `True` if the command should be executed in the background
+- `envs`: Environment variables used for the command
+- `user`: User to run the command as
+- `cwd`: Working directory to run the command
+- `on_stdout`: Callback for command stdout output
+- `on_stderr`: Callback for command stderr output
+- `timeout`: Timeout for the command connection in **seconds**. Using `0` will not limit the command connection time
+- `request_timeout`: Timeout for the request in **seconds**
+
+**Returns**:
+
+`CommandResult` result of the command execution
+
+
+### run
+
+```python
+@overload
+def run(cmd: str,
+        background: Literal[True],
+        envs: Optional[Dict[str, str]] = None,
+        user: Username = "user",
+        cwd: Optional[str] = None,
+        on_stdout: None = None,
+        on_stderr: None = None,
+        timeout: Optional[float] = 60,
+        request_timeout: Optional[float] = None) -> CommandHandle
+```
+
+Start a new command and return a handle to interact with it.
+
+**Arguments**:
+
+- `cmd`: Command to execute
+- `background`: `False` if the command should be executed in the foreground, **`True` if the command should be executed in the background**
+- `envs`: Environment variables used for the command
+- `user`: User to run the command as
+- `cwd`: Working directory to run the command
+- `timeout`: Timeout for the command connection in **seconds**. Using `0` will not limit the command connection time
+- `request_timeout`: Timeout for the request in **seconds**
+
+**Returns**:
+
+`CommandHandle` handle to interact with the running command
+
+
+### connect
+
+```python
+def connect(pid: int,
+            timeout: Optional[float] = 60,
+            request_timeout: Optional[float] = None)
+```
+
+Connects to a running command.
+
+You can use `CommandHandle.wait()` to wait for the command to finish and get execution results.
+
+**Arguments**:
+
+- `pid`: Process ID of the command to connect to. You can get the list of processes using `sandbox.commands.list()`
+- `timeout`: Timeout for the connection in **seconds**. Using `0` will not limit the connection time
+- `request_timeout`: Timeout for the request in **seconds**
+
+**Returns**:
+
+`CommandHandle` handle to interact with the running command
+
+
+
+
+## SandboxApi
+
+```python
+class SandboxApi(SandboxApiBase)
+```
+
+
+### list
+
+```python
+@classmethod
+def list(cls,
+         api_key: Optional[str] = None,
+         query: Optional[SandboxQuery] = None,
+         domain: Optional[str] = None,
+         debug: Optional[bool] = None,
+         request_timeout: Optional[float] = None) -> List[SandboxInfo]
+```
+
+List all running sandboxes.
+
+**Arguments**:
+
+- `api_key`: API key to use for authentication, defaults to `E2B_API_KEY` environment variable
+- `query`: Filter the list of sandboxes, e.g. by metadata `SandboxQuery(metadata={"key": "value"})`, if there are multiple filters they are combined with AND.
+- `domain`: Domain to use for the request, only relevant for self-hosted environments
+- `debug`: Enable debug mode, all requested are then sent to localhost
+- `request_timeout`: Timeout for the request in **seconds**
+
+**Returns**:
+
+List of running sandboxes
+
+
+### get\_info
+
+```python
+@classmethod
+def get_info(cls,
+             sandbox_id: str,
+             api_key: Optional[str] = None,
+             domain: Optional[str] = None,
+             debug: Optional[bool] = None,
+             request_timeout: Optional[float] = None) -> SandboxInfo
+```
+
+Get the sandbox info.
+
+**Arguments**:
+
+- `sandbox_id`: Sandbox ID
+- `api_key`: API key to use for authentication, defaults to `E2B_API_KEY` environment variable
+- `domain`: Domain to use for the request, defaults to `E2B_DOMAIN` environment variable
+- `debug`: Debug mode, defaults to `E2B_DEBUG` environment variable
+- `request_timeout`: Timeout for the request in **seconds**
+
+**Returns**:
+
+Sandbox info
+
+
+
+
+## Sandbox
+
+```python
+class Sandbox(SandboxSetup, SandboxApi)
+```
+
+E2B cloud sandbox is a secure and isolated cloud environment.
+
+The sandbox allows you to:
+- Access Linux OS
+- Create, list, and delete files and directories
+- Run commands
+- Run isolated code
+- Access the internet
+
+Check docs [here](https://e2b.dev/docs).
+
+Use the `Sandbox()` to create a new sandbox.
+
+**Example**:
+
+```python
+from e2b import Sandbox
+
+sandbox = Sandbox()
+```
+
+
+### files
+
+```python
+@property
+def files() -> Filesystem
+```
+
+Module for interacting with the sandbox filesystem.
+
+
+### commands
+
+```python
+@property
+def commands() -> Commands
+```
+
+Module for running commands in the sandbox.
+
+
+### pty
+
+```python
+@property
+def pty() -> Pty
+```
+
+Module for interacting with the sandbox pseudo-terminal.
+
+
+### sandbox\_id
+
+```python
+@property
+def sandbox_id() -> str
+```
+
+Unique identifier of the sandbox
+
+
+### \_\_init\_\_
+
+```python
+def __init__(template: Optional[str] = None,
+             timeout: Optional[int] = None,
+             metadata: Optional[Dict[str, str]] = None,
+             envs: Optional[Dict[str, str]] = None,
+             api_key: Optional[str] = None,
+             domain: Optional[str] = None,
+             debug: Optional[bool] = None,
+             sandbox_id: Optional[str] = None,
+             request_timeout: Optional[float] = None)
+```
+
+Create a new sandbox.
+
+By default, the sandbox is created from the default `base` sandbox template.
+
+**Arguments**:
+
+- `template`: Sandbox template name or ID
+- `timeout`: Timeout for the sandbox in **seconds**, default to 300 seconds. Maximum time a sandbox can be kept alive is 24 hours (86_400 seconds) for Pro users and 1 hour (3_600 seconds) for Hobby users
+- `metadata`: Custom metadata for the sandbox
+- `envs`: Custom environment variables for the sandbox
+- `api_key`: E2B API Key to use for authentication, defaults to `E2B_API_KEY` environment variable
+- `request_timeout`: Timeout for the request in **seconds**
+
+**Returns**:
+
+sandbox instance for the new sandbox
+
+
+### is\_running
+
+```python
+def is_running(request_timeout: Optional[float] = None) -> bool
+```
+
+Check if the sandbox is running.
+
+**Arguments**:
+
+- `request_timeout`: Timeout for the request in **seconds**
+
+**Returns**:
+
+`True` if the sandbox is running, `False` otherwise
+Example
+```python
+sandbox = Sandbox()
+sandbox.is_running() # Returns True
+
+sandbox.kill()
+sandbox.is_running() # Returns False
+```
+
+
+### connect
+
+```python
+@classmethod
+def connect(cls,
+            sandbox_id: str,
+            api_key: Optional[str] = None,
+            domain: Optional[str] = None,
+            debug: Optional[bool] = None)
+```
+
+Connects to an existing Sandbox.
+
+With sandbox ID you can connect to the same sandbox from different places or environments (serverless functions, etc).
+
+**Arguments**:
+
+- `sandbox_id`: Sandbox ID
+- `api_key`: E2B API Key to use for authentication, defaults to `E2B_API_KEY` environment variable
+
+**Returns**:
+
+sandbox instance for the existing sandbox
+@example
+```python
+sandbox = Sandbox()
+sandbox_id = sandbox.sandbox_id
+
+same_sandbox = Sandbox.connect(sandbox_id)
+```
+
+
+### kill
+
+```python
+@overload
+def kill(request_timeout: Optional[float] = None) -> bool
+```
+
+Kill the sandbox.
+
+**Arguments**:
+
+- `request_timeout`: Timeout for the request in **seconds**
+
+**Returns**:
+
+`True` if the sandbox was killed, `False` if the sandbox was not found
+
+
+### kill
+
+```python
+@overload
+@staticmethod
+def kill(sandbox_id: str,
+         api_key: Optional[str] = None,
+         domain: Optional[str] = None,
+         debug: Optional[bool] = None,
+         request_timeout: Optional[float] = None) -> bool
+```
+
+Kill the sandbox specified by sandbox ID.
+
+**Arguments**:
+
+- `sandbox_id`: Sandbox ID
+- `api_key`: E2B API Key to use for authentication, defaults to `E2B_API_KEY` environment variable
+- `request_timeout`: Timeout for the request in **seconds**
+
+**Returns**:
+
+`True` if the sandbox was killed, `False` if the sandbox was not found
+
+
+### kill
+
+```python
+@class_method_variant("_cls_kill")
+def kill(request_timeout: Optional[float] = None) -> bool
+```
+
+Kill the sandbox.
+
+**Arguments**:
+
+- `request_timeout`: Timeout for the request
+
+**Returns**:
+
+`True` if the sandbox was killed, `False` if the sandbox was not found
+
+
+### set\_timeout
+
+```python
+@overload
+def set_timeout(timeout: int, request_timeout: Optional[float] = None) -> None
+```
+
+Set the timeout of the sandbox.
+
+After the timeout expires the sandbox will be automatically killed.
+This method can extend or reduce the sandbox timeout set when creating the sandbox or from the last call to `.set_timeout`.
+
+Maximum time a sandbox can be kept alive is 24 hours (86_400 seconds) for Pro users and 1 hour (3_600 seconds) for Hobby users.
+
+**Arguments**:
+
+- `timeout`: Timeout for the sandbox in **seconds**
+- `request_timeout`: Timeout for the request in **seconds**
+
+
+### set\_timeout
+
+```python
+@overload
+@staticmethod
+def set_timeout(sandbox_id: str,
+                timeout: int,
+                api_key: Optional[str] = None,
+                domain: Optional[str] = None,
+                debug: Optional[bool] = None,
+                request_timeout: Optional[float] = None) -> None
+```
+
+Set the timeout of the sandbox specified by sandbox ID.
+
+After the timeout expires the sandbox will be automatically killed.
+This method can extend or reduce the sandbox timeout set when creating the sandbox or from the last call to `.set_timeout`.
+
+Maximum time a sandbox can be kept alive is 24 hours (86_400 seconds) for Pro users and 1 hour (3_600 seconds) for Hobby users.
+
+**Arguments**:
+
+- `sandbox_id`: Sandbox ID
+- `timeout`: Timeout for the sandbox in **seconds**
+- `api_key`: E2B API Key to use for authentication, defaults to `E2B_API_KEY` environment variable
+- `request_timeout`: Timeout for the request in **seconds**
+
+
+### get\_info
+
+```python
+def get_info(request_timeout: Optional[float] = None) -> SandboxInfo
+```
+
+Get sandbox information like sandbox id, template, metadata, started at/end at date.
+
+**Arguments**:
+
+- `request_timeout`: Timeout for the request in **seconds**
+
+**Returns**:
+
+Sandbox info
+
+
+
+
+## WatchHandle
+
+```python
+class WatchHandle()
+```
+
+Handle for watching filesystem events.
+It is used to get the latest events that have occurred in the watched directory.
+
+Use `.stop()` to stop watching the directory.
+
+
+### stop
+
+```python
+def stop()
+```
+
+Stop watching the directory.
+After you stop the watcher you won't be able to get the events anymore.
+
+
+### get\_new\_events
+
+```python
+def get_new_events() -> List[FilesystemEvent]
+```
+
+Get the latest events that have occurred in the watched directory since the last call, or from the beginning of the watching, up until now.
+
+**Returns**:
+
+List of filesystem events
+
+
+
+
+## Filesystem
+
+```python
+class Filesystem()
+```
+
+Module for interacting with the filesystem in the sandbox.
+
+
+### read
+
+```python
+@overload
+def read(path: str,
+         format: Literal["text"] = "text",
+         user: Username = "user",
+         request_timeout: Optional[float] = None) -> str
+```
+
+Read file content as a `str`.
+
+**Arguments**:
+
+- `path`: Path to the file
+- `user`: Run the operation as this user
+- `format`: Format of the file content—`text` by default
+- `request_timeout`: Timeout for the request in **seconds**
+
+**Returns**:
+
+File content as a `str`
+
+
+### read
+
+```python
+@overload
+def read(path: str,
+         format: Literal["bytes"],
+         user: Username = "user",
+         request_timeout: Optional[float] = None) -> bytearray
+```
+
+Read file content as a `bytearray`.
+
+**Arguments**:
+
+- `path`: Path to the file
+- `user`: Run the operation as this user
+- `format`: Format of the file content—`bytes`
+- `request_timeout`: Timeout for the request in **seconds**
+
+**Returns**:
+
+File content as a `bytearray`
+
+
+### read
+
+```python
+@overload
+def read(path: str,
+         format: Literal["stream"],
+         user: Username = "user",
+         request_timeout: Optional[float] = None) -> Iterator[bytes]
+```
+
+Read file content as a `Iterator[bytes]`.
+
+**Arguments**:
+
+- `path`: Path to the file
+- `user`: Run the operation as this user
+- `format`: Format of the file content—`stream`
+- `request_timeout`: Timeout for the request in **seconds**
+
+**Returns**:
+
+File content as an `Iterator[bytes]`
+
+
+### write
+
+```python
+@overload
+def write(path: str,
+          data: Union[str, bytes, IO],
+          user: Username = "user",
+          request_timeout: Optional[float] = None) -> EntryInfo
+```
+
+Write content to a file on the path.
+
+Writing to a file that doesn't exist creates the file.
+
+Writing to a file that already exists overwrites the file.
+
+Writing to a file at path that doesn't exist creates the necessary directories.
+
+**Arguments**:
+
+- `path`: Path to the file
+- `data`: Data to write to the file, can be a `str`, `bytes`, or `IO`.
+- `user`: Run the operation as this user
+- `request_timeout`: Timeout for the request in **seconds**
+
+**Returns**:
+
+Information about the written file
+
+
+### write
+
+```python
+@overload
+def write(files: List[WriteEntry],
+          user: Optional[Username] = "user",
+          request_timeout: Optional[float] = None) -> List[EntryInfo]
+```
+
+Writes a list of files to the filesystem.
+
+When writing to a file that doesn't exist, the file will get created.
+When writing to a file that already exists, the file will get overwritten.
+When writing to a file that's in a directory that doesn't exist, you'll get an error.
+
+**Arguments**:
+
+- `files`: list of files to write
+- `user`: Run the operation as this user
+- `request_timeout`: Timeout for the request
+
+**Returns**:
+
+Information about the written files
+
+
+### list
+
+```python
+def list(path: str,
+         user: Username = "user",
+         request_timeout: Optional[float] = None) -> List[EntryInfo]
+```
+
+List entries in a directory.
+
+**Arguments**:
+
+- `path`: Path to the directory
+- `user`: Run the operation as this user
+- `request_timeout`: Timeout for the request in **seconds**
+
+**Returns**:
+
+List of entries in the directory
+
+
+### exists
+
+```python
+def exists(path: str,
+           user: Username = "user",
+           request_timeout: Optional[float] = None) -> bool
+```
+
+Check if a file or a directory exists.
+
+**Arguments**:
+
+- `path`: Path to a file or a directory
+- `user`: Run the operation as this user
+- `request_timeout`: Timeout for the request in **seconds**
+
+**Returns**:
+
+`True` if the file or directory exists, `False` otherwise
+
+
+### remove
+
+```python
+def remove(path: str,
+           user: Username = "user",
+           request_timeout: Optional[float] = None) -> None
+```
+
+Remove a file or a directory.
+
+**Arguments**:
+
+- `path`: Path to a file or a directory
+- `user`: Run the operation as this user
+- `request_timeout`: Timeout for the request in **seconds**
+
+
+### rename
+
+```python
+def rename(old_path: str,
+           new_path: str,
+           user: Username = "user",
+           request_timeout: Optional[float] = None) -> EntryInfo
+```
+
+Rename a file or directory.
+
+**Arguments**:
+
+- `old_path`: Path to the file or directory to rename
+- `new_path`: New path to the file or directory
+- `user`: Run the operation as this user
+- `request_timeout`: Timeout for the request in **seconds**
+
+**Returns**:
+
+Information about the renamed file or directory
+
+
+### make\_dir
+
+```python
+def make_dir(path: str,
+             user: Username = "user",
+             request_timeout: Optional[float] = None) -> bool
+```
+
+Create a new directory and all directories along the way if needed on the specified path.
+
+**Arguments**:
+
+- `path`: Path to a new directory. For example '/dirA/dirB' when creating 'dirB'.
+- `user`: Run the operation as this user
+- `request_timeout`: Timeout for the request in **seconds**
+
+**Returns**:
+
+`True` if the directory was created, `False` if the directory already exists
+
+
+### watch\_dir
+
+```python
+def watch_dir(path: str,
+              user: Username = "user",
+              request_timeout: Optional[float] = None,
+              recursive: bool = False) -> WatchHandle
+```
+
+Watch directory for filesystem events.
+
+**Arguments**:
+
+- `path`: Path to a directory to watch
+- `user`: Run the operation as this user
+- `request_timeout`: Timeout for the request in **seconds**
+- `recursive`: Watch directory recursively
+
+**Returns**:
+
+`WatchHandle` object for stopping watching directory
+

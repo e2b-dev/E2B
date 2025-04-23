@@ -1,6 +1,9 @@
-<p align="center">
+<!-- <p align="center">
   <img width="100" src="/readme-assets/logo-circle.png" alt="e2b logo">
-</p>
+</p> -->
+
+![E2B SDK Preview](/readme-assets/e2b-sdk-light.png#gh-light-mode-only)
+![E2B SDK Preview](/readme-assets/e2b-sdk-dark.png#gh-dark-mode-only)
 
 <h4 align="center">
   <a href="https://pypi.org/project/e2b/">
@@ -51,9 +54,9 @@ JavaScript / TypeScript
 import { Sandbox } from '@e2b/code-interpreter'
 
 const sandbox = await Sandbox.create()
-await sbx.runCode('x = 1')
+await sandbox.runCode('x = 1')
 
-const execution = await sbx.runCode('x+=1; x')
+const execution = await sandbox.runCode('x+=1; x')
 console.log(execution.text)  // outputs 2
 ```
 
@@ -72,3 +75,13 @@ Visit [E2B documentation](https://e2b.dev/docs).
 
 ### 5. E2B cookbook
 Visit our [Cookbook](https://github.com/e2b-dev/e2b-cookbook/tree/main) to get inspired by examples with different LLMs and AI frameworks.
+
+## Self-hosting
+
+Read the [self-hosting guide](https://github.com/e2b-dev/infra/blob/main/self-host.md) to learn how to set up the [E2B infrastructure](https://github.com/e2b-dev/infra) on your own. The infrastructure is deployed using Terraform. 
+
+Supported cloud providers:
+- 🟢 GCP
+- 🚧 AWS
+- [ ] Azure
+- [ ] General linux machine

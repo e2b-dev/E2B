@@ -11,7 +11,7 @@ sandboxTest.skipIf(isDebug)('env vars', async ({ sandbox }) => {
 })
 
 sandboxTest.skipIf(isDebug)('env vars on sandbox', async ({ template }) => {
-  const sandbox = await Sandbox.create(template, { envs: { FOO: 'bar' } })
+  const sandbox = await Sandbox.create(template, { envs: { FOO: 'bar' }, autoPause: true })
 
   try {
     const cmd = await sandbox.commands.run('echo "$FOO"')
@@ -21,4 +21,9 @@ sandboxTest.skipIf(isDebug)('env vars on sandbox', async ({ template }) => {
   } finally {
     await sandbox.kill()
   }
+})
+
+sandboxTest.skipIf(isDebug)('default env vars present', async ({ sandbox }) => {
+  const result = await sandbox.commands.run('echo $E2B_SANDBOX')
+  assert.equal(result?.stdout.trim(), 'true')
 })

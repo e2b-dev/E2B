@@ -8,7 +8,7 @@ Every sandbox has a public URL that can be used to access running services insid
 
 <CodeGroup>
 ```js
-import { Sandbox } from '@e2b/code-interpeter'
+import { Sandbox } from '@e2b/code-interpreter'
 
 const sandbox = await Sandbox.create()
 
@@ -31,10 +31,10 @@ The code above will print something like this:
 
 <CodeGroup>
 ```bash {{ language: 'js' }}
-http://3000-i62mff4ahtrdfdkyn2esc-b0b684e9.e2b.dev
+https://3000-i62mff4ahtrdfdkyn2esc-b0b684e9.e2b.dev
 ```
 ```bash {{ language: 'python' }}
-http://3000-i62mff4ahtrdfdkyn2esc-b0b684e9.e2b.dev
+https://3000-i62mff4ahtrdfdkyn2esc-b0b684e9.e2b.dev
 ```
 </CodeGroup>
 
@@ -47,7 +47,7 @@ In this example we will start a simple HTTP server that listens on port 3000 and
 
 <CodeGroup>
 ```js
-import { Sandbox } from '@e2b/code-interpeter'
+import { Sandbox } from '@e2b/code-interpreter'
 
 const sandbox = await Sandbox.create()
 

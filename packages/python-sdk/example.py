@@ -14,7 +14,8 @@ async def main():
     await sbx.set_timeout(20)
     id = await sbx.pause()
 
-    sbx = await AsyncSandbox.resume(id)
+    sbx = await AsyncSandbox.connect(id, True)
+
 
 if __name__ == "__main__":
     asyncio.run(main())

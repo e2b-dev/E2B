@@ -1,9 +1,13 @@
-from typing import Any, Dict, List, Type, TypeVar, cast
+from collections.abc import Mapping
+from typing import Any, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
-from ..models.template_build_status import TemplateBuildStatus
+from ..models.template_build_status import (
+    TemplateBuildStatus,
+    check_template_build_status,
+)
 
 T = TypeVar("T", bound="TemplateBuild")
 
@@ -12,63 +16,63 @@ T = TypeVar("T", bound="TemplateBuild")
 class TemplateBuild:
     """
     Attributes:
-        logs (List[str]): Build logs
-        template_id (str): Identifier of the template
         build_id (str): Identifier of the build
+        logs (list[str]): Build logs
         status (TemplateBuildStatus): Status of the template
+        template_id (str): Identifier of the template
     """
 
-    logs: List[str]
-    template_id: str
     build_id: str
+    logs: list[str]
     status: TemplateBuildStatus
-    additional_properties: Dict[str, Any] = _attrs_field(init=False, factory=dict)
+    template_id: str
+    additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
+        build_id = self.build_id
+
         logs = self.logs
+
+        status: str = self.status
 
         template_id = self.template_id
 
-        build_id = self.build_id
-
-        status = self.status.value
-
-        field_dict: Dict[str, Any] = {}
+        field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
-                "logs": logs,
-                "templateID": template_id,
                 "buildID": build_id,
+                "logs": logs,
                 "status": status,
+                "templateID": template_id,
             }
         )
 
         return field_dict
 
     @classmethod
-    def from_dict(cls: Type[T], src_dict: Dict[str, Any]) -> T:
-        d = src_dict.copy()
-        logs = cast(List[str], d.pop("logs"))
+    def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
+        d = dict(src_dict)
+        build_id = d.pop("buildID")
+
+        logs = cast(list[str], d.pop("logs"))
+
+        status = check_template_build_status(d.pop("status"))
 
         template_id = d.pop("templateID")
 
-        build_id = d.pop("buildID")
-
-        status = TemplateBuildStatus(d.pop("status"))
-
         template_build = cls(
-            logs=logs,
-            template_id=template_id,
             build_id=build_id,
+            logs=logs,
             status=status,
+            template_id=template_id,
         )
 
         template_build.additional_properties = d
         return template_build
 
     @property
-    def additional_keys(self) -> List[str]:
+    def additional_keys(self) -> list[str]:
         return list(self.additional_properties.keys())
 
     def __getitem__(self, key: str) -> Any:

@@ -2,7 +2,6 @@ import {
   landingPageHostname,
   landingPageFramerHostname,
   blogFramerHostname,
-  changelogFramerHostname,
 } from '@/app/hostnames'
 
 export function replaceUrls(text: string, urlPathName: string, prefix: string = '', suffix: string = ''): string {
@@ -26,14 +25,6 @@ export function replaceUrls(text: string, urlPathName: string, prefix: string = 
       // so we need to handle this explicitly.
       urlPathName === '/'
         ? `${prefix}https://e2b.dev/blog`
-        : `${prefix}https://e2b.dev`
-    )
-    .replaceAll(
-      `${prefix}${changelogFramerHostname}`,
-      // The default url on framer does not have /changelog in the path but the custom domain does,
-      // so we need to handle this explicitly.
-      urlPathName === '/'
-        ? `${prefix}https://e2b.dev/changelog`
         : `${prefix}https://e2b.dev`
     )
 }

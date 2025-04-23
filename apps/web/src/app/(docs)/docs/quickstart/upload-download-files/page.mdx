@@ -10,22 +10,22 @@ An alternative way to get your data to the sandbox is to create a [custom sandbo
 ```ts {{ language: 'js' }}
 import { Sandbox } from '@e2b/code-interpreter'
 
-// Read local file
-const content = fs.readFileSync('/local/file')
+// Read local file relative to the current working directory
+const content = fs.readFileSync('local/file')
 
 const sbx = await Sandbox.create()
-// Upload file to the sandbox to path '/home/user/my-file'
+// Upload file to the sandbox to absolute path '/home/user/my-file'
 await sbx.files.write('/home/user/my-file', content)
 ```
 
 ```python {{ language: 'python' }}
 from e2b_code_interpreter import Sandbox
 
-sbx = Sandbox.create()
+sbx = Sandbox()
 
-# Read local file
-with open("/local/file", "rb") as file:
-   # Upload file to the sandbox to path '/home/user/my-file'
+# Read local file relative to the current working directory
+with open("local/file", "rb") as file:
+   # Upload file to the sandbox to absolute path '/home/user/my-file'
 	sbx.files.write("/home/user/my-file", file)
 ```
 </CodeGroup>
@@ -39,26 +39,30 @@ We're working on a better solution.
 ```ts {{ language: 'js' }}
 import { Sandbox } from '@e2b/code-interpreter'
 
-// Read local files
-const fileA = fs.readFileSync('/local/file/a')
-const fileB = fs.readFileSync('/local/file/b')
+// Read local file relative to the current working directory
+const fileA = fs.readFileSync('local/file/a')
+const fileB = fs.readFileSync('local/file/b')
 
 const sbx = await Sandbox.create()
-// Upload file A to the sandbox to path '/home/user/my-file-a'
-await sbx.files.write('/home/user/my-file-a', content)
-// Upload file B to the sandbox to path '/home/user/my-file-b'
-await sbx.files.write('/home/user/my-file-b', content)
+// Upload file A to the sandbox to absolute path '/home/user/my-file-a'
+await sbx.files.write('/home/user/my-file-a', fileA)
+// Upload file B to the sandbox to absolute path '/home/user/my-file-b'
+await sbx.files.write('/home/user/my-file-b', fileB)
 ```
 
 ```python {{ language: 'python' }}
 from e2b_code_interpreter import Sandbox
 
-sbx = Sandbox.create()
+sbx = Sandbox()
 
-# Read local file
-with open("/local/file", "rb") as file:
-   # Upload file to the sandbox to path '/home/user/my-file'
-	sbx.files.write("/home/user/my-file", file)
+# Read local file relative to the current working directory
+with open("local/file/a", "rb") as file:
+   # Upload file to the sandbox to absolute path '/home/user/my-file-a'
+	sbx.files.write("/home/user/my-file-a", file)
+
+with open("local/file/b", "rb") as file:
+   # Upload file to the sandbox to absolute path '/home/user/my-file-b'
+	sbx.files.write("/home/user/my-file-b", file)
 ```
 </CodeGroup>
 
@@ -79,20 +83,20 @@ To download a file, you need to first get the file's content and then write it t
 import { Sandbox } from '@e2b/code-interpreter'
 
 const sbx = await Sandbox.create()
-// Download file from the sandbox to path '/home/user/my-file'
+// Download file from the sandbox to absolute path '/home/user/my-file'
 const content = await sbx.files.read('/home/user/my-file')
-// Write file to local path
-fs.writeFileSync('/local/file', content)
+// Write file to local path relative to the current working directory
+fs.writeFileSync('local/file', content)
 ```
 
 ```python {{ language: 'python' }}
 from e2b_code_interpreter import Sandbox
 
-sbx = Sandbox.create()
-# Download file from the sandbox to path '/home/user/my-file'
+sbx = Sandbox()
+# Download file from the sandbox to absolute path '/home/user/my-file'
 content = sbx.files.read('/home/user/my-file')
-# Write file to local path
-with open('/local/file', 'w') as file:
+# Write file to local path relative to the current working directory
+with open('local/file', 'w') as file:
     file.write(content)
 ```
 </CodeGroup>
@@ -108,31 +112,31 @@ We're working on a better solution.
 import { Sandbox } from '@e2b/code-interpreter'
 
 const sbx = await Sandbox.create()
-// Download file A from the sandbox to path '/home/user/my-file'
+// Download file A from the sandbox by absolute path '/home/user/my-file-a'
 const contentA = await sbx.files.read('/home/user/my-file-a')
-// Write file A to local path
-fs.writeFileSync('/local/file/a', contentA)
+// Write file A to local path relative to the current working directory
+fs.writeFileSync('local/file/a', contentA)
 
-// Download file B from the sandbox to path '/home/user/my-file'
+// Download file B from the sandbox by absolute path '/home/user/my-file-b'
 const contentB = await sbx.files.read('/home/user/my-file-b')
-// Write file B to local path
-fs.writeFileSync('/local/file/b', contentB)
+// Write file B to local path relative to the current working directory
+fs.writeFileSync('local/file/b', contentB)
 ```
 
 ```python {{ language: 'python' }}
 from e2b_code_interpreter import Sandbox
 
-sbx = Sandbox.create()
-# Download file A from the sandbox to path '/home/user/my-file-a'
+sbx = Sandbox()
+# Download file A from the sandbox by absolute path '/home/user/my-file-a'
 contentA = sbx.files.read('/home/user/my-file-a')
-# Write file A to local path
-with open('/local/file/a', 'w') as file:
+# Write file A to local path relative to the current working directory
+with open('local/file/a', 'w') as file:
     file.write(contentA)
 
-# Download file B from the sandbox to path '/home/user/my-file-b'
+# Download file B from the sandbox by absolute path '/home/user/my-file-b'
 contentB = sbx.files.read('/home/user/my-file-b')
-# Write file B to local path
-with open('/local/file/b', 'w') as file:
+# Write file B to local path relative to the current working directory
+with open('local/file/b', 'w') as file:
     file.write(contentB)
 ```
 </CodeGroup>

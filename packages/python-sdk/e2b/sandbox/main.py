@@ -18,19 +18,23 @@ class SandboxSetup(ABC):
     envd_port = 49983
 
     default_sandbox_timeout = 300
+    default_sandbox_auto_pause = False
     default_template = "base"
 
     @property
     @abstractmethod
-    def connection_config(self) -> ConnectionConfig: ...
+    def connection_config(self) -> ConnectionConfig:
+        ...
 
     @property
     @abstractmethod
-    def envd_api_url(self) -> str: ...
+    def envd_api_url(self) -> str:
+        ...
 
     @property
     @abstractmethod
-    def sandbox_id(self) -> str: ...
+    def sandbox_id(self) -> str:
+        ...
 
     def _file_url(self, path: Optional[str] = None) -> str:
         url = urllib.parse.urljoin(self.envd_api_url, ENVD_API_FILES_ROUTE)

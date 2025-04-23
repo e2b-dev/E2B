@@ -58,6 +58,13 @@ class ApiClient {
         ...(config.accessToken && {
           Authorization: `Bearer ${config.accessToken}`,
         }),
+        ...config.headers,
+      },
+      querySerializer: {
+        array: {
+          style: 'form',
+          explode: false,
+        },
       },
     })
 
