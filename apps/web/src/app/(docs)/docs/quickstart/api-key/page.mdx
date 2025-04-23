@@ -1,0 +1,49 @@
+import Link from 'next/link'
+
+# API Key
+
+To use the API key, you can either:
+
+- **Set the API key as the `E2B_API_KEY` environment variable** to avoid passing it each time you create a sandbox.
+- Or pass it directly to the `Sandbox` constructor as shown below:
+
+<CodeGroup>
+```js {{ language: 'js' }}
+import { Sandbox } from '@e2b/code-interpreter'
+
+const sandbox = await Sandbox.create({ apiKey: 'YOUR_API_KEY' })
+await sandbox.notebook.execCell('x = 1')
+
+const execution = await sandbox.notebook.execCell('x+=1; x')
+console.log(execution.text)  // outputs 2
+
+await sandbox.close()
+```
+```python {{ language: 'python' }}
+from e2b_code_interpreter import CodeInterpreter
+
+with CodeInterpreter(api_key="YOUR_API_KEY") as code_interpreter:
+sandbox.notebook.exec_cell("x = 1")
+execution = sandbox.notebook.exec_cell("x+=1; x")
+print(execution.text)  # outputs 2
+```
+</CodeGroup>
+
+## Where to find API key
+
+You can get your API key at <Link href="/dashboard?tab=keys">dashboard</Link>.
+
+<br/>
+
+# Access Token
+
+The access token is used only in the CLI and is **not needed in the SDK**. There's no need to set it when logging into the CLI using `e2b auth login`.
+
+<Note>
+To authenticate without the browser, you can set `E2B_ACCESS_TOKEN` as an environment variable. This is useful for CI/CD pipelines.
+</Note>
+
+## Where to find Access token
+
+You can get your **Access token key** at the <Link href="/dashboard/account">dashboard</Link>.
+
