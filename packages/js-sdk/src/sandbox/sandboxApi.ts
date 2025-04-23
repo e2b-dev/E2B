@@ -150,6 +150,7 @@ export class SandboxPaginator {
         ...(sandbox.alias && { name: sandbox.alias }),
         metadata: sandbox.metadata ?? {},
         startedAt: new Date(sandbox.startedAt),
+        endAt: new Date(sandbox.endAt),
         state: sandbox.state,
       })
     )
