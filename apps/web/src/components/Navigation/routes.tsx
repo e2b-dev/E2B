@@ -58,11 +58,11 @@ export const docRoutes: NavGroup[] = [
             title: 'Install custom packages',
             href: '/docs/quickstart/install-custom-packages',
           },
-          {
-            title: 'API Key',
-            href: '/docs/quickstart/api-key',
-          },
         ],
+      },
+      {
+        title: 'API Key',
+        href: '/docs/api-key',
       },
       {
         title: 'Cookbook',
