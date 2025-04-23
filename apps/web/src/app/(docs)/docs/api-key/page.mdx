@@ -12,20 +12,11 @@ To use the API key, you can either:
 import { Sandbox } from '@e2b/code-interpreter'
 
 const sandbox = await Sandbox.create({ apiKey: 'YOUR_API_KEY' })
-await sandbox.notebook.execCell('x = 1')
-
-const execution = await sandbox.notebook.execCell('x+=1; x')
-console.log(execution.text)  // outputs 2
-
-await sandbox.close()
 ```
 ```python {{ language: 'python' }}
-from e2b_code_interpreter import CodeInterpreter
+from e2b_code_interpreter import Sandbox
 
-with CodeInterpreter(api_key="YOUR_API_KEY") as code_interpreter:
-sandbox.notebook.exec_cell("x = 1")
-execution = sandbox.notebook.exec_cell("x+=1; x")
-print(execution.text)  # outputs 2
+sbx = Sandbox(api_key="YOUR_API_KEY")
 ```
 </CodeGroup>
 
