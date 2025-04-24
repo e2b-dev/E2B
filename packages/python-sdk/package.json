@@ -1,7 +1,7 @@
 {
   "name": "@e2b/python-sdk",
   "private": true,
-  "version": "1.3.4",
+  "version": "1.3.5",
   "scripts": {
     "example": "poetry run python example.py",
     "test": "poetry run pytest -n 4 --verbose -x",

@@ -1,6 +1,7 @@
 import os
 
 from typing import Literal, Optional, Dict
+from httpx._types import ProxyTypes
 
 REQUEST_TIMEOUT: float = 30.0  # 30 seconds
 
@@ -37,12 +38,14 @@ class ConnectionConfig:
         access_token: Optional[str] = None,
         request_timeout: Optional[float] = None,
         headers: Optional[Dict[str, str]] = None,
+        proxy: Optional[ProxyTypes] = None,
     ):
         self.domain = domain or ConnectionConfig._domain()
         self.debug = debug or ConnectionConfig._debug()
         self.api_key = api_key or ConnectionConfig._api_key()
         self.access_token = access_token or ConnectionConfig._access_token()
         self.headers = headers
+        self.proxy = proxy
 
         self.request_timeout = ConnectionConfig._get_request_timeout(
             REQUEST_TIMEOUT,

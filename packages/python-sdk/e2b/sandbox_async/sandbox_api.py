@@ -1,6 +1,8 @@
 import urllib.parse
+
 from typing import Optional, Dict, List
 from packaging.version import Version
+
 
 from e2b.sandbox.sandbox_api import SandboxInfo, SandboxApiBase, SandboxQuery
 from e2b.exceptions import TemplateException
@@ -13,7 +15,7 @@ from e2b.api.client.api.sandboxes import (
     delete_sandboxes_sandbox_id,
     post_sandboxes,
 )
-from e2b.connection_config import ConnectionConfig
+from e2b.connection_config import ConnectionConfig, ProxyTypes
 from e2b.api import handle_api_exception
 
 
@@ -27,6 +29,7 @@ class SandboxApi(SandboxApiBase):
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
         headers: Optional[Dict[str, str]] = None,
+        proxy: Optional[ProxyTypes] = None,
     ) -> List[SandboxInfo]:
         """
         List all running sandboxes.
@@ -37,6 +40,7 @@ class SandboxApi(SandboxApiBase):
         :param debug: Enable debug mode, all requested are then sent to localhost
         :param request_timeout: Timeout for the request in **seconds**
         :param headers: Additional headers to send with the request
+        :param proxy: Proxy to use for the request
 
         :return: List of running sandboxes
         """
@@ -46,6 +50,7 @@ class SandboxApi(SandboxApiBase):
             debug=debug,
             request_timeout=request_timeout,
             headers=headers,
+            proxy=proxy,
         )
 
         # Convert filters to the format expected by the API
@@ -58,7 +63,10 @@ class SandboxApi(SandboxApiBase):
                 }
                 metadata = urllib.parse.urlencode(quoted_metadata)
 
-        async with AsyncApiClient(config) as api_client:
+        async with AsyncApiClient(
+            config,
+            limits=SandboxApiBase._limits,
+        ) as api_client:
             res = await get_sandboxes.asyncio_detailed(
                 client=api_client,
                 metadata=metadata,
@@ -96,6 +104,7 @@ class SandboxApi(SandboxApiBase):
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
         headers: Optional[Dict[str, str]] = None,
+        proxy: Optional[ProxyTypes] = None,
     ) -> SandboxInfo:
         """
         Get the sandbox info.
@@ -105,6 +114,7 @@ class SandboxApi(SandboxApiBase):
         :param debug: Debug mode, defaults to `E2B_DEBUG` environment variable
         :param request_timeout: Timeout for the request in **seconds**
         :param headers: Additional headers to send with the request
+        :param proxy: Proxy to use for the request
 
         :return: Sandbox info
         """
@@ -114,9 +124,13 @@ class SandboxApi(SandboxApiBase):
             debug=debug,
             request_timeout=request_timeout,
             headers=headers,
+            proxy=proxy,
         )
 
-        async with AsyncApiClient(config) as api_client:
+        async with AsyncApiClient(
+            config,
+            limits=SandboxApiBase._limits,
+        ) as api_client:
             res = await get_sandboxes_sandbox_id.asyncio_detailed(
                 sandbox_id,
                 client=api_client,
@@ -151,6 +165,7 @@ class SandboxApi(SandboxApiBase):
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
         headers: Optional[Dict[str, str]] = None,
+        proxy: Optional[ProxyTypes] = None,
     ) -> bool:
         config = ConnectionConfig(
             api_key=api_key,
@@ -158,13 +173,17 @@ class SandboxApi(SandboxApiBase):
             debug=debug,
             request_timeout=request_timeout,
             headers=headers,
+            proxy=proxy,
         )
 
         if config.debug:
             # Skip killing the sandbox in debug mode
             return True
 
-        async with AsyncApiClient(config) as api_client:
+        async with AsyncApiClient(
+            config,
+            limits=SandboxApiBase._limits,
+        ) as api_client:
             res = await delete_sandboxes_sandbox_id.asyncio_detailed(
                 sandbox_id,
                 client=api_client,
@@ -188,6 +207,7 @@ class SandboxApi(SandboxApiBase):
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
         headers: Optional[Dict[str, str]] = None,
+        proxy: Optional[ProxyTypes] = None,
     ) -> None:
         config = ConnectionConfig(
             api_key=api_key,
@@ -195,13 +215,17 @@ class SandboxApi(SandboxApiBase):
             debug=debug,
             request_timeout=request_timeout,
             headers=headers,
+            proxy=proxy,
         )
 
         if config.debug:
             # Skip setting the timeout in debug mode
             return
 
-        async with AsyncApiClient(config) as api_client:
+        async with AsyncApiClient(
+            config,
+            limits=SandboxApiBase._limits,
+        ) as api_client:
             res = await post_sandboxes_sandbox_id_timeout.asyncio_detailed(
                 sandbox_id,
                 client=api_client,
@@ -223,6 +247,7 @@ class SandboxApi(SandboxApiBase):
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
         headers: Optional[Dict[str, str]] = None,
+        proxy: Optional[ProxyTypes] = None,
     ) -> SandboxCreateResponse:
         config = ConnectionConfig(
             api_key=api_key,
@@ -230,9 +255,13 @@ class SandboxApi(SandboxApiBase):
             debug=debug,
             request_timeout=request_timeout,
             headers=headers,
+            proxy=proxy,
         )
 
-        async with AsyncApiClient(config) as api_client:
+        async with AsyncApiClient(
+            config,
+            limits=SandboxApiBase._limits,
+        ) as api_client:
             res = await post_sandboxes.asyncio_detailed(
                 body=NewSandbox(
                     template_id=template,
@@ -268,7 +297,3 @@ class SandboxApi(SandboxApiBase):
                 ),
                 envd_version=res.parsed.envd_version,
             )
-
-    @staticmethod
-    def _get_sandbox_id(sandbox_id: str, client_id: str) -> str:
-        return f"{sandbox_id}-{client_id}"

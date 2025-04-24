@@ -1,4 +1,4 @@
-import { Braces, CheckCircle, Home, MessagesSquare } from 'lucide-react'
+import { Braces, CheckCircle, Home, KeyRound, MessagesSquare } from 'lucide-react'
 import sdkRefRoutesJson from './sdkRefRoutes.json'
 
 enum Tag {
@@ -59,6 +59,11 @@ export const docRoutes: NavGroup[] = [
             href: '/docs/quickstart/install-custom-packages',
           },
         ],
+      },
+      {
+        title: 'API Key',
+        href: '/docs/api-key',
+        icon: <KeyRound size={16} />,
       },
       {
         title: 'Cookbook',
@@ -294,7 +299,7 @@ export const docRoutes: NavGroup[] = [
         href: '/docs/sandbox/environment-variables',
       },
       {
-        title: 'List running sandboxes',
+        title: 'List sandboxes',
         href: '/docs/sandbox/list',
       },
       {
@@ -304,6 +309,10 @@ export const docRoutes: NavGroup[] = [
       {
         title: 'Internet access',
         href: '/docs/sandbox/internet-access',
+      },
+      {
+        title: 'Installing beta SDKs',
+        href: '/docs/sandbox/installing-beta-sdks',
       },
       // {
       //   title: '* Request timeouts',
@@ -422,7 +431,7 @@ export const docRoutes: NavGroup[] = [
         href: '/docs/cli/auth',
       },
       {
-        title: 'List running sandboxes',
+        title: 'List sandboxes',
         href: '/docs/cli/list-sandboxes',
       },
       {
