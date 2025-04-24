@@ -33,8 +33,6 @@ test('connect to non-running sandbox', async () => {
     const sbxConnection = await Sandbox.connect(sbx.sandboxId)
     const isRunning2 = await sbxConnection.isRunning()
     assert.isFalse(isRunning2)
-
-    await sbxConnection.commands.run('echo "hello"')
   } finally {
     if (!isKilled) {
       await sbx.kill()

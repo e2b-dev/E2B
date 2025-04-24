@@ -52,6 +52,13 @@ sandboxTest.skipIf(isDebug)(
     assert.equal(res2.status, 502)
 
     const text = await res2.text()
-    assert.equal(text, 'Sandbox not found')
+    const json = JSON.parse(text) as {
+      message: string
+      sandboxId: string
+      code: number
+    }
+    assert.equal(json.message, 'Sandbox not found')
+    assert.isTrue(sandbox.sandboxId.startsWith(json.sandboxId))
+    assert.equal(json.code, 0)
   }
 )
