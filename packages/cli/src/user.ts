@@ -14,7 +14,7 @@ export interface UserConfig {
 }
 
 export const USER_CONFIG_PATH = path.join(os.homedir(), '.e2b', 'config.json') // TODO: Keep in Keychain
-export const DOCS_BASE = `https://${process.env.E2B_DOCS_DOMAIN || process.env.E2B_DOMAIN || 'e2b.dev'}/docs`
+export const DOCS_BASE = process.env.E2B_DOCS_BASE || `https://${process.env.E2B_DOMAIN || 'e2b.dev'}/docs`
 
 export function getUserConfig(): UserConfig | null {
   if (!fs.existsSync(USER_CONFIG_PATH)) return null
