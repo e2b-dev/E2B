@@ -19,23 +19,12 @@ test('connect', async () => {
     }
   }
 })
+sandboxTest('connect to non-running sandbox', async ({ sandbox }) => {
+  const isRunning = await sbx.isRunning()
+  assert.isTrue(isRunning)
+  await sbx.kill()
 
-test('connect to non-running sandbox', async () => {
-  const sbx = await Sandbox.create(template, { timeoutMs: 10_000 })
-  let isKilled = false
-
-  try {
-    const isRunning = await sbx.isRunning()
-    assert.isTrue(isRunning)
-    await sbx.kill()
-    isKilled = true
-
-    const sbxConnection = await Sandbox.connect(sbx.sandboxId)
-    const isRunning2 = await sbxConnection.isRunning()
-    assert.isFalse(isRunning2)
-  } finally {
-    if (!isKilled) {
-      await sbx.kill()
-    }
-  }
+  const sbxConnection = await Sandbox.connect(sbx.sandboxId)
+  const isRunning2 = await sbxConnection.isRunning()
+  assert.isFalse(isRunning2)
 })
