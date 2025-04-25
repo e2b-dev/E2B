@@ -1,7 +1,7 @@
 import { assert, test } from 'vitest'
 
-import { Sandbox } from '../../src'
-import { isDebug, template } from '../setup.js'
+import sandbox, { Sandbox } from '../../src'
+import { isDebug, sandboxTest, template } from '../setup.js'
 
 test('connect', async () => {
   const sbx = await Sandbox.create(template, { timeoutMs: 10_000 })
@@ -19,12 +19,13 @@ test('connect', async () => {
     }
   }
 })
-sandboxTest('connect to non-running sandbox', async ({ sandbox }) => {
-  const isRunning = await sbx.isRunning()
-  assert.isTrue(isRunning)
-  await sbx.kill()
 
-  const sbxConnection = await Sandbox.connect(sbx.sandboxId)
+sandboxTest('connect to non-running sandbox', async ({ sandbox }) => {
+  const isRunning = await sandbox.isRunning()
+  assert.isTrue(isRunning)
+  await sandbox.kill()
+
+  const sbxConnection = await Sandbox.connect(sandbox.sandboxId)
   const isRunning2 = await sbxConnection.isRunning()
   assert.isFalse(isRunning2)
 })

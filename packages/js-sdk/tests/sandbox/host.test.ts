@@ -40,7 +40,7 @@ sandboxTest.skipIf(isDebug)(
   'ping server in non-running sandbox',
   async ({ sandbox }) => {
     const host = sandbox.getHost(3000)
-    const url = `https://{host}`
+    const url = `https://${host}`
 
     await sandbox.kill()
 
@@ -52,8 +52,8 @@ sandboxTest.skipIf(isDebug)(
     const res2 = await fetch(url)
     assert.equal(res2.status, 502)
 
-    const text = await res2.text()
-    const json = JSON.parse(text) as {
+    const text2 = await res2.text()
+    const json = JSON.parse(text2) as {
       message: string
       sandboxId: string
       code: number
