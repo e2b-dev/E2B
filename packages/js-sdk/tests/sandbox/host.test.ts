@@ -48,12 +48,7 @@ sandboxTest.skipIf(isDebug)(
     assert.equal(res.status, 502)
 
     const text = await res.text()
-
-    const res2 = await fetch(url)
-    assert.equal(res2.status, 502)
-
-    const text2 = await res2.text()
-    const json = JSON.parse(text2) as {
+    const json = JSON.parse(text) as {
       message: string
       sandboxId: string
       code: number
