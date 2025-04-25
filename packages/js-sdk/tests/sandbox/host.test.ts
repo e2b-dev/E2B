@@ -2,7 +2,7 @@ import { assert } from 'vitest'
 
 import { isDebug, sandboxTest, wait } from '../setup.js'
 
-sandboxTest.skipIf(isDebug)(
+sandboxTest(
   'ping server in running sandbox',
   async ({ sandbox }) => {
     const cmd = await sandbox.commands.run('python -m http.server 8000', {
