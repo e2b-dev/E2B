@@ -1,6 +1,6 @@
 import { assert, test } from 'vitest'
 
-import sandbox, { Sandbox } from '../../src'
+import { Sandbox } from '../../src'
 import { isDebug, sandboxTest, template } from '../setup.js'
 
 test('connect', async () => {
@@ -20,12 +20,15 @@ test('connect', async () => {
   }
 })
 
-sandboxTest('connect to non-running sandbox', async ({ sandbox }) => {
-  const isRunning = await sandbox.isRunning()
-  assert.isTrue(isRunning)
-  await sandbox.kill()
+sandboxTest.skipIf(isDebug)(
+  'connect to non-running sandbox',
+  async ({ sandbox }) => {
+    const isRunning = await sandbox.isRunning()
+    assert.isTrue(isRunning)
+    await sandbox.kill()
 
-  const sbxConnection = await Sandbox.connect(sandbox.sandboxId)
-  const isRunning2 = await sbxConnection.isRunning()
-  assert.isFalse(isRunning2)
-})
+    const sbxConnection = await Sandbox.connect(sandbox.sandboxId)
+    const isRunning2 = await sbxConnection.isRunning()
+    assert.isFalse(isRunning2)
+  }
+)
