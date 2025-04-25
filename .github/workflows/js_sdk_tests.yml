@@ -17,11 +17,11 @@ jobs:
     defaults:
       run:
         working-directory: ./packages/js-sdk
-    name: Build and test SDK
+    name: JS SDK - Build and test
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install pnpm
         uses: pnpm/action-setup@v3
