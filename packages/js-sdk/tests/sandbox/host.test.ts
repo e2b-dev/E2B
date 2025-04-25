@@ -39,19 +39,15 @@ sandboxTest.skipIf(isDebug)(
 sandboxTest.skipIf(isDebug)(
   'ping server in non-running sandbox',
   async ({ sandbox }) => {
-    const cmd = await sandbox.commands.run('python -m http.server 8000', {
-      background: true,
-    })
-
-    await wait(1000)
-
-    const host = sandbox.getHost(8000)
-    const url = `${isDebug ? 'http' : 'https'}://${host}`
-    const res = await fetch(url)
-
-    assert.equal(res.status, 200)
+    const host = sandbox.getHost(3000)
+    const url = `https://{host}`
 
     await sandbox.kill()
+
+    const res = await fetch(url)
+    assert.equal(res.status, 502)
+
+    const text = await res.text()
 
     const res2 = await fetch(url)
     assert.equal(res2.status, 502)
