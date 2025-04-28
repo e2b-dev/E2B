@@ -15,12 +15,6 @@ sandboxTest('list directory', async ({ sandbox }) => {
 
   const testCases = [
     {
-      name: 'explicit depth 0 (should default to 1)',
-      depth: 0,
-      expectedLen: 2,
-      expectedFiles: ['subdir1', 'subdir2'],
-    },
-    {
       name: 'default depth (1)',
       depth: undefined,
       expectedLen: 2,
@@ -37,12 +31,12 @@ sandboxTest('list directory', async ({ sandbox }) => {
       depth: 2,
       expectedLen: 6,
       expectedFiles: [
-        'subdir1',
-        'subdir1_1',
-        'subdir1_2',
-        'subdir2',
-        'subdir2_1',
-        'subdir2_2',
+        `${parentDirName}/subdir1`,
+        `${parentDirName}/subdir1/subdir1_1`,
+        `${parentDirName}/subdir1/subdir1_2`,
+        `${parentDirName}/subdir2`,
+        `${parentDirName}/subdir2/subdir2_1`,
+        `${parentDirName}/subdir2/subdir2_2`,
       ],
     },
     {
@@ -50,12 +44,12 @@ sandboxTest('list directory', async ({ sandbox }) => {
       depth: 3,
       expectedLen: 6,
       expectedFiles: [
-        'subdir1',
-        'subdir1_1',
-        'subdir1_2',
-        'subdir2',
-        'subdir2_1',
-        'subdir2_2',
+        `${parentDirName}/subdir1`,
+        `${parentDirName}/subdir1/subdir1_1`,
+        `${parentDirName}/subdir1/subdir1_2`,
+        `${parentDirName}/subdir2`,
+        `${parentDirName}/subdir2/subdir2_1`,
+        `${parentDirName}/subdir2/subdir2_2`,
       ],
     },
   ]
@@ -84,9 +78,10 @@ sandboxTest('list directory with invalid depth', async ({ sandbox }) => {
     await sandbox.files.list(parentDirName, { depth: -1 })
     assert.fail('Expected error but none was thrown')
   } catch (err) {
+    const expectedErrorMessage = 'depth should be at least one'
     assert.ok(
-      err.message.includes('depth should be a positive number'),
-      'expected error message to include "depth should be a positive number"'
+      err.message.includes(expectedErrorMessage),
+      `expected error message to include "${expectedErrorMessage}"`
     )
   }
 

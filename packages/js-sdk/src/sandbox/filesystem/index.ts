@@ -347,8 +347,8 @@ export class Filesystem {
    * @returns list of entries in the sandbox filesystem directory.
    */
   async list(path: string, opts?: FilesystemListOpts): Promise<EntryInfo[]> {
-    if (typeof opts?.depth === 'number' && opts.depth < 0) {
-      throw new InvalidArgumentError('depth should be a positive number')
+    if (typeof opts?.depth === 'number' && opts.depth < 1) {
+      throw new InvalidArgumentError('depth should be a least one')
     }
 
     try {
