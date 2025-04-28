@@ -27,6 +27,7 @@ sandboxTest(
         await wait(500)
       }
       assert.equal(res.status, 200)
+      disable()
     } finally {
       try {
         await cmd.kill()
@@ -34,7 +35,6 @@ sandboxTest(
         console.error(e)
       }
     }
-    disable()
   },
   60_000
 )
