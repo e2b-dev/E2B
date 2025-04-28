@@ -16,34 +16,34 @@ def test_list_directory(sandbox: Sandbox):
 
     test_cases = [
         {
-            "name": "explicit depth 0 (should default to 1)",
-            "depth": 0,
-            "expected_len": 2,
-            "expected_files": ["subdir1", "subdir2"],
-        },
-        {
             "name": "default depth (1)",
             "depth": None,
             "expected_len": 2,
-            "expected_files": ["subdir1", "subdir2"],
+            "expected_files": [
+                f"{parent_dir_name}/subdir1",
+                f"{parent_dir_name}/subdir2",
+            ],
         },
         {
             "name": "explicit depth 1",
             "depth": 1,
             "expected_len": 2,
-            "expected_files": ["subdir1", "subdir2"],
+            "expected_files": [
+                f"{parent_dir_name}/subdir1",
+                f"{parent_dir_name}/subdir2",
+            ],
         },
         {
             "name": "explicit depth 2",
             "depth": 2,
             "expected_len": 6,
             "expected_files": [
-                "subdir1",
-                "subdir1_1",
-                "subdir1_2",
-                "subdir2",
-                "subdir2_1",
-                "subdir2_2",
+                f"{parent_dir_name}/subdir1",
+                f"{parent_dir_name}/subdir1/subdir1_1",
+                f"{parent_dir_name}/subdir1/subdir1_2",
+                f"{parent_dir_name}/subdir2",
+                f"{parent_dir_name}/subdir2/subdir2_1",
+                f"{parent_dir_name}/subdir2/subdir2_2",
             ],
         },
         {
@@ -51,12 +51,12 @@ def test_list_directory(sandbox: Sandbox):
             "depth": 3,
             "expected_len": 6,
             "expected_files": [
-                "subdir1",
-                "subdir1_1",
-                "subdir1_2",
-                "subdir2",
-                "subdir2_1",
-                "subdir2_2",
+                f"{parent_dir_name}/subdir1",
+                f"{parent_dir_name}/subdir1/subdir1_1",
+                f"{parent_dir_name}/subdir1/subdir1_2",
+                f"{parent_dir_name}/subdir2",
+                f"{parent_dir_name}/subdir2/subdir2_1",
+                f"{parent_dir_name}/subdir2/subdir2_2",
             ],
         },
     ]

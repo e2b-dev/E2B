@@ -16,34 +16,34 @@ async def test_list_directory(async_sandbox: AsyncSandbox):
 
     test_cases = [
         {
-            "name": "explicit depth 0 (should default to 1)",
-            "depth": 0,
-            "expected_len": 2,
-            "expected_files": ["subdir1", "subdir2"],
-        },
-        {
             "name": "default depth (1)",
             "depth": None,
             "expected_len": 2,
-            "expected_files": ["subdir1", "subdir2"],
+            "expected_files": [
+                f"{parent_dir_name}/subdir1",
+                f"{parent_dir_name}/subdir2",
+            ],
         },
         {
             "name": "explicit depth 1",
             "depth": 1,
             "expected_len": 2,
-            "expected_files": ["subdir1", "subdir2"],
+            "expected_files": [
+                f"{parent_dir_name}/subdir1",
+                f"{parent_dir_name}/subdir2",
+            ],
         },
         {
             "name": "explicit depth 2",
             "depth": 2,
             "expected_len": 6,
             "expected_files": [
-                "subdir1",
-                "subdir1_1",
-                "subdir1_2",
-                "subdir2",
-                "subdir2_1",
-                "subdir2_2",
+                f"{parent_dir_name}/subdir1",
+                f"{parent_dir_name}/subdir1/subdir1_1",
+                f"{parent_dir_name}/subdir1/subdir1_2",
+                f"{parent_dir_name}/subdir2",
+                f"{parent_dir_name}/subdir2/subdir2_1",
+                f"{parent_dir_name}/subdir2/subdir2_2",
             ],
         },
         {
@@ -51,12 +51,12 @@ async def test_list_directory(async_sandbox: AsyncSandbox):
             "depth": 3,
             "expected_len": 6,
             "expected_files": [
-                "subdir1",
-                "subdir1_1",
-                "subdir1_2",
-                "subdir2",
-                "subdir2_1",
-                "subdir2_2",
+                f"{parent_dir_name}/subdir1",
+                f"{parent_dir_name}/subdir1/subdir1_1",
+                f"{parent_dir_name}/subdir1/subdir1_2",
+                f"{parent_dir_name}/subdir2",
+                f"{parent_dir_name}/subdir2/subdir2_1",
+                f"{parent_dir_name}/subdir2/subdir2_2",
             ],
         },
     ]
@@ -79,7 +79,7 @@ async def test_list_directory_error_cases(async_sandbox: AsyncSandbox):
     parent_dir_name = f"test_directory_{uuid.uuid4()}"
     await async_sandbox.files.make_dir(parent_dir_name)
 
-    expected_error_message = "depth should be a positive number"
+    expected_error_message = "depth should be at least one"
     try:
         await async_sandbox.files.list(parent_dir_name, depth=-1)
         assert False, "Expected error but none was thrown"
