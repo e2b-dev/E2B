@@ -2,20 +2,17 @@ import { assert, test } from 'vitest'
 
 import { Sandbox } from '../../src/index.js'
 import { isDebug, template, wait } from '../setup.js'
+import { waitForFailure } from '../cmdHelper.js'
 
 test.skipIf(isDebug)('closed port in SDK', async () => {
   const sbx = await Sandbox.create(template, { timeoutMs: 60_000 })
   const goodPort = 8000
 
-  await sbx.commands.run(`python -m http.server ${goodPort}`, {
+  const cmd = await sbx.commands.run(`python -m http.server ${goodPort}`, {
     background: true,
-    onStdout: (data) => {
-      console.log('stdout', data)
-    },
-    onStderr: (data) => {
-      console.log('stderr', data)
-    },
   })
+
+  const disable = waitForFailure(cmd)
 
   const goodHost = sbx.getHost(goodPort)
   // leave this here as a helper to visit host in browser
@@ -48,21 +45,18 @@ test.skipIf(isDebug)('closed port in SDK', async () => {
   assert.equal(resp.message, 'The sandbox is running but port is not open')
   assert.equal(cleanedSbxId, resp.sandboxId)
   assert.equal(resp.port, badPort)
+  disable()
 })
 
 test.skipIf(isDebug)('closed port in browser  ', async () => {
   const sbx = await Sandbox.create(template, { timeoutMs: 60_000 })
   const goodPort = 8000
 
-  await sbx.commands.run(`python -m http.server ${goodPort}`, {
+  const cmd = await sbx.commands.run(`python -m http.server ${goodPort}`, {
     background: true,
-    onStdout: (data) => {
-      console.log('stdout', data)
-    },
-    onStderr: (data) => {
-      console.log('stderr', data)
-    },
   })
+
+  const disable = waitForFailure(cmd)
 
   await wait(1000)
 
@@ -97,4 +91,5 @@ test.skipIf(isDebug)('closed port in browser  ', async () => {
   assert.equal(res.status, 502)
   const resp_text = await res.text()
   assert(resp_text.includes('<title>Closed Port Error</title>'))
+  disable()
 })

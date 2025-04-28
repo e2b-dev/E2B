@@ -1,19 +1,15 @@
 import { assert } from 'vitest'
 
 import { isDebug, sandboxTest, wait } from '../setup.js'
-
+import { waitForFailure } from '../cmdHelper.js'
 sandboxTest(
   'ping server in running sandbox',
   async ({ sandbox }) => {
     const cmd = await sandbox.commands.run('python -m http.server 8000', {
       background: true,
-      onStdout: (data) => {
-        console.log('stdout', data)
-      },
-      onStderr: (data) => {
-        console.log('stderr', data)
-      },
     })
+
+    const disable = waitForFailure(cmd)
 
     try {
       await wait(1000)
@@ -38,6 +34,7 @@ sandboxTest(
         console.error(e)
       }
     }
+    disable()
   },
   60_000
 )
