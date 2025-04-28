@@ -1,16 +1,18 @@
 import { expect, inject, test } from 'vitest'
 import { render } from 'vitest-browser-react'
+import { waitFor } from '@testing-library/react'
 import React from 'react'
 import { useEffect, useState } from 'react'
+
 import { Sandbox } from '../../../src'
-import { waitFor } from '@testing-library/react'
+import { template } from '../../setup'
 
 function E2BTest() {
   const [text, setText] = useState<string>()
 
   useEffect(() => {
     const getText = async () => {
-      const sandbox = await Sandbox.create({apiKey: inject('E2B_API_KEY')})
+      const sandbox = await Sandbox.create(template, { apiKey: inject('E2B_API_KEY') })
 
       try {
         await sandbox.commands.run('echo "Hello World" > hello.txt')

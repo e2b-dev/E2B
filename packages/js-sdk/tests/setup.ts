@@ -9,7 +9,7 @@ interface SandboxFixture {
 
 export const sandboxTest = base.extend<SandboxFixture>({
   sandbox: [
-    async ({}, use) => {
+    async ({ }, use) => {
       const sandbox = await Sandbox.create(template)
       try {
         await use(sandbox)
@@ -25,7 +25,7 @@ export const sandboxTest = base.extend<SandboxFixture>({
         }
       }
     },
-    { auto: true },
+    { auto: false },
   ],
 })
 

@@ -9,9 +9,13 @@ test.skipIf(isDebug)('closed port in SDK', async () => {
 
   await sbx.commands.run(`python -m http.server ${goodPort}`, {
     background: true,
+    onStdout: (data) => {
+      console.log('stdout', data)
+    },
+    onStderr: (data) => {
+      console.log('stderr', data)
+    },
   })
-
-  await wait(1000)
 
   const goodHost = sbx.getHost(goodPort)
   // leave this here as a helper to visit host in browser
@@ -52,6 +56,12 @@ test.skipIf(isDebug)('closed port in browser  ', async () => {
 
   await sbx.commands.run(`python -m http.server ${goodPort}`, {
     background: true,
+    onStdout: (data) => {
+      console.log('stdout', data)
+    },
+    onStderr: (data) => {
+      console.log('stderr', data)
+    },
   })
 
   await wait(1000)

@@ -3,8 +3,15 @@ import { assert } from 'vitest'
 import { isDebug, sandboxTest, wait } from '../setup.js'
 
 sandboxTest('ping server in sandbox', async ({ sandbox }) => {
-  const cmd = await sandbox.commands.run('python -m http.server 8000', { background: true })
-
+  const cmd = await sandbox.commands.run('python -m http.server 8000', { 
+    background: true,
+    onStdout: (data) => {
+      console.log('stdout', data)
+    },
+    onStderr: (data) => {
+      console.log('stderr', data)
+    },
+  })
   try {
     await wait(1000)
 
