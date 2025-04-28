@@ -290,16 +290,9 @@ class Sandbox(SandboxSetup, SandboxApi):
         :param request_timeout: Timeout for the request
         :return: `True` if the sandbox was killed, `False` if the sandbox was not found
         """
-        config_dict = self.connection_config.__dict__
-        config_dict.pop("access_token", None)
-        config_dict.pop("api_url", None)
-
-        if request_timeout:
-            config_dict["request_timeout"] = request_timeout
-
         SandboxApi._cls_kill(
             sandbox_id=self.sandbox_id,
-            **self.connection_config.__dict__,
+            request_timeout=request_timeout,
         )
 
     @overload
@@ -350,17 +343,10 @@ class Sandbox(SandboxSetup, SandboxApi):
         timeout: int,
         request_timeout: Optional[float] = None,
     ) -> None:
-        config_dict = self.connection_config.__dict__
-        config_dict.pop("access_token", None)
-        config_dict.pop("api_url", None)
-
-        if request_timeout:
-            config_dict["request_timeout"] = request_timeout
-
         SandboxApi._cls_set_timeout(
             sandbox_id=self.sandbox_id,
             timeout=timeout,
-            **self.connection_config.__dict__,
+            request_timeout=request_timeout,
         )
 
     @classmethod
@@ -407,9 +393,23 @@ class Sandbox(SandboxSetup, SandboxApi):
             debug=debug,
         )
 
-    @classmethod
+    @overload
     def pause(
-        cls,
+        self,
+        request_timeout: Optional[float] = None,
+    ) -> str:
+        """
+        Pause the sandbox.
+
+        :param request_timeout: Timeout for the request in **seconds**
+
+        :return: sandbox ID that can be used to resume the sandbox
+        """
+        ...
+
+    @overload
+    @staticmethod
+    def pause(
         sandbox_id: str,
         api_key: Optional[str] = None,
         domain: Optional[str] = None,
@@ -427,16 +427,10 @@ class Sandbox(SandboxSetup, SandboxApi):
 
         :return: sandbox ID that can be used to resume the sandbox
         """
-        SandboxApi._cls_pause(
-            sandbox_id=sandbox_id,
-            api_key=api_key,
-            domain=domain,
-            debug=debug,
-            request_timeout=request_timeout,
-        )
-        return sandbox_id
+        ...
 
-    def pause(
+    @class_method_variant("_cls_pause")
+    def pause( # type: ignore
         self,
         request_timeout: Optional[float] = None,
     ) -> str:
@@ -447,7 +441,6 @@ class Sandbox(SandboxSetup, SandboxApi):
 
         :return: sandbox ID that can be used to resume the sandbox
         """
-
         SandboxApi._cls_pause(
             sandbox_id=self.sandbox_id,
             api_key=self.connection_config.api_key,
@@ -455,7 +448,6 @@ class Sandbox(SandboxSetup, SandboxApi):
             debug=self.connection_config.debug,
             request_timeout=request_timeout,
         )
-
         return self.sandbox_id
 
     @overload
