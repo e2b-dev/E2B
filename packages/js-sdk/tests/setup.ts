@@ -34,3 +34,5 @@ export const isIntegrationTest = process.env.E2B_INTEGRATION_TEST !== undefined
 export async function wait(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
+
+export { template }
