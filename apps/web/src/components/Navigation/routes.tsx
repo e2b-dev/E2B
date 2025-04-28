@@ -1,4 +1,4 @@
-import { Braces, CheckCircle, Home, MessagesSquare } from 'lucide-react'
+import { Braces, CheckCircle, Home, KeyRound, MessagesSquare } from 'lucide-react'
 import sdkRefRoutesJson from './sdkRefRoutes.json'
 
 enum Tag {
@@ -59,6 +59,11 @@ export const docRoutes: NavGroup[] = [
             href: '/docs/quickstart/install-custom-packages',
           },
         ],
+      },
+      {
+        title: 'API Key',
+        href: '/docs/api-key',
+        icon: <KeyRound size={16} />,
       },
       {
         title: 'Cookbook',

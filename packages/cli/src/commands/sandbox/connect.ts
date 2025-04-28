@@ -35,6 +35,10 @@ async function connectToSandbox({
   apiKey: string
   sandboxID: string
 }) {
+  if (sandboxID.split('-').length == 1) {
+    sandboxID = `${sandboxID}-00000000`
+  }
+
   const sandbox = await e2b.Sandbox.connect(sandboxID, { apiKey })
 
   console.log(
