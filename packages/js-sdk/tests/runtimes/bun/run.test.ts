@@ -1,7 +1,7 @@
 import { expect, test } from 'bun:test'
 
 import { Sandbox } from '../../../src'
-import { template } from '../../setup'
+import { template } from '../../template'
 
 test(
   'Bun test',
