@@ -5,7 +5,7 @@ import React from 'react'
 import { useEffect, useState } from 'react'
 
 import { Sandbox } from '../../../src'
-import { template } from '../../setup'
+import { template } from '../../template'
 
 function E2BTest() {
   const [text, setText] = useState<string>()
