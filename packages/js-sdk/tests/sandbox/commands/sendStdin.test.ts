@@ -7,7 +7,6 @@ sandboxTest('send stdin to process', async ({ sandbox }) => {
 
   await sandbox.commands.sendStdin(cmd.pid, text)
 
-
   for (let i = 0; i < 5; i++) {
     if (cmd.stdout === text) {
       break
@@ -63,7 +62,6 @@ sandboxTest('send multiline string to stdin', async ({ sandbox }) => {
   }
 
   await cmd.kill()
-
 
   assert.equal(cmd.stdout, text)
 })
