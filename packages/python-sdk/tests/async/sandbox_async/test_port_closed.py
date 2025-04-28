@@ -5,17 +5,20 @@ import httpx
 from e2b import AsyncSandbox
 
 
-async def test_port_closed(template):
+async def test_port_closed(template, helpers):
     sbx = await AsyncSandbox.create(template, timeout=60)
     try:
         assert await sbx.is_running()
 
         good_port = 8002
         # Start a Python HTTP server on port 8002
-        await sbx.commands.run(
+        cmd = await sbx.commands.run(
             f"python -m http.server {good_port}",
             background=True,
         )
+
+        disable = helpers.wait_for_failure(cmd)
+
         await asyncio.sleep(1)  # Wait for server to start
 
         # Test good port (8002)
@@ -50,5 +53,6 @@ async def test_port_closed(template):
             assert resp["message"] == "The sandbox is running but port is not open"
             assert cleaned_sbx_id == resp["sandboxId"]
             assert resp["port"] == bad_port
+        disable()
     finally:
         await sbx.kill()

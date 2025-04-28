@@ -3,7 +3,7 @@ import httpx
 from time import sleep
 
 
-def test_ping_server(sandbox, debug):
+def test_ping_server(sandbox, debug, helpers):
     cmd = sandbox.commands.run("python -m http.server 8001", background=True)
 
     try:
@@ -17,5 +17,8 @@ def test_ping_server(sandbox, debug):
             sleep(0.5)
 
         assert status_code == 200
+    except Exception as e:
+        helpers.wait_for_failure(cmd)
+        raise e
     finally:
         cmd.kill()
