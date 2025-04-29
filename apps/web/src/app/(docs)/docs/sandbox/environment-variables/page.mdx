@@ -35,7 +35,7 @@ You can set global environment variables when creating a sandbox.
 import { Sandbox } from '@e2b/code-interpreter'
 
 const sandbox = await Sandbox.create({
-  env: { // $HighlightLine
+  envs: { // $HighlightLine
     MY_VAR: 'my_value', // $HighlightLine
   }, // $HighlightLine
 })
@@ -44,7 +44,7 @@ const sandbox = await Sandbox.create({
 from e2b_code_interpreter import Sandbox
 
 sandbox = Sandbox(
-  env={ # $HighlightLine
+  envs={ # $HighlightLine
     'MY_VAR': 'my_value', # $HighlightLine
   }, # $HighlightLine
 )
