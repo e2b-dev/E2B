@@ -416,7 +416,42 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
             debug=debug,
         )
 
+    @overload
     async def pause(
+        self,
+        request_timeout: Optional[float] = None,
+    ) -> str:
+        """
+        Pause the sandbox.
+
+        :param request_timeout: Timeout for the request in **seconds**
+
+        :return: sandbox ID that can be used to resume the sandbox
+        """
+        ...
+
+    @overload
+    @staticmethod
+    async def pause(
+        sandbox_id: str,
+        api_key: Optional[str] = None,
+        domain: Optional[str] = None,
+        debug: Optional[bool] = None,
+        request_timeout: Optional[float] = None,
+    ) -> str:
+        """
+        Pause the sandbox specified by sandbox ID.
+
+        :param sandbox_id: Sandbox ID
+        :param api_key: E2B API Key to use for authentication, defaults to `E2B_API_KEY` environment variable
+        :param request_timeout: Timeout for the request in **seconds**
+
+        :return: sandbox ID that can be used to resume the sandbox
+        """
+        ...
+
+    @class_method_variant("_cls_pause")
+    async def pause(  # type: ignore
         self,
         request_timeout: Optional[float] = None,
     ) -> str:

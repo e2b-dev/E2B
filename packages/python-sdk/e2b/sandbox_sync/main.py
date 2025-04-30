@@ -407,6 +407,7 @@ class Sandbox(SandboxSetup, SandboxApi):
             debug=debug,
         )
 
+    @overload
     def pause(
         self,
         request_timeout: Optional[float] = None,
@@ -418,7 +419,42 @@ class Sandbox(SandboxSetup, SandboxApi):
 
         :return: sandbox ID that can be used to resume the sandbox
         """
+        ...
 
+    @overload
+    @staticmethod
+    def pause(
+        sandbox_id: str,
+        api_key: Optional[str] = None,
+        domain: Optional[str] = None,
+        debug: Optional[bool] = None,
+        request_timeout: Optional[float] = None,
+    ) -> str:
+        """
+        Pause a sandbox by its ID.
+
+        :param sandbox_id: Sandbox ID
+        :param api_key: E2B API Key to use for authentication
+        :param domain: Domain of the sandbox server
+        :param debug: Enable debug mode
+        :param request_timeout: Timeout for the request in **seconds**
+
+        :return: sandbox ID that can be used to resume the sandbox
+        """
+        ...
+
+    @class_method_variant("_cls_pause")
+    def pause( # type: ignore
+        self,
+        request_timeout: Optional[float] = None,
+    ) -> str:
+        """
+        Pause the sandbox.
+
+        :param request_timeout: Timeout for the request in **seconds**
+
+        :return: sandbox ID that can be used to resume the sandbox
+        """
         SandboxApi._cls_pause(
             sandbox_id=self.sandbox_id,
             api_key=self.connection_config.api_key,

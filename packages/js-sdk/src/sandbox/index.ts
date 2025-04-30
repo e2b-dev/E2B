@@ -107,8 +107,9 @@ export class Sandbox extends SandboxApi {
 
     this.sandboxId = opts.sandboxId
     this.connectionConfig = new ConnectionConfig(opts)
-    this.envdApiUrl = `${this.connectionConfig.debug ? 'http' : 'https'
-      }://${this.getHost(this.envdPort)}`
+    this.envdApiUrl = `${
+      this.connectionConfig.debug ? 'http' : 'https'
+    }://${this.getHost(this.envdPort)}`
 
     const rpcTransport = createConnectTransport({
       baseUrl: this.envdApiUrl,
@@ -254,9 +255,29 @@ export class Sandbox extends SandboxApi {
     sandboxId: string,
     opts?: Omit<SandboxOpts, 'metadata' | 'envs'>
   ): Promise<InstanceType<S>> {
-    await Sandbox.resumeSandbox(sandboxId, opts?.timeoutMs ?? this.defaultSandboxTimeoutMs, opts)
+    await Sandbox.resumeSandbox(
+      sandboxId,
+      opts?.timeoutMs ?? this.defaultSandboxTimeoutMs,
+      opts
+    )
 
     return await this.connect(sandboxId, opts)
+  }
+
+  /**
+   * Pause a sandbox by its ID.
+   *
+   * @param sandboxId sandbox ID.
+   * @param opts connection options.
+   *
+   * @returns sandbox ID that can be used to resume the sandbox.
+   */
+  static async pause(
+    sandboxId: string,
+    opts?: Omit<SandboxOpts, 'metadata' | 'envs' | 'timeoutMs'>
+  ): Promise<string> {
+    await Sandbox.pauseSandbox(sandboxId, opts)
+    return sandboxId
   }
 
   /**
@@ -391,7 +412,10 @@ export class Sandbox extends SandboxApi {
    * @returns sandbox ID that can be used to resume the sandbox.
    */
   async pause(opts?: Pick<SandboxOpts, 'requestTimeoutMs'>): Promise<string> {
-    await Sandbox.pauseSandbox(this.sandboxId, { ...this.connectionConfig, ...opts })
+    await Sandbox.pauseSandbox(this.sandboxId, {
+      ...this.connectionConfig,
+      ...opts,
+    })
 
     return this.sandboxId
   }
