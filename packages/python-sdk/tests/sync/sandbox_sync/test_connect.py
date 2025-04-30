@@ -16,7 +16,7 @@ def test_connect(template):
 def test_connect_with_secure(template):
     dir_name = f"test_directory_{uuid.uuid4()}"
 
-    sbx = Sandbox(template, timeout=10, secrue=True)
+    sbx = Sandbox(template, timeout=10, secure=True)
     try:
         assert sbx.is_running()
 

@@ -94,7 +94,7 @@ class Sandbox(SandboxSetup, SandboxApi):
         timeout: Optional[int] = None,
         metadata: Optional[Dict[str, str]] = None,
         envs: Optional[Dict[str, str]] = None,
-        secrue: Optional[bool] = None,
+        secure: Optional[bool] = None,
         api_key: Optional[str] = None,
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
@@ -152,7 +152,7 @@ class Sandbox(SandboxSetup, SandboxApi):
                 domain=domain,
                 debug=debug,
                 request_timeout=request_timeout,
-                secure=secrue or False,
+                secure=secure or False,
                 proxy=proxy,
             )
             self._sandbox_id = response.sandbox_id
