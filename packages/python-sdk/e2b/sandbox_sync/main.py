@@ -299,7 +299,7 @@ class Sandbox(SandboxSetup, SandboxApi):
 
         SandboxApi._cls_kill(
             sandbox_id=self.sandbox_id,
-            **config_dict,
+            **self.connection_config.__dict__
         )
 
     @overload
