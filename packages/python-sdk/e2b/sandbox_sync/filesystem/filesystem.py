@@ -120,7 +120,7 @@ class Filesystem:
             ENVD_API_FILES_ROUTE,
             params={"path": path, "username": user},
             timeout=self._connection_config.get_request_timeout(request_timeout),
-            headers=self._base_headers()
+            headers=self._base_headers(),
         )
 
         err = handle_envd_api_exception(r)
@@ -231,7 +231,7 @@ class Filesystem:
             files=httpx_files,
             params=params,
             timeout=self._connection_config.get_request_timeout(request_timeout),
-            headers=self._base_headers()
+            headers=self._base_headers(),
         )
 
         err = handle_envd_api_exception(r)

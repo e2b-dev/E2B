@@ -197,12 +197,14 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
         :param api_key: E2B API Key to use for authentication, defaults to `E2B_API_KEY` environment variable
         :param request_timeout: Timeout for the request in **seconds**
         :param proxy: Proxy to use for the request and for the **requests made to the returned sandbox**
+        :param secure: Envd is secured with access token and cannot be used without it
 
         :return: sandbox instance for the new sandbox
 
         Use this method instead of using the constructor to create a new sandbox.
         """
-        connection_headers = {"x": "b"}
+
+        connection_headers = {}
 
         if debug:
             sandbox_id = "debug_sandbox_id"
@@ -221,12 +223,13 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
                 secure=secure,
                 proxy=proxy,
             )
+
             sandbox_id = response.sandbox_id
             envd_version = response.envd_version
             envd_access_token = response.envd_access_token
 
             if envd_access_token is not None and not isinstance(envd_access_token, Unset):
-                  connection_headers["X-Access-Token"] = envd_access_token
+                connection_headers["X-Access-Token"] = envd_access_token
 
         connection_config = ConnectionConfig(
             api_key=api_key,
@@ -271,14 +274,21 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
         # Another code block
         same_sandbox = await AsyncSandbox.connect(sandbox_id)
         """
+
+        connection_headers = {}
+
+        response = await SandboxApi.get_info(sandbox_id)
+
+        if response.envd_access_token is not None and not isinstance(response.envd_access_token, Unset):
+            connection_headers["X-Access-Token"] = response.envd_access_token
+
         connection_config = ConnectionConfig(
             api_key=api_key,
             domain=domain,
             debug=debug,
+            headers=connection_headers,
             proxy=proxy,
         )
-
-        response = await SandboxApi.get_info(sandbox_id)
 
         return cls(
             sandbox_id=sandbox_id,

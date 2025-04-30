@@ -87,8 +87,8 @@ class SandboxApi(SandboxApiBase):
                     ),
                     started_at=sandbox.started_at,
                     end_at=sandbox.end_at,
-                    envd_version=sandbox.envd_version,
-                    envd_access_token=sandbox.envd_access_token,
+                    envd_version=None,
+                    envd_access_token=None,
                 )
                 for sandbox in res.parsed
             ]
@@ -258,10 +258,7 @@ class SandboxApi(SandboxApiBase):
             proxy=proxy,
         )
 
-        with ApiClient(
-            config,
-            limits=SandboxApiBase._limits
-        ) as api_client:
+        with ApiClient(config, limits=SandboxApiBase._limits) as api_client:
             res = post_sandboxes.sync_detailed(
                 body=NewSandbox(
                     template_id=template,
