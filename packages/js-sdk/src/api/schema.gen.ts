@@ -98,7 +98,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["ListedSandbox"];
+                        "application/json": components["schemas"]["SandboxDetail"];
                     };
                 };
                 401: components["responses"]["401"];
@@ -811,10 +811,6 @@ export interface components {
              * @description Time when the sandbox will expire
              */
             endAt: string;
-            /** @description Access token used for envd communication */
-            envdAccessToken?: string;
-            /** @description Version of the envd running in the sandbox */
-            envdVersion?: string;
             memoryMB: components["schemas"]["MemoryMB"];
             metadata?: components["schemas"]["SandboxMetadata"];
             /** @description Identifier of the sandbox */
@@ -960,6 +956,34 @@ export interface components {
             envdVersion: string;
             /** @description Identifier of the sandbox */
             sandboxID: string;
+            /** @description Identifier of the template from which is the sandbox created */
+            templateID: string;
+        };
+        SandboxDetail: {
+            /** @description Alias of the template */
+            alias?: string;
+            /** @description Identifier of the client */
+            clientID: string;
+            cpuCount: components["schemas"]["CPUCount"];
+            /**
+             * Format: date-time
+             * @description Time when the sandbox will expire
+             */
+            endAt: string;
+            /** @description Access token used for envd communication */
+            envdAccessToken?: string;
+            /** @description Version of the envd running in the sandbox */
+            envdVersion?: string;
+            memoryMB: components["schemas"]["MemoryMB"];
+            metadata?: components["schemas"]["SandboxMetadata"];
+            /** @description Identifier of the sandbox */
+            sandboxID: string;
+            /**
+             * Format: date-time
+             * @description Time when the sandbox was started
+             */
+            startedAt: string;
+            state: components["schemas"]["SandboxState"];
             /** @description Identifier of the template from which is the sandbox created */
             templateID: string;
         };

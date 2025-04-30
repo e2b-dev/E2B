@@ -253,7 +253,7 @@ components:
           type: string
           description: Access token used for envd communication
 
-    ListedSandbox:
+    SandboxDetail:
       required:
         - templateID
         - sandboxID
@@ -290,6 +290,46 @@ components:
         envdAccessToken:
           type: string
           description: Access token used for envd communication
+        cpuCount:
+          $ref: "#/components/schemas/CPUCount"
+        memoryMB:
+          $ref: "#/components/schemas/MemoryMB"
+        metadata:
+          $ref: "#/components/schemas/SandboxMetadata"
+        state:
+          $ref: "#/components/schemas/SandboxState"
+
+    ListedSandbox:
+      required:
+        - templateID
+        - sandboxID
+        - clientID
+        - startedAt
+        - cpuCount
+        - memoryMB
+        - endAt
+        - state
+      properties:
+        templateID:
+          type: string
+          description: Identifier of the template from which is the sandbox created
+        alias:
+          type: string
+          description: Alias of the template
+        sandboxID:
+          type: string
+          description: Identifier of the sandbox
+        clientID:
+          type: string
+          description: Identifier of the client
+        startedAt:
+          type: string
+          format: date-time
+          description: Time when the sandbox was started
+        endAt:
+          type: string
+          format: date-time
+          description: Time when the sandbox will expire
         cpuCount:
           $ref: "#/components/schemas/CPUCount"
         memoryMB:
@@ -963,7 +1003,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ListedSandbox"
+                $ref: "#/components/schemas/SandboxDetail"
         "404":
           $ref: "#/components/responses/404"
         "401":
