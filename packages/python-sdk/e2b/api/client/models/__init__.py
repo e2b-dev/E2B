@@ -18,6 +18,7 @@ from .post_sandboxes_sandbox_id_timeout_body import PostSandboxesSandboxIDTimeou
 from .resumed_sandbox import ResumedSandbox
 from .running_sandbox_with_metrics import RunningSandboxWithMetrics
 from .sandbox import Sandbox
+from .sandbox_detail import SandboxDetail
 from .sandbox_log import SandboxLog
 from .sandbox_logs import SandboxLogs
 from .sandbox_metric import SandboxMetric
@@ -49,6 +50,7 @@ __all__ = (
     "ResumedSandbox",
     "RunningSandboxWithMetrics",
     "Sandbox",
+    "SandboxDetail",
     "SandboxLog",
     "SandboxLogs",
     "SandboxMetric",
