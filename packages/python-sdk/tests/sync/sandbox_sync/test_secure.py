@@ -4,7 +4,7 @@ from e2b import Sandbox
 
 
 def test_start_secured(template):
-    sbx = Sandbox(template, timeout=5, secrue=True)
+    sbx = Sandbox(template, timeout=5, secure=True)
     try:
         assert sbx.is_running()
         assert sbx._envd_version is not None

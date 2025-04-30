@@ -111,7 +111,7 @@ def test_watch_file(sandbox: Sandbox):
         sandbox.files.watch_dir(filename)
 
 def test_watch_file_with_secured_envd(template):
-    sbx = Sandbox(template, timeout=30, secrue=True)
+    sbx = Sandbox(template, timeout=30, secure=True)
     try:
         sbx.files.watch_dir("/home/user/")
         sbx.files.write("test_watch.txt", "This file will be watched.")
