@@ -267,8 +267,8 @@ class Filesystem:
 
         :return: List of entries in the directory
         """
-        if depth is not None and depth < 0:
-            raise InvalidArgumentException("depth should be a positive number")
+        if depth is not None and depth < 1:
+            raise InvalidArgumentException("depth should be at least 1")
 
         try:
             res = await self._rpc.alist_dir(

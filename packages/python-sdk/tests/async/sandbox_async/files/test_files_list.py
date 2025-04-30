@@ -79,7 +79,7 @@ async def test_list_directory_error_cases(async_sandbox: AsyncSandbox):
     parent_dir_name = f"test_directory_{uuid.uuid4()}"
     await async_sandbox.files.make_dir(parent_dir_name)
 
-    expected_error_message = "depth should be at least one"
+    expected_error_message = "depth should be at least 1"
     try:
         await async_sandbox.files.list(parent_dir_name, depth=-1)
         assert False, "Expected error but none was thrown"
