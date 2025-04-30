@@ -81,6 +81,7 @@ class ConnectionConfig:
     def get_request_base_headers(self):
         return self.headers or {}
 
+
 Username = Literal["root", "user"]
 """
 User used for the operation in the sandbox.
