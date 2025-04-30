@@ -299,7 +299,7 @@ class Sandbox(SandboxSetup, SandboxApi):
 
         SandboxApi._cls_kill(
             sandbox_id=self.sandbox_id,
-            **self.connection_config.__dict__
+            **self.connection_config.__dict__,
         )
 
     @overload
@@ -462,6 +462,7 @@ class Sandbox(SandboxSetup, SandboxApi):
             debug=self.connection_config.debug,
             request_timeout=request_timeout,
         )
+
         return self.sandbox_id
 
     @overload
