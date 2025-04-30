@@ -290,9 +290,16 @@ class Sandbox(SandboxSetup, SandboxApi):
         :param request_timeout: Timeout for the request
         :return: `True` if the sandbox was killed, `False` if the sandbox was not found
         """
+        config_dict = self.connection_config.__dict__
+        config_dict.pop("access_token", None)
+        config_dict.pop("api_url", None)
+
+        if request_timeout:
+            config_dict["request_timeout"] = request_timeout
+
         SandboxApi._cls_kill(
             sandbox_id=self.sandbox_id,
-            request_timeout=request_timeout,
+            **config_dict,
         )
 
     @overload
