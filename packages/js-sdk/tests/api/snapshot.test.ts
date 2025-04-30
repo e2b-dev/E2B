@@ -1,13 +1,13 @@
 import { assert } from 'vitest'
 import { Sandbox } from '../../src'
-import { sandboxTest } from '../setup'
+import { sandboxTest, isDebug } from '../setup'
 
-sandboxTest('pause a sandbox', async ({ sandbox }) => {
+sandboxTest.skipIf(isDebug)('pause a sandbox', async ({ sandbox }) => {
   await Sandbox.pause(sandbox.sandboxId)
-  assert.isTrue(await sandbox.isRunning())
+  assert.isFalse(await sandbox.isRunning())
 })
 
-sandboxTest('resume a sandbox', async ({ sandbox }) => {
+sandboxTest.skipIf(isDebug)('resume a sandbox', async ({ sandbox }) => {
   // pause
   await Sandbox.pause(sandbox.sandboxId)
   assert.isFalse(await sandbox.isRunning())
