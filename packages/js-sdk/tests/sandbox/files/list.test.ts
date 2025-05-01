@@ -13,14 +13,17 @@ sandboxTest('list directory', async ({ sandbox }) => {
   await sandbox.files.makeDir(`${parentDirName}/subdir1/subdir1_2`)
   await sandbox.files.makeDir(`${parentDirName}/subdir2/subdir2_1`)
   await sandbox.files.makeDir(`${parentDirName}/subdir2/subdir2_2`)
+  await sandbox.files.write(`${parentDirName}/file1.txt`, 'Hello, world!')
 
   const testCases = [
     {
       test_name: 'default depth (1)',
       depth: undefined,
-      expectedLen: 2,
-      expectedFileNames: ['subdir1', 'subdir2'],
+      expectedLen: 3,
+      expectedFileNames: ['file1.txt', 'subdir1', 'subdir2'],
+      expectedFileTypes: ['file', 'dir', 'dir'],
       expectedFilePaths: [
+        `${homeDirName}/${parentDirName}/file1.txt`,
         `${homeDirName}/${parentDirName}/subdir1`,
         `${homeDirName}/${parentDirName}/subdir2`,
       ],
@@ -28,9 +31,11 @@ sandboxTest('list directory', async ({ sandbox }) => {
     {
       test_name: 'explicit depth 1',
       depth: 1,
-      expectedLen: 2,
-      expectedFileNames: ['subdir1', 'subdir2'],
+      expectedLen: 3,
+      expectedFileNames: ['file1.txt', 'subdir1', 'subdir2'],
+      expectedFileTypes: ['file', 'dir', 'dir'],
       expectedFilePaths: [
+        `${homeDirName}/${parentDirName}/file1.txt`,
         `${homeDirName}/${parentDirName}/subdir1`,
         `${homeDirName}/${parentDirName}/subdir2`,
       ],
@@ -38,8 +43,10 @@ sandboxTest('list directory', async ({ sandbox }) => {
     {
       test_name: 'explicit depth 2',
       depth: 2,
-      expectedLen: 6,
+      expectedLen: 7,
+      expectedFileTypes: ['file', 'dir', 'dir', 'dir', 'dir', 'dir', 'dir'],
       expectedFileNames: [
+        'file1.txt',
         'subdir1',
         'subdir1_1',
         'subdir1_2',
@@ -48,6 +55,7 @@ sandboxTest('list directory', async ({ sandbox }) => {
         'subdir2_2',
       ],
       expectedFilePaths: [
+        `${homeDirName}/${parentDirName}/file1.txt`,
         `${homeDirName}/${parentDirName}/subdir1`,
         `${homeDirName}/${parentDirName}/subdir1/subdir1_1`,
         `${homeDirName}/${parentDirName}/subdir1/subdir1_2`,
@@ -59,8 +67,10 @@ sandboxTest('list directory', async ({ sandbox }) => {
     {
       test_name: 'explicit depth 3 (should be the same as depth 2)',
       depth: 3,
-      expectedLen: 6,
+      expectedLen: 7,
+      expectedFileTypes: ['file', 'dir', 'dir', 'dir', 'dir', 'dir', 'dir'],
       expectedFileNames: [
+        'file1.txt',
         'subdir1',
         'subdir1_1',
         'subdir1_2',
@@ -69,6 +79,7 @@ sandboxTest('list directory', async ({ sandbox }) => {
         'subdir2_2',
       ],
       expectedFilePaths: [
+        `${homeDirName}/${parentDirName}/file1.txt`,
         `${homeDirName}/${parentDirName}/subdir1`,
         `${homeDirName}/${parentDirName}/subdir1/subdir1_1`,
         `${homeDirName}/${parentDirName}/subdir1/subdir1_2`,
@@ -87,15 +98,11 @@ sandboxTest('list directory', async ({ sandbox }) => {
     assert.equal(files.length, testCase.expectedLen)
 
     for (let i = 0; i < testCase.expectedFilePaths.length; i++) {
-      assert.equal(files[i].type, 'dir')
+      assert.equal(files[i].type, testCase.expectedFileTypes[i])
       assert.equal(files[i].name, testCase.expectedFileNames[i])
       assert.equal(files[i].path, testCase.expectedFilePaths[i])
     }
   }
-
-  onTestFinished(() => {
-    sandbox.files.remove(parentDirName)
-  })
 })
 
 sandboxTest('list directory with invalid depth', async ({ sandbox }) => {
@@ -111,8 +118,4 @@ sandboxTest('list directory with invalid depth', async ({ sandbox }) => {
       `expected error message to include "${expectedErrorMessage}"`
     )
   }
-
-  onTestFinished(() => {
-    sandbox.files.remove(parentDirName)
-  })
 })
