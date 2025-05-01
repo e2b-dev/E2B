@@ -1,9 +1,10 @@
 import uuid
 
-from e2b import Sandbox
+from e2b import Sandbox, FileType
 
 
 def test_list_directory(sandbox: Sandbox):
+    home_dir_name = "/home/user"
     parent_dir_name = f"test_directory_{uuid.uuid4()}"
 
     sandbox.files.make_dir(parent_dir_name)
@@ -13,50 +14,111 @@ def test_list_directory(sandbox: Sandbox):
     sandbox.files.make_dir(f"{parent_dir_name}/subdir1/subdir1_2")
     sandbox.files.make_dir(f"{parent_dir_name}/subdir2/subdir2_1")
     sandbox.files.make_dir(f"{parent_dir_name}/subdir2/subdir2_2")
+    sandbox.files.write(f"{parent_dir_name}/file1.txt", "Hello, world!")
 
     test_cases = [
         {
             "name": "default depth (1)",
             "depth": None,
-            "expected_len": 2,
-            "expected_files": [
-                f"{parent_dir_name}/subdir1",
-                f"{parent_dir_name}/subdir2",
+            "expected_len": 3,
+            "expected_file_names": [
+                "file1.txt",
+                "subdir1",
+                "subdir2",
+            ],
+            "expected_file_types": [
+                FileType.FILE,
+                FileType.DIR,
+                FileType.DIR,
+            ],
+            "expected_file_paths": [
+                f"{home_dir_name}/{parent_dir_name}/file1.txt",
+                f"{home_dir_name}/{parent_dir_name}/subdir1",
+                f"{home_dir_name}/{parent_dir_name}/subdir2",
             ],
         },
         {
             "name": "explicit depth 1",
             "depth": 1,
-            "expected_len": 2,
-            "expected_files": [
-                f"{parent_dir_name}/subdir1",
-                f"{parent_dir_name}/subdir2",
+            "expected_len": 3,
+            "expected_file_names": [
+                "file1.txt",
+                "subdir1",
+                "subdir2",
+            ],
+            "expected_file_types": [
+                FileType.FILE,
+                FileType.DIR,
+                FileType.DIR,
+            ],
+            "expected_file_paths": [
+                f"{home_dir_name}/{parent_dir_name}/file1.txt",
+                f"{home_dir_name}/{parent_dir_name}/subdir1",
+                f"{home_dir_name}/{parent_dir_name}/subdir2",
             ],
         },
         {
             "name": "explicit depth 2",
             "depth": 2,
-            "expected_len": 6,
-            "expected_files": [
-                f"{parent_dir_name}/subdir1",
-                f"{parent_dir_name}/subdir1/subdir1_1",
-                f"{parent_dir_name}/subdir1/subdir1_2",
-                f"{parent_dir_name}/subdir2",
-                f"{parent_dir_name}/subdir2/subdir2_1",
-                f"{parent_dir_name}/subdir2/subdir2_2",
+            "expected_len": 7,
+            "expected_file_types": [
+                FileType.FILE,
+                FileType.DIR,
+                FileType.DIR,
+                FileType.DIR,
+                FileType.DIR,
+                FileType.DIR,
+                FileType.DIR,
+            ],
+            "expected_file_names": [
+                "file1.txt",
+                "subdir1",
+                "subdir1_1",
+                "subdir1_2",
+                "subdir2",
+                "subdir2_1",
+                "subdir2_2",
+            ],
+            "expected_file_paths": [
+                f"{home_dir_name}/{parent_dir_name}/file1.txt",
+                f"{home_dir_name}/{parent_dir_name}/subdir1",
+                f"{home_dir_name}/{parent_dir_name}/subdir1/subdir1_1",
+                f"{home_dir_name}/{parent_dir_name}/subdir1/subdir1_2",
+                f"{home_dir_name}/{parent_dir_name}/subdir2",
+                f"{home_dir_name}/{parent_dir_name}/subdir2/subdir2_1",
+                f"{home_dir_name}/{parent_dir_name}/subdir2/subdir2_2",
             ],
         },
         {
             "name": "explicit depth 3 (should be the same as depth 2)",
             "depth": 3,
-            "expected_len": 6,
-            "expected_files": [
-                f"{parent_dir_name}/subdir1",
-                f"{parent_dir_name}/subdir1/subdir1_1",
-                f"{parent_dir_name}/subdir1/subdir1_2",
-                f"{parent_dir_name}/subdir2",
-                f"{parent_dir_name}/subdir2/subdir2_1",
-                f"{parent_dir_name}/subdir2/subdir2_2",
+            "expected_len": 7,
+            "expected_file_names": [
+                "file1.txt",
+                "subdir1",
+                "subdir1_1",
+                "subdir1_2",
+                "subdir2",
+                "subdir2_1",
+                "subdir2_2",
+            ],
+            "expected_file_types": [
+                FileType.FILE,
+                FileType.DIR,
+                FileType.DIR,
+                FileType.DIR,
+                FileType.DIR,
+                FileType.DIR,
+                FileType.DIR,
+            ],
+            "expected_file_paths": [
+                f"{home_dir_name}/{parent_dir_name}/file1.txt",
+                f"{home_dir_name}/{parent_dir_name}/subdir1",
+                f"{home_dir_name}/{parent_dir_name}/subdir1/subdir1_1",
+                f"{home_dir_name}/{parent_dir_name}/subdir1/subdir1_2",
+                f"{home_dir_name}/{parent_dir_name}/subdir2",
+                f"{home_dir_name}/{parent_dir_name}/subdir2/subdir2_1",
+                f"{home_dir_name}/{parent_dir_name}/subdir2/subdir2_2",
             ],
         },
     ]
@@ -69,8 +131,10 @@ def test_list_directory(sandbox: Sandbox):
 
         assert len(files) == test_case["expected_len"]
 
-        for i, expected_name in enumerate(test_case["expected_files"]):
-            assert files[i].name == expected_name
+        for i in range(len(test_case["expected_file_names"])):
+            assert files[i].name == test_case["expected_file_names"][i]
+            assert files[i].path == test_case["expected_file_paths"][i]
+            assert files[i].type == test_case["expected_file_types"][i]
 
     sandbox.files.remove(parent_dir_name)
 
