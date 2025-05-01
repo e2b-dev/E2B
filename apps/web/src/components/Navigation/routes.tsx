@@ -311,6 +311,10 @@ export const docRoutes: NavGroup[] = [
         href: '/docs/sandbox/internet-access',
       },
       {
+        title: 'Connecting bucket',
+        href: '/docs/sandbox/connect-bucket',
+      },
+      {
         title: 'Installing beta SDKs',
         href: '/docs/sandbox/installing-beta-sdks',
       },
