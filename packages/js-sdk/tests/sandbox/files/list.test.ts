@@ -1,10 +1,9 @@
 import { assert, onTestFinished } from 'vitest'
 
-import { sandboxTest } from '../../setup.js'
+import { sandboxTest, wait } from '../../setup.js'
 
 const parentDirName = 'test_directory'
 
-/*
 sandboxTest('list directory', async ({ sandbox }) => {
   const homeDirName = '/home/user'
   await sandbox.files.makeDir(parentDirName)
@@ -98,7 +97,6 @@ sandboxTest('list directory', async ({ sandbox }) => {
     sandbox.files.remove(parentDirName)
   })
 })
-*/
 
 sandboxTest('list directory with invalid depth', async ({ sandbox }) => {
   await sandbox.files.makeDir(parentDirName)
@@ -108,7 +106,6 @@ sandboxTest('list directory with invalid depth', async ({ sandbox }) => {
     assert.fail('Expected error but none was thrown')
   } catch (err) {
     const expectedErrorMessage = 'depth should be at least one'
-    console.log(err.message)
     assert.ok(
       err.message.includes(expectedErrorMessage),
       `expected error message to include "${expectedErrorMessage}"`
