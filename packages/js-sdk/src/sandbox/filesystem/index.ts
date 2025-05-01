@@ -348,7 +348,7 @@ export class Filesystem {
    */
   async list(path: string, opts?: FilesystemListOpts): Promise<EntryInfo[]> {
     if (typeof opts?.depth === 'number' && opts.depth < 1) {
-      throw new InvalidArgumentError('depth should be a least one')
+      throw new InvalidArgumentError('depth should be at least one')
     }
 
     try {
