@@ -66,10 +66,10 @@ def skip_by_debug(request, debug):
 
 class Helpers:
     @staticmethod
-    def wait_for_async_failure(cmd: AsyncCommandHandle):
+    def wait_for_async_cmd_exit_error_in_background(cmd: AsyncCommandHandle):
         disabled = False
 
-        async def wait_for_failure():
+        async def wait_for_exit():
             try:
                 await cmd.wait()
             except CommandExitException as e:
@@ -78,7 +78,7 @@ class Helpers:
                         False
                     ), f"command failed with exit code {e.exit_code}: {e.stderr}"
 
-        asyncio.create_task(wait_for_failure())
+        asyncio.create_task(wait_for_exit())
 
         def disable():
             nonlocal disabled
@@ -87,7 +87,7 @@ class Helpers:
         return disable
 
     @staticmethod
-    def wait_for_failure(cmd: CommandHandle):
+    def check_cmd_exit_error(cmd: CommandHandle):
         try:
             cmd.wait()
         except CommandExitException as e:

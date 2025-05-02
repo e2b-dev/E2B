@@ -18,7 +18,7 @@ def test_ping_server(sandbox, debug, helpers):
 
         assert status_code == 200
     except Exception as e:
-        helpers.wait_for_failure(cmd)
+        helpers.check_cmd_exit_error(cmd)
         raise e
     finally:
         cmd.kill()

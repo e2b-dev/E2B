@@ -1,7 +1,7 @@
 import { CommandHandle, CommandExitError } from '../src/index.js'
 import { assert } from 'vitest'
 
-export function waitForFailure(cmd: CommandHandle) {
+export function waitForCmdExitErrorInBackground(cmd: CommandHandle) {
   let disabled = false
 
   cmd.wait().catch((res: CommandExitError) => {

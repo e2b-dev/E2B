@@ -1,7 +1,7 @@
 import { assert } from 'vitest'
 
 import { isDebug, sandboxTest, wait } from '../setup.js'
-import { waitForFailure } from '../cmdHelper.js'
+import { waitForCmdExitErrorInBackground } from '../cmdHelper.js'
 sandboxTest(
   'ping server in running sandbox',
   async ({ sandbox }) => {
@@ -9,7 +9,7 @@ sandboxTest(
       background: true,
     })
 
-    const disable = waitForFailure(cmd)
+    const disable = waitForCmdExitErrorInBackground(cmd)
 
     try {
       await wait(1000)

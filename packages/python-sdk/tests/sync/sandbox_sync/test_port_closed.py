@@ -51,7 +51,7 @@ def test_port_closed(template, helpers):
             assert cleaned_sbx_id == resp["sandboxId"]
             assert resp["port"] == bad_port
     except Exception as e:
-        helpers.wait_for_failure(cmd)
+        helpers.check_cmd_exit_error(cmd)
         raise e
     finally:
         sbx.kill()
