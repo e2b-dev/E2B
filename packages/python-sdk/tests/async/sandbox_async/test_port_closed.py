@@ -17,7 +17,7 @@ async def test_port_closed(template, helpers):
             background=True,
         )
 
-        disable = helpers.wait_for_failure(cmd)
+        disable = helpers.wait_for_async_failure(cmd)
 
         await asyncio.sleep(1)  # Wait for server to start
 

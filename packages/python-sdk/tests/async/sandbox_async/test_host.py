@@ -11,7 +11,7 @@ async def test_ping_server(async_sandbox: AsyncSandbox, debug, helpers):
         background=True,
     )
 
-    disable = helpers.wait_for_failure(cmd)
+    disable = helpers.wait_for_async_failure(cmd)
 
     try:
         host = async_sandbox.get_host(8000)
