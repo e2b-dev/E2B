@@ -11,7 +11,7 @@ export default defineWorkspace([
       globals: false,
       testTimeout: 30_000,
       environment: 'node',
-      bail: 1,
+      bail: 0,
       server: {},
       deps: {
         interopDefault: true,
@@ -28,12 +28,12 @@ export default defineWorkspace([
       browser: {
         enabled: true,
         headless: true,
-        instances: [{browser: 'chromium'}],
+        instances: [{ browser: 'chromium' }],
         provider: 'playwright',
         // https://playwright.dev
       },
       provide: {
-        E2B_API_KEY: process.env.E2B_API_KEY || env.parsed.E2B_API_KEY,
+        E2B_API_KEY: process.env.E2B_API_KEY || env.parsed?.E2B_API_KEY,
       },
     },
   },
@@ -53,4 +53,3 @@ export default defineWorkspace([
     },
   },
 ])
-
