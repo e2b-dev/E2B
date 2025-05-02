@@ -17,7 +17,7 @@ from e2b import (
 
 @pytest.fixture()
 def template():
-    return "q52rcyz0ua30keeiy22u"
+    return "base"
 
 
 @pytest.fixture()
