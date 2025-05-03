@@ -37,6 +37,7 @@
   "scripts": {
     "prepublishOnly": "pnpm build",
     "build": "tsc --noEmit --skipLibCheck && tsup --minify",
+    "build:compile": "./scripts/build-binaries.sh",
     "dev": "tsup --watch",
     "test": "pnpm build && cd testground/demo-basic && ../../dist/index.js template build",
     "check-deps": "knip",

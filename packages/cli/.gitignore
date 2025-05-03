@@ -33,6 +33,7 @@ yarn-error.log*
 
 # generate output
 dist
+release
 
 # compiled binary addons (https://nodejs.org/api/addons.html)
 build/Release
