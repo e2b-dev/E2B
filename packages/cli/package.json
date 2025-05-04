@@ -40,6 +40,7 @@
     "build:compile": "./scripts/build-binaries.sh",
     "dev": "tsup --watch",
     "test": "pnpm build && cd testground/demo-basic && ../../dist/index.js template build",
+    "test:binary": "./scripts/test-binary.sh",
     "check-deps": "knip",
     "update-deps": "ncu -u && pnpm i",
     "generate-ref": "./scripts/generate_sdk_ref.sh"

@@ -33,6 +33,7 @@ jobs:
           cache: 'pnpm'
           cache-dependency-path: pnpm-lock.yaml
 
+      # required to build the binaries
       - name: Set up Bun
         uses: oven-sh/setup-bun@v2
 
@@ -40,7 +41,10 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build CLI binaries and Generate Checksums
-        run: pnpm --filter @e2b/cli run build:compile
+        run: pnpm run --filter @e2b/cli build:compile
+
+      - name: Test Native Binary
+        run: pnpm run --filter @e2b/cli test:binary
 
       - name: Upload Binaries and Checksum to GitHub Release
         uses: softprops/action-gh-release@v2

@@ -33,6 +33,7 @@ TARGETS=(
   "darwin_x64:bun-darwin-x64:"
   "darwin_arm64:bun-darwin-arm64:"
   "windows_x64:bun-windows-x64:.exe"
+  "linux_arm64:bun-linux-arm64:"
 )
 
 # --- Build Logic ---
