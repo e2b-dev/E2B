@@ -6,9 +6,7 @@ on:
     tags:
       # Match the specific tag format for the CLI package
       - '@e2b/cli@[0-9]+.[0-9]+.[0-9]+'
-      # We might also want to handle tags with pre-release identifiers like -beta.0
-      # - '@e2b/cli@[0-9]+.[0-9]+.[0-9]+-**'
-  workflow_dispatch:
+      # - '@e2b/cli@[0-9]+.[0-9]+.[0-9]+-**' # Optional: for pre-releases
 
 permissions:
   contents: write
@@ -46,7 +44,9 @@ jobs:
       - name: Test Native Binary
         run: pnpm run --filter @e2b/cli test:binary
 
-      - name: Upload Binaries and Checksum to GitHub Release
+      - name: Upload to Tagged Release
+        id: upload_tagged
+        if: startsWith(github.ref, 'refs/tags/@e2b/cli@')
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
