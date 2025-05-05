@@ -53,8 +53,8 @@ sandboxTest.skipIf(isDebug)(
       sandboxId: string
       code: number
     }
-    assert.equal(json.message, 'Sandbox not found')
+    assert.equal(json.message, 'The sandbox was not found')
     assert.isTrue(sandbox.sandboxId.startsWith(json.sandboxId))
-    assert.equal(json.code, 0)
+    assert.equal(json.code, 502)
   }
 )
