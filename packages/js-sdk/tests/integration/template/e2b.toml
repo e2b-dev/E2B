@@ -15,4 +15,4 @@ memory_mb = 512
 start_cmd = "npm run dev"
 dockerfile = "e2b.Dockerfile"
 template_name = "integration-test-v1"
-template_id = "rki5dems9wqfm4r03t7g"
+template_id = "2e2z80zhv34yumbrybvn"
