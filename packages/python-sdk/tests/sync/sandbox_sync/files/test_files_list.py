@@ -1,20 +1,20 @@
 import uuid
 
-from e2b import AsyncSandbox, FileType
+from e2b import Sandbox, FileType
 
 
-async def test_list_directory(async_sandbox: AsyncSandbox):
+def test_list_directory(sandbox: Sandbox):
     home_dir_name = "/home/user"
     parent_dir_name = f"test_directory_{uuid.uuid4()}"
 
-    await async_sandbox.files.make_dir(parent_dir_name)
-    await async_sandbox.files.make_dir(f"{parent_dir_name}/subdir1")
-    await async_sandbox.files.make_dir(f"{parent_dir_name}/subdir2")
-    await async_sandbox.files.make_dir(f"{parent_dir_name}/subdir1/subdir1_1")
-    await async_sandbox.files.make_dir(f"{parent_dir_name}/subdir1/subdir1_2")
-    await async_sandbox.files.make_dir(f"{parent_dir_name}/subdir2/subdir2_1")
-    await async_sandbox.files.make_dir(f"{parent_dir_name}/subdir2/subdir2_2")
-    await async_sandbox.files.write(f"{parent_dir_name}/file1.txt", "Hello, world!")
+    sandbox.files.make_dir(parent_dir_name)
+    sandbox.files.make_dir(f"{parent_dir_name}/subdir1")
+    sandbox.files.make_dir(f"{parent_dir_name}/subdir2")
+    sandbox.files.make_dir(f"{parent_dir_name}/subdir1/subdir1_1")
+    sandbox.files.make_dir(f"{parent_dir_name}/subdir1/subdir1_2")
+    sandbox.files.make_dir(f"{parent_dir_name}/subdir2/subdir2_1")
+    sandbox.files.make_dir(f"{parent_dir_name}/subdir2/subdir2_2")
+    sandbox.files.write(f"{parent_dir_name}/file1.txt", "Hello, world!")
 
     test_cases = [
         {
@@ -124,7 +124,7 @@ async def test_list_directory(async_sandbox: AsyncSandbox):
     ]
 
     for test_case in test_cases:
-        files = await async_sandbox.files.list(
+        files = sandbox.files.list(
             parent_dir_name,
             depth=test_case["depth"] if test_case["depth"] is not None else None,
         )
@@ -136,20 +136,20 @@ async def test_list_directory(async_sandbox: AsyncSandbox):
             assert files[i].path == test_case["expected_file_paths"][i]
             assert files[i].type == test_case["expected_file_types"][i]
 
-    await async_sandbox.files.remove(parent_dir_name)
+    sandbox.files.remove(parent_dir_name)
 
 
-async def test_list_directory_error_cases(async_sandbox: AsyncSandbox):
+def test_list_directory_error_cases(sandbox: Sandbox):
     parent_dir_name = f"test_directory_{uuid.uuid4()}"
-    await async_sandbox.files.make_dir(parent_dir_name)
+    sandbox.files.make_dir(parent_dir_name)
 
     expected_error_message = "depth should be at least 1"
     try:
-        await async_sandbox.files.list(parent_dir_name, depth=-1)
+        sandbox.files.list(parent_dir_name, depth=-1)
         assert False, "Expected error but none was thrown"
     except Exception as err:
         assert expected_error_message in str(
             err
         ), f'expected error message to include "{expected_error_message}"'
 
-    await async_sandbox.files.remove(parent_dir_name)
+    sandbox.files.remove(parent_dir_name)
