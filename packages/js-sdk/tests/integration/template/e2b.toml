@@ -1,5 +1,5 @@
 # This is a config for E2B sandbox template.
-# You can use template ID (rki5dems9wqfm4r03t7g) or template name (integration-test-v1) to create a sandbox:
+# You can use template ID (2e2z80zhv34yumbrybvn) or template name (integration-test-v1) to create a sandbox:
 
 # Python SDK
 # from e2b import Sandbox, AsyncSandbox
