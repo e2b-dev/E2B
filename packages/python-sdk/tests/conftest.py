@@ -66,7 +66,7 @@ def skip_by_debug(request, debug):
 
 class Helpers:
     @staticmethod
-    def wait_for_async_cmd_exit_error_in_background(cmd: AsyncCommandHandle):
+    def catch_cmd_exit_error_in_background(cmd: AsyncCommandHandle):
         disabled = False
 
         async def wait_for_exit():

@@ -2,7 +2,7 @@ import { assert, test } from 'vitest'
 
 import { Sandbox } from '../../src/index.js'
 import { isDebug, template, wait } from '../setup.js'
-import { waitForCmdExitErrorInBackground } from '../cmdHelper.js'
+import { catchCmdExitErrorInBackground } from '../cmdHelper.js'
 
 test.skipIf(isDebug)('closed port in SDK', async () => {
   const sbx = await Sandbox.create(template, { timeoutMs: 60_000 })
@@ -12,7 +12,7 @@ test.skipIf(isDebug)('closed port in SDK', async () => {
     background: true,
   })
 
-  const disable = waitForCmdExitErrorInBackground(cmd)
+  const disable = catchCmdExitErrorInBackground(cmd)
 
   const goodHost = sbx.getHost(goodPort)
   // leave this here as a helper to visit host in browser
@@ -56,7 +56,7 @@ test.skipIf(isDebug)('closed port in browser  ', async () => {
     background: true,
   })
 
-  const disable = waitForCmdExitErrorInBackground(cmd)
+  const disable = catchCmdExitErrorInBackground(cmd)
 
   await wait(1000)
 
