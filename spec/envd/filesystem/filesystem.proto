@@ -62,6 +62,7 @@ enum FileType {
 
 message ListDirRequest {
     string path = 1;
+    uint32 depth = 2;
 }
 
 message ListDirResponse {

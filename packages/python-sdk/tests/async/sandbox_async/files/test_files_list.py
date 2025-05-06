@@ -4,15 +4,152 @@ from e2b import AsyncSandbox, FileType
 
 
 async def test_list_directory(async_sandbox: AsyncSandbox):
-    dir_name = f"test_directory_{uuid.uuid4()}"
+    home_dir_name = "/home/user"
+    parent_dir_name = f"test_directory_{uuid.uuid4()}"
 
-    await async_sandbox.files.make_dir(dir_name)
-    files = await async_sandbox.files.list(dir_name)
-    assert len(files) == 0
+    await async_sandbox.files.make_dir(parent_dir_name)
+    await async_sandbox.files.make_dir(f"{parent_dir_name}/subdir1")
+    await async_sandbox.files.make_dir(f"{parent_dir_name}/subdir2")
+    await async_sandbox.files.make_dir(f"{parent_dir_name}/subdir1/subdir1_1")
+    await async_sandbox.files.make_dir(f"{parent_dir_name}/subdir1/subdir1_2")
+    await async_sandbox.files.make_dir(f"{parent_dir_name}/subdir2/subdir2_1")
+    await async_sandbox.files.make_dir(f"{parent_dir_name}/subdir2/subdir2_2")
+    await async_sandbox.files.write(f"{parent_dir_name}/file1.txt", "Hello, world!")
 
-    await async_sandbox.files.write(f"{dir_name}/test_file", "test")
-    files1 = await async_sandbox.files.list(dir_name)
-    assert len(files1) == 1
-    assert files1[0].name == "test_file"
-    assert files1[0].type == FileType.FILE
-    assert files1[0].path == f"/home/user/{dir_name}/test_file"
+    test_cases = [
+        {
+            "name": "default depth (1)",
+            "depth": None,
+            "expected_len": 3,
+            "expected_file_names": [
+                "file1.txt",
+                "subdir1",
+                "subdir2",
+            ],
+            "expected_file_types": [
+                FileType.FILE,
+                FileType.DIR,
+                FileType.DIR,
+            ],
+            "expected_file_paths": [
+                f"{home_dir_name}/{parent_dir_name}/file1.txt",
+                f"{home_dir_name}/{parent_dir_name}/subdir1",
+                f"{home_dir_name}/{parent_dir_name}/subdir2",
+            ],
+        },
+        {
+            "name": "explicit depth 1",
+            "depth": 1,
+            "expected_len": 3,
+            "expected_file_names": [
+                "file1.txt",
+                "subdir1",
+                "subdir2",
+            ],
+            "expected_file_types": [
+                FileType.FILE,
+                FileType.DIR,
+                FileType.DIR,
+            ],
+            "expected_file_paths": [
+                f"{home_dir_name}/{parent_dir_name}/file1.txt",
+                f"{home_dir_name}/{parent_dir_name}/subdir1",
+                f"{home_dir_name}/{parent_dir_name}/subdir2",
+            ],
+        },
+        {
+            "name": "explicit depth 2",
+            "depth": 2,
+            "expected_len": 7,
+            "expected_file_types": [
+                FileType.FILE,
+                FileType.DIR,
+                FileType.DIR,
+                FileType.DIR,
+                FileType.DIR,
+                FileType.DIR,
+                FileType.DIR,
+            ],
+            "expected_file_names": [
+                "file1.txt",
+                "subdir1",
+                "subdir1_1",
+                "subdir1_2",
+                "subdir2",
+                "subdir2_1",
+                "subdir2_2",
+            ],
+            "expected_file_paths": [
+                f"{home_dir_name}/{parent_dir_name}/file1.txt",
+                f"{home_dir_name}/{parent_dir_name}/subdir1",
+                f"{home_dir_name}/{parent_dir_name}/subdir1/subdir1_1",
+                f"{home_dir_name}/{parent_dir_name}/subdir1/subdir1_2",
+                f"{home_dir_name}/{parent_dir_name}/subdir2",
+                f"{home_dir_name}/{parent_dir_name}/subdir2/subdir2_1",
+                f"{home_dir_name}/{parent_dir_name}/subdir2/subdir2_2",
+            ],
+        },
+        {
+            "name": "explicit depth 3 (should be the same as depth 2)",
+            "depth": 3,
+            "expected_len": 7,
+            "expected_file_names": [
+                "file1.txt",
+                "subdir1",
+                "subdir1_1",
+                "subdir1_2",
+                "subdir2",
+                "subdir2_1",
+                "subdir2_2",
+            ],
+            "expected_file_types": [
+                FileType.FILE,
+                FileType.DIR,
+                FileType.DIR,
+                FileType.DIR,
+                FileType.DIR,
+                FileType.DIR,
+                FileType.DIR,
+            ],
+            "expected_file_paths": [
+                f"{home_dir_name}/{parent_dir_name}/file1.txt",
+                f"{home_dir_name}/{parent_dir_name}/subdir1",
+                f"{home_dir_name}/{parent_dir_name}/subdir1/subdir1_1",
+                f"{home_dir_name}/{parent_dir_name}/subdir1/subdir1_2",
+                f"{home_dir_name}/{parent_dir_name}/subdir2",
+                f"{home_dir_name}/{parent_dir_name}/subdir2/subdir2_1",
+                f"{home_dir_name}/{parent_dir_name}/subdir2/subdir2_2",
+            ],
+        },
+    ]
+
+    for test_case in test_cases:
+        files = await async_sandbox.files.list(
+            parent_dir_name,
+            depth=test_case["depth"] if test_case["depth"] is not None else None,
+        )
+
+        assert len(files) == test_case["expected_len"]
+
+        for i in range(len(test_case["expected_file_names"])):
+            assert files[i].name == test_case["expected_file_names"][i]
+            assert files[i].path == test_case["expected_file_paths"][i]
+            assert files[i].type == test_case["expected_file_types"][i]
+
+    await async_sandbox.files.remove(parent_dir_name)
+
+
+async def test_list_directory_error_cases(async_sandbox: AsyncSandbox):
+    parent_dir_name = f"test_directory_{uuid.uuid4()}"
+    await async_sandbox.files.make_dir(parent_dir_name)
+
+    expected_error_message = "depth should be at least 1"
+    try:
+        await async_sandbox.files.list(parent_dir_name, depth=-1)
+        assert False, "Expected error but none was thrown"
+    except Exception as err:
+        assert expected_error_message in str(
+            err
+        ), f'expected error message to include "{expected_error_message}"'
+
+    await async_sandbox.files.remove(parent_dir_name)
