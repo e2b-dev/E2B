@@ -1,7 +1,6 @@
 import { Sandbox } from '../src'
 import { test as base } from 'vitest'
-
-export const template = 'base'
+import { template } from './template'
 
 interface SandboxFixture {
   sandbox: Sandbox
@@ -9,7 +8,7 @@ interface SandboxFixture {
 
 export const sandboxTest = base.extend<SandboxFixture>({
   sandbox: [
-    async ({}, use) => {
+    async ({ }, use) => {
       const sandbox = await Sandbox.create(template)
       try {
         await use(sandbox)
@@ -25,7 +24,7 @@ export const sandboxTest = base.extend<SandboxFixture>({
         }
       }
     },
-    { auto: true },
+    { auto: false },
   ],
 })
 
@@ -35,3 +34,5 @@ export const isIntegrationTest = process.env.E2B_INTEGRATION_TEST !== undefined
 export async function wait(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
+
+export { template }

@@ -15,9 +15,9 @@ def test_list_sandboxes(sandbox: Sandbox):
 
 
 @pytest.mark.skip_debug()
-def test_list_sandboxes_with_filter(sandbox: Sandbox):
+def test_list_sandboxes_with_filter(template):
     unique_id = "".join(random.choices(string.ascii_letters, k=5))
-    Sandbox(metadata={"unique_id": unique_id})
+    Sandbox(template=template, metadata={"unique_id": unique_id})
     sandboxes = Sandbox.list(query=SandboxQuery(metadata={"unique_id": unique_id}))
     assert len(sandboxes) == 1
     assert sandboxes[0].metadata["unique_id"] == unique_id

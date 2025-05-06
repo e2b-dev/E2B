@@ -1,10 +1,18 @@
+import asyncio
+
 import pytest
 import pytest_asyncio
 import os
 
 from logging import warning
 
-from e2b import Sandbox, AsyncSandbox
+from e2b import (
+    Sandbox,
+    AsyncSandbox,
+    AsyncCommandHandle,
+    CommandExitException,
+    CommandHandle,
+)
 
 
 @pytest.fixture()
@@ -54,3 +62,40 @@ def skip_by_debug(request, debug):
     if request.node.get_closest_marker("skip_debug"):
         if debug:
             pytest.skip("skipped because E2B_DEBUG is set")
+
+
+class Helpers:
+    @staticmethod
+    def catch_cmd_exit_error_in_background(cmd: AsyncCommandHandle):
+        disabled = False
+
+        async def wait_for_exit():
+            try:
+                await cmd.wait()
+            except CommandExitException as e:
+                if not disabled:
+                    assert (
+                        False
+                    ), f"command failed with exit code {e.exit_code}: {e.stderr}"
+
+        asyncio.create_task(wait_for_exit())
+
+        def disable():
+            nonlocal disabled
+            disabled = True
+
+        return disable
+
+    @staticmethod
+    def check_cmd_exit_error(cmd: CommandHandle):
+        try:
+            cmd.wait()
+        except CommandExitException as e:
+            assert False, f"command failed with exit code {e.exit_code}: {e.stderr}"
+        except Exception as e:
+            raise e
+
+
+@pytest.fixture
+def helpers():
+    return Helpers

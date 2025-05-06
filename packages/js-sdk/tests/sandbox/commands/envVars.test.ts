@@ -1,6 +1,6 @@
 import { assert } from 'vitest'
 
-import { sandboxTest, isDebug } from '../../setup.js'
+import { sandboxTest, isDebug, template } from '../../setup.js'
 import { Sandbox } from '../../../src'
 
 sandboxTest.skipIf(isDebug)('env vars', async ({ sandbox }) => {
@@ -11,7 +11,7 @@ sandboxTest.skipIf(isDebug)('env vars', async ({ sandbox }) => {
 })
 
 sandboxTest.skipIf(isDebug)('env vars on sandbox', async () => {
-  const sandbox = await Sandbox.create({ envs: { FOO: 'bar' } })
+  const sandbox = await Sandbox.create(template, { envs: { FOO: 'bar' } })
 
   try {
     const cmd = await sandbox.commands.run('echo "$FOO"')
