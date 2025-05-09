@@ -1,13 +1,15 @@
 import { assert } from 'vitest'
 
 import { isDebug, sandboxTest, wait } from '../setup.js'
-
+import { catchCmdExitErrorInBackground } from '../cmdHelper.js'
 sandboxTest(
   'ping server in running sandbox',
   async ({ sandbox }) => {
     const cmd = await sandbox.commands.run('python -m http.server 8000', {
       background: true,
     })
+
+    const disable = catchCmdExitErrorInBackground(cmd)
 
     try {
       await wait(1000)
@@ -25,6 +27,7 @@ sandboxTest(
         await wait(500)
       }
       assert.equal(res.status, 200)
+      disable()
     } finally {
       try {
         await cmd.kill()

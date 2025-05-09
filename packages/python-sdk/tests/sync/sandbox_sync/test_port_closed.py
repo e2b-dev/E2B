@@ -5,14 +5,14 @@ import time
 from e2b import Sandbox
 
 
-def test_port_closed(template):
+def test_port_closed(template, helpers):
     sbx = Sandbox(template, timeout=60)
     try:
         assert sbx.is_running()
 
         good_port = 8004
         # Start a Python HTTP server on port 8004
-        sbx.commands.run(
+        cmd = sbx.commands.run(
             f"python -m http.server {good_port}",
             background=True,
         )
@@ -50,5 +50,8 @@ def test_port_closed(template):
             assert resp["message"] == "The sandbox is running but port is not open"
             assert cleaned_sbx_id == resp["sandboxId"]
             assert resp["port"] == bad_port
+    except Exception as e:
+        helpers.check_cmd_exit_error(cmd)
+        raise e
     finally:
         sbx.kill()

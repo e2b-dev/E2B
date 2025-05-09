@@ -10,8 +10,8 @@
 # import { Sandbox } from 'e2b'
 # const sandbox = await Sandbox.create('integration-test-v1')
 
-team_id = "b9c07023-d095-4bdc-9634-e25d5530ba47"
-memory_mb = 1_024
+team_id = "460355b3-4f64-48f9-9a16-4442817f79f5"
+memory_mb = 512
 start_cmd = "npm run dev"
 dockerfile = "e2b.Dockerfile"
 template_name = "integration-test-v1"

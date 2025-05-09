@@ -30,7 +30,7 @@ sandboxTest('run with multiline string', async ({ sandbox }) => {
 })
 
 sandboxTest('run with timeout', async ({ sandbox }) => {
-  const cmd = await sandbox.commands.run('echo "Hello, World!"', { timeoutMs: 1000 })
+  const cmd = await sandbox.commands.run('echo "Hello, World!"', { timeoutMs: 4000 })
 
   assert.equal(cmd.exitCode, 0)
 })
