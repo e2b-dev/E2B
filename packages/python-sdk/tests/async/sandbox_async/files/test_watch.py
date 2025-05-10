@@ -112,3 +112,11 @@ async def test_watch_file(async_sandbox: AsyncSandbox):
 
     with pytest.raises(SandboxException):
         await async_sandbox.files.watch_dir(filename, on_event=lambda e: None)
+
+async def test_watch_file_with_secured_envd(template):
+    sbx = await AsyncSandbox.create(template, timeout=30, secure=True)
+    try:
+        await sbx.files.watch_dir("/home/user/", on_event=lambda e: None)
+        await sbx.files.write("test_watch.txt", "This file will be watched.")
+    finally:
+        await sbx.kill()

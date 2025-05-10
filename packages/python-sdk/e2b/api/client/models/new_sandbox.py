@@ -17,6 +17,7 @@ class NewSandbox:
         auto_pause (Union[Unset, bool]): Automatically pauses the sandbox after the timeout Default: False.
         env_vars (Union[Unset, Any]):
         metadata (Union[Unset, Any]):
+        secure (Union[Unset, bool]): Secure all system communication with sandbox
         timeout (Union[Unset, int]): Time to live for the sandbox in seconds. Default: 15.
     """
 
@@ -24,6 +25,7 @@ class NewSandbox:
     auto_pause: Union[Unset, bool] = False
     env_vars: Union[Unset, Any] = UNSET
     metadata: Union[Unset, Any] = UNSET
+    secure: Union[Unset, bool] = UNSET
     timeout: Union[Unset, int] = 15
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
@@ -35,6 +37,8 @@ class NewSandbox:
         env_vars = self.env_vars
 
         metadata = self.metadata
+
+        secure = self.secure
 
         timeout = self.timeout
 
@@ -51,6 +55,8 @@ class NewSandbox:
             field_dict["envVars"] = env_vars
         if metadata is not UNSET:
             field_dict["metadata"] = metadata
+        if secure is not UNSET:
+            field_dict["secure"] = secure
         if timeout is not UNSET:
             field_dict["timeout"] = timeout
 
@@ -67,6 +73,8 @@ class NewSandbox:
 
         metadata = d.pop("metadata", UNSET)
 
+        secure = d.pop("secure", UNSET)
+
         timeout = d.pop("timeout", UNSET)
 
         new_sandbox = cls(
@@ -74,6 +82,7 @@ class NewSandbox:
             auto_pause=auto_pause,
             env_vars=env_vars,
             metadata=metadata,
+            secure=secure,
             timeout=timeout,
         )
 

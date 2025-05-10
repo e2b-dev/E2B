@@ -21,7 +21,10 @@ class SandboxInfo:
     """Sandbox start time."""
     end_at: datetime
     """Sandbox expiration date."""
-
+    envd_access_token: Optional[str]
+    """EnvD access token."""
+    envd_version: Optional[str]
+    """EnvD version."""
 
 @dataclass
 class SandboxQuery:
