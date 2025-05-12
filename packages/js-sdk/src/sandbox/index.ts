@@ -10,7 +10,7 @@ import { createRpcLogger } from '../logs'
 import { Commands, Pty } from './commands'
 import { Filesystem } from './filesystem'
 import { SandboxApi } from './sandboxApi'
-import crypto from 'crypto'
+import crypto from 'node:crypto'
 
 /**
  * Options for creating a new Sandbox.
