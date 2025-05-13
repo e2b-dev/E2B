@@ -325,6 +325,38 @@ class Filesystem:
                     return False
             raise handle_rpc_exception(e)
 
+    async def get_info(
+        self,
+        path: str,
+        user: Username = "user",
+        request_timeout: Optional[float] = None,
+    ) -> EntryInfo:
+        """
+        Get information about a file or directory.
+
+        :param path: Path to a file or a directory
+        :param user: Run the operation as this user
+        :param request_timeout: Timeout for the request in **seconds**
+
+        :return: Information about the file or directory like name, type, and path
+        """
+        try:
+            r = await self._rpc.astat(
+                filesystem_pb2.StatRequest(path=path),
+                request_timeout=self._connection_config.get_request_timeout(
+                    request_timeout
+                ),
+                headers=authentication_header(user),
+            )
+
+            return EntryInfo(
+                name=r.entry.name,
+                type=map_file_type(r.entry.type),
+                path=r.entry.path,
+            )
+        except Exception as e:
+            raise handle_rpc_exception(e)
+
     async def remove(
         self,
         path: str,
