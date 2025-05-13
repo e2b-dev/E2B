@@ -84,6 +84,7 @@ export interface ListedSandbox {
 
   /**
    * Client ID.
+   * @deprecated
    */
   clientId: string;
 
