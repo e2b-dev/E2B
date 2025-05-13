@@ -1,6 +1,7 @@
-import {assert, test} from 'vitest'
-import {Sandbox} from '../../src'
-import {template} from '../setup'
+import { assert, test } from 'vitest'
+import { getSignature, Sandbox } from '../../src'
+import  {template } from '../setup'
+import { randomUUID, createHash } from 'node:crypto'
 
 const timeout = 20 * 1000
 
@@ -15,7 +16,7 @@ test('test access file without signing', async () => {
     const resStatus = res.status
 
     assert.equal(resStatus, 401)
-    assert.equal(JSON.parse(resBody), {code: 401, message: 'missing signature query parameter'})
+    assert.deepEqual(JSON.parse(resBody), {code: 401, message: 'missing signature query parameter'})
 
     await sbx.kill()
 })
@@ -24,7 +25,7 @@ test('test access file with signing', async () => {
     const sbx = await Sandbox.create(template, { timeoutMs: timeout, secure: true })
     await sbx.files.write('hello.txt', 'hello world')
 
-    const fileUrlWithSigning = sbx.downloadUrl('hello.txt', true)
+    const fileUrlWithSigning = sbx.downloadUrl('hello.txt', { useSignature: true })
 
     const res = await fetch(fileUrlWithSigning)
     const resBody = await res.text()
@@ -42,4 +43,62 @@ test('try to re-connect to sandbox', async () => {
 
     await sbxReconnect.files.write('hello.txt', 'hello world')
     await sbxReconnect.kill()
+})
+
+test('signing generation', async () => {
+    const operation = 'read'
+    const path = '/home/user/hello.txt'
+    const user = 'root'
+    const envdAccessToken = randomUUID()
+
+    const signatureRaw = `${path}:${operation}:${user}:${envdAccessToken}`
+
+    const buff = Buffer.from(signatureRaw, 'utf8')
+    const hash = createHash('sha256').update(buff).digest()
+    const signature =  'v1_' + hash.toString('base64').replace(/=+$/, '')
+
+    const readSignatureExpected = {
+        signature: signature,
+        expiration: null
+    }
+
+    const readSignatureReceived =  getSignature({ path, operation, user, envdAccessToken })
+
+    assert.deepEqual(readSignatureExpected, readSignatureReceived)
+})
+
+test('signing generation with expiration', async () => {
+    const operation = 'read'
+    const path = '/home/user/hello.txt'
+    const user = 'root'
+    const envdAccessToken = randomUUID()
+    const expirationInSeconds = 120
+
+    const signatureExpiration = expirationInSeconds ? Math.floor(Date.now() / 1000) + expirationInSeconds : null
+    const signatureRaw = `${path}:${operation}:${user}:${envdAccessToken}:${signatureExpiration.toString()}`
+
+    const buff = Buffer.from(signatureRaw, 'utf8')
+    const hash = createHash('sha256').update(buff).digest()
+    const signature =  'v1_' + hash.toString('base64').replace(/=+$/, '')
+
+    const readSignatureExpected = {
+        signature: signature,
+        expiration: signatureExpiration
+    }
+
+    const readSignatureReceived =  getSignature({ path, operation, user, envdAccessToken, expirationInSeconds })
+
+    assert.deepEqual(readSignatureExpected, readSignatureReceived)
+})
+
+
+test('static signing key comparison', async () => {
+    const operation = 'read'
+    const path = 'hello.txt'
+    const user = 'user'
+    const envdAccessToken = '0tQG31xiMp0IOQfaz9dcwi72L1CPo8e0'
+
+    const signatureReceived =  getSignature({ path, operation, user, envdAccessToken })
+
+    assert.equal('v1_gUtH/s9YCJWgCizjfUxuWfhFE4QSydOWEIIvfLwDr6E', signatureReceived.signature)
 })

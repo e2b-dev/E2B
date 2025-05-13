@@ -10,7 +10,7 @@ import { createRpcLogger } from '../logs'
 import { Commands, Pty } from './commands'
 import { Filesystem } from './filesystem'
 import { SandboxApi } from './sandboxApi'
-import crypto from 'node:crypto'
+import { getSignature } from './signature'
 
 /**
  * Options for creating a new Sandbox.
@@ -47,6 +47,25 @@ export interface SandboxOpts extends ConnectionOpts {
    * @default false
    */
   secure?: boolean
+}
+
+/**
+ * Options for sandbox upload/download URL generation.
+ */
+export interface SandboxUrlOpts {
+  /**
+   * Use signature for the URL.
+   * This needs to be used in case of using secured envd in sandbox.
+   *
+   * @default false
+   */
+  useSignature?: true,
+
+  /**
+   * Use signature expiration for the URL.
+   * Optional parameter to set the expiration time for the signature.
+   */
+  useSignatureExpiration?: number
 }
 
 /**
@@ -365,28 +384,31 @@ export class Sandbox extends SandboxApi {
    *
    * You have to send a POST request to this URL with the file as multipart/form-data.
    *
-   * @param path the directory where to upload the file, defaults to user's home directory.
+   * @param path path to the file in the sandbox.
    *
-   * @param useSignature URL will be signed with the access token, this can be used for uploading files to the sandbox from a different environment (e.g. browser).
-   *
-   * @param signatureExpirationInSeconds URL will be signed with the access token, this can be used for uploading files to the sandbox from a different environment (e.g. browser).
+   * @param opts download url options.
    *
    * @returns URL for uploading file.
    */
-  uploadUrl(path?: string, useSignature?: boolean, signatureExpirationInSeconds?: number) {
-    if (!this.envdAccessToken && (useSignature != undefined || signatureExpirationInSeconds != undefined)) {
+  uploadUrl(path?: string, opts?: SandboxUrlOpts) {
+    opts = opts ?? {}
+
+    if (!this.envdAccessToken && (opts.useSignature || opts.useSignatureExpiration != undefined)) {
       throw new Error('Signature can be used only when sandbox is spawned with secure option.')
     }
 
-    if (useSignature == undefined && signatureExpirationInSeconds != undefined) {
+    if (!opts.useSignature && opts.useSignatureExpiration != undefined) {
       throw new Error('Signature expiration can be used only when signature is set to true.')
     }
 
-    const fileUrl = this.fileUrl(path, defaultUsername)
+    const filePath = path ?? ''
+    const fileUrl = this.fileUrl(filePath, defaultUsername)
 
-    if (useSignature) {
+    if (opts.useSignature) {
       const url = new URL(fileUrl)
-      const sig = this.getSignature(path ?? '', 'write', defaultUsername, signatureExpirationInSeconds)
+      const sig = getSignature(
+          { path: filePath, operation: 'write', user: defaultUsername, expirationInSeconds: opts.useSignatureExpiration, envdAccessToken: this.envdAccessToken}
+      )
 
       url.searchParams.set('signature', sig.signature)
       if (sig.expiration) {
@@ -402,28 +424,31 @@ export class Sandbox extends SandboxApi {
   /**
    * Get the URL to download a file from the sandbox.
    *
-   * @param path path to the file to download.
+   * @param path path to the file in the sandbox.
    *
-   * @param useSignature URL will be signed with the access token, this can be used for uploading files to the sandbox from a different environment (e.g. browser).
-   *
-   * @param signatureExpirationInSeconds URL will be signed with the access token, this can be used for uploading files to the sandbox from a different environment (e.g. browser).
+   * @param opts download url options.
    *
    * @returns URL for downloading file.
    */
-  downloadUrl(path: string, useSignature?: boolean, signatureExpirationInSeconds?: number) {
-    if (!this.envdAccessToken && (useSignature != undefined || signatureExpirationInSeconds != undefined)) {
+  downloadUrl(path: string, opts?: SandboxUrlOpts) { //path: string, useSignature?: boolean, signatureExpirationInSeconds?: number) {
+    opts = opts ?? {}
+
+    if (!this.envdAccessToken && (opts.useSignature || opts.useSignatureExpiration != undefined)) {
       throw new Error('Signature can be used only when sandbox is spawned with secure option.')
     }
 
-    if (useSignature == undefined && signatureExpirationInSeconds != undefined) {
+    if (!opts.useSignature && opts.useSignatureExpiration != undefined) {
       throw new Error('Signature expiration can be used only when signature is set to true.')
     }
 
     const fileUrl = this.fileUrl(path, defaultUsername)
 
-    if (useSignature) {
+    if (opts.useSignature) {
       const url = new URL(fileUrl)
-      const sig = this.getSignature(path, 'read', defaultUsername, signatureExpirationInSeconds)
+      const sig = getSignature(
+          { path, operation: 'read', user: defaultUsername, expirationInSeconds: opts.useSignatureExpiration, envdAccessToken: this.envdAccessToken}
+      )
+
       url.searchParams.set('signature', sig.signature)
       if (sig.expiration) {
         url.searchParams.set('signature_expiration', sig.expiration.toString())
@@ -435,15 +460,6 @@ export class Sandbox extends SandboxApi {
     return fileUrl
   }
 
-  private fileUrl(path?: string, username?:  string) {
-    const url = new URL('/files', this.envdApiUrl)
-    url.searchParams.set('username', username ?? defaultUsername)
-    if (path) {
-      url.searchParams.set('path', path)
-    }
-
-    return url.toString()
-  }
 
   /**
    * Get sandbox information like sandbox ID, template, metadata, started at/end at date.
@@ -459,28 +475,15 @@ export class Sandbox extends SandboxApi {
     })
   }
 
-  private getSignature(filePath: string, fileOperation: 'read' | 'write', user: string, expirationInSeconds?: number): { signature: string; expiration: number | null } {
-    if (!this.envdAccessToken) {
-      throw new Error('Access token is not set and signature cannot be generated!')
+
+  private fileUrl(path?: string, username?:  string) {
+    const url = new URL('/files', this.envdApiUrl)
+
+    url.searchParams.set('username', username ?? defaultUsername)
+    if (path) {
+      url.searchParams.set('path', path)
     }
 
-    // expiration is unix timestamp
-    const signatureExpiration = expirationInSeconds ? Math.floor(Date.now() / 1000) + expirationInSeconds : null
-    let signatureRaw: string
-
-    if (signatureExpiration === undefined || signatureExpiration === null) {
-      signatureRaw = `${filePath}:${fileOperation}:${user}:${this.envdAccessToken}`
-    } else {
-      signatureRaw = `${filePath}:${fileOperation}:${user}:${this.envdAccessToken}:${signatureExpiration.toString()}`
-    }
-
-    const buff = Buffer.from(signatureRaw, 'utf8')
-    const hash = crypto.createHash('sha256').update(buff).digest()
-    const signature =  'v1_' + hash.toString('base64').replace(/=+$/, '')
-
-    return {
-        signature: signature,
-        expiration: signatureExpiration
-    }
+    return url.toString()
   }
 }
