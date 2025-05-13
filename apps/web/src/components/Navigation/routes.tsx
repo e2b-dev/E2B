@@ -1,4 +1,10 @@
-import { Braces, CheckCircle, Home, KeyRound, MessagesSquare } from 'lucide-react'
+import {
+  Braces,
+  CheckCircle,
+  Home,
+  KeyRound,
+  MessagesSquare,
+} from 'lucide-react'
 import sdkRefRoutesJson from './sdkRefRoutes.json'
 
 enum Tag {
@@ -352,6 +358,10 @@ export const docRoutes: NavGroup[] = [
       {
         title: 'Read & write',
         href: '/docs/filesystem/read-write',
+      },
+      {
+        title: 'Get information about a file or directory',
+        href: '/docs/filesystem/info',
       },
       {
         title: 'Watch directory for changes',
