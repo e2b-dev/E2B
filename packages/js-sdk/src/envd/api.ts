@@ -107,7 +107,7 @@ class EnvdApiClient {
       baseUrl: config.apiUrl,
       fetch: config?.fetch,
       headers: config?.headers,
-      keepalive: true,
+      // keepalive: true, // TODO: Return keepalive
     })
     this.version = metadata.version
 
