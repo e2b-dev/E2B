@@ -66,6 +66,59 @@ export interface SandboxInfo {
   endAt: Date
 }
 
+export interface ListedSandbox {
+  /**
+   * Sandbox ID.
+   */
+  sandboxId: string
+
+  /**
+   * Template ID alias.
+   */
+  alias?: string;
+
+  /**
+   * Template ID.
+   */
+  templateId: string;
+
+  /**
+   * Client ID.
+   */
+  clientId: string;
+
+  /**
+   * Sandbox state.
+   */
+  state: 'running' | 'paused';
+
+  /**
+   * Sandbox CPU count.
+   */
+  cpuCount: number;
+
+  /**
+   * Sandbox Memory size in MB.
+   */
+  memoryMB: number;
+
+  /**
+   * Saved sandbox metadata.
+   */
+  metadata?: Record<string, string>
+
+  /**
+   * Sandbox expected end time.
+   */
+  endAt: Date;
+
+  /**
+   * Sandbox start time.
+   */
+  startedAt: Date;
+}
+
+
 export class SandboxApi {
   protected constructor() {}
 
@@ -112,7 +165,7 @@ export class SandboxApi {
    *
    * @returns list of running sandboxes.
    */
-  static async list(opts?: SandboxListOpts): Promise<SandboxInfo[]> {
+  static async list(opts?: SandboxListOpts): Promise<ListedSandbox[]> {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
 
@@ -143,13 +196,14 @@ export class SandboxApi {
 
     return (
       res.data?.map((sandbox: components['schemas']['ListedSandbox']) => ({
-        sandboxId: this.getSandboxId({
-          sandboxId: sandbox.sandboxID,
-          clientId: sandbox.clientID,
-        }),
+        sandboxId: this.getSandboxId({ sandboxId: sandbox.sandboxID, clientId: sandbox.clientID }),
         templateId: sandbox.templateID,
-        ...(sandbox.alias && { name: sandbox.alias }),
-        metadata: sandbox.metadata ?? {},
+        clientId: sandbox.clientID,
+        state: sandbox.state,
+        cpuCount: sandbox.cpuCount,
+        memoryMB: sandbox.memoryMB,
+        alias: sandbox.alias,
+        metadata: sandbox.metadata,
         startedAt: new Date(sandbox.startedAt),
         endAt: new Date(sandbox.endAt),
       })) ?? []
