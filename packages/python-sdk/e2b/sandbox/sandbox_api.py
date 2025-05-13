@@ -22,9 +22,25 @@ class SandboxInfo:
     end_at: datetime
     """Sandbox expiration date."""
     envd_access_token: Optional[str]
-    """EnvD access token."""
+    """Envd access token."""
     envd_version: Optional[str]
-    """EnvD version."""
+    """Envd version."""
+
+@dataclass
+class ListedSandbox:
+    """Information about a sandbox."""
+
+    sandbox_id: str
+    """Sandbox ID."""
+    template_id: str
+    """Template ID."""
+    name: Optional[str]
+    """Template name."""
+    metadata: Dict[str, str]
+    """Saved sandbox metadata."""
+    started_at: datetime
+    """Sandbox start time."""
+    end_at: datetime
 
 @dataclass
 class SandboxQuery:
