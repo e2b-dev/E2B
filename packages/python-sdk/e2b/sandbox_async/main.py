@@ -95,7 +95,7 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
         return self._envd_api_url
 
     @property
-    def envd_access_token(self) -> str | None:
+    def envd_access_token(self) -> Optional[str]:
         """
         Envd access token for the sandbox.
         """

@@ -28,7 +28,7 @@ class SandboxSetup(ABC):
 
     @property
     @abstractmethod
-    def envd_access_token(self) -> str | None:
+    def envd_access_token(self) -> Optional[str]:
         ...
 
     @property
@@ -62,7 +62,7 @@ class SandboxSetup(ABC):
 
         return url
 
-    def download_url(self, path: str, user: str = "user", use_signature: bool = False, use_signature_expiration: int | None = None) -> str:
+    def download_url(self, path: str, user: str = "user", use_signature: bool = False, use_signature_expiration: Optional[int] = None) -> str:
         """
         Get the URL to download a file from the sandbox.
 
@@ -80,7 +80,7 @@ class SandboxSetup(ABC):
         else:
             return self._file_url(path)
 
-    def upload_url(self, path: Optional[str] = None, user: str = "user", use_signature: bool = False, use_signature_expiration: int | None = None) -> str:
+    def upload_url(self, path: Optional[str] = None, user: str = "user", use_signature: bool = False, use_signature_expiration: Optional[int] = None) -> str:
         """
         Get the URL to upload a file to the sandbox.
 
