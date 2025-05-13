@@ -16,8 +16,8 @@ def get_signature(
     path: str,
     operation: Operation,
     user: str,
-    envd_access_token: str | None,
-    expiration_in_seconds: int | None = None,
+    envd_access_token: Optional[str],
+    expiration_in_seconds: Optional[int] = None,
 ) -> Signature:
     """
     Generate a v1 signature for sandbox file URLs.

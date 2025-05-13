@@ -186,6 +186,7 @@ class Sandbox(SandboxSetup, SandboxApi):
         self._envd_api = httpx.Client(
             base_url=self.envd_api_url,
             transport=self._transport,
+            headers=self.connection_config.headers,
         )
 
         self._filesystem = Filesystem(
