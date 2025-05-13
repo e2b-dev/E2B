@@ -1,4 +1,5 @@
 import io
+import uuid
 
 from e2b.sandbox.filesystem.filesystem import EntryInfo
 from e2b.sandbox_sync.main import Sandbox
@@ -123,7 +124,7 @@ def test_write_to_non_existing_directory(sandbox):
 
 
 def test_write_with_secured_envd(template):
-    filename = "non_existing_dir/test_write.txt"
+    filename = f"non_existing_dir_{uuid.uuid4()}/test_write.txt"
     content = "This should succeed too."
 
     sbx = Sandbox(template, timeout=30, secure=True)
