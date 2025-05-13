@@ -101,8 +101,6 @@ class Sandbox(SandboxSetup, SandboxApi):
         sandbox_id: Optional[str] = None,
         request_timeout: Optional[float] = None,
         proxy: Optional[ProxyTypes] = None,
-        envd_access_token: Optional[str] = None,
-        envd_version: Optional[str] = None,
     ):
         """
         Create a new sandbox.
@@ -134,14 +132,16 @@ class Sandbox(SandboxSetup, SandboxApi):
             self._envd_version = None
             self._envd_access_token = None
         elif sandbox_id is not None:
-            self._sandbox_id = sandbox_id
-            self._envd_version = envd_version
-            self._envd_access_token = envd_access_token
+            response = SandboxApi.get_info(sandbox_id)
 
-            if envd_access_token is not None and not isinstance(
-                envd_access_token, Unset
+            self._sandbox_id = sandbox_id
+            self._envd_version = response.envd_version
+            self._envd_access_token = response.envd_access_token
+
+            if response.envd_access_token is not None and not isinstance(
+                    response.envd_access_token, Unset
             ):
-                connection_headers["X-Access-Token"] = envd_access_token
+                connection_headers["X-Access-Token"] = response.envd_access_token
         else:
             template = template or self.default_template
             timeout = timeout or self.default_sandbox_timeout
@@ -267,16 +267,12 @@ class Sandbox(SandboxSetup, SandboxApi):
         ```
         """
 
-        response = SandboxApi.get_info(sandbox_id)
-
         return cls(
             sandbox_id=sandbox_id,
             api_key=api_key,
             domain=domain,
             debug=debug,
             proxy=proxy,
-            envd_version=response.envd_version,
-            envd_access_token=response.envd_access_token,
         )
 
     def __enter__(self):
