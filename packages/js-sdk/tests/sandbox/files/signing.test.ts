@@ -15,7 +15,7 @@ test('test access file with expired signing', async () => {
     const resStatus = res.status
 
     assert.equal(resStatus, 401)
-    assert.equal(resBody, '{"code":401,"message":"signature is already expired"}\n')
+    assert.equal(JSON.parse(resBody), {code: 401, message: 'signature is already expired'})
 
     await sbx.kill()
 })
@@ -48,7 +48,7 @@ test('test upload file with valid signing', async () => {
     const resStatus = res.status
 
     assert.equal(resStatus, 200)
-    assert.equal(resBody, '[{"name":"hello.txt","path":"/home/user/hello.txt","type":"file"}]')
+    assert.equal(JSON.parse(resBody), [{name: 'hello.txt', path: '/home/user/hello.txt', type: 'file'}])
 
     await sbx.kill()
 })
@@ -65,7 +65,7 @@ test('test upload file with invalid signing', async () => {
     const resStatus = res.status
 
     assert.equal(resStatus, 401)
-    assert.equal(resBody, '{"code":401,"message":"signature is already expired"}\n')
+    assert.equal(JSON.parse(resBody), {code: 401, message: 'signature is already expired'})
 
     await sbx.kill()
 })
@@ -82,12 +82,12 @@ test('test upload file with missing signing', async () => {
     const resStatus = res.status
 
     assert.equal(resStatus, 401)
-    assert.equal(resBody, '{"code":401,"message":"missing signature query parameter"}\n')
+    assert.equal(JSON.parse(resBody), {code: 401, message: 'missing signature query parameter'})
 
     await sbx.kill()
 })
 
-test('test command run withing secured sbx', async () => {
+test('test command run with secured sbx', async () => {
     const sbx = await Sandbox.create(template, { timeoutMs: timeout, secure: true })
     const response = await sbx.commands.run('echo Hello World!')
 

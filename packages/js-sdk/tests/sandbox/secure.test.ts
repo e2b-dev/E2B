@@ -15,7 +15,7 @@ test('test access file without signing', async () => {
     const resStatus = res.status
 
     assert.equal(resStatus, 401)
-    assert.equal(resBody, '{"code":401,"message":"missing signature query parameter"}\n')
+    assert.equal(JSON.parse(resBody), {code: 401, message: 'missing signature query parameter'})
 
     await sbx.kill()
 })
