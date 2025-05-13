@@ -505,6 +505,34 @@ export class Filesystem {
   }
 
   /**
+   * Get information about a file or directory.
+   *
+   * @param path path to a file or directory.
+   * @param opts connection options.
+   *
+   * @returns information about the file or directory like name, type, and path.
+   */
+  async getInfo(
+    path: string,
+    opts?: FilesystemRequestOpts
+  ): Promise<EntryInfo> {
+    try {
+      const res = await this.rpc.stat(
+        { path },
+        { headers: authenticationHeader(opts?.user) }
+      )
+
+      return {
+        name: res.entry!.name,
+        type: mapFileType(res.entry!.type),
+        path: res.entry!.path,
+      }
+    } catch (err) {
+      throw handleRpcError(err)
+    }
+  }
+
+  /**
    * Start watching a directory for filesystem events.
    *
    * @param path path to directory to watch.
