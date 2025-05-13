@@ -382,7 +382,7 @@ export class Sandbox extends SandboxApi {
       throw new Error('Signature expiration can be used only when signature is set to true.')
     }
 
-   const fileUrl = this.fileUrl(path, defaultUsername)
+    const fileUrl = this.fileUrl(path, defaultUsername)
 
     if (useSignature) {
       const url = new URL(fileUrl)
