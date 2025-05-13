@@ -1,8 +1,12 @@
 from abc import ABC
 from dataclasses import dataclass
-from typing import Optional, Dict
+from typing import Optional, Dict, Union, Literal
 from datetime import datetime
+
+from deprecated import deprecated
 from httpx import Limits
+
+from e2b.api.client.models import SandboxState
 
 
 @dataclass
@@ -34,8 +38,14 @@ class ListedSandbox:
     """Sandbox ID."""
     template_id: str
     """Template ID."""
-    name: Optional[str]
-    """Template name."""
+    alias: Optional[str]
+    """Template Alias."""
+    state: SandboxState
+    """Sandbox state."""
+    cpu_count: int
+    """Sandbox CPU count."""
+    memory_mb: int
+    """Sandbox Memory size in MB."""
     metadata: Dict[str, str]
     """Saved sandbox metadata."""
     started_at: datetime

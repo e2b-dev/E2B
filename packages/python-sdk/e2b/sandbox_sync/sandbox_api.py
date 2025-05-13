@@ -81,10 +81,13 @@ class SandboxApi(SandboxApiBase):
                         sandbox.client_id,
                     ),
                     template_id=sandbox.template_id,
-                    name=sandbox.alias if isinstance(sandbox.alias, str) else None,
+                    alias=sandbox.alias if isinstance(sandbox.alias, str) else None,
                     metadata=(
                         sandbox.metadata if isinstance(sandbox.metadata, dict) else {}
                     ),
+                    state=sandbox.state,
+                    cpu_count=sandbox.cpu_count,
+                    memory_mb=sandbox.memory_mb,
                     started_at=sandbox.started_at,
                     end_at=sandbox.end_at,
                 )
