@@ -85,6 +85,10 @@ class Sandbox(SandboxSetup, SandboxApi):
         return self._envd_api_url
 
     @property
+    def envd_access_token(self) -> str | None:
+        return self._envd_access_token
+
+    @property
     def connection_config(self) -> ConnectionConfig:
         return self._connection_config
 

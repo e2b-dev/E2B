@@ -1,4 +1,6 @@
 import logging
+from abc import ABC
+
 import httpx
 
 from typing import Dict, Optional, TypedDict, overload
@@ -91,6 +93,13 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
     @property
     def envd_api_url(self) -> str:
         return self._envd_api_url
+
+    @property
+    def envd_access_token(self) -> str | None:
+        """
+        Envd access token for the sandbox.
+        """
+        return self._envd_access_token
 
     @property
     def connection_config(self) -> ConnectionConfig:
