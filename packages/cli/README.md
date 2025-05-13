@@ -8,6 +8,14 @@ This CLI tool allows you to build manager your running E2B sandbox and sandbox t
 
 ### 1. Install the CLI
 
+**Using Homebrew (on macOS)**
+
+```bash
+brew install e2b
+```
+
+**Using NPM**
+
 ```bash
 npm install -g @e2b/cli
 ```
@@ -18,7 +26,7 @@ npm install -g @e2b/cli
 e2b auth login
 ```
 
-> [!NOTE] 
+> [!NOTE]
 > To authenticate without the ability to open the browser, provide
 > `E2B_ACCESS_TOKEN` as an environment variable. Get your `E2B_ACCESS_TOKEN`
 > from the Personal tab at [e2b.dev/dashboard](https://e2b.dev/dashboard). Then use the CLI like this:
@@ -28,4 +36,5 @@ e2b auth login
 > Note the distinction between `E2B_ACCESS_TOKEN` and `E2B_API_KEY`.
 
 ### 3. Check out docs
+
 Visit our [CLI documentation](https://e2b.dev/docs) to learn more.
