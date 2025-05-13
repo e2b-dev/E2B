@@ -228,7 +228,9 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
             envd_version = response.envd_version
             envd_access_token = response.envd_access_token
 
-            if envd_access_token is not None and not isinstance(envd_access_token, Unset):
+            if envd_access_token is not None and not isinstance(
+                envd_access_token, Unset
+            ):
                 connection_headers["X-Access-Token"] = envd_access_token
 
         connection_config = ConnectionConfig(
@@ -279,7 +281,9 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
 
         response = await SandboxApi.get_info(sandbox_id)
 
-        if response.envd_access_token is not None and not isinstance(response.envd_access_token, Unset):
+        if response.envd_access_token is not None and not isinstance(
+            response.envd_access_token, Unset
+        ):
             connection_headers["X-Access-Token"] = response.envd_access_token
 
         connection_config = ConnectionConfig(

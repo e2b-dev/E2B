@@ -13,6 +13,7 @@ async def test_connect(template):
     finally:
         await sbx.kill()
 
+
 async def test_connect_with_secure(template):
     dir_name = f"test_directory_{uuid.uuid4()}"
 

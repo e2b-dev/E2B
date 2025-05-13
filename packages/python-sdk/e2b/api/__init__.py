@@ -24,6 +24,7 @@ class SandboxCreateResponse:
     envd_version: str
     envd_access_token: str
 
+
 def handle_api_exception(e: Response):
     try:
         body = json.loads(e.content) if e.content else {}

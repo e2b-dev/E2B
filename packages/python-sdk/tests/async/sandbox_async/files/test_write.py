@@ -1,4 +1,5 @@
 import io
+import uuid
 
 from e2b import AsyncSandbox
 from e2b.sandbox_async.filesystem.filesystem import EntryInfo
@@ -111,7 +112,7 @@ async def test_overwrite_file(async_sandbox: AsyncSandbox):
 
 
 async def test_write_to_non_existing_directory(async_sandbox: AsyncSandbox):
-    filename = "non_existing_dir/test_write.txt"
+    filename = f"non_existing_dir_{uuid.uuid4()}/test_write.txt"
     content = "This should succeed too."
 
     await async_sandbox.files.write(filename, content)
@@ -121,8 +122,9 @@ async def test_write_to_non_existing_directory(async_sandbox: AsyncSandbox):
     read_content = await async_sandbox.files.read(filename)
     assert read_content == content
 
+
 async def test_write_with_secured_envd(template):
-    filename = "non_existing_dir/test_write.txt"
+    filename = f"non_existing_dir_{uuid.uuid4()}/test_write.txt"
     content = "This should succeed too."
 
     sbx = await AsyncSandbox.create(template, timeout=30, secure=True)

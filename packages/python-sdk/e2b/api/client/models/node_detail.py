@@ -22,6 +22,7 @@ class NodeDetail:
         node_id (str): Identifier of the node
         sandboxes (list['ListedSandbox']): List of sandboxes running on the node
         status (NodeStatus): Status of the node
+        version (str): Version of the orchestrator
     """
 
     cached_builds: list[str]
@@ -29,6 +30,7 @@ class NodeDetail:
     node_id: str
     sandboxes: list["ListedSandbox"]
     status: NodeStatus
+    version: str
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -45,6 +47,8 @@ class NodeDetail:
 
         status = self.status.value
 
+        version = self.version
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
@@ -54,6 +58,7 @@ class NodeDetail:
                 "nodeID": node_id,
                 "sandboxes": sandboxes,
                 "status": status,
+                "version": version,
             }
         )
 
@@ -79,12 +84,15 @@ class NodeDetail:
 
         status = NodeStatus(d.pop("status"))
 
+        version = d.pop("version")
+
         node_detail = cls(
             cached_builds=cached_builds,
             create_fails=create_fails,
             node_id=node_id,
             sandboxes=sandboxes,
             status=status,
+            version=version,
         )
 
         node_detail.additional_properties = d

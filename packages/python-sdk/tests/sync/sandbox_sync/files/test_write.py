@@ -121,6 +121,7 @@ def test_write_to_non_existing_directory(sandbox):
     read_content = sandbox.files.read(filename)
     assert read_content == content
 
+
 def test_write_with_secured_envd(template):
     filename = "non_existing_dir/test_write.txt"
     content = "This should succeed too."
@@ -141,4 +142,3 @@ def test_write_with_secured_envd(template):
 
     finally:
         sbx.kill()
-

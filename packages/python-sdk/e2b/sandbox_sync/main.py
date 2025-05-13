@@ -138,7 +138,9 @@ class Sandbox(SandboxSetup, SandboxApi):
             self._envd_version = envd_version
             self._envd_access_token = envd_access_token
 
-            if envd_access_token is not None and not isinstance(envd_access_token, Unset):
+            if envd_access_token is not None and not isinstance(
+                envd_access_token, Unset
+            ):
                 connection_headers["X-Access-Token"] = envd_access_token
         else:
             template = template or self.default_template
@@ -158,7 +160,9 @@ class Sandbox(SandboxSetup, SandboxApi):
             self._sandbox_id = response.sandbox_id
             self._envd_version = response.envd_version
 
-            if response.envd_access_token is not None and not isinstance(response.envd_access_token, Unset):
+            if response.envd_access_token is not None and not isinstance(
+                response.envd_access_token, Unset
+            ):
                 self._envd_access_token = response.envd_access_token
                 connection_headers["X-Access-Token"] = response.envd_access_token
             else:

@@ -2,6 +2,7 @@ import pytest
 
 from e2b import AsyncSandbox
 
+
 async def test_start_secured(template):
     sbx = await AsyncSandbox.create(template, timeout=5, secure=True)
     try:
