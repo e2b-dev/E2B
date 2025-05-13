@@ -146,14 +146,12 @@ components:
       type: integer
       format: int32
       minimum: 1
-      maximum: 8
       description: CPU cores for the sandbox
 
     MemoryMB:
       type: integer
       format: int32
       minimum: 128
-      maximum: 8192
       description: Memory for the sandbox in MB
 
     SandboxMetadata:
@@ -549,7 +547,11 @@ components:
         - allocatedMemoryMiB
         - createFails
         - sandboxStartingCount
+        - version
       properties:
+        version:
+          type: string
+          description: Version of the orchestrator
         nodeID:
           type: string
           description: Identifier of the node
@@ -583,7 +585,11 @@ components:
         - sandboxes
         - cachedBuilds
         - createFails
+        - version
       properties:
+        version:
+          type: string
+          description: Version of the orchestrator
         nodeID:
           type: string
           description: Identifier of the node
@@ -1195,6 +1201,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Template"
+        "400":
+          $ref: "#/components/responses/400"
         "401":
           $ref: "#/components/responses/401"
         "500":

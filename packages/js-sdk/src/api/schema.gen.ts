@@ -502,6 +502,7 @@ export interface paths {
                         "application/json": components["schemas"]["Template"];
                     };
                 };
+                400: components["responses"]["400"];
                 401: components["responses"]["401"];
                 500: components["responses"]["500"];
             };
@@ -885,6 +886,8 @@ export interface components {
              */
             sandboxStartingCount: number;
             status: components["schemas"]["NodeStatus"];
+            /** @description Version of the orchestrator */
+            version: string;
         };
         NodeDetail: {
             /** @description List of cached builds id on the node */
@@ -899,6 +902,8 @@ export interface components {
             /** @description List of sandboxes running on the node */
             sandboxes: components["schemas"]["ListedSandbox"][];
             status: components["schemas"]["NodeStatus"];
+            /** @description Version of the orchestrator */
+            version: string;
         };
         /**
          * @description Status of the node
