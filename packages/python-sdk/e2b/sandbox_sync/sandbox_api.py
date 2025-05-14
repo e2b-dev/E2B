@@ -81,7 +81,7 @@ class SandboxApi(SandboxApiBase):
                         sandbox.client_id,
                     ),
                     template_id=sandbox.template_id,
-                    alias=sandbox.alias if isinstance(sandbox.alias, str) else None,
+                    name=sandbox.alias if isinstance(sandbox.alias, str) else None,
                     metadata=(
                         sandbox.metadata if isinstance(sandbox.metadata, dict) else {}
                     ),

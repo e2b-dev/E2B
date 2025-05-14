@@ -37,7 +37,7 @@ class ListedSandbox:
     """Sandbox ID."""
     template_id: str
     """Template ID."""
-    alias: Optional[str]
+    name: Optional[str]
     """Template Alias."""
     state: SandboxState
     """Sandbox state."""
