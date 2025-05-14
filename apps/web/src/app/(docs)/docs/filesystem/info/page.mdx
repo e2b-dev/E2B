@@ -2,6 +2,8 @@
 
 You can get information about a file or directory using the `files.getInfo()` / `files.get_info()` methods. Information such as file name, type, and path is returned.
 
+### Getting information about a file
+
 <CodeGroup>
 ```js
 import { Sandbox } from '@e2b/code-interpreter'
@@ -34,5 +36,42 @@ info = sandbox.files.get_info('test_file')
 
 print(info)
 # EntryInfo(name='test_file.txt', type=<FileType.FILE: 'file'>, path='/home/user/test_file.txt')
+```
+</CodeGroup>
+
+### Getting information about a directory
+
+<CodeGroup>
+```js
+import { Sandbox } from '@e2b/code-interpreter'
+
+const sandbox = await Sandbox.create()
+
+// Create a new directory
+await sandbox.files.makeDir('test_dir')
+
+// Get information about the directory
+const info = await sandbox.files.getInfo('test_dir')
+
+console.log(info)
+// {
+//   name: 'test_dir',
+//   type: 'dir',
+//   path: '/home/user/test_dir'
+// }
+```
+```python
+from e2b_code_interpreter import Sandbox
+
+sandbox = Sandbox()
+
+# Create a new directory
+sandbox.files.make_dir('test_dir')
+
+# Get information about the directory
+info = sandbox.files.get_info('test_dir')
+
+print(info)
+# EntryInfo(name='test_dir', type=<FileType.DIR: 'dir'>, path='/home/user/test_dir')
 ```
 </CodeGroup>
