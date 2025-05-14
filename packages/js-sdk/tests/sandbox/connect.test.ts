@@ -1,4 +1,4 @@
-import { assert, test } from 'vitest'
+import { assert, test, expect } from 'vitest'
 
 import { Sandbox } from '../../src'
 import { isDebug, sandboxTest, template } from '../setup.js'
@@ -27,8 +27,9 @@ sandboxTest.skipIf(isDebug)(
     assert.isTrue(isRunning)
     await sandbox.kill()
 
-    const sbxConnection = await Sandbox.connect(sandbox.sandboxId)
-    const isRunning2 = await sbxConnection.isRunning()
-    assert.isFalse(isRunning2)
+    const connectPromise = Sandbox.connect(sandbox.sandboxId)
+    await expect(connectPromise).rejects.toThrowError(
+        expect.objectContaining({ message: `404: sandbox "${sandbox.sandboxId}" doesn't exist or you don't have access to it` })
+    )
   }
 )

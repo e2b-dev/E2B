@@ -44,7 +44,7 @@ class ConnectionConfig:
         self.debug = debug or ConnectionConfig._debug()
         self.api_key = api_key or ConnectionConfig._api_key()
         self.access_token = access_token or ConnectionConfig._access_token()
-        self.headers = headers
+        self.headers = headers or {}
         self.proxy = proxy
 
         self.request_timeout = ConnectionConfig._get_request_timeout(
@@ -77,7 +77,6 @@ class ConnectionConfig:
 
     def get_request_timeout(self, request_timeout: Optional[float] = None):
         return self._get_request_timeout(self.request_timeout, request_timeout)
-
 
 Username = Literal["root", "user"]
 """

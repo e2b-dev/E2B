@@ -4,6 +4,42 @@
  */
 
 export interface paths {
+    "/envs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get the environment variables */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Environment variables */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["EnvVars"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/files": {
         parameters: {
             query?: never;
@@ -17,6 +53,10 @@ export interface paths {
                 query: {
                     /** @description Path to the file, URL encoded. Can be relative to user's home directory. */
                     path?: components["parameters"]["FilePath"];
+                    /** @description Signature used for file access permission verification. */
+                    signature?: components["parameters"]["Signature"];
+                    /** @description Signature expiration used for defining the expiration time of the signature. */
+                    signature_expiration?: components["parameters"]["SignatureExpiration"];
                     /** @description User used for setting the owner, or resolving relative paths. */
                     username: components["parameters"]["User"];
                 };
@@ -40,6 +80,10 @@ export interface paths {
                 query: {
                     /** @description Path to the file, URL encoded. Can be relative to user's home directory. */
                     path?: components["parameters"]["FilePath"];
+                    /** @description Signature used for file access permission verification. */
+                    signature?: components["parameters"]["Signature"];
+                    /** @description Signature expiration used for defining the expiration time of the signature. */
+                    signature_expiration?: components["parameters"]["SignatureExpiration"];
                     /** @description User used for setting the owner, or resolving relative paths. */
                     username: components["parameters"]["User"];
                 };
@@ -105,7 +149,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Set env vars, ensure the time and metadata is synced with the host */
+        /** Set initial vars, ensure the time and metadata is synced with the host */
         post: {
             parameters: {
                 query?: never;
@@ -116,6 +160,8 @@ export interface paths {
             requestBody?: {
                 content: {
                     "application/json": {
+                        /** @description Access token for secure access to envd service */
+                        accessToken?: string;
                         envVars?: components["schemas"]["EnvVars"];
                     };
                 };
@@ -130,6 +176,42 @@ export interface paths {
                 };
             };
         };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/metrics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get the stats of the service */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The resource usage metrics of the service */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Metrics"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -160,6 +242,16 @@ export interface components {
             code: number;
             /** @description Error message */
             message: string;
+        };
+        /** @description Resource usage metrics */
+        Metrics: {
+            /**
+             * Format: float
+             * @description CPU usage percentage
+             */
+            cpu_used_pct?: number;
+            /** @description Total virtual memory usage in bytes */
+            mem_bytes?: number;
         };
     };
     responses: {
@@ -230,6 +322,10 @@ export interface components {
     parameters: {
         /** @description Path to the file, URL encoded. Can be relative to user's home directory. */
         FilePath: string;
+        /** @description Signature used for file access permission verification. */
+        Signature: string;
+        /** @description Signature expiration used for defining the expiration time of the signature. */
+        SignatureExpiration: number;
         /** @description User used for setting the owner, or resolving relative paths. */
         User: string;
     };

@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 class SandboxCreateResponse:
     sandbox_id: str
     envd_version: str
+    envd_access_token: str
 
 
 def handle_api_exception(e: Response):
