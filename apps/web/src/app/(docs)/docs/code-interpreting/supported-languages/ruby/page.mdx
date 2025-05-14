@@ -1,0 +1,19 @@
+# Run Ruby code
+Use the `runCode`/`run_code` method to run Ruby code inside the sandbox.
+You'll need to pass the `language` parameter with value `ruby` or `rb`.
+<CodeGroup>
+```js
+import { Sandbox } from '@e2b/code-interpreter'
+
+const sbx = await Sandbox.create()
+const execution = await sbx.runCode('puts "Hello, world!"', { language: 'ruby' })
+console.log(execution)
+```
+```python
+from e2b_code_interpreter import Sandbox
+
+sbx = Sandbox()
+execution = sbx.run_code('puts "Hello, world!"', language="ruby")
+print(execution)
+```
+</CodeGroup>
