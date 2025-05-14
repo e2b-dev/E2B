@@ -274,9 +274,7 @@ class Filesystem:
                 request_timeout=self._connection_config.get_request_timeout(
                     request_timeout
                 ),
-                headers={
-                    **authentication_header(user),
-                },
+                headers=authentication_header(user),
             )
 
             entries: List[EntryInfo] = []
@@ -313,9 +311,7 @@ class Filesystem:
                 request_timeout=self._connection_config.get_request_timeout(
                     request_timeout
                 ),
-                headers={
-                    **authentication_header(user),
-                },
+                headers=authentication_header(user),
             )
             return True
 
@@ -344,9 +340,7 @@ class Filesystem:
                 request_timeout=self._connection_config.get_request_timeout(
                     request_timeout
                 ),
-                headers={
-                    **authentication_header(user),
-                },
+                headers=authentication_header(user),
             )
         except Exception as e:
             raise handle_rpc_exception(e)
@@ -377,9 +371,7 @@ class Filesystem:
                 request_timeout=self._connection_config.get_request_timeout(
                     request_timeout
                 ),
-                headers={
-                    **authentication_header(user),
-                },
+                headers=authentication_header(user),
             )
 
             return EntryInfo(
@@ -411,9 +403,7 @@ class Filesystem:
                 request_timeout=self._connection_config.get_request_timeout(
                     request_timeout
                 ),
-                headers={
-                    **authentication_header(user),
-                },
+                headers=authentication_header(user),
             )
 
             return True
@@ -456,9 +446,7 @@ class Filesystem:
                 request_timeout=self._connection_config.get_request_timeout(
                     request_timeout
                 ),
-                headers={
-                    **authentication_header(user),
-                },
+                headers=authentication_header(user),
             )
         except Exception as e:
             raise handle_rpc_exception(e)
