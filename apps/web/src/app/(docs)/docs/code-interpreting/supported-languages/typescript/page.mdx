@@ -1,0 +1,20 @@
+# Run TypeScript code
+Use the `runCode`/`run_code` method to run TypeScript code inside the sandbox.
+You'll need to pass the `language` parameter with value `typescript` or `ts`.
+
+<CodeGroup>
+```js
+import { Sandbox } from '@e2b/code-interpreter'
+
+const sbx = await Sandbox.create()
+const execution = await sbx.runCode('const greeting: string = "Hello, world!"; console.log(greeting)', { language: 'ts' })
+console.log(execution)
+```
+```python
+from e2b_code_interpreter import Sandbox
+
+sbx = Sandbox()
+execution = sbx.run_code('const greeting: string = "Hello, world!"; console.log(greeting)', language="ts")
+print(execution)
+```
+</CodeGroup>
