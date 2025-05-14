@@ -85,8 +85,14 @@ class Sandbox(SandboxSetup, SandboxApi):
         return self._envd_api_url
 
     @property
-    def envd_access_token(self) -> Optional[str]:
-        return self._envd_access_token
+    def _envd_access_token(self) -> str:
+        """Private property to access the envd token"""
+        return self.__envd_access_token
+
+    @_envd_access_token.setter
+    def _envd_access_token(self, value: Optional[str]):
+        """Private setter for envd token"""
+        self.__envd_access_token = value
 
     @property
     def connection_config(self) -> ConnectionConfig:
@@ -140,12 +146,12 @@ class Sandbox(SandboxSetup, SandboxApi):
 
             self._sandbox_id = sandbox_id
             self._envd_version = response.envd_version
-            self._envd_access_token = response.envd_access_token
+            self._envd_access_token = response._envd_access_token
 
-            if response.envd_access_token is not None and not isinstance(
-                    response.envd_access_token, Unset
+            if response._envd_access_token is not None and not isinstance(
+                    response._envd_access_token, Unset
             ):
-                connection_headers["X-Access-Token"] = response.envd_access_token
+                connection_headers["X-Access-Token"] = response._envd_access_token
         else:
             template = template or self.default_template
             timeout = timeout or self.default_sandbox_timeout

@@ -28,7 +28,7 @@ class SandboxSetup(ABC):
 
     @property
     @abstractmethod
-    def envd_access_token(self) -> Optional[str]:
+    def _envd_access_token(self) -> Optional[str]:
         ...
 
     @property
@@ -75,7 +75,7 @@ class SandboxSetup(ABC):
         """
 
         if use_signature:
-            signature = get_signature(path, "read", user, self.envd_access_token, use_signature_expiration)
+            signature = get_signature(path, "read", user, self._envd_access_token, use_signature_expiration)
             return self._file_url(path, user, signature["signature"], signature["expiration"])
         else:
             return self._file_url(path)
@@ -95,7 +95,7 @@ class SandboxSetup(ABC):
         """
 
         if use_signature:
-            signature = get_signature(path, "write", user, self.envd_access_token, use_signature_expiration)
+            signature = get_signature(path, "write", user, self._envd_access_token, use_signature_expiration)
             return self._file_url(path, user, signature["signature"], signature["expiration"])
         else:
             return self._file_url(path)

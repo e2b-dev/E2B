@@ -1,6 +1,4 @@
 import logging
-from abc import ABC
-
 import httpx
 
 from typing import Dict, Optional, TypedDict, overload
@@ -95,11 +93,14 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
         return self._envd_api_url
 
     @property
-    def envd_access_token(self) -> Optional[str]:
-        """
-        Envd access token for the sandbox.
-        """
-        return self._envd_access_token
+    def _envd_access_token(self) -> str:
+        """Private property to access the envd token"""
+        return self.__envd_access_token
+
+    @_envd_access_token.setter
+    def _envd_access_token(self, value: str):
+        """Private setter for envd token"""
+        self.__envd_access_token = value
 
     @property
     def connection_config(self) -> ConnectionConfig:
@@ -124,6 +125,7 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
         self._envd_api = httpx.AsyncClient(
             base_url=self.envd_api_url,
             transport=self._transport,
+            headers=self._connection_config.headers,
         )
 
         self._filesystem = Filesystem(
@@ -290,10 +292,10 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
 
         response = await SandboxApi.get_info(sandbox_id)
 
-        if response.envd_access_token is not None and not isinstance(
-            response.envd_access_token, Unset
+        if response._envd_access_token is not None and not isinstance(
+            response._envd_access_token, Unset
         ):
-            connection_headers["X-Access-Token"] = response.envd_access_token
+            connection_headers["X-Access-Token"] = response._envd_access_token
 
         connection_config = ConnectionConfig(
             api_key=api_key,
@@ -305,9 +307,9 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
 
         return cls(
             sandbox_id=sandbox_id,
-            envd_version=response.envd_version,
-            envd_access_token=response.envd_access_token,
             connection_config=connection_config,
+            envd_version=response.envd_version,
+            envd_access_token=response._envd_access_token,
         )
 
     async def __aenter__(self):

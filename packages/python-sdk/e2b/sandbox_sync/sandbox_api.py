@@ -152,8 +152,8 @@ class SandboxApi(SandboxApiBase):
                 ),
                 started_at=res.parsed.started_at,
                 end_at=res.parsed.end_at,
-                envd_access_token=res.parsed.envd_access_token,
                 envd_version=res.parsed.envd_version,
+                _envd_access_token=res.parsed.envd_access_token,
             )
 
     @classmethod
