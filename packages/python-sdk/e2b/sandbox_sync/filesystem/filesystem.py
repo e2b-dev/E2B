@@ -446,7 +446,10 @@ class Filesystem:
                 request_timeout=self._connection_config.get_request_timeout(
                     request_timeout
                 ),
-                headers=authentication_header(user),
+                headers={
+                    **authentication_header(user),
+                    KEEPALIVE_PING_HEADER: str(KEEPALIVE_PING_INTERVAL_SEC),
+                }
             )
         except Exception as e:
             raise handle_rpc_exception(e)
