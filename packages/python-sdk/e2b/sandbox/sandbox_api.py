@@ -3,7 +3,6 @@ from dataclasses import dataclass
 from typing import Optional, Dict, Union, Literal
 from datetime import datetime
 
-from deprecated import deprecated
 from httpx import Limits
 
 from e2b.api.client.models import SandboxState
