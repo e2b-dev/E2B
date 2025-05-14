@@ -89,11 +89,6 @@ export interface ListedSandbox {
   clientId: string;
 
   /**
-   * Sandbox state.
-   */
-  state: 'running' | 'paused';
-
-  /**
    * Sandbox CPU count.
    */
   cpuCount: number;
