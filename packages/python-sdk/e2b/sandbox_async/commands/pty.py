@@ -65,7 +65,6 @@ class Pty:
                 request_timeout=self._connection_config.get_request_timeout(
                     request_timeout
                 ),
-                headers=self._base_headers(),
             )
             return True
         except Exception as e:
@@ -98,7 +97,6 @@ class Pty:
                 request_timeout=self._connection_config.get_request_timeout(
                     request_timeout
                 ),
-                headers=self._base_headers(),
             )
         except Exception as e:
             raise handle_rpc_exception(e)
@@ -141,7 +139,6 @@ class Pty:
                 ),
             ),
             headers={
-                **self._base_headers(),
                 **authentication_header(user),
                 KEEPALIVE_PING_HEADER: str(KEEPALIVE_PING_INTERVAL_SEC),
             },
@@ -192,8 +189,4 @@ class Pty:
             request_timeout=self._connection_config.get_request_timeout(
                 request_timeout
             ),
-            headers=self._base_headers(),
         )
-
-    def _base_headers(self) -> dict:
-        return self._connection_config.headers

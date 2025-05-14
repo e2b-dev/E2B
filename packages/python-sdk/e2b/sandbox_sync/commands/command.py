@@ -34,6 +34,7 @@ class Commands:
             # compressor=e2b_connect.GzipCompressor,
             pool=pool,
             json=True,
+            headers=connection_config.headers,
         )
 
     def list(
@@ -53,7 +54,6 @@ class Commands:
                 request_timeout=self._connection_config.get_request_timeout(
                     request_timeout
                 ),
-                headers=self._base_headers(),
             )
             return [
                 ProcessInfo(
@@ -92,7 +92,6 @@ class Commands:
                 request_timeout=self._connection_config.get_request_timeout(
                     request_timeout
                 ),
-                headers=self._base_headers(),
             )
             return True
         except Exception as e:
@@ -125,7 +124,6 @@ class Commands:
                 request_timeout=self._connection_config.get_request_timeout(
                     request_timeout
                 ),
-                headers=self._base_headers(),
             )
         except Exception as e:
             raise handle_rpc_exception(e)
@@ -237,7 +235,6 @@ class Commands:
                 ),
             ),
             headers={
-                **self._base_headers(),
                 **authentication_header(user),
                 KEEPALIVE_PING_HEADER: str(KEEPALIVE_PING_INTERVAL_SEC),
             },
@@ -284,7 +281,6 @@ class Commands:
                 process=process_pb2.ProcessSelector(pid=pid),
             ),
             headers={
-                **self._base_headers(),
                 KEEPALIVE_PING_HEADER: str(KEEPALIVE_PING_INTERVAL_SEC),
             },
             timeout=timeout,
@@ -308,6 +304,3 @@ class Commands:
             )
         except Exception as e:
             raise handle_rpc_exception(e)
-
-    def _base_headers(self) -> dict:
-        return self._connection_config.headers

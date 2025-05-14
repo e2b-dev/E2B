@@ -47,6 +47,7 @@ class Filesystem:
             # compressor=e2b_connect.GzipCompressor,
             pool=pool,
             json=True,
+            headers=connection_config.headers,
         )
 
     @overload
@@ -120,7 +121,6 @@ class Filesystem:
             ENVD_API_FILES_ROUTE,
             params={"path": path, "username": user},
             timeout=self._connection_config.get_request_timeout(request_timeout),
-            headers=self._base_headers(),
         )
 
         err = handle_envd_api_exception(r)
@@ -231,7 +231,6 @@ class Filesystem:
             files=httpx_files,
             params=params,
             timeout=self._connection_config.get_request_timeout(request_timeout),
-            headers=self._base_headers(),
         )
 
         err = handle_envd_api_exception(r)
@@ -277,7 +276,6 @@ class Filesystem:
                 ),
                 headers={
                     **authentication_header(user),
-                    **self._base_headers(),
                 },
             )
 
@@ -317,7 +315,6 @@ class Filesystem:
                 ),
                 headers={
                     **authentication_header(user),
-                    **self._base_headers(),
                 },
             )
             return True
@@ -349,7 +346,6 @@ class Filesystem:
                 ),
                 headers={
                     **authentication_header(user),
-                    **self._base_headers(),
                 },
             )
         except Exception as e:
@@ -383,7 +379,6 @@ class Filesystem:
                 ),
                 headers={
                     **authentication_header(user),
-                    **self._base_headers(),
                 },
             )
 
@@ -418,7 +413,6 @@ class Filesystem:
                 ),
                 headers={
                     **authentication_header(user),
-                    **self._base_headers(),
                 },
             )
 
@@ -464,13 +458,9 @@ class Filesystem:
                 ),
                 headers={
                     **authentication_header(user),
-                    **self._base_headers(),
                 },
             )
         except Exception as e:
             raise handle_rpc_exception(e)
 
         return WatchHandle(self._rpc, r.watcher_id)
-
-    def _base_headers(self) -> dict:
-        return self._connection_config.headers
