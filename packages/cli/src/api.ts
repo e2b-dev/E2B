@@ -14,10 +14,11 @@ const authErrorBox = (keyName: string) => {
     case 'E2B_API_KEY':
       link = 'https://e2b.dev/dashboard?tab=keys'
       msg = 'API key'
-
+      break
     case 'E2B_ACCESS_TOKEN':
       link = 'https://e2b.dev/dashboard?tab=personal'
       msg = 'access token'
+      break
   }
   // throwing error in default in switch statement results in unreachable code,
   // so we need to check if link and msg are defined here instead
