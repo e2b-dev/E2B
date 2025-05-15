@@ -173,6 +173,7 @@ export const buildCommand = new commander.Command('build')
     '--build-arg <args...>',
     'specify additional build arguments for the build command. The format should be <varname>=<value>.'
   )
+  .option('--no-cache', 'skip cache when building the template.')
   .alias('bd')
   .action(
     async (
@@ -187,6 +188,7 @@ export const buildCommand = new commander.Command('build')
         cpuCount?: number
         memoryMb?: number
         buildArg?: [string]
+        noCache?: boolean
       }
     ) => {
       try {
@@ -354,12 +356,15 @@ export const buildCommand = new commander.Command('build')
           .map(([key, value]) => `--build-arg "${key}=${value}"`)
           .join(' ')
 
+        const noCache = opts.noCache ? '--no-cache' : ''
+
         const cmd = [
           'docker build',
           `-f ${dockerfileRelativePath}`,
           '--pull --platform linux/amd64',
           `-t docker.${connectionConfig.domain}/e2b/custom-envs/${templateID}:${template.buildID}`,
           buildArgs,
+          noCache,
           '.',
         ].join(' ')
 
