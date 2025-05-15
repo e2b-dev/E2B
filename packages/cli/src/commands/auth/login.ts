@@ -20,7 +20,8 @@ import { handleE2BRequestError } from '../../utils/errors'
 export const loginCommand = new commander.Command('login')
   .description('log in to CLI')
   .action(async () => {
-    let userConfig
+    let userConfig: UserConfig | null = null
+
     try {
       userConfig = getUserConfig()
     } catch (err) {
@@ -35,16 +36,18 @@ export const loginCommand = new commander.Command('login')
       return
     } else if (!userConfig) {
       console.log('Attempting to log in...')
-      userConfig = await signInWithBrowser()
-      if (!userConfig) {
+      const signInResponse = await signInWithBrowser()
+      if (!signInResponse) {
         console.info('Login aborted')
         return
       }
 
+      const accessToken =
+        process.env.E2B_ACCESS_TOKEN || signInResponse.accessToken
+
       const signal = connectionConfig.getSignal()
       const config = new e2b.ConnectionConfig({
-        accessToken: process.env.E2B_ACCESS_TOKEN || userConfig?.accessToken,
-        apiKey: process.env.E2B_API_KEY || userConfig?.teamApiKey,
+        accessToken,
       })
       const client = new e2b.ApiClient(config)
       const res = await client.api.GET('/teams', { signal })
@@ -61,9 +64,14 @@ export const loginCommand = new commander.Command('login')
         process.exit(1)
       }
 
-      userConfig.teamName = defaultTeam.name
-      userConfig.teamId = defaultTeam.teamID
-      userConfig.teamApiKey = defaultTeam.apiKey
+      userConfig = {
+        email: signInResponse.email,
+        accessToken,
+        teamName: defaultTeam.name,
+        teamId: defaultTeam.teamID,
+        teamApiKey: defaultTeam.apiKey,
+      }
+
       fs.mkdirSync(path.dirname(USER_CONFIG_PATH), { recursive: true })
       fs.writeFileSync(USER_CONFIG_PATH, JSON.stringify(userConfig, null, 2))
     }
@@ -76,7 +84,13 @@ export const loginCommand = new commander.Command('login')
     process.exit(0)
   })
 
-async function signInWithBrowser(): Promise<UserConfig> {
+interface SignInWithBrowserResponse {
+  email: string
+  accessToken: string
+  defaultTeamId: string
+}
+
+async function signInWithBrowser(): Promise<SignInWithBrowserResponse> {
   const server = http.createServer()
   const { port } = await listen.default(server, 0, '127.0.0.1')
   const loginUrl = new URL(`${DOCS_BASE}/api/cli`)
@@ -92,7 +106,7 @@ async function signInWithBrowser(): Promise<UserConfig> {
         .searchParams
       const searchParamsObj = Object.fromEntries(
         searchParams.entries()
-      ) as unknown as UserConfig & {
+      ) as unknown as SignInWithBrowserResponse & {
         error?: string
       }
       const { error } = searchParamsObj
