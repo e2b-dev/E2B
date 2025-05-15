@@ -173,7 +173,7 @@ export const buildCommand = new commander.Command('build')
     '--build-arg <args...>',
     'specify additional build arguments for the build command. The format should be <varname>=<value>.'
   )
-  .option('--no-cache', 'do not use cache when building the docker image.')
+  .option('--no-cache', 'skip cache when building the template.')
   .alias('bd')
   .action(
     async (
