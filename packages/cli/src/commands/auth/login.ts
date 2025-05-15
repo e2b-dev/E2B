@@ -42,9 +42,12 @@ export const loginCommand = new commander.Command('login')
         return
       }
 
+      const accessToken =
+        process.env.E2B_ACCESS_TOKEN || signInResponse.accessToken
+
       const signal = connectionConfig.getSignal()
       const config = new e2b.ConnectionConfig({
-        accessToken: process.env.E2B_ACCESS_TOKEN || signInResponse.accessToken,
+        accessToken,
       })
       const client = new e2b.ApiClient(config)
       const res = await client.api.GET('/teams', { signal })
@@ -62,7 +65,8 @@ export const loginCommand = new commander.Command('login')
       }
 
       userConfig = {
-        ...signInResponse,
+        email: signInResponse.email,
+        accessToken,
         teamName: defaultTeam.name,
         teamId: defaultTeam.teamID,
         teamApiKey: defaultTeam.apiKey,
