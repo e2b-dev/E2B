@@ -363,8 +363,8 @@ export const buildCommand = new commander.Command('build')
           `-f ${dockerfileRelativePath}`,
           '--pull --platform linux/amd64',
           `-t docker.${connectionConfig.domain}/e2b/custom-envs/${templateID}:${template.buildID}`,
-          noCache,
           buildArgs,
+          noCache,
           '.',
         ].join(' ')
 
