@@ -77,7 +77,7 @@ export interface EntryInfoExtended extends EntryInfo {
   /**
    * Last modification time of the filesystem object.
    */
-  modifiedTime: Date
+  modifiedTime?: Date
 }
 
 /**
@@ -108,7 +108,9 @@ function mapFileType(fileType: FsFileType) {
   }
 }
 
-function mapModifiedTime(modifiedTime: Timestamp) {
+function mapModifiedTime(modifiedTime: Timestamp | undefined) {
+  if (!modifiedTime) return undefined
+
   return new Date(
     Number(modifiedTime.seconds) * 1000 +
       Math.floor(modifiedTime.nanos / 1_000_000)
@@ -421,7 +423,7 @@ export class Filesystem {
             permissions: e.permissions,
             owner: e.owner,
             group: e.group,
-            modifiedTime: mapModifiedTime(e.modifiedTime!),
+            modifiedTime: mapModifiedTime(e.modifiedTime),
           })
         }
       }
@@ -586,7 +588,7 @@ export class Filesystem {
         permissions: res.entry.permissions,
         owner: res.entry.owner,
         group: res.entry.group,
-        modifiedTime: mapModifiedTime(res.entry.modifiedTime!),
+        modifiedTime: mapModifiedTime(res.entry.modifiedTime),
       }
     } catch (err) {
       throw handleRpcError(err)
