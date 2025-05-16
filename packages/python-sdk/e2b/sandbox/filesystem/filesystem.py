@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from datetime import datetime
 from enum import Enum
 from typing import IO, Optional, Union
 
@@ -44,6 +45,38 @@ class EntryInfo:
     path: str
     """
     Path to the filesystem object.
+    """
+
+
+@dataclass
+class EntryInfoExtended(EntryInfo):
+    """
+    Extended sandbox filesystem object information.
+    """
+
+    size: int
+    """
+    Size of the filesystem object in bytes.
+    """
+    mode: int
+    """
+    File mode and permission bits.
+    """
+    permissions: str
+    """
+    String representation of file permissions (e.g. 'rwxr-xr-x').
+    """
+    owner: str
+    """
+    Owner of the filesystem object.
+    """
+    group: str
+    """
+    Group owner of the filesystem object.
+    """
+    modified_time: datetime
+    """
+    Last modification time of the filesystem object.
     """
 
 

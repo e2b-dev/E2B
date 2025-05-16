@@ -2,9 +2,10 @@ import pytest
 from e2b.exceptions import NotFoundException
 from e2b import Sandbox, FileType
 
+
 def test_get_info_of_file(sandbox: Sandbox):
     filename = "test_file.txt"
-    
+
     sandbox.files.write(filename, "test")
     info = sandbox.files.get_info(filename)
     current_path = sandbox.commands.run("pwd")
@@ -13,25 +14,28 @@ def test_get_info_of_file(sandbox: Sandbox):
     assert info.type == FileType.FILE
     assert info.path == f"{current_path.stdout.strip()}/{filename}"
 
+
 def test_get_info_of_nonexistent_file(sandbox: Sandbox):
     filename = "test_does_not_exist.txt"
-    
+
     with pytest.raises(NotFoundException) as exc_info:
         sandbox.files.get_info(filename)
-    
+
+
 def test_get_info_of_directory(sandbox: Sandbox):
     dirname = "test_dir"
-    
+
     sandbox.files.make_dir(dirname)
     info = sandbox.files.get_info(dirname)
     current_path = sandbox.commands.run("pwd")
-    
+
     assert info.name == dirname
     assert info.type == FileType.DIR
     assert info.path == f"{current_path.stdout.strip()}/{dirname}"
 
+
 def test_get_info_of_nonexistent_directory(sandbox: Sandbox):
     dirname = "test_does_not_exist_dir"
-    
+
     with pytest.raises(NotFoundException) as exc_info:
         sandbox.files.get_info(dirname)

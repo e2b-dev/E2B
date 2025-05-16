@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package filesystem;
 
+import "google/protobuf/timestamp.proto";
+
 service Filesystem {
     rpc Stat(StatRequest) returns (StatResponse);
     rpc MakeDir(MakeDirRequest) returns (MakeDirResponse);
@@ -45,13 +47,25 @@ message StatRequest {
 }
 
 message StatResponse {
-    EntryInfo entry = 1;
+    EntryInfoExtended entry = 1;
 }
 
 message EntryInfo {
     string name = 1;
     FileType type = 2;
     string path = 3;
+}
+
+message EntryInfoExtended {
+    string name = 1;
+    FileType type = 2;
+    string path = 3;
+    int64 size = 4;
+    uint32 mode = 5;
+    string permissions = 6;
+    string owner = 7;
+    string group = 8;
+    google.protobuf.Timestamp modified_time = 9;
 }
 
 enum FileType {
@@ -66,7 +80,7 @@ message ListDirRequest {
 }
 
 message ListDirResponse {
-    repeated EntryInfo entries = 1;
+    repeated EntryInfoExtended entries = 1;
 }
 
 message WatchDirRequest {
@@ -109,7 +123,7 @@ message GetWatcherEventsResponse {
 }
 
 message RemoveWatcherRequest {
-    string watcher_id = 1;
+      string watcher_id = 1;
 }
 
 message RemoveWatcherResponse {}
