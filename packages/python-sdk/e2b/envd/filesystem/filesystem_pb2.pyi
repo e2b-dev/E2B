@@ -1,3 +1,4 @@
+from google.protobuf import timestamp_pb2 as _timestamp_pb2
 from google.protobuf.internal import containers as _containers
 from google.protobuf.internal import enum_type_wrapper as _enum_type_wrapper
 from google.protobuf import descriptor as _descriptor
@@ -84,8 +85,10 @@ class StatRequest(_message.Message):
 class StatResponse(_message.Message):
     __slots__ = ("entry",)
     ENTRY_FIELD_NUMBER: _ClassVar[int]
-    entry: EntryInfo
-    def __init__(self, entry: _Optional[_Union[EntryInfo, _Mapping]] = ...) -> None: ...
+    entry: EntryInfoExtended
+    def __init__(
+        self, entry: _Optional[_Union[EntryInfoExtended, _Mapping]] = ...
+    ) -> None: ...
 
 class EntryInfo(_message.Message):
     __slots__ = ("name", "type", "path")
@@ -102,6 +105,49 @@ class EntryInfo(_message.Message):
         path: _Optional[str] = ...,
     ) -> None: ...
 
+class EntryInfoExtended(_message.Message):
+    __slots__ = (
+        "name",
+        "type",
+        "path",
+        "size",
+        "mode",
+        "permissions",
+        "owner",
+        "group",
+        "modified_time",
+    )
+    NAME_FIELD_NUMBER: _ClassVar[int]
+    TYPE_FIELD_NUMBER: _ClassVar[int]
+    PATH_FIELD_NUMBER: _ClassVar[int]
+    SIZE_FIELD_NUMBER: _ClassVar[int]
+    MODE_FIELD_NUMBER: _ClassVar[int]
+    PERMISSIONS_FIELD_NUMBER: _ClassVar[int]
+    OWNER_FIELD_NUMBER: _ClassVar[int]
+    GROUP_FIELD_NUMBER: _ClassVar[int]
+    MODIFIED_TIME_FIELD_NUMBER: _ClassVar[int]
+    name: str
+    type: FileType
+    path: str
+    size: int
+    mode: int
+    permissions: str
+    owner: str
+    group: str
+    modified_time: _timestamp_pb2.Timestamp
+    def __init__(
+        self,
+        name: _Optional[str] = ...,
+        type: _Optional[_Union[FileType, str]] = ...,
+        path: _Optional[str] = ...,
+        size: _Optional[int] = ...,
+        mode: _Optional[int] = ...,
+        permissions: _Optional[str] = ...,
+        owner: _Optional[str] = ...,
+        group: _Optional[str] = ...,
+        modified_time: _Optional[_Union[_timestamp_pb2.Timestamp, _Mapping]] = ...,
+    ) -> None: ...
+
 class ListDirRequest(_message.Message):
     __slots__ = ("path", "depth")
     PATH_FIELD_NUMBER: _ClassVar[int]
@@ -115,9 +161,9 @@ class ListDirRequest(_message.Message):
 class ListDirResponse(_message.Message):
     __slots__ = ("entries",)
     ENTRIES_FIELD_NUMBER: _ClassVar[int]
-    entries: _containers.RepeatedCompositeFieldContainer[EntryInfo]
+    entries: _containers.RepeatedCompositeFieldContainer[EntryInfoExtended]
     def __init__(
-        self, entries: _Optional[_Iterable[_Union[EntryInfo, _Mapping]]] = ...
+        self, entries: _Optional[_Iterable[_Union[EntryInfoExtended, _Mapping]]] = ...
     ) -> None: ...
 
 class WatchDirRequest(_message.Message):
