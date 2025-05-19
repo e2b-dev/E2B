@@ -1,8 +1,10 @@
 import uuid
+import pytest
 
 from e2b import Sandbox
 
 
+@pytest.mark.skip_debug()
 def test_connect(template):
     sbx = Sandbox(template, timeout=10)
     try:
@@ -14,6 +16,7 @@ def test_connect(template):
         sbx.kill()
 
 
+@pytest.mark.skip_debug()
 def test_connect_with_secure(template):
     dir_name = f"test_directory_{uuid.uuid4()}"
 

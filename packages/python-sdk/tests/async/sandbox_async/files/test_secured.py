@@ -7,7 +7,7 @@ from e2b import (
     AsyncSandbox,
 )
 
-
+@pytest.mark.skip_debug()
 async def test_download_url_with_signing(template):
     sbx = await AsyncSandbox.create(template, timeout=100, secure=True)
     file_path = "test_download_url_with_signing.txt"
@@ -25,6 +25,7 @@ async def test_download_url_with_signing(template):
     finally:
         await sbx.kill()
 
+@pytest.mark.skip_debug()
 async def test_download_url_with_signing_and_expiration(template):
     sbx = await AsyncSandbox.create(template, timeout=100, secure=True)
     file_path = "test_download_url_with_signing.txt"
@@ -42,6 +43,7 @@ async def test_download_url_with_signing_and_expiration(template):
     finally:
         await sbx.kill()
 
+@pytest.mark.skip_debug()
 async def test_download_url_with_expired_signing(template):
     sbx = await AsyncSandbox.create(template, timeout=100, secure=True)
     file_path = "test_download_url_with_signing.txt"

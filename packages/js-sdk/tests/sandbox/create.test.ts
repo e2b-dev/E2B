@@ -1,9 +1,9 @@
-import { test, assert } from 'vitest'
+import { assert } from 'vitest'
 
 import { Sandbox } from '../../src'
-import { template, isDebug } from '../setup.js'
+import { template, isDebug, sandboxTest } from '../setup.js'
 
-test.skipIf(isDebug)('create', async () => {
+sandboxTest.skipIf(isDebug)('create', async () => {
   const sbx = await Sandbox.create(template, { timeoutMs: 5_000 })
   try {
     const isRunning = await sbx.isRunning()
@@ -15,7 +15,7 @@ test.skipIf(isDebug)('create', async () => {
   }
 })
 
-test.skipIf(isDebug)('metadata', async () => {
+sandboxTest.skipIf(isDebug)('metadata', async () => {
   const metadata = {
     'test-key': 'test-value',
   }

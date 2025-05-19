@@ -2,7 +2,7 @@ import pytest
 
 from e2b import Sandbox
 
-
+@pytest.mark.skip_debug()
 def test_start_secured(template):
     sbx = Sandbox(template, timeout=5, secure=True)
     try:
@@ -12,6 +12,7 @@ def test_start_secured(template):
     finally:
         sbx.kill()
 
+@pytest.mark.skip_debug()
 def test_connect_to_secured(template):
     sbx = Sandbox(template, timeout=5, secure=True)
     try:
