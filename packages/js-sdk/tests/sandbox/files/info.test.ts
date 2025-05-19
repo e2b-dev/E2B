@@ -14,6 +14,12 @@ sandboxTest('get info of a file', async ({ sandbox }) => {
   assert.equal(info.name, filename)
   assert.equal(info.type, 'file')
   assert.equal(info.path, currentPath.trim() + '/' + filename)
+  assert.equal(info.size, 4)
+  assert.equal(info.mode, 0o644)
+  assert.equal(info.permissions, 'rw-r--r--')
+  assert.equal(info.owner, 'user')
+  assert.equal(info.group, 'user')
+  assert.property(info, 'modifiedTime')
 })
 
 sandboxTest('get info of a file that does not exist', async ({ sandbox }) => {
@@ -31,6 +37,12 @@ sandboxTest('get info of a directory', async ({ sandbox }) => {
   assert.equal(info.name, dirname)
   assert.equal(info.type, 'dir')
   assert.equal(info.path, currentPath.trim() + '/' + dirname)
+  assert.equal(info.size, 0)
+  assert.equal(info.mode, 0o755)
+  assert.equal(info.permissions, 'rwxr-xr-x')
+  assert.equal(info.owner, 'user')
+  assert.equal(info.group, 'user')
+  assert.property(info, 'modifiedTime')
 })
 
 sandboxTest(
