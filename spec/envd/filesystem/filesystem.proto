@@ -80,7 +80,7 @@ message ListDirRequest {
 }
 
 message ListDirResponse {
-    repeated EntryInfoExtended entries = 1;
+    repeated EntryInfo entries = 1;
 }
 
 message WatchDirRequest {

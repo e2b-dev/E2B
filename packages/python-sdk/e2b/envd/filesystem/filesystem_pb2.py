@@ -22,7 +22,7 @@ from google.protobuf import timestamp_pb2 as google_dot_protobuf_dot_timestamp__
 
 
 DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
-    b'\n\x1b\x66ilesystem/filesystem.proto\x12\nfilesystem\x1a\x1fgoogle/protobuf/timestamp.proto"G\n\x0bMoveRequest\x12\x16\n\x06source\x18\x01 \x01(\tR\x06source\x12 \n\x0b\x64\x65stination\x18\x02 \x01(\tR\x0b\x64\x65stination";\n\x0cMoveResponse\x12+\n\x05\x65ntry\x18\x01 \x01(\x0b\x32\x15.filesystem.EntryInfoR\x05\x65ntry"$\n\x0eMakeDirRequest\x12\x12\n\x04path\x18\x01 \x01(\tR\x04path">\n\x0fMakeDirResponse\x12+\n\x05\x65ntry\x18\x01 \x01(\x0b\x32\x15.filesystem.EntryInfoR\x05\x65ntry"#\n\rRemoveRequest\x12\x12\n\x04path\x18\x01 \x01(\tR\x04path"\x10\n\x0eRemoveResponse"!\n\x0bStatRequest\x12\x12\n\x04path\x18\x01 \x01(\tR\x04path"C\n\x0cStatResponse\x12\x33\n\x05\x65ntry\x18\x01 \x01(\x0b\x32\x1d.filesystem.EntryInfoExtendedR\x05\x65ntry"]\n\tEntryInfo\x12\x12\n\x04name\x18\x01 \x01(\tR\x04name\x12(\n\x04type\x18\x02 \x01(\x0e\x32\x14.filesystem.FileTypeR\x04type\x12\x12\n\x04path\x18\x03 \x01(\tR\x04path"\x9c\x02\n\x11\x45ntryInfoExtended\x12\x12\n\x04name\x18\x01 \x01(\tR\x04name\x12(\n\x04type\x18\x02 \x01(\x0e\x32\x14.filesystem.FileTypeR\x04type\x12\x12\n\x04path\x18\x03 \x01(\tR\x04path\x12\x12\n\x04size\x18\x04 \x01(\x03R\x04size\x12\x12\n\x04mode\x18\x05 \x01(\rR\x04mode\x12 \n\x0bpermissions\x18\x06 \x01(\tR\x0bpermissions\x12\x14\n\x05owner\x18\x07 \x01(\tR\x05owner\x12\x14\n\x05group\x18\x08 \x01(\tR\x05group\x12?\n\rmodified_time\x18\t \x01(\x0b\x32\x1a.google.protobuf.TimestampR\x0cmodifiedTime":\n\x0eListDirRequest\x12\x12\n\x04path\x18\x01 \x01(\tR\x04path\x12\x14\n\x05\x64\x65pth\x18\x02 \x01(\rR\x05\x64\x65pth"J\n\x0fListDirResponse\x12\x37\n\x07\x65ntries\x18\x01 \x03(\x0b\x32\x1d.filesystem.EntryInfoExtendedR\x07\x65ntries"C\n\x0fWatchDirRequest\x12\x12\n\x04path\x18\x01 \x01(\tR\x04path\x12\x1c\n\trecursive\x18\x02 \x01(\x08R\trecursive"P\n\x0f\x46ilesystemEvent\x12\x12\n\x04name\x18\x01 \x01(\tR\x04name\x12)\n\x04type\x18\x02 \x01(\x0e\x32\x15.filesystem.EventTypeR\x04type"\xfe\x01\n\x10WatchDirResponse\x12?\n\x05start\x18\x01 \x01(\x0b\x32\'.filesystem.WatchDirResponse.StartEventH\x00R\x05start\x12=\n\nfilesystem\x18\x02 \x01(\x0b\x32\x1b.filesystem.FilesystemEventH\x00R\nfilesystem\x12\x46\n\tkeepalive\x18\x03 \x01(\x0b\x32&.filesystem.WatchDirResponse.KeepAliveH\x00R\tkeepalive\x1a\x0c\n\nStartEvent\x1a\x0b\n\tKeepAliveB\x07\n\x05\x65vent"H\n\x14\x43reateWatcherRequest\x12\x12\n\x04path\x18\x01 \x01(\tR\x04path\x12\x1c\n\trecursive\x18\x02 \x01(\x08R\trecursive"6\n\x15\x43reateWatcherResponse\x12\x1d\n\nwatcher_id\x18\x01 \x01(\tR\twatcherId"8\n\x17GetWatcherEventsRequest\x12\x1d\n\nwatcher_id\x18\x01 \x01(\tR\twatcherId"O\n\x18GetWatcherEventsResponse\x12\x33\n\x06\x65vents\x18\x01 \x03(\x0b\x32\x1b.filesystem.FilesystemEventR\x06\x65vents"5\n\x14RemoveWatcherRequest\x12\x1d\n\nwatcher_id\x18\x01 \x01(\tR\twatcherId"\x17\n\x15RemoveWatcherResponse*R\n\x08\x46ileType\x12\x19\n\x15\x46ILE_TYPE_UNSPECIFIED\x10\x00\x12\x12\n\x0e\x46ILE_TYPE_FILE\x10\x01\x12\x17\n\x13\x46ILE_TYPE_DIRECTORY\x10\x02*\x98\x01\n\tEventType\x12\x1a\n\x16\x45VENT_TYPE_UNSPECIFIED\x10\x00\x12\x15\n\x11\x45VENT_TYPE_CREATE\x10\x01\x12\x14\n\x10\x45VENT_TYPE_WRITE\x10\x02\x12\x15\n\x11\x45VENT_TYPE_REMOVE\x10\x03\x12\x15\n\x11\x45VENT_TYPE_RENAME\x10\x04\x12\x14\n\x10\x45VENT_TYPE_CHMOD\x10\x05\x32\x9f\x05\n\nFilesystem\x12\x39\n\x04Stat\x12\x17.filesystem.StatRequest\x1a\x18.filesystem.StatResponse\x12\x42\n\x07MakeDir\x12\x1a.filesystem.MakeDirRequest\x1a\x1b.filesystem.MakeDirResponse\x12\x39\n\x04Move\x12\x17.filesystem.MoveRequest\x1a\x18.filesystem.MoveResponse\x12\x42\n\x07ListDir\x12\x1a.filesystem.ListDirRequest\x1a\x1b.filesystem.ListDirResponse\x12?\n\x06Remove\x12\x19.filesystem.RemoveRequest\x1a\x1a.filesystem.RemoveResponse\x12G\n\x08WatchDir\x12\x1b.filesystem.WatchDirRequest\x1a\x1c.filesystem.WatchDirResponse0\x01\x12T\n\rCreateWatcher\x12 .filesystem.CreateWatcherRequest\x1a!.filesystem.CreateWatcherResponse\x12]\n\x10GetWatcherEvents\x12#.filesystem.GetWatcherEventsRequest\x1a$.filesystem.GetWatcherEventsResponse\x12T\n\rRemoveWatcher\x12 .filesystem.RemoveWatcherRequest\x1a!.filesystem.RemoveWatcherResponseBi\n\x0e\x63om.filesystemB\x0f\x46ilesystemProtoP\x01\xa2\x02\x03\x46XX\xaa\x02\nFilesystem\xca\x02\nFilesystem\xe2\x02\x16\x46ilesystem\\GPBMetadata\xea\x02\nFilesystemb\x06proto3'
+    b'\n\x1b\x66ilesystem/filesystem.proto\x12\nfilesystem\x1a\x1fgoogle/protobuf/timestamp.proto"G\n\x0bMoveRequest\x12\x16\n\x06source\x18\x01 \x01(\tR\x06source\x12 \n\x0b\x64\x65stination\x18\x02 \x01(\tR\x0b\x64\x65stination";\n\x0cMoveResponse\x12+\n\x05\x65ntry\x18\x01 \x01(\x0b\x32\x15.filesystem.EntryInfoR\x05\x65ntry"$\n\x0eMakeDirRequest\x12\x12\n\x04path\x18\x01 \x01(\tR\x04path">\n\x0fMakeDirResponse\x12+\n\x05\x65ntry\x18\x01 \x01(\x0b\x32\x15.filesystem.EntryInfoR\x05\x65ntry"#\n\rRemoveRequest\x12\x12\n\x04path\x18\x01 \x01(\tR\x04path"\x10\n\x0eRemoveResponse"!\n\x0bStatRequest\x12\x12\n\x04path\x18\x01 \x01(\tR\x04path"C\n\x0cStatResponse\x12\x33\n\x05\x65ntry\x18\x01 \x01(\x0b\x32\x1d.filesystem.EntryInfoExtendedR\x05\x65ntry"]\n\tEntryInfo\x12\x12\n\x04name\x18\x01 \x01(\tR\x04name\x12(\n\x04type\x18\x02 \x01(\x0e\x32\x14.filesystem.FileTypeR\x04type\x12\x12\n\x04path\x18\x03 \x01(\tR\x04path"\x9c\x02\n\x11\x45ntryInfoExtended\x12\x12\n\x04name\x18\x01 \x01(\tR\x04name\x12(\n\x04type\x18\x02 \x01(\x0e\x32\x14.filesystem.FileTypeR\x04type\x12\x12\n\x04path\x18\x03 \x01(\tR\x04path\x12\x12\n\x04size\x18\x04 \x01(\x03R\x04size\x12\x12\n\x04mode\x18\x05 \x01(\rR\x04mode\x12 \n\x0bpermissions\x18\x06 \x01(\tR\x0bpermissions\x12\x14\n\x05owner\x18\x07 \x01(\tR\x05owner\x12\x14\n\x05group\x18\x08 \x01(\tR\x05group\x12?\n\rmodified_time\x18\t \x01(\x0b\x32\x1a.google.protobuf.TimestampR\x0cmodifiedTime":\n\x0eListDirRequest\x12\x12\n\x04path\x18\x01 \x01(\tR\x04path\x12\x14\n\x05\x64\x65pth\x18\x02 \x01(\rR\x05\x64\x65pth"B\n\x0fListDirResponse\x12/\n\x07\x65ntries\x18\x01 \x03(\x0b\x32\x15.filesystem.EntryInfoR\x07\x65ntries"C\n\x0fWatchDirRequest\x12\x12\n\x04path\x18\x01 \x01(\tR\x04path\x12\x1c\n\trecursive\x18\x02 \x01(\x08R\trecursive"P\n\x0f\x46ilesystemEvent\x12\x12\n\x04name\x18\x01 \x01(\tR\x04name\x12)\n\x04type\x18\x02 \x01(\x0e\x32\x15.filesystem.EventTypeR\x04type"\xfe\x01\n\x10WatchDirResponse\x12?\n\x05start\x18\x01 \x01(\x0b\x32\'.filesystem.WatchDirResponse.StartEventH\x00R\x05start\x12=\n\nfilesystem\x18\x02 \x01(\x0b\x32\x1b.filesystem.FilesystemEventH\x00R\nfilesystem\x12\x46\n\tkeepalive\x18\x03 \x01(\x0b\x32&.filesystem.WatchDirResponse.KeepAliveH\x00R\tkeepalive\x1a\x0c\n\nStartEvent\x1a\x0b\n\tKeepAliveB\x07\n\x05\x65vent"H\n\x14\x43reateWatcherRequest\x12\x12\n\x04path\x18\x01 \x01(\tR\x04path\x12\x1c\n\trecursive\x18\x02 \x01(\x08R\trecursive"6\n\x15\x43reateWatcherResponse\x12\x1d\n\nwatcher_id\x18\x01 \x01(\tR\twatcherId"8\n\x17GetWatcherEventsRequest\x12\x1d\n\nwatcher_id\x18\x01 \x01(\tR\twatcherId"O\n\x18GetWatcherEventsResponse\x12\x33\n\x06\x65vents\x18\x01 \x03(\x0b\x32\x1b.filesystem.FilesystemEventR\x06\x65vents"5\n\x14RemoveWatcherRequest\x12\x1d\n\nwatcher_id\x18\x01 \x01(\tR\twatcherId"\x17\n\x15RemoveWatcherResponse*R\n\x08\x46ileType\x12\x19\n\x15\x46ILE_TYPE_UNSPECIFIED\x10\x00\x12\x12\n\x0e\x46ILE_TYPE_FILE\x10\x01\x12\x17\n\x13\x46ILE_TYPE_DIRECTORY\x10\x02*\x98\x01\n\tEventType\x12\x1a\n\x16\x45VENT_TYPE_UNSPECIFIED\x10\x00\x12\x15\n\x11\x45VENT_TYPE_CREATE\x10\x01\x12\x14\n\x10\x45VENT_TYPE_WRITE\x10\x02\x12\x15\n\x11\x45VENT_TYPE_REMOVE\x10\x03\x12\x15\n\x11\x45VENT_TYPE_RENAME\x10\x04\x12\x14\n\x10\x45VENT_TYPE_CHMOD\x10\x05\x32\x9f\x05\n\nFilesystem\x12\x39\n\x04Stat\x12\x17.filesystem.StatRequest\x1a\x18.filesystem.StatResponse\x12\x42\n\x07MakeDir\x12\x1a.filesystem.MakeDirRequest\x1a\x1b.filesystem.MakeDirResponse\x12\x39\n\x04Move\x12\x17.filesystem.MoveRequest\x1a\x18.filesystem.MoveResponse\x12\x42\n\x07ListDir\x12\x1a.filesystem.ListDirRequest\x1a\x1b.filesystem.ListDirResponse\x12?\n\x06Remove\x12\x19.filesystem.RemoveRequest\x1a\x1a.filesystem.RemoveResponse\x12G\n\x08WatchDir\x12\x1b.filesystem.WatchDirRequest\x1a\x1c.filesystem.WatchDirResponse0\x01\x12T\n\rCreateWatcher\x12 .filesystem.CreateWatcherRequest\x1a!.filesystem.CreateWatcherResponse\x12]\n\x10GetWatcherEvents\x12#.filesystem.GetWatcherEventsRequest\x1a$.filesystem.GetWatcherEventsResponse\x12T\n\rRemoveWatcher\x12 .filesystem.RemoveWatcherRequest\x1a!.filesystem.RemoveWatcherResponseBi\n\x0e\x63om.filesystemB\x0f\x46ilesystemProtoP\x01\xa2\x02\x03\x46XX\xaa\x02\nFilesystem\xca\x02\nFilesystem\xe2\x02\x16\x46ilesystem\\GPBMetadata\xea\x02\nFilesystemb\x06proto3'
 )
 
 _globals = globals()
@@ -35,10 +35,10 @@ if not _descriptor._USE_C_DESCRIPTORS:
     _globals[
         "DESCRIPTOR"
     ]._serialized_options = b"\n\016com.filesystemB\017FilesystemProtoP\001\242\002\003FXX\252\002\nFilesystem\312\002\nFilesystem\342\002\026Filesystem\\GPBMetadata\352\002\nFilesystem"
-    _globals["_FILETYPE"]._serialized_start = 1746
-    _globals["_FILETYPE"]._serialized_end = 1828
-    _globals["_EVENTTYPE"]._serialized_start = 1831
-    _globals["_EVENTTYPE"]._serialized_end = 1983
+    _globals["_FILETYPE"]._serialized_start = 1738
+    _globals["_FILETYPE"]._serialized_end = 1820
+    _globals["_EVENTTYPE"]._serialized_start = 1823
+    _globals["_EVENTTYPE"]._serialized_end = 1975
     _globals["_MOVEREQUEST"]._serialized_start = 76
     _globals["_MOVEREQUEST"]._serialized_end = 147
     _globals["_MOVERESPONSE"]._serialized_start = 149
@@ -62,29 +62,29 @@ if not _descriptor._USE_C_DESCRIPTORS:
     _globals["_LISTDIRREQUEST"]._serialized_start = 853
     _globals["_LISTDIRREQUEST"]._serialized_end = 911
     _globals["_LISTDIRRESPONSE"]._serialized_start = 913
-    _globals["_LISTDIRRESPONSE"]._serialized_end = 987
-    _globals["_WATCHDIRREQUEST"]._serialized_start = 989
-    _globals["_WATCHDIRREQUEST"]._serialized_end = 1056
-    _globals["_FILESYSTEMEVENT"]._serialized_start = 1058
-    _globals["_FILESYSTEMEVENT"]._serialized_end = 1138
-    _globals["_WATCHDIRRESPONSE"]._serialized_start = 1141
-    _globals["_WATCHDIRRESPONSE"]._serialized_end = 1395
-    _globals["_WATCHDIRRESPONSE_STARTEVENT"]._serialized_start = 1361
-    _globals["_WATCHDIRRESPONSE_STARTEVENT"]._serialized_end = 1373
-    _globals["_WATCHDIRRESPONSE_KEEPALIVE"]._serialized_start = 1375
-    _globals["_WATCHDIRRESPONSE_KEEPALIVE"]._serialized_end = 1386
-    _globals["_CREATEWATCHERREQUEST"]._serialized_start = 1397
-    _globals["_CREATEWATCHERREQUEST"]._serialized_end = 1469
-    _globals["_CREATEWATCHERRESPONSE"]._serialized_start = 1471
-    _globals["_CREATEWATCHERRESPONSE"]._serialized_end = 1525
-    _globals["_GETWATCHEREVENTSREQUEST"]._serialized_start = 1527
-    _globals["_GETWATCHEREVENTSREQUEST"]._serialized_end = 1583
-    _globals["_GETWATCHEREVENTSRESPONSE"]._serialized_start = 1585
-    _globals["_GETWATCHEREVENTSRESPONSE"]._serialized_end = 1664
-    _globals["_REMOVEWATCHERREQUEST"]._serialized_start = 1666
-    _globals["_REMOVEWATCHERREQUEST"]._serialized_end = 1719
-    _globals["_REMOVEWATCHERRESPONSE"]._serialized_start = 1721
-    _globals["_REMOVEWATCHERRESPONSE"]._serialized_end = 1744
-    _globals["_FILESYSTEM"]._serialized_start = 1986
-    _globals["_FILESYSTEM"]._serialized_end = 2657
+    _globals["_LISTDIRRESPONSE"]._serialized_end = 979
+    _globals["_WATCHDIRREQUEST"]._serialized_start = 981
+    _globals["_WATCHDIRREQUEST"]._serialized_end = 1048
+    _globals["_FILESYSTEMEVENT"]._serialized_start = 1050
+    _globals["_FILESYSTEMEVENT"]._serialized_end = 1130
+    _globals["_WATCHDIRRESPONSE"]._serialized_start = 1133
+    _globals["_WATCHDIRRESPONSE"]._serialized_end = 1387
+    _globals["_WATCHDIRRESPONSE_STARTEVENT"]._serialized_start = 1353
+    _globals["_WATCHDIRRESPONSE_STARTEVENT"]._serialized_end = 1365
+    _globals["_WATCHDIRRESPONSE_KEEPALIVE"]._serialized_start = 1367
+    _globals["_WATCHDIRRESPONSE_KEEPALIVE"]._serialized_end = 1378
+    _globals["_CREATEWATCHERREQUEST"]._serialized_start = 1389
+    _globals["_CREATEWATCHERREQUEST"]._serialized_end = 1461
+    _globals["_CREATEWATCHERRESPONSE"]._serialized_start = 1463
+    _globals["_CREATEWATCHERRESPONSE"]._serialized_end = 1517
+    _globals["_GETWATCHEREVENTSREQUEST"]._serialized_start = 1519
+    _globals["_GETWATCHEREVENTSREQUEST"]._serialized_end = 1575
+    _globals["_GETWATCHEREVENTSRESPONSE"]._serialized_start = 1577
+    _globals["_GETWATCHEREVENTSRESPONSE"]._serialized_end = 1656
+    _globals["_REMOVEWATCHERREQUEST"]._serialized_start = 1658
+    _globals["_REMOVEWATCHERREQUEST"]._serialized_end = 1711
+    _globals["_REMOVEWATCHERRESPONSE"]._serialized_start = 1713
+    _globals["_REMOVEWATCHERRESPONSE"]._serialized_end = 1736
+    _globals["_FILESYSTEM"]._serialized_start = 1978
+    _globals["_FILESYSTEM"]._serialized_end = 2649
 # @@protoc_insertion_point(module_scope)

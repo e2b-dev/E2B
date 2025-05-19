@@ -161,9 +161,9 @@ class ListDirRequest(_message.Message):
 class ListDirResponse(_message.Message):
     __slots__ = ("entries",)
     ENTRIES_FIELD_NUMBER: _ClassVar[int]
-    entries: _containers.RepeatedCompositeFieldContainer[EntryInfoExtended]
+    entries: _containers.RepeatedCompositeFieldContainer[EntryInfo]
     def __init__(
-        self, entries: _Optional[_Iterable[_Union[EntryInfoExtended, _Mapping]]] = ...
+        self, entries: _Optional[_Iterable[_Union[EntryInfo, _Mapping]]] = ...
     ) -> None: ...
 
 class WatchDirRequest(_message.Message):
