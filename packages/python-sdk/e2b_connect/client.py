@@ -125,7 +125,7 @@ class ProtobufCodec:
     @staticmethod
     def decode(data, *, msg_type):
         msg = msg_type()
-        msg.ParseFromString(data)
+        msg.MergeFromString(data)
         return msg
 
 
