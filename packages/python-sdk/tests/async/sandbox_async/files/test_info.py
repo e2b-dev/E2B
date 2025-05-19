@@ -14,6 +14,12 @@ async def test_get_info_of_file(async_sandbox: AsyncSandbox):
     assert info.name == filename
     assert info.type == FileType.FILE
     assert info.path == f"{current_path.stdout.strip()}/{filename}"
+    assert info.size == 4
+    assert info.mode == 0o644
+    assert info.permissions == "rw-r--r--"
+    assert info.owner == "user"
+    assert info.group == "user"
+    assert info.modified_time is not None
 
 
 @pytest.mark.asyncio
@@ -35,6 +41,12 @@ async def test_get_info_of_directory(async_sandbox: AsyncSandbox):
     assert info.name == dirname
     assert info.type == FileType.DIR
     assert info.path == f"{current_path.stdout.strip()}/{dirname}"
+    assert info.size == 0
+    assert info.mode == 0o755
+    assert info.permissions == "rwxr-xr-x"
+    assert info.owner == "user"
+    assert info.group == "user"
+    assert info.modified_time is not None
 
 
 @pytest.mark.asyncio
