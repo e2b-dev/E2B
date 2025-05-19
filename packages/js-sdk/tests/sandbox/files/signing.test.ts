@@ -1,4 +1,4 @@
-import { assert, expect } from 'vitest'
+import { assert, expect, test } from 'vitest'
 import { sandboxTest } from '../../setup.js'
 
 import { Sandbox } from '../../../src'
@@ -6,35 +6,32 @@ import { template, isDebug } from '../../setup'
 
 const timeout = 20 * 1000
 
-sandboxTest.skipIf(isDebug)(
-  'test access file with expired signing',
-  async () => {
-    const sbx = await Sandbox.create(template, {
-      timeoutMs: timeout,
-      secure: true,
-    })
-    await sbx.files.write('hello.txt', 'hello world')
+test.skipIf(isDebug)('test access file with expired signing', async () => {
+  const sbx = await Sandbox.create(template, {
+    timeoutMs: timeout,
+    secure: true,
+  })
+  await sbx.files.write('hello.txt', 'hello world')
 
-    const fileUrlWithSigning = sbx.downloadUrl('hello.txt', {
-      useSignature: true,
-      useSignatureExpiration: -10_000,
-    })
+  const fileUrlWithSigning = sbx.downloadUrl('hello.txt', {
+    useSignature: true,
+    useSignatureExpiration: -10_000,
+  })
 
-    const res = await fetch(fileUrlWithSigning)
-    const resBody = await res.text()
-    const resStatus = res.status
+  const res = await fetch(fileUrlWithSigning)
+  const resBody = await res.text()
+  const resStatus = res.status
 
-    assert.equal(resStatus, 401)
-    assert.deepEqual(JSON.parse(resBody), {
-      code: 401,
-      message: 'signature is already expired',
-    })
+  assert.equal(resStatus, 401)
+  assert.deepEqual(JSON.parse(resBody), {
+    code: 401,
+    message: 'signature is already expired',
+  })
 
-    await sbx.kill()
-  }
-)
+  await sbx.kill()
+})
 
-sandboxTest.skipIf(isDebug)('test access file with valid signing', async () => {
+test.skipIf(isDebug)('test access file with valid signing', async () => {
   const sbx = await Sandbox.create(template, {
     timeoutMs: timeout,
     secure: true,
@@ -56,7 +53,7 @@ sandboxTest.skipIf(isDebug)('test access file with valid signing', async () => {
   await sbx.kill()
 })
 
-sandboxTest.skipIf(isDebug)('test upload file with valid signing', async () => {
+test.skipIf(isDebug)('test upload file with valid signing', async () => {
   const sbx = await Sandbox.create(template, {
     timeoutMs: timeout,
     secure: true,
@@ -81,62 +78,56 @@ sandboxTest.skipIf(isDebug)('test upload file with valid signing', async () => {
   await sbx.kill()
 })
 
-sandboxTest.skipIf(isDebug)(
-  'test upload file with invalid signing',
-  async () => {
-    const sbx = await Sandbox.create(template, {
-      timeoutMs: timeout,
-      secure: true,
-    })
-    const fileUrlWithSigning = sbx.uploadUrl('hello.txt', {
-      useSignature: true,
-      useSignatureExpiration: -10_000,
-    })
+test.skipIf(isDebug)('test upload file with invalid signing', async () => {
+  const sbx = await Sandbox.create(template, {
+    timeoutMs: timeout,
+    secure: true,
+  })
+  const fileUrlWithSigning = sbx.uploadUrl('hello.txt', {
+    useSignature: true,
+    useSignatureExpiration: -10_000,
+  })
 
-    const form = new FormData()
-    form.append('file', 'file content')
+  const form = new FormData()
+  form.append('file', 'file content')
 
-    const res = await fetch(fileUrlWithSigning, { method: 'POST', body: form })
-    const resBody = await res.text()
-    const resStatus = res.status
+  const res = await fetch(fileUrlWithSigning, { method: 'POST', body: form })
+  const resBody = await res.text()
+  const resStatus = res.status
 
-    assert.equal(resStatus, 401)
-    assert.deepEqual(JSON.parse(resBody), {
-      code: 401,
-      message: 'signature is already expired',
-    })
+  assert.equal(resStatus, 401)
+  assert.deepEqual(JSON.parse(resBody), {
+    code: 401,
+    message: 'signature is already expired',
+  })
 
-    await sbx.kill()
-  }
-)
+  await sbx.kill()
+})
 
-sandboxTest.skipIf(isDebug)(
-  'test upload file with missing signing',
-  async () => {
-    const sbx = await Sandbox.create(template, {
-      timeoutMs: timeout,
-      secure: true,
-    })
-    const fileUrlWithSigning = sbx.uploadUrl('hello.txt')
+test.skipIf(isDebug)('test upload file with missing signing', async () => {
+  const sbx = await Sandbox.create(template, {
+    timeoutMs: timeout,
+    secure: true,
+  })
+  const fileUrlWithSigning = sbx.uploadUrl('hello.txt')
 
-    const form = new FormData()
-    form.append('file', 'file content')
+  const form = new FormData()
+  form.append('file', 'file content')
 
-    const res = await fetch(fileUrlWithSigning, { method: 'POST', body: form })
-    const resBody = await res.text()
-    const resStatus = res.status
+  const res = await fetch(fileUrlWithSigning, { method: 'POST', body: form })
+  const resBody = await res.text()
+  const resStatus = res.status
 
-    assert.equal(resStatus, 401)
-    assert.deepEqual(JSON.parse(resBody), {
-      code: 401,
-      message: 'missing signature query parameter',
-    })
+  assert.equal(resStatus, 401)
+  assert.deepEqual(JSON.parse(resBody), {
+    code: 401,
+    message: 'missing signature query parameter',
+  })
 
-    await sbx.kill()
-  }
-)
+  await sbx.kill()
+})
 
-sandboxTest.skipIf(isDebug)('test command run with secured sbx', async () => {
+test.skipIf(isDebug)('test command run with secured sbx', async () => {
   const sbx = await Sandbox.create(template, {
     timeoutMs: timeout,
     secure: true,

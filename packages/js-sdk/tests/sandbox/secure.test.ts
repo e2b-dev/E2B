@@ -1,11 +1,11 @@
-import { assert } from 'vitest'
+import { assert, test } from 'vitest'
 import { getSignature, Sandbox } from '../../src'
 import { isDebug, sandboxTest, template } from '../setup'
 import { randomUUID, createHash } from 'node:crypto'
 
 const timeout = 20 * 1000
 
-sandboxTest.skipIf(isDebug)('test access file without signing', async () => {
+test.skipIf(isDebug)('test access file without signing', async () => {
   const sbx = await Sandbox.create(template, {
     timeoutMs: timeout,
     secure: true,
@@ -27,7 +27,7 @@ sandboxTest.skipIf(isDebug)('test access file without signing', async () => {
   await sbx.kill()
 })
 
-sandboxTest.skipIf(isDebug)('test access file with signing', async () => {
+test.skipIf(isDebug)('test access file with signing', async () => {
   const sbx = await Sandbox.create(template, {
     timeoutMs: timeout,
     secure: true,
@@ -48,7 +48,7 @@ sandboxTest.skipIf(isDebug)('test access file with signing', async () => {
   await sbx.kill()
 })
 
-sandboxTest.skipIf(isDebug)('try to re-connect to sandbox', async () => {
+test.skipIf(isDebug)('try to re-connect to sandbox', async () => {
   const sbx = await Sandbox.create(template, {
     timeoutMs: timeout,
     secure: true,
@@ -59,7 +59,7 @@ sandboxTest.skipIf(isDebug)('try to re-connect to sandbox', async () => {
   await sbxReconnect.kill()
 })
 
-sandboxTest.skipIf(isDebug)('signing generation', async () => {
+test.skipIf(isDebug)('signing generation', async () => {
   const operation = 'read'
   const path = '/home/user/hello.txt'
   const user = 'root'
@@ -86,7 +86,7 @@ sandboxTest.skipIf(isDebug)('signing generation', async () => {
   assert.deepEqual(readSignatureExpected, readSignatureReceived)
 })
 
-sandboxTest.skipIf(isDebug)('signing generation with expiration', async () => {
+test.skipIf(isDebug)('signing generation with expiration', async () => {
   const operation = 'read'
   const path = '/home/user/hello.txt'
   const user = 'root'
@@ -118,7 +118,7 @@ sandboxTest.skipIf(isDebug)('signing generation with expiration', async () => {
   assert.deepEqual(readSignatureExpected, readSignatureReceived)
 })
 
-sandboxTest.skipIf(isDebug)('static signing key comparison', async () => {
+test.skipIf(isDebug)('static signing key comparison', async () => {
   const operation = 'read'
   const path = 'hello.txt'
   const user = 'user'
