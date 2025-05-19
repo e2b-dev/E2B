@@ -3,7 +3,7 @@ import urllib.parse
 from typing import Optional, Dict, List
 from packaging.version import Version
 
-from e2b.sandbox.sandbox_api import SandboxInfo, SandboxApiBase, SandboxQuery
+from e2b.sandbox.sandbox_api import SandboxInfo, SandboxApiBase, SandboxQuery, ListedSandbox
 from e2b.exceptions import TemplateException
 from e2b.api import ApiClient, SandboxCreateResponse
 from e2b.api.client.models import NewSandbox, PostSandboxesSandboxIDTimeoutBody
@@ -29,7 +29,7 @@ class SandboxApi(SandboxApiBase):
         request_timeout: Optional[float] = None,
         headers: Optional[Dict[str, str]] = None,
         proxy: Optional[ProxyTypes] = None,
-    ) -> List[SandboxInfo]:
+    ) -> List[ListedSandbox]:
         """
         List all running sandboxes.
 
@@ -75,7 +75,7 @@ class SandboxApi(SandboxApiBase):
                 return []
 
             return [
-                SandboxInfo(
+                ListedSandbox(
                     sandbox_id=SandboxApi._get_sandbox_id(
                         sandbox.sandbox_id,
                         sandbox.client_id,
@@ -85,6 +85,9 @@ class SandboxApi(SandboxApiBase):
                     metadata=(
                         sandbox.metadata if isinstance(sandbox.metadata, dict) else {}
                     ),
+                    state=sandbox.state,
+                    cpu_count=sandbox.cpu_count,
+                    memory_mb=sandbox.memory_mb,
                     started_at=sandbox.started_at,
                     end_at=sandbox.end_at,
                 )
@@ -149,6 +152,8 @@ class SandboxApi(SandboxApiBase):
                 ),
                 started_at=res.parsed.started_at,
                 end_at=res.parsed.end_at,
+                envd_version=res.parsed.envd_version,
+                _envd_access_token=res.parsed.envd_access_token,
             )
 
     @classmethod
@@ -237,6 +242,7 @@ class SandboxApi(SandboxApiBase):
         timeout: int,
         metadata: Optional[Dict[str, str]] = None,
         env_vars: Optional[Dict[str, str]] = None,
+        secure: Optional[bool] = None,
         api_key: Optional[str] = None,
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
@@ -253,16 +259,14 @@ class SandboxApi(SandboxApiBase):
             proxy=proxy,
         )
 
-        with ApiClient(
-            config,
-            limits=SandboxApiBase._limits
-        ) as api_client:
+        with ApiClient(config, limits=SandboxApiBase._limits) as api_client:
             res = post_sandboxes.sync_detailed(
                 body=NewSandbox(
                     template_id=template,
                     metadata=metadata or {},
                     timeout=timeout,
                     env_vars=env_vars or {},
+                    secure=secure or False,
                 ),
                 client=api_client,
             )
@@ -291,4 +295,5 @@ class SandboxApi(SandboxApiBase):
                     res.parsed.client_id,
                 ),
                 envd_version=res.parsed.envd_version,
+                envd_access_token=res.parsed.envd_access_token,
             )

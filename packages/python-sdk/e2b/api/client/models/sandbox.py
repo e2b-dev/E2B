@@ -18,6 +18,7 @@ class Sandbox:
         sandbox_id (str): Identifier of the sandbox
         template_id (str): Identifier of the template from which is the sandbox created
         alias (Union[Unset, str]): Alias of the template
+        envd_access_token (Union[Unset, str]): Access token used for envd communication
     """
 
     client_id: str
@@ -25,6 +26,7 @@ class Sandbox:
     sandbox_id: str
     template_id: str
     alias: Union[Unset, str] = UNSET
+    envd_access_token: Union[Unset, str] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -38,6 +40,8 @@ class Sandbox:
 
         alias = self.alias
 
+        envd_access_token = self.envd_access_token
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
@@ -50,6 +54,8 @@ class Sandbox:
         )
         if alias is not UNSET:
             field_dict["alias"] = alias
+        if envd_access_token is not UNSET:
+            field_dict["envdAccessToken"] = envd_access_token
 
         return field_dict
 
@@ -66,12 +72,15 @@ class Sandbox:
 
         alias = d.pop("alias", UNSET)
 
+        envd_access_token = d.pop("envdAccessToken", UNSET)
+
         sandbox = cls(
             client_id=client_id,
             envd_version=envd_version,
             sandbox_id=sandbox_id,
             template_id=template_id,
             alias=alias,
+            envd_access_token=envd_access_token,
         )
 
         sandbox.additional_properties = d

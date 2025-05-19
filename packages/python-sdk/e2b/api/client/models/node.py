@@ -20,6 +20,7 @@ class Node:
         sandbox_count (int): Number of sandboxes running on the node
         sandbox_starting_count (int): Number of starting Sandboxes
         status (NodeStatus): Status of the node
+        version (str): Version of the orchestrator
     """
 
     allocated_cpu: int
@@ -29,6 +30,7 @@ class Node:
     sandbox_count: int
     sandbox_starting_count: int
     status: NodeStatus
+    version: str
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -46,6 +48,8 @@ class Node:
 
         status = self.status.value
 
+        version = self.version
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
@@ -57,6 +61,7 @@ class Node:
                 "sandboxCount": sandbox_count,
                 "sandboxStartingCount": sandbox_starting_count,
                 "status": status,
+                "version": version,
             }
         )
 
@@ -79,6 +84,8 @@ class Node:
 
         status = NodeStatus(d.pop("status"))
 
+        version = d.pop("version")
+
         node = cls(
             allocated_cpu=allocated_cpu,
             allocated_memory_mi_b=allocated_memory_mi_b,
@@ -87,6 +94,7 @@ class Node:
             sandbox_count=sandbox_count,
             sandbox_starting_count=sandbox_starting_count,
             status=status,
+            version=version,
         )
 
         node.additional_properties = d

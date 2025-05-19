@@ -4,7 +4,7 @@ info:
   title: E2B API
 
 servers:
-  - url: https://api.e2b.dev
+  - url: https://api.e2b.app
 
 components:
   securitySchemes:
@@ -146,20 +146,25 @@ components:
       type: integer
       format: int32
       minimum: 1
-      maximum: 8
       description: CPU cores for the sandbox
 
     MemoryMB:
       type: integer
       format: int32
       minimum: 128
-      maximum: 8192
       description: Memory for the sandbox in MB
 
     SandboxMetadata:
       additionalProperties:
         type: string
         description: Metadata of the sandbox
+
+    SandboxState:
+      type: string
+      description: State of the sandbox
+      enum:
+        - running
+        - paused
 
     EnvVars:
       additionalProperties:
@@ -242,8 +247,11 @@ components:
         envdVersion:
           type: string
           description: Version of the envd running in the sandbox
+        envdAccessToken:
+          type: string
+          description: Access token used for envd communication
 
-    RunningSandbox:
+    SandboxDetail:
       required:
         - templateID
         - sandboxID
@@ -252,6 +260,53 @@ components:
         - cpuCount
         - memoryMB
         - endAt
+        - state
+      properties:
+        templateID:
+          type: string
+          description: Identifier of the template from which is the sandbox created
+        alias:
+          type: string
+          description: Alias of the template
+        sandboxID:
+          type: string
+          description: Identifier of the sandbox
+        clientID:
+          type: string
+          description: Identifier of the client
+        startedAt:
+          type: string
+          format: date-time
+          description: Time when the sandbox was started
+        endAt:
+          type: string
+          format: date-time
+          description: Time when the sandbox will expire
+        envdVersion:
+          type: string
+          description: Version of the envd running in the sandbox
+        envdAccessToken:
+          type: string
+          description: Access token used for envd communication
+        cpuCount:
+          $ref: "#/components/schemas/CPUCount"
+        memoryMB:
+          $ref: "#/components/schemas/MemoryMB"
+        metadata:
+          $ref: "#/components/schemas/SandboxMetadata"
+        state:
+          $ref: "#/components/schemas/SandboxState"
+
+    ListedSandbox:
+      required:
+        - templateID
+        - sandboxID
+        - clientID
+        - startedAt
+        - cpuCount
+        - memoryMB
+        - endAt
+        - state
       properties:
         templateID:
           type: string
@@ -279,6 +334,8 @@ components:
           $ref: "#/components/schemas/MemoryMB"
         metadata:
           $ref: "#/components/schemas/SandboxMetadata"
+        state:
+          $ref: "#/components/schemas/SandboxState"
 
     RunningSandboxWithMetrics:
       required:
@@ -338,6 +395,9 @@ components:
           type: boolean
           default: false
           description: Automatically pauses the sandbox after the timeout
+        secure:
+          type: boolean
+          description: Secure all system communication with sandbox
         metadata:
           $ref: "#/components/schemas/SandboxMetadata"
         envVars:
@@ -487,7 +547,11 @@ components:
         - allocatedMemoryMiB
         - createFails
         - sandboxStartingCount
+        - version
       properties:
+        version:
+          type: string
+          description: Version of the orchestrator
         nodeID:
           type: string
           description: Identifier of the node
@@ -521,7 +585,11 @@ components:
         - sandboxes
         - cachedBuilds
         - createFails
+        - version
       properties:
+        version:
+          type: string
+          description: Version of the orchestrator
         nodeID:
           type: string
           description: Identifier of the node
@@ -531,7 +599,7 @@ components:
           type: array
           description: List of sandboxes running on the node
           items:
-            $ref: "#/components/schemas/RunningSandbox"
+            $ref: "#/components/schemas/ListedSandbox"
         cachedBuilds:
           type: array
           description: List of cached builds id on the node
@@ -738,7 +806,7 @@ paths:
                 type: array
                 items:
                   allOf:
-                    - $ref: "#/components/schemas/RunningSandbox"
+                    - $ref: "#/components/schemas/ListedSandbox"
         "401":
           $ref: "#/components/responses/401"
         "400":
@@ -765,6 +833,64 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Sandbox"
+        "401":
+          $ref: "#/components/responses/401"
+        "400":
+          $ref: "#/components/responses/400"
+        "500":
+          $ref: "#/components/responses/500"
+
+  /v2/sandboxes:
+    get:
+      description: List all sandboxes
+      tags: [sandboxes]
+      security:
+        - ApiKeyAuth: []
+        - Supabase1TokenAuth: []
+          Supabase2TeamAuth: []
+      parameters:
+        - name: metadata
+          in: query
+          description: Metadata query used to filter the sandboxes (e.g. "user=abc&app=prod"). Each key and values must be URL encoded.
+          required: false
+          schema:
+            type: string
+        - name: state
+          in: query
+          description: Filter sandboxes by one or more states
+          required: false
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/SandboxState"
+          style: form
+          explode: false
+        - name: nextToken
+          in: query
+          description: Cursor to start the list from
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: Maximum number of items to return per page
+          required: false
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+            default: 1000
+            maximum: 1000
+      responses:
+        "200":
+          description: Successfully returned all running sandboxes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  allOf:
+                    - $ref: "#/components/schemas/ListedSandbox"
         "401":
           $ref: "#/components/responses/401"
         "400":
@@ -867,7 +993,6 @@ paths:
         "500":
           $ref: "#/components/responses/500"
 
-
   /sandboxes/{sandboxID}:
     get:
       description: Get a sandbox by id
@@ -884,7 +1009,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/RunningSandbox"
+                $ref: "#/components/schemas/SandboxDetail"
         "404":
           $ref: "#/components/responses/404"
         "401":
@@ -1076,6 +1201,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Template"
+        "400":
+          $ref: "#/components/responses/400"
         "401":
           $ref: "#/components/responses/401"
         "500":

@@ -41,7 +41,7 @@
     "autoprefixer": "^10.4.7",
     "class-variance-authority": "^0.7.0",
     "clsx": "^1.2.1",
-    "e2b": "^1.4.0",
+    "e2b": "^1.5.0",
     "fast-glob": "^3.3.0",
     "fast-xml-parser": "4.4.1",
     "flexsearch": "^0.7.31",

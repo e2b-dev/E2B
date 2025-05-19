@@ -34,6 +34,7 @@ class Commands:
             # compressor=e2b_connect.GzipCompressor,
             pool=pool,
             json=True,
+            headers=connection_config.headers,
         )
 
     def list(

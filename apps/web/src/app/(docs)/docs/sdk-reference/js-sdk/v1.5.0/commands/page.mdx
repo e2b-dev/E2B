@@ -1,0 +1,483 @@
+### Commands
+
+Module for starting and interacting with commands in the sandbox.
+
+#### Constructors
+
+```ts
+new Commands(transport: Transport, connectionConfig: ConnectionConfig): Commands
+```
+
+###### Parameters
+
+| Parameter | Type |
+| ------ | ------ |
+| `transport` | `Transport` |
+| `connectionConfig` | `ConnectionConfig` |
+
+###### Returns
+
+`Commands`
+
+#### Methods
+
+### connect()
+
+```ts
+connect(pid: number, opts?: CommandConnectOpts): Promise<CommandHandle>
+```
+
+Connect to a running command.
+You can use CommandHandle.wait to wait for the command to finish and get execution results.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `pid` | `number` | process ID of the command to connect to. You can get the list of running commands using Commands.list. |
+| `opts`? | `CommandConnectOpts` | connection options. |
+
+###### Returns
+
+`Promise`\<`CommandHandle`\>
+
+`CommandHandle` handle to interact with the running command.
+
+### kill()
+
+```ts
+kill(pid: number, opts?: CommandRequestOpts): Promise<boolean>
+```
+
+Kill a running command specified by its process ID.
+It uses `SIGKILL` signal to kill the command.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `pid` | `number` | process ID of the command. You can get the list of running commands using Commands.list. |
+| `opts`? | `CommandRequestOpts` | connection options. |
+
+###### Returns
+
+`Promise`\<`boolean`\>
+
+`true` if the command was killed, `false` if the command was not found.
+
+### list()
+
+```ts
+list(opts?: CommandRequestOpts): Promise<ProcessInfo[]>
+```
+
+List all running commands and PTY sessions.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `opts`? | `CommandRequestOpts` | connection options. |
+
+###### Returns
+
+`Promise`\<`ProcessInfo`[]\>
+
+list of running commands and PTY sessions.
+
+### run()
+
+###### run(cmd, opts)
+
+```ts
+run(cmd: string, opts?: CommandStartOpts & object): Promise<CommandResult>
+```
+
+Start a new command and wait until it finishes executing.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `cmd` | `string` | command to execute. |
+| `opts`? | `CommandStartOpts` & `object` | options for starting the command. |
+
+###### Returns
+
+`Promise`\<`CommandResult`\>
+
+`CommandResult` result of the command execution.
+
+###### run(cmd, opts)
+
+```ts
+run(cmd: string, opts?: CommandStartOpts & object): Promise<CommandHandle>
+```
+
+Start a new command in the background.
+You can use CommandHandle.wait to wait for the command to finish and get its result.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `cmd` | `string` | command to execute. |
+| `opts`? | `CommandStartOpts` & `object` | options for starting the command |
+
+###### Returns
+
+`Promise`\<`CommandHandle`\>
+
+`CommandHandle` handle to interact with the running command.
+
+### sendStdin()
+
+```ts
+sendStdin(
+   pid: number, 
+   data: string, 
+opts?: CommandRequestOpts): Promise<void>
+```
+
+Send data to command stdin.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `pid` | `number` | process ID of the command. You can get the list of running commands using Commands.list. |
+| `data` | `string` | data to send to the command. |
+| `opts`? | `CommandRequestOpts` | connection options. |
+
+###### Returns
+
+`Promise`\<`void`\>
+
+***
+
+### Pty
+
+Module for interacting with PTYs (pseudo-terminals) in the sandbox.
+
+#### Constructors
+
+```ts
+new Pty(transport: Transport, connectionConfig: ConnectionConfig): Pty
+```
+
+###### Parameters
+
+| Parameter | Type |
+| ------ | ------ |
+| `transport` | `Transport` |
+| `connectionConfig` | `ConnectionConfig` |
+
+###### Returns
+
+`Pty`
+
+#### Methods
+
+### create()
+
+```ts
+create(opts: PtyCreateOpts): Promise<CommandHandle>
+```
+
+Create a new PTY (pseudo-terminal).
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `opts` | `PtyCreateOpts` | options for creating the PTY. |
+
+###### Returns
+
+`Promise`\<`CommandHandle`\>
+
+handle to interact with the PTY.
+
+### kill()
+
+```ts
+kill(pid: number, opts?: Pick<ConnectionOpts, "requestTimeoutMs">): Promise<boolean>
+```
+
+Kill a running PTY specified by process ID.
+It uses `SIGKILL` signal to kill the PTY.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `pid` | `number` | process ID of the PTY. |
+| `opts`? | `Pick`\<`ConnectionOpts`, `"requestTimeoutMs"`\> | connection options. |
+
+###### Returns
+
+`Promise`\<`boolean`\>
+
+`true` if the PTY was killed, `false` if the PTY was not found.
+
+### resize()
+
+```ts
+resize(
+   pid: number, 
+   size: object, 
+opts?: Pick<ConnectionOpts, "requestTimeoutMs">): Promise<void>
+```
+
+Resize PTY.
+Call this when the terminal window is resized and the number of columns and rows has changed.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `pid` | `number` | process ID of the PTY. |
+| `size` | `object` | new size of the PTY. |
+| `size.cols` | `number` | - |
+| `size.rows`? | `number` | - |
+| `opts`? | `Pick`\<`ConnectionOpts`, `"requestTimeoutMs"`\> | connection options. |
+
+###### Returns
+
+`Promise`\<`void`\>
+
+### sendInput()
+
+```ts
+sendInput(
+   pid: number, 
+   data: Uint8Array, 
+opts?: Pick<ConnectionOpts, "requestTimeoutMs">): Promise<void>
+```
+
+Send input to a PTY.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `pid` | `number` | process ID of the PTY. |
+| `data` | `Uint8Array` | input data to send to the PTY. |
+| `opts`? | `Pick`\<`ConnectionOpts`, `"requestTimeoutMs"`\> | connection options. |
+
+###### Returns
+
+`Promise`\<`void`\>
+
+## Interfaces
+
+### CommandRequestOpts
+
+Options for sending a command request.
+
+#### Extended by
+
+- `CommandStartOpts`
+
+#### Properties
+
+### requestTimeoutMs?
+
+```ts
+optional requestTimeoutMs: number;
+```
+
+Timeout for requests to the API in **milliseconds**.
+
+###### Default
+
+```ts
+30_000 // 30 seconds
+```
+
+***
+
+### CommandStartOpts
+
+Options for starting a new command.
+
+#### Properties
+
+### background?
+
+```ts
+optional background: boolean;
+```
+
+If true, starts command in the background and the method returns immediately.
+You can use CommandHandle.wait to wait for the command to finish.
+
+### cwd?
+
+```ts
+optional cwd: string;
+```
+
+Working directory for the command.
+
+###### Default
+
+```ts
+// home directory of the user used to start the command
+```
+
+### envs?
+
+```ts
+optional envs: Record<string, string>;
+```
+
+Environment variables used for the command.
+
+This overrides the default environment variables from `Sandbox` constructor.
+
+###### Default
+
+`{}`
+
+### onStderr()?
+
+```ts
+optional onStderr: (data: string) => void | Promise<void>;
+```
+
+Callback for command stderr output.
+
+###### Parameters
+
+| Parameter | Type |
+| ------ | ------ |
+| `data` | `string` |
+
+###### Returns
+
+`void` \| `Promise`\<`void`\>
+
+### onStdout()?
+
+```ts
+optional onStdout: (data: string) => void | Promise<void>;
+```
+
+Callback for command stdout output.
+
+###### Parameters
+
+| Parameter | Type |
+| ------ | ------ |
+| `data` | `string` |
+
+###### Returns
+
+`void` \| `Promise`\<`void`\>
+
+### requestTimeoutMs?
+
+```ts
+optional requestTimeoutMs: number;
+```
+
+Timeout for requests to the API in **milliseconds**.
+
+###### Default
+
+```ts
+30_000 // 30 seconds
+```
+
+### timeoutMs?
+
+```ts
+optional timeoutMs: number;
+```
+
+Timeout for the command in **milliseconds**.
+
+###### Default
+
+```ts
+60_000 // 60 seconds
+```
+
+### user?
+
+```ts
+optional user: Username;
+```
+
+User to run the command as.
+
+###### Default
+
+`user`
+
+***
+
+### ProcessInfo
+
+Information about a command, PTY session or start command running in the sandbox as process.
+
+#### Properties
+
+### args
+
+```ts
+args: string[];
+```
+
+Command arguments.
+
+### cmd
+
+```ts
+cmd: string;
+```
+
+Command that was executed.
+
+### cwd?
+
+```ts
+optional cwd: string;
+```
+
+Executed command working directory.
+
+### envs
+
+```ts
+envs: Record<string, string>;
+```
+
+Environment variables used for the command.
+
+### pid
+
+```ts
+pid: number;
+```
+
+Process ID.
+
+### tag?
+
+```ts
+optional tag: string;
+```
+
+Custom tag used for identifying special commands like start command in the custom template.
+
+## Type Aliases
+
+### CommandConnectOpts
+
+```ts
+type CommandConnectOpts: Pick<CommandStartOpts, "onStderr" | "onStdout" | "timeoutMs"> & CommandRequestOpts;
+```
+
+Options for connecting to a command.
