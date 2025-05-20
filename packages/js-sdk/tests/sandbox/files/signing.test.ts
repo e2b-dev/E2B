@@ -1,5 +1,4 @@
-import { assert, expect, test } from 'vitest'
-import { sandboxTest } from '../../setup.js'
+import { assert, test } from 'vitest'
 
 import { Sandbox } from '../../../src'
 import { template, isDebug } from '../../setup'

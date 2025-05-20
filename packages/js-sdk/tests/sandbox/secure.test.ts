@@ -1,6 +1,6 @@
 import { assert, test } from 'vitest'
 import { getSignature, Sandbox } from '../../src'
-import { isDebug, sandboxTest, template } from '../setup'
+import { isDebug, template } from '../setup'
 import { randomUUID, createHash } from 'node:crypto'
 
 const timeout = 20 * 1000

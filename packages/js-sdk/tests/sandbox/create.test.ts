@@ -1,7 +1,7 @@
 import { assert, test } from 'vitest'
 
 import { Sandbox } from '../../src'
-import { template, isDebug, sandboxTest } from '../setup.js'
+import { template, isDebug } from '../setup.js'
 
 test.skipIf(isDebug)('create', async () => {
   const sbx = await Sandbox.create(template, { timeoutMs: 5_000 })
