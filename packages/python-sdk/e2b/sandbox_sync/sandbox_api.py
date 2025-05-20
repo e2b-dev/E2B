@@ -253,10 +253,7 @@ class SandboxApi(SandboxApiBase):
             proxy=proxy,
         )
 
-        with ApiClient(
-            config,
-            limits=SandboxApiBase._limits
-        ) as api_client:
+        with ApiClient(config, limits=SandboxApiBase._limits) as api_client:
             res = post_sandboxes.sync_detailed(
                 body=NewSandbox(
                     template_id=template,

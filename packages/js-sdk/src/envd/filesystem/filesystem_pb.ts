@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file filesystem/filesystem.proto.
  */
 export const file_filesystem_filesystem: GenFile = /*@__PURE__*/
-  fileDesc("ChtmaWxlc3lzdGVtL2ZpbGVzeXN0ZW0ucHJvdG8SCmZpbGVzeXN0ZW0iMgoLTW92ZVJlcXVlc3QSDgoGc291cmNlGAEgASgJEhMKC2Rlc3RpbmF0aW9uGAIgASgJIjQKDE1vdmVSZXNwb25zZRIkCgVlbnRyeRgBIAEoCzIVLmZpbGVzeXN0ZW0uRW50cnlJbmZvIh4KDk1ha2VEaXJSZXF1ZXN0EgwKBHBhdGgYASABKAkiNwoPTWFrZURpclJlc3BvbnNlEiQKBWVudHJ5GAEgASgLMhUuZmlsZXN5c3RlbS5FbnRyeUluZm8iHQoNUmVtb3ZlUmVxdWVzdBIMCgRwYXRoGAEgASgJIhAKDlJlbW92ZVJlc3BvbnNlIhsKC1N0YXRSZXF1ZXN0EgwKBHBhdGgYASABKAkiPAoMU3RhdFJlc3BvbnNlEiwKBWVudHJ5GAEgASgLMh0uZmlsZXN5c3RlbS5FbnRyeUluZm9FeHRlbmRlZCJLCglFbnRyeUluZm8SDAoEbmFtZRgBIAEoCRIiCgR0eXBlGAIgASgOMhQuZmlsZXN5c3RlbS5GaWxlVHlwZRIMCgRwYXRoGAMgASgJItUBChFFbnRyeUluZm9FeHRlbmRlZBIMCgRuYW1lGAEgASgJEiIKBHR5cGUYAiABKA4yFC5maWxlc3lzdGVtLkZpbGVUeXBlEgwKBHBhdGgYAyABKAkSDAoEc2l6ZRgEIAEoAxIMCgRtb2RlGAUgASgNEhMKC3Blcm1pc3Npb25zGAYgASgJEg0KBW93bmVyGAcgASgJEg0KBWdyb3VwGAggASgJEjEKDW1vZGlmaWVkX3RpbWUYCSABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wIi0KDkxpc3REaXJSZXF1ZXN0EgwKBHBhdGgYASABKAkSDQoFZGVwdGgYAiABKA0iOQoPTGlzdERpclJlc3BvbnNlEiYKB2VudHJpZXMYASADKAsyFS5maWxlc3lzdGVtLkVudHJ5SW5mbyIyCg9XYXRjaERpclJlcXVlc3QSDAoEcGF0aBgBIAEoCRIRCglyZWN1cnNpdmUYAiABKAgiRAoPRmlsZXN5c3RlbUV2ZW50EgwKBG5hbWUYASABKAkSIwoEdHlwZRgCIAEoDjIVLmZpbGVzeXN0ZW0uRXZlbnRUeXBlIuABChBXYXRjaERpclJlc3BvbnNlEjgKBXN0YXJ0GAEgASgLMicuZmlsZXN5c3RlbS5XYXRjaERpclJlc3BvbnNlLlN0YXJ0RXZlbnRIABIxCgpmaWxlc3lzdGVtGAIgASgLMhsuZmlsZXN5c3RlbS5GaWxlc3lzdGVtRXZlbnRIABI7CglrZWVwYWxpdmUYAyABKAsyJi5maWxlc3lzdGVtLldhdGNoRGlyUmVzcG9uc2UuS2VlcEFsaXZlSAAaDAoKU3RhcnRFdmVudBoLCglLZWVwQWxpdmVCBwoFZXZlbnQiNwoUQ3JlYXRlV2F0Y2hlclJlcXVlc3QSDAoEcGF0aBgBIAEoCRIRCglyZWN1cnNpdmUYAiABKAgiKwoVQ3JlYXRlV2F0Y2hlclJlc3BvbnNlEhIKCndhdGNoZXJfaWQYASABKAkiLQoXR2V0V2F0Y2hlckV2ZW50c1JlcXVlc3QSEgoKd2F0Y2hlcl9pZBgBIAEoCSJHChhHZXRXYXRjaGVyRXZlbnRzUmVzcG9uc2USKwoGZXZlbnRzGAEgAygLMhsuZmlsZXN5c3RlbS5GaWxlc3lzdGVtRXZlbnQiKgoUUmVtb3ZlV2F0Y2hlclJlcXVlc3QSEgoKd2F0Y2hlcl9pZBgBIAEoCSIXChVSZW1vdmVXYXRjaGVyUmVzcG9uc2UqUgoIRmlsZVR5cGUSGQoVRklMRV9UWVBFX1VOU1BFQ0lGSUVEEAASEgoORklMRV9UWVBFX0ZJTEUQARIXChNGSUxFX1RZUEVfRElSRUNUT1JZEAIqmAEKCUV2ZW50VHlwZRIaChZFVkVOVF9UWVBFX1VOU1BFQ0lGSUVEEAASFQoRRVZFTlRfVFlQRV9DUkVBVEUQARIUChBFVkVOVF9UWVBFX1dSSVRFEAISFQoRRVZFTlRfVFlQRV9SRU1PVkUQAxIVChFFVkVOVF9UWVBFX1JFTkFNRRAEEhQKEEVWRU5UX1RZUEVfQ0hNT0QQBTKfBQoKRmlsZXN5c3RlbRI5CgRTdGF0EhcuZmlsZXN5c3RlbS5TdGF0UmVxdWVzdBoYLmZpbGVzeXN0ZW0uU3RhdFJlc3BvbnNlEkIKB01ha2VEaXISGi5maWxlc3lzdGVtLk1ha2VEaXJSZXF1ZXN0GhsuZmlsZXN5c3RlbS5NYWtlRGlyUmVzcG9uc2USOQoETW92ZRIXLmZpbGVzeXN0ZW0uTW92ZVJlcXVlc3QaGC5maWxlc3lzdGVtLk1vdmVSZXNwb25zZRJCCgdMaXN0RGlyEhouZmlsZXN5c3RlbS5MaXN0RGlyUmVxdWVzdBobLmZpbGVzeXN0ZW0uTGlzdERpclJlc3BvbnNlEj8KBlJlbW92ZRIZLmZpbGVzeXN0ZW0uUmVtb3ZlUmVxdWVzdBoaLmZpbGVzeXN0ZW0uUmVtb3ZlUmVzcG9uc2USRwoIV2F0Y2hEaXISGy5maWxlc3lzdGVtLldhdGNoRGlyUmVxdWVzdBocLmZpbGVzeXN0ZW0uV2F0Y2hEaXJSZXNwb25zZTABElQKDUNyZWF0ZVdhdGNoZXISIC5maWxlc3lzdGVtLkNyZWF0ZVdhdGNoZXJSZXF1ZXN0GiEuZmlsZXN5c3RlbS5DcmVhdGVXYXRjaGVyUmVzcG9uc2USXQoQR2V0V2F0Y2hlckV2ZW50cxIjLmZpbGVzeXN0ZW0uR2V0V2F0Y2hlckV2ZW50c1JlcXVlc3QaJC5maWxlc3lzdGVtLkdldFdhdGNoZXJFdmVudHNSZXNwb25zZRJUCg1SZW1vdmVXYXRjaGVyEiAuZmlsZXN5c3RlbS5SZW1vdmVXYXRjaGVyUmVxdWVzdBohLmZpbGVzeXN0ZW0uUmVtb3ZlV2F0Y2hlclJlc3BvbnNlQmkKDmNvbS5maWxlc3lzdGVtQg9GaWxlc3lzdGVtUHJvdG9QAaICA0ZYWKoCCkZpbGVzeXN0ZW3KAgpGaWxlc3lzdGVt4gIWRmlsZXN5c3RlbVxHUEJNZXRhZGF0YeoCCkZpbGVzeXN0ZW1iBnByb3RvMw", [file_google_protobuf_timestamp]);
+  fileDesc("ChtmaWxlc3lzdGVtL2ZpbGVzeXN0ZW0ucHJvdG8SCmZpbGVzeXN0ZW0iMgoLTW92ZVJlcXVlc3QSDgoGc291cmNlGAEgASgJEhMKC2Rlc3RpbmF0aW9uGAIgASgJIjQKDE1vdmVSZXNwb25zZRIkCgVlbnRyeRgBIAEoCzIVLmZpbGVzeXN0ZW0uRW50cnlJbmZvIh4KDk1ha2VEaXJSZXF1ZXN0EgwKBHBhdGgYASABKAkiNwoPTWFrZURpclJlc3BvbnNlEiQKBWVudHJ5GAEgASgLMhUuZmlsZXN5c3RlbS5FbnRyeUluZm8iHQoNUmVtb3ZlUmVxdWVzdBIMCgRwYXRoGAEgASgJIhAKDlJlbW92ZVJlc3BvbnNlIhsKC1N0YXRSZXF1ZXN0EgwKBHBhdGgYASABKAkiNAoMU3RhdFJlc3BvbnNlEiQKBWVudHJ5GAEgASgLMhUuZmlsZXN5c3RlbS5FbnRyeUluZm8izQEKCUVudHJ5SW5mbxIMCgRuYW1lGAEgASgJEiIKBHR5cGUYAiABKA4yFC5maWxlc3lzdGVtLkZpbGVUeXBlEgwKBHBhdGgYAyABKAkSDAoEc2l6ZRgEIAEoAxIMCgRtb2RlGAUgASgNEhMKC3Blcm1pc3Npb25zGAYgASgJEg0KBW93bmVyGAcgASgJEg0KBWdyb3VwGAggASgJEjEKDW1vZGlmaWVkX3RpbWUYCSABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wIi0KDkxpc3REaXJSZXF1ZXN0EgwKBHBhdGgYASABKAkSDQoFZGVwdGgYAiABKA0iOQoPTGlzdERpclJlc3BvbnNlEiYKB2VudHJpZXMYASADKAsyFS5maWxlc3lzdGVtLkVudHJ5SW5mbyIyCg9XYXRjaERpclJlcXVlc3QSDAoEcGF0aBgBIAEoCRIRCglyZWN1cnNpdmUYAiABKAgiRAoPRmlsZXN5c3RlbUV2ZW50EgwKBG5hbWUYASABKAkSIwoEdHlwZRgCIAEoDjIVLmZpbGVzeXN0ZW0uRXZlbnRUeXBlIuABChBXYXRjaERpclJlc3BvbnNlEjgKBXN0YXJ0GAEgASgLMicuZmlsZXN5c3RlbS5XYXRjaERpclJlc3BvbnNlLlN0YXJ0RXZlbnRIABIxCgpmaWxlc3lzdGVtGAIgASgLMhsuZmlsZXN5c3RlbS5GaWxlc3lzdGVtRXZlbnRIABI7CglrZWVwYWxpdmUYAyABKAsyJi5maWxlc3lzdGVtLldhdGNoRGlyUmVzcG9uc2UuS2VlcEFsaXZlSAAaDAoKU3RhcnRFdmVudBoLCglLZWVwQWxpdmVCBwoFZXZlbnQiNwoUQ3JlYXRlV2F0Y2hlclJlcXVlc3QSDAoEcGF0aBgBIAEoCRIRCglyZWN1cnNpdmUYAiABKAgiKwoVQ3JlYXRlV2F0Y2hlclJlc3BvbnNlEhIKCndhdGNoZXJfaWQYASABKAkiLQoXR2V0V2F0Y2hlckV2ZW50c1JlcXVlc3QSEgoKd2F0Y2hlcl9pZBgBIAEoCSJHChhHZXRXYXRjaGVyRXZlbnRzUmVzcG9uc2USKwoGZXZlbnRzGAEgAygLMhsuZmlsZXN5c3RlbS5GaWxlc3lzdGVtRXZlbnQiKgoUUmVtb3ZlV2F0Y2hlclJlcXVlc3QSEgoKd2F0Y2hlcl9pZBgBIAEoCSIXChVSZW1vdmVXYXRjaGVyUmVzcG9uc2UqUgoIRmlsZVR5cGUSGQoVRklMRV9UWVBFX1VOU1BFQ0lGSUVEEAASEgoORklMRV9UWVBFX0ZJTEUQARIXChNGSUxFX1RZUEVfRElSRUNUT1JZEAIqmAEKCUV2ZW50VHlwZRIaChZFVkVOVF9UWVBFX1VOU1BFQ0lGSUVEEAASFQoRRVZFTlRfVFlQRV9DUkVBVEUQARIUChBFVkVOVF9UWVBFX1dSSVRFEAISFQoRRVZFTlRfVFlQRV9SRU1PVkUQAxIVChFFVkVOVF9UWVBFX1JFTkFNRRAEEhQKEEVWRU5UX1RZUEVfQ0hNT0QQBTKfBQoKRmlsZXN5c3RlbRI5CgRTdGF0EhcuZmlsZXN5c3RlbS5TdGF0UmVxdWVzdBoYLmZpbGVzeXN0ZW0uU3RhdFJlc3BvbnNlEkIKB01ha2VEaXISGi5maWxlc3lzdGVtLk1ha2VEaXJSZXF1ZXN0GhsuZmlsZXN5c3RlbS5NYWtlRGlyUmVzcG9uc2USOQoETW92ZRIXLmZpbGVzeXN0ZW0uTW92ZVJlcXVlc3QaGC5maWxlc3lzdGVtLk1vdmVSZXNwb25zZRJCCgdMaXN0RGlyEhouZmlsZXN5c3RlbS5MaXN0RGlyUmVxdWVzdBobLmZpbGVzeXN0ZW0uTGlzdERpclJlc3BvbnNlEj8KBlJlbW92ZRIZLmZpbGVzeXN0ZW0uUmVtb3ZlUmVxdWVzdBoaLmZpbGVzeXN0ZW0uUmVtb3ZlUmVzcG9uc2USRwoIV2F0Y2hEaXISGy5maWxlc3lzdGVtLldhdGNoRGlyUmVxdWVzdBocLmZpbGVzeXN0ZW0uV2F0Y2hEaXJSZXNwb25zZTABElQKDUNyZWF0ZVdhdGNoZXISIC5maWxlc3lzdGVtLkNyZWF0ZVdhdGNoZXJSZXF1ZXN0GiEuZmlsZXN5c3RlbS5DcmVhdGVXYXRjaGVyUmVzcG9uc2USXQoQR2V0V2F0Y2hlckV2ZW50cxIjLmZpbGVzeXN0ZW0uR2V0V2F0Y2hlckV2ZW50c1JlcXVlc3QaJC5maWxlc3lzdGVtLkdldFdhdGNoZXJFdmVudHNSZXNwb25zZRJUCg1SZW1vdmVXYXRjaGVyEiAuZmlsZXN5c3RlbS5SZW1vdmVXYXRjaGVyUmVxdWVzdBohLmZpbGVzeXN0ZW0uUmVtb3ZlV2F0Y2hlclJlc3BvbnNlQmkKDmNvbS5maWxlc3lzdGVtQg9GaWxlc3lzdGVtUHJvdG9QAaICA0ZYWKoCCkZpbGVzeXN0ZW3KAgpGaWxlc3lzdGVt4gIWRmlsZXN5c3RlbVxHUEJNZXRhZGF0YeoCCkZpbGVzeXN0ZW1iBnByb3RvMw", [file_google_protobuf_timestamp]);
 
 /**
  * @generated from message filesystem.MoveRequest
@@ -139,9 +139,9 @@ export const StatRequestSchema: GenMessage<StatRequest> = /*@__PURE__*/
  */
 export type StatResponse = Message<"filesystem.StatResponse"> & {
   /**
-   * @generated from field: filesystem.EntryInfoExtended entry = 1;
+   * @generated from field: filesystem.EntryInfo entry = 1;
    */
-  entry?: EntryInfoExtended;
+  entry?: EntryInfo;
 };
 
 /**
@@ -155,33 +155,6 @@ export const StatResponseSchema: GenMessage<StatResponse> = /*@__PURE__*/
  * @generated from message filesystem.EntryInfo
  */
 export type EntryInfo = Message<"filesystem.EntryInfo"> & {
-  /**
-   * @generated from field: string name = 1;
-   */
-  name: string;
-
-  /**
-   * @generated from field: filesystem.FileType type = 2;
-   */
-  type: FileType;
-
-  /**
-   * @generated from field: string path = 3;
-   */
-  path: string;
-};
-
-/**
- * Describes the message filesystem.EntryInfo.
- * Use `create(EntryInfoSchema)` to create a new message.
- */
-export const EntryInfoSchema: GenMessage<EntryInfo> = /*@__PURE__*/
-  messageDesc(file_filesystem_filesystem, 8);
-
-/**
- * @generated from message filesystem.EntryInfoExtended
- */
-export type EntryInfoExtended = Message<"filesystem.EntryInfoExtended"> & {
   /**
    * @generated from field: string name = 1;
    */
@@ -229,11 +202,11 @@ export type EntryInfoExtended = Message<"filesystem.EntryInfoExtended"> & {
 };
 
 /**
- * Describes the message filesystem.EntryInfoExtended.
- * Use `create(EntryInfoExtendedSchema)` to create a new message.
+ * Describes the message filesystem.EntryInfo.
+ * Use `create(EntryInfoSchema)` to create a new message.
  */
-export const EntryInfoExtendedSchema: GenMessage<EntryInfoExtended> = /*@__PURE__*/
-  messageDesc(file_filesystem_filesystem, 9);
+export const EntryInfoSchema: GenMessage<EntryInfo> = /*@__PURE__*/
+  messageDesc(file_filesystem_filesystem, 8);
 
 /**
  * @generated from message filesystem.ListDirRequest
@@ -255,7 +228,7 @@ export type ListDirRequest = Message<"filesystem.ListDirRequest"> & {
  * Use `create(ListDirRequestSchema)` to create a new message.
  */
 export const ListDirRequestSchema: GenMessage<ListDirRequest> = /*@__PURE__*/
-  messageDesc(file_filesystem_filesystem, 10);
+  messageDesc(file_filesystem_filesystem, 9);
 
 /**
  * @generated from message filesystem.ListDirResponse
@@ -272,7 +245,7 @@ export type ListDirResponse = Message<"filesystem.ListDirResponse"> & {
  * Use `create(ListDirResponseSchema)` to create a new message.
  */
 export const ListDirResponseSchema: GenMessage<ListDirResponse> = /*@__PURE__*/
-  messageDesc(file_filesystem_filesystem, 11);
+  messageDesc(file_filesystem_filesystem, 10);
 
 /**
  * @generated from message filesystem.WatchDirRequest
@@ -294,7 +267,7 @@ export type WatchDirRequest = Message<"filesystem.WatchDirRequest"> & {
  * Use `create(WatchDirRequestSchema)` to create a new message.
  */
 export const WatchDirRequestSchema: GenMessage<WatchDirRequest> = /*@__PURE__*/
-  messageDesc(file_filesystem_filesystem, 12);
+  messageDesc(file_filesystem_filesystem, 11);
 
 /**
  * @generated from message filesystem.FilesystemEvent
@@ -316,7 +289,7 @@ export type FilesystemEvent = Message<"filesystem.FilesystemEvent"> & {
  * Use `create(FilesystemEventSchema)` to create a new message.
  */
 export const FilesystemEventSchema: GenMessage<FilesystemEvent> = /*@__PURE__*/
-  messageDesc(file_filesystem_filesystem, 13);
+  messageDesc(file_filesystem_filesystem, 12);
 
 /**
  * @generated from message filesystem.WatchDirResponse
@@ -351,7 +324,7 @@ export type WatchDirResponse = Message<"filesystem.WatchDirResponse"> & {
  * Use `create(WatchDirResponseSchema)` to create a new message.
  */
 export const WatchDirResponseSchema: GenMessage<WatchDirResponse> = /*@__PURE__*/
-  messageDesc(file_filesystem_filesystem, 14);
+  messageDesc(file_filesystem_filesystem, 13);
 
 /**
  * @generated from message filesystem.WatchDirResponse.StartEvent
@@ -364,7 +337,7 @@ export type WatchDirResponse_StartEvent = Message<"filesystem.WatchDirResponse.S
  * Use `create(WatchDirResponse_StartEventSchema)` to create a new message.
  */
 export const WatchDirResponse_StartEventSchema: GenMessage<WatchDirResponse_StartEvent> = /*@__PURE__*/
-  messageDesc(file_filesystem_filesystem, 14, 0);
+  messageDesc(file_filesystem_filesystem, 13, 0);
 
 /**
  * @generated from message filesystem.WatchDirResponse.KeepAlive
@@ -377,7 +350,7 @@ export type WatchDirResponse_KeepAlive = Message<"filesystem.WatchDirResponse.Ke
  * Use `create(WatchDirResponse_KeepAliveSchema)` to create a new message.
  */
 export const WatchDirResponse_KeepAliveSchema: GenMessage<WatchDirResponse_KeepAlive> = /*@__PURE__*/
-  messageDesc(file_filesystem_filesystem, 14, 1);
+  messageDesc(file_filesystem_filesystem, 13, 1);
 
 /**
  * @generated from message filesystem.CreateWatcherRequest
@@ -399,7 +372,7 @@ export type CreateWatcherRequest = Message<"filesystem.CreateWatcherRequest"> & 
  * Use `create(CreateWatcherRequestSchema)` to create a new message.
  */
 export const CreateWatcherRequestSchema: GenMessage<CreateWatcherRequest> = /*@__PURE__*/
-  messageDesc(file_filesystem_filesystem, 15);
+  messageDesc(file_filesystem_filesystem, 14);
 
 /**
  * @generated from message filesystem.CreateWatcherResponse
@@ -416,7 +389,7 @@ export type CreateWatcherResponse = Message<"filesystem.CreateWatcherResponse"> 
  * Use `create(CreateWatcherResponseSchema)` to create a new message.
  */
 export const CreateWatcherResponseSchema: GenMessage<CreateWatcherResponse> = /*@__PURE__*/
-  messageDesc(file_filesystem_filesystem, 16);
+  messageDesc(file_filesystem_filesystem, 15);
 
 /**
  * @generated from message filesystem.GetWatcherEventsRequest
@@ -433,7 +406,7 @@ export type GetWatcherEventsRequest = Message<"filesystem.GetWatcherEventsReques
  * Use `create(GetWatcherEventsRequestSchema)` to create a new message.
  */
 export const GetWatcherEventsRequestSchema: GenMessage<GetWatcherEventsRequest> = /*@__PURE__*/
-  messageDesc(file_filesystem_filesystem, 17);
+  messageDesc(file_filesystem_filesystem, 16);
 
 /**
  * @generated from message filesystem.GetWatcherEventsResponse
@@ -450,7 +423,7 @@ export type GetWatcherEventsResponse = Message<"filesystem.GetWatcherEventsRespo
  * Use `create(GetWatcherEventsResponseSchema)` to create a new message.
  */
 export const GetWatcherEventsResponseSchema: GenMessage<GetWatcherEventsResponse> = /*@__PURE__*/
-  messageDesc(file_filesystem_filesystem, 18);
+  messageDesc(file_filesystem_filesystem, 17);
 
 /**
  * @generated from message filesystem.RemoveWatcherRequest
@@ -467,7 +440,7 @@ export type RemoveWatcherRequest = Message<"filesystem.RemoveWatcherRequest"> & 
  * Use `create(RemoveWatcherRequestSchema)` to create a new message.
  */
 export const RemoveWatcherRequestSchema: GenMessage<RemoveWatcherRequest> = /*@__PURE__*/
-  messageDesc(file_filesystem_filesystem, 19);
+  messageDesc(file_filesystem_filesystem, 18);
 
 /**
  * @generated from message filesystem.RemoveWatcherResponse
@@ -480,7 +453,7 @@ export type RemoveWatcherResponse = Message<"filesystem.RemoveWatcherResponse"> 
  * Use `create(RemoveWatcherResponseSchema)` to create a new message.
  */
 export const RemoveWatcherResponseSchema: GenMessage<RemoveWatcherResponse> = /*@__PURE__*/
-  messageDesc(file_filesystem_filesystem, 20);
+  messageDesc(file_filesystem_filesystem, 19);
 
 /**
  * @generated from enum filesystem.FileType

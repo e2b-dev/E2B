@@ -47,16 +47,10 @@ message StatRequest {
 }
 
 message StatResponse {
-    EntryInfoExtended entry = 1;
+    EntryInfo entry = 1;
 }
 
 message EntryInfo {
-    string name = 1;
-    FileType type = 2;
-    string path = 3;
-}
-
-message EntryInfoExtended {
     string name = 1;
     FileType type = 2;
     string path = 3;
