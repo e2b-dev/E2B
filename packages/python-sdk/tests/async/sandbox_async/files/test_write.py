@@ -26,7 +26,7 @@ async def test_write_text_file(async_sandbox: AsyncSandbox):
 
 
 async def test_write_binary_file(async_sandbox: AsyncSandbox):
-    filename = "test_write.txt"
+    filename = "test_write.bin"
     text = "This is a test binary file."
     # equivalent to `open("path/to/local/file", "rb")`
     content = io.BytesIO(text.encode("utf-8"))

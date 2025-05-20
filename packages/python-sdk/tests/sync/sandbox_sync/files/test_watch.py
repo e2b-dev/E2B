@@ -22,8 +22,8 @@ def test_watch_directory_changes(sandbox: Sandbox):
 
 
 def test_watch_iterated(sandbox: Sandbox):
-    dirname = "test_watch_dir"
-    filename = "test_watch.txt"
+    dirname = "test_watch_dir_iterated"
+    filename = "test_watch_iterated.txt"
     content = "This file will be watched."
     new_content = "This file has been modified."
 
