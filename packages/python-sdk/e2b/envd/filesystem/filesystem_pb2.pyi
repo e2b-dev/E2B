@@ -85,27 +85,10 @@ class StatRequest(_message.Message):
 class StatResponse(_message.Message):
     __slots__ = ("entry",)
     ENTRY_FIELD_NUMBER: _ClassVar[int]
-    entry: EntryInfoExtended
-    def __init__(
-        self, entry: _Optional[_Union[EntryInfoExtended, _Mapping]] = ...
-    ) -> None: ...
+    entry: EntryInfo
+    def __init__(self, entry: _Optional[_Union[EntryInfo, _Mapping]] = ...) -> None: ...
 
 class EntryInfo(_message.Message):
-    __slots__ = ("name", "type", "path")
-    NAME_FIELD_NUMBER: _ClassVar[int]
-    TYPE_FIELD_NUMBER: _ClassVar[int]
-    PATH_FIELD_NUMBER: _ClassVar[int]
-    name: str
-    type: FileType
-    path: str
-    def __init__(
-        self,
-        name: _Optional[str] = ...,
-        type: _Optional[_Union[FileType, str]] = ...,
-        path: _Optional[str] = ...,
-    ) -> None: ...
-
-class EntryInfoExtended(_message.Message):
     __slots__ = (
         "name",
         "type",
