@@ -2,7 +2,7 @@ import pytest
 
 from e2b import AsyncSandbox
 
-
+@pytest.mark.skip_debug()
 async def test_start_secured(template):
     sbx = await AsyncSandbox.create(template, timeout=5, secure=True)
     try:
@@ -12,7 +12,7 @@ async def test_start_secured(template):
     finally:
         await sbx.kill()
 
-
+@pytest.mark.skip_debug()
 async def test_connect_to_secured(template):
     sbx = await AsyncSandbox.create(template, timeout=100, secure=True)
     try:

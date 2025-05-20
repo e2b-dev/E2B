@@ -3,7 +3,7 @@ import { assert, test, expect } from 'vitest'
 import { Sandbox } from '../../src'
 import { isDebug, sandboxTest, template } from '../setup.js'
 
-test('connect', async () => {
+test.skipIf(isDebug)('connect', async () => {
   const sbx = await Sandbox.create(template, { timeoutMs: 10_000 })
 
   try {
@@ -29,7 +29,9 @@ sandboxTest.skipIf(isDebug)(
 
     const connectPromise = Sandbox.connect(sandbox.sandboxId)
     await expect(connectPromise).rejects.toThrowError(
-        expect.objectContaining({ message: `404: sandbox "${sandbox.sandboxId}" doesn't exist or you don't have access to it` })
+      expect.objectContaining({
+        message: `404: sandbox "${sandbox.sandboxId}" doesn't exist or you don't have access to it`,
+      })
     )
   }
 )
