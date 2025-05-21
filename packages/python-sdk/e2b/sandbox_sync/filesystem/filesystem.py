@@ -258,7 +258,7 @@ class Filesystem:
         depth: Optional[int] = 1,
         user: Username = "user",
         request_timeout: Optional[float] = None,
-    ) -> List[EntryInfo]:
+    ) -> List[EntryInfoExtended]:
         """
         List entries in a directory.
 
@@ -281,16 +281,22 @@ class Filesystem:
                 headers=authentication_header(user),
             )
 
-            entries: List[EntryInfo] = []
+            entries: List[EntryInfoExtended] = []
             for entry in res.entries:
                 event_type = map_file_type(entry.type)
 
                 if event_type:
                     entries.append(
-                        EntryInfo(
+                        EntryInfoExtended(
                             name=entry.name,
                             type=event_type,
                             path=entry.path,
+                            size=entry.size,
+                            mode=entry.mode,
+                            permissions=entry.permissions,
+                            owner=entry.owner,
+                            group=entry.group,
+                            modified_time=entry.modified_time.ToDatetime(),
                         )
                     )
 
