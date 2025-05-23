@@ -1,4 +1,10 @@
-import { Braces, CheckCircle, Home, KeyRound, MessagesSquare } from 'lucide-react'
+import {
+  Braces,
+  CheckCircle,
+  Home,
+  KeyRound,
+  MessagesSquare,
+} from 'lucide-react'
 import sdkRefRoutesJson from './sdkRefRoutes.json'
 
 enum Tag {
@@ -183,6 +189,10 @@ export const docRoutes: NavGroup[] = [
           {
             title: 'JavaScript',
             href: '/docs/code-interpreting/supported-languages/javascript',
+          },
+          {
+            title: 'TypeScript',
+            href: '/docs/code-interpreting/supported-languages/typescript',
           },
           {
             title: 'R',
