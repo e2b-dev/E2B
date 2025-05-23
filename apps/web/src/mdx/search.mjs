@@ -68,8 +68,15 @@ export default function (nextConfig = {}) {
             let appDir = path.resolve('./src/app')
             this.addContextDependency(appDir)
 
+            console.log('Starting MDX processing for search...')
+
             let files = glob.sync('**/*.mdx', { cwd: appDir })
-            let data = files.map((file) => {
+            // Exclude legacy docs
+            files = files.filter(file => !file.includes('docs/legacy'))
+
+            let data = files.map((file, index, arr) => {
+              console.log(`Processing MDX file ${index + 1}/${arr.length}: ${file}`)
+
               let url = '/' + file.replace(/(^|\/)page\.mdx$/, '')
               let mdx = fs.readFileSync(path.join(appDir, file), 'utf8')
 
@@ -114,8 +121,6 @@ export default function (nextConfig = {}) {
                   continue
                 }
 
-                const isLegacy = url.includes('docs/legacy')
-
                 for (let [title, hash, content] of sections) {
                   sectionIndex.add({
                     url: url + (hash ? ('#' + hash) : ''),
@@ -123,10 +128,12 @@ export default function (nextConfig = {}) {
                     content: [title, ...content].join('\\n'),
                     pageTitle: hash ? sections[0][0] : undefined,
                     preview: content.join('\\n'),
-                    badge: isLegacy ? 'Legacy' : undefined,
+                    badge: undefined,
                   })
                 }
               }
+
+              console.log('MDX processing complete. Search index populated.')
 
               export function search(query, options = {}) {
                 let result = sectionIndex.search(query, {
