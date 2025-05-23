@@ -1,4 +1,10 @@
-import { Braces, CheckCircle, Home, KeyRound, MessagesSquare } from 'lucide-react'
+import {
+  Braces,
+  CheckCircle,
+  Home,
+  KeyRound,
+  MessagesSquare,
+} from 'lucide-react'
 import sdkRefRoutesJson from './sdkRefRoutes.json'
 
 enum Tag {
@@ -311,7 +317,7 @@ export const docRoutes: NavGroup[] = [
         href: '/docs/sandbox/internet-access',
       },
       {
-        title: 'Connecting bucket',
+        title: 'Connecting storage bucket',
         href: '/docs/sandbox/connect-bucket',
       },
       {
