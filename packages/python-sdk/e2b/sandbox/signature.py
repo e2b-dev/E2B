@@ -1,11 +1,10 @@
 import base64
 import hashlib
 import time
-import urllib.parse
-
-from typing import Optional, TypedDict, Literal
+from typing import Literal, Optional, TypedDict
 
 Operation = Literal["read", "write"]
+
 
 class Signature(TypedDict):
     signature: str
@@ -25,9 +24,7 @@ def get_signature(
     if not envd_access_token:
         raise ValueError("Access token is not set and signature cannot be generated!")
 
-    expiration = (
-        int(time.time()) + expiration_in_seconds if expiration_in_seconds else None
-    )
+    expiration = int(time.time()) + expiration_in_seconds if expiration_in_seconds else None
 
     raw = (
         f"{path}:{operation}:{user}:{envd_access_token}"

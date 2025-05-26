@@ -1,17 +1,19 @@
 import gzip
+import http
 import json
 import struct
+from collections.abc import Generator
+from enum import Enum, Flag
+from typing import Any, Callable, Dict, Optional, Tuple
 
+from google.protobuf import json_format
 from httpcore import (
-    ConnectionPool,
+    URL,
     AsyncConnectionPool,
+    ConnectionPool,
     RemoteProtocolError,
     Response,
 )
-from enum import Flag, Enum
-from typing import Callable, Optional, Dict, Any, Generator, Tuple
-from google.protobuf import json_format
-from httpcore import URL
 
 
 class EnvelopeFlags(Flag):
@@ -65,12 +67,12 @@ def error_for_response(http_resp: Response):
     try:
         error = json.loads(http_resp.content)
     except (json.decoder.JSONDecodeError, KeyError):
-        if http_resp.status == 429:
+        if http_resp.status == http.HTTPStatus.TOO_MANY_REQUESTS:
             return ConnectException(
                 Code.resource_exhausted,
                 f"{http_resp.content.decode()} The requests are being rate limited.",
             )
-        elif http_resp.status == 502:
+        elif http_resp.status == http.HTTPStatus.BAD_GATEWAY:
             return ConnectException(
                 Code.unavailable,
                 http_resp.content.decode(),
@@ -199,7 +201,7 @@ class Client:
         self,
         http_resp: Response,
     ):
-        if http_resp.status != 200:
+        if http_resp.status != http.HTTPStatus.OK:
             raise error_for_response(http_resp)
 
         content = http_resp.content
@@ -339,7 +341,7 @@ class Client:
         for _ in range(self._connection_retries):
             try:
                 async with conn.stream(**req_data) as http_resp:
-                    if http_resp.status != 200:
+                    if http_resp.status != http.HTTPStatus.OK:
                         await http_resp.aread()
                         raise error_for_response(http_resp)
 
@@ -384,7 +386,7 @@ class Client:
         for _ in range(self._connection_retries):
             try:
                 with conn.stream(**req_data) as http_resp:
-                    if http_resp.status != 200:
+                    if http_resp.status != http.HTTPStatus.OK:
                         raise error_for_response(http_resp)
 
                     parser = ServerStreamParser(

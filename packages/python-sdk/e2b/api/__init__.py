@@ -1,19 +1,20 @@
+import http
 import json
 import logging
-from typing import Optional
-from httpx import Limits
 from dataclasses import dataclass
+from typing import Optional
 
+from httpx import Limits
 
 from e2b.api.client.client import AuthenticatedClient
-from e2b.connection_config import ConnectionConfig
+from e2b.api.client.types import Response
 from e2b.api.metadata import default_headers
+from e2b.connection_config import ConnectionConfig
 from e2b.exceptions import (
     AuthenticationException,
-    SandboxException,
     RateLimitException,
+    SandboxException,
 )
-from e2b.api.client.types import Response
 
 logger = logging.getLogger(__name__)
 
@@ -31,10 +32,8 @@ def handle_api_exception(e: Response):
     except json.JSONDecodeError:
         body = {}
 
-    if e.status_code == 429:
-        return RateLimitException(
-            f"{e.status_code}: Rate limit exceeded, please try again later."
-        )
+    if e.status_code == http.HTTPStatus.TOO_MANY_REQUESTS:
+        return RateLimitException(f"{e.status_code}: Rate limit exceeded, please try again later.")
 
     if "message" in body:
         return SandboxException(f"{e.status_code}: {body['message']}")
@@ -69,17 +68,19 @@ class ApiClient(AuthenticatedClient):
         if require_api_key:
             if config.api_key is None:
                 raise AuthenticationException(
-                    "API key is required, please visit the Team tab at https://e2b.dev/dashboard to get your API key. "
-                    "You can either set the environment variable `E2B_API_KEY` "
-                    'or you can pass it directly to the sandbox like Sandbox(api_key="e2b_...")',
+                    "API key is required, please visit the Team tab at"
+                    " https://e2b.dev/dashboard to get your API key. You can either set the"
+                    " environment variable `E2B_API_KEY` or you can pass it directly to the"
+                    ' sandbox like Sandbox(api_key="e2b_...")'
                 )
             token = config.api_key
 
         if require_access_token:
             if config.access_token is None:
                 raise AuthenticationException(
-                    "Access token is required, please visit the Personal tab at https://e2b.dev/dashboard to get your access token. "
-                    "You can set the environment variable `E2B_ACCESS_TOKEN` or pass the `access_token` in options.",
+                    "Access token is required, please visit the Personal tab at"
+                    " https://e2b.dev/dashboard to get your access token. You can set the"
+                    " environment variable `E2B_ACCESS_TOKEN` or pass the `access_token` in options."
                 )
             token = config.access_token
 
@@ -113,7 +114,7 @@ class ApiClient(AuthenticatedClient):
         logger.info(f"Request {request.method} {request.url}")
 
     def _log_response(self, response: Response):
-        if response.status_code >= 400:
+        if response.status_code >= http.HTTPStatus.BAD_REQUEST:
             logger.error(f"Response {response.status_code}")
         else:
             logger.info(f"Response {response.status_code}")
@@ -125,7 +126,7 @@ class AsyncApiClient(ApiClient):
         logger.info(f"Request {request.method} {request.url}")
 
     async def _log_response(self, response: Response):
-        if response.status_code >= 400:
+        if response.status_code >= http.HTTPStatus.BAD_REQUEST:
             logger.error(f"Response {response.status_code}")
         else:
             logger.info(f"Response {response.status_code}")

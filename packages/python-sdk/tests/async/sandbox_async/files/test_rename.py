@@ -1,6 +1,6 @@
 import pytest
 
-from e2b import NotFoundException, AsyncSandbox
+from e2b import AsyncSandbox, NotFoundException
 
 
 async def test_rename_file(async_sandbox: AsyncSandbox):

@@ -1,17 +1,16 @@
 import asyncio
+import os
+from logging import warning
 
 import pytest
 import pytest_asyncio
-import os
-
-from logging import warning
 
 from e2b import (
-    Sandbox,
-    AsyncSandbox,
     AsyncCommandHandle,
+    AsyncSandbox,
     CommandExitException,
     CommandHandle,
+    Sandbox,
 )
 
 
@@ -74,9 +73,7 @@ class Helpers:
                 await cmd.wait()
             except CommandExitException as e:
                 if not disabled:
-                    assert (
-                        False
-                    ), f"command failed with exit code {e.exit_code}: {e.stderr}"
+                    assert False, f"command failed with exit code {e.exit_code}: {e.stderr}"
 
         asyncio.create_task(wait_for_exit())
 

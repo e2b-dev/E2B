@@ -1,1 +1,1 @@
-from .client import Client, GzipCompressor, ConnectException, Code  # noqa: F401
+from .client import Client, Code, ConnectException, GzipCompressor  # noqa: F401

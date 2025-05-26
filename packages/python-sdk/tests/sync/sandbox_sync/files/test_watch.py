@@ -1,6 +1,6 @@
 import pytest
 
-from e2b import NotFoundException, FilesystemEventType, Sandbox, SandboxException
+from e2b import FilesystemEventType, NotFoundException, Sandbox, SandboxException
 
 
 def test_watch_directory_changes(sandbox: Sandbox):

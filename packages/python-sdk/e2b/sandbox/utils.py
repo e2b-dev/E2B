@@ -1,10 +1,10 @@
-from typing import TypeVar, Any, cast, Optional, Type
 import functools
+from typing import Any, Optional, Type, TypeVar, cast
 
 T = TypeVar("T")
 
 
-class class_method_variant(object):
+class class_method_variant:
     def __init__(self, class_method_name):
         self.class_method_name = class_method_name
 

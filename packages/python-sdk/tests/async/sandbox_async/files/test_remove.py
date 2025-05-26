@@ -1,5 +1,3 @@
-import pytest
-
 from e2b import AsyncSandbox
 
 

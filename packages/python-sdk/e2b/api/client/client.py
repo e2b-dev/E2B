@@ -38,15 +38,11 @@ class Client:
     _base_url: str = field(alias="base_url")
     _cookies: dict[str, str] = field(factory=dict, kw_only=True, alias="cookies")
     _headers: dict[str, str] = field(factory=dict, kw_only=True, alias="headers")
-    _timeout: Optional[httpx.Timeout] = field(
-        default=None, kw_only=True, alias="timeout"
-    )
+    _timeout: Optional[httpx.Timeout] = field(default=None, kw_only=True, alias="timeout")
     _verify_ssl: Union[str, bool, ssl.SSLContext] = field(
         default=True, kw_only=True, alias="verify_ssl"
     )
-    _follow_redirects: bool = field(
-        default=False, kw_only=True, alias="follow_redirects"
-    )
+    _follow_redirects: bool = field(default=False, kw_only=True, alias="follow_redirects")
     _httpx_args: dict[str, Any] = field(factory=dict, kw_only=True, alias="httpx_args")
     _client: Optional[httpx.Client] = field(default=None, init=False)
     _async_client: Optional[httpx.AsyncClient] = field(default=None, init=False)
@@ -174,15 +170,11 @@ class AuthenticatedClient:
     _base_url: str = field(alias="base_url")
     _cookies: dict[str, str] = field(factory=dict, kw_only=True, alias="cookies")
     _headers: dict[str, str] = field(factory=dict, kw_only=True, alias="headers")
-    _timeout: Optional[httpx.Timeout] = field(
-        default=None, kw_only=True, alias="timeout"
-    )
+    _timeout: Optional[httpx.Timeout] = field(default=None, kw_only=True, alias="timeout")
     _verify_ssl: Union[str, bool, ssl.SSLContext] = field(
         default=True, kw_only=True, alias="verify_ssl"
     )
-    _follow_redirects: bool = field(
-        default=False, kw_only=True, alias="follow_redirects"
-    )
+    _follow_redirects: bool = field(default=False, kw_only=True, alias="follow_redirects")
     _httpx_args: dict[str, Any] = field(factory=dict, kw_only=True, alias="httpx_args")
     _client: Optional[httpx.Client] = field(default=None, init=False)
     _async_client: Optional[httpx.AsyncClient] = field(default=None, init=False)
@@ -249,9 +241,7 @@ class AuthenticatedClient:
         """Exit a context manager for internal httpx.Client (see httpx docs)"""
         self.get_httpx_client().__exit__(*args, **kwargs)
 
-    def set_async_httpx_client(
-        self, async_client: httpx.AsyncClient
-    ) -> "AuthenticatedClient":
+    def set_async_httpx_client(self, async_client: httpx.AsyncClient) -> "AuthenticatedClient":
         """Manually the underlying httpx.AsyncClient
 
         **NOTE**: This will override any other settings on the client, including cookies, headers, and timeout.

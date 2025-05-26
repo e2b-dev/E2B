@@ -2,20 +2,20 @@ import {
   Code,
   ConnectError,
   createClient,
-  Client,
-  Transport,
+  type Client,
+  type Transport,
 } from '@connectrpc/connect'
 
 import { Signal, Process as ProcessService } from '../../envd/process/process_pb'
 import {
-  ConnectionConfig,
-  Username,
-  ConnectionOpts,
+  type ConnectionConfig,
+  type Username,
+  type ConnectionOpts,
   KEEPALIVE_PING_INTERVAL_SEC,
   KEEPALIVE_PING_HEADER,
 } from '../../connectionConfig'
 import { authenticationHeader, handleRpcError } from '../../envd/rpc'
-import { CommandHandle, CommandResult } from './commandHandle'
+import { CommandHandle, type CommandResult } from './commandHandle'
 import { handleProcessStartEvent } from '../../envd/api'
 export { Pty } from './pty'
 
@@ -144,10 +144,10 @@ export class Commands {
       return res.processes.map((p) => ({
         pid: p.pid,
         ...(p.tag && { tag: p.tag }),
-        args: p.config!.args,
-        envs: p.config!.envs,
-        cmd: p.config!.cmd,
-        ...(p.config!.cwd && { cwd: p.config!.cwd }),
+        args: p.config?.args,
+        envs: p.config?.envs,
+        cmd: p.config?.cmd,
+        ...(p.config?.cwd && { cwd: p.config?.cwd }),
       }))
     } catch (err) {
       throw handleRpcError(err)

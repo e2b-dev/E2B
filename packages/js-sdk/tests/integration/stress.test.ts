@@ -15,7 +15,7 @@ const sanboxCount = 10
 test.skipIf(!isIntegrationTest)(
   'stress test heavy file writes and reads',
   async () => {
-    const promises: Array<Promise<string | void>> = []
+    const promises: Array<Promise<string | undefined>> = []
     for (let i = 0; i < sanboxCount; i++) {
       promises.push(
         Sandbox.create(integrationTestTemplate, { timeoutMs: 60 })
@@ -34,7 +34,7 @@ test.skipIf(!isIntegrationTest)(
 )
 
 test.skipIf(!isIntegrationTest)('stress requests to nextjs app', async ({}) => {
-  const hostPromises: Array<Promise<string | void>> = []
+  const hostPromises: Array<Promise<string | undefined>> = []
 
   for (let i = 0; i < sanboxCount; i++) {
     hostPromises.push(
@@ -57,13 +57,13 @@ test.skipIf(!isIntegrationTest)('stress requests to nextjs app', async ({}) => {
   await wait(10_000)
   const hosts = await Promise.all(hostPromises)
 
-  const fetchPromises: Array<Promise<string | void>> = []
+  const fetchPromises: Array<Promise<string | undefined>> = []
 
   for (let i = 0; i < 100; i++) {
     for (const host of hosts) {
       fetchPromises.push(
         new Promise((resolve) => {
-          fetch('https://' + host)
+          fetch(`https://${host}`)
             .then((res) => {
               console.log(`response for ${host}: ${res.status}`)
             })

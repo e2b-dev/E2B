@@ -15,9 +15,7 @@ async def test_start(template):
 
 @pytest.mark.skip_debug()
 async def test_metadata(template):
-    sbx = await AsyncSandbox.create(
-        template, timeout=5, metadata={"test-key": "test-value"}
-    )
+    sbx = await AsyncSandbox.create(template, timeout=5, metadata={"test-key": "test-value"})
 
     try:
         sbxs = await AsyncSandbox.list()

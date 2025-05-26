@@ -1,6 +1,6 @@
 import { handleRpcError } from '../../envd/rpc'
 import { SandboxError } from '../../errors'
-import { ConnectResponse, StartResponse } from '../../envd/process/process_pb'
+import type { ConnectResponse, StartResponse } from '../../envd/process/process_pb'
 
 declare const __brand: unique symbol
 type Brand<B> = { [__brand]: B }

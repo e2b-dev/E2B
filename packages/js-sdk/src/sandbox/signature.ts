@@ -38,7 +38,7 @@ export function getSignature({ path, operation, user, expirationInSeconds, envdA
 
     const buff = Buffer.from(signatureRaw, 'utf8')
     const hash = crypto.createHash('sha256').update(buff).digest()
-    const signature =  'v1_' + hash.toString('base64').replace(/=+$/, '')
+    const signature =  `v1_${hash.toString('base64').replace(/=+$/, '')}`
 
     return {
         signature: signature,

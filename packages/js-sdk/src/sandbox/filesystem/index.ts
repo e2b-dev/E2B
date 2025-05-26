@@ -1,29 +1,29 @@
 import {
   createClient,
-  Transport,
-  Client,
+  type Transport,
+  type Client,
   ConnectError,
   Code,
 } from '@connectrpc/connect'
 import {
-  ConnectionConfig,
-  ConnectionOpts,
+  type ConnectionConfig,
+  type ConnectionOpts,
   defaultUsername,
   KEEPALIVE_PING_HEADER,
   KEEPALIVE_PING_INTERVAL_SEC,
-  Username,
+  type Username,
 } from '../../connectionConfig'
 
 import { handleEnvdApiError, handleWatchDirStartEvent } from '../../envd/api'
 import { authenticationHeader, handleRpcError } from '../../envd/rpc'
 
-import { EnvdApiClient } from '../../envd/api'
+import type { EnvdApiClient } from '../../envd/api'
 import {
   FileType as FsFileType,
   Filesystem as FilesystemService,
 } from '../../envd/filesystem/filesystem_pb'
 
-import { FilesystemEvent, WatchHandle } from './watchHandle'
+import { type FilesystemEvent, WatchHandle } from './watchHandle'
 
 import { compareVersions } from 'compare-versions'
 import { InvalidArgumentError, TemplateError } from '../../errors'
@@ -50,7 +50,7 @@ export interface EntryInfo {
 /**
  * Sandbox filesystem object type.
  */
-export const enum FileType {
+export enum FileType {
   /**
    * Filesystem object is a file.
    */

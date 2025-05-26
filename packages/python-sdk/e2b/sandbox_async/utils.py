@@ -1,4 +1,5 @@
-from typing import TypeVar, Union, Callable, Awaitable
+from collections.abc import Awaitable
+from typing import Callable, TypeVar, Union
 
 T = TypeVar("T")
 OutputHandler = Union[

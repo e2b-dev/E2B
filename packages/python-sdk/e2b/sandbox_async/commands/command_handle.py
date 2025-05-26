@@ -1,23 +1,22 @@
 import asyncio
 import inspect
+from collections.abc import AsyncGenerator, Coroutine
 from typing import (
-    Optional,
-    Callable,
     Any,
-    AsyncGenerator,
-    Union,
+    Callable,
+    Optional,
     Tuple,
-    Coroutine,
+    Union,
 )
 
-from e2b.envd.rpc import handle_rpc_exception
 from e2b.envd.process import process_pb2
+from e2b.envd.rpc import handle_rpc_exception
 from e2b.sandbox.commands.command_handle import (
     CommandExitException,
     CommandResult,
+    PtyOutput,
     Stderr,
     Stdout,
-    PtyOutput,
 )
 from e2b.sandbox_async.utils import OutputHandler
 
@@ -76,9 +75,7 @@ class AsyncCommandHandle:
         self,
         pid: int,
         handle_kill: Callable[[], Coroutine[Any, Any, bool]],
-        events: AsyncGenerator[
-            Union[process_pb2.StartResponse, process_pb2.ConnectResponse], Any
-        ],
+        events: AsyncGenerator[Union[process_pb2.StartResponse, process_pb2.ConnectResponse], Any],
         on_stdout: Optional[OutputHandler[Stdout]] = None,
         on_stderr: Optional[OutputHandler[Stderr]] = None,
         on_pty: Optional[OutputHandler[PtyOutput]] = None,

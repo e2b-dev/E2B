@@ -1,7 +1,7 @@
-import pytest
 from datetime import datetime
-
 from time import sleep
+
+import pytest
 
 from e2b import AsyncSandbox
 

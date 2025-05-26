@@ -148,8 +148,8 @@ async def test_list_directory_error_cases(async_sandbox: AsyncSandbox):
         await async_sandbox.files.list(parent_dir_name, depth=-1)
         assert False, "Expected error but none was thrown"
     except Exception as err:
-        assert expected_error_message in str(
-            err
-        ), f'expected error message to include "{expected_error_message}"'
+        assert expected_error_message in str(err), (
+            f'expected error message to include "{expected_error_message}"'
+        )
 
     await async_sandbox.files.remove(parent_dir_name)

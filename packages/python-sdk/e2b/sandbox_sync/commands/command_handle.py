@@ -1,13 +1,14 @@
-from typing import Optional, Callable, Any, Generator, Union, Tuple
+from collections.abc import Generator
+from typing import Any, Callable, Optional, Tuple, Union
 
-from e2b.envd.rpc import handle_rpc_exception
 from e2b.envd.process import process_pb2
+from e2b.envd.rpc import handle_rpc_exception
 from e2b.sandbox.commands.command_handle import (
     CommandExitException,
     CommandResult,
+    PtyOutput,
     Stderr,
     Stdout,
-    PtyOutput,
 )
 
 
@@ -29,9 +30,7 @@ class CommandHandle:
         self,
         pid: int,
         handle_kill: Callable[[], bool],
-        events: Generator[
-            Union[process_pb2.StartResponse, process_pb2.ConnectResponse], Any, None
-        ],
+        events: Generator[Union[process_pb2.StartResponse, process_pb2.ConnectResponse], Any, None],
     ):
         self._pid = pid
         self._handle_kill = handle_kill

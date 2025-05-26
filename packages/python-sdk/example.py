@@ -1,8 +1,9 @@
 import asyncio
 import logging
-from e2b import AsyncSandbox
 
 import dotenv
+
+from e2b import AsyncSandbox
 
 dotenv.load_dotenv()
 

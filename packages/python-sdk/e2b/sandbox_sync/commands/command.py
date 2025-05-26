@@ -1,18 +1,19 @@
 from typing import Callable, Dict, List, Literal, Optional, Union, overload
 
-import e2b_connect
 import httpcore
+
+import e2b_connect
 from e2b.connection_config import (
-    ConnectionConfig,
-    Username,
     KEEPALIVE_PING_HEADER,
     KEEPALIVE_PING_INTERVAL_SEC,
+    ConnectionConfig,
+    Username,
 )
 from e2b.envd.process import process_connect, process_pb2
 from e2b.envd.rpc import authentication_header, handle_rpc_exception
 from e2b.exceptions import SandboxException
-from e2b.sandbox.commands.main import ProcessInfo
 from e2b.sandbox.commands.command_handle import CommandResult
+from e2b.sandbox.commands.main import ProcessInfo
 from e2b.sandbox_sync.commands.command_handle import CommandHandle
 
 
@@ -51,9 +52,7 @@ class Commands:
         try:
             res = self._rpc.list(
                 process_pb2.ListRequest(),
-                request_timeout=self._connection_config.get_request_timeout(
-                    request_timeout
-                ),
+                request_timeout=self._connection_config.get_request_timeout(request_timeout),
             )
             return [
                 ProcessInfo(
@@ -89,9 +88,7 @@ class Commands:
                     process=process_pb2.ProcessSelector(pid=pid),
                     signal=process_pb2.Signal.SIGNAL_SIGKILL,
                 ),
-                request_timeout=self._connection_config.get_request_timeout(
-                    request_timeout
-                ),
+                request_timeout=self._connection_config.get_request_timeout(request_timeout),
             )
             return True
         except Exception as e:
@@ -121,9 +118,7 @@ class Commands:
                         stdin=data.encode(),
                     ),
                 ),
-                request_timeout=self._connection_config.get_request_timeout(
-                    request_timeout
-                ),
+                request_timeout=self._connection_config.get_request_timeout(request_timeout),
             )
         except Exception as e:
             raise handle_rpc_exception(e)
@@ -239,9 +234,7 @@ class Commands:
                 KEEPALIVE_PING_HEADER: str(KEEPALIVE_PING_INTERVAL_SEC),
             },
             timeout=timeout,
-            request_timeout=self._connection_config.get_request_timeout(
-                request_timeout
-            ),
+            request_timeout=self._connection_config.get_request_timeout(request_timeout),
         )
 
         try:
@@ -284,9 +277,7 @@ class Commands:
                 KEEPALIVE_PING_HEADER: str(KEEPALIVE_PING_INTERVAL_SEC),
             },
             timeout=timeout,
-            request_timeout=self._connection_config.get_request_timeout(
-                request_timeout
-            ),
+            request_timeout=self._connection_config.get_request_timeout(request_timeout),
         )
 
         try:

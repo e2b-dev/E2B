@@ -1,17 +1,16 @@
 import base64
-
 from typing import Optional
-from e2b_connect.client import Code, ConnectException
 
+from e2b.connection_config import Username, default_username
 from e2b.exceptions import (
-    SandboxException,
+    AuthenticationException,
     InvalidArgumentException,
     NotFoundException,
+    SandboxException,
     TimeoutException,
     format_sandbox_timeout_exception,
-    AuthenticationException,
 )
-from e2b.connection_config import Username, default_username
+from e2b_connect.client import Code, ConnectException
 
 
 def handle_rpc_exception(e: Exception):

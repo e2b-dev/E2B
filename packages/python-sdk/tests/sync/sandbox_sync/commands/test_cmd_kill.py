@@ -1,6 +1,6 @@
 import pytest
 
-from e2b import Sandbox, CommandExitException
+from e2b import CommandExitException, Sandbox
 
 
 def test_kill_process(sandbox: Sandbox):

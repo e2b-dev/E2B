@@ -1,9 +1,11 @@
-import urllib.request
-import urllib.error
 import json
+import urllib.error
+import urllib.request
+
 import pytest
 
 from e2b import Sandbox
+
 
 @pytest.mark.skip_debug()
 async def test_download_url_with_signing(template):
@@ -18,10 +20,11 @@ async def test_download_url_with_signing(template):
         with urllib.request.urlopen(signed_url) as resp:
             assert resp.status == 200
             body_bytes = resp.read()
-            body_text  = body_bytes.decode()
+            body_text = body_bytes.decode()
             assert body_text == file_content
     finally:
         sbx.kill()
+
 
 @pytest.mark.skip_debug()
 async def test_download_url_with_signing_and_expiration(template):
@@ -36,10 +39,11 @@ async def test_download_url_with_signing_and_expiration(template):
         with urllib.request.urlopen(signed_url) as resp:
             assert resp.status == 200
             body_bytes = resp.read()
-            body_text  = body_bytes.decode()
+            body_text = body_bytes.decode()
             assert body_text == file_content
     finally:
         sbx.kill()
+
 
 @pytest.mark.skip_debug()
 async def test_download_url_with_expired_signing(template):
@@ -60,8 +64,8 @@ async def test_download_url_with_expired_signing(template):
         err = exc_info.value
         assert err.code == 401, f"Unexpected status {err.code}"
 
-        error_json_str = err.read().decode()          # bytes ➜ str
-        error_payload  = json.loads(error_json_str)   # str  ➜ dict
+        error_json_str = err.read().decode()  # bytes ➜ str
+        error_payload = json.loads(error_json_str)  # str  ➜ dict
 
         expected_payload = {"code": 401, "message": "signature is already expired"}
         assert error_payload == expected_payload

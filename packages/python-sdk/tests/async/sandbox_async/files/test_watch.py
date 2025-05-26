@@ -1,12 +1,12 @@
-import pytest
-
 from asyncio import Event
 
+import pytest
+
 from e2b import (
-    NotFoundException,
     AsyncSandbox,
     FilesystemEvent,
     FilesystemEventType,
+    NotFoundException,
     SandboxException,
 )
 
@@ -52,9 +52,7 @@ async def test_watch_recursive_directory_changes(async_sandbox: AsyncSandbox):
         if e.type == FilesystemEventType.WRITE and e.name == expected_filename:
             event_triggered.set()
 
-    handle = await async_sandbox.files.watch_dir(
-        dirname, on_event=handle_event, recursive=True
-    )
+    handle = await async_sandbox.files.watch_dir(dirname, on_event=handle_event, recursive=True)
 
     await async_sandbox.files.write(f"{dirname}/{nested_dirname}/{filename}", content)
 
@@ -86,9 +84,7 @@ async def test_watch_recursive_directory_after_nested_folder_addition(
         if e.type == FilesystemEventType.CREATE and e.name == nested_dirname:
             event_triggered_folder.set()
 
-    handle = await async_sandbox.files.watch_dir(
-        dirname, on_event=handle_event, recursive=True
-    )
+    handle = await async_sandbox.files.watch_dir(dirname, on_event=handle_event, recursive=True)
 
     await async_sandbox.files.make_dir(f"{dirname}/{nested_dirname}")
     await event_triggered_folder.wait()

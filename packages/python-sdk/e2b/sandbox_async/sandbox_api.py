@@ -1,22 +1,25 @@
 import urllib.parse
+from typing import Dict, List, Optional
 
-from typing import Optional, Dict, List
 from packaging.version import Version
 
-
-from e2b.sandbox.sandbox_api import SandboxInfo, SandboxApiBase, SandboxQuery, ListedSandbox
-from e2b.exceptions import TemplateException
-from e2b.api import AsyncApiClient, SandboxCreateResponse
-from e2b.api.client.models import NewSandbox, PostSandboxesSandboxIDTimeoutBody
+from e2b.api import AsyncApiClient, SandboxCreateResponse, handle_api_exception
 from e2b.api.client.api.sandboxes import (
-    get_sandboxes_sandbox_id,
-    post_sandboxes_sandbox_id_timeout,
-    get_sandboxes,
     delete_sandboxes_sandbox_id,
+    get_sandboxes,
+    get_sandboxes_sandbox_id,
     post_sandboxes,
+    post_sandboxes_sandbox_id_timeout,
 )
+from e2b.api.client.models import NewSandbox, PostSandboxesSandboxIDTimeoutBody
 from e2b.connection_config import ConnectionConfig, ProxyTypes
-from e2b.api import handle_api_exception
+from e2b.exceptions import TemplateException
+from e2b.sandbox.sandbox_api import (
+    ListedSandbox,
+    SandboxApiBase,
+    SandboxInfo,
+    SandboxQuery,
+)
 
 
 class SandboxApi(SandboxApiBase):
@@ -58,8 +61,7 @@ class SandboxApi(SandboxApiBase):
         if query:
             if query.metadata:
                 quoted_metadata = {
-                    urllib.parse.quote(k): urllib.parse.quote(v)
-                    for k, v in query.metadata.items()
+                    urllib.parse.quote(k): urllib.parse.quote(v) for k, v in query.metadata.items()
                 }
                 metadata = urllib.parse.urlencode(quoted_metadata)
 
@@ -86,9 +88,7 @@ class SandboxApi(SandboxApiBase):
                 ),
                 template_id=sandbox.template_id,
                 name=sandbox.alias if isinstance(sandbox.alias, str) else None,
-                metadata=(
-                    sandbox.metadata if isinstance(sandbox.metadata, dict) else {}
-                ),
+                metadata=(sandbox.metadata if isinstance(sandbox.metadata, dict) else {}),
                 state=sandbox.state,
                 cpu_count=sandbox.cpu_count,
                 memory_mb=sandbox.memory_mb,
@@ -152,9 +152,7 @@ class SandboxApi(SandboxApiBase):
                 ),
                 template_id=res.parsed.template_id,
                 name=res.parsed.alias if isinstance(res.parsed.alias, str) else None,
-                metadata=(
-                    res.parsed.metadata if isinstance(res.parsed.metadata, dict) else {}
-                ),
+                metadata=(res.parsed.metadata if isinstance(res.parsed.metadata, dict) else {}),
                 started_at=res.parsed.started_at,
                 end_at=res.parsed.end_at,
                 envd_version=res.parsed.envd_version,

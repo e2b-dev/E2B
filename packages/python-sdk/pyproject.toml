@@ -35,3 +35,10 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.urls]
 "Bug Tracker" = "https://github.com/e2b-dev/e2b/issues"
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "PL", "ERA"]
+ignore = ["ERA001", "PLR0913", "PLR2004"]

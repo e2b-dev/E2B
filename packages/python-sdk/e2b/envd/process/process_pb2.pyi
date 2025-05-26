@@ -1,14 +1,19 @@
-from google.protobuf.internal import containers as _containers
-from google.protobuf.internal import enum_type_wrapper as _enum_type_wrapper
-from google.protobuf import descriptor as _descriptor
-from google.protobuf import message as _message
+from collections.abc import Iterable as _Iterable
+from collections.abc import Mapping as _Mapping
 from typing import (
     ClassVar as _ClassVar,
-    Iterable as _Iterable,
-    Mapping as _Mapping,
+)
+from typing import (
     Optional as _Optional,
+)
+from typing import (
     Union as _Union,
 )
+
+from google.protobuf import descriptor as _descriptor
+from google.protobuf import message as _message
+from google.protobuf.internal import containers as _containers
+from google.protobuf.internal import enum_type_wrapper as _enum_type_wrapper
 
 DESCRIPTOR: _descriptor.FileDescriptor
 
@@ -31,9 +36,8 @@ class PTY(_message.Message):
         ROWS_FIELD_NUMBER: _ClassVar[int]
         cols: int
         rows: int
-        def __init__(
-            self, cols: _Optional[int] = ..., rows: _Optional[int] = ...
-        ) -> None: ...
+        def __init__(self, cols: _Optional[int] = ..., rows: _Optional[int] = ...) -> None: ...
+
     SIZE_FIELD_NUMBER: _ClassVar[int]
     size: PTY.Size
     def __init__(self, size: _Optional[_Union[PTY.Size, _Mapping]] = ...) -> None: ...
@@ -47,9 +51,8 @@ class ProcessConfig(_message.Message):
         VALUE_FIELD_NUMBER: _ClassVar[int]
         key: str
         value: str
-        def __init__(
-            self, key: _Optional[str] = ..., value: _Optional[str] = ...
-        ) -> None: ...
+        def __init__(self, key: _Optional[str] = ..., value: _Optional[str] = ...) -> None: ...
+
     CMD_FIELD_NUMBER: _ClassVar[int]
     ARGS_FIELD_NUMBER: _ClassVar[int]
     ENVS_FIELD_NUMBER: _ClassVar[int]
@@ -169,6 +172,7 @@ class ProcessEvent(_message.Message):
     class KeepAlive(_message.Message):
         __slots__ = ()
         def __init__(self) -> None: ...
+
     START_FIELD_NUMBER: _ClassVar[int]
     DATA_FIELD_NUMBER: _ClassVar[int]
     END_FIELD_NUMBER: _ClassVar[int]
@@ -189,17 +193,13 @@ class StartResponse(_message.Message):
     __slots__ = ("event",)
     EVENT_FIELD_NUMBER: _ClassVar[int]
     event: ProcessEvent
-    def __init__(
-        self, event: _Optional[_Union[ProcessEvent, _Mapping]] = ...
-    ) -> None: ...
+    def __init__(self, event: _Optional[_Union[ProcessEvent, _Mapping]] = ...) -> None: ...
 
 class ConnectResponse(_message.Message):
     __slots__ = ("event",)
     EVENT_FIELD_NUMBER: _ClassVar[int]
     event: ProcessEvent
-    def __init__(
-        self, event: _Optional[_Union[ProcessEvent, _Mapping]] = ...
-    ) -> None: ...
+    def __init__(self, event: _Optional[_Union[ProcessEvent, _Mapping]] = ...) -> None: ...
 
 class SendInputRequest(_message.Message):
     __slots__ = ("process", "input")
@@ -223,9 +223,7 @@ class ProcessInput(_message.Message):
     PTY_FIELD_NUMBER: _ClassVar[int]
     stdin: bytes
     pty: bytes
-    def __init__(
-        self, stdin: _Optional[bytes] = ..., pty: _Optional[bytes] = ...
-    ) -> None: ...
+    def __init__(self, stdin: _Optional[bytes] = ..., pty: _Optional[bytes] = ...) -> None: ...
 
 class StreamInputRequest(_message.Message):
     __slots__ = ("start", "data", "keepalive")
@@ -234,21 +232,18 @@ class StreamInputRequest(_message.Message):
         __slots__ = ("process",)
         PROCESS_FIELD_NUMBER: _ClassVar[int]
         process: ProcessSelector
-        def __init__(
-            self, process: _Optional[_Union[ProcessSelector, _Mapping]] = ...
-        ) -> None: ...
+        def __init__(self, process: _Optional[_Union[ProcessSelector, _Mapping]] = ...) -> None: ...
 
     class DataEvent(_message.Message):
         __slots__ = ("input",)
         INPUT_FIELD_NUMBER: _ClassVar[int]
         input: ProcessInput
-        def __init__(
-            self, input: _Optional[_Union[ProcessInput, _Mapping]] = ...
-        ) -> None: ...
+        def __init__(self, input: _Optional[_Union[ProcessInput, _Mapping]] = ...) -> None: ...
 
     class KeepAlive(_message.Message):
         __slots__ = ()
         def __init__(self) -> None: ...
+
     START_FIELD_NUMBER: _ClassVar[int]
     DATA_FIELD_NUMBER: _ClassVar[int]
     KEEPALIVE_FIELD_NUMBER: _ClassVar[int]
@@ -286,9 +281,7 @@ class ConnectRequest(_message.Message):
     __slots__ = ("process",)
     PROCESS_FIELD_NUMBER: _ClassVar[int]
     process: ProcessSelector
-    def __init__(
-        self, process: _Optional[_Union[ProcessSelector, _Mapping]] = ...
-    ) -> None: ...
+    def __init__(self, process: _Optional[_Union[ProcessSelector, _Mapping]] = ...) -> None: ...
 
 class ProcessSelector(_message.Message):
     __slots__ = ("pid", "tag")
@@ -296,6 +289,4 @@ class ProcessSelector(_message.Message):
     TAG_FIELD_NUMBER: _ClassVar[int]
     pid: int
     tag: str
-    def __init__(
-        self, pid: _Optional[int] = ..., tag: _Optional[str] = ...
-    ) -> None: ...
+    def __init__(self, pid: _Optional[int] = ..., tag: _Optional[str] = ...) -> None: ...

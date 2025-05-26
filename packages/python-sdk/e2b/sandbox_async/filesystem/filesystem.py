@@ -1,22 +1,24 @@
+from collections.abc import AsyncIterator
+from io import IOBase
+from typing import IO, List, Literal, Optional, Union, overload
+
 import httpcore
 import httpx
-from io import IOBase
 from packaging.version import Version
-from typing import AsyncIterator, IO, List, Literal, Optional, overload, Union
-from e2b.sandbox.filesystem.filesystem import WriteEntry
+
 import e2b_connect as connect
 from e2b.connection_config import (
-    ConnectionConfig,
-    Username,
     KEEPALIVE_PING_HEADER,
     KEEPALIVE_PING_INTERVAL_SEC,
+    ConnectionConfig,
+    Username,
 )
 from e2b.envd.api import ENVD_API_FILES_ROUTE, ahandle_envd_api_exception
 from e2b.envd.filesystem import filesystem_connect, filesystem_pb2
 from e2b.envd.rpc import authentication_header, handle_rpc_exception
 from e2b.envd.versions import ENVD_VERSION_RECURSIVE_WATCH
-from e2b.exceptions import SandboxException, TemplateException, InvalidArgumentException
-from e2b.sandbox.filesystem.filesystem import EntryInfo, map_file_type
+from e2b.exceptions import InvalidArgumentException, SandboxException, TemplateException
+from e2b.sandbox.filesystem.filesystem import EntryInfo, WriteEntry, map_file_type
 from e2b.sandbox.filesystem.watch_handle import FilesystemEvent
 from e2b.sandbox_async.filesystem.watch_handle import AsyncWatchHandle
 from e2b.sandbox_async.utils import OutputHandler
@@ -274,9 +276,7 @@ class Filesystem:
         try:
             res = await self._rpc.alist_dir(
                 filesystem_pb2.ListDirRequest(path=path, depth=depth),
-                request_timeout=self._connection_config.get_request_timeout(
-                    request_timeout
-                ),
+                request_timeout=self._connection_config.get_request_timeout(request_timeout),
                 headers=authentication_header(user),
             )
 
@@ -285,9 +285,7 @@ class Filesystem:
                 event_type = map_file_type(entry.type)
 
                 if event_type:
-                    entries.append(
-                        EntryInfo(name=entry.name, type=event_type, path=entry.path)
-                    )
+                    entries.append(EntryInfo(name=entry.name, type=event_type, path=entry.path))
 
             return entries
         except Exception as e:
@@ -311,9 +309,7 @@ class Filesystem:
         try:
             await self._rpc.astat(
                 filesystem_pb2.StatRequest(path=path),
-                request_timeout=self._connection_config.get_request_timeout(
-                    request_timeout
-                ),
+                request_timeout=self._connection_config.get_request_timeout(request_timeout),
                 headers=authentication_header(user),
             )
 
@@ -341,9 +337,7 @@ class Filesystem:
         try:
             await self._rpc.aremove(
                 filesystem_pb2.RemoveRequest(path=path),
-                request_timeout=self._connection_config.get_request_timeout(
-                    request_timeout
-                ),
+                request_timeout=self._connection_config.get_request_timeout(request_timeout),
                 headers=authentication_header(user),
             )
         except Exception as e:
@@ -372,9 +366,7 @@ class Filesystem:
                     source=old_path,
                     destination=new_path,
                 ),
-                request_timeout=self._connection_config.get_request_timeout(
-                    request_timeout
-                ),
+                request_timeout=self._connection_config.get_request_timeout(request_timeout),
                 headers=authentication_header(user),
             )
 
@@ -404,9 +396,7 @@ class Filesystem:
         try:
             await self._rpc.amake_dir(
                 filesystem_pb2.MakeDirRequest(path=path),
-                request_timeout=self._connection_config.get_request_timeout(
-                    request_timeout
-                ),
+                request_timeout=self._connection_config.get_request_timeout(request_timeout),
                 headers=authentication_header(user),
             )
 
@@ -452,9 +442,7 @@ class Filesystem:
 
         events = self._rpc.awatch_dir(
             filesystem_pb2.WatchDirRequest(path=path, recursive=recursive),
-            request_timeout=self._connection_config.get_request_timeout(
-                request_timeout
-            ),
+            request_timeout=self._connection_config.get_request_timeout(request_timeout),
             timeout=timeout,
             headers={
                 **authentication_header(user),

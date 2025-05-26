@@ -69,7 +69,7 @@ test.skipIf(isDebug)('signing generation', async () => {
 
   const buff = Buffer.from(signatureRaw, 'utf8')
   const hash = createHash('sha256').update(buff).digest()
-  const signature = 'v1_' + hash.toString('base64').replace(/=+$/, '')
+  const signature = `v1_${hash.toString('base64').replace(/=+$/, '')}`
 
   const readSignatureExpected = {
     signature: signature,
@@ -100,7 +100,7 @@ test.skipIf(isDebug)('signing generation with expiration', async () => {
 
   const buff = Buffer.from(signatureRaw, 'utf8')
   const hash = createHash('sha256').update(buff).digest()
-  const signature = 'v1_' + hash.toString('base64').replace(/=+$/, '')
+  const signature = `v1_${hash.toString('base64').replace(/=+$/, '')}`
 
   const readSignatureExpected = {
     signature: signature,

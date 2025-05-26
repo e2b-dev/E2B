@@ -1,5 +1,5 @@
-import { ApiClient, components, handleApiError } from '../api'
-import { ConnectionConfig, ConnectionOpts } from '../connectionConfig'
+import { ApiClient, type components, handleApiError } from '../api'
+import { ConnectionConfig, type ConnectionOpts } from '../connectionConfig'
 import { compareVersions } from 'compare-versions'
 import { TemplateError } from '../errors'
 
@@ -197,7 +197,7 @@ export class SandboxApi {
 
     return (
       res.data?.map((sandbox: components['schemas']['ListedSandbox']) => ({
-        sandboxId: this.getSandboxId({ sandboxId: sandbox.sandboxID, clientId: sandbox.clientID }),
+        sandboxId: SandboxApi.getSandboxId({ sandboxId: sandbox.sandboxID, clientId: sandbox.clientID }),
         templateId: sandbox.templateID,
         clientId: sandbox.clientID,
         state: sandbox.state,
@@ -245,7 +245,7 @@ export class SandboxApi {
     }
 
     return {
-      sandboxId: this.getSandboxId({
+      sandboxId: SandboxApi.getSandboxId({
         sandboxId: res.data.sandboxID,
         clientId: res.data.clientID,
       }),
@@ -286,7 +286,7 @@ export class SandboxApi {
         },
       },
       body: {
-        timeout: this.timeoutToSeconds(timeoutMs),
+        timeout: SandboxApi.timeoutToSeconds(timeoutMs),
       },
       signal: config.getSignal(opts?.requestTimeoutMs),
     })
@@ -319,7 +319,7 @@ export class SandboxApi {
         templateID: template,
         metadata: opts?.metadata,
         envVars: opts?.envs,
-        timeout: this.timeoutToSeconds(timeoutMs),
+        timeout: SandboxApi.timeoutToSeconds(timeoutMs),
         secure: opts?.secure,
       },
       signal: config.getSignal(opts?.requestTimeoutMs),
@@ -330,11 +330,11 @@ export class SandboxApi {
       throw err
     }
 
-    if (compareVersions(res.data!.envdVersion, '0.1.0') < 0) {
-      await this.kill(
-        this.getSandboxId({
-          sandboxId: res.data!.sandboxID,
-          clientId: res.data!.clientID,
+    if (compareVersions(res.data?.envdVersion, '0.1.0') < 0) {
+      await SandboxApi.kill(
+        SandboxApi.getSandboxId({
+          sandboxId: res.data?.sandboxID,
+          clientId: res.data?.clientID,
         }),
         opts
       )
@@ -345,12 +345,12 @@ export class SandboxApi {
     }
 
     return {
-      sandboxId: this.getSandboxId({
-        sandboxId: res.data!.sandboxID,
-        clientId: res.data!.clientID,
+      sandboxId: SandboxApi.getSandboxId({
+        sandboxId: res.data?.sandboxID,
+        clientId: res.data?.clientID,
       }),
-      envdVersion: res.data!.envdVersion,
-      envdAccessToken: res.data!.envdAccessToken
+      envdVersion: res.data?.envdVersion,
+      envdAccessToken: res.data?.envdAccessToken
     }
   }
 

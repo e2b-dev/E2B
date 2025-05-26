@@ -1,7 +1,7 @@
 import logging
-import httpx
-
 from typing import Dict, Optional, overload
+
+import httpx
 
 from e2b.api.client.types import Unset
 from e2b.connection_config import ConnectionConfig, ProxyTypes
@@ -9,9 +9,9 @@ from e2b.envd.api import ENVD_API_HEALTH_ROUTE, handle_envd_api_exception
 from e2b.exceptions import SandboxException, format_request_timeout_error
 from e2b.sandbox.main import SandboxSetup
 from e2b.sandbox.utils import class_method_variant
-from e2b.sandbox_sync.filesystem.filesystem import Filesystem
 from e2b.sandbox_sync.commands.command import Commands
 from e2b.sandbox_sync.commands.pty import Pty
+from e2b.sandbox_sync.filesystem.filesystem import Filesystem
 from e2b.sandbox_sync.sandbox_api import SandboxApi, SandboxInfo
 
 logger = logging.getLogger(__name__)
@@ -149,7 +149,7 @@ class Sandbox(SandboxSetup, SandboxApi):
             self._envd_access_token = response._envd_access_token
 
             if response._envd_access_token is not None and not isinstance(
-                    response._envd_access_token, Unset
+                response._envd_access_token, Unset
             ):
                 connection_headers["X-Access-Token"] = response._envd_access_token
         else:

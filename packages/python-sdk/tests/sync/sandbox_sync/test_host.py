@@ -1,6 +1,6 @@
-import httpx
-
 from time import sleep
+
+import httpx
 
 
 def test_ping_server(sandbox, debug, helpers):

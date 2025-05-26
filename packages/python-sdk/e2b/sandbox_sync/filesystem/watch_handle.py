@@ -49,9 +49,7 @@ class WatchHandle:
             raise SandboxException("The watcher is already stopped")
 
         try:
-            r = self._rpc.get_watcher_events(
-                GetWatcherEventsRequest(watcher_id=self._watcher_id)
-            )
+            r = self._rpc.get_watcher_events(GetWatcherEventsRequest(watcher_id=self._watcher_id))
         except Exception as e:
             raise handle_rpc_exception(e)
 

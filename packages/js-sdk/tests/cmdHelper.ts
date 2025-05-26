@@ -1,4 +1,4 @@
-import { CommandHandle, CommandExitError } from '../src/index.js'
+import type { CommandHandle, CommandExitError } from '../src/index.js'
 import { assert } from 'vitest'
 
 export function catchCmdExitErrorInBackground(cmd: CommandHandle) {

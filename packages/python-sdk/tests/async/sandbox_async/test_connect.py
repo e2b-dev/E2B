@@ -1,7 +1,9 @@
 import uuid
+
 import pytest
 
 from e2b import AsyncSandbox
+
 
 @pytest.mark.skip_debug()
 async def test_connect(template):
@@ -13,6 +15,7 @@ async def test_connect(template):
         assert await sbx_connection.is_running()
     finally:
         await sbx.kill()
+
 
 @pytest.mark.skip_debug()
 async def test_connect_with_secure(template):

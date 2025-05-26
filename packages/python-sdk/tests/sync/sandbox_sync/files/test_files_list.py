@@ -1,6 +1,6 @@
 import uuid
 
-from e2b import Sandbox, FileType
+from e2b import FileType, Sandbox
 
 
 def test_list_directory(sandbox: Sandbox):
@@ -148,8 +148,8 @@ def test_list_directory_error_cases(sandbox: Sandbox):
         sandbox.files.list(parent_dir_name, depth=-1)
         assert False, "Expected error but none was thrown"
     except Exception as err:
-        assert expected_error_message in str(
-            err
-        ), f'expected error message to include "{expected_error_message}"'
+        assert expected_error_message in str(err), (
+            f'expected error message to include "{expected_error_message}"'
+        )
 
     sandbox.files.remove(parent_dir_name)

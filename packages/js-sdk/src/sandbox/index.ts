@@ -2,7 +2,7 @@ import { createConnectTransport } from '@connectrpc/connect-web'
 
 import {
   ConnectionConfig,
-  ConnectionOpts,
+  type ConnectionOpts,
   defaultUsername,
 } from '../connectionConfig'
 import { EnvdApiClient, handleEnvdApiError } from '../envd/api'
@@ -231,22 +231,21 @@ export class Sandbox extends SandboxApi {
     const { template, sandboxOpts } =
       typeof templateOrOpts === 'string'
         ? { template: templateOrOpts, sandboxOpts: opts }
-        : { template: this.defaultTemplate, sandboxOpts: templateOrOpts }
+        : { template: Sandbox.defaultTemplate, sandboxOpts: templateOrOpts }
 
     const config = new ConnectionConfig(sandboxOpts)
     if (config.debug) {
-      return new this({
+      return new Sandbox({
         sandboxId: 'debug_sandbox_id',
         ...config,
       }) as InstanceType<S>
-    } else {
-      const sandbox = await this.createSandbox(
+    }
+      const sandbox = await Sandbox.createSandbox(
         template,
-        sandboxOpts?.timeoutMs ?? this.defaultSandboxTimeoutMs,
+        sandboxOpts?.timeoutMs ?? Sandbox.defaultSandboxTimeoutMs,
         sandboxOpts
       )
-      return new this({ ...sandbox, ...config }) as InstanceType<S>
-    }
+      return new Sandbox({ ...sandbox, ...config }) as InstanceType<S>
   }
 
   /**
@@ -273,9 +272,9 @@ export class Sandbox extends SandboxApi {
     opts?: Omit<SandboxOpts, 'metadata' | 'envs' | 'timeoutMs'>
   ): Promise<InstanceType<S>> {
     const config = new ConnectionConfig(opts)
-    const info = await this.getInfo(sandboxId, opts)
+    const info = await Sandbox.getInfo(sandboxId, opts)
 
-    return new this(
+    return new Sandbox(
         { sandboxId, envdAccessToken: info.envdAccessToken, envdVersion: info.envdVersion, ...config }
     ) as InstanceType<S>
   }
@@ -328,7 +327,7 @@ export class Sandbox extends SandboxApi {
       signal,
     })
 
-    if (res.response.status == 502) {
+    if (res.response.status === 502) {
       return false
     }
 
@@ -393,11 +392,11 @@ export class Sandbox extends SandboxApi {
   uploadUrl(path?: string, opts?: SandboxUrlOpts) {
     opts = opts ?? {}
 
-    if (!this.envdAccessToken && (opts.useSignature || opts.useSignatureExpiration != undefined)) {
+    if (!this.envdAccessToken && (opts.useSignature || opts.useSignatureExpiration !== undefined)) {
       throw new Error('Signature can be used only when sandbox is spawned with secure option.')
     }
 
-    if (!opts.useSignature && opts.useSignatureExpiration != undefined) {
+    if (!opts.useSignature && opts.useSignatureExpiration !== undefined) {
       throw new Error('Signature expiration can be used only when signature is set to true.')
     }
 
@@ -433,11 +432,11 @@ export class Sandbox extends SandboxApi {
   downloadUrl(path: string, opts?: SandboxUrlOpts) { //path: string, useSignature?: boolean, signatureExpirationInSeconds?: number) {
     opts = opts ?? {}
 
-    if (!this.envdAccessToken && (opts.useSignature || opts.useSignatureExpiration != undefined)) {
+    if (!this.envdAccessToken && (opts.useSignature || opts.useSignatureExpiration !== undefined)) {
       throw new Error('Signature can be used only when sandbox is spawned with secure option.')
     }
 
-    if (!opts.useSignature && opts.useSignatureExpiration != undefined) {
+    if (!opts.useSignature && opts.useSignatureExpiration !== undefined) {
       throw new Error('Signature expiration can be used only when signature is set to true.')
     }
 

@@ -1,4 +1,4 @@
-from http import HTTPStatus
+import http
 from typing import Any, Optional, Union
 
 import httpx
@@ -32,13 +32,11 @@ def _get_kwargs(
 def _parse_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
 ) -> Optional[Union[Error, list["RunningSandboxWithMetrics"]]]:
-    if response.status_code == 200:
+    if response.status_code == http.HTTPStatus.OK:
         response_200 = []
         _response_200 = response.json()
         for response_200_item_data in _response_200:
-            response_200_item = RunningSandboxWithMetrics.from_dict(
-                response_200_item_data
-            )
+            response_200_item = RunningSandboxWithMetrics.from_dict(response_200_item_data)
 
             response_200.append(response_200_item)
 

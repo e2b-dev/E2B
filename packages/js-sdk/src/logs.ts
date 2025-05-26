@@ -40,9 +40,8 @@ export function createRpcLogger(logger: Logger): Interceptor {
         ...res,
         message: logEach(res.message),
       }
-    } else {
-      logger.info?.('Response:', formatLog(res.message))
     }
+      logger.info?.('Response:', formatLog(res.message))
 
     return res
   }

@@ -1,18 +1,15 @@
 from typing import Dict, Optional
 
-import e2b_connect
 import httpcore
 
-from typing import Dict, Optional
-
-from e2b.envd.process import process_connect, process_pb2
+import e2b_connect
 from e2b.connection_config import (
-    Username,
-    ConnectionConfig,
     KEEPALIVE_PING_HEADER,
     KEEPALIVE_PING_INTERVAL_SEC,
+    ConnectionConfig,
+    Username,
 )
-from e2b.exceptions import SandboxException
+from e2b.envd.process import process_connect, process_pb2
 from e2b.envd.rpc import authentication_header, handle_rpc_exception
 from e2b.exceptions import SandboxException
 from e2b.sandbox.commands.command_handle import PtySize
@@ -62,9 +59,7 @@ class Pty:
                     process=process_pb2.ProcessSelector(pid=pid),
                     signal=process_pb2.Signal.SIGNAL_SIGKILL,
                 ),
-                request_timeout=self._connection_config.get_request_timeout(
-                    request_timeout
-                ),
+                request_timeout=self._connection_config.get_request_timeout(request_timeout),
             )
             return True
         except Exception as e:
@@ -94,9 +89,7 @@ class Pty:
                         pty=data,
                     ),
                 ),
-                request_timeout=self._connection_config.get_request_timeout(
-                    request_timeout
-                ),
+                request_timeout=self._connection_config.get_request_timeout(request_timeout),
             )
         except Exception as e:
             raise handle_rpc_exception(e)
@@ -134,18 +127,14 @@ class Pty:
                     args=["-i", "-l"],
                     cwd=cwd,
                 ),
-                pty=process_pb2.PTY(
-                    size=process_pb2.PTY.Size(rows=size.rows, cols=size.cols)
-                ),
+                pty=process_pb2.PTY(size=process_pb2.PTY.Size(rows=size.rows, cols=size.cols)),
             ),
             headers={
                 **authentication_header(user),
                 KEEPALIVE_PING_HEADER: str(KEEPALIVE_PING_INTERVAL_SEC),
             },
             timeout=timeout,
-            request_timeout=self._connection_config.get_request_timeout(
-                request_timeout
-            ),
+            request_timeout=self._connection_config.get_request_timeout(request_timeout),
         )
 
         try:
@@ -186,7 +175,5 @@ class Pty:
                     size=process_pb2.PTY.Size(rows=size.rows, cols=size.cols),
                 ),
             ),
-            request_timeout=self._connection_config.get_request_timeout(
-                request_timeout
-            ),
+            request_timeout=self._connection_config.get_request_timeout(request_timeout),
         )

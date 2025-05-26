@@ -1,10 +1,10 @@
 import asyncio
 import inspect
+from collections.abc import AsyncGenerator
+from typing import Any, Optional
 
-from typing import Any, AsyncGenerator, Optional
-
-from e2b.envd.rpc import handle_rpc_exception
 from e2b.envd.filesystem.filesystem_pb2 import WatchDirResponse
+from e2b.envd.rpc import handle_rpc_exception
 from e2b.sandbox.filesystem.watch_handle import FilesystemEvent, map_event_type
 from e2b.sandbox_async.utils import OutputHandler
 

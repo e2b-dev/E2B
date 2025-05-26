@@ -66,9 +66,7 @@ def test_write_multiple_files(sandbox):
         )
 
     # Attempt to write with one file in array
-    info = sandbox.files.write(
-        [{"path": "one_test_file.txt", "data": "This is a test file."}]
-    )
+    info = sandbox.files.write([{"path": "one_test_file.txt", "data": "This is a test file."}])
     assert isinstance(info, list)
     assert len(info) == 1
     info = info[0]

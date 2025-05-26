@@ -1,6 +1,6 @@
 import os
+from typing import Dict, Literal, Optional
 
-from typing import Literal, Optional, Dict
 from httpx._types import ProxyTypes
 
 REQUEST_TIMEOUT: float = 30.0  # 30 seconds
@@ -59,9 +59,7 @@ class ConnectionConfig:
         else:
             self.request_timeout = REQUEST_TIMEOUT
 
-        self.api_url = (
-            "http://localhost:3000" if self.debug else f"https://api.{self.domain}"
-        )
+        self.api_url = "http://localhost:3000" if self.debug else f"https://api.{self.domain}"
 
     @staticmethod
     def _get_request_timeout(
@@ -77,6 +75,7 @@ class ConnectionConfig:
 
     def get_request_timeout(self, request_timeout: Optional[float] = None):
         return self._get_request_timeout(self.request_timeout, request_timeout)
+
 
 Username = Literal["root", "user"]
 """
