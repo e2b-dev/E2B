@@ -20,7 +20,13 @@ console.log(info)
 // {
 //   name: 'test_file.txt',
 //   type: 'file',
-//   path: '/home/user/test_file.txt'
+//   path: '/home/user/test_file.txt',
+//   size: 13,
+//   mode: 0o644, 
+//   permissions: '-rw-r--r--',
+//   owner: 'user',
+//   group: 'user',
+//   modifiedTime: '2025-05-26T12:00:00.000Z'
 // }
 ```
 ```python
@@ -35,7 +41,17 @@ sandbox.files.write('test_file', 'Hello, world!')
 info = sandbox.files.get_info('test_file')
 
 print(info)
-# EntryInfo(name='test_file.txt', type=<FileType.FILE: 'file'>, path='/home/user/test_file.txt')
+# EntryInfo(
+#   name='test_file.txt',
+#   type=<FileType.FILE: 'file'>,
+#   path='/home/user/test_file.txt',
+#   size=13,
+#   mode=0o644,
+#   permissions='-rw-r--r--',
+#   owner='user',
+#   group='user',
+#   modified_time='2025-05-26T12:00:00.000Z'
+# )
 ```
 </CodeGroup>
 
@@ -57,7 +73,13 @@ console.log(info)
 // {
 //   name: 'test_dir',
 //   type: 'dir',
-//   path: '/home/user/test_dir'
+//   path: '/home/user/test_dir',
+//   size: 0,
+//   mode: 0o755,
+//   permissions: 'drwxr-xr-x',
+//   owner: 'user',
+//   group: 'user',
+//   modifiedTime: '2025-05-26T12:00:00.000Z'
 // }
 ```
 ```python
@@ -72,6 +94,16 @@ sandbox.files.make_dir('test_dir')
 info = sandbox.files.get_info('test_dir')
 
 print(info)
-# EntryInfo(name='test_dir', type=<FileType.DIR: 'dir'>, path='/home/user/test_dir')
+# EntryInfo(
+#   name='test_dir',
+#   type=<FileType.DIR: 'dir'>,
+#   path='/home/user/test_dir',
+#   size=0,
+#   mode=0o755,
+#   permissions='drwxr-xr-x',
+#   owner='user',
+#   group='user',
+#   modified_time='2025-05-26T12:00:00.000Z'
+# )
 ```
 </CodeGroup>
