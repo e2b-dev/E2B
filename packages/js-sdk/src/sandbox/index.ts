@@ -2,7 +2,7 @@ import { createConnectTransport } from '@connectrpc/connect-web'
 
 import {
   ConnectionConfig,
-  ConnectionOpts,
+  type ConnectionOpts,
   defaultUsername,
 } from '../connectionConfig'
 import { EnvdApiClient, handleEnvdApiError } from '../envd/api'

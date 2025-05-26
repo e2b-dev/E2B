@@ -1,0 +1,37 @@
+name: Lint
+
+on:
+  pull_request:
+
+jobs:
+  lint-python:
+    name: Lint Python
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11' # Or the version used in the project
+      - name: Install Ruff
+        run: pip install ruff
+      - name: Run Ruff
+        run: ruff check packages/python-sdk/
+
+  lint-javascript:
+    name: Lint JavaScript
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18' # Or the version used in the project
+      - name: Install pnpm
+        run: npm install -g pnpm
+      - name: Install Biome
+        # This project uses pnpm. The root package.json already has @biomejs/biome in devDependencies.
+        # We need to run pnpm install to make it available.
+        run: pnpm install --frozen-lockfile --prefer-offline
+      - name: Run Biome
+        run: pnpm exec biome lint ./packages/js-sdk/

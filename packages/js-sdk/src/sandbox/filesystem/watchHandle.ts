@@ -1,13 +1,13 @@
 import { handleRpcError } from '../../envd/rpc'
 import {
   EventType,
-  WatchDirResponse,
+  type WatchDirResponse,
 } from '../../envd/filesystem/filesystem_pb'
 
 /**
  * Sandbox filesystem event types.
  */
-export const enum FilesystemEventType {
+export enum FilesystemEventType {
   /**
    * Filesystem object permissions were changed.
    */

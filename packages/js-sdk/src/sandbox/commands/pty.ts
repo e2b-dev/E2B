@@ -2,15 +2,15 @@ import {
   Code,
   ConnectError,
   createClient,
-  Client,
-  Transport,
+  type Client,
+  type Transport,
 } from '@connectrpc/connect'
 
 import { Signal, Process as ProcessService } from '../../envd/process/process_pb'
 import {
-  ConnectionConfig,
-  ConnectionOpts,
-  Username,
+  type ConnectionConfig,
+  type ConnectionOpts,
+  type Username,
   KEEPALIVE_PING_HEADER,
   KEEPALIVE_PING_INTERVAL_SEC,
 } from '../../connectionConfig'

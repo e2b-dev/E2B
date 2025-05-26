@@ -1,4 +1,4 @@
-import { Logger } from './logs'
+import type { Logger } from './logs'
 import { getEnvVar } from './api/metadata'
 
 const REQUEST_TIMEOUT_MS = 30_000 // 30 seconds

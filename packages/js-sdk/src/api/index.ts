@@ -1,13 +1,13 @@
-import createClient, { FetchResponse } from 'openapi-fetch'
+import createClient, { type FetchResponse } from 'openapi-fetch'
 
 import type { components, paths } from './schema.gen'
 import { defaultHeaders } from './metadata'
-import { ConnectionConfig } from '../connectionConfig'
+import type { ConnectionConfig } from '../connectionConfig'
 import { AuthenticationError, RateLimitError, SandboxError } from '../errors'
 import { createApiLogger } from '../logs'
 
 export function handleApiError(
-  response: FetchResponse<any, any, any>
+  response: FetchResponse<unknown, unknown, unknown>
 ): Error | undefined {
   if (!response.error) {
     return

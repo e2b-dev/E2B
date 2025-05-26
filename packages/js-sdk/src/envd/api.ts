@@ -1,7 +1,7 @@
-import createClient, { FetchResponse } from 'openapi-fetch'
+import createClient, { type FetchResponse } from 'openapi-fetch'
 
 import type { components, paths } from './schema.gen'
-import { ConnectionConfig } from '../connectionConfig'
+import type { ConnectionConfig } from '../connectionConfig'
 import { createApiLogger } from '../logs'
 import {
   SandboxError,
@@ -11,9 +11,9 @@ import {
   formatSandboxTimeoutError,
   AuthenticationError,
 } from '../errors'
-import { StartResponse, ConnectResponse } from './process/process_pb'
+import type { StartResponse, ConnectResponse } from './process/process_pb'
 import { Code, ConnectError } from '@connectrpc/connect'
-import { WatchDirResponse } from './filesystem/filesystem_pb'
+import type { WatchDirResponse } from './filesystem/filesystem_pb'
 
 export async function handleEnvdApiError<A, B, C extends `${string}/${string}`>(
   res: FetchResponse<A, B, C>
@@ -23,7 +23,7 @@ export async function handleEnvdApiError<A, B, C extends `${string}/${string}`>(
   }
 
   const message: string =
-    typeof res.error == 'string'
+    typeof res.error === 'string'
       ? res.error
       : res.error?.message || (await res.response.text())
 

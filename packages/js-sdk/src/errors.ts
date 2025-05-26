@@ -11,7 +11,7 @@ export function formatSandboxTimeoutError(message: string) {
  * Thrown when general sandbox errors occur.
  */
 export class SandboxError extends Error {
-  constructor(message: any) {
+  constructor(message: string) {
     super(message)
     this.name = 'SandboxError'
   }
@@ -69,7 +69,7 @@ export class NotFoundError extends SandboxError {
  * Thrown when authentication fails.
  */
 export class AuthenticationError extends SandboxError {
-  constructor(message: any) {
+  constructor(message: string) {
     super(message)
     this.name = 'AuthenticationError'
   }
@@ -89,7 +89,7 @@ export class TemplateError extends SandboxError {
  * Thrown when the API rate limit is exceeded.
  */
 export class RateLimitError extends SandboxError {
-  constructor(message: any) {
+  constructor(message: string) {
     super(message)
     this.name = 'RateLimitError'
   }

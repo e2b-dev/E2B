@@ -8,23 +8,23 @@ export interface Logger {
   /**
    * Debug level logging method.
    */
-  debug?: (...args: any[]) => void
+  debug?: (...args: unknown[]) => void
   /**
    * Info level logging method.
    */
-  info?: (...args: any[]) => void
+  info?: (...args: unknown[]) => void
   /**
    * Error level logging method.
    */
-  error?: (...args: any[]) => void
+  error?: (...args: unknown[]) => void
 }
 
-function formatLog(log: any) {
+function formatLog(log: unknown) {
   return JSON.parse(JSON.stringify(log))
 }
 
 export function createRpcLogger(logger: Logger): Interceptor {
-  async function* logEach(stream: AsyncIterable<any>) {
+  async function* logEach(stream: AsyncIterable<unknown>) {
     for await (const m of stream) {
       logger.debug?.('Response stream:', formatLog(m))
       yield m

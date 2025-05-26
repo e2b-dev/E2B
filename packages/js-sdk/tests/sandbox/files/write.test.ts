@@ -1,7 +1,7 @@
-import path from 'path'
+import path from 'node:path'
 import { assert, onTestFinished } from 'vitest'
 
-import { WriteEntry } from '../../../src/sandbox/filesystem'
+import type { WriteEntry } from '../../../src/sandbox/filesystem'
 import { isDebug, sandboxTest } from '../../setup.js'
 
 sandboxTest('write file', async ({ sandbox }) => {
@@ -77,7 +77,7 @@ sandboxTest('write multiple files', async ({ sandbox }) => {
 
   for (let i = 0; i < 10; i++) {
     let path = ''
-    if (i % 2 == 0) {
+    if (i % 2 === 0) {
       path = `/${i}/multi_test_file${i}.txt`
     } else {
       path = `/home/user/multi_test_file${i}.txt`
