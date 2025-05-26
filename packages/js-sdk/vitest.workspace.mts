@@ -34,6 +34,7 @@ export default defineWorkspace([
       },
       provide: {
         E2B_API_KEY: process.env.E2B_API_KEY || env.parsed?.E2B_API_KEY,
+        E2B_DOMAIN: process.env.E2B_DOMAIN || env.parsed?.E2B_DOMAIN,
       },
     },
   },
