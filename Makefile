@@ -16,7 +16,7 @@ generate-js:
 	cd spec/envd && buf generate --template buf-js.gen.yaml
 
 generate-python:
-	if [ ! -f "/go/bin/protoc-gen-connect-python" ]; then \
+	if [ ! -f "$(GOPATH)/bin/protoc-gen-connect-python" ]; then \
 		$(MAKE) -C packages/connect-python build; \
 	fi
 	cd packages/python-sdk && make generate-api
