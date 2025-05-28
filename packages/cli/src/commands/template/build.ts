@@ -6,7 +6,7 @@ import * as stripAnsi from 'strip-ansi'
 import * as boxen from 'boxen'
 import commandExists from 'command-exists'
 import { wait } from 'src/utils/wait'
-import { connectionConfig, ensureAccessToken } from 'src/api'
+import { client, connectionConfig, ensureAccessToken } from 'src/api'
 import { getRoot } from 'src/utils/filesystem'
 import {
   asBold,
@@ -20,14 +20,9 @@ import {
   withDelimiter,
 } from 'src/utils/format'
 import { configOption, pathOption, teamOption } from 'src/options'
-import {
-  defaultDockerfileName,
-  fallbackDockerfileName,
-} from 'src/docker/constants'
+import { defaultDockerfileName, fallbackDockerfileName } from 'src/docker/constants'
 import { configName, getConfigPath, loadConfig, saveConfig } from 'src/config'
 import * as child_process from 'child_process'
-
-import { client } from 'src/api'
 import { handleE2BRequestError } from '../../utils/errors'
 import { getUserConfig } from 'src/user'
 import { buildWithProxy } from './buildWithProxy'
@@ -60,12 +55,12 @@ async function getTemplateBuildLogs({
     }
   )
 
-  handleE2BRequestError(res.error, 'Error getting template build status')
+  handleE2BRequestError(res, 'Error getting template build status')
   return res.data as e2b.paths['/templates/{templateID}/builds/{buildID}/status']['get']['responses']['200']['content']['application/json']
 }
 
 async function requestTemplateBuild(
-  args?: e2b.paths['/templates']['post']['requestBody']['content']['application/json']
+  args: e2b.paths['/templates']['post']['requestBody']['content']['application/json']
 ) {
   return await client.api.POST('/templates', {
     body: args,
@@ -74,7 +69,7 @@ async function requestTemplateBuild(
 
 async function requestTemplateRebuild(
   templateID: string,
-  args?: e2b.paths['/templates/{templateID}']['post']['requestBody']['content']['application/json']
+  args: e2b.paths['/templates/{templateID}']['post']['requestBody']['content']['application/json']
 ) {
   return await client.api.POST('/templates/{templateID}', {
     body: args,
@@ -118,8 +113,8 @@ async function triggerTemplateBuild(templateID: string, buildID: string) {
     throw new Error('Error triggering template build')
   }
 
-  handleE2BRequestError(res?.error, 'Error triggering template build')
-  return res?.data
+  handleE2BRequestError(res, 'Error triggering template build')
+  return res.data
 }
 
 export const buildCommand = new commander.Command('build')
@@ -605,7 +600,7 @@ async function requestBuildTemplate(
     res = await requestTemplateBuild(args)
   }
 
-  handleE2BRequestError(res.error, 'Error requesting template build')
+  handleE2BRequestError(res, 'Error requesting template build')
   return res.data
 }
 

@@ -8,16 +8,17 @@ export class E2BRequestError extends Error {
   }
 }
 
-export function handleE2BRequestError(
-  err?: { code: number; message: string },
+export function handleE2BRequestError<T>(
+  res: { data?: T | null | undefined; error?: { code: number; message: string } },
   errMsg?: string,
-) {
-  if (!err) {
+): asserts res is { data: T; error?: undefined } {
+  if (!res.error && res.data != null) {
     return
   }
 
-  let message = ''
-  switch (err.code) {
+  let message = 'unknown error'
+  const code = res.error?.code ?? 0
+  switch (code) {
     case 400:
       message = 'bad request'
       break
@@ -36,8 +37,8 @@ export function handleE2BRequestError(
   }
 
   throw new E2BRequestError(
-    `${errMsg && `${errMsg}: `}[${err.code}] ${message && `${message}: `}${
-      err.message ?? 'no message'
+    `${errMsg && `${errMsg}: `}[${code}] ${message && `${message}: `}${
+      res.error?.message ?? 'no message'
     }`,
   )
 }

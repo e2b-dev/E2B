@@ -2,7 +2,7 @@ import * as tablePrinter from 'console-table-printer'
 import * as commander from 'commander'
 import * as e2b from 'e2b'
 
-import { ensureAPIKey, client, connectionConfig } from 'src/api'
+import { client, connectionConfig, ensureAPIKey } from 'src/api'
 import { handleE2BRequestError } from '../../utils/errors'
 
 export const listCommand = new commander.Command('list')
@@ -89,7 +89,7 @@ export async function listSandboxes(): Promise<
   const signal = connectionConfig.getSignal()
   const res = await client.api.GET('/sandboxes', { signal })
 
-  handleE2BRequestError(res.error, 'Error getting running sandboxes')
+  handleE2BRequestError(res,  'Error getting running sandboxes')
 
   return res.data
 }
