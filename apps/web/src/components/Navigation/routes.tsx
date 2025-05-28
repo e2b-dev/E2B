@@ -187,7 +187,7 @@ export const docRoutes: NavGroup[] = [
             href: '/docs/code-interpreting/supported-languages/python',
           },
           {
-            title: 'JavaScript',
+            title: 'JavaScript and TypeScript',
             href: '/docs/code-interpreting/supported-languages/javascript',
           },
           {
