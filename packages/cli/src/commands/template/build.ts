@@ -131,7 +131,7 @@ export const buildCommand = new commander.Command('build')
     '[template]',
     `specify ${asBold(
       '[template]'
-    )} to rebuild it. If you don's specify ${asBold(
+    )} to rebuild it. If you dont's specify ${asBold(
       '[template]'
     )} and there is no ${asLocal(
       'e2b.toml'
@@ -221,6 +221,8 @@ export const buildCommand = new commander.Command('build')
         let cpuCount = opts.cpuCount
         let memoryMB = opts.memoryMb
         let teamID = opts.team
+        let readyCmd: string | undefined
+        let readyTimeout: number | undefined
 
         const root = getRoot(opts.path)
         const configPath = getConfigPath(root, opts.config)
@@ -249,6 +251,8 @@ export const buildCommand = new commander.Command('build')
           cpuCount = opts.cpuCount || config.cpu_count
           memoryMB = opts.memoryMb || config.memory_mb
           teamID = opts.team || config.team_id
+          readyCmd = config.ready_cmd
+          readyTimeout = config.ready_timeout
         }
 
         const userConfig = getUserConfig()
@@ -295,6 +299,8 @@ export const buildCommand = new commander.Command('build')
           memoryMB: memoryMB,
           dockerfile: dockerfileContent,
           teamID: teamID,
+          readyCmd: readyCmd,
+          readyTimeout: readyTimeout,
         }
 
         if (opts.memoryMb) {
@@ -327,6 +333,8 @@ export const buildCommand = new commander.Command('build')
             cpu_count: cpuCount,
             memory_mb: memoryMB,
             team_id: teamID,
+            ready_cmd: readyCmd,
+            ready_timeout: readyTimeout,
           },
           true
         )
