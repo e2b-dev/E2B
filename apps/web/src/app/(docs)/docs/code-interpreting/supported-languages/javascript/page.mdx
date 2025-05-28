@@ -23,7 +23,7 @@ const execution = await sbx.runCode(`
 
   const url: string = "https://api.github.com/status";
   const response = await axios.get(url);
-  console.log(response.data);
+  response.data;
 `,
   { language: "ts" }
 );
@@ -33,7 +33,7 @@ console.log(execution);
 // Execution {
 //   results: [],
 //   logs: {
-//     stdout: [ "{ message: 'GitHub lives! (2025-05-28 06:30:44 -0700) (1)' }\n" ],
+//     stdout: [ "{ message: 'GitHub lives! (2025-05-28 10:49:55 -0700) (1)' }\n" ],
 //     stderr: [],
 //   },
 //   error: undefined,
@@ -57,7 +57,7 @@ execution = sbx.run_code("""
 
   const url: string = "https://api.github.com/status";
   const response = await axios.get(url);
-  console.log(response.data);
+  response.data;
 """,
     language="ts",
 )
@@ -65,11 +65,10 @@ execution = sbx.run_code("""
 print(execution)
 
 # Execution(
-#   Results: [],
-#   Logs: Logs(
-#     stdout: ["{ message: 'GitHub lives! (2025-05-28 06:30:44 -0700) (1)' }\n"],
-#     stderr: [],
-#   ),
+#   Results: [
+#     Result({ message: 'GitHub lives! (2025-05-28 10:48:47 -0700) (1)' })
+#   ],
+#   Logs: Logs(stdout: [], stderr: []),
 #   Error: None
 # )
 ```
