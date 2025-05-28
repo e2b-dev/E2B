@@ -40,7 +40,7 @@ async function deleteTemplate(templateID: string) {
     },
   })
 
-  handleE2BRequestError(res.error, 'Error deleting sandbox template')
+  handleE2BRequestError(res, 'Error deleting sandbox template')
   return
 }
 

@@ -311,7 +311,7 @@ export async function listSandboxLogs({
     },
   })
 
-  handleE2BRequestError(res.error, 'Error while getting sandbox logs')
+  handleE2BRequestError(res, 'Error while getting sandbox logs')
 
   return res.data.logs
 }

@@ -52,7 +52,7 @@ export const loginCommand = new commander.Command('login')
       const client = new e2b.ApiClient(config)
       const res = await client.api.GET('/teams', { signal })
 
-      handleE2BRequestError(res.error, 'Error getting teams')
+      handleE2BRequestError(res, 'Error getting teams')
 
       const defaultTeam = res.data.find(
         (team: e2b.components['schemas']['Team']) => team.isDefault

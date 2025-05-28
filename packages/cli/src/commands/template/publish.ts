@@ -2,20 +2,9 @@ import * as commander from 'commander'
 import * as chalk from 'chalk'
 import * as fs from 'fs'
 
-import {
-  asBold,
-  asFormattedError,
-  asFormattedSandboxTemplate,
-  asLocal,
-  asLocalRelative,
-} from 'src/utils/format'
-import {
-  configOption,
-  pathOption,
-  selectMultipleOption,
-  teamOption,
-} from 'src/options'
-import { E2BConfig, configName, getConfigPath, loadConfig } from 'src/config'
+import { asBold, asFormattedError, asFormattedSandboxTemplate, asLocal, asLocalRelative } from 'src/utils/format'
+import { configOption, pathOption, selectMultipleOption, teamOption } from 'src/options'
+import { configName, E2BConfig, getConfigPath, loadConfig } from 'src/config'
 import { getRoot } from 'src/utils/filesystem'
 import { listSandboxTemplates } from './list'
 import { getPromptTemplates } from 'src/utils/templatePrompt'
@@ -37,7 +26,7 @@ async function publishTemplate(templateID: string, publish: boolean) {
   })
 
   handleE2BRequestError(
-    res.error,
+    res,
     `Error ${publish ? 'publishing' : 'unpublishing'} sandbox template`
   )
   return
