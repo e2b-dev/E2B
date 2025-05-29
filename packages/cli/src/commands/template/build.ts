@@ -252,7 +252,6 @@ export const buildCommand = new commander.Command('build')
           memoryMB = opts.memoryMb || config.memory_mb
           teamID = opts.team || config.team_id
           readyCmd = config.ready_cmd
-          readyTimeout = config.ready_timeout
         }
 
         const userConfig = getUserConfig()
@@ -334,7 +333,6 @@ export const buildCommand = new commander.Command('build')
             memory_mb: memoryMB,
             team_id: teamID,
             ready_cmd: readyCmd,
-            ready_timeout: readyTimeout,
           },
           true
         )

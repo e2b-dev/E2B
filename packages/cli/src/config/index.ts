@@ -31,7 +31,6 @@ export const configSchema = yup.object({
   dockerfile: yup.string().required(),
   start_cmd: yup.string().optional(),
   ready_cmd: yup.string().optional(),
-  ready_timeout: yup.number().integer().min(1).optional(),
   cpu_count: yup.number().integer().min(1).optional(),
   memory_mb: yup.number().integer().min(128).optional(),
   team_id: yup.string().optional(),
