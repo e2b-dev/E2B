@@ -112,10 +112,6 @@ export interface ProcessInfo {
   cwd?: string
 }
 
-type RunCommandReturn<T extends boolean> = T extends true
-  ? CommandHandle
-  : CommandResult
-
 /**
  * Module for starting and interacting with commands in the sandbox.
  */
@@ -323,6 +319,8 @@ export class Commands {
     opts: CommandStartOpts & { background: true }
   ): Promise<CommandHandle>
 
+  // NOTE - The following overload seems redundant, but it's required to make the type inference work correctly.
+
   /**
    * Start a new command.
    *
@@ -337,17 +335,13 @@ export class Commands {
     cmd: string,
     opts?: CommandStartOpts & { background?: boolean }
   ): Promise<CommandHandle | CommandResult>
-  async run<T extends boolean>(
+  async run(
     cmd: string,
-    opts?: CommandStartOpts & { background?: T }
-  ): Promise<RunCommandReturn<T>> {
+    opts?: CommandStartOpts & { background?: boolean }
+  ): Promise<CommandHandle | CommandResult> {
     const proc = await this.start(cmd, opts)
 
-    if (opts?.background === true) {
-      return proc as RunCommandReturn<T>
-    }
-
-    return (await proc.wait()) as RunCommandReturn<T>
+    return opts?.background === true ? proc : await proc.wait()
   }
 
   private async start(
