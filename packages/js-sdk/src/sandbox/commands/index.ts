@@ -341,7 +341,7 @@ export class Commands {
   ): Promise<CommandHandle | CommandResult> {
     const proc = await this.start(cmd, opts)
 
-    return opts?.background === true ? proc : await proc.wait()
+    return opts?.background ? proc : proc.wait()
   }
 
   private async start(
