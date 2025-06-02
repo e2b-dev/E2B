@@ -1,23 +1,22 @@
 import clsx from 'clsx'
 import { ChevronDown, ChevronRight } from 'lucide-react'
-import { usePathname } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 
 import { NavigationLink } from './NavigationLink'
 import { NavSubgroup } from './routes'
 
-export function NavigationSubgroup({ subgroup }: { subgroup: NavSubgroup }) {
-  const [isExpanded, setIsExpanded] = useState(false)
-  const pathname = usePathname()
+interface NavigationSubgroupProps {
+  subgroup: NavSubgroup
+  pathname: string
+}
 
+export function NavigationSubgroup({
+  subgroup,
+  pathname,
+}: NavigationSubgroupProps) {
   const isActive = subgroup.links.some((link) => link.href === pathname)
 
-  // Automatically expand the subgroup if it's active
-  useEffect(() => {
-    if (isActive) {
-      setIsExpanded(true)
-    }
-  }, [isActive])
+  const [isExpanded, setIsExpanded] = useState(isActive)
 
   const toggleExpand = () => {
     setIsExpanded(!isExpanded)
