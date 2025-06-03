@@ -9,12 +9,25 @@ import { Section } from '@/components/SectionProvider'
 import { Layout } from '@/components/Layout'
 import { headers } from 'next/headers'
 
+function isValidPath(pathname: string) {
+  try {
+    const docsDirectory = glob.sync('**/*.mdx', {
+      cwd: `src/app/(docs)${pathname}`,
+    })
+
+    return docsDirectory.length > 0
+  } catch (error) {
+    console.error('Error validating path in generateMetadata:', error)
+    return false
+  }
+}
+
 export async function generateMetadata() {
   const headerList = headers()
   let pathname = headerList.get('x-middleware-pathname')
   const shouldIndex = headerList.get('x-e2b-should-index')
 
-  if (!pathname?.startsWith('/docs')) {
+  if (!pathname?.startsWith('/docs') || !isValidPath(pathname)) {
     pathname = null
   }
 
