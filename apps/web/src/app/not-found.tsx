@@ -1,5 +1,5 @@
-import { redirect } from 'next/navigation'
+import { redirect, RedirectType } from 'next/navigation'
 
 export default async function NotFound() {
-  throw redirect('/docs')
+  throw redirect('https://e2b.dev/docs', RedirectType.replace)
 }
