@@ -10,7 +10,7 @@ import { Layout } from '@/components/Layout'
 import { headers } from 'next/headers'
 import path from 'path'
 
-async function isValidPath(pathname: string) {
+function isValidPath(pathname: string) {
   const startTime = Date.now()
   console.log('🔍 [isValidPath] Starting validation for:', pathname)
   console.log('🌍 [isValidPath] Environment:', {
@@ -18,6 +18,10 @@ async function isValidPath(pathname: string) {
     NODE_ENV: process.env.NODE_ENV,
     LAMBDA_RUNTIME_DIR: process.env.LAMBDA_RUNTIME_DIR,
     cwd: process.cwd(),
+  })
+  console.log('📂 [isValidPath] Directory structure:', {
+    cwd: process.cwd(),
+    files: glob.sync('**/*', { cwd: process.cwd(), dot: true }),
   })
 
   try {
@@ -65,7 +69,7 @@ async function isValidPath(pathname: string) {
       cwd: globCwd,
     })
 
-    const docsDirectory = await glob(globPattern, {
+    const docsDirectory = glob.sync(globPattern, {
       cwd: globCwd,
     })
 
@@ -117,7 +121,7 @@ export async function generateMetadata() {
   let isValid = false
 
   if (pathname?.startsWith('/docs')) {
-    isValid = await isValidPath(pathname)
+    isValid = isValidPath(pathname)
   }
 
   return {
