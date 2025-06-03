@@ -1,30 +1,63 @@
 import { Metadata } from 'next'
 import { Analytics } from '@vercel/analytics/react'
 import Script from 'next/script'
-
 import { Providers } from '@/app/providers'
-
 import '@/styles/tailwind.css'
-import Canonical from '@/components/Navigation/canonical'
 import { Header } from '@/components/Header'
 import glob from 'fast-glob'
 import { Section } from '@/components/SectionProvider'
 import { Layout } from '@/components/Layout'
+import { headers } from 'next/headers'
 
-export const metadata: Metadata = {
-  title: {
-    template: '%s - E2B',
-    default: 'E2B - Code Interpreting for AI apps',
-  },
-  description: 'Open-source secure sandboxes for AI code execution',
-  twitter: {
-    title: 'E2B - Code Interpreting for AI apps',
+async function isValidPath(pathname: string) {
+  try {
+    const docsDirectory = await glob('**/*.mdx', {
+      cwd: `src/app/(docs)${pathname}`,
+    })
+
+    return docsDirectory.length > 0
+  } catch (error) {
+    console.error('Error validating path in generateMetadata:', error)
+    return false
+  }
+}
+
+export async function generateMetadata() {
+  const headerList = headers()
+  const pathname = headerList.get('x-middleware-pathname')
+  const shouldIndex = headerList.get('x-e2b-should-index')
+
+  let isValid = false
+
+  if (pathname?.startsWith('/docs')) {
+    isValid = await isValidPath(pathname)
+  }
+
+  return {
+    title: {
+      template: '%s - E2B',
+      default: 'E2B - Code Interpreting for AI apps',
+    },
     description: 'Open-source secure sandboxes for AI code execution',
-  },
-  openGraph: {
-    title: 'E2B - Code Interpreting for AI apps',
-    description: 'Open-source secure sandboxes for AI code execution',
-  },
+    twitter: {
+      title: 'E2B - Code Interpreting for AI apps',
+      description: 'Open-source secure sandboxes for AI code execution',
+    },
+    openGraph: {
+      title: 'E2B - Code Interpreting for AI apps',
+      description: 'Open-source secure sandboxes for AI code execution',
+    },
+    alternates:
+      isValid && pathname !== ''
+        ? {
+            canonical: `https://e2b.dev${pathname}`,
+          }
+        : undefined,
+    robots:
+      isValid && shouldIndex
+        ? { index: true, follow: true }
+        : { index: false, follow: false },
+  } satisfies Metadata
 }
 
 declare global {
@@ -60,7 +93,6 @@ export default async function RootLayout({ children }) {
             `}
           </Script>
         )}
-        <Canonical />
       </head>
       <body className="flex min-h-full antialiased bg-zinc-900">
         {process.env.NODE_ENV === 'production' && (
