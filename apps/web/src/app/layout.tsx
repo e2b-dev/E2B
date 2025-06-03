@@ -8,14 +8,25 @@ import glob from 'fast-glob'
 import { Section } from '@/components/SectionProvider'
 import { Layout } from '@/components/Layout'
 import { headers } from 'next/headers'
+import path from 'path'
 
 async function isValidPath(pathname: string) {
   try {
+    const rootAppDirPath = path.join(
+      process.env.NODE_ENV === 'production'
+        ? path.join('.', 'src', 'app')
+        : path.join(process.cwd(), 'src', 'app')
+    )
+
+    console.log('LAYOUT METADATA ROOT APP DIR PATH', rootAppDirPath)
+
     const docsDirectory = await glob('**/*.mdx', {
-      cwd: `src/app/(docs)${pathname}`,
+      cwd: `${rootAppDirPath}/(docs)${pathname}`,
     })
 
-    return docsDirectory.length > 0
+    console.log('LAYOUT METADATA DOCS DIRECTORY', docsDirectory)
+
+    return docsDirectory.length > 0 && docsDirectory.includes('page.mdx')
   } catch (error) {
     console.error('Error validating path in generateMetadata:', error)
     return false
@@ -26,6 +37,10 @@ export async function generateMetadata() {
   const headerList = headers()
   const pathname = headerList.get('x-middleware-pathname')
   const shouldIndex = headerList.get('x-e2b-should-index')
+
+  console.log('LAYOUT METADATA HEADERS', Array.from(headerList.entries()))
+  console.log('LAYOUT METADATA PATHNAME', pathname)
+  console.log('LAYOUT METADATA SHOULD INDEX', shouldIndex)
 
   let isValid = false
 
