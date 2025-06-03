@@ -6,7 +6,10 @@ import {
   Transport,
 } from '@connectrpc/connect'
 
-import { Signal, Process as ProcessService } from '../../envd/process/process_pb'
+import {
+  Signal,
+  Process as ProcessService,
+} from '../../envd/process/process_pb'
 import {
   ConnectionConfig,
   Username,
@@ -15,7 +18,7 @@ import {
   KEEPALIVE_PING_HEADER,
 } from '../../connectionConfig'
 import { authenticationHeader, handleRpcError } from '../../envd/rpc'
-import { CommandHandle, CommandResult } from './commandHandle'
+import { CommandResult, CommandHandle } from './commandHandle'
 import { handleProcessStartEvent } from '../../envd/api'
 export { Pty } from './pty'
 
@@ -23,7 +26,7 @@ export { Pty } from './pty'
  * Options for sending a command request.
  */
 export interface CommandRequestOpts
-  extends Partial<Pick<ConnectionOpts, 'requestTimeoutMs'>> { }
+  extends Partial<Pick<ConnectionOpts, 'requestTimeoutMs'>> {}
 
 /**
  * Options for starting a new command.
@@ -36,21 +39,21 @@ export interface CommandStartOpts extends CommandRequestOpts {
   background?: boolean
   /**
    * Working directory for the command.
-   * 
+   *
    * @default // home directory of the user used to start the command
    */
   cwd?: string
   /**
    * User to run the command as.
-   * 
+   *
    * @default `user`
    */
   user?: Username
   /**
    * Environment variables used for the command.
-   * 
+   *
    * This overrides the default environment variables from `Sandbox` constructor.
-   * 
+   *
    * @default `{}`
    */
   envs?: Record<string, string>
@@ -64,7 +67,7 @@ export interface CommandStartOpts extends CommandRequestOpts {
   onStderr?: (data: string) => void | Promise<void>
   /**
    * Timeout for the command in **milliseconds**.
-   * 
+   *
    * @default 60_000 // 60 seconds
    */
   timeoutMs?: number
@@ -109,7 +112,6 @@ export interface ProcessInfo {
   cwd?: string
 }
 
-
 /**
  * Module for starting and interacting with commands in the sandbox.
  */
@@ -129,7 +131,7 @@ export class Commands {
    * List all running commands and PTY sessions.
    *
    * @param opts connection options.
-   * 
+   *
    * @returns list of running commands and PTY sessions.
    */
   async list(opts?: CommandRequestOpts): Promise<ProcessInfo[]> {
@@ -197,7 +199,7 @@ export class Commands {
    *
    * @param pid process ID of the command. You can get the list of running commands using {@link Commands.list}.
    * @param opts connection options.
-   * 
+   *
    * @returns `true` if the command was killed, `false` if the command was not found.
    */
   async kill(pid: number, opts?: CommandRequestOpts): Promise<boolean> {
@@ -235,7 +237,7 @@ export class Commands {
    *
    * @param pid process ID of the command to connect to. You can get the list of running commands using {@link Commands.list}.
    * @param opts connection options.
-   * 
+   *
    * @returns `CommandHandle` handle to interact with the running command.
    */
   async connect(
@@ -249,8 +251,8 @@ export class Commands {
 
     const reqTimeout = requestTimeoutMs
       ? setTimeout(() => {
-        controller.abort()
-      }, requestTimeoutMs)
+          controller.abort()
+        }, requestTimeoutMs)
       : undefined
 
     const events = this.rpc.connect(
@@ -292,33 +294,51 @@ export class Commands {
 
   /**
    * Start a new command and wait until it finishes executing.
-   * 
+   *
    * @param cmd command to execute.
    * @param opts options for starting the command.
-   * 
+   *
    * @returns `CommandResult` result of the command execution.
    */
   async run(
     cmd: string,
     opts?: CommandStartOpts & { background?: false }
   ): Promise<CommandResult>
+
   /**
    * Start a new command in the background.
    * You can use {@link CommandHandle.wait} to wait for the command to finish and get its result.
-   * 
+   *
    * @param cmd command to execute.
    * @param opts options for starting the command
-   * 
+   *
    * @returns `CommandHandle` handle to interact with the running command.
    */
   async run(
     cmd: string,
-    opts?: CommandStartOpts & { background: true }
+    opts: CommandStartOpts & { background: true }
   ): Promise<CommandHandle>
+
+  // NOTE - The following overload seems redundant, but it's required to make the type inference work correctly.
+
+  /**
+   * Start a new command.
+   *
+   * @param cmd command to execute.
+   * @param opts options for starting the command.
+   *   - `opts.background: true` - runs in background, returns `CommandHandle`
+   *   - `opts.background: false | undefined` - waits for completion, returns `CommandResult`
+   *
+   * @returns Either a `CommandHandle` or a `CommandResult` (depending on `opts.background`).
+   */
   async run(
     cmd: string,
     opts?: CommandStartOpts & { background?: boolean }
-  ): Promise<unknown> {
+  ): Promise<CommandHandle | CommandResult>
+  async run(
+    cmd: string,
+    opts?: CommandStartOpts & { background?: boolean }
+  ): Promise<CommandHandle | CommandResult> {
     const proc = await this.start(cmd, opts)
 
     return opts?.background ? proc : proc.wait()
@@ -335,8 +355,8 @@ export class Commands {
 
     const reqTimeout = requestTimeoutMs
       ? setTimeout(() => {
-        controller.abort()
-      }, requestTimeoutMs)
+          controller.abort()
+        }, requestTimeoutMs)
       : undefined
 
     const events = this.rpc.start(
