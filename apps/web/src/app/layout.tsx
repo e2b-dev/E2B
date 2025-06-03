@@ -11,24 +11,96 @@ import { headers } from 'next/headers'
 import path from 'path'
 
 async function isValidPath(pathname: string) {
+  const startTime = Date.now()
+  console.log('🔍 [isValidPath] Starting validation for:', pathname)
+  console.log('🌍 [isValidPath] Environment:', {
+    VERCEL_ENV: process.env.VERCEL_ENV,
+    NODE_ENV: process.env.NODE_ENV,
+    LAMBDA_RUNTIME_DIR: process.env.LAMBDA_RUNTIME_DIR,
+    cwd: process.cwd(),
+  })
+
   try {
-    const rootAppDirPath = path.join(
-      process.env.NODE_ENV === 'production'
-        ? path.join('.', 'src', 'app')
-        : path.join(process.cwd(), 'src', 'app')
-    )
+    let rootAppDirPath: string
+    let pathStrategy: string
 
-    console.log('LAYOUT METADATA ROOT APP DIR PATH', rootAppDirPath)
+    if (
+      process.env.VERCEL_ENV === 'production' &&
+      process.env.LAMBDA_RUNTIME_DIR
+    ) {
+      // Use LAMBDA_RUNTIME_DIR in Vercel production for reliable path resolution
+      rootAppDirPath = path.join(process.env.LAMBDA_RUNTIME_DIR, 'src', 'app')
+      pathStrategy = 'LAMBDA_RUNTIME_DIR'
+      console.log('📁 [isValidPath] Using LAMBDA_RUNTIME_DIR strategy')
+    } else if (process.env.VERCEL_ENV === 'production') {
+      // Fallback for production without LAMBDA_RUNTIME_DIR
+      const cwd = process.cwd()
+      const isMonorepo = cwd.includes('apps/web') || cwd.endsWith('apps/web')
+      rootAppDirPath = isMonorepo
+        ? path.join(cwd, 'src', 'app')
+        : path.join(cwd, 'apps', 'web', 'src', 'app')
+      pathStrategy = `FALLBACK_PRODUCTION (monorepo: ${isMonorepo})`
+      console.log(
+        '📁 [isValidPath] Using fallback production strategy, monorepo detected:',
+        isMonorepo
+      )
+    } else {
+      // Development environment
+      rootAppDirPath = path.join(process.cwd(), 'src', 'app')
+      pathStrategy = 'DEVELOPMENT'
+      console.log('📁 [isValidPath] Using development strategy')
+    }
 
-    const docsDirectory = await glob('**/*.mdx', {
-      cwd: `${rootAppDirPath}/(docs)${pathname}`,
+    console.log('📂 [isValidPath] Path construction:', {
+      strategy: pathStrategy,
+      rootAppDirPath,
+      targetPath: `${rootAppDirPath}/(docs)${pathname}`,
     })
 
-    console.log('LAYOUT METADATA DOCS DIRECTORY', docsDirectory)
+    const globPattern = '**/*.mdx'
+    const globCwd = `${rootAppDirPath}/(docs)${pathname}`
 
-    return docsDirectory.length > 0 && docsDirectory.includes('page.mdx')
+    console.log('🔎 [isValidPath] Starting glob search:', {
+      pattern: globPattern,
+      cwd: globCwd,
+    })
+
+    const docsDirectory = await glob(globPattern, {
+      cwd: globCwd,
+    })
+
+    console.log('📄 [isValidPath] Glob results:', {
+      filesFound: docsDirectory.length,
+      files: docsDirectory,
+      hasPageMdx: docsDirectory.includes('page.mdx'),
+    })
+
+    const isValid =
+      docsDirectory.length > 0 && docsDirectory.includes('page.mdx')
+    const duration = Date.now() - startTime
+
+    console.log('✅ [isValidPath] Validation complete:', {
+      pathname,
+      isValid,
+      duration: `${duration}ms`,
+      strategy: pathStrategy,
+    })
+
+    return isValid
   } catch (error) {
-    console.error('Error validating path in generateMetadata:', error)
+    const duration = Date.now() - startTime
+    console.error('❌ [isValidPath] Error during validation:', {
+      pathname,
+      duration: `${duration}ms`,
+      error:
+        error instanceof Error
+          ? {
+              name: error.name,
+              message: error.message,
+              stack: error.stack,
+            }
+          : error,
+    })
     return false
   }
 }
