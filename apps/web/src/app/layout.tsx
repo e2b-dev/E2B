@@ -11,8 +11,12 @@ import { headers } from 'next/headers'
 
 export async function generateMetadata() {
   const headerList = headers()
-  const pathname = headerList.get('x-middleware-pathname')
+  let pathname = headerList.get('x-middleware-pathname')
   const shouldIndex = headerList.get('x-e2b-should-index')
+
+  if (!pathname?.startsWith('/docs')) {
+    pathname = null
+  }
 
   return {
     title: {
