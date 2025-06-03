@@ -9,9 +9,9 @@ import { Section } from '@/components/SectionProvider'
 import { Layout } from '@/components/Layout'
 import { headers } from 'next/headers'
 
-function isValidPath(pathname: string) {
+async function isValidPath(pathname: string) {
   try {
-    const docsDirectory = glob.sync('**/*.mdx', {
+    const docsDirectory = await glob('**/*.mdx', {
       cwd: `src/app/(docs)${pathname}`,
     })
 
@@ -24,11 +24,13 @@ function isValidPath(pathname: string) {
 
 export async function generateMetadata() {
   const headerList = headers()
-  let pathname = headerList.get('x-middleware-pathname')
+  const pathname = headerList.get('x-middleware-pathname')
   const shouldIndex = headerList.get('x-e2b-should-index')
 
-  if (!pathname?.startsWith('/docs') || !isValidPath(pathname)) {
-    pathname = null
+  let isValid = false
+
+  if (pathname?.startsWith('/docs')) {
+    isValid = await isValidPath(pathname)
   }
 
   return {
@@ -45,14 +47,16 @@ export async function generateMetadata() {
       title: 'E2B - Code Interpreting for AI apps',
       description: 'Open-source secure sandboxes for AI code execution',
     },
-    alternates: pathname
-      ? {
-          canonical: `https://e2b.dev${pathname}`,
-        }
-      : undefined,
-    robots: shouldIndex
-      ? { index: true, follow: true }
-      : { index: false, follow: false },
+    alternates:
+      isValid && pathname !== ''
+        ? {
+            canonical: `https://e2b.dev${pathname}`,
+          }
+        : undefined,
+    robots:
+      isValid && shouldIndex
+        ? { index: true, follow: true }
+        : { index: false, follow: false },
   } satisfies Metadata
 }
 
