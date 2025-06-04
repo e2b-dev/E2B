@@ -17,7 +17,7 @@ async function isValidPath(pathname: string) {
     const sitemapUrl = `${baseUrl}/sitemap.xml`
 
     const response = await fetch(sitemapUrl, {
-      next: { revalidate: 900 },
+      cache: 'force-cache',
     })
 
     if (!response.ok) {
