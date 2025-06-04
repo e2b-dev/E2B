@@ -10,67 +10,28 @@ import { Layout } from '@/components/Layout'
 import { headers } from 'next/headers'
 
 async function isValidPath(pathname: string) {
-  const startTime = Date.now()
-  console.log('🔍 [isValidPath] Starting validation for:', pathname)
-  console.log('🌍 [isValidPath] Environment:', {
-    VERCEL_ENV: process.env.VERCEL_ENV,
-    VERCEL_URL: process.env.VERCEL_URL,
-    NODE_ENV: process.env.NODE_ENV,
-  })
-
   try {
     const baseUrl = process.env.VERCEL_URL
       ? `https://${process.env.VERCEL_URL}`
       : 'https://e2b.dev'
     const sitemapUrl = `${baseUrl}/sitemap.xml`
 
-    console.log('🗺️ [isValidPath] Fetching sitemap:', sitemapUrl)
-
     const response = await fetch(sitemapUrl, {
-      next: { revalidate: 300 },
+      next: { revalidate: 900 },
     })
 
     if (!response.ok) {
-      console.warn('⚠️ [isValidPath] Sitemap fetch failed:', {
-        status: response.status,
-        statusText: response.statusText,
-      })
+      console.error('Sitemap fetch failed:', response.statusText)
       return false
     }
 
     const sitemapXml = await response.text()
-    console.log('📄 [isValidPath] Sitemap fetched:', {
-      length: sitemapXml.length,
-      contentType: response.headers.get('content-type'),
-    })
-
     const targetUrl = `https://e2b.dev${pathname}`
     const isValid = sitemapXml.includes(`<loc>${targetUrl}</loc>`)
 
-    const duration = Date.now() - startTime
-    console.log('✅ [isValidPath] Validation complete:', {
-      pathname,
-      targetUrl,
-      isValid,
-      duration: `${duration}ms`,
-      method: 'sitemap',
-    })
-
     return isValid
   } catch (error) {
-    const duration = Date.now() - startTime
-    console.error('❌ [isValidPath] Error during validation:', {
-      pathname,
-      duration: `${duration}ms`,
-      error:
-        error instanceof Error
-          ? {
-              name: error.name,
-              message: error.message,
-              stack: error.stack,
-            }
-          : error,
-    })
+    console.error('Error validating path in isValidPath:', error)
     return false
   }
 }
@@ -79,10 +40,6 @@ export async function generateMetadata() {
   const headerList = headers()
   const pathname = headerList.get('x-middleware-pathname')
   const shouldIndex = headerList.get('x-e2b-should-index')
-
-  console.log('LAYOUT METADATA HEADERS', Array.from(headerList.entries()))
-  console.log('LAYOUT METADATA PATHNAME', pathname)
-  console.log('LAYOUT METADATA SHOULD INDEX', shouldIndex)
 
   let isValid = false
 
