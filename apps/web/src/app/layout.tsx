@@ -16,6 +16,7 @@ async function isValidPath(pathname: string) {
       : 'https://e2b.dev'
     const sitemapUrl = `${baseUrl}/sitemap.xml`
 
+    // NOTE: Expects all valid paths to be in one sitemap.xml file
     const response = await fetch(sitemapUrl, {
       cache: 'force-cache',
     })
