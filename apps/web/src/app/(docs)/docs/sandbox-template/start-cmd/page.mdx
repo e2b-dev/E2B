@@ -10,13 +10,13 @@ The idea behind the start command feature is to lower the wait times for your us
 When you are building a sandbox template you can specify the start command by using the [`-c`](/docs/sdk-reference/cli/v1.0.9/template#e2b-template-build) option:
 
 ```bash
-e2b build -c "<your-start-command>"
+e2b template build -c "<your-start-command>"
 ```
 
 When you spawn the custom sandbox you built, the start command will be already running if there was no error when we tried to execute it.
 
 ### Sandbox template config
-You can specify the start command also inside the `e2b.toml` in the same directory where you run `e2b build`.
+You can specify the start command also inside the `e2b.toml` in the same directory where you run `e2b template build`.
 <CodeGroup isFileName title="e2b.toml" isRunnable={false}>
   ```toml
   # This is a config for E2B sandbox template
