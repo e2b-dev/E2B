@@ -1,0 +1,22 @@
+# Ready Command
+The ready command allows you to specify a command that will determine **template sandbox** readiness before creating the snapshot.
+The ready command is executed in an infinite loop until it returns a successful **exit code&nbsp;0**.
+This way you can control how long should we wait for the start command or any system state.
+
+
+## How to add ready command
+
+You can specify the ready command inside the `e2b.toml` in the same directory where you run `e2b build`.
+<CodeGroup isFileName title="e2b.toml" isRunnable={false}>
+  ```toml
+  # This is a config for E2B sandbox template
+  template_id = "1wdqsf9le9gk21ztb4mo"
+  dockerfile = "e2b.Dockerfile"
+  template_name = "my-agent-sandbox"
+  ready_cmd = "<your-ready-command>"  # $HighlightLine
+  ```
+</CodeGroup>
+
+## Default values
+By default, the ready command is set to `sleep 0`, which means the template sandbox will be ready immediatelly.
+If the [start command](/docs/sandbox-template/start-cmd) is defined, the default is set to `sleep 20`, which means that the template sandbox will wait for 20 seconds before taking the snapshot.
