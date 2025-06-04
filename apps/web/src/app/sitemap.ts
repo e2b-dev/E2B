@@ -4,6 +4,8 @@ import { getPageForSitemap } from '@/utils/sitemap'
 
 export const dynamic = 'force-static'
 
+// NOTE: Sitemap should not be split into multiple files.
+// This would break path validation in [app/layout.tsx]
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const docsDirectory = path.join(
     process.env.NODE_ENV === 'production'

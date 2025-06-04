@@ -11,13 +11,28 @@ import { headers } from 'next/headers'
 
 async function isValidPath(pathname: string) {
   try {
-    const docsDirectory = await glob('**/*.mdx', {
-      cwd: `src/app/(docs)${pathname}`,
+    const baseUrl = process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : 'https://e2b.dev'
+    const sitemapUrl = `${baseUrl}/sitemap.xml`
+
+    // NOTE: Expects all valid paths to be in one sitemap.xml file
+    const response = await fetch(sitemapUrl, {
+      cache: 'force-cache',
     })
 
-    return docsDirectory.length > 0
+    if (!response.ok) {
+      console.error('Sitemap fetch failed:', response.statusText)
+      return false
+    }
+
+    const sitemapXml = await response.text()
+    const targetUrl = `https://e2b.dev${pathname}`
+    const isValid = sitemapXml.includes(`<loc>${targetUrl}</loc>`)
+
+    return isValid
   } catch (error) {
-    console.error('Error validating path in generateMetadata:', error)
+    console.error('Error validating path in isValidPath:', error)
     return false
   }
 }
