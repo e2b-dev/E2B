@@ -8,86 +8,52 @@ import glob from 'fast-glob'
 import { Section } from '@/components/SectionProvider'
 import { Layout } from '@/components/Layout'
 import { headers } from 'next/headers'
-import path from 'path'
 
-function isValidPath(pathname: string) {
+async function isValidPath(pathname: string) {
   const startTime = Date.now()
   console.log('🔍 [isValidPath] Starting validation for:', pathname)
   console.log('🌍 [isValidPath] Environment:', {
     VERCEL_ENV: process.env.VERCEL_ENV,
+    VERCEL_URL: process.env.VERCEL_URL,
     NODE_ENV: process.env.NODE_ENV,
-    LAMBDA_RUNTIME_DIR: process.env.LAMBDA_RUNTIME_DIR,
-    cwd: process.cwd(),
-  })
-  console.log('📂 [isValidPath] Directory structure:', {
-    cwd: process.cwd(),
-    files: glob.sync('**/*', { cwd: process.cwd(), dot: true }),
   })
 
   try {
-    let rootAppDirPath: string
-    let pathStrategy: string
+    const baseUrl = process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : 'https://e2b.dev'
+    const sitemapUrl = `${baseUrl}/sitemap.xml`
 
-    if (
-      process.env.VERCEL_ENV === 'production' &&
-      process.env.LAMBDA_RUNTIME_DIR
-    ) {
-      // Use LAMBDA_RUNTIME_DIR in Vercel production for reliable path resolution
-      rootAppDirPath = path.join(process.env.LAMBDA_RUNTIME_DIR, 'src', 'app')
-      pathStrategy = 'LAMBDA_RUNTIME_DIR'
-      console.log('📁 [isValidPath] Using LAMBDA_RUNTIME_DIR strategy')
-    } else if (process.env.VERCEL_ENV === 'production') {
-      // Fallback for production without LAMBDA_RUNTIME_DIR
-      const cwd = process.cwd()
-      const isMonorepo = cwd.includes('apps/web') || cwd.endsWith('apps/web')
-      rootAppDirPath = isMonorepo
-        ? path.join(cwd, 'src', 'app')
-        : path.join(cwd, 'apps', 'web', 'src', 'app')
-      pathStrategy = `FALLBACK_PRODUCTION (monorepo: ${isMonorepo})`
-      console.log(
-        '📁 [isValidPath] Using fallback production strategy, monorepo detected:',
-        isMonorepo
-      )
-    } else {
-      // Development environment
-      rootAppDirPath = path.join(process.cwd(), 'src', 'app')
-      pathStrategy = 'DEVELOPMENT'
-      console.log('📁 [isValidPath] Using development strategy')
+    console.log('🗺️ [isValidPath] Fetching sitemap:', sitemapUrl)
+
+    const response = await fetch(sitemapUrl, {
+      next: { revalidate: 300 },
+    })
+
+    if (!response.ok) {
+      console.warn('⚠️ [isValidPath] Sitemap fetch failed:', {
+        status: response.status,
+        statusText: response.statusText,
+      })
+      return false
     }
 
-    console.log('📂 [isValidPath] Path construction:', {
-      strategy: pathStrategy,
-      rootAppDirPath,
-      targetPath: `${rootAppDirPath}/(docs)${pathname}`,
+    const sitemapXml = await response.text()
+    console.log('📄 [isValidPath] Sitemap fetched:', {
+      length: sitemapXml.length,
+      contentType: response.headers.get('content-type'),
     })
 
-    const globPattern = '**/*.mdx'
-    const globCwd = `${rootAppDirPath}/(docs)${pathname}`
+    const targetUrl = `https://e2b.dev${pathname}`
+    const isValid = sitemapXml.includes(`<loc>${targetUrl}</loc>`)
 
-    console.log('🔎 [isValidPath] Starting glob search:', {
-      pattern: globPattern,
-      cwd: globCwd,
-    })
-
-    const docsDirectory = glob.sync(globPattern, {
-      cwd: globCwd,
-    })
-
-    console.log('📄 [isValidPath] Glob results:', {
-      filesFound: docsDirectory.length,
-      files: docsDirectory,
-      hasPageMdx: docsDirectory.includes('page.mdx'),
-    })
-
-    const isValid =
-      docsDirectory.length > 0 && docsDirectory.includes('page.mdx')
     const duration = Date.now() - startTime
-
     console.log('✅ [isValidPath] Validation complete:', {
       pathname,
+      targetUrl,
       isValid,
       duration: `${duration}ms`,
-      strategy: pathStrategy,
+      method: 'sitemap',
     })
 
     return isValid
@@ -121,7 +87,7 @@ export async function generateMetadata() {
   let isValid = false
 
   if (pathname?.startsWith('/docs')) {
-    isValid = isValidPath(pathname)
+    isValid = await isValidPath(pathname)
   }
 
   return {
