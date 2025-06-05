@@ -339,7 +339,7 @@ async function generateSitemap() {
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${finalEntries.map(entry => `  <url>
     <loc>${entry.url}</loc>
-    <lastmod>${entry.lastModified}</lastmod>
+    <changefreq>weekly</changefreq>
     <priority>${entry.priority}</priority>
   </url>`).join('\n')}
 </urlset>`
