@@ -252,15 +252,13 @@ async function generateSitemap() {
       throw new Error('Not running from apps/web directory')
     }
 
-    const patterns = [
-      'src/app/\\(docs\\)/docs/**/page.mdx', // Subdirectories
-      'src/app/\\(docs\\)/docs/page.mdx' // Root docs page
-    ]
+    const pattern =
+      'src/app/\\(docs\\)/docs/**/page.mdx'
+
 
     let mdxFiles = []
     let patternsWithResults = []
 
-    for (const pattern of patterns) {
       const files = await fg(pattern, {
         cwd: process.cwd(),
         absolute: true,
@@ -272,12 +270,11 @@ async function generateSitemap() {
         mdxFiles.push(...files)
         patternsWithResults.push(pattern)
       }
-    }
 
     console.log(`Found ${mdxFiles.length} total files using patterns: ${patternsWithResults.join(', ')}`)
 
     if (mdxFiles.length === 0) {
-      throw new Error(`No page.mdx files found with any pattern. Tried: ${patterns.join(', ')}`)
+      throw new Error(`No page.mdx files found with any pattern. Pattern: ${pattern}`)
     }
 
     const docsPages = []
@@ -300,7 +297,7 @@ async function generateSitemap() {
       })
     }
 
-    const filteredPages = docsPages.filter((entry) => !entry.url.includes('/docs/legacy'))
+    const filteredPages = docsPages.filter((entry) => !entry.url.includes('/docs/legacy') && !entry.url.includes('/docs/api-reference'))
 
     console.log(`Generated ${filteredPages.length} sitemap entries`)
     const finalEntries = filteredPages.sort((a, b) => a.url.localeCompare(b.url))
