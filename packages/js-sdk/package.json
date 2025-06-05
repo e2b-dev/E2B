@@ -36,7 +36,8 @@
     "postPublish": "./scripts/post-publish.sh || true",
     "test:bun": "bun test tests/runtimes/bun --env-file=.env",
     "test:deno": "deno test tests/runtimes/deno/ --allow-net --allow-read --allow-env --unstable-sloppy-imports --trace-leaks",
-    "test:integration": "E2B_INTEGRATION_TEST=1 vitest run tests/integration/**"
+    "test:integration": "E2B_INTEGRATION_TEST=1 vitest run tests/integration/**",
+    "lint": "eslint ."
   },
   "devDependencies": {
     "@testing-library/react": "^16.2.0",
@@ -48,6 +49,7 @@
     "@vitejs/plugin-react": "^4.3.4",
     "@vitest/browser": "^3.1.1",
     "dotenv": "^16.4.5",
+    "eslint": "^8.57.1",
     "knip": "^5.43.6",
     "npm-check-updates": "^16.14.20",
     "openapi-typescript": "^7.6.1",
