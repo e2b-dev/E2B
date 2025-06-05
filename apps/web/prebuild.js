@@ -1,5 +1,6 @@
 const fs = require('fs')
 const path = require('path')
+const fg = require('fast-glob')
 
 const sdkRefRoutesFilePath = './src/components/Navigation/sdkRefRoutes.json'
 
@@ -239,3 +240,120 @@ fs.writeFileSync(
 )
 
 console.log('\n\nSDK reference routes generated successfully')
+
+// Generate sitemap
+async function generateSitemap() {
+  try {
+    console.log('Generating sitemap...')
+    console.log('Current working directory:', process.cwd())
+
+    // Patterns to find all page.mdx files
+    // Account for different possible CWDs (main repo root vs apps/web)
+    const patterns = [
+      'src/app/\\(docs\\)/docs/**/page.mdx',  // Subdirectories
+      'src/app/\\(docs\\)/docs/page.mdx',     // Root docs page
+      'apps/web/src/app/\\(docs\\)/docs/**/page.mdx',  // Subdirectories (when CWD is repo root)
+      'apps/web/src/app/\\(docs\\)/docs/page.mdx'      // Root docs page (when CWD is repo root)
+    ]
+
+    let mdxFiles = []
+
+    // Collect files from all patterns
+    for (const pattern of patterns) {
+      const files = await fg(pattern, {
+        cwd: process.cwd(),
+        absolute: true,
+      })
+
+      console.log(`Pattern: ${pattern}, Found: ${files.length} files`)
+
+      if (files.length > 0) {
+        mdxFiles.push(...files)
+      }
+    }
+
+    // Remove duplicates
+    mdxFiles = [...new Set(mdxFiles)]
+
+    console.log(`Found ${mdxFiles.length} total files`)
+
+    if (mdxFiles.length === 0) {
+      console.error('Could not find any page.mdx files')
+      process.exit(1)
+    }
+
+    // Convert file paths to sitemap entries
+    const docsPages = mdxFiles
+      .map((filePath) => {
+        try {
+          // Find the /docs/ segment and extract everything after it
+          const docsMatch = filePath.match(/\/app\/\(docs\)\/docs\/(.*)\/page\.mdx$/) ||
+                           filePath.match(/\/app\/\(docs\)\/docs\/page\.mdx$/)
+
+          if (!docsMatch) {
+            console.warn(`Unexpected file path format: ${filePath}`)
+            return null
+          }
+
+          // Handle root docs page vs subdirectory pages
+          let pathname = docsMatch[1] || ''
+
+          // Normalize pathname to always start with /docs
+          const normalizedPath = `/docs${pathname ? `/${pathname}` : ''}`
+          const url = `https://e2b.dev${normalizedPath}`
+
+          // Get last modified time
+          const lastModified = fs.statSync(filePath).mtime.toISOString()
+
+          return {
+            url,
+            lastModified,
+            priority: 0.8,
+          }
+        } catch (error) {
+          console.error(`Error processing file ${filePath}:`, error)
+          return null
+        }
+      })
+      .filter(entry => entry !== null)
+      // Filter out legacy docs pages
+      .filter((entry) => !entry.url.includes('/docs/legacy'))
+
+    console.log(`Generated ${docsPages.length} sitemap entries`)
+
+    // Deduplicate URLs, keeping the entry with highest priority
+    const urlMap = new Map()
+    for (const entry of docsPages) {
+      const existing = urlMap.get(entry.url)
+      if (!existing || (existing.priority || 0) < (entry.priority || 0)) {
+        urlMap.set(entry.url, entry)
+      }
+    }
+
+    const finalEntries = Array.from(urlMap.values()).sort((a, b) =>
+      a.url.localeCompare(b.url)
+    )
+
+    // Generate XML sitemap
+    const sitemapXml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${finalEntries.map(entry => `  <url>
+    <loc>${entry.url}</loc>
+    <lastmod>${entry.lastModified}</lastmod>
+    <priority>${entry.priority}</priority>
+  </url>`).join('\n')}
+</urlset>`
+
+    // Write sitemap.xml to public directory (Next.js will serve it automatically)
+    const outputPath = path.join(__dirname, 'public', 'sitemap.xml')
+    fs.writeFileSync(outputPath, sitemapXml)
+
+    console.log(`✅ Sitemap generated successfully: ${outputPath}`)
+    console.log(`📊 Total entries: ${finalEntries.length}`)
+  } catch (error) {
+    console.error('Error generating sitemap:', error)
+    process.exit(1)
+  }
+}
+
+generateSitemap().catch(console.error)
