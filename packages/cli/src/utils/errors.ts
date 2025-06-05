@@ -12,7 +12,7 @@ export function handleE2BRequestError<T>(
   res: { data?: T | null | undefined; error?: { code: number; message: string } },
   errMsg?: string,
 ): asserts res is { data: T; error?: undefined } {
-  if (!res.error && res.data != null) {
+  if (!res.error) {
     return
   }
 
