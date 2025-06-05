@@ -16,4 +16,4 @@ def test_kill_process(sandbox: Sandbox):
 def test_kill_non_existing_process(sandbox):
     non_existing_pid = 999999
 
-    assert sandbox.commands.kill(non_existing_pid) == False
+    assert not sandbox.commands.kill(non_existing_pid)
