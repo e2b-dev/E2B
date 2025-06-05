@@ -242,99 +242,95 @@ fs.writeFileSync(
 console.log('\n\nSDK reference routes generated successfully')
 
 // Generate sitemap
+
 async function generateSitemap() {
   try {
     console.log('Generating sitemap...')
     console.log('Current working directory:', process.cwd())
 
-    // Patterns to find all page.mdx files
-    // Account for different possible CWDs (main repo root vs apps/web)
+    if (!process.cwd().endsWith('/apps/web')) {
+      throw new Error('Not running from apps/web directory')
+    }
+
+    // Assuming we're running from apps/web directory (Vercel build context)
+    // Use simple patterns relative to current directory
     const patterns = [
       'src/app/\\(docs\\)/docs/**/page.mdx',  // Subdirectories
-      'src/app/\\(docs\\)/docs/page.mdx',     // Root docs page
-      'apps/web/src/app/\\(docs\\)/docs/**/page.mdx',  // Subdirectories (when CWD is repo root)
-      'apps/web/src/app/\\(docs\\)/docs/page.mdx'      // Root docs page (when CWD is repo root)
+      'src/app/\\(docs\\)/docs/page.mdx'     // Root docs page
     ]
 
     let mdxFiles = []
+    let patternsWithResults = []
 
-    // Collect files from all patterns
     for (const pattern of patterns) {
-      const files = await fg(pattern, {
-        cwd: process.cwd(),
-        absolute: true,
-      })
+      try {
+        const files = await fg(pattern, {
+          cwd: process.cwd(),
+          absolute: true,
+        })
 
-      console.log(`Pattern: ${pattern}, Found: ${files.length} files`)
+        console.log(`Pattern: ${pattern}, Found: ${files.length} files`)
 
-      if (files.length > 0) {
-        mdxFiles.push(...files)
+        if (files.length > 0) {
+          mdxFiles.push(...files)
+          patternsWithResults.push(pattern)
+        }
+      } catch (error) {
+        console.error(`Error with pattern ${pattern}:`, error.message)
       }
     }
 
-    // Remove duplicates
-    mdxFiles = [...new Set(mdxFiles)]
 
-    console.log(`Found ${mdxFiles.length} total files`)
+    console.log(`Found ${mdxFiles.length} total files using patterns: ${patternsWithResults.join(', ')}`)
 
     if (mdxFiles.length === 0) {
-      console.error('Could not find any page.mdx files')
-      process.exit(1)
+      throw new Error(`No page.mdx files found with any pattern. Tried: ${patterns.join(', ')}`)
     }
 
     // Convert file paths to sitemap entries
-    const docsPages = mdxFiles
-      .map((filePath) => {
-        try {
-          // Find the /docs/ segment and extract everything after it
-          const docsMatch = filePath.match(/\/app\/\(docs\)\/docs\/(.*)\/page\.mdx$/) ||
-                           filePath.match(/\/app\/\(docs\)\/docs\/page\.mdx$/)
+    const docsPages = []
+    const processingErrors = []
 
-          if (!docsMatch) {
-            console.warn(`Unexpected file path format: ${filePath}`)
-            return null
-          }
+    for (const filePath of mdxFiles) {
+      try {
+        // Find the /docs/ segment and extract everything after it
+        const docsMatch = filePath.match(/\/app\/\(docs\)\/docs\/(.*)\/page\.mdx$/) ||
+                         filePath.match(/\/app\/\(docs\)\/docs\/page\.mdx$/)
 
-          // Handle root docs page vs subdirectory pages
-          let pathname = docsMatch[1] || ''
-
-          // Normalize pathname to always start with /docs
-          const normalizedPath = `/docs${pathname ? `/${pathname}` : ''}`
-          const url = `https://e2b.dev${normalizedPath}`
-
-          // Get last modified time
-          const lastModified = fs.statSync(filePath).mtime.toISOString()
-
-          return {
-            url,
-            lastModified,
-            priority: 0.8,
-          }
-        } catch (error) {
-          console.error(`Error processing file ${filePath}:`, error)
-          return null
+        if (!docsMatch) {
+          processingErrors.push(`Unexpected file path format: ${filePath}`)
+          continue
         }
-      })
-      .filter(entry => entry !== null)
-      // Filter out legacy docs pages
-      .filter((entry) => !entry.url.includes('/docs/legacy'))
 
-    console.log(`Generated ${docsPages.length} sitemap entries`)
+        // Handle root docs page vs subdirectory pages
+        const pathname = docsMatch[1] || ''
 
-    // Deduplicate URLs, keeping the entry with highest priority
-    const urlMap = new Map()
-    for (const entry of docsPages) {
-      const existing = urlMap.get(entry.url)
-      if (!existing || (existing.priority || 0) < (entry.priority || 0)) {
-        urlMap.set(entry.url, entry)
+        // Normalize pathname to always start with /docs
+        const normalizedPath = `/docs${pathname ? `/${pathname}` : ''}`
+        const url = `https://e2b.dev${normalizedPath}`
+
+        docsPages.push({
+          url,
+          priority: 0.8,
+        })
+      } catch (error) {
+        processingErrors.push(`Error processing file ${filePath}: ${error.message}`)
       }
     }
 
-    const finalEntries = Array.from(urlMap.values()).sort((a, b) =>
-      a.url.localeCompare(b.url)
-    )
+    if (processingErrors.length > 0) {
+      console.warn(`Processing errors (${processingErrors.length}):`)
+      processingErrors.slice(0, 5).forEach(error => console.warn(`  - ${error}`))
+      if (processingErrors.length > 5) {
+        console.warn(`  ... and ${processingErrors.length - 5} more`)
+      }
+    }
 
-    // Generate XML sitemap
+    const filteredPages = docsPages.filter((entry) => !entry.url.includes('/docs/legacy'))
+
+    console.log(`Generated ${filteredPages.length} sitemap entries`)
+    const finalEntries = filteredPages.sort((a, b) => a.url.localeCompare(b.url))
+
     const sitemapXml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${finalEntries.map(entry => `  <url>
@@ -344,15 +340,16 @@ ${finalEntries.map(entry => `  <url>
   </url>`).join('\n')}
 </urlset>`
 
-    // Write sitemap.xml to public directory (Next.js will serve it automatically)
-    const outputPath = path.join(__dirname, 'public', 'sitemap.xml')
+    // Write sitemap.xml to public directory
+    // Assuming we're running from apps/web directory (Vercel build context)
+    const outputPath = path.join(process.cwd(), 'public', 'sitemap.xml')
     fs.writeFileSync(outputPath, sitemapXml)
 
     console.log(`✅ Sitemap generated successfully: ${outputPath}`)
     console.log(`📊 Total entries: ${finalEntries.length}`)
   } catch (error) {
-    console.error('Error generating sitemap:', error)
-    process.exit(1)
+    console.error('Error generating sitemap:', error.message)
+    throw error
   }
 }
 
