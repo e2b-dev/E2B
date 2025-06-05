@@ -1,4 +1,3 @@
-import pytest
 import asyncio
 
 from e2b import AsyncSandbox

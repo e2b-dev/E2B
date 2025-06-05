@@ -7,3 +7,6 @@ generate-api:
 
 init:
 	pip install openapi-python-client
+
+lint:
+	ruff check .

@@ -1,6 +1,6 @@
-import { assert, onTestFinished } from 'vitest'
+import { assert } from 'vitest'
 
-import { sandboxTest, wait } from '../../setup.js'
+import { sandboxTest } from '../../setup.js'
 
 const parentDirName = 'test_directory'
 

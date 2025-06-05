@@ -16,4 +16,4 @@ async def test_kill_process(async_sandbox: AsyncSandbox):
 async def test_kill_non_existing_process(async_sandbox: AsyncSandbox):
     non_existing_pid = 999999
 
-    assert await async_sandbox.commands.kill(non_existing_pid) == False
+    assert not await async_sandbox.commands.kill(non_existing_pid)
