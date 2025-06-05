@@ -37,7 +37,7 @@
     "test:bun": "bun test tests/runtimes/bun --env-file=.env",
     "test:deno": "deno test tests/runtimes/deno/ --allow-net --allow-read --allow-env --unstable-sloppy-imports --trace-leaks",
     "test:integration": "E2B_INTEGRATION_TEST=1 vitest run tests/integration/**",
-    "lint": "eslint ."
+    "lint": "eslint src/ tests/"
   },
   "devDependencies": {
     "@testing-library/react": "^16.2.0",
