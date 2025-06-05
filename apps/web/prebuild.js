@@ -252,34 +252,27 @@ async function generateSitemap() {
       throw new Error('Not running from apps/web directory')
     }
 
-    // Assuming we're running from apps/web directory (Vercel build context)
-    // Use simple patterns relative to current directory
     const patterns = [
-      'src/app/\\(docs\\)/docs/**/page.mdx',  // Subdirectories
-      'src/app/\\(docs\\)/docs/page.mdx'     // Root docs page
+      'src/app/\\(docs\\)/docs/**/page.mdx', // Subdirectories
+      'src/app/\\(docs\\)/docs/page.mdx' // Root docs page
     ]
 
     let mdxFiles = []
     let patternsWithResults = []
 
     for (const pattern of patterns) {
-      try {
-        const files = await fg(pattern, {
-          cwd: process.cwd(),
-          absolute: true,
-        })
+      const files = await fg(pattern, {
+        cwd: process.cwd(),
+        absolute: true,
+      })
 
-        console.log(`Pattern: ${pattern}, Found: ${files.length} files`)
+      console.log(`Pattern: ${pattern}, Found: ${files.length} files`)
 
-        if (files.length > 0) {
-          mdxFiles.push(...files)
-          patternsWithResults.push(pattern)
-        }
-      } catch (error) {
-        console.error(`Error with pattern ${pattern}:`, error.message)
+      if (files.length > 0) {
+        mdxFiles.push(...files)
+        patternsWithResults.push(pattern)
       }
     }
-
 
     console.log(`Found ${mdxFiles.length} total files using patterns: ${patternsWithResults.join(', ')}`)
 
@@ -287,43 +280,24 @@ async function generateSitemap() {
       throw new Error(`No page.mdx files found with any pattern. Tried: ${patterns.join(', ')}`)
     }
 
-    // Convert file paths to sitemap entries
     const docsPages = []
-    const processingErrors = []
 
     for (const filePath of mdxFiles) {
-      try {
-        // Find the /docs/ segment and extract everything after it
-        const docsMatch = filePath.match(/\/app\/\(docs\)\/docs\/(.*)\/page\.mdx$/) ||
-                         filePath.match(/\/app\/\(docs\)\/docs\/page\.mdx$/)
+      const docsMatch = filePath.match(/\/app\/\(docs\)\/docs\/(.*)\/page\.mdx$/) ||
+        filePath.match(/\/app\/\(docs\)\/docs\/page\.mdx$/)
 
-        if (!docsMatch) {
-          processingErrors.push(`Unexpected file path format: ${filePath}`)
-          continue
-        }
-
-        // Handle root docs page vs subdirectory pages
-        const pathname = docsMatch[1] || ''
-
-        // Normalize pathname to always start with /docs
-        const normalizedPath = `/docs${pathname ? `/${pathname}` : ''}`
-        const url = `https://e2b.dev${normalizedPath}`
-
-        docsPages.push({
-          url,
-          priority: 0.8,
-        })
-      } catch (error) {
-        processingErrors.push(`Error processing file ${filePath}: ${error.message}`)
+      if (!docsMatch) {
+        throw new Error(`Unexpected file path format: ${filePath}`)
       }
-    }
 
-    if (processingErrors.length > 0) {
-      console.warn(`Processing errors (${processingErrors.length}):`)
-      processingErrors.slice(0, 5).forEach(error => console.warn(`  - ${error}`))
-      if (processingErrors.length > 5) {
-        console.warn(`  ... and ${processingErrors.length - 5} more`)
-      }
+      const pathname = docsMatch[1] || ''
+      const normalizedPath = `/docs${pathname ? `/${pathname}` : ''}`
+      const url = `https://e2b.dev${normalizedPath}`
+
+      docsPages.push({
+        url,
+        priority: 0.8,
+      })
     }
 
     const filteredPages = docsPages.filter((entry) => !entry.url.includes('/docs/legacy'))
@@ -340,8 +314,6 @@ ${finalEntries.map(entry => `  <url>
   </url>`).join('\n')}
 </urlset>`
 
-    // Write sitemap.xml to public directory
-    // Assuming we're running from apps/web directory (Vercel build context)
     const outputPath = path.join(process.cwd(), 'public', 'sitemap.xml')
     fs.writeFileSync(outputPath, sitemapXml)
 
