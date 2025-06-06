@@ -297,7 +297,7 @@ async function generateSitemap() {
       })
     }
 
-    const filteredPages = docsPages.filter((entry) => !entry.url.includes('/docs/legacy') && !entry.url.includes('/docs/api-reference'))
+    const filteredPages = docsPages.filter((entry) => !entry.url.includes('/docs/legacy'))
 
     console.log(`Generated ${filteredPages.length} sitemap entries`)
     const finalEntries = filteredPages.sort((a, b) => a.url.localeCompare(b.url))
