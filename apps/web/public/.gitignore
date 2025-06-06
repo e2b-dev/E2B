@@ -1,1 +1,0 @@
-sitemap.xml
