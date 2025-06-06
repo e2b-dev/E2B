@@ -152,6 +152,10 @@ export const buildCommand = new commander.Command('build')
     '-c, --cmd <start-command>',
     'specify command that will be executed when the sandbox is started.'
   )
+  .option(
+    '--ready-cmd <ready-command>',
+    'specify command that will need to exit 0 for the template to be ready.'
+  )
   .addOption(teamOption)
   .addOption(configOption)
   .option(
@@ -178,6 +182,7 @@ export const buildCommand = new commander.Command('build')
         dockerfile?: string
         name?: string
         cmd?: string
+        readyCmd?: string
         team?: string
         config?: string
         cpuCount?: number
@@ -218,11 +223,10 @@ export const buildCommand = new commander.Command('build')
 
         let dockerfile = opts.dockerfile
         let startCmd = opts.cmd
+        let readyCmd=  opts.readyCmd
         let cpuCount = opts.cpuCount
         let memoryMB = opts.memoryMb
         let teamID = opts.team
-        let readyCmd: string | undefined
-        let readyTimeout: number | undefined
 
         const root = getRoot(opts.path)
         const configPath = getConfigPath(root, opts.config)
@@ -248,10 +252,10 @@ export const buildCommand = new commander.Command('build')
           templateID = config.template_id
           dockerfile = opts.dockerfile || config.dockerfile
           startCmd = opts.cmd || config.start_cmd
+          readyCmd = opts.readyCmd ||config.ready_cmd
           cpuCount = opts.cpuCount || config.cpu_count
           memoryMB = opts.memoryMb || config.memory_mb
           teamID = opts.team || config.team_id
-          readyCmd = config.ready_cmd
         }
 
         const userConfig = getUserConfig()
@@ -294,12 +298,11 @@ export const buildCommand = new commander.Command('build')
         const body = {
           alias: name,
           startCmd: startCmd,
+          readyCmd: readyCmd,
           cpuCount: cpuCount,
           memoryMB: memoryMB,
           dockerfile: dockerfileContent,
           teamID: teamID,
-          readyCmd: readyCmd,
-          readyTimeout: readyTimeout,
         }
 
         if (opts.memoryMb) {
@@ -329,10 +332,10 @@ export const buildCommand = new commander.Command('build')
             dockerfile: dockerfileRelativePath,
             template_name: name,
             start_cmd: startCmd,
+            ready_cmd: readyCmd,
             cpu_count: cpuCount,
             memory_mb: memoryMB,
             team_id: teamID,
-            ready_cmd: readyCmd,
           },
           true
         )
