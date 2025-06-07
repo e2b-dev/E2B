@@ -112,6 +112,7 @@ class Sandbox(SandboxSetup, SandboxApi):
         sandbox_id: Optional[str] = None,
         request_timeout: Optional[float] = None,
         proxy: Optional[ProxyTypes] = None,
+        headers: Optional[Dict[str, str]] = None,
     ):
         """
         Create a new sandbox.
@@ -136,7 +137,10 @@ class Sandbox(SandboxSetup, SandboxApi):
                 "Use Sandbox.connect method instead.",
             )
 
-        connection_headers = default_headers
+        connection_headers = {
+            **default_headers,
+            **(headers or {}),
+        }
 
         if debug:
             self._sandbox_id = "debug_sandbox_id"

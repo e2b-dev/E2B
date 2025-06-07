@@ -137,8 +137,13 @@ export class Sandbox extends SandboxApi {
     super()
 
     this.sandboxId = opts.sandboxId
-    this.connectionConfig = new ConnectionConfig(opts)
-
+    this.connectionConfig = new ConnectionConfig({
+      ...opts,
+      headers: {
+        ...defaultHeaders,
+        ...opts.headers,
+      },
+    })
     this.envdAccessToken = opts.envdAccessToken
     this.envdApiUrl = `${
       this.connectionConfig.debug ? 'http' : 'https'

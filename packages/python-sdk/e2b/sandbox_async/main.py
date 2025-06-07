@@ -196,6 +196,7 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
         request_timeout: Optional[float] = None,
         proxy: Optional[ProxyTypes] = None,
         secure: Optional[bool] = None,
+        headers: Optional[Dict[str, str]] = None,
     ):
         """
         Create a new sandbox.
@@ -216,7 +217,10 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
         Use this method instead of using the constructor to create a new sandbox.
         """
 
-        connection_headers = default_headers
+        connection_headers = {
+            **default_headers,
+            **(headers or {}),
+        }
 
         if debug:
             sandbox_id = "debug_sandbox_id"
