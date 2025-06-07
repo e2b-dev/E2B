@@ -1,5 +1,5 @@
 import { Logger } from './logs'
-import { getEnvVar } from './api/metadata'
+import { getEnvVar } from './metadata'
 
 const REQUEST_TIMEOUT_MS = 30_000 // 30 seconds
 export const KEEPALIVE_PING_INTERVAL_SEC = 50 // 50 seconds
