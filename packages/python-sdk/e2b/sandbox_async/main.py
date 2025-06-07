@@ -8,6 +8,7 @@ from e2b.api.client.types import Unset
 from e2b.connection_config import ConnectionConfig, ProxyTypes
 from e2b.envd.api import ENVD_API_HEALTH_ROUTE, ahandle_envd_api_exception
 from e2b.exceptions import format_request_timeout_error
+from e2b.metadata import default_headers
 from e2b.sandbox.main import SandboxSetup
 from e2b.sandbox.utils import class_method_variant
 from e2b.sandbox_async.filesystem.filesystem import Filesystem
@@ -20,6 +21,8 @@ logger = logging.getLogger(__name__)
 
 class AsyncTransportWithLogger(httpx.AsyncHTTPTransport):
     async def handle_async_request(self, request):
+        request.headers.update(default_headers)
+        
         url = f"{request.url.scheme}://{request.url.host}{request.url.path}"
         logger.info(f"Request: {request.method} {url}")
         response = await super().handle_async_request(request)
