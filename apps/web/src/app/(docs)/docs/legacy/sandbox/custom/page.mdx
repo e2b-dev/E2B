@@ -20,7 +20,7 @@ Once you build your custom sandbox template, you can spawn multiple isolated san
 
       // Create new sandbox
       const sandbox = await Sandbox.create({
-        template: '<sandbox-template-id>', // You get sandbox template ID from the CLI after you run `$ e2b build`
+        template: '<sandbox-template-id>', // You get sandbox template ID from the CLI after you run `$ e2b template build`
       })
 
       // Close sandbox once done
@@ -32,7 +32,7 @@ Once you build your custom sandbox template, you can spawn multiple isolated san
 
       # Create new sandbox
       sandbox = Sandbox(
-        template="<sandbox-template>", # You get sandbox template from the CLI after you run `$ e2b build`
+        template="<sandbox-template>", # You get sandbox template from the CLI after you run `$ e2b template build`
       )
 
       # Close sandbox once done

@@ -4,39 +4,29 @@ This way, you can for example have running servers or seeded databases inside th
 
 The idea behind the start command feature is to lower the wait times for your users and have everything ready for your users when you spawn your sandbox.
 
+You can see how it works [here](/docs/sandbox-template#how-it-works).
 
 ## How to add start command
 
 When you are building a sandbox template you can specify the start command by using the [`-c`](/docs/sdk-reference/cli/v1.0.9/template#e2b-template-build) option:
 
 ```bash
-e2b build -c "<your-start-command>"
+e2b template build -c "<your-start-command>"
 ```
 
 When you spawn the custom sandbox you built, the start command will be already running if there was no error when we tried to execute it.
 
-
-## How it works
-Every time you are building a [custom sandbox](/docs/sandbox-template), we create a container based on the [`e2b.Dockerfile`](/docs/sandbox-template#3-customize-e2b-dockerfile) file you create in the process.
-We extract the container's filesystem and start a sandbox with this extracted filesystem.
-We call this sandbox a _template sandbox_.
-
-Then, these steps happen:
-
-    1. We take the running template sandbox.
-    2. (Only if you specified the start command, otherwise this step is skipped) **Execute the start command and wait 15 seconds**.
-    3. Snapshot the sandbox and make it ready for you to spawn it with the SDK.
-
-
-<Note title="Sandbox Snapshot">
-Snapshots are saved running sandboxes. We serialize and save the whole sandbox's filesystem together with all the running processes in a way that can be loaded later.
-
-This allows us to load the sandbox in a few hundred milliseconds any time later with all the processes already running and the filesystem exactly as it was.
-</Note>
-
-
-## Limits
-- We wait 15 seconds after we execute the start command before we snapshot the sandbox.
+### Sandbox template config
+You can specify the start command also inside the `e2b.toml` in the same directory where you run `e2b template build`.
+<CodeGroup isFileName title="e2b.toml" isRunnable={false}>
+  ```toml
+  # This is a config for E2B sandbox template
+  template_id = "1wdqsf9le9gk21ztb4mo"
+  dockerfile = "e2b.Dockerfile"
+  template_name = "my-agent-sandbox"
+  start_cmd = "<your-start-command>"  # $HighlightLine
+  ```
+</CodeGroup>
 
 
 ## Logs
@@ -85,17 +75,5 @@ Or you can use the CLI:
 <CodeGroup isTerminalCommand>
 ```bash {{ language: 'bash' }}
 e2b sandbox logs <sandbox-id>
-```
-</CodeGroup>
-
-## Sandbox template config
-The start command is specified inside the `e2b.toml` in the same directory where you ran `e2b build -c "<your-start-command>"`.
-<CodeGroup isFileName title="e2b.toml" isRunnable={false}>
-```toml
-# This is a config for E2B sandbox template
-template_id = "1wdqsf9le9gk21ztb4mo"
-dockerfile = "e2b.Dockerfile"
-template_name = "my-agent-sandbox"
-start_cmd = "<your-start-command>"  # $HighlightLine
 ```
 </CodeGroup>
