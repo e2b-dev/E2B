@@ -61,6 +61,12 @@ class ApiClient {
         }),
         ...config.headers,
       },
+      fetch: (request: Request) => {
+        const newRequest = new Request(request, {
+          keepalive: true,
+        })
+        return fetch(newRequest)
+      },
     })
 
     if (config.logger) {
