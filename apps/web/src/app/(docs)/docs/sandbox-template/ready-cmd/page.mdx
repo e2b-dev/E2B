@@ -27,3 +27,21 @@ You can specify the ready command inside the `e2b.toml` in the same directory wh
 ## Default values
 By default, the ready command is set to `sleep 0`, which means the sandbox template will be ready immediatelly.
 If the [start command](/docs/sandbox-template/start-cmd) is defined, the default is set to `sleep 20`, which means that the template sandbox will wait for 20 seconds before taking the snapshot.
+
+## Examples
+Here are some examples of the ready command you can use.
+
+### Wait for URL to return 200 status code
+```bash
+ready_cmd = 'curl -s -o /dev/null -w "%{http_code}" https://myurl.com | grep -q "200"'
+```
+
+### Wait for a specific process to start
+```bash
+ready_cmd = 'pgrep my-process-name > /dev/null'
+```
+
+### Wait for a file to exist
+```bash
+ready_cmd = '[ -f /tmp/ready.flag ]'
+```
