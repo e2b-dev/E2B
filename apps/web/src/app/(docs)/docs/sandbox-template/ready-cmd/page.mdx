@@ -33,7 +33,7 @@ Here are some examples of the ready command you can use.
 
 ### Wait for URL to return 200 status code
 ```bash
-ready_cmd = 'curl -s -o /dev/null -w "%{http_code}" https://myurl.com | grep -q "200"'
+ready_cmd = 'curl -s -o /dev/null -w "%{http_code}" http://localhost:3000 | grep -q "200"'
 ```
 
 ### Wait for a specific process to start
