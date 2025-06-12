@@ -290,7 +290,13 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
 
         connection_headers = {}
 
-        response = await SandboxApi._cls_get_info(sandbox_id)
+        response = await SandboxApi._cls_get_info(
+            sandbox_id,
+            api_key=api_key,
+            domain=domain,
+            debug=debug,
+            proxy=proxy,
+        )
 
         if response._envd_access_token is not None and not isinstance(
             response._envd_access_token, Unset

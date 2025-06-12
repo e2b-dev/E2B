@@ -142,7 +142,14 @@ class Sandbox(SandboxSetup, SandboxApi):
             self._envd_version = None
             self._envd_access_token = None
         elif sandbox_id is not None:
-            response = SandboxApi._cls_get_info(sandbox_id)
+            response = SandboxApi._cls_get_info(
+                sandbox_id,
+                api_key=api_key,
+                domain=domain,
+                debug=debug,
+                request_timeout=request_timeout,
+                proxy=proxy,
+            )
 
             self._sandbox_id = sandbox_id
             self._envd_version = response.envd_version
