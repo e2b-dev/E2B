@@ -52,20 +52,14 @@ class ApiClient {
 
     this.api = createClient<paths>({
       baseUrl: config.apiUrl,
-      // keepalive: true, // TODO: Return keepalive
       headers: {
         ...defaultHeaders,
         ...(config.apiKey && { 'X-API-KEY': config.apiKey }),
         ...(config.accessToken && {
           Authorization: `Bearer ${config.accessToken}`,
         }),
+        ...{ 'Keep-Alive': true },
         ...config.headers,
-      },
-      fetch: (request: Request) => {
-        const newRequest = new Request(request, {
-          keepalive: true,
-        })
-        return fetch(newRequest)
       },
     })
 
