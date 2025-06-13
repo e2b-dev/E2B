@@ -50,7 +50,7 @@ export interface EntryInfo {
 /**
  * Sandbox filesystem object type.
  */
-export const enum FileType {
+export enum FileType {
   /**
    * Filesystem object is a file.
    */
