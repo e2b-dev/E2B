@@ -1,9 +1,15 @@
 import { Code, ConnectError } from '@connectrpc/connect'
-import { runtime } from '../api/metadata'
+import { runtime } from '../metadata'
 import { defaultUsername } from '../connectionConfig'
 
-import { SandboxError, TimeoutError, formatSandboxTimeoutError, InvalidArgumentError, NotFoundError, AuthenticationError } from '../errors'
-
+import {
+  SandboxError,
+  TimeoutError,
+  formatSandboxTimeoutError,
+  InvalidArgumentError,
+  NotFoundError,
+  AuthenticationError,
+} from '../errors'
 
 export function handleRpcError(err: unknown): Error {
   if (err instanceof ConnectError) {
@@ -45,10 +51,12 @@ function encode64(value: string): string {
   }
 }
 
-export function authenticationHeader(username?: string): Record<string, string> {
+export function authenticationHeader(
+  username?: string
+): Record<string, string> {
   const value = `${username || defaultUsername}:`
 
   const encoded = encode64(value)
 
-  return { 'Authorization': `Basic ${encoded}` }
+  return { Authorization: `Basic ${encoded}` }
 }
