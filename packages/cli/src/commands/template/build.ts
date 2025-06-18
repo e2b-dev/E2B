@@ -20,7 +20,10 @@ import {
   withDelimiter,
 } from 'src/utils/format'
 import { configOption, pathOption, teamOption } from 'src/options'
-import { defaultDockerfileName, fallbackDockerfileName } from 'src/docker/constants'
+import {
+  defaultDockerfileName,
+  fallbackDockerfileName,
+} from 'src/docker/constants'
 import { configName, getConfigPath, loadConfig, saveConfig } from 'src/config'
 import * as child_process from 'child_process'
 import { handleE2BRequestError } from '../../utils/errors'
@@ -223,7 +226,7 @@ export const buildCommand = new commander.Command('build')
 
         let dockerfile = opts.dockerfile
         let startCmd = opts.cmd
-        let readyCmd=  opts.readyCmd
+        let readyCmd = opts.readyCmd
         let cpuCount = opts.cpuCount
         let memoryMB = opts.memoryMb
         let teamID = opts.team
@@ -252,7 +255,7 @@ export const buildCommand = new commander.Command('build')
           templateID = config.template_id
           dockerfile = opts.dockerfile || config.dockerfile
           startCmd = opts.cmd || config.start_cmd
-          readyCmd = opts.readyCmd ||config.ready_cmd
+          readyCmd = opts.readyCmd || config.ready_cmd
           cpuCount = opts.cpuCount || config.cpu_count
           memoryMB = opts.memoryMb || config.memory_mb
           teamID = opts.team || config.team_id
@@ -519,7 +522,7 @@ const sandbox = await Sandbox.create('${
             aliases,
             ...template,
           })} failed.\nCheck the logs above for more details or contact us ${asPrimary(
-            '(https://e2b.dev/docs/getting-help)'
+            '(https://e2b.dev/docs/support)'
           )} to get help.\n`
         )
     }
