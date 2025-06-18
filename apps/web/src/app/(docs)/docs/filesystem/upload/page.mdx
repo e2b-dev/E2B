@@ -42,7 +42,7 @@ import { Sandbox } from '@e2b/code-interpreter'
 const sandbox = await Sandbox.create(template, { secure: true })
 
 // Create a pre-signed URL for file upload with 10 seconds expiration
-const publicUploadUrl = sbx.uploadUrl(
+const publicUploadUrl = sandbox.uploadUrl(
   'demo.txt', {
     useSignature: true,
     useSignatureExpiration: 10_000, // optionals

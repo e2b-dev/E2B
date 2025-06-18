@@ -42,7 +42,7 @@ import { Sandbox } from '@e2b/code-interpreter'
 const sandbox = await Sandbox.create(template, { secure: true })
 
 // Create a pre-signed URL for file download with 10 seconds expiration
-const publicUrl = sbx.downloadUrl(
+const publicUrl = sandbox.downloadUrl(
   'demo.txt', {
     useSignature: true,
     useSignatureExpiration: 10_000, // optionals
