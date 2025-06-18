@@ -26,3 +26,32 @@ with open('/local/path', 'w') as file:
   file.write(content)
 ```
 </CodeGroup>
+
+
+## Download with pre-signed URL
+
+Some times you may want to let users from unauthorized environment to download files from the sandbox, like a user's browser.
+For this use-case you can use pre-signed URLs to and let download files securely.
+
+<CodeGroup>
+```js
+import fs from 'fs'
+import { Sandbox } from '@e2b/code-interpreter'
+
+// Start secured sandbox (all operations must be authorized by default)
+const sandbox = await Sandbox.create(template, { secure: true })
+
+// Create a pre-signed URL for file download with 10 seconds expiration
+const publicUrl = sbx.downloadUrl(
+  'demo.txt', {
+    useSignature: true,
+    useSignatureExpiration: 10_000, // optionals
+  },
+)
+
+// You can just visit the URL in browser to download the file
+const res = await fetch(publicUrl)
+const content = await res.text()
+
+```
+</CodeGroup>

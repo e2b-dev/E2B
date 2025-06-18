@@ -28,6 +28,38 @@ with open("path/to/local/file", "rb") as file:
 ```
 </CodeGroup>
 
+## Upload with pre-signed URL
+
+Sometimes you may want to upload files to the sandbox from a different environment, that is not authorized, like a user's browser.
+In this case, you can use pre-signed URLs to upload files securely.
+
+<CodeGroup>
+```js
+import fs from 'fs'
+import { Sandbox } from '@e2b/code-interpreter'
+
+// Start secured sandbox (all operations must be authorized by default)
+const sandbox = await Sandbox.create(template, { secure: true })
+
+// Create a pre-signed URL for file upload with 10 seconds expiration
+const publicUploadUrl = sbx.uploadUrl(
+  'demo.txt', {
+    useSignature: true,
+    useSignatureExpiration: 10_000, // optionals
+  },
+)
+
+// Upload file with pre-signed URL (this can be executed from any environment such as clients browser)
+const form = new FormData()
+form.append('file', 'file content')
+
+await fetch(publicUploadUrl, { method: 'POST', body: form })
+
+// File is now available in the sandbox and can be read
+const content = fs.readFileSync('demo.txt')
+```
+</CodeGroup>
+
 ## Upload directory / multiple files
 
 <CodeGroup>
