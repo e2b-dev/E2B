@@ -156,19 +156,22 @@ async function proxy(
         },
       } as http.RequestOptions
 
-      if (!options.headers!.Authorization) {
+      // Type-safe header manipulation
+      const headers = options.headers as http.OutgoingHttpHeaders
+
+      if (!headers.Authorization) {
         if (targetUrl.pathname.startsWith('/v2/token')) {
-          options.headers!.Authorization = `Basic ${credsBase64}`
+          headers.Authorization = `Basic ${credsBase64}`
         } else if (
           targetUrl.pathname == '/v2/' ||
           targetUrl.pathname == '/v2'
         ) {
-          options.headers!.Authorization = `Bearer ${credsBase64}`
+          headers.Authorization = `Bearer ${credsBase64}`
         } else if (
           // Exclude the artifacts-uploads namespace
           !targetUrl.pathname.startsWith('/artifacts-uploads/namespaces')
         ) {
-          options.headers!.Authorization = `Bearer ${token}`
+          headers.Authorization = `Bearer ${token}`
         }
       }
 
