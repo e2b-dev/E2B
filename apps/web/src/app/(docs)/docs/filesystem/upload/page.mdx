@@ -30,33 +30,45 @@ with open("path/to/local/file", "rb") as file:
 
 ## Upload with pre-signed URL
 
-Sometimes you may want to upload files to the sandbox from a different environment, that is not authorized, like a user's browser.
-In this case, you can use pre-signed URLs to upload files securely.
+Sometimes, you may want to let users from unauthorized environments, like a browser, upload files to the sandbox.
+For this use case, you can use pre-signed URLs to let users upload files securely.
 
 <CodeGroup>
 ```js
 import fs from 'fs'
 import { Sandbox } from '@e2b/code-interpreter'
 
-// Start secured sandbox (all operations must be authorized by default)
+// Start a secured sandbox (all operations must be authorized by default)
 const sandbox = await Sandbox.create(template, { secure: true })
 
-// Create a pre-signed URL for file upload with 10 seconds expiration
+// Create a pre-signed URL for file upload with a 10 second expiration
 const publicUploadUrl = sandbox.uploadUrl(
   'demo.txt', {
     useSignature: true,
-    useSignatureExpiration: 10_000, // optionals
+    useSignatureExpiration: 10_000, // optional
   },
 )
 
-// Upload file with pre-signed URL (this can be executed from any environment such as clients browser)
+// Upload a file with a pre-signed URL (this can be used in any environment, such as a browser)
 const form = new FormData()
 form.append('file', 'file content')
 
 await fetch(publicUploadUrl, { method: 'POST', body: form })
 
-// File is now available in the sandbox and can be read
+// File is now available in the sandbox and you can read it
 const content = fs.readFileSync('demo.txt')
+```
+```python
+from e2b import Sandbox
+import requests
+
+# Start a secured sandbox (all operations must be authorized by default)
+sandbox = Sandbox(template, timeout=12_000, secure=True)
+
+# Create a pre-signed URL for file upload with a 10 second expiration
+signed_url = sbx.upload_url(file_path, "user", True, 10_000)
+form_data = {"file":"file content"}
+requests.post(signed_url, data=form_data)
 ```
 </CodeGroup>
 
