@@ -25,6 +25,24 @@
 > [!NOTE]
 > This repository contains the core E2B SDK that's used in our main [E2B Code Interpreter SDK](https://github.com/e2b-dev/code-interpreter).
 
+## Repository Structure
+
+This is a monorepo containing multiple packages and applications:
+
+### 📦 Packages
+- **[`packages/js-sdk`](./packages/js-sdk)** - JavaScript/TypeScript SDK for E2B
+- **[`packages/python-sdk`](./packages/python-sdk)** - Python SDK for E2B
+- **[`packages/cli`](./packages/cli)** - Command-line interface for E2B
+- **[`packages/connect-python`](./packages/connect-python)** - Go-based protobuf plugin for generating Python Connect RPC clients
+
+### 🎯 Applications
+- **[`apps/web`](./apps/web)** - E2B web application
+
+### 🔧 Development
+- **[`spec/`](./spec)** - OpenAPI and protobuf specifications
+- **[`scripts/`](./scripts)** - Build and development scripts
+- **[`templates/`](./templates)** - Sandbox templates
+
 ## Run your first Sandbox
 
 ### 1. Install SDK
@@ -67,7 +85,7 @@ from e2b_code_interpreter import Sandbox
 with Sandbox() as sandbox:
     sandbox.run_code("x = 1")
     execution = sandbox.run_code("x+=1; x")
-    print(execution.text)  # outputs 2
+    print(execution.text)  // outputs 2
 ```
 
 ### 4. Check docs
@@ -75,6 +93,38 @@ Visit [E2B documentation](https://e2b.dev/docs).
 
 ### 5. E2B cookbook
 Visit our [Cookbook](https://github.com/e2b-dev/e2b-cookbook/tree/main) to get inspired by examples with different LLMs and AI frameworks.
+
+## Development
+
+This repository uses [pnpm](https://pnpm.io/) as the package manager.
+
+### Prerequisites
+- Node.js 18+
+- pnpm 9+
+- Go 1.22+ (for connect-python)
+- Python 3.8+ (for Python SDK)
+
+### Setup
+```bash
+# Install dependencies
+pnpm install
+
+# Build all packages
+pnpm run build
+
+# Run tests
+pnpm test
+
+# Generate SDK code from specs
+make codegen
+```
+
+### Available Scripts
+- `pnpm dev:web` - Start the web application in development mode
+- `pnpm build:web` - Build the web application
+- `pnpm test` - Run tests across all packages
+- `pnpm lint` - Lint all packages
+- `make codegen` - Generate SDK code from OpenAPI and protobuf specifications
 
 ## Self-hosting
 
