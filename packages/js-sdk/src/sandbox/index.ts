@@ -66,6 +66,11 @@ export interface SandboxUrlOpts {
    * Optional parameter to set the expiration time for the signature.
    */
   useSignatureExpiration?: number
+
+  /**
+   * User that will be used to access the file.
+   */
+  user?: string
 }
 
 /**
@@ -402,12 +407,12 @@ export class Sandbox extends SandboxApi {
     }
 
     const filePath = path ?? ''
-    const fileUrl = this.fileUrl(filePath, defaultUsername)
+    const fileUrl = this.fileUrl(filePath, opts.user ?? defaultUsername)
 
     if (opts.useSignature) {
       const url = new URL(fileUrl)
       const sig = getSignature(
-          { path: filePath, operation: 'write', user: defaultUsername, expirationInSeconds: opts.useSignatureExpiration, envdAccessToken: this.envdAccessToken}
+          { path: filePath, operation: 'write', user: opts.user ?? defaultUsername, expirationInSeconds: opts.useSignatureExpiration, envdAccessToken: this.envdAccessToken}
       )
 
       url.searchParams.set('signature', sig.signature)
@@ -441,12 +446,12 @@ export class Sandbox extends SandboxApi {
       throw new Error('Signature expiration can be used only when signature is set to true.')
     }
 
-    const fileUrl = this.fileUrl(path, defaultUsername)
+    const fileUrl = this.fileUrl(path, opts.user ?? defaultUsername)
 
     if (opts.useSignature) {
       const url = new URL(fileUrl)
       const sig = getSignature(
-          { path, operation: 'read', user: defaultUsername, expirationInSeconds: opts.useSignatureExpiration, envdAccessToken: this.envdAccessToken}
+          { path, operation: 'read', user: opts.user ?? defaultUsername, expirationInSeconds: opts.useSignatureExpiration, envdAccessToken: this.envdAccessToken}
       )
 
       url.searchParams.set('signature', sig.signature)
