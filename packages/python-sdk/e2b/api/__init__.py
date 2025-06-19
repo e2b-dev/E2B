@@ -7,7 +7,7 @@ from dataclasses import dataclass
 
 from e2b.api.client.client import AuthenticatedClient
 from e2b.connection_config import ConnectionConfig
-from e2b.api.metadata import default_headers
+from e2b.metadata import default_headers
 from e2b.exceptions import (
     AuthenticationException,
     SandboxException,

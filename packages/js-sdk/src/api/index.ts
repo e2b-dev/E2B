@@ -1,7 +1,7 @@
 import createClient, { FetchResponse } from 'openapi-fetch'
 
 import type { components, paths } from './schema.gen'
-import { defaultHeaders } from './metadata'
+import { defaultHeaders } from './../metadata'
 import { ConnectionConfig } from '../connectionConfig'
 import { AuthenticationError, RateLimitError, SandboxError } from '../errors'
 import { createApiLogger } from '../logs'
