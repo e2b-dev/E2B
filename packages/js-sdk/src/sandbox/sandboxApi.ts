@@ -1,4 +1,4 @@
-import { ApiClient, components, handleApiError } from '../api'
+import { ApiClient, handleApiError, components } from '../api'
 import { ConnectionConfig, ConnectionOpts } from '../connectionConfig'
 import { compareVersions } from 'compare-versions'
 import { TemplateError } from '../errors'
@@ -17,8 +17,28 @@ export interface SandboxApiOpts
 export interface SandboxListOpts extends SandboxApiOpts {
   /**
    * Filter the list of sandboxes, e.g. by metadata `metadata:{"key": "value"}`, if there are multiple filters they are combined with AND.
+   *
    */
-  query?: { metadata?: Record<string, string> }
+  query?: {
+    metadata?: Record<string, string>
+    /**
+     * Filter the list of sandboxes by state.
+     * @default ['running', 'paused']
+     */
+    state?: Array<'running' | 'paused'>
+  }
+
+  /**
+   * Number of sandboxes to return.
+   *
+   * @default 1000
+   */
+  limit?: number
+
+  /**
+   * Token to the next page.
+   */
+  nextToken?: string
 }
 
 /**
@@ -42,11 +62,17 @@ export interface SandboxInfo {
 
   /**
    * Envd access token.
+   *
+   * Not included when listing sandboxes.
+   * TODO: Should we include this in list request? What about the paused sandboxes?
    */
   envdAccessToken?: string
 
   /**
    * Envd version.
+   *
+   * Not included when listing sandboxes.
+   * TODO: Should we include this in the list request? What about the paused sandboxes?
    */
   envdVersion?: string
 
@@ -64,61 +90,22 @@ export interface SandboxInfo {
    * Sandbox expiration date.
    */
   endAt: Date
-}
-
-export interface ListedSandbox {
-  /**
-   * Sandbox ID.
-   */
-  sandboxId: string
-
-  /**
-   * Template ID alias.
-   */
-  alias?: string;
-
-  /**
-   * Template ID.
-   */
-  templateId: string;
-
-  /**
-   * Client ID.
-   * @deprecated
-   */
-  clientId: string;
 
   /**
    * Sandbox state.
    */
-  state: 'running' | 'paused';
+  state: 'running' | 'paused'
 
   /**
    * Sandbox CPU count.
    */
-  cpuCount: number;
+  cpuCount: number
 
   /**
    * Sandbox Memory size in MB.
    */
-  memoryMB: number;
-
-  /**
-   * Saved sandbox metadata.
-   */
-  metadata?: Record<string, string>
-
-  /**
-   * Sandbox expected end time.
-   */
-  endAt: Date;
-
-  /**
-   * Sandbox start time.
-   */
-  startedAt: Date;
+  memoryMB: number
 }
-
 
 export class SandboxApi {
   protected constructor() {}
@@ -160,55 +147,14 @@ export class SandboxApi {
   }
 
   /**
-   * List all running sandboxes.
+   * List all sandboxes.
    *
    * @param opts connection options.
    *
-   * @returns list of running sandboxes.
+   * @returns paginator for listing sandboxes.
    */
-  static async list(opts?: SandboxListOpts): Promise<ListedSandbox[]> {
-    const config = new ConnectionConfig(opts)
-    const client = new ApiClient(config)
-
-    let metadata = undefined
-    if (opts?.query) {
-      if (opts.query.metadata) {
-        const encodedPairs: Record<string, string> = Object.fromEntries(
-          Object.entries(opts.query.metadata).map(([key, value]) => [
-            encodeURIComponent(key),
-            encodeURIComponent(value),
-          ])
-        )
-        metadata = new URLSearchParams(encodedPairs).toString()
-      }
-    }
-
-    const res = await client.api.GET('/sandboxes', {
-      params: {
-        query: { metadata },
-      },
-      signal: config.getSignal(opts?.requestTimeoutMs),
-    })
-
-    const err = handleApiError(res)
-    if (err) {
-      throw err
-    }
-
-    return (
-      res.data?.map((sandbox: components['schemas']['ListedSandbox']) => ({
-        sandboxId: this.getSandboxId({ sandboxId: sandbox.sandboxID, clientId: sandbox.clientID }),
-        templateId: sandbox.templateID,
-        clientId: sandbox.clientID,
-        state: sandbox.state,
-        cpuCount: sandbox.cpuCount,
-        memoryMB: sandbox.memoryMB,
-        alias: sandbox.alias,
-        metadata: sandbox.metadata,
-        startedAt: new Date(sandbox.startedAt),
-        endAt: new Date(sandbox.endAt),
-      })) ?? []
-    )
+  static list(opts: SandboxListOpts = {}): SandboxPaginator {
+    return new SandboxPaginator(opts)
   }
 
   /**
@@ -245,7 +191,7 @@ export class SandboxApi {
     }
 
     return {
-      sandboxId: this.getSandboxId({
+      sandboxId: getSandboxId({
         sandboxId: res.data.sandboxID,
         clientId: res.data.clientID,
       }),
@@ -256,6 +202,9 @@ export class SandboxApi {
       envdAccessToken: res.data.envdAccessToken,
       startedAt: new Date(res.data.startedAt),
       endAt: new Date(res.data.endAt),
+      state: res.data.state,
+      cpuCount: res.data.cpuCount,
+      memoryMB: res.data.memoryMB,
     }
   }
 
@@ -332,7 +281,7 @@ export class SandboxApi {
 
     if (compareVersions(res.data!.envdVersion, '0.1.0') < 0) {
       await this.kill(
-        this.getSandboxId({
+        getSandboxId({
           sandboxId: res.data!.sandboxID,
           clientId: res.data!.clientID,
         }),
@@ -345,26 +294,111 @@ export class SandboxApi {
     }
 
     return {
-      sandboxId: this.getSandboxId({
+      sandboxId: getSandboxId({
         sandboxId: res.data!.sandboxID,
         clientId: res.data!.clientID,
       }),
       envdVersion: res.data!.envdVersion,
-      envdAccessToken: res.data!.envdAccessToken
+      envdAccessToken: res.data!.envdAccessToken,
     }
   }
 
-  private static timeoutToSeconds(timeout: number): number {
+  protected static timeoutToSeconds(timeout: number): number {
     return Math.ceil(timeout / 1000)
   }
+}
 
-  private static getSandboxId({
-    sandboxId,
-    clientId,
-  }: {
-    sandboxId: string
-    clientId: string
-  }): string {
-    return `${sandboxId}-${clientId}`
+function getSandboxId({
+  sandboxId,
+  clientId,
+}: {
+  sandboxId: string
+  clientId: string
+}): string {
+  return `${sandboxId}-${clientId}`
+}
+
+export class SandboxPaginator {
+  private options: SandboxListOpts
+  private _hasNext: boolean
+  private _nextToken: string | undefined
+
+  constructor(options: SandboxListOpts = {}) {
+    this.options = options
+    this._hasNext = true
+    this._nextToken = options.nextToken
+  }
+
+  get hasNext(): boolean {
+    return this._hasNext
+  }
+
+  get nextToken(): string | undefined {
+    return this._nextToken
+  }
+
+  /**
+   * Get the next page of sandboxes.
+   *
+   * @throws Error if there are no more items to fetch
+   */
+  async nextItems(): Promise<SandboxInfo[]> {
+    if (!this.hasNext) {
+      throw new Error('No more items to fetch')
+    }
+
+    const { query, limit, requestTimeoutMs } = this.options
+    const config = new ConnectionConfig({ requestTimeoutMs })
+    const client = new ApiClient(config)
+
+    let metadata = undefined
+    if (query) {
+      if (query.metadata) {
+        const encodedPairs: Record<string, string> = Object.fromEntries(
+          Object.entries(query.metadata).map(([key, value]) => [
+            encodeURIComponent(key),
+            encodeURIComponent(value),
+          ])
+        )
+        metadata = new URLSearchParams(encodedPairs).toString()
+      }
+    }
+
+    const res = await client.api.GET('/v2/sandboxes', {
+      params: {
+        query: {
+          metadata,
+          state: query?.state,
+          limit,
+          nextToken: this.nextToken,
+        },
+      },
+      signal: config.getSignal(requestTimeoutMs),
+    })
+
+    const err = handleApiError(res)
+    if (err) {
+      throw err
+    }
+
+    this._nextToken = res.response.headers.get('x-next-token') || undefined
+    this._hasNext = !!this._nextToken
+
+    return (res.data ?? []).map(
+      (sandbox: components['schemas']['ListedSandbox']) => ({
+        sandboxId: getSandboxId({
+          sandboxId: sandbox.sandboxID,
+          clientId: sandbox.clientID,
+        }),
+        templateId: sandbox.templateID,
+        ...(sandbox.alias && { name: sandbox.alias }),
+        metadata: sandbox.metadata ?? {},
+        startedAt: new Date(sandbox.startedAt),
+        endAt: new Date(sandbox.endAt),
+        state: sandbox.state,
+        cpuCount: sandbox.cpuCount,
+        memoryMB: sandbox.memoryMB,
+      })
+    )
   }
 }

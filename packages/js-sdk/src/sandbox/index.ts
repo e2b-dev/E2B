@@ -59,7 +59,7 @@ export interface SandboxUrlOpts {
    *
    * @default false
    */
-  useSignature?: true,
+  useSignature?: true
 
   /**
    * Use signature expiration for the URL.
@@ -114,9 +114,9 @@ export class Sandbox extends SandboxApi {
   protected readonly envdPort = 49983
 
   protected readonly connectionConfig: ConnectionConfig
+  protected readonly envdApi: EnvdApiClient
   private readonly envdApiUrl: string
   private readonly envdAccessToken?: string
-  private readonly envdApi: EnvdApiClient
 
   /**
    * Use {@link Sandbox.create} to create a new Sandbox instead.
@@ -171,7 +171,9 @@ export class Sandbox extends SandboxApi {
         apiUrl: this.envdApiUrl,
         logger: opts?.logger,
         accessToken: this.envdAccessToken,
-        headers: this.envdAccessToken ? { 'X-Access-Token': this.envdAccessToken } : { },
+        headers: this.envdAccessToken
+          ? { 'X-Access-Token': this.envdAccessToken }
+          : {},
       },
       {
         version: opts?.envdVersion,
@@ -275,9 +277,12 @@ export class Sandbox extends SandboxApi {
     const config = new ConnectionConfig(opts)
     const info = await this.getInfo(sandboxId, opts)
 
-    return new this(
-        { sandboxId, envdAccessToken: info.envdAccessToken, envdVersion: info.envdVersion, ...config }
-    ) as InstanceType<S>
+    return new this({
+      sandboxId,
+      envdAccessToken: info.envdAccessToken,
+      envdVersion: info.envdVersion,
+      ...config,
+    }) as InstanceType<S>
   }
 
   /**
@@ -393,12 +398,19 @@ export class Sandbox extends SandboxApi {
   uploadUrl(path?: string, opts?: SandboxUrlOpts) {
     opts = opts ?? {}
 
-    if (!this.envdAccessToken && (opts.useSignature || opts.useSignatureExpiration != undefined)) {
-      throw new Error('Signature can be used only when sandbox is spawned with secure option.')
+    if (
+      !this.envdAccessToken &&
+      (opts.useSignature || opts.useSignatureExpiration != undefined)
+    ) {
+      throw new Error(
+        'Signature can be used only when sandbox is spawned with secure option.'
+      )
     }
 
     if (!opts.useSignature && opts.useSignatureExpiration != undefined) {
-      throw new Error('Signature expiration can be used only when signature is set to true.')
+      throw new Error(
+        'Signature expiration can be used only when signature is set to true.'
+      )
     }
 
     const filePath = path ?? ''
@@ -406,9 +418,13 @@ export class Sandbox extends SandboxApi {
 
     if (opts.useSignature) {
       const url = new URL(fileUrl)
-      const sig = getSignature(
-          { path: filePath, operation: 'write', user: defaultUsername, expirationInSeconds: opts.useSignatureExpiration, envdAccessToken: this.envdAccessToken}
-      )
+      const sig = getSignature({
+        path: filePath,
+        operation: 'write',
+        user: defaultUsername,
+        expirationInSeconds: opts.useSignatureExpiration,
+        envdAccessToken: this.envdAccessToken,
+      })
 
       url.searchParams.set('signature', sig.signature)
       if (sig.expiration) {
@@ -430,24 +446,36 @@ export class Sandbox extends SandboxApi {
    *
    * @returns URL for downloading file.
    */
-  downloadUrl(path: string, opts?: SandboxUrlOpts) { //path: string, useSignature?: boolean, signatureExpirationInSeconds?: number) {
+  downloadUrl(path: string, opts?: SandboxUrlOpts) {
+    //path: string, useSignature?: boolean, signatureExpirationInSeconds?: number) {
     opts = opts ?? {}
 
-    if (!this.envdAccessToken && (opts.useSignature || opts.useSignatureExpiration != undefined)) {
-      throw new Error('Signature can be used only when sandbox is spawned with secure option.')
+    if (
+      !this.envdAccessToken &&
+      (opts.useSignature || opts.useSignatureExpiration != undefined)
+    ) {
+      throw new Error(
+        'Signature can be used only when sandbox is spawned with secure option.'
+      )
     }
 
     if (!opts.useSignature && opts.useSignatureExpiration != undefined) {
-      throw new Error('Signature expiration can be used only when signature is set to true.')
+      throw new Error(
+        'Signature expiration can be used only when signature is set to true.'
+      )
     }
 
     const fileUrl = this.fileUrl(path, defaultUsername)
 
     if (opts.useSignature) {
       const url = new URL(fileUrl)
-      const sig = getSignature(
-          { path, operation: 'read', user: defaultUsername, expirationInSeconds: opts.useSignatureExpiration, envdAccessToken: this.envdAccessToken}
-      )
+      const sig = getSignature({
+        path,
+        operation: 'read',
+        user: defaultUsername,
+        expirationInSeconds: opts.useSignatureExpiration,
+        envdAccessToken: this.envdAccessToken,
+      })
 
       url.searchParams.set('signature', sig.signature)
       if (sig.expiration) {
@@ -459,7 +487,6 @@ export class Sandbox extends SandboxApi {
 
     return fileUrl
   }
-
 
   /**
    * Get sandbox information like sandbox ID, template, metadata, started at/end at date.
@@ -475,8 +502,7 @@ export class Sandbox extends SandboxApi {
     })
   }
 
-
-  private fileUrl(path?: string, username?:  string) {
+  private fileUrl(path?: string, username?: string) {
     const url = new URL('/files', this.envdApiUrl)
 
     url.searchParams.set('username', username ?? defaultUsername)

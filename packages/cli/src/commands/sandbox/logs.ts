@@ -1,13 +1,13 @@
+import * as chalk from 'chalk'
 import * as commander from 'commander'
 import * as e2b from 'e2b'
 import * as util from 'util'
-import * as chalk from 'chalk'
 
 import { client, connectionConfig } from 'src/api'
 import { asBold, asTimestamp, withUnderline } from 'src/utils/format'
-import { listSandboxes } from './list'
 import { wait } from 'src/utils/wait'
 import { handleE2BRequestError } from '../../utils/errors'
+import { listSandboxes } from './list'
 
 const maxRuntime = 24 * 60 * 60 * 1000 // 24 hours in milliseconds
 
@@ -15,7 +15,7 @@ function getShortID(sandboxID: string) {
   return sandboxID.split('-')[0]
 }
 
-function waitForSandboxEnd(sandboxID: string) {
+export function waitForSandboxEnd(sandboxID: string) {
   let isRunning = true
 
   async function monitor() {
@@ -31,7 +31,7 @@ function waitForSandboxEnd(sandboxID: string) {
         break
       }
 
-      const response = await listSandboxes()
+      const response = await listSandboxes({ state: ['running'] })
       const sandbox = response.find(
         (s) => s.sandboxID === getShortID(sandboxID)
       )
@@ -87,7 +87,7 @@ enum LogFormat {
   PRETTY = 'pretty',
 }
 
-function cleanLogger(logger?: string) {
+export function cleanLogger(logger?: string) {
   if (!logger) {
     return ''
   }
@@ -153,7 +153,7 @@ export const logsCommand = new commander.Command('logs')
           console.log(`\nLogs for sandbox ${asBold(sandboxID)}:`)
         }
 
-        const isRunningPromise = listSandboxes()
+        const isRunningPromise = listSandboxes({ state: ['running'] })
           .then((r) => r.find((s) => s.sandboxID === getShortID(sandboxID)))
           .then((s) => !!s)
 
@@ -311,7 +311,7 @@ export async function listSandboxLogs({
     },
   })
 
-  handleE2BRequestError(res, 'Error while getting sandbox logs')
+  handleE2BRequestError(res.error, 'Error while getting sandbox logs')
 
   return res.data.logs
 }
