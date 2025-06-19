@@ -1,4 +1,5 @@
 import { assert, onTestFinished } from 'vitest'
+import { randomBytes } from 'crypto'
 
 import { Sandbox } from '../../src'
 import { sandboxTest, isDebug } from '../setup.js'
@@ -122,7 +123,7 @@ sandboxTest.skipIf(isDebug)(
     assert.isTrue(await sandbox.isRunning())
 
     // the file should be created after more than 2 seconds have elapsed
-    await new Promise((resolve) => setTimeout(resolve, 2000))
+    await new Promise((resolve) => setTimeout(resolve, 3500))
 
     const exists2 = await sandbox.files.exists(filename)
     assert.isTrue(exists2)
@@ -154,5 +155,27 @@ sandboxTest.skipIf(isDebug)(
     url = await sandbox.getHost(8000)
     const response2 = await fetch(`https://${url}`)
     assert.equal(response2.status, 200)
+  }
+)
+
+sandboxTest.skipIf(isDebug)(
+  'pause and resume a sandbox while flushing the filesystem cache',
+  async ({ sandbox }) => {
+    const testPath = '/home/user/test'
+    const testContent = randomBytes(512).toString('hex')
+
+    await sandbox.files.write(testPath, testContent)
+
+    // sync: from the man page: flush file system buffers. Force changed blocks to disk, update the super block
+    // echo 3 > /proc/sys/vm/drop_cache: from the kernel docs: this will cause the kernel to free pagecache, dentries and inodes
+    await sandbox.commands.run('sync && echo 3 | sudo tee /proc/sys/vm/drop_caches')
+
+    await sandbox.pause()
+
+    const resumedSbx = await Sandbox.resume(sandbox.sandboxId)
+
+    const contentAfter = await resumedSbx.files.read(testPath)
+
+    assert.equal(contentAfter, testContent)
   }
 )
