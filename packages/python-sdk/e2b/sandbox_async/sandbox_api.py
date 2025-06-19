@@ -99,7 +99,7 @@ class SandboxApi(SandboxApiBase):
         ]
 
     @classmethod
-    async def get_info(
+    async def _cls_get_info(
         cls,
         sandbox_id: str,
         api_key: Optional[str] = None,
