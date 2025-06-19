@@ -3,7 +3,7 @@ import { createConnectTransport } from '@connectrpc/connect-web'
 import {
   ConnectionConfig,
   ConnectionOpts,
-  defaultUsername,
+  defaultUsername, Username,
 } from '../connectionConfig'
 import { EnvdApiClient, handleEnvdApiError } from '../envd/api'
 import { createRpcLogger } from '../logs'
@@ -70,7 +70,7 @@ export interface SandboxUrlOpts {
   /**
    * User that will be used to access the file.
    */
-  user?: string
+  user?: Username
 }
 
 /**
@@ -406,13 +406,14 @@ export class Sandbox extends SandboxApi {
       throw new Error('Signature expiration can be used only when signature is set to true.')
     }
 
+    const username = opts.user ?? defaultUsername
     const filePath = path ?? ''
-    const fileUrl = this.fileUrl(filePath, opts.user ?? defaultUsername)
+    const fileUrl = this.fileUrl(filePath, username)
 
     if (opts.useSignature) {
       const url = new URL(fileUrl)
       const sig = getSignature(
-          { path: filePath, operation: 'write', user: opts.user ?? defaultUsername, expirationInSeconds: opts.useSignatureExpiration, envdAccessToken: this.envdAccessToken}
+          { path: filePath, operation: 'write', user: username, expirationInSeconds: opts.useSignatureExpiration, envdAccessToken: this.envdAccessToken}
       )
 
       url.searchParams.set('signature', sig.signature)
@@ -446,12 +447,13 @@ export class Sandbox extends SandboxApi {
       throw new Error('Signature expiration can be used only when signature is set to true.')
     }
 
-    const fileUrl = this.fileUrl(path, opts.user ?? defaultUsername)
+    const username = opts.user ?? defaultUsername
+    const fileUrl = this.fileUrl(path, username)
 
     if (opts.useSignature) {
       const url = new URL(fileUrl)
       const sig = getSignature(
-          { path, operation: 'read', user: opts.user ?? defaultUsername, expirationInSeconds: opts.useSignatureExpiration, envdAccessToken: this.envdAccessToken}
+          { path, operation: 'read', user: username, expirationInSeconds: opts.useSignatureExpiration, envdAccessToken: this.envdAccessToken}
       )
 
       url.searchParams.set('signature', sig.signature)
