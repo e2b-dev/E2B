@@ -121,7 +121,7 @@ test.skipIf(isDebug)('test upload file with valid signing as root user', async (
 
   assert.equal(resStatus, 200)
   assert.deepEqual(JSON.parse(resBody), [
-    { name: 'hello.txt', path: '/home/root/hello.txt', type: 'file' },
+    { name: 'hello.txt', path: '/root/hello.txt', type: 'file' },
   ])
 
   await sbx.kill()
