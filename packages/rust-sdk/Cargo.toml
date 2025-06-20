@@ -1,0 +1,40 @@
+[workspace]
+members = ["e2b", "e2b_connect"]
+resolver = "2"
+
+[workspace.dependencies]
+# Async runtime
+tokio = { version = "1.0", features = ["full"] }
+tokio-test = "0.4"
+tokio-stream = { version = "0.1", features = ["sync"] }
+
+# HTTP client
+reqwest = { version = "0.12", features = ["json", "stream", "multipart", "gzip"] }
+url = { version = "2.5", features = ["serde"] }
+
+# RPC/gRPC
+tonic = "0.12"
+prost = "0.13"
+prost-types = "0.13"
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Error handling
+thiserror = "1.0"
+anyhow = "1.0"
+
+# Configuration
+config = "0.14"
+
+# Utilities
+uuid = { version = "1.0", features = ["v4", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+bytes = "1.0"
+futures = "0.3"
+tracing = "0.1"
+tracing-subscriber = "0.3"
+
+# Testing
+mockito = "1.0"
