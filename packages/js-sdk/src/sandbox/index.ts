@@ -403,7 +403,7 @@ export class Sandbox extends SandboxApi {
    *
    * @returns URL for uploading file.
    */
-  uploadUrl(path?: string, opts?: SandboxUrlOpts) {
+  async uploadUrl(path?: string, opts?: SandboxUrlOpts) {
     opts = opts ?? {}
 
     if (
@@ -427,7 +427,7 @@ export class Sandbox extends SandboxApi {
 
     if (opts.useSignature) {
       const url = new URL(fileUrl)
-      const sig = getSignature({
+      const sig = await getSignature({
         path: filePath,
         operation: 'write',
         user: username,
@@ -455,7 +455,7 @@ export class Sandbox extends SandboxApi {
    *
    * @returns URL for downloading file.
    */
-  downloadUrl(path: string, opts?: SandboxUrlOpts) {
+  async downloadUrl(path: string, opts?: SandboxUrlOpts) {
     //path: string, useSignature?: boolean, signatureExpirationInSeconds?: number) {
     opts = opts ?? {}
 
@@ -479,7 +479,7 @@ export class Sandbox extends SandboxApi {
 
     if (opts.useSignature) {
       const url = new URL(fileUrl)
-      const sig = getSignature({
+      const sig = await getSignature({
         path,
         operation: 'read',
         user: username,
