@@ -10,7 +10,7 @@ export const sandboxTest = base.extend<SandboxFixture>({
   sandbox: [
     // eslint-disable-next-line no-empty-pattern
     async ({}, use) => {
-      const sandbox = await Sandbox.create(template)
+      const sandbox = await Sandbox.create(template, { debug: isDebug })
       try {
         await use(sandbox)
       } finally {
