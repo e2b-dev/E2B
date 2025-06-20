@@ -43,6 +43,8 @@ paths:
               properties:
                 envVars:
                   $ref: "#/components/schemas/EnvVars"
+                metadata:
+                  $ref: "#/components/schemas/Metadata"
                 accessToken:
                   type: string
                   description: Access token for secure access to envd service
@@ -63,6 +65,20 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/EnvVars"
+
+  /metadata:
+    get:
+      summary: Get the sandbox metadata
+      security:
+        - AccessTokenAuth: []
+        - {}
+      responses:
+        "200":
+          description: Sandbox metadata
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Metadata"
 
   /files:
     get:
@@ -256,3 +272,9 @@ components:
         mem_bytes:
           type: integer
           description: Total virtual memory usage in bytes
+    Metadata:
+      type: object
+      description: Metadata for the sandbox
+      additionalProperties:
+        type: string
+        description: Metadata key-value pairs for the sandbox
