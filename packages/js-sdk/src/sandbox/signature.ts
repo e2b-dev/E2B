@@ -21,7 +21,8 @@ interface SignatureOpts {
 // Cross-platform crypto implementation
 async function sha256(data: string): Promise<string> {
   // Use Node.js crypto if WebCrypto is not available
-  if (!crypto) {
+  if (typeof crypto === 'undefined') {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const { createHash } = require('node:crypto')
     const hash = createHash('sha256').update(data, 'utf8').digest()
     return hash.toString('base64')
