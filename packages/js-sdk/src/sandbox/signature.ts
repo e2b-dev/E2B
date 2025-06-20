@@ -18,6 +18,23 @@ interface SignatureOpts {
   envdAccessToken?: string
 }
 
+// Cross-platform crypto implementation
+async function sha256(data: string): Promise<string> {
+  // Use Node.js crypto if WebCrypto is not available
+  if (!crypto) {
+    const { createHash } = require('node:crypto')
+    const hash = createHash('sha256').update(data, 'utf8').digest()
+    return hash.toString('base64')
+  }
+
+  // Use WebCrypto API if available
+  const encoder = new TextEncoder()
+  const dataBuffer = encoder.encode(data)
+  const hashBuffer = await crypto.subtle.digest('SHA-256', dataBuffer)
+  const hashArray = new Uint8Array(hashBuffer)
+  return btoa(String.fromCharCode(...hashArray))
+}
+
 export async function getSignature({
   path,
   operation,
@@ -43,16 +60,7 @@ export async function getSignature({
     signatureRaw = `${path}:${operation}:${user}:${envdAccessToken}:${signatureExpiration.toString()}`
   }
 
-  // Use TextEncoder to convert string to Uint8Array
-  const encoder = new TextEncoder()
-  const data = encoder.encode(signatureRaw)
-
-  // Use WebCrypto to create SHA-256 hash
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data)
-
-  // Convert ArrayBuffer to base64 string
-  const hashArray = new Uint8Array(hashBuffer)
-  const hashBase64 = btoa(String.fromCharCode(...hashArray))
+  const hashBase64 = await sha256(signatureRaw)
   const signature = 'v1_' + hashBase64.replace(/=+$/, '')
 
   return {
