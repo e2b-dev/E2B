@@ -54,11 +54,9 @@ impl ApiClient {
             let status = response.status();
             let bytes = response.bytes().await.unwrap_or_default();
             
-            // Try to parse error response as API error format
             if let Ok(api_error) = serde_json::from_slice::<models::ApiError>(&bytes) {
                 Err(self.map_api_error(status.as_u16(), &api_error))
             } else {
-                // Fallback to text response
                 let text = String::from_utf8_lossy(&bytes);
                 Err(self.map_http_error(status.as_u16(), &text))
             }
@@ -74,11 +72,9 @@ impl ApiClient {
             let status = response.status();
             let bytes = response.bytes().await.unwrap_or_default();
             
-            // Try to parse error response as API error format
             if let Ok(api_error) = serde_json::from_slice::<models::ApiError>(&bytes) {
                 Err(self.map_api_error(status.as_u16(), &api_error))
             } else {
-                // Fallback to text response
                 let text = String::from_utf8_lossy(&bytes);
                 Err(self.map_http_error(status.as_u16(), &text))
             }

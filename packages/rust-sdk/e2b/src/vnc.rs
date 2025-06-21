@@ -6,7 +6,10 @@ use crate::{
 use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
 use std::sync::Arc;
-use tokio::sync::Mutex;
+use tokio::{
+    time::{sleep, Duration, Instant},
+    sync::Mutex
+};
 use url::Url;
 
 /// Configuration options for VNC server
@@ -41,8 +44,10 @@ pub struct VncServer<T> {
     sandbox: T,
     config: VncConfig,
     vnc_process: Arc<Mutex<Option<AsyncCommandHandle>>>,
+    xvfb_process: Arc<Mutex<Option<AsyncCommandHandle>>>,
     novnc_process: Arc<Mutex<Option<AsyncCommandHandle>>>,
     auth_password: Option<String>,
+    last_xfce4_pid: Option<i32>,
     is_running: Arc<Mutex<bool>>,
 }
 
@@ -56,8 +61,10 @@ where
             sandbox,
             config: VncConfig::default(),
             vnc_process: Arc::new(Mutex::new(None)),
+            xvfb_process: Arc::new(Mutex::new(None)),
             novnc_process: Arc::new(Mutex::new(None)),
             auth_password: None,
+            last_xfce4_pid: None,
             is_running: Arc::new(Mutex::new(false)),
         }
     }
@@ -68,13 +75,14 @@ where
             sandbox,
             config,
             vnc_process: Arc::new(Mutex::new(None)),
+            xvfb_process: Arc::new(Mutex::new(None)),
             novnc_process: Arc::new(Mutex::new(None)),
             auth_password: None,
+            last_xfce4_pid: None,
             is_running: Arc::new(Mutex::new(false)),
         }
     }
 
-    /// Start the VNC server
     pub async fn start(&mut self) -> Result<()> {
         {
             let is_running = self.is_running.lock().await;
@@ -83,17 +91,15 @@ where
             }
         }
 
-        // Generate password if authentication is enabled and no password is provided
-        if self.config.enable_auth && self.config.password.is_none() {
+        if self.config.enable_auth && self.config.password.is_none() && self.auth_password.is_none() {
             self.auth_password = Some(self.generate_password());
         } else if self.config.enable_auth {
             self.auth_password = self.config.password.clone();
         }
 
-        // Start VNC server
+        self.start_xvfb().await?;
+        self.start_xfce4().await?;
         self.start_vnc_server().await?;
-
-        // Start noVNC proxy
         self.start_novnc_proxy().await?;
 
         {
@@ -167,7 +173,7 @@ where
 
         // Kill any remaining VNC processes
         let _ = self.sandbox.run("pkill", &["-f", "x11vnc"]).await;
-        let _ = self.sandbox.run("pkill", &["-f", "websockify"]).await;
+        let _ = self.sandbox.run("pkill", &["-f", "novnc"]).await;
 
         {
             let mut is_running = self.is_running.lock().await;
@@ -186,11 +192,47 @@ where
         self.auth_password.as_deref()
     }
 
+    async fn start_xvfb(&mut self) -> Result<()> {
+        let resolution = &format!("{}x{}x24", 1024, 768);
+        let dpi = 96.to_string();
+        let display = ":1";
+
+        let xvfb_args = vec![
+            display,
+            "-ac",
+            "-screen", "0",
+            resolution,
+            "-retro",
+            "-dpi", &dpi,
+            "-nolisten", "tcp",
+            "&",
+        ];
+
+        let xvfb_handle = self.sandbox.start("Xvfb", &xvfb_args).await?;
+        *self.xvfb_process.lock().await = Some(xvfb_handle);
+
+        // 2) Wait for Xvfb to be ready (timeout after ~5 s)
+        let start = Instant::now();
+        let mut ready = false;
+        while start.elapsed() < Duration::from_secs(5) {
+            let status = self.sandbox.run("xdpyinfo", &["-display", display]).await?.exit_code;
+            if status == 0 {
+                ready = true;
+                break;
+            }
+            sleep(Duration::from_millis(1000)).await;
+        }
+        if !ready {
+            return Err(Error::other("Could not start Xvfb."));
+        }
+        Ok(())
+    }
+
     async fn start_vnc_server(&mut self) -> Result<()> {
         let vnc_port_str = self.config.vnc_port.to_string();
         let mut vnc_args = vec![
             "-display",
-            ":0",
+            ":1",
             "-rfbport",
             &vnc_port_str,
             "-shared",
@@ -198,9 +240,9 @@ where
             "-noxdamage",
             "-noxfixes",
             "-noxrandr",
+            "&",
         ];
 
-        // Add authentication if enabled
         if self.config.enable_auth {
             if let Some(password) = &self.auth_password {
                 vnc_args.extend_from_slice(&["-passwd", password]);
@@ -209,16 +251,15 @@ where
             vnc_args.push("-nopw");
         }
 
-        // Add window ID if specified
         if let Some(window_id) = &self.config.window_id {
             vnc_args.extend_from_slice(&["-id", window_id]);
         }
 
         let handle = self.sandbox.start("x11vnc", &vnc_args).await?;
+        tracing::info!("Started VNC. pid={}", handle.pid.clone().to_string());
         *self.vnc_process.lock().await = Some(handle);
 
-        // Wait a bit for VNC server to start
-        tokio::time::sleep(tokio::time::Duration::from_millis(1000)).await;
+        sleep(Duration::from_millis(1000)).await;
 
         Ok(())
     }
@@ -226,20 +267,65 @@ where
     async fn start_novnc_proxy(&mut self) -> Result<()> {
         let novnc_port_str = self.config.novnc_port.to_string();
         let vnc_target = format!("localhost:{}", self.config.vnc_port);
+
         let novnc_args = vec![
-            "--web",
-            "/usr/share/novnc",
-            "--port",
-            &novnc_port_str,
+            "/opt/noVNC/utils",
+            "&&",
+            "./novnc_proxy",
+            "--vnc",
             &vnc_target,
+            "--listen",
+            &novnc_port_str,
+            "--web",
+            "/opt/noVNC",
+            ">",
+            "/tmp/novnc.log",
+            "2>&1",
+            "&"
         ];
 
-        let handle = self.sandbox.start("websockify", &novnc_args).await?;
+        let handle = self.sandbox.start("cd", &novnc_args).await?;
+        tracing::info!("Started noVNC. pid={}", handle.pid.clone().to_string());
         *self.novnc_process.lock().await = Some(handle);
 
-        // Wait a bit for noVNC proxy to start
-        tokio::time::sleep(tokio::time::Duration::from_millis(1000)).await;
+        sleep(Duration::from_millis(1000)).await;
 
+        Ok(())
+    }
+    
+    async fn start_xfce4(&mut self) -> Result<()> {
+        match self.last_xfce4_pid {
+            Some(pid) => {
+                let pid_param = pid.to_string();
+                let ps_args = vec![
+                    "aux",
+                    "|",
+                    "grep",
+                    &pid_param,
+                    "grep",
+                    "-v",
+                    "grep",
+                    "|",
+                    "head",
+                    "-n",
+                    "1"];
+                let result =self.sandbox.run("ps", &ps_args).await?;
+                let stdout = result.stdout.trim();
+                if stdout == "[xfce4-session] <defunct>" {
+                    self.last_xfce4_pid = Some(self.sandbox.start("DISPLAY=:1 startxfce4 &", &[]).await?.pid);
+                }
+            }
+            None => {
+                self.last_xfce4_pid = Some(self.sandbox.start("DISPLAY=:1 startxfce4 &", &[]).await?.pid);
+            }
+        }
+
+        match self.last_xfce4_pid {
+            Some(pid) => tracing::info!("Started xfce4. pid={}", &pid.to_string()),
+            None => tracing::info!("Failed to start xfce4.")
+        }
+        
+        sleep(Duration::from_millis(1000)).await;
         Ok(())
     }
 

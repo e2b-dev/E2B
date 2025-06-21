@@ -10,6 +10,7 @@ use crate::{
 use std::collections::HashMap;
 use url::Url;
 
+#[derive(Clone)]
 pub struct Sandbox {
     pub id: String,
     pub template_id: String,
@@ -21,11 +22,13 @@ pub struct Sandbox {
 }
 
 /// Commands interface for the sandbox
+#[derive(Clone)]
 pub struct SandboxCommands {
     rpc_client: ConnectRpcClient,
 }
 
 /// Filesystem interface for the sandbox  
+#[derive(Clone)]
 pub struct SandboxFilesystem {
     rpc_client: ConnectRpcClient,
 }

@@ -160,7 +160,7 @@ impl ConnectClient {
         // Add Connect protocol headers for streaming like Python SDK
         req_builder = req_builder
             .header("connect-protocol-version", "1")
-            .header("connect-keepalive-ping", "30"); // 30 second keepalive
+            .header("connect-keepalive-ping", "30");
             
         if self.config.use_json {
             // For Connect RPC streaming, we need to wrap the JSON in an envelope
