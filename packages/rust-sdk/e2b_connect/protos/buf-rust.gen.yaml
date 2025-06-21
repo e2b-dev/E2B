@@ -1,0 +1,16 @@
+# buf.gen.yaml defines a local generation template.
+# For details, see https://buf.build/docs/configuration/v1/buf-gen-yaml
+version: v1
+plugins:
+  - plugin: buf.build/community/neoeinstein-prost
+    out: ../../packages/rust-sdk/e2b_connect/src
+    opt:
+      - compile_well_known_types
+  - plugin: buf.build/community/neoeinstein-tonic
+    out: ../../packages/rust-sdk/e2b_connect/src
+    opt:
+      - compile_well_known_types
+
+managed:
+  enabled: true
+  optimize_for: SPEED

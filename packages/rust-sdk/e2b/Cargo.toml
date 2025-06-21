@@ -1,0 +1,62 @@
+[package]
+name = "e2b"
+version = "0.1.0"
+edition = "2021"
+description = "E2B SDK for Rust - Cloud development environments"
+license = "MIT"
+repository = "https://github.com/e2b-dev/e2b"
+keywords = ["e2b", "sandbox", "cloud", "development", "environment"]
+categories = ["development-tools", "api-bindings"]
+
+[dependencies]
+tokio = { workspace = true }
+reqwest = { workspace = true }
+url = { workspace = true }
+tonic = { workspace = true }
+prost = { workspace = true }
+prost-types = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+config = { workspace = true }
+uuid = { workspace = true }
+chrono = { workspace = true }
+bytes = { workspace = true }
+futures = { workspace = true }
+tracing = { workspace = true }
+async-trait = "0.1"
+rand = "0.8"
+base64 = "0.22"
+e2b_connect = { path = "../e2b_connect" }
+tokio-stream = { workspace = true }
+
+[dev-dependencies]
+tokio-test = { workspace = true }
+tracing-subscriber = { workspace = true }
+mockito = { workspace = true }
+
+[[test]]
+name = "integration"
+path = "tests/integration.rs"
+
+[[test]]
+name = "connect_streaming_test"
+path = "tests/connect_streaming_test.rs"
+
+[[test]]
+name = "simple_connect_test"
+path = "tests/simple_connect_test.rs"
+
+[[test]]
+name = "debug_connect_test"
+path = "tests/debug_connect_test.rs"
+
+[[test]]
+name = "tracing_demo_test"
+path = "tests/tracing_demo_test.rs"
+
+[features]
+default = ["async"]
+async = []
+sync = []
