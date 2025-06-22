@@ -32,6 +32,69 @@ import { buildWithProxy } from './buildWithProxy'
 
 const templateCheckInterval = 500 // 0.5 sec
 
+// Enhanced error handling function with better API error messages
+function handleE2BRequestErrorEnhanced(
+  res: any,
+  context: string,
+  domain?: string
+): void {
+  // If response is successful, return early
+  if (res.response?.ok || res.data) {
+    return;
+  }
+
+  const status = res.response?.status || res.status || 0;
+  const statusText = res.response?.statusText || res.statusText || 'Unknown';
+  const url = res.response?.url || res.url || domain || 'Unknown URL';
+
+  let errorBody = '';
+  try {
+    if (res.error) {
+      errorBody = typeof res.error === 'string' ? res.error : JSON.stringify(res.error, null, 2);
+    } else if (res.response?.data) {
+      errorBody = typeof res.response.data === 'string' ? res.response.data : JSON.stringify(res.response.data, null, 2);
+    } else if (res.data && typeof res.data === 'object' && res.data.message) {
+      errorBody = res.data.message;
+    }
+  } catch (e) {
+    errorBody = 'Unable to parse error response';
+  }
+
+  // Handle specific error cases
+  if (status === 0) {
+    const extractedHostname = extractHostname(url);
+    throw new Error(
+      `${context}: Unable to connect to E2B API server.\n` +
+      `Hostname: ${extractedHostname}\n` +
+      `Please check your internet connection and verify that ${extractedHostname} is accessible.\n` +
+      `If the problem persists, the E2B service may be temporarily unavailable.`
+    );
+  }
+
+  // Handle other HTTP errors
+  const extractedHostname = extractHostname(url);
+  const errorMessage = [
+    `${context}:`,
+    `URL: ${url}`,
+    `HTTP ${status}: ${statusText}`,
+    errorBody ? `Error: ${errorBody}` : ''
+  ].filter(Boolean).join('\n');
+
+  throw new Error(errorMessage);
+}
+
+function extractHostname(url: string): string {
+  try {
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return new URL(url).hostname;
+    }
+    // If it's just a hostname without protocol
+    return url.split('/')[0];
+  } catch (e) {
+    return url;
+  }
+}
+
 async function getTemplateBuildLogs({
   templateID,
   buildID,
@@ -58,23 +121,26 @@ async function getTemplateBuildLogs({
     }
   )
 
-  handleE2BRequestError(res, 'Error getting template build status')
+  handleE2BRequestErrorEnhanced(res, 'Error getting template build status', connectionConfig.domain)
   return res.data as e2b.paths['/templates/{templateID}/builds/{buildID}/status']['get']['responses']['200']['content']['application/json']
 }
 
 async function requestTemplateBuild(
   args: e2b.paths['/templates']['post']['requestBody']['content']['application/json']
 ) {
-  return await client.api.POST('/templates', {
+  const res = await client.api.POST('/templates', {
     body: args,
   })
+
+  handleE2BRequestErrorEnhanced(res, 'Error requesting template build', connectionConfig.domain)
+  return res;
 }
 
 async function requestTemplateRebuild(
   templateID: string,
   args: e2b.paths['/templates/{templateID}']['post']['requestBody']['content']['application/json']
 ) {
-  return await client.api.POST('/templates/{templateID}', {
+  const res = await client.api.POST('/templates/{templateID}', {
     body: args,
     params: {
       path: {
@@ -82,11 +148,16 @@ async function requestTemplateRebuild(
       },
     },
   })
+
+  handleE2BRequestErrorEnhanced(res, 'Error requesting template rebuild', connectionConfig.domain)
+  return res;
 }
 
 async function triggerTemplateBuild(templateID: string, buildID: string) {
   let res
   const maxRetries = 3
+  let lastError: Error | null = null;
+
   for (let i = 0; i < maxRetries; i++) {
     try {
       res = await client.api.POST('/templates/{templateID}/builds/{buildID}', {
@@ -100,6 +171,8 @@ async function triggerTemplateBuild(templateID: string, buildID: string) {
 
       break
     } catch (e) {
+      lastError = e instanceof Error ? e : new Error('Unknown error');
+
       // If the build and push takes more than 10 minutes the connection gets automatically closed by load balancer
       // and the request fails with UND_ERR_SOCKET error. In this case we just need to retry the request.
       if (
@@ -113,10 +186,10 @@ async function triggerTemplateBuild(templateID: string, buildID: string) {
   }
 
   if (!res) {
-    throw new Error('Error triggering template build')
+    throw lastError || new Error('Error triggering template build')
   }
 
-  handleE2BRequestError(res, 'Error triggering template build')
+  handleE2BRequestErrorEnhanced(res, 'Error triggering template build', connectionConfig.domain)
   return res.data
 }
 
@@ -320,6 +393,11 @@ export const buildCommand = new commander.Command('build')
         }
 
         const template = await requestBuildTemplate(body, templateID)
+
+        if (!template) {
+          throw new Error('Failed to create or rebuild template')
+        }
+
         templateID = template.templateID
 
         console.log(
@@ -599,12 +677,7 @@ function getDockerfile(root: string, file?: string) {
 async function requestBuildTemplate(
   args: e2b.paths['/templates']['post']['requestBody']['content']['application/json'],
   templateID?: string
-): Promise<
-  Omit<
-    e2b.paths['/templates']['post']['responses']['202']['content']['application/json'],
-    'logs'
-  >
-> {
+) {
   let res
   if (templateID) {
     res = await requestTemplateRebuild(templateID, args)
@@ -612,7 +685,7 @@ async function requestBuildTemplate(
     res = await requestTemplateBuild(args)
   }
 
-  handleE2BRequestError(res, 'Error requesting template build')
+  handleE2BRequestErrorEnhanced(res, 'Error requesting template build', connectionConfig.domain)
   return res.data
 }
 
