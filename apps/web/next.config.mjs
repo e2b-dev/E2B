@@ -98,6 +98,11 @@ const nextConfig = {
         destination: '/docs/sdk-reference/python-sdk/v1.0.4/sandbox_sync',
         permanent: true,
       },
+      {
+        source: '/docs/getting-help',
+        destination: '/docs/support',
+        permanent: true,
+      },
     ]
   },
 }
