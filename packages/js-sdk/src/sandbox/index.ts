@@ -3,7 +3,8 @@ import { createConnectTransport } from '@connectrpc/connect-web'
 import {
   ConnectionConfig,
   ConnectionOpts,
-  defaultUsername, Username,
+  defaultUsername,
+  Username,
 } from '../connectionConfig'
 import { EnvdApiClient, handleEnvdApiError } from '../envd/api'
 import { createRpcLogger } from '../logs'
@@ -402,7 +403,7 @@ export class Sandbox extends SandboxApi {
    *
    * @returns URL for uploading file.
    */
-  uploadUrl(path?: string, opts?: SandboxUrlOpts) {
+  async uploadUrl(path?: string, opts?: SandboxUrlOpts) {
     opts = opts ?? {}
 
     if (
@@ -426,9 +427,13 @@ export class Sandbox extends SandboxApi {
 
     if (opts.useSignature) {
       const url = new URL(fileUrl)
-      const sig = getSignature(
-          { path: filePath, operation: 'write', user: username, expirationInSeconds: opts.useSignatureExpiration, envdAccessToken: this.envdAccessToken}
-      )
+      const sig = await getSignature({
+        path: filePath,
+        operation: 'write',
+        user: username,
+        expirationInSeconds: opts.useSignatureExpiration,
+        envdAccessToken: this.envdAccessToken,
+      })
 
       url.searchParams.set('signature', sig.signature)
       if (sig.expiration) {
@@ -450,7 +455,7 @@ export class Sandbox extends SandboxApi {
    *
    * @returns URL for downloading file.
    */
-  downloadUrl(path: string, opts?: SandboxUrlOpts) {
+  async downloadUrl(path: string, opts?: SandboxUrlOpts) {
     opts = opts ?? {}
 
     if (
@@ -473,9 +478,13 @@ export class Sandbox extends SandboxApi {
 
     if (opts.useSignature) {
       const url = new URL(fileUrl)
-      const sig = getSignature(
-          { path, operation: 'read', user: username, expirationInSeconds: opts.useSignatureExpiration, envdAccessToken: this.envdAccessToken}
-      )
+      const sig = await getSignature({
+        path,
+        operation: 'read',
+        user: username,
+        expirationInSeconds: opts.useSignatureExpiration,
+        envdAccessToken: this.envdAccessToken,
+      })
 
       url.searchParams.set('signature', sig.signature)
       if (sig.expiration) {
