@@ -451,7 +451,6 @@ export class Sandbox extends SandboxApi {
    * @returns URL for downloading file.
    */
   downloadUrl(path: string, opts?: SandboxUrlOpts) {
-    //path: string, useSignature?: boolean, signatureExpirationInSeconds?: number) {
     opts = opts ?? {}
 
     if (
