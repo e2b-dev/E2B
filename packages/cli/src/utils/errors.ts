@@ -1,3 +1,5 @@
+import status from 'statuses'
+
 /**
  * Thrown when a request to E2B API occurs.
  */
@@ -16,7 +18,7 @@ export function handleE2BRequestError<T>(
     return
   }
 
-  let message = 'unknown error'
+  let message: string
   const code = res.error?.code ?? 0
   switch (code) {
     case 400:
@@ -33,6 +35,9 @@ export function handleE2BRequestError<T>(
       break
     case 500:
       message = 'internal server error'
+      break
+    default:
+      message = status(code) || 'unknown error'
       break
   }
 
