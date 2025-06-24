@@ -25,6 +25,9 @@
 > [!NOTE]
 > This repository contains the core E2B SDK that's used in our main [E2B Code Interpreter SDK](https://github.com/e2b-dev/code-interpreter).
 
+E2B works with any LLM that supports tool use. You can connect providers like OpenAI,
+Anthropic, Mistral, Groq, or custom OpenAI-compatible APIs such as the [AI/ML API](https://aimlapi.com/app/?utm_source=e2b&utm_medium=github&utm_campaign=integration).
+
 ## Run your first Sandbox
 
 ### 1. Install SDK
