@@ -207,7 +207,6 @@ impl AsyncFilesystem for ConnectRpcClient {
     }
 
     async fn read(&self, path: &str) -> Result<Vec<u8>> {
-        // Use HTTP API for file reading (same as before)
         let url = format!("{}{}", self.envd_client.base_url, super::ENVD_API_FILES_ROUTE);
 
         let response = self
@@ -407,12 +406,14 @@ impl AsyncCommands for ConnectRpcClient {
             format!("{} {}", cmd, args.join(" "))
         };
         
-        // Use bash wrapper like Python SDK: /bin/bash -l -c "command"
+        let mut envs = HashMap::new();
+        envs.insert("DISPLAY".to_string(), ":1".to_string());
+
         let request = e2b_connect::json_types::StartRequest {
             process: e2b_connect::json_types::ProcessConfig {
                 cmd: "/bin/bash".to_string(),
                 args: vec!["-l".to_string(), "-c".to_string(), full_cmd],
-                envs: HashMap::new(),
+                envs: envs,
                 cwd: None,
             },
             pty: None,
