@@ -149,7 +149,7 @@ class Sandbox(SandboxSetup, SandboxApi):
             self._envd_access_token = response._envd_access_token
 
             if response._envd_access_token is not None and not isinstance(
-                    response._envd_access_token, Unset
+                response._envd_access_token, Unset
             ):
                 connection_headers["X-Access-Token"] = response._envd_access_token
         else:
@@ -293,7 +293,10 @@ class Sandbox(SandboxSetup, SandboxApi):
         self.kill()
 
     @overload
-    def kill(self, request_timeout: Optional[float] = None) -> bool:
+    def kill(  # type: ignore
+        self,
+        request_timeout: Optional[float] = None,
+    ) -> bool:
         """
         Kill the sandbox.
 
@@ -326,7 +329,10 @@ class Sandbox(SandboxSetup, SandboxApi):
         ...
 
     @class_method_variant("_cls_kill")
-    def kill(self, request_timeout: Optional[float] = None) -> bool:  # type: ignore
+    def kill(  # type: ignore
+        self,
+        request_timeout: Optional[float] = None,
+    ) -> bool:
         """
         Kill the sandbox.
 
@@ -340,13 +346,13 @@ class Sandbox(SandboxSetup, SandboxApi):
         if request_timeout:
             config_dict["request_timeout"] = request_timeout
 
-        SandboxApi._cls_kill(
+        return SandboxApi._cls_kill(
             sandbox_id=self.sandbox_id,
             **config_dict,
         )
 
     @overload
-    def set_timeout(
+    def set_timeout(  # type: ignore
         self,
         timeout: int,
         request_timeout: Optional[float] = None,

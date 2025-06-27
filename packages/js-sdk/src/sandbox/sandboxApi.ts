@@ -1,6 +1,7 @@
+import { compareVersions } from 'compare-versions'
+
 import { ApiClient, handleApiError, components } from '../api'
 import { ConnectionConfig, ConnectionOpts } from '../connectionConfig'
-import { compareVersions } from 'compare-versions'
 import { TemplateError } from '../errors'
 
 /**
@@ -12,7 +13,7 @@ export interface SandboxApiOpts
       ConnectionOpts,
       'apiKey' | 'headers' | 'debug' | 'domain' | 'requestTimeoutMs'
     >
-  > {}
+  > { }
 
 export interface SandboxListOpts extends SandboxApiOpts {
   /**
@@ -61,22 +62,6 @@ export interface SandboxInfo {
   name?: string
 
   /**
-   * Envd access token.
-   *
-   * Not included when listing sandboxes.
-   * TODO: Should we include this in list request? What about the paused sandboxes?
-   */
-  envdAccessToken?: string
-
-  /**
-   * Envd version.
-   *
-   * Not included when listing sandboxes.
-   * TODO: Should we include this in the list request? What about the paused sandboxes?
-   */
-  envdVersion?: string
-
-  /**
    * Saved sandbox metadata.
    */
   metadata: Record<string, string>
@@ -108,7 +93,7 @@ export interface SandboxInfo {
 }
 
 export class SandboxApi {
-  protected constructor() {}
+  protected constructor() { }
 
   /**
    * Kill the sandbox specified by sandbox ID.
@@ -169,6 +154,18 @@ export class SandboxApi {
     sandboxId: string,
     opts?: SandboxApiOpts
   ): Promise<SandboxInfo> {
+    const fullInfo = await this.getFullInfo(sandboxId, opts)
+
+    delete fullInfo.envdAccessToken
+    delete fullInfo.envdVersion
+
+    return fullInfo
+  }
+
+  protected static async getFullInfo(
+    sandboxId: string,
+    opts?: SandboxApiOpts
+  ) {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
 
@@ -289,7 +286,7 @@ export class SandboxApi {
       )
       throw new TemplateError(
         'You need to update the template to use the new SDK. ' +
-          'You can do this by running `e2b template build` in the directory with the template.'
+        'You can do this by running `e2b template build` in the directory with the template.'
       )
     }
 

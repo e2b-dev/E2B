@@ -64,6 +64,8 @@ export interface SandboxUrlOpts {
   /**
    * Use signature expiration for the URL.
    * Optional parameter to set the expiration time for the signature.
+   *
+   * @default undefined (no expiration)
    */
   useSignatureExpiration?: number
 }
@@ -275,7 +277,7 @@ export class Sandbox extends SandboxApi {
     opts?: Omit<SandboxOpts, 'metadata' | 'envs' | 'timeoutMs'>
   ): Promise<InstanceType<S>> {
     const config = new ConnectionConfig(opts)
-    const info = await this.getInfo(sandboxId, opts)
+    const info = await this.getFullInfo(sandboxId, opts)
 
     return new this({
       sandboxId,

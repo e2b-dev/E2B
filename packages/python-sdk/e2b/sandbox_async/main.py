@@ -319,7 +319,10 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
         await self.kill()
 
     @overload
-    async def kill(self, request_timeout: Optional[float] = None) -> bool:
+    async def kill(  # type: ignore
+        self,
+        request_timeout: Optional[float] = None,
+    ) -> bool:
         """
         Kill the sandbox.
 
@@ -352,10 +355,10 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
         ...
 
     @class_method_variant("_cls_kill")
-    async def kill(
+    async def kill(  # type: ignore
         self,
         request_timeout: Optional[float] = None,
-    ) -> bool:  # type: ignore
+    ) -> bool:
         config_dict = self.connection_config.__dict__
         config_dict.pop("access_token", None)
         config_dict.pop("api_url", None)
@@ -363,13 +366,13 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
         if request_timeout:
             config_dict["request_timeout"] = request_timeout
 
-        await SandboxApi._cls_kill(
+        return await SandboxApi._cls_kill(
             sandbox_id=self.sandbox_id,
             **config_dict,
         )
 
     @overload
-    async def set_timeout(
+    async def set_timeout(  # type: ignore
         self,
         timeout: int,
         request_timeout: Optional[float] = None,

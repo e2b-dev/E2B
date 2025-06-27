@@ -3,7 +3,7 @@ import urllib.parse
 from typing import Optional, Dict, List
 from packaging.version import Version
 
-from e2b.sandbox.sandbox_api import SandboxInfo, SandboxApiBase, SandboxQuery, ListedSandbox
+from e2b.sandbox.sandbox_api import SandboxInfo, SandboxApiBase, SandboxQuery
 from e2b.exceptions import TemplateException
 from e2b.api import ApiClient, SandboxCreateResponse
 from e2b.api.client.models import NewSandbox, PostSandboxesSandboxIDTimeoutBody
@@ -29,7 +29,7 @@ class SandboxApi(SandboxApiBase):
         request_timeout: Optional[float] = None,
         headers: Optional[Dict[str, str]] = None,
         proxy: Optional[ProxyTypes] = None,
-    ) -> List[ListedSandbox]:
+    ) -> List[SandboxInfo]:
         """
         List all running sandboxes.
 
@@ -152,7 +152,7 @@ class SandboxApi(SandboxApiBase):
                 ),
                 started_at=res.parsed.started_at,
                 end_at=res.parsed.end_at,
-                envd_version=res.parsed.envd_version,
+                _envd_version=res.parsed.envd_version,
                 _envd_access_token=res.parsed.envd_access_token,
             )
 
