@@ -1,5 +1,5 @@
 import { Logger } from './logs'
-import { getEnvVar } from './metadata'
+import { getEnvVar, defaultHeaders } from './metadata'
 
 const REQUEST_TIMEOUT_MS = 30_000 // 30 seconds
 export const KEEPALIVE_PING_INTERVAL_SEC = 50 // 50 seconds
@@ -74,7 +74,10 @@ export class ConnectionConfig {
     this.accessToken = opts?.accessToken || ConnectionConfig.accessToken
     this.requestTimeoutMs = opts?.requestTimeoutMs ?? REQUEST_TIMEOUT_MS
     this.logger = opts?.logger
-    this.headers = opts?.headers
+    this.headers = {
+      ...defaultHeaders,
+      ...(opts?.headers || {}),
+    }
 
     this.apiUrl = this.debug
       ? 'http://localhost:3000'

@@ -137,13 +137,7 @@ export class Sandbox extends SandboxApi {
     super()
 
     this.sandboxId = opts.sandboxId
-    this.connectionConfig = new ConnectionConfig({
-      ...opts,
-      headers: {
-        ...defaultHeaders,
-        ...opts.headers,
-      },
-    })
+    this.connectionConfig = new ConnectionConfig(opts)
     this.envdAccessToken = opts.envdAccessToken
     this.envdApiUrl = `${
       this.connectionConfig.debug ? 'http' : 'https'
@@ -185,7 +179,6 @@ export class Sandbox extends SandboxApi {
         logger: opts?.logger,
         accessToken: this.envdAccessToken,
         headers: {
-          ...defaultHeaders,
           ...(this.envdAccessToken
             ? { 'X-Access-Token': this.envdAccessToken }
             : {}),

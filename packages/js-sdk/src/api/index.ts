@@ -1,7 +1,6 @@
 import createClient, { FetchResponse } from 'openapi-fetch'
 
 import type { components, paths } from './schema.gen'
-import { defaultHeaders } from './../metadata'
 import { ConnectionConfig } from '../connectionConfig'
 import { AuthenticationError, RateLimitError, SandboxError } from '../errors'
 import { createApiLogger } from '../logs'
@@ -54,7 +53,6 @@ class ApiClient {
       baseUrl: config.apiUrl,
       // keepalive: true, // TODO: Return keepalive
       headers: {
-        ...defaultHeaders,
         ...(config.apiKey && { 'X-API-KEY': config.apiKey }),
         ...(config.accessToken && {
           Authorization: `Bearer ${config.accessToken}`,
