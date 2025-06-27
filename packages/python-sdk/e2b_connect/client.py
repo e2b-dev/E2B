@@ -111,7 +111,7 @@ class JSONCodec:
     @staticmethod
     def decode(data, *, msg_type):
         msg = msg_type()
-        json_format.Parse(data.decode("utf8"), msg)
+        json_format.Parse(data.decode("utf8"), msg, ignore_unknown_fields=True)
         return msg
 
 
