@@ -7,7 +7,6 @@ from e2b.api.client.types import Unset
 from e2b.connection_config import ConnectionConfig, ProxyTypes
 from e2b.envd.api import ENVD_API_HEALTH_ROUTE, handle_envd_api_exception
 from e2b.exceptions import SandboxException, format_request_timeout_error
-from e2b.metadata import default_headers
 from e2b.sandbox.main import SandboxSetup
 from e2b.sandbox.utils import class_method_variant
 from e2b.sandbox_sync.filesystem.filesystem import Filesystem
@@ -137,10 +136,7 @@ class Sandbox(SandboxSetup, SandboxApi):
                 "Use Sandbox.connect method instead.",
             )
 
-        connection_headers = {
-            **default_headers,
-            **(headers or {}),
-        }
+        connection_headers = headers or {}
 
         if debug:
             self._sandbox_id = "debug_sandbox_id"

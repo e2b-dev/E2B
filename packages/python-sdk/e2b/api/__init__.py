@@ -7,7 +7,6 @@ from dataclasses import dataclass
 
 from e2b.api.client.client import AuthenticatedClient
 from e2b.connection_config import ConnectionConfig
-from e2b.metadata import default_headers
 from e2b.exceptions import (
     AuthenticationException,
     SandboxException,
@@ -86,10 +85,7 @@ class ApiClient(AuthenticatedClient):
         auth_header_name = "X-API-KEY" if require_api_key else "Authorization"
         prefix = "" if require_api_key else "Bearer"
 
-        headers = {
-            **default_headers,
-            **(config.headers or {}),
-        }
+        headers = config.headers or {}
 
         super().__init__(
             base_url=config.api_url,
