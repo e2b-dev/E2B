@@ -20,7 +20,10 @@ import {
   withDelimiter,
 } from 'src/utils/format'
 import { configOption, pathOption, teamOption } from 'src/options'
-import { defaultDockerfileName, fallbackDockerfileName } from 'src/docker/constants'
+import {
+  defaultDockerfileName,
+  fallbackDockerfileName,
+} from 'src/docker/constants'
 import { configName, getConfigPath, loadConfig, saveConfig } from 'src/config'
 import * as child_process from 'child_process'
 import { handleE2BRequestError } from '../../utils/errors'
@@ -131,7 +134,7 @@ export const buildCommand = new commander.Command('build')
     '[template]',
     `specify ${asBold(
       '[template]'
-    )} to rebuild it. If you don's specify ${asBold(
+    )} to rebuild it. If you dont's specify ${asBold(
       '[template]'
     )} and there is no ${asLocal(
       'e2b.toml'
@@ -151,6 +154,10 @@ export const buildCommand = new commander.Command('build')
   .option(
     '-c, --cmd <start-command>',
     'specify command that will be executed when the sandbox is started.'
+  )
+  .option(
+    '--ready-cmd <ready-command>',
+    'specify command that will need to exit 0 for the template to be ready.'
   )
   .addOption(teamOption)
   .addOption(configOption)
@@ -178,6 +185,7 @@ export const buildCommand = new commander.Command('build')
         dockerfile?: string
         name?: string
         cmd?: string
+        readyCmd?: string
         team?: string
         config?: string
         cpuCount?: number
@@ -218,6 +226,7 @@ export const buildCommand = new commander.Command('build')
 
         let dockerfile = opts.dockerfile
         let startCmd = opts.cmd
+        let readyCmd = opts.readyCmd
         let cpuCount = opts.cpuCount
         let memoryMB = opts.memoryMb
         let teamID = opts.team
@@ -246,6 +255,7 @@ export const buildCommand = new commander.Command('build')
           templateID = config.template_id
           dockerfile = opts.dockerfile || config.dockerfile
           startCmd = opts.cmd || config.start_cmd
+          readyCmd = opts.readyCmd || config.ready_cmd
           cpuCount = opts.cpuCount || config.cpu_count
           memoryMB = opts.memoryMb || config.memory_mb
           teamID = opts.team || config.team_id
@@ -291,6 +301,7 @@ export const buildCommand = new commander.Command('build')
         const body = {
           alias: name,
           startCmd: startCmd,
+          readyCmd: readyCmd,
           cpuCount: cpuCount,
           memoryMB: memoryMB,
           dockerfile: dockerfileContent,
@@ -324,6 +335,7 @@ export const buildCommand = new commander.Command('build')
             dockerfile: dockerfileRelativePath,
             template_name: name,
             start_cmd: startCmd,
+            ready_cmd: readyCmd,
             cpu_count: cpuCount,
             memory_mb: memoryMB,
             team_id: teamID,
@@ -510,7 +522,7 @@ const sandbox = await Sandbox.create('${
             aliases,
             ...template,
           })} failed.\nCheck the logs above for more details or contact us ${asPrimary(
-            '(https://e2b.dev/docs/getting-help)'
+            '(https://e2b.dev/docs/support)'
           )} to get help.\n`
         )
     }

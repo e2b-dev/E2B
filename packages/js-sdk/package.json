@@ -1,6 +1,6 @@
 {
   "name": "e2b",
-  "version": "1.5.2",
+  "version": "1.7.1",
   "description": "E2B SDK that give agents cloud environments",
   "homepage": "https://e2b.dev",
   "license": "MIT",
@@ -28,7 +28,7 @@
     "dev": "tsup --watch",
     "example": "tsx example.mts",
     "test": "vitest run",
-    "generate": "python ./../../spec/remove_extra_tags.py sandboxes templates && openapi-typescript ../../spec/openapi_generated.yml -x api_key --array-length --alphabetize --output src/api/schema.gen.ts",
+    "generate": "python ./../../spec/remove_extra_tags.py sandboxes templates auth && openapi-typescript ../../spec/openapi_generated.yml -x api_key --array-length --alphabetize --output src/api/schema.gen.ts",
     "generate-envd-api": "openapi-typescript ../../spec/envd/envd.yaml -x api_key --array-length --alphabetize --output src/envd/schema.gen.ts",
     "generate-ref": "./scripts/generate_sdk_ref.sh",
     "check-deps": "knip",

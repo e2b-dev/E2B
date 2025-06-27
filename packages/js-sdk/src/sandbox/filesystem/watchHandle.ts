@@ -7,7 +7,7 @@ import {
 /**
  * Sandbox filesystem event types.
  */
-export const enum FilesystemEventType {
+export enum FilesystemEventType {
   /**
    * Filesystem object permissions were changed.
    */
