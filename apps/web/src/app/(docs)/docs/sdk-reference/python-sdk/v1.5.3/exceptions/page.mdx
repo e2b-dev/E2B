@@ -1,0 +1,84 @@
+
+
+
+## SandboxException
+
+```python
+class SandboxException(Exception)
+```
+
+Base class for all sandbox errors.
+
+Raised when a general sandbox exception occurs.
+
+
+## TimeoutException
+
+```python
+class TimeoutException(SandboxException)
+```
+
+Raised when a timeout occurs.
+
+The `unavailable` exception type is caused by sandbox timeout.
+
+The `canceled` exception type is caused by exceeding request timeout.
+
+The `deadline_exceeded` exception type is caused by exceeding the timeout for process, watch, etc.
+
+The `unknown` exception type is sometimes caused by the sandbox timeout when the request is not processed correctly.
+
+
+## InvalidArgumentException
+
+```python
+class InvalidArgumentException(SandboxException)
+```
+
+Raised when an invalid argument is provided.
+
+
+## NotEnoughSpaceException
+
+```python
+class NotEnoughSpaceException(SandboxException)
+```
+
+Raised when there is not enough disk space.
+
+
+## NotFoundException
+
+```python
+class NotFoundException(SandboxException)
+```
+
+Raised when a resource is not found.
+
+
+## AuthenticationException
+
+```python
+class AuthenticationException(SandboxException)
+```
+
+Raised when authentication fails.
+
+
+## TemplateException
+
+```python
+class TemplateException(SandboxException)
+```
+
+Exception raised when the template uses old envd version. It isn't compatible with the new SDK.
+
+
+## RateLimitException
+
+```python
+class RateLimitException(SandboxException)
+```
+
+Raised when the API rate limit is exceeded.
+
