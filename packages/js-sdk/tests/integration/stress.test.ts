@@ -33,7 +33,7 @@ test.skipIf(!isIntegrationTest)(
   }
 )
 
-test.skipIf(!isIntegrationTest)('stress requests to nextjs app', async ({}) => {
+test.skipIf(!isIntegrationTest)('stress requests to nextjs app', async () => {
   const hostPromises: Array<Promise<string | void>> = []
 
   for (let i = 0; i < sanboxCount; i++) {

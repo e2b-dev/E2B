@@ -1,4 +1,5 @@
-const { MarkdownTheme, MarkdownPageEvent } = require('typedoc-plugin-markdown')
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { MarkdownPageEvent } = require('typedoc-plugin-markdown')
 
 function load(app) {
   // Listen to the render event
@@ -24,7 +25,7 @@ function removeMarkdownLinks(text) {
   return text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '$1') // Replace with just the link text
 }
 
-function removeFirstNLines(text, n, condition) {
+function removeFirstNLines(text, n) {
   // Split the text into lines, then join back excluding the first four lines
   return text.split('\n').slice(n).join('\n')
 }

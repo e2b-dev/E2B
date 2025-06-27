@@ -1,7 +1,6 @@
 import base64
 import hashlib
 import time
-import urllib.parse
 
 from typing import Optional, TypedDict, Literal
 

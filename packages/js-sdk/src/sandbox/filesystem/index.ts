@@ -50,7 +50,7 @@ export interface EntryInfo {
 /**
  * Sandbox filesystem object type.
  */
-export const enum FileType {
+export enum FileType {
   /**
    * Filesystem object is a file.
    */
@@ -517,7 +517,6 @@ export class Filesystem {
     path: string,
     onEvent: (event: FilesystemEvent) => void | Promise<void>,
     opts?: WatchOpts & {
-      timeout?: number
       onExit?: (err?: Error) => void | Promise<void>
     }
   ): Promise<WatchHandle> {

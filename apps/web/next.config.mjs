@@ -83,6 +83,26 @@ const nextConfig = {
         destination: '/docs/sandbox-template',
         permanent: true,
       },
+      {
+        source: '/docs/api-reference/python-sdk/v1.0.4/exceptions',
+        destination: '/docs/sdk-reference/python-sdk/v1.0.4/exceptions',
+        permanent: true,
+      },
+      {
+        source: '/docs/api-reference/python-sdk/v1.0.4/sandbox_async',
+        destination: '/docs/sdk-reference/python-sdk/v1.0.4/sandbox_async',
+        permanent: true,
+      },
+      {
+        source: '/docs/api-reference/python-sdk/v1.0.4/sandbox_sync',
+        destination: '/docs/sdk-reference/python-sdk/v1.0.4/sandbox_sync',
+        permanent: true,
+      },
+      {
+        source: '/docs/getting-help',
+        destination: '/docs/support',
+        permanent: true,
+      },
     ]
   },
 }

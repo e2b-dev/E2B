@@ -1,0 +1,326 @@
+### Execution
+
+Represents the result of a cell execution.
+
+#### Constructors
+
+```ts
+new Execution(
+   results: Result[], 
+   logs: Logs, 
+   error?: ExecutionError, 
+   executionCount?: number): Execution
+```
+
+###### Parameters
+
+| Parameter | Type | Default value | Description |
+| ------ | ------ | ------ | ------ |
+| `results` | `Result`[] | `[]` | List of result of the cell (interactively interpreted last line), display calls (e.g. matplotlib plots). |
+| `logs` | `Logs` | `...` | Logs printed to stdout and stderr during execution. |
+| `error`? | `ExecutionError` | `undefined` | An Error object if an error occurred, null otherwise. |
+| `executionCount`? | `number` | `undefined` | Execution count of the cell. |
+
+###### Returns
+
+`Execution`
+
+#### Properties
+
+| Property | Modifier | Type | Default value | Description |
+| ------ | ------ | ------ | ------ | ------ |
+| `error?` | `public` | `ExecutionError` | `undefined` | An Error object if an error occurred, null otherwise. |
+| `executionCount?` | `public` | `number` | `undefined` | Execution count of the cell. |
+| `logs` | `public` | `Logs` | `undefined` | Logs printed to stdout and stderr during execution. |
+| `results` | `public` | `Result`[] | `[]` | List of result of the cell (interactively interpreted last line), display calls (e.g. matplotlib plots). |
+
+#### Accessors
+
+### text
+
+```ts
+get text(): undefined | string
+```
+
+Returns the text representation of the main result of the cell.
+
+###### Returns
+
+`undefined` \| `string`
+
+#### Methods
+
+### toJSON()
+
+```ts
+toJSON(): object
+```
+
+Returns the serializable representation of the execution result.
+
+###### Returns
+
+`object`
+
+| Name | Type |
+| ------ | ------ |
+| `error` | `undefined` \| `ExecutionError` |
+| `logs` | `Logs` |
+| `results` | `Result`[] |
+
+***
+
+### ExecutionError
+
+Represents an error that occurred during the execution of a cell.
+The error contains the name of the error, the value of the error, and the traceback.
+
+#### Constructors
+
+```ts
+new ExecutionError(
+   name: string, 
+   value: string, 
+   traceback: string): ExecutionError
+```
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `name` | `string` | Name of the error. |
+| `value` | `string` | Value of the error. |
+| `traceback` | `string` | The raw traceback of the error. |
+
+###### Returns
+
+`ExecutionError`
+
+#### Properties
+
+| Property | Modifier | Type | Description |
+| ------ | ------ | ------ | ------ |
+| `name` | `public` | `string` | Name of the error. |
+| `traceback` | `public` | `string` | The raw traceback of the error. |
+| `value` | `public` | `string` | Value of the error. |
+
+***
+
+### OutputMessage
+
+Represents an output message from the sandbox code execution.
+
+#### Constructors
+
+```ts
+new OutputMessage(
+   line: string, 
+   timestamp: number, 
+   error: boolean): OutputMessage
+```
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `line` | `string` | The output line. |
+| `timestamp` | `number` | Unix epoch in nanoseconds. |
+| `error` | `boolean` | Whether the output is an error. |
+
+###### Returns
+
+`OutputMessage`
+
+#### Properties
+
+| Property | Modifier | Type | Description |
+| ------ | ------ | ------ | ------ |
+| `error` | `readonly` | `boolean` | Whether the output is an error. |
+| `line` | `readonly` | `string` | The output line. |
+| `timestamp` | `readonly` | `number` | Unix epoch in nanoseconds. |
+
+#### Methods
+
+### toString()
+
+```ts
+toString(): string
+```
+
+###### Returns
+
+`string`
+
+***
+
+### Result
+
+Represents the data to be displayed as a result of executing a cell in a Jupyter notebook.
+The result is similar to the structure returned by ipython kernel: https://ipython.readthedocs.io/en/stable/development/execution.html#execution-semantics
+
+The result can contain multiple types of data, such as text, images, plots, etc. Each type of data is represented
+as a string, and the result can contain multiple types of data. The display calls don't have to have text representation,
+for the actual result the representation is always present for the result, the other representations are always optional.
+
+#### Constructors
+
+```ts
+new Result(rawData: RawData, isMainResult: boolean): Result
+```
+
+###### Parameters
+
+| Parameter | Type |
+| ------ | ------ |
+| `rawData` | `RawData` |
+| `isMainResult` | `boolean` |
+
+###### Returns
+
+`Result`
+
+#### Properties
+
+| Property | Modifier | Type | Description |
+| ------ | ------ | ------ | ------ |
+| `chart?` | `readonly` | `ChartTypes` | Contains the chart data. |
+| `data?` | `readonly` | `Record`\<`string`, `unknown`\> | Contains the data from DataFrame. |
+| `extra?` | `readonly` | `any` | Extra data that can be included. Not part of the standard types. |
+| `html?` | `readonly` | `string` | HTML representation of the data. |
+| `isMainResult` | `readonly` | `boolean` | - |
+| `javascript?` | `readonly` | `string` | JavaScript representation of the data. |
+| `jpeg?` | `readonly` | `string` | JPEG representation of the data. |
+| `json?` | `readonly` | `string` | JSON representation of the data. |
+| `latex?` | `readonly` | `string` | LaTeX representation of the data. |
+| `markdown?` | `readonly` | `string` | Markdown representation of the data. |
+| `pdf?` | `readonly` | `string` | PDF representation of the data. |
+| `png?` | `readonly` | `string` | PNG representation of the data. |
+| `raw` | `readonly` | `RawData` | - |
+| `svg?` | `readonly` | `string` | SVG representation of the data. |
+| `text?` | `readonly` | `string` | Text representation of the result. |
+
+#### Methods
+
+### formats()
+
+```ts
+formats(): string[]
+```
+
+Returns all the formats available for the result.
+
+###### Returns
+
+`string`[]
+
+Array of strings representing the formats available for the result.
+
+### toJSON()
+
+```ts
+toJSON(): object
+```
+
+Returns the serializable representation of the result.
+
+###### Returns
+
+`object`
+
+| Name | Type |
+| ------ | ------ |
+| `extra`? | `any` |
+| `html` | `undefined` \| `string` |
+| `javascript` | `undefined` \| `string` |
+| `jpeg` | `undefined` \| `string` |
+| `json` | `undefined` \| `string` |
+| `latex` | `undefined` \| `string` |
+| `markdown` | `undefined` \| `string` |
+| `pdf` | `undefined` \| `string` |
+| `png` | `undefined` \| `string` |
+| `svg` | `undefined` \| `string` |
+| `text` | `undefined` \| `string` |
+
+## Type Aliases
+
+### Logs
+
+```ts
+type Logs: object;
+```
+
+Data printed to stdout and stderr during execution, usually by print statements, logs, warnings, subprocesses, etc.
+
+#### Type declaration
+
+| Name | Type | Description |
+| ------ | ------ | ------ |
+| `stderr` | `string`[] | List of strings printed to stderr by prints, subprocesses, etc. |
+| `stdout` | `string`[] | List of strings printed to stdout by prints, subprocesses, etc. |
+
+***
+
+### MIMEType
+
+```ts
+type MIMEType: string;
+```
+
+Represents a MIME type.
+
+***
+
+### RawData
+
+```ts
+type RawData: object & E2BData;
+```
+
+Dictionary that maps MIME types to their corresponding representations of the data.
+
+## Functions
+
+### extractError()
+
+```ts
+function extractError(res: Response): Promise<undefined | SandboxError>
+```
+
+#### Parameters
+
+| Parameter | Type |
+| ------ | ------ |
+| `res` | `Response` |
+
+#### Returns
+
+`Promise`\<`undefined` \| `SandboxError`\>
+
+***
+
+### parseOutput()
+
+```ts
+function parseOutput(
+   execution: Execution, 
+   line: string, 
+   onStdout?: (output: OutputMessage) => any, 
+   onStderr?: (output: OutputMessage) => any, 
+   onResult?: (data: Result) => any, 
+onError?: (error: ExecutionError) => any): Promise<void>
+```
+
+#### Parameters
+
+| Parameter | Type |
+| ------ | ------ |
+| `execution` | `Execution` |
+| `line` | `string` |
+| `onStdout`? | (`output`: `OutputMessage`) => `any` |
+| `onStderr`? | (`output`: `OutputMessage`) => `any` |
+| `onResult`? | (`data`: `Result`) => `any` |
+| `onError`? | (`error`: `ExecutionError`) => `any` |
+
+#### Returns
+
+`Promise`\<`void`\>

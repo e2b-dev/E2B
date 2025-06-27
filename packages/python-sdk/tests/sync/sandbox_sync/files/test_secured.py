@@ -5,6 +5,7 @@ import pytest
 
 from e2b import Sandbox
 
+@pytest.mark.skip_debug()
 async def test_download_url_with_signing(template):
     sbx = Sandbox(template, timeout=100, secure=True)
     file_path = "test_download_url_with_signing.txt"
@@ -22,6 +23,7 @@ async def test_download_url_with_signing(template):
     finally:
         sbx.kill()
 
+@pytest.mark.skip_debug()
 async def test_download_url_with_signing_and_expiration(template):
     sbx = Sandbox(template, timeout=100, secure=True)
     file_path = "test_download_url_with_signing.txt"
@@ -39,6 +41,7 @@ async def test_download_url_with_signing_and_expiration(template):
     finally:
         sbx.kill()
 
+@pytest.mark.skip_debug()
 async def test_download_url_with_expired_signing(template):
     sbx = Sandbox(template, timeout=100, secure=True)
     file_path = "test_download_url_with_signing.txt"

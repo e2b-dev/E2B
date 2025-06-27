@@ -3,7 +3,6 @@ from typing import Dict, Optional
 import e2b_connect
 import httpcore
 
-from typing import Dict, Optional
 
 from e2b.envd.process import process_connect, process_pb2
 from e2b.connection_config import (
@@ -14,7 +13,6 @@ from e2b.connection_config import (
 )
 from e2b.exceptions import SandboxException
 from e2b.envd.rpc import authentication_header, handle_rpc_exception
-from e2b.exceptions import SandboxException
 from e2b.sandbox.commands.command_handle import PtySize
 from e2b.sandbox_async.commands.command_handle import (
     AsyncCommandHandle,

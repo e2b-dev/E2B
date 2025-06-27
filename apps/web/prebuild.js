@@ -1,5 +1,6 @@
 const fs = require('fs')
 const path = require('path')
+const fg = require('fast-glob')
 
 const sdkRefRoutesFilePath = './src/components/Navigation/sdkRefRoutes.json'
 
@@ -239,3 +240,86 @@ fs.writeFileSync(
 )
 
 console.log('\n\nSDK reference routes generated successfully')
+
+// Generate sitemap
+
+async function generateSitemap() {
+  try {
+    console.log('Generating sitemap...')
+    console.log('Current working directory:', process.cwd())
+
+    if (!process.cwd().endsWith('/apps/web')) {
+      throw new Error('Not running from apps/web directory')
+    }
+
+    const pattern =
+      'src/app/\\(docs\\)/docs/**/page.mdx'
+
+
+    let mdxFiles = []
+    let patternsWithResults = []
+
+      const files = await fg(pattern, {
+        cwd: process.cwd(),
+        absolute: true,
+      })
+
+      console.log(`Pattern: ${pattern}, Found: ${files.length} files`)
+
+      if (files.length > 0) {
+        mdxFiles.push(...files)
+        patternsWithResults.push(pattern)
+      }
+
+    console.log(`Found ${mdxFiles.length} total files using patterns: ${patternsWithResults.join(', ')}`)
+
+    if (mdxFiles.length === 0) {
+      throw new Error(`No page.mdx files found with any pattern. Pattern: ${pattern}`)
+    }
+
+    const docsPages = []
+
+    for (const filePath of mdxFiles) {
+      const docsMatch = filePath.match(/\/app\/\(docs\)\/docs\/(.*)\/page\.mdx$/) ||
+        filePath.match(/\/app\/\(docs\)\/docs\/page\.mdx$/)
+
+      if (!docsMatch) {
+        throw new Error(`Unexpected file path format: ${filePath}`)
+      }
+
+      const pathname = docsMatch[1] || ''
+      const normalizedPath = `/docs${pathname ? `/${pathname}` : ''}`
+      const url = `https://e2b.dev${normalizedPath}`
+
+      docsPages.push({
+        url,
+        priority: 0.8,
+      })
+    }
+
+    const filteredPages = docsPages.filter((entry) => !entry.url.includes('/docs/legacy'))
+
+    console.log(`Generated ${filteredPages.length} sitemap entries`)
+    const finalEntries = filteredPages.sort((a, b) => a.url.localeCompare(b.url))
+
+    const sitemapXml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${finalEntries.map(entry => `  <url>
+    <loc>${entry.url}</loc>
+    <changefreq>weekly</changefreq>
+    <priority>${entry.priority}</priority>
+  </url>`).join('\n')}
+</urlset>`
+
+    const outputPath = path.join(process.cwd(), 'public', 'sitemap.xml')
+    fs.writeFileSync(outputPath, sitemapXml)
+
+    console.log(`✅ Sitemap generated successfully: ${outputPath}`)
+    console.log(`📊 Total entries: ${finalEntries.length}`)
+  } catch (error) {
+    console.error('Error generating sitemap:', error.message)
+    throw error
+  }
+}
+
+generateSitemap().catch(console.error)

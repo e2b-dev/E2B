@@ -1,3 +1,5 @@
+import status from 'statuses'
+
 /**
  * Thrown when a request to E2B API occurs.
  */
@@ -8,16 +10,17 @@ export class E2BRequestError extends Error {
   }
 }
 
-export function handleE2BRequestError(
-  err?: { code: number; message: string },
+export function handleE2BRequestError<T>(
+  res: { data?: T | null | undefined; error?: { code: number; message: string } },
   errMsg?: string,
-) {
-  if (!err) {
+): asserts res is { data: T; error?: undefined } {
+  if (!res.error) {
     return
   }
 
-  let message = ''
-  switch (err.code) {
+  let message: string
+  const code = res.error?.code ?? 0
+  switch (code) {
     case 400:
       message = 'bad request'
       break
@@ -33,11 +36,14 @@ export function handleE2BRequestError(
     case 500:
       message = 'internal server error'
       break
+    default:
+      message = status(code) || 'unknown error'
+      break
   }
 
   throw new E2BRequestError(
-    `${errMsg && `${errMsg}: `}[${err.code}] ${message && `${message}: `}${
-      err.message ?? 'no message'
+    `${errMsg && `${errMsg}: `}[${code}] ${message && `${message}: `}${
+      res.error?.message ?? 'no message'
     }`,
   )
 }

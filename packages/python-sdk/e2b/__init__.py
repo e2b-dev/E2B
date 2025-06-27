@@ -66,3 +66,44 @@ from .sandbox_async.utils import OutputHandler
 from .sandbox_async.main import AsyncSandbox
 from .sandbox_async.filesystem.watch_handle import AsyncWatchHandle
 from .sandbox_async.commands.command_handle import AsyncCommandHandle
+
+__all__ = [
+    # API
+    "ApiClient",
+    "client",
+    # Connection config
+    "ConnectionConfig",
+    "ProxyTypes",
+    # Exceptions
+    "SandboxException",
+    "TimeoutException",
+    "NotFoundException",
+    "AuthenticationException",
+    "InvalidArgumentException",
+    "NotEnoughSpaceException",
+    "TemplateException",
+    # Sandbox API
+    "SandboxInfo",
+    "ProcessInfo",
+    # Command handle
+    "CommandResult",
+    "Stderr",
+    "Stdout",
+    "CommandExitException",
+    "PtyOutput",
+    "PtySize",
+    # Filesystem
+    "FilesystemEvent",
+    "FilesystemEventType",
+    "EntryInfo",
+    "FileType",
+    # Sync sandbox
+    "Sandbox",
+    "WatchHandle",
+    "CommandHandle",
+    # Async sandbox
+    "OutputHandler",
+    "AsyncSandbox",
+    "AsyncWatchHandle",
+    "AsyncCommandHandle",
+]

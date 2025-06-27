@@ -1,4 +1,10 @@
-import { Braces, CheckCircle, Home, KeyRound, MessagesSquare } from 'lucide-react'
+import {
+  Braces,
+  CheckCircle,
+  Home,
+  KeyRound,
+  MessagesSquare,
+} from 'lucide-react'
 import sdkRefRoutesJson from './sdkRefRoutes.json'
 
 enum Tag {
@@ -181,7 +187,7 @@ export const docRoutes: NavGroup[] = [
             href: '/docs/code-interpreting/supported-languages/python',
           },
           {
-            title: 'JavaScript',
+            title: 'JavaScript and TypeScript',
             href: '/docs/code-interpreting/supported-languages/javascript',
           },
           {
@@ -311,7 +317,7 @@ export const docRoutes: NavGroup[] = [
         href: '/docs/sandbox/internet-access',
       },
       {
-        title: 'Connecting bucket',
+        title: 'Connecting storage bucket',
         href: '/docs/sandbox/connect-bucket',
       },
       {
@@ -335,6 +341,10 @@ export const docRoutes: NavGroup[] = [
       {
         title: 'Start command',
         href: '/docs/sandbox-template/start-cmd',
+      },
+      {
+        title: 'Ready command',
+        href: '/docs/sandbox-template/ready-cmd',
       },
       {
         title: 'Customize CPU & RAM',

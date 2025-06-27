@@ -107,6 +107,6 @@ export async function listSandboxTemplates({
     },
   })
 
-  handleE2BRequestError(templates.error, 'Error getting templates')
+  handleE2BRequestError(templates, 'Error getting templates')
   return templates.data
 }

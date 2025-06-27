@@ -1,4 +1,3 @@
-import uuid
 from e2b.sandbox.commands.command_handle import CommandExitException
 
 import pytest
@@ -24,7 +23,7 @@ exit(0)
 """
 
     def pyautogui(self, pyautogui_code: str):
-        code_path = f"/home/user/code-4f3a0850-1a83-47b2-8402-67b039a084ae.py"
+        code_path = "/home/user/code-4f3a0850-1a83-47b2-8402-67b039a084ae.py"
         print(code_path)
 
         code = self._wrap_pyautogui_code(pyautogui_code)

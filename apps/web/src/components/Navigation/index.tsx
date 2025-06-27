@@ -63,7 +63,10 @@ function NavigationGroup({
             {group.items?.map((item) => (
               <React.Fragment key={item.title}>
                 {(item as any).links ? (
-                  <NavigationSubgroup subgroup={item as NavSubgroup} />
+                  <NavigationSubgroup
+                    subgroup={item as NavSubgroup}
+                    pathname={initialPathname}
+                  />
                 ) : (
                   <NavigationLink
                     link={item as NavLink}
@@ -139,7 +142,10 @@ function VersionedNavigationGroup({
             {group.versionedItems[curVersion]?.map((item) => (
               <React.Fragment key={item.title}>
                 {(item as any).links ? (
-                  <NavigationSubgroup subgroup={item as NavSubgroup} />
+                  <NavigationSubgroup
+                    subgroup={item as NavSubgroup}
+                    pathname={initialPathname}
+                  />
                 ) : (
                   <NavigationLink
                     link={item as NavLink}

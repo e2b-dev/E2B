@@ -12,7 +12,10 @@ function E2BTest() {
 
   useEffect(() => {
     const getText = async () => {
-      const sandbox = await Sandbox.create(template, { apiKey: inject('E2B_API_KEY') })
+      const sandbox = await Sandbox.create(template, {
+        apiKey: inject('E2B_API_KEY'),
+        domain: inject('E2B_DOMAIN')
+      })
 
       try {
         await sandbox.commands.run('echo "Hello World" > hello.txt')

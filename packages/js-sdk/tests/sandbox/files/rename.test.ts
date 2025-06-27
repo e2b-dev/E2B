@@ -26,5 +26,7 @@ sandboxTest('rename non-existing file', async ({ sandbox }) => {
   const oldFilename = 'non_existing_file.txt'
   const newFilename = 'new_non_existing_file.txt'
 
-  await expect(sandbox.files.rename(oldFilename, newFilename)).rejects.toThrowError(NotFoundError)
+  await expect(
+    sandbox.files.rename(oldFilename, newFilename)
+  ).rejects.toThrowError(NotFoundError)
 })
