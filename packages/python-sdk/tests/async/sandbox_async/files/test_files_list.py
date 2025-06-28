@@ -153,3 +153,94 @@ async def test_list_directory_error_cases(async_sandbox: AsyncSandbox):
         ), f'expected error message to include "{expected_error_message}"'
 
     await async_sandbox.files.remove(parent_dir_name)
+
+
+async def test_file_entry_details(async_sandbox: AsyncSandbox):
+    test_dir = "test-file-entry"
+    file_path = f"{test_dir}/test.txt"
+    content = "Hello, World!"
+
+    await async_sandbox.files.make_dir(test_dir)
+    await async_sandbox.files.write(file_path, content)
+
+    files = await async_sandbox.files.list(test_dir, depth=1)
+    assert len(files) == 1
+
+    file_entry = files[0]
+    assert file_entry.name == "test.txt"
+    assert file_entry.path == f"/home/user/{file_path}"
+    assert file_entry.type == FileType.FILE
+    assert file_entry.mode == 0o644
+    assert file_entry.permissions == "-rw-r--r--"
+    assert file_entry.owner == "user"
+    assert file_entry.group == "user"
+    assert file_entry.size == len(content)
+    assert file_entry.modified_time is not None
+
+    await async_sandbox.files.remove(test_dir)
+
+
+async def test_directory_entry_details(async_sandbox: AsyncSandbox):
+    test_dir = "test-entry-info"
+    sub_dir = f"{test_dir}/subdir"
+
+    await async_sandbox.files.make_dir(test_dir)
+    await async_sandbox.files.make_dir(sub_dir)
+
+    files = await async_sandbox.files.list(test_dir, depth=1)
+    assert len(files) == 1
+
+    dir_entry = files[0]
+    assert dir_entry.name == "subdir"
+    assert dir_entry.path == f"/home/user/{sub_dir}"
+    assert dir_entry.type == FileType.DIR
+    assert dir_entry.mode == 0o755
+    assert dir_entry.permissions == "drwxr-xr-x"
+    assert dir_entry.owner == "user"
+    assert dir_entry.group == "user"
+    assert dir_entry.modified_time is not None
+
+    await async_sandbox.files.remove(test_dir)
+
+
+async def test_mixed_entries(async_sandbox: AsyncSandbox):
+    test_dir = "test-mixed-entries"
+    sub_dir = f"{test_dir}/subdir"
+    file_path = f"{test_dir}/test.txt"
+    content = "Hello, World!"
+
+    await async_sandbox.files.make_dir(test_dir)
+    await async_sandbox.files.make_dir(sub_dir)
+    await async_sandbox.files.write(file_path, content)
+
+    files = await async_sandbox.files.list(test_dir, depth=1)
+    assert len(files) == 2
+
+    # Create a dictionary of entries by name for easier verification
+    entries = {entry.name: entry for entry in files}
+
+    # Verify directory entry
+    dir_entry = entries.get("subdir")
+    assert dir_entry is not None
+    assert dir_entry.path == f"/home/user/{sub_dir}"
+    assert dir_entry.type == FileType.DIR
+    assert dir_entry.mode == 0o755
+    assert dir_entry.permissions == "drwxr-xr-x"
+    assert dir_entry.owner == "user"
+    assert dir_entry.group == "user"
+    assert dir_entry.modified_time is not None
+
+    # Verify file entry
+    file_entry = entries.get("test.txt")
+    assert file_entry is not None
+    assert file_entry.path == f"/home/user/{file_path}"
+    assert file_entry.type == FileType.FILE
+    assert file_entry.mode == 0o644
+    assert file_entry.permissions == "-rw-r--r--"
+    assert file_entry.owner == "user"
+    assert file_entry.group == "user"
+    assert file_entry.size == len(content)
+    assert file_entry.modified_time is not None
+
+    await async_sandbox.files.remove(test_dir)
+
