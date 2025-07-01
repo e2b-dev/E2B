@@ -112,4 +112,4 @@ class SandboxSetup(ABC):
         if self.connection_config.debug:
             return f"localhost:{port}"
 
-        return f"{port}-{self.sandbox_id}.{self.connection_config.domain}"
+        return f"{port}-{self.sandbox_id}.{self.connection_config.sandbox_domain}"

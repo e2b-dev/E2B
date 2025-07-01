@@ -19,6 +19,10 @@ class ConnectionConfig:
         return os.getenv("E2B_DOMAIN", "e2b.app")
 
     @staticmethod
+    def _sandbox_domain():
+        return os.getenv("E2B_SANDBOX_DOMAIN", os.getenv("E2B_DOMAIN", "e2b.app"))
+
+    @staticmethod
     def _debug():
         return os.getenv("E2B_DEBUG", "false").lower() == "true"
 
@@ -39,8 +43,11 @@ class ConnectionConfig:
         request_timeout: Optional[float] = None,
         headers: Optional[Dict[str, str]] = None,
         proxy: Optional[ProxyTypes] = None,
+        sandbox_domain: Optional[str] = None,
     ):
         self.domain = domain or ConnectionConfig._domain()
+        self.sandbox_domain = sandbox_domain or ConnectionConfig._sandbox_domain()
+
         self.debug = debug or ConnectionConfig._debug()
         self.api_key = api_key or ConnectionConfig._api_key()
         self.access_token = access_token or ConnectionConfig._access_token()

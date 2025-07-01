@@ -336,6 +336,7 @@ class Sandbox(SandboxSetup, SandboxApi):
         config_dict = self.connection_config.__dict__
         config_dict.pop("access_token", None)
         config_dict.pop("api_url", None)
+        config_dict.pop("sandbox_domain", None)
 
         if request_timeout:
             config_dict["request_timeout"] = request_timeout
@@ -398,6 +399,7 @@ class Sandbox(SandboxSetup, SandboxApi):
         config_dict = self.connection_config.__dict__
         config_dict.pop("access_token", None)
         config_dict.pop("api_url", None)
+        config_dict.pop("sandbox_domain", None)
 
         if request_timeout:
             config_dict["request_timeout"] = request_timeout
@@ -420,6 +422,7 @@ class Sandbox(SandboxSetup, SandboxApi):
         config_dict = self.connection_config.__dict__
         config_dict.pop("access_token", None)
         config_dict.pop("api_url", None)
+        config_dict.pop("sandbox_domain", None)
 
         if request_timeout:
             config_dict["request_timeout"] = request_timeout
