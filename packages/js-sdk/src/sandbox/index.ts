@@ -315,7 +315,7 @@ export class Sandbox extends SandboxApi {
       return `localhost:${port}`
     }
 
-    return `${port}-${this.sandboxId}.${this.connectionConfig.domain}`
+    return `${port}-${this.sandboxId}.${this.connectionConfig.sandboxDomain}`
   }
 
   /**

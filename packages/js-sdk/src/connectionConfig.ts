@@ -29,6 +29,12 @@ export interface ConnectionOpts {
    */
   domain?: string
   /**
+   * Domain to use for the sandbox traffic.
+   *
+   * @default E2B_SANDBOX_DOMAIN // environment variable or fallback domain from `domain` option
+   */
+  sandboxDomain?: string
+  /**
    * If true the SDK starts in the debug mode and connects to the local envd API server.
    * @internal
    * @default E2B_DEBUG // environment variable or `false`
@@ -57,6 +63,7 @@ export interface ConnectionOpts {
 export class ConnectionConfig {
   readonly debug: boolean
   readonly domain: string
+  readonly sandboxDomain: string
   readonly apiUrl: string
   readonly logger?: Logger
 
@@ -71,6 +78,7 @@ export class ConnectionConfig {
     this.apiKey = opts?.apiKey || ConnectionConfig.apiKey
     this.debug = opts?.debug || ConnectionConfig.debug
     this.domain = opts?.domain || ConnectionConfig.domain
+    this.sandboxDomain = opts?.sandboxDomain || ConnectionConfig.sandboxDomain
     this.accessToken = opts?.accessToken || ConnectionConfig.accessToken
     this.requestTimeoutMs = opts?.requestTimeoutMs ?? REQUEST_TIMEOUT_MS
     this.logger = opts?.logger
@@ -83,6 +91,10 @@ export class ConnectionConfig {
 
   private static get domain() {
     return getEnvVar('E2B_DOMAIN') || 'e2b.app'
+  }
+
+  private static get sandboxDomain() {
+    return getEnvVar('E2B_SANDBOX_DOMAIN') || ConnectionConfig.domain
   }
 
   private static get debug() {
