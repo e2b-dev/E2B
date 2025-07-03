@@ -37,6 +37,25 @@ class Code(Enum):
     data_loss = "data_loss"
     unauthenticated = "unauthenticated"
 
+def make_error_from_http_code(http_code: int):
+    error_code_map = {
+        400: Code.invalid_argument,
+        401: Code.unauthenticated,
+        403: Code.permission_denied,
+        404: Code.not_found,
+        409: Code.already_exists,
+        413: Code.resource_exhausted,
+        429: Code.resource_exhausted,
+        499: Code.canceled,
+        500: Code.internal,
+        501: Code.unimplemented,
+        502: Code.unavailable,
+        503: Code.unavailable,
+        504: Code.deadline_exceeded,
+        505: Code.unimplemented,
+    }
+    
+    return error_code_map.get(http_code, Code.unknown)
 
 class ConnectException(Exception):
     def __init__(self, status: Code, message: str):
@@ -64,6 +83,7 @@ def decode_envelope_header(header):
 def error_for_response(http_resp: Response):
     try:
         error = json.loads(http_resp.content)
+        return make_error(error)
     except (json.decoder.JSONDecodeError, KeyError):
         if http_resp.status == 429:
             return ConnectException(
@@ -80,17 +100,18 @@ def error_for_response(http_resp: Response):
                 Code.unknown,
                 f"{http_resp.status}: {http_resp.content.decode('utf-8')}",
             )
-    else:
-        return make_error(error)
-
 
 def make_error(error):
     status = None
     try:
-        status = Code(error["code"])
-    except KeyError:
+        code_value = error["code"]
+        # return error code from http status code
+        if isinstance(code_value, int):
+            status = make_error_from_http_code(code_value)
+        else:
+            status = Code(code_value)
+    except (KeyError, ValueError):
         status = Code.unknown
-        pass
 
     return ConnectException(status, error.get("message", ""))
 
@@ -385,6 +406,7 @@ class Client:
             try:
                 with conn.stream(**req_data) as http_resp:
                     if http_resp.status != 200:
+                        http_resp.read()
                         raise error_for_response(http_resp)
 
                     parser = ServerStreamParser(
