@@ -103,6 +103,11 @@ const nextConfig = {
         destination: '/docs/support',
         permanent: true,
       },
+      {
+        source: '/docs/quickstart/migrating-from-v0',
+        destination: '/docs',
+        permanent: true,
+      },
     ]
   },
 }
