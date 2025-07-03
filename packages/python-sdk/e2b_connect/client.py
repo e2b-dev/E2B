@@ -85,21 +85,11 @@ def error_for_response(http_resp: Response):
         error = json.loads(http_resp.content)
         return make_error(error)
     except (json.decoder.JSONDecodeError, KeyError):
-        if http_resp.status == 429:
-            return ConnectException(
-                Code.resource_exhausted,
-                f"{http_resp.content.decode()} The requests are being rate limited.",
-            )
-        elif http_resp.status == 502:
-            return ConnectException(
-                Code.unavailable,
-                http_resp.content.decode(),
-            )
-        else:
-            return ConnectException(
-                Code.unknown,
-                f"{http_resp.status}: {http_resp.content.decode('utf-8')}",
-            )
+        error = {
+            "code": http_resp.status,
+            "message": http_resp.content.decode('utf-8')
+        }
+        return make_error(error)
 
 def make_error(error):
     status = None
