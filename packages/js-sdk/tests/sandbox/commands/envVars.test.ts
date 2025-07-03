@@ -1,4 +1,4 @@
-import { assert, test } from 'vitest'
+import { assert } from 'vitest'
 
 import { sandboxTest, isDebug, template } from '../../setup.js'
 import { Sandbox } from '../../../src'
