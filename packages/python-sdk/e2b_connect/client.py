@@ -94,7 +94,7 @@ def error_for_response(http_resp: Response):
 def make_error(error):
     status = None
     try:
-        code_value = error["code"]
+        code_value = error.get("code")
         # return error code from http status code
         if isinstance(code_value, int):
             status = make_error_from_http_code(code_value)
