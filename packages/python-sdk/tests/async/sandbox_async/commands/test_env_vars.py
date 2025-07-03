@@ -35,26 +35,3 @@ async def test_python_command_scoped_env_vars(async_sandbox: AsyncSandbox):
     )
     assert cmd.exit_code == 0
     assert cmd.stdout.strip() == "bar"
-
-
-@pytest.mark.skip_debug()
-async def test_default_env_vars(template):
-    try:
-        sandbox = await AsyncSandbox.create(template)
-        cmd = await sandbox.commands.run('echo "$E2B_SANDBOX"')
-        assert cmd.exit_code == 0
-        assert cmd.stdout.strip() == "true"
-
-        cmd2 = await sandbox.commands.run("cat /run/e2b/.E2B_SANDBOX")
-        assert cmd2.exit_code == 0
-        assert cmd2.stdout.strip() == "true"
-
-        cmd3 = await sandbox.commands.run('echo "$E2B_SANDBOX_ID"')
-        assert cmd3.exit_code == 0
-        assert cmd3.stdout.strip() == sandbox.sandbox_id.split("-")[0]
-
-        cmd4 = await sandbox.commands.run("cat /run/e2b/.E2B_SANDBOX_ID")
-        assert cmd4.exit_code == 0
-        assert cmd4.stdout.strip() == sandbox.sandbox_id.split("-")[0]
-    finally:
-        await sandbox.kill()

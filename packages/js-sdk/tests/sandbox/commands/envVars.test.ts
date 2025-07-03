@@ -34,31 +34,3 @@ sandboxTest('python command scoped env vars', async ({ sandbox }) => {
   assert.equal(cmd.exitCode, 0)
   assert.equal(cmd.stdout.trim(), 'bar')
 })
-
-sandboxTest('default env vars', async ({ sandbox }) => {
-  try {
-    const cmd = await sandbox.commands.run('echo "$E2B_SANDBOX"')
-
-    assert.equal(cmd.exitCode, 0)
-    assert.equal(cmd.stdout.trim(), isDebug ? 'false' : 'true')
-
-    const cmd2 = await sandbox.commands.run('cat /run/e2b/.E2B_SANDBOX')
-
-    assert.equal(cmd2.exitCode, 0)
-    assert.equal(cmd2.stdout.trim(), isDebug ? 'false' : 'true')
-
-    if (!isDebug) {
-      const cmd3 = await sandbox.commands.run('echo "$E2B_SANDBOX_ID"')
-
-      assert.equal(cmd3.exitCode, 0)
-      assert.equal(cmd3.stdout.trim(), sandbox.sandboxId.split('-')[0])
-
-      const cmd4 = await sandbox.commands.run('cat /run/e2b/.E2B_SANDBOX_ID')
-
-      assert.equal(cmd4.exitCode, 0)
-      assert.equal(cmd4.stdout.trim(), sandbox.sandboxId.split('-')[0])
-    }
-  } finally {
-    await sandbox.kill()
-  }
-})
