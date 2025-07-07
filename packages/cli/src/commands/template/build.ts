@@ -262,9 +262,6 @@ export const buildCommand = new commander.Command('build')
         }
 
         const userConfig = getUserConfig()
-        if (userConfig) {
-          teamID = teamID || userConfig.teamId
-        }
 
         if (config && templateID && config.template_id !== templateID) {
           // error: you can't specify different ID than the one in config
