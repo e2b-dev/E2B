@@ -193,7 +193,7 @@ class Filesystem:
                 )
             path, write_files, user, request_timeout = (
                 path_or_files,
-                [{"path": path_or_files, "data": data_or_user}],
+                [WriteEntry(path=path_or_files, data=data_or_user)],
                 user_or_request_timeout or "user",
                 request_timeout_or_none,
             )
@@ -210,7 +210,7 @@ class Filesystem:
         # Prepare the files for the multipart/form-data request
         httpx_files = []
         for file in write_files:
-            file_path, file_data = file["path"], file["data"]
+            file_path, file_data = file.path, file.data
             if isinstance(file_data, str) or isinstance(file_data, bytes):
                 httpx_files.append(("file", (file_path, file_data)))
             elif isinstance(file_data, IOBase):
