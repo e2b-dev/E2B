@@ -517,7 +517,6 @@ export class Filesystem {
     path: string,
     onEvent: (event: FilesystemEvent) => void | Promise<void>,
     opts?: WatchOpts & {
-      timeout?: number
       onExit?: (err?: Error) => void | Promise<void>
     }
   ): Promise<WatchHandle> {
