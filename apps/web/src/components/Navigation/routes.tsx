@@ -81,10 +81,6 @@ export const docRoutes: NavGroup[] = [
         href: '/docs/support',
         icon: <MessagesSquare size={16} />,
       },
-      {
-        title: 'Migrating from v0.* to v1.*',
-        href: '/docs/quickstart/migrating-from-v0',
-      },
     ],
   },
   // {
@@ -341,6 +337,10 @@ export const docRoutes: NavGroup[] = [
       {
         title: 'Start command',
         href: '/docs/sandbox-template/start-cmd',
+      },
+      {
+        title: 'Ready command',
+        href: '/docs/sandbox-template/ready-cmd',
       },
       {
         title: 'Customize CPU & RAM',

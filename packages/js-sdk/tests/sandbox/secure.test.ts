@@ -12,7 +12,7 @@ test.skipIf(isDebug)('test access file without signing', async () => {
   })
   await sbx.files.write('hello.txt', 'hello world')
 
-  const fileUrlWithoutSigning = sbx.downloadUrl('hello.txt')
+  const fileUrlWithoutSigning = await sbx.downloadUrl('hello.txt')
 
   const res = await fetch(fileUrlWithoutSigning)
   const resBody = await res.text()
@@ -34,7 +34,7 @@ test.skipIf(isDebug)('test access file with signing', async () => {
   })
   await sbx.files.write('hello.txt', 'hello world')
 
-  const fileUrlWithSigning = sbx.downloadUrl('hello.txt', {
+  const fileUrlWithSigning = await sbx.downloadUrl('hello.txt', {
     useSignature: true,
   })
 
@@ -76,7 +76,7 @@ test.skipIf(isDebug)('signing generation', async () => {
     expiration: null,
   }
 
-  const readSignatureReceived = getSignature({
+  const readSignatureReceived = await getSignature({
     path,
     operation,
     user,
@@ -107,7 +107,7 @@ test.skipIf(isDebug)('signing generation with expiration', async () => {
     expiration: signatureExpiration,
   }
 
-  const readSignatureReceived = getSignature({
+  const readSignatureReceived = await getSignature({
     path,
     operation,
     user,
@@ -124,7 +124,7 @@ test.skipIf(isDebug)('static signing key comparison', async () => {
   const user = 'user'
   const envdAccessToken = '0tQG31xiMp0IOQfaz9dcwi72L1CPo8e0'
 
-  const signatureReceived = getSignature({
+  const signatureReceived = await getSignature({
     path,
     operation,
     user,
