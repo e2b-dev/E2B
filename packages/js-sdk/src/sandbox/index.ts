@@ -434,7 +434,7 @@ export class Sandbox extends SandboxApi {
 
     if (opts.useSignature) {
       const url = new URL(fileUrl)
-      const sig = getSignature({
+      const sig = await getSignature({
         path: filePath,
         operation: 'write',
         user: defaultUsername,
