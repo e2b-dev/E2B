@@ -16,3 +16,22 @@ def test_sandbox_envs(template):
         assert cmd.stdout.strip() == "bar"
     finally:
         sandbox.kill()
+
+
+def test_bash_command_scoped_env_vars(sandbox: Sandbox):
+    cmd = sandbox.commands.run("echo $FOO", envs={"FOO": "bar"})
+    assert cmd.exit_code == 0
+    assert cmd.stdout.strip() == "bar"
+
+    # test that it is secure and not accessible to subsequent commands
+    cmd2 = sandbox.commands.run('sudo echo "$FOO"')
+    assert cmd2.exit_code == 0
+    assert cmd2.stdout.strip() == ""
+
+
+def test_python_command_scoped_env_vars(sandbox: Sandbox):
+    cmd = sandbox.commands.run(
+        "python3 -c \"import os; print(os.environ['FOO'])\"", envs={"FOO": "bar"}
+    )
+    assert cmd.exit_code == 0
+    assert cmd.stdout.strip() == "bar"

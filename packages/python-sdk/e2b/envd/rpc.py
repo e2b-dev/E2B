@@ -10,6 +10,7 @@ from e2b.exceptions import (
     TimeoutException,
     format_sandbox_timeout_exception,
     AuthenticationException,
+    RateLimitException,
 )
 from e2b.connection_config import Username, default_username
 
@@ -24,6 +25,10 @@ def handle_rpc_exception(e: Exception):
             return NotFoundException(e.message)
         elif e.status == Code.unavailable:
             return format_sandbox_timeout_exception(e.message)
+        elif e.status == Code.resource_exhausted:
+            return RateLimitException(
+                f"{e.message}: Rate limit exceeded, please try again later."
+            )
         elif e.status == Code.canceled:
             return TimeoutException(
                 f"{e.message}: This error is likely due to exceeding 'request_timeout'. You can pass the request timeout value as an option when making the request."

@@ -81,10 +81,6 @@ export const docRoutes: NavGroup[] = [
         href: '/docs/support',
         icon: <MessagesSquare size={16} />,
       },
-      {
-        title: 'Migrating from v0.* to v1.*',
-        href: '/docs/quickstart/migrating-from-v0',
-      },
     ],
   },
   // {
