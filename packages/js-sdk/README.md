@@ -36,7 +36,7 @@ E2B_API_KEY=e2b_***
 ```ts
 import { Sandbox } from '@e2b/code-interpreter'
 
-const sandbox = await Sandbox.create()
+const sbx = await Sandbox.create()
 await sbx.runCode('x = 1')
 
 const execution = await sbx.runCode('x+=1; x')
