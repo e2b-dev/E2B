@@ -464,6 +464,7 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
         :param sandbox_id: Sandbox ID
         :param api_key: E2B API Key to use for authentication, defaults to `E2B_API_KEY` environment variable
         :param request_timeout: Timeout for the request in **seconds**
+        :param headers: Custom headers to use for the request
         :param proxy: Proxy to use for the request
         :return: Sandbox info
         """
