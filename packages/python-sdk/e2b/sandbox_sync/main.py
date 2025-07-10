@@ -442,6 +442,8 @@ class Sandbox(SandboxSetup, SandboxApi):
         Get sandbox information like sandbox ID, template, metadata, started at/end at date.
         :param sandbox_id: Sandbox ID
         :param api_key: E2B API Key to use for authentication, defaults to `E2B_API_KEY` environment variable
+        :param domain: E2B domain to use for authentication, defaults to `E2B_DOMAIN` environment variable
+        :param debug: Whether to use debug mode, defaults to `E2B_DEBUG` environment variable
         :param request_timeout: Timeout for the request in **seconds**
         :param headers: Custom headers to use for the request
         :param proxy: Proxy to use for the request
