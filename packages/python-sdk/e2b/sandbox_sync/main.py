@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 class TransportWithLogger(httpx.HTTPTransport):
-    def handle_request(self, request):
+    def handle_request(self, request):        
         url = f"{request.url.scheme}://{request.url.host}{request.url.path}"
         logger.info(f"Request: {request.method} {url}")
         response = super().handle_request(request)
@@ -111,6 +111,7 @@ class Sandbox(SandboxSetup, SandboxApi):
         sandbox_id: Optional[str] = None,
         request_timeout: Optional[float] = None,
         proxy: Optional[ProxyTypes] = None,
+        headers: Optional[Dict[str, str]] = None,
     ):
         """
         Create a new sandbox.
@@ -135,7 +136,7 @@ class Sandbox(SandboxSetup, SandboxApi):
                 "Use Sandbox.connect method instead.",
             )
 
-        connection_headers = {}
+        connection_headers = headers or {}
 
         if debug:
             self._sandbox_id = "debug_sandbox_id"

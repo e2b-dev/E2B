@@ -2,6 +2,7 @@ import os
 
 from typing import Literal, Optional, Dict
 from httpx._types import ProxyTypes
+from e2b.metadata import default_headers
 
 REQUEST_TIMEOUT: float = 30.0  # 30 seconds
 
@@ -44,7 +45,11 @@ class ConnectionConfig:
         self.debug = debug or ConnectionConfig._debug()
         self.api_key = api_key or ConnectionConfig._api_key()
         self.access_token = access_token or ConnectionConfig._access_token()
-        self.headers = headers or {}
+        self.headers = {
+            **default_headers,
+            **(headers or {}),
+        }
+
         self.proxy = proxy
 
         self.request_timeout = ConnectionConfig._get_request_timeout(

@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 class AsyncTransportWithLogger(httpx.AsyncHTTPTransport):
-    async def handle_async_request(self, request):
+    async def handle_async_request(self, request):        
         url = f"{request.url.scheme}://{request.url.host}{request.url.path}"
         logger.info(f"Request: {request.method} {url}")
         response = await super().handle_async_request(request)
@@ -195,6 +195,7 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
         request_timeout: Optional[float] = None,
         proxy: Optional[ProxyTypes] = None,
         secure: Optional[bool] = None,
+        headers: Optional[Dict[str, str]] = None,
     ):
         """
         Create a new sandbox.
@@ -215,7 +216,7 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
         Use this method instead of using the constructor to create a new sandbox.
         """
 
-        connection_headers = {}
+        connection_headers = headers or {}
 
         if debug:
             sandbox_id = "debug_sandbox_id"
