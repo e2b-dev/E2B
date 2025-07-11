@@ -95,7 +95,7 @@ class SandboxApi(SandboxApiBase):
             ]
 
     @classmethod
-    def get_info(
+    def _cls_get_info(
         cls,
         sandbox_id: str,
         api_key: Optional[str] = None,
