@@ -168,6 +168,7 @@ export class Sandbox extends SandboxApi {
           ...(options ?? {}),
           headers: headers,
           redirect: 'follow',
+          keepalive: true,
         }
 
         return fetch(url, options)
@@ -180,8 +181,8 @@ export class Sandbox extends SandboxApi {
         logger: opts?.logger,
         accessToken: this.envdAccessToken,
         headers: this.envdAccessToken
-          ? { 'X-Access-Token': this.envdAccessToken }
-          : {},
+          ? { 'X-Access-Token': this.envdAccessToken, Connection: 'keep-alive' }
+          : { Connection: 'keep-alive' },
       },
       {
         version: opts?.envdVersion,
