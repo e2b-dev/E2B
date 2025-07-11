@@ -58,7 +58,7 @@ class ApiClient {
         ...(config.accessToken && {
           Authorization: `Bearer ${config.accessToken}`,
         }),
-        ...{ 'Keep-Alive': true },
+        ...{ Connection: 'keep-alive' },
         ...config.headers,
       },
     })
