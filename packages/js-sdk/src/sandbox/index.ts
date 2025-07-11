@@ -181,14 +181,8 @@ export class Sandbox extends SandboxApi {
         logger: opts?.logger,
         accessToken: this.envdAccessToken,
         headers: this.envdAccessToken
-          ? { 'X-Access-Token': this.envdAccessToken }
-          : {},
-        fetch: (request: Request) => {
-          const newRequest = new Request(request, {
-            keepalive: true,
-          })
-          return fetch(newRequest)
-        },
+          ? { 'X-Access-Token': this.envdAccessToken, Connection: 'keep-alive' }
+          : { Connection: 'keep-alive' },
       },
       {
         version: opts?.envdVersion,
