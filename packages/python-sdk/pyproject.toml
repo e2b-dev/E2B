@@ -13,12 +13,12 @@ packages = [{ include = "e2b" }, { include = "e2b_connect" }]
 python = "^3.9"
 
 python-dateutil = ">=2.8.2"
-protobuf = ">=5.29.4, <6.0.0"
 httpcore = "^1.0.5"
 httpx = ">=0.27.0, <1.0.0"
 attrs = ">=23.2.0"
 packaging = ">=24.1"
 typing-extensions = ">=4.1.0"
+protobuf = ">=3.20.0"
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.7.0"
