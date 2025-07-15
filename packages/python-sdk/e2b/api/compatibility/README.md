@@ -1,4 +1,5 @@
 # Compatibility
+
 Python OpenAPI generated client does not support `explode: false` for query parameters. This means the state parameter is won't be in the `q=state1,state2` format.
 In this directory there is a workaround to support this.
 
