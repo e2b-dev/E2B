@@ -173,6 +173,10 @@ export const buildCommand = new commander.Command('build')
     'specify additional build arguments for the build command. The format should be <varname>=<value>.',
   )
   .option('--no-cache', 'skip cache when building the template.')
+  .option(
+      '--image-url-mask <mask>',
+      'specify image URL mask if you need to push to different from default Docker repository. Mask can contain {buildID} and {templateID} placeholders that will be resolved before calling.',
+  )
   .alias('bd')
   .action(
     async (
@@ -189,6 +193,7 @@ export const buildCommand = new commander.Command('build')
         memoryMb?: number
         buildArg?: [string]
         noCache?: boolean
+        imageUrlMask?: string
       },
     ) => {
       try {
@@ -340,20 +345,23 @@ export const buildCommand = new commander.Command('build')
           true,
         )
 
-        try {
-          child_process.execSync(
-            `echo "${accessToken}" | docker login docker.${connectionConfig.domain} -u _e2b_access_token --password-stdin`,
-            {
-              stdio: 'inherit',
-              cwd: root,
-            },
-          )
-        } catch (err: any) {
-          console.error(
-            'Docker login failed. Please try to log in with `e2b auth login` and try again.',
-          )
-          process.exit(1)
+        if (opts.imageUrlMask == undefined) {
+          try {
+            child_process.execSync(
+                `echo "${accessToken}" | docker login docker.${connectionConfig.domain} -u _e2b_access_token --password-stdin`,
+                {
+                  stdio: 'inherit',
+                  cwd: root,
+                },
+            )
+          } catch (err: any) {
+            console.error(
+                'Docker login failed. Please try to log in with `e2b auth login` and try again.',
+            )
+            process.exit(1)
+          }
         }
+
         process.stdout.write('\n')
 
         const buildArgs = Object.entries(dockerBuildArgs)
@@ -362,11 +370,12 @@ export const buildCommand = new commander.Command('build')
 
         const noCache = opts.noCache ? '--no-cache' : ''
 
+        const imageUrl = dockerImageUrl(templateID, template.buildID, connectionConfig.domain, opts.imageUrlMask)
         const cmd = [
           'docker build',
           `-f ${dockerfileRelativePath}`,
           '--pull --platform linux/amd64',
-          `-t docker.${connectionConfig.domain}/e2b/custom-envs/${templateID}:${template.buildID}`,
+          `-t ${imageUrl}`,
           buildArgs,
           noCache,
           '.',
@@ -386,7 +395,7 @@ export const buildCommand = new commander.Command('build')
         })
         console.log('> Docker image built.\n')
 
-        const pushCmd = `docker push docker.${connectionConfig.domain}/e2b/custom-envs/${templateID}:${template.buildID}`
+        const pushCmd = `docker push ${imageUrl}`
         console.log(
           `Pushing docker image with the following command:\n${asBold(
             pushCmd,
@@ -615,4 +624,12 @@ async function triggerBuild(templateID: string, buildID: string) {
   await triggerTemplateBuild(templateID, buildID)
 
   return
+}
+
+function dockerImageUrl(templateID: string, buildID: string, defaultDomain: string, imageUrlMask?: string): string {
+  if (imageUrlMask == undefined) {
+    return `docker.${defaultDomain}/e2b/custom-envs/${templateID}:${buildID}`
+  }
+
+  return imageUrlMask.replaceAll('{templateID}', templateID).replaceAll('{buildID}', buildID)
 }
