@@ -138,7 +138,7 @@ export class SandboxApi {
    *
    * @returns paginator for listing sandboxes.
    */
-  static list(opts: SandboxListOpts = {}): SandboxPaginator {
+  static list(opts?: SandboxListOpts): SandboxPaginator {
     return new SandboxPaginator(opts)
   }
 
@@ -316,14 +316,24 @@ function getSandboxId({
 }
 
 export class SandboxPaginator {
-  private options: SandboxListOpts
   private _hasNext: boolean
-  private _nextToken: string | undefined
+  private _nextToken?: string
 
-  constructor(options: SandboxListOpts = {}) {
-    this.options = options
+  private config: ConnectionConfig
+  private client: ApiClient
+
+  private query: SandboxListOpts['query']
+  private limit?: number
+
+  constructor(opts?: SandboxListOpts) {
+    this.config = new ConnectionConfig(opts)
+    this.client = new ApiClient(this.config)
+
     this._hasNext = true
-    this._nextToken = options.nextToken
+    this._nextToken = opts?.nextToken
+
+    this.query = opts?.query
+    this.limit = opts?.limit
   }
 
   get hasNext(): boolean {
@@ -344,33 +354,29 @@ export class SandboxPaginator {
       throw new Error('No more items to fetch')
     }
 
-    const { query, limit, requestTimeoutMs } = this.options
-    const config = new ConnectionConfig({ requestTimeoutMs })
-    const client = new ApiClient(config)
-
     let metadata = undefined
-    if (query) {
-      if (query.metadata) {
-        const encodedPairs: Record<string, string> = Object.fromEntries(
-          Object.entries(query.metadata).map(([key, value]) => [
-            encodeURIComponent(key),
-            encodeURIComponent(value),
-          ])
-        )
-        metadata = new URLSearchParams(encodedPairs).toString()
-      }
+    if (this.query?.metadata) {
+      const encodedPairs: Record<string, string> = Object.fromEntries(
+        Object.entries(this.query.metadata).map(([key, value]) => [
+          encodeURIComponent(key),
+          encodeURIComponent(value),
+        ])
+      )
+
+      metadata = new URLSearchParams(encodedPairs).toString()
     }
 
-    const res = await client.api.GET('/v2/sandboxes', {
+    const res = await this.client.api.GET('/v2/sandboxes', {
       params: {
         query: {
           metadata,
-          state: query?.state,
-          limit,
+          state: this.query?.state,
+          limit: this.limit,
           nextToken: this.nextToken,
         },
       },
-      signal: config.getSignal(requestTimeoutMs),
+      // requestTimeoutMs is already passed here via the connectionConfig.
+      signal: this.config.getSignal(),
     })
 
     const err = handleApiError(res)
