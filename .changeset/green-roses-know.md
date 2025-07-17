@@ -1,4 +1,5 @@
 ---
+'@e2b/cli': minor
 '@e2b/python-sdk': minor
 'e2b': minor
 ---
