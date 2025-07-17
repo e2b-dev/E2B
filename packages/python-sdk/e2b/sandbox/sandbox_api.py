@@ -65,7 +65,3 @@ class SandboxApiBase(ABC):
         max_connections=20,
         keepalive_expiry=20,
     )
-
-    @staticmethod
-    def _get_sandbox_id(sandbox_id: str, client_id: str) -> str:
-        return f"{sandbox_id}-{client_id}"
