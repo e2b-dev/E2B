@@ -80,10 +80,7 @@ class SandboxApi(SandboxApiBase):
 
         return [
             ListedSandbox(
-                sandbox_id=SandboxApi._get_sandbox_id(
-                    sandbox.sandbox_id,
-                    sandbox.client_id,
-                ),
+                sandbox_id=sandbox.sandbox_id,
                 template_id=sandbox.template_id,
                 name=sandbox.alias if isinstance(sandbox.alias, str) else None,
                 metadata=(
@@ -146,10 +143,7 @@ class SandboxApi(SandboxApiBase):
                 raise Exception("Body of the request is None")
 
             return SandboxInfo(
-                sandbox_id=SandboxApi._get_sandbox_id(
-                    res.parsed.sandbox_id,
-                    res.parsed.client_id,
-                ),
+                sandbox_id=res.parsed.sandbox_id,
                 template_id=res.parsed.template_id,
                 name=res.parsed.alias if isinstance(res.parsed.alias, str) else None,
                 metadata=(
@@ -286,22 +280,14 @@ class SandboxApi(SandboxApiBase):
                 raise Exception("Body of the request is None")
 
             if Version(res.parsed.envd_version) < Version("0.1.0"):
-                await SandboxApi._cls_kill(
-                    SandboxApi._get_sandbox_id(
-                        res.parsed.sandbox_id,
-                        res.parsed.client_id,
-                    )
-                )
+                await SandboxApi._cls_kill(res.parsed.sandbox_id)
                 raise TemplateException(
                     "You need to update the template to use the new SDK. "
                     "You can do this by running `e2b template build` in the directory with the template."
                 )
 
             return SandboxCreateResponse(
-                sandbox_id=SandboxApi._get_sandbox_id(
-                    res.parsed.sandbox_id,
-                    res.parsed.client_id,
-                ),
+                sandbox_id=res.parsed.sandbox_id,
                 envd_version=res.parsed.envd_version,
                 envd_access_token=res.parsed.envd_access_token,
             )
