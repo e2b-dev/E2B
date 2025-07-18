@@ -29,6 +29,7 @@ import { buildWithProxy } from './buildWithProxy'
 
 const templateCheckInterval = 500 // 0.5 sec
 
+// Custom image URI is used for Bring Your Own Compute with self-hosted Docker registry
 export const imageUriMask = process.env.E2B_IMAGE_URI_MASK
 
 async function getTemplateBuildLogs({
