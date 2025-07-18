@@ -42,7 +42,7 @@ from .exceptions import (
     NotEnoughSpaceException,
     TemplateException,
 )
-from .sandbox.sandbox_api import SandboxInfo
+from .sandbox.sandbox_api import SandboxInfo, SandboxQuery, SandboxState, SandboxMetrics
 from .sandbox.commands.main import ProcessInfo
 from .sandbox.commands.command_handle import (
     CommandResult,
@@ -62,12 +62,14 @@ from .sandbox_sync.main import Sandbox
 from .sandbox_sync.sandbox_beta import SandboxBeta
 from .sandbox_sync.filesystem.watch_handle import WatchHandle
 from .sandbox_sync.commands.command_handle import CommandHandle
+from .sandbox_sync.sandbox_api import SandboxPaginator
 
 from .sandbox_async.utils import OutputHandler
 from .sandbox_async.main import AsyncSandbox
 from .sandbox_async.sandbox_beta import AsyncSandboxBeta
 from .sandbox_async.filesystem.watch_handle import AsyncWatchHandle
 from .sandbox_async.commands.command_handle import AsyncCommandHandle
+from .sandbox_async.sandbox_api import AsyncSandboxPaginator
 
 __all__ = [
     # API
@@ -87,6 +89,9 @@ __all__ = [
     # Sandbox API
     "SandboxInfo",
     "ProcessInfo",
+    "SandboxQuery",
+    "SandboxState",
+    "SandboxMetrics",
     # Command handle
     "CommandResult",
     "Stderr",
@@ -101,10 +106,12 @@ __all__ = [
     "FileType",
     # Sync sandbox
     "Sandbox",
+    "SandboxPaginator",
     "WatchHandle",
     "CommandHandle",
     # Async sandbox
     "OutputHandler",
+    "AsyncSandboxPaginator",
     "AsyncSandbox",
     "AsyncWatchHandle",
     "AsyncCommandHandle",
