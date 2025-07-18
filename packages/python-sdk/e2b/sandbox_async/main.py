@@ -93,7 +93,7 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
         return self._envd_api_url
 
     @property
-    def _envd_access_token(self) -> str:
+    def _envd_access_token(self) -> Optional[str]:
         """Private property to access the envd token"""
         return self.__envd_access_token
 
@@ -222,7 +222,7 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
             envd_version = None
             envd_access_token = None
         else:
-            response = await SandboxApi._create_sandbox(
+            res = await SandboxApi._create_sandbox(
                 template=template or cls.default_template,
                 api_key=api_key,
                 timeout=timeout or cls.default_sandbox_timeout,
@@ -235,9 +235,9 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
                 proxy=proxy,
             )
 
-            sandbox_id = response.sandbox_id
-            envd_version = response.envd_version
-            envd_access_token = response.envd_access_token
+            sandbox_id = res.sandbox_id
+            envd_version = res.envd_version
+            envd_access_token = res.envd_access_token
 
             if envd_access_token is not None and not isinstance(
                 envd_access_token, Unset
@@ -290,12 +290,12 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
 
         connection_headers = {}
 
-        response = await SandboxApi.get_info(sandbox_id)
+        info = await SandboxApi.get_info(sandbox_id)
 
-        if response._envd_access_token is not None and not isinstance(
-            response._envd_access_token, Unset
+        if info._envd_access_token is not None and not isinstance(
+            info._envd_access_token, Unset
         ):
-            connection_headers["X-Access-Token"] = response._envd_access_token
+            connection_headers["X-Access-Token"] = info._envd_access_token
 
         connection_config = ConnectionConfig(
             api_key=api_key,
@@ -308,8 +308,8 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
         return cls(
             sandbox_id=sandbox_id,
             connection_config=connection_config,
-            envd_version=response.envd_version,
-            envd_access_token=response._envd_access_token,
+            envd_version=info._envd_version,
+            envd_access_token=info._envd_access_token,
         )
 
     async def __aenter__(self):

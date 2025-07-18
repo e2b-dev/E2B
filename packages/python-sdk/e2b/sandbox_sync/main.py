@@ -85,7 +85,7 @@ class Sandbox(SandboxSetup, SandboxApi):
         return self._envd_api_url
 
     @property
-    def _envd_access_token(self) -> str:
+    def _envd_access_token(self) -> Optional[str]:
         """Private property to access the envd token"""
         return self.__envd_access_token
 
@@ -142,20 +142,20 @@ class Sandbox(SandboxSetup, SandboxApi):
             self._envd_version = None
             self._envd_access_token = None
         elif sandbox_id is not None:
-            response = SandboxApi.get_info(sandbox_id)
+            info = SandboxApi.get_info(sandbox_id)
 
             self._sandbox_id = sandbox_id
-            self._envd_version = response.envd_version
-            self._envd_access_token = response._envd_access_token
+            self._envd_version = info._envd_version
+            self._envd_access_token = info._envd_access_token
 
-            if response._envd_access_token is not None and not isinstance(
-                response._envd_access_token, Unset
+            if info._envd_access_token is not None and not isinstance(
+                info._envd_access_token, Unset
             ):
-                connection_headers["X-Access-Token"] = response._envd_access_token
+                connection_headers["X-Access-Token"] = info._envd_access_token
         else:
             template = template or self.default_template
             timeout = timeout or self.default_sandbox_timeout
-            response = SandboxApi._create_sandbox(
+            info = SandboxApi._create_sandbox(
                 template=template,
                 api_key=api_key,
                 timeout=timeout,
@@ -167,14 +167,14 @@ class Sandbox(SandboxSetup, SandboxApi):
                 secure=secure or False,
                 proxy=proxy,
             )
-            self._sandbox_id = response.sandbox_id
-            self._envd_version = response.envd_version
+            self._sandbox_id = info.sandbox_id
+            self._envd_version = info.envd_version
 
-            if response.envd_access_token is not None and not isinstance(
-                response.envd_access_token, Unset
+            if info.envd_access_token is not None and not isinstance(
+                info.envd_access_token, Unset
             ):
-                self._envd_access_token = response.envd_access_token
-                connection_headers["X-Access-Token"] = response.envd_access_token
+                self._envd_access_token = info.envd_access_token
+                connection_headers["X-Access-Token"] = info.envd_access_token
             else:
                 self._envd_access_token = None
 
