@@ -1,11 +1,15 @@
 import datetime
 from collections.abc import Mapping
-from typing import Any, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 from uuid import UUID
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 from dateutil.parser import isoparse
+
+if TYPE_CHECKING:
+    from ..models.identifier_masking_details import IdentifierMaskingDetails
+
 
 T = TypeVar("T", bound="CreatedAccessToken")
 
@@ -16,16 +20,16 @@ class CreatedAccessToken:
     Attributes:
         created_at (datetime.datetime): Timestamp of access token creation
         id (UUID): Identifier of the access token
+        mask (IdentifierMaskingDetails):
         name (str): Name of the access token
-        token (str): Raw value of the access token
-        token_mask (str): Mask of the access token
+        token (str): The fully created access token
     """
 
     created_at: datetime.datetime
     id: UUID
+    mask: "IdentifierMaskingDetails"
     name: str
     token: str
-    token_mask: str
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -33,11 +37,11 @@ class CreatedAccessToken:
 
         id = str(self.id)
 
+        mask = self.mask.to_dict()
+
         name = self.name
 
         token = self.token
-
-        token_mask = self.token_mask
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
@@ -45,9 +49,9 @@ class CreatedAccessToken:
             {
                 "createdAt": created_at,
                 "id": id,
+                "mask": mask,
                 "name": name,
                 "token": token,
-                "tokenMask": token_mask,
             }
         )
 
@@ -55,23 +59,25 @@ class CreatedAccessToken:
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
+        from ..models.identifier_masking_details import IdentifierMaskingDetails
+
         d = dict(src_dict)
         created_at = isoparse(d.pop("createdAt"))
 
         id = UUID(d.pop("id"))
 
+        mask = IdentifierMaskingDetails.from_dict(d.pop("mask"))
+
         name = d.pop("name")
 
         token = d.pop("token")
 
-        token_mask = d.pop("tokenMask")
-
         created_access_token = cls(
             created_at=created_at,
             id=id,
+            mask=mask,
             name=name,
             token=token,
-            token_mask=token_mask,
         )
 
         created_access_token.additional_properties = d

@@ -17,6 +17,7 @@ class TemplateBuildRequest:
         alias (Union[Unset, str]): Alias of the template
         cpu_count (Union[Unset, int]): CPU cores for the sandbox
         memory_mb (Union[Unset, int]): Memory for the sandbox in MB
+        ready_cmd (Union[Unset, str]): Ready check command to execute in the template after the build
         start_cmd (Union[Unset, str]): Start command to execute in the template after the build
         team_id (Union[Unset, str]): Identifier of the team
     """
@@ -25,6 +26,7 @@ class TemplateBuildRequest:
     alias: Union[Unset, str] = UNSET
     cpu_count: Union[Unset, int] = UNSET
     memory_mb: Union[Unset, int] = UNSET
+    ready_cmd: Union[Unset, str] = UNSET
     start_cmd: Union[Unset, str] = UNSET
     team_id: Union[Unset, str] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
@@ -37,6 +39,8 @@ class TemplateBuildRequest:
         cpu_count = self.cpu_count
 
         memory_mb = self.memory_mb
+
+        ready_cmd = self.ready_cmd
 
         start_cmd = self.start_cmd
 
@@ -55,6 +59,8 @@ class TemplateBuildRequest:
             field_dict["cpuCount"] = cpu_count
         if memory_mb is not UNSET:
             field_dict["memoryMB"] = memory_mb
+        if ready_cmd is not UNSET:
+            field_dict["readyCmd"] = ready_cmd
         if start_cmd is not UNSET:
             field_dict["startCmd"] = start_cmd
         if team_id is not UNSET:
@@ -73,6 +79,8 @@ class TemplateBuildRequest:
 
         memory_mb = d.pop("memoryMB", UNSET)
 
+        ready_cmd = d.pop("readyCmd", UNSET)
+
         start_cmd = d.pop("startCmd", UNSET)
 
         team_id = d.pop("teamID", UNSET)
@@ -82,6 +90,7 @@ class TemplateBuildRequest:
             alias=alias,
             cpu_count=cpu_count,
             memory_mb=memory_mb,
+            ready_cmd=ready_cmd,
             start_cmd=start_cmd,
             team_id=team_id,
         )

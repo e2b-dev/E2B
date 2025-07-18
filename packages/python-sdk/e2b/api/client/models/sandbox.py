@@ -1,5 +1,5 @@
 from collections.abc import Mapping
-from typing import Any, TypeVar, Union
+from typing import Any, TypeVar, Union, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -18,6 +18,7 @@ class Sandbox:
         sandbox_id (str): Identifier of the sandbox
         template_id (str): Identifier of the template from which is the sandbox created
         alias (Union[Unset, str]): Alias of the template
+        domain (Union[None, Unset, str]): Base domain where the sandbox traffic is accessible
         envd_access_token (Union[Unset, str]): Access token used for envd communication
     """
 
@@ -26,6 +27,7 @@ class Sandbox:
     sandbox_id: str
     template_id: str
     alias: Union[Unset, str] = UNSET
+    domain: Union[None, Unset, str] = UNSET
     envd_access_token: Union[Unset, str] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
@@ -39,6 +41,12 @@ class Sandbox:
         template_id = self.template_id
 
         alias = self.alias
+
+        domain: Union[None, Unset, str]
+        if isinstance(self.domain, Unset):
+            domain = UNSET
+        else:
+            domain = self.domain
 
         envd_access_token = self.envd_access_token
 
@@ -54,6 +62,8 @@ class Sandbox:
         )
         if alias is not UNSET:
             field_dict["alias"] = alias
+        if domain is not UNSET:
+            field_dict["domain"] = domain
         if envd_access_token is not UNSET:
             field_dict["envdAccessToken"] = envd_access_token
 
@@ -72,6 +82,15 @@ class Sandbox:
 
         alias = d.pop("alias", UNSET)
 
+        def _parse_domain(data: object) -> Union[None, Unset, str]:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(Union[None, Unset, str], data)
+
+        domain = _parse_domain(d.pop("domain", UNSET))
+
         envd_access_token = d.pop("envdAccessToken", UNSET)
 
         sandbox = cls(
@@ -80,6 +99,7 @@ class Sandbox:
             sandbox_id=sandbox_id,
             template_id=template_id,
             alias=alias,
+            domain=domain,
             envd_access_token=envd_access_token,
         )
 
