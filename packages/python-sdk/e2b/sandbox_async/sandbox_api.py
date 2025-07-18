@@ -50,8 +50,10 @@ class AsyncSandboxPaginator(SandboxPaginatorBase):
             }
             metadata = urllib.parse.urlencode(quoted_metadata)
 
-        # TODO: Check if we still need to pass the transport here
-        async with AsyncApiClient(self._config) as api_client:
+        async with AsyncApiClient(
+            self._config,
+            limits=SandboxApiBase._limits,
+        ) as api_client:
             res = await modified_get_v2_sandboxes.asyncio_detailed(
                 client=api_client,
                 metadata=metadata if metadata else UNSET,

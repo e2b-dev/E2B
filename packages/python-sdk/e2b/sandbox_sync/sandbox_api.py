@@ -48,8 +48,7 @@ class SandboxPaginator(SandboxPaginatorBase):
 
         with ApiClient(
             self._config,
-            # TODO: Check if we still need to pass the transport here
-            transport=HTTPTransport(limits=SandboxApiBase._limits),
+            limits=SandboxApiBase._limits,
         ) as api_client:
             res = modified_get_v2_sandboxes.sync_detailed(
                 client=api_client,
@@ -272,7 +271,10 @@ class SandboxApi(SandboxApiBase):
             proxy=proxy,
         )
 
-        with ApiClient(config, limits=SandboxApiBase._limits) as api_client:
+        with ApiClient(
+            config,
+            limits=SandboxApiBase._limits,
+        ) as api_client:
             res = post_sandboxes.sync_detailed(
                 body=NewSandbox(
                     template_id=template,
