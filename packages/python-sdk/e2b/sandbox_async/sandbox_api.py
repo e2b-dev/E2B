@@ -149,6 +149,7 @@ class SandboxApi(SandboxApiBase):
 
             return SandboxInfo(
                 sandbox_id=res.parsed.sandbox_id,
+                sandbox_domain=res.parsed.domain,
                 template_id=res.parsed.template_id,
                 name=res.parsed.alias if isinstance(res.parsed.alias, str) else None,
                 metadata=(
@@ -293,6 +294,7 @@ class SandboxApi(SandboxApiBase):
 
             return SandboxCreateResponse(
                 sandbox_id=res.parsed.sandbox_id,
+                sandbox_domain=res.parsed.domain,
                 envd_version=res.parsed.envd_version,
                 envd_access_token=res.parsed.envd_access_token,
             )

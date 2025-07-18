@@ -14,6 +14,8 @@ class SandboxInfo:
 
     sandbox_id: str
     """Sandbox ID."""
+    sandbox_domain: Optional[str]
+    """Domain where the sandbox is hosted."""
     template_id: str
     """Template ID."""
     name: Optional[str]

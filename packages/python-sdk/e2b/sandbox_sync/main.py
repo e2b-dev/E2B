@@ -76,9 +76,16 @@ class Sandbox(SandboxSetup, SandboxApi):
     @property
     def sandbox_id(self) -> str:
         """
-        Unique identifier of the sandbox
+        Unique identifier of the sandbox.
         """
         return self._sandbox_id
+
+    @property
+    def sandbox_domain(self) -> str:
+        """
+        Domain where the sandbox is hosted.
+        """
+        return self._sandbox_domain
 
     @property
     def envd_api_url(self) -> str:
@@ -139,6 +146,7 @@ class Sandbox(SandboxSetup, SandboxApi):
 
         if debug:
             self._sandbox_id = "debug_sandbox_id"
+            self._sandbox_domain = None
             self._envd_version = None
             self._envd_access_token = None
         elif sandbox_id is not None:
@@ -152,6 +160,7 @@ class Sandbox(SandboxSetup, SandboxApi):
             )
 
             self._sandbox_id = sandbox_id
+            self._sandbox_domain = response.sandbox_domain
             self._envd_version = response.envd_version
             self._envd_access_token = response._envd_access_token
 
@@ -174,7 +183,9 @@ class Sandbox(SandboxSetup, SandboxApi):
                 secure=secure or False,
                 proxy=proxy,
             )
+
             self._sandbox_id = response.sandbox_id
+            self._sandbox_domain = response.sandbox_domain
             self._envd_version = response.envd_version
 
             if response.envd_access_token is not None and not isinstance(
@@ -194,6 +205,7 @@ class Sandbox(SandboxSetup, SandboxApi):
             headers=connection_headers,
             proxy=proxy,
         )
+
 
         self._envd_api_url = f"{'http' if self.connection_config.debug else 'https'}://{self.get_host(self.envd_port)}"
         self._envd_api = httpx.Client(

@@ -32,6 +32,7 @@ class AsyncTransportWithLogger(httpx.AsyncHTTPTransport):
 
 class AsyncSandboxOpts(TypedDict):
     sandbox_id: str
+    sandbox_domain: Optional[str]
     envd_version: Optional[str]
     envd_access_token: Optional[str]
     connection_config: ConnectionConfig
@@ -89,6 +90,13 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
         return self._sandbox_id
 
     @property
+    def sandbox_domain(self) -> str:
+        """
+        Unique identifier of the sandbox.
+        """
+        return self._sandbox_domain
+
+    @property
     def envd_api_url(self) -> str:
         return self._envd_api_url
 
@@ -112,8 +120,10 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
         """
         super().__init__()
 
-        self._sandbox_id = opts["sandbox_id"]
         self._connection_config = opts["connection_config"]
+
+        self._sandbox_id = opts["sandbox_id"]
+        self._sandbox_domain = opts["sandbox_domain"] or self.connection_config.domain
 
         self._envd_api_url = f"{'http' if self.connection_config.debug else 'https'}://{self.get_host(self.envd_port)}"
         self._envd_version = opts["envd_version"]
@@ -219,6 +229,7 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
 
         if debug:
             sandbox_id = "debug_sandbox_id"
+            sandbox_domain = None
             envd_version = None
             envd_access_token = None
         else:
@@ -236,6 +247,7 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
             )
 
             sandbox_id = response.sandbox_id
+            sandbox_domain = response.sandbox_domain
             envd_version = response.envd_version
             envd_access_token = response.envd_access_token
 
@@ -255,6 +267,7 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
 
         return cls(
             sandbox_id=sandbox_id,
+            sandbox_domain=sandbox_domain,
             envd_version=envd_version,
             envd_access_token=envd_access_token,
             connection_config=connection_config,
@@ -313,6 +326,7 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
 
         return cls(
             sandbox_id=sandbox_id,
+            sandbox_domain=response.sandbox_domain,
             connection_config=connection_config,
             envd_version=response.envd_version,
             envd_access_token=response._envd_access_token,

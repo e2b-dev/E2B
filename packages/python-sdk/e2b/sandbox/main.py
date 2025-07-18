@@ -41,6 +41,11 @@ class SandboxSetup(ABC):
     def sandbox_id(self) -> str:
         ...
 
+    @property
+    @abstractmethod
+    def sandbox_domain(self) -> str:
+        ...
+
     def _file_url(
         self,
         path: Optional[str] = None,
@@ -138,4 +143,4 @@ class SandboxSetup(ABC):
         if self.connection_config.debug:
             return f"localhost:{port}"
 
-        return f"{port}-{self.sandbox_id}.{self.connection_config.domain}"
+        return f"{port}-{self.sandbox_id}.{self.sandbox_domain}"
