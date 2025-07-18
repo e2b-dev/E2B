@@ -1,6 +1,5 @@
 from e2b.sandbox_sync.main import Sandbox
 from typing import Optional, overload, List
-from e2b.api.client.models.sandbox import Sandbox
 from packaging.version import Version
 
 from e2b.exceptions import SandboxException, NotFoundException
@@ -16,6 +15,7 @@ from e2b.api.client.api.sandboxes import (
 )
 from e2b.api.client.models import (
     ResumedSandbox,
+    Error,
 )
 
 
@@ -225,6 +225,9 @@ class SandboxBeta(Sandbox):
 
             if res.parsed is None:
                 return []
+
+            if isinstance(res.parsed, Error):
+                raise SandboxException(f"{res.parsed.message}: Request failed")
 
             return [
                 SandboxMetrics(
