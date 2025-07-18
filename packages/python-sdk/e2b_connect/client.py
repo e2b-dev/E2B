@@ -37,6 +37,7 @@ class Code(Enum):
     data_loss = "data_loss"
     unauthenticated = "unauthenticated"
 
+
 def make_error_from_http_code(http_code: int):
     error_code_map = {
         400: Code.invalid_argument,
@@ -54,8 +55,9 @@ def make_error_from_http_code(http_code: int):
         504: Code.deadline_exceeded,
         505: Code.unimplemented,
     }
-    
+
     return error_code_map.get(http_code, Code.unknown)
+
 
 class ConnectException(Exception):
     def __init__(self, status: Code, message: str):
@@ -85,11 +87,9 @@ def error_for_response(http_resp: Response):
         error = json.loads(http_resp.content)
         return make_error(error)
     except (json.decoder.JSONDecodeError, KeyError):
-        error = {
-            "code": http_resp.status,
-            "message": http_resp.content.decode('utf-8')
-        }
+        error = {"code": http_resp.status, "message": http_resp.content.decode("utf-8")}
         return make_error(error)
+
 
 def make_error(error):
     status = None

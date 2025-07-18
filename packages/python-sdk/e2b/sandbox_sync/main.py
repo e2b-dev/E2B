@@ -156,7 +156,7 @@ class Sandbox(SandboxSetup, SandboxApi):
             self._envd_access_token = response._envd_access_token
 
             if response._envd_access_token is not None and not isinstance(
-                    response._envd_access_token, Unset
+                response._envd_access_token, Unset
             ):
                 connection_headers["X-Access-Token"] = response._envd_access_token
         else:

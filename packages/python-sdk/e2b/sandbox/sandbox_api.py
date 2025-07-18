@@ -29,6 +29,7 @@ class SandboxInfo:
     _envd_access_token: Optional[str]
     """Envd access token."""
 
+
 @dataclass
 class ListedSandbox:
     """Information about a sandbox."""
@@ -50,6 +51,7 @@ class ListedSandbox:
     started_at: datetime
     """Sandbox start time."""
     end_at: datetime
+
 
 @dataclass
 class SandboxQuery:

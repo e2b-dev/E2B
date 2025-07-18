@@ -2,6 +2,7 @@ import pytest
 
 from e2b import AsyncSandbox
 
+
 @pytest.mark.skip_debug()
 async def test_start_secured(template):
     sbx = await AsyncSandbox.create(template, timeout=5, secure=True)
@@ -11,6 +12,7 @@ async def test_start_secured(template):
         assert sbx._envd_access_token is not None
     finally:
         await sbx.kill()
+
 
 @pytest.mark.skip_debug()
 async def test_connect_to_secured(template):

@@ -449,7 +449,7 @@ class Filesystem:
                 headers={
                     **authentication_header(user),
                     KEEPALIVE_PING_HEADER: str(KEEPALIVE_PING_INTERVAL_SEC),
-                }
+                },
             )
         except Exception as e:
             raise handle_rpc_exception(e)

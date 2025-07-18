@@ -4,7 +4,12 @@ from typing import Optional, Dict, List
 from packaging.version import Version
 
 
-from e2b.sandbox.sandbox_api import SandboxInfo, SandboxApiBase, SandboxQuery, ListedSandbox
+from e2b.sandbox.sandbox_api import (
+    SandboxInfo,
+    SandboxApiBase,
+    SandboxQuery,
+    ListedSandbox,
+)
 from e2b.exceptions import TemplateException
 from e2b.api import AsyncApiClient, SandboxCreateResponse
 from e2b.api.client.models import NewSandbox, PostSandboxesSandboxIDTimeoutBody
