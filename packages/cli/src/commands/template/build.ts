@@ -29,6 +29,8 @@ import { buildWithProxy } from './buildWithProxy'
 
 const templateCheckInterval = 500 // 0.5 sec
 
+export const imageUriMask = process.env.E2B_IMAGE_URI_MASK
+
 async function getTemplateBuildLogs({
                                       templateID,
                                       buildID,
@@ -173,10 +175,6 @@ export const buildCommand = new commander.Command('build')
     'specify additional build arguments for the build command. The format should be <varname>=<value>.',
   )
   .option('--no-cache', 'skip cache when building the template.')
-  .option(
-      '--image-url-mask <mask>',
-      'specify image URL mask if you need to push to different from default Docker repository. Mask can contain {buildID} and {templateID} placeholders that will be resolved before calling.',
-  )
   .alias('bd')
   .action(
     async (
@@ -193,7 +191,6 @@ export const buildCommand = new commander.Command('build')
         memoryMb?: number
         buildArg?: [string]
         noCache?: boolean
-        imageUrlMask?: string
       },
     ) => {
       try {
@@ -345,7 +342,7 @@ export const buildCommand = new commander.Command('build')
           true,
         )
 
-        if (opts.imageUrlMask == undefined) {
+        if (imageUriMask == undefined) {
           try {
             child_process.execSync(
                 `echo "${accessToken}" | docker login docker.${connectionConfig.domain} -u _e2b_access_token --password-stdin`,
@@ -370,7 +367,11 @@ export const buildCommand = new commander.Command('build')
 
         const noCache = opts.noCache ? '--no-cache' : ''
 
-        const imageUrl = dockerImageUrl(templateID, template.buildID, connectionConfig.domain, opts.imageUrlMask)
+        const imageUrl = dockerImageUrl(templateID, template.buildID, connectionConfig.domain, imageUriMask)
+        if (imageUriMask != undefined) {
+          console.log('Using custom docker image URI:', imageUrl)
+        }
+
         const cmd = [
           'docker build',
           `-f ${dockerfileRelativePath}`,
