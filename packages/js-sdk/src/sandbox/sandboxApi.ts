@@ -31,6 +31,11 @@ export interface SandboxInfo {
   sandboxId: string
 
   /**
+   * Domain where the sandbox is hosted.
+   */
+  sandboxDomain?: string
+
+  /**
    * Template ID.
    */
   templateId: string
@@ -246,6 +251,7 @@ export class SandboxApi {
 
     return {
       sandboxId: res.data.sandboxID,
+      sandboxDomain: res.data!.domain || undefined,
       templateId: res.data.templateID,
       ...(res.data.alias && { name: res.data.alias }),
       metadata: res.data.metadata ?? {},
@@ -304,6 +310,7 @@ export class SandboxApi {
     }
   ): Promise<{
     sandboxId: string
+    sandboxDomain?: string
     envdVersion: string
     envdAccessToken?: string
   }> {
@@ -337,6 +344,7 @@ export class SandboxApi {
 
     return {
       sandboxId: res.data!.sandboxID,
+      sandboxDomain: res.data!.domain || undefined,
       envdVersion: res.data!.envdVersion,
       envdAccessToken: res.data!.envdAccessToken
     }

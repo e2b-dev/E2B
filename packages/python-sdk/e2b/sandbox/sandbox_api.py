@@ -14,6 +14,8 @@ class SandboxInfo:
 
     sandbox_id: str
     """Sandbox ID."""
+    sandbox_domain: Optional[str]
+    """Domain where the sandbox is hosted."""
     template_id: str
     """Template ID."""
     name: Optional[str]
@@ -28,6 +30,7 @@ class SandboxInfo:
     """Envd version."""
     _envd_access_token: Optional[str]
     """Envd access token."""
+
 
 @dataclass
 class ListedSandbox:
@@ -50,6 +53,7 @@ class ListedSandbox:
     started_at: datetime
     """Sandbox start time."""
     end_at: datetime
+
 
 @dataclass
 class SandboxQuery:

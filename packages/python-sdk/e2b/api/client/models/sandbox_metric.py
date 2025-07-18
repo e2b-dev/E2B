@@ -16,15 +16,15 @@ class SandboxMetric:
     Attributes:
         cpu_count (int): Number of CPU cores
         cpu_used_pct (float): CPU usage percentage
-        mem_total_mi_b (int): Total memory in MiB
-        mem_used_mi_b (int): Memory used in MiB
+        mem_total (int): Total memory in bytes
+        mem_used (int): Memory used in bytes
         timestamp (datetime.datetime): Timestamp of the metric entry
     """
 
     cpu_count: int
     cpu_used_pct: float
-    mem_total_mi_b: int
-    mem_used_mi_b: int
+    mem_total: int
+    mem_used: int
     timestamp: datetime.datetime
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
@@ -33,9 +33,9 @@ class SandboxMetric:
 
         cpu_used_pct = self.cpu_used_pct
 
-        mem_total_mi_b = self.mem_total_mi_b
+        mem_total = self.mem_total
 
-        mem_used_mi_b = self.mem_used_mi_b
+        mem_used = self.mem_used
 
         timestamp = self.timestamp.isoformat()
 
@@ -45,8 +45,8 @@ class SandboxMetric:
             {
                 "cpuCount": cpu_count,
                 "cpuUsedPct": cpu_used_pct,
-                "memTotalMiB": mem_total_mi_b,
-                "memUsedMiB": mem_used_mi_b,
+                "memTotal": mem_total,
+                "memUsed": mem_used,
                 "timestamp": timestamp,
             }
         )
@@ -60,17 +60,17 @@ class SandboxMetric:
 
         cpu_used_pct = d.pop("cpuUsedPct")
 
-        mem_total_mi_b = d.pop("memTotalMiB")
+        mem_total = d.pop("memTotal")
 
-        mem_used_mi_b = d.pop("memUsedMiB")
+        mem_used = d.pop("memUsed")
 
         timestamp = isoparse(d.pop("timestamp"))
 
         sandbox_metric = cls(
             cpu_count=cpu_count,
             cpu_used_pct=cpu_used_pct,
-            mem_total_mi_b=mem_total_mi_b,
-            mem_used_mi_b=mem_used_mi_b,
+            mem_total=mem_total,
+            mem_used=mem_used,
             timestamp=timestamp,
         )
 

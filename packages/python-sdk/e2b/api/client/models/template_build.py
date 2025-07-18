@@ -1,10 +1,11 @@
 from collections.abc import Mapping
-from typing import Any, TypeVar, cast
+from typing import Any, TypeVar, Union, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
 from ..models.template_build_status import TemplateBuildStatus
+from ..types import UNSET, Unset
 
 T = TypeVar("T", bound="TemplateBuild")
 
@@ -17,12 +18,14 @@ class TemplateBuild:
         logs (list[str]): Build logs
         status (TemplateBuildStatus): Status of the template
         template_id (str): Identifier of the template
+        reason (Union[Unset, str]): Message with the status reason, currently reporting only for error status
     """
 
     build_id: str
     logs: list[str]
     status: TemplateBuildStatus
     template_id: str
+    reason: Union[Unset, str] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -34,6 +37,8 @@ class TemplateBuild:
 
         template_id = self.template_id
 
+        reason = self.reason
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
@@ -44,6 +49,8 @@ class TemplateBuild:
                 "templateID": template_id,
             }
         )
+        if reason is not UNSET:
+            field_dict["reason"] = reason
 
         return field_dict
 
@@ -58,11 +65,14 @@ class TemplateBuild:
 
         template_id = d.pop("templateID")
 
+        reason = d.pop("reason", UNSET)
+
         template_build = cls(
             build_id=build_id,
             logs=logs,
             status=status,
             template_id=template_id,
+            reason=reason,
         )
 
         template_build.additional_properties = d
