@@ -3,7 +3,6 @@ import httpx
 
 from typing import Dict, Optional, overload
 
-from e2b.api.client.types import Unset
 from e2b.connection_config import ConnectionConfig, ProxyTypes
 from e2b.envd.api import ENVD_API_HEALTH_ROUTE, ahandle_envd_api_exception
 from e2b.exceptions import format_request_timeout_error
@@ -263,9 +262,7 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
 
         info = await SandboxApi.get_info(sandbox_id)
 
-        if info._envd_access_token is not None and not isinstance(
-            info._envd_access_token, Unset
-        ):
+        if info._envd_access_token:
             connection_headers["X-Access-Token"] = info._envd_access_token
 
         connection_config = ConnectionConfig(
