@@ -193,7 +193,11 @@ export interface paths {
         /** @description Get sandbox metrics */
         get: {
             parameters: {
-                query?: never;
+                query?: {
+                    end?: number;
+                    /** @description Starting timestamp of the metrics that should be returned in milliseconds */
+                    start?: number;
+                };
                 header?: never;
                 path: {
                     sandboxID: components["parameters"]["sandboxID"];
@@ -211,6 +215,7 @@ export interface paths {
                         "application/json": components["schemas"]["SandboxMetric"][];
                     };
                 };
+                400: components["responses"]["400"];
                 401: components["responses"]["401"];
                 404: components["responses"]["404"];
                 500: components["responses"]["500"];
@@ -411,12 +416,12 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description List all running sandboxes with metrics */
+        /** @description List metrics for given sandboxes */
         get: {
             parameters: {
-                query?: {
-                    /** @description Metadata query used to filter the sandboxes (e.g. "user=abc&app=prod"). Each key and values must be URL encoded. */
-                    metadata?: string;
+                query: {
+                    /** @description Comma-separated list of sandbox IDs to get metrics for */
+                    sandbox_ids: string[];
                 };
                 header?: never;
                 path?: never;
@@ -430,7 +435,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["RunningSandboxWithMetrics"][];
+                        "application/json": components["schemas"]["SandboxesWithMetrics"];
                     };
                 };
                 400: components["responses"]["400"];
@@ -796,12 +801,11 @@ export interface components {
              * @description Identifier of the access token
              */
             id: string;
+            mask: components["schemas"]["IdentifierMaskingDetails"];
             /** @description Name of the access token */
             name: string;
-            /** @description Raw value of the access token */
+            /** @description The fully created access token */
             token: string;
-            /** @description Mask of the access token */
-            tokenMask: string;
         };
         CreatedTeamAPIKey: {
             /**
@@ -809,7 +813,7 @@ export interface components {
              * @description Timestamp of API key creation
              */
             createdAt: string;
-            createdBy: components["schemas"]["TeamUser"] | null;
+            createdBy?: components["schemas"]["TeamUser"] | null;
             /**
              * Format: uuid
              * @description Identifier of the API key
@@ -817,13 +821,12 @@ export interface components {
             id: string;
             /** @description Raw value of the API key */
             key: string;
-            /** @description Mask of the API key */
-            keyMask: string;
             /**
              * Format: date-time
              * @description Last time this API key was used
              */
-            lastUsed: string | null;
+            lastUsed?: string | null;
+            mask: components["schemas"]["IdentifierMaskingDetails"];
             /** @description Name of the API key */
             name: string;
         };
@@ -839,10 +842,23 @@ export interface components {
             /** @description Error */
             message: string;
         };
+        IdentifierMaskingDetails: {
+            /** @description Prefix used in masked version of the token or key */
+            maskedValuePrefix: string;
+            /** @description Suffix used in masked version of the token or key */
+            maskedValueSuffix: string;
+            /** @description Prefix that identifies the token or key type */
+            prefix: string;
+            /** @description Length of the token or key */
+            valueLength: number;
+        };
         ListedSandbox: {
             /** @description Alias of the template */
             alias?: string;
-            /** @description Identifier of the client */
+            /**
+             * @deprecated
+             * @description Identifier of the client
+             */
             clientID: string;
             cpuCount: components["schemas"]["CPUCount"];
             /**
@@ -906,11 +922,20 @@ export interface components {
              * @description Amount of allocated memory in MiB
              */
             allocatedMemoryMiB: number;
+            /** @description Identifier of the cluster */
+            clusterID?: string | null;
+            /** @description Commit of the orchestrator */
+            commit: string;
             /**
              * Format: uint64
              * @description Number of sandbox create fails
              */
             createFails: number;
+            /**
+             * Format: uint64
+             * @description Number of sandbox create successes
+             */
+            createSuccesses: number;
             /** @description Identifier of the node */
             nodeID: string;
             /**
@@ -930,11 +955,20 @@ export interface components {
         NodeDetail: {
             /** @description List of cached builds id on the node */
             cachedBuilds: string[];
+            /** @description Identifier of the cluster */
+            clusterID?: string | null;
+            /** @description Commit of the orchestrator */
+            commit: string;
             /**
              * Format: uint64
              * @description Number of sandbox create fails
              */
             createFails: number;
+            /**
+             * Format: uint64
+             * @description Number of sandbox create successes
+             */
+            createSuccesses: number;
             /** @description Identifier of the node */
             nodeID: string;
             /** @description List of sandboxes running on the node */
@@ -964,35 +998,16 @@ export interface components {
              */
             timeout: number;
         };
-        RunningSandboxWithMetrics: {
-            /** @description Alias of the template */
-            alias?: string;
-            /** @description Identifier of the client */
-            clientID: string;
-            cpuCount: components["schemas"]["CPUCount"];
-            /**
-             * Format: date-time
-             * @description Time when the sandbox will expire
-             */
-            endAt: string;
-            memoryMB: components["schemas"]["MemoryMB"];
-            metadata?: components["schemas"]["SandboxMetadata"];
-            metrics?: components["schemas"]["SandboxMetric"][];
-            /** @description Identifier of the sandbox */
-            sandboxID: string;
-            /**
-             * Format: date-time
-             * @description Time when the sandbox was started
-             */
-            startedAt: string;
-            /** @description Identifier of the template from which is the sandbox created */
-            templateID: string;
-        };
         Sandbox: {
             /** @description Alias of the template */
             alias?: string;
-            /** @description Identifier of the client */
+            /**
+             * @deprecated
+             * @description Identifier of the client
+             */
             clientID: string;
+            /** @description Base domain where the sandbox traffic is accessible */
+            domain?: string | null;
             /** @description Access token used for envd communication */
             envdAccessToken?: string;
             /** @description Version of the envd running in the sandbox */
@@ -1005,9 +1020,14 @@ export interface components {
         SandboxDetail: {
             /** @description Alias of the template */
             alias?: string;
-            /** @description Identifier of the client */
+            /**
+             * @deprecated
+             * @description Identifier of the client
+             */
             clientID: string;
             cpuCount: components["schemas"]["CPUCount"];
+            /** @description Base domain where the sandbox traffic is accessible */
+            domain?: string | null;
             /**
              * Format: date-time
              * @description Time when the sandbox will expire
@@ -1029,6 +1049,11 @@ export interface components {
             state: components["schemas"]["SandboxState"];
             /** @description Identifier of the template from which is the sandbox created */
             templateID: string;
+        };
+        SandboxesWithMetrics: {
+            sandboxes: {
+                [key: string]: components["schemas"]["SandboxMetric"];
+            };
         };
         /** @description Log entry with timestamp and line */
         SandboxLog: {
@@ -1061,14 +1086,14 @@ export interface components {
             cpuUsedPct: number;
             /**
              * Format: int64
-             * @description Total memory in MiB
+             * @description Total memory in bytes
              */
-            memTotalMiB: number;
+            memTotal: number;
             /**
              * Format: int64
-             * @description Memory used in MiB
+             * @description Memory used in bytes
              */
-            memUsedMiB: number;
+            memUsed: number;
             /**
              * Format: date-time
              * @description Timestamp of the metric entry
@@ -1096,19 +1121,18 @@ export interface components {
              * @description Timestamp of API key creation
              */
             createdAt: string;
-            createdBy: components["schemas"]["TeamUser"] | null;
+            createdBy?: components["schemas"]["TeamUser"] | null;
             /**
              * Format: uuid
              * @description Identifier of the API key
              */
             id: string;
-            /** @description Mask of the API key */
-            keyMask: string;
             /**
              * Format: date-time
              * @description Last time this API key was used
              */
-            lastUsed: string | null;
+            lastUsed?: string | null;
+            mask: components["schemas"]["IdentifierMaskingDetails"];
             /** @description Name of the API key */
             name: string;
         };
@@ -1167,6 +1191,8 @@ export interface components {
              * @default []
              */
             logs: string[];
+            /** @description Message with the status reason, currently reporting only for error status */
+            reason?: string;
             /**
              * @description Status of the template
              * @enum {string}
@@ -1182,6 +1208,8 @@ export interface components {
             /** @description Dockerfile for the template */
             dockerfile: string;
             memoryMB?: components["schemas"]["MemoryMB"];
+            /** @description Ready check command to execute in the template after the build */
+            readyCmd?: string;
             /** @description Start command to execute in the template after the build */
             startCmd?: string;
             /** @description Identifier of the team */

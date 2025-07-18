@@ -4,6 +4,7 @@ import {
   ConnectionConfig,
   ConnectionOpts,
   defaultUsername,
+  Username,
 } from '../connectionConfig'
 import { EnvdApiClient, handleEnvdApiError } from '../envd/api'
 import { createRpcLogger } from '../logs'
@@ -68,6 +69,11 @@ export interface SandboxUrlOpts {
    * @default undefined (no expiration)
    */
   useSignatureExpiration?: number
+
+  /**
+   * User that will be used to access the file.
+   */
+  user?: Username
 }
 
 /**
@@ -113,6 +119,11 @@ export class Sandbox extends SandboxApi {
    */
   readonly sandboxId: string
 
+  /**
+   * Domain where the sandbox is hosted.
+   */
+  readonly sandboxDomain: string
+
   protected readonly envdPort = 49983
 
   protected readonly connectionConfig: ConnectionConfig
@@ -131,17 +142,22 @@ export class Sandbox extends SandboxApi {
   constructor(
     opts: Omit<SandboxOpts, 'timeoutMs' | 'envs' | 'metadata'> & {
       sandboxId: string
+      sandboxDomain?: string
       envdVersion?: string
       envdAccessToken?: string
     }
   ) {
     super()
 
-    this.sandboxId = opts.sandboxId
     this.connectionConfig = new ConnectionConfig(opts)
 
+    this.sandboxId = opts.sandboxId
+    this.sandboxDomain = opts.sandboxDomain ?? this.connectionConfig.domain
+
     this.envdAccessToken = opts.envdAccessToken
-    this.envdApiUrl = `${this.connectionConfig.debug ? 'http' : 'https'}://${this.getHost(this.envdPort)}`
+    this.envdApiUrl = `${
+      this.connectionConfig.debug ? 'http' : 'https'
+    }://${this.getHost(this.envdPort)}`
 
     const rpcTransport = createConnectTransport({
       baseUrl: this.envdApiUrl,
@@ -281,6 +297,7 @@ export class Sandbox extends SandboxApi {
 
     return new this({
       sandboxId,
+      sandboxDomain: info.sandboxDomain,
       envdAccessToken: info.envdAccessToken,
       envdVersion: info.envdVersion,
       ...config,
@@ -309,7 +326,7 @@ export class Sandbox extends SandboxApi {
       return `localhost:${port}`
     }
 
-    return `${port}-${this.sandboxId}.${this.connectionConfig.domain}`
+    return `${port}-${this.sandboxId}.${this.sandboxDomain}`
   }
 
   /**
@@ -397,7 +414,7 @@ export class Sandbox extends SandboxApi {
    *
    * @returns URL for uploading file.
    */
-  uploadUrl(path?: string, opts?: SandboxUrlOpts) {
+  async uploadUrl(path?: string, opts?: SandboxUrlOpts) {
     opts = opts ?? {}
 
     if (
@@ -415,15 +432,16 @@ export class Sandbox extends SandboxApi {
       )
     }
 
+    const username = opts.user ?? defaultUsername
     const filePath = path ?? ''
-    const fileUrl = this.fileUrl(filePath, defaultUsername)
+    const fileUrl = this.fileUrl(filePath, username)
 
     if (opts.useSignature) {
       const url = new URL(fileUrl)
-      const sig = getSignature({
+      const sig = await getSignature({
         path: filePath,
         operation: 'write',
-        user: defaultUsername,
+        user: username,
         expirationInSeconds: opts.useSignatureExpiration,
         envdAccessToken: this.envdAccessToken,
       })
@@ -448,8 +466,7 @@ export class Sandbox extends SandboxApi {
    *
    * @returns URL for downloading file.
    */
-  downloadUrl(path: string, opts?: SandboxUrlOpts) {
-    //path: string, useSignature?: boolean, signatureExpirationInSeconds?: number) {
+  async downloadUrl(path: string, opts?: SandboxUrlOpts) {
     opts = opts ?? {}
 
     if (
@@ -467,14 +484,15 @@ export class Sandbox extends SandboxApi {
       )
     }
 
-    const fileUrl = this.fileUrl(path, defaultUsername)
+    const username = opts.user ?? defaultUsername
+    const fileUrl = this.fileUrl(path, username)
 
     if (opts.useSignature) {
       const url = new URL(fileUrl)
-      const sig = getSignature({
+      const sig = await getSignature({
         path,
         operation: 'read',
-        user: defaultUsername,
+        user: username,
         expirationInSeconds: opts.useSignatureExpiration,
         envdAccessToken: this.envdAccessToken,
       })

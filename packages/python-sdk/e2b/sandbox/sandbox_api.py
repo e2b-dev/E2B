@@ -17,6 +17,8 @@ class SandboxInfo:
 
     sandbox_id: str
     """Sandbox ID."""
+    sandbox_domain: Optional[str]
+    """Domain where the sandbox is hosted."""
     template_id: str
     """Template ID."""
     name: Optional[str]
@@ -45,12 +47,11 @@ class SandboxInfo:
         sandbox: Union[ListedSandbox, SandboxDetail],
         envd_version: Optional[str] = None,
         envd_access_token: Optional[str] = None,
+        sandbox_domain: Optional[str] = None,
     ):
         return cls(
-            sandbox_id=SandboxBase._get_sandbox_id(
-                sandbox.sandbox_id,
-                sandbox.client_id,
-            ),
+            sandbox_domain=sandbox_domain,
+            sandbox_id=sandbox.sandbox_id,
             template_id=sandbox.template_id,
             name=(sandbox.alias if isinstance(sandbox.alias, str) else None),
             metadata=(sandbox.metadata if isinstance(sandbox.metadata, dict) else {}),
@@ -79,6 +80,11 @@ class SandboxInfo:
             (
                 sandbox_detail.envd_access_token
                 if isinstance(sandbox_detail.envd_access_token, str)
+                else None
+            ),
+            sandbox_domain=(
+                sandbox_detail.domain
+                if isinstance(sandbox_detail.domain, str)
                 else None
             ),
         )

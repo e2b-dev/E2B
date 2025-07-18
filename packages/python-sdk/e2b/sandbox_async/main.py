@@ -96,7 +96,6 @@ class AsyncSandbox(SandboxApi):
             transport=self._transport,
             headers=self._connection_config.headers,
         )
-
         self._filesystem = Filesystem(
             self.envd_api_url,
             self._envd_version,
@@ -187,6 +186,7 @@ class AsyncSandbox(SandboxApi):
         connection_headers = {}
 
         sandbox_id: str
+        sandbox_domain: Optional[str]
         envd_version: Optional[str]
         envd_access_token: Optional[str]
 
@@ -208,6 +208,8 @@ class AsyncSandbox(SandboxApi):
 
             sandbox_id = res.sandbox_id
             envd_version = res.envd_version
+            sandbox_domain = res.sandbox_domain
+            envd_version = res.envd_version
 
             if res.envd_access_token:
                 envd_access_token = res.envd_access_token
@@ -220,6 +222,7 @@ class AsyncSandbox(SandboxApi):
             request_timeout=request_timeout,
             headers=connection_headers,
             proxy=proxy,
+            sandbox_domain=sandbox_domain,
         )
 
         return cls(
@@ -259,7 +262,13 @@ class AsyncSandbox(SandboxApi):
 
         connection_headers = {}
 
-        info = await SandboxApi.get_info(sandbox_id)
+        info = await SandboxApi._cls_get_info(
+            sandbox_id,
+            api_key=api_key,
+            domain=domain,
+            debug=debug,
+            proxy=proxy,
+        )
 
         if info._envd_access_token:
             connection_headers["X-Access-Token"] = info._envd_access_token
@@ -270,10 +279,12 @@ class AsyncSandbox(SandboxApi):
             debug=debug,
             headers=connection_headers,
             proxy=proxy,
+            sandbox_domain=info.sandbox_domain,
         )
 
         return cls(
             sandbox_id=sandbox_id,
+            sandbox_domain=info.sandbox_domain,
             connection_config=connection_config,
             envd_version=info._envd_version,
             envd_access_token=info._envd_access_token,
@@ -400,6 +411,43 @@ class AsyncSandbox(SandboxApi):
             **config_dict,
         )
 
+    @overload
+    async def get_info(  # type: ignore
+        self,
+        request_timeout: Optional[float] = None,
+    ) -> SandboxInfo:
+        """
+        Get sandbox information like sandbox ID, template, metadata, started at/end at date.
+        :param request_timeout: Timeout for the request in **seconds**
+        :return: Sandbox info
+        """
+        ...
+
+    @overload
+    @staticmethod
+    async def get_info(
+        sandbox_id: str,
+        api_key: Optional[str] = None,
+        domain: Optional[str] = None,
+        debug: Optional[bool] = None,
+        request_timeout: Optional[float] = None,
+        headers: Optional[Dict[str, str]] = None,
+        proxy: Optional[ProxyTypes] = None,
+    ) -> SandboxInfo:
+        """
+        Get sandbox information like sandbox ID, template, metadata, started at/end at date.
+        :param sandbox_id: Sandbox ID
+        :param api_key: E2B API Key to use for authentication, defaults to `E2B_API_KEY` environment variable
+        :param domain: E2B domain to use for authentication, defaults to `E2B_DOMAIN` environment variable
+        :param debug: Whether to use debug mode, defaults to `E2B_DEBUG` environment variable
+        :param request_timeout: Timeout for the request in **seconds**
+        :param headers: Custom headers to use for the request
+        :param proxy: Proxy to use for the request
+        :return: Sandbox info
+        """
+        ...
+
+    @class_method_variant("_cls_get_info")
     async def get_info(  # type: ignore
         self,
         request_timeout: Optional[float] = None,
@@ -417,7 +465,7 @@ class AsyncSandbox(SandboxApi):
         if request_timeout:
             config_dict["request_timeout"] = request_timeout
 
-        return await SandboxApi.get_info(
+        return await SandboxApi._cls_get_info(
             sandbox_id=self.sandbox_id,
             **config_dict,
         )

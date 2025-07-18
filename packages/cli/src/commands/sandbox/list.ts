@@ -56,7 +56,7 @@ export const listCommand = new commander.Command('list')
           rows: sandboxes
             .map((sandbox) => ({
               ...sandbox,
-              sandboxID: `${sandbox.sandboxID}-${sandbox.clientID}`,
+              sandboxID: sandbox.sandboxID,
               startedAt: new Date(sandbox.startedAt).toLocaleString(),
               endAt: new Date(sandbox.endAt).toLocaleString(),
               state:

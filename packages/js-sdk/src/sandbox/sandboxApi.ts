@@ -57,6 +57,11 @@ export interface SandboxInfo {
   sandboxId: string
 
   /**
+   * Domain where the sandbox is hosted.
+   */
+  sandboxDomain?: string
+
+  /**
    * Template ID.
    */
   templateId: string
@@ -233,10 +238,7 @@ export class SandboxApi {
     }
 
     return {
-      sandboxId: getSandboxId({
-        sandboxId: res.data.sandboxID,
-        clientId: res.data.clientID,
-      }),
+      sandboxId: res.data.sandboxID,
       templateId: res.data.templateID,
       ...(res.data.alias && { name: res.data.alias }),
       metadata: res.data.metadata ?? {},
@@ -247,6 +249,7 @@ export class SandboxApi {
       state: res.data.state,
       cpuCount: res.data.cpuCount,
       memoryMB: res.data.memoryMB,
+      sandboxDomain: res.data.domain || undefined,
     }
   }
 
@@ -260,6 +263,7 @@ export class SandboxApi {
     }
   ): Promise<{
     sandboxId: string
+    sandboxDomain?: string
     envdVersion: string
     envdAccessToken?: string
   }> {
@@ -284,13 +288,7 @@ export class SandboxApi {
     }
 
     if (compareVersions(res.data!.envdVersion, '0.1.0') < 0) {
-      await this.kill(
-        getSandboxId({
-          sandboxId: res.data!.sandboxID,
-          clientId: res.data!.clientID,
-        }),
-        opts
-      )
+      await this.kill(res.data!.sandboxID, opts)
       throw new TemplateError(
         'You need to update the template to use the new SDK. ' +
         'You can do this by running `e2b template build` in the directory with the template.'
@@ -298,10 +296,8 @@ export class SandboxApi {
     }
 
     return {
-      sandboxId: getSandboxId({
-        sandboxId: res.data!.sandboxID,
-        clientId: res.data!.clientID,
-      }),
+      sandboxId: res.data!.sandboxID,
+      sandboxDomain: res.data!.domain || undefined,
       envdVersion: res.data!.envdVersion,
       envdAccessToken: res.data!.envdAccessToken,
     }
@@ -312,15 +308,6 @@ export class SandboxApi {
   }
 }
 
-function getSandboxId({
-  sandboxId,
-  clientId,
-}: {
-  sandboxId: string
-  clientId: string
-}): string {
-  return `${sandboxId}-${clientId}`
-}
 
 /**
  * Paginator for listing sandboxes.
@@ -417,10 +404,7 @@ export class SandboxPaginator {
 
     return (res.data ?? []).map(
       (sandbox: components['schemas']['ListedSandbox']) => ({
-        sandboxId: getSandboxId({
-          sandboxId: sandbox.sandboxID,
-          clientId: sandbox.clientID,
-        }),
+        sandboxId: sandbox.sandboxID,
         templateId: sandbox.templateID,
         ...(sandbox.alias && { name: sandbox.alias }),
         metadata: sandbox.metadata ?? {},

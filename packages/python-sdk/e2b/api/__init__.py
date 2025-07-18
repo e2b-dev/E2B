@@ -15,7 +15,6 @@ from e2b.exceptions import (
 )
 from e2b.api.client.models.sandbox import Sandbox as SandboxModel
 from e2b.api.client.types import Response
-from e2b.sandbox.main import SandboxBase
 
 
 logger = logging.getLogger(__name__)
@@ -24,15 +23,16 @@ logger = logging.getLogger(__name__)
 @dataclass
 class SandboxCreateResponse:
     sandbox_id: str
-    envd_version: Optional[str]
-    envd_access_token: Optional[str]
+    envd_version: str
+    sandbox_domain: Optional[str] = None
+    envd_access_token: Optional[str] = None
 
     @classmethod
     def _from_response(cls, response: SandboxModel):
         return cls(
-            sandbox_id=SandboxBase._get_sandbox_id(
-                response.sandbox_id,
-                response.client_id,
+            sandbox_id=response.sandbox_id,
+            sandbox_domain=(
+                response.domain if isinstance(response.domain, str) else None
             ),
             envd_version=response.envd_version,
             envd_access_token=(

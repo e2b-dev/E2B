@@ -132,7 +132,7 @@ class SandboxApi(SandboxBase):
         )
 
     @classmethod
-    async def get_info(
+    async def _cls_get_info(
         cls,
         sandbox_id: str,
         api_key: Optional[str] = None,
@@ -313,12 +313,7 @@ class SandboxApi(SandboxBase):
                 raise SandboxException(f"{res.parsed.message}: Request failed")
 
             if Version(res.parsed.envd_version) < Version("0.1.0"):
-                await SandboxApi._cls_kill(
-                    SandboxApi._get_sandbox_id(
-                        res.parsed.sandbox_id,
-                        res.parsed.client_id,
-                    )
-                )
+                await SandboxApi._cls_kill(res.parsed.sandbox_id)
                 raise TemplateException(
                     "You need to update the template to use the new SDK. "
                     "You can do this by running `e2b template build` in the directory with the template."

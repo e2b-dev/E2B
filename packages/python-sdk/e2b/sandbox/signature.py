@@ -6,6 +6,7 @@ from typing import Optional, TypedDict, Literal
 
 Operation = Literal["read", "write"]
 
+
 class Signature(TypedDict):
     signature: str
     expiration: Optional[int]  # Unix timestamp or None

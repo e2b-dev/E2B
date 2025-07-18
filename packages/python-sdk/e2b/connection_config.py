@@ -16,7 +16,7 @@ class ConnectionConfig:
 
     @staticmethod
     def _domain():
-        return os.getenv("E2B_DOMAIN", "e2b.app")
+        return os.getenv("E2B_DOMAIN") or "e2b.app"
 
     @staticmethod
     def _debug():
@@ -33,6 +33,7 @@ class ConnectionConfig:
     def __init__(
         self,
         domain: Optional[str] = None,
+        sandbox_domain: Optional[str] = None,
         debug: Optional[bool] = None,
         api_key: Optional[str] = None,
         access_token: Optional[str] = None,
@@ -46,6 +47,7 @@ class ConnectionConfig:
         self.access_token = access_token or ConnectionConfig._access_token()
         self.headers = headers or {}
         self.proxy = proxy
+        self.sandbox_domain = sandbox_domain or self.domain
 
         self.request_timeout = ConnectionConfig._get_request_timeout(
             REQUEST_TIMEOUT,
@@ -77,6 +79,7 @@ class ConnectionConfig:
 
     def get_request_timeout(self, request_timeout: Optional[float] = None):
         return self._get_request_timeout(self.request_timeout, request_timeout)
+
 
 Username = Literal["root", "user"]
 """
