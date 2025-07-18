@@ -1,9 +1,16 @@
-from enum import Enum
+from typing import Literal, cast
+
+SandboxState = Literal["paused", "running"]
+
+SANDBOX_STATE_VALUES: set[SandboxState] = {
+    "paused",
+    "running",
+}
 
 
-class SandboxState(str, Enum):
-    PAUSED = "paused"
-    RUNNING = "running"
-
-    def __str__(self) -> str:
-        return str(self.value)
+def check_sandbox_state(value: str) -> SandboxState:
+    if value in SANDBOX_STATE_VALUES:
+        return cast(SandboxState, value)
+    raise TypeError(
+        f"Unexpected value {value!r}. Expected one of {SANDBOX_STATE_VALUES!r}"
+    )

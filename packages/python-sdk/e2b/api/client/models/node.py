@@ -4,7 +4,7 @@ from typing import Any, TypeVar, Union, cast
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
-from ..models.node_status import NodeStatus
+from ..models.node_status import NodeStatus, check_node_status
 from ..types import UNSET, Unset
 
 T = TypeVar("T", bound="Node")
@@ -57,7 +57,7 @@ class Node:
 
         sandbox_starting_count = self.sandbox_starting_count
 
-        status = self.status.value
+        status: str = self.status
 
         version = self.version
 
@@ -107,7 +107,7 @@ class Node:
 
         sandbox_starting_count = d.pop("sandboxStartingCount")
 
-        status = NodeStatus(d.pop("status"))
+        status = check_node_status(d.pop("status"))
 
         version = d.pop("version")
 
