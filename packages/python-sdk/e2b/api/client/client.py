@@ -232,7 +232,7 @@ class AuthenticatedClient:
             self._client = httpx.Client(
                 base_url=self._base_url,
                 cookies=self._cookies,
-                headers=self._headers,
+                headers={**self._headers, "Connection": "keep-alive"},
                 timeout=self._timeout,
                 verify=self._verify_ssl,
                 follow_redirects=self._follow_redirects,
