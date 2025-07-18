@@ -315,6 +315,19 @@ function getSandboxId({
   return `${sandboxId}-${clientId}`
 }
 
+/**
+ * Paginator for listing sandboxes.
+ *
+ * @example
+ * ```ts
+ * const paginator = Sandbox.list()
+ *
+ * while (paginator.hasNext) {
+ *   const sandboxes = await paginator.nextItems()
+ *   console.log(sandboxes)
+ * }
+ * ```
+ */
 export class SandboxPaginator {
   private _hasNext: boolean
   private _nextToken?: string

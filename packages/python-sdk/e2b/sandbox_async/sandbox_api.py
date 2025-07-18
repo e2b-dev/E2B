@@ -30,6 +30,19 @@ from e2b.api.client.types import UNSET
 
 
 class AsyncSandboxPaginator(SandboxPaginatorBase):
+    """
+    Paginator for listing sandboxes.
+
+    Example:
+    ```python
+    paginator = AsyncSandbox.list()
+
+    while paginator.has_next:
+        sandboxes = await paginator.next_items()
+        print(sandboxes)
+    ```
+    """
+
     async def next_items(self) -> List[SandboxInfo]:
         """
         Returns the next page of sandboxes.
