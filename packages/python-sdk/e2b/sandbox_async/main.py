@@ -211,7 +211,6 @@ class AsyncSandbox(SandboxApi):
             sandbox_id = res.sandbox_id
             envd_version = res.envd_version
             sandbox_domain = res.sandbox_domain
-            envd_version = res.envd_version
 
             if res.envd_access_token:
                 envd_access_token = res.envd_access_token
@@ -262,8 +261,6 @@ class AsyncSandbox(SandboxApi):
         same_sandbox = await AsyncSandbox.connect(sandbox_id)
         """
 
-        connection_headers = {}
-
         info = await SandboxApi._cls_get_info(
             sandbox_id,
             api_key=api_key,
@@ -271,6 +268,8 @@ class AsyncSandbox(SandboxApi):
             debug=debug,
             proxy=proxy,
         )
+
+        connection_headers = {}
 
         if info._envd_access_token:
             connection_headers["X-Access-Token"] = info._envd_access_token

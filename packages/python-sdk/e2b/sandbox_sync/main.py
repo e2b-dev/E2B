@@ -6,6 +6,7 @@ from typing import Dict, Optional, overload
 from e2b.connection_config import ConnectionConfig, ProxyTypes
 from e2b.envd.api import ENVD_API_HEALTH_ROUTE, handle_envd_api_exception
 from e2b.exceptions import SandboxException, format_request_timeout_error
+from e2b.sandbox.main import SandboxBase
 from e2b.sandbox.utils import class_method_variant
 from e2b.sandbox_sync.filesystem.filesystem import Filesystem
 from e2b.sandbox_sync.commands.command import Commands
@@ -124,12 +125,10 @@ class Sandbox(SandboxApi):
                 envd_access_token = info._envd_access_token
                 connection_headers["X-Access-Token"] = info._envd_access_token
         else:
-            template = template or self.default_template
-            timeout = timeout or self.default_sandbox_timeout
             info = SandboxApi._create_sandbox(
-                template=template,
+                template=template or SandboxBase.default_template,
                 api_key=api_key,
-                timeout=timeout,
+                timeout=timeout or SandboxBase.default_sandbox_timeout,
                 metadata=metadata,
                 env_vars=envs,
                 domain=domain,
