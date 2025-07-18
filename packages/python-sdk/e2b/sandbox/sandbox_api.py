@@ -32,7 +32,7 @@ class SandboxInfo:
     cpu_count: int
     """Sandbox CPU count."""
     memory_mb: int
-    """Sandbox Memory size in MB."""
+    """Sandbox Memory size in MiB."""
 
     _envd_version: Optional[str]
     """Envd version."""

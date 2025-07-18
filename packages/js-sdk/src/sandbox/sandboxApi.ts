@@ -87,7 +87,7 @@ export interface SandboxInfo {
   cpuCount: number
 
   /**
-   * Sandbox Memory size in MB.
+   * Sandbox Memory size in MiB.
    */
   memoryMB: number
 }
