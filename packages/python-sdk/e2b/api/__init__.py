@@ -13,7 +13,9 @@ from e2b.exceptions import (
     SandboxException,
     RateLimitException,
 )
+from e2b.api.client.models.sandbox import Sandbox as SandboxModel
 from e2b.api.client.types import Response
+from e2b.sandbox.sandbox_api import SandboxApiBase
 
 logger = logging.getLogger(__name__)
 
@@ -21,8 +23,23 @@ logger = logging.getLogger(__name__)
 @dataclass
 class SandboxCreateResponse:
     sandbox_id: str
-    envd_version: str
-    envd_access_token: str
+    envd_version: Optional[str]
+    envd_access_token: Optional[str]
+
+    @classmethod
+    def _from_response(cls, response: SandboxModel):
+        return cls(
+            sandbox_id=SandboxApiBase._get_sandbox_id(
+                response.sandbox_id,
+                response.client_id,
+            ),
+            envd_version=response.envd_version,
+            envd_access_token=(
+                response.envd_access_token
+                if isinstance(response.envd_access_token, str)
+                else None
+            ),
+        )
 
 
 def handle_api_exception(e: Response):

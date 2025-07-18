@@ -73,31 +73,6 @@ class Sandbox(SandboxSetup, SandboxApi):
         """
         return self._pty
 
-    @property
-    def sandbox_id(self) -> str:
-        """
-        Unique identifier of the sandbox
-        """
-        return self._sandbox_id
-
-    @property
-    def envd_api_url(self) -> str:
-        return self._envd_api_url
-
-    @property
-    def _envd_access_token(self) -> Optional[str]:
-        """Private property to access the envd token"""
-        return self.__envd_access_token
-
-    @_envd_access_token.setter
-    def _envd_access_token(self, value: Optional[str]):
-        """Private setter for envd token"""
-        self.__envd_access_token = value
-
-    @property
-    def connection_config(self) -> ConnectionConfig:
-        return self._connection_config
-
     def __init__(
         self,
         template: Optional[str] = None,
@@ -127,8 +102,6 @@ class Sandbox(SandboxSetup, SandboxApi):
 
         :return: sandbox instance for the new sandbox
         """
-        super().__init__()
-
         if sandbox_id and (metadata is not None or template is not None):
             raise SandboxException(
                 "Cannot set metadata or timeout when connecting to an existing sandbox. "
@@ -137,20 +110,18 @@ class Sandbox(SandboxSetup, SandboxApi):
 
         connection_headers = {}
 
+        envd_version: Optional[str]
+        envd_access_token: Optional[str]
+
         if debug:
-            self._sandbox_id = "debug_sandbox_id"
-            self._envd_version = None
-            self._envd_access_token = None
+            sandbox_id = "debug_sandbox_id"
         elif sandbox_id is not None:
             info = SandboxApi.get_info(sandbox_id)
 
-            self._sandbox_id = sandbox_id
-            self._envd_version = info._envd_version
-            self._envd_access_token = info._envd_access_token
+            envd_version = info._envd_version
 
-            if info._envd_access_token is not None and not isinstance(
-                info._envd_access_token, Unset
-            ):
+            if info._envd_access_token:
+                envd_access_token = info._envd_access_token
                 connection_headers["X-Access-Token"] = info._envd_access_token
         else:
             template = template or self.default_template
@@ -167,19 +138,14 @@ class Sandbox(SandboxSetup, SandboxApi):
                 secure=secure or False,
                 proxy=proxy,
             )
-            self._sandbox_id = info.sandbox_id
-            self._envd_version = info.envd_version
+            sandbox_id = info.sandbox_id
+            envd_version = info.envd_version
 
-            if info.envd_access_token is not None and not isinstance(
-                info.envd_access_token, Unset
-            ):
-                self._envd_access_token = info.envd_access_token
+            if info.envd_access_token:
+                envd_access_token = info.envd_access_token
                 connection_headers["X-Access-Token"] = info.envd_access_token
-            else:
-                self._envd_access_token = None
 
-        self._transport = TransportWithLogger(limits=self._limits, proxy=proxy)
-        self._connection_config = ConnectionConfig(
+        connection_config = ConnectionConfig(
             api_key=api_key,
             domain=domain,
             debug=debug,
@@ -188,7 +154,15 @@ class Sandbox(SandboxSetup, SandboxApi):
             proxy=proxy,
         )
 
-        self._envd_api_url = f"{'http' if self.connection_config.debug else 'https'}://{self.get_host(self.envd_port)}"
+        super().__init__(
+            sandbox_id=sandbox_id,
+            envd_version=envd_version,
+            envd_access_token=envd_access_token,
+            connection_config=connection_config,
+        )
+
+        self._transport = TransportWithLogger(limits=self._limits, proxy=proxy)
+
         self._envd_api = httpx.Client(
             base_url=self.envd_api_url,
             transport=self._transport,
@@ -202,11 +176,13 @@ class Sandbox(SandboxSetup, SandboxApi):
             self._transport._pool,
             self._envd_api,
         )
+
         self._commands = Commands(
             self.envd_api_url,
             self.connection_config,
             self._transport._pool,
         )
+
         self._pty = Pty(
             self.envd_api_url,
             self.connection_config,

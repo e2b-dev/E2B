@@ -1,6 +1,6 @@
 import urllib.parse
 
-from abc import ABC, abstractmethod
+from abc import ABC
 from typing import Optional
 
 from e2b.sandbox.signature import get_signature
@@ -21,27 +21,50 @@ class SandboxSetup(ABC):
     default_sandbox_timeout = 300
     default_template = "base"
 
-    @property
-    @abstractmethod
-    def connection_config(self) -> ConnectionConfig:
-        ...
+    def __init__(
+        self,
+        sandbox_id: str,
+        envd_version: Optional[str],
+        envd_access_token: Optional[str],
+        connection_config: ConnectionConfig,
+    ):
+        self._sandbox_id = sandbox_id
+        self._connection_config = connection_config
+        self.__envd_version = envd_version
+        self.__envd_access_token = envd_access_token
+        self._envd_api_url = f"{'http' if self.connection_config.debug else 'https'}://{self.get_host(self.envd_port)}"
 
     @property
-    @abstractmethod
     def _envd_access_token(self) -> Optional[str]:
-        ...
+        """Private property to access the envd token"""
+        return self.__envd_access_token
 
     @property
-    @abstractmethod
+    def connection_config(self) -> ConnectionConfig:
+        return self._connection_config
+
+    @property
+    def _envd_version(self) -> Optional[str]:
+        return self.__envd_version
+
+    @property
     def envd_api_url(self) -> str:
-        ...
+        return self._envd_api_url
 
     @property
-    @abstractmethod
     def sandbox_id(self) -> str:
-        ...
+        """
+        Unique identifier of the sandbox.
+        """
+        return self._sandbox_id
 
-    def _file_url(self, path: Optional[str] = None, user: str = "user", signature: Optional[str] = None, signature_expiration: Optional[int] = None) -> str:
+    def _file_url(
+        self,
+        path: Optional[str] = None,
+        user: str = "user",
+        signature: Optional[str] = None,
+        signature_expiration: Optional[int] = None,
+    ) -> str:
         url = urllib.parse.urljoin(self.envd_api_url, ENVD_API_FILES_ROUTE)
         query = {"path": path} if path else {}
         query = {**query, "username": user}
@@ -62,7 +85,13 @@ class SandboxSetup(ABC):
 
         return url
 
-    def download_url(self, path: str, user: str = "user", use_signature: bool = False, use_signature_expiration: Optional[int] = None) -> str:
+    def download_url(
+        self,
+        path: str,
+        user: str = "user",
+        use_signature: bool = False,
+        use_signature_expiration: Optional[int] = None,
+    ) -> str:
         """
         Get the URL to download a file from the sandbox.
 
@@ -75,12 +104,22 @@ class SandboxSetup(ABC):
         """
 
         if use_signature:
-            signature = get_signature(path, "read", user, self._envd_access_token, use_signature_expiration)
-            return self._file_url(path, user, signature["signature"], signature["expiration"])
+            signature = get_signature(
+                path, "read", user, self._envd_access_token, use_signature_expiration
+            )
+            return self._file_url(
+                path, user, signature["signature"], signature["expiration"]
+            )
         else:
             return self._file_url(path)
 
-    def upload_url(self, path: Optional[str] = None, user: str = "user", use_signature: bool = False, use_signature_expiration: Optional[int] = None) -> str:
+    def upload_url(
+        self,
+        path: Optional[str] = None,
+        user: str = "user",
+        use_signature: bool = False,
+        use_signature_expiration: Optional[int] = None,
+    ) -> str:
         """
         Get the URL to upload a file to the sandbox.
 
@@ -95,8 +134,12 @@ class SandboxSetup(ABC):
         """
 
         if use_signature:
-            signature = get_signature(path, "write", user, self._envd_access_token, use_signature_expiration)
-            return self._file_url(path, user, signature["signature"], signature["expiration"])
+            signature = get_signature(
+                path, "write", user, self._envd_access_token, use_signature_expiration
+            )
+            return self._file_url(
+                path, user, signature["signature"], signature["expiration"]
+            )
         else:
             return self._file_url(path)
 

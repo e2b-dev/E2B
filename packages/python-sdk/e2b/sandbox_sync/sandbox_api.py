@@ -30,7 +30,7 @@ class SandboxPaginator(SandboxPaginatorBase):
         """
         Returns the next page of sandboxes.
 
-        Call this method only if `has_next` is True, otherwise it will raise an exception.
+        Call this method only if `has_next` is `True`, otherwise it will raise an exception.
 
         :returns: List of sandboxes
         """
@@ -164,7 +164,7 @@ class SandboxApi(SandboxApiBase):
 
             # Check if res.parse is Error
             if isinstance(res.parsed, Error):
-                raise SandboxException(f"{res.parsed.message}: Cannot parse response")
+                raise SandboxException(f"{res.parsed.message}: Request failed")
 
             return SandboxInfo._from_sandbox_detail(res.parsed)
 
@@ -292,6 +292,10 @@ class SandboxApi(SandboxApiBase):
             if res.parsed is None:
                 raise Exception("Body of the request is None")
 
+            # Check if res.parse is Error
+            if isinstance(res.parsed, Error):
+                raise SandboxException(f"{res.parsed.message}: Request failed")
+
             if Version(res.parsed.envd_version) < Version("0.1.0"):
                 SandboxApi._cls_kill(
                     SandboxApi._get_sandbox_id(
@@ -304,11 +308,4 @@ class SandboxApi(SandboxApiBase):
                     "You can do this by running `e2b template build` in the directory with the template."
                 )
 
-            return SandboxCreateResponse(
-                sandbox_id=SandboxApi._get_sandbox_id(
-                    res.parsed.sandbox_id,
-                    res.parsed.client_id,
-                ),
-                envd_version=res.parsed.envd_version,
-                envd_access_token=res.parsed.envd_access_token,
-            )
+            return SandboxCreateResponse._from_response(res.parsed)

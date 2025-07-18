@@ -29,6 +29,7 @@ class SandboxBeta(Sandbox):
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
+        # TODO: Should we add headers here?
         proxy: Optional[ProxyTypes] = None,
     ):
         """

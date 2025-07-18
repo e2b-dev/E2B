@@ -1,8 +1,7 @@
 import logging
 import httpx
 
-from typing import Dict, Optional, TypedDict, overload
-from typing_extensions import Unpack
+from typing import Dict, Optional, overload
 
 from e2b.api.client.types import Unset
 from e2b.connection_config import ConnectionConfig, ProxyTypes
@@ -28,13 +27,6 @@ class AsyncTransportWithLogger(httpx.AsyncHTTPTransport):
         logger.info(f"Response: {response.status_code} {url}")
 
         return response
-
-
-class AsyncSandboxOpts(TypedDict):
-    sandbox_id: str
-    envd_version: Optional[str]
-    envd_access_token: Optional[str]
-    connection_config: ConnectionConfig
 
 
 class AsyncSandbox(SandboxSetup, SandboxApi):
@@ -81,43 +73,22 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
         """
         return self._pty
 
-    @property
-    def sandbox_id(self) -> str:
-        """
-        Unique identifier of the sandbox.
-        """
-        return self._sandbox_id
-
-    @property
-    def envd_api_url(self) -> str:
-        return self._envd_api_url
-
-    @property
-    def _envd_access_token(self) -> Optional[str]:
-        """Private property to access the envd token"""
-        return self.__envd_access_token
-
-    @_envd_access_token.setter
-    def _envd_access_token(self, value: str):
-        """Private setter for envd token"""
-        self.__envd_access_token = value
-
-    @property
-    def connection_config(self) -> ConnectionConfig:
-        return self._connection_config
-
-    def __init__(self, **opts: Unpack[AsyncSandboxOpts]):
+    def __init__(
+        self,
+        sandbox_id: str,
+        connection_config: ConnectionConfig,
+        envd_version: Optional[str],
+        envd_access_token: Optional[str],
+    ):
         """
         Use `AsyncSandbox.create()` to create a new sandbox instead.
         """
-        super().__init__()
-
-        self._sandbox_id = opts["sandbox_id"]
-        self._connection_config = opts["connection_config"]
-
-        self._envd_api_url = f"{'http' if self.connection_config.debug else 'https'}://{self.get_host(self.envd_port)}"
-        self._envd_version = opts["envd_version"]
-        self._envd_access_token = opts["envd_access_token"]
+        super().__init__(
+            sandbox_id=sandbox_id,
+            envd_version=envd_version,
+            envd_access_token=envd_access_token,
+            connection_config=connection_config,
+        )
 
         self._transport = AsyncTransportWithLogger(
             limits=self._limits, proxy=self._connection_config.proxy
@@ -217,10 +188,12 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
 
         connection_headers = {}
 
+        sandbox_id: str
+        envd_version: Optional[str]
+        envd_access_token: Optional[str]
+
         if debug:
             sandbox_id = "debug_sandbox_id"
-            envd_version = None
-            envd_access_token = None
         else:
             res = await SandboxApi._create_sandbox(
                 template=template or cls.default_template,
@@ -237,11 +210,9 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
 
             sandbox_id = res.sandbox_id
             envd_version = res.envd_version
-            envd_access_token = res.envd_access_token
 
-            if envd_access_token is not None and not isinstance(
-                envd_access_token, Unset
-            ):
+            if res.envd_access_token:
+                envd_access_token = res.envd_access_token
                 connection_headers["X-Access-Token"] = envd_access_token
 
         connection_config = ConnectionConfig(
