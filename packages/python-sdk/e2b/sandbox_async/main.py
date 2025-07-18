@@ -32,6 +32,7 @@ class AsyncTransportWithLogger(httpx.AsyncHTTPTransport):
 
 class AsyncSandboxOpts(TypedDict):
     sandbox_id: str
+    sandbox_domain: Optional[str]
     envd_version: Optional[str]
     envd_access_token: Optional[str]
     connection_config: ConnectionConfig
@@ -89,6 +90,13 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
         return self._sandbox_id
 
     @property
+    def sandbox_domain(self) -> str:
+        """
+        Unique identifier of the sandbox.
+        """
+        return self._sandbox_domain
+
+    @property
     def envd_api_url(self) -> str:
         return self._envd_api_url
 
@@ -112,8 +120,10 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
         """
         super().__init__()
 
-        self._sandbox_id = opts["sandbox_id"]
         self._connection_config = opts["connection_config"]
+
+        self._sandbox_id = opts["sandbox_id"]
+        self._sandbox_domain = opts["sandbox_domain"] or self.connection_config.domain
 
         self._envd_api_url = f"{'http' if self.connection_config.debug else 'https'}://{self.get_host(self.envd_port)}"
         self._envd_version = opts["envd_version"]
@@ -219,6 +229,7 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
 
         if debug:
             sandbox_id = "debug_sandbox_id"
+            sandbox_domain = None
             envd_version = None
             envd_access_token = None
         else:
@@ -236,6 +247,7 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
             )
 
             sandbox_id = response.sandbox_id
+            sandbox_domain = response.sandbox_domain
             envd_version = response.envd_version
             envd_access_token = response.envd_access_token
 
@@ -255,6 +267,7 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
 
         return cls(
             sandbox_id=sandbox_id,
+            sandbox_domain=sandbox_domain,
             envd_version=envd_version,
             envd_access_token=envd_access_token,
             connection_config=connection_config,
@@ -290,7 +303,13 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
 
         connection_headers = {}
 
-        response = await SandboxApi.get_info(sandbox_id)
+        response = await SandboxApi._cls_get_info(
+            sandbox_id,
+            api_key=api_key,
+            domain=domain,
+            debug=debug,
+            proxy=proxy,
+        )
 
         if response._envd_access_token is not None and not isinstance(
             response._envd_access_token, Unset
@@ -307,6 +326,7 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
 
         return cls(
             sandbox_id=sandbox_id,
+            sandbox_domain=response.sandbox_domain,
             connection_config=connection_config,
             envd_version=response.envd_version,
             envd_access_token=response._envd_access_token,
@@ -430,6 +450,43 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
             **config_dict,
         )
 
+    @overload
+    async def get_info(
+        self,
+        request_timeout: Optional[float] = None,
+    ) -> SandboxInfo:
+        """
+        Get sandbox information like sandbox ID, template, metadata, started at/end at date.
+        :param request_timeout: Timeout for the request in **seconds**
+        :return: Sandbox info
+        """
+        ...
+
+    @overload
+    @staticmethod
+    async def get_info(
+        sandbox_id: str,
+        api_key: Optional[str] = None,
+        domain: Optional[str] = None,
+        debug: Optional[bool] = None,
+        request_timeout: Optional[float] = None,
+        headers: Optional[Dict[str, str]] = None,
+        proxy: Optional[ProxyTypes] = None,
+    ) -> SandboxInfo:
+        """
+        Get sandbox information like sandbox ID, template, metadata, started at/end at date.
+        :param sandbox_id: Sandbox ID
+        :param api_key: E2B API Key to use for authentication, defaults to `E2B_API_KEY` environment variable
+        :param domain: E2B domain to use for authentication, defaults to `E2B_DOMAIN` environment variable
+        :param debug: Whether to use debug mode, defaults to `E2B_DEBUG` environment variable
+        :param request_timeout: Timeout for the request in **seconds**
+        :param headers: Custom headers to use for the request
+        :param proxy: Proxy to use for the request
+        :return: Sandbox info
+        """
+        ...
+
+    @class_method_variant("_cls_get_info")
     async def get_info(  # type: ignore
         self,
         request_timeout: Optional[float] = None,
@@ -447,7 +504,7 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
         if request_timeout:
             config_dict["request_timeout"] = request_timeout
 
-        return await SandboxApi.get_info(
+        return await SandboxApi._cls_get_info(
             sandbox_id=self.sandbox_id,
             **config_dict,
         )

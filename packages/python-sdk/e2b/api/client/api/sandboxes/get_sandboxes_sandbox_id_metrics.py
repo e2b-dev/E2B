@@ -7,15 +7,27 @@ from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.error import Error
 from ...models.sandbox_metric import SandboxMetric
-from ...types import Response
+from ...types import UNSET, Response, Unset
 
 
 def _get_kwargs(
     sandbox_id: str,
+    *,
+    start: Union[Unset, int] = UNSET,
+    end: Union[Unset, int] = UNSET,
 ) -> dict[str, Any]:
+    params: dict[str, Any] = {}
+
+    params["start"] = start
+
+    params["end"] = end
+
+    params = {k: v for k, v in params.items() if v is not UNSET and v is not None}
+
     _kwargs: dict[str, Any] = {
         "method": "get",
         "url": f"/sandboxes/{sandbox_id}/metrics",
+        "params": params,
     }
 
     return _kwargs
@@ -33,6 +45,10 @@ def _parse_response(
             response_200.append(response_200_item)
 
         return response_200
+    if response.status_code == 400:
+        response_400 = Error.from_dict(response.json())
+
+        return response_400
     if response.status_code == 401:
         response_401 = Error.from_dict(response.json())
 
@@ -66,11 +82,16 @@ def sync_detailed(
     sandbox_id: str,
     *,
     client: AuthenticatedClient,
+    start: Union[Unset, int] = UNSET,
+    end: Union[Unset, int] = UNSET,
 ) -> Response[Union[Error, list["SandboxMetric"]]]:
     """Get sandbox metrics
 
     Args:
         sandbox_id (str):
+        start (Union[Unset, int]):
+        end (Union[Unset, int]): Ending timestamp of the metrics that should be returned in
+            milliseconds
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -82,6 +103,8 @@ def sync_detailed(
 
     kwargs = _get_kwargs(
         sandbox_id=sandbox_id,
+        start=start,
+        end=end,
     )
 
     response = client.get_httpx_client().request(
@@ -95,11 +118,16 @@ def sync(
     sandbox_id: str,
     *,
     client: AuthenticatedClient,
+    start: Union[Unset, int] = UNSET,
+    end: Union[Unset, int] = UNSET,
 ) -> Optional[Union[Error, list["SandboxMetric"]]]:
     """Get sandbox metrics
 
     Args:
         sandbox_id (str):
+        start (Union[Unset, int]):
+        end (Union[Unset, int]): Ending timestamp of the metrics that should be returned in
+            milliseconds
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -112,6 +140,8 @@ def sync(
     return sync_detailed(
         sandbox_id=sandbox_id,
         client=client,
+        start=start,
+        end=end,
     ).parsed
 
 
@@ -119,11 +149,16 @@ async def asyncio_detailed(
     sandbox_id: str,
     *,
     client: AuthenticatedClient,
+    start: Union[Unset, int] = UNSET,
+    end: Union[Unset, int] = UNSET,
 ) -> Response[Union[Error, list["SandboxMetric"]]]:
     """Get sandbox metrics
 
     Args:
         sandbox_id (str):
+        start (Union[Unset, int]):
+        end (Union[Unset, int]): Ending timestamp of the metrics that should be returned in
+            milliseconds
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -135,6 +170,8 @@ async def asyncio_detailed(
 
     kwargs = _get_kwargs(
         sandbox_id=sandbox_id,
+        start=start,
+        end=end,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -146,11 +183,16 @@ async def asyncio(
     sandbox_id: str,
     *,
     client: AuthenticatedClient,
+    start: Union[Unset, int] = UNSET,
+    end: Union[Unset, int] = UNSET,
 ) -> Optional[Union[Error, list["SandboxMetric"]]]:
     """Get sandbox metrics
 
     Args:
         sandbox_id (str):
+        start (Union[Unset, int]):
+        end (Union[Unset, int]): Ending timestamp of the metrics that should be returned in
+            milliseconds
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -164,5 +206,7 @@ async def asyncio(
         await asyncio_detailed(
             sandbox_id=sandbox_id,
             client=client,
+            start=start,
+            end=end,
         )
     ).parsed

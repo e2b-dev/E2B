@@ -76,9 +76,16 @@ class Sandbox(SandboxSetup, SandboxApi):
     @property
     def sandbox_id(self) -> str:
         """
-        Unique identifier of the sandbox
+        Unique identifier of the sandbox.
         """
         return self._sandbox_id
+
+    @property
+    def sandbox_domain(self) -> str:
+        """
+        Domain where the sandbox is hosted.
+        """
+        return self._sandbox_domain
 
     @property
     def envd_api_url(self) -> str:
@@ -139,17 +146,26 @@ class Sandbox(SandboxSetup, SandboxApi):
 
         if debug:
             self._sandbox_id = "debug_sandbox_id"
+            self._sandbox_domain = None
             self._envd_version = None
             self._envd_access_token = None
         elif sandbox_id is not None:
-            response = SandboxApi.get_info(sandbox_id)
+            response = SandboxApi._cls_get_info(
+                sandbox_id,
+                api_key=api_key,
+                domain=domain,
+                debug=debug,
+                request_timeout=request_timeout,
+                proxy=proxy,
+            )
 
             self._sandbox_id = sandbox_id
+            self._sandbox_domain = response.sandbox_domain
             self._envd_version = response.envd_version
             self._envd_access_token = response._envd_access_token
 
             if response._envd_access_token is not None and not isinstance(
-                    response._envd_access_token, Unset
+                response._envd_access_token, Unset
             ):
                 connection_headers["X-Access-Token"] = response._envd_access_token
         else:
@@ -167,7 +183,9 @@ class Sandbox(SandboxSetup, SandboxApi):
                 secure=secure or False,
                 proxy=proxy,
             )
+
             self._sandbox_id = response.sandbox_id
+            self._sandbox_domain = response.sandbox_domain
             self._envd_version = response.envd_version
 
             if response.envd_access_token is not None and not isinstance(
@@ -188,6 +206,7 @@ class Sandbox(SandboxSetup, SandboxApi):
             proxy=proxy,
         )
 
+        self._sandbox_domain = self._sandbox_domain or self._connection_config.domain
         self._envd_api_url = f"{'http' if self.connection_config.debug else 'https'}://{self.get_host(self.envd_port)}"
         self._envd_api = httpx.Client(
             base_url=self.envd_api_url,
@@ -408,6 +427,43 @@ class Sandbox(SandboxSetup, SandboxApi):
             **config_dict,
         )
 
+    @overload
+    def get_info(
+        self,
+        request_timeout: Optional[float] = None,
+    ) -> SandboxInfo:
+        """
+        Get sandbox information like sandbox ID, template, metadata, started at/end at date.
+        :param request_timeout: Timeout for the request in **seconds**
+        :return: Sandbox info
+        """
+        ...
+
+    @overload
+    @staticmethod
+    def get_info(
+        sandbox_id: str,
+        api_key: Optional[str] = None,
+        domain: Optional[str] = None,
+        debug: Optional[bool] = None,
+        request_timeout: Optional[float] = None,
+        headers: Optional[Dict[str, str]] = None,
+        proxy: Optional[ProxyTypes] = None,
+    ) -> SandboxInfo:
+        """
+        Get sandbox information like sandbox ID, template, metadata, started at/end at date.
+        :param sandbox_id: Sandbox ID
+        :param api_key: E2B API Key to use for authentication, defaults to `E2B_API_KEY` environment variable
+        :param domain: E2B domain to use for authentication, defaults to `E2B_DOMAIN` environment variable
+        :param debug: Whether to use debug mode, defaults to `E2B_DEBUG` environment variable
+        :param request_timeout: Timeout for the request in **seconds**
+        :param headers: Custom headers to use for the request
+        :param proxy: Proxy to use for the request
+        :return: Sandbox info
+        """
+        ...
+
+    @class_method_variant("_cls_get_info")
     def get_info(  # type: ignore
         self,
         request_timeout: Optional[float] = None,
@@ -424,7 +480,7 @@ class Sandbox(SandboxSetup, SandboxApi):
         if request_timeout:
             config_dict["request_timeout"] = request_timeout
 
-        return SandboxApi.get_info(
+        return SandboxApi._cls_get_info(
             sandbox_id=self.sandbox_id,
             **config_dict,
         )

@@ -117,6 +117,11 @@ export class Sandbox extends SandboxApi {
    */
   readonly sandboxId: string
 
+  /**
+   * Domain where the sandbox is hosted.
+   */
+  readonly sandboxDomain: string
+
   protected readonly envdPort = 49983
 
   protected readonly connectionConfig: ConnectionConfig
@@ -135,14 +140,17 @@ export class Sandbox extends SandboxApi {
   constructor(
     opts: Omit<SandboxOpts, 'timeoutMs' | 'envs' | 'metadata'> & {
       sandboxId: string
+      sandboxDomain?: string
       envdVersion?: string
       envdAccessToken?: string
     }
   ) {
     super()
 
-    this.sandboxId = opts.sandboxId
     this.connectionConfig = new ConnectionConfig(opts)
+
+    this.sandboxId = opts.sandboxId
+    this.sandboxDomain = opts.sandboxDomain ?? this.connectionConfig.domain
 
     this.envdAccessToken = opts.envdAccessToken
     this.envdApiUrl = `${
@@ -287,6 +295,7 @@ export class Sandbox extends SandboxApi {
 
     return new this({
       sandboxId,
+      sandboxDomain: info.sandboxDomain,
       envdAccessToken: info.envdAccessToken,
       envdVersion: info.envdVersion,
       ...config,
@@ -315,7 +324,7 @@ export class Sandbox extends SandboxApi {
       return `localhost:${port}`
     }
 
-    return `${port}-${this.sandboxId}.${this.connectionConfig.domain}`
+    return `${port}-${this.sandboxId}.${this.sandboxDomain}`
   }
 
   /**
@@ -456,7 +465,6 @@ export class Sandbox extends SandboxApi {
    * @returns URL for downloading file.
    */
   async downloadUrl(path: string, opts?: SandboxUrlOpts) {
-    //path: string, useSignature?: boolean, signatureExpirationInSeconds?: number) {
     opts = opts ?? {}
 
     if (

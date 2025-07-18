@@ -201,8 +201,8 @@ components:
         - timestamp
         - cpuCount
         - cpuUsedPct
-        - memUsedMiB
-        - memTotalMiB
+        - memUsed
+        - memTotal
       properties:
         timestamp:
           type: string
@@ -216,14 +216,14 @@ components:
           type: number
           format: float
           description: CPU usage percentage
-        memUsedMiB:
+        memUsed:
           type: integer
           format: int64
-          description: Memory used in MiB
-        memTotalMiB:
+          description: Memory used in bytes
+        memTotal:
           type: integer
           format: int64
-          description: Total memory in MiB
+          description: Total memory in bytes
 
     Sandbox:
       required:
@@ -243,6 +243,7 @@ components:
           description: Alias of the template
         clientID:
           type: string
+          deprecated: true
           description: Identifier of the client
         envdVersion:
           type: string
@@ -250,6 +251,10 @@ components:
         envdAccessToken:
           type: string
           description: Access token used for envd communication
+        domain:
+          type: string
+          nullable: true
+          description: Base domain where the sandbox traffic is accessible
 
     SandboxDetail:
       required:
@@ -273,6 +278,7 @@ components:
           description: Identifier of the sandbox
         clientID:
           type: string
+          deprecated: true
           description: Identifier of the client
         startedAt:
           type: string
@@ -288,6 +294,10 @@ components:
         envdAccessToken:
           type: string
           description: Access token used for envd communication
+        domain:
+          type: string
+          nullable: true
+          description: Base domain where the sandbox traffic is accessible
         cpuCount:
           $ref: "#/components/schemas/CPUCount"
         memoryMB:
@@ -319,6 +329,7 @@ components:
           description: Identifier of the sandbox
         clientID:
           type: string
+          deprecated: true
           description: Identifier of the client
         startedAt:
           type: string
@@ -337,45 +348,12 @@ components:
         state:
           $ref: "#/components/schemas/SandboxState"
 
-    RunningSandboxWithMetrics:
+    SandboxesWithMetrics:
       required:
-        - templateID
-        - sandboxID
-        - clientID
-        - startedAt
-        - cpuCount
-        - memoryMB
-        - endAt
+        - sandboxes
       properties:
-        templateID:
-          type: string
-          description: Identifier of the template from which is the sandbox created
-        alias:
-          type: string
-          description: Alias of the template
-        sandboxID:
-          type: string
-          description: Identifier of the sandbox
-        clientID:
-          type: string
-          description: Identifier of the client
-        startedAt:
-          type: string
-          format: date-time
-          description: Time when the sandbox was started
-        endAt:
-          type: string
-          format: date-time
-          description: Time when the sandbox will expire
-        cpuCount:
-          $ref: "#/components/schemas/CPUCount"
-        memoryMB:
-          $ref: "#/components/schemas/MemoryMB"
-        metadata:
-          $ref: "#/components/schemas/SandboxMetadata"
-        metrics:
-          type: array
-          items:
+        sandboxes:
+          additionalProperties:
             $ref: "#/components/schemas/SandboxMetric"
 
     NewSandbox:
@@ -489,6 +467,9 @@ components:
         startCmd:
           description: Start command to execute in the template after the build
           type: string
+        readyCmd:
+          description: Ready check command to execute in the template after the build
+          type: string
         cpuCount:
           $ref: "#/components/schemas/CPUCount"
         memoryMB:
@@ -521,6 +502,9 @@ components:
             - waiting
             - ready
             - error
+        reason:
+          type: string
+          description: Message with the status reason, currently reporting only for error status
 
     NodeStatus:
       type: string
@@ -545,16 +529,25 @@ components:
         - sandboxCount
         - allocatedCPU
         - allocatedMemoryMiB
+        - createSuccesses
         - createFails
         - sandboxStartingCount
         - version
+        - commit
       properties:
         version:
           type: string
           description: Version of the orchestrator
+        commit:
+          type: string
+          description: Commit of the orchestrator
         nodeID:
           type: string
           description: Identifier of the node
+        clusterID:
+          type: string
+          nullable: true
+          description: Identifier of the cluster
         status:
           $ref: "#/components/schemas/NodeStatus"
         sandboxCount:
@@ -569,6 +562,10 @@ components:
           type: integer
           format: int32
           description: Amount of allocated memory in MiB
+        createSuccesses:
+          type: integer
+          format: uint64
+          description: Number of sandbox create successes
         createFails:
           type: integer
           format: uint64
@@ -584,12 +581,21 @@ components:
         - status
         - sandboxes
         - cachedBuilds
+        - createSuccesses
         - createFails
         - version
+        - commit
       properties:
+        clusterID:
+          type: string
+          nullable: true
+          description: Identifier of the cluster
         version:
           type: string
           description: Version of the orchestrator
+        commit:
+          type: string
+          description: Commit of the orchestrator
         nodeID:
           type: string
           description: Identifier of the node
@@ -605,6 +611,10 @@ components:
           description: List of cached builds id on the node
           items:
             type: string
+        createSuccesses:
+          type: integer
+          format: uint64
+          description: Number of sandbox create successes
         createFails:
           type: integer
           format: uint64
@@ -615,7 +625,7 @@ components:
         - id
         - name
         - token
-        - tokenMask
+        - mask
         - createdAt
       properties:
         id:
@@ -627,10 +637,9 @@ components:
           description: Name of the access token
         token:
           type: string
-          description: Raw value of the access token
-        tokenMask:
-          type: string
-          description: Mask of the access token
+          description: The fully created access token
+        mask:
+          $ref: "#/components/schemas/IdentifierMaskingDetails"
         createdAt:
           type: string
           format: date-time
@@ -648,10 +657,8 @@ components:
       required:
         - id
         - name
-        - keyMask
+        - mask
         - createdAt
-        - createdBy
-        - lastUsed
       properties:
         id:
           type: string
@@ -660,9 +667,8 @@ components:
         name:
           type: string
           description: Name of the API key
-        keyMask:
-          type: string
-          description: Mask of the API key
+        mask:
+          $ref: "#/components/schemas/IdentifierMaskingDetails"
         createdAt:
           type: string
           format: date-time
@@ -680,26 +686,23 @@ components:
     CreatedTeamAPIKey:
       required:
         - id
-        - name
         - key
-        - keyMask
+        - mask
+        - name
         - createdAt
-        - createdBy
-        - lastUsed
       properties:
         id:
           type: string
           format: uuid
           description: Identifier of the API key
-        name:
-          type: string
-          description: Name of the API key
         key:
           type: string
           description: Raw value of the API key
-        keyMask:
+        mask:
+          $ref: "#/components/schemas/IdentifierMaskingDetails"
+        name:
           type: string
-          description: Mask of the API key
+          description: Name of the API key
         createdAt:
           type: string
           format: date-time
@@ -742,6 +745,26 @@ components:
         message:
           type: string
           description: Error
+
+    IdentifierMaskingDetails:
+      required:
+        - prefix
+        - valueLength
+        - maskedValuePrefix
+        - maskedValueSuffix
+      properties:
+        prefix:
+          type: string
+          description: Prefix that identifies the token or key type
+        valueLength:
+          type: integer
+          description: Length of the token or key
+        maskedValuePrefix:
+          type: string
+          description: Prefix used in masked version of the token or key
+        maskedValueSuffix:
+          type: string
+          description: Suffix used in masked version of the token or key
 
 tags:
   - name: templates
@@ -900,27 +923,31 @@ paths:
 
   /sandboxes/metrics:
     get:
-      description: List all running sandboxes with metrics
+      description: List metrics for given sandboxes
       tags: [sandboxes]
       security:
         - ApiKeyAuth: []
+        - Supabase1TokenAuth: []
+          Supabase2TeamAuth: []
       parameters:
-        - name: metadata
+        - name: sandbox_ids
           in: query
-          description: Metadata query used to filter the sandboxes (e.g. "user=abc&app=prod"). Each key and values must be URL encoded.
-          required: false
+          required: true
+          description: Comma-separated list of sandbox IDs to get metrics for
+          explode: false
           schema:
-            type: string
+            type: array
+            items:
+              type: string
+            maxItems: 100
+            uniqueItems: true
       responses:
         "200":
           description: Successfully returned all running sandboxes with metrics
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  allOf:
-                    - $ref: "#/components/schemas/RunningSandboxWithMetrics"
+                $ref: "#/components/schemas/SandboxesWithMetrics"
         "401":
           $ref: "#/components/responses/401"
         "400":
@@ -960,32 +987,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SandboxLogs"
-        "404":
-          $ref: "#/components/responses/404"
-        "401":
-          $ref: "#/components/responses/401"
-        "500":
-          $ref: "#/components/responses/500"
-
-  /sandboxes/{sandboxID}/metrics:
-    get:
-      description: Get sandbox metrics
-      tags: [sandboxes]
-      security:
-        - ApiKeyAuth: []
-        - Supabase1TokenAuth: []
-          Supabase2TeamAuth: []
-      parameters:
-        - $ref: "#/components/parameters/sandboxID"
-      responses:
-        "200":
-          description: Successfully returned the sandbox metrics
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/SandboxMetric"
         "404":
           $ref: "#/components/responses/404"
         "401":
@@ -1035,6 +1036,50 @@ paths:
           $ref: "#/components/responses/401"
         "500":
           $ref: "#/components/responses/500"
+
+  /sandboxes/{sandboxID}/metrics:
+    get:
+      description: Get sandbox metrics
+      tags: [sandboxes]
+      security:
+        - ApiKeyAuth: []
+        - Supabase1TokenAuth: []
+          Supabase2TeamAuth: []
+      parameters:
+        - $ref: "#/components/parameters/sandboxID"
+        - in: query
+          name: start
+          schema:
+            type: integer
+            format: int64
+            minimum: 0
+          description: Starting timestamp of the metrics that should be returned in milliseconds
+        - in: query
+          name: end
+          schema:
+            type: integer
+            format: int64
+            minimum: 0
+            description: Ending timestamp of the metrics that should be returned in milliseconds
+
+      responses:
+        "200":
+          description: Successfully returned the sandbox metrics
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SandboxMetric"
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "404":
+          $ref: "#/components/responses/404"
+        "500":
+          $ref: "#/components/responses/500"
+
 
   # TODO: Pause and resume might be exposed as POST /sandboxes/{sandboxID}/snapshot and then POST /sandboxes with specified snapshotting setup
   /sandboxes/{sandboxID}/pause:

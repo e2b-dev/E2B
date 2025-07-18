@@ -41,7 +41,18 @@ class SandboxSetup(ABC):
     def sandbox_id(self) -> str:
         ...
 
-    def _file_url(self, path: Optional[str] = None, user: str = "user", signature: Optional[str] = None, signature_expiration: Optional[int] = None) -> str:
+    @property
+    @abstractmethod
+    def sandbox_domain(self) -> str:
+        ...
+
+    def _file_url(
+        self,
+        path: Optional[str] = None,
+        user: str = "user",
+        signature: Optional[str] = None,
+        signature_expiration: Optional[int] = None,
+    ) -> str:
         url = urllib.parse.urljoin(self.envd_api_url, ENVD_API_FILES_ROUTE)
         query = {"path": path} if path else {}
         query = {**query, "username": user}
@@ -62,7 +73,13 @@ class SandboxSetup(ABC):
 
         return url
 
-    def download_url(self, path: str, user: str = "user", use_signature: bool = False, use_signature_expiration: Optional[int] = None) -> str:
+    def download_url(
+        self,
+        path: str,
+        user: str = "user",
+        use_signature: bool = False,
+        use_signature_expiration: Optional[int] = None,
+    ) -> str:
         """
         Get the URL to download a file from the sandbox.
 
@@ -75,12 +92,22 @@ class SandboxSetup(ABC):
         """
 
         if use_signature:
-            signature = get_signature(path, "read", user, self._envd_access_token, use_signature_expiration)
-            return self._file_url(path, user, signature["signature"], signature["expiration"])
+            signature = get_signature(
+                path, "read", user, self._envd_access_token, use_signature_expiration
+            )
+            return self._file_url(
+                path, user, signature["signature"], signature["expiration"]
+            )
         else:
             return self._file_url(path)
 
-    def upload_url(self, path: Optional[str] = None, user: str = "user", use_signature: bool = False, use_signature_expiration: Optional[int] = None) -> str:
+    def upload_url(
+        self,
+        path: Optional[str] = None,
+        user: str = "user",
+        use_signature: bool = False,
+        use_signature_expiration: Optional[int] = None,
+    ) -> str:
         """
         Get the URL to upload a file to the sandbox.
 
@@ -95,8 +122,12 @@ class SandboxSetup(ABC):
         """
 
         if use_signature:
-            signature = get_signature(path, "write", user, self._envd_access_token, use_signature_expiration)
-            return self._file_url(path, user, signature["signature"], signature["expiration"])
+            signature = get_signature(
+                path, "write", user, self._envd_access_token, use_signature_expiration
+            )
+            return self._file_url(
+                path, user, signature["signature"], signature["expiration"]
+            )
         else:
             return self._file_url(path)
 
@@ -112,4 +143,4 @@ class SandboxSetup(ABC):
         if self.connection_config.debug:
             return f"localhost:{port}"
 
-        return f"{port}-{self.sandbox_id}.{self.connection_config.domain}"
+        return f"{port}-{self.sandbox_id}.{self.sandbox_domain}"

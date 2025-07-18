@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class SandboxCreateResponse:
     sandbox_id: str
+    sandbox_domain: Optional[str]
     envd_version: str
     envd_access_token: str
 

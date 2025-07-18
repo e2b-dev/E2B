@@ -14,6 +14,8 @@ class SandboxInfo:
 
     sandbox_id: str
     """Sandbox ID."""
+    sandbox_domain: Optional[str]
+    """Domain where the sandbox is hosted."""
     template_id: str
     """Template ID."""
     name: Optional[str]
@@ -28,6 +30,7 @@ class SandboxInfo:
     """Envd version."""
     _envd_access_token: Optional[str]
     """Envd access token."""
+
 
 @dataclass
 class ListedSandbox:
@@ -51,6 +54,7 @@ class ListedSandbox:
     """Sandbox start time."""
     end_at: datetime
 
+
 @dataclass
 class SandboxQuery:
     """Query parameters for listing sandboxes."""
@@ -65,7 +69,3 @@ class SandboxApiBase(ABC):
         max_connections=20,
         keepalive_expiry=20,
     )
-
-    @staticmethod
-    def _get_sandbox_id(sandbox_id: str, client_id: str) -> str:
-        return f"{sandbox_id}-{client_id}"
