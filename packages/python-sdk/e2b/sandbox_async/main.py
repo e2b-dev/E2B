@@ -76,6 +76,7 @@ class AsyncSandbox(SandboxApi):
         sandbox_id: str,
         connection_config: ConnectionConfig,
         envd_version: Optional[str],
+        sandbox_domain: Optional[str],
         envd_access_token: Optional[str],
     ):
         """
@@ -84,6 +85,7 @@ class AsyncSandbox(SandboxApi):
         super().__init__(
             sandbox_id=sandbox_id,
             envd_version=envd_version,
+            sandbox_domain=sandbox_domain,
             envd_access_token=envd_access_token,
             connection_config=connection_config,
         )
@@ -222,11 +224,11 @@ class AsyncSandbox(SandboxApi):
             request_timeout=request_timeout,
             headers=connection_headers,
             proxy=proxy,
-            sandbox_domain=sandbox_domain,
         )
 
         return cls(
             sandbox_id=sandbox_id,
+            sandbox_domain=sandbox_domain,
             envd_version=envd_version,
             envd_access_token=envd_access_token,
             connection_config=connection_config,
@@ -279,7 +281,6 @@ class AsyncSandbox(SandboxApi):
             debug=debug,
             headers=connection_headers,
             proxy=proxy,
-            sandbox_domain=info.sandbox_domain,
         )
 
         return cls(

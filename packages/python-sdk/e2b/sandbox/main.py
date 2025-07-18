@@ -26,10 +26,12 @@ class SandboxBase(ABC):
         sandbox_id: str,
         envd_version: Optional[str],
         envd_access_token: Optional[str],
+        sandbox_domain: Optional[str],
         connection_config: ConnectionConfig,
     ):
-        self._sandbox_id = sandbox_id
         self._connection_config = connection_config
+        self._sandbox_id = sandbox_id
+        self._sandbox_domain = sandbox_domain or self.connection_config.domain
         self.__envd_version = envd_version
         self.__envd_access_token = envd_access_token
         self._envd_api_url = f"{'http' if self.connection_config.debug else 'https'}://{self.get_host(self.envd_port)}"
@@ -46,6 +48,10 @@ class SandboxBase(ABC):
     @property
     def _envd_version(self) -> Optional[str]:
         return self.__envd_version
+
+    @property
+    def sandbox_domain(self) -> Optional[str]:
+        return self._sandbox_domain
 
     @property
     def envd_api_url(self) -> str:
@@ -155,4 +161,4 @@ class SandboxBase(ABC):
         if self.connection_config.debug:
             return f"localhost:{port}"
 
-        return f"{port}-{self.sandbox_id}.{self.connection_config.domain}"
+        return f"{port}-{self.sandbox_id}.{self.sandbox_domain}"

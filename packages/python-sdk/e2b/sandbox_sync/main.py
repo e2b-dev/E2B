@@ -140,6 +140,7 @@ class Sandbox(SandboxApi):
             )
             sandbox_id = info.sandbox_id
             envd_version = info.envd_version
+            sandbox_domain = info.sandbox_domain
 
             if info.envd_access_token:
                 envd_access_token = info.envd_access_token
@@ -151,13 +152,13 @@ class Sandbox(SandboxApi):
             debug=debug,
             request_timeout=request_timeout,
             headers=connection_headers,
-            sandbox_domain=sandbox_domain,
             proxy=proxy,
         )
 
         super().__init__(
             sandbox_id=sandbox_id,
             envd_version=envd_version,
+            sandbox_domain=sandbox_domain,
             envd_access_token=envd_access_token,
             connection_config=connection_config,
         )
@@ -392,7 +393,7 @@ class Sandbox(SandboxApi):
         )
 
     @overload
-    def get_info(
+    def get_info(  # type: ignore
         self,
         request_timeout: Optional[float] = None,
     ) -> SandboxInfo:
