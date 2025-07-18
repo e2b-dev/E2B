@@ -15,6 +15,11 @@ export interface SandboxApiOpts
     >
   > { }
 
+/**
+ * State of the sandbox.
+ */
+export type SandboxState = 'running' | 'paused'
+
 export interface SandboxListOpts extends SandboxApiOpts {
   /**
    * Filter the list of sandboxes, e.g. by metadata `metadata:{"key": "value"}`, if there are multiple filters they are combined with AND.
@@ -26,7 +31,7 @@ export interface SandboxListOpts extends SandboxApiOpts {
      * Filter the list of sandboxes by state.
      * @default ['running', 'paused']
      */
-    state?: Array<'running' | 'paused'>
+    state?: Array<SandboxState>
   }
 
   /**
@@ -78,8 +83,10 @@ export interface SandboxInfo {
 
   /**
    * Sandbox state.
+   *
+   * @string can be `running` or `paused`
    */
-  state: 'running' | 'paused'
+  state: SandboxState
 
   /**
    * Sandbox CPU count.
