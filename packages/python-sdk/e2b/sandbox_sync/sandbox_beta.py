@@ -6,7 +6,6 @@ from e2b.exceptions import SandboxException, NotFoundException
 from e2b.sandbox.utils import class_method_variant
 from e2b.sandbox.sandbox_api import SandboxMetrics
 from e2b.connection_config import ConnectionConfig, ProxyTypes
-from e2b.sandbox_sync.sandbox_api import SandboxApiBase
 from e2b.api import ApiClient, handle_api_exception
 from e2b.api.client.api.sandboxes import (
     get_sandboxes_sandbox_id_metrics,
@@ -213,7 +212,7 @@ class SandboxBeta(Sandbox):
 
         with ApiClient(
             config,
-            limits=SandboxApiBase._limits,
+            limits=cls._limits,
         ) as api_client:
             res = get_sandboxes_sandbox_id_metrics.sync_detailed(
                 sandbox_id,
@@ -259,7 +258,7 @@ class SandboxBeta(Sandbox):
 
         with ApiClient(
             config,
-            limits=SandboxApiBase._limits,
+            limits=cls._limits,
         ) as api_client:
             res = post_sandboxes_sandbox_id_resume.sync_detailed(
                 sandbox_id,
@@ -296,7 +295,7 @@ class SandboxBeta(Sandbox):
 
         with ApiClient(
             config,
-            limits=SandboxApiBase._limits,
+            limits=cls._limits,
         ) as api_client:
             res = post_sandboxes_sandbox_id_pause.sync_detailed(
                 sandbox_id,

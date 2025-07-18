@@ -6,7 +6,6 @@ from typing import Dict, Optional, overload
 from e2b.connection_config import ConnectionConfig, ProxyTypes
 from e2b.envd.api import ENVD_API_HEALTH_ROUTE, ahandle_envd_api_exception
 from e2b.exceptions import format_request_timeout_error
-from e2b.sandbox.main import SandboxSetup
 from e2b.sandbox.utils import class_method_variant
 from e2b.sandbox_async.filesystem.filesystem import Filesystem
 from e2b.sandbox_async.commands.command import Commands
@@ -28,7 +27,7 @@ class AsyncTransportWithLogger(httpx.AsyncHTTPTransport):
         return response
 
 
-class AsyncSandbox(SandboxSetup, SandboxApi):
+class AsyncSandbox(SandboxApi):
     """
     E2B cloud sandbox is a secure and isolated cloud environment.
 

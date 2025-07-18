@@ -3,10 +3,9 @@ import urllib.parse
 from typing import Optional, Dict, List
 from packaging.version import Version
 
-
+from e2b.sandbox.main import SandboxBase
 from e2b.sandbox.sandbox_api import (
     SandboxInfo,
-    SandboxApiBase,
     SandboxPaginatorBase,
     SandboxInfo,
     SandboxQuery,
@@ -65,7 +64,7 @@ class AsyncSandboxPaginator(SandboxPaginatorBase):
 
         async with AsyncApiClient(
             self._config,
-            limits=SandboxApiBase._limits,
+            limits=SandboxBase._limits,
         ) as api_client:
             res = await modified_get_v2_sandboxes.asyncio_detailed(
                 client=api_client,
@@ -91,7 +90,7 @@ class AsyncSandboxPaginator(SandboxPaginatorBase):
             return [SandboxInfo._from_listed_sandbox(sandbox) for sandbox in res.parsed]
 
 
-class SandboxApi(SandboxApiBase):
+class SandboxApi(SandboxBase):
     @classmethod
     def list(
         cls,
@@ -166,7 +165,7 @@ class SandboxApi(SandboxApiBase):
 
         async with AsyncApiClient(
             config,
-            limits=SandboxApiBase._limits,
+            limits=SandboxBase._limits,
         ) as api_client:
             res = await get_sandboxes_sandbox_id.asyncio_detailed(
                 sandbox_id,
@@ -211,7 +210,7 @@ class SandboxApi(SandboxApiBase):
 
         async with AsyncApiClient(
             config,
-            limits=SandboxApiBase._limits,
+            limits=SandboxBase._limits,
         ) as api_client:
             res = await delete_sandboxes_sandbox_id.asyncio_detailed(
                 sandbox_id,
@@ -253,7 +252,7 @@ class SandboxApi(SandboxApiBase):
 
         async with AsyncApiClient(
             config,
-            limits=SandboxApiBase._limits,
+            limits=SandboxBase._limits,
         ) as api_client:
             res = await post_sandboxes_sandbox_id_timeout.asyncio_detailed(
                 sandbox_id,
@@ -290,7 +289,7 @@ class SandboxApi(SandboxApiBase):
 
         async with AsyncApiClient(
             config,
-            limits=SandboxApiBase._limits,
+            limits=SandboxBase._limits,
         ) as api_client:
             res = await post_sandboxes.asyncio_detailed(
                 body=NewSandbox(

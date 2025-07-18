@@ -4,11 +4,11 @@ from typing import Optional, Dict, Union
 from datetime import datetime
 
 from e2b.api.client.models.sandbox_detail import SandboxDetail
-from httpx import Limits
 
 from e2b.api.client.models import SandboxState
 from e2b.connection_config import ConnectionConfig, ProxyTypes
 from e2b.api.client.models.listed_sandbox import ListedSandbox
+from e2b.sandbox.main import SandboxBase
 
 
 @dataclass
@@ -47,7 +47,7 @@ class SandboxInfo:
         envd_access_token: Optional[str] = None,
     ):
         return cls(
-            sandbox_id=SandboxApiBase._get_sandbox_id(
+            sandbox_id=SandboxBase._get_sandbox_id(
                 sandbox.sandbox_id,
                 sandbox.client_id,
             ),
@@ -93,18 +93,6 @@ class SandboxQuery:
 
     state: Optional[list[SandboxState]] = None
     """Filter sandboxes by state."""
-
-
-class SandboxApiBase(ABC):
-    _limits = Limits(
-        max_keepalive_connections=10,
-        max_connections=20,
-        keepalive_expiry=20,
-    )
-
-    @staticmethod
-    def _get_sandbox_id(sandbox_id: str, client_id: str) -> str:
-        return f"{sandbox_id}-{client_id}"
 
 
 @dataclass

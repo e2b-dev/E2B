@@ -9,7 +9,7 @@ from e2b.envd.api import ENVD_API_FILES_ROUTE
 from httpx import Limits
 
 
-class SandboxSetup(ABC):
+class SandboxBase(ABC):
     _limits = Limits(
         max_keepalive_connections=40,
         max_connections=40,
@@ -156,3 +156,7 @@ class SandboxSetup(ABC):
             return f"localhost:{port}"
 
         return f"{port}-{self.sandbox_id}.{self.connection_config.domain}"
+
+    @staticmethod
+    def _get_sandbox_id(sandbox_id: str, client_id: str) -> str:
+        return f"{sandbox_id}-{client_id}"

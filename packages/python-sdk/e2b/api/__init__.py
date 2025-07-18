@@ -15,7 +15,8 @@ from e2b.exceptions import (
 )
 from e2b.api.client.models.sandbox import Sandbox as SandboxModel
 from e2b.api.client.types import Response
-from e2b.sandbox.sandbox_api import SandboxApiBase
+from e2b.sandbox.main import SandboxBase
+
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +30,7 @@ class SandboxCreateResponse:
     @classmethod
     def _from_response(cls, response: SandboxModel):
         return cls(
-            sandbox_id=SandboxApiBase._get_sandbox_id(
+            sandbox_id=SandboxBase._get_sandbox_id(
                 response.sandbox_id,
                 response.client_id,
             ),

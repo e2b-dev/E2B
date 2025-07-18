@@ -7,10 +7,10 @@ from packaging.version import Version
 
 from e2b.sandbox.sandbox_api import (
     SandboxInfo,
-    SandboxApiBase,
     SandboxQuery,
     SandboxPaginatorBase,
 )
+from e2b.sandbox.main import SandboxBase
 from e2b.exceptions import TemplateException, SandboxException
 from e2b.api import ApiClient, SandboxCreateResponse
 from e2b.api.client.models import NewSandbox, PostSandboxesSandboxIDTimeoutBody
@@ -61,7 +61,7 @@ class SandboxPaginator(SandboxPaginatorBase):
 
         with ApiClient(
             self._config,
-            limits=SandboxApiBase._limits,
+            limits=SandboxBase._limits,
         ) as api_client:
             res = modified_get_v2_sandboxes.sync_detailed(
                 client=api_client,
@@ -87,7 +87,7 @@ class SandboxPaginator(SandboxPaginatorBase):
             return [SandboxInfo._from_listed_sandbox(sandbox) for sandbox in res.parsed]
 
 
-class SandboxApi(SandboxApiBase):
+class SandboxApi(SandboxBase):
     @classmethod
     def list(
         cls,
@@ -162,7 +162,7 @@ class SandboxApi(SandboxApiBase):
 
         with ApiClient(
             config,
-            limits=SandboxApiBase._limits,
+            limits=SandboxBase._limits,
         ) as api_client:
             res = get_sandboxes_sandbox_id.sync_detailed(
                 sandbox_id,
@@ -207,7 +207,7 @@ class SandboxApi(SandboxApiBase):
 
         with ApiClient(
             config,
-            limits=SandboxApiBase._limits,
+            limits=SandboxBase._limits,
         ) as api_client:
             res = delete_sandboxes_sandbox_id.sync_detailed(
                 sandbox_id,
@@ -249,7 +249,7 @@ class SandboxApi(SandboxApiBase):
 
         with ApiClient(
             config,
-            limits=SandboxApiBase._limits,
+            limits=SandboxBase._limits,
         ) as api_client:
             res = post_sandboxes_sandbox_id_timeout.sync_detailed(
                 sandbox_id,
@@ -286,7 +286,7 @@ class SandboxApi(SandboxApiBase):
 
         with ApiClient(
             config,
-            limits=SandboxApiBase._limits,
+            limits=SandboxBase._limits,
         ) as api_client:
             res = post_sandboxes.sync_detailed(
                 body=NewSandbox(

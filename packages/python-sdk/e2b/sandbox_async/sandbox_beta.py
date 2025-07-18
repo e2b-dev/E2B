@@ -5,7 +5,6 @@ from e2b.exceptions import SandboxException, NotFoundException
 from e2b.sandbox.utils import class_method_variant
 from e2b.sandbox.sandbox_api import SandboxMetrics
 from e2b.sandbox_async.main import AsyncSandbox
-from e2b.sandbox_async.sandbox_api import SandboxApiBase
 from e2b.connection_config import ConnectionConfig, ProxyTypes
 from e2b.api import AsyncApiClient, handle_api_exception
 from e2b.api.client.api.sandboxes import (
@@ -214,7 +213,7 @@ class AsyncSandboxBeta(AsyncSandbox):
 
         async with AsyncApiClient(
             config,
-            limits=SandboxApiBase._limits,
+            limits=cls._limits,
         ) as api_client:
             res = await get_sandboxes_sandbox_id_metrics.asyncio_detailed(
                 sandbox_id,
@@ -264,7 +263,7 @@ class AsyncSandboxBeta(AsyncSandbox):
 
         async with AsyncApiClient(
             config,
-            limits=SandboxApiBase._limits,
+            limits=cls._limits,
         ) as api_client:
             res = await post_sandboxes_sandbox_id_resume.asyncio_detailed(
                 sandbox_id,
@@ -303,7 +302,7 @@ class AsyncSandboxBeta(AsyncSandbox):
 
         async with AsyncApiClient(
             config,
-            limits=SandboxApiBase._limits,
+            limits=cls._limits,
         ) as api_client:
             res = await post_sandboxes_sandbox_id_pause.asyncio_detailed(
                 sandbox_id,
