@@ -8,6 +8,7 @@ import {
 } from '../connectionConfig'
 import { EnvdApiClient, handleEnvdApiError } from '../envd/api'
 import { createRpcLogger } from '../logs'
+import { defaultHeaders } from '../metadata'
 import { Commands, Pty } from './commands'
 import { Filesystem } from './filesystem'
 import { SandboxApi } from './sandboxApi'
@@ -143,7 +144,6 @@ export class Sandbox extends SandboxApi {
 
     this.sandboxId = opts.sandboxId
     this.connectionConfig = new ConnectionConfig(opts)
-
     this.envdAccessToken = opts.envdAccessToken
     this.envdApiUrl = `${
       this.connectionConfig.debug ? 'http' : 'https'
@@ -160,6 +160,11 @@ export class Sandbox extends SandboxApi {
         // E2B endpoints should be safe to use with redirect: "follow" https://github.com/e2b-dev/E2B/issues/531#issuecomment-2779492867
 
         const headers = new Headers(options?.headers)
+        headers.append('User-Agent', 'connect-js')
+        Object.entries(defaultHeaders).forEach(([key, value]) => {
+          headers.append(key, value)
+        })
+
         if (this.envdAccessToken) {
           headers.append('X-Access-Token', this.envdAccessToken)
         }
