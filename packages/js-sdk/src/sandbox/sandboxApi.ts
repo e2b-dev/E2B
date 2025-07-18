@@ -162,6 +162,44 @@ export class SandboxApi {
     return fullInfo
   }
 
+  /**
+   * Set the timeout of the specified sandbox.
+   * After the timeout expires the sandbox will be automatically killed.
+   *
+   * This method can extend or reduce the sandbox timeout set when creating the sandbox or from the last call to {@link Sandbox.setTimeout}.
+   *
+   * Maximum time a sandbox can be kept alive is 24 hours (86_400_000 milliseconds) for Pro users and 1 hour (3_600_000 milliseconds) for Hobby users.
+   *
+   * @param sandboxId sandbox ID.
+   * @param timeoutMs timeout in **milliseconds**.
+   * @param opts connection options.
+   */
+  static async setTimeout(
+    sandboxId: string,
+    timeoutMs: number,
+    opts?: SandboxApiOpts
+  ): Promise<void> {
+    const config = new ConnectionConfig(opts)
+    const client = new ApiClient(config)
+
+    const res = await client.api.POST('/sandboxes/{sandboxID}/timeout', {
+      params: {
+        path: {
+          sandboxID: sandboxId,
+        },
+      },
+      body: {
+        timeout: this.timeoutToSeconds(timeoutMs),
+      },
+      signal: config.getSignal(opts?.requestTimeoutMs),
+    })
+
+    const err = handleApiError(res)
+    if (err) {
+      throw err
+    }
+  }
+
   protected static async getFullInfo(
     sandboxId: string,
     opts?: SandboxApiOpts
@@ -202,44 +240,6 @@ export class SandboxApi {
       state: res.data.state,
       cpuCount: res.data.cpuCount,
       memoryMB: res.data.memoryMB,
-    }
-  }
-
-  /**
-   * Set the timeout of the specified sandbox.
-   * After the timeout expires the sandbox will be automatically killed.
-   *
-   * This method can extend or reduce the sandbox timeout set when creating the sandbox or from the last call to {@link Sandbox.setTimeout}.
-   *
-   * Maximum time a sandbox can be kept alive is 24 hours (86_400_000 milliseconds) for Pro users and 1 hour (3_600_000 milliseconds) for Hobby users.
-   *
-   * @param sandboxId sandbox ID.
-   * @param timeoutMs timeout in **milliseconds**.
-   * @param opts connection options.
-   */
-  static async setTimeout(
-    sandboxId: string,
-    timeoutMs: number,
-    opts?: SandboxApiOpts
-  ): Promise<void> {
-    const config = new ConnectionConfig(opts)
-    const client = new ApiClient(config)
-
-    const res = await client.api.POST('/sandboxes/{sandboxID}/timeout', {
-      params: {
-        path: {
-          sandboxID: sandboxId,
-        },
-      },
-      body: {
-        timeout: this.timeoutToSeconds(timeoutMs),
-      },
-      signal: config.getSignal(opts?.requestTimeoutMs),
-    })
-
-    const err = handleApiError(res)
-    if (err) {
-      throw err
     }
   }
 
@@ -336,10 +336,16 @@ export class SandboxPaginator {
     this.limit = opts?.limit
   }
 
+  /**
+   * Returns True if there are more items to fetch.
+   */
   get hasNext(): boolean {
     return this._hasNext
   }
 
+  /**
+   * Returns the next token to use for pagination.
+   */
   get nextToken(): string | undefined {
     return this._nextToken
   }
@@ -347,7 +353,9 @@ export class SandboxPaginator {
   /**
    * Get the next page of sandboxes.
    *
-   * @throws Error if there are no more items to fetch
+   * @throws Error if there are no more items to fetch. Call this method only if `hasNext` is `true`.
+   *
+   * @returns List of sandboxes
    */
   async nextItems(): Promise<SandboxInfo[]> {
     if (!this.hasNext) {
