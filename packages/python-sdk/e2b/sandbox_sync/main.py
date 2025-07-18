@@ -206,7 +206,7 @@ class Sandbox(SandboxSetup, SandboxApi):
             proxy=proxy,
         )
 
-
+        self._sandbox_domain = self._sandbox_domain or self._connection_config.domain
         self._envd_api_url = f"{'http' if self.connection_config.debug else 'https'}://{self.get_host(self.envd_port)}"
         self._envd_api = httpx.Client(
             base_url=self.envd_api_url,
