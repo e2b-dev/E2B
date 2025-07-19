@@ -15,6 +15,7 @@ from e2b.api.client.api.sandboxes import (
 from e2b.api.client.models import (
     ResumedSandbox,
 )
+from e2b.api.client.models.error import Error
 
 
 class AsyncSandboxBeta(AsyncSandbox):
@@ -180,6 +181,7 @@ class AsyncSandboxBeta(AsyncSandbox):
 
         return await AsyncSandboxBeta._cls_get_metrics(
             sandbox_id=self.sandbox_id,
+            # TODO: Fix error
             **self.connection_config.get_api_params(request_timeout),
         )
 
@@ -220,18 +222,17 @@ class AsyncSandboxBeta(AsyncSandbox):
             if res.parsed is None:
                 return []
 
-            if not isinstance(res.parsed, list):
-                raise SandboxException(
-                    f"Error when listing sandboxes: {res.parsed.message}"
-                )
+            # Check if res.parse is Error
+            if isinstance(res.parsed, Error):
+                raise SandboxException(f"{res.parsed.message}: Request failed")
 
             return [
                 SandboxMetrics(
                     timestamp=metric.timestamp,
                     cpu_used_pct=metric.cpu_used_pct,
                     cpu_count=metric.cpu_count,
-                    mem_used_mib=metric.mem_used_mi_b,
-                    mem_total_mib=metric.mem_total_mi_b,
+                    mem_used_mib=metric.mem_used,
+                    mem_total_mib=metric.mem_total,
                 )
                 for metric in res.parsed
             ]

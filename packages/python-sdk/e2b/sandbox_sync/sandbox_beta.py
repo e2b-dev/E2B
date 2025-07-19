@@ -226,8 +226,8 @@ class SandboxBeta(Sandbox):
                     timestamp=metric.timestamp,
                     cpu_used_pct=metric.cpu_used_pct,
                     cpu_count=metric.cpu_count,
-                    mem_used_mib=metric.mem_used_mib,
-                    mem_total_mib=metric.mem_total_mib,
+                    mem_used_mib=metric.mem_used,
+                    mem_total_mib=metric.mem_total,
                 )
                 for metric in res.parsed
             ]

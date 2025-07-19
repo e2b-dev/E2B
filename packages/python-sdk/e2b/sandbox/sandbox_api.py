@@ -111,9 +111,9 @@ class SandboxMetrics:
     cpu_count: int
     """Number of CPU cores."""
     mem_used_mib: int
-    """Memory usage in bytes."""
+    """Memory usage in MiB."""
     mem_total_mib: int
-    """Total memory available"""
+    """Total memory available in MiB."""
 
 
 class SandboxPaginatorBase(ABC):
