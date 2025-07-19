@@ -8,7 +8,6 @@ from e2b.api.client.models.sandbox_detail import SandboxDetail
 from e2b.api.client.models import SandboxState
 from e2b.connection_config import ConnectionConfig, ProxyTypes
 from e2b.api.client.models.listed_sandbox import ListedSandbox
-from e2b.sandbox.main import SandboxBase
 
 
 @dataclass
