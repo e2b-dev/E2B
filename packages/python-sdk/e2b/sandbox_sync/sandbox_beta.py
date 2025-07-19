@@ -1,7 +1,7 @@
-from e2b.sandbox_sync.main import Sandbox
-from typing import Optional, overload, List
+from typing import Optional, overload, List, Dict
 from packaging.version import Version
 
+from e2b.sandbox_sync.main import Sandbox
 from e2b.exceptions import SandboxException, NotFoundException
 from e2b.sandbox.utils import class_method_variant
 from e2b.sandbox.sandbox_api import SandboxMetrics
@@ -221,16 +221,7 @@ class SandboxBeta(Sandbox):
             if isinstance(res.parsed, Error):
                 raise SandboxException(f"{res.parsed.message}: Request failed")
 
-            return [
-                SandboxMetrics(
-                    timestamp=metric.timestamp,
-                    cpu_used_pct=metric.cpu_used_pct,
-                    cpu_count=metric.cpu_count,
-                    mem_used_mib=metric.mem_used,
-                    mem_total_mib=metric.mem_total,
-                )
-                for metric in res.parsed
-            ]
+            return [SandboxMetrics._from_model(metric) for metric in res.parsed]
 
     @classmethod
     def _cls_resume(
@@ -241,6 +232,8 @@ class SandboxBeta(Sandbox):
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
+        headers: Optional[Dict[str, str]] = None,
+        proxy: Optional[ProxyTypes] = None,
     ) -> bool:
         config = ConnectionConfig(
             api_key=api_key,

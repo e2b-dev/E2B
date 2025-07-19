@@ -8,6 +8,10 @@ from e2b.api.client.models.sandbox_detail import SandboxDetail
 from e2b.api.client.models import SandboxState
 from e2b.connection_config import ConnectionConfig, ProxyTypes
 from e2b.api.client.models.listed_sandbox import ListedSandbox
+from e2b.api.client.models.sandbox_metric import SandboxMetric as SandboxMetricModel
+
+
+bytes_to_mib_shift = 20
 
 
 @dataclass
@@ -104,16 +108,26 @@ class SandboxQuery:
 class SandboxMetrics:
     """Sandbox resource usage metrics"""
 
+    mem_used_mib: int
+    """Memory usage in MiB."""
+    mem_total_mib: int
+    """Total memory available in MiB."""
     timestamp: datetime
     """Timestamp of the metrics."""
     cpu_used_pct: float
     """CPU usage in percentage."""
     cpu_count: int
     """Number of CPU cores."""
-    mem_used_mib: int
-    """Memory usage in MiB."""
-    mem_total_mib: int
-    """Total memory available in MiB."""
+
+    @classmethod
+    def _from_model(cls, model: SandboxMetricModel):
+        return cls(
+            mem_used_mib=model.mem_used >> bytes_to_mib_shift,
+            mem_total_mib=model.mem_total >> bytes_to_mib_shift,
+            timestamp=model.timestamp,
+            cpu_used_pct=model.cpu_used_pct,
+            cpu_count=model.cpu_count,
+        )
 
 
 class SandboxPaginatorBase(ABC):

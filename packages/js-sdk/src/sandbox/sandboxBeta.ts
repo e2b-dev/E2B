@@ -40,6 +40,8 @@ export interface SandboxMetrics {
   memTotalMiB: number
 }
 
+const bytesToMiBShift = 20
+
 export class SandboxBeta extends Sandbox {
   /**
    * Resume the sandbox.
@@ -116,8 +118,8 @@ export class SandboxBeta extends Sandbox {
         timestamp: new Date(metric.timestamp),
         cpuUsedPct: metric.cpuUsedPct,
         cpuCount: metric.cpuCount,
-        memUsedMiB: metric.memUsed,
-        memTotalMiB: metric.memTotal,
+        memUsedMiB: metric.memUsed >> bytesToMiBShift,
+        memTotalMiB: metric.memTotal >> bytesToMiBShift,
       })) ?? []
     )
   }

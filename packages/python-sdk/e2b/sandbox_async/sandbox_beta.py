@@ -1,4 +1,4 @@
-from typing import Optional, overload, List
+from typing import Optional, overload, List, Dict
 from packaging.version import Version
 
 from e2b.exceptions import SandboxException, NotFoundException
@@ -28,6 +28,7 @@ class AsyncSandboxBeta(AsyncSandbox):
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
+        headers: Optional[Dict[str, str]] = None,
         proxy: Optional[ProxyTypes] = None,
     ):
         """
@@ -42,6 +43,7 @@ class AsyncSandboxBeta(AsyncSandbox):
         :param domain: Domain of the sandbox server
         :param debug: Enable debug mode
         :param request_timeout: Timeout for the request in **seconds**
+        :param headers: Additional headers to send with the request
         :param proxy: Proxy to use for the request
 
         :return: A running sandbox instance
@@ -57,6 +59,7 @@ class AsyncSandboxBeta(AsyncSandbox):
             domain=domain,
             debug=debug,
             proxy=proxy,
+            headers=headers,
         )
 
         return await cls.connect(
@@ -65,6 +68,7 @@ class AsyncSandboxBeta(AsyncSandbox):
             domain=domain,
             debug=debug,
             proxy=proxy,
+            headers=headers,
         )
 
     @overload
@@ -226,16 +230,7 @@ class AsyncSandboxBeta(AsyncSandbox):
             if isinstance(res.parsed, Error):
                 raise SandboxException(f"{res.parsed.message}: Request failed")
 
-            return [
-                SandboxMetrics(
-                    timestamp=metric.timestamp,
-                    cpu_used_pct=metric.cpu_used_pct,
-                    cpu_count=metric.cpu_count,
-                    mem_used_mib=metric.mem_used,
-                    mem_total_mib=metric.mem_total,
-                )
-                for metric in res.parsed
-            ]
+            return [SandboxMetrics._from_model(metric) for metric in res.parsed]
 
     @classmethod
     async def _cls_resume(
