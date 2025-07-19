@@ -1,12 +1,22 @@
 import os
 
-from typing import Literal, Optional, Dict
+from typing import Literal, Optional, Dict, TypedDict
 from httpx._types import ProxyTypes
+
 
 REQUEST_TIMEOUT: float = 60.0  # 60 seconds
 
 KEEPALIVE_PING_INTERVAL_SEC = 50  # 50 seconds
 KEEPALIVE_PING_HEADER = "Keepalive-Ping-Interval"
+
+
+class ApiParams(TypedDict):
+    api_key: Optional[str]
+    domain: Optional[str]
+    debug: Optional[bool]
+    request_timeout: Optional[float]
+    headers: Optional[Dict[str, str]]
+    proxy: Optional[ProxyTypes]
 
 
 class ConnectionConfig:
@@ -77,6 +87,32 @@ class ConnectionConfig:
 
     def get_request_timeout(self, request_timeout: Optional[float] = None):
         return self._get_request_timeout(self.request_timeout, request_timeout)
+
+    def get_api_params(
+        self,
+        request_timeout: Optional[float] = None,
+    ):
+        """
+        Get the parameters for the API call.
+
+        This is used to avoid passing following attributes to the API call:
+        - access_token
+        - api_url
+
+        It also returns a copy so the original object is not modified.
+
+        :param request_timeout: Request timeout in seconds
+        :return: Dictionary of parameters for the API call
+        """
+
+        return ApiParams(
+            api_key=self.api_key,
+            domain=self.domain,
+            debug=self.debug,
+            request_timeout=self.get_request_timeout(request_timeout),
+            headers=self.headers,
+            proxy=self.proxy,
+        )
 
 
 Username = Literal["root", "user"]

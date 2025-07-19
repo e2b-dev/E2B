@@ -337,16 +337,9 @@ class AsyncSandbox(SandboxApi):
         self,
         request_timeout: Optional[float] = None,
     ) -> bool:
-        config_dict = self.connection_config.__dict__
-        config_dict.pop("access_token", None)
-        config_dict.pop("api_url", None)
-
-        if request_timeout:
-            config_dict["request_timeout"] = request_timeout
-
         return await SandboxApi._cls_kill(
             sandbox_id=self.sandbox_id,
-            **config_dict,
+            **self.connection_config.get_api_params(request_timeout),
         )
 
     @overload
@@ -398,17 +391,10 @@ class AsyncSandbox(SandboxApi):
         timeout: int,
         request_timeout: Optional[float] = None,
     ) -> None:
-        config_dict = self.connection_config.__dict__
-        config_dict.pop("access_token", None)
-        config_dict.pop("api_url", None)
-
-        if request_timeout:
-            config_dict["request_timeout"] = request_timeout
-
         await SandboxApi._cls_set_timeout(
             sandbox_id=self.sandbox_id,
             timeout=timeout,
-            **config_dict,
+            **self.connection_config.get_api_params(request_timeout),
         )
 
     @overload
@@ -458,14 +444,7 @@ class AsyncSandbox(SandboxApi):
         :return: Sandbox info
         """
 
-        config_dict = self.connection_config.__dict__
-        config_dict.pop("access_token", None)
-        config_dict.pop("api_url", None)
-
-        if request_timeout:
-            config_dict["request_timeout"] = request_timeout
-
         return await SandboxApi._cls_get_info(
             sandbox_id=self.sandbox_id,
-            **config_dict,
+            **self.connection_config.get_api_params(request_timeout),
         )

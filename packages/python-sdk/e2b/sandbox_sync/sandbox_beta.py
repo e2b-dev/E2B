@@ -178,16 +178,9 @@ class SandboxBeta(Sandbox):
                 "Metrics are not supported in this version of the sandbox, please rebuild your template."
             )
 
-        config_dict = self.connection_config.__dict__
-        config_dict.pop("access_token", None)
-        config_dict.pop("api_url", None)
-
-        if request_timeout:
-            config_dict["request_timeout"] = request_timeout
-
         return SandboxBeta._cls_get_metrics(
             sandbox_id=self.sandbox_id,
-            **config_dict,
+            **self.connection_config.get_api_params(request_timeout),
         )
 
     @classmethod
@@ -233,8 +226,8 @@ class SandboxBeta(Sandbox):
                     timestamp=metric.timestamp,
                     cpu_used_pct=metric.cpu_used_pct,
                     cpu_count=metric.cpu_count,
-                    mem_used_mib=metric.mem_used_mi_b,
-                    mem_total_mib=metric.mem_total_mi_b,
+                    mem_used_mib=metric.mem_used_mib,
+                    mem_total_mib=metric.mem_total_mib,
                 )
                 for metric in res.parsed
             ]
