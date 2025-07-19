@@ -2,13 +2,13 @@
 
 import { compareVersions } from 'compare-versions'
 
-import { Sandbox, SandboxOpts } from './sandbox'
-import { SandboxApiOpts } from './sandbox/sandboxApi'
-import { ConnectionConfig } from './connectionConfig'
-import { ApiClient, handleApiError } from './api'
-import { NotFoundError } from './errors'
+import { Sandbox, SandboxOpts } from '.'
+import { SandboxApiOpts } from './sandboxApi'
+import { ConnectionConfig } from '../connectionConfig'
+import { ApiClient, handleApiError } from '../api'
+import { NotFoundError } from '../errors'
 
-import type { components } from './api'
+import type { components } from '../api'
 
 // TODO: Add description
 export class SandboxBeta extends Sandbox {

@@ -48,4 +48,4 @@ export type { SandboxInfo, SandboxPaginator, SandboxState } from './sandbox/sand
 export { Sandbox }
 import { Sandbox } from './sandbox'
 export default Sandbox
-export { SandboxBeta } from './sandboxBeta'
+export { SandboxBeta } from './sandbox/sandboxBeta'
