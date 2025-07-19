@@ -10,7 +10,36 @@ import { NotFoundError } from '../errors'
 
 import type { components } from '../api'
 
-// TODO: Add description
+/**
+ * Sandbox resource usage metrics.
+ */
+export interface SandboxMetrics {
+  /**
+   * Timestamp of the metrics.
+   */
+  timestamp: Date
+
+  /**
+   * CPU usage in percentage.
+   */
+  cpuUsedPct: number
+
+  /**
+   * Number of CPU cores.
+   */
+  cpuCount: number
+
+  /**
+   * Memory usage in MiB.
+   */
+  memUsedMiB: number
+
+  /**
+   * Total memory available in MiB.
+   */
+  memTotalMiB: number
+}
+
 export class SandboxBeta extends Sandbox {
   /**
    * Resume the sandbox.
@@ -64,7 +93,7 @@ export class SandboxBeta extends Sandbox {
   static async getMetrics(
     sandboxId: string,
     opts?: SandboxApiOpts
-  ): Promise<components['schemas']['SandboxMetric'][]> {
+  ): Promise<SandboxMetrics[]> {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
 
@@ -84,8 +113,11 @@ export class SandboxBeta extends Sandbox {
 
     return (
       res.data?.map((metric: components['schemas']['SandboxMetric']) => ({
-        ...metric,
-        timestamp: new Date(metric.timestamp).toISOString(),
+        timestamp: new Date(metric.timestamp),
+        cpuUsedPct: metric.cpuUsedPct,
+        cpuCount: metric.cpuCount,
+        memUsedMiB: metric.memUsed,
+        memTotalMiB: metric.memTotal,
       })) ?? []
     )
   }
@@ -179,7 +211,7 @@ export class SandboxBeta extends Sandbox {
    */
   async getMetrics(
     opts?: Pick<SandboxOpts, 'requestTimeoutMs'>
-  ): Promise<components['schemas']['SandboxMetric'][]> {
+  ): Promise<SandboxMetrics[]> {
     if (
       this.envdApi.version &&
       compareVersions(this.envdApi.version, '0.1.5') < 0
@@ -188,6 +220,7 @@ export class SandboxBeta extends Sandbox {
         'Metrics are not supported in this version of the sandbox, please rebuild your template.'
       )
     }
+
     return await SandboxBeta.getMetrics(this.sandboxId, {
       ...this.connectionConfig,
       ...opts,

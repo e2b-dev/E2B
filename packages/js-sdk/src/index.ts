@@ -48,4 +48,5 @@ export type { SandboxInfo, SandboxPaginator, SandboxState } from './sandbox/sand
 export { Sandbox }
 import { Sandbox } from './sandbox'
 export default Sandbox
+export type { SandboxMetrics } from './sandbox/sandboxBeta'
 export { SandboxBeta } from './sandbox/sandboxBeta'
