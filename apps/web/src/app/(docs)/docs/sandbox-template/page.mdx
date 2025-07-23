@@ -21,39 +21,44 @@ You can then use this template ID to create a new sandbox with the SDK based on 
 **Using Homebrew (on macOS)**
 
 <CodeGroup isTerminalCommand>
-```bash
-brew install e2b
-```
+  ```bash
+  brew install e2b
+  ```
 </CodeGroup>
 
 **Using NPM**
 
 <CodeGroup isTerminalCommand>
-```bash
-npm i -g @e2b/cli
-```
+  ```bash
+  npm i -g @e2b/cli
+  ```
 </CodeGroup>
 
 ### 2. Initialize sandbox template
 The following command will create a basic `e2b.Dockerfile` in the current directory.
 
 <CodeGroup isTerminalCommand>
-```bash
-e2b template init
-```
+  ```bash
+  e2b template init
+  ```
 </CodeGroup>
 
 ### 3. Customize `e2b.Dockerfile`
 Now you can customize your sandbox template by editing the `e2b.Dockerfile` file.
 <CodeGroup title="e2b.Dockerfile">
-```bash
-# Make sure to use this base image
-FROM e2bdev/code-interpreter:latest # $HighlightLine
+  ```bash
+  # Make sure to use this base image
+  FROM e2bdev/code-interpreter:latest # $HighlightLine
 
-# Install some Python packages
-RUN pip install cowsay # $HighlightLine
-```
+  # Install some Python packages
+  RUN pip install cowsay # $HighlightLine
+  ```
 </CodeGroup>
+
+<Note>
+  Only [Debian-based](https://en.wikipedia.org/wiki/List_of_Linux_distributions#Debian-based) images are
+  supported.
+</Note>
 
 ### 4. Build your sandbox template
 Now you can build your sandbox template. We'll use Docker and the E2B CLI.
@@ -61,9 +66,9 @@ What is going to happen is that E2B CLI will call Docker to build the image and 
 Then we convert the Docker image to a micro VM that can be then launched as a sandbox with our SDK.
 
 <CodeGroup isTerminalCommand>
-```bash
-e2b template build -c "/root/.jupyter/start-up.sh"
-```
+  ```bash
+  e2b template build -c "/root/.jupyter/start-up.sh"
+  ```
 </CodeGroup>
 
 This process will take a moment. In the end, you'll see your template ID that you'll need to use to create a sandbox with the SDK.
@@ -72,38 +77,38 @@ This process will take a moment. In the end, you'll see your template ID that yo
 Now you can use the template ID to create a sandbox with the SDK.
 
 <CodeGroup>
-```javascript {{ language: 'js' }}
-import { sandbox } from '@e2b/code-interpreter'
+  ```javascript {{ language: 'js' }}
+  import {sandbox} from '@e2b/code-interpreter'
 
-// Your template ID from the previous step
-const templateID = 'id-of-your-template' // $HighlightLine
-// Pass the template ID to the `Sandbox.create` method
-const sandbox = await Sandbox.create(templateID) // $HighlightLine
+  // Your template ID from the previous step
+  const templateID = 'id-of-your-template' // $HighlightLine
+  // Pass the template ID to the `Sandbox.create` method
+  const sandbox = await Sandbox.create(templateID) // $HighlightLine
 
-// The template installed cowsay, so we can use it
-const execution = await sandbox.runCode(`
-import cowsay
-cowsay.say('Hello from E2B!')
-`)
+  // The template installed cowsay, so we can use it
+  const execution = await sandbox.runCode(`
+  import cowsay
+  cowsay.say('Hello from E2B!')
+  `)
 
-console.log(execution.stdout)
-```
-```python {{ language: 'python' }}
-from e2b_code_interpreter import Sandbox
+  console.log(execution.stdout)
+  ```
+  ```python {{ language: 'python' }}
+  from e2b_code_interpreter import Sandbox
 
-# Your template ID from the previous step
-template_id = 'id-of-your-template' # $HighlightLine
-# Pass the template ID to the `Sandbox.create` method
-sandbox = Sandbox(template_id) # $HighlightLine
+  # Your template ID from the previous step
+  template_id = 'id-of-your-template' # $HighlightLine
+  # Pass the template ID to the `Sandbox.create` method
+  sandbox = Sandbox(template_id) # $HighlightLine
 
-# The template installed cowsay, so we can use it
-execution = sandbox.run_code("""
-import cowsay
-cowsay.say('Hello from E2B!')
-""")
+  # The template installed cowsay, so we can use it
+  execution = sandbox.run_code("""
+  import cowsay
+  cowsay.say('Hello from E2B!')
+  """)
 
-print(execution.stdout)
-```
+  print(execution.stdout)
+  ```
 </CodeGroup>
 
 ## How it works
@@ -120,7 +125,9 @@ Then, these steps happen:
 We call this sandbox snapshot a _sandbox template_.
 
 <Note title="Sandbox Snapshot">
-  Snapshots are saved running sandboxes. We serialize and save the whole sandbox's filesystem together with all the running processes in a way that can be loaded later.
+  Snapshots are saved running sandboxes. We serialize and save the whole sandbox's filesystem together with all the
+  running processes in a way that can be loaded later.
 
-  This allows us to load the sandbox in a few hundred milliseconds any time later with all the processes already running and the filesystem exactly as it was.
+  This allows us to load the sandbox in a few hundred milliseconds any time later with all the processes already running
+  and the filesystem exactly as it was.
 </Note>
