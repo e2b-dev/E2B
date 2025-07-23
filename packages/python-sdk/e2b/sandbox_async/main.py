@@ -240,6 +240,7 @@ class AsyncSandbox(SandboxApi):
         api_key: Optional[str] = None,
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
+        headers: Optional[Dict[str, str]] = None,
         proxy: Optional[ProxyTypes] = None,
     ):
         """
@@ -248,6 +249,7 @@ class AsyncSandbox(SandboxApi):
 
         :param sandbox_id: Sandbox ID
         :param api_key: E2B API Key to use for authentication, defaults to `E2B_API_KEY` environment variable
+        :param headers: Additional headers to send with the request
         :param proxy: Proxy to use for the request and for the **requests made to the returned sandbox**
 
         :return: sandbox instance for the existing sandbox
@@ -267,8 +269,10 @@ class AsyncSandbox(SandboxApi):
             domain=domain,
             debug=debug,
             proxy=proxy,
+            headers=headers,
         )
 
+        # TODO: Pass these headers without using the connection config as that will start passing them with all request (even API)—right now we use it for the envd access token!
         connection_headers = {}
 
         if info._envd_access_token:
@@ -300,6 +304,7 @@ class AsyncSandbox(SandboxApi):
     async def kill(  # type: ignore
         self,
         request_timeout: Optional[float] = None,
+        headers: Optional[Dict[str, str]] = None,
     ) -> bool:
         """
         Kill the sandbox.
@@ -318,6 +323,7 @@ class AsyncSandbox(SandboxApi):
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
+        headers: Optional[Dict[str, str]] = None,
         proxy: Optional[ProxyTypes] = None,
     ) -> bool:
         """
@@ -336,6 +342,7 @@ class AsyncSandbox(SandboxApi):
     async def kill(  # type: ignore
         self,
         request_timeout: Optional[float] = None,
+        headers: Optional[Dict[str, str]] = None,
     ) -> bool:
         return await SandboxApi._cls_kill(
             sandbox_id=self.sandbox_id,
@@ -347,6 +354,7 @@ class AsyncSandbox(SandboxApi):
         self,
         timeout: int,
         request_timeout: Optional[float] = None,
+        headers: Optional[Dict[str, str]] = None,
     ) -> None:
         """
         Set the timeout of the sandbox.
@@ -369,6 +377,7 @@ class AsyncSandbox(SandboxApi):
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
+        headers: Optional[Dict[str, str]] = None,
         proxy: Optional[ProxyTypes] = None,
     ) -> None:
         """
@@ -390,6 +399,7 @@ class AsyncSandbox(SandboxApi):
         self,
         timeout: int,
         request_timeout: Optional[float] = None,
+        headers: Optional[Dict[str, str]] = None,
     ) -> None:
         await SandboxApi._cls_set_timeout(
             sandbox_id=self.sandbox_id,
@@ -401,6 +411,7 @@ class AsyncSandbox(SandboxApi):
     async def get_info(  # type: ignore
         self,
         request_timeout: Optional[float] = None,
+        headers: Optional[Dict[str, str]] = None,
     ) -> SandboxInfo:
         """
         Get sandbox information like sandbox ID, template, metadata, started at/end at date.

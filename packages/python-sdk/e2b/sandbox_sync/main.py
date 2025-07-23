@@ -123,6 +123,7 @@ class Sandbox(SandboxApi):
 
             if info._envd_access_token:
                 envd_access_token = info._envd_access_token
+                # TODO: Pass these headers without using the connection config as that will start passing them with all request (even API)—right now we use it for the envd access token!
                 connection_headers["X-Access-Token"] = info._envd_access_token
         else:
             info = SandboxApi._create_sandbox(
@@ -143,6 +144,7 @@ class Sandbox(SandboxApi):
 
             if info.envd_access_token:
                 envd_access_token = info.envd_access_token
+                # TODO: Pass these headers without using the connection config as that will start passing them with all request (even API)—right now we use it for the envd access token!
                 connection_headers["X-Access-Token"] = info.envd_access_token
 
         connection_config = ConnectionConfig(
