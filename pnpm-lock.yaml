@@ -118,8 +118,8 @@ importers:
         specifier: ^1.2.1
         version: 1.2.1
       e2b:
-        specifier: ^1.8.0
-        version: 1.8.0
+        specifier: ^1.9.0
+        version: 1.9.0
       fast-glob:
         specifier: ^3.3.0
         version: 3.3.1
@@ -263,8 +263,8 @@ importers:
         specifier: ^2.11.2
         version: 2.11.2
       e2b:
-        specifier: ^1.8.0
-        version: 1.8.0
+        specifier: ^1.9.0
+        version: 1.9.0
       inquirer:
         specifier: ^9.2.12
         version: 9.2.12
@@ -3721,8 +3721,8 @@ packages:
     resolution: {integrity: sha512-KIN/nDJBQRcXw0MLVhZE9iQHmG68qAVIBg9CqmUYjmQIhgij9U5MFvrqkUL5FbtyyzZuOeOt0zdeRe4UY7ct+A==}
     engines: {node: '>= 0.4'}
 
-  e2b@1.8.0:
-    resolution: {integrity: sha512-cB25x2QDbo2x0N40+oHhvnGYIy3MqDM90PJyDYB1JuX0EC76wU+qxQjZHYOZAPX2dGPOIvz3EShPvXwG/3pBlw==}
+  e2b@1.9.0:
+    resolution: {integrity: sha512-MM3RhWW7YENYocTy20BvKVcn8li/FxkDrHINS7tmz00ffl1ZavQTRxCI9Sl8ofeRg+HVMlqO4W8LJ+ij9VTZPg==}
     engines: {node: '>=18'}
 
   eastasianwidth@0.2.0:
@@ -11156,7 +11156,7 @@ snapshots:
       es-errors: 1.3.0
       gopd: 1.2.0
 
-  e2b@1.8.0:
+  e2b@1.9.0:
     dependencies:
       '@bufbuild/protobuf': 2.2.2
       '@connectrpc/connect': 2.0.0-rc.3(@bufbuild/protobuf@2.2.2)
