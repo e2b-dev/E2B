@@ -520,6 +520,21 @@ export class Sandbox extends SandboxApi {
     })
   }
 
+
+  /**
+   * Get the metrics of the sandbox.
+   *
+   * @param opts connection options.
+   *
+   * @returns metrics of the sandbox.
+   */
+  async getMetrics(opts?: Pick<SandboxOpts, 'requestTimeoutMs'>) {
+    return await Sandbox.getMetrics(this.sandboxId, {
+      ...this.connectionConfig,
+      ...opts,
+    })
+  }
+
   private fileUrl(path?: string, username?: string) {
     const url = new URL('/files', this.envdApiUrl)
 

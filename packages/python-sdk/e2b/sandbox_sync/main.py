@@ -1,8 +1,11 @@
 import logging
 import httpx
 
-from typing import Dict, Optional, overload
+from typing import Dict, Optional, overload, List
 
+from packaging.version import Version
+
+from e2b.api.client.models import SandboxMetric
 from e2b.api.client.types import Unset
 from e2b.connection_config import ConnectionConfig, ProxyTypes
 from e2b.envd.api import ENVD_API_HEALTH_ROUTE, handle_envd_api_exception
@@ -481,6 +484,67 @@ class Sandbox(SandboxSetup, SandboxApi):
             config_dict["request_timeout"] = request_timeout
 
         return SandboxApi._cls_get_info(
+            sandbox_id=self.sandbox_id,
+            **config_dict,
+        )
+
+    @overload
+    def get_metrics(  # type: ignore
+        self, request_timeout: Optional[float] = None
+    ) -> List[SandboxMetric]:
+        """
+        Get the metrics of the current sandbox.
+
+        :param request_timeout: Timeout for the request in **seconds**
+
+        :return: List of sandbox metrics containing CPU and memory usage information
+        """
+        ...
+
+    @overload
+    @staticmethod
+    def get_metrics(
+        sandbox_id: str,
+        api_key: Optional[str] = None,
+        domain: Optional[str] = None,
+        debug: Optional[bool] = None,
+        request_timeout: Optional[float] = None,
+    ) -> List[SandboxMetric]:
+        """
+        Get the metrics of the sandbox specified by sandbox ID.
+
+        :param sandbox_id: Sandbox ID
+        :param api_key: E2B API Key to use for authentication, defaults to `E2B_API_KEY` environment variable
+        :param request_timeout: Timeout for the request in **seconds**
+
+        :return: List of sandbox metrics containing CPU and memory usage information
+        """
+        ...
+
+    @class_method_variant("_cls_get_metrics")
+    def get_metrics(  # type: ignore
+        self,
+        request_timeout: Optional[float] = None,
+    ) -> List[SandboxMetric]:
+        """
+        Get the metrics of the current sandbox.
+
+        :param request_timeout: Timeout for the request in **seconds**
+
+        :return: List of sandbox metrics containing CPU and memory usage information
+        """
+        if self._envd_version and Version(self._envd_version) < Version("0.1.5"):
+            raise SandboxException(
+                "Metrics are not supported in this version of the sandbox, please rebuild your template."
+            )
+
+        config_dict = self.connection_config.__dict__
+        config_dict.pop("access_token", None)
+        config_dict.pop("api_url", None)
+        if request_timeout:
+            config_dict["request_timeout"] = request_timeout
+
+        return self._cls_get_metrics(
             sandbox_id=self.sandbox_id,
             **config_dict,
         )

@@ -41,7 +41,7 @@ export type {
 } from './sandbox/commands'
 
 export type { SandboxOpts } from './sandbox'
-export type { SandboxInfo } from './sandbox/sandboxApi'
+export type { SandboxInfo, SandboxMetrics } from './sandbox/sandboxApi'
 export { Sandbox }
 import { Sandbox } from './sandbox'
 export default Sandbox
