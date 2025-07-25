@@ -8,45 +8,7 @@ import { asBold, asTimestamp, withUnderline } from 'src/utils/format'
 import { listSandboxes } from './list'
 import { wait } from 'src/utils/wait'
 import { handleE2BRequestError } from '../../utils/errors'
-
-const maxRuntime = 24 * 60 * 60 * 1000 // 24 hours in milliseconds
-
-function getShortID(sandboxID: string) {
-  return sandboxID.split('-')[0]
-}
-
-function waitForSandboxEnd(sandboxID: string) {
-  let isRunning = true
-
-  async function monitor() {
-    const startTime = new Date().getTime()
-
-    // eslint-disable-next-line no-constant-condition
-    while (true) {
-      const currentTime = new Date().getTime()
-      const elapsedTime = currentTime - startTime // Time elapsed in milliseconds
-
-      // Check if 24 hours (in milliseconds) have passed
-      if (elapsedTime >= maxRuntime) {
-        break
-      }
-
-      const response = await listSandboxes()
-      const sandbox = response.find(
-        (s) => s.sandboxID === getShortID(sandboxID)
-      )
-      if (!sandbox) {
-        isRunning = false
-        break
-      }
-      await wait(5000)
-    }
-  }
-
-  monitor()
-
-  return () => isRunning
-}
+import { waitForSandboxEnd, formatEnum, Format, getShortID } from './utils'
 
 enum LogLevel {
   DEBUG = 'DEBUG',
@@ -76,17 +38,6 @@ function isLevelIncluded(level: LogLevel, allowedLevel?: LogLevel) {
   }
 }
 
-function formatEnum(e: { [key: string]: string }) {
-  return Object.values(e)
-    .map((level) => asBold(level))
-    .join(', ')
-}
-
-enum LogFormat {
-  JSON = 'json',
-  PRETTY = 'pretty',
-}
-
 function cleanLogger(logger?: string) {
   if (!logger) {
     return ''
@@ -112,8 +63,8 @@ export const logsCommand = new commander.Command('logs')
   .option('-f, --follow', 'keep streaming logs until the sandbox is closed')
   .option(
     '--format <format>',
-    `specify format for printing logs (${formatEnum(LogFormat)})`,
-    LogFormat.PRETTY
+    `specify format for printing logs (${formatEnum(Format)})`,
+    Format.PRETTY
   )
   .option(
     '--loggers [loggers]',
@@ -126,7 +77,7 @@ export const logsCommand = new commander.Command('logs')
       opts?: {
         level: string
         follow: boolean
-        format: LogFormat
+        format: Format
         loggers?: string[]
       }
     ) => {
@@ -136,8 +87,8 @@ export const logsCommand = new commander.Command('logs')
           throw new Error(`Invalid log level: ${level}`)
         }
 
-        const format = opts?.format.toLowerCase() as LogFormat | undefined
-        if (format && !Object.values(LogFormat).includes(format)) {
+        const format = opts?.format.toLowerCase() as Format | undefined
+        if (format && !Object.values(Format).includes(format)) {
           throw new Error(`Invalid log format: ${format}`)
         }
 
@@ -149,7 +100,7 @@ export const logsCommand = new commander.Command('logs')
         let isFirstRun = true
         let firstLogsPrinted = false
 
-        if (format === LogFormat.PRETTY) {
+        if (format === Format.PRETTY) {
           console.log(`\nLogs for sandbox ${asBold(sandboxID)}:`)
         }
 
@@ -178,7 +129,7 @@ export const logsCommand = new commander.Command('logs')
           const isRunning = await isRunningPromise
 
           if (!isRunning && logs.length === 0 && isFirstRun) {
-            if (format === LogFormat.PRETTY) {
+            if (format === Format.PRETTY) {
               console.log(
                 `\nStopped printing logs — sandbox ${withUnderline(
                   'not found'
@@ -189,7 +140,7 @@ export const logsCommand = new commander.Command('logs')
           }
 
           if (!isRunning) {
-            if (format === LogFormat.PRETTY) {
+            if (format === Format.PRETTY) {
               console.log(
                 `\nStopped printing logs — sandbox is ${withUnderline(
                   'closed'
@@ -219,7 +170,7 @@ function printLog(
   timestamp: string,
   line: string,
   allowedLevel: LogLevel | undefined,
-  format: LogFormat | undefined,
+  format: Format | undefined,
   allowedLoggers?: string[] | undefined
 ) {
   const log = JSON.parse(line)
@@ -266,7 +217,7 @@ function printLog(
   delete log['envID']
   delete log['sandboxID']
 
-  if (format === LogFormat.JSON) {
+  if (format === Format.JSON) {
     console.log(
       JSON.stringify({
         timestamp: new Date(timestamp).toISOString(),
