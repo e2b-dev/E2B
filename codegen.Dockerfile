@@ -4,7 +4,7 @@ FROM golang:1.23
 RUN go install github.com/bufbuild/buf/cmd/buf@v1.50.1 && \
     go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.28.1 && \
     go install connectrpc.com/connect/cmd/protoc-gen-connect-go@v1.18.1
-    
+
 # Install our custom protoc plugin, connect-python
 COPY ./packages/connect-python /packages/connect-python
 RUN cd /packages/connect-python && make bin/protoc-gen-connect-python
@@ -38,7 +38,7 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # Install Node.js deps
-RUN npm install -g pnpm @connectrpc/protoc-gen-connect-es@1.6.1 @bufbuild/protoc-gen-es@2.2.2
-
-# Generate when container starts
-CMD ["make", "generate"]
+RUN npm install -g \
+    pnpm \
+    @connectrpc/protoc-gen-connect-es@1.6.1 \
+    @bufbuild/protoc-gen-es@2.6.2 \

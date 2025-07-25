@@ -1,0 +1,26 @@
+name: Generated files
+
+on:
+  pull_request:
+
+jobs:
+  lint:
+    name: Generated files
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: Install make
+        run: sudo apt-get update && sudo apt-get install -y make
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Run codegen
+        run: make codegen
+
+      - name: Check generated files
+        run: |
+          git diff --exit-code || (echo "Generated files are not up to date. Please run 'make codegen'." && exit 1)
