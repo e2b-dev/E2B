@@ -16,6 +16,8 @@ class SandboxMetric:
     Attributes:
         cpu_count (int): Number of CPU cores
         cpu_used_pct (float): CPU usage percentage
+        disk_total (int): Total disk space in bytes
+        disk_used (int): Disk used in bytes
         mem_total (int): Total memory in bytes
         mem_used (int): Memory used in bytes
         timestamp (datetime.datetime): Timestamp of the metric entry
@@ -23,6 +25,8 @@ class SandboxMetric:
 
     cpu_count: int
     cpu_used_pct: float
+    disk_total: int
+    disk_used: int
     mem_total: int
     mem_used: int
     timestamp: datetime.datetime
@@ -32,6 +36,10 @@ class SandboxMetric:
         cpu_count = self.cpu_count
 
         cpu_used_pct = self.cpu_used_pct
+
+        disk_total = self.disk_total
+
+        disk_used = self.disk_used
 
         mem_total = self.mem_total
 
@@ -45,6 +53,8 @@ class SandboxMetric:
             {
                 "cpuCount": cpu_count,
                 "cpuUsedPct": cpu_used_pct,
+                "diskTotal": disk_total,
+                "diskUsed": disk_used,
                 "memTotal": mem_total,
                 "memUsed": mem_used,
                 "timestamp": timestamp,
@@ -60,6 +70,10 @@ class SandboxMetric:
 
         cpu_used_pct = d.pop("cpuUsedPct")
 
+        disk_total = d.pop("diskTotal")
+
+        disk_used = d.pop("diskUsed")
+
         mem_total = d.pop("memTotal")
 
         mem_used = d.pop("memUsed")
@@ -69,6 +83,8 @@ class SandboxMetric:
         sandbox_metric = cls(
             cpu_count=cpu_count,
             cpu_used_pct=cpu_used_pct,
+            disk_total=disk_total,
+            disk_used=disk_used,
             mem_total=mem_total,
             mem_used=mem_used,
             timestamp=timestamp,

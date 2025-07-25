@@ -9,15 +9,21 @@ from e2b.sandbox.sandbox_api import (
     SandboxQuery,
     ListedSandbox,
 )
-from e2b.exceptions import TemplateException
+from e2b.exceptions import TemplateException, SandboxException
 from e2b.api import ApiClient, SandboxCreateResponse
-from e2b.api.client.models import NewSandbox, PostSandboxesSandboxIDTimeoutBody
+from e2b.api.client.models import (
+    NewSandbox,
+    PostSandboxesSandboxIDTimeoutBody,
+    SandboxMetric,
+    Error,
+)
 from e2b.api.client.api.sandboxes import (
     get_sandboxes_sandbox_id,
     post_sandboxes_sandbox_id_timeout,
     get_sandboxes,
     delete_sandboxes_sandbox_id,
     post_sandboxes,
+    get_sandboxes_sandbox_id_metrics,
 )
 from e2b.connection_config import ConnectionConfig, ProxyTypes
 from e2b.api import handle_api_exception
@@ -290,3 +296,47 @@ class SandboxApi(SandboxApiBase):
                 envd_version=res.parsed.envd_version,
                 envd_access_token=res.parsed.envd_access_token,
             )
+
+    @classmethod
+    def _cls_get_metrics(
+        cls,
+        sandbox_id: str,
+        api_key: Optional[str] = None,
+        domain: Optional[str] = None,
+        debug: Optional[bool] = None,
+        request_timeout: Optional[float] = None,
+        headers: Optional[Dict[str, str]] = None,
+        proxy: Optional[ProxyTypes] = None,
+    ) -> List[SandboxMetric]:
+        config = ConnectionConfig(
+            api_key=api_key,
+            domain=domain,
+            debug=debug,
+            request_timeout=request_timeout,
+            headers=headers,
+            proxy=proxy,
+        )
+
+        if config.debug:
+            # Skip getting the metrics in debug mode
+            return []
+
+        with ApiClient(
+            config,
+            limits=cls._limits,
+        ) as api_client:
+            res = get_sandboxes_sandbox_id_metrics.sync_detailed(
+                sandbox_id,
+                client=api_client,
+            )
+
+            if res.status_code >= 300:
+                raise handle_api_exception(res)
+
+            if res.parsed is None:
+                return []
+
+            if isinstance(res.parsed, Error):
+                raise SandboxException(f"{res.parsed.message}: Request failed")
+
+            return res.parsed

@@ -1,11 +1,15 @@
 from collections.abc import Mapping
-from typing import Any, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, TypeVar, Union, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
 from ..models.template_build_status import TemplateBuildStatus
 from ..types import UNSET, Unset
+
+if TYPE_CHECKING:
+    from ..models.build_log_entry import BuildLogEntry
+
 
 T = TypeVar("T", bound="TemplateBuild")
 
@@ -15,6 +19,7 @@ class TemplateBuild:
     """
     Attributes:
         build_id (str): Identifier of the build
+        log_entries (list['BuildLogEntry']): Build logs structured
         logs (list[str]): Build logs
         status (TemplateBuildStatus): Status of the template
         template_id (str): Identifier of the template
@@ -22,6 +27,7 @@ class TemplateBuild:
     """
 
     build_id: str
+    log_entries: list["BuildLogEntry"]
     logs: list[str]
     status: TemplateBuildStatus
     template_id: str
@@ -30,6 +36,11 @@ class TemplateBuild:
 
     def to_dict(self) -> dict[str, Any]:
         build_id = self.build_id
+
+        log_entries = []
+        for log_entries_item_data in self.log_entries:
+            log_entries_item = log_entries_item_data.to_dict()
+            log_entries.append(log_entries_item)
 
         logs = self.logs
 
@@ -44,6 +55,7 @@ class TemplateBuild:
         field_dict.update(
             {
                 "buildID": build_id,
+                "logEntries": log_entries,
                 "logs": logs,
                 "status": status,
                 "templateID": template_id,
@@ -56,8 +68,17 @@ class TemplateBuild:
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
+        from ..models.build_log_entry import BuildLogEntry
+
         d = dict(src_dict)
         build_id = d.pop("buildID")
+
+        log_entries = []
+        _log_entries = d.pop("logEntries")
+        for log_entries_item_data in _log_entries:
+            log_entries_item = BuildLogEntry.from_dict(log_entries_item_data)
+
+            log_entries.append(log_entries_item)
 
         logs = cast(list[str], d.pop("logs"))
 
@@ -69,6 +90,7 @@ class TemplateBuild:
 
         template_build = cls(
             build_id=build_id,
+            log_entries=log_entries,
             logs=logs,
             status=status,
             template_id=template_id,

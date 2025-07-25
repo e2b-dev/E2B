@@ -125,6 +125,47 @@ export interface ListedSandbox {
 }
 
 
+/**
+ * Sandbox resource usage metrics.
+ */
+export interface SandboxMetrics {
+  /**
+   * Timestamp of the metrics.
+   */
+  timestamp: Date
+
+  /**
+   * CPU usage in percentage.
+   */
+  cpuUsedPct: number
+
+  /**
+   * Number of CPU cores.
+   */
+  cpuCount: number
+
+  /**
+   * Memory usage in bytes.
+   */
+  memUsed: number
+
+  /**
+   * Total memory available in bytes.
+   */
+  memTotal: number
+
+  /**
+   * Used disk space in bytes.
+   */
+  diskUsed: number
+
+  /**
+   * Total disk space available in bytes.
+   */
+  diskTotal: number
+}
+
+
 export class SandboxApi {
   protected constructor() {}
 
@@ -260,6 +301,49 @@ export class SandboxApi {
       startedAt: new Date(res.data.startedAt),
       endAt: new Date(res.data.endAt),
     }
+  }
+
+
+  /**
+   * Get the metrics of the sandbox.
+   *
+   * @param sandboxId sandbox ID.
+   * @param opts connection options.
+   *
+   * @returns metrics of the sandbox.
+   */
+  static async getMetrics(
+    sandboxId: string,
+    opts?: SandboxApiOpts
+  ): Promise<SandboxMetrics[]> {
+    const config = new ConnectionConfig(opts)
+    const client = new ApiClient(config)
+
+    const res = await client.api.GET('/sandboxes/{sandboxID}/metrics', {
+      params: {
+        path: {
+          sandboxID: sandboxId,
+        },
+      },
+      signal: config.getSignal(opts?.requestTimeoutMs),
+    })
+
+    const err = handleApiError(res)
+    if (err) {
+      throw err
+    }
+
+    return (
+      res.data?.map((metric: components['schemas']['SandboxMetric']) => ({
+        timestamp: new Date(metric.timestamp),
+        cpuUsedPct: metric.cpuUsedPct,
+        cpuCount: metric.cpuCount,
+        memUsed: metric.memUsed,
+        memTotal: metric.memTotal,
+        diskUsed: metric.diskUsed,
+        diskTotal: metric.diskTotal,
+      })) ?? []
+    )
   }
 
   /**
