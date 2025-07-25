@@ -28,6 +28,7 @@ import { FilesystemEvent, WatchHandle } from './watchHandle'
 import { compareVersions } from 'compare-versions'
 import { InvalidArgumentError, TemplateError } from '../../errors'
 import { ENVD_VERSION_RECURSIVE_WATCH } from '../../envd/versions'
+import type { Timestamp } from '@bufbuild/protobuf/wkt'
 
 /**
  * Sandbox filesystem object information.
@@ -45,6 +46,38 @@ export interface EntryInfo {
    * Path to the filesystem object.
    */
   path: string
+}
+
+export interface EntryInfoExtended extends EntryInfo {
+  /**
+   * Size of the filesystem object in bytes.
+   */
+  size: number
+
+  /**
+   * File mode and permission bits.
+   */
+  mode: number
+
+  /**
+   * String representation of file permissions (e.g. 'rwxr-xr-x').
+   */
+  permissions: string
+
+  /**
+   * Owner of the filesystem object.
+   */
+  owner: string
+
+  /**
+   * Group owner of the filesystem object.
+   */
+  group: string
+
+  /**
+   * Last modification time of the filesystem object.
+   */
+  modifiedTime?: Date
 }
 
 /**
@@ -73,6 +106,15 @@ function mapFileType(fileType: FsFileType) {
     case FsFileType.FILE:
       return FileType.FILE
   }
+}
+
+function mapModifiedTime(modifiedTime: Timestamp | undefined) {
+  if (!modifiedTime) return undefined
+
+  return new Date(
+    Number(modifiedTime.seconds) * 1000 +
+      Math.floor(modifiedTime.nanos / 1_000_000)
+  )
 }
 
 /**
@@ -346,7 +388,10 @@ export class Filesystem {
    *
    * @returns list of entries in the sandbox filesystem directory.
    */
-  async list(path: string, opts?: FilesystemListOpts): Promise<EntryInfo[]> {
+  async list(
+    path: string,
+    opts?: FilesystemListOpts
+  ): Promise<EntryInfoExtended[]> {
     if (typeof opts?.depth === 'number' && opts.depth < 1) {
       throw new InvalidArgumentError('depth should be at least one')
     }
@@ -363,7 +408,7 @@ export class Filesystem {
         }
       )
 
-      const entries: EntryInfo[] = []
+      const entries: EntryInfoExtended[] = []
 
       for (const e of res.entries) {
         const type = mapFileType(e.type)
@@ -373,6 +418,12 @@ export class Filesystem {
             name: e.name,
             type,
             path: e.path,
+            size: Number(e.size),
+            mode: e.mode,
+            permissions: e.permissions,
+            owner: e.owner,
+            group: e.group,
+            modifiedTime: mapModifiedTime(e.modifiedTime),
           })
         }
       }
@@ -500,6 +551,46 @@ export class Filesystem {
         }
       }
 
+      throw handleRpcError(err)
+    }
+  }
+
+  /**
+   * Get information about a file or directory.
+   *
+   * @param path path to a file or directory.
+   * @param opts connection options.
+   *
+   * @returns information about the file or directory like name, type, and path.
+   */
+  async getInfo(
+    path: string,
+    opts?: FilesystemRequestOpts
+  ): Promise<EntryInfoExtended> {
+    try {
+      const res = await this.rpc.stat(
+        { path },
+        { headers: authenticationHeader(opts?.user) }
+      )
+
+      if (!res.entry) {
+        throw new Error(
+          'Expected to receive information about the file or directory'
+        )
+      }
+
+      return {
+        name: res.entry.name,
+        type: mapFileType(res.entry.type),
+        path: res.entry.path,
+        size: Number(res.entry.size),
+        mode: res.entry.mode,
+        permissions: res.entry.permissions,
+        owner: res.entry.owner,
+        group: res.entry.group,
+        modifiedTime: mapModifiedTime(res.entry.modifiedTime),
+      }
+    } catch (err) {
       throw handleRpcError(err)
     }
   }

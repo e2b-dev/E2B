@@ -18,7 +18,11 @@ from e2b.connection_config import (
 from e2b.envd.api import ENVD_API_FILES_ROUTE, handle_envd_api_exception
 from e2b.envd.filesystem import filesystem_connect, filesystem_pb2
 from e2b.envd.rpc import authentication_header, handle_rpc_exception
-from e2b.sandbox.filesystem.filesystem import EntryInfo, map_file_type
+from e2b.sandbox.filesystem.filesystem import (
+    EntryInfo,
+    EntryInfoExtended,
+    map_file_type,
+)
 from e2b.sandbox_sync.filesystem.watch_handle import WatchHandle
 
 
@@ -254,7 +258,7 @@ class Filesystem:
         depth: Optional[int] = 1,
         user: Username = "user",
         request_timeout: Optional[float] = None,
-    ) -> List[EntryInfo]:
+    ) -> List[EntryInfoExtended]:
         """
         List entries in a directory.
 
@@ -277,13 +281,23 @@ class Filesystem:
                 headers=authentication_header(user),
             )
 
-            entries: List[EntryInfo] = []
+            entries: List[EntryInfoExtended] = []
             for entry in res.entries:
                 event_type = map_file_type(entry.type)
 
                 if event_type:
                     entries.append(
-                        EntryInfo(name=entry.name, type=event_type, path=entry.path)
+                        EntryInfoExtended(
+                            name=entry.name,
+                            type=event_type,
+                            path=entry.path,
+                            size=entry.size,
+                            mode=entry.mode,
+                            permissions=entry.permissions,
+                            owner=entry.owner,
+                            group=entry.group,
+                            modified_time=entry.modified_time.ToDatetime(),
+                        )
                     )
 
             return entries
@@ -319,6 +333,44 @@ class Filesystem:
             if isinstance(e, e2b_connect.ConnectException):
                 if e.status == e2b_connect.Code.not_found:
                     return False
+            raise handle_rpc_exception(e)
+
+    def get_info(
+        self,
+        path: str,
+        user: Username = "user",
+        request_timeout: Optional[float] = None,
+    ) -> EntryInfoExtended:
+        """
+        Get information about a file or directory.
+
+        :param path: Path to a file or a directory
+        :param user: Run the operation as this user
+        :param request_timeout: Timeout for the request in **seconds**
+
+        :return: Information about the file or directory like name, type, and path
+        """
+        try:
+            r = self._rpc.stat(
+                filesystem_pb2.StatRequest(path=path),
+                request_timeout=self._connection_config.get_request_timeout(
+                    request_timeout
+                ),
+                headers=authentication_header(user),
+            )
+
+            return EntryInfoExtended(
+                name=r.entry.name,
+                type=map_file_type(r.entry.type),
+                path=r.entry.path,
+                size=r.entry.size,
+                mode=r.entry.mode,
+                permissions=r.entry.permissions,
+                owner=r.entry.owner,
+                group=r.entry.group,
+                modified_time=r.entry.modified_time.ToDatetime(),
+            )
+        except Exception as e:
             raise handle_rpc_exception(e)
 
     def remove(
