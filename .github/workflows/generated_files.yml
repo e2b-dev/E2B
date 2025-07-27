@@ -12,9 +12,6 @@ jobs:
       - name: Checkout Repo
         uses: actions/checkout@v4
 
-      - name: Install make
-        run: sudo apt-get update && sudo apt-get install -y make
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
