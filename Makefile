@@ -1,9 +1,7 @@
 .PHONY: codegen
 codegen:
 	@echo "Generating SDK code from openapi and envd spec"
-	@docker run -v "$$(pwd):/workspace" $$(docker build -q -t codegen-env . -f codegen.Dockerfile) \
-		/bin/sh -c "pnpm install && make generate"
-
+	@docker run -v "$$(pwd):/workspace" $$(docker build -q -t codegen-env . -f codegen.Dockerfile)
 generate: generate-js generate-python
 
 generate-js:

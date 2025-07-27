@@ -4,26 +4,59 @@ on:
   pull_request:
 
 jobs:
-  lint:
+  check-generated:
     name: Generated files
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        id: pnpm-install
+        with:
+          version: 9.5
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          registry-url: 'https://registry.npmjs.org'
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Configure pnpm
+        run: |
+          pnpm config set auto-install-peers true
+          pnpm config set exclude-links-from-lockfile true
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Build codegen image with caching
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: codegen.Dockerfile
+          tags: codegen-env:latest
+          load: true # makes the image available for `docker run`
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
       - name: Run codegen
         run: make codegen
 
-      - name: Check generated files
+      - name: Check for uncommitted changes
         run: |
           if [[ -n $(git status --porcelain) ]]; then
-            echo "Changes detected:"
+            echo "❌ Generated files are not up to date:"
             git status --short
+            git diff
             exit 1
           else
-            echo "No changes detected."
+            echo "✅ No changes detected."
           fi

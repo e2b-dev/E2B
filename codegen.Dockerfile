@@ -47,4 +47,6 @@ RUN apt-get update && \
 RUN npm install -g \
     pnpm \
     @connectrpc/protoc-gen-connect-es@1.6.1 \
-    @bufbuild/protoc-gen-es@2.6.2 \
+    @bufbuild/protoc-gen-es@2.6.2
+
+CMD ["make", "generate"]
