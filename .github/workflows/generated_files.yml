@@ -23,4 +23,10 @@ jobs:
 
       - name: Check generated files
         run: |
-          git diff --exit-code || (echo "Generated files are not up to date. Please run 'make codegen'." && exit 1)
+          if [[ -n $(git status --porcelain) ]]; then
+            echo "Changes detected:"
+            git status --short
+            exit 1
+          else
+            echo "No changes detected."
+          fi
