@@ -78,6 +78,11 @@ class EntryInfo(EntryInfoAPI):
     """
     Last modification time of the filesystem object.
     """
+    symlink_target: Optional[str] = None
+    """
+    Target of the symlink if the filesystem object is a symlink.
+    If the filesystem object is not a symlink, this field is None.
+    """
 
 
 @dataclass

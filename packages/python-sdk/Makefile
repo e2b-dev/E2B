@@ -1,6 +1,8 @@
+ROOT_DIR := $(abspath $(dir $(lastword $(MAKEFILE_LIST)))/../..)
+
 generate-api:
-	python ./../../spec/remove_extra_tags.py sandboxes
-	openapi-python-client generate --output-path e2b/api/api --overwrite --path ../../spec/openapi_generated.yml
+	python $(ROOT_DIR)/spec/remove_extra_tags.py sandboxes
+	openapi-python-client generate --output-path $(ROOT_DIR)/packages/python-sdk/e2b/api/api --overwrite --path $(ROOT_DIR)/spec/openapi_generated.yml
 	rm -rf e2b/api/client
 	mv e2b/api/api/e2b_api_client e2b/api/client
 	rm -rf e2b/api/api
@@ -8,10 +10,10 @@ generate-api:
 
 generate-envd:
 	if [ ! -f "/go/bin/protoc-gen-connect-python" ]; then \
-		$(MAKE) -C packages/connect-python build; \
+		$(MAKE) -C $(ROOT_DIR)/packages/connect-python build; \
 	fi
 
-	cd ./../../spec/envd && buf generate --template buf-python.gen.yaml
+	cd $(ROOT_DIR)/spec/envd && buf generate --template buf-python.gen.yaml
 	black .
 
 generate: generate-api generate-envd

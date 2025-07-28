@@ -99,6 +99,7 @@ class EntryInfo(_message.Message):
         "owner",
         "group",
         "modified_time",
+        "symlink_target",
     )
     NAME_FIELD_NUMBER: _ClassVar[int]
     TYPE_FIELD_NUMBER: _ClassVar[int]
@@ -109,6 +110,7 @@ class EntryInfo(_message.Message):
     OWNER_FIELD_NUMBER: _ClassVar[int]
     GROUP_FIELD_NUMBER: _ClassVar[int]
     MODIFIED_TIME_FIELD_NUMBER: _ClassVar[int]
+    SYMLINK_TARGET_FIELD_NUMBER: _ClassVar[int]
     name: str
     type: FileType
     path: str
@@ -118,6 +120,7 @@ class EntryInfo(_message.Message):
     owner: str
     group: str
     modified_time: _timestamp_pb2.Timestamp
+    symlink_target: str
     def __init__(
         self,
         name: _Optional[str] = ...,
@@ -129,6 +132,7 @@ class EntryInfo(_message.Message):
         owner: _Optional[str] = ...,
         group: _Optional[str] = ...,
         modified_time: _Optional[_Union[_timestamp_pb2.Timestamp, _Mapping]] = ...,
+        symlink_target: _Optional[str] = ...,
     ) -> None: ...
 
 class ListDirRequest(_message.Message):

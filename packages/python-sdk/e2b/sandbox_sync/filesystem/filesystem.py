@@ -297,6 +297,7 @@ class Filesystem:
                             owner=entry.owner,
                             group=entry.group,
                             modified_time=entry.modified_time.ToDatetime(),
+                            symlink_target=entry.symlink_target,
                         )
                     )
 
@@ -369,6 +370,7 @@ class Filesystem:
                 owner=r.entry.owner,
                 group=r.entry.group,
                 modified_time=r.entry.modified_time.ToDatetime(),
+                symlink_target=r.entry.symlink_target,
             )
         except Exception as e:
             raise handle_rpc_exception(e)
@@ -403,7 +405,7 @@ class Filesystem:
         new_path: str,
         user: Username = "user",
         request_timeout: Optional[float] = None,
-    ) -> EntryInfoAPI:
+    ) -> EntryInfo:
         """
         Rename a file or directory.
 
@@ -426,10 +428,17 @@ class Filesystem:
                 headers=authentication_header(user),
             )
 
-            return EntryInfoAPI(
+            return EntryInfo(
                 name=r.entry.name,
                 type=map_file_type(r.entry.type),
                 path=r.entry.path,
+                size=r.entry.size,
+                mode=r.entry.mode,
+                permissions=r.entry.permissions,
+                owner=r.entry.owner,
+                group=r.entry.group,
+                modified_time=r.entry.modified_time.ToDatetime(),
+                symlink_target=r.entry.symlink_target,
             )
         except Exception as e:
             raise handle_rpc_exception(e)
