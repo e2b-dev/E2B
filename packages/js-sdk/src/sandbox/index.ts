@@ -12,6 +12,8 @@ import { Commands, Pty } from './commands'
 import { Filesystem } from './filesystem'
 import { SandboxApi } from './sandboxApi'
 import { getSignature } from './signature'
+import { compareVersions } from 'compare-versions'
+import { SandboxError } from '../errors'
 
 /**
  * Options for creating a new Sandbox.
@@ -529,6 +531,21 @@ export class Sandbox extends SandboxApi {
    * @returns metrics of the sandbox.
    */
   async getMetrics(opts?: Pick<SandboxOpts, 'requestTimeoutMs'>) {
+    if (this.envdApi.version) {
+      if (compareVersions(this.envdApi.version, '0.1.5') < 0) {
+        throw new SandboxError(
+          'You need to update the template to use the new SDK. ' +
+          'You can do this by running `e2b template build` in the directory with the template.'
+        )
+      }
+
+      if (compareVersions(this.envdApi.version, '0.2.4') < 0) {
+        this.connectionConfig.logger?.warn?.(
+          'Disk metrics are not supported in this version of the sandbox, please rebuild the template to get disk metrics.'
+        )
+      }
+    }
+
     return await Sandbox.getMetrics(this.sandboxId, {
       ...this.connectionConfig,
       ...opts,

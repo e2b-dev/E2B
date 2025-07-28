@@ -557,10 +557,16 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
 
         :return: List of sandbox metrics containing CPU and memory usage information
         """
-        if self._envd_version and Version(self._envd_version) < Version("0.1.5"):
-            raise SandboxException(
-                "Metrics are not supported in this version of the sandbox, please rebuild your template."
-            )
+        if self._envd_version:
+            if Version(self._envd_version) < Version("0.1.5"):
+                raise SandboxException(
+                    "Metrics are not supported in this version of the sandbox, please rebuild your template."
+                )
+
+            if Version(self._envd_version) < Version("0.2.4"):
+                logger.warning(
+                    "Disk metrics are not supported in this version of the sandbox, please rebuild the template to get disk metrics."
+                )
 
         config_dict = self.connection_config.__dict__
         config_dict.pop("access_token", None)
