@@ -118,8 +118,8 @@ importers:
         specifier: ^1.2.1
         version: 1.2.1
       e2b:
-        specifier: ^1.9.0
-        version: 1.9.0
+        specifier: ^1.9.1
+        version: 1.9.1
       fast-glob:
         specifier: ^3.3.0
         version: 3.3.1
@@ -404,7 +404,7 @@ importers:
         version: 3.1.1(@types/node@18.18.6)(@vitest/browser@3.1.1)(jiti@2.4.2)(msw@2.7.0(@types/node@18.18.6)(typescript@5.5.3))(terser@5.43.1)(yaml@2.5.1)
       vitest-browser-react:
         specifier: ^0.1.1
-        version: 0.1.1(@types/react-dom@18.3.1)(@types/react@18.3.11)(@vitest/browser@3.1.1)(react-dom@18.2.0(react@18.3.1))(react@18.3.1)(vitest@3.1.1)
+        version: 0.1.1(@types/react-dom@18.3.1)(@types/react@18.3.11)(@vitest/browser@3.1.1(bufferutil@4.0.8)(msw@2.7.0(@types/node@18.18.6)(typescript@5.5.3))(playwright@1.48.0)(utf-8-validate@6.0.3)(vite@6.3.5(@types/node@18.18.6)(jiti@2.4.2)(terser@5.43.1)(yaml@2.5.1))(vitest@3.1.1))(react-dom@18.2.0(react@18.3.1))(react@18.3.1)(vitest@3.1.1(@types/node@18.18.6)(@vitest/browser@3.1.1)(jiti@2.4.2)(msw@2.7.0(@types/node@18.18.6)(typescript@5.5.3))(terser@5.43.1)(yaml@2.5.1))
 
   packages/python-sdk: {}
 
@@ -3783,6 +3783,10 @@ packages:
 
   e2b@1.9.0:
     resolution: {integrity: sha512-MM3RhWW7YENYocTy20BvKVcn8li/FxkDrHINS7tmz00ffl1ZavQTRxCI9Sl8ofeRg+HVMlqO4W8LJ+ij9VTZPg==}
+    engines: {node: '>=18'}
+
+  e2b@1.9.1:
+    resolution: {integrity: sha512-8b1BJ3vtzF2m1rAAB0suxmagNJ3twvvfbgn96WtSaLLoCGenAMKWl7VyMmS7Z7Rv4FWnsrmuC609nihJnqx6pw==}
     engines: {node: '>=18'}
 
   eastasianwidth@0.2.0:
@@ -11630,6 +11634,15 @@ snapshots:
       openapi-fetch: 0.9.8
       platform: 1.3.6
 
+  e2b@1.9.1:
+    dependencies:
+      '@bufbuild/protobuf': 2.6.2
+      '@connectrpc/connect': 2.0.0-rc.3(@bufbuild/protobuf@2.6.2)
+      '@connectrpc/connect-web': 2.0.0-rc.3(@bufbuild/protobuf@2.6.2)(@connectrpc/connect@2.0.0-rc.3(@bufbuild/protobuf@2.6.2))
+      compare-versions: 6.1.1
+      openapi-fetch: 0.9.8
+      platform: 1.3.6
+
   eastasianwidth@0.2.0: {}
 
   easy-table@1.2.0:
@@ -11926,7 +11939,7 @@ snapshots:
       debug: 4.4.0(supports-color@9.4.0)
       enhanced-resolve: 5.18.1
       eslint: 8.57.1
-      eslint-module-utils: 2.8.0(@typescript-eslint/parser@7.18.0(eslint@8.57.1)(typescript@5.1.6))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.6.0)(eslint@8.57.1)
+      eslint-module-utils: 2.8.0(@typescript-eslint/parser@7.18.0(eslint@8.57.1)(typescript@5.1.6))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.6.0(@typescript-eslint/parser@7.18.0(eslint@8.57.1)(typescript@5.1.6))(eslint-import-resolver-node@0.3.9)(eslint-plugin-import@2.28.1)(eslint@8.57.1))(eslint@8.57.1)
       eslint-plugin-import: 2.28.1(@typescript-eslint/parser@7.18.0(eslint@8.57.1)(typescript@5.1.6))(eslint-import-resolver-typescript@3.6.0)(eslint@8.57.1)
       fast-glob: 3.3.2
       get-tsconfig: 4.7.0
@@ -11938,7 +11951,7 @@ snapshots:
       - eslint-import-resolver-webpack
       - supports-color
 
-  eslint-module-utils@2.8.0(@typescript-eslint/parser@7.18.0(eslint@8.57.1)(typescript@5.1.6))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.6.0)(eslint@8.57.1):
+  eslint-module-utils@2.8.0(@typescript-eslint/parser@7.18.0(eslint@8.57.1)(typescript@5.1.6))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.6.0(@typescript-eslint/parser@7.18.0(eslint@8.57.1)(typescript@5.1.6))(eslint-import-resolver-node@0.3.9)(eslint-plugin-import@2.28.1)(eslint@8.57.1))(eslint@8.57.1):
     dependencies:
       debug: 3.2.7
     optionalDependencies:
@@ -11959,7 +11972,7 @@ snapshots:
       doctrine: 2.1.0
       eslint: 8.57.1
       eslint-import-resolver-node: 0.3.9
-      eslint-module-utils: 2.8.0(@typescript-eslint/parser@7.18.0(eslint@8.57.1)(typescript@5.1.6))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.6.0)(eslint@8.57.1)
+      eslint-module-utils: 2.8.0(@typescript-eslint/parser@7.18.0(eslint@8.57.1)(typescript@5.1.6))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.6.0(@typescript-eslint/parser@7.18.0(eslint@8.57.1)(typescript@5.1.6))(eslint-import-resolver-node@0.3.9)(eslint-plugin-import@2.28.1)(eslint@8.57.1))(eslint@8.57.1)
       has: 1.0.3
       is-core-module: 2.13.0
       is-glob: 4.0.3
@@ -16121,7 +16134,7 @@ snapshots:
       terser: 5.43.1
       yaml: 2.5.1
 
-  vitest-browser-react@0.1.1(@types/react-dom@18.3.1)(@types/react@18.3.11)(@vitest/browser@3.1.1)(react-dom@18.2.0(react@18.3.1))(react@18.3.1)(vitest@3.1.1):
+  vitest-browser-react@0.1.1(@types/react-dom@18.3.1)(@types/react@18.3.11)(@vitest/browser@3.1.1(bufferutil@4.0.8)(msw@2.7.0(@types/node@18.18.6)(typescript@5.5.3))(playwright@1.48.0)(utf-8-validate@6.0.3)(vite@6.3.5(@types/node@18.18.6)(jiti@2.4.2)(terser@5.43.1)(yaml@2.5.1))(vitest@3.1.1))(react-dom@18.2.0(react@18.3.1))(react@18.3.1)(vitest@3.1.1(@types/node@18.18.6)(@vitest/browser@3.1.1)(jiti@2.4.2)(msw@2.7.0(@types/node@18.18.6)(typescript@5.5.3))(terser@5.43.1)(yaml@2.5.1)):
     dependencies:
       '@vitest/browser': 3.1.1(bufferutil@4.0.8)(msw@2.7.0(@types/node@18.18.6)(typescript@5.5.3))(playwright@1.48.0)(utf-8-validate@6.0.3)(vite@6.3.5(@types/node@18.18.6)(jiti@2.4.2)(terser@5.43.1)(yaml@2.5.1))(vitest@3.1.1)
       react: 18.3.1
