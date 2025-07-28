@@ -2,6 +2,8 @@ import platform from 'platform'
 
 import { version } from '../../package.json'
 
+export { version } from '../../package.json'
+
 declare let window: any
 
 type Runtime = 'node' | 'browser' | 'deno' | 'bun' | 'vercel-edge' | 'cloudflare-worker' | 'unknown'
