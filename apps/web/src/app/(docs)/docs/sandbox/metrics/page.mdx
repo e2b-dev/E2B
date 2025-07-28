@@ -31,19 +31,19 @@ console.log('Sandbox metrics:', metrics)
 //     timestamp: 2025-07-28T08:04:05.000Z,
 //     cpuUsedPct: 20.33,
 //     cpuCount: 2,
-//     memUsed: 32681984,
-//     memTotal: 507592704,
-//     diskUsed: 1514856448,
-//     diskTotal: 2573185024
+//     memUsed: 32681984,  // in bytes
+//     memTotal: 507592704,  // in bytes
+//     diskUsed: 1514856448,  // in bytes
+//     diskTotal: 2573185024  // in bytes
 //   },
 //   {
 //     timestamp: 2025-07-28T08:04:10.000Z,
 //     cpuUsedPct: 0.2,
 //     cpuCount: 2,
-//     memUsed: 33316864,
-//     memTotal: 507592704,
-//     diskUsed: 1514856448,
-//     diskTotal: 2573185024
+//     memUsed: 33316864,  // in bytes
+//     memTotal: 507592704, // in bytes
+//     diskUsed: 1514856448,  // in bytes
+//     diskTotal: 2573185024  // in bytes
 //   }
 // ]
 ```
@@ -69,22 +69,20 @@ print('Sandbox metrics', metrics)
 #     SandboxMetric(
 #         cpu_count=2,
 #         cpu_used_pct=13.97,
-#         disk_total=2573185024,
-#         disk_used=1514856448,
-#         mem_total=507592704,
-#         mem_used=30588928,
+#         disk_total=2573185024,  # in bytes
+#         disk_used=1514856448,  # in bytes
+#         mem_total=507592704,  # in bytes
+#         mem_used=30588928,  # in bytes
 #         timestamp=datetime.datetime(2025, 7, 28, 8, 8, 15, tzinfo=tzutc()),
-#         additional_properties={},
 #     ),
 #     SandboxMetric(
 #         cpu_count=2,
 #         cpu_used_pct=0.1,
-#         disk_total=2573185024,
-#         disk_used=1514856448,
-#         mem_total=507592704,
-#         mem_used=31084544,
+#         disk_total=2573185024,  # in bytes
+#         disk_used=1514856448,  # in bytes
+#         mem_total=507592704,  # in bytes
+#         mem_used=31084544,  # in bytes
 #         timestamp=datetime.datetime(2025, 7, 28, 8, 8, 20, tzinfo=tzutc()),
-#         additional_properties={},
 #     ),
 # ]
 ```
