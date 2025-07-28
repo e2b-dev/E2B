@@ -24,7 +24,7 @@ def test_get_info_of_file(sandbox: Sandbox):
 def test_get_info_of_nonexistent_file(sandbox: Sandbox):
     filename = "test_does_not_exist.txt"
 
-    with pytest.raises(NotFoundException) as exc_info:
+    with pytest.raises(NotFoundException):
         sandbox.files.get_info(filename)
 
 
@@ -49,7 +49,7 @@ def test_get_info_of_directory(sandbox: Sandbox):
 def test_get_info_of_nonexistent_directory(sandbox: Sandbox):
     dirname = "test_does_not_exist_dir"
 
-    with pytest.raises(NotFoundException) as exc_info:
+    with pytest.raises(NotFoundException):
         sandbox.files.get_info(dirname)
 
 
@@ -66,7 +66,7 @@ async def test_file_symlink(sandbox: Sandbox):
 
     file = sandbox.files.get_info(test_dir)
 
-    pwd = sandbox.commands.run(f"pwd", cwd=test_dir)
+    pwd = sandbox.commands.run("pwd", cwd=test_dir)
     assert file.type == FileType.FILE
     assert file.symlink_target == f"{pwd.stdout.strip()}/{file_path}"
 

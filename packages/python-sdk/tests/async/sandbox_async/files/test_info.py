@@ -26,7 +26,7 @@ async def test_get_info_of_file(async_sandbox: AsyncSandbox):
 async def test_get_info_of_nonexistent_file(async_sandbox: AsyncSandbox):
     filename = "test_does_not_exist.txt"
 
-    with pytest.raises(NotFoundException) as exc_info:
+    with pytest.raises(NotFoundException):
         await async_sandbox.files.get_info(filename)
 
 
@@ -53,7 +53,7 @@ async def test_get_info_of_directory(async_sandbox: AsyncSandbox):
 async def test_get_info_of_nonexistent_directory(async_sandbox: AsyncSandbox):
     dirname = "test_does_not_exist_dir"
 
-    with pytest.raises(NotFoundException) as exc_info:
+    with pytest.raises(NotFoundException):
         await async_sandbox.files.get_info(dirname)
 
 
@@ -70,7 +70,7 @@ async def test_file_symlink(async_sandbox: AsyncSandbox):
 
     file = await async_sandbox.files.get_info(symlink_path)
 
-    pwd = await async_sandbox.commands.run(f"pwd")
+    pwd = await async_sandbox.commands.run("pwd")
     assert file.type == FileType.FILE
     assert file.symlink_target == f"{pwd.stdout.strip()}/{file_path}"
 
