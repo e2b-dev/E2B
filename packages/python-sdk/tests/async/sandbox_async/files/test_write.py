@@ -2,7 +2,7 @@ import io
 import uuid
 
 from e2b import AsyncSandbox
-from e2b.sandbox_async.filesystem.filesystem import EntryInfo
+from e2b.sandbox_async.filesystem.filesystem import EntryInfoAPI
 
 
 async def test_write_text_file(async_sandbox: AsyncSandbox):
@@ -72,7 +72,7 @@ async def test_write_multiple_files(async_sandbox: AsyncSandbox):
     assert isinstance(info, list)
     assert len(info) == 1
     info = info[0]
-    assert isinstance(info, EntryInfo)
+    assert isinstance(info, EntryInfoAPI)
     assert info.path == "/home/user/one_test_file.txt"
     exists = await async_sandbox.files.exists(info.path)
     assert exists
@@ -91,7 +91,7 @@ async def test_write_multiple_files(async_sandbox: AsyncSandbox):
     assert isinstance(infos, list)
     assert len(infos) == len(files)
     for i, info in enumerate(infos):
-        assert isinstance(info, EntryInfo)
+        assert isinstance(info, EntryInfoAPI)
         assert info.path == f"/home/user/test_write_{i}.txt"
         exists = await async_sandbox.files.exists(path)
         assert exists

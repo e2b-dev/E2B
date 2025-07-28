@@ -17,8 +17,8 @@ from e2b.envd.rpc import authentication_header, handle_rpc_exception
 from e2b.envd.versions import ENVD_VERSION_RECURSIVE_WATCH
 from e2b.exceptions import SandboxException, TemplateException, InvalidArgumentException
 from e2b.sandbox.filesystem.filesystem import (
+    EntryInfoAPI,
     EntryInfo,
-    EntryInfoExtended,
     map_file_type,
 )
 from e2b.sandbox.filesystem.watch_handle import FilesystemEvent
@@ -145,7 +145,7 @@ class Filesystem:
         data: Union[str, bytes, IO],
         user: Username = "user",
         request_timeout: Optional[float] = None,
-    ) -> EntryInfo:
+    ) -> EntryInfoAPI:
         """
         Write content to a file on the path.
 
@@ -169,7 +169,7 @@ class Filesystem:
         files: List[WriteEntry],
         user: Optional[Username] = "user",
         request_timeout: Optional[float] = None,
-    ) -> List[EntryInfo]:
+    ) -> List[EntryInfoAPI]:
         """
         Writes multiple files.
 
@@ -185,7 +185,7 @@ class Filesystem:
         data_or_user: Union[str, bytes, IO, Username] = "user",
         user_or_request_timeout: Optional[Union[float, Username]] = None,
         request_timeout_or_none: Optional[float] = None,
-    ) -> Union[EntryInfo, List[EntryInfo]]:
+    ) -> Union[EntryInfoAPI, List[EntryInfoAPI]]:
         """
         Writes content to a file on the path.
         When writing to a file that doesn't exist, the file will get created.
@@ -251,9 +251,9 @@ class Filesystem:
 
         if len(write_files) == 1 and path:
             file = write_files[0]
-            return EntryInfo(**file)
+            return EntryInfoAPI(**file)
         else:
-            return [EntryInfo(**file) for file in write_files]
+            return [EntryInfoAPI(**file) for file in write_files]
 
     async def list(
         self,
@@ -261,7 +261,7 @@ class Filesystem:
         depth: Optional[int] = 1,
         user: Username = "user",
         request_timeout: Optional[float] = None,
-    ) -> List[EntryInfoExtended]:
+    ) -> List[EntryInfo]:
         """
         List entries in a directory.
 
@@ -284,13 +284,13 @@ class Filesystem:
                 headers=authentication_header(user),
             )
 
-            entries: List[EntryInfoExtended] = []
+            entries: List[EntryInfo] = []
             for entry in res.entries:
                 event_type = map_file_type(entry.type)
 
                 if event_type:
                     entries.append(
-                        EntryInfoExtended(
+                        EntryInfo(
                             name=entry.name,
                             type=event_type,
                             path=entry.path,
@@ -344,7 +344,7 @@ class Filesystem:
         path: str,
         user: Username = "user",
         request_timeout: Optional[float] = None,
-    ) -> EntryInfoExtended:
+    ) -> EntryInfo:
         """
         Get information about a file or directory.
 
@@ -363,7 +363,7 @@ class Filesystem:
                 headers=authentication_header(user),
             )
 
-            return EntryInfoExtended(
+            return EntryInfo(
                 name=r.entry.name,
                 type=map_file_type(r.entry.type),
                 path=r.entry.path,
@@ -407,7 +407,7 @@ class Filesystem:
         new_path: str,
         user: Username = "user",
         request_timeout: Optional[float] = None,
-    ) -> EntryInfo:
+    ) -> EntryInfoAPI:
         """
         Rename a file or directory.
 
@@ -430,7 +430,7 @@ class Filesystem:
                 headers=authentication_header(user),
             )
 
-            return EntryInfo(
+            return EntryInfoAPI(
                 name=r.entry.name,
                 type=map_file_type(r.entry.type),
                 path=r.entry.path,

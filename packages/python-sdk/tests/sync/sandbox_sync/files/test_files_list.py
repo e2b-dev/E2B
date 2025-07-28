@@ -243,4 +243,3 @@ def test_mixed_entries(sandbox: Sandbox):
     assert file_entry.modified_time is not None
 
     sandbox.files.remove(test_dir)
-

@@ -33,7 +33,7 @@ import type { Timestamp } from '@bufbuild/protobuf/wkt'
 /**
  * Sandbox filesystem object information.
  */
-export interface EntryInfo {
+export interface EntryInfoApi {
   /**
    * Name of the filesystem object.
    */
@@ -48,7 +48,7 @@ export interface EntryInfo {
   path: string
 }
 
-export interface EntryInfoExtended extends EntryInfo {
+export interface EntryInfo extends EntryInfoApi {
   /**
    * Size of the filesystem object in bytes.
    */
@@ -78,6 +78,11 @@ export interface EntryInfoExtended extends EntryInfo {
    * Last modification time of the filesystem object.
    */
   modifiedTime?: Date
+
+  /**
+   * If the filesystem object is a symlink, this is the target of the symlink.
+   */
+  symlinkTarget?: string
 }
 
 /**
@@ -290,11 +295,11 @@ export class Filesystem {
     path: string,
     data: string | ArrayBuffer | Blob | ReadableStream,
     opts?: FilesystemRequestOpts
-  ): Promise<EntryInfo>
+  ): Promise<EntryInfoApi>
   async write(
     files: WriteEntry[],
     opts?: FilesystemRequestOpts
-  ): Promise<EntryInfo[]>
+  ): Promise<EntryInfoApi[]>
   async write(
     pathOrFiles: string | WriteEntry[],
     dataOrOpts?:
@@ -304,7 +309,7 @@ export class Filesystem {
       | ReadableStream
       | FilesystemRequestOpts,
     opts?: FilesystemRequestOpts
-  ): Promise<EntryInfo | EntryInfo[]> {
+  ): Promise<EntryInfoApi | EntryInfoApi[]> {
     if (typeof pathOrFiles !== 'string' && !Array.isArray(pathOrFiles)) {
       throw new Error('Path or files are required')
     }
@@ -336,7 +341,7 @@ export class Filesystem {
             writeFiles: pathOrFiles as WriteEntry[],
           }
 
-    if (writeFiles.length === 0) return [] as EntryInfo[]
+    if (writeFiles.length === 0) return [] as EntryInfoApi[]
 
     const blobs = await Promise.all(
       writeFiles.map((f) => new Response(f.data).blob())
@@ -372,7 +377,7 @@ export class Filesystem {
       throw err
     }
 
-    const files = res.data as EntryInfo[]
+    const files = res.data as EntryInfoApi[]
     if (!files) {
       throw new Error('Expected to receive information about written file')
     }
@@ -391,7 +396,7 @@ export class Filesystem {
   async list(
     path: string,
     opts?: FilesystemListOpts
-  ): Promise<EntryInfoExtended[]> {
+  ): Promise<EntryInfo[]> {
     if (typeof opts?.depth === 'number' && opts.depth < 1) {
       throw new InvalidArgumentError('depth should be at least one')
     }
@@ -408,7 +413,7 @@ export class Filesystem {
         }
       )
 
-      const entries: EntryInfoExtended[] = []
+      const entries: EntryInfo[] = []
 
       for (const e of res.entries) {
         const type = mapFileType(e.type)
@@ -424,6 +429,7 @@ export class Filesystem {
             owner: e.owner,
             group: e.group,
             modifiedTime: mapModifiedTime(e.modifiedTime),
+            symlinkTarget: e.symlinkTarget,
           })
         }
       }
@@ -499,6 +505,13 @@ export class Filesystem {
         name: entry.name,
         type: mapFileType(entry.type),
         path: entry.path,
+        size: Number(entry.size),
+        mode: entry.mode,
+        permissions: entry.permissions,
+        owner: entry.owner,
+        group: entry.group,
+        modifiedTime: mapModifiedTime(entry.modifiedTime),
+        symlinkTarget: entry.symlinkTarget,
       }
     } catch (err) {
       throw handleRpcError(err)
@@ -566,7 +579,7 @@ export class Filesystem {
   async getInfo(
     path: string,
     opts?: FilesystemRequestOpts
-  ): Promise<EntryInfoExtended> {
+  ): Promise<EntryInfo> {
     try {
       const res = await this.rpc.stat(
         { path },
@@ -589,6 +602,7 @@ export class Filesystem {
         owner: res.entry.owner,
         group: res.entry.group,
         modifiedTime: mapModifiedTime(res.entry.modifiedTime),
+        symlinkTarget: res.entry.symlinkTarget,
       }
     } catch (err) {
       throw handleRpcError(err)

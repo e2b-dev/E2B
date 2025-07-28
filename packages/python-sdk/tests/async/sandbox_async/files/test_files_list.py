@@ -243,4 +243,3 @@ async def test_mixed_entries(async_sandbox: AsyncSandbox):
     assert file_entry.modified_time is not None
 
     await async_sandbox.files.remove(test_dir)
-
