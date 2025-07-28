@@ -141,6 +141,7 @@ sandboxTest('file entry details', async ({ sandbox }) => {
   assert.equal(fileEntry.group, 'user')
   assert.equal(fileEntry.size, content.length)
   assert.ok(fileEntry.modifiedTime)
+  assert.isNull(fileEntry.symlinkTarget)
 })
 
 sandboxTest('directory entry details', async ({ sandbox }) => {

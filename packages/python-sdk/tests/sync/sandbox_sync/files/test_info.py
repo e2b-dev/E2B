@@ -51,3 +51,23 @@ def test_get_info_of_nonexistent_directory(sandbox: Sandbox):
 
     with pytest.raises(NotFoundException) as exc_info:
         sandbox.files.get_info(dirname)
+
+
+async def test_file_symlink(sandbox: Sandbox):
+    test_dir = "test-simlink-entry"
+    file_path = f"{test_dir}/test.txt"
+    content = "Hello, World!"
+
+    sandbox.files.make_dir(test_dir)
+    sandbox.files.write(file_path, content)
+
+    symlink_path = f"{test_dir}/symlink_to_test.txt"
+    sandbox.commands.run(f"ln -s {file_path} {symlink_path}", cwd=test_dir)
+
+    file = sandbox.files.get_info(test_dir)
+
+    pwd = sandbox.commands.run(f"pwd", cwd=test_dir)
+    assert file.type == FileType.FILE
+    assert file.symlink_target == f"{pwd.stdout.strip()}/{file_path}"
+
+    sandbox.files.remove(test_dir)

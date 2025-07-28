@@ -176,6 +176,7 @@ async def test_file_entry_details(async_sandbox: AsyncSandbox):
     assert file_entry.group == "user"
     assert file_entry.size == len(content)
     assert file_entry.modified_time is not None
+    assert file_entry.symlink_target is None
 
     await async_sandbox.files.remove(test_dir)
 
@@ -199,6 +200,7 @@ async def test_directory_entry_details(async_sandbox: AsyncSandbox):
     assert dir_entry.owner == "user"
     assert dir_entry.group == "user"
     assert dir_entry.modified_time is not None
+    assert dir_entry.symlink_target is None
 
     await async_sandbox.files.remove(test_dir)
 

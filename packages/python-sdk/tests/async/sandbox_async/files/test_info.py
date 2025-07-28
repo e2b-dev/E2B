@@ -55,3 +55,23 @@ async def test_get_info_of_nonexistent_directory(async_sandbox: AsyncSandbox):
 
     with pytest.raises(NotFoundException) as exc_info:
         await async_sandbox.files.get_info(dirname)
+
+
+async def test_file_symlink(async_sandbox: AsyncSandbox):
+    test_dir = "test-simlink-entry"
+    file_path = f"{test_dir}/test.txt"
+    content = "Hello, World!"
+
+    await async_sandbox.files.make_dir(test_dir)
+    await async_sandbox.files.write(file_path, content)
+
+    symlink_path = f"{test_dir}/symlink_to_test.txt"
+    await async_sandbox.commands.run(f"ln -s {file_path} {symlink_path}")
+
+    file = await async_sandbox.files.get_info(symlink_path)
+
+    pwd = await async_sandbox.commands.run(f"pwd")
+    assert file.type == FileType.FILE
+    assert file.symlink_target == f"{pwd.stdout.strip()}/{file_path}"
+
+    await async_sandbox.files.remove(test_dir)
