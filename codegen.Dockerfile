@@ -4,7 +4,7 @@ FROM golang:1.23
 RUN go install github.com/bufbuild/buf/cmd/buf@v1.50.1 && \
     go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.28.1 && \
     go install connectrpc.com/connect/cmd/protoc-gen-connect-go@v1.18.1
-    
+
 # Install our custom protoc plugin, connect-python
 COPY ./packages/connect-python /packages/connect-python
 RUN cd /packages/connect-python && make bin/protoc-gen-connect-python
@@ -15,10 +15,16 @@ FROM python:3.9
 # Set working directory
 WORKDIR /workspace
 
-ENV PROTOC_ZIP=protoc-29.3-linux-aarch_64.zip
-
-RUN curl -OL https://github.com/protocolbuffers/protobuf/releases/download/v29.3/$PROTOC_ZIP
-RUN unzip -o $PROTOC_ZIP -d /usr/local bin/protoc
+ENV PROTOC_VERSION=29.3
+RUN ARCH=$(uname -m) && \
+    case "$ARCH" in \
+        x86_64) PROTOC_ARCH="x86_64" ;; \
+        arm64|aarch64) PROTOC_ARCH="aarch_64" ;; \
+        *) echo "Unsupported architecture: $ARCH" && exit 1 ;; \
+    esac && \
+    curl -LO https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-linux-${PROTOC_ARCH}.zip && \
+    unzip -o protoc-${PROTOC_VERSION}-linux-${PROTOC_ARCH}.zip -d /usr/local && \
+    rm protoc-${PROTOC_VERSION}-linux-${PROTOC_ARCH}.zip
 
 # Copy installed Go deps from previous build step
 COPY --from=0 /go /go
@@ -38,7 +44,9 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # Install Node.js deps
-RUN npm install -g pnpm @connectrpc/protoc-gen-connect-es@1.6.1 @bufbuild/protoc-gen-es@2.2.2
+RUN npm install -g \
+    pnpm \
+    @connectrpc/protoc-gen-connect-es@1.6.1 \
+    @bufbuild/protoc-gen-es@2.6.2
 
-# Generate when container starts
 CMD ["make", "generate"]
