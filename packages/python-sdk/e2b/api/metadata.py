@@ -2,6 +2,8 @@ import platform
 
 from importlib import metadata
 
+package_version = metadata.version("e2b")
+
 default_headers = {
     "lang": "python",
     "lang_version": platform.python_version(),

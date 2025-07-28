@@ -167,7 +167,11 @@ export class Sandbox extends SandboxApi {
         // connect-web package uses redirect: "error" which is not supported in edge runtimes
         // E2B endpoints should be safe to use with redirect: "follow" https://github.com/e2b-dev/E2B/issues/531#issuecomment-2779492867
 
-        const headers = new Headers(options?.headers)
+        const headers = new Headers(this.connectionConfig.headers)
+        new Headers(options?.headers).forEach(
+          (value, key) => headers.append(key, value)
+        )
+
         if (this.envdAccessToken) {
           headers.append('X-Access-Token', this.envdAccessToken)
         }
