@@ -2,7 +2,7 @@ import platform from 'platform'
 
 import { version } from '../../package.json'
 
-export { version } from '../../package.json'
+export { version }
 
 declare let window: any
 
