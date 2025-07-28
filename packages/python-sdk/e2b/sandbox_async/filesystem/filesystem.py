@@ -300,7 +300,12 @@ class Filesystem:
                             owner=entry.owner,
                             group=entry.group,
                             modified_time=entry.modified_time.ToDatetime(),
-                            symlink_target=entry.symlink_target,
+                            # Optional, we can't directly access symlink_target otherwise if will be "" instead of None
+                            symlink_target=(
+                                entry.symlink_target
+                                if entry.HasField("symlink_target")
+                                else None
+                            ),
                         )
                     )
 
@@ -374,6 +379,11 @@ class Filesystem:
                 owner=r.entry.owner,
                 group=r.entry.group,
                 modified_time=r.entry.modified_time.ToDatetime(),
+                symlink_target=(
+                    r.entry.symlink_target
+                    if r.entry.HasField("symlink_target")
+                    else None
+                ),
             )
         except Exception as e:
             raise handle_rpc_exception(e)
@@ -441,7 +451,12 @@ class Filesystem:
                 owner=r.entry.owner,
                 group=r.entry.group,
                 modified_time=r.entry.modified_time.ToDatetime(),
-                symlink_target=r.entry.symlink_target,
+                # Optional, we can't directly access symlink_target otherwise if will be "" instead of None
+                symlink_target=(
+                    r.entry.symlink_target
+                    if r.entry.HasField("symlink_target")
+                    else None
+                ),
             )
         except Exception as e:
             raise handle_rpc_exception(e)

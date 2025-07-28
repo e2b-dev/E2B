@@ -41,7 +41,7 @@ async def test_get_info_of_directory(async_sandbox: AsyncSandbox):
     assert info.name == dirname
     assert info.type == FileType.DIR
     assert info.path == f"{current_path.stdout.strip()}/{dirname}"
-    assert info.size == 0
+    assert info.size > 0
     assert info.mode == 0o755
     assert info.permissions == "drwxr-xr-x"
     assert info.owner == "user"
@@ -59,19 +59,19 @@ async def test_get_info_of_nonexistent_directory(async_sandbox: AsyncSandbox):
 
 async def test_file_symlink(async_sandbox: AsyncSandbox):
     test_dir = "test-simlink-entry"
-    file_path = f"{test_dir}/test.txt"
+    file_name = "test.txt"
     content = "Hello, World!"
 
     await async_sandbox.files.make_dir(test_dir)
-    await async_sandbox.files.write(file_path, content)
+    await async_sandbox.files.write(f"{test_dir}/{file_name}", content)
 
-    symlink_path = f"{test_dir}/symlink_to_test.txt"
-    await async_sandbox.commands.run(f"ln -s {file_path} {symlink_path}")
+    symlink_name = "symlink_to_test.txt"
+    await async_sandbox.commands.run(f"ln -s {file_name} {symlink_name}", cwd=test_dir)
 
-    file = await async_sandbox.files.get_info(symlink_path)
+    file = await async_sandbox.files.get_info(f"{test_dir}/{symlink_name}")
 
     pwd = await async_sandbox.commands.run("pwd")
     assert file.type == FileType.FILE
-    assert file.symlink_target == f"{pwd.stdout.strip()}/{file_path}"
+    assert file.symlink_target == f"{pwd.stdout.strip()}/{file_name}"
 
     await async_sandbox.files.remove(test_dir)

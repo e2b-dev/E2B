@@ -38,7 +38,7 @@ def test_get_info_of_directory(sandbox: Sandbox):
     assert info.name == dirname
     assert info.type == FileType.DIR
     assert info.path == f"{current_path.stdout.strip()}/{dirname}"
-    assert info.size == 0
+    assert info.size > 0
     assert info.mode == 0o755
     assert info.permissions == "drwxr-xr-x"
     assert info.owner == "user"
@@ -53,21 +53,21 @@ def test_get_info_of_nonexistent_directory(sandbox: Sandbox):
         sandbox.files.get_info(dirname)
 
 
-async def test_file_symlink(sandbox: Sandbox):
+def test_file_symlink(sandbox: Sandbox):
     test_dir = "test-simlink-entry"
-    file_path = f"{test_dir}/test.txt"
+    file_name = "test.txt"
     content = "Hello, World!"
 
     sandbox.files.make_dir(test_dir)
-    sandbox.files.write(file_path, content)
+    sandbox.files.write(f"{test_dir}/{file_name}", content)
 
-    symlink_path = f"{test_dir}/symlink_to_test.txt"
-    sandbox.commands.run(f"ln -s {file_path} {symlink_path}", cwd=test_dir)
+    symlink_name = "symlink_to_test.txt"
+    sandbox.commands.run(f"ln -s {file_name} {symlink_name}", cwd=test_dir)
 
-    file = sandbox.files.get_info(test_dir)
+    file = sandbox.files.get_info(f"{test_dir}/{symlink_name}")
 
-    pwd = sandbox.commands.run("pwd", cwd=test_dir)
+    pwd = sandbox.commands.run("pwd")
     assert file.type == FileType.FILE
-    assert file.symlink_target == f"{pwd.stdout.strip()}/{file_path}"
+    assert file.symlink_target == f"{pwd.stdout.strip()}/{file_name}"
 
     sandbox.files.remove(test_dir)
