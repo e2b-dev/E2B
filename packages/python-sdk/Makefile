@@ -13,12 +13,12 @@ generate-envd:
 		$(MAKE) -C $(ROOT_DIR)/packages/connect-python build; \
 	fi
 
-	cd $(ROOT_DIR)/spec/envd && buf generate --template buf-python.gen.yaml
+	cd $(ROOT_DIR)/spec/envd && pwd && buf generate --template buf-python.gen.yaml
+	./scripts/fix-python-pb.sh
+
 	black .
 
 generate: generate-api generate-envd
-	./scripts/fix-python-pb.sh
-	black .
 
 init:
 	pip install openapi-python-client

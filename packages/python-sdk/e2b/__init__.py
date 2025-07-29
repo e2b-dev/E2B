@@ -56,7 +56,7 @@ from .sandbox.filesystem.watch_handle import (
     FilesystemEvent,
     FilesystemEventType,
 )
-from .sandbox.filesystem.filesystem import EntryInfoAPI, FileType
+from .sandbox.filesystem.filesystem import EntryInfo, EntryInfoAPI, FileType
 
 from .sandbox_sync.main import Sandbox
 from .sandbox_sync.filesystem.watch_handle import WatchHandle
@@ -95,6 +95,7 @@ __all__ = [
     # Filesystem
     "FilesystemEvent",
     "FilesystemEventType",
+    "EntryInfo",
     "EntryInfoAPI",
     "FileType",
     # Sync sandbox
