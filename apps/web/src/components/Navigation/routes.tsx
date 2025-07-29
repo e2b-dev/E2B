@@ -360,6 +360,10 @@ export const docRoutes: NavGroup[] = [
         href: '/docs/filesystem/read-write',
       },
       {
+        title: 'Get info about a file or directory',
+        href: '/docs/filesystem/info',
+      },
+      {
         title: 'Watch directory for changes',
         href: '/docs/filesystem/watch',
       },

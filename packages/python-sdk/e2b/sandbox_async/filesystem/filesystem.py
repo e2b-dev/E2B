@@ -16,7 +16,11 @@ from e2b.envd.filesystem import filesystem_connect, filesystem_pb2
 from e2b.envd.rpc import authentication_header, handle_rpc_exception
 from e2b.envd.versions import ENVD_VERSION_RECURSIVE_WATCH
 from e2b.exceptions import SandboxException, TemplateException, InvalidArgumentException
-from e2b.sandbox.filesystem.filesystem import EntryInfo, map_file_type
+from e2b.sandbox.filesystem.filesystem import (
+    WriteInfo,
+    EntryInfo,
+    map_file_type,
+)
 from e2b.sandbox.filesystem.watch_handle import FilesystemEvent
 from e2b.sandbox_async.filesystem.watch_handle import AsyncWatchHandle
 from e2b.sandbox_async.utils import OutputHandler
@@ -141,7 +145,7 @@ class Filesystem:
         data: Union[str, bytes, IO],
         user: Username = "user",
         request_timeout: Optional[float] = None,
-    ) -> EntryInfo:
+    ) -> WriteInfo:
         """
         Write content to a file on the path.
 
@@ -165,7 +169,7 @@ class Filesystem:
         files: List[WriteEntry],
         user: Optional[Username] = "user",
         request_timeout: Optional[float] = None,
-    ) -> List[EntryInfo]:
+    ) -> List[WriteInfo]:
         """
         Writes multiple files.
 
@@ -181,7 +185,7 @@ class Filesystem:
         data_or_user: Union[str, bytes, IO, Username] = "user",
         user_or_request_timeout: Optional[Union[float, Username]] = None,
         request_timeout_or_none: Optional[float] = None,
-    ) -> Union[EntryInfo, List[EntryInfo]]:
+    ) -> Union[WriteInfo, List[WriteInfo]]:
         """
         Writes content to a file on the path.
         When writing to a file that doesn't exist, the file will get created.
@@ -247,9 +251,9 @@ class Filesystem:
 
         if len(write_files) == 1 and path:
             file = write_files[0]
-            return EntryInfo(**file)
+            return WriteInfo(**file)
         else:
-            return [EntryInfo(**file) for file in write_files]
+            return [WriteInfo(**file) for file in write_files]
 
     async def list(
         self,
@@ -286,7 +290,23 @@ class Filesystem:
 
                 if event_type:
                     entries.append(
-                        EntryInfo(name=entry.name, type=event_type, path=entry.path)
+                        EntryInfo(
+                            name=entry.name,
+                            type=event_type,
+                            path=entry.path,
+                            size=entry.size,
+                            mode=entry.mode,
+                            permissions=entry.permissions,
+                            owner=entry.owner,
+                            group=entry.group,
+                            modified_time=entry.modified_time.ToDatetime(),
+                            # Optional, we can't directly access symlink_target otherwise if will be "" instead of None
+                            symlink_target=(
+                                entry.symlink_target
+                                if entry.HasField("symlink_target")
+                                else None
+                            ),
+                        )
                     )
 
             return entries
@@ -323,6 +343,49 @@ class Filesystem:
             if isinstance(e, connect.ConnectException):
                 if e.status == connect.Code.not_found:
                     return False
+            raise handle_rpc_exception(e)
+
+    async def get_info(
+        self,
+        path: str,
+        user: Username = "user",
+        request_timeout: Optional[float] = None,
+    ) -> EntryInfo:
+        """
+        Get information about a file or directory.
+
+        :param path: Path to a file or a directory
+        :param user: Run the operation as this user
+        :param request_timeout: Timeout for the request in **seconds**
+
+        :return: Information about the file or directory like name, type, and path
+        """
+        try:
+            r = await self._rpc.astat(
+                filesystem_pb2.StatRequest(path=path),
+                request_timeout=self._connection_config.get_request_timeout(
+                    request_timeout
+                ),
+                headers=authentication_header(user),
+            )
+
+            return EntryInfo(
+                name=r.entry.name,
+                type=map_file_type(r.entry.type),
+                path=r.entry.path,
+                size=r.entry.size,
+                mode=r.entry.mode,
+                permissions=r.entry.permissions,
+                owner=r.entry.owner,
+                group=r.entry.group,
+                modified_time=r.entry.modified_time.ToDatetime(),
+                symlink_target=(
+                    r.entry.symlink_target
+                    if r.entry.HasField("symlink_target")
+                    else None
+                ),
+            )
+        except Exception as e:
             raise handle_rpc_exception(e)
 
     async def remove(
@@ -382,6 +445,18 @@ class Filesystem:
                 name=r.entry.name,
                 type=map_file_type(r.entry.type),
                 path=r.entry.path,
+                size=r.entry.size,
+                mode=r.entry.mode,
+                permissions=r.entry.permissions,
+                owner=r.entry.owner,
+                group=r.entry.group,
+                modified_time=r.entry.modified_time.ToDatetime(),
+                # Optional, we can't directly access symlink_target otherwise if will be "" instead of None
+                symlink_target=(
+                    r.entry.symlink_target
+                    if r.entry.HasField("symlink_target")
+                    else None
+                ),
             )
         except Exception as e:
             raise handle_rpc_exception(e)

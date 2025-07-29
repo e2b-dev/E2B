@@ -36,3 +36,8 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.urls]
 "Bug Tracker" = "https://github.com/e2b-dev/e2b/issues"
+
+[tool.ruff]
+exclude = [
+    "e2b/envd/filesystem/filesystem_pb2.py"
+]
