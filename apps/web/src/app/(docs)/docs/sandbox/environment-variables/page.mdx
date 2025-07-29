@@ -64,10 +64,10 @@ sandbox = Sandbox(
 </CodeGroup>
 
 ### 2. Setting environment variables when running code
-You can set environment variables for specific code execution call in the sandbox. This is recommended for passing secrets.
+You can set environment variables for specific code execution call in the sandbox. 
 
 <Note>
-- These environment variables are securely scoped to the command and will not be global or accessible inside the sandbox or for subsequent commands.
+- These environment variables are scoped to the command but are not private in the OS. 
 - If you had a global environment variable with the same name, it will be overridden only for the command.
 </Note>
 
@@ -92,10 +92,10 @@ result = sandbox.run_code(
 </CodeGroup>
 
 ### 3. Setting environment variables when running commands
-You can set environment variables for specific command execution in the sandbox. This is recommended for passing secrets.
+You can set environment variables for specific command execution in the sandbox.
 
 <Note>
-- These environment variables are securely scoped to the command and will not be global or accessible inside the sandbox or for subsequent commands.
+- These environment variables are scoped to the command but are not private in the OS. 
 - If you had a global environment variable with the same name, it will be overridden only for the command.
 </Note>
 
