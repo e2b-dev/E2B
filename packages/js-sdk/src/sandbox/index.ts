@@ -522,20 +522,19 @@ export class Sandbox extends SandboxApi {
     })
   }
 
-
   /**
    * Get the metrics of the sandbox.
    *
    * @param opts connection options.
    *
-   * @returns metrics of the sandbox.
+   * @returns  List of sandbox metrics containing CPU, memory and disk usage information.
    */
   async getMetrics(opts?: Pick<SandboxOpts, 'requestTimeoutMs'>) {
     if (this.envdApi.version) {
       if (compareVersions(this.envdApi.version, '0.1.5') < 0) {
         throw new SandboxError(
           'You need to update the template to use the new SDK. ' +
-          'You can do this by running `e2b template build` in the directory with the template.'
+            'You can do this by running `e2b template build` in the directory with the template.'
         )
       }
 

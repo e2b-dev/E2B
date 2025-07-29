@@ -1,13 +1,11 @@
 import * as chalk from 'chalk'
 import * as commander from 'commander'
-import * as e2b from 'e2b'
 
-import { client, connectionConfig } from 'src/api'
 import { asBold, asTimestamp, withUnderline } from 'src/utils/format'
 import { wait } from 'src/utils/wait'
-import { handleE2BRequestError } from '../../utils/errors'
 import { listSandboxes } from './list'
 import { formatEnum, getShortID, Format } from './utils'
+import { Sandbox } from 'e2b'
 
 export const metricsCommand = new commander.Command('metrics')
   .description('show metrics for sandbox')
@@ -19,7 +17,7 @@ export const metricsCommand = new commander.Command('metrics')
   .option('-f, --follow', 'keep streaming metrics until the sandbox is closed')
   .option(
     '--format <format>',
-    `specify format for printing logs (${formatEnum(Format)})`,
+    `specify format for printing metrics (${formatEnum(Format)})`,
     Format.PRETTY
   )
   .action(
@@ -36,7 +34,7 @@ export const metricsCommand = new commander.Command('metrics')
           throw new Error(`Invalid log format: ${format}`)
         }
 
-        let start : string | undefined
+        let start: Date | undefined
         let isFirstRun = true
         let firstMetricsPrinted = false
 
@@ -49,7 +47,7 @@ export const metricsCommand = new commander.Command('metrics')
           .then((s) => !!s)
 
         do {
-          const metrics = await getSandboxMetrics({ sandboxID, start })
+          const metrics = await Sandbox.getMetrics(sandboxID, { start })
 
           if (metrics.length !== 0 && !firstMetricsPrinted) {
             firstMetricsPrinted = true
@@ -101,7 +99,7 @@ export const metricsCommand = new commander.Command('metrics')
   )
 
 function printMetric(
-  timestamp: string,
+  timestamp: Date,
   line: string,
   format: Format | undefined
 ) {
@@ -111,43 +109,36 @@ function printMetric(
   if (format === Format.JSON) {
     console.log(
       JSON.stringify({
-        timestamp: new Date(timestamp).toISOString(),
+        timestamp: timestamp.toISOString(),
         ...metric,
       })
     )
   } else {
-    const time = `[${new Date(timestamp).toISOString().replace(/\.\d{3}Z/, 'Z').replace(/T/, ' ')}]`
+    const time = `[${timestamp
+      .toISOString()
+      .replace(/\.\d{3}Z/, 'Z')
+      .replace(/T/, ' ')}]`
     delete metric['timestamp']
     const multipleCores = metric.cpuCount > 1
     metric.cpuCount += 0
     console.log(
       `${asTimestamp(time)} ${level} ` +
-        asBold('CPU') + `: ${(metric.cpuUsedPct).toString().padStart(5)}% / ${metric.cpuCount.toString().padStart(2)} Core${multipleCores && 's'} | ` +
-        asBold('Memory') + `: ${(metric.memUsed >>> 20).toString().padStart(5)} / ${(metric.memTotal >>> 20).toString().padEnd(5)} MiB | ` +
-        asBold('Disk') + `: ${(metric.diskUsed >>> 20).toString().padStart(5)} / ${(metric.diskTotal >>> 20).toString().padEnd(5)} MiB`
+        asBold('CPU') +
+        `: ${metric.cpuUsedPct.toString().padStart(5)}% / ${metric.cpuCount
+          .toString()
+          .padStart(2)} Core${multipleCores && 's'} | ` +
+        asBold('Memory') +
+        `: ${(metric.memUsed >>> 20).toString().padStart(5)} / ${(
+          metric.memTotal >>> 20
+        )
+          .toString()
+          .padEnd(5)} MiB | ` +
+        asBold('Disk') +
+        `: ${(metric.diskUsed >>> 20).toString().padStart(5)} / ${(
+          metric.diskTotal >>> 20
+        )
+          .toString()
+          .padEnd(5)} MiB`
     )
   }
-}
-
-export async function getSandboxMetrics({
-  sandboxID,
-  start,
-}: {
-  sandboxID: string
-  start?: string
-}): Promise<e2b.components['schemas']['SandboxMetric'][]> {
-  const signal = connectionConfig.getSignal()
-  const res = await client.api.GET('/sandboxes/{sandboxID}/metrics', {
-    signal,
-    params: {
-      path: {
-        sandboxID,
-        start,
-      },
-    },
-  })
-
-  handleE2BRequestError(res, 'Error while getting sandbox metrics')
-
-  return res.data as unknown as e2b.components['schemas']['SandboxMetric'][]
 }

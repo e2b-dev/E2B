@@ -80,33 +80,33 @@ export interface ListedSandbox {
   /**
    * Template ID alias.
    */
-  alias?: string;
+  alias?: string
 
   /**
    * Template ID.
    */
-  templateId: string;
+  templateId: string
 
   /**
    * Client ID.
    * @deprecated
    */
-  clientId: string;
+  clientId: string
 
   /**
    * Sandbox state.
    */
-  state: 'running' | 'paused';
+  state: 'running' | 'paused'
 
   /**
    * Sandbox CPU count.
    */
-  cpuCount: number;
+  cpuCount: number
 
   /**
    * Sandbox Memory size in MB.
    */
-  memoryMB: number;
+  memoryMB: number
 
   /**
    * Saved sandbox metadata.
@@ -116,14 +116,13 @@ export interface ListedSandbox {
   /**
    * Sandbox expected end time.
    */
-  endAt: Date;
+  endAt: Date
 
   /**
    * Sandbox start time.
    */
-  startedAt: Date;
+  startedAt: Date
 }
-
 
 /**
  * Sandbox resource usage metrics.
@@ -164,7 +163,6 @@ export interface SandboxMetrics {
    */
   diskTotal: number
 }
-
 
 export class SandboxApi {
   protected constructor() {}
@@ -243,7 +241,7 @@ export class SandboxApi {
 
     return (
       res.data?.map((sandbox: components['schemas']['ListedSandbox']) => ({
-        sandboxId:  sandbox.sandboxID,
+        sandboxId: sandbox.sandboxID,
         templateId: sandbox.templateID,
         clientId: sandbox.clientID,
         state: sandbox.state,
@@ -303,7 +301,6 @@ export class SandboxApi {
     }
   }
 
-
   /**
    * Get the metrics of the sandbox.
    *
@@ -314,7 +311,10 @@ export class SandboxApi {
    */
   static async getMetrics(
     sandboxId: string,
-    opts?: SandboxApiOpts
+    opts?: SandboxApiOpts & {
+      start?: string | Date
+      end?: string | Date
+    }
   ): Promise<SandboxMetrics[]> {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
@@ -323,6 +323,8 @@ export class SandboxApi {
       params: {
         path: {
           sandboxID: sandboxId,
+          start: opts?.start,
+          end: opts?.end,
         },
       },
       signal: config.getSignal(opts?.requestTimeoutMs),
@@ -430,7 +432,7 @@ export class SandboxApi {
       sandboxId: res.data!.sandboxID,
       sandboxDomain: res.data!.domain || undefined,
       envdVersion: res.data!.envdVersion,
-      envdAccessToken: res.data!.envdAccessToken
+      envdAccessToken: res.data!.envdAccessToken,
     }
   }
 
