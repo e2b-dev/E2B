@@ -17,7 +17,6 @@ from e2b.api import AsyncApiClient, SandboxCreateResponse
 from e2b.api.client.models import (
     NewSandbox,
     PostSandboxesSandboxIDTimeoutBody,
-    SandboxMetric,
     Error,
 )
 from e2b.api.client.api.sandboxes import (
