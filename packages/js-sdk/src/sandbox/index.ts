@@ -10,7 +10,7 @@ import { EnvdApiClient, handleEnvdApiError } from '../envd/api'
 import { createRpcLogger } from '../logs'
 import { Commands, Pty } from './commands'
 import { Filesystem } from './filesystem'
-import { SandboxApi } from './sandboxApi'
+import { SandboxApi, SandboxMetricsOpts } from './sandboxApi'
 import { getSignature } from './signature'
 import { compareVersions } from 'compare-versions'
 import { SandboxError } from '../errors'
@@ -529,7 +529,7 @@ export class Sandbox extends SandboxApi {
    *
    * @returns  List of sandbox metrics containing CPU, memory and disk usage information.
    */
-  async getMetrics(opts?: Pick<SandboxOpts, 'requestTimeoutMs'>) {
+  async getMetrics(opts?: SandboxMetricsOpts) {
     if (this.envdApi.version) {
       if (compareVersions(this.envdApi.version, '0.1.5') < 0) {
         throw new SandboxError(

@@ -499,8 +499,8 @@ class Sandbox(SandboxSetup, SandboxApi):
         """
         Get the metrics of the current sandbox.
 
-        :param start: Start time for the metrics, defaults to `None` (from the beginning of the sandbox)
-        :param end: End time for the metrics, defaults to `None` (current time)
+        :param start: Start time for the metrics, defaults to the start of the sandbox
+        :param end: End time for the metrics, defaults to current time
         :param request_timeout: Timeout for the request in **seconds**
 
         :return: List of sandbox metrics containing CPU, memory and disk usage information
@@ -522,8 +522,8 @@ class Sandbox(SandboxSetup, SandboxApi):
         Get the metrics of the sandbox specified by sandbox ID.
 
         :param sandbox_id: Sandbox ID
-        :param start: Start time for the metrics, defaults to `None` (from the beginning of the sandbox)
-        :param end: End time for the metrics, defaults to `None` (current time)
+        :param start: Start time for the metrics, defaults to the start of the sandbox
+        :param end: End time for the metrics, defaults to current time
         :param api_key: E2B API Key to use for authentication, defaults to `E2B_API_KEY` environment variable
         :param request_timeout: Timeout for the request in **seconds**
 
@@ -541,8 +541,8 @@ class Sandbox(SandboxSetup, SandboxApi):
         """
         Get the metrics of the current sandbox.
 
-        :param start: Start time for the metrics, defaults to `None` (from the beginning of the sandbox)
-        :param end: End time for the metrics, defaults to `None` (current time)
+        :param start: Start time for the metrics, defaults to the start of the sandbox
+        :param end: End time for the metrics, defaults to current time
         :param request_timeout: Timeout for the request in **seconds**
 
         :return: List of sandbox metrics containing CPU, memory and disk usage information

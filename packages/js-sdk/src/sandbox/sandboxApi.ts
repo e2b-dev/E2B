@@ -21,6 +21,17 @@ export interface SandboxListOpts extends SandboxApiOpts {
   query?: { metadata?: Record<string, string> }
 }
 
+export interface SandboxMetricsOpts extends SandboxApiOpts {
+  /**
+   * Start time for the metrics, defaults to the start of the sandbox
+   */
+  start?: string | Date
+  /**
+   * End time for the metrics, defaults to the current time
+   */
+  end?: string | Date
+}
+
 /**
  * Information about a sandbox.
  */
@@ -305,16 +316,13 @@ export class SandboxApi {
    * Get the metrics of the sandbox.
    *
    * @param sandboxId sandbox ID.
-   * @param opts connection options.
+   * @param opts sandbox metrics options.
    *
-   * @returns metrics of the sandbox.
+   * @returns  List of sandbox metrics containing CPU, memory and disk usage information.
    */
   static async getMetrics(
     sandboxId: string,
-    opts?: SandboxApiOpts & {
-      start?: string | Date
-      end?: string | Date
-    }
+    opts?: SandboxMetricsOpts
   ): Promise<SandboxMetrics[]> {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
