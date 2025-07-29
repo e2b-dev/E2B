@@ -68,6 +68,6 @@ def test_file_symlink(sandbox: Sandbox):
 
     pwd = sandbox.commands.run("pwd")
     assert file.type == FileType.FILE
-    assert file.symlink_target == f"{pwd.stdout.strip()}/{file_name}"
+    assert file.symlink_target == f"{pwd.stdout.strip()}/{test_dir}/{file_name}"
 
     sandbox.files.remove(test_dir)

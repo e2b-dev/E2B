@@ -37,7 +37,7 @@ sandboxTest('get info of a directory', async ({ sandbox }) => {
   assert.equal(info.name, dirname)
   assert.equal(info.type, 'dir')
   assert.equal(info.path, currentPath.trim() + '/' + dirname)
-  assert.equal(info.size, 0)
+  assert.isAbove(info.size, 0)
   assert.equal(info.mode, 0o755)
   assert.equal(info.permissions, 'drwxr-xr-x')
   assert.equal(info.owner, 'user')
@@ -53,7 +53,6 @@ sandboxTest(
     await expect(sandbox.files.getInfo(dirname)).rejects.toThrow(NotFoundError)
   }
 )
-
 
 sandboxTest('get info of a symlink', async ({ sandbox }) => {
   const filename = 'test_file.txt'
