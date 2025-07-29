@@ -1,3 +1,4 @@
+import datetime
 import logging
 import httpx
 
@@ -6,12 +7,12 @@ from typing import Dict, Optional, TypedDict, overload, List
 from packaging.version import Version
 from typing_extensions import Unpack
 
-from e2b.api.client.models import SandboxMetric
 from e2b.api.client.types import Unset
 from e2b.connection_config import ConnectionConfig, ProxyTypes
 from e2b.envd.api import ENVD_API_HEALTH_ROUTE, ahandle_envd_api_exception
 from e2b.exceptions import format_request_timeout_error, SandboxException
 from e2b.sandbox.main import SandboxSetup
+from e2b.sandbox.sandbox_api import SandboxMetrics
 from e2b.sandbox.utils import class_method_variant
 from e2b.sandbox_async.filesystem.filesystem import Filesystem
 from e2b.sandbox_async.commands.command import Commands
@@ -514,14 +515,19 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
 
     @overload
     async def get_metrics(  # type: ignore
-        self, request_timeout: Optional[float] = None
-    ) -> List[SandboxMetric]:
+        self,
+        start: Optional[datetime.datetime] = None,
+        end: Optional[datetime.datetime] = None,
+        request_timeout: Optional[float] = None,
+    ) -> List[SandboxMetrics]:
         """
         Get the metrics of the current sandbox.
 
+        :param start: Start time for the metrics, defaults to `None` (from the beginning of the sandbox)
+        :param end: End time for the metrics, defaults to `None` (current time)
         :param request_timeout: Timeout for the request in **seconds**
 
-        :return: List of sandbox metrics containing CPU and memory usage information
+        :return: List of sandbox metrics containing CPU, memory and disk usage information
         """
         ...
 
@@ -529,33 +535,41 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
     @staticmethod
     async def get_metrics(
         sandbox_id: str,
+        start: Optional[datetime.datetime] = None,
+        end: Optional[datetime.datetime] = None,
         api_key: Optional[str] = None,
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
-    ) -> List[SandboxMetric]:
+    ) -> List[SandboxMetrics]:
         """
         Get the metrics of the sandbox specified by sandbox ID.
 
         :param sandbox_id: Sandbox ID
+        :param start: Start time for the metrics, defaults to `None` (from the beginning of the sandbox)
+        :param end: End time for the metrics, defaults to `None` (current time)
         :param api_key: E2B API Key to use for authentication, defaults to `E2B_API_KEY` environment variable
         :param request_timeout: Timeout for the request in **seconds**
 
-        :return: List of sandbox metrics containing CPU and memory usage information
+        :return: List of sandbox metrics containing CPU, memory and disk usage information
         """
         ...
 
     @class_method_variant("_cls_get_metrics")
     async def get_metrics(  # type: ignore
         self,
+        start: Optional[datetime.datetime] = None,
+        end: Optional[datetime.datetime] = None,
         request_timeout: Optional[float] = None,
-    ) -> List[SandboxMetric]:
+    ) -> List[SandboxMetrics]:
         """
         Get the metrics of the current sandbox.
 
+        :param start: Start time for the metrics, defaults to `None` (from the beginning of the sandbox)
+        :param end: End time for the metrics, defaults to `None` (current time)
         :param request_timeout: Timeout for the request in **seconds**
 
-        :return: List of sandbox metrics containing CPU and memory usage information
+        :return: List of sandbox metrics containing CPU, memory and disk usage information
         """
         if self._envd_version:
             if Version(self._envd_version) < Version("0.1.5"):
@@ -576,5 +590,7 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
 
         return await self._cls_get_metrics(
             sandbox_id=self.sandbox_id,
+            start=start,
+            end=end,
             **config_dict,
         )

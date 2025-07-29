@@ -1,3 +1,4 @@
+import datetime
 import urllib.parse
 
 from typing import Optional, Dict, List
@@ -9,6 +10,7 @@ from e2b.sandbox.sandbox_api import (
     SandboxApiBase,
     SandboxQuery,
     ListedSandbox,
+    SandboxMetrics,
 )
 from e2b.exceptions import TemplateException, SandboxException
 from e2b.api import AsyncApiClient, SandboxCreateResponse
@@ -309,13 +311,15 @@ class SandboxApi(SandboxApiBase):
     async def _cls_get_metrics(
         cls,
         sandbox_id: str,
+        start: Optional[datetime.datetime] = None,
+        end: Optional[datetime.datetime] = None,
         api_key: Optional[str] = None,
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
         headers: Optional[Dict[str, str]] = None,
         proxy: Optional[ProxyTypes] = None,
-    ) -> List[SandboxMetric]:
+    ) -> List[SandboxMetrics]:
         config = ConnectionConfig(
             api_key=api_key,
             domain=domain,
@@ -335,6 +339,8 @@ class SandboxApi(SandboxApiBase):
         ) as api_client:
             res = await get_sandboxes_sandbox_id_metrics.asyncio_detailed(
                 sandbox_id,
+                start=int(start.timestamp() * 1000) if start else None,
+                end=int(end.timestamp() * 1000) if end else None,
                 client=api_client,
             )
 
@@ -348,4 +354,16 @@ class SandboxApi(SandboxApiBase):
             if isinstance(res.parsed, Error):
                 raise SandboxException(f"{res.parsed.message}: Request failed")
 
-            return res.parsed
+            # Convert to typed SandboxMetrics objects
+            return [
+                SandboxMetrics(
+                    cpu_count=metric.cpu_count,
+                    cpu_used_pct=metric.cpu_used_pct,
+                    disk_total=metric.disk_total,
+                    disk_used=metric.disk_used,
+                    mem_total=metric.mem_total,
+                    mem_used=metric.mem_used,
+                    timestamp=metric.timestamp,
+                )
+                for metric in res.parsed
+            ]
