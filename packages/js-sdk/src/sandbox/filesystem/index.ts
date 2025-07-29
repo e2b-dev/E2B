@@ -33,7 +33,7 @@ import type { Timestamp } from '@bufbuild/protobuf/wkt'
 /**
  * Sandbox filesystem object information.
  */
-export interface EntryInfoApi {
+export interface WriteInfo {
   /**
    * Name of the filesystem object.
    */
@@ -48,7 +48,7 @@ export interface EntryInfoApi {
   path: string
 }
 
-export interface EntryInfo extends EntryInfoApi {
+export interface EntryInfo extends WriteInfo {
   /**
    * Size of the filesystem object in bytes.
    */
@@ -295,11 +295,11 @@ export class Filesystem {
     path: string,
     data: string | ArrayBuffer | Blob | ReadableStream,
     opts?: FilesystemRequestOpts
-  ): Promise<EntryInfoApi>
+  ): Promise<WriteInfo>
   async write(
     files: WriteEntry[],
     opts?: FilesystemRequestOpts
-  ): Promise<EntryInfoApi[]>
+  ): Promise<WriteInfo[]>
   async write(
     pathOrFiles: string | WriteEntry[],
     dataOrOpts?:
@@ -309,7 +309,7 @@ export class Filesystem {
       | ReadableStream
       | FilesystemRequestOpts,
     opts?: FilesystemRequestOpts
-  ): Promise<EntryInfoApi | EntryInfoApi[]> {
+  ): Promise<WriteInfo | WriteInfo[]> {
     if (typeof pathOrFiles !== 'string' && !Array.isArray(pathOrFiles)) {
       throw new Error('Path or files are required')
     }
@@ -341,7 +341,7 @@ export class Filesystem {
             writeFiles: pathOrFiles as WriteEntry[],
           }
 
-    if (writeFiles.length === 0) return [] as EntryInfoApi[]
+    if (writeFiles.length === 0) return [] as WriteInfo[]
 
     const blobs = await Promise.all(
       writeFiles.map((f) => new Response(f.data).blob())
@@ -377,7 +377,7 @@ export class Filesystem {
       throw err
     }
 
-    const files = res.data as EntryInfoApi[]
+    const files = res.data as WriteInfo[]
     if (!files) {
       throw new Error('Expected to receive information about written file')
     }
@@ -393,10 +393,7 @@ export class Filesystem {
    *
    * @returns list of entries in the sandbox filesystem directory.
    */
-  async list(
-    path: string,
-    opts?: FilesystemListOpts
-  ): Promise<EntryInfo[]> {
+  async list(path: string, opts?: FilesystemListOpts): Promise<EntryInfo[]> {
     if (typeof opts?.depth === 'number' && opts.depth < 1) {
       throw new InvalidArgumentError('depth should be at least one')
     }

@@ -17,9 +17,12 @@ export type { Logger } from './logs'
 export { getSignature } from './sandbox/signature'
 
 export { FileType } from './sandbox/filesystem'
-export type { EntryInfoApi, Filesystem } from './sandbox/filesystem'
+export type { WriteInfo, EntryInfo, Filesystem } from './sandbox/filesystem'
 export { FilesystemEventType } from './sandbox/filesystem/watchHandle'
-export type { FilesystemEvent, WatchHandle } from './sandbox/filesystem/watchHandle'
+export type {
+  FilesystemEvent,
+  WatchHandle,
+} from './sandbox/filesystem/watchHandle'
 
 export { CommandExitError } from './sandbox/commands/commandHandle'
 export type {

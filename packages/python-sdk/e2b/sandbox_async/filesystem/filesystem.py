@@ -17,7 +17,7 @@ from e2b.envd.rpc import authentication_header, handle_rpc_exception
 from e2b.envd.versions import ENVD_VERSION_RECURSIVE_WATCH
 from e2b.exceptions import SandboxException, TemplateException, InvalidArgumentException
 from e2b.sandbox.filesystem.filesystem import (
-    EntryInfoAPI,
+    WriteInfo,
     EntryInfo,
     map_file_type,
 )
@@ -145,7 +145,7 @@ class Filesystem:
         data: Union[str, bytes, IO],
         user: Username = "user",
         request_timeout: Optional[float] = None,
-    ) -> EntryInfoAPI:
+    ) -> WriteInfo:
         """
         Write content to a file on the path.
 
@@ -169,7 +169,7 @@ class Filesystem:
         files: List[WriteEntry],
         user: Optional[Username] = "user",
         request_timeout: Optional[float] = None,
-    ) -> List[EntryInfoAPI]:
+    ) -> List[WriteInfo]:
         """
         Writes multiple files.
 
@@ -185,7 +185,7 @@ class Filesystem:
         data_or_user: Union[str, bytes, IO, Username] = "user",
         user_or_request_timeout: Optional[Union[float, Username]] = None,
         request_timeout_or_none: Optional[float] = None,
-    ) -> Union[EntryInfoAPI, List[EntryInfoAPI]]:
+    ) -> Union[WriteInfo, List[WriteInfo]]:
         """
         Writes content to a file on the path.
         When writing to a file that doesn't exist, the file will get created.
@@ -251,9 +251,9 @@ class Filesystem:
 
         if len(write_files) == 1 and path:
             file = write_files[0]
-            return EntryInfoAPI(**file)
+            return WriteInfo(**file)
         else:
-            return [EntryInfoAPI(**file) for file in write_files]
+            return [WriteInfo(**file) for file in write_files]
 
     async def list(
         self,

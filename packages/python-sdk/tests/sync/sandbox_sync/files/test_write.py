@@ -1,7 +1,7 @@
 import io
 import uuid
 
-from e2b.sandbox.filesystem.filesystem import EntryInfoAPI
+from e2b.sandbox.filesystem.filesystem import WriteInfo
 from e2b.sandbox_sync.main import Sandbox
 
 
@@ -72,7 +72,7 @@ def test_write_multiple_files(sandbox):
     assert isinstance(info, list)
     assert len(info) == 1
     info = info[0]
-    assert isinstance(info, EntryInfoAPI)
+    assert isinstance(info, WriteInfo)
     assert info.path == "/home/user/one_test_file.txt"
     exists = sandbox.files.exists(info.path)
     assert exists
@@ -91,7 +91,7 @@ def test_write_multiple_files(sandbox):
     assert isinstance(infos, list)
     assert len(infos) == len(files)
     for i, info in enumerate(infos):
-        assert isinstance(info, EntryInfoAPI)
+        assert isinstance(info, WriteInfo)
         assert info.path == f"/home/user/test_write_{i}.txt"
         exists = sandbox.files.exists(path)
         assert exists

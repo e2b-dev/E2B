@@ -29,7 +29,7 @@ def map_file_type(ft: filesystem_pb2.FileType):
 
 
 @dataclass
-class EntryInfoAPI:
+class WriteInfo:
     """
     Sandbox filesystem object information.
     """
@@ -49,7 +49,7 @@ class EntryInfoAPI:
 
 
 @dataclass
-class EntryInfo(EntryInfoAPI):
+class EntryInfo(WriteInfo):
     """
     Extended sandbox filesystem object information.
     """
