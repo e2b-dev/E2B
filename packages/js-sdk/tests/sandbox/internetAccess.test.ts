@@ -1,6 +1,6 @@
 import { assert, test } from 'vitest'
 
-import { Sandbox } from '../../src'
+import { CommandExitError, Sandbox } from '../../src'
 import { template, isDebug } from '../setup.js'
 
 test.skipIf(isDebug)('internet access enabled', async () => {
@@ -33,7 +33,8 @@ test.skipIf(isDebug)('internet access disabled', async () => {
       assert.fail('Expected command to fail when internet access is disabled')
     } catch (error) {
       // The command should fail or timeout when internet access is disabled
-      assert.isTrue(error instanceof Error)
+      assert.isTrue(error instanceof CommandExitError)
+      assert.notEqual(error.exitCode, 0)
     }
   } finally {
     await sbx.kill()
