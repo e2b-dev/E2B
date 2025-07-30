@@ -529,7 +529,7 @@ export class Sandbox extends SandboxApi {
    *
    * @returns  List of sandbox metrics containing CPU, memory and disk usage information.
    */
-  async getMetrics(opts?: SandboxMetricsOpts) {
+  async getMetrics(opts?: Pick<SandboxMetricsOpts, 'start' | 'end' | 'requestTimeoutMs'>) {
     if (this.envdApi.version) {
       if (compareVersions(this.envdApi.version, '0.1.5') < 0) {
         throw new SandboxError(
