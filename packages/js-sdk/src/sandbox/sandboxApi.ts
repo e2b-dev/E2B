@@ -14,6 +14,31 @@ export interface SandboxApiOpts
     >
   > {}
 
+/**
+ * Options for create sandbox request.
+ */
+export interface SandboxCreateOpts extends SandboxApiOpts {
+  /**
+   * Custom metadata for the sandbox
+   */
+  metadata?: Record<string, string>
+
+  /**
+   * Custom environment variables for the sandbox
+   */
+  envs?: Record<string, string>
+
+  /**
+   * Envd is secured with access token and cannot be used without it
+   */
+  secure?: boolean
+
+  /**
+   * Allow sandbox to access the internet, defaults to `true`.
+   */
+  allowInternetAccess?: boolean
+}
+
 export interface SandboxListOpts extends SandboxApiOpts {
   /**
    * Filter the list of sandboxes, e.g. by metadata `metadata:{"key": "value"}`, if there are multiple filters they are combined with AND.
@@ -397,11 +422,7 @@ export class SandboxApi {
   protected static async createSandbox(
     template: string,
     timeoutMs: number,
-    opts?: SandboxApiOpts & {
-      metadata?: Record<string, string>
-      envs?: Record<string, string>
-      secure?: boolean
-    }
+    opts?: SandboxCreateOpts
   ): Promise<{
     sandboxId: string
     sandboxDomain?: string
@@ -419,6 +440,7 @@ export class SandboxApi {
         envVars: opts?.envs,
         timeout: this.timeoutToSeconds(timeoutMs),
         secure: opts?.secure,
+        allow_internet_access: opts?.allowInternetAccess ?? true,
       },
       signal: config.getSignal(opts?.requestTimeoutMs),
     })

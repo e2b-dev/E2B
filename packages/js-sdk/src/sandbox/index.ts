@@ -50,6 +50,13 @@ export interface SandboxOpts extends ConnectionOpts {
    * @default false
    */
   secure?: boolean
+
+  /**
+   * Allow sandbox to access the internet
+   *
+   * @default true
+   */
+  allowInternetAccess?: boolean
 }
 
 /**
@@ -170,8 +177,8 @@ export class Sandbox extends SandboxApi {
         // E2B endpoints should be safe to use with redirect: "follow" https://github.com/e2b-dev/E2B/issues/531#issuecomment-2779492867
 
         const headers = new Headers(this.connectionConfig.headers)
-        new Headers(options?.headers).forEach(
-          (value, key) => headers.append(key, value)
+        new Headers(options?.headers).forEach((value, key) =>
+          headers.append(key, value)
         )
 
         if (this.envdAccessToken) {

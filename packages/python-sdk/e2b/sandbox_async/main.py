@@ -209,6 +209,7 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
         request_timeout: Optional[float] = None,
         proxy: Optional[ProxyTypes] = None,
         secure: Optional[bool] = None,
+        allow_internet_access: Optional[bool] = True,
     ):
         """
         Create a new sandbox.
@@ -223,6 +224,7 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
         :param request_timeout: Timeout for the request in **seconds**
         :param proxy: Proxy to use for the request and for the **requests made to the returned sandbox**
         :param secure: Envd is secured with access token and cannot be used without it
+        :param allow_internet_access: Allow sandbox to access the internet, defaults to `True`.
 
         :return: sandbox instance for the new sandbox
 
@@ -248,6 +250,7 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
                 env_vars=envs,
                 secure=secure,
                 proxy=proxy,
+                allow_internet_access=allow_internet_access,
             )
 
             sandbox_id = response.sandbox_id

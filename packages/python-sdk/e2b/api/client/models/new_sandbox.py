@@ -14,6 +14,7 @@ class NewSandbox:
     """
     Attributes:
         template_id (str): Identifier of the required template
+        allow_internet_access (Union[Unset, bool]): Allow sandbox to access the internet
         auto_pause (Union[Unset, bool]): Automatically pauses the sandbox after the timeout Default: False.
         env_vars (Union[Unset, Any]):
         metadata (Union[Unset, Any]):
@@ -22,6 +23,7 @@ class NewSandbox:
     """
 
     template_id: str
+    allow_internet_access: Union[Unset, bool] = UNSET
     auto_pause: Union[Unset, bool] = False
     env_vars: Union[Unset, Any] = UNSET
     metadata: Union[Unset, Any] = UNSET
@@ -31,6 +33,8 @@ class NewSandbox:
 
     def to_dict(self) -> dict[str, Any]:
         template_id = self.template_id
+
+        allow_internet_access = self.allow_internet_access
 
         auto_pause = self.auto_pause
 
@@ -49,6 +53,8 @@ class NewSandbox:
                 "templateID": template_id,
             }
         )
+        if allow_internet_access is not UNSET:
+            field_dict["allow_internet_access"] = allow_internet_access
         if auto_pause is not UNSET:
             field_dict["autoPause"] = auto_pause
         if env_vars is not UNSET:
@@ -67,6 +73,8 @@ class NewSandbox:
         d = dict(src_dict)
         template_id = d.pop("templateID")
 
+        allow_internet_access = d.pop("allow_internet_access", UNSET)
+
         auto_pause = d.pop("autoPause", UNSET)
 
         env_vars = d.pop("envVars", UNSET)
@@ -79,6 +87,7 @@ class NewSandbox:
 
         new_sandbox = cls(
             template_id=template_id,
+            allow_internet_access=allow_internet_access,
             auto_pause=auto_pause,
             env_vars=env_vars,
             metadata=metadata,

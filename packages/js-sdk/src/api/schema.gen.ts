@@ -1035,6 +1035,8 @@ export interface components {
             name: string;
         };
         NewSandbox: {
+            /** @description Allow sandbox to access the internet */
+            allow_internet_access?: boolean;
             /**
              * @description Automatically pauses the sandbox after the timeout
              * @default false
