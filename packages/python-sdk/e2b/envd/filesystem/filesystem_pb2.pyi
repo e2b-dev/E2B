@@ -1,3 +1,4 @@
+from google.protobuf import timestamp_pb2 as _timestamp_pb2
 from google.protobuf.internal import containers as _containers
 from google.protobuf.internal import enum_type_wrapper as _enum_type_wrapper
 from google.protobuf import descriptor as _descriptor
@@ -88,18 +89,50 @@ class StatResponse(_message.Message):
     def __init__(self, entry: _Optional[_Union[EntryInfo, _Mapping]] = ...) -> None: ...
 
 class EntryInfo(_message.Message):
-    __slots__ = ("name", "type", "path")
+    __slots__ = (
+        "name",
+        "type",
+        "path",
+        "size",
+        "mode",
+        "permissions",
+        "owner",
+        "group",
+        "modified_time",
+        "symlink_target",
+    )
     NAME_FIELD_NUMBER: _ClassVar[int]
     TYPE_FIELD_NUMBER: _ClassVar[int]
     PATH_FIELD_NUMBER: _ClassVar[int]
+    SIZE_FIELD_NUMBER: _ClassVar[int]
+    MODE_FIELD_NUMBER: _ClassVar[int]
+    PERMISSIONS_FIELD_NUMBER: _ClassVar[int]
+    OWNER_FIELD_NUMBER: _ClassVar[int]
+    GROUP_FIELD_NUMBER: _ClassVar[int]
+    MODIFIED_TIME_FIELD_NUMBER: _ClassVar[int]
+    SYMLINK_TARGET_FIELD_NUMBER: _ClassVar[int]
     name: str
     type: FileType
     path: str
+    size: int
+    mode: int
+    permissions: str
+    owner: str
+    group: str
+    modified_time: _timestamp_pb2.Timestamp
+    symlink_target: str
     def __init__(
         self,
         name: _Optional[str] = ...,
         type: _Optional[_Union[FileType, str]] = ...,
         path: _Optional[str] = ...,
+        size: _Optional[int] = ...,
+        mode: _Optional[int] = ...,
+        permissions: _Optional[str] = ...,
+        owner: _Optional[str] = ...,
+        group: _Optional[str] = ...,
+        modified_time: _Optional[_Union[_timestamp_pb2.Timestamp, _Mapping]] = ...,
+        symlink_target: _Optional[str] = ...,
     ) -> None: ...
 
 class ListDirRequest(_message.Message):

@@ -1,5 +1,5 @@
 import { Logger } from './logs'
-import { getEnvVar } from './api/metadata'
+import {getEnvVar, version} from './api/metadata'
 
 const REQUEST_TIMEOUT_MS = 60_000 // 60 seconds
 export const KEEPALIVE_PING_INTERVAL_SEC = 50 // 50 seconds
@@ -74,7 +74,8 @@ export class ConnectionConfig {
     this.accessToken = opts?.accessToken || ConnectionConfig.accessToken
     this.requestTimeoutMs = opts?.requestTimeoutMs ?? REQUEST_TIMEOUT_MS
     this.logger = opts?.logger
-    this.headers = opts?.headers
+    this.headers = opts?.headers || {}
+    this.headers['User-Agent'] = `e2b-js-sdk/${version}`
 
     this.apiUrl = this.debug
       ? 'http://localhost:3000'

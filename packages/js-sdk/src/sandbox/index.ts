@@ -10,8 +10,10 @@ import { EnvdApiClient, handleEnvdApiError } from '../envd/api'
 import { createRpcLogger } from '../logs'
 import { Commands, Pty } from './commands'
 import { Filesystem } from './filesystem'
-import { SandboxApi } from './sandboxApi'
+import { SandboxApi, SandboxMetricsOpts } from './sandboxApi'
 import { getSignature } from './signature'
+import { compareVersions } from 'compare-versions'
+import { SandboxError } from '../errors'
 
 /**
  * Options for creating a new Sandbox.
@@ -168,7 +170,11 @@ export class Sandbox extends SandboxApi {
         // connect-web package uses redirect: "error" which is not supported in edge runtimes
         // E2B endpoints should be safe to use with redirect: "follow" https://github.com/e2b-dev/E2B/issues/531#issuecomment-2779492867
 
-        const headers = new Headers(options?.headers)
+        const headers = new Headers(this.connectionConfig.headers)
+        new Headers(options?.headers).forEach(
+          (value, key) => headers.append(key, value)
+        )
+
         if (this.envdAccessToken) {
           headers.append('X-Access-Token', this.envdAccessToken)
         }
@@ -528,6 +534,35 @@ export class Sandbox extends SandboxApi {
    */
   async getInfo(opts?: Pick<SandboxOpts, 'requestTimeoutMs'>) {
     return await Sandbox.getInfo(this.sandboxId, {
+      ...this.connectionConfig,
+      ...opts,
+    })
+  }
+
+  /**
+   * Get the metrics of the sandbox.
+   *
+   * @param opts connection options.
+   *
+   * @returns  List of sandbox metrics containing CPU, memory and disk usage information.
+   */
+  async getMetrics(opts?: Pick<SandboxMetricsOpts, 'start' | 'end' | 'requestTimeoutMs'>) {
+    if (this.envdApi.version) {
+      if (compareVersions(this.envdApi.version, '0.1.5') < 0) {
+        throw new SandboxError(
+          'You need to update the template to use the new SDK. ' +
+            'You can do this by running `e2b template build` in the directory with the template.'
+        )
+      }
+
+      if (compareVersions(this.envdApi.version, '0.2.4') < 0) {
+        this.connectionConfig.logger?.warn?.(
+          'Disk metrics are not supported in this version of the sandbox, please rebuild the template to get disk metrics.'
+        )
+      }
+    }
+
+    return await Sandbox.getMetrics(this.sandboxId, {
       ...this.connectionConfig,
       ...opts,
     })

@@ -2,6 +2,7 @@ import os
 
 from typing import Literal, Optional, Dict, TypedDict
 from httpx._types import ProxyTypes
+from e2b.api.metadata import package_version
 
 
 REQUEST_TIMEOUT: float = 60.0  # 60 seconds
@@ -55,6 +56,8 @@ class ConnectionConfig:
         self.api_key = api_key or ConnectionConfig._api_key()
         self.access_token = access_token or ConnectionConfig._access_token()
         self.headers = headers or {}
+        self.headers["User-Agent"] = f"e2b-python-sdk/{package_version}"
+
         self.proxy = proxy
 
         self.request_timeout = ConnectionConfig._get_request_timeout(

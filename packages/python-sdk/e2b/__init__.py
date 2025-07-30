@@ -56,7 +56,7 @@ from .sandbox.filesystem.watch_handle import (
     FilesystemEvent,
     FilesystemEventType,
 )
-from .sandbox.filesystem.filesystem import EntryInfo, FileType
+from .sandbox.filesystem.filesystem import EntryInfo, WriteInfo, FileType
 
 from .sandbox_sync.main import Sandbox
 from .sandbox_sync.sandbox_beta import SandboxBeta
@@ -88,6 +88,7 @@ __all__ = [
     "TemplateException",
     # Sandbox API
     "SandboxInfo",
+    "SandboxMetrics",
     "ProcessInfo",
     "SandboxQuery",
     "SandboxState",
@@ -103,6 +104,7 @@ __all__ = [
     "FilesystemEvent",
     "FilesystemEventType",
     "EntryInfo",
+    "WriteInfo",
     "FileType",
     # Sync sandbox
     "Sandbox",

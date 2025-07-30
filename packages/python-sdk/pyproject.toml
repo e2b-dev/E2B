@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "e2b"
-version = "1.7.0"
+version = "1.9.0"
 description = "E2B SDK that give agents cloud environments"
 authors = ["e2b <hello@e2b.dev>"]
 license = "MIT"
@@ -36,3 +36,8 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.urls]
 "Bug Tracker" = "https://github.com/e2b-dev/e2b/issues"
+
+[tool.ruff]
+exclude = [
+    "e2b/envd/filesystem/filesystem_pb2.py"
+]

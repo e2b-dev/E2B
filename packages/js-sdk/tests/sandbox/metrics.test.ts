@@ -1,29 +1,24 @@
-import { assert } from 'vitest'
+import { expect } from 'vitest'
 
-import { sandboxTest, wait } from '../setup.js'
+import { SandboxMetrics } from '../../src'
+import {sandboxTest, isDebug, wait} from '../setup.js'
 
-sandboxTest('get sandbox metrics', async ({ sandbox }) => {
-  let testPassed = false
-
-  const attempts = 10
-  const intervalDuration = 10_000
-
-  for (let i = 0; i < attempts; i++) {
-    const metrics = await sandbox.getMetrics()
-    if (metrics && metrics.length >= 1) {
-      assert.isAtLeast(metrics.length, 1)
-      assert.isAtLeast(metrics[0]?.cpuUsedPct, 0)
-      assert.isAtLeast(metrics[0]?.memTotalMiB, 0)
-      assert.isAtLeast(metrics[0]?.memUsedMiB, 0)
-      testPassed = true
+sandboxTest.skipIf(isDebug)('sbx metrics', async ({ sandbox }) => {
+  let metrics: SandboxMetrics[]
+  for (let i = 0; i < 10; i++) {
+    metrics = await sandbox.getMetrics()
+    if (metrics.length > 0) {
       break
-    } else {
-      await wait(intervalDuration)
-      continue
     }
+    await wait(1_000)
   }
-  assert.isTrue(
-    testPassed,
-    `Metrics were not returned after ${(attempts * intervalDuration) / 1000}s`
-  )
+
+  expect(metrics.length).toBeGreaterThan(0)
+  const metric = metrics[0]
+  expect(metric.diskTotal).toBeDefined()
+  expect(metric.diskUsed).toBeDefined()
+  expect(metric.memTotal).toBeDefined()
+  expect(metric.memUsed).toBeDefined()
+  expect(metric.cpuUsedPct).toBeDefined()
+  expect(metric.cpuCount).toBeDefined()
 })

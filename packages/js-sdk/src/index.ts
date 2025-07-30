@@ -17,7 +17,7 @@ export type { Logger } from './logs'
 export { getSignature } from './sandbox/signature'
 
 export { FileType } from './sandbox/filesystem'
-export type { EntryInfo, Filesystem } from './sandbox/filesystem'
+export type { WriteInfo, EntryInfo, Filesystem } from './sandbox/filesystem'
 export { FilesystemEventType } from './sandbox/filesystem/watchHandle'
 export type {
   FilesystemEvent,
@@ -45,8 +45,8 @@ export type {
 
 export type { SandboxOpts } from './sandbox'
 export type { SandboxInfo, SandboxPaginator, SandboxState } from './sandbox/sandboxApi'
+export type { SandboxMetrics } from './sandbox/sandboxApi'
 export { Sandbox }
 import { Sandbox } from './sandbox'
 export default Sandbox
-export type { SandboxMetrics } from './sandbox/sandboxBeta'
 export { SandboxBeta } from './sandbox/sandboxBeta'

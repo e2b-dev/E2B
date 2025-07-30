@@ -28,11 +28,12 @@ import { FilesystemEvent, WatchHandle } from './watchHandle'
 import { compareVersions } from 'compare-versions'
 import { InvalidArgumentError, TemplateError } from '../../errors'
 import { ENVD_VERSION_RECURSIVE_WATCH } from '../../envd/versions'
+import type { Timestamp } from '@bufbuild/protobuf/wkt'
 
 /**
  * Sandbox filesystem object information.
  */
-export interface EntryInfo {
+export interface WriteInfo {
   /**
    * Name of the filesystem object.
    */
@@ -45,6 +46,43 @@ export interface EntryInfo {
    * Path to the filesystem object.
    */
   path: string
+}
+
+export interface EntryInfo extends WriteInfo {
+  /**
+   * Size of the filesystem object in bytes.
+   */
+  size: number
+
+  /**
+   * File mode and permission bits.
+   */
+  mode: number
+
+  /**
+   * String representation of file permissions (e.g. 'rwxr-xr-x').
+   */
+  permissions: string
+
+  /**
+   * Owner of the filesystem object.
+   */
+  owner: string
+
+  /**
+   * Group owner of the filesystem object.
+   */
+  group: string
+
+  /**
+   * Last modification time of the filesystem object.
+   */
+  modifiedTime?: Date
+
+  /**
+   * If the filesystem object is a symlink, this is the target of the symlink.
+   */
+  symlinkTarget?: string
 }
 
 /**
@@ -73,6 +111,15 @@ function mapFileType(fileType: FsFileType) {
     case FsFileType.FILE:
       return FileType.FILE
   }
+}
+
+function mapModifiedTime(modifiedTime: Timestamp | undefined) {
+  if (!modifiedTime) return undefined
+
+  return new Date(
+    Number(modifiedTime.seconds) * 1000 +
+      Math.floor(modifiedTime.nanos / 1_000_000)
+  )
 }
 
 /**
@@ -248,11 +295,11 @@ export class Filesystem {
     path: string,
     data: string | ArrayBuffer | Blob | ReadableStream,
     opts?: FilesystemRequestOpts
-  ): Promise<EntryInfo>
+  ): Promise<WriteInfo>
   async write(
     files: WriteEntry[],
     opts?: FilesystemRequestOpts
-  ): Promise<EntryInfo[]>
+  ): Promise<WriteInfo[]>
   async write(
     pathOrFiles: string | WriteEntry[],
     dataOrOpts?:
@@ -262,7 +309,7 @@ export class Filesystem {
       | ReadableStream
       | FilesystemRequestOpts,
     opts?: FilesystemRequestOpts
-  ): Promise<EntryInfo | EntryInfo[]> {
+  ): Promise<WriteInfo | WriteInfo[]> {
     if (typeof pathOrFiles !== 'string' && !Array.isArray(pathOrFiles)) {
       throw new Error('Path or files are required')
     }
@@ -294,7 +341,7 @@ export class Filesystem {
             writeFiles: pathOrFiles as WriteEntry[],
           }
 
-    if (writeFiles.length === 0) return [] as EntryInfo[]
+    if (writeFiles.length === 0) return [] as WriteInfo[]
 
     const blobs = await Promise.all(
       writeFiles.map((f) => new Response(f.data).blob())
@@ -330,7 +377,7 @@ export class Filesystem {
       throw err
     }
 
-    const files = res.data as EntryInfo[]
+    const files = res.data as WriteInfo[]
     if (!files) {
       throw new Error('Expected to receive information about written file')
     }
@@ -373,6 +420,13 @@ export class Filesystem {
             name: e.name,
             type,
             path: e.path,
+            size: Number(e.size),
+            mode: e.mode,
+            permissions: e.permissions,
+            owner: e.owner,
+            group: e.group,
+            modifiedTime: mapModifiedTime(e.modifiedTime),
+            symlinkTarget: e.symlinkTarget,
           })
         }
       }
@@ -448,6 +502,13 @@ export class Filesystem {
         name: entry.name,
         type: mapFileType(entry.type),
         path: entry.path,
+        size: Number(entry.size),
+        mode: entry.mode,
+        permissions: entry.permissions,
+        owner: entry.owner,
+        group: entry.group,
+        modifiedTime: mapModifiedTime(entry.modifiedTime),
+        symlinkTarget: entry.symlinkTarget,
       }
     } catch (err) {
       throw handleRpcError(err)
@@ -500,6 +561,47 @@ export class Filesystem {
         }
       }
 
+      throw handleRpcError(err)
+    }
+  }
+
+  /**
+   * Get information about a file or directory.
+   *
+   * @param path path to a file or directory.
+   * @param opts connection options.
+   *
+   * @returns information about the file or directory like name, type, and path.
+   */
+  async getInfo(
+    path: string,
+    opts?: FilesystemRequestOpts
+  ): Promise<EntryInfo> {
+    try {
+      const res = await this.rpc.stat(
+        { path },
+        { headers: authenticationHeader(opts?.user) }
+      )
+
+      if (!res.entry) {
+        throw new Error(
+          'Expected to receive information about the file or directory'
+        )
+      }
+
+      return {
+        name: res.entry.name,
+        type: mapFileType(res.entry.type),
+        path: res.entry.path,
+        size: Number(res.entry.size),
+        mode: res.entry.mode,
+        permissions: res.entry.permissions,
+        owner: res.entry.owner,
+        group: res.entry.group,
+        modifiedTime: mapModifiedTime(res.entry.modifiedTime),
+        symlinkTarget: res.entry.symlinkTarget,
+      }
+    } catch (err) {
       throw handleRpcError(err)
     }
   }

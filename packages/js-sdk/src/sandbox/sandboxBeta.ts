@@ -1,6 +1,5 @@
 // Do not add new functionality to the SandboxBeta.
 
-import { compareVersions } from 'compare-versions'
 
 import { Sandbox, SandboxOpts } from '.'
 import { SandboxApiOpts } from './sandboxApi'
@@ -8,39 +7,7 @@ import { ConnectionConfig } from '../connectionConfig'
 import { ApiClient, handleApiError } from '../api'
 import { NotFoundError } from '../errors'
 
-import type { components } from '../api'
 
-/**
- * Sandbox resource usage metrics.
- */
-export interface SandboxMetrics {
-  /**
-   * Timestamp of the metrics.
-   */
-  timestamp: Date
-
-  /**
-   * CPU usage in percentage.
-   */
-  cpuUsedPct: number
-
-  /**
-   * Number of CPU cores.
-   */
-  cpuCount: number
-
-  /**
-   * Memory usage in MiB.
-   */
-  memUsedMiB: number
-
-  /**
-   * Total memory available in MiB.
-   */
-  memTotalMiB: number
-}
-
-const bytesToMiBShift = 20
 
 export class SandboxBeta extends Sandbox {
   /**
@@ -84,45 +51,6 @@ export class SandboxBeta extends Sandbox {
     return sandboxId
   }
 
-  /**
-   * Get the metrics of the sandbox.
-   *
-   * @param sandboxId sandbox ID.
-   * @param opts connection options.
-   *
-   * @returns metrics of the sandbox.
-   */
-  static async getMetrics(
-    sandboxId: string,
-    opts?: SandboxApiOpts
-  ): Promise<SandboxMetrics[]> {
-    const config = new ConnectionConfig(opts)
-    const client = new ApiClient(config)
-
-    const res = await client.api.GET('/sandboxes/{sandboxID}/metrics', {
-      params: {
-        path: {
-          sandboxID: sandboxId,
-        },
-      },
-      signal: config.getSignal(opts?.requestTimeoutMs),
-    })
-
-    const err = handleApiError(res)
-    if (err) {
-      throw err
-    }
-
-    return (
-      res.data?.map((metric: components['schemas']['SandboxMetric']) => ({
-        timestamp: new Date(metric.timestamp),
-        cpuUsedPct: metric.cpuUsedPct,
-        cpuCount: metric.cpuCount,
-        memUsedMiB: metric.memUsed >> bytesToMiBShift,
-        memTotalMiB: metric.memTotal >> bytesToMiBShift,
-      })) ?? []
-    )
-  }
 
   /**
    * Pause the sandbox specified by sandbox ID.
@@ -201,32 +129,6 @@ export class SandboxBeta extends Sandbox {
     }
 
     return true
-  }
-
-  /**
-   * Get the metrics of the sandbox.
-   *
-   * @param timeoutMs timeout in **milliseconds**.
-   * @param opts connection options.
-   *
-   * @returns metrics of the sandbox.
-   */
-  async getMetrics(
-    opts?: Pick<SandboxOpts, 'requestTimeoutMs'>
-  ): Promise<SandboxMetrics[]> {
-    if (
-      this.envdApi.version &&
-      compareVersions(this.envdApi.version, '0.1.5') < 0
-    ) {
-      throw new Error(
-        'Metrics are not supported in this version of the sandbox, please rebuild your template.'
-      )
-    }
-
-    return await SandboxBeta.getMetrics(this.sandboxId, {
-      ...this.connectionConfig,
-      ...opts,
-    })
   }
 
   /**
