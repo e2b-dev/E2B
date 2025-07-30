@@ -1,3 +1,4 @@
+import datetime
 import urllib.parse
 
 from typing import Optional, Dict, List
@@ -9,16 +10,22 @@ from e2b.sandbox.sandbox_api import (
     SandboxApiBase,
     SandboxQuery,
     ListedSandbox,
+    SandboxMetrics,
 )
-from e2b.exceptions import TemplateException
+from e2b.exceptions import TemplateException, SandboxException
 from e2b.api import AsyncApiClient, SandboxCreateResponse
-from e2b.api.client.models import NewSandbox, PostSandboxesSandboxIDTimeoutBody
+from e2b.api.client.models import (
+    NewSandbox,
+    PostSandboxesSandboxIDTimeoutBody,
+    Error,
+)
 from e2b.api.client.api.sandboxes import (
     get_sandboxes_sandbox_id,
     post_sandboxes_sandbox_id_timeout,
     get_sandboxes,
     delete_sandboxes_sandbox_id,
     post_sandboxes,
+    get_sandboxes_sandbox_id_metrics,
 )
 from e2b.connection_config import ConnectionConfig, ProxyTypes
 from e2b.api import handle_api_exception
@@ -298,3 +305,64 @@ class SandboxApi(SandboxApiBase):
                 envd_version=res.parsed.envd_version,
                 envd_access_token=res.parsed.envd_access_token,
             )
+
+    @classmethod
+    async def _cls_get_metrics(
+        cls,
+        sandbox_id: str,
+        start: Optional[datetime.datetime] = None,
+        end: Optional[datetime.datetime] = None,
+        api_key: Optional[str] = None,
+        domain: Optional[str] = None,
+        debug: Optional[bool] = None,
+        request_timeout: Optional[float] = None,
+        headers: Optional[Dict[str, str]] = None,
+        proxy: Optional[ProxyTypes] = None,
+    ) -> List[SandboxMetrics]:
+        config = ConnectionConfig(
+            api_key=api_key,
+            domain=domain,
+            debug=debug,
+            headers=headers,
+            request_timeout=request_timeout,
+            proxy=proxy,
+        )
+
+        if config.debug:
+            # Skip getting the metrics in debug mode
+            return []
+
+        async with AsyncApiClient(
+            config,
+            limits=cls._limits,
+        ) as api_client:
+            res = await get_sandboxes_sandbox_id_metrics.asyncio_detailed(
+                sandbox_id,
+                start=int(start.timestamp() * 1000) if start else None,
+                end=int(end.timestamp() * 1000) if end else None,
+                client=api_client,
+            )
+
+            if res.status_code >= 300:
+                raise handle_api_exception(res)
+
+            if res.parsed is None:
+                return []
+
+            # Check if res.parse is Error
+            if isinstance(res.parsed, Error):
+                raise SandboxException(f"{res.parsed.message}: Request failed")
+
+            # Convert to typed SandboxMetrics objects
+            return [
+                SandboxMetrics(
+                    cpu_count=metric.cpu_count,
+                    cpu_used_pct=metric.cpu_used_pct,
+                    disk_total=metric.disk_total,
+                    disk_used=metric.disk_used,
+                    mem_total=metric.mem_total,
+                    mem_used=metric.mem_used,
+                    timestamp=metric.timestamp,
+                )
+                for metric in res.parsed
+            ]

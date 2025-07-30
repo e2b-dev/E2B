@@ -21,6 +21,17 @@ export interface SandboxListOpts extends SandboxApiOpts {
   query?: { metadata?: Record<string, string> }
 }
 
+export interface SandboxMetricsOpts extends SandboxApiOpts {
+  /**
+   * Start time for the metrics, defaults to the start of the sandbox
+   */
+  start?: string | Date
+  /**
+   * End time for the metrics, defaults to the current time
+   */
+  end?: string | Date
+}
+
 /**
  * Information about a sandbox.
  */
@@ -80,33 +91,33 @@ export interface ListedSandbox {
   /**
    * Template ID alias.
    */
-  alias?: string;
+  alias?: string
 
   /**
    * Template ID.
    */
-  templateId: string;
+  templateId: string
 
   /**
    * Client ID.
    * @deprecated
    */
-  clientId: string;
+  clientId: string
 
   /**
    * Sandbox state.
    */
-  state: 'running' | 'paused';
+  state: 'running' | 'paused'
 
   /**
    * Sandbox CPU count.
    */
-  cpuCount: number;
+  cpuCount: number
 
   /**
    * Sandbox Memory size in MB.
    */
-  memoryMB: number;
+  memoryMB: number
 
   /**
    * Saved sandbox metadata.
@@ -116,14 +127,53 @@ export interface ListedSandbox {
   /**
    * Sandbox expected end time.
    */
-  endAt: Date;
+  endAt: Date
 
   /**
    * Sandbox start time.
    */
-  startedAt: Date;
+  startedAt: Date
 }
 
+/**
+ * Sandbox resource usage metrics.
+ */
+export interface SandboxMetrics {
+  /**
+   * Timestamp of the metrics.
+   */
+  timestamp: Date
+
+  /**
+   * CPU usage in percentage.
+   */
+  cpuUsedPct: number
+
+  /**
+   * Number of CPU cores.
+   */
+  cpuCount: number
+
+  /**
+   * Memory usage in bytes.
+   */
+  memUsed: number
+
+  /**
+   * Total memory available in bytes.
+   */
+  memTotal: number
+
+  /**
+   * Used disk space in bytes.
+   */
+  diskUsed: number
+
+  /**
+   * Total disk space available in bytes.
+   */
+  diskTotal: number
+}
 
 export class SandboxApi {
   protected constructor() {}
@@ -202,7 +252,7 @@ export class SandboxApi {
 
     return (
       res.data?.map((sandbox: components['schemas']['ListedSandbox']) => ({
-        sandboxId:  sandbox.sandboxID,
+        sandboxId: sandbox.sandboxID,
         templateId: sandbox.templateID,
         clientId: sandbox.clientID,
         state: sandbox.state,
@@ -260,6 +310,50 @@ export class SandboxApi {
       startedAt: new Date(res.data.startedAt),
       endAt: new Date(res.data.endAt),
     }
+  }
+
+  /**
+   * Get the metrics of the sandbox.
+   *
+   * @param sandboxId sandbox ID.
+   * @param opts sandbox metrics options.
+   *
+   * @returns  List of sandbox metrics containing CPU, memory and disk usage information.
+   */
+  static async getMetrics(
+    sandboxId: string,
+    opts?: SandboxMetricsOpts
+  ): Promise<SandboxMetrics[]> {
+    const config = new ConnectionConfig(opts)
+    const client = new ApiClient(config)
+
+    const res = await client.api.GET('/sandboxes/{sandboxID}/metrics', {
+      params: {
+        path: {
+          sandboxID: sandboxId,
+          start: opts?.start,
+          end: opts?.end,
+        },
+      },
+      signal: config.getSignal(opts?.requestTimeoutMs),
+    })
+
+    const err = handleApiError(res)
+    if (err) {
+      throw err
+    }
+
+    return (
+      res.data?.map((metric: components['schemas']['SandboxMetric']) => ({
+        timestamp: new Date(metric.timestamp),
+        cpuUsedPct: metric.cpuUsedPct,
+        cpuCount: metric.cpuCount,
+        memUsed: metric.memUsed,
+        memTotal: metric.memTotal,
+        diskUsed: metric.diskUsed,
+        diskTotal: metric.diskTotal,
+      })) ?? []
+    )
   }
 
   /**
@@ -346,7 +440,7 @@ export class SandboxApi {
       sandboxId: res.data!.sandboxID,
       sandboxDomain: res.data!.domain || undefined,
       envdVersion: res.data!.envdVersion,
-      envdAccessToken: res.data!.envdAccessToken
+      envdAccessToken: res.data!.envdAccessToken,
     }
   }
 
