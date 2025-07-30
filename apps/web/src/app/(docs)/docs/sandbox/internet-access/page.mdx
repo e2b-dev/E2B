@@ -2,6 +2,32 @@
 
 Every sandbox has access to the internet and can be reached by a public URL.
 
+## Controlling internet access
+
+You can control whether a sandbox has access to the internet by using the `allowInternetAccess` parameter when creating a sandbox. By default, internet access is enabled (`true`), but you can disable it for security-sensitive workloads.
+
+<CodeGroup>
+```js
+import { Sandbox } from '@e2b/code-interpreter'
+
+// Create sandbox with internet access enabled (default)
+const sandbox = await Sandbox.create({ allowInternetAccess: true })
+
+// Create sandbox without internet access
+const isolatedSandbox = await Sandbox.create({ allowInternetAccess: false })
+```
+```python
+from e2b_code_interpreter import Sandbox
+
+# Create sandbox with internet access enabled (default)
+sandbox = Sandbox(allow_internet_access=True)
+
+# Create sandbox without internet access
+isolated_sandbox = Sandbox(allow_internet_access=False)
+```
+</CodeGroup>
+
+When internet access is disabled, the sandbox cannot make outbound network connections, which provides an additional layer of security for sensitive code execution.
 
 ## Sandbox public URL
 Every sandbox has a public URL that can be used to access running services inside the sandbox.
