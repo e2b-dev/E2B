@@ -284,12 +284,10 @@ export const docRoutes: NavGroup[] = [
       },
       {
         title: 'Persistence',
-        tag: Tag.New,
         href: '/docs/sandbox/persistence',
       },
       {
         title: 'Metrics',
-        tag: Tag.New,
         href: '/docs/sandbox/metrics',
       },
       {
