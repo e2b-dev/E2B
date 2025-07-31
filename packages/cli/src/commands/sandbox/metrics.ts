@@ -130,17 +130,22 @@ function printMetric(
           .toString()
           .padStart(2)} Core${multipleCores && 's'} | ` +
         asBold('Memory') +
-        `: ${(metric.memUsed >>> 20).toString().padStart(5)} / ${(
-          metric.memTotal >>> 20
+        `: ${toMB(metric.memUsed).toFixed(0).padStart(5)} / ${toMB(
+          metric.memTotal
         )
-          .toString()
+          .toFixed(0)
           .padEnd(5)} MiB | ` +
         asBold('Disk') +
-        `: ${(metric.diskUsed >>> 20).toString().padStart(5)} / ${(
-          metric.diskTotal >>> 20
+        `: ${toMB(metric.diskUsed).toFixed(0).padStart(5)} / ${toMB(
+          metric.diskTotal
         )
-          .toString()
+          .toFixed(0)
           .padEnd(5)} MiB`
     )
   }
+}
+
+// we can't use bite shift here because shift is 32 bit operation and disk sizes can be greater than 2^32
+function toMB(bytes: number): number {
+  return bytes / 1024 / 1024
 }
