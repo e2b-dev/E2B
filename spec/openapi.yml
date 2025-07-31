@@ -386,6 +386,9 @@ components:
         secure:
           type: boolean
           description: Secure all system communication with sandbox
+        allow_internet_access:
+          type: boolean
+          description: Allow sandbox to access the internet
         metadata:
           $ref: "#/components/schemas/SandboxMetadata"
         envVars:
@@ -1379,6 +1382,68 @@ paths:
         "500":
           $ref: "#/components/responses/500"
 
+  /v2/templates:
+    post:
+      description: Create a new template
+      tags: [templates]
+      security:
+        - AccessTokenAuth: []
+        - ApiKeyAuth: []
+        - Supabase1TokenAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TemplateBuildRequestV2"
+
+      responses:
+        "202":
+          description: The build was requested successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Template"
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "500":
+          $ref: "#/components/responses/500"
+
+  /templates/{templateID}/files/{hash}:
+    get:
+      description: Get an upload link for a tar file containing build layer files
+      tags: [templates]
+      security:
+        - AccessTokenAuth: []
+        - ApiKeyAuth: []
+        - Supabase1TokenAuth: []
+      parameters:
+        - $ref: "#/components/parameters/templateID"
+        - in: path
+          name: hash
+          required: true
+          schema:
+            type: string
+            description: Hash of the files
+
+      responses:
+        "201":
+          description: The upload link where to upload the tar file
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TemplateBuildFileUpload"
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "404":
+          $ref: "#/components/responses/404"
+        "500":
+          $ref: "#/components/responses/500"
+
   /templates:
     get:
       description: List all templates
@@ -1510,6 +1575,31 @@ paths:
       parameters:
         - $ref: "#/components/parameters/templateID"
         - $ref: "#/components/parameters/buildID"
+      responses:
+        "202":
+          description: The build has started
+        "401":
+          $ref: "#/components/responses/401"
+        "500":
+          $ref: "#/components/responses/500"
+
+  /v2/templates/{templateID}/builds/{buildID}:
+    post:
+      description: Start the build
+      tags: [templates]
+      security:
+        - AccessTokenAuth: []
+        - ApiKeyAuth: []
+        - Supabase1TokenAuth: []
+      parameters:
+        - $ref: "#/components/parameters/templateID"
+        - $ref: "#/components/parameters/buildID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TemplateBuildStartV2"
       responses:
         "202":
           description: The build has started

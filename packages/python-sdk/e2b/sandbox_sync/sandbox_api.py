@@ -256,6 +256,7 @@ class SandboxApi(SandboxApiBase):
         request_timeout: Optional[float] = None,
         headers: Optional[Dict[str, str]] = None,
         proxy: Optional[ProxyTypes] = None,
+        allow_internet_access: Optional[bool] = True,
     ) -> SandboxCreateResponse:
         config = ConnectionConfig(
             api_key=api_key,
@@ -274,6 +275,7 @@ class SandboxApi(SandboxApiBase):
                     timeout=timeout,
                     env_vars=env_vars or {},
                     secure=secure or False,
+                    allow_internet_access=allow_internet_access,
                 ),
                 client=api_client,
             )

@@ -122,6 +122,7 @@ class Sandbox(SandboxSetup, SandboxApi):
         sandbox_id: Optional[str] = None,
         request_timeout: Optional[float] = None,
         proxy: Optional[ProxyTypes] = None,
+        allow_internet_access: Optional[bool] = True,
     ):
         """
         Create a new sandbox.
@@ -135,6 +136,7 @@ class Sandbox(SandboxSetup, SandboxApi):
         :param api_key: E2B API Key to use for authentication, defaults to `E2B_API_KEY` environment variable
         :param request_timeout: Timeout for the request in **seconds**
         :param proxy: Proxy to use for the request and for the **requests made to the returned sandbox**
+        :param allow_internet_access: Allow sandbox to access the internet, defaults to `True`
 
         :return: sandbox instance for the new sandbox
         """
@@ -186,6 +188,7 @@ class Sandbox(SandboxSetup, SandboxApi):
                 request_timeout=request_timeout,
                 secure=secure or False,
                 proxy=proxy,
+                allow_internet_access=allow_internet_access,
             )
 
             self._sandbox_id = response.sandbox_id
