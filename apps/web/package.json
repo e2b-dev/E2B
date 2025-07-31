@@ -59,6 +59,7 @@
     "remark": "^14.0.2",
     "remark-gfm": "^3.0.1",
     "remark-mdx": "^2.3.0",
+    "semver": "^7.7.2",
     "shiki": "^0.11.1",
     "simple-functional-loader": "^1.2.1",
     "tailwind-merge": "^1.14.0",
