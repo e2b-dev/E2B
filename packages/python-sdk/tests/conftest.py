@@ -22,7 +22,7 @@ def template():
 
 @pytest.fixture()
 def sandbox(template, debug):
-    sandbox = Sandbox(template)
+    sandbox = Sandbox(template, debug=debug)
 
     try:
         yield sandbox
@@ -38,7 +38,7 @@ def sandbox(template, debug):
 
 @pytest_asyncio.fixture
 async def async_sandbox(template, debug):
-    sandbox = await AsyncSandbox.create(template)
+    sandbox = await AsyncSandbox.create(template, debug=debug)
 
     try:
         yield sandbox
