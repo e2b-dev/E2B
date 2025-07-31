@@ -1,5 +1,3 @@
-import semver from 'semver'
-
 export interface Props {
   selectedVersion: string
   versions: string[]
@@ -11,9 +9,6 @@ export function SdkVersionSelect({
   versions,
   onVersionChange,
 }: Props) {
-
-  // Sort versions from latest to oldest user semver
-  versions.sort((a, b) => semver.rcompare(a, b))
 
   return (
     <select

@@ -1,9 +1,11 @@
 'use client'
 
+
 import clsx from 'clsx'
 import { motion } from 'framer-motion'
 import { usePathname, useRouter } from 'next/navigation'
 import React, { useRef, useState } from 'react'
+import semver from 'semver'
 
 import { useIsInsideMobileNavigation } from '@/components/MobileBurgerMenu'
 import { useSectionStore } from '@/components/SectionProvider'
@@ -98,7 +100,8 @@ function VersionedNavigationGroup({
   const router = useRouter()
 
   // Manage the state of the current version of the SDK reference
-  const versions = Object.keys(group.versionedItems)
+  // and pre-sort them from latest to oldest user semver
+  const versions = Object.keys(group.versionedItems)?.sort((a, b) => semver.rcompare(a, b)) ?? []
   const [curVersion, setCurVersion] = useState(versions[0])
 
   // If this is the mobile navigation then we always render the initial
