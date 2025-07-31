@@ -140,7 +140,7 @@ test.skipIf(isDebug)('test upload file with invalid signing', async () => {
   })
   const fileUrlWithSigning = await sbx.uploadUrl('hello.txt', {
     useSignature: true,
-    useSignatureExpiration: -10_000,
+    useSignatureExpiration: -100_000,
   })
 
   const form = new FormData()

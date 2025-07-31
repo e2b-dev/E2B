@@ -6,6 +6,7 @@ import { wait } from 'src/utils/wait'
 import { listSandboxes } from './list'
 import { formatEnum, getShortID, Format } from './utils'
 import { Sandbox } from 'e2b'
+import { ensureAPIKey } from '../../api'
 
 export const metricsCommand = new commander.Command('metrics')
   .description('show metrics for sandbox')
@@ -42,12 +43,13 @@ export const metricsCommand = new commander.Command('metrics')
           console.log(`\nMetrics for sandbox ${asBold(sandboxID)}:`)
         }
 
+        const apiKey = ensureAPIKey()
         const isRunningPromise = listSandboxes()
           .then((r) => r.find((s) => s.sandboxID === getShortID(sandboxID)))
           .then((s) => !!s)
 
         do {
-          const metrics = await Sandbox.getMetrics(sandboxID, { start })
+          const metrics = await Sandbox.getMetrics(sandboxID, { start, apiKey })
 
           if (metrics.length !== 0 && !firstMetricsPrinted) {
             firstMetricsPrinted = true
