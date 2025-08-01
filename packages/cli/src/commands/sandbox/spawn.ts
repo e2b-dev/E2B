@@ -8,7 +8,7 @@ import { asBold, asFormattedSandboxTemplate } from 'src/utils/format'
 import { getRoot } from '../../utils/filesystem'
 import { getConfigPath, loadConfig } from '../../config'
 import fs from 'fs'
-import { configOption, pathOption, teamOption } from '../../options'
+import { configOption, pathOption } from '../../options'
 import { getUserConfig, SANDBOX_INSPECT_URL } from '../../user'
 
 export const spawnCommand = new commander.Command('spawn')
