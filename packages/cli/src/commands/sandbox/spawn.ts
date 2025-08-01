@@ -63,7 +63,10 @@ export const spawnCommand = new commander.Command('spawn')
           process.exit(1)
         }
 
-        await connectSandbox({ apiKey, template: { templateID } })
+        await connectSandbox({
+          apiKey,
+          template: { templateID },
+        })
         process.exit(0)
       } catch (err: any) {
         console.error(err)
@@ -82,21 +85,18 @@ export async function connectSandbox({
   const sandbox = await e2b.Sandbox.create(template.templateID, { apiKey })
 
   const userConfig = getUserConfig()
+  const teamId = userConfig?.teamId
 
-  if (userConfig) {
-    const teamId = userConfig.teamId
+  if (teamId) {
+    const url = SANDBOX_INSPECT_URL(teamId, sandbox.sandboxId)
+    const clickable = `\u001b]8;;${url}\u0007${url}\u001b]8;;\u0007`
 
-    if (teamId) {
-      const url = SANDBOX_INSPECT_URL(teamId, sandbox.sandboxId)
-      const clickable = `\u001b]8;;${url}\u0007${url}\u001b]8;;\u0007`
-
-      console.log('')
-      console.log(
-        'Use the following link to inspect this Sandbox live inside the E2B Dashboard️:'
-      )
-      console.log(` \x1b[38;5;208m${clickable}\x1b[0m`)
-      console.log('')
-    }
+    console.log('')
+    console.log(
+      'Use the following link to inspect this Sandbox live inside the E2B Dashboard️:'
+    )
+    console.log(`↪\x1b[38;5;208m${clickable}\x1b[0m`)
+    console.log('')
   }
 
   // keep-alive loop
