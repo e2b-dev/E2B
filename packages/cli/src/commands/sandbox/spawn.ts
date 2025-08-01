@@ -95,7 +95,7 @@ export async function connectSandbox({
     console.log(
       'Use the following link to inspect this Sandbox live inside the E2B Dashboard️:'
     )
-    console.log(`↪\x1b[38;5;208m${clickable}\x1b[0m`)
+    console.log(`\x1b[38;5;208m↪ ${clickable}\x1b[0m`)
     console.log('')
   }
 
