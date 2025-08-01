@@ -8,13 +8,14 @@ import { asBold, asFormattedSandboxTemplate } from 'src/utils/format'
 import { getRoot } from '../../utils/filesystem'
 import { getConfigPath, loadConfig } from '../../config'
 import fs from 'fs'
-import { configOption, pathOption } from '../../options'
+import { configOption, pathOption, teamOption } from '../../options'
+import { getUserConfig, SANDBOX_INSPECT_URL } from '../../user'
 
 export const spawnCommand = new commander.Command('spawn')
   .description('spawn sandbox and connect terminal to it')
   .argument(
     '[template]',
-    `spawn and connect to sandbox specified by ${asBold('[template]')}`,
+    `spawn and connect to sandbox specified by ${asBold('[template]')}`
   )
   .addOption(pathOption)
   .addOption(configOption)
@@ -26,7 +27,7 @@ export const spawnCommand = new commander.Command('spawn')
         name?: string
         path?: string
         config?: string
-      },
+      }
     ) => {
       try {
         const apiKey = ensureAPIKey()
@@ -49,15 +50,15 @@ export const spawnCommand = new commander.Command('spawn')
                   ? [config.template_name]
                   : undefined,
               },
-              relativeConfigPath,
-            )}`,
+              relativeConfigPath
+            )}`
           )
           templateID = config.template_id
         }
 
         if (!templateID) {
           console.error(
-            'You need to specify sandbox template ID or path to sandbox template config',
+            'You need to specify sandbox template ID or path to sandbox template config'
           )
           process.exit(1)
         }
@@ -68,7 +69,7 @@ export const spawnCommand = new commander.Command('spawn')
         console.error(err)
         process.exit(1)
       }
-    },
+    }
   )
 
 export async function connectSandbox({
@@ -80,6 +81,24 @@ export async function connectSandbox({
 }) {
   const sandbox = await e2b.Sandbox.create(template.templateID, { apiKey })
 
+  const userConfig = getUserConfig()
+
+  if (userConfig) {
+    const teamId = userConfig.teamId
+
+    if (teamId) {
+      const url = SANDBOX_INSPECT_URL(teamId, sandbox.sandboxId)
+      const clickable = `\u001b]8;;${url}\u0007${url}\u001b]8;;\u0007`
+
+      console.log('')
+      console.log(
+        'Use the following link to inspect this Sandbox live inside the E2B Dashboard️:'
+      )
+      console.log(` \x1b[38;5;208m${clickable}\x1b[0m`)
+      console.log('')
+    }
+  }
+
   // keep-alive loop
   const intervalId = setInterval(async () => {
     await sandbox.setTimeout(30_000)
@@ -87,8 +106,8 @@ export async function connectSandbox({
 
   console.log(
     `Terminal connecting to template ${asFormattedSandboxTemplate(
-      template,
-    )} with sandbox ID ${asBold(`${sandbox.sandboxId}`)}`,
+      template
+    )} with sandbox ID ${asBold(`${sandbox.sandboxId}`)}`
   )
   try {
     await spawnConnectedTerminal(sandbox)
@@ -97,8 +116,8 @@ export async function connectSandbox({
     await sandbox.kill()
     console.log(
       `Closing terminal connection to template ${asFormattedSandboxTemplate(
-        template,
-      )} with sandbox ID ${asBold(`${sandbox.sandboxId}`)}`,
+        template
+      )} with sandbox ID ${asBold(`${sandbox.sandboxId}`)}`
     )
   }
 }
