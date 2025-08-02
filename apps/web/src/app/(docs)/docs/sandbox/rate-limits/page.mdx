@@ -5,9 +5,11 @@ This page describes API and sandbox rate limits of the E2B platform.
 ## Table of Contents
 
 - [Sandbox lifecycle & management API](#sandbox-lifecycle--management-api)
-- [Sandbox operations & requests to sandboxes](#sandbox-operations--requests-to-sandboxes)
+- [Sandbox operations & requests to sandboxes](#sandbox-operations-and-requests-to-sandboxes)
 - [Concurrent Sandboxes](#concurrent-sandboxes)
 - [Sandbox creation rate](#sandbox-creation-rate)
+- [Reaching limits](#reaching-limits)
+- [Increasing and avoiding rate limits](#increasing-and-avoiding-rate-limits)
 
 Here's a limits breakdown table based on the plan:
 
@@ -107,12 +109,7 @@ This limit controls how quickly you can create new sandboxes.
 ### Enterprise tier
 **Custom limit - 5+ sandboxes per second**
 
-
-## Increasing and avoiding rate limits
-
-You can avoid rate limits by either increasing your plan or contacting our sales team to discuss your specific requirements and we can provide tailored limits to meet your needs at [enterprise@e2b.dev](mailto:enterprise@e2b.dev).
-
-### Reaching limits
+## Reaching limits
 
 When you reach the limits of your plan, subsequent requests/function calls will be effectively dropped and return the following:
 -  the `429 Too Many Requests` HTTP status code (when calling API/sandbox ports directly)
@@ -122,3 +119,7 @@ When you reach the limits of your plan, subsequent requests/function calls will 
 For example, if you on the Pro tier (without any concurrency addons) you can create up to 100 sandboxes running concurrently.
 If the 100 sandboxes are still running, requests for creating new sandboxes from the SDKs (`Sandbox.create()` in JS/TS or `Sandbox()` in Python) will fail and return `RateLimitError` or `RateLimitException` respectively.
 After the number of running sandboxes drops below 100 or you purchase the concurrency addon, you will be able to create new sandboxes again.
+
+## Increasing and avoiding rate limits
+
+You can avoid rate limits by either increasing your plan or contacting our sales team to discuss your specific requirements and we can provide tailored limits to meet your needs at [enterprise@e2b.dev](mailto:enterprise@e2b.dev).
