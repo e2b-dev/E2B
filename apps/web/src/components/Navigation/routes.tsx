@@ -315,6 +315,10 @@ export const docRoutes: NavGroup[] = [
         href: '/docs/sandbox/connect-bucket',
       },
       {
+        title: 'Rate limits',
+        href: '/docs/sandbox/rate-limits',
+      },
+      {
         title: 'Installing beta SDKs',
         href: '/docs/sandbox/installing-beta-sdks',
       },
