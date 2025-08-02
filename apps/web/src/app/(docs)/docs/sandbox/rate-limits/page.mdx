@@ -116,9 +116,9 @@ When you reach the limits of your plan, subsequent requests/function calls will 
 - `RateLimitError` in the JS/TS SDK
 - `RateLimitException` in the Python SDK
 
-For example, if you on the Pro tier (without any concurrency addons) you can create up to 100 sandboxes running concurrently.
+For example, if you're on the Pro tier (without any concurrency addons) you can create up to 100 sandboxes running concurrently.
 If the 100 sandboxes are still running, requests for creating new sandboxes from the SDKs (`Sandbox.create()` in JS/TS or `Sandbox()` in Python) will fail and return `RateLimitError` or `RateLimitException` respectively.
-After the number of running sandboxes drops below 100 or you purchase the concurrency addon, you will be able to create new sandboxes again.
+After the number of running sandboxes drops below 100 or you purchase the concurrency addon, you'll be able to create new sandboxes again.
 
 ## Increasing and avoiding rate limits
 
