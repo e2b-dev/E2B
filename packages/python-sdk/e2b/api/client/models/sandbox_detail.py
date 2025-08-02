@@ -6,7 +6,7 @@ from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 from dateutil.parser import isoparse
 
-from ..models.sandbox_state import SandboxState
+from ..models.sandbox_state import SandboxState, check_sandbox_state
 from ..types import UNSET, Unset
 
 T = TypeVar("T", bound="SandboxDetail")
@@ -59,7 +59,7 @@ class SandboxDetail:
 
         started_at = self.started_at.isoformat()
 
-        state = self.state.value
+        state: str = self.state
 
         template_id = self.template_id
 
@@ -119,7 +119,7 @@ class SandboxDetail:
 
         started_at = isoparse(d.pop("startedAt"))
 
-        state = SandboxState(d.pop("state"))
+        state = check_sandbox_state(d.pop("state"))
 
         template_id = d.pop("templateID")
 

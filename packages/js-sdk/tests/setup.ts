@@ -1,4 +1,4 @@
-import { Sandbox } from '../src'
+import { SandboxBeta as Sandbox } from '../src'
 import { test as base } from 'vitest'
 import { template } from './template'
 

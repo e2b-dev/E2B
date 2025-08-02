@@ -2,15 +2,17 @@ import datetime
 import urllib.parse
 
 from typing import Optional, Dict, List
+from e2b.api.client.models.error import Error
+from e2b.api.compatibility import modified_get_v2_sandboxes
 from packaging.version import Version
 
 from e2b.sandbox.sandbox_api import (
     SandboxInfo,
-    SandboxApiBase,
     SandboxQuery,
-    ListedSandbox,
+    SandboxPaginatorBase,
     SandboxMetrics,
 )
+from e2b.sandbox.main import SandboxBase
 from e2b.exceptions import TemplateException, SandboxException
 from e2b.api import ApiClient, SandboxCreateResponse
 from e2b.api.client.models import (
@@ -21,87 +23,117 @@ from e2b.api.client.models import (
 from e2b.api.client.api.sandboxes import (
     get_sandboxes_sandbox_id,
     post_sandboxes_sandbox_id_timeout,
-    get_sandboxes,
     delete_sandboxes_sandbox_id,
     post_sandboxes,
     get_sandboxes_sandbox_id_metrics,
 )
 from e2b.connection_config import ConnectionConfig, ProxyTypes
 from e2b.api import handle_api_exception
+from e2b.api.client.types import UNSET
 
 
-class SandboxApi(SandboxApiBase):
+class SandboxPaginator(SandboxPaginatorBase):
+    """
+    Paginator for listing sandboxes.
+
+    Example:
+    ```python
+    paginator = Sandbox.list()
+
+    while paginator.has_next:
+        sandboxes = paginator.next_items()
+        print(sandboxes)
+    ```
+    """
+
+    def next_items(self) -> List[SandboxInfo]:
+        """
+        Returns the next page of sandboxes.
+
+        Call this method only if `has_next` is `True`, otherwise it will raise an exception.
+
+        :returns: List of sandboxes
+        """
+        if not self.has_next:
+            raise Exception("No more items to fetch")
+
+        # Convert filters to the format expected by the API
+        metadata: Optional[str] = None
+        if self.query and self.query.metadata:
+            quoted_metadata = {
+                urllib.parse.quote(k): urllib.parse.quote(v)
+                for k, v in self.query.metadata.items()
+            }
+            metadata = urllib.parse.urlencode(quoted_metadata)
+
+        with ApiClient(
+            self._config,
+            limits=SandboxBase._limits,
+        ) as api_client:
+            res = modified_get_v2_sandboxes.sync_detailed(
+                client=api_client,
+                metadata=metadata if metadata else UNSET,
+                state=self.query.state if self.query and self.query.state else UNSET,
+                limit=self.limit if self.limit else UNSET,
+                next_token=self._next_token if self._next_token else UNSET,
+            )
+
+            if res.status_code >= 300:
+                raise handle_api_exception(res)
+
+            self._next_token = res.headers.get("x-next-token")
+            self._has_next = bool(self._next_token)
+
+            if res.parsed is None:
+                return []
+
+            # Check if res.parse is Error
+            if isinstance(res.parsed, Error):
+                raise SandboxException(f"{res.parsed.message}: Cannot parse response")
+
+            return [SandboxInfo._from_listed_sandbox(sandbox) for sandbox in res.parsed]
+
+
+class SandboxApi(SandboxBase):
     @classmethod
     def list(
         cls,
         api_key: Optional[str] = None,
         query: Optional[SandboxQuery] = None,
+        limit: Optional[int] = None,
+        next_token: Optional[str] = None,
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
         request_timeout: Optional[float] = None,
         headers: Optional[Dict[str, str]] = None,
         proxy: Optional[ProxyTypes] = None,
-    ) -> List[ListedSandbox]:
+    ) -> SandboxPaginator:
         """
-        List all running sandboxes.
+        List sandboxes with pagination.
 
         :param api_key: API key to use for authentication, defaults to `E2B_API_KEY` environment variable
-        :param query: Filter the list of sandboxes, e.g. by metadata `SandboxQuery(metadata={"key": "value"})`, if there are multiple filters they are combined with AND.
+        :param query: Filter the list of sandboxes by metadata or state, e.g. `SandboxListQuery(metadata={"key": "value"})` or `SandboxListQuery(state=["paused", "running"])`
+        :param limit: Maximum number of sandboxes to return
+        :param next_token: Token for pagination
         :param domain: Domain to use for the request, only relevant for self-hosted environments
         :param debug: Enable debug mode, all requested are then sent to localhost
         :param request_timeout: Timeout for the request in **seconds**
         :param headers: Additional headers to send with the request
         :param proxy: Proxy to use for the request
 
-        :return: List of running sandboxes
+        :returns: SandboxPaginator
         """
-        config = ConnectionConfig(
+        return SandboxPaginator(
+            query=query,
             api_key=api_key,
             domain=domain,
             debug=debug,
             request_timeout=request_timeout,
+            limit=limit,
+            next_token=next_token,
             headers=headers,
             proxy=proxy,
         )
-
-        # Convert filters to the format expected by the API
-        metadata = None
-        if query:
-            if query.metadata:
-                quoted_metadata = {
-                    urllib.parse.quote(k): urllib.parse.quote(v)
-                    for k, v in query.metadata.items()
-                }
-                metadata = urllib.parse.urlencode(quoted_metadata)
-
-        with ApiClient(
-            config,
-            limits=SandboxApiBase._limits,
-        ) as api_client:
-            res = get_sandboxes.sync_detailed(client=api_client, metadata=metadata)
-
-            if res.status_code >= 300:
-                raise handle_api_exception(res)
-
-            if res.parsed is None:
-                return []
-
-            return [
-                ListedSandbox(
-                    sandbox_id=sandbox.sandbox_id,
-                    template_id=sandbox.template_id,
-                    name=sandbox.alias if isinstance(sandbox.alias, str) else None,
-                    metadata=(
-                        sandbox.metadata if isinstance(sandbox.metadata, dict) else {}
-                    ),
-                    state=sandbox.state,
-                    cpu_count=sandbox.cpu_count,
-                    memory_mb=sandbox.memory_mb,
-                    started_at=sandbox.started_at,
-                    end_at=sandbox.end_at,
-                )
-                for sandbox in res.parsed
-            ]
 
     @classmethod
     def _cls_get_info(
@@ -122,6 +154,7 @@ class SandboxApi(SandboxApiBase):
         :param debug: Debug mode, defaults to `E2B_DEBUG` environment variable
         :param request_timeout: Timeout for the request in **seconds**
         :param headers: Additional headers to send with the request
+        :param proxy: Proxy to use for the request
 
         :return: Sandbox info
         """
@@ -136,7 +169,7 @@ class SandboxApi(SandboxApiBase):
 
         with ApiClient(
             config,
-            limits=SandboxApiBase._limits,
+            limits=SandboxBase._limits,
         ) as api_client:
             res = get_sandboxes_sandbox_id.sync_detailed(
                 sandbox_id,
@@ -149,19 +182,11 @@ class SandboxApi(SandboxApiBase):
             if res.parsed is None:
                 raise Exception("Body of the request is None")
 
-            return SandboxInfo(
-                sandbox_id=res.parsed.sandbox_id,
-                sandbox_domain=res.parsed.domain,
-                template_id=res.parsed.template_id,
-                name=res.parsed.alias if isinstance(res.parsed.alias, str) else None,
-                metadata=(
-                    res.parsed.metadata if isinstance(res.parsed.metadata, dict) else {}
-                ),
-                started_at=res.parsed.started_at,
-                end_at=res.parsed.end_at,
-                envd_version=res.parsed.envd_version,
-                _envd_access_token=res.parsed.envd_access_token,
-            )
+            # Check if res.parse is Error
+            if isinstance(res.parsed, Error):
+                raise SandboxException(f"{res.parsed.message}: Request failed")
+
+            return SandboxInfo._from_sandbox_detail(res.parsed)
 
     @classmethod
     def _cls_kill(
@@ -189,7 +214,7 @@ class SandboxApi(SandboxApiBase):
 
         with ApiClient(
             config,
-            limits=SandboxApiBase._limits,
+            limits=SandboxBase._limits,
         ) as api_client:
             res = delete_sandboxes_sandbox_id.sync_detailed(
                 sandbox_id,
@@ -231,7 +256,7 @@ class SandboxApi(SandboxApiBase):
 
         with ApiClient(
             config,
-            limits=SandboxApiBase._limits,
+            limits=SandboxBase._limits,
         ) as api_client:
             res = post_sandboxes_sandbox_id_timeout.sync_detailed(
                 sandbox_id,
@@ -267,7 +292,10 @@ class SandboxApi(SandboxApiBase):
             proxy=proxy,
         )
 
-        with ApiClient(config, limits=SandboxApiBase._limits) as api_client:
+        with ApiClient(
+            config,
+            limits=SandboxBase._limits,
+        ) as api_client:
             res = post_sandboxes.sync_detailed(
                 body=NewSandbox(
                     template_id=template,
@@ -286,6 +314,10 @@ class SandboxApi(SandboxApiBase):
             if res.parsed is None:
                 raise Exception("Body of the request is None")
 
+            # Check if res.parse is Error
+            if isinstance(res.parsed, Error):
+                raise SandboxException(f"{res.parsed.message}: Request failed")
+
             if Version(res.parsed.envd_version) < Version("0.1.0"):
                 SandboxApi._cls_kill(res.parsed.sandbox_id)
                 raise TemplateException(
@@ -293,12 +325,7 @@ class SandboxApi(SandboxApiBase):
                     "You can do this by running `e2b template build` in the directory with the template."
                 )
 
-            return SandboxCreateResponse(
-                sandbox_id=res.parsed.sandbox_id,
-                sandbox_domain=res.parsed.domain,
-                envd_version=res.parsed.envd_version,
-                envd_access_token=res.parsed.envd_access_token,
-            )
+            return SandboxCreateResponse._from_response(res.parsed)
 
     @classmethod
     def _cls_get_metrics(
