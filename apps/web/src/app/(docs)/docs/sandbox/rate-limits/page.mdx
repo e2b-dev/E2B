@@ -1,13 +1,13 @@
 # Rate Limits
 
-This page describes various API and sandbox rate limits of the E2B platform.
+This page describes API and sandbox rate limits of the E2B platform.
 
 ## Table of Contents
 
 - [Sandbox lifecycle & management API](#sandbox-lifecycle--management-api)
-- [Sandbox operations](#sandbox-operations)
+- [Sandbox operations & requests to sandboxes](#sandbox-operations--requests-to-sandboxes)
 - [Concurrent Sandboxes](#concurrent-sandboxes)
-- [Sandbox Creation Rate](#sandbox-creation-rate)
+- [Sandbox creation rate](#sandbox-creation-rate)
 
 Here's a limits breakdown table based on the plan:
 
@@ -58,15 +58,17 @@ Here's a limits breakdown table based on the plan:
 
 **20,000 requests per 30 seconds**
 
-This rate limit applies to lifecycle operations and managements such as sandbox create, kill, update, list, and other management operations.
+This rate limit applies to lifecycle and management operations such as sandbox create, kill, update, list, and other.
 
 ---
 
-## Sandbox operations
+## Sandbox operations & requests to sandboxes
 
 **40,000 requests per 60 seconds**
 
-This rate limits applies t operations within running sandboxes such as running code, listing files, running commands, etc.
+This rate limits applies to operations to/within running sandboxes such as running code, listing files, running commands, etc.
+This also includes requests made to custom ports in the sandbox.
+
 <br/> This limit is enforced globally across all sandbox operations from a single IP address.
 
 ---
@@ -82,12 +84,12 @@ Number of concurrent sandboxes differs based on the pricing tier.
 **Starts at 100 concurrent sandboxes**
 
 <Note>
-Can go up to 1,100 with a separate addon avaialble for purchase.
+Can go up to 1,100 with a separate addon available for purchase.
 </Note>
 
 
 ### Enterprise tier
-**Coustom limit - 1,100+ concurrent sandboxes**
+**Custom limit - 1,100+ concurrent sandboxes**
 
 ---
 
@@ -109,3 +111,14 @@ This limit controls how quickly you can create new sandboxes.
 ## Increasing and avoiding rate limits
 
 You can avoid rate limits by either increasing your plan or contacting our sales team to discuss your specific requirements and we can provide tailored limits to meet your needs at [enterprise@e2b.dev](mailto:enterprise@e2b.dev).
+
+### Reaching limits
+
+When you reach the limits of your plan, subsequent requests/function calls will be effectively dropped and return the following:
+-  the `429 Too Many Requests` HTTP status code (when calling API/sandbox ports directly)
+- `RateLimitError` in the JS/TS SDK
+- `RateLimitException` in the Python SDK
+
+For example, if you on the Pro tier (without any concurrency addons) you can create up to 100 sandboxes running concurrently.
+If the 100 sandboxes are still running, requests for creating new sandboxes from the SDKs (`Sandbox.create()` in JS/TS or `Sandbox()` in Python) will fail and return `RateLimitError` or `RateLimitException` respectively.
+After the number of running sandboxes drops below 100 or you purchase the concurrency addon, you will be able to create new sandboxes again.
