@@ -2,11 +2,11 @@ ROOT_DIR := $(abspath $(dir $(lastword $(MAKEFILE_LIST)))/../..)
 
 generate-api:
 	python $(ROOT_DIR)/spec/remove_extra_tags.py sandboxes
-	openapi-python-client generate --output-path $(ROOT_DIR)/packages/python-sdk/e2b/api/api --overwrite --path $(ROOT_DIR)/spec/openapi_generated.yml
+	openapi-python-client generate --output-path $(ROOT_DIR)/packages/python-sdk/e2b/api/api --overwrite --path $(ROOT_DIR)/spec/openapi_generated.yml --config openapi-generator.yml
 	rm -rf e2b/api/client
 	mv e2b/api/api/e2b_api_client e2b/api/client
 	rm -rf e2b/api/api
-	black .
+	mv e2b/api/client/api/sandboxes/get_v2_sandboxes.py e2b/api/compatibility/unused_get_v2_sandboxes.py
 
 generate-envd:
 	if [ ! -f "/go/bin/protoc-gen-connect-python" ]; then \
@@ -17,8 +17,6 @@ generate-envd:
 	./scripts/fix-python-pb.sh
 
 	black .
-
-generate: generate-api generate-envd
 
 init:
 	pip install openapi-python-client

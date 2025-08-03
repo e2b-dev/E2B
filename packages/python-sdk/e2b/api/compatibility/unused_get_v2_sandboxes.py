@@ -26,7 +26,7 @@ def _get_kwargs(
     if not isinstance(state, Unset):
         json_state = []
         for state_item_data in state:
-            state_item = state_item_data.value
+            state_item: str = state_item_data
             json_state.append(state_item)
 
     params["state"] = json_state

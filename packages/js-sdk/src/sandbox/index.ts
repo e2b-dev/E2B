@@ -74,6 +74,8 @@ export interface SandboxUrlOpts {
   /**
    * Use signature expiration for the URL.
    * Optional parameter to set the expiration time for the signature.
+   *
+   * @default undefined (no expiration)
    */
   useSignatureExpiration?: number
 
@@ -134,9 +136,9 @@ export class Sandbox extends SandboxApi {
   protected readonly envdPort = 49983
 
   protected readonly connectionConfig: ConnectionConfig
+  protected readonly envdApi: EnvdApiClient
   private readonly envdApiUrl: string
   private readonly envdAccessToken?: string
-  private readonly envdApi: EnvdApiClient
 
   /**
    * Use {@link Sandbox.create} to create a new Sandbox instead.
@@ -162,9 +164,8 @@ export class Sandbox extends SandboxApi {
     this.sandboxDomain = opts.sandboxDomain ?? this.connectionConfig.domain
 
     this.envdAccessToken = opts.envdAccessToken
-    this.envdApiUrl = `${
-      this.connectionConfig.debug ? 'http' : 'https'
-    }://${this.getHost(this.envdPort)}`
+    this.envdApiUrl = `${this.connectionConfig.debug ? 'http' : 'https'
+      }://${this.getHost(this.envdPort)}`
 
     const rpcTransport = createConnectTransport({
       baseUrl: this.envdApiUrl,
@@ -264,20 +265,26 @@ export class Sandbox extends SandboxApi {
         ? { template: templateOrOpts, sandboxOpts: opts }
         : { template: this.defaultTemplate, sandboxOpts: templateOrOpts }
 
-    const config = new ConnectionConfig(sandboxOpts)
+    const config = new ConnectionConfig({
+      ...sandboxOpts,
+      // We don't want to pass headers to the connection config as they would then be inherited by all requests,
+      // which can be confusing.
+      headers: undefined,
+    })
     if (config.debug) {
       return new this({
         sandboxId: 'debug_sandbox_id',
         ...config,
       }) as InstanceType<S>
-    } else {
-      const sandbox = await this.createSandbox(
-        template,
-        sandboxOpts?.timeoutMs ?? this.defaultSandboxTimeoutMs,
-        sandboxOpts
-      )
-      return new this({ ...sandbox, ...config }) as InstanceType<S>
     }
+
+    const sandbox = await this.createSandbox(
+      template,
+      sandboxOpts?.timeoutMs ?? this.defaultSandboxTimeoutMs,
+      sandboxOpts
+    )
+
+    return new this({ ...sandbox, ...config }) as InstanceType<S>
   }
 
   /**
@@ -303,8 +310,14 @@ export class Sandbox extends SandboxApi {
     sandboxId: string,
     opts?: Omit<SandboxOpts, 'metadata' | 'envs' | 'timeoutMs'>
   ): Promise<InstanceType<S>> {
-    const config = new ConnectionConfig(opts)
-    const info = await this.getInfo(sandboxId, opts)
+    const info = await this.getFullInfo(sandboxId, opts)
+
+    const config = new ConnectionConfig({
+      ...opts,
+      // We don't want to pass headers to the connection config as they would then be inherited by all requests,
+      // which can be confusing.
+      headers: undefined,
+    })
 
     return new this({
       sandboxId,

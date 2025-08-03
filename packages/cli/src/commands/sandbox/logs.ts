@@ -1,11 +1,10 @@
+import * as chalk from 'chalk'
 import * as commander from 'commander'
 import * as e2b from 'e2b'
 import * as util from 'util'
-import * as chalk from 'chalk'
 
 import { client, connectionConfig } from 'src/api'
 import { asBold, asTimestamp, withUnderline } from 'src/utils/format'
-import { listSandboxes } from './list'
 import { wait } from 'src/utils/wait'
 import { handleE2BRequestError } from '../../utils/errors'
 import { waitForSandboxEnd, formatEnum, Format, getShortID } from './utils'
@@ -104,7 +103,7 @@ export const logsCommand = new commander.Command('logs')
           console.log(`\nLogs for sandbox ${asBold(sandboxID)}:`)
         }
 
-        const isRunningPromise = listSandboxes()
+        const isRunningPromise = listSandboxes({ state: ['running'] })
           .then((r) => r.find((s) => s.sandboxID === getShortID(sandboxID)))
           .then((s) => !!s)
 
@@ -262,7 +261,7 @@ export async function listSandboxLogs({
     },
   })
 
-  handleE2BRequestError(res, 'Error while getting sandbox logs')
+  handleE2BRequestError(res.error, 'Error while getting sandbox logs')
 
   return res.data.logs
 }

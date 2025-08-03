@@ -1,6 +1,6 @@
 import { assert } from 'vitest'
 
-import { Sandbox, SandboxInfo } from '../../src'
+import { SandboxBeta as Sandbox, SandboxInfo } from '../../src'
 import { sandboxTest, isDebug } from '../setup.js'
 
 sandboxTest.skipIf(isDebug)(
