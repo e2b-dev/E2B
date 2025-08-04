@@ -5,28 +5,6 @@ import { randomUUID, createHash } from 'node:crypto'
 
 const timeout = 20 * 1000
 
-test.skipIf(isDebug)('test access file without signing', async () => {
-  const sbx = await Sandbox.create(template, {
-    timeoutMs: timeout,
-    secure: true,
-  })
-  await sbx.files.write('hello.txt', 'hello world')
-
-  const fileUrlWithoutSigning = await sbx.downloadUrl('hello.txt')
-
-  const res = await fetch(fileUrlWithoutSigning)
-  const resBody = await res.text()
-  const resStatus = res.status
-
-  assert.equal(resStatus, 401)
-  assert.deepEqual(JSON.parse(resBody), {
-    code: 401,
-    message: 'missing signature query parameter',
-  })
-
-  await sbx.kill()
-})
-
 test.skipIf(isDebug)('test access file with signing', async () => {
   const sbx = await Sandbox.create(template, {
     timeoutMs: timeout,
@@ -34,9 +12,7 @@ test.skipIf(isDebug)('test access file with signing', async () => {
   })
   await sbx.files.write('hello.txt', 'hello world')
 
-  const fileUrlWithSigning = await sbx.downloadUrl('hello.txt', {
-    useSignature: true,
-  })
+  const fileUrlWithSigning = await sbx.downloadUrl('hello.txt')
 
   const res = await fetch(fileUrlWithSigning)
   const resBody = await res.text()

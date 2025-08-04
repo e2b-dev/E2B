@@ -16,7 +16,7 @@ async def test_download_url_with_signing(template):
 
     try:
         await sbx.files.write(file_path, file_content)
-        signed_url = sbx.download_url(file_path, "user", True)
+        signed_url = sbx.download_url(file_path, "user")
 
         with urllib.request.urlopen(signed_url) as resp:
             assert resp.status == 200
@@ -35,7 +35,7 @@ async def test_download_url_with_signing_and_expiration(template):
 
     try:
         await sbx.files.write(file_path, file_content)
-        signed_url = sbx.download_url(file_path, "user", True, 120)
+        signed_url = sbx.download_url(file_path, "user", 120)
 
         with urllib.request.urlopen(signed_url) as resp:
             assert resp.status == 200
@@ -55,9 +55,7 @@ async def test_download_url_with_expired_signing(template):
     try:
         await sbx.files.write(file_path, file_content)
 
-        signed_url = sbx.download_url(
-            file_path, "user", use_signature=True, use_signature_expiration=-120
-        )
+        signed_url = sbx.download_url(file_path, "user", use_signature_expiration=-120)
 
         with pytest.raises(urllib.error.HTTPError) as exc_info:
             urllib.request.urlopen(signed_url)

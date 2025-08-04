@@ -77,7 +77,6 @@ class SandboxSetup(ABC):
         self,
         path: str,
         user: str = "user",
-        use_signature: bool = False,
         use_signature_expiration: Optional[int] = None,
     ) -> str:
         """
@@ -85,12 +84,12 @@ class SandboxSetup(ABC):
 
         :param path: Path to the file to download
         :param user: User to upload the file as
-        :param use_signature: Whether to use a signed URL for downloading the file
         :param use_signature_expiration: Expiration time for the signed URL in seconds
 
         :return: URL for downloading file
         """
 
+        use_signature = self._envd_access_token is not None
         if use_signature:
             signature = get_signature(
                 path, "read", user, self._envd_access_token, use_signature_expiration
@@ -105,7 +104,6 @@ class SandboxSetup(ABC):
         self,
         path: Optional[str] = None,
         user: str = "user",
-        use_signature: bool = False,
         use_signature_expiration: Optional[int] = None,
     ) -> str:
         """
@@ -115,12 +113,12 @@ class SandboxSetup(ABC):
 
         :param path: Path to the file to upload
         :param user: User to upload the file as
-        :param use_signature: Whether to use a signed URL for downloading the file
         :param use_signature_expiration: Expiration time for the signed URL in seconds
 
         :return: URL for uploading file
         """
 
+        use_signature = self._envd_access_token is not None
         if use_signature:
             signature = get_signature(
                 path, "write", user, self._envd_access_token, use_signature_expiration
