@@ -65,7 +65,7 @@ export interface SandboxOpts extends ConnectionOpts {
 export interface SandboxUrlOpts {
   /**
    * Use signature expiration for the URL.
-   * Optional parameter to set the expiration time for the signature.
+   * Optional parameter to set the expiration time for the signature in seconds.
    */
   useSignatureExpiration?: number
 
