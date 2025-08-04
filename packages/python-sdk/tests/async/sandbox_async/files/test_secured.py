@@ -55,9 +55,7 @@ async def test_download_url_with_expired_signing(template):
     try:
         await sbx.files.write(file_path, file_content)
 
-        signed_url = sbx.download_url(
-            file_path, "user", use_signature_expiration=-120
-        )
+        signed_url = sbx.download_url(file_path, "user", use_signature_expiration=-120)
 
         with pytest.raises(urllib.error.HTTPError) as exc_info:
             urllib.request.urlopen(signed_url)
