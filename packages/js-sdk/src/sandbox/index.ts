@@ -64,14 +64,6 @@ export interface SandboxOpts extends ConnectionOpts {
  */
 export interface SandboxUrlOpts {
   /**
-   * Use signature for the URL.
-   * This needs to be used in case of using secured envd in sandbox.
-   *
-   * @default false
-   */
-  useSignature?: true
-
-  /**
    * Use signature expiration for the URL.
    * Optional parameter to set the expiration time for the signature.
    */
@@ -428,18 +420,11 @@ export class Sandbox extends SandboxApi {
   async uploadUrl(path?: string, opts?: SandboxUrlOpts) {
     opts = opts ?? {}
 
-    if (
-      !this.envdAccessToken &&
-      (opts.useSignature || opts.useSignatureExpiration != undefined)
-    ) {
-      throw new Error(
-        'Signature can be used only when sandbox is spawned with secure option.'
-      )
-    }
+    const useSignature = !!this.envdAccessToken
 
-    if (!opts.useSignature && opts.useSignatureExpiration != undefined) {
+    if (!useSignature && opts.useSignatureExpiration != undefined) {
       throw new Error(
-        'Signature expiration can be used only when signature is set to true.'
+          'Signature expiration can be used only when sandbox is created as secured.'
       )
     }
 
@@ -447,7 +432,7 @@ export class Sandbox extends SandboxApi {
     const filePath = path ?? ''
     const fileUrl = this.fileUrl(filePath, username)
 
-    if (opts.useSignature) {
+    if (useSignature) {
       const url = new URL(fileUrl)
       const sig = await getSignature({
         path: filePath,
@@ -480,25 +465,18 @@ export class Sandbox extends SandboxApi {
   async downloadUrl(path: string, opts?: SandboxUrlOpts) {
     opts = opts ?? {}
 
-    if (
-      !this.envdAccessToken &&
-      (opts.useSignature || opts.useSignatureExpiration != undefined)
-    ) {
-      throw new Error(
-        'Signature can be used only when sandbox is spawned with secure option.'
-      )
-    }
+    const useSignature = !!this.envdAccessToken
 
-    if (!opts.useSignature && opts.useSignatureExpiration != undefined) {
+    if (!useSignature && opts.useSignatureExpiration != undefined) {
       throw new Error(
-        'Signature expiration can be used only when signature is set to true.'
+        'Signature expiration can be used only when sandbox is created as secured.'
       )
     }
 
     const username = opts.user ?? defaultUsername
     const fileUrl = this.fileUrl(path, username)
 
-    if (opts.useSignature) {
+    if (useSignature) {
       const url = new URL(fileUrl)
       const sig = await getSignature({
         path,
