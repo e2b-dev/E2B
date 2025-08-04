@@ -1,7 +1,7 @@
 import { Logger } from './logs'
-import {getEnvVar, version} from './api/metadata'
+import { getEnvVar, version } from './api/metadata'
 
-const REQUEST_TIMEOUT_MS = 30_000 // 30 seconds
+const REQUEST_TIMEOUT_MS = 60_000 // 60 seconds
 export const KEEPALIVE_PING_INTERVAL_SEC = 50 // 50 seconds
 
 export const KEEPALIVE_PING_HEADER = 'Keepalive-Ping-Interval'
@@ -37,7 +37,7 @@ export interface ConnectionOpts {
   /**
    * Timeout for requests to the API in **milliseconds**.
    *
-   * @default 30_000 // 30 seconds
+   * @default 60_000 // 60 seconds
    */
   requestTimeoutMs?: number
   /**
