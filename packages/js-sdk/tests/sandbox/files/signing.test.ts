@@ -13,7 +13,7 @@ test.skipIf(isDebug)('test access file with expired signing', async () => {
   await sbx.files.write('hello.txt', 'hello world')
 
   const fileUrlWithSigning = await sbx.downloadUrl('hello.txt', {
-      useSignatureExpiration: -10_000
+        useSignatureExpiration: -10_000
   })
 
   const res = await fetch(fileUrlWithSigning)
