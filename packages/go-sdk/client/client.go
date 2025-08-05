@@ -4,7 +4,9 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"connectrpc.com/connect"
@@ -13,6 +15,7 @@ import (
 	"github.com/e2b-dev/e2b/packages/go-sdk/src/envd/process"
 	"github.com/e2b-dev/e2b/packages/go-sdk/src/envd/process/processconnect"
 	"github.com/e2b-dev/e2b/packages/go-sdk/src/sandbox"
+	"github.com/e2b-dev/e2b/packages/go-sdk/src/utils"
 )
 
 // Client provides a simplified interface for E2B computer use
@@ -117,15 +120,71 @@ func (c *Client) SandboxID() string {
 	return c.sandboxID
 }
 
-// RunCommand executes a command (simplified for computer use)
-func (c *Client) RunCommand(ctx context.Context, cmd string, args []string) (*connect.ServerStreamForClient[process.StartResponse], error) {
+// RunCommand executes a command and returns detailed results
+func (c *Client) RunCommand(ctx context.Context, cmd string, args []string) (*utils.ProcessResult, error) {
 	req := &process.StartRequest{
 		Process: &process.ProcessConfig{
 			Cmd:  cmd,
 			Args: args,
 		},
 	}
-	return c.processClient.Start(ctx, connect.NewRequest(req))
+
+	stream, err := c.processClient.Start(ctx, connect.NewRequest(req))
+	if err != nil {
+		return nil, err
+	}
+
+	return utils.HandleProcessStream(stream)
+}
+
+// RunCommandWithOutput executes a command and returns just the output as string
+func (c *Client) RunCommandWithOutput(ctx context.Context, cmd string, args []string) (string, error) {
+	req := &process.StartRequest{
+		Process: &process.ProcessConfig{
+			Cmd:  cmd,
+			Args: args,
+		},
+	}
+
+	stream, err := c.processClient.Start(ctx, connect.NewRequest(req))
+	if err != nil {
+		return "", err
+	}
+
+	return utils.HandleProcessStreamOutput(stream)
+}
+
+// RunCommandSimple executes a command and logs output (for compatibility)
+func (c *Client) RunCommandSimple(ctx context.Context, cmd string, args []string) error {
+	result, err := c.RunCommand(ctx, cmd, args)
+	if err != nil {
+		return err
+	}
+	
+	// Log output for backward compatibility
+	if result.Stdout != "" {
+		log.Printf("stdout: %s", result.Stdout)
+	}
+	if result.Stderr != "" {
+		log.Printf("stderr: %s", result.Stderr)
+	}
+	
+	return nil
+}
+
+// RunShellCommand executes a shell command (bash -l -c) and returns detailed results
+func (c *Client) RunShellCommand(ctx context.Context, command string) (*utils.ProcessResult, error) {
+	return c.RunCommand(ctx, "/bin/bash", []string{"-l", "-c", command})
+}
+
+// RunShellCommandWithOutput executes a shell command and returns output - useful for computer use
+func (c *Client) RunShellCommandWithOutput(ctx context.Context, command string) (string, error) {
+	return c.RunCommandWithOutput(ctx, "/bin/bash", []string{"-l", "-c", command})
+}
+
+// RunShellCommandSimple executes a shell command and logs output (for compatibility)
+func (c *Client) RunShellCommandSimple(ctx context.Context, command string) error {
+	return c.RunCommandSimple(ctx, "/bin/bash", []string{"-l", "-c", command})
 }
 
 // ListProcesses returns running processes
@@ -155,4 +214,70 @@ func (c *Client) Remove(ctx context.Context, path string) (*connect.Response[fil
 		Path: path,
 	}
 	return c.filesystemClient.Remove(ctx, connect.NewRequest(req))
+}
+
+// Helper Functions
+
+// HandleProcessStream processes streaming responses from RunCommand
+func HandleProcessStream(stream *connect.ServerStreamForClient[process.StartResponse]) error {
+	defer stream.Close()
+
+	// Read stream responses
+	for stream.Receive() {
+		msg := stream.Msg()
+		if msg.Event != nil {
+			switch event := msg.Event.Event.(type) {
+			case *process.ProcessEvent_Start:
+				log.Printf("Process started with PID: %d", event.Start.Pid)
+			case *process.ProcessEvent_Data:
+				if data := event.Data; data != nil {
+					switch output := data.Output.(type) {
+					case *process.ProcessEvent_DataEvent_Stdout:
+						log.Printf("stdout: %s", string(output.Stdout))
+					case *process.ProcessEvent_DataEvent_Stderr:
+						log.Printf("stderr: %s", string(output.Stderr))
+					}
+				}
+			case *process.ProcessEvent_End:
+				log.Printf("Process ended with exit code: %d, status: %s", event.End.ExitCode, event.End.Status)
+				if event.End.Error != nil {
+					log.Printf("Error: %s", *event.End.Error)
+				}
+			}
+		}
+	}
+
+	return stream.Err()
+}
+
+// Computer Use Helper Functions (extracted from vnc_commands.go)
+
+// Key mapping for computer use automation
+var KeyMapper = map[string]string{
+	"enter":     "Return",
+	"ret":       "Return",
+	"esc":       "Escape",
+	"ctrl":      "ctrl",
+	"alt":       "alt",
+	"shift":     "shift",
+	"tab":       "Tab",
+	"space":     "space",
+	"backspace": "BackSpace",
+	"delete":    "Delete",
+	"left":      "Left",
+	"right":     "Right",
+	"up":        "Up",
+	"down":      "Down",
+	"home":      "Home",
+	"end":       "End",
+	"pageup":    "Page_Up",
+	"pagedown":  "Page_Down",
+}
+
+// MapKey translates common key names for automation
+func MapKey(key string) string {
+	if mapped, exists := KeyMapper[strings.ToLower(key)]; exists {
+		return mapped
+	}
+	return key
 }
