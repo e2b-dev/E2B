@@ -1,6 +1,5 @@
 import urllib.parse
 
-from abc import ABC, abstractmethod
 from typing import Optional
 
 from e2b.sandbox.signature import get_signature
@@ -9,7 +8,7 @@ from e2b.envd.api import ENVD_API_FILES_ROUTE
 from httpx import Limits
 
 
-class SandboxSetup(ABC):
+class SandboxSetup:
     _limits = Limits(
         max_keepalive_connections=40,
         max_connections=40,
@@ -21,30 +20,48 @@ class SandboxSetup(ABC):
     default_sandbox_timeout = 300
     default_template = "base"
 
-    @property
-    @abstractmethod
-    def connection_config(self) -> ConnectionConfig:
-        ...
+    def __init__(
+        self,
+        sandbox_id: str,
+        envd_version: Optional[str],
+        envd_access_token: Optional[str],
+        sandbox_domain: Optional[str],
+        connection_config: ConnectionConfig,
+    ):
+        self.__connection_config = connection_config
+        self.__sandbox_id = sandbox_id
+        self.__sandbox_domain = sandbox_domain or self.connection_config.domain
+        self.__envd_version = envd_version
+        self.__envd_access_token = envd_access_token
+        self.__envd_api_url = f"{'http' if self.connection_config.debug else 'https'}://{self.get_host(self.envd_port)}"
 
     @property
-    @abstractmethod
     def _envd_access_token(self) -> Optional[str]:
-        ...
+        """Private property to access the envd token"""
+        return self.__envd_access_token
 
     @property
-    @abstractmethod
+    def connection_config(self) -> ConnectionConfig:
+        return self.__connection_config
+
+    @property
+    def _envd_version(self) -> Optional[str]:
+        return self.__envd_version
+
+    @property
+    def sandbox_domain(self) -> Optional[str]:
+        return self.__sandbox_domain
+
+    @property
     def envd_api_url(self) -> str:
-        ...
+        return self.__envd_api_url
 
     @property
-    @abstractmethod
     def sandbox_id(self) -> str:
-        ...
-
-    @property
-    @abstractmethod
-    def sandbox_domain(self) -> str:
-        ...
+        """
+        Unique identifier of the sandbox.
+        """
+        return self.__sandbox_id
 
     def _file_url(
         self,
