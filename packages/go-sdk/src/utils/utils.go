@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"connectrpc.com/connect"
-	"github.com/e2b-dev/e2b/packages/go-sdk/src/envd/process"
+	"github.com/aj-groq/E2B/packages/go-sdk/src/envd/process"
 )
 
 // ProcessResult contains the results of a process execution
@@ -24,7 +24,7 @@ func HandleProcessStream(stream *connect.ServerStreamForClient[process.StartResp
 	result := &ProcessResult{
 		ExitCode: -1, // Default to -1 for unknown/running
 	}
-	
+
 	var stdout, stderr strings.Builder
 
 	// Read stream responses

@@ -8,7 +8,7 @@ import (
 	connect "connectrpc.com/connect"
 	context "context"
 	errors "errors"
-	filesystem "github.com/e2b-dev/e2b/packages/go-sdk/src/envd/filesystem"
+	filesystem "github.com/aj-groq/E2B/packages/go-sdk/src/envd/filesystem"
 	http "net/http"
 	strings "strings"
 )

@@ -11,4 +11,4 @@ managed:
   enabled: true
   optimize_for: SPEED
   go_package_prefix:
-    default: github.com/e2b-dev/e2b/packages/go-sdk/envd
+    default: github.com/aj-groq/E2B/packages/go-sdk/src/envd

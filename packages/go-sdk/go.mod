@@ -1,4 +1,4 @@
-module github.com/e2b-dev/e2b/packages/go-sdk
+module github.com/aj-groq/E2B/packages/go-sdk
 
 go 1.22
 

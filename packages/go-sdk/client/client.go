@@ -10,12 +10,12 @@ import (
 	"time"
 
 	"connectrpc.com/connect"
-	"github.com/e2b-dev/e2b/packages/go-sdk/src/envd/filesystem"
-	"github.com/e2b-dev/e2b/packages/go-sdk/src/envd/filesystem/filesystemconnect"
-	"github.com/e2b-dev/e2b/packages/go-sdk/src/envd/process"
-	"github.com/e2b-dev/e2b/packages/go-sdk/src/envd/process/processconnect"
-	"github.com/e2b-dev/e2b/packages/go-sdk/src/sandbox"
-	"github.com/e2b-dev/e2b/packages/go-sdk/src/utils"
+	"github.com/aj-groq/E2B/packages/go-sdk/src/envd/filesystem"
+	"github.com/aj-groq/E2B/packages/go-sdk/src/envd/filesystem/filesystemconnect"
+	"github.com/aj-groq/E2B/packages/go-sdk/src/envd/process"
+	"github.com/aj-groq/E2B/packages/go-sdk/src/envd/process/processconnect"
+	"github.com/aj-groq/E2B/packages/go-sdk/src/sandbox"
+	"github.com/aj-groq/E2B/packages/go-sdk/src/utils"
 )
 
 // Client provides a simplified interface for E2B computer use
@@ -120,6 +120,11 @@ func (c *Client) SandboxID() string {
 	return c.sandboxID
 }
 
+// ClientID returns the client ID
+func (c *Client) ClientID() string {
+	return c.clientID
+}
+
 // RunCommand executes a command and returns detailed results
 func (c *Client) RunCommand(ctx context.Context, cmd string, args []string) (*utils.ProcessResult, error) {
 	req := &process.StartRequest{
@@ -160,7 +165,7 @@ func (c *Client) RunCommandSimple(ctx context.Context, cmd string, args []string
 	if err != nil {
 		return err
 	}
-	
+
 	// Log output for backward compatibility
 	if result.Stdout != "" {
 		log.Printf("stdout: %s", result.Stdout)
@@ -168,7 +173,7 @@ func (c *Client) RunCommandSimple(ctx context.Context, cmd string, args []string
 	if result.Stderr != "" {
 		log.Printf("stderr: %s", result.Stderr)
 	}
-	
+
 	return nil
 }
 
