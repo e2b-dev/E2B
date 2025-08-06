@@ -404,7 +404,7 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
         ...
 
     @class_method_variant("_cls_get_info")
-    async def get_info(  # type: ignore
+    async def get_info(
         self,
         **opts: Unpack[ApiParams],
     ) -> SandboxInfo:
@@ -420,7 +420,7 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
         )
 
     @overload
-    async def get_metrics(  # type: ignore
+    async def get_metrics(
         self,
         start: Optional[datetime.datetime] = None,
         end: Optional[datetime.datetime] = None,
@@ -456,7 +456,7 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
         ...
 
     @class_method_variant("_cls_get_metrics")
-    async def get_metrics(  # type: ignore
+    async def get_metrics(
         self,
         start: Optional[datetime.datetime] = None,
         end: Optional[datetime.datetime] = None,

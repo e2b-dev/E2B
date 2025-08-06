@@ -1,7 +1,6 @@
 import os
 
-from typing import Literal, Optional, Dict
-from dataclasses import dataclass
+from typing import Literal, Optional, Dict, TypedDict
 from httpx._types import ProxyTypes
 from typing_extensions import Unpack
 
@@ -13,8 +12,7 @@ KEEPALIVE_PING_INTERVAL_SEC = 50  # 50 seconds
 KEEPALIVE_PING_HEADER = "Keepalive-Ping-Interval"
 
 
-@dataclass
-class ApiParams:
+class ApiParams(TypedDict, total=False):
     """
     Parameters for a request.
 
@@ -23,19 +21,19 @@ class ApiParams:
 
     request_timeout: Optional[float]
     """Timeout for the request in **seconds**, defaults to 60 seconds."""
-    
-    headers: Dict[str, str]
+
+    headers: Optional[Dict[str, str]]
     """Additional headers to send with the request."""
-    
+
     api_key: Optional[str]
     """E2B API Key to use for authentication, defaults to `E2B_API_KEY` environment variable."""
-    
-    domain: str
+
+    domain: Optional[str]
     """E2B domain to use for authentication, defaults to `E2B_DOMAIN` environment variable."""
-    
-    debug: bool
+
+    debug: Optional[bool]
     """Whether to use debug mode, defaults to `E2B_DEBUG` environment variable."""
-    
+
     proxy: Optional[ProxyTypes]
     """Proxy to use for the request. In case of a sandbox it applies to all **requests made to the returned sandbox**."""
 
@@ -139,14 +137,16 @@ class ConnectionConfig:
         if headers is not None:
             req_headers.update(headers)
 
-        return ApiParams(
-            api_key=api_key if api_key is not None else self.api_key,
-            domain=domain if domain is not None else self.domain,
-            debug=debug if debug is not None else self.debug,
-            request_timeout=self.get_request_timeout(request_timeout),
-            headers=req_headers,
-            proxy=proxy if proxy is not None else self.proxy,
-        ).__dict__
+        return dict(
+            ApiParams(
+                api_key=api_key if api_key is not None else self.api_key,
+                domain=domain if domain is not None else self.domain,
+                debug=debug if debug is not None else self.debug,
+                request_timeout=self.get_request_timeout(request_timeout),
+                headers=req_headers,
+                proxy=proxy if proxy is not None else self.proxy,
+            )
+        )
 
     @property
     def sandbox_headers(self):

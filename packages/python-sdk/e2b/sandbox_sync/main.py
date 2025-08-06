@@ -349,7 +349,7 @@ class Sandbox(SandboxSetup, SandboxApi):
         ...
 
     @class_method_variant("_cls_set_timeout")
-    def set_timeout(  # type: ignore
+    def set_timeout(
         self,
         timeout: int,
         **opts: Unpack[ApiParams],
@@ -399,7 +399,7 @@ class Sandbox(SandboxSetup, SandboxApi):
         ...
 
     @class_method_variant("_cls_get_info")
-    def get_info(  # type: ignore
+    def get_info(
         self,
         **opts: Unpack[ApiParams],
     ) -> SandboxInfo:
@@ -414,7 +414,7 @@ class Sandbox(SandboxSetup, SandboxApi):
         )
 
     @overload
-    def get_metrics(  # type: ignore
+    def get_metrics(
         self,
         start: Optional[datetime.datetime] = None,
         end: Optional[datetime.datetime] = None,
