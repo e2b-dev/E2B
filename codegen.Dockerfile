@@ -15,7 +15,7 @@ FROM python:3.9
 # Set working directory
 WORKDIR /workspace
 
-ENV PROTOC_VERSION=29.3
+ENV PROTOC_VERSION=26.1
 RUN ARCH=$(uname -m) && \
     case "$ARCH" in \
         x86_64) PROTOC_ARCH="x86_64" ;; \

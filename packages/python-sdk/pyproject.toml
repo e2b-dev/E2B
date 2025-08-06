@@ -13,7 +13,7 @@ packages = [{ include = "e2b" }, { include = "e2b_connect" }]
 python = "^3.9"
 
 python-dateutil = ">=2.8.2"
-protobuf = ">=3.20.0"
+protobuf = ">=4.21.0"
 httpcore = "^1.0.5"
 httpx = ">=0.27.0, <1.0.0"
 attrs = ">=23.2.0"
