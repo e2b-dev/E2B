@@ -168,7 +168,7 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
         secure: Optional[bool] = None,
         allow_internet_access: Optional[bool] = True,
         **opts: Unpack[ApiParams],
-    ):
+    ) -> "AsyncSandbox":
         """
         Create a new sandbox.
 
@@ -234,7 +234,7 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
         cls,
         sandbox_id: str,
         **opts: Unpack[ApiParams],
-    ):
+    ) -> "AsyncSandbox":
         """
         Connect to an existing sandbox.
         With a sandbox ID, you can connect to the same sandbox from different places or environments (serverless functions, etc.).
