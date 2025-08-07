@@ -254,10 +254,9 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
         response = await SandboxApi._cls_get_info(sandbox_id, **opts)
 
         sandbox_headers = {}
-        if response.envd_access_token is not None and not isinstance(
-            response.envd_access_token, Unset
-        ):
-            sandbox_headers["X-Access-Token"] = response.envd_access_token
+        envd_access_token = response._envd_access_token
+        if envd_access_token is not None and not isinstance(envd_access_token, Unset):
+            sandbox_headers["X-Access-Token"] = envd_access_token
 
         connection_config = ConnectionConfig(
             extra_sandbox_headers=sandbox_headers,
@@ -269,7 +268,7 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
             sandbox_domain=response.sandbox_domain,
             connection_config=connection_config,
             envd_version=response.envd_version,
-            envd_access_token=response.envd_access_token,
+            envd_access_token=envd_access_token,
         )
 
     async def __aenter__(self):

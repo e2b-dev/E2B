@@ -131,7 +131,7 @@ class Sandbox(SandboxSetup, SandboxApi):
 
             envd_version = response.envd_version
             sandbox_domain = response.sandbox_domain
-            envd_access_token = response.envd_access_token
+            envd_access_token = response._envd_access_token
 
             if envd_access_token is not None and not isinstance(
                 envd_access_token, Unset

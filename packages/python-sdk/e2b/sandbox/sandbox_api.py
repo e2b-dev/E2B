@@ -28,7 +28,7 @@ class SandboxInfo:
     """Sandbox expiration date."""
     envd_version: Optional[str]
     """Envd version."""
-    envd_access_token: Optional[str]
+    _envd_access_token: Optional[str]
     """Envd access token."""
 
 
