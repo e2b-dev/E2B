@@ -355,7 +355,7 @@ class AsyncSandbox(SandboxApi):
         ...
 
     @class_method_variant("_cls_set_timeout")
-    async def set_timeout(  # type: ignore
+    async def set_timeout(
         self,
         timeout: int,
         **opts: Unpack[ApiParams],
