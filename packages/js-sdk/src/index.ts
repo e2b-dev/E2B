@@ -11,6 +11,7 @@ export {
   SandboxError,
   TemplateError,
   TimeoutError,
+  RateLimitError,
 } from './errors'
 export type { Logger } from './logs'
 
