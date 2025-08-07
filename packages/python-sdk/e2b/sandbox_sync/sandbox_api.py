@@ -7,11 +7,11 @@ from typing_extensions import Unpack
 
 from e2b.sandbox.sandbox_api import (
     SandboxInfo,
-    SandboxApiBase,
     SandboxQuery,
     ListedSandbox,
     SandboxMetrics,
 )
+from e2b.sandbox.main import SandboxBase
 from e2b.exceptions import TemplateException, SandboxException
 from e2b.api import ApiClient, SandboxCreateResponse
 from e2b.api.client.models import (
@@ -31,7 +31,7 @@ from e2b.connection_config import ConnectionConfig, ApiParams
 from e2b.api import handle_api_exception
 
 
-class SandboxApi(SandboxApiBase):
+class SandboxApi(SandboxBase):
     @classmethod
     def list(
         cls,
@@ -59,7 +59,7 @@ class SandboxApi(SandboxApiBase):
 
         with ApiClient(
             config,
-            limits=SandboxApiBase._limits,
+            limits=cls._limits,
         ) as api_client:
             res = get_sandboxes.sync_detailed(client=api_client, metadata=metadata)
 
@@ -102,7 +102,7 @@ class SandboxApi(SandboxApiBase):
 
         with ApiClient(
             config,
-            limits=SandboxApiBase._limits,
+            limits=cls._limits,
         ) as api_client:
             res = get_sandboxes_sandbox_id.sync_detailed(
                 sandbox_id,
@@ -143,7 +143,7 @@ class SandboxApi(SandboxApiBase):
 
         with ApiClient(
             config,
-            limits=SandboxApiBase._limits,
+            limits=cls._limits,
         ) as api_client:
             res = delete_sandboxes_sandbox_id.sync_detailed(
                 sandbox_id,
@@ -173,7 +173,7 @@ class SandboxApi(SandboxApiBase):
 
         with ApiClient(
             config,
-            limits=SandboxApiBase._limits,
+            limits=cls._limits,
         ) as api_client:
             res = post_sandboxes_sandbox_id_timeout.sync_detailed(
                 sandbox_id,
@@ -197,7 +197,7 @@ class SandboxApi(SandboxApiBase):
     ) -> SandboxCreateResponse:
         config = ConnectionConfig(**opts)
 
-        with ApiClient(config, limits=SandboxApiBase._limits) as api_client:
+        with ApiClient(config, limits=cls._limits) as api_client:
             res = post_sandboxes.sync_detailed(
                 body=NewSandbox(
                     template_id=template,

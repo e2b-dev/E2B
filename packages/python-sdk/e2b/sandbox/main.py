@@ -8,7 +8,7 @@ from e2b.envd.api import ENVD_API_FILES_ROUTE
 from httpx import Limits
 
 
-class SandboxSetup:
+class SandboxBase:
     _limits = Limits(
         max_keepalive_connections=40,
         max_connections=40,

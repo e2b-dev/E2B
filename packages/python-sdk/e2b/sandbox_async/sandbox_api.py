@@ -5,9 +5,9 @@ from typing import Optional, Dict, List
 from packaging.version import Version
 from typing_extensions import Unpack
 
+from e2b.sandbox.main import SandboxBase
 from e2b.sandbox.sandbox_api import (
     SandboxInfo,
-    SandboxApiBase,
     SandboxQuery,
     ListedSandbox,
     SandboxMetrics,
@@ -31,7 +31,7 @@ from e2b.connection_config import ConnectionConfig, ApiParams
 from e2b.api import handle_api_exception
 
 
-class SandboxApi(SandboxApiBase):
+class SandboxApi(SandboxBase):
     @classmethod
     async def list(
         cls,
@@ -59,7 +59,7 @@ class SandboxApi(SandboxApiBase):
 
         async with AsyncApiClient(
             config,
-            limits=SandboxApiBase._limits,
+            limits=cls._limits,
         ) as api_client:
             res = await get_sandboxes.asyncio_detailed(
                 client=api_client,
@@ -105,7 +105,7 @@ class SandboxApi(SandboxApiBase):
 
         async with AsyncApiClient(
             config,
-            limits=SandboxApiBase._limits,
+            limits=cls._limits,
         ) as api_client:
             res = await get_sandboxes_sandbox_id.asyncio_detailed(
                 sandbox_id,
@@ -146,7 +146,7 @@ class SandboxApi(SandboxApiBase):
 
         async with AsyncApiClient(
             config,
-            limits=SandboxApiBase._limits,
+            limits=cls._limits,
         ) as api_client:
             res = await delete_sandboxes_sandbox_id.asyncio_detailed(
                 sandbox_id,
@@ -176,7 +176,7 @@ class SandboxApi(SandboxApiBase):
 
         async with AsyncApiClient(
             config,
-            limits=SandboxApiBase._limits,
+            limits=cls._limits,
         ) as api_client:
             res = await post_sandboxes_sandbox_id_timeout.asyncio_detailed(
                 sandbox_id,
@@ -202,7 +202,7 @@ class SandboxApi(SandboxApiBase):
 
         async with AsyncApiClient(
             config,
-            limits=SandboxApiBase._limits,
+            limits=cls._limits,
         ) as api_client:
             res = await post_sandboxes.asyncio_detailed(
                 body=NewSandbox(

@@ -11,7 +11,6 @@ from e2b.api.client.types import Unset
 from e2b.connection_config import ConnectionConfig, ApiParams
 from e2b.envd.api import ENVD_API_HEALTH_ROUTE, handle_envd_api_exception
 from e2b.exceptions import SandboxException, format_request_timeout_error
-from e2b.sandbox.main import SandboxSetup
 from e2b.sandbox.sandbox_api import SandboxMetrics
 from e2b.sandbox.utils import class_method_variant
 from e2b.sandbox_sync.filesystem.filesystem import Filesystem
@@ -38,7 +37,7 @@ class TransportWithLogger(httpx.HTTPTransport):
         return self._pool
 
 
-class Sandbox(SandboxSetup, SandboxApi):
+class Sandbox(SandboxApi):
     """
     E2B cloud sandbox is a secure and isolated cloud environment.
 
@@ -124,7 +123,7 @@ class Sandbox(SandboxSetup, SandboxApi):
         if debug:
             _sandbox_id = "debug_sandbox_id"
         elif _sandbox_id is not None:
-            response = SandboxApi._cls_get_info(
+            response = self._cls_get_info(
                 _sandbox_id,
                 **opts,
             )
@@ -140,7 +139,7 @@ class Sandbox(SandboxSetup, SandboxApi):
         else:
             template = template or self.default_template
             timeout = timeout or self.default_sandbox_timeout
-            response = SandboxApi._create_sandbox(
+            response = self._create_sandbox(
                 template=template,
                 timeout=timeout,
                 metadata=metadata,
@@ -307,7 +306,7 @@ class Sandbox(SandboxSetup, SandboxApi):
 
         :return: `True` if the sandbox was killed, `False` if the sandbox was not found
         """
-        return SandboxApi._cls_kill(
+        return self._cls_kill(
             sandbox_id=self.sandbox_id,
             **self.connection_config.get_api_params(**opts),
         )
@@ -365,7 +364,7 @@ class Sandbox(SandboxSetup, SandboxApi):
 
         """
 
-        SandboxApi._cls_set_timeout(
+        self._cls_set_timeout(
             sandbox_id=self.sandbox_id,
             timeout=timeout,
             **self.connection_config.get_api_params(**opts),
@@ -408,7 +407,7 @@ class Sandbox(SandboxSetup, SandboxApi):
 
         :return: Sandbox info
         """
-        return SandboxApi._cls_get_info(
+        return self._cls_get_info(
             sandbox_id=self.sandbox_id,
             **self.connection_config.get_api_params(**opts),
         )

@@ -11,7 +11,6 @@ from e2b.api.client.types import Unset
 from e2b.connection_config import ConnectionConfig, ApiParams
 from e2b.envd.api import ENVD_API_HEALTH_ROUTE, ahandle_envd_api_exception
 from e2b.exceptions import format_request_timeout_error, SandboxException
-from e2b.sandbox.main import SandboxSetup
 from e2b.sandbox.sandbox_api import SandboxMetrics
 from e2b.sandbox.utils import class_method_variant
 from e2b.sandbox_async.filesystem.filesystem import Filesystem
@@ -46,7 +45,7 @@ class AsyncSandboxOpts(TypedDict):
     connection_config: ConnectionConfig
 
 
-class AsyncSandbox(SandboxSetup, SandboxApi):
+class AsyncSandbox(SandboxApi):
     """
     E2B cloud sandbox is a secure and isolated cloud environment.
 
@@ -195,7 +194,7 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
             envd_version = None
             envd_access_token = None
         else:
-            response = await SandboxApi._create_sandbox(
+            response = await cls._create_sandbox(
                 template=template or cls.default_template,
                 timeout=timeout or cls.default_sandbox_timeout,
                 metadata=metadata,
@@ -251,7 +250,7 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
         # Another code block
         same_sandbox = await AsyncSandbox.connect(sandbox_id)
         """
-        response = await SandboxApi._cls_get_info(sandbox_id, **opts)
+        response = await cls._cls_get_info(sandbox_id, **opts)
 
         sandbox_headers = {}
         envd_access_token = response._envd_access_token
@@ -314,7 +313,7 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
 
         :return: `True` if the sandbox was killed, `False` if the sandbox was not found
         """
-        return await SandboxApi._cls_kill(
+        return await self._cls_kill(
             sandbox_id=self.sandbox_id,
             **self.connection_config.get_api_params(**opts),
         )
@@ -370,7 +369,7 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
 
         :param timeout: Timeout for the sandbox in **seconds**
         """
-        await SandboxApi._cls_set_timeout(
+        await self._cls_set_timeout(
             sandbox_id=self.sandbox_id,
             timeout=timeout,
             **self.connection_config.get_api_params(**opts),
@@ -413,7 +412,7 @@ class AsyncSandbox(SandboxSetup, SandboxApi):
         :return: Sandbox info
         """
 
-        return await SandboxApi._cls_get_info(
+        return await self._cls_get_info(
             sandbox_id=self.sandbox_id,
             **self.connection_config.get_api_params(**opts),
         )
