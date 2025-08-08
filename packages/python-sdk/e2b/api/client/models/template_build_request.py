@@ -16,7 +16,7 @@ class TemplateBuildRequest:
         dockerfile (str): Dockerfile for the template
         alias (Union[Unset, str]): Alias of the template
         cpu_count (Union[Unset, int]): CPU cores for the sandbox
-        memory_mb (Union[Unset, int]): Memory for the sandbox in MB
+        memory_mb (Union[Unset, int]): Memory for the sandbox in MiB
         ready_cmd (Union[Unset, str]): Ready check command to execute in the template after the build
         start_cmd (Union[Unset, str]): Start command to execute in the template after the build
         team_id (Union[Unset, str]): Identifier of the team

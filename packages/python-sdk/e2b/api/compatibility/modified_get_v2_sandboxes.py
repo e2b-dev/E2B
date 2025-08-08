@@ -3,12 +3,12 @@ from typing import Any, Optional, Union
 
 import httpx
 
-from ... import errors
-from ...client import AuthenticatedClient, Client
-from ...models.error import Error
-from ...models.listed_sandbox import ListedSandbox
-from ...models.sandbox_state import SandboxState
-from ...types import UNSET, Response, Unset
+from e2b.api.client import errors
+from e2b.api.client.client import AuthenticatedClient, Client
+from e2b.api.client.models.error import Error
+from e2b.api.client.models.listed_sandbox import ListedSandbox
+from e2b.api.client.models.sandbox_state import SandboxState
+from e2b.api.client.types import UNSET, Response, Unset
 
 
 def _get_kwargs(
@@ -30,7 +30,6 @@ def _get_kwargs(
             json_state.append(state_item)
 
     params["state"] = ",".join(str(item) for item in json_state)
-
     params["nextToken"] = next_token
 
     params["limit"] = limit
@@ -58,14 +57,14 @@ def _parse_response(
             response_200.append(response_200_item)
 
         return response_200
-    if response.status_code == 400:
-        response_400 = Error.from_dict(response.json())
-
-        return response_400
     if response.status_code == 401:
         response_401 = Error.from_dict(response.json())
 
         return response_401
+    if response.status_code == 400:
+        response_400 = Error.from_dict(response.json())
+
+        return response_400
     if response.status_code == 500:
         response_500 = Error.from_dict(response.json())
 

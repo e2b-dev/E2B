@@ -18,8 +18,9 @@ class SandboxDetail:
     Attributes:
         client_id (str): Identifier of the client
         cpu_count (int): CPU cores for the sandbox
+        disk_size_mb (int): Disk size for the sandbox in MiB
         end_at (datetime.datetime): Time when the sandbox will expire
-        memory_mb (int): Memory for the sandbox in MB
+        memory_mb (int): Memory for the sandbox in MiB
         sandbox_id (str): Identifier of the sandbox
         started_at (datetime.datetime): Time when the sandbox was started
         state (SandboxState): State of the sandbox
@@ -33,6 +34,7 @@ class SandboxDetail:
 
     client_id: str
     cpu_count: int
+    disk_size_mb: int
     end_at: datetime.datetime
     memory_mb: int
     sandbox_id: str
@@ -50,6 +52,8 @@ class SandboxDetail:
         client_id = self.client_id
 
         cpu_count = self.cpu_count
+
+        disk_size_mb = self.disk_size_mb
 
         end_at = self.end_at.isoformat()
 
@@ -83,6 +87,7 @@ class SandboxDetail:
             {
                 "clientID": client_id,
                 "cpuCount": cpu_count,
+                "diskSizeMB": disk_size_mb,
                 "endAt": end_at,
                 "memoryMB": memory_mb,
                 "sandboxID": sandbox_id,
@@ -110,6 +115,8 @@ class SandboxDetail:
         client_id = d.pop("clientID")
 
         cpu_count = d.pop("cpuCount")
+
+        disk_size_mb = d.pop("diskSizeMB")
 
         end_at = isoparse(d.pop("endAt"))
 
@@ -143,6 +150,7 @@ class SandboxDetail:
         sandbox_detail = cls(
             client_id=client_id,
             cpu_count=cpu_count,
+            disk_size_mb=disk_size_mb,
             end_at=end_at,
             memory_mb=memory_mb,
             sandbox_id=sandbox_id,
