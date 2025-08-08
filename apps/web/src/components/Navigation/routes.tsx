@@ -457,6 +457,15 @@ export const docRoutes: NavGroup[] = [
     ],
   },
   {
+    title: 'Deployment',
+    items: [
+      {
+        title: 'Bring Your Own Cloud',
+        href: '/docs/byoc',
+      },
+    ],
+  },
+  {
     title: 'Troubleshooting',
     items: [
       {
