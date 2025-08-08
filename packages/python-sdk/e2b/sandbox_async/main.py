@@ -198,7 +198,6 @@ class AsyncSandbox(SandboxApi):
                 template=template or cls.default_template,
                 timeout=timeout or cls.default_sandbox_timeout,
                 metadata=metadata,
-                debug=debug,
                 env_vars=envs,
                 secure=secure,
                 allow_internet_access=allow_internet_access,
