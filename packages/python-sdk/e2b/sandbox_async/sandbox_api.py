@@ -72,22 +72,7 @@ class SandboxApi(SandboxBase):
         if res.parsed is None:
             return []
 
-        return [
-            ListedSandbox(
-                sandbox_id=sandbox.sandbox_id,
-                template_id=sandbox.template_id,
-                name=sandbox.alias if isinstance(sandbox.alias, str) else None,
-                metadata=(
-                    sandbox.metadata if isinstance(sandbox.metadata, dict) else {}
-                ),
-                state=sandbox.state,
-                cpu_count=sandbox.cpu_count,
-                memory_mb=sandbox.memory_mb,
-                started_at=sandbox.started_at,
-                end_at=sandbox.end_at,
-            )
-            for sandbox in res.parsed
-        ]
+        return res.parsed
 
     @classmethod
     async def _cls_get_info(
@@ -128,8 +113,11 @@ class SandboxApi(SandboxBase):
                 ),
                 started_at=res.parsed.started_at,
                 end_at=res.parsed.end_at,
-                envd_version=res.parsed.envd_version,
+                _envd_version=res.parsed.envd_version,
                 _envd_access_token=res.parsed.envd_access_token,
+                state=res.parsed.state,
+                cpu_count=res.parsed.cpu_count,
+                memory_mb=res.parsed.memory_mb,
             )
 
     @classmethod

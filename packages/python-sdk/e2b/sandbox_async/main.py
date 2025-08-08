@@ -265,7 +265,7 @@ class AsyncSandbox(SandboxApi):
             sandbox_id=sandbox_id,
             sandbox_domain=response.sandbox_domain,
             connection_config=connection_config,
-            envd_version=response.envd_version,
+            envd_version=response._envd_version,
             envd_access_token=envd_access_token,
         )
 
