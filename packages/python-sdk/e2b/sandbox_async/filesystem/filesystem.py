@@ -51,7 +51,7 @@ class Filesystem:
             # compressor=e2b_connect.GzipCompressor,
             async_pool=pool,
             json=True,
-            headers=connection_config.headers,
+            headers=connection_config.sandbox_headers,
         )
 
     @overload
