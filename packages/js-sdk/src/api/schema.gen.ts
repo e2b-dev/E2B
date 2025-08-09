@@ -971,6 +971,13 @@ export interface components {
             /** @description Name of the API key */
             name: string;
         };
+        /**
+         * Format: int32
+         * @description Disk size for the sandbox in MiB
+         */
+        DiskSizeMB: number;
+        /** @description Version of the envd running in the sandbox */
+        EnvdVersion: string;
         EnvVars: {
             [key: string]: string;
         };
@@ -1002,11 +1009,13 @@ export interface components {
              */
             clientID: string;
             cpuCount: components["schemas"]["CPUCount"];
+            diskSizeMB: components["schemas"]["DiskSizeMB"];
             /**
              * Format: date-time
              * @description Time when the sandbox will expire
              */
             endAt: string;
+            envdVersion: components["schemas"]["EnvdVersion"];
             memoryMB: components["schemas"]["MemoryMB"];
             metadata?: components["schemas"]["SandboxMetadata"];
             /** @description Identifier of the sandbox */
@@ -1027,7 +1036,7 @@ export interface components {
         LogLevel: "debug" | "info" | "warn" | "error";
         /**
          * Format: int32
-         * @description Memory for the sandbox in MB
+         * @description Memory for the sandbox in MiB
          */
         MemoryMB: number;
         NewAccessToken: {
@@ -1174,6 +1183,7 @@ export interface components {
              */
             clientID: string;
             cpuCount: components["schemas"]["CPUCount"];
+            diskSizeMB: components["schemas"]["DiskSizeMB"];
             /** @description Base domain where the sandbox traffic is accessible */
             domain?: string | null;
             /**
@@ -1320,6 +1330,8 @@ export interface components {
              */
             createdAt: string;
             createdBy: components["schemas"]["TeamUser"] | null;
+            diskSizeMB: components["schemas"]["DiskSizeMB"];
+            envdVersion: components["schemas"]["EnvdVersion"];
             /**
              * Format: date-time
              * @description Time when the template was last used
@@ -1399,7 +1411,9 @@ export interface components {
              */
             force: boolean;
             /** @description Image to use as a base for the template build */
-            fromImage: string;
+            fromImage?: string;
+            /** @description Template to use as a base for the template build */
+            fromTemplate?: string;
             /** @description Ready check command to execute in the template after the build */
             readyCmd?: string;
             /** @description Start command to execute in the template after the build */

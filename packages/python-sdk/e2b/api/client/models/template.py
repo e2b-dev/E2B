@@ -24,8 +24,10 @@ class Template:
         cpu_count (int): CPU cores for the sandbox
         created_at (datetime.datetime): Time when the template was created
         created_by (Union['TeamUser', None]):
+        disk_size_mb (int): Disk size for the sandbox in MiB
+        envd_version (str): Version of the envd running in the sandbox
         last_spawned_at (datetime.datetime): Time when the template was last used
-        memory_mb (int): Memory for the sandbox in MB
+        memory_mb (int): Memory for the sandbox in MiB
         public (bool): Whether the template is public or only accessible by the team
         spawn_count (int): Number of times the template was used
         template_id (str): Identifier of the template
@@ -38,6 +40,8 @@ class Template:
     cpu_count: int
     created_at: datetime.datetime
     created_by: Union["TeamUser", None]
+    disk_size_mb: int
+    envd_version: str
     last_spawned_at: datetime.datetime
     memory_mb: int
     public: bool
@@ -64,6 +68,10 @@ class Template:
         else:
             created_by = self.created_by
 
+        disk_size_mb = self.disk_size_mb
+
+        envd_version = self.envd_version
+
         last_spawned_at = self.last_spawned_at.isoformat()
 
         memory_mb = self.memory_mb
@@ -89,6 +97,8 @@ class Template:
                 "cpuCount": cpu_count,
                 "createdAt": created_at,
                 "createdBy": created_by,
+                "diskSizeMB": disk_size_mb,
+                "envdVersion": envd_version,
                 "lastSpawnedAt": last_spawned_at,
                 "memoryMB": memory_mb,
                 "public": public,
@@ -130,6 +140,10 @@ class Template:
 
         created_by = _parse_created_by(d.pop("createdBy"))
 
+        disk_size_mb = d.pop("diskSizeMB")
+
+        envd_version = d.pop("envdVersion")
+
         last_spawned_at = isoparse(d.pop("lastSpawnedAt"))
 
         memory_mb = d.pop("memoryMB")
@@ -150,6 +164,8 @@ class Template:
             cpu_count=cpu_count,
             created_at=created_at,
             created_by=created_by,
+            disk_size_mb=disk_size_mb,
+            envd_version=envd_version,
             last_spawned_at=last_spawned_at,
             memory_mb=memory_mb,
             public=public,

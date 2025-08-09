@@ -2,21 +2,40 @@ import datetime
 import logging
 import httpx
 
-from typing import Dict, Optional, TypedDict, overload, List
+from typing import (
+    Dict,
+    Optional,
+    TypedDict,
+    overload,
+    List,
+    Type,
+)
 
 from packaging.version import Version
 from typing_extensions import Unpack
 
+from e2b.api import AsyncApiClient, handle_api_exception
+from e2b.api.client.api.sandboxes import (
+    post_sandboxes_sandbox_id_pause,
+    post_sandboxes_sandbox_id_resume,
+)
+from e2b.api.client.models import ResumedSandbox
 from e2b.api.client.types import Unset
 from e2b.connection_config import ConnectionConfig, ApiParams
 from e2b.envd.api import ENVD_API_HEALTH_ROUTE, ahandle_envd_api_exception
-from e2b.exceptions import format_request_timeout_error, SandboxException
-from e2b.sandbox.sandbox_api import SandboxMetrics
+from e2b.exceptions import (
+    format_request_timeout_error,
+    SandboxException,
+    NotFoundException,
+)
+from e2b.sandbox.main import SandboxBase
+from e2b.sandbox.sandbox_api import SandboxMetrics, SandboxQueryBeta
 from e2b.sandbox.utils import class_method_variant
 from e2b.sandbox_async.filesystem.filesystem import Filesystem
 from e2b.sandbox_async.commands.command import Commands
 from e2b.sandbox_async.commands.pty import Pty
 from e2b.sandbox_async.sandbox_api import SandboxApi, SandboxInfo
+from e2b.sandbox_async.sandbox_beta import AsyncSandboxPaginator
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +64,210 @@ class AsyncSandboxOpts(TypedDict):
     connection_config: ConnectionConfig
 
 
-class AsyncSandbox(SandboxApi):
+class AsyncBeta:
+    def __init__(self, sandbox: "AsyncSandbox"):
+        self._sandbox = sandbox
+
+    @staticmethod
+    def list(
+        query: Optional[SandboxQueryBeta] = None,
+        limit: Optional[int] = None,
+        next_token: Optional[str] = None,
+        **opts: Unpack[ApiParams],
+    ) -> AsyncSandboxPaginator:
+        """
+        List all running sandboxes.
+
+        :param query: Filter the list of sandboxes by metadata or state, e.g. `SandboxListQuery(metadata={"key": "value"})` or `SandboxListQuery(state=[SandboxState.RUNNING])`
+        :param limit: Maximum number of sandboxes to return
+        :param next_token: Token for pagination
+
+        :return: List of running sandboxes
+        """
+        return AsyncSandboxPaginator(
+            query=query,
+            limit=limit,
+            next_token=next_token,
+            **opts,
+        )
+
+    @overload
+    async def pause(
+        self,
+        **opts: Unpack[ApiParams],
+    ) -> str:
+        """
+        Pause the sandbox.
+
+        :return: Sandbox ID that can be used to resume the sandbox
+        """
+        ...
+
+    @overload
+    @staticmethod
+    async def pause(
+        sandbox_id: str,
+        **opts: Unpack[ApiParams],
+    ) -> str:
+        """
+        Pause the sandbox specified by sandbox ID.
+
+        :param sandbox_id: Sandbox ID
+
+        :return: Sandbox ID that can be used to resume the sandbox
+        """
+        ...
+
+    @class_method_variant("_cls_pause")
+    async def pause(
+        self,
+        **opts: Unpack[ApiParams],
+    ) -> str:
+        """
+        Pause the sandbox.
+
+        :param request_timeout: Timeout for the request in **seconds**
+
+        :return: Sandbox ID that can be used to resume the sandbox
+        """
+
+        await self._cls_pause(
+            sandbox_id=self._sandbox.sandbox_id,
+            **opts,
+        )
+
+        return self._sandbox.sandbox_id
+
+    @classmethod
+    async def _cls_pause(
+        cls,
+        sandbox_id: str,
+        **opts: Unpack[ApiParams],
+    ) -> bool:
+        config = ConnectionConfig(**opts)
+
+        async with AsyncApiClient(
+            config,
+            limits=SandboxBase._limits,
+        ) as api_client:
+            res = await post_sandboxes_sandbox_id_pause.asyncio_detailed(
+                sandbox_id,
+                client=api_client,
+            )
+
+            if res.status_code == 404:
+                raise NotFoundException(f"Sandbox {sandbox_id} not found")
+
+            if res.status_code == 409:
+                return False
+
+            if res.status_code >= 300:
+                raise handle_api_exception(res)
+
+            return True
+
+    @overload
+    async def resume(
+        self,
+        timeout: Optional[int] = None,
+        **opts: Unpack[ApiParams],
+    ) -> "AsyncSandbox":
+        """
+        Resume the sandbox.
+
+        :return: A running sandbox instance
+        """
+        ...
+
+    @overload
+    @staticmethod
+    async def resume(
+        sandbox_id: str,
+        timeout: Optional[int] = None,
+        **opts: Unpack[ApiParams],
+    ) -> "AsyncSandbox":
+        """
+        Resume the sandbox.
+
+        :param sandbox_id: Sandbox ID
+        :param timeout: Timeout for the sandbox in **seconds**
+
+        :return: A running sandbox instance
+        """
+        ...
+
+    @class_method_variant("_cls_resume")
+    async def resume(
+        self,
+        timeout: Optional[int] = None,
+        **opts: Unpack[ApiParams],
+    ) -> "AsyncSandbox":
+        """
+        Resume the sandbox.
+
+        The **default sandbox timeout of 300 seconds** will be used for the resumed sandbox.
+        If you pass a custom timeout via the `timeout` parameter, it will be used instead.
+
+        :param sandbox_id: Sandbox ID
+        :param timeout: Timeout for the sandbox in **seconds**
+
+        :return: A running sandbox instance
+        """
+
+        await self._cls_resume(
+            sandbox_id=self._sandbox.sandbox_id,
+            timeout=timeout,
+            **opts,
+        )
+
+        return await self._sandbox.connect(
+            sandbox_id=self._sandbox.sandbox_id,
+            **opts,
+        )
+
+    @classmethod
+    async def _cls_resume(
+        cls,
+        sandbox_id: str,
+        timeout: Optional[int] = None,
+        **opts: Unpack[ApiParams],
+    ) -> bool:
+        timeout = timeout or SandboxBase.default_sandbox_timeout
+
+        config = ConnectionConfig(**opts)
+
+        async with AsyncApiClient(
+            config,
+            limits=SandboxBase._limits,
+        ) as api_client:
+            res = await post_sandboxes_sandbox_id_resume.asyncio_detailed(
+                sandbox_id,
+                client=api_client,
+                body=ResumedSandbox(timeout=timeout),
+            )
+
+            if res.status_code == 404:
+                raise NotFoundException(f"Paused sandbox {sandbox_id} not found")
+
+            if res.status_code == 409:
+                return False
+
+            if res.status_code >= 300:
+                raise handle_api_exception(res)
+
+            return True
+
+
+class _AsyncSandboxMeta(type):
+    """Metaclass for AsyncSandbox to provide class-level beta access."""
+
+    @property
+    def beta(cls) -> Type[AsyncBeta]:
+        """Access to beta features at class level."""
+        return AsyncBeta
+
+
+class AsyncSandbox(SandboxApi, metaclass=_AsyncSandboxMeta):
     """
     E2B cloud sandbox is a secure and isolated cloud environment.
 
@@ -88,6 +310,13 @@ class AsyncSandbox(SandboxApi):
         Module for interacting with the sandbox pseudo-terminal.
         """
         return self._pty
+
+    @property
+    def beta(self) -> AsyncBeta:
+        """
+        Module for beta features.
+        """
+        return AsyncBeta(self)
 
     def __init__(self, **opts: Unpack[AsyncSandboxOpts]):
         """
@@ -265,7 +494,7 @@ class AsyncSandbox(SandboxApi):
             sandbox_id=sandbox_id,
             sandbox_domain=response.sandbox_domain,
             connection_config=connection_config,
-            envd_version=response.envd_version,
+            envd_version=response._envd_version,
             envd_access_token=envd_access_token,
         )
 
