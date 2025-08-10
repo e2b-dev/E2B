@@ -29,7 +29,6 @@ class SandboxDetail:
         alias (Union[Unset, str]): Alias of the template
         domain (Union[None, Unset, str]): Base domain where the sandbox traffic is accessible
         envd_access_token (Union[Unset, str]): Access token used for envd communication
-        envd_version (Union[Unset, str]): Version of the envd running in the sandbox
         metadata (Union[Unset, Any]):
     """
 

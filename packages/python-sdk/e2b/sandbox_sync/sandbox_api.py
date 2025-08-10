@@ -1,5 +1,4 @@
 import datetime
-import urllib.parse
 
 from typing import Optional, Dict, List
 from packaging.version import Version
@@ -11,67 +10,51 @@ from e2b.sandbox.sandbox_api import (
     SandboxMetrics,
 )
 from e2b.sandbox.main import SandboxBase
-from e2b.exceptions import TemplateException, SandboxException
+from e2b.exceptions import TemplateException, SandboxException, NotFoundException
 from e2b.api import ApiClient, SandboxCreateResponse
 from e2b.api.client.models import (
     NewSandbox,
     PostSandboxesSandboxIDTimeoutBody,
     Error,
+    ResumedSandbox,
 )
 from e2b.api.client.api.sandboxes import (
     get_sandboxes_sandbox_id,
     post_sandboxes_sandbox_id_timeout,
-    get_sandboxes,
     delete_sandboxes_sandbox_id,
     post_sandboxes,
     get_sandboxes_sandbox_id_metrics,
+    post_sandboxes_sandbox_id_resume,
+    post_sandboxes_sandbox_id_pause,
 )
 from e2b.connection_config import ConnectionConfig, ApiParams
 from e2b.api import handle_api_exception
+from e2b.sandbox_sync.paginator import SandboxPaginator
 
 
 class SandboxApi(SandboxBase):
-    @classmethod
+    @staticmethod
     def list(
-        cls,
         query: Optional[SandboxQuery] = None,
+        limit: Optional[int] = None,
+        next_token: Optional[str] = None,
         **opts: Unpack[ApiParams],
-    ) -> List[SandboxInfo]:
+    ) -> SandboxPaginator:
         """
         List all running sandboxes.
 
-        :param query: Filter the list of sandboxes, e.g. by metadata `SandboxQuery(metadata={"key": "value"})`, if there are multiple filters, they are combined with AND.
+        :param query: Filter the list of sandboxes by metadata or state, e.g. `SandboxListQuery(metadata={"key": "value"})` or `SandboxListQuery(state=[SandboxState.RUNNING])`
+        :param limit: Maximum number of sandboxes to return
+        :param next_token: Token for pagination
 
         :return: List of running sandboxes
         """
-        config = ConnectionConfig(**opts)
-
-        # Convert filters to the format expected by the API
-        metadata = None
-        if query:
-            if query.metadata:
-                quoted_metadata = {
-                    urllib.parse.quote(k): urllib.parse.quote(v)
-                    for k, v in query.metadata.items()
-                }
-                metadata = urllib.parse.urlencode(quoted_metadata)
-
-        with ApiClient(
-            config,
-            limits=cls._limits,
-        ) as api_client:
-            res = get_sandboxes.sync_detailed(client=api_client, metadata=metadata)
-
-            if res.status_code >= 300:
-                raise handle_api_exception(res)
-
-            if res.parsed is None:
-                return []
-
-            if isinstance(res.parsed, Error):
-                raise SandboxException(f"{res.parsed.message}: Request failed")
-
-            return [SandboxInfo._from_listed_sandbox(sandbox) for sandbox in res.parsed]
+        return SandboxPaginator(
+            query=query,
+            limit=limit,
+            next_token=next_token,
+            **opts,
+        )
 
     @classmethod
     def _cls_get_info(
@@ -255,3 +238,65 @@ class SandboxApi(SandboxBase):
                 )
                 for metric in res.parsed
             ]
+
+
+class SandboxApiBeta:
+    @classmethod
+    def _cls_resume(
+        cls,
+        sandbox_id: str,
+        timeout: Optional[int] = None,
+        **opts: Unpack[ApiParams],
+    ) -> bool:
+        timeout = timeout or SandboxBase.default_sandbox_timeout
+
+        config = ConnectionConfig(**opts)
+
+        with ApiClient(
+            config,
+            limits=SandboxBase._limits,
+        ) as api_client:
+            res = post_sandboxes_sandbox_id_resume.sync_detailed(
+                sandbox_id,
+                client=api_client,
+                body=ResumedSandbox(timeout=timeout),
+            )
+
+            if res.status_code == 404:
+                raise NotFoundException(f"Paused sandbox {sandbox_id} not found")
+
+            if res.status_code == 409:
+                return False
+
+            if res.status_code >= 300:
+                raise handle_api_exception(res)
+
+            return True
+
+    @classmethod
+    def _cls_pause(
+        cls,
+        sandbox_id: str,
+        **opts: Unpack[ApiParams],
+    ) -> bool:
+        config = ConnectionConfig(**opts)
+
+        with ApiClient(
+            config,
+            limits=SandboxBase._limits,
+        ) as api_client:
+            res = post_sandboxes_sandbox_id_pause.sync_detailed(
+                sandbox_id,
+                client=api_client,
+            )
+
+            if res.status_code == 404:
+                raise NotFoundException(f"Sandbox {sandbox_id} not found")
+
+            if res.status_code == 409:
+                return False
+
+            if res.status_code >= 300:
+                raise handle_api_exception(res)
+
+            return True

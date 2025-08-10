@@ -29,7 +29,8 @@ def _get_kwargs(
             state_item = state_item_data.value
             json_state.append(state_item)
 
-    params["state"] = ",".join(str(item) for item in json_state)
+    if not isinstance(json_state, Unset):
+        params["state"] = ",".join(str(item) for item in json_state)
 
     params["nextToken"] = next_token
 

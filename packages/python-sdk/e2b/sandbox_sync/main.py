@@ -2,7 +2,7 @@ import datetime
 import logging
 import httpx
 
-from typing import Dict, Optional, overload, List
+from typing import Dict, Optional, overload, List, Type
 
 from packaging.version import Version
 from typing_extensions import Unpack
@@ -16,7 +16,7 @@ from e2b.sandbox.utils import class_method_variant
 from e2b.sandbox_sync.filesystem.filesystem import Filesystem
 from e2b.sandbox_sync.commands.command import Commands
 from e2b.sandbox_sync.commands.pty import Pty
-from e2b.sandbox_sync.sandbox_api import SandboxApi, SandboxInfo
+from e2b.sandbox_sync.sandbox_api import SandboxApi, SandboxInfo, SandboxApiBeta
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +37,125 @@ class TransportWithLogger(httpx.HTTPTransport):
         return self._pool
 
 
-class Sandbox(SandboxApi):
+class _Beta(SandboxApiBeta):
+    def __init__(self, sandbox: "Sandbox"):
+        self._sandbox = sandbox
+
+    @overload
+    def pause(
+        self,
+        **opts: Unpack[ApiParams],
+    ) -> str:
+        """
+        Pause the sandbox.
+
+        :return: Sandbox ID that can be used to resume the sandbox
+        """
+        ...
+
+    @overload
+    @staticmethod
+    def pause(
+        sandbox_id: str,
+        **opts: Unpack[ApiParams],
+    ) -> str:
+        """
+        Pause the sandbox specified by sandbox ID.
+
+        :param sandbox_id: Sandbox ID
+
+        :return: Sandbox ID that can be used to resume the sandbox
+        """
+        ...
+
+    @class_method_variant("_cls_pause")
+    def pause(
+        self,
+        **opts: Unpack[ApiParams],
+    ) -> str:
+        """
+        Pause the sandbox.
+
+        :return: Sandbox ID that can be used to resume the sandbox
+        """
+
+        self._cls_pause(
+            sandbox_id=self._sandbox.sandbox_id,
+            **opts,
+        )
+
+        return self._sandbox.sandbox_id
+
+    @overload
+    def resume(
+        self,
+        timeout: Optional[int] = None,
+        **opts: Unpack[ApiParams],
+    ) -> "Sandbox":
+        """
+        Resume the sandbox.
+
+        :return: A running sandbox instance
+        """
+        ...
+
+    @overload
+    @staticmethod
+    def resume(
+        sandbox_id: str,
+        timeout: Optional[int] = None,
+        **opts: Unpack[ApiParams],
+    ) -> "Sandbox":
+        """
+        Resume the sandbox.
+
+        :param sandbox_id: Sandbox ID
+        :param timeout: Timeout for the sandbox in **seconds**
+
+        :return: A running sandbox instance
+        """
+        ...
+
+    @class_method_variant("_cls_resume")
+    def resume(
+        self,
+        timeout: Optional[int] = None,
+        **opts: Unpack[ApiParams],
+    ) -> "Sandbox":
+        """
+        Resume the sandbox.
+
+        The **default sandbox timeout of 300 seconds** will be used for the resumed sandbox.
+        If you pass a custom timeout via the `timeout` parameter, it will be used instead.
+
+        :param sandbox_id: Sandbox ID
+        :param timeout: Timeout for the sandbox in **seconds**
+
+        :return: A running sandbox instance
+        """
+
+        self._cls_resume(
+            sandbox_id=self._sandbox.sandbox_id,
+            timeout=timeout,
+            **opts,
+        )
+
+        return self._sandbox.connect(
+            sandbox_id=self._sandbox.sandbox_id,
+            **opts,
+        )
+
+
+class _SandboxMeta(type):
+    """Metaclass for AsyncSandbox to provide class-level beta access."""
+
+    @property
+    def beta(cls) -> Type[_Beta]:
+        """Access to beta features at class level."""
+        return _Beta
+
+
+class Sandbox(SandboxApi, metaclass=_SandboxMeta):
     """
     E2B cloud sandbox is a secure and isolated cloud environment.
 
@@ -80,6 +198,10 @@ class Sandbox(SandboxApi):
         Module for interacting with the sandbox pseudo-terminal.
         """
         return self._pty
+
+    @property
+    def beta(self) -> _Beta:
+        return self._beta
 
     def __init__(
         self,
@@ -199,6 +321,8 @@ class Sandbox(SandboxApi):
             self.connection_config,
             self._transport.pool,
         )
+
+        self._beta = _Beta(self)
 
     def is_running(self, request_timeout: Optional[float] = None) -> bool:
         """
