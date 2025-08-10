@@ -101,7 +101,10 @@ class SandboxApi(SandboxBase):
                 raise handle_api_exception(res)
 
             if res.parsed is None:
-                raise Exception("Body of the request is None")
+                raise SandboxException("Body of the request is None")
+
+            if isinstance(res.parsed, Error):
+                raise SandboxException(f"{res.parsed.message}: Request failed")
 
             return SandboxInfo._from_sandbox_detail(res.parsed)
 
