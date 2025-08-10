@@ -5,12 +5,12 @@ import httpx
 from typing import Dict, Optional, overload, List
 
 from packaging.version import Version
+from typing_extensions import Unpack
 
 from e2b.api.client.types import Unset
-from e2b.connection_config import ConnectionConfig, ProxyTypes
+from e2b.connection_config import ConnectionConfig, ApiParams
 from e2b.envd.api import ENVD_API_HEALTH_ROUTE, handle_envd_api_exception
 from e2b.exceptions import SandboxException, format_request_timeout_error
-from e2b.sandbox.main import SandboxSetup
 from e2b.sandbox.sandbox_api import SandboxMetrics
 from e2b.sandbox.utils import class_method_variant
 from e2b.sandbox_sync.filesystem.filesystem import Filesystem
@@ -32,8 +32,12 @@ class TransportWithLogger(httpx.HTTPTransport):
 
         return response
 
+    @property
+    def pool(self):
+        return self._pool
 
-class Sandbox(SandboxSetup, SandboxApi):
+
+class Sandbox(SandboxApi):
     """
     E2B cloud sandbox is a secure and isolated cloud environment.
 
@@ -77,38 +81,6 @@ class Sandbox(SandboxSetup, SandboxApi):
         """
         return self._pty
 
-    @property
-    def sandbox_id(self) -> str:
-        """
-        Unique identifier of the sandbox.
-        """
-        return self._sandbox_id
-
-    @property
-    def sandbox_domain(self) -> str:
-        """
-        Domain where the sandbox is hosted.
-        """
-        return self._sandbox_domain
-
-    @property
-    def envd_api_url(self) -> str:
-        return self._envd_api_url
-
-    @property
-    def _envd_access_token(self) -> str:
-        """Private property to access the envd token"""
-        return self.__envd_access_token
-
-    @_envd_access_token.setter
-    def _envd_access_token(self, value: Optional[str]):
-        """Private setter for envd token"""
-        self.__envd_access_token = value
-
-    @property
-    def connection_config(self) -> ConnectionConfig:
-        return self._connection_config
-
     def __init__(
         self,
         template: Optional[str] = None,
@@ -116,13 +88,9 @@ class Sandbox(SandboxSetup, SandboxApi):
         metadata: Optional[Dict[str, str]] = None,
         envs: Optional[Dict[str, str]] = None,
         secure: Optional[bool] = None,
-        api_key: Optional[str] = None,
-        domain: Optional[str] = None,
-        debug: Optional[bool] = None,
-        sandbox_id: Optional[str] = None,
-        request_timeout: Optional[float] = None,
-        proxy: Optional[ProxyTypes] = None,
         allow_internet_access: Optional[bool] = True,
+        _sandbox_id: Optional[str] = None,
+        **opts: Unpack[ApiParams],
     ):
         """
         Create a new sandbox.
@@ -130,113 +98,106 @@ class Sandbox(SandboxSetup, SandboxApi):
         By default, the sandbox is created from the default `base` sandbox template.
 
         :param template: Sandbox template name or ID
-        :param timeout: Timeout for the sandbox in **seconds**, default to 300 seconds. Maximum time a sandbox can be kept alive is 24 hours (86_400 seconds) for Pro users and 1 hour (3_600 seconds) for Hobby users
+        :param timeout: Timeout for the sandbox in **seconds**, default to 300 seconds. The maximum time a sandbox can be kept alive is 24 hours (86_400 seconds) for Pro users and 1 hour (3_600 seconds) for Hobby users.
         :param metadata: Custom metadata for the sandbox
         :param envs: Custom environment variables for the sandbox
-        :param api_key: E2B API Key to use for authentication, defaults to `E2B_API_KEY` environment variable
-        :param request_timeout: Timeout for the request in **seconds**
-        :param proxy: Proxy to use for the request and for the **requests made to the returned sandbox**
-        :param allow_internet_access: Allow sandbox to access the internet, defaults to `True`
+        :param secure: Envd is secured with access token and cannot be used without it
+        :param allow_internet_access: Allow sandbox to access the internet, defaults to `True`.
 
-        :return: sandbox instance for the new sandbox
+        :return: Sandbox instance for the new sandbox
         """
-        super().__init__()
-
-        if sandbox_id and (metadata is not None or template is not None):
+        if _sandbox_id and (metadata is not None or template is not None):
             raise SandboxException(
                 "Cannot set metadata or timeout when connecting to an existing sandbox. "
                 "Use Sandbox.connect method instead.",
             )
 
-        connection_headers = {}
+        extra_sandbox_headers = {}
+
+        sandbox_domain: Optional[str] = None
+        envd_version: Optional[str] = None
+        envd_access_token: Optional[str] = None
+
+        debug = opts.get("debug")
 
         if debug:
-            self._sandbox_id = "debug_sandbox_id"
-            self._sandbox_domain = None
-            self._envd_version = None
-            self._envd_access_token = None
-        elif sandbox_id is not None:
-            response = SandboxApi._cls_get_info(
-                sandbox_id,
-                api_key=api_key,
-                domain=domain,
-                debug=debug,
-                request_timeout=request_timeout,
-                proxy=proxy,
+            _sandbox_id = "debug_sandbox_id"
+        elif _sandbox_id is not None:
+            response = self._cls_get_info(
+                _sandbox_id,
+                **opts,
             )
 
-            self._sandbox_id = sandbox_id
-            self._sandbox_domain = response.sandbox_domain
-            self._envd_version = response.envd_version
-            self._envd_access_token = response._envd_access_token
+            envd_version = response.envd_version
+            sandbox_domain = response.sandbox_domain
+            envd_access_token = response._envd_access_token
 
-            if response._envd_access_token is not None and not isinstance(
-                response._envd_access_token, Unset
+            if envd_access_token is not None and not isinstance(
+                envd_access_token, Unset
             ):
-                connection_headers["X-Access-Token"] = response._envd_access_token
+                extra_sandbox_headers["X-Access-Token"] = envd_access_token
         else:
             template = template or self.default_template
             timeout = timeout or self.default_sandbox_timeout
-            response = SandboxApi._create_sandbox(
+            response = self._create_sandbox(
                 template=template,
-                api_key=api_key,
                 timeout=timeout,
                 metadata=metadata,
                 env_vars=envs,
-                domain=domain,
-                debug=debug,
-                request_timeout=request_timeout,
                 secure=secure or False,
-                proxy=proxy,
                 allow_internet_access=allow_internet_access,
+                **opts,
             )
+            _sandbox_id = response.sandbox_id
+            envd_version = response.envd_version
+            sandbox_domain = response.sandbox_domain
+            envd_access_token = response.envd_access_token
 
-            self._sandbox_id = response.sandbox_id
-            self._sandbox_domain = response.sandbox_domain
-            self._envd_version = response.envd_version
-
-            if response.envd_access_token is not None and not isinstance(
-                response.envd_access_token, Unset
+            if envd_access_token is not None and not isinstance(
+                envd_access_token, Unset
             ):
-                self._envd_access_token = response.envd_access_token
-                connection_headers["X-Access-Token"] = response.envd_access_token
-            else:
-                self._envd_access_token = None
+                extra_sandbox_headers["X-Access-Token"] = envd_access_token
 
-        self._transport = TransportWithLogger(limits=self._limits, proxy=proxy)
-        self._connection_config = ConnectionConfig(
-            api_key=api_key,
-            domain=domain,
-            debug=debug,
-            request_timeout=request_timeout,
-            headers=connection_headers,
-            proxy=proxy,
+        connection_config = ConnectionConfig(
+            extra_sandbox_headers=extra_sandbox_headers,
+            **opts,
         )
 
-        self._sandbox_domain = self._sandbox_domain or self._connection_config.domain
-        self._envd_api_url = f"{'http' if self.connection_config.debug else 'https'}://{self.get_host(self.envd_port)}"
+        super().__init__(
+            sandbox_id=_sandbox_id,
+            envd_version=envd_version,
+            sandbox_domain=sandbox_domain,
+            envd_access_token=envd_access_token,
+            connection_config=connection_config,
+        )
+
+        proxy = opts.get("proxy")
+        self._transport = TransportWithLogger(limits=self._limits, proxy=proxy)
+
         self._envd_api = httpx.Client(
             base_url=self.envd_api_url,
             transport=self._transport,
-            headers=self.connection_config.headers,
+            headers=self.connection_config.sandbox_headers,
         )
 
         self._filesystem = Filesystem(
             self.envd_api_url,
             self._envd_version,
             self.connection_config,
-            self._transport._pool,
+            self._transport.pool,
             self._envd_api,
         )
+
         self._commands = Commands(
             self.envd_api_url,
             self.connection_config,
-            self._transport._pool,
+            self._transport.pool,
         )
+
         self._pty = Pty(
             self.envd_api_url,
             self.connection_config,
-            self._transport._pool,
+            self._transport.pool,
         )
 
     def is_running(self, request_timeout: Optional[float] = None) -> bool:
@@ -279,20 +240,13 @@ class Sandbox(SandboxSetup, SandboxApi):
     def connect(
         cls,
         sandbox_id: str,
-        api_key: Optional[str] = None,
-        domain: Optional[str] = None,
-        debug: Optional[bool] = None,
-        proxy: Optional[ProxyTypes] = None,
+        **opts: Unpack[ApiParams],
     ):
         """
-        Connects to an existing Sandbox.
-        With sandbox ID you can connect to the same sandbox from different places or environments (serverless functions, etc).
+        Connect to an existing sandbox.
+        With a sandbox ID, you can connect to the same sandbox from different places or environments (serverless functions, etc.).
 
         :param sandbox_id: Sandbox ID
-        :param api_key: E2B API Key to use for authentication, defaults to `E2B_API_KEY` environment variable
-        :param proxy: Proxy to use for the request and for the **requests made to the returned sandbox**
-
-        :return: sandbox instance for the existing sandbox
 
         @example
         ```python
@@ -305,11 +259,8 @@ class Sandbox(SandboxSetup, SandboxApi):
         """
 
         return cls(
-            sandbox_id=sandbox_id,
-            api_key=api_key,
-            domain=domain,
-            debug=debug,
-            proxy=proxy,
+            _sandbox_id=sandbox_id,
+            **opts,
         )
 
     def __enter__(self):
@@ -319,11 +270,12 @@ class Sandbox(SandboxSetup, SandboxApi):
         self.kill()
 
     @overload
-    def kill(self, request_timeout: Optional[float] = None) -> bool:
+    def kill(
+        self,
+        **opts: Unpack[ApiParams],
+    ) -> bool:
         """
         Kill the sandbox.
-
-        :param request_timeout: Timeout for the request in **seconds**
 
         :return: `True` if the sandbox was killed, `False` if the sandbox was not found
         """
@@ -333,59 +285,46 @@ class Sandbox(SandboxSetup, SandboxApi):
     @staticmethod
     def kill(
         sandbox_id: str,
-        api_key: Optional[str] = None,
-        domain: Optional[str] = None,
-        debug: Optional[bool] = None,
-        request_timeout: Optional[float] = None,
-        proxy: Optional[ProxyTypes] = None,
+        **opts: Unpack[ApiParams],
     ) -> bool:
         """
         Kill the sandbox specified by sandbox ID.
 
         :param sandbox_id: Sandbox ID
-        :param api_key: E2B API Key to use for authentication, defaults to `E2B_API_KEY` environment variable
-        :param request_timeout: Timeout for the request in **seconds**
-        :param proxy: Proxy to use for the request
 
         :return: `True` if the sandbox was killed, `False` if the sandbox was not found
         """
         ...
 
     @class_method_variant("_cls_kill")
-    def kill(self, request_timeout: Optional[float] = None) -> bool:  # type: ignore
+    def kill(
+        self,
+        **opts: Unpack[ApiParams],
+    ) -> bool:
         """
-        Kill the sandbox.
+        Kill the sandbox specified by sandbox ID.
 
-        :param request_timeout: Timeout for the request
         :return: `True` if the sandbox was killed, `False` if the sandbox was not found
         """
-        config_dict = self.connection_config.__dict__
-        config_dict.pop("access_token", None)
-        config_dict.pop("api_url", None)
-
-        if request_timeout:
-            config_dict["request_timeout"] = request_timeout
-
-        SandboxApi._cls_kill(
+        return self._cls_kill(
             sandbox_id=self.sandbox_id,
-            **config_dict,
+            **self.connection_config.get_api_params(**opts),
         )
 
     @overload
     def set_timeout(
         self,
         timeout: int,
-        request_timeout: Optional[float] = None,
+        **opts: Unpack[ApiParams],
     ) -> None:
         """
         Set the timeout of the sandbox.
-        After the timeout expires the sandbox will be automatically killed.
+        After the timeout expires, the sandbox will be automatically killed.
         This method can extend or reduce the sandbox timeout set when creating the sandbox or from the last call to `.set_timeout`.
 
-        Maximum time a sandbox can be kept alive is 24 hours (86_400 seconds) for Pro users and 1 hour (3_600 seconds) for Hobby users.
+        The maximum time a sandbox can be kept alive is 24 hours (86_400 seconds) for Pro users and 1 hour (3_600 seconds) for Hobby users.
 
         :param timeout: Timeout for the sandbox in **seconds**
-        :param request_timeout: Timeout for the request in **seconds**
         """
         ...
 
@@ -394,54 +333,51 @@ class Sandbox(SandboxSetup, SandboxApi):
     def set_timeout(
         sandbox_id: str,
         timeout: int,
-        api_key: Optional[str] = None,
-        domain: Optional[str] = None,
-        debug: Optional[bool] = None,
-        request_timeout: Optional[float] = None,
-        proxy: Optional[ProxyTypes] = None,
+        **opts: Unpack[ApiParams],
     ) -> None:
         """
         Set the timeout of the sandbox specified by sandbox ID.
-        After the timeout expires the sandbox will be automatically killed.
+        After the timeout expires, the sandbox will be automatically killed.
         This method can extend or reduce the sandbox timeout set when creating the sandbox or from the last call to `.set_timeout`.
 
-        Maximum time a sandbox can be kept alive is 24 hours (86_400 seconds) for Pro users and 1 hour (3_600 seconds) for Hobby users.
+        The maximum time a sandbox can be kept alive is 24 hours (86_400 seconds) for Pro users and 1 hour (3_600 seconds) for Hobby users.
 
         :param sandbox_id: Sandbox ID
         :param timeout: Timeout for the sandbox in **seconds**
-        :param api_key: E2B API Key to use for authentication, defaults to `E2B_API_KEY` environment variable
-        :param request_timeout: Timeout for the request in **seconds**
-        :param proxy: Proxy to use for the request
         """
         ...
 
     @class_method_variant("_cls_set_timeout")
-    def set_timeout(  # type: ignore
+    def set_timeout(
         self,
         timeout: int,
-        request_timeout: Optional[float] = None,
+        **opts: Unpack[ApiParams],
     ) -> None:
-        config_dict = self.connection_config.__dict__
-        config_dict.pop("access_token", None)
-        config_dict.pop("api_url", None)
+        """
+        Set the timeout of the sandbox.
+        After the timeout expires, the sandbox will be automatically killed.
+        This method can extend or reduce the sandbox timeout set when creating the sandbox or from the last call to `.set_timeout`.
 
-        if request_timeout:
-            config_dict["request_timeout"] = request_timeout
+        The maximum time a sandbox can be kept alive is 24 hours (86_400 seconds) for Pro users and 1 hour (3_600 seconds) for Hobby users.
 
-        SandboxApi._cls_set_timeout(
+        :param timeout: Timeout for the sandbox in **seconds**
+
+        """
+
+        self._cls_set_timeout(
             sandbox_id=self.sandbox_id,
             timeout=timeout,
-            **config_dict,
+            **self.connection_config.get_api_params(**opts),
         )
 
     @overload
     def get_info(
         self,
-        request_timeout: Optional[float] = None,
+        **opts: Unpack[ApiParams],
     ) -> SandboxInfo:
         """
         Get sandbox information like sandbox ID, template, metadata, started at/end at date.
-        :param request_timeout: Timeout for the request in **seconds**
+
         :return: Sandbox info
         """
         ...
@@ -450,61 +386,44 @@ class Sandbox(SandboxSetup, SandboxApi):
     @staticmethod
     def get_info(
         sandbox_id: str,
-        api_key: Optional[str] = None,
-        domain: Optional[str] = None,
-        debug: Optional[bool] = None,
-        request_timeout: Optional[float] = None,
-        headers: Optional[Dict[str, str]] = None,
-        proxy: Optional[ProxyTypes] = None,
+        **opts: Unpack[ApiParams],
     ) -> SandboxInfo:
         """
         Get sandbox information like sandbox ID, template, metadata, started at/end at date.
+
         :param sandbox_id: Sandbox ID
-        :param api_key: E2B API Key to use for authentication, defaults to `E2B_API_KEY` environment variable
-        :param domain: E2B domain to use for authentication, defaults to `E2B_DOMAIN` environment variable
-        :param debug: Whether to use debug mode, defaults to `E2B_DEBUG` environment variable
-        :param request_timeout: Timeout for the request in **seconds**
-        :param headers: Custom headers to use for the request
-        :param proxy: Proxy to use for the request
+
         :return: Sandbox info
         """
         ...
 
     @class_method_variant("_cls_get_info")
-    def get_info(  # type: ignore
+    def get_info(
         self,
-        request_timeout: Optional[float] = None,
+        **opts: Unpack[ApiParams],
     ) -> SandboxInfo:
         """
         Get sandbox information like sandbox ID, template, metadata, started at/end at date.
-        :param request_timeout: Timeout for the request in **seconds**
+
         :return: Sandbox info
         """
-        config_dict = self.connection_config.__dict__
-        config_dict.pop("access_token", None)
-        config_dict.pop("api_url", None)
-
-        if request_timeout:
-            config_dict["request_timeout"] = request_timeout
-
-        return SandboxApi._cls_get_info(
+        return self._cls_get_info(
             sandbox_id=self.sandbox_id,
-            **config_dict,
+            **self.connection_config.get_api_params(**opts),
         )
 
     @overload
-    def get_metrics(  # type: ignore
+    def get_metrics(
         self,
         start: Optional[datetime.datetime] = None,
         end: Optional[datetime.datetime] = None,
-        request_timeout: Optional[float] = None,
+        **opts: Unpack[ApiParams],
     ) -> List[SandboxMetrics]:
         """
         Get the metrics of the current sandbox.
 
         :param start: Start time for the metrics, defaults to the start of the sandbox
-        :param end: End time for the metrics, defaults to current time
-        :param request_timeout: Timeout for the request in **seconds**
+        :param end: End time for the metrics, defaults to the current time
 
         :return: List of sandbox metrics containing CPU, memory and disk usage information
         """
@@ -516,37 +435,31 @@ class Sandbox(SandboxSetup, SandboxApi):
         sandbox_id: str,
         start: Optional[datetime.datetime] = None,
         end: Optional[datetime.datetime] = None,
-        api_key: Optional[str] = None,
-        domain: Optional[str] = None,
-        debug: Optional[bool] = None,
-        request_timeout: Optional[float] = None,
+        **opts: Unpack[ApiParams],
     ) -> List[SandboxMetrics]:
         """
         Get the metrics of the sandbox specified by sandbox ID.
 
         :param sandbox_id: Sandbox ID
         :param start: Start time for the metrics, defaults to the start of the sandbox
-        :param end: End time for the metrics, defaults to current time
-        :param api_key: E2B API Key to use for authentication, defaults to `E2B_API_KEY` environment variable
-        :param request_timeout: Timeout for the request in **seconds**
+        :param end: End time for the metrics, defaults to the current time
 
         :return: List of sandbox metrics containing CPU, memory and disk usage information
         """
         ...
 
     @class_method_variant("_cls_get_metrics")
-    def get_metrics(  # type: ignore
+    def get_metrics(
         self,
         start: Optional[datetime.datetime] = None,
         end: Optional[datetime.datetime] = None,
-        request_timeout: Optional[float] = None,
+        **opts: Unpack[ApiParams],
     ) -> List[SandboxMetrics]:
         """
-        Get the metrics of the current sandbox.
+        Get the metrics of the sandbox specified by sandbox ID.
 
         :param start: Start time for the metrics, defaults to the start of the sandbox
-        :param end: End time for the metrics, defaults to current time
-        :param request_timeout: Timeout for the request in **seconds**
+        :param end: End time for the metrics, defaults to the current time
 
         :return: List of sandbox metrics containing CPU, memory and disk usage information
         """
@@ -561,15 +474,9 @@ class Sandbox(SandboxSetup, SandboxApi):
                     "Disk metrics are not supported in this version of the sandbox, please rebuild the template to get disk metrics."
                 )
 
-        config_dict = self.connection_config.__dict__
-        config_dict.pop("access_token", None)
-        config_dict.pop("api_url", None)
-        if request_timeout:
-            config_dict["request_timeout"] = request_timeout
-
         return self._cls_get_metrics(
             sandbox_id=self.sandbox_id,
             start=start,
             end=end,
-            **config_dict,
+            **self.connection_config.get_api_params(**opts),
         )

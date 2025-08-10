@@ -1,9 +1,6 @@
-from abc import ABC
 from dataclasses import dataclass
 from typing import Optional, Dict
 from datetime import datetime
-
-from httpx import Limits
 
 from e2b.api.client.models import SandboxState
 
@@ -81,11 +78,3 @@ class SandboxMetrics:
     """Memory used in bytes."""
     timestamp: datetime
     """Timestamp of the metric entry."""
-
-
-class SandboxApiBase(ABC):
-    _limits = Limits(
-        max_keepalive_connections=10,
-        max_connections=20,
-        keepalive_expiry=20,
-    )
