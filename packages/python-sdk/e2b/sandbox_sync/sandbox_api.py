@@ -37,7 +37,7 @@ class SandboxApi(SandboxBase):
         cls,
         query: Optional[SandboxQuery] = None,
         **opts: Unpack[ApiParams],
-    ) -> List[ListedSandbox]:
+    ) -> List[SandboxInfo]:
         """
         List all running sandboxes.
 
