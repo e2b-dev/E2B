@@ -69,22 +69,10 @@ class SandboxApi(SandboxBase):
             if res.parsed is None:
                 return []
 
-            return [
-                ListedSandbox(
-                    sandbox_id=sandbox.sandbox_id,
-                    template_id=sandbox.template_id,
-                    name=sandbox.alias if isinstance(sandbox.alias, str) else None,
-                    metadata=(
-                        sandbox.metadata if isinstance(sandbox.metadata, dict) else {}
-                    ),
-                    state=sandbox.state,
-                    cpu_count=sandbox.cpu_count,
-                    memory_mb=sandbox.memory_mb,
-                    started_at=sandbox.started_at,
-                    end_at=sandbox.end_at,
-                )
-                for sandbox in res.parsed
-            ]
+            if isinstance(res.parsed, Error):
+                raise SandboxException(f"{res.parsed.message}: Request failed")
+
+            return [SandboxInfo._from_listed_sandbox(sandbox) for sandbox in res.parsed]
 
     @classmethod
     def _cls_get_info(
@@ -115,19 +103,7 @@ class SandboxApi(SandboxBase):
             if res.parsed is None:
                 raise Exception("Body of the request is None")
 
-            return SandboxInfo(
-                sandbox_id=res.parsed.sandbox_id,
-                sandbox_domain=res.parsed.domain,
-                template_id=res.parsed.template_id,
-                name=res.parsed.alias if isinstance(res.parsed.alias, str) else None,
-                metadata=(
-                    res.parsed.metadata if isinstance(res.parsed.metadata, dict) else {}
-                ),
-                started_at=res.parsed.started_at,
-                end_at=res.parsed.end_at,
-                envd_version=res.parsed.envd_version,
-                _envd_access_token=res.parsed.envd_access_token,
-            )
+            return SandboxInfo._from_sandbox_detail(res.parsed)
 
     @classmethod
     def _cls_kill(

@@ -18,8 +18,10 @@ class SandboxDetail:
     Attributes:
         client_id (str): Identifier of the client
         cpu_count (int): CPU cores for the sandbox
+        disk_size_mb (int): Disk size for the sandbox in MiB
         end_at (datetime.datetime): Time when the sandbox will expire
-        memory_mb (int): Memory for the sandbox in MB
+        envd_version (str): Version of the envd running in the sandbox
+        memory_mb (int): Memory for the sandbox in MiB
         sandbox_id (str): Identifier of the sandbox
         started_at (datetime.datetime): Time when the sandbox was started
         state (SandboxState): State of the sandbox
@@ -27,13 +29,14 @@ class SandboxDetail:
         alias (Union[Unset, str]): Alias of the template
         domain (Union[None, Unset, str]): Base domain where the sandbox traffic is accessible
         envd_access_token (Union[Unset, str]): Access token used for envd communication
-        envd_version (Union[Unset, str]): Version of the envd running in the sandbox
         metadata (Union[Unset, Any]):
     """
 
     client_id: str
     cpu_count: int
+    disk_size_mb: int
     end_at: datetime.datetime
+    envd_version: str
     memory_mb: int
     sandbox_id: str
     started_at: datetime.datetime
@@ -42,7 +45,6 @@ class SandboxDetail:
     alias: Union[Unset, str] = UNSET
     domain: Union[None, Unset, str] = UNSET
     envd_access_token: Union[Unset, str] = UNSET
-    envd_version: Union[Unset, str] = UNSET
     metadata: Union[Unset, Any] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
@@ -51,7 +53,11 @@ class SandboxDetail:
 
         cpu_count = self.cpu_count
 
+        disk_size_mb = self.disk_size_mb
+
         end_at = self.end_at.isoformat()
+
+        envd_version = self.envd_version
 
         memory_mb = self.memory_mb
 
@@ -73,8 +79,6 @@ class SandboxDetail:
 
         envd_access_token = self.envd_access_token
 
-        envd_version = self.envd_version
-
         metadata = self.metadata
 
         field_dict: dict[str, Any] = {}
@@ -83,7 +87,9 @@ class SandboxDetail:
             {
                 "clientID": client_id,
                 "cpuCount": cpu_count,
+                "diskSizeMB": disk_size_mb,
                 "endAt": end_at,
+                "envdVersion": envd_version,
                 "memoryMB": memory_mb,
                 "sandboxID": sandbox_id,
                 "startedAt": started_at,
@@ -97,8 +103,6 @@ class SandboxDetail:
             field_dict["domain"] = domain
         if envd_access_token is not UNSET:
             field_dict["envdAccessToken"] = envd_access_token
-        if envd_version is not UNSET:
-            field_dict["envdVersion"] = envd_version
         if metadata is not UNSET:
             field_dict["metadata"] = metadata
 
@@ -111,7 +115,11 @@ class SandboxDetail:
 
         cpu_count = d.pop("cpuCount")
 
+        disk_size_mb = d.pop("diskSizeMB")
+
         end_at = isoparse(d.pop("endAt"))
+
+        envd_version = d.pop("envdVersion")
 
         memory_mb = d.pop("memoryMB")
 
@@ -136,14 +144,14 @@ class SandboxDetail:
 
         envd_access_token = d.pop("envdAccessToken", UNSET)
 
-        envd_version = d.pop("envdVersion", UNSET)
-
         metadata = d.pop("metadata", UNSET)
 
         sandbox_detail = cls(
             client_id=client_id,
             cpu_count=cpu_count,
+            disk_size_mb=disk_size_mb,
             end_at=end_at,
+            envd_version=envd_version,
             memory_mb=memory_mb,
             sandbox_id=sandbox_id,
             started_at=started_at,
@@ -152,7 +160,6 @@ class SandboxDetail:
             alias=alias,
             domain=domain,
             envd_access_token=envd_access_token,
-            envd_version=envd_version,
             metadata=metadata,
         )
 

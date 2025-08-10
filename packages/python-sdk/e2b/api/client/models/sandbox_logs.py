@@ -6,6 +6,7 @@ from attrs import field as _attrs_field
 
 if TYPE_CHECKING:
     from ..models.sandbox_log import SandboxLog
+    from ..models.sandbox_log_entry import SandboxLogEntry
 
 
 T = TypeVar("T", bound="SandboxLogs")
@@ -15,13 +16,20 @@ T = TypeVar("T", bound="SandboxLogs")
 class SandboxLogs:
     """
     Attributes:
+        log_entries (list['SandboxLogEntry']): Structured logs of the sandbox
         logs (list['SandboxLog']): Logs of the sandbox
     """
 
+    log_entries: list["SandboxLogEntry"]
     logs: list["SandboxLog"]
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
+        log_entries = []
+        for log_entries_item_data in self.log_entries:
+            log_entries_item = log_entries_item_data.to_dict()
+            log_entries.append(log_entries_item)
+
         logs = []
         for logs_item_data in self.logs:
             logs_item = logs_item_data.to_dict()
@@ -31,6 +39,7 @@ class SandboxLogs:
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
+                "logEntries": log_entries,
                 "logs": logs,
             }
         )
@@ -40,8 +49,16 @@ class SandboxLogs:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         from ..models.sandbox_log import SandboxLog
+        from ..models.sandbox_log_entry import SandboxLogEntry
 
         d = dict(src_dict)
+        log_entries = []
+        _log_entries = d.pop("logEntries")
+        for log_entries_item_data in _log_entries:
+            log_entries_item = SandboxLogEntry.from_dict(log_entries_item_data)
+
+            log_entries.append(log_entries_item)
+
         logs = []
         _logs = d.pop("logs")
         for logs_item_data in _logs:
@@ -50,6 +67,7 @@ class SandboxLogs:
             logs.append(logs_item)
 
         sandbox_logs = cls(
+            log_entries=log_entries,
             logs=logs,
         )
 
