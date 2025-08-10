@@ -3,6 +3,7 @@ import { createConnectTransport } from '@connectrpc/connect-web'
 import {
   ConnectionConfig,
   ConnectionOpts,
+  DEFAULT_SANDBOX_TIMEOUT_MS,
   defaultUsername,
   Username,
 } from '../connectionConfig'
@@ -98,7 +99,7 @@ export interface SandboxUrlOpts {
  */
 export class Sandbox extends SandboxApi {
   protected static readonly defaultTemplate: string = 'base'
-  protected static readonly defaultSandboxTimeoutMs = 300_000
+  protected static readonly defaultSandboxTimeoutMs = DEFAULT_SANDBOX_TIMEOUT_MS
 
   /**
    * Module for interacting with the sandbox filesystem
@@ -209,6 +210,68 @@ export class Sandbox extends SandboxApi {
     this.pty = new Pty(rpcTransport, this.connectionConfig)
   }
 
+  static get beta() {
+    return {
+      /**
+       * Resume the sandbox.
+       *
+       * The **default sandbox timeout of 300 seconds** ({@link Sandbox.defaultSandboxTimeoutMs}) will be used for the resumed sandbox.
+       * If you pass a custom timeout in the `opts` parameter via {@link SandboxOpts.timeoutMs} property, it will be used instead.
+       *
+       * @param sandboxId sandbox ID.
+       * @param opts connection options.
+       *
+       * @returns a running sandbox instance.
+       */
+      resume: Sandbox.resumeSandbox.bind(Sandbox),
+      /**
+       * Pause a sandbox by its ID.
+       *
+       * @param sandboxId sandbox ID.
+       * @param opts connection options.
+       *
+       * @returns sandbox ID that can be used to resume the sandbox.
+       */
+      pause: Sandbox.pauseSandbox.bind(Sandbox),
+    }
+  }
+
+  get beta() {
+    return {
+      /**
+       * Resume the sandbox.
+       *
+       * The **default sandbox timeout of 300 seconds** ({@link Sandbox.defaultSandboxTimeoutMs}) will be used for the resumed sandbox.
+       * If you pass a custom timeout in the `opts` parameter via {@link SandboxOpts.timeoutMs} property, it will be used instead.
+       *
+       * @param opts connection options.
+       *
+       * @returns a running sandbox instance.
+       */
+      resume: async (opts?: Omit<SandboxOpts, 'metadata' | 'envs'>) => {
+        return await Sandbox.resumeSandbox(this.sandboxId, {
+          ...this.connectionConfig,
+          ...opts,
+        })
+      },
+      /**
+       * Pause a sandbox by its ID.
+       *
+       * @param opts connection options.
+       *
+       * @returns sandbox ID that can be used to resume the sandbox.
+       */
+      pause: async (
+        opts?: Omit<SandboxOpts, 'metadata' | 'envs' | 'timeoutMs'>
+      ) => {
+        return await Sandbox.pauseSandbox(this.sandboxId, {
+          ...this.connectionConfig,
+          ...opts,
+        })
+      },
+    }
+  }
+
   /**
    * Create a new sandbox from the default `base` sandbox template.
    *
@@ -262,14 +325,15 @@ export class Sandbox extends SandboxApi {
         sandboxId: 'debug_sandbox_id',
         ...config,
       }) as InstanceType<S>
-    } else {
-      const sandbox = await this.createSandbox(
-        template,
-        sandboxOpts?.timeoutMs ?? this.defaultSandboxTimeoutMs,
-        sandboxOpts
-      )
-      return new this({ ...sandbox, ...config }) as InstanceType<S>
     }
+
+    const sandbox = await this.createSandbox(
+      template,
+      sandboxOpts?.timeoutMs ?? this.defaultSandboxTimeoutMs,
+      sandboxOpts
+    )
+
+    return new this({ ...sandbox, ...config }) as InstanceType<S>
   }
 
   /**
@@ -295,8 +359,14 @@ export class Sandbox extends SandboxApi {
     sandboxId: string,
     opts?: Omit<SandboxOpts, 'metadata' | 'envs' | 'timeoutMs'>
   ): Promise<InstanceType<S>> {
-    const config = new ConnectionConfig(opts)
-    const info = await this.getInfo(sandboxId, opts)
+    const info = await this.getFullInfo(sandboxId, opts)
+
+    const config = new ConnectionConfig({
+      ...opts,
+      // We don't want to pass headers to the connection config as they would then be inherited by all requests,
+      // which can be confusing.
+      headers: undefined,
+    })
 
     return new this({
       sandboxId,
@@ -424,7 +494,7 @@ export class Sandbox extends SandboxApi {
 
     if (!useSignature && opts.useSignatureExpiration != undefined) {
       throw new Error(
-          'Signature expiration can be used only when sandbox is created as secured.'
+        'Signature expiration can be used only when sandbox is created as secured.'
       )
     }
 
@@ -518,7 +588,9 @@ export class Sandbox extends SandboxApi {
    *
    * @returns  List of sandbox metrics containing CPU, memory and disk usage information.
    */
-  async getMetrics(opts?: Pick<SandboxMetricsOpts, 'start' | 'end' | 'requestTimeoutMs'>) {
+  async getMetrics(
+    opts?: Pick<SandboxMetricsOpts, 'start' | 'end' | 'requestTimeoutMs'>
+  ) {
     if (this.envdApi.version) {
       if (compareVersions(this.envdApi.version, '0.1.5') < 0) {
         throw new SandboxError(
