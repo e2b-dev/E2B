@@ -22,6 +22,8 @@ from .resumed_sandbox import ResumedSandbox
 from .sandbox import Sandbox
 from .sandbox_detail import SandboxDetail
 from .sandbox_log import SandboxLog
+from .sandbox_log_entry import SandboxLogEntry
+from .sandbox_log_entry_fields import SandboxLogEntryFields
 from .sandbox_logs import SandboxLogs
 from .sandbox_metric import SandboxMetric
 from .sandbox_state import SandboxState
@@ -62,6 +64,8 @@ __all__ = (
     "SandboxDetail",
     "SandboxesWithMetrics",
     "SandboxLog",
+    "SandboxLogEntry",
+    "SandboxLogEntryFields",
     "SandboxLogs",
     "SandboxMetric",
     "SandboxState",
