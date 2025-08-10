@@ -104,7 +104,7 @@ export const logsCommand = new commander.Command('logs')
           console.log(`\nLogs for sandbox ${asBold(sandboxID)}:`)
         }
 
-        const isRunningPromise = listSandboxes()
+        const isRunningPromise = listSandboxes({ state: ['running'] })
           .then((r) => r.find((s) => s.sandboxID === getShortID(sandboxID)))
           .then((s) => !!s)
 
