@@ -210,6 +210,9 @@ export class Sandbox extends SandboxApi {
     this.pty = new Pty(rpcTransport, this.connectionConfig)
   }
 
+  /**
+   * Module for beta features.
+   */
   static get beta() {
     return {
       /**
@@ -236,6 +239,9 @@ export class Sandbox extends SandboxApi {
     }
   }
 
+  /**
+   * Module for beta features.
+   */
   get beta() {
     return {
       /**

@@ -151,7 +151,9 @@ class _SandboxMeta(type):
 
     @property
     def beta(cls) -> Type[_Beta]:
-        """Access to beta features at class level."""
+        """
+        Module for beta features.
+        """
         return _Beta
 
 
@@ -201,6 +203,9 @@ class Sandbox(SandboxApi, metaclass=_SandboxMeta):
 
     @property
     def beta(self) -> _Beta:
+        """
+        Module for beta features.
+        """
         return self._beta
 
     def __init__(

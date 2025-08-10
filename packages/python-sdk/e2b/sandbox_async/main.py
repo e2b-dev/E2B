@@ -166,7 +166,9 @@ class _AsyncSandboxMeta(type):
 
     @property
     def beta(cls) -> Type[_Beta]:
-        """Access to beta features at class level."""
+        """
+        Module for beta features.
+        """
         return _Beta
 
 
