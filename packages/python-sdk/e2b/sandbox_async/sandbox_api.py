@@ -9,7 +9,6 @@ from e2b.sandbox.main import SandboxBase
 from e2b.sandbox.sandbox_api import (
     SandboxInfo,
     SandboxQuery,
-    ListedSandbox,
     SandboxMetrics,
 )
 from e2b.exceptions import TemplateException, SandboxException

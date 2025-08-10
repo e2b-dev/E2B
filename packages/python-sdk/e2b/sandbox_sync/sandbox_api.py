@@ -8,7 +8,6 @@ from typing_extensions import Unpack
 from e2b.sandbox.sandbox_api import (
     SandboxInfo,
     SandboxQuery,
-    ListedSandbox,
     SandboxMetrics,
 )
 from e2b.sandbox.main import SandboxBase
