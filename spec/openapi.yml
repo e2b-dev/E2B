@@ -293,8 +293,7 @@ components:
           deprecated: true
           description: Identifier of the client
         envdVersion:
-          type: string
-          description: Version of the envd running in the sandbox
+          $ref: "#/components/schemas/EnvdVersion"
         envdAccessToken:
           type: string
           description: Access token used for envd communication
@@ -338,8 +337,7 @@ components:
           format: date-time
           description: Time when the sandbox will expire
         envdVersion:
-          type: string
-          description: Version of the envd running in the sandbox
+          $ref: "#/components/schemas/EnvdVersion"
         envdAccessToken:
           type: string
           description: Access token used for envd communication

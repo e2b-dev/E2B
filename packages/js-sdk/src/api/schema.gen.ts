@@ -1166,8 +1166,7 @@ export interface components {
             domain?: string | null;
             /** @description Access token used for envd communication */
             envdAccessToken?: string;
-            /** @description Version of the envd running in the sandbox */
-            envdVersion: string;
+            envdVersion: components["schemas"]["EnvdVersion"];
             /** @description Identifier of the sandbox */
             sandboxID: string;
             /** @description Identifier of the template from which is the sandbox created */
@@ -1192,8 +1191,7 @@ export interface components {
             endAt: string;
             /** @description Access token used for envd communication */
             envdAccessToken?: string;
-            /** @description Version of the envd running in the sandbox */
-            envdVersion: string;
+            envdVersion: components["schemas"]["EnvdVersion"];
             memoryMB: components["schemas"]["MemoryMB"];
             metadata?: components["schemas"]["SandboxMetadata"];
             /** @description Identifier of the sandbox */
