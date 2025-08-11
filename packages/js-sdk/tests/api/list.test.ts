@@ -406,17 +406,18 @@ sandboxTest.skipIf(isDebug)(
 
       // Check first page
       assert.equal(sandboxes.length, 1)
-      assert.equal(sandboxes[0].state, 'paused')
+      assert.equal(sandboxes[0].state, 'running')
+
       assert.isTrue(paginator.hasNext)
       assert.notEqual(paginator.nextToken, undefined)
-      assert.equal(sandboxes[0].sandboxId.startsWith(extraSbxId), true)
+      assert.equal(sandboxes[0].sandboxId, extraSbxId)
 
       // Get second page
       const sandboxes2 = await paginator.nextItems()
 
       // Check second page
       assert.equal(sandboxes2.length, 1)
-      assert.equal(sandboxes2[0].state, 'running')
+      assert.equal(sandboxes2[0].state, 'paused')
       assert.isFalse(paginator.hasNext)
       assert.equal(paginator.nextToken, undefined)
       assert.equal(sandboxes2[0].sandboxId, sandbox.sandboxId)
