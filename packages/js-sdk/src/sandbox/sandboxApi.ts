@@ -92,7 +92,7 @@ export interface SandboxListOpts extends SandboxApiOpts {
   }
 
   /**
-   * Number of sandboxes to return.
+   * Number of sandboxes to return per page.
    *
    * @default 1000
    */

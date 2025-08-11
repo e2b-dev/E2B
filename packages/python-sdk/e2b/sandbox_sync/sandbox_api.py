@@ -44,7 +44,7 @@ class SandboxApi(SandboxBase):
         List all running sandboxes.
 
         :param query: Filter the list of sandboxes by metadata or state, e.g. `SandboxListQuery(metadata={"key": "value"})` or `SandboxListQuery(state=[SandboxState.RUNNING])`
-        :param limit: Maximum number of sandboxes to return
+        :param limit: Maximum number of sandboxes to return per page
         :param next_token: Token for pagination
 
         :return: List of running sandboxes
