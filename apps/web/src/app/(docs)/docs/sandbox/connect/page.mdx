@@ -7,19 +7,19 @@ This is useful if you want to, for example, reuse the same sandbox instance for 
 ## 1. Get the sandbox ID
 To connect to a running sandbox, you first need to retrieve its ID. You can do this by calling the `Sandbox.list()` method.
 
-<Note>
-If you're using the [beta version of the SDKs](/docs/sandbox/installing-beta-sdks), the `Sandbox.list()` method was updated. See [List Sandboxes](/docs/sandbox/list#changes-in-the-beta-sdks) for more information.
-</Note>
-
 <CodeGroup>
 ```js
-import { Sandbox } from "@e2b/code-interpreter"
+import { Sandbox } from './dist'
+const sbx = await Sandbox.create()
 
 // Get all running sandboxes
-const runningSandboxes = await Sandbox.list() // $HighlightLine
+const paginator = await Sandbox.list({
+  query: { state: ['running'] }, // $HighlightLine
+})
 
+const runningSandboxes = await paginator.nextItems()
 if (runningSandboxes.length === 0) {
-  throw new Error("No running sandboxes found")
+  throw new Error('No running sandboxes found')
 }
 
 // Get the ID of the sandbox you want to connect to
@@ -27,17 +27,17 @@ const sandboxId = runningSandboxes[0].sandboxId
 ```
 
 ```python
-from e2b_code_interpreter import Sandbox
-
 # Get all running sandboxes
-running_sandboxes = Sandbox.list() # $HighlightLine
+paginator = Sandbox.list()  # $HighlightLine
 
 # Get the ID of the sandbox you want to connect to
+running_sandboxes = paginator.next_items()
 if len(running_sandboxes) == 0:
-  raise Exception("No running sandboxes found")
+    raise Exception("No running sandboxes found")
 
 # Get the ID of the sandbox you want to connect to
 sandbox_id = running_sandboxes[0].sandbox_id
+
 ```
 </CodeGroup>
 
