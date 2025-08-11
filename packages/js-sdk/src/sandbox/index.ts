@@ -11,54 +11,16 @@ import { EnvdApiClient, handleEnvdApiError } from '../envd/api'
 import { createRpcLogger } from '../logs'
 import { Commands, Pty } from './commands'
 import { Filesystem } from './filesystem'
-import { SandboxApi, SandboxMetricsOpts } from './sandboxApi'
+import {
+  SandboxApi,
+  SandboxOpts,
+  SandboxConnectOpts,
+  SandboxResumeOpts,
+  SandboxMetricsOpts,
+} from './sandboxApi'
 import { getSignature } from './signature'
 import { compareVersions } from 'compare-versions'
 import { SandboxError } from '../errors'
-
-/**
- * Options for creating a new Sandbox.
- */
-export interface SandboxOpts extends ConnectionOpts {
-  /**
-   * Custom metadata for the sandbox.
-   *
-   * @default {}
-   */
-  metadata?: Record<string, string>
-
-  /**
-   * Custom environment variables for the sandbox.
-   *
-   * Used when executing commands and code in the sandbox.
-   * Can be overridden with the `envs` argument when executing commands or code.
-   *
-   * @default {}
-   */
-  envs?: Record<string, string>
-
-  /**
-   * Timeout for the sandbox in **milliseconds**.
-   * Maximum time a sandbox can be kept alive is 24 hours (86_400_000 milliseconds) for Pro users and 1 hour (3_600_000 milliseconds) for Hobby users.
-   *
-   * @default 300_000 // 5 minutes
-   */
-  timeoutMs?: number
-
-  /**
-   * Secure all traffic coming to the sandbox controller with auth token
-   *
-   * @default false
-   */
-  secure?: boolean
-
-  /**
-   * Allow sandbox to access the internet
-   *
-   * @default true
-   */
-  allowInternetAccess?: boolean
-}
 
 /**
  * Options for sandbox upload/download URL generation.
@@ -100,6 +62,7 @@ export interface SandboxUrlOpts {
 export class Sandbox extends SandboxApi {
   protected static readonly defaultTemplate: string = 'base'
   protected static readonly defaultSandboxTimeoutMs = DEFAULT_SANDBOX_TIMEOUT_MS
+  private static _betaInstance?: StaticBeta<typeof this>
 
   /**
    * Module for interacting with the sandbox filesystem
@@ -130,6 +93,7 @@ export class Sandbox extends SandboxApi {
   private readonly envdApiUrl: string
   private readonly envdAccessToken?: string
   private readonly envdApi: EnvdApiClient
+  private _betaInstance?: InstanceBeta<this>
 
   /**
    * Use {@link Sandbox.create} to create a new Sandbox instead.
@@ -140,7 +104,7 @@ export class Sandbox extends SandboxApi {
    * @access protected
    */
   constructor(
-    opts: Omit<SandboxOpts, 'timeoutMs' | 'envs' | 'metadata'> & {
+    opts: SandboxConnectOpts & {
       sandboxId: string
       sandboxDomain?: string
       envdVersion?: string
@@ -213,69 +177,41 @@ export class Sandbox extends SandboxApi {
   /**
    * Module for beta features.
    */
-  static get beta() {
-    return {
-      /**
-       * Resume the sandbox.
-       *
-       * The **default sandbox timeout of 300 seconds** ({@link Sandbox.defaultSandboxTimeoutMs}) will be used for the resumed sandbox.
-       * If you pass a custom timeout in the `opts` parameter via {@link SandboxOpts.timeoutMs} property, it will be used instead.
-       *
-       * @param sandboxId sandbox ID.
-       * @param opts connection options.
-       *
-       * @returns a running sandbox instance.
-       */
-      resume: Sandbox.resumeSandbox.bind(Sandbox),
-      /**
-       * Pause a sandbox by its ID.
-       *
-       * @param sandboxId sandbox ID.
-       * @param opts connection options.
-       *
-       * @returns sandbox ID that can be used to resume the sandbox.
-       */
-      pause: Sandbox.pauseSandbox.bind(Sandbox),
+  static get beta(): StaticBeta<typeof this> {
+    const Ctor = this.constructor as typeof Sandbox
+    if (!Ctor._betaInstance) {
+      const resumeBound = async (
+        sandboxId: string,
+        opts?: SandboxResumeOpts
+      ) => {
+        await this.resumeSandbox(sandboxId, opts)
+        return await this.connect(sandboxId, opts)
+      }
+
+      const pauseBound = async (sandboxId: string, opts?: ConnectionOpts) =>
+        await this.pauseSandbox(sandboxId, opts)
+
+      Ctor._betaInstance = new StaticBeta(resumeBound, pauseBound)
     }
+    return Ctor._betaInstance
   }
 
   /**
    * Module for beta features.
    */
-  get beta() {
-    return {
-      /**
-       * Resume the sandbox.
-       *
-       * The **default sandbox timeout of 300 seconds** ({@link Sandbox.defaultSandboxTimeoutMs}) will be used for the resumed sandbox.
-       * If you pass a custom timeout in the `opts` parameter via {@link SandboxOpts.timeoutMs} property, it will be used instead.
-       *
-       * @param opts connection options.
-       *
-       * @returns a running sandbox instance.
-       */
-      resume: async (opts?: Omit<SandboxOpts, 'metadata' | 'envs'>) => {
-        return await Sandbox.resumeSandbox(this.sandboxId, {
-          ...this.connectionConfig,
-          ...opts,
-        })
-      },
-      /**
-       * Pause a sandbox by its ID.
-       *
-       * @param opts connection options.
-       *
-       * @returns sandbox ID that can be used to resume the sandbox.
-       */
-      pause: async (
-        opts?: Omit<SandboxOpts, 'metadata' | 'envs' | 'timeoutMs'>
-      ) => {
-        return await Sandbox.pauseSandbox(this.sandboxId, {
-          ...this.connectionConfig,
-          ...opts,
-        })
-      },
+  get beta(): InstanceBeta<this> {
+    if (!this._betaInstance) {
+      const resumeBound = this.resume.bind(this) as (
+        opts?: SandboxResumeOpts
+      ) => Promise<this>
+
+      const pauseBound = this.pause.bind(this) as (
+        opts?: ConnectionOpts
+      ) => Promise<boolean>
+
+      this._betaInstance = new InstanceBeta<this>(resumeBound, pauseBound)
     }
+    return this._betaInstance
   }
 
   /**
@@ -363,7 +299,7 @@ export class Sandbox extends SandboxApi {
   static async connect<S extends typeof Sandbox>(
     this: S,
     sandboxId: string,
-    opts?: Omit<SandboxOpts, 'metadata' | 'envs' | 'timeoutMs'>
+    opts?: SandboxConnectOpts
   ): Promise<InstanceType<S>> {
     const info = await this.getFullInfo(sandboxId, opts)
 
@@ -618,6 +554,27 @@ export class Sandbox extends SandboxApi {
     })
   }
 
+  protected async resume<T extends typeof Sandbox>(
+    this: InstanceType<T>,
+    opts?: SandboxResumeOpts
+  ): Promise<InstanceType<T>> {
+    const Ctor = this.constructor as T
+    await Ctor.resumeSandbox(this.sandboxId, opts)
+
+    const config = new ConnectionConfig({
+      ...opts,
+      // We don't want to pass headers to the connection config as they would then be inherited by all requests,
+      // which can be confusing.
+      headers: undefined,
+    })
+
+    return await Ctor.connect(this.sandboxId, config)
+  }
+
+  private async pause(opts?: ConnectionOpts): Promise<boolean> {
+    return await Sandbox.pauseSandbox(this.sandboxId, opts)
+  }
+
   private fileUrl(path?: string, username?: string) {
     const url = new URL('/files', this.envdApiUrl)
 
@@ -627,5 +584,83 @@ export class Sandbox extends SandboxApi {
     }
 
     return url.toString()
+  }
+}
+
+/**
+ * Beta features for static Sandbox methods
+ */
+class StaticBeta<I extends typeof Sandbox> {
+  constructor(
+    private resumeSandbox: (
+      sandboxId: string,
+      opts?: SandboxResumeOpts
+    ) => Promise<InstanceType<I>>,
+    private pauseSandbox: (
+      sandboxId: string,
+      opts?: ConnectionOpts
+    ) => Promise<boolean>
+  ) {}
+
+  /**
+   * Resume the sandbox.
+   *
+   * The **default sandbox timeout of 300 seconds** ({@link Sandbox.defaultSandboxTimeoutMs}) will be used for the resumed sandbox.
+   * If you pass a custom timeout in the `opts` parameter via {@link SandboxOpts.timeoutMs} property, it will be used instead.
+   *
+   * @param sandboxId sandbox ID.
+   * @param opts connection options.
+   *
+   * @returns a running sandbox instance.
+   */
+  async resume(sandboxId: string, opts?: SandboxResumeOpts) {
+    return await this.resumeSandbox(sandboxId, opts)
+  }
+
+  /**
+   * Pause a sandbox by its ID.
+   *
+   * @param sandboxId sandbox ID.
+   * @param opts connection options.
+   *
+   * @returns sandbox ID that can be used to resume the sandbox.
+   */
+  async pause(sandboxId: string, opts?: ConnectionOpts) {
+    return this.pauseSandbox(sandboxId, opts)
+  }
+}
+
+/**
+ * Beta features for Sandbox instances
+ */
+class InstanceBeta<I extends Sandbox> {
+  constructor(
+    private resumeSandbox: (opts?: SandboxResumeOpts) => Promise<I>,
+    private pauseSandbox: (opts?: ConnectionOpts) => Promise<boolean>
+  ) {}
+
+  /**
+   * Resume the sandbox.
+   *
+   * The **default sandbox timeout of 300 seconds** ({@link Sandbox.defaultSandboxTimeoutMs}) will be used for the resumed sandbox.
+   * If you pass a custom timeout in the `opts` parameter via {@link SandboxOpts.timeoutMs} property, it will be used instead.
+   *
+   * @param opts connection options.
+   *
+   * @returns a running sandbox instance.
+   */
+  async resume(opts?: SandboxResumeOpts) {
+    return await this.resumeSandbox(opts)
+  }
+
+  /**
+   * Pause a sandbox by its ID.
+   *
+   * @param opts connection options.
+   *
+   * @returns sandbox ID that can be used to resume the sandbox.
+   */
+  async pause(opts?: ConnectionOpts) {
+    return await this.pauseSandbox(opts)
   }
 }

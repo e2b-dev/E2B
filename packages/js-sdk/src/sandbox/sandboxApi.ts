@@ -6,7 +6,6 @@ import {
 } from '../connectionConfig'
 import { compareVersions } from 'compare-versions'
 import { NotFoundError, TemplateError } from '../errors'
-import { SandboxOpts } from './index'
 
 /**
  * Options for request to the Sandbox API.
@@ -20,29 +19,58 @@ export interface SandboxApiOpts
   > {}
 
 /**
- * Options for create sandbox request.
+ * Options for creating a new Sandbox.
  */
-export interface SandboxCreateOpts extends SandboxApiOpts {
+export interface SandboxOpts extends ConnectionOpts {
   /**
-   * Custom metadata for the sandbox
+   * Custom metadata for the sandbox.
+   *
+   * @default {}
    */
   metadata?: Record<string, string>
 
   /**
-   * Custom environment variables for the sandbox
+   * Custom environment variables for the sandbox.
+   *
+   * Used when executing commands and code in the sandbox.
+   * Can be overridden with the `envs` argument when executing commands or code.
+   *
+   * @default {}
    */
   envs?: Record<string, string>
 
   /**
-   * Envd is secured with access token and cannot be used without it
+   * Timeout for the sandbox in **milliseconds**.
+   * Maximum time a sandbox can be kept alive is 24 hours (86_400_000 milliseconds) for Pro users and 1 hour (3_600_000 milliseconds) for Hobby users.
+   *
+   * @default 300_000 // 5 minutes
+   */
+  timeoutMs?: number
+
+  /**
+   * Secure all traffic coming to the sandbox controller with auth token
+   *
+   * @default false
    */
   secure?: boolean
 
   /**
-   * Allow sandbox to access the internet, defaults to `true`.
+   * Allow sandbox to access the internet
+   *
+   * @default true
    */
   allowInternetAccess?: boolean
 }
+
+/**
+ * Options for resuming a paused Sandbox.
+ */
+export type SandboxResumeOpts = Omit<SandboxOpts, 'metadata' | 'envs'>
+
+/**
+ * Options for connecting to a Sandbox.
+ */
+export type SandboxConnectOpts = Omit<SandboxResumeOpts, 'timeoutMs'>
 
 /**
  * State of the sandbox.
@@ -416,12 +444,14 @@ export class SandboxApi {
 
   protected static async resumeSandbox(
     sandboxId: string,
-    opts?: Omit<SandboxOpts, 'metadata' | 'envs'>
+    opts?: SandboxResumeOpts
   ): Promise<boolean> {
     const timeoutMs = opts?.timeoutMs ?? DEFAULT_SANDBOX_TIMEOUT_MS
 
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
+
+    console.log(this)
 
     const res = await client.api.POST('/sandboxes/{sandboxID}/resume', {
       params: {

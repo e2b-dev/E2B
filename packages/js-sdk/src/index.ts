@@ -33,7 +33,7 @@ export type {
   PtyOutput,
   CommandHandle,
 } from './sandbox/commands/commandHandle'
-export type { SandboxApiOpts, SandboxCreateOpts } from './sandbox/sandboxApi'
+export type { SandboxOpts, SandboxApiOpts } from './sandbox/sandboxApi'
 
 export type {
   ProcessInfo,
@@ -44,7 +44,6 @@ export type {
   Pty,
 } from './sandbox/commands'
 
-export type { SandboxOpts } from './sandbox'
 export type { SandboxInfo, SandboxMetrics } from './sandbox/sandboxApi'
 export { Sandbox }
 import { Sandbox } from './sandbox'
