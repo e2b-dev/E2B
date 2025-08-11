@@ -5,9 +5,9 @@ import { sandboxTest, isDebug } from '../setup.js'
 
 sandboxTest.skipIf(isDebug)(
   'list sandboxes',
-  async ({ sandbox, sandboxType }) => {
+  async ({ sandbox, sandboxTestId }) => {
     const paginator = Sandbox.list({
-      query: { metadata: { sandboxType } },
+      query: { metadata: { sandboxTestId } },
     })
     const sandboxes = await paginator.nextItems()
 
@@ -37,12 +37,12 @@ sandboxTest.skipIf(isDebug)('list sandboxes with filter', async () => {
 
 sandboxTest.skipIf(isDebug)(
   'list running sandboxes',
-  async ({ sandboxType }) => {
-    const extraSbx = await Sandbox.create({ metadata: { sandboxType } })
+  async ({ sandboxTestId }) => {
+    const extraSbx = await Sandbox.create({ metadata: { sandboxTestId } })
 
     try {
       const paginator = Sandbox.list({
-        query: { metadata: { sandboxType }, state: ['running'] },
+        query: { metadata: { sandboxTestId }, state: ['running'] },
       })
       const sandboxes = await paginator.nextItems()
 
@@ -61,14 +61,14 @@ sandboxTest.skipIf(isDebug)(
 
 sandboxTest.skipIf(isDebug)(
   'list paused sandboxes',
-  async ({ sandboxType }) => {
+  async ({ sandboxTestId }) => {
     // Create and pause a sandbox
-    const extraSbx = await Sandbox.create({ metadata: { sandboxType } })
+    const extraSbx = await Sandbox.create({ metadata: { sandboxTestId } })
     await extraSbx.beta.pause()
 
     try {
       const paginator = Sandbox.list({
-        query: { metadata: { sandboxType }, state: ['paused'] },
+        query: { metadata: { sandboxTestId }, state: ['paused'] },
       })
       const sandboxes = await paginator.nextItems()
 
@@ -88,15 +88,15 @@ sandboxTest.skipIf(isDebug)(
 
 sandboxTest.skipIf(isDebug)(
   'paginate running sandboxes',
-  async ({ sandbox, sandboxType }) => {
+  async ({ sandbox, sandboxTestId }) => {
     // Create extra sandboxes
-    const extraSbx = await Sandbox.create({ metadata: { sandboxType } })
+    const extraSbx = await Sandbox.create({ metadata: { sandboxTestId } })
 
     try {
       // Test pagination with limit
       const paginator = Sandbox.list({
         limit: 1,
-        query: { metadata: { sandboxType }, state: ['running'] },
+        query: { metadata: { sandboxTestId }, state: ['running'] },
       })
       const sandboxes = await paginator.nextItems()
 
@@ -124,12 +124,12 @@ sandboxTest.skipIf(isDebug)(
 
 sandboxTest.skipIf(isDebug)(
   'paginate paused sandboxes',
-  async ({ sandbox, sandboxType }) => {
+  async ({ sandbox, sandboxTestId }) => {
     const sandboxId = sandbox.sandboxId.split('-')[0]
     await sandbox.beta.pause()
 
     // Create extra paused sandbox
-    const extraSbx = await Sandbox.create({ metadata: { sandboxType } })
+    const extraSbx = await Sandbox.create({ metadata: { sandboxTestId } })
     await extraSbx.beta.pause()
     const extraSbxId = extraSbx.sandboxId.split('-')[0]
 
@@ -137,7 +137,7 @@ sandboxTest.skipIf(isDebug)(
       // Test pagination with limit
       const paginator = Sandbox.list({
         limit: 1,
-        query: { metadata: { sandboxType }, state: ['paused'] },
+        query: { metadata: { sandboxTestId }, state: ['paused'] },
       })
       const sandboxes = await paginator.nextItems()
 
@@ -165,9 +165,9 @@ sandboxTest.skipIf(isDebug)(
 
 sandboxTest.skipIf(isDebug)(
   'paginate running and paused sandboxes',
-  async ({ sandbox, sandboxType }) => {
+  async ({ sandbox, sandboxTestId }) => {
     // Create extra sandbox
-    const extraSbx = await Sandbox.create({ metadata: { sandboxType } })
+    const extraSbx = await Sandbox.create({ metadata: { sandboxTestId } })
     const extraSbxId = extraSbx.sandboxId.split('-')[0]
 
     // Pause the extra sandbox
@@ -178,7 +178,7 @@ sandboxTest.skipIf(isDebug)(
       const paginator = Sandbox.list({
         limit: 1,
         query: {
-          metadata: { sandboxType },
+          metadata: { sandboxTestId },
           state: ['running', 'paused'],
         },
       })
@@ -208,9 +208,9 @@ sandboxTest.skipIf(isDebug)(
 
 sandboxTest.skipIf(isDebug)(
   'paginate iterator',
-  async ({ sandbox, sandboxType }) => {
+  async ({ sandbox, sandboxTestId }) => {
     const paginator = Sandbox.list({
-      query: { metadata: { sandboxType } },
+      query: { metadata: { sandboxTestId } },
     })
     const sandboxes: SandboxInfo[] = []
 

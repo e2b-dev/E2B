@@ -5,11 +5,11 @@ import { Sandbox } from '../../src'
 
 sandboxTest.skipIf(isDebug)(
   'kill existing sandbox',
-  async ({ sandbox, sandboxType }) => {
+  async ({ sandbox, sandboxTestId }) => {
     await Sandbox.kill(sandbox.sandboxId)
 
     const paginator = Sandbox.list({
-      query: { state: ['running'], metadata: { sandboxType } },
+      query: { state: ['running'], metadata: { sandboxTestId } },
     })
     const sandboxes = await paginator.nextItems()
     expect(sandboxes.map((s) => s.sandboxId)).not.toContain(sandbox.sandboxId)

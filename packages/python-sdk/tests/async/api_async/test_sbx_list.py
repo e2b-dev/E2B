@@ -6,9 +6,9 @@ from e2b import AsyncSandbox, SandboxQuery, SandboxState
 
 
 @pytest.mark.skip_debug()
-async def test_list_sandboxes(async_sandbox: AsyncSandbox, sandbox_type: str):
+async def test_list_sandboxes(async_sandbox: AsyncSandbox, sandbox_test_id: str):
     paginator = AsyncSandbox.list(
-        query=SandboxQuery(metadata={"sandbox_type": sandbox_type})
+        query=SandboxQuery(metadata={"sandbox_test_id": sandbox_test_id})
     )
     sandboxes = await paginator.next_items()
     assert len(sandboxes) >= 1
@@ -16,7 +16,7 @@ async def test_list_sandboxes(async_sandbox: AsyncSandbox, sandbox_type: str):
 
 
 @pytest.mark.skip_debug()
-async def test_list_sandboxes_with_filter(sandbox_type: str):
+async def test_list_sandboxes_with_filter(sandbox_test_id: str):
     unique_id = str(int(time.time()))
     extra_sbx = await AsyncSandbox.create(metadata={"unique_id": unique_id})
 
@@ -32,10 +32,12 @@ async def test_list_sandboxes_with_filter(sandbox_type: str):
 
 
 @pytest.mark.skip_debug()
-async def test_list_running_sandboxes(async_sandbox: AsyncSandbox, sandbox_type: str):
+async def test_list_running_sandboxes(
+    async_sandbox: AsyncSandbox, sandbox_test_id: str
+):
     paginator = AsyncSandbox.list(
         query=SandboxQuery(
-            metadata={"sandbox_type": sandbox_type}, state=[SandboxState.RUNNING]
+            metadata={"sandbox_test_id": sandbox_test_id}, state=[SandboxState.RUNNING]
         )
     )
     sandboxes = await paginator.next_items()
@@ -49,12 +51,12 @@ async def test_list_running_sandboxes(async_sandbox: AsyncSandbox, sandbox_type:
 
 
 @pytest.mark.skip_debug()
-async def test_list_paused_sandboxes(async_sandbox: AsyncSandbox, sandbox_type: str):
+async def test_list_paused_sandboxes(async_sandbox: AsyncSandbox, sandbox_test_id: str):
     await async_sandbox.beta.pause()
 
     paginator = AsyncSandbox.list(
         query=SandboxQuery(
-            metadata={"sandbox_type": sandbox_type}, state=[SandboxState.PAUSED]
+            metadata={"sandbox_test_id": sandbox_test_id}, state=[SandboxState.PAUSED]
         )
     )
     sandboxes = await paginator.next_items()
@@ -70,16 +72,17 @@ async def test_list_paused_sandboxes(async_sandbox: AsyncSandbox, sandbox_type: 
 
 @pytest.mark.skip_debug()
 async def test_paginate_running_sandboxes(
-    async_sandbox: AsyncSandbox, sandbox_type: str
+    async_sandbox: AsyncSandbox, sandbox_test_id: str
 ):
     # Create extra sandbox
-    extra_sbx = await AsyncSandbox.create(metadata={"sandbox_type": sandbox_type})
+    extra_sbx = await AsyncSandbox.create(metadata={"sandbox_test_id": sandbox_test_id})
 
     try:
         # Test pagination with limit
         paginator = AsyncSandbox.list(
             query=SandboxQuery(
-                metadata={"sandbox_type": sandbox_type}, state=[SandboxState.RUNNING]
+                metadata={"sandbox_test_id": sandbox_test_id},
+                state=[SandboxState.RUNNING],
             ),
             limit=1,
         )
@@ -107,13 +110,13 @@ async def test_paginate_running_sandboxes(
 
 @pytest.mark.skip_debug()
 async def test_paginate_paused_sandboxes(
-    async_sandbox: AsyncSandbox, sandbox_type: str
+    async_sandbox: AsyncSandbox, sandbox_test_id: str
 ):
     sandbox_id = async_sandbox.sandbox_id.split("-")[0]
     await async_sandbox.beta.pause()
 
     # create another paused sandbox
-    extra_sbx = await AsyncSandbox.create(metadata={"sandbox_type": sandbox_type})
+    extra_sbx = await AsyncSandbox.create(metadata={"sandbox_test_id": sandbox_test_id})
     extra_sbx_id = extra_sbx.sandbox_id.split("-")[0]
     await extra_sbx.beta.pause()
 
@@ -121,7 +124,8 @@ async def test_paginate_paused_sandboxes(
         # Test pagination with limit
         paginator = AsyncSandbox.list(
             query=SandboxQuery(
-                state=[SandboxState.PAUSED], metadata={"sandbox_type": sandbox_type}
+                state=[SandboxState.PAUSED],
+                metadata={"sandbox_test_id": sandbox_test_id},
             ),
             limit=1,
         )
@@ -149,10 +153,10 @@ async def test_paginate_paused_sandboxes(
 
 @pytest.mark.skip_debug()
 async def test_paginate_running_and_paused_sandboxes(
-    async_sandbox: AsyncSandbox, sandbox_type: str
+    async_sandbox: AsyncSandbox, sandbox_test_id: str
 ):
     # Create extra paused sandbox
-    extra_sbx = await AsyncSandbox.create(metadata={"sandbox_type": sandbox_type})
+    extra_sbx = await AsyncSandbox.create(metadata={"sandbox_test_id": sandbox_test_id})
     extra_sbx_id = extra_sbx.sandbox_id.split("-")[0]
     await extra_sbx.beta.pause()
 
@@ -160,7 +164,7 @@ async def test_paginate_running_and_paused_sandboxes(
         # Test pagination with limit
         paginator = AsyncSandbox.list(
             query=SandboxQuery(
-                metadata={"sandbox_type": sandbox_type},
+                metadata={"sandbox_test_id": sandbox_test_id},
                 state=[SandboxState.RUNNING, SandboxState.PAUSED],
             ),
             limit=1,
@@ -188,9 +192,9 @@ async def test_paginate_running_and_paused_sandboxes(
 
 
 @pytest.mark.skip_debug()
-async def test_paginate_iterator(async_sandbox: AsyncSandbox, sandbox_type: str):
+async def test_paginate_iterator(async_sandbox: AsyncSandbox, sandbox_test_id: str):
     paginator = AsyncSandbox.list(
-        query=SandboxQuery(metadata={"sandbox_type": sandbox_type})
+        query=SandboxQuery(metadata={"sandbox_test_id": sandbox_test_id})
     )
     sandboxes_list = []
 

@@ -17,7 +17,7 @@ from e2b import (
 
 
 @pytest.fixture(scope="session")
-def sandbox_type():
+def sandbox_test_id():
     return f"test_{uuid.uuid4()}"
 
 
@@ -27,8 +27,8 @@ def template():
 
 
 @pytest.fixture()
-def sandbox(template, debug, sandbox_type):
-    sandbox = Sandbox(template, metadata={"sandbox_type": sandbox_type})
+def sandbox(template, debug, sandbox_test_id):
+    sandbox = Sandbox(template, metadata={"sandbox_test_id": sandbox_test_id})
 
     try:
         yield sandbox
@@ -43,9 +43,9 @@ def sandbox(template, debug, sandbox_type):
 
 
 @pytest_asyncio.fixture
-async def async_sandbox(template, debug, sandbox_type):
+async def async_sandbox(template, debug, sandbox_test_id):
     sandbox = await AsyncSandbox.create(
-        template, metadata={"sandbox_type": sandbox_type}
+        template, metadata={"sandbox_test_id": sandbox_test_id}
     )
 
     try:

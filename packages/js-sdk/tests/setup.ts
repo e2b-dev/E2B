@@ -5,12 +5,12 @@ import { template } from './template'
 interface SandboxFixture {
   sandbox: Sandbox
   template: string
-  sandboxType: string
+  sandboxTestId: string
 }
 
 export const sandboxTest = base.extend<SandboxFixture>({
   template,
-  sandboxType: [
+  sandboxTestId: [
     // eslint-disable-next-line no-empty-pattern
     async ({}, use) => {
       const id = `test-${generateRandomString()}`
@@ -19,9 +19,9 @@ export const sandboxTest = base.extend<SandboxFixture>({
     { auto: true },
   ],
   sandbox: [
-    async ({ sandboxType }, use) => {
+    async ({ sandboxTestId }, use) => {
       const sandbox = await Sandbox.create(template, {
-        metadata: { sandboxType },
+        metadata: { sandboxTestId },
       })
       try {
         await use(sandbox)
