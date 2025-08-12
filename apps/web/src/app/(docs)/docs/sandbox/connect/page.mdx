@@ -9,7 +9,7 @@ To connect to a running sandbox, you first need to retrieve its ID. You can do t
 
 <CodeGroup>
 ```js
-import { Sandbox } from './dist'
+import { Sandbox } from '@e2b/code-interpreter'
 const sbx = await Sandbox.create()
 
 // Get all running sandboxes
@@ -27,6 +27,8 @@ const sandboxId = runningSandboxes[0].sandboxId
 ```
 
 ```python
+from e2b_code_interpreter import Sandbox
+
 # Get all running sandboxes
 paginator = Sandbox.list()  # $HighlightLine
 
