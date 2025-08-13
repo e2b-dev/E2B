@@ -29,7 +29,7 @@ const sandboxEvents = await resp1.json()
 
 // Get the latest 10 events for all sandboxes associated with the team
 const resp2 = await fetch(
-  'https://api.e2b.app/events/sandboxes',
+  'https://api.e2b.app/events/sandboxes?limit=10',
   {
     method: 'GET',
     headers: {
