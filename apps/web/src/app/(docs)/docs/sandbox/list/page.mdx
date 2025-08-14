@@ -105,7 +105,7 @@ Filter sandboxes by their current state. The state parameter can contain either 
     from e2b_code_interpreter import Sandbox, SandboxListQuery
 
     # Create a sandbox with metadata.
-    sandbox = Sandbox()
+    sandbox = Sandbox.create()
 
     # List running sandboxes that are running or paused.
     paginator = Sandbox.list(

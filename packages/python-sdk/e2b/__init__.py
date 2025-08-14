@@ -14,7 +14,7 @@ E2B Python SDK supports both sync and async API:
 from e2b import Sandbox
 
 # Create sandbox
-sandbox = Sandbox()
+sandbox = Sandbox.create()
 ```
 
 ```py

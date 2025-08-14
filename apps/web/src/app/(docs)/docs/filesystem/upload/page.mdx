@@ -19,7 +19,7 @@ await sandbox.files.write('/path/in/sandbox', content)
 ```python
 from e2b_code_interpreter import Sandbox
 
-sandbox = Sandbox()
+sandbox = Sandbox.create()
 
 # Read file from local filesystem
 with open("path/to/local/file", "rb") as file:
@@ -125,7 +125,7 @@ await sandbox.files.write(files)
 import os
 from e2b_code_interpreter import Sandbox
 
-sandbox = Sandbox()
+sandbox = Sandbox.create()
 
 def read_directory_files(directory_path):
     files = []

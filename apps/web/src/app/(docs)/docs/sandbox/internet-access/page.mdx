@@ -45,7 +45,7 @@ console.log(`https://${host}`)
 ```python
 from e2b_code_interpreter import Sandbox
 
-sandbox = Sandbox()
+sandbox = Sandbox.create()
 
 # You need to always pass a port number to get the host
 host = sandbox.get_host(3000) # $HighlightLine
@@ -94,7 +94,7 @@ await process.kill()
 ```python
 from e2b_code_interpreter import Sandbox
 
-sandbox = Sandbox()
+sandbox = Sandbox.create()
 
 # Start a simple HTTP server inside the sandbox.
 process = sandbox.commands.run("python -m http.server 3000", background=True)

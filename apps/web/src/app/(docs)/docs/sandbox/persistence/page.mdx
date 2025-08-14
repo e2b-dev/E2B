@@ -29,7 +29,7 @@ console.log('Sandbox paused', sandboxId) // $HighlightLine
 ```python
 from e2b_code_interpreter import Sandbox
 
-sbx = Sandbox()
+sbx = Sandbox.create()
 print('Sandbox created', sbx.sandbox_id)
 
 # Pause the sandbox
@@ -65,7 +65,7 @@ console.log('Sandbox resumed', sameSbx.sandboxId) // $HighlightLine
 ```python
 from e2b_code_interpreter import Sandbox
 
-sbx = Sandbox()
+sbx = Sandbox.create()
 print('Sandbox created', sbx.sandbox_id)
 
 # Pause the sandbox
@@ -141,7 +141,7 @@ await Sandbox.kill(sandboxId) // $HighlightLine
 ```python
 from e2b import Sandbox
 
-sbx = Sandbox()
+sbx = Sandbox.create()
 
 # Pause the sandbox
 sandbox_id = sbx.beta.pause()

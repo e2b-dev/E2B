@@ -64,7 +64,7 @@ const sandbox = await Sandbox.create({ timeoutMs: 300_000 })
 from e2b import Sandbox
 
 # Before
-# sandbox = Sandbox()
+# sandbox = Sandbox.create()
 # sandbox.close()
 
 # Now
@@ -118,7 +118,7 @@ await sandbox.setTimeout(600_000)
 from e2b import Sandbox
 
 # Before
-# sandbox = Sandbox()
+# sandbox = Sandbox.create()
 # sandbox.keep_alive(600)
 
 # Now
@@ -153,7 +153,7 @@ const existingSandbox = await Sandbox.connect(sandbox.sandboxId)
 from e2b import Sandbox
 
 # Before
-# sandbox = Sandbox()
+# sandbox = Sandbox.create()
 # sandbox.keep_alive(600)
 # sandbox.close()
 
@@ -305,7 +305,7 @@ const result = await sandbox.commands.run('echo "Hello, World!"', {
 from e2b import Sandbox
 
 # Before
-# sandbox = Sandbox()
+# sandbox = Sandbox.create()
 # result = sandbox.process.start_and_wait(
 # 	cmd='echo "Hello, world!"',
 # 	on_stderr=lambda msg: print(msg.line),
@@ -351,7 +351,7 @@ const result = await command.wait()
 from e2b import Sandbox
 
 # Before
-# sandbox = Sandbox()
+# sandbox = Sandbox.create()
 # process = sandbox.process.start(
 # 	cmd='echo "Hello, world!"',
 # 	on_stderr=lambda msg: print(msg.line),
@@ -394,14 +394,14 @@ await sandbox.files.watchDir('/path/in/sandbox', (event) => console.log(event))
 from e2b import Sandbox
 
 # Before
-# sandbox = Sandbox()
+# sandbox = Sandbox.create()
 
 # watcher = sandbox.filesystem.watch_dir("/path/in/sandbox")
 # watcher.add_event_listener(lambda event: print(event))
 # watcher.start()
 
 # Now
-sandbox = Sandbox()
+sandbox = Sandbox.create()
 watcher = sandbox.files.watch_dir("/path/in/sandbox")
 
 for event in watcher:
@@ -632,7 +632,7 @@ If you need to use async import `AsyncSandbox`/`AsyncCodeInterpreter` instead of
 ```python
 # Sync
 # from e2b import Sandbox
-# sandbox = Sandbox()
+# sandbox = Sandbox.create()
 
 # from e2b_code_interpreter import CodeInterpreter
 # sandbox = CodeInterpreter()
@@ -655,7 +655,7 @@ The async versions of methods for watching for files' changes and running comman
 from e2b import Sandbox
 
 # Sync
-# sandbox = Sandbox()
+# sandbox = Sandbox.create()
 # watcher = sandbox.files.watch_dir("/path/in/sandbox")
 
 # for event in watcher:
@@ -674,7 +674,7 @@ await sandbox.files.watch_dir("/path/in/sandbox", lambda event: print(event))
 from e2b import Sandbox
 
 # Sync
-# sandbox = Sandbox()
+# sandbox = Sandbox.create()
 # command = sandbox.commands.run(
 # 	cmd='echo "Hello, World!"',
 # 	background=True,

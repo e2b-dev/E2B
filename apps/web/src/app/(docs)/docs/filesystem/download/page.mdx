@@ -17,7 +17,7 @@ fs.writeFileSync('/local/path', content)
 ```python
 from e2b_code_interpreter import Sandbox
 
-sandbox = Sandbox()
+sandbox = Sandbox.create()
 
 # Read file from sandbox
 content = sandbox.files.read('/path/in/sandbox')

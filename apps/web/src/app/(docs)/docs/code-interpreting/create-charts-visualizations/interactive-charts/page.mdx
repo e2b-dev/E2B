@@ -68,7 +68,7 @@ plt.tight_layout()
 plt.show()
 """
 
-sandbox = Sandbox()
+sandbox = Sandbox.create()
 execution = sandbox.run_code(code)
 chart = execution.results[0].chart
 
