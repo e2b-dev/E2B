@@ -14,3 +14,7 @@ export async function sha256(data: string): Promise<string> {
   const hash = createHash('sha256').update(data, 'utf8').digest()
   return hash.toString('base64')
 }
+
+export function timeoutToSeconds(timeout: number): number {
+  return Math.ceil(timeout / 1000)
+}
