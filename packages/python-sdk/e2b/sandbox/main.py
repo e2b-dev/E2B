@@ -65,7 +65,7 @@ class SandboxBase:
 
     def _file_url(
         self,
-        path: Optional[str] = None,
+        path: str,
         user: str = "user",
         signature: Optional[str] = None,
         signature_expiration: Optional[int] = None,
@@ -119,7 +119,7 @@ class SandboxBase:
 
     def upload_url(
         self,
-        path: Optional[str] = None,
+        path: str,
         user: str = "user",
         use_signature_expiration: Optional[int] = None,
     ) -> str:

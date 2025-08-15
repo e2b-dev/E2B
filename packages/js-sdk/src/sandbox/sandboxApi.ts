@@ -63,6 +63,8 @@ export interface SandboxOpts extends ConnectionOpts {
   allowInternetAccess?: boolean
 }
 
+export type SandboxBetaCreateOpts = SandboxOpts & { autoPause?: boolean }
+
 /**
  * Options for resuming a paused Sandbox.
  */
@@ -253,17 +255,6 @@ export class SandboxApi {
   }
 
   /**
-   * List all sandboxes.
-   *
-   * @param opts connection options.
-   *
-   * @returns paginator for listing sandboxes.
-   */
-  static list(opts?: SandboxListOpts): SandboxPaginator {
-    return new SandboxPaginator(opts)
-  }
-
-  /**
    * Get sandbox information like sandbox ID, template, metadata, started at/end at date.
    *
    * @param sandboxId sandbox ID.
@@ -364,7 +355,7 @@ export class SandboxApi {
     }
   }
 
-  protected static async getFullInfo(sandboxId: string, opts?: SandboxApiOpts) {
+  static async getFullInfo(sandboxId: string, opts?: SandboxApiOpts) {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
 
@@ -402,15 +393,10 @@ export class SandboxApi {
     }
   }
 
-  protected static async createSandbox(
+  static async createSandbox(
     template: string,
     timeoutMs: number,
-    opts?: SandboxApiOpts & {
-      metadata?: Record<string, string>
-      envs?: Record<string, string>
-      secure?: boolean
-      allowInternetAccess?: boolean
-    }
+    opts?: SandboxBetaCreateOpts
   ): Promise<{
     sandboxId: string
     sandboxDomain?: string
@@ -422,7 +408,7 @@ export class SandboxApi {
 
     const res = await client.api.POST('/sandboxes', {
       body: {
-        autoPause: false,
+        autoPause: opts?.autoPause ?? false,
         templateID: template,
         metadata: opts?.metadata,
         envVars: opts?.envs,
@@ -452,6 +438,86 @@ export class SandboxApi {
       envdVersion: res.data!.envdVersion,
       envdAccessToken: res.data!.envdAccessToken,
     }
+  }
+
+  /**
+   * Pause the sandbox specified by sandbox ID.
+   *
+   * @param sandboxId sandbox ID.
+   * @param opts connection options.
+   *
+   * @returns `true` if the sandbox got paused, `false` if the sandbox was already paused.
+   */
+  static async betaPause(
+    sandboxId: string,
+    opts?: SandboxApiOpts
+  ): Promise<boolean> {
+    const config = new ConnectionConfig(opts)
+    const client = new ApiClient(config)
+
+    const res = await client.api.POST('/sandboxes/{sandboxID}/pause', {
+      params: {
+        path: {
+          sandboxID: sandboxId,
+        },
+      },
+      signal: config.getSignal(opts?.requestTimeoutMs),
+    })
+
+    if (res.error?.code === 404) {
+      throw new NotFoundError(`Sandbox ${sandboxId} not found`)
+    }
+
+    if (res.error?.code === 409) {
+      // Sandbox is already paused
+      return false
+    }
+
+    const err = handleApiError(res)
+    if (err) {
+      throw err
+    }
+
+    return true
+  }
+
+  static async resumeSandbox(
+    sandboxId: string,
+    opts?: SandboxResumeOpts
+  ): Promise<boolean> {
+    const timeoutMs = opts?.timeoutMs ?? DEFAULT_SANDBOX_TIMEOUT_MS
+
+    const config = new ConnectionConfig(opts)
+    const client = new ApiClient(config)
+
+    const res = await client.api.POST('/sandboxes/{sandboxID}/resume', {
+      params: {
+        path: {
+          sandboxID: sandboxId,
+        },
+      },
+      body: {
+        autoPause: false,
+        timeout: timeoutToSeconds(timeoutMs),
+      },
+      signal: config.getSignal(opts?.requestTimeoutMs),
+    })
+
+    if (res.error?.code === 404) {
+      throw new NotFoundError(`Paused sandbox ${sandboxId} not found`)
+    }
+
+    if (res.error?.code === 409) {
+      // Sandbox is already running
+      return false
+    }
+
+    const err = handleApiError(res)
+    if (err) {
+      throw err
+    }
+
+    return true
   }
 }
 
@@ -562,87 +628,5 @@ export class SandboxPaginator {
         envdVersion: sandbox.envdVersion,
       })
     )
-  }
-}
-
-export class SandboxApiBeta {
-  /**
-   * Pause the sandbox specified by sandbox ID.
-   *
-   * @param sandboxId sandbox ID.
-   * @param opts connection options.
-   *
-   * @returns `true` if the sandbox got paused, `false` if the sandbox was already paused.
-   */
-  static async pauseSandbox(
-    sandboxId: string,
-    opts?: SandboxApiOpts
-  ): Promise<boolean> {
-    const config = new ConnectionConfig(opts)
-    const client = new ApiClient(config)
-
-    const res = await client.api.POST('/sandboxes/{sandboxID}/pause', {
-      params: {
-        path: {
-          sandboxID: sandboxId,
-        },
-      },
-      signal: config.getSignal(opts?.requestTimeoutMs),
-    })
-
-    if (res.error?.code === 404) {
-      throw new NotFoundError(`Sandbox ${sandboxId} not found`)
-    }
-
-    if (res.error?.code === 409) {
-      // Sandbox is already paused
-      return false
-    }
-
-    const err = handleApiError(res)
-    if (err) {
-      throw err
-    }
-
-    return true
-  }
-
-  static async resumeSandbox(
-    sandboxId: string,
-    opts?: SandboxResumeOpts
-  ): Promise<boolean> {
-    const timeoutMs = opts?.timeoutMs ?? DEFAULT_SANDBOX_TIMEOUT_MS
-
-    const config = new ConnectionConfig(opts)
-    const client = new ApiClient(config)
-
-    const res = await client.api.POST('/sandboxes/{sandboxID}/resume', {
-      params: {
-        path: {
-          sandboxID: sandboxId,
-        },
-      },
-      body: {
-        autoPause: false,
-        timeout: timeoutToSeconds(timeoutMs),
-      },
-      signal: config.getSignal(opts?.requestTimeoutMs),
-    })
-
-    if (res.error?.code === 404) {
-      throw new NotFoundError(`Paused sandbox ${sandboxId} not found`)
-    }
-
-    if (res.error?.code === 409) {
-      // Sandbox is already running
-      return false
-    }
-
-    const err = handleApiError(res)
-    if (err) {
-      throw err
-    }
-
-    return true
   }
 }

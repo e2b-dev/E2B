@@ -4,11 +4,7 @@ from typing import Optional, Dict, List
 from packaging.version import Version
 from typing_extensions import Unpack
 
-from e2b.sandbox.sandbox_api import (
-    SandboxInfo,
-    SandboxQuery,
-    SandboxMetrics,
-)
+from e2b.sandbox.sandbox_api import SandboxInfo, SandboxMetrics
 from e2b.sandbox.main import SandboxBase
 from e2b.exceptions import TemplateException, SandboxException, NotFoundException
 from e2b.api import ApiClient, SandboxCreateResponse
@@ -29,33 +25,9 @@ from e2b.api.client.api.sandboxes import (
 )
 from e2b.connection_config import ConnectionConfig, ApiParams
 from e2b.api import handle_api_exception
-from e2b.sandbox_sync.paginator import SandboxPaginator
 
 
 class SandboxApi(SandboxBase):
-    @staticmethod
-    def list(
-        query: Optional[SandboxQuery] = None,
-        limit: Optional[int] = None,
-        next_token: Optional[str] = None,
-        **opts: Unpack[ApiParams],
-    ) -> SandboxPaginator:
-        """
-        List all running sandboxes.
-
-        :param query: Filter the list of sandboxes by metadata or state, e.g. `SandboxListQuery(metadata={"key": "value"})` or `SandboxListQuery(state=[SandboxState.RUNNING])`
-        :param limit: Maximum number of sandboxes to return per page
-        :param next_token: Token for pagination
-
-        :return: List of running sandboxes
-        """
-        return SandboxPaginator(
-            query=query,
-            limit=limit,
-            next_token=next_token,
-            **opts,
-        )
-
     @classmethod
     def _cls_get_info(
         cls,
@@ -72,7 +44,7 @@ class SandboxApi(SandboxBase):
 
         with ApiClient(
             config,
-            limits=cls._limits,
+            limits=SandboxBase._limits,
         ) as api_client:
             res = get_sandboxes_sandbox_id.sync_detailed(
                 sandbox_id,
@@ -104,7 +76,7 @@ class SandboxApi(SandboxBase):
 
         with ApiClient(
             config,
-            limits=cls._limits,
+            limits=SandboxBase._limits,
         ) as api_client:
             res = delete_sandboxes_sandbox_id.sync_detailed(
                 sandbox_id,
@@ -134,7 +106,7 @@ class SandboxApi(SandboxBase):
 
         with ApiClient(
             config,
-            limits=cls._limits,
+            limits=SandboxBase._limits,
         ) as api_client:
             res = post_sandboxes_sandbox_id_timeout.sync_detailed(
                 sandbox_id,
@@ -149,19 +121,21 @@ class SandboxApi(SandboxBase):
     def _create_sandbox(
         cls,
         template: str,
+        auto_pause: bool,
         timeout: int,
         metadata: Optional[Dict[str, str]] = None,
         env_vars: Optional[Dict[str, str]] = None,
         secure: Optional[bool] = None,
-        allow_internet_access: Optional[bool] = True,
+        allow_internet_access: bool = True,
         **opts: Unpack[ApiParams],
     ) -> SandboxCreateResponse:
         config = ConnectionConfig(**opts)
 
-        with ApiClient(config, limits=cls._limits) as api_client:
+        with ApiClient(config, limits=SandboxBase._limits) as api_client:
             res = post_sandboxes.sync_detailed(
                 body=NewSandbox(
                     template_id=template,
+                    auto_pause=auto_pause,
                     metadata=metadata or {},
                     timeout=timeout,
                     env_vars=env_vars or {},
@@ -176,6 +150,9 @@ class SandboxApi(SandboxBase):
 
             if res.parsed is None:
                 raise Exception("Body of the request is None")
+
+            if isinstance(res.parsed, Error):
+                raise SandboxException(f"{res.parsed.message}: Request failed")
 
             if Version(res.parsed.envd_version) < Version("0.1.0"):
                 SandboxApi._cls_kill(res.parsed.sandbox_id)
@@ -207,7 +184,7 @@ class SandboxApi(SandboxBase):
 
         with ApiClient(
             config,
-            limits=cls._limits,
+            limits=SandboxBase._limits,
         ) as api_client:
             res = get_sandboxes_sandbox_id_metrics.sync_detailed(
                 sandbox_id,
@@ -239,10 +216,8 @@ class SandboxApi(SandboxBase):
                 for metric in res.parsed
             ]
 
-
-class SandboxApiBeta:
     @classmethod
-    def _api_resume(
+    def _cls_resume(
         cls,
         sandbox_id: str,
         timeout: Optional[int] = None,
@@ -274,7 +249,7 @@ class SandboxApiBeta:
             return True
 
     @classmethod
-    def _api_pause(
+    def _cls_pause(
         cls,
         sandbox_id: str,
         **opts: Unpack[ApiParams],

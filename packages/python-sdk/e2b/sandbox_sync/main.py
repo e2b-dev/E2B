@@ -10,26 +10,23 @@ from typing import (
     List,
     Type,
     TypedDict,
-    Generic,
-    TypeVar,
-    ClassVar,
-    Protocol,
-    cast,
 )
 
 from packaging.version import Version
-from typing_extensions import Unpack, deprecated
+from typing_extensions import Unpack, deprecated, Self
 
 from e2b.api.client.types import Unset
 from e2b.connection_config import ConnectionConfig, ApiParams
 from e2b.envd.api import ENVD_API_HEALTH_ROUTE, handle_envd_api_exception
 from e2b.exceptions import SandboxException, format_request_timeout_error
-from e2b.sandbox.sandbox_api import SandboxMetrics
+from e2b.sandbox.main import SandboxBase
+from e2b.sandbox.sandbox_api import SandboxMetrics, SandboxQuery
 from e2b.sandbox.utils import class_method_variant
 from e2b.sandbox_sync.filesystem.filesystem import Filesystem
 from e2b.sandbox_sync.commands.command import Commands
 from e2b.sandbox_sync.commands.pty import Pty
-from e2b.sandbox_sync.sandbox_api import SandboxApi, SandboxInfo, SandboxApiBeta
+from e2b.sandbox_sync.paginator import SandboxPaginator
+from e2b.sandbox_sync.sandbox_api import SandboxApi, SandboxInfo
 
 logger = logging.getLogger(__name__)
 
@@ -58,243 +55,7 @@ class TransportWithLogger(httpx.HTTPTransport):
         return self._pool
 
 
-S = TypeVar("S", bound="Sandbox")
-
-
-class BetaProto(Protocol[S]):
-    @classmethod
-    def create(
-        cls,
-        template: Optional[str] = None,
-        timeout: Optional[int] = None,
-        metadata: Optional[Dict[str, str]] = None,
-        envs: Optional[Dict[str, str]] = None,
-        secure: Optional[bool] = None,
-        allow_internet_access: Optional[bool] = True,
-        **opts: Unpack[ApiParams],
-    ) -> S:
-        ...
-
-    @overload
-    def resume(
-        self,
-        timeout: Optional[int] = None,
-        **opts: Unpack[ApiParams],
-    ) -> S:
-        """
-        Resume the sandbox.
-
-        :return: A running sandbox instance
-        """
-        ...
-
-    @overload
-    @staticmethod
-    def resume(
-        sandbox_id: str,
-        timeout: Optional[int] = None,
-        **opts: Unpack[ApiParams],
-    ) -> S:
-        """
-        Resume the sandbox.
-
-        :param sandbox_id: Sandbox ID
-        :param timeout: Timeout for the sandbox in **seconds**
-
-        :return: A running sandbox instance
-        """
-        ...
-
-
-class _Beta(Generic[S], SandboxApiBeta):
-    sbx_class: ClassVar[type]
-    """Class type"""
-
-    def __init__(self, sbx_cls: S, sandbox_id: str):
-        self._instance_cls: S = sbx_cls
-        self._sandbox_id = sandbox_id
-
-    @classmethod
-    def create(
-        cls,
-        template: Optional[str] = None,
-        timeout: Optional[int] = None,
-        metadata: Optional[Dict[str, str]] = None,
-        envs: Optional[Dict[str, str]] = None,
-        secure: Optional[bool] = None,
-        allow_internet_access: Optional[bool] = True,
-        **opts: Unpack[ApiParams],
-    ) -> S:
-        """
-        Create a new sandbox.
-
-        By default, the sandbox is created from the default `base` sandbox template.
-
-        :param template: Sandbox template name or ID
-        :param timeout: Timeout for the sandbox in **seconds**, default to 300 seconds. The maximum time a sandbox can be kept alive is 24 hours (86_400 seconds) for Pro users and 1 hour (3_600 seconds) for Hobby users.
-        :param metadata: Custom metadata for the sandbox
-        :param envs: Custom environment variables for the sandbox
-        :param secure: Envd is secured with access token and cannot be used without it
-        :param allow_internet_access: Allow sandbox to access the internet, defaults to `True`.
-
-        :return: A Sandbox instance for the new sandbox
-
-        Use this method instead of using the constructor to create a new sandbox.
-        """
-
-        sbx = cast(Type[S], cls.sbx_class)
-        return sbx.create(
-            template, timeout, metadata, envs, secure, allow_internet_access, **opts
-        )
-
-    @overload
-    def pause(
-        self,
-        **opts: Unpack[ApiParams],
-    ) -> str:
-        """
-        Pause the sandbox.
-
-        :return: Sandbox ID that can be used to resume the sandbox
-        """
-        ...
-
-    @overload
-    @staticmethod
-    def pause(
-        sandbox_id: str,
-        **opts: Unpack[ApiParams],
-    ) -> str:
-        """
-        Pause the sandbox specified by sandbox ID.
-
-        :param sandbox_id: Sandbox ID
-
-        :return: Sandbox ID that can be used to resume the sandbox
-        """
-        ...
-
-    @class_method_variant("_api_pause")
-    def pause(
-        self,
-        **opts: Unpack[ApiParams],
-    ) -> str:
-        """
-        Pause the sandbox.
-
-        :return: Sandbox ID that can be used to resume the sandbox
-        """
-
-        return self._api_pause(
-            sandbox_id=self._sandbox_id,
-            **opts,
-        )
-
-    @overload
-    def resume(
-        self,
-        timeout: Optional[int] = None,
-        **opts: Unpack[ApiParams],
-    ) -> S:
-        """
-        Resume the sandbox.
-
-        :return: A running sandbox instance
-        """
-        ...
-
-    @overload
-    @staticmethod
-    def resume(
-        sandbox_id: str,
-        timeout: Optional[int] = None,
-        **opts: Unpack[ApiParams],
-    ) -> S:
-        """
-        Resume the sandbox.
-
-        :param sandbox_id: Sandbox ID
-        :param timeout: Timeout for the sandbox in **seconds**
-
-        :return: A running sandbox instance
-        """
-        ...
-
-    @class_method_variant("_cls_resume")
-    def resume(
-        self,
-        timeout: Optional[int] = None,
-        **opts: Unpack[ApiParams],
-    ) -> S:
-        """
-        Resume the sandbox.
-
-        The **default sandbox timeout of 300 seconds** will be used for the resumed sandbox.
-        If you pass a custom timeout via the `timeout` parameter, it will be used instead.
-
-        :param sandbox_id: Sandbox ID
-        :param timeout: Timeout for the sandbox in **seconds**
-
-        :return: A running sandbox instance
-        """
-
-        sbx = cast(Type[S], self._instance_cls)
-        self._api_resume(
-            sandbox_id=self._sandbox_id,
-            timeout=timeout,
-            **opts,
-        )
-
-        return sbx.connect(
-            sandbox_id=self._sandbox_id,
-            **opts,
-        )
-
-    @classmethod
-    def _cls_resume(
-        cls,
-        sandbox_id: str,
-        timeout: Optional[int] = None,
-        **opts: Unpack[ApiParams],
-    ) -> S:
-        """
-        Resume the sandbox.
-
-        The **default sandbox timeout of 300 seconds** will be used for the resumed sandbox.
-        If you pass a custom timeout via the `timeout` parameter, it will be used instead.
-
-        :param sandbox_id: Sandbox ID
-        :param timeout: Timeout for the sandbox in **seconds**
-
-        :return: A running sandbox instance
-        """
-
-        cls._api_resume(
-            sandbox_id=sandbox_id,
-            timeout=timeout,
-            **opts,
-        )
-
-        sbx = cast(Type[S], cls.sbx_class)
-        return sbx.connect(
-            sandbox_id=sandbox_id,
-            **opts,
-        )
-
-
-class BetaDescriptor(Generic[S]):
-    def __get__(self, obj, owner: Type[S]) -> Type[BetaProto[S]]:
-        dyn = type(f"_BetaFor{owner.__name__}", (_Beta,), {"sbx_class": owner})
-        return cast(Type[BetaProto[S]], dyn)
-
-
-class _SandboxMeta(type):
-    beta: BetaDescriptor
-
-
-class Sandbox(SandboxApi, metaclass=_SandboxMeta):
-    beta = BetaDescriptor()
-
+class Sandbox(SandboxApi):
     """
     E2B cloud sandbox is a secure and isolated cloud environment.
 
@@ -338,9 +99,10 @@ class Sandbox(SandboxApi, metaclass=_SandboxMeta):
         """
         return self._pty
 
-    @deprecated("Use Sandbox.create() instead.")
     def __init__(self, **opts: Unpack[SandboxOpts]):
         """
+        :deprecated: This constructor is deprecated
+
         Use `Sandbox.create()` to create a new sandbox instead.
         """
         super().__init__(**opts)
@@ -370,7 +132,6 @@ class Sandbox(SandboxApi, metaclass=_SandboxMeta):
             self.connection_config,
             self._transport.pool,
         )
-        self.beta = _Beta(self, self.sandbox_id)
 
     def is_running(self, request_timeout: Optional[float] = None) -> bool:
         """
@@ -410,15 +171,15 @@ class Sandbox(SandboxApi, metaclass=_SandboxMeta):
 
     @classmethod
     def create(
-        cls: Type[S],
+        cls,
         template: Optional[str] = None,
         timeout: Optional[int] = None,
         metadata: Optional[Dict[str, str]] = None,
         envs: Optional[Dict[str, str]] = None,
         secure: Optional[bool] = None,
-        allow_internet_access: Optional[bool] = True,
+        allow_internet_access: bool = True,
         **opts: Unpack[ApiParams],
-    ) -> S:
+    ) -> Self:
         """
         Create a new sandbox.
 
@@ -445,8 +206,9 @@ class Sandbox(SandboxApi, metaclass=_SandboxMeta):
             envd_version = None
             envd_access_token = None
         else:
-            response = cls._create_sandbox(
+            response = SandboxApi._create_sandbox(
                 template=template or cls.default_template,
+                auto_pause=False,
                 timeout=timeout or cls.default_sandbox_timeout,
                 metadata=metadata,
                 env_vars=envs,
@@ -499,7 +261,7 @@ class Sandbox(SandboxApi, metaclass=_SandboxMeta):
         same_sandbox = Sandbox.connect(sandbox_id)
         ```
         """
-        response = cls._cls_get_info(sandbox_id, **opts)
+        response = SandboxApi._cls_get_info(sandbox_id, **opts)
 
         sandbox_headers = {}
         envd_access_token = response._envd_access_token
@@ -524,6 +286,29 @@ class Sandbox(SandboxApi, metaclass=_SandboxMeta):
 
     def __exit__(self, exc_type, exc_value, traceback):
         self.kill()
+
+    @staticmethod
+    def list(
+        query: Optional[SandboxQuery] = None,
+        limit: Optional[int] = None,
+        next_token: Optional[str] = None,
+        **opts: Unpack[ApiParams],
+    ) -> SandboxPaginator:
+        """
+        List all running sandboxes.
+
+        :param query: Filter the list of sandboxes by metadata or state, e.g. `SandboxListQuery(metadata={"key": "value"})` or `SandboxListQuery(state=[SandboxState.RUNNING])`
+        :param limit: Maximum number of sandboxes to return per page
+        :param next_token: Token for pagination
+
+        :return: List of running sandboxes
+        """
+        return SandboxPaginator(
+            query=query,
+            limit=limit,
+            next_token=next_token,
+            **opts,
+        )
 
     @overload
     def kill(
@@ -562,7 +347,7 @@ class Sandbox(SandboxApi, metaclass=_SandboxMeta):
 
         :return: `True` if the sandbox was killed, `False` if the sandbox was not found
         """
-        return self._cls_kill(
+        return SandboxApi._cls_kill(
             sandbox_id=self.sandbox_id,
             **self.connection_config.get_api_params(**opts),
         )
@@ -620,7 +405,7 @@ class Sandbox(SandboxApi, metaclass=_SandboxMeta):
 
         """
 
-        self._cls_set_timeout(
+        SandboxApi._cls_set_timeout(
             sandbox_id=self.sandbox_id,
             timeout=timeout,
             **self.connection_config.get_api_params(**opts),
@@ -663,7 +448,7 @@ class Sandbox(SandboxApi, metaclass=_SandboxMeta):
 
         :return: Sandbox info
         """
-        return self._cls_get_info(
+        return SandboxApi._cls_get_info(
             sandbox_id=self.sandbox_id,
             **self.connection_config.get_api_params(**opts),
         )
@@ -730,9 +515,264 @@ class Sandbox(SandboxApi, metaclass=_SandboxMeta):
                     "Disk metrics are not supported in this version of the sandbox, please rebuild the template to get disk metrics."
                 )
 
-        return self._cls_get_metrics(
+        return SandboxApi._cls_get_metrics(
             sandbox_id=self.sandbox_id,
             start=start,
             end=end,
             **self.connection_config.get_api_params(**opts),
+        )
+
+    @classmethod
+    def beta_create(
+        cls,
+        template: Optional[str] = None,
+        auto_pause: bool = True,
+        timeout: Optional[int] = None,
+        metadata: Optional[Dict[str, str]] = None,
+        envs: Optional[Dict[str, str]] = None,
+        secure: Optional[bool] = None,
+        allow_internet_access: bool = True,
+        **opts: Unpack[ApiParams],
+    ):
+        """
+        Create a new sandbox.
+
+        By default, the sandbox is created from the default `base` sandbox template.
+
+        :param template: Sandbox template name or ID
+        :param auto_pause: Automatically pause the sandbox after the timeout expires
+        :param timeout: Timeout for the sandbox in **seconds**, default to 300 seconds. The maximum time a sandbox can be kept alive is 24 hours (86_400 seconds) for Pro users and 1 hour (3_600 seconds) for Hobby users.
+        :param metadata: Custom metadata for the sandbox
+        :param envs: Custom environment variables for the sandbox
+        :param secure: Envd is secured with access token and cannot be used without it
+        :param allow_internet_access: Allow sandbox to access the internet, defaults to `True`.
+
+        :return: A Sandbox instance for the new sandbox
+
+        Use this method instead of using the constructor to create a new sandbox.
+        """
+
+        extra_sandbox_headers = {}
+
+        debug = opts.get("debug")
+        if debug:
+            sandbox_id = "debug_sandbox_id"
+            sandbox_domain = None
+            envd_version = None
+            envd_access_token = None
+        else:
+            response = SandboxApi._create_sandbox(
+                template=template or cls.default_template,
+                auto_pause=auto_pause,
+                timeout=timeout or cls.default_sandbox_timeout,
+                metadata=metadata,
+                env_vars=envs,
+                secure=secure,
+                allow_internet_access=allow_internet_access,
+                **opts,
+            )
+
+            sandbox_id = response.sandbox_id
+            sandbox_domain = response.sandbox_domain
+            envd_version = response.envd_version
+            envd_access_token = response.envd_access_token
+
+            if envd_access_token is not None and not isinstance(
+                envd_access_token, Unset
+            ):
+                extra_sandbox_headers["X-Access-Token"] = envd_access_token
+
+        connection_config = ConnectionConfig(
+            extra_sandbox_headers=extra_sandbox_headers,
+            **opts,
+        )
+
+        return cls(
+            sandbox_id=sandbox_id,
+            sandbox_domain=sandbox_domain,
+            envd_version=envd_version,
+            envd_access_token=envd_access_token,
+            connection_config=connection_config,
+        )
+
+    @overload
+    def beta_pause(
+        self,
+        **opts: Unpack[ApiParams],
+    ) -> None:
+        """
+        Pause the sandbox.
+        """
+        ...
+
+    @overload
+    @staticmethod
+    def beta_pause(
+        sandbox_id: str,
+        **opts: Unpack[ApiParams],
+    ) -> None:
+        """
+        Pause the sandbox specified by sandbox ID.
+
+        :param sandbox_id: Sandbox ID
+        """
+        ...
+
+    @class_method_variant("_cls_pause")
+    def beta_pause(
+        self,
+        **opts: Unpack[ApiParams],
+    ) -> None:
+        """
+        Pause the sandbox.
+
+        :return: Sandbox ID that can be used to resume the sandbox
+        """
+
+        SandboxApi._cls_pause(
+            sandbox_id=self.sandbox_id,
+            **opts,
+        )
+
+    @overload
+    def beta_connect(
+        self,
+        timeout: Optional[int] = None,
+        **opts: Unpack[ApiParams],
+    ) -> Self:
+        """
+        Connect to a sandbox. Sandbox must be either running or be paused
+
+        :param timeout: Timeout for the sandbox in **seconds**
+        :return: A Sandbox instance
+
+        @example
+        ```python
+        sandbox = Sandbox.create()
+        sandbox.beta.pause()
+
+        # Another code block
+        same_sandbox = Sandbox.beta.connect()
+
+        :return: A running sandbox instance
+        """
+        ...
+
+    @overload
+    @staticmethod
+    def beta_connect(
+        sandbox_id: str,
+        timeout: Optional[int] = None,
+        **opts: Unpack[ApiParams],
+    ) -> Self:
+        """
+        Connect to a sandbox. Sandbox must be either running or be paused
+
+        :param sandbox_id: Sandbox ID
+        :param timeout: Timeout for the sandbox in **seconds**
+        :return: A Sandbox instance
+
+        @example
+        ```python
+        sandbox = Sandbox.create()
+        sandbox.beta.pause()
+
+        # Another code block
+        same_sandbox = Sandbox.beta.connect()
+
+        :return: A running sandbox instance
+        """
+        ...
+
+    @class_method_variant("_cls_beta_connect")
+    def beta_connect(
+        self,
+        timeout: Optional[int] = None,
+        **opts: Unpack[ApiParams],
+    ) -> Self:
+        """
+        Connect to a sandbox. Sandbox must be either running or be paused
+
+        :param timeout: Timeout for the sandbox in **seconds**
+        :return: A Sandbox instance
+
+        @example
+        ```python
+        sandbox = Sandbox.create()
+        sandbox.beta.pause()
+
+        # Another code block
+        same_sandbox = Sandbox.beta.connect()
+
+        :return: A running sandbox instance
+        """
+        return Sandbox._cls_beta_connect(
+            sandbox_id=self.sandbox_id,
+            timeout=timeout,
+            **opts,
+        )
+
+    @classmethod
+    def _cls_beta_connect(
+        cls,
+        sandbox_id: str,
+        timeout: Optional[int] = None,
+        **opts: Unpack[ApiParams],
+    ) -> Self:
+        """
+        Connect to a sandbox. Sandbox must be either running or be paused
+
+        :param timeout: Timeout for the sandbox in **seconds**
+        :return: A Sandbox instance
+
+        @example
+        ```python
+        sandbox = Sandbox.create()
+        sandbox.beta.pause()
+
+        # Another code block
+        same_sandbox = Sandbox.beta.connect()
+
+        :return: A running sandbox instance
+        """
+
+        # Temporary solution (02/12/2025),
+        # Options discussed:
+        # 1. No set - never sure how long the sandbox will be running
+        # 2. Always set the timeout in code - the user can't just connect to the sandbox
+        #       without changing the timeout, round trip to the server time
+        # 3. Set the timeout in resume on backend - side effect on error
+        # 4. Create new endpoint for connect
+        try:
+            cls._cls_set_timeout(
+                sandbox_id=sandbox_id,
+                timeout=timeout,
+                **opts,
+            )
+        except:
+            # Sandbox is not running, resume it
+            SandboxApi._cls_resume(
+                sandbox_id=sandbox_id,
+                timeout=timeout,
+                **opts,
+            )
+
+        response = cls._cls_get_info(sandbox_id, **opts)
+
+        sandbox_headers = {}
+        envd_access_token = response._envd_access_token
+        if envd_access_token is not None and not isinstance(envd_access_token, Unset):
+            sandbox_headers["X-Access-Token"] = envd_access_token
+
+        connection_config = ConnectionConfig(
+            extra_sandbox_headers=sandbox_headers,
+            **opts,
+        )
+
+        return cls(
+            sandbox_id=sandbox_id,
+            sandbox_domain=response.sandbox_domain,
+            connection_config=connection_config,
+            envd_version=response.envd_version,
+            envd_access_token=envd_access_token,
         )

@@ -4,7 +4,7 @@ import { sandboxTest, isDebug } from '../setup.js'
 import { Sandbox } from '../../src'
 
 sandboxTest.skipIf(isDebug)('pause sandbox', async ({ sandbox }) => {
-  await Sandbox.beta.pause(sandbox.sandboxId)
+  await Sandbox.betaPause(sandbox.sandboxId)
   assert.isFalse(
     await sandbox.isRunning(),
     'Sandbox should not be running after pause'
@@ -12,13 +12,13 @@ sandboxTest.skipIf(isDebug)('pause sandbox', async ({ sandbox }) => {
 })
 
 sandboxTest.skipIf(isDebug)('resume sandbox', async ({ sandbox }) => {
-  await Sandbox.beta.pause(sandbox.sandboxId)
+  await Sandbox.betaPause(sandbox.sandboxId)
   assert.isFalse(
     await sandbox.isRunning(),
     'Sandbox should not be running after pause'
   )
 
-  await Sandbox.beta.resume(sandbox.sandboxId)
+  await Sandbox.betaConnect(sandbox.sandboxId)
   assert.isTrue(
     await sandbox.isRunning(),
     'Sandbox should be running after resume'

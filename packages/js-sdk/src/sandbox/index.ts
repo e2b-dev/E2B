@@ -12,12 +12,12 @@ import { createRpcLogger } from '../logs'
 import { Commands, Pty } from './commands'
 import { Filesystem } from './filesystem'
 import {
-  SandboxApi,
   SandboxOpts,
   SandboxConnectOpts,
-  SandboxResumeOpts,
   SandboxMetricsOpts,
-  SandboxApiBeta,
+  SandboxApi,
+  SandboxListOpts,
+  SandboxPaginator,
 } from './sandboxApi'
 import { getSignature } from './signature'
 import { compareVersions } from 'compare-versions'
@@ -63,7 +63,6 @@ export interface SandboxUrlOpts {
 export class Sandbox extends SandboxApi {
   protected static readonly defaultTemplate: string = 'base'
   protected static readonly defaultSandboxTimeoutMs = DEFAULT_SANDBOX_TIMEOUT_MS
-  private static _beta?: StaticBeta<typeof this>
 
   /**
    * Module for interacting with the sandbox filesystem
@@ -94,7 +93,6 @@ export class Sandbox extends SandboxApi {
   private readonly envdApiUrl: string
   private readonly envdAccessToken?: string
   private readonly envdApi: EnvdApiClient
-  private _beta?: InstanceBeta<this>
 
   /**
    * Use {@link Sandbox.create} to create a new Sandbox instead.
@@ -176,39 +174,14 @@ export class Sandbox extends SandboxApi {
   }
 
   /**
-   * Module for beta features.
+   * List all sandboxes.
+   *
+   * @param opts connection options.
+   *
+   * @returns paginator for listing sandboxes.
    */
-  static get beta() {
-    const Ctor = this.constructor as typeof Sandbox
-    if (!Ctor._beta) {
-      // create a new one
-      const betaClass = makeStaticBeta(this)
-      return new betaClass() as unknown as StaticBeta<typeof this>
-    }
-
-    // return the existing one
-    return Ctor._beta
-  }
-
-  /**
-   * Module for beta features.
-   */
-  get beta(): InstanceBeta<this> {
-    if (!this._beta) {
-      // Bound the resume and pause methods to the instance
-      const resumeBound = this.resume.bind(this) as (
-        opts?: SandboxResumeOpts
-      ) => Promise<this>
-
-      const pauseBound = this.pause.bind(this) as (
-        opts?: ConnectionOpts
-      ) => Promise<boolean>
-
-      this._beta = new InstanceBeta<this>(resumeBound, pauseBound)
-    }
-
-    // return the existing one
-    return this._beta
+  static list(opts?: SandboxListOpts): SandboxPaginator {
+    return new SandboxPaginator(opts)
   }
 
   /**
@@ -266,7 +239,7 @@ export class Sandbox extends SandboxApi {
       }) as InstanceType<S>
     }
 
-    const sandbox = await this.createSandbox(
+    const sandbox = await SandboxApi.createSandbox(
       template,
       sandboxOpts?.timeoutMs ?? this.defaultSandboxTimeoutMs,
       sandboxOpts
@@ -298,7 +271,7 @@ export class Sandbox extends SandboxApi {
     sandboxId: string,
     opts?: SandboxConnectOpts
   ): Promise<InstanceType<S>> {
-    const info = await this.getFullInfo(sandboxId, opts)
+    const info = await SandboxApi.getFullInfo(sandboxId, opts)
 
     const config = new ConnectionConfig(opts)
 
@@ -311,15 +284,32 @@ export class Sandbox extends SandboxApi {
     }) as InstanceType<S>
   }
 
-  static async betaCreate<S extends typeof Sandbox>(
+  static async betaConnect<S extends typeof Sandbox>(
     this: S,
-    templateOrOpts?: SandboxOpts | string,
-    opts?: SandboxOpts
+    sandboxId: string,
+    timeoutMs: number,
+    opts?: SandboxConnectOpts
   ): Promise<InstanceType<S>> {
-    if (typeof templateOrOpts === 'string') {
-      return await this.create(templateOrOpts, opts)
+    try {
+      await SandboxApi.setTimeout(sandboxId, timeoutMs, opts)
+    } catch (e) {
+      await SandboxApi.resumeSandbox(sandboxId, opts)
     }
-    return await this.create(templateOrOpts)
+
+    return await this.connect(sandboxId, opts)
+  }
+
+  async betaConnect(
+    timeoutMs: number,
+    opts?: SandboxConnectOpts
+  ): Promise<this> {
+    try {
+      await SandboxApi.setTimeout(this.sandboxId, timeoutMs, opts)
+    } catch (e) {
+      await SandboxApi.resumeSandbox(this.sandboxId, opts)
+    }
+
+    return this
   }
 
   /**
@@ -401,7 +391,7 @@ export class Sandbox extends SandboxApi {
       return
     }
 
-    await Sandbox.setTimeout(this.sandboxId, timeoutMs, {
+    await SandboxApi.setTimeout(this.sandboxId, timeoutMs, {
       ...this.connectionConfig,
       ...opts,
     })
@@ -418,7 +408,15 @@ export class Sandbox extends SandboxApi {
       return
     }
 
-    await Sandbox.kill(this.sandboxId, { ...this.connectionConfig, ...opts })
+    await SandboxApi.kill(this.sandboxId, { ...this.connectionConfig, ...opts })
+  }
+
+  /**
+   * Pause the sandbox.
+   *
+   */
+  async betaPause(opts?: ConnectionOpts): Promise<boolean> {
+    return await SandboxApi.betaPause(this.sandboxId, opts)
   }
 
   /**
@@ -520,7 +518,7 @@ export class Sandbox extends SandboxApi {
    * @returns information about the sandbox
    */
   async getInfo(opts?: Pick<SandboxOpts, 'requestTimeoutMs'>) {
-    return await Sandbox.getInfo(this.sandboxId, {
+    return await SandboxApi.getInfo(this.sandboxId, {
       ...this.connectionConfig,
       ...opts,
     })
@@ -549,23 +547,10 @@ export class Sandbox extends SandboxApi {
       }
     }
 
-    return await Sandbox.getMetrics(this.sandboxId, {
+    return await SandboxApi.getMetrics(this.sandboxId, {
       ...this.connectionConfig,
       ...opts,
     })
-  }
-
-  protected async resume<T extends typeof Sandbox>(
-    this: InstanceType<T>,
-    opts?: SandboxResumeOpts
-  ): Promise<InstanceType<T>> {
-    const Ctor = this.constructor as T
-    await SandboxApiBeta.resumeSandbox(this.sandboxId, opts)
-    return await Ctor.connect(this.sandboxId, opts)
-  }
-
-  private async pause(opts?: ConnectionOpts): Promise<boolean> {
-    return await SandboxApiBeta.pauseSandbox(this.sandboxId, opts)
   }
 
   private fileUrl(path?: string, username?: string) {
@@ -577,145 +562,5 @@ export class Sandbox extends SandboxApi {
     }
 
     return url.toString()
-  }
-}
-
-/**
- * Beta features for Sandbox instances
- */
-class InstanceBeta<I extends Sandbox> {
-  constructor(
-    private resumeSandbox: (opts?: SandboxResumeOpts) => Promise<I>,
-    private pauseSandbox: (opts?: ConnectionOpts) => Promise<boolean>
-  ) {}
-
-  /**
-   * Resume the sandbox.
-   *
-   * The **default sandbox timeout of 300 seconds** ({@link Sandbox.defaultSandboxTimeoutMs}) will be used for the resumed sandbox.
-   * If you pass a custom timeout in the `opts` parameter via {@link SandboxOpts.timeoutMs} property, it will be used instead.
-   *
-   * @param opts connection options.
-   *
-   * @returns a running sandbox instance.
-   */
-  async resume(opts?: SandboxResumeOpts) {
-    return await this.resumeSandbox(opts)
-  }
-
-  /**
-   * Pause a sandbox by its ID.
-   *
-   * @param opts connection options.
-   *
-   * @returns sandbox ID that can be used to resume the sandbox.
-   */
-  async pause(opts?: ConnectionOpts) {
-    return await this.pauseSandbox(opts)
-  }
-}
-
-/**
- * Beta features for static Sandbox methods
- */
-interface StaticBeta<I extends typeof Sandbox> {
-  /**
-   **
-   * Create a new sandbox from the specified sandbox template.
-   *
-   * @param opts connection options.
-   *
-   * @returns sandbox instance for the new sandbox.
-   *
-   * @example
-   * ```ts
-   * const sandbox = await Sandbox.create('<template-name-or-id>')
-   * ```
-   * @constructs Sandbox
-   */
-  create(opts?: SandboxOpts): Promise<InstanceType<I>>
-  /**
-   * Create a new sandbox from the specified sandbox template.
-   *
-   * @param template sandbox template name or ID.
-   * @param opts connection options.
-   *
-   * @returns sandbox instance for the new sandbox.
-   *
-   * @example
-   * ```ts
-   * const sandbox = await Sandbox.create('<template-name-or-id>')
-   * ```
-   * @constructs Sandbox
-   */
-  create(template: string, opts?: SandboxOpts): Promise<InstanceType<I>>
-
-  /**
-   * Resume the sandbox.
-   *
-   * The **default sandbox timeout of 300 seconds** ({@link Sandbox.defaultSandboxTimeoutMs}) will be used for the resumed sandbox.
-   * If you pass a custom timeout in the `opts` parameter via {@link SandboxOpts.timeoutMs} property, it will be used instead.
-   *
-   * @param sandboxId sandbox ID.
-   * @param opts connection options.
-   *
-   * @returns a running sandbox instance.
-   */
-  resume(sandboxId: string, opts?: SandboxResumeOpts): Promise<InstanceType<I>>
-
-  /**
-   * Pause a sandbox by its ID.
-   *
-   * @param sandboxId sandbox ID.
-   * @param opts connection options.
-   *
-   * @returns sandbox ID that can be used to resume the sandbox.
-   */
-  pause(sandboxId: string, opts?: ConnectionOpts): Promise<boolean>
-}
-
-function makeStaticBeta<S extends typeof Sandbox>(Ctor: S) {
-  return class {
-    static async create(
-      templateOrOpts?: SandboxOpts | string,
-      opts?: SandboxOpts
-    ): Promise<InstanceType<S>> {
-      if (typeof templateOrOpts === 'string') {
-        return await Ctor.betaCreate(templateOrOpts, opts)
-      }
-      return await Ctor.betaCreate(templateOrOpts)
-    }
-
-    /**
-     * Resume the sandbox.
-     *
-     * The **default sandbox timeout of 300 seconds** ({@link Sandbox.defaultSandboxTimeoutMs}) will be used for the resumed sandbox.
-     * If you pass a custom timeout in the `opts` parameter via {@link SandboxOpts.timeoutMs} property, it will be used instead.
-     *
-     * @param sandboxId sandbox ID.
-     * @param opts connection options.
-     *
-     * @returns a running sandbox instance.
-     */
-    async resume(
-      sandboxId: string,
-      opts?: SandboxResumeOpts
-    ): Promise<InstanceType<S>> {
-      await SandboxApiBeta.resumeSandbox(sandboxId, opts)
-
-      return await Ctor.connect(sandboxId, opts)
-    }
-
-    /**
-     * Pause a sandbox by its ID.
-     *
-     * @param sandboxId sandbox ID.
-     * @param opts connection options.
-     *
-     * @returns sandbox ID that can be used to resume the sandbox.
-     */
-    async pause(sandboxId: string, opts?: ConnectionOpts): Promise<boolean> {
-      return SandboxApiBeta.pauseSandbox(sandboxId, opts)
-    }
   }
 }

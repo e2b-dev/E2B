@@ -48,7 +48,7 @@ def test_list_running_sandboxes(sandbox: Sandbox, sandbox_test_id: str):
 
 @pytest.mark.skip_debug()
 def test_list_paused_sandboxes(sandbox: Sandbox, sandbox_test_id: str):
-    sandbox.beta.pause()
+    sandbox.beta_pause()
 
     paginator = Sandbox.list(
         query=SandboxQuery(
@@ -106,12 +106,12 @@ def test_paginate_running_sandboxes(sandbox: Sandbox, sandbox_test_id: str):
 @pytest.mark.skip_debug()
 def test_paginate_paused_sandboxes(sandbox: Sandbox, sandbox_test_id: str):
     sandbox_id = sandbox.sandbox_id.split("-")[0]
-    sandbox.beta.pause()
+    sandbox.beta_pause()
 
     # create another paused sandbox
     extra_sbx = Sandbox.create(metadata={"sandbox_test_id": sandbox_test_id})
     extra_sbx_id = extra_sbx.sandbox_id.split("-")[0]
-    extra_sbx.beta.pause()
+    extra_sbx.beta_pause()
 
     try:
         # Test pagination with limit
@@ -150,7 +150,7 @@ def test_paginate_running_and_paused_sandboxes(sandbox: Sandbox, sandbox_test_id
     # Create extra paused sandbox
     extra_sbx = Sandbox.create(metadata={"sandbox_test_id": sandbox_test_id})
     extra_sbx_id = extra_sbx.sandbox_id.split("-")[0]
-    extra_sbx.beta.pause()
+    extra_sbx.beta_pause()
 
     try:
         # Test pagination with limit

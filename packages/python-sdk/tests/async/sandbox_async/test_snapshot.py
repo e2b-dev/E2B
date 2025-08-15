@@ -6,10 +6,10 @@ from e2b import AsyncSandbox
 async def test_snapshot(async_sandbox: AsyncSandbox):
     assert await async_sandbox.is_running()
 
-    await async_sandbox.beta.pause()
+    await async_sandbox.beta_pause()
     assert not await async_sandbox.is_running()
 
-    resumed_sandbox = await async_sandbox.beta.resume()
+    resumed_sandbox = await async_sandbox.beta_connect()
     assert await async_sandbox.is_running()
     assert resumed_sandbox.is_running()
     assert resumed_sandbox.sandbox_id == async_sandbox.sandbox_id

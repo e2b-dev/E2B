@@ -30,33 +30,9 @@ from e2b.api.client.api.sandboxes import (
 )
 from e2b.connection_config import ConnectionConfig, ApiParams
 from e2b.api import handle_api_exception
-from e2b.sandbox_async.paginator import AsyncSandboxPaginator
 
 
 class SandboxApi(SandboxBase):
-    @staticmethod
-    def list(
-        query: Optional[SandboxQuery] = None,
-        limit: Optional[int] = None,
-        next_token: Optional[str] = None,
-        **opts: Unpack[ApiParams],
-    ) -> AsyncSandboxPaginator:
-        """
-        List all running sandboxes.
-
-        :param query: Filter the list of sandboxes by metadata or state, e.g. `SandboxListQuery(metadata={"key": "value"})` or `SandboxListQuery(state=[SandboxState.RUNNING])`
-        :param limit: Maximum number of sandboxes to return per page
-        :param next_token: Token for pagination
-
-        :return: List of running sandboxes
-        """
-        return AsyncSandboxPaginator(
-            query=query,
-            limit=limit,
-            next_token=next_token,
-            **opts,
-        )
-
     @classmethod
     async def _cls_get_info(
         cls,
@@ -73,7 +49,7 @@ class SandboxApi(SandboxBase):
 
         async with AsyncApiClient(
             config,
-            limits=cls._limits,
+            limits=SandboxBase._limits,
         ) as api_client:
             res = await get_sandboxes_sandbox_id.asyncio_detailed(
                 sandbox_id,
@@ -105,7 +81,7 @@ class SandboxApi(SandboxBase):
 
         async with AsyncApiClient(
             config,
-            limits=cls._limits,
+            limits=SandboxBase._limits,
         ) as api_client:
             res = await delete_sandboxes_sandbox_id.asyncio_detailed(
                 sandbox_id,
@@ -135,7 +111,7 @@ class SandboxApi(SandboxBase):
 
         async with AsyncApiClient(
             config,
-            limits=cls._limits,
+            limits=SandboxBase._limits,
         ) as api_client:
             res = await post_sandboxes_sandbox_id_timeout.asyncio_detailed(
                 sandbox_id,
@@ -161,7 +137,7 @@ class SandboxApi(SandboxBase):
 
         async with AsyncApiClient(
             config,
-            limits=cls._limits,
+            limits=SandboxBase._limits,
         ) as api_client:
             res = await post_sandboxes.asyncio_detailed(
                 body=NewSandbox(
@@ -223,7 +199,7 @@ class SandboxApi(SandboxBase):
 
         async with AsyncApiClient(
             config,
-            limits=cls._limits,
+            limits=SandboxBase._limits,
         ) as api_client:
             res = await get_sandboxes_sandbox_id_metrics.asyncio_detailed(
                 sandbox_id,
@@ -256,10 +232,8 @@ class SandboxApi(SandboxBase):
                 for metric in res.parsed
             ]
 
-
-class SandboxApiBeta:
     @classmethod
-    async def _api_pause(
+    async def _cls_pause(
         cls,
         sandbox_id: str,
         **opts: Unpack[ApiParams],
@@ -287,7 +261,7 @@ class SandboxApiBeta:
             return sandbox_id
 
     @classmethod
-    async def _api_resume(
+    async def _cls_resume(
         cls,
         sandbox_id: str,
         timeout: Optional[int] = None,
