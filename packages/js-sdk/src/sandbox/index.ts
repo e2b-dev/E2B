@@ -20,7 +20,8 @@ import {
 } from './sandboxApi'
 import { getSignature } from './signature'
 import { compareVersions } from 'compare-versions'
-import { SandboxError } from '../errors'
+import { NotFoundError, SandboxError } from '../errors'
+import { ApiClient, handleApiError } from '../api'
 
 /**
  * Options for sandbox upload/download URL generation.
@@ -62,7 +63,7 @@ export interface SandboxUrlOpts {
 export class Sandbox extends SandboxApi {
   protected static readonly defaultTemplate: string = 'base'
   protected static readonly defaultSandboxTimeoutMs = DEFAULT_SANDBOX_TIMEOUT_MS
-  private static _betaInstance?: StaticBeta<typeof this>
+  private static _beta?: StaticBeta<typeof this>
 
   /**
    * Module for interacting with the sandbox filesystem
@@ -93,7 +94,7 @@ export class Sandbox extends SandboxApi {
   private readonly envdApiUrl: string
   private readonly envdAccessToken?: string
   private readonly envdApi: EnvdApiClient
-  private _betaInstance?: InstanceBeta<this>
+  private _beta?: InstanceBeta<this>
 
   /**
    * Use {@link Sandbox.create} to create a new Sandbox instead.
@@ -177,30 +178,23 @@ export class Sandbox extends SandboxApi {
   /**
    * Module for beta features.
    */
-  static get beta(): StaticBeta<typeof this> {
+  static get beta() {
     const Ctor = this.constructor as typeof Sandbox
-    if (!Ctor._betaInstance) {
-      const resumeBound = async (
-        sandboxId: string,
-        opts?: SandboxResumeOpts
-      ) => {
-        await this.resumeSandbox(sandboxId, opts)
-        return await this.connect(sandboxId, opts)
-      }
-
-      const pauseBound = async (sandboxId: string, opts?: ConnectionOpts) =>
-        await this.pauseSandbox(sandboxId, opts)
-
-      Ctor._betaInstance = new StaticBeta(resumeBound, pauseBound)
+    if (!Ctor._beta) {
+      // Class
+      const betaClass = makeBeta(this)
+      return new betaClass() as unknown as StaticBeta<typeof this>
     }
-    return Ctor._betaInstance
+
+    // Instance
+    return Ctor._beta
   }
 
   /**
    * Module for beta features.
    */
   get beta(): InstanceBeta<this> {
-    if (!this._betaInstance) {
+    if (!this._beta) {
       const resumeBound = this.resume.bind(this) as (
         opts?: SandboxResumeOpts
       ) => Promise<this>
@@ -209,9 +203,9 @@ export class Sandbox extends SandboxApi {
         opts?: ConnectionOpts
       ) => Promise<boolean>
 
-      this._betaInstance = new InstanceBeta<this>(resumeBound, pauseBound)
+      this._beta = new InstanceBeta<this>(resumeBound, pauseBound)
     }
-    return this._betaInstance
+    return this._beta
   }
 
   /**
@@ -317,6 +311,33 @@ export class Sandbox extends SandboxApi {
       envdVersion: info.envdVersion,
       ...config,
     }) as InstanceType<S>
+  }
+
+  static async betaCreate<S extends typeof Sandbox>(
+    this: S,
+    templateOrOpts?: SandboxOpts | string,
+    opts?: SandboxOpts
+  ): Promise<InstanceType<S>> {
+    const { template, sandboxOpts } =
+      typeof templateOrOpts === 'string'
+        ? { template: templateOrOpts, sandboxOpts: opts }
+        : { template: this.defaultTemplate, sandboxOpts: templateOrOpts }
+
+    const config = new ConnectionConfig(sandboxOpts)
+    if (config.debug) {
+      return new this({
+        sandboxId: 'debug_sandbox_id',
+        ...config,
+      }) as InstanceType<S>
+    }
+
+    const sandbox = await this.createSandbox(
+      template,
+      sandboxOpts?.timeoutMs ?? this.defaultSandboxTimeoutMs,
+      sandboxOpts
+    )
+
+    return new this({ ...sandbox, ...config }) as InstanceType<S>
   }
 
   /**
@@ -590,17 +611,37 @@ export class Sandbox extends SandboxApi {
 /**
  * Beta features for static Sandbox methods
  */
-class StaticBeta<I extends typeof Sandbox> {
-  constructor(
-    private resumeSandbox: (
-      sandboxId: string,
-      opts?: SandboxResumeOpts
-    ) => Promise<InstanceType<I>>,
-    private pauseSandbox: (
-      sandboxId: string,
-      opts?: ConnectionOpts
-    ) => Promise<boolean>
-  ) {}
+interface StaticBeta<I extends typeof Sandbox> {
+  /**
+   **
+   * Create a new sandbox from the specified sandbox template.
+   *
+   * @param opts connection options.
+   *
+   * @returns sandbox instance for the new sandbox.
+   *
+   * @example
+   * ```ts
+   * const sandbox = await Sandbox.create('<template-name-or-id>')
+   * ```
+   * @constructs Sandbox
+   */
+  create(opts?: SandboxOpts): Promise<InstanceType<I>>
+  /**
+   * Create a new sandbox from the specified sandbox template.
+   *
+   * @param template sandbox template name or ID.
+   * @param opts connection options.
+   *
+   * @returns sandbox instance for the new sandbox.
+   *
+   * @example
+   * ```ts
+   * const sandbox = await Sandbox.create('<template-name-or-id>')
+   * ```
+   * @constructs Sandbox
+   */
+  create(template: string, opts?: SandboxOpts): Promise<InstanceType<I>>
 
   /**
    * Resume the sandbox.
@@ -613,9 +654,7 @@ class StaticBeta<I extends typeof Sandbox> {
    *
    * @returns a running sandbox instance.
    */
-  async resume(sandboxId: string, opts?: SandboxResumeOpts) {
-    return await this.resumeSandbox(sandboxId, opts)
-  }
+  resume(sandboxId: string, opts?: SandboxResumeOpts): Promise<InstanceType<I>>
 
   /**
    * Pause a sandbox by its ID.
@@ -625,9 +664,7 @@ class StaticBeta<I extends typeof Sandbox> {
    *
    * @returns sandbox ID that can be used to resume the sandbox.
    */
-  async pause(sandboxId: string, opts?: ConnectionOpts) {
-    return this.pauseSandbox(sandboxId, opts)
-  }
+  pause(sandboxId: string, opts?: ConnectionOpts): Promise<boolean>
 }
 
 /**
@@ -662,5 +699,105 @@ class InstanceBeta<I extends Sandbox> {
    */
   async pause(opts?: ConnectionOpts) {
     return await this.pauseSandbox(opts)
+  }
+}
+function makeBeta<S extends typeof Sandbox>(Ctor: S) {
+  return class {
+    static async create(
+      templateOrOpts?: SandboxOpts | string,
+      opts?: SandboxOpts
+    ): Promise<InstanceType<S>> {
+      if (typeof templateOrOpts === 'string') {
+        return await Ctor.betaCreate(templateOrOpts, opts)
+      }
+      return await Ctor.betaCreate(templateOrOpts)
+    }
+
+    /**
+     * Resume the sandbox.
+     *
+     * The **default sandbox timeout of 300 seconds** ({@link Sandbox.defaultSandboxTimeoutMs}) will be used for the resumed sandbox.
+     * If you pass a custom timeout in the `opts` parameter via {@link SandboxOpts.timeoutMs} property, it will be used instead.
+     *
+     * @param sandboxId sandbox ID.
+     * @param opts connection options.
+     *
+     * @returns a running sandbox instance.
+     */
+    async resume(
+      sandboxId: string,
+      opts?: SandboxResumeOpts
+    ): Promise<InstanceType<S>> {
+      const timeoutMs = opts?.timeoutMs ?? DEFAULT_SANDBOX_TIMEOUT_MS
+
+      const config = new ConnectionConfig(opts)
+      const client = new ApiClient(config)
+
+      const res = await client.api.POST('/sandboxes/{sandboxID}/resume', {
+        params: {
+          path: {
+            sandboxID: sandboxId,
+          },
+        },
+        body: {
+          autoPause: false,
+          timeout: Math.ceil(timeoutMs / 1000),
+        },
+        signal: config.getSignal(opts?.requestTimeoutMs),
+      })
+
+      if (res.error?.code === 404) {
+        throw new NotFoundError(`Paused sandbox ${sandboxId} not found`)
+      }
+
+      if (res.error?.code === 409) {
+        // Sandbox is already running
+      }
+
+      const err = handleApiError(res)
+      if (err) {
+        throw err
+      }
+
+      return await Ctor.connect(sandboxId, opts)
+    }
+
+    /**
+     * Pause a sandbox by its ID.
+     *
+     * @param sandboxId sandbox ID.
+     * @param opts connection options.
+     *
+     * @returns sandbox ID that can be used to resume the sandbox.
+     */
+    async pause(sandboxId: string, opts?: ConnectionOpts): Promise<boolean> {
+      const config = new ConnectionConfig(opts)
+      const client = new ApiClient(config)
+
+      const res = await client.api.POST('/sandboxes/{sandboxID}/pause', {
+        params: {
+          path: {
+            sandboxID: sandboxId,
+          },
+        },
+        signal: config.getSignal(opts?.requestTimeoutMs),
+      })
+
+      if (res.error?.code === 404) {
+        throw new NotFoundError(`Sandbox ${sandboxId} not found`)
+      }
+
+      if (res.error?.code === 409) {
+        // Sandbox is already paused
+        return false
+      }
+
+      const err = handleApiError(res)
+      if (err) {
+        throw err
+      }
+
+      return true
+    }
   }
 }

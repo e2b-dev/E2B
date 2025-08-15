@@ -451,8 +451,6 @@ export class SandboxApi {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
 
-    console.log(this)
-
     const res = await client.api.POST('/sandboxes/{sandboxID}/resume', {
       params: {
         path: {
