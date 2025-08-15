@@ -18,6 +18,7 @@ import {
   SandboxApi,
   SandboxListOpts,
   SandboxPaginator,
+  SandboxBetaCreateOpts,
 } from './sandboxApi'
 import { getSignature } from './signature'
 import { compareVersions } from 'compare-versions'
@@ -283,12 +284,12 @@ export class Sandbox extends SandboxApi {
   static async betaCreate<S extends typeof Sandbox>(
     this: S,
     template: string,
-    opts?: SandboxOpts
+    opts?: SandboxBetaCreateOpts
   ): Promise<InstanceType<S>>
   static async betaCreate<S extends typeof Sandbox>(
     this: S,
-    templateOrOpts?: SandboxOpts | string,
-    opts?: SandboxOpts
+    templateOrOpts?: SandboxBetaCreateOpts | string,
+    opts?: SandboxBetaCreateOpts
   ): Promise<InstanceType<S>> {
     const { template, sandboxOpts } =
       typeof templateOrOpts === 'string'
