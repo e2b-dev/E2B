@@ -249,6 +249,70 @@ export class Sandbox extends SandboxApi {
   }
 
   /**
+   * Create a new sandbox from the default `base` sandbox template.
+   *
+   * @param opts connection options.
+   *
+   * @returns sandbox instance for the new sandbox.
+   *
+   * @example
+   * ```ts
+   * const sandbox = await Sandbox.betaCreate()
+   * ```
+   * @constructs Sandbox
+   */
+  static async betaCreate<S extends typeof Sandbox>(
+    this: S,
+    opts?: SandboxOpts
+  ): Promise<InstanceType<S>>
+
+  /**
+   * Create a new sandbox from the specified sandbox template.
+   *
+   * @param template sandbox template name or ID.
+   * @param opts connection options.
+   *
+   * @returns sandbox instance for the new sandbox.
+   *
+   * @example
+   * ```ts
+   * const sandbox = await Sandbox.betaCreate('<template-name-or-id>')
+   * ```
+   * @constructs Sandbox
+   */
+  static async betaCreate<S extends typeof Sandbox>(
+    this: S,
+    template: string,
+    opts?: SandboxOpts
+  ): Promise<InstanceType<S>>
+  static async betaCreate<S extends typeof Sandbox>(
+    this: S,
+    templateOrOpts?: SandboxOpts | string,
+    opts?: SandboxOpts
+  ): Promise<InstanceType<S>> {
+    const { template, sandboxOpts } =
+      typeof templateOrOpts === 'string'
+        ? { template: templateOrOpts, sandboxOpts: opts }
+        : { template: this.defaultTemplate, sandboxOpts: templateOrOpts }
+
+    const config = new ConnectionConfig(sandboxOpts)
+    if (config.debug) {
+      return new this({
+        sandboxId: 'debug_sandbox_id',
+        ...config,
+      }) as InstanceType<S>
+    }
+
+    const sandbox = await SandboxApi.createSandbox(
+      template,
+      sandboxOpts?.timeoutMs ?? this.defaultSandboxTimeoutMs,
+      sandboxOpts
+    )
+
+    return new this({ ...sandbox, ...config }) as InstanceType<S>
+  }
+
+  /**
    * Connect to an existing sandbox.
    * With sandbox ID you can connect to the same sandbox from different places or environments (serverless functions, etc).
    *

@@ -393,7 +393,48 @@ export class SandboxApi {
     }
   }
 
-  static async createSandbox(
+  /**
+   * Pause the sandbox specified by sandbox ID.
+   *
+   * @param sandboxId sandbox ID.
+   * @param opts connection options.
+   *
+   * @returns `true` if the sandbox got paused, `false` if the sandbox was already paused.
+   */
+  static async betaPause(
+    sandboxId: string,
+    opts?: SandboxApiOpts
+  ): Promise<boolean> {
+    const config = new ConnectionConfig(opts)
+    const client = new ApiClient(config)
+
+    const res = await client.api.POST('/sandboxes/{sandboxID}/pause', {
+      params: {
+        path: {
+          sandboxID: sandboxId,
+        },
+      },
+      signal: config.getSignal(opts?.requestTimeoutMs),
+    })
+
+    if (res.error?.code === 404) {
+      throw new NotFoundError(`Sandbox ${sandboxId} not found`)
+    }
+
+    if (res.error?.code === 409) {
+      // Sandbox is already paused
+      return false
+    }
+
+    const err = handleApiError(res)
+    if (err) {
+      throw err
+    }
+
+    return true
+  }
+
+  protected static async createSandbox(
     template: string,
     timeoutMs: number,
     opts?: SandboxBetaCreateOpts
@@ -440,48 +481,7 @@ export class SandboxApi {
     }
   }
 
-  /**
-   * Pause the sandbox specified by sandbox ID.
-   *
-   * @param sandboxId sandbox ID.
-   * @param opts connection options.
-   *
-   * @returns `true` if the sandbox got paused, `false` if the sandbox was already paused.
-   */
-  static async betaPause(
-    sandboxId: string,
-    opts?: SandboxApiOpts
-  ): Promise<boolean> {
-    const config = new ConnectionConfig(opts)
-    const client = new ApiClient(config)
-
-    const res = await client.api.POST('/sandboxes/{sandboxID}/pause', {
-      params: {
-        path: {
-          sandboxID: sandboxId,
-        },
-      },
-      signal: config.getSignal(opts?.requestTimeoutMs),
-    })
-
-    if (res.error?.code === 404) {
-      throw new NotFoundError(`Sandbox ${sandboxId} not found`)
-    }
-
-    if (res.error?.code === 409) {
-      // Sandbox is already paused
-      return false
-    }
-
-    const err = handleApiError(res)
-    if (err) {
-      throw err
-    }
-
-    return true
-  }
-
-  static async resumeSandbox(
+  protected static async resumeSandbox(
     sandboxId: string,
     opts?: SandboxResumeOpts
   ): Promise<boolean> {
