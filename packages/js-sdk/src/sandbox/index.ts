@@ -181,12 +181,12 @@ export class Sandbox extends SandboxApi {
   static get beta() {
     const Ctor = this.constructor as typeof Sandbox
     if (!Ctor._beta) {
-      // Class
+      // create a new one
       const betaClass = makeBeta(this)
       return new betaClass() as unknown as StaticBeta<typeof this>
     }
 
-    // Instance
+    // return the existing one
     return Ctor._beta
   }
 
@@ -195,6 +195,7 @@ export class Sandbox extends SandboxApi {
    */
   get beta(): InstanceBeta<this> {
     if (!this._beta) {
+      // Bound the resume and pause methods to the instance
       const resumeBound = this.resume.bind(this) as (
         opts?: SandboxResumeOpts
       ) => Promise<this>
@@ -205,6 +206,8 @@ export class Sandbox extends SandboxApi {
 
       this._beta = new InstanceBeta<this>(resumeBound, pauseBound)
     }
+
+    // return the existing one
     return this._beta
   }
 
