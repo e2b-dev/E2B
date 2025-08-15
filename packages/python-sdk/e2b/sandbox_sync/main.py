@@ -72,7 +72,8 @@ class BetaProto(Protocol[S]):
         secure: Optional[bool] = None,
         allow_internet_access: Optional[bool] = True,
         **opts: Unpack[ApiParams],
-    ) -> S: ...
+    ) -> S:
+        ...
 
     @overload
     def resume(
@@ -106,7 +107,6 @@ class BetaProto(Protocol[S]):
 
 
 class _Beta(Generic[S], SandboxApiBeta):
-
     sbx_class: ClassVar[type]
     """Class type"""
 

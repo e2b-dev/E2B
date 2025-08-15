@@ -71,7 +71,8 @@ class BetaProto(Protocol[S]):
         secure: Optional[bool] = None,
         allow_internet_access: Optional[bool] = True,
         **opts: Unpack[ApiParams],
-    ) -> S: ...
+    ) -> S:
+        ...
 
     @overload
     async def resume(
