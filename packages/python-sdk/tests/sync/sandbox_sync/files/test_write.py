@@ -127,7 +127,7 @@ def test_write_with_secured_envd(template):
     filename = f"non_existing_dir_{uuid.uuid4()}/test_write.txt"
     content = "This should succeed too."
 
-    sbx = Sandbox(template, timeout=30, secure=True)
+    sbx = Sandbox.create(template, timeout=30, secure=True)
     try:
         assert sbx.is_running()
         assert sbx._envd_version is not None

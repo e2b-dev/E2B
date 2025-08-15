@@ -1,7 +1,8 @@
 import { Logger } from './logs'
 import { getEnvVar, version } from './api/metadata'
 
-const REQUEST_TIMEOUT_MS = 60_000 // 60 seconds
+export const REQUEST_TIMEOUT_MS = 60_000 // 60 seconds
+export const DEFAULT_SANDBOX_TIMEOUT_MS = 300_000 // 300 seconds
 export const KEEPALIVE_PING_INTERVAL_SEC = 50 // 50 seconds
 
 export const KEEPALIVE_PING_HEADER = 'Keepalive-Ping-Interval'

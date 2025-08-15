@@ -1,81 +1,38 @@
 import datetime
-import urllib.parse
 
 from typing import Optional, Dict, List
 from packaging.version import Version
 from typing_extensions import Unpack
 
+from e2b.api.client.types import UNSET
 from e2b.sandbox.main import SandboxBase
 from e2b.sandbox.sandbox_api import (
     SandboxInfo,
     SandboxQuery,
     SandboxMetrics,
 )
-from e2b.exceptions import TemplateException, SandboxException
+from e2b.exceptions import TemplateException, SandboxException, NotFoundException
 from e2b.api import AsyncApiClient, SandboxCreateResponse
 from e2b.api.client.models import (
     NewSandbox,
     PostSandboxesSandboxIDTimeoutBody,
     Error,
+    ResumedSandbox,
 )
 from e2b.api.client.api.sandboxes import (
     get_sandboxes_sandbox_id,
     post_sandboxes_sandbox_id_timeout,
-    get_sandboxes,
     delete_sandboxes_sandbox_id,
     post_sandboxes,
     get_sandboxes_sandbox_id_metrics,
+    post_sandboxes_sandbox_id_pause,
+    post_sandboxes_sandbox_id_resume,
 )
 from e2b.connection_config import ConnectionConfig, ApiParams
 from e2b.api import handle_api_exception
 
 
 class SandboxApi(SandboxBase):
-    @classmethod
-    async def list(
-        cls,
-        query: Optional[SandboxQuery] = None,
-        **opts: Unpack[ApiParams],
-    ) -> List[SandboxInfo]:
-        """
-        List all running sandboxes.
-
-        :param query: Filter the list of sandboxes, e.g. by metadata `SandboxQuery(metadata={"key": "value"})`, if there are multiple filters, they are combined with AND.
-
-        :return: List of running sandboxes
-        """
-        config = ConnectionConfig(**opts)
-
-        # Convert filters to the format expected by the API
-        metadata = None
-        if query:
-            if query.metadata:
-                quoted_metadata = {
-                    urllib.parse.quote(k): urllib.parse.quote(v)
-                    for k, v in query.metadata.items()
-                }
-                metadata = urllib.parse.urlencode(quoted_metadata)
-
-        async with AsyncApiClient(
-            config,
-            limits=cls._limits,
-        ) as api_client:
-            res = await get_sandboxes.asyncio_detailed(
-                client=api_client,
-                metadata=metadata,
-            )
-
-        if res.status_code >= 300:
-            raise handle_api_exception(res)
-
-        if res.parsed is None:
-            return []
-
-        if isinstance(res.parsed, Error):
-            raise SandboxException(f"{res.parsed.message}: Request failed")
-
-        return [SandboxInfo._from_listed_sandbox(sandbox) for sandbox in res.parsed]
-
     @classmethod
     async def _cls_get_info(
         cls,
@@ -92,7 +49,7 @@ class SandboxApi(SandboxBase):
 
         async with AsyncApiClient(
             config,
-            limits=cls._limits,
+            limits=SandboxBase._limits,
         ) as api_client:
             res = await get_sandboxes_sandbox_id.asyncio_detailed(
                 sandbox_id,
@@ -124,7 +81,7 @@ class SandboxApi(SandboxBase):
 
         async with AsyncApiClient(
             config,
-            limits=cls._limits,
+            limits=SandboxBase._limits,
         ) as api_client:
             res = await delete_sandboxes_sandbox_id.asyncio_detailed(
                 sandbox_id,
@@ -154,7 +111,7 @@ class SandboxApi(SandboxBase):
 
         async with AsyncApiClient(
             config,
-            limits=cls._limits,
+            limits=SandboxBase._limits,
         ) as api_client:
             res = await post_sandboxes_sandbox_id_timeout.asyncio_detailed(
                 sandbox_id,
@@ -180,7 +137,7 @@ class SandboxApi(SandboxBase):
 
         async with AsyncApiClient(
             config,
-            limits=cls._limits,
+            limits=SandboxBase._limits,
         ) as api_client:
             res = await post_sandboxes.asyncio_detailed(
                 body=NewSandbox(
@@ -199,6 +156,9 @@ class SandboxApi(SandboxBase):
 
             if res.parsed is None:
                 raise Exception("Body of the request is None")
+
+            if isinstance(res.parsed, Error):
+                raise SandboxException(f"{res.parsed.message}: Request failed")
 
             if Version(res.parsed.envd_version) < Version("0.1.0"):
                 await SandboxApi._cls_kill(res.parsed.sandbox_id)
@@ -239,12 +199,12 @@ class SandboxApi(SandboxBase):
 
         async with AsyncApiClient(
             config,
-            limits=cls._limits,
+            limits=SandboxBase._limits,
         ) as api_client:
             res = await get_sandboxes_sandbox_id_metrics.asyncio_detailed(
                 sandbox_id,
-                start=int(start.timestamp() * 1000) if start else None,
-                end=int(end.timestamp() * 1000) if end else None,
+                start=int(start.timestamp() * 1000) if start else UNSET,
+                end=int(end.timestamp() * 1000) if end else UNSET,
                 client=api_client,
             )
 
@@ -271,3 +231,63 @@ class SandboxApi(SandboxBase):
                 )
                 for metric in res.parsed
             ]
+
+    @classmethod
+    async def _cls_pause(
+        cls,
+        sandbox_id: str,
+        **opts: Unpack[ApiParams],
+    ) -> str:
+        config = ConnectionConfig(**opts)
+
+        async with AsyncApiClient(
+            config,
+            limits=SandboxBase._limits,
+        ) as api_client:
+            res = await post_sandboxes_sandbox_id_pause.asyncio_detailed(
+                sandbox_id,
+                client=api_client,
+            )
+
+            if res.status_code == 404:
+                raise NotFoundException(f"Sandbox {sandbox_id} not found")
+
+            if res.status_code == 409:
+                return sandbox_id
+
+            if res.status_code >= 300:
+                raise handle_api_exception(res)
+
+            return sandbox_id
+
+    @classmethod
+    async def _cls_resume(
+        cls,
+        sandbox_id: str,
+        timeout: Optional[int] = None,
+        **opts: Unpack[ApiParams],
+    ) -> bool:
+        timeout = timeout or SandboxBase.default_sandbox_timeout
+
+        config = ConnectionConfig(**opts)
+
+        async with AsyncApiClient(
+            config,
+            limits=SandboxBase._limits,
+        ) as api_client:
+            res = await post_sandboxes_sandbox_id_resume.asyncio_detailed(
+                sandbox_id,
+                client=api_client,
+                body=ResumedSandbox(timeout=timeout),
+            )
+
+            if res.status_code == 404:
+                raise NotFoundException(f"Paused sandbox {sandbox_id} not found")
+
+            if res.status_code == 409:
+                return False
+
+            if res.status_code >= 300:
+                raise handle_api_exception(res)
+
+            return True

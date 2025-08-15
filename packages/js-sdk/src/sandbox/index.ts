@@ -3,6 +3,7 @@ import { createConnectTransport } from '@connectrpc/connect-web'
 import {
   ConnectionConfig,
   ConnectionOpts,
+  DEFAULT_SANDBOX_TIMEOUT_MS,
   defaultUsername,
   Username,
 } from '../connectionConfig'
@@ -10,54 +11,18 @@ import { EnvdApiClient, handleEnvdApiError } from '../envd/api'
 import { createRpcLogger } from '../logs'
 import { Commands, Pty } from './commands'
 import { Filesystem } from './filesystem'
-import { SandboxApi, SandboxMetricsOpts } from './sandboxApi'
+import {
+  SandboxOpts,
+  SandboxConnectOpts,
+  SandboxMetricsOpts,
+  SandboxApi,
+  SandboxListOpts,
+  SandboxPaginator,
+  SandboxBetaCreateOpts,
+} from './sandboxApi'
 import { getSignature } from './signature'
 import { compareVersions } from 'compare-versions'
 import { SandboxError } from '../errors'
-
-/**
- * Options for creating a new Sandbox.
- */
-export interface SandboxOpts extends ConnectionOpts {
-  /**
-   * Custom metadata for the sandbox.
-   *
-   * @default {}
-   */
-  metadata?: Record<string, string>
-
-  /**
-   * Custom environment variables for the sandbox.
-   *
-   * Used when executing commands and code in the sandbox.
-   * Can be overridden with the `envs` argument when executing commands or code.
-   *
-   * @default {}
-   */
-  envs?: Record<string, string>
-
-  /**
-   * Timeout for the sandbox in **milliseconds**.
-   * Maximum time a sandbox can be kept alive is 24 hours (86_400_000 milliseconds) for Pro users and 1 hour (3_600_000 milliseconds) for Hobby users.
-   *
-   * @default 300_000 // 5 minutes
-   */
-  timeoutMs?: number
-
-  /**
-   * Secure all traffic coming to the sandbox controller with auth token
-   *
-   * @default false
-   */
-  secure?: boolean
-
-  /**
-   * Allow sandbox to access the internet
-   *
-   * @default true
-   */
-  allowInternetAccess?: boolean
-}
 
 /**
  * Options for sandbox upload/download URL generation.
@@ -98,7 +63,7 @@ export interface SandboxUrlOpts {
  */
 export class Sandbox extends SandboxApi {
   protected static readonly defaultTemplate: string = 'base'
-  protected static readonly defaultSandboxTimeoutMs = 300_000
+  protected static readonly defaultSandboxTimeoutMs = DEFAULT_SANDBOX_TIMEOUT_MS
 
   /**
    * Module for interacting with the sandbox filesystem
@@ -139,7 +104,7 @@ export class Sandbox extends SandboxApi {
    * @access protected
    */
   constructor(
-    opts: Omit<SandboxOpts, 'timeoutMs' | 'envs' | 'metadata'> & {
+    opts: SandboxConnectOpts & {
       sandboxId: string
       sandboxDomain?: string
       envdVersion?: string
@@ -210,6 +175,17 @@ export class Sandbox extends SandboxApi {
   }
 
   /**
+   * List all sandboxes.
+   *
+   * @param opts connection options.
+   *
+   * @returns paginator for listing sandboxes.
+   */
+  static list(opts?: SandboxListOpts): SandboxPaginator {
+    return new SandboxPaginator(opts)
+  }
+
+  /**
    * Create a new sandbox from the default `base` sandbox template.
    *
    * @param opts connection options.
@@ -262,14 +238,79 @@ export class Sandbox extends SandboxApi {
         sandboxId: 'debug_sandbox_id',
         ...config,
       }) as InstanceType<S>
-    } else {
-      const sandbox = await this.createSandbox(
-        template,
-        sandboxOpts?.timeoutMs ?? this.defaultSandboxTimeoutMs,
-        sandboxOpts
-      )
-      return new this({ ...sandbox, ...config }) as InstanceType<S>
     }
+
+    const sandbox = await SandboxApi.createSandbox(
+      template,
+      sandboxOpts?.timeoutMs ?? this.defaultSandboxTimeoutMs,
+      sandboxOpts
+    )
+
+    return new this({ ...sandbox, ...config }) as InstanceType<S>
+  }
+
+  /**
+   * Create a new sandbox from the default `base` sandbox template.
+   *
+   * @param opts connection options.
+   *
+   * @returns sandbox instance for the new sandbox.
+   *
+   * @example
+   * ```ts
+   * const sandbox = await Sandbox.betaCreate()
+   * ```
+   * @constructs Sandbox
+   */
+  static async betaCreate<S extends typeof Sandbox>(
+    this: S,
+    opts?: SandboxOpts
+  ): Promise<InstanceType<S>>
+
+  /**
+   * Create a new sandbox from the specified sandbox template.
+   *
+   * @param template sandbox template name or ID.
+   * @param opts connection options.
+   *
+   * @returns sandbox instance for the new sandbox.
+   *
+   * @example
+   * ```ts
+   * const sandbox = await Sandbox.betaCreate('<template-name-or-id>')
+   * ```
+   * @constructs Sandbox
+   */
+  static async betaCreate<S extends typeof Sandbox>(
+    this: S,
+    template: string,
+    opts?: SandboxBetaCreateOpts
+  ): Promise<InstanceType<S>>
+  static async betaCreate<S extends typeof Sandbox>(
+    this: S,
+    templateOrOpts?: SandboxBetaCreateOpts | string,
+    opts?: SandboxBetaCreateOpts
+  ): Promise<InstanceType<S>> {
+    const { template, sandboxOpts } =
+      typeof templateOrOpts === 'string'
+        ? { template: templateOrOpts, sandboxOpts: opts }
+        : { template: this.defaultTemplate, sandboxOpts: templateOrOpts }
+
+    const config = new ConnectionConfig(sandboxOpts)
+    if (config.debug) {
+      return new this({
+        sandboxId: 'debug_sandbox_id',
+        ...config,
+      }) as InstanceType<S>
+    }
+
+    const sandbox = await SandboxApi.createSandbox(
+      template,
+      sandboxOpts?.timeoutMs ?? this.defaultSandboxTimeoutMs,
+      sandboxOpts
+    )
+
+    return new this({ ...sandbox, ...config }) as InstanceType<S>
   }
 
   /**
@@ -293,10 +334,11 @@ export class Sandbox extends SandboxApi {
   static async connect<S extends typeof Sandbox>(
     this: S,
     sandboxId: string,
-    opts?: Omit<SandboxOpts, 'metadata' | 'envs' | 'timeoutMs'>
+    opts?: SandboxConnectOpts
   ): Promise<InstanceType<S>> {
+    const info = await SandboxApi.getFullInfo(sandboxId, opts)
+
     const config = new ConnectionConfig(opts)
-    const info = await this.getInfo(sandboxId, opts)
 
     return new this({
       sandboxId,
@@ -305,6 +347,34 @@ export class Sandbox extends SandboxApi {
       envdVersion: info.envdVersion,
       ...config,
     }) as InstanceType<S>
+  }
+
+  static async betaConnect<S extends typeof Sandbox>(
+    this: S,
+    sandboxId: string,
+    timeoutMs: number,
+    opts?: SandboxConnectOpts
+  ): Promise<InstanceType<S>> {
+    try {
+      await SandboxApi.setTimeout(sandboxId, timeoutMs, opts)
+    } catch (e) {
+      await SandboxApi.resumeSandbox(sandboxId, opts)
+    }
+
+    return await this.connect(sandboxId, opts)
+  }
+
+  async betaConnect(
+    timeoutMs: number,
+    opts?: SandboxConnectOpts
+  ): Promise<this> {
+    try {
+      await SandboxApi.setTimeout(this.sandboxId, timeoutMs, opts)
+    } catch (e) {
+      await SandboxApi.resumeSandbox(this.sandboxId, opts)
+    }
+
+    return this
   }
 
   /**
@@ -386,7 +456,7 @@ export class Sandbox extends SandboxApi {
       return
     }
 
-    await Sandbox.setTimeout(this.sandboxId, timeoutMs, {
+    await SandboxApi.setTimeout(this.sandboxId, timeoutMs, {
       ...this.connectionConfig,
       ...opts,
     })
@@ -403,7 +473,15 @@ export class Sandbox extends SandboxApi {
       return
     }
 
-    await Sandbox.kill(this.sandboxId, { ...this.connectionConfig, ...opts })
+    await SandboxApi.kill(this.sandboxId, { ...this.connectionConfig, ...opts })
+  }
+
+  /**
+   * Pause the sandbox.
+   *
+   */
+  async betaPause(opts?: ConnectionOpts): Promise<boolean> {
+    return await SandboxApi.betaPause(this.sandboxId, opts)
   }
 
   /**
@@ -424,7 +502,7 @@ export class Sandbox extends SandboxApi {
 
     if (!useSignature && opts.useSignatureExpiration != undefined) {
       throw new Error(
-          'Signature expiration can be used only when sandbox is created as secured.'
+        'Signature expiration can be used only when sandbox is created as secured.'
       )
     }
 
@@ -505,7 +583,7 @@ export class Sandbox extends SandboxApi {
    * @returns information about the sandbox
    */
   async getInfo(opts?: Pick<SandboxOpts, 'requestTimeoutMs'>) {
-    return await Sandbox.getInfo(this.sandboxId, {
+    return await SandboxApi.getInfo(this.sandboxId, {
       ...this.connectionConfig,
       ...opts,
     })
@@ -518,7 +596,7 @@ export class Sandbox extends SandboxApi {
    *
    * @returns  List of sandbox metrics containing CPU, memory and disk usage information.
    */
-  async getMetrics(opts?: Pick<SandboxMetricsOpts, 'start' | 'end' | 'requestTimeoutMs'>) {
+  async getMetrics(opts?: SandboxMetricsOpts) {
     if (this.envdApi.version) {
       if (compareVersions(this.envdApi.version, '0.1.5') < 0) {
         throw new SandboxError(
@@ -534,7 +612,7 @@ export class Sandbox extends SandboxApi {
       }
     }
 
-    return await Sandbox.getMetrics(this.sandboxId, {
+    return await SandboxApi.getMetrics(this.sandboxId, {
       ...this.connectionConfig,
       ...opts,
     })

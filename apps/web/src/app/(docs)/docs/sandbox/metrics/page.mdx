@@ -51,7 +51,7 @@ console.log('Sandbox metrics:', metrics)
 from time import sleep
 from e2b_code_interpreter import Sandbox
 
-sbx = Sandbox()
+sbx = Sandbox.create()
 print('Sandbox created', sbx.sandbox_id)
 
 # Wait for a few seconds to collect some metrics

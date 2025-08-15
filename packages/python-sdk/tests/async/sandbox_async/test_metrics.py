@@ -9,7 +9,7 @@ from e2b import AsyncSandbox
 async def test_sbx_metrics(async_sandbox: AsyncSandbox):
     # Wait for the sandbox to have some metrics
     metrics = []
-    for _ in range(10):
+    for _ in range(15):
         metrics = await async_sandbox.get_metrics()
         if len(metrics) > 0:
             break

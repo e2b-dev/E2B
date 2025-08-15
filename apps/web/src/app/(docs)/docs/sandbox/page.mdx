@@ -17,7 +17,7 @@ from e2b_code_interpreter import Sandbox
 
 # Create sandbox with and keep it running for 60 seconds.
 # 🚨 Note: The units are seconds.
-sandbox = Sandbox(
+sandbox = Sandbox.create(
   timeout=60, # $HighlightLine
 )
 ```
@@ -48,7 +48,7 @@ await sandbox.setTimeout(30_000)
 from e2b_code_interpreter import Sandbox
 
 # Create sandbox with and keep it running for 60 seconds.
-sandbox = Sandbox(timeout=60)
+sandbox = Sandbox.create(timeout=60)
 
 # Change the sandbox timeout to 30 seconds.
 # 🚨 The new timeout will be 30 seconds from now.
@@ -86,7 +86,7 @@ console.log(info)
 from e2b_code_interpreter import Sandbox
 
 # Create sandbox with and keep it running for 60 seconds.
-sandbox = Sandbox(timeout=60)
+sandbox = Sandbox.create(timeout=60)
 
 # Retrieve sandbox information.
 info = sandbox.get_info()
@@ -121,7 +121,7 @@ await sandbox.kill()
 from e2b_code_interpreter import Sandbox
 
 # Create sandbox with and keep it running for 60 seconds.
-sandbox = Sandbox(timeout=60)
+sandbox = Sandbox.create(timeout=60)
 
 # Shutdown the sandbox immediately.
 sandbox.kill()

@@ -1,4 +1,5 @@
 import asyncio
+import uuid
 
 import pytest
 import pytest_asyncio
@@ -15,14 +16,19 @@ from e2b import (
 )
 
 
+@pytest.fixture(scope="session")
+def sandbox_test_id():
+    return f"test_{uuid.uuid4()}"
+
+
 @pytest.fixture()
 def template():
     return "base"
 
 
 @pytest.fixture()
-def sandbox(template, debug):
-    sandbox = Sandbox(template)
+def sandbox(template, debug, sandbox_test_id):
+    sandbox = Sandbox.create(template, metadata={"sandbox_test_id": sandbox_test_id})
 
     try:
         yield sandbox
@@ -37,8 +43,10 @@ def sandbox(template, debug):
 
 
 @pytest_asyncio.fixture
-async def async_sandbox(template, debug):
-    sandbox = await AsyncSandbox.create(template)
+async def async_sandbox(template, debug, sandbox_test_id):
+    sandbox = await AsyncSandbox.create(
+        template, metadata={"sandbox_test_id": sandbox_test_id}
+    )
 
     try:
         yield sandbox

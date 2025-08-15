@@ -1,8 +1,11 @@
 from dataclasses import dataclass
 from typing import Optional, Dict, Union
+from typing_extensions import Unpack
 from datetime import datetime
 
+from e2b import ConnectionConfig
 from e2b.api.client.models import SandboxState, SandboxDetail, ListedSandbox
+from e2b.connection_config import ApiParams
 
 
 @dataclass
@@ -84,6 +87,9 @@ class SandboxQuery:
     metadata: Optional[dict[str, str]] = None
     """Filter sandboxes by metadata."""
 
+    state: Optional[list[SandboxState]] = None
+    """Filter sandboxes by state."""
+
 
 @dataclass
 class SandboxMetrics:
@@ -103,3 +109,34 @@ class SandboxMetrics:
     """Memory used in bytes."""
     timestamp: datetime
     """Timestamp of the metric entry."""
+
+
+class SandboxPaginatorBase:
+    def __init__(
+        self,
+        query: Optional[SandboxQuery] = None,
+        limit: Optional[int] = None,
+        next_token: Optional[str] = None,
+        **opts: Unpack[ApiParams],
+    ):
+        self._config = ConnectionConfig(**opts)
+
+        self.query = query
+        self.limit = limit
+
+        self._has_next = True
+        self._next_token = next_token
+
+    @property
+    def has_next(self) -> bool:
+        """
+        Returns True if there are more items to fetch.
+        """
+        return self._has_next
+
+    @property
+    def next_token(self) -> Optional[str]:
+        """
+        Returns the next token to use for pagination.
+        """
+        return self._next_token

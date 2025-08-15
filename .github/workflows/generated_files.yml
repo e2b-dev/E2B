@@ -48,7 +48,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Run codegen
-        run: make codegen
+        run: CODEGEN_IMAGE=codegen-env:latest make codegen
 
       - name: Check for uncommitted changes
         run: |

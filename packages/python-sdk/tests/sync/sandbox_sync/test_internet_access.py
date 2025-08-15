@@ -7,7 +7,7 @@ from e2b.sandbox.commands.command_handle import CommandExitException
 @pytest.mark.skip_debug()
 def test_internet_access_enabled(template):
     """Test that sandbox with internet access enabled can reach external websites."""
-    sbx = Sandbox(template, allow_internet_access=True)
+    sbx = Sandbox.create(template, allow_internet_access=True)
     try:
         # Test internet connectivity by making a curl request to a reliable external site
         result = sbx.commands.run(
@@ -22,7 +22,7 @@ def test_internet_access_enabled(template):
 @pytest.mark.skip_debug()
 def test_internet_access_disabled(template):
     """Test that sandbox with internet access disabled cannot reach external websites."""
-    sbx = Sandbox(template, allow_internet_access=False)
+    sbx = Sandbox.create(template, allow_internet_access=False)
     try:
         # Test that internet connectivity is blocked by making a curl request
         with pytest.raises(CommandExitException) as exc_info:
@@ -39,7 +39,7 @@ def test_internet_access_disabled(template):
 @pytest.mark.skip_debug()
 def test_internet_access_default(template):
     """Test that sandbox with default settings (no explicit allow_internet_access) has internet access."""
-    sbx = Sandbox(template)
+    sbx = Sandbox.create(template)
     try:
         # Test internet connectivity by making a curl request to a reliable external site
         result = sbx.commands.run(

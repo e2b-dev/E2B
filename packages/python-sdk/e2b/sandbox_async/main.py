@@ -2,20 +2,28 @@ import datetime
 import logging
 import httpx
 
-from typing import Dict, Optional, TypedDict, overload, List
+from typing import (
+    Dict,
+    Optional,
+    TypedDict,
+    overload,
+    List,
+)
 
 from packaging.version import Version
-from typing_extensions import Unpack
+from typing_extensions import Unpack, Self
 
 from e2b.api.client.types import Unset
 from e2b.connection_config import ConnectionConfig, ApiParams
 from e2b.envd.api import ENVD_API_HEALTH_ROUTE, ahandle_envd_api_exception
 from e2b.exceptions import format_request_timeout_error, SandboxException
-from e2b.sandbox.sandbox_api import SandboxMetrics
+from e2b.sandbox.main import SandboxBase
+from e2b.sandbox.sandbox_api import SandboxMetrics, SandboxQuery
 from e2b.sandbox.utils import class_method_variant
 from e2b.sandbox_async.filesystem.filesystem import Filesystem
 from e2b.sandbox_async.commands.command import Commands
 from e2b.sandbox_async.commands.pty import Pty
+from e2b.sandbox_async.paginator import AsyncSandboxPaginator
 from e2b.sandbox_async.sandbox_api import SandboxApi, SandboxInfo
 
 logger = logging.getLogger(__name__)
@@ -167,7 +175,7 @@ class AsyncSandbox(SandboxApi):
         secure: Optional[bool] = None,
         allow_internet_access: Optional[bool] = True,
         **opts: Unpack[ApiParams],
-    ) -> "AsyncSandbox":
+    ) -> Self:
         """
         Create a new sandbox.
 
@@ -194,7 +202,7 @@ class AsyncSandbox(SandboxApi):
             envd_version = None
             envd_access_token = None
         else:
-            response = await cls._create_sandbox(
+            response = await SandboxApi._create_sandbox(
                 template=template or cls.default_template,
                 timeout=timeout or cls.default_sandbox_timeout,
                 metadata=metadata,
@@ -232,7 +240,7 @@ class AsyncSandbox(SandboxApi):
         cls,
         sandbox_id: str,
         **opts: Unpack[ApiParams],
-    ) -> "AsyncSandbox":
+    ) -> Self:
         """
         Connect to an existing sandbox.
         With a sandbox ID, you can connect to the same sandbox from different places or environments (serverless functions, etc.).
@@ -249,7 +257,7 @@ class AsyncSandbox(SandboxApi):
         # Another code block
         same_sandbox = await AsyncSandbox.connect(sandbox_id)
         """
-        response = await cls._cls_get_info(sandbox_id, **opts)
+        response = await SandboxApi._cls_get_info(sandbox_id, **opts)
 
         sandbox_headers = {}
         envd_access_token = response._envd_access_token
@@ -274,6 +282,29 @@ class AsyncSandbox(SandboxApi):
 
     async def __aexit__(self, exc_type, exc_value, traceback):
         await self.kill()
+
+    @staticmethod
+    def list(
+        query: Optional[SandboxQuery] = None,
+        limit: Optional[int] = None,
+        next_token: Optional[str] = None,
+        **opts: Unpack[ApiParams],
+    ) -> AsyncSandboxPaginator:
+        """
+        List all running sandboxes.
+
+        :param query: Filter the list of sandboxes by metadata or state, e.g. `SandboxListQuery(metadata={"key": "value"})` or `SandboxListQuery(state=[SandboxState.RUNNING])`
+        :param limit: Maximum number of sandboxes to return per page
+        :param next_token: Token for pagination
+
+        :return: List of running sandboxes
+        """
+        return AsyncSandboxPaginator(
+            query=query,
+            limit=limit,
+            next_token=next_token,
+            **opts,
+        )
 
     @overload
     async def kill(
@@ -312,7 +343,7 @@ class AsyncSandbox(SandboxApi):
 
         :return: `True` if the sandbox was killed, `False` if the sandbox was not found
         """
-        return await self._cls_kill(
+        return await SandboxApi._cls_kill(
             sandbox_id=self.sandbox_id,
             **self.connection_config.get_api_params(**opts),
         )
@@ -368,7 +399,7 @@ class AsyncSandbox(SandboxApi):
 
         :param timeout: Timeout for the sandbox in **seconds**
         """
-        await self._cls_set_timeout(
+        await SandboxApi._cls_set_timeout(
             sandbox_id=self.sandbox_id,
             timeout=timeout,
             **self.connection_config.get_api_params(**opts),
@@ -411,7 +442,7 @@ class AsyncSandbox(SandboxApi):
         :return: Sandbox info
         """
 
-        return await self._cls_get_info(
+        return await SandboxApi._cls_get_info(
             sandbox_id=self.sandbox_id,
             **self.connection_config.get_api_params(**opts),
         )
@@ -478,9 +509,195 @@ class AsyncSandbox(SandboxApi):
                     "Disk metrics are not supported in this version of the sandbox, please rebuild the template to get disk metrics."
                 )
 
-        return await self._cls_get_metrics(
+        return await SandboxApi._cls_get_metrics(
             sandbox_id=self.sandbox_id,
             start=start,
             end=end,
             **self.connection_config.get_api_params(**opts),
+        )
+
+    @classmethod
+    async def beta_create(
+        cls,
+        template: Optional[str] = None,
+        timeout: Optional[int] = None,
+        metadata: Optional[Dict[str, str]] = None,
+        envs: Optional[Dict[str, str]] = None,
+        secure: Optional[bool] = None,
+        allow_internet_access: Optional[bool] = True,
+        **opts: Unpack[ApiParams],
+    ) -> Self:
+        """
+        Create a new sandbox.
+
+        By default, the sandbox is created from the default `base` sandbox template.
+
+        :param template: Sandbox template name or ID
+        :param timeout: Timeout for the sandbox in **seconds**, default to 300 seconds. The maximum time a sandbox can be kept alive is 24 hours (86_400 seconds) for Pro users and 1 hour (3_600 seconds) for Hobby users.
+        :param metadata: Custom metadata for the sandbox
+        :param envs: Custom environment variables for the sandbox
+        :param secure: Envd is secured with access token and cannot be used without it
+        :param allow_internet_access: Allow sandbox to access the internet, defaults to `True`.
+
+        :return: A Sandbox instance for the new sandbox
+
+        Use this method instead of using the constructor to create a new sandbox.
+        """
+
+        return await cls.create(
+            template, timeout, metadata, envs, secure, allow_internet_access, **opts
+        )
+
+    @overload
+    async def beta_pause(
+        self,
+        **opts: Unpack[ApiParams],
+    ) -> None:
+        """
+        Pause the sandbox.
+
+        :return: Sandbox ID that can be used to resume the sandbox
+        """
+        ...
+
+    @overload
+    @staticmethod
+    async def beta_pause(
+        sandbox_id: str,
+        **opts: Unpack[ApiParams],
+    ) -> None:
+        """
+        Pause the sandbox specified by sandbox ID.
+
+        :param sandbox_id: Sandbox ID
+
+        :return: Sandbox ID that can be used to resume the sandbox
+        """
+        ...
+
+    @class_method_variant("_cls_pause")
+    async def beta_pause(
+        self,
+        **opts: Unpack[ApiParams],
+    ) -> None:
+        """
+        Pause the sandbox.
+
+        :param request_timeout: Timeout for the request in **seconds**
+
+        :return: Sandbox ID that can be used to resume the sandbox
+        """
+
+        await SandboxApi._cls_pause(
+            sandbox_id=self.sandbox_id,
+            **opts,
+        )
+
+    @overload
+    async def beta_connect(
+        self,
+        timeout: Optional[int] = None,
+        **opts: Unpack[ApiParams],
+    ) -> Self:
+        """
+        Connect to a sandbox. Sandbox must be either running or be paused
+
+        :param timeout: Timeout for the sandbox in **seconds**
+        :return: A Sandbox instance
+
+        @example
+        ```python
+        sandbox = await AsyncSandbox.create()
+        await sandbox.beta.pause()
+
+        # Another code block
+        same_sandbox = await AsyncSandbox.beta.connect()
+
+        :return: A running sandbox instance
+        """
+        ...
+
+    @overload
+    @staticmethod
+    async def beta_connect(
+        sandbox_id: str,
+        timeout: Optional[int] = None,
+        **opts: Unpack[ApiParams],
+    ) -> Self:
+        """
+        Connect to a sandbox. Sandbox must be either running or be paused
+
+        :param sandbox_id: Sandbox ID
+        :param timeout: Timeout for the sandbox in **seconds**
+        :return: A Sandbox instance
+
+        @example
+        ```python
+        sandbox = await AsyncSandbox.create()
+        await sandbox.beta.pause()
+
+        # Another code block
+        same_sandbox = await AsyncSandbox.beta.connect()
+
+        :return: A running sandbox instance
+        """
+        ...
+
+    @class_method_variant("_cls_beta_connect")
+    async def beta_connect(
+        self,
+        timeout: Optional[int] = None,
+        **opts: Unpack[ApiParams],
+    ) -> Self:
+        """
+        Connect to a sandbox. Sandbox must be either running or be paused
+
+        :param timeout: Timeout for the sandbox in **seconds**
+        :return: A Sandbox instance
+
+        @example
+        ```python
+        sandbox = await AsyncSandbox.create()
+        await sandbox.beta.pause()
+
+        # Another code block
+        same_sandbox = await AsyncSandbox.beta.connect()
+
+        :return: A running sandbox instance
+        """
+        return await self._cls_beta_connect(
+            sandbox_id=self.sandbox_id, timeout=timeout, **opts
+        )
+
+    @classmethod
+    async def _cls_beta_connect(
+        cls,
+        sandbox_id: str,
+        timeout: Optional[int] = None,
+        **opts: Unpack[ApiParams],
+    ) -> Self:
+        # Temporary solution (02/12/2025),
+        # Options discussed:
+        # 1. No set - never sure how long the sandbox will be running
+        # 2. Always set the timeout in code - the user can't just connect to the sandbox
+        #       without changing the timeout, round trip to the server time
+        # 3. Set the timeout in resume on backend - side effect on error
+        # 4. Create new endpoint for connect
+        try:
+            await SandboxApi._cls_set_timeout(
+                sandbox_id=sandbox_id,
+                timeout=timeout or SandboxBase.default_sandbox_timeout,
+                **opts,
+            )
+        except:
+            # Sandbox is not running, resume it
+            await SandboxApi._cls_resume(
+                sandbox_id=sandbox_id,
+                timeout=timeout,
+                **opts,
+            )
+
+        return await cls.connect(
+            sandbox_id=sandbox_id,
+            **opts,
         )

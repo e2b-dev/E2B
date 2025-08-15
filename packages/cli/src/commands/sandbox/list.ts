@@ -1,6 +1,6 @@
 import * as tablePrinter from 'console-table-printer'
 import * as commander from 'commander'
-import * as e2b from 'e2b'
+import { components } from 'e2b'
 
 import { client, connectionConfig, ensureAPIKey } from 'src/api'
 import { handleE2BRequestError } from '../../utils/errors'
@@ -8,12 +8,31 @@ import { handleE2BRequestError } from '../../utils/errors'
 export const listCommand = new commander.Command('list')
   .description('list all running sandboxes')
   .alias('ls')
-  .action(async () => {
+  .option(
+    '-s, --state <state>',
+    'filter by state, eg. running, stopped',
+    (value) => value.split(',')
+  )
+  .option(
+    '-m, --metadata <metadata>',
+    'filter by metadata, eg. key1=value1',
+    (value) => value.replace(/,/g, '&')
+  )
+  .option(
+    '-l, --limit <limit>',
+    'limit the number of sandboxes returned',
+    (value) => parseInt(value)
+  )
+  .action(async (options) => {
     try {
-      const sandboxes = await listSandboxes()
+      const sandboxes = await listSandboxes({
+        limit: options.limit,
+        state: options.state,
+        metadata: options.metadata,
+      })
 
       if (!sandboxes?.length) {
-        console.log('No running sandboxes.')
+        console.log('No sandboxes found')
       } else {
         const table = new tablePrinter.Table({
           title: 'Running sandboxes',
@@ -28,6 +47,7 @@ export const listCommand = new commander.Command('list')
             { name: 'alias', alignment: 'left', title: 'Alias' },
             { name: 'startedAt', alignment: 'left', title: 'Started at' },
             { name: 'endAt', alignment: 'left', title: 'End at' },
+            { name: 'state', alignment: 'left', title: 'State' },
             { name: 'cpuCount', alignment: 'left', title: 'vCPUs' },
             { name: 'memoryMB', alignment: 'left', title: 'RAM MiB' },
             { name: 'metadata', alignment: 'left', title: 'Metadata' },
@@ -39,6 +59,8 @@ export const listCommand = new commander.Command('list')
               sandboxID: sandbox.sandboxID,
               startedAt: new Date(sandbox.startedAt).toLocaleString(),
               endAt: new Date(sandbox.endAt).toLocaleString(),
+              state:
+                sandbox.state.charAt(0).toUpperCase() + sandbox.state.slice(1), // capitalize
               metadata: JSON.stringify(sandbox.metadata),
             }))
             .sort(
@@ -81,15 +103,51 @@ export const listCommand = new commander.Command('list')
     }
   })
 
-export async function listSandboxes(): Promise<
-  e2b.components['schemas']['ListedSandbox'][]
+type ListSandboxesOptions = {
+  limit?: number
+  state?: components['schemas']['SandboxState'][]
+  metadata?: string
+}
+
+export async function listSandboxes({
+  limit,
+  state,
+  metadata,
+}: ListSandboxesOptions = {}): Promise<
+  components['schemas']['ListedSandbox'][]
 > {
   ensureAPIKey()
 
   const signal = connectionConfig.getSignal()
-  const res = await client.api.GET('/sandboxes', { signal })
 
-  handleE2BRequestError(res,  'Error getting running sandboxes')
+  let hasNext = true
+  let nextToken: string | undefined
+  let remainingLimit: number | undefined = limit
 
-  return res.data
+  const sandboxes: components['schemas']['ListedSandbox'][] = []
+
+  while (hasNext && (!limit || (remainingLimit && remainingLimit > 0))) {
+    const res = await client.api.GET('/v2/sandboxes', {
+      params: {
+        query: {
+          state,
+          metadata,
+          nextToken,
+          limit: remainingLimit,
+        },
+      },
+      signal,
+    })
+
+    handleE2BRequestError(res, 'Error getting running sandboxes')
+
+    nextToken = res.response.headers.get('x-next-token') || undefined
+    hasNext = !!nextToken
+    sandboxes.push(...res.data)
+    if (limit && remainingLimit) {
+      remainingLimit -= res.data.length
+    }
+  }
+
+  return sandboxes
 }
