@@ -6,7 +6,7 @@ from e2b.sandbox.sandbox_api import SandboxQuery
 
 @pytest.mark.skip_debug()
 def test_start(template):
-    sbx = Sandbox(template, timeout=5)
+    sbx = Sandbox.create(template, timeout=5)
     try:
         assert sbx.is_running()
         assert sbx._envd_version is not None
@@ -16,7 +16,7 @@ def test_start(template):
 
 @pytest.mark.skip_debug()
 def test_metadata(template):
-    sbx = Sandbox(template, timeout=5, metadata={"test-key": "test-value"})
+    sbx = Sandbox.create(template, timeout=5, metadata={"test-key": "test-value"})
 
     try:
         paginator = Sandbox.list(

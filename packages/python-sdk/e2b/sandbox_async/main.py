@@ -9,6 +9,11 @@ from typing import (
     overload,
     List,
     Type,
+    Generic,
+    cast,
+    ClassVar,
+    TypeVar,
+    Protocol,
 )
 
 from packaging.version import Version
@@ -52,9 +57,92 @@ class AsyncSandboxOpts(TypedDict):
     connection_config: ConnectionConfig
 
 
+S = TypeVar("S", bound="AsyncSandbox")
+
+
+class BetaProto(Protocol[S]):
+    @classmethod
+    async def create(
+        cls,
+        template: Optional[str] = None,
+        timeout: Optional[int] = None,
+        metadata: Optional[Dict[str, str]] = None,
+        envs: Optional[Dict[str, str]] = None,
+        secure: Optional[bool] = None,
+        allow_internet_access: Optional[bool] = True,
+        **opts: Unpack[ApiParams],
+    ) -> S: ...
+
+    @overload
+    async def resume(
+        self,
+        timeout: Optional[int] = None,
+        **opts: Unpack[ApiParams],
+    ) -> S:
+        """
+        Resume the sandbox.
+
+        :return: A running sandbox instance
+        """
+        ...
+
+    @overload
+    @staticmethod
+    async def resume(
+        sandbox_id: str,
+        timeout: Optional[int] = None,
+        **opts: Unpack[ApiParams],
+    ) -> S:
+        """
+        Resume the sandbox.
+
+        :param sandbox_id: Sandbox ID
+        :param timeout: Timeout for the sandbox in **seconds**
+
+        :return: A running sandbox instance
+        """
+        ...
+
+
 class _Beta(SandboxApiBeta):
-    def __init__(self, sandbox: "AsyncSandbox"):
-        self._sandbox = sandbox
+    sbx_class: ClassVar[type]
+
+    def __init__(self, sbx_cls: S, sandbox_id: str):
+        self._instance_cls: S = sbx_cls
+        self._sandbox_id = sandbox_id
+
+    @classmethod
+    async def create(
+        cls,
+        template: Optional[str] = None,
+        timeout: Optional[int] = None,
+        metadata: Optional[Dict[str, str]] = None,
+        envs: Optional[Dict[str, str]] = None,
+        secure: Optional[bool] = None,
+        allow_internet_access: Optional[bool] = True,
+        **opts: Unpack[ApiParams],
+    ) -> S:
+        """
+        Create a new sandbox.
+
+        By default, the sandbox is created from the default `base` sandbox template.
+
+        :param template: Sandbox template name or ID
+        :param timeout: Timeout for the sandbox in **seconds**, default to 300 seconds. The maximum time a sandbox can be kept alive is 24 hours (86_400 seconds) for Pro users and 1 hour (3_600 seconds) for Hobby users.
+        :param metadata: Custom metadata for the sandbox
+        :param envs: Custom environment variables for the sandbox
+        :param secure: Envd is secured with access token and cannot be used without it
+        :param allow_internet_access: Allow sandbox to access the internet, defaults to `True`.
+
+        :return: A Sandbox instance for the new sandbox
+
+        Use this method instead of using the constructor to create a new sandbox.
+        """
+
+        sbx = cast(Type[S], cls.sbx_class)
+        return await sbx.create(
+            template, timeout, metadata, envs, secure, allow_internet_access, **opts
+        )
 
     @overload
     async def pause(
@@ -83,7 +171,7 @@ class _Beta(SandboxApiBeta):
         """
         ...
 
-    @class_method_variant("_cls_pause")
+    @class_method_variant("_api_pause")
     async def pause(
         self,
         **opts: Unpack[ApiParams],
@@ -96,19 +184,17 @@ class _Beta(SandboxApiBeta):
         :return: Sandbox ID that can be used to resume the sandbox
         """
 
-        await self._cls_pause(
-            sandbox_id=self._sandbox.sandbox_id,
+        return await self._api_pause(
+            sandbox_id=self._sandbox_id,
             **opts,
         )
-
-        return self._sandbox.sandbox_id
 
     @overload
     async def resume(
         self,
         timeout: Optional[int] = None,
         **opts: Unpack[ApiParams],
-    ) -> "AsyncSandbox":
+    ) -> S:
         """
         Resume the sandbox.
 
@@ -122,7 +208,7 @@ class _Beta(SandboxApiBeta):
         sandbox_id: str,
         timeout: Optional[int] = None,
         **opts: Unpack[ApiParams],
-    ) -> "AsyncSandbox":
+    ) -> S:
         """
         Resume the sandbox.
 
@@ -138,7 +224,7 @@ class _Beta(SandboxApiBeta):
         self,
         timeout: Optional[int] = None,
         **opts: Unpack[ApiParams],
-    ) -> "AsyncSandbox":
+    ) -> S:
         """
         Resume the sandbox.
 
@@ -149,27 +235,61 @@ class _Beta(SandboxApiBeta):
 
         :return: A running sandbox instance
         """
-        await self._cls_resume(
-            sandbox_id=self._sandbox.sandbox_id,
+
+        sbx = cast(Type[S], self._instance_cls)
+
+        await self._api_resume(
+            sandbox_id=self._sandbox_id,
             timeout=timeout,
             **opts,
         )
 
-        return await self._sandbox.connect(
-            sandbox_id=self._sandbox.sandbox_id,
+        return await sbx.connect(
+            sandbox_id=self._sandbox_id,
             **opts,
         )
+
+    @classmethod
+    async def _cls_resume(
+        cls,
+        sandbox_id: str,
+        timeout: Optional[int] = None,
+        **opts: Unpack[ApiParams],
+    ) -> S:
+        """
+        Resume the sandbox.
+
+        The **default sandbox timeout of 300 seconds** will be used for the resumed sandbox.
+        If you pass a custom timeout via the `timeout` parameter, it will be used instead.
+
+        :param timeout: Timeout for the sandbox in **seconds**
+
+        :return: A running sandbox instance
+        """
+
+        await cls._api_resume(
+            sandbox_id=sandbox_id,
+            timeout=timeout,
+            **opts,
+        )
+
+        sbx = cast(Type[S], cls.sbx_class)
+        return await sbx.connect(
+            sandbox_id=sandbox_id,
+            **opts,
+        )
+
+
+class BetaDescriptor(Generic[S]):
+    def __get__(self, obj, owner: Type[S]) -> Type[BetaProto[S]]:
+        dyn = type(f"_BetaFor{owner.__name__}", (_Beta,), {"sbx_class": owner})
+        return cast(Type[BetaProto[S]], dyn)
 
 
 class _AsyncSandboxMeta(type):
     """Metaclass for AsyncSandbox to provide class-level beta access."""
 
-    @property
-    def beta(cls) -> Type[_Beta]:
-        """
-        Module for beta features.
-        """
-        return _Beta
+    beta = BetaDescriptor()
 
 
 class AsyncSandbox(SandboxApi, metaclass=_AsyncSandboxMeta):
@@ -195,6 +315,8 @@ class AsyncSandbox(SandboxApi, metaclass=_AsyncSandboxMeta):
     ```
     """
 
+    beta = BetaDescriptor()
+
     @property
     def files(self) -> Filesystem:
         """
@@ -215,13 +337,6 @@ class AsyncSandbox(SandboxApi, metaclass=_AsyncSandboxMeta):
         Module for interacting with the sandbox pseudo-terminal.
         """
         return self._pty
-
-    @property
-    def beta(self) -> _Beta:
-        """
-        Module for beta features.
-        """
-        return self._beta
 
     def __init__(self, **opts: Unpack[AsyncSandboxOpts]):
         """
@@ -254,7 +369,7 @@ class AsyncSandbox(SandboxApi, metaclass=_AsyncSandboxMeta):
             self.connection_config,
             self._transport.pool,
         )
-        self._beta = _Beta(self)
+        self.beta = _Beta(self, self.sandbox_id)
 
     async def is_running(self, request_timeout: Optional[float] = None) -> bool:
         """

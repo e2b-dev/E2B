@@ -4,6 +4,7 @@ from typing import Optional, Dict, List
 from packaging.version import Version
 from typing_extensions import Unpack
 
+from e2b.api.client.types import UNSET
 from e2b.sandbox.main import SandboxBase
 from e2b.sandbox.sandbox_api import (
     SandboxInfo,
@@ -180,6 +181,9 @@ class SandboxApi(SandboxBase):
             if res.parsed is None:
                 raise Exception("Body of the request is None")
 
+            if isinstance(res.parsed, Error):
+                raise SandboxException(f"{res.parsed.message}: Request failed")
+
             if Version(res.parsed.envd_version) < Version("0.1.0"):
                 await SandboxApi._cls_kill(res.parsed.sandbox_id)
                 raise TemplateException(
@@ -223,8 +227,8 @@ class SandboxApi(SandboxBase):
         ) as api_client:
             res = await get_sandboxes_sandbox_id_metrics.asyncio_detailed(
                 sandbox_id,
-                start=int(start.timestamp() * 1000) if start else None,
-                end=int(end.timestamp() * 1000) if end else None,
+                start=int(start.timestamp() * 1000) if start else UNSET,
+                end=int(end.timestamp() * 1000) if end else UNSET,
                 client=api_client,
             )
 
@@ -255,11 +259,11 @@ class SandboxApi(SandboxBase):
 
 class SandboxApiBeta:
     @classmethod
-    async def _cls_pause(
+    async def _api_pause(
         cls,
         sandbox_id: str,
         **opts: Unpack[ApiParams],
-    ) -> bool:
+    ) -> str:
         config = ConnectionConfig(**opts)
 
         async with AsyncApiClient(
@@ -275,15 +279,15 @@ class SandboxApiBeta:
                 raise NotFoundException(f"Sandbox {sandbox_id} not found")
 
             if res.status_code == 409:
-                return False
+                return sandbox_id
 
             if res.status_code >= 300:
                 raise handle_api_exception(res)
 
-            return True
+            return sandbox_id
 
     @classmethod
-    async def _cls_resume(
+    async def _api_resume(
         cls,
         sandbox_id: str,
         timeout: Optional[int] = None,

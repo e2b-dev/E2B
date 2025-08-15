@@ -18,7 +18,7 @@ def test_list_sandboxes(sandbox: Sandbox, sandbox_test_id: str):
 @pytest.mark.skip_debug()
 def test_list_sandboxes_with_filter(sandbox_test_id: str):
     unique_id = str(int(time.time()))
-    extra_sbx = Sandbox(metadata={"unique_id": unique_id})
+    extra_sbx = Sandbox.create(metadata={"unique_id": unique_id})
 
     try:
         paginator = Sandbox.list(query=SandboxQuery(metadata={"unique_id": unique_id}))
@@ -69,7 +69,7 @@ def test_list_paused_sandboxes(sandbox: Sandbox, sandbox_test_id: str):
 @pytest.mark.skip_debug()
 def test_paginate_running_sandboxes(sandbox: Sandbox, sandbox_test_id: str):
     # Create two sandboxes
-    extra_sbx = Sandbox(metadata={"sandbox_test_id": sandbox_test_id})
+    extra_sbx = Sandbox.create(metadata={"sandbox_test_id": sandbox_test_id})
 
     try:
         # Test pagination with limit
@@ -109,7 +109,7 @@ def test_paginate_paused_sandboxes(sandbox: Sandbox, sandbox_test_id: str):
     sandbox.beta.pause()
 
     # create another paused sandbox
-    extra_sbx = Sandbox(metadata={"sandbox_test_id": sandbox_test_id})
+    extra_sbx = Sandbox.create(metadata={"sandbox_test_id": sandbox_test_id})
     extra_sbx_id = extra_sbx.sandbox_id.split("-")[0]
     extra_sbx.beta.pause()
 
@@ -148,7 +148,7 @@ def test_paginate_paused_sandboxes(sandbox: Sandbox, sandbox_test_id: str):
 @pytest.mark.skip_debug()
 def test_paginate_running_and_paused_sandboxes(sandbox: Sandbox, sandbox_test_id: str):
     # Create extra paused sandbox
-    extra_sbx = Sandbox(metadata={"sandbox_test_id": sandbox_test_id})
+    extra_sbx = Sandbox.create(metadata={"sandbox_test_id": sandbox_test_id})
     extra_sbx_id = extra_sbx.sandbox_id.split("-")[0]
     extra_sbx.beta.pause()
 

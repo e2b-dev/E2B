@@ -28,7 +28,7 @@ def template():
 
 @pytest.fixture()
 def sandbox(template, debug, sandbox_test_id):
-    sandbox = Sandbox(template, metadata={"sandbox_test_id": sandbox_test_id})
+    sandbox = Sandbox.create(template, metadata={"sandbox_test_id": sandbox_test_id})
 
     try:
         yield sandbox

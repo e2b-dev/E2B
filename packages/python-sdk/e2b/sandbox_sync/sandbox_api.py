@@ -242,7 +242,7 @@ class SandboxApi(SandboxBase):
 
 class SandboxApiBeta:
     @classmethod
-    def _cls_resume(
+    def _api_resume(
         cls,
         sandbox_id: str,
         timeout: Optional[int] = None,
@@ -274,11 +274,11 @@ class SandboxApiBeta:
             return True
 
     @classmethod
-    def _cls_pause(
+    def _api_pause(
         cls,
         sandbox_id: str,
         **opts: Unpack[ApiParams],
-    ) -> bool:
+    ) -> str:
         config = ConnectionConfig(**opts)
 
         with ApiClient(
@@ -294,9 +294,9 @@ class SandboxApiBeta:
                 raise NotFoundException(f"Sandbox {sandbox_id} not found")
 
             if res.status_code == 409:
-                return False
+                return sandbox_id
 
             if res.status_code >= 300:
                 raise handle_api_exception(res)
 
-            return True
+        return sandbox_id
