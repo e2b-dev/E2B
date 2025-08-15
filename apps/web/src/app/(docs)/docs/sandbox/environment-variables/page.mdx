@@ -55,7 +55,7 @@ const sandbox = await Sandbox.create({
 ```python
 from e2b_code_interpreter import Sandbox
 
-sandbox = Sandbox(
+sandbox = Sandbox.create(
   envs={ # $HighlightLine
     'MY_VAR': 'my_value', # $HighlightLine
   }, # $HighlightLine

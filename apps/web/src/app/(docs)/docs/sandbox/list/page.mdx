@@ -42,7 +42,7 @@ The `Sandbox.list()` method supports pagination. In the [advanced pagination](/d
     ```python
     from e2b_code_interpreter import Sandbox, SandboxInfo
 
-    sandbox = Sandbox(
+    sandbox = Sandbox.create(
         metadata={
             "name": "My Sandbox",  # $HighlightLine
         },
@@ -147,7 +147,7 @@ Filter sandboxes by the metadata key value pairs specified during Sandbox creati
     from e2b_code_interpreter import Sandbox, SandboxListQuery
 
     # Create sandbox with metadata.
-    sandbox = Sandbox(
+    sandbox = Sandbox.create(
         metadata={
             "env": "dev", # $HighlightLine
             "app": "my-app", # $HighlightLine
@@ -269,11 +269,11 @@ You can fetch all pages by looping through the paginator while checking if there
     from e2b_code_interpreter import Sandbox
 
     # Create a sandbox.
-    sandbox = Sandbox({
+    sandbox = Sandbox.create(
       metadata: {
         name: 'My Sandbox',
       },
-    })
+    )
 
     # List all running sandboxes.
     running_sandboxes = Sandbox.list() # $HighlightLine
@@ -318,7 +318,7 @@ This can be useful when you have a large number of sandboxes and want to find on
     from e2b.sandbox.sandbox_api import SandboxQuery
 
     # Create sandbox with metadata.
-    sandbox = Sandbox(
+    sandbox = Sandbox.create(
         metadata={
             "env": "dev",  # $HighlightLine
             "app": "my-app",  # $HighlightLine

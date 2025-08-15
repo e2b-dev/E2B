@@ -68,7 +68,7 @@ from e2b import Sandbox
 # sandbox.close()
 
 # Now
-sandbox = Sandbox(timeout=300)
+sandbox = Sandbox.create(timeout=300)
 ```
 </CodeGroup>
 
@@ -90,11 +90,11 @@ const sandbox = await Sandbox.create('template-name-or-id', {
 from e2b import Sandbox
 
 # Before
-# sandbox = Sandbox(template='template-name-or-id')
+# sandbox = Sandbox.create(template='template-name-or-id')
 # sandbox.close()
 
 # Now
-sandbox = Sandbox(template='template-name-or-id', timeout=300)
+sandbox = Sandbox.create(template='template-name-or-id', timeout=300)
 ```
 </CodeGroup>
 
@@ -122,7 +122,7 @@ from e2b import Sandbox
 # sandbox.keep_alive(600)
 
 # Now
-sandbox = Sandbox(timeout=300)
+sandbox = Sandbox.create(timeout=300)
 sandbox.set_timeout(600)
 ```
 </CodeGroup>
@@ -160,7 +160,7 @@ from e2b import Sandbox
 # existing_sandbox = Sandbox.reconnect(sandbox.id)
 
 # Now
-sandbox = Sandbox(timeout=600)
+sandbox = Sandbox.create(timeout=600)
 
 existing_sandbox = Sandbox.connect(sandbox.sandbox_id)
 ```

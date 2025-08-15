@@ -20,10 +20,10 @@ const isolatedSandbox = await Sandbox.create({ allowInternetAccess: false })
 from e2b_code_interpreter import Sandbox
 
 # Create sandbox with internet access enabled (default)
-sandbox = Sandbox(allow_internet_access=True)
+sandbox = Sandbox.create(allow_internet_access=True)
 
 # Create sandbox without internet access
-isolated_sandbox = Sandbox(allow_internet_access=False)
+isolated_sandbox = Sandbox.create(allow_internet_access=False)
 ```
 </CodeGroup>
 
