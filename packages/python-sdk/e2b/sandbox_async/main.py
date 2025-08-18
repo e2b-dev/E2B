@@ -17,7 +17,6 @@ from e2b.api.client.types import Unset
 from e2b.connection_config import ConnectionConfig, ApiParams
 from e2b.envd.api import ENVD_API_HEALTH_ROUTE, ahandle_envd_api_exception
 from e2b.exceptions import format_request_timeout_error, SandboxException
-from e2b.sandbox.main import SandboxBase
 from e2b.sandbox.sandbox_api import SandboxMetrics, SandboxQuery
 from e2b.sandbox.utils import class_method_variant
 from e2b.sandbox_async.filesystem.filesystem import Filesystem
