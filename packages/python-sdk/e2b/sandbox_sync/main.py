@@ -180,48 +180,14 @@ class Sandbox(SandboxApi):
 
         Use this method instead of using the constructor to create a new sandbox.
         """
-
-        extra_sandbox_headers = {}
-
-        debug = opts.get("debug")
-        if debug:
-            sandbox_id = "debug_sandbox_id"
-            sandbox_domain = None
-            envd_version = None
-            envd_access_token = None
-        else:
-            response = SandboxApi._create_sandbox(
-                template=template or cls.default_template,
-                auto_pause=False,
-                timeout=timeout or cls.default_sandbox_timeout,
-                metadata=metadata,
-                env_vars=envs,
-                secure=secure,
-                allow_internet_access=allow_internet_access,
-                **opts,
-            )
-
-            sandbox_id = response.sandbox_id
-            sandbox_domain = response.sandbox_domain
-            envd_version = response.envd_version
-            envd_access_token = response.envd_access_token
-
-            if envd_access_token is not None and not isinstance(
-                envd_access_token, Unset
-            ):
-                extra_sandbox_headers["X-Access-Token"] = envd_access_token
-
-        connection_config = ConnectionConfig(
-            extra_sandbox_headers=extra_sandbox_headers,
+        return cls._create(
+            template=template,
+            timeout=timeout,
+            metadata=metadata,
+            envs=envs,
+            secure=secure,
+            allow_internet_access=allow_internet_access,
             **opts,
-        )
-
-        return cls(
-            sandbox_id=sandbox_id,
-            sandbox_domain=sandbox_domain,
-            envd_version=envd_version,
-            envd_access_token=envd_access_token,
-            connection_config=connection_config,
         )
 
     @overload
@@ -534,8 +500,8 @@ class Sandbox(SandboxApi):
     def beta_create(
         cls,
         template: Optional[str] = None,
-        auto_pause: bool = True,
         timeout: Optional[int] = None,
+        auto_pause: bool = False,
         metadata: Optional[Dict[str, str]] = None,
         envs: Optional[Dict[str, str]] = None,
         secure: Optional[bool] = None,
@@ -550,8 +516,8 @@ class Sandbox(SandboxApi):
         By default, the sandbox is created from the default `base` sandbox template.
 
         :param template: Sandbox template name or ID
-        :param auto_pause: Automatically pause the sandbox after the timeout expires
         :param timeout: Timeout for the sandbox in **seconds**, default to 300 seconds. The maximum time a sandbox can be kept alive is 24 hours (86_400 seconds) for Pro users and 1 hour (3_600 seconds) for Hobby users.
+        :param auto_pause: Automatically pause the sandbox after the timeout expires. Defaults to `False`.
         :param metadata: Custom metadata for the sandbox
         :param envs: Custom environment variables for the sandbox
         :param secure: Envd is secured with access token and cannot be used without it
@@ -561,48 +527,15 @@ class Sandbox(SandboxApi):
 
         Use this method instead of using the constructor to create a new sandbox.
         """
-
-        extra_sandbox_headers = {}
-
-        debug = opts.get("debug")
-        if debug:
-            sandbox_id = "debug_sandbox_id"
-            sandbox_domain = None
-            envd_version = None
-            envd_access_token = None
-        else:
-            response = SandboxApi._create_sandbox(
-                template=template or cls.default_template,
-                auto_pause=auto_pause,
-                timeout=timeout or cls.default_sandbox_timeout,
-                metadata=metadata,
-                env_vars=envs,
-                secure=secure,
-                allow_internet_access=allow_internet_access,
-                **opts,
-            )
-
-            sandbox_id = response.sandbox_id
-            sandbox_domain = response.sandbox_domain
-            envd_version = response.envd_version
-            envd_access_token = response.envd_access_token
-
-            if envd_access_token is not None and not isinstance(
-                envd_access_token, Unset
-            ):
-                extra_sandbox_headers["X-Access-Token"] = envd_access_token
-
-        connection_config = ConnectionConfig(
-            extra_sandbox_headers=extra_sandbox_headers,
+        return cls._create(
+            template=template,
+            auto_pause=auto_pause,
+            timeout=timeout,
+            metadata=metadata,
+            envs=envs,
+            secure=secure,
+            allow_internet_access=allow_internet_access,
             **opts,
-        )
-
-        return cls(
-            sandbox_id=sandbox_id,
-            sandbox_domain=sandbox_domain,
-            envd_version=envd_version,
-            envd_access_token=envd_access_token,
-            connection_config=connection_config,
         )
 
     @overload
@@ -678,4 +611,59 @@ class Sandbox(SandboxApi):
             connection_config=connection_config,
             envd_version=response.envd_version,
             envd_access_token=envd_access_token,
+        )
+
+    @classmethod
+    def _create(
+        cls,
+        template: Optional[str] = None,
+        timeout: Optional[int] = None,
+        auto_pause: bool = False,
+        metadata: Optional[Dict[str, str]] = None,
+        envs: Optional[Dict[str, str]] = None,
+        secure: Optional[bool] = None,
+        allow_internet_access: bool = True,
+        **opts: Unpack[ApiParams],
+    ):
+        extra_sandbox_headers = {}
+
+        debug = opts.get("debug")
+        if debug:
+            sandbox_id = "debug_sandbox_id"
+            sandbox_domain = None
+            envd_version = None
+            envd_access_token = None
+        else:
+            response = SandboxApi._create_sandbox(
+                template=template or cls.default_template,
+                timeout=timeout or cls.default_sandbox_timeout,
+                auto_pause=auto_pause,
+                metadata=metadata,
+                env_vars=envs,
+                secure=secure,
+                allow_internet_access=allow_internet_access,
+                **opts,
+            )
+
+            sandbox_id = response.sandbox_id
+            sandbox_domain = response.sandbox_domain
+            envd_version = response.envd_version
+            envd_access_token = response.envd_access_token
+
+            if envd_access_token is not None and not isinstance(
+                envd_access_token, Unset
+            ):
+                extra_sandbox_headers["X-Access-Token"] = envd_access_token
+
+        connection_config = ConnectionConfig(
+            extra_sandbox_headers=extra_sandbox_headers,
+            **opts,
+        )
+
+        return cls(
+            sandbox_id=sandbox_id,
+            sandbox_domain=sandbox_domain,
+            envd_version=envd_version,
+            envd_access_token=envd_access_token,
+            connection_config=connection_config,
         )

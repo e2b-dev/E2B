@@ -63,7 +63,13 @@ export interface SandboxOpts extends ConnectionOpts {
   allowInternetAccess?: boolean
 }
 
-export type SandboxBetaCreateOpts = SandboxOpts & { autoPause?: boolean }
+export type SandboxBetaCreateOpts = SandboxOpts & {
+  /**
+   * Automatically pause the sandbox after the timeout expires.
+   * @default false
+   */
+  autoPause?: boolean
+}
 
 /**
  * Options for connecting to a Sandbox.

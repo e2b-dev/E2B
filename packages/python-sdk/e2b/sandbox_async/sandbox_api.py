@@ -147,6 +147,7 @@ class SandboxApi(SandboxBase):
         cls,
         template: str,
         timeout: int,
+        auto_pause: bool,
         metadata: Optional[Dict[str, str]] = None,
         env_vars: Optional[Dict[str, str]] = None,
         secure: Optional[bool] = None,
@@ -162,6 +163,7 @@ class SandboxApi(SandboxBase):
             res = await post_sandboxes.asyncio_detailed(
                 body=NewSandbox(
                     template_id=template,
+                    auto_pause=auto_pause,
                     metadata=metadata or {},
                     timeout=timeout,
                     env_vars=env_vars or {},

@@ -145,8 +145,8 @@ class SandboxApi(SandboxBase):
     def _create_sandbox(
         cls,
         template: str,
-        auto_pause: bool,
         timeout: int,
+        auto_pause: bool,
         metadata: Optional[Dict[str, str]] = None,
         env_vars: Optional[Dict[str, str]] = None,
         secure: Optional[bool] = None,

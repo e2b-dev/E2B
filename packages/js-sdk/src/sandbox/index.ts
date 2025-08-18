@@ -266,7 +266,7 @@ export class Sandbox extends SandboxApi {
    */
   static async betaCreate<S extends typeof Sandbox>(
     this: S,
-    opts?: SandboxOpts
+    opts?: SandboxBetaCreateOpts
   ): Promise<InstanceType<S>>
 
   /**
