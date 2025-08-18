@@ -18,7 +18,7 @@ sandboxTest.skipIf(isDebug)('resume sandbox', async ({ sandbox }) => {
     'Sandbox should not be running after pause'
   )
 
-  await Sandbox.betaConnect(sandbox.sandboxId)
+  await Sandbox.connect(sandbox.sandboxId)
   assert.isTrue(
     await sandbox.isRunning(),
     'Sandbox should be running after resume'

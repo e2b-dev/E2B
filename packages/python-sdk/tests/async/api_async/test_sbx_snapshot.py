@@ -15,5 +15,5 @@ async def test_resume_sandbox(async_sandbox: AsyncSandbox):
     assert not await async_sandbox.is_running()
 
     # resume
-    await AsyncSandbox.beta_connect(async_sandbox.sandbox_id)
+    await AsyncSandbox.connect(async_sandbox.sandbox_id)
     assert await async_sandbox.is_running()

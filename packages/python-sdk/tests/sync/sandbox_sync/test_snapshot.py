@@ -9,7 +9,7 @@ def test_snapshot(sandbox: Sandbox):
     sandbox.beta_pause()
     assert not sandbox.is_running()
 
-    resumed_sandbox = sandbox.beta_connect()
+    resumed_sandbox = sandbox.connect()
     assert sandbox.is_running()
     assert resumed_sandbox.is_running()
     assert resumed_sandbox.sandbox_id == sandbox.sandbox_id

@@ -15,5 +15,5 @@ def test_resume_sandbox(sandbox: Sandbox):
     assert not sandbox.is_running()
 
     # resume
-    Sandbox.beta_connect(sandbox.sandbox_id)
+    Sandbox.connect(sandbox.sandbox_id)
     assert sandbox.is_running()

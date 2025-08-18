@@ -238,46 +238,93 @@ class Sandbox(SandboxApi):
             connection_config=connection_config,
         )
 
-    @classmethod
+    @overload
     def connect(
-        cls,
-        sandbox_id: str,
+        self,
+        timeout: Optional[int] = None,
         **opts: Unpack[ApiParams],
-    ):
+    ) -> Self:
         """
-        Connect to an existing sandbox.
-        With a sandbox ID, you can connect to the same sandbox from different places or environments (serverless functions, etc.).
+        Connect to a sandbox. If the sandbox is paused, it will be automatically resumed.
+        Sandbox must be either running or be paused.
 
-        :param sandbox_id: Sandbox ID
+        With sandbox ID you can connect to the same sandbox from different places or environments (serverless functions, etc).
+
+        :param timeout: Timeout for the sandbox in **seconds**
+        :return: A running sandbox instance
 
         @example
         ```python
         sandbox = Sandbox.create()
-        sandbox_id = sandbox.sandbox_id
+        sandbox.beta_pause()
 
         # Another code block
-        same_sandbox = Sandbox.connect(sandbox_id)
+        same_sandbox = sandbox.connect()
+
+        :return: A running sandbox instance
+        """
+        ...
+
+    @overload
+    @classmethod
+    def connect(
+        cls,
+        sandbox_id: str,
+        timeout: Optional[int] = None,
+        **opts: Unpack[ApiParams],
+    ) -> Self:
+        """
+        Connect to a sandbox. If the sandbox is paused, it will be automatically resumed.
+        Sandbox must be either running or be paused.
+
+        With sandbox ID you can connect to the same sandbox from different places or environments (serverless functions, etc).
+
+        :param sandbox_id: Sandbox ID
+        :param timeout: Timeout for the sandbox in **seconds**
+        :return: A running sandbox instance
+
+        @example
+        ```python
+        sandbox = Sandbox.create()
+        Sandbox.beta_pause(sandbox.sandbox_id)
+
+        # Another code block
+        same_sandbox = Sandbox.connect(sandbox.sandbox_id)
         ```
         """
-        response = SandboxApi._cls_get_info(sandbox_id, **opts)
+        ...
 
-        sandbox_headers = {}
-        envd_access_token = response._envd_access_token
-        if envd_access_token is not None and not isinstance(envd_access_token, Unset):
-            sandbox_headers["X-Access-Token"] = envd_access_token
+    @class_method_variant("_cls_connect")
+    def connect(
+        self,
+        timeout: Optional[int] = None,
+        **opts: Unpack[ApiParams],
+    ) -> Self:
+        """
+        Connect to a sandbox. If the sandbox is paused, it will be automatically resumed.
+        Sandbox must be either running or be paused.
 
-        connection_config = ConnectionConfig(
-            extra_sandbox_headers=sandbox_headers,
+        With sandbox ID you can connect to the same sandbox from different places or environments (serverless functions, etc).
+
+        :param timeout: Timeout for the sandbox in **seconds**
+        :return: A running sandbox instance
+
+        @example
+        ```python
+        sandbox = Sandbox.create()
+        sandbox.beta_pause()
+
+        # Another code block
+        same_sandbox = sandbox.connect()
+        ```
+        """
+        SandboxApi._cls_resume(
+            sandbox_id=self.sandbox_id,
+            timeout=timeout,
             **opts,
         )
 
-        return cls(
-            sandbox_id=sandbox_id,
-            sandbox_domain=response.sandbox_domain,
-            connection_config=connection_config,
-            envd_version=response.envd_version,
-            envd_access_token=envd_access_token,
-        )
+        return self
 
     def __enter__(self):
         return self
@@ -641,118 +688,14 @@ class Sandbox(SandboxApi):
             **opts,
         )
 
-    @overload
-    def beta_connect(
-        self,
-        timeout: Optional[int] = None,
-        **opts: Unpack[ApiParams],
-    ) -> Self:
-        """
-        [BETA] This feature is in beta and may change in the future.
-
-        Connect to a sandbox. If the sandbox is paused, it will be automatically resumed.
-        Sandbox must be either running or be paused
-
-        :param timeout: Timeout for the sandbox in **seconds**
-        :return: A Sandbox instance
-
-        @example
-        ```python
-        sandbox = Sandbox.create()
-        sandbox.beta_pause()
-
-        # Another code block
-        same_sandbox = sandbox.beta_connect()
-
-        :return: A running sandbox instance
-        """
-        ...
-
-    @overload
     @classmethod
-    def beta_connect(
+    def _cls_connect(
         cls,
         sandbox_id: str,
         timeout: Optional[int] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
-        """
-        [BETA] This feature is in beta and may change in the future.
-
-        Connect to a sandbox. If the sandbox is paused, it will be automatically resumed.
-        Sandbox must be either running or be paused
-
-        :param sandbox_id: Sandbox ID
-        :param timeout: Timeout for the sandbox in **seconds**
-        :return: A running sandbox instance
-
-        @example
-        ```python
-        sandbox = Sandbox.create()
-        Sandbox.beta_pause(sandbox.sandbox_id)
-
-        # Another code block
-        same_sandbox = Sandbox.beta_connect(sandbox.sandbox_id)
-        ```
-        """
-        ...
-
-    @class_method_variant("_cls_beta_connect")
-    def beta_connect(
-        self,
-        timeout: Optional[int] = None,
-        **opts: Unpack[ApiParams],
-    ) -> Self:
-        """
-        [BETA] This feature is in beta and may change in the future.
-
-        Connect to a sandbox. Sandbox must be either running or be paused
-
-        :param timeout: Timeout for the sandbox in **seconds**
-        :return: A running sandbox instance
-
-        @example
-        ```python
-        sandbox = Sandbox.create()
-        sandbox.beta_pause()
-
-        # Another code block
-        same_sandbox = sandbox.beta_connect()
-        ```
-        """
-        return self._cls_beta_connect(
-            sandbox_id=self.sandbox_id,
-            timeout=timeout,
-            **opts,
-        )
-
-    @classmethod
-    def _cls_beta_connect(
-        cls,
-        sandbox_id: str,
-        timeout: Optional[int] = None,
-        **opts: Unpack[ApiParams],
-    ) -> Self:
-        # Temporary solution (02/12/2025),
-        # Options discussed:
-        # 1. No set - never sure how long the sandbox will be running
-        # 2. Always set the timeout in code - the user can't just connect to the sandbox
-        #       without changing the timeout, round trip to the server time
-        # 3. Set the timeout in resume on backend - side effect on error
-        # 4. Create new endpoint for connect
-        try:
-            cls._cls_set_timeout(
-                sandbox_id=sandbox_id,
-                timeout=timeout,
-                **opts,
-            )
-        except SandboxException:
-            # Sandbox is not running, resume it
-            SandboxApi._cls_resume(
-                sandbox_id=sandbox_id,
-                timeout=timeout,
-                **opts,
-            )
+        SandboxApi._cls_resume(sandbox_id, timeout, **opts)
 
         response = cls._cls_get_info(sandbox_id, **opts)
 

@@ -57,7 +57,7 @@ const sandboxId = await sbx.betaPause()
 console.log('Sandbox paused', sandboxId)
 
 // Connect to the sandbox (it will automatically resume the sandbox, if paused)
-const sameSbx = await sbx.betaConnect() // $HighlightLine
+const sameSbx = await sbx.connect() // $HighlightLine
 console.log('Connected to the sandbox', sameSbx.sandboxId) // $HighlightLine
 ```
 ```python
@@ -73,7 +73,7 @@ sandbox_id = sbx.beta_pause()
 print('Sandbox paused', sandbox_id)
 
 # Connect to the sandbox (it will automatically resume the sandbox, if paused)
-same_sbx = sbx.beta_connect() # $HighlightLine
+same_sbx = sbx.connect() # $HighlightLine
 print('Connected to the sandbox', same_sbx.sandbox_id) # $HighlightLine
 ```
 </CodeGroup>
@@ -155,18 +155,18 @@ Sandbox.kill(sandbox_id) # $HighlightLine
 ## Sandbox's timeout
 When you connect to a sandbox, the sandbox's timeout is reset to the default timeout of an E2B sandbox - 5 minutes.
 
-You can pass a custom timeout to the `Sandbox.betaConnect()`/`Sandbox.beta_connect()` method like this:
+You can pass a custom timeout to the `Sandbox.connect()`/`Sandbox.connect()` method like this:
 
 <CodeGroup>
 ```js
 import { Sandbox } from '@e2b/code-interpreter'
 
-const sbx = await Sandbox.betaConnect(sandboxId, { timeoutMs: 60 * 1000 }) // 60 seconds
+const sbx = await Sandbox.connect(sandboxId, { timeoutMs: 60 * 1000 }) // 60 seconds
 ```
 ```python
 from e2b_code_interpreter import Sandbox
 
-sbx = Sandbox.beta_connect(sandbox_id, timeout=60) # 60 seconds
+sbx = Sandbox.connect(sandbox_id, timeout=60) # 60 seconds
 ```
 </CodeGroup>
 

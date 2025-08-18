@@ -1,52 +1,54 @@
 import { assert } from 'vitest'
 
 import { sandboxTest, isDebug } from '../setup.js'
-//
-// sandboxTest.skipIf(isDebug)(
-//   'pause and resume a sandbox',
-//   async ({ sandbox }) => {
-//     assert.isTrue(await sandbox.isRunning())
-//
-//     await sandbox.betaPause()
-//
-//     assert.isFalse(await sandbox.isRunning())
-//
-//     const resumedSandbox = await sandbox.betaConnect()
-//     assert.equal(resumedSandbox.sandboxId, sandbox.sandboxId)
-//
-//     assert.isTrue(await sandbox.isRunning())
-//   }
-// )
-//
-// sandboxTest.skipIf(isDebug)(
-//   'pause and resume a sandbox with env vars',
-//   async ({ template }) => {
-//     // Environment variables of a process exist at runtime, and are not stored in some file or so.
-//     // They are stored in the process's own memory
-//     const sandbox = await Sandbox.create(template, {
-//       envs: { TEST_VAR: 'sfisback' },
-//     })
-//
-//     const cmd = await sandbox.commands.run('echo "$TEST_VAR"')
-//
-//     assert.equal(cmd.exitCode, 0)
-//     assert.equal(cmd.stdout.trim(), 'sfisback')
-//
-//     await sandbox.betaPause()
-//
-//     assert.isFalse(await sandbox.isRunning())
-//
-//     const resumedSandbox = await sandbox.betaConnect()
-//     assert.isTrue(await sandbox.isRunning())
-//     assert.isTrue(await resumedSandbox.isRunning())
-//     assert.equal(resumedSandbox.sandboxId, sandbox.sandboxId)
-//
-//     const cmd2 = await sandbox.commands.run('echo "$TEST_VAR"')
-//
-//     assert.equal(cmd2.exitCode, 0)
-//     assert.equal(cmd2.stdout.trim(), 'sfisback')
-//   }
-// )
+import { Sandbox } from '../../src'
+
+sandboxTest.skipIf(isDebug)(
+  'pause and resume a sandbox',
+  async ({ sandbox }) => {
+    assert.isTrue(await sandbox.isRunning())
+
+    await sandbox.betaPause()
+
+    assert.isFalse(await sandbox.isRunning())
+
+    const resumedSandbox = await sandbox.connect()
+    assert.equal(resumedSandbox.sandboxId, sandbox.sandboxId)
+
+    assert.isTrue(await sandbox.isRunning())
+  }
+)
+
+sandboxTest.skipIf(isDebug)(
+  'pause and resume a sandbox with env vars',
+  async ({ template, sandboxTestId }) => {
+    // Environment variables of a process exist at runtime, and are not stored in some file or so.
+    // They are stored in the process's own memory
+    const sandbox = await Sandbox.create(template, {
+      envs: { TEST_VAR: 'sfisback' },
+      metadata: { sandboxTestId },
+    })
+
+    const cmd = await sandbox.commands.run('echo "$TEST_VAR"')
+
+    assert.equal(cmd.exitCode, 0)
+    assert.equal(cmd.stdout.trim(), 'sfisback')
+
+    await sandbox.betaPause()
+
+    assert.isFalse(await sandbox.isRunning())
+
+    const resumedSandbox = await sandbox.connect()
+    assert.isTrue(await sandbox.isRunning())
+    assert.isTrue(await resumedSandbox.isRunning())
+    assert.equal(resumedSandbox.sandboxId, sandbox.sandboxId)
+
+    const cmd2 = await sandbox.commands.run('echo "$TEST_VAR"')
+
+    assert.equal(cmd2.exitCode, 0)
+    assert.equal(cmd2.stdout.trim(), 'sfisback')
+  }
+)
 
 sandboxTest.skipIf(isDebug)(
   'pause and resume a sandbox with file',
@@ -67,7 +69,7 @@ sandboxTest.skipIf(isDebug)(
     await sandbox.betaPause()
     assert.isFalse(await sandbox.isRunning())
 
-    await sandbox.betaConnect()
+    await sandbox.connect()
     assert.isTrue(await sandbox.isRunning())
 
     const exists2 = await sandbox.files.exists(filename)
@@ -86,7 +88,7 @@ sandboxTest.skipIf(isDebug)(
     await sandbox.betaPause()
     assert.isFalse(await sandbox.isRunning())
 
-    await sandbox.betaConnect()
+    await sandbox.connect()
     assert.isTrue(await sandbox.isRunning())
 
     // First check that the command is in list
@@ -120,7 +122,7 @@ sandboxTest.skipIf(isDebug)(
     await sandbox.betaPause()
     assert.isFalse(await sandbox.isRunning())
 
-    await sandbox.betaConnect()
+    await sandbox.connect()
     assert.isTrue(await sandbox.isRunning())
 
     // the file should be created after more than 2 seconds have elapsed
@@ -150,7 +152,7 @@ sandboxTest.skipIf(isDebug)(
     await sandbox.betaPause()
     assert.isFalse(await sandbox.isRunning())
 
-    await sandbox.betaConnect()
+    await sandbox.connect()
     assert.isTrue(await sandbox.isRunning())
 
     url = await sandbox.getHost(8000)

@@ -30,7 +30,7 @@ sandboxTest.skipIf(isDebug)(
     const connectPromise = Sandbox.connect(sandbox.sandboxId)
     await expect(connectPromise).rejects.toThrowError(
       expect.objectContaining({
-        message: `404: sandbox "${sandbox.sandboxId}" doesn't exist or you don't have access to it`,
+        name: 'NotFoundError',
       })
     )
   }

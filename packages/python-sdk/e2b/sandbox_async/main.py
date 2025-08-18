@@ -235,47 +235,92 @@ class AsyncSandbox(SandboxApi):
             connection_config=connection_config,
         )
 
-    @classmethod
+    @overload
     async def connect(
-        cls,
-        sandbox_id: str,
+        self,
+        timeout: Optional[int] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
         """
-        Connect to an existing sandbox.
-        With a sandbox ID, you can connect to the same sandbox from different places or environments (serverless functions, etc.).
+        Connect to a sandbox. If the sandbox is paused, it will be automatically resumed.
+        Sandbox must be either running or be paused.
 
-        :param sandbox_id: Sandbox ID
+        With sandbox ID you can connect to the same sandbox from different places or environments (serverless functions, etc).
 
-        :return: A Sandbox instance for the existing sandbox
+        :param timeout: Timeout for the sandbox in **seconds**
+        :return: A running sandbox instance
 
         @example
         ```python
         sandbox = await AsyncSandbox.create()
-        sandbox_id = sandbox.sandbox_id
+        await sandbox.beta_pause()
 
         # Another code block
-        same_sandbox = await AsyncSandbox.connect(sandbox_id)
+        same_sandbox = await sandbox.connect()
+        ```
         """
-        response = await SandboxApi._cls_get_info(sandbox_id, **opts)
+        ...
 
-        sandbox_headers = {}
-        envd_access_token = response._envd_access_token
-        if envd_access_token is not None and not isinstance(envd_access_token, Unset):
-            sandbox_headers["X-Access-Token"] = envd_access_token
+    @overload
+    @classmethod
+    async def connect(
+        cls,
+        sandbox_id: str,
+        timeout: Optional[int] = None,
+        **opts: Unpack[ApiParams],
+    ) -> Self:
+        """
+        Connect to a sandbox. If the sandbox is paused, it will be automatically resumed.
+        Sandbox must be either running or be paused.
 
-        connection_config = ConnectionConfig(
-            extra_sandbox_headers=sandbox_headers,
+        With sandbox ID you can connect to the same sandbox from different places or environments (serverless functions, etc).
+
+        :param sandbox_id: Sandbox ID
+        :param timeout: Timeout for the sandbox in **seconds**
+        :return: A running sandbox instance
+
+        @example
+        ```python
+        sandbox = await AsyncSandbox.create()
+        await AsyncSandbox.beta_pause(sandbox.sandbox_id)
+
+        # Another code block
+        same_sandbox = await AsyncSandbox.connect(sandbox.sandbox_id))
+        ```
+        """
+        ...
+
+    @class_method_variant("_cls_connect")
+    async def connect(
+        self,
+        timeout: Optional[int] = None,
+        **opts: Unpack[ApiParams],
+    ) -> Self:
+        """
+        Connect to a sandbox. If the sandbox is paused, it will be automatically resumed.
+        Sandbox must be either running or be paused.
+
+        With sandbox ID you can connect to the same sandbox from different places or environments (serverless functions, etc).
+
+        :param timeout: Timeout for the sandbox in **seconds**
+        :return: A running sandbox instance
+
+        @example
+        ```python
+        sandbox = await AsyncSandbox.create()
+        await sandbox.beta_pause()
+
+        # Another code block
+        same_sandbox = await sandbox.connect()
+        ```
+        """
+        await SandboxApi._cls_resume(
+            sandbox_id=self.sandbox_id,
+            timeout=timeout,
             **opts,
         )
 
-        return cls(
-            sandbox_id=sandbox_id,
-            sandbox_domain=response.sandbox_domain,
-            connection_config=connection_config,
-            envd_version=response.envd_version,
-            envd_access_token=envd_access_token,
-        )
+        return self
 
     async def __aenter__(self):
         return self
@@ -599,115 +644,35 @@ class AsyncSandbox(SandboxApi):
             **opts,
         )
 
-    @overload
-    async def beta_connect(
-        self,
-        timeout: Optional[int] = None,
-        **opts: Unpack[ApiParams],
-    ) -> Self:
-        """
-        [BETA] This feature is in beta and may change in the future.
-
-        Connect to a sandbox. Sandbox must be either running or be paused
-
-        :param timeout: Timeout for the sandbox in **seconds**
-        :return: A running sandbox instance
-
-        @example
-        ```python
-        sandbox = await AsyncSandbox.create()
-        await sandbox.beta_pause()
-
-        # Another code block
-        same_sandbox = await sandbox.beta_connect()
-        ```
-        """
-        ...
-
-    @overload
     @classmethod
-    async def beta_connect(
+    async def _cls_connect(
         cls,
         sandbox_id: str,
         timeout: Optional[int] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
-        """
-        [BETA] This feature is in beta and may change in the future.
-
-        Connect to a sandbox. Sandbox must be either running or be paused
-
-        :param sandbox_id: Sandbox ID
-        :param timeout: Timeout for the sandbox in **seconds**
-        :return: A running sandbox instance
-
-        @example
-        ```python
-        sandbox = await AsyncSandbox.create()
-        await AsyncSandbox.beta_pause(sandbox.sandbox_id)
-
-        # Another code block
-        same_sandbox = await AsyncSandbox.beta_connect(sandbox.sandbox_id))
-        ```
-        """
-        ...
-
-    @class_method_variant("_cls_beta_connect")
-    async def beta_connect(
-        self,
-        timeout: Optional[int] = None,
-        **opts: Unpack[ApiParams],
-    ) -> Self:
-        """
-        [BETA] This feature is in beta and may change in the future.
-
-        Connect to a sandbox. Sandbox must be either running or be paused
-
-        :param timeout: Timeout for the sandbox in **seconds**
-        :return: A running sandbox instance
-
-        @example
-        ```python
-        sandbox = await AsyncSandbox.create()
-        await sandbox.beta_pause()
-
-        # Another code block
-        same_sandbox = await sandbox.beta_connect()
-        ```
-        """
-        return await self._cls_beta_connect(
-            sandbox_id=self.sandbox_id, timeout=timeout, **opts
+        await SandboxApi._cls_resume(
+            sandbox_id=sandbox_id,
+            timeout=timeout,
+            **opts,
         )
 
-    @classmethod
-    async def _cls_beta_connect(
-        cls,
-        sandbox_id: str,
-        timeout: Optional[int] = None,
-        **opts: Unpack[ApiParams],
-    ) -> Self:
-        # Temporary solution (02/12/2025),
-        # Options discussed:
-        # 1. No set - never sure how long the sandbox will be running
-        # 2. Always set the timeout in code - the user can't just connect to the sandbox
-        #       without changing the timeout, round trip to the server time
-        # 3. Set the timeout in resume on backend - side effect on error
-        # 4. Create new endpoint for connect
-        try:
-            await SandboxApi._cls_set_timeout(
-                sandbox_id=sandbox_id,
-                timeout=timeout or SandboxBase.default_sandbox_timeout,
-                **opts,
-            )
-        except SandboxException:
-            # Sandbox is not running, resume it
-            await SandboxApi._cls_resume(
-                sandbox_id=sandbox_id,
-                timeout=timeout,
-                **opts,
-            )
+        response = await SandboxApi._cls_get_info(sandbox_id, **opts)
 
-        return await cls.connect(
-            sandbox_id=sandbox_id,
+        sandbox_headers = {}
+        envd_access_token = response._envd_access_token
+        if envd_access_token is not None and not isinstance(envd_access_token, Unset):
+            sandbox_headers["X-Access-Token"] = envd_access_token
+
+        connection_config = ConnectionConfig(
+            extra_sandbox_headers=sandbox_headers,
             **opts,
+        )
+
+        return cls(
+            sandbox_id=response.sandbox_id,
+            sandbox_domain=response.sandbox_domain,
+            envd_version=response.envd_version,
+            envd_access_token=envd_access_token,
+            connection_config=connection_config,
         )

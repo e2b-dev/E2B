@@ -265,25 +265,41 @@ class SandboxApi(SandboxBase):
     ) -> bool:
         timeout = timeout or SandboxBase.default_sandbox_timeout
 
-        config = ConnectionConfig(**opts)
-
-        async with AsyncApiClient(
-            config,
-            limits=SandboxBase._limits,
-        ) as api_client:
-            res = await post_sandboxes_sandbox_id_resume.asyncio_detailed(
-                sandbox_id,
-                client=api_client,
-                body=ResumedSandbox(timeout=timeout),
+        # Temporary solution (02/12/2025),
+        # Options discussed:
+        # 1. No set - never sure how long the sandbox will be running
+        # 2. Always set the timeout in code - the user can't just connect to the sandbox
+        #       without changing the timeout, round trip to the server time
+        # 3. Set the timeout in resume on backend - side effect on error
+        # 4. Create new endpoint for connect
+        try:
+            await SandboxApi._cls_set_timeout(
+                sandbox_id=sandbox_id,
+                timeout=timeout,
+                **opts,
             )
+            return False
+        except SandboxException:
+            # Sandbox is not running, resume it
+            config = ConnectionConfig(**opts)
 
-            if res.status_code == 404:
-                raise NotFoundException(f"Paused sandbox {sandbox_id} not found")
+            async with AsyncApiClient(
+                config,
+                limits=SandboxBase._limits,
+            ) as api_client:
+                res = await post_sandboxes_sandbox_id_resume.asyncio_detailed(
+                    sandbox_id,
+                    client=api_client,
+                    body=ResumedSandbox(timeout=timeout),
+                )
 
-            if res.status_code == 409:
-                return False
+                if res.status_code == 404:
+                    raise NotFoundException(f"Paused sandbox {sandbox_id} not found")
 
-            if res.status_code >= 300:
-                raise handle_api_exception(res)
+                if res.status_code == 409:
+                    return False
 
-            return True
+                if res.status_code >= 300:
+                    raise handle_api_exception(res)
+
+                return True
