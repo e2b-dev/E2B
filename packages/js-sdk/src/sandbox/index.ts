@@ -119,9 +119,8 @@ export class Sandbox extends SandboxApi {
     this.sandboxDomain = opts.sandboxDomain ?? this.connectionConfig.domain
 
     this.envdAccessToken = opts.envdAccessToken
-    this.envdApiUrl = `${
-      this.connectionConfig.debug ? 'http' : 'https'
-    }://${this.getHost(this.envdPort)}`
+    this.envdApiUrl = `${this.connectionConfig.debug ? 'http' : 'https'
+      }://${this.getHost(this.envdPort)}`
 
     const rpcTransport = createConnectTransport({
       baseUrl: this.envdApiUrl,
@@ -196,7 +195,7 @@ export class Sandbox extends SandboxApi {
    * ```ts
    * const sandbox = await Sandbox.create()
    * ```
-   * @constructs Sandbox
+   * @constructs {@link Sandbox}
    */
   static async create<S extends typeof Sandbox>(
     this: S,
@@ -215,7 +214,7 @@ export class Sandbox extends SandboxApi {
    * ```ts
    * const sandbox = await Sandbox.create('<template-name-or-id>')
    * ```
-   * @constructs Sandbox
+   * @constructs {@link Sandbox}
    */
   static async create<S extends typeof Sandbox>(
     this: S,
@@ -250,7 +249,7 @@ export class Sandbox extends SandboxApi {
   }
 
   /**
-   * [BETA] This feature is in beta and may change in the future.
+   * @beta This feature is in beta and may change in the future.
    *
    * Create a new sandbox from the default `base` sandbox template.
    *
@@ -262,7 +261,7 @@ export class Sandbox extends SandboxApi {
    * ```ts
    * const sandbox = await Sandbox.betaCreate()
    * ```
-   * @constructs Sandbox
+   * @constructs {@link Sandbox}
    */
   static async betaCreate<S extends typeof Sandbox>(
     this: S,
@@ -270,10 +269,10 @@ export class Sandbox extends SandboxApi {
   ): Promise<InstanceType<S>>
 
   /**
-   * [BETA] This feature is in beta and may change in the future.
+   * @beta This feature is in beta and may change in the future.
    *
    * Create a new sandbox from the specified sandbox template.
-   *
+   * 
    * @param template sandbox template name or ID.
    * @param opts connection options.
    *
@@ -283,7 +282,7 @@ export class Sandbox extends SandboxApi {
    * ```ts
    * const sandbox = await Sandbox.betaCreate('<template-name-or-id>')
    * ```
-   * @constructs Sandbox
+   * @constructs {@link Sandbox}
    */
   static async betaCreate<S extends typeof Sandbox>(
     this: S,
@@ -502,7 +501,7 @@ export class Sandbox extends SandboxApi {
   }
 
   /**
-   * [BETA] This feature is in beta and may change in the future.
+   * @beta This feature is in beta and may change in the future.
    *
    * Pause a sandbox by its ID.
    *
@@ -631,7 +630,7 @@ export class Sandbox extends SandboxApi {
       if (compareVersions(this.envdApi.version, '0.1.5') < 0) {
         throw new SandboxError(
           'You need to update the template to use the new SDK. ' +
-            'You can do this by running `e2b template build` in the directory with the template.'
+          'You can do this by running `e2b template build` in the directory with the template.'
         )
       }
 
