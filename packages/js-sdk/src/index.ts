@@ -40,7 +40,7 @@ export type {
   SandboxApiOpts,
   SandboxConnectOpts,
   SandboxBetaCreateOpts,
-  SandboxResumeOpts,
+  SandboxBetaConnectOpts,
   SandboxMetricsOpts,
   SandboxState,
   SandboxListOpts,

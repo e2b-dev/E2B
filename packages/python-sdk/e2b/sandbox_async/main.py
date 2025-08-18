@@ -528,6 +528,8 @@ class AsyncSandbox(SandboxApi):
         **opts: Unpack[ApiParams],
     ) -> Self:
         """
+        [BETA] This feature is in beta and may change in the future.
+
         Create a new sandbox.
 
         By default, the sandbox is created from the default `base` sandbox template.
@@ -554,6 +556,8 @@ class AsyncSandbox(SandboxApi):
         **opts: Unpack[ApiParams],
     ) -> None:
         """
+        [BETA] This feature is in beta and may change in the future.
+
         Pause the sandbox.
 
         :return: Sandbox ID that can be used to resume the sandbox
@@ -567,6 +571,8 @@ class AsyncSandbox(SandboxApi):
         **opts: Unpack[ApiParams],
     ) -> None:
         """
+        [BETA] This feature is in beta and may change in the future.
+
         Pause the sandbox specified by sandbox ID.
 
         :param sandbox_id: Sandbox ID
@@ -581,9 +587,9 @@ class AsyncSandbox(SandboxApi):
         **opts: Unpack[ApiParams],
     ) -> None:
         """
-        Pause the sandbox.
+        [BETA] This feature is in beta and may change in the future.
 
-        :param request_timeout: Timeout for the request in **seconds**
+        Pause the sandbox.
 
         :return: Sandbox ID that can be used to resume the sandbox
         """
@@ -600,46 +606,49 @@ class AsyncSandbox(SandboxApi):
         **opts: Unpack[ApiParams],
     ) -> Self:
         """
+        [BETA] This feature is in beta and may change in the future.
+
         Connect to a sandbox. Sandbox must be either running or be paused
 
         :param timeout: Timeout for the sandbox in **seconds**
-        :return: A Sandbox instance
+        :return: A running sandbox instance
 
         @example
         ```python
         sandbox = await AsyncSandbox.create()
-        await sandbox.beta.pause()
+        await sandbox.beta_pause()
 
         # Another code block
-        same_sandbox = await AsyncSandbox.beta.connect()
-
-        :return: A running sandbox instance
+        same_sandbox = await sandbox.beta_connect()
+        ```
         """
         ...
 
     @overload
-    @staticmethod
+    @classmethod
     async def beta_connect(
+        cls,
         sandbox_id: str,
         timeout: Optional[int] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
         """
+        [BETA] This feature is in beta and may change in the future.
+
         Connect to a sandbox. Sandbox must be either running or be paused
 
         :param sandbox_id: Sandbox ID
         :param timeout: Timeout for the sandbox in **seconds**
-        :return: A Sandbox instance
+        :return: A running sandbox instance
 
         @example
         ```python
         sandbox = await AsyncSandbox.create()
-        await sandbox.beta.pause()
+        await AsyncSandbox.beta_pause(sandbox.sandbox_id)
 
         # Another code block
-        same_sandbox = await AsyncSandbox.beta.connect()
-
-        :return: A running sandbox instance
+        same_sandbox = await AsyncSandbox.beta_connect(sandbox.sandbox_id))
+        ```
         """
         ...
 
@@ -650,20 +659,21 @@ class AsyncSandbox(SandboxApi):
         **opts: Unpack[ApiParams],
     ) -> Self:
         """
+        [BETA] This feature is in beta and may change in the future.
+
         Connect to a sandbox. Sandbox must be either running or be paused
 
         :param timeout: Timeout for the sandbox in **seconds**
-        :return: A Sandbox instance
+        :return: A running sandbox instance
 
         @example
         ```python
         sandbox = await AsyncSandbox.create()
-        await sandbox.beta.pause()
+        await sandbox.beta_pause()
 
         # Another code block
-        same_sandbox = await AsyncSandbox.beta.connect()
-
-        :return: A running sandbox instance
+        same_sandbox = await sandbox.beta_connect()
+        ```
         """
         return await self._cls_beta_connect(
             sandbox_id=self.sandbox_id, timeout=timeout, **opts

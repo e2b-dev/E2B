@@ -535,6 +535,8 @@ class Sandbox(SandboxApi):
         **opts: Unpack[ApiParams],
     ):
         """
+        [BETA] This feature is in beta and may change in the future.
+
         Create a new sandbox.
 
         By default, the sandbox is created from the default `base` sandbox template.
@@ -601,17 +603,22 @@ class Sandbox(SandboxApi):
         **opts: Unpack[ApiParams],
     ) -> None:
         """
+        [BETA] This feature is in beta and may change in the future.
+
         Pause the sandbox.
         """
         ...
 
     @overload
-    @staticmethod
+    @classmethod
     def beta_pause(
+        cls,
         sandbox_id: str,
         **opts: Unpack[ApiParams],
     ) -> None:
         """
+        [BETA] This feature is in beta and may change in the future.
+
         Pause the sandbox specified by sandbox ID.
 
         :param sandbox_id: Sandbox ID
@@ -624,6 +631,8 @@ class Sandbox(SandboxApi):
         **opts: Unpack[ApiParams],
     ) -> None:
         """
+        [BETA] This feature is in beta and may change in the future.
+
         Pause the sandbox.
 
         :return: Sandbox ID that can be used to resume the sandbox
@@ -641,7 +650,10 @@ class Sandbox(SandboxApi):
         **opts: Unpack[ApiParams],
     ) -> Self:
         """
-        Connect to a sandbox. Sandbox must be either running or be paused
+        [BETA] This feature is in beta and may change in the future.
+
+        Connect to a sandbox. If the sandbox is paused, it will be automatically resumed.
+        Sandbox must be either running or be paused
 
         :param timeout: Timeout for the sandbox in **seconds**
         :return: A Sandbox instance
@@ -649,38 +661,41 @@ class Sandbox(SandboxApi):
         @example
         ```python
         sandbox = Sandbox.create()
-        sandbox.beta.pause()
+        sandbox.beta_pause()
 
         # Another code block
-        same_sandbox = Sandbox.beta.connect()
+        same_sandbox = sandbox.beta_connect()
 
         :return: A running sandbox instance
         """
         ...
 
     @overload
-    @staticmethod
+    @classmethod
     def beta_connect(
+        cls,
         sandbox_id: str,
         timeout: Optional[int] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
         """
-        Connect to a sandbox. Sandbox must be either running or be paused
+        [BETA] This feature is in beta and may change in the future.
+
+        Connect to a sandbox. If the sandbox is paused, it will be automatically resumed.
+        Sandbox must be either running or be paused
 
         :param sandbox_id: Sandbox ID
         :param timeout: Timeout for the sandbox in **seconds**
-        :return: A Sandbox instance
+        :return: A running sandbox instance
 
         @example
         ```python
         sandbox = Sandbox.create()
-        sandbox.beta.pause()
+        Sandbox.beta_pause(sandbox.sandbox_id)
 
         # Another code block
-        same_sandbox = Sandbox.beta.connect()
-
-        :return: A running sandbox instance
+        same_sandbox = Sandbox.beta_connect(sandbox.sandbox_id)
+        ```
         """
         ...
 
@@ -691,22 +706,23 @@ class Sandbox(SandboxApi):
         **opts: Unpack[ApiParams],
     ) -> Self:
         """
+        [BETA] This feature is in beta and may change in the future.
+
         Connect to a sandbox. Sandbox must be either running or be paused
 
         :param timeout: Timeout for the sandbox in **seconds**
-        :return: A Sandbox instance
+        :return: A running sandbox instance
 
         @example
         ```python
         sandbox = Sandbox.create()
-        sandbox.beta.pause()
+        sandbox.beta_pause()
 
         # Another code block
-        same_sandbox = Sandbox.beta.connect()
-
-        :return: A running sandbox instance
+        same_sandbox = sandbox.beta_connect()
+        ```
         """
-        return Sandbox._cls_beta_connect(
+        return self._cls_beta_connect(
             sandbox_id=self.sandbox_id,
             timeout=timeout,
             **opts,
@@ -719,23 +735,6 @@ class Sandbox(SandboxApi):
         timeout: Optional[int] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
-        """
-        Connect to a sandbox. Sandbox must be either running or be paused
-
-        :param timeout: Timeout for the sandbox in **seconds**
-        :return: A Sandbox instance
-
-        @example
-        ```python
-        sandbox = Sandbox.create()
-        sandbox.beta.pause()
-
-        # Another code block
-        same_sandbox = Sandbox.beta.connect()
-
-        :return: A running sandbox instance
-        """
-
         # Temporary solution (02/12/2025),
         # Options discussed:
         # 1. No set - never sure how long the sandbox will be running

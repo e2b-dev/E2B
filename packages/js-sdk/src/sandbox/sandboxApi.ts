@@ -68,12 +68,12 @@ export type SandboxBetaCreateOpts = SandboxOpts & { autoPause?: boolean }
 /**
  * Options for resuming a paused Sandbox.
  */
-export type SandboxResumeOpts = Omit<SandboxOpts, 'metadata' | 'envs'>
+export type SandboxBetaConnectOpts = Omit<SandboxOpts, 'metadata' | 'envs'>
 
 /**
  * Options for connecting to a Sandbox.
  */
-export type SandboxConnectOpts = Omit<SandboxResumeOpts, 'timeoutMs'>
+export type SandboxConnectOpts = Omit<SandboxBetaConnectOpts, 'timeoutMs'>
 
 /**
  * State of the sandbox.
@@ -483,7 +483,7 @@ export class SandboxApi {
 
   protected static async resumeSandbox(
     sandboxId: string,
-    opts?: SandboxResumeOpts
+    opts?: SandboxBetaConnectOpts
   ): Promise<boolean> {
     const timeoutMs = opts?.timeoutMs ?? DEFAULT_SANDBOX_TIMEOUT_MS
 

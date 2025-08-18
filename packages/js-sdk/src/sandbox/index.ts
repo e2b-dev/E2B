@@ -19,6 +19,7 @@ import {
   SandboxListOpts,
   SandboxPaginator,
   SandboxBetaCreateOpts,
+  SandboxBetaConnectOpts,
 } from './sandboxApi'
 import { getSignature } from './signature'
 import { compareVersions } from 'compare-versions'
@@ -250,6 +251,8 @@ export class Sandbox extends SandboxApi {
   }
 
   /**
+   * [BETA] This feature is in beta and may change in the future.
+   *
    * Create a new sandbox from the default `base` sandbox template.
    *
    * @param opts connection options.
@@ -268,6 +271,8 @@ export class Sandbox extends SandboxApi {
   ): Promise<InstanceType<S>>
 
   /**
+   * [BETA] This feature is in beta and may change in the future.
+   *
    * Create a new sandbox from the specified sandbox template.
    *
    * @param template sandbox template name or ID.
@@ -349,14 +354,39 @@ export class Sandbox extends SandboxApi {
     }) as InstanceType<S>
   }
 
+  /**
+   * [BETA] This feature is in beta and may change in the future.
+   *
+   * Connect to a sandbox. If the sandbox is paused, it will be automatically resumed.
+   * Sandbox must be either running or be paused.
+   * With sandbox ID you can connect to the same sandbox from different places or environments (serverless functions, etc).
+   *
+   * @param sandboxId sandbox ID.
+   * @param opts connection options.
+   *
+   * @returns sandbox instance for the existing sandbox.
+   *
+   * @example
+   * ```ts
+   * const sandbox = await Sandbox.create()
+   * const sandboxId = sandbox.sandboxId
+   * await Sandbox.betaPause()
+   *
+   * // Connect to the same sandbox.
+   * const sameSandbox = await Sandbox.betaConnect(sandboxId)
+   * ```
+   */
   static async betaConnect<S extends typeof Sandbox>(
     this: S,
     sandboxId: string,
-    timeoutMs: number,
-    opts?: SandboxConnectOpts
+    opts?: SandboxBetaConnectOpts
   ): Promise<InstanceType<S>> {
     try {
-      await SandboxApi.setTimeout(sandboxId, timeoutMs, opts)
+      await SandboxApi.setTimeout(
+        sandboxId,
+        opts?.timeoutMs || DEFAULT_SANDBOX_TIMEOUT_MS,
+        opts
+      )
     } catch (e) {
       await SandboxApi.resumeSandbox(sandboxId, opts)
     }
@@ -364,12 +394,33 @@ export class Sandbox extends SandboxApi {
     return await this.connect(sandboxId, opts)
   }
 
-  async betaConnect(
-    timeoutMs: number,
-    opts?: SandboxConnectOpts
-  ): Promise<this> {
+  /**
+   * [BETA] This feature is in beta and may change in the future.
+   *
+   * Connect to a sandbox. If the sandbox is paused, it will be automatically resumed.
+   * Sandbox must be either running or be paused.
+   * With sandbox ID you can connect to the same sandbox from different places or environments (serverless functions, etc).
+   *
+   * @param opts connection options.
+   *
+   * @returns sandbox instance for the existing sandbox.
+   *
+   * @example
+   * ```ts
+   * const sandbox = await Sandbox.create()
+   * await sandbox.betaPause()
+   *
+   * // Connect to the same sandbox.
+   * const sameSandbox = await sandbox.betaConnect()
+   * ```
+   */
+  async betaConnect(opts?: SandboxBetaCreateOpts): Promise<this> {
     try {
-      await SandboxApi.setTimeout(this.sandboxId, timeoutMs, opts)
+      await SandboxApi.setTimeout(
+        this.sandboxId,
+        opts?.timeoutMs || DEFAULT_SANDBOX_TIMEOUT_MS,
+        opts
+      )
     } catch (e) {
       await SandboxApi.resumeSandbox(this.sandboxId, opts)
     }
@@ -477,8 +528,13 @@ export class Sandbox extends SandboxApi {
   }
 
   /**
-   * Pause the sandbox.
+   * [BETA] This feature is in beta and may change in the future.
    *
+   * Pause a sandbox by its ID.
+   *
+   * @param opts connection options.
+   *
+   * @returns sandbox ID that can be used to resume the sandbox.
    */
   async betaPause(opts?: ConnectionOpts): Promise<boolean> {
     return await SandboxApi.betaPause(this.sandboxId, opts)
