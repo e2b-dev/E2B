@@ -1,5 +1,3 @@
-# Sandbox persistence
-
 <Note>
 Sandbox persistence is currently in public beta:
 1. Consider [some limitations](#limitations-while-in-beta).
@@ -23,7 +21,7 @@ console.log('Sandbox created', sbx.sandboxId)
 // Pause the sandbox
 // You can save the sandbox ID in your database
 // to resume the sandbox later
-const sandboxId = await sbx.beta.pause() // $HighlightLine
+const sandboxId = await sbx.betaPause() // $HighlightLine
 console.log('Sandbox paused', sandboxId) // $HighlightLine
 ```
 ```python
@@ -35,7 +33,7 @@ print('Sandbox created', sbx.sandbox_id)
 # Pause the sandbox
 # You can save the sandbox ID in your database
 # to resume the sandbox later
-sandbox_id = sbx.beta.pause() # $HighlightLine
+sandbox_id = sbx.beta_pause() # $HighlightLine
 print('Sandbox paused', sandbox_id) # $HighlightLine
 ```
 </CodeGroup>
@@ -55,12 +53,12 @@ console.log('Sandbox created', sbx.sandboxId)
 // Pause the sandbox
 // You can save the sandbox ID in your database
 // to resume the sandbox later
-const sandboxId = await sbx.beta.pause()
+const sandboxId = await sbx.betaPause()
 console.log('Sandbox paused', sandboxId)
 
-// Resume the sandbox from the same state
-const sameSbx = await sbx.beta.resume() // $HighlightLine
-console.log('Sandbox resumed', sameSbx.sandboxId) // $HighlightLine
+// Connect to the sandbox (it will automatically resume the sandbox, if paused)
+const sameSbx = await sbx.betaConnect() // $HighlightLine
+console.log('Connected to the sandbox', sameSbx.sandboxId) // $HighlightLine
 ```
 ```python
 from e2b_code_interpreter import Sandbox
@@ -71,12 +69,12 @@ print('Sandbox created', sbx.sandbox_id)
 # Pause the sandbox
 # You can save the sandbox ID in your database
 # to resume the sandbox later
-sandbox_id = sbx.beta.pause()
+sandbox_id = sbx.beta_pause()
 print('Sandbox paused', sandbox_id)
 
-# Resume the sandbox from the same state
-same_sbx = sbx.beta.resume() # $HighlightLine
-print('Sandbox resumed', same_sbx.sandbox_id) # $HighlightLine
+# Connect to the sandbox (it will automatically resume the sandbox, if paused)
+same_sbx = sbx.beta_connect() # $HighlightLine
+print('Connected to the sandbox', same_sbx.sandbox_id) # $HighlightLine
 ```
 </CodeGroup>
 
@@ -130,7 +128,7 @@ console.log('Sandbox created', sbx.sandboxId)
 // Pause the sandbox
 // You can save the sandbox ID in your database
 // to resume the sandbox later
-const sandboxId = await sbx.beta.pause()
+const sandboxId = await sbx.betaPause()
 
 // Remove the sandbox
 await sbx.kill() // $HighlightLine
@@ -144,7 +142,7 @@ from e2b import Sandbox
 sbx = Sandbox.create()
 
 # Pause the sandbox
-sandbox_id = sbx.beta.pause()
+sandbox_id = sbx.beta_pause()
 
 # Remove the sandbox
 sbx.kill() # $HighlightLine
@@ -155,21 +153,20 @@ Sandbox.kill(sandbox_id) # $HighlightLine
 </CodeGroup>
 
 ## Sandbox's timeout
-When you resume a sandbox, the sandbox's timeout is reset to the default timeout of an E2B sandbox - 5 minutes.
+When you connect to a sandbox, the sandbox's timeout is reset to the default timeout of an E2B sandbox - 5 minutes.
 
-
-You can pass a custom timeout to the `Sandbox.beta.resume()` method like this:
+You can pass a custom timeout to the `Sandbox.betaConnect()`/`Sandbox.beta_connect()` method like this:
 
 <CodeGroup>
 ```js
 import { Sandbox } from '@e2b/code-interpreter'
 
-const sbx = await Sandbox.beta.resume(sandboxId, { timeoutMs: 60 * 1000 }) // 60 seconds
+const sbx = await Sandbox.betaConnect(sandboxId, { timeoutMs: 60 * 1000 }) // 60 seconds
 ```
 ```python
 from e2b_code_interpreter import Sandbox
 
-sbx = Sandbox.beta.resume(sandbox_id, timeout=60) # 60 seconds
+sbx = Sandbox.beta_connect(sandbox_id, timeout=60) # 60 seconds
 ```
 </CodeGroup>
 
