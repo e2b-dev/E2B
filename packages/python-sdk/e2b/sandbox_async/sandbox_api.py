@@ -6,11 +6,7 @@ from typing_extensions import Unpack
 
 from e2b.api.client.types import UNSET
 from e2b.sandbox.main import SandboxBase
-from e2b.sandbox.sandbox_api import (
-    SandboxInfo,
-    SandboxQuery,
-    SandboxMetrics,
-)
+from e2b.sandbox.sandbox_api import SandboxInfo, SandboxMetrics
 from e2b.exceptions import TemplateException, SandboxException, NotFoundException
 from e2b.api import AsyncApiClient, SandboxCreateResponse
 from e2b.api.client.models import (

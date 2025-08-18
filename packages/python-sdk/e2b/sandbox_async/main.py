@@ -699,7 +699,7 @@ class AsyncSandbox(SandboxApi):
                 timeout=timeout or SandboxBase.default_sandbox_timeout,
                 **opts,
             )
-        except:
+        except SandboxException:
             # Sandbox is not running, resume it
             await SandboxApi._cls_resume(
                 sandbox_id=sandbox_id,

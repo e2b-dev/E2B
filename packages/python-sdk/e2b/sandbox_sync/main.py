@@ -8,18 +8,16 @@ from typing import (
     Optional,
     overload,
     List,
-    Type,
     TypedDict,
 )
 
 from packaging.version import Version
-from typing_extensions import Unpack, deprecated, Self
+from typing_extensions import Unpack, Self
 
 from e2b.api.client.types import Unset
 from e2b.connection_config import ConnectionConfig, ApiParams
 from e2b.envd.api import ENVD_API_HEALTH_ROUTE, handle_envd_api_exception
 from e2b.exceptions import SandboxException, format_request_timeout_error
-from e2b.sandbox.main import SandboxBase
 from e2b.sandbox.sandbox_api import SandboxMetrics, SandboxQuery
 from e2b.sandbox.utils import class_method_variant
 from e2b.sandbox_sync.filesystem.filesystem import Filesystem
@@ -748,7 +746,7 @@ class Sandbox(SandboxApi):
                 timeout=timeout,
                 **opts,
             )
-        except:
+        except SandboxException:
             # Sandbox is not running, resume it
             SandboxApi._cls_resume(
                 sandbox_id=sandbox_id,
