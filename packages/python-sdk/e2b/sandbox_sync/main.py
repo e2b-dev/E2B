@@ -624,7 +624,7 @@ class Sandbox(SandboxApi):
         secure: Optional[bool] = None,
         allow_internet_access: bool = True,
         **opts: Unpack[ApiParams],
-    ):
+    ) -> Self:
         extra_sandbox_headers = {}
 
         debug = opts.get("debug")
