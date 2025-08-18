@@ -4,7 +4,7 @@ from typing import Optional, Dict, List
 from packaging.version import Version
 from typing_extensions import Unpack
 
-from e2b.sandbox.sandbox_api import SandboxInfo, SandboxMetrics
+from e2b.sandbox.sandbox_api import SandboxInfo, SandboxMetrics, SandboxQuery
 from e2b.sandbox.main import SandboxBase
 from e2b.exceptions import TemplateException, SandboxException, NotFoundException
 from e2b.api import ApiClient, SandboxCreateResponse
@@ -25,9 +25,33 @@ from e2b.api.client.api.sandboxes import (
 )
 from e2b.connection_config import ConnectionConfig, ApiParams
 from e2b.api import handle_api_exception
+from e2b.sandbox_sync.paginator import SandboxPaginator
 
 
 class SandboxApi(SandboxBase):
+    @staticmethod
+    def list(
+        query: Optional[SandboxQuery] = None,
+        limit: Optional[int] = None,
+        next_token: Optional[str] = None,
+        **opts: Unpack[ApiParams],
+    ) -> SandboxPaginator:
+        """
+        List all running sandboxes.
+
+        :param query: Filter the list of sandboxes by metadata or state, e.g. `SandboxListQuery(metadata={"key": "value"})` or `SandboxListQuery(state=[SandboxState.RUNNING])`
+        :param limit: Maximum number of sandboxes to return per page
+        :param next_token: Token for pagination
+
+        :return: List of running sandboxes
+        """
+        return SandboxPaginator(
+            query=query,
+            limit=limit,
+            next_token=next_token,
+            **opts,
+        )
+
     @classmethod
     def _cls_get_info(
         cls,

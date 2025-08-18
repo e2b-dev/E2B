@@ -2,13 +2,7 @@ import datetime
 import logging
 import httpx
 
-from typing import (
-    Dict,
-    Optional,
-    TypedDict,
-    overload,
-    List,
-)
+from typing import Dict, Optional, overload, List
 
 from packaging.version import Version
 from typing_extensions import Unpack, Self
@@ -17,12 +11,12 @@ from e2b.api.client.types import Unset
 from e2b.connection_config import ConnectionConfig, ApiParams
 from e2b.envd.api import ENVD_API_HEALTH_ROUTE, ahandle_envd_api_exception
 from e2b.exceptions import format_request_timeout_error, SandboxException
-from e2b.sandbox.sandbox_api import SandboxMetrics, SandboxQuery
+from e2b.sandbox.main import SandboxOpts
+from e2b.sandbox.sandbox_api import SandboxMetrics
 from e2b.sandbox.utils import class_method_variant
 from e2b.sandbox_async.filesystem.filesystem import Filesystem
 from e2b.sandbox_async.commands.command import Commands
 from e2b.sandbox_async.commands.pty import Pty
-from e2b.sandbox_async.paginator import AsyncSandboxPaginator
 from e2b.sandbox_async.sandbox_api import SandboxApi, SandboxInfo
 
 logger = logging.getLogger(__name__)
@@ -42,14 +36,6 @@ class AsyncTransportWithLogger(httpx.AsyncHTTPTransport):
     @property
     def pool(self):
         return self._pool
-
-
-class AsyncSandboxOpts(TypedDict):
-    sandbox_id: str
-    sandbox_domain: Optional[str]
-    envd_version: Optional[str]
-    envd_access_token: Optional[str]
-    connection_config: ConnectionConfig
 
 
 class AsyncSandbox(SandboxApi):
@@ -96,7 +82,7 @@ class AsyncSandbox(SandboxApi):
         """
         return self._pty
 
-    def __init__(self, **opts: Unpack[AsyncSandboxOpts]):
+    def __init__(self, **opts: Unpack[SandboxOpts]):
         """
         Use `AsyncSandbox.create()` to create a new sandbox instead.
         """
@@ -326,29 +312,6 @@ class AsyncSandbox(SandboxApi):
 
     async def __aexit__(self, exc_type, exc_value, traceback):
         await self.kill()
-
-    @staticmethod
-    def list(
-        query: Optional[SandboxQuery] = None,
-        limit: Optional[int] = None,
-        next_token: Optional[str] = None,
-        **opts: Unpack[ApiParams],
-    ) -> AsyncSandboxPaginator:
-        """
-        List all running sandboxes.
-
-        :param query: Filter the list of sandboxes by metadata or state, e.g. `SandboxListQuery(metadata={"key": "value"})` or `SandboxListQuery(state=[SandboxState.RUNNING])`
-        :param limit: Maximum number of sandboxes to return per page
-        :param next_token: Token for pagination
-
-        :return: List of running sandboxes
-        """
-        return AsyncSandboxPaginator(
-            query=query,
-            limit=limit,
-            next_token=next_token,
-            **opts,
-        )
 
     @overload
     async def kill(
