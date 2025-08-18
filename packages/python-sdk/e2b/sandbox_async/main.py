@@ -158,7 +158,7 @@ class AsyncSandbox(SandboxApi):
         metadata: Optional[Dict[str, str]] = None,
         envs: Optional[Dict[str, str]] = None,
         secure: Optional[bool] = None,
-        allow_internet_access: Optional[bool] = True,
+        allow_internet_access: bool = True,
         **opts: Unpack[ApiParams],
     ) -> Self:
         """
@@ -499,7 +499,7 @@ class AsyncSandbox(SandboxApi):
         metadata: Optional[Dict[str, str]] = None,
         envs: Optional[Dict[str, str]] = None,
         secure: Optional[bool] = None,
-        allow_internet_access: Optional[bool] = True,
+        allow_internet_access: bool = True,
         **opts: Unpack[ApiParams],
     ) -> Self:
         """
@@ -621,10 +621,10 @@ class AsyncSandbox(SandboxApi):
         template: Optional[str] = None,
         timeout: Optional[int] = None,
         auto_pause: bool = False,
+        allow_internet_access: bool = True,
         metadata: Optional[Dict[str, str]] = None,
         envs: Optional[Dict[str, str]] = None,
         secure: Optional[bool] = None,
-        allow_internet_access: Optional[bool] = True,
         **opts: Unpack[ApiParams],
     ) -> Self:
         extra_sandbox_headers = {}
