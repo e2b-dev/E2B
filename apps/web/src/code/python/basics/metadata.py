@@ -1,24 +1,22 @@
-from e2b import Sandbox, SandboxState
-from e2b.sandbox.sandbox_api import SandboxQuery
+from e2b import Sandbox
 
 sandbox = Sandbox(
-    template="base",
+    template='base',
     metadata={"user_id": "uniqueID"},  # $HighlightLine
 )
 
 # Keep the sandbox alive for 60 seconds
-sandbox.set_timeout(60)
+sandbox.keep_alive(60)
 # You can even close the script
 
 # Later, can be even from another process
 # List all running sandboxes
-paginator = Sandbox.list(query=SandboxQuery(state=[SandboxState.RUNNING]))
-running_sandboxes = paginator.next_items()
+running_sandboxes = Sandbox.list()
 
 # Find the sandbox by metadata
 for running_sandbox in running_sandboxes:
-    if running_sandbox.metadata.get("user_id", "") == "uniqueID":
-        sandbox = Sandbox.connect(running_sandbox.sandbox_id)
+    if running_sandbox.metadata.get("user_id", "") == 'uniqueID':
+        sandbox = Sandbox.reconnect(running_sandbox.sandbox_id)
         break
 else:
     # Sandbox not found

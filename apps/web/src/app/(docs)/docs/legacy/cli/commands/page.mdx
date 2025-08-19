@@ -195,7 +195,7 @@ e2b template list
 
 ## `sandbox list`
 
-List your created sandboxes that are running right now.
+List your spawned sandboxes that are running right now.
 
 ```bash
 e2b sandbox list
@@ -253,7 +253,7 @@ You can use `e2b sandbox list` to get a list of running sandboxes and their IDs 
 
 ## `sandbox connect`
 
-Connects your terminal to a running sandbox that you created via the E2B SDK.
+Connects your terminal to a running sandbox that you spawned via the E2B SDK.
 This command is useful if you need to debug a running sandbox.
 
 This command works similar to the `docker exec -it <container> bash` command in Docker.
@@ -274,7 +274,7 @@ You can use `e2b sandbox list` to get a list of running sandboxes and their IDs 
   </Option>
 </Options>
 
-## `sandbox create`
+## `sandbox spawn`
 
 Spawns a sandbox and connects your terminal to the sandbox.
 This command can be used to debug your sandbox template.
@@ -282,18 +282,18 @@ This command can be used to debug your sandbox template.
 This command works similar to the `docker run -it <image> bash` command in Docker.
 
 ```bash
-e2b sandbox create
+e2b sandbox spawn
 ```
 
 <Note>
-Running `e2b sandbox create` without specifying a template with the `[template]` argument will create sandbox defined by the `e2b.toml` config.
+Running `e2b sandbox spawn` without specifying a template with the `[template]` argument will spawn sandbox defined by the `e2b.toml` config.
 </Note>
 
 #### **Arguments**
 
 <Options>
   <Option type="[template]">
-    Specify the template you want to create sandbox from. You can use the template name or ID.
+    Specify the template you want to spawn sandbox from. You can use the template name or ID.
   </Option>
 </Options>
 

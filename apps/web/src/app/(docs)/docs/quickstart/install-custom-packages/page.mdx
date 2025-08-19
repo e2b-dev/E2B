@@ -100,7 +100,7 @@ const sbx = Sandbox.create({
 ```python
 from e2b_code_interpreter import Sandbox
 
-sbx = Sandbox.create(template='YOUR_TEMPLATE_ID')
+sbx = Sandbox(template='YOUR_TEMPLATE_ID')
 ```
 </CodeGroup>
 
@@ -130,7 +130,7 @@ sbx.runCode(`
 ```python
 from e2b_code_interpreter import Sandbox
 
-sbx = Sandbox.create()
+sbx = Sandbox()
 sbx.commands.run("pip install cowsay") # This will install the cowsay package
 sbx.run_code("""
   import cowsay
@@ -155,7 +155,7 @@ sbx.runCode(`
 ```python
 from e2b_code_interpreter import Sandbox
 
-sbx = Sandbox.create()
+sbx = Sandbox()
 sbx.commands.run("npm install cowsay") # This will install the cowsay package
 sbx.run_code("""
   import { say } from 'cowsay'
@@ -181,7 +181,7 @@ await sbx.commands.run('apt-get update && apt-get install -y curl git')
 ```python
 from e2b_code_interpreter import Sandbox
 
-sbx = Sandbox.create()
+sbx = Sandbox()
 sbx.commands.run("apt-get update && apt-get install -y curl git")
 ```
 </CodeGroup>

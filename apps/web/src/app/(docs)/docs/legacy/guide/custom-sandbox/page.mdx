@@ -3,7 +3,7 @@ import Image from 'next/image'
 # Creating Custom Sandbox
 
 In this guide, we'll create a custom E2B sandbox with preinstalled dependencies and files.
-Once the sandbox is built, we'll show how to create and control it with our SDK.
+Once the sandbox is built, we'll show how to spawn and control it with our SDK.
 
 ## Prerequisites
 1. [Node.js](https://nodejs.org/) 18.0.0 or later
@@ -107,7 +107,7 @@ Postprocessing finished.
 │  from e2b import Sandbox                                                                                                                             │
 │                                                                                                                                                      │
 │  # Start sandbox                                                                                                                                     │
-│  sandbox = Sandbox.create("my-agent-sandbox")                                                                                                               │
+│  sandbox = Sandbox("my-agent-sandbox")                                                                                                               │
 │                                                                                                                                                      │
 │  # Interact with sandbox. Learn more here:                                                                                                           │
 │  # https://e2b.dev/docs/sandbox/overview                                                                                                             │
@@ -184,7 +184,7 @@ await sandbox.close()
 from e2b import Sandbox
 
 # Spawn your custom sandbox
-sandbox = Sandbox.create(template="my-agent-sandbox") # $HighlightLine
+sandbox = Sandbox(template="my-agent-sandbox") # $HighlightLine
 
 # Interact with sandbox. Learn more here:
 # https://e2b.dev/docs/sandbox/overview

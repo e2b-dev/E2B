@@ -38,7 +38,7 @@ console.log(runningSandboxes[0].metadata)
 from e2b_code_interpreter import Sandbox
 
 # Create sandbox with metadata.
-sandbox = Sandbox.create(
+sandbox = Sandbox(
   metadata={
     'userId': '123', # $HighlightLine
   },

@@ -46,7 +46,7 @@ await sandbox.commands.run('sudo gcsfuse <flags> --key-file /home/user/key.json 
 ```python {{ language: 'python' }}
 from e2b import Sandbox
 
-sandbox = Sandbox.create("<your template id>")
+sandbox = Sandbox("<your template id>")
 sandbox.files.make_dir("/home/user/bucket")
 sandbox.files.write("key.json", "<your key file content>")
 
@@ -98,7 +98,7 @@ await sandbox.commands.run('sudo s3fs <flags> <bucket-name> /home/user/bucket')
 ```python {{ language: 'python' }}
 from e2b import Sandbox
 
-sandbox = Sandbox.create("<your template id>")
+sandbox = Sandbox("<your template id>")
 sandbox.files.make_dir("/home/user/bucket")
 
 # Create a file with the credentials
@@ -144,7 +144,7 @@ await sandbox.commands.run('sudo s3fs -o url=https://<ACCOUNT ID>.r2.cloudflares
 ```python {{ language: 'python' }}
 from e2b import Sandbox
 
-sandbox = Sandbox.create("<your template id>")
+sandbox = Sandbox("<your template id>")
 sandbox.files.make_dir("/home/user/bucket")
 
 # Create a file with the R2 credentials

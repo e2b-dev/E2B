@@ -40,7 +40,7 @@ code_to_run = """
   print("This goes last")
 """
 
-sandbox = Sandbox.create()
+sandbox = Sandbox()
 sandbox.run_code(
   code_to_run,
   # Use `on_error` to handle runtime code errors
@@ -131,7 +131,7 @@ plt.title('Values by Category')
 plt.show()
 """
 
-sandbox = Sandbox.create()
+sandbox = Sandbox()
 sandbox.run_code(
   code_to_run,
   on_result=lambda result: print('result:', result), # $HighlightLine

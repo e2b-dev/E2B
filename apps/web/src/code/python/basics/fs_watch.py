@@ -2,7 +2,7 @@ import time
 
 from e2b import Sandbox
 
-sandbox = Sandbox.create()
+sandbox = Sandbox()
 
 watcher = sandbox.files.watch_dir("/home")  # $HighlightLine
 

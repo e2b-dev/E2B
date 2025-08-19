@@ -23,7 +23,7 @@ await command.kill()
 ```python
 from e2b_code_interpreter import Sandbox
 
-sandbox = Sandbox.create()
+sandbox = Sandbox()
 
 # Start the command in the background
 command = sandbox.commands.run('echo hello; sleep 10; echo world', background=True)

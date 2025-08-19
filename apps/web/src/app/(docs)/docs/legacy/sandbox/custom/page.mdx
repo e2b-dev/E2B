@@ -31,7 +31,7 @@ Once you build your custom sandbox template, you can spawn multiple isolated san
       from e2b import Sandbox
 
       # Create new sandbox
-      sandbox = Sandbox.create(
+      sandbox = Sandbox(
         template="<sandbox-template>", # You get sandbox template from the CLI after you run `$ e2b template build`
       )
 

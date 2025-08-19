@@ -10,8 +10,7 @@ await sandbox.keepAlive(60_000)
 
 // Later, can be even from another process
 // List all running sandboxes
-const paginator = Sandbox.list({ query: {state: ['running']}})
-const runningSandboxes = await paginator.nextItems()
+const runningSandboxes = await Sandbox.list()
 // Find the sandbox by metadata
 const found = runningSandboxes.find(s => s.metadata?.userID === 'uniqueID')
 if (found) {

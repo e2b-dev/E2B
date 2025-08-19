@@ -46,7 +46,7 @@ code = response.choices[0].message.content
 
 # Execute code in E2B Sandbox
 if code:
-    with Sandbox.create() as sandbox:
+    with Sandbox() as sandbox:
         execution = sandbox.run_code(code)
         result = execution.text
 
@@ -110,7 +110,7 @@ if response_message.tool_calls:
     for tool_call in response_message.tool_calls:
         if tool_call.function.name == "execute_python":
             # Create a sandbox and execute the code
-            with Sandbox.create() as sandbox:
+            with Sandbox() as sandbox:
                 code = json.loads(tool_call.function.arguments)['code']
                 execution = sandbox.run_code(code)
                 result = execution.text
@@ -164,7 +164,7 @@ response = anthropic.messages.create(
 code = response.content[0].text
 
 # Execute code in E2B Sandbox
-with Sandbox.create() as sandbox:
+with Sandbox() as sandbox:
     execution = sandbox.run_code(code)
     result = execution.logs.stdout
 
@@ -229,7 +229,7 @@ if message.stop_reason == "tool_use":
     tool_input = tool_use.input
 
     if tool_name == "execute_python":
-        with Sandbox.create() as sandbox:
+        with Sandbox() as sandbox:
             code = tool_input['code']
             execution = sandbox.run_code(code)
             result = execution.text
@@ -289,7 +289,7 @@ response = client.chat.complete(
 code = response.choices[0].message.content
 
 # Execute code in E2B Sandbox
-with Sandbox.create() as sandbox:
+with Sandbox() as sandbox:
     execution = sandbox.run_code(code)
     result = execution.text
 
@@ -352,7 +352,7 @@ if response_message.tool_calls:
     for tool_call in response_message.tool_calls:
         if tool_call.function.name == "execute_python":
             # Create a sandbox and execute the code
-            with Sandbox.create() as sandbox:
+            with Sandbox() as sandbox:
                 code = json.loads(tool_call.function.arguments)['code']
                 execution = sandbox.run_code(code)
                 result = execution.text
@@ -406,7 +406,7 @@ response = client.chat.completions.create(
 code = response.choices[0].message.content
 
 # Execute code in E2B Sandbox
-with Sandbox.create() as sandbox:
+with Sandbox() as sandbox:
     execution = sandbox.run_code(code)
     result = execution.text
 
@@ -509,7 +509,7 @@ def execute_python(code: str) -> str:
     """
     Execute Python code and return the results.
     """
-    with Sandbox.create() as sandbox:
+    with Sandbox() as sandbox:
         execution = sandbox.run_code(code)
         return execution.text
 
@@ -576,7 +576,7 @@ chain = prompt_template | llm | output_parser
 code = chain.invoke({"input": prompt})
 
 # Execute code in E2B Sandbox
-with Sandbox.create() as sandbox:
+with Sandbox() as sandbox:
     execution = sandbox.run_code(code)
     result = execution.text
 
@@ -604,7 +604,7 @@ def execute_python(code: str):
     """
     Execute python code in a Jupyter notebook.
     """
-    with Sandbox.create() as sandbox:
+    with Sandbox() as sandbox:
         execution = sandbox.run_code(code)
         return execution.text
 
@@ -637,7 +637,7 @@ from langchain.schema import HumanMessage, AIMessage, FunctionMessage
 from e2b_code_interpreter import Sandbox
 
 def execute_python(code: str):
-    with Sandbox.create() as sandbox:
+    with Sandbox() as sandbox:
         execution = sandbox.run_code(code)
         return execution.text
 
@@ -691,7 +691,7 @@ from e2b_code_interpreter import Sandbox
 
 # Define the tool
 def execute_python(code: str):
-    with Sandbox.create() as sandbox:
+    with Sandbox() as sandbox:
         execution = sandbox.run_code(code)
         return execution.text
 
@@ -735,7 +735,7 @@ response = ollama.chat(
 code = response['message']['content']
 
 # Execute code in E2B Sandbox
-with Sandbox.create() as sandbox:
+with Sandbox() as sandbox:
     execution = sandbox.run_code(code)
     result = execution.logs.stdout
 
@@ -797,7 +797,7 @@ completion = client.chat.completions.create(
 content = completion.choices[0].message.content
 code = match_code_block(content)
 
-with Sandbox.create() as sandbox:
+with Sandbox() as sandbox:
     execution = sandbox.run_code(code)
     print(execution)
 ```

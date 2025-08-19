@@ -19,7 +19,7 @@ await sandbox.files.write('/path/in/sandbox', content)
 ```python
 from e2b_code_interpreter import Sandbox
 
-sandbox = Sandbox.create()
+sandbox = Sandbox()
 
 # Read file from local filesystem
 with open("path/to/local/file", "rb") as file:
@@ -64,7 +64,7 @@ from e2b import Sandbox
 import requests
 
 # Start a secured sandbox (all operations must be authorized by default)
-sandbox = Sandbox.create(timeout=12_000, secure=True)
+sandbox = Sandbox(timeout=12_000, secure=True)
 
 # Create a pre-signed URL for file upload with a 10 second expiration
 signed_url = sbx.upload_url(path="demo.txt", user="user", use_signature_expiration=10_000)
@@ -125,7 +125,7 @@ await sandbox.files.write(files)
 import os
 from e2b_code_interpreter import Sandbox
 
-sandbox = Sandbox.create()
+sandbox = Sandbox()
 
 def read_directory_files(directory_path):
     files = []

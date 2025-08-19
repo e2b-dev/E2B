@@ -99,7 +99,7 @@ Now you can use the template ID to create a sandbox with the SDK.
   # Your template ID from the previous step
   template_id = 'id-of-your-template' # $HighlightLine
   # Pass the template ID to the `Sandbox.create` method
-  sandbox = Sandbox.create(template_id) # $HighlightLine
+  sandbox = Sandbox(template_id) # $HighlightLine
 
   # The template installed cowsay, so we can use it
   execution = sandbox.run_code("""

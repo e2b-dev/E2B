@@ -18,7 +18,7 @@ const sandbox = await Sandbox.create()
 const result = await sandbox.commands.run('echo $E2B_SANDBOX_ID')
 ```
 ```python
-sandbox = Sandbox.create()
+sandbox = Sandbox()
 result = sandbox.commands.run("echo $E2B_SANDBOX_ID")
 ```
 </CodeGroup>
@@ -55,7 +55,7 @@ const sandbox = await Sandbox.create({
 ```python
 from e2b_code_interpreter import Sandbox
 
-sandbox = Sandbox.create(
+sandbox = Sandbox(
   envs={ # $HighlightLine
     'MY_VAR': 'my_value', # $HighlightLine
   }, # $HighlightLine
@@ -81,7 +81,7 @@ const result = await sandbox.runCode('import os; print(os.environ.get("MY_VAR"))
 })
 ```
 ```python
-sandbox = Sandbox.create()
+sandbox = Sandbox()
 result = sandbox.run_code(
     'import os; print(os.environ.get("MY_VAR"))',
     envs={ # $HighlightLine
@@ -109,7 +109,7 @@ sandbox.commands.run('echo $MY_VAR', {
 })
 ```
 ```python
-sandbox = Sandbox.create()
+sandbox = Sandbox()
 sandbox.commands.run(
     'echo $MY_VAR',
     envs={ # $HighlightLine
