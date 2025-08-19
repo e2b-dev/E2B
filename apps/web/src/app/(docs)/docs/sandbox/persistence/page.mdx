@@ -1,10 +1,7 @@
-# Sandbox persistence
-
 <Note>
 Sandbox persistence is currently in public beta:
-1. You'll need to install the [beta version of the SDKs](/docs/sandbox/installing-beta-sdks).
-2. Consider [some limitations](#limitations-while-in-beta).
-3. The persistence is free for all users during the beta.
+1. Consider [some limitations](#limitations-while-in-beta).
+2. The persistence is free for all users during the beta.
 </Note>
 
 The sandbox persistence allows you to pause your sandbox and resume it later from the same state it was in when you paused it.
@@ -17,11 +14,6 @@ When you pause a sandbox, both the sandbox's filesystem and memory state will be
 <CodeGroup>
 ```js
 import { Sandbox } from '@e2b/code-interpreter'
-// or use Core: https://github.com/e2b-dev/e2b
-// import { Sandbox } from 'e2b'
-//
-// or use Desktop: https://github.com/e2b-dev/desktop
-// import { Sandbox } from '@e2b/desktop'
 
 const sbx = await Sandbox.create()
 console.log('Sandbox created', sbx.sandboxId)
@@ -29,24 +21,19 @@ console.log('Sandbox created', sbx.sandboxId)
 // Pause the sandbox
 // You can save the sandbox ID in your database
 // to resume the sandbox later
-const sandboxId = await sbx.pause() // $HighlightLine
+const sandboxId = await sbx.betaPause() // $HighlightLine
 console.log('Sandbox paused', sandboxId) // $HighlightLine
 ```
 ```python
 from e2b_code_interpreter import Sandbox
-# or use Core: https://github.com/e2b-dev/e2b
-# from e2b import Sandbox
-#
-# or use Desktop: https://github.com/e2b-dev/desktop
-# from e2b_desktop import Sandbox
 
-sbx = Sandbox()
+sbx = Sandbox.create()
 print('Sandbox created', sbx.sandbox_id)
 
 # Pause the sandbox
 # You can save the sandbox ID in your database
 # to resume the sandbox later
-sandbox_id = sbx.pause() # $HighlightLine
+sandbox_id = sbx.beta_pause() # $HighlightLine
 print('Sandbox paused', sandbox_id) # $HighlightLine
 ```
 </CodeGroup>
@@ -59,11 +46,6 @@ This means that all the files in the sandbox's filesystem will be restored and a
 <CodeGroup>
 ```js
 import { Sandbox } from '@e2b/code-interpreter'
-// or use Core: https://github.com/e2b-dev/e2b
-// import { Sandbox } from 'e2b'
-//
-// or use Desktop: https://github.com/e2b-dev/desktop
-// import { Sandbox } from '@e2b/desktop'
 
 const sbx = await Sandbox.create()
 console.log('Sandbox created', sbx.sandboxId)
@@ -71,33 +53,28 @@ console.log('Sandbox created', sbx.sandboxId)
 // Pause the sandbox
 // You can save the sandbox ID in your database
 // to resume the sandbox later
-const sandboxId = await sbx.pause()
+const sandboxId = await sbx.betaPause()
 console.log('Sandbox paused', sandboxId)
 
-// Resume the sandbox from the same state
-const sameSbx = await Sandbox.resume(sandboxId) // $HighlightLine
-console.log('Sandbox resumed', sameSbx.sandboxId) // $HighlightLine
+// Connect to the sandbox (it will automatically resume the sandbox, if paused)
+const sameSbx = await sbx.connect() // $HighlightLine
+console.log('Connected to the sandbox', sameSbx.sandboxId) // $HighlightLine
 ```
 ```python
-from e2b import Sandbox
-# or use Core: https://github.com/e2b-dev/e2b
-# from e2b import Sandbox
-#
-# or use Desktop: https://github.com/e2b-dev/desktop
-# from e2b_desktop import Sandbox
+from e2b_code_interpreter import Sandbox
 
-sbx = Sandbox()
+sbx = Sandbox.create()
 print('Sandbox created', sbx.sandbox_id)
 
 # Pause the sandbox
 # You can save the sandbox ID in your database
 # to resume the sandbox later
-sandbox_id = sbx.pause()
+sandbox_id = sbx.beta_pause()
 print('Sandbox paused', sandbox_id)
 
-# Resume the sandbox from the same state
-same_sbx = Sandbox.resume(sandbox_id) # $HighlightLine
-print('Sandbox resumed', same_sbx.sandbox_id) # $HighlightLine
+# Connect to the sandbox (it will automatically resume the sandbox, if paused)
+same_sbx = sbx.connect() # $HighlightLine
+print('Connected to the sandbox', same_sbx.sandbox_id) # $HighlightLine
 ```
 </CodeGroup>
 
@@ -108,11 +85,6 @@ More information about using the method can be found in [List Sandboxes](/docs/s
 <CodeGroup>
 ```js
 import { Sandbox, SandboxInfo } from '@e2b/code-interpreter'
-// or use Core: https://github.com/e2b-dev/e2b
-// import { Sandbox, SandboxInfo } from 'e2b'
-//
-// or use Desktop: https://github.com/e2b-dev/desktop
-// import { Sandbox, SandboxInfo } from '@e2b/desktop'
 
 // List all paused sandboxes
 const paginator = Sandbox.list({ query: { state: ['paused'] } }) // $HighlightLine
@@ -121,28 +93,21 @@ const paginator = Sandbox.list({ query: { state: ['paused'] } }) // $HighlightLi
 const sandboxes = await paginator.nextItems() // $HighlightLine
 
 // Get all paused sandboxes
-const sandboxes: SandboxInfo[] = []
 while (paginator.hasNext) {
   const items = await paginator.nextItems()
   sandboxes.push(...items)
 }
 ```
 ```python
-from e2b_code_interpreter import Sandbox, SandboxListQuery
-# or use Core: https://github.com/e2b-dev/e2b
-# from e2b import Sandbox, SandboxListQuery
-#
-# or use Desktop: https://github.com/e2b-dev/desktop
-# from e2b_desktop import Sandbox, SandboxInfo, SandboxListQuery
-
 # List all paused sandboxes
-paginator = Sandbox.list(SandboxListQuery(state=['paused'])) # $HighlightLine
+from e2b_code_interpreter import Sandbox, SandboxQuery, SandboxState
+
+paginator = Sandbox.list(SandboxQuery(state=[SandboxState.PAUSED])) # $HighlightLine
 
 # Get the first page of paused sandboxes
 sandboxes = paginator.next_items() # $HighlightLine
 
 # Get all paused sandboxes
-sandboxes: list[SandboxInfo] = []
 while paginator.has_next:
   items = paginator.next_items()
   sandboxes.extend(items)
@@ -156,11 +121,6 @@ You can remove paused sandboxes by calling the `kill` method on the Sandbox inst
 <CodeGroup>
 ```js
 import { Sandbox } from '@e2b/code-interpreter'
-// or use Core: https://github.com/e2b-dev/e2b
-// import { Sandbox } from 'e2b'
-//
-// or use Desktop: https://github.com/e2b-dev/desktop
-// import { Sandbox } from '@e2b/desktop'
 
 const sbx = await Sandbox.create()
 console.log('Sandbox created', sbx.sandboxId)
@@ -168,7 +128,7 @@ console.log('Sandbox created', sbx.sandboxId)
 // Pause the sandbox
 // You can save the sandbox ID in your database
 // to resume the sandbox later
-const sandboxId = await sbx.pause()
+const sandboxId = await sbx.betaPause()
 
 // Remove the sandbox
 await sbx.kill() // $HighlightLine
@@ -178,16 +138,11 @@ await Sandbox.kill(sandboxId) // $HighlightLine
 ```
 ```python
 from e2b import Sandbox
-# or use Core: https://github.com/e2b-dev/e2b
-# from e2b import Sandbox
-#
-# or use Desktop: https://github.com/e2b-dev/desktop
-# from e2b_desktop import Sandbox
 
-sbx = Sandbox()
+sbx = Sandbox.create()
 
 # Pause the sandbox
-sandbox_id = sbx.pause()
+sandbox_id = sbx.beta_pause()
 
 # Remove the sandbox
 sbx.kill() # $HighlightLine
@@ -198,31 +153,20 @@ Sandbox.kill(sandbox_id) # $HighlightLine
 </CodeGroup>
 
 ## Sandbox's timeout
-When you resume a sandbox, the sandbox's timeout is reset to the default timeout of an E2B sandbox - 5 minutes.
+When you connect to a sandbox, the sandbox's timeout is reset to the default timeout of an E2B sandbox - 5 minutes.
 
-
-You can pass a custom timeout to the `Sandbox.resume()` method like this:
+You can pass a custom timeout to the `Sandbox.connect()`/`Sandbox.connect()` method like this:
 
 <CodeGroup>
 ```js
 import { Sandbox } from '@e2b/code-interpreter'
-// or use Core: https://github.com/e2b-dev/e2b
-// import { Sandbox } from 'e2b'
-//
-// or use Desktop: https://github.com/e2b-dev/desktop
-// import { Sandbox } from '@e2b/desktop'
 
-const sbx = await Sandbox.resume(sandboxId, { timeoutMs: 60 * 1000 }) // 60 seconds
+const sbx = await Sandbox.connect(sandboxId, { timeoutMs: 60 * 1000 }) // 60 seconds
 ```
 ```python
 from e2b_code_interpreter import Sandbox
-# or use Core: https://github.com/e2b-dev/e2b
-# from e2b import Sandbox
-#
-# or use Desktop: https://github.com/e2b-dev/desktop
-# from e2b_desktop import Sandbox
 
-sbx = Sandbox.resume(sandbox_id, timeout=60) # 60 seconds
+sbx = Sandbox.connect(sandbox_id, timeout=60) # 60 seconds
 ```
 </CodeGroup>
 
