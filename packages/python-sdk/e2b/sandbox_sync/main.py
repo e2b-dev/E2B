@@ -507,7 +507,7 @@ class Sandbox(SandboxApi):
         secure: Optional[bool] = None,
         allow_internet_access: bool = True,
         **opts: Unpack[ApiParams],
-    ):
+    ) -> Self:
         """
         [BETA] This feature is in beta and may change in the future.
 
