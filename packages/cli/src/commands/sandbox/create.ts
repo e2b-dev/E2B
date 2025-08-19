@@ -10,15 +10,15 @@ import { getConfigPath, loadConfig } from '../../config'
 import fs from 'fs'
 import { configOption, pathOption } from '../../options'
 
-export const spawnCommand = new commander.Command('spawn')
-  .description('spawn sandbox and connect terminal to it')
+export const createCommand = new commander.Command('create')
+  .description('create sandbox and connect terminal to it')
   .argument(
     '[template]',
-    `spawn and connect to sandbox specified by ${asBold('[template]')}`,
+    `create and connect to sandbox specified by ${asBold('[template]')}`
   )
   .addOption(pathOption)
   .addOption(configOption)
-  .alias('sp')
+  .alias('cr')
   .action(
     async (
       template: string | undefined,
@@ -26,7 +26,7 @@ export const spawnCommand = new commander.Command('spawn')
         name?: string
         path?: string
         config?: string
-      },
+      }
     ) => {
       try {
         const apiKey = ensureAPIKey()
@@ -49,15 +49,15 @@ export const spawnCommand = new commander.Command('spawn')
                   ? [config.template_name]
                   : undefined,
               },
-              relativeConfigPath,
-            )}`,
+              relativeConfigPath
+            )}`
           )
           templateID = config.template_id
         }
 
         if (!templateID) {
           console.error(
-            'You need to specify sandbox template ID or path to sandbox template config',
+            'You need to specify sandbox template ID or path to sandbox template config'
           )
           process.exit(1)
         }
@@ -68,7 +68,7 @@ export const spawnCommand = new commander.Command('spawn')
         console.error(err)
         process.exit(1)
       }
-    },
+    }
   )
 
 export async function connectSandbox({
@@ -87,8 +87,8 @@ export async function connectSandbox({
 
   console.log(
     `Terminal connecting to template ${asFormattedSandboxTemplate(
-      template,
-    )} with sandbox ID ${asBold(`${sandbox.sandboxId}`)}`,
+      template
+    )} with sandbox ID ${asBold(`${sandbox.sandboxId}`)}`
   )
   try {
     await spawnConnectedTerminal(sandbox)
@@ -97,8 +97,8 @@ export async function connectSandbox({
     await sandbox.kill()
     console.log(
       `Closing terminal connection to template ${asFormattedSandboxTemplate(
-        template,
-      )} with sandbox ID ${asBold(`${sandbox.sandboxId}`)}`,
+        template
+      )} with sandbox ID ${asBold(`${sandbox.sandboxId}`)}`
     )
   }
 }

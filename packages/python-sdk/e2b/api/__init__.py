@@ -92,6 +92,12 @@ class ApiClient(AuthenticatedClient):
             **(config.headers or {}),
         }
 
+        # Prevent passing these parameters twice
+        kwargs.pop("headers", None)
+        kwargs.pop("token", None)
+        kwargs.pop("auth_header_name", None)
+        kwargs.pop("prefix", None)
+
         super().__init__(
             base_url=config.api_url,
             httpx_args={

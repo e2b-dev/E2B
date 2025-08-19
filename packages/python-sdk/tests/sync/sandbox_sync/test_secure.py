@@ -5,7 +5,7 @@ from e2b import Sandbox
 
 @pytest.mark.skip_debug()
 def test_start_secured(template):
-    sbx = Sandbox(template, timeout=5, secure=True)
+    sbx = Sandbox.create(template, timeout=5, secure=True)
     try:
         assert sbx.is_running()
         assert sbx._envd_version is not None
@@ -16,7 +16,7 @@ def test_start_secured(template):
 
 @pytest.mark.skip_debug()
 def test_connect_to_secured(template):
-    sbx = Sandbox(template, timeout=5, secure=True)
+    sbx = Sandbox.create(template, timeout=5, secure=True)
     try:
         assert sbx.is_running()
         assert sbx._envd_version is not None

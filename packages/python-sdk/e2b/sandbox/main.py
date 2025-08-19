@@ -1,11 +1,19 @@
 import urllib.parse
 
-from typing import Optional
+from typing import Optional, TypedDict
 
 from e2b.sandbox.signature import get_signature
 from e2b.connection_config import ConnectionConfig
 from e2b.envd.api import ENVD_API_FILES_ROUTE
 from httpx import Limits
+
+
+class SandboxOpts(TypedDict):
+    sandbox_id: str
+    sandbox_domain: Optional[str]
+    envd_version: Optional[str]
+    envd_access_token: Optional[str]
+    connection_config: ConnectionConfig
 
 
 class SandboxBase:
@@ -65,7 +73,7 @@ class SandboxBase:
 
     def _file_url(
         self,
-        path: Optional[str] = None,
+        path: str,
         user: str = "user",
         signature: Optional[str] = None,
         signature_expiration: Optional[int] = None,
@@ -119,7 +127,7 @@ class SandboxBase:
 
     def upload_url(
         self,
-        path: Optional[str] = None,
+        path: str,
         user: str = "user",
         use_signature_expiration: Optional[int] = None,
     ) -> str:

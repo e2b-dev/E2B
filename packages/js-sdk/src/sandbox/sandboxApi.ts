@@ -1,7 +1,12 @@
 import { ApiClient, components, handleApiError } from '../api'
-import { ConnectionConfig, ConnectionOpts } from '../connectionConfig'
+import {
+  ConnectionConfig,
+  ConnectionOpts,
+  DEFAULT_SANDBOX_TIMEOUT_MS,
+} from '../connectionConfig'
 import { compareVersions } from 'compare-versions'
-import { TemplateError } from '../errors'
+import { NotFoundError, TemplateError } from '../errors'
+import { timeoutToSeconds } from '../utils'
 
 /**
  * Options for request to the Sandbox API.
@@ -15,35 +20,92 @@ export interface SandboxApiOpts
   > {}
 
 /**
- * Options for create sandbox request.
+ * Options for creating a new Sandbox.
  */
-export interface SandboxCreateOpts extends SandboxApiOpts {
+export interface SandboxOpts extends ConnectionOpts {
   /**
-   * Custom metadata for the sandbox
+   * Custom metadata for the sandbox.
+   *
+   * @default {}
    */
   metadata?: Record<string, string>
 
   /**
-   * Custom environment variables for the sandbox
+   * Custom environment variables for the sandbox.
+   *
+   * Used when executing commands and code in the sandbox.
+   * Can be overridden with the `envs` argument when executing commands or code.
+   *
+   * @default {}
    */
   envs?: Record<string, string>
 
   /**
-   * Envd is secured with access token and cannot be used without it
+   * Timeout for the sandbox in **milliseconds**.
+   * Maximum time a sandbox can be kept alive is 24 hours (86_400_000 milliseconds) for Pro users and 1 hour (3_600_000 milliseconds) for Hobby users.
+   *
+   * @default 300_000 // 5 minutes
+   */
+  timeoutMs?: number
+
+  /**
+   * Secure all traffic coming to the sandbox controller with auth token
+   *
+   * @default false
    */
   secure?: boolean
 
   /**
-   * Allow sandbox to access the internet, defaults to `true`.
+   * Allow sandbox to access the internet
+   *
+   * @default true
    */
   allowInternetAccess?: boolean
 }
 
+export type SandboxBetaCreateOpts = SandboxOpts & {
+  /**
+   * Automatically pause the sandbox after the timeout expires.
+   * @default false
+   */
+  autoPause?: boolean
+}
+
+/**
+ * Options for connecting to a Sandbox.
+ */
+export type SandboxConnectOpts = Omit<SandboxOpts, 'metadata' | 'envs'>
+
+/**
+ * State of the sandbox.
+ */
+export type SandboxState = 'running' | 'paused'
+
 export interface SandboxListOpts extends SandboxApiOpts {
   /**
    * Filter the list of sandboxes, e.g. by metadata `metadata:{"key": "value"}`, if there are multiple filters they are combined with AND.
+   *
    */
-  query?: { metadata?: Record<string, string> }
+  query?: {
+    metadata?: Record<string, string>
+    /**
+     * Filter the list of sandboxes by state.
+     * @default ['running', 'paused']
+     */
+    state?: Array<SandboxState>
+  }
+
+  /**
+   * Number of sandboxes to return per page.
+   *
+   * @default 1000
+   */
+  limit?: number
+
+  /**
+   * Token to the next page.
+   */
+  nextToken?: string
 }
 
 export interface SandboxMetricsOpts extends SandboxApiOpts {
@@ -67,11 +129,6 @@ export interface SandboxInfo {
   sandboxId: string
 
   /**
-   * Domain where the sandbox is hosted.
-   */
-  sandboxDomain?: string
-
-  /**
    * Template ID.
    */
   templateId: string
@@ -80,16 +137,6 @@ export interface SandboxInfo {
    * Template name.
    */
   name?: string
-
-  /**
-   * Envd access token.
-   */
-  envdAccessToken?: string
-
-  /**
-   * Envd version.
-   */
-  envdVersion?: string
 
   /**
    * Saved sandbox metadata.
@@ -105,34 +152,13 @@ export interface SandboxInfo {
    * Sandbox expiration date.
    */
   endAt: Date
-}
-
-export interface ListedSandbox {
-  /**
-   * Sandbox ID.
-   */
-  sandboxId: string
-
-  /**
-   * Template ID alias.
-   */
-  alias?: string
-
-  /**
-   * Template ID.
-   */
-  templateId: string
-
-  /**
-   * Client ID.
-   * @deprecated
-   */
-  clientId: string
 
   /**
    * Sandbox state.
+   *
+   * @string can be `running` or `paused`
    */
-  state: 'running' | 'paused'
+  state: SandboxState
 
   /**
    * Sandbox CPU count.
@@ -140,24 +166,14 @@ export interface ListedSandbox {
   cpuCount: number
 
   /**
-   * Sandbox Memory size in MB.
+   * Sandbox Memory size in MiB.
    */
   memoryMB: number
 
   /**
-   * Saved sandbox metadata.
+   * Envd version.
    */
-  metadata?: Record<string, string>
-
-  /**
-   * Sandbox expected end time.
-   */
-  endAt: Date
-
-  /**
-   * Sandbox start time.
-   */
-  startedAt: Date
+  envdVersion: string
 }
 
 /**
@@ -240,58 +256,6 @@ export class SandboxApi {
   }
 
   /**
-   * List all running sandboxes.
-   *
-   * @param opts connection options.
-   *
-   * @returns list of running sandboxes.
-   */
-  static async list(opts?: SandboxListOpts): Promise<ListedSandbox[]> {
-    const config = new ConnectionConfig(opts)
-    const client = new ApiClient(config)
-
-    let metadata = undefined
-    if (opts?.query) {
-      if (opts.query.metadata) {
-        const encodedPairs: Record<string, string> = Object.fromEntries(
-          Object.entries(opts.query.metadata).map(([key, value]) => [
-            encodeURIComponent(key),
-            encodeURIComponent(value),
-          ])
-        )
-        metadata = new URLSearchParams(encodedPairs).toString()
-      }
-    }
-
-    const res = await client.api.GET('/sandboxes', {
-      params: {
-        query: { metadata },
-      },
-      signal: config.getSignal(opts?.requestTimeoutMs),
-    })
-
-    const err = handleApiError(res)
-    if (err) {
-      throw err
-    }
-
-    return (
-      res.data?.map((sandbox: components['schemas']['ListedSandbox']) => ({
-        sandboxId: sandbox.sandboxID,
-        templateId: sandbox.templateID,
-        clientId: sandbox.clientID,
-        state: sandbox.state,
-        cpuCount: sandbox.cpuCount,
-        memoryMB: sandbox.memoryMB,
-        alias: sandbox.alias,
-        metadata: sandbox.metadata,
-        startedAt: new Date(sandbox.startedAt),
-        endAt: new Date(sandbox.endAt),
-      })) ?? []
-    )
-  }
-
-  /**
    * Get sandbox information like sandbox ID, template, metadata, started at/end at date.
    *
    * @param sandboxId sandbox ID.
@@ -303,38 +267,11 @@ export class SandboxApi {
     sandboxId: string,
     opts?: SandboxApiOpts
   ): Promise<SandboxInfo> {
-    const config = new ConnectionConfig(opts)
-    const client = new ApiClient(config)
+    const fullInfo = await this.getFullInfo(sandboxId, opts)
+    delete fullInfo.envdAccessToken
+    delete fullInfo.sandboxDomain
 
-    const res = await client.api.GET('/sandboxes/{sandboxID}', {
-      params: {
-        path: {
-          sandboxID: sandboxId,
-        },
-      },
-      signal: config.getSignal(opts?.requestTimeoutMs),
-    })
-
-    const err = handleApiError(res)
-    if (err) {
-      throw err
-    }
-
-    if (!res.data) {
-      throw new Error('Sandbox not found')
-    }
-
-    return {
-      sandboxId: res.data.sandboxID,
-      sandboxDomain: res.data!.domain || undefined,
-      templateId: res.data.templateID,
-      ...(res.data.alias && { name: res.data.alias }),
-      metadata: res.data.metadata ?? {},
-      envdVersion: res.data.envdVersion,
-      envdAccessToken: res.data.envdAccessToken,
-      startedAt: new Date(res.data.startedAt),
-      endAt: new Date(res.data.endAt),
-    }
+    return fullInfo
   }
 
   /**
@@ -408,7 +345,7 @@ export class SandboxApi {
         },
       },
       body: {
-        timeout: this.timeoutToSeconds(timeoutMs),
+        timeout: timeoutToSeconds(timeoutMs),
       },
       signal: config.getSignal(opts?.requestTimeoutMs),
     })
@@ -419,10 +356,89 @@ export class SandboxApi {
     }
   }
 
+  static async getFullInfo(sandboxId: string, opts?: SandboxApiOpts) {
+    const config = new ConnectionConfig(opts)
+    const client = new ApiClient(config)
+
+    const res = await client.api.GET('/sandboxes/{sandboxID}', {
+      params: {
+        path: {
+          sandboxID: sandboxId,
+        },
+      },
+      signal: config.getSignal(opts?.requestTimeoutMs),
+    })
+
+    const err = handleApiError(res)
+    if (err) {
+      throw err
+    }
+
+    if (!res.data) {
+      throw new Error('Sandbox not found')
+    }
+
+    return {
+      sandboxId: res.data.sandboxID,
+      templateId: res.data.templateID,
+      ...(res.data.alias && { name: res.data.alias }),
+      metadata: res.data.metadata ?? {},
+      envdVersion: res.data.envdVersion,
+      envdAccessToken: res.data.envdAccessToken,
+      startedAt: new Date(res.data.startedAt),
+      endAt: new Date(res.data.endAt),
+      state: res.data.state,
+      cpuCount: res.data.cpuCount,
+      memoryMB: res.data.memoryMB,
+      sandboxDomain: res.data.domain || undefined,
+    }
+  }
+
+  /**
+   * Pause the sandbox specified by sandbox ID.
+   *
+   * @param sandboxId sandbox ID.
+   * @param opts connection options.
+   *
+   * @returns `true` if the sandbox got paused, `false` if the sandbox was already paused.
+   */
+  static async betaPause(
+    sandboxId: string,
+    opts?: SandboxApiOpts
+  ): Promise<boolean> {
+    const config = new ConnectionConfig(opts)
+    const client = new ApiClient(config)
+
+    const res = await client.api.POST('/sandboxes/{sandboxID}/pause', {
+      params: {
+        path: {
+          sandboxID: sandboxId,
+        },
+      },
+      signal: config.getSignal(opts?.requestTimeoutMs),
+    })
+
+    if (res.error?.code === 404) {
+      throw new NotFoundError(`Sandbox ${sandboxId} not found`)
+    }
+
+    if (res.error?.code === 409) {
+      // Sandbox is already paused
+      return false
+    }
+
+    const err = handleApiError(res)
+    if (err) {
+      throw err
+    }
+
+    return true
+  }
+
   protected static async createSandbox(
     template: string,
     timeoutMs: number,
-    opts?: SandboxCreateOpts
+    opts?: SandboxBetaCreateOpts
   ): Promise<{
     sandboxId: string
     sandboxDomain?: string
@@ -434,11 +450,11 @@ export class SandboxApi {
 
     const res = await client.api.POST('/sandboxes', {
       body: {
-        autoPause: false,
+        autoPause: opts?.autoPause ?? false,
         templateID: template,
         metadata: opts?.metadata,
         envVars: opts?.envs,
-        timeout: this.timeoutToSeconds(timeoutMs),
+        timeout: timeoutToSeconds(timeoutMs),
         secure: opts?.secure,
         allow_internet_access: opts?.allowInternetAccess ?? true,
       },
@@ -466,7 +482,152 @@ export class SandboxApi {
     }
   }
 
-  private static timeoutToSeconds(timeout: number): number {
-    return Math.ceil(timeout / 1000)
+  protected static async resumeSandbox(
+    sandboxId: string,
+    opts?: SandboxConnectOpts
+  ): Promise<boolean> {
+    const timeoutMs = opts?.timeoutMs ?? DEFAULT_SANDBOX_TIMEOUT_MS
+
+    const config = new ConnectionConfig(opts)
+    const client = new ApiClient(config)
+
+    const res = await client.api.POST('/sandboxes/{sandboxID}/resume', {
+      params: {
+        path: {
+          sandboxID: sandboxId,
+        },
+      },
+      body: {
+        autoPause: false,
+        timeout: timeoutToSeconds(timeoutMs),
+      },
+      signal: config.getSignal(opts?.requestTimeoutMs),
+    })
+
+    if (res.error?.code === 404) {
+      throw new NotFoundError(`Paused sandbox ${sandboxId} not found`)
+    }
+
+    if (res.error?.code === 409) {
+      // Sandbox is already running
+      return false
+    }
+
+    const err = handleApiError(res)
+    if (err) {
+      throw err
+    }
+
+    return true
+  }
+}
+
+/**
+ * Paginator for listing sandboxes.
+ *
+ * @example
+ * ```ts
+ * const paginator = Sandbox.list()
+ *
+ * while (paginator.hasNext) {
+ *   const sandboxes = await paginator.nextItems()
+ *   console.log(sandboxes)
+ * }
+ * ```
+ */
+export class SandboxPaginator {
+  private _hasNext: boolean
+  private _nextToken?: string
+
+  private readonly config: ConnectionConfig
+  private client: ApiClient
+
+  private query: SandboxListOpts['query']
+  private readonly limit?: number
+
+  constructor(opts?: SandboxListOpts) {
+    this.config = new ConnectionConfig(opts)
+    this.client = new ApiClient(this.config)
+
+    this._hasNext = true
+    this._nextToken = opts?.nextToken
+
+    this.query = opts?.query
+    this.limit = opts?.limit
+  }
+
+  /**
+   * Returns True if there are more items to fetch.
+   */
+  get hasNext(): boolean {
+    return this._hasNext
+  }
+
+  /**
+   * Returns the next token to use for pagination.
+   */
+  get nextToken(): string | undefined {
+    return this._nextToken
+  }
+
+  /**
+   * Get the next page of sandboxes.
+   *
+   * @throws Error if there are no more items to fetch. Call this method only if `hasNext` is `true`.
+   *
+   * @returns List of sandboxes
+   */
+  async nextItems(): Promise<SandboxInfo[]> {
+    if (!this.hasNext) {
+      throw new Error('No more items to fetch')
+    }
+
+    let metadata = undefined
+    if (this.query?.metadata) {
+      const encodedPairs: Record<string, string> = Object.fromEntries(
+        Object.entries(this.query.metadata).map(([key, value]) => [
+          encodeURIComponent(key),
+          encodeURIComponent(value),
+        ])
+      )
+
+      metadata = new URLSearchParams(encodedPairs).toString()
+    }
+
+    const res = await this.client.api.GET('/v2/sandboxes', {
+      params: {
+        query: {
+          metadata,
+          state: this.query?.state,
+          limit: this.limit,
+          nextToken: this.nextToken,
+        },
+      },
+      // requestTimeoutMs is already passed here via the connectionConfig.
+      signal: this.config.getSignal(),
+    })
+
+    const err = handleApiError(res)
+    if (err) {
+      throw err
+    }
+
+    this._nextToken = res.response.headers.get('x-next-token') || undefined
+    this._hasNext = !!this._nextToken
+
+    return (res.data ?? []).map(
+      (sandbox: components['schemas']['ListedSandbox']) => ({
+        sandboxId: sandbox.sandboxID,
+        templateId: sandbox.templateID,
+        ...(sandbox.alias && { name: sandbox.alias }),
+        metadata: sandbox.metadata ?? {},
+        startedAt: new Date(sandbox.startedAt),
+        endAt: new Date(sandbox.endAt),
+        state: sandbox.state,
+        cpuCount: sandbox.cpuCount,
+        memoryMB: sandbox.memoryMB,
+        envdVersion: sandbox.envdVersion,
+      })
+    )
   }
 }

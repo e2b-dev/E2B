@@ -3,6 +3,7 @@ import { createConnectTransport } from '@connectrpc/connect-web'
 import {
   ConnectionConfig,
   ConnectionOpts,
+  DEFAULT_SANDBOX_TIMEOUT_MS,
   defaultUsername,
   Username,
 } from '../connectionConfig'
@@ -10,54 +11,18 @@ import { EnvdApiClient, handleEnvdApiError } from '../envd/api'
 import { createRpcLogger } from '../logs'
 import { Commands, Pty } from './commands'
 import { Filesystem } from './filesystem'
-import { SandboxApi, SandboxMetricsOpts } from './sandboxApi'
+import {
+  SandboxOpts,
+  SandboxConnectOpts,
+  SandboxMetricsOpts,
+  SandboxApi,
+  SandboxListOpts,
+  SandboxPaginator,
+  SandboxBetaCreateOpts,
+} from './sandboxApi'
 import { getSignature } from './signature'
 import { compareVersions } from 'compare-versions'
 import { SandboxError } from '../errors'
-
-/**
- * Options for creating a new Sandbox.
- */
-export interface SandboxOpts extends ConnectionOpts {
-  /**
-   * Custom metadata for the sandbox.
-   *
-   * @default {}
-   */
-  metadata?: Record<string, string>
-
-  /**
-   * Custom environment variables for the sandbox.
-   *
-   * Used when executing commands and code in the sandbox.
-   * Can be overridden with the `envs` argument when executing commands or code.
-   *
-   * @default {}
-   */
-  envs?: Record<string, string>
-
-  /**
-   * Timeout for the sandbox in **milliseconds**.
-   * Maximum time a sandbox can be kept alive is 24 hours (86_400_000 milliseconds) for Pro users and 1 hour (3_600_000 milliseconds) for Hobby users.
-   *
-   * @default 300_000 // 5 minutes
-   */
-  timeoutMs?: number
-
-  /**
-   * Secure all traffic coming to the sandbox controller with auth token
-   *
-   * @default false
-   */
-  secure?: boolean
-
-  /**
-   * Allow sandbox to access the internet
-   *
-   * @default true
-   */
-  allowInternetAccess?: boolean
-}
 
 /**
  * Options for sandbox upload/download URL generation.
@@ -98,7 +63,7 @@ export interface SandboxUrlOpts {
  */
 export class Sandbox extends SandboxApi {
   protected static readonly defaultTemplate: string = 'base'
-  protected static readonly defaultSandboxTimeoutMs = 300_000
+  protected static readonly defaultSandboxTimeoutMs = DEFAULT_SANDBOX_TIMEOUT_MS
 
   /**
    * Module for interacting with the sandbox filesystem
@@ -139,7 +104,7 @@ export class Sandbox extends SandboxApi {
    * @access protected
    */
   constructor(
-    opts: Omit<SandboxOpts, 'timeoutMs' | 'envs' | 'metadata'> & {
+    opts: SandboxConnectOpts & {
       sandboxId: string
       sandboxDomain?: string
       envdVersion?: string
@@ -154,9 +119,8 @@ export class Sandbox extends SandboxApi {
     this.sandboxDomain = opts.sandboxDomain ?? this.connectionConfig.domain
 
     this.envdAccessToken = opts.envdAccessToken
-    this.envdApiUrl = `${
-      this.connectionConfig.debug ? 'http' : 'https'
-    }://${this.getHost(this.envdPort)}`
+    this.envdApiUrl = `${this.connectionConfig.debug ? 'http' : 'https'
+      }://${this.getHost(this.envdPort)}`
 
     const rpcTransport = createConnectTransport({
       baseUrl: this.envdApiUrl,
@@ -210,6 +174,17 @@ export class Sandbox extends SandboxApi {
   }
 
   /**
+   * List all sandboxes.
+   *
+   * @param opts connection options.
+   *
+   * @returns paginator for listing sandboxes.
+   */
+  static list(opts?: SandboxListOpts): SandboxPaginator {
+    return new SandboxPaginator(opts)
+  }
+
+  /**
    * Create a new sandbox from the default `base` sandbox template.
    *
    * @param opts connection options.
@@ -220,7 +195,7 @@ export class Sandbox extends SandboxApi {
    * ```ts
    * const sandbox = await Sandbox.create()
    * ```
-   * @constructs Sandbox
+   * @constructs {@link Sandbox}
    */
   static async create<S extends typeof Sandbox>(
     this: S,
@@ -239,7 +214,7 @@ export class Sandbox extends SandboxApi {
    * ```ts
    * const sandbox = await Sandbox.create('<template-name-or-id>')
    * ```
-   * @constructs Sandbox
+   * @constructs {@link Sandbox}
    */
   static async create<S extends typeof Sandbox>(
     this: S,
@@ -262,24 +237,95 @@ export class Sandbox extends SandboxApi {
         sandboxId: 'debug_sandbox_id',
         ...config,
       }) as InstanceType<S>
-    } else {
-      const sandbox = await this.createSandbox(
-        template,
-        sandboxOpts?.timeoutMs ?? this.defaultSandboxTimeoutMs,
-        sandboxOpts
-      )
-      return new this({ ...sandbox, ...config }) as InstanceType<S>
     }
+
+    const sandbox = await SandboxApi.createSandbox(
+      template,
+      sandboxOpts?.timeoutMs ?? this.defaultSandboxTimeoutMs,
+      sandboxOpts
+    )
+
+    return new this({ ...sandbox, ...config }) as InstanceType<S>
   }
 
   /**
-   * Connect to an existing sandbox.
+   * @beta This feature is in beta and may change in the future.
+   *
+   * Create a new sandbox from the default `base` sandbox template.
+   *
+   * @param opts connection options.
+   *
+   * @returns sandbox instance for the new sandbox.
+   *
+   * @example
+   * ```ts
+   * const sandbox = await Sandbox.betaCreate()
+   * ```
+   * @constructs {@link Sandbox}
+   */
+  static async betaCreate<S extends typeof Sandbox>(
+    this: S,
+    opts?: SandboxBetaCreateOpts
+  ): Promise<InstanceType<S>>
+
+  /**
+   * @beta This feature is in beta and may change in the future.
+   *
+   * Create a new sandbox from the specified sandbox template.
+   * 
+   * @param template sandbox template name or ID.
+   * @param opts connection options.
+   *
+   * @returns sandbox instance for the new sandbox.
+   *
+   * @example
+   * ```ts
+   * const sandbox = await Sandbox.betaCreate('<template-name-or-id>')
+   * ```
+   * @constructs {@link Sandbox}
+   */
+  static async betaCreate<S extends typeof Sandbox>(
+    this: S,
+    template: string,
+    opts?: SandboxBetaCreateOpts
+  ): Promise<InstanceType<S>>
+  static async betaCreate<S extends typeof Sandbox>(
+    this: S,
+    templateOrOpts?: SandboxBetaCreateOpts | string,
+    opts?: SandboxBetaCreateOpts
+  ): Promise<InstanceType<S>> {
+    const { template, sandboxOpts } =
+      typeof templateOrOpts === 'string'
+        ? { template: templateOrOpts, sandboxOpts: opts }
+        : { template: this.defaultTemplate, sandboxOpts: templateOrOpts }
+
+    const config = new ConnectionConfig(sandboxOpts)
+    if (config.debug) {
+      return new this({
+        sandboxId: 'debug_sandbox_id',
+        ...config,
+      }) as InstanceType<S>
+    }
+
+    const sandbox = await SandboxApi.createSandbox(
+      template,
+      sandboxOpts?.timeoutMs ?? this.defaultSandboxTimeoutMs,
+      sandboxOpts
+    )
+
+    return new this({ ...sandbox, ...config }) as InstanceType<S>
+  }
+
+  /**
+   * Connect to a sandbox. If the sandbox is paused, it will be automatically resumed.
+   * Sandbox must be either running or be paused.
+   *
    * With sandbox ID you can connect to the same sandbox from different places or environments (serverless functions, etc).
    *
    * @param sandboxId sandbox ID.
    * @param opts connection options.
    *
-   * @returns sandbox instance for the existing sandbox.
+   * @returns A running sandbox instance
    *
    * @example
    * ```ts
@@ -293,10 +339,25 @@ export class Sandbox extends SandboxApi {
   static async connect<S extends typeof Sandbox>(
     this: S,
     sandboxId: string,
-    opts?: Omit<SandboxOpts, 'metadata' | 'envs' | 'timeoutMs'>
+    opts?: SandboxConnectOpts
   ): Promise<InstanceType<S>> {
+    try {
+      await SandboxApi.setTimeout(
+        sandboxId,
+        opts?.timeoutMs || DEFAULT_SANDBOX_TIMEOUT_MS,
+        opts
+      )
+    } catch (e) {
+      if (e instanceof SandboxError) {
+        await SandboxApi.resumeSandbox(sandboxId, opts)
+      } else {
+        throw e
+      }
+    }
+
+    const info = await SandboxApi.getFullInfo(sandboxId, opts)
+
     const config = new ConnectionConfig(opts)
-    const info = await this.getInfo(sandboxId, opts)
 
     return new this({
       sandboxId,
@@ -305,6 +366,39 @@ export class Sandbox extends SandboxApi {
       envdVersion: info.envdVersion,
       ...config,
     }) as InstanceType<S>
+  }
+
+  /**
+   * Connect to a sandbox. If the sandbox is paused, it will be automatically resumed.
+   * Sandbox must be either running or be paused.
+   *
+   * With sandbox ID you can connect to the same sandbox from different places or environments (serverless functions, etc).
+   *
+   * @param opts connection options.
+   *
+   * @returns A running sandbox instance
+   *
+   * @example
+   * ```ts
+   * const sandbox = await Sandbox.create()
+   * await sandbox.betaPause()
+   *
+   * // Connect to the same sandbox.
+   * const sameSandbox = await sandbox.connect()
+   * ```
+   */
+  async connect(opts?: SandboxBetaCreateOpts): Promise<this> {
+    try {
+      await SandboxApi.setTimeout(
+        this.sandboxId,
+        opts?.timeoutMs || DEFAULT_SANDBOX_TIMEOUT_MS,
+        opts
+      )
+    } catch (e) {
+      await SandboxApi.resumeSandbox(this.sandboxId, opts)
+    }
+
+    return this
   }
 
   /**
@@ -386,7 +480,7 @@ export class Sandbox extends SandboxApi {
       return
     }
 
-    await Sandbox.setTimeout(this.sandboxId, timeoutMs, {
+    await SandboxApi.setTimeout(this.sandboxId, timeoutMs, {
       ...this.connectionConfig,
       ...opts,
     })
@@ -403,7 +497,20 @@ export class Sandbox extends SandboxApi {
       return
     }
 
-    await Sandbox.kill(this.sandboxId, { ...this.connectionConfig, ...opts })
+    await SandboxApi.kill(this.sandboxId, { ...this.connectionConfig, ...opts })
+  }
+
+  /**
+   * @beta This feature is in beta and may change in the future.
+   *
+   * Pause a sandbox by its ID.
+   *
+   * @param opts connection options.
+   *
+   * @returns sandbox ID that can be used to resume the sandbox.
+   */
+  async betaPause(opts?: ConnectionOpts): Promise<boolean> {
+    return await SandboxApi.betaPause(this.sandboxId, opts)
   }
 
   /**
@@ -424,7 +531,7 @@ export class Sandbox extends SandboxApi {
 
     if (!useSignature && opts.useSignatureExpiration != undefined) {
       throw new Error(
-          'Signature expiration can be used only when sandbox is created as secured.'
+        'Signature expiration can be used only when sandbox is created as secured.'
       )
     }
 
@@ -505,7 +612,7 @@ export class Sandbox extends SandboxApi {
    * @returns information about the sandbox
    */
   async getInfo(opts?: Pick<SandboxOpts, 'requestTimeoutMs'>) {
-    return await Sandbox.getInfo(this.sandboxId, {
+    return await SandboxApi.getInfo(this.sandboxId, {
       ...this.connectionConfig,
       ...opts,
     })
@@ -518,12 +625,12 @@ export class Sandbox extends SandboxApi {
    *
    * @returns  List of sandbox metrics containing CPU, memory and disk usage information.
    */
-  async getMetrics(opts?: Pick<SandboxMetricsOpts, 'start' | 'end' | 'requestTimeoutMs'>) {
+  async getMetrics(opts?: SandboxMetricsOpts) {
     if (this.envdApi.version) {
       if (compareVersions(this.envdApi.version, '0.1.5') < 0) {
         throw new SandboxError(
           'You need to update the template to use the new SDK. ' +
-            'You can do this by running `e2b template build` in the directory with the template.'
+          'You can do this by running `e2b template build` in the directory with the template.'
         )
       }
 
@@ -534,7 +641,7 @@ export class Sandbox extends SandboxApi {
       }
     }
 
-    return await Sandbox.getMetrics(this.sandboxId, {
+    return await SandboxApi.getMetrics(this.sandboxId, {
       ...this.connectionConfig,
       ...opts,
     })

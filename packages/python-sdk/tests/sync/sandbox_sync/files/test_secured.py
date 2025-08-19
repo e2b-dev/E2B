@@ -8,7 +8,7 @@ from e2b import Sandbox
 
 @pytest.mark.skip_debug()
 def test_download_url_with_signing(template):
-    sbx = Sandbox(template, timeout=100, secure=True)
+    sbx = Sandbox.create(template, timeout=100, secure=True)
     file_path = "test_download_url_with_signing.txt"
     file_content = "This file will be watched."
 
@@ -27,7 +27,7 @@ def test_download_url_with_signing(template):
 
 @pytest.mark.skip_debug()
 def test_download_url_with_signing_and_expiration(template):
-    sbx = Sandbox(template, timeout=100, secure=True)
+    sbx = Sandbox.create(template, timeout=100, secure=True)
     file_path = "test_download_url_with_signing.txt"
     file_content = "This file will be watched."
 
@@ -46,7 +46,7 @@ def test_download_url_with_signing_and_expiration(template):
 
 @pytest.mark.skip_debug()
 def test_download_url_with_expired_signing(template):
-    sbx = Sandbox(template, timeout=100, secure=True)
+    sbx = Sandbox.create(template, timeout=100, secure=True)
     file_path = "test_download_url_with_signing.txt"
     file_content = "This file will be watched."
 
