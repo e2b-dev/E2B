@@ -138,7 +138,6 @@ class Filesystem:
         elif format == "stream":
             return r.aiter_bytes()
 
-    @overload
     async def write(
         self,
         path: str,
@@ -162,9 +161,16 @@ class Filesystem:
 
         :return: Information about the written file
         """
+        result = await self.write_files(
+            [WriteEntry(path=path, data=data)], user, request_timeout
+        )
 
-    @overload
-    async def write(
+        if len(result) != 1:
+            raise SandboxException("Received unexpected response from write operation")
+
+        return result[0]
+
+    async def write_files(
         self,
         files: List[WriteEntry],
         user: Optional[Username] = "user",
@@ -178,60 +184,26 @@ class Filesystem:
         :param request_timeout: Timeout for the request
         :return: Information about the written files
         """
-
-    async def write(
-        self,
-        path_or_files: Union[str, List[WriteEntry]],
-        data_or_user: Union[str, bytes, IO, Username] = "user",
-        user_or_request_timeout: Optional[Union[float, Username]] = None,
-        request_timeout_or_none: Optional[float] = None,
-    ) -> Union[WriteInfo, List[WriteInfo]]:
-        """
-        Writes content to a file on the path.
-        When writing to a file that doesn't exist, the file will get created.
-        When writing to a file that already exists, the file will get overwritten.
-        When writing to a file that's in a directory that doesn't exist, you'll get an error.
-        """
-        path, write_files, user, request_timeout = None, [], "user", None
-        if isinstance(path_or_files, str):
-            if isinstance(data_or_user, list):
-                raise Exception(
-                    "Cannot specify both path and array of files. You have to specify either path and data for a single file or an array for multiple files."
-                )
-            path, write_files, user, request_timeout = (
-                path_or_files,
-                [{"path": path_or_files, "data": data_or_user}],
-                user_or_request_timeout or "user",
-                request_timeout_or_none,
-            )
-        else:
-            if path_or_files is None:
-                raise Exception("Path or files are required")
-            path, write_files, user, request_timeout = (
-                None,
-                path_or_files,
-                data_or_user,
-                user_or_request_timeout,
-            )
+        params = {"username": user}
+        if len(files) == 1:
+            params["path"] = files[0]["path"]
 
         # Prepare the files for the multipart/form-data request
         httpx_files = []
-        for file in write_files:
+        for file in files:
             file_path, file_data = file["path"], file["data"]
             if isinstance(file_data, str) or isinstance(file_data, bytes):
                 httpx_files.append(("file", (file_path, file_data)))
             elif isinstance(file_data, IOBase):
                 httpx_files.append(("file", (file_path, file_data.read())))
             else:
-                raise ValueError(f"Unsupported data type for file {file_path}")
+                raise InvalidArgumentException(
+                    f"Unsupported data type for file {file_path}"
+                )
 
         # Allow passing empty list of files
         if len(httpx_files) == 0:
             return []
-
-        params = {"username": user}
-        if path is not None:
-            params["path"] = path
 
         r = await self._envd_api.post(
             ENVD_API_FILES_ROUTE,
@@ -247,13 +219,9 @@ class Filesystem:
         write_files = r.json()
 
         if not isinstance(write_files, list) or len(write_files) == 0:
-            raise Exception("Expected to receive information about written file")
+            raise SandboxException("Expected to receive information about written file")
 
-        if len(write_files) == 1 and path:
-            file = write_files[0]
-            return WriteInfo(**file)
-        else:
-            return [WriteInfo(**file) for file in write_files]
+        return [WriteInfo(**file) for file in write_files]
 
     async def list(
         self,

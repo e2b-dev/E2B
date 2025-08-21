@@ -1,5 +1,6 @@
 from io import IOBase
 from typing import IO, Iterator, List, Literal, Optional, overload, Union
+
 from e2b.sandbox.filesystem.filesystem import WriteEntry
 
 import e2b_connect
@@ -8,7 +9,7 @@ import httpx
 from packaging.version import Version
 
 from e2b.envd.versions import ENVD_VERSION_RECURSIVE_WATCH
-from e2b.exceptions import TemplateException, InvalidArgumentException
+from e2b.exceptions import SandboxException, TemplateException, InvalidArgumentException
 from e2b.connection_config import (
     ConnectionConfig,
     Username,
@@ -138,7 +139,6 @@ class Filesystem:
         elif format == "stream":
             return r.iter_bytes()
 
-    @overload
     def write(
         self,
         path: str,
@@ -162,9 +162,18 @@ class Filesystem:
 
         :return: Information about the written file
         """
+        result = self.write_files(
+            [WriteEntry(path=path, data=data)],
+            user=user,
+            request_timeout=request_timeout,
+        )
 
-    @overload
-    def write(
+        if len(result) != 1:
+            raise SandboxException("Received unexpected response from write operation")
+
+        return result[0]
+
+    def write_files(
         self,
         files: List[WriteEntry],
         user: Optional[Username] = "user",
@@ -181,54 +190,26 @@ class Filesystem:
         :param request_timeout: Timeout for the request
         :return: Information about the written files
         """
-
-    def write(
-        self,
-        path_or_files: Union[str, List[WriteEntry]],
-        data_or_user: Union[str, bytes, IO, Username] = "user",
-        user_or_request_timeout: Optional[Union[float, Username]] = None,
-        request_timeout_or_none: Optional[float] = None,
-    ) -> Union[WriteInfo, List[WriteInfo]]:
-        path, write_files, user, request_timeout = None, [], "user", None
-        if isinstance(path_or_files, str):
-            if isinstance(data_or_user, list):
-                raise Exception(
-                    "Cannot specify both path and array of files. You have to specify either path and data for a single file or an array for multiple files."
-                )
-            path, write_files, user, request_timeout = (
-                path_or_files,
-                [{"path": path_or_files, "data": data_or_user}],
-                user_or_request_timeout or "user",
-                request_timeout_or_none,
-            )
-        else:
-            if path_or_files is None:
-                raise Exception("Path or files are required")
-            path, write_files, user, request_timeout = (
-                None,
-                path_or_files,
-                data_or_user,
-                user_or_request_timeout,
-            )
+        params = {"username": user}
+        if len(files) == 1:
+            params["path"] = files[0]["path"]
 
         # Prepare the files for the multipart/form-data request
         httpx_files = []
-        for file in write_files:
+        for file in files:
             file_path, file_data = file["path"], file["data"]
             if isinstance(file_data, str) or isinstance(file_data, bytes):
                 httpx_files.append(("file", (file_path, file_data)))
             elif isinstance(file_data, IOBase):
                 httpx_files.append(("file", (file_path, file_data.read())))
             else:
-                raise ValueError(f"Unsupported data type for file {file_path}")
+                raise InvalidArgumentException(
+                    f"Unsupported data type for file {file_path}"
+                )
 
         # Allow passing empty list of files
         if len(httpx_files) == 0:
             return []
-
-        params = {"username": user}
-        if path is not None:
-            params["path"] = path
 
         r = self._envd_api.post(
             ENVD_API_FILES_ROUTE,
@@ -244,13 +225,9 @@ class Filesystem:
         write_files = r.json()
 
         if not isinstance(write_files, list) or len(write_files) == 0:
-            raise Exception("Expected to receive information about written file")
+            raise SandboxException("Expected to receive information about written file")
 
-        if len(write_files) == 1 and path:
-            file = write_files[0]
-            return WriteInfo(**file)
-        else:
-            return [WriteInfo(**file) for file in write_files]
+        return [WriteInfo(**file) for file in write_files]
 
     def list(
         self,
