@@ -40,7 +40,7 @@ await sandbox.files.write('/path/to/file', 'file content')
 
 ## Writing multiple files
 
-You can also write multiple files to the sandbox filesystem using the `files.write()` method.
+You can also write multiple files to the sandbox.
 
 <CodeGroup>
 ```js
@@ -57,7 +57,7 @@ from e2b_code_interpreter import Sandbox
 
 sandbox = Sandbox.create()
 
-await sandbox.files.write([
+await sandbox.files.write_files([
     { "path": "/path/to/a", "data": "file content" },
     { "path": "another/path/to/b", "data": "file content" }
 ])
