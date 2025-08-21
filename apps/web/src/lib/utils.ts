@@ -8,6 +8,10 @@ export function cn(...inputs: ClassValue[]) {
 
 // Verify that the sandbox exists and is associated with the API key
 export async function verifySandbox(apiKey: string, sandboxId: string) {
-  const sandboxes = await Sandbox.list({ apiKey })
-  return sandboxes.some((sandbox) => sandbox.sandboxId === sandboxId)
+  try {
+    const sandbox = await Sandbox.getInfo(sandboxId, { apiKey })
+    return sandbox.state === 'running'
+  } catch (error) {
+    return false
+  }
 }
