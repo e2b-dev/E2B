@@ -45,7 +45,7 @@ export const killCommand = new commander.Command('kill')
       }
 
       if (all) {
-        const total = 0
+        let total = 0
         const iterator = Sandbox.list({
           apiKey,
           query: {
@@ -55,6 +55,7 @@ export const killCommand = new commander.Command('kill')
 
         while (iterator.hasNext) {
           const sandboxes = await iterator.nextItems()
+          total += sandboxes.length
 
           await Promise.all(
             sandboxes.map((sandbox) => killSandbox(sandbox.sandboxId, apiKey))
@@ -63,8 +64,11 @@ export const killCommand = new commander.Command('kill')
 
         if (total === 0) {
           console.log('No running sandboxes')
-          process.exit(0)
+        } else {
+          console.log(`Killed ${total} running sandboxes`)
         }
+
+        process.exit(0)
       } else {
         await killSandbox(sandboxID, apiKey)
       }
