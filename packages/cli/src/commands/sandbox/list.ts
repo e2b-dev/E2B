@@ -3,14 +3,13 @@ import * as commander from 'commander'
 import { components, Sandbox, SandboxInfo } from 'e2b'
 
 import { ensureAPIKey } from 'src/api'
-import { asBold } from '../../utils/format'
 
 export const listCommand = new commander.Command('list')
-  .description('list all running sandboxes')
+  .description('list all sandboxes, by default it list only running ones')
   .alias('ls')
   .option(
     '-s, --state <state>',
-    'filter by state, eg. running, stopped',
+    'filter by state, eg. running, paused. Defaults to running',
     (value) => value.split(',')
   )
   .option(
@@ -20,15 +19,15 @@ export const listCommand = new commander.Command('list')
   )
   .option(
     '-l, --limit <limit>',
-    'limit the number of sandboxes returned, defaults to 100',
+    'limit the number of sandboxes returned',
     (value) => parseInt(value)
   )
   .action(async (options) => {
     try {
-      const limit = options.limit ? parseInt(options.limit) : 100
+      const state = options.state || ['running']
       const sandboxes = await listSandboxes({
-        limit: limit,
-        state: options.state,
+        limit: options.limit,
+        state,
         metadataRaw: options.metadata,
       })
 
@@ -98,14 +97,6 @@ export const listCommand = new commander.Command('list')
 
         process.stdout.write('\n')
       }
-
-      if (sandboxes.length === limit) {
-        console.log(
-          `\nShowing ${sandboxes.length} sandboxes, use ${asBold(
-            '--limit'
-          )} to change the limit`
-        )
-      }
     } catch (err: any) {
       console.error(err)
       process.exit(1)
@@ -144,10 +135,6 @@ export async function listSandboxes({
   }
 
   let remainingLimit = limit
-  if (!remainingLimit) {
-    remainingLimit = 100
-  }
-
   const sandboxes: SandboxInfo[] = []
   const iterator = Sandbox.list({
     apiKey: apiKey,
@@ -155,7 +142,7 @@ export async function listSandboxes({
     query: { state, metadata },
   })
 
-  while (iterator.hasNext && remainingLimit > 0) {
+  while (iterator.hasNext && (!remainingLimit || remainingLimit > 0)) {
     const batch = await iterator.nextItems()
     sandboxes.push(...batch)
 
