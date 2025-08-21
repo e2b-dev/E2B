@@ -91,8 +91,8 @@ export class Sandbox extends SandboxApi {
   protected readonly envdPort = 49983
 
   protected readonly connectionConfig: ConnectionConfig
+  protected readonly envdAccessToken?: string
   private readonly envdApiUrl: string
-  private readonly envdAccessToken?: string
   private readonly envdApi: EnvdApiClient
 
   /**
@@ -119,8 +119,9 @@ export class Sandbox extends SandboxApi {
     this.sandboxDomain = opts.sandboxDomain ?? this.connectionConfig.domain
 
     this.envdAccessToken = opts.envdAccessToken
-    this.envdApiUrl = `${this.connectionConfig.debug ? 'http' : 'https'
-      }://${this.getHost(this.envdPort)}`
+    this.envdApiUrl = `${
+      this.connectionConfig.debug ? 'http' : 'https'
+    }://${this.getHost(this.envdPort)}`
 
     const rpcTransport = createConnectTransport({
       baseUrl: this.envdApiUrl,
@@ -272,7 +273,7 @@ export class Sandbox extends SandboxApi {
    * @beta This feature is in beta and may change in the future.
    *
    * Create a new sandbox from the specified sandbox template.
-   * 
+   *
    * @param template sandbox template name or ID.
    * @param opts connection options.
    *
@@ -630,7 +631,7 @@ export class Sandbox extends SandboxApi {
       if (compareVersions(this.envdApi.version, '0.1.5') < 0) {
         throw new SandboxError(
           'You need to update the template to use the new SDK. ' +
-          'You can do this by running `e2b template build` in the directory with the template.'
+            'You can do this by running `e2b template build` in the directory with the template.'
         )
       }
 
