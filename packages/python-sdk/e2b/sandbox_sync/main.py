@@ -160,7 +160,7 @@ class Sandbox(SandboxApi):
         timeout: Optional[int] = None,
         metadata: Optional[Dict[str, str]] = None,
         envs: Optional[Dict[str, str]] = None,
-        secure: Optional[bool] = None,
+        secure: bool = True,
         allow_internet_access: bool = True,
         **opts: Unpack[ApiParams],
     ) -> Self:
@@ -173,7 +173,7 @@ class Sandbox(SandboxApi):
         :param timeout: Timeout for the sandbox in **seconds**, default to 300 seconds. The maximum time a sandbox can be kept alive is 24 hours (86_400 seconds) for Pro users and 1 hour (3_600 seconds) for Hobby users.
         :param metadata: Custom metadata for the sandbox
         :param envs: Custom environment variables for the sandbox
-        :param secure: Envd is secured with access token and cannot be used without it
+        :param secure: Envd is secured with access token and cannot be used without it, defaults to `True`.
         :param allow_internet_access: Allow sandbox to access the internet, defaults to `True`.
 
         :return: A Sandbox instance for the new sandbox
@@ -504,7 +504,7 @@ class Sandbox(SandboxApi):
         auto_pause: bool = False,
         metadata: Optional[Dict[str, str]] = None,
         envs: Optional[Dict[str, str]] = None,
-        secure: Optional[bool] = None,
+        secure: bool = True,
         allow_internet_access: bool = True,
         **opts: Unpack[ApiParams],
     ) -> Self:
@@ -520,7 +520,7 @@ class Sandbox(SandboxApi):
         :param auto_pause: Automatically pause the sandbox after the timeout expires. Defaults to `False`.
         :param metadata: Custom metadata for the sandbox
         :param envs: Custom environment variables for the sandbox
-        :param secure: Envd is secured with access token and cannot be used without it
+        :param secure: Envd is secured with access token and cannot be used without it, defaults to `True`.
         :param allow_internet_access: Allow sandbox to access the internet, defaults to `True`.
 
         :return: A Sandbox instance for the new sandbox
@@ -616,13 +616,13 @@ class Sandbox(SandboxApi):
     @classmethod
     def _create(
         cls,
-        template: Optional[str] = None,
-        timeout: Optional[int] = None,
-        auto_pause: bool = False,
-        metadata: Optional[Dict[str, str]] = None,
-        envs: Optional[Dict[str, str]] = None,
-        secure: Optional[bool] = None,
-        allow_internet_access: bool = True,
+        template: Optional[str],
+        timeout: Optional[int],
+        auto_pause: bool,
+        metadata: Optional[Dict[str, str]],
+        envs: Optional[Dict[str, str]],
+        secure: bool,
+        allow_internet_access: bool,
         **opts: Unpack[ApiParams],
     ) -> Self:
         extra_sandbox_headers = {}
