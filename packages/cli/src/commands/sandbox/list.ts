@@ -1,9 +1,9 @@
 import * as tablePrinter from 'console-table-printer'
 import * as commander from 'commander'
-import { components } from 'e2b'
+import { components, Sandbox, SandboxInfo } from 'e2b'
 
-import { client, connectionConfig, ensureAPIKey } from 'src/api'
-import { handleE2BRequestError } from '../../utils/errors'
+import { ensureAPIKey } from 'src/api'
+import { asBold } from '../../utils/format'
 
 export const listCommand = new commander.Command('list')
   .description('list all running sandboxes')
@@ -20,15 +20,16 @@ export const listCommand = new commander.Command('list')
   )
   .option(
     '-l, --limit <limit>',
-    'limit the number of sandboxes returned',
+    'limit the number of sandboxes returned, defaults to 100',
     (value) => parseInt(value)
   )
   .action(async (options) => {
     try {
+      const limit = options.limit ? parseInt(options.limit) : 100
       const sandboxes = await listSandboxes({
-        limit: options.limit,
+        limit: limit,
         state: options.state,
-        metadata: options.metadata,
+        metadataRaw: options.metadata,
       })
 
       if (!sandboxes?.length) {
@@ -56,7 +57,7 @@ export const listCommand = new commander.Command('list')
           rows: sandboxes
             .map((sandbox) => ({
               ...sandbox,
-              sandboxID: sandbox.sandboxID,
+              sandboxID: sandbox.sandboxId,
               startedAt: new Date(sandbox.startedAt).toLocaleString(),
               endAt: new Date(sandbox.endAt).toLocaleString(),
               state:
@@ -97,6 +98,14 @@ export const listCommand = new commander.Command('list')
 
         process.stdout.write('\n')
       }
+
+      if (sandboxes.length === limit) {
+        console.log(
+          `\nShowing ${sandboxes.length} sandboxes, use ${asBold(
+            '--limit'
+          )} to change the limit`
+        )
+      }
     } catch (err: any) {
       console.error(err)
       process.exit(1)
@@ -106,46 +115,52 @@ export const listCommand = new commander.Command('list')
 type ListSandboxesOptions = {
   limit?: number
   state?: components['schemas']['SandboxState'][]
-  metadata?: string
+  metadataRaw?: string
 }
 
 export async function listSandboxes({
   limit,
   state,
-  metadata,
-}: ListSandboxesOptions = {}): Promise<
-  components['schemas']['ListedSandbox'][]
-> {
-  ensureAPIKey()
+  metadataRaw,
+}: ListSandboxesOptions = {}): Promise<SandboxInfo[]> {
+  const apiKey = ensureAPIKey()
 
-  const signal = connectionConfig.getSignal()
-
-  let hasNext = true
-  let nextToken: string | undefined
-  let remainingLimit: number | undefined = limit
-
-  const sandboxes: components['schemas']['ListedSandbox'][] = []
-
-  while (hasNext && (!limit || (remainingLimit && remainingLimit > 0))) {
-    const res = await client.api.GET('/v2/sandboxes', {
-      params: {
-        query: {
-          state,
-          metadata,
-          nextToken,
-          limit: remainingLimit,
-        },
-      },
-      signal,
+  let metadata: Record<string, string> | undefined = undefined
+  if (metadataRaw && metadataRaw.length > 0) {
+    const parsedMetadata: Record<string, string> = {}
+    metadataRaw.split(',').map((pair: string) => {
+      const [key, value] = pair.split('=')
+      if (key && value) {
+        parsedMetadata[key.trim()] = value.trim()
+      }
     })
 
-    handleE2BRequestError(res, 'Error getting running sandboxes')
+    metadata = parsedMetadata
+  }
 
-    nextToken = res.response.headers.get('x-next-token') || undefined
-    hasNext = !!nextToken
-    sandboxes.push(...res.data)
+  let pageLimit = limit
+  if (!limit || limit > 100) {
+    pageLimit = 100
+  }
+
+  let remainingLimit = limit
+  if (!remainingLimit) {
+    remainingLimit = 100
+  }
+
+  const sandboxes: SandboxInfo[] = []
+  const iterator = Sandbox.list({
+    apiKey: apiKey,
+    limit: pageLimit,
+    query: { state, metadata },
+  })
+
+  while (iterator.hasNext && remainingLimit > 0) {
+    const batch = await iterator.nextItems()
+    sandboxes.push(...batch)
+
     if (limit && remainingLimit) {
-      remainingLimit -= res.data.length
+      remainingLimit -= batch.length
     }
   }
 
