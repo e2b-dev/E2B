@@ -51,6 +51,12 @@ components:
       required: true
       schema:
         type: string
+    teamID:
+      name: teamID
+      in: path
+      required: true
+      schema:
+        type: string
     nodeID:
       name: nodeID
       in: path
@@ -79,6 +85,12 @@ components:
             $ref: "#/components/schemas/Error"
     "401":
       description: Authentication error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    "403":
+      description: Forbidden
       content:
         application/json:
           schema:
@@ -449,8 +461,29 @@ components:
           description: Time to live for the sandbox in seconds.
         autoPause:
           type: boolean
+          deprecated: true
           default: false
           description: Automatically pauses the sandbox after the timeout
+
+    TeamMetric:
+      description: Team metric with timestamp
+      required:
+        - timestamp
+        - concurrentSandboxes
+        - sandboxStartRate
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          description: Timestamp of the metric entry
+        concurrentSandboxes:
+          type: integer
+          format: int32
+          description: The number of concurrent sandboxes for the team
+        sandboxStartRate:
+          type: number
+          format: float
+          description: Number of sandboxes started per second
 
     Template:
       required:
@@ -638,6 +671,17 @@ components:
         level:
           $ref: "#/components/schemas/LogLevel"
 
+    BuildStatusReason:
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          description: Message with the status reason, currently reporting only for error status
+        step:
+          type: string
+          description: Step that failed
+
     TemplateBuild:
       required:
         - templateID
@@ -673,8 +717,7 @@ components:
             - ready
             - error
         reason:
-          type: string
-          description: Message with the status reason, currently reporting only for error status
+          $ref: "#/components/schemas/BuildStatusReason"
 
     NodeStatus:
       type: string
@@ -697,13 +740,80 @@ components:
         status:
           $ref: "#/components/schemas/NodeStatus"
 
+    DiskMetrics:
+      required:
+        - mountPoint
+        - device
+        - filesystemType
+        - usedBytes
+        - totalBytes
+      properties:
+        mountPoint:
+          type: string
+          description: Mount point of the disk
+        device:
+          type: string
+          description: Device name
+        filesystemType:
+          type: string
+          description: Filesystem type (e.g., ext4, xfs)
+        usedBytes:
+          type: integer
+          format: uint64
+          description: Used space in bytes
+        totalBytes:
+          type: integer
+          format: uint64
+          description: Total space in bytes
+
+    NodeMetrics:
+      description: Node metrics
+      required:
+        - allocatedCPU
+        - allocatedMemoryBytes
+        - cpuPercent
+        - memoryUsedBytes
+        - cpuCount
+        - memoryTotalBytes
+        - disks
+      properties:
+        allocatedCPU:
+          type: integer
+          format: uint32
+          description: Number of allocated CPU cores
+        cpuPercent:
+          type: integer
+          format: uint32
+          description: Node CPU usage percentage
+        cpuCount:
+          type: integer
+          format: uint32
+          description: Total number of CPU cores on the node
+        allocatedMemoryBytes:
+          type: integer
+          format: uint64
+          description: Amount of allocated memory in bytes
+        memoryUsedBytes:
+          type: integer
+          format: uint64
+          description: Node memory used in bytes
+        memoryTotalBytes:
+          type: integer
+          format: uint64
+          description: Total node memory in bytes
+        disks:
+          type: array
+          description: Detailed metrics for each disk/mount point
+          items:
+            $ref: "#/components/schemas/DiskMetrics"
+
     Node:
       required:
         - nodeID
+        - clusterID
         - status
         - sandboxCount
-        - allocatedCPU
-        - allocatedMemoryMiB
+        - metrics
         - createSuccesses
         - createFails
         - sandboxStartingCount
@@ -721,22 +831,15 @@ components:
           description: Identifier of the node
         clusterID:
           type: string
-          nullable: true
           description: Identifier of the cluster
         status:
           $ref: "#/components/schemas/NodeStatus"
         sandboxCount:
           type: integer
-          format: int32
+          format: uint32
           description: Number of sandboxes running on the node
-        allocatedCPU:
-          type: integer
-          format: int32
-          description: Number of allocated CPU cores
-        allocatedMemoryMiB:
-          type: integer
-          format: int32
-          description: Amount of allocated memory in MiB
+        metrics:
+          $ref: "#/components/schemas/NodeMetrics"
         createSuccesses:
           type: integer
           format: uint64
@@ -753,6 +856,7 @@ components:
     NodeDetail:
       required:
         - nodeID
+        - clusterID
         - status
         - sandboxes
         - cachedBuilds
@@ -760,10 +864,10 @@ components:
         - createFails
         - version
         - commit
+        - metrics
       properties:
         clusterID:
           type: string
-          nullable: true
           description: Identifier of the cluster
         version:
           type: string
@@ -781,6 +885,8 @@ components:
           description: List of sandboxes running on the node
           items:
             $ref: "#/components/schemas/ListedSandbox"
+        metrics:
+          $ref: "#/components/schemas/NodeMetrics"
         cachedBuilds:
           type: array
           description: List of cached builds id on the node
@@ -980,6 +1086,48 @@ paths:
         "500":
           $ref: "#/components/responses/500"
 
+  /teams/{teamID}/metrics:
+    get:
+      description: Get metrics for the team
+      tags: [auth]
+      security:
+        - ApiKeyAuth: []
+        - Supabase1TokenAuth: []
+          Supabase2TeamAuth: []
+      parameters:
+        - $ref: "#/components/parameters/teamID"
+        - in: query
+          name: start
+          schema:
+            type: integer
+            format: int64
+            minimum: 0
+          description: Unix timestamp for the start of the interval, in seconds, for which the metrics
+        - in: query
+          name: end
+          schema:
+            type: integer
+            format: int64
+            minimum: 0
+            description: Unix timestamp for the end of the interval, in seconds, for which the metrics
+      responses:
+        "200":
+          description: Successfully returned the team metrics
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TeamMetric"
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "403":
+          $ref: "#/components/responses/403"
+        "500":
+          $ref: "#/components/responses/500"
+
   /sandboxes:
     get:
       description: List all running sandboxes
@@ -1077,8 +1225,7 @@ paths:
             type: integer
             format: int32
             minimum: 1
-            default: 1000
-            maximum: 1000
+            default: 100
       responses:
         "200":
           description: Successfully returned all running sandboxes
@@ -1228,14 +1375,14 @@ paths:
             type: integer
             format: int64
             minimum: 0
-          description: Starting timestamp of the metrics that should be returned in milliseconds
+          description: Unix timestamp for the start of the interval, in seconds, for which the metrics
         - in: query
           name: end
           schema:
             type: integer
             format: int64
             minimum: 0
-            description: Ending timestamp of the metrics that should be returned in milliseconds
+            description: Unix timestamp for the end of the interval, in seconds, for which the metrics
 
       responses:
         "200":
@@ -1519,6 +1666,7 @@ paths:
       description: Delete a template
       tags: [templates]
       security:
+        - ApiKeyAuth: []
         - AccessTokenAuth: []
         - Supabase1TokenAuth: []
       parameters:

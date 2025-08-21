@@ -90,8 +90,8 @@ def sync_detailed(
     Args:
         sandbox_id (str):
         start (Union[Unset, int]):
-        end (Union[Unset, int]): Ending timestamp of the metrics that should be returned in
-            milliseconds
+        end (Union[Unset, int]): Unix timestamp for the end of the interval, in seconds, for which
+            the metrics
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -126,8 +126,8 @@ def sync(
     Args:
         sandbox_id (str):
         start (Union[Unset, int]):
-        end (Union[Unset, int]): Ending timestamp of the metrics that should be returned in
-            milliseconds
+        end (Union[Unset, int]): Unix timestamp for the end of the interval, in seconds, for which
+            the metrics
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -157,8 +157,8 @@ async def asyncio_detailed(
     Args:
         sandbox_id (str):
         start (Union[Unset, int]):
-        end (Union[Unset, int]): Ending timestamp of the metrics that should be returned in
-            milliseconds
+        end (Union[Unset, int]): Unix timestamp for the end of the interval, in seconds, for which
+            the metrics
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -191,8 +191,8 @@ async def asyncio(
     Args:
         sandbox_id (str):
         start (Union[Unset, int]):
-        end (Union[Unset, int]): Ending timestamp of the metrics that should be returned in
-            milliseconds
+        end (Union[Unset, int]): Unix timestamp for the end of the interval, in seconds, for which
+            the metrics
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.

@@ -1,14 +1,14 @@
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
 from ..models.node_status import NodeStatus
-from ..types import UNSET, Unset
 
 if TYPE_CHECKING:
     from ..models.listed_sandbox import ListedSandbox
+    from ..models.node_metrics import NodeMetrics
 
 
 T = TypeVar("T", bound="NodeDetail")
@@ -19,35 +19,41 @@ class NodeDetail:
     """
     Attributes:
         cached_builds (list[str]): List of cached builds id on the node
+        cluster_id (str): Identifier of the cluster
         commit (str): Commit of the orchestrator
         create_fails (int): Number of sandbox create fails
         create_successes (int): Number of sandbox create successes
+        metrics (NodeMetrics): Node metrics
         node_id (str): Identifier of the node
         sandboxes (list['ListedSandbox']): List of sandboxes running on the node
         status (NodeStatus): Status of the node
         version (str): Version of the orchestrator
-        cluster_id (Union[None, Unset, str]): Identifier of the cluster
     """
 
     cached_builds: list[str]
+    cluster_id: str
     commit: str
     create_fails: int
     create_successes: int
+    metrics: "NodeMetrics"
     node_id: str
     sandboxes: list["ListedSandbox"]
     status: NodeStatus
     version: str
-    cluster_id: Union[None, Unset, str] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         cached_builds = self.cached_builds
+
+        cluster_id = self.cluster_id
 
         commit = self.commit
 
         create_fails = self.create_fails
 
         create_successes = self.create_successes
+
+        metrics = self.metrics.to_dict()
 
         node_id = self.node_id
 
@@ -60,43 +66,42 @@ class NodeDetail:
 
         version = self.version
 
-        cluster_id: Union[None, Unset, str]
-        if isinstance(self.cluster_id, Unset):
-            cluster_id = UNSET
-        else:
-            cluster_id = self.cluster_id
-
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
                 "cachedBuilds": cached_builds,
+                "clusterID": cluster_id,
                 "commit": commit,
                 "createFails": create_fails,
                 "createSuccesses": create_successes,
+                "metrics": metrics,
                 "nodeID": node_id,
                 "sandboxes": sandboxes,
                 "status": status,
                 "version": version,
             }
         )
-        if cluster_id is not UNSET:
-            field_dict["clusterID"] = cluster_id
 
         return field_dict
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         from ..models.listed_sandbox import ListedSandbox
+        from ..models.node_metrics import NodeMetrics
 
         d = dict(src_dict)
         cached_builds = cast(list[str], d.pop("cachedBuilds"))
+
+        cluster_id = d.pop("clusterID")
 
         commit = d.pop("commit")
 
         create_fails = d.pop("createFails")
 
         create_successes = d.pop("createSuccesses")
+
+        metrics = NodeMetrics.from_dict(d.pop("metrics"))
 
         node_id = d.pop("nodeID")
 
@@ -111,25 +116,17 @@ class NodeDetail:
 
         version = d.pop("version")
 
-        def _parse_cluster_id(data: object) -> Union[None, Unset, str]:
-            if data is None:
-                return data
-            if isinstance(data, Unset):
-                return data
-            return cast(Union[None, Unset, str], data)
-
-        cluster_id = _parse_cluster_id(d.pop("clusterID", UNSET))
-
         node_detail = cls(
             cached_builds=cached_builds,
+            cluster_id=cluster_id,
             commit=commit,
             create_fails=create_fails,
             create_successes=create_successes,
+            metrics=metrics,
             node_id=node_id,
             sandboxes=sandboxes,
             status=status,
             version=version,
-            cluster_id=cluster_id,
         )
 
         node_detail.additional_properties = d

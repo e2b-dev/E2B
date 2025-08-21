@@ -1,11 +1,14 @@
 from collections.abc import Mapping
-from typing import Any, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
 from ..models.node_status import NodeStatus
-from ..types import UNSET, Unset
+
+if TYPE_CHECKING:
+    from ..models.node_metrics import NodeMetrics
+
 
 T = TypeVar("T", bound="Node")
 
@@ -14,42 +17,40 @@ T = TypeVar("T", bound="Node")
 class Node:
     """
     Attributes:
-        allocated_cpu (int): Number of allocated CPU cores
-        allocated_memory_mi_b (int): Amount of allocated memory in MiB
+        cluster_id (str): Identifier of the cluster
         commit (str): Commit of the orchestrator
         create_fails (int): Number of sandbox create fails
         create_successes (int): Number of sandbox create successes
+        metrics (NodeMetrics): Node metrics
         node_id (str): Identifier of the node
         sandbox_count (int): Number of sandboxes running on the node
         sandbox_starting_count (int): Number of starting Sandboxes
         status (NodeStatus): Status of the node
         version (str): Version of the orchestrator
-        cluster_id (Union[None, Unset, str]): Identifier of the cluster
     """
 
-    allocated_cpu: int
-    allocated_memory_mi_b: int
+    cluster_id: str
     commit: str
     create_fails: int
     create_successes: int
+    metrics: "NodeMetrics"
     node_id: str
     sandbox_count: int
     sandbox_starting_count: int
     status: NodeStatus
     version: str
-    cluster_id: Union[None, Unset, str] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        allocated_cpu = self.allocated_cpu
-
-        allocated_memory_mi_b = self.allocated_memory_mi_b
+        cluster_id = self.cluster_id
 
         commit = self.commit
 
         create_fails = self.create_fails
 
         create_successes = self.create_successes
+
+        metrics = self.metrics.to_dict()
 
         node_id = self.node_id
 
@@ -61,21 +62,15 @@ class Node:
 
         version = self.version
 
-        cluster_id: Union[None, Unset, str]
-        if isinstance(self.cluster_id, Unset):
-            cluster_id = UNSET
-        else:
-            cluster_id = self.cluster_id
-
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
-                "allocatedCPU": allocated_cpu,
-                "allocatedMemoryMiB": allocated_memory_mi_b,
+                "clusterID": cluster_id,
                 "commit": commit,
                 "createFails": create_fails,
                 "createSuccesses": create_successes,
+                "metrics": metrics,
                 "nodeID": node_id,
                 "sandboxCount": sandbox_count,
                 "sandboxStartingCount": sandbox_starting_count,
@@ -83,23 +78,23 @@ class Node:
                 "version": version,
             }
         )
-        if cluster_id is not UNSET:
-            field_dict["clusterID"] = cluster_id
 
         return field_dict
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
-        d = dict(src_dict)
-        allocated_cpu = d.pop("allocatedCPU")
+        from ..models.node_metrics import NodeMetrics
 
-        allocated_memory_mi_b = d.pop("allocatedMemoryMiB")
+        d = dict(src_dict)
+        cluster_id = d.pop("clusterID")
 
         commit = d.pop("commit")
 
         create_fails = d.pop("createFails")
 
         create_successes = d.pop("createSuccesses")
+
+        metrics = NodeMetrics.from_dict(d.pop("metrics"))
 
         node_id = d.pop("nodeID")
 
@@ -111,27 +106,17 @@ class Node:
 
         version = d.pop("version")
 
-        def _parse_cluster_id(data: object) -> Union[None, Unset, str]:
-            if data is None:
-                return data
-            if isinstance(data, Unset):
-                return data
-            return cast(Union[None, Unset, str], data)
-
-        cluster_id = _parse_cluster_id(d.pop("clusterID", UNSET))
-
         node = cls(
-            allocated_cpu=allocated_cpu,
-            allocated_memory_mi_b=allocated_memory_mi_b,
+            cluster_id=cluster_id,
             commit=commit,
             create_fails=create_fails,
             create_successes=create_successes,
+            metrics=metrics,
             node_id=node_id,
             sandbox_count=sandbox_count,
             sandbox_starting_count=sandbox_starting_count,
             status=status,
             version=version,
-            cluster_id=cluster_id,
         )
 
         node.additional_properties = d

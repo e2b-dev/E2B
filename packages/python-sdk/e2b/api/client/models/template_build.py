@@ -9,6 +9,7 @@ from ..types import UNSET, Unset
 
 if TYPE_CHECKING:
     from ..models.build_log_entry import BuildLogEntry
+    from ..models.build_status_reason import BuildStatusReason
 
 
 T = TypeVar("T", bound="TemplateBuild")
@@ -23,7 +24,7 @@ class TemplateBuild:
         logs (list[str]): Build logs
         status (TemplateBuildStatus): Status of the template
         template_id (str): Identifier of the template
-        reason (Union[Unset, str]): Message with the status reason, currently reporting only for error status
+        reason (Union[Unset, BuildStatusReason]):
     """
 
     build_id: str
@@ -31,7 +32,7 @@ class TemplateBuild:
     logs: list[str]
     status: TemplateBuildStatus
     template_id: str
-    reason: Union[Unset, str] = UNSET
+    reason: Union[Unset, "BuildStatusReason"] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -48,7 +49,9 @@ class TemplateBuild:
 
         template_id = self.template_id
 
-        reason = self.reason
+        reason: Union[Unset, dict[str, Any]] = UNSET
+        if not isinstance(self.reason, Unset):
+            reason = self.reason.to_dict()
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
@@ -69,6 +72,7 @@ class TemplateBuild:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         from ..models.build_log_entry import BuildLogEntry
+        from ..models.build_status_reason import BuildStatusReason
 
         d = dict(src_dict)
         build_id = d.pop("buildID")
@@ -86,7 +90,12 @@ class TemplateBuild:
 
         template_id = d.pop("templateID")
 
-        reason = d.pop("reason", UNSET)
+        _reason = d.pop("reason", UNSET)
+        reason: Union[Unset, BuildStatusReason]
+        if isinstance(_reason, Unset):
+            reason = UNSET
+        else:
+            reason = BuildStatusReason.from_dict(_reason)
 
         template_build = cls(
             build_id=build_id,
