@@ -82,7 +82,7 @@ load_dotenv()
 from e2b_code_interpreter import Sandbox
 
 # Create sandbox
-sbx = Sandbox()
+sbx = Sandbox.create()
 
 # Upload the dataset to the sandbox
 dataset_path_in_sandbox = ""
@@ -453,7 +453,7 @@ from e2b_code_interpreter import Sandbox
 from anthropic import Anthropic
 
 # Create sandbox
-sbx = Sandbox()
+sbx = Sandbox.create()
 
 # Upload the dataset to the sandbox
 with open("../dataset.csv", "rb") as f:

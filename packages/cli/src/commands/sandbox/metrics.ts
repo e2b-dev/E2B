@@ -3,8 +3,7 @@ import * as commander from 'commander'
 
 import { asBold, asTimestamp, withUnderline } from 'src/utils/format'
 import { wait } from 'src/utils/wait'
-import { listSandboxes } from './list'
-import { formatEnum, getShortID, Format } from './utils'
+import { formatEnum, Format, isRunning } from './utils'
 import { Sandbox } from 'e2b'
 import { ensureAPIKey } from '../../api'
 
@@ -44,9 +43,7 @@ export const metricsCommand = new commander.Command('metrics')
         }
 
         const apiKey = ensureAPIKey()
-        const isRunningPromise = listSandboxes()
-          .then((r) => r.find((s) => s.sandboxID === getShortID(sandboxID)))
-          .then((s) => !!s)
+        const isRunningPromise = isRunning(sandboxID)
 
         do {
           const metrics = await Sandbox.getMetrics(sandboxID, { start, apiKey })

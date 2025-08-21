@@ -33,7 +33,7 @@ console.log(info)
 ```python
 from e2b_code_interpreter import Sandbox
 
-sandbox = Sandbox()
+sandbox = Sandbox.create()
 
 # Create a new file
 sandbox.files.write('test_file', 'Hello, world!')
@@ -88,7 +88,7 @@ console.log(info)
 ```python
 from e2b_code_interpreter import Sandbox
 
-sandbox = Sandbox()
+sandbox = Sandbox.create()
 
 # Create a new directory
 sandbox.files.make_dir('test_dir')

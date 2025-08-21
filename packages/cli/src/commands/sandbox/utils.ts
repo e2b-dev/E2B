@@ -1,7 +1,6 @@
-import { listSandboxes } from './list'
 import { wait } from '../../utils/wait'
-import {asBold} from '../../utils/format'
-
+import { asBold } from '../../utils/format'
+import { Sandbox } from 'e2b'
 
 export function formatEnum(e: { [key: string]: string }) {
   return Object.values(e)
@@ -14,11 +13,10 @@ export enum Format {
   PRETTY = 'pretty',
 }
 
-
 const maxRuntime = 24 * 60 * 60 * 1000 // 24 hours in milliseconds
 
 export function waitForSandboxEnd(sandboxID: string) {
-  let isRunning = true
+  let running = true
 
   async function monitor() {
     const startTime = new Date().getTime()
@@ -33,14 +31,11 @@ export function waitForSandboxEnd(sandboxID: string) {
         break
       }
 
-      const response = await listSandboxes()
-      const sandbox = response.find(
-        (s) => s.sandboxID === getShortID(sandboxID)
-      )
-      if (!sandbox) {
-        isRunning = false
+      running = await isRunning(sandboxID)
+      if (!running) {
         break
       }
+
       await wait(5000)
     }
   }
@@ -52,4 +47,13 @@ export function waitForSandboxEnd(sandboxID: string) {
 
 export function getShortID(sandboxID: string) {
   return sandboxID.split('-')[0]
+}
+
+export async function isRunning(sandboxID: string) {
+  try {
+    const info = await Sandbox.getInfo(getShortID(sandboxID))
+    return info.state === 'running'
+  } catch {
+    return false
+  }
 }

@@ -51,7 +51,7 @@ export interface SandboxOpts extends ConnectionOpts {
   /**
    * Secure all traffic coming to the sandbox controller with auth token
    *
-   * @default false
+   * @default true
    */
   secure?: boolean
 
@@ -98,7 +98,7 @@ export interface SandboxListOpts extends SandboxApiOpts {
   /**
    * Number of sandboxes to return per page.
    *
-   * @default 1000
+   * @default 100
    */
   limit?: number
 
@@ -455,7 +455,7 @@ export class SandboxApi {
         metadata: opts?.metadata,
         envVars: opts?.envs,
         timeout: timeoutToSeconds(timeoutMs),
-        secure: opts?.secure,
+        secure: opts?.secure ?? true,
         allow_internet_access: opts?.allowInternetAccess ?? true,
       },
       signal: config.getSignal(opts?.requestTimeoutMs),

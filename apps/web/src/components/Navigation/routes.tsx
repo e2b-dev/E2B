@@ -322,10 +322,6 @@ export const docRoutes: NavGroup[] = [
         title: 'Rate limits',
         href: '/docs/sandbox/rate-limits',
       },
-      {
-        title: 'Installing beta SDKs',
-        href: '/docs/sandbox/installing-beta-sdks',
-      },
       // {
       //   title: '* Request timeouts',
       //   href: '/docs/sandbox/request-timeouts',

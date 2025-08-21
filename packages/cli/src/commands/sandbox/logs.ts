@@ -5,10 +5,9 @@ import * as chalk from 'chalk'
 
 import { client, connectionConfig } from 'src/api'
 import { asBold, asTimestamp, withUnderline } from 'src/utils/format'
-import { listSandboxes } from './list'
 import { wait } from 'src/utils/wait'
 import { handleE2BRequestError } from '../../utils/errors'
-import { waitForSandboxEnd, formatEnum, Format, getShortID } from './utils'
+import { waitForSandboxEnd, formatEnum, Format, isRunning } from './utils'
 
 enum LogLevel {
   DEBUG = 'DEBUG',
@@ -104,9 +103,7 @@ export const logsCommand = new commander.Command('logs')
           console.log(`\nLogs for sandbox ${asBold(sandboxID)}:`)
         }
 
-        const isRunningPromise = listSandboxes({ state: ['running'] })
-          .then((r) => r.find((s) => s.sandboxID === getShortID(sandboxID)))
-          .then((s) => !!s)
+        const isRunningPromise = isRunning(sandboxID)
 
         do {
           const logs = await listSandboxLogs({ sandboxID, start })

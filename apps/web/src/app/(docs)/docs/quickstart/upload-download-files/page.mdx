@@ -21,7 +21,7 @@ await sbx.files.write('/home/user/my-file', content)
 ```python {{ language: 'python' }}
 from e2b_code_interpreter import Sandbox
 
-sbx = Sandbox()
+sbx = Sandbox.create()
 
 # Read local file relative to the current working directory
 with open("local/file", "rb") as file:
@@ -53,7 +53,7 @@ await sbx.files.write('/home/user/my-file-b', fileB)
 ```python {{ language: 'python' }}
 from e2b_code_interpreter import Sandbox
 
-sbx = Sandbox()
+sbx = Sandbox.create()
 
 # Read local file relative to the current working directory
 with open("local/file/a", "rb") as file:
@@ -92,7 +92,7 @@ fs.writeFileSync('local/file', content)
 ```python {{ language: 'python' }}
 from e2b_code_interpreter import Sandbox
 
-sbx = Sandbox()
+sbx = Sandbox.create()
 # Download file from the sandbox to absolute path '/home/user/my-file'
 content = sbx.files.read('/home/user/my-file')
 # Write file to local path relative to the current working directory
@@ -126,7 +126,7 @@ fs.writeFileSync('local/file/b', contentB)
 ```python {{ language: 'python' }}
 from e2b_code_interpreter import Sandbox
 
-sbx = Sandbox()
+sbx = Sandbox.create()
 # Download file A from the sandbox by absolute path '/home/user/my-file-a'
 contentA = sbx.files.read('/home/user/my-file-a')
 # Write file A to local path relative to the current working directory
