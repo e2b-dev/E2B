@@ -172,14 +172,14 @@ Filter sandboxes by the metadata key value pairs specified during Sandbox creati
 
 ### Advanced pagination
 
-For more granular pagination, you can set custom per-page item limit (default and maximum is **1000**) and specify an offset parameter (`nextToken` or `next_token`) to start paginating from.
+For more granular pagination, you can set custom per-page item limit (default and maximum is **100**) and specify an offset parameter (`nextToken` or `next_token`) to start paginating from.
 
 <CodeGroup>
     ```js
     import { Sandbox } from '@e2b/code-interpreter'
 
     const paginator = Sandbox.list({
-      limit: 1000, // $HighlightLine
+      limit: 100, // $HighlightLine
       nextToken: '<base64-encoded-token>', // $HighlightLine
     })
 
@@ -198,7 +198,7 @@ For more granular pagination, you can set custom per-page item limit (default an
 
     # List running sandboxes that has `userId` key with value `123` and `env` key with value `dev`.
     paginator = Sandbox.list(
-        limit=1000, # $HighlightLine
+        limit=100, # $HighlightLine
         next_token="<base64-encoded-token>", # $HighlightLine
     )
 
