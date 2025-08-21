@@ -148,11 +148,8 @@ class Filesystem:
     ) -> WriteInfo:
         """
         Write content to a file on the path.
-
         Writing to a file that doesn't exist creates the file.
-
         Writing to a file that already exists overwrites the file.
-
         Writing to a file at path that doesn't exist creates the necessary directories.
 
         :param path: Path to the file
@@ -176,7 +173,7 @@ class Filesystem:
     def write_files(
         self,
         files: List[WriteEntry],
-        user: Optional[Username] = "user",
+        user: Username = "user",
         request_timeout: Optional[float] = None,
     ) -> List[WriteInfo]:
         """
@@ -185,7 +182,7 @@ class Filesystem:
         When writing to a file that already exists, the file will get overwritten.
         When writing to a file that's in a directory that doesn't exist, you'll get an error.
 
-        :param files: list of files to write
+        :param files: list of files to write as `WriteEntry` objects, each containing `path` and `data`
         :param user: Run the operation as this user
         :param request_timeout: Timeout for the request
         :return: Information about the written files
