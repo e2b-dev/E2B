@@ -14,7 +14,13 @@ export function handleApiError(
   }
 
   if (response.response.status === 429) {
-    return new RateLimitError('Rate limit exceeded, please try again later.')
+    const message = 'Rate limit exceeded, please try again later'
+    const content = response.error?.message ?? response.error
+
+    if (content) {
+      return new RateLimitError(`${message} - ${content}`)
+    }
+    return new RateLimitError(message)
   }
 
   const message = response.error?.message ?? response.error
