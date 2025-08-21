@@ -187,6 +187,7 @@ class Sandbox(SandboxApi):
             envs=envs,
             secure=secure,
             allow_internet_access=allow_internet_access,
+            auto_pause=False,
             **opts,
         )
 
