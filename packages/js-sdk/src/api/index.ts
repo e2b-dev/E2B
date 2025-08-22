@@ -41,7 +41,7 @@ class ApiClient {
     } = { requireAccessToken: false, requireApiKey: true }
   ) {
     // FIXME: This statement makes no sense
-    if (!opts?.requireApiKey && !config.apiKey) {
+    if (opts?.requireApiKey && !config.apiKey) {
       throw new AuthenticationError(
         'API key is required, please visit the Team tab at https://e2b.dev/dashboard to get your API key. ' +
           'You can either set the environment variable `E2B_API_KEY` ' +
