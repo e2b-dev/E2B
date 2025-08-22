@@ -466,6 +466,15 @@ export const docRoutes: NavGroup[] = [
     ],
   },
   {
+    title: 'Migration',
+    items: [
+      {
+        title: 'SDK v2 Migration Guide',
+        href: '/docs/migration/v2',
+      },
+    ],
+  },
+  {
     title: 'Troubleshooting',
     items: [
       {

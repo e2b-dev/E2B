@@ -170,6 +170,31 @@ sbx = Sandbox.connect(sandbox_id, timeout=60) # 60 seconds
 ```
 </CodeGroup>
 
+
+### Auto-pause (Beta)
+
+**Note: Auto-pause is currently in beta and available through `betaCreate`/`beta_create()` method.**
+
+Sandboxes can now automatically pause after they times out. When a sandbox is paused, it stops consuming compute but preserves its state. The default inactivity timeout is 10 minutes.
+The auto-pause is persistent, meaning that if your sandbox resumes and it times out, it will be automatically paused again.
+
+If you `.kill()` the sandbox, it will be permanently deleted and you won't be able to resume it.
+
+<CodeGroup>
+```js
+// Create sandbox with auto-pause enabled (Beta)
+const sandbox = await Sandbox.betaCreate({
+    autoPause: true  // Auto-pause after the sandbox times out
+})
+```
+```python
+# Create sandbox with auto-pause enabled (Beta)
+sandbox = Sandbox.beta_create(
+    auto_pause=True  # Auto-pause after the sandbox times out
+)
+```
+</CodeGroup>
+
 ## Network
 If you have a service (for example a server) running inside your sandbox and you pause the sandbox, the service won't be accessible from the outside and all the clients will be disconnected.
 If you resume the sandbox, the service will be accessible again but you need to connect clients again.

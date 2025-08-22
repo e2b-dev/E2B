@@ -1,0 +1,126 @@
+# Migration Guide: SDK v2
+
+This guide helps you migrate from E2B SDK v1 to v2, covering all breaking changes and new patterns.
+
+## Overview
+
+SDK v2 introduces several important changes:
+- **Secure by default**: Sandboxes now default to `secure=True`
+- **New creation pattern**: Changed from `Sandbox()` to `Sandbox.create()` in synchronous Python SDK
+- **Updated file operations**: File writing API changed in Python SDK
+- **Updated list method**: Updated approach to listing sandboxes
+
+## Breaking Changes
+
+### 1. Sandbox Creation in Synchronous Python SDK
+
+In v2, the synchronous Python SDK uses a class method `create()` instead of the constructor `Sandbox()`.
+
+<CodeGroup>
+```python
+from e2b import Sandbox
+
+sandbox = Sandbox.create()
+sandbox = Sandbox.create(template="base")
+```
+</CodeGroup>
+
+In the v1, you would instantiate directly:
+
+<CodeGroup>
+    ```python
+    from e2b import Sandbox
+
+    sandbox = Sandbox()
+    sandbox = Sandbox(template="base")
+    ```
+</CodeGroup>
+
+### 2. Security Default Change
+
+Sandboxes are now **secure by default** (`secure=True`).
+
+This shouldn't affect you, but if you need to access envd directly without SDK and you are now getting 401, you may need to set `secure=False`.
+
+<CodeGroup>
+```js
+const sandbox = await Sandbox.create({secure:false})  # Explicitly disable
+```
+
+```python
+sandbox = Sandbox.create(secure=False)  # Explicitly disable
+```
+</CodeGroup>
+
+### 3. File Writing in Python SDK
+
+The file writing API in Python has been made more consistent.
+
+In v2, use `sandbox.files.write()` for single files and `sandbox.files.write_files()` for multiple files:
+<CodeGroup>
+```python v2
+# Write single file
+info = sandbox.files.write("/tmp/file.txt", "content")
+
+# Write multiple files
+infos = sandbox.files.write_files([
+    {"path": "/tmp/file1.txt", "data": "content1"},
+    {"path": "/tmp/file2.txt", "data": "content2"}
+])
+```
+</CodeGroup>
+
+In v1, the same `write()` method was overloaded for both single and multiple files:
+
+<CodeGroup>
+```python v1
+# Write single file
+info = sandbox.write(path="/tmp/file.txt", data="content")
+
+# Write multiple files
+infos = sandbox.write([
+    {"path": "/tmp/file1.txt", "data": "content1"},
+    {"path": "/tmp/file2.txt", "data": "content2"}
+])
+```
+</CodeGroup>
+
+### 4. Listing Sandboxes
+
+The method for listing sandboxes has been updated to use pagination.
+
+<CodeGroup>
+```js
+import { Sandbox } from '@e2b/code-interpreter'
+
+// Get paginator
+const paginator = Sandbox.list()
+
+// Iterate through all sandboxes
+for (const sandbox of await paginator.nextItems()) {
+    console.log(sandbox.sandboxId)
+}
+
+// Or get all at once
+const allSandboxes = list(paginator)
+
+// With query
+const queryPaginator = Sandbox.list({query: {metadata: {key: "value"}}})
+```
+```python
+from e2b import Sandbox, SandboxQuery
+
+# Get paginator
+paginator = Sandbox.list()
+
+# Iterate through all sandboxes
+for sandbox in paginator:
+    print(sandbox.sandbox_id)
+
+# Or get all at once
+all_sandboxes = list(paginator)
+
+# With query
+paginator = Sandbox.list(query=SandboxQuery(metadata={"key": "value"}})
+```
+</CodeGroup>
