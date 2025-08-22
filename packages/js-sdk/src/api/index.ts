@@ -38,7 +38,7 @@ class ApiClient {
     opts: {
       requireAccessToken?: boolean
       requireApiKey?: boolean
-    } = { requireAccessToken: false, requireApiKey: true }
+    } = { requireAccessToken: false, requireApiKey: false }
   ) {
     if (opts?.requireApiKey && !config.apiKey) {
       throw new AuthenticationError(
