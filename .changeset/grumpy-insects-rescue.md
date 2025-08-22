@@ -3,3 +3,4 @@
 ---
 
 Fix the api key check
+Remove deprecated fields from the config
