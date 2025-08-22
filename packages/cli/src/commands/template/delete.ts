@@ -2,7 +2,6 @@ import * as commander from 'commander'
 import * as chalk from 'chalk'
 import * as fs from 'fs'
 
-
 import {
   asBold,
   asFormattedError,
@@ -49,10 +48,10 @@ export const deleteCommand = new commander.Command('delete')
   .argument(
     '[template]',
     `specify ${asBold('[template]')} to delete it. If you dont specify ${asBold(
-      '[template]',
+      '[template]'
     )} the command will try to delete sandbox template defined by ${asLocal(
-      'e2b.toml',
-    )}.`,
+      'e2b.toml'
+    )}.`
   )
   .addOption(pathOption)
   .addOption(configOption)
@@ -69,7 +68,7 @@ export const deleteCommand = new commander.Command('delete')
         yes?: boolean
         select?: boolean
         team?: string
-      },
+      }
     ) => {
       try {
         let teamId = opts.team
@@ -87,7 +86,7 @@ export const deleteCommand = new commander.Command('delete')
         } else if (opts.select) {
           const userConfig = getUserConfig()
           if (userConfig) {
-            teamId = teamId || userConfig.teamId || userConfig.defaultTeamId! // default team ID is here for backwards compatibility
+            teamId = teamId || userConfig.teamId
           }
 
           const allTemplates = await listSandboxTemplates({
@@ -96,13 +95,13 @@ export const deleteCommand = new commander.Command('delete')
 
           const selectedTemplates = await getPromptTemplates(
             allTemplates,
-            'Select sandbox templates to delete',
+            'Select sandbox templates to delete'
           )
           templates.push(
             ...selectedTemplates.map((e) => ({
               template_id: e.templateID,
               ...e,
-            })),
+            }))
           )
 
           if (!templates || templates.length === 0) {
@@ -118,10 +117,10 @@ export const deleteCommand = new commander.Command('delete')
           if (!config) {
             console.log(
               `No ${asLocal(configName)} found in ${asLocalRelative(
-                root,
+                root
               )}. Specify sandbox template with ${asBold(
-                '[template]',
-              )} argument or use interactive mode with ${asBold('-s')} flag.`,
+                '[template]'
+              )} argument or use interactive mode with ${asBold('-s')} flag.`
             )
             return
           }
@@ -135,24 +134,24 @@ export const deleteCommand = new commander.Command('delete')
         if (!templates || templates.length === 0) {
           console.log(
             `No sandbox templates selected. Specify sandbox template with ${asBold(
-              '[template]',
-            )} argument or use interactive mode with  ${asBold('-s')} flag.`,
+              '[template]'
+            )} argument or use interactive mode with  ${asBold('-s')} flag.`
           )
           return
         }
 
         console.log(
           chalk.default.red(
-            chalk.default.underline('\nSandbox templates to delete'),
-          ),
+            chalk.default.underline('\nSandbox templates to delete')
+          )
         )
         templates.forEach((e) =>
           console.log(
             asFormattedSandboxTemplate(
               { ...e, templateID: e.template_id },
-              e.configPath,
-            ),
-          ),
+              e.configPath
+            )
+          )
         )
         process.stdout.write('\n')
 
@@ -160,7 +159,7 @@ export const deleteCommand = new commander.Command('delete')
           const confirmed = await confirm(
             `Do you really want to delete ${
               templates.length === 1 ? 'this template' : 'these templates'
-            }?`,
+            }?`
           )
 
           if (!confirmed) {
@@ -174,19 +173,19 @@ export const deleteCommand = new commander.Command('delete')
             console.log(
               `- Deleting sandbox template ${asFormattedSandboxTemplate(
                 { ...e, templateID: e.template_id },
-                e.configPath,
-              )}`,
+                e.configPath
+              )}`
             )
             await deleteTemplate(e.template_id)
             if (e.configPath) {
               await deleteConfig(e.configPath)
             }
-          }),
+          })
         )
         process.stdout.write('\n')
       } catch (err: any) {
         console.error(asFormattedError(err.message))
         process.exit(1)
       }
-    },
+    }
   )
