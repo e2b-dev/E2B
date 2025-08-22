@@ -472,7 +472,7 @@ async function waitForBuildFinish(
         const pythonExample = asPython(`from e2b import Sandbox, AsyncSandbox
 
 # Create sync sandbox
-sandbox = Sandbox("${aliases?.length ? aliases[0] : template.templateID}")
+sandbox = Sandbox.create("${aliases?.length ? aliases[0] : template.templateID}")
 
 # Create async sandbox
 sandbox = await AsyncSandbox.create("${
