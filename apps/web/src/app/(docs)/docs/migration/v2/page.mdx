@@ -102,7 +102,11 @@ for (const sandbox of await paginator.nextItems()) {
 }
 
 // Or get all at once
-const allSandboxes = list(paginator)
+const allSandboxes: SandboxInfo[] = []
+while (paginator.hasNext) {
+    const items = await paginator.nextItems()
+    sandboxes.push(...items)
+}
 
 // With query
 const queryPaginator = Sandbox.list({query: {metadata: {key: "value"}}})

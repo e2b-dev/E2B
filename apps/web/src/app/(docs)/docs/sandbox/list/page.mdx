@@ -91,7 +91,7 @@ Filter sandboxes by their current state. The state parameter can contain either 
     // Create a sandbox.
     const sandbox = await Sandbox.create()
 
-    // List all sandboxes that are running or paused.
+    // List sandboxes that are running or paused.
     const paginator = Sandbox.list({
       query: {
         state: ['running', 'paused'], // $HighlightLine
@@ -106,7 +106,7 @@ Filter sandboxes by their current state. The state parameter can contain either 
     # Create a sandbox with metadata.
     sandbox = Sandbox.create()
 
-    # List running sandboxes that are running or paused.
+    # List sandboxes that are running or paused.
     paginator = Sandbox.list(
         query=SandboxListQuery(
             state=['running', 'paused'], # $HighlightLine

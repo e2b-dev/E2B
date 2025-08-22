@@ -137,7 +137,7 @@ await sbx.kill() // $HighlightLine
 await Sandbox.kill(sandboxId) // $HighlightLine
 ```
 ```python
-from e2b import Sandbox
+from e2b_code_interpreter import Sandbox
 
 sbx = Sandbox.create()
 
@@ -182,12 +182,15 @@ If you `.kill()` the sandbox, it will be permanently deleted and you won't be ab
 
 <CodeGroup>
 ```js
+import { Sandbox } from '@e2b/code-interpreter'
+
 // Create sandbox with auto-pause enabled (Beta)
 const sandbox = await Sandbox.betaCreate({
     autoPause: true  // Auto-pause after the sandbox times out
 })
 ```
 ```python
+from e2b_code_interpreter import Sandbox
 # Create sandbox with auto-pause enabled (Beta)
 sandbox = Sandbox.beta_create(
     auto_pause=True  # Auto-pause after the sandbox times out
