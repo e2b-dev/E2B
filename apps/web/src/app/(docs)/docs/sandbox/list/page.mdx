@@ -17,12 +17,13 @@ The `Sandbox.list()` method supports pagination. In the [advanced pagination](/d
     import { Sandbox, SandboxInfo } from '@e2b/code-interpreter'
 
     const sandbox = await Sandbox.create(
-      metadata: {
-        name: 'My Sandbox', // $HighlightLine}
+      {
+        metadata: {
+          name: 'My Sandbox', // $HighlightLine}
+        },
       },
     )
 
-    const sandboxes = []
     const paginator = Sandbox.list() // $HighlightLine
 
     // Get the first page of sandboxes (running and paused)
@@ -101,15 +102,15 @@ Filter sandboxes by their current state. The state parameter can contain either 
     const sandboxes = await paginator.nextItems() // $HighlightLine
     ```
     ```python
-    from e2b_code_interpreter import Sandbox, SandboxListQuery
+    from e2b_code_interpreter import Sandbox, SandboxQuery, SandboxState
 
     # Create a sandbox with metadata.
     sandbox = Sandbox.create()
 
     # List sandboxes that are running or paused.
     paginator = Sandbox.list(
-        query=SandboxListQuery(
-            state=['running', 'paused'], # $HighlightLine
+        query=SandboxQuery(
+            state=[SandboxState.RUNNING, SandboxState.PAUSED], # $HighlightLine
         ),
     )
 
@@ -143,7 +144,7 @@ Filter sandboxes by the metadata key value pairs specified during Sandbox creati
     const sandboxes = await paginator.nextItems() // $HighlightLine
     ```
     ```python
-    from e2b_code_interpreter import Sandbox, SandboxListQuery
+    from e2b_code_interpreter import Sandbox, SandboxQuery, SandboxState
 
     # Create sandbox with metadata.
     sandbox = Sandbox.create(
@@ -156,7 +157,7 @@ Filter sandboxes by the metadata key value pairs specified during Sandbox creati
 
     # List running sandboxes that has `userId` key with value `123` and `env` key with value `dev`.
     paginator = Sandbox.list(
-        query=SandboxListQuery(
+        query=SandboxQuery(
             metadata={
                 "userId": "123", # $HighlightLine
                 "env": "dev", # $HighlightLine
@@ -193,7 +194,7 @@ For more granular pagination, you can set custom per-page item limit (default an
     await paginator.nextItems() // $HighlightLine
     ```
     ```python
-    from e2b_code_interpreter import Sandbox, SandboxListQuery
+    from e2b_code_interpreter import Sandbox
 
     # List running sandboxes that has `userId` key with value `123` and `env` key with value `dev`.
     paginator = Sandbox.list(
@@ -225,7 +226,7 @@ You can fetch all pages by looping through the paginator while checking if there
     }
     ```
     ```python
-    from e2b_code_interpreter import Sandbox, SandboxListQuery
+    from e2b_code_interpreter import Sandbox, SandboxQuery
 
     paginator = Sandbox.list()
 

@@ -18,7 +18,7 @@ In v2, the synchronous Python SDK uses a class method `create()` instead of the 
 
 <CodeGroup>
 ```python
-from e2b import Sandbox
+from e2b_code_interpreter import Sandbox
 
 sandbox = Sandbox.create()
 sandbox = Sandbox.create(template="base")
@@ -28,12 +28,12 @@ sandbox = Sandbox.create(template="base")
 In the v1, you would instantiate directly:
 
 <CodeGroup>
-    ```python
-    from e2b import Sandbox
+```python
+from e2b_code_interpreter import Sandbox
 
-    sandbox = Sandbox()
-    sandbox = Sandbox(template="base")
-    ```
+sandbox = Sandbox()
+sandbox = Sandbox(template="base")
+```
 </CodeGroup>
 
 ### 2. Security Default Change
@@ -44,10 +44,14 @@ This shouldn't affect you, but if you need to access envd directly without SDK a
 
 <CodeGroup>
 ```js
-const sandbox = await Sandbox.create({secure:false})  # Explicitly disable
+import { Sandbox } from '@e2b/code-interpreter'
+
+const sandbox = await Sandbox.create({secure: false}) // Explicitly disable
 ```
 
 ```python
+from e2b_code_interpreter import Sandbox
+
 sandbox = Sandbox.create(secure=False)  # Explicitly disable
 ```
 </CodeGroup>
@@ -59,6 +63,10 @@ The file writing API in Python has been made more consistent.
 In v2, use `sandbox.files.write()` for single files and `sandbox.files.write_files()` for multiple files:
 <CodeGroup>
 ```python v2
+from e2b_code_interpreter import Sandbox
+
+sandbox = Sandbox.create()
+
 # Write single file
 info = sandbox.files.write("/tmp/file.txt", "content")
 
@@ -74,6 +82,10 @@ In v1, the same `write()` method was overloaded for both single and multiple fil
 
 <CodeGroup>
 ```python v1
+from e2b_code_interpreter import Sandbox
+
+sandbox = Sandbox.create()
+
 # Write single file
 info = sandbox.write(path="/tmp/file.txt", data="content")
 
@@ -91,7 +103,7 @@ The method for listing sandboxes has been updated to use pagination.
 
 <CodeGroup>
 ```js
-import { Sandbox } from '@e2b/code-interpreter'
+import { Sandbox, SandboxInfo } from '@e2b/code-interpreter'
 
 // Get paginator
 const paginator = Sandbox.list()
@@ -101,30 +113,28 @@ for (const sandbox of await paginator.nextItems()) {
     console.log(sandbox.sandboxId)
 }
 
-// Or get all at once
+// Iterate through all sandboxes
 const allSandboxes: SandboxInfo[] = []
 while (paginator.hasNext) {
     const items = await paginator.nextItems()
-    sandboxes.push(...items)
+    allSandboxes.push(...items)
 }
 
 // With query
 const queryPaginator = Sandbox.list({query: {metadata: {key: "value"}}})
 ```
 ```python
-from e2b import Sandbox, SandboxQuery
+from e2b_code_interpreter import Sandbox, SandboxQuery
 
 # Get paginator
 paginator = Sandbox.list()
 
 # Iterate through all sandboxes
-for sandbox in paginator:
-    print(sandbox.sandbox_id)
-
-# Or get all at once
-all_sandboxes = list(paginator)
+while paginator.has_next:
+    sandboxes = paginator.next_items()
+    print(sandboxes)
 
 # With query
-paginator = Sandbox.list(query=SandboxQuery(metadata={"key": "value"}})
+paginator = Sandbox.list(query=SandboxQuery(metadata={"key": "value"}))
 ```
 </CodeGroup>

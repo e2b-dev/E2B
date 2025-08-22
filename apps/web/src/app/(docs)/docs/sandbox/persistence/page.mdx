@@ -19,10 +19,9 @@ const sbx = await Sandbox.create()
 console.log('Sandbox created', sbx.sandboxId)
 
 // Pause the sandbox
-// You can save the sandbox ID in your database
-// to resume the sandbox later
-const sandboxId = await sbx.betaPause() // $HighlightLine
-console.log('Sandbox paused', sandboxId) // $HighlightLine
+// You can save the sandbox ID in your database to resume the sandbox later
+await sbx.betaPause() // $HighlightLine
+console.log('Sandbox paused', sbx.sandboxId) // $HighlightLine
 ```
 ```python
 from e2b_code_interpreter import Sandbox
@@ -31,10 +30,9 @@ sbx = Sandbox.create()
 print('Sandbox created', sbx.sandbox_id)
 
 # Pause the sandbox
-# You can save the sandbox ID in your database
-# to resume the sandbox later
-sandbox_id = sbx.beta_pause() # $HighlightLine
-print('Sandbox paused', sandbox_id) # $HighlightLine
+# You can save the sandbox ID in your database to resume the sandbox later
+sbx.beta_pause() # $HighlightLine
+print('Sandbox paused', sbx.sandbox_id) # $HighlightLine
 ```
 </CodeGroup>
 
@@ -51,10 +49,9 @@ const sbx = await Sandbox.create()
 console.log('Sandbox created', sbx.sandboxId)
 
 // Pause the sandbox
-// You can save the sandbox ID in your database
-// to resume the sandbox later
-const sandboxId = await sbx.betaPause()
-console.log('Sandbox paused', sandboxId)
+// You can save the sandbox ID in your database to resume the sandbox later
+await sbx.betaPause()
+console.log('Sandbox paused', sbx.sandboxId)
 
 // Connect to the sandbox (it will automatically resume the sandbox, if paused)
 const sameSbx = await sbx.connect() // $HighlightLine
@@ -67,9 +64,8 @@ sbx = Sandbox.create()
 print('Sandbox created', sbx.sandbox_id)
 
 # Pause the sandbox
-# You can save the sandbox ID in your database
-# to resume the sandbox later
-sandbox_id = sbx.beta_pause()
+# You can save the sandbox ID in your database to resume the sandbox later
+sbx.beta_pause()
 print('Sandbox paused', sandbox_id)
 
 # Connect to the sandbox (it will automatically resume the sandbox, if paused)
@@ -126,15 +122,14 @@ const sbx = await Sandbox.create()
 console.log('Sandbox created', sbx.sandboxId)
 
 // Pause the sandbox
-// You can save the sandbox ID in your database
-// to resume the sandbox later
-const sandboxId = await sbx.betaPause()
+// You can save the sandbox ID in your database to resume the sandbox later
+await sbx.betaPause()
 
 // Remove the sandbox
 await sbx.kill() // $HighlightLine
 
 // Remove sandbox by id
-await Sandbox.kill(sandboxId) // $HighlightLine
+await Sandbox.kill(sbx.sandboxId) // $HighlightLine
 ```
 ```python
 from e2b_code_interpreter import Sandbox
@@ -142,13 +137,13 @@ from e2b_code_interpreter import Sandbox
 sbx = Sandbox.create()
 
 # Pause the sandbox
-sandbox_id = sbx.beta_pause()
+sbx.beta_pause()
 
 # Remove the sandbox
 sbx.kill() # $HighlightLine
 
 # Remove sandbox by id
-Sandbox.kill(sandbox_id) # $HighlightLine
+Sandbox.kill(sbx.sandbox_id) # $HighlightLine
 ```
 </CodeGroup>
 
