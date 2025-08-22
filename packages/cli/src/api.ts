@@ -47,7 +47,7 @@ export function ensureAPIKey() {
   // If apiKey is not already set (either from env var or from user config), try to get it from config file
   if (!apiKey) {
     const userConfig = getUserConfig()
-    apiKey = userConfig?.teamApiKey || userConfig?.defaultTeamApiKey
+    apiKey = userConfig?.teamApiKey
   }
 
   if (!apiKey) {
