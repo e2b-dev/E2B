@@ -168,7 +168,7 @@ sbx = Sandbox.connect(sandbox_id, timeout=60) # 60 seconds
 
 ### Auto-pause (Beta)
 
-**Note: Auto-pause is currently in beta and available through `betaCreate`/`beta_create()` method.**
+**Note: Auto-pause is currently in beta and available through `Sandbox.betaCreate()`/`Sandbox.beta_create()` method.**
 
 Sandboxes can now automatically pause after they times out. When a sandbox is paused, it stops consuming compute but preserves its state. The default inactivity timeout is 10 minutes.
 The auto-pause is persistent, meaning that if your sandbox resumes and it times out, it will be automatically paused again.
