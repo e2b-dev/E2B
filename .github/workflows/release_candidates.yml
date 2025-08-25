@@ -17,7 +17,7 @@ jobs:
         with:
           ref: ${{ github.head_ref }}
 
-      - uses: pnpm/action-setup@v3
+      - uses: pnpm/action-setup@v4
         if: ${{ contains( github.event.pull_request.labels.*.name, 'js-rc') || contains( github.event.pull_request.labels.*.name, 'cli-rc') }}
         with:
           version: 9.5
@@ -36,12 +36,11 @@ jobs:
           pnpm config set auto-install-peers true
           pnpm config set exclude-links-from-lockfile true
 
-
       - name: Set up Python
         uses: actions/setup-python@v4
         if: ${{ contains( github.event.pull_request.labels.*.name, 'python-rc') }}
         with:
-          python-version: "3.9"
+          python-version: '3.9'
 
       - name: Install and configure Poetry
         uses: snok/install-poetry@v1
