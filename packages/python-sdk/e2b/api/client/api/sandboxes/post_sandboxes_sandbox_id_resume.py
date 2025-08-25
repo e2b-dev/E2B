@@ -1,11 +1,10 @@
 from http import HTTPStatus
-from typing import Any, Optional, Union
+from typing import Any, Optional, Union, cast
 
 import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
-from ...models.error import Error
 from ...models.resumed_sandbox import ResumedSandbox
 from ...models.sandbox import Sandbox
 from ...types import Response
@@ -23,8 +22,9 @@ def _get_kwargs(
         "url": f"/sandboxes/{sandbox_id}/resume",
     }
 
-    _kwargs["json"] = body.to_dict()
+    _body = body.to_dict()
 
+    _kwargs["json"] = _body
     headers["Content-Type"] = "application/json"
 
     _kwargs["headers"] = headers
@@ -33,26 +33,22 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Optional[Union[Error, Sandbox]]:
+) -> Optional[Union[Any, Sandbox]]:
     if response.status_code == 201:
         response_201 = Sandbox.from_dict(response.json())
 
         return response_201
     if response.status_code == 401:
-        response_401 = Error.from_dict(response.json())
-
+        response_401 = cast(Any, None)
         return response_401
     if response.status_code == 404:
-        response_404 = Error.from_dict(response.json())
-
+        response_404 = cast(Any, None)
         return response_404
     if response.status_code == 409:
-        response_409 = Error.from_dict(response.json())
-
+        response_409 = cast(Any, None)
         return response_409
     if response.status_code == 500:
-        response_500 = Error.from_dict(response.json())
-
+        response_500 = cast(Any, None)
         return response_500
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
@@ -62,7 +58,7 @@ def _parse_response(
 
 def _build_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Response[Union[Error, Sandbox]]:
+) -> Response[Union[Any, Sandbox]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -76,7 +72,7 @@ def sync_detailed(
     *,
     client: AuthenticatedClient,
     body: ResumedSandbox,
-) -> Response[Union[Error, Sandbox]]:
+) -> Response[Union[Any, Sandbox]]:
     """Resume the sandbox
 
     Args:
@@ -88,7 +84,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Error, Sandbox]]
+        Response[Union[Any, Sandbox]]
     """
 
     kwargs = _get_kwargs(
@@ -108,7 +104,7 @@ def sync(
     *,
     client: AuthenticatedClient,
     body: ResumedSandbox,
-) -> Optional[Union[Error, Sandbox]]:
+) -> Optional[Union[Any, Sandbox]]:
     """Resume the sandbox
 
     Args:
@@ -120,7 +116,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Error, Sandbox]
+        Union[Any, Sandbox]
     """
 
     return sync_detailed(
@@ -135,7 +131,7 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient,
     body: ResumedSandbox,
-) -> Response[Union[Error, Sandbox]]:
+) -> Response[Union[Any, Sandbox]]:
     """Resume the sandbox
 
     Args:
@@ -147,7 +143,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Error, Sandbox]]
+        Response[Union[Any, Sandbox]]
     """
 
     kwargs = _get_kwargs(
@@ -165,7 +161,7 @@ async def asyncio(
     *,
     client: AuthenticatedClient,
     body: ResumedSandbox,
-) -> Optional[Union[Error, Sandbox]]:
+) -> Optional[Union[Any, Sandbox]]:
     """Resume the sandbox
 
     Args:
@@ -177,7 +173,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Error, Sandbox]
+        Union[Any, Sandbox]
     """
 
     return (

@@ -1,4 +1,3 @@
-from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, TypeVar
 
 from attrs import define as _attrs_define
@@ -47,11 +46,11 @@ class SandboxLogs:
         return field_dict
 
     @classmethod
-    def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
+    def from_dict(cls: type[T], src_dict: dict[str, Any]) -> T:
         from ..models.sandbox_log import SandboxLog
         from ..models.sandbox_log_entry import SandboxLogEntry
 
-        d = dict(src_dict)
+        d = src_dict.copy()
         log_entries = []
         _log_entries = d.pop("logEntries")
         for log_entries_item_data in _log_entries:

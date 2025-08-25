@@ -1,5 +1,4 @@
 import datetime
-from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, TypeVar, Union, cast
 
 from attrs import define as _attrs_define
@@ -113,10 +112,10 @@ class Template:
         return field_dict
 
     @classmethod
-    def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
+    def from_dict(cls: type[T], src_dict: dict[str, Any]) -> T:
         from ..models.team_user import TeamUser
 
-        d = dict(src_dict)
+        d = src_dict.copy()
         build_count = d.pop("buildCount")
 
         build_id = d.pop("buildID")

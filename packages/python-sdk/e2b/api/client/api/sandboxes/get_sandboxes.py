@@ -1,11 +1,10 @@
 from http import HTTPStatus
-from typing import Any, Optional, Union
+from typing import Any, Optional, Union, cast
 
 import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
-from ...models.error import Error
 from ...models.listed_sandbox import ListedSandbox
 from ...types import UNSET, Response, Unset
 
@@ -31,7 +30,7 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Optional[Union[Error, list["ListedSandbox"]]]:
+) -> Optional[Union[Any, list["ListedSandbox"]]]:
     if response.status_code == 200:
         response_200 = []
         _response_200 = response.json()
@@ -42,16 +41,13 @@ def _parse_response(
 
         return response_200
     if response.status_code == 400:
-        response_400 = Error.from_dict(response.json())
-
+        response_400 = cast(Any, None)
         return response_400
     if response.status_code == 401:
-        response_401 = Error.from_dict(response.json())
-
+        response_401 = cast(Any, None)
         return response_401
     if response.status_code == 500:
-        response_500 = Error.from_dict(response.json())
-
+        response_500 = cast(Any, None)
         return response_500
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
@@ -61,7 +57,7 @@ def _parse_response(
 
 def _build_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Response[Union[Error, list["ListedSandbox"]]]:
+) -> Response[Union[Any, list["ListedSandbox"]]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -74,7 +70,7 @@ def sync_detailed(
     *,
     client: AuthenticatedClient,
     metadata: Union[Unset, str] = UNSET,
-) -> Response[Union[Error, list["ListedSandbox"]]]:
+) -> Response[Union[Any, list["ListedSandbox"]]]:
     """List all running sandboxes
 
     Args:
@@ -85,7 +81,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Error, list['ListedSandbox']]]
+        Response[Union[Any, list['ListedSandbox']]]
     """
 
     kwargs = _get_kwargs(
@@ -103,7 +99,7 @@ def sync(
     *,
     client: AuthenticatedClient,
     metadata: Union[Unset, str] = UNSET,
-) -> Optional[Union[Error, list["ListedSandbox"]]]:
+) -> Optional[Union[Any, list["ListedSandbox"]]]:
     """List all running sandboxes
 
     Args:
@@ -114,7 +110,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Error, list['ListedSandbox']]
+        Union[Any, list['ListedSandbox']]
     """
 
     return sync_detailed(
@@ -127,7 +123,7 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient,
     metadata: Union[Unset, str] = UNSET,
-) -> Response[Union[Error, list["ListedSandbox"]]]:
+) -> Response[Union[Any, list["ListedSandbox"]]]:
     """List all running sandboxes
 
     Args:
@@ -138,7 +134,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Error, list['ListedSandbox']]]
+        Response[Union[Any, list['ListedSandbox']]]
     """
 
     kwargs = _get_kwargs(
@@ -154,7 +150,7 @@ async def asyncio(
     *,
     client: AuthenticatedClient,
     metadata: Union[Unset, str] = UNSET,
-) -> Optional[Union[Error, list["ListedSandbox"]]]:
+) -> Optional[Union[Any, list["ListedSandbox"]]]:
     """List all running sandboxes
 
     Args:
@@ -165,7 +161,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Error, list['ListedSandbox']]
+        Union[Any, list['ListedSandbox']]
     """
 
     return (

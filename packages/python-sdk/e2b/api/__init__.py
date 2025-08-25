@@ -26,22 +26,29 @@ class SandboxCreateResponse:
     envd_access_token: str
 
 
-def handle_api_exception(e: Response):
+def handle_api_exception(
+    e: Response, default_exception_class: type[Exception] = SandboxException
+):
     try:
         body = json.loads(e.content) if e.content else {}
     except json.JSONDecodeError:
         body = {}
 
-    if e.status_code == 429:
-        message = f"{e.status_code}: Rate limit exceeded, please try again later"
+    if e.status_code == 401:
+        message = f"{e.status_code}: {body['message']}"
         if body.get("message"):
             message += f" - {body['message']}"
+        return AuthenticationException(message)
 
+    if e.status_code == 429:
+        message = f"{e.status_code}: Rate limit exceeded, please try again later."
+        if body.get("message"):
+            message += f" - {body['message']}"
         return RateLimitException(message)
 
     if "message" in body:
-        return SandboxException(f"{e.status_code}: {body['message']}")
-    return SandboxException(f"{e.status_code}: {e.content}")
+        return default_exception_class(f"{e.status_code}: {body['message']}")
+    return default_exception_class(f"{e.status_code}: {e.content}")
 
 
 class ApiClient(AuthenticatedClient):

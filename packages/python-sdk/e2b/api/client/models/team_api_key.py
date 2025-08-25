@@ -1,5 +1,4 @@
 import datetime
-from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, TypeVar, Union, cast
 from uuid import UUID
 
@@ -82,11 +81,11 @@ class TeamAPIKey:
         return field_dict
 
     @classmethod
-    def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
+    def from_dict(cls: type[T], src_dict: dict[str, Any]) -> T:
         from ..models.identifier_masking_details import IdentifierMaskingDetails
         from ..models.team_user import TeamUser
 
-        d = dict(src_dict)
+        d = src_dict.copy()
         created_at = isoparse(d.pop("createdAt"))
 
         id = UUID(d.pop("id"))

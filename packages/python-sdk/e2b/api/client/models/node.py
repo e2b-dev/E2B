@@ -1,4 +1,3 @@
-from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, TypeVar
 
 from attrs import define as _attrs_define
@@ -82,10 +81,10 @@ class Node:
         return field_dict
 
     @classmethod
-    def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
+    def from_dict(cls: type[T], src_dict: dict[str, Any]) -> T:
         from ..models.node_metrics import NodeMetrics
 
-        d = dict(src_dict)
+        d = src_dict.copy()
         cluster_id = d.pop("clusterID")
 
         commit = d.pop("commit")

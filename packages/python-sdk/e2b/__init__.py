@@ -41,6 +41,8 @@ from .exceptions import (
     InvalidArgumentException,
     NotEnoughSpaceException,
     TemplateException,
+    BuildException,
+    FileUploadException,
 )
 from .sandbox.sandbox_api import SandboxInfo, SandboxQuery, SandboxState, SandboxMetrics
 from .sandbox.commands.main import ProcessInfo
@@ -68,6 +70,20 @@ from .sandbox_async.main import AsyncSandbox
 from .sandbox_async.filesystem.watch_handle import AsyncWatchHandle
 from .sandbox_async.commands.command_handle import AsyncCommandHandle
 from .sandbox_sync.paginator import SandboxPaginator
+
+from .template import (
+    wait_for_port,
+    wait_for_url,
+    wait_for_process,
+    wait_for_file,
+    wait_for_timeout,
+    CopyItem,
+    Instruction,
+    Step,
+    TemplateType,
+)
+from .template_sync import Template
+from .template_async import AsyncTemplate
 
 __all__ = [
     # API
@@ -115,4 +131,18 @@ __all__ = [
     "AsyncSandbox",
     "AsyncWatchHandle",
     "AsyncCommandHandle",
+    # Template
+    "CopyItem",
+    "Instruction",
+    "Step",
+    "TemplateType",
+    "BuildException",
+    "FileUploadException",
+    "wait_for_port",
+    "wait_for_url",
+    "wait_for_process",
+    "wait_for_file",
+    "wait_for_timeout",
+    "Template",
+    "AsyncTemplate",
 ]
