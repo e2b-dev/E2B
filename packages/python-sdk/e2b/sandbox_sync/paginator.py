@@ -16,10 +16,10 @@ class SandboxPaginator(SandboxPaginatorBase):
 
     Example:
     ```python
-    paginator = AsyncSandbox.list()
+    paginator = Sandbox.list()
 
     while paginator.has_next:
-        sandboxes = await paginator.next_items()
+        sandboxes = paginator.next_items()
         print(sandboxes)
     ```
     """
