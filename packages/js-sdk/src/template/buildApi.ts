@@ -43,7 +43,7 @@ export async function requestBuild(
     },
   })
 
-  const error = handleApiError(requestBuildRes)
+  const error = handleApiError(requestBuildRes, BuildError)
   if (error) {
     throw error
   }
@@ -71,7 +71,7 @@ export async function getFileUploadLink(
     }
   )
 
-  const error = handleApiError(fileUploadLinkRes)
+  const error = handleApiError(fileUploadLinkRes, FileUploadError)
   if (error) {
     throw error
   }
@@ -129,7 +129,7 @@ export async function triggerBuild(
     }
   )
 
-  const error = handleApiError(triggerBuildRes)
+  const error = handleApiError(triggerBuildRes, BuildError)
   if (error) {
     throw error
   }
@@ -154,7 +154,7 @@ export async function getBuildStatus(
     }
   )
 
-  const error = handleApiError(buildStatusRes)
+  const error = handleApiError(buildStatusRes, BuildError)
   if (error) {
     throw error
   }
