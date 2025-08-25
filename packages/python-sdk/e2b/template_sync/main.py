@@ -32,7 +32,9 @@ class Template(TemplateBase):
         domain: Optional[str] = None,
     ) -> None:
         domain = domain or os.environ.get("E2B_DOMAIN", "e2b.dev")
-        config = ConnectionConfig(domain=domain, api_key=api_key or os.environ.get("E2B_API_KEY"))
+        config = ConnectionConfig(
+            domain=domain, api_key=api_key or os.environ.get("E2B_API_KEY")
+        )
         client = ApiClient(config, require_api_key=True, require_access_token=False)
 
         if skip_cache:

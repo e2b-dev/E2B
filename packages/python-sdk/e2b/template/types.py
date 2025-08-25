@@ -1,6 +1,7 @@
 from typing import List, Optional, TypedDict, Union
 from typing_extensions import NotRequired
 
+
 class CopyItem(TypedDict):
     src: str
     dest: str
