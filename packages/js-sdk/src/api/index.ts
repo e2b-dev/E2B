@@ -13,6 +13,16 @@ export function handleApiError(
     return
   }
 
+  if (response.response.status === 401) {
+    const message = 'Unauthorized, please check your credentials.'
+    const content = response.error?.message ?? response.error
+
+    if (content) {
+      return new AuthenticationError(`${message} - ${content}`)
+    }
+    return new AuthenticationError(message)
+  }
+
   if (response.response.status === 429) {
     const message = 'Rate limit exceeded, please try again later'
     const content = response.error?.message ?? response.error
