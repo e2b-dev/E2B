@@ -86,7 +86,7 @@ export async function tarFileStreamUpload(
   // First pass: calculate the compressed size without buffering
   const sizeCalculationStream = tarFileStream(fileName, fileContextPath)
   let contentLength = 0
-  for await (const chunk of sizeCalculationStream as AsyncIterable<Uint8Array>) {
+  for await (const chunk of sizeCalculationStream as unknown as AsyncIterable<Buffer>) {
     contentLength += chunk.length
   }
 
