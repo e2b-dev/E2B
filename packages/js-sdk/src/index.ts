@@ -12,6 +12,8 @@ export {
   TemplateError,
   TimeoutError,
   RateLimitError,
+  BuildError,
+  FileUploadError,
 } from './errors'
 export type { Logger } from './logs'
 
