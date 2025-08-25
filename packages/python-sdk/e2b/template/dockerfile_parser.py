@@ -4,7 +4,7 @@ import tempfile
 from typing import Dict, List, Optional, Protocol, Union
 
 from dockerfile_parse import DockerfileParser
-from .types import CopyItem
+from e2b.template.types import CopyItem
 
 
 class DockerfileParserInterface(Protocol):
