@@ -5,7 +5,7 @@ This guide helps you migrate from E2B SDK v1 to v2, covering all breaking change
 ## Overview
 
 SDK v2 introduces several important changes:
-- **Secure by default**: Sandboxes now default to `secure=True`
+- **Secure by default**: Sandboxes now default to `secure` to `True`
 - **New creation pattern**: Changed from `Sandbox()` to `Sandbox.create()` in synchronous Python SDK
 - **Updated file operations**: File writing API changed in Python SDK
 - **Updated list method**: Updated approach to listing sandboxes
@@ -38,15 +38,15 @@ sandbox = Sandbox(template="base")
 
 ### 2. Security Default Change
 
-Sandboxes are now **secure by default** (`secure=True`).
+Sandboxes are now **secure by default**.
 
-This shouldn't affect you, but if you need to access envd directly without SDK and you are now getting 401, you may need to set `secure=False`.
+This shouldn't affect you, but if you need to access sandbox directly without SDK and you are now getting 401, you may need to set `secure` to `False`.
 
 <CodeGroup>
 ```js
 import { Sandbox } from '@e2b/code-interpreter'
 
-const sandbox = await Sandbox.create({secure: false}) // Explicitly disable
+const sandbox = await Sandbox.create({ secure: false }) // Explicitly disable
 ```
 
 ```python
