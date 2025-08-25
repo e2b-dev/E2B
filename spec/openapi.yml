@@ -462,7 +462,6 @@ components:
         autoPause:
           type: boolean
           deprecated: true
-          default: false
           description: Automatically pauses the sandbox after the timeout
 
     TeamMetric:
