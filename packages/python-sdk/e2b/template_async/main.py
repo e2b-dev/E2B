@@ -1,4 +1,4 @@
-from typing import Callable, Literal, Optional
+from typing import Callable, Literal, Optional, Union
 
 from e2b.template import LogEntry, TemplateBuilder, TemplateFinal, TemplateBase
 
@@ -22,7 +22,7 @@ from .build_api import (
 class AsyncTemplate(TemplateBase):
     @staticmethod
     async def build(
-        template: TemplateFinal | TemplateBuilder,
+        template: Union[TemplateFinal, TemplateBuilder],
         alias: str,
         cpu_count: int,
         memory_mb: int,
