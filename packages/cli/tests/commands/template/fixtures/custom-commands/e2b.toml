@@ -1,0 +1,4 @@
+template_id = "custom-app"
+dockerfile = "e2b.Dockerfile"
+start_cmd = "node server.js"
+ready_cmd = "curl -f http://localhost:3000/health || exit 1"

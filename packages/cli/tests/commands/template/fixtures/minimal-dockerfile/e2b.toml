@@ -1,0 +1,2 @@
+template_id = "minimal-template"
+dockerfile = "e2b.Dockerfile"
