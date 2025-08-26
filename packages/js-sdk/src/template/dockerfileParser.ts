@@ -1,6 +1,7 @@
-import { Instructions } from './types'
-import { DockerfileParser, Instruction, Argument } from 'dockerfile-ast'
+import { Argument, DockerfileParser, Instruction } from 'dockerfile-ast'
 import fs from 'node:fs'
+import { waitForTimeout } from './index'
+import { Instructions } from './types'
 
 export interface DockerfileParseResult {
   baseImage: string
@@ -244,11 +245,17 @@ function handleCmdEntrypointInstruction(
 ): void {
   const argumentsData = instruction.getArguments()
   if (argumentsData && argumentsData.length > 0) {
-    const command = argumentsData
-      .map((arg: Argument) => arg.getValue())
-      .join(' ')
-    // Import waitForTimeout locally to avoid circular dependency
-    const waitForTimeout = (timeout: string) => `sleep ${timeout}`
+    let command = argumentsData.map((arg: Argument) => arg.getValue()).join(' ')
+
+    try {
+      const parsedCommand = JSON.parse(command)
+      if (Array.isArray(parsedCommand)) {
+        command = parsedCommand.join(' ')
+      }
+    } catch {
+      // Do nothing
+    }
+
     templateBuilder.setStartCmd(command, waitForTimeout('20s'))
   }
 }

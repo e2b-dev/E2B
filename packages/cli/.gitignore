@@ -2,6 +2,8 @@
 
 # dependencies
 /node_modules
+tests/temp
+coverage
 /.pnp
 .pnp.js
 
