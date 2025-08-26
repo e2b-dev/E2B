@@ -287,6 +287,10 @@ export const docRoutes: NavGroup[] = [
         href: '/docs/sandbox/lifecycle-events-api',
       },
       {
+        title: 'Lifecycle events webhooks',
+        href: '/docs/sandbox/lifecycle-events-webhooks',
+      },
+      {
         title: 'Persistence',
         href: '/docs/sandbox/persistence',
       },
