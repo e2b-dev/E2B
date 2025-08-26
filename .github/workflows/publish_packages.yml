@@ -42,14 +42,14 @@ jobs:
           virtualenvs-in-project: true
           installer-parallel: true
 
-      - uses: pnpm/action-setup@v3
+      - uses: pnpm/action-setup@v4
         with:
-          version: 9.5
+          version: 9.15.5
 
-      - name: Setup Node.js 18
+      - name: Setup Node.js 20
         uses: actions/setup-node@v3
         with:
-          node-version: '18.x'
+          node-version: '20.x'
           cache: pnpm
 
       - name: Configure pnpm

@@ -12,16 +12,6 @@ export interface UserConfig {
   teamId: string
   teamApiKey: string
   dockerProxySet?: boolean
-
-  /**
-   * @deprecated Kept for backward compatibility. Use {@link UserConfig.teamApiKey} instead.
-   */
-  defaultTeamApiKey?: string
-
-  /**
-   * @deprecated Kept for backward compatibility. Use {@link UserConfig.teamId} instead.
-   */
-  defaultTeamId?: string
 }
 
 export const USER_CONFIG_PATH = path.join(os.homedir(), '.e2b', 'config.json') // TODO: Keep in Keychain
