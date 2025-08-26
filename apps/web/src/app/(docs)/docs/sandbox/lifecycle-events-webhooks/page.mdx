@@ -1,12 +1,12 @@
-# Sandbox Lifecycle Webhooks
+# Sandbox lifecycle webhooks
 
 Webhooks provide a way for notifications to be delivered to an external web server whenever certain sandbox lifecycle events occur. 
 This allows you to receive real-time updates about sandbox creation, updates, and termination without having to poll the API.
 All webhook requests require authentication using your team [API key](/docs/api-key#where-to-find-api-key).
 
-## Webhook Management
+## Webhook management
 
-### Register Webhook
+### Register webhook
 
 Register a new webhook to receive sandbox lifecycle events.
 The webhook will be registered for the team ID associated with your API key. You will receive webhook notifications for sandbox lifecycle events from sandboxes created by your team.
@@ -56,7 +56,7 @@ if resp.status_code == 201:
 </CodeGroup>
 
 
-### Get Webhook Configuration
+### Get webhook configuration
 
 Retrieve the current webhook configuration for your team.
 
@@ -102,7 +102,7 @@ print(webhook_config)
 ```
 </CodeGroup>
 
-### Update Webhook Configuration
+### Update webhook configuration
 
 Update an existing webhook configuration. The update will replace the previous configuration fields with provided fields.
 
@@ -149,7 +149,7 @@ if resp.status_code == 200:
 ```
 </CodeGroup>
 
-### Delete Webhook
+### Delete webhook
 
 Unregister the webhook.
 
@@ -186,7 +186,7 @@ if resp.status_code == 200:
 ```
 </CodeGroup>
 
-### Test Webhook
+### Test webhook
 
 Send a test webhook to verify your endpoint is working correctly.
 
@@ -223,7 +223,7 @@ if resp.status_code == 200:
 ```
 </CodeGroup>
 
-## Webhook Payload
+## Webhook payload
 
 When a webhook is triggered, your endpoint will receive a POST request with a JSON payload containing the sandbox event data. The payload structure matches the event format from the API:
 
@@ -241,7 +241,7 @@ When a webhook is triggered, your endpoint will receive a POST request with a JS
 }
 ```
 
-## Available Event Types
+## Available event types
 
 The following event types can be subscribed to via webhooks:
 
