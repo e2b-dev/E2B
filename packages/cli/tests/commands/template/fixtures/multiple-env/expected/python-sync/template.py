@@ -1,0 +1,25 @@
+from e2b import Template
+
+template = (
+    Template()
+    .from_image("node:18")
+    .set_envs({
+        "NODE_ENV": "production",
+    })
+    .set_envs({
+        "PORT": "3000",
+    })
+    .set_envs({
+        "DEBUG": "false",
+    })
+    .set_envs({
+        "LOG_LEVEL": "info",
+    })
+    .set_envs({
+        "API_URL": "https://api.example.com",
+    })
+    .set_envs({
+        "SINGLE_VAR": "single_value",
+    })
+    .set_workdir("/app")
+)

@@ -551,7 +551,7 @@ function loadFile(filePath: string) {
   return fs.readFileSync(filePath, 'utf-8')
 }
 
-function getDockerfile(root: string, file?: string) {
+export function getDockerfile(root: string, file?: string) {
   // Check if user specified custom Dockerfile exists
   if (file) {
     const dockerfilePath = path.join(root, file)
