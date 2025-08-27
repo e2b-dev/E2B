@@ -40,6 +40,10 @@ Sandboxes are now **secure by default**. That means you cannot access the sandbo
 
 This shouldn't affect you, but if you need to access sandbox directly without SDK and you are now getting 401, you may need to set `secure` to `false`.
 
+<Note>
+    If you are using custom code interpreter templates, it may be necessary to rebuild the template to ensure compatibility with secure sandboxes.
+</Note>
+
 <CodeGroup>
 ```js
 import { Sandbox } from '@e2b/code-interpreter'
