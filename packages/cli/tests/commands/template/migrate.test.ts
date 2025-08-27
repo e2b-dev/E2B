@@ -30,6 +30,7 @@ describe('Template Migration', () => {
       'minimal-dockerfile',
       'multiple-env',
       'start-cmd',
+      'multi-stage',
     ]
 
     testCases.forEach((testCaseName) => {
@@ -139,38 +140,6 @@ dockerfile = "e2b.Dockerfile"`
           cwd: testDir,
         })
       }).toThrow()
-    })
-
-    test('should reject multi-stage Dockerfiles', async () => {
-      const dockerfileContent = `FROM node:18 AS builder
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci
-
-FROM node:18-slim
-WORKDIR /app
-COPY --from=builder /app/node_modules ./node_modules
-CMD ["node", "index.js"]`
-
-      await fs.writeFile(
-        path.join(testDir, 'e2b.Dockerfile'),
-        dockerfileContent
-      )
-
-      const config = `template_id = "multi-stage"
-dockerfile = "e2b.Dockerfile"`
-      await fs.writeFile(path.join(testDir, 'e2b.toml'), config)
-
-      // Should fail for all languages
-      const languages = ['typescript', 'python-sync', 'python-async']
-      for (const language of languages) {
-        expect(() => {
-          execSync(`node ${cliPath} template migrate --language ${language}`, {
-            cwd: testDir,
-            stdio: 'pipe',
-          })
-        }).toThrow()
-      }
     })
   })
 
