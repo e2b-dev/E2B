@@ -11,11 +11,7 @@ template = (
     })
     .set_envs({
         "DEBUG": "false",
-    })
-    .set_envs({
         "LOG_LEVEL": "info",
-    })
-    .set_envs({
         "API_URL": "https://api.example.com",
     })
     .set_envs({

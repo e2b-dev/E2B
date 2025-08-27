@@ -209,6 +209,8 @@ function handleEnvInstruction(
   const keyword = instruction.getKeyword()
 
   if (argumentsData && argumentsData.length >= 1) {
+    const envVars: Record<string, string> = {}
+
     if (argumentsData.length === 2) {
       // ENV key value format OR multiple key=value pairs (from line continuation)
       const firstArg = argumentsData[0].getValue()
@@ -223,12 +225,12 @@ function handleEnvInstruction(
           if (equalIndex > 0) {
             const key = envString.substring(0, equalIndex)
             const value = envString.substring(equalIndex + 1)
-            templateBuilder.setEnvs({ [key]: value })
+            envVars[key] = value
           }
         }
       } else {
         // Traditional ENV key value format
-        templateBuilder.setEnvs({ [firstArg]: secondArg })
+        envVars[firstArg] = secondArg
       }
     } else if (argumentsData.length === 1) {
       // ENV/ARG key=value format (single argument) or ARG key (without default)
@@ -239,11 +241,11 @@ function handleEnvInstruction(
       if (equalIndex > 0) {
         const key = envString.substring(0, equalIndex)
         const value = envString.substring(equalIndex + 1)
-        templateBuilder.setEnvs({ [key]: value })
+        envVars[key] = value
       } else if (keyword === 'ARG' && envString.trim()) {
         // ARG without default value - set as empty ENV
         const key = envString.trim()
-        templateBuilder.setEnvs({ [key]: '' })
+        envVars[key] = ''
       }
     } else {
       // Multiple arguments (from line continuation with backslashes)
@@ -253,13 +255,18 @@ function handleEnvInstruction(
         if (equalIndex > 0) {
           const key = envString.substring(0, equalIndex)
           const value = envString.substring(equalIndex + 1)
-          templateBuilder.setEnvs({ [key]: value })
+          envVars[key] = value
         } else if (keyword === 'ARG') {
           // ARG without default value
           const key = envString
-          templateBuilder.setEnvs({ [key]: '' })
+          envVars[key] = ''
         }
       }
+    }
+
+    // Call setEnvs once with all environment variables from this instruction
+    if (Object.keys(envVars).length > 0) {
+      templateBuilder.setEnvs(envVars)
     }
   }
 }

@@ -10,11 +10,7 @@ export const template = Template()
   })
   .setEnvs({
     'DEBUG': 'false',
-  })
-  .setEnvs({
     'LOG_LEVEL': 'info',
-  })
-  .setEnvs({
     'API_URL': 'https://api.example.com',
   })
   .setEnvs({
