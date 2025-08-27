@@ -1,6 +1,6 @@
 This guide helps you migrate from E2B SDK v1 to v2, covering all breaking changes and new patterns.
 
-## Table of Contents
+## Table of contents
 
 SDK v2 introduces several important changes:
 - [**New creation pattern in Python Synchronous SDK**](#1-sandbox-creation-in-synchronous-python-sdk)
@@ -8,9 +8,9 @@ SDK v2 introduces several important changes:
 - [**Updated file operations in Python SDK**](#3-file-writing-in-python-sdk)
 - [**Updated list method**](#4-listing-sandboxes)
 
-## Breaking Changes
+## Breaking changes
 
-### 1. Sandbox Creation in Synchronous Python SDK
+### 1. Sandbox creation in synchronous Python SDK
 
 In v2, the synchronous Python SDK uses a class method `create()` instead of the constructor `Sandbox()`.
 
@@ -34,7 +34,7 @@ sandbox = Sandbox(template="base")
 ```
 </CodeGroup>
 
-### 2. Security Default Change
+### 2. Secure communication by default
 
 Sandboxes are now **secure by default**. That means you cannot access the sandbox directly via its URL; there's authentication required. If you use the SDK, this is handled for you automatically.
 
@@ -54,7 +54,7 @@ sandbox = Sandbox.create(secure=False)  # Explicitly disable
 ```
 </CodeGroup>
 
-### 3. File Writing in Python SDK
+### 3. File writing in Python SDK
 
 The file writing API in Python has been made more consistent.
 
@@ -95,7 +95,7 @@ infos = sandbox.write([
 ```
 </CodeGroup>
 
-### 4. Listing Sandboxes
+### 4. Listing sandboxes
 
 The method for listing sandboxes has been updated to use pagination.
 

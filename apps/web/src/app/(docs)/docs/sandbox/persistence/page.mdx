@@ -19,13 +19,13 @@ Understanding how sandboxes transition between different states is crucial for m
 <div className="flex items-center justify-center">
     <Image className='rounded mx-auto' src={diagram} alt="Sandbox State Transitions" width="250" height="250" />
 </div>
-### State Descriptions
+### State descriptions
 
 - **Running**: The sandbox is actively running and can execute code. This is the initial state after creation.
 - **Paused**: The sandbox execution is suspended but its state is preserved.
 - **Killed**: The sandbox is terminated and all resources are released. This is a terminal state.
 
-### Transition Methods
+### Changing sandbox's state
 
 <CodeGroup>
 ```js
@@ -217,7 +217,7 @@ sbx = Sandbox.connect(sandbox_id, timeout=60) # 60 seconds
 </CodeGroup>
 
 
-### Auto-pause (Beta)
+### Auto-pause (beta)
 
 **Note: Auto-pause is currently in beta and available through `Sandbox.betaCreate()`/`Sandbox.beta_create()` method.**
 
