@@ -232,14 +232,13 @@ const sandbox = await Sandbox.betaCreate({
     autoPause: true,
     timeoutMs: 10 * 60 * 1000 // Optional: change the default timeout (10 minutes)
 })
-    ```python
-    from e2b_code_interpreter import Sandbox
-    # Create sandbox with auto-pause enabled (Beta)
-    sandbox = Sandbox.beta_create(
+```python
+from e2b_code_interpreter import Sandbox
+# Create sandbox with auto-pause enabled (Beta)
+sandbox = Sandbox.beta_create(
     auto_pause=True  # Auto-pause after the sandbox times out
     timeout=10 * 60, # Optional: change the default timeout (10 minutes)
-    )
-    ```
+)
 </CodeGroup>
 
 The auto-pause is persistent, meaning that if your sandbox resumes and it times out, it will be automatically paused again.
