@@ -6,8 +6,6 @@ template = (
     .run_cmd("apt-get update && apt-get install -y gcc g++ make libpq-dev && rm -rf /var/lib/apt/lists/*")
     .set_envs({
         "PYTHONDONTWRITEBYTECODE": "1",
-    })
-    .set_envs({
         "PYTHONUNBUFFERED": "1",
     })
     .run_cmd("useradd -m -u 1000 appuser")

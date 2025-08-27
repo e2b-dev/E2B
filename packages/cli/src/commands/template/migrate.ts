@@ -1,8 +1,8 @@
 import { select } from '@inquirer/prompts'
-import CodeBlockWriter from 'code-block-writer'
 import * as commander from 'commander'
 import { Template, TemplateBuilder, TemplateFinal } from 'e2b'
 import * as fs from 'fs'
+import Handlebars from 'handlebars'
 import * as path from 'path'
 import { E2BConfig, getConfigPath, loadConfig } from 'src/config'
 import { defaultDockerfileName } from 'src/docker/constants'
@@ -43,6 +43,72 @@ interface TemplateJSON {
   }>
 }
 
+// Register Handlebars helpers
+Handlebars.registerHelper('eq', function (a: any, b: any, options: any) {
+  if (a === b) {
+    // @ts-ignore - this context is provided by Handlebars
+    return options.fn(this)
+  }
+  return ''
+})
+
+Handlebars.registerHelper('escapeQuotes', function (str) {
+  return str ? str.replace(/'/g, "\\'") : str
+})
+
+Handlebars.registerHelper('escapeDoubleQuotes', function (str) {
+  return str ? str.replace(/"/g, '\\"') : str
+})
+
+// Transform template JSON data for Handlebars
+function transformTemplateData(json: TemplateJSON) {
+  const transformedSteps: any[] = []
+
+  for (const step of json.steps) {
+    switch (step.type) {
+      case 'ENV': {
+        // Keep all environment variables from one ENV instruction together
+        const envVars: Record<string, string> = {}
+        for (let i = 0; i < step.args.length; i += 2) {
+          if (i + 1 < step.args.length) {
+            envVars[step.args[i]] = step.args[i + 1]
+          }
+        }
+        transformedSteps.push({
+          type: 'ENV',
+          envVars,
+        })
+        break
+      }
+      case 'COPY': {
+        if (step.args.length >= 2) {
+          const src = step.args[0]
+          let dest = step.args[step.args.length - 1]
+          if (!dest || dest === '') {
+            dest = '.'
+          }
+          transformedSteps.push({
+            type: 'COPY',
+            src,
+            dest,
+          })
+        }
+        break
+      }
+      default:
+        transformedSteps.push({
+          type: step.type,
+          args: step.args,
+        })
+    }
+  }
+
+  return {
+    ...json,
+    steps: transformedSteps,
+  }
+}
+
 /**
  * Convert the JSON representation from Template.toJSON() to TypeScript code
  */
@@ -52,107 +118,39 @@ function jsonToTypeScript(
   cpuCount?: number,
   memoryMB?: number
 ): { templateContent: string; buildContent: string } {
-  const templateWriter = new CodeBlockWriter({ indentNumberOfSpaces: 2 })
+  const transformedData = transformTemplateData(json)
 
-  // Template file
-  templateWriter.writeLine("import { Template } from 'e2b'")
-  templateWriter.blankLine()
-  templateWriter.write('export const template = Template()')
+  // Load and compile templates
+  // When running from dist/index.js, templates are in dist/templates/
+  const templatesDir = path.join(__dirname, 'templates')
+  const templateSource = fs.readFileSync(
+    path.join(templatesDir, 'typescript-template.hbs'),
+    'utf8'
+  )
+  const buildSource = fs.readFileSync(
+    path.join(templatesDir, 'typescript-build.hbs'),
+    'utf8'
+  )
 
-  // Handle base image or template
-  if (json.fromImage) {
-    templateWriter.newLine().indent().write(`.fromImage('${json.fromImage}')`)
-  } else {
-    throw new Error('Unsupported template Dockerfile')
+  const templateTemplate = Handlebars.compile(templateSource)
+  const buildTemplate = Handlebars.compile(buildSource)
+
+  // Generate content
+  const templateData = {
+    ...transformedData,
   }
 
-  // Process steps
-  for (const step of json.steps) {
-    switch (step.type) {
-      case 'WORKDIR':
-        templateWriter
-          .newLine()
-          .indent()
-          .write(`.setWorkdir('${step.args[0]}')`)
-        break
-      case 'USER':
-        templateWriter.newLine().indent().write(`.setUser('${step.args[0]}')`)
-        break
-      case 'ENV': {
-        const envs: Record<string, string> = {}
-        for (let i = 0; i < step.args.length; i += 2) {
-          if (i + 1 < step.args.length) {
-            envs[step.args[i]] = step.args[i + 1]
-          }
-        }
-        if (Object.keys(envs).length > 0) {
-          templateWriter
-            .newLine()
-            .setIndentationLevel(1)
-            .write('.setEnvs(')
-            .inlineBlock(() => {
-              for (const [key, value] of Object.entries(envs)) {
-                templateWriter.write(`'${key}': '${value}',`)
-              }
-            })
-            .write(')')
-            .setIndentationLevel(0)
-        }
-        break
-      }
-      case 'RUN': {
-        templateWriter.newLine().indent().write(`.runCmd('${step.args[0]}')`)
-        break
-      }
-      case 'COPY':
-        if (step.args.length >= 2) {
-          const src = step.args[0]
-          let dest = step.args[step.args.length - 1]
-          // Normalize empty or . destinations
-          if (!dest || dest === '') {
-            dest = '.'
-          }
-          templateWriter.newLine().indent().write(`.copy('${src}', '${dest}')`)
-        }
-        break
-      default:
-        // For unsupported instructions, add a comment
-        templateWriter
-          .newLine()
-          .indent()
-          .write(`// UNSUPPORTED: ${step.type} ${step.args.join(' ')}`)
-    }
-  }
+  const templateContent = templateTemplate(templateData)
 
-  // Handle start and ready commands from config
-  if (json.startCmd && json.readyCmd) {
-    const startCmd = json.startCmd.replace(/'/g, "\\'")
-    const readyCmd = json.readyCmd.replace(/'/g, "\\'")
-    templateWriter
-      .newLine()
-      .indent()
-      .write(`.setStartCmd('${startCmd}', '${readyCmd}')`)
-  } else if (json.readyCmd) {
-    const readyCmd = json.readyCmd.replace(/'/g, "\\'")
-    templateWriter.newLine().indent().write(`.setReadyCmd('${readyCmd}')`)
-  }
-
-  // Generate build script
-  const buildWriter = new CodeBlockWriter({ indentNumberOfSpaces: 2 })
-
-  buildWriter.writeLine("import { Template } from 'e2b'")
-  buildWriter.writeLine("import { template } from './template'")
-  buildWriter.blankLine()
-  buildWriter.write('await Template.build(template, ').inlineBlock(() => {
-    buildWriter.writeLine(`alias: '${alias}',`)
-    if (cpuCount) buildWriter.writeLine(`cpuCount: ${cpuCount},`)
-    if (memoryMB) buildWriter.writeLine(`memoryMB: ${memoryMB},`)
+  const buildContent = buildTemplate({
+    alias,
+    cpuCount,
+    memoryMB,
   })
-  buildWriter.write(')')
 
   return {
-    templateContent: templateWriter.toString(),
-    buildContent: buildWriter.toString(),
+    templateContent: templateContent.trim(),
+    buildContent: buildContent.trim(),
   }
 }
 
@@ -166,135 +164,38 @@ function jsonToPython(
   memoryMB?: number,
   isAsync: boolean = false
 ): { templateContent: string; buildContent: string } {
-  const templateWriter = new CodeBlockWriter({
-    indentNumberOfSpaces: 4,
-    useTabs: false,
-  })
-  const templateImportClass = isAsync ? 'AsyncTemplate' : 'Template'
+  const transformedData = transformTemplateData(json)
 
-  // Template file
-  templateWriter.writeLine(`from e2b import ${templateImportClass}`)
-  templateWriter.blankLine()
-  templateWriter.write('template = (')
-  templateWriter.newLine().indent().write(`${templateImportClass}()`)
+  // Load and compile templates
+  // When running from dist/index.js, templates are in dist/templates/
+  const templatesDir = path.join(__dirname, 'templates')
+  const templateSource = fs.readFileSync(
+    path.join(templatesDir, 'python-template.hbs'),
+    'utf8'
+  )
+  const buildSource = fs.readFileSync(
+    path.join(templatesDir, `python-build-${isAsync ? 'async' : 'sync'}.hbs`),
+    'utf8'
+  )
 
-  // Handle base image or template
-  if (json.fromImage) {
-    templateWriter.newLine().indent().write(`.from_image("${json.fromImage}")`)
-  } else {
-    throw new Error('Unsupported template Dockerfile')
-  }
+  const templateTemplate = Handlebars.compile(templateSource)
+  const buildTemplate = Handlebars.compile(buildSource)
 
-  // Process steps
-  for (const step of json.steps) {
-    switch (step.type) {
-      case 'WORKDIR':
-        templateWriter
-          .newLine()
-          .indent()
-          .write(`.set_workdir("${step.args[0]}")`)
-        break
-      case 'USER':
-        templateWriter.newLine().indent().write(`.set_user("${step.args[0]}")`)
-        break
-      case 'ENV': {
-        templateWriter.newLine().indent().write('.set_envs({')
-        for (let i = 0; i < step.args.length; i += 2) {
-          if (i + 1 < step.args.length) {
-            templateWriter
-              .newLine()
-              .indent(2)
-              .write(`"${step.args[i]}": "${step.args[i + 1]}",`)
-          }
-        }
-        templateWriter.newLine().indent().write('})')
-        break
-      }
-      case 'RUN': {
-        templateWriter.newLine().indent().write(`.run_cmd("${step.args[0]}")`)
-        break
-      }
-      case 'COPY':
-        if (step.args.length >= 2) {
-          const src = step.args[0]
-          let dest = step.args[step.args.length - 1]
-          // Normalize empty or . destinations
-          if (!dest || dest === '') {
-            dest = '.'
-          }
-          templateWriter.newLine().indent().write(`.copy("${src}", "${dest}")`)
-        }
-        break
-      default:
-        // For unsupported instructions, add a comment
-        templateWriter
-          .newLine()
-          .indent()
-          .write(`// UNSUPPORTED: ${step.type} ${step.args.join(' ')}`)
-    }
-  }
-
-  // Handle start and ready commands from config
-  if (json.startCmd && json.readyCmd) {
-    const startCmd = json.startCmd.replace(/"/g, '\\"')
-    const readyCmd = json.readyCmd.replace(/"/g, '\\"')
-    templateWriter
-      .newLine()
-      .indent()
-      .write(`.set_start_cmd("${startCmd}", "${readyCmd}")`)
-  } else if (json.readyCmd) {
-    const readyCmd = json.readyCmd.replace(/"/g, '\\"')
-    templateWriter.newLine().indent().write(`.set_ready_cmd("${readyCmd}")`)
-  }
-
-  templateWriter.writeLine(')')
-
-  // Generate build script
-  const buildWriter = new CodeBlockWriter({
-    indentNumberOfSpaces: 4,
-    useTabs: false,
+  // Generate content
+  const templateContent = templateTemplate({
+    ...transformedData,
+    isAsync,
   })
 
-  if (isAsync) {
-    buildWriter.writeLine('import asyncio')
-    buildWriter.writeLine(`from e2b import ${templateImportClass}`)
-    buildWriter.writeLine('from template import template')
-    buildWriter.blankLine()
-    buildWriter.blankLine()
-    buildWriter.writeLine('async def main():')
-    buildWriter.setIndentationLevel(1)
-    buildWriter.writeLine(`await ${templateImportClass}.build(`)
-    buildWriter.setIndentationLevel(2)
-    buildWriter.writeLine('template,')
-    buildWriter.writeLine(`alias="${alias}",`)
-    if (cpuCount) buildWriter.writeLine(`cpu_count=${cpuCount},`)
-    if (memoryMB) buildWriter.writeLine(`memory_mb=${memoryMB},`)
-    buildWriter.setIndentationLevel(1)
-    buildWriter.writeLine(')')
-    buildWriter.blankLine()
-    buildWriter.blankLine()
-    buildWriter.setIndentationLevel(0)
-    buildWriter.writeLine('if __name__ == "__main__":')
-    buildWriter.setIndentationLevel(1)
-    buildWriter.writeLine('asyncio.run(main())')
-  } else {
-    buildWriter.writeLine(`from e2b import ${templateImportClass}`)
-    buildWriter.writeLine('from template import template')
-    buildWriter.blankLine()
-    buildWriter.blankLine()
-    buildWriter.writeLine(`${templateImportClass}.build(`)
-    buildWriter.setIndentationLevel(1)
-    buildWriter.writeLine('template,')
-    buildWriter.writeLine(`alias="${alias}",`)
-    if (cpuCount) buildWriter.writeLine(`cpu_count=${cpuCount},`)
-    if (memoryMB) buildWriter.writeLine(`memory_mb=${memoryMB},`)
-    buildWriter.setIndentationLevel(0)
-    buildWriter.writeLine(')')
-  }
+  const buildContent = buildTemplate({
+    alias,
+    cpuCount,
+    memoryMB,
+  })
 
   return {
-    templateContent: templateWriter.toString(),
-    buildContent: buildWriter.toString(),
+    templateContent: templateContent.trim(),
+    buildContent: buildContent.trim(),
   }
 }
 
