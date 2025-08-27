@@ -1,14 +1,14 @@
-import * as commander from 'commander'
-import * as fs from 'fs'
-import * as path from 'path'
 import { select } from '@inquirer/prompts'
 import CodeBlockWriter from 'code-block-writer'
-import { getRoot } from 'src/utils/filesystem'
-import { pathOption } from 'src/options'
-import { getConfigPath, loadConfig, E2BConfig } from 'src/config'
-import { asLocal, asLocalRelative, asPrimary } from 'src/utils/format'
+import * as commander from 'commander'
+import { Template, TemplateBuilder, TemplateFinal } from 'e2b'
+import * as fs from 'fs'
+import * as path from 'path'
+import { E2BConfig, getConfigPath, loadConfig } from 'src/config'
 import { defaultDockerfileName } from 'src/docker/constants'
-import { Template, TemplateFinal } from 'e2b'
+import { pathOption } from 'src/options'
+import { getRoot } from 'src/utils/filesystem'
+import { asLocal, asLocalRelative, asPrimary } from 'src/utils/format'
 import { getDockerfile } from './build'
 
 enum Language {
@@ -334,7 +334,30 @@ async function migrateToLanguage(
   const { dockerfileContent } = getDockerfile(root, dockerfilePath)
 
   // Parse Dockerfile using SDK
-  const baseTemplate = template.fromDockerfile(dockerfileContent)
+  let baseTemplate: TemplateBuilder
+  try {
+    baseTemplate = template.fromDockerfile(dockerfileContent)
+  } catch (error) {
+    console.warn(
+      "\n⚠️  Unfortunately, we weren't able to fully convert the template to the new SDK format."
+    )
+    console.warn(
+      '\nPlease build the Docker image manually, push it to a repository of your choice, and then reference it.'
+    )
+    console.warn("\nHere's an example of how to build the Docker image:")
+    console.warn(
+      `   ${asPrimary(
+        'docker build -f e2b.Dockerfile --platform linux/amd64 -t your-image-tag .'
+      )}`
+    )
+    console.warn(
+      '\nAfter building and pushing your image to a repository of your choice, update the generated template files to use the actual image tag.'
+    )
+    if (error instanceof Error) {
+      console.warn('\nCause:', error.message)
+    }
+    baseTemplate = template.fromImage('my-custom-image')
+  }
 
   // Apply config start/ready commands
   let parsedTemplate: TemplateFinal = baseTemplate
