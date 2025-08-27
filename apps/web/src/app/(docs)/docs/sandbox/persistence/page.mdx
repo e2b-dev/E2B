@@ -224,15 +224,14 @@ sbx = Sandbox.connect(sandbox_id, timeout=60) # 60 seconds
 Sandboxes can now automatically pause after they time out. When a sandbox is paused, it stops consuming compute but preserves its state. The default inactivity timeout is 10 minutes. You can change the timeout by passing the `timeoutMs`/`timeout` parameter to the `Sandbox.connect()`/`Sandbox.connect()` method.
 
 <CodeGroup>
-    ```js
-    import { Sandbox } from '@e2b/code-interpreter'
+```js
+import { Sandbox } from '@e2b/code-interpreter'
 
-    // Create sandbox with auto-pause enabled
-    const sandbox = await Sandbox.betaCreate({
+// Create sandbox with auto-pause enabled
+const sandbox = await Sandbox.betaCreate({
     autoPause: true,
     timeoutMs: 10 * 60 * 1000 // Optional: change the default timeout (10 minutes)
 })
-    ```
     ```python
     from e2b_code_interpreter import Sandbox
     # Create sandbox with auto-pause enabled (Beta)
