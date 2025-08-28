@@ -81,3 +81,15 @@ class RateLimitException(SandboxException):
     """
     Raised when the API rate limit is exceeded.
     """
+
+
+class BuildException(Exception):
+    """
+    Raised when a build fails.
+    """
+
+
+class FileUploadException(BuildException):
+    """
+    Raised when a file upload fails.
+    """
