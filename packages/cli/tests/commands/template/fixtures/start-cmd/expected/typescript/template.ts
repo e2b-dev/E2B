@@ -8,4 +8,6 @@ export const template = Template()
   .setEnvs({
     'PYTHONUNBUFFERED': '1',
   })
+  .setUser('root')
+  .setWorkdir('/home/user')
   .setStartCmd('node server.js', 'sleep 20')
