@@ -63,6 +63,8 @@ export default Sandbox
 
 export {
   Template,
+  type TemplateBuilder,
+  type TemplateFinal,
   waitForFile,
   waitForPort,
   waitForProcess,

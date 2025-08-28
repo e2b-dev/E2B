@@ -72,7 +72,7 @@ interface TemplateFromImage {
 }
 
 // Interface for the main builder state - all methods except start/ready commands
-interface TemplateBuilder {
+export interface TemplateBuilder {
   copy(
     src: string,
     dest: string,
@@ -116,7 +116,7 @@ interface TemplateBuilder {
 
 // Interface for the final state
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-interface TemplateFinal {}
+export interface TemplateFinal {}
 
 export class TemplateClass
   implements
@@ -143,8 +143,11 @@ export class TemplateClass
     this.ignoreFilePaths = options?.ignoreFilePaths ?? this.ignoreFilePaths
   }
 
-  static toJSON(template: TemplateBuilder | TemplateFinal): string {
-    return (template as TemplateClass).toJSON()
+  static toJSON(
+    template: TemplateBuilder | TemplateFinal,
+    calculateHashes: boolean = true
+  ): string {
+    return (template as TemplateClass).toJSON(calculateHashes)
   }
 
   static toDockerfile(template: TemplateBuilder | TemplateFinal): string {
@@ -430,9 +433,11 @@ export class TemplateClass
     return this
   }
 
-  private toJSON(): string {
+  private toJSON(calculateHashes: boolean = true): string {
     return JSON.stringify(
-      this.serialize(this.calculateFilesHashes()),
+      this.serialize(
+        calculateHashes ? this.calculateFilesHashes() : this.instructions
+      ),
       undefined,
       2
     )
