@@ -28,11 +28,13 @@ template = (
 {{/each}}
 {{#if startCmd}}
 {{#if readyCmd}}
+    .set_user("root")
+    .set_workdir("/home/user")
     .set_start_cmd("{{{escapeDoubleQuotes startCmd}}}", "{{{escapeDoubleQuotes readyCmd}}}")
-{{else}}
-    .set_start_cmd("{{{escapeDoubleQuotes startCmd}}}")
 {{/if}}
 {{else if readyCmd}}
+    .set_user("root")
+    .set_workdir("/home/user")
     .set_ready_cmd("{{{escapeDoubleQuotes readyCmd}}}")
 {{/if}}
 )

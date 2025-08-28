@@ -27,10 +27,12 @@ export const template = Template()
 {{/each}}
 {{#if startCmd}}
 {{#if readyCmd}}
+  .setUser('root')
+  .setWorkdir('/home/user')
   .setStartCmd('{{{escapeQuotes startCmd}}}', '{{{escapeQuotes readyCmd}}}')
-{{else}}
-  .setStartCmd('{{{escapeQuotes startCmd}}}')
 {{/if}}
 {{else if readyCmd}}
+  .setUser('root')
+  .setWorkdir('/home/user')
   .setReadyCmd('{{{escapeQuotes readyCmd}}}')
 {{/if}}
