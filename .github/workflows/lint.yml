@@ -46,7 +46,7 @@ jobs:
       - name: Install Python dependencies
         working-directory: packages/python-sdk
         run: |
-          poetry install
+          poetry install --with dev
 
       - name: Run linting
         run: |
