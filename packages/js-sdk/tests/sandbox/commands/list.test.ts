@@ -11,7 +11,7 @@ sandboxTest('list processes', async ({ sandbox }) => {
   assert.isArray(processes)
   assert.isAtLeast(processes.length, 2)
 
-  processes.forEach(process => {
+  processes.forEach((process) => {
     assert.containsAllKeys(process, ['pid'])
   })
 })

@@ -82,9 +82,9 @@ class Helpers:
                 await cmd.wait()
             except CommandExitException as e:
                 if not disabled:
-                    assert (
-                        False
-                    ), f"command failed with exit code {e.exit_code}: {e.stderr}"
+                    assert False, (
+                        f"command failed with exit code {e.exit_code}: {e.stderr}"
+                    )
 
         asyncio.create_task(wait_for_exit())
 

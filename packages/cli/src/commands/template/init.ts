@@ -11,10 +11,10 @@ import { asLocalRelative, asPrimary } from 'src/utils/format'
 export const initCommand = new commander.Command('init')
   .description(
     `create basic E2B Dockerfile (${asLocalRelative(
-      'e2b.Dockerfile',
+      'e2b.Dockerfile'
     )}) in root directory. You can then run ${asPrimary(
-      'e2b template build',
-    )} to build sandbox template from this Dockerfile`,
+      'e2b template build'
+    )} to build sandbox template from this Dockerfile`
   )
   .addOption(pathOption)
   .alias('it')
@@ -33,7 +33,7 @@ export const initCommand = new commander.Command('init')
 
       if (fileExists) {
         console.log(
-          `Dockerfile ${asLocalRelative(relativePath)} already exists.\n`,
+          `Dockerfile ${asLocalRelative(relativePath)} already exists.\n`
         )
         return
       }

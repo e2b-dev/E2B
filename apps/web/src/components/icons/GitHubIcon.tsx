@@ -1,10 +1,6 @@
 export function GitHubIcon(props) {
   return (
-    <svg
-      viewBox="0 0 20 20"
-      aria-hidden="true"
-      {...props}
-    >
+    <svg viewBox="0 0 20 20" aria-hidden="true" {...props}>
       <path
         fillRule="evenodd"
         clipRule="evenodd"

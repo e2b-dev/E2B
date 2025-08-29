@@ -7,7 +7,7 @@ import shiki from 'shiki'
 import { visit } from 'unist-util-visit'
 
 function rehypeParseCodeBlocks() {
-  return tree => {
+  return (tree) => {
     visit(tree, 'element', (node, _nodeIndex, parentNode) => {
       if (node.tagName === 'code' && node.properties.className) {
         parentNode.properties.language = node.properties.className[0]?.replace(
@@ -38,7 +38,7 @@ const elements = {
 
   token({ style, children }) {
     return `<span style="${style}">${children}</span>` // no changes here
-  }
+  },
 }
 
 // From Shiki
@@ -47,7 +47,7 @@ const FontStyle = {
   None: 0,
   Italic: 1,
   Bold: 2,
-  Underline: 4
+  Underline: 4,
 }
 
 // Custom implementation of renderToHtml from https://raw.githubusercontent.com/shikijs/shiki/main/packages/shiki/src/renderer.ts
@@ -58,7 +58,7 @@ function customRenderToHtml(lines, language) {
       children = children.filter(Boolean)
       return element({
         ...props,
-        children: type === 'code' ? children.join('\n') : children.join('')
+        children: type === 'code' ? children.join('\n') : children.join(''),
       })
     }
     return ''
@@ -74,11 +74,14 @@ function customRenderToHtml(lines, language) {
           // Not perfect, but should work fine for now
           index === 0 && // Only supported on the first line
           line?.some(
-            token =>
-              token.content === 'import' && token.color === 'var(--shiki-token-keyword)'
+            (token) =>
+              token.content === 'import' &&
+              token.color === 'var(--shiki-token-keyword)'
           ) && // works fine for Python and JS
           line?.some(
-            token => token.content === 'e2b' && token.color === 'var(--shiki-token-text)'
+            (token) =>
+              token.content === 'e2b' &&
+              token.color === 'var(--shiki-token-text)'
           ) // works fine for Python and JS
         ) {
           isE2bImport = true // TODO: Actually use, probably to dim the line
@@ -87,7 +90,7 @@ function customRenderToHtml(lines, language) {
         let isHighlightComment = false
         if (
           line?.some(
-            token =>
+            (token) =>
               token.content.includes('$HighlightLine') &&
               token.color === 'var(--shiki-token-comment)'
           )
@@ -105,7 +108,7 @@ function customRenderToHtml(lines, language) {
           // Drop the token with the comment
           // TODO: Dry
           line = line.filter(
-            token =>
+            (token) =>
               !(
                 token.content.includes('$HighlightLine') &&
                 token.color === 'var(--shiki-token-comment)'
@@ -120,7 +123,7 @@ function customRenderToHtml(lines, language) {
             className: lineClasses,
             lines,
             line,
-            index
+            index,
           },
           line.map((token, index) => {
             const cssDeclarations = [`color: ${token.color}`]
@@ -137,14 +140,14 @@ function customRenderToHtml(lines, language) {
                 style: cssDeclarations.join('; '),
                 tokens: line,
                 token,
-                index
+                index,
               },
               [escapeHtml(token.content)]
             )
           })
         )
       })
-    )
+    ),
   ])
 }
 
@@ -153,18 +156,19 @@ const htmlEscapes = {
   '<': '&lt;',
   '>': '&gt;',
   '"': '&quot;',
-  "'": '&#39;'
+  "'": '&#39;',
 }
 
 function escapeHtml(html) {
-  return html.replace(/[&<>"']/g, chr => htmlEscapes[chr])
+  return html.replace(/[&<>"']/g, (chr) => htmlEscapes[chr])
 }
 
 function rehypeShiki() {
-  return async tree => {
-    highlighter = highlighter ?? (await shiki.getHighlighter({ theme: 'css-variables' }))
+  return async (tree) => {
+    highlighter =
+      highlighter ?? (await shiki.getHighlighter({ theme: 'css-variables' }))
 
-    visit(tree, 'element', node => {
+    visit(tree, 'element', (node) => {
       if (node.tagName === 'pre' && node.children[0]?.tagName === 'code') {
         const { language } = node.properties
         let codeNode = node.children[0]
@@ -188,9 +192,9 @@ function rehypeShiki() {
 }
 
 function rehypeSlugify() {
-  return tree => {
+  return (tree) => {
     let slugify = slugifyWithCounter()
-    visit(tree, 'element', node => {
+    visit(tree, 'element', (node) => {
       if (node.tagName === 'h2' && !node.properties.id) {
         node.properties.id = slugify(toString(node))
       }
@@ -202,7 +206,7 @@ function rehypeSlugify() {
 }
 
 function rehypeAddMDXExports(getExports) {
-  return tree => {
+  return (tree) => {
     let exports = Object.entries(getExports(tree))
 
     for (let [name, value] of exports) {
@@ -223,9 +227,9 @@ function rehypeAddMDXExports(getExports) {
         data: {
           estree: acorn.parse(exportStr, {
             sourceType: 'module',
-            ecmaVersion: 'latest'
-          })
-        }
+            ecmaVersion: 'latest',
+          }),
+        },
       })
     }
   }
@@ -235,7 +239,10 @@ function getSections(node) {
   let sections = []
 
   for (let child of node.children ?? []) {
-    if (child.type === 'element' && (child.tagName === 'h2' || child.tagName === 'h3')) {
+    if (
+      child.type === 'element' &&
+      (child.tagName === 'h2' || child.tagName === 'h3')
+    ) {
       sections.push(`{
         title: ${JSON.stringify(toString(child))},
         id: ${JSON.stringify(child.properties.id)},
@@ -256,8 +263,8 @@ export const rehypePlugins = [
   rehypeSlugify,
   [
     rehypeAddMDXExports,
-    tree => ({
-      sections: `[${getSections(tree).join()}]`
-    })
-  ]
+    (tree) => ({
+      sections: `[${getSections(tree).join()}]`,
+    }),
+  ],
 ]

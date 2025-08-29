@@ -47,7 +47,7 @@
   #sidebar::-webkit-scrollbar-thumb {
     border-radius: 10px;
   }
-  
+
   .supabase-auth-ui_ui-button {
     @apply rounded-lg;
   }

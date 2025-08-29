@@ -11,8 +11,11 @@ export class E2BRequestError extends Error {
 }
 
 export function handleE2BRequestError<T>(
-  res: { data?: T | null | undefined; error?: { code: number; message: string } },
-  errMsg?: string,
+  res: {
+    data?: T | null | undefined
+    error?: { code: number; message: string }
+  },
+  errMsg?: string
 ): asserts res is { data: T; error?: undefined } {
   if (!res.error) {
     return
@@ -44,6 +47,6 @@ export function handleE2BRequestError<T>(
   throw new E2BRequestError(
     `${errMsg && `${errMsg}: `}[${code}] ${message && `${message}: `}${
       res.error?.message ?? 'no message'
-    }`,
+    }`
   )
 }

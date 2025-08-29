@@ -15,12 +15,14 @@ const guides = [
   {
     href: '/errors',
     name: 'Errors',
-    description: 'Read about the different types of errors returned by the API.',
+    description:
+      'Read about the different types of errors returned by the API.',
   },
   {
     href: '/webhooks',
     name: 'Webhooks',
-    description: 'Learn how to programmatically configure webhooks for your app.',
+    description:
+      'Learn how to programmatically configure webhooks for your app.',
   },
 ]
 
@@ -28,15 +30,11 @@ export function Guides() {
   return (
     <div className="my-16 xl:max-w-none">
       {/* @ts-ignore */}
-      <Heading
-        level={2}
-        id="guides"
-      >
+      <Heading level={2} id="guides">
         Guides
       </Heading>
-      <div
-        className="not-prose mt-4 grid grid-cols-1 gap-8 border-t border-zinc-900/5 pt-10 dark:border-white/5 sm:grid-cols-2 xl:grid-cols-4">
-        {guides.map(guide => (
+      <div className="not-prose mt-4 grid grid-cols-1 gap-8 border-t border-zinc-900/5 pt-10 dark:border-white/5 sm:grid-cols-2 xl:grid-cols-4">
+        {guides.map((guide) => (
           <div key={guide.href}>
             <h3 className="text-sm font-semibold text-zinc-900 dark:text-white">
               {guide.name}
@@ -46,11 +44,7 @@ export function Guides() {
             </p>
             <p className="mt-4">
               {/* @ts-ignore */}
-              <Button
-                href={guide.href}
-                variant="text"
-                arrow="right"
-              >
+              <Button href={guide.href} variant="text" arrow="right">
                 Read more
               </Button>
             </p>

@@ -1,9 +1,5 @@
 import Link from 'next/link'
-import {
-  Mail,
-  Github,
-  UsersRound,
-} from 'lucide-react'
+import { Mail, Github, UsersRound } from 'lucide-react'
 
 export function Support() {
   return (
@@ -13,8 +9,13 @@ export function Support() {
           href="https://discord.com/invite/U7KEcGErtQ"
           className="no-underline flex flex-col justify-center items-center gap-2 h-full w-full"
         >
-          <UsersRound strokeWidth={1.5} className="h-6 w-6 text-zinc-300 group-hover:text-[#5865F2] transition-colors" />
-          <span className="text-zinc-300 transition-colors group-hover:text-white">Join our Discord community</span>
+          <UsersRound
+            strokeWidth={1.5}
+            className="h-6 w-6 text-zinc-300 group-hover:text-[#5865F2] transition-colors"
+          />
+          <span className="text-zinc-300 transition-colors group-hover:text-white">
+            Join our Discord community
+          </span>
         </Link>
       </div>
 
@@ -23,8 +24,13 @@ export function Support() {
           href="https://github.com/e2b-dev/e2b"
           className="no-underline flex flex-col justify-center items-center gap-2 h-full w-full"
         >
-          <Github strokeWidth={1.5} className="h-6 w-6 text-zinc-300 group-hover:text-[#6e40c9] transition-colors" />
-          <span className="text-zinc-300 transition-colors group-hover:text-white">Visit our GitHub</span>
+          <Github
+            strokeWidth={1.5}
+            className="h-6 w-6 text-zinc-300 group-hover:text-[#6e40c9] transition-colors"
+          />
+          <span className="text-zinc-300 transition-colors group-hover:text-white">
+            Visit our GitHub
+          </span>
         </Link>
       </div>
 
@@ -33,8 +39,13 @@ export function Support() {
           href="mailto:support@e2b.dev"
           className="no-underline	flex flex-col justify-center items-center gap-2 h-full w-full"
         >
-          <Mail strokeWidth={1.5} className="h-6 w-6 text-zinc-300 group-hover:text-white transition-colors" />
-          <span className="text-zinc-300 transition-colors group-hover:text-white">Contact us</span>
+          <Mail
+            strokeWidth={1.5}
+            className="h-6 w-6 text-zinc-300 group-hover:text-white transition-colors"
+          />
+          <span className="text-zinc-300 transition-colors group-hover:text-white">
+            Contact us
+          </span>
         </Link>
       </div>
     </div>
