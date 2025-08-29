@@ -11,20 +11,34 @@ export interface BoxItem {
   icon: ReactNode
 }
 
-function Icon({ icon, noBackground }: { icon: ReactNode, noBackground?: boolean }) {
+function Icon({
+  icon,
+  noBackground,
+}: {
+  icon: ReactNode
+  noBackground?: boolean
+}) {
   return (
-    <div className={
-      clsx(
+    <div
+      className={clsx(
         'flex h-8 w-8 items-center justify-center rounded-full backdrop-blur-[2px] transition duration-300 ',
-        noBackground ? 'bg-none ring-0' : 'ring-1 ring-white/15 bg-white/7.5 group-hover:bg-brand-300/10 group-hover:ring-brand-400',
-      )
-    }>
+        noBackground
+          ? 'bg-none ring-0'
+          : 'ring-1 ring-white/15 bg-white/7.5 group-hover:bg-brand-300/10 group-hover:ring-brand-400'
+      )}
+    >
       {icon}
     </div>
   )
 }
 
-export function DocsBox({ item: { href, title, description, icon }, noBackground }: { item: BoxItem, noBackground?: boolean }) {
+export function DocsBox({
+  item: { href, title, description, icon },
+  noBackground,
+}: {
+  item: BoxItem
+  noBackground?: boolean
+}) {
   const mouseX = useMotionValue(0)
   const mouseY = useMotionValue(0)
 
@@ -38,10 +52,21 @@ export function DocsBox({ item: { href, title, description, icon }, noBackground
     <div
       key={href}
       onMouseMove={onMouseMove}
-      className={clsx('group relative flex rounded-2xl transition-shadow hover:shadow-md', noBackground ? 'bg-none hover:bg-none' : 'bg-white/2.5 hover:shadow-black/5')}
+      className={clsx(
+        'group relative flex rounded-2xl transition-shadow hover:shadow-md',
+        noBackground
+          ? 'bg-none hover:bg-none'
+          : 'bg-white/2.5 hover:shadow-black/5'
+      )}
     >
       <div
-        className={clsx('absolute inset-0 rounded-2xl', noBackground ? 'ring-0 outline-none' : 'ring-1 ring-inset ring-white/10 group-hover:ring-white/20')} />
+        className={clsx(
+          'absolute inset-0 rounded-2xl',
+          noBackground
+            ? 'ring-0 outline-none'
+            : 'ring-1 ring-inset ring-white/10 group-hover:ring-white/20'
+        )}
+      />
       {noBackground ? (
         <div className="relative flex items-start justify-start gap-4">
           <Icon icon={icon} noBackground={true} />
@@ -52,9 +77,7 @@ export function DocsBox({ item: { href, title, description, icon }, noBackground
                 {title}
               </Link>
             </h3>
-            <p className="mt-1 text-sm text-zinc-400">
-              {description}
-            </p>
+            <p className="mt-1 text-sm text-zinc-400">{description}</p>
           </div>
         </div>
       ) : (
@@ -66,26 +89,25 @@ export function DocsBox({ item: { href, title, description, icon }, noBackground
               {title}
             </Link>
           </h3>
-          <p className="mt-1 text-sm text-zinc-400">
-            {description}
-          </p>
+          <p className="mt-1 text-sm text-zinc-400">{description}</p>
         </div>
       )}
     </div>
   )
 }
 
-export function BoxGrid({ items, noBackground }: { items: Array<BoxItem>, noBackground?: boolean }) {
+export function BoxGrid({
+  items,
+  noBackground,
+}: {
+  items: Array<BoxItem>
+  noBackground?: boolean
+}) {
   return (
     <div className="xl:max-w-none">
-      <div
-        className="mt-4 not-prose grid grid-cols-1 gap-8 sm:grid-cols-2 xl:grid-cols-4">
-        {items.map(item => (
-          <DocsBox
-            key={item.href}
-            item={item}
-            noBackground={noBackground}
-          />
+      <div className="mt-4 not-prose grid grid-cols-1 gap-8 sm:grid-cols-2 xl:grid-cols-4">
+        {items.map((item) => (
+          <DocsBox key={item.href} item={item} noBackground={noBackground} />
         ))}
       </div>
     </div>

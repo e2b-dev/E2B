@@ -39,6 +39,7 @@
     "build": "tsc --noEmit --skipLibCheck && tsup --minify",
     "dev": "tsup --watch",
     "lint": "eslint src",
+    "format": "prettier --write src",
     "test": "pnpm build && cd testground/demo-basic && ../../dist/index.js template build",
     "check-deps": "knip",
     "update-deps": "ncu -u && pnpm i",
