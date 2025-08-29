@@ -30,7 +30,7 @@ jobs:
 
       - name: Install JS dependencies
         run: |
-          pnpm install --frozen-lockfile
+          pnpm -w install --frozen-lockfile
 
       - name: Set up Python
         uses: actions/setup-python@v4
