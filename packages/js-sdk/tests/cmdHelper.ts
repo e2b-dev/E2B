@@ -6,7 +6,11 @@ export function catchCmdExitErrorInBackground(cmd: CommandHandle) {
 
   cmd.wait().catch((res: CommandExitError) => {
     if (!disabled) {
-      assert.equal(res.exitCode, 0, `command failed with exit code ${res.exitCode}: ${res.stderr}`)
+      assert.equal(
+        res.exitCode,
+        0,
+        `command failed with exit code ${res.exitCode}: ${res.stderr}`
+      )
     }
   })
 

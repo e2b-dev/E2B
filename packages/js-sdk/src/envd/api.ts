@@ -98,10 +98,13 @@ class EnvdApiClient {
   readonly version: string | undefined
 
   constructor(
-    config: Pick<ConnectionConfig, 'apiUrl' | 'logger' | 'accessToken'> & { fetch?: (request: Request) => ReturnType<typeof fetch>, headers?: Record<string, string> },
+    config: Pick<ConnectionConfig, 'apiUrl' | 'logger' | 'accessToken'> & {
+      fetch?: (request: Request) => ReturnType<typeof fetch>
+      headers?: Record<string, string>
+    },
     metadata: {
       version?: string
-    },
+    }
   ) {
     this.api = createClient({
       baseUrl: config.apiUrl,

@@ -9,7 +9,7 @@ function nonNull<T>(value: T | null): value is T {
 export function getPageForSitemap(
   directory: string,
   urlPrefix: string,
-  priority: number,
+  priority: number
 ): MetadataRoute.Sitemap {
   const files = getFiles(directory)
 
@@ -21,7 +21,7 @@ export function getPageForSitemap(
         .replace(/\/page\.tsx$/, '')
 
       if (pathname == 'page.tsx' || pathname == 'page.mdx') {
-         pathname = ''
+        pathname = ''
       }
 
       const url = new URL(pathname, urlPrefix).href.replace(/\/$/, '')

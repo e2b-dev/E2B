@@ -41,7 +41,9 @@ sandboxTest('write multiple files', async ({ sandbox }) => {
   // Attempt to write with undefined path and file array
   await sandbox.files
     // @ts-ignore
-    .write(undefined, [{ path: 'one_test_file.txt', data: 'This is a test file.' }])
+    .write(undefined, [
+      { path: 'one_test_file.txt', data: 'This is a test file.' },
+    ])
     .then((e) => {
       assert.isUndefined(e)
     })
@@ -53,7 +55,9 @@ sandboxTest('write multiple files', async ({ sandbox }) => {
   // Attempt to write with path and file array
   await sandbox.files
     // @ts-ignore
-    .write('/path/to/file', [{ path: 'one_test_file.txt', data: 'This is a test file.' }])
+    .write('/path/to/file', [
+      { path: 'one_test_file.txt', data: 'This is a test file.' },
+    ])
     .then((e) => {
       assert.isUndefined(e)
     })
@@ -66,7 +70,9 @@ sandboxTest('write multiple files', async ({ sandbox }) => {
     })
 
   // Attempt to write with one file in array
-  const info = await sandbox.files.write([{ path: 'one_test_file.txt', data: 'This is a test file.' }])
+  const info = await sandbox.files.write([
+    { path: 'one_test_file.txt', data: 'This is a test file.' },
+  ])
   assert.isTrue(Array.isArray(info))
   assert.equal(info[0].name, 'one_test_file.txt')
   assert.equal(info[0].type, 'file')

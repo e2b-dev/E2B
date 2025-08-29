@@ -8,6 +8,7 @@
     "build": "node prebuild.js && next build",
     "start": "next start",
     "lint": "next lint",
+    "format": "prettier --write .",
     "rm-next-cache": "rm -rf .next/cache",
     "check-deps": "knip"
   },

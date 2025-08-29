@@ -1,6 +1,12 @@
 'use client'
 
-import { createContext, useContext, useEffect, useLayoutEffect, useState } from 'react'
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useState,
+} from 'react'
 import { createStore, type StoreApi, useStore } from 'zustand'
 
 import { remToPx } from '@/lib/remToPx'
@@ -30,19 +36,19 @@ interface SectionState {
 }
 
 function createSectionStore(sections: Array<Section>) {
-  return createStore<SectionState>()(set => ({
+  return createStore<SectionState>()((set) => ({
     sections,
     visibleSections: [],
-    setVisibleSections: visibleSections =>
-      set(state =>
+    setVisibleSections: (visibleSections) =>
+      set((state) =>
         state.visibleSections.join() === visibleSections.join()
           ? {}
-          : { visibleSections },
+          : { visibleSections }
       ),
     registerHeading: ({ id, ref, offsetRem }) =>
-      set(state => {
+      set((state) => {
         return {
-          sections: state.sections.map(section => {
+          sections: state.sections.map((section) => {
             if (section.id === id) {
               return {
                 ...section,
@@ -58,16 +64,20 @@ function createSectionStore(sections: Array<Section>) {
 }
 
 function useVisibleSections(sectionStore: StoreApi<SectionState>) {
-  const setVisibleSections = useStore(sectionStore, s => s.setVisibleSections)
+  const setVisibleSections = useStore(sectionStore, (s) => s.setVisibleSections)
   // @ts-ignore
-  const sections = useStore(sectionStore, s => s.sections)
+  const sections = useStore(sectionStore, (s) => s.sections)
 
   useEffect(() => {
     function checkVisibleSections() {
       const { innerHeight, scrollY } = window
       const newVisibleSections: any[] = []
 
-      for (let sectionIndex = 0; sectionIndex < sections.length; sectionIndex++) {
+      for (
+        let sectionIndex = 0;
+        sectionIndex < sections.length;
+        sectionIndex++
+      ) {
         const { id, headingRef, offsetRem = 0 } = sections[sectionIndex]
 
         if (!headingRef?.current) {
@@ -83,7 +93,8 @@ function useVisibleSections(sectionStore: StoreApi<SectionState>) {
 
         const nextSection = sections[sectionIndex + 1]
         const bottom =
-          (nextSection?.headingRef?.current?.getBoundingClientRect().top ?? Infinity) +
+          (nextSection?.headingRef?.current?.getBoundingClientRect().top ??
+            Infinity) +
           scrollY -
           remToPx(nextSection?.offsetRem ?? 0)
 

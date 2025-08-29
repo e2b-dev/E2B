@@ -2,7 +2,6 @@ import CPUSpec, { CPUValue } from './CPUSpec'
 import RAMSpec from './RAMSpec'
 import StorageSpec, { StorageValue } from './StorageSpec'
 
-
 const cpuVals: CPUValue[] = [
   {
     value: 1,
@@ -45,11 +44,11 @@ const ramPrice = 0.0000045
 const storageValues: StorageValue[] = [
   {
     value: 1,
-    plan: 'Hobby'
+    plan: 'Hobby',
   },
   {
     value: 5,
-    plan: 'Pro'
+    plan: 'Pro',
   },
 ]
 

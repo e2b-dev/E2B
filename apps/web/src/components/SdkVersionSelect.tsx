@@ -9,7 +9,6 @@ export function SdkVersionSelect({
   versions,
   onVersionChange,
 }: Props) {
-
   return (
     <select
       className="
