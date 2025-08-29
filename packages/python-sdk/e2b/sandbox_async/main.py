@@ -381,6 +381,56 @@ class AsyncSandbox(SandboxApi):
         )
 
     @overload
+    async def set_online_cpus(
+        self,
+        online_cpus: int,
+        **opts: Unpack[ApiParams],
+    ) -> None:
+        """
+        Configure the running sandbox to have the specified number of online CPUs.
+
+        The number of online CPUs has to be at least 1 and at most the vCPU count configured when the sandbox was created.
+
+        :param online_cpus: How many CPUs should be online
+        """
+        ...
+
+    @overload
+    @staticmethod
+    async def set_online_cpus(
+        sandbox_id: str,
+        online_cpus: int,
+        **opts: Unpack[ApiParams],
+    ) -> None:
+        """
+        Configure the running sandbox to have the specified number of online CPUs.
+
+        The number of online CPUs has to be at least 1 and at most the vCPU count configured when the sandbox was created.
+
+        :param online_cpus: How many CPUs should be online
+        """
+        ...
+
+    @class_method_variant("_cls_set_online_cpus")
+    async def set_online_cpus(
+        self,
+        online_cpus: int,
+        **opts: Unpack[ApiParams],
+    ) -> None:
+        """
+        Configure the running sandbox to have the specified number of online CPUs.
+
+        The number of online CPUs has to be at least 1 and at most the vCPU count configured when the sandbox was created.
+
+        :param online_cpus: How many CPUs should be online
+        """
+        await SandboxApi._cls_set_online_cpus(
+            sandbox_id=self.sandbox_id,
+            online_cpus=online_cpus,
+            **self.connection_config.get_api_params(**opts),
+        )
+
+    @overload
     async def get_info(
         self,
         **opts: Unpack[ApiParams],
