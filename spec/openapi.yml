@@ -1519,6 +1519,37 @@ paths:
         "404":
           $ref: "#/components/responses/404"
 
+  /sandboxes/{sandboxID}/cpus:
+    post:
+      description: Set the number of online vcpus
+      security:
+        - ApiKeyAuth: []
+        - Supabase1TokenAuth: []
+          Supabase2TeamAuth: []
+      tags: [sandboxes]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - onlineCpus
+              properties:
+                onlineCpus:
+                  description: Number of vcpus to make online
+                  type: integer
+                  format: uint32
+                  minimum: 1
+      parameters:
+        - $ref: "#/components/parameters/sandboxID"
+      responses:
+        "204":
+          description: Successfully updated the number of online vcpus
+        "401":
+          $ref: "#/components/responses/401"
+        "404":
+          $ref: "#/components/responses/404"
+
   /v2/templates:
     post:
       description: Create a new template

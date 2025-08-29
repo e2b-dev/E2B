@@ -11,12 +11,14 @@ from e2b.exceptions import TemplateException, SandboxException, NotFoundExceptio
 from e2b.api import AsyncApiClient, SandboxCreateResponse
 from e2b.api.client.models import (
     NewSandbox,
+    PostSandboxesSandboxIDCpusBody,
     PostSandboxesSandboxIDTimeoutBody,
     Error,
     ResumedSandbox,
 )
 from e2b.api.client.api.sandboxes import (
     get_sandboxes_sandbox_id,
+    post_sandboxes_sandbox_id_cpus,
     post_sandboxes_sandbox_id_timeout,
     delete_sandboxes_sandbox_id,
     post_sandboxes,
@@ -137,6 +139,32 @@ class SandboxApi(SandboxBase):
                 sandbox_id,
                 client=api_client,
                 body=PostSandboxesSandboxIDTimeoutBody(timeout=timeout),
+            )
+
+            if res.status_code >= 300:
+                raise handle_api_exception(res)
+
+    @classmethod
+    async def _cls_set_online_cpus(
+        cls,
+        sandbox_id: str,
+        online_cpus: int,
+        **opts: Unpack[ApiParams],
+    ) -> None:
+        config = ConnectionConfig(**opts)
+
+        if config.debug:
+            # Skip setting the online cpus in debug mode
+            return
+
+        async with AsyncApiClient(
+            config,
+            limits=SandboxBase._limits,
+        ) as api_client:
+            res = await post_sandboxes_sandbox_id_cpus.asyncio_detailed(
+                sandbox_id,
+                client=api_client,
+                body=PostSandboxesSandboxIDCpusBody(online_cpus=online_cpus),
             )
 
             if res.status_code >= 300:
