@@ -6,7 +6,10 @@ import {
   Transport,
 } from '@connectrpc/connect'
 
-import { Signal, Process as ProcessService } from '../../envd/process/process_pb'
+import {
+  Signal,
+  Process as ProcessService,
+} from '../../envd/process/process_pb'
 import {
   ConnectionConfig,
   ConnectionOpts,
@@ -34,25 +37,25 @@ export interface PtyCreateOpts
   onData: (data: Uint8Array) => void | Promise<void>
   /**
    * Timeout for the PTY in **milliseconds**.
-   * 
+   *
    * @default 60_000 // 60 seconds
    */
   timeoutMs?: number
   /**
    * User to use for the PTY.
-   * 
+   *
    * @default `user`
    */
   user?: Username
   /**
    * Environment variables for the PTY.
-   * 
+   *
    * @default {}
    */
   envs?: Record<string, string>
   /**
    * Working directory for the PTY.
-   * 
+   *
    * @default // home directory of the user used to start the PTY
    */
   cwd?: string
@@ -75,7 +78,7 @@ export class Pty {
    * Create a new PTY (pseudo-terminal).
    *
    * @param opts options for creating the PTY.
-   * 
+   *
    * @returns handle to interact with the PTY.
    */
   async create(opts: PtyCreateOpts) {
@@ -214,7 +217,7 @@ export class Pty {
    *
    * @param pid process ID of the PTY.
    * @param opts connection options.
-   * 
+   *
    * @returns `true` if the PTY was killed, `false` if the PTY was not found.
    */
   async kill(

@@ -252,35 +252,40 @@ async function generateSitemap() {
       throw new Error('Not running from apps/web directory')
     }
 
-    const pattern =
-      'src/app/\\(docs\\)/docs/**/page.mdx'
-
+    const pattern = 'src/app/\\(docs\\)/docs/**/page.mdx'
 
     let mdxFiles = []
     let patternsWithResults = []
 
-      const files = await fg(pattern, {
-        cwd: process.cwd(),
-        absolute: true,
-      })
+    const files = await fg(pattern, {
+      cwd: process.cwd(),
+      absolute: true,
+    })
 
-      console.log(`Pattern: ${pattern}, Found: ${files.length} files`)
+    console.log(`Pattern: ${pattern}, Found: ${files.length} files`)
 
-      if (files.length > 0) {
-        mdxFiles.push(...files)
-        patternsWithResults.push(pattern)
-      }
+    if (files.length > 0) {
+      mdxFiles.push(...files)
+      patternsWithResults.push(pattern)
+    }
 
-    console.log(`Found ${mdxFiles.length} total files using patterns: ${patternsWithResults.join(', ')}`)
+    console.log(
+      `Found ${
+        mdxFiles.length
+      } total files using patterns: ${patternsWithResults.join(', ')}`
+    )
 
     if (mdxFiles.length === 0) {
-      throw new Error(`No page.mdx files found with any pattern. Pattern: ${pattern}`)
+      throw new Error(
+        `No page.mdx files found with any pattern. Pattern: ${pattern}`
+      )
     }
 
     const docsPages = []
 
     for (const filePath of mdxFiles) {
-      const docsMatch = filePath.match(/\/app\/\(docs\)\/docs\/(.*)\/page\.mdx$/) ||
+      const docsMatch =
+        filePath.match(/\/app\/\(docs\)\/docs\/(.*)\/page\.mdx$/) ||
         filePath.match(/\/app\/\(docs\)\/docs\/page\.mdx$/)
 
       if (!docsMatch) {
@@ -297,18 +302,26 @@ async function generateSitemap() {
       })
     }
 
-    const filteredPages = docsPages.filter((entry) => !entry.url.includes('/docs/legacy'))
+    const filteredPages = docsPages.filter(
+      (entry) => !entry.url.includes('/docs/legacy')
+    )
 
     console.log(`Generated ${filteredPages.length} sitemap entries`)
-    const finalEntries = filteredPages.sort((a, b) => a.url.localeCompare(b.url))
+    const finalEntries = filteredPages.sort((a, b) =>
+      a.url.localeCompare(b.url)
+    )
 
     const sitemapXml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${finalEntries.map(entry => `  <url>
+${finalEntries
+  .map(
+    (entry) => `  <url>
     <loc>${entry.url}</loc>
     <changefreq>weekly</changefreq>
     <priority>${entry.priority}</priority>
-  </url>`).join('\n')}
+  </url>`
+  )
+  .join('\n')}
 </urlset>`
 
     const outputPath = path.join(process.cwd(), 'public', 'sitemap.xml')

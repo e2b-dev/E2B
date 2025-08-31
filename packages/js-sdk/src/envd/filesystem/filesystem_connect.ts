@@ -3,20 +3,39 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { CreateWatcherRequest, CreateWatcherResponse, GetWatcherEventsRequest, GetWatcherEventsResponse, ListDirRequest, ListDirResponse, MakeDirRequest, MakeDirResponse, MoveRequest, MoveResponse, RemoveRequest, RemoveResponse, RemoveWatcherRequest, RemoveWatcherResponse, StatRequest, StatResponse, WatchDirRequest, WatchDirResponse } from "./filesystem_pb.js";
-import { MethodKind } from "@bufbuild/protobuf";
+import {
+  CreateWatcherRequest,
+  CreateWatcherResponse,
+  GetWatcherEventsRequest,
+  GetWatcherEventsResponse,
+  ListDirRequest,
+  ListDirResponse,
+  MakeDirRequest,
+  MakeDirResponse,
+  MoveRequest,
+  MoveResponse,
+  RemoveRequest,
+  RemoveResponse,
+  RemoveWatcherRequest,
+  RemoveWatcherResponse,
+  StatRequest,
+  StatResponse,
+  WatchDirRequest,
+  WatchDirResponse,
+} from './filesystem_pb.js'
+import { MethodKind } from '@bufbuild/protobuf'
 
 /**
  * @generated from service filesystem.Filesystem
  */
 export const Filesystem = {
-  typeName: "filesystem.Filesystem",
+  typeName: 'filesystem.Filesystem',
   methods: {
     /**
      * @generated from rpc filesystem.Filesystem.Stat
      */
     stat: {
-      name: "Stat",
+      name: 'Stat',
       I: StatRequest,
       O: StatResponse,
       kind: MethodKind.Unary,
@@ -25,7 +44,7 @@ export const Filesystem = {
      * @generated from rpc filesystem.Filesystem.MakeDir
      */
     makeDir: {
-      name: "MakeDir",
+      name: 'MakeDir',
       I: MakeDirRequest,
       O: MakeDirResponse,
       kind: MethodKind.Unary,
@@ -34,7 +53,7 @@ export const Filesystem = {
      * @generated from rpc filesystem.Filesystem.Move
      */
     move: {
-      name: "Move",
+      name: 'Move',
       I: MoveRequest,
       O: MoveResponse,
       kind: MethodKind.Unary,
@@ -43,7 +62,7 @@ export const Filesystem = {
      * @generated from rpc filesystem.Filesystem.ListDir
      */
     listDir: {
-      name: "ListDir",
+      name: 'ListDir',
       I: ListDirRequest,
       O: ListDirResponse,
       kind: MethodKind.Unary,
@@ -52,7 +71,7 @@ export const Filesystem = {
      * @generated from rpc filesystem.Filesystem.Remove
      */
     remove: {
-      name: "Remove",
+      name: 'Remove',
       I: RemoveRequest,
       O: RemoveResponse,
       kind: MethodKind.Unary,
@@ -61,7 +80,7 @@ export const Filesystem = {
      * @generated from rpc filesystem.Filesystem.WatchDir
      */
     watchDir: {
-      name: "WatchDir",
+      name: 'WatchDir',
       I: WatchDirRequest,
       O: WatchDirResponse,
       kind: MethodKind.ServerStreaming,
@@ -72,7 +91,7 @@ export const Filesystem = {
      * @generated from rpc filesystem.Filesystem.CreateWatcher
      */
     createWatcher: {
-      name: "CreateWatcher",
+      name: 'CreateWatcher',
       I: CreateWatcherRequest,
       O: CreateWatcherResponse,
       kind: MethodKind.Unary,
@@ -81,7 +100,7 @@ export const Filesystem = {
      * @generated from rpc filesystem.Filesystem.GetWatcherEvents
      */
     getWatcherEvents: {
-      name: "GetWatcherEvents",
+      name: 'GetWatcherEvents',
       I: GetWatcherEventsRequest,
       O: GetWatcherEventsResponse,
       kind: MethodKind.Unary,
@@ -90,11 +109,10 @@ export const Filesystem = {
      * @generated from rpc filesystem.Filesystem.RemoveWatcher
      */
     removeWatcher: {
-      name: "RemoveWatcher",
+      name: 'RemoveWatcher',
       I: RemoveWatcherRequest,
       O: RemoveWatcherResponse,
       kind: MethodKind.Unary,
     },
-  }
-} as const;
-
+  },
+} as const

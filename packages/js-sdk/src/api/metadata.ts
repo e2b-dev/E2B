@@ -6,7 +6,14 @@ export { version }
 
 declare let window: any
 
-type Runtime = 'node' | 'browser' | 'deno' | 'bun' | 'vercel-edge' | 'cloudflare-worker' | 'unknown'
+type Runtime =
+  | 'node'
+  | 'browser'
+  | 'deno'
+  | 'bun'
+  | 'vercel-edge'
+  | 'cloudflare-worker'
+  | 'unknown'
 
 function getRuntime(): { runtime: Runtime; version: string } {
   // @ts-ignore
