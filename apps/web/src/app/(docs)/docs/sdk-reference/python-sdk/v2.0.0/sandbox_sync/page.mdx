@@ -22,7 +22,7 @@ List all running sandboxes.
 
 **Arguments**:
 
-- `query`: Filter the list of sandboxes by metadata or state, e.g. `SandboxQuery(metadata={"key": "value"})` or `SandboxQuery(state=[SandboxState.RUNNING])`
+- `query`: Filter the list of sandboxes by metadata or state, e.g. `SandboxListQuery(metadata={"key": "value"})` or `SandboxListQuery(state=[SandboxState.RUNNING])`
 - `limit`: Maximum number of sandboxes to return per page
 - `next_token`: Token for pagination
 
@@ -694,10 +694,10 @@ Paginator for listing sandboxes.
 **Example**:
 
 ```python
-paginator = AsyncSandbox.list()
+paginator = Sandbox.list()
 
 while paginator.has_next:
-    sandboxes = await paginator.next_items()
+    sandboxes = paginator.next_items()
     print(sandboxes)
 ```
 
