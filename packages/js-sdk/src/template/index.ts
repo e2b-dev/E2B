@@ -679,12 +679,6 @@ export function Template(options?: TemplateOptions): TemplateFromImage {
   return new TemplateClass(options)
 }
 
-export function defineConfig(
-  options: BuildOptions & { template: TemplateClass }
-): BuildOptions {
-  return options
-}
-
 export function waitForPort(port: number) {
   return `ss -tuln | grep :${port}`
 }

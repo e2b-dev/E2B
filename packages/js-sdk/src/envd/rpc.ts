@@ -1,5 +1,5 @@
 import { Code, ConnectError } from '@connectrpc/connect'
-import { runtime } from '../api/metadata'
+import { runtime } from '../utils'
 import { defaultUsername } from '../connectionConfig'
 
 import {
