@@ -10,66 +10,77 @@ import { getConfigPath, loadConfig } from '../../config'
 import fs from 'fs'
 import { configOption, pathOption } from '../../options'
 
-export const createCommand = new commander.Command('create')
-  .description('create sandbox and connect terminal to it')
-  .argument(
-    '[template]',
-    `create and connect to sandbox specified by ${asBold('[template]')}`
-  )
-  .addOption(pathOption)
-  .addOption(configOption)
-  .alias('cr')
-  .action(
-    async (
-      template: string | undefined,
-      opts: {
-        name?: string
-        path?: string
-        config?: string
-      }
-    ) => {
-      try {
-        const apiKey = ensureAPIKey()
-        let templateID = template
-
-        const root = getRoot(opts.path)
-        const configPath = getConfigPath(root, opts.config)
-
-        const config = fs.existsSync(configPath)
-          ? await loadConfig(configPath)
-          : undefined
-        const relativeConfigPath = path.relative(root, configPath)
-
-        if (!templateID && config) {
-          console.log(
-            `Found sandbox template ${asFormattedSandboxTemplate(
-              {
-                templateID: config.template_id,
-                aliases: config.template_name
-                  ? [config.template_name]
-                  : undefined,
-              },
-              relativeConfigPath
-            )}`
-          )
-          templateID = config.template_id
+export function createCommand(
+  name: string,
+  alias: string,
+  deprecated: boolean
+) {
+  return new commander.Command(name)
+    .description('create sandbox and connect terminal to it')
+    .argument(
+      '[template]',
+      `create and connect to sandbox specified by ${asBold('[template]')}`
+    )
+    .addOption(pathOption)
+    .addOption(configOption)
+    .alias(alias)
+    .action(
+      async (
+        template: string | undefined,
+        opts: {
+          name?: string
+          path?: string
+          config?: string
         }
-
-        if (!templateID) {
-          console.error(
-            'You need to specify sandbox template ID or path to sandbox template config'
+      ) => {
+        if (deprecated) {
+          console.warn(
+            `Warning: The '${name}' command is deprecated and will be removed in future releases. Please use 'e2b sandbox create' instead.`
           )
+        }
+        try {
+          const apiKey = ensureAPIKey()
+          let templateID = template
+
+          const root = getRoot(opts.path)
+          const configPath = getConfigPath(root, opts.config)
+
+          const config = fs.existsSync(configPath)
+            ? await loadConfig(configPath)
+            : undefined
+          const relativeConfigPath = path.relative(root, configPath)
+
+          if (!templateID && config) {
+            console.log(
+              `Found sandbox template ${asFormattedSandboxTemplate(
+                {
+                  templateID: config.template_id,
+                  aliases: config.template_name
+                    ? [config.template_name]
+                    : undefined,
+                },
+                relativeConfigPath
+              )}`
+            )
+            templateID = config.template_id
+          }
+
+          if (!templateID) {
+            console.error(
+              'You need to specify sandbox template ID or path to sandbox template config'
+            )
+            process.exit(1)
+          }
+
+          await connectSandbox({ apiKey, template: { templateID } })
+          process.exit(0)
+        } catch (err: any) {
+          console.error(err)
           process.exit(1)
         }
-
-        await connectSandbox({ apiKey, template: { templateID } })
-        process.exit(0)
-      } catch (err: any) {
-        console.error(err)
-        process.exit(1)
       }
-    }
-  )
+    )
+}
 
 export async function connectSandbox({
   apiKey,
