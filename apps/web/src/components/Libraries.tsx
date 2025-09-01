@@ -15,8 +15,7 @@ const libraries = [
   {
     href: 'https://pypi.org/project/e2b',
     name: 'Python',
-    description:
-      'Requires at least Python 3.8.',
+    description: 'Requires at least Python 3.8.',
     logo: logoPython,
   },
 ]
@@ -25,11 +24,8 @@ export function Libraries() {
   return (
     <div className="xl:max-w-none">
       <div className="not-prose grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 xl:max-w-none xl:grid-cols-3">
-        {libraries.map(library => (
-          <div
-            key={library.name}
-            className="flex flex-row-reverse gap-6"
-          >
+        {libraries.map((library) => (
+          <div key={library.name} className="flex flex-row-reverse gap-6">
             <div className="flex flex-col flex-auto">
               <h3 className="text-sm font-semibold text-zinc-900 dark:text-white">
                 {library.name}
@@ -39,12 +35,9 @@ export function Libraries() {
               </p>
               <p className="mt-4">
                 {/* @ts-ignore */}
-                <Button
-                  href={library.href}
-                  variant="text"
-                  arrow="right"
-                >
-                  Inspect on {library.name === 'JavaScript & Typescript' ? ' NPM' : 'PyPi'}
+                <Button href={library.href} variant="text" arrow="right">
+                  Inspect on{' '}
+                  {library.name === 'JavaScript & Typescript' ? ' NPM' : 'PyPi'}
                 </Button>
               </p>
             </div>

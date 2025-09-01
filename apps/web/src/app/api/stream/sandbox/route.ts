@@ -10,9 +10,8 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
 const mux = new Mux({
   tokenId: process.env.MUX_TOKEN_ID,
-  tokenSecret: process.env.MUX_TOKEN_SECRET
+  tokenSecret: process.env.MUX_TOKEN_SECRET,
 })
-
 
 // Create a new live stream and return the stream key
 export async function POST(request: Request) {
@@ -39,11 +38,21 @@ export async function POST(request: Request) {
     .single()
 
   if (existingStreamError && existingStreamError.code !== 'PGRST116') {
-    return NextResponse.json({ error: `Failed to check existing stream - ${existingStreamError.message}` }, { status: 500 })
+    return NextResponse.json(
+      {
+        error: `Failed to check existing stream - ${existingStreamError.message}`,
+      },
+      { status: 500 }
+    )
   }
 
   if (existingStream) {
-    return NextResponse.json({ error: `Stream for the sandbox '${sandboxId}' already exists. There can be only one stream per sandbox.` }, { status: 400 })
+    return NextResponse.json(
+      {
+        error: `Stream for the sandbox '${sandboxId}' already exists. There can be only one stream per sandbox.`,
+      },
+      { status: 400 }
+    )
   }
 
   // The stream doesn't exist yet, so create a new live stream
@@ -55,22 +64,37 @@ export async function POST(request: Request) {
   })
 
   if (!liveStream.playback_ids?.[0]?.id) {
-    return NextResponse.json({ error: 'Failed to create live stream' }, { status: 500 })
+    return NextResponse.json(
+      { error: 'Failed to create live stream' },
+      { status: 500 }
+    )
   }
 
-  const { data, error }: { data: { token: string } | null, error: any } = await supabase
-    .from('sandbox_streams')
-    .insert([{ sandbox_id: sandboxId, playback_id: liveStream.playback_ids[0].id }])
-    .select('token')
-    .single()
+  const { data, error }: { data: { token: string } | null; error: any } =
+    await supabase
+      .from('sandbox_streams')
+      .insert([
+        { sandbox_id: sandboxId, playback_id: liveStream.playback_ids[0].id },
+      ])
+      .select('token')
+      .single()
 
   if (error) {
-    return NextResponse.json({ error: `Failed to insert and retrieve token - ${error.message}` }, { status: 500 })
+    return NextResponse.json(
+      { error: `Failed to insert and retrieve token - ${error.message}` },
+      { status: 500 }
+    )
   }
 
   if (!data) {
-    return NextResponse.json({ error: 'Failed to insert and retrieve token - no data' }, { status: 500 })
+    return NextResponse.json(
+      { error: 'Failed to insert and retrieve token - no data' },
+      { status: 500 }
+    )
   }
 
-  return NextResponse.json({ streamKey: liveStream.stream_key, token: data.token }, { status: 201 })
+  return NextResponse.json(
+    { streamKey: liveStream.stream_key, token: data.token },
+    { status: 201 }
+  )
 }

@@ -12,15 +12,14 @@ jobs:
       - name: Checkout Repo
         uses: actions/checkout@v4
 
-      - uses: pnpm/action-setup@v3
+      - uses: pnpm/action-setup@v4
         with:
-          version: 9.5
+          version: 9.15.5
 
       - name: Setup Node.js 20
         uses: actions/setup-node@v4
         with:
           node-version: '20.x'
-          registry-url: https://registry.npmjs.org
           cache: pnpm
 
       - name: Configure pnpm
@@ -28,13 +27,8 @@ jobs:
           pnpm config set auto-install-peers true
           pnpm config set exclude-links-from-lockfile true
 
-      - name: Install JS dependencies
-        run: |
-          pnpm install --frozen-lockfile
-
-      - name: Run JS linting
-        run: |
-          pnpm run lint
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -52,9 +46,23 @@ jobs:
       - name: Install Python dependencies
         working-directory: packages/python-sdk
         run: |
-          poetry install
+          poetry install --with dev
 
-      - name: Run Python linting
-        working-directory: packages/python-sdk
+      - name: Run linting
         run: |
-          poetry run ruff check .
+          pnpm run lint
+
+      - name: Run formatting
+        run: |
+          pnpm run format
+
+      - name: Check for uncommitted changes
+        run: |
+          if [[ -n $(git status --porcelain) ]]; then
+            echo "❌ Files are not formatted properly:"
+            git status --short
+            git diff
+            exit 1
+          else
+            echo "✅ No changes detected."
+          fi

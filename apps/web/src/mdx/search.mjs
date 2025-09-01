@@ -72,10 +72,12 @@ export default function (nextConfig = {}) {
 
             let files = glob.sync('**/*.mdx', { cwd: appDir })
             // Exclude legacy docs
-            files = files.filter(file => !file.includes('docs/legacy'))
+            files = files.filter((file) => !file.includes('docs/legacy'))
 
             let data = files.map((file, index, arr) => {
-              console.log(`Processing MDX file ${index + 1}/${arr.length}: ${file}`)
+              console.log(
+                `Processing MDX file ${index + 1}/${arr.length}: ${file}`
+              )
 
               let url = '/' + file.replace(/(^|\/)page\.mdx$/, '')
               let mdx = fs.readFileSync(path.join(appDir, file), 'utf8')

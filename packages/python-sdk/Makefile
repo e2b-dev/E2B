@@ -6,7 +6,7 @@ generate-api:
 	rm -rf e2b/api/client
 	mv e2b/api/api/e2b_api_client e2b/api/client
 	rm -rf e2b/api/api
-	black .
+	ruff format .
 
 generate-envd:
 	if [ ! -f "/go/bin/protoc-gen-connect-python" ]; then \
@@ -16,7 +16,7 @@ generate-envd:
 	cd $(ROOT_DIR)/spec/envd && pwd && buf generate --template buf-python.gen.yaml
 	./scripts/fix-python-pb.sh
 
-	black .
+	ruff format .
 
 generate: generate-api generate-envd
 
@@ -25,3 +25,6 @@ init:
 
 lint:
 	ruff check .
+
+format:
+	ruff format .

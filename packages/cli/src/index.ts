@@ -10,9 +10,8 @@ export const pkg = packageJSON
 
 updateNotifier({
   pkg,
-  updateCheckInterval:1000 * 60 * 60 * 8, // 8 hours
-})
-  .notify()
+  updateCheckInterval: 1000 * 60 * 60 * 8, // 8 hours
+}).notify()
 
 const prog = program.version(
   packageJSON.version,

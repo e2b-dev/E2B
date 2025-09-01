@@ -9,7 +9,9 @@ sandboxTest('kill process', async ({ sandbox }) => {
 
   await sandbox.commands.kill(pid)
 
-  await expect(sandbox.commands.run(`kill -0 ${pid}`)).rejects.toThrowError(ProcessExitError)
+  await expect(sandbox.commands.run(`kill -0 ${pid}`)).rejects.toThrowError(
+    ProcessExitError
+  )
 })
 
 sandboxTest('kill non-existing process', async ({ sandbox }) => {
