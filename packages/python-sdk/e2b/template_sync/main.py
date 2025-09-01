@@ -45,7 +45,7 @@ class Template(TemplateBase):
             if on_build_logs:
                 on_build_logs(
                     LogEntry(
-                        timestamp=datetime.utcnow(),
+                        timestamp=datetime.now(),
                         level="info",
                         message=f"Requesting build for template: {alias}",
                     )
@@ -64,7 +64,7 @@ class Template(TemplateBase):
             if on_build_logs:
                 on_build_logs(
                     LogEntry(
-                        timestamp=datetime.utcnow(),
+                        timestamp=datetime.now(),
                         level="info",
                         message=f"Template created with ID: {template_id}, Build ID: {build_id}",
                     )
@@ -101,7 +101,7 @@ class Template(TemplateBase):
                     if on_build_logs:
                         on_build_logs(
                             LogEntry(
-                                timestamp=datetime.utcnow(),
+                                timestamp=datetime.now(),
                                 level="info",
                                 message=f"Uploaded '{file_upload['src']}'",
                             )
@@ -110,7 +110,7 @@ class Template(TemplateBase):
                     if on_build_logs:
                         on_build_logs(
                             LogEntry(
-                                timestamp=datetime.utcnow(),
+                                timestamp=datetime.now(),
                                 level="info",
                                 message=f"Skipping upload of '{file_upload['src']}', already cached",
                             )
@@ -119,7 +119,7 @@ class Template(TemplateBase):
             if on_build_logs:
                 on_build_logs(
                     LogEntry(
-                        timestamp=datetime.utcnow(),
+                        timestamp=datetime.now(),
                         level="info",
                         message="All file uploads completed",
                     )
@@ -129,7 +129,7 @@ class Template(TemplateBase):
             if on_build_logs:
                 on_build_logs(
                     LogEntry(
-                        timestamp=datetime.utcnow(),
+                        timestamp=datetime.now(),
                         level="info",
                         message="Starting building...",
                     )
@@ -145,7 +145,7 @@ class Template(TemplateBase):
             if on_build_logs:
                 on_build_logs(
                     LogEntry(
-                        timestamp=datetime.utcnow(),
+                        timestamp=datetime.now(),
                         level="info",
                         message="Waiting for logs...",
                     )

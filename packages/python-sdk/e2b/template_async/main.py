@@ -47,7 +47,7 @@ class AsyncTemplate(TemplateBase):
             if on_build_logs:
                 on_build_logs(
                     LogEntry(
-                        timestamp=datetime.utcnow(),
+                        timestamp=datetime.now(),
                         level="info",
                         message=f"Requesting build for template: {alias}",
                     )
@@ -66,7 +66,7 @@ class AsyncTemplate(TemplateBase):
             if on_build_logs:
                 on_build_logs(
                     LogEntry(
-                        timestamp=datetime.utcnow(),
+                        timestamp=datetime.now(),
                         level="info",
                         message=f"Template created with ID: {template_id}, Build ID: {build_id}",
                     )
@@ -103,7 +103,7 @@ class AsyncTemplate(TemplateBase):
                     if on_build_logs:
                         on_build_logs(
                             LogEntry(
-                                timestamp=datetime.utcnow(),
+                                timestamp=datetime.now(),
                                 level="info",
                                 message=f"Uploaded '{file_upload['src']}'",
                             )
@@ -112,7 +112,7 @@ class AsyncTemplate(TemplateBase):
                     if on_build_logs:
                         on_build_logs(
                             LogEntry(
-                                timestamp=datetime.utcnow(),
+                                timestamp=datetime.now(),
                                 level="info",
                                 message=f"Skipping upload of '{file_upload['src']}', already cached",
                             )
@@ -121,7 +121,7 @@ class AsyncTemplate(TemplateBase):
             if on_build_logs:
                 on_build_logs(
                     LogEntry(
-                        timestamp=datetime.utcnow(),
+                        timestamp=datetime.now(),
                         level="info",
                         message="All file uploads completed",
                     )
@@ -131,7 +131,7 @@ class AsyncTemplate(TemplateBase):
             if on_build_logs:
                 on_build_logs(
                     LogEntry(
-                        timestamp=datetime.utcnow(),
+                        timestamp=datetime.now(),
                         level="info",
                         message="Starting building...",
                     )
@@ -147,7 +147,7 @@ class AsyncTemplate(TemplateBase):
             if on_build_logs:
                 on_build_logs(
                     LogEntry(
-                        timestamp=datetime.utcnow(),
+                        timestamp=datetime.now(),
                         level="info",
                         message="Waiting for logs...",
                     )
