@@ -3,6 +3,7 @@ from uuid import uuid4
 
 from e2b import Template, wait_for_timeout
 
+
 @pytest.mark.skip_debug()
 async def test_build():
     template = (
