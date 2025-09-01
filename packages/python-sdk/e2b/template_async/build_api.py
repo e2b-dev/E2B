@@ -75,9 +75,9 @@ async def upload_file(file_name: str, context_path: str, url: str):
     tar_buffer = io.BytesIO()
 
     with tarfile.open(fileobj=tar_buffer, mode="w:gz") as tar:
-        files = glob.glob(os.path.join(context_path, file_name), recursive=True)
+        files = glob.glob(file_name, root_dir=context_path, recursive=True)
         for file in files:
-            src_path = file
+            src_path = os.path.join(context_path, file)
             tar.add(src_path, arcname=file)
 
     async with httpx.AsyncClient() as client:
