@@ -10,7 +10,7 @@ repository = "https://github.com/e2b-dev/e2b/tree/main/packages/python-sdk"
 packages = [{ include = "e2b" }, { include = "e2b_connect" }]
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = "^3.9"
 
 python-dateutil = ">=2.8.2"
 protobuf = ">=4.21.0"
