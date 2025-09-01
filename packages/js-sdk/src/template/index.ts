@@ -1,4 +1,5 @@
 import { ApiClient } from '../api'
+import { runtime } from '../utils'
 import {
   getBuildStatus,
   GetBuildStatusResponse,
@@ -135,7 +136,8 @@ export class TemplateClass
   // Force the next layer to be rebuilt
   private forceNextLayer: boolean = false
   private instructions: Instructions[] = []
-  private fileContextPath: string = getCallerDirectory() ?? '.'
+  private fileContextPath: string =
+    runtime === 'browser' ? '.' : getCallerDirectory() ?? '.'
   private ignoreFilePaths: string[] = []
 
   constructor(options?: TemplateOptions) {
@@ -240,6 +242,10 @@ export class TemplateClass
       | { forceUpload?: true; user?: string; mode?: number },
     options?: { forceUpload?: true; user?: string; mode?: number }
   ): TemplateBuilder {
+    if (runtime === 'browser') {
+      throw new Error('Browser runtime is not supported for copy')
+    }
+
     const items = Array.isArray(srcOrItems)
       ? srcOrItems
       : [{ src: srcOrItems, dest: destOrOptions as string }]
@@ -574,7 +580,12 @@ export class TemplateClass
           instruction.args[0],
           instruction.args[1],
           this.fileContextPath,
-          [...this.ignoreFilePaths, ...readDockerignore(this.fileContextPath)]
+          [
+            ...this.ignoreFilePaths,
+            ...(runtime === 'browser'
+              ? []
+              : readDockerignore(this.fileContextPath)),
+          ]
         )
         steps.push({ ...instruction, filesHash })
       } else {
