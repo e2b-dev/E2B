@@ -1,8 +1,7 @@
 import crypto from 'crypto'
 import fs from 'fs'
-import { glob } from 'glob'
 import path from 'path'
-import { create } from 'tar'
+import { dynamicGlob, dynamicTar } from '../utils'
 
 export function readDockerignore(contextPath: string): string[] {
   const dockerignorePath = path.join(contextPath, '.dockerignore')
@@ -23,13 +22,14 @@ export function calculateFilesHash(
   contextPath: string,
   ignorePatterns?: string[]
 ): string {
+  const { globSync } = dynamicGlob()
   const srcPath = path.join(contextPath, src)
   const hash = crypto.createHash('sha256')
   const content = `COPY ${src} ${dest}`
 
   hash.update(content)
 
-  const files = glob.globSync(srcPath, {
+  const files = globSync(srcPath, {
     ignore: ignorePatterns,
   })
 
@@ -68,7 +68,9 @@ export function padOctal(mode: number): string {
 }
 
 export function tarFileStream(fileName: string, fileContextPath: string) {
-  const files = glob.globSync(fileName, { cwd: fileContextPath, nodir: false })
+  const { globSync } = dynamicGlob()
+  const { create } = dynamicTar()
+  const files = globSync(fileName, { cwd: fileContextPath, nodir: false })
 
   return create(
     {

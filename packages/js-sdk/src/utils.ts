@@ -1,3 +1,5 @@
+import { runtime } from './api/metadata'
+
 export async function sha256(data: string): Promise<string> {
   // Use WebCrypto API if available
   if (typeof crypto !== 'undefined') {
@@ -17,4 +19,20 @@ export async function sha256(data: string): Promise<string> {
 
 export function timeoutToSeconds(timeout: number): number {
   return Math.ceil(timeout / 1000)
+}
+
+export function dynamicGlob(): typeof import('glob') {
+  if (runtime === 'browser') {
+    throw new Error('Browser runtime is not supported for glob')
+  }
+
+  return require('glob')
+}
+
+export function dynamicTar(): typeof import('tar') {
+  if (runtime === 'browser') {
+    throw new Error('Browser runtime is not supported for tar')
+  }
+
+  return require('tar')
 }

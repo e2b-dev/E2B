@@ -9,7 +9,6 @@ export default defineConfig({
   clean: true,
   entry: {
     index: './src/index.ts',
-    template: './src/template/index.ts',
   },
   esbuildOptions: (options) => {
     options.legalComments = 'none'
