@@ -67,18 +67,20 @@ export function timeoutToSeconds(timeout: number): number {
   return Math.ceil(timeout / 1000)
 }
 
-export function dynamicGlob(): typeof import('glob') {
+export async function dynamicGlob(): Promise<typeof import('glob')> {
   if (runtime === 'browser') {
     throw new Error('Browser runtime is not supported for glob')
   }
 
-  return require('glob')
+  // @ts-ignore
+  return await import('glob')
 }
 
-export function dynamicTar(): typeof import('tar') {
+export async function dynamicTar(): Promise<typeof import('tar')> {
   if (runtime === 'browser') {
     throw new Error('Browser runtime is not supported for tar')
   }
 
-  return require('tar')
+  // @ts-ignore
+  return await import('tar')
 }

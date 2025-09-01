@@ -16,13 +16,13 @@ export function readDockerignore(contextPath: string): string[] {
     .filter((line) => line && !line.startsWith('#'))
 }
 
-export function calculateFilesHash(
+export async function calculateFilesHash(
   src: string,
   dest: string,
   contextPath: string,
   ignorePatterns?: string[]
-): string {
-  const { globSync } = dynamicGlob()
+): Promise<string> {
+  const { globSync } = await dynamicGlob()
   const srcPath = path.join(contextPath, src)
   const hash = crypto.createHash('sha256')
   const content = `COPY ${src} ${dest}`
@@ -67,9 +67,9 @@ export function padOctal(mode: number): string {
   return mode.toString(8).padStart(4, '0')
 }
 
-export function tarFileStream(fileName: string, fileContextPath: string) {
-  const { globSync } = dynamicGlob()
-  const { create } = dynamicTar()
+export async function tarFileStream(fileName: string, fileContextPath: string) {
+  const { globSync } = await dynamicGlob()
+  const { create } = await dynamicTar()
   const files = globSync(fileName, { cwd: fileContextPath, nodir: false })
 
   return create(
@@ -86,7 +86,7 @@ export async function tarFileStreamUpload(
   fileContextPath: string
 ) {
   // First pass: calculate the compressed size without buffering
-  const sizeCalculationStream = tarFileStream(fileName, fileContextPath)
+  const sizeCalculationStream = await tarFileStream(fileName, fileContextPath)
   let contentLength = 0
   for await (const chunk of sizeCalculationStream as unknown as AsyncIterable<Buffer>) {
     contentLength += chunk.length
@@ -94,6 +94,6 @@ export async function tarFileStreamUpload(
 
   return {
     contentLength,
-    uploadStream: tarFileStream(fileName, fileContextPath),
+    uploadStream: await tarFileStream(fileName, fileContextPath),
   }
 }

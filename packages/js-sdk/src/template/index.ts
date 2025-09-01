@@ -145,7 +145,7 @@ export class TemplateClass
     this.ignoreFilePaths = options?.ignoreFilePaths ?? this.ignoreFilePaths
   }
 
-  static toJSON(template: TemplateBuilder | TemplateFinal): string {
+  static toJSON(template: TemplateBuilder | TemplateFinal): Promise<string> {
     return (template as TemplateClass).toJSON()
   }
 
@@ -436,9 +436,9 @@ export class TemplateClass
     return this
   }
 
-  private toJSON(): string {
+  private async toJSON(): Promise<string> {
     return JSON.stringify(
-      this.serialize(this.calculateFilesHashes()),
+      this.serialize(await this.calculateFilesHashes()),
       undefined,
       2
     )
@@ -500,7 +500,7 @@ export class TemplateClass
       )
     )
 
-    const instructionsWithHashes = this.calculateFilesHashes()
+    const instructionsWithHashes = await this.calculateFilesHashes()
 
     // Prepare file uploads
     const fileUploads = instructionsWithHashes
@@ -571,12 +571,12 @@ export class TemplateClass
   }
 
   // We might no longer need this as we move the logic server-side
-  private calculateFilesHashes(): Steps[] {
+  private async calculateFilesHashes(): Promise<Steps[]> {
     const steps: Steps[] = []
 
     for (const instruction of this.instructions) {
       if (instruction.type === 'COPY') {
-        const filesHash = calculateFilesHash(
+        const filesHash = await calculateFilesHash(
           instruction.args[0],
           instruction.args[1],
           this.fileContextPath,
