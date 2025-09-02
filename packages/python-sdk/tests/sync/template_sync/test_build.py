@@ -5,7 +5,7 @@ from e2b import Template
 
 
 @pytest.mark.skip_debug()
-async def test_build():
+def test_build():
     template = (
         Template()
         .from_image("ubuntu:22.04")
