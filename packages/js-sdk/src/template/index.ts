@@ -9,9 +9,17 @@ import {
   TriggerBuildTemplate,
   uploadFile,
 } from './buildApi'
-import { parseDockerfile, DockerfileParserInterface } from './dockerfileParser'
+import { parseDockerfile } from './dockerfileParser'
 import { BuildError } from '../errors'
-import { Duration, Instructions, Steps } from './types'
+import {
+  Instructions,
+  Steps,
+  TemplateFromImage,
+  TemplateBuilder,
+  TemplateFinal,
+  CopyItem,
+  Duration,
+} from './types'
 import {
   calculateFilesHash,
   getCallerDirectory,
@@ -20,16 +28,11 @@ import {
 } from './utils'
 import stripAnsi from 'strip-ansi'
 import { ConnectionConfig } from '../connectionConfig'
+import { LogEntry } from './logs'
 
 type TemplateOptions = {
   fileContextPath?: string
   ignoreFilePaths?: string[]
-}
-
-type CopyItem = {
-  src: string
-  dest: string
-  forceUpload?: boolean
 }
 
 type BasicBuildOptions = {
@@ -45,86 +48,8 @@ export type BuildOptions = BasicBuildOptions & {
   domain?: string
 }
 
-export class LogEntry {
-  constructor(
-    public readonly timestamp: Date,
-    public readonly level: 'debug' | 'info' | 'warn' | 'error',
-    public readonly message: string
-  ) {}
-
-  toString() {
-    return `[${this.timestamp.toISOString()}] [${this.level}] ${stripAnsi(
-      this.message
-    )}`
-  }
-}
-
-// Interface for the initial state - only fromImage methods available
-interface TemplateFromImage {
-  fromDebianImage(variant?: string): TemplateBuilder
-  fromUbuntuImage(variant?: string): TemplateBuilder
-  fromPythonImage(version?: string): TemplateBuilder
-  fromNodeImage(variant?: string): TemplateBuilder
-  fromBaseImage(): TemplateBuilder
-  fromImage(baseImage: string): TemplateBuilder
-  fromTemplate(template: string): TemplateBuilder
-  fromDockerfile(dockerfileContent: string): TemplateBuilder
-  skipCache(): TemplateBuilder
-}
-
-// Interface for the main builder state - all methods except start/ready commands
-interface TemplateBuilder {
-  copy(
-    src: string,
-    dest: string,
-    options?: { forceUpload?: true; user?: string; mode?: number }
-  ): TemplateBuilder
-  copy(
-    items: CopyItem[],
-    options?: { forceUpload?: true; user?: string; mode?: number }
-  ): TemplateBuilder
-  remove(
-    path: string,
-    options?: { force?: boolean; recursive?: boolean }
-  ): TemplateBuilder
-  rename(
-    src: string,
-    dest: string,
-    options?: { force?: boolean }
-  ): TemplateBuilder
-  makeDir(
-    paths: string | string[],
-    options?: { mode?: number }
-  ): TemplateBuilder
-  makeSymlink(src: string, dest: string): TemplateBuilder
-  runCmd(command: string, options?: { user?: string }): TemplateBuilder
-  runCmd(commands: string[], options?: { user?: string }): TemplateBuilder
-  setWorkdir(workdir: string): TemplateBuilder
-  setUser(user: string): TemplateBuilder
-  pipInstall(packages: string | string[]): TemplateBuilder
-  npmInstall(packages: string | string[]): TemplateBuilder
-  aptInstall(packages: string | string[]): TemplateBuilder
-  gitClone(
-    url: string,
-    path?: string,
-    options?: { branch?: string; depth?: number }
-  ): TemplateBuilder
-  setEnvs(envs: Record<string, string>): TemplateBuilder
-  skipCache(): TemplateBuilder
-  setStartCmd(startCommand: string, readyCommand: string): TemplateFinal
-  setReadyCmd(command: string): TemplateFinal
-}
-
-// Interface for the final state
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-interface TemplateFinal {}
-
 export class TemplateClass
-  implements
-    TemplateFromImage,
-    TemplateBuilder,
-    TemplateFinal,
-    DockerfileParserInterface
+  implements TemplateFromImage, TemplateBuilder, TemplateFinal
 {
   private defaultBaseImage: string = 'e2bdev/base'
   private baseImage: string | undefined = this.defaultBaseImage
@@ -679,26 +604,26 @@ export function Template(options?: TemplateOptions): TemplateFromImage {
   return new TemplateClass(options)
 }
 
-export function waitForPort(port: number) {
-  return `ss -tuln | grep :${port}`
-}
-
-export function waitForURL(url: string, statusCode: number = 200) {
-  return `curl -s -o /dev/null -w "%{http_code}" ${url} | grep -q "${statusCode}"`
-}
-
-export function waitForProcess(processName: string) {
-  return `pgrep ${processName} > /dev/null`
-}
-
-export function waitForFile(filename: string) {
-  return `[ -f ${filename} ]`
-}
-
-export function waitForTimeout(timeout: number | Duration) {
-  return `sleep ${timeout}`
-}
-
 Template.build = TemplateClass.build
 Template.toJSON = TemplateClass.toJSON
 Template.toDockerfile = TemplateClass.toDockerfile
+
+Template.waitForPort = function (port: number) {
+  return `ss -tuln | grep :${port}`
+}
+
+Template.waitForURL = function (url: string, statusCode: number = 200) {
+  return `curl -s -o /dev/null -w "%{http_code}" ${url} | grep -q "${statusCode}"`
+}
+
+Template.waitForProcess = function (processName: string) {
+  return `pgrep ${processName} > /dev/null`
+}
+
+Template.waitForFile = function (filename: string) {
+  return `[ -f ${filename} ]`
+}
+
+Template.waitForTimeout = function (timeout: number | Duration) {
+  return `sleep ${timeout}`
+}
