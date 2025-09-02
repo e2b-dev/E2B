@@ -196,7 +196,7 @@ class TemplateBuilder:
     def git_clone(
         self,
         url: str,
-        path: str,
+        path: Optional[str] = None,
         branch: Optional[str] = None,
         depth: Optional[int] = None,
     ) -> "TemplateBuilder":

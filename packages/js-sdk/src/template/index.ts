@@ -106,7 +106,7 @@ interface TemplateBuilder {
   aptInstall(packages: string | string[]): TemplateBuilder
   gitClone(
     url: string,
-    path: string,
+    path?: string,
     options?: { branch?: string; depth?: number }
   ): TemplateBuilder
   setEnvs(envs: Record<string, string>): TemplateBuilder
@@ -392,7 +392,7 @@ export class TemplateClass
 
   gitClone(
     url: string,
-    path: string,
+    path?: string,
     options?: { branch?: string; depth?: number }
   ): TemplateBuilder {
     const args = ['git', 'clone', url, path]
