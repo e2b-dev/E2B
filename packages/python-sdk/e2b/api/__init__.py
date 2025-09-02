@@ -35,7 +35,7 @@ def handle_api_exception(
         body = {}
 
     if e.status_code == 401:
-        message = f"{e.status_code}: {body['message']}"
+        message = f"{e.status_code}: Unauthorized, please check your credentials."
         if body.get("message"):
             message += f" - {body['message']}"
         return AuthenticationException(message)
@@ -81,7 +81,7 @@ class ApiClient(AuthenticatedClient):
                 raise AuthenticationException(
                     "API key is required, please visit the Team tab at https://e2b.dev/dashboard to get your API key. "
                     "You can either set the environment variable `E2B_API_KEY` "
-                    'or you can pass it directly to the sandbox like Sandbox(api_key="e2b_...")',
+                    'or you can pass it directly to the method like api_key="e2b_..."',
                 )
             token = config.api_key
 
