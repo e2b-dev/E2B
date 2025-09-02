@@ -71,8 +71,7 @@ from .sandbox_async.filesystem.watch_handle import AsyncWatchHandle
 from .sandbox_async.commands.command_handle import AsyncCommandHandle
 from .sandbox_sync.paginator import SandboxPaginator
 
-from .template_sync import Template
-from .template_async import AsyncTemplate
+from .template import Template, AsyncTemplate
 
 __all__ = [
     # API
