@@ -1,6 +1,7 @@
 from typing import Callable, Literal, Optional, Union
 
-from e2b.template import LogEntry, TemplateBuilder, TemplateFinal, TemplateBase
+from e2b.template import TemplateBuilder, TemplateFinal, TemplateBase
+from e2b.template.logs import LogEntry
 
 import os
 from datetime import datetime

@@ -72,11 +72,6 @@ from .sandbox_async.commands.command_handle import AsyncCommandHandle
 from .sandbox_sync.paginator import SandboxPaginator
 
 from .template import (
-    wait_for_port,
-    wait_for_url,
-    wait_for_process,
-    wait_for_file,
-    wait_for_timeout,
     CopyItem,
     Instruction,
     Step,
@@ -138,11 +133,6 @@ __all__ = [
     "TemplateType",
     "BuildException",
     "FileUploadException",
-    "wait_for_port",
-    "wait_for_url",
-    "wait_for_process",
-    "wait_for_file",
-    "wait_for_timeout",
     "Template",
     "AsyncTemplate",
 ]

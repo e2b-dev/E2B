@@ -1,7 +1,5 @@
 import json
-from dataclasses import dataclass
-from datetime import datetime
-from typing import Dict, List, Literal, Optional, Union
+from typing import Dict, List, Optional, Union
 
 from e2b.template.dockerfile_parser import parse_dockerfile
 from e2b.template.types import CopyItem, Duration, Instruction, Step, TemplateType
@@ -10,22 +8,7 @@ from e2b.template.utils import (
     get_caller_directory,
     pad_octal,
     read_dockerignore,
-    strip_ansi_escape_codes,
 )
-
-
-@dataclass
-class LogEntry:
-    timestamp: datetime
-    level: Literal["debug", "info", "warn", "error"]
-    message: str
-
-    def __post_init__(self):
-        self.message = strip_ansi_escape_codes(self.message)
-
-    def __str__(self) -> str:
-        return f"[{self.timestamp.isoformat()}] [{self.level}] {self.message}"
-
 
 class TemplateBuilder:
     """Builder stage after fromImage - all methods except start/ready commands available"""
@@ -407,27 +390,27 @@ class TemplateBase:
 
         return template_data
 
+    @classmethod
+    def wait_for_port(cls, port: int) -> str:
+        """Generate a command to wait for a port to be available."""
+        return f"ss -tuln | grep :{port}"
 
-def wait_for_port(port: int) -> str:
-    """Generate a command to wait for a port to be available."""
-    return f"ss -tuln | grep :{port}"
+    @classmethod
+    def wait_for_url(cls, url: str, status_code: int = 200) -> str:
+        """Generate a command to wait for a URL to return a specific status code."""
+        return f'curl -s -o /dev/null -w "%{{http_code}}" {url} | grep -q "{status_code}"'
 
+    @classmethod
+    def wait_for_process(cls, process_name: str) -> str:
+        """Generate a command to wait for a process to be running."""
+        return f"pgrep {process_name} > /dev/null"
 
-def wait_for_url(url: str, status_code: int = 200) -> str:
-    """Generate a command to wait for a URL to return a specific status code."""
-    return f'curl -s -o /dev/null -w "%{{http_code}}" {url} | grep -q "{status_code}"'
+    @classmethod
+    def wait_for_file(cls, filename: str) -> str:
+        """Generate a command to wait for a file to exist."""
+        return f"[ -f {filename} ]"
 
-
-def wait_for_process(process_name: str) -> str:
-    """Generate a command to wait for a process to be running."""
-    return f"pgrep {process_name} > /dev/null"
-
-
-def wait_for_file(filename: str) -> str:
-    """Generate a command to wait for a file to exist."""
-    return f"[ -f {filename} ]"
-
-
-def wait_for_timeout(timeout: Duration) -> str:
-    """Generate a command to wait for a specified duration."""
-    return f"sleep {timeout}"
+    @classmethod
+    def wait_for_timeout(cls, timeout: Duration) -> str:
+        """Generate a command to wait for a specified duration."""
+        return f"sleep {timeout}"

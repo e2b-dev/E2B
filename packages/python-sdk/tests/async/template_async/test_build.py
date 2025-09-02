@@ -1,7 +1,7 @@
 import pytest
 from uuid import uuid4
 
-from e2b import AsyncTemplate, wait_for_timeout
+from e2b import AsyncTemplate
 
 
 @pytest.mark.skip_debug()
@@ -18,7 +18,7 @@ async def test_build():
         )
         .run_cmd("cat folder/test.txt")
         .set_workdir("/app")
-        .set_start_cmd("echo 'Hello, world!'", wait_for_timeout("10s"))
+        .set_start_cmd("echo 'Hello, world!'", AsyncTemplate.wait_for_timeout("10s"))
     )
 
     await AsyncTemplate.build(
