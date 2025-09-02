@@ -71,12 +71,6 @@ from .sandbox_async.filesystem.watch_handle import AsyncWatchHandle
 from .sandbox_async.commands.command_handle import AsyncCommandHandle
 from .sandbox_sync.paginator import SandboxPaginator
 
-from .template import (
-    CopyItem,
-    Instruction,
-    Step,
-    TemplateType,
-)
 from .template_sync import Template
 from .template_async import AsyncTemplate
 
@@ -95,6 +89,8 @@ __all__ = [
     "InvalidArgumentException",
     "NotEnoughSpaceException",
     "TemplateException",
+    "BuildException",
+    "FileUploadException",
     # Sandbox API
     "SandboxInfo",
     "SandboxMetrics",
@@ -127,12 +123,6 @@ __all__ = [
     "AsyncWatchHandle",
     "AsyncCommandHandle",
     # Template
-    "CopyItem",
-    "Instruction",
-    "Step",
-    "TemplateType",
-    "BuildException",
-    "FileUploadException",
     "Template",
     "AsyncTemplate",
 ]
