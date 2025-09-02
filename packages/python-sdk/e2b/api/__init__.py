@@ -33,9 +33,11 @@ def handle_api_exception(e: Response):
         body = {}
 
     if e.status_code == 429:
-        return RateLimitException(
-            f"{e.status_code}: Rate limit exceeded, please try again later."
-        )
+        message = f"{e.status_code}: Rate limit exceeded, please try again later"
+        if body.get("message"):
+            message += f" - {body['message']}"
+
+        return RateLimitException(message)
 
     if "message" in body:
         return SandboxException(f"{e.status_code}: {body['message']}")
@@ -91,6 +93,12 @@ class ApiClient(AuthenticatedClient):
             **default_headers,
             **(config.headers or {}),
         }
+
+        # Prevent passing these parameters twice
+        kwargs.pop("headers", None)
+        kwargs.pop("token", None)
+        kwargs.pop("auth_header_name", None)
+        kwargs.pop("prefix", None)
 
         super().__init__(
             base_url=config.api_url,

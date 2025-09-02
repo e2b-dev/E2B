@@ -14,7 +14,7 @@ E2B Python SDK supports both sync and async API:
 from e2b import Sandbox
 
 # Create sandbox
-sandbox = Sandbox()
+sandbox = Sandbox.create()
 ```
 
 ```py
@@ -42,7 +42,7 @@ from .exceptions import (
     NotEnoughSpaceException,
     TemplateException,
 )
-from .sandbox.sandbox_api import SandboxInfo
+from .sandbox.sandbox_api import SandboxInfo, SandboxQuery, SandboxState, SandboxMetrics
 from .sandbox.commands.main import ProcessInfo
 from .sandbox.commands.command_handle import (
     CommandResult,
@@ -56,16 +56,18 @@ from .sandbox.filesystem.watch_handle import (
     FilesystemEvent,
     FilesystemEventType,
 )
-from .sandbox.filesystem.filesystem import EntryInfo, FileType
+from .sandbox.filesystem.filesystem import EntryInfo, WriteInfo, FileType
 
 from .sandbox_sync.main import Sandbox
 from .sandbox_sync.filesystem.watch_handle import WatchHandle
 from .sandbox_sync.commands.command_handle import CommandHandle
+from .sandbox_async.paginator import AsyncSandboxPaginator
 
 from .sandbox_async.utils import OutputHandler
 from .sandbox_async.main import AsyncSandbox
 from .sandbox_async.filesystem.watch_handle import AsyncWatchHandle
 from .sandbox_async.commands.command_handle import AsyncCommandHandle
+from .sandbox_sync.paginator import SandboxPaginator
 
 __all__ = [
     # API
@@ -84,7 +86,11 @@ __all__ = [
     "TemplateException",
     # Sandbox API
     "SandboxInfo",
+    "SandboxMetrics",
     "ProcessInfo",
+    "SandboxQuery",
+    "SandboxState",
+    "SandboxMetrics",
     # Command handle
     "CommandResult",
     "Stderr",
@@ -96,13 +102,16 @@ __all__ = [
     "FilesystemEvent",
     "FilesystemEventType",
     "EntryInfo",
+    "WriteInfo",
     "FileType",
     # Sync sandbox
     "Sandbox",
+    "SandboxPaginator",
     "WatchHandle",
     "CommandHandle",
     # Async sandbox
     "OutputHandler",
+    "AsyncSandboxPaginator",
     "AsyncSandbox",
     "AsyncWatchHandle",
     "AsyncCommandHandle",

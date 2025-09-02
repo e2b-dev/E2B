@@ -19,7 +19,7 @@ await sandbox.files.write('/path/in/sandbox', content)
 ```python
 from e2b_code_interpreter import Sandbox
 
-sandbox = Sandbox()
+sandbox = Sandbox.create()
 
 # Read file from local filesystem
 with open("path/to/local/file", "rb") as file:
@@ -33,6 +33,8 @@ with open("path/to/local/file", "rb") as file:
 Sometimes, you may want to let users from unauthorized environments, like a browser, upload files to the sandbox.
 For this use case, you can use pre-signed URLs to let users upload files securely.
 
+All you need to do is create a sandbox with the `secure: true` option. An upload URL will then be generated with a signature that allows only authorized users to upload files.
+You can optionally set an expiration time for the URL so that it will be valid only for a limited time.
 <CodeGroup>
 ```js
 import fs from 'fs'
@@ -44,7 +46,6 @@ const sandbox = await Sandbox.create(template, { secure: true })
 // Create a pre-signed URL for file upload with a 10 second expiration
 const publicUploadUrl = await sandbox.uploadUrl(
   'demo.txt', {
-    useSignature: true,
     useSignatureExpiration: 10_000, // optional
   },
 )
@@ -63,10 +64,10 @@ from e2b import Sandbox
 import requests
 
 # Start a secured sandbox (all operations must be authorized by default)
-sandbox = Sandbox(timeout=12_000, secure=True)
+sandbox = Sandbox.create(timeout=12_000, secure=True)
 
 # Create a pre-signed URL for file upload with a 10 second expiration
-signed_url = sbx.upload_url(path="demo.txt", user="user", use_signature=True, use_signature_expiration=10_000)
+signed_url = sbx.upload_url(path="demo.txt", user="user", use_signature_expiration=10_000)
 
 form_data = {"file":"file content"}
 requests.post(signed_url, data=form_data)
@@ -124,7 +125,7 @@ await sandbox.files.write(files)
 import os
 from e2b_code_interpreter import Sandbox
 
-sandbox = Sandbox()
+sandbox = Sandbox.create()
 
 def read_directory_files(directory_path):
     files = []

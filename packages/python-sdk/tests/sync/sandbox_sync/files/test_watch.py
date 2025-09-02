@@ -22,8 +22,8 @@ def test_watch_directory_changes(sandbox: Sandbox):
 
 
 def test_watch_iterated(sandbox: Sandbox):
-    dirname = "test_watch_dir"
-    filename = "test_watch.txt"
+    dirname = "test_watch_dir_iterated"
+    filename = "test_watch_iterated.txt"
     content = "This file will be watched."
     new_content = "This file has been modified."
 
@@ -112,7 +112,7 @@ def test_watch_file(sandbox: Sandbox):
 
 
 def test_watch_file_with_secured_envd(template):
-    sbx = Sandbox(template, timeout=30, secure=True)
+    sbx = Sandbox.create(template, timeout=30, secure=True)
     try:
         sbx.files.watch_dir("/home/user/")
         sbx.files.write("test_watch.txt", "This file will be watched.")

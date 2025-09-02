@@ -161,7 +161,7 @@ class Client:
         self._codec = JSONCodec if json else ProtobufCodec
         self._response_type = response_type
         self._compressor = compressor
-        self._headers = {**{"user-agent": "connect-python"}, **headers}
+        self._headers = headers
         self._connection_retries = 3
 
     def _prepare_unary_request(

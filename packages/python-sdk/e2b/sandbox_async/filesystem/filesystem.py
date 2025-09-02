@@ -16,7 +16,11 @@ from e2b.envd.filesystem import filesystem_connect, filesystem_pb2
 from e2b.envd.rpc import authentication_header, handle_rpc_exception
 from e2b.envd.versions import ENVD_VERSION_RECURSIVE_WATCH
 from e2b.exceptions import SandboxException, TemplateException, InvalidArgumentException
-from e2b.sandbox.filesystem.filesystem import EntryInfo, map_file_type
+from e2b.sandbox.filesystem.filesystem import (
+    WriteInfo,
+    EntryInfo,
+    map_file_type,
+)
 from e2b.sandbox.filesystem.watch_handle import FilesystemEvent
 from e2b.sandbox_async.filesystem.watch_handle import AsyncWatchHandle
 from e2b.sandbox_async.utils import OutputHandler
@@ -47,7 +51,7 @@ class Filesystem:
             # compressor=e2b_connect.GzipCompressor,
             async_pool=pool,
             json=True,
-            headers=connection_config.headers,
+            headers=connection_config.sandbox_headers,
         )
 
     @overload
@@ -134,21 +138,17 @@ class Filesystem:
         elif format == "stream":
             return r.aiter_bytes()
 
-    @overload
     async def write(
         self,
         path: str,
         data: Union[str, bytes, IO],
         user: Username = "user",
         request_timeout: Optional[float] = None,
-    ) -> EntryInfo:
+    ) -> WriteInfo:
         """
         Write content to a file on the path.
-
         Writing to a file that doesn't exist creates the file.
-
         Writing to a file that already exists overwrites the file.
-
         Writing to a file at path that doesn't exist creates the necessary directories.
 
         :param path: Path to the file
@@ -158,76 +158,54 @@ class Filesystem:
 
         :return: Information about the written file
         """
+        result = await self.write_files(
+            [WriteEntry(path=path, data=data)], user, request_timeout
+        )
 
-    @overload
-    async def write(
+        if len(result) != 1:
+            raise SandboxException("Received unexpected response from write operation")
+
+        return result[0]
+
+    async def write_files(
         self,
         files: List[WriteEntry],
-        user: Optional[Username] = "user",
+        user: Username = "user",
         request_timeout: Optional[float] = None,
-    ) -> List[EntryInfo]:
+    ) -> List[WriteInfo]:
         """
         Writes multiple files.
 
-        :param files: list of files to write
+        Writes a list of files to the filesystem.
+        When writing to a file that doesn't exist, the file will get created.
+        When writing to a file that already exists, the file will get overwritten.
+        When writing to a file that's in a directory that doesn't exist, you'll get an error.
+
+        :param files: list of files to write as `WriteEntry` objects, each containing `path` and `data`
         :param user: Run the operation as this user
         :param request_timeout: Timeout for the request
         :return: Information about the written files
         """
-
-    async def write(
-        self,
-        path_or_files: Union[str, List[WriteEntry]],
-        data_or_user: Union[str, bytes, IO, Username] = "user",
-        user_or_request_timeout: Optional[Union[float, Username]] = None,
-        request_timeout_or_none: Optional[float] = None,
-    ) -> Union[EntryInfo, List[EntryInfo]]:
-        """
-        Writes content to a file on the path.
-        When writing to a file that doesn't exist, the file will get created.
-        When writing to a file that already exists, the file will get overwritten.
-        When writing to a file that's in a directory that doesn't exist, you'll get an error.
-        """
-        path, write_files, user, request_timeout = None, [], "user", None
-        if isinstance(path_or_files, str):
-            if isinstance(data_or_user, list):
-                raise Exception(
-                    "Cannot specify both path and array of files. You have to specify either path and data for a single file or an array for multiple files."
-                )
-            path, write_files, user, request_timeout = (
-                path_or_files,
-                [{"path": path_or_files, "data": data_or_user}],
-                user_or_request_timeout or "user",
-                request_timeout_or_none,
-            )
-        else:
-            if path_or_files is None:
-                raise Exception("Path or files are required")
-            path, write_files, user, request_timeout = (
-                None,
-                path_or_files,
-                data_or_user,
-                user_or_request_timeout,
-            )
+        params = {"username": user}
+        if len(files) == 1:
+            params["path"] = files[0]["path"]
 
         # Prepare the files for the multipart/form-data request
         httpx_files = []
-        for file in write_files:
+        for file in files:
             file_path, file_data = file["path"], file["data"]
             if isinstance(file_data, str) or isinstance(file_data, bytes):
                 httpx_files.append(("file", (file_path, file_data)))
             elif isinstance(file_data, IOBase):
                 httpx_files.append(("file", (file_path, file_data.read())))
             else:
-                raise ValueError(f"Unsupported data type for file {file_path}")
+                raise InvalidArgumentException(
+                    f"Unsupported data type for file {file_path}"
+                )
 
         # Allow passing empty list of files
         if len(httpx_files) == 0:
             return []
-
-        params = {"username": user}
-        if path is not None:
-            params["path"] = path
 
         r = await self._envd_api.post(
             ENVD_API_FILES_ROUTE,
@@ -243,13 +221,9 @@ class Filesystem:
         write_files = r.json()
 
         if not isinstance(write_files, list) or len(write_files) == 0:
-            raise Exception("Expected to receive information about written file")
+            raise SandboxException("Expected to receive information about written file")
 
-        if len(write_files) == 1 and path:
-            file = write_files[0]
-            return EntryInfo(**file)
-        else:
-            return [EntryInfo(**file) for file in write_files]
+        return [WriteInfo(**file) for file in write_files]
 
     async def list(
         self,
@@ -286,7 +260,23 @@ class Filesystem:
 
                 if event_type:
                     entries.append(
-                        EntryInfo(name=entry.name, type=event_type, path=entry.path)
+                        EntryInfo(
+                            name=entry.name,
+                            type=event_type,
+                            path=entry.path,
+                            size=entry.size,
+                            mode=entry.mode,
+                            permissions=entry.permissions,
+                            owner=entry.owner,
+                            group=entry.group,
+                            modified_time=entry.modified_time.ToDatetime(),
+                            # Optional, we can't directly access symlink_target otherwise if will be "" instead of None
+                            symlink_target=(
+                                entry.symlink_target
+                                if entry.HasField("symlink_target")
+                                else None
+                            ),
+                        )
                     )
 
             return entries
@@ -323,6 +313,49 @@ class Filesystem:
             if isinstance(e, connect.ConnectException):
                 if e.status == connect.Code.not_found:
                     return False
+            raise handle_rpc_exception(e)
+
+    async def get_info(
+        self,
+        path: str,
+        user: Username = "user",
+        request_timeout: Optional[float] = None,
+    ) -> EntryInfo:
+        """
+        Get information about a file or directory.
+
+        :param path: Path to a file or a directory
+        :param user: Run the operation as this user
+        :param request_timeout: Timeout for the request in **seconds**
+
+        :return: Information about the file or directory like name, type, and path
+        """
+        try:
+            r = await self._rpc.astat(
+                filesystem_pb2.StatRequest(path=path),
+                request_timeout=self._connection_config.get_request_timeout(
+                    request_timeout
+                ),
+                headers=authentication_header(user),
+            )
+
+            return EntryInfo(
+                name=r.entry.name,
+                type=map_file_type(r.entry.type),
+                path=r.entry.path,
+                size=r.entry.size,
+                mode=r.entry.mode,
+                permissions=r.entry.permissions,
+                owner=r.entry.owner,
+                group=r.entry.group,
+                modified_time=r.entry.modified_time.ToDatetime(),
+                symlink_target=(
+                    r.entry.symlink_target
+                    if r.entry.HasField("symlink_target")
+                    else None
+                ),
+            )
+        except Exception as e:
             raise handle_rpc_exception(e)
 
     async def remove(
@@ -382,6 +415,18 @@ class Filesystem:
                 name=r.entry.name,
                 type=map_file_type(r.entry.type),
                 path=r.entry.path,
+                size=r.entry.size,
+                mode=r.entry.mode,
+                permissions=r.entry.permissions,
+                owner=r.entry.owner,
+                group=r.entry.group,
+                modified_time=r.entry.modified_time.ToDatetime(),
+                # Optional, we can't directly access symlink_target otherwise if will be "" instead of None
+                symlink_target=(
+                    r.entry.symlink_target
+                    if r.entry.HasField("symlink_target")
+                    else None
+                ),
             )
         except Exception as e:
             raise handle_rpc_exception(e)

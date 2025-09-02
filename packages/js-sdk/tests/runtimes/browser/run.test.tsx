@@ -14,7 +14,7 @@ function E2BTest() {
     const getText = async () => {
       const sandbox = await Sandbox.create(template, {
         apiKey: inject('E2B_API_KEY'),
-        domain: inject('E2B_DOMAIN')
+        domain: inject('E2B_DOMAIN'),
       })
 
       try {
@@ -31,14 +31,12 @@ function E2BTest() {
 
   return <div>{text}</div>
 }
-test(
-  'browser test',
-  async () => {
-    const { getByText } = render(<E2BTest />)
-    await waitFor(
-      () => expect.element(getByText('Hello World')).toBeInTheDocument(),
-      {
-        timeout: 30_000,
-      }
-    )
-  }, 40_000)
+test('browser test', async () => {
+  const { getByText } = render(<E2BTest />)
+  await waitFor(
+    () => expect.element(getByText('Hello World')).toBeInTheDocument(),
+    {
+      timeout: 30_000,
+    }
+  )
+}, 40_000)

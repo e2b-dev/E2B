@@ -21,7 +21,7 @@ console.log(result)
 ```python
 from e2b_code_interpreter import Sandbox
 
-sandbox = Sandbox()
+sandbox = Sandbox.create()
 
 result = sandbox.commands.run('echo hello; sleep 1; echo world', on_stdout=lambda data: print(data), on_stderr=lambda data: print(data))
 print(result)

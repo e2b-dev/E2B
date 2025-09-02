@@ -14,6 +14,10 @@ export interface Logger {
    */
   info?: (...args: any[]) => void
   /**
+   * Warn level logging method.
+   */
+  warn?: (...args: any[]) => void
+  /**
    * Error level logging method.
    */
   error?: (...args: any[]) => void

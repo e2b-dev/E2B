@@ -7,14 +7,14 @@ from e2b import Sandbox
 
 
 @pytest.mark.skip_debug()
-async def test_download_url_with_signing(template):
-    sbx = Sandbox(template, timeout=100, secure=True)
+def test_download_url_with_signing(template):
+    sbx = Sandbox.create(template, timeout=100, secure=True)
     file_path = "test_download_url_with_signing.txt"
     file_content = "This file will be watched."
 
     try:
         sbx.files.write(file_path, file_content)
-        signed_url = sbx.download_url(file_path, "user", True)
+        signed_url = sbx.download_url(file_path, "user")
 
         with urllib.request.urlopen(signed_url) as resp:
             assert resp.status == 200
@@ -26,14 +26,14 @@ async def test_download_url_with_signing(template):
 
 
 @pytest.mark.skip_debug()
-async def test_download_url_with_signing_and_expiration(template):
-    sbx = Sandbox(template, timeout=100, secure=True)
+def test_download_url_with_signing_and_expiration(template):
+    sbx = Sandbox.create(template, timeout=100, secure=True)
     file_path = "test_download_url_with_signing.txt"
     file_content = "This file will be watched."
 
     try:
         sbx.files.write(file_path, file_content)
-        signed_url = sbx.download_url(file_path, "user", True, 120)
+        signed_url = sbx.download_url(file_path, "user", 120)
 
         with urllib.request.urlopen(signed_url) as resp:
             assert resp.status == 200
@@ -45,17 +45,15 @@ async def test_download_url_with_signing_and_expiration(template):
 
 
 @pytest.mark.skip_debug()
-async def test_download_url_with_expired_signing(template):
-    sbx = Sandbox(template, timeout=100, secure=True)
+def test_download_url_with_expired_signing(template):
+    sbx = Sandbox.create(template, timeout=100, secure=True)
     file_path = "test_download_url_with_signing.txt"
     file_content = "This file will be watched."
 
     try:
         sbx.files.write(file_path, file_content)
 
-        signed_url = sbx.download_url(
-            file_path, "user", use_signature=True, use_signature_expiration=-120
-        )
+        signed_url = sbx.download_url(file_path, "user", use_signature_expiration=-120)
 
         with pytest.raises(urllib.error.HTTPError) as exc_info:
             urllib.request.urlopen(signed_url)

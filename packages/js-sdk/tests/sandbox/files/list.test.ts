@@ -119,3 +119,88 @@ sandboxTest('list directory with invalid depth', async ({ sandbox }) => {
     )
   }
 })
+
+sandboxTest('file entry details', async ({ sandbox }) => {
+  const testDir = 'test-file-entry'
+  const filePath = `${testDir}/test.txt`
+  const content = 'Hello, World!'
+
+  await sandbox.files.makeDir(testDir)
+  await sandbox.files.write(filePath, content)
+
+  const files = await sandbox.files.list(testDir, { depth: 1 })
+  assert.equal(files.length, 1)
+
+  const fileEntry = files[0]
+  assert.equal(fileEntry.name, 'test.txt')
+  assert.equal(fileEntry.path, `/home/user/${filePath}`)
+  assert.equal(fileEntry.type, 'file')
+  assert.equal(fileEntry.mode, 0o644)
+  assert.equal(fileEntry.permissions, '-rw-r--r--')
+  assert.equal(fileEntry.owner, 'user')
+  assert.equal(fileEntry.group, 'user')
+  assert.equal(fileEntry.size, content.length)
+  assert.ok(fileEntry.modifiedTime)
+  assert.isUndefined(fileEntry.symlinkTarget)
+})
+
+sandboxTest('directory entry details', async ({ sandbox }) => {
+  const testDir = 'test-entry-info'
+  const subDir = `${testDir}/subdir`
+
+  await sandbox.files.makeDir(testDir)
+  await sandbox.files.makeDir(subDir)
+
+  const files = await sandbox.files.list(testDir, { depth: 1 })
+  assert.equal(files.length, 1)
+
+  const dirEntry = files[0]
+  assert.equal(dirEntry.name, 'subdir')
+  assert.equal(dirEntry.path, `/home/user/${subDir}`)
+  assert.equal(dirEntry.type, 'dir')
+  assert.equal(dirEntry.mode, 0o755)
+  assert.equal(dirEntry.permissions, 'drwxr-xr-x')
+  assert.equal(dirEntry.owner, 'user')
+  assert.equal(dirEntry.group, 'user')
+  assert.ok(dirEntry.modifiedTime)
+})
+
+sandboxTest('mixed entries (files and directories)', async ({ sandbox }) => {
+  const testDir = 'test-mixed-entries'
+  const subDir = `${testDir}/subdir`
+  const filePath = `${testDir}/test.txt`
+  const content = 'Hello, World!'
+
+  await sandbox.files.makeDir(testDir)
+  await sandbox.files.makeDir(subDir)
+  await sandbox.files.write(filePath, content)
+
+  const files = await sandbox.files.list(testDir, { depth: 1 })
+  assert.equal(files.length, 2)
+
+  // Create a map of entries by name for easier verification
+  const entries = new Map(files.map((entry) => [entry.name, entry]))
+
+  // Verify directory entry
+  const dirEntry = entries.get('subdir')
+  assert.ok(dirEntry)
+  assert.equal(dirEntry!.path, `/home/user/${subDir}`)
+  assert.equal(dirEntry!.type, 'dir')
+  assert.equal(dirEntry!.mode, 0o755)
+  assert.equal(dirEntry!.permissions, 'drwxr-xr-x')
+  assert.equal(dirEntry!.owner, 'user')
+  assert.equal(dirEntry!.group, 'user')
+  assert.ok(dirEntry!.modifiedTime)
+
+  // Verify file entry
+  const fileEntry = entries.get('test.txt')
+  assert.ok(fileEntry)
+  assert.equal(fileEntry!.path, `/home/user/${filePath}`)
+  assert.equal(fileEntry!.type, 'file')
+  assert.equal(fileEntry!.mode, 0o644)
+  assert.equal(fileEntry!.permissions, '-rw-r--r--')
+  assert.equal(fileEntry!.owner, 'user')
+  assert.equal(fileEntry!.group, 'user')
+  assert.equal(fileEntry!.size, content.length)
+  assert.ok(fileEntry!.modifiedTime)
+})

@@ -1,6 +1,7 @@
 from dataclasses import dataclass
+from datetime import datetime
 from enum import Enum
-from typing import IO, Optional, Union
+from typing import IO, Optional, Union, TypedDict
 
 from e2b.envd.filesystem import filesystem_pb2
 
@@ -28,7 +29,7 @@ def map_file_type(ft: filesystem_pb2.FileType):
 
 
 @dataclass
-class EntryInfo:
+class WriteInfo:
     """
     Sandbox filesystem object information.
     """
@@ -48,7 +49,43 @@ class EntryInfo:
 
 
 @dataclass
-class WriteEntry:
+class EntryInfo(WriteInfo):
+    """
+    Extended sandbox filesystem object information.
+    """
+
+    size: int
+    """
+    Size of the filesystem object in bytes.
+    """
+    mode: int
+    """
+    File mode and permission bits.
+    """
+    permissions: str
+    """
+    String representation of file permissions (e.g. 'rwxr-xr-x').
+    """
+    owner: str
+    """
+    Owner of the filesystem object.
+    """
+    group: str
+    """
+    Group owner of the filesystem object.
+    """
+    modified_time: datetime
+    """
+    Last modification time of the filesystem object.
+    """
+    symlink_target: Optional[str] = None
+    """
+    Target of the symlink if the filesystem object is a symlink.
+    If the filesystem object is not a symlink, this field is None.
+    """
+
+
+class WriteEntry(TypedDict):
     """
     Contains path and data of the file to be written to the filesystem.
     """

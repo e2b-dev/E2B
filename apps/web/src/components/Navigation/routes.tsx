@@ -283,13 +283,15 @@ export const docRoutes: NavGroup[] = [
         href: '/docs/sandbox',
       },
       {
+        title: 'Lifecycle events API',
+        href: '/docs/sandbox/lifecycle-events-api',
+      },
+      {
         title: 'Persistence',
-        tag: Tag.New,
         href: '/docs/sandbox/persistence',
       },
       {
         title: 'Metrics',
-        tag: Tag.New,
         href: '/docs/sandbox/metrics',
       },
       {
@@ -317,8 +319,8 @@ export const docRoutes: NavGroup[] = [
         href: '/docs/sandbox/connect-bucket',
       },
       {
-        title: 'Installing beta SDKs',
-        href: '/docs/sandbox/installing-beta-sdks',
+        title: 'Rate limits',
+        href: '/docs/sandbox/rate-limits',
       },
       // {
       //   title: '* Request timeouts',
@@ -358,6 +360,10 @@ export const docRoutes: NavGroup[] = [
       {
         title: 'Read & write',
         href: '/docs/filesystem/read-write',
+      },
+      {
+        title: 'File & directory metadata',
+        href: '/docs/filesystem/info',
       },
       {
         title: 'Watch directory for changes',
@@ -447,6 +453,24 @@ export const docRoutes: NavGroup[] = [
       {
         title: 'Shutdown running sandboxes',
         href: '/docs/cli/shutdown-sandboxes',
+      },
+    ],
+  },
+  {
+    title: 'Deployment',
+    items: [
+      {
+        title: 'Bring Your Own Cloud',
+        href: '/docs/byoc',
+      },
+    ],
+  },
+  {
+    title: 'Migration',
+    items: [
+      {
+        title: 'SDK v2 Migration Guide',
+        href: '/docs/migration/v2',
       },
     ],
   },

@@ -1,19 +1,38 @@
 import * as tablePrinter from 'console-table-printer'
 import * as commander from 'commander'
-import * as e2b from 'e2b'
+import { components, Sandbox, SandboxInfo } from 'e2b'
 
-import { client, connectionConfig, ensureAPIKey } from 'src/api'
-import { handleE2BRequestError } from '../../utils/errors'
+import { ensureAPIKey } from 'src/api'
 
 export const listCommand = new commander.Command('list')
-  .description('list all running sandboxes')
+  .description('list all sandboxes, by default it list only running ones')
   .alias('ls')
-  .action(async () => {
+  .option(
+    '-s, --state <state>',
+    'filter by state, eg. running, paused. Defaults to running',
+    (value) => value.split(',')
+  )
+  .option(
+    '-m, --metadata <metadata>',
+    'filter by metadata, eg. key1=value1',
+    (value) => value.replace(/,/g, '&')
+  )
+  .option(
+    '-l, --limit <limit>',
+    'limit the number of sandboxes returned',
+    (value) => parseInt(value)
+  )
+  .action(async (options) => {
     try {
-      const sandboxes = await listSandboxes()
+      const state = options.state || ['running']
+      const sandboxes = await listSandboxes({
+        limit: options.limit,
+        state,
+        metadataRaw: options.metadata,
+      })
 
       if (!sandboxes?.length) {
-        console.log('No running sandboxes.')
+        console.log('No sandboxes found')
       } else {
         const table = new tablePrinter.Table({
           title: 'Running sandboxes',
@@ -28,6 +47,7 @@ export const listCommand = new commander.Command('list')
             { name: 'alias', alignment: 'left', title: 'Alias' },
             { name: 'startedAt', alignment: 'left', title: 'Started at' },
             { name: 'endAt', alignment: 'left', title: 'End at' },
+            { name: 'state', alignment: 'left', title: 'State' },
             { name: 'cpuCount', alignment: 'left', title: 'vCPUs' },
             { name: 'memoryMB', alignment: 'left', title: 'RAM MiB' },
             { name: 'metadata', alignment: 'left', title: 'Metadata' },
@@ -36,9 +56,11 @@ export const listCommand = new commander.Command('list')
           rows: sandboxes
             .map((sandbox) => ({
               ...sandbox,
-              sandboxID: sandbox.sandboxID,
+              sandboxID: sandbox.sandboxId,
               startedAt: new Date(sandbox.startedAt).toLocaleString(),
               endAt: new Date(sandbox.endAt).toLocaleString(),
+              state:
+                sandbox.state.charAt(0).toUpperCase() + sandbox.state.slice(1), // capitalize
               metadata: JSON.stringify(sandbox.metadata),
             }))
             .sort(
@@ -81,15 +103,53 @@ export const listCommand = new commander.Command('list')
     }
   })
 
-export async function listSandboxes(): Promise<
-  e2b.components['schemas']['ListedSandbox'][]
-> {
-  ensureAPIKey()
+type ListSandboxesOptions = {
+  limit?: number
+  state?: components['schemas']['SandboxState'][]
+  metadataRaw?: string
+}
 
-  const signal = connectionConfig.getSignal()
-  const res = await client.api.GET('/sandboxes', { signal })
+export async function listSandboxes({
+  limit,
+  state,
+  metadataRaw,
+}: ListSandboxesOptions = {}): Promise<SandboxInfo[]> {
+  const apiKey = ensureAPIKey()
 
-  handleE2BRequestError(res,  'Error getting running sandboxes')
+  let metadata: Record<string, string> | undefined = undefined
+  if (metadataRaw && metadataRaw.length > 0) {
+    const parsedMetadata: Record<string, string> = {}
+    metadataRaw.split(',').map((pair: string) => {
+      const [key, value] = pair.split('=')
+      if (key && value) {
+        parsedMetadata[key.trim()] = value.trim()
+      }
+    })
 
-  return res.data
+    metadata = parsedMetadata
+  }
+
+  let pageLimit = limit
+  if (!limit || limit > 100) {
+    pageLimit = 100
+  }
+
+  let remainingLimit = limit
+  const sandboxes: SandboxInfo[] = []
+  const iterator = Sandbox.list({
+    apiKey: apiKey,
+    limit: pageLimit,
+    query: { state, metadata },
+  })
+
+  while (iterator.hasNext && (!remainingLimit || remainingLimit > 0)) {
+    const batch = await iterator.nextItems()
+    sandboxes.push(...batch)
+
+    if (limit && remainingLimit) {
+      remainingLimit -= batch.length
+    }
+  }
+
+  return sandboxes
 }

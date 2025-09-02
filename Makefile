@@ -1,28 +1,19 @@
-update-api-spec:
-	@echo "Updating API spec"
-	@./scripts/update-api-spec.sh
-	@echo "Done"
-
 .PHONY: codegen
 codegen:
 	@echo "Generating SDK code from openapi and envd spec"
-	@./scripts/codegen.sh
+	@CODEGEN_IMAGE=$${CODEGEN_IMAGE:-$$(docker build -q -t codegen-env . -f codegen.Dockerfile)} ; \
+	echo "Using codegen image: $$CODEGEN_IMAGE" \
+	&& docker run -v $$PWD:/workspace $$CODEGEN_IMAGE make generate
 
 generate: generate-js generate-python
 
 generate-js:
 	cd packages/js-sdk && pnpm generate
-	cd packages/js-sdk && pnpm generate-envd-api
-	cd spec/envd && buf generate --template buf-js.gen.yaml
 
 generate-python:
-	if [ ! -f "/go/bin/protoc-gen-connect-python" ]; then \
-		$(MAKE) -C packages/connect-python build; \
-	fi
-	cd packages/python-sdk && make generate-api
-	cd spec/envd && buf generate --template buf-python.gen.yaml
-	cd packages/python-sdk && ./scripts/fix-python-pb.sh && black .
+	cd packages/python-sdk && make generate
 
 .PHONY: init-styles
 init-styles:
 	vale sync
+
