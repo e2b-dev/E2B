@@ -10,6 +10,7 @@ from e2b.template.utils import (
     read_dockerignore,
 )
 
+
 class TemplateBuilder:
     """Builder stage after fromImage - all methods except start/ready commands available"""
 
@@ -398,7 +399,9 @@ class TemplateBase:
     @classmethod
     def wait_for_url(cls, url: str, status_code: int = 200) -> str:
         """Generate a command to wait for a URL to return a specific status code."""
-        return f'curl -s -o /dev/null -w "%{{http_code}}" {url} | grep -q "{status_code}"'
+        return (
+            f'curl -s -o /dev/null -w "%{{http_code}}" {url} | grep -q "{status_code}"'
+        )
 
     @classmethod
     def wait_for_process(cls, process_name: str) -> str:

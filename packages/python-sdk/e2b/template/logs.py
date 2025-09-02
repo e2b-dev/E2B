@@ -16,4 +16,3 @@ class LogEntry:
 
     def __str__(self) -> str:
         return f"[{self.timestamp.isoformat()}] [{self.level}] {self.message}"
-
