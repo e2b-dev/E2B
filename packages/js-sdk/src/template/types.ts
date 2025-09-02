@@ -59,8 +59,8 @@ export interface TemplateBuilder {
   runCmd(commands: string[], options?: { user?: string }): TemplateBuilder
   setWorkdir(workdir: string): TemplateBuilder
   setUser(user: string): TemplateBuilder
-  pipInstall(packages: string | string[]): TemplateBuilder
-  npmInstall(packages: string | string[]): TemplateBuilder
+  pipInstall(packages?: string | string[]): TemplateBuilder
+  npmInstall(packages?: string | string[], g?: boolean): TemplateBuilder
   aptInstall(packages: string | string[]): TemplateBuilder
   gitClone(
     url: string,

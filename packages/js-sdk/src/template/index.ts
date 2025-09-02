@@ -282,8 +282,13 @@ export class TemplateClass
 
   pipInstall(packages?: string | string[]): TemplateBuilder {
     const args = ['pip', 'install']
-    if (packages) {
-      args.push(...packages)
+    const packageList = packages
+      ? Array.isArray(packages)
+        ? packages
+        : [packages]
+      : undefined
+    if (packageList) {
+      args.push(...packageList)
     } else {
       args.push('.')
     }
@@ -292,8 +297,13 @@ export class TemplateClass
 
   npmInstall(packages?: string | string[], g?: boolean): TemplateBuilder {
     const args = ['npm', 'install']
-    if (packages) {
-      args.push(...packages)
+    const packageList = packages
+      ? Array.isArray(packages)
+        ? packages
+        : [packages]
+      : undefined
+    if (packageList) {
+      args.push(...packageList)
     }
     if (g) {
       args.push('-g')
