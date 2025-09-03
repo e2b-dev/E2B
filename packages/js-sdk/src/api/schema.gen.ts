@@ -1242,9 +1242,8 @@ export interface components {
       /**
        * @deprecated
        * @description Automatically pauses the sandbox after the timeout
-       * @default false
        */
-      autoPause: boolean
+      autoPause?: boolean
       /**
        * Format: int32
        * @description Time to live for the sandbox in seconds.
