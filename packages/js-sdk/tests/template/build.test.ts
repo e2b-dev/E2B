@@ -18,6 +18,5 @@ test('build template', { timeout: 180000 }, async () => {
     alias: randomUUID(),
     cpuCount: 1,
     memoryMB: 1024,
-    onBuildLogs: (logEntry) => console.log(logEntry.toString()),
   })
 })
