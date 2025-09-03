@@ -1,55 +1,56 @@
 from collections.abc import Mapping
-from typing import Any, TypeVar, Union
+from typing import Any, TypeVar
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
-from ..types import UNSET, Unset
+from ..models.gcp_registry_type import GCPRegistryType
 
-T = TypeVar("T", bound="ResumedSandbox")
+T = TypeVar("T", bound="GCPRegistry")
 
 
 @_attrs_define
-class ResumedSandbox:
+class GCPRegistry:
     """
     Attributes:
-        auto_pause (Union[Unset, bool]): Automatically pauses the sandbox after the timeout
-        timeout (Union[Unset, int]): Time to live for the sandbox in seconds. Default: 15.
+        service_account_json (str): Service Account JSON for GCP authentication
+        type_ (GCPRegistryType): Type of registry authentication
     """
 
-    auto_pause: Union[Unset, bool] = UNSET
-    timeout: Union[Unset, int] = 15
+    service_account_json: str
+    type_: GCPRegistryType
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        auto_pause = self.auto_pause
+        service_account_json = self.service_account_json
 
-        timeout = self.timeout
+        type_ = self.type_.value
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
-        field_dict.update({})
-        if auto_pause is not UNSET:
-            field_dict["autoPause"] = auto_pause
-        if timeout is not UNSET:
-            field_dict["timeout"] = timeout
+        field_dict.update(
+            {
+                "serviceAccountJson": service_account_json,
+                "type": type_,
+            }
+        )
 
         return field_dict
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        auto_pause = d.pop("autoPause", UNSET)
+        service_account_json = d.pop("serviceAccountJson")
 
-        timeout = d.pop("timeout", UNSET)
+        type_ = GCPRegistryType(d.pop("type"))
 
-        resumed_sandbox = cls(
-            auto_pause=auto_pause,
-            timeout=timeout,
+        gcp_registry = cls(
+            service_account_json=service_account_json,
+            type_=type_,
         )
 
-        resumed_sandbox.additional_properties = d
-        return resumed_sandbox
+        gcp_registry.additional_properties = d
+        return gcp_registry
 
     @property
     def additional_keys(self) -> list[str]:
