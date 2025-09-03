@@ -12,26 +12,17 @@ export interface UserConfig {
   teamId: string
   teamApiKey: string
   dockerProxySet?: boolean
-
-  /**
-   * @deprecated Kept for backward compatibility. Use {@link UserConfig.teamApiKey} instead.
-   */
-  defaultTeamApiKey?: string
-
-  /**
-   * @deprecated Kept for backward compatibility. Use {@link UserConfig.teamId} instead.
-   */
-  defaultTeamId?: string
 }
 
 export const USER_CONFIG_PATH = path.join(os.homedir(), '.e2b', 'config.json') // TODO: Keep in Keychain
 export const DOCS_BASE =
   process.env.E2B_DOCS_BASE ||
   `https://${process.env.E2B_DOMAIN || 'e2b.dev'}/docs`
-export const SANDBOX_INSPECT_URL = (teamId: string, sandboxId: string) =>
+
+export const SANDBOX_INSPECT_URL = (sandboxId: string) =>
   `https://${
     process.env.E2B_DOMAIN || 'e2b.dev'
-  }/dashboard/${teamId}/sandboxes/${sandboxId}/inspect`
+  }/dashboard/inspect/${sandboxId}`
 
 export function getUserConfig(): UserConfig | null {
   if (!fs.existsSync(USER_CONFIG_PATH)) return null

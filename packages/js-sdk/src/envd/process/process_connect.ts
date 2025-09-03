@@ -3,20 +3,35 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { ConnectRequest, ConnectResponse, ListRequest, ListResponse, SendInputRequest, SendInputResponse, SendSignalRequest, SendSignalResponse, StartRequest, StartResponse, StreamInputRequest, StreamInputResponse, UpdateRequest, UpdateResponse } from "./process_pb.js";
-import { MethodKind } from "@bufbuild/protobuf";
+import {
+  ConnectRequest,
+  ConnectResponse,
+  ListRequest,
+  ListResponse,
+  SendInputRequest,
+  SendInputResponse,
+  SendSignalRequest,
+  SendSignalResponse,
+  StartRequest,
+  StartResponse,
+  StreamInputRequest,
+  StreamInputResponse,
+  UpdateRequest,
+  UpdateResponse,
+} from './process_pb.js'
+import { MethodKind } from '@bufbuild/protobuf'
 
 /**
  * @generated from service process.Process
  */
 export const Process = {
-  typeName: "process.Process",
+  typeName: 'process.Process',
   methods: {
     /**
      * @generated from rpc process.Process.List
      */
     list: {
-      name: "List",
+      name: 'List',
       I: ListRequest,
       O: ListResponse,
       kind: MethodKind.Unary,
@@ -25,7 +40,7 @@ export const Process = {
      * @generated from rpc process.Process.Connect
      */
     connect: {
-      name: "Connect",
+      name: 'Connect',
       I: ConnectRequest,
       O: ConnectResponse,
       kind: MethodKind.ServerStreaming,
@@ -34,7 +49,7 @@ export const Process = {
      * @generated from rpc process.Process.Start
      */
     start: {
-      name: "Start",
+      name: 'Start',
       I: StartRequest,
       O: StartResponse,
       kind: MethodKind.ServerStreaming,
@@ -43,7 +58,7 @@ export const Process = {
      * @generated from rpc process.Process.Update
      */
     update: {
-      name: "Update",
+      name: 'Update',
       I: UpdateRequest,
       O: UpdateResponse,
       kind: MethodKind.Unary,
@@ -54,7 +69,7 @@ export const Process = {
      * @generated from rpc process.Process.StreamInput
      */
     streamInput: {
-      name: "StreamInput",
+      name: 'StreamInput',
       I: StreamInputRequest,
       O: StreamInputResponse,
       kind: MethodKind.ClientStreaming,
@@ -63,7 +78,7 @@ export const Process = {
      * @generated from rpc process.Process.SendInput
      */
     sendInput: {
-      name: "SendInput",
+      name: 'SendInput',
       I: SendInputRequest,
       O: SendInputResponse,
       kind: MethodKind.Unary,
@@ -72,11 +87,10 @@ export const Process = {
      * @generated from rpc process.Process.SendSignal
      */
     sendSignal: {
-      name: "SendSignal",
+      name: 'SendSignal',
       I: SendSignalRequest,
       O: SendSignalResponse,
       kind: MethodKind.Unary,
     },
-  }
-} as const;
-
+  },
+} as const

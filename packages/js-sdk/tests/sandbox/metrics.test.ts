@@ -1,11 +1,11 @@
 import { expect } from 'vitest'
 
 import { SandboxMetrics } from '../../src'
-import {sandboxTest, isDebug, wait} from '../setup.js'
+import { sandboxTest, isDebug, wait } from '../setup.js'
 
 sandboxTest.skipIf(isDebug)('sbx metrics', async ({ sandbox }) => {
   let metrics: SandboxMetrics[]
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < 15; i++) {
     metrics = await sandbox.getMetrics()
     if (metrics.length > 0) {
       break

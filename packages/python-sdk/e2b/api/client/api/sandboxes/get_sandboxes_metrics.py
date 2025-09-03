@@ -18,7 +18,7 @@ def _get_kwargs(
 
     json_sandbox_ids = sandbox_ids
 
-    params["sandbox_ids"] = json_sandbox_ids
+    params["sandbox_ids"] = ",".join(str(item) for item in json_sandbox_ids)
 
     params = {k: v for k, v in params.items() if v is not UNSET and v is not None}
 

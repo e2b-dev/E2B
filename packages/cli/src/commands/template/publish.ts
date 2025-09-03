@@ -2,8 +2,19 @@ import * as commander from 'commander'
 import * as chalk from 'chalk'
 import * as fs from 'fs'
 
-import { asBold, asFormattedError, asFormattedSandboxTemplate, asLocal, asLocalRelative } from 'src/utils/format'
-import { configOption, pathOption, selectMultipleOption, teamOption } from 'src/options'
+import {
+  asBold,
+  asFormattedError,
+  asFormattedSandboxTemplate,
+  asLocal,
+  asLocalRelative,
+} from 'src/utils/format'
+import {
+  configOption,
+  pathOption,
+  selectMultipleOption,
+  teamOption,
+} from 'src/options'
 import { configName, E2BConfig, getConfigPath, loadConfig } from 'src/config'
 import { getRoot } from 'src/utils/filesystem'
 import { listSandboxTemplates } from './list'
@@ -59,7 +70,7 @@ async function templateAction(
     } else if (opts.select) {
       const userConfig = getUserConfig()
       if (userConfig) {
-        teamId = teamId || userConfig.teamId || userConfig.defaultTeamId! // default team ID is here for backwards compatibility
+        teamId = teamId || userConfig.teamId
       }
 
       const allTemplates = await listSandboxTemplates({

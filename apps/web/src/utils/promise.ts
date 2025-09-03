@@ -1,11 +1,11 @@
 export function assertFulfilled<T>(
-  item: PromiseSettledResult<T>,
+  item: PromiseSettledResult<T>
 ): item is PromiseFulfilledResult<T> {
   return item.status === 'fulfilled'
 }
 
 export function assertRejected<T>(
-  item: PromiseSettledResult<T>,
+  item: PromiseSettledResult<T>
 ): item is PromiseRejectedResult {
   return item.status === 'rejected'
 }

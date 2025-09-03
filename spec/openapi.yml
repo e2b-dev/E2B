@@ -51,6 +51,12 @@ components:
       required: true
       schema:
         type: string
+    teamID:
+      name: teamID
+      in: path
+      required: true
+      schema:
+        type: string
     nodeID:
       name: nodeID
       in: path
@@ -79,6 +85,12 @@ components:
             $ref: "#/components/schemas/Error"
     "401":
       description: Authentication error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    "403":
+      description: Forbidden
       content:
         application/json:
           schema:
@@ -152,7 +164,17 @@ components:
       type: integer
       format: int32
       minimum: 128
-      description: Memory for the sandbox in MB
+      description: Memory for the sandbox in MiB
+
+    DiskSizeMB:
+      type: integer
+      format: int32
+      minimum: 0
+      description: Disk size for the sandbox in MiB
+
+    EnvdVersion:
+      type: string
+      description: Version of the envd running in the sandbox
 
     SandboxMetadata:
       additionalProperties:
@@ -185,15 +207,42 @@ components:
           type: string
           description: Log line content
 
+    SandboxLogEntry:
+      required:
+        - timestamp
+        - level
+        - message
+        - fields
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          description: Timestamp of the log entry
+        message:
+          type: string
+          description: Log message content
+        level:
+          $ref: "#/components/schemas/LogLevel"
+        fields:
+          type: object
+          additionalProperties:
+            type: string
+
     SandboxLogs:
       required:
         - logs
+        - logEntries
       properties:
         logs:
           description: Logs of the sandbox
           type: array
           items:
             $ref: "#/components/schemas/SandboxLog"
+        logEntries:
+          description: Structured logs of the sandbox
+          type: array
+          items:
+            $ref: "#/components/schemas/SandboxLogEntry"
 
     SandboxMetric:
       description: Metric entry with timestamp and line
@@ -256,8 +305,7 @@ components:
           deprecated: true
           description: Identifier of the client
         envdVersion:
-          type: string
-          description: Version of the envd running in the sandbox
+          $ref: "#/components/schemas/EnvdVersion"
         envdAccessToken:
           type: string
           description: Access token used for envd communication
@@ -274,8 +322,10 @@ components:
         - startedAt
         - cpuCount
         - memoryMB
+        - diskSizeMB
         - endAt
         - state
+        - envdVersion
       properties:
         templateID:
           type: string
@@ -299,8 +349,7 @@ components:
           format: date-time
           description: Time when the sandbox will expire
         envdVersion:
-          type: string
-          description: Version of the envd running in the sandbox
+          $ref: "#/components/schemas/EnvdVersion"
         envdAccessToken:
           type: string
           description: Access token used for envd communication
@@ -312,6 +361,8 @@ components:
           $ref: "#/components/schemas/CPUCount"
         memoryMB:
           $ref: "#/components/schemas/MemoryMB"
+        diskSizeMB:
+          $ref: "#/components/schemas/DiskSizeMB"
         metadata:
           $ref: "#/components/schemas/SandboxMetadata"
         state:
@@ -325,8 +376,10 @@ components:
         - startedAt
         - cpuCount
         - memoryMB
+        - diskSizeMB
         - endAt
         - state
+        - envdVersion
       properties:
         templateID:
           type: string
@@ -353,10 +406,14 @@ components:
           $ref: "#/components/schemas/CPUCount"
         memoryMB:
           $ref: "#/components/schemas/MemoryMB"
+        diskSizeMB:
+          $ref: "#/components/schemas/DiskSizeMB"
         metadata:
           $ref: "#/components/schemas/SandboxMetadata"
         state:
           $ref: "#/components/schemas/SandboxState"
+        envdVersion:
+          $ref: "#/components/schemas/EnvdVersion"
 
     SandboxesWithMetrics:
       required:
@@ -404,8 +461,28 @@ components:
           description: Time to live for the sandbox in seconds.
         autoPause:
           type: boolean
-          default: false
+          deprecated: true
           description: Automatically pauses the sandbox after the timeout
+
+    TeamMetric:
+      description: Team metric with timestamp
+      required:
+        - timestamp
+        - concurrentSandboxes
+        - sandboxStartRate
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          description: Timestamp of the metric entry
+        concurrentSandboxes:
+          type: integer
+          format: int32
+          description: The number of concurrent sandboxes for the team
+        sandboxStartRate:
+          type: number
+          format: float
+          description: Number of sandboxes started per second
 
     Template:
       required:
@@ -413,6 +490,7 @@ components:
         - buildID
         - cpuCount
         - memoryMB
+        - diskSizeMB
         - public
         - createdAt
         - updatedAt
@@ -420,6 +498,7 @@ components:
         - lastSpawnedAt
         - spawnCount
         - buildCount
+        - envdVersion
       properties:
         templateID:
           type: string
@@ -431,6 +510,8 @@ components:
           $ref: "#/components/schemas/CPUCount"
         memoryMB:
           $ref: "#/components/schemas/MemoryMB"
+        diskSizeMB:
+          $ref: "#/components/schemas/DiskSizeMB"
         public:
           type: boolean
           description: Whether the template is public or only accessible by the team
@@ -463,6 +544,8 @@ components:
           type: integer
           format: int32
           description: Number of times the template was built
+        envdVersion:
+          $ref: "#/components/schemas/EnvdVersion"
 
     TemplateBuildRequest:
       required:
@@ -526,12 +609,14 @@ components:
           $ref: "#/components/schemas/MemoryMB"
 
     TemplateBuildStartV2:
-      required:
-        - fromImage
+      type: object
       properties:
         fromImage:
           type: string
           description: Image to use as a base for the template build
+        fromTemplate:
+          type: string
+          description: Template to use as a base for the template build
         force:
           default: false
           type: boolean
@@ -583,8 +668,18 @@ components:
           type: string
           description: Log message content
         level:
-          description: Log level of the entry
           $ref: "#/components/schemas/LogLevel"
+
+    BuildStatusReason:
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          description: Message with the status reason, currently reporting only for error status
+        step:
+          type: string
+          description: Step that failed
 
     TemplateBuild:
       required:
@@ -621,8 +716,7 @@ components:
             - ready
             - error
         reason:
-          type: string
-          description: Message with the status reason, currently reporting only for error status
+          $ref: "#/components/schemas/BuildStatusReason"
 
     NodeStatus:
       type: string
@@ -645,13 +739,80 @@ components:
         status:
           $ref: "#/components/schemas/NodeStatus"
 
+    DiskMetrics:
+      required:
+        - mountPoint
+        - device
+        - filesystemType
+        - usedBytes
+        - totalBytes
+      properties:
+        mountPoint:
+          type: string
+          description: Mount point of the disk
+        device:
+          type: string
+          description: Device name
+        filesystemType:
+          type: string
+          description: Filesystem type (e.g., ext4, xfs)
+        usedBytes:
+          type: integer
+          format: uint64
+          description: Used space in bytes
+        totalBytes:
+          type: integer
+          format: uint64
+          description: Total space in bytes
+
+    NodeMetrics:
+      description: Node metrics
+      required:
+        - allocatedCPU
+        - allocatedMemoryBytes
+        - cpuPercent
+        - memoryUsedBytes
+        - cpuCount
+        - memoryTotalBytes
+        - disks
+      properties:
+        allocatedCPU:
+          type: integer
+          format: uint32
+          description: Number of allocated CPU cores
+        cpuPercent:
+          type: integer
+          format: uint32
+          description: Node CPU usage percentage
+        cpuCount:
+          type: integer
+          format: uint32
+          description: Total number of CPU cores on the node
+        allocatedMemoryBytes:
+          type: integer
+          format: uint64
+          description: Amount of allocated memory in bytes
+        memoryUsedBytes:
+          type: integer
+          format: uint64
+          description: Node memory used in bytes
+        memoryTotalBytes:
+          type: integer
+          format: uint64
+          description: Total node memory in bytes
+        disks:
+          type: array
+          description: Detailed metrics for each disk/mount point
+          items:
+            $ref: "#/components/schemas/DiskMetrics"
+
     Node:
       required:
         - nodeID
+        - clusterID
         - status
         - sandboxCount
-        - allocatedCPU
-        - allocatedMemoryMiB
+        - metrics
         - createSuccesses
         - createFails
         - sandboxStartingCount
@@ -669,22 +830,15 @@ components:
           description: Identifier of the node
         clusterID:
           type: string
-          nullable: true
           description: Identifier of the cluster
         status:
           $ref: "#/components/schemas/NodeStatus"
         sandboxCount:
           type: integer
-          format: int32
+          format: uint32
           description: Number of sandboxes running on the node
-        allocatedCPU:
-          type: integer
-          format: int32
-          description: Number of allocated CPU cores
-        allocatedMemoryMiB:
-          type: integer
-          format: int32
-          description: Amount of allocated memory in MiB
+        metrics:
+          $ref: "#/components/schemas/NodeMetrics"
         createSuccesses:
           type: integer
           format: uint64
@@ -701,6 +855,7 @@ components:
     NodeDetail:
       required:
         - nodeID
+        - clusterID
         - status
         - sandboxes
         - cachedBuilds
@@ -708,10 +863,10 @@ components:
         - createFails
         - version
         - commit
+        - metrics
       properties:
         clusterID:
           type: string
-          nullable: true
           description: Identifier of the cluster
         version:
           type: string
@@ -729,6 +884,8 @@ components:
           description: List of sandboxes running on the node
           items:
             $ref: "#/components/schemas/ListedSandbox"
+        metrics:
+          $ref: "#/components/schemas/NodeMetrics"
         cachedBuilds:
           type: array
           description: List of cached builds id on the node
@@ -928,6 +1085,48 @@ paths:
         "500":
           $ref: "#/components/responses/500"
 
+  /teams/{teamID}/metrics:
+    get:
+      description: Get metrics for the team
+      tags: [auth]
+      security:
+        - ApiKeyAuth: []
+        - Supabase1TokenAuth: []
+          Supabase2TeamAuth: []
+      parameters:
+        - $ref: "#/components/parameters/teamID"
+        - in: query
+          name: start
+          schema:
+            type: integer
+            format: int64
+            minimum: 0
+          description: Unix timestamp for the start of the interval, in seconds, for which the metrics
+        - in: query
+          name: end
+          schema:
+            type: integer
+            format: int64
+            minimum: 0
+            description: Unix timestamp for the end of the interval, in seconds, for which the metrics
+      responses:
+        "200":
+          description: Successfully returned the team metrics
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TeamMetric"
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "403":
+          $ref: "#/components/responses/403"
+        "500":
+          $ref: "#/components/responses/500"
+
   /sandboxes:
     get:
       description: List all running sandboxes
@@ -1025,8 +1224,7 @@ paths:
             type: integer
             format: int32
             minimum: 1
-            default: 1000
-            maximum: 1000
+            default: 100
       responses:
         "200":
           description: Successfully returned all running sandboxes
@@ -1176,14 +1374,14 @@ paths:
             type: integer
             format: int64
             minimum: 0
-          description: Starting timestamp of the metrics that should be returned in milliseconds
+          description: Unix timestamp for the start of the interval, in seconds, for which the metrics
         - in: query
           name: end
           schema:
             type: integer
             format: int64
             minimum: 0
-            description: Ending timestamp of the metrics that should be returned in milliseconds
+            description: Unix timestamp for the end of the interval, in seconds, for which the metrics
 
       responses:
         "200":
@@ -1325,69 +1523,6 @@ paths:
       description: Create a new template
       tags: [templates]
       security:
-        - AccessTokenAuth: []
-        - ApiKeyAuth: []
-        - Supabase1TokenAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/TemplateBuildRequestV2"
-
-      responses:
-        "202":
-          description: The build was requested successfully
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Template"
-        "400":
-          $ref: "#/components/responses/400"
-        "401":
-          $ref: "#/components/responses/401"
-        "500":
-          $ref: "#/components/responses/500"
-
-  /templates/{templateID}/files/{hash}:
-    get:
-      description: Get an upload link for a tar file containing build layer files
-      tags: [templates]
-      security:
-        - AccessTokenAuth: []
-        - ApiKeyAuth: []
-        - Supabase1TokenAuth: []
-      parameters:
-        - $ref: "#/components/parameters/templateID"
-        - in: path
-          name: hash
-          required: true
-          schema:
-            type: string
-            description: Hash of the files
-
-      responses:
-        "201":
-          description: The upload link where to upload the tar file
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/TemplateBuildFileUpload"
-        "400":
-          $ref: "#/components/responses/400"
-        "401":
-          $ref: "#/components/responses/401"
-        "404":
-          $ref: "#/components/responses/404"
-        "500":
-          $ref: "#/components/responses/500"
-
-  /v2/templates:
-    post:
-      description: Create a new template
-      tags: [templates]
-      security:
-        - AccessTokenAuth: []
         - ApiKeyAuth: []
         - Supabase1TokenAuth: []
       requestBody:
@@ -1530,6 +1665,7 @@ paths:
       description: Delete a template
       tags: [templates]
       security:
+        - ApiKeyAuth: []
         - AccessTokenAuth: []
         - Supabase1TokenAuth: []
       parameters:
@@ -1588,32 +1724,6 @@ paths:
       description: Start the build
       tags: [templates]
       security:
-        - AccessTokenAuth: []
-        - ApiKeyAuth: []
-        - Supabase1TokenAuth: []
-      parameters:
-        - $ref: "#/components/parameters/templateID"
-        - $ref: "#/components/parameters/buildID"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/TemplateBuildStartV2"
-      responses:
-        "202":
-          description: The build has started
-        "401":
-          $ref: "#/components/responses/401"
-        "500":
-          $ref: "#/components/responses/500"
-
-  /v2/templates/{templateID}/builds/{buildID}:
-    post:
-      description: Start the build
-      tags: [templates]
-      security:
-        - AccessTokenAuth: []
         - ApiKeyAuth: []
         - Supabase1TokenAuth: []
       parameters:
@@ -1656,7 +1766,6 @@ paths:
           name: level
           schema:
             $ref: "#/components/schemas/LogLevel"
-            default: debug
       responses:
         "200":
           description: Successfully returned the template

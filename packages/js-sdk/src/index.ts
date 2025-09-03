@@ -11,6 +11,7 @@ export {
   SandboxError,
   TemplateError,
   TimeoutError,
+  RateLimitError,
 } from './errors'
 export type { Logger } from './logs'
 
@@ -32,7 +33,18 @@ export type {
   PtyOutput,
   CommandHandle,
 } from './sandbox/commands/commandHandle'
-export type { SandboxApiOpts, SandboxCreateOpts } from './sandbox/sandboxApi'
+export type {
+  SandboxInfo,
+  SandboxMetrics,
+  SandboxOpts,
+  SandboxApiOpts,
+  SandboxConnectOpts,
+  SandboxBetaCreateOpts,
+  SandboxMetricsOpts,
+  SandboxState,
+  SandboxListOpts,
+  SandboxPaginator,
+} from './sandbox/sandboxApi'
 
 export type {
   ProcessInfo,
@@ -43,8 +55,6 @@ export type {
   Pty,
 } from './sandbox/commands'
 
-export type { SandboxOpts } from './sandbox'
-export type { SandboxInfo, SandboxMetrics } from './sandbox/sandboxApi'
 export { Sandbox }
 import { Sandbox } from './sandbox'
 export default Sandbox

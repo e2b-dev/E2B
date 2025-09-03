@@ -283,6 +283,10 @@ export const docRoutes: NavGroup[] = [
         href: '/docs/sandbox',
       },
       {
+        title: 'Lifecycle events API',
+        href: '/docs/sandbox/lifecycle-events-api',
+      },
+      {
         title: 'Persistence',
         href: '/docs/sandbox/persistence',
       },
@@ -315,8 +319,8 @@ export const docRoutes: NavGroup[] = [
         href: '/docs/sandbox/connect-bucket',
       },
       {
-        title: 'Installing beta SDKs',
-        href: '/docs/sandbox/installing-beta-sdks',
+        title: 'Rate limits',
+        href: '/docs/sandbox/rate-limits',
       },
       // {
       //   title: '* Request timeouts',
@@ -449,6 +453,24 @@ export const docRoutes: NavGroup[] = [
       {
         title: 'Shutdown running sandboxes',
         href: '/docs/cli/shutdown-sandboxes',
+      },
+    ],
+  },
+  {
+    title: 'Deployment',
+    items: [
+      {
+        title: 'Bring Your Own Cloud',
+        href: '/docs/byoc',
+      },
+    ],
+  },
+  {
+    title: 'Migration',
+    items: [
+      {
+        title: 'SDK v2 Migration Guide',
+        href: '/docs/migration/v2',
       },
     ],
   },

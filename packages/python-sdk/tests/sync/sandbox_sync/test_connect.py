@@ -6,7 +6,7 @@ from e2b import Sandbox
 
 @pytest.mark.skip_debug()
 def test_connect(template):
-    sbx = Sandbox(template, timeout=10)
+    sbx = Sandbox.create(template, timeout=10)
     try:
         assert sbx.is_running()
 
@@ -20,7 +20,7 @@ def test_connect(template):
 def test_connect_with_secure(template):
     dir_name = f"test_directory_{uuid.uuid4()}"
 
-    sbx = Sandbox(template, timeout=10, secure=True)
+    sbx = Sandbox.create(template, timeout=10, secure=True)
     try:
         assert sbx.is_running()
 

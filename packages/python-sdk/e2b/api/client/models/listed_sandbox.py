@@ -18,8 +18,10 @@ class ListedSandbox:
     Attributes:
         client_id (str): Identifier of the client
         cpu_count (int): CPU cores for the sandbox
+        disk_size_mb (int): Disk size for the sandbox in MiB
         end_at (datetime.datetime): Time when the sandbox will expire
-        memory_mb (int): Memory for the sandbox in MB
+        envd_version (str): Version of the envd running in the sandbox
+        memory_mb (int): Memory for the sandbox in MiB
         sandbox_id (str): Identifier of the sandbox
         started_at (datetime.datetime): Time when the sandbox was started
         state (SandboxState): State of the sandbox
@@ -30,7 +32,9 @@ class ListedSandbox:
 
     client_id: str
     cpu_count: int
+    disk_size_mb: int
     end_at: datetime.datetime
+    envd_version: str
     memory_mb: int
     sandbox_id: str
     started_at: datetime.datetime
@@ -45,7 +49,11 @@ class ListedSandbox:
 
         cpu_count = self.cpu_count
 
+        disk_size_mb = self.disk_size_mb
+
         end_at = self.end_at.isoformat()
+
+        envd_version = self.envd_version
 
         memory_mb = self.memory_mb
 
@@ -67,7 +75,9 @@ class ListedSandbox:
             {
                 "clientID": client_id,
                 "cpuCount": cpu_count,
+                "diskSizeMB": disk_size_mb,
                 "endAt": end_at,
+                "envdVersion": envd_version,
                 "memoryMB": memory_mb,
                 "sandboxID": sandbox_id,
                 "startedAt": started_at,
@@ -89,7 +99,11 @@ class ListedSandbox:
 
         cpu_count = d.pop("cpuCount")
 
+        disk_size_mb = d.pop("diskSizeMB")
+
         end_at = isoparse(d.pop("endAt"))
+
+        envd_version = d.pop("envdVersion")
 
         memory_mb = d.pop("memoryMB")
 
@@ -108,7 +122,9 @@ class ListedSandbox:
         listed_sandbox = cls(
             client_id=client_id,
             cpu_count=cpu_count,
+            disk_size_mb=disk_size_mb,
             end_at=end_at,
+            envd_version=envd_version,
             memory_mb=memory_mb,
             sandbox_id=sandbox_id,
             started_at=started_at,

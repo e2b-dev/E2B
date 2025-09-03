@@ -28,7 +28,7 @@ await sandbox.files.write(`${dirname}/my-file`, 'hello')
 ```python
 from e2b_code_interpreter import Sandbox
 
-sandbox = Sandbox()
+sandbox = Sandbox.create()
 dirname = '/home/user'
 
 # Watch directory for changes
@@ -77,7 +77,7 @@ await sandbox.files.write(`${dirname}/my-folder/my-file`, 'hello') // $Highlight
 ```python
 from e2b_code_interpreter import Sandbox
 
-sandbox = Sandbox()
+sandbox = Sandbox.create()
 dirname = '/home/user'
 
 # Watch directory for changes

@@ -15,7 +15,7 @@ class TemplateBuildRequestV2:
     Attributes:
         alias (str): Alias of the template
         cpu_count (Union[Unset, int]): CPU cores for the sandbox
-        memory_mb (Union[Unset, int]): Memory for the sandbox in MB
+        memory_mb (Union[Unset, int]): Memory for the sandbox in MiB
         team_id (Union[Unset, str]): Identifier of the team
     """
 

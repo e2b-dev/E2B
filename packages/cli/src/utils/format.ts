@@ -13,7 +13,7 @@ export function asFormattedConfig(config: UserConfig) {
   const team = config.teamName
     ? asBold(config.teamName)
     : asRed('Log out and log in to get team name')
-  const teamId = asBold(config.teamId || config.defaultTeamId!)
+  const teamId = asBold(config.teamId)
   return `You are logged in as ${email},\nSelected team: ${team} (${teamId})`
 }
 

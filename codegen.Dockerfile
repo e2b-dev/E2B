@@ -15,7 +15,7 @@ FROM python:3.9
 # Set working directory
 WORKDIR /workspace
 
-ENV PROTOC_VERSION=29.3
+ENV PROTOC_VERSION=26.1
 RUN ARCH=$(uname -m) && \
     case "$ARCH" in \
         x86_64) PROTOC_ARCH="x86_64" ;; \
@@ -32,8 +32,9 @@ COPY --from=0 /go /go
 # Add Go binary to PATH 
 ENV PATH="/go/bin:${PATH}"
 
-# Install Python deps
-RUN pip install black==23.7.0 pyyaml==6.0.2 openapi-python-client==0.24.3
+# Install Python deps (e2b-openapi-python-client is patched version to fix issue with explode)
+# https://github.com/openapi-generators/openapi-python-client/pull/1296
+RUN pip install black==23.7.0 pyyaml==6.0.2 e2b-openapi-python-client==0.26.2
 
 # Install Node.js and npm
 RUN apt-get update && \

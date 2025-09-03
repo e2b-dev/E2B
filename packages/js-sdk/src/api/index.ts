@@ -14,7 +14,13 @@ export function handleApiError(
   }
 
   if (response.response.status === 429) {
-    return new RateLimitError('Rate limit exceeded, please try again later.')
+    const message = 'Rate limit exceeded, please try again later'
+    const content = response.error?.message ?? response.error
+
+    if (content) {
+      return new RateLimitError(`${message} - ${content}`)
+    }
+    return new RateLimitError(message)
   }
 
   const message = response.error?.message ?? response.error
@@ -32,10 +38,9 @@ class ApiClient {
     opts: {
       requireAccessToken?: boolean
       requireApiKey?: boolean
-    } = { requireAccessToken: false, requireApiKey: true }
+    } = { requireAccessToken: false, requireApiKey: false }
   ) {
-    // FIXME: This statement makes no sense
-    if (!opts?.requireApiKey && !config.apiKey) {
+    if (opts?.requireApiKey && !config.apiKey) {
       throw new AuthenticationError(
         'API key is required, please visit the Team tab at https://e2b.dev/dashboard to get your API key. ' +
           'You can either set the environment variable `E2B_API_KEY` ' +
@@ -60,6 +65,12 @@ class ApiClient {
           Authorization: `Bearer ${config.accessToken}`,
         }),
         ...config.headers,
+      },
+      querySerializer: {
+        array: {
+          style: 'form',
+          explode: false,
+        },
       },
     })
 

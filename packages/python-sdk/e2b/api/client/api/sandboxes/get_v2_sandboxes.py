@@ -16,7 +16,7 @@ def _get_kwargs(
     metadata: Union[Unset, str] = UNSET,
     state: Union[Unset, list[SandboxState]] = UNSET,
     next_token: Union[Unset, str] = UNSET,
-    limit: Union[Unset, int] = 1000,
+    limit: Union[Unset, int] = 100,
 ) -> dict[str, Any]:
     params: dict[str, Any] = {}
 
@@ -29,7 +29,8 @@ def _get_kwargs(
             state_item = state_item_data.value
             json_state.append(state_item)
 
-    params["state"] = json_state
+    if not isinstance(json_state, Unset):
+        params["state"] = ",".join(str(item) for item in json_state)
 
     params["nextToken"] = next_token
 
@@ -93,7 +94,7 @@ def sync_detailed(
     metadata: Union[Unset, str] = UNSET,
     state: Union[Unset, list[SandboxState]] = UNSET,
     next_token: Union[Unset, str] = UNSET,
-    limit: Union[Unset, int] = 1000,
+    limit: Union[Unset, int] = 100,
 ) -> Response[Union[Error, list["ListedSandbox"]]]:
     """List all sandboxes
 
@@ -101,7 +102,7 @@ def sync_detailed(
         metadata (Union[Unset, str]):
         state (Union[Unset, list[SandboxState]]):
         next_token (Union[Unset, str]):
-        limit (Union[Unset, int]):  Default: 1000.
+        limit (Union[Unset, int]):  Default: 100.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -131,7 +132,7 @@ def sync(
     metadata: Union[Unset, str] = UNSET,
     state: Union[Unset, list[SandboxState]] = UNSET,
     next_token: Union[Unset, str] = UNSET,
-    limit: Union[Unset, int] = 1000,
+    limit: Union[Unset, int] = 100,
 ) -> Optional[Union[Error, list["ListedSandbox"]]]:
     """List all sandboxes
 
@@ -139,7 +140,7 @@ def sync(
         metadata (Union[Unset, str]):
         state (Union[Unset, list[SandboxState]]):
         next_token (Union[Unset, str]):
-        limit (Union[Unset, int]):  Default: 1000.
+        limit (Union[Unset, int]):  Default: 100.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -164,7 +165,7 @@ async def asyncio_detailed(
     metadata: Union[Unset, str] = UNSET,
     state: Union[Unset, list[SandboxState]] = UNSET,
     next_token: Union[Unset, str] = UNSET,
-    limit: Union[Unset, int] = 1000,
+    limit: Union[Unset, int] = 100,
 ) -> Response[Union[Error, list["ListedSandbox"]]]:
     """List all sandboxes
 
@@ -172,7 +173,7 @@ async def asyncio_detailed(
         metadata (Union[Unset, str]):
         state (Union[Unset, list[SandboxState]]):
         next_token (Union[Unset, str]):
-        limit (Union[Unset, int]):  Default: 1000.
+        limit (Union[Unset, int]):  Default: 100.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -200,7 +201,7 @@ async def asyncio(
     metadata: Union[Unset, str] = UNSET,
     state: Union[Unset, list[SandboxState]] = UNSET,
     next_token: Union[Unset, str] = UNSET,
-    limit: Union[Unset, int] = 1000,
+    limit: Union[Unset, int] = 100,
 ) -> Optional[Union[Error, list["ListedSandbox"]]]:
     """List all sandboxes
 
@@ -208,7 +209,7 @@ async def asyncio(
         metadata (Union[Unset, str]):
         state (Union[Unset, list[SandboxState]]):
         next_token (Union[Unset, str]):
-        limit (Union[Unset, int]):  Default: 1000.
+        limit (Union[Unset, int]):  Default: 100.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.

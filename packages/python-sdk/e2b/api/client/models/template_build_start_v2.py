@@ -17,25 +17,29 @@ T = TypeVar("T", bound="TemplateBuildStartV2")
 class TemplateBuildStartV2:
     """
     Attributes:
-        from_image (str): Image to use as a base for the template build
         force (Union[Unset, bool]): Whether the whole build should be forced to run regardless of the cache Default:
             False.
+        from_image (Union[Unset, str]): Image to use as a base for the template build
+        from_template (Union[Unset, str]): Template to use as a base for the template build
         ready_cmd (Union[Unset, str]): Ready check command to execute in the template after the build
         start_cmd (Union[Unset, str]): Start command to execute in the template after the build
         steps (Union[Unset, list['TemplateStep']]): List of steps to execute in the template build
     """
 
-    from_image: str
     force: Union[Unset, bool] = False
+    from_image: Union[Unset, str] = UNSET
+    from_template: Union[Unset, str] = UNSET
     ready_cmd: Union[Unset, str] = UNSET
     start_cmd: Union[Unset, str] = UNSET
     steps: Union[Unset, list["TemplateStep"]] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
+        force = self.force
+
         from_image = self.from_image
 
-        force = self.force
+        from_template = self.from_template
 
         ready_cmd = self.ready_cmd
 
@@ -50,13 +54,13 @@ class TemplateBuildStartV2:
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
-        field_dict.update(
-            {
-                "fromImage": from_image,
-            }
-        )
+        field_dict.update({})
         if force is not UNSET:
             field_dict["force"] = force
+        if from_image is not UNSET:
+            field_dict["fromImage"] = from_image
+        if from_template is not UNSET:
+            field_dict["fromTemplate"] = from_template
         if ready_cmd is not UNSET:
             field_dict["readyCmd"] = ready_cmd
         if start_cmd is not UNSET:
@@ -71,9 +75,11 @@ class TemplateBuildStartV2:
         from ..models.template_step import TemplateStep
 
         d = dict(src_dict)
-        from_image = d.pop("fromImage")
-
         force = d.pop("force", UNSET)
+
+        from_image = d.pop("fromImage", UNSET)
+
+        from_template = d.pop("fromTemplate", UNSET)
 
         ready_cmd = d.pop("readyCmd", UNSET)
 
@@ -87,8 +93,9 @@ class TemplateBuildStartV2:
             steps.append(steps_item)
 
         template_build_start_v2 = cls(
-            from_image=from_image,
             force=force,
+            from_image=from_image,
+            from_template=from_template,
             ready_cmd=ready_cmd,
             start_cmd=start_cmd,
             steps=steps,

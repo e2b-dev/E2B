@@ -1,0 +1,463 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" id="mermaid-svg" width="100%" class="statediagram" style="max-width: 301.234375px;" viewBox="0 0 301.234375 465" role="graphics-document document" aria-roledescription="stateDiagram">
+    <style xmlns="http://www.w3.org/1999/xhtml">
+        @import url("https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css");
+    </style>
+    <style>
+        #mermaid-svg {
+        font-family: "trebuchet ms", verdana, arial, sans-serif;
+        font-size: 16px;
+        fill: #ffffff;
+        }
+
+        @keyframes edge-animation-frame {
+        from {
+        stroke-dashoffset: 0;
+        }
+        }
+
+        @keyframes dash {
+        to {
+        stroke-dashoffset: 0;
+        }
+        }
+
+        #mermaid-svg .edge-animation-slow {
+        stroke-dasharray: 9, 5 !important;
+        stroke-dashoffset: 900;
+        animation: dash 50s linear infinite;
+        stroke-linecap: round;
+        }
+
+        #mermaid-svg .edge-animation-fast {
+        stroke-dasharray: 9, 5 !important;
+        stroke-dashoffset: 900;
+        animation: dash 20s linear infinite;
+        stroke-linecap: round;
+        }
+
+        #mermaid-svg .error-icon {
+        fill: #444444;
+        }
+
+        #mermaid-svg .error-text {
+        fill: #bbbbbb;
+        stroke: #bbbbbb;
+        }
+
+        #mermaid-svg .edge-thickness-normal {
+        stroke-width: 1px;
+        }
+
+        #mermaid-svg .edge-thickness-thick {
+        stroke-width: 3.5px;
+        }
+
+        #mermaid-svg .edge-pattern-solid {
+        stroke-dasharray: 0;
+        }
+
+        #mermaid-svg .edge-thickness-invisible {
+        stroke-width: 0;
+        fill: none;
+        }
+
+        #mermaid-svg .edge-pattern-dashed {
+        stroke-dasharray: 3;
+        }
+
+        #mermaid-svg .edge-pattern-dotted {
+        stroke-dasharray: 2;
+        }
+
+        #mermaid-svg .marker {
+        fill: #ffffff;
+        stroke: #ffffff;
+        }
+
+        #mermaid-svg .marker.cross {
+        stroke: #ffffff;
+        }
+
+        #mermaid-svg svg {
+        font-family: "trebuchet ms", verdana, arial, sans-serif;
+        font-size: 16px;
+        }
+
+        #mermaid-svg p {
+        margin: 0;
+        }
+
+        #mermaid-svg defs #statediagram-barbEnd {
+        fill: #ffffff;
+        stroke: #ffffff;
+        }
+
+        #mermaid-svg g.stateGroup text {
+        fill: #cccccc;
+        stroke: none;
+        font-size: 10px;
+        }
+
+        #mermaid-svg g.stateGroup text {
+        fill: #ffffff;
+        stroke: none;
+        font-size: 10px;
+        }
+
+        #mermaid-svg g.stateGroup .state-title {
+        font-weight: bolder;
+        fill: #ffffff;
+        }
+
+        #mermaid-svg g.stateGroup rect {
+        fill: #1e1e1e;
+        stroke: #cccccc;
+        }
+
+        #mermaid-svg g.stateGroup line {
+        stroke: #ffffff;
+        stroke-width: 1;
+        }
+
+        #mermaid-svg .transition {
+        stroke: #ffffff;
+        stroke-width: 1;
+        fill: none;
+        }
+
+        #mermaid-svg .stateGroup .composit {
+        fill: #000000;
+        border-bottom: 1px;
+        }
+
+        #mermaid-svg .stateGroup .alt-composit {
+        fill: #e0e0e0;
+        border-bottom: 1px;
+        }
+
+        #mermaid-svg .state-note {
+        stroke: hsl(52.6829268293, 60%, 73.9215686275%);
+        fill: #fff5ad;
+        }
+
+        #mermaid-svg .state-note text {
+        fill: #333;
+        stroke: none;
+        font-size: 10px;
+        }
+
+        #mermaid-svg .stateLabel .box {
+        stroke: none;
+        stroke-width: 0;
+        fill: #1e1e1e;
+        opacity: 0.5;
+        }
+
+        #mermaid-svg .edgeLabel .label rect {
+        fill: #1e1e1e;
+        opacity: 0.5;
+        }
+
+        #mermaid-svg .edgeLabel {
+        background-color: inherit;
+        text-align: center;
+        }
+
+        #mermaid-svg .edgeLabel rect {
+        opacity: 0.5;
+        background-color: #333333;
+        fill: #333333;
+        }
+
+        #mermaid-svg .edgeLabel .label text {
+        fill: #ffffff;
+        }
+
+        #mermaid-svg .label div .edgeLabel {
+        color: #ffffff;
+        }
+
+        #mermaid-svg .stateLabel text {
+        fill: #ffffff;
+        font-size: 10px;
+        font-weight: bold;
+        }
+
+        #mermaid-svg .node circle.state-start {
+        fill: #ffffff;
+        stroke: #ffffff;
+        }
+
+        #mermaid-svg .node .fork-join {
+        fill: #ffffff;
+        stroke: #ffffff;
+        }
+
+        #mermaid-svg .node circle.state-end {
+        fill: #cccccc;
+        stroke: #000000;
+        stroke-width: 1.5;
+        }
+
+        #mermaid-svg .end-state-inner {
+        fill: #000000;
+        stroke-width: 1.5;
+        }
+
+        #mermaid-svg .node rect {
+        fill: #1e1e1e;
+        stroke: #cccccc;
+        stroke-width: 1px;
+        }
+
+        #mermaid-svg .node polygon {
+        fill: #1e1e1e;
+        stroke: #cccccc;
+        stroke-width: 1px;
+        }
+
+        #mermaid-svg #statediagram-barbEnd {
+        fill: #ffffff;
+        }
+
+        #mermaid-svg .statediagram-cluster rect {
+        fill: #1e1e1e;
+        stroke: #cccccc;
+        stroke-width: 1px;
+        }
+
+        #mermaid-svg .cluster-label,
+        #mermaid-svg .nodeLabel {
+        color: #ffffff;
+        }
+
+        #mermaid-svg .statediagram-cluster rect.outer {
+        rx: 5px;
+        ry: 5px;
+        }
+
+        #mermaid-svg .statediagram-state .divider {
+        stroke: #cccccc;
+        }
+
+        #mermaid-svg .statediagram-state .title-state {
+        rx: 5px;
+        ry: 5px;
+        }
+
+        #mermaid-svg .statediagram-cluster.statediagram-cluster .inner {
+        fill: #000000;
+        }
+
+        #mermaid-svg .statediagram-cluster.statediagram-cluster-alt .inner {
+        fill: #444444;
+        }
+
+        #mermaid-svg .statediagram-cluster .inner {
+        rx: 0;
+        ry: 0;
+        }
+
+        #mermaid-svg .statediagram-state rect.basic {
+        rx: 5px;
+        ry: 5px;
+        }
+
+        #mermaid-svg .statediagram-state rect.divider {
+        stroke-dasharray: 10, 10;
+        fill: #444444;
+        }
+
+        #mermaid-svg .note-edge {
+        stroke-dasharray: 5;
+        }
+
+        #mermaid-svg .statediagram-note rect {
+        fill: #fff5ad;
+        stroke: hsl(52.6829268293, 60%, 73.9215686275%);
+        stroke-width: 1px;
+        rx: 0;
+        ry: 0;
+        }
+
+        #mermaid-svg .statediagram-note rect {
+        fill: #fff5ad;
+        stroke: hsl(52.6829268293, 60%, 73.9215686275%);
+        stroke-width: 1px;
+        rx: 0;
+        ry: 0;
+        }
+
+        #mermaid-svg .statediagram-note text {
+        fill: #333;
+        }
+
+        #mermaid-svg .statediagram-note .nodeLabel {
+        color: #333;
+        }
+
+        #mermaid-svg .statediagram .edgeLabel {
+        color: red;
+        }
+
+        #mermaid-svg #dependencyStart,
+        #mermaid-svg #dependencyEnd {
+        fill: #ffffff;
+        stroke: #ffffff;
+        stroke-width: 1;
+        }
+
+        #mermaid-svg .statediagramTitleText {
+        text-anchor: middle;
+        font-size: 18px;
+        fill: #ffffff;
+        }
+
+        #mermaid-svg :root {
+        --mermaid-font-family: "trebuchet ms", verdana, arial, sans-serif;
+        }
+    </style>
+    <g>
+        <defs>
+            <marker id="mermaid-svg_stateDiagram-barbEnd" refX="19" refY="7" markerWidth="20" markerHeight="14" markerUnits="userSpaceOnUse" orient="auto">
+                <path d="M 19,7 L9,13 L14,7 L9,1 Z" />
+            </marker>
+        </defs>
+        <g class="root">
+            <g class="clusters" />
+            <g class="edgePaths">
+                <path d="M128.73,22L128.73,28.167C128.73,34.333,128.73,46.667,128.73,59C128.73,71.333,128.73,83.667,128.73,89.833L128.73,96" id="edge0" class=" edge-thickness-normal edge-pattern-solid transition" style="fill:none;" marker-end="url(#mermaid-svg_stateDiagram-barbEnd)" />
+                <path d="M128.73,167L128.73,173.167C128.73,179.333,128.73,191.667,133.479,204C138.228,216.333,147.726,228.667,152.475,234.833L157.224,241" id="edge1" class=" edge-thickness-normal edge-pattern-solid transition" style="fill:none;" marker-end="url(#mermaid-svg_stateDiagram-barbEnd)" />
+                <path d="M77.667,167L68.796,173.167C59.926,179.333,42.186,191.667,33.316,209.917C24.445,228.167,24.445,252.333,24.445,276.5C24.445,300.667,24.445,324.833,31.255,343.083C38.064,361.333,51.684,373.667,58.493,379.833L65.303,386" id="edge2" class=" edge-thickness-normal edge-pattern-solid transition" style="fill:none;" marker-end="url(#mermaid-svg_stateDiagram-barbEnd)" />
+                <path d="M205.239,241L208.831,234.833C212.422,228.667,219.606,216.333,214.857,204C210.108,191.667,193.427,179.333,185.086,173.167L176.745,167" id="edge3" class=" edge-thickness-normal edge-pattern-solid transition" style="fill:none;" marker-end="url(#mermaid-svg_stateDiagram-barbEnd)" />
+                <path d="M184.563,312L184.563,318.167C184.563,324.333,184.563,336.667,177.753,349C170.943,361.333,157.324,373.667,150.515,379.833L143.705,386" id="edge4" class=" edge-thickness-normal edge-pattern-solid transition" style="fill:none;" marker-end="url(#mermaid-svg_stateDiagram-barbEnd)" />
+            </g>
+            <g class="edgeLabels">
+                <g class="edgeLabel" transform="translate(128.73046875, 59)">
+                    <g class="label" transform="translate(-64.90625, -12)">
+                        <foreignObject width="129.8125" height="24">
+                            <div xmlns="http://www.w3.org/1999/xhtml" class="labelBkg" style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;">
+                                <span class="edgeLabel ">
+                                    <p>
+                                        <strong>Sandbox.create()</strong>
+                                    </p>
+                                </span>
+                            </div>
+                        </foreignObject>
+                    </g>
+                </g>
+                <g class="edgeLabel" transform="translate(128.73046875, 204)">
+                    <g class="label" transform="translate(-28.453125, -12)">
+                        <foreignObject width="56.90625" height="24">
+                            <div xmlns="http://www.w3.org/1999/xhtml" class="labelBkg" style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;">
+                                <span class="edgeLabel ">
+                                    <p>
+                                        <strong>pause()</strong>
+                                    </p>
+                                </span>
+                            </div>
+                        </foreignObject>
+                    </g>
+                </g>
+                <g class="edgeLabel" transform="translate(24.4453125, 276.5)">
+                    <g class="label" transform="translate(-16.4453125, -12)">
+                        <foreignObject width="32.890625" height="24">
+                            <div xmlns="http://www.w3.org/1999/xhtml" class="labelBkg" style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;">
+                                <span class="edgeLabel ">
+                                    <p>
+                                        <strong>kill()</strong>
+                                    </p>
+                                </span>
+                            </div>
+                        </foreignObject>
+                    </g>
+                </g>
+                <g class="edgeLabel" transform="translate(226.7890625, 204)">
+                    <g class="label" transform="translate(-36, -12)">
+                        <foreignObject width="72" height="24">
+                            <div xmlns="http://www.w3.org/1999/xhtml" class="labelBkg" style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;">
+                                <span class="edgeLabel ">
+                                    <p>
+                                        <strong>connect()</strong>
+                                    </p>
+                                </span>
+                            </div>
+                        </foreignObject>
+                    </g>
+                </g>
+                <g class="edgeLabel" transform="translate(184.5625, 349)">
+                    <g class="label" transform="translate(-16.4453125, -12)">
+                        <foreignObject width="32.890625" height="24">
+                            <div xmlns="http://www.w3.org/1999/xhtml" class="labelBkg" style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;">
+                                <span class="edgeLabel ">
+                                    <p>
+                                        <strong>kill()</strong>
+                                    </p>
+                                </span>
+                            </div>
+                        </foreignObject>
+                    </g>
+                </g>
+            </g>
+            <g class="nodes">
+                <g class="node default" id="state-root_start-0" transform="translate(128.73046875, 15)">
+                    <circle class="state-start" r="7" width="14" height="14" />
+                </g>
+                <g class="node  statediagram-state" id="state-Running-5" transform="translate(128.73046875, 131.5)">
+                    <g>
+                        <rect class="outer title-state" style="" x="-85.109375" y="-35.5" width="170.21875" height="71" />
+                        <line class="divider" x1="-85.109375" x2="85.109375" y1="-13.5" y2="-13.5" />
+                    </g>
+                    <g class="label" style="" transform="translate(-81.109375, -32.5)">
+                        <foreignObject width="60.609375" height="18" transform="translate( 50.8046875, 0)">
+                            <div xmlns="http://www.w3.org/1999/xhtml" style="display: inline-block; padding-right: 1px; white-space: nowrap;">
+                                <span class="nodeLabel">Running</span>
+                            </div>
+                        </foreignObject>
+                        <foreignObject width="162.21875" height="36" transform="translate( 0, 27)">
+                            <div xmlns="http://www.w3.org/1999/xhtml" style="display: inline-block; padding-right: 1px; white-space: nowrap;">
+                                <span class="nodeLabel">• Active execution <br />• Consumes resources </span>
+                            </div>
+                        </foreignObject>
+                    </g>
+                </g>
+                <g class="node  statediagram-state" id="state-Paused-5" transform="translate(184.5625, 276.5)">
+                    <g>
+                        <rect class="outer title-state" style="" x="-108.671875" y="-35.5" width="217.34375" height="71" />
+                        <line class="divider" x1="-108.671875" x2="108.671875" y1="-13.5" y2="-13.5" />
+                    </g>
+                    <g class="label" style="" transform="translate(-104.671875, -32.5)">
+                        <foreignObject width="55.265625" height="18" transform="translate( 77.0390625, 0)">
+                            <div xmlns="http://www.w3.org/1999/xhtml" style="display: inline-block; padding-right: 1px; white-space: nowrap;">
+                                <span class="nodeLabel">Paused</span>
+                            </div>
+                        </foreignObject>
+                        <foreignObject width="209.34375" height="36" transform="translate( 0, 27)">
+                            <div xmlns="http://www.w3.org/1999/xhtml" style="display: inline-block; padding-right: 1px; white-space: nowrap;">
+                                <span class="nodeLabel">• Preserves memory and files <br />• Cannot execute code </span>
+                            </div>
+                        </foreignObject>
+                    </g>
+                </g>
+                <g class="node  statediagram-state" id="state-Killed-5" transform="translate(104.50390625, 421.5)">
+                    <g>
+                        <rect class="outer title-state" style="" x="-80.671875" y="-35.5" width="161.34375" height="71" />
+                        <line class="divider" x1="-80.671875" x2="80.671875" y1="-13.5" y2="-13.5" />
+                    </g>
+                    <g class="label" style="" transform="translate(-76.671875, -32.5)">
+                        <foreignObject width="40.140625" height="18" transform="translate( 56.6015625, 0)">
+                            <div xmlns="http://www.w3.org/1999/xhtml" style="display: inline-block; padding-right: 1px; white-space: nowrap;">
+                                <span class="nodeLabel">Killed</span>
+                            </div>
+                        </foreignObject>
+                        <foreignObject width="153.34375" height="36" transform="translate( 0, 27)">
+                            <div xmlns="http://www.w3.org/1999/xhtml" style="display: inline-block; padding-right: 1px; white-space: nowrap;">
+                                <span class="nodeLabel">• Resources released <br />• Cannot be resumed </span>
+                            </div>
+                        </foreignObject>
+                    </g>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>

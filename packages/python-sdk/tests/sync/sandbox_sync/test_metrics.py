@@ -6,10 +6,10 @@ from e2b import Sandbox
 
 
 @pytest.mark.skip_debug()
-def test_sbx_metrics(sandbox: Sandbox):
+def test_sbx_metrics(sandbox: Sandbox) -> None:
     # Wait for the sandbox to have some metrics
     metrics = []
-    for _ in range(10):
+    for _ in range(15):
         metrics = sandbox.get_metrics()
         if len(metrics) > 0:
             break

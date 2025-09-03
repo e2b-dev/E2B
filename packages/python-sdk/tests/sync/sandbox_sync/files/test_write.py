@@ -1,19 +1,13 @@
 import io
 import uuid
 
-from e2b.sandbox.filesystem.filesystem import WriteInfo
+from e2b.sandbox.filesystem.filesystem import WriteInfo, WriteEntry
 from e2b.sandbox_sync.main import Sandbox
 
 
 def test_write_text_file(sandbox):
     filename = "test_write.txt"
     content = "This is a test file."
-
-    # Attempt to write without path
-    try:
-        sandbox.files.write(None, content)
-    except Exception as e:
-        assert "Path or files are required" in str(e)
 
     info = sandbox.files.write(filename, content)
     assert info.path == f"/home/user/{filename}"
@@ -43,31 +37,16 @@ def test_write_binary_file(sandbox):
 
 def test_write_multiple_files(sandbox):
     # Attempt to write with empty files array
-    empty_info = sandbox.files.write([])
+    empty_info = sandbox.files.write_files([])
     assert isinstance(empty_info, list)
     assert len(empty_info) == 0
 
-    # Attempt to write with None path and empty files array
-    try:
-        sandbox.files.write(None, [])
-    except Exception as e:
-        assert "Path or files are required" in str(e)
-
-    # Attempt to write with path and file array
-    try:
-        sandbox.files.write(
-            "/path/to/file",
-            [{"path": "one_test_file.txt", "data": "This is a test file."}],
-        )
-    except Exception as e:
-        assert (
-            "Cannot specify both path and array of files. You have to specify either path and data for a single file or an array for multiple files."
-            in str(e)
-        )
+    # Attempt to write with no files
+    assert sandbox.files.write_files([]) == []
 
     # Attempt to write with one file in array
-    info = sandbox.files.write(
-        [{"path": "one_test_file.txt", "data": "This is a test file."}]
+    info = sandbox.files.write_files(
+        [WriteEntry(path="one_test_file.txt", data="This is a test file.")]
     )
     assert isinstance(info, list)
     assert len(info) == 1
@@ -85,9 +64,9 @@ def test_write_multiple_files(sandbox):
     for i in range(10):
         path = f"test_write_{i}.txt"
         content = f"This is a test file {i}."
-        files.append({"path": path, "data": content})
+        files.append(WriteEntry(path=path, data=content))
 
-    infos = sandbox.files.write(files)
+    infos = sandbox.files.write_files(files)
     assert isinstance(infos, list)
     assert len(infos) == len(files)
     for i, info in enumerate(infos):
@@ -127,7 +106,7 @@ def test_write_with_secured_envd(template):
     filename = f"non_existing_dir_{uuid.uuid4()}/test_write.txt"
     content = "This should succeed too."
 
-    sbx = Sandbox(template, timeout=30, secure=True)
+    sbx = Sandbox.create(template, timeout=30, secure=True)
     try:
         assert sbx.is_running()
         assert sbx._envd_version is not None

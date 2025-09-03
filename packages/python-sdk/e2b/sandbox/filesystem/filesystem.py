@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from typing import IO, Optional, Union
+from typing import IO, Optional, Union, TypedDict
 
 from e2b.envd.filesystem import filesystem_pb2
 
@@ -85,8 +85,7 @@ class EntryInfo(WriteInfo):
     """
 
 
-@dataclass
-class WriteEntry:
+class WriteEntry(TypedDict):
     """
     Contains path and data of the file to be written to the filesystem.
     """
