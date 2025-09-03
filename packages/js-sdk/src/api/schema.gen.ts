@@ -961,6 +961,19 @@ export interface paths {
 export type webhooks = Record<string, never>
 export interface components {
   schemas: {
+    AWSRegistry: {
+      /** @description AWS Access Key ID for ECR authentication */
+      awsAccessKeyId: string
+      /** @description AWS Region where the ECR registry is located */
+      awsRegion: string
+      /** @description AWS Secret Access Key for ECR authentication */
+      awsSecretAccessKey: string
+      /**
+       * @description Type of registry authentication (enum property replaced by openapi-typescript)
+       * @enum {string}
+       */
+      type: 'aws'
+    }
     BuildLogEntry: {
       level: components['schemas']['LogLevel']
       /** @description Log message content */
@@ -1059,6 +1072,30 @@ export interface components {
       /** @description Error */
       message: string
     }
+    FromImageRegistry:
+      | components['schemas']['AWSRegistry']
+      | components['schemas']['GCPRegistry']
+      | components['schemas']['GeneralRegistry']
+    GCPRegistry: {
+      /** @description Service Account JSON for GCP authentication */
+      serviceAccountJson: string
+      /**
+       * @description Type of registry authentication (enum property replaced by openapi-typescript)
+       * @enum {string}
+       */
+      type: 'gcp'
+    }
+    GeneralRegistry: {
+      /** @description Password to use for the registry */
+      password: string
+      /**
+       * @description Type of registry authentication (enum property replaced by openapi-typescript)
+       * @enum {string}
+       */
+      type: 'registry'
+      /** @description Username to use for the registry */
+      username: string
+    }
     IdentifierMaskingDetails: {
       /** @description Prefix used in masked version of the token or key */
       maskedValuePrefix: string
@@ -1152,8 +1189,13 @@ export interface components {
        * @description Number of sandbox create successes
        */
       createSuccesses: number
-      metrics: components['schemas']['NodeMetrics']
       /** @description Identifier of the node */
+      id: string
+      metrics: components['schemas']['NodeMetrics']
+      /**
+       * @deprecated
+       * @description Identifier of the nomad node
+       */
       nodeID: string
       /**
        * Format: uint32
@@ -1165,6 +1207,8 @@ export interface components {
        * @description Number of starting Sandboxes
        */
       sandboxStartingCount: number
+      /** @description Service instance identifier of the node */
+      serviceInstanceID: string
       status: components['schemas']['NodeStatus']
       /** @description Version of the orchestrator */
       version: string
@@ -1186,11 +1230,18 @@ export interface components {
        * @description Number of sandbox create successes
        */
       createSuccesses: number
-      metrics: components['schemas']['NodeMetrics']
       /** @description Identifier of the node */
+      id: string
+      metrics: components['schemas']['NodeMetrics']
+      /**
+       * @deprecated
+       * @description Identifier of the nomad node
+       */
       nodeID: string
       /** @description List of sandboxes running on the node */
       sandboxes: components['schemas']['ListedSandbox'][]
+      /** @description Service instance identifier of the node */
+      serviceInstanceID: string
       status: components['schemas']['NodeStatus']
       /** @description Version of the orchestrator */
       version: string
@@ -1442,7 +1493,7 @@ export interface components {
     }
     Template: {
       /** @description Aliases of the template */
-      aliases?: string[]
+      aliases: string[]
       /**
        * Format: int32
        * @description Number of times the template was built
@@ -1463,7 +1514,7 @@ export interface components {
        * Format: date-time
        * @description Time when the template was last used
        */
-      lastSpawnedAt: string
+      lastSpawnedAt: string | null
       memoryMB: components['schemas']['MemoryMB']
       /** @description Whether the template is public or only accessible by the team */
       public: boolean
@@ -1538,6 +1589,7 @@ export interface components {
       force: boolean
       /** @description Image to use as a base for the template build */
       fromImage?: string
+      fromImageRegistry?: components['schemas']['FromImageRegistry']
       /** @description Template to use as a base for the template build */
       fromTemplate?: string
       /** @description Ready check command to execute in the template after the build */

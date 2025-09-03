@@ -499,6 +499,7 @@ components:
         - spawnCount
         - buildCount
         - envdVersion
+        - aliases
       properties:
         templateID:
           type: string
@@ -534,6 +535,7 @@ components:
           nullable: true
         lastSpawnedAt:
           type: string
+          nullable: true
           format: date-time
           description: Time when the template was last used
         spawnCount:
@@ -608,6 +610,72 @@ components:
         memoryMB:
           $ref: "#/components/schemas/MemoryMB"
 
+    FromImageRegistry:
+      oneOf:
+        - $ref: '#/components/schemas/AWSRegistry'
+        - $ref: '#/components/schemas/GCPRegistry'
+        - $ref: '#/components/schemas/GeneralRegistry'
+      discriminator:
+        propertyName: type
+        mapping:
+          aws: '#/components/schemas/AWSRegistry'
+          gcp: '#/components/schemas/GCPRegistry'
+          registry: '#/components/schemas/GeneralRegistry'
+
+    AWSRegistry:
+      type: object
+      required:
+        - type
+        - awsAccessKeyId
+        - awsSecretAccessKey
+        - awsRegion
+      properties:
+        type:
+          type: string
+          enum: [aws]
+          description: Type of registry authentication
+        awsAccessKeyId:
+          type: string
+          description: AWS Access Key ID for ECR authentication
+        awsSecretAccessKey:
+          type: string
+          description: AWS Secret Access Key for ECR authentication
+        awsRegion:
+          type: string
+          description: AWS Region where the ECR registry is located
+
+    GCPRegistry:
+      type: object
+      required:
+        - type
+        - serviceAccountJson
+      properties:
+        type:
+          type: string
+          enum: [gcp]
+          description: Type of registry authentication
+        serviceAccountJson:
+          type: string
+          description: Service Account JSON for GCP authentication
+
+    GeneralRegistry:
+      type: object
+      required:
+        - type
+        - username
+        - password
+      properties:
+        type:
+          type: string
+          enum: [registry]
+          description: Type of registry authentication
+        username:
+          type: string
+          description: Username to use for the registry
+        password:
+          type: string
+          description: Password to use for the registry
+
     TemplateBuildStartV2:
       type: object
       properties:
@@ -617,6 +685,8 @@ components:
         fromTemplate:
           type: string
           description: Template to use as a base for the template build
+        fromImageRegistry:
+          $ref: "#/components/schemas/FromImageRegistry"
         force:
           default: false
           type: boolean
@@ -809,6 +879,8 @@ components:
     Node:
       required:
         - nodeID
+        - id
+        - serviceInstanceID
         - clusterID
         - status
         - sandboxCount
@@ -827,7 +899,14 @@ components:
           description: Commit of the orchestrator
         nodeID:
           type: string
+          deprecated: true
+          description: Identifier of the nomad node
+        id:
+          type: string
           description: Identifier of the node
+        serviceInstanceID:
+            type: string
+            description: Service instance identifier of the node
         clusterID:
           type: string
           description: Identifier of the cluster
@@ -855,6 +934,8 @@ components:
     NodeDetail:
       required:
         - nodeID
+        - id
+        - serviceInstanceID
         - clusterID
         - status
         - sandboxes
@@ -874,9 +955,16 @@ components:
         commit:
           type: string
           description: Commit of the orchestrator
-        nodeID:
+        id:
           type: string
           description: Identifier of the node
+        serviceInstanceID:
+            type: string
+            description: Service instance identifier of the node
+        nodeID:
+          type: string
+          deprecated: true
+          description: Identifier of the nomad node
         status:
           $ref: "#/components/schemas/NodeStatus"
         sandboxes:
@@ -1809,6 +1897,12 @@ paths:
         - AdminTokenAuth: []
       parameters:
         - $ref: "#/components/parameters/nodeID"
+        - in: query
+          name: clusterID
+          description: Identifier of the cluster
+          required: false
+          schema:
+            type: string
       responses:
         "200":
           description: Successfully returned the node
