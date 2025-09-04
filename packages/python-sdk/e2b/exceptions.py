@@ -63,7 +63,7 @@ class NotFoundException(SandboxException):
     pass
 
 
-class AuthenticationException(SandboxException):
+class AuthenticationException(Exception):
     """
     Raised when authentication fails.
     """
