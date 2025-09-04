@@ -1,11 +1,20 @@
 import pytest
+import os
 from uuid import uuid4
+import shutil
 
 from e2b import AsyncTemplate
 
 
 @pytest.mark.skip_debug()
 async def test_build():
+    test_dir = os.path.dirname(os.path.abspath(__file__))
+    folder_path = os.path.join(test_dir, "folder")
+
+    os.makedirs(folder_path)
+    with open(os.path.join(folder_path, "test.txt"), "w") as f:
+        f.write("test")
+
     template = (
         AsyncTemplate()
         .from_image("ubuntu:22.04")
@@ -27,3 +36,5 @@ async def test_build():
         cpu_count=1,
         memory_mb=1024,
     )
+
+    shutil.rmtree(folder_path)
