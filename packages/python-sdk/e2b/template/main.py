@@ -235,21 +235,22 @@ class TemplateBase:
     )
     _logs_refresh_frequency = 0.2
     _default_base_image: str = "e2bdev/base"
-    _base_image: Optional[str] = _default_base_image
-    _base_template: Optional[str] = None
-    _start_cmd: Optional[str] = None
-    _ready_cmd: Optional[str] = None
-    # Force the whole template to be rebuilt
-    _force: bool = False
-    # Force the next layer to be rebuilt
-    _force_next_layer: bool = False
-    _instructions: List[Instruction] = []
 
     def __init__(
         self,
         file_context_path: Optional[str] = None,
         ignore_file_paths: List[str] = [],
     ):
+        self._base_image: Optional[str] = self._default_base_image
+        self._base_template: Optional[str] = None
+        self._start_cmd: Optional[str] = None
+        self._ready_cmd: Optional[str] = None
+        # Force the whole template to be rebuilt
+        self._force: bool = False
+        # Force the next layer to be rebuilt
+        self._force_next_layer: bool = False
+        self._instructions: List[Instruction] = []
+
         # If no file_context_path is provided, use the caller's directory
         self._file_context_path: str = (
             file_context_path or get_caller_directory() or "."
