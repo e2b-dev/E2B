@@ -11,7 +11,7 @@ async def test_build():
     test_dir = os.path.dirname(os.path.abspath(__file__))
     folder_path = os.path.join(test_dir, "folder")
 
-    os.makedirs(folder_path)
+    os.makedirs(folder_path, exist_ok=True)
     with open(os.path.join(folder_path, "test.txt"), "w") as f:
         f.write("test")
 
