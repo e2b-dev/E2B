@@ -77,7 +77,7 @@ export async function getFileUploadLink(
   }
 
   if (!fileUploadLinkRes.data) {
-    throw new BuildError('Failed to get file upload link')
+    throw new FileUploadError('Failed to get file upload link')
   }
 
   return fileUploadLinkRes.data
