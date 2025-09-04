@@ -15,6 +15,8 @@ export type CopyItem = {
   src: string
   dest: string
   forceUpload?: boolean
+  user?: string
+  mode?: number
 }
 
 // Interface for the initial state

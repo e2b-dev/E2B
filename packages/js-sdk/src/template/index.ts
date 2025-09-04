@@ -173,20 +173,28 @@ export class TemplateClass
 
     const items = Array.isArray(srcOrItems)
       ? srcOrItems
-      : [{ src: srcOrItems, dest: destOrOptions as string }]
+      : [
+          {
+            src: srcOrItems,
+            dest: destOrOptions as string,
+            mode: options?.mode,
+            user: options?.user,
+            forceUpload: options?.forceUpload,
+          },
+        ]
     for (const item of items) {
       const args = [
         item.src,
         item.dest,
-        options?.user ?? '',
-        options?.mode ? padOctal(options.mode) : '',
+        item.user ?? '',
+        item.mode ? padOctal(item.mode) : '',
       ]
 
       this.instructions.push({
         type: 'COPY',
         args,
-        force: options?.forceUpload ?? this.forceNextLayer,
-        forceUpload: options?.forceUpload,
+        force: item.forceUpload ?? this.forceNextLayer,
+        forceUpload: item.forceUpload,
       })
     }
 
