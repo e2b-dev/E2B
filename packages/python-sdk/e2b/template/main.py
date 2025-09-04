@@ -1,5 +1,6 @@
 import json
 from typing import Dict, List, Optional, Union
+from httpx import Limits
 
 from e2b.template.dockerfile_parser import parse_dockerfile
 from e2b.template.types import CopyItem, Duration, Instruction, Step, TemplateType
@@ -227,6 +228,12 @@ class TemplateFinal:
 
 
 class TemplateBase:
+    _limits = Limits(
+        max_keepalive_connections=40,
+        max_connections=40,
+        keepalive_expiry=300,
+    )
+
     def __init__(
         self,
         file_context_path: Optional[str] = None,

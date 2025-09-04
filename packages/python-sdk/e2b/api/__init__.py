@@ -107,20 +107,16 @@ class ApiClient(AuthenticatedClient):
         kwargs.pop("auth_header_name", None)
         kwargs.pop("prefix", None)
 
-        # Only include limits in httpx_args if it's not None
-        httpx_args = {
-            "event_hooks": {
-                "request": [self._log_request],
-                "response": [self._log_response],
-            },
-            "proxy": config.proxy,
-        }
-        if limits is not None:
-            httpx_args["limits"] = limits
-
         super().__init__(
             base_url=config.api_url,
-            httpx_args=httpx_args,
+            httpx_args={
+                "event_hooks": {
+                    "request": [self._log_request],
+                    "response": [self._log_response],
+                },
+                "proxy": config.proxy,
+                "limits": limits,
+            },
             headers=headers,
             token=token,
             auth_header_name=auth_header_name,

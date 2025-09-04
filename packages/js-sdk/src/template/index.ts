@@ -102,7 +102,6 @@ export class TemplateClass
     return this.fromImage(`node:${variant}`)
   }
 
-  // maybe unnecessary
   fromBaseImage(): TemplateBuilder {
     return this.fromImage(this.defaultBaseImage)
   }

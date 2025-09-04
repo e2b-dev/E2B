@@ -37,7 +37,10 @@ class AsyncTemplate(TemplateBase):
             domain=domain, api_key=api_key or os.environ.get("E2B_API_KEY")
         )
         client = AsyncApiClient(
-            config, require_api_key=True, require_access_token=False
+            config,
+            require_api_key=True,
+            require_access_token=False,
+            limits=TemplateBase._limits,
         )
 
         if skip_cache:

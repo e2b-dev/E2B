@@ -36,7 +36,12 @@ class Template(TemplateBase):
         config = ConnectionConfig(
             domain=domain, api_key=api_key or os.environ.get("E2B_API_KEY")
         )
-        client = ApiClient(config, require_api_key=True, require_access_token=False)
+        client = ApiClient(
+            config,
+            require_api_key=True,
+            require_access_token=False,
+            limits=TemplateBase._limits,
+        )
 
         if skip_cache:
             template._template._force = True
