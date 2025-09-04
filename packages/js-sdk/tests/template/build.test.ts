@@ -1,8 +1,14 @@
 import { test } from 'vitest'
 import { Template } from '../../src'
 import { randomUUID } from 'node:crypto'
+import path from 'node:path'
+import fs from 'node:fs'
 
 test('build template', { timeout: 180000 }, async () => {
+  const folderPath = path.join(__dirname, 'folder')
+  fs.mkdirSync(folderPath, { recursive: true })
+  fs.writeFileSync(path.join(folderPath, 'test.txt'), 'This is a test file.')
+
   const template = Template()
     .fromImage('ubuntu:22.04')
     .copy('folder/*.txt', 'folder', { forceUpload: true })
@@ -19,4 +25,6 @@ test('build template', { timeout: 180000 }, async () => {
     cpuCount: 1,
     memoryMB: 1024,
   })
+
+  fs.rmSync(folderPath, { recursive: true })
 })
