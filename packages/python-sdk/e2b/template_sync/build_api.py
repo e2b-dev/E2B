@@ -164,9 +164,7 @@ def wait_for_build_finish(
     status: Literal["building", "waiting", "ready", "error"] = "building"
 
     while status == "building":
-        build_status = get_build_status(
-            client, template_id, build_id, logs_offset
-        )
+        build_status = get_build_status(client, template_id, build_id, logs_offset)
 
         logs_offset += len(build_status.log_entries)
 
