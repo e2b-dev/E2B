@@ -1,22 +1,19 @@
-from typing import Callable, Literal, Optional, Union
+from typing import Callable, Optional, Union
 
 from e2b.template import TemplateBuilder, TemplateFinal, TemplateBase
-from e2b.template.logs import LogEntry
+from e2b.template.types import LogEntry
 
 import os
 from datetime import datetime
-from e2b.exceptions import BuildException
-import time
 
 from e2b.api import ApiClient
 from e2b.connection_config import ConnectionConfig
-from e2b.api.client.client import AuthenticatedClient
 from e2b.template_sync.build_api import (
-    get_build_status,
     get_file_upload_link,
     request_build,
     trigger_build,
     upload_file,
+    wait_for_build_finish,
 )
 
 
@@ -157,42 +154,10 @@ class Template(TemplateBase):
                     )
                 )
 
-            Template.__wait_for_build_finish(
-                api_client, template_id, build_id, on_build_logs
+            wait_for_build_finish(
+                api_client,
+                template_id,
+                build_id,
+                on_build_logs,
+                logs_refresh_frequency=TemplateBase._logs_refresh_frequency,
             )
-
-    @staticmethod
-    def __wait_for_build_finish(
-        client: AuthenticatedClient,
-        template_id: str,
-        build_id: str,
-        on_build_logs: Optional[Callable[[LogEntry], None]] = None,
-    ):
-        logs_offset = 0
-        status: Literal["building", "waiting", "ready", "error"] = "building"
-
-        while status == "building":
-            build_status = get_build_status(client, template_id, build_id, logs_offset)
-
-            logs_offset += len(build_status.log_entries)
-
-            for log_entry in build_status.log_entries:
-                if on_build_logs:
-                    on_build_logs(
-                        LogEntry(
-                            timestamp=log_entry.timestamp,
-                            level=log_entry.level.value,
-                            message=log_entry.message,
-                        )
-                    )
-
-            status = build_status.status.value
-            if status == "ready":
-                return
-            elif status == "error":
-                raise BuildException(build_status.reason or "Build failed")
-
-            # Wait for a short period before checking the status again
-            time.sleep(TemplateBase._logs_refresh_frequency)
-
-        raise BuildException("Unknown build error occurred.")

@@ -2,11 +2,13 @@ import io
 import os
 from glob import glob
 import tarfile
+import asyncio
+from typing import Callable, Literal, Optional
 
 import httpx
 
 from e2b.api.client.types import UNSET
-from e2b.template.types import TemplateType
+from e2b.template.types import TemplateType, LogEntry
 from e2b.api.client.client import AuthenticatedClient
 from e2b.api.client.api.templates import (
     post_v2_templates,
@@ -149,3 +151,44 @@ async def get_build_status(
         raise BuildException("Failed to get build status")
 
     return res.parsed
+
+
+async def wait_for_build_finish(
+    client: AuthenticatedClient,
+    template_id: str,
+    build_id: str,
+    on_build_logs: Optional[Callable[[LogEntry], None]] = None,
+    logs_refresh_frequency: float = 0.2,
+):
+    logs_offset = 0
+    status: Literal["building", "waiting", "ready", "error"] = "building"
+
+    while status == "building":
+        build_status = await get_build_status(
+            client, template_id, build_id, logs_offset
+        )
+
+        logs_offset += len(build_status.log_entries)
+
+        for log_entry in build_status.log_entries:
+            if on_build_logs:
+                on_build_logs(
+                    LogEntry(
+                        timestamp=log_entry.timestamp,
+                        level=log_entry.level.value,
+                        message=log_entry.message,
+                    )
+                )
+
+        status = build_status.status.value
+
+        if status == "ready":
+            return
+
+        elif status == "error":
+            raise BuildException(build_status.reason or "Build failed")
+
+        # Wait for a short period before checking the status again
+        await asyncio.sleep(logs_refresh_frequency)
+
+    raise BuildException("Unknown build error occurred.")

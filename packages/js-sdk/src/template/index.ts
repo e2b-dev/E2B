@@ -1,13 +1,12 @@
 import { ApiClient } from '../api'
 import { runtime } from '../utils'
 import {
-  getBuildStatus,
-  GetBuildStatusResponse,
   getFileUploadLink,
   requestBuild,
   triggerBuild,
   TriggerBuildTemplate,
   uploadFile,
+  waitForBuildFinish,
 } from './buildApi'
 import { parseDockerfile } from './dockerfileParser'
 import { BuildError } from '../errors'
@@ -26,9 +25,8 @@ import {
   padOctal,
   readDockerignore,
 } from './utils'
-import stripAnsi from 'strip-ansi'
 import { ConnectionConfig } from '../connectionConfig'
-import { LogEntry } from './logs'
+import { LogEntry } from './types'
 
 type TemplateOptions = {
   fileContextPath?: string
@@ -506,10 +504,11 @@ export class TemplateClass
       new LogEntry(new Date(), 'info', 'Waiting for logs...')
     )
 
-    await this.waitForBuildFinish(client, {
+    await waitForBuildFinish(client, {
       templateID,
       buildID,
       onBuildLogs: options.onBuildLogs,
+      logsRefreshFrequency: this.logsRefreshFrequency,
     })
   }
 
@@ -537,60 +536,6 @@ export class TemplateClass
     }
 
     return steps
-  }
-
-  private async waitForBuildFinish(
-    client: ApiClient,
-    {
-      templateID,
-      buildID,
-      onBuildLogs,
-    }: {
-      templateID: string
-      buildID: string
-      onBuildLogs?: (logEntry: InstanceType<typeof LogEntry>) => void
-    }
-  ): Promise<void> {
-    let logsOffset = 0
-    let status: GetBuildStatusResponse['status'] = 'building'
-
-    while (status === 'building') {
-      const buildStatus = await getBuildStatus(client, {
-        templateID,
-        buildID,
-        logsOffset,
-      })
-
-      logsOffset += buildStatus.logEntries.length
-
-      buildStatus.logEntries.forEach(
-        (logEntry: GetBuildStatusResponse['logEntries'][number]) =>
-          onBuildLogs?.(
-            new LogEntry(
-              new Date(logEntry.timestamp),
-              logEntry.level,
-              stripAnsi(logEntry.message)
-            )
-          )
-      )
-
-      status = buildStatus.status
-      switch (status) {
-        case 'ready': {
-          return
-        }
-        case 'error': {
-          throw new BuildError(buildStatus?.reason?.message ?? 'Unknown error')
-        }
-      }
-
-      // Wait for a short period before checking the status again
-      await new Promise((resolve) =>
-        setTimeout(resolve, this.logsRefreshFrequency)
-      )
-    }
-
-    throw new BuildError('Unknown build error occurred.')
   }
 
   private serialize(steps: Steps[]): TriggerBuildTemplate {

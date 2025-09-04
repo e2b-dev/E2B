@@ -1,6 +1,8 @@
 import { ApiClient, paths, handleApiError } from '../api'
 import { BuildError, FileUploadError } from '../errors'
+import { LogEntry } from './types'
 import { tarFileStreamUpload } from './utils'
+import stripAnsi from 'strip-ansi'
 
 type RequestBuildInput = {
   alias: string
@@ -164,4 +166,58 @@ export async function getBuildStatus(
   }
 
   return buildStatusRes.data
+}
+
+export async function waitForBuildFinish(
+  client: ApiClient,
+  {
+    templateID,
+    buildID,
+    onBuildLogs,
+    logsRefreshFrequency,
+  }: {
+    templateID: string
+    buildID: string
+    onBuildLogs?: (logEntry: InstanceType<typeof LogEntry>) => void
+    logsRefreshFrequency: number
+  }
+): Promise<void> {
+  let logsOffset = 0
+  let status: GetBuildStatusResponse['status'] = 'building'
+
+  while (status === 'building') {
+    const buildStatus = await getBuildStatus(client, {
+      templateID,
+      buildID,
+      logsOffset,
+    })
+
+    logsOffset += buildStatus.logEntries.length
+
+    buildStatus.logEntries.forEach(
+      (logEntry: GetBuildStatusResponse['logEntries'][number]) =>
+        onBuildLogs?.(
+          new LogEntry(
+            new Date(logEntry.timestamp),
+            logEntry.level,
+            stripAnsi(logEntry.message)
+          )
+        )
+    )
+
+    status = buildStatus.status
+    switch (status) {
+      case 'ready': {
+        return
+      }
+      case 'error': {
+        throw new BuildError(buildStatus?.reason?.message ?? 'Unknown error')
+      }
+    }
+
+    // Wait for a short period before checking the status again
+    await new Promise((resolve) => setTimeout(resolve, logsRefreshFrequency))
+  }
+
+  throw new BuildError('Unknown build error occurred.')
 }
