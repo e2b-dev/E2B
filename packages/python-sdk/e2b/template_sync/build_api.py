@@ -60,7 +60,7 @@ def get_file_upload_link(
     )
 
     if res.status_code >= 300:
-        raise handle_api_exception(res, BuildException)
+        raise handle_api_exception(res, FileUploadException)
 
     if isinstance(res.parsed, Error):
         raise FileUploadException(f"API error: {res.parsed.message}")
