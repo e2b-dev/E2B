@@ -117,7 +117,7 @@ export function parseDockerfile(
         break
 
       default:
-        // For unsupported instructions, we could log a warning or add as raw commands
+        console.warn(`Unsupported instruction: ${keyword}`)
         break
     }
   }

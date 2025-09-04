@@ -106,33 +106,25 @@ def parse_dockerfile(
             instruction = instruction_data["instruction"]
             value = instruction_data["value"]
 
-            if instruction == "FROM":
-                # Already handled above
-                continue
-            elif instruction == "RUN":
-                _handle_run_instruction(value, template_builder)
-            elif instruction in ["COPY", "ADD"]:
-                _handle_copy_instruction(value, template_builder)
-            elif instruction == "WORKDIR":
-                _handle_workdir_instruction(value, template_builder)
-            elif instruction == "USER":
-                _handle_user_instruction(value, template_builder)
-            elif instruction in ["ENV", "ARG"]:
-                _handle_env_instruction(value, instruction, template_builder)
-            elif instruction in ["CMD", "ENTRYPOINT"]:
-                _handle_cmd_entrypoint_instruction(value, template_builder)
-            elif instruction in [
-                "EXPOSE",
-                "VOLUME",
-                "LABEL",
-                "HEALTHCHECK",
-                "ONBUILD",
-                "STOPSIGNAL",
-                "SHELL",
-            ]:
-                # Unsupported instructions - skip silently
-                continue
-            # Other unsupported instructions are silently ignored
+            match instruction:
+                case "FROM":
+                    # Already handled above
+                    continue
+                case "RUN":
+                    _handle_run_instruction(value, template_builder)
+                case "COPY" | "ADD":
+                    _handle_copy_instruction(value, template_builder)
+                case "WORKDIR":
+                    _handle_workdir_instruction(value, template_builder)
+                case "USER":
+                    _handle_user_instruction(value, template_builder)
+                case "ENV" | "ARG":
+                    _handle_env_instruction(value, instruction, template_builder)
+                case "CMD" | "ENTRYPOINT":
+                    _handle_cmd_entrypoint_instruction(value, template_builder)
+                case _:
+                    print(f"Unsupported instruction: {instruction}")
+                    continue
 
     return base_image
 
