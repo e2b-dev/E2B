@@ -64,6 +64,7 @@ export class TemplateClass
   private fileContextPath: string =
     runtime === 'browser' ? '.' : getCallerDirectory() ?? '.'
   private ignoreFilePaths: string[] = []
+  private logsRefreshFrequency: number = 200
 
   constructor(options?: TemplateOptions) {
     this.fileContextPath = options?.fileContextPath ?? this.fileContextPath
@@ -576,7 +577,9 @@ export class TemplateClass
       }
 
       // Wait for a short period before checking the status again
-      await new Promise((resolve) => setTimeout(resolve, 200))
+      await new Promise((resolve) =>
+        setTimeout(resolve, this.logsRefreshFrequency)
+      )
     }
 
     throw new BuildError('Unknown build error occurred.')

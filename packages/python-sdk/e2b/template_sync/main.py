@@ -174,7 +174,7 @@ class Template(TemplateBase):
         while status == "building":
             build_status = get_build_status(client, template_id, build_id, logs_offset)
 
-            logs_offset += len(build_status.logs)
+            logs_offset += len(build_status.log_entries)
 
             for log_entry in build_status.log_entries:
                 if on_build_logs:
@@ -193,6 +193,6 @@ class Template(TemplateBase):
                 raise BuildException(build_status.reason or "Build failed")
 
             # Wait for a short period before checking the status again
-            time.sleep(0.2)
+            time.sleep(TemplateBase._logs_refresh_frequency)
 
         raise BuildException("Unknown build error occurred.")
