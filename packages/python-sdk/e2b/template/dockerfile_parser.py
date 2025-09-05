@@ -4,8 +4,12 @@ import tempfile
 from typing import Dict, List, Optional, Protocol, Union
 
 from dockerfile_parse import DockerfileParser
-from e2b.template.main import TemplateBuilder
+from e2b.template.main import TemplateFinal
 from e2b.template.types import CopyItem
+
+
+class DockerfileParserFinalInterface(Protocol):
+    """Protocol defining the interface for Dockerfile parsing final callbacks."""
 
 
 class DockerfileParserInterface(Protocol):
@@ -40,13 +44,13 @@ class DockerfileParserInterface(Protocol):
 
     def set_start_cmd(
         self, start_cmd: str, ready_cmd: str
-    ) -> "DockerfileParserInterface":
+    ) -> "DockerfileParserFinalInterface":
         """Handle CMD/ENTRYPOINT instruction."""
         ...
 
 
 def parse_dockerfile(
-    dockerfile_content_or_path: str, template_builder: TemplateBuilder
+    dockerfile_content_or_path: str, template_builder: "DockerfileParserInterface"
 ) -> str:
     """Parse a Dockerfile and convert it to Template SDK format.
 
@@ -126,7 +130,7 @@ def parse_dockerfile(
 
 
 def _handle_run_instruction(
-    value: str, template_builder: TemplateBuilder
+    value: str, template_builder: "DockerfileParserInterface"
 ) -> None:
     """Handle RUN instruction"""
     if not value.strip():
@@ -137,7 +141,7 @@ def _handle_run_instruction(
 
 
 def _handle_copy_instruction(
-    value: str, template_builder: TemplateBuilder
+    value: str, template_builder: "DockerfileParserInterface"
 ) -> None:
     """Handle COPY/ADD instruction"""
     if not value.strip():
@@ -179,7 +183,7 @@ def _handle_copy_instruction(
 
 
 def _handle_workdir_instruction(
-    value: str, template_builder: TemplateBuilder
+    value: str, template_builder: "DockerfileParserInterface"
 ) -> None:
     """Handle WORKDIR instruction"""
     if not value.strip():
@@ -189,7 +193,7 @@ def _handle_workdir_instruction(
 
 
 def _handle_user_instruction(
-    value: str, template_builder: TemplateBuilder
+    value: str, template_builder: "DockerfileParserInterface"
 ) -> None:
     """Handle USER instruction"""
     if not value.strip():
@@ -199,7 +203,7 @@ def _handle_user_instruction(
 
 
 def _handle_env_instruction(
-    value: str, instruction_type: str, template_builder: TemplateBuilder
+    value: str, instruction_type: str, template_builder: "DockerfileParserInterface"
 ) -> None:
     """Handle ENV/ARG instruction"""
     if not value.strip():
@@ -232,7 +236,7 @@ def _handle_env_instruction(
 
 
 def _handle_cmd_entrypoint_instruction(
-    value: str, template_builder: TemplateBuilder
+    value: str, template_builder: "DockerfileParserInterface"
 ) -> None:
     """Handle CMD/ENTRYPOINT instruction - convert to setStartCmd with 20s timeout"""
     if not value.strip():
