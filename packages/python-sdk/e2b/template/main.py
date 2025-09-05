@@ -13,8 +13,6 @@ from e2b.template.utils import (
 
 
 class TemplateBuilder:
-    """Builder stage after fromImage - all methods except start/ready commands available"""
-
     def __init__(self, template: "TemplateBase"):
         self._template = template
 
@@ -221,7 +219,6 @@ class TemplateBuilder:
 
 
 class TemplateFinal:
-    """Final stage - only start/ready commands and utility methods available"""
 
     def __init__(self, template: "TemplateBase"):
         self._template = template
