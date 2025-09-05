@@ -308,19 +308,6 @@ export class TemplateBase {
     this.ignoreFilePaths = options?.ignoreFilePaths ?? this.ignoreFilePaths
   }
 
-  // Static methods
-  static toJSON(template: TemplateClass): Promise<string> {
-    return template.getTemplateBase().toJSON()
-  }
-
-  static toDockerfile(template: TemplateClass): string {
-    return template.getTemplateBase().toDockerfile()
-  }
-
-  static build(template: TemplateClass, options: BuildOptions): Promise<void> {
-    return template.getTemplateBase().build(options)
-  }
-
   static waitForPort(port: number): string {
     return `ss -tuln | grep :${port}`
   }
@@ -463,45 +450,51 @@ export class TemplateBase {
     return new TemplateFinal(this)
   }
 
-  protected async toJSON(): Promise<string> {
+  static async toJSON(template: TemplateClass): Promise<string> {
+    const templateBase = template.getTemplateBase()
     return JSON.stringify(
-      this.serialize(await this.calculateFilesHashes()),
+      templateBase.serialize(await templateBase.calculateFilesHashes()),
       undefined,
       2
     )
   }
 
-  protected toDockerfile(): string {
-    if (this.baseTemplate !== undefined) {
+  static toDockerfile(template: TemplateClass): string {
+    const templateBase = template.getTemplateBase()
+    if (templateBase.baseTemplate !== undefined) {
       throw new Error(
         'Cannot convert template built from another template to Dockerfile. ' +
           'Templates based on other templates can only be built using the E2B API.'
       )
     }
 
-    if (this.baseImage === undefined) {
+    if (templateBase.baseImage === undefined) {
       throw new Error('No base image specified for template')
     }
 
-    let dockerfile = `FROM ${this.baseImage}\n`
-    for (const instruction of this.instructions) {
+    let dockerfile = `FROM ${templateBase.baseImage}\n`
+    for (const instruction of templateBase.instructions) {
       dockerfile += `${instruction.type} ${instruction.args.join(' ')}\n`
     }
-    if (this.startCmd) {
-      dockerfile += `ENTRYPOINT ${this.startCmd}\n`
+    if (templateBase.startCmd) {
+      dockerfile += `ENTRYPOINT ${templateBase.startCmd}\n`
     }
     return dockerfile
   }
 
-  protected async build(options: BuildOptions): Promise<void> {
+  static async build(
+    template: TemplateClass,
+    options: BuildOptions
+  ): Promise<void> {
     const config = new ConnectionConfig({
       domain: options.domain,
       apiKey: options.apiKey,
     })
     const client = new ApiClient(config)
+    const templateBase = template.getTemplateBase()
 
     if (options.skipCache) {
-      this.force = true
+      templateBase.force = true
     }
 
     // Create template
@@ -527,7 +520,7 @@ export class TemplateBase {
       )
     )
 
-    const instructionsWithHashes = await this.calculateFilesHashes()
+    const instructionsWithHashes = await templateBase.calculateFilesHashes()
 
     // Prepare file uploads
     const fileUploads = instructionsWithHashes
@@ -552,7 +545,7 @@ export class TemplateBase {
       ) {
         await uploadFile({
           fileName: file.src,
-          fileContextPath: this.fileContextPath,
+          fileContextPath: templateBase.fileContextPath,
           url,
         })
         options.onBuildLogs?.(
@@ -583,7 +576,7 @@ export class TemplateBase {
     await triggerBuild(client, {
       templateID,
       buildID,
-      template: this.serialize(instructionsWithHashes),
+      template: templateBase.serialize(instructionsWithHashes),
     })
 
     options.onBuildLogs?.(
@@ -594,7 +587,7 @@ export class TemplateBase {
       templateID,
       buildID,
       onBuildLogs: options.onBuildLogs,
-      logsRefreshFrequency: this.logsRefreshFrequency,
+      logsRefreshFrequency: templateBase.logsRefreshFrequency,
     })
   }
 
