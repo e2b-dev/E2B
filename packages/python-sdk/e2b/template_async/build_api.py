@@ -184,6 +184,9 @@ async def wait_for_build_finish(
 
         if status == "ready":
             return
+        
+        elif status == "waiting":
+            continue
 
         elif status == "error":
             raise BuildException(build_status.reason or "Build failed")

@@ -210,6 +210,9 @@ export async function waitForBuildFinish(
       case 'ready': {
         return
       }
+      case 'waiting': {
+        continue
+      }
       case 'error': {
         throw new BuildError(buildStatus?.reason?.message ?? 'Unknown error')
       }
