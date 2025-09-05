@@ -142,25 +142,26 @@ export class TemplateBuilder {
     return this
   }
 
+  runCmd(command: string, options?: { user?: string }): TemplateBuilder
+  runCmd(commands: string[], options?: { user?: string }): TemplateBuilder
   runCmd(
     commandOrCommands: string | string[],
     options?: { user?: string }
   ): TemplateBuilder {
-    const commands = Array.isArray(commandOrCommands)
+    const cmds = Array.isArray(commandOrCommands)
       ? commandOrCommands
       : [commandOrCommands]
-    const args = [commands.join(' && ')]
 
+    const args = [cmds.join(' && ')]
     if (options?.user) {
       args.push(options.user)
     }
 
-    const instruction: Instruction = {
+    this.template.instructions.push({
       type: 'RUN',
       args,
       force: this.template.forceNextLayer,
-    }
-    this.template.instructions.push(instruction)
+    })
     return this
   }
 
@@ -533,56 +534,6 @@ export class TemplateBase {
     }
 
     return new TemplateBuilder(this)
-  }
-
-  // DockerfileParserInterface implementation
-  setWorkdir(workdir: string): DockerfileParserInterface {
-    this.instructions.push({
-      type: 'WORKDIR',
-      args: [workdir],
-      force: this.forceNextLayer,
-    })
-    return this
-  }
-
-  setUser(user: string): DockerfileParserInterface {
-    this.instructions.push({
-      type: 'USER',
-      args: [user],
-      force: this.forceNextLayer,
-    })
-    return this
-  }
-
-  setEnvs(envs: Record<string, string>): DockerfileParserInterface {
-    if (Object.keys(envs).length === 0) {
-      return this
-    }
-
-    this.instructions.push({
-      type: 'ENV',
-      args: Object.entries(envs).flatMap(([key, value]) => [key, value]),
-      force: this.forceNextLayer,
-    })
-    return this
-  }
-
-  runCmd(command: string): DockerfileParserInterface {
-    this.instructions.push({
-      type: 'RUN',
-      args: [command],
-      force: this.forceNextLayer,
-    })
-    return this
-  }
-
-  copy(src: string, dest: string): DockerfileParserInterface {
-    this.instructions.push({
-      type: 'COPY',
-      args: [src, dest, '', ''],
-      force: this.forceNextLayer,
-    })
-    return this
   }
 
   setStartCmd(startCommand: string, readyCommand: string): TemplateFinal {
