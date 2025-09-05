@@ -163,7 +163,7 @@ async def wait_for_build_finish(
     logs_offset = 0
     status: Literal["building", "waiting", "ready", "error"] = "building"
 
-    while status == "building":
+    while status in ["building", "waiting"]:
         build_status = await get_build_status(
             client, template_id, build_id, logs_offset
         )
