@@ -1,7 +1,7 @@
 import os
 import re
 import tempfile
-from typing import Any, Dict, List, Optional, Protocol, Union
+from typing import Dict, List, Optional, Protocol, Union
 
 from dockerfile_parse import DockerfileParser
 from e2b.template.types import CopyItem
@@ -37,7 +37,7 @@ class DockerfileParserInterface(Protocol):
         """Handle ENV instruction."""
         ...
 
-    def set_start_cmd(self, start_cmd: str, ready_cmd: str) -> Any:
+    def set_start_cmd(self, start_cmd: str, ready_cmd: str) -> "DockerfileParserInterface":
         """Handle CMD/ENTRYPOINT instruction."""
         ...
 
