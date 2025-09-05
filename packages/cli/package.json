@@ -40,7 +40,6 @@
     "dev": "tsup --watch",
     "lint": "eslint src",
     "format": "prettier --write src",
-    "test": "pnpm build && cd testground/demo-basic && ../../dist/index.js template build",
     "test": "vitest run",
     "test:watch": "vitest watch",
     "test:coverage": "vitest run --coverage",

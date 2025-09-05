@@ -11,12 +11,12 @@ import {
 import { parseDockerfile } from './dockerfileParser'
 import { BuildError } from './errors'
 import {
+  CopyItem,
   Instruction,
-  TemplateFromImage,
+  LogEntry,
   TemplateBuilder,
   TemplateFinal,
-  CopyItem,
-  LogEntry,
+  TemplateFromImage,
 } from './types'
 import {
   calculateFilesHash,
@@ -68,8 +68,11 @@ export class TemplateBase
     this.ignoreFilePaths = options?.ignoreFilePaths ?? this.ignoreFilePaths
   }
 
-  static toJSON(template: TemplateClass): Promise<string> {
-    return (template as TemplateBase).toJSON()
+  static toJSON(
+    template: TemplateClass,
+    computeHashes: boolean = true
+  ): Promise<string> {
+    return (template as TemplateBase).toJSON(computeHashes)
   }
 
   static toDockerfile(template: TemplateClass): string {
@@ -387,12 +390,13 @@ export class TemplateBase
     return this
   }
 
-  private async toJSON(): Promise<string> {
-    return JSON.stringify(
-      this.serialize(await this.calculateFilesHashes()),
-      undefined,
-      2
-    )
+  private async toJSON(computeHashes: boolean = true): Promise<string> {
+    let instructions = this.instructions
+    if (computeHashes) {
+      instructions = await this.calculateFilesHashes()
+    }
+
+    return JSON.stringify(this.serialize(instructions), undefined, 2)
   }
 
   private toDockerfile(): string {
@@ -583,6 +587,7 @@ Template.toJSON = TemplateBase.toJSON
 Template.toDockerfile = TemplateBase.toDockerfile
 
 export type TemplateClass = TemplateBuilder | TemplateFinal
+export { type TemplateBuilder } from './types'
 export { BuildError, FileUploadError } from './errors'
 export {
   waitForFile,
