@@ -518,12 +518,6 @@ export class TemplateBase {
     return templateBuilder
   }
 
-  setStartCmd(startCommand: string, readyCommand: string): TemplateFinal {
-    this.startCmd = startCommand
-    this.readyCmd = readyCommand
-    return new TemplateFinal(this)
-  }
-
   public async calculateFilesHashes(): Promise<Step[]> {
     const steps: Step[] = []
 
