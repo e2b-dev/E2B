@@ -3,4 +3,5 @@
 'e2b': minor
 ---
 
-- add Template SDK, fix raising AuthenticationError for 401 status code
+- added Templates SDK.
+- fixed authentication error handling to properly raise `AuthenticationError` instead of `SandboxError` for 401 errors.
