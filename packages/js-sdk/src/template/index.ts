@@ -45,7 +45,7 @@ export type BuildOptions = BasicBuildOptions & {
   domain?: string
 }
 
-export class TemplateClass
+export class TemplateBase
   implements TemplateFromImage, TemplateBuilder, TemplateFinal
 {
   private defaultBaseImage: string = 'e2bdev/base'
@@ -69,18 +69,15 @@ export class TemplateClass
   }
 
   static toJSON(template: TemplateBuilder | TemplateFinal): Promise<string> {
-    return (template as TemplateClass).toJSON()
+    return (template as TemplateBase).toJSON()
   }
 
   static toDockerfile(template: TemplateBuilder | TemplateFinal): string {
-    return (template as TemplateClass).toDockerfile()
+    return (template as TemplateBase).toDockerfile()
   }
 
-  static build(
-    template: TemplateBuilder | TemplateFinal,
-    options: BuildOptions
-  ): Promise<void> {
-    return (template as TemplateClass).build(options)
+  static build(template: TemplateClass, options: BuildOptions): Promise<void> {
+    return (template as TemplateBase).build(options)
   }
 
   // Built-in image mixins
@@ -565,12 +562,12 @@ export class TemplateClass
 
 // Factory function to create Template instances without 'new'
 export function Template(options?: TemplateOptions): TemplateFromImage {
-  return new TemplateClass(options)
+  return new TemplateBase(options)
 }
 
-Template.build = TemplateClass.build
-Template.toJSON = TemplateClass.toJSON
-Template.toDockerfile = TemplateClass.toDockerfile
+Template.build = TemplateBase.build
+Template.toJSON = TemplateBase.toJSON
+Template.toDockerfile = TemplateBase.toDockerfile
 
 Template.waitForPort = function (port: number) {
   return `ss -tuln | grep :${port}`
@@ -591,3 +588,5 @@ Template.waitForFile = function (filename: string) {
 Template.waitForTimeout = function (timeout: number) {
   return `sleep ${Math.floor(timeout / 1000)}`
 }
+
+export type TemplateClass = TemplateBuilder
