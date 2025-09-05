@@ -40,21 +40,33 @@ export type BuildOptions = BasicBuildOptions & {
 export class TemplateBuilder {
   constructor(private template: TemplateBase) {}
 
+  toJSON(): Promise<string> {
+    return this.template.toJSON()
+  }
+
+  toDockerfile(): string {
+    return this.template.toDockerfile()
+  }
+
+  build(options: BuildOptions): Promise<void> {
+    return this.template.build(options)
+  }
+
   copy(
     src: string,
     dest: string,
-    options?: { forceUpload?: boolean; user?: string; mode?: number }
+    options?: { forceUpload?: true; user?: string; mode?: number }
   ): TemplateBuilder
   copy(
     items: CopyItem[],
-    options?: { forceUpload?: boolean; user?: string; mode?: number }
+    options?: { forceUpload?: true; user?: string; mode?: number }
   ): TemplateBuilder
   copy(
     srcOrItems: string | CopyItem[],
     destOrOptions?:
       | string
-      | { forceUpload?: boolean; user?: string; mode?: number },
-    options?: { forceUpload?: boolean; user?: string; mode?: number }
+      | { forceUpload?: true; user?: string; mode?: number },
+    options?: { forceUpload?: true; user?: string; mode?: number }
   ): TemplateBuilder {
     if (runtime === 'browser') {
       throw new Error('Browser runtime is not supported for copy')
@@ -139,10 +151,12 @@ export class TemplateBuilder {
   }
 
   runCmd(
-    command: string | string[],
+    commandOrCommands: string | string[],
     options?: { user?: string }
   ): TemplateBuilder {
-    const commands = Array.isArray(command) ? command : [command]
+    const commands = Array.isArray(commandOrCommands)
+      ? commandOrCommands
+      : [commandOrCommands]
     const args = [commands.join(' && ')]
 
     if (options?.user) {
@@ -273,9 +287,21 @@ export class TemplateBuilder {
 
 export class TemplateFinal {
   constructor(private template: TemplateBase) {}
+
+  toJSON(): Promise<string> {
+    return this.template.toJSON()
+  }
+
+  toDockerfile(): string {
+    return this.template.toDockerfile()
+  }
+
+  build(options: BuildOptions): Promise<void> {
+    return this.template.build(options)
+  }
 }
 
-export class TemplateBase implements DockerfileParserInterface {
+export class TemplateBase {
   // Public instance fields
   public startCmd: string | undefined = undefined
   public readyCmd: string | undefined = undefined
@@ -300,15 +326,15 @@ export class TemplateBase implements DockerfileParserInterface {
 
   // Static methods
   static toJSON(template: TemplateClass): Promise<string> {
-    return (template as any).toJSON()
+    return template.toJSON()
   }
 
   static toDockerfile(template: TemplateClass): string {
-    return (template as any).toDockerfile()
+    return template.toDockerfile()
   }
 
   static build(template: TemplateClass, options: BuildOptions): Promise<void> {
-    return (template as any).build(options)
+    return template.build(options)
   }
 
   static waitForPort(port: number): string {
@@ -447,7 +473,7 @@ export class TemplateBase implements DockerfileParserInterface {
     return this
   }
 
-  setStartCmd(startCommand: string, readyCommand: string): any {
+  setStartCmd(startCommand: string, readyCommand: string): TemplateFinal {
     this.startCmd = startCommand
     this.readyCmd = readyCommand
     return new TemplateFinal(this)
@@ -483,7 +509,7 @@ export class TemplateBase implements DockerfileParserInterface {
     return dockerfile
   }
 
-  public async build(options: BuildOptions): Promise<void> {
+  async build(options: BuildOptions): Promise<void> {
     const config = new ConnectionConfig({
       domain: options.domain,
       apiKey: options.apiKey,

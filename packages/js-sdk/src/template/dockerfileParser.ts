@@ -77,7 +77,7 @@ export function parseDockerfile(
   const resultInstructions: Instruction[] = []
 
   // Process all other instructions
-  for (const instruction of instructions as any[]) {
+  for (const instruction of instructions) {
     const keyword = instruction.getKeyword()
 
     switch (keyword) {
