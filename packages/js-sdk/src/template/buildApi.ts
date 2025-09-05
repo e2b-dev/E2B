@@ -185,7 +185,7 @@ export async function waitForBuildFinish(
   let logsOffset = 0
   let status: GetBuildStatusResponse['status'] = 'building'
 
-  while (status === 'building') {
+  while (status === 'building' || status === 'waiting') {
     const buildStatus = await getBuildStatus(client, {
       templateID,
       buildID,
@@ -211,7 +211,7 @@ export async function waitForBuildFinish(
         return
       }
       case 'waiting': {
-        continue
+        break
       }
       case 'error': {
         throw new BuildError(buildStatus?.reason?.message ?? 'Unknown error')
