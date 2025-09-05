@@ -27,7 +27,7 @@ def test_build():
         )
         .run_cmd("cat folder/test.txt")
         .set_workdir("/app")
-        .set_start_cmd("echo 'Hello, world!'", Template.wait_for_timeout(1000))
+        .set_start_cmd("echo 'Hello, world!'", Template.wait_for_timeout(10_000))
     )
 
     Template.build(
