@@ -210,7 +210,7 @@ class TemplateBuilder:
         return self
 
     def set_start_cmd(
-        self, start_cmd: str, ready_cmd: str | ReadyCmd
+        self, start_cmd: str, ready_cmd: Union[str, ReadyCmd]
     ) -> "TemplateFinal":
         self._template._start_cmd = start_cmd
 

@@ -16,6 +16,7 @@ import {
   TemplateBuilder,
   TemplateFinal,
   CopyItem,
+  LogEntry,
 } from './types'
 import {
   calculateFilesHash,
@@ -24,7 +25,6 @@ import {
   readDockerignore,
 } from './utils'
 import { ConnectionConfig } from '../connectionConfig'
-import { LogEntry } from './logentry'
 import { ReadyCmd } from './readycmd'
 
 type TemplateOptions = {
