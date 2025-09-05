@@ -219,7 +219,6 @@ class TemplateBuilder:
 
 
 class TemplateFinal:
-
     def __init__(self, template: "TemplateBase"):
         self._template = template
 
