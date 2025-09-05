@@ -330,126 +330,6 @@ export class TemplateBase {
     return `sleep ${seconds}`
   }
 
-  // Public instance methods
-  skipCache(): TemplateBase {
-    this.forceNextLayer = true
-    return this
-  }
-
-  // Built-in image mixins
-  fromDebianImage(variant: string = 'slim'): TemplateBuilder {
-    return this.fromImage(`debian:${variant}`)
-  }
-
-  fromUbuntuImage(variant: string = 'lts'): TemplateBuilder {
-    return this.fromImage(`ubuntu:${variant}`)
-  }
-
-  fromPythonImage(version: string = '3.13'): TemplateBuilder {
-    return this.fromImage(`python:${version}`)
-  }
-
-  fromNodeImage(variant: string = 'lts'): TemplateBuilder {
-    return this.fromImage(`node:${variant}`)
-  }
-
-  fromBaseImage(): TemplateBuilder {
-    return this.fromImage(this.defaultBaseImage)
-  }
-
-  fromImage(baseImage: string): TemplateBuilder {
-    this.baseImage = baseImage
-    this.baseTemplate = undefined
-
-    // If we should force the next layer and it's a FROM command, invalidate whole template
-    if (this.forceNextLayer) {
-      this.force = true
-    }
-
-    return new TemplateBuilder(this)
-  }
-
-  fromTemplate(template: string): TemplateBuilder {
-    this.baseTemplate = template
-    this.baseImage = undefined
-
-    // If we should force the next layer and it's a FROM command, invalidate whole template
-    if (this.forceNextLayer) {
-      this.force = true
-    }
-
-    return new TemplateBuilder(this)
-  }
-
-  fromDockerfile(dockerfileContentOrPath: string): TemplateBuilder {
-    const { baseImage } = parseDockerfile(dockerfileContentOrPath, this)
-    this.baseImage = baseImage
-    this.baseTemplate = undefined
-
-    // If we should force the next layer and it's a FROM command, invalidate whole template
-    if (this.forceNextLayer) {
-      this.force = true
-    }
-
-    return new TemplateBuilder(this)
-  }
-
-  // DockerfileParserInterface implementation
-  setWorkdir(workdir: string): DockerfileParserInterface {
-    this.instructions.push({
-      type: 'WORKDIR',
-      args: [workdir],
-      force: this.forceNextLayer,
-    })
-    return this
-  }
-
-  setUser(user: string): DockerfileParserInterface {
-    this.instructions.push({
-      type: 'USER',
-      args: [user],
-      force: this.forceNextLayer,
-    })
-    return this
-  }
-
-  setEnvs(envs: Record<string, string>): DockerfileParserInterface {
-    if (Object.keys(envs).length === 0) {
-      return this
-    }
-
-    this.instructions.push({
-      type: 'ENV',
-      args: Object.entries(envs).flatMap(([key, value]) => [key, value]),
-      force: this.forceNextLayer,
-    })
-    return this
-  }
-
-  runCmd(command: string): DockerfileParserInterface {
-    this.instructions.push({
-      type: 'RUN',
-      args: [command],
-      force: this.forceNextLayer,
-    })
-    return this
-  }
-
-  copy(src: string, dest: string): DockerfileParserInterface {
-    this.instructions.push({
-      type: 'COPY',
-      args: [src, dest, '', ''],
-      force: this.forceNextLayer,
-    })
-    return this
-  }
-
-  setStartCmd(startCommand: string, readyCommand: string): TemplateFinal {
-    this.startCmd = startCommand
-    this.readyCmd = readyCommand
-    return new TemplateFinal(this)
-  }
-
   static async toJSON(template: TemplateClass): Promise<string> {
     const templateBase = template.getTemplateBase()
     return JSON.stringify(
@@ -589,6 +469,126 @@ export class TemplateBase {
       onBuildLogs: options.onBuildLogs,
       logsRefreshFrequency: templateBase.logsRefreshFrequency,
     })
+  }
+
+  // Public instance methods
+  skipCache(): TemplateBase {
+    this.forceNextLayer = true
+    return this
+  }
+
+  // Built-in image mixins
+  fromDebianImage(variant: string = 'slim'): TemplateBuilder {
+    return this.fromImage(`debian:${variant}`)
+  }
+
+  fromUbuntuImage(variant: string = 'lts'): TemplateBuilder {
+    return this.fromImage(`ubuntu:${variant}`)
+  }
+
+  fromPythonImage(version: string = '3.13'): TemplateBuilder {
+    return this.fromImage(`python:${version}`)
+  }
+
+  fromNodeImage(variant: string = 'lts'): TemplateBuilder {
+    return this.fromImage(`node:${variant}`)
+  }
+
+  fromBaseImage(): TemplateBuilder {
+    return this.fromImage(this.defaultBaseImage)
+  }
+
+  fromImage(baseImage: string): TemplateBuilder {
+    this.baseImage = baseImage
+    this.baseTemplate = undefined
+
+    // If we should force the next layer and it's a FROM command, invalidate whole template
+    if (this.forceNextLayer) {
+      this.force = true
+    }
+
+    return new TemplateBuilder(this)
+  }
+
+  fromTemplate(template: string): TemplateBuilder {
+    this.baseTemplate = template
+    this.baseImage = undefined
+
+    // If we should force the next layer and it's a FROM command, invalidate whole template
+    if (this.forceNextLayer) {
+      this.force = true
+    }
+
+    return new TemplateBuilder(this)
+  }
+
+  fromDockerfile(dockerfileContentOrPath: string): TemplateBuilder {
+    const { baseImage } = parseDockerfile(dockerfileContentOrPath, this)
+    this.baseImage = baseImage
+    this.baseTemplate = undefined
+
+    // If we should force the next layer and it's a FROM command, invalidate whole template
+    if (this.forceNextLayer) {
+      this.force = true
+    }
+
+    return new TemplateBuilder(this)
+  }
+
+  // DockerfileParserInterface implementation
+  setWorkdir(workdir: string): DockerfileParserInterface {
+    this.instructions.push({
+      type: 'WORKDIR',
+      args: [workdir],
+      force: this.forceNextLayer,
+    })
+    return this
+  }
+
+  setUser(user: string): DockerfileParserInterface {
+    this.instructions.push({
+      type: 'USER',
+      args: [user],
+      force: this.forceNextLayer,
+    })
+    return this
+  }
+
+  setEnvs(envs: Record<string, string>): DockerfileParserInterface {
+    if (Object.keys(envs).length === 0) {
+      return this
+    }
+
+    this.instructions.push({
+      type: 'ENV',
+      args: Object.entries(envs).flatMap(([key, value]) => [key, value]),
+      force: this.forceNextLayer,
+    })
+    return this
+  }
+
+  runCmd(command: string): DockerfileParserInterface {
+    this.instructions.push({
+      type: 'RUN',
+      args: [command],
+      force: this.forceNextLayer,
+    })
+    return this
+  }
+
+  copy(src: string, dest: string): DockerfileParserInterface {
+    this.instructions.push({
+      type: 'COPY',
+      args: [src, dest, '', ''],
+      force: this.forceNextLayer,
+    })
+    return this
+  }
+
+  setStartCmd(startCommand: string, readyCommand: string): TemplateFinal {
+    this.startCmd = startCommand
+    this.readyCmd = readyCommand
+    return new TemplateFinal(this)
   }
 
   public async calculateFilesHashes(): Promise<Step[]> {
