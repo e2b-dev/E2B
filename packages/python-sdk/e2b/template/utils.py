@@ -34,13 +34,20 @@ def calculate_files_hash(
 
     hash_obj.update(content.encode())
 
-    files = glob(src_path, recursive=True)
+    files_glob = glob(src_path, recursive=True)
 
-    for file in files:
+    files = []
+    for file in files_glob:
         if ignore_patterns and any(
             fnmatch.fnmatch(file, pattern) for pattern in ignore_patterns
         ):
             continue
+        files.append(file)
+
+    if len(files) == 0:
+        raise ValueError(f"No files found in {src_path}")
+
+    for file in files:
         with open(file, "rb") as f:
             hash_obj.update(f.read())
 
