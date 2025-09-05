@@ -425,3 +425,6 @@ class TemplateBase:
     def wait_for_timeout(cls, timeout: Duration) -> str:
         """Generate a command to wait for a specified duration."""
         return f"sleep {timeout}"
+
+
+TemplateClass = Union[TemplateFinal, TemplateBuilder]

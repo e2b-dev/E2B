@@ -71,7 +71,7 @@ from .sandbox_async.filesystem.watch_handle import AsyncWatchHandle
 from .sandbox_async.commands.command_handle import AsyncCommandHandle
 from .sandbox_sync.paginator import SandboxPaginator
 
-from .template import Template, AsyncTemplate
+from .template import Template, AsyncTemplate, TemplateBase, TemplateClass
 
 __all__ = [
     # API
@@ -124,4 +124,6 @@ __all__ = [
     # Template
     "Template",
     "AsyncTemplate",
+    "TemplateBase",
+    "TemplateClass",
 ]

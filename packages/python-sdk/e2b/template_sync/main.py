@@ -1,6 +1,6 @@
-from typing import Callable, Optional, Union
+from typing import Callable, Optional
 
-from e2b.template import TemplateBuilder, TemplateFinal, TemplateBase
+from e2b.template import TemplateBase, TemplateClass
 from e2b.template.types import LogEntry
 
 import os
@@ -20,7 +20,7 @@ from e2b.template_sync.build_api import (
 class Template(TemplateBase):
     @staticmethod
     def build(
-        template: Union[TemplateFinal, TemplateBuilder],
+        template: TemplateClass,
         alias: str,
         cpu_count: int,
         memory_mb: int,

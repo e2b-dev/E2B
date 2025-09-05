@@ -1,6 +1,6 @@
-from typing import Callable, Optional, Union
+from typing import Callable, Optional
 
-from e2b.template import TemplateBuilder, TemplateFinal, TemplateBase
+from e2b.template import TemplateBase, TemplateClass
 
 import os
 from datetime import datetime
@@ -20,7 +20,7 @@ from .build_api import (
 class AsyncTemplate(TemplateBase):
     @staticmethod
     async def build(
-        template: Union[TemplateFinal, TemplateBuilder],
+        template: TemplateClass,
         alias: str,
         cpu_count: int,
         memory_mb: int,
