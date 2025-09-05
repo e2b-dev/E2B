@@ -18,7 +18,7 @@ test('build template', { timeout: 180000 }, async () => {
     })
     .runCmd('cat folder/test.txt')
     .setWorkdir('/app')
-    .setStartCmd('echo "Hello, world!"', Template.waitForTimeout('10s'))
+    .setStartCmd('echo "Hello, world!"', Template.waitForTimeout(10000))
 
   await Template.build(template, {
     alias: randomUUID(),

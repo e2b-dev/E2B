@@ -3,7 +3,7 @@ from typing import Dict, List, Optional, Union
 from httpx import Limits
 
 from e2b.template.dockerfile_parser import parse_dockerfile
-from e2b.template.types import CopyItem, Duration, Instruction, Step, TemplateType
+from e2b.template.types import CopyItem, Instruction, Step, TemplateType
 from e2b.template.utils import (
     calculate_files_hash,
     get_caller_directory,
@@ -422,7 +422,7 @@ class TemplateBase:
         return f"[ -f {filename} ]"
 
     @classmethod
-    def wait_for_timeout(cls, timeout: Duration) -> str:
+    def wait_for_timeout(cls, timeout: int) -> str:
         """Generate a command to wait for a specified duration."""
         return f"sleep {timeout}"
 

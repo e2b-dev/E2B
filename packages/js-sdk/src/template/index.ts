@@ -17,7 +17,6 @@ import {
   TemplateBuilder,
   TemplateFinal,
   CopyItem,
-  Duration,
 } from './types'
 import {
   calculateFilesHash,
@@ -589,6 +588,6 @@ Template.waitForFile = function (filename: string) {
   return `[ -f ${filename} ]`
 }
 
-Template.waitForTimeout = function (timeout: number | Duration) {
-  return `sleep ${timeout}`
+Template.waitForTimeout = function (timeoutMs: number) {
+  return `sleep ${timeoutMs}`
 }

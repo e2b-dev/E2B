@@ -35,9 +35,6 @@ class TemplateType(TypedDict):
     force: bool
 
 
-Duration = Union[str, int]  # Can be "5s", "10m", "2h", "1d" or just a number
-
-
 @dataclass
 class LogEntry:
     timestamp: datetime

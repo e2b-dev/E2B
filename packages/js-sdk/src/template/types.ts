@@ -11,8 +11,6 @@ export type Steps = Instructions & {
   filesHash?: string
 }
 
-export type Duration = `${number}s` | `${number}m` | `${number}h` | `${number}d`
-
 export type CopyItem = {
   src: string
   dest: string
