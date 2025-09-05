@@ -1,4 +1,4 @@
-import { Instructions } from './types'
+import { Instructions, CopyItem } from './types'
 import { DockerfileParser, Instruction, Argument } from 'dockerfile-ast'
 import fs from 'node:fs'
 
@@ -7,13 +7,33 @@ export interface DockerfileParseResult {
   instructions: Instructions[]
 }
 
+interface DockerfileFinalParserInterface {}
+
 export interface DockerfileParserInterface {
-  setWorkdir(workdir: string): void
-  setUser(user: string): void
-  setEnvs(envs: Record<string, string>): void
-  runCmd(command: string): void
-  copy(src: string, dest: string): void
-  setStartCmd(startCommand: string, readyCommand: string): void
+  setWorkdir(workdir: string): DockerfileParserInterface
+  setUser(user: string): DockerfileParserInterface
+  setEnvs(envs: Record<string, string>): DockerfileParserInterface
+  runCmd(
+    command: string,
+    options?: { user?: string }
+  ): DockerfileParserInterface
+  runCmd(
+    commands: string[],
+    options?: { user?: string }
+  ): DockerfileParserInterface
+  copy(
+    src: string,
+    dest: string,
+    options?: { forceUpload?: true; user?: string; mode?: number }
+  ): DockerfileParserInterface
+  copy(
+    items: CopyItem[],
+    options?: { forceUpload?: true; user?: string; mode?: number }
+  ): DockerfileParserInterface
+  setStartCmd(
+    startCommand: string,
+    readyCommand: string
+  ): DockerfileFinalParserInterface
 }
 
 /**

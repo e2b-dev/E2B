@@ -7,11 +7,15 @@ from dockerfile_parse import DockerfileParser
 from e2b.template.types import CopyItem
 
 
+class DockerfFileFinalParserInterface(Protocol):
+    """Protocol defining the final interface for Dockerfile parsing callbacks."""
+
+
 class DockerfileParserInterface(Protocol):
     """Protocol defining the interface for Dockerfile parsing callbacks."""
 
     def run_cmd(
-        self, command: Union[str, List[str]], force: bool = False
+        self, command: Union[str, List[str]], user: Optional[str] = None
     ) -> "DockerfileParserInterface":
         """Handle RUN instruction."""
         ...
@@ -21,29 +25,27 @@ class DockerfileParserInterface(Protocol):
         src: Union[str, List[CopyItem]],
         dest: Optional[str] = None,
         force_upload: Optional[bool] = None,
+        user: Optional[str] = None,
+        mode: Optional[int] = None,
     ) -> "DockerfileParserInterface":
         """Handle COPY instruction."""
         ...
 
-    def set_workdir(
-        self, workdir: str, force: bool = False
-    ) -> "DockerfileParserInterface":
+    def set_workdir(self, workdir: str) -> "DockerfileParserInterface":
         """Handle WORKDIR instruction."""
         ...
 
-    def set_user(self, user: str, force: bool = False) -> "DockerfileParserInterface":
+    def set_user(self, user: str) -> "DockerfileParserInterface":
         """Handle USER instruction."""
         ...
 
-    def set_envs(
-        self, envs: Dict[str, str], force: bool = False
-    ) -> "DockerfileParserInterface":
+    def set_envs(self, envs: Dict[str, str]) -> "DockerfileParserInterface":
         """Handle ENV instruction."""
         ...
 
     def set_start_cmd(
         self, start_cmd: str, ready_cmd: str
-    ) -> "DockerfileParserInterface":
+    ) -> "DockerfFileFinalParserInterface":
         """Handle CMD/ENTRYPOINT instruction."""
         ...
 
