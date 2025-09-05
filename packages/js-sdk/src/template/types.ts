@@ -1,13 +1,13 @@
 import stripAnsi from 'strip-ansi'
 
-export type Instructions = {
+export type Instruction = {
   type: 'COPY' | 'ENV' | 'RUN' | 'WORKDIR' | 'USER'
   args: string[]
   force: boolean
   forceUpload?: boolean
 }
 
-export type Steps = Instructions & {
+export type Step = Instruction & {
   filesHash?: string
 }
 

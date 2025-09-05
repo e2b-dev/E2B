@@ -11,8 +11,8 @@ import {
 import { parseDockerfile } from './dockerfileParser'
 import { BuildError } from '../errors'
 import {
-  Instructions,
-  Steps,
+  Instruction,
+  Step,
   TemplateFromImage,
   TemplateBuilder,
   TemplateFinal,
@@ -57,7 +57,7 @@ export class TemplateBase
   private force: boolean = false
   // Force the next layer to be rebuilt
   private forceNextLayer: boolean = false
-  private instructions: Instructions[] = []
+  private instructions: Instruction[] = []
   private fileContextPath: string =
     runtime === 'browser' ? '.' : getCallerDirectory() ?? '.'
   private ignoreFilePaths: string[] = []
@@ -509,8 +509,8 @@ export class TemplateBase
   }
 
   // We might no longer need this as we move the logic server-side
-  private async calculateFilesHashes(): Promise<Steps[]> {
-    const steps: Steps[] = []
+  private async calculateFilesHashes(): Promise<Step[]> {
+    const steps: Step[] = []
 
     for (const instruction of this.instructions) {
       if (instruction.type === 'COPY') {
@@ -534,7 +534,7 @@ export class TemplateBase
     return steps
   }
 
-  private serialize(steps: Steps[]): TriggerBuildTemplate {
+  private serialize(steps: Step[]): TriggerBuildTemplate {
     const baseData = {
       startCmd: this.startCmd,
       readyCmd: this.readyCmd,
