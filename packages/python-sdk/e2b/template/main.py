@@ -314,36 +314,30 @@ class TemplateBase:
         return builder
 
     @staticmethod
-    def to_json(template: "TemplateBase") -> str:
-        return template.__to_json()
-
-    def __to_json(self) -> str:
+    def to_json(template: "TemplateClass") -> str:
         return json.dumps(
-            self._serialize(self._calculate_hashes()),
+            template._template._serialize(template._template._calculate_hashes()),
             indent=2,
         )
 
     @staticmethod
-    def to_dockerfile(template: "TemplateBase") -> str:
-        return template.__to_dockerfile()
-
-    def __to_dockerfile(self) -> str:
-        if self._base_template is not None:
+    def to_dockerfile(template: "TemplateClass") -> str:
+        if template._template._base_template is not None:
             raise ValueError(
                 "Cannot convert template built from another template to Dockerfile. "
                 "Templates based on other templates can only be built using the E2B API."
             )
 
-        if self._base_image is None:
+        if template._template._base_image is None:
             raise ValueError("No base image specified for template")
 
-        dockerfile = f"FROM {self._base_image}\n"
+        dockerfile = f"FROM {template._template._base_image}\n"
 
-        for instruction in self._instructions:
+        for instruction in template._template._instructions:
             dockerfile += f"{instruction['type']} {' '.join(instruction['args'])}\n"
 
-        if self._start_cmd:
-            dockerfile += f"ENTRYPOINT {self._start_cmd}\n"
+        if template._template._start_cmd:
+            dockerfile += f"ENTRYPOINT {template._template._start_cmd}\n"
 
         return dockerfile
 
