@@ -10,21 +10,21 @@ import {
 } from './buildApi'
 import { parseDockerfile } from './dockerfileParser'
 import {
-  Instruction,
-  TemplateFromImage,
-  TemplateBuilder,
-  TemplateFinal,
   CopyItem,
+  Instruction,
+  InstructionType,
   LogEntry,
   RegistryConfig,
-  InstructionType,
+  TemplateBuilder,
+  TemplateFinal,
+  TemplateFromImage,
 } from './types'
 import {
   calculateFilesHash,
   getCallerDirectory,
+  getCallerFrame,
   padOctal,
   readDockerignore,
-  getCallerFrame,
   readGCPServiceAccountJSON,
 } from './utils'
 import { ConnectionConfig } from '../connectionConfig'
@@ -75,8 +75,11 @@ export class TemplateBase
     this.ignoreFilePaths = options?.ignoreFilePaths ?? this.ignoreFilePaths
   }
 
-  static toJSON(template: TemplateClass): Promise<string> {
-    return (template as TemplateBase).toJSON()
+  static toJSON(
+    template: TemplateClass,
+    computeHashes: boolean = true
+  ): Promise<string> {
+    return (template as TemplateBase).toJSON(computeHashes)
   }
 
   static toDockerfile(template: TemplateClass): string {
@@ -498,12 +501,13 @@ export class TemplateBase
     return result
   }
 
-  private async toJSON(): Promise<string> {
-    return JSON.stringify(
-      this.serialize(await this.instructionsWithHashes()),
-      undefined,
-      2
-    )
+  private async toJSON(computeHashes: boolean): Promise<string> {
+    let instructions = this.instructions
+    if (computeHashes) {
+      instructions = await this.instructionsWithHashes()
+    }
+
+    return JSON.stringify(this.serialize(instructions), undefined, 2)
   }
 
   private toDockerfile(): string {

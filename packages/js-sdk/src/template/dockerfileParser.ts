@@ -1,12 +1,12 @@
-import { Instruction, CopyItem } from './types'
+import { CopyItem, Instruction } from './types'
 import {
+  Argument,
   DockerfileParser,
   Instruction as DockerfileInstruction,
-  Argument,
 } from 'dockerfile-ast'
 import fs from 'node:fs'
 import { waitForTimeout } from './index'
-import { Instructions } from './types'
+import { ReadyCmd } from './readycmd'
 
 export interface DockerfileParseResult {
   baseImage: string
@@ -34,7 +34,7 @@ export interface DockerfileParserInterface {
   ): DockerfileParserInterface
   setStartCmd(
     startCommand: string,
-    readyCommand: string
+    readyCommand: string | ReadyCmd
   ): DockerfileFinalParserInterface
 }
 

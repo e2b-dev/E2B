@@ -1,6 +1,6 @@
 import { select } from '@inquirer/prompts'
 import * as commander from 'commander'
-import { Template, TemplateBuilder, TemplateFinal } from 'e2b'
+import { Template, TemplateClass } from 'e2b'
 import * as fs from 'fs'
 import Handlebars from 'handlebars'
 import * as path from 'path'
@@ -261,7 +261,7 @@ async function migrateToLanguage(
   }
 
   // Apply config start/ready commands
-  let parsedTemplate: TemplateFinal = baseTemplate
+  let parsedTemplate: TemplateClass = baseTemplate
   if (config.start_cmd) {
     parsedTemplate = baseTemplate.setStartCmd(
       config.start_cmd,
@@ -272,9 +272,8 @@ async function migrateToLanguage(
   }
 
   // Extract JSON structure from parsed template
-  const json = JSON.parse(
-    Template.toJSON(parsedTemplate, false)
-  ) as TemplateJSON
+  const jsonString = await Template.toJSON(parsedTemplate, false)
+  const json = JSON.parse(jsonString) as TemplateJSON
 
   const alias = config.template_name || config.template_id
   if (!alias) {
