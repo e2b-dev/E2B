@@ -40,8 +40,10 @@ class AsyncTemplate(TemplateBase):
             limits=TemplateBase._limits,
         )
 
+        template_base = template.get_template_base()
+
         if skip_cache:
-            template._template._force = True
+            template_base._force = True
 
         with client as api_client:
             # Create template
@@ -73,7 +75,7 @@ class AsyncTemplate(TemplateBase):
                     )
                 )
 
-            instructions_with_hashes = template._template._calculate_hashes()
+            instructions_with_hashes = template_base._calculate_hashes()
 
             # Prepare file uploads
             file_uploads = [
@@ -98,7 +100,7 @@ class AsyncTemplate(TemplateBase):
                 ):
                     await upload_file(
                         file_upload["src"],
-                        template._template._file_context_path,
+                        template_base._file_context_path,
                         file_info.url,
                     )
                     if on_build_logs:
@@ -142,7 +144,7 @@ class AsyncTemplate(TemplateBase):
                 api_client,
                 template_id,
                 build_id,
-                template._template._serialize(instructions_with_hashes),
+                template_base._serialize(instructions_with_hashes),
             )
 
             if on_build_logs:

@@ -7,11 +7,15 @@ from dockerfile_parse import DockerfileParser
 from e2b.template.types import CopyItem
 
 
+class DockerfileParserFinalInterface(Protocol):
+    """Protocol defining the interface for Dockerfile parsing final callbacks."""
+
+
 class DockerfileParserInterface(Protocol):
     """Protocol defining the interface for Dockerfile parsing callbacks."""
 
     def run_cmd(
-        self, command: Union[str, List[str]], force: bool = False
+        self, command: Union[str, List[str]], user: Optional[str] = None
     ) -> "DockerfileParserInterface":
         """Handle RUN instruction."""
         ...
@@ -25,31 +29,27 @@ class DockerfileParserInterface(Protocol):
         """Handle COPY instruction."""
         ...
 
-    def set_workdir(
-        self, workdir: str, force: bool = False
-    ) -> "DockerfileParserInterface":
+    def set_workdir(self, workdir: str) -> "DockerfileParserInterface":
         """Handle WORKDIR instruction."""
         ...
 
-    def set_user(self, user: str, force: bool = False) -> "DockerfileParserInterface":
+    def set_user(self, user: str) -> "DockerfileParserInterface":
         """Handle USER instruction."""
         ...
 
-    def set_envs(
-        self, envs: Dict[str, str], force: bool = False
-    ) -> "DockerfileParserInterface":
+    def set_envs(self, envs: Dict[str, str]) -> "DockerfileParserInterface":
         """Handle ENV instruction."""
         ...
 
     def set_start_cmd(
         self, start_cmd: str, ready_cmd: str
-    ) -> "DockerfileParserInterface":
+    ) -> "DockerfileParserFinalInterface":
         """Handle CMD/ENTRYPOINT instruction."""
         ...
 
 
 def parse_dockerfile(
-    dockerfile_content_or_path: str, template_builder: DockerfileParserInterface
+    dockerfile_content_or_path: str, template_builder: "DockerfileParserInterface"
 ) -> str:
     """Parse a Dockerfile and convert it to Template SDK format.
 
@@ -129,7 +129,7 @@ def parse_dockerfile(
 
 
 def _handle_run_instruction(
-    value: str, template_builder: DockerfileParserInterface
+    value: str, template_builder: "DockerfileParserInterface"
 ) -> None:
     """Handle RUN instruction"""
     if not value.strip():
@@ -140,7 +140,7 @@ def _handle_run_instruction(
 
 
 def _handle_copy_instruction(
-    value: str, template_builder: DockerfileParserInterface
+    value: str, template_builder: "DockerfileParserInterface"
 ) -> None:
     """Handle COPY/ADD instruction"""
     if not value.strip():
@@ -182,7 +182,7 @@ def _handle_copy_instruction(
 
 
 def _handle_workdir_instruction(
-    value: str, template_builder: DockerfileParserInterface
+    value: str, template_builder: "DockerfileParserInterface"
 ) -> None:
     """Handle WORKDIR instruction"""
     if not value.strip():
@@ -192,7 +192,7 @@ def _handle_workdir_instruction(
 
 
 def _handle_user_instruction(
-    value: str, template_builder: DockerfileParserInterface
+    value: str, template_builder: "DockerfileParserInterface"
 ) -> None:
     """Handle USER instruction"""
     if not value.strip():
@@ -202,7 +202,7 @@ def _handle_user_instruction(
 
 
 def _handle_env_instruction(
-    value: str, instruction_type: str, template_builder: DockerfileParserInterface
+    value: str, instruction_type: str, template_builder: "DockerfileParserInterface"
 ) -> None:
     """Handle ENV/ARG instruction"""
     if not value.strip():
@@ -235,7 +235,7 @@ def _handle_env_instruction(
 
 
 def _handle_cmd_entrypoint_instruction(
-    value: str, template_builder: DockerfileParserInterface
+    value: str, template_builder: "DockerfileParserInterface"
 ) -> None:
     """Handle CMD/ENTRYPOINT instruction - convert to setStartCmd with 20s timeout"""
     if not value.strip():

@@ -9,15 +9,7 @@ import {
   waitForBuildFinish,
 } from './buildApi'
 import { parseDockerfile } from './dockerfileParser'
-import { BuildError } from '../errors'
-import {
-  Instructions,
-  Steps,
-  TemplateFromImage,
-  TemplateBuilder,
-  TemplateFinal,
-  CopyItem,
-} from './types'
+import { Instruction, Step, CopyItem, TemplateType } from './types'
 import {
   calculateFilesHash,
   getCallerDirectory,
@@ -45,104 +37,11 @@ export type BuildOptions = BasicBuildOptions & {
   domain?: string
 }
 
-export class TemplateBase
-  implements TemplateFromImage, TemplateBuilder, TemplateFinal
-{
-  private defaultBaseImage: string = 'e2bdev/base'
-  private baseImage: string | undefined = this.defaultBaseImage
-  private baseTemplate: string | undefined = undefined
-  private startCmd: string | undefined = undefined
-  private readyCmd: string | undefined = undefined
-  // Force the whole template to be rebuilt
-  private force: boolean = false
-  // Force the next layer to be rebuilt
-  private forceNextLayer: boolean = false
-  private instructions: Instructions[] = []
-  private fileContextPath: string =
-    runtime === 'browser' ? '.' : getCallerDirectory() ?? '.'
-  private ignoreFilePaths: string[] = []
-  private logsRefreshFrequency: number = 200
+export class TemplateBuilder {
+  constructor(private template: TemplateBase) {}
 
-  constructor(options?: TemplateOptions) {
-    this.fileContextPath = options?.fileContextPath ?? this.fileContextPath
-    this.ignoreFilePaths = options?.ignoreFilePaths ?? this.ignoreFilePaths
-  }
-
-  static toJSON(template: TemplateClass): Promise<string> {
-    return (template as TemplateBase).toJSON()
-  }
-
-  static toDockerfile(template: TemplateClass): string {
-    return (template as TemplateBase).toDockerfile()
-  }
-
-  static build(template: TemplateClass, options: BuildOptions): Promise<void> {
-    return (template as TemplateBase).build(options)
-  }
-
-  // Built-in image mixins
-  fromDebianImage(variant: string = 'slim'): TemplateBuilder {
-    return this.fromImage(`debian:${variant}`)
-  }
-
-  fromUbuntuImage(variant: string = 'lts'): TemplateBuilder {
-    return this.fromImage(`ubuntu:${variant}`)
-  }
-
-  fromPythonImage(version: string = '3.13'): TemplateBuilder {
-    return this.fromImage(`python:${version}`)
-  }
-
-  fromNodeImage(variant: string = 'lts'): TemplateBuilder {
-    return this.fromImage(`node:${variant}`)
-  }
-
-  fromBaseImage(): TemplateBuilder {
-    return this.fromImage(this.defaultBaseImage)
-  }
-
-  fromImage(baseImage: string): TemplateBuilder {
-    this.baseImage = baseImage
-    this.baseTemplate = undefined
-
-    // If we should force the next layer and it's a FROM command, invalidate whole template
-    if (this.forceNextLayer) {
-      this.force = true
-    }
-
-    return this
-  }
-
-  fromTemplate(template: string): TemplateBuilder {
-    this.baseTemplate = template
-    this.baseImage = undefined
-
-    // If we should force the next layer and it's a FROM command, invalidate whole template
-    if (this.forceNextLayer) {
-      this.force = true
-    }
-
-    return this
-  }
-
-  /**
-   * Parse a Dockerfile and convert it to Template SDK format
-   *
-   * @param dockerfileContentOrPath Either the Dockerfile content as a string,
-   *                                or a path to a Dockerfile file
-   * @returns TemplateBuilder instance for method chaining
-   */
-  fromDockerfile(dockerfileContentOrPath: string): TemplateBuilder {
-    const { baseImage } = parseDockerfile(dockerfileContentOrPath, this)
-    this.baseImage = baseImage
-    this.baseTemplate = undefined
-
-    // If we should force the next layer and it's a FROM command, invalidate whole template
-    if (this.forceNextLayer) {
-      this.force = true
-    }
-
-    return this
+  getTemplateBase(): TemplateBase {
+    return this.template
   }
 
   copy(
@@ -176,6 +75,7 @@ export class TemplateBase
             forceUpload: options?.forceUpload,
           },
         ]
+
     for (const item of items) {
       const args = [
         item.src,
@@ -184,14 +84,14 @@ export class TemplateBase
         item.mode ? padOctal(item.mode) : '',
       ]
 
-      this.instructions.push({
+      const instruction: Instruction = {
         type: 'COPY',
         args,
-        force: item.forceUpload ?? this.forceNextLayer,
+        force: item.forceUpload ?? this.template.forceNextLayer,
         forceUpload: item.forceUpload,
-      })
+      }
+      this.template.instructions.push(instruction)
     }
-
     return this
   }
 
@@ -227,7 +127,8 @@ export class TemplateBase
     paths: string | string[],
     options?: { mode?: number }
   ): TemplateBuilder {
-    const args = ['mkdir', '-p', ...(Array.isArray(paths) ? paths : [paths])]
+    const pathList = Array.isArray(paths) ? paths : [paths]
+    const args = ['mkdir', '-p', ...pathList]
     if (options?.mode) {
       args.push(`-m ${padOctal(options.mode)}`)
     }
@@ -256,29 +157,31 @@ export class TemplateBase
       args.push(options.user)
     }
 
-    this.instructions.push({
+    this.template.instructions.push({
       type: 'RUN',
       args,
-      force: this.forceNextLayer,
+      force: this.template.forceNextLayer,
     })
     return this
   }
 
   setWorkdir(workdir: string): TemplateBuilder {
-    this.instructions.push({
+    const instruction: Instruction = {
       type: 'WORKDIR',
       args: [workdir],
-      force: this.forceNextLayer,
-    })
+      force: this.template.forceNextLayer,
+    }
+    this.template.instructions.push(instruction)
     return this
   }
 
   setUser(user: string): TemplateBuilder {
-    this.instructions.push({
+    const instruction: Instruction = {
       type: 'USER',
       args: [user],
-      force: this.forceNextLayer,
-    })
+      force: this.template.forceNextLayer,
+    }
+    this.template.instructions.push(instruction)
     return this
   }
 
@@ -344,74 +247,113 @@ export class TemplateBase
     return this
   }
 
-  setStartCmd(startCommand: string, readyCommand: string): TemplateFinal {
-    this.startCmd = startCommand
-    this.readyCmd = readyCommand
-    return this
-  }
-
-  setReadyCmd(command: string): TemplateFinal {
-    this.readyCmd = command
-    return this
-  }
-
   setEnvs(envs: Record<string, string>): TemplateBuilder {
     if (Object.keys(envs).length === 0) {
       return this
     }
 
-    this.instructions.push({
+    const instruction: Instruction = {
       type: 'ENV',
       args: Object.entries(envs).flatMap(([key, value]) => [key, value]),
-      force: this.forceNextLayer,
-    })
+      force: this.template.forceNextLayer,
+    }
+    this.template.instructions.push(instruction)
     return this
   }
 
   skipCache(): TemplateBuilder {
-    this.forceNextLayer = true
+    this.template.forceNextLayer = true
     return this
   }
 
-  private async toJSON(): Promise<string> {
+  setStartCmd(startCmd: string, readyCmd: string): TemplateFinal {
+    this.template.startCmd = startCmd
+    this.template.readyCmd = readyCmd
+    return new TemplateFinal(this.template)
+  }
+
+  setReadyCmd(readyCmd: string): TemplateFinal {
+    this.template.readyCmd = readyCmd
+    return new TemplateFinal(this.template)
+  }
+}
+
+export class TemplateFinal {
+  constructor(private template: TemplateBase) {}
+
+  getTemplateBase(): TemplateBase {
+    return this.template
+  }
+}
+
+export class TemplateBase {
+  // Public instance fields
+  public startCmd: string | undefined = undefined
+  public readyCmd: string | undefined = undefined
+  public forceNextLayer: boolean = false
+  public instructions: Instruction[] = []
+
+  // Private instance fields
+  private defaultBaseImage: string = 'e2bdev/base'
+  private baseImage: string | undefined = this.defaultBaseImage
+  private baseTemplate: string | undefined = undefined
+  // Force the whole template to be rebuilt
+  private force: boolean = false
+  private fileContextPath: string =
+    runtime === 'browser' ? '.' : getCallerDirectory() ?? '.'
+  private ignoreFilePaths: string[] = []
+  private logsRefreshFrequency: number = 200
+
+  constructor(options?: TemplateOptions) {
+    this.fileContextPath = options?.fileContextPath ?? this.fileContextPath
+    this.ignoreFilePaths = options?.ignoreFilePaths ?? this.ignoreFilePaths
+  }
+
+  static async toJSON(template: TemplateClass): Promise<string> {
+    const templateBase = template.getTemplateBase()
     return JSON.stringify(
-      this.serialize(await this.calculateFilesHashes()),
+      templateBase.serialize(await templateBase.calculateFilesHashes()),
       undefined,
       2
     )
   }
 
-  private toDockerfile(): string {
-    if (this.baseTemplate !== undefined) {
+  static toDockerfile(template: TemplateClass): string {
+    const templateBase = template.getTemplateBase()
+    if (templateBase.baseTemplate !== undefined) {
       throw new Error(
         'Cannot convert template built from another template to Dockerfile. ' +
           'Templates based on other templates can only be built using the E2B API.'
       )
     }
 
-    if (this.baseImage === undefined) {
+    if (templateBase.baseImage === undefined) {
       throw new Error('No base image specified for template')
     }
 
-    let dockerfile = `FROM ${this.baseImage}\n`
-    for (const instruction of this.instructions) {
+    let dockerfile = `FROM ${templateBase.baseImage}\n`
+    for (const instruction of templateBase.instructions) {
       dockerfile += `${instruction.type} ${instruction.args.join(' ')}\n`
     }
-    if (this.startCmd) {
-      dockerfile += `ENTRYPOINT ${this.startCmd}\n`
+    if (templateBase.startCmd) {
+      dockerfile += `ENTRYPOINT ${templateBase.startCmd}\n`
     }
     return dockerfile
   }
 
-  private async build(options: BuildOptions): Promise<void> {
+  static async build(
+    template: TemplateClass,
+    options: BuildOptions
+  ): Promise<void> {
     const config = new ConnectionConfig({
       domain: options.domain,
       apiKey: options.apiKey,
     })
     const client = new ApiClient(config)
+    const templateBase = template.getTemplateBase()
 
     if (options.skipCache) {
-      this.force = true
+      templateBase.force = true
     }
 
     // Create template
@@ -437,7 +379,7 @@ export class TemplateBase
       )
     )
 
-    const instructionsWithHashes = await this.calculateFilesHashes()
+    const instructionsWithHashes = await templateBase.calculateFilesHashes()
 
     // Prepare file uploads
     const fileUploads = instructionsWithHashes
@@ -462,7 +404,7 @@ export class TemplateBase
       ) {
         await uploadFile({
           fileName: file.src,
-          fileContextPath: this.fileContextPath,
+          fileContextPath: templateBase.fileContextPath,
           url,
         })
         options.onBuildLogs?.(
@@ -493,7 +435,7 @@ export class TemplateBase
     await triggerBuild(client, {
       templateID,
       buildID,
-      template: this.serialize(instructionsWithHashes),
+      template: templateBase.serialize(instructionsWithHashes),
     })
 
     options.onBuildLogs?.(
@@ -504,17 +446,91 @@ export class TemplateBase
       templateID,
       buildID,
       onBuildLogs: options.onBuildLogs,
-      logsRefreshFrequency: this.logsRefreshFrequency,
+      logsRefreshFrequency: templateBase.logsRefreshFrequency,
     })
   }
 
-  // We might no longer need this as we move the logic server-side
-  private async calculateFilesHashes(): Promise<Steps[]> {
-    const steps: Steps[] = []
+  // Public instance methods
+  skipCache(): TemplateBase {
+    this.forceNextLayer = true
+    return this
+  }
+
+  // Built-in image mixins
+  fromDebianImage(variant: string = 'slim'): TemplateBuilder {
+    return this.fromImage(`debian:${variant}`)
+  }
+
+  fromUbuntuImage(variant: string = 'lts'): TemplateBuilder {
+    return this.fromImage(`ubuntu:${variant}`)
+  }
+
+  fromPythonImage(version: string = '3.13'): TemplateBuilder {
+    return this.fromImage(`python:${version}`)
+  }
+
+  fromNodeImage(variant: string = 'lts'): TemplateBuilder {
+    return this.fromImage(`node:${variant}`)
+  }
+
+  fromBaseImage(): TemplateBuilder {
+    return this.fromImage(this.defaultBaseImage)
+  }
+
+  fromImage(baseImage: string): TemplateBuilder {
+    this.baseImage = baseImage
+    this.baseTemplate = undefined
+
+    // If we should force the next layer and it's a FROM command, invalidate whole template
+    if (this.forceNextLayer) {
+      this.force = true
+    }
+
+    return new TemplateBuilder(this)
+  }
+
+  fromTemplate(template: string): TemplateBuilder {
+    this.baseTemplate = template
+    this.baseImage = undefined
+
+    // If we should force the next layer and it's a FROM command, invalidate whole template
+    if (this.forceNextLayer) {
+      this.force = true
+    }
+
+    return new TemplateBuilder(this)
+  }
+
+  fromDockerfile(dockerfileContentOrPath: string): TemplateBuilder {
+    const templateBuilder = new TemplateBuilder(this)
+    const { baseImage } = parseDockerfile(
+      dockerfileContentOrPath,
+      templateBuilder
+    )
+    this.baseImage = baseImage
+    this.baseTemplate = undefined
+
+    // If we should force the next layer and it's a FROM command, invalidate whole template
+    if (this.forceNextLayer) {
+      this.force = true
+    }
+
+    return templateBuilder
+  }
+
+  public async calculateFilesHashes(): Promise<Step[]> {
+    const steps: Step[] = []
 
     for (const instruction of this.instructions) {
+      const step: Step = {
+        type: instruction.type,
+        args: instruction.args,
+        force: instruction.force,
+        forceUpload: instruction.forceUpload,
+      }
+
       if (instruction.type === 'COPY') {
-        const filesHash = await calculateFilesHash(
+        step.filesHash = await calculateFilesHash(
           instruction.args[0],
           instruction.args[1],
           this.fileContextPath,
@@ -525,50 +541,48 @@ export class TemplateBase
               : readDockerignore(this.fileContextPath)),
           ]
         )
-        steps.push({ ...instruction, filesHash })
-      } else {
-        steps.push(instruction)
       }
+
+      steps.push(step)
     }
 
     return steps
   }
 
-  private serialize(steps: Steps[]): TriggerBuildTemplate {
-    const baseData = {
-      startCmd: this.startCmd,
-      readyCmd: this.readyCmd,
+  public serialize(steps: Step[]): TriggerBuildTemplate {
+    const templateData: TemplateType = {
       steps,
       force: this.force,
     }
 
     if (this.baseImage !== undefined) {
-      return {
-        ...baseData,
-        fromImage: this.baseImage,
-      }
-    } else if (this.baseTemplate !== undefined) {
-      return {
-        ...baseData,
-        fromTemplate: this.baseTemplate,
-      }
-    } else {
-      throw new BuildError(
-        'Template must specify either fromImage or fromTemplate'
-      )
+      templateData.fromImage = this.baseImage
     }
+
+    if (this.baseTemplate !== undefined) {
+      templateData.fromTemplate = this.baseTemplate
+    }
+
+    if (this.startCmd !== undefined) {
+      templateData.startCmd = this.startCmd
+    }
+
+    if (this.readyCmd !== undefined) {
+      templateData.readyCmd = this.readyCmd
+    }
+
+    return templateData as TriggerBuildTemplate
   }
 }
 
 // Factory function to create Template instances without 'new'
-export function Template(options?: TemplateOptions): TemplateFromImage {
+export function Template(options?: TemplateOptions): TemplateBase {
   return new TemplateBase(options)
 }
 
 Template.build = TemplateBase.build
 Template.toJSON = TemplateBase.toJSON
 Template.toDockerfile = TemplateBase.toDockerfile
-
 Template.waitForPort = function (port: number) {
   return `ss -tuln | grep :${port}`
 }
