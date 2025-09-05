@@ -524,7 +524,11 @@ export class TemplateBase {
   }
 
   fromDockerfile(dockerfileContentOrPath: string): TemplateBuilder {
-    const { baseImage } = parseDockerfile(dockerfileContentOrPath, this)
+    const templateBuilder = new TemplateBuilder(this)
+    const { baseImage } = parseDockerfile(
+      dockerfileContentOrPath,
+      templateBuilder
+    )
     this.baseImage = baseImage
     this.baseTemplate = undefined
 
@@ -533,7 +537,7 @@ export class TemplateBase {
       this.force = true
     }
 
-    return new TemplateBuilder(this)
+    return templateBuilder
   }
 
   setStartCmd(startCommand: string, readyCommand: string): TemplateFinal {
