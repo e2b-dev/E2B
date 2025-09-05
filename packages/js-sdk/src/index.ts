@@ -62,3 +62,4 @@ import { Sandbox } from './sandbox'
 export default Sandbox
 
 export { Template, type TemplateClass, type TemplateBase } from './template'
+export { ReadyCmd } from './template/readycmd'

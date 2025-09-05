@@ -1,4 +1,5 @@
 from e2b.template.main import TemplateBase, TemplateClass
+from e2b.template.readycmd import ReadyCmd
 from e2b.template_sync import Template
 from e2b.template_async import AsyncTemplate
 
@@ -7,4 +8,5 @@ __all__ = [
     "AsyncTemplate",
     "TemplateBase",
     "TemplateClass",
+    "ReadyCmd",
 ]

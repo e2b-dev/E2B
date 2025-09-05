@@ -569,26 +569,4 @@ Template.build = TemplateBase.build
 Template.toJSON = TemplateBase.toJSON
 Template.toDockerfile = TemplateBase.toDockerfile
 
-Template.waitForPort = function (port: number) {
-  return `ss -tuln | grep :${port}`
-}
-
-Template.waitForURL = function (url: string, statusCode: number = 200) {
-  return `curl -s -o /dev/null -w "%{http_code}" ${url} | grep -q "${statusCode}"`
-}
-
-Template.waitForProcess = function (processName: string) {
-  return `pgrep ${processName} > /dev/null`
-}
-
-Template.waitForFile = function (filename: string) {
-  return `[ -f ${filename} ]`
-}
-
-Template.waitForTimeout = function (timeout: number) {
-  // convert to seconds, but ensure minimum of 1 second
-  const seconds = Math.max(1, Math.floor(timeout / 1000))
-  return `sleep ${seconds}`
-}
-
 export type TemplateClass = TemplateBuilder | TemplateFinal
