@@ -588,6 +588,6 @@ Template.waitForFile = function (filename: string) {
   return `[ -f ${filename} ]`
 }
 
-Template.waitForTimeout = function (timeoutMs: number) {
-  return `sleep ${timeoutMs}`
+Template.waitForTimeout = function (timeout: number) {
+  return `sleep ${timeout}`
 }

@@ -27,7 +27,7 @@ async def test_build():
         )
         .run_cmd("cat folder/test.txt")
         .set_workdir("/app")
-        .set_start_cmd("echo 'Hello, world!'", AsyncTemplate.wait_for_timeout(10000))
+        .set_start_cmd("echo 'Hello, world!'", AsyncTemplate.wait_for_timeout(1000))
     )
 
     await AsyncTemplate.build(
