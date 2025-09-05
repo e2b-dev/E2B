@@ -586,7 +586,9 @@ Template.waitForFile = function (filename: string) {
 }
 
 Template.waitForTimeout = function (timeout: number) {
-  return `sleep ${Math.floor(timeout / 1000)}`
+  // convert to seconds, but ensure minimum of 1 second
+  const seconds = Math.max(1, Math.floor(timeout / 1000))
+  return `sleep ${seconds}`
 }
 
 export type TemplateClass = TemplateBuilder

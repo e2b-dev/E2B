@@ -244,6 +244,8 @@ def _handle_cmd_entrypoint_instruction(
 
     # Import wait_for_timeout locally to avoid circular dependency
     def wait_for_timeout(timeout: int) -> str:
-        return f"sleep {timeout // 1000}"
+        # convert to seconds, but ensure minimum of 1 second
+        seconds = max(1, timeout // 1000)
+        return f"sleep {seconds}"
 
     template_builder.set_start_cmd(command, wait_for_timeout(20_000))

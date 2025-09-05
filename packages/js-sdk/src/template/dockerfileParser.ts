@@ -248,8 +248,11 @@ function handleCmdEntrypointInstruction(
       .map((arg: Argument) => arg.getValue())
       .join(' ')
     // Import waitForTimeout locally to avoid circular dependency
-    const waitForTimeout = (timeout: number) =>
-      `sleep ${Math.floor(timeout / 1000)}`
+    const waitForTimeout = (timeout: number) => {
+      // convert to seconds, but ensure minimum of 1 second
+      const seconds = Math.max(1, Math.floor(timeout / 1000))
+      return `sleep ${seconds}`
+    }
     templateBuilder.setStartCmd(command, waitForTimeout(20_000))
   }
 }

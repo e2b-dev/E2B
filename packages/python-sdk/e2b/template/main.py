@@ -424,8 +424,9 @@ class TemplateBase:
     @classmethod
     def wait_for_timeout(cls, timeout: int) -> str:
         """Generate a command to wait for a specified duration."""
-        # convert to seconds
-        return f"sleep {timeout // 1000}"
+        # convert to seconds, but ensure minimum of 1 second
+        seconds = max(1, timeout // 1000)
+        return f"sleep {seconds}"
 
 
 TemplateClass = Union[TemplateFinal, TemplateBuilder]
