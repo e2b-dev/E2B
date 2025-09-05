@@ -276,16 +276,18 @@ export class TemplateFinal {
 }
 
 export class TemplateBase implements DockerfileParserInterface {
+  // Public instance fields
+  public startCmd: string | undefined = undefined
+  public readyCmd: string | undefined = undefined
+  public forceNextLayer: boolean = false
+  public instructions: Instruction[] = []
+
+  // Private instance fields
   private defaultBaseImage: string = 'e2bdev/base'
   private baseImage: string | undefined = this.defaultBaseImage
   private baseTemplate: string | undefined = undefined
-  public startCmd: string | undefined = undefined
-  public readyCmd: string | undefined = undefined
   // Force the whole template to be rebuilt
   private force: boolean = false
-  // Force the next layer to be rebuilt
-  public forceNextLayer: boolean = false
-  public instructions: Instruction[] = []
   private fileContextPath: string =
     runtime === 'browser' ? '.' : getCallerDirectory() ?? '.'
   private ignoreFilePaths: string[] = []
@@ -296,6 +298,42 @@ export class TemplateBase implements DockerfileParserInterface {
     this.ignoreFilePaths = options?.ignoreFilePaths ?? this.ignoreFilePaths
   }
 
+  // Static methods
+  static toJSON(template: TemplateClass): Promise<string> {
+    return (template as any).toJSON()
+  }
+
+  static toDockerfile(template: TemplateClass): string {
+    return (template as any).toDockerfile()
+  }
+
+  static build(template: TemplateClass, options: BuildOptions): Promise<void> {
+    return (template as any).build(options)
+  }
+
+  static waitForPort(port: number): string {
+    return `ss -tuln | grep :${port}`
+  }
+
+  static waitForURL(url: string, statusCode: number = 200): string {
+    return `curl -s -o /dev/null -w "%{http_code}" ${url} | grep -q "${statusCode}"`
+  }
+
+  static waitForProcess(processName: string): string {
+    return `pgrep ${processName} > /dev/null`
+  }
+
+  static waitForFile(filename: string): string {
+    return `[ -f ${filename} ]`
+  }
+
+  static waitForTimeout(timeout: number): string {
+    // convert to seconds, but ensure minimum of 1 second
+    const seconds = Math.max(1, Math.floor(timeout / 1000))
+    return `sleep ${seconds}`
+  }
+
+  // Public instance methods
   skipCache(): TemplateBase {
     this.forceNextLayer = true
     return this
@@ -415,20 +453,12 @@ export class TemplateBase implements DockerfileParserInterface {
     return new TemplateFinal(this)
   }
 
-  static toJSON(template: TemplateClass): Promise<string> {
-    return (template as any).toJSON()
-  }
-
   public async toJSON(): Promise<string> {
     return JSON.stringify(
       this.serialize(await this.calculateFilesHashes()),
       undefined,
       2
     )
-  }
-
-  static toDockerfile(template: TemplateClass): string {
-    return (template as any).toDockerfile()
   }
 
   public toDockerfile(): string {
@@ -451,10 +481,6 @@ export class TemplateBase implements DockerfileParserInterface {
       dockerfile += `ENTRYPOINT ${this.startCmd}\n`
     }
     return dockerfile
-  }
-
-  static build(template: TemplateClass, options: BuildOptions): Promise<void> {
-    return (template as any).build(options)
   }
 
   public async build(options: BuildOptions): Promise<void> {
@@ -616,28 +642,6 @@ export class TemplateBase implements DockerfileParserInterface {
     }
 
     return templateData as TriggerBuildTemplate
-  }
-
-  static waitForPort(port: number): string {
-    return `ss -tuln | grep :${port}`
-  }
-
-  static waitForURL(url: string, statusCode: number = 200): string {
-    return `curl -s -o /dev/null -w "%{http_code}" ${url} | grep -q "${statusCode}"`
-  }
-
-  static waitForProcess(processName: string): string {
-    return `pgrep ${processName} > /dev/null`
-  }
-
-  static waitForFile(filename: string): string {
-    return `[ -f ${filename} ]`
-  }
-
-  static waitForTimeout(timeout: number): string {
-    // convert to seconds, but ensure minimum of 1 second
-    const seconds = Math.max(1, Math.floor(timeout / 1000))
-    return `sleep ${seconds}`
   }
 }
 
