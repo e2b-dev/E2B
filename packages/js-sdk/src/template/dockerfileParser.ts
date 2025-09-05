@@ -11,13 +11,18 @@ export interface DockerfileParseResult {
   instructions: Instruction[]
 }
 
+export interface DockerfileParserFinalInterface {}
+
 export interface DockerfileParserInterface {
   setWorkdir(workdir: string): DockerfileParserInterface
   setUser(user: string): DockerfileParserInterface
   setEnvs(envs: Record<string, string>): DockerfileParserInterface
   runCmd(command: string): DockerfileParserInterface
   copy(src: string, dest: string): DockerfileParserInterface
-  setStartCmd(startCommand: string, readyCommand: string): any
+  setStartCmd(
+    startCommand: string,
+    readyCommand: string
+  ): DockerfileParserFinalInterface
 }
 
 /**
