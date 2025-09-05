@@ -589,5 +589,5 @@ Template.waitForFile = function (filename: string) {
 }
 
 Template.waitForTimeout = function (timeout: number) {
-  return `sleep ${timeout / 1000}`
+  return `sleep ${Math.floor(timeout / 1000)}`
 }
