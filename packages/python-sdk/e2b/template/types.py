@@ -19,9 +19,6 @@ class Instruction(TypedDict):
     args: List[str]
     force: bool
     forceUpload: Optional[bool]
-
-
-class Step(Instruction):
     filesHash: NotRequired[str]
 
 
@@ -31,7 +28,7 @@ class TemplateType(TypedDict):
     startCmd: NotRequired[str]
     readyCmd: NotRequired[str]
     readyCmdTimeoutMs: NotRequired[int]
-    steps: List[Step]
+    steps: List[Instruction]
     force: bool
 
 

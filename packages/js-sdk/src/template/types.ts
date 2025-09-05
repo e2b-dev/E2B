@@ -5,9 +5,6 @@ export type Instruction = {
   args: string[]
   force: boolean
   forceUpload?: boolean
-}
-
-export type Step = Instruction & {
   filesHash?: string
 }
 

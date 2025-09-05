@@ -12,7 +12,6 @@ import { parseDockerfile } from './dockerfileParser'
 import { BuildError } from '../errors'
 import {
   Instruction,
-  Step,
   TemplateFromImage,
   TemplateBuilder,
   TemplateFinal,
@@ -509,12 +508,12 @@ export class TemplateBase
   }
 
   // We might no longer need this as we move the logic server-side
-  private async calculateFilesHashes(): Promise<Step[]> {
-    const steps: Step[] = []
+  private async calculateFilesHashes(): Promise<Instruction[]> {
+    const steps: Instruction[] = []
 
     for (const instruction of this.instructions) {
       if (instruction.type === 'COPY') {
-        const filesHash = await calculateFilesHash(
+        instruction.filesHash = await calculateFilesHash(
           instruction.args[0],
           instruction.args[1],
           this.fileContextPath,
@@ -525,16 +524,15 @@ export class TemplateBase
               : readDockerignore(this.fileContextPath)),
           ]
         )
-        steps.push({ ...instruction, filesHash })
-      } else {
-        steps.push(instruction)
       }
+
+      steps.push(instruction)
     }
 
     return steps
   }
 
-  private serialize(steps: Step[]): TriggerBuildTemplate {
+  private serialize(steps: Instruction[]): TriggerBuildTemplate {
     const baseData = {
       startCmd: this.startCmd,
       readyCmd: this.readyCmd,

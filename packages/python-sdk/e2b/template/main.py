@@ -3,7 +3,7 @@ from typing import Dict, List, Optional, Union
 from httpx import Limits
 
 from e2b.template.dockerfile_parser import parse_dockerfile
-from e2b.template.types import CopyItem, Instruction, Step, TemplateType
+from e2b.template.types import CopyItem, Instruction, TemplateType
 from e2b.template.utils import (
     calculate_files_hash,
     get_caller_directory,
@@ -343,11 +343,11 @@ class TemplateBase:
 
     def _calculate_hashes(
         self,
-    ) -> List[Step]:
-        steps: List[Step] = []
+    ) -> List[Instruction]:
+        steps: List[Instruction] = []
 
         for instruction in self._instructions:
-            step: Step = Step(
+            step: Instruction = Instruction(
                 type=instruction["type"],
                 args=instruction["args"],
                 force=instruction["force"],
@@ -369,7 +369,7 @@ class TemplateBase:
 
         return steps
 
-    def _serialize(self, steps: List[Step]) -> TemplateType:
+    def _serialize(self, steps: List[Instruction]) -> TemplateType:
         template_data: TemplateType = {
             "steps": steps,
             "force": self._force,
