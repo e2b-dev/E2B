@@ -591,4 +591,4 @@ Template.waitForTimeout = function (timeout: number) {
   return `sleep ${seconds}`
 }
 
-export type TemplateClass = TemplateBuilder
+export type TemplateClass = TemplateBuilder | TemplateFinal
