@@ -243,7 +243,7 @@ def _handle_cmd_entrypoint_instruction(
     command = value.strip()
 
     # Import wait_for_timeout locally to avoid circular dependency
-    def wait_for_timeout(timeout: str) -> str:
-        return f"sleep {timeout}"
+    def wait_for_timeout(timeout: int) -> str:
+        return f"sleep {timeout / 1000}"
 
-    template_builder.set_start_cmd(command, wait_for_timeout("20s"))
+    template_builder.set_start_cmd(command, wait_for_timeout(20_000))
