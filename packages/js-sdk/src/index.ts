@@ -61,4 +61,4 @@ export { Sandbox }
 import { Sandbox } from './sandbox'
 export default Sandbox
 
-export { Template, type TemplateClass, TemplateBase } from './template'
+export { Template, type TemplateClass, type TemplateBase } from './template'
