@@ -191,6 +191,10 @@ export const docRoutes: NavGroup[] = [
             href: '/docs/code-interpreting/supported-languages/r',
           },
           {
+            title: 'Ruby',
+            href: '/docs/code-interpreting/supported-languages/ruby',
+          },
+          {
             title: 'Java',
             href: '/docs/code-interpreting/supported-languages/java',
           },
