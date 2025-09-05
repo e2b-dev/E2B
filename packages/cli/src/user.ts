@@ -19,6 +19,11 @@ export const DOCS_BASE =
   process.env.E2B_DOCS_BASE ||
   `https://${process.env.E2B_DOMAIN || 'e2b.dev'}/docs`
 
+export const SANDBOX_INSPECT_URL = (sandboxId: string) =>
+  `https://${
+    process.env.E2B_DOMAIN || 'e2b.dev'
+  }/dashboard/inspect/${sandboxId}`
+
 export function getUserConfig(): UserConfig | null {
   if (!fs.existsSync(USER_CONFIG_PATH)) return null
   return JSON.parse(fs.readFileSync(USER_CONFIG_PATH, 'utf8'))
