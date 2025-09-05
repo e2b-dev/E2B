@@ -14,7 +14,10 @@ from e2b.template.utils import (
 
 class TemplateBuilder:
     def __init__(self, template: "TemplateBase"):
-        self._template = template
+        self.__template = template
+
+    def get_template_base(self) -> "TemplateBase":
+        return self.__template
 
     def copy(
         self,
@@ -52,10 +55,10 @@ class TemplateBuilder:
             instruction: Instruction = Instruction(
                 type="COPY",
                 args=args,
-                force=force_upload or self._template._force_next_layer,
+                force=force_upload or self.__template._force_next_layer,
                 forceUpload=force_upload,
             )
-            self._template._instructions.append(instruction)
+            self.__template._instructions.append(instruction)
         return self
 
     def remove(
@@ -108,30 +111,30 @@ class TemplateBuilder:
         instruction: Instruction = Instruction(
             type="RUN",
             args=args,
-            force=self._template._force_next_layer,
+            force=self.__template._force_next_layer,
             forceUpload=None,
         )
-        self._template._instructions.append(instruction)
+        self.__template._instructions.append(instruction)
         return self
 
     def set_workdir(self, workdir: str) -> "TemplateBuilder":
         instruction: Instruction = Instruction(
             type="WORKDIR",
             args=[workdir],
-            force=self._template._force_next_layer,
+            force=self.__template._force_next_layer,
             forceUpload=None,
         )
-        self._template._instructions.append(instruction)
+        self.__template._instructions.append(instruction)
         return self
 
     def set_user(self, user: str) -> "TemplateBuilder":
         instruction: Instruction = Instruction(
             type="USER",
             args=[user],
-            force=self._template._force_next_layer,
+            force=self.__template._force_next_layer,
             forceUpload=None,
         )
-        self._template._instructions.append(instruction)
+        self.__template._instructions.append(instruction)
         return self
 
     def pip_install(
@@ -198,29 +201,32 @@ class TemplateBuilder:
         instruction: Instruction = Instruction(
             type="ENV",
             args=[item for key, value in envs.items() for item in [key, value]],
-            force=self._template._force_next_layer,
+            force=self.__template._force_next_layer,
             forceUpload=None,
         )
-        self._template._instructions.append(instruction)
+        self.__template._instructions.append(instruction)
         return self
 
     def skip_cache(self) -> "TemplateBuilder":
-        self._template._force_next_layer = True
+        self.__template._force_next_layer = True
         return self
 
     def set_start_cmd(self, start_cmd: str, ready_cmd: str) -> "TemplateFinal":
-        self._template._start_cmd = start_cmd
-        self._template._ready_cmd = ready_cmd
-        return TemplateFinal(self._template)
+        self.__template._start_cmd = start_cmd
+        self.__template._ready_cmd = ready_cmd
+        return TemplateFinal(self.__template)
 
     def set_ready_cmd(self, ready_cmd: str) -> "TemplateFinal":
-        self._template._ready_cmd = ready_cmd
-        return TemplateFinal(self._template)
+        self.__template._ready_cmd = ready_cmd
+        return TemplateFinal(self.__template)
 
 
 class TemplateFinal:
     def __init__(self, template: "TemplateBase"):
-        self._template = template
+        self.__template = template
+
+    def get_template_base(self) -> "TemplateBase":
+        return self.__template
 
 
 class TemplateBase:
@@ -314,8 +320,8 @@ class TemplateBase:
         return builder
 
     @staticmethod
-    def to_json(template: "TemplateBase") -> str:
-        return template.__to_json()
+    def to_json(template: "TemplateClass") -> str:
+        return template.get_template_base().__to_json()
 
     def __to_json(self) -> str:
         return json.dumps(
@@ -324,8 +330,8 @@ class TemplateBase:
         )
 
     @staticmethod
-    def to_dockerfile(template: "TemplateBase") -> str:
-        return template.__to_dockerfile()
+    def to_dockerfile(template: "TemplateClass") -> str:
+        return template.get_template_base().__to_dockerfile()
 
     def __to_dockerfile(self) -> str:
         if self._base_template is not None:

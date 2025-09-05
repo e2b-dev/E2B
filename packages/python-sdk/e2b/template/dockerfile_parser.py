@@ -1,7 +1,7 @@
 import os
 import re
 import tempfile
-from typing import Dict, List, Optional, Protocol, Union
+from typing import Any, Dict, List, Optional, Protocol, Union
 
 from dockerfile_parse import DockerfileParser
 from e2b.template.types import CopyItem
@@ -11,7 +11,7 @@ class DockerfileParserInterface(Protocol):
     """Protocol defining the interface for Dockerfile parsing callbacks."""
 
     def run_cmd(
-        self, command: Union[str, List[str]], force: bool = False
+        self, command: Union[str, List[str]], user: Optional[str] = None
     ) -> "DockerfileParserInterface":
         """Handle RUN instruction."""
         ...
@@ -25,25 +25,21 @@ class DockerfileParserInterface(Protocol):
         """Handle COPY instruction."""
         ...
 
-    def set_workdir(
-        self, workdir: str, force: bool = False
-    ) -> "DockerfileParserInterface":
+    def set_workdir(self, workdir: str) -> "DockerfileParserInterface":
         """Handle WORKDIR instruction."""
         ...
 
-    def set_user(self, user: str, force: bool = False) -> "DockerfileParserInterface":
+    def set_user(self, user: str) -> "DockerfileParserInterface":
         """Handle USER instruction."""
         ...
 
-    def set_envs(
-        self, envs: Dict[str, str], force: bool = False
-    ) -> "DockerfileParserInterface":
+    def set_envs(self, envs: Dict[str, str]) -> "DockerfileParserInterface":
         """Handle ENV instruction."""
         ...
 
     def set_start_cmd(
         self, start_cmd: str, ready_cmd: str
-    ) -> "DockerfileParserInterface":
+    ) -> Any:
         """Handle CMD/ENTRYPOINT instruction."""
         ...
 
