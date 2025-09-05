@@ -58,3 +58,16 @@ export type {
 export { Sandbox }
 import { Sandbox } from './sandbox'
 export default Sandbox
+
+export {
+  Template,
+  type TemplateClass,
+  type TemplateBase,
+  BuildError,
+  FileUploadError,
+  waitForPort,
+  waitForURL,
+  waitForProcess,
+  waitForFile,
+  waitForTimeout,
+} from './template'
