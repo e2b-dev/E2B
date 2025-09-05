@@ -424,7 +424,7 @@ class TemplateBase:
     @classmethod
     def wait_for_timeout(cls, timeout: int) -> str:
         """Generate a command to wait for a specified duration."""
-            # convert to seconds
+        # convert to seconds
         return f"sleep {timeout / 1000}"
 
 
