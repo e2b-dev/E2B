@@ -55,6 +55,7 @@ def calculate_files_hash(
 
 
 def strip_ansi_escape_codes(text: str) -> str:
+    """Strip ANSI escape codes from a string. Source: https://github.com/chalk/ansi-regex/blob/main/index.js"""
     # Valid string terminator sequences are BEL, ESC\, and 0x9c
     st = r"(?:\u0007|\u001B\u005C|\u009C)"
     pattern = [
