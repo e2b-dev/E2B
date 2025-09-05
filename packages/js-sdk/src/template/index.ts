@@ -68,11 +68,11 @@ export class TemplateBase
     this.ignoreFilePaths = options?.ignoreFilePaths ?? this.ignoreFilePaths
   }
 
-  static toJSON(template: TemplateBuilder | TemplateFinal): Promise<string> {
+  static toJSON(template: TemplateClass): Promise<string> {
     return (template as TemplateBase).toJSON()
   }
 
-  static toDockerfile(template: TemplateBuilder | TemplateFinal): string {
+  static toDockerfile(template: TemplateClass): string {
     return (template as TemplateBase).toDockerfile()
   }
 
