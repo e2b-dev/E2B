@@ -24,7 +24,8 @@ import {
   readDockerignore,
 } from './utils'
 import { ConnectionConfig } from '../connectionConfig'
-import { LogEntry } from './types'
+import { LogEntry } from './logentry'
+import { ReadyCmd } from './readycmd'
 
 type TemplateOptions = {
   fileContextPath?: string
@@ -343,14 +344,18 @@ export class TemplateBase
     return this
   }
 
-  setStartCmd(startCommand: string, readyCommand: string): TemplateFinal {
+  setStartCmd(
+    startCommand: string,
+    readyCommand: string | ReadyCmd
+  ): TemplateFinal {
     this.startCmd = startCommand
-    this.readyCmd = readyCommand
-    return this
-  }
 
-  setReadyCmd(command: string): TemplateFinal {
-    this.readyCmd = command
+    if (readyCommand instanceof ReadyCmd) {
+      this.readyCmd = readyCommand.getCmd()
+    } else {
+      this.readyCmd = readyCommand
+    }
+
     return this
   }
 

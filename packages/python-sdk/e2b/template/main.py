@@ -10,6 +10,7 @@ from e2b.template.utils import (
     pad_octal,
     read_dockerignore,
 )
+from e2b.template.readycmd import ReadyCmd
 
 
 class TemplateBuilder:
@@ -208,12 +209,14 @@ class TemplateBuilder:
         self._template._force_next_layer = True
         return self
 
-    def set_start_cmd(self, start_cmd: str, ready_cmd: str) -> "TemplateFinal":
+    def set_start_cmd(
+        self, start_cmd: str, ready_cmd: str | ReadyCmd
+    ) -> "TemplateFinal":
         self._template._start_cmd = start_cmd
-        self._template._ready_cmd = ready_cmd
-        return TemplateFinal(self._template)
 
-    def set_ready_cmd(self, ready_cmd: str) -> "TemplateFinal":
+        if isinstance(ready_cmd, ReadyCmd):
+            ready_cmd = ready_cmd.get_cmd()
+
         self._template._ready_cmd = ready_cmd
         return TemplateFinal(self._template)
 

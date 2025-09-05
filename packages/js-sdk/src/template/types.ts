@@ -1,4 +1,5 @@
 import stripAnsi from 'strip-ansi'
+import { ReadyCmd } from './readycmd'
 
 export type Instruction = {
   type: 'COPY' | 'ENV' | 'RUN' | 'WORKDIR' | 'USER'
@@ -68,8 +69,10 @@ export interface TemplateBuilder {
   ): TemplateBuilder
   setEnvs(envs: Record<string, string>): TemplateBuilder
   skipCache(): TemplateBuilder
-  setStartCmd(startCommand: string, readyCommand: string): TemplateFinal
-  setReadyCmd(command: string): TemplateFinal
+  setStartCmd(
+    startCommand: string,
+    readyCommand: string | ReadyCmd
+  ): TemplateFinal
 }
 
 // Interface for the final state
