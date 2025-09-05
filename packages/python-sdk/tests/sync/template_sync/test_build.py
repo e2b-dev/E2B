@@ -3,7 +3,7 @@ import os
 from uuid import uuid4
 import shutil
 
-from e2b import Template, ReadyCmd
+from e2b import Template, wait_for_timeout
 
 
 @pytest.mark.skip_debug()
@@ -27,7 +27,7 @@ def test_build():
         )
         .run_cmd("cat folder/test.txt")
         .set_workdir("/app")
-        .set_start_cmd("echo 'Hello, world!'", ReadyCmd.wait_for_timeout(10_000))
+        .set_start_cmd("echo 'Hello, world!'", wait_for_timeout(10_000))
     )
 
     Template.build(
