@@ -62,4 +62,10 @@ import { Sandbox } from './sandbox'
 export default Sandbox
 
 export { Template, type TemplateClass, type TemplateBase } from './template'
-export { ReadyCmd } from './template/readycmd'
+export {
+  waitForPort,
+  waitForURL,
+  waitForProcess,
+  waitForFile,
+  waitForTimeout,
+} from './template/readycmd'

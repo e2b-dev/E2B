@@ -1,5 +1,5 @@
 import { test } from 'vitest'
-import { Template, ReadyCmd } from '../../src'
+import { Template, waitForTimeout } from '../../src'
 import { randomUUID } from 'node:crypto'
 import path from 'node:path'
 import fs from 'node:fs'
@@ -18,7 +18,7 @@ test('build template', { timeout: 180000 }, async () => {
     })
     .runCmd('cat folder/test.txt')
     .setWorkdir('/app')
-    .setStartCmd('echo "Hello, world!"', ReadyCmd.waitForTimeout(10_000))
+    .setStartCmd('echo "Hello, world!"', waitForTimeout(10_000))
 
   await Template.build(template, {
     alias: randomUUID(),

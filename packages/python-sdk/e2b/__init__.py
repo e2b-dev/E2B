@@ -71,7 +71,17 @@ from .sandbox_async.filesystem.watch_handle import AsyncWatchHandle
 from .sandbox_async.commands.command_handle import AsyncCommandHandle
 from .sandbox_sync.paginator import SandboxPaginator
 
-from .template import Template, AsyncTemplate, TemplateBase, TemplateClass, ReadyCmd
+from .template import (
+    Template,
+    AsyncTemplate,
+    TemplateBase,
+    TemplateClass,
+    wait_for_file,
+    wait_for_url,
+    wait_for_port,
+    wait_for_process,
+    wait_for_timeout,
+)
 
 __all__ = [
     # API
@@ -126,5 +136,9 @@ __all__ = [
     "AsyncTemplate",
     "TemplateBase",
     "TemplateClass",
-    "ReadyCmd",
+    "wait_for_file",
+    "wait_for_url",
+    "wait_for_port",
+    "wait_for_process",
+    "wait_for_timeout",
 ]
