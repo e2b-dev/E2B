@@ -37,9 +37,7 @@ class DockerfileParserInterface(Protocol):
         """Handle ENV instruction."""
         ...
 
-    def set_start_cmd(
-        self, start_cmd: str, ready_cmd: str
-    ) -> Any:
+    def set_start_cmd(self, start_cmd: str, ready_cmd: str) -> Any:
         """Handle CMD/ENTRYPOINT instruction."""
         ...
 
