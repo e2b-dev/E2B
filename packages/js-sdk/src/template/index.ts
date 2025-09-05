@@ -309,28 +309,6 @@ export class TemplateBase {
     this.ignoreFilePaths = options?.ignoreFilePaths ?? this.ignoreFilePaths
   }
 
-  static waitForPort(port: number): string {
-    return `ss -tuln | grep :${port}`
-  }
-
-  static waitForURL(url: string, statusCode: number = 200): string {
-    return `curl -s -o /dev/null -w "%{http_code}" ${url} | grep -q "${statusCode}"`
-  }
-
-  static waitForProcess(processName: string): string {
-    return `pgrep ${processName} > /dev/null`
-  }
-
-  static waitForFile(filename: string): string {
-    return `[ -f ${filename} ]`
-  }
-
-  static waitForTimeout(timeout: number): string {
-    // convert to seconds, but ensure minimum of 1 second
-    const seconds = Math.max(1, Math.floor(timeout / 1000))
-    return `sleep ${seconds}`
-  }
-
   static async toJSON(template: TemplateClass): Promise<string> {
     const templateBase = template.getTemplateBase()
     return JSON.stringify(
@@ -611,10 +589,26 @@ export function Template(options?: TemplateOptions): TemplateBase {
 Template.build = TemplateBase.build
 Template.toJSON = TemplateBase.toJSON
 Template.toDockerfile = TemplateBase.toDockerfile
-Template.waitForPort = TemplateBase.waitForPort
-Template.waitForURL = TemplateBase.waitForURL
-Template.waitForProcess = TemplateBase.waitForProcess
-Template.waitForFile = TemplateBase.waitForFile
-Template.waitForTimeout = TemplateBase.waitForTimeout
+Template.waitForPort = function (port: number) {
+  return `ss -tuln | grep :${port}`
+}
+
+Template.waitForURL = function (url: string, statusCode: number = 200) {
+  return `curl -s -o /dev/null -w "%{http_code}" ${url} | grep -q "${statusCode}"`
+}
+
+Template.waitForProcess = function (processName: string) {
+  return `pgrep ${processName} > /dev/null`
+}
+
+Template.waitForFile = function (filename: string) {
+  return `[ -f ${filename} ]`
+}
+
+Template.waitForTimeout = function (timeout: number) {
+  // convert to seconds, but ensure minimum of 1 second
+  const seconds = Math.max(1, Math.floor(timeout / 1000))
+  return `sleep ${seconds}`
+}
 
 export type TemplateClass = TemplateBuilder | TemplateFinal
