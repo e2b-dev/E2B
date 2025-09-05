@@ -1,19 +1,23 @@
-import { Instructions } from './types'
-import { DockerfileParser, Instruction, Argument } from 'dockerfile-ast'
+import { Instruction } from './types'
+import {
+  DockerfileParser,
+  Instruction as DockerfileInstruction,
+  Argument,
+} from 'dockerfile-ast'
 import fs from 'node:fs'
 
 export interface DockerfileParseResult {
   baseImage: string
-  instructions: Instructions[]
+  instructions: Instruction[]
 }
 
 export interface DockerfileParserInterface {
-  setWorkdir(workdir: string): void
-  setUser(user: string): void
-  setEnvs(envs: Record<string, string>): void
-  runCmd(command: string): void
-  copy(src: string, dest: string): void
-  setStartCmd(startCommand: string, readyCommand: string): void
+  setWorkdir(workdir: string): DockerfileParserInterface
+  setUser(user: string): DockerfileParserInterface
+  setEnvs(envs: Record<string, string>): DockerfileParserInterface
+  runCmd(command: string): DockerfileParserInterface
+  copy(src: string, dest: string): DockerfileParserInterface
+  setStartCmd(startCommand: string, readyCommand: string): any
 }
 
 /**
@@ -70,10 +74,10 @@ export function parseDockerfile(
     baseImage = argumentsData[0].getValue()
   }
 
-  const resultInstructions: Instructions[] = []
+  const resultInstructions: Instruction[] = []
 
   // Process all other instructions
-  for (const instruction of instructions) {
+  for (const instruction of instructions as any[]) {
     const keyword = instruction.getKeyword()
 
     switch (keyword) {
@@ -129,7 +133,7 @@ export function parseDockerfile(
 }
 
 function handleRunInstruction(
-  instruction: Instruction,
+  instruction: DockerfileInstruction,
   templateBuilder: DockerfileParserInterface
 ): void {
   const argumentsData = instruction.getArguments()
@@ -142,7 +146,7 @@ function handleRunInstruction(
 }
 
 function handleCopyInstruction(
-  instruction: Instruction,
+  instruction: DockerfileInstruction,
   templateBuilder: DockerfileParserInterface
 ): void {
   const argumentsData = instruction.getArguments()
@@ -154,7 +158,7 @@ function handleCopyInstruction(
 }
 
 function handleWorkdirInstruction(
-  instruction: Instruction,
+  instruction: DockerfileInstruction,
   templateBuilder: DockerfileParserInterface
 ): void {
   const argumentsData = instruction.getArguments()
@@ -165,7 +169,7 @@ function handleWorkdirInstruction(
 }
 
 function handleUserInstruction(
-  instruction: Instruction,
+  instruction: DockerfileInstruction,
   templateBuilder: DockerfileParserInterface
 ): void {
   const argumentsData = instruction.getArguments()
@@ -176,7 +180,7 @@ function handleUserInstruction(
 }
 
 function handleEnvInstruction(
-  instruction: Instruction,
+  instruction: DockerfileInstruction,
   templateBuilder: DockerfileParserInterface
 ): void {
   const argumentsData = instruction.getArguments()
@@ -239,7 +243,7 @@ function handleEnvInstruction(
 }
 
 function handleCmdEntrypointInstruction(
-  instruction: Instruction,
+  instruction: DockerfileInstruction,
   templateBuilder: DockerfileParserInterface
 ): void {
   const argumentsData = instruction.getArguments()

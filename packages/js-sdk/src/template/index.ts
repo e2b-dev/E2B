@@ -8,16 +8,8 @@ import {
   uploadFile,
   waitForBuildFinish,
 } from './buildApi'
-import { parseDockerfile } from './dockerfileParser'
-import { BuildError } from '../errors'
-import {
-  Instructions,
-  Steps,
-  TemplateFromImage,
-  TemplateBuilder,
-  TemplateFinal,
-  CopyItem,
-} from './types'
+import { parseDockerfile, DockerfileParserInterface } from './dockerfileParser'
+import { Instruction, Step, CopyItem, TemplateType } from './types'
 import {
   calculateFilesHash,
   getCallerDirectory,
@@ -45,121 +37,24 @@ export type BuildOptions = BasicBuildOptions & {
   domain?: string
 }
 
-export class TemplateBase
-  implements TemplateFromImage, TemplateBuilder, TemplateFinal
-{
-  private defaultBaseImage: string = 'e2bdev/base'
-  private baseImage: string | undefined = this.defaultBaseImage
-  private baseTemplate: string | undefined = undefined
-  private startCmd: string | undefined = undefined
-  private readyCmd: string | undefined = undefined
-  // Force the whole template to be rebuilt
-  private force: boolean = false
-  // Force the next layer to be rebuilt
-  private forceNextLayer: boolean = false
-  private instructions: Instructions[] = []
-  private fileContextPath: string =
-    runtime === 'browser' ? '.' : getCallerDirectory() ?? '.'
-  private ignoreFilePaths: string[] = []
-  private logsRefreshFrequency: number = 200
-
-  constructor(options?: TemplateOptions) {
-    this.fileContextPath = options?.fileContextPath ?? this.fileContextPath
-    this.ignoreFilePaths = options?.ignoreFilePaths ?? this.ignoreFilePaths
-  }
-
-  static toJSON(template: TemplateClass): Promise<string> {
-    return (template as TemplateBase).toJSON()
-  }
-
-  static toDockerfile(template: TemplateClass): string {
-    return (template as TemplateBase).toDockerfile()
-  }
-
-  static build(template: TemplateClass, options: BuildOptions): Promise<void> {
-    return (template as TemplateBase).build(options)
-  }
-
-  // Built-in image mixins
-  fromDebianImage(variant: string = 'slim'): TemplateBuilder {
-    return this.fromImage(`debian:${variant}`)
-  }
-
-  fromUbuntuImage(variant: string = 'lts'): TemplateBuilder {
-    return this.fromImage(`ubuntu:${variant}`)
-  }
-
-  fromPythonImage(version: string = '3.13'): TemplateBuilder {
-    return this.fromImage(`python:${version}`)
-  }
-
-  fromNodeImage(variant: string = 'lts'): TemplateBuilder {
-    return this.fromImage(`node:${variant}`)
-  }
-
-  fromBaseImage(): TemplateBuilder {
-    return this.fromImage(this.defaultBaseImage)
-  }
-
-  fromImage(baseImage: string): TemplateBuilder {
-    this.baseImage = baseImage
-    this.baseTemplate = undefined
-
-    // If we should force the next layer and it's a FROM command, invalidate whole template
-    if (this.forceNextLayer) {
-      this.force = true
-    }
-
-    return this
-  }
-
-  fromTemplate(template: string): TemplateBuilder {
-    this.baseTemplate = template
-    this.baseImage = undefined
-
-    // If we should force the next layer and it's a FROM command, invalidate whole template
-    if (this.forceNextLayer) {
-      this.force = true
-    }
-
-    return this
-  }
-
-  /**
-   * Parse a Dockerfile and convert it to Template SDK format
-   *
-   * @param dockerfileContentOrPath Either the Dockerfile content as a string,
-   *                                or a path to a Dockerfile file
-   * @returns TemplateBuilder instance for method chaining
-   */
-  fromDockerfile(dockerfileContentOrPath: string): TemplateBuilder {
-    const { baseImage } = parseDockerfile(dockerfileContentOrPath, this)
-    this.baseImage = baseImage
-    this.baseTemplate = undefined
-
-    // If we should force the next layer and it's a FROM command, invalidate whole template
-    if (this.forceNextLayer) {
-      this.force = true
-    }
-
-    return this
-  }
+export class TemplateBuilder {
+  constructor(private template: TemplateBase) {}
 
   copy(
     src: string,
     dest: string,
-    options?: { forceUpload?: true; user?: string; mode?: number }
+    options?: { forceUpload?: boolean; user?: string; mode?: number }
   ): TemplateBuilder
   copy(
     items: CopyItem[],
-    options?: { forceUpload?: true; user?: string; mode?: number }
+    options?: { forceUpload?: boolean; user?: string; mode?: number }
   ): TemplateBuilder
   copy(
     srcOrItems: string | CopyItem[],
     destOrOptions?:
       | string
-      | { forceUpload?: true; user?: string; mode?: number },
-    options?: { forceUpload?: true; user?: string; mode?: number }
+      | { forceUpload?: boolean; user?: string; mode?: number },
+    options?: { forceUpload?: boolean; user?: string; mode?: number }
   ): TemplateBuilder {
     if (runtime === 'browser') {
       throw new Error('Browser runtime is not supported for copy')
@@ -176,6 +71,7 @@ export class TemplateBase
             forceUpload: options?.forceUpload,
           },
         ]
+
     for (const item of items) {
       const args = [
         item.src,
@@ -184,14 +80,14 @@ export class TemplateBase
         item.mode ? padOctal(item.mode) : '',
       ]
 
-      this.instructions.push({
+      const instruction: Instruction = {
         type: 'COPY',
         args,
-        force: item.forceUpload ?? this.forceNextLayer,
+        force: item.forceUpload ?? this.template.forceNextLayer,
         forceUpload: item.forceUpload,
-      })
+      }
+      this.template.instructions.push(instruction)
     }
-
     return this
   }
 
@@ -227,7 +123,8 @@ export class TemplateBase
     paths: string | string[],
     options?: { mode?: number }
   ): TemplateBuilder {
-    const args = ['mkdir', '-p', ...(Array.isArray(paths) ? paths : [paths])]
+    const pathList = Array.isArray(paths) ? paths : [paths]
+    const args = ['mkdir', '-p', ...pathList]
     if (options?.mode) {
       args.push(`-m ${padOctal(options.mode)}`)
     }
@@ -241,44 +138,43 @@ export class TemplateBase
     return this
   }
 
-  runCmd(command: string, options?: { user?: string }): TemplateBuilder
-  runCmd(commands: string[], options?: { user?: string }): TemplateBuilder
   runCmd(
-    commandOrCommands: string | string[],
+    command: string | string[],
     options?: { user?: string }
   ): TemplateBuilder {
-    const cmds = Array.isArray(commandOrCommands)
-      ? commandOrCommands
-      : [commandOrCommands]
+    const commands = Array.isArray(command) ? command : [command]
+    const args = [commands.join(' && ')]
 
-    const args = [cmds.join(' && ')]
     if (options?.user) {
       args.push(options.user)
     }
 
-    this.instructions.push({
+    const instruction: Instruction = {
       type: 'RUN',
       args,
-      force: this.forceNextLayer,
-    })
+      force: this.template.forceNextLayer,
+    }
+    this.template.instructions.push(instruction)
     return this
   }
 
   setWorkdir(workdir: string): TemplateBuilder {
-    this.instructions.push({
+    const instruction: Instruction = {
       type: 'WORKDIR',
       args: [workdir],
-      force: this.forceNextLayer,
-    })
+      force: this.template.forceNextLayer,
+    }
+    this.template.instructions.push(instruction)
     return this
   }
 
   setUser(user: string): TemplateBuilder {
-    this.instructions.push({
+    const instruction: Instruction = {
       type: 'USER',
       args: [user],
-      force: this.forceNextLayer,
-    })
+      force: this.template.forceNextLayer,
+    }
+    this.template.instructions.push(instruction)
     return this
   }
 
@@ -344,18 +240,145 @@ export class TemplateBase
     return this
   }
 
-  setStartCmd(startCommand: string, readyCommand: string): TemplateFinal {
-    this.startCmd = startCommand
-    this.readyCmd = readyCommand
-    return this
-  }
-
-  setReadyCmd(command: string): TemplateFinal {
-    this.readyCmd = command
-    return this
-  }
-
   setEnvs(envs: Record<string, string>): TemplateBuilder {
+    if (Object.keys(envs).length === 0) {
+      return this
+    }
+
+    const instruction: Instruction = {
+      type: 'ENV',
+      args: Object.entries(envs).flatMap(([key, value]) => [key, value]),
+      force: this.template.forceNextLayer,
+    }
+    this.template.instructions.push(instruction)
+    return this
+  }
+
+  skipCache(): TemplateBuilder {
+    this.template.forceNextLayer = true
+    return this
+  }
+
+  setStartCmd(startCmd: string, readyCmd: string): TemplateFinal {
+    this.template.startCmd = startCmd
+    this.template.readyCmd = readyCmd
+    return new TemplateFinal(this.template)
+  }
+
+  setReadyCmd(readyCmd: string): TemplateFinal {
+    this.template.readyCmd = readyCmd
+    return new TemplateFinal(this.template)
+  }
+}
+
+export class TemplateFinal {
+  constructor(private template: TemplateBase) {}
+}
+
+export class TemplateBase implements DockerfileParserInterface {
+  private defaultBaseImage: string = 'e2bdev/base'
+  private baseImage: string | undefined = this.defaultBaseImage
+  private baseTemplate: string | undefined = undefined
+  public startCmd: string | undefined = undefined
+  public readyCmd: string | undefined = undefined
+  // Force the whole template to be rebuilt
+  private force: boolean = false
+  // Force the next layer to be rebuilt
+  public forceNextLayer: boolean = false
+  public instructions: Instruction[] = []
+  private fileContextPath: string =
+    runtime === 'browser' ? '.' : getCallerDirectory() ?? '.'
+  private ignoreFilePaths: string[] = []
+  private logsRefreshFrequency: number = 200
+
+  constructor(options?: TemplateOptions) {
+    this.fileContextPath = options?.fileContextPath ?? this.fileContextPath
+    this.ignoreFilePaths = options?.ignoreFilePaths ?? this.ignoreFilePaths
+  }
+
+  skipCache(): TemplateBase {
+    this.forceNextLayer = true
+    return this
+  }
+
+  // Built-in image mixins
+  fromDebianImage(variant: string = 'slim'): TemplateBuilder {
+    return this.fromImage(`debian:${variant}`)
+  }
+
+  fromUbuntuImage(variant: string = 'lts'): TemplateBuilder {
+    return this.fromImage(`ubuntu:${variant}`)
+  }
+
+  fromPythonImage(version: string = '3.13'): TemplateBuilder {
+    return this.fromImage(`python:${version}`)
+  }
+
+  fromNodeImage(variant: string = 'lts'): TemplateBuilder {
+    return this.fromImage(`node:${variant}`)
+  }
+
+  fromBaseImage(): TemplateBuilder {
+    return this.fromImage(this.defaultBaseImage)
+  }
+
+  fromImage(baseImage: string): TemplateBuilder {
+    this.baseImage = baseImage
+    this.baseTemplate = undefined
+
+    // If we should force the next layer and it's a FROM command, invalidate whole template
+    if (this.forceNextLayer) {
+      this.force = true
+    }
+
+    return new TemplateBuilder(this)
+  }
+
+  fromTemplate(template: string): TemplateBuilder {
+    this.baseTemplate = template
+    this.baseImage = undefined
+
+    // If we should force the next layer and it's a FROM command, invalidate whole template
+    if (this.forceNextLayer) {
+      this.force = true
+    }
+
+    return new TemplateBuilder(this)
+  }
+
+  fromDockerfile(dockerfileContentOrPath: string): TemplateBuilder {
+    const { baseImage } = parseDockerfile(dockerfileContentOrPath, this)
+    this.baseImage = baseImage
+    this.baseTemplate = undefined
+
+    // If we should force the next layer and it's a FROM command, invalidate whole template
+    if (this.forceNextLayer) {
+      this.force = true
+    }
+
+    return new TemplateBuilder(this)
+  }
+
+  // DockerfileParserInterface implementation
+  setWorkdir(workdir: string): DockerfileParserInterface {
+    this.instructions.push({
+      type: 'WORKDIR',
+      args: [workdir],
+      force: this.forceNextLayer,
+    })
+    return this
+  }
+
+  setUser(user: string): DockerfileParserInterface {
+    this.instructions.push({
+      type: 'USER',
+      args: [user],
+      force: this.forceNextLayer,
+    })
+    return this
+  }
+
+  setEnvs(envs: Record<string, string>): DockerfileParserInterface {
     if (Object.keys(envs).length === 0) {
       return this
     }
@@ -368,12 +391,35 @@ export class TemplateBase
     return this
   }
 
-  skipCache(): TemplateBuilder {
-    this.forceNextLayer = true
+  runCmd(command: string): DockerfileParserInterface {
+    this.instructions.push({
+      type: 'RUN',
+      args: [command],
+      force: this.forceNextLayer,
+    })
     return this
   }
 
-  private async toJSON(): Promise<string> {
+  copy(src: string, dest: string): DockerfileParserInterface {
+    this.instructions.push({
+      type: 'COPY',
+      args: [src, dest, '', ''],
+      force: this.forceNextLayer,
+    })
+    return this
+  }
+
+  setStartCmd(startCommand: string, readyCommand: string): any {
+    this.startCmd = startCommand
+    this.readyCmd = readyCommand
+    return new TemplateFinal(this)
+  }
+
+  static toJSON(template: TemplateClass): Promise<string> {
+    return (template as any).toJSON()
+  }
+
+  public async toJSON(): Promise<string> {
     return JSON.stringify(
       this.serialize(await this.calculateFilesHashes()),
       undefined,
@@ -381,7 +427,11 @@ export class TemplateBase
     )
   }
 
-  private toDockerfile(): string {
+  static toDockerfile(template: TemplateClass): string {
+    return (template as any).toDockerfile()
+  }
+
+  public toDockerfile(): string {
     if (this.baseTemplate !== undefined) {
       throw new Error(
         'Cannot convert template built from another template to Dockerfile. ' +
@@ -403,7 +453,11 @@ export class TemplateBase
     return dockerfile
   }
 
-  private async build(options: BuildOptions): Promise<void> {
+  static build(template: TemplateClass, options: BuildOptions): Promise<void> {
+    return (template as any).build(options)
+  }
+
+  public async build(options: BuildOptions): Promise<void> {
     const config = new ConnectionConfig({
       domain: options.domain,
       apiKey: options.apiKey,
@@ -508,13 +562,19 @@ export class TemplateBase
     })
   }
 
-  // We might no longer need this as we move the logic server-side
-  private async calculateFilesHashes(): Promise<Steps[]> {
-    const steps: Steps[] = []
+  public async calculateFilesHashes(): Promise<Step[]> {
+    const steps: Step[] = []
 
     for (const instruction of this.instructions) {
+      const step: Step = {
+        type: instruction.type,
+        args: instruction.args,
+        force: instruction.force,
+        forceUpload: instruction.forceUpload,
+      }
+
       if (instruction.type === 'COPY') {
-        const filesHash = await calculateFilesHash(
+        step.filesHash = await calculateFilesHash(
           instruction.args[0],
           instruction.args[1],
           this.fileContextPath,
@@ -525,70 +585,74 @@ export class TemplateBase
               : readDockerignore(this.fileContextPath)),
           ]
         )
-        steps.push({ ...instruction, filesHash })
-      } else {
-        steps.push(instruction)
       }
+
+      steps.push(step)
     }
 
     return steps
   }
 
-  private serialize(steps: Steps[]): TriggerBuildTemplate {
-    const baseData = {
-      startCmd: this.startCmd,
-      readyCmd: this.readyCmd,
+  public serialize(steps: Step[]): TriggerBuildTemplate {
+    const templateData: TemplateType = {
       steps,
       force: this.force,
     }
 
     if (this.baseImage !== undefined) {
-      return {
-        ...baseData,
-        fromImage: this.baseImage,
-      }
-    } else if (this.baseTemplate !== undefined) {
-      return {
-        ...baseData,
-        fromTemplate: this.baseTemplate,
-      }
-    } else {
-      throw new BuildError(
-        'Template must specify either fromImage or fromTemplate'
-      )
+      templateData.fromImage = this.baseImage
     }
+
+    if (this.baseTemplate !== undefined) {
+      templateData.fromTemplate = this.baseTemplate
+    }
+
+    if (this.startCmd !== undefined) {
+      templateData.startCmd = this.startCmd
+    }
+
+    if (this.readyCmd !== undefined) {
+      templateData.readyCmd = this.readyCmd
+    }
+
+    return templateData as TriggerBuildTemplate
+  }
+
+  static waitForPort(port: number): string {
+    return `ss -tuln | grep :${port}`
+  }
+
+  static waitForURL(url: string, statusCode: number = 200): string {
+    return `curl -s -o /dev/null -w "%{http_code}" ${url} | grep -q "${statusCode}"`
+  }
+
+  static waitForProcess(processName: string): string {
+    return `pgrep ${processName} > /dev/null`
+  }
+
+  static waitForFile(filename: string): string {
+    return `[ -f ${filename} ]`
+  }
+
+  static waitForTimeout(timeout: number): string {
+    // convert to seconds, but ensure minimum of 1 second
+    const seconds = Math.max(1, Math.floor(timeout / 1000))
+    return `sleep ${seconds}`
   }
 }
 
 // Factory function to create Template instances without 'new'
-export function Template(options?: TemplateOptions): TemplateFromImage {
+export function Template(options?: TemplateOptions): TemplateBase {
   return new TemplateBase(options)
 }
 
 Template.build = TemplateBase.build
 Template.toJSON = TemplateBase.toJSON
 Template.toDockerfile = TemplateBase.toDockerfile
-
-Template.waitForPort = function (port: number) {
-  return `ss -tuln | grep :${port}`
-}
-
-Template.waitForURL = function (url: string, statusCode: number = 200) {
-  return `curl -s -o /dev/null -w "%{http_code}" ${url} | grep -q "${statusCode}"`
-}
-
-Template.waitForProcess = function (processName: string) {
-  return `pgrep ${processName} > /dev/null`
-}
-
-Template.waitForFile = function (filename: string) {
-  return `[ -f ${filename} ]`
-}
-
-Template.waitForTimeout = function (timeout: number) {
-  // convert to seconds, but ensure minimum of 1 second
-  const seconds = Math.max(1, Math.floor(timeout / 1000))
-  return `sleep ${seconds}`
-}
+Template.waitForPort = TemplateBase.waitForPort
+Template.waitForURL = TemplateBase.waitForURL
+Template.waitForProcess = TemplateBase.waitForProcess
+Template.waitForFile = TemplateBase.waitForFile
+Template.waitForTimeout = TemplateBase.waitForTimeout
 
 export type TemplateClass = TemplateBuilder | TemplateFinal
