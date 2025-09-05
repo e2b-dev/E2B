@@ -1,4 +1,4 @@
-from typing import List, Optional, TypedDict, Union
+from typing import List, Optional, TypedDict
 from typing_extensions import NotRequired
 from dataclasses import dataclass
 from datetime import datetime
