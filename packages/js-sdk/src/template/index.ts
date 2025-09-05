@@ -9,7 +9,7 @@ import {
   waitForBuildFinish,
 } from './buildApi'
 import { parseDockerfile } from './dockerfileParser'
-import { BuildError } from '../errors'
+import { BuildError } from './errors'
 import {
   Instruction,
   TemplateFromImage,
@@ -573,3 +573,11 @@ Template.toJSON = TemplateBase.toJSON
 Template.toDockerfile = TemplateBase.toDockerfile
 
 export type TemplateClass = TemplateBuilder | TemplateFinal
+export { BuildError, FileUploadError } from './errors'
+export {
+  waitForFile,
+  waitForURL,
+  waitForPort,
+  waitForProcess,
+  waitForTimeout,
+} from './readycmd'

@@ -41,8 +41,6 @@ from .exceptions import (
     InvalidArgumentException,
     NotEnoughSpaceException,
     TemplateException,
-    BuildException,
-    FileUploadException,
 )
 from .sandbox.sandbox_api import SandboxInfo, SandboxQuery, SandboxState, SandboxMetrics
 from .sandbox.commands.main import ProcessInfo
@@ -76,6 +74,8 @@ from .template import (
     AsyncTemplate,
     TemplateBase,
     TemplateClass,
+    BuildException,
+    FileUploadException,
     wait_for_file,
     wait_for_url,
     wait_for_port,

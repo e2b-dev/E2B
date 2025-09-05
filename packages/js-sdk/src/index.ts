@@ -12,8 +12,6 @@ export {
   TemplateError,
   TimeoutError,
   RateLimitError,
-  BuildError,
-  FileUploadError,
 } from './errors'
 export type { Logger } from './logs'
 
@@ -61,11 +59,15 @@ export { Sandbox }
 import { Sandbox } from './sandbox'
 export default Sandbox
 
-export { Template, type TemplateClass, type TemplateBase } from './template'
 export {
+  Template,
+  type TemplateClass,
+  type TemplateBase,
+  BuildError,
+  FileUploadError,
   waitForPort,
   waitForURL,
   waitForProcess,
   waitForFile,
   waitForTimeout,
-} from './template/readycmd'
+} from './template'

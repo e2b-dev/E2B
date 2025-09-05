@@ -25,7 +25,7 @@ from e2b.api.client.models import (
     Error,
 )
 from e2b.api import handle_api_exception
-from e2b.exceptions import BuildException, FileUploadException
+from e2b.template.exceptions import BuildException, FileUploadException
 
 
 async def request_build(
