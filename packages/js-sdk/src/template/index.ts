@@ -40,16 +40,8 @@ export type BuildOptions = BasicBuildOptions & {
 export class TemplateBuilder {
   constructor(private template: TemplateBase) {}
 
-  toJSON(): Promise<string> {
-    return this.template.toJSON()
-  }
-
-  toDockerfile(): string {
-    return this.template.toDockerfile()
-  }
-
-  build(options: BuildOptions): Promise<void> {
-    return this.template.build(options)
+  getTemplateBase(): TemplateBase {
+    return this.template
   }
 
   copy(
@@ -288,16 +280,8 @@ export class TemplateBuilder {
 export class TemplateFinal {
   constructor(private template: TemplateBase) {}
 
-  toJSON(): Promise<string> {
-    return this.template.toJSON()
-  }
-
-  toDockerfile(): string {
-    return this.template.toDockerfile()
-  }
-
-  build(options: BuildOptions): Promise<void> {
-    return this.template.build(options)
+  getTemplateBase(): TemplateBase {
+    return this.template
   }
 }
 
@@ -326,15 +310,15 @@ export class TemplateBase {
 
   // Static methods
   static toJSON(template: TemplateClass): Promise<string> {
-    return template.toJSON()
+    return template.getTemplateBase().toJSON()
   }
 
   static toDockerfile(template: TemplateClass): string {
-    return template.toDockerfile()
+    return template.getTemplateBase().toDockerfile()
   }
 
   static build(template: TemplateClass, options: BuildOptions): Promise<void> {
-    return template.build(options)
+    return template.getTemplateBase().build(options)
   }
 
   static waitForPort(port: number): string {
@@ -479,7 +463,7 @@ export class TemplateBase {
     return new TemplateFinal(this)
   }
 
-  public async toJSON(): Promise<string> {
+  protected async toJSON(): Promise<string> {
     return JSON.stringify(
       this.serialize(await this.calculateFilesHashes()),
       undefined,
@@ -487,7 +471,7 @@ export class TemplateBase {
     )
   }
 
-  public toDockerfile(): string {
+  protected toDockerfile(): string {
     if (this.baseTemplate !== undefined) {
       throw new Error(
         'Cannot convert template built from another template to Dockerfile. ' +
@@ -509,7 +493,7 @@ export class TemplateBase {
     return dockerfile
   }
 
-  async build(options: BuildOptions): Promise<void> {
+  protected async build(options: BuildOptions): Promise<void> {
     const config = new ConnectionConfig({
       domain: options.domain,
       apiKey: options.apiKey,
