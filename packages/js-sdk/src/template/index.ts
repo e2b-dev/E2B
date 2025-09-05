@@ -112,14 +112,14 @@ class BuilderState {
 }
 
 export interface TemplateClass {
-  getState(): BuilderState
+  _getState(): BuilderState
 }
 
 export class TemplateBuilder implements TemplateClass {
   constructor(private state: BuilderState) {
   }
 
-  getState(): BuilderState {
+  _getState(): BuilderState {
     return this.state
   }
 
@@ -361,15 +361,15 @@ export class TemplateFinal implements TemplateClass {
   constructor(private state: BuilderState) {
   }
 
-  getState(): BuilderState {
+  _getState(): BuilderState {
     return this.state
   }
 }
 
 export class TemplateBase {
-  defaultBaseImage: string = 'e2bdev/base'
+  private defaultBaseImage: string = 'e2bdev/base'
 
-  state: BuilderState
+  private readonly state: BuilderState
 
   constructor(options?: TemplateOptions) {
     this.state = new BuilderState()
@@ -452,7 +452,7 @@ export class TemplateBase {
 }
 
 async function toJSON(template: TemplateClass): Promise<string> {
-  const state = template.getState()
+  const state = template._getState()
   await state.calculateFilesHashes()
   return JSON.stringify(
     state.serialize(),
@@ -462,7 +462,7 @@ async function toJSON(template: TemplateClass): Promise<string> {
 }
 
 function toDockerfile(template: TemplateClass): string {
-  const templateBase = template.getState()
+  const templateBase = template._getState()
   if (templateBase.baseTemplate !== undefined) {
     throw new Error(
       'Cannot convert template built from another template to Dockerfile. ' +
@@ -493,7 +493,7 @@ async function build(
     apiKey: options.apiKey,
   })
   const client = new ApiClient(config)
-  const state = template.getState()
+  const state = template._getState()
 
   if (options.skipCache) {
     state.force = true

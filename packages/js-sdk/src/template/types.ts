@@ -17,7 +17,7 @@ export type CopyItem = {
 }
 
 export type TemplateType = {
-  steps: Step[]
+  steps: Instruction[]
   force: boolean
   fromImage?: string
   fromTemplate?: string
