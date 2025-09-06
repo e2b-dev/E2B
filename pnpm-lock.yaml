@@ -118,8 +118,8 @@ importers:
         specifier: ^1.2.1
         version: 1.2.1
       e2b:
-        specifier: ^2.1.0
-        version: 2.1.0
+        specifier: ^2.1.1
+        version: 2.1.1
       fast-glob:
         specifier: ^3.3.0
         version: 3.3.1
@@ -3816,8 +3816,8 @@ packages:
     resolution: {integrity: sha512-YDI4LPrbq0CZPdB0EP/qK2pCB61a/a4KK94VqSKP5tLfY/kiaViZCsjNGPWEYsfjCcwQU5MFmrzhwgy/C0uO2A==}
     engines: {node: '>=18'}
 
-  e2b@2.1.0:
-    resolution: {integrity: sha512-64f3dMVoCYf6KWUpC6vmU9mU6qhafCzGCrbtfiNKE+gqKhsyOOYhhuAeYiqSXesV+HmXsCToOaRa763X1qP4SQ==}
+  e2b@2.1.1:
+    resolution: {integrity: sha512-QZnqShp96FCbtjmsJ7+MOEDKfqxnO9dZOFQvLHBHOpqGBSkaQDrDFgLhYhvHLcCKRTFxAtmTTy1slA0wqZ9cvQ==}
     engines: {node: '>=18'}
 
   eastasianwidth@0.2.0:
@@ -11708,7 +11708,7 @@ snapshots:
       openapi-fetch: 0.9.8
       platform: 1.3.6
 
-  e2b@2.1.0:
+  e2b@2.1.1:
     dependencies:
       '@bufbuild/protobuf': 2.6.2
       '@connectrpc/connect': 2.0.0-rc.3(@bufbuild/protobuf@2.6.2)
