@@ -18,12 +18,12 @@ class TemplateBuilder:
         self._template = template
 
     def copy(
-        self,
-        src: Union[str, List[CopyItem]],
-        dest: Optional[str] = None,
-        force_upload: Optional[bool] = None,
-        user: Optional[str] = None,
-        mode: Optional[int] = None,
+            self,
+            src: Union[str, List[CopyItem]],
+            dest: Optional[str] = None,
+            force_upload: Optional[bool] = None,
+            user: Optional[str] = None,
+            mode: Optional[int] = None,
     ) -> "TemplateBuilder":
         if isinstance(src, str):
             # Single copy operation
@@ -60,7 +60,7 @@ class TemplateBuilder:
         return self
 
     def remove(
-        self, path: str, force: bool = False, recursive: bool = False
+            self, path: str, force: bool = False, recursive: bool = False
     ) -> "TemplateBuilder":
         args = ["rm", path]
         if recursive:
@@ -80,7 +80,7 @@ class TemplateBuilder:
         return self
 
     def make_dir(
-        self, paths: Union[str, List[str]], mode: Optional[int] = None
+            self, paths: Union[str, List[str]], mode: Optional[int] = None
     ) -> "TemplateBuilder":
         if isinstance(paths, str):
             paths = [paths]
@@ -98,7 +98,7 @@ class TemplateBuilder:
         return self
 
     def run_cmd(
-        self, command: Union[str, List[str]], user: Optional[str] = None
+            self, command: Union[str, List[str]], user: Optional[str] = None
     ) -> "TemplateBuilder":
         commands = [command] if isinstance(command, str) else command
         args = [" && ".join(commands)]
@@ -136,7 +136,7 @@ class TemplateBuilder:
         return self
 
     def pip_install(
-        self, packages: Optional[Union[str, List[str]]] = None
+            self, packages: Optional[Union[str, List[str]]] = None
     ) -> "TemplateBuilder":
         if isinstance(packages, str):
             packages = [packages]
@@ -150,9 +150,9 @@ class TemplateBuilder:
         return self.run_cmd(" ".join(args))
 
     def npm_install(
-        self,
-        packages: Optional[Union[str, List[str]]] = None,
-        g: Optional[bool] = False,
+            self,
+            packages: Optional[Union[str, List[str]]] = None,
+            g: Optional[bool] = False,
     ) -> "TemplateBuilder":
         if isinstance(packages, str):
             packages = [packages]
@@ -178,11 +178,11 @@ class TemplateBuilder:
         )
 
     def git_clone(
-        self,
-        url: str,
-        path: Optional[str] = None,
-        branch: Optional[str] = None,
-        depth: Optional[int] = None,
+            self,
+            url: str,
+            path: Optional[str] = None,
+            branch: Optional[str] = None,
+            depth: Optional[int] = None,
     ) -> "TemplateBuilder":
         args = ["git", "clone", url, path]
         if branch:
@@ -210,10 +210,17 @@ class TemplateBuilder:
         return self
 
     def set_start_cmd(
-        self, start_cmd: str, ready_cmd: Union[str, ReadyCmd]
+            self, start_cmd: str, ready_cmd: Union[str, ReadyCmd]
     ) -> "TemplateFinal":
         self._template._start_cmd = start_cmd
 
+        if isinstance(ready_cmd, ReadyCmd):
+            ready_cmd = ready_cmd.get_cmd()
+
+        self._template._ready_cmd = ready_cmd
+        return TemplateFinal(self._template)
+
+    def set_ready_cmd(self, ready_cmd: Union[str, ReadyCmd]) -> "TemplateFinal":
         if isinstance(ready_cmd, ReadyCmd):
             ready_cmd = ready_cmd.get_cmd()
 
@@ -235,9 +242,9 @@ class TemplateBase:
     _logs_refresh_frequency = 0.2
 
     def __init__(
-        self,
-        file_context_path: Optional[str] = None,
-        ignore_file_paths: Optional[List[str]] = None,
+            self,
+            file_context_path: Optional[str] = None,
+            ignore_file_paths: Optional[List[str]] = None,
     ):
         self._default_base_image: str = "e2bdev/base"
         self._base_image: Optional[str] = self._default_base_image
@@ -251,7 +258,7 @@ class TemplateBase:
         self._instructions: List[Instruction] = []
         # If no file_context_path is provided, use the caller's directory
         self._file_context_path: str = (
-            file_context_path or get_caller_directory() or "."
+                file_context_path or get_caller_directory() or "."
         )
         self._ignore_file_paths: List[str] = ignore_file_paths or []
 
@@ -345,7 +352,7 @@ class TemplateBase:
         return dockerfile
 
     def _calculate_hashes(
-        self,
+            self,
     ) -> List[Instruction]:
         steps: List[Instruction] = []
 

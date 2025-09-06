@@ -46,8 +46,7 @@ export type BuildOptions = BasicBuildOptions & {
 }
 
 export class TemplateBase
-  implements TemplateFromImage, TemplateBuilder, TemplateFinal
-{
+  implements TemplateFromImage, TemplateBuilder, TemplateFinal {
   private defaultBaseImage: string = 'e2bdev/base'
   private baseImage: string | undefined = this.defaultBaseImage
   private baseTemplate: string | undefined = undefined
@@ -148,18 +147,18 @@ export class TemplateBase
   copy(
     src: string,
     dest: string,
-    options?: { forceUpload?: true; user?: string; mode?: number }
+    options?: { forceUpload?: true; user?: string; mode?: number },
   ): TemplateBuilder
   copy(
     items: CopyItem[],
-    options?: { forceUpload?: true; user?: string; mode?: number }
+    options?: { forceUpload?: true; user?: string; mode?: number },
   ): TemplateBuilder
   copy(
     srcOrItems: string | CopyItem[],
     destOrOptions?:
       | string
       | { forceUpload?: true; user?: string; mode?: number },
-    options?: { forceUpload?: true; user?: string; mode?: number }
+    options?: { forceUpload?: true; user?: string; mode?: number },
   ): TemplateBuilder {
     if (runtime === 'browser') {
       throw new Error('Browser runtime is not supported for copy')
@@ -168,14 +167,14 @@ export class TemplateBase
     const items = Array.isArray(srcOrItems)
       ? srcOrItems
       : [
-          {
-            src: srcOrItems,
-            dest: destOrOptions as string,
-            mode: options?.mode,
-            user: options?.user,
-            forceUpload: options?.forceUpload,
-          },
-        ]
+        {
+          src: srcOrItems,
+          dest: destOrOptions as string,
+          mode: options?.mode,
+          user: options?.user,
+          forceUpload: options?.forceUpload,
+        },
+      ]
     for (const item of items) {
       const args = [
         item.src,
@@ -197,7 +196,7 @@ export class TemplateBase
 
   remove(
     path: string,
-    options?: { force?: boolean; recursive?: boolean }
+    options?: { force?: boolean; recursive?: boolean },
   ): TemplateBuilder {
     const args = ['rm', path]
     if (options?.recursive) {
@@ -213,7 +212,7 @@ export class TemplateBase
   rename(
     src: string,
     dest: string,
-    options?: { force?: boolean }
+    options?: { force?: boolean },
   ): TemplateBuilder {
     const args = ['mv', src, dest]
     if (options?.force) {
@@ -225,7 +224,7 @@ export class TemplateBase
 
   makeDir(
     paths: string | string[],
-    options?: { mode?: number }
+    options?: { mode?: number },
   ): TemplateBuilder {
     const args = ['mkdir', '-p', ...(Array.isArray(paths) ? paths : [paths])]
     if (options?.mode) {
@@ -245,7 +244,7 @@ export class TemplateBase
   runCmd(commands: string[], options?: { user?: string }): TemplateBuilder
   runCmd(
     commandOrCommands: string | string[],
-    options?: { user?: string }
+    options?: { user?: string },
   ): TemplateBuilder {
     const cmds = Array.isArray(commandOrCommands)
       ? commandOrCommands
@@ -320,17 +319,17 @@ export class TemplateBase
       [
         'apt-get update',
         `DEBIAN_FRONTEND=noninteractive DEBCONF_NOWARNINGS=yes apt-get install -y --no-install-recommends ${packageList.join(
-          ' '
+          ' ',
         )}`,
       ],
-      { user: 'root' }
+      { user: 'root' },
     )
   }
 
   gitClone(
     url: string,
     path?: string,
-    options?: { branch?: string; depth?: number }
+    options?: { branch?: string; depth?: number },
   ): TemplateBuilder {
     const args = ['git', 'clone', url, path]
     if (options?.branch) {
@@ -346,10 +345,22 @@ export class TemplateBase
 
   setStartCmd(
     startCommand: string,
-    readyCommand: string | ReadyCmd
+    readyCommand: string | ReadyCmd,
   ): TemplateFinal {
     this.startCmd = startCommand
 
+    if (readyCommand instanceof ReadyCmd) {
+      this.readyCmd = readyCommand.getCmd()
+    } else {
+      this.readyCmd = readyCommand
+    }
+
+    return this
+  }
+
+  setReadyCmd(
+    readyCommand: string | ReadyCmd,
+  ): TemplateFinal {
     if (readyCommand instanceof ReadyCmd) {
       this.readyCmd = readyCommand.getCmd()
     } else {
@@ -381,7 +392,7 @@ export class TemplateBase
     return JSON.stringify(
       this.serialize(await this.calculateFilesHashes()),
       undefined,
-      2
+      2,
     )
   }
 
@@ -389,7 +400,7 @@ export class TemplateBase
     if (this.baseTemplate !== undefined) {
       throw new Error(
         'Cannot convert template built from another template to Dockerfile. ' +
-          'Templates based on other templates can only be built using the E2B API.'
+        'Templates based on other templates can only be built using the E2B API.',
       )
     }
 
@@ -423,8 +434,8 @@ export class TemplateBase
       new LogEntry(
         new Date(),
         'info',
-        `Requesting build for template: ${options.alias}`
-      )
+        `Requesting build for template: ${options.alias}`,
+      ),
     )
 
     const { templateID, buildID } = await requestBuild(client, {
@@ -437,8 +448,8 @@ export class TemplateBase
       new LogEntry(
         new Date(),
         'info',
-        `Template created with ID: ${templateID}, Build ID: ${buildID}`
-      )
+        `Template created with ID: ${templateID}, Build ID: ${buildID}`,
+      ),
     )
 
     const instructionsWithHashes = await this.calculateFilesHashes()
@@ -470,15 +481,15 @@ export class TemplateBase
           url,
         })
         options.onBuildLogs?.(
-          new LogEntry(new Date(), 'info', `Uploaded '${file.src}'`)
+          new LogEntry(new Date(), 'info', `Uploaded '${file.src}'`),
         )
       } else {
         options.onBuildLogs?.(
           new LogEntry(
             new Date(),
             'info',
-            `Skipping upload of '${file.src}', already cached`
-          )
+            `Skipping upload of '${file.src}', already cached`,
+          ),
         )
       }
     })
@@ -486,12 +497,12 @@ export class TemplateBase
     await Promise.all(uploadPromises)
 
     options.onBuildLogs?.(
-      new LogEntry(new Date(), 'info', 'All file uploads completed')
+      new LogEntry(new Date(), 'info', 'All file uploads completed'),
     )
 
     // Start build
     options.onBuildLogs?.(
-      new LogEntry(new Date(), 'info', 'Starting building...')
+      new LogEntry(new Date(), 'info', 'Starting building...'),
     )
 
     await triggerBuild(client, {
@@ -501,7 +512,7 @@ export class TemplateBase
     })
 
     options.onBuildLogs?.(
-      new LogEntry(new Date(), 'info', 'Waiting for logs...')
+      new LogEntry(new Date(), 'info', 'Waiting for logs...'),
     )
 
     await waitForBuildFinish(client, {
@@ -527,7 +538,7 @@ export class TemplateBase
             ...(runtime === 'browser'
               ? []
               : readDockerignore(this.fileContextPath)),
-          ]
+          ],
         )
       }
 
@@ -557,7 +568,7 @@ export class TemplateBase
       }
     } else {
       throw new BuildError(
-        'Template must specify either fromImage or fromTemplate'
+        'Template must specify either fromImage or fromTemplate',
       )
     }
   }
