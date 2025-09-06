@@ -359,6 +359,16 @@ export class TemplateBase
     return this
   }
 
+  setReadyCmd(readyCommand: string | ReadyCmd): TemplateFinal {
+    if (readyCommand instanceof ReadyCmd) {
+      this.readyCmd = readyCommand.getCmd()
+    } else {
+      this.readyCmd = readyCommand
+    }
+
+    return this
+  }
+
   setEnvs(envs: Record<string, string>): TemplateBuilder {
     if (Object.keys(envs).length === 0) {
       return this
