@@ -1,0 +1,38 @@
+import { Template } from 'e2b'
+
+export const template = Template()
+{{#if fromImage}}
+  .fromImage('{{{fromImage}}}')
+{{/if}}
+{{#each steps}}
+{{#eq type "WORKDIR"}}
+  .setWorkdir('{{{args.[0]}}}')
+{{/eq}}
+{{#eq type "USER"}}
+  .setUser('{{{args.[0]}}}')
+{{/eq}}
+{{#eq type "ENV"}}
+  .setEnvs({
+{{#each envVars}}
+    '{{{@key}}}': '{{{this}}}',
+{{/each}}
+  })
+{{/eq}}
+{{#eq type "RUN"}}
+  .runCmd('{{{args.[0]}}}')
+{{/eq}}
+{{#eq type "COPY"}}
+  .copy('{{{src}}}', '{{{dest}}}')
+{{/eq}}
+{{/each}}
+{{#if startCmd}}
+{{#if readyCmd}}
+  .setUser('root')
+  .setWorkdir('/home/user')
+  .setStartCmd('{{{escapeQuotes startCmd}}}', '{{{escapeQuotes readyCmd}}}')
+{{/if}}
+{{else if readyCmd}}
+  .setUser('root')
+  .setWorkdir('/home/user')
+  .setReadyCmd('{{{escapeQuotes readyCmd}}}')
+{{/if}}
