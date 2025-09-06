@@ -43,28 +43,28 @@ export interface TemplateBuilder {
   copy(
     src: string,
     dest: string,
-    options?: { forceUpload?: true; user?: string; mode?: number },
+    options?: { forceUpload?: true; user?: string; mode?: number }
   ): TemplateBuilder
 
   copy(
     items: CopyItem[],
-    options?: { forceUpload?: true; user?: string; mode?: number },
+    options?: { forceUpload?: true; user?: string; mode?: number }
   ): TemplateBuilder
 
   remove(
     path: string,
-    options?: { force?: boolean; recursive?: boolean },
+    options?: { force?: boolean; recursive?: boolean }
   ): TemplateBuilder
 
   rename(
     src: string,
     dest: string,
-    options?: { force?: boolean },
+    options?: { force?: boolean }
   ): TemplateBuilder
 
   makeDir(
     paths: string | string[],
-    options?: { mode?: number },
+    options?: { mode?: number }
   ): TemplateBuilder
 
   makeSymlink(src: string, dest: string): TemplateBuilder
@@ -86,7 +86,7 @@ export interface TemplateBuilder {
   gitClone(
     url: string,
     path?: string,
-    options?: { branch?: string; depth?: number },
+    options?: { branch?: string; depth?: number }
   ): TemplateBuilder
 
   setEnvs(envs: Record<string, string>): TemplateBuilder
@@ -95,30 +95,26 @@ export interface TemplateBuilder {
 
   setStartCmd(
     startCommand: string,
-    readyCommand: string | ReadyCmd,
+    readyCommand: string | ReadyCmd
   ): TemplateFinal
 
-  setReadyCmd(
-    readyCommand: string | ReadyCmd,
-  ): TemplateFinal
+  setReadyCmd(readyCommand: string | ReadyCmd): TemplateFinal
 }
 
 // Interface for the final state
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface TemplateFinal {
-}
+export interface TemplateFinal {}
 
 export class LogEntry {
   constructor(
     public readonly timestamp: Date,
     public readonly level: 'debug' | 'info' | 'warn' | 'error',
-    public readonly message: string,
-  ) {
-  }
+    public readonly message: string
+  ) {}
 
   toString() {
     return `[${this.timestamp.toISOString()}] [${this.level}] ${stripAnsi(
-      this.message,
+      this.message
     )}`
   }
 }
