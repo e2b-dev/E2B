@@ -2,7 +2,7 @@ import { ApiClient, paths, handleApiError } from '../api'
 import { BuildError, FileUploadError } from './errors'
 import { LogEntry } from './types'
 import { tarFileStreamUpload } from './utils'
-import stripAnsi from 'strip-ansi'
+import { stripAnsi } from '../utils'
 
 type RequestBuildInput = {
   alias: string
