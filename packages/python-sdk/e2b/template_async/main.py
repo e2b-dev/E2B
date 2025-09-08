@@ -1,6 +1,6 @@
 from typing import Callable, Optional
 
-from e2b.template import TemplateBase, TemplateClass
+from e2b.template.main import TemplateBase, TemplateClass
 
 import os
 from datetime import datetime
