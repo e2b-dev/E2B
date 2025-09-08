@@ -2,14 +2,13 @@ import json
 from typing import Dict, List, Optional, Union
 from httpx import Limits
 
-from e2b.template.registries import (
-    RegistryConfig,
-    GenericDockerRegistry,
-    AWSRegistry,
-    GCPRegistry,
-)
 from e2b.template.dockerfile_parser import parse_dockerfile
-from e2b.template.types import CopyItem, Instruction, TemplateType
+from e2b.template.types import (
+    CopyItem,
+    Instruction,
+    TemplateType,
+    RegistryConfig,
+)
 from e2b.template.utils import (
     calculate_files_hash,
     get_caller_directory,
@@ -335,7 +334,11 @@ class TemplateBase:
     ) -> TemplateBuilder:
         self._base_image = image
         self._base_template = None
-        self._registry_config = GenericDockerRegistry(username, password)
+        self._registry_config = {
+            "type": "registry",
+            "username": username,
+            "password": password,
+        }
 
         # If we should force the next layer and it's a FROM command, invalidate whole template
         if self._force_next_layer:
@@ -352,9 +355,12 @@ class TemplateBase:
     ) -> TemplateBuilder:
         self._base_image = image
         self._base_template = None
-        self._registry_config = AWSRegistry(
-            aws_access_key_id, aws_secret_access_key, aws_region
-        )
+        self._registry_config = {
+            "type": "aws",
+            "aws_access_key_id": aws_access_key_id,
+            "aws_secret_access_key": aws_secret_access_key,
+            "aws_region": aws_region,
+        }
 
         # If we should force the next layer and it's a FROM command, invalidate whole template
         if self._force_next_layer:
@@ -367,7 +373,10 @@ class TemplateBase:
     ) -> TemplateBuilder:
         self._base_image = image
         self._base_template = None
-        self._registry_config = GCPRegistry(service_account_json)
+        self._registry_config = {
+            "type": "gcp",
+            "service_account_json": service_account_json,
+        }
 
         # If we should force the next layer and it's a FROM command, invalidate whole template
         if self._force_next_layer:
@@ -446,7 +455,7 @@ class TemplateBase:
             template_data["fromTemplate"] = self._base_template
 
         if self._registry_config is not None:
-            template_data["fromImageRegistry"] = self._registry_config.to_dict()
+            template_data["fromImageRegistry"] = self._registry_config
 
         return template_data
 

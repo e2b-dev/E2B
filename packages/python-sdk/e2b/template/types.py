@@ -1,4 +1,4 @@
-from typing import List, Optional, TypedDict
+from typing import List, Optional, TypedDict, Union
 from typing_extensions import NotRequired
 from dataclasses import dataclass
 from datetime import datetime
@@ -22,16 +22,6 @@ class Instruction(TypedDict):
     filesHash: NotRequired[str]
 
 
-class TemplateType(TypedDict):
-    fromImage: NotRequired[str]
-    fromTemplate: NotRequired[str]
-    fromImageRegistry: NotRequired[dict]
-    startCmd: Optional[str]
-    readyCmd: Optional[str]
-    steps: List[Instruction]
-    force: bool
-
-
 @dataclass
 class LogEntry:
     timestamp: datetime
@@ -43,3 +33,34 @@ class LogEntry:
 
     def __str__(self) -> str:
         return f"[{self.timestamp.isoformat()}] [{self.level}] {self.message}"
+
+
+class GenericDockerRegistry(TypedDict):
+    type: Literal["registry"]
+    username: str
+    password: str
+
+
+class AWSRegistry(TypedDict):
+    type: Literal["aws"]
+    aws_access_key_id: str
+    aws_secret_access_key: str
+    aws_region: str
+
+
+class GCPRegistry(TypedDict):
+    type: Literal["gcp"]
+    service_account_json: Union[str, dict]
+
+
+RegistryConfig = Union[GenericDockerRegistry, AWSRegistry, GCPRegistry]
+
+
+class TemplateType(TypedDict):
+    fromImage: NotRequired[str]
+    fromTemplate: NotRequired[str]
+    fromImageRegistry: NotRequired[RegistryConfig]
+    startCmd: Optional[str]
+    readyCmd: Optional[str]
+    steps: List[Instruction]
+    force: bool
