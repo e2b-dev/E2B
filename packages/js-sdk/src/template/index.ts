@@ -26,6 +26,8 @@ import {
 } from './utils'
 import { ConnectionConfig } from '../connectionConfig'
 import { ReadyCmd } from './readycmd'
+import fs from 'node:fs'
+import path from 'node:path'
 
 type TemplateOptions = {
   fileContextPath?: string
@@ -197,17 +199,23 @@ export class TemplateBase
   fromGCPRegistry(
     image: string,
     options: {
-      serviceAccount: object | string
+      serviceAccountJSON: string | object
     }
   ): TemplateBuilder {
     this.baseImage = image
     this.baseTemplate = undefined
+
+    const serviceAccountJson =
+      typeof options.serviceAccountJSON === 'string'
+        ? fs.readFileSync(
+            path.join(this.fileContextPath, options.serviceAccountJSON),
+            'utf8'
+          )
+        : JSON.stringify(options.serviceAccountJSON)
+
     this.registryConfig = {
       type: 'gcp',
-      serviceAccountJson:
-        typeof options.serviceAccount === 'string'
-          ? options.serviceAccount
-          : JSON.stringify(options.serviceAccount),
+      serviceAccountJson,
     }
 
     // If we should force the next layer and it's a FROM command, invalidate whole template

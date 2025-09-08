@@ -1,4 +1,5 @@
 import json
+import os
 from typing import Dict, List, Optional, Union
 from httpx import Limits
 
@@ -369,15 +370,22 @@ class TemplateBase:
         return TemplateBuilder(self)
 
     def from_gcp_registry(
-        self, image: str, service_account: Union[str, dict]
+        self, image: str, service_account_json: Union[str, dict]
     ) -> TemplateBuilder:
         self._base_image = image
         self._base_template = None
+
+        if isinstance(service_account_json, str):
+            # If it's a string, treat it as a file path and read the content
+            file_path = os.path.join(self._file_context_path, service_account_json)
+            with open(file_path, "r", encoding="utf-8") as f:
+                service_account_json = f.read()
+        else:
+            service_account_json = json.dumps(service_account_json)
+
         self._registry_config = {
             "type": "gcp",
-            "serviceAccountJson": service_account
-            if isinstance(service_account, str)
-            else json.dumps(service_account),
+            "serviceAccountJson": service_account_json,
         }
 
         # If we should force the next layer and it's a FROM command, invalidate whole template
