@@ -26,6 +26,12 @@ import {
 } from './utils'
 import { ConnectionConfig } from '../connectionConfig'
 import { ReadyCmd } from './readycmd'
+import {
+  RegistryConfig,
+  GenericDockerRegistry,
+  AWSRegistry,
+  GCPRegistry,
+} from './registry'
 
 type TemplateOptions = {
   fileContextPath?: string
@@ -51,6 +57,7 @@ export class TemplateBase
   private defaultBaseImage: string = 'e2bdev/base'
   private baseImage: string | undefined = this.defaultBaseImage
   private baseTemplate: string | undefined = undefined
+  private registryConfig: RegistryConfig | undefined = undefined
   private startCmd: string | undefined = undefined
   private readyCmd: string | undefined = undefined
   // Force the whole template to be rebuilt
@@ -136,6 +143,58 @@ export class TemplateBase
     const { baseImage } = parseDockerfile(dockerfileContentOrPath, this)
     this.baseImage = baseImage
     this.baseTemplate = undefined
+
+    // If we should force the next layer and it's a FROM command, invalidate whole template
+    if (this.forceNextLayer) {
+      this.force = true
+    }
+
+    return this
+  }
+
+  fromDockerRegistry(
+    image: string,
+    username: string,
+    password: string
+  ): TemplateBuilder {
+    this.baseImage = image
+    this.baseTemplate = undefined
+    this.registryConfig = new GenericDockerRegistry(username, password)
+
+    // If we should force the next layer and it's a FROM command, invalidate whole template
+    if (this.forceNextLayer) {
+      this.force = true
+    }
+
+    return this
+  }
+
+  fromAWSRegistry(
+    image: string,
+    awsAccessKeyId: string,
+    awsSecretAccessKey: string,
+    awsRegion: string
+  ): TemplateBuilder {
+    this.baseImage = image
+    this.baseTemplate = undefined
+    this.registryConfig = new AWSRegistry(
+      awsAccessKeyId,
+      awsSecretAccessKey,
+      awsRegion
+    )
+
+    // If we should force the next layer and it's a FROM command, invalidate whole template
+    if (this.forceNextLayer) {
+      this.force = true
+    }
+
+    return this
+  }
+
+  fromGCPRegistry(image: string, serviceAccountJson: object): TemplateBuilder {
+    this.baseImage = image
+    this.baseTemplate = undefined
+    this.registryConfig = new GCPRegistry(serviceAccountJson)
 
     // If we should force the next layer and it's a FROM command, invalidate whole template
     if (this.forceNextLayer) {
@@ -555,7 +614,13 @@ export class TemplateBase
       force: this.force,
     }
 
-    if (this.baseImage !== undefined) {
+    if (this.registryConfig !== undefined && this.baseImage !== undefined) {
+      return {
+        ...baseData,
+        fromImage: this.baseImage,
+        fromImageRegistry: this.registryConfig.toJSON(),
+      }
+    } else if (this.baseImage !== undefined) {
       return {
         ...baseData,
         fromImage: this.baseImage,
@@ -567,7 +632,7 @@ export class TemplateBase
       }
     } else {
       throw new BuildError(
-        'Template must specify either fromImage or fromTemplate'
+        'Template must specify either a base image or a base template'
       )
     }
   }
