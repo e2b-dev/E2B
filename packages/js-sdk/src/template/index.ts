@@ -17,9 +17,6 @@ import {
   CopyItem,
   LogEntry,
   RegistryConfig,
-  GenericDockerRegistry,
-  AWSRegistry,
-  GCPRegistry,
 } from './types'
 import {
   calculateFilesHash,
