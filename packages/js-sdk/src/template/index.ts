@@ -9,7 +9,6 @@ import {
   waitForBuildFinish,
 } from './buildApi'
 import { parseDockerfile } from './dockerfileParser'
-import { BuildError } from './errors'
 import {
   Instruction,
   TemplateFromImage,
@@ -17,6 +16,10 @@ import {
   TemplateFinal,
   CopyItem,
   LogEntry,
+  RegistryConfig,
+  GenericDockerRegistry,
+  AWSRegistry,
+  GCPRegistry,
 } from './types'
 import {
   calculateFilesHash,
@@ -26,12 +29,6 @@ import {
 } from './utils'
 import { ConnectionConfig } from '../connectionConfig'
 import { ReadyCmd } from './readycmd'
-import {
-  RegistryConfig,
-  GenericDockerRegistry,
-  AWSRegistry,
-  GCPRegistry,
-} from './registry'
 
 type TemplateOptions = {
   fileContextPath?: string
@@ -159,7 +156,11 @@ export class TemplateBase
   ): TemplateBuilder {
     this.baseImage = image
     this.baseTemplate = undefined
-    this.registryConfig = new GenericDockerRegistry(username, password)
+    this.registryConfig = {
+      type: 'registry',
+      username,
+      password,
+    }
 
     // If we should force the next layer and it's a FROM command, invalidate whole template
     if (this.forceNextLayer) {
@@ -177,11 +178,12 @@ export class TemplateBase
   ): TemplateBuilder {
     this.baseImage = image
     this.baseTemplate = undefined
-    this.registryConfig = new AWSRegistry(
+    this.registryConfig = {
+      type: 'aws',
       awsAccessKeyId,
       awsSecretAccessKey,
-      awsRegion
-    )
+      awsRegion,
+    }
 
     // If we should force the next layer and it's a FROM command, invalidate whole template
     if (this.forceNextLayer) {
@@ -191,10 +193,19 @@ export class TemplateBase
     return this
   }
 
-  fromGCPRegistry(image: string, serviceAccountJson: object): TemplateBuilder {
+  fromGCPRegistry(
+    image: string,
+    serviceAccountJson: object | string
+  ): TemplateBuilder {
     this.baseImage = image
     this.baseTemplate = undefined
-    this.registryConfig = new GCPRegistry(serviceAccountJson)
+    this.registryConfig = {
+      type: 'gcp',
+      serviceAccountJson:
+        typeof serviceAccountJson === 'string'
+          ? serviceAccountJson
+          : JSON.stringify(serviceAccountJson),
+    }
 
     // If we should force the next layer and it's a FROM command, invalidate whole template
     if (this.forceNextLayer) {
@@ -623,7 +634,7 @@ export class TemplateBase
     }
 
     if (this.registryConfig !== undefined) {
-      templateData.fromImageRegistry = this.registryConfig.toJSON()
+      templateData.fromImageRegistry = this.registryConfig
     }
 
     return templateData

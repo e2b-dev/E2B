@@ -118,3 +118,23 @@ export class LogEntry {
     )}`
   }
 }
+
+export type GenericDockerRegistry = {
+  type: 'registry'
+  username: string
+  password: string
+}
+
+export type AWSRegistry = {
+  type: 'aws'
+  awsAccessKeyId: string
+  awsSecretAccessKey: string
+  awsRegion: string
+}
+
+export type GCPRegistry = {
+  type: 'gcp'
+  serviceAccountJson: string
+}
+
+export type RegistryConfig = GenericDockerRegistry | AWSRegistry | GCPRegistry
