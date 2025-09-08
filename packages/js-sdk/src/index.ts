@@ -58,3 +58,15 @@ export type {
 export { Sandbox }
 import { Sandbox } from './sandbox'
 export default Sandbox
+
+export { BuildError, FileUploadError } from './template/errors'
+
+export {
+  waitForPort,
+  waitForURL,
+  waitForProcess,
+  waitForFile,
+  waitForTimeout,
+} from './template/readycmd'
+
+export { Template, type TemplateClass, type TemplateBase } from './template'

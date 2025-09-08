@@ -66,10 +66,7 @@ export function Logo(props) {
           filterUnits="userSpaceOnUse"
           colorInterpolationFilters="sRGB"
         >
-          <feFlood
-            floodOpacity="0"
-            result="BackgroundImageFix"
-          />
+          <feFlood floodOpacity="0" result="BackgroundImageFix" />
           <feBlend
             mode="normal"
             in="SourceGraphic"
@@ -89,22 +86,10 @@ export function Logo(props) {
           gradientUnits="userSpaceOnUse"
           gradientTransform="translate(150.342 182.032) rotate(59.4351) scale(161.356 156.629)"
         >
-          <stop
-            offset="0.455526"
-            stopColor="white"
-          />
-          <stop
-            offset="0.762774"
-            stopColor="#FF8800"
-          />
-          <stop
-            offset="0.895833"
-            stopColor="#FF3D00"
-          />
-          <stop
-            offset="0.916667"
-            stopColor="white"
-          />
+          <stop offset="0.455526" stopColor="white" />
+          <stop offset="0.762774" stopColor="#FF8800" />
+          <stop offset="0.895833" stopColor="#FF3D00" />
+          <stop offset="0.916667" stopColor="white" />
         </radialGradient>
         <radialGradient
           id="paint1_angular_354_41876"
@@ -114,28 +99,11 @@ export function Logo(props) {
           gradientUnits="userSpaceOnUse"
           gradientTransform="translate(112 116.002) rotate(90) scale(115.892 110.425)"
         >
-          <stop
-            offset="0.03125"
-            stopColor="white"
-          />
-          <stop
-            offset="0.500802"
-            stopColor="white"
-          />
-          <stop
-            offset="0.5784"
-            stopColor="white"
-          />
-          <stop
-            offset="0.787671"
-            stopColor="white"
-            stopOpacity="0"
-          />
-          <stop
-            offset="1"
-            stopColor="white"
-            stopOpacity="0"
-          />
+          <stop offset="0.03125" stopColor="white" />
+          <stop offset="0.500802" stopColor="white" />
+          <stop offset="0.5784" stopColor="white" />
+          <stop offset="0.787671" stopColor="white" stopOpacity="0" />
+          <stop offset="1" stopColor="white" stopOpacity="0" />
         </radialGradient>
         <linearGradient
           id="paint2_linear_354_41876"
@@ -145,15 +113,9 @@ export function Logo(props) {
           y2="195.449"
           gradientUnits="userSpaceOnUse"
         >
-          <stop stopColor="white"/>
-          <stop
-            offset="0.720129"
-            stopColor="#FF8800"
-          />
-          <stop
-            offset="1"
-            stopColor="#FF4400"
-          />
+          <stop stopColor="white" />
+          <stop offset="0.720129" stopColor="#FF8800" />
+          <stop offset="1" stopColor="#FF4400" />
         </linearGradient>
       </defs>
     </svg>

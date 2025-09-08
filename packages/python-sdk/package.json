@@ -1,13 +1,15 @@
 {
   "name": "@e2b/python-sdk",
   "private": true,
-  "version": "2.0.0",
+  "version": "2.1.1",
   "scripts": {
     "example": "poetry run python example.py",
     "test": "poetry run pytest -n 4 --verbose -x",
     "postVersion": "poetry version $(pnpm pkg get version --workspaces=false | tr -d \\\")",
     "postPublish": "poetry build && poetry config pypi-token.pypi ${PYPI_TOKEN} && poetry publish --skip-existing",
     "pretest": "poetry install",
-    "generate-ref": "poetry install && ./scripts/generate_sdk_ref.sh"
+    "generate-ref": "poetry install && ./scripts/generate_sdk_ref.sh",
+    "lint": "poetry run make lint",
+    "format": "poetry run make format"
   }
 }

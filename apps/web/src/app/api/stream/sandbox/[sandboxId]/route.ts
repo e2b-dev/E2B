@@ -7,7 +7,10 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-export async function GET(request: Request, { params }: { params: { sandboxId: string } }) {
+export async function GET(
+  request: Request,
+  { params }: { params: { sandboxId: string } }
+) {
   const apiKey = request.headers.get('X-API-Key')
   const sandboxId = params.sandboxId
 
@@ -30,13 +33,18 @@ export async function GET(request: Request, { params }: { params: { sandboxId: s
     .single()
 
   if (error) {
-    return NextResponse.json({ error: `Failed to retrieve stream - ${error.message}` }, { status: 500 })
+    return NextResponse.json(
+      { error: `Failed to retrieve stream - ${error.message}` },
+      { status: 500 }
+    )
   }
 
   if (!stream) {
-    return NextResponse.json({ error: `Stream not found for sandbox ${sandboxId}` }, { status: 404 })
+    return NextResponse.json(
+      { error: `Stream not found for sandbox ${sandboxId}` },
+      { status: 404 }
+    )
   }
 
   return NextResponse.json({ token: stream.token }, { status: 200 })
 }
-

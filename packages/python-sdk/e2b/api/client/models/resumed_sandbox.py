@@ -13,11 +13,11 @@ T = TypeVar("T", bound="ResumedSandbox")
 class ResumedSandbox:
     """
     Attributes:
-        auto_pause (Union[Unset, bool]): Automatically pauses the sandbox after the timeout Default: False.
+        auto_pause (Union[Unset, bool]): Automatically pauses the sandbox after the timeout
         timeout (Union[Unset, int]): Time to live for the sandbox in seconds. Default: 15.
     """
 
-    auto_pause: Union[Unset, bool] = False
+    auto_pause: Union[Unset, bool] = UNSET
     timeout: Union[Unset, int] = 15
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 

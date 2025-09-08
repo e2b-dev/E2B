@@ -5,7 +5,12 @@ import * as e2b from 'e2b'
 import * as path from 'path'
 
 import { USER_CONFIG_PATH } from 'src/user'
-import { client, connectionConfig, ensureAccessToken, ensureUserConfig } from 'src/api'
+import {
+  client,
+  connectionConfig,
+  ensureAccessToken,
+  ensureUserConfig,
+} from 'src/api'
 import { asBold, asFormattedTeam } from '../../utils/format'
 import { handleE2BRequestError } from '../../utils/errors'
 

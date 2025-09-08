@@ -68,7 +68,7 @@ export class NotFoundError extends SandboxError {
 /**
  * Thrown when authentication fails.
  */
-export class AuthenticationError extends SandboxError {
+export class AuthenticationError extends Error {
   constructor(message: any) {
     super(message)
     this.name = 'AuthenticationError'

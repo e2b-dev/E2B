@@ -1,11 +1,17 @@
 """Contains all the data models used in inputs/outputs"""
 
+from .aws_registry import AWSRegistry
+from .aws_registry_type import AWSRegistryType
 from .build_log_entry import BuildLogEntry
 from .build_status_reason import BuildStatusReason
 from .created_access_token import CreatedAccessToken
 from .created_team_api_key import CreatedTeamAPIKey
 from .disk_metrics import DiskMetrics
 from .error import Error
+from .gcp_registry import GCPRegistry
+from .gcp_registry_type import GCPRegistryType
+from .general_registry import GeneralRegistry
+from .general_registry_type import GeneralRegistryType
 from .identifier_masking_details import IdentifierMaskingDetails
 from .listed_sandbox import ListedSandbox
 from .log_level import LogLevel
@@ -47,12 +53,18 @@ from .template_update_request import TemplateUpdateRequest
 from .update_team_api_key import UpdateTeamAPIKey
 
 __all__ = (
+    "AWSRegistry",
+    "AWSRegistryType",
     "BuildLogEntry",
     "BuildStatusReason",
     "CreatedAccessToken",
     "CreatedTeamAPIKey",
     "DiskMetrics",
     "Error",
+    "GCPRegistry",
+    "GCPRegistryType",
+    "GeneralRegistry",
+    "GeneralRegistryType",
     "IdentifierMaskingDetails",
     "ListedSandbox",
     "LogLevel",

@@ -6,8 +6,6 @@ from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 from dateutil.parser import isoparse
 
-from ..types import UNSET, Unset
-
 if TYPE_CHECKING:
     from ..models.team_user import TeamUser
 
@@ -19,6 +17,7 @@ T = TypeVar("T", bound="Template")
 class Template:
     """
     Attributes:
+        aliases (list[str]): Aliases of the template
         build_count (int): Number of times the template was built
         build_id (str): Identifier of the last successful build for given template
         cpu_count (int): CPU cores for the sandbox
@@ -26,15 +25,15 @@ class Template:
         created_by (Union['TeamUser', None]):
         disk_size_mb (int): Disk size for the sandbox in MiB
         envd_version (str): Version of the envd running in the sandbox
-        last_spawned_at (datetime.datetime): Time when the template was last used
+        last_spawned_at (Union[None, datetime.datetime]): Time when the template was last used
         memory_mb (int): Memory for the sandbox in MiB
         public (bool): Whether the template is public or only accessible by the team
         spawn_count (int): Number of times the template was used
         template_id (str): Identifier of the template
         updated_at (datetime.datetime): Time when the template was last updated
-        aliases (Union[Unset, list[str]]): Aliases of the template
     """
 
+    aliases: list[str]
     build_count: int
     build_id: str
     cpu_count: int
@@ -42,17 +41,18 @@ class Template:
     created_by: Union["TeamUser", None]
     disk_size_mb: int
     envd_version: str
-    last_spawned_at: datetime.datetime
+    last_spawned_at: Union[None, datetime.datetime]
     memory_mb: int
     public: bool
     spawn_count: int
     template_id: str
     updated_at: datetime.datetime
-    aliases: Union[Unset, list[str]] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         from ..models.team_user import TeamUser
+
+        aliases = self.aliases
 
         build_count = self.build_count
 
@@ -72,7 +72,11 @@ class Template:
 
         envd_version = self.envd_version
 
-        last_spawned_at = self.last_spawned_at.isoformat()
+        last_spawned_at: Union[None, str]
+        if isinstance(self.last_spawned_at, datetime.datetime):
+            last_spawned_at = self.last_spawned_at.isoformat()
+        else:
+            last_spawned_at = self.last_spawned_at
 
         memory_mb = self.memory_mb
 
@@ -84,14 +88,11 @@ class Template:
 
         updated_at = self.updated_at.isoformat()
 
-        aliases: Union[Unset, list[str]] = UNSET
-        if not isinstance(self.aliases, Unset):
-            aliases = self.aliases
-
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
+                "aliases": aliases,
                 "buildCount": build_count,
                 "buildID": build_id,
                 "cpuCount": cpu_count,
@@ -107,8 +108,6 @@ class Template:
                 "updatedAt": updated_at,
             }
         )
-        if aliases is not UNSET:
-            field_dict["aliases"] = aliases
 
         return field_dict
 
@@ -117,6 +116,8 @@ class Template:
         from ..models.team_user import TeamUser
 
         d = dict(src_dict)
+        aliases = cast(list[str], d.pop("aliases"))
+
         build_count = d.pop("buildCount")
 
         build_id = d.pop("buildID")
@@ -144,7 +145,20 @@ class Template:
 
         envd_version = d.pop("envdVersion")
 
-        last_spawned_at = isoparse(d.pop("lastSpawnedAt"))
+        def _parse_last_spawned_at(data: object) -> Union[None, datetime.datetime]:
+            if data is None:
+                return data
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                last_spawned_at_type_0 = isoparse(data)
+
+                return last_spawned_at_type_0
+            except:  # noqa: E722
+                pass
+            return cast(Union[None, datetime.datetime], data)
+
+        last_spawned_at = _parse_last_spawned_at(d.pop("lastSpawnedAt"))
 
         memory_mb = d.pop("memoryMB")
 
@@ -156,9 +170,8 @@ class Template:
 
         updated_at = isoparse(d.pop("updatedAt"))
 
-        aliases = cast(list[str], d.pop("aliases", UNSET))
-
         template = cls(
+            aliases=aliases,
             build_count=build_count,
             build_id=build_id,
             cpu_count=cpu_count,
@@ -172,7 +185,6 @@ class Template:
             spawn_count=spawn_count,
             template_id=template_id,
             updated_at=updated_at,
-            aliases=aliases,
         )
 
         template.additional_properties = d

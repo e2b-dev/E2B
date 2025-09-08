@@ -29,10 +29,9 @@ export function asFormattedTeam(
 }
 
 export function asFormattedSandboxTemplate(
-  template: Pick<
-    e2b.components['schemas']['Template'],
-    'templateID' | 'aliases'
-  >,
+  template: Pick<e2b.components['schemas']['Template'], 'templateID'> & {
+    aliases?: e2b.components['schemas']['Template']['aliases']
+  },
   configLocalPath?: string
 ) {
   const aliases = listAliases(template.aliases)
