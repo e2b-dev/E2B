@@ -583,11 +583,3 @@ Template.toJSON = TemplateBase.toJSON
 Template.toDockerfile = TemplateBase.toDockerfile
 
 export type TemplateClass = TemplateBuilder | TemplateFinal
-export { BuildError, FileUploadError } from './errors'
-export {
-  waitForFile,
-  waitForURL,
-  waitForPort,
-  waitForProcess,
-  waitForTimeout,
-} from './readycmd'
