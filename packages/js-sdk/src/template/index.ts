@@ -197,7 +197,7 @@ export class TemplateBase
   fromGCPRegistry(
     image: string,
     options: {
-      serviceAccountJson: object | string
+      serviceAccount: object | string
     }
   ): TemplateBuilder {
     this.baseImage = image
@@ -205,9 +205,9 @@ export class TemplateBase
     this.registryConfig = {
       type: 'gcp',
       serviceAccountJson:
-        typeof options.serviceAccountJson === 'string'
-          ? options.serviceAccountJson
-          : JSON.stringify(options.serviceAccountJson),
+        typeof options.serviceAccount === 'string'
+          ? options.serviceAccount
+          : JSON.stringify(options.serviceAccount),
     }
 
     // If we should force the next layer and it's a FROM command, invalidate whole template

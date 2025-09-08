@@ -55,7 +55,7 @@ export interface TemplateFromImage {
   fromGCPRegistry(
     image: string,
     options: {
-      serviceAccountJson: object | string
+      serviceAccount: object | string
     }
   ): TemplateBuilder
 
