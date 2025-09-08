@@ -1,4 +1,4 @@
-import stripAnsi from 'strip-ansi'
+import { stripAnsi } from '../utils'
 import { ReadyCmd } from './readycmd'
 
 export type Instruction = {

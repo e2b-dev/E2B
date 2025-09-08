@@ -347,9 +347,6 @@ importers:
       platform:
         specifier: ^1.3.6
         version: 1.3.6
-      strip-ansi:
-        specifier: ^7.1.0
-        version: 7.1.0
       tar:
         specifier: ^7.4.3
         version: 7.4.3
@@ -11171,7 +11168,7 @@ snapshots:
 
   bufferutil@4.0.8:
     dependencies:
-      node-gyp-build: 4.6.1
+      node-gyp-build: 4.8.4
 
   builtins@5.0.1:
     dependencies:
@@ -14136,8 +14133,7 @@ snapshots:
 
   node-gyp-build@4.6.1: {}
 
-  node-gyp-build@4.8.4:
-    optional: true
+  node-gyp-build@4.8.4: {}
 
   node-gyp@9.4.0:
     dependencies:
