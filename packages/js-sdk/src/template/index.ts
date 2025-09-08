@@ -607,34 +607,26 @@ export class TemplateBase
   }
 
   private serialize(steps: Instruction[]): TriggerBuildTemplate {
-    const baseData = {
+    const templateData: TriggerBuildTemplate = {
       startCmd: this.startCmd,
       readyCmd: this.readyCmd,
       steps,
       force: this.force,
     }
 
-    if (this.registryConfig !== undefined && this.baseImage !== undefined) {
-      return {
-        ...baseData,
-        fromImage: this.baseImage,
-        fromImageRegistry: this.registryConfig.toJSON(),
-      }
-    } else if (this.baseImage !== undefined) {
-      return {
-        ...baseData,
-        fromImage: this.baseImage,
-      }
-    } else if (this.baseTemplate !== undefined) {
-      return {
-        ...baseData,
-        fromTemplate: this.baseTemplate,
-      }
-    } else {
-      throw new BuildError(
-        'Template must specify either a base image or a base template'
-      )
+    if (this.baseImage !== undefined) {
+      templateData.fromImage = this.baseImage
     }
+
+    if (this.baseTemplate !== undefined) {
+      templateData.fromTemplate = this.baseTemplate
+    }
+
+    if (this.registryConfig !== undefined) {
+      templateData.fromImageRegistry = this.registryConfig.toJSON()
+    }
+
+    return templateData
   }
 }
 

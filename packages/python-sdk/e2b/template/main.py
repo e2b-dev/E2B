@@ -435,6 +435,8 @@ class TemplateBase:
         template_data: TemplateType = {
             "steps": steps,
             "force": self._force,
+            "startCmd": self._start_cmd,
+            "readyCmd": self._ready_cmd,
         }
 
         if self._base_image is not None:
@@ -445,12 +447,6 @@ class TemplateBase:
 
         if self._registry_config is not None:
             template_data["fromImageRegistry"] = self._registry_config.to_dict()
-
-        if self._start_cmd is not None:
-            template_data["startCmd"] = self._start_cmd
-
-        if self._ready_cmd is not None:
-            template_data["readyCmd"] = self._ready_cmd
 
         return template_data
 

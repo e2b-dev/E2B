@@ -26,8 +26,8 @@ class TemplateType(TypedDict):
     fromImage: NotRequired[str]
     fromTemplate: NotRequired[str]
     fromImageRegistry: NotRequired[dict]
-    startCmd: NotRequired[str]
-    readyCmd: NotRequired[str]
+    startCmd: Optional[str]
+    readyCmd: Optional[str]
     steps: List[Instruction]
     force: bool
 
