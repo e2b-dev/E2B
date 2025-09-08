@@ -25,9 +25,9 @@ class Instruction(TypedDict):
 class TemplateType(TypedDict):
     fromImage: NotRequired[str]
     fromTemplate: NotRequired[str]
+    fromImageRegistry: NotRequired[dict]
     startCmd: NotRequired[str]
     readyCmd: NotRequired[str]
-    readyCmdTimeoutMs: NotRequired[int]
     steps: List[Instruction]
     force: bool
 
