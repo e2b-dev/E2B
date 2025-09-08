@@ -329,7 +329,7 @@ class TemplateBase:
 
         return builder
 
-    def from_docker_registry(
+    def from_registry(
         self, image: str, username: str, password: str
     ) -> TemplateBuilder:
         self._base_image = image
@@ -349,17 +349,17 @@ class TemplateBase:
     def from_aws_registry(
         self,
         image: str,
-        aws_access_key_id: str,
-        aws_secret_access_key: str,
-        aws_region: str,
+        access_key_id: str,
+        secret_access_key: str,
+        region: str,
     ) -> TemplateBuilder:
         self._base_image = image
         self._base_template = None
         self._registry_config = {
             "type": "aws",
-            "aws_access_key_id": aws_access_key_id,
-            "aws_secret_access_key": aws_secret_access_key,
-            "aws_region": aws_region,
+            "awsAccessKeyId": access_key_id,
+            "awsSecretAccessKey": secret_access_key,
+            "awsRegion": region,
         }
 
         # If we should force the next layer and it's a FROM command, invalidate whole template
@@ -375,7 +375,9 @@ class TemplateBase:
         self._base_template = None
         self._registry_config = {
             "type": "gcp",
-            "service_account_json": service_account_json,
+            "serviceAccountJson": service_account_json
+            if isinstance(service_account_json, str)
+            else json.dumps(service_account_json),
         }
 
         # If we should force the next layer and it's a FROM command, invalidate whole template
@@ -444,8 +446,6 @@ class TemplateBase:
         template_data: TemplateType = {
             "steps": steps,
             "force": self._force,
-            "startCmd": self._start_cmd,
-            "readyCmd": self._ready_cmd,
         }
 
         if self._base_image is not None:
@@ -456,6 +456,12 @@ class TemplateBase:
 
         if self._registry_config is not None:
             template_data["fromImageRegistry"] = self._registry_config
+
+        if self._start_cmd is not None:
+            template_data["startCmd"] = self._start_cmd
+
+        if self._ready_cmd is not None:
+            template_data["readyCmd"] = self._ready_cmd
 
         return template_data
 

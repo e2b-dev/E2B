@@ -146,17 +146,19 @@ export class TemplateBase
     return this
   }
 
-  fromDockerRegistry(
+  fromRegistry(
     image: string,
-    username: string,
-    password: string
+    options: {
+      username: string
+      password: string
+    }
   ): TemplateBuilder {
     this.baseImage = image
     this.baseTemplate = undefined
     this.registryConfig = {
       type: 'registry',
-      username,
-      password,
+      username: options.username,
+      password: options.password,
     }
 
     // If we should force the next layer and it's a FROM command, invalidate whole template
@@ -169,17 +171,19 @@ export class TemplateBase
 
   fromAWSRegistry(
     image: string,
-    awsAccessKeyId: string,
-    awsSecretAccessKey: string,
-    awsRegion: string
+    options: {
+      accessKeyId: string
+      secretAccessKey: string
+      region: string
+    }
   ): TemplateBuilder {
     this.baseImage = image
     this.baseTemplate = undefined
     this.registryConfig = {
       type: 'aws',
-      awsAccessKeyId,
-      awsSecretAccessKey,
-      awsRegion,
+      awsAccessKeyId: options.accessKeyId,
+      awsSecretAccessKey: options.secretAccessKey,
+      awsRegion: options.region,
     }
 
     // If we should force the next layer and it's a FROM command, invalidate whole template
@@ -192,16 +196,18 @@ export class TemplateBase
 
   fromGCPRegistry(
     image: string,
-    serviceAccountJson: object | string
+    options: {
+      serviceAccountJson: object | string
+    }
   ): TemplateBuilder {
     this.baseImage = image
     this.baseTemplate = undefined
     this.registryConfig = {
       type: 'gcp',
       serviceAccountJson:
-        typeof serviceAccountJson === 'string'
-          ? serviceAccountJson
-          : JSON.stringify(serviceAccountJson),
+        typeof options.serviceAccountJson === 'string'
+          ? options.serviceAccountJson
+          : JSON.stringify(options.serviceAccountJson),
     }
 
     // If we should force the next layer and it's a FROM command, invalidate whole template

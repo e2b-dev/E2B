@@ -43,14 +43,14 @@ class GenericDockerRegistry(TypedDict):
 
 class AWSRegistry(TypedDict):
     type: Literal["aws"]
-    aws_access_key_id: str
-    aws_secret_access_key: str
-    aws_region: str
+    awsAccessKeyId: str
+    awsSecretAccessKey: str
+    awsRegion: str
 
 
 class GCPRegistry(TypedDict):
     type: Literal["gcp"]
-    service_account_json: Union[str, dict]
+    serviceAccountJson: Union[str, dict]
 
 
 RegistryConfig = Union[GenericDockerRegistry, AWSRegistry, GCPRegistry]
@@ -60,7 +60,7 @@ class TemplateType(TypedDict):
     fromImage: NotRequired[str]
     fromTemplate: NotRequired[str]
     fromImageRegistry: NotRequired[RegistryConfig]
-    startCmd: Optional[str]
-    readyCmd: Optional[str]
+    startCmd: NotRequired[str]
+    readyCmd: NotRequired[str]
     steps: List[Instruction]
     force: bool

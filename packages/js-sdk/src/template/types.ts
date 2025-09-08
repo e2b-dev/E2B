@@ -35,22 +35,28 @@ export interface TemplateFromImage {
 
   fromDockerfile(dockerfileContent: string): TemplateBuilder
 
-  fromDockerRegistry(
+  fromRegistry(
     image: string,
-    username: string,
-    password: string
+    options: {
+      username: string
+      password: string
+    }
   ): TemplateBuilder
 
   fromAWSRegistry(
     image: string,
-    awsAccessKeyId: string,
-    awsSecretAccessKey: string,
-    awsRegion: string
+    options: {
+      accessKeyId: string
+      secretAccessKey: string
+      region: string
+    }
   ): TemplateBuilder
 
   fromGCPRegistry(
     image: string,
-    serviceAccountJson: object | string
+    options: {
+      serviceAccountJson: object | string
+    }
   ): TemplateBuilder
 
   skipCache(): TemplateBuilder
