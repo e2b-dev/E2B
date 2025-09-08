@@ -23,11 +23,10 @@ import {
   getCallerDirectory,
   padOctal,
   readDockerignore,
+  readGCPServiceAccountJSON,
 } from './utils'
 import { ConnectionConfig } from '../connectionConfig'
 import { ReadyCmd } from './readycmd'
-import fs from 'node:fs'
-import path from 'node:path'
 
 type TemplateOptions = {
   fileContextPath?: string
@@ -205,13 +204,10 @@ export class TemplateBase
     this.baseImage = image
     this.baseTemplate = undefined
 
-    const serviceAccountJson =
-      typeof options.serviceAccountJSON === 'string'
-        ? fs.readFileSync(
-            path.join(this.fileContextPath, options.serviceAccountJSON),
-            'utf8'
-          )
-        : JSON.stringify(options.serviceAccountJSON)
+    const serviceAccountJson = readGCPServiceAccountJSON(
+      this.fileContextPath,
+      options.serviceAccountJSON
+    )
 
     this.registryConfig = {
       type: 'gcp',
