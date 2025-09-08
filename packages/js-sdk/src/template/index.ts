@@ -389,7 +389,7 @@ export class TemplateBase
 
   private async toJSON(): Promise<string> {
     return JSON.stringify(
-      this.serialize(await this.calculateFilesHashes()),
+      this.serialize(this.calculateFilesHashes()),
       undefined,
       2
     )
@@ -451,7 +451,7 @@ export class TemplateBase
       )
     )
 
-    const instructionsWithHashes = await this.calculateFilesHashes()
+    const instructionsWithHashes = this.calculateFilesHashes()
 
     // Prepare file uploads
     const fileUploads = instructionsWithHashes
@@ -523,12 +523,12 @@ export class TemplateBase
   }
 
   // We might no longer need this as we move the logic server-side
-  private async calculateFilesHashes(): Promise<Instruction[]> {
+  private calculateFilesHashes(): Instruction[] {
     const steps: Instruction[] = []
 
     for (const instruction of this.instructions) {
       if (instruction.type === 'COPY') {
-        instruction.filesHash = await calculateFilesHash(
+        instruction.filesHash = calculateFilesHash(
           instruction.args[0],
           instruction.args[1],
           this.fileContextPath,
