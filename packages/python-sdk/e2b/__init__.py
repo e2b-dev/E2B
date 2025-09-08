@@ -69,13 +69,13 @@ from .sandbox_async.filesystem.watch_handle import AsyncWatchHandle
 from .sandbox_async.commands.command_handle import AsyncCommandHandle
 from .sandbox_sync.paginator import SandboxPaginator
 
-from .template import (
-    Template,
-    AsyncTemplate,
-    TemplateBase,
-    TemplateClass,
-    BuildException,
-    FileUploadException,
+from .template.main import TemplateBase, TemplateClass
+
+from .template_sync.main import Template
+from .template_async.main import AsyncTemplate
+
+from .template.exceptions import BuildException, FileUploadException
+from .template.readycmd import (
     wait_for_file,
     wait_for_url,
     wait_for_port,
