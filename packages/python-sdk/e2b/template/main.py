@@ -2,6 +2,7 @@ import json
 from typing import Dict, List, Optional, Union
 from httpx import Limits
 
+from e2b.template.registries import RegistryConfig, GenericDockerRegistry, AWSRegistry, GCPRegistry
 from e2b.template.dockerfile_parser import parse_dockerfile
 from e2b.template.types import CopyItem, Instruction, TemplateType
 from e2b.template.utils import (
@@ -249,6 +250,7 @@ class TemplateBase:
         self._default_base_image: str = "e2bdev/base"
         self._base_image: Optional[str] = self._default_base_image
         self._base_template: Optional[str] = None
+        self._registry_config: Optional[RegistryConfig] = None
         self._start_cmd: Optional[str] = None
         self._ready_cmd: Optional[str] = None
         # Force the whole template to be rebuilt
@@ -322,6 +324,39 @@ class TemplateBase:
             self._force = True
 
         return builder
+    
+    def from_docker_registry(self, image: str, username: str, password: str) -> TemplateBuilder:
+        self._base_image = image
+        self._base_template = None
+        self._registry_config = GenericDockerRegistry(username, password)
+
+        # If we should force the next layer and it's a FROM command, invalidate whole template
+        if self._force_next_layer:
+            self._force = True
+
+        return TemplateBuilder(self)
+    
+    def from_aws_registry(self, image: str, aws_access_key_id: str, aws_secret_access_key: str, aws_region: str) -> TemplateBuilder:
+        self._base_image = image
+        self._base_template = None
+        self._registry_config = AWSRegistry(aws_access_key_id, aws_secret_access_key, aws_region)
+
+        # If we should force the next layer and it's a FROM command, invalidate whole template
+        if self._force_next_layer:
+            self._force = True
+
+        return TemplateBuilder(self)
+    
+    def from_gcp_registry(self, image: str, service_account_json: str) -> TemplateBuilder:
+        self._base_image = image
+        self._base_template = None
+        self._registry_config = GCPRegistry(service_account_json)
+
+        # If we should force the next layer and it's a FROM command, invalidate whole template
+        if self._force_next_layer:
+            self._force = True
+
+        return TemplateBuilder(self)
 
     @staticmethod
     def to_json(template: "TemplateClass") -> str:
@@ -390,6 +425,9 @@ class TemplateBase:
 
         if self._base_template is not None:
             template_data["fromTemplate"] = self._base_template
+
+        if self._registry_config is not None:
+            template_data["fromImageRegistry"] = self._registry_config.to_json()
 
         if self._start_cmd is not None:
             template_data["startCmd"] = self._start_cmd
