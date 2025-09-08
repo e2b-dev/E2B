@@ -75,7 +75,7 @@ const resp = await fetch(
 const webhookConfig = await resp.json()
 console.log(webhookConfig)
 // {
-//   "teamID": "460355b3-4f64-48f9-9a16-4442817f79f5",
+//   "teamID": "<your-team-id>",
 //   "url": "https://your-webhook-endpoint.com/webhook",
 //   "events": ["create", "kill"]
 // }
@@ -91,13 +91,13 @@ resp = requests.get(
         "X-API-Key": E2B_API_KEY,
     }
 )
-webhook_config = resp.json()
 
+webhook_config = resp.json()
 print(webhook_config)
 # {
-#   "teamID": "460355b3-4f64-48f9-9a16-4442817f79f5",
-#   "url": "https://your-webhook-endpoint.com/webhook",
+#   "teamID": "<your-team-id>",
 #   "events": ["create", "kill"]
+#   "url": "https://your-webhook-endpoint.com/webhook",
 # }
 ```
 </CodeGroup>
@@ -119,14 +119,18 @@ const resp = await fetch(
     },
     body: JSON.stringify({
       url: 'https://your-updated-webhook-endpoint.com/webhook',
-      events: ['create', 'kill']
+      events: ['create']
     }),
   }
 )
 
-if (resp.status === 200) {
-  console.log('Webhook updated successfully')
-}
+const updatedWebhookConfig = await resp.json()
+console.log(updatedWebhookConfigwebhookConfig)
+// {
+//     "teamID": "<your-team-id>",
+//     "events": ["create"],
+//     "url": "https://your-updated-webhook-endpoint.com/webhook"
+// }
 ```
 ```python
 import requests
@@ -140,12 +144,17 @@ resp = requests.patch(
     },
     json={
         "url": "https://your-updated-webhook-endpoint.com/webhook",
-        "events": ["create", "kill"]
+        "events": ["create"]
     }
 )
 
-if resp.status_code == 200:
-    print("Webhook updated successfully")
+updated_webhook_config = resp.json()
+print(updated_webhook_config)
+# {
+#   "teamID": "<your-team-id>",
+#   "events": ["create"],
+#   "url": "https://your-updated-webhook-endpoint.com/webhook"
+# }
 ```
 </CodeGroup>
 
@@ -230,12 +239,16 @@ When a webhook is triggered, your endpoint will receive a POST request with a JS
 ```json
 {
   "eventCategory": "lifecycle",
-  "eventData": null,
+  "eventData": { 
+    "sandbox_metadata": {
+      "test_key": "test_value"
+    }
+  },
   "eventLabel": "create",
   "sandboxBuildId": "a979a14b-bdcc-49e6-bc04-1189fc9fe7c2",
   "sandboxExecutionId": "1dae9a1c-9957-4ce7-a236-a99d5779aadf",
-  "sandboxId": "your-sandbox-id",
-  "sandboxTeamId": "${E2B_TEAM_ID}",
+  "sandboxId": "<your-sandbox-id>",
+  "sandboxTeamId": "<your-team-id>",
   "sandboxTemplateId": "rki5dems9wqfm4r03t7g",
   "timestamp": "2025-08-06T20:59:24Z"
 }
