@@ -45,7 +45,7 @@ export async function calculateFilesHash(
   return hash.digest('hex')
 }
 
-export function getCallerFrame(depth: number = 3): string | undefined {
+export function getCallerFrame(depth: number = 4): string | undefined {
   const stackTrace = new Error().stack
   if (!stackTrace) {
     return
@@ -56,11 +56,11 @@ export function getCallerFrame(depth: number = 3): string | undefined {
     return
   }
 
-  return lines[depth]
+  return lines.slice(depth).join('\n')
 }
 
 export function getCallerDirectory(): string | undefined {
-  const caller = getCallerFrame()
+  const caller = getCallerFrame(5)
   if (!caller) {
     return
   }
@@ -111,10 +111,6 @@ export async function tarFileStreamUpload(
 
 export function captureStackTrace(): Error {
   const error = new Error()
-  if (error.stack) {
-    const lines = error.stack.split('\n')
-    // Skip the first 3 lines (Error message, this function, and immediate caller)
-    error.stack = lines.slice(3).join('\n')
-  }
+  error.stack = getCallerFrame()
   return error
 }
