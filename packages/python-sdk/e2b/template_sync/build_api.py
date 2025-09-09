@@ -4,6 +4,7 @@ from glob import glob
 import tarfile
 import time
 from typing import Callable, Literal, Optional, List
+from types import TracebackType
 
 import httpx
 
@@ -159,7 +160,7 @@ def wait_for_build_finish(
     build_id: str,
     on_build_logs: Optional[Callable[[LogEntry], None]] = None,
     logs_refresh_frequency: float = 0.2,
-    stack_traces: List[str] = [],
+    stack_traces: List[TracebackType] = [],
 ):
     logs_offset = 0
     status: Literal["building", "waiting", "ready", "error"] = "building"
@@ -194,12 +195,8 @@ def wait_for_build_finish(
                 if step_index < len(stack_traces):
                     stack_trace = stack_traces[step_index]
                     # Create error message with stack trace, similar to JavaScript version
-                    error_message = (
-                        (build_status.reason.message or "Unknown error") + 
-                        "\n" + 
-                        stack_trace
-                    )
-                    raise BuildException(error_message)
+                    error_message = build_status.reason.message or "Unknown error"
+                    raise BuildException(error_message).with_traceback(stack_trace)
 
             raise BuildException(
                 build_status.reason.message if build_status.reason else "Build failed"

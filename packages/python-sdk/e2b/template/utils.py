@@ -1,10 +1,11 @@
 import hashlib
 import os
-import traceback
 from glob import glob
 import fnmatch
 import re
 import inspect
+import types
+from types import TracebackType
 from typing import List, Optional
 
 
@@ -89,13 +90,25 @@ def pad_octal(mode: int) -> str:
     return f"{mode:04o}"
 
 
-def capture_stack_trace():
+def capture_stack_trace() -> TracebackType:
     """Capture the current stack trace, similar to JavaScript's captureStackTrace function."""
-        
-    stack = traceback.extract_stack()
 
-    # Get the frame summary (skip this function and the immediate caller)
-    frame_summary = stack[-3]
-    
-    # Format the FrameSummary to a proper string representation
-    return f'File "{frame_summary.filename}", line {frame_summary.lineno}, in {frame_summary.name}\n    {frame_summary.line}'
+    # Get the current frame
+    current_frame = inspect.currentframe()
+    if current_frame is None:
+        raise RuntimeError("Could not get current frame")
+
+    # Walk up the stack to get the caller's frame (skip this function and the immediate caller)
+    caller_frame = current_frame
+    for _ in range(2):  # Skip this function and the immediate caller
+        caller_frame = caller_frame.f_back
+        if caller_frame is None:
+            raise RuntimeError("Could not get caller frame")
+
+    # Create a traceback object from the caller frame
+    return types.TracebackType(
+        tb_next=None,
+        tb_frame=caller_frame,
+        tb_lasti=caller_frame.f_lasti,
+        tb_lineno=caller_frame.f_lineno,
+    )

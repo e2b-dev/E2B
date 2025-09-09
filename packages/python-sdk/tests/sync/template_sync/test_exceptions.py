@@ -7,9 +7,7 @@ from e2b import Template
 @pytest.mark.skip_debug()
 def test_build():
     template = (
-        Template()
-        .from_image("ubuntu:22.04")
-        .run_cmd("cat non_existing_file.txt")
+        Template().from_image("ubuntu:22.04").run_cmd("cat non_existing_file.txt")
     )
 
     Template.build(

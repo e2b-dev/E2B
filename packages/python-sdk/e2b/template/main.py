@@ -1,5 +1,6 @@
 import json
 from typing import Dict, List, Optional, Union
+from types import TracebackType
 from httpx import Limits
 
 from e2b.template.dockerfile_parser import parse_dockerfile
@@ -267,7 +268,7 @@ class TemplateBase:
             file_context_path or get_caller_directory() or "."
         )
         self._ignore_file_paths: List[str] = ignore_file_paths or []
-        self._stack_traces: List[str] = []
+        self._stack_traces: List[TracebackType] = []
 
     def skip_cache(self) -> "TemplateBase":
         """Skip cache for the next instruction (before from instruction)"""
