@@ -5,10 +5,8 @@ from glob import glob
 import fnmatch
 import re
 import inspect
-import types
-from types import TracebackType
-from typing import List, Optional, UNION
-from types import FrameType
+from types import TracebackType, FrameType
+from typing import List, Optional, Union
 
 
 def read_dockerignore(context_path: str) -> List[str]:
@@ -106,7 +104,7 @@ def capture_stack_trace() -> TracebackType:
         raise RuntimeError("Could not get caller frame")
 
     # Create a traceback object from the caller frame
-    return types.TracebackType(
+    return TracebackType(
         tb_next=None,
         tb_frame=stack,
         tb_lasti=stack.f_lasti,
@@ -122,6 +120,7 @@ def get_build_step_index(step: str, stack_traces_length: int) -> int:
         return stack_traces_length - 1
 
     return int(step)
+
 
 def read_gcp_service_account_json(
     context_path: str, path_or_content: Union[str, dict]

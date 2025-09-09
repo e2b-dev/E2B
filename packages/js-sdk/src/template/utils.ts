@@ -122,6 +122,7 @@ export function getBuildStepIndex(
   }
 
   return Number(step)
+}
 
 export function readGCPServiceAccountJSON(
   contextPath: string,
