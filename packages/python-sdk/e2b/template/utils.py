@@ -92,19 +92,13 @@ def pad_octal(mode: int) -> str:
 
 def capture_stack_trace() -> TracebackType:
     """Capture the current stack trace, similar to JavaScript's captureStackTrace function."""
-
-    # Get the current frame
-    current_frame = inspect.currentframe()
-    if current_frame is None:
-        raise RuntimeError("Could not get current frame")
-
-    # Walk up the stack to get the caller's frame (skip this function and the immediate caller)
-    caller_frame = current_frame
-    for _ in range(2):  # Skip this function and the immediate caller
-        caller_frame = caller_frame.f_back
-        if caller_frame is None:
-            raise RuntimeError("Could not get caller frame")
-
+    # Get the stack trace and skip this function and the immediate caller
+    stack = inspect.stack()
+    if len(stack) < 3:
+        raise RuntimeError("Could not get caller frame")
+    
+    caller_frame = stack[2].frame
+    
     # Create a traceback object from the caller frame
     return types.TracebackType(
         tb_next=None,
