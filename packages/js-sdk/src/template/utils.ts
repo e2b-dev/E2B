@@ -108,3 +108,11 @@ export async function tarFileStreamUpload(
     uploadStream: await tarFileStream(fileName, fileContextPath),
   }
 }
+
+export function getBuildStepIndex(step: string): number {
+  if (step === 'base') {
+    return 0
+  }
+
+  return Number(step)
+}

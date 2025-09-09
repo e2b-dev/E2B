@@ -27,6 +27,7 @@ from e2b.api.client.models import (
 )
 from e2b.api import handle_api_exception
 from e2b.template.exceptions import BuildException, FileUploadException
+from e2b.template.utils import get_build_step_index
 
 
 def request_build(
@@ -189,18 +190,16 @@ def wait_for_build_finish(
             pass
 
         elif status == "error":
-            if build_status.reason:
+            traceback = None
+            if build_status.reason and build_status.reason.step:
                 # Find the corresponding stack trace for the failed step
-                step_index = int(build_status.reason.step or 0)
+                step_index = get_build_step_index(build_status.reason.step)
                 if step_index < len(stack_traces):
-                    stack_trace = stack_traces[step_index]
-                    # Create error message with stack trace, similar to JavaScript version
-                    error_message = build_status.reason.message or "Unknown error"
-                    raise BuildException(error_message).with_traceback(stack_trace)
+                    traceback = stack_traces[step_index]
 
             raise BuildException(
                 build_status.reason.message if build_status.reason else "Build failed"
-            )
+            ).with_traceback(traceback)
 
         # Wait for a short period before checking the status again
         time.sleep(logs_refresh_frequency)

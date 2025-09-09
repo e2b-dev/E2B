@@ -1,7 +1,7 @@
 import { ApiClient, paths, handleApiError } from '../api'
 import { BuildError, FileUploadError } from './errors'
 import { LogEntry } from './types'
-import { tarFileStreamUpload } from './utils'
+import { getBuildStepIndex, tarFileStreamUpload } from './utils'
 import { stripAnsi } from '../utils'
 
 type RequestBuildInput = {
@@ -216,9 +216,11 @@ export async function waitForBuildFinish(
         break
       }
       case 'error': {
-        const stackError = stackTraces.find(
-          (_, index) => index === Number(buildStatus.reason?.step)
-        )
+        let stackError: string | undefined
+        if (buildStatus.reason?.step) {
+          const step = getBuildStepIndex(buildStatus.reason?.step)
+          stackError = stackTraces.find((_, index) => index === step)
+        }
 
         throw new BuildError(
           buildStatus?.reason?.message ?? 'Unknown error',

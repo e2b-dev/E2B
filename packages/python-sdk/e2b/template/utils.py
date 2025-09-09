@@ -111,3 +111,9 @@ def capture_stack_trace() -> TracebackType:
         tb_lasti=stack.f_lasti,
         tb_lineno=stack.f_lineno,
     )
+
+def get_build_step_index(step: str) -> int:
+    if step == "base":
+        return 0
+
+    return int(step)
