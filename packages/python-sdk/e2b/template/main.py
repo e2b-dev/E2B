@@ -290,7 +290,9 @@ class TemplateBase:
     def from_base_image(self) -> TemplateBuilder:
         return self.from_image(self._default_base_image)
 
-    def from_image(self, base_image: str, registry_config: Optional[RegistryConfig] = None) -> TemplateBuilder:
+    def from_image(
+        self, base_image: str, registry_config: Optional[RegistryConfig] = None
+    ) -> TemplateBuilder:
         self._base_image = base_image
         self._base_template = None
 
@@ -337,11 +339,14 @@ class TemplateBase:
     def from_registry(
         self, image: str, username: str, password: str
     ) -> TemplateBuilder:
-        return self.from_image(image, registry_config={
-            "type": "registry",
-            "username": username,
-            "password": password,
-        })
+        return self.from_image(
+            image,
+            registry_config={
+                "type": "registry",
+                "username": username,
+                "password": password,
+            },
+        )
 
     def from_aws_registry(
         self,
@@ -350,22 +355,28 @@ class TemplateBase:
         secret_access_key: str,
         region: str,
     ) -> TemplateBuilder:
-        return self.from_image(image, registry_config={
-            "type": "aws",
-            "awsAccessKeyId": access_key_id,
-            "awsSecretAccessKey": secret_access_key,
-            "awsRegion": region,
-        })
+        return self.from_image(
+            image,
+            registry_config={
+                "type": "aws",
+                "awsAccessKeyId": access_key_id,
+                "awsSecretAccessKey": secret_access_key,
+                "awsRegion": region,
+            },
+        )
 
     def from_gcp_registry(
         self, image: str, service_account_json: Union[str, dict]
     ) -> TemplateBuilder:
-        return self.from_image(image, registry_config={
-            "type": "gcp",
-            "serviceAccountJson": read_gcp_service_account_json(
-                self._file_context_path, service_account_json
-            ),
-        })
+        return self.from_image(
+            image,
+            registry_config={
+                "type": "gcp",
+                "serviceAccountJson": read_gcp_service_account_json(
+                    self._file_context_path, service_account_json
+                ),
+            },
+        )
 
     @staticmethod
     def to_json(template: "TemplateClass") -> str:
