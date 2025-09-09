@@ -59,7 +59,7 @@ class TemplateBuilder:
                 forceUpload=force_upload,
             )
             self._template._instructions.append(instruction)
-            self._template._stack_traces.append(capture_stack_trace())
+        self._template._stack_traces.append(capture_stack_trace())
         return self
 
     def remove(
@@ -72,6 +72,7 @@ class TemplateBuilder:
             args.append("-f")
 
         self.run_cmd(" ".join(args))
+        self._template._replace_last_stack_trace(capture_stack_trace())
         return self
 
     def rename(self, src: str, dest: str, force: bool = False) -> "TemplateBuilder":
@@ -80,6 +81,7 @@ class TemplateBuilder:
             args.append("-f")
 
         self.run_cmd(" ".join(args))
+        self._template._replace_last_stack_trace(capture_stack_trace())
         return self
 
     def make_dir(
@@ -93,11 +95,13 @@ class TemplateBuilder:
             args.append(f"-m {pad_octal(mode)}")
 
         self.run_cmd(" ".join(args))
+        self._template._replace_last_stack_trace(capture_stack_trace())
         return self
 
     def make_symlink(self, src: str, dest: str) -> "TemplateBuilder":
         args = ["ln", "-s", src, dest]
         self.run_cmd(" ".join(args))
+        self._template._replace_last_stack_trace(capture_stack_trace())
         return self
 
     def run_cmd(
@@ -153,7 +157,9 @@ class TemplateBuilder:
         else:
             args.append(".")
 
-        return self.run_cmd(" ".join(args))
+        self.run_cmd(" ".join(args))
+        self._template._replace_last_stack_trace(capture_stack_trace())
+        return self
 
     def npm_install(
         self,
@@ -169,19 +175,23 @@ class TemplateBuilder:
         if g:
             args.append("-g")
 
-        return self.run_cmd(" ".join(args))
+        self.run_cmd(" ".join(args))
+        self._template._replace_last_stack_trace(capture_stack_trace())
+        return self
 
     def apt_install(self, packages: Union[str, List[str]]) -> "TemplateBuilder":
         if isinstance(packages, str):
             packages = [packages]
 
-        return self.run_cmd(
+        self.run_cmd(
             [
                 "apt-get update",
                 f"DEBIAN_FRONTEND=noninteractive DEBCONF_NOWARNINGS=yes apt-get install -y --no-install-recommends {' '.join(packages)}",
             ],
             user="root",
         )
+        self._template._replace_last_stack_trace(capture_stack_trace())
+        return self
 
     def git_clone(
         self,
@@ -196,7 +206,9 @@ class TemplateBuilder:
             args.append("--single-branch")
         if depth:
             args.append(f"--depth {depth}")
-        return self.run_cmd(" ".join(args))
+        self.run_cmd(" ".join(args))
+        self._template._replace_last_stack_trace(capture_stack_trace())
+        return self
 
     def set_envs(self, envs: Dict[str, str]) -> "TemplateBuilder":
         if len(envs) == 0:
@@ -271,6 +283,11 @@ class TemplateBase:
         )
         self._ignore_file_paths: List[str] = ignore_file_paths or []
         self._stack_traces: List[TracebackType] = []
+
+    def _replace_last_stack_trace(self, stack_trace: TracebackType) -> None:
+        """Replace the last stack trace in the list."""
+        if self._stack_traces:
+            self._stack_traces[-1] = stack_trace
 
     def skip_cache(self) -> "TemplateBase":
         """Skip cache for the next instruction (before from instruction)"""

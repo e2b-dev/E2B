@@ -70,6 +70,10 @@ export class TemplateBase
     this.ignoreFilePaths = options?.ignoreFilePaths ?? this.ignoreFilePaths
   }
 
+  private replaceLastStackTrace(stackTrace: string | undefined): void {
+    this.stackTraces[this.stackTraces.length - 1] = stackTrace
+  }
+
   static toJSON(template: TemplateClass): Promise<string> {
     return (template as TemplateBase).toJSON()
   }
@@ -195,9 +199,9 @@ export class TemplateBase
         force: item.forceUpload ?? this.forceNextLayer,
         forceUpload: item.forceUpload,
       })
-      this.stackTraces.push(getCallerFrame())
     }
 
+    this.stackTraces.push(getCallerFrame())
     return this
   }
 
@@ -212,7 +216,9 @@ export class TemplateBase
     if (options?.force) {
       args.push('-f')
     }
+
     this.runCmd(args.join(' '))
+    this.replaceLastStackTrace(getCallerFrame())
     return this
   }
 
@@ -225,7 +231,9 @@ export class TemplateBase
     if (options?.force) {
       args.push('-f')
     }
+
     this.runCmd(args.join(' '))
+    this.replaceLastStackTrace(getCallerFrame())
     return this
   }
 
@@ -237,13 +245,17 @@ export class TemplateBase
     if (options?.mode) {
       args.push(`-m ${padOctal(options.mode)}`)
     }
+
     this.runCmd(args.join(' '))
+    this.replaceLastStackTrace(getCallerFrame())
     return this
   }
 
   makeSymlink(src: string, dest: string): TemplateBuilder {
     const args = ['ln', '-s', src, dest]
+
     this.runCmd(args.join(' '))
+    this.replaceLastStackTrace(getCallerFrame())
     return this
   }
 
@@ -267,6 +279,7 @@ export class TemplateBase
       args,
       force: this.forceNextLayer,
     })
+
     this.stackTraces.push(getCallerFrame())
     return this
   }
@@ -277,6 +290,7 @@ export class TemplateBase
       args: [workdir],
       force: this.forceNextLayer,
     })
+
     this.stackTraces.push(getCallerFrame())
     return this
   }
@@ -287,6 +301,7 @@ export class TemplateBase
       args: [user],
       force: this.forceNextLayer,
     })
+
     this.stackTraces.push(getCallerFrame())
     return this
   }
@@ -304,7 +319,9 @@ export class TemplateBase
       args.push('.')
     }
 
-    return this.runCmd(args)
+    this.runCmd(args)
+    this.replaceLastStackTrace(getCallerFrame())
+    return this
   }
 
   npmInstall(packages?: string | string[], g?: boolean): TemplateBuilder {
@@ -321,12 +338,14 @@ export class TemplateBase
       args.push('-g')
     }
 
-    return this.runCmd(args)
+    this.runCmd(args)
+    this.replaceLastStackTrace(getCallerFrame())
+    return this
   }
 
   aptInstall(packages: string | string[]): TemplateBuilder {
     const packageList = Array.isArray(packages) ? packages : [packages]
-    return this.runCmd(
+    this.runCmd(
       [
         'apt-get update',
         `DEBIAN_FRONTEND=noninteractive DEBCONF_NOWARNINGS=yes apt-get install -y --no-install-recommends ${packageList.join(
@@ -335,6 +354,9 @@ export class TemplateBase
       ],
       { user: 'root' }
     )
+
+    this.replaceLastStackTrace(getCallerFrame())
+    return this
   }
 
   gitClone(
@@ -350,7 +372,9 @@ export class TemplateBase
     if (options?.depth) {
       args.push(`--depth ${options.depth}`)
     }
+
     this.runCmd(args.join(' '))
+    this.replaceLastStackTrace(getCallerFrame())
     return this
   }
 
