@@ -290,9 +290,13 @@ class TemplateBase:
     def from_base_image(self) -> TemplateBuilder:
         return self.from_image(self._default_base_image)
 
-    def from_image(self, base_image: str) -> TemplateBuilder:
+    def from_image(self, base_image: str, registry_config: Optional[RegistryConfig] = None) -> TemplateBuilder:
         self._base_image = base_image
         self._base_template = None
+
+        # Set the registry config if provided
+        if registry_config is not None:
+            self._registry_config = registry_config
 
         # If we should force the next layer and it's a FROM command, invalidate whole template
         if self._force_next_layer:
@@ -333,19 +337,11 @@ class TemplateBase:
     def from_registry(
         self, image: str, username: str, password: str
     ) -> TemplateBuilder:
-        self._base_image = image
-        self._base_template = None
-        self._registry_config = {
+        return self.from_image(image, registry_config={
             "type": "registry",
             "username": username,
             "password": password,
-        }
-
-        # If we should force the next layer and it's a FROM command, invalidate whole template
-        if self._force_next_layer:
-            self._force = True
-
-        return TemplateBuilder(self)
+        })
 
     def from_aws_registry(
         self,
@@ -354,39 +350,22 @@ class TemplateBase:
         secret_access_key: str,
         region: str,
     ) -> TemplateBuilder:
-        self._base_image = image
-        self._base_template = None
-        self._registry_config = {
+        return self.from_image(image, registry_config={
             "type": "aws",
             "awsAccessKeyId": access_key_id,
             "awsSecretAccessKey": secret_access_key,
             "awsRegion": region,
-        }
-
-        # If we should force the next layer and it's a FROM command, invalidate whole template
-        if self._force_next_layer:
-            self._force = True
-
-        return TemplateBuilder(self)
+        })
 
     def from_gcp_registry(
         self, image: str, service_account_json: Union[str, dict]
     ) -> TemplateBuilder:
-        self._base_image = image
-        self._base_template = None
-
-        self._registry_config = {
+        return self.from_image(image, registry_config={
             "type": "gcp",
             "serviceAccountJson": read_gcp_service_account_json(
                 self._file_context_path, service_account_json
             ),
-        }
-
-        # If we should force the next layer and it's a FROM command, invalidate whole template
-        if self._force_next_layer:
-            self._force = True
-
-        return TemplateBuilder(self)
+        })
 
     @staticmethod
     def to_json(template: "TemplateClass") -> str:
