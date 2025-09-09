@@ -1,7 +1,10 @@
 export class BuildError extends Error {
-  constructor(message: string) {
+  constructor(message: string, stackTrace?: string) {
     super(message)
     this.name = 'BuildError'
+    if (stackTrace) {
+      this.stack = stackTrace
+    }
   }
 }
 

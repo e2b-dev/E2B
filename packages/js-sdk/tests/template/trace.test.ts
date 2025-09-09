@@ -16,6 +16,6 @@ test('build template', { timeout: 180000 }, async () => {
       memoryMB: 1024,
     })
   } catch (error) {
-    assert(error.stack.split('\n')[1].includes(__filename))
+    assert(error.stack.split('\n')[0].includes(__filename))
   }
 })

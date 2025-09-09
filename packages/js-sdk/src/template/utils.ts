@@ -45,15 +45,15 @@ export async function calculateFilesHash(
   return hash.digest('hex')
 }
 
-export function getCallerFrame(depth: number = 3): string | null {
+export function getCallerFrame(depth: number = 3): string | undefined {
   const stackTrace = new Error().stack
   if (!stackTrace) {
-    return null
+    return
   }
 
   const lines = stackTrace.split('\n')
   if (lines.length < depth + 1) {
-    return null
+    return
   }
 
   return lines.slice(depth).join('\n')
