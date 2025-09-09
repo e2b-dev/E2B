@@ -303,7 +303,7 @@ export class TemplateBase
     } else {
       args.push('.')
     }
-    this.stackTraces.push(captureStackTrace())
+
     return this.runCmd(args)
   }
 
@@ -320,14 +320,12 @@ export class TemplateBase
     if (g) {
       args.push('-g')
     }
-    this.stackTraces.push(captureStackTrace())
+
     return this.runCmd(args)
   }
 
   aptInstall(packages: string | string[]): TemplateBuilder {
     const packageList = Array.isArray(packages) ? packages : [packages]
-
-    this.stackTraces.push(captureStackTrace())
     return this.runCmd(
       [
         'apt-get update',
@@ -352,7 +350,6 @@ export class TemplateBase
     if (options?.depth) {
       args.push(`--depth ${options.depth}`)
     }
-    this.stackTraces.push(captureStackTrace())
     this.runCmd(args.join(' '))
     return this
   }
@@ -392,6 +389,7 @@ export class TemplateBase
       args: Object.entries(envs).flatMap(([key, value]) => [key, value]),
       force: this.forceNextLayer,
     })
+    this.stackTraces.push(captureStackTrace())
     return this
   }
 
