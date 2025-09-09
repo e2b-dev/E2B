@@ -97,3 +97,12 @@ export async function tarFileStreamUpload(
     uploadStream: await tarFileStream(fileName, fileContextPath),
   }
 }
+
+export function captureStackTrace(): Error {
+  const error = new Error()
+  if (error.stack) {
+    const lines = error.stack.split('\n')
+    error.stack = lines.slice(3).join('\n')
+  }
+  return error
+}

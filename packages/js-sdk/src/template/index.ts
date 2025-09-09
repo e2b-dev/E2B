@@ -23,6 +23,7 @@ import {
   getCallerDirectory,
   padOctal,
   readDockerignore,
+  captureStackTrace,
 } from './utils'
 import { ConnectionConfig } from '../connectionConfig'
 import { ReadyCmd } from './readycmd'
@@ -105,7 +106,7 @@ export class TemplateBase
   fromImage(baseImage: string): TemplateBuilder {
     this.baseImage = baseImage
     this.baseTemplate = undefined
-    this.stackTraces.push(new Error())
+    this.stackTraces.push(captureStackTrace())
 
     // If we should force the next layer and it's a FROM command, invalidate whole template
     if (this.forceNextLayer) {
@@ -118,7 +119,7 @@ export class TemplateBase
   fromTemplate(template: string): TemplateBuilder {
     this.baseTemplate = template
     this.baseImage = undefined
-    this.stackTraces.push(new Error())
+    this.stackTraces.push(captureStackTrace())
 
     // If we should force the next layer and it's a FROM command, invalidate whole template
     if (this.forceNextLayer) {
@@ -139,7 +140,7 @@ export class TemplateBase
     const { baseImage } = parseDockerfile(dockerfileContentOrPath, this)
     this.baseImage = baseImage
     this.baseTemplate = undefined
-    this.stackTraces.push(new Error())
+    this.stackTraces.push(captureStackTrace())
 
     // If we should force the next layer and it's a FROM command, invalidate whole template
     if (this.forceNextLayer) {
@@ -194,7 +195,7 @@ export class TemplateBase
         force: item.forceUpload ?? this.forceNextLayer,
         forceUpload: item.forceUpload,
       })
-      this.stackTraces.push(new Error())
+      this.stackTraces.push(captureStackTrace())
     }
 
     return this
@@ -266,7 +267,7 @@ export class TemplateBase
       args,
       force: this.forceNextLayer,
     })
-    this.stackTraces.push(new Error())
+    this.stackTraces.push(captureStackTrace())
     return this
   }
 
@@ -276,7 +277,7 @@ export class TemplateBase
       args: [workdir],
       force: this.forceNextLayer,
     })
-    this.stackTraces.push(new Error())
+    this.stackTraces.push(captureStackTrace())
     return this
   }
 
@@ -286,7 +287,7 @@ export class TemplateBase
       args: [user],
       force: this.forceNextLayer,
     })
-    this.stackTraces.push(new Error())
+    this.stackTraces.push(captureStackTrace())
     return this
   }
 
@@ -302,7 +303,7 @@ export class TemplateBase
     } else {
       args.push('.')
     }
-    this.stackTraces.push(new Error())
+    this.stackTraces.push(captureStackTrace())
     return this.runCmd(args)
   }
 
@@ -319,14 +320,14 @@ export class TemplateBase
     if (g) {
       args.push('-g')
     }
-    this.stackTraces.push(new Error())
+    this.stackTraces.push(captureStackTrace())
     return this.runCmd(args)
   }
 
   aptInstall(packages: string | string[]): TemplateBuilder {
     const packageList = Array.isArray(packages) ? packages : [packages]
 
-    this.stackTraces.push(new Error())
+    this.stackTraces.push(captureStackTrace())
     return this.runCmd(
       [
         'apt-get update',
@@ -351,7 +352,7 @@ export class TemplateBase
     if (options?.depth) {
       args.push(`--depth ${options.depth}`)
     }
-    this.stackTraces.push(new Error())
+    this.stackTraces.push(captureStackTrace())
     this.runCmd(args.join(' '))
     return this
   }
