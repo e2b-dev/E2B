@@ -45,15 +45,15 @@ export async function calculateFilesHash(
   return hash.digest('hex')
 }
 
-export function getCallerFrame(depth: number = 4): string | undefined {
+export function getCallerFrame(depth: number = 3): string | null {
   const stackTrace = new Error().stack
   if (!stackTrace) {
-    return
+    return null
   }
 
   const lines = stackTrace.split('\n')
   if (lines.length < depth + 1) {
-    return
+    return null
   }
 
   return lines.slice(depth).join('\n')
@@ -107,12 +107,4 @@ export async function tarFileStreamUpload(
     contentLength,
     uploadStream: await tarFileStream(fileName, fileContextPath),
   }
-}
-
-export function captureStackTrace(): string | null {
-  const caller = getCallerFrame(4)
-  if (!caller) {
-    return null
-  }
-  return caller
 }

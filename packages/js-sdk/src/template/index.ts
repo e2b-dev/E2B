@@ -23,7 +23,7 @@ import {
   getCallerDirectory,
   padOctal,
   readDockerignore,
-  captureStackTrace,
+  getCallerFrame,
 } from './utils'
 import { ConnectionConfig } from '../connectionConfig'
 import { ReadyCmd } from './readycmd'
@@ -106,7 +106,7 @@ export class TemplateBase
   fromImage(baseImage: string): TemplateBuilder {
     this.baseImage = baseImage
     this.baseTemplate = undefined
-    this.stackTraces.push(captureStackTrace())
+    this.stackTraces.push(getCallerFrame())
 
     // If we should force the next layer and it's a FROM command, invalidate whole template
     if (this.forceNextLayer) {
@@ -119,7 +119,7 @@ export class TemplateBase
   fromTemplate(template: string): TemplateBuilder {
     this.baseTemplate = template
     this.baseImage = undefined
-    this.stackTraces.push(captureStackTrace())
+    this.stackTraces.push(getCallerFrame())
 
     // If we should force the next layer and it's a FROM command, invalidate whole template
     if (this.forceNextLayer) {
@@ -140,7 +140,7 @@ export class TemplateBase
     const { baseImage } = parseDockerfile(dockerfileContentOrPath, this)
     this.baseImage = baseImage
     this.baseTemplate = undefined
-    this.stackTraces.push(captureStackTrace())
+    this.stackTraces.push(getCallerFrame())
 
     // If we should force the next layer and it's a FROM command, invalidate whole template
     if (this.forceNextLayer) {
@@ -195,7 +195,7 @@ export class TemplateBase
         force: item.forceUpload ?? this.forceNextLayer,
         forceUpload: item.forceUpload,
       })
-      this.stackTraces.push(captureStackTrace())
+      this.stackTraces.push(getCallerFrame())
     }
 
     return this
@@ -267,7 +267,7 @@ export class TemplateBase
       args,
       force: this.forceNextLayer,
     })
-    this.stackTraces.push(captureStackTrace())
+    this.stackTraces.push(getCallerFrame())
     return this
   }
 
@@ -277,7 +277,7 @@ export class TemplateBase
       args: [workdir],
       force: this.forceNextLayer,
     })
-    this.stackTraces.push(captureStackTrace())
+    this.stackTraces.push(getCallerFrame())
     return this
   }
 
@@ -287,7 +287,7 @@ export class TemplateBase
       args: [user],
       force: this.forceNextLayer,
     })
-    this.stackTraces.push(captureStackTrace())
+    this.stackTraces.push(getCallerFrame())
     return this
   }
 
@@ -389,7 +389,7 @@ export class TemplateBase
       args: Object.entries(envs).flatMap(([key, value]) => [key, value]),
       force: this.forceNextLayer,
     })
-    this.stackTraces.push(captureStackTrace())
+    this.stackTraces.push(getCallerFrame())
     return this
   }
 
