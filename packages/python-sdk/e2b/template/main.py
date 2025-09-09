@@ -9,6 +9,7 @@ from e2b.template.utils import (
     get_caller_directory,
     pad_octal,
     read_dockerignore,
+    capture_stack_trace,
 )
 from e2b.template.readycmd import ReadyCmd
 
@@ -57,6 +58,7 @@ class TemplateBuilder:
                 forceUpload=force_upload,
             )
             self._template._instructions.append(instruction)
+            self._template._stack_traces.append(capture_stack_trace())
         return self
 
     def remove(
@@ -113,6 +115,7 @@ class TemplateBuilder:
             forceUpload=None,
         )
         self._template._instructions.append(instruction)
+        self._template._stack_traces.append(capture_stack_trace())
         return self
 
     def set_workdir(self, workdir: str) -> "TemplateBuilder":
@@ -123,6 +126,7 @@ class TemplateBuilder:
             forceUpload=None,
         )
         self._template._instructions.append(instruction)
+        self._template._stack_traces.append(capture_stack_trace())
         return self
 
     def set_user(self, user: str) -> "TemplateBuilder":
@@ -133,6 +137,7 @@ class TemplateBuilder:
             forceUpload=None,
         )
         self._template._instructions.append(instruction)
+        self._template._stack_traces.append(capture_stack_trace())
         return self
 
     def pip_install(
@@ -203,6 +208,7 @@ class TemplateBuilder:
             forceUpload=None,
         )
         self._template._instructions.append(instruction)
+        self._template._stack_traces.append(capture_stack_trace())
         return self
 
     def skip_cache(self) -> "TemplateBuilder":
@@ -261,6 +267,7 @@ class TemplateBase:
             file_context_path or get_caller_directory() or "."
         )
         self._ignore_file_paths: List[str] = ignore_file_paths or []
+        self._stack_traces: List[str] = []
 
     def skip_cache(self) -> "TemplateBase":
         """Skip cache for the next instruction (before from instruction)"""
@@ -291,6 +298,7 @@ class TemplateBase:
         if self._force_next_layer:
             self._force = True
 
+        self._stack_traces.append(capture_stack_trace())
         return TemplateBuilder(self)
 
     def from_template(self, template: str) -> TemplateBuilder:
@@ -301,6 +309,7 @@ class TemplateBase:
         if self._force_next_layer:
             self._force = True
 
+        self._stack_traces.append(capture_stack_trace())
         return TemplateBuilder(self)
 
     def from_dockerfile(self, dockerfile_content_or_path: str) -> TemplateBuilder:
@@ -321,6 +330,7 @@ class TemplateBase:
         if self._force_next_layer:
             self._force = True
 
+        self._stack_traces.append(capture_stack_trace())
         return builder
 
     @staticmethod

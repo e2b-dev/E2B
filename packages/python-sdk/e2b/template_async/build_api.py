@@ -3,7 +3,7 @@ import os
 from glob import glob
 import tarfile
 import asyncio
-from typing import Callable, Literal, Optional
+from typing import Callable, Literal, Optional, List
 
 import httpx
 
@@ -159,6 +159,7 @@ async def wait_for_build_finish(
     build_id: str,
     on_build_logs: Optional[Callable[[LogEntry], None]] = None,
     logs_refresh_frequency: float = 0.2,
+    stack_traces: List[str] = [],
 ):
     logs_offset = 0
     status: Literal["building", "waiting", "ready", "error"] = "building"
@@ -189,7 +190,22 @@ async def wait_for_build_finish(
             pass
 
         elif status == "error":
-            raise BuildException(build_status.reason or "Build failed")
+            if build_status.reason:
+                # Find the corresponding stack trace for the failed step
+                step_index = int(build_status.reason.step or 0)
+                if step_index < len(stack_traces):
+                    stack_trace = stack_traces[step_index]
+                    # Create error message with stack trace, similar to JavaScript version
+                    error_message = (
+                        (build_status.reason.message or "Unknown error") + 
+                        "\n" + 
+                        stack_trace
+                    )
+                    raise BuildException(error_message)
+
+            raise BuildException(
+                build_status.reason.message if build_status.reason else "Build failed"
+            )
 
         # Wait for a short period before checking the status again
         await asyncio.sleep(logs_refresh_frequency)

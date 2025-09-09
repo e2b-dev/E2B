@@ -160,4 +160,5 @@ class AsyncTemplate(TemplateBase):
                 build_id,
                 on_build_logs,
                 logs_refresh_frequency=TemplateBase._logs_refresh_frequency,
+                stack_traces=template._template._stack_traces,
             )

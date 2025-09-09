@@ -1,5 +1,6 @@
 import hashlib
 import os
+import traceback
 from glob import glob
 import fnmatch
 import re
@@ -86,3 +87,15 @@ def get_caller_directory() -> Optional[str]:
 
 def pad_octal(mode: int) -> str:
     return f"{mode:04o}"
+
+
+def capture_stack_trace():
+    """Capture the current stack trace, similar to JavaScript's captureStackTrace function."""
+        
+    stack = traceback.extract_stack()
+
+    # Get the frame summary (skip this function and the immediate caller)
+    frame_summary = stack[-3]
+    
+    # Format the FrameSummary to a proper string representation
+    return f'File "{frame_summary.filename}", line {frame_summary.lineno}, in {frame_summary.name}\n    {frame_summary.line}'
