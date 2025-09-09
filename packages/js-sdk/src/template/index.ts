@@ -72,10 +72,6 @@ export class TemplateBase
     this.ignoreFilePaths = options?.ignoreFilePaths ?? this.ignoreFilePaths
   }
 
-  private replaceLastStackTrace(stackTrace: string | undefined): void {
-    this.stackTraces[this.stackTraces.length - 1] = stackTrace
-  }
-
   static toJSON(template: TemplateClass): Promise<string> {
     return (template as TemplateBase).toJSON()
   }
@@ -492,6 +488,10 @@ export class TemplateBase
   skipCache(): TemplateBuilder {
     this.forceNextLayer = true
     return this
+  }
+
+  private replaceLastStackTrace(stackTrace: string | undefined): void {
+    this.stackTraces[this.stackTraces.length - 1] = stackTrace
   }
 
   private async toJSON(): Promise<string> {
