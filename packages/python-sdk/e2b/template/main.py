@@ -3,12 +3,18 @@ from typing import Dict, List, Optional, Union
 from httpx import Limits
 
 from e2b.template.dockerfile_parser import parse_dockerfile
-from e2b.template.types import CopyItem, Instruction, TemplateType
+from e2b.template.types import (
+    CopyItem,
+    Instruction,
+    TemplateType,
+    RegistryConfig,
+)
 from e2b.template.utils import (
     calculate_files_hash,
     get_caller_directory,
     pad_octal,
     read_dockerignore,
+    read_gcp_service_account_json,
 )
 from e2b.template.readycmd import ReadyCmd
 
@@ -249,6 +255,7 @@ class TemplateBase:
         self._default_base_image: str = "e2bdev/base"
         self._base_image: Optional[str] = self._default_base_image
         self._base_template: Optional[str] = None
+        self._registry_config: Optional[RegistryConfig] = None
         self._start_cmd: Optional[str] = None
         self._ready_cmd: Optional[str] = None
         # Force the whole template to be rebuilt
@@ -283,9 +290,15 @@ class TemplateBase:
     def from_base_image(self) -> TemplateBuilder:
         return self.from_image(self._default_base_image)
 
-    def from_image(self, base_image: str) -> TemplateBuilder:
+    def from_image(
+        self, base_image: str, registry_config: Optional[RegistryConfig] = None
+    ) -> TemplateBuilder:
         self._base_image = base_image
         self._base_template = None
+
+        # Set the registry config if provided
+        if registry_config is not None:
+            self._registry_config = registry_config
 
         # If we should force the next layer and it's a FROM command, invalidate whole template
         if self._force_next_layer:
@@ -322,6 +335,48 @@ class TemplateBase:
             self._force = True
 
         return builder
+
+    def from_registry(
+        self, image: str, username: str, password: str
+    ) -> TemplateBuilder:
+        return self.from_image(
+            image,
+            registry_config={
+                "type": "registry",
+                "username": username,
+                "password": password,
+            },
+        )
+
+    def from_aws_registry(
+        self,
+        image: str,
+        access_key_id: str,
+        secret_access_key: str,
+        region: str,
+    ) -> TemplateBuilder:
+        return self.from_image(
+            image,
+            registry_config={
+                "type": "aws",
+                "awsAccessKeyId": access_key_id,
+                "awsSecretAccessKey": secret_access_key,
+                "awsRegion": region,
+            },
+        )
+
+    def from_gcp_registry(
+        self, image: str, service_account_json: Union[str, dict]
+    ) -> TemplateBuilder:
+        return self.from_image(
+            image,
+            registry_config={
+                "type": "gcp",
+                "serviceAccountJson": read_gcp_service_account_json(
+                    self._file_context_path, service_account_json
+                ),
+            },
+        )
 
     @staticmethod
     def to_json(template: "TemplateClass") -> str:
@@ -390,6 +445,9 @@ class TemplateBase:
 
         if self._base_template is not None:
             template_data["fromTemplate"] = self._base_template
+
+        if self._registry_config is not None:
+            template_data["fromImageRegistry"] = self._registry_config
 
         if self._start_cmd is not None:
             template_data["startCmd"] = self._start_cmd

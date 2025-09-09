@@ -97,3 +97,13 @@ export async function tarFileStreamUpload(
     uploadStream: await tarFileStream(fileName, fileContextPath),
   }
 }
+
+export function readGCPServiceAccountJSON(
+  contextPath: string,
+  pathOrContent: string | object
+): string {
+  if (typeof pathOrContent === 'string') {
+    return fs.readFileSync(path.join(contextPath, pathOrContent), 'utf-8')
+  }
+  return JSON.stringify(pathOrContent)
+}
