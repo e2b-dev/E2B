@@ -109,9 +109,16 @@ export async function tarFileStreamUpload(
   }
 }
 
-export function getBuildStepIndex(step: string): number {
+export function getBuildStepIndex(
+  step: string,
+  stackTracesLength: number
+): number {
   if (step === 'base') {
     return 0
+  }
+
+  if (step == 'finalize') {
+    return stackTracesLength - 1
   }
 
   return Number(step)

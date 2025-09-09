@@ -366,6 +366,7 @@ export class TemplateBase
       this.readyCmd = readyCommand
     }
 
+    this.stackTraces.push(getCallerFrame())
     return this
   }
 
@@ -376,6 +377,7 @@ export class TemplateBase
       this.readyCmd = readyCommand
     }
 
+    this.stackTraces.push(getCallerFrame())
     return this
   }
 

@@ -193,7 +193,9 @@ def wait_for_build_finish(
             traceback = None
             if build_status.reason and build_status.reason.step:
                 # Find the corresponding stack trace for the failed step
-                step_index = get_build_step_index(build_status.reason.step)
+                step_index = get_build_step_index(
+                    build_status.reason.step, len(stack_traces)
+                )
                 if step_index < len(stack_traces):
                     traceback = stack_traces[step_index]
 

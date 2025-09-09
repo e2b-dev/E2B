@@ -225,6 +225,7 @@ class TemplateBuilder:
             ready_cmd = ready_cmd.get_cmd()
 
         self._template._ready_cmd = ready_cmd
+        self._template._stack_traces.append(capture_stack_trace())
         return TemplateFinal(self._template)
 
     def set_ready_cmd(self, ready_cmd: Union[str, ReadyCmd]) -> "TemplateFinal":
@@ -232,6 +233,7 @@ class TemplateBuilder:
             ready_cmd = ready_cmd.get_cmd()
 
         self._template._ready_cmd = ready_cmd
+        self._template._stack_traces.append(capture_stack_trace())
         return TemplateFinal(self._template)
 
 
