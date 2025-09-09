@@ -63,7 +63,7 @@ export class TemplateBase
     runtime === 'browser' ? '.' : getCallerDirectory() ?? '.'
   private ignoreFilePaths: string[] = []
   private logsRefreshFrequency: number = 200
-  private stackTraces: Error[] = []
+  private stackTraces: (string | null)[] = []
 
   constructor(options?: TemplateOptions) {
     this.fileContextPath = options?.fileContextPath ?? this.fileContextPath

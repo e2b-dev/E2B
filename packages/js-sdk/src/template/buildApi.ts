@@ -181,7 +181,7 @@ export async function waitForBuildFinish(
     buildID: string
     onBuildLogs?: (logEntry: InstanceType<typeof LogEntry>) => void
     logsRefreshFrequency: number
-    stackTraces: Error[]
+    stackTraces: (string | null)[]
   }
 ): Promise<void> {
   let logsOffset = 0
@@ -223,7 +223,7 @@ export async function waitForBuildFinish(
           throw new BuildError(
             (buildStatus?.reason?.message ?? 'Unknown error') +
               '\n' +
-              stackError.stack
+              stackError
           )
         }
 

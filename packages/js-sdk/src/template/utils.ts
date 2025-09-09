@@ -109,8 +109,10 @@ export async function tarFileStreamUpload(
   }
 }
 
-export function captureStackTrace(): Error {
-  const error = new Error()
-  error.stack = getCallerFrame()
-  return error
+export function captureStackTrace(): string | null {
+  const caller = getCallerFrame(4)
+  if (!caller) {
+    return null
+  }
+  return caller
 }
