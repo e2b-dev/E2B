@@ -171,13 +171,16 @@ export class TemplateBase
       password: string
     }
   ): TemplateBuilder {
-    return this.fromImage(image, {
+    this.fromImage(image, {
       registryConfig: {
         type: 'registry',
         username: options.username,
         password: options.password,
       },
     })
+
+    this.replaceLastStackTrace(getCallerFrame())
+    return this
   }
 
   fromAWSRegistry(
@@ -188,7 +191,7 @@ export class TemplateBase
       region: string
     }
   ): TemplateBuilder {
-    return this.fromImage(image, {
+    this.fromImage(image, {
       registryConfig: {
         type: 'aws',
         awsAccessKeyId: options.accessKeyId,
@@ -196,6 +199,9 @@ export class TemplateBase
         awsRegion: options.region,
       },
     })
+
+    this.replaceLastStackTrace(getCallerFrame())
+    return this
   }
 
   fromGCPRegistry(
@@ -204,7 +210,7 @@ export class TemplateBase
       serviceAccountJSON: string | object
     }
   ): TemplateBuilder {
-    return this.fromImage(image, {
+    this.fromImage(image, {
       registryConfig: {
         type: 'gcp',
         serviceAccountJson: readGCPServiceAccountJSON(
@@ -213,6 +219,9 @@ export class TemplateBase
         ),
       },
     })
+
+    this.replaceLastStackTrace(getCallerFrame())
+    return this
   }
 
   copy(

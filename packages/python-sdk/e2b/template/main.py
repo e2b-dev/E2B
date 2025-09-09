@@ -369,7 +369,7 @@ class TemplateBase:
     def from_registry(
         self, image: str, username: str, password: str
     ) -> TemplateBuilder:
-        return self.from_image(
+        builder = self.from_image(
             image,
             registry_config={
                 "type": "registry",
@@ -378,6 +378,9 @@ class TemplateBase:
             },
         )
 
+        builder._template._replace_last_stack_trace(capture_stack_trace())
+        return builder
+
     def from_aws_registry(
         self,
         image: str,
@@ -385,7 +388,7 @@ class TemplateBase:
         secret_access_key: str,
         region: str,
     ) -> TemplateBuilder:
-        return self.from_image(
+        builder = self.from_image(
             image,
             registry_config={
                 "type": "aws",
@@ -395,10 +398,13 @@ class TemplateBase:
             },
         )
 
+        builder._template._replace_last_stack_trace(capture_stack_trace())
+        return builder
+
     def from_gcp_registry(
         self, image: str, service_account_json: Union[str, dict]
     ) -> TemplateBuilder:
-        return self.from_image(
+        builder = self.from_image(
             image,
             registry_config={
                 "type": "gcp",
@@ -407,6 +413,9 @@ class TemplateBase:
                 ),
             },
         )
+
+        builder._template._replace_last_stack_trace(capture_stack_trace())
+        return builder
 
     @staticmethod
     def to_json(template: "TemplateClass") -> str:
