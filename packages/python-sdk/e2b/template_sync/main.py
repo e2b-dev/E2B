@@ -1,6 +1,6 @@
 from typing import Callable, Optional
 
-from e2b.template import TemplateBase, TemplateClass
+from e2b.template.main import TemplateBase, TemplateClass
 from e2b.template.types import LogEntry
 
 import os
