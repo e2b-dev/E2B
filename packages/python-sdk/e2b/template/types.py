@@ -50,7 +50,7 @@ class AWSRegistry(TypedDict):
 
 class GCPRegistry(TypedDict):
     type: Literal["gcp"]
-    serviceAccountJson: Union[str, dict]
+    serviceAccountJson: str
 
 
 RegistryConfig = Union[GenericDockerRegistry, AWSRegistry, GCPRegistry]
