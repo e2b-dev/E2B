@@ -65,7 +65,10 @@ export function getCallerDirectory(): string | undefined {
     return
   }
 
-  const match = caller.match(/at ([^:]+):\d+:\d+/)
+  const lines = caller.split('\n')
+  const firstLine = lines[0]
+
+  const match = firstLine.match(/at ([^:]+):\d+:\d+/)
   if (match) {
     const filePath = match[1]
     return path.dirname(filePath)
