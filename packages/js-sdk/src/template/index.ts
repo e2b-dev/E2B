@@ -23,6 +23,7 @@ import {
   getCallerDirectory,
   padOctal,
   readDockerignore,
+  getCallerFrame,
   readGCPServiceAccountJSON,
 } from './utils'
 import { ConnectionConfig } from '../connectionConfig'
@@ -64,6 +65,7 @@ export class TemplateBase
     runtime === 'browser' ? '.' : getCallerDirectory() ?? '.'
   private ignoreFilePaths: string[] = []
   private logsRefreshFrequency: number = 200
+  private stackTraces: (string | undefined)[] = []
 
   constructor(options?: TemplateOptions) {
     this.fileContextPath = options?.fileContextPath ?? this.fileContextPath
@@ -109,6 +111,7 @@ export class TemplateBase
   ): TemplateBuilder {
     this.baseImage = baseImage
     this.baseTemplate = undefined
+    this.stackTraces.push(getCallerFrame())
 
     // Set the registry config if provided
     if (options?.registryConfig) {
@@ -126,6 +129,7 @@ export class TemplateBase
   fromTemplate(template: string): TemplateBuilder {
     this.baseTemplate = template
     this.baseImage = undefined
+    this.stackTraces.push(getCallerFrame())
 
     // If we should force the next layer and it's a FROM command, invalidate whole template
     if (this.forceNextLayer) {
@@ -146,6 +150,7 @@ export class TemplateBase
     const { baseImage } = parseDockerfile(dockerfileContentOrPath, this)
     this.baseImage = baseImage
     this.baseTemplate = undefined
+    this.stackTraces.push(getCallerFrame())
 
     // If we should force the next layer and it's a FROM command, invalidate whole template
     if (this.forceNextLayer) {
@@ -162,13 +167,16 @@ export class TemplateBase
       password: string
     }
   ): TemplateBuilder {
-    return this.fromImage(image, {
+    this.fromImage(image, {
       registryConfig: {
         type: 'registry',
         username: options.username,
         password: options.password,
       },
     })
+
+    this.replaceLastStackTrace(getCallerFrame())
+    return this
   }
 
   fromAWSRegistry(
@@ -179,7 +187,7 @@ export class TemplateBase
       region: string
     }
   ): TemplateBuilder {
-    return this.fromImage(image, {
+    this.fromImage(image, {
       registryConfig: {
         type: 'aws',
         awsAccessKeyId: options.accessKeyId,
@@ -187,6 +195,9 @@ export class TemplateBase
         awsRegion: options.region,
       },
     })
+
+    this.replaceLastStackTrace(getCallerFrame())
+    return this
   }
 
   fromGCPRegistry(
@@ -195,7 +206,7 @@ export class TemplateBase
       serviceAccountJSON: string | object
     }
   ): TemplateBuilder {
-    return this.fromImage(image, {
+    this.fromImage(image, {
       registryConfig: {
         type: 'gcp',
         serviceAccountJson: readGCPServiceAccountJSON(
@@ -204,6 +215,9 @@ export class TemplateBase
         ),
       },
     })
+
+    this.replaceLastStackTrace(getCallerFrame())
+    return this
   }
 
   copy(
@@ -253,6 +267,7 @@ export class TemplateBase
       })
     }
 
+    this.stackTraces.push(getCallerFrame())
     return this
   }
 
@@ -267,7 +282,9 @@ export class TemplateBase
     if (options?.force) {
       args.push('-f')
     }
+
     this.runCmd(args.join(' '))
+    this.replaceLastStackTrace(getCallerFrame())
     return this
   }
 
@@ -280,7 +297,9 @@ export class TemplateBase
     if (options?.force) {
       args.push('-f')
     }
+
     this.runCmd(args.join(' '))
+    this.replaceLastStackTrace(getCallerFrame())
     return this
   }
 
@@ -292,13 +311,17 @@ export class TemplateBase
     if (options?.mode) {
       args.push(`-m ${padOctal(options.mode)}`)
     }
+
     this.runCmd(args.join(' '))
+    this.replaceLastStackTrace(getCallerFrame())
     return this
   }
 
   makeSymlink(src: string, dest: string): TemplateBuilder {
     const args = ['ln', '-s', src, dest]
+
     this.runCmd(args.join(' '))
+    this.replaceLastStackTrace(getCallerFrame())
     return this
   }
 
@@ -322,6 +345,8 @@ export class TemplateBase
       args,
       force: this.forceNextLayer,
     })
+
+    this.stackTraces.push(getCallerFrame())
     return this
   }
 
@@ -331,6 +356,8 @@ export class TemplateBase
       args: [workdir],
       force: this.forceNextLayer,
     })
+
+    this.stackTraces.push(getCallerFrame())
     return this
   }
 
@@ -340,6 +367,8 @@ export class TemplateBase
       args: [user],
       force: this.forceNextLayer,
     })
+
+    this.stackTraces.push(getCallerFrame())
     return this
   }
 
@@ -355,7 +384,10 @@ export class TemplateBase
     } else {
       args.push('.')
     }
-    return this.runCmd(args)
+
+    this.runCmd(args)
+    this.replaceLastStackTrace(getCallerFrame())
+    return this
   }
 
   npmInstall(packages?: string | string[], g?: boolean): TemplateBuilder {
@@ -371,13 +403,15 @@ export class TemplateBase
     if (g) {
       args.push('-g')
     }
-    return this.runCmd(args)
+
+    this.runCmd(args)
+    this.replaceLastStackTrace(getCallerFrame())
+    return this
   }
 
   aptInstall(packages: string | string[]): TemplateBuilder {
     const packageList = Array.isArray(packages) ? packages : [packages]
-
-    return this.runCmd(
+    this.runCmd(
       [
         'apt-get update',
         `DEBIAN_FRONTEND=noninteractive DEBCONF_NOWARNINGS=yes apt-get install -y --no-install-recommends ${packageList.join(
@@ -386,6 +420,9 @@ export class TemplateBase
       ],
       { user: 'root' }
     )
+
+    this.replaceLastStackTrace(getCallerFrame())
+    return this
   }
 
   gitClone(
@@ -401,7 +438,9 @@ export class TemplateBase
     if (options?.depth) {
       args.push(`--depth ${options.depth}`)
     }
+
     this.runCmd(args.join(' '))
+    this.replaceLastStackTrace(getCallerFrame())
     return this
   }
 
@@ -417,6 +456,7 @@ export class TemplateBase
       this.readyCmd = readyCommand
     }
 
+    this.stackTraces.push(getCallerFrame())
     return this
   }
 
@@ -427,6 +467,7 @@ export class TemplateBase
       this.readyCmd = readyCommand
     }
 
+    this.stackTraces.push(getCallerFrame())
     return this
   }
 
@@ -440,12 +481,17 @@ export class TemplateBase
       args: Object.entries(envs).flatMap(([key, value]) => [key, value]),
       force: this.forceNextLayer,
     })
+    this.stackTraces.push(getCallerFrame())
     return this
   }
 
   skipCache(): TemplateBuilder {
     this.forceNextLayer = true
     return this
+  }
+
+  private replaceLastStackTrace(stackTrace: string | undefined): void {
+    this.stackTraces[this.stackTraces.length - 1] = stackTrace
   }
 
   private async toJSON(): Promise<string> {
@@ -580,6 +626,7 @@ export class TemplateBase
       buildID,
       onBuildLogs: options.onBuildLogs,
       logsRefreshFrequency: this.logsRefreshFrequency,
+      stackTraces: this.stackTraces,
     })
   }
 

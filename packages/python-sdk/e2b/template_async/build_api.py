@@ -3,7 +3,8 @@ import os
 from glob import glob
 import tarfile
 import asyncio
-from typing import Callable, Literal, Optional
+from typing import Callable, Literal, Optional, List
+from types import TracebackType
 
 import httpx
 
@@ -24,6 +25,7 @@ from e2b.api.client.models import (
 )
 from e2b.api import handle_api_exception
 from e2b.template.exceptions import BuildException, FileUploadException
+from e2b.template.utils import get_build_step_index
 
 
 async def request_build(
@@ -134,6 +136,7 @@ async def wait_for_build_finish(
     build_id: str,
     on_build_logs: Optional[Callable[[LogEntry], None]] = None,
     logs_refresh_frequency: float = 0.2,
+    stack_traces: List[TracebackType] = [],
 ):
     logs_offset = 0
     status: Literal["building", "waiting", "ready", "error"] = "building"
@@ -164,7 +167,18 @@ async def wait_for_build_finish(
             pass
 
         elif status == "error":
-            raise BuildException(build_status.reason or "Build failed")
+            traceback = None
+            if build_status.reason and build_status.reason.step:
+                # Find the corresponding stack trace for the failed step
+                step_index = get_build_step_index(
+                    build_status.reason.step, len(stack_traces)
+                )
+                if step_index < len(stack_traces):
+                    traceback = stack_traces[step_index]
+
+            raise BuildException(
+                build_status.reason.message if build_status.reason else "Build failed"
+            ).with_traceback(traceback)
 
         # Wait for a short period before checking the status again
         await asyncio.sleep(logs_refresh_frequency)

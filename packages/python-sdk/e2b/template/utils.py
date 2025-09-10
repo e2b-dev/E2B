@@ -5,6 +5,7 @@ from glob import glob
 import fnmatch
 import re
 import inspect
+from types import TracebackType, FrameType
 from typing import List, Optional, Union
 
 
@@ -67,17 +68,23 @@ def strip_ansi_escape_codes(text: str) -> str:
     return ansi_escape.sub("", text)
 
 
+def get_caller_frame(depth: int = 3) -> Optional[FrameType]:
+    """Get the frame of the caller function."""
+    stack = inspect.stack()
+    if len(stack) < depth + 1:
+        return None
+    return stack[depth].frame
+
+
 def get_caller_directory() -> Optional[str]:
     """Get the directory of the file that called this function."""
     try:
         # Get the stack trace
-        stack = inspect.stack()
-        if len(stack) < 3:
+        caller_frame = get_caller_frame()
+        if caller_frame is None:
             return None
 
-        # Get the caller frame (skip this function and the immediate caller)
-        caller_frame = stack[2]
-        caller_file = caller_frame.filename
+        caller_file = caller_frame.f_code.co_filename
 
         # Return the directory of the caller file
         return os.path.dirname(os.path.abspath(caller_file))
@@ -87,6 +94,32 @@ def get_caller_directory() -> Optional[str]:
 
 def pad_octal(mode: int) -> str:
     return f"{mode:04o}"
+
+
+def capture_stack_trace() -> TracebackType:
+    """Capture the current stack trace, similar to JavaScript's captureStackTrace function."""
+    # Get the stack trace and skip this function and the immediate caller
+    stack = get_caller_frame()
+    if stack is None:
+        raise RuntimeError("Could not get caller frame")
+
+    # Create a traceback object from the caller frame
+    return TracebackType(
+        tb_next=None,
+        tb_frame=stack,
+        tb_lasti=stack.f_lasti,
+        tb_lineno=stack.f_lineno,
+    )
+
+
+def get_build_step_index(step: str, stack_traces_length: int) -> int:
+    if step == "base":
+        return 0
+
+    if step == "finalize":
+        return stack_traces_length - 1
+
+    return int(step)
 
 
 def read_gcp_service_account_json(

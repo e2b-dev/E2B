@@ -45,16 +45,30 @@ export async function calculateFilesHash(
   return hash.digest('hex')
 }
 
-export function getCallerDirectory(): string | undefined {
+export function getCallerFrame(depth: number = 3): string | undefined {
   const stackTrace = new Error().stack
   if (!stackTrace) {
     return
   }
 
   const lines = stackTrace.split('\n')
-  const caller = lines[4]
+  if (lines.length < depth + 1) {
+    return
+  }
 
-  const match = caller.match(/at ([^:]+):\d+:\d+/)
+  return lines.slice(depth).join('\n')
+}
+
+export function getCallerDirectory(): string | undefined {
+  const caller = getCallerFrame(5)
+  if (!caller) {
+    return
+  }
+
+  const lines = caller.split('\n')
+  const firstLine = lines[0]
+
+  const match = firstLine.match(/at ([^:]+):\d+:\d+/)
   if (match) {
     const filePath = match[1]
     return path.dirname(filePath)
@@ -96,6 +110,21 @@ export async function tarFileStreamUpload(
     contentLength,
     uploadStream: await tarFileStream(fileName, fileContextPath),
   }
+}
+
+export function getBuildStepIndex(
+  step: string,
+  stackTracesLength: number
+): number {
+  if (step === 'base') {
+    return 0
+  }
+
+  if (step == 'finalize') {
+    return stackTracesLength - 1
+  }
+
+  return Number(step)
 }
 
 export function readGCPServiceAccountJSON(

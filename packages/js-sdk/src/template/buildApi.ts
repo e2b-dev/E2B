@@ -1,7 +1,7 @@
 import { ApiClient, paths, handleApiError } from '../api'
 import { BuildError, FileUploadError } from './errors'
 import { LogEntry } from './types'
-import { tarFileStreamUpload } from './utils'
+import { getBuildStepIndex, tarFileStreamUpload } from './utils'
 import { stripAnsi } from '../utils'
 
 type RequestBuildInput = {
@@ -175,11 +175,13 @@ export async function waitForBuildFinish(
     buildID,
     onBuildLogs,
     logsRefreshFrequency,
+    stackTraces,
   }: {
     templateID: string
     buildID: string
     onBuildLogs?: (logEntry: InstanceType<typeof LogEntry>) => void
     logsRefreshFrequency: number
+    stackTraces: (string | undefined)[]
   }
 ): Promise<void> {
   let logsOffset = 0
@@ -214,7 +216,19 @@ export async function waitForBuildFinish(
         break
       }
       case 'error': {
-        throw new BuildError(buildStatus?.reason?.message ?? 'Unknown error')
+        let stackError: string | undefined
+        if (buildStatus.reason?.step) {
+          const step = getBuildStepIndex(
+            buildStatus.reason?.step,
+            stackTraces.length
+          )
+          stackError = stackTraces.find((_, index) => index === step)
+        }
+
+        throw new BuildError(
+          buildStatus?.reason?.message ?? 'Unknown error',
+          stackError
+        )
       }
     }
 
