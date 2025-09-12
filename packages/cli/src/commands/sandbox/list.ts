@@ -51,7 +51,8 @@ export const listCommand = new commander.Command('list')
       } else if (format === 'json') {
         console.log(JSON.stringify(sandboxes, null, 2))
       } else {
-        return console.error(`Unsupported output format: ${format}`)
+        console.error(`Unsupported output format: ${format}`)
+        process.exit(1)
       }
     } catch (err: any) {
       console.error(err)
