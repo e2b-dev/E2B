@@ -7,7 +7,6 @@ from typing import Callable, Literal, Optional
 
 import httpx
 
-from e2b.api.client.types import UNSET
 from e2b.template.types import TemplateType, LogEntry
 from e2b.api.client.client import AuthenticatedClient
 from e2b.api.client.api.templates import (
@@ -21,7 +20,6 @@ from e2b.api.client.models import (
     TemplateBuildStartV2,
     TemplateBuildFileUpload,
     TemplateBuild,
-    TemplateStep,
     Error,
 )
 from e2b.api import handle_api_exception
@@ -94,31 +92,8 @@ async def trigger_build(
     build_id: str,
     template: TemplateType,
 ) -> None:
-    # Convert template dict to TemplateBuildStartV2 model
-    template_steps = []
-    for step in template.get("steps", []):
-        template_step = TemplateStep(
-            type_=step["type"],
-            args=step.get("args", []),
-            force=step.get("force", False),
-        )
-        if "filesHash" in step:
-            template_step.files_hash = step["filesHash"]
-        template_steps.append(template_step)
-
-    # Create the appropriate template data type based on fromImage or fromTemplate
-    template_data = TemplateBuildStartV2(
-        from_image=template.get("fromImage", UNSET),
-        from_template=template.get("fromTemplate", UNSET),
-        force=template.get("force", False),
-        steps=template_steps,
-        start_cmd=template.get("startCmd", UNSET),
-        ready_cmd=template.get("readyCmd", UNSET),
-    )
-
-    # Validate that either fromImage or fromTemplate is specified
-    if template_data.from_image is UNSET and template_data.from_template is UNSET:
-        raise BuildException("Template must specify either fromImage or fromTemplate")
+    # Convert template dict to TemplateBuildStartV2 model using from_dict
+    template_data = TemplateBuildStartV2.from_dict(template)
 
     res = await post_v_2_templates_template_id_builds_build_id.asyncio_detailed(
         template_id=template_id,

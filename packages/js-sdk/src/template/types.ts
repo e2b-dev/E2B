@@ -35,6 +35,30 @@ export interface TemplateFromImage {
 
   fromDockerfile(dockerfileContent: string): TemplateBuilder
 
+  fromRegistry(
+    image: string,
+    options: {
+      username: string
+      password: string
+    }
+  ): TemplateBuilder
+
+  fromAWSRegistry(
+    image: string,
+    options: {
+      accessKeyId: string
+      secretAccessKey: string
+      region: string
+    }
+  ): TemplateBuilder
+
+  fromGCPRegistry(
+    image: string,
+    options: {
+      serviceAccountJSON: object | string
+    }
+  ): TemplateBuilder
+
   skipCache(): TemplateBuilder
 }
 
@@ -118,3 +142,23 @@ export class LogEntry {
     )}`
   }
 }
+
+export type GenericDockerRegistry = {
+  type: 'registry'
+  username: string
+  password: string
+}
+
+export type AWSRegistry = {
+  type: 'aws'
+  awsAccessKeyId: string
+  awsSecretAccessKey: string
+  awsRegion: string
+}
+
+export type GCPRegistry = {
+  type: 'gcp'
+  serviceAccountJson: string
+}
+
+export type RegistryConfig = GenericDockerRegistry | AWSRegistry | GCPRegistry

@@ -9,7 +9,6 @@ import {
   waitForBuildFinish,
 } from './buildApi'
 import { parseDockerfile } from './dockerfileParser'
-import { BuildError } from './errors'
 import {
   Instruction,
   TemplateFromImage,
@@ -17,12 +16,14 @@ import {
   TemplateFinal,
   CopyItem,
   LogEntry,
+  RegistryConfig,
 } from './types'
 import {
   calculateFilesHash,
   getCallerDirectory,
   padOctal,
   readDockerignore,
+  readGCPServiceAccountJSON,
 } from './utils'
 import { ConnectionConfig } from '../connectionConfig'
 import { ReadyCmd } from './readycmd'
@@ -51,6 +52,7 @@ export class TemplateBase
   private defaultBaseImage: string = 'e2bdev/base'
   private baseImage: string | undefined = this.defaultBaseImage
   private baseTemplate: string | undefined = undefined
+  private registryConfig: RegistryConfig | undefined = undefined
   private startCmd: string | undefined = undefined
   private readyCmd: string | undefined = undefined
   // Force the whole template to be rebuilt
@@ -101,9 +103,17 @@ export class TemplateBase
     return this.fromImage(this.defaultBaseImage)
   }
 
-  fromImage(baseImage: string): TemplateBuilder {
+  fromImage(
+    baseImage: string,
+    options?: { registryConfig?: RegistryConfig }
+  ): TemplateBuilder {
     this.baseImage = baseImage
     this.baseTemplate = undefined
+
+    // Set the registry config if provided
+    if (options?.registryConfig) {
+      this.registryConfig = options.registryConfig
+    }
 
     // If we should force the next layer and it's a FROM command, invalidate whole template
     if (this.forceNextLayer) {
@@ -143,6 +153,57 @@ export class TemplateBase
     }
 
     return this
+  }
+
+  fromRegistry(
+    image: string,
+    options: {
+      username: string
+      password: string
+    }
+  ): TemplateBuilder {
+    return this.fromImage(image, {
+      registryConfig: {
+        type: 'registry',
+        username: options.username,
+        password: options.password,
+      },
+    })
+  }
+
+  fromAWSRegistry(
+    image: string,
+    options: {
+      accessKeyId: string
+      secretAccessKey: string
+      region: string
+    }
+  ): TemplateBuilder {
+    return this.fromImage(image, {
+      registryConfig: {
+        type: 'aws',
+        awsAccessKeyId: options.accessKeyId,
+        awsSecretAccessKey: options.secretAccessKey,
+        awsRegion: options.region,
+      },
+    })
+  }
+
+  fromGCPRegistry(
+    image: string,
+    options: {
+      serviceAccountJSON: string | object
+    }
+  ): TemplateBuilder {
+    return this.fromImage(image, {
+      registryConfig: {
+        type: 'gcp',
+        serviceAccountJson: readGCPServiceAccountJSON(
+          this.fileContextPath,
+          options.serviceAccountJSON
+        ),
+      },
+    })
   }
 
   copy(
@@ -548,7 +609,7 @@ export class TemplateBase
   }
 
   private serialize(steps: Instruction[]): TriggerBuildTemplate {
-    const baseData = {
+    const templateData: TriggerBuildTemplate = {
       startCmd: this.startCmd,
       readyCmd: this.readyCmd,
       steps,
@@ -556,20 +617,18 @@ export class TemplateBase
     }
 
     if (this.baseImage !== undefined) {
-      return {
-        ...baseData,
-        fromImage: this.baseImage,
-      }
-    } else if (this.baseTemplate !== undefined) {
-      return {
-        ...baseData,
-        fromTemplate: this.baseTemplate,
-      }
-    } else {
-      throw new BuildError(
-        'Template must specify either fromImage or fromTemplate'
-      )
+      templateData.fromImage = this.baseImage
     }
+
+    if (this.baseTemplate !== undefined) {
+      templateData.fromTemplate = this.baseTemplate
+    }
+
+    if (this.registryConfig !== undefined) {
+      templateData.fromImageRegistry = this.registryConfig
+    }
+
+    return templateData
   }
 }
 
@@ -583,11 +642,3 @@ Template.toJSON = TemplateBase.toJSON
 Template.toDockerfile = TemplateBase.toDockerfile
 
 export type TemplateClass = TemplateBuilder | TemplateFinal
-export { BuildError, FileUploadError } from './errors'
-export {
-  waitForFile,
-  waitForURL,
-  waitForPort,
-  waitForProcess,
-  waitForTimeout,
-} from './readycmd'
