@@ -30,9 +30,11 @@ export const listCommand = new commander.Command('list')
     'limit the number of sandboxes returned',
     (value) => parseInt(value)
   )
+  .option('-f, --format <format>', 'output format, eg. json, table')
   .action(async (options) => {
     try {
       const state = options.state || ['running']
+      const format = options.format || 'table'
       const sandboxes = await listSandboxes({
         limit: options.limit,
         state,
@@ -41,75 +43,88 @@ export const listCommand = new commander.Command('list')
 
       if (!sandboxes?.length) {
         console.log('No sandboxes found')
-      } else {
-        const table = new tablePrinter.Table({
-          title: getStateTitle(state),
-          columns: [
-            { name: 'sandboxId', alignment: 'left', title: 'Sandbox ID' },
-            {
-              name: 'templateId',
-              alignment: 'left',
-              title: 'Template ID',
-              maxLen: 20,
-            },
-            { name: 'name', alignment: 'left', title: 'Alias' },
-            { name: 'startedAt', alignment: 'left', title: 'Started at' },
-            { name: 'endAt', alignment: 'left', title: 'End at' },
-            { name: 'state', alignment: 'left', title: 'State' },
-            { name: 'cpuCount', alignment: 'left', title: 'vCPUs' },
-            { name: 'memoryMB', alignment: 'left', title: 'RAM MiB' },
-            { name: 'envdVersion', alignment: 'left', title: 'Envd version' },
-            { name: 'metadata', alignment: 'left', title: 'Metadata' },
-          ],
-          disabledColumns: ['clientID'],
-          rows: sandboxes
-            .map((sandbox) => ({
-              ...sandbox,
-              startedAt: new Date(sandbox.startedAt).toLocaleString(),
-              endAt: new Date(sandbox.endAt).toLocaleString(),
-              state:
-                sandbox.state.charAt(0).toUpperCase() + sandbox.state.slice(1), // capitalize
-              metadata: JSON.stringify(sandbox.metadata),
-            }))
-            .sort(
-              (a, b) =>
-                a.startedAt.localeCompare(b.startedAt) ||
-                a.sandboxId.localeCompare(b.sandboxId)
-            ),
-          style: {
-            headerTop: {
-              left: '',
-              right: '',
-              mid: '',
-              other: '',
-            },
-            headerBottom: {
-              left: '',
-              right: '',
-              mid: '',
-              other: '',
-            },
-            tableBottom: {
-              left: '',
-              right: '',
-              mid: '',
-              other: '',
-            },
-            vertical: '',
-          },
-          colorMap: {
-            orange: '\x1b[38;5;216m',
-          },
-        })
-        table.printTable()
+        return
+      }
 
-        process.stdout.write('\n')
+      if (format === 'table') {
+        renderTable(sandboxes, state)
+      } else if (format === 'json') {
+        console.log(JSON.stringify(sandboxes, null, 2))
+      } else {
+        throw new Error(`Unsupported output format: ${format}`)
       }
     } catch (err: any) {
       console.error(err)
       process.exit(1)
     }
   })
+
+function renderTable(
+  sandboxes: SandboxInfo[],
+  state: components['schemas']['SandboxState'][]
+) {
+  const table = new tablePrinter.Table({
+    title: getStateTitle(state),
+    columns: [
+      { name: 'sandboxId', alignment: 'left', title: 'Sandbox ID' },
+      {
+        name: 'templateId',
+        alignment: 'left',
+        title: 'Template ID',
+        maxLen: 20,
+      },
+      { name: 'name', alignment: 'left', title: 'Alias' },
+      { name: 'startedAt', alignment: 'left', title: 'Started at' },
+      { name: 'endAt', alignment: 'left', title: 'End at' },
+      { name: 'state', alignment: 'left', title: 'State' },
+      { name: 'cpuCount', alignment: 'left', title: 'vCPUs' },
+      { name: 'memoryMB', alignment: 'left', title: 'RAM MiB' },
+      { name: 'envdVersion', alignment: 'left', title: 'Envd version' },
+      { name: 'metadata', alignment: 'left', title: 'Metadata' },
+    ],
+    disabledColumns: ['clientID'],
+    rows: sandboxes
+      .map((sandbox) => ({
+        ...sandbox,
+        startedAt: new Date(sandbox.startedAt).toLocaleString(),
+        endAt: new Date(sandbox.endAt).toLocaleString(),
+        state: sandbox.state.charAt(0).toUpperCase() + sandbox.state.slice(1), // capitalize
+        metadata: JSON.stringify(sandbox.metadata),
+      }))
+      .sort(
+        (a, b) =>
+          a.startedAt.localeCompare(b.startedAt) ||
+          a.sandboxId.localeCompare(b.sandboxId)
+      ),
+    style: {
+      headerTop: {
+        left: '',
+        right: '',
+        mid: '',
+        other: '',
+      },
+      headerBottom: {
+        left: '',
+        right: '',
+        mid: '',
+        other: '',
+      },
+      tableBottom: {
+        left: '',
+        right: '',
+        mid: '',
+        other: '',
+      },
+      vertical: '',
+    },
+    colorMap: {
+      orange: '\x1b[38;5;216m',
+    },
+  })
+  table.printTable()
+
+  process.stdout.write('\n')
+}
 
 type ListSandboxesOptions = {
   limit?: number
