@@ -13,10 +13,10 @@ export const listCommand = new commander.Command('list')
   .description('list sandbox templates')
   .alias('ls')
   .addOption(teamOption)
-  .option('-f, --format <format>', 'output format, eg. json, table')
+  .option('-f, --format <format>', 'output format, eg. json, pretty')
   .action(async (opts: { team: string; format: string }) => {
     try {
-      const format = opts.format || 'table'
+      const format = opts.format || 'pretty'
       const userConfig = getUserConfig()
       ensureAccessToken()
       process.stdout.write('\n')
@@ -29,7 +29,7 @@ export const listCommand = new commander.Command('list')
         sortTemplatesAliases(template.aliases)
       }
 
-      if (format === 'table') {
+      if (format === 'pretty') {
         renderTable(templates)
       } else if (format === 'json') {
         console.log(JSON.stringify(templates, null, 2))

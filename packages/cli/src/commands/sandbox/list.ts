@@ -27,18 +27,18 @@ export const listCommand = new commander.Command('list')
     'limit the number of sandboxes returned',
     (value) => parseInt(value)
   )
-  .option('-f, --format <format>', 'output format, eg. json, table')
+  .option('-f, --format <format>', 'output format, eg. json, pretty')
   .action(async (options) => {
     try {
       const state = options.state || ['running']
-      const format = options.format || 'table'
+      const format = options.format || 'pretty'
       const sandboxes = await listSandboxes({
         limit: options.limit,
         state,
         metadataRaw: options.metadata,
       })
 
-      if (format === 'table') {
+      if (format === 'pretty') {
         renderTable(sandboxes, state)
       } else if (format === 'json') {
         console.log(JSON.stringify(sandboxes, null, 2))
