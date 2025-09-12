@@ -41,7 +41,7 @@
     "lint": "eslint src",
     "format": "prettier --write src",
     "test": "pnpm build && cd testground/demo-basic && ../../dist/index.js template build",
-    "test:interactive": "pnpm build && ../../dist/index.js",
+    "test:interactive": "pnpm build && ./dist/index.js",
     "check-deps": "knip",
     "update-deps": "ncu -u && pnpm i",
     "generate-ref": "./scripts/generate_sdk_ref.sh"
