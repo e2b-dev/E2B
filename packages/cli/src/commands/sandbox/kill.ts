@@ -25,10 +25,13 @@ export const killCommand = new commander.Command('kill')
   .option('-a, --all', 'kill all sandboxes')
   .option(
     '-s, --state <state>',
-    'filter by state, eg. running, paused. Defaults to running',
+    'when used with -a/--all flag, filter by state, eg. running, paused. Defaults to running',
     (value) => value.split(',')
   )
-  .option('-m, --metadata <metadata>', 'filter by metadata, eg. key1=value1')
+  .option(
+    '-m, --metadata <metadata>',
+    'when used with -a/--all flag, filter by metadata, eg. key1=value1'
+  )
   .action(
     async (
       sandboxIDs: string[],
