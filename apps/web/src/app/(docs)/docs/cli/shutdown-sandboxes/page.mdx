@@ -2,13 +2,13 @@
 
 You can shutdown single or all running sandboxes with the E2B CLI.
 
-## Shutdown single sandbox
+## Shutdown single or multiple sandboxes
 
-To shutdown a single sandbox, run the following command:
+To shutdown a single or multiple sandboxes, run the following command:
 
 <CodeGroup isTerminalCommand>
 ```bash
-e2b sandbox kill <sandbox-id>
+e2b sandbox kill <sandbox-id1> <sandbox-id2> <sandbox-id3>
 ```
 </CodeGroup>
 
@@ -19,5 +19,25 @@ To shutdown all running sandboxes, run the following command:
 <CodeGroup isTerminalCommand>
 ```bash
 e2b sandbox kill --all
+```
+</CodeGroup>
+
+Further, you can filter the sandboxes to be shutdown by state, metadata or both.
+
+<CodeGroup isTerminalCommand>
+```bash
+e2b sandbox kill --all --state=running,paused
+```
+</CodeGroup>
+
+<CodeGroup isTerminalCommand>
+```bash
+e2b sandbox kill --all --metadata=key=value
+```
+</CodeGroup>
+
+<CodeGroup isTerminalCommand>
+```bash
+e2b sandbox kill --all --state=running,paused --metadata=key=value
 ```
 </CodeGroup>
