@@ -5,8 +5,10 @@ import { components, Sandbox, SandboxInfo } from 'e2b'
 import { ensureAPIKey } from 'src/api'
 
 function getStateTitle(state?: components['schemas']['SandboxState'][]) {
-  if (state?.includes('running')) return 'Running sandboxes'
-  if (state?.includes('paused')) return 'Paused sandboxes'
+  if (state?.length === 1) {
+    if (state?.includes('running')) return 'Running sandboxes'
+    if (state?.includes('paused')) return 'Paused sandboxes'
+  }
   return 'Sandboxes'
 }
 
