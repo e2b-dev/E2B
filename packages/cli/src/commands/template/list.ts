@@ -29,17 +29,13 @@ export const listCommand = new commander.Command('list')
         sortTemplatesAliases(template.aliases)
       }
 
-      if (!templates?.length) {
-        console.log('No templates found.')
-        return
-      }
-
       if (format === 'table') {
         renderTable(templates)
       } else if (format === 'json') {
         console.log(JSON.stringify(templates, null, 2))
       } else {
-        return console.error(`Unsupported output format: ${format}`)
+        console.error(`Unsupported output format: ${format}`)
+        process.exit(1)
       }
     } catch (err: any) {
       console.error(err)
@@ -48,6 +44,11 @@ export const listCommand = new commander.Command('list')
   })
 
 function renderTable(templates: e2b.components['schemas']['Template'][]) {
+  if (!templates?.length) {
+    console.log('No templates found.')
+    return
+  }
+
   const table = new tablePrinter.Table({
     title: 'Sandbox templates',
     columns: [

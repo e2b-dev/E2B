@@ -41,11 +41,6 @@ export const listCommand = new commander.Command('list')
         metadataRaw: options.metadata,
       })
 
-      if (!sandboxes?.length) {
-        console.log('No sandboxes found')
-        return
-      }
-
       if (format === 'table') {
         renderTable(sandboxes, state)
       } else if (format === 'json') {
@@ -64,6 +59,11 @@ function renderTable(
   sandboxes: SandboxInfo[],
   state: components['schemas']['SandboxState'][]
 ) {
+  if (!sandboxes?.length) {
+    console.log('No sandboxes found')
+    return
+  }
+
   const table = new tablePrinter.Table({
     title: getStateTitle(state),
     columns: [
