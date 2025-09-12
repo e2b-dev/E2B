@@ -41,7 +41,7 @@ export const listCommand = new commander.Command('list')
         console.log('No sandboxes found')
       } else {
         const table = new tablePrinter.Table({
-          title: getStateTitle(options.state),
+          title: getStateTitle(state),
           columns: [
             { name: 'sandboxId', alignment: 'left', title: 'Sandbox ID' },
             {
