@@ -4,6 +4,12 @@ import { components, Sandbox, SandboxInfo } from 'e2b'
 
 import { ensureAPIKey } from 'src/api'
 
+function getStateTitle(state?: components['schemas']['SandboxState'][]) {
+  if (state?.includes('running')) return 'Running sandboxes'
+  if (state?.includes('paused')) return 'Paused sandboxes'
+  return 'Sandboxes'
+}
+
 export const listCommand = new commander.Command('list')
   .description('list all sandboxes, by default it list only running ones')
   .alias('ls')
@@ -35,28 +41,28 @@ export const listCommand = new commander.Command('list')
         console.log('No sandboxes found')
       } else {
         const table = new tablePrinter.Table({
-          title: 'Running sandboxes',
+          title: getStateTitle(options.state),
           columns: [
-            { name: 'sandboxID', alignment: 'left', title: 'Sandbox ID' },
+            { name: 'sandboxId', alignment: 'left', title: 'Sandbox ID' },
             {
-              name: 'templateID',
+              name: 'templateId',
               alignment: 'left',
               title: 'Template ID',
               maxLen: 20,
             },
-            { name: 'alias', alignment: 'left', title: 'Alias' },
+            { name: 'name', alignment: 'left', title: 'Alias' },
             { name: 'startedAt', alignment: 'left', title: 'Started at' },
             { name: 'endAt', alignment: 'left', title: 'End at' },
             { name: 'state', alignment: 'left', title: 'State' },
             { name: 'cpuCount', alignment: 'left', title: 'vCPUs' },
             { name: 'memoryMB', alignment: 'left', title: 'RAM MiB' },
+            { name: 'envdVersion', alignment: 'left', title: 'Envd version' },
             { name: 'metadata', alignment: 'left', title: 'Metadata' },
           ],
           disabledColumns: ['clientID'],
           rows: sandboxes
             .map((sandbox) => ({
               ...sandbox,
-              sandboxID: sandbox.sandboxId,
               startedAt: new Date(sandbox.startedAt).toLocaleString(),
               endAt: new Date(sandbox.endAt).toLocaleString(),
               state:
@@ -66,7 +72,7 @@ export const listCommand = new commander.Command('list')
             .sort(
               (a, b) =>
                 a.startedAt.localeCompare(b.startedAt) ||
-                a.sandboxID.localeCompare(b.sandboxID)
+                a.sandboxId.localeCompare(b.sandboxId)
             ),
           style: {
             headerTop: {
