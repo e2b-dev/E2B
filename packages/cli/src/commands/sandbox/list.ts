@@ -3,6 +3,7 @@ import * as commander from 'commander'
 import { components, Sandbox, SandboxInfo } from 'e2b'
 
 import { ensureAPIKey } from 'src/api'
+import { parseMetadata } from './utils'
 
 export const listCommand = new commander.Command('list')
   .description('list all sandboxes, by default it list only running ones')
@@ -12,11 +13,7 @@ export const listCommand = new commander.Command('list')
     'filter by state, eg. running, paused. Defaults to running',
     (value) => value.split(',')
   )
-  .option(
-    '-m, --metadata <metadata>',
-    'filter by metadata, eg. key1=value1',
-    (value) => value.replace(/,/g, '&')
-  )
+  .option('-m, --metadata <metadata>', 'filter by metadata, eg. key1=value1')
   .option(
     '-l, --limit <limit>',
     'limit the number of sandboxes returned',
@@ -115,19 +112,7 @@ export async function listSandboxes({
   metadataRaw,
 }: ListSandboxesOptions = {}): Promise<SandboxInfo[]> {
   const apiKey = ensureAPIKey()
-
-  let metadata: Record<string, string> | undefined = undefined
-  if (metadataRaw && metadataRaw.length > 0) {
-    const parsedMetadata: Record<string, string> = {}
-    metadataRaw.split(',').map((pair: string) => {
-      const [key, value] = pair.split('=')
-      if (key && value) {
-        parsedMetadata[key.trim()] = value.trim()
-      }
-    })
-
-    metadata = parsedMetadata
-  }
+  const metadata = parseMetadata(metadataRaw)
 
   let pageLimit = limit
   if (!limit || limit > 100) {
