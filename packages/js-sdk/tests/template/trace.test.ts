@@ -1,5 +1,5 @@
 import { assert, test } from 'vitest'
-import { Template, TemplateClass, waitForTimeout } from '../../src'
+import { BuildError, Template, TemplateClass, waitForTimeout } from '../../src'
 import { randomUUID } from 'node:crypto'
 import fs from 'node:fs'
 
@@ -37,11 +37,15 @@ async function expectTemplateToThrowAndCheckTrace(
     // If we reach here, the test should fail because we expected an error
     assert.fail('Expected Template.build to throw an error')
   } catch (error) {
-    // Verify the error contains the expected method in the stack trace
-    assert.include(
-      getStackTraceCallerMethod(__fileContent, error.stack),
-      expectedMethod
-    )
+    if (error instanceof BuildError) {
+      // Verify the error contains the expected method in the stack trace
+      assert.include(
+        getStackTraceCallerMethod(__fileContent, error.stack ?? ''),
+        expectedMethod
+      )
+    } else {
+      throw error
+    }
   }
 }
 
@@ -56,9 +60,7 @@ test('traces on fromTemplate', { timeout: testTimeout }, async () => {
 })
 
 test('traces on fromDockerfile', { timeout: testTimeout }, async () => {
-  const template = Template().fromDockerfile(
-    'FROM nonexistent:latest\nRUN echo "test"'
-  )
+  const template = Template().fromDockerfile('FROM nonexistent:latest')
   await expectTemplateToThrowAndCheckTrace(template, 'fromDockerfile')
 })
 
@@ -108,16 +110,14 @@ test('traces on rename', { timeout: testTimeout }, async () => {
 })
 
 test('traces on makeDir', { timeout: testTimeout }, async () => {
-  const template = Template()
-    .fromImage('ubuntu:22.04')
-    .makeDir('//invalid/path')
+  const template = Template().fromImage('ubuntu:22.04').makeDir('.bashrc')
   await expectTemplateToThrowAndCheckTrace(template, 'makeDir')
 })
 
 test('traces on makeSymlink', { timeout: testTimeout }, async () => {
   const template = Template()
     .fromImage('ubuntu:22.04')
-    .makeSymlink(nonExistentPath, '/tmp/link')
+    .makeSymlink('.bashrc', '.bashrc')
   await expectTemplateToThrowAndCheckTrace(template, 'makeSymlink')
 })
 
