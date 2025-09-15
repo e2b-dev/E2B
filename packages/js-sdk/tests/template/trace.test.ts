@@ -1,13 +1,10 @@
 import { assert, test } from 'vitest'
-import { Template, waitForTimeout } from '../../src'
+import { Template, TemplateClass, waitForTimeout } from '../../src'
 import { randomUUID } from 'node:crypto'
 import fs from 'node:fs'
 
-// read current file content
-const __fileContent = fs.readFileSync(__filename, 'utf8')
-
+const __fileContent = fs.readFileSync(__filename, 'utf8') // read current file content
 const testTimeout = 180000 // 3 minutes
-
 const nonExistentPath = '/nonexistent/path'
 
 function getStackTraceCallerMethod(fileContent: string, stackTrace: string) {
@@ -27,57 +24,42 @@ function getStackTraceCallerMethod(fileContent: string, stackTrace: string) {
   return null
 }
 
-test('traces on fromImage', { timeout: testTimeout }, async () => {
-  const template = Template().fromImage('e2b.dev/this-image-does-not-exist')
-
+async function expectTemplateToThrowAndCheckTrace(
+  template: TemplateClass,
+  expectedMethod: string
+) {
   try {
     await Template.build(template, {
       alias: randomUUID(),
       cpuCount: 1,
       memoryMB: 1024,
     })
+    // If we reach here, the test should fail because we expected an error
+    assert.fail('Expected Template.build to throw an error')
   } catch (error) {
+    // Verify the error contains the expected method in the stack trace
     assert.include(
       getStackTraceCallerMethod(__fileContent, error.stack),
-      'fromImage'
+      expectedMethod
     )
   }
+}
+
+test('traces on fromImage', { timeout: testTimeout }, async () => {
+  const template = Template().fromImage('e2b.dev/this-image-does-not-exist')
+  await expectTemplateToThrowAndCheckTrace(template, 'fromImage')
 })
 
 test('traces on fromTemplate', { timeout: testTimeout }, async () => {
   const template = Template().fromTemplate('this-template-does-not-exist')
-
-  try {
-    await Template.build(template, {
-      alias: randomUUID(),
-      cpuCount: 1,
-      memoryMB: 1024,
-    })
-  } catch (error) {
-    assert.include(
-      getStackTraceCallerMethod(__fileContent, error.stack),
-      'fromTemplate'
-    )
-  }
+  await expectTemplateToThrowAndCheckTrace(template, 'fromTemplate')
 })
 
 test('traces on fromDockerfile', { timeout: testTimeout }, async () => {
   const template = Template().fromDockerfile(
     'FROM nonexistent:latest\nRUN echo "test"'
   )
-
-  try {
-    await Template.build(template, {
-      alias: randomUUID(),
-      cpuCount: 1,
-      memoryMB: 1024,
-    })
-  } catch (error) {
-    assert.include(
-      getStackTraceCallerMethod(__fileContent, error.stack),
-      'fromDockerfile'
-    )
-  }
+  await expectTemplateToThrowAndCheckTrace(template, 'fromDockerfile')
 })
 
 test('traces on fromRegistry', { timeout: testTimeout }, async () => {
@@ -88,19 +70,7 @@ test('traces on fromRegistry', { timeout: testTimeout }, async () => {
       password: 'test',
     }
   )
-
-  try {
-    await Template.build(template, {
-      alias: randomUUID(),
-      cpuCount: 1,
-      memoryMB: 1024,
-    })
-  } catch (error) {
-    assert.include(
-      getStackTraceCallerMethod(__fileContent, error.stack),
-      'fromRegistry'
-    )
-  }
+  await expectTemplateToThrowAndCheckTrace(template, 'fromRegistry')
 })
 
 test('traces on fromAWSRegistry', { timeout: testTimeout }, async () => {
@@ -112,19 +82,7 @@ test('traces on fromAWSRegistry', { timeout: testTimeout }, async () => {
       region: 'us-east-1',
     }
   )
-
-  try {
-    await Template.build(template, {
-      alias: randomUUID(),
-      cpuCount: 1,
-      memoryMB: 1024,
-    })
-  } catch (error) {
-    assert.include(
-      getStackTraceCallerMethod(__fileContent, error.stack),
-      'fromAWSRegistry'
-    )
-  }
+  await expectTemplateToThrowAndCheckTrace(template, 'fromAWSRegistry')
 })
 
 test('traces on fromGCPRegistry', { timeout: testTimeout }, async () => {
@@ -134,259 +92,85 @@ test('traces on fromGCPRegistry', { timeout: testTimeout }, async () => {
       serviceAccountJSON: { type: 'service_account' },
     }
   )
-
-  try {
-    await Template.build(template, {
-      alias: randomUUID(),
-      cpuCount: 1,
-      memoryMB: 1024,
-    })
-  } catch (error) {
-    assert.include(
-      getStackTraceCallerMethod(__fileContent, error.stack),
-      'fromGCPRegistry'
-    )
-  }
+  await expectTemplateToThrowAndCheckTrace(template, 'fromGCPRegistry')
 })
-
-// Copy currently throws a different error when files not found
-// test('traces on copy', { timeout: testTimeout }, async () => {
-//   try {
-//     const template = Template()
-//       .fromImage('ubuntu:22.04')
-//       .copy('/nonexistent/test.txt', '/tmp/test.txt')
-
-//     await Template.build(template, {
-//       alias: randomUUID(),
-//       cpuCount: 1,
-//       memoryMB: 1024,
-//     })
-//   } catch (error) {
-//     assert.include(
-//       getStackTraceCallerMethod(__fileContent, error.stack),
-//       'copy'
-//     )
-//   }
-// })
 
 test('traces on remove', { timeout: testTimeout }, async () => {
   const template = Template().fromImage('ubuntu:22.04').remove(nonExistentPath)
-
-  try {
-    await Template.build(template, {
-      alias: randomUUID(),
-      cpuCount: 1,
-      memoryMB: 1024,
-    })
-  } catch (error) {
-    assert.include(
-      getStackTraceCallerMethod(__fileContent, error.stack),
-      'remove'
-    )
-  }
+  await expectTemplateToThrowAndCheckTrace(template, 'remove')
 })
 
 test('traces on rename', { timeout: testTimeout }, async () => {
   const template = Template()
     .fromImage('ubuntu:22.04')
     .rename(nonExistentPath, '/tmp/dest.txt')
-
-  try {
-    await Template.build(template, {
-      alias: randomUUID(),
-      cpuCount: 1,
-      memoryMB: 1024,
-    })
-  } catch (error) {
-    assert.include(
-      getStackTraceCallerMethod(__fileContent, error.stack),
-      'rename'
-    )
-  }
+  await expectTemplateToThrowAndCheckTrace(template, 'rename')
 })
 
 test('traces on makeDir', { timeout: testTimeout }, async () => {
-  const template = Template().fromImage('ubuntu:22.04').makeDir('/tmp/testdir')
-
-  try {
-    await Template.build(template, {
-      alias: randomUUID(),
-      cpuCount: 1,
-      memoryMB: 1024,
-    })
-  } catch (error) {
-    assert.include(
-      getStackTraceCallerMethod(__fileContent, error.stack),
-      'makeDir'
-    )
-  }
+  const template = Template()
+    .fromImage('ubuntu:22.04')
+    .makeDir('//invalid/path')
+  await expectTemplateToThrowAndCheckTrace(template, 'makeDir')
 })
 
 test('traces on makeSymlink', { timeout: testTimeout }, async () => {
   const template = Template()
     .fromImage('ubuntu:22.04')
     .makeSymlink(nonExistentPath, '/tmp/link')
-
-  try {
-    await Template.build(template, {
-      alias: randomUUID(),
-      cpuCount: 1,
-      memoryMB: 1024,
-    })
-  } catch (error) {
-    assert.include(
-      getStackTraceCallerMethod(__fileContent, error.stack),
-      'makeSymlink'
-    )
-  }
+  await expectTemplateToThrowAndCheckTrace(template, 'makeSymlink')
 })
 
 test('traces on runCmd', { timeout: testTimeout }, async () => {
   const template = Template()
     .fromImage('ubuntu:22.04')
-    .runCmd('cat folder/test.txt')
-
-  try {
-    await Template.build(template, {
-      alias: randomUUID(),
-      cpuCount: 1,
-      memoryMB: 1024,
-    })
-  } catch (error) {
-    assert.include(
-      getStackTraceCallerMethod(__fileContent, error.stack),
-      'runCmd'
-    )
-  }
+    .runCmd(`./${nonExistentPath}`)
+  await expectTemplateToThrowAndCheckTrace(template, 'runCmd')
 })
 
 test('traces on setWorkdir', { timeout: testTimeout }, async () => {
   const template = Template()
     .fromImage('ubuntu:22.04')
     .setWorkdir(nonExistentPath)
-
-  try {
-    await Template.build(template, {
-      alias: randomUUID(),
-      cpuCount: 1,
-      memoryMB: 1024,
-    })
-  } catch (error) {
-    assert.include(
-      getStackTraceCallerMethod(__fileContent, error.stack),
-      'setWorkdir'
-    )
-  }
+  await expectTemplateToThrowAndCheckTrace(template, 'setWorkdir')
 })
 
 test('traces on setUser', { timeout: testTimeout }, async () => {
   const template = Template().fromImage('ubuntu:22.04').setUser('non-existent')
-
-  try {
-    await Template.build(template, {
-      alias: randomUUID(),
-      cpuCount: 1,
-      memoryMB: 1024,
-    })
-  } catch (error) {
-    assert.include(
-      getStackTraceCallerMethod(__fileContent, error.stack),
-      'setUser'
-    )
-  }
+  await expectTemplateToThrowAndCheckTrace(template, 'setUser')
 })
 
 test('traces on pipInstall', { timeout: testTimeout }, async () => {
   const template = Template()
     .fromImage('python:3.13')
     .pipInstall('nonexistent-package')
-
-  try {
-    await Template.build(template, {
-      alias: randomUUID(),
-      cpuCount: 1,
-      memoryMB: 1024,
-    })
-  } catch (error) {
-    assert.include(
-      getStackTraceCallerMethod(__fileContent, error.stack),
-      'pipInstall'
-    )
-  }
+  await expectTemplateToThrowAndCheckTrace(template, 'pipInstall')
 })
 
 test('traces on npmInstall', { timeout: testTimeout }, async () => {
   const template = Template()
     .fromImage('node:lts')
     .npmInstall('nonexistent-package')
-
-  try {
-    await Template.build(template, {
-      alias: randomUUID(),
-      cpuCount: 1,
-      memoryMB: 1024,
-    })
-  } catch (error) {
-    assert.include(
-      getStackTraceCallerMethod(__fileContent, error.stack),
-      'npmInstall'
-    )
-  }
+  await expectTemplateToThrowAndCheckTrace(template, 'npmInstall')
 })
 
 test('traces on aptInstall', { timeout: testTimeout }, async () => {
   const template = Template()
     .fromImage('ubuntu:22.04')
     .aptInstall('nonexistent-package')
-
-  try {
-    await Template.build(template, {
-      alias: randomUUID(),
-      cpuCount: 1,
-      memoryMB: 1024,
-    })
-  } catch (error) {
-    assert.include(
-      getStackTraceCallerMethod(__fileContent, error.stack),
-      'aptInstall'
-    )
-  }
+  await expectTemplateToThrowAndCheckTrace(template, 'aptInstall')
 })
 
 test('traces on gitClone', { timeout: testTimeout }, async () => {
   const template = Template()
     .fromImage('ubuntu:22.04')
     .gitClone('https://github.com/nonexistent/repo.git')
-
-  try {
-    await Template.build(template, {
-      alias: randomUUID(),
-      cpuCount: 1,
-      memoryMB: 1024,
-    })
-  } catch (error) {
-    assert.include(
-      getStackTraceCallerMethod(__fileContent, error.stack),
-      'gitClone'
-    )
-  }
+  await expectTemplateToThrowAndCheckTrace(template, 'gitClone')
 })
 
 test('traces on setStartCmd', { timeout: testTimeout }, async () => {
   const template = Template()
     .fromImage('ubuntu:22.04')
     .setStartCmd(`./${nonExistentPath}`, waitForTimeout(10_000))
-
-  try {
-    await Template.build(template, {
-      alias: randomUUID(),
-      cpuCount: 1,
-      memoryMB: 1024,
-    })
-  } catch (error) {
-    assert.include(
-      getStackTraceCallerMethod(__fileContent, error.stack),
-      'setStartCmd'
-    )
-  }
+  await expectTemplateToThrowAndCheckTrace(template, 'setStartCmd')
 })
