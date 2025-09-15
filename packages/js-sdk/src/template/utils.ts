@@ -45,13 +45,19 @@ export async function calculateFilesHash(
   return hash.digest('hex')
 }
 
-export function getCallerFrame(depth: number = 3): string | undefined {
+/**
+ * Get the caller frame
+ * @param depth - The depth of the stack trace
+ * Levels explained: caller (eg. from class TemplateBase.fromImage) > original caller (eg. template file)
+ * @returns The caller frame
+ */
+export function getCallerFrame(depth: number = 2): string | undefined {
   const stackTrace = new Error().stack
   if (!stackTrace) {
     return
   }
 
-  const lines = stackTrace.split('\n')
+  const lines = stackTrace.split('\n').slice(1) // Skip the first line (this function)
   if (lines.length < depth + 1) {
     return
   }
@@ -59,8 +65,16 @@ export function getCallerFrame(depth: number = 3): string | undefined {
   return lines.slice(depth).join('\n')
 }
 
+/**
+ * Get the caller directory
+ * @returns The caller directory
+ */
 export function getCallerDirectory(): string | undefined {
-  const caller = getCallerFrame(5)
+  /**
+   * Levels explained:
+   * getCallerDirectory (this function) > TemplateBase.fileContextPath > Template > original caller (eg. template file)
+   */
+  const caller = getCallerFrame(4)
   if (!caller) {
     return
   }

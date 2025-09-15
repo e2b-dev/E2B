@@ -68,9 +68,9 @@ def strip_ansi_escape_codes(text: str) -> str:
     return ansi_escape.sub("", text)
 
 
-def get_caller_frame(depth: int = 3) -> Optional[FrameType]:
-    """Get the frame of the caller function."""
-    stack = inspect.stack()
+def get_caller_frame(depth: int = 2) -> Optional[FrameType]:
+    """Get the caller frame. Skip this function (first frame)."""
+    stack = inspect.stack()[1:]
     if len(stack) < depth + 1:
         return None
     return stack[depth].frame

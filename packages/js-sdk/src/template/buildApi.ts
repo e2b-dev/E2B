@@ -217,9 +217,9 @@ export async function waitForBuildFinish(
       }
       case 'error': {
         let stackError: string | undefined
-        if (buildStatus.reason?.step) {
+        if (buildStatus.reason?.step !== undefined) {
           const step = getBuildStepIndex(
-            buildStatus.reason?.step,
+            buildStatus.reason.step,
             stackTraces.length
           )
           stackError = stackTraces.find((_, index) => index === step)
