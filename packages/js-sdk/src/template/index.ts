@@ -465,7 +465,7 @@ export class TemplateBase
   private _fromImage(
     baseImage: string,
     options?: { registryConfig?: RegistryConfig }
-  ): TemplateBuilder {
+  ): void {
     this.baseImage = baseImage
     this.baseTemplate = undefined
 
@@ -478,8 +478,6 @@ export class TemplateBase
     if (this.forceNextLayer) {
       this.force = true
     }
-
-    return this
   }
 
   private _runCmd(
