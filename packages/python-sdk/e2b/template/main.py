@@ -77,8 +77,8 @@ class TemplateBuilder:
         if force:
             args.append("-f")
 
-        self.run_cmd(" ".join(args))
-        self._template._replace_last_stack_trace(capture_stack_trace())
+        self._run_cmd(" ".join(args))
+        self._template._stack_traces.append(capture_stack_trace())
         return self
 
     def rename(self, src: str, dest: str, force: bool = False) -> "TemplateBuilder":
@@ -86,8 +86,8 @@ class TemplateBuilder:
         if force:
             args.append("-f")
 
-        self.run_cmd(" ".join(args))
-        self._template._replace_last_stack_trace(capture_stack_trace())
+        self._run_cmd(" ".join(args))
+        self._template._stack_traces.append(capture_stack_trace())
         return self
 
     def make_dir(
@@ -100,19 +100,20 @@ class TemplateBuilder:
         if mode:
             args.append(f"-m {pad_octal(mode)}")
 
-        self.run_cmd(" ".join(args))
-        self._template._replace_last_stack_trace(capture_stack_trace())
+        self._run_cmd(" ".join(args))
+        self._template._stack_traces.append(capture_stack_trace())
         return self
 
     def make_symlink(self, src: str, dest: str) -> "TemplateBuilder":
         args = ["ln", "-s", src, dest]
-        self.run_cmd(" ".join(args))
-        self._template._replace_last_stack_trace(capture_stack_trace())
+        self._run_cmd(" ".join(args))
+        self._template._stack_traces.append(capture_stack_trace())
         return self
 
-    def run_cmd(
+    def _run_cmd(
         self, command: Union[str, List[str]], user: Optional[str] = None
-    ) -> "TemplateBuilder":
+    ) -> None:
+        """Private method to add RUN instruction"""
         commands = [command] if isinstance(command, str) else command
         args = [" && ".join(commands)]
 
@@ -126,6 +127,11 @@ class TemplateBuilder:
             forceUpload=None,
         )
         self._template._instructions.append(instruction)
+
+    def run_cmd(
+        self, command: Union[str, List[str]], user: Optional[str] = None
+    ) -> "TemplateBuilder":
+        self._run_cmd(command, user)
         self._template._stack_traces.append(capture_stack_trace())
         return self
 
@@ -163,8 +169,8 @@ class TemplateBuilder:
         else:
             args.append(".")
 
-        self.run_cmd(" ".join(args))
-        self._template._replace_last_stack_trace(capture_stack_trace())
+        self._run_cmd(" ".join(args))
+        self._template._stack_traces.append(capture_stack_trace())
         return self
 
     def npm_install(
@@ -181,22 +187,22 @@ class TemplateBuilder:
         if g:
             args.append("-g")
 
-        self.run_cmd(" ".join(args))
-        self._template._replace_last_stack_trace(capture_stack_trace())
+        self._run_cmd(" ".join(args))
+        self._template._stack_traces.append(capture_stack_trace())
         return self
 
     def apt_install(self, packages: Union[str, List[str]]) -> "TemplateBuilder":
         if isinstance(packages, str):
             packages = [packages]
 
-        self.run_cmd(
+        self._run_cmd(
             [
                 "apt-get update",
                 f"DEBIAN_FRONTEND=noninteractive DEBCONF_NOWARNINGS=yes apt-get install -y --no-install-recommends {' '.join(packages)}",
             ],
             user="root",
         )
-        self._template._replace_last_stack_trace(capture_stack_trace())
+        self._template._stack_traces.append(capture_stack_trace())
         return self
 
     def git_clone(
@@ -212,8 +218,8 @@ class TemplateBuilder:
             args.append("--single-branch")
         if depth:
             args.append(f"--depth {depth}")
-        self.run_cmd(" ".join(args))
-        self._template._replace_last_stack_trace(capture_stack_trace())
+        self._run_cmd(" ".join(args))
+        self._template._stack_traces.append(capture_stack_trace())
         return self
 
     def set_envs(self, envs: Dict[str, str]) -> "TemplateBuilder":
@@ -291,11 +297,6 @@ class TemplateBase:
         self._ignore_file_paths: List[str] = ignore_file_paths or []
         self._stack_traces: List[TracebackType] = []
 
-    def _replace_last_stack_trace(self, stack_trace: TracebackType) -> None:
-        """Replace the last stack trace in the list."""
-        if self._stack_traces:
-            self._stack_traces[-1] = stack_trace
-
     def skip_cache(self) -> "TemplateBase":
         """Skip cache for the next instruction (before from instruction)"""
         self._force_next_layer = True
@@ -317,9 +318,10 @@ class TemplateBase:
     def from_base_image(self) -> TemplateBuilder:
         return self.from_image(self._default_base_image)
 
-    def from_image(
+    def _from_image(
         self, base_image: str, registry_config: Optional[RegistryConfig] = None
-    ) -> TemplateBuilder:
+    ):
+        """Private method to set base image without adding stack trace"""
         self._base_image = base_image
         self._base_template = None
 
@@ -331,6 +333,10 @@ class TemplateBase:
         if self._force_next_layer:
             self._force = True
 
+    def from_image(
+        self, base_image: str, registry_config: Optional[RegistryConfig] = None
+    ) -> TemplateBuilder:
+        self._from_image(base_image, registry_config)
         self._stack_traces.append(capture_stack_trace())
         return TemplateBuilder(self)
 
@@ -369,7 +375,7 @@ class TemplateBase:
     def from_registry(
         self, image: str, username: str, password: str
     ) -> TemplateBuilder:
-        builder = self.from_image(
+        self._from_image(
             image,
             registry_config={
                 "type": "registry",
@@ -378,8 +384,8 @@ class TemplateBase:
             },
         )
 
-        builder._template._replace_last_stack_trace(capture_stack_trace())
-        return builder
+        self._stack_traces.append(capture_stack_trace())
+        return TemplateBuilder(self)
 
     def from_aws_registry(
         self,
@@ -388,7 +394,7 @@ class TemplateBase:
         secret_access_key: str,
         region: str,
     ) -> TemplateBuilder:
-        builder = self.from_image(
+        self._from_image(
             image,
             registry_config={
                 "type": "aws",
@@ -398,13 +404,13 @@ class TemplateBase:
             },
         )
 
-        builder._template._replace_last_stack_trace(capture_stack_trace())
-        return builder
+        self._stack_traces.append(capture_stack_trace())
+        return TemplateBuilder(self)
 
     def from_gcp_registry(
         self, image: str, service_account_json: Union[str, dict]
     ) -> TemplateBuilder:
-        builder = self.from_image(
+        self._from_image(
             image,
             registry_config={
                 "type": "gcp",
@@ -414,8 +420,8 @@ class TemplateBase:
             },
         )
 
-        builder._template._replace_last_stack_trace(capture_stack_trace())
-        return builder
+        self._stack_traces.append(capture_stack_trace())
+        return TemplateBuilder(self)
 
     @staticmethod
     def to_json(template: "TemplateClass") -> str:
