@@ -369,7 +369,7 @@ export const migrateCommand = new commander.Command('migrate')
   )
   .option(
     '-l, --language <language>',
-    `specify target language: ${Object.keys(validLanguages).join(', ')}`,
+    `specify target language: ${validLanguages.join(', ')}`,
     (value) => {
       if (!validLanguages.includes(value as Language)) {
         throw new Error(
