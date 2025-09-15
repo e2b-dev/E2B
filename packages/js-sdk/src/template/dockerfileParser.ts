@@ -18,11 +18,7 @@ export interface DockerfileParserInterface {
   setUser(user: string): DockerfileParserInterface
   setEnvs(envs: Record<string, string>): DockerfileParserInterface
   runCmd(
-    command: string,
-    options?: { user?: string }
-  ): DockerfileParserInterface
-  runCmd(
-    commands: string[],
+    commandOrCommands: string | string[],
     options?: { user?: string }
   ): DockerfileParserInterface
   copy(
