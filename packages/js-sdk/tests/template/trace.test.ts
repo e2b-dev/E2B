@@ -129,14 +129,12 @@ test('traces on runCmd', { timeout: testTimeout }, async () => {
 })
 
 test('traces on setWorkdir', { timeout: testTimeout }, async () => {
-  const template = Template()
-    .fromImage('ubuntu:22.04')
-    .setWorkdir(nonExistentPath)
+  const template = Template().fromImage('ubuntu:22.04').setWorkdir('.bashrc')
   await expectTemplateToThrowAndCheckTrace(template, 'setWorkdir')
 })
 
 test('traces on setUser', { timeout: testTimeout }, async () => {
-  const template = Template().fromImage('ubuntu:22.04').setUser('non-existent')
+  const template = Template().fromImage('ubuntu:22.04').setUser(';')
   await expectTemplateToThrowAndCheckTrace(template, 'setUser')
 })
 
