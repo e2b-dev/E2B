@@ -70,4 +70,9 @@ export {
   waitForTimeout,
 } from './template/readycmd'
 
-export { Template, type TemplateClass, type TemplateBase } from './template'
+export {
+  Template,
+  type TemplateClass,
+  type TemplateBuilder,
+  type TemplateBase,
+} from './template'

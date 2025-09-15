@@ -1,6 +1,6 @@
 import { select } from '@inquirer/prompts'
 import * as commander from 'commander'
-import { Template, TemplateClass } from 'e2b'
+import { Template, TemplateBuilder, TemplateClass } from 'e2b'
 import * as fs from 'fs'
 import Handlebars from 'handlebars'
 import * as path from 'path'

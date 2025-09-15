@@ -5,8 +5,7 @@ import {
   Instruction as DockerfileInstruction,
 } from 'dockerfile-ast'
 import fs from 'node:fs'
-import { waitForTimeout } from './index'
-import { ReadyCmd } from './readycmd'
+import { ReadyCmd, waitForTimeout } from './readycmd'
 
 export interface DockerfileParseResult {
   baseImage: string

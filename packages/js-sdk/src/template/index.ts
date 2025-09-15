@@ -31,6 +31,8 @@ import { ConnectionConfig } from '../connectionConfig'
 import { ReadyCmd } from './readycmd'
 import { STACK_TRACE_DEPTH } from './consts'
 
+export { type TemplateBuilder } from './types'
+
 type TemplateOptions = {
   fileContextPath?: string
   ignoreFilePaths?: string[]
