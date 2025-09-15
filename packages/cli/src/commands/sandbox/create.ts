@@ -9,7 +9,7 @@ import { getRoot } from '../../utils/filesystem'
 import { getConfigPath, loadConfig } from '../../config'
 import fs from 'fs'
 import { configOption, pathOption } from '../../options'
-import { SANDBOX_INSPECT_URL } from 'src/user'
+import { printDashboardSandboxInspectUrl } from 'src/utils/urls'
 
 export function createCommand(
   name: string,
@@ -92,15 +92,7 @@ export async function connectSandbox({
 }) {
   const sandbox = await e2b.Sandbox.create(template.templateID, { apiKey })
 
-  const url = SANDBOX_INSPECT_URL(sandbox.sandboxId)
-  const clickable = `\u001b]8;;${url}\u0007${url}\u001b]8;;\u0007`
-
-  console.log('')
-  console.log(
-    'Use the following link to inspect this Sandbox live inside the E2B Dashboard️:'
-  )
-  console.log(`\x1b[38;5;208m↪ ${clickable}\x1b[0m`)
-  console.log('')
+  printDashboardSandboxInspectUrl(sandbox.sandboxId)
 
   // keep-alive loop
   const intervalId = setInterval(async () => {
