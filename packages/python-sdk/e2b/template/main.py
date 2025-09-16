@@ -77,18 +77,18 @@ class TemplateBuilder:
         if force:
             args.append("-f")
 
-        self.run_cmd(" ".join(args))
-        self._template._collect_stack_trace()
-        return self
+        return self._template._run_in_new_stack_trace_context(
+            lambda: self.run_cmd(" ".join(args))
+        )
 
     def rename(self, src: str, dest: str, force: bool = False) -> "TemplateBuilder":
         args = ["mv", src, dest]
         if force:
             args.append("-f")
 
-        self.run_cmd(" ".join(args))
-        self._template._collect_stack_trace()
-        return self
+        return self._template._run_in_new_stack_trace_context(
+            lambda: self.run_cmd(" ".join(args))
+        )
 
     def make_dir(
         self, paths: Union[str, List[str]], mode: Optional[int] = None
@@ -100,15 +100,15 @@ class TemplateBuilder:
         if mode:
             args.append(f"-m {pad_octal(mode)}")
 
-        self.run_cmd(" ".join(args))
-        self._template._collect_stack_trace()
-        return self
+        return self._template._run_in_new_stack_trace_context(
+            lambda: self.run_cmd(" ".join(args))
+        )
 
     def make_symlink(self, src: str, dest: str) -> "TemplateBuilder":
         args = ["ln", "-s", src, dest]
-        self.run_cmd(" ".join(args))
-        self._template._collect_stack_trace()
-        return self
+        return self._template._run_in_new_stack_trace_context(
+            lambda: self.run_cmd(" ".join(args))
+        )
 
     def run_cmd(
         self, command: Union[str, List[str]], user: Optional[str] = None
