@@ -67,6 +67,7 @@ export class TemplateBase
   private logsRefreshFrequency: number = 200
   private stackTraces: (string | undefined)[] = []
   private stackTracesEnabled: boolean = true
+  private stackTracesDepth: number = 3
 
   constructor(options?: TemplateOptions) {
     this.fileContextPath = options?.fileContextPath ?? this.fileContextPath
@@ -148,7 +149,7 @@ export class TemplateBase
    * @returns TemplateBuilder instance for method chaining
    */
   fromDockerfile(dockerfileContentOrPath: string): TemplateBuilder {
-    return this.stackTraceContext(() => {
+    return this.runInNewStackTraceContext(() => {
       const { baseImage } = parseDockerfile(dockerfileContentOrPath, this)
       this.baseImage = baseImage
       this.baseTemplate = undefined
@@ -169,7 +170,7 @@ export class TemplateBase
       password: string
     }
   ): TemplateBuilder {
-    return this.stackTraceContext(() =>
+    return this.runInNewStackTraceContext(() =>
       this.fromImage(image, {
         registryConfig: {
           type: 'registry',
@@ -188,7 +189,7 @@ export class TemplateBase
       region: string
     }
   ): TemplateBuilder {
-    return this.stackTraceContext(() =>
+    return this.runInNewStackTraceContext(() =>
       this.fromImage(image, {
         registryConfig: {
           type: 'aws',
@@ -206,7 +207,7 @@ export class TemplateBase
       serviceAccountJSON: string | object
     }
   ): TemplateBuilder {
-    return this.stackTraceContext(() =>
+    return this.runInNewStackTraceContext(() =>
       this.fromImage(image, {
         registryConfig: {
           type: 'gcp',
@@ -281,8 +282,7 @@ export class TemplateBase
     if (options?.force) {
       args.push('-f')
     }
-
-    return this.stackTraceContext(() => this.runCmd(args.join(' ')))
+    return this.runInNewStackTraceContext(() => this.runCmd(args.join(' ')))
   }
 
   rename(
@@ -294,8 +294,7 @@ export class TemplateBase
     if (options?.force) {
       args.push('-f')
     }
-
-    return this.stackTraceContext(() => this.runCmd(args.join(' ')))
+    return this.runInNewStackTraceContext(() => this.runCmd(args.join(' ')))
   }
 
   makeDir(
@@ -306,14 +305,12 @@ export class TemplateBase
     if (options?.mode) {
       args.push(`-m ${padOctal(options.mode)}`)
     }
-
-    return this.stackTraceContext(() => this.runCmd(args.join(' ')))
+    return this.runInNewStackTraceContext(() => this.runCmd(args.join(' ')))
   }
 
   makeSymlink(src: string, dest: string): TemplateBuilder {
     const args = ['ln', '-s', src, dest]
-
-    return this.stackTraceContext(() => this.runCmd(args.join(' ')))
+    return this.runInNewStackTraceContext(() => this.runCmd(args.join(' ')))
   }
 
   runCmd(
@@ -374,7 +371,7 @@ export class TemplateBase
       args.push('.')
     }
 
-    return this.stackTraceContext(() => this.runCmd(args))
+    return this.runInNewStackTraceContext(() => this.runCmd(args))
   }
 
   npmInstall(packages?: string | string[], g?: boolean): TemplateBuilder {
@@ -391,12 +388,12 @@ export class TemplateBase
       args.push('-g')
     }
 
-    return this.stackTraceContext(() => this.runCmd(args))
+    return this.runInNewStackTraceContext(() => this.runCmd(args))
   }
 
   aptInstall(packages: string | string[]): TemplateBuilder {
     const packageList = Array.isArray(packages) ? packages : [packages]
-    return this.stackTraceContext(() =>
+    return this.runInNewStackTraceContext(() =>
       this.runCmd(
         [
           'apt-get update',
@@ -423,7 +420,7 @@ export class TemplateBase
       args.push(`--depth ${options.depth}`)
     }
 
-    return this.stackTraceContext(() => this.runCmd(args.join(' ')))
+    return this.runInNewStackTraceContext(() => this.runCmd(args.join(' ')))
   }
 
   setStartCmd(
@@ -472,12 +469,12 @@ export class TemplateBase
     return this
   }
 
-  private collectStackTrace(callerFrameDepth: number = 3) {
+  private collectStackTrace(stackTracesDepth: number = this.stackTracesDepth) {
     if (!this.stackTracesEnabled) {
       return this
     }
 
-    this.stackTraces.push(getCallerFrame(callerFrameDepth))
+    this.stackTraces.push(getCallerFrame(stackTracesDepth))
     return this
   }
 
@@ -491,11 +488,11 @@ export class TemplateBase
     return this
   }
 
-  private stackTraceContext<T>(f: () => T): T {
+  private runInNewStackTraceContext<T>(fn: () => T): T {
     this.disableStackTrace()
-    const result = f()
+    const result = fn()
     this.enableStackTrace()
-    this.collectStackTrace(4)
+    this.collectStackTrace(this.stackTracesDepth + 1)
     return result
   }
 
