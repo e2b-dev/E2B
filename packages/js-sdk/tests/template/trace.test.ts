@@ -74,15 +74,7 @@ test('traces on fromRegistry', { timeout: testTimeout }, async () => {
       password: 'test',
     }
   )
-  // await expectTemplateToThrowAndCheckTrace(template, 'fromRegistry')
-  await Template.build(template, {
-    alias: randomUUID(),
-    cpuCount: 1,
-    memoryMB: 1024,
-    onBuildLogs: (logEntry) => {
-      console.log(logEntry)
-    },
-  })
+  await expectTemplateToThrowAndCheckTrace(template, 'fromRegistry')
 })
 
 test('traces on fromAWSRegistry', { timeout: testTimeout }, async () => {
