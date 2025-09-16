@@ -149,18 +149,16 @@ export class TemplateBase
    * @returns TemplateBuilder instance for method chaining
    */
   fromDockerfile(dockerfileContentOrPath: string): TemplateBuilder {
-    return this.runInNewStackTraceContext(() => {
-      const { baseImage } = parseDockerfile(dockerfileContentOrPath, this)
-      this.baseImage = baseImage
-      this.baseTemplate = undefined
+    const { baseImage } = parseDockerfile(dockerfileContentOrPath, this)
+    this.baseImage = baseImage
+    this.baseTemplate = undefined
 
-      // If we should force the next layer and it's a FROM command, invalidate whole template
-      if (this.forceNextLayer) {
-        this.force = true
-      }
+    // If we should force the next layer and it's a FROM command, invalidate whole template
+    if (this.forceNextLayer) {
+      this.force = true
+    }
 
-      return this
-    })
+    return this
   }
 
   fromRegistry(
