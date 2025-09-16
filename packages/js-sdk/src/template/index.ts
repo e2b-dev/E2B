@@ -109,8 +109,20 @@ export class TemplateBase
     baseImage: string,
     options?: { registryConfig?: RegistryConfig }
   ): TemplateBuilder {
-    this._fromImage(baseImage, options)
+    this.baseImage = baseImage
+    this.baseTemplate = undefined
     this.stackTraces.push(getCallerFrame())
+
+    // Set the registry config if provided
+    if (options?.registryConfig) {
+      this.registryConfig = options.registryConfig
+    }
+
+    // If we should force the next layer and it's a FROM command, invalidate whole template
+    if (this.forceNextLayer) {
+      this.force = true
+    }
+
     return this
   }
 
@@ -155,7 +167,7 @@ export class TemplateBase
       password: string
     }
   ): TemplateBuilder {
-    this._fromImage(image, {
+    this.fromImage(image, {
       registryConfig: {
         type: 'registry',
         username: options.username,
@@ -175,7 +187,7 @@ export class TemplateBase
       region: string
     }
   ): TemplateBuilder {
-    this._fromImage(image, {
+    this.fromImage(image, {
       registryConfig: {
         type: 'aws',
         awsAccessKeyId: options.accessKeyId,
@@ -194,7 +206,7 @@ export class TemplateBase
       serviceAccountJSON: string | object
     }
   ): TemplateBuilder {
-    this._fromImage(image, {
+    this.fromImage(image, {
       registryConfig: {
         type: 'gcp',
         serviceAccountJson: readGCPServiceAccountJSON(
@@ -271,7 +283,7 @@ export class TemplateBase
       args.push('-f')
     }
 
-    this._runCmd(args.join(' '))
+    this.runCmd(args.join(' '))
     this.stackTraces.push(getCallerFrame())
     return this
   }
@@ -286,7 +298,7 @@ export class TemplateBase
       args.push('-f')
     }
 
-    this._runCmd(args.join(' '))
+    this.runCmd(args.join(' '))
     this.stackTraces.push(getCallerFrame())
     return this
   }
@@ -300,7 +312,7 @@ export class TemplateBase
       args.push(`-m ${padOctal(options.mode)}`)
     }
 
-    this._runCmd(args.join(' '))
+    this.runCmd(args.join(' '))
     this.stackTraces.push(getCallerFrame())
     return this
   }
@@ -308,7 +320,7 @@ export class TemplateBase
   makeSymlink(src: string, dest: string): TemplateBuilder {
     const args = ['ln', '-s', src, dest]
 
-    this._runCmd(args.join(' '))
+    this.runCmd(args.join(' '))
     this.stackTraces.push(getCallerFrame())
     return this
   }
@@ -317,8 +329,21 @@ export class TemplateBase
     commandOrCommands: string | string[],
     options?: { user?: string }
   ): TemplateBuilder {
-    this._runCmd(commandOrCommands, options)
-    this.stackTraces.push(getCallerFrame())
+    const cmds = Array.isArray(commandOrCommands)
+      ? commandOrCommands
+      : [commandOrCommands]
+
+    const args = [cmds.join(' && ')]
+    if (options?.user) {
+      args.push(options.user)
+    }
+
+    this.instructions.push({
+      type: 'RUN',
+      args,
+      force: this.forceNextLayer,
+    })
+
     return this
   }
 
@@ -357,7 +382,7 @@ export class TemplateBase
       args.push('.')
     }
 
-    this._runCmd(args)
+    this.runCmd(args)
     this.stackTraces.push(getCallerFrame())
     return this
   }
@@ -376,14 +401,14 @@ export class TemplateBase
       args.push('-g')
     }
 
-    this._runCmd(args)
+    this.runCmd(args)
     this.stackTraces.push(getCallerFrame())
     return this
   }
 
   aptInstall(packages: string | string[]): TemplateBuilder {
     const packageList = Array.isArray(packages) ? packages : [packages]
-    this._runCmd(
+    this.runCmd(
       [
         'apt-get update',
         `DEBIAN_FRONTEND=noninteractive DEBCONF_NOWARNINGS=yes apt-get install -y --no-install-recommends ${packageList.join(
@@ -411,7 +436,7 @@ export class TemplateBase
       args.push(`--depth ${options.depth}`)
     }
 
-    this._runCmd(args.join(' '))
+    this.runCmd(args.join(' '))
     this.stackTraces.push(getCallerFrame())
     return this
   }
@@ -460,44 +485,6 @@ export class TemplateBase
   skipCache(): TemplateBuilder {
     this.forceNextLayer = true
     return this
-  }
-
-  private _fromImage(
-    baseImage: string,
-    options?: { registryConfig?: RegistryConfig }
-  ): void {
-    this.baseImage = baseImage
-    this.baseTemplate = undefined
-
-    // Set the registry config if provided
-    if (options?.registryConfig) {
-      this.registryConfig = options.registryConfig
-    }
-
-    // If we should force the next layer and it's a FROM command, invalidate whole template
-    if (this.forceNextLayer) {
-      this.force = true
-    }
-  }
-
-  private _runCmd(
-    commandOrCommands: string | string[],
-    options?: { user?: string }
-  ): void {
-    const cmds = Array.isArray(commandOrCommands)
-      ? commandOrCommands
-      : [commandOrCommands]
-
-    const args = [cmds.join(' && ')]
-    if (options?.user) {
-      args.push(options.user)
-    }
-
-    this.instructions.push({
-      type: 'RUN',
-      args,
-      force: this.forceNextLayer,
-    })
   }
 
   private async toJSON(): Promise<string> {

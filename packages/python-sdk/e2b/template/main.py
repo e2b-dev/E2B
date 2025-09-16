@@ -77,7 +77,7 @@ class TemplateBuilder:
         if force:
             args.append("-f")
 
-        self._run_cmd(" ".join(args))
+        self.run_cmd(" ".join(args))
         self._template._stack_traces.append(capture_stack_trace())
         return self
 
@@ -86,7 +86,7 @@ class TemplateBuilder:
         if force:
             args.append("-f")
 
-        self._run_cmd(" ".join(args))
+        self.run_cmd(" ".join(args))
         self._template._stack_traces.append(capture_stack_trace())
         return self
 
@@ -100,20 +100,19 @@ class TemplateBuilder:
         if mode:
             args.append(f"-m {pad_octal(mode)}")
 
-        self._run_cmd(" ".join(args))
+        self.run_cmd(" ".join(args))
         self._template._stack_traces.append(capture_stack_trace())
         return self
 
     def make_symlink(self, src: str, dest: str) -> "TemplateBuilder":
         args = ["ln", "-s", src, dest]
-        self._run_cmd(" ".join(args))
+        self.run_cmd(" ".join(args))
         self._template._stack_traces.append(capture_stack_trace())
         return self
 
-    def _run_cmd(
+    def run_cmd(
         self, command: Union[str, List[str]], user: Optional[str] = None
-    ) -> None:
-        """Private method to add RUN instruction"""
+    ) -> "TemplateBuilder":
         commands = [command] if isinstance(command, str) else command
         args = [" && ".join(commands)]
 
@@ -127,11 +126,6 @@ class TemplateBuilder:
             forceUpload=None,
         )
         self._template._instructions.append(instruction)
-
-    def run_cmd(
-        self, command: Union[str, List[str]], user: Optional[str] = None
-    ) -> "TemplateBuilder":
-        self._run_cmd(command, user)
         self._template._stack_traces.append(capture_stack_trace())
         return self
 
@@ -169,7 +163,7 @@ class TemplateBuilder:
         else:
             args.append(".")
 
-        self._run_cmd(" ".join(args))
+        self.run_cmd(" ".join(args))
         self._template._stack_traces.append(capture_stack_trace())
         return self
 
@@ -187,7 +181,7 @@ class TemplateBuilder:
         if g:
             args.append("-g")
 
-        self._run_cmd(" ".join(args))
+        self.run_cmd(" ".join(args))
         self._template._stack_traces.append(capture_stack_trace())
         return self
 
@@ -195,7 +189,7 @@ class TemplateBuilder:
         if isinstance(packages, str):
             packages = [packages]
 
-        self._run_cmd(
+        self.run_cmd(
             [
                 "apt-get update",
                 f"DEBIAN_FRONTEND=noninteractive DEBCONF_NOWARNINGS=yes apt-get install -y --no-install-recommends {' '.join(packages)}",
@@ -218,7 +212,7 @@ class TemplateBuilder:
             args.append("--single-branch")
         if depth:
             args.append(f"--depth {depth}")
-        self._run_cmd(" ".join(args))
+        self.run_cmd(" ".join(args))
         self._template._stack_traces.append(capture_stack_trace())
         return self
 
@@ -318,9 +312,9 @@ class TemplateBase:
     def from_base_image(self) -> TemplateBuilder:
         return self.from_image(self._default_base_image)
 
-    def _from_image(
+    def from_image(
         self, base_image: str, registry_config: Optional[RegistryConfig] = None
-    ):
+    ) -> TemplateBuilder:
         """Private method to set base image without adding stack trace"""
         self._base_image = base_image
         self._base_template = None
@@ -333,10 +327,6 @@ class TemplateBase:
         if self._force_next_layer:
             self._force = True
 
-    def from_image(
-        self, base_image: str, registry_config: Optional[RegistryConfig] = None
-    ) -> TemplateBuilder:
-        self._from_image(base_image, registry_config)
         self._stack_traces.append(capture_stack_trace())
         return TemplateBuilder(self)
 
@@ -375,7 +365,7 @@ class TemplateBase:
     def from_registry(
         self, image: str, username: str, password: str
     ) -> TemplateBuilder:
-        self._from_image(
+        self.from_image(
             image,
             registry_config={
                 "type": "registry",
@@ -394,7 +384,7 @@ class TemplateBase:
         secret_access_key: str,
         region: str,
     ) -> TemplateBuilder:
-        self._from_image(
+        self.from_image(
             image,
             registry_config={
                 "type": "aws",
@@ -410,7 +400,7 @@ class TemplateBase:
     def from_gcp_registry(
         self, image: str, service_account_json: Union[str, dict]
     ) -> TemplateBuilder:
-        self._from_image(
+        self.from_image(
             image,
             registry_config={
                 "type": "gcp",
