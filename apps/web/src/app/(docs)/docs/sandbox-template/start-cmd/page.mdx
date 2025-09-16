@@ -41,8 +41,7 @@ These logs are the logs from the start command during the build phase.
 import { Sandbox } from 'e2b'
 
 // Spawn your custom sandbox
-const sandbox = await Sandbox.create({
-  id: 'my-agent-sandbox',
+const sandbox = await Sandbox.create('my-agent-sandbox', {
   // If you specify onStderr and onStdout handlers when spawning the sandbox
   // you will see logs from the start command.
   onStderr: output => console.log("stderr", output.line), // $HighlightLine
@@ -50,7 +49,7 @@ const sandbox = await Sandbox.create({
 })
 
 // Close sandbox once done
-await sandbox.close()
+await sandbox.kill()
 ```
 
 ```python {{ language: 'python' }}
@@ -58,7 +57,7 @@ from e2b import Sandbox
 
 # Spawn your custom sandbox
 sandbox = Sandbox.create(
-  id="my-agent-sandbox",
+  template="my-agent-sandbox",
   # If you specify on_stderr and on_stdout handlers when spawning the sandbox
   # you will see logs from the start command.
   on_stderr=lambda output: print("stderr", output.line),  # $HighlightLine
