@@ -66,7 +66,7 @@ export class TemplateBase
   private ignoreFilePaths: string[] = []
   private logsRefreshFrequency: number = 200
   private stackTraces: (string | undefined)[] = []
-  private skipNextTrace: boolean = false
+  private stackTracesEnabled: boolean = true
 
   constructor(options?: TemplateOptions) {
     this.fileContextPath = options?.fileContextPath ?? this.fileContextPath
@@ -168,7 +168,7 @@ export class TemplateBase
       password: string
     }
   ): TemplateBuilder {
-    this.skipStackTrace().fromImage(image, {
+    this.disableStackTrace().fromImage(image, {
       registryConfig: {
         type: 'registry',
         username: options.username,
@@ -176,7 +176,7 @@ export class TemplateBase
       },
     })
 
-    this.collectStackTrace()
+    this.enableStackTrace().collectStackTrace()
     return this
   }
 
@@ -188,7 +188,7 @@ export class TemplateBase
       region: string
     }
   ): TemplateBuilder {
-    this.skipStackTrace().fromImage(image, {
+    this.disableStackTrace().fromImage(image, {
       registryConfig: {
         type: 'aws',
         awsAccessKeyId: options.accessKeyId,
@@ -197,7 +197,7 @@ export class TemplateBase
       },
     })
 
-    this.collectStackTrace()
+    this.enableStackTrace().collectStackTrace()
     return this
   }
 
@@ -207,7 +207,7 @@ export class TemplateBase
       serviceAccountJSON: string | object
     }
   ): TemplateBuilder {
-    this.skipStackTrace().fromImage(image, {
+    this.disableStackTrace().fromImage(image, {
       registryConfig: {
         type: 'gcp',
         serviceAccountJson: readGCPServiceAccountJSON(
@@ -217,7 +217,7 @@ export class TemplateBase
       },
     })
 
-    this.collectStackTrace()
+    this.enableStackTrace().collectStackTrace()
     return this
   }
 
@@ -284,8 +284,8 @@ export class TemplateBase
       args.push('-f')
     }
 
-    this.skipStackTrace().runCmd(args.join(' '))
-    this.collectStackTrace()
+    this.disableStackTrace().runCmd(args.join(' '))
+    this.enableStackTrace().collectStackTrace()
     return this
   }
 
@@ -299,8 +299,8 @@ export class TemplateBase
       args.push('-f')
     }
 
-    this.skipStackTrace().runCmd(args.join(' '))
-    this.collectStackTrace()
+    this.disableStackTrace().runCmd(args.join(' '))
+    this.enableStackTrace().collectStackTrace()
     return this
   }
 
@@ -313,16 +313,16 @@ export class TemplateBase
       args.push(`-m ${padOctal(options.mode)}`)
     }
 
-    this.skipStackTrace().runCmd(args.join(' '))
-    this.collectStackTrace()
+    this.disableStackTrace().runCmd(args.join(' '))
+    this.enableStackTrace().collectStackTrace()
     return this
   }
 
   makeSymlink(src: string, dest: string): TemplateBuilder {
     const args = ['ln', '-s', src, dest]
 
-    this.skipStackTrace().runCmd(args.join(' '))
-    this.collectStackTrace()
+    this.disableStackTrace().runCmd(args.join(' '))
+    this.enableStackTrace().collectStackTrace()
     return this
   }
 
@@ -384,8 +384,8 @@ export class TemplateBase
       args.push('.')
     }
 
-    this.skipStackTrace().runCmd(args)
-    this.collectStackTrace()
+    this.disableStackTrace().runCmd(args)
+    this.enableStackTrace().collectStackTrace()
     return this
   }
 
@@ -403,14 +403,14 @@ export class TemplateBase
       args.push('-g')
     }
 
-    this.skipStackTrace().runCmd(args)
-    this.collectStackTrace()
+    this.disableStackTrace().runCmd(args)
+    this.enableStackTrace().collectStackTrace()
     return this
   }
 
   aptInstall(packages: string | string[]): TemplateBuilder {
     const packageList = Array.isArray(packages) ? packages : [packages]
-    this.runCmd(
+    this.disableStackTrace().runCmd(
       [
         'apt-get update',
         `DEBIAN_FRONTEND=noninteractive DEBCONF_NOWARNINGS=yes apt-get install -y --no-install-recommends ${packageList.join(
@@ -420,7 +420,7 @@ export class TemplateBase
       { user: 'root' }
     )
 
-    this.collectStackTrace()
+    this.enableStackTrace().collectStackTrace()
     return this
   }
 
@@ -438,8 +438,8 @@ export class TemplateBase
       args.push(`--depth ${options.depth}`)
     }
 
-    this.skipStackTrace().runCmd(args.join(' '))
-    this.collectStackTrace()
+    this.disableStackTrace().runCmd(args.join(' '))
+    this.enableStackTrace().collectStackTrace()
     return this
   }
 
@@ -490,7 +490,7 @@ export class TemplateBase
   }
 
   private collectStackTrace() {
-    if (this.skipNextTrace) {
+    if (!this.stackTracesEnabled) {
       return this
     }
 
@@ -498,9 +498,22 @@ export class TemplateBase
     return this
   }
 
-  private skipStackTrace() {
-    this.skipNextTrace = true
+  private disableStackTrace() {
+    this.stackTracesEnabled = false
     return this
+  }
+
+  private enableStackTrace() {
+    this.stackTracesEnabled = true
+    return this
+  }
+
+  private stackTraceContext<T>(f: () => T): T {
+    this.disableStackTrace()
+    const result = f()
+    this.enableStackTrace()
+    this.collectStackTrace()
+    return result
   }
 
   private async toJSON(): Promise<string> {
