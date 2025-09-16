@@ -148,17 +148,18 @@ export class TemplateBase
    * @returns TemplateBuilder instance for method chaining
    */
   fromDockerfile(dockerfileContentOrPath: string): TemplateBuilder {
-    const { baseImage } = parseDockerfile(dockerfileContentOrPath, this)
-    this.baseImage = baseImage
-    this.baseTemplate = undefined
+    return this.stackTraceContext(() => {
+      const { baseImage } = parseDockerfile(dockerfileContentOrPath, this)
+      this.baseImage = baseImage
+      this.baseTemplate = undefined
 
-    // If we should force the next layer and it's a FROM command, invalidate whole template
-    if (this.forceNextLayer) {
-      this.force = true
-    }
+      // If we should force the next layer and it's a FROM command, invalidate whole template
+      if (this.forceNextLayer) {
+        this.force = true
+      }
 
-    this.collectStackTrace()
-    return this
+      return this
+    })
   }
 
   fromRegistry(
@@ -168,16 +169,15 @@ export class TemplateBase
       password: string
     }
   ): TemplateBuilder {
-    this.disableStackTrace().fromImage(image, {
-      registryConfig: {
-        type: 'registry',
-        username: options.username,
-        password: options.password,
-      },
-    })
-
-    this.enableStackTrace().collectStackTrace()
-    return this
+    return this.stackTraceContext(() =>
+      this.fromImage(image, {
+        registryConfig: {
+          type: 'registry',
+          username: options.username,
+          password: options.password,
+        },
+      })
+    )
   }
 
   fromAWSRegistry(
@@ -188,17 +188,16 @@ export class TemplateBase
       region: string
     }
   ): TemplateBuilder {
-    this.disableStackTrace().fromImage(image, {
-      registryConfig: {
-        type: 'aws',
-        awsAccessKeyId: options.accessKeyId,
-        awsSecretAccessKey: options.secretAccessKey,
-        awsRegion: options.region,
-      },
-    })
-
-    this.enableStackTrace().collectStackTrace()
-    return this
+    return this.stackTraceContext(() =>
+      this.fromImage(image, {
+        registryConfig: {
+          type: 'aws',
+          awsAccessKeyId: options.accessKeyId,
+          awsSecretAccessKey: options.secretAccessKey,
+          awsRegion: options.region,
+        },
+      })
+    )
   }
 
   fromGCPRegistry(
@@ -207,18 +206,17 @@ export class TemplateBase
       serviceAccountJSON: string | object
     }
   ): TemplateBuilder {
-    this.disableStackTrace().fromImage(image, {
-      registryConfig: {
-        type: 'gcp',
-        serviceAccountJson: readGCPServiceAccountJSON(
-          this.fileContextPath,
-          options.serviceAccountJSON
-        ),
-      },
-    })
-
-    this.enableStackTrace().collectStackTrace()
-    return this
+    return this.stackTraceContext(() =>
+      this.fromImage(image, {
+        registryConfig: {
+          type: 'gcp',
+          serviceAccountJson: readGCPServiceAccountJSON(
+            this.fileContextPath,
+            options.serviceAccountJSON
+          ),
+        },
+      })
+    )
   }
 
   copy(
@@ -284,9 +282,7 @@ export class TemplateBase
       args.push('-f')
     }
 
-    this.disableStackTrace().runCmd(args.join(' '))
-    this.enableStackTrace().collectStackTrace()
-    return this
+    return this.stackTraceContext(() => this.runCmd(args.join(' ')))
   }
 
   rename(
@@ -299,9 +295,7 @@ export class TemplateBase
       args.push('-f')
     }
 
-    this.disableStackTrace().runCmd(args.join(' '))
-    this.enableStackTrace().collectStackTrace()
-    return this
+    return this.stackTraceContext(() => this.runCmd(args.join(' ')))
   }
 
   makeDir(
@@ -313,17 +307,13 @@ export class TemplateBase
       args.push(`-m ${padOctal(options.mode)}`)
     }
 
-    this.disableStackTrace().runCmd(args.join(' '))
-    this.enableStackTrace().collectStackTrace()
-    return this
+    return this.stackTraceContext(() => this.runCmd(args.join(' ')))
   }
 
   makeSymlink(src: string, dest: string): TemplateBuilder {
     const args = ['ln', '-s', src, dest]
 
-    this.disableStackTrace().runCmd(args.join(' '))
-    this.enableStackTrace().collectStackTrace()
-    return this
+    return this.stackTraceContext(() => this.runCmd(args.join(' ')))
   }
 
   runCmd(
@@ -384,9 +374,7 @@ export class TemplateBase
       args.push('.')
     }
 
-    this.disableStackTrace().runCmd(args)
-    this.enableStackTrace().collectStackTrace()
-    return this
+    return this.stackTraceContext(() => this.runCmd(args))
   }
 
   npmInstall(packages?: string | string[], g?: boolean): TemplateBuilder {
@@ -403,25 +391,22 @@ export class TemplateBase
       args.push('-g')
     }
 
-    this.disableStackTrace().runCmd(args)
-    this.enableStackTrace().collectStackTrace()
-    return this
+    return this.stackTraceContext(() => this.runCmd(args))
   }
 
   aptInstall(packages: string | string[]): TemplateBuilder {
     const packageList = Array.isArray(packages) ? packages : [packages]
-    this.disableStackTrace().runCmd(
-      [
-        'apt-get update',
-        `DEBIAN_FRONTEND=noninteractive DEBCONF_NOWARNINGS=yes apt-get install -y --no-install-recommends ${packageList.join(
-          ' '
-        )}`,
-      ],
-      { user: 'root' }
+    return this.stackTraceContext(() =>
+      this.runCmd(
+        [
+          'apt-get update',
+          `DEBIAN_FRONTEND=noninteractive DEBCONF_NOWARNINGS=yes apt-get install -y --no-install-recommends ${packageList.join(
+            ' '
+          )}`,
+        ],
+        { user: 'root' }
+      )
     )
-
-    this.enableStackTrace().collectStackTrace()
-    return this
   }
 
   gitClone(
@@ -438,9 +423,7 @@ export class TemplateBase
       args.push(`--depth ${options.depth}`)
     }
 
-    this.disableStackTrace().runCmd(args.join(' '))
-    this.enableStackTrace().collectStackTrace()
-    return this
+    return this.stackTraceContext(() => this.runCmd(args.join(' ')))
   }
 
   setStartCmd(
@@ -489,12 +472,12 @@ export class TemplateBase
     return this
   }
 
-  private collectStackTrace() {
+  private collectStackTrace(callerFrameDepth: number = 3) {
     if (!this.stackTracesEnabled) {
       return this
     }
 
-    this.stackTraces.push(getCallerFrame())
+    this.stackTraces.push(getCallerFrame(callerFrameDepth))
     return this
   }
 
@@ -512,7 +495,7 @@ export class TemplateBase
     this.disableStackTrace()
     const result = f()
     this.enableStackTrace()
-    this.collectStackTrace()
+    this.collectStackTrace(4)
     return result
   }
 

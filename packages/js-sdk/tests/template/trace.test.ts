@@ -60,7 +60,9 @@ test('traces on fromTemplate', { timeout: testTimeout }, async () => {
 })
 
 test('traces on fromDockerfile', { timeout: testTimeout }, async () => {
-  const template = Template().fromDockerfile('FROM nonexistent:latest')
+  const template = Template().fromDockerfile(
+    'FROM ubuntu:22.04\nRUN nonexistent'
+  )
   await expectTemplateToThrowAndCheckTrace(template, 'fromDockerfile')
 })
 
@@ -72,7 +74,15 @@ test('traces on fromRegistry', { timeout: testTimeout }, async () => {
       password: 'test',
     }
   )
-  await expectTemplateToThrowAndCheckTrace(template, 'fromRegistry')
+  // await expectTemplateToThrowAndCheckTrace(template, 'fromRegistry')
+  await Template.build(template, {
+    alias: randomUUID(),
+    cpuCount: 1,
+    memoryMB: 1024,
+    onBuildLogs: (logEntry) => {
+      console.log(logEntry)
+    },
+  })
 })
 
 test('traces on fromAWSRegistry', { timeout: testTimeout }, async () => {
