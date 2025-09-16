@@ -123,7 +123,7 @@ export class TemplateBase
       this.force = true
     }
 
-    this.collectTrace()
+    this.collectStackTrace()
     return this
   }
 
@@ -136,7 +136,7 @@ export class TemplateBase
       this.force = true
     }
 
-    this.collectTrace()
+    this.collectStackTrace()
     return this
   }
 
@@ -157,7 +157,7 @@ export class TemplateBase
       this.force = true
     }
 
-    this.collectTrace()
+    this.collectStackTrace()
     return this
   }
 
@@ -168,7 +168,7 @@ export class TemplateBase
       password: string
     }
   ): TemplateBuilder {
-    this.skipTrace().fromImage(image, {
+    this.skipStackTrace().fromImage(image, {
       registryConfig: {
         type: 'registry',
         username: options.username,
@@ -176,7 +176,7 @@ export class TemplateBase
       },
     })
 
-    this.collectTrace()
+    this.collectStackTrace()
     return this
   }
 
@@ -188,7 +188,7 @@ export class TemplateBase
       region: string
     }
   ): TemplateBuilder {
-    this.skipTrace().fromImage(image, {
+    this.skipStackTrace().fromImage(image, {
       registryConfig: {
         type: 'aws',
         awsAccessKeyId: options.accessKeyId,
@@ -197,7 +197,7 @@ export class TemplateBase
       },
     })
 
-    this.collectTrace()
+    this.collectStackTrace()
     return this
   }
 
@@ -207,7 +207,7 @@ export class TemplateBase
       serviceAccountJSON: string | object
     }
   ): TemplateBuilder {
-    this.skipTrace().fromImage(image, {
+    this.skipStackTrace().fromImage(image, {
       registryConfig: {
         type: 'gcp',
         serviceAccountJson: readGCPServiceAccountJSON(
@@ -217,7 +217,7 @@ export class TemplateBase
       },
     })
 
-    this.collectTrace()
+    this.collectStackTrace()
     return this
   }
 
@@ -268,7 +268,7 @@ export class TemplateBase
       })
     }
 
-    this.collectTrace()
+    this.collectStackTrace()
     return this
   }
 
@@ -284,8 +284,8 @@ export class TemplateBase
       args.push('-f')
     }
 
-    this.skipTrace().runCmd(args.join(' '))
-    this.collectTrace()
+    this.skipStackTrace().runCmd(args.join(' '))
+    this.collectStackTrace()
     return this
   }
 
@@ -299,8 +299,8 @@ export class TemplateBase
       args.push('-f')
     }
 
-    this.skipTrace().runCmd(args.join(' '))
-    this.collectTrace()
+    this.skipStackTrace().runCmd(args.join(' '))
+    this.collectStackTrace()
     return this
   }
 
@@ -313,16 +313,16 @@ export class TemplateBase
       args.push(`-m ${padOctal(options.mode)}`)
     }
 
-    this.skipTrace().runCmd(args.join(' '))
-    this.collectTrace()
+    this.skipStackTrace().runCmd(args.join(' '))
+    this.collectStackTrace()
     return this
   }
 
   makeSymlink(src: string, dest: string): TemplateBuilder {
     const args = ['ln', '-s', src, dest]
 
-    this.skipTrace().runCmd(args.join(' '))
-    this.collectTrace()
+    this.skipStackTrace().runCmd(args.join(' '))
+    this.collectStackTrace()
     return this
   }
 
@@ -345,7 +345,7 @@ export class TemplateBase
       force: this.forceNextLayer,
     })
 
-    this.collectTrace()
+    this.collectStackTrace()
     return this
   }
 
@@ -356,7 +356,7 @@ export class TemplateBase
       force: this.forceNextLayer,
     })
 
-    this.collectTrace()
+    this.collectStackTrace()
     return this
   }
 
@@ -367,7 +367,7 @@ export class TemplateBase
       force: this.forceNextLayer,
     })
 
-    this.collectTrace()
+    this.collectStackTrace()
     return this
   }
 
@@ -384,8 +384,8 @@ export class TemplateBase
       args.push('.')
     }
 
-    this.skipTrace().runCmd(args)
-    this.collectTrace()
+    this.skipStackTrace().runCmd(args)
+    this.collectStackTrace()
     return this
   }
 
@@ -403,8 +403,8 @@ export class TemplateBase
       args.push('-g')
     }
 
-    this.skipTrace().runCmd(args)
-    this.collectTrace()
+    this.skipStackTrace().runCmd(args)
+    this.collectStackTrace()
     return this
   }
 
@@ -420,7 +420,7 @@ export class TemplateBase
       { user: 'root' }
     )
 
-    this.collectTrace()
+    this.collectStackTrace()
     return this
   }
 
@@ -438,8 +438,8 @@ export class TemplateBase
       args.push(`--depth ${options.depth}`)
     }
 
-    this.skipTrace().runCmd(args.join(' '))
-    this.collectTrace()
+    this.skipStackTrace().runCmd(args.join(' '))
+    this.collectStackTrace()
     return this
   }
 
@@ -455,7 +455,7 @@ export class TemplateBase
       this.readyCmd = readyCommand
     }
 
-    this.collectTrace()
+    this.collectStackTrace()
     return this
   }
 
@@ -466,7 +466,7 @@ export class TemplateBase
       this.readyCmd = readyCommand
     }
 
-    this.collectTrace()
+    this.collectStackTrace()
     return this
   }
 
@@ -480,7 +480,7 @@ export class TemplateBase
       args: Object.entries(envs).flatMap(([key, value]) => [key, value]),
       force: this.forceNextLayer,
     })
-    this.collectTrace()
+    this.collectStackTrace()
     return this
   }
 
@@ -489,9 +489,8 @@ export class TemplateBase
     return this
   }
 
-  private collectTrace() {
+  private collectStackTrace() {
     if (this.skipNextTrace) {
-      this.skipNextTrace = false
       return this
     }
 
@@ -499,7 +498,7 @@ export class TemplateBase
     return this
   }
 
-  skipTrace() {
+  private skipStackTrace() {
     this.skipNextTrace = true
     return this
   }
