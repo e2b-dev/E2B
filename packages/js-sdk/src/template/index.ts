@@ -158,6 +158,7 @@ export class TemplateBase
       this.force = true
     }
 
+    this.collectStackTrace()
     return this
   }
 
@@ -492,6 +493,10 @@ export class TemplateBase
     this.enableStackTrace()
     this.collectStackTrace(this.stackTracesDepth + 1)
     return result
+  }
+
+  private setStackTraceDepth(depth: number) {
+    this.stackTracesDepth = depth
   }
 
   private async toJSON(): Promise<string> {
