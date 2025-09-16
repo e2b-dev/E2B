@@ -2,7 +2,7 @@ import platform from 'platform'
 
 declare let window: any
 
-export type Runtime =
+type Runtime =
   | 'node'
   | 'browser'
   | 'deno'
