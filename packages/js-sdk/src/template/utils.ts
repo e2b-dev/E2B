@@ -51,7 +51,7 @@ export async function calculateFilesHash(
  * Levels explained: caller (eg. from class TemplateBase.fromImage) > original caller (eg. template file)
  * @returns The caller frame
  */
-export function getCallerFrame(depth: number = 3): string | undefined {
+export function getCallerFrame(depth: number): string | undefined {
   const stackTrace = new Error().stack
   if (!stackTrace) {
     return

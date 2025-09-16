@@ -96,10 +96,10 @@ def pad_octal(mode: int) -> str:
     return f"{mode:04o}"
 
 
-def capture_stack_trace() -> TracebackType:
+def capture_stack_trace(depth) -> TracebackType:
     """Capture the current stack trace, similar to JavaScript's captureStackTrace function."""
     # Get the stack trace and skip this function and the immediate caller
-    stack = get_caller_frame()
+    stack = get_caller_frame(depth)
     if stack is None:
         raise RuntimeError("Could not get caller frame")
 
