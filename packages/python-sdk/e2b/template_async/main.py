@@ -73,8 +73,6 @@ class AsyncTemplate(TemplateBase):
                     )
                 )
 
-            instructions_with_hashes = template._template._calculate_hashes()
-
             # Prepare file uploads
             file_uploads = [
                 {
@@ -83,7 +81,7 @@ class AsyncTemplate(TemplateBase):
                     "filesHash": instruction.get("filesHash"),
                     "forceUpload": instruction.get("forceUpload"),
                 }
-                for instruction in instructions_with_hashes
+                for instruction in template._template._instructions
                 if instruction["type"] == "COPY"
             ]
 
@@ -142,7 +140,7 @@ class AsyncTemplate(TemplateBase):
                 api_client,
                 template_id,
                 build_id,
-                template._template._serialize(instructions_with_hashes),
+                template._template._serialize(),
             )
 
             if on_build_logs:

@@ -16,13 +16,13 @@ export function readDockerignore(contextPath: string): string[] {
     .filter((line) => line && !line.startsWith('#'))
 }
 
-export async function calculateFilesHash(
+export function calculateFilesHash(
   src: string,
   dest: string,
   contextPath: string,
   ignorePatterns?: string[]
-): Promise<string> {
-  const { globSync } = await dynamicGlob()
+): string {
+  const { globSync } = dynamicGlob()
   const srcPath = path.join(contextPath, src)
   const hash = crypto.createHash('sha256')
   const content = `COPY ${src} ${dest}`
@@ -68,8 +68,8 @@ export function padOctal(mode: number): string {
 }
 
 export async function tarFileStream(fileName: string, fileContextPath: string) {
-  const { globSync } = await dynamicGlob()
-  const { create } = await dynamicTar()
+  const { globSync } = dynamicGlob()
+  const { create } = dynamicTar()
   const files = globSync(fileName, { cwd: fileContextPath, nodir: false })
 
   return create(
