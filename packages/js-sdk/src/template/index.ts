@@ -1,5 +1,5 @@
 import { ApiClient } from '../api'
-import { runtime, type Runtime } from '../utils'
+import { runtime } from '../utils'
 import {
   getFileUploadLink,
   requestBuild,
