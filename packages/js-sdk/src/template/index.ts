@@ -8,7 +8,7 @@ import {
   uploadFile,
   waitForBuildFinish,
 } from './buildApi'
-import { DockerfileParserInterface, parseDockerfile } from './dockerfileParser'
+import { parseDockerfile } from './dockerfileParser'
 import {
   Instruction,
   TemplateFromImage,

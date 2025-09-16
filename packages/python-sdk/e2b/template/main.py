@@ -163,7 +163,9 @@ class TemplateBuilder:
         else:
             args.append(".")
 
-        return self._template._run_in_new_stack_trace_context(lambda: self.run_cmd(" ".join(args)))
+        return self._template._run_in_new_stack_trace_context(
+            lambda: self.run_cmd(" ".join(args))
+        )
 
     def npm_install(
         self,
@@ -179,19 +181,23 @@ class TemplateBuilder:
         if g:
             args.append("-g")
 
-        return self._template._run_in_new_stack_trace_context(lambda: self.run_cmd(" ".join(args)))
+        return self._template._run_in_new_stack_trace_context(
+            lambda: self.run_cmd(" ".join(args))
+        )
 
     def apt_install(self, packages: Union[str, List[str]]) -> "TemplateBuilder":
         if isinstance(packages, str):
             packages = [packages]
 
-        return self._template._run_in_new_stack_trace_context(lambda: self.run_cmd(
-            [
-                "apt-get update",
-                f"DEBIAN_FRONTEND=noninteractive DEBCONF_NOWARNINGS=yes apt-get install -y --no-install-recommends {' '.join(packages)}",
-            ],
-            user="root",
-        ))
+        return self._template._run_in_new_stack_trace_context(
+            lambda: self.run_cmd(
+                [
+                    "apt-get update",
+                    f"DEBIAN_FRONTEND=noninteractive DEBCONF_NOWARNINGS=yes apt-get install -y --no-install-recommends {' '.join(packages)}",
+                ],
+                user="root",
+            )
+        )
 
     def git_clone(
         self,
@@ -206,7 +212,9 @@ class TemplateBuilder:
             args.append("--single-branch")
         if depth:
             args.append(f"--depth {depth}")
-        return self._template._run_in_new_stack_trace_context(lambda: self.run_cmd(" ".join(args)))
+        return self._template._run_in_new_stack_trace_context(
+            lambda: self.run_cmd(" ".join(args))
+        )
 
     def set_envs(self, envs: Dict[str, str]) -> "TemplateBuilder":
         if len(envs) == 0:
@@ -290,11 +298,13 @@ class TemplateBase:
         self._force_next_layer = True
         return self
 
-    def _collect_stack_trace(self, stack_traces_depth: Optional[int] = None) -> "TemplateBase":
+    def _collect_stack_trace(
+        self, stack_traces_depth: Optional[int] = None
+    ) -> "TemplateBase":
         """Collect stack trace if enabled"""
         if not self._stack_traces_enabled:
             return self
-        
+
         depth = stack_traces_depth or self._stack_traces_depth
         self._stack_traces.append(capture_stack_trace(depth))
         return self
@@ -324,19 +334,29 @@ class TemplateBase:
 
     # Built-in image mixins
     def from_debian_image(self, variant: str = "slim") -> TemplateBuilder:
-        return self._run_in_new_stack_trace_context(lambda: self.from_image(f"debian:{variant}"))
+        return self._run_in_new_stack_trace_context(
+            lambda: self.from_image(f"debian:{variant}")
+        )
 
     def from_ubuntu_image(self, variant: str = "lts") -> TemplateBuilder:
-        return self._run_in_new_stack_trace_context(lambda: self.from_image(f"ubuntu:{variant}"))
+        return self._run_in_new_stack_trace_context(
+            lambda: self.from_image(f"ubuntu:{variant}")
+        )
 
     def from_python_image(self, version: str = "3.13") -> TemplateBuilder:
-        return self._run_in_new_stack_trace_context(lambda: self.from_image(f"python:{version}"))
+        return self._run_in_new_stack_trace_context(
+            lambda: self.from_image(f"python:{version}")
+        )
 
     def from_node_image(self, variant: str = "lts") -> TemplateBuilder:
-        return self._run_in_new_stack_trace_context(lambda: self.from_image(f"node:{variant}"))
+        return self._run_in_new_stack_trace_context(
+            lambda: self.from_image(f"node:{variant}")
+        )
 
     def from_base_image(self) -> TemplateBuilder:
-        return self._run_in_new_stack_trace_context(lambda: self.from_image(self._default_base_image))
+        return self._run_in_new_stack_trace_context(
+            lambda: self.from_image(self._default_base_image)
+        )
 
     def from_image(
         self, base_image: str, registry_config: Optional[RegistryConfig] = None
@@ -391,14 +411,16 @@ class TemplateBase:
     def from_registry(
         self, image: str, username: str, password: str
     ) -> TemplateBuilder:
-        return self._run_in_new_stack_trace_context(lambda: self.from_image(
-            image,
-            registry_config={
-                "type": "registry",
-                "username": username,
-                "password": password,
-            },
-        ))
+        return self._run_in_new_stack_trace_context(
+            lambda: self.from_image(
+                image,
+                registry_config={
+                    "type": "registry",
+                    "username": username,
+                    "password": password,
+                },
+            )
+        )
 
     def from_aws_registry(
         self,
@@ -407,28 +429,32 @@ class TemplateBase:
         secret_access_key: str,
         region: str,
     ) -> TemplateBuilder:
-        return self._run_in_new_stack_trace_context(lambda: self.from_image(
-            image,
-            registry_config={
-                "type": "aws",
-                "awsAccessKeyId": access_key_id,
-                "awsSecretAccessKey": secret_access_key,
-                "awsRegion": region,
-            },
-        ))
+        return self._run_in_new_stack_trace_context(
+            lambda: self.from_image(
+                image,
+                registry_config={
+                    "type": "aws",
+                    "awsAccessKeyId": access_key_id,
+                    "awsSecretAccessKey": secret_access_key,
+                    "awsRegion": region,
+                },
+            )
+        )
 
     def from_gcp_registry(
         self, image: str, service_account_json: Union[str, dict]
     ) -> TemplateBuilder:
-        return self._run_in_new_stack_trace_context(lambda: self.from_image(
-            image,
-            registry_config={
-                "type": "gcp",
-                "serviceAccountJson": read_gcp_service_account_json(
-                    self._file_context_path, service_account_json
-                ),
-            },
-        ))
+        return self._run_in_new_stack_trace_context(
+            lambda: self.from_image(
+                image,
+                registry_config={
+                    "type": "gcp",
+                    "serviceAccountJson": read_gcp_service_account_json(
+                        self._file_context_path, service_account_json
+                    ),
+                },
+            )
+        )
 
     @staticmethod
     def to_json(template: "TemplateClass") -> str:
