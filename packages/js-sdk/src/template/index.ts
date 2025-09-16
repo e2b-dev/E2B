@@ -8,7 +8,7 @@ import {
   uploadFile,
   waitForBuildFinish,
 } from './buildApi'
-import { parseDockerfile } from './dockerfileParser'
+import { DockerfileParserInterface, parseDockerfile } from './dockerfileParser'
 import {
   Instruction,
   TemplateFromImage,
@@ -66,6 +66,7 @@ export class TemplateBase
   private ignoreFilePaths: string[] = []
   private logsRefreshFrequency: number = 200
   private stackTraces: (string | undefined)[] = []
+  private skipNextTrace: boolean = false
 
   constructor(options?: TemplateOptions) {
     this.fileContextPath = options?.fileContextPath ?? this.fileContextPath
@@ -111,7 +112,6 @@ export class TemplateBase
   ): TemplateBuilder {
     this.baseImage = baseImage
     this.baseTemplate = undefined
-    this.stackTraces.push(getCallerFrame())
 
     // Set the registry config if provided
     if (options?.registryConfig) {
@@ -123,19 +123,20 @@ export class TemplateBase
       this.force = true
     }
 
+    this.collectTrace()
     return this
   }
 
   fromTemplate(template: string): TemplateBuilder {
     this.baseTemplate = template
     this.baseImage = undefined
-    this.stackTraces.push(getCallerFrame())
 
     // If we should force the next layer and it's a FROM command, invalidate whole template
     if (this.forceNextLayer) {
       this.force = true
     }
 
+    this.collectTrace()
     return this
   }
 
@@ -150,13 +151,13 @@ export class TemplateBase
     const { baseImage } = parseDockerfile(dockerfileContentOrPath, this)
     this.baseImage = baseImage
     this.baseTemplate = undefined
-    this.stackTraces.push(getCallerFrame())
 
     // If we should force the next layer and it's a FROM command, invalidate whole template
     if (this.forceNextLayer) {
       this.force = true
     }
 
+    this.collectTrace()
     return this
   }
 
@@ -167,7 +168,7 @@ export class TemplateBase
       password: string
     }
   ): TemplateBuilder {
-    this.fromImage(image, {
+    this.skipTrace().fromImage(image, {
       registryConfig: {
         type: 'registry',
         username: options.username,
@@ -175,7 +176,7 @@ export class TemplateBase
       },
     })
 
-    this.stackTraces.push(getCallerFrame())
+    this.collectTrace()
     return this
   }
 
@@ -187,7 +188,7 @@ export class TemplateBase
       region: string
     }
   ): TemplateBuilder {
-    this.fromImage(image, {
+    this.skipTrace().fromImage(image, {
       registryConfig: {
         type: 'aws',
         awsAccessKeyId: options.accessKeyId,
@@ -196,7 +197,7 @@ export class TemplateBase
       },
     })
 
-    this.stackTraces.push(getCallerFrame())
+    this.collectTrace()
     return this
   }
 
@@ -206,7 +207,7 @@ export class TemplateBase
       serviceAccountJSON: string | object
     }
   ): TemplateBuilder {
-    this.fromImage(image, {
+    this.skipTrace().fromImage(image, {
       registryConfig: {
         type: 'gcp',
         serviceAccountJson: readGCPServiceAccountJSON(
@@ -216,7 +217,7 @@ export class TemplateBase
       },
     })
 
-    this.stackTraces.push(getCallerFrame())
+    this.collectTrace()
     return this
   }
 
@@ -267,7 +268,7 @@ export class TemplateBase
       })
     }
 
-    this.stackTraces.push(getCallerFrame())
+    this.collectTrace()
     return this
   }
 
@@ -283,8 +284,8 @@ export class TemplateBase
       args.push('-f')
     }
 
-    this.runCmd(args.join(' '))
-    this.stackTraces.push(getCallerFrame())
+    this.skipTrace().runCmd(args.join(' '))
+    this.collectTrace()
     return this
   }
 
@@ -298,8 +299,8 @@ export class TemplateBase
       args.push('-f')
     }
 
-    this.runCmd(args.join(' '))
-    this.stackTraces.push(getCallerFrame())
+    this.skipTrace().runCmd(args.join(' '))
+    this.collectTrace()
     return this
   }
 
@@ -312,16 +313,16 @@ export class TemplateBase
       args.push(`-m ${padOctal(options.mode)}`)
     }
 
-    this.runCmd(args.join(' '))
-    this.stackTraces.push(getCallerFrame())
+    this.skipTrace().runCmd(args.join(' '))
+    this.collectTrace()
     return this
   }
 
   makeSymlink(src: string, dest: string): TemplateBuilder {
     const args = ['ln', '-s', src, dest]
 
-    this.runCmd(args.join(' '))
-    this.stackTraces.push(getCallerFrame())
+    this.skipTrace().runCmd(args.join(' '))
+    this.collectTrace()
     return this
   }
 
@@ -344,6 +345,7 @@ export class TemplateBase
       force: this.forceNextLayer,
     })
 
+    this.collectTrace()
     return this
   }
 
@@ -354,7 +356,7 @@ export class TemplateBase
       force: this.forceNextLayer,
     })
 
-    this.stackTraces.push(getCallerFrame())
+    this.collectTrace()
     return this
   }
 
@@ -365,7 +367,7 @@ export class TemplateBase
       force: this.forceNextLayer,
     })
 
-    this.stackTraces.push(getCallerFrame())
+    this.collectTrace()
     return this
   }
 
@@ -382,8 +384,8 @@ export class TemplateBase
       args.push('.')
     }
 
-    this.runCmd(args)
-    this.stackTraces.push(getCallerFrame())
+    this.skipTrace().runCmd(args)
+    this.collectTrace()
     return this
   }
 
@@ -401,8 +403,8 @@ export class TemplateBase
       args.push('-g')
     }
 
-    this.runCmd(args)
-    this.stackTraces.push(getCallerFrame())
+    this.skipTrace().runCmd(args)
+    this.collectTrace()
     return this
   }
 
@@ -418,7 +420,7 @@ export class TemplateBase
       { user: 'root' }
     )
 
-    this.stackTraces.push(getCallerFrame())
+    this.collectTrace()
     return this
   }
 
@@ -436,8 +438,8 @@ export class TemplateBase
       args.push(`--depth ${options.depth}`)
     }
 
-    this.runCmd(args.join(' '))
-    this.stackTraces.push(getCallerFrame())
+    this.skipTrace().runCmd(args.join(' '))
+    this.collectTrace()
     return this
   }
 
@@ -453,7 +455,7 @@ export class TemplateBase
       this.readyCmd = readyCommand
     }
 
-    this.stackTraces.push(getCallerFrame())
+    this.collectTrace()
     return this
   }
 
@@ -464,7 +466,7 @@ export class TemplateBase
       this.readyCmd = readyCommand
     }
 
-    this.stackTraces.push(getCallerFrame())
+    this.collectTrace()
     return this
   }
 
@@ -478,12 +480,27 @@ export class TemplateBase
       args: Object.entries(envs).flatMap(([key, value]) => [key, value]),
       force: this.forceNextLayer,
     })
-    this.stackTraces.push(getCallerFrame())
+    this.collectTrace()
     return this
   }
 
   skipCache(): TemplateBuilder {
     this.forceNextLayer = true
+    return this
+  }
+
+  private collectTrace() {
+    if (this.skipNextTrace) {
+      this.skipNextTrace = false
+      return this
+    }
+
+    this.stackTraces.push(getCallerFrame())
+    return this
+  }
+
+  skipTrace() {
+    this.skipNextTrace = true
     return this
   }
 
