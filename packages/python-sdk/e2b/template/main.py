@@ -61,6 +61,15 @@ class TemplateBuilder:
                 args=args,
                 force=force_upload or self._template._force_next_layer,
                 forceUpload=force_upload,
+                filesHash=calculate_files_hash(
+                    copy_item["src"],
+                    copy_item["dest"],
+                    self._template._file_context_path,
+                    [
+                        *self._template._ignore_file_paths,
+                        *read_dockerignore(self._template._file_context_path),
+                    ],
+                ),
             )
             self._template._instructions.append(instruction)
         return self
@@ -381,7 +390,7 @@ class TemplateBase:
     @staticmethod
     def to_json(template: "TemplateClass") -> str:
         return json.dumps(
-            template._template._serialize(template._template._calculate_hashes()),
+            template._template._serialize(),
             indent=2,
         )
 
@@ -406,37 +415,9 @@ class TemplateBase:
 
         return dockerfile
 
-    def _calculate_hashes(
-        self,
-    ) -> List[Instruction]:
-        steps: List[Instruction] = []
-
-        for instruction in self._instructions:
-            step: Instruction = Instruction(
-                type=instruction["type"],
-                args=instruction["args"],
-                force=instruction["force"],
-                forceUpload=instruction.get("forceUpload"),
-            )
-
-            if instruction["type"] == "COPY":
-                step["filesHash"] = calculate_files_hash(
-                    instruction["args"][0],
-                    instruction["args"][1],
-                    self._file_context_path,
-                    [
-                        *self._ignore_file_paths,
-                        *read_dockerignore(self._file_context_path),
-                    ],
-                )
-
-            steps.append(step)
-
-        return steps
-
-    def _serialize(self, steps: List[Instruction]) -> TemplateType:
+    def _serialize(self) -> TemplateType:
         template_data: TemplateType = {
-            "steps": steps,
+            "steps": self._instructions,
             "force": self._force,
         }
 

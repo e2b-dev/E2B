@@ -1,5 +1,5 @@
 import { ApiClient } from '../api'
-import { runtime } from '../utils'
+import { runtime, type Runtime } from '../utils'
 import {
   getFileUploadLink,
   requestBuild,
@@ -19,11 +19,11 @@ import {
   RegistryConfig,
 } from './types'
 import {
-  calculateFilesHash,
   getCallerDirectory,
   padOctal,
   readDockerignore,
   readGCPServiceAccountJSON,
+  calculateFilesHash,
 } from './utils'
 import { ConnectionConfig } from '../connectionConfig'
 import { ReadyCmd } from './readycmd'
@@ -250,6 +250,12 @@ export class TemplateBase
         args,
         force: item.forceUpload ?? this.forceNextLayer,
         forceUpload: item.forceUpload,
+        filesHash: calculateFilesHash(
+          item.src,
+          item.dest,
+          this.fileContextPath,
+          [...this.ignoreFilePaths, ...readDockerignore(this.fileContextPath)]
+        ),
       })
     }
 
@@ -449,11 +455,7 @@ export class TemplateBase
   }
 
   private async toJSON(): Promise<string> {
-    return JSON.stringify(
-      this.serialize(await this.calculateFilesHashes()),
-      undefined,
-      2
-    )
+    return JSON.stringify(this.serialize(), undefined, 2)
   }
 
   private toDockerfile(): string {
@@ -512,10 +514,8 @@ export class TemplateBase
       )
     )
 
-    const instructionsWithHashes = await this.calculateFilesHashes()
-
     // Prepare file uploads
-    const fileUploads = instructionsWithHashes
+    const fileUploads = this.instructions
       .filter((instruction) => instruction.type === 'COPY')
       .map((instruction) => ({
         src: instruction.args[0],
@@ -568,7 +568,7 @@ export class TemplateBase
     await triggerBuild(client, {
       templateID,
       buildID,
-      template: this.serialize(instructionsWithHashes),
+      template: this.serialize(),
     })
 
     options.onBuildLogs?.(
@@ -583,36 +583,11 @@ export class TemplateBase
     })
   }
 
-  // We might no longer need this as we move the logic server-side
-  private async calculateFilesHashes(): Promise<Instruction[]> {
-    const steps: Instruction[] = []
-
-    for (const instruction of this.instructions) {
-      if (instruction.type === 'COPY') {
-        instruction.filesHash = await calculateFilesHash(
-          instruction.args[0],
-          instruction.args[1],
-          this.fileContextPath,
-          [
-            ...this.ignoreFilePaths,
-            ...(runtime === 'browser'
-              ? []
-              : readDockerignore(this.fileContextPath)),
-          ]
-        )
-      }
-
-      steps.push(instruction)
-    }
-
-    return steps
-  }
-
-  private serialize(steps: Instruction[]): TriggerBuildTemplate {
+  private serialize(): TriggerBuildTemplate {
     const templateData: TriggerBuildTemplate = {
       startCmd: this.startCmd,
       readyCmd: this.readyCmd,
-      steps,
+      steps: this.instructions,
       force: this.force,
     }
 
