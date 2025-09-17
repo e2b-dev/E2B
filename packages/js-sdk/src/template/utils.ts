@@ -2,6 +2,7 @@ import crypto from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
 import { dynamicGlob, dynamicTar } from '../utils'
+import { BuildError } from './errors'
 
 export function readDockerignore(contextPath: string): string[] {
   const dockerignorePath = path.join(contextPath, '.dockerignore')
@@ -20,7 +21,8 @@ export async function calculateFilesHash(
   src: string,
   dest: string,
   contextPath: string,
-  ignorePatterns?: string[]
+  ignorePatterns?: string[],
+  stackTrace?: string
 ): Promise<string> {
   const { globSync } = await dynamicGlob()
   const srcPath = path.join(contextPath, src)
@@ -34,7 +36,7 @@ export async function calculateFilesHash(
   })
 
   if (files.length === 0) {
-    throw new Error(`No files found in ${srcPath}`)
+    throw new BuildError(`No files found in ${srcPath}`, stackTrace)
   }
 
   for (const file of files) {

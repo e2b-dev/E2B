@@ -629,7 +629,8 @@ export class TemplateBase
   // We might no longer need this as we move the logic server-side
   private async instructionsWithHashes(): Promise<Instruction[]> {
     return Promise.all(
-      this.instructions.map(async (instruction) => {
+      this.instructions.map(async (instruction, index) => {
+        const stackTrace = this.stackTraces.find((_, i) => i === index + 1)
         if (instruction.type !== 'COPY') {
           return instruction
         }
@@ -645,7 +646,8 @@ export class TemplateBase
               ...(runtime === 'browser'
                 ? []
                 : readDockerignore(this.fileContextPath)),
-            ]
+            ],
+            stackTrace
           ),
         }
       })

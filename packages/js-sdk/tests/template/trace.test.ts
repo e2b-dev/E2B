@@ -99,78 +99,75 @@ test('traces on fromGCPRegistry', { timeout: testTimeout }, async () => {
   await expectTemplateToThrowAndCheckTrace(template, 'fromGCPRegistry')
 })
 
+test('traces on copy', { timeout: testTimeout }, async () => {
+  const template = Template()
+    .fromBaseImage()
+    .copy(nonExistentPath, nonExistentPath)
+  await expectTemplateToThrowAndCheckTrace(template, 'copy')
+})
+
 test('traces on remove', { timeout: testTimeout }, async () => {
-  const template = Template().fromImage('ubuntu:22.04').remove(nonExistentPath)
+  const template = Template().fromBaseImage().remove(nonExistentPath)
   await expectTemplateToThrowAndCheckTrace(template, 'remove')
 })
 
 test('traces on rename', { timeout: testTimeout }, async () => {
   const template = Template()
-    .fromImage('ubuntu:22.04')
+    .fromBaseImage()
     .rename(nonExistentPath, '/tmp/dest.txt')
   await expectTemplateToThrowAndCheckTrace(template, 'rename')
 })
 
 test('traces on makeDir', { timeout: testTimeout }, async () => {
-  const template = Template().fromImage('ubuntu:22.04').makeDir('.bashrc')
+  const template = Template().fromBaseImage().makeDir('.bashrc')
   await expectTemplateToThrowAndCheckTrace(template, 'makeDir')
 })
 
 test('traces on makeSymlink', { timeout: testTimeout }, async () => {
-  const template = Template()
-    .fromImage('ubuntu:22.04')
-    .makeSymlink('.bashrc', '.bashrc')
+  const template = Template().fromBaseImage().makeSymlink('.bashrc', '.bashrc')
   await expectTemplateToThrowAndCheckTrace(template, 'makeSymlink')
 })
 
 test('traces on runCmd', { timeout: testTimeout }, async () => {
-  const template = Template()
-    .fromImage('ubuntu:22.04')
-    .runCmd(`./${nonExistentPath}`)
+  const template = Template().fromBaseImage().runCmd(`./${nonExistentPath}`)
   await expectTemplateToThrowAndCheckTrace(template, 'runCmd')
 })
 
 test('traces on setWorkdir', { timeout: testTimeout }, async () => {
-  const template = Template().fromImage('ubuntu:22.04').setWorkdir('.bashrc')
+  const template = Template().fromBaseImage().setWorkdir('.bashrc')
   await expectTemplateToThrowAndCheckTrace(template, 'setWorkdir')
 })
 
 test('traces on setUser', { timeout: testTimeout }, async () => {
-  const template = Template().fromImage('ubuntu:22.04').setUser(';')
+  const template = Template().fromBaseImage().setUser(';')
   await expectTemplateToThrowAndCheckTrace(template, 'setUser')
 })
 
 test('traces on pipInstall', { timeout: testTimeout }, async () => {
-  const template = Template()
-    .fromImage('python:3.13')
-    .pipInstall('nonexistent-package')
+  const template = Template().fromBaseImage().pipInstall('nonexistent-package')
   await expectTemplateToThrowAndCheckTrace(template, 'pipInstall')
 })
 
 test('traces on npmInstall', { timeout: testTimeout }, async () => {
-  const template = Template()
-    .fromImage('node:lts')
-    .npmInstall('nonexistent-package')
+  const template = Template().fromBaseImage().npmInstall('nonexistent-package')
   await expectTemplateToThrowAndCheckTrace(template, 'npmInstall')
 })
 
 test('traces on aptInstall', { timeout: testTimeout }, async () => {
-  const template = Template()
-    .fromImage('ubuntu:22.04')
-    .aptInstall('nonexistent-package')
+  const template = Template().fromBaseImage().aptInstall('nonexistent-package')
   await expectTemplateToThrowAndCheckTrace(template, 'aptInstall')
 })
 
 test('traces on gitClone', { timeout: testTimeout }, async () => {
   const template = Template()
-    .fromImage('ubuntu:22.04')
+    .fromBaseImage()
     .gitClone('https://github.com/nonexistent/repo.git')
   await expectTemplateToThrowAndCheckTrace(template, 'gitClone')
 })
 
 test('traces on setStartCmd', { timeout: testTimeout }, async () => {
   const template = Template()
-    .fromImage('ubuntu:22.04')
+    .fromBaseImage()
     .setStartCmd(`./${nonExistentPath}`, waitForTimeout(10_000))
   await expectTemplateToThrowAndCheckTrace(template, 'setStartCmd')
 })
