@@ -4,6 +4,8 @@ import linecache
 
 from e2b import AsyncTemplate, wait_for_timeout, TemplateClass
 
+non_existent_path = "/nonexistent/path"
+
 
 async def build(template: TemplateClass):
     return await AsyncTemplate.build(
@@ -84,7 +86,6 @@ async def test_traces_on_from_gcp_registry():
 
 @pytest.mark.skip_debug()
 async def test_traces_on_copy():
-    non_existent_path = "/nonexistent/path"
     template = (
         AsyncTemplate().from_base_image().copy(non_existent_path, non_existent_path)
     )
@@ -93,14 +94,12 @@ async def test_traces_on_copy():
 
 @pytest.mark.skip_debug()
 async def test_traces_on_remove():
-    non_existent_path = "/nonexistent/path"
     template = AsyncTemplate().from_base_image().remove(non_existent_path)
     await _expect_to_throw_and_check_trace(lambda: build(template), "remove")
 
 
 @pytest.mark.skip_debug()
 async def test_traces_on_rename():
-    non_existent_path = "/nonexistent/path"
     template = (
         AsyncTemplate().from_base_image().rename(non_existent_path, "/tmp/dest.txt")
     )
@@ -121,7 +120,7 @@ async def test_traces_on_make_symlink():
 
 @pytest.mark.skip_debug()
 async def test_traces_on_run_cmd():
-    template = AsyncTemplate().from_base_image().run_cmd("cat /nonexistent/path")
+    template = AsyncTemplate().from_base_image().run_cmd(f"cat {non_existent_path}")
     await _expect_to_throw_and_check_trace(lambda: build(template), "run_cmd")
 
 
@@ -170,6 +169,6 @@ async def test_traces_on_set_start_cmd():
     template = (
         AsyncTemplate()
         .from_base_image()
-        .set_start_cmd("./nonexistent/path", wait_for_timeout(10_000))
+        .set_start_cmd(f"./{non_existent_path}", wait_for_timeout(10_000))
     )
     await _expect_to_throw_and_check_trace(lambda: build(template), "set_start_cmd")
