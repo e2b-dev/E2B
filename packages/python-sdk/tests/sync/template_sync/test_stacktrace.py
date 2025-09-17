@@ -112,9 +112,7 @@ def test_traces_on_from_gcp_registry():
 
 @pytest.mark.skip_debug()
 def test_traces_on_copy():
-    template = (
-        Template().from_base_image().copy(non_existent_path, non_existent_path)
-    )
+    template = Template().from_base_image().copy(non_existent_path, non_existent_path)
     _expect_to_throw_and_check_trace(lambda: build(template), "copy")
 
 
@@ -126,9 +124,7 @@ def test_traces_on_remove():
 
 @pytest.mark.skip_debug()
 def test_traces_on_rename():
-    template = (
-        Template().from_base_image().rename(non_existent_path, "/tmp/dest.txt")
-    )
+    template = Template().from_base_image().rename(non_existent_path, "/tmp/dest.txt")
     _expect_to_throw_and_check_trace(lambda: build(template), "rename")
 
 

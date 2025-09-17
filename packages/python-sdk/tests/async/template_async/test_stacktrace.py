@@ -15,6 +15,7 @@ async def build(template: TemplateClass):
         memory_mb=1024,
     )
 
+
 async def _expect_to_throw_and_check_trace(func, expected_method: str):
     try:
         await func()
