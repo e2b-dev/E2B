@@ -571,7 +571,7 @@ export class TemplateBase
         const src = instruction.args[0]
         const forceUpload = instruction.forceUpload
         const filesHash = instruction.filesHash!
-        const stackTrace = this.stackTraces.find((_, i) => i === index + 1)
+        const stackTrace = this.stackTraces[index + 1]
 
         const { present, url } = await getFileUploadLink(
           client,
@@ -647,7 +647,7 @@ export class TemplateBase
           return instruction
         }
 
-        const stackTrace = this.stackTraces.find((_, i) => i === index + 1)
+        const stackTrace = this.stackTraces[index + 1]
         return {
           ...instruction,
           filesHash: await calculateFilesHash(

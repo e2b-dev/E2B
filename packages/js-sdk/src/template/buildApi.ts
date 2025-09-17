@@ -234,7 +234,7 @@ export async function waitForBuildFinish(
             buildStatus.reason.step,
             stackTraces.length
           )
-          stackError = stackTraces.find((_, index) => index === step)
+          stackError = stackTraces[step]
         }
 
         throw new BuildError(
