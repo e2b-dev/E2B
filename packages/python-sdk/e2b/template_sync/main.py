@@ -75,7 +75,7 @@ class Template(TemplateBase):
 
             instructions_with_hashes = template._template._instructions_with_hashes()
 
-            # Prepare file uploads
+            # Upload files
             for index, file_upload in enumerate(instructions_with_hashes):
                 if file_upload["type"] != "COPY":
                     continue
@@ -92,7 +92,6 @@ class Template(TemplateBase):
                     api_client, template_id, files_hash, stack_trace
                 )
 
-                # Upload files
                 if (force_upload and file_info.url) or (
                     file_info.present is False and file_info.url
                 ):
@@ -100,35 +99,6 @@ class Template(TemplateBase):
                         src,
                         template._template._file_context_path,
                         file_info.url,
-                        stack_trace,
-                    )
-                else:
-                    if on_build_logs:
-                        on_build_logs(
-                            LogEntry(
-                                timestamp=datetime.now(),
-                                level="info",
-                                message=f"Skipping upload of '{src}', already cached",
-                            )
-                        )
-
-                if on_build_logs:
-                    on_build_logs(
-                        LogEntry(
-                            timestamp=datetime.now(),
-                            level="info",
-                            message="All file uploads completed",
-                        )
-                    )
-
-                if (file_upload["forceUpload"] and file_info.url) or (
-                    file_info.present is False and file_info.url
-                ):
-                    upload_file(
-                        src,
-                        template._template._file_context_path,
-                        file_info.url,
-                        stack_trace,
                     )
                     if on_build_logs:
                         on_build_logs(
