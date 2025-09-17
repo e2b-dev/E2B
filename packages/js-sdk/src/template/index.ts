@@ -562,39 +562,52 @@ export class TemplateBase
     const instructionsWithHashes = await this.instructionsWithHashes()
 
     // Upload files in parallel
-    const uploadPromises = instructionsWithHashes.map(async (instruction) => {
-      if (instruction.type !== 'COPY') {
-        return
-      }
+    const uploadPromises = instructionsWithHashes.map(
+      async (instruction, index) => {
+        if (instruction.type !== 'COPY') {
+          return
+        }
 
-      const src = instruction.args[0]
-      const forceUpload = instruction.forceUpload
-      const filesHash = instruction.filesHash
+        const src = instruction.args[0]
+        const forceUpload = instruction.forceUpload
+        const filesHash = instruction.filesHash!
+        const stackTrace = this.stackTraces.find((_, i) => i === index + 1)
 
-      const { present, url } = await getFileUploadLink(client, {
-        templateID,
-        filesHash: filesHash!,
-      })
-
-      if ((forceUpload && url != null) || (present === false && url != null)) {
-        await uploadFile({
-          fileName: src,
-          fileContextPath: this.fileContextPath,
-          url,
-        })
-        options.onBuildLogs?.(
-          new LogEntry(new Date(), 'info', `Uploaded '${src}'`)
+        const { present, url } = await getFileUploadLink(
+          client,
+          {
+            templateID,
+            filesHash,
+          },
+          stackTrace
         )
-      } else {
-        options.onBuildLogs?.(
-          new LogEntry(
-            new Date(),
-            'info',
-            `Skipping upload of '${src}', already cached`
+
+        if (
+          (forceUpload && url != null) ||
+          (present === false && url != null)
+        ) {
+          await uploadFile(
+            {
+              fileName: src,
+              fileContextPath: this.fileContextPath,
+              url,
+            },
+            stackTrace
           )
-        )
+          options.onBuildLogs?.(
+            new LogEntry(new Date(), 'info', `Uploaded '${src}'`)
+          )
+        } else {
+          options.onBuildLogs?.(
+            new LogEntry(
+              new Date(),
+              'info',
+              `Skipping upload of '${src}', already cached`
+            )
+          )
+        }
       }
-    })
+    )
 
     await Promise.all(uploadPromises)
 
@@ -630,11 +643,11 @@ export class TemplateBase
   private async instructionsWithHashes(): Promise<Instruction[]> {
     return Promise.all(
       this.instructions.map(async (instruction, index) => {
-        const stackTrace = this.stackTraces.find((_, i) => i === index + 1)
         if (instruction.type !== 'COPY') {
           return instruction
         }
 
+        const stackTrace = this.stackTraces.find((_, i) => i === index + 1)
         return {
           ...instruction,
           filesHash: await calculateFilesHash(

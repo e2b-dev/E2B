@@ -59,7 +59,8 @@ export async function requestBuild(
 
 export async function getFileUploadLink(
   client: ApiClient,
-  { templateID, filesHash }: GetFileUploadLinkInput
+  { templateID, filesHash }: GetFileUploadLinkInput,
+  stackTrace?: string
 ) {
   const fileUploadLinkRes = await client.api.GET(
     '/templates/{templateID}/files/{hash}',
@@ -73,44 +74,51 @@ export async function getFileUploadLink(
     }
   )
 
-  const error = handleApiError(fileUploadLinkRes, FileUploadError)
+  const error = handleApiError(fileUploadLinkRes, FileUploadError, stackTrace)
   if (error) {
     throw error
   }
 
   if (!fileUploadLinkRes.data) {
-    throw new FileUploadError('Failed to get file upload link')
+    throw new FileUploadError('Failed to get file upload link', stackTrace)
   }
 
   return fileUploadLinkRes.data
 }
 
-export async function uploadFile(options: {
-  fileName: string
-  fileContextPath: string
-  url: string
-}) {
-  const { fileName, url, fileContextPath } = options
-  const { contentLength, uploadStream } = await tarFileStreamUpload(
-    fileName,
-    fileContextPath
-  )
-
-  // The compiler assumes this is Web fetch API, but it's actually Node.js fetch API
-  const res = await fetch(url, {
-    method: 'PUT',
-    // @ts-expect-error
-    body: uploadStream,
-    headers: {
-      'Content-Length': contentLength.toString(),
-    },
-    duplex: 'half',
-  })
-
-  if (!res.ok) {
-    throw new FileUploadError(
-      `Failed to upload file: ${res.statusText} ${res.status}`
+export async function uploadFile(
+  options: {
+    fileName: string
+    fileContextPath: string
+    url: string
+  },
+  stackTrace?: string
+) {
+  try {
+    const { fileName, url, fileContextPath } = options
+    const { contentLength, uploadStream } = await tarFileStreamUpload(
+      fileName,
+      fileContextPath
     )
+    // The compiler assumes this is Web fetch API, but it's actually Node.js fetch API
+    const res = await fetch(url, {
+      method: 'PUT',
+      // @ts-expect-error
+      body: uploadStream,
+      headers: {
+        'Content-Length': contentLength.toString(),
+      },
+      duplex: 'half',
+    })
+
+    if (!res.ok) {
+      throw new FileUploadError(
+        `Failed to upload file: ${res.statusText} ${res.status}`,
+        stackTrace
+      )
+    }
+  } catch (error) {
+    throw new FileUploadError(`Failed to upload file: ${error}`, stackTrace)
   }
 }
 

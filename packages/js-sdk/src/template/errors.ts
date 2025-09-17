@@ -9,8 +9,8 @@ export class BuildError extends Error {
 }
 
 export class FileUploadError extends BuildError {
-  constructor(message: string) {
-    super(message)
+  constructor(message: string, stackTrace?: string) {
+    super(message, stackTrace)
     this.name = 'FileUploadError'
   }
 }

@@ -8,7 +8,11 @@ import { createApiLogger } from '../logs'
 
 export function handleApiError(
   response: FetchResponse<any, any, any>,
-  errorClass: new (message: string) => Error = SandboxError
+  errorClass: new (
+    message: string,
+    stackTrace?: string
+  ) => Error = SandboxError,
+  stackTrace?: string
 ): Error | undefined {
   if (!response.error) {
     return
@@ -19,9 +23,9 @@ export function handleApiError(
     const content = response.error?.message ?? response.error
 
     if (content) {
-      return new AuthenticationError(`${message} - ${content}`)
+      return new AuthenticationError(`${message} - ${content}`, stackTrace)
     }
-    return new AuthenticationError(message)
+    return new AuthenticationError(message, stackTrace)
   }
 
   if (response.response.status === 429) {
@@ -29,13 +33,13 @@ export function handleApiError(
     const content = response.error?.message ?? response.error
 
     if (content) {
-      return new RateLimitError(`${message} - ${content}`)
+      return new RateLimitError(`${message} - ${content}`, stackTrace)
     }
-    return new RateLimitError(message)
+    return new RateLimitError(message, stackTrace)
   }
 
   const message = response.error?.message ?? response.error
-  return new errorClass(`${response.response.status}: ${message}`)
+  return new errorClass(`${response.response.status}: ${message}`, stackTrace)
 }
 
 /**
