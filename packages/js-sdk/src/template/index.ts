@@ -495,13 +495,9 @@ export class TemplateBase
     return result
   }
 
-  private setStackTraceDepth(depth: number) {
-    this.stackTracesDepth = depth
-  }
-
   private async toJSON(): Promise<string> {
     return JSON.stringify(
-      this.serialize(await this.calculateFilesHashes()),
+      this.serialize(await this.instructionsWithHashes()),
       undefined,
       2
     )
@@ -563,43 +559,38 @@ export class TemplateBase
       )
     )
 
-    const instructionsWithHashes = await this.calculateFilesHashes()
-
-    // Prepare file uploads
-    const fileUploads = instructionsWithHashes
-      .filter((instruction) => instruction.type === 'COPY')
-      .map((instruction) => ({
-        src: instruction.args[0],
-        dest: instruction.args[1],
-        filesHash: instruction.filesHash,
-        forceUpload: instruction.forceUpload,
-      }))
+    const instructionsWithHashes = await this.instructionsWithHashes()
 
     // Upload files in parallel
-    const uploadPromises = fileUploads.map(async (file) => {
+    const uploadPromises = instructionsWithHashes.map(async (instruction) => {
+      if (instruction.type !== 'COPY') {
+        return
+      }
+
+      const src = instruction.args[0]
+      const forceUpload = instruction.forceUpload
+      const filesHash = instruction.filesHash
+
       const { present, url } = await getFileUploadLink(client, {
         templateID,
-        filesHash: file.filesHash!,
+        filesHash: filesHash!,
       })
 
-      if (
-        (file.forceUpload && url != null) ||
-        (present === false && url != null)
-      ) {
+      if ((forceUpload && url != null) || (present === false && url != null)) {
         await uploadFile({
-          fileName: file.src,
+          fileName: src,
           fileContextPath: this.fileContextPath,
           url,
         })
         options.onBuildLogs?.(
-          new LogEntry(new Date(), 'info', `Uploaded '${file.src}'`)
+          new LogEntry(new Date(), 'info', `Uploaded '${src}'`)
         )
       } else {
         options.onBuildLogs?.(
           new LogEntry(
             new Date(),
             'info',
-            `Skipping upload of '${file.src}', already cached`
+            `Skipping upload of '${src}', already cached`
           )
         )
       }
@@ -636,28 +627,29 @@ export class TemplateBase
   }
 
   // We might no longer need this as we move the logic server-side
-  private async calculateFilesHashes(): Promise<Instruction[]> {
-    const steps: Instruction[] = []
+  private async instructionsWithHashes(): Promise<Instruction[]> {
+    return Promise.all(
+      this.instructions.map(async (instruction) => {
+        if (instruction.type !== 'COPY') {
+          return instruction
+        }
 
-    for (const instruction of this.instructions) {
-      if (instruction.type === 'COPY') {
-        instruction.filesHash = await calculateFilesHash(
-          instruction.args[0],
-          instruction.args[1],
-          this.fileContextPath,
-          [
-            ...this.ignoreFilePaths,
-            ...(runtime === 'browser'
-              ? []
-              : readDockerignore(this.fileContextPath)),
-          ]
-        )
-      }
-
-      steps.push(instruction)
-    }
-
-    return steps
+        return {
+          ...instruction,
+          filesHash: await calculateFilesHash(
+            instruction.args[0],
+            instruction.args[1],
+            this.fileContextPath,
+            [
+              ...this.ignoreFilePaths,
+              ...(runtime === 'browser'
+                ? []
+                : readDockerignore(this.fileContextPath)),
+            ]
+          ),
+        }
+      })
+    )
   }
 
   private serialize(steps: Instruction[]): TriggerBuildTemplate {
