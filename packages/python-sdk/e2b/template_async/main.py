@@ -73,31 +73,30 @@ class AsyncTemplate(TemplateBase):
                     )
                 )
 
-            instructions_with_hashes = template._template._calculate_hashes()
-
-            # Prepare file uploads
-            file_uploads = [
-                {
-                    "src": instruction["args"][0],
-                    "dest": instruction["args"][1],
-                    "filesHash": instruction.get("filesHash"),
-                    "forceUpload": instruction.get("forceUpload"),
-                }
-                for instruction in instructions_with_hashes
-                if instruction["type"] == "COPY"
-            ]
+            instructions_with_hashes = template._template._instructions_with_hashes()
 
             # Upload files
-            for file_upload in file_uploads:
+            for index, file_upload in enumerate(instructions_with_hashes):
+                if file_upload["type"] != "COPY":
+                    continue
+
+                src = file_upload["args"][0]
+                force_upload = file_upload.get("forceUpload")
+                files_hash = file_upload.get("filesHash", "")
+
+                stack_trace = None
+                if index + 1 < len(template._template._stack_traces):
+                    stack_trace = template._template._stack_traces[index + 1]
+
                 file_info = await get_file_upload_link(
-                    api_client, template_id, file_upload["filesHash"]
+                    api_client, template_id, files_hash, stack_trace
                 )
 
-                if (file_upload["forceUpload"] and file_info.url) or (
+                if (force_upload and file_info.url) or (
                     file_info.present is False and file_info.url
                 ):
                     await upload_file(
-                        file_upload["src"],
+                        src,
                         template._template._file_context_path,
                         file_info.url,
                     )
@@ -106,7 +105,7 @@ class AsyncTemplate(TemplateBase):
                             LogEntry(
                                 timestamp=datetime.now(),
                                 level="info",
-                                message=f"Uploaded '{file_upload['src']}'",
+                                message=f"Uploaded '{src}'",
                             )
                         )
                 else:
@@ -115,7 +114,7 @@ class AsyncTemplate(TemplateBase):
                             LogEntry(
                                 timestamp=datetime.now(),
                                 level="info",
-                                message=f"Skipping upload of '{file_upload['src']}', already cached",
+                                message=f"Skipping upload of '{src}', already cached",
                             )
                         )
 

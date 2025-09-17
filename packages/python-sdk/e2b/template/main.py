@@ -459,7 +459,9 @@ class TemplateBase:
     @staticmethod
     def to_json(template: "TemplateClass") -> str:
         return json.dumps(
-            template._template._serialize(template._template._calculate_hashes()),
+            template._template._serialize(
+                template._template._instructions_with_hashes()
+            ),
             indent=2,
         )
 
@@ -484,12 +486,12 @@ class TemplateBase:
 
         return dockerfile
 
-    def _calculate_hashes(
+    def _instructions_with_hashes(
         self,
     ) -> List[Instruction]:
         steps: List[Instruction] = []
 
-        for instruction in self._instructions:
+        for index, instruction in enumerate(self._instructions):
             step: Instruction = Instruction(
                 type=instruction["type"],
                 args=instruction["args"],
@@ -498,6 +500,10 @@ class TemplateBase:
             )
 
             if instruction["type"] == "COPY":
+                stack_trace = None
+                if index + 1 < len(self._stack_traces):
+                    stack_trace = self._stack_traces[index + 1]
+
                 step["filesHash"] = calculate_files_hash(
                     instruction["args"][0],
                     instruction["args"][1],
@@ -506,6 +512,7 @@ class TemplateBase:
                         *self._ignore_file_paths,
                         *read_dockerignore(self._file_context_path),
                     ],
+                    stack_trace,
                 )
 
             steps.append(step)

@@ -1,3 +1,4 @@
+from types import TracebackType
 import json
 import logging
 from typing import Optional
@@ -27,7 +28,9 @@ class SandboxCreateResponse:
 
 
 def handle_api_exception(
-    e: Response, default_exception_class: type[Exception] = SandboxException
+    e: Response,
+    default_exception_class: type[Exception] = SandboxException,
+    stack_trace: Optional[TracebackType] = None,
 ):
     try:
         body = json.loads(e.content) if e.content else {}
@@ -47,8 +50,12 @@ def handle_api_exception(
         return RateLimitException(message)
 
     if "message" in body:
-        return default_exception_class(f"{e.status_code}: {body['message']}")
-    return default_exception_class(f"{e.status_code}: {e.content}")
+        return default_exception_class(
+            f"{e.status_code}: {body['message']}"
+        ).with_traceback(stack_trace)
+    return default_exception_class(f"{e.status_code}: {e.content}").with_traceback(
+        stack_trace
+    )
 
 
 class ApiClient(AuthenticatedClient):

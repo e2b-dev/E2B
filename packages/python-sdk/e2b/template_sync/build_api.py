@@ -53,7 +53,10 @@ def request_build(
 
 
 def get_file_upload_link(
-    client: AuthenticatedClient, template_id: str, files_hash: str
+    client: AuthenticatedClient,
+    template_id: str,
+    files_hash: str,
+    stack_trace: Optional[TracebackType] = None,
 ) -> TemplateBuildFileUpload:
     res = get_templates_template_id_files_hash.sync_detailed(
         template_id=template_id,
@@ -62,30 +65,53 @@ def get_file_upload_link(
     )
 
     if res.status_code >= 300:
-        raise handle_api_exception(res, FileUploadException)
+        raise handle_api_exception(res, FileUploadException, stack_trace)
 
     if isinstance(res.parsed, Error):
-        raise FileUploadException(f"API error: {res.parsed.message}")
+        raise FileUploadException(f"API error: {res.parsed.message}").with_traceback(
+            stack_trace
+        )
 
     if res.parsed is None:
-        raise FileUploadException("Failed to get file upload link")
+        raise FileUploadException("Failed to get file upload link").with_traceback(
+            stack_trace
+        )
 
     return res.parsed
 
 
-def upload_file(file_name: str, context_path: str, url: str):
+def upload_file(
+    file_name: str,
+    context_path: str,
+    url: str,
+    stack_trace: Optional[TracebackType] = None,
+):
     tar_buffer = io.BytesIO()
 
-    with tarfile.open(fileobj=tar_buffer, mode="w:gz") as tar:
-        src_path = os.path.join(context_path, file_name)
-        files = glob(src_path, recursive=True)
-        for file in files:
-            arcname = os.path.relpath(file, context_path)
-            tar.add(file, arcname=arcname)
+    try:
+        with tarfile.open(fileobj=tar_buffer, mode="w:gz") as tar:
+            src_path = os.path.join(context_path, file_name)
+            files = glob(src_path, recursive=True)
+            for file in files:
+                arcname = os.path.relpath(file, context_path)
+                tar.add(file, arcname=arcname)
+    except Exception as e:
+        raise FileUploadException(f"Failed to create tar file: {e}").with_traceback(
+            stack_trace
+        )
 
-    with httpx.Client() as client:
-        response = client.put(url, content=tar_buffer.getvalue())
-        response.raise_for_status()
+    try:
+        with httpx.Client() as client:
+            response = client.put(url, content=tar_buffer.getvalue())
+            response.raise_for_status()
+    except httpx.HTTPStatusError as e:
+        raise FileUploadException(f"Failed to upload file: {e}").with_traceback(
+            stack_trace
+        )
+    except Exception as e:
+        raise FileUploadException(f"Failed to upload file: {e}").with_traceback(
+            stack_trace
+        )
 
 
 def trigger_build(

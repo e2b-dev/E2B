@@ -29,6 +29,7 @@ def calculate_files_hash(
     dest: str,
     context_path: str,
     ignore_patterns: Optional[List[str]] = None,
+    stack_trace: Optional[TracebackType] = None,
 ) -> str:
     src_path = os.path.join(context_path, src)
     hash_obj = hashlib.sha256()
@@ -47,7 +48,7 @@ def calculate_files_hash(
         files.append(file)
 
     if len(files) == 0:
-        raise ValueError(f"No files found in {src_path}")
+        raise ValueError(f"No files found in {src_path}").with_traceback(stack_trace)
 
     for file in files:
         with open(file, "rb") as f:
