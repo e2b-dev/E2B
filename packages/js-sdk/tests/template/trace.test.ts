@@ -7,7 +7,14 @@ const __fileContent = fs.readFileSync(__filename, 'utf8') // read current file c
 const testTimeout = 180000 // 3 minutes
 const nonExistentPath = '/nonexistent/path'
 
-function getStackTraceCallerMethod(fileContent: string, stackTrace: string) {
+function getStackTraceCallerMethod(
+  fileContent: string,
+  stackTrace: string | undefined
+) {
+  if (!stackTrace) {
+    return null
+  }
+
   const stackTraceLines = stackTrace.split('\n')
   const callerTrace = stackTraceLines[0]
 
@@ -16,8 +23,12 @@ function getStackTraceCallerMethod(fileContent: string, stackTrace: string) {
   const columnNumber = parseInt(column)
 
   const lines = fileContent.split('\n')
-  const parsedLine = lines[lineNumber - 1].slice(columnNumber - 1)
-  const match = parsedLine.match(/^(\w+)\s*\(/)
+  const parsedLine = lines[lineNumber - 1]
+  if (!parsedLine) {
+    return null
+  }
+
+  const match = parsedLine.slice(columnNumber - 1).match(/^(\w+)\s*\(/)
   if (match) {
     return match[1]
   }
@@ -34,18 +45,13 @@ async function expectTemplateToThrowAndCheckTrace(
       cpuCount: 1,
       memoryMB: 1024,
     })
-    // If we reach here, the test should fail because we expected an error
     assert.fail('Expected Template.build to throw an error')
   } catch (error) {
-    if (error instanceof BuildError) {
-      // Verify the error contains the expected method in the stack trace
-      assert.include(
-        getStackTraceCallerMethod(__fileContent, error.stack ?? ''),
-        expectedMethod
-      )
-    } else {
+    const callerMethod = getStackTraceCallerMethod(__fileContent, error.stack)
+    if (!callerMethod) {
       throw error
     }
+    assert.include(callerMethod, expectedMethod)
   }
 }
 
