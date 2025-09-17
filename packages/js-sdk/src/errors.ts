@@ -11,7 +11,7 @@ export function formatSandboxTimeoutError(message: string) {
  * Thrown when general sandbox errors occur.
  */
 export class SandboxError extends Error {
-  constructor(message: string, stackTrace?: string) {
+  constructor(message?: string, stackTrace?: string) {
     super(message)
     this.name = 'SandboxError'
     if (stackTrace) {
