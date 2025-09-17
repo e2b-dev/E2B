@@ -319,11 +319,6 @@ class TemplateBase:
         self._stack_traces_enabled = True
         return self
 
-    def _set_stack_trace_depth(self, depth: int) -> "TemplateBase":
-        """Set the depth for stack trace collection"""
-        self._stack_traces_depth = depth
-        return self
-
     def _run_in_new_stack_trace_context(self, fn):
         """Run a function in a new stack trace context"""
         self._disable_stack_trace()
