@@ -206,7 +206,9 @@ class TemplateBuilder:
         branch: Optional[str] = None,
         depth: Optional[int] = None,
     ) -> "TemplateBuilder":
-        args = ["git", "clone", url, path]
+        args = ["git", "clone", url]
+        if path:
+            args.append(path)
         if branch:
             args.append(f"--branch {branch}")
             args.append("--single-branch")
