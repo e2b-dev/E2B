@@ -1,5 +1,5 @@
 import { assert, test } from 'vitest'
-import { BuildError, Template, TemplateClass, waitForTimeout } from '../../src'
+import { Template, TemplateClass, waitForTimeout } from '../../src'
 import { randomUUID } from 'node:crypto'
 import fs from 'node:fs'
 
