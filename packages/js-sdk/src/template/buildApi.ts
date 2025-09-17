@@ -100,8 +100,9 @@ export async function uploadFile(
       fileName,
       fileContextPath
     )
+
     // The compiler assumes this is Web fetch API, but it's actually Node.js fetch API
-    const res = await fetch(url, {
+    await fetch(url, {
       method: 'PUT',
       // @ts-expect-error
       body: uploadStream,
@@ -110,13 +111,6 @@ export async function uploadFile(
       },
       duplex: 'half',
     })
-
-    if (!res.ok) {
-      throw new FileUploadError(
-        `Failed to upload file: ${res.statusText} ${res.status}`,
-        stackTrace
-      )
-    }
   } catch (error) {
     throw new FileUploadError(`Failed to upload file: ${error}`, stackTrace)
   }
