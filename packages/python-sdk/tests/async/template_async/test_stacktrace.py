@@ -5,6 +5,14 @@ import linecache
 from e2b import AsyncTemplate, wait_for_timeout, TemplateClass
 
 
+async def build(template: TemplateClass):
+    return await AsyncTemplate.build(
+        template,
+        alias=str(uuid4()),
+        cpu_count=1,
+        memory_mb=1024,
+    )
+
 async def _expect_to_throw_and_check_trace(func, expected_method: str):
     try:
         await func()
@@ -29,46 +37,19 @@ async def _expect_to_throw_and_check_trace(func, expected_method: str):
 @pytest.mark.skip_debug()
 async def test_traces_on_from_image():
     template = AsyncTemplate().from_image("e2b.dev/this-image-does-not-exist")
-
-    async def run():
-        await AsyncTemplate.build(
-            template,
-            alias=str(uuid4()),
-            cpu_count=1,
-            memory_mb=1024,
-        )
-
-    await _expect_to_throw_and_check_trace(run, "from_image")
+    await _expect_to_throw_and_check_trace(lambda: build(template), "from_image")
 
 
 @pytest.mark.skip_debug()
 async def test_traces_on_from_template():
     template = AsyncTemplate().from_template("this-template-does-not-exist")
-
-    async def run():
-        await AsyncTemplate.build(
-            template,
-            alias=str(uuid4()),
-            cpu_count=1,
-            memory_mb=1024,
-        )
-
-    await _expect_to_throw_and_check_trace(run, "from_template")
+    await _expect_to_throw_and_check_trace(lambda: build(template), "from_template")
 
 
 @pytest.mark.skip_debug()
 async def test_traces_on_from_dockerfile():
     template = AsyncTemplate().from_dockerfile("FROM ubuntu:22.04\nRUN nonexistent")
-
-    async def run():
-        await AsyncTemplate.build(
-            template,
-            alias=str(uuid4()),
-            cpu_count=1,
-            memory_mb=1024,
-        )
-
-    await _expect_to_throw_and_check_trace(run, "from_dockerfile")
+    await _expect_to_throw_and_check_trace(lambda: build(template), "from_dockerfile")
 
 
 @pytest.mark.skip_debug()
@@ -78,16 +59,7 @@ async def test_traces_on_from_registry():
         username="test",
         password="test",
     )
-
-    async def run():
-        await AsyncTemplate.build(
-            template,
-            alias=str(uuid4()),
-            cpu_count=1,
-            memory_mb=1024,
-        )
-
-    await _expect_to_throw_and_check_trace(run, "from_registry")
+    await _expect_to_throw_and_check_trace(lambda: build(template), "from_registry")
 
 
 @pytest.mark.skip_debug()
@@ -98,16 +70,7 @@ async def test_traces_on_from_aws_registry():
         secret_access_key="test",
         region="us-east-1",
     )
-
-    async def run():
-        await AsyncTemplate.build(
-            template,
-            alias=str(uuid4()),
-            cpu_count=1,
-            memory_mb=1024,
-        )
-
-    await _expect_to_throw_and_check_trace(run, "from_aws_registry")
+    await _expect_to_throw_and_check_trace(lambda: build(template), "from_aws_registry")
 
 
 @pytest.mark.skip_debug()
@@ -116,16 +79,7 @@ async def test_traces_on_from_gcp_registry():
         "gcr.io/nonexistent-project/nonexistent:latest",
         service_account_json={"type": "service_account"},
     )
-
-    async def run():
-        await AsyncTemplate.build(
-            template,
-            alias=str(uuid4()),
-            cpu_count=1,
-            memory_mb=1024,
-        )
-
-    await _expect_to_throw_and_check_trace(run, "from_gcp_registry")
+    await _expect_to_throw_and_check_trace(lambda: build(template), "from_gcp_registry")
 
 
 @pytest.mark.skip_debug()
@@ -134,32 +88,14 @@ async def test_traces_on_copy():
     template = (
         AsyncTemplate().from_base_image().copy(non_existent_path, non_existent_path)
     )
-
-    async def run():
-        await AsyncTemplate.build(
-            template,
-            alias=str(uuid4()),
-            cpu_count=1,
-            memory_mb=1024,
-        )
-
-    await _expect_to_throw_and_check_trace(run, "copy")
+    await _expect_to_throw_and_check_trace(lambda: build(template), "copy")
 
 
 @pytest.mark.skip_debug()
 async def test_traces_on_remove():
     non_existent_path = "/nonexistent/path"
     template = AsyncTemplate().from_base_image().remove(non_existent_path)
-
-    async def run():
-        await AsyncTemplate.build(
-            template,
-            alias=str(uuid4()),
-            cpu_count=1,
-            memory_mb=1024,
-        )
-
-    await _expect_to_throw_and_check_trace(run, "remove")
+    await _expect_to_throw_and_check_trace(lambda: build(template), "remove")
 
 
 @pytest.mark.skip_debug()
@@ -168,136 +104,55 @@ async def test_traces_on_rename():
     template = (
         AsyncTemplate().from_base_image().rename(non_existent_path, "/tmp/dest.txt")
     )
-
-    async def run():
-        await AsyncTemplate.build(
-            template,
-            alias=str(uuid4()),
-            cpu_count=1,
-            memory_mb=1024,
-        )
-
-    await _expect_to_throw_and_check_trace(run, "rename")
+    await _expect_to_throw_and_check_trace(lambda: build(template), "rename")
 
 
 @pytest.mark.skip_debug()
 async def test_traces_on_make_dir():
     template = AsyncTemplate().from_base_image().make_dir(".bashrc")
-
-    async def run():
-        await AsyncTemplate.build(
-            template,
-            alias=str(uuid4()),
-            cpu_count=1,
-            memory_mb=1024,
-        )
-
-    await _expect_to_throw_and_check_trace(run, "make_dir")
+    await _expect_to_throw_and_check_trace(lambda: build(template), "make_dir")
 
 
 @pytest.mark.skip_debug()
 async def test_traces_on_make_symlink():
     template = AsyncTemplate().from_base_image().make_symlink(".bashrc", ".bashrc")
-
-    async def run():
-        await AsyncTemplate.build(
-            template,
-            alias=str(uuid4()),
-            cpu_count=1,
-            memory_mb=1024,
-        )
-
-    await _expect_to_throw_and_check_trace(run, "make_symlink")
+    await _expect_to_throw_and_check_trace(lambda: build(template), "make_symlink")
 
 
 @pytest.mark.skip_debug()
 async def test_traces_on_run_cmd():
     template = AsyncTemplate().from_base_image().run_cmd("cat /nonexistent/path")
-
-    async def run():
-        await AsyncTemplate.build(
-            template,
-            alias=str(uuid4()),
-            cpu_count=1,
-            memory_mb=1024,
-        )
-
-    await _expect_to_throw_and_check_trace(run, "run_cmd")
+    await _expect_to_throw_and_check_trace(lambda: build(template), "run_cmd")
 
 
 @pytest.mark.skip_debug()
 async def test_traces_on_set_workdir():
     template = AsyncTemplate().from_base_image().set_workdir(".bashrc")
-
-    async def run():
-        await AsyncTemplate.build(
-            template,
-            alias=str(uuid4()),
-            cpu_count=1,
-            memory_mb=1024,
-        )
-
-    await _expect_to_throw_and_check_trace(run, "set_workdir")
+    await _expect_to_throw_and_check_trace(lambda: build(template), "set_workdir")
 
 
 @pytest.mark.skip_debug()
 async def test_traces_on_set_user():
     template = AsyncTemplate().from_base_image().set_user(";")
-
-    async def run():
-        await AsyncTemplate.build(
-            template,
-            alias=str(uuid4()),
-            cpu_count=1,
-            memory_mb=1024,
-        )
-
-    await _expect_to_throw_and_check_trace(run, "set_user")
+    await _expect_to_throw_and_check_trace(lambda: build(template), "set_user")
 
 
 @pytest.mark.skip_debug()
 async def test_traces_on_pip_install():
     template = AsyncTemplate().from_base_image().pip_install("nonexistent-package")
-
-    async def run():
-        await AsyncTemplate.build(
-            template,
-            alias=str(uuid4()),
-            cpu_count=1,
-            memory_mb=1024,
-        )
-
-    await _expect_to_throw_and_check_trace(run, "pip_install")
+    await _expect_to_throw_and_check_trace(lambda: build(template), "pip_install")
 
 
 @pytest.mark.skip_debug()
 async def test_traces_on_npm_install():
     template = AsyncTemplate().from_base_image().npm_install("nonexistent-package")
-
-    async def run():
-        await AsyncTemplate.build(
-            template,
-            alias=str(uuid4()),
-            cpu_count=1,
-            memory_mb=1024,
-        )
-
-    await _expect_to_throw_and_check_trace(run, "npm_install")
+    await _expect_to_throw_and_check_trace(lambda: build(template), "npm_install")
 
 
 @pytest.mark.skip_debug()
 async def test_traces_on_apt_install():
     template = AsyncTemplate().from_base_image().apt_install("nonexistent-package")
-
-    async def run():
-        await AsyncTemplate.build(
-            template,
-            alias=str(uuid4()),
-            cpu_count=1,
-            memory_mb=1024,
-        )
-
-    await _expect_to_throw_and_check_trace(run, "apt_install")
+    await _expect_to_throw_and_check_trace(lambda: build(template), "apt_install")
 
 
 @pytest.mark.skip_debug()
@@ -307,16 +162,7 @@ async def test_traces_on_git_clone():
         .from_base_image()
         .git_clone("https://github.com/nonexistent/repo.git")
     )
-
-    async def run():
-        await AsyncTemplate.build(
-            template,
-            alias=str(uuid4()),
-            cpu_count=1,
-            memory_mb=1024,
-        )
-
-    await _expect_to_throw_and_check_trace(run, "git_clone")
+    await _expect_to_throw_and_check_trace(lambda: build(template), "git_clone")
 
 
 @pytest.mark.skip_debug()
@@ -326,13 +172,4 @@ async def test_traces_on_set_start_cmd():
         .from_base_image()
         .set_start_cmd("./nonexistent/path", wait_for_timeout(10_000))
     )
-
-    async def run():
-        await AsyncTemplate.build(
-            template,
-            alias=str(uuid4()),
-            cpu_count=1,
-            memory_mb=1024,
-        )
-
-    await _expect_to_throw_and_check_trace(run, "set_start_cmd")
+    await _expect_to_throw_and_check_trace(lambda: build(template), "set_start_cmd")
