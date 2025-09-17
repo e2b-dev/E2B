@@ -23,9 +23,9 @@ export function handleApiError(
     const content = response.error?.message ?? response.error
 
     if (content) {
-      return new AuthenticationError(`${message} - ${content}`, stackTrace)
+      return new AuthenticationError(`${message} - ${content}`)
     }
-    return new AuthenticationError(message, stackTrace)
+    return new AuthenticationError(message)
   }
 
   if (response.response.status === 429) {
@@ -33,9 +33,9 @@ export function handleApiError(
     const content = response.error?.message ?? response.error
 
     if (content) {
-      return new RateLimitError(`${message} - ${content}`, stackTrace)
+      return new RateLimitError(`${message} - ${content}`)
     }
-    return new RateLimitError(message, stackTrace)
+    return new RateLimitError(message)
   }
 
   const message = response.error?.message ?? response.error

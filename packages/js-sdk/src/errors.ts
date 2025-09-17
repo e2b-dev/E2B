@@ -72,12 +72,9 @@ export class NotFoundError extends SandboxError {
  * Thrown when authentication fails.
  */
 export class AuthenticationError extends Error {
-  constructor(message: string, stackTrace?: string) {
+  constructor(message: string) {
     super(message)
     this.name = 'AuthenticationError'
-    if (stackTrace) {
-      this.stack = stackTrace
-    }
   }
 }
 
@@ -95,8 +92,8 @@ export class TemplateError extends SandboxError {
  * Thrown when the API rate limit is exceeded.
  */
 export class RateLimitError extends SandboxError {
-  constructor(message: string, stackTrace?: string) {
-    super(message, stackTrace)
+  constructor(message: string) {
+    super(message)
     this.name = 'RateLimitError'
   }
 }
