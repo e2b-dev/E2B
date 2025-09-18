@@ -516,9 +516,15 @@ class TemplateBase:
                 if index + 1 < len(self._stack_traces):
                     stack_trace = self._stack_traces[index + 1]
 
+                args = instruction.get("args", [])
+                src = args[0] if len(args) > 0 else None
+                dest = args[1] if len(args) > 1 else None
+                if src is None or dest is None:
+                    raise ValueError("Source path and destination path are required")
+
                 step["filesHash"] = calculate_files_hash(
-                    instruction["args"][0] if instruction["args"] else "",
-                    instruction["args"][1] if instruction["args"] else "",
+                    src,
+                    dest,
                     self._file_context_path,
                     [
                         *self._ignore_file_paths,

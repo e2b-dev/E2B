@@ -24,6 +24,9 @@ function getStackTraceCallerMethod(
   }
 
   const stackTraceLines = stackTrace.split('\n')
+  if (stackTraceLines.length === 0) {
+    return null
+  }
   const callerTrace = stackTraceLines[0]
 
   const [, line, column] = callerTrace.split(':')

@@ -7,7 +7,7 @@ from datetime import datetime
 
 from e2b.connection_config import ConnectionConfig
 from e2b.api import AsyncApiClient
-from e2b.template.types import LogEntry
+from e2b.template.types import LogEntry, InstructionType
 from .build_api import (
     get_file_upload_link,
     request_build,
@@ -77,12 +77,16 @@ class AsyncTemplate(TemplateBase):
 
             # Upload files
             for index, file_upload in enumerate(instructions_with_hashes):
-                if file_upload["type"] != "COPY":
+                if file_upload["type"] != InstructionType.COPY:
                     continue
 
-                src = file_upload.get("args")[0] if file_upload.get("args") else ""
+                args = file_upload.get("args", [])
+                src = args[0] if len(args) > 0 else None
                 force_upload = file_upload.get("forceUpload")
-                files_hash = file_upload.get("filesHash", "")
+                files_hash = file_upload.get("filesHash", None)
+                
+                if src is None or files_hash is None:
+                    raise ValueError("Source path and files hash are required")
 
                 stack_trace = None
                 if index + 1 < len(template._template._stack_traces):

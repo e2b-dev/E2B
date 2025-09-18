@@ -82,6 +82,9 @@ export function getCallerDirectory(depth: number): string | undefined {
   }
 
   const lines = caller.split('\n')
+  if (lines.length === 0) {
+    return
+  }
   const firstLine = lines[0]
 
   const match = firstLine.match(/at ([^:]+):\d+:\d+/)

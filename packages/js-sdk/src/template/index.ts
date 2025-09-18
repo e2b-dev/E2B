@@ -569,9 +569,13 @@ export class TemplateBase
           return
         }
 
-        const src = instruction.args[0] ?? ''
+        const src = instruction.args.length > 0 ? instruction.args[0] : null
+        const filesHash = instruction.filesHash ?? null
+        if (src === null || filesHash === null) {
+          throw new Error('Source path and files hash are required')
+        }
+
         const forceUpload = instruction.forceUpload
-        const filesHash = instruction.filesHash ?? ''
         const stackTrace = this.stackTraces[index + 1] ?? undefined
 
         const { present, url } = await getFileUploadLink(
@@ -648,12 +652,18 @@ export class TemplateBase
           return instruction
         }
 
+        const src = instruction.args.length > 0 ? instruction.args[0] : null
+        const dest = instruction.args.length > 1 ? instruction.args[1] : null
+        if (src === null || dest === null) {
+          throw new Error('Source path and destination path are required')
+        }
+
         const stackTrace = this.stackTraces[index + 1] ?? undefined
         return {
           ...instruction,
           filesHash: await calculateFilesHash(
-            instruction.args[0] ?? '',
-            instruction.args[1] ?? '',
+            src,
+            dest,
             this.fileContextPath,
             [
               ...this.ignoreFilePaths,
