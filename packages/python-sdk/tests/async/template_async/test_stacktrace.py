@@ -192,5 +192,7 @@ async def test_traces_on_git_clone():
 async def test_traces_on_set_start_cmd():
     template = AsyncTemplate()
     template = template.from_base_image()
-    template = template.set_start_cmd(f"./{non_existent_path}", wait_for_timeout(10_000))
+    template = template.set_start_cmd(
+        f"./{non_existent_path}", wait_for_timeout(10_000)
+    )
     await _expect_to_throw_and_check_trace(lambda: build(template), "set_start_cmd")
