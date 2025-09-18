@@ -2,7 +2,7 @@ import crypto from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
 import { dynamicGlob, dynamicTar } from '../utils'
-import { BASE_STEP_NAME, FINALIZE_STEP_NAME, STACK_TRACE_DEPTH } from './consts'
+import { BASE_STEP_NAME, FINALIZE_STEP_NAME } from './consts'
 
 export function readDockerignore(contextPath: string): string[] {
   const dockerignorePath = path.join(contextPath, '.dockerignore')
