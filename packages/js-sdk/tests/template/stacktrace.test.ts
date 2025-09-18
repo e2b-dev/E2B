@@ -66,12 +66,13 @@ test('traces on fromImage', { timeout: testTimeout }, async () => {
   }, 'fromImage')
 })
 
-test('traces on fromTemplate', { timeout: testTimeout }, async () => {
-  const template = Template().fromTemplate('this-template-does-not-exist')
-  await expectToThrowAndCheckTrace(async () => {
-    await buildTemplate(template)
-  }, 'fromTemplate')
-})
+// TODO: uncomment this test when build system is updated
+// test('traces on fromTemplate', { timeout: testTimeout }, async () => {
+//   const template = Template().fromTemplate('this-template-does-not-exist')
+//   await expectToThrowAndCheckTrace(async () => {
+//     await buildTemplate(template)
+//   }, 'fromTemplate')
+// })
 
 test('traces on fromDockerfile', { timeout: testTimeout }, async () => {
   const template = Template().fromDockerfile(

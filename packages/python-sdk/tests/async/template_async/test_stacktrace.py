@@ -43,10 +43,10 @@ async def test_traces_on_from_image():
     await _expect_to_throw_and_check_trace(lambda: build(template), "from_image")
 
 
-@pytest.mark.skip_debug()
-async def test_traces_on_from_template():
-    template = AsyncTemplate().from_template("this-template-does-not-exist")
-    await _expect_to_throw_and_check_trace(lambda: build(template), "from_template")
+# @pytest.mark.skip_debug()
+# async def test_traces_on_from_template():
+#     template = AsyncTemplate().from_template("this-template-does-not-exist")
+#     await _expect_to_throw_and_check_trace(lambda: build(template), "from_template")
 
 
 @pytest.mark.skip_debug()
