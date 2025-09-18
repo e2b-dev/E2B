@@ -517,8 +517,8 @@ class TemplateBase:
                     stack_trace = self._stack_traces[index + 1]
 
                 step["filesHash"] = calculate_files_hash(
-                    instruction["args"][0],
-                    instruction["args"][1],
+                    instruction["args"][0] if instructions["args"] else "",
+                    instruction["args"][1] if instructions["args"] else "",
                     self._file_context_path,
                     [
                         *self._ignore_file_paths,

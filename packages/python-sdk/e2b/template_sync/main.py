@@ -80,7 +80,7 @@ class Template(TemplateBase):
                 if file_upload["type"] != "COPY":
                     continue
 
-                src = file_upload["args"][0]
+                src = file_upload.get("args")[0] if file_upload.get("args") else ""
                 force_upload = file_upload.get("forceUpload")
                 files_hash = file_upload.get("filesHash", "")
 

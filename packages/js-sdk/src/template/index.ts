@@ -569,10 +569,10 @@ export class TemplateBase
           return
         }
 
-        const src = instruction.args[0]
+        const src = instruction.args[0] ?? ''
         const forceUpload = instruction.forceUpload
-        const filesHash = instruction.filesHash!
-        const stackTrace = this.stackTraces[index + 1]
+        const filesHash = instruction.filesHash ?? ''
+        const stackTrace = this.stackTraces[index + 1] ?? undefined
 
         const { present, url } = await getFileUploadLink(
           client,
@@ -648,12 +648,12 @@ export class TemplateBase
           return instruction
         }
 
-        const stackTrace = this.stackTraces[index + 1]
+        const stackTrace = this.stackTraces[index + 1] ?? undefined
         return {
           ...instruction,
           filesHash: await calculateFilesHash(
-            instruction.args[0],
-            instruction.args[1],
+            instruction.args[0] ?? '',
+            instruction.args[1] ?? '',
             this.fileContextPath,
             [
               ...this.ignoreFilePaths,
