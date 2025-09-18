@@ -576,7 +576,10 @@ export class TemplateBase
         }
 
         const forceUpload = instruction.forceUpload
-        const stackTrace = this.stackTraces[index + 1] ?? undefined
+        let stackTrace = undefined
+        if (index + 1 >= 0 && index + 1 < this.stackTraces.length) {
+          stackTrace = this.stackTraces[index + 1]
+        }
 
         const { present, url } = await getFileUploadLink(
           client,
@@ -658,7 +661,11 @@ export class TemplateBase
           throw new Error('Source path and destination path are required')
         }
 
-        const stackTrace = this.stackTraces[index + 1] ?? undefined
+        let stackTrace = undefined
+        if (index + 1 >= 0 && index + 1 < this.stackTraces.length) {
+          stackTrace = this.stackTraces[index + 1]
+        }
+
         return {
           ...instruction,
           filesHash: await calculateFilesHash(
