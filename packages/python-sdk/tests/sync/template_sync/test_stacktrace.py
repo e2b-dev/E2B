@@ -178,11 +178,7 @@ def test_traces_on_apt_install():
 
 @pytest.mark.skip_debug()
 def test_traces_on_git_clone():
-    template = (
-        Template()
-        .from_base_image()
-        .git_clone("https://github.com/nonexistent/repo.git")
-    )
+    template = Template().from_base_image().git_clone("https://github.com/repo.git")
     _expect_to_throw_and_check_trace(lambda: build(template), "git_clone")
 
 

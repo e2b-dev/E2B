@@ -158,9 +158,7 @@ async def test_traces_on_apt_install():
 @pytest.mark.skip_debug()
 async def test_traces_on_git_clone():
     template = (
-        AsyncTemplate()
-        .from_base_image()
-        .git_clone("https://github.com/nonexistent/repo.git")
+        AsyncTemplate().from_base_image().git_clone("https://github.com/repo.git")
     )
     await _expect_to_throw_and_check_trace(lambda: build(template), "git_clone")
 
