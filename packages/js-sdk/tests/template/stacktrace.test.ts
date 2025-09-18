@@ -60,7 +60,8 @@ async function expectToThrowAndCheckTrace(
 }
 
 test('traces on fromImage', { timeout: testTimeout }, async () => {
-  const template = Template().fromImage('e2b.dev/this-image-does-not-exist')
+  const template = Template()
+  template.fromImage('e2b.dev/this-image-does-not-exist')
   await expectToThrowAndCheckTrace(async () => {
     await buildTemplate(template)
   }, 'fromImage')
@@ -75,29 +76,27 @@ test('traces on fromImage', { timeout: testTimeout }, async () => {
 // })
 
 test('traces on fromDockerfile', { timeout: testTimeout }, async () => {
-  const template = Template().fromDockerfile(
-    'FROM ubuntu:22.04\nRUN nonexistent'
-  )
+  const template = Template()
+  template.fromDockerfile('FROM ubuntu:22.04\nRUN nonexistent')
   await expectToThrowAndCheckTrace(async () => {
     await buildTemplate(template)
   }, 'fromDockerfile')
 })
 
 test('traces on fromRegistry', { timeout: testTimeout }, async () => {
-  const template = Template().fromRegistry(
-    'registry.example.com/nonexistent:latest',
-    {
-      username: 'test',
-      password: 'test',
-    }
-  )
+  const template = Template()
+  template.fromRegistry('registry.example.com/nonexistent:latest', {
+    username: 'test',
+    password: 'test',
+  })
   await expectToThrowAndCheckTrace(async () => {
     await buildTemplate(template)
   }, 'fromRegistry')
 })
 
 test('traces on fromAWSRegistry', { timeout: testTimeout }, async () => {
-  const template = Template().fromAWSRegistry(
+  const template = Template()
+  template.fromAWSRegistry(
     '123456789.dkr.ecr.us-east-1.amazonaws.com/nonexistent:latest',
     {
       accessKeyId: 'test',
@@ -111,12 +110,10 @@ test('traces on fromAWSRegistry', { timeout: testTimeout }, async () => {
 })
 
 test('traces on fromGCPRegistry', { timeout: testTimeout }, async () => {
-  const template = Template().fromGCPRegistry(
-    'gcr.io/nonexistent-project/nonexistent:latest',
-    {
-      serviceAccountJSON: { type: 'service_account' },
-    }
-  )
+  const template = Template()
+  template.fromGCPRegistry('gcr.io/nonexistent-project/nonexistent:latest', {
+    serviceAccountJSON: { type: 'service_account' },
+  })
   await expectToThrowAndCheckTrace(async () => {
     await buildTemplate(template)
   }, 'fromGCPRegistry')
@@ -124,15 +121,17 @@ test('traces on fromGCPRegistry', { timeout: testTimeout }, async () => {
 
 test('traces on copy', { timeout: testTimeout }, async () => {
   const template = Template()
-    .fromBaseImage()
-    .copy(nonExistentPath, nonExistentPath)
+  template.fromBaseImage()
+  template.copy(nonExistentPath, nonExistentPath)
   await expectToThrowAndCheckTrace(async () => {
     await buildTemplate(template)
   }, 'copy')
 })
 
 test('traces on remove', { timeout: testTimeout }, async () => {
-  const template = Template().fromBaseImage().remove(nonExistentPath)
+  const template = Template()
+  template.fromBaseImage()
+  template.remove(nonExistentPath)
   await expectToThrowAndCheckTrace(async () => {
     await buildTemplate(template)
   }, 'remove')
