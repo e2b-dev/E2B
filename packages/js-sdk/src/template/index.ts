@@ -313,6 +313,8 @@ export class TemplateBase
     return this.runInNewStackTraceContext(() => this.runCmd(args.join(' ')))
   }
 
+  runCmd(command: string, options?: { user?: string }): TemplateBuilder
+  runCmd(commands: string[], options?: { user?: string }): TemplateBuilder
   runCmd(
     commandOrCommands: string | string[],
     options?: { user?: string }

@@ -101,6 +101,10 @@ export interface TemplateBuilder {
 
   makeSymlink(src: string, dest: string): TemplateBuilder
 
+  runCmd(command: string, options?: { user?: string }): TemplateBuilder
+
+  runCmd(commands: string[], options?: { user?: string }): TemplateBuilder
+
   runCmd(
     commandOrCommands: string | string[],
     options?: { user?: string }
