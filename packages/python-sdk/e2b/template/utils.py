@@ -8,6 +8,8 @@ import inspect
 from types import TracebackType, FrameType
 from typing import List, Optional, Union
 
+from e2b.template.consts import BASE_STEP_NAME, FINALIZE_STEP_NAME
+
 
 def read_dockerignore(context_path: str) -> List[str]:
     dockerignore_path = os.path.join(context_path, ".dockerignore")
@@ -69,7 +71,7 @@ def strip_ansi_escape_codes(text: str) -> str:
     return ansi_escape.sub("", text)
 
 
-def get_caller_frame(depth: int = 2) -> Optional[FrameType]:
+def get_caller_frame(depth: int) -> Optional[FrameType]:
     """Get the caller frame. Skip this function (first frame)."""
     stack = inspect.stack()[1:]
     if len(stack) < depth + 1:
@@ -77,11 +79,11 @@ def get_caller_frame(depth: int = 2) -> Optional[FrameType]:
     return stack[depth].frame
 
 
-def get_caller_directory() -> Optional[str]:
+def get_caller_directory(depth: int) -> Optional[str]:
     """Get the directory of the file that called this function."""
     try:
         # Get the stack trace
-        caller_frame = get_caller_frame()
+        caller_frame = get_caller_frame(depth)
         if caller_frame is None:
             return None
 
@@ -97,27 +99,11 @@ def pad_octal(mode: int) -> str:
     return f"{mode:04o}"
 
 
-def capture_stack_trace(depth) -> TracebackType:
-    """Capture the current stack trace, similar to JavaScript's captureStackTrace function."""
-    # Get the stack trace and skip this function and the immediate caller
-    stack = get_caller_frame(depth)
-    if stack is None:
-        raise RuntimeError("Could not get caller frame")
-
-    # Create a traceback object from the caller frame
-    return TracebackType(
-        tb_next=None,
-        tb_frame=stack,
-        tb_lasti=stack.f_lasti,
-        tb_lineno=stack.f_lineno,
-    )
-
-
 def get_build_step_index(step: str, stack_traces_length: int) -> int:
-    if step == "base":
+    if step == BASE_STEP_NAME:
         return 0
 
-    if step == "finalize":
+    if step == FINALIZE_STEP_NAME:
         return stack_traces_length - 1
 
     return int(step)

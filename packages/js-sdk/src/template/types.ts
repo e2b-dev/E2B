@@ -7,8 +7,6 @@ export enum InstructionType {
   RUN = 'RUN',
   WORKDIR = 'WORKDIR',
   USER = 'USER',
-  FINALIZE = 'finalize',
-  BASE = 'base',
 }
 
 export type Instruction = {

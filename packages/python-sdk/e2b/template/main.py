@@ -3,20 +3,22 @@ from typing import Dict, List, Optional, Union
 from types import TracebackType
 from httpx import Limits
 
+from e2b.template.consts import STACK_TRACE_DEPTH
 from e2b.template.dockerfile_parser import parse_dockerfile
 from e2b.template.types import (
     CopyItem,
     Instruction,
     TemplateType,
     RegistryConfig,
+    InstructionType,
 )
 from e2b.template.utils import (
     calculate_files_hash,
     get_caller_directory,
     pad_octal,
     read_dockerignore,
-    capture_stack_trace,
     read_gcp_service_account_json,
+    get_caller_frame,
 )
 from e2b.template.readycmd import ReadyCmd
 
@@ -59,7 +61,7 @@ class TemplateBuilder:
             ]
 
             instruction: Instruction = Instruction(
-                type="COPY",
+                type=InstructionType.COPY,
                 args=args,
                 force=force_upload or self._template._force_next_layer,
                 forceUpload=force_upload,
@@ -120,7 +122,7 @@ class TemplateBuilder:
             args.append(user)
 
         instruction: Instruction = Instruction(
-            type="RUN",
+            type=InstructionType.RUN,
             args=args,
             force=self._template._force_next_layer,
             forceUpload=None,
@@ -131,7 +133,7 @@ class TemplateBuilder:
 
     def set_workdir(self, workdir: str) -> "TemplateBuilder":
         instruction: Instruction = Instruction(
-            type="WORKDIR",
+            type=InstructionType.WORKDIR,
             args=[workdir],
             force=self._template._force_next_layer,
             forceUpload=None,
@@ -142,7 +144,7 @@ class TemplateBuilder:
 
     def set_user(self, user: str) -> "TemplateBuilder":
         instruction: Instruction = Instruction(
-            type="USER",
+            type=InstructionType.USER,
             args=[user],
             force=self._template._force_next_layer,
             forceUpload=None,
@@ -223,7 +225,7 @@ class TemplateBuilder:
             return self
 
         instruction: Instruction = Instruction(
-            type="ENV",
+            type=InstructionType.ENV,
             args=[item for key, value in envs.items() for item in [key, value]],
             force=self._template._force_next_layer,
             forceUpload=None,
@@ -288,12 +290,11 @@ class TemplateBase:
         self._instructions: List[Instruction] = []
         # If no file_context_path is provided, use the caller's directory
         self._file_context_path: str = (
-            file_context_path or get_caller_directory() or "."
+            file_context_path or get_caller_directory(STACK_TRACE_DEPTH) or "."
         )
         self._ignore_file_paths: List[str] = ignore_file_paths or []
         self._stack_traces: List[TracebackType] = []
         self._stack_traces_enabled: bool = True
-        self._stack_traces_depth: int = 3
 
     def skip_cache(self) -> "TemplateBase":
         """Skip cache for the next instruction (before from instruction)"""
@@ -301,14 +302,26 @@ class TemplateBase:
         return self
 
     def _collect_stack_trace(
-        self, stack_traces_depth: Optional[int] = None
+        self, stack_traces_depth: Optional[int] = STACK_TRACE_DEPTH
     ) -> "TemplateBase":
         """Collect stack trace if enabled"""
         if not self._stack_traces_enabled:
             return self
 
-        depth = stack_traces_depth or self._stack_traces_depth
-        self._stack_traces.append(capture_stack_trace(depth))
+        stack = get_caller_frame(stack_traces_depth)
+        if stack is None:
+            self._stack_traces.append(None)
+            return self
+
+        # Create a traceback object from the caller frame
+        capture_stack_trace = TracebackType(
+            tb_next=None,
+            tb_frame=stack,
+            tb_lasti=stack.f_lasti,
+            tb_lineno=stack.f_lineno,
+        )
+
+        self._stack_traces.append(capture_stack_trace)
         return self
 
     def _disable_stack_trace(self) -> "TemplateBase":
@@ -326,7 +339,7 @@ class TemplateBase:
         self._disable_stack_trace()
         result = fn()
         self._enable_stack_trace()
-        self._collect_stack_trace(self._stack_traces_depth + 1)
+        self._collect_stack_trace(STACK_TRACE_DEPTH + 1)
         return result
 
     # Built-in image mixins
@@ -476,7 +489,9 @@ class TemplateBase:
         dockerfile = f"FROM {template._template._base_image}\n"
 
         for instruction in template._template._instructions:
-            dockerfile += f"{instruction['type']} {' '.join(instruction['args'])}\n"
+            dockerfile += (
+                f"{instruction['type'].value} {' '.join(instruction['args'])}\n"
+            )
 
         if template._template._start_cmd:
             dockerfile += f"ENTRYPOINT {template._template._start_cmd}\n"
@@ -490,13 +505,13 @@ class TemplateBase:
 
         for index, instruction in enumerate(self._instructions):
             step: Instruction = Instruction(
-                type=instruction["type"],
+                type=instruction["type"].value,
                 args=instruction["args"],
                 force=instruction["force"],
                 forceUpload=instruction.get("forceUpload"),
             )
 
-            if instruction["type"] == "COPY":
+            if instruction["type"] == InstructionType.COPY:
                 stack_trace = None
                 if index + 1 < len(self._stack_traces):
                     stack_trace = self._stack_traces[index + 1]

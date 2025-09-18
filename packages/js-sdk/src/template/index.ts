@@ -69,7 +69,6 @@ export class TemplateBase
   private logsRefreshFrequency: number = 200
   private stackTraces: (string | undefined)[] = []
   private stackTracesEnabled: boolean = true
-  private stackTracesDepth: number = STACK_TRACE_DEPTH
 
   constructor(options?: TemplateOptions) {
     this.fileContextPath = options?.fileContextPath ?? this.fileContextPath
@@ -470,7 +469,7 @@ export class TemplateBase
     return this
   }
 
-  private collectStackTrace(stackTracesDepth: number = this.stackTracesDepth) {
+  private collectStackTrace(stackTracesDepth: number = STACK_TRACE_DEPTH) {
     if (!this.stackTracesEnabled) {
       return this
     }
@@ -493,7 +492,7 @@ export class TemplateBase
     this.disableStackTrace()
     const result = fn()
     this.enableStackTrace()
-    this.collectStackTrace(this.stackTracesDepth + 1)
+    this.collectStackTrace(STACK_TRACE_DEPTH + 1)
     return result
   }
 
