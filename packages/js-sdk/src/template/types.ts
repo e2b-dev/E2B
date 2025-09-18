@@ -1,8 +1,18 @@
 import { stripAnsi } from '../utils'
 import { ReadyCmd } from './readycmd'
 
+export enum InstructionType {
+  COPY = 'COPY',
+  ENV = 'ENV',
+  RUN = 'RUN',
+  WORKDIR = 'WORKDIR',
+  USER = 'USER',
+  FINALIZE = 'finalize',
+  BASE = 'base',
+}
+
 export type Instruction = {
-  type: 'COPY' | 'ENV' | 'RUN' | 'WORKDIR' | 'USER'
+  type: InstructionType
   args: string[]
   force: boolean
   forceUpload?: boolean

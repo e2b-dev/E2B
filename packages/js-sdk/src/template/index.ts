@@ -17,6 +17,7 @@ import {
   CopyItem,
   LogEntry,
   RegistryConfig,
+  InstructionType,
 } from './types'
 import {
   calculateFilesHash,
@@ -28,6 +29,7 @@ import {
 } from './utils'
 import { ConnectionConfig } from '../connectionConfig'
 import { ReadyCmd } from './readycmd'
+import { STACK_TRACE_DEPTH } from './consts'
 
 type TemplateOptions = {
   fileContextPath?: string
@@ -62,12 +64,12 @@ export class TemplateBase
   private forceNextLayer: boolean = false
   private instructions: Instruction[] = []
   private fileContextPath: string =
-    runtime === 'browser' ? '.' : getCallerDirectory() ?? '.'
+    runtime === 'browser' ? '.' : getCallerDirectory(STACK_TRACE_DEPTH) ?? '.'
   private ignoreFilePaths: string[] = []
   private logsRefreshFrequency: number = 200
   private stackTraces: (string | undefined)[] = []
   private stackTracesEnabled: boolean = true
-  private stackTracesDepth: number = 3
+  private stackTracesDepth: number = STACK_TRACE_DEPTH
 
   constructor(options?: TemplateOptions) {
     this.fileContextPath = options?.fileContextPath ?? this.fileContextPath
@@ -259,7 +261,7 @@ export class TemplateBase
       ]
 
       this.instructions.push({
-        type: 'COPY',
+        type: InstructionType.COPY,
         args,
         force: item.forceUpload ?? this.forceNextLayer,
         forceUpload: item.forceUpload,
@@ -326,7 +328,7 @@ export class TemplateBase
     }
 
     this.instructions.push({
-      type: 'RUN',
+      type: InstructionType.RUN,
       args,
       force: this.forceNextLayer,
     })
@@ -337,7 +339,7 @@ export class TemplateBase
 
   setWorkdir(workdir: string): TemplateBuilder {
     this.instructions.push({
-      type: 'WORKDIR',
+      type: InstructionType.WORKDIR,
       args: [workdir],
       force: this.forceNextLayer,
     })
@@ -348,7 +350,7 @@ export class TemplateBase
 
   setUser(user: string): TemplateBuilder {
     this.instructions.push({
-      type: 'USER',
+      type: InstructionType.USER,
       args: [user],
       force: this.forceNextLayer,
     })
@@ -455,7 +457,7 @@ export class TemplateBase
     }
 
     this.instructions.push({
-      type: 'ENV',
+      type: InstructionType.ENV,
       args: Object.entries(envs).flatMap(([key, value]) => [key, value]),
       force: this.forceNextLayer,
     })
@@ -564,7 +566,7 @@ export class TemplateBase
     // Upload files in parallel
     const uploadPromises = instructionsWithHashes.map(
       async (instruction, index) => {
-        if (instruction.type !== 'COPY') {
+        if (instruction.type !== InstructionType.COPY) {
           return
         }
 
@@ -643,7 +645,7 @@ export class TemplateBase
   private async instructionsWithHashes(): Promise<Instruction[]> {
     return Promise.all(
       this.instructions.map(async (instruction, index) => {
-        if (instruction.type !== 'COPY') {
+        if (instruction.type !== InstructionType.COPY) {
           return instruction
         }
 

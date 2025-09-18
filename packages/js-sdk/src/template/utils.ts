@@ -2,6 +2,7 @@ import crypto from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
 import { dynamicGlob, dynamicTar } from '../utils'
+import { BASE_STEP_NAME, FINALIZE_STEP_NAME, STACK_TRACE_DEPTH } from './consts'
 
 export function readDockerignore(contextPath: string): string[] {
   const dockerignorePath = path.join(contextPath, '.dockerignore')
@@ -62,7 +63,7 @@ export function getCallerFrame(depth: number): string | undefined {
     return
   }
 
-  const lines = stackTrace.split('\n').slice(1) // Skip the first line (this function)
+  const lines = stackTrace.split('\n').slice(1) // Skip the this function (getCallerFrame)
   if (lines.length < depth + 1) {
     return
   }
@@ -74,12 +75,8 @@ export function getCallerFrame(depth: number): string | undefined {
  * Get the caller directory
  * @returns The caller directory
  */
-export function getCallerDirectory(): string | undefined {
-  /**
-   * Levels explained:
-   * getCallerDirectory (this function) > TemplateBase.fileContextPath > Template > original caller (eg. template file)
-   */
-  const caller = getCallerFrame(4)
+export function getCallerDirectory(depth: number): string | undefined {
+  const caller = getCallerFrame(depth + 1) // +1 depth to skip this function (getCallerDirectory)
   if (!caller) {
     return
   }
@@ -135,11 +132,11 @@ export function getBuildStepIndex(
   step: string,
   stackTracesLength: number
 ): number {
-  if (step === 'base') {
+  if (step === BASE_STEP_NAME) {
     return 0
   }
 
-  if (step == 'finalize') {
+  if (step === FINALIZE_STEP_NAME) {
     return stackTracesLength - 1
   }
 
