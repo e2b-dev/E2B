@@ -8,6 +8,7 @@ export default defineConfig({
     testTimeout: 30_000,
     include: ['tests/**/*.test.ts'],
     exclude: ['node_modules', 'dist', 'testground'],
+    setupFiles: ['tests/setup.ts'],
   },
   resolve: {
     alias: {
