@@ -4,22 +4,12 @@ import HandlebarsLib from 'handlebars'
 import * as path from 'path'
 import { TemplateJSON, TemplateWithStepsJSON } from './types'
 
-// Track if helpers are registered to avoid duplicate registration
-let helpersRegistered = false
-
 class Handlebars {
+  private handlebars: typeof HandlebarsLib
+
   constructor() {
-    this.registerHandlebarsHelpers()
-  }
-
-  compile(template: string) {
-    return HandlebarsLib.compile(template)
-  }
-
-  private registerHandlebarsHelpers() {
-    if (helpersRegistered) return
-
-    HandlebarsLib.registerHelper('eq', function (a: any, b: any, options: any) {
+    const handlebars = HandlebarsLib.create()
+    handlebars.registerHelper('eq', function (a: any, b: any, options: any) {
       if (a === b) {
         // @ts-ignore - this context is provided by Handlebars
         return options.fn(this)
@@ -27,15 +17,19 @@ class Handlebars {
       return ''
     })
 
-    HandlebarsLib.registerHelper('escapeQuotes', function (str) {
+    handlebars.registerHelper('escapeQuotes', function (str) {
       return str ? str.replace(/'/g, "\\'") : str
     })
 
-    HandlebarsLib.registerHelper('escapeDoubleQuotes', function (str) {
+    handlebars.registerHelper('escapeDoubleQuotes', function (str) {
       return str ? str.replace(/"/g, '\\"') : str
     })
 
-    helpersRegistered = true
+    this.handlebars = handlebars
+  }
+
+  compile(template: string) {
+    return this.handlebars.compile(template)
   }
 }
 
