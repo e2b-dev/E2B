@@ -40,6 +40,7 @@
     "dev": "tsup --watch",
     "lint": "eslint src",
     "format": "prettier --write src",
+    "test:interactive": "pnpm build && ./dist/index.js",
     "test": "vitest run",
     "test:watch": "vitest watch",
     "test:coverage": "vitest run --coverage",

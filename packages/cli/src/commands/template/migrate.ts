@@ -3,17 +3,16 @@ import * as commander from 'commander'
 import { Template, TemplateBuilder, TemplateClass } from 'e2b'
 import * as fs from 'fs'
 import * as path from 'path'
-import { E2BConfig, getConfigPath, loadConfig } from 'src/config'
-import { defaultDockerfileName } from 'src/docker/constants'
-import { pathOption } from 'src/options'
-import { getRoot } from 'src/utils/filesystem'
-import { asLocal, asLocalRelative, asPrimary } from 'src/utils/format'
+import { E2BConfig, getConfigPath, loadConfig } from '../../config'
+import { defaultDockerfileName } from '../../docker/constants'
+import { configOption, pathOption } from '../../options'
+import { getRoot } from '../../utils/filesystem'
+import { asLocal, asLocalRelative, asPrimary } from '../../utils/format'
 import { getDockerfile } from './build'
 import {
   generateAndWriteTemplateFiles,
   Language,
   languageDisplay,
-  validLanguages,
 } from './generators'
 
 /**
@@ -95,17 +94,16 @@ export const migrateCommand = new commander.Command('migrate')
     '-d, --dockerfile <file>',
     `specify path to Dockerfile. Defaults to ${asLocal('e2b.Dockerfile')}`
   )
-  .option(
-    '-c, --config <file>',
-    `specify path to config file. Defaults to ${asLocal('e2b.toml')}`
-  )
+  .addOption(configOption)
   .option(
     '-l, --language <language>',
-    `specify target language: ${validLanguages.join(', ')}`,
+    `specify target language: ${Object.values(Language).join(', ')}`,
     (value) => {
-      if (!validLanguages.includes(value as Language)) {
+      if (!Object.values(Language).includes(value as Language)) {
         throw new Error(
-          `Invalid language. Must be one of: ${validLanguages.join(', ')}`
+          `Invalid language. Must be one of: ${Object.values(Language).join(
+            ', '
+          )}`
         )
       }
       return value as Language

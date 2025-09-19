@@ -1,43 +1,63 @@
 import { Template, TemplateClass } from 'e2b'
 import * as fs from 'fs'
-import Handlebars from 'handlebars'
+import HandlebarsLib from 'handlebars'
 import * as path from 'path'
-import { TemplateJSON } from './types'
+import { TemplateJSON, TemplateWithStepsJSON } from './types'
 
 // Track if helpers are registered to avoid duplicate registration
 let helpersRegistered = false
 
-export function registerHandlebarsHelpers() {
-  if (helpersRegistered) return
+class Handlebars {
+  constructor() {
+    this.registerHandlebarsHelpers()
+  }
 
-  Handlebars.registerHelper('eq', function (a: any, b: any, options: any) {
-    if (a === b) {
-      // @ts-ignore - this context is provided by Handlebars
-      return options.fn(this)
-    }
-    return ''
-  })
+  compile(template: string) {
+    return HandlebarsLib.compile(template)
+  }
 
-  Handlebars.registerHelper('escapeQuotes', function (str) {
-    return str ? str.replace(/'/g, "\\'") : str
-  })
+  private registerHandlebarsHelpers() {
+    if (helpersRegistered) return
 
-  Handlebars.registerHelper('escapeDoubleQuotes', function (str) {
-    return str ? str.replace(/"/g, '\\"') : str
-  })
+    HandlebarsLib.registerHelper('eq', function (a: any, b: any, options: any) {
+      if (a === b) {
+        // @ts-ignore - this context is provided by Handlebars
+        return options.fn(this)
+      }
+      return ''
+    })
 
-  helpersRegistered = true
+    HandlebarsLib.registerHelper('escapeQuotes', function (str) {
+      return str ? str.replace(/'/g, "\\'") : str
+    })
+
+    HandlebarsLib.registerHelper('escapeDoubleQuotes', function (str) {
+      return str ? str.replace(/"/g, '\\"') : str
+    })
+
+    helpersRegistered = true
+  }
+}
+
+interface HandlebarStep {
+  type: string
+  args?: string[]
+  envVars?: Record<string, string>
+  src?: string
+  dest?: string
 }
 
 /**
  * Transform template data for Handlebars
  */
-export async function transformTemplateData(template: TemplateClass) {
+export async function transformTemplateData(
+  template: TemplateClass
+): Promise<TemplateJSON & { steps: HandlebarStep[] }> {
   // Extract JSON structure from parsed template
   const jsonString = await Template.toJSON(template, false)
-  const json = JSON.parse(jsonString) as TemplateJSON
+  const json = JSON.parse(jsonString) as TemplateWithStepsJSON
 
-  const transformedSteps: any[] = []
+  const transformedSteps: HandlebarStep[] = []
 
   for (const step of json.steps) {
     switch (step.type) {
@@ -93,7 +113,7 @@ export async function generateTypeScriptCode(
   cpuCount?: number,
   memoryMB?: number
 ): Promise<{ templateContent: string; buildContent: string }> {
-  registerHandlebarsHelpers()
+  const hb = new Handlebars()
   const transformedData = await transformTemplateData(template)
 
   // Load and compile templates
@@ -108,17 +128,17 @@ export async function generateTypeScriptCode(
     'utf8'
   )
 
-  const templateTemplate = Handlebars.compile(templateSource)
-  const buildTemplate = Handlebars.compile(buildSource)
+  const generateTemplateSource = hb.compile(templateSource)
+  const generateBuildSource = hb.compile(buildSource)
 
   // Generate content
   const templateData = {
     ...transformedData,
   }
 
-  const templateContent = templateTemplate(templateData)
+  const templateContent = generateTemplateSource(templateData)
 
-  const buildContent = buildTemplate({
+  const buildContent = generateBuildSource({
     alias,
     cpuCount,
     memoryMB,
@@ -140,7 +160,7 @@ export async function generatePythonCode(
   memoryMB?: number,
   isAsync: boolean = false
 ): Promise<{ templateContent: string; buildContent: string }> {
-  registerHandlebarsHelpers()
+  const hb = new Handlebars()
   const transformedData = await transformTemplateData(template)
 
   // Load and compile templates
@@ -155,16 +175,16 @@ export async function generatePythonCode(
     'utf8'
   )
 
-  const templateTemplate = Handlebars.compile(templateSource)
-  const buildTemplate = Handlebars.compile(buildSource)
+  const generateTemplateSource = hb.compile(templateSource)
+  const generateBuildSource = hb.compile(buildSource)
 
   // Generate content
-  const templateContent = templateTemplate({
+  const templateContent = generateTemplateSource({
     ...transformedData,
     isAsync,
   })
 
-  const buildContent = buildTemplate({
+  const buildContent = generateBuildSource({
     alias,
     cpuCount,
     memoryMB,

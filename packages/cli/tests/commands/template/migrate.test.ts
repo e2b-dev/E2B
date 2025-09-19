@@ -1,7 +1,36 @@
-import { describe, test, expect, beforeEach, afterEach } from 'vitest'
+import { afterEach, beforeEach, describe, expect, test } from 'vitest'
 import * as fs from 'fs/promises'
 import * as path from 'path'
 import { execSync } from 'child_process'
+import { Language } from '../../../src/commands/template/generators'
+
+interface FileNames {
+  template: string
+  buildDev: string
+  buildProd: string
+}
+
+function getFileNames(language: Language): FileNames {
+  switch (language) {
+    case Language.TypeScript: {
+      return {
+        template: 'template.ts',
+        buildDev: 'build.dev.ts',
+        buildProd: 'build.prod.ts',
+      }
+    }
+    case Language.PythonSync:
+    case Language.PythonAsync: {
+      return {
+        template: 'template.py',
+        buildDev: 'build_dev.py',
+        buildProd: 'build_prod.py',
+      }
+    }
+    default:
+      throw new Error(`Unsupported language: ${language}`)
+  }
+}
 
 describe('Template Migration', () => {
   let testDir: string
@@ -36,20 +65,20 @@ describe('Template Migration', () => {
     testCases.forEach((testCaseName) => {
       describe(testCaseName.replace('-', ' '), () => {
         test('should migrate to TypeScript', async () => {
-          await runMigrationTest(testCaseName, 'typescript')
+          await runMigrationTest(testCaseName, Language.TypeScript)
         })
 
         test('should migrate to Python sync', async () => {
-          await runMigrationTest(testCaseName, 'python-sync')
+          await runMigrationTest(testCaseName, Language.PythonSync)
         })
 
         test('should migrate to Python async', async () => {
-          await runMigrationTest(testCaseName, 'python-async')
+          await runMigrationTest(testCaseName, Language.PythonAsync)
         })
       })
     })
 
-    async function runMigrationTest(testCaseName: string, language: string) {
+    async function runMigrationTest(testCaseName: string, language: Language) {
       const fixtureDir = path.join(fixturesDir, testCaseName)
 
       // Copy fixture files to test directory
@@ -61,41 +90,38 @@ describe('Template Migration', () => {
       })
 
       // Determine file extensions and names based on language
-      const isTypescript = language === 'typescript'
-      const templateExt = isTypescript ? '.ts' : '.py'
-      const buildDevName = isTypescript ? 'build.dev.ts' : 'build_dev.py'
-      const buildProdName = isTypescript ? 'build.prod.ts' : 'build_prod.py'
+      const fileNames = getFileNames(language)
 
       // Load expected outputs
       const expectedDir = path.join(fixtureDir, 'expected', language)
       const expectedTemplate = await fs.readFile(
-        path.join(expectedDir, `template${templateExt}`),
+        path.join(expectedDir, fileNames.template),
         'utf-8'
       )
       const expectedBuildDev = await fs.readFile(
-        path.join(expectedDir, buildDevName),
+        path.join(expectedDir, fileNames.buildDev),
         'utf-8'
       )
       const expectedBuildProd = await fs.readFile(
-        path.join(expectedDir, buildProdName),
+        path.join(expectedDir, fileNames.buildProd),
         'utf-8'
       )
 
       // Check generated files
       const templateFile = await fs.readFile(
-        path.join(testDir, `template${templateExt}`),
+        path.join(testDir, fileNames.template),
         'utf-8'
       )
       expect(templateFile.trim()).toEqual(expectedTemplate.trim())
 
       const buildDevFile = await fs.readFile(
-        path.join(testDir, buildDevName),
+        path.join(testDir, fileNames.buildDev),
         'utf-8'
       )
       expect(buildDevFile.trim()).toEqual(expectedBuildDev.trim())
 
       const buildProdFile = await fs.readFile(
-        path.join(testDir, buildProdName),
+        path.join(testDir, fileNames.buildProd),
         'utf-8'
       )
       expect(buildProdFile.trim()).toEqual(expectedBuildProd.trim())
@@ -144,7 +170,7 @@ dockerfile = "e2b.Dockerfile"`
   })
 
   describe('File Collision Handling', () => {
-    test('should generate unique filenames if files already exist', async () => {
+    test('should error out if files already exist', async () => {
       // Create test Dockerfile
       const dockerfile = 'FROM node:18'
       await fs.writeFile(path.join(testDir, 'e2b.Dockerfile'), dockerfile)
@@ -160,18 +186,16 @@ dockerfile = "e2b.Dockerfile"`
       await fs.writeFile(path.join(testDir, 'build.prod.ts'), '// existing')
 
       // Run migration
-      execSync(`node ${cliPath} template migrate --language typescript`, {
-        cwd: testDir,
-      })
+      expect(() => {
+        execSync(`node ${cliPath} template migrate --language typescript`, {
+          cwd: testDir,
+        })
+      }).toThrow()
 
-      // Check that new files were created with different names
       const files = await fs.readdir(testDir)
-      expect(files).toContain('template.ts') // original
-      expect(files).toContain('template-1.ts') // new
-      expect(files).toContain('build.dev.ts') // original
-      expect(files).toContain('build.dev-1.ts') // new
-      expect(files).toContain('build.prod.ts') // original
-      expect(files).toContain('build.prod-1.ts') // new
+      expect(files).toContain('template.ts')
+      expect(files).toContain('build.dev.ts')
+      expect(files).toContain('build.prod.ts')
     })
   })
 })

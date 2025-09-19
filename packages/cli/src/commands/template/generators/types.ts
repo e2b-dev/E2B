@@ -4,12 +4,6 @@ export enum Language {
   PythonAsync = 'python-async',
 }
 
-export const validLanguages: Language[] = [
-  Language.TypeScript,
-  Language.PythonSync,
-  Language.PythonAsync,
-]
-
 export const languageDisplay = {
   [Language.TypeScript]: 'TypeScript',
   [Language.PythonSync]: 'Python (sync)',
@@ -22,6 +16,9 @@ export interface TemplateJSON {
   startCmd?: string
   readyCmd?: string
   force: boolean
+}
+
+export interface TemplateWithStepsJSON extends TemplateJSON {
   steps: Array<{
     type: string
     args: string[]

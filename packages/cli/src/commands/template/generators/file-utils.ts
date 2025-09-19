@@ -2,19 +2,19 @@ import * as fs from 'fs'
 import * as path from 'path'
 
 /**
- * Generate unique file names to avoid overwriting existing files
+ * Check if file exists to avoid overwriting existing files
  */
-export function getUniqueFileName(
+export function errorIfExists(
   directory: string,
   baseName: string,
   extension: string
 ): string {
-  let fileName = `${baseName}${extension}`
-  let counter = 1
+  const fileName = `${baseName}${extension}`
 
-  while (fs.existsSync(path.join(directory, fileName))) {
-    fileName = `${baseName}-${counter}${extension}`
-    counter++
+  if (fs.existsSync(path.join(directory, fileName))) {
+    throw new Error(
+      `File ${fileName} already exists. Aborting to avoid overwrite.`
+    )
   }
 
   return fileName
