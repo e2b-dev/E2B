@@ -19,6 +19,7 @@ def test_build():
         Template()
         .from_image("ubuntu:22.04")
         .copy("folder/*.txt", "folder", force_upload=True)
+        .copy("folder", "folder2", force_upload=True)
         .set_envs(
             {
                 "ENV_1": "value1",

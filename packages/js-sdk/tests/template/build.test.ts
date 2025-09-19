@@ -12,6 +12,7 @@ test('build template', { timeout: 180000 }, async () => {
   const template = Template()
     .fromImage('ubuntu:22.04')
     .copy('folder/*.txt', 'folder', { forceUpload: true })
+    .copy('folder', 'folder2', { forceUpload: true })
     .setEnvs({
       ENV_1: 'value1',
       ENV_2: 'value2',

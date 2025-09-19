@@ -53,6 +53,9 @@ def calculate_files_hash(
         raise ValueError(f"No files found in {src_path}").with_traceback(stack_trace)
 
     for file in files:
+        if not os.path.isfile(file):
+            # skip folders
+            continue
         with open(file, "rb") as f:
             hash_obj.update(f.read())
 

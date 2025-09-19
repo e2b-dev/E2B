@@ -24,15 +24,16 @@ export async function calculateFilesHash(
   ignorePatterns?: string[],
   stackTrace?: string
 ): Promise<string> {
-  const { globSync } = await dynamicGlob()
+  const { glob } = await dynamicGlob()
   const srcPath = path.join(contextPath, src)
   const hash = crypto.createHash('sha256')
   const content = `COPY ${src} ${dest}`
 
   hash.update(content)
 
-  const files = globSync(srcPath, {
+  const files = await glob(srcPath, {
     ignore: ignorePatterns,
+    withFileTypes: true,
   })
 
   if (files.length === 0) {
@@ -44,7 +45,11 @@ export async function calculateFilesHash(
   }
 
   for (const file of files) {
-    const content = fs.readFileSync(file)
+    if (!file.isFile()) {
+      continue
+    }
+
+    const content = fs.readFileSync(file.fullpath())
     hash.update(new Uint8Array(content))
   }
 
