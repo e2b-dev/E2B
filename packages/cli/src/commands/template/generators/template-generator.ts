@@ -2,7 +2,7 @@ import * as path from 'path'
 import { asLocalRelative, asPrimary } from '../../../utils/format'
 import { GeneratedFiles, Language, languageDisplay } from './types'
 import { generatePythonCode, generateTypeScriptCode } from './handlebars'
-import { errorIfExists, writeFileContent } from './file-utils'
+import { writeFileContent } from './file-utils'
 import { TemplateClass } from 'e2b'
 
 /**
@@ -32,10 +32,9 @@ export async function generateAndWriteTemplateFiles(
         memoryMB
       )
 
-      const extension = '.ts'
-      const templateFile = errorIfExists(root, 'template', extension)
-      const buildDevFile = errorIfExists(root, 'build.dev', extension)
-      const buildProdFile = errorIfExists(root, 'build.prod', extension)
+      const templateFile = path.join(root, 'template.ts')
+      const buildDevFile = path.join(root, 'build.dev.ts')
+      const buildProdFile = path.join(root, 'build.prod.ts')
 
       await writeFileContent(path.join(root, templateFile), templateContent)
       await writeFileContent(path.join(root, buildDevFile), buildDevContent)
@@ -71,10 +70,9 @@ export async function generateAndWriteTemplateFiles(
         isAsync
       )
 
-      const extension = '.py'
-      const templateFile = errorIfExists(root, 'template', extension)
-      const buildDevFile = errorIfExists(root, 'build_dev', extension)
-      const buildProdFile = errorIfExists(root, 'build_prod', extension)
+      const templateFile = path.join(root, 'template.py')
+      const buildDevFile = path.join(root, 'build_dev.py')
+      const buildProdFile = path.join(root, 'build_prod.py')
 
       await writeFileContent(path.join(root, templateFile), templateContent)
       await writeFileContent(path.join(root, buildDevFile), buildDevContent)
