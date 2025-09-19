@@ -23,7 +23,7 @@ class Template(TemplateBase):
         template: TemplateClass,
         alias: str,
         cpu_count: int = 2,
-        memory_mb: int = 512,
+        memory_mb: int = 1024,
         skip_cache: bool = False,
         on_build_logs: Optional[Callable[[LogEntry], None]] = None,
         api_key: Optional[str] = None,

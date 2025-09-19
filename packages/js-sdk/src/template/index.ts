@@ -556,7 +556,7 @@ export class TemplateBase
 
     const { templateID, buildID } = await requestBuild(client, {
       alias: options.alias,
-      cpuCount: options.cpuCount ?? 1,
+      cpuCount: options.cpuCount ?? 2,
       memoryMB: options.memoryMB ?? 1024,
     })
 
