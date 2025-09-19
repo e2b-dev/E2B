@@ -5,6 +5,7 @@ import { listCommand } from './list'
 import { initCommand } from './init'
 import { deleteCommand } from './delete'
 import { publishCommand, unPublishCommand } from './publish'
+import { migrateCommand } from './migrate'
 
 export const templateCommand = new commander.Command('template')
   .description('manage sandbox templates')
@@ -15,3 +16,4 @@ export const templateCommand = new commander.Command('template')
   .addCommand(deleteCommand)
   .addCommand(publishCommand)
   .addCommand(unPublishCommand)
+  .addCommand(migrateCommand)

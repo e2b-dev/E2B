@@ -1,0 +1,5 @@
+template_id = "start-cmd"
+dockerfile = "e2b.Dockerfile"
+cpu_count = 2
+memory_mb = 1024
+start_cmd = "node server.js"
