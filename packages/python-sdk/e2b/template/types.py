@@ -3,7 +3,16 @@ from typing_extensions import NotRequired
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Literal
+from enum import Enum
 from e2b.template.utils import strip_ansi_escape_codes
+
+
+class InstructionType(Enum):
+    COPY = "COPY"
+    ENV = "ENV"
+    RUN = "RUN"
+    WORKDIR = "WORKDIR"
+    USER = "USER"
 
 
 class CopyItem(TypedDict):
@@ -15,11 +24,11 @@ class CopyItem(TypedDict):
 
 
 class Instruction(TypedDict):
-    type: str
+    type: InstructionType
     args: List[str]
     force: bool
-    forceUpload: Optional[bool]
-    filesHash: NotRequired[str]
+    forceUpload: NotRequired[Optional[bool]]
+    filesHash: NotRequired[Optional[str]]
 
 
 @dataclass

@@ -1,7 +1,7 @@
 import { ApiClient, paths, handleApiError } from '../api'
 import { BuildError, FileUploadError } from './errors'
 import { LogEntry } from './types'
-import { tarFileStreamUpload } from './utils'
+import { getBuildStepIndex, tarFileStreamUpload } from './utils'
 import { stripAnsi } from '../utils'
 
 type RequestBuildInput = {
@@ -59,7 +59,8 @@ export async function requestBuild(
 
 export async function getFileUploadLink(
   client: ApiClient,
-  { templateID, filesHash }: GetFileUploadLinkInput
+  { templateID, filesHash }: GetFileUploadLinkInput,
+  stackTrace?: string
 ) {
   const fileUploadLinkRes = await client.api.GET(
     '/templates/{templateID}/files/{hash}',
@@ -73,44 +74,55 @@ export async function getFileUploadLink(
     }
   )
 
-  const error = handleApiError(fileUploadLinkRes, FileUploadError)
+  const error = handleApiError(fileUploadLinkRes, FileUploadError, stackTrace)
   if (error) {
     throw error
   }
 
   if (!fileUploadLinkRes.data) {
-    throw new FileUploadError('Failed to get file upload link')
+    throw new FileUploadError('Failed to get file upload link', stackTrace)
   }
 
   return fileUploadLinkRes.data
 }
 
-export async function uploadFile(options: {
-  fileName: string
-  fileContextPath: string
-  url: string
-}) {
+export async function uploadFile(
+  options: {
+    fileName: string
+    fileContextPath: string
+    url: string
+  },
+  stackTrace?: string
+) {
   const { fileName, url, fileContextPath } = options
-  const { contentLength, uploadStream } = await tarFileStreamUpload(
-    fileName,
-    fileContextPath
-  )
-
-  // The compiler assumes this is Web fetch API, but it's actually Node.js fetch API
-  const res = await fetch(url, {
-    method: 'PUT',
-    // @ts-expect-error
-    body: uploadStream,
-    headers: {
-      'Content-Length': contentLength.toString(),
-    },
-    duplex: 'half',
-  })
-
-  if (!res.ok) {
-    throw new FileUploadError(
-      `Failed to upload file: ${res.statusText} ${res.status}`
+  try {
+    const { contentLength, uploadStream } = await tarFileStreamUpload(
+      fileName,
+      fileContextPath
     )
+
+    // The compiler assumes this is Web fetch API, but it's actually Node.js fetch API
+    const res = await fetch(url, {
+      method: 'PUT',
+      // @ts-expect-error
+      body: uploadStream,
+      headers: {
+        'Content-Length': contentLength.toString(),
+      },
+      duplex: 'half',
+    })
+
+    if (!res.ok) {
+      throw new FileUploadError(
+        `Failed to upload file: ${res.statusText}`,
+        stackTrace
+      )
+    }
+  } catch (error) {
+    if (error instanceof FileUploadError) {
+      throw error
+    }
+    throw new FileUploadError(`Failed to upload file: ${error}`, stackTrace)
   }
 }
 
@@ -175,11 +187,13 @@ export async function waitForBuildFinish(
     buildID,
     onBuildLogs,
     logsRefreshFrequency,
+    stackTraces,
   }: {
     templateID: string
     buildID: string
     onBuildLogs?: (logEntry: InstanceType<typeof LogEntry>) => void
     logsRefreshFrequency: number
+    stackTraces: (string | undefined)[]
   }
 ): Promise<void> {
   let logsOffset = 0
@@ -214,7 +228,19 @@ export async function waitForBuildFinish(
         break
       }
       case 'error': {
-        throw new BuildError(buildStatus?.reason?.message ?? 'Unknown error')
+        let stackError: string | undefined
+        if (buildStatus.reason?.step !== undefined) {
+          const step = getBuildStepIndex(
+            buildStatus.reason.step,
+            stackTraces.length
+          )
+          stackError = stackTraces[step]
+        }
+
+        throw new BuildError(
+          buildStatus?.reason?.message ?? 'Unknown error',
+          stackError
+        )
       }
     }
 

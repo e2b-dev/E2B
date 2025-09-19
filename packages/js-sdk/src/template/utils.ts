@@ -2,6 +2,7 @@ import crypto from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
 import { dynamicGlob, dynamicTar } from '../utils'
+import { BASE_STEP_NAME, FINALIZE_STEP_NAME } from './consts'
 
 export function readDockerignore(contextPath: string): string[] {
   const dockerignorePath = path.join(contextPath, '.dockerignore')
@@ -20,7 +21,8 @@ export async function calculateFilesHash(
   src: string,
   dest: string,
   contextPath: string,
-  ignorePatterns?: string[]
+  ignorePatterns?: string[],
+  stackTrace?: string
 ): Promise<string> {
   const { globSync } = await dynamicGlob()
   const srcPath = path.join(contextPath, src)
@@ -34,7 +36,11 @@ export async function calculateFilesHash(
   })
 
   if (files.length === 0) {
-    throw new Error(`No files found in ${srcPath}`)
+    const error = new Error(`No files found in ${srcPath}`)
+    if (stackTrace) {
+      error.stack = stackTrace
+    }
+    throw error
   }
 
   for (const file of files) {
@@ -45,16 +51,43 @@ export async function calculateFilesHash(
   return hash.digest('hex')
 }
 
-export function getCallerDirectory(): string | undefined {
+/**
+ * Get the caller frame
+ * @param depth - The depth of the stack trace
+ * Levels explained: caller (eg. from class TemplateBase.fromImage) > original caller (eg. template file)
+ * @returns The caller frame
+ */
+export function getCallerFrame(depth: number): string | undefined {
   const stackTrace = new Error().stack
   if (!stackTrace) {
     return
   }
 
-  const lines = stackTrace.split('\n')
-  const caller = lines[4]
+  const lines = stackTrace.split('\n').slice(1) // Skip the this function (getCallerFrame)
+  if (lines.length < depth + 1) {
+    return
+  }
 
-  const match = caller.match(/at ([^:]+):\d+:\d+/)
+  return lines.slice(depth).join('\n')
+}
+
+/**
+ * Get the caller directory
+ * @returns The caller directory
+ */
+export function getCallerDirectory(depth: number): string | undefined {
+  const caller = getCallerFrame(depth + 1) // +1 depth to skip this function (getCallerDirectory)
+  if (!caller) {
+    return
+  }
+
+  const lines = caller.split('\n')
+  if (lines.length === 0) {
+    return
+  }
+  const firstLine = lines[0]
+
+  const match = firstLine.match(/at ([^:]+):\d+:\d+/)
   if (match) {
     const filePath = match[1]
     return path.dirname(filePath)
@@ -96,6 +129,21 @@ export async function tarFileStreamUpload(
     contentLength,
     uploadStream: await tarFileStream(fileName, fileContextPath),
   }
+}
+
+export function getBuildStepIndex(
+  step: string,
+  stackTracesLength: number
+): number {
+  if (step === BASE_STEP_NAME) {
+    return 0
+  }
+
+  if (step === FINALIZE_STEP_NAME) {
+    return stackTracesLength - 1
+  }
+
+  return Number(step)
 }
 
 export function readGCPServiceAccountJSON(

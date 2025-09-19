@@ -5,7 +5,10 @@ from glob import glob
 import fnmatch
 import re
 import inspect
+from types import TracebackType, FrameType
 from typing import List, Optional, Union
+
+from e2b.template.consts import BASE_STEP_NAME, FINALIZE_STEP_NAME
 
 
 def read_dockerignore(context_path: str) -> List[str]:
@@ -28,6 +31,7 @@ def calculate_files_hash(
     dest: str,
     context_path: str,
     ignore_patterns: Optional[List[str]] = None,
+    stack_trace: Optional[TracebackType] = None,
 ) -> str:
     src_path = os.path.join(context_path, src)
     hash_obj = hashlib.sha256()
@@ -46,7 +50,7 @@ def calculate_files_hash(
         files.append(file)
 
     if len(files) == 0:
-        raise ValueError(f"No files found in {src_path}")
+        raise ValueError(f"No files found in {src_path}").with_traceback(stack_trace)
 
     for file in files:
         with open(file, "rb") as f:
@@ -67,17 +71,23 @@ def strip_ansi_escape_codes(text: str) -> str:
     return ansi_escape.sub("", text)
 
 
-def get_caller_directory() -> Optional[str]:
+def get_caller_frame(depth: int) -> Optional[FrameType]:
+    """Get the caller frame. Skip this function (first frame)."""
+    stack = inspect.stack()[1:]
+    if len(stack) < depth + 1:
+        return None
+    return stack[depth].frame
+
+
+def get_caller_directory(depth: int) -> Optional[str]:
     """Get the directory of the file that called this function."""
     try:
         # Get the stack trace
-        stack = inspect.stack()
-        if len(stack) < 3:
+        caller_frame = get_caller_frame(depth)
+        if caller_frame is None:
             return None
 
-        # Get the caller frame (skip this function and the immediate caller)
-        caller_frame = stack[2]
-        caller_file = caller_frame.filename
+        caller_file = caller_frame.f_code.co_filename
 
         # Return the directory of the caller file
         return os.path.dirname(os.path.abspath(caller_file))
@@ -87,6 +97,16 @@ def get_caller_directory() -> Optional[str]:
 
 def pad_octal(mode: int) -> str:
     return f"{mode:04o}"
+
+
+def get_build_step_index(step: str, stack_traces_length: int) -> int:
+    if step == BASE_STEP_NAME:
+        return 0
+
+    if step == FINALIZE_STEP_NAME:
+        return stack_traces_length - 1
+
+    return int(step)
 
 
 def read_gcp_service_account_json(

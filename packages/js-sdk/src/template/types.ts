@@ -1,8 +1,16 @@
 import { stripAnsi } from '../utils'
 import { ReadyCmd } from './readycmd'
 
+export enum InstructionType {
+  COPY = 'COPY',
+  ENV = 'ENV',
+  RUN = 'RUN',
+  WORKDIR = 'WORKDIR',
+  USER = 'USER',
+}
+
 export type Instruction = {
-  type: 'COPY' | 'ENV' | 'RUN' | 'WORKDIR' | 'USER'
+  type: InstructionType
   args: string[]
   force: boolean
   forceUpload?: boolean
@@ -96,6 +104,11 @@ export interface TemplateBuilder {
   runCmd(command: string, options?: { user?: string }): TemplateBuilder
 
   runCmd(commands: string[], options?: { user?: string }): TemplateBuilder
+
+  runCmd(
+    commandOrCommands: string | string[],
+    options?: { user?: string }
+  ): TemplateBuilder
 
   setWorkdir(workdir: string): TemplateBuilder
 

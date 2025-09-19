@@ -17,16 +17,19 @@ import {
   CopyItem,
   LogEntry,
   RegistryConfig,
+  InstructionType,
 } from './types'
 import {
   calculateFilesHash,
   getCallerDirectory,
   padOctal,
   readDockerignore,
+  getCallerFrame,
   readGCPServiceAccountJSON,
 } from './utils'
 import { ConnectionConfig } from '../connectionConfig'
 import { ReadyCmd } from './readycmd'
+import { STACK_TRACE_DEPTH } from './consts'
 
 type TemplateOptions = {
   fileContextPath?: string
@@ -61,9 +64,11 @@ export class TemplateBase
   private forceNextLayer: boolean = false
   private instructions: Instruction[] = []
   private fileContextPath: string =
-    runtime === 'browser' ? '.' : getCallerDirectory() ?? '.'
+    runtime === 'browser' ? '.' : getCallerDirectory(STACK_TRACE_DEPTH) ?? '.'
   private ignoreFilePaths: string[] = []
   private logsRefreshFrequency: number = 200
+  private stackTraces: (string | undefined)[] = []
+  private stackTracesEnabled: boolean = true
 
   constructor(options?: TemplateOptions) {
     this.fileContextPath = options?.fileContextPath ?? this.fileContextPath
@@ -120,6 +125,7 @@ export class TemplateBase
       this.force = true
     }
 
+    this.collectStackTrace()
     return this
   }
 
@@ -132,6 +138,7 @@ export class TemplateBase
       this.force = true
     }
 
+    this.collectStackTrace()
     return this
   }
 
@@ -152,6 +159,7 @@ export class TemplateBase
       this.force = true
     }
 
+    this.collectStackTrace()
     return this
   }
 
@@ -162,13 +170,15 @@ export class TemplateBase
       password: string
     }
   ): TemplateBuilder {
-    return this.fromImage(image, {
-      registryConfig: {
-        type: 'registry',
-        username: options.username,
-        password: options.password,
-      },
-    })
+    return this.runInNewStackTraceContext(() =>
+      this.fromImage(image, {
+        registryConfig: {
+          type: 'registry',
+          username: options.username,
+          password: options.password,
+        },
+      })
+    )
   }
 
   fromAWSRegistry(
@@ -179,14 +189,16 @@ export class TemplateBase
       region: string
     }
   ): TemplateBuilder {
-    return this.fromImage(image, {
-      registryConfig: {
-        type: 'aws',
-        awsAccessKeyId: options.accessKeyId,
-        awsSecretAccessKey: options.secretAccessKey,
-        awsRegion: options.region,
-      },
-    })
+    return this.runInNewStackTraceContext(() =>
+      this.fromImage(image, {
+        registryConfig: {
+          type: 'aws',
+          awsAccessKeyId: options.accessKeyId,
+          awsSecretAccessKey: options.secretAccessKey,
+          awsRegion: options.region,
+        },
+      })
+    )
   }
 
   fromGCPRegistry(
@@ -195,15 +207,17 @@ export class TemplateBase
       serviceAccountJSON: string | object
     }
   ): TemplateBuilder {
-    return this.fromImage(image, {
-      registryConfig: {
-        type: 'gcp',
-        serviceAccountJson: readGCPServiceAccountJSON(
-          this.fileContextPath,
-          options.serviceAccountJSON
-        ),
-      },
-    })
+    return this.runInNewStackTraceContext(() =>
+      this.fromImage(image, {
+        registryConfig: {
+          type: 'gcp',
+          serviceAccountJson: readGCPServiceAccountJSON(
+            this.fileContextPath,
+            options.serviceAccountJSON
+          ),
+        },
+      })
+    )
   }
 
   copy(
@@ -246,13 +260,14 @@ export class TemplateBase
       ]
 
       this.instructions.push({
-        type: 'COPY',
+        type: InstructionType.COPY,
         args,
         force: item.forceUpload ?? this.forceNextLayer,
         forceUpload: item.forceUpload,
       })
     }
 
+    this.collectStackTrace()
     return this
   }
 
@@ -267,8 +282,7 @@ export class TemplateBase
     if (options?.force) {
       args.push('-f')
     }
-    this.runCmd(args.join(' '))
-    return this
+    return this.runInNewStackTraceContext(() => this.runCmd(args.join(' ')))
   }
 
   rename(
@@ -280,8 +294,7 @@ export class TemplateBase
     if (options?.force) {
       args.push('-f')
     }
-    this.runCmd(args.join(' '))
-    return this
+    return this.runInNewStackTraceContext(() => this.runCmd(args.join(' ')))
   }
 
   makeDir(
@@ -292,14 +305,12 @@ export class TemplateBase
     if (options?.mode) {
       args.push(`-m ${padOctal(options.mode)}`)
     }
-    this.runCmd(args.join(' '))
-    return this
+    return this.runInNewStackTraceContext(() => this.runCmd(args.join(' ')))
   }
 
   makeSymlink(src: string, dest: string): TemplateBuilder {
     const args = ['ln', '-s', src, dest]
-    this.runCmd(args.join(' '))
-    return this
+    return this.runInNewStackTraceContext(() => this.runCmd(args.join(' ')))
   }
 
   runCmd(command: string, options?: { user?: string }): TemplateBuilder
@@ -318,28 +329,34 @@ export class TemplateBase
     }
 
     this.instructions.push({
-      type: 'RUN',
+      type: InstructionType.RUN,
       args,
       force: this.forceNextLayer,
     })
+
+    this.collectStackTrace()
     return this
   }
 
   setWorkdir(workdir: string): TemplateBuilder {
     this.instructions.push({
-      type: 'WORKDIR',
+      type: InstructionType.WORKDIR,
       args: [workdir],
       force: this.forceNextLayer,
     })
+
+    this.collectStackTrace()
     return this
   }
 
   setUser(user: string): TemplateBuilder {
     this.instructions.push({
-      type: 'USER',
+      type: InstructionType.USER,
       args: [user],
       force: this.forceNextLayer,
     })
+
+    this.collectStackTrace()
     return this
   }
 
@@ -355,7 +372,8 @@ export class TemplateBase
     } else {
       args.push('.')
     }
-    return this.runCmd(args)
+
+    return this.runInNewStackTraceContext(() => this.runCmd(args))
   }
 
   npmInstall(packages?: string | string[], g?: boolean): TemplateBuilder {
@@ -371,20 +389,22 @@ export class TemplateBase
     if (g) {
       args.push('-g')
     }
-    return this.runCmd(args)
+
+    return this.runInNewStackTraceContext(() => this.runCmd(args))
   }
 
   aptInstall(packages: string | string[]): TemplateBuilder {
     const packageList = Array.isArray(packages) ? packages : [packages]
-
-    return this.runCmd(
-      [
-        'apt-get update',
-        `DEBIAN_FRONTEND=noninteractive DEBCONF_NOWARNINGS=yes apt-get install -y --no-install-recommends ${packageList.join(
-          ' '
-        )}`,
-      ],
-      { user: 'root' }
+    return this.runInNewStackTraceContext(() =>
+      this.runCmd(
+        [
+          'apt-get update',
+          `DEBIAN_FRONTEND=noninteractive DEBCONF_NOWARNINGS=yes apt-get install -y --no-install-recommends ${packageList.join(
+            ' '
+          )}`,
+        ],
+        { user: 'root' }
+      )
     )
   }
 
@@ -401,8 +421,8 @@ export class TemplateBase
     if (options?.depth) {
       args.push(`--depth ${options.depth}`)
     }
-    this.runCmd(args.join(' '))
-    return this
+
+    return this.runInNewStackTraceContext(() => this.runCmd(args.join(' ')))
   }
 
   setStartCmd(
@@ -417,6 +437,7 @@ export class TemplateBase
       this.readyCmd = readyCommand
     }
 
+    this.collectStackTrace()
     return this
   }
 
@@ -427,6 +448,7 @@ export class TemplateBase
       this.readyCmd = readyCommand
     }
 
+    this.collectStackTrace()
     return this
   }
 
@@ -436,10 +458,11 @@ export class TemplateBase
     }
 
     this.instructions.push({
-      type: 'ENV',
+      type: InstructionType.ENV,
       args: Object.entries(envs).flatMap(([key, value]) => [key, value]),
       force: this.forceNextLayer,
     })
+    this.collectStackTrace()
     return this
   }
 
@@ -448,9 +471,36 @@ export class TemplateBase
     return this
   }
 
+  private collectStackTrace(stackTracesDepth: number = STACK_TRACE_DEPTH) {
+    if (!this.stackTracesEnabled) {
+      return this
+    }
+
+    this.stackTraces.push(getCallerFrame(stackTracesDepth))
+    return this
+  }
+
+  private disableStackTrace() {
+    this.stackTracesEnabled = false
+    return this
+  }
+
+  private enableStackTrace() {
+    this.stackTracesEnabled = true
+    return this
+  }
+
+  private runInNewStackTraceContext<T>(fn: () => T): T {
+    this.disableStackTrace()
+    const result = fn()
+    this.enableStackTrace()
+    this.collectStackTrace(STACK_TRACE_DEPTH + 1)
+    return result
+  }
+
   private async toJSON(): Promise<string> {
     return JSON.stringify(
-      this.serialize(await this.calculateFilesHashes()),
+      this.serialize(await this.instructionsWithHashes()),
       undefined,
       2
     )
@@ -512,47 +562,62 @@ export class TemplateBase
       )
     )
 
-    const instructionsWithHashes = await this.calculateFilesHashes()
-
-    // Prepare file uploads
-    const fileUploads = instructionsWithHashes
-      .filter((instruction) => instruction.type === 'COPY')
-      .map((instruction) => ({
-        src: instruction.args[0],
-        dest: instruction.args[1],
-        filesHash: instruction.filesHash,
-        forceUpload: instruction.forceUpload,
-      }))
+    const instructionsWithHashes = await this.instructionsWithHashes()
 
     // Upload files in parallel
-    const uploadPromises = fileUploads.map(async (file) => {
-      const { present, url } = await getFileUploadLink(client, {
-        templateID,
-        filesHash: file.filesHash!,
-      })
+    const uploadPromises = instructionsWithHashes.map(
+      async (instruction, index) => {
+        if (instruction.type !== InstructionType.COPY) {
+          return
+        }
 
-      if (
-        (file.forceUpload && url != null) ||
-        (present === false && url != null)
-      ) {
-        await uploadFile({
-          fileName: file.src,
-          fileContextPath: this.fileContextPath,
-          url,
-        })
-        options.onBuildLogs?.(
-          new LogEntry(new Date(), 'info', `Uploaded '${file.src}'`)
+        const src = instruction.args.length > 0 ? instruction.args[0] : null
+        const filesHash = instruction.filesHash ?? null
+        if (src === null || filesHash === null) {
+          throw new Error('Source path and files hash are required')
+        }
+
+        const forceUpload = instruction.forceUpload
+        let stackTrace = undefined
+        if (index + 1 >= 0 && index + 1 < this.stackTraces.length) {
+          stackTrace = this.stackTraces[index + 1]
+        }
+
+        const { present, url } = await getFileUploadLink(
+          client,
+          {
+            templateID,
+            filesHash,
+          },
+          stackTrace
         )
-      } else {
-        options.onBuildLogs?.(
-          new LogEntry(
-            new Date(),
-            'info',
-            `Skipping upload of '${file.src}', already cached`
+
+        if (
+          (forceUpload && url != null) ||
+          (present === false && url != null)
+        ) {
+          await uploadFile(
+            {
+              fileName: src,
+              fileContextPath: this.fileContextPath,
+              url,
+            },
+            stackTrace
           )
-        )
+          options.onBuildLogs?.(
+            new LogEntry(new Date(), 'info', `Uploaded '${src}'`)
+          )
+        } else {
+          options.onBuildLogs?.(
+            new LogEntry(
+              new Date(),
+              'info',
+              `Skipping upload of '${src}', already cached`
+            )
+          )
+        }
       }
-    })
+    )
 
     await Promise.all(uploadPromises)
 
@@ -580,32 +645,46 @@ export class TemplateBase
       buildID,
       onBuildLogs: options.onBuildLogs,
       logsRefreshFrequency: this.logsRefreshFrequency,
+      stackTraces: this.stackTraces,
     })
   }
 
   // We might no longer need this as we move the logic server-side
-  private async calculateFilesHashes(): Promise<Instruction[]> {
-    const steps: Instruction[] = []
+  private async instructionsWithHashes(): Promise<Instruction[]> {
+    return Promise.all(
+      this.instructions.map(async (instruction, index) => {
+        if (instruction.type !== InstructionType.COPY) {
+          return instruction
+        }
 
-    for (const instruction of this.instructions) {
-      if (instruction.type === 'COPY') {
-        instruction.filesHash = await calculateFilesHash(
-          instruction.args[0],
-          instruction.args[1],
-          this.fileContextPath,
-          [
-            ...this.ignoreFilePaths,
-            ...(runtime === 'browser'
-              ? []
-              : readDockerignore(this.fileContextPath)),
-          ]
-        )
-      }
+        const src = instruction.args.length > 0 ? instruction.args[0] : null
+        const dest = instruction.args.length > 1 ? instruction.args[1] : null
+        if (src === null || dest === null) {
+          throw new Error('Source path and destination path are required')
+        }
 
-      steps.push(instruction)
-    }
+        let stackTrace = undefined
+        if (index + 1 >= 0 && index + 1 < this.stackTraces.length) {
+          stackTrace = this.stackTraces[index + 1]
+        }
 
-    return steps
+        return {
+          ...instruction,
+          filesHash: await calculateFilesHash(
+            src,
+            dest,
+            this.fileContextPath,
+            [
+              ...this.ignoreFilePaths,
+              ...(runtime === 'browser'
+                ? []
+                : readDockerignore(this.fileContextPath)),
+            ],
+            stackTrace
+          ),
+        }
+      })
+    )
   }
 
   private serialize(steps: Instruction[]): TriggerBuildTemplate {

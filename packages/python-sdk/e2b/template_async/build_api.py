@@ -3,7 +3,8 @@ import os
 from glob import glob
 import tarfile
 import asyncio
-from typing import Callable, Literal, Optional
+from typing import Callable, Literal, Optional, List
+from types import TracebackType
 
 import httpx
 
@@ -24,6 +25,7 @@ from e2b.api.client.models import (
 )
 from e2b.api import handle_api_exception
 from e2b.template.exceptions import BuildException, FileUploadException
+from e2b.template.utils import get_build_step_index
 
 
 async def request_build(
@@ -51,7 +53,10 @@ async def request_build(
 
 
 async def get_file_upload_link(
-    client: AuthenticatedClient, template_id: str, files_hash: str
+    client: AuthenticatedClient,
+    template_id: str,
+    files_hash: str,
+    stack_trace: Optional[TracebackType] = None,
 ) -> TemplateBuildFileUpload:
     res = await get_templates_template_id_files_hash.asyncio_detailed(
         template_id=template_id,
@@ -60,30 +65,53 @@ async def get_file_upload_link(
     )
 
     if res.status_code >= 300:
-        raise handle_api_exception(res, FileUploadException)
+        raise handle_api_exception(res, FileUploadException, stack_trace)
 
     if isinstance(res.parsed, Error):
-        raise FileUploadException(f"API error: {res.parsed.message}")
+        raise FileUploadException(f"API error: {res.parsed.message}").with_traceback(
+            stack_trace
+        )
 
     if res.parsed is None:
-        raise FileUploadException("Failed to get file upload link")
+        raise FileUploadException("Failed to get file upload link").with_traceback(
+            stack_trace
+        )
 
     return res.parsed
 
 
-async def upload_file(file_name: str, context_path: str, url: str):
+async def upload_file(
+    file_name: str,
+    context_path: str,
+    url: str,
+    stack_trace: Optional[TracebackType] = None,
+):
     tar_buffer = io.BytesIO()
 
-    with tarfile.open(fileobj=tar_buffer, mode="w:gz") as tar:
-        src_path = os.path.join(context_path, file_name)
-        files = glob(src_path, recursive=True)
-        for file in files:
-            arcname = os.path.relpath(file, context_path)
-            tar.add(file, arcname=arcname)
+    try:
+        with tarfile.open(fileobj=tar_buffer, mode="w:gz") as tar:
+            src_path = os.path.join(context_path, file_name)
+            files = glob(src_path, recursive=True)
+            for file in files:
+                arcname = os.path.relpath(file, context_path)
+                tar.add(file, arcname=arcname)
+    except Exception as e:
+        raise FileUploadException(f"Failed to create tar file: {e}").with_traceback(
+            stack_trace
+        )
 
-    async with httpx.AsyncClient() as client:
-        response = await client.put(url, content=tar_buffer.getvalue())
-        response.raise_for_status()
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.put(url, content=tar_buffer.getvalue())
+            response.raise_for_status()
+    except httpx.HTTPStatusError as e:
+        raise FileUploadException(f"Failed to upload file: {e}").with_traceback(
+            stack_trace
+        )
+    except Exception as e:
+        raise FileUploadException(f"Failed to upload file: {e}").with_traceback(
+            stack_trace
+        )
 
 
 async def trigger_build(
@@ -134,6 +162,7 @@ async def wait_for_build_finish(
     build_id: str,
     on_build_logs: Optional[Callable[[LogEntry], None]] = None,
     logs_refresh_frequency: float = 0.2,
+    stack_traces: List[TracebackType] = [],
 ):
     logs_offset = 0
     status: Literal["building", "waiting", "ready", "error"] = "building"
@@ -164,7 +193,18 @@ async def wait_for_build_finish(
             pass
 
         elif status == "error":
-            raise BuildException(build_status.reason or "Build failed")
+            traceback = None
+            if build_status.reason and build_status.reason.step:
+                # Find the corresponding stack trace for the failed step
+                step_index = get_build_step_index(
+                    build_status.reason.step, len(stack_traces)
+                )
+                if step_index < len(stack_traces):
+                    traceback = stack_traces[step_index]
+
+            raise BuildException(
+                build_status.reason.message if build_status.reason else "Build failed"
+            ).with_traceback(traceback)
 
         # Wait for a short period before checking the status again
         await asyncio.sleep(logs_refresh_frequency)
