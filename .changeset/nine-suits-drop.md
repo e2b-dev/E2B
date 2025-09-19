@@ -1,6 +1,6 @@
 ---
-'@e2b/python-sdk': minor
-'e2b': minor
+'@e2b/python-sdk': patch
+'e2b': patch
 ---
 
 added step stacktraces
