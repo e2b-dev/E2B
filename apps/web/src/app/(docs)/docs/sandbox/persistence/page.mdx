@@ -119,7 +119,7 @@ print('Sandbox created', sbx.sandbox_id)
 # Pause the sandbox
 # You can save the sandbox ID in your database to resume the sandbox later
 sbx.beta_pause()
-print('Sandbox paused', sandbox_id)
+print('Sandbox paused', sbx.sandbox_id)
 
 # Connect to the sandbox (it will automatically resume the sandbox, if paused)
 same_sbx = sbx.connect() # $HighlightLine
