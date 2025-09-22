@@ -21,6 +21,7 @@ Understanding how sandboxes transition between different states is crucial for m
 <div className="flex items-center justify-center">
     <Image className='rounded mx-auto' src={diagram} alt="Sandbox State Transitions" width="250" height="250" />
 </div>
+
 ### State descriptions
 
 - **Running**: The sandbox is actively running and can execute code. This is the initial state after creation.
@@ -231,9 +232,10 @@ import { Sandbox } from '@e2b/code-interpreter'
 
 // Create sandbox with auto-pause enabled
 const sandbox = await Sandbox.betaCreate({
-    autoPause: true,
+    autoPause: true, // Auto-pause after the sandbox times out
     timeoutMs: 10 * 60 * 1000 // Optional: change the default timeout (10 minutes)
 })
+```
 ```python
 from e2b_code_interpreter import Sandbox
 # Create sandbox with auto-pause enabled (Beta)
@@ -241,29 +243,12 @@ sandbox = Sandbox.beta_create(
     auto_pause=True  # Auto-pause after the sandbox times out
     timeout=10 * 60, # Optional: change the default timeout (10 minutes)
 )
+```
 </CodeGroup>
 
 The auto-pause is persistent, meaning that if your sandbox resumes and it times out, it will be automatically paused again.
 
 If you `.kill()` the sandbox, it will be permanently deleted and you won't be able to resume it.
-
-<CodeGroup>
-```js
-import { Sandbox } from '@e2b/code-interpreter'
-
-// Create sandbox with auto-pause enabled (Beta)
-const sandbox = await Sandbox.betaCreate({
-    autoPause: true  // Auto-pause after the sandbox times out
-})
-```
-```python
-from e2b_code_interpreter import Sandbox
-# Create sandbox with auto-pause enabled (Beta)
-sandbox = Sandbox.beta_create(
-    auto_pause=True  # Auto-pause after the sandbox times out
-)
-```
-</CodeGroup>
 
 ## Network
 If you have a service (for example a server) running inside your sandbox and you pause the sandbox, the service won't be accessible from the outside and all the clients will be disconnected.
