@@ -230,7 +230,7 @@ Sandboxes can now automatically pause after they time out. When a sandbox is pau
 ```js
 import { Sandbox } from '@e2b/code-interpreter'
 
-// Create sandbox with auto-pause enabled
+// Create sandbox with auto-pause enabled (Beta)
 const sandbox = await Sandbox.betaCreate({
     autoPause: true, // Auto-pause after the sandbox times out
     timeoutMs: 10 * 60 * 1000 // Optional: change the default timeout (10 minutes)
