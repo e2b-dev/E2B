@@ -52,6 +52,10 @@ export async function calculateFilesHash(
     const content = fs.readFileSync(file.fullpath())
     hash.update(new Uint8Array(content))
 
+    // Add relative path to hash calculation
+    const relativePath = path.relative(contextPath, file.fullpath())
+    hash.update(relativePath)
+
     // Add stat information to hash calculation
     const stats = fs.statSync(file.fullpath())
     hash.update(stats.mode.toString())
