@@ -122,7 +122,7 @@ describe('Template Init', () => {
         expect(existsSync(templateDir)).toBe(true)
 
         // Verify files were created in the template directory
-        const expectedFiles = getExpectedFiles('typescript')
+        const expectedFiles = getExpectedFiles(Language.TypeScript)
         for (const file of expectedFiles) {
           expect(existsSync(path.join(templateDir, file))).toBe(true)
         }
@@ -171,13 +171,72 @@ describe('Template Init', () => {
       expect(existsSync(templateDir)).toBe(true)
 
       // Verify files were created in the template directory
-      const expectedFiles = getExpectedFiles('typescript')
+      const expectedFiles = getExpectedFiles(Language.TypeScript)
       for (const file of expectedFiles) {
         expect(existsSync(path.join(templateDir, file))).toBe(true)
       }
 
-      // Verify package.json was not created in the template directory
-      expect(existsSync(path.join(templateDir, 'package.json'))).toBe(false)
+      // Verify package.json was created in the template directory
+      const createdPackageJSON = JSON.parse(
+        await fs.readFile(path.join(templateDir, 'package.json'), 'utf8')
+      )
+
+      expect(createdPackageJSON.scripts).toHaveProperty('e2b:build:dev')
+      expect(createdPackageJSON.scripts).toHaveProperty('e2b:build:prod')
+    })
+  })
+
+  describe('Makefile Integration', () => {
+    test('should add scripts to existing Makefile', async () => {
+      // Create a Makefile file in the parent directory
+      const makefile = `
+.PHONY: build
+build/%:
+\tCGO_ENABLED=1 go build
+      `
+      const makefilePath = path.join(testDir, 'Makefile')
+      await fs.writeFile(makefilePath, makefile)
+
+      // Run init command
+      execSync(
+        `node "${cliPath}" template init-v2 --name "test-template" --language "python-sync" --path "${testDir}"`,
+        { stdio: 'inherit' }
+      )
+
+      // Verify Makefile was updated (it should remain in the parent directory)
+      const updatedMakefile = await fs.readFile(makefilePath, 'utf8')
+
+      expect(updatedMakefile).toContain('e2b:build:dev')
+      expect(updatedMakefile).toContain('e2b:build:prod')
+      expect(updatedMakefile).toContain(`.PHONY: build
+build/%:
+\tCGO_ENABLED=1 go build`) // existing script preserved
+    })
+
+    test('should work without Makefile', async () => {
+      // Run init command without Makefile
+      execSync(
+        `node "${cliPath}" template init-v2 --name "test-template" --language "python-sync" --path "${testDir}"`,
+        { stdio: 'inherit' }
+      )
+
+      // Verify template directory was created
+      const templateDir = path.join(testDir, 'test-template')
+      expect(existsSync(templateDir)).toBe(true)
+
+      // Verify files were created in the template directory
+      const expectedFiles = getExpectedFiles(Language.PythonSync)
+      for (const file of expectedFiles) {
+        expect(existsSync(path.join(templateDir, file))).toBe(true)
+      }
+
+      // Verify Makefile was created in the template directory
+      const createdMakefile = await fs.readFile(
+        path.join(templateDir, 'Makefile'),
+        'utf8'
+      )
+      expect(createdMakefile).toContain('e2b:build:dev')
+      expect(createdMakefile).toContain('e2b:build:prod')
     })
   })
 
@@ -266,10 +325,12 @@ describe('Template Init', () => {
 })
 
 // Helper functions
-function getExpectedFiles(language: string): string[] {
-  const extension = language === 'typescript' ? '.ts' : '.py'
-  const buildDevName = language === 'typescript' ? 'build.dev' : 'build_dev'
-  const buildProdName = language === 'typescript' ? 'build.prod' : 'build_prod'
+function getExpectedFiles(language: Language): string[] {
+  const extension = language === Language.TypeScript ? '.ts' : '.py'
+  const buildDevName =
+    language === Language.TypeScript ? 'build.dev' : 'build_dev'
+  const buildProdName =
+    language === Language.TypeScript ? 'build.prod' : 'build_prod'
 
   return [
     `template${extension}`,
@@ -280,12 +341,14 @@ function getExpectedFiles(language: string): string[] {
 
 async function verifyTemplateNameInBuildFiles(
   testDir: string,
-  language: string,
+  language: Language,
   templateName: string
 ): Promise<void> {
-  const extension = language === 'typescript' ? '.ts' : '.py'
-  const buildDevName = language === 'typescript' ? 'build.dev' : 'build_dev'
-  const buildProdName = language === 'typescript' ? 'build.prod' : 'build_prod'
+  const extension = language === Language.TypeScript ? '.ts' : '.py'
+  const buildDevName =
+    language === Language.TypeScript ? 'build.dev' : 'build_dev'
+  const buildProdName =
+    language === Language.TypeScript ? 'build.prod' : 'build_prod'
 
   // Check dev build file contains template name with -dev suffix
   const devContent = await fs.readFile(

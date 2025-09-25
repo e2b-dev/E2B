@@ -40,22 +40,76 @@ async function generateTemplateFiles(
 }
 
 /**
- * Add build scripts to package.json if it exists
+ * Add build scripts to Makefile if it exists or create a new one
+ */
+async function addMakefileScripts(
+  root: string,
+  files: GeneratedFiles,
+  templateDirName: string
+): Promise<void> {
+  try {
+    const makefileName = 'Makefile'
+    const makefileExists = fs.existsSync(path.join(root, makefileName))
+
+    let cdPrefix = ''
+    if (makefileExists) {
+      cdPrefix = `cd ${templateDirName} && `
+    }
+
+    const makefileContent = `
+.PHONY: e2b:build:dev
+e2b:build:dev:
+\t${cdPrefix}python ${files.buildDevFile}
+
+.PHONY: e2b:build:prod
+e2b:build:prod:
+\t${cdPrefix}python ${files.buildProdFile}
+`
+
+    if (makefileExists) {
+      const makefilePath = path.join(root, makefileName)
+      await fs.promises.appendFile(makefilePath, '\n' + makefileContent, 'utf8')
+    } else {
+      // Create a basic Makefile if it doesn't exist
+      const makefilePath = path.join(root, templateDirName, makefileName)
+      await fs.promises.writeFile(makefilePath, makefileContent, 'utf8')
+    }
+
+    console.log('\n📝 Added build scripts to Makefile:')
+    console.log(
+      `   ${asPrimary('make e2b:build:dev')} - Build development template`
+    )
+    console.log(
+      `   ${asPrimary('make e2b:build:prod')} - Build production template`
+    )
+  } catch (err) {
+    console.warn(
+      '\n⚠️  Could not add scripts to Makefile:',
+      err instanceof Error ? err.message : err
+    )
+  }
+}
+
+/**
+ * Add build scripts to package.json if it exists or create a new one
  */
 async function addPackageJsonScripts(
   root: string,
   files: GeneratedFiles,
-  templateDirName?: string
+  templateDirName: string
 ): Promise<void> {
   try {
-    // Use @npmcli/package-json for robust handling
-    // The library expects the directory path, not the full file path
-    const pkgJson = await PackageJson.load(root, {
-      create: true,
-    })
-
-    // Generate script commands based on language and directory structure
-    const cdPrefix = templateDirName ? `cd ${templateDirName} && ` : ''
+    let cdPrefix = ''
+    let pkgJson: PackageJson
+    try {
+      // The library expects the directory path, not the full file path
+      pkgJson = await PackageJson.load(root)
+      cdPrefix = `cd ${templateDirName} && `
+    } catch (error) {
+      // Handle the case where package.json does not exist
+      const createRoot = path.join(root, templateDirName)
+      pkgJson = await PackageJson.create(createRoot)
+    }
 
     switch (files.language) {
       case Language.TypeScript:
@@ -64,16 +118,6 @@ async function addPackageJsonScripts(
             ...pkgJson.content.scripts,
             'e2b:build:dev': `${cdPrefix}npx tsx ${files.buildDevFile}`,
             'e2b:build:prod': `${cdPrefix}npx tsx ${files.buildProdFile}`,
-          },
-        })
-        break
-      case Language.PythonAsync:
-      case Language.PythonSync:
-        pkgJson.update({
-          scripts: {
-            ...pkgJson.content.scripts,
-            'e2b:build:dev': `${cdPrefix}python ${files.buildDevFile}`,
-            'e2b:build:prod': `${cdPrefix}python ${files.buildProdFile}`,
           },
         })
         break
@@ -225,8 +269,18 @@ export const initV2Command = new commander.Command('init-v2')
           language
         )
 
-        // Step 5: Add scripts to package.json if it exists in the parent directory
-        await addPackageJsonScripts(root, generatedFiles, templateDirName)
+        // Step 5: Add scripts
+        switch (language) {
+          case Language.TypeScript:
+            await addPackageJsonScripts(root, generatedFiles, templateDirName)
+            break
+          case Language.PythonAsync:
+          case Language.PythonSync:
+            await addMakefileScripts(root, generatedFiles, templateDirName)
+            break
+          default:
+            throw new Error('Unsupported language for scripts')
+        }
 
         // Step 6: Create README.md
         const readmeContent = await generateReadmeContent(
@@ -266,10 +320,10 @@ export const initV2Command = new commander.Command('init-v2')
           case Language.PythonAsync:
           case Language.PythonSync:
             console.log(
-              `   ${asPrimary('npm run e2b:build:dev')} (for development)`
+              `   ${asPrimary('make e2b:build:dev')} (for development)`
             )
             console.log(
-              `   ${asPrimary('npm run e2b:build:prod')} (for production)`
+              `   ${asPrimary('make e2b:build:prod')} (for production)`
             )
             console.log('\nOr directly:')
             console.log(
