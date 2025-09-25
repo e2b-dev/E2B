@@ -3,6 +3,7 @@ import { existsSync } from 'fs'
 import * as fs from 'fs/promises'
 import * as path from 'path'
 import { afterEach, beforeEach, describe, expect, test } from 'vitest'
+import { Language } from '../../../src/commands/template/generators'
 
 describe('Template Init', () => {
   let testDir: string
@@ -20,10 +21,8 @@ describe('Template Init', () => {
     }
   })
 
-  const languages = ['typescript', 'python-sync', 'python-async'] as const
-
   describe('CLI Options', () => {
-    languages.forEach((language) => {
+    Object.values(Language).forEach((language) => {
       test(`should generate files with --name and --language ${language}`, async () => {
         const templateName = 'my-test-template'
 
@@ -199,7 +198,7 @@ describe('Template Init', () => {
       expect(templateContent).toContain("import { Template } from 'e2b'")
       expect(templateContent).toContain('export const template = Template()')
       expect(templateContent).toContain('fromImage')
-      expect(templateContent).toContain('ubuntu:22.04')
+      expect(templateContent).toContain('e2bdev/base')
     })
 
     test('should generate correct Python template content', async () => {
@@ -219,7 +218,7 @@ describe('Template Init', () => {
       expect(templateContent).toContain('template = (')
       expect(templateContent).toContain('Template()')
       expect(templateContent).toContain('from_image')
-      expect(templateContent).toContain('ubuntu:22.04')
+      expect(templateContent).toContain('e2bdev/base')
     })
 
     test('should generate correct async Python template content', async () => {
