@@ -12,7 +12,6 @@ import {
   GeneratedFiles,
   Language,
   languageDisplay,
-  validLanguages,
 } from './generators'
 import { generateReadmeContent } from './generators/handlebars'
 
@@ -26,9 +25,7 @@ async function generateTemplateFiles(
   cpuCount?: number,
   memoryMB?: number
 ): Promise<GeneratedFiles> {
-  const template = Template()
-    .fromImage('ubuntu:22.04')
-    .runCmd('echo Hello World E2B!')
+  const template = Template().fromBaseImage().runCmd('echo Hello World E2B!')
 
   return generateAndWriteTemplateFiles(
     root,
@@ -51,27 +48,35 @@ async function addPackageJsonScripts(
   try {
     // Use @npmcli/package-json for robust handling
     // The library expects the directory path, not the full file path
-    const pkgJson = await PackageJson.load(root)
+    const pkgJson = await PackageJson.load(root, {
+      create: true,
+    })
 
     // Generate script commands based on language and directory structure
     const cdPrefix = templateDirName ? `cd ${templateDirName} && ` : ''
 
-    if (files.language === Language.TypeScript) {
-      pkgJson.update({
-        scripts: {
-          ...pkgJson.content.scripts,
-          'e2b:build:dev': `${cdPrefix}npx tsx ${files.buildDevFile}`,
-          'e2b:build:prod': `${cdPrefix}npx tsx ${files.buildProdFile}`,
-        },
-      })
-    } else {
-      pkgJson.update({
-        scripts: {
-          ...pkgJson.content.scripts,
-          'e2b:build:dev': `${cdPrefix}python ${files.buildDevFile}`,
-          'e2b:build:prod': `${cdPrefix}python ${files.buildProdFile}`,
-        },
-      })
+    switch (files.language) {
+      case Language.TypeScript:
+        pkgJson.update({
+          scripts: {
+            ...pkgJson.content.scripts,
+            'e2b:build:dev': `${cdPrefix}npx tsx ${files.buildDevFile}`,
+            'e2b:build:prod': `${cdPrefix}npx tsx ${files.buildProdFile}`,
+          },
+        })
+        break
+      case Language.PythonAsync:
+      case Language.PythonSync:
+        pkgJson.update({
+          scripts: {
+            ...pkgJson.content.scripts,
+            'e2b:build:dev': `${cdPrefix}python ${files.buildDevFile}`,
+            'e2b:build:prod': `${cdPrefix}python ${files.buildProdFile}`,
+          },
+        })
+        break
+      default:
+        throw new Error('Unsupported language for package.json scripts')
     }
 
     // Save the changes
@@ -102,15 +107,30 @@ function validateTemplateName(name: string): boolean {
 export const initV2Command = new commander.Command('init-v2')
   .description('initialize a new sandbox template using the SDK')
   .addOption(pathOption)
-  .option('-n, --name <name>', 'template name (alias)')
+  .option('-n, --name <name>', 'template name (alias)', (value) => {
+    if (!value || value.trim().length === 0) {
+      console.error('Template name cannot be empty')
+      process.exit(1)
+    }
+    if (!validateTemplateName(value.trim())) {
+      console.error(
+        'Template name must contain only lowercase letters, numbers, hyphens, and underscores, and cannot start or end with a hyphen or underscore'
+      )
+      process.exit(1)
+    }
+    return value
+  })
   .option(
     '-l, --language <language>',
-    `target language: ${validLanguages.join(', ')}`,
+    `target language: ${Object.values(Language).join(', ')}`,
     (value) => {
-      if (!validLanguages.includes(value as Language)) {
-        throw new Error(
-          `Invalid language. Must be one of: ${validLanguages.join(', ')}`
+      if (!Object.values(Language).includes(value as Language)) {
+        console.error(
+          `Invalid language. Must be one of: ${Object.values(Language).join(
+            ', '
+          )}`
         )
+        process.exit(1)
       }
       return value as Language
     }
@@ -220,42 +240,48 @@ export const initV2Command = new commander.Command('init-v2')
         )
         console.log('\nYou can now build your template using:')
 
-        if (language === Language.TypeScript) {
-          console.log(
-            `   ${asPrimary('npm run e2b:build:dev')} (for development)`
-          )
-          console.log(
-            `   ${asPrimary('npm run e2b:build:prod')} (for production)`
-          )
-          console.log('\nOr directly:')
-          console.log(
-            `   ${asPrimary(
-              `cd ${templateDirName} && npx tsx ${generatedFiles.buildDevFile}`
-            )} (for development)`
-          )
-          console.log(
-            `   ${asPrimary(
-              `cd ${templateDirName} && npx tsx ${generatedFiles.buildProdFile}`
-            )} (for production)`
-          )
-        } else {
-          console.log(
-            `   ${asPrimary('npm run e2b:build:dev')} (for development)`
-          )
-          console.log(
-            `   ${asPrimary('npm run e2b:build:prod')} (for production)`
-          )
-          console.log('\nOr directly:')
-          console.log(
-            `   ${asPrimary(
-              `cd ${templateDirName} && python ${generatedFiles.buildDevFile}`
-            )} (for development)`
-          )
-          console.log(
-            `   ${asPrimary(
-              `cd ${templateDirName} && python ${generatedFiles.buildProdFile}`
-            )} (for production)`
-          )
+        switch (language) {
+          case Language.TypeScript:
+            console.log(
+              `   ${asPrimary('npm run e2b:build:dev')} (for development)`
+            )
+            console.log(
+              `   ${asPrimary('npm run e2b:build:prod')} (for production)`
+            )
+            console.log('\nOr directly:')
+            console.log(
+              `   ${asPrimary(
+                `cd ${templateDirName} && npx tsx ${generatedFiles.buildDevFile}`
+              )} (for development)`
+            )
+            console.log(
+              `   ${asPrimary(
+                `cd ${templateDirName} && npx tsx ${generatedFiles.buildProdFile}`
+              )} (for production)`
+            )
+            break
+          case Language.PythonAsync:
+          case Language.PythonSync:
+            console.log(
+              `   ${asPrimary('npm run e2b:build:dev')} (for development)`
+            )
+            console.log(
+              `   ${asPrimary('npm run e2b:build:prod')} (for production)`
+            )
+            console.log('\nOr directly:')
+            console.log(
+              `   ${asPrimary(
+                `cd ${templateDirName} && python ${generatedFiles.buildDevFile}`
+              )} (for development)`
+            )
+            console.log(
+              `   ${asPrimary(
+                `cd ${templateDirName} && python ${generatedFiles.buildProdFile}`
+              )} (for production)`
+            )
+            break
+          default:
+            throw new Error('Unsupported language for instructions')
         }
 
         console.log(
