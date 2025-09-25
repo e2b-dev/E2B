@@ -129,15 +129,20 @@ export function padOctal(mode: number): string {
   return mode.toString(8).padStart(4, '0')
 }
 
-export async function tarFileStream(fileName: string, fileContextPath: string) {
+export async function tarFileStream(
+  fileName: string,
+  fileContextPath: string,
+  resolveSymlinks: boolean = false
+) {
   const { globSync } = await dynamicGlob()
   const { create } = await dynamicTar()
-  const files = globSync(fileName, { cwd: fileContextPath, nodir: false })
+  const files = globSync(fileName, { cwd: fileContextPath })
 
   return create(
     {
       gzip: true,
       cwd: fileContextPath,
+      follow: resolveSymlinks,
     },
     files
   )
@@ -145,23 +150,27 @@ export async function tarFileStream(fileName: string, fileContextPath: string) {
 
 export async function tarFileStreamUpload(
   fileName: string,
-  fileContextPath: string
+  fileContextPath: string,
+  resolveSymlinks: boolean = false
 ) {
   // First pass: calculate the compressed size without buffering
-  const sizeCalculationStream = await tarFileStream(fileName, fileContextPath)
+  const sizeCalculationStream = await tarFileStream(
+    fileName,
+    fileContextPath,
+    resolveSymlinks
+  )
   let contentLength = 0
   for await (const chunk of sizeCalculationStream as unknown as AsyncIterable<Buffer>) {
     contentLength += chunk.length
   }
 
-  // write the content stream to a file
-  const contentStreamPath = path.join(fileContextPath, 'content.tar')
-  const contentStream = await tarFileStream(fileName, fileContextPath)
-  contentStream.pipe(fs.createWriteStream(contentStreamPath))
-
   return {
     contentLength,
-    uploadStream: await tarFileStream(fileName, fileContextPath),
+    uploadStream: await tarFileStream(
+      fileName,
+      fileContextPath,
+      resolveSymlinks
+    ),
   }
 }
 
