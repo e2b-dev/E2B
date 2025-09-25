@@ -15,6 +15,8 @@ import {
 } from './generators'
 import { generateReadmeContent } from './generators/handlebars'
 
+const DEFAULT_TEMPLATE_NAME = 'my-template'
+
 /**
  * Generate template files using shared template generation logic
  */
@@ -98,26 +100,35 @@ async function addPackageJsonScripts(
 }
 
 /**
- * Validate template name format
+ * Check template name format
  */
-function validateTemplateName(name: string): boolean {
+function templateNameRegex(name: string): boolean {
   return /^[a-z0-9][a-z0-9_-]*[a-z0-9]$|^[a-z0-9]$/.test(name)
+}
+
+function validateTemplateName(name: string) {
+  if (!name || name.trim().length === 0) {
+    throw new Error('Template name cannot be empty')
+  }
+  if (!templateNameRegex(name.trim())) {
+    throw new Error(
+      'Template name must contain only lowercase letters, numbers, hyphens, and underscores, and cannot start or end with a hyphen or underscore'
+    )
+  }
 }
 
 export const initV2Command = new commander.Command('init-v2')
   .description('initialize a new sandbox template using the SDK')
   .addOption(pathOption)
   .option('-n, --name <name>', 'template name (alias)', (value) => {
-    if (!value || value.trim().length === 0) {
-      console.error('Template name cannot be empty')
-      process.exit(1)
-    }
-    if (!validateTemplateName(value.trim())) {
-      console.error(
-        'Template name must contain only lowercase letters, numbers, hyphens, and underscores, and cannot start or end with a hyphen or underscore'
+    try {
+      validateTemplateName(value)
+    } catch (err) {
+      throw new commander.InvalidArgumentError(
+        err instanceof Error ? err.message : String(err)
       )
-      process.exit(1)
     }
+
     return value
   })
   .option(
@@ -125,12 +136,11 @@ export const initV2Command = new commander.Command('init-v2')
     `target language: ${Object.values(Language).join(', ')}`,
     (value) => {
       if (!Object.values(Language).includes(value as Language)) {
-        console.error(
+        throw new commander.InvalidArgumentError(
           `Invalid language. Must be one of: ${Object.values(Language).join(
             ', '
           )}`
         )
-        process.exit(1)
       }
       return value as Language
     }
@@ -147,31 +157,24 @@ export const initV2Command = new commander.Command('init-v2')
         console.log('🚀 Initializing Sandbox Template...\n')
 
         // Step 1: Get template name (from CLI or prompt)
-        let templateName: string
-        if (opts.name) {
-          if (!validateTemplateName(opts.name)) {
-            throw new Error(
-              'Template name must contain only lowercase letters, numbers, hyphens, and underscores, and cannot start or end with a hyphen or underscore'
-            )
-          }
-          templateName = opts.name
-          console.log(`Using template name: ${templateName}`)
-        } else {
+        let templateName: string = opts.name ?? DEFAULT_TEMPLATE_NAME
+        if (opts.name === undefined) {
           templateName = await input({
             message: 'Enter template name (alias):',
-            default: 'my-template',
+            default: DEFAULT_TEMPLATE_NAME,
             validate: (input: string) => {
-              if (!input || input.trim().length === 0) {
-                return 'Template name cannot be empty'
+              try {
+                validateTemplateName(input)
+              } catch (err) {
+                return err instanceof Error ? err.message : err
               }
-              if (!validateTemplateName(input.trim())) {
-                return 'Template name must contain only lowercase letters, numbers, hyphens, and underscores, and cannot start or end with a hyphen or underscore'
-              }
+
               return true
             },
           })
         }
         templateName = templateName.trim()
+        console.log(`Using template name: ${templateName}`)
 
         // Step 2: Get language (from CLI or prompt)
         let language: Language
