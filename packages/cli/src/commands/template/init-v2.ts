@@ -305,17 +305,6 @@ export const initV2Command = new commander.Command('init-v2')
             console.log(
               `   ${asPrimary('npm run e2b:build:prod')} (for production)`
             )
-            console.log('\nOr directly:')
-            console.log(
-              `   ${asPrimary(
-                `cd ${templateDirName} && npx tsx ${generatedFiles.buildDevFile}`
-              )} (for development)`
-            )
-            console.log(
-              `   ${asPrimary(
-                `cd ${templateDirName} && npx tsx ${generatedFiles.buildProdFile}`
-              )} (for production)`
-            )
             break
           case Language.PythonAsync:
           case Language.PythonSync:
@@ -324,17 +313,6 @@ export const initV2Command = new commander.Command('init-v2')
             )
             console.log(
               `   ${asPrimary('make e2b:build:prod')} (for production)`
-            )
-            console.log('\nOr directly:')
-            console.log(
-              `   ${asPrimary(
-                `cd ${templateDirName} && python ${generatedFiles.buildDevFile}`
-              )} (for development)`
-            )
-            console.log(
-              `   ${asPrimary(
-                `cd ${templateDirName} && python ${generatedFiles.buildProdFile}`
-              )} (for production)`
             )
             break
           default:
@@ -347,7 +325,7 @@ export const initV2Command = new commander.Command('init-v2')
           )}\n`
         )
       } catch (err: any) {
-        console.error('Initialization failed:', err.message)
+        console.error(err)
         process.exit(1)
       }
     }

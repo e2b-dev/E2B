@@ -7,8 +7,7 @@ This is an E2B sandbox template that allows you to run code in a controlled envi
 Before you begin, make sure you have:
 - An E2B account (sign up at [e2b.dev](https://e2b.dev))
 - Your E2B API key (get it from your [E2B dashboard](https://e2b.dev/dashboard))
-{{#if isTypeScript}}- Node.js and npm/yarn installed{{/if}}
-{{#if isPython}}- Python installed{{/if}}
+{{#if isTypeScript}}- Node.js and npm/yarn (or similar) installed{{else if isPython}}- Python installed{{/if}}
 
 ## Configuration
 
@@ -19,36 +18,22 @@ Before you begin, make sure you have:
 
 ## Building the Template
 
-You have several options to build your template:
-
-### Option 1: Using npm scripts (recommended)
-
 ```bash
-# For development (includes debug logging)
-npm run e2b:build:dev
-
-# For production (optimized build)
-npm run e2b:build:prod
-```
-
-### Option 2: Direct execution
-
 {{#if isTypeScript}}
 ```bash
 # For development
-cd {{templateDir}} && npx tsx {{buildDevFile}}
+npm run e2b:build:dev
 
 # For production
-cd {{templateDir}} && npx tsx {{buildProdFile}}
+npm run e2b:build:prod
 ```
-{{/if}}
-{{#if isPython}}
+{{else if isPython}}
 ```bash
 # For development
-cd {{templateDir}} && python {{buildDevFile}}
+make e2b:build:dev
 
 # For production
-cd {{templateDir}} && python {{buildProdFile}}
+make e2b:build:prod
 ```
 {{/if}}
 
@@ -66,19 +51,17 @@ const sandbox = await Sandbox.create('{{alias}}')
 // Your sandbox is ready to use!
 console.log('Sandbox created successfully')
 ```
-{{/if}}
-{{#if isPythonSync}}
+{{else if isPythonSync}}
 ```python
 from e2b import Sandbox
 
 # Create a new sandbox instance
-sandbox = Sandbox('{{alias}}')
+sandbox = Sandbox.create('{{alias}}')
 
 # Your sandbox is ready to use!
 print('Sandbox created successfully')
 ```
-{{/if}}
-{{#if isPythonAsync}}
+{{else if isPythonAsync}}
 ```python
 from e2b import AsyncSandbox
 import asyncio
