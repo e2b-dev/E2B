@@ -45,7 +45,7 @@ export async function calculateFilesHash(
   }
 
   for (const file of files) {
-    if (!file.isFile()) {
+    if (file.isDirectory()) {
       continue
     }
 
@@ -141,6 +141,11 @@ export async function tarFileStreamUpload(
   for await (const chunk of sizeCalculationStream as unknown as AsyncIterable<Buffer>) {
     contentLength += chunk.length
   }
+
+  // write the content stream to a file
+  const contentStreamPath = path.join(fileContextPath, 'content.tar')
+  const contentStream = await tarFileStream(fileName, fileContextPath)
+  contentStream.pipe(fs.createWriteStream(contentStreamPath))
 
   return {
     contentLength,
