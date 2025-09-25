@@ -58,11 +58,11 @@ def calculate_files_hash(
             continue
         with open(file, "rb") as f:
             hash_obj.update(f.read())
-        
+
         # Add relative path to hash calculation
         relative_path = os.path.relpath(file, context_path)
         hash_obj.update(relative_path.encode())
-        
+
         # Add stat information to hash calculation
         stat_info = os.stat(file)
         hash_obj.update(str(stat_info.st_mode).encode())
