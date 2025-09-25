@@ -56,20 +56,30 @@ def calculate_files_hash(
         if os.path.isdir(file):
             # skip folders
             continue
-        with open(file, "rb") as f:
-            hash_obj.update(f.read())
 
         # Add relative path to hash calculation
         relative_path = os.path.relpath(file, context_path)
         hash_obj.update(relative_path.encode())
 
         # Add stat information to hash calculation
-        stat_info = os.stat(file)
+        if os.path.islink(file):
+            stat_info = os.lstat(file)
+        else:
+            stat_info = os.stat(file)
+        
         hash_obj.update(str(stat_info.st_mode).encode())
         hash_obj.update(str(stat_info.st_uid).encode())
         hash_obj.update(str(stat_info.st_gid).encode())
         hash_obj.update(str(stat_info.st_size).encode())
         hash_obj.update(str(stat_info.st_mtime).encode())
+
+        # Add file content to hash calculation
+        if os.path.islink(file):
+            symlink_content = os.readlink(file)
+            hash_obj.update(symlink_content.encode())
+        else:
+            with open(file, "rb") as f:
+                hash_obj.update(f.read())
 
     return hash_obj.hexdigest()
 

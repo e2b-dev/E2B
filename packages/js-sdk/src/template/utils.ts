@@ -49,20 +49,32 @@ export async function calculateFilesHash(
       continue
     }
 
-    const content = fs.readFileSync(file.fullpath())
-    hash.update(new Uint8Array(content))
-
     // Add relative path to hash calculation
     const relativePath = path.relative(contextPath, file.fullpath())
     hash.update(relativePath)
 
     // Add stat information to hash calculation
-    const stats = fs.statSync(file.fullpath())
+    let stats
+    if (file.isSymbolicLink()) {
+      stats = fs.lstatSync(file.fullpath())
+    } else {
+      stats = fs.statSync(file.fullpath())
+    }
+
     hash.update(stats.mode.toString())
     hash.update(stats.uid.toString())
     hash.update(stats.gid.toString())
     hash.update(stats.size.toString())
     hash.update(stats.mtimeMs.toString())
+
+    // Add file content to hash calculation unless it's a symlink
+    if (file.isSymbolicLink()) {
+      const content = fs.readlinkSync(file.fullpath())
+      hash.update(content)
+    } else {
+      const content = fs.readFileSync(file.fullpath())
+      hash.update(new Uint8Array(content))
+    }
   }
 
   return hash.digest('hex')
