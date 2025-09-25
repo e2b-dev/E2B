@@ -51,6 +51,14 @@ export async function calculateFilesHash(
 
     const content = fs.readFileSync(file.fullpath())
     hash.update(new Uint8Array(content))
+
+    // Add stat information to hash calculation
+    const stats = fs.statSync(file.fullpath())
+    hash.update(stats.mode.toString())
+    hash.update(stats.uid.toString())
+    hash.update(stats.gid.toString())
+    hash.update(stats.size.toString())
+    hash.update(stats.mtimeMs.toString())
   }
 
   return hash.digest('hex')

@@ -58,6 +58,14 @@ def calculate_files_hash(
             continue
         with open(file, "rb") as f:
             hash_obj.update(f.read())
+        
+        # Add stat information to hash calculation
+        stat_info = os.stat(file)
+        hash_obj.update(str(stat_info.st_mode).encode())
+        hash_obj.update(str(stat_info.st_uid).encode())
+        hash_obj.update(str(stat_info.st_gid).encode())
+        hash_obj.update(str(stat_info.st_size).encode())
+        hash_obj.update(str(stat_info.st_mtime).encode())
 
     return hash_obj.hexdigest()
 
