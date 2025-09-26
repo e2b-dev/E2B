@@ -1,0 +1,146 @@
+---
+title: "SDK v2 Migration Guide"
+---
+
+This guide helps you migrate from E2B SDK v1 to v2, covering all breaking changes and new patterns.
+
+## Table of contents
+
+SDK v2 introduces several important changes:
+- [**New creation pattern in Python Synchronous SDK**](#1-sandbox-creation-in-synchronous-python-sdk)
+- [**Secure by default**](#2-secure-communication-by-default)
+- [**Updated file operations in Python SDK**](#3-file-writing-in-python-sdk)
+- [**Updated list method**](#4-listing-sandboxes)
+
+## Breaking changes
+
+### 1. Sandbox creation in synchronous Python SDK
+
+In v2, the synchronous Python SDK uses a class method `create()` instead of the constructor `Sandbox()`.
+
+<CodeGroup>
+```python Python
+from e2b_code_interpreter import Sandbox
+
+sandbox = Sandbox.create()
+sandbox = Sandbox.create(template="base")
+```
+</CodeGroup>
+
+In the v1, you would instantiate directly:
+
+<CodeGroup>
+```python Python
+from e2b_code_interpreter import Sandbox
+
+sandbox = Sandbox()
+sandbox = Sandbox(template="base")
+```
+</CodeGroup>
+
+### 2. Secure communication by default
+
+Sandboxes are now **secure by default**. That means you cannot access the sandbox directly via its URL; there's authentication required. If you use the SDK, this is handled for you automatically.
+
+This shouldn't affect you, but if you need to access sandbox directly without SDK and you are now getting 401, you may need to set `secure` to `false`.
+
+<Note>
+    If you are using custom code interpreter templates, it may be necessary to rebuild the template to ensure compatibility with secure sandboxes.
+</Note>
+
+<CodeGroup>
+```js JavaScript & TypeScript
+import { Sandbox } from '@e2b/code-interpreter'
+
+const sandbox = await Sandbox.create({ secure: false }) // Explicitly disable
+```
+
+```python Python
+from e2b_code_interpreter import Sandbox
+
+sandbox = Sandbox.create(secure=False)  # Explicitly disable
+```
+</CodeGroup>
+
+### 3. File writing in Python SDK
+
+The file writing API in Python has been made more consistent.
+
+In v2, use `sandbox.files.write()` for single files and `sandbox.files.write_files()` for multiple files:
+<CodeGroup>
+```python v2
+from e2b_code_interpreter import Sandbox
+
+sandbox = Sandbox.create()
+
+# Write single file
+info = sandbox.files.write("/tmp/file.txt", "content")
+
+# Write multiple files
+infos = sandbox.files.write_files([
+    {"path": "/tmp/file1.txt", "data": "content1"},
+    {"path": "/tmp/file2.txt", "data": "content2"}
+])
+```
+</CodeGroup>
+
+In v1, the same `write()` method was overloaded for both single and multiple files:
+
+<CodeGroup>
+```python v1
+from e2b_code_interpreter import Sandbox
+
+sandbox = Sandbox.create()
+
+# Write single file
+info = sandbox.write(path="/tmp/file.txt", data="content")
+
+# Write multiple files
+infos = sandbox.write([
+    {"path": "/tmp/file1.txt", "data": "content1"},
+    {"path": "/tmp/file2.txt", "data": "content2"}
+])
+```
+</CodeGroup>
+
+### 4. Listing sandboxes
+
+The method for listing sandboxes has been updated to use pagination.
+
+<CodeGroup>
+```js JavaScript & TypeScript
+import { Sandbox, SandboxInfo } from '@e2b/code-interpreter'
+
+// Get paginator
+const paginator = Sandbox.list()
+
+// Iterate through all sandboxes
+for (const sandbox of await paginator.nextItems()) {
+    console.log(sandbox.sandboxId)
+}
+
+// Iterate through all sandboxes
+const allSandboxes: SandboxInfo[] = []
+while (paginator.hasNext) {
+    const items = await paginator.nextItems()
+    allSandboxes.push(...items)
+}
+
+// With query
+const queryPaginator = Sandbox.list({query: {metadata: {key: "value"}}})
+```
+```python Python
+from e2b_code_interpreter import Sandbox, SandboxQuery
+
+# Get paginator
+paginator = Sandbox.list()
+
+# Iterate through all sandboxes
+while paginator.has_next:
+    sandboxes = paginator.next_items()
+    print(sandboxes)
+
+# With query
+paginator = Sandbox.list(query=SandboxQuery(metadata={"key": "value"}))
+```
+</CodeGroup>

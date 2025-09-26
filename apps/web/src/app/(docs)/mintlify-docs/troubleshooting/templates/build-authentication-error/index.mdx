@@ -1,0 +1,73 @@
+---
+title: "Docker push authentication error"
+sidebarTitle: Build authentication error
+---
+
+When the CLI tries to push a Docker image to the registry, you might encounter an authentication error. This error sometimes occurs for users when Docker doesn't send any credentials to the registry.
+To resolve this issue, you can use the following steps:
+
+## MacOS
+
+1. Open Docker Desktop.
+2. Go to Settings.
+3. Go to Docker Engine.
+4. Add the following line to the json configuration:
+
+```json
+{
+  "insecure-registries": ["host.docker.internal:49984"]
+}
+```
+
+It may look like this:
+
+```json
+{
+  "builder": {
+    "gc": {
+      "defaultKeepStorage": "20GB",
+      "enabled": true
+    }
+  },
+  "features": {
+    "buildkit": true
+  },
+  "insecure-registries": [
+    "host.docker.internal:49984"
+  ]
+}
+```
+This allows Docker to send requests to local proxy, which handles the authentication.
+
+5. Click Apply & Restart.
+
+
+## Linux
+
+1. Edit the Docker configuration file (usually `/etc/docker/daemon.json`) and add the following line, if the file doesn't exist, create it:
+```json
+{
+  "insecure-registries": ["localhost:49984"]
+}
+```
+
+2. Restart Docker:
+
+```bash
+sudo systemctl restart docker
+```
+
+## Windows
+
+1. Open Docker Desktop.
+2. Go to Settings.
+3. Go to Docker Engine.
+4. Add the following line to the json configuration:
+
+```json
+{
+  "insecure-registries": ["host.docker.internal:49984"]
+}
+```
+5. Click Apply & Restart.
+

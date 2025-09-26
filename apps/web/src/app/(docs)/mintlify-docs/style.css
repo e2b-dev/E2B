@@ -1,0 +1,28 @@
+#topbar-links {
+  background-color: var(--background-white);
+}
+
+/* Add styles specifically for the Sign In link */
+a[href*="auth/sign-in"].whitespace-nowrap.font-medium {
+  background-color: black;
+  color: white !important;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+a[href*="auth/sign-in"].whitespace-nowrap.font-medium:hover {
+  background-color: #333;
+  color: white !important;
+}
+
+/* Dark mode styles */
+.dark a[href*="auth/sign-in"].whitespace-nowrap.font-medium {
+  background-color: white;
+  color: black !important;
+}
+
+.dark a[href*="auth/sign-in"].whitespace-nowrap.font-medium:hover {
+  background-color: #f3f3f3;
+  color: black !important;
+}

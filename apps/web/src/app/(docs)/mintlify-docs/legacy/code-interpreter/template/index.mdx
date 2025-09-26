@@ -1,0 +1,61 @@
+---
+title: "Using custom sandbox template & custom compute with Code Interpreter SDK"
+---
+
+<Callout icon="circle-exclamation" color="#ff8800" iconType="regular">You are reading a legacy (pre v1.0) document.</Callout>
+
+
+# Using custom sandbox template & custom compute with Code Interpreter SDK
+
+If you want to customize the Code Interprerter sandbox (e.g.: add a preinstalled package) you can do that by using a [custom sandbox template](https://e2b.dev/docs/sandbox/templates/overview).
+
+
+## Step-by-step guide
+1. Create custom sandbox by following [this guide](/legacy/guide/custom-sandbox)
+
+2. Use prebuilt [E2B Code Interpreter image](https://hub.docker.com/r/e2bdev/code-interpreter) by replacing the `FROM` command in your `e2b.Dockerfile` with following
+
+    ```sh
+    FROM e2bdev/code-interpreter:latest
+    ```
+
+3. Run the following in the same directory where's your `e2b.toml`
+    ```sh
+    e2b template build -c "/root/.jupyter/start-up.sh"
+    ```
+
+4. Use your custom sandbox with Code Interpreter SDK
+
+    <CodeGroup>
+    ```python Python
+    from e2b_code_interpreter import CodeInterpreter
+    sandbox = CodeInterpreter(template="your-custom-sandbox-name")
+    execution = sandbox.notebook.exec_cell("print('hello')")
+    sandbox.close()
+
+    # Or you can use `with` which handles closing the sandbox for you
+    with CodeInterpreter(template="your-custom-sandbox-name") as sandbox:
+        execution = sandbox.notebook.exec_cell("print('hello')")
+    ```
+
+    ```js JavaScript & TypeScript
+    import { CodeInterpreter } from '@e2b/code-interpreter'
+    const sandbox = await CodeInterpreter.create({ template: 'your-custom-sandbox-name' })
+    const execution = await sandbox.notebook.execCell('print("hello")')
+    await sandbox.close()
+    ```
+    </CodeGroup>
+
+
+## Customize CPU & RAM of your sandbox
+You can customize number of CPUs and MiB of RAM for your sandbox. To achieve that, specify the `--cpu-count` and `--memory-mb` options during the build step:
+```sh
+e2b template build -c "/home/user/.jupyter/start-up.sh" --cpu-count 4 --memory-mb 4096
+```
+The above will create a custom sandbox with 4 CPUs a 4 GiB of RAM.
+
+## How to install another Python kernels
+
+Jupyter has ability to work with different than Python kernel. It even supports multiple kernels in one notebook. If you want to install another kernels.
+
+You can find list of available kernels [here](https://github.com/jupyter/jupyter/wiki/Jupyter-kernels). Each has a little bit different installation process, but in general you need to install kernel package and register it in jupyter.

@@ -1,0 +1,149 @@
+---
+title: "Examples"
+---
+
+<Callout icon="circle-exclamation" color="#ff8800" iconType="regular">You are reading a legacy (pre v1.0) document.</Callout>
+
+
+Here are some examples of how to use the E2B Code Interpreter package. If you are missing something, please let us know.
+
+## Minimal example with the sharing context
+
+The following example demonstrates how to create a shared context between multiple code executions. This is useful when you want to share variables between different code cells.
+
+<CodeGroup isRunnable={false}>
+```js JavaScript & TypeScript
+import { CodeInterpreter } from '@e2b/code-interpreter'
+
+const sandbox = await CodeInterpreter.create()
+await sandbox.notebook.execCell('x = 1')
+
+const execution = await sandbox.notebook.execCell('x+=1; x')
+console.log(execution.text)  // outputs 2
+
+await sandbox.close()
+```
+```python Python
+from e2b_code_interpreter import CodeInterpreter
+
+with CodeInterpreter() as sandbox:
+    sandbox.notebook.exec_cell("x = 1")
+
+    execution = sandbox.notebook.exec_cell("x+=1; x")
+    print(execution.text)  # outputs 2
+
+```
+</CodeGroup>
+
+## Get charts and any display-able data
+
+<CodeGroup isRunnable={false}>
+```js JavaScript & TypeScript
+import { CodeInterpreter } from '@e2b/code-interpreter'
+
+const sandbox = await CodeInterpreter.create()
+
+const code = `
+import matplotlib.pyplot as plt
+import numpy as np
+
+x = np.linspace(0, 20, 100)
+y = np.sin(x)
+
+plt.plot(x, y)
+plt.show()
+`;
+
+// you can install dependencies in "jupyter notebook style"
+await sandbox.notebook.execCell("!pip install matplotlib")
+
+const execution = await sandbox.notebook.execCell(code)
+
+// this contains the image data, you can e.g. save it to file or send to frontend
+execution.results[0].png
+
+await sandbox.close()
+```
+```python Python
+import base64
+import io
+
+from matplotlib import image as mpimg, pyplot as plt
+
+from e2b_code_interpreter import CodeInterpreter
+
+code = """
+import matplotlib.pyplot as plt
+import numpy as np
+
+x = np.linspace(0, 20, 100)
+y = np.sin(x)
+
+plt.plot(x, y)
+plt.show()
+"""
+
+with CodeInterpreter() as sandbox:
+    # you can install dependencies in "jupyter notebook style"
+    sandbox.notebook.exec_cell("!pip install matplotlib")
+
+    # plot random graph
+    execution = sandbox.notebook.exec_cell(code)
+
+# there's your image
+image = execution.results[0].png
+
+# example how to show the image / prove it works
+i = base64.b64decode(image)
+i = io.BytesIO(i)
+i = mpimg.imread(i, format='PNG')
+
+plt.imshow(i, interpolation='nearest')
+plt.show()
+```
+</CodeGroup>
+
+## Streaming code output
+
+<CodeGroup isRunnable={false}>
+```js JavaScript & TypeScript
+import { CodeInterpreter } from "@e2b/code-interpreter";
+
+code = `
+import time
+import pandas as pd
+
+print("hello")
+time.sleep(3)
+data = pd.DataFrame(data=[[1, 2], [3, 4]], columns=["A", "B"])
+display(data.head(10))
+time.sleep(3)
+print("world")
+`
+
+const sandbox = await CodeInterpreter.create()
+
+await sandbox.notebook.execCell(code, {
+  onStdout: (out) => console.log(out),
+  onStderr: (outErr) => console.error(outErr),
+  onResult: (result) => console.log(result.text)
+})
+````
+```python Python
+from e2b_code_interpreter import CodeInterpreter
+
+code = """
+import time
+import pandas as pd
+
+print("hello")
+time.sleep(3)
+data = pd.DataFrame(data=[[1, 2], [3, 4]], columns=["A", "B"])
+display(data.head(10))
+time.sleep(3)
+print("world")
+"""
+with CodeInterpreter() as sandbox:
+    sandbox.notebook.exec_cell(code, on_stdout=print, on_stderr=print, on_result=(lambda result: print(result.text)))
+```
+</ CodeGroup>
