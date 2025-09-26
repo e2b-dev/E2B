@@ -111,19 +111,13 @@ async function addPackageJsonScripts(
       pkgJson = await PackageJson.create(createRoot)
     }
 
-    switch (files.language) {
-      case Language.TypeScript:
-        pkgJson.update({
-          scripts: {
-            ...pkgJson.content.scripts,
-            'e2b:build:dev': `${cdPrefix}npx tsx ${files.buildDevFile}`,
-            'e2b:build:prod': `${cdPrefix}npx tsx ${files.buildProdFile}`,
-          },
-        })
-        break
-      default:
-        throw new Error('Unsupported language for package.json scripts')
-    }
+    pkgJson.update({
+      scripts: {
+        ...pkgJson.content.scripts,
+        'e2b:build:dev': `${cdPrefix}npx tsx ${files.buildDevFile}`,
+        'e2b:build:prod': `${cdPrefix}npx tsx ${files.buildProdFile}`,
+      },
+    })
 
     // Save the changes
     await pkgJson.save()
