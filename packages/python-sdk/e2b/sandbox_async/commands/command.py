@@ -143,7 +143,7 @@ class Commands:
         cwd: Optional[str] = None,
         on_stdout: Optional[OutputHandler[Stdout]] = None,
         on_stderr: Optional[OutputHandler[Stderr]] = None,
-        stdin: bool = False,
+        stdin: Optional[bool] = None,
         timeout: Optional[float] = 60,
         request_timeout: Optional[float] = None,
     ) -> CommandResult:
@@ -175,7 +175,7 @@ class Commands:
         cwd: Optional[str] = None,
         on_stdout: Optional[OutputHandler[Stdout]] = None,
         on_stderr: Optional[OutputHandler[Stderr]] = None,
-        stdin: bool = False,
+        stdin: Optional[bool] = None,
         timeout: Optional[float] = 60,
         request_timeout: Optional[float] = None,
     ) -> AsyncCommandHandle:
