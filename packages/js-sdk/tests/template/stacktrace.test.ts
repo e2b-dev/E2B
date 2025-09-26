@@ -1,4 +1,4 @@
-import { assert, test } from 'vitest'
+import { assert } from 'vitest'
 import { Template, waitForTimeout } from '../../src'
 import fs from 'node:fs'
 import { buildTemplateTest } from '../setup'
