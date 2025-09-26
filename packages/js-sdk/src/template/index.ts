@@ -228,18 +228,30 @@ export class TemplateBase
   copy(
     src: string,
     dest: string,
-    options?: { forceUpload?: true; user?: string; mode?: number }
+    options?: {
+      forceUpload?: true
+      user?: string
+      mode?: number
+      resolveSymlinks?: boolean
+    }
   ): TemplateBuilder
-  copy(
-    items: CopyItem[],
-    options?: { forceUpload?: true; user?: string; mode?: number }
-  ): TemplateBuilder
+  copy(items: CopyItem[]): TemplateBuilder
   copy(
     srcOrItems: string | CopyItem[],
     destOrOptions?:
       | string
-      | { forceUpload?: true; user?: string; mode?: number },
-    options?: { forceUpload?: true; user?: string; mode?: number }
+      | {
+          forceUpload?: true
+          user?: string
+          mode?: number
+          resolveSymlinks?: boolean
+        },
+    options?: {
+      forceUpload?: true
+      user?: string
+      mode?: number
+      resolveSymlinks?: boolean
+    }
   ): TemplateBuilder {
     if (runtime === 'browser') {
       throw new Error('Browser runtime is not supported for copy')
@@ -254,6 +266,7 @@ export class TemplateBase
             mode: options?.mode,
             user: options?.user,
             forceUpload: options?.forceUpload,
+            resolveSymlinks: options?.resolveSymlinks,
           },
         ]
     for (const item of items) {
@@ -269,6 +282,7 @@ export class TemplateBase
         args,
         force: item.forceUpload ?? this.forceNextLayer,
         forceUpload: item.forceUpload,
+        resolveSymlinks: item.resolveSymlinks ?? false,
       })
     }
 
@@ -607,6 +621,7 @@ export class TemplateBase
               fileName: src,
               fileContextPath: this.fileContextPath,
               url,
+              resolveSymlinks: instruction.resolveSymlinks ?? false,
             },
             stackTrace
           )

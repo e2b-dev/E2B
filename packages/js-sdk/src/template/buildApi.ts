@@ -91,14 +91,16 @@ export async function uploadFile(
     fileName: string
     fileContextPath: string
     url: string
+    resolveSymlinks: boolean
   },
   stackTrace?: string
 ) {
-  const { fileName, url, fileContextPath } = options
+  const { fileName, url, fileContextPath, resolveSymlinks } = options
   try {
     const { contentLength, uploadStream } = await tarFileStreamUpload(
       fileName,
-      fileContextPath
+      fileContextPath,
+      resolveSymlinks
     )
 
     // The compiler assumes this is Web fetch API, but it's actually Node.js fetch API

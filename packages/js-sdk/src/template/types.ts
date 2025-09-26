@@ -15,6 +15,7 @@ export type Instruction = {
   force: boolean
   forceUpload?: boolean
   filesHash?: string
+  resolveSymlinks?: boolean
 }
 
 export type CopyItem = {
@@ -23,6 +24,7 @@ export type CopyItem = {
   forceUpload?: boolean
   user?: string
   mode?: number
+  resolveSymlinks?: boolean
 }
 
 // Interface for the initial state
@@ -75,13 +77,15 @@ export interface TemplateBuilder {
   copy(
     src: string,
     dest: string,
-    options?: { forceUpload?: true; user?: string; mode?: number }
+    options?: {
+      forceUpload?: true
+      user?: string
+      mode?: number
+      resolveSymlinks?: boolean
+    }
   ): TemplateBuilder
 
-  copy(
-    items: CopyItem[],
-    options?: { forceUpload?: true; user?: string; mode?: number }
-  ): TemplateBuilder
+  copy(items: CopyItem[]): TemplateBuilder
 
   remove(
     path: string,
