@@ -40,7 +40,7 @@ async def _expect_to_throw_and_check_trace(func, expected_method: str):
 @pytest.mark.skip_debug()
 async def test_traces_on_from_image():
     template = AsyncTemplate()
-    template = template.from_image("e2b.dev/this-image-does-not-exist")
+    template = template.skip_cache().from_image("e2b.dev/this-image-does-not-exist")
     await _expect_to_throw_and_check_trace(lambda: build(template), "from_image")
 
 
@@ -60,7 +60,7 @@ async def test_traces_on_from_dockerfile():
 @pytest.mark.skip_debug()
 async def test_traces_on_from_registry():
     template = AsyncTemplate()
-    template = template.from_registry(
+    template = template.skip_cache().from_registry(
         "registry.example.com/nonexistent:latest",
         username="test",
         password="test",
@@ -71,7 +71,7 @@ async def test_traces_on_from_registry():
 @pytest.mark.skip_debug()
 async def test_traces_on_from_aws_registry():
     template = AsyncTemplate()
-    template = template.from_aws_registry(
+    template = template.skip_cache().from_aws_registry(
         "123456789.dkr.ecr.us-east-1.amazonaws.com/nonexistent:latest",
         access_key_id="test",
         secret_access_key="test",
@@ -83,7 +83,7 @@ async def test_traces_on_from_aws_registry():
 @pytest.mark.skip_debug()
 async def test_traces_on_from_gcp_registry():
     template = AsyncTemplate()
-    template = template.from_gcp_registry(
+    template = template.skip_cache().from_gcp_registry(
         "gcr.io/nonexistent-project/nonexistent:latest",
         service_account_json={
             "type": "service_account",
@@ -96,7 +96,7 @@ async def test_traces_on_from_gcp_registry():
 async def test_traces_on_copy():
     template = AsyncTemplate()
     template = template.from_base_image()
-    template = template.copy(non_existent_path, non_existent_path)
+    template = template.skip_cache().copy(non_existent_path, non_existent_path)
     await _expect_to_throw_and_check_trace(lambda: build(template), "copy")
 
 
@@ -104,7 +104,7 @@ async def test_traces_on_copy():
 async def test_traces_on_remove():
     template = AsyncTemplate()
     template = template.from_base_image()
-    template = template.remove(non_existent_path)
+    template = template.skip_cache().remove(non_existent_path)
     await _expect_to_throw_and_check_trace(lambda: build(template), "remove")
 
 
@@ -112,7 +112,7 @@ async def test_traces_on_remove():
 async def test_traces_on_rename():
     template = AsyncTemplate()
     template = template.from_base_image()
-    template = template.rename(non_existent_path, "/tmp/dest.txt")
+    template = template.skip_cache().rename(non_existent_path, "/tmp/dest.txt")
     await _expect_to_throw_and_check_trace(lambda: build(template), "rename")
 
 
@@ -120,7 +120,7 @@ async def test_traces_on_rename():
 async def test_traces_on_make_dir():
     template = AsyncTemplate()
     template = template.from_base_image()
-    template = template.make_dir(".bashrc")
+    template = template.skip_cache().make_dir(".bashrc")
     await _expect_to_throw_and_check_trace(lambda: build(template), "make_dir")
 
 
@@ -128,7 +128,7 @@ async def test_traces_on_make_dir():
 async def test_traces_on_make_symlink():
     template = AsyncTemplate()
     template = template.from_base_image()
-    template = template.make_symlink(".bashrc", ".bashrc")
+    template = template.skip_cache().make_symlink(".bashrc", ".bashrc")
     await _expect_to_throw_and_check_trace(lambda: build(template), "make_symlink")
 
 
@@ -136,7 +136,7 @@ async def test_traces_on_make_symlink():
 async def test_traces_on_run_cmd():
     template = AsyncTemplate()
     template = template.from_base_image()
-    template = template.run_cmd(f"cat {non_existent_path}")
+    template = template.skip_cache().run_cmd(f"cat {non_existent_path}")
     await _expect_to_throw_and_check_trace(lambda: build(template), "run_cmd")
 
 
@@ -144,7 +144,7 @@ async def test_traces_on_run_cmd():
 async def test_traces_on_set_workdir():
     template = AsyncTemplate()
     template = template.from_base_image()
-    template = template.set_workdir(".bashrc")
+    template = template.skip_cache().set_workdir(".bashrc")
     await _expect_to_throw_and_check_trace(lambda: build(template), "set_workdir")
 
 
@@ -152,7 +152,7 @@ async def test_traces_on_set_workdir():
 async def test_traces_on_set_user():
     template = AsyncTemplate()
     template = template.from_base_image()
-    template = template.set_user(";")
+    template = template.skip_cache().set_user(";")
     await _expect_to_throw_and_check_trace(lambda: build(template), "set_user")
 
 
@@ -160,7 +160,7 @@ async def test_traces_on_set_user():
 async def test_traces_on_pip_install():
     template = AsyncTemplate()
     template = template.from_base_image()
-    template = template.pip_install("nonexistent-package")
+    template = template.skip_cache().pip_install("nonexistent-package")
     await _expect_to_throw_and_check_trace(lambda: build(template), "pip_install")
 
 
@@ -168,7 +168,7 @@ async def test_traces_on_pip_install():
 async def test_traces_on_npm_install():
     template = AsyncTemplate()
     template = template.from_base_image()
-    template = template.npm_install("nonexistent-package")
+    template = template.skip_cache().npm_install("nonexistent-package")
     await _expect_to_throw_and_check_trace(lambda: build(template), "npm_install")
 
 
@@ -176,7 +176,7 @@ async def test_traces_on_npm_install():
 async def test_traces_on_apt_install():
     template = AsyncTemplate()
     template = template.from_base_image()
-    template = template.apt_install("nonexistent-package")
+    template = template.skip_cache().apt_install("nonexistent-package")
     await _expect_to_throw_and_check_trace(lambda: build(template), "apt_install")
 
 
@@ -184,7 +184,7 @@ async def test_traces_on_apt_install():
 async def test_traces_on_git_clone():
     template = AsyncTemplate()
     template = template.from_base_image()
-    template = template.git_clone("https://github.com/repo.git")
+    template = template.skip_cache().git_clone("https://github.com/repo.git")
     await _expect_to_throw_and_check_trace(lambda: build(template), "git_clone")
 
 
