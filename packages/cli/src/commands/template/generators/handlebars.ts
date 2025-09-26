@@ -77,7 +77,7 @@ export async function transformTemplateData(
       case 'COPY': {
         if (step.args.length >= 2) {
           const src = step.args[0]
-          let dest = step.args[step.args.length - 1]
+          let dest = step.args[1]
           if (!dest || dest === '') {
             dest = '.'
           }
