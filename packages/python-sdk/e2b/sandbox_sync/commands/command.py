@@ -11,6 +11,7 @@ from e2b.connection_config import (
 )
 from e2b.envd.process import process_connect, process_pb2
 from e2b.envd.rpc import authentication_header, handle_rpc_exception
+from e2b.envd.versions import ENVD_COMMANDS_STDIN
 from e2b.exceptions import SandboxException
 from e2b.sandbox.commands.main import ProcessInfo
 from e2b.sandbox.commands.command_handle import CommandResult
@@ -141,6 +142,7 @@ class Commands:
         cwd: Optional[str] = None,
         on_stdout: Optional[Callable[[str], None]] = None,
         on_stderr: Optional[Callable[[str], None]] = None,
+        stdin: Optional[bool] = None,
         timeout: Optional[float] = 60,
         request_timeout: Optional[float] = None,
     ) -> CommandResult:
@@ -154,6 +156,7 @@ class Commands:
         :param cwd: Working directory to run the command
         :param on_stdout: Callback for command stdout output
         :param on_stderr: Callback for command stderr output
+        :param stdin: If `True`, the command will have a stdin stream that you can send data to using `sandbox.commands.send_stdin()`
         :param timeout: Timeout for the command connection in **seconds**. Using `0` will not limit the command connection time
         :param request_timeout: Timeout for the request in **seconds**
 
@@ -171,6 +174,7 @@ class Commands:
         cwd: Optional[str] = None,
         on_stdout: None = None,
         on_stderr: None = None,
+        stdin: Optional[bool] = None,
         timeout: Optional[float] = 60,
         request_timeout: Optional[float] = None,
     ) -> CommandHandle:
@@ -182,6 +186,7 @@ class Commands:
         :param envs: Environment variables used for the command
         :param user: User to run the command as
         :param cwd: Working directory to run the command
+        :param stdin: If `True`, the command will have a stdin stream that you can send data to using `sandbox.commands.send_stdin()`
         :param timeout: Timeout for the command connection in **seconds**. Using `0` will not limit the command connection time
         :param request_timeout: Timeout for the request in **seconds**
 
@@ -198,14 +203,26 @@ class Commands:
         cwd: Optional[str] = None,
         on_stdout: Optional[Callable[[str], None]] = None,
         on_stderr: Optional[Callable[[str], None]] = None,
+        stdin: Optional[bool] = None,
         timeout: Optional[float] = 60,
         request_timeout: Optional[float] = None,
     ):
+        # Check version for stdin support
+        if stdin is False and self._envd_version < ENVD_COMMANDS_STDIN:
+            raise SandboxException(
+                f"Sandbox envd version {self._envd_version} can't specify stdin, it's always turned on. "
+                f"Please rebuild your template if you need this feature."
+            )
+
+        # Default to `False`
+        stdin = stdin or False
+
         proc = self._start(
             cmd,
             envs,
             user,
             cwd,
+            stdin,
             timeout,
             request_timeout,
         )
@@ -222,11 +239,12 @@ class Commands:
     def _start(
         self,
         cmd: str,
-        envs: Optional[Dict[str, str]] = None,
-        user: Username = "user",
-        cwd: Optional[str] = None,
-        timeout: Optional[float] = 60,
-        request_timeout: Optional[float] = None,
+        envs: Optional[Dict[str, str]],
+        user: Username,
+        cwd: Optional[str],
+        stdin: bool,
+        timeout: Optional[float],
+        request_timeout: Optional[float],
     ):
         events = self._rpc.start(
             process_pb2.StartRequest(
@@ -236,6 +254,7 @@ class Commands:
                     args=["-l", "-c", cmd],
                     cwd=cwd,
                 ),
+                stdin=stdin,
             ),
             headers={
                 **authentication_header(user),
