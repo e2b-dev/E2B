@@ -119,12 +119,17 @@ export class Commands {
   protected readonly rpc: Client<typeof ProcessService>
 
   private readonly defaultProcessConnectionTimeout = 60_000 // 60 seconds
+  private readonly envdVersion: string
 
   constructor(
     transport: Transport,
-    private readonly connectionConfig: ConnectionConfig
+    private readonly connectionConfig: ConnectionConfig,
+    metadata: {
+      version: string
+    }
   ) {
     this.rpc = createClient(ProcessService, transport)
+    this.envdVersion = metadata.version
   }
 
   /**

@@ -2,6 +2,7 @@ from typing import Callable, Dict, List, Literal, Optional, Union, overload
 
 import e2b_connect
 import httpcore
+from packaging.version import Version
 from e2b.connection_config import (
     ConnectionConfig,
     Username,
@@ -26,8 +27,10 @@ class Commands:
         envd_api_url: str,
         connection_config: ConnectionConfig,
         pool: httpcore.ConnectionPool,
+        envd_version: Version,
     ) -> None:
         self._connection_config = connection_config
+        self._envd_version = envd_version
         self._rpc = process_connect.ProcessClient(
             envd_api_url,
             # TODO: Fix and enable compression again — the headers compression is not solved for streaming.

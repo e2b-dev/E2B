@@ -23,6 +23,7 @@ import {
 import { getSignature } from './signature'
 import { compareVersions } from 'compare-versions'
 import { SandboxError } from '../errors'
+import { ENVD_DEBUG_FALLBACK } from '../envd/versions'
 
 /**
  * Options for sandbox upload/download URL generation.
@@ -107,7 +108,7 @@ export class Sandbox extends SandboxApi {
     opts: SandboxConnectOpts & {
       sandboxId: string
       sandboxDomain?: string
-      envdVersion?: string
+      envdVersion: string
       envdAccessToken?: string
     }
   ) {
@@ -162,7 +163,7 @@ export class Sandbox extends SandboxApi {
           : {},
       },
       {
-        version: opts?.envdVersion,
+        version: opts.envdVersion,
       }
     )
     this.files = new Filesystem(
@@ -170,7 +171,9 @@ export class Sandbox extends SandboxApi {
       this.envdApi,
       this.connectionConfig
     )
-    this.commands = new Commands(rpcTransport, this.connectionConfig)
+    this.commands = new Commands(rpcTransport, this.connectionConfig, {
+      version: opts.envdVersion,
+    })
     this.pty = new Pty(rpcTransport, this.connectionConfig)
   }
 
@@ -236,6 +239,7 @@ export class Sandbox extends SandboxApi {
     if (config.debug) {
       return new this({
         sandboxId: 'debug_sandbox_id',
+        envdVersion: ENVD_DEBUG_FALLBACK,
         ...config,
       }) as InstanceType<S>
     }
@@ -304,6 +308,7 @@ export class Sandbox extends SandboxApi {
     if (config.debug) {
       return new this({
         sandboxId: 'debug_sandbox_id',
+        envdVersion: ENVD_DEBUG_FALLBACK,
         ...config,
       }) as InstanceType<S>
     }

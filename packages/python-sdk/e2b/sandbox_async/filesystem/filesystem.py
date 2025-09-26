@@ -34,7 +34,7 @@ class Filesystem:
     def __init__(
         self,
         envd_api_url: str,
-        envd_version: Optional[str],
+        envd_version: Version,
         connection_config: ConnectionConfig,
         pool: httpcore.AsyncConnectionPool,
         envd_api: httpx.AsyncClient,
@@ -485,11 +485,7 @@ class Filesystem:
 
         :return: `AsyncWatchHandle` object for stopping watching directory
         """
-        if (
-            recursive
-            and self._envd_version is not None
-            and Version(self._envd_version) < ENVD_VERSION_RECURSIVE_WATCH
-        ):
+        if recursive and self._envd_version < ENVD_VERSION_RECURSIVE_WATCH:
             raise TemplateException(
                 "You need to update the template to use recursive watching. "
                 "You can do this by running `e2b template build` in the directory with the template."

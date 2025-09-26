@@ -95,7 +95,7 @@ export async function handleWatchDirStartEvent(
 
 class EnvdApiClient {
   readonly api: ReturnType<typeof createClient<paths>>
-  readonly version: string | undefined
+  readonly version: string
 
   constructor(
     config: Pick<ConnectionConfig, 'apiUrl' | 'logger' | 'accessToken'> & {
@@ -103,7 +103,7 @@ class EnvdApiClient {
       headers?: Record<string, string>
     },
     metadata: {
-      version?: string
+      version: string
     }
   ) {
     this.api = createClient({

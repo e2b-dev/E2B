@@ -1,4 +1,5 @@
 import urllib.parse
+from packaging.version import Version
 
 from typing import Optional, TypedDict
 
@@ -11,7 +12,7 @@ from httpx import Limits
 class SandboxOpts(TypedDict):
     sandbox_id: str
     sandbox_domain: Optional[str]
-    envd_version: Optional[str]
+    envd_version: Version
     envd_access_token: Optional[str]
     connection_config: ConnectionConfig
 
@@ -31,7 +32,7 @@ class SandboxBase:
     def __init__(
         self,
         sandbox_id: str,
-        envd_version: Optional[str],
+        envd_version: Version,
         envd_access_token: Optional[str],
         sandbox_domain: Optional[str],
         connection_config: ConnectionConfig,
@@ -53,7 +54,7 @@ class SandboxBase:
         return self.__connection_config
 
     @property
-    def _envd_version(self) -> Optional[str]:
+    def _envd_version(self) -> Version:
         return self.__envd_version
 
     @property
