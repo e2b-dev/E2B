@@ -1,1 +1,2 @@
 export const ENVD_VERSION_RECURSIVE_WATCH = '0.1.4'
+export const ENVD_DEBUG_FALLBACK = '99.99.99'

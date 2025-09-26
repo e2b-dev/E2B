@@ -11,6 +11,7 @@ from typing_extensions import Unpack, Self
 from e2b.api.client.types import Unset
 from e2b.connection_config import ConnectionConfig, ApiParams
 from e2b.envd.api import ENVD_API_HEALTH_ROUTE, handle_envd_api_exception
+from e2b.envd.versions import ENVD_DEBUG_FALLBACK
 from e2b.exceptions import SandboxException, format_request_timeout_error
 from e2b.sandbox.main import SandboxOpts
 from e2b.sandbox.sandbox_api import SandboxMetrics
@@ -110,6 +111,7 @@ class Sandbox(SandboxApi):
             self.envd_api_url,
             self.connection_config,
             self._transport.pool,
+            self._envd_version,
         )
         self._pty = Pty(
             self.envd_api_url,
@@ -479,16 +481,15 @@ class Sandbox(SandboxApi):
 
         :return: List of sandbox metrics containing CPU, memory and disk usage information
         """
-        if self._envd_version:
-            if Version(self._envd_version) < Version("0.1.5"):
-                raise SandboxException(
-                    "Metrics are not supported in this version of the sandbox, please rebuild your template."
-                )
+        if self._envd_version < Version("0.1.5"):
+            raise SandboxException(
+                "Metrics are not supported in this version of the sandbox, please rebuild your template."
+            )
 
-            if Version(self._envd_version) < Version("0.2.4"):
-                logger.warning(
-                    "Disk metrics are not supported in this version of the sandbox, please rebuild the template to get disk metrics."
-                )
+        if self._envd_version < Version("0.2.4"):
+            logger.warning(
+                "Disk metrics are not supported in this version of the sandbox, please rebuild the template to get disk metrics."
+            )
 
         return SandboxApi._cls_get_metrics(
             sandbox_id=self.sandbox_id,
@@ -632,7 +633,7 @@ class Sandbox(SandboxApi):
         if debug:
             sandbox_id = "debug_sandbox_id"
             sandbox_domain = None
-            envd_version = None
+            envd_version = ENVD_DEBUG_FALLBACK
             envd_access_token = None
         else:
             response = SandboxApi._create_sandbox(
@@ -648,7 +649,7 @@ class Sandbox(SandboxApi):
 
             sandbox_id = response.sandbox_id
             sandbox_domain = response.sandbox_domain
-            envd_version = response.envd_version
+            envd_version = Version(response.envd_version)
             envd_access_token = response.envd_access_token
 
             if envd_access_token is not None and not isinstance(
