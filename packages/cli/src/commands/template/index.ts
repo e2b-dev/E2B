@@ -6,6 +6,7 @@ import { initCommand } from './init'
 import { deleteCommand } from './delete'
 import { publishCommand, unPublishCommand } from './publish'
 import { migrateCommand } from './migrate'
+import { initV2Command } from './init-v2'
 
 export const templateCommand = new commander.Command('template')
   .description('manage sandbox templates')
@@ -13,6 +14,7 @@ export const templateCommand = new commander.Command('template')
   .addCommand(buildCommand)
   .addCommand(listCommand)
   .addCommand(initCommand)
+  .addCommand(initV2Command)
   .addCommand(deleteCommand)
   .addCommand(publishCommand)
   .addCommand(unPublishCommand)

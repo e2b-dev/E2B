@@ -2,7 +2,12 @@ import { Template, TemplateClass } from 'e2b'
 import * as fs from 'fs'
 import HandlebarsLib from 'handlebars'
 import * as path from 'path'
-import { TemplateJSON, TemplateWithStepsJSON } from './types'
+import {
+  GeneratedFiles,
+  Language,
+  TemplateJSON,
+  TemplateWithStepsJSON,
+} from './types'
 
 class Handlebars {
   private handlebars: typeof HandlebarsLib
@@ -188,4 +193,41 @@ export async function generatePythonCode(
     templateContent: templateContent.trim(),
     buildContent: buildContent.trim(),
   }
+}
+
+/**
+ * Generate README.md content using Handlebars
+ */
+export async function generateReadmeContent(
+  alias: string,
+  templateDir: string,
+  generatedFiles: GeneratedFiles
+): Promise<string> {
+  const hb = new Handlebars()
+
+  // Load and compile README template
+  const templatesDir = path.join(__dirname, 'templates')
+  const readmeSource = fs.readFileSync(
+    path.join(templatesDir, 'readme.hbs'),
+    'utf8'
+  )
+
+  const generateReadmeSource = hb.compile(readmeSource)
+
+  // Prepare template data
+  const templateData = {
+    alias,
+    templateDir,
+    templateFile: generatedFiles.templateFile,
+    buildDevFile: generatedFiles.buildDevFile,
+    buildProdFile: generatedFiles.buildProdFile,
+    isTypeScript: generatedFiles.language === Language.TypeScript,
+    isPython:
+      generatedFiles.language === Language.PythonSync ||
+      generatedFiles.language === Language.PythonAsync,
+    isPythonSync: generatedFiles.language === Language.PythonSync,
+    isPythonAsync: generatedFiles.language === Language.PythonAsync,
+  }
+
+  return generateReadmeSource(templateData).trim()
 }

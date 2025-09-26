@@ -100,7 +100,7 @@ export const migrateCommand = new commander.Command('migrate')
     `specify target language: ${Object.values(Language).join(', ')}`,
     (value) => {
       if (!Object.values(Language).includes(value as Language)) {
-        throw new Error(
+        throw new commander.InvalidArgumentError(
           `Invalid language. Must be one of: ${Object.values(Language).join(
             ', '
           )}`
