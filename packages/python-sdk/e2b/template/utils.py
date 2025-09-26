@@ -66,7 +66,7 @@ def calculate_files_hash(
             stat_info = os.lstat(file)
         else:
             stat_info = os.stat(file)
-        
+
         hash_obj.update(str(stat_info.st_mode).encode())
         hash_obj.update(str(stat_info.st_uid).encode())
         hash_obj.update(str(stat_info.st_gid).encode())
