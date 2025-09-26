@@ -12,7 +12,7 @@ from httpx import Limits
 class SandboxOpts(TypedDict):
     sandbox_id: str
     sandbox_domain: Optional[str]
-    envd_version: Optional[str]
+    envd_version: Version
     envd_access_token: Optional[str]
     connection_config: ConnectionConfig
 

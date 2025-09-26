@@ -612,7 +612,7 @@ class AsyncSandbox(SandboxApi):
         return cls(
             sandbox_id=response.sandbox_id,
             sandbox_domain=response.sandbox_domain,
-            envd_version=response.envd_version,
+            envd_version=Version(response.envd_version),
             envd_access_token=envd_access_token,
             connection_config=connection_config,
         )
