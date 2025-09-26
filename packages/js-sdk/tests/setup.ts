@@ -57,6 +57,7 @@ export const sandboxTest = base.extend<SandboxFixture>({
 
 export const buildTemplateTest = base.extend<BuildTemplateFixture>({
   buildTemplate: [
+    // eslint-disable-next-line no-empty-pattern
     async ({}, use) => {
       await use(buildTemplate)
     },
