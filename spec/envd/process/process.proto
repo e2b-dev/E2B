@@ -49,6 +49,7 @@ message StartRequest {
     ProcessConfig process = 1;
     optional PTY pty = 2;
     optional string tag = 3;
+    optional bool stdin = 4;
 }
 
 message UpdateRequest {

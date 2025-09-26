@@ -3,7 +3,7 @@ import { sandboxTest } from '../../setup.js'
 
 sandboxTest('send stdin to process', async ({ sandbox }) => {
   const text = 'Hello, World!'
-  const cmd = await sandbox.commands.run('cat', { background: true })
+  const cmd = await sandbox.commands.run('cat', { background: true, stdin: true })
 
   await sandbox.commands.sendStdin(cmd.pid, text)
 
@@ -21,7 +21,7 @@ sandboxTest('send stdin to process', async ({ sandbox }) => {
 
 sandboxTest('send empty stdin to process', async ({ sandbox }) => {
   const text = ''
-  const cmd = await sandbox.commands.run('cat', { background: true })
+  const cmd = await sandbox.commands.run('cat', { background: true, stdin: true })
 
   await sandbox.commands.sendStdin(cmd.pid, text)
 
@@ -32,7 +32,7 @@ sandboxTest('send empty stdin to process', async ({ sandbox }) => {
 
 sandboxTest('send special characters to stdin', async ({ sandbox }) => {
   const text = '!@#$%^&*()_+'
-  const cmd = await sandbox.commands.run('cat', { background: true })
+  const cmd = await sandbox.commands.run('cat', { background: true, stdin: true })
 
   await sandbox.commands.sendStdin(cmd.pid, text)
 
@@ -50,7 +50,7 @@ sandboxTest('send special characters to stdin', async ({ sandbox }) => {
 
 sandboxTest('send multiline string to stdin', async ({ sandbox }) => {
   const text = 'Hello,\nWorld!'
-  const cmd = await sandbox.commands.run('cat', { background: true })
+  const cmd = await sandbox.commands.run('cat', {background: true, stdin: true})
 
   await sandbox.commands.sendStdin(cmd.pid, text)
 
