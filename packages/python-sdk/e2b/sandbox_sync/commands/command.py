@@ -142,7 +142,7 @@ class Commands:
         cwd: Optional[str] = None,
         on_stdout: Optional[Callable[[str], None]] = None,
         on_stderr: Optional[Callable[[str], None]] = None,
-        stdin: bool = False,
+        stdin: Optional[bool] = None,
         timeout: Optional[float] = 60,
         request_timeout: Optional[float] = None,
     ) -> CommandResult:
@@ -174,7 +174,7 @@ class Commands:
         cwd: Optional[str] = None,
         on_stdout: None = None,
         on_stderr: None = None,
-        stdin: bool = False,
+        stdin: Optional[bool] = None,
         timeout: Optional[float] = 60,
         request_timeout: Optional[float] = None,
     ) -> CommandHandle:
