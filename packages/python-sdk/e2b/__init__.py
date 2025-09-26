@@ -69,6 +69,20 @@ from .sandbox_async.filesystem.watch_handle import AsyncWatchHandle
 from .sandbox_async.commands.command_handle import AsyncCommandHandle
 from .sandbox_sync.paginator import SandboxPaginator
 
+from .template.main import TemplateBase, TemplateClass
+
+from .template_sync.main import Template
+from .template_async.main import AsyncTemplate
+
+from .template.exceptions import BuildException, FileUploadException
+from .template.readycmd import (
+    wait_for_file,
+    wait_for_url,
+    wait_for_port,
+    wait_for_process,
+    wait_for_timeout,
+)
+
 __all__ = [
     # API
     "ApiClient",
@@ -84,6 +98,8 @@ __all__ = [
     "InvalidArgumentException",
     "NotEnoughSpaceException",
     "TemplateException",
+    "BuildException",
+    "FileUploadException",
     # Sandbox API
     "SandboxInfo",
     "SandboxMetrics",
@@ -115,4 +131,14 @@ __all__ = [
     "AsyncSandbox",
     "AsyncWatchHandle",
     "AsyncCommandHandle",
+    # Template
+    "Template",
+    "AsyncTemplate",
+    "TemplateBase",
+    "TemplateClass",
+    "wait_for_file",
+    "wait_for_url",
+    "wait_for_port",
+    "wait_for_process",
+    "wait_for_timeout",
 ]

@@ -57,3 +57,20 @@ export async function isRunning(sandboxID: string) {
     return false
   }
 }
+
+export function parseMetadata(metadataRaw?: string) {
+  let metadata: Record<string, string> | undefined = undefined
+  if (metadataRaw && metadataRaw.length > 0) {
+    const parsedMetadata: Record<string, string> = {}
+    metadataRaw.split(',').map((pair: string) => {
+      const [key, value] = pair.split('=')
+      if (key && value) {
+        parsedMetadata[key.trim()] = value.trim()
+      }
+    })
+
+    metadata = parsedMetadata
+  }
+
+  return metadata
+}

@@ -5,7 +5,7 @@ import { asFormattedSandboxTemplate } from 'src/utils/format'
 
 export async function getPromptTemplates(
   templates: e2b.components['schemas']['Template'][],
-  text: string,
+  text: string
 ) {
   const inquirer = await import('inquirer')
   const templatesAnwsers = await inquirer.default.prompt([

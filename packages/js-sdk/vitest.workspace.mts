@@ -53,4 +53,12 @@ export default defineWorkspace([
       environment: 'node',
     },
   },
+  {
+    test: {
+      include: ['tests/template/stacktrace.test.ts'],
+      globals: false,
+      testTimeout: 180_000,
+      environment: 'node',
+    },
+  },
 ])

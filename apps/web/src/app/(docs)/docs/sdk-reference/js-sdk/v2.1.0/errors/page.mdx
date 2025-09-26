@@ -1,0 +1,210 @@
+### AuthenticationError
+
+Thrown when authentication fails.
+
+#### Constructors
+
+```ts
+new AuthenticationError(message: any): AuthenticationError
+```
+
+###### Parameters
+
+| Parameter | Type |
+| ------ | ------ |
+| `message` | `any` |
+
+###### Returns
+
+`AuthenticationError`
+
+***
+
+### InvalidArgumentError
+
+Thrown when an invalid argument is provided.
+
+#### Constructors
+
+```ts
+new InvalidArgumentError(message: string): InvalidArgumentError
+```
+
+###### Parameters
+
+| Parameter | Type |
+| ------ | ------ |
+| `message` | `string` |
+
+###### Returns
+
+`InvalidArgumentError`
+
+***
+
+### NotEnoughSpaceError
+
+Thrown when there is not enough disk space.
+
+#### Constructors
+
+```ts
+new NotEnoughSpaceError(message: string): NotEnoughSpaceError
+```
+
+###### Parameters
+
+| Parameter | Type |
+| ------ | ------ |
+| `message` | `string` |
+
+###### Returns
+
+`NotEnoughSpaceError`
+
+***
+
+### NotFoundError
+
+Thrown when a resource is not found.
+
+#### Constructors
+
+```ts
+new NotFoundError(message: string): NotFoundError
+```
+
+###### Parameters
+
+| Parameter | Type |
+| ------ | ------ |
+| `message` | `string` |
+
+###### Returns
+
+`NotFoundError`
+
+***
+
+### RateLimitError
+
+Thrown when the API rate limit is exceeded.
+
+#### Constructors
+
+```ts
+new RateLimitError(message: any): RateLimitError
+```
+
+###### Parameters
+
+| Parameter | Type |
+| ------ | ------ |
+| `message` | `any` |
+
+###### Returns
+
+`RateLimitError`
+
+***
+
+### SandboxError
+
+Base class for all sandbox errors.
+
+Thrown when general sandbox errors occur.
+
+#### Extended by
+
+- `TimeoutError`
+- `InvalidArgumentError`
+- `NotEnoughSpaceError`
+- `NotFoundError`
+- `TemplateError`
+- `RateLimitError`
+
+#### Constructors
+
+```ts
+new SandboxError(message: any): SandboxError
+```
+
+###### Parameters
+
+| Parameter | Type |
+| ------ | ------ |
+| `message` | `any` |
+
+###### Returns
+
+`SandboxError`
+
+***
+
+### TemplateError
+
+Thrown when the template uses old envd version. It isn't compatible with the new SDK.
+
+#### Constructors
+
+```ts
+new TemplateError(message: string): TemplateError
+```
+
+###### Parameters
+
+| Parameter | Type |
+| ------ | ------ |
+| `message` | `string` |
+
+###### Returns
+
+`TemplateError`
+
+***
+
+### TimeoutError
+
+Thrown when a timeout error occurs.
+
+The [unavailable] error type is caused by sandbox timeout.
+
+The [canceled] error type is caused by exceeding request timeout.
+
+The [deadline_exceeded] error type is caused by exceeding the timeout for command execution, watch, etc.
+
+The [unknown] error type is sometimes caused by the sandbox timeout when the request is not processed correctly.
+
+#### Constructors
+
+```ts
+new TimeoutError(message: string): TimeoutError
+```
+
+###### Parameters
+
+| Parameter | Type |
+| ------ | ------ |
+| `message` | `string` |
+
+###### Returns
+
+`TimeoutError`
+
+## Functions
+
+### formatSandboxTimeoutError()
+
+```ts
+function formatSandboxTimeoutError(message: string): TimeoutError
+```
+
+#### Parameters
+
+| Parameter | Type |
+| ------ | ------ |
+| `message` | `string` |
+
+#### Returns
+
+`TimeoutError`

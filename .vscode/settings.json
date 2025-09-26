@@ -73,6 +73,12 @@
   // Disable Pylint and use just Pylance
   "python.linting.enabled": false,
   "python.analysis.typeCheckingMode": "basic",
+  "cursorpyright.analysis.extraPaths": [
+    "./**",
+    "./packages/python-sdk/**",
+    "./packages/python-sdk/.venv/bin/python"
+  ],
+  "cursorpyright.analysis.typeCheckingMode": "basic",
   // "python.analysis.pylanceLspClientEnabled": true,
   // "python.analysis.inlayHints.functionReturnTypes": true,
   // "python.analysis.inlayHints.pytestParameters": true,

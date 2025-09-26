@@ -1,3 +1,4 @@
+from types import TracebackType
 import json
 import logging
 from typing import Optional
@@ -26,22 +27,35 @@ class SandboxCreateResponse:
     envd_access_token: str
 
 
-def handle_api_exception(e: Response):
+def handle_api_exception(
+    e: Response,
+    default_exception_class: type[Exception] = SandboxException,
+    stack_trace: Optional[TracebackType] = None,
+):
     try:
         body = json.loads(e.content) if e.content else {}
     except json.JSONDecodeError:
         body = {}
 
-    if e.status_code == 429:
-        message = f"{e.status_code}: Rate limit exceeded, please try again later"
+    if e.status_code == 401:
+        message = f"{e.status_code}: Unauthorized, please check your credentials."
         if body.get("message"):
             message += f" - {body['message']}"
+        return AuthenticationException(message)
 
+    if e.status_code == 429:
+        message = f"{e.status_code}: Rate limit exceeded, please try again later."
+        if body.get("message"):
+            message += f" - {body['message']}"
         return RateLimitException(message)
 
     if "message" in body:
-        return SandboxException(f"{e.status_code}: {body['message']}")
-    return SandboxException(f"{e.status_code}: {e.content}")
+        return default_exception_class(
+            f"{e.status_code}: {body['message']}"
+        ).with_traceback(stack_trace)
+    return default_exception_class(f"{e.status_code}: {e.content}").with_traceback(
+        stack_trace
+    )
 
 
 class ApiClient(AuthenticatedClient):
@@ -74,7 +88,7 @@ class ApiClient(AuthenticatedClient):
                 raise AuthenticationException(
                     "API key is required, please visit the Team tab at https://e2b.dev/dashboard to get your API key. "
                     "You can either set the environment variable `E2B_API_KEY` "
-                    'or you can pass it directly to the sandbox like Sandbox(api_key="e2b_...")',
+                    'or you can pass it directly to the method like api_key="e2b_..."',
                 )
             token = config.api_key
 

@@ -10,8 +10,9 @@ export const configName = 'e2b.toml'
 
 function getConfigHeader(config: E2BConfig) {
   return `# This is a config for E2B sandbox template.
-# You can use template ID (${config.template_id}) ${config.template_name ? `or template name (${config.template_name}) ` : ''
-    }to create a sandbox:
+# You can use template ID (${config.template_id}) ${
+    config.template_name ? `or template name (${config.template_name}) ` : ''
+  }to create a sandbox:
 
 # Python SDK
 # from e2b import Sandbox, AsyncSandbox
@@ -20,7 +21,9 @@ function getConfigHeader(config: E2BConfig) {
 
 # JS SDK
 # import { Sandbox } from 'e2b'
-# const sandbox = await Sandbox.create('${config.template_name || config.template_id}')
+# const sandbox = await Sandbox.create('${
+    config.template_name || config.template_id
+  }')
 
 `
 }
@@ -81,14 +84,14 @@ export async function loadConfig(configPath: string) {
 export async function saveConfig(
   configPath: string,
   config: E2BConfig,
-  overwrite?: boolean,
+  overwrite?: boolean
 ) {
   try {
     if (!overwrite) {
       const configExists = fs.existsSync(configPath)
       if (configExists) {
         throw new Error(
-          `Config already exists on path ${asLocalRelative(configPath)}`,
+          `Config already exists on path ${asLocalRelative(configPath)}`
         )
       }
     }
@@ -105,8 +108,8 @@ export async function saveConfig(
         {
           templateID: config.template_id,
         },
-        configPath,
-      )} cannot be saved: ${err.message}`,
+        configPath
+      )} cannot be saved: ${err.message}`
     )
   }
 }

@@ -11,9 +11,12 @@ export function formatSandboxTimeoutError(message: string) {
  * Thrown when general sandbox errors occur.
  */
 export class SandboxError extends Error {
-  constructor(message: any) {
+  constructor(message?: string, stackTrace?: string) {
     super(message)
     this.name = 'SandboxError'
+    if (stackTrace) {
+      this.stack = stackTrace
+    }
   }
 }
 
@@ -29,8 +32,8 @@ export class SandboxError extends Error {
  * The [unknown] error type is sometimes caused by the sandbox timeout when the request is not processed correctly.
  */
 export class TimeoutError extends SandboxError {
-  constructor(message: string) {
-    super(message)
+  constructor(message: string, stackTrace?: string) {
+    super(message, stackTrace)
     this.name = 'TimeoutError'
   }
 }
@@ -39,8 +42,8 @@ export class TimeoutError extends SandboxError {
  * Thrown when an invalid argument is provided.
  */
 export class InvalidArgumentError extends SandboxError {
-  constructor(message: string) {
-    super(message)
+  constructor(message: string, stackTrace?: string) {
+    super(message, stackTrace)
     this.name = 'InvalidArgumentError'
   }
 }
@@ -49,8 +52,8 @@ export class InvalidArgumentError extends SandboxError {
  * Thrown when there is not enough disk space.
  */
 export class NotEnoughSpaceError extends SandboxError {
-  constructor(message: string) {
-    super(message)
+  constructor(message: string, stackTrace?: string) {
+    super(message, stackTrace)
     this.name = 'NotEnoughSpaceError'
   }
 }
@@ -59,8 +62,8 @@ export class NotEnoughSpaceError extends SandboxError {
  * Thrown when a resource is not found.
  */
 export class NotFoundError extends SandboxError {
-  constructor(message: string) {
-    super(message)
+  constructor(message: string, stackTrace?: string) {
+    super(message, stackTrace)
     this.name = 'NotFoundError'
   }
 }
@@ -68,8 +71,8 @@ export class NotFoundError extends SandboxError {
 /**
  * Thrown when authentication fails.
  */
-export class AuthenticationError extends SandboxError {
-  constructor(message: any) {
+export class AuthenticationError extends Error {
+  constructor(message: string) {
     super(message)
     this.name = 'AuthenticationError'
   }
@@ -79,8 +82,8 @@ export class AuthenticationError extends SandboxError {
  * Thrown when the template uses old envd version. It isn't compatible with the new SDK.
  */
 export class TemplateError extends SandboxError {
-  constructor(message: string) {
-    super(message)
+  constructor(message: string, stackTrace?: string) {
+    super(message, stackTrace)
     this.name = 'TemplateError'
   }
 }
@@ -89,7 +92,7 @@ export class TemplateError extends SandboxError {
  * Thrown when the API rate limit is exceeded.
  */
 export class RateLimitError extends SandboxError {
-  constructor(message: any) {
+  constructor(message: string) {
     super(message)
     this.name = 'RateLimitError'
   }

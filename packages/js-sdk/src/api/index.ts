@@ -7,10 +7,25 @@ import { AuthenticationError, RateLimitError, SandboxError } from '../errors'
 import { createApiLogger } from '../logs'
 
 export function handleApiError(
-  response: FetchResponse<any, any, any>
+  response: FetchResponse<any, any, any>,
+  errorClass: new (
+    message: string,
+    stackTrace?: string
+  ) => Error = SandboxError,
+  stackTrace?: string
 ): Error | undefined {
   if (!response.error) {
     return
+  }
+
+  if (response.response.status === 401) {
+    const message = 'Unauthorized, please check your credentials.'
+    const content = response.error?.message ?? response.error
+
+    if (content) {
+      return new AuthenticationError(`${message} - ${content}`)
+    }
+    return new AuthenticationError(message)
   }
 
   if (response.response.status === 429) {
@@ -24,7 +39,7 @@ export function handleApiError(
   }
 
   const message = response.error?.message ?? response.error
-  return new SandboxError(`${response.response.status}: ${message}`)
+  return new errorClass(`${response.response.status}: ${message}`, stackTrace)
 }
 
 /**
