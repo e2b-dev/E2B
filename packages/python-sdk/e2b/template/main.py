@@ -34,20 +34,20 @@ class TemplateBuilder:
         force_upload: Optional[bool] = None,
         user: Optional[str] = None,
         mode: Optional[int] = None,
+        resolve_symlinks: Optional[bool] = None,
     ) -> "TemplateBuilder":
         if isinstance(src, str):
             # Single copy operation
             if dest is None:
                 raise ValueError("dest parameter is required when src is a string")
-            copy_items: List[CopyItem] = [
-                {
-                    "src": src,
-                    "dest": dest,
-                    "forceUpload": force_upload,
-                    "user": user,
-                    "mode": mode,
-                }
-            ]
+            copy_items: List[CopyItem] = CopyItem(
+                src=src,
+                dest=dest,
+                forceUpload=force_upload,
+                user=user,
+                mode=mode,
+                resolveSymlinks=resolve_symlinks,
+            )
         else:
             # Multiple copy operations
             copy_items = src
@@ -65,6 +65,7 @@ class TemplateBuilder:
                 args=args,
                 force=force_upload or self._template._force_next_layer,
                 forceUpload=force_upload,
+                resolveSymlinks=resolve_symlinks,
             )
             self._template._instructions.append(instruction)
         self._template._collect_stack_trace()
@@ -509,6 +510,7 @@ class TemplateBase:
                 args=instruction["args"],
                 force=instruction["force"],
                 forceUpload=instruction.get("forceUpload"),
+                resolveSymlinks=instruction.get("resolveSymlinks"),
             )
 
             if instruction["type"] == InstructionType.COPY:

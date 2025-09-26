@@ -85,11 +85,14 @@ async def upload_file(
     context_path: str,
     url: str,
     stack_trace: Optional[TracebackType] = None,
+    resolve_symlinks: bool = False,
 ):
     tar_buffer = io.BytesIO()
 
     try:
-        with tarfile.open(fileobj=tar_buffer, mode="w:gz") as tar:
+        with tarfile.open(
+            fileobj=tar_buffer, mode="w:gz", dereference=resolve_symlinks
+        ) as tar:
             src_path = os.path.join(context_path, file_name)
             files = glob(src_path, recursive=True)
             for file in files:
