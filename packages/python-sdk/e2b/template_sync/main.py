@@ -84,6 +84,7 @@ class Template(TemplateBase):
                 src = args[0] if len(args) > 0 else None
                 force_upload = file_upload.get("forceUpload")
                 files_hash = file_upload.get("filesHash", None)
+                resolve_symlinks = file_upload.get("resolveSymlinks", False)
 
                 if src is None or files_hash is None:
                     raise ValueError("Source path and files hash are required")
@@ -103,6 +104,8 @@ class Template(TemplateBase):
                         src,
                         template._template._file_context_path,
                         file_info.url,
+                        resolve_symlinks,
+                        stack_trace,
                     )
                     if on_build_logs:
                         on_build_logs(
