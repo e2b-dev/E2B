@@ -1,0 +1,283 @@
+---
+title: "CLI Commands"
+---
+
+<Callout icon="circle-exclamation" color="#ff8800" iconType="regular">You are reading a legacy (pre v1.0) document.</Callout>
+
+
+Build your sandbox with our CLI.
+
+<Note>
+You can use `--help` flag for more information about commands.
+</Note>
+
+---
+
+# Auth
+
+<br/>
+
+## `auth login`
+
+Log in to the CLI. It will save your access token in `~/.e2b` file.
+
+```bash
+e2b auth login
+```
+
+## `auth logout`
+
+Log out of the CLI. It will remove your access token from `~/.e2b` file.
+
+```
+e2b auth logout
+```
+
+## `auth configure`
+
+Configure the default team for the CLI. It will be used for all commands that require a team.
+
+```bash
+e2b auth configure
+```
+
+## `auth info`
+
+Get info about your current user.
+
+```
+e2b auth info
+```
+
+---
+
+# Templates
+
+<br/>
+
+## `template init`
+
+Creates a basic Dockerfile (`./e2b.Dockerfile`) in current directory.
+You can then run `e2b template build` to build sandbox template from this Dockerfile.
+
+```bash
+e2b template init
+```
+
+#### **Options**
+
+<Options>
+  <Option name="path" type="-p, --path">
+    Change the root directory where the command is executed to `path` directory.
+  </Option>
+</Options>
+
+
+## `template build`
+
+Builds a sandbox template defined by `./e2b.Dockerfile` or `./Dockerfile` from the root directory.
+By default, the root directory is the current working directory.
+This command also creates the `e2b.toml` config.
+
+```bash
+e2b template build
+```
+
+<Note>
+Running `e2b template build` without specifying a template with the `[template]` argument will rebuild template defined by the `e2b.toml` config.
+
+If there is no `e2b.toml` config a new template will be created.
+</Note>
+
+#### **Arguments**
+
+<ResponseField name="" type="[template]">
+  Specify the template you want to rebuild. You can use the template name or ID.
+</ResponseField>
+
+
+#### **Options**
+
+<ResponseField name="start-command" type="-c, --cmd">
+  Specify the command that should be running when a sandbox starts.
+</ResponseField>
+<ResponseField name="e2b-toml" type="--config">
+  Specify the path to the config file. By default, E2B tries to find `e2b.toml` in the root directory.
+</ResponseField>
+<ResponseField name="template-name" type="-n, --name">
+  Specify the name of the sandbox template. You can use the template name to start the sandbox in the SDK. The name must be lowercase and contain only letters, numbers, dashes, and underscores.
+</ResponseField>
+<ResponseField name="path" type="-p, --path">
+  Change the root directory where the command is executed to the `path` directory.
+</ResponseField>
+<ResponseField name="dockerfile" type="-d, --dockerfile">
+  Specify the path to Dockerfile. By default E2B tries to find `e2b.Dockerfile` or `Dockerfile` in the root directory.
+</ResponseField>
+<ResponseField name="team" type="-t, --team">
+  Specify the team that will be used for the sandbox template. You can find team ID in the team settings in the [E2B dashboard](https://e2b.dev/dashboard?tab=team).
+</ResponseField>
+<ResponseField name="cpu-count" type="--cpu-count">
+  Specify the number of CPUs that will be used to run the sandbox. The default value is 2.
+</ResponseField>
+<ResponseField name="memory-mb" type="--memory-mb">
+  Specify the amount of memory in megabytes that will be used to run the sandbox. Must be an even number. The default value is 512.
+</ResponseField>
+<ResponseField name="build-arg" type="--build-arg">
+  Specify a build argument for the Dockerfile. The format is `key=value`. You can use this option multiple times.
+</ResponseField>
+
+## `template delete`
+
+Delete the sandbox template specified by the `[template]` argument, `e2b.toml` config in the working directory, or by an interactive selection.
+By default, the root directory is the current working directory.
+
+This command also deletes the `e2b.toml` config.
+
+```bash
+e2b template delete
+```
+
+<Note>
+Running `e2b template delete` without specifying a template with the `[template]` argument will delete the template defined by the `e2b.toml` config.
+</Note>
+
+#### **Arguments**
+
+<ResponseField name="" type="[template]">
+  Specify the template you want to delete. You can use the template name or ID.
+</ResponseField>
+
+
+#### **Options**
+
+<ResponseField name="path" type="-p, --path">
+  Change the root directory where the command is executed to the `path` directory.
+</ResponseField>
+<ResponseField name="e2b-toml" type="--config">
+  Specify the path to the config file. By default, E2B tries to find `e2b.toml` in the root directory.
+</ResponseField>
+<ResponseField name="team" type="-t, --team">
+  Specify the team that will be used for the sandbox template. You can find team ID in the team settings in the [E2B dashboard](https://e2b.dev/dashboard?tab=team).
+</ResponseField>
+<ResponseField name="" type="-s, --select">
+  Interactively select sandbox templates you want to delete.
+</ResponseField>
+<ResponseField name="" type="-y, --yes">
+  Don't ask for confirmation before deleting the sandbox template.
+</ResponseField>
+
+
+## `template list`
+
+List your sandbox templates.
+
+```bash
+e2b template list
+```
+
+#### **Options**
+
+<ResponseField name="team" type="-t, --team">
+  Specify the team that will be used for the sandbox template. You can find team ID in the team settings in the [E2B dashboard](https://e2b.dev/dashboard?tab=team).
+</ResponseField>
+
+
+---
+
+# Sandboxes
+
+<br/>
+
+## `sandbox list`
+
+List your created sandboxes that are running right now.
+
+```bash
+e2b sandbox list
+```
+
+
+## `sandbox logs`
+Starts printing logs from the specified sandbox.
+If the sandbox is running new logs will be streamed to the terminal.
+
+The timestamps are in the UTC format.
+
+This command is useful if you need to debug a running sandbox or check logs from a sandbox that was already closed.
+
+```bash
+e2b sandbox logs <sandboxID>
+```
+
+<Note>
+You can use `e2b sandbox list` to get a list of running sandboxes and their IDs that can be used with `e2b sandbox logs <sandboxID>` command.
+</Note>
+
+#### **Arguments**
+
+<ResponseField name="" type="<sandboxID>">
+  Specify the ID of the sandbox you want to get logs from.
+</ResponseField>
+
+#### **Options**
+
+<ResponseField name="" type="-f, --follow">
+  Enable streaming logs until the sandbox is closed.
+</ResponseField>
+
+## `sandbox connect`
+
+Connects your terminal to a running sandbox that you created via the E2B SDK.
+This command is useful if you need to debug a running sandbox.
+
+This command works similar to the `docker exec -it <container> bash` command in Docker.
+
+```bash
+e2b sandbox connect <sandboxID>
+```
+
+<Note>
+You can use `e2b sandbox list` to get a list of running sandboxes and their IDs that can be used with `e2b sandbox connect <sandboxID>` command.
+</Note>
+
+#### **Arguments**
+
+<ResponseField name="" type="<sandboxID>">
+  Specify the ID of a running sandbox you want to connect to.
+</ResponseField>
+
+## `sandbox create`
+
+Spawns a sandbox and connects your terminal to the sandbox.
+This command can be used to debug your sandbox template.
+
+This command works similar to the `docker run -it <image> bash` command in Docker.
+
+```bash
+e2b sandbox create
+```
+
+<Note>
+Running `e2b sandbox create` without specifying a template with the `[template]` argument will create sandbox defined by the `e2b.toml` config.
+</Note>
+
+#### **Arguments**
+
+<ResponseField name="" type="[template]">
+  Specify the template you want to create sandbox from. You can use the template name or ID.
+</ResponseField>
+
+
+#### **Options**
+
+<ResponseField name="e2b-toml" type="--config">
+  Specify the path to the config file. By default, E2B tries to find `e2b.toml` in the root directory.
+</ResponseField>
+
+## `sandbox kill`
+
+Immediately kill a running sandbox.
+
+```bash
+e2b sandbox kill <sandboxID>
+```

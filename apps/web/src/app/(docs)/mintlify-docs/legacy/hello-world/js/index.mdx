@@ -1,0 +1,308 @@
+---
+title: "Hello World.ts"
+---
+
+<Callout icon="circle-exclamation" color="#ff8800" iconType="regular">You are reading a legacy (pre v1.0) document.</Callout>
+
+
+This JavaScript guide will show you the basics of E2B:
+- Connect the code interpreter to an LLM
+- Prompt the LLM to generate the Python code
+- Execute the AI-generated Python code in a secure E2B sandbox
+
+### Get full code
+Check out the [full code in our cookbook](https://github.com/e2b-dev/e2b-cookbook/tree/main/examples/hello-world-js).
+
+### Overview
+1. [Install Code Interpreter SDK](#1-install-code-interpreter-sdk)
+1. [Prepare prompt and tools for LLM](#2-prepare-prompt-and-tools-for-llm)
+1. [Prepare code interpreting](#3-prepare-code-interpreting)
+1. [Call LLM and parse response with tools](#4-call-llm-and-parse-response-with-tools)
+1. [Create code interpreter and run everything](##5-create-code-interpreter-and-run-everything)
+1. [Save generated chart](#6-save-generated-chart)
+
+
+## 1. Install Code Interpreter SDK
+
+The Code Interpreter SDK allows you to run AI-generated code in a secure small VM - **E2B sandbox** - made for AI code execution.
+Inside the sandbox is a Jupyter server running that you can control from our SDK through the `notebook.execCell()` method.
+
+Check out the [SDK's repository on GitHub](https://github.com/e2b-dev/code-interpreter).
+
+<CodeGroup isRunnable={false}>
+```bash JavaScript & TypeScript
+npm init -y \
+&& npm i --save-dev typescript tsx @types/node \
+&& npm i @e2b/code-interpreter
+```
+</CodeGroup>
+
+Get your E2B API key [here](/legacy/getting-started/api-key) and save it to `.env` in your root directory.
+<CodeGroup isFileName title=".env" isRunnable={false}>
+```bash .env
+E2B_API_KEY="e2b-api-key"
+```
+</CodeGroup>
+
+## 2. Prepare prompt and tools for LLM
+We'll be using Anthropic's [Claude 3 Opus](https://www.anthropic.com/news/claude-3-family) model but E2B works with any LLM so feel free to pick any you want!
+
+<Note>
+Usually, all you need from the model is just support for tool use. If the LLM doesn't support tool use, you can ask the LLM to respond with Markdown or XML and parse the LLM's output on your own. Then just pass the parsed code from code blocks to the code interpreter.
+</Note>
+
+Create the `model.ts` file and paste the following code.
+<CodeGroup isFileName title="model.ts" isRunnable={false}>
+```ts model.ts
+import { Anthropic } from '@anthropic-ai/sdk'
+
+export const MODEL_NAME = 'claude-3-opus-20240229'
+
+export const SYSTEM_PROMPT = `
+## your job & context
+you are a python data scientist. you are given tasks to complete and you run python code to solve them.
+- the python code runs in jupyter notebook.
+- every time you call \`execute_python\` tool, the python code is executed in a separate cell. it's okay to multiple calls to \`execute_python\`.
+- display visualizations using matplotlib or any other visualization library directly in the notebook. don't worry about saving the visualizations to a file.
+- you have access to the internet and can make api requests.
+- you also have access to the filesystem and can read/write files.
+- you can install any pip package (if it exists) if you need to but the usual packages for data analysis are already preinstalled.
+- you can run any python code you want, everything is running in a secure sandbox environment.
+`
+
+export const tools: Anthropic.Tool[] = [
+  {
+    name: 'execute_python',
+    description: 'Execute python code in a Jupyter notebook cell and returns any result, stdout, stderr, display_data, and error.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        code: {
+          type: 'string',
+          description: 'The python code to execute in a single cell.'
+        }
+      },
+      required: ['code']
+    }
+  }
+]
+
+```
+</CodeGroup>
+
+This defines our system prompt and the `tools` dictionary with available tools for the LLM - namely the `"execute_python"` tool.
+A little bit later, we'll connect `"execute_python"` to the E2B's code interpretrer.
+
+
+## 3. Prepare code interpreting
+We'll create a new function called `codeInterpret()` in a separate file `codeInterpreter.ts`.
+
+<CodeGroup isFileName title="codeInterpreter.ts" isRunnable={false}>
+```ts codeInterpreter.ts
+import { CodeInterpreter } from '@e2b/code-interpreter'
+
+export async function codeInterpret(codeInterpreter: CodeInterpreter, code: string) {
+  console.log(`\n${'='.repeat(50)}\n> Running following AI-generated code:\n${code}\n${'='.repeat(50)}`);
+
+  const exec = await codeInterpreter.notebook.execCell(
+    code,
+    {
+      // You can stream logs from the code interpreter
+      // onStderr: (stderr: string) => console.log("\n[Code Interpreter stdout]", stderr),
+      // onStdout: (stdout: string) => console.log("\n[Code Interpreter stderr]", stdout),
+      //
+      // You can also stream additional results like charts, images, etc.
+      // onResult: ...
+    }
+  )
+
+  if (exec.error) {
+    console.log('[Code Interpreter error]', exec.error) // Runtime error
+    return undefined
+  }
+
+  return exec
+}
+```
+</CodeGroup>
+
+This function takes the `CodeInterpreter` object from our SDK, and `code` as paramaters.
+The `code` parameter is the code generated by the LLM.
+
+Inside the function, we call the `codeInterpreter.notebook.execCell()` method. The `execCell()` takes `code` argument, and executes this `code` inside E2B sandbox.
+
+## 4. Call LLM and parse response with tools
+We're using Claude 3 Opus. Get your [Anthropic API key](https://console.anthropic.com/), save it to `.env` file, and install the [Anthropic SDK](https://docs.anthropic.com/claude/reference/client-sdks).
+
+<CodeGroup isFileName title=".env" isRunnable={false}>
+```bash .env
+ANTHROPIC_API_KEY="anthropic-api-key"
+```
+</CodeGroup>
+
+<CodeGroup isRunnable={false}>
+```bash npm
+npm i @anthropic-ai/sdk@0.28.0
+```
+</CodeGroup>
+
+Now we'll put everything together.
+Create the `index.ts` file, import dependencies, and create the `chat()` function that will do the LLM calling and tool parsing.
+
+<CodeGroup isFileName title="index.ts" isRunnable={false}>
+```ts index.ts
+import * as fs from 'fs'
+
+import 'dotenv/config'
+import { CodeInterpreter, Execution } from '@e2b/code-interpreter'
+import Anthropic from '@anthropic-ai/sdk'
+
+import {
+  MODEL_NAME,
+  SYSTEM_PROMPT,
+  tools,
+} from './model'
+import { codeInterpret } from './codeInterpreter'
+
+const anthropic = new Anthropic()
+
+async function chat(codeInterpreter: CodeInterpreter, userMessage: string): Promise<Execution | undefined> {
+  console.log('Waiting for Claude...')
+
+  const msg = await anthropic.messages.create({
+    model: MODEL_NAME,
+    system: SYSTEM_PROMPT,
+    max_tokens: 4096,
+    messages: [{role: 'user', content: userMessage}],
+    tools,
+  })
+
+  console.log(`\n${'='.repeat(50)}\nModel response: ${msg.content}\n${'='.repeat(50)}`)
+  console.log(msg)
+
+  if (msg.stop_reason === 'tool_use') {
+    const toolBlock = msg.content.find((block) => block.type === 'tool_use');
+    const toolName = toolBlock.name
+    const toolInput = toolBlock.input
+
+    console.log(`\n${'='.repeat(50)}\nUsing tool: ${toolName}\n${'='.repeat(50)}`);
+
+    if (toolName === 'execute_python') {
+      const code = toolInput.code
+      return codeInterpret(codeInterpreter, code)
+    }
+    return undefined
+  }
+}
+```
+</CodeGroup>
+
+## 5. Create code interpreter and run everything
+Now we put all together, and run our program. In the end of `index.ts` add following code prompting the LLM to visualize a distribution of height of men and print the median.
+
+<CodeGroup isFileName title="index.ts" isRunnable={false}>
+```ts index.ts
+async function run() {
+  const userMessage = 'Visualize a distribution of height of men based on the latest data you know. Also print the median value.'
+
+  const codeInterpreter = await CodeInterpreter.create()
+
+  const codeOutput = await chat(codeInterpreter, userMessage)
+  if (!codeOutput) {
+    console.log('No code output')
+    return
+  }
+
+  const logs = codeOutput.logs
+  console.log(logs)
+
+  if (codeOutput.results.length == 0) {
+    console.log('No results')
+    return
+  }
+
+  const firstResult = codeOutput.results[0]
+  // Print description of the first rich result
+  console.log(firstResult.text)
+
+  await codeInterpreter.close()
+}
+
+run()
+```
+</CodeGroup>
+
+After running your code with the following command
+<CodeGroup isRunnable={false}>
+```bash bash
+$ tsx index.ts
+```
+</CodeGroup>
+
+you should see similar results to this:
+
+```sh
+stdout=['The median male height is 175.5 cm\n'] stderr=[]
+<Figure size 800x400 with 1 Axes>
+```
+
+We got our median in the logs (`stdout`, and `stderr`) but we also something intering in `firstResult`.
+```sh
+<Figure size 800x400 with 1 Axes>
+```
+
+## 6. Save generated chart
+
+This looks like a plot. Let's save it to a file. Update the `run()` function like this,
+and run the code again with `tsx index.ts` in your terminal.
+<CodeGroup isFileName title="index.ts" isRunnable={false}>
+```ts index.ts
+async function run() {
+  const userMessage = 'Visualize a distribution of height of men based on the latest data you know. Also print the median value.'
+
+  const codeInterpreter = await CodeInterpreter.create()
+
+  const codeOutput = await chat(codeInterpreter, userMessage)
+  if (!codeOutput) {
+    console.log('No code output')
+    return
+  }
+
+  const logs = codeOutput.logs
+  console.log(logs)
+
+  if (codeOutput.results.length == 0) {
+    console.log('No results')
+    return
+  }
+
+  const firstResult = codeOutput.results[0]
+  // Print description of the first rich result
+  console.log(firstResult.text)
+
+  // If we received a chart in PNG form, we can visualize it
+  if (firstResult.png) {
+      // Decode the base64 encoded PNG data
+      const pngData = Buffer.from(firstResult.png, 'base64');
+
+      // Generate a unique filename for the PNG
+      const filename = 'chart.png';
+
+      // Save the decoded PNG data to a file
+      fs.writeFileSync(filename, pngData);
+
+      console.log(`Saved chart to ${filename}`);
+  }
+
+  await codeInterpreter.close()
+}
+
+run()
+```
+</CodeGroup>
+
+The chart got saved in the `chart.png` file and it should look similar to this:
+
+<Frame>
+    <img src="/images/hello-world-chart.png" />
+</Frame>
