@@ -22,7 +22,7 @@ import { CommandResult, CommandHandle } from './commandHandle'
 import { handleProcessStartEvent } from '../../envd/api'
 import { compareVersions } from 'compare-versions'
 import { ENVD_COMMANDS_STDIN } from '../../envd/versions'
-import { SandboxError } from "../../errors";
+import { SandboxError } from '../../errors'
 export { Pty } from './pty'
 
 /**
