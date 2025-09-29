@@ -1,4 +1,5 @@
 import { ApiClient } from '../api'
+import { ConnectionConfig } from '../connectionConfig'
 import { runtime } from '../utils'
 import {
   getFileUploadLink,
@@ -8,7 +9,9 @@ import {
   uploadFile,
   waitForBuildFinish,
 } from './buildApi'
+import { STACK_TRACE_DEPTH } from './consts'
 import { parseDockerfile } from './dockerfileParser'
+import { ReadyCmd } from './readycmd'
 import {
   CopyItem,
   Instruction,
@@ -27,9 +30,6 @@ import {
   readDockerignore,
   readGCPServiceAccountJSON,
 } from './utils'
-import { ConnectionConfig } from '../connectionConfig'
-import { ReadyCmd } from './readycmd'
-import { STACK_TRACE_DEPTH } from './consts'
 
 export { type TemplateBuilder } from './types'
 
@@ -381,14 +381,17 @@ export class TemplateBase
     return this.runInNewStackTraceContext(() => this.runCmd(args.join(' ')))
   }
 
-  npmInstall(packages?: string | string[], g?: boolean): TemplateBuilder {
+  npmInstall(
+    packages?: string | string[],
+    options?: { g?: boolean }
+  ): TemplateBuilder {
     const args = ['npm', 'install']
     const packageList = packages
       ? Array.isArray(packages)
         ? packages
         : [packages]
       : undefined
-    if (g) {
+    if (options?.g) {
       args.push('-g')
     }
     if (packageList) {

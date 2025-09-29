@@ -116,7 +116,10 @@ export interface TemplateBuilder {
 
   pipInstall(packages?: string | string[]): TemplateBuilder
 
-  npmInstall(packages?: string | string[], g?: boolean): TemplateBuilder
+  npmInstall(
+    packages?: string | string[],
+    options?: { g?: boolean }
+  ): TemplateBuilder
 
   aptInstall(packages: string | string[]): TemplateBuilder
 
