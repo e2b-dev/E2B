@@ -6,7 +6,7 @@ from template import template
 async def main():
     await AsyncTemplate.build(
         template,
-        alias="Complex Python App-dev",
+        alias="complex-python-app-dev",
     )
 
 
