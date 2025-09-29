@@ -378,7 +378,7 @@ export class TemplateBase
       args.push('.')
     }
 
-    return this.runInNewStackTraceContext(() => this.runCmd(args))
+    return this.runInNewStackTraceContext(() => this.runCmd(args.join(' ')))
   }
 
   npmInstall(packages?: string | string[], g?: boolean): TemplateBuilder {
@@ -388,14 +388,14 @@ export class TemplateBase
         ? packages
         : [packages]
       : undefined
-    if (packageList) {
-      args.push(...packageList)
-    }
     if (g) {
       args.push('-g')
     }
+    if (packageList) {
+      args.push(...packageList)
+    }
 
-    return this.runInNewStackTraceContext(() => this.runCmd(args))
+    return this.runInNewStackTraceContext(() => this.runCmd(args.join(' ')))
   }
 
   aptInstall(packages: string | string[]): TemplateBuilder {
