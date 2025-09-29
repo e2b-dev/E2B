@@ -73,6 +73,7 @@ def build():
             cpu_count=1,
             memory_mb=1024,
         )
+
     return _build
 
 
@@ -85,6 +86,7 @@ def async_build():
             cpu_count=1,
             memory_mb=1024,
         )
+
     return _async_build
 
 
