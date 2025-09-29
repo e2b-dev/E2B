@@ -40,14 +40,14 @@ class TemplateBuilder:
             # Single copy operation
             if dest is None:
                 raise ValueError("dest parameter is required when src is a string")
-            copy_items: List[CopyItem] = CopyItem(
+            copy_items: List[CopyItem] = [CopyItem(
                 src=src,
                 dest=dest,
                 forceUpload=force_upload,
                 user=user,
                 mode=mode,
                 resolveSymlinks=resolve_symlinks,
-            )
+            )]
         else:
             # Multiple copy operations
             copy_items = src
