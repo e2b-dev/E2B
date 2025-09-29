@@ -178,10 +178,10 @@ class TemplateBuilder:
             packages = [packages]
 
         args = ["npm", "install"]
-        if packages:
-            args.extend(packages)
         if g:
             args.append("-g")
+        if packages:
+            args.extend(packages)
 
         return self._template._run_in_new_stack_trace_context(
             lambda: self.run_cmd(" ".join(args))
