@@ -20,6 +20,9 @@ import {
 import { authenticationHeader, handleRpcError } from '../../envd/rpc'
 import { CommandResult, CommandHandle } from './commandHandle'
 import { handleProcessStartEvent } from '../../envd/api'
+import { compareVersions } from 'compare-versions'
+import { ENVD_COMMANDS_STDIN } from '../../envd/versions'
+import { SandboxError } from '../../errors'
 export { Pty } from './pty'
 
 /**
@@ -65,6 +68,11 @@ export interface CommandStartOpts extends CommandRequestOpts {
    * Callback for command stderr output.
    */
   onStderr?: (data: string) => void | Promise<void>
+  /**
+   * If true, command stdin is kept open and you can send data to it using {@link Commands.sendStdin} or {@link CommandHandle.sendStdin}.
+   * @default false
+   */
+  stdin: boolean
   /**
    * Timeout for the command in **milliseconds**.
    *
@@ -364,6 +372,15 @@ export class Commands {
         }, requestTimeoutMs)
       : undefined
 
+    if (
+      opts?.stdin === false &&
+      compareVersions(this.envdVersion, ENVD_COMMANDS_STDIN) < 0
+    ) {
+      throw new SandboxError(
+        `Sandbox envd version ${this.envdVersion} can't specify stdin, it's always turned on. Please rebuild your template if you need this feature.`
+      )
+    }
+
     const events = this.rpc.start(
       {
         process: {
@@ -372,6 +389,7 @@ export class Commands {
           envs: opts?.envs,
           args: ['-l', '-c', cmd],
         },
+        stdin: opts?.stdin || false,
       },
       {
         headers: {

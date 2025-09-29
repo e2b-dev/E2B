@@ -94,18 +94,21 @@ class ListResponse(_message.Message):
     ) -> None: ...
 
 class StartRequest(_message.Message):
-    __slots__ = ("process", "pty", "tag")
+    __slots__ = ("process", "pty", "tag", "stdin")
     PROCESS_FIELD_NUMBER: _ClassVar[int]
     PTY_FIELD_NUMBER: _ClassVar[int]
     TAG_FIELD_NUMBER: _ClassVar[int]
+    STDIN_FIELD_NUMBER: _ClassVar[int]
     process: ProcessConfig
     pty: PTY
     tag: str
+    stdin: bool
     def __init__(
         self,
         process: _Optional[_Union[ProcessConfig, _Mapping]] = ...,
         pty: _Optional[_Union[PTY, _Mapping]] = ...,
         tag: _Optional[str] = ...,
+        stdin: bool = ...,
     ) -> None: ...
 
 class UpdateRequest(_message.Message):
