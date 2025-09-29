@@ -282,7 +282,7 @@ export class TemplateBase
         args,
         force: item.forceUpload ?? this.forceNextLayer,
         forceUpload: item.forceUpload,
-        resolveSymlinks: item.resolveSymlinks ?? false,
+        resolveSymlinks: item.resolveSymlinks,
       })
     }
 
@@ -624,7 +624,7 @@ export class TemplateBase
               fileName: src,
               fileContextPath: this.fileContextPath,
               url,
-              resolveSymlinks: instruction.resolveSymlinks ?? false,
+              resolveSymlinks: instruction.resolveSymlinks,
             },
             stackTrace
           )
@@ -704,7 +704,7 @@ export class TemplateBase
                 ? []
                 : readDockerignore(this.fileContextPath)),
             ],
-            instruction.resolveSymlinks ?? false,
+            instruction.resolveSymlinks,
             stackTrace
           ),
         }

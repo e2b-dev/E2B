@@ -91,7 +91,7 @@ export async function uploadFile(
     fileName: string
     fileContextPath: string
     url: string
-    resolveSymlinks: boolean
+    resolveSymlinks?: boolean
   },
   stackTrace?: string
 ) {

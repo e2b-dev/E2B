@@ -31,7 +31,7 @@ def calculate_files_hash(
     dest: str,
     context_path: str,
     ignore_patterns: Optional[List[str]] = None,
-    resolve_symlinks: Optional[bool] = False,
+    resolve_symlinks: Optional[bool] = None,
     stack_trace: Optional[TracebackType] = None,
 ) -> str:
     src_path = os.path.join(context_path, src)
