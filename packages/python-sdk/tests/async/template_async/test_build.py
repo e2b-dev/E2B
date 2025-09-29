@@ -69,7 +69,12 @@ async def test_build_template_with_resolve_symlinks(async_build, setup_test_fold
     template = (
         AsyncTemplate()
         .from_image("ubuntu:22.04")
-        .copy("folder/symlink.txt", "folder/symlink.txt", force_upload=True, resolve_symlinks=True)
+        .copy(
+            "folder/symlink.txt",
+            "folder/symlink.txt",
+            force_upload=True,
+            resolve_symlinks=True,
+        )
         .run_cmd("cat folder/symlink.txt")
     )
 
