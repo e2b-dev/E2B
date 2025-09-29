@@ -704,6 +704,7 @@ export class TemplateBase
                 ? []
                 : readDockerignore(this.fileContextPath)),
             ],
+            instruction.resolveSymlinks ?? false,
             stackTrace
           ),
         }

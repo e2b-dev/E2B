@@ -31,6 +31,7 @@ def calculate_files_hash(
     dest: str,
     context_path: str,
     ignore_patterns: Optional[List[str]] = None,
+    resolve_symlinks: Optional[bool] = False,
     stack_trace: Optional[TracebackType] = None,
 ) -> str:
     src_path = os.path.join(context_path, src)
@@ -62,7 +63,7 @@ def calculate_files_hash(
         hash_obj.update(relative_path.encode())
 
         # Add stat information to hash calculation
-        if os.path.islink(file):
+        if os.path.islink(file) and not resolve_symlinks:
             stat_info = os.lstat(file)
         else:
             stat_info = os.stat(file)
@@ -74,7 +75,7 @@ def calculate_files_hash(
         hash_obj.update(str(stat_info.st_mtime).encode())
 
         # Add file content to hash calculation
-        if os.path.islink(file):
+        if os.path.islink(file) and not resolve_symlinks:
             symlink_content = os.readlink(file)
             hash_obj.update(symlink_content.encode())
         else:

@@ -22,6 +22,7 @@ export async function calculateFilesHash(
   dest: string,
   contextPath: string,
   ignorePatterns?: string[],
+  resolveSymlinks?: boolean,
   stackTrace?: string
 ): Promise<string> {
   const { glob } = await dynamicGlob()
@@ -55,7 +56,7 @@ export async function calculateFilesHash(
 
     // Add stat information to hash calculation
     let stats
-    if (file.isSymbolicLink()) {
+    if (file.isSymbolicLink() && !resolveSymlinks) {
       stats = fs.lstatSync(file.fullpath())
     } else {
       stats = fs.statSync(file.fullpath())
@@ -68,7 +69,7 @@ export async function calculateFilesHash(
     hash.update(stats.mtimeMs.toString())
 
     // Add file content to hash calculation unless it's a symlink
-    if (file.isSymbolicLink()) {
+    if (file.isSymbolicLink() && !resolveSymlinks) {
       const content = fs.readlinkSync(file.fullpath())
       hash.update(content)
     } else {
