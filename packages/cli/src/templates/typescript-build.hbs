@@ -1,12 +1,16 @@
 import { Template } from 'e2b'
 import { template } from './template'
 
-await Template.build(template, {
-  alias: '{{alias}}',
-{{#if cpuCount}}
-  cpuCount: {{cpuCount}},
-{{/if}}
-{{#if memoryMB}}
-  memoryMB: {{memoryMB}},
-{{/if}}
-})
+async function main() {
+  await Template.build(template, {
+    alias: '{{alias}}',
+    {{#if cpuCount}}
+    cpuCount: {{cpuCount}},
+    {{/if}}
+    {{#if memoryMB}}
+    memoryMB: {{memoryMB}},
+    {{/if}}
+  });
+}
+
+main().catch(console.error);

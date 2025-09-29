@@ -1,6 +1,10 @@
 import { Template } from 'e2b'
 import { template } from './template'
 
-await Template.build(template, {
-  alias: 'env-test',
-})
+async function main() {
+  await Template.build(template, {
+    alias: 'env-test',
+  });
+}
+
+main().catch(console.error);

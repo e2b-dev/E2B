@@ -2,13 +2,14 @@ from e2b import Template
 from template import template
 
 
-Template.build(
-    template,
-    alias="{{alias}}",
-{{#if cpuCount}}
-    cpu_count={{cpuCount}},
-{{/if}}
-{{#if memoryMB}}
-    memory_mb={{memoryMB}},
-{{/if}}
-)
+if __name__ == "__main__":
+    Template.build(
+        template,
+        alias="{{alias}}",
+    {{#if cpuCount}}
+        cpu_count={{cpuCount}},
+    {{/if}}
+    {{#if memoryMB}}
+        memory_mb={{memoryMB}},
+    {{/if}}
+    )

@@ -2,7 +2,8 @@ from e2b import Template
 from template import template
 
 
-Template.build(
-    template,
-    alias="Complex Python App-dev",
-)
+if __name__ == "__main__":
+    Template.build(
+        template,
+        alias="complex-python-app-dev",
+    )

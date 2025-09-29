@@ -1,6 +1,10 @@
 import { Template } from 'e2b'
 import { template } from './template'
 
-await Template.build(template, {
-  alias: 'multi-stage-dev',
-})
+async function main() {
+  await Template.build(template, {
+    alias: 'multi-stage-dev',
+  });
+}
+
+main().catch(console.error);
