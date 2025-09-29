@@ -54,10 +54,6 @@ def calculate_files_hash(
         raise ValueError(f"No files found in {src_path}").with_traceback(stack_trace)
 
     for file in files:
-        if os.path.isdir(file):
-            # skip folders
-            continue
-
         # Add relative path to hash calculation
         relative_path = os.path.relpath(file, context_path)
         hash_obj.update(relative_path.encode())
@@ -78,7 +74,7 @@ def calculate_files_hash(
         if os.path.islink(file) and not resolve_symlinks:
             symlink_content = os.readlink(file)
             hash_obj.update(symlink_content.encode())
-        else:
+        elif not os.path.isdir(file):
             with open(file, "rb") as f:
                 hash_obj.update(f.read())
 

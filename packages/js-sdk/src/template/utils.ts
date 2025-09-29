@@ -46,10 +46,6 @@ export async function calculateFilesHash(
   }
 
   for (const file of files) {
-    if (file.isDirectory()) {
-      continue
-    }
-
     // Add relative path to hash calculation
     const relativePath = path.relative(contextPath, file.fullpath())
     hash.update(relativePath)
@@ -72,7 +68,7 @@ export async function calculateFilesHash(
     if (file.isSymbolicLink() && !resolveSymlinks) {
       const content = fs.readlinkSync(file.fullpath())
       hash.update(content)
-    } else {
+    } else if (!stats.isDirectory()) {
       const content = fs.readFileSync(file.fullpath())
       hash.update(new Uint8Array(content))
     }
