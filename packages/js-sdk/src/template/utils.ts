@@ -2,7 +2,7 @@ import crypto from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
 import { dynamicGlob, dynamicTar } from '../utils'
-import { BASE_STEP_NAME, FINALIZE_STEP_NAME } from './consts'
+import { BASE_STEP_NAME, FINALIZE_STEP_NAME, RESOLVE_SYMLINKS } from './consts'
 
 export function readDockerignore(contextPath: string): string[] {
   const dockerignorePath = path.join(contextPath, '.dockerignore')
@@ -129,7 +129,7 @@ export function padOctal(mode: number): string {
 export async function tarFileStream(
   fileName: string,
   fileContextPath: string,
-  resolveSymlinks?: boolean
+  resolveSymlinks: boolean = RESOLVE_SYMLINKS
 ) {
   const { globSync } = await dynamicGlob()
   const { create } = await dynamicTar()
@@ -148,7 +148,7 @@ export async function tarFileStream(
 export async function tarFileStreamUpload(
   fileName: string,
   fileContextPath: string,
-  resolveSymlinks?: boolean
+  resolveSymlinks: boolean
 ) {
   // First pass: calculate the compressed size without buffering
   const sizeCalculationStream = await tarFileStream(

@@ -534,7 +534,7 @@ class TemplateBase:
                         *self._ignore_file_paths,
                         *read_dockerignore(self._file_context_path),
                     ],
-                    instruction.get("resolveSymlinks", False),
+                    instruction.get("resolveSymlinks"),
                     stack_trace,
                 )
 

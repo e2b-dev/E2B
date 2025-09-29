@@ -25,6 +25,7 @@ from e2b.api.client.models import (
 )
 from e2b.api import handle_api_exception
 from e2b.template.exceptions import BuildException, FileUploadException
+from e2b.template.consts import RESOLVE_SYMLINKS
 from e2b.template.utils import get_build_step_index
 
 
@@ -84,7 +85,7 @@ def upload_file(
     file_name: str,
     context_path: str,
     url: str,
-    resolve_symlinks: Optional[bool] = None,
+    resolve_symlinks: Optional[bool] = RESOLVE_SYMLINKS,
     stack_trace: Optional[TracebackType] = None,
 ):
     tar_buffer = io.BytesIO()
