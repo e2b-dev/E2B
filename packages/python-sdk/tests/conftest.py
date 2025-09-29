@@ -65,23 +65,27 @@ async def async_sandbox(template, debug, sandbox_test_id):
 
 
 @pytest.fixture
-def build(template: TemplateClass):
-    return Template.build(
-        template,
-        alias=str(uuid4()),
-        cpu_count=1,
-        memory_mb=1024,
-    )
+def build():
+    def _build(template: TemplateClass):
+        return Template.build(
+            template,
+            alias=str(uuid4()),
+            cpu_count=1,
+            memory_mb=1024,
+        )
+    return _build
 
 
 @pytest_asyncio.fixture
-def async_build(template: TemplateClass):
-    return AsyncTemplate.build(
-        template,
-        alias=str(uuid4()),
-        cpu_count=1,
-        memory_mb=1024,
-    )
+def async_build():
+    async def _async_build(template: TemplateClass):
+        return await AsyncTemplate.build(
+            template,
+            alias=str(uuid4()),
+            cpu_count=1,
+            memory_mb=1024,
+        )
+    return _async_build
 
 
 @pytest.fixture
