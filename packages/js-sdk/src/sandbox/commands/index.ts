@@ -22,6 +22,7 @@ import { CommandResult, CommandHandle } from './commandHandle'
 import { handleProcessStartEvent } from '../../envd/api'
 import { compareVersions } from 'compare-versions'
 import { ENVD_COMMANDS_STDIN } from '../../envd/versions'
+import { SandboxError } from "../../errors";
 export { Pty } from './pty'
 
 /**
@@ -375,7 +376,7 @@ export class Commands {
       opts?.stdin === false &&
       compareVersions(this.envdVersion, ENVD_COMMANDS_STDIN) < 0
     ) {
-      throw new Error(
+      throw new SandboxError(
         `Sandbox envd version ${this.envdVersion} can't specify stdin, it's always turned on. Please rebuild your template if you need this feature.`
       )
     }
