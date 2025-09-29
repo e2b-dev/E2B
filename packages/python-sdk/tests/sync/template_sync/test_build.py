@@ -1,13 +1,12 @@
 import pytest
 import os
-from uuid import uuid4
 import shutil
 
 from e2b import Template, wait_for_timeout
 
 
 @pytest.mark.skip_debug()
-def test_build():
+def test_build(build):
     test_dir = os.path.dirname(os.path.abspath(__file__))
     folder_path = os.path.join(test_dir, "folder")
 
@@ -31,11 +30,6 @@ def test_build():
         .set_start_cmd("echo 'Hello, world!'", wait_for_timeout(10_000))
     )
 
-    Template.build(
-        template,
-        alias=str(uuid4()),
-        cpu_count=1,
-        memory_mb=1024,
-    )
+    build(template)
 
     shutil.rmtree(folder_path)

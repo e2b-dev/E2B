@@ -1,13 +1,12 @@
 import pytest
 import os
-from uuid import uuid4
 import shutil
 
 from e2b import AsyncTemplate, wait_for_timeout
 
 
 @pytest.mark.skip_debug()
-async def test_build():
+async def test_build(async_build):
     test_dir = os.path.dirname(os.path.abspath(__file__))
     folder_path = os.path.join(test_dir, "folder")
 
@@ -31,11 +30,6 @@ async def test_build():
         .set_start_cmd("echo 'Hello, world!'", wait_for_timeout(10_000))
     )
 
-    await AsyncTemplate.build(
-        template,
-        alias=str(uuid4()),
-        cpu_count=1,
-        memory_mb=1024,
-    )
+    await async_build(template)
 
     shutil.rmtree(folder_path)

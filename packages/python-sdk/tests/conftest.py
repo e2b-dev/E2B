@@ -4,6 +4,7 @@ import uuid
 import pytest
 import pytest_asyncio
 import os
+from uuid import uuid4
 
 from logging import warning
 
@@ -13,6 +14,9 @@ from e2b import (
     AsyncCommandHandle,
     CommandExitException,
     CommandHandle,
+    AsyncTemplate,
+    Template,
+    TemplateClass,
 )
 
 
@@ -58,6 +62,26 @@ async def async_sandbox(template, debug, sandbox_test_id):
                 warning(
                     "Failed to kill sandbox — this is expected if the test runs with local envd."
                 )
+
+
+@pytest.fixture
+def build(template: TemplateClass):
+    return Template.build(
+        template,
+        alias=str(uuid4()),
+        cpu_count=1,
+        memory_mb=1024,
+    )
+
+
+@pytest_asyncio.fixture
+def async_build(template: TemplateClass):
+    return AsyncTemplate.build(
+        template,
+        alias=str(uuid4()),
+        cpu_count=1,
+        memory_mb=1024,
+    )
 
 
 @pytest.fixture
