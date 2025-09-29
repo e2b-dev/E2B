@@ -104,8 +104,8 @@ class AsyncTemplate(TemplateBase):
                         src,
                         template._template._file_context_path,
                         file_info.url,
-                        stack_trace,
                         resolve_symlinks,
+                        stack_trace,
                     )
                     if on_build_logs:
                         on_build_logs(
