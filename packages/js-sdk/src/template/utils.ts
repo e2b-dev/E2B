@@ -49,30 +49,41 @@ export async function calculateFilesHash(
     throw error
   }
 
-  for (const file of files) {
-    // Add relative path to hash calculation
-    const relativePath = path.relative(contextPath, file.fullpath())
-    hash.update(relativePath)
-
-    // Add stat information to hash calculation
-    let stats
-    if (file.isSymbolicLink() && !resolveSymlinks) {
-      stats = fs.lstatSync(file.fullpath())
-    } else {
-      stats = fs.statSync(file.fullpath())
-    }
-
+  // Hash stats
+  const hashStats = (stats: fs.Stats) => {
     hash.update(stats.mode.toString())
     hash.update(stats.uid.toString())
     hash.update(stats.gid.toString())
     hash.update(stats.size.toString())
     hash.update(stats.mtimeMs.toString())
+  }
 
-    // Add file content to hash calculation unless it's a symlink
-    if (file.isSymbolicLink() && !resolveSymlinks) {
-      const content = fs.readlinkSync(file.fullpath())
-      hash.update(content)
-    } else if (!stats.isDirectory()) {
+  for (const file of files) {
+    // Add a relative path to hash calculation
+    const relativePath = path.relative(contextPath, file.fullpath())
+    hash.update(relativePath)
+
+    // Add stat information to hash calculation
+    if (file.isSymbolicLink()) {
+      const stats = fs.lstatSync(file.fullpath())
+      const shouldFollow =
+        resolveSymlinks && (stats.isFile() || stats.isDirectory())
+
+      if (!shouldFollow) {
+        hashStats(stats)
+
+        const content = fs.readlinkSync(file.fullpath())
+        hash.update(content)
+
+        continue
+      }
+    }
+
+    const stats = fs.statSync(file.fullpath())
+
+    hashStats(stats)
+
+    if (stats.isFile()) {
       const content = fs.readFileSync(file.fullpath())
       hash.update(new Uint8Array(content))
     }

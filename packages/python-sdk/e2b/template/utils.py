@@ -1,6 +1,7 @@
 import hashlib
 import os
 import json
+import stat
 from glob import glob
 import fnmatch
 import re
@@ -56,28 +57,36 @@ def calculate_files_hash(
     if len(files) == 0:
         raise ValueError(f"No files found in {src_path}").with_traceback(stack_trace)
 
-    for file in files:
-        # Add relative path to hash calculation
-        relative_path = os.path.relpath(file, context_path)
-        hash_obj.update(relative_path.encode())
-
-        # Add stat information to hash calculation
-        if os.path.islink(file) and not resolve_symlinks:
-            stat_info = os.lstat(file)
-        else:
-            stat_info = os.stat(file)
-
+    def hash_stats(stat_info: os.stat_result) -> None:
         hash_obj.update(str(stat_info.st_mode).encode())
         hash_obj.update(str(stat_info.st_uid).encode())
         hash_obj.update(str(stat_info.st_gid).encode())
         hash_obj.update(str(stat_info.st_size).encode())
         hash_obj.update(str(stat_info.st_mtime).encode())
 
-        # Add file content to hash calculation
-        if os.path.islink(file) and not resolve_symlinks:
-            symlink_content = os.readlink(file)
-            hash_obj.update(symlink_content.encode())
-        elif not os.path.isdir(file):
+    for file in files:
+        # Add a relative path to hash calculation
+        relative_path = os.path.relpath(file, context_path)
+        hash_obj.update(relative_path.encode())
+
+        # Add stat information to hash calculation
+        if os.path.islink(file):
+            stats = os.lstat(file)
+            should_follow = resolve_symlinks and (
+                stat.S_ISREG(stats.st_mode) or stat.S_ISDIR(stats.st_mode)
+            )
+
+            if not should_follow:
+                hash_stats(stats)
+
+                content = os.readlink(file)
+                hash_obj.update(content.encode())
+                continue
+
+        stats = os.stat(file)
+        hash_stats(stats)
+
+        if stat.S_ISREG(stats.st_mode):
             with open(file, "rb") as f:
                 hash_obj.update(f.read())
 
