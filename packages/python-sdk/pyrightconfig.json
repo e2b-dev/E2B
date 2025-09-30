@@ -1,0 +1,7 @@
+{
+  "include": ["e2b"],
+
+  "reportDeprecated": false,
+  "reportUnannotatedClassAttribute": false,
+  "reportUnusedCallResult": false
+}
