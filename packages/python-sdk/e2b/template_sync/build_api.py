@@ -84,7 +84,7 @@ def upload_file(
     file_name: str,
     context_path: str,
     url: str,
-    resolve_symlinks: Optional[bool],
+    resolve_symlinks: bool,
     stack_trace: Optional[TracebackType],
 ):
     tar_buffer = io.BytesIO()
