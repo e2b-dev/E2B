@@ -25,6 +25,10 @@ export async function calculateFilesHash(
   resolveSymlinks?: boolean,
   stackTrace?: string
 ): Promise<string> {
+  if (resolveSymlinks == undefined) {
+    resolveSymlinks = RESOLVE_SYMLINKS
+  }
+
   const { glob } = await dynamicGlob()
   const srcPath = path.join(contextPath, src)
   const hash = crypto.createHash('sha256')

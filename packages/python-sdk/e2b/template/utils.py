@@ -8,7 +8,7 @@ import inspect
 from types import TracebackType, FrameType
 from typing import List, Optional, Union
 
-from e2b.template.consts import BASE_STEP_NAME, FINALIZE_STEP_NAME
+from e2b.template.consts import BASE_STEP_NAME, FINALIZE_STEP_NAME, RESOLVE_SYMLINKS
 
 
 def read_dockerignore(context_path: str) -> List[str]:
@@ -34,6 +34,9 @@ def calculate_files_hash(
     resolve_symlinks: Optional[bool] = None,
     stack_trace: Optional[TracebackType] = None,
 ) -> str:
+    resolve_symlinks = (
+        resolve_symlinks if resolve_symlinks is not None else RESOLVE_SYMLINKS
+    )
     src_path = os.path.join(context_path, src)
     hash_obj = hashlib.sha256()
     content = f"COPY {src} {dest}"
