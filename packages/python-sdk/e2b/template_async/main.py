@@ -15,6 +15,7 @@ from .build_api import (
     upload_file,
     wait_for_build_finish,
 )
+from ..template.consts import RESOLVE_SYMLINKS
 
 
 class AsyncTemplate(TemplateBase):
@@ -84,7 +85,7 @@ class AsyncTemplate(TemplateBase):
                 src = args[0] if len(args) > 0 else None
                 force_upload = file_upload.get("forceUpload")
                 files_hash = file_upload.get("filesHash", None)
-                resolve_symlinks = file_upload.get("resolveSymlinks")
+                resolve_symlinks = file_upload.get("resolveSymlinks", RESOLVE_SYMLINKS)
 
                 if src is None or files_hash is None:
                     raise ValueError("Source path and files hash are required")

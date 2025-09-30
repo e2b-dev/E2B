@@ -3,7 +3,7 @@ from typing import Dict, List, Optional, Union
 from types import TracebackType
 from httpx import Limits
 
-from e2b.template.consts import STACK_TRACE_DEPTH
+from e2b.template.consts import STACK_TRACE_DEPTH, RESOLVE_SYMLINKS
 from e2b.template.dockerfile_parser import parse_dockerfile
 from e2b.template.types import (
     CopyItem,
@@ -534,7 +534,7 @@ class TemplateBase:
                         *self._ignore_file_paths,
                         *read_dockerignore(self._file_context_path),
                     ],
-                    instruction.get("resolveSymlinks"),
+                    instruction.get("resolveSymlinks", RESOLVE_SYMLINKS),
                     stack_trace,
                 )
 

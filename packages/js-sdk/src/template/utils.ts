@@ -2,7 +2,7 @@ import crypto from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
 import { dynamicGlob, dynamicTar } from '../utils'
-import { BASE_STEP_NAME, FINALIZE_STEP_NAME, RESOLVE_SYMLINKS } from './consts'
+import { BASE_STEP_NAME, FINALIZE_STEP_NAME } from './consts'
 
 export function readDockerignore(contextPath: string): string[] {
   const dockerignorePath = path.join(contextPath, '.dockerignore')
@@ -21,14 +21,10 @@ export async function calculateFilesHash(
   src: string,
   dest: string,
   contextPath: string,
-  ignorePatterns?: string[],
-  resolveSymlinks?: boolean,
-  stackTrace?: string
+  ignorePatterns: string[],
+  resolveSymlinks: boolean,
+  stackTrace: string | undefined
 ): Promise<string> {
-  if (resolveSymlinks == undefined) {
-    resolveSymlinks = RESOLVE_SYMLINKS
-  }
-
   const { glob } = await dynamicGlob()
   const srcPath = path.join(contextPath, src)
   const hash = crypto.createHash('sha256')
@@ -144,7 +140,7 @@ export function padOctal(mode: number): string {
 export async function tarFileStream(
   fileName: string,
   fileContextPath: string,
-  resolveSymlinks: boolean = RESOLVE_SYMLINKS
+  resolveSymlinks: boolean
 ) {
   const { globSync } = await dynamicGlob()
   const { create } = await dynamicTar()

@@ -9,7 +9,7 @@ import {
   uploadFile,
   waitForBuildFinish,
 } from './buildApi'
-import { STACK_TRACE_DEPTH } from './consts'
+import { RESOLVE_SYMLINKS, STACK_TRACE_DEPTH } from './consts'
 import { parseDockerfile } from './dockerfileParser'
 import { ReadyCmd } from './readycmd'
 import {
@@ -624,7 +624,7 @@ export class TemplateBase
               fileName: src,
               fileContextPath: this.fileContextPath,
               url,
-              resolveSymlinks: instruction.resolveSymlinks,
+              resolveSymlinks: instruction.resolveSymlinks ?? RESOLVE_SYMLINKS,
             },
             stackTrace
           )
@@ -704,7 +704,7 @@ export class TemplateBase
                 ? []
                 : readDockerignore(this.fileContextPath)),
             ],
-            instruction.resolveSymlinks,
+            instruction.resolveSymlinks ?? RESOLVE_SYMLINKS,
             stackTrace
           ),
         }
