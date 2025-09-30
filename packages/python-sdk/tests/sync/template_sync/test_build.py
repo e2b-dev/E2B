@@ -1,3 +1,5 @@
+import tempfile
+
 import pytest
 import os
 import shutil
@@ -7,7 +9,7 @@ from e2b import Template, wait_for_timeout
 
 @pytest.fixture(scope="module")
 def setup_test_folder():
-    test_dir = os.path.dirname(os.path.abspath(__file__))
+    test_dir = tempfile.mkdtemp(prefix="python_sync_test_")
     folder_path = os.path.join(test_dir, "folder")
 
     os.makedirs(folder_path, exist_ok=True)
@@ -32,16 +34,16 @@ def setup_test_folder():
         os.remove(symlink3_path)
     os.symlink("12345test.txt", symlink3_path)
 
-    yield folder_path
+    yield test_dir
 
     # Cleanup
-    shutil.rmtree(folder_path, ignore_errors=True)
+    shutil.rmtree(test_dir, ignore_errors=True)
 
 
 @pytest.mark.skip_debug()
 def test_build_template(build, setup_test_folder):
     template = (
-        Template()
+        Template(file_context_path=setup_test_folder)
         .from_image("ubuntu:22.04")
         .copy("folder/*", "folder", force_upload=True)
         .run_cmd("cat folder/test.txt")
@@ -55,7 +57,7 @@ def test_build_template(build, setup_test_folder):
 @pytest.mark.skip_debug()
 def test_build_template_with_symlinks(build, setup_test_folder):
     template = (
-        Template()
+        Template(file_context_path=setup_test_folder)
         .from_image("ubuntu:22.04")
         .copy("folder/*", "folder", force_upload=True)
         .run_cmd("cat folder/symlink.txt")
@@ -67,7 +69,7 @@ def test_build_template_with_symlinks(build, setup_test_folder):
 @pytest.mark.skip_debug()
 def test_build_template_with_resolve_symlinks(build, setup_test_folder):
     template = (
-        Template()
+        Template(file_context_path=setup_test_folder)
         .from_image("ubuntu:22.04")
         .copy(
             "folder/symlink.txt",
