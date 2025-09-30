@@ -127,7 +127,9 @@ async def test_traces_on_make_symlink(async_build):
     template = AsyncTemplate()
     template = template.from_base_image()
     template = template.skip_cache().make_symlink(".bashrc", ".bashrc")
-    await _expect_to_throw_and_check_trace(lambda: async_build(template), "make_symlink")
+    await _expect_to_throw_and_check_trace(
+        lambda: async_build(template), "make_symlink"
+    )
 
 
 @pytest.mark.skip_debug()

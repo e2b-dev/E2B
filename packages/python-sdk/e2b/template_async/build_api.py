@@ -8,6 +8,7 @@ from types import TracebackType
 
 import httpx
 
+from e2b.template.consts import RESOLVE_SYMLINKS
 from e2b.template.types import TemplateType, LogEntry
 from e2b.api.client.client import AuthenticatedClient
 from e2b.api.client.api.templates import (
@@ -84,14 +85,18 @@ async def upload_file(
     file_name: str,
     context_path: str,
     url: str,
-    resolve_symlinks: bool,
+    resolve_symlinks: Optional[bool] = None,
     stack_trace: Optional[TracebackType] = None,
 ):
     tar_buffer = io.BytesIO()
 
     try:
         with tarfile.open(
-            fileobj=tar_buffer, mode="w:gz", dereference=resolve_symlinks
+            fileobj=tar_buffer,
+            mode="w:gz",
+            dereference=resolve_symlinks
+            if resolve_symlinks is not None
+            else RESOLVE_SYMLINKS,
         ) as tar:
             src_path = os.path.join(context_path, file_name)
             files = glob(src_path, recursive=True)
