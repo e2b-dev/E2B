@@ -8,12 +8,12 @@ title: Sandbox metadata
 You can assign metadata to your sandbox. This metadata will be available if you call `Sandbox.list()`. This can be useful in a situation where each of your users have dedicated sandbox and the time between the steps of the integration is long. You can use the metadata to store the user id and reconnect to it later.
 
 <CodeGroup>
-```js JavaScript & TypeScript
+```js JavaScript & TypeScript highlight={5}
 import { Sandbox } from 'e2b'
 
 const sandbox = await Sandbox.create({
   template: 'base',
-  metadata: { userID: 'uniqueID' }   // $HighlightLine
+  metadata: { userID: 'uniqueID' }
 })
 // Keep the sandbox alive for 60 seconds
 await sandbox.keepAlive(60_000)
@@ -34,13 +34,13 @@ if (found) {
 
 await sandbox.close()
 ```
-```python Python
+```python Python highlight={6}
 from e2b import Sandbox, SandboxState
 from e2b.sandbox.sandbox_api import SandboxQuery
 
 sandbox = Sandbox(
     template="base",
-    metadata={"user_id": "uniqueID"},  # $HighlightLine
+    metadata={"user_id": "uniqueID"},
 )
 
 # Keep the sandbox alive for 60 seconds

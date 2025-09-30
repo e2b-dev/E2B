@@ -12,7 +12,7 @@ The metrics are collected every 5 seconds.
 ### Getting sandbox metrics using the SDKs
 
 <CodeGroup>
-```js JavaScript & TypeScript
+```js JavaScript & TypeScript highlight={9}
 import { Sandbox } from '@e2b/code-interpreter'
 
 const sbx = await Sandbox.create()
@@ -21,7 +21,7 @@ console.log('Sandbox created', sbx.sandboxId)
 // Wait for a few seconds to collect some metrics
 await new Promise((resolve) => setTimeout(resolve, 10_000))
 
-const metrics = await sbx.getMetrics() // $HighlightLine
+const metrics = await sbx.getMetrics()
 
 // You can also get the metrics by sandbox ID:
 // const metrics = await Sandbox.getMetrics(sbx.sandboxId)
@@ -50,7 +50,7 @@ console.log('Sandbox metrics:', metrics)
 //   }
 // ]
 ```
-```python Python
+```python Python highlight={10}
 from time import sleep
 from e2b_code_interpreter import Sandbox
 
@@ -60,7 +60,7 @@ print('Sandbox created', sbx.sandbox_id)
 # Wait for a few seconds to collect some metrics
 sleep(10)
 
-metrics = sbx.get_metrics() # $HighlightLine
+metrics = sbx.get_metrics()
 
 # You can also get the metrics by sandbox ID:
 # metrics = Sandbox.get_metrics(sbx.sandbox_id)
@@ -93,8 +93,8 @@ print('Sandbox metrics', metrics)
 
 ### Getting sandbox metrics using the CLI
 <CodeGroup>
-```bash Terminal
-e2b sandbox metrics <sandbox_id>  # $HighlightLine
+```bash Terminal highlight={1}
+e2b sandbox metrics <sandbox_id> 
 
 # Metrics for sandbox <sandbox_id>
 # 

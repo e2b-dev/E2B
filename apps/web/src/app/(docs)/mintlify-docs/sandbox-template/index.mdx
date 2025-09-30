@@ -49,12 +49,12 @@ The following command will create a basic `e2b.Dockerfile` in the current direct
 ### 3. Customize `e2b.Dockerfile`
 Now you can customize your sandbox template by editing the `e2b.Dockerfile` file.
 <CodeGroup title="e2b.Dockerfile">
-  ```bash e2b.Dockerfile
+  ```bash e2b.Dockerfile highlight={2,5}
   # Make sure to use this base image
-  FROM e2bdev/code-interpreter:latest # $HighlightLine
+  FROM e2bdev/code-interpreter:latest 
 
   # Install some Python packages
-  RUN pip install cowsay # $HighlightLine
+  RUN pip install cowsay 
   ```
 </CodeGroup>
 
@@ -84,9 +84,9 @@ Now you can use the template ID to create a sandbox with the SDK.
   import { Sandbox } from '@e2b/code-interpreter'
 
   // Your template ID from the previous step
-  const templateID = 'id-of-your-template' // $HighlightLine
+  const templateID = 'id-of-your-template'
   // Pass the template ID to the `Sandbox.create` method
-  const sandbox = await Sandbox.create(templateID) // $HighlightLine
+  const sandbox = await Sandbox.create(templateID)
 
   // The template installed cowsay, so we can use it
   const execution = await sandbox.runCode(`
@@ -100,9 +100,9 @@ Now you can use the template ID to create a sandbox with the SDK.
   from e2b_code_interpreter import Sandbox
 
   # Your template ID from the previous step
-  template_id = 'id-of-your-template' # $HighlightLine
+  template_id = 'id-of-your-template' 
   # Pass the template ID to the `Sandbox.create` method
-  sandbox = Sandbox.create(template_id) # $HighlightLine
+  sandbox = Sandbox.create(template_id) 
 
   # The template installed cowsay, so we can use it
   execution = sandbox.run_code("""

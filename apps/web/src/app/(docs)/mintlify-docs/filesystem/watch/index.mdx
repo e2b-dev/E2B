@@ -18,12 +18,12 @@ const sandbox = await Sandbox.create()
 const dirname = '/home/user'
 
 // Start watching directory for changes
-const handle = await sandbox.files.watchDir(dirname, async (event) => { // $HighlightLine
-  console.log(event) // $HighlightLine
-  if (event.type === FilesystemEventType.WRITE) { // $HighlightLine
-    console.log(`wrote to file ${event.name}`) // $HighlightLine
-  } // $HighlightLine
-}) // $HighlightLine
+const handle = await sandbox.files.watchDir(dirname, async (event) => {
+  console.log(event)
+  if (event.type === FilesystemEventType.WRITE) {
+    console.log(`wrote to file ${event.name}`)
+  }
+})
 
 // Trigger file write event
 await sandbox.files.write(`${dirname}/my-file`, 'hello')
@@ -35,16 +35,16 @@ sandbox = Sandbox.create()
 dirname = '/home/user'
 
 # Watch directory for changes
-handle = sandbox.files.watch_dir(dirname) # $HighlightLine
+handle = sandbox.files.watch_dir(dirname)
 # Trigger file write event
 sandbox.files.write(f"{dirname}/my-file", "hello")
 
 # Retrieve the latest new events since the last `get_new_events()` call
-events = handle.get_new_events() # $HighlightLine
-for event in events: # $HighlightLine
-  print(event) # $HighlightLine
-  if event.type == FilesystemEventType.Write: # $HighlightLine
-    print(f"wrote to file {event.name}") # $HighlightLine
+events = handle.get_new_events()
+for event in events:
+  print(event)
+  if event.type == FilesystemEventType.Write:
+    print(f"wrote to file {event.name}")
 ```
 </CodeGroup>
 
@@ -71,11 +71,11 @@ const handle = await sandbox.files.watchDir(dirname, async (event) => {
     console.log(`wrote to file ${event.name}`)
   }
 }, {
-  recursive: true // $HighlightLine
+  recursive: true
 })
 
 // Trigger file write event
-await sandbox.files.write(`${dirname}/my-folder/my-file`, 'hello') // $HighlightLine
+await sandbox.files.write(`${dirname}/my-folder/my-file`, 'hello')
 ```
 ```python Python highlight={7,9}
 from e2b_code_interpreter import Sandbox
@@ -84,9 +84,9 @@ sandbox = Sandbox.create()
 dirname = '/home/user'
 
 # Watch directory for changes
-handle = sandbox.files.watch_dir(dirname, recursive=True) # $HighlightLine
+handle = sandbox.files.watch_dir(dirname, recursive=True)
 # Trigger file write event
-sandbox.files.write(f"{dirname}/my-folder/my-file", "hello") # $HighlightLine
+sandbox.files.write(f"{dirname}/my-folder/my-file", "hello")
 
 # Retrieve the latest new events since the last `get_new_events()` call
 events = handle.get_new_events()

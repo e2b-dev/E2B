@@ -30,7 +30,8 @@ pip install e2b-code-interpreter python-dotenv
 <Step title="Write code for starting Sandbox">
 We'll write the minimal code for starting Sandbox, executing Python inside it and listing all files inside the root directory.
 <CodeGroup>
-```javascript index.ts
+```javascript JavaScript & TypeScript
+// index.ts
 import 'dotenv/config'
 import { Sandbox } from '@e2b/code-interpreter'
 
@@ -41,7 +42,8 @@ console.log(execution.logs)
 const files = await sbx.files.list('/')
 console.log(files)
 ```
-```python main.py
+```python Python
+# main.py
 from dotenv import load_dotenv
 load_dotenv()
 from e2b_code_interpreter import Sandbox

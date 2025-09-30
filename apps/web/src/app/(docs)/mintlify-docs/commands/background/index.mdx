@@ -14,7 +14,7 @@ const sandbox = await Sandbox.create()
 
 // Start the command in the background
 const command = await sandbox.commands.run('echo hello; sleep 10; echo world', {
-  background: true, // $HighlightLine
+  background: true,
   onStdout: (data) => {
     console.log(data)
   },

@@ -50,18 +50,18 @@ You can set global environment variables when creating a sandbox.
 import { Sandbox } from '@e2b/code-interpreter'
 
 const sandbox = await Sandbox.create({
-  envs: { // $HighlightLine
-    MY_VAR: 'my_value', // $HighlightLine
-  }, // $HighlightLine
+  envs: {
+    MY_VAR: 'my_value',
+  },
 })
 ```
 ```python Python highlight={4-6}
 from e2b_code_interpreter import Sandbox
 
 sandbox = Sandbox.create(
-  envs={ # $HighlightLine
-    'MY_VAR': 'my_value', # $HighlightLine
-  }, # $HighlightLine
+  envs={
+    'MY_VAR': 'my_value',
+  },
 )
 ```
 </CodeGroup>
@@ -78,18 +78,18 @@ You can set environment variables for specific code execution call in the sandbo
 ```js JavaScript & TypeScript highlight={3-5}
 const sandbox = await Sandbox.create()
 const result = await sandbox.runCode('import os; print(os.environ.get("MY_VAR"))', {
-  envs: { // $HighlightLine
-    MY_VAR: 'my_value', // $HighlightLine
-  }, // $HighlightLine
+  envs: {
+    MY_VAR: 'my_value',
+  },
 })
 ```
 ```python Python highlight={4-6}
 sandbox = Sandbox.create()
 result = sandbox.run_code(
     'import os; print(os.environ.get("MY_VAR"))',
-    envs={ # $HighlightLine
-        'MY_VAR': 'my_value' # $HighlightLine
-    } # $HighlightLine
+    envs={
+        'MY_VAR': 'my_value'
+    }
 )
 ```
 </CodeGroup>
@@ -106,18 +106,18 @@ You can set environment variables for specific command execution in the sandbox.
 ```js JavaScript & TypeScript highlight={3-5}
 const sandbox = await Sandbox.create()
 sandbox.commands.run('echo $MY_VAR', {
-  envs: { // $HighlightLine
-    MY_VAR: '123', // $HighlightLine
-  }, // $HighlightLine
+  envs: { 
+    MY_VAR: '123', 
+  }, 
 })
 ```
 ```python Python highlight={4-6}
 sandbox = Sandbox.create()
 sandbox.commands.run(
     'echo $MY_VAR',
-    envs={ # $HighlightLine
-        'MY_VAR': '123' # $HighlightLine
-    } # $HighlightLine
+    envs={
+        'MY_VAR': '123'
+    }
 )
 ```
 </CodeGroup>
