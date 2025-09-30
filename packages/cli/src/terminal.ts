@@ -55,7 +55,7 @@ export async function spawnConnectedTerminal(sandbox: e2b.Sandbox) {
   } finally {
     // Cleanup
     process.stdout.write('\n')
-    inputQueue.stop()
+    await inputQueue.stop()
     resizeListener.destroy()
     stdinListener.destroy()
     process.stdin.setRawMode(false)
@@ -78,25 +78,31 @@ class BatchedQueue<T> {
 
   start() {
     this.intervalId = setInterval(async () => {
-      if (this.isFlushing || this.queue.length === 0) return
+      if (this.isFlushing) return
 
       this.isFlushing = true
-      const batch = this.queue.splice(0, this.queue.length)
-
-      try {
-        await this.flushHandler(batch)
-      } catch (err) {
-        console.error('Error sending input:', err)
-      }
-
+      await this.flush()
       this.isFlushing = false
     }, this.flushIntervalMs)
   }
 
-  stop() {
+  async stop() {
     if (this.intervalId) {
       clearInterval(this.intervalId)
       this.intervalId = undefined
+    }
+
+    await this.flush()
+  }
+
+  private async flush() {
+    if (this.queue.length === 0) return
+
+    const batch = this.queue.splice(0, this.queue.length)
+    try {
+      await this.flushHandler(batch)
+    } catch (err) {
+      console.error('Error sending input:', err)
     }
   }
 }
