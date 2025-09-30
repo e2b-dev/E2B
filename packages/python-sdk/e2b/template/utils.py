@@ -70,7 +70,7 @@ def calculate_files_hash(
         if os.path.islink(file):
             stats = os.lstat(file)
             should_follow = resolve_symlinks and (
-                stat.S_ISREG(stats.st_mode) or stat.S_ISDIR(stats.st_mode)
+                os.path.isfile(file) or os.path.isdir(file)
             )
 
             if not should_follow:
