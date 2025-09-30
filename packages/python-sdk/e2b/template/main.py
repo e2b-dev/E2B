@@ -1,10 +1,11 @@
 import json
 from typing import Dict, List, Optional, Union
-from types import TracebackType
+
 from httpx import Limits
 
 from e2b.template.consts import STACK_TRACE_DEPTH, RESOLVE_SYMLINKS
 from e2b.template.dockerfile_parser import parse_dockerfile
+from e2b.template.readycmd import ReadyCmd
 from e2b.template.types import (
     CopyItem,
     Instruction,
@@ -20,7 +21,7 @@ from e2b.template.utils import (
     read_gcp_service_account_json,
     get_caller_frame,
 )
-from e2b.template.readycmd import ReadyCmd
+from types import TracebackType
 
 
 class TemplateBuilder:
@@ -508,7 +509,7 @@ class TemplateBase:
 
         for index, instruction in enumerate(self._instructions):
             step: Instruction = Instruction(
-                type=instruction["type"].value,
+                type=instruction["type"],
                 args=instruction["args"],
                 force=instruction["force"],
                 forceUpload=instruction.get("forceUpload"),
@@ -543,8 +544,28 @@ class TemplateBase:
         return steps
 
     def _serialize(self, steps: List[Instruction]) -> TemplateType:
+        _steps: List[Instruction] = []
+
+        for index, instruction in enumerate(steps):
+            step = {
+                # Serialize enum to string value
+                "type": instruction["type"].value,
+                "args": instruction["args"],
+                "force": instruction["force"],
+                "filesHash": instruction.get("filesHash"),
+                "forceUpload": instruction.get("forceUpload"),
+            }
+
+            if step["filesHash"] is None:
+                del step["filesHash"]
+
+            if step.get("forceUpload") is None:
+                del step["forceUpload"]
+
+            _steps.append(step)
+
         template_data: TemplateType = {
-            "steps": steps,
+            "steps": _steps,
             "force": self._force,
         }
 
