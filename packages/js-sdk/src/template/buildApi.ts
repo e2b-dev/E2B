@@ -193,7 +193,7 @@ export async function waitForBuildFinish(
   }: {
     templateID: string
     buildID: string
-    onBuildLogs?: (logEntry: InstanceType<typeof LogEntry>) => void
+    onBuildLogs?: (logEntry: LogEntry) => void
     logsRefreshFrequency: number
     stackTraces: (string | undefined)[]
   }

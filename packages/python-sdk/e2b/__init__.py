@@ -86,6 +86,9 @@ from .template.readycmd import (
     wait_for_timeout,
 )
 
+from .template.types import LogEntry, LogEntryLevel, LogEntryStart, LogEntryEnd
+from .template.logger import default_build_logger
+
 __all__ = [
     # API
     "ApiClient",
@@ -145,6 +148,11 @@ __all__ = [
     "wait_for_port",
     "wait_for_process",
     "wait_for_timeout",
+    "LogEntry",
+    "LogEntryStart",
+    "LogEntryEnd",
+    "LogEntryLevel",
+    "default_build_logger",
     # MCP
     "McpServer",
 ]

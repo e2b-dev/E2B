@@ -1,7 +1,7 @@
-import { Sandbox, Template, TemplateClass } from '../src'
-import { test as base } from 'vitest'
-import { template } from './template'
 import { randomUUID } from 'node:crypto'
+import { test as base } from 'vitest'
+import { LogEntry, Sandbox, Template, TemplateClass } from '../src'
+import { template } from './template'
 
 interface SandboxFixture {
   sandbox: Sandbox
@@ -10,15 +10,24 @@ interface SandboxFixture {
 }
 
 interface BuildTemplateFixture {
-  buildTemplate: (template: TemplateClass, skipCache?: boolean) => Promise<void>
+  buildTemplate: (
+    template: TemplateClass,
+    skipCache?: boolean,
+    onBuildLogs?: (logEntry: LogEntry) => void
+  ) => Promise<void>
 }
 
-function buildTemplate(template: TemplateClass, skipCache?: boolean) {
+function buildTemplate(
+  template: TemplateClass,
+  skipCache?: boolean,
+  onBuildLogs?: (logEntry: LogEntry) => void
+) {
   return Template.build(template, {
     alias: randomUUID(),
     cpuCount: 1,
     memoryMB: 1024,
     skipCache: skipCache,
+    onBuildLogs: onBuildLogs,
   })
 }
 

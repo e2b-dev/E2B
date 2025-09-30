@@ -34,10 +34,13 @@ class Instruction(TypedDict):
     resolveSymlinks: NotRequired[Optional[bool]]
 
 
+LogEntryLevel = Literal["debug", "info", "warn", "error"]
+
+
 @dataclass
 class LogEntry:
     timestamp: datetime
-    level: Literal["debug", "info", "warn", "error"]
+    level: LogEntryLevel
     message: str
 
     def __post_init__(self):
@@ -45,6 +48,18 @@ class LogEntry:
 
     def __str__(self) -> str:
         return f"[{self.timestamp.isoformat()}] [{self.level}] {self.message}"
+
+
+@dataclass
+class LogEntryStart(LogEntry):
+    def __init__(self, timestamp: datetime, message: str):
+        super().__init__(timestamp, "debug", message)
+
+
+@dataclass
+class LogEntryEnd(LogEntry):
+    def __init__(self, timestamp: datetime, message: str):
+        super().__init__(timestamp, "debug", message)
 
 
 class GenericDockerRegistry(TypedDict):

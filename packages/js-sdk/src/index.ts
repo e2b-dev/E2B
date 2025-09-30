@@ -79,4 +79,9 @@ export {
   type TemplateClass,
   type TemplateBuilder,
   type TemplateBase,
+  LogEntry,
+  LogEntryStart,
+  LogEntryEnd,
+  type LogEntryLevel,
+  defaultBuildLogger,
 } from './template'

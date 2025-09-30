@@ -17,6 +17,8 @@ import {
   Instruction,
   InstructionType,
   LogEntry,
+  LogEntryEnd,
+  LogEntryStart,
   RegistryConfig,
   TemplateBuilder,
   TemplateFinal,
@@ -32,7 +34,15 @@ import {
 } from './utils'
 import type { PathLike } from 'node:fs'
 
-export { type TemplateBuilder } from './types'
+export {
+  LogEntry,
+  LogEntryEnd,
+  LogEntryStart,
+  type LogEntryLevel,
+  type TemplateBuilder,
+} from './types'
+
+export { defaultBuildLogger } from './logger'
 
 type TemplateOptions = {
   fileContextPath?: PathLike
@@ -44,7 +54,7 @@ type BasicBuildOptions = {
   cpuCount?: number
   memoryMB?: number
   skipCache?: boolean
-  onBuildLogs?: (logEntry: InstanceType<typeof LogEntry>) => void
+  onBuildLogs?: (logEntry: LogEntry) => void
 }
 
 export type BuildOptions = BasicBuildOptions & {
@@ -67,7 +77,7 @@ export class TemplateBase
   private forceNextLayer: boolean = false
   private instructions: Instruction[] = []
   private fileContextPath: PathLike =
-    runtime === 'browser' ? '.' : (getCallerDirectory(STACK_TRACE_DEPTH) ?? '.')
+    runtime === 'browser' ? '.' : getCallerDirectory(STACK_TRACE_DEPTH) ?? '.'
   private fileIgnorePatterns: string[] = []
   private logsRefreshFrequency: number = 200
   private stackTraces: (string | undefined)[] = []
@@ -91,7 +101,12 @@ export class TemplateBase
   }
 
   static build(template: TemplateClass, options: BuildOptions): Promise<void> {
-    return (template as TemplateBase).build(options)
+    try {
+      options.onBuildLogs?.(new LogEntryStart(new Date(), 'Build started'))
+      return (template as TemplateBase).build(options)
+    } finally {
+      options.onBuildLogs?.(new LogEntryEnd(new Date(), 'Build finished'))
+    }
   }
 
   // Built-in image mixins
