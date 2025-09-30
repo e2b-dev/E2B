@@ -55,9 +55,9 @@ export async function spawnConnectedTerminal(sandbox: e2b.Sandbox) {
   } finally {
     // Cleanup
     process.stdout.write('\n')
-    await inputQueue.stop()
     resizeListener.destroy()
     stdinListener.destroy()
+    await inputQueue.stop()
     process.stdin.setRawMode(false)
   }
 }
