@@ -52,7 +52,8 @@ Usually, all you need from the model is just support for tool use. If the LLM do
 
 Create the `model.py` file and paste the following code.
 <CodeGroup isFileName title="model.py" isRunnable={false}>
-```python model.py
+```python Python
+# model.py
 MODEL_NAME = "claude-3-opus-20240229"
 
 SYSTEM_PROMPT = """
@@ -94,7 +95,8 @@ A little bit later, we'll connect `"execute_python"` to the E2B's code interpret
 We'll create a new function called `code_interpret()` in a separate file `code_interpreter.py`.
 
 <CodeGroup isFileName title="code_interpreter.py" isRunnable={false}>
-```python code_interpreter.py
+```python Python 
+# code_interpreter.py
 from e2b_code_interpreter import CodeInterpreter
 
 def code_interpret(code_interpreter: CodeInterpreter, code: str):
@@ -187,7 +189,8 @@ def chat(code_interpreter: CodeInterpreter, user_message: str) -> Tuple[List[Res
 Now we are ready to run our program. At the end of `main.py` add the following code prompting the LLM to visualize a distribution of the height of men and print the median.
 
 <CodeGroup isFileName title="main.py" isRunnable={false}>
-```python main.py
+```python Python 
+# main.py
 def main():
   user_message = "Visualize a distribution of height of men based on the latest data you know. Also, print the median value."
 
@@ -228,7 +231,8 @@ We got our median in the logs (`stdout`, and `stderr`) but we also something int
 
 This looks like a plot. Let's save it to a file. Add the following to the end of `main.py` and run the code again with `python main.py` in your terminal.
 <CodeGroup isFileName title="main.py" isRunnable={false}>
-```python main.py
+```python Python
+# main.py
     # If we received a chart in PNG form, we can visualize it
     if first_result.png:
       # Decode the base64 encoded PNG data
