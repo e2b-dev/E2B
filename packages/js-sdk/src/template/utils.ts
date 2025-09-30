@@ -61,11 +61,14 @@ export async function calculateFilesHash(
 
     // Add stat information to hash calculation
     if (file.isSymbolicLink()) {
-      const stats = fs.lstatSync(file.fullpath())
+      // If the symlink is broken, it will return undefined, otherwise it will return a stats object of the target
+      const stats = fs.statSync(file.fullpath(), { throwIfNoEntry: false })
       const shouldFollow =
-        resolveSymlinks && (stats.isFile() || stats.isDirectory())
+        resolveSymlinks && (stats?.isFile() || stats?.isDirectory())
 
       if (!shouldFollow) {
+        const stats = fs.lstatSync(file.fullpath())
+
         hashStats(stats)
 
         const content = fs.readlinkSync(file.fullpath())
