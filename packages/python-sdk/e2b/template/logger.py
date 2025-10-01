@@ -23,17 +23,32 @@ levels: Dict[LogEntryLevel, tuple[str, Style]] = {
 
 # Level ordering for comparison
 level_order = {
-    "error": 0,
-    "warn": 1,
-    "info": 2,
-    "debug": 3,
+    "debug": 0,
+    "info": 1,
+    "warn": 2,
+    "error": 3,
 }
+
+
+def set_interval(func, interval):
+    """
+    Returns a stop function that can be called to cancel the interval.
+    Similar to JavaScript's setInterval.
+    """
+    stopped = threading.Event()
+
+    def loop():
+        while not stopped.wait(interval):  # wait returns True if stopped
+            func()
+
+    threading.Thread(target=loop, daemon=True).start()
+    return stopped.set  # Return the stop function
 
 
 class InitialState(TypedDict):
     start_time: float
     animation_frame: int
-    timer: Optional[threading.Timer]
+    timer: Optional[Callable[[], None]]
 
 
 class BuildLogger:
@@ -53,7 +68,7 @@ class BuildLogger:
 
         if isinstance(log, LogEntryEnd):
             if self.__state["timer"] is not None:
-                self.__state["timer"].cancel()
+                self.__state["timer"]()
             return
 
         # Filter by minimum level
@@ -66,7 +81,7 @@ class BuildLogger:
         # Redraw the timer line
         self.__update_timer()
 
-    def __reset_initial_state(self, timer: Optional[threading.Timer] = None):
+    def __reset_initial_state(self, timer: Optional[Callable[[], None]] = None):
         self.__state = {
             "start_time": time.time(),
             "animation_frame": 0,
@@ -104,10 +119,11 @@ class BuildLogger:
             return
 
         # Start the timer interval
-        timer = threading.Timer(TIMER_UPDATE_INTERVAL_MS / 1000.0, self.__update_timer)
-        timer.start()
+        stop_timer = set_interval(
+            self.__update_timer, TIMER_UPDATE_INTERVAL_MS / 1000.0
+        )
 
-        self.__reset_initial_state(timer)
+        self.__reset_initial_state(stop_timer)
 
         # Initial timer display
         self.__update_timer()
