@@ -554,10 +554,10 @@ class TemplateBase:
                 "force": instruction["force"],
             }
 
-            if instruction["filesHash"] is not None:
+            if instruction.get("filesHash") is not None:
                 step["filesHash"] = instruction["filesHash"]
 
-            if instruction["forceUpload"] is not None:
+            if instruction.get("forceUpload") is not None:
                 step["forceUpload"] = instruction["forceUpload"]
 
             _steps.append(step)

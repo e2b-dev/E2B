@@ -15,7 +15,7 @@ from .build_api import (
     upload_file,
     wait_for_build_finish,
 )
-from ..template.consts import RESOLVE_SYMLINKS
+from e2b.template.consts import RESOLVE_SYMLINKS
 
 
 class AsyncTemplate(TemplateBase):
