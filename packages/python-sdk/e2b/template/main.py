@@ -552,15 +552,13 @@ class TemplateBase:
                 "type": instruction["type"].value,
                 "args": instruction["args"],
                 "force": instruction["force"],
-                "filesHash": instruction.get("filesHash"),
-                "forceUpload": instruction.get("forceUpload"),
             }
 
-            if step["filesHash"] is None:
-                del step["filesHash"]
+            if instruction["filesHash"] is not None:
+                step["filesHash"] = instruction["filesHash"]
 
-            if step.get("forceUpload") is None:
-                del step["forceUpload"]
+            if instruction["forceUpload"] is not None:
+                step["forceUpload"] = instruction["forceUpload"]
 
             _steps.append(step)
 
