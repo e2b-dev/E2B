@@ -1,11 +1,25 @@
-import { Sandbox } from '../src'
+import { Sandbox, Template, TemplateClass } from '../src'
 import { test as base } from 'vitest'
 import { template } from './template'
+import { randomUUID } from 'node:crypto'
 
 interface SandboxFixture {
   sandbox: Sandbox
   template: string
   sandboxTestId: string
+}
+
+interface BuildTemplateFixture {
+  buildTemplate: (template: TemplateClass) => Promise<void>
+}
+
+function buildTemplate(template: TemplateClass, skipCache?: boolean) {
+  return Template.build(template, {
+    alias: randomUUID(),
+    cpuCount: 1,
+    memoryMB: 1024,
+    skipCache: skipCache,
+  })
 }
 
 export const sandboxTest = base.extend<SandboxFixture>({
@@ -38,6 +52,16 @@ export const sandboxTest = base.extend<SandboxFixture>({
       }
     },
     { auto: false },
+  ],
+})
+
+export const buildTemplateTest = base.extend<BuildTemplateFixture>({
+  buildTemplate: [
+    // eslint-disable-next-line no-empty-pattern
+    async ({}, use) => {
+      await use(buildTemplate)
+    },
+    { auto: true },
   ],
 })
 

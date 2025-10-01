@@ -21,8 +21,9 @@ export async function calculateFilesHash(
   src: string,
   dest: string,
   contextPath: string,
-  ignorePatterns?: string[],
-  stackTrace?: string
+  ignorePatterns: string[],
+  resolveSymlinks: boolean,
+  stackTrace: string | undefined
 ): Promise<string> {
   const { glob } = await dynamicGlob()
   const srcPath = path.join(contextPath, src)
@@ -44,13 +45,47 @@ export async function calculateFilesHash(
     throw error
   }
 
+  // Hash stats
+  const hashStats = (stats: fs.Stats) => {
+    hash.update(stats.mode.toString())
+    hash.update(stats.uid.toString())
+    hash.update(stats.gid.toString())
+    hash.update(stats.size.toString())
+    hash.update(stats.mtimeMs.toString())
+  }
+
   for (const file of files) {
-    if (!file.isFile()) {
-      continue
+    // Add a relative path to hash calculation
+    const relativePath = path.relative(contextPath, file.fullpath())
+    hash.update(relativePath)
+
+    // Add stat information to hash calculation
+    if (file.isSymbolicLink()) {
+      // If the symlink is broken, it will return undefined, otherwise it will return a stats object of the target
+      const stats = fs.statSync(file.fullpath(), { throwIfNoEntry: false })
+      const shouldFollow =
+        resolveSymlinks && (stats?.isFile() || stats?.isDirectory())
+
+      if (!shouldFollow) {
+        const stats = fs.lstatSync(file.fullpath())
+
+        hashStats(stats)
+
+        const content = fs.readlinkSync(file.fullpath())
+        hash.update(content)
+
+        continue
+      }
     }
 
-    const content = fs.readFileSync(file.fullpath())
-    hash.update(new Uint8Array(content))
+    const stats = fs.statSync(file.fullpath())
+
+    hashStats(stats)
+
+    if (stats.isFile()) {
+      const content = fs.readFileSync(file.fullpath())
+      hash.update(new Uint8Array(content))
+    }
   }
 
   return hash.digest('hex')
@@ -105,15 +140,20 @@ export function padOctal(mode: number): string {
   return mode.toString(8).padStart(4, '0')
 }
 
-export async function tarFileStream(fileName: string, fileContextPath: string) {
+export async function tarFileStream(
+  fileName: string,
+  fileContextPath: string,
+  resolveSymlinks: boolean
+) {
   const { globSync } = await dynamicGlob()
   const { create } = await dynamicTar()
-  const files = globSync(fileName, { cwd: fileContextPath, nodir: false })
+  const files = globSync(fileName, { cwd: fileContextPath })
 
   return create(
     {
       gzip: true,
       cwd: fileContextPath,
+      follow: resolveSymlinks,
     },
     files
   )
@@ -121,10 +161,15 @@ export async function tarFileStream(fileName: string, fileContextPath: string) {
 
 export async function tarFileStreamUpload(
   fileName: string,
-  fileContextPath: string
+  fileContextPath: string,
+  resolveSymlinks: boolean
 ) {
   // First pass: calculate the compressed size without buffering
-  const sizeCalculationStream = await tarFileStream(fileName, fileContextPath)
+  const sizeCalculationStream = await tarFileStream(
+    fileName,
+    fileContextPath,
+    resolveSymlinks
+  )
   let contentLength = 0
   for await (const chunk of sizeCalculationStream as unknown as AsyncIterable<Buffer>) {
     contentLength += chunk.length
@@ -132,7 +177,11 @@ export async function tarFileStreamUpload(
 
   return {
     contentLength,
-    uploadStream: await tarFileStream(fileName, fileContextPath),
+    uploadStream: await tarFileStream(
+      fileName,
+      fileContextPath,
+      resolveSymlinks
+    ),
   }
 }
 

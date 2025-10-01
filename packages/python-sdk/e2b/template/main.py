@@ -1,10 +1,11 @@
 import json
 from typing import Dict, List, Optional, Union
-from types import TracebackType
+
 from httpx import Limits
 
-from e2b.template.consts import STACK_TRACE_DEPTH
+from e2b.template.consts import STACK_TRACE_DEPTH, RESOLVE_SYMLINKS
 from e2b.template.dockerfile_parser import parse_dockerfile
+from e2b.template.readycmd import ReadyCmd
 from e2b.template.types import (
     CopyItem,
     Instruction,
@@ -20,7 +21,7 @@ from e2b.template.utils import (
     read_gcp_service_account_json,
     get_caller_frame,
 )
-from e2b.template.readycmd import ReadyCmd
+from types import TracebackType
 
 
 class TemplateBuilder:
@@ -34,19 +35,21 @@ class TemplateBuilder:
         force_upload: Optional[bool] = None,
         user: Optional[str] = None,
         mode: Optional[int] = None,
+        resolve_symlinks: Optional[bool] = None,
     ) -> "TemplateBuilder":
         if isinstance(src, str):
             # Single copy operation
             if dest is None:
                 raise ValueError("dest parameter is required when src is a string")
             copy_items: List[CopyItem] = [
-                {
-                    "src": src,
-                    "dest": dest,
-                    "forceUpload": force_upload,
-                    "user": user,
-                    "mode": mode,
-                }
+                CopyItem(
+                    src=src,
+                    dest=dest,
+                    forceUpload=force_upload,
+                    user=user,
+                    mode=mode,
+                    resolveSymlinks=resolve_symlinks,
+                )
             ]
         else:
             # Multiple copy operations
@@ -65,6 +68,7 @@ class TemplateBuilder:
                 args=args,
                 force=force_upload or self._template._force_next_layer,
                 forceUpload=force_upload,
+                resolveSymlinks=resolve_symlinks,
             )
             self._template._instructions.append(instruction)
         self._template._collect_stack_trace()
@@ -505,10 +509,11 @@ class TemplateBase:
 
         for index, instruction in enumerate(self._instructions):
             step: Instruction = Instruction(
-                type=instruction["type"].value,
+                type=instruction["type"],
                 args=instruction["args"],
                 force=instruction["force"],
                 forceUpload=instruction.get("forceUpload"),
+                resolveSymlinks=instruction.get("resolveSymlinks"),
             )
 
             if instruction["type"] == InstructionType.COPY:
@@ -530,6 +535,7 @@ class TemplateBase:
                         *self._ignore_file_paths,
                         *read_dockerignore(self._file_context_path),
                     ],
+                    instruction.get("resolveSymlinks", RESOLVE_SYMLINKS),
                     stack_trace,
                 )
 
@@ -538,8 +544,26 @@ class TemplateBase:
         return steps
 
     def _serialize(self, steps: List[Instruction]) -> TemplateType:
+        _steps: List[Instruction] = []
+
+        for index, instruction in enumerate(steps):
+            step = {
+                # Serialize enum to string value
+                "type": instruction["type"].value,
+                "args": instruction["args"],
+                "force": instruction["force"],
+            }
+
+            if instruction.get("filesHash") is not None:
+                step["filesHash"] = instruction["filesHash"]
+
+            if instruction.get("forceUpload") is not None:
+                step["forceUpload"] = instruction["forceUpload"]
+
+            _steps.append(step)
+
         template_data: TemplateType = {
-            "steps": steps,
+            "steps": _steps,
             "force": self._force,
         }
 

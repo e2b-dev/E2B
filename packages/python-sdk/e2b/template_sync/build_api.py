@@ -1,21 +1,21 @@
 import io
 import os
-from glob import glob
 import tarfile
 import time
-from typing import Callable, Literal, Optional, List
+from glob import glob
 from types import TracebackType
+from typing import Callable, Literal, Optional, List
 
 import httpx
 
-from e2b.template.types import TemplateType, LogEntry
-from e2b.api.client.client import AuthenticatedClient
+from e2b.api import handle_api_exception
 from e2b.api.client.api.templates import (
     post_v2_templates,
     get_templates_template_id_files_hash,
     post_v_2_templates_template_id_builds_build_id,
     get_templates_template_id_builds_build_id_status,
 )
+from e2b.api.client.client import AuthenticatedClient
 from e2b.api.client.models import (
     TemplateBuildRequestV2,
     TemplateBuildStartV2,
@@ -23,8 +23,8 @@ from e2b.api.client.models import (
     TemplateBuild,
     Error,
 )
-from e2b.api import handle_api_exception
 from e2b.template.exceptions import BuildException, FileUploadException
+from e2b.template.types import TemplateType, LogEntry
 from e2b.template.utils import get_build_step_index
 
 
@@ -84,12 +84,17 @@ def upload_file(
     file_name: str,
     context_path: str,
     url: str,
-    stack_trace: Optional[TracebackType] = None,
+    resolve_symlinks: bool,
+    stack_trace: Optional[TracebackType],
 ):
     tar_buffer = io.BytesIO()
 
     try:
-        with tarfile.open(fileobj=tar_buffer, mode="w:gz") as tar:
+        with tarfile.open(
+            fileobj=tar_buffer,
+            mode="w:gz",
+            dereference=resolve_symlinks,
+        ) as tar:
             src_path = os.path.join(context_path, file_name)
             files = glob(src_path, recursive=True)
             for file in files:

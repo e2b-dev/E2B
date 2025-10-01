@@ -1,8 +1,8 @@
-import { ApiClient, paths, handleApiError } from '../api'
+import { ApiClient, handleApiError, paths } from '../api'
+import { stripAnsi } from '../utils'
 import { BuildError, FileUploadError } from './errors'
 import { LogEntry } from './types'
 import { getBuildStepIndex, tarFileStreamUpload } from './utils'
-import { stripAnsi } from '../utils'
 
 type RequestBuildInput = {
   alias: string
@@ -91,14 +91,16 @@ export async function uploadFile(
     fileName: string
     fileContextPath: string
     url: string
+    resolveSymlinks: boolean
   },
-  stackTrace?: string
+  stackTrace: string | undefined
 ) {
-  const { fileName, url, fileContextPath } = options
+  const { fileName, url, fileContextPath, resolveSymlinks } = options
   try {
     const { contentLength, uploadStream } = await tarFileStreamUpload(
       fileName,
-      fileContextPath
+      fileContextPath,
+      resolveSymlinks
     )
 
     // The compiler assumes this is Web fetch API, but it's actually Node.js fetch API

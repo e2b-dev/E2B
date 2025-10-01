@@ -8,3 +8,5 @@ export const BASE_STEP_NAME = 'base'
  * 3. Caller method (eg. copy(), fromImage(), etc.)
  */
 export const STACK_TRACE_DEPTH = 3
+
+export const RESOLVE_SYMLINKS = false

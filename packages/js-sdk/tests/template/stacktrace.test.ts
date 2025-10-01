@@ -1,19 +1,10 @@
-import { assert, test } from 'vitest'
-import { Template, TemplateClass, waitForTimeout } from '../../src'
-import { randomUUID } from 'node:crypto'
+import { assert } from 'vitest'
+import { Template, waitForTimeout } from '../../src'
 import fs from 'node:fs'
+import { buildTemplateTest } from '../setup'
 
 const __fileContent = fs.readFileSync(__filename, 'utf8') // read current file content
 const nonExistentPath = '/nonexistent/path'
-
-function buildTemplate(template: TemplateClass, skipCache?: boolean) {
-  return Template.build(template, {
-    alias: randomUUID(),
-    cpuCount: 1,
-    memoryMB: 1024,
-    skipCache: skipCache,
-  })
-}
 
 function getStackTraceCallerMethod(
   fileContent: string,
@@ -62,7 +53,7 @@ async function expectToThrowAndCheckTrace(
   }
 }
 
-test('traces on fromImage', async () => {
+buildTemplateTest('traces on fromImage', async ({ buildTemplate }) => {
   const templateFrom = Template()
   const template = templateFrom.fromImage('e2b.dev/this-image-does-not-exist')
   await expectToThrowAndCheckTrace(async () => {
@@ -79,7 +70,7 @@ test('traces on fromImage', async () => {
 //   }, 'fromTemplate')
 // })
 
-test('traces on fromDockerfile', async () => {
+buildTemplateTest('traces on fromDockerfile', async ({ buildTemplate }) => {
   const templateFrom = Template()
   const template = templateFrom.fromDockerfile(
     'FROM ubuntu:22.04\nRUN nonexistent'
@@ -89,7 +80,7 @@ test('traces on fromDockerfile', async () => {
   }, 'fromDockerfile')
 })
 
-test('traces on fromRegistry', async () => {
+buildTemplateTest('traces on fromRegistry', async ({ buildTemplate }) => {
   const templateFrom = Template()
   const template = templateFrom.fromRegistry(
     'registry.example.com/nonexistent:latest',
@@ -103,7 +94,7 @@ test('traces on fromRegistry', async () => {
   }, 'fromRegistry')
 })
 
-test('traces on fromAWSRegistry', async () => {
+buildTemplateTest('traces on fromAWSRegistry', async ({ buildTemplate }) => {
   const templateFrom = Template()
   const template = templateFrom.fromAWSRegistry(
     '123456789.dkr.ecr.us-east-1.amazonaws.com/nonexistent:latest',
@@ -118,7 +109,7 @@ test('traces on fromAWSRegistry', async () => {
   }, 'fromAWSRegistry')
 })
 
-test('traces on fromGCPRegistry', async () => {
+buildTemplateTest('traces on fromGCPRegistry', async ({ buildTemplate }) => {
   const templateFrom = Template()
   const template = templateFrom.fromGCPRegistry(
     'gcr.io/nonexistent-project/nonexistent:latest',
@@ -131,7 +122,7 @@ test('traces on fromGCPRegistry', async () => {
   }, 'fromGCPRegistry')
 })
 
-test('traces on copy', async () => {
+buildTemplateTest('traces on copy', async ({ buildTemplate }) => {
   let template = Template().fromBaseImage()
   template = template.skipCache().copy(nonExistentPath, nonExistentPath)
   await expectToThrowAndCheckTrace(async () => {
@@ -139,7 +130,7 @@ test('traces on copy', async () => {
   }, 'copy')
 })
 
-test('traces on remove', async () => {
+buildTemplateTest('traces on remove', async ({ buildTemplate }) => {
   let template = Template().fromBaseImage()
   template = template.skipCache().remove(nonExistentPath)
   await expectToThrowAndCheckTrace(async () => {
@@ -147,7 +138,7 @@ test('traces on remove', async () => {
   }, 'remove')
 })
 
-test('traces on rename', async () => {
+buildTemplateTest('traces on rename', async ({ buildTemplate }) => {
   let template = Template().fromBaseImage()
   template = template.skipCache().rename(nonExistentPath, '/tmp/dest.txt')
   await expectToThrowAndCheckTrace(async () => {
@@ -155,7 +146,7 @@ test('traces on rename', async () => {
   }, 'rename')
 })
 
-test('traces on makeDir', async () => {
+buildTemplateTest('traces on makeDir', async ({ buildTemplate }) => {
   let template = Template().fromBaseImage()
   template = template.skipCache().makeDir('.bashrc')
   await expectToThrowAndCheckTrace(async () => {
@@ -163,7 +154,7 @@ test('traces on makeDir', async () => {
   }, 'makeDir')
 })
 
-test('traces on makeSymlink', async () => {
+buildTemplateTest('traces on makeSymlink', async ({ buildTemplate }) => {
   let template = Template().fromBaseImage()
   template = template.skipCache().makeSymlink('.bashrc', '.bashrc')
   await expectToThrowAndCheckTrace(async () => {
@@ -171,7 +162,7 @@ test('traces on makeSymlink', async () => {
   }, 'makeSymlink')
 })
 
-test('traces on runCmd', async () => {
+buildTemplateTest('traces on runCmd', async ({ buildTemplate }) => {
   let template = Template().fromBaseImage()
   template = template.skipCache().runCmd(`./${nonExistentPath}`)
   await expectToThrowAndCheckTrace(async () => {
@@ -179,7 +170,7 @@ test('traces on runCmd', async () => {
   }, 'runCmd')
 })
 
-test('traces on setWorkdir', async () => {
+buildTemplateTest('traces on setWorkdir', async ({ buildTemplate }) => {
   let template = Template().fromBaseImage()
   template = template.skipCache().setWorkdir('.bashrc')
   await expectToThrowAndCheckTrace(async () => {
@@ -187,7 +178,7 @@ test('traces on setWorkdir', async () => {
   }, 'setWorkdir')
 })
 
-test('traces on setUser', async () => {
+buildTemplateTest('traces on setUser', async ({ buildTemplate }) => {
   let template = Template().fromBaseImage()
   template = template.skipCache().setUser(';')
   await expectToThrowAndCheckTrace(async () => {
@@ -195,7 +186,7 @@ test('traces on setUser', async () => {
   }, 'setUser')
 })
 
-test('traces on pipInstall', async () => {
+buildTemplateTest('traces on pipInstall', async ({ buildTemplate }) => {
   let template = Template().fromBaseImage()
   template = template.skipCache().pipInstall('nonexistent-package')
   await expectToThrowAndCheckTrace(async () => {
@@ -203,7 +194,7 @@ test('traces on pipInstall', async () => {
   }, 'pipInstall')
 })
 
-test('traces on npmInstall', async () => {
+buildTemplateTest('traces on npmInstall', async ({ buildTemplate }) => {
   let template = Template().fromBaseImage()
   template = template.skipCache().npmInstall('nonexistent-package')
   await expectToThrowAndCheckTrace(async () => {
@@ -211,7 +202,7 @@ test('traces on npmInstall', async () => {
   }, 'npmInstall')
 })
 
-test('traces on aptInstall', async () => {
+buildTemplateTest('traces on aptInstall', async ({ buildTemplate }) => {
   let template = Template().fromBaseImage()
   template = template.skipCache().aptInstall('nonexistent-package')
   await expectToThrowAndCheckTrace(async () => {
@@ -219,7 +210,7 @@ test('traces on aptInstall', async () => {
   }, 'aptInstall')
 })
 
-test('traces on gitClone', async () => {
+buildTemplateTest('traces on gitClone', async ({ buildTemplate }) => {
   let template = Template().fromBaseImage()
   template = template
     .skipCache()
@@ -229,7 +220,7 @@ test('traces on gitClone', async () => {
   }, 'gitClone')
 })
 
-test('traces on setStartCmd', async () => {
+buildTemplateTest('traces on setStartCmd', async ({ buildTemplate }) => {
   let template: any = Template().fromBaseImage()
   template = template.setStartCmd(
     `./${nonExistentPath}`,

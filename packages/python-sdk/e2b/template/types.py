@@ -21,6 +21,7 @@ class CopyItem(TypedDict):
     forceUpload: NotRequired[Optional[bool]]
     user: NotRequired[Optional[str]]
     mode: NotRequired[Optional[int]]
+    resolveSymlinks: NotRequired[Optional[bool]]
 
 
 class Instruction(TypedDict):
@@ -29,6 +30,7 @@ class Instruction(TypedDict):
     force: bool
     forceUpload: NotRequired[Optional[bool]]
     filesHash: NotRequired[Optional[str]]
+    resolveSymlinks: NotRequired[Optional[bool]]
 
 
 @dataclass

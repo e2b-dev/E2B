@@ -1,19 +1,9 @@
 import pytest
-from uuid import uuid4
 import linecache
 
-from e2b import Template, wait_for_timeout, TemplateClass
+from e2b import Template, wait_for_timeout
 
 non_existent_path = "/nonexistent/path"
-
-
-def build(template: TemplateClass):
-    return Template.build(
-        template,
-        alias=str(uuid4()),
-        cpu_count=1,
-        memory_mb=1024,
-    )
 
 
 def _expect_to_throw_and_check_trace(func, expected_method: str):
@@ -38,27 +28,27 @@ def _expect_to_throw_and_check_trace(func, expected_method: str):
 
 
 @pytest.mark.skip_debug()
-def test_traces_on_from_image():
+def test_traces_on_from_image(build):
     template = Template()
     template = template.skip_cache().from_image("e2b.dev/this-image-does-not-exist")
     _expect_to_throw_and_check_trace(lambda: build(template), "from_image")
 
 
 # @pytest.mark.skip_debug()
-# def test_traces_on_from_template():
+# def test_traces_on_from_template(build):
 #     template = Template().from_template("this-template-does-not-exist")
 #     _expect_to_throw_and_check_trace(lambda: build(template), "from_template")
 
 
 @pytest.mark.skip_debug()
-def test_traces_on_from_dockerfile():
+def test_traces_on_from_dockerfile(build):
     template = Template()
     template = template.from_dockerfile("FROM ubuntu:22.04\nRUN nonexistent")
     _expect_to_throw_and_check_trace(lambda: build(template), "from_dockerfile")
 
 
 @pytest.mark.skip_debug()
-def test_traces_on_from_registry():
+def test_traces_on_from_registry(build):
     template = Template()
     template = template.skip_cache().from_registry(
         "registry.example.com/nonexistent:latest",
@@ -69,7 +59,7 @@ def test_traces_on_from_registry():
 
 
 @pytest.mark.skip_debug()
-def test_traces_on_from_aws_registry():
+def test_traces_on_from_aws_registry(build):
     template = Template()
     template = template.skip_cache().from_aws_registry(
         "123456789.dkr.ecr.us-east-1.amazonaws.com/nonexistent:latest",
@@ -81,7 +71,7 @@ def test_traces_on_from_aws_registry():
 
 
 @pytest.mark.skip_debug()
-def test_traces_on_from_gcp_registry():
+def test_traces_on_from_gcp_registry(build):
     template = Template()
     template = template.skip_cache().from_gcp_registry(
         "gcr.io/nonexistent-project/nonexistent:latest",
@@ -93,7 +83,7 @@ def test_traces_on_from_gcp_registry():
 
 
 @pytest.mark.skip_debug()
-def test_traces_on_copy():
+def test_traces_on_copy(build):
     template = Template()
     template = template.from_base_image()
     template = template.skip_cache().copy(non_existent_path, non_existent_path)
@@ -101,7 +91,7 @@ def test_traces_on_copy():
 
 
 @pytest.mark.skip_debug()
-def test_traces_on_remove():
+def test_traces_on_remove(build):
     template = Template()
     template = template.from_base_image()
     template = template.skip_cache().remove(non_existent_path)
@@ -109,7 +99,7 @@ def test_traces_on_remove():
 
 
 @pytest.mark.skip_debug()
-def test_traces_on_rename():
+def test_traces_on_rename(build):
     template = Template()
     template = template.from_base_image()
     template = template.skip_cache().rename(non_existent_path, "/tmp/dest.txt")
@@ -117,7 +107,7 @@ def test_traces_on_rename():
 
 
 @pytest.mark.skip_debug()
-def test_traces_on_make_dir():
+def test_traces_on_make_dir(build):
     template = Template()
     template = template.from_base_image()
     template = template.skip_cache().make_dir(".bashrc")
@@ -125,7 +115,7 @@ def test_traces_on_make_dir():
 
 
 @pytest.mark.skip_debug()
-def test_traces_on_make_symlink():
+def test_traces_on_make_symlink(build):
     template = Template()
     template = template.from_base_image()
     template = template.skip_cache().make_symlink(".bashrc", ".bashrc")
@@ -133,7 +123,7 @@ def test_traces_on_make_symlink():
 
 
 @pytest.mark.skip_debug()
-def test_traces_on_run_cmd():
+def test_traces_on_run_cmd(build):
     template = Template()
     template = template.from_base_image()
     template = template.skip_cache().run_cmd(f"cat {non_existent_path}")
@@ -141,7 +131,7 @@ def test_traces_on_run_cmd():
 
 
 @pytest.mark.skip_debug()
-def test_traces_on_set_workdir():
+def test_traces_on_set_workdir(build):
     template = Template()
     template = template.from_base_image()
     template = template.skip_cache().set_workdir(".bashrc")
@@ -149,7 +139,7 @@ def test_traces_on_set_workdir():
 
 
 @pytest.mark.skip_debug()
-def test_traces_on_set_user():
+def test_traces_on_set_user(build):
     template = Template()
     template = template.from_base_image()
     template = template.skip_cache().set_user(";")
@@ -157,7 +147,7 @@ def test_traces_on_set_user():
 
 
 @pytest.mark.skip_debug()
-def test_traces_on_pip_install():
+def test_traces_on_pip_install(build):
     template = Template()
     template = template.from_base_image()
     template = template.skip_cache().pip_install("nonexistent-package")
@@ -165,7 +155,7 @@ def test_traces_on_pip_install():
 
 
 @pytest.mark.skip_debug()
-def test_traces_on_npm_install():
+def test_traces_on_npm_install(build):
     template = Template()
     template = template.from_base_image()
     template = template.skip_cache().npm_install("nonexistent-package")
@@ -173,7 +163,7 @@ def test_traces_on_npm_install():
 
 
 @pytest.mark.skip_debug()
-def test_traces_on_apt_install():
+def test_traces_on_apt_install(build):
     template = Template()
     template = template.from_base_image()
     template = template.skip_cache().apt_install("nonexistent-package")
@@ -181,7 +171,7 @@ def test_traces_on_apt_install():
 
 
 @pytest.mark.skip_debug()
-def test_traces_on_git_clone():
+def test_traces_on_git_clone(build):
     template = Template()
     template = template.from_base_image()
     template = template.skip_cache().git_clone("https://github.com/repo.git")
@@ -189,7 +179,7 @@ def test_traces_on_git_clone():
 
 
 @pytest.mark.skip_debug()
-def test_traces_on_set_start_cmd():
+def test_traces_on_set_start_cmd(build):
     template = Template()
     template = template.from_base_image()
     template = template.set_start_cmd(
