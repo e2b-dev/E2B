@@ -171,11 +171,11 @@ This way, we'll be able to spawn our custom sandbox and control it with the SDK.
 
 ##### Spawn & control your custom sandbox
 <CodeGroup>
-```js JavaScript & TypeScript
+```js JavaScript & TypeScript highlight={4}
 import { Sandbox } from 'e2b'
 
 // Spawn your custom sandbox
-const sandbox = await Sandbox.create({ template: 'my-agent-sandbox' }) // $HighlightLine
+const sandbox = await Sandbox.create({ template: 'my-agent-sandbox' })
 
 // Interact with sandbox. Learn more here:
 // https://e2b.dev/docs/sandbox/overview
@@ -184,11 +184,11 @@ const sandbox = await Sandbox.create({ template: 'my-agent-sandbox' }) // $Highl
 await sandbox.close()
 ```
 
-```python Python
+```python Python highlight={4}
 from e2b import Sandbox
 
 # Spawn your custom sandbox
-sandbox = Sandbox.create(template="my-agent-sandbox") # $HighlightLine
+sandbox = Sandbox.create(template="my-agent-sandbox")
 
 # Interact with sandbox. Learn more here:
 # https://e2b.dev/docs/sandbox/overview

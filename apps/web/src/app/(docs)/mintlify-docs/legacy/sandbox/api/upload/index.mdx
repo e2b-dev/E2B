@@ -15,16 +15,16 @@ We support uploading files up to 100MB at the moment. If you need to upload larg
 </Note>
 
 <CodeGroup>
-```js JavaScript & TypeScript
+```js JavaScript & TypeScript highlight={7-9}
 import { Sandbox } from 'e2b'
 import fs from 'node:fs'
 
 const sandbox = await Sandbox.create({ template: 'base' })
 
 // If you're in the server environment
-const filename = 'data.csv' // $HighlightLine
-const fileBuffer = fs.readFileSync('path/to/local/file') // $HighlightLine
-const remotePath = await sandbox.uploadFile(fileBuffer, filename) // $HighlightLine
+const filename = 'data.csv'
+const fileBuffer = fs.readFileSync('path/to/local/file')
+const remotePath = await sandbox.uploadFile(fileBuffer, filename)
 
 // If you're in the browser environment, you can use the Blob API
 // const filename = 'data.csv'
@@ -42,13 +42,13 @@ console.log(
 
 await sandbox.close()
 ```
-```python Python
+```python Python highlight={6}
 from e2b import Sandbox
 
 sandbox = Sandbox(template="base")
 
 with open("path/to/local/file", "rb") as f:
-    remote_path = sandbox.upload_file(f)  # $HighlightLine
+    remote_path = sandbox.upload_file(f)
 
 sandbox.close()
 ```

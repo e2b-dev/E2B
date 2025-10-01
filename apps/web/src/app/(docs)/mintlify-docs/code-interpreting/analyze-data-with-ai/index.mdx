@@ -187,49 +187,49 @@ The way we'll do it is by connecting the method for running AI-generated code we
 
 Update the initialization of the Anthropic client to include the tool use like this:
 <CodeGroup>
-```js index.ts
+```js index.ts highlight={6-20}
 const msg = await anthropic.messages.create({
   model: 'claude-3-5-sonnet-20240620',
   max_tokens: 1024,
   messages: [{ role: 'user', content: prompt }],
-  tools: [ // $HighlightLine
-     { // $HighlightLine
-      name: 'run_python_code', // $HighlightLine
-      description: 'Run Python code', // $HighlightLine
-      input_schema: { // $HighlightLine
-        type: 'object', // $HighlightLine
-        properties: { // $HighlightLine
-          code: { // $HighlightLine
-            type: 'string', // $HighlightLine
-            description: 'The Python code to run', // $HighlightLine
-          }, // $HighlightLine
-        }, // $HighlightLine
-        required: ['code'], // $HighlightLine
-      }, // $HighlightLine
-    }, // $HighlightLine
-  ], // $HighlightLine
+  tools: [
+     {
+      name: 'run_python_code',
+      description: 'Run Python code',
+      input_schema: {
+        type: 'object',
+        properties: {
+          code: {
+            type: 'string',
+            description: 'The Python code to run',
+          },
+        },
+        required: ['code'],
+      },
+    },
+  ],
 })
 ```
-```python main.py
+```python main.py highlight={7-19}
 msg = anthropic.messages.create(
   model='claude-3-5-sonnet-20240620',
   max_tokens=1024,
   messages=[
     {"role": "user", "content": prompt}
   ],
-  tools=[ # $HighlightLine
-    { # $HighlightLine
-      "name": "run_python_code", # $HighlightLine
-      "description": "Run Python code", # $HighlightLine
-      "input_schema": { # $HighlightLine
-        "type": "object", # $HighlightLine
-        "properties": { # $HighlightLine
-          "code": { "type": "string", "description": "The Python code to run" }, # $HighlightLine
-        }, # $HighlightLine
-        "required": ["code"], # $HighlightLine
-      }, # $HighlightLine
-    }, # $HighlightLine
-  ], # $HighlightLine
+  tools=[
+    {
+      "name": "run_python_code",
+      "description": "Run Python code",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "string", "description": "The Python code to run" },
+        },
+        "required": ["code"],
+      },
+    },
+  ],
 )
 ```
 </CodeGroup>
@@ -276,58 +276,58 @@ In this example we're specifically asking for a chart so we'll be looking for th
 
 Let's update the `runAIGeneratedCode` method in JavaScript and `run_ai_generated_code` method in Python to check for the chart in the results and save it to the file.
 <CodeGroup>
-```js index.ts
+```js index.ts highlight={7-12,17-25}
 async function runAIGeneratedCode(aiGeneratedCode: string) {
   console.log('Running the code in the sandbox....')
   const execution = await sbx.runCode(aiGeneratedCode)
   console.log('Code execution finished!')
 
   // First let's check if the code ran successfully.
-  if (execution.error) { // $HighlightLine
-    console.error('AI-generated code had an error.') // $HighlightLine
-    console.log(execution.error.name) // $HighlightLine
-    console.log(execution.error.value) // $HighlightLine
-    console.log(execution.error.traceback) // $HighlightLine
-    process.exit(1) // $HighlightLine
-  } // $HighlightLine
+  if (execution.error) {
+    console.error('AI-generated code had an error.')
+    console.log(execution.error.name)
+    console.log(execution.error.value)
+    console.log(execution.error.traceback)
+    process.exit(1)
+  }
 
   // Iterate over all the results and specifically check for png files that will represent the chart.
-  let resultIdx = 0 // $HighlightLine
-  for (const result of execution.results) { // $HighlightLine
-    if (result.png) { // $HighlightLine
+  let resultIdx = 0
+  for (const result of execution.results) {
+    if (result.png) {
       // Save the png to a file
       // The png is in base64 format.
-      fs.writeFileSync(`chart-${resultIdx}.png`, result.png, { encoding: 'base64' }) // $HighlightLine
-      console.log(`Chart saved to chart-${resultIdx}.png`) // $HighlightLine
-      resultIdx++ // $HighlightLine
-    } // $HighlightLine
-  } // $HighlightLine
+      fs.writeFileSync(`chart-${resultIdx}.png`, result.png, { encoding: 'base64' })
+      console.log(`Chart saved to chart-${resultIdx}.png`)
+      resultIdx++
+    }
+  }
 }
 ```
-```python main.py
+```python main.py highlight={7-12,15-23}
 def run_ai_generated_code(ai_generated_code: str):
     print('Running the code in the sandbox....')
     execution = sbx.run_code(ai_generated_code)
     print('Code execution finished!')
 
     # First let's check if the code ran successfully.
-    if execution.error: # $HighlightLine
-        print('AI-generated code had an error.') # $HighlightLine
-        print(execution.error.name) # $HighlightLine
-        print(execution.error.value) # $HighlightLine
-        print(execution.error.traceback) # $HighlightLine
-        sys.exit(1) # $HighlightLine
+    if execution.error:
+        print('AI-generated code had an error.')
+        print(execution.error.name)
+        print(execution.error.value)
+        print(execution.error.traceback)
+        sys.exit(1)
 
     # Iterate over all the results and specifically check for png files that will represent the chart.
-    result_idx = 0 # $HighlightLine
-    for result in execution.results: # $HighlightLine
-        if result.png: # $HighlightLine
+    result_idx = 0
+    for result in execution.results:
+        if result.png:
             # Save the png to a file
             # The png is in base64 format.
-            with open(f'chart-{result_idx}.png', 'wb') as f: # $HighlightLine
-                f.write(base64.b64decode(result.png)) # $HighlightLine
-            print(f'Chart saved to chart-{result_idx}.png') # $HighlightLine
-            result_idx += 1 # $HighlightLine
+            with open(f'chart-{result_idx}.png', 'wb') as f:
+                f.write(base64.b64decode(result.png))
+            print(f'Chart saved to chart-{result_idx}.png')
+            result_idx += 1
 ```
 </CodeGroup>
 

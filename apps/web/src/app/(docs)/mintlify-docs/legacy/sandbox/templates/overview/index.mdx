@@ -29,26 +29,26 @@ Follow our [guide](/legacy/guide/custom-sandbox) on how to create a custom sandb
     ```
 1. Pass the template ID to our SDK like this:
     <CodeGroup title="Using custom sandbox with SDK" isRunnable={false}>
-      ```js JavaScript & TypeScript
+      ```js JavaScript & TypeScript highlight={6}
       import { Sandbox } from 'e2b'
 
       // Create new sandbox
       const sandbox = await Sandbox.create({
         // You get sandbox template from the CLI after you run `$ e2b template build`
-        template: '<sandbox-template>',  // $HighlightLine
+        template: '<sandbox-template>',
       })
 
       // Close sandbox once done
       await sandbox.close()
       ```
 
-      ```python Python
+      ```python Python highlight={6}
       from e2b import Sandbox
 
       # Create new sandbox
       sandbox = Sandbox.create(
         # You get sandbox template from the CLI after you run `$ e2b template build`
-        template="<sandbox-template>", # $HighlightLine
+        template="<sandbox-template>",
       )
 
       # Close sandbox once done

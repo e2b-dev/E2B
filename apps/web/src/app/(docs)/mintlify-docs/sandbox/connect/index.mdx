@@ -10,13 +10,13 @@ This is useful if you want to, for example, reuse the same sandbox instance for 
 To connect to a running sandbox, you first need to retrieve its ID. You can do this by calling the `Sandbox.list()` method.
 
 <CodeGroup>
-```js JavaScript & TypeScript
+```js JavaScript & TypeScript highlight={6}
 import { Sandbox } from '@e2b/code-interpreter'
 const sbx = await Sandbox.create()
 
 // Get all running sandboxes
 const paginator = await Sandbox.list({
-  query: { state: ['running'] }, // $HighlightLine
+  query: { state: ['running'] },
 })
 
 const runningSandboxes = await paginator.nextItems()
@@ -28,11 +28,11 @@ if (runningSandboxes.length === 0) {
 const sandboxId = runningSandboxes[0].sandboxId
 ```
 
-```python Python
+```python Python highlight={4}
 from e2b_code_interpreter import Sandbox
 
 # Get all running sandboxes
-paginator = Sandbox.list()  # $HighlightLine
+paginator = Sandbox.list()
 
 # Get the ID of the sandbox you want to connect to
 running_sandboxes = paginator.next_items()
@@ -50,7 +50,7 @@ sandbox_id = running_sandboxes[0].sandbox_id
 Now that you have the sandbox ID, you can connect to the sandbox using the `Sandbox.connect()` method.
 
 <CodeGroup>
-```js JavaScript & TypeScript
+```js JavaScript & TypeScript highlight={14}
 import { Sandbox } from "@e2b/code-interpreter"
 
 // Get all running sandboxes
@@ -64,12 +64,11 @@ if (runningSandboxes.length === 0) {
 const sandboxId = runningSandboxes[0].sandboxId
 
 // Connect to the sandbox
-const sandbox = await Sandbox.connect(sandboxId) // $HighlightLine
+const sandbox = await Sandbox.connect(sandboxId)
 // Now you can use the sandbox as usual
 // ...
-
 ```
-```python Python
+```python Python highlight={13}
 from e2b_code_interpreter import Sandbox
 
 # Get all running sandboxes
@@ -82,9 +81,8 @@ if len(running_sandboxes) == 0:
 sandbox_id = running_sandboxes[0].sandbox_id
 
 # Connect to the sandbox
-sandbox = Sandbox.connect(sandbox_id) # $HighlightLine
+sandbox = Sandbox.connect(sandbox_id)
 # Now you can use the sandbox as usual
 # ...
-
 ```
 </CodeGroup>

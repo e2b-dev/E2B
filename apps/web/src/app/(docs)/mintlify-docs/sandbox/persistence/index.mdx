@@ -73,8 +73,8 @@ console.log('Sandbox created', sbx.sandboxId)
 
 // Pause the sandbox
 // You can save the sandbox ID in your database to resume the sandbox later
-await sbx.betaPause() // $HighlightLine
-console.log('Sandbox paused', sbx.sandboxId) // $HighlightLine
+await sbx.betaPause()
+console.log('Sandbox paused', sbx.sandboxId)
 ```
 ```python Python highlight={8-9}
 from e2b_code_interpreter import Sandbox
@@ -84,8 +84,8 @@ print('Sandbox created', sbx.sandbox_id)
 
 # Pause the sandbox
 # You can save the sandbox ID in your database to resume the sandbox later
-sbx.beta_pause() # $HighlightLine
-print('Sandbox paused', sbx.sandbox_id) # $HighlightLine
+sbx.beta_pause() 
+print('Sandbox paused', sbx.sandbox_id) 
 ```
 </CodeGroup>
 
@@ -107,8 +107,8 @@ await sbx.betaPause()
 console.log('Sandbox paused', sbx.sandboxId)
 
 // Connect to the sandbox (it will automatically resume the sandbox, if paused)
-const sameSbx = await sbx.connect() // $HighlightLine
-console.log('Connected to the sandbox', sameSbx.sandboxId) // $HighlightLine
+const sameSbx = await sbx.connect()
+console.log('Connected to the sandbox', sameSbx.sandboxId)
 ```
 ```python Python highlight={12-13}
 from e2b_code_interpreter import Sandbox
@@ -122,8 +122,8 @@ sbx.beta_pause()
 print('Sandbox paused', sandbox_id)
 
 # Connect to the sandbox (it will automatically resume the sandbox, if paused)
-same_sbx = sbx.connect() # $HighlightLine
-print('Connected to the sandbox', same_sbx.sandbox_id) # $HighlightLine
+same_sbx = sbx.connect()
+print('Connected to the sandbox', same_sbx.sandbox_id)
 ```
 </CodeGroup>
 
@@ -136,10 +136,10 @@ More information about using the method can be found in [List Sandboxes](/sandbo
 import { Sandbox, SandboxInfo } from '@e2b/code-interpreter'
 
 // List all paused sandboxes
-const paginator = Sandbox.list({ query: { state: ['paused'] } }) // $HighlightLine
+const paginator = Sandbox.list({ query: { state: ['paused'] } })
 
 // Get the first page of paused sandboxes
-const sandboxes = await paginator.nextItems() // $HighlightLine
+const sandboxes = await paginator.nextItems()
 
 // Get all paused sandboxes
 while (paginator.hasNext) {
@@ -151,10 +151,10 @@ while (paginator.hasNext) {
 # List all paused sandboxes
 from e2b_code_interpreter import Sandbox, SandboxQuery, SandboxState
 
-paginator = Sandbox.list(SandboxQuery(state=[SandboxState.PAUSED])) # $HighlightLine
+paginator = Sandbox.list(SandboxQuery(state=[SandboxState.PAUSED]))
 
 # Get the first page of paused sandboxes
-sandboxes = paginator.next_items() # $HighlightLine
+sandboxes = paginator.next_items()
 
 # Get all paused sandboxes
 while paginator.has_next:
@@ -179,10 +179,10 @@ console.log('Sandbox created', sbx.sandboxId)
 await sbx.betaPause()
 
 // Remove the sandbox
-await sbx.kill() // $HighlightLine
+await sbx.kill()
 
 // Remove sandbox by id
-await Sandbox.kill(sbx.sandboxId) // $HighlightLine
+await Sandbox.kill(sbx.sandboxId)
 ```
 ```python Python highlight={9,12}
 from e2b_code_interpreter import Sandbox
@@ -193,10 +193,10 @@ sbx = Sandbox.create()
 sbx.beta_pause()
 
 # Remove the sandbox
-sbx.kill() # $HighlightLine
+sbx.kill()
 
 # Remove sandbox by id
-Sandbox.kill(sbx.sandbox_id) # $HighlightLine
+Sandbox.kill(sbx.sandbox_id)
 ```
 </CodeGroup>
 

@@ -8,22 +8,22 @@ title: "Setting environment variables"
 ## Global environment variables
 You can set the sandbox's global environment variables when initializing a new sandbox.
 <CodeGroup>
-```js JavaScript & TypeScript
+```js JavaScript & TypeScript highlight={5}
 import { Sandbox } from 'e2b'
 
 const sandbox = await Sandbox.create({
   template: 'base',
-  envVars: {FOO: 'Hello'}, // $HighlightLine
+  envVars: {FOO: 'Hello'},
 })
 
 await sandbox.close()
 ```
-```python Python
+```python Python highlight={5}
 from e2b import Sandbox
 
 sandbox = Sandbox(
     template="base",
-    env_vars={"FOO": "Hello"},  # $HighlightLine
+    env_vars={"FOO": "Hello"},
 )
 
 sandbox.close()
@@ -39,7 +39,7 @@ Environment variables set when starting a new process have precedence over the e
 </Note>
 
 <CodeGroup>
-```js JavaScript & TypeScript
+```js JavaScript & TypeScript highlight={10}
 import { Sandbox } from 'e2b'
 
 const sandbox = await Sandbox.create({
@@ -49,7 +49,7 @@ const sandbox = await Sandbox.create({
 
 const proc = await sandbox.process.start({
   cmd: 'echo $FOO $BAR!',
-  envVars: {BAR: 'World'}, // $HighlightLine
+  envVars: {BAR: 'World'},
 })
 await proc.wait()
 console.log(proc.output.stdout)
@@ -57,7 +57,7 @@ console.log(proc.output.stdout)
 
 await sandbox.close()
 ```
-```python Python
+```python Python highlight={10}
 from e2b import Sandbox
 
 sandbox = Sandbox(
@@ -67,7 +67,7 @@ sandbox = Sandbox(
 
 proc = sandbox.process.start(
     "echo $FOO $BAR!",
-    env_vars={"BAR": "World"},  # $HighlightLine
+    env_vars={"BAR": "World"},
 )
 proc.wait()
 

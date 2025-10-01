@@ -2598,15 +2598,5 @@
       "github": "https://github.com/mintlify",
       "linkedin": "https://linkedin.com/company/mintlify"
     }
-  },
-  "fonts": {
-    "heading": {
-      "family": "IBM Plex Mono",
-      "weight": 700
-    },
-    "body": {
-      "family": "IBM Plex Mono",
-      "weight": 400
-    }
   }
 }

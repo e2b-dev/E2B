@@ -19,12 +19,12 @@ e2b template build --ready-cmd "<your-ready-command>"
 ### Sandbox template config
 You can specify the ready command inside the `e2b.toml` in the same directory where you run `e2b template build`.
 <CodeGroup isFileName title="e2b.toml" isRunnable={false}>
-  ```toml
+  ```toml e2b.toml highlight={5}
   # This is a config for E2B sandbox template
   template_id = "1wdqsf9le9gk21ztb4mo"
   dockerfile = "e2b.Dockerfile"
   template_name = "my-agent-sandbox"
-  ready_cmd = "<your-ready-command>"  # $HighlightLine
+  ready_cmd = "<your-ready-command>"
   ```
 </CodeGroup>
 

@@ -9,7 +9,7 @@ Use E2B SDK allows you to stream the output, and results when executing code in 
 When using the `runCode()` method in JavaScript or `run_code()` in Python you can pass `onStdout`/`on_stdout` and `onStderr`/`on_stderr` callbacks to handle the output.
 
 <CodeGroup>
-```js JavaScript & TypeScript
+```js JavaScript & TypeScript highlight={15-17}
 import { Sandbox } from '@e2b/code-interpreter'
 
 const codeToRun = `
@@ -24,12 +24,12 @@ const codeToRun = `
 const sandbox = await Sandbox.create()
 sandbox.runCode(codeToRun, {
   // Use `onError` to handle runtime code errors
-  onError: error => console.error('error:', error), // $HighlightLine
-  onStdout: data => console.log('stdout:', data), // $HighlightLine
-  onStderr: data => console.error('stderr:', data), // $HighlightLine
+  onError: error => console.error('error:', error),
+  onStdout: data => console.log('stdout:', data),
+  onStderr: data => console.error('stderr:', data),
 })
 ```
-```python Python
+```python Python highlight={17-19}
 from e2b_code_interpreter import Sandbox
 
 code_to_run = """
@@ -46,9 +46,9 @@ sandbox = Sandbox.create()
 sandbox.run_code(
   code_to_run,
   # Use `on_error` to handle runtime code errors
-  on_error=lambda error: print('error:', error), # $HighlightLine
-  on_stdout=lambda data: print('stdout:', data), # $HighlightLine
-  on_stderr=lambda data: print('stderr:', data), # $HighlightLine
+  on_error=lambda error: print('error:', error),
+  on_stdout=lambda data: print('stdout:', data),
+  on_stderr=lambda data: print('stderr:', data),
 )
 ```
 </CodeGroup>
@@ -79,7 +79,6 @@ stdout: This goes first to stdout
 stderr: This goes later to stderr
 
 stdout: This goes last
-
 ```
 </CodeGroup>
 
@@ -89,7 +88,7 @@ When using the `runCode()` method in JavaScript or `run_code()` in Python you ca
 to receive results from the sandbox like charts, tables, text, and more.
 
 <CodeGroup>
-```js JavaScript & TypeScript
+```js JavaScript & TypeScript highlight={20}
 const codeToRun = `
 import matplotlib.pyplot as plt
 
@@ -109,10 +108,10 @@ plt.show()
 `
 const sandbox = await Sandbox.create()
 await sandbox.runCode(codeToRun, {
-  onResult: result => console.log('result:', result), // $HighlightLine
+  onResult: result => console.log('result:', result),
 })
 ```
-```python Python
+```python Python highlight={24}
 from e2b_code_interpreter import Sandbox
 
 code_to_run = """
@@ -136,7 +135,7 @@ plt.show()
 sandbox = Sandbox.create()
 sandbox.run_code(
   code_to_run,
-  on_result=lambda result: print('result:', result), # $HighlightLine
+  on_result=lambda result: print('result:', result),
 )
 ```
 </CodeGroup>

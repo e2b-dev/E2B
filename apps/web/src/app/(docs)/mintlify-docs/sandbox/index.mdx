@@ -6,22 +6,22 @@ sidebarTitle: Lifecycle
 When you start the sandbox, it stays alive for 5 minutes by default but you can change it by passing the `timeout` parameter.
 After the time passes, the sandbox will be automatically shutdown.
 <CodeGroup>
-```js JavaScript & TypeScript
+```js JavaScript & TypeScript highlight={6}
 import { Sandbox } from '@e2b/code-interpreter'
 
 // Create sandbox with and keep it running for 60 seconds.
 // 🚨 Note: The units are milliseconds.
 const sandbox = await Sandbox.create({
-  timeoutMs: 60_000, // $HighlightLine
+  timeoutMs: 60_000,
 })
 ```
-```python Python
+```python Python highlight={6}
 from e2b_code_interpreter import Sandbox
 
 # Create sandbox with and keep it running for 60 seconds.
 # 🚨 Note: The units are seconds.
 sandbox = Sandbox.create(
-  timeout=60, # $HighlightLine
+  timeout=60,
 )
 ```
 </CodeGroup>

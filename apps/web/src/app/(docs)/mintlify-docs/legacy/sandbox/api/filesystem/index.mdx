@@ -6,27 +6,27 @@ title: List directory
 
 
 <CodeGroup>
-```js JavaScript & TypeScript
+```js JavaScript & TypeScript highlight={7}
 import { Sandbox } from 'e2b'
 
 const sandbox = await Sandbox.create({
   template: 'base',
 })
 
-const dirContent = await sandbox.filesystem.list('/') // $HighlightLine
+const dirContent = await sandbox.filesystem.list('/')
 dirContent.forEach((item) => {
   console.log(item.name)
 })
 
 await sandbox.close()
 ```
-```python Python
+```python Python highlight={6}
 from e2b import Sandbox
 
 sandbox = Sandbox(template="base")
 
 # List the root directory
-content = sandbox.filesystem.list("/")  # $HighlightLine
+content = sandbox.filesystem.list("/") 
 for item in content:
     print(f"Is '{item.name}' directory?", item.is_dir)
 
@@ -39,23 +39,23 @@ sandbox.close()
 Create directory and all parent directories.
 
 <CodeGroup>
-```js JavaScript & TypeScript
+```js JavaScript & TypeScript highlight={6}
 import { Sandbox } from 'e2b'
 
 const sandbox = await Sandbox.create({ template: 'base' })
 
 // Create a new directory '/dir'
-await sandbox.filesystem.makeDir('/dir') // $HighlightLine
+await sandbox.filesystem.makeDir('/dir')
 
 await sandbox.close()
 ```
-```python Python
+```python Python highlight={6}
 from e2b import Sandbox
 
 sandbox = Sandbox(template="base")
 
 # Create a new directory '/dir'
-sandbox.filesystem.make_dir("/dir")  # $HighlightLine
+sandbox.filesystem.make_dir("/dir")
 
 sandbox.close()
 ```
@@ -70,7 +70,7 @@ When writing to a file that already exists, the file will get overwritten.
 When writing to a file that's in a directory that doesn't exist, you'll get an error.
 
 <CodeGroup>
-```js JavaScript & TypeScript
+```js JavaScript & TypeScript highlight={11}
 import { Sandbox } from 'e2b'
 
 const sandbox = await Sandbox.create({ template: 'base' })
@@ -81,14 +81,14 @@ const sandbox = await Sandbox.create({ template: 'base' })
 // - overwrite the file if it exists
 
 // Write the content of the file '/hello.txt'
-await sandbox.filesystem.write('/hello.txt', 'Hello World!') // $HighlightLine
+await sandbox.filesystem.write('/hello.txt', 'Hello World!')
 
 // The following would fail because '/dir' doesn't exist
 // await sandbox.filesystem.write("/dir/hello.txt", "Hello World!")
 
 await sandbox.close()
 ```
-```python Python
+```python Python highlight={11}
 from e2b import Sandbox
 
 sandbox = Sandbox(template="base")
@@ -99,7 +99,7 @@ sandbox = Sandbox(template="base")
 # - overwrite the file if it exists
 
 # Write the content of the file '/hello.txt'
-sandbox.filesystem.write("/hello.txt", "Hello World!")  # $HighlightLine
+sandbox.filesystem.write("/hello.txt", "Hello World!")
 
 # The following would fail because '/dir' doesn't exist
 # sandbox.filesystem.write("/dir/hello.txt", "Hello World!")
@@ -111,23 +111,23 @@ sandbox.close()
 ## Read from file
 
 <CodeGroup>
-```js JavaScript & TypeScript
+```js JavaScript & TypeScript highlight={5}
 import { Sandbox } from 'e2b'
 
 const sandbox = await Sandbox.create({ template: 'base' })
 
-const fileContent = await sandbox.filesystem.read('/etc/hosts') // $HighlightLine
+const fileContent = await sandbox.filesystem.read('/etc/hosts')
 console.log(fileContent)
 
 await sandbox.close()
 ```
-```python Python
+```python Python highlight={6}
 from e2b import Sandbox
 
 sandbox = Sandbox(template="base")
 
 # Read the '/etc/hosts' file
-file_content = sandbox.filesystem.read("/etc/hosts")  # $HighlightLine
+file_content = sandbox.filesystem.read("/etc/hosts")
 
 # Prints something like:
 # 127.0.0.1       localhost
@@ -140,7 +140,7 @@ sandbox.close()
 ## Write bytes
 
 <CodeGroup>
-```js JavaScript & TypeScript
+```js JavaScript & TypeScript highlight={10}
 import { Sandbox } from 'e2b'
 
 const sandbox = await Sandbox.create({ template: 'base' })
@@ -150,7 +150,7 @@ const encoder = new TextEncoder('utf-8')
 const contentInBytes = encoder.encode('Hello World!')
 
 // `writeBytes` accepts a Uint8Array and saves it to a file inside the playground
-await sandbox.filesystem.writeBytes('/file', contentInBytes) // $HighlightLine
+await sandbox.filesystem.writeBytes('/file', contentInBytes)
 
 // We can read the file back to verify the content
 const fileContent = await sandbox.filesystem.read('/file')
@@ -160,7 +160,7 @@ console.log(fileContent)
 
 await sandbox.close()
 ```
-```python Python
+```python Python highlight={8}
 from e2b import Sandbox
 
 sandbox = Sandbox(template="base")
@@ -168,7 +168,7 @@ sandbox = Sandbox(template="base")
 content_in_bytes = bytearray(b"Hello world")
 
 # `write_bytes` will write bytearray to a file inside the playground.
-sandbox.filesystem.write_bytes("/file", content_in_bytes)  # $HighlightLine
+sandbox.filesystem.write_bytes("/file", content_in_bytes)
 
 # We can read the file back to verify the content
 file_content = sandbox.filesystem.read("/file")
@@ -181,7 +181,7 @@ sandbox.close()
 ## Read bytes
 
 <CodeGroup>
-```js JavaScript & TypeScript
+```js JavaScript & TypeScript highlight={8}
 import fs from 'fs'
 import { Sandbox } from 'e2b'
 
@@ -189,7 +189,7 @@ const sandbox = await Sandbox.create({ template: 'base' })
 
 // File bytes will read file's content as bytes
 // `fileBytes` as a Uint8Array
-const fileBytes = await sandbox.filesystem.readBytes('/etc/hosts') // $HighlightLine
+const fileBytes = await sandbox.filesystem.readBytes('/etc/hosts')
 
 // The output will look similar to this:
 // <Buffer 31 32 37 2e 30 2e 30 2e 31 09 6c 6f 63 61 6c 68 6f 73  ...
@@ -200,14 +200,14 @@ fs.writeFileSync('hosts', fileBytes)
 
 await sandbox.close()
 ```
-```python Python
+```python Python highlight={7}
 from e2b import Sandbox
 
 sandbox = Sandbox(template="base")
 
 # File bytes will read file's content as bytes
 # `file_bytes` as a bytearray
-file_bytes = sandbox.filesystem.read_bytes("/etc/hosts")  # $HighlightLine
+file_bytes = sandbox.filesystem.read_bytes("/etc/hosts")
 
 # The output will look similar to this:
 # b'127.0.0.1\tlocalhost\n::1\tlocalhost ip6-localhost ip6-loopback\nfe00::0\tip6-localnet\nff00::0\tip6-mcastprefix\nff02::1\tip6-allnodes\nff02::2\tip6-allrouters\n172.17.0.17\t77c7a543226b\n'
@@ -224,18 +224,17 @@ sandbox.close()
 ## Watch directory for changes
 
 <CodeGroup>
-```js JavaScript & TypeScript
+```js JavaScript & TypeScript highlight={6-10}
 import { Sandbox } from 'e2b'
 
 const sandbox = await Sandbox.create({ template: 'base' })
 
 // Start filesystem watcher for the /home directory
-const watcher = sandbox.filesystem.watchDir('/home') // $HighlightLine
-watcher.addEventListener((event) => {
-  // $HighlightLine
-  console.log('Filesystem event', event) // $HighlightLine
-}) // $HighlightLine
-await watcher.start() // $HighlightLine
+const watcher = sandbox.filesystem.watchDir('/home') 
+watcher.addEventListener((event) => { 
+  console.log('Filesystem event', event) 
+}) 
+await watcher.start() 
 
 // Create files in the /home directory inside the playground
 // We'll receive notifications for these events through the watcher we created above.
@@ -249,14 +248,14 @@ for (let i = 0; i < 10; i++) {
 
 await sandbox.close()
 ```
-```python Python
+```python Python highlight={7,19}
 import time
 
 from e2b import Sandbox
 
 sandbox = Sandbox.create()
 
-watcher = sandbox.files.watch_dir("/home")  # $HighlightLine
+watcher = sandbox.files.watch_dir("/home") 
 
 # Create files in the /home directory inside the playground
 # We'll receive notifications for these events through the watcher we created above.
@@ -268,7 +267,7 @@ for i in range(10):
     time.sleep(1)
 
 for event in watcher.get():
-    print(f"Event: {event.type} {event.name}")  # $HighlightLine
+    print(f"Event: {event.type} {event.name}") 
 
 watcher.stop()
 sandbox.kill()

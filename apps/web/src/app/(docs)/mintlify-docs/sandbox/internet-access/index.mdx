@@ -35,22 +35,22 @@ When internet access is disabled, the sandbox cannot make outbound network conne
 Every sandbox has a public URL that can be used to access running services inside the sandbox.
 
 <CodeGroup>
-```js JavaScript & TypeScript
+```js JavaScript & TypeScript highlight={6}
 import { Sandbox } from '@e2b/code-interpreter'
 
 const sandbox = await Sandbox.create()
 
 // You need to always pass a port number to get the host
-const host = sandbox.getHost(3000) // $HighlightLine
+const host = sandbox.getHost(3000) 
 console.log(`https://${host}`)
 ```
-```python Python
+```python Python highlight={6}
 from e2b_code_interpreter import Sandbox
 
 sandbox = Sandbox.create()
 
 # You need to always pass a port number to get the host
-host = sandbox.get_host(3000) # $HighlightLine
+host = sandbox.get_host(3000) 
 print(f'https://{host}')
 ```
 </CodeGroup>

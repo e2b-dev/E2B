@@ -19,7 +19,7 @@ export const sections = [
 </CodeGroup>
 
 <CodeGroup>
-```js JavaScript & TypeScript
+```js JavaScript & TypeScript highlight={14}
 import { Sandbox } from 'e2b'
 
 const logger = {
@@ -33,10 +33,10 @@ const logger = {
 const sandbox = await Sandbox.create({
   template: 'base',
   apiKey: process.env.E2B_API_KEY,
-  logger, // $HighlightLine
+  logger,
 })
 ```
-```python Python
+```python Python highlight={10,15,18,29}
 import logging
 from os import getenv
 
@@ -46,15 +46,15 @@ E2B_API_KEY = getenv("E2B_API_KEY")
 
 # Global logging configuration
 logging.basicConfig(level=logging.INFO, format="GLOBAL - [%(asctime)s] - %(name)-32s - %(levelname)7s: %(message)s",
-                    datefmt="%Y-%m-%d %H:%M:%S")  # $HighlightLine
+                    datefmt="%Y-%m-%d %H:%M:%S")
 
 # Or configure only e2b logger
 
 # Get e2b logger
-e2b_logger = logging.getLogger("e2b")  # $HighlightLine
+e2b_logger = logging.getLogger("e2b")
 
 # Set e2b logger level to INFO
-e2b_logger.setLevel(logging.INFO)  # $HighlightLine
+e2b_logger.setLevel(logging.INFO)
 
 # Setup formatter
 formatter = logging.Formatter("E2B    - [%(asctime)s] - %(name)-32s - %(levelname)7s: %(message)s",
@@ -65,7 +65,7 @@ handler = logging.StreamHandler()
 handler.setFormatter(formatter)
 
 # Add handler to e2b logger
-e2b_logger.addHandler(handler)  # $HighlightLine
+e2b_logger.addHandler(handler)
 
 
 def main():

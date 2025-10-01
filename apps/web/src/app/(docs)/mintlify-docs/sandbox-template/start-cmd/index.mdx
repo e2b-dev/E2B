@@ -23,12 +23,12 @@ When you spawn the custom sandbox you built, the start command will be already r
 ### Sandbox template config
 You can specify the start command also inside the `e2b.toml` in the same directory where you run `e2b template build`.
 <CodeGroup isFileName title="e2b.toml" isRunnable={false}>
-  ```toml highlight={5}
+  ```toml e2b.toml highlight={5}
   # This is a config for E2B sandbox template
   template_id = "1wdqsf9le9gk21ztb4mo"
   dockerfile = "e2b.Dockerfile"
   template_name = "my-agent-sandbox"
-  start_cmd = "<your-start-command>"  # $HighlightLine
+  start_cmd = "<your-start-command>"
   ```
 </CodeGroup>
 

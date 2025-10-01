@@ -12,27 +12,27 @@ For example, the download file method is useful for downloading any files produc
 This LLM-generated code might produce some files like charts, CSV files, or PDF files that you want to download to your machine.
 
 <CodeGroup>
-```js JavaScript & TypeScript
+```js JavaScript & TypeScript highlight={6}
 import { Sandbox } from 'e2b'
 import fs from 'node:fs'
 
 const sandbox = await Sandbox.create({ template: 'base' })
 
-const buffer = await sandbox.downloadFile('path/to/remote/file/inside/sandbox', 'buffer') // $HighlightLine
+const buffer = await sandbox.downloadFile('path/to/remote/file/inside/sandbox', 'buffer')
 // Save file to local filesystem
 fs.writeFileSync('path/to/local/file', buffer)
 
 await sandbox.close()
 ```
-```python Python
+```python Python highlight={5,7,8}
 from e2b import Sandbox
 
 sandbox = Sandbox(template="base")
 
-file_in_bytes = sandbox.download_file("path/to/remote/file/inside/sandbox")  # $HighlightLine
+file_in_bytes = sandbox.download_file("path/to/remote/file/inside/sandbox") 
 # Save file to local filesystem
-with open("path/to/local/file", "wb") as f:  # $HighlightLine
-    f.write(file_in_bytes)  # $HighlightLine
+with open("path/to/local/file", "wb") as f: 
+    f.write(file_in_bytes) 
 
 sandbox.close()
 ```

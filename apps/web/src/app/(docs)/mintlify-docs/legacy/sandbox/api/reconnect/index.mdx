@@ -45,7 +45,7 @@ Call the `keep_alive`/`keepAlive` method on the sandbox instance to keep it aliv
 You then disconnect from the sandbox.
 
 <CodeGroup>
-```js JavaScript & TypeScript
+```js JavaScript & TypeScript highlight={8}
 // Do something in the sandbox
 await sandbox.filesystem.write('hello.txt', 'Hello World!')
 
@@ -53,7 +53,7 @@ await sandbox.filesystem.write('hello.txt', 'Hello World!')
 const sandboxID = sandbox.id
 
 // Keep alive the sandbox for 2 minutes
-await sandbox.keepAlive(2 * 60 * 1000) // 2 minutes $HighlightLine
+await sandbox.keepAlive(2 * 60 * 1000) // 2 minutes
 
 // Close the sandbox. Even if we close the sandbox, it will stay alive, because we explicitly called keepAlive().
 await sandbox.close()
@@ -61,7 +61,7 @@ await sandbox.close()
 // Do something else...
 await wait(60 * 1000)
 ```
-```python Python
+```python Python highlight={8}
 # Do something in the sandbox
 sandbox.filesystem.write('hello.txt', 'Hello World!')
 
@@ -69,7 +69,7 @@ sandbox.filesystem.write('hello.txt', 'Hello World!')
 sandboxID = sandbox.id
 
 # Keep the sandbox alive for 2 minutes
-sandbox.keep_alive(60 * 2)  # $HighlightLine
+sandbox.keep_alive(60 * 2) 
 
 # Close the sandbox. Even if we close the sandbox, it will stay alive, because we explicitly called keep_alive().
 sandbox.close()
@@ -82,9 +82,9 @@ time.sleep(60)
 You can then reconnect to the sandbox from anywhere.
 
 <CodeGroup>
-```js JavaScript & TypeScript
+```js JavaScript & TypeScript highlight={2}
 // Reconnect to the sandbox
-const sandbox2 = await Sandbox.reconnect(sandboxID) // $HighlightLine
+const sandbox2 = await Sandbox.reconnect(sandboxID)
 
 // Continue in using the sandbox
 const content = await sandbox2.filesystem.read('hello.txt')
@@ -93,9 +93,9 @@ console.log(content)
 // Close the sandbox
 await sandbox2.close()
 ```
-```python Python
+```python Python highlight={2}
 # Reconnect to the sandbox
-sandbox2 = Sandbox.reconnect(sandboxID) # $HighlightLine
+sandbox2 = Sandbox.reconnect(sandboxID)
 
 # Continue in using the sandbox
 content = sandbox2.filesystem.read('hello.txt')
