@@ -225,14 +225,14 @@ function printLog(
     delete log['level']
     console.log(
       `${asTimestamp(time)} ${level} ` +
-      util.inspect(log, {
-        colors: true,
-        depth: null,
-        maxArrayLength: Infinity,
-        sorted: true,
-        compact: true,
-        breakLength: Infinity,
-      })
+        util.inspect(log, {
+          colors: true,
+          depth: null,
+          maxArrayLength: Infinity,
+          sorted: true,
+          compact: true,
+          breakLength: Infinity,
+        })
     )
   }
 }
