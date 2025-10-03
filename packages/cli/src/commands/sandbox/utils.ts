@@ -1,6 +1,7 @@
 import { wait } from '../../utils/wait'
 import { asBold } from '../../utils/format'
 import { Sandbox } from 'e2b'
+import { ensureAPIKey } from 'src/api'
 
 export function formatEnum(e: { [key: string]: string }) {
   return Object.values(e)
@@ -51,7 +52,10 @@ export function getShortID(sandboxID: string) {
 
 export async function isRunning(sandboxID: string) {
   try {
-    const info = await Sandbox.getInfo(getShortID(sandboxID))
+    const apiKey = ensureAPIKey()
+    const info = await Sandbox.getInfo(getShortID(sandboxID), {
+      apiKey,
+    })
     return info.state === 'running'
   } catch {
     return false
