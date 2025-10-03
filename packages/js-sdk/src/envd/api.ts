@@ -15,9 +15,11 @@ import { StartResponse, ConnectResponse } from './process/process_pb'
 import { Code, ConnectError } from '@connectrpc/connect'
 import { WatchDirResponse } from './filesystem/filesystem_pb'
 
-export async function handleEnvdApiError<A extends { responses: Record<string, any> }, B, C extends `${string}/${string}`>(
-  res: FetchResponse<A, B, C>
-) {
+export async function handleEnvdApiError<
+  A extends { responses: Record<string, any> },
+  B,
+  C extends `${string}/${string}`
+>(res: FetchResponse<A, B, C>) {
   if (!res.error) {
     return
   }
