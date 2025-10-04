@@ -72,7 +72,7 @@ export interface CommandStartOpts extends CommandRequestOpts {
    * If true, command stdin is kept open and you can send data to it using {@link Commands.sendStdin} or {@link CommandHandle.sendStdin}.
    * @default false
    */
-  stdin: boolean
+  stdin?: boolean
   /**
    * Timeout for the command in **milliseconds**.
    *
