@@ -1,4 +1,4 @@
-import { Template } from 'e2b'
+import { Template, defaultBuildLogger } from 'e2b'
 import { template } from './template'
 
 async function main() {
@@ -6,6 +6,7 @@ async function main() {
     alias: 'start-cmd',
     cpuCount: 2,
     memoryMB: 1024,
+    onBuildLogs: defaultBuildLogger(),
   });
 }
 

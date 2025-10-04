@@ -17,6 +17,8 @@ import {
   Instruction,
   InstructionType,
   LogEntry,
+  LogEntryEnd,
+  LogEntryStart,
   RegistryConfig,
   TemplateBuilder,
   TemplateFinal,
@@ -31,7 +33,15 @@ import {
   readGCPServiceAccountJSON,
 } from './utils'
 
-export { type TemplateBuilder } from './types'
+export {
+  LogEntry,
+  LogEntryEnd,
+  LogEntryStart,
+  type LogEntryLevel,
+  type TemplateBuilder,
+} from './types'
+
+export { defaultBuildLogger } from './logger'
 
 type TemplateOptions = {
   fileContextPath?: string
@@ -43,7 +53,7 @@ type BasicBuildOptions = {
   cpuCount?: number
   memoryMB?: number
   skipCache?: boolean
-  onBuildLogs?: (logEntry: InstanceType<typeof LogEntry>) => void
+  onBuildLogs?: (logEntry: LogEntry) => void
 }
 
 export type BuildOptions = BasicBuildOptions & {
@@ -552,125 +562,132 @@ export class TemplateBase
   }
 
   private async build(options: BuildOptions): Promise<void> {
-    const config = new ConnectionConfig({
-      domain: options.domain,
-      apiKey: options.apiKey,
-    })
-    const client = new ApiClient(config)
+    try {
+      options.onBuildLogs?.(new LogEntryStart(new Date(), 'Build started'))
 
-    if (options.skipCache) {
-      this.force = true
-    }
+      const config = new ConnectionConfig({
+        domain: options.domain,
+        apiKey: options.apiKey,
+      })
+      const client = new ApiClient(config)
 
-    // Create template
-    options.onBuildLogs?.(
-      new LogEntry(
-        new Date(),
-        'info',
-        `Requesting build for template: ${options.alias}`
-      )
-    )
+      if (options.skipCache) {
+        this.force = true
+      }
 
-    const { templateID, buildID } = await requestBuild(client, {
-      alias: options.alias,
-      cpuCount: options.cpuCount ?? 2,
-      memoryMB: options.memoryMB ?? 1024,
-    })
-
-    options.onBuildLogs?.(
-      new LogEntry(
-        new Date(),
-        'info',
-        `Template created with ID: ${templateID}, Build ID: ${buildID}`
-      )
-    )
-
-    const instructionsWithHashes = await this.instructionsWithHashes()
-
-    // Upload files in parallel
-    const uploadPromises = instructionsWithHashes.map(
-      async (instruction, index) => {
-        if (instruction.type !== InstructionType.COPY) {
-          return
-        }
-
-        const src = instruction.args.length > 0 ? instruction.args[0] : null
-        const filesHash = instruction.filesHash ?? null
-        if (src === null || filesHash === null) {
-          throw new Error('Source path and files hash are required')
-        }
-
-        const forceUpload = instruction.forceUpload
-        let stackTrace = undefined
-        if (index + 1 >= 0 && index + 1 < this.stackTraces.length) {
-          stackTrace = this.stackTraces[index + 1]
-        }
-
-        const { present, url } = await getFileUploadLink(
-          client,
-          {
-            templateID,
-            filesHash,
-          },
-          stackTrace
+      // Create template
+      options.onBuildLogs?.(
+        new LogEntry(
+          new Date(),
+          'info',
+          `Requesting build for template: ${options.alias}`
         )
+      )
 
-        if (
-          (forceUpload && url != null) ||
-          (present === false && url != null)
-        ) {
-          await uploadFile(
+      const { templateID, buildID } = await requestBuild(client, {
+        alias: options.alias,
+        cpuCount: options.cpuCount ?? 2,
+        memoryMB: options.memoryMB ?? 1024,
+      })
+
+      options.onBuildLogs?.(
+        new LogEntry(
+          new Date(),
+          'info',
+          `Template created with ID: ${templateID}, Build ID: ${buildID}`
+        )
+      )
+
+      const instructionsWithHashes = await this.instructionsWithHashes()
+
+      // Upload files in parallel
+      const uploadPromises = instructionsWithHashes.map(
+        async (instruction, index) => {
+          if (instruction.type !== InstructionType.COPY) {
+            return
+          }
+
+          const src = instruction.args.length > 0 ? instruction.args[0] : null
+          const filesHash = instruction.filesHash ?? null
+          if (src === null || filesHash === null) {
+            throw new Error('Source path and files hash are required')
+          }
+
+          const forceUpload = instruction.forceUpload
+          let stackTrace = undefined
+          if (index + 1 >= 0 && index + 1 < this.stackTraces.length) {
+            stackTrace = this.stackTraces[index + 1]
+          }
+
+          const { present, url } = await getFileUploadLink(
+            client,
             {
-              fileName: src,
-              fileContextPath: this.fileContextPath,
-              url,
-              resolveSymlinks: instruction.resolveSymlinks ?? RESOLVE_SYMLINKS,
+              templateID,
+              filesHash,
             },
             stackTrace
           )
-          options.onBuildLogs?.(
-            new LogEntry(new Date(), 'info', `Uploaded '${src}'`)
-          )
-        } else {
-          options.onBuildLogs?.(
-            new LogEntry(
-              new Date(),
-              'info',
-              `Skipping upload of '${src}', already cached`
+
+          if (
+            (forceUpload && url != null) ||
+            (present === false && url != null)
+          ) {
+            await uploadFile(
+              {
+                fileName: src,
+                fileContextPath: this.fileContextPath,
+                url,
+                resolveSymlinks:
+                  instruction.resolveSymlinks ?? RESOLVE_SYMLINKS,
+              },
+              stackTrace
             )
-          )
+            options.onBuildLogs?.(
+              new LogEntry(new Date(), 'info', `Uploaded '${src}'`)
+            )
+          } else {
+            options.onBuildLogs?.(
+              new LogEntry(
+                new Date(),
+                'info',
+                `Skipping upload of '${src}', already cached`
+              )
+            )
+          }
         }
-      }
-    )
+      )
 
-    await Promise.all(uploadPromises)
+      await Promise.all(uploadPromises)
 
-    options.onBuildLogs?.(
-      new LogEntry(new Date(), 'info', 'All file uploads completed')
-    )
+      options.onBuildLogs?.(
+        new LogEntry(new Date(), 'info', 'All file uploads completed')
+      )
 
-    // Start build
-    options.onBuildLogs?.(
-      new LogEntry(new Date(), 'info', 'Starting building...')
-    )
+      // Start build
+      options.onBuildLogs?.(
+        new LogEntry(new Date(), 'info', 'Starting building...')
+      )
 
-    await triggerBuild(client, {
-      templateID,
-      buildID,
-      template: this.serialize(instructionsWithHashes),
-    })
+      await triggerBuild(client, {
+        templateID,
+        buildID,
+        template: this.serialize(instructionsWithHashes),
+      })
 
-    options.onBuildLogs?.(
-      new LogEntry(new Date(), 'info', 'Waiting for logs...')
-    )
+      options.onBuildLogs?.(
+        new LogEntry(new Date(), 'info', 'Waiting for logs...')
+      )
 
-    await waitForBuildFinish(client, {
-      templateID,
-      buildID,
-      onBuildLogs: options.onBuildLogs,
-      logsRefreshFrequency: this.logsRefreshFrequency,
-      stackTraces: this.stackTraces,
-    })
+      await waitForBuildFinish(client, {
+        templateID,
+        buildID,
+        onBuildLogs: options.onBuildLogs,
+        logsRefreshFrequency: this.logsRefreshFrequency,
+        stackTraces: this.stackTraces,
+      })
+    } finally {
+      options.onBuildLogs?.(new LogEntryEnd(new Date(), 'Build finished'))
+    }
   }
 
   // We might no longer need this as we move the logic server-side
