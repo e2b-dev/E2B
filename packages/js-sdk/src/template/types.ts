@@ -20,8 +20,8 @@ export type Instruction = {
 }
 
 export type CopyItem = {
-  src: string | PathLike
-  dest: string | PathLike
+  src: PathLike | PathLike[]
+  dest: PathLike
   forceUpload?: true
   user?: string
   mode?: number
@@ -73,7 +73,7 @@ export interface TemplateFromImage {
 // Interface for the main builder state
 export interface TemplateBuilder {
   copy(
-    src: PathLike,
+    src: PathLike | PathLike[],
     dest: PathLike,
     options?: {
       forceUpload?: true
@@ -86,7 +86,7 @@ export interface TemplateBuilder {
   copyItems(items: CopyItem[]): TemplateBuilder
 
   remove(
-    path: string,
+    path: PathLike | PathLike[],
     options?: { force?: boolean; recursive?: boolean }
   ): TemplateBuilder
 
@@ -97,7 +97,7 @@ export interface TemplateBuilder {
   ): TemplateBuilder
 
   makeDir(
-    paths: PathLike | PathLike[],
+    path: PathLike | PathLike[],
     options?: { mode?: number }
   ): TemplateBuilder
 

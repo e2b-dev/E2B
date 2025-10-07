@@ -229,7 +229,7 @@ export class TemplateBase
   }
 
   copy(
-    src: PathLike,
+    src: PathLike | PathLike[],
     dest: PathLike,
     options?: {
       forceUpload?: true
@@ -242,20 +242,24 @@ export class TemplateBase
       throw new Error('Browser runtime is not supported for copy')
     }
 
-    const args = [
-      src.toString(),
-      dest.toString(),
-      options?.user ?? '',
-      options?.mode ? padOctal(options.mode) : '',
-    ]
+    const srcs = Array.isArray(src) ? src : [src]
 
-    this.instructions.push({
-      type: InstructionType.COPY,
-      args,
-      force: options?.forceUpload ?? this.forceNextLayer,
-      forceUpload: options?.forceUpload,
-      resolveSymlinks: options?.resolveSymlinks,
-    })
+    for (const src of srcs) {
+      const args = [
+        src.toString(),
+        dest.toString(),
+        options?.user ?? '',
+        options?.mode ? padOctal(options.mode) : '',
+      ]
+
+      this.instructions.push({
+        type: InstructionType.COPY,
+        args,
+        force: options?.forceUpload ?? this.forceNextLayer,
+        forceUpload: options?.forceUpload,
+        resolveSymlinks: options?.resolveSymlinks,
+      })
+    }
 
     this.collectStackTrace()
     return this
@@ -281,13 +285,11 @@ export class TemplateBase
   }
 
   remove(
-    path: string,
+    path: PathLike | PathLike[],
     options?: { force?: boolean; recursive?: boolean }
   ): TemplateBuilder {
-    const args = ['rm', path]
-    if (options?.recursive) {
-      args.push('-r')
-    }
+    const paths = Array.isArray(path) ? path : [path]
+    const args = ['rm', ...paths.map((p) => p.toString())]
     if (options?.force) {
       args.push('-f')
     }
@@ -307,14 +309,11 @@ export class TemplateBase
   }
 
   makeDir(
-    paths: PathLike | PathLike[],
+    path: PathLike | PathLike[],
     options?: { mode?: number }
   ): TemplateBuilder {
-    const args = [
-      'mkdir',
-      '-p',
-      ...(Array.isArray(paths) ? paths : [paths]).map((p) => p.toString()),
-    ]
+    const paths = Array.isArray(path) ? path : [path]
+    const args = ['mkdir', '-p', ...paths.map((p) => p.toString())]
     if (options?.mode) {
       args.push(`-m ${padOctal(options.mode)}`)
     }
