@@ -1,0 +1,929 @@
+export interface McpServer {
+    airtable?: {
+        airtableApiKey: string
+        nodeenv: string
+    }
+    aks?: {
+        /**
+         * Access level for the MCP server, One of [ readonly, readwrite, admin ]
+         */
+        accessLevel: string
+        /**
+         * Comma-separated list of additional tools, One of [ helm, cilium ]
+         */
+        additionalTools?: string
+        /**
+         * Comma-separated list of namespaces to allow access to. If not specified, all namespaces are allowed.
+         */
+        allowNamespaces?: string
+        /**
+         * Path to the Azure configuration directory (e.g. /home/azureuser/.azure). Used for Azure CLI authentication, you should be logged in (e.g. run `az login`) on the host before starting the MCP server.
+         */
+        azureDir: string
+        /**
+         * Username or UID of the container user (format <name|uid>[:<group|gid>] e.g. 10000), ensuring correct permissions to access the Azure and kubeconfig files. Leave empty to use default user in the container.
+         */
+        containerUser?: string
+        /**
+         * Path to the kubeconfig file for the AKS cluster (e.g. /home/azureuser/.kube/config). Used to connect to the AKS cluster.
+         */
+        kubeconfig: string
+    }
+    apiGateway?: {
+        api1HeaderAuthorization: string
+        api1Name: string
+        api1SwaggerUrl: string
+    }
+    apify?: {
+        apifyToken: string
+        /**
+         * Comma-separated list of tools to enable. Can be either a tool category, a specific tool, or an Apify Actor. For example: "actors,docs,apify/rag-web-browser". For more details visit https://mcp.apify.com.
+         */
+        tools: string
+    }
+    arxiv?: {
+        /**
+         * Directory path where downloaded papers will be stored
+         */
+        storagePath: string
+    }
+    astGrep?: {
+        path: string
+    }
+    astraDb?: {
+        astraDbApplicationToken: string
+        endpoint: string
+    }
+    astroDocs?: {}
+    atlan?: {
+        apiKey: string
+        baseUrl: string
+    }
+    atlasDocs?: {
+        apiUrl: string
+    }
+    atlassian?: {
+        confluenceApiToken?: string
+        confluencePersonalToken?: string
+        confluenceUrl: string
+        confluenceUsername?: string
+        jiraApiToken?: string
+        jiraPersonalToken?: string
+        jiraUrl: string
+        jiraUsername?: string
+    }
+    audienseInsights?: {
+        audienseClientSecret?: string
+        clientId: string
+        twitterBearerToken?: string
+    }
+    awsCdk?: {}
+    awsCore?: {}
+    awsDiagram?: {}
+    awsDocumentation?: {}
+    awsKbRetrievalServer?: {
+        accessKeyId: string
+        awsSecretAccessKey?: string
+    }
+    awsTerraform?: {}
+    azure?: {}
+    beagleSecurity?: {
+        beagleSecurityApiToken: string
+    }
+    bitrefill?: {
+        apiId: string
+        apiSecret?: string
+    }
+    box?: {
+        clientId: string
+        clientSecret?: string
+    }
+    brave?: {
+        apiKey: string
+    }
+    buildkite?: {
+        apiToken: string
+    }
+    camunda?: {
+        camundahost: string
+    }
+    cdataConnectcloud?: {
+        cdataPat?: string
+        username: string
+    }
+    charmhealth?: {
+        charmhealthApiKey: string
+        charmhealthBaseUrl: string
+        charmhealthClientId: string
+        charmhealthClientSecret: string
+        charmhealthRedirectUri: string
+        charmhealthRefreshToken: string
+        charmhealthTokenUrl: string
+    }
+    chroma?: {
+        apiKey: string
+    }
+    circleci?: {
+        token: string
+        url: string
+    }
+    clickhouse?: {
+        connectTimeout: string
+        host: string
+        password: string
+        port: string
+        secure: string
+        sendReceiveTimeout: string
+        user: string
+        verify: string
+    }
+    close?: {
+        apiKey: string
+    }
+    cloudRun?: {
+        /**
+         * path to application-default credentials (eg $HOME/.config/gcloud/application_default_credentials.json )
+         */
+        credentialsPath: string
+    }
+    cloudflareDocs?: {}
+    cockroachdb?: {
+        caPath: string
+        crdbPwd: string
+        database: string
+        host: string
+        port: number
+        sslCertfile: string
+        sslKeyfile: string
+        sslMode: string
+        username: string
+    }
+    codeInterpreter?: {}
+    context7?: {}
+    couchbase?: {
+        /**
+         * Bucket in the Couchbase cluster to use for the MCP server.
+         */
+        cbBucketName: string
+        /**
+         * Connection string for the Couchbase cluster.
+         */
+        cbConnectionString: string
+        /**
+         * Setting to "true" (default) enables read-only query mode while running SQL++ queries.
+         */
+        cbMcpReadOnlyQueryMode: string
+        cbPassword: string
+        /**
+         * Username for the Couchbase cluster with access to the bucket.
+         */
+        cbUsername: string
+    }
+    curl?: {}
+    cyreslabAiShodan?: {
+        shodanApiKey: string
+    }
+    dappier?: {
+        apiKey: string
+    }
+    dappierRemote?: {
+        dappierRemoteApiKey: string
+    }
+    dart?: {
+        host: string
+        token: string
+    }
+    databaseServer?: {
+        /**
+         * Connection string for your database. Examples: SQLite: sqlite+aiosqlite:///data/mydb.db, PostgreSQL: postgresql+asyncpg://user:password@localhost:5432/mydb, MySQL: mysql+aiomysql://user:password@localhost:3306/mydb
+         */
+        databaseUrl: string
+    }
+    databutton?: {}
+    deepwiki?: {}
+    descope?: {
+        managementKey?: string
+        projectId: string
+    }
+    desktopCommander?: {
+        /**
+         * List of directories that Desktop Commander can access
+         */
+        paths: string[]
+    }
+    devhubCms?: {
+        devhubApiKey?: string
+        devhubApiSecret?: string
+        url: string
+    }
+    discord?: {
+        discordToken: string
+    }
+    docker?: {}
+    dockerhub?: {
+        hubPatToken: string
+        username: string
+    }
+    dodoPayments?: {
+        dodoPaymentsApiKey: string
+    }
+    dreamfactory?: {
+        dreamfactoryapikey: string
+        dreamfactoryurl: string
+    }
+    duckduckgo?: {}
+    dynatrace?: {
+        oauthClientId: string
+        oauthClientSecret: string
+        url: string
+    }
+    e2b?: {
+        apiKey: string
+    }
+    edubase?: {
+        apiKey?: string
+        app: string
+        url: string
+    }
+    effect?: {}
+    elasticsearch?: {
+        esApiKey?: string
+        url: string
+    }
+    elevenlabs?: {
+        apiKey?: string
+        data: string
+    }
+    everart?: {
+        apiKey: string
+    }
+    exa?: {
+        apiKey: string
+    }
+    explorium?: {
+        apiAccessToken: string
+    }
+    fetch?: {}
+    ffmpeg?: {}
+    fibery?: {
+        apiToken: string
+        host: string
+    }
+    filesystem?: {
+        paths: string[]
+    }
+    findADomain?: {}
+    firecrawl?: {
+        apiKey: string
+        creditCriticalThreshold: number
+        creditWarningThreshold: number
+        retryBackoffFactor: number
+        retryDelay: number
+        retryMax: number
+        retryMaxDelay: number
+        url: string
+    }
+    firewalla?: {
+        /**
+         * Your Firewalla Box Global ID
+         */
+        boxId: string
+        firewallaMspToken: string
+        /**
+         * Your Firewalla MSP domain (e.g., yourdomain.firewalla.net)
+         */
+        mspId: string
+    }
+    flexprice?: {
+        apiKey: string
+        baseUrl: string
+    }
+    git?: {
+        paths: string[]
+    }
+    github?: {
+        personalAccessToken: string
+    }
+    githubChat?: {
+        githubApiKey: string
+    }
+    githubOfficial?: {
+        githubPersonalAccessToken: string
+    }
+    gitlab?: {
+        personalAccessToken: string
+        /**
+         * api url - optional for self-hosted instances
+         */
+        url: string
+    }
+    gitmcp?: {}
+    glif?: {
+        apiToken: string
+        ids: string
+        ignoredSaved: boolean
+    }
+    gmail?: {
+        /**
+         * Your Gmail email address
+         */
+        emailAddress: string
+        emailPassword?: string
+    }
+    googleMaps?: {
+        googleMapsApiKey: string
+    }
+    googleMapsComprehensive?: {
+        googleMapsApiKey: string
+    }
+    grafana?: {
+        apiKey: string
+        url: string
+    }
+    gyazo?: {
+        accessToken: string
+    }
+    hackernews?: {}
+    hackle?: {
+        apiKey: string
+    }
+    handwritingOcr?: {
+        apiToken: string
+    }
+    hdx?: {
+        appIdentifier: string
+    }
+    heroku?: {
+        apiKey: string
+    }
+    hostinger?: {
+        apitoken: string
+    }
+    hoverfly?: {
+        data: string
+    }
+    hubspot?: {
+        apiKey: string
+    }
+    huggingFace?: {}
+    hummingbot?: {
+        apiUrl: string
+        hummingbotApiPassword?: string
+        hummingbotApiUsername?: string
+    }
+    husqvarnaAutomower?: {
+        clientId: string
+        husqvarnaClientSecret: string
+    }
+    hyperbrowser?: {
+        apiKey: string
+    }
+    hyperspell?: {
+        collection: string
+        token: string
+        useResources: boolean
+    }
+    iaptic?: {
+        apiKey?: string
+        appName: string
+    }
+    inspektorGadget?: {
+        /**
+         * Comma-separated list of gadget images (trace_dns, trace_tcp, etc) to use, allowing control over which gadgets are available as MCP tools
+         */
+        gadgetImages?: string
+        /**
+         * Path to the kubeconfig file for accessing Kubernetes clusters
+         */
+        kubeconfig: string
+    }
+    javadocs?: {}
+    jetbrains?: {
+        port: number
+    }
+    kafkaSchemaReg?: {
+        /**
+         * Schema Registry URL
+         */
+        registryUrl: string
+        schemaRegistryPassword?: string
+        schemaRegistryUser?: string
+        /**
+         * Enable SLIM_MODE for better performance
+         */
+        slimMode?: string
+        /**
+         * Enable read-only mode
+         */
+        viewonly?: string
+    }
+    kagisearch?: {
+        engine: string
+        kagiApiKey: string
+    }
+    keboola?: {
+        kbcStorageToken: string
+        kbcWorkspaceSchema: string
+    }
+    kong?: {
+        konnectAccessToken: string
+        region: string
+    }
+    kubectl?: {
+        kubeconfig: string
+    }
+    kubernetes?: {
+        /**
+         * the path to the host .kube/config
+         */
+        configPath: string
+    }
+    lara?: {
+        accessKeySecret?: string
+        keyId: string
+    }
+    line?: {
+        channelAccessToken?: string
+        userId: string
+    }
+    linkedin?: {
+        linkedinCookie: string
+        /**
+         * Custom user agent string (optional, helps avoid detection and cookie login issues)
+         */
+        userAgent: string
+    }
+    llmtxt?: {}
+    maestro?: {
+        apiKeyApiKey: string
+    }
+    manifold?: {}
+    mapbox?: {
+        accessToken: string
+    }
+    mapboxDevkit?: {
+        mapboxAccessToken: string
+    }
+    markdownify?: {
+        paths: string[]
+    }
+    markitdown?: {
+        paths: string[]
+    }
+    memory?: {}
+    mercadoLibre?: {
+        mercadoLibreApiKey: string
+    }
+    mercadoPago?: {
+        mercadoPagoApiKey: string
+    }
+    metabase?: {
+        apiKey: string
+        metabaseurl: string
+        metabaseusername: string
+        password: string
+    }
+    minecraftWiki?: {}
+    mongodb?: {
+        mdbMcpConnectionString: string
+    }
+    multiversxMx?: {
+        network: string
+        wallet: string
+    }
+    nasdaqDataLink?: {
+        nasdaqDataLinkApiKey: string
+    }
+    needle?: {
+        needleApiKey: string
+    }
+    neo4jCloudAuraApi?: {
+        clientId: string
+        neo4jAuraClientSecret?: string
+        serverAllowOrigins?: string
+        serverAllowedHosts?: string
+        serverHost?: string
+        serverPath?: string
+        serverPort?: string
+        transport?: string
+    }
+    neo4jCypher?: {
+        database?: string
+        namespace?: string
+        neo4jPassword?: string
+        readOnly?: boolean
+        readTimeout?: string
+        responseTokenLimit?: string
+        serverAllowOrigins?: string
+        serverAllowedHosts?: string
+        serverHost?: string
+        serverPath?: string
+        serverPort?: string
+        transport?: string
+        url: string
+        username: string
+    }
+    neo4jDataModeling?: {
+        serverAllowOrigins: string
+        serverAllowedHosts: string
+        serverHost: string
+        serverPath: string
+        serverPort: string
+        transport: string
+    }
+    neo4jMemory?: {
+        database?: string
+        neo4jPassword?: string
+        serverAllowOrigins?: string
+        serverAllowedHosts?: string
+        serverHost?: string
+        serverPath?: string
+        serverPort?: string
+        transport?: string
+        url: string
+        username: string
+    }
+    neon?: {
+        apiKey: string
+    }
+    nodeCodeSandbox?: {}
+    notion?: {
+        internalIntegrationToken: string
+    }
+    novita?: {}
+    npmSentinel?: {}
+    obsidian?: {
+        apiKey: string
+    }
+    oktaMcpFctr?: {
+        /**
+         * Okta organization URL (e.g., https://dev-123456.okta.com)
+         */
+        clientOrgurl: string
+        /**
+         * Maximum concurrent requests to Okta API
+         */
+        concurrentLimit?: string
+        /**
+         * Logging level for server output
+         */
+        logLevel?: string
+        oktaApiToken?: string
+    }
+    omi?: {
+        apiKey: string
+    }
+    onlyofficeDocspace?: {
+        baseUrl: string
+        docspaceApiKey: string
+        docspaceAuthToken: string
+        docspacePassword: string
+        docspaceUsername: string
+        dynamic: boolean
+        origin: string
+        toolsets: string
+        userAgent: string
+    }
+    openapi?: {
+        mode: string
+    }
+    openbnbAirbnb?: {}
+    openmesh?: {}
+    openweather?: {
+        owmApiKey: string
+    }
+    openzeppelinCairo?: {}
+    openzeppelinSolidity?: {}
+    openzeppelinStellar?: {}
+    openzeppelinStylus?: {}
+    opik?: {
+        apiBaseUrl: string
+        apiKey: string
+        workspaceName: string
+    }
+    opine?: {
+        opineApiKey: string
+    }
+    oracle?: {
+        oracleConnectionString: string
+        oracleUser: string
+        password: string
+    }
+    ospMarketingTools?: {}
+    oxylabs?: {
+        password?: string
+        username: string
+    }
+    paperSearch?: {}
+    perplexityAsk?: {
+        perplexityApiKey: string
+    }
+    pia?: {
+        apiKey: string
+    }
+    pinecone?: {
+        apiKey: string
+        assistantHost: string
+    }
+    playwright?: {
+        data: string
+    }
+    pluggedinMcpProxy?: {
+        /**
+         * Base URL for the Plugged.in API (optional, defaults to https://plugged.in for cloud or http://localhost:12005 for self-hosted)
+         */
+        pluggedinApiBaseUrl: string
+        pluggedinApiKey: string
+    }
+    polarSignals?: {
+        polarSignalsApiKey: string
+    }
+    pomodash?: {
+        apiKey: string
+    }
+    postgres?: {
+        url: string
+    }
+    postman?: {
+        apiKey: string
+    }
+    prefEditor?: {}
+    prometheus?: {
+        /**
+         * The URL of your Prometheus server
+         */
+        prometheusUrl: string
+    }
+    puppeteer?: {}
+    pythonRefactoring?: {}
+    quantconnect?: {
+        agentname: string
+        quantconnectapitoken: string
+        quantconnectuserid: string
+    }
+    ramparts?: {}
+    razorpay?: {
+        keyId: string
+        keySecret?: string
+    }
+    reddit?: {
+        redditClientId: string
+        redditClientSecret: string
+        redditPassword: string
+        username: string
+    }
+    redis?: {
+        caCerts: string
+        caPath: string
+        certReqs: string
+        clusterMode: boolean
+        host: string
+        port: number
+        pwd: string
+        ssl: boolean
+        sslCertfile: string
+        sslKeyfile: string
+        username: string
+    }
+    redisCloud?: {
+        apiKey: string
+        secretKey?: string
+    }
+    ref?: {
+        apiKey: string
+    }
+    remote?: {}
+    render?: {
+        apiKey: string
+    }
+    resend?: {
+        apiKey?: string
+        /**
+         * comma separated list of reply to email addresses
+         */
+        replyTo: string
+        /**
+         * sender email address
+         */
+        sender: string
+    }
+    risken?: {
+        accessToken: string
+        url: string
+    }
+    root?: {
+        apiAccessToken: string
+    }
+    ros2?: {}
+    rube?: {
+        apiKey: string
+    }
+    rustMcpFilesystem?: {
+        /**
+         * Enable read/write mode. If false, the app operates in read-only mode.
+         */
+        allowWrite: boolean
+        /**
+         * List of directories that rust-mcp-filesystem can access.
+         */
+        allowedDirectories: string[]
+        /**
+         * Enable dynamic directory access control via MCP client-side Roots.
+         */
+        enableRoots: boolean
+    }
+    schemacrawlerAi?: {
+        /**
+         * --info-level How much database metadata to retrieve
+         */
+        generalInfoLevel: string
+        generalLogLevel?: string
+        schcrwlrDatabasePassword?: string
+        schcrwlrDatabaseUser?: string
+        /**
+         * --database Database to connect to (optional)
+         */
+        serverConnectionDatabase?: string
+        /**
+         * --host Database host (optional)
+         */
+        serverConnectionHost?: string
+        /**
+         * --port Database port (optional)
+         */
+        serverConnectionPort?: number
+        /**
+         * --server SchemaCrawler database plugin
+         */
+        serverConnectionServer: string
+        /**
+         * --url JDBC URL for database connection
+         */
+        urlConnectionJdbcUrl: string
+        /**
+         * Host volume to map within the Docker container
+         */
+        volumeHostShare: string
+    }
+    schoginiMcpImageBorder?: {}
+    scrapegraph?: {
+        sgaiApiKey: string
+    }
+    scrapezy?: {
+        apiKey: string
+    }
+    securenoteLink?: {}
+    semgrep?: {}
+    sentry?: {
+        authToken: string
+    }
+    sequa?: {
+        apiKey: string
+        mcpServerUrl: string
+    }
+    sequentialthinking?: {}
+    shortIo?: {
+        shortIoApiKey: string
+    }
+    simplechecklist?: {}
+    singlestore?: {
+        mcpApiKey: string
+    }
+    slack?: {
+        botToken?: string
+        channelIds?: string
+        teamId: string
+    }
+    smartbear?: {
+        apiHubApiKey: string
+        bugsnagApiKey: string
+        bugsnagAuthToken: string
+        bugsnagEndpoint: string
+        pactBrokerBaseUrl: string
+        pactBrokerPassword: string
+        pactBrokerToken: string
+        pactBrokerUsername: string
+        reflectApiToken: string
+    }
+    sonarqube?: {
+        /**
+         * Organization key for SonarQube Cloud, not required for SonarQube Server or Community Build
+         */
+        org: string
+        token: string
+        /**
+         * URL of the SonarQube instance, to provide only for SonarQube Server or Community Build
+         */
+        url: string
+    }
+    sqlite?: {}
+    stackgen?: {
+        token?: string
+        /**
+         * URL of your StackGen instance
+         */
+        url: string
+    }
+    stackhawk?: {
+        apiKey: string
+    }
+    stripe?: {
+        secretKey: string
+    }
+    supadata?: {
+        apiKey: string
+    }
+    suzieq?: {
+        apiEndpoint: string
+        apiKey: string
+    }
+    taskOrchestrator?: {}
+    tavily?: {
+        apiKey: string
+    }
+    teamwork?: {
+        twMcpBearerToken: string
+    }
+    telnyx?: {
+        apiKey: string
+    }
+    tembo?: {
+        apiKey: string
+    }
+    terraform?: {}
+    textToGraphql?: {
+        graphqlApiKey: string
+        /**
+         * Authentication method for GraphQL API
+         */
+        graphqlAuthType: string
+        graphqlEndpoint: string
+        /**
+         * OpenAI model to use
+         */
+        modelName: string
+        /**
+         * Model temperature for responses
+         */
+        modelTemperature: number
+        openaiApiKey: string
+    }
+    tigris?: {
+        awsAccessKeyId: string
+        awsEndpointUrlS3: string
+        awsSecretAccessKey?: string
+    }
+    time?: {}
+    triplewhale?: {
+        apiKey: string
+    }
+    unrealEngine?: {
+        /**
+         * Logging level
+         */
+        logLevel?: string
+        /**
+         * Unreal Engine host address. Use: host.docker.internal for local UE on Windows/Mac Docker, 127.0.0.1 for Linux without Docker, or actual IP address (e.g., 192.168.1.100) for remote UE
+         */
+        ueHost: string
+        /**
+         * Remote Control HTTP port
+         */
+        ueRcHttpPort: string
+        /**
+         * Remote Control WebSocket port
+         */
+        ueRcWsPort: string
+    }
+    veyrax?: {
+        apiKey: string
+    }
+    vizro?: {}
+    vulnNist?: {}
+    wayfound?: {
+        mcpApiKey: string
+    }
+    webflow?: {
+        token: string
+    }
+    wikipedia?: {}
+    wolframAlpha?: {
+        wolframApiKey: string
+    }
+    youtubeTranscript?: {}
+    zerodhaKite?: {
+        /**
+         * Access token obtained after OAuth authentication (optional - can be generated at runtime)
+         */
+        kiteAccessToken?: string
+        /**
+         * Your Kite Connect API key from the developer console
+         */
+        kiteApiKey: string
+        kiteApiSecret?: string
+        /**
+         * OAuth redirect URL configured in your Kite Connect app
+         */
+        kiteRedirectUrl?: string
+    }
+}

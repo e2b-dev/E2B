@@ -120,9 +120,8 @@ export class Sandbox extends SandboxApi {
     this.sandboxDomain = opts.sandboxDomain ?? this.connectionConfig.domain
 
     this.envdAccessToken = opts.envdAccessToken
-    this.envdApiUrl = `${
-      this.connectionConfig.debug ? 'http' : 'https'
-    }://${this.getHost(this.envdPort)}`
+    this.envdApiUrl = `${this.connectionConfig.debug ? 'http' : 'https'
+      }://${this.getHost(this.envdPort)}`
 
     const rpcTransport = createConnectTransport({
       baseUrl: this.envdApiUrl,
@@ -319,7 +318,23 @@ export class Sandbox extends SandboxApi {
       sandboxOpts
     )
 
-    return new this({ ...sandbox, ...config }) as InstanceType<S>
+    const instance = new this({ ...sandbox, ...config }) as InstanceType<S>
+
+    if (sandboxOpts?.mcp) {
+      const mcpUrl = instance.getHost(8080)
+      for (let i = 0; i < 5; i++) {
+        const res = await fetch(`https://${mcpUrl}/config`, {
+          method: 'POST',
+          body: JSON.stringify(sandboxOpts?.mcp),
+        })
+        if (res.ok) {
+          break
+        }
+        await new Promise(resolve => setTimeout(resolve, 250))
+      }
+    }
+
+    return instance
   }
 
   /**
@@ -520,6 +535,17 @@ export class Sandbox extends SandboxApi {
   }
 
   /**
+   * @beta This feature is in beta and may change in the future.
+   *
+   * Get the MCP URL for the sandbox.
+   *
+   * @returns MCP URL for the sandbox.
+   */
+  betaGetMcpUrl(): string {
+    return this.getHost(8080) + '/mcp'
+  }
+
+  /**
    * Get the URL to upload a file to the sandbox.
    *
    * You have to send a POST request to this URL with the file as multipart/form-data.
@@ -636,7 +662,7 @@ export class Sandbox extends SandboxApi {
       if (compareVersions(this.envdApi.version, '0.1.5') < 0) {
         throw new SandboxError(
           'You need to update the template to use the new SDK. ' +
-            'You can do this by running `e2b template build` in the directory with the template.'
+          'You can do this by running `e2b template build` in the directory with the template.'
         )
       }
 
