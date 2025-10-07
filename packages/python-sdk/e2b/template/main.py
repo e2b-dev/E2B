@@ -107,11 +107,10 @@ class TemplateBuilder:
 
     def make_dir(
         self,
-        paths: Union[Union[str, Path], List[Union[str, Path]]],
+        path: Union[Union[str, Path], List[Union[str, Path]]],
         mode: Optional[int] = None,
     ) -> "TemplateBuilder":
-        path_list = [paths] if isinstance(paths, (str, Path)) else paths
-
+        path_list = [path] if isinstance(path, (str, Path)) else path
         args = ["mkdir", "-p"] + [str(p) for p in path_list]
         if mode:
             args.append(f"-m {pad_octal(mode)}")
