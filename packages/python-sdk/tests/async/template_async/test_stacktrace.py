@@ -57,9 +57,7 @@ async def test_traces_on_from_image_registry(async_build):
         username="test",
         password="test",
     )
-    await _expect_to_throw_and_check_trace(
-        lambda: async_build(template), "from_image"
-    )
+    await _expect_to_throw_and_check_trace(lambda: async_build(template), "from_image")
 
 
 @pytest.mark.skip_debug()
