@@ -16,5 +16,5 @@ template = (
     .set_user("appuser")
     .set_user("root")
     .set_workdir("/home/user")
-    .set_start_cmd("gunicorn --bind 0.0.0.0:8000 app:application", "sleep 20")
+    .start_cmd("gunicorn --bind 0.0.0.0:8000 app:application", "sleep 20")
 )

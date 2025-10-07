@@ -137,12 +137,9 @@ export interface TemplateBuilder {
 
   skipCache(): TemplateBuilder
 
-  setStartCmd(
-    startCommand: string,
-    readyCommand: string | ReadyCmd
-  ): TemplateFinal
+  startCmd(startCommand: string, readyCommand: string | ReadyCmd): TemplateFinal
 
-  setReadyCmd(readyCommand: string | ReadyCmd): TemplateFinal
+  readyCmd(readyCommand: string | ReadyCmd): TemplateFinal
 }
 
 // Interface for the final state

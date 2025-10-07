@@ -2,10 +2,12 @@ import { Template } from 'e2b'
 
 export const template = Template()
   .fromImage('python:3.11-slim')
-  .runCmd('apt-get update && apt-get install -y gcc g++ make libpq-dev && rm -rf /var/lib/apt/lists/*')
+  .runCmd(
+    'apt-get update && apt-get install -y gcc g++ make libpq-dev && rm -rf /var/lib/apt/lists/*'
+  )
   .setEnvs({
-    'PYTHONDONTWRITEBYTECODE': '1',
-    'PYTHONUNBUFFERED': '1',
+    PYTHONDONTWRITEBYTECODE: '1',
+    PYTHONUNBUFFERED: '1',
   })
   .runCmd('useradd -m -u 1000 appuser')
   .setWorkdir('/app')
@@ -15,4 +17,4 @@ export const template = Template()
   .setUser('appuser')
   .setUser('root')
   .setWorkdir('/home/user')
-  .setStartCmd('gunicorn --bind 0.0.0.0:8000 app:application', 'sleep 20')
+  .startCmd('gunicorn --bind 0.0.0.0:8000 app:application', 'sleep 20')

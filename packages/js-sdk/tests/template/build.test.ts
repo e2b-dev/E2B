@@ -36,7 +36,7 @@ buildTemplateTest(
       .copy('folder/*', 'folder', { forceUpload: true })
       .runCmd('cat folder/test.txt')
       .setWorkdir('/app')
-      .setStartCmd('echo "Hello, world!"', waitForTimeout(10_000))
+      .startCmd('echo "Hello, world!"', waitForTimeout(10_000))
 
     await buildTemplate(template)
   }

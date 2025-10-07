@@ -31,7 +31,7 @@ export interface DockerfileParserInterface {
     items: CopyItem[],
     options?: { forceUpload?: true; user?: string; mode?: number }
   ): DockerfileParserInterface
-  setStartCmd(
+  startCmd(
     startCommand: string,
     readyCommand: string | ReadyCmd
   ): DockerfileFinalParserInterface
@@ -283,6 +283,6 @@ function handleCmdEntrypointInstruction(
       // Do nothing
     }
 
-    templateBuilder.setStartCmd(command, waitForTimeout(20_000))
+    templateBuilder.startCmd(command, waitForTimeout(20_000))
   }
 }

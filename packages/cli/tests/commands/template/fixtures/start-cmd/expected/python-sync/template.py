@@ -11,5 +11,5 @@ template = (
     })
     .set_user("root")
     .set_workdir("/home/user")
-    .set_start_cmd("node server.js", "sleep 20")
+    .start_cmd("node server.js", "sleep 20")
 )

@@ -60,12 +60,12 @@ async function migrateToLanguage(
   // Apply config start/ready commands
   let parsedTemplate: TemplateClass = baseTemplate
   if (config.start_cmd) {
-    parsedTemplate = baseTemplate.setStartCmd(
+    parsedTemplate = baseTemplate.startCmd(
       config.start_cmd,
       config.ready_cmd || 'sleep 20'
     )
   } else if (config.ready_cmd) {
-    parsedTemplate = baseTemplate.setReadyCmd(config.ready_cmd)
+    parsedTemplate = baseTemplate.readyCmd(config.ready_cmd)
   }
 
   const alias = config.template_name || config.template_id

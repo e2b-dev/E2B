@@ -242,7 +242,7 @@ class TemplateBuilder:
         self._template._force_next_layer = True
         return self
 
-    def set_start_cmd(
+    def start_cmd(
         self, start_cmd: str, ready_cmd: Union[str, ReadyCmd]
     ) -> "TemplateFinal":
         self._template._start_cmd = start_cmd
@@ -254,7 +254,7 @@ class TemplateBuilder:
         self._template._collect_stack_trace()
         return TemplateFinal(self._template)
 
-    def set_ready_cmd(self, ready_cmd: Union[str, ReadyCmd]) -> "TemplateFinal":
+    def ready_cmd(self, ready_cmd: Union[str, ReadyCmd]) -> "TemplateFinal":
         if isinstance(ready_cmd, ReadyCmd):
             ready_cmd = ready_cmd.get_cmd()
 
@@ -297,7 +297,7 @@ class TemplateBase:
             file_context_path or get_caller_directory(STACK_TRACE_DEPTH) or "."
         )
         self._ignore_file_paths: List[str] = ignore_file_paths or []
-        self._stack_traces: List[TracebackType] = []
+        self._stack_traces: List[Union[TracebackType, None]] = []
         self._stack_traces_enabled: bool = True
 
     def skip_cache(self) -> "TemplateBase":
@@ -306,7 +306,7 @@ class TemplateBase:
         return self
 
     def _collect_stack_trace(
-        self, stack_traces_depth: Optional[int] = STACK_TRACE_DEPTH
+        self, stack_traces_depth: int = STACK_TRACE_DEPTH
     ) -> "TemplateBase":
         """Collect stack trace if enabled"""
         if not self._stack_traces_enabled:
@@ -535,7 +535,7 @@ class TemplateBase:
                         *self._ignore_file_paths,
                         *read_dockerignore(self._file_context_path),
                     ],
-                    instruction.get("resolveSymlinks", RESOLVE_SYMLINKS),
+                    instruction.get("resolveSymlinks") or RESOLVE_SYMLINKS,
                     stack_trace,
                 )
 
@@ -546,19 +546,18 @@ class TemplateBase:
     def _serialize(self, steps: List[Instruction]) -> TemplateType:
         _steps: List[Instruction] = []
 
-        for index, instruction in enumerate(steps):
-            step = {
-                # Serialize enum to string value
-                "type": instruction["type"].value,
-                "args": instruction["args"],
-                "force": instruction["force"],
+        for _, instruction in enumerate(steps):
+            step: Instruction = {
+                "type": instruction.get("type"),
+                "args": instruction.get("args"),
+                "force": instruction.get("force"),
             }
 
             if instruction.get("filesHash") is not None:
-                step["filesHash"] = instruction["filesHash"]
+                step["filesHash"] = instruction.get("filesHash")
 
             if instruction.get("forceUpload") is not None:
-                step["forceUpload"] = instruction["forceUpload"]
+                step["forceUpload"] = instruction.get("forceUpload")
 
             _steps.append(step)
 

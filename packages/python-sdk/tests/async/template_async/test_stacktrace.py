@@ -189,12 +189,8 @@ async def test_traces_on_git_clone(async_build):
 
 
 @pytest.mark.skip_debug()
-async def test_traces_on_set_start_cmd(async_build):
+async def test_traces_on_start_cmd(async_build):
     template = AsyncTemplate()
     template = template.from_base_image()
-    template = template.set_start_cmd(
-        f"./{non_existent_path}", wait_for_timeout(10_000)
-    )
-    await _expect_to_throw_and_check_trace(
-        lambda: async_build(template), "set_start_cmd"
-    )
+    template = template.start_cmd(f"./{non_existent_path}", wait_for_timeout(10_000))
+    await _expect_to_throw_and_check_trace(lambda: async_build(template), "start_cmd")

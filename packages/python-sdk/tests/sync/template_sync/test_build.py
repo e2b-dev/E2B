@@ -48,7 +48,7 @@ def test_build_template(build, setup_test_folder):
         .copy("folder/*", "folder", force_upload=True)
         .run_cmd("cat folder/test.txt")
         .set_workdir("/app")
-        .set_start_cmd("echo 'Hello, world!'", wait_for_timeout(10_000))
+        .start_cmd("echo 'Hello, world!'", wait_for_timeout(10_000))
     )
 
     build(template)

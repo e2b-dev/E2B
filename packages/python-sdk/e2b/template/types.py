@@ -7,7 +7,7 @@ from enum import Enum
 from e2b.template.utils import strip_ansi_escape_codes
 
 
-class InstructionType(Enum):
+class InstructionType(str, Enum):
     COPY = "COPY"
     ENV = "ENV"
     RUN = "RUN"

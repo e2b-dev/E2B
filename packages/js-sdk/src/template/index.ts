@@ -58,8 +58,8 @@ export class TemplateBase
   private baseImage: string | undefined = this.defaultBaseImage
   private baseTemplate: string | undefined = undefined
   private registryConfig: RegistryConfig | undefined = undefined
-  private startCmd: string | undefined = undefined
-  private readyCmd: string | undefined = undefined
+  private startCommand: string | undefined = undefined
+  private readyCommand: string | undefined = undefined
   // Force the whole template to be rebuilt
   private force: boolean = false
   // Force the next layer to be rebuilt
@@ -447,27 +447,27 @@ export class TemplateBase
     return this.runInNewStackTraceContext(() => this.runCmd(args.join(' ')))
   }
 
-  setStartCmd(
+  startCmd(
     startCommand: string,
     readyCommand: string | ReadyCmd
   ): TemplateFinal {
-    this.startCmd = startCommand
+    this.startCommand = startCommand
 
     if (readyCommand instanceof ReadyCmd) {
-      this.readyCmd = readyCommand.getCmd()
+      this.readyCommand = readyCommand.getCmd()
     } else {
-      this.readyCmd = readyCommand
+      this.readyCommand = readyCommand
     }
 
     this.collectStackTrace()
     return this
   }
 
-  setReadyCmd(readyCommand: string | ReadyCmd): TemplateFinal {
+  readyCmd(readyCommand: string | ReadyCmd): TemplateFinal {
     if (readyCommand instanceof ReadyCmd) {
-      this.readyCmd = readyCommand.getCmd()
+      this.readyCommand = readyCommand.getCmd()
     } else {
-      this.readyCmd = readyCommand
+      this.readyCommand = readyCommand
     }
 
     this.collectStackTrace()
@@ -545,7 +545,7 @@ export class TemplateBase
     for (const instruction of this.instructions) {
       dockerfile += `${instruction.type} ${instruction.args.join(' ')}\n`
     }
-    if (this.startCmd) {
+    if (this.startCommand) {
       dockerfile += `ENTRYPOINT ${this.startCmd}\n`
     }
     return dockerfile
@@ -714,8 +714,8 @@ export class TemplateBase
 
   private serialize(steps: Instruction[]): TriggerBuildTemplate {
     const templateData: TriggerBuildTemplate = {
-      startCmd: this.startCmd,
-      readyCmd: this.readyCmd,
+      startCmd: this.startCommand,
+      readyCmd: this.readyCommand,
       steps,
       force: this.force,
     }

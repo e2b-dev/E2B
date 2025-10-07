@@ -220,13 +220,10 @@ buildTemplateTest('traces on gitClone', async ({ buildTemplate }) => {
   }, 'gitClone')
 })
 
-buildTemplateTest('traces on setStartCmd', async ({ buildTemplate }) => {
+buildTemplateTest('traces on startCmd', async ({ buildTemplate }) => {
   let template: any = Template().fromBaseImage()
-  template = template.setStartCmd(
-    `./${nonExistentPath}`,
-    waitForTimeout(10_000)
-  )
+  template = template.startCmd(`./${nonExistentPath}`, waitForTimeout(10_000))
   await expectToThrowAndCheckTrace(async () => {
     await buildTemplate(template)
-  }, 'setStartCmd')
+  }, 'startCmd')
 })
