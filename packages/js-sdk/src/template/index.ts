@@ -265,16 +265,16 @@ export class TemplateBase
       throw new Error('Browser runtime is not supported for copyItems')
     }
 
-    for (const item of items) {
-      this.runInNewStackTraceContext(() =>
+    this.runInNewStackTraceContext(() => {
+      for (const item of items) {
         this.copy(item.src, item.dest, {
           forceUpload: item.forceUpload,
           user: item.user,
           mode: item.mode,
           resolveSymlinks: item.resolveSymlinks,
         })
-      )
-    }
+      }
+    })
 
     return this
   }

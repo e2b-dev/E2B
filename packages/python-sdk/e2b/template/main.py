@@ -30,48 +30,46 @@ class TemplateBuilder:
 
     def copy(
         self,
-        src: Union[str, List[CopyItem]],
-        dest: Optional[str] = None,
+        src: str,
+        dest: str,
         force_upload: Optional[bool] = None,
         user: Optional[str] = None,
         mode: Optional[int] = None,
         resolve_symlinks: Optional[bool] = None,
     ) -> "TemplateBuilder":
-        if isinstance(src, str):
-            # Single copy operation
-            if dest is None:
-                raise ValueError("dest parameter is required when src is a string")
-            copy_items: List[CopyItem] = [
-                CopyItem(
-                    src=src,
-                    dest=dest,
-                    forceUpload=force_upload,
-                    user=user,
-                    mode=mode,
-                    resolveSymlinks=resolve_symlinks,
-                )
-            ]
-        else:
-            # Multiple copy operations
-            copy_items = src
+        args = [
+            src,
+            dest,
+            user or "",
+            pad_octal(mode) if mode else "",
+        ]
 
-        for copy_item in copy_items:
-            args = [
-                copy_item["src"],
-                copy_item["dest"],
-                user or "",
-                pad_octal(mode) if mode else "",
-            ]
+        instruction: Instruction = Instruction(
+            type=InstructionType.COPY,
+            args=args,
+            force=force_upload or self._template._force_next_layer,
+            forceUpload=force_upload,
+            resolveSymlinks=resolve_symlinks,
+        )
 
-            instruction: Instruction = Instruction(
-                type=InstructionType.COPY,
-                args=args,
-                force=force_upload or self._template._force_next_layer,
-                forceUpload=force_upload,
-                resolveSymlinks=resolve_symlinks,
-            )
-            self._template._instructions.append(instruction)
+        self._template._instructions.append(instruction)
         self._template._collect_stack_trace()
+        return self
+
+    def copy_items(self, items: List[CopyItem]) -> "TemplateBuilder":
+        self._template._run_in_new_stack_trace_context(
+            lambda: [
+                self.copy(
+                    item["src"],
+                    item["dest"],
+                    item.get("forceUpload"),
+                    item.get("user"),
+                    item.get("mode"),
+                    item.get("resolveSymlinks"),
+                )
+                for item in items
+            ]
+        )
         return self
 
     def remove(
