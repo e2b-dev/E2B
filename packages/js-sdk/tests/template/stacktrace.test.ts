@@ -80,7 +80,7 @@ buildTemplateTest('traces on fromDockerfile', async ({ buildTemplate }) => {
   }, 'fromDockerfile')
 })
 
-buildTemplateTest('traces on fromRegistry', async ({ buildTemplate }) => {
+buildTemplateTest('traces on fromImage registry', async ({ buildTemplate }) => {
   const templateFrom = Template()
   const template = templateFrom.fromImage(
     'registry.example.com/nonexistent:latest',
@@ -91,7 +91,7 @@ buildTemplateTest('traces on fromRegistry', async ({ buildTemplate }) => {
   )
   await expectToThrowAndCheckTrace(async () => {
     await buildTemplate(template, true)
-  }, 'fromRegistry')
+  }, 'fromImage')
 })
 
 buildTemplateTest('traces on fromAWSRegistry', async ({ buildTemplate }) => {

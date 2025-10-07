@@ -48,14 +48,14 @@ def test_traces_on_from_dockerfile(build):
 
 
 @pytest.mark.skip_debug()
-def test_traces_on_from_registry(build):
+def test_traces_on_from_image_registry(build):
     template = Template()
     template = template.skip_cache().from_image(
         "registry.example.com/nonexistent:latest",
         username="test",
         password="test",
     )
-    _expect_to_throw_and_check_trace(lambda: build(template), "from_registry")
+    _expect_to_throw_and_check_trace(lambda: build(template), "from_image")
 
 
 @pytest.mark.skip_debug()
