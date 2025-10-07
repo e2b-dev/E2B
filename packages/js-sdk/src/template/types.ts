@@ -1,4 +1,3 @@
-import { stripAnsi } from '../utils'
 import { ReadyCmd } from './readycmd'
 import type { PathLike } from 'node:fs'
 
@@ -144,34 +143,6 @@ export interface TemplateBuilder {
 // Interface for the final state
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface TemplateFinal {}
-
-export type LogEntryLevel = 'debug' | 'info' | 'warn' | 'error'
-
-export class LogEntry {
-  constructor(
-    public readonly timestamp: Date,
-    public readonly level: LogEntryLevel,
-    public readonly message: string
-  ) {}
-
-  toString() {
-    return `[${this.timestamp.toISOString()}] [${this.level}] ${stripAnsi(
-      this.message
-    )}`
-  }
-}
-
-export class LogEntryStart extends LogEntry {
-  constructor(timestamp: Date, message: string) {
-    super(timestamp, 'debug', message)
-  }
-}
-
-export class LogEntryEnd extends LogEntry {
-  constructor(timestamp: Date, message: string) {
-    super(timestamp, 'debug', message)
-  }
-}
 
 export type GenericDockerRegistry = {
   type: 'registry'

@@ -1,13 +1,43 @@
 import os
 import threading
 import time
-from typing import Optional, TypedDict, Callable, Dict
+from dataclasses import dataclass
+from datetime import datetime
+from typing import Optional, TypedDict, Callable, Dict, Literal
 
 from rich.console import Console
 from rich.style import Style
 from rich.text import Text
 
-from e2b.template.types import LogEntryLevel, LogEntry, LogEntryStart, LogEntryEnd
+from e2b.template.utils import strip_ansi_escape_codes
+
+LogEntryLevel = Literal["debug", "info", "warn", "error"]
+
+
+@dataclass
+class LogEntry:
+    timestamp: datetime
+    level: LogEntryLevel
+    message: str
+
+    def __post_init__(self):
+        self.message = strip_ansi_escape_codes(self.message)
+
+    def __str__(self) -> str:
+        return f"[{self.timestamp.isoformat()}] [{self.level}] {self.message}"
+
+
+@dataclass
+class LogEntryStart(LogEntry):
+    def __init__(self, timestamp: datetime, message: str):
+        super().__init__(timestamp, "debug", message)
+
+
+@dataclass
+class LogEntryEnd(LogEntry):
+    def __init__(self, timestamp: datetime, message: str):
+        super().__init__(timestamp, "debug", message)
+
 
 TIMER_UPDATE_INTERVAL_MS = 150
 

@@ -1,5 +1,33 @@
 import chalk from 'chalk'
-import { LogEntry, LogEntryEnd, LogEntryLevel, LogEntryStart } from './types'
+import { stripAnsi } from '../utils'
+
+export type LogEntryLevel = 'debug' | 'info' | 'warn' | 'error'
+
+export class LogEntry {
+  constructor(
+    public readonly timestamp: Date,
+    public readonly level: LogEntryLevel,
+    public readonly message: string
+  ) {}
+
+  toString() {
+    return `[${this.timestamp.toISOString()}] [${this.level}] ${stripAnsi(
+      this.message
+    )}`
+  }
+}
+
+export class LogEntryStart extends LogEntry {
+  constructor(timestamp: Date, message: string) {
+    super(timestamp, 'debug', message)
+  }
+}
+
+export class LogEntryEnd extends LogEntry {
+  constructor(timestamp: Date, message: string) {
+    super(timestamp, 'debug', message)
+  }
+}
 
 const TIMER_UPDATE_INTERVAL_MS = 150
 

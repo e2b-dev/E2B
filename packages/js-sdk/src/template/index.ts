@@ -1,3 +1,4 @@
+import type { PathLike } from 'node:fs'
 import { ApiClient } from '../api'
 import { ConnectionConfig } from '../connectionConfig'
 import { runtime } from '../utils'
@@ -11,14 +12,12 @@ import {
 } from './buildApi'
 import { RESOLVE_SYMLINKS, STACK_TRACE_DEPTH } from './consts'
 import { parseDockerfile } from './dockerfileParser'
+import { LogEntry, LogEntryEnd, LogEntryStart } from './logger'
 import { ReadyCmd } from './readycmd'
 import {
   CopyItem,
   Instruction,
   InstructionType,
-  LogEntry,
-  LogEntryEnd,
-  LogEntryStart,
   RegistryConfig,
   TemplateBuilder,
   TemplateFinal,
@@ -32,17 +31,16 @@ import {
   readDockerignore,
   readGCPServiceAccountJSON,
 } from './utils'
-import type { PathLike } from 'node:fs'
+
+export { type TemplateBuilder } from './types'
 
 export {
+  defaultBuildLogger,
   LogEntry,
   LogEntryEnd,
   LogEntryStart,
   type LogEntryLevel,
-  type TemplateBuilder,
-} from './types'
-
-export { defaultBuildLogger } from './logger'
+} from './logger'
 
 type TemplateOptions = {
   fileContextPath?: PathLike
