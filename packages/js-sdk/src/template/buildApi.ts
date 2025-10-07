@@ -1,7 +1,7 @@
 import { ApiClient, handleApiError, paths } from '../api'
 import { stripAnsi } from '../utils'
 import { BuildError, FileUploadError } from './errors'
-import { LogEntry } from './types'
+import { LogEntry } from './logger'
 import { getBuildStepIndex, tarFileStreamUpload } from './utils'
 
 type RequestBuildInput = {
