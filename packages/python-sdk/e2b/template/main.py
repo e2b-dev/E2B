@@ -84,11 +84,12 @@ class TemplateBuilder:
         recursive: bool = False,
     ) -> "TemplateBuilder":
         paths = [path] if isinstance(path, (str, Path)) else path
-        args = ["rm"] + [str(p) for p in paths]
+        args = ["rm"]
         if recursive:
             args.append("-r")
         if force:
             args.append("-f")
+        args.extend([str(p) for p in paths])
 
         return self._template._run_in_new_stack_trace_context(
             lambda: self.run_cmd(" ".join(args))
@@ -111,9 +112,10 @@ class TemplateBuilder:
         mode: Optional[int] = None,
     ) -> "TemplateBuilder":
         path_list = [path] if isinstance(path, (str, Path)) else path
-        args = ["mkdir", "-p"] + [str(p) for p in path_list]
+        args = ["mkdir", "-p"]
         if mode:
             args.append(f"-m {pad_octal(mode)}")
+        args.extend([str(p) for p in path_list])
 
         return self._template._run_in_new_stack_trace_context(
             lambda: self.run_cmd(" ".join(args))
@@ -559,7 +561,7 @@ class TemplateBase:
                         *self._ignore_file_paths,
                         *read_dockerignore(self._file_context_path),
                     ],
-                    instruction.get("resolveSymlinks") or RESOLVE_SYMLINKS,
+                    instruction.get("resolveSymlinks", RESOLVE_SYMLINKS),
                     stack_trace,
                 )
 

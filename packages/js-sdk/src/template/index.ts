@@ -289,10 +289,14 @@ export class TemplateBase
     options?: { force?: boolean; recursive?: boolean }
   ): TemplateBuilder {
     const paths = Array.isArray(path) ? path : [path]
-    const args = ['rm', ...paths.map((p) => p.toString())]
+    const args = ['rm']
+    if (options?.recursive) {
+      args.push('-r')
+    }
     if (options?.force) {
       args.push('-f')
     }
+    args.push(...paths.map((p) => p.toString()))
     return this.runInNewStackTraceContext(() => this.runCmd(args.join(' ')))
   }
 
@@ -313,10 +317,11 @@ export class TemplateBase
     options?: { mode?: number }
   ): TemplateBuilder {
     const paths = Array.isArray(path) ? path : [path]
-    const args = ['mkdir', '-p', ...paths.map((p) => p.toString())]
+    const args = ['mkdir', '-p']
     if (options?.mode) {
       args.push(`-m ${padOctal(options.mode)}`)
     }
+    args.push(...paths.map((p) => p.toString()))
     return this.runInNewStackTraceContext(() => this.runCmd(args.join(' ')))
   }
 
@@ -539,7 +544,7 @@ export class TemplateBase
       dockerfile += `${instruction.type} ${instruction.args.join(' ')}\n`
     }
     if (this.startCommand) {
-      dockerfile += `ENTRYPOINT ${this.startCmd}\n`
+      dockerfile += `ENTRYPOINT ${this.startCommand}\n`
     }
     return dockerfile
   }
