@@ -30,6 +30,7 @@ import {
   readDockerignore,
   readGCPServiceAccountJSON,
 } from './utils'
+import { PathLike } from 'fs'
 
 export { type TemplateBuilder } from './types'
 
@@ -228,8 +229,8 @@ export class TemplateBase
   }
 
   copy(
-    src: string,
-    dest: string,
+    src: string | PathLike,
+    dest: string | PathLike,
     options?: {
       forceUpload?: true
       user?: string
@@ -242,8 +243,8 @@ export class TemplateBase
     }
 
     const args = [
-      src,
-      dest,
+      src.toString(),
+      dest.toString(),
       options?.user ?? '',
       options?.mode ? padOctal(options.mode) : '',
     ]
@@ -294,11 +295,11 @@ export class TemplateBase
   }
 
   rename(
-    src: string,
-    dest: string,
+    src: string | PathLike,
+    dest: string | PathLike,
     options?: { force?: boolean }
   ): TemplateBuilder {
-    const args = ['mv', src, dest]
+    const args = ['mv', src.toString(), dest.toString()]
     if (options?.force) {
       args.push('-f')
     }
@@ -306,18 +307,25 @@ export class TemplateBase
   }
 
   makeDir(
-    paths: string | string[],
+    paths: (string | PathLike) | (string | PathLike)[],
     options?: { mode?: number }
   ): TemplateBuilder {
-    const args = ['mkdir', '-p', ...(Array.isArray(paths) ? paths : [paths])]
+    const args = [
+      'mkdir',
+      '-p',
+      ...(Array.isArray(paths) ? paths : [paths]).map((p) => p.toString()),
+    ]
     if (options?.mode) {
       args.push(`-m ${padOctal(options.mode)}`)
     }
     return this.runInNewStackTraceContext(() => this.runCmd(args.join(' ')))
   }
 
-  makeSymlink(src: string, dest: string): TemplateBuilder {
-    const args = ['ln', '-s', src, dest]
+  makeSymlink(
+    src: string | PathLike,
+    dest: string | PathLike
+  ): TemplateBuilder {
+    const args = ['ln', '-s', src.toString(), dest.toString()]
     return this.runInNewStackTraceContext(() => this.runCmd(args.join(' ')))
   }
 
@@ -346,10 +354,10 @@ export class TemplateBase
     return this
   }
 
-  setWorkdir(workdir: string): TemplateBuilder {
+  setWorkdir(workdir: string | PathLike): TemplateBuilder {
     this.instructions.push({
       type: InstructionType.WORKDIR,
-      args: [workdir],
+      args: [workdir.toString()],
       force: this.forceNextLayer,
     })
 
@@ -421,10 +429,10 @@ export class TemplateBase
 
   gitClone(
     url: string,
-    path?: string,
+    path?: string | PathLike,
     options?: { branch?: string; depth?: number }
   ): TemplateBuilder {
-    const args = ['git', 'clone', url, path]
+    const args = ['git', 'clone', url, path?.toString()]
     if (options?.branch) {
       args.push(`--branch ${options.branch}`)
       args.push('--single-branch')

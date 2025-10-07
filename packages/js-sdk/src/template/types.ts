@@ -1,5 +1,6 @@
 import { stripAnsi } from '../utils'
 import { ReadyCmd } from './readycmd'
+import { PathLike } from 'fs'
 
 export enum InstructionType {
   COPY = 'COPY',
@@ -19,8 +20,8 @@ export type Instruction = {
 }
 
 export type CopyItem = {
-  src: string
-  dest: string
+  src: string | PathLike
+  dest: string | PathLike
   forceUpload?: true
   user?: string
   mode?: number
@@ -72,8 +73,8 @@ export interface TemplateFromImage {
 // Interface for the main builder state
 export interface TemplateBuilder {
   copy(
-    src: string,
-    dest: string,
+    src: string | PathLike,
+    dest: string | PathLike,
     options?: {
       forceUpload?: true
       user?: string
@@ -90,17 +91,17 @@ export interface TemplateBuilder {
   ): TemplateBuilder
 
   rename(
-    src: string,
-    dest: string,
+    src: string | PathLike,
+    dest: string | PathLike,
     options?: { force?: boolean }
   ): TemplateBuilder
 
   makeDir(
-    paths: string | string[],
+    paths: (string | string[]) | (PathLike | PathLike[]),
     options?: { mode?: number }
   ): TemplateBuilder
 
-  makeSymlink(src: string, dest: string): TemplateBuilder
+  makeSymlink(src: string | PathLike, dest: string | PathLike): TemplateBuilder
 
   runCmd(command: string, options?: { user?: string }): TemplateBuilder
 
@@ -111,7 +112,7 @@ export interface TemplateBuilder {
     options?: { user?: string }
   ): TemplateBuilder
 
-  setWorkdir(workdir: string): TemplateBuilder
+  setWorkdir(workdir: string | PathLike): TemplateBuilder
 
   setUser(user: string): TemplateBuilder
 
@@ -126,7 +127,7 @@ export interface TemplateBuilder {
 
   gitClone(
     url: string,
-    path?: string,
+    path?: string | PathLike,
     options?: { branch?: string; depth?: number }
   ): TemplateBuilder
 
