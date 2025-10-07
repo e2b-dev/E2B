@@ -373,15 +373,18 @@ class TemplateBase:
         )
 
     @overload
-    def from_image(self, base_image: str) -> TemplateBuilder:
-        ...
+    def from_image(self, base_image: str) -> TemplateBuilder: ...
 
     @overload
-    def from_image(self, base_image: str, username: str, password: str) -> TemplateBuilder:
-        ...
+    def from_image(
+        self, base_image: str, username: str, password: str
+    ) -> TemplateBuilder: ...
 
     def from_image(
-        self, base_image: str, username: Optional[str] = None, password: Optional[str] = None
+        self,
+        base_image: str,
+        username: Optional[str] = None,
+        password: Optional[str] = None,
     ) -> TemplateBuilder:
         """Private method to set base image without adding stack trace"""
         self._base_image = base_image
@@ -433,7 +436,6 @@ class TemplateBase:
 
         self._collect_stack_trace()
         return builder
-
 
     def from_aws_registry(
         self,
