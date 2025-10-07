@@ -1,13 +1,22 @@
+import * as boxen from 'boxen'
+import * as child_process from 'child_process'
+import commandExists from 'command-exists'
 import * as commander from 'commander'
+import * as e2b from 'e2b'
 import * as fs from 'fs'
 import * as path from 'path'
-import * as e2b from 'e2b'
-import * as stripAnsi from 'strip-ansi'
-import * as boxen from 'boxen'
-import commandExists from 'command-exists'
-import { wait } from 'src/utils/wait'
 import { client, connectionConfig, ensureAccessToken } from 'src/api'
+import { configName, getConfigPath, loadConfig, saveConfig } from 'src/config'
+import {
+  defaultDockerfileName,
+  fallbackDockerfileName,
+} from 'src/docker/constants'
+import { configOption, pathOption, teamOption } from 'src/options'
+import { getUserConfig } from 'src/user'
 import { getRoot } from 'src/utils/filesystem'
+import { wait } from 'src/utils/wait'
+import * as stripAnsi from 'strip-ansi'
+import { handleE2BRequestError } from '../../utils/errors'
 import {
   asBold,
   asBuildLogs,
@@ -18,16 +27,7 @@ import {
   asPython,
   asTypescript,
   withDelimiter,
-} from 'src/utils/format'
-import { configOption, pathOption, teamOption } from 'src/options'
-import {
-  defaultDockerfileName,
-  fallbackDockerfileName,
-} from 'src/docker/constants'
-import { configName, getConfigPath, loadConfig, saveConfig } from 'src/config'
-import * as child_process from 'child_process'
-import { handleE2BRequestError } from '../../utils/errors'
-import { getUserConfig } from 'src/user'
+} from '../../utils/format'
 import { buildWithProxy } from './buildWithProxy'
 
 const templateCheckInterval = 500 // 0.5 sec
