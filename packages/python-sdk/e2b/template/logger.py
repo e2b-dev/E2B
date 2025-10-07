@@ -1,4 +1,4 @@
-import os
+import sys
 import threading
 import time
 from dataclasses import dataclass
@@ -145,7 +145,7 @@ class BuildLogger:
         return text
 
     def __start_timer(self):
-        if os.getenv("CI"):
+        if not sys.stdin.isatty:
             return
 
         # Start the timer interval
@@ -159,7 +159,7 @@ class BuildLogger:
         self.__update_timer()
 
     def __update_timer(self):
-        if os.getenv("CI"):
+        if not sys.stdin.isatty:
             return
 
         self.__state["animation_frame"] += 1

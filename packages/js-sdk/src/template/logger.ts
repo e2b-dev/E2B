@@ -126,7 +126,7 @@ class BuildLogger {
   }
 
   private startTimer() {
-    if (process.env.CI) {
+    if (!process.stdout.isTTY) {
       return
     }
 
@@ -143,7 +143,7 @@ class BuildLogger {
   }
 
   private updateTimer() {
-    if (process.env.CI) {
+    if (!process.stdout.isTTY) {
       return
     }
 
