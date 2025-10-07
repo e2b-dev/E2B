@@ -21,7 +21,7 @@ import { getDockerfile } from './build'
 
 export const buildV2Command = new commander.Command('build-v2')
   .description(
-    'build sandbox template as E2B template. This command reads a Dockerfile and builds it directly.'
+    'build Dockerfile as a Sandbox template. This command reads a Dockerfile and builds it directly.'
   )
   .argument(
     '<template-name>',
