@@ -18,8 +18,8 @@ from e2b import (
     AsyncTemplate,
     Template,
     TemplateClass,
+    LogEntry,
 )
-from e2b.template.types import LogEntry
 
 
 @pytest.fixture(scope="session")
