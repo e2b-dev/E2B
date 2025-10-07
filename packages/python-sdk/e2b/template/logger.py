@@ -146,7 +146,7 @@ class BuildLogger:
         return text
 
     def __start_timer(self):
-        if not sys.stdin.isatty():
+        if not sys.stdout.isatty():
             return
 
         # Start the timer interval
@@ -160,7 +160,7 @@ class BuildLogger:
         self.__update_timer()
 
     def __update_timer(self):
-        if not sys.stdin.isatty():
+        if not sys.stdout.isatty():
             return
 
         self.__state["animation_frame"] += 1
