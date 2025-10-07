@@ -133,14 +133,15 @@ class BuildLogger:
         level_text, level_style = levels.get(line.level, levels[DEFAULT_LEVEL])
 
         # Build a rich Text object
-        text = Text()
-        text.append(timer)
-        text.append(" | ")
-        text.append(timestamp, style="dim")
-        text.append(" ")
-        text.append(level_text, style=level_style)
-        text.append(" ")
-        text.append(line.message)
+        text = Text.assemble(
+            timer,
+            " | ",
+            (timestamp, "dim"),
+            " ",
+            (level_text, level_style),
+            " ",
+            line.message,
+        )
 
         return text
 
@@ -165,10 +166,9 @@ class BuildLogger:
         self.__state["animation_frame"] += 1
         jumping_squares = self.__animate_status()
 
-        timer_text = Text()
-        timer_text.append(jumping_squares)
-        timer_text.append(" Building ")
-        timer_text.append(self.__format_timer_line())
+        timer_text = Text.assemble(
+            jumping_squares, " Building ", self.__format_timer_line()
+        )
 
         # Print with carriage return
         self.__console.print(timer_text, end="\r")
