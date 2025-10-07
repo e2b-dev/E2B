@@ -31,29 +31,33 @@ class TemplateBuilder:
 
     def copy(
         self,
-        src: Union[str, Path],
+        src: Union[Union[str, Path], List[Union[str, Path]]],
         dest: Union[str, Path],
         force_upload: Optional[bool] = None,
         user: Optional[str] = None,
         mode: Optional[int] = None,
         resolve_symlinks: Optional[bool] = None,
     ) -> "TemplateBuilder":
-        args = [
-            str(src),
-            str(dest),
-            user or "",
-            pad_octal(mode) if mode else "",
-        ]
+        srcs = [src] if isinstance(src, (str, Path)) else src
 
-        instruction: Instruction = {
-            "type": InstructionType.COPY,
-            "args": args,
-            "force": force_upload or self._template._force_next_layer,
-            "forceUpload": force_upload,
-            "resolveSymlinks": resolve_symlinks,
-        }
+        for src_item in srcs:
+            args = [
+                str(src_item),
+                str(dest),
+                user or "",
+                pad_octal(mode) if mode else "",
+            ]
 
-        self._template._instructions.append(instruction)
+            instruction: Instruction = {
+                "type": InstructionType.COPY,
+                "args": args,
+                "force": force_upload or self._template._force_next_layer,
+                "forceUpload": force_upload,
+                "resolveSymlinks": resolve_symlinks,
+            }
+
+            self._template._instructions.append(instruction)
+
         self._template._collect_stack_trace()
         return self
 
@@ -74,9 +78,13 @@ class TemplateBuilder:
         return self
 
     def remove(
-        self, path: str, force: bool = False, recursive: bool = False
+        self, 
+        path: Union[Union[str, Path], List[Union[str, Path]]], 
+        force: bool = False, 
+        recursive: bool = False
     ) -> "TemplateBuilder":
-        args = ["rm", path]
+        paths = [path] if isinstance(path, (str, Path)) else path
+        args = ["rm"] + [str(p) for p in paths]
         if recursive:
             args.append("-r")
         if force:
@@ -98,10 +106,9 @@ class TemplateBuilder:
     def make_dir(
         self, paths: Union[Union[str, Path], List[Union[str, Path]]], mode: Optional[int] = None
     ) -> "TemplateBuilder":
-        if isinstance(paths, (str, Path)):
-            paths = [paths]
+        path_list = [paths] if isinstance(paths, (str, Path)) else paths
 
-        args = ["mkdir", "-p", *[str(p) for p in paths]]
+        args = ["mkdir", "-p"] + [str(p) for p in path_list]
         if mode:
             args.append(f"-m {pad_octal(mode)}")
 

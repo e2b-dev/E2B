@@ -17,7 +17,7 @@ class InstructionType(str, Enum):
 
 
 class CopyItem(TypedDict):
-    src: Union[str, Path]
+    src: Union[Union[str, Path], List[Union[str, Path]]]
     dest: Union[str, Path]
     forceUpload: NotRequired[Optional[bool]]
     user: NotRequired[Optional[str]]
