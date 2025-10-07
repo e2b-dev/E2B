@@ -82,7 +82,7 @@ buildTemplateTest('traces on fromDockerfile', async ({ buildTemplate }) => {
 
 buildTemplateTest('traces on fromRegistry', async ({ buildTemplate }) => {
   const templateFrom = Template()
-  const template = templateFrom.fromRegistry(
+  const template = templateFrom.fromImage(
     'registry.example.com/nonexistent:latest',
     {
       username: 'test',

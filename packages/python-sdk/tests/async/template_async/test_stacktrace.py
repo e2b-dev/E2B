@@ -52,7 +52,7 @@ async def test_traces_on_from_dockerfile(async_build):
 @pytest.mark.skip_debug()
 async def test_traces_on_from_registry(async_build):
     template = AsyncTemplate()
-    template = template.skip_cache().from_registry(
+    template = template.skip_cache().from_image(
         "registry.example.com/nonexistent:latest",
         username="test",
         password="test",

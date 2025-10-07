@@ -50,7 +50,7 @@ def test_traces_on_from_dockerfile(build):
 @pytest.mark.skip_debug()
 def test_traces_on_from_registry(build):
     template = Template()
-    template = template.skip_cache().from_registry(
+    template = template.skip_cache().from_image(
         "registry.example.com/nonexistent:latest",
         username="test",
         password="test",
