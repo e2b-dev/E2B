@@ -433,13 +433,16 @@ export class TemplateBase
     path?: PathLike,
     options?: { branch?: string; depth?: number }
   ): TemplateBuilder {
-    const args = ['git', 'clone', url, path?.toString()]
+    const args = ['git', 'clone', url]
     if (options?.branch) {
       args.push(`--branch ${options.branch}`)
       args.push('--single-branch')
     }
     if (options?.depth) {
       args.push(`--depth ${options.depth}`)
+    }
+    if (path) {
+      args.push(path.toString())
     }
 
     return this.runInNewStackTraceContext(() => this.runCmd(args.join(' ')))

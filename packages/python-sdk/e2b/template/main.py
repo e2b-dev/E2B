@@ -226,13 +226,13 @@ class TemplateBuilder:
         depth: Optional[int] = None,
     ) -> "TemplateBuilder":
         args = ["git", "clone", url]
-        if path:
-            args.append(str(path))
         if branch:
             args.append(f"--branch {branch}")
             args.append("--single-branch")
         if depth:
             args.append(f"--depth {depth}")
+        if path:
+            args.append(str(path))
         return self._template._run_in_new_stack_trace_context(
             lambda: self.run_cmd(" ".join(args))
         )
