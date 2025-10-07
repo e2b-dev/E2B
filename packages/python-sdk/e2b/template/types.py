@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Literal
 from enum import Enum
+from pathlib import Path
 from e2b.template.utils import strip_ansi_escape_codes
 
 
@@ -16,8 +17,8 @@ class InstructionType(str, Enum):
 
 
 class CopyItem(TypedDict):
-    src: str
-    dest: str
+    src: Union[str, Path]
+    dest: Union[str, Path]
     forceUpload: NotRequired[Optional[bool]]
     user: NotRequired[Optional[str]]
     mode: NotRequired[Optional[int]]

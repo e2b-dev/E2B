@@ -1,5 +1,6 @@
 import json
 from typing import Dict, List, Optional, Union, overload
+from pathlib import Path
 
 from httpx import Limits
 
@@ -30,27 +31,27 @@ class TemplateBuilder:
 
     def copy(
         self,
-        src: str,
-        dest: str,
+        src: Union[str, Path],
+        dest: Union[str, Path],
         force_upload: Optional[bool] = None,
         user: Optional[str] = None,
         mode: Optional[int] = None,
         resolve_symlinks: Optional[bool] = None,
     ) -> "TemplateBuilder":
         args = [
-            src,
-            dest,
+            str(src),
+            str(dest),
             user or "",
             pad_octal(mode) if mode else "",
         ]
 
-        instruction: Instruction = Instruction(
-            type=InstructionType.COPY,
-            args=args,
-            force=force_upload or self._template._force_next_layer,
-            forceUpload=force_upload,
-            resolveSymlinks=resolve_symlinks,
-        )
+        instruction: Instruction = {
+            "type": InstructionType.COPY,
+            "args": args,
+            "force": force_upload or self._template._force_next_layer,
+            "forceUpload": force_upload,
+            "resolveSymlinks": resolve_symlinks,
+        }
 
         self._template._instructions.append(instruction)
         self._template._collect_stack_trace()
@@ -85,8 +86,8 @@ class TemplateBuilder:
             lambda: self.run_cmd(" ".join(args))
         )
 
-    def rename(self, src: str, dest: str, force: bool = False) -> "TemplateBuilder":
-        args = ["mv", src, dest]
+    def rename(self, src: Union[str, Path], dest: Union[str, Path], force: bool = False) -> "TemplateBuilder":
+        args = ["mv", str(src), str(dest)]
         if force:
             args.append("-f")
 
@@ -95,12 +96,12 @@ class TemplateBuilder:
         )
 
     def make_dir(
-        self, paths: Union[str, List[str]], mode: Optional[int] = None
+        self, paths: Union[Union[str, Path], List[Union[str, Path]]], mode: Optional[int] = None
     ) -> "TemplateBuilder":
-        if isinstance(paths, str):
+        if isinstance(paths, (str, Path)):
             paths = [paths]
 
-        args = ["mkdir", "-p", *paths]
+        args = ["mkdir", "-p", *[str(p) for p in paths]]
         if mode:
             args.append(f"-m {pad_octal(mode)}")
 
@@ -108,8 +109,8 @@ class TemplateBuilder:
             lambda: self.run_cmd(" ".join(args))
         )
 
-    def make_symlink(self, src: str, dest: str) -> "TemplateBuilder":
-        args = ["ln", "-s", src, dest]
+    def make_symlink(self, src: Union[str, Path], dest: Union[str, Path]) -> "TemplateBuilder":
+        args = ["ln", "-s", str(src), str(dest)]
         return self._template._run_in_new_stack_trace_context(
             lambda: self.run_cmd(" ".join(args))
         )
@@ -123,34 +124,34 @@ class TemplateBuilder:
         if user:
             args.append(user)
 
-        instruction: Instruction = Instruction(
-            type=InstructionType.RUN,
-            args=args,
-            force=self._template._force_next_layer,
-            forceUpload=None,
-        )
+        instruction: Instruction = {
+            "type": InstructionType.RUN,
+            "args": args,
+            "force": self._template._force_next_layer,
+            "forceUpload": None,
+        }
         self._template._instructions.append(instruction)
         self._template._collect_stack_trace()
         return self
 
-    def set_workdir(self, workdir: str) -> "TemplateBuilder":
-        instruction: Instruction = Instruction(
-            type=InstructionType.WORKDIR,
-            args=[workdir],
-            force=self._template._force_next_layer,
-            forceUpload=None,
-        )
+    def set_workdir(self, workdir: Union[str, Path]) -> "TemplateBuilder":
+        instruction: Instruction = {
+            "type": InstructionType.WORKDIR,
+            "args": [str(workdir)],
+            "force": self._template._force_next_layer,
+            "forceUpload": None,
+        }
         self._template._instructions.append(instruction)
         self._template._collect_stack_trace()
         return self
 
     def set_user(self, user: str) -> "TemplateBuilder":
-        instruction: Instruction = Instruction(
-            type=InstructionType.USER,
-            args=[user],
-            force=self._template._force_next_layer,
-            forceUpload=None,
-        )
+        instruction: Instruction = {
+            "type": InstructionType.USER,
+            "args": [user],
+            "force": self._template._force_next_layer,
+            "forceUpload": None,
+        }
         self._template._instructions.append(instruction)
         self._template._collect_stack_trace()
         return self
@@ -206,13 +207,13 @@ class TemplateBuilder:
     def git_clone(
         self,
         url: str,
-        path: Optional[str] = None,
+        path: Optional[Union[str, Path]] = None,
         branch: Optional[str] = None,
         depth: Optional[int] = None,
     ) -> "TemplateBuilder":
         args = ["git", "clone", url]
         if path:
-            args.append(path)
+            args.append(str(path))
         if branch:
             args.append(f"--branch {branch}")
             args.append("--single-branch")
@@ -226,12 +227,12 @@ class TemplateBuilder:
         if len(envs) == 0:
             return self
 
-        instruction: Instruction = Instruction(
-            type=InstructionType.ENV,
-            args=[item for key, value in envs.items() for item in [key, value]],
-            force=self._template._force_next_layer,
-            forceUpload=None,
-        )
+        instruction: Instruction = {
+            "type": InstructionType.ENV,
+            "args": [item for key, value in envs.items() for item in [key, value]],
+            "force": self._template._force_next_layer,
+            "forceUpload": None,
+        }
         self._template._instructions.append(instruction)
         self._template._collect_stack_trace()
         return self
@@ -519,13 +520,13 @@ class TemplateBase:
         steps: List[Instruction] = []
 
         for index, instruction in enumerate(self._instructions):
-            step: Instruction = Instruction(
-                type=instruction["type"],
-                args=instruction["args"],
-                force=instruction["force"],
-                forceUpload=instruction.get("forceUpload"),
-                resolveSymlinks=instruction.get("resolveSymlinks"),
-            )
+            step: Instruction = {
+                "type": instruction["type"],
+                "args": instruction["args"],
+                "force": instruction["force"],
+                "forceUpload": instruction.get("forceUpload"),
+                "resolveSymlinks": instruction.get("resolveSymlinks"),
+            }
 
             if instruction["type"] == InstructionType.COPY:
                 stack_trace = None

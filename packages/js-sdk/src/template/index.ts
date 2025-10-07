@@ -229,8 +229,8 @@ export class TemplateBase
   }
 
   copy(
-    src: string | PathLike,
-    dest: string | PathLike,
+    src: PathLike,
+    dest: PathLike,
     options?: {
       forceUpload?: true
       user?: string
@@ -295,8 +295,8 @@ export class TemplateBase
   }
 
   rename(
-    src: string | PathLike,
-    dest: string | PathLike,
+    src: PathLike,
+    dest: PathLike,
     options?: { force?: boolean }
   ): TemplateBuilder {
     const args = ['mv', src.toString(), dest.toString()]
@@ -307,7 +307,7 @@ export class TemplateBase
   }
 
   makeDir(
-    paths: (string | PathLike) | (string | PathLike)[],
+    paths: PathLike | PathLike[],
     options?: { mode?: number }
   ): TemplateBuilder {
     const args = [
@@ -321,10 +321,7 @@ export class TemplateBase
     return this.runInNewStackTraceContext(() => this.runCmd(args.join(' ')))
   }
 
-  makeSymlink(
-    src: string | PathLike,
-    dest: string | PathLike
-  ): TemplateBuilder {
+  makeSymlink(src: PathLike, dest: PathLike): TemplateBuilder {
     const args = ['ln', '-s', src.toString(), dest.toString()]
     return this.runInNewStackTraceContext(() => this.runCmd(args.join(' ')))
   }
@@ -354,7 +351,7 @@ export class TemplateBase
     return this
   }
 
-  setWorkdir(workdir: string | PathLike): TemplateBuilder {
+  setWorkdir(workdir: PathLike): TemplateBuilder {
     this.instructions.push({
       type: InstructionType.WORKDIR,
       args: [workdir.toString()],
@@ -429,7 +426,7 @@ export class TemplateBase
 
   gitClone(
     url: string,
-    path?: string | PathLike,
+    path?: PathLike,
     options?: { branch?: string; depth?: number }
   ): TemplateBuilder {
     const args = ['git', 'clone', url, path?.toString()]

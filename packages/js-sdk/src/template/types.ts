@@ -73,8 +73,8 @@ export interface TemplateFromImage {
 // Interface for the main builder state
 export interface TemplateBuilder {
   copy(
-    src: string | PathLike,
-    dest: string | PathLike,
+    src: PathLike,
+    dest: PathLike,
     options?: {
       forceUpload?: true
       user?: string
@@ -91,17 +91,17 @@ export interface TemplateBuilder {
   ): TemplateBuilder
 
   rename(
-    src: string | PathLike,
-    dest: string | PathLike,
+    src: PathLike,
+    dest: PathLike,
     options?: { force?: boolean }
   ): TemplateBuilder
 
   makeDir(
-    paths: (string | string[]) | (PathLike | PathLike[]),
+    paths: PathLike | PathLike[],
     options?: { mode?: number }
   ): TemplateBuilder
 
-  makeSymlink(src: string | PathLike, dest: string | PathLike): TemplateBuilder
+  makeSymlink(src: PathLike, dest: PathLike): TemplateBuilder
 
   runCmd(command: string, options?: { user?: string }): TemplateBuilder
 
@@ -112,7 +112,7 @@ export interface TemplateBuilder {
     options?: { user?: string }
   ): TemplateBuilder
 
-  setWorkdir(workdir: string | PathLike): TemplateBuilder
+  setWorkdir(workdir: PathLike): TemplateBuilder
 
   setUser(user: string): TemplateBuilder
 
@@ -127,7 +127,7 @@ export interface TemplateBuilder {
 
   gitClone(
     url: string,
-    path?: string | PathLike,
+    path?: PathLike,
     options?: { branch?: string; depth?: number }
   ): TemplateBuilder
 
