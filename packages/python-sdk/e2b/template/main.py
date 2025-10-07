@@ -1,5 +1,5 @@
 import json
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Union, overload
 
 from httpx import Limits
 
@@ -372,16 +372,28 @@ class TemplateBase:
             lambda: self.from_image(self._default_base_image)
         )
 
+    @overload
+    def from_image(self, base_image: str) -> TemplateBuilder:
+        ...
+
+    @overload
+    def from_image(self, base_image: str, username: str, password: str) -> TemplateBuilder:
+        ...
+
     def from_image(
-        self, base_image: str, registry_config: Optional[RegistryConfig] = None
+        self, base_image: str, username: Optional[str] = None, password: Optional[str] = None
     ) -> TemplateBuilder:
         """Private method to set base image without adding stack trace"""
         self._base_image = base_image
         self._base_template = None
 
         # Set the registry config if provided
-        if registry_config is not None:
-            self._registry_config = registry_config
+        if username and password:
+            self._registry_config = {
+                "type": "registry",
+                "username": username,
+                "password": password,
+            }
 
         # If we should force the next layer and it's a FROM command, invalidate whole template
         if self._force_next_layer:
@@ -422,53 +434,52 @@ class TemplateBase:
         self._collect_stack_trace()
         return builder
 
-    def from_registry(
-        self, image: str, username: str, password: str
-    ) -> TemplateBuilder:
-        return self._run_in_new_stack_trace_context(
-            lambda: self.from_image(
-                image,
-                registry_config={
-                    "type": "registry",
-                    "username": username,
-                    "password": password,
-                },
-            )
-        )
 
     def from_aws_registry(
         self,
-        image: str,
+        base_image: str,
         access_key_id: str,
         secret_access_key: str,
         region: str,
     ) -> TemplateBuilder:
-        return self._run_in_new_stack_trace_context(
-            lambda: self.from_image(
-                image,
-                registry_config={
-                    "type": "aws",
-                    "awsAccessKeyId": access_key_id,
-                    "awsSecretAccessKey": secret_access_key,
-                    "awsRegion": region,
-                },
-            )
-        )
+        self._base_image = base_image
+        self._base_template = None
+
+        # Set the registry config if provided
+        self._registry_config = {
+            "type": "aws",
+            "awsAccessKeyId": access_key_id,
+            "awsSecretAccessKey": secret_access_key,
+            "awsRegion": region,
+        }
+
+        # If we should force the next layer and it's a FROM command, invalidate whole template
+        if self._force_next_layer:
+            self._force = True
+
+        self._collect_stack_trace()
+        return TemplateBuilder(self)
 
     def from_gcp_registry(
-        self, image: str, service_account_json: Union[str, dict]
+        self, base_image: str, service_account_json: Union[str, dict]
     ) -> TemplateBuilder:
-        return self._run_in_new_stack_trace_context(
-            lambda: self.from_image(
-                image,
-                registry_config={
-                    "type": "gcp",
-                    "serviceAccountJson": read_gcp_service_account_json(
-                        self._file_context_path, service_account_json
-                    ),
-                },
-            )
-        )
+        self._base_image = base_image
+        self._base_template = None
+
+        # Set the registry config if provided
+        self._registry_config = {
+            "type": "gcp",
+            "serviceAccountJson": read_gcp_service_account_json(
+                self._file_context_path, service_account_json
+            ),
+        }
+
+        # If we should force the next layer and it's a FROM command, invalidate whole template
+        if self._force_next_layer:
+            self._force = True
+
+        self._collect_stack_trace()
+        return TemplateBuilder(self)
 
     @staticmethod
     def to_json(template: "TemplateClass") -> str:

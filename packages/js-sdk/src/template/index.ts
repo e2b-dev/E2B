@@ -113,16 +113,25 @@ export class TemplateBase
     return this.fromImage(this.defaultBaseImage)
   }
 
+  fromImage(baseImage: string): TemplateBuilder
   fromImage(
     baseImage: string,
-    options?: { registryConfig?: RegistryConfig }
+    options: { username: string; password: string }
+  ): TemplateBuilder
+  fromImage(
+    baseImage: string,
+    options?: { username: string; password: string }
   ): TemplateBuilder {
     this.baseImage = baseImage
     this.baseTemplate = undefined
 
     // Set the registry config if provided
-    if (options?.registryConfig) {
-      this.registryConfig = options.registryConfig
+    if (options?.username && options?.password) {
+      this.registryConfig = {
+        type: 'registry',
+        username: options.username,
+        password: options.password,
+      }
     }
 
     // If we should force the next layer and it's a FROM command, invalidate whole template
@@ -168,61 +177,54 @@ export class TemplateBase
     return this
   }
 
-  fromRegistry(
-    image: string,
-    options: {
-      username: string
-      password: string
-    }
-  ): TemplateBuilder {
-    return this.runInNewStackTraceContext(() =>
-      this.fromImage(image, {
-        registryConfig: {
-          type: 'registry',
-          username: options.username,
-          password: options.password,
-        },
-      })
-    )
-  }
-
   fromAWSRegistry(
-    image: string,
+    baseImage: string,
     options: {
       accessKeyId: string
       secretAccessKey: string
       region: string
     }
   ): TemplateBuilder {
-    return this.runInNewStackTraceContext(() =>
-      this.fromImage(image, {
-        registryConfig: {
-          type: 'aws',
-          awsAccessKeyId: options.accessKeyId,
-          awsSecretAccessKey: options.secretAccessKey,
-          awsRegion: options.region,
-        },
-      })
-    )
+    this.baseImage = baseImage
+    this.baseTemplate = undefined
+
+    // Set the registry config if provided
+    this.registryConfig = {
+      type: 'aws',
+      awsAccessKeyId: options.accessKeyId,
+      awsSecretAccessKey: options.secretAccessKey,
+      awsRegion: options.region,
+    }
+
+    // If we should force the next layer and it's a FROM command, invalidate whole template
+    if (this.forceNextLayer) {
+      this.force = true
+    }
+
+    this.collectStackTrace()
+    return this
   }
 
   fromGCPRegistry(
-    image: string,
+    baseImage: string,
     options: {
       serviceAccountJSON: string | object
     }
   ): TemplateBuilder {
-    return this.runInNewStackTraceContext(() =>
-      this.fromImage(image, {
-        registryConfig: {
-          type: 'gcp',
-          serviceAccountJson: readGCPServiceAccountJSON(
-            this.fileContextPath,
-            options.serviceAccountJSON
-          ),
-        },
-      })
-    )
+    this.baseImage = baseImage
+    this.baseTemplate = undefined
+
+    // Set the registry config if provided
+    this.registryConfig = {
+      type: 'gcp',
+      serviceAccountJson: readGCPServiceAccountJSON(
+        this.fileContextPath,
+        options.serviceAccountJSON
+      ),
+    }
+
+    this.collectStackTrace()
+    return this
   }
 
   copy(
