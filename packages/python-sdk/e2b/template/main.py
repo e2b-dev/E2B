@@ -78,10 +78,10 @@ class TemplateBuilder:
         return self
 
     def remove(
-        self, 
-        path: Union[Union[str, Path], List[Union[str, Path]]], 
-        force: bool = False, 
-        recursive: bool = False
+        self,
+        path: Union[Union[str, Path], List[Union[str, Path]]],
+        force: bool = False,
+        recursive: bool = False,
     ) -> "TemplateBuilder":
         paths = [path] if isinstance(path, (str, Path)) else path
         args = ["rm"] + [str(p) for p in paths]
@@ -94,7 +94,9 @@ class TemplateBuilder:
             lambda: self.run_cmd(" ".join(args))
         )
 
-    def rename(self, src: Union[str, Path], dest: Union[str, Path], force: bool = False) -> "TemplateBuilder":
+    def rename(
+        self, src: Union[str, Path], dest: Union[str, Path], force: bool = False
+    ) -> "TemplateBuilder":
         args = ["mv", str(src), str(dest)]
         if force:
             args.append("-f")
@@ -104,7 +106,9 @@ class TemplateBuilder:
         )
 
     def make_dir(
-        self, paths: Union[Union[str, Path], List[Union[str, Path]]], mode: Optional[int] = None
+        self,
+        paths: Union[Union[str, Path], List[Union[str, Path]]],
+        mode: Optional[int] = None,
     ) -> "TemplateBuilder":
         path_list = [paths] if isinstance(paths, (str, Path)) else paths
 
@@ -116,7 +120,9 @@ class TemplateBuilder:
             lambda: self.run_cmd(" ".join(args))
         )
 
-    def make_symlink(self, src: Union[str, Path], dest: Union[str, Path]) -> "TemplateBuilder":
+    def make_symlink(
+        self, src: Union[str, Path], dest: Union[str, Path]
+    ) -> "TemplateBuilder":
         args = ["ln", "-s", str(src), str(dest)]
         return self._template._run_in_new_stack_trace_context(
             lambda: self.run_cmd(" ".join(args))
