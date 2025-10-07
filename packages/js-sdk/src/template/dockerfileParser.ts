@@ -27,7 +27,7 @@ export interface DockerfileParserInterface {
     dest: string,
     options?: { forceUpload?: true; user?: string; mode?: number }
   ): DockerfileParserInterface
-  copy(
+  copyItems(
     items: CopyItem[],
     options?: { forceUpload?: true; user?: string; mode?: number }
   ): DockerfileParserInterface

@@ -234,61 +234,48 @@ export class TemplateBase
       forceUpload?: true
       user?: string
       mode?: number
-      resolveSymlinks?: boolean
-    }
-  ): TemplateBuilder
-  copy(items: CopyItem[]): TemplateBuilder
-  copy(
-    srcOrItems: string | CopyItem[],
-    destOrOptions?:
-      | string
-      | {
-          forceUpload?: true
-          user?: string
-          mode?: number
-          resolveSymlinks?: boolean
-        },
-    options?: {
-      forceUpload?: true
-      user?: string
-      mode?: number
-      resolveSymlinks?: boolean
+      resolveSymlinks?: true
     }
   ): TemplateBuilder {
     if (runtime === 'browser') {
       throw new Error('Browser runtime is not supported for copy')
     }
 
-    const items = Array.isArray(srcOrItems)
-      ? srcOrItems
-      : [
-          {
-            src: srcOrItems,
-            dest: destOrOptions as string,
-            mode: options?.mode,
-            user: options?.user,
-            forceUpload: options?.forceUpload,
-            resolveSymlinks: options?.resolveSymlinks,
-          },
-        ]
-    for (const item of items) {
-      const args = [
-        item.src,
-        item.dest,
-        item.user ?? '',
-        item.mode ? padOctal(item.mode) : '',
-      ]
+    const args = [
+      src,
+      dest,
+      options?.user ?? '',
+      options?.mode ? padOctal(options.mode) : '',
+    ]
 
-      this.instructions.push({
-        type: InstructionType.COPY,
-        args,
-        force: item.forceUpload ?? this.forceNextLayer,
-        forceUpload: item.forceUpload,
-        resolveSymlinks: item.resolveSymlinks,
-      })
-    }
+    this.instructions.push({
+      type: InstructionType.COPY,
+      args,
+      force: options?.forceUpload ?? this.forceNextLayer,
+      forceUpload: options?.forceUpload,
+      resolveSymlinks: options?.resolveSymlinks,
+    })
 
     this.collectStackTrace()
+    return this
+  }
+
+  copyItems(items: CopyItem[]): TemplateBuilder {
+    if (runtime === 'browser') {
+      throw new Error('Browser runtime is not supported for copyItems')
+    }
+
+    for (const item of items) {
+      this.runInNewStackTraceContext(() =>
+        this.copy(item.src, item.dest, {
+          forceUpload: item.forceUpload,
+          user: item.user,
+          mode: item.mode,
+          resolveSymlinks: item.resolveSymlinks,
+        })
+      )
+    }
+
     return this
   }
 
