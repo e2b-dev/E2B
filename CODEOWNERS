@@ -5,7 +5,6 @@
 # Web
 apps/web @jakubno @ben-fornefeld
 apps/web/src/app/(docs)/docs @mlejva
-apps/web/src/app/(docs)/docs/sdk-reference @0div
 
 # SDKs
 packages @jakubno @ValentaTomas @mishushakov
