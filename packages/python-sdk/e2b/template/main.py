@@ -1,5 +1,5 @@
 import json
-from typing import Dict, List, Optional, Union, Literal, overload
+from typing import Dict, List, Optional, Union, Literal
 from pathlib import Path
 
 from httpx import Limits
