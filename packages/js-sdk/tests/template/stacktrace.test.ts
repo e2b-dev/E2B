@@ -230,7 +230,7 @@ buildTemplateTest('traces on gitClone', async ({ buildTemplate }) => {
   }, 'gitClone')
 })
 
-buildTemplateTest('traces on startCmd', async ({ buildTemplate }) => {
+buildTemplateTest('traces on setStartCmd', async ({ buildTemplate }) => {
   let template: any = Template().fromBaseImage()
   template = template.setStartCmd(
     `./${nonExistentPath}`,
