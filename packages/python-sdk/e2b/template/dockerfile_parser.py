@@ -239,7 +239,7 @@ def _handle_env_instruction(
 def _handle_cmd_entrypoint_instruction(
     value: str, template_builder: DockerfileParserInterface
 ) -> None:
-    """Handle CMD/ENTRYPOINT instruction - convert to start_cmd with 20s timeout"""
+    """Handle CMD/ENTRYPOINT instruction - convert to set_start_cmd with 20s timeout"""
     if not value.strip():
         return
     command = value.strip()

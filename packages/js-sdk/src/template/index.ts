@@ -115,11 +115,6 @@ export class TemplateBase
     return this.fromImage(this.defaultBaseImage)
   }
 
-  fromImage(baseImage: string): TemplateBuilder
-  fromImage(
-    baseImage: string,
-    credentials: { username: string; password: string }
-  ): TemplateBuilder
   fromImage(
     baseImage: string,
     credentials?: { username: string; password: string }
@@ -180,14 +175,14 @@ export class TemplateBase
   }
 
   fromAWSRegistry(
-    baseImage: string,
+    image: string,
     credentials: {
       accessKeyId: string
       secretAccessKey: string
       region: string
     }
   ): TemplateBuilder {
-    this.baseImage = baseImage
+    this.baseImage = image
     this.baseTemplate = undefined
 
     // Set the registry config if provided
@@ -208,12 +203,12 @@ export class TemplateBase
   }
 
   fromGCPRegistry(
-    baseImage: string,
+    image: string,
     credentials: {
       serviceAccountJSON: string | object
     }
   ): TemplateBuilder {
-    this.baseImage = baseImage
+    this.baseImage = image
     this.baseTemplate = undefined
 
     // Set the registry config if provided

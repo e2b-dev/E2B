@@ -40,13 +40,6 @@ export interface TemplateFromImage {
 
   fromBaseImage(): TemplateBuilder
 
-  fromImage(baseImage: string): TemplateBuilder
-
-  fromImage(
-    baseImage: string,
-    credentials: { username: string; password: string }
-  ): TemplateBuilder
-
   fromImage(
     baseImage: string,
     credentials?: { username: string; password: string }
@@ -57,7 +50,7 @@ export interface TemplateFromImage {
   fromDockerfile(dockerfileContent: string): TemplateBuilder
 
   fromAWSRegistry(
-    baseImage: string,
+    image: string,
     credentials: {
       accessKeyId: string
       secretAccessKey: string
@@ -66,7 +59,7 @@ export interface TemplateFromImage {
   ): TemplateBuilder
 
   fromGCPRegistry(
-    baseImage: string,
+    image: string,
     credentials: {
       serviceAccountJSON: object | string
     }
