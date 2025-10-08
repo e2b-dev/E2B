@@ -4,8 +4,8 @@ export const template = Template()
   .fromImage('python:3.11-slim')
   .runCmd('apt-get update && apt-get install -y gcc g++ make libpq-dev && rm -rf /var/lib/apt/lists/*')
   .setEnvs({
-    PYTHONDONTWRITEBYTECODE: '1',
-    PYTHONUNBUFFERED: '1',
+    'PYTHONDONTWRITEBYTECODE': '1',
+    'PYTHONUNBUFFERED': '1',
   })
   .runCmd('useradd -m -u 1000 appuser')
   .setWorkdir('/app')
