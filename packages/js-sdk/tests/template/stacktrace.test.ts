@@ -130,6 +130,14 @@ buildTemplateTest('traces on copy', async ({ buildTemplate }) => {
   }, 'copy')
 })
 
+buildTemplateTest('traces on copyItems', async ({ buildTemplate }) => {
+  let template = Template().fromBaseImage()
+  template = template.skipCache().copyItems([{ src: nonExistentPath, dest: nonExistentPath }])
+  await expectToThrowAndCheckTrace(async () => {
+    await buildTemplate(template)
+  }, 'copyItems')
+})
+
 buildTemplateTest('traces on remove', async ({ buildTemplate }) => {
   let template = Template().fromBaseImage()
   template = template.skipCache().remove(nonExistentPath)

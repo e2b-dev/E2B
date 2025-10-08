@@ -1,7 +1,7 @@
 import pytest
 import linecache
 
-from e2b import Template, wait_for_timeout
+from e2b import Template, CopyItem, wait_for_timeout
 
 non_existent_path = "/nonexistent/path"
 
@@ -88,6 +88,14 @@ def test_traces_on_copy(build):
     template = template.from_base_image()
     template = template.skip_cache().copy(non_existent_path, non_existent_path)
     _expect_to_throw_and_check_trace(lambda: build(template), "copy")
+
+
+@pytest.mark.skip_debug()
+def test_traces_on_copyItems(build):
+    template = Template()
+    template = template.from_base_image()
+    template = template.skip_cache().copy_items([CopyItem(src=non_existent_path, dest=non_existent_path)])
+    _expect_to_throw_and_check_trace(lambda: build(template), "copy_items")
 
 
 @pytest.mark.skip_debug()
