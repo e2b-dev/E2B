@@ -35,8 +35,8 @@ import type { PathLike } from 'node:fs'
 export { type TemplateBuilder } from './types'
 
 type TemplateOptions = {
-  fileContextPath?: string
-  ignoreFilePaths?: string[]
+  fileContextPath?: PathLike
+  ignoreFilePatterns?: string[]
 }
 
 type BasicBuildOptions = {
@@ -66,16 +66,17 @@ export class TemplateBase
   // Force the next layer to be rebuilt
   private forceNextLayer: boolean = false
   private instructions: Instruction[] = []
-  private fileContextPath: string =
+  private fileContextPath: PathLike =
     runtime === 'browser' ? '.' : getCallerDirectory(STACK_TRACE_DEPTH) ?? '.'
-  private ignoreFilePaths: string[] = []
+  private ignoreFilePatterns: string[] = []
   private logsRefreshFrequency: number = 200
   private stackTraces: (string | undefined)[] = []
   private stackTracesEnabled: boolean = true
 
   constructor(options?: TemplateOptions) {
     this.fileContextPath = options?.fileContextPath ?? this.fileContextPath
-    this.ignoreFilePaths = options?.ignoreFilePaths ?? this.ignoreFilePaths
+    this.ignoreFilePatterns =
+      options?.ignoreFilePatterns ?? this.ignoreFilePatterns
   }
 
   static toJSON(
@@ -219,7 +220,7 @@ export class TemplateBase
     this.registryConfig = {
       type: 'gcp',
       serviceAccountJson: readGCPServiceAccountJSON(
-        this.fileContextPath,
+        this.fileContextPath.toString(),
         options.serviceAccountJSON
       ),
     }
@@ -623,7 +624,7 @@ export class TemplateBase
           await uploadFile(
             {
               fileName: src,
-              fileContextPath: this.fileContextPath,
+              fileContextPath: this.fileContextPath.toString(),
               url,
               resolveSymlinks: instruction.resolveSymlinks ?? RESOLVE_SYMLINKS,
             },
@@ -698,12 +699,12 @@ export class TemplateBase
           filesHash: await calculateFilesHash(
             src,
             dest,
-            this.fileContextPath,
+            this.fileContextPath.toString(),
             [
-              ...this.ignoreFilePaths,
+              ...this.ignoreFilePatterns,
               ...(runtime === 'browser'
                 ? []
-                : readDockerignore(this.fileContextPath)),
+                : readDockerignore(this.fileContextPath.toString())),
             ],
             instruction.resolveSymlinks ?? RESOLVE_SYMLINKS,
             stackTrace
