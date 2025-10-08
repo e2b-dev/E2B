@@ -30,7 +30,7 @@ template = (
 {{#if readyCmd}}
     .set_user("root")
     .set_workdir("/home/user")
-    .start_cmd("{{{escapeDoubleQuotes startCmd}}}", "{{{escapeDoubleQuotes readyCmd}}}")
+    .set_start_cmd("{{{escapeDoubleQuotes startCmd}}}", "{{{escapeDoubleQuotes readyCmd}}}")
 {{/if}}
 {{else if readyCmd}}
     .set_user("root")
