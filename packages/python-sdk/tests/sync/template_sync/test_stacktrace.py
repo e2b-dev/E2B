@@ -94,7 +94,9 @@ def test_traces_on_copy(build):
 def test_traces_on_copyItems(build):
     template = Template()
     template = template.from_base_image()
-    template = template.skip_cache().copy_items([CopyItem(src=non_existent_path, dest=non_existent_path)])
+    template = template.skip_cache().copy_items(
+        [CopyItem(src=non_existent_path, dest=non_existent_path)]
+    )
     _expect_to_throw_and_check_trace(lambda: build(template), "copy_items")
 
 

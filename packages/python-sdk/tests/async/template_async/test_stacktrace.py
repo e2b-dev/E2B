@@ -100,7 +100,9 @@ async def test_traces_on_copy(async_build):
 async def test_traces_on_copyItems(async_build):
     template = AsyncTemplate()
     template = template.from_base_image()
-    template = template.skip_cache().copy_items([CopyItem(src=non_existent_path, dest=non_existent_path)])
+    template = template.skip_cache().copy_items(
+        [CopyItem(src=non_existent_path, dest=non_existent_path)]
+    )
     await _expect_to_throw_and_check_trace(lambda: async_build(template), "copy_items")
 
 
