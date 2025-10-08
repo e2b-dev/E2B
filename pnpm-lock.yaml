@@ -118,8 +118,8 @@ importers:
         specifier: ^1.2.1
         version: 1.2.1
       e2b:
-        specifier: ^2.2.2
-        version: 2.2.2
+        specifier: ^2.2.3
+        version: 2.2.3
       fast-glob:
         specifier: ^3.3.0
         version: 3.3.1
@@ -3999,6 +3999,10 @@ packages:
 
   e2b@2.2.2:
     resolution: {integrity: sha512-LKtmoT1jCXxWZ3z7+b4w0fyJcD94sPsdORM2gZdxMr8ISjqpTUWpdNCbypZixxLoswcwIm4WvMueWlFQHiNryA==}
+    engines: {node: '>=20'}
+
+  e2b@2.2.3:
+    resolution: {integrity: sha512-qtYIL9hmMAAP+307wy9FtsOgOQMjHj3JyR889SzIvsikWIJvu1uK8BayFvrUa+hGwStu8L82DksAIegNpApdvQ==}
     engines: {node: '>=20'}
 
   eastasianwidth@0.2.0:
@@ -12280,6 +12284,18 @@ snapshots:
       gopd: 1.2.0
 
   e2b@2.2.2:
+    dependencies:
+      '@bufbuild/protobuf': 2.6.2
+      '@connectrpc/connect': 2.0.0-rc.3(@bufbuild/protobuf@2.6.2)
+      '@connectrpc/connect-web': 2.0.0-rc.3(@bufbuild/protobuf@2.6.2)(@connectrpc/connect@2.0.0-rc.3(@bufbuild/protobuf@2.6.2))
+      compare-versions: 6.1.1
+      dockerfile-ast: 0.7.1
+      glob: 11.0.3
+      openapi-fetch: 0.9.8
+      platform: 1.3.6
+      tar: 7.4.3
+
+  e2b@2.2.3:
     dependencies:
       '@bufbuild/protobuf': 2.6.2
       '@connectrpc/connect': 2.0.0-rc.3(@bufbuild/protobuf@2.6.2)
