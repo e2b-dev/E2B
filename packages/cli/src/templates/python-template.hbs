@@ -35,6 +35,6 @@ template = (
 {{else if readyCmd}}
     .set_user("root")
     .set_workdir("/home/user")
-    .ready_cmd("{{{escapeDoubleQuotes readyCmd}}}")
+    .set_ready_cmd("{{{escapeDoubleQuotes readyCmd}}}")
 {{/if}}
 )
