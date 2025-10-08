@@ -39,7 +39,7 @@ RUN pip install black==23.7.0 pyyaml==6.0.2 e2b-openapi-python-client==0.26.2
 # Install Node.js and npm
 RUN apt-get update && \
     apt-get install -y curl && \
-    curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
+    curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
     apt-get install -y nodejs && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
