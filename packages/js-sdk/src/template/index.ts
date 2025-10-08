@@ -36,7 +36,7 @@ export { type TemplateBuilder } from './types'
 
 type TemplateOptions = {
   fileContextPath?: PathLike
-  ignoreFilePatterns?: string[]
+  fileIgnorePatterns?: string[]
 }
 
 type BasicBuildOptions = {
@@ -68,15 +68,15 @@ export class TemplateBase
   private instructions: Instruction[] = []
   private fileContextPath: PathLike =
     runtime === 'browser' ? '.' : getCallerDirectory(STACK_TRACE_DEPTH) ?? '.'
-  private ignoreFilePatterns: string[] = []
+  private fileIgnorePatterns: string[] = []
   private logsRefreshFrequency: number = 200
   private stackTraces: (string | undefined)[] = []
   private stackTracesEnabled: boolean = true
 
   constructor(options?: TemplateOptions) {
     this.fileContextPath = options?.fileContextPath ?? this.fileContextPath
-    this.ignoreFilePatterns =
-      options?.ignoreFilePatterns ?? this.ignoreFilePatterns
+    this.fileIgnorePatterns =
+      options?.fileIgnorePatterns ?? this.fileIgnorePatterns
   }
 
   static toJSON(
@@ -701,7 +701,7 @@ export class TemplateBase
             dest,
             this.fileContextPath.toString(),
             [
-              ...this.ignoreFilePatterns,
+              ...this.fileIgnorePatterns,
               ...(runtime === 'browser'
                 ? []
                 : readDockerignore(this.fileContextPath.toString())),

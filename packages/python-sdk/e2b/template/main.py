@@ -292,7 +292,7 @@ class TemplateBase:
     def __init__(
         self,
         file_context_path: Optional[Union[str, Path]] = None,
-        ignore_file_patterns: Optional[List[str]] = None,
+        file_ignore_patterns: Optional[List[str]] = None,
     ):
         self._default_base_image: str = "e2bdev/base"
         self._base_image: Optional[str] = self._default_base_image
@@ -311,7 +311,7 @@ class TemplateBase:
             if isinstance(file_context_path, Path)
             else (file_context_path or get_caller_directory(STACK_TRACE_DEPTH) or ".")
         )
-        self._ignore_file_patterns: List[str] = ignore_file_patterns or []
+        self._file_ignore_patterns: List[str] = file_ignore_patterns or []
         self._stack_traces: List[Union[TracebackType, None]] = []
         self._stack_traces_enabled: bool = True
 
@@ -552,7 +552,7 @@ class TemplateBase:
                     dest,
                     self._file_context_path,
                     [
-                        *self._ignore_file_patterns,
+                        *self._file_ignore_patterns,
                         *read_dockerignore(self._file_context_path),
                     ],
                     instruction.get("resolveSymlinks", RESOLVE_SYMLINKS),
