@@ -14,7 +14,7 @@ export const template = Template()
 {{#eq type "ENV"}}
   .setEnvs({
 {{#each envVars}}
-    '{{{@key}}}': '{{{this}}}',
+    {{{@key}}}: '{{{this}}}',
 {{/each}}
   })
 {{/eq}}
