@@ -6,7 +6,7 @@ export const template = Template()
   .runCmd('pip install --upgrade pip')
   .runCmd('pip install -r requirements.txt')
   .setEnvs({
-    PYTHONUNBUFFERED: '1',
+    'PYTHONUNBUFFERED': '1',
   })
   .setUser('root')
   .setWorkdir('/home/user')
