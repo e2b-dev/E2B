@@ -25,6 +25,7 @@ class SandboxBase:
     )
 
     envd_port = 49983
+    mcp_port = 8080
 
     default_sandbox_timeout = 300
     default_template = "base"
@@ -168,3 +169,25 @@ class SandboxBase:
             return f"localhost:{port}"
 
         return f"{port}-{self.sandbox_id}.{self.sandbox_domain}"
+
+    def beta_mcp_server_url(self) -> str:
+        """
+        [BETA] This feature is in beta and may change in the future.
+
+        Get the MCP URL for the sandbox.
+
+        :returns MCP URL for the sandbox.
+        """
+        return f"https://{self.get_host(self.mcp_port)}/mcp"
+
+
+#   /**
+#    * @beta This feature is in beta and may change in the future.
+#    *
+#    * Get the MCP URL for the sandbox.
+#    *
+#    * @returns MCP URL for the sandbox.
+#    */
+#   betaGetMcpUrl(): string {
+#     return `https://${this.getHost(8080)}/mcp`
+#   }
