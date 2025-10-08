@@ -14,18 +14,18 @@ export type Instruction = {
   type: InstructionType
   args: string[]
   force: boolean
-  forceUpload?: true
+  forceUpload?: boolean
   filesHash?: string
-  resolveSymlinks?: true
+  resolveSymlinks?: boolean
 }
 
 export type CopyItem = {
   src: PathLike | PathLike[]
   dest: PathLike
-  forceUpload?: true
+  forceUpload?: boolean
   user?: string
   mode?: number
-  resolveSymlinks?: true
+  resolveSymlinks?: boolean
 }
 
 // Interface for the initial state
@@ -44,7 +44,12 @@ export interface TemplateFromImage {
 
   fromImage(
     baseImage: string,
-    options: { username: string; password: string }
+    credentials: { username: string; password: string }
+  ): TemplateBuilder
+
+  fromImage(
+    baseImage: string,
+    credentials?: { username: string; password: string }
   ): TemplateBuilder
 
   fromTemplate(template: string): TemplateBuilder
@@ -53,7 +58,7 @@ export interface TemplateFromImage {
 
   fromAWSRegistry(
     baseImage: string,
-    options: {
+    credentials: {
       accessKeyId: string
       secretAccessKey: string
       region: string
@@ -62,7 +67,7 @@ export interface TemplateFromImage {
 
   fromGCPRegistry(
     baseImage: string,
-    options: {
+    credentials: {
       serviceAccountJSON: object | string
     }
   ): TemplateBuilder
@@ -76,10 +81,10 @@ export interface TemplateBuilder {
     src: PathLike | PathLike[],
     dest: PathLike,
     options?: {
-      forceUpload?: true
+      forceUpload?: boolean
       user?: string
       mode?: number
-      resolveSymlinks?: true
+      resolveSymlinks?: boolean
     }
   ): TemplateBuilder
 

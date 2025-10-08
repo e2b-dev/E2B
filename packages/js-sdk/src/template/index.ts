@@ -118,21 +118,21 @@ export class TemplateBase
   fromImage(baseImage: string): TemplateBuilder
   fromImage(
     baseImage: string,
-    options: { username: string; password: string }
+    credentials: { username: string; password: string }
   ): TemplateBuilder
   fromImage(
     baseImage: string,
-    options?: { username: string; password: string }
+    credentials?: { username: string; password: string }
   ): TemplateBuilder {
     this.baseImage = baseImage
     this.baseTemplate = undefined
 
     // Set the registry config if provided
-    if (options?.username && options?.password) {
+    if (credentials) {
       this.registryConfig = {
         type: 'registry',
-        username: options.username,
-        password: options.password,
+        username: credentials.username,
+        password: credentials.password,
       }
     }
 
@@ -181,7 +181,7 @@ export class TemplateBase
 
   fromAWSRegistry(
     baseImage: string,
-    options: {
+    credentials: {
       accessKeyId: string
       secretAccessKey: string
       region: string
@@ -193,9 +193,9 @@ export class TemplateBase
     // Set the registry config if provided
     this.registryConfig = {
       type: 'aws',
-      awsAccessKeyId: options.accessKeyId,
-      awsSecretAccessKey: options.secretAccessKey,
-      awsRegion: options.region,
+      awsAccessKeyId: credentials.accessKeyId,
+      awsSecretAccessKey: credentials.secretAccessKey,
+      awsRegion: credentials.region,
     }
 
     // If we should force the next layer and it's a FROM command, invalidate whole template
@@ -209,7 +209,7 @@ export class TemplateBase
 
   fromGCPRegistry(
     baseImage: string,
-    options: {
+    credentials: {
       serviceAccountJSON: string | object
     }
   ): TemplateBuilder {
@@ -221,7 +221,7 @@ export class TemplateBase
       type: 'gcp',
       serviceAccountJson: readGCPServiceAccountJSON(
         this.fileContextPath.toString(),
-        options.serviceAccountJSON
+        credentials.serviceAccountJSON
       ),
     }
 
@@ -238,10 +238,10 @@ export class TemplateBase
     src: PathLike | PathLike[],
     dest: PathLike,
     options?: {
-      forceUpload?: true
+      forceUpload?: boolean
       user?: string
       mode?: number
-      resolveSymlinks?: true
+      resolveSymlinks?: boolean
     }
   ): TemplateBuilder {
     if (runtime === 'browser') {
