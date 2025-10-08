@@ -542,7 +542,7 @@ export class Sandbox extends SandboxApi {
    * @returns MCP URL for the sandbox.
    */
   betaGetMcpUrl(): string {
-    return this.getHost(8080) + '/mcp'
+    return `https://${this.getHost(8080)}/mcp`
   }
 
   /**
