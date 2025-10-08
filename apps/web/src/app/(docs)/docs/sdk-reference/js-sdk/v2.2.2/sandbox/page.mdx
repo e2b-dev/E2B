@@ -1,0 +1,678 @@
+### Sandbox
+
+E2B cloud sandbox is a secure and isolated cloud environment.
+
+The sandbox allows you to:
+- Access Linux OS
+- Create, list, and delete files and directories
+- Run commands
+- Run isolated code
+- Access the internet
+
+Check docs here.
+
+Use Sandbox.create to create a new sandbox.
+
+#### Example
+
+```ts
+import { Sandbox } from 'e2b'
+
+const sandbox = await Sandbox.create()
+```
+
+#### Properties
+
+| Property | Modifier | Type | Description |
+| ------ | ------ | ------ | ------ |
+| `commands` | `readonly` | `Commands` | Module for running commands in the sandbox |
+| `files` | `readonly` | `Filesystem` | Module for interacting with the sandbox filesystem |
+| `pty` | `readonly` | `Pty` | Module for interacting with the sandbox pseudo-terminals |
+| `sandboxDomain` | `readonly` | `string` | Domain where the sandbox is hosted. |
+| `sandboxId` | `readonly` | `string` | Unique identifier of the sandbox. |
+
+#### Methods
+
+### betaPause()
+
+```ts
+betaPause(opts?: ConnectionOpts): Promise<boolean>
+```
+
+**`Beta`**
+
+This feature is in beta and may change in the future.
+
+Pause a sandbox by its ID.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `opts`? | `ConnectionOpts` | connection options. |
+
+###### Returns
+
+`Promise`\<`boolean`\>
+
+sandbox ID that can be used to resume the sandbox.
+
+### connect()
+
+```ts
+connect(opts?: SandboxBetaCreateOpts): Promise<Sandbox>
+```
+
+Connect to a sandbox. If the sandbox is paused, it will be automatically resumed.
+Sandbox must be either running or be paused.
+
+With sandbox ID you can connect to the same sandbox from different places or environments (serverless functions, etc).
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `opts`? | `SandboxBetaCreateOpts` | connection options. |
+
+###### Returns
+
+`Promise`\<`Sandbox`\>
+
+A running sandbox instance
+
+###### Example
+
+```ts
+const sandbox = await Sandbox.create()
+await sandbox.betaPause()
+
+// Connect to the same sandbox.
+const sameSandbox = await sandbox.connect()
+```
+
+### downloadUrl()
+
+```ts
+downloadUrl(path: string, opts?: SandboxUrlOpts): Promise<string>
+```
+
+Get the URL to download a file from the sandbox.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `path` | `string` | path to the file in the sandbox. |
+| `opts`? | `SandboxUrlOpts` | download url options. |
+
+###### Returns
+
+`Promise`\<`string`\>
+
+URL for downloading file.
+
+### getHost()
+
+```ts
+getHost(port: number): string
+```
+
+Get the host address for the specified sandbox port.
+You can then use this address to connect to the sandbox port from outside the sandbox via HTTP or WebSocket.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `port` | `number` | number of the port in the sandbox. |
+
+###### Returns
+
+`string`
+
+host address of the sandbox port.
+
+###### Example
+
+```ts
+const sandbox = await Sandbox.create()
+// Start an HTTP server
+await sandbox.commands.exec('python3 -m http.server 3000')
+// Get the hostname of the HTTP server
+const serverURL = sandbox.getHost(3000)
+```
+
+### getInfo()
+
+```ts
+getInfo(opts?: Pick<SandboxOpts, "requestTimeoutMs">): Promise<SandboxInfo>
+```
+
+Get sandbox information like sandbox ID, template, metadata, started at/end at date.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `opts`? | `Pick`\<`SandboxOpts`, `"requestTimeoutMs"`\> | connection options. |
+
+###### Returns
+
+`Promise`\<`SandboxInfo`\>
+
+information about the sandbox
+
+### getMetrics()
+
+```ts
+getMetrics(opts?: SandboxMetricsOpts): Promise<SandboxMetrics[]>
+```
+
+Get the metrics of the sandbox.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `opts`? | `SandboxMetricsOpts` | connection options. |
+
+###### Returns
+
+`Promise`\<`SandboxMetrics`[]\>
+
+List of sandbox metrics containing CPU, memory and disk usage information.
+
+### isRunning()
+
+```ts
+isRunning(opts?: Pick<ConnectionOpts, "requestTimeoutMs">): Promise<boolean>
+```
+
+Check if the sandbox is running.
+
+###### Parameters
+
+| Parameter | Type |
+| ------ | ------ |
+| `opts`? | `Pick`\<`ConnectionOpts`, `"requestTimeoutMs"`\> |
+
+###### Returns
+
+`Promise`\<`boolean`\>
+
+`true` if the sandbox is running, `false` otherwise.
+
+###### Example
+
+```ts
+const sandbox = await Sandbox.create()
+await sandbox.isRunning() // Returns true
+
+await sandbox.kill()
+await sandbox.isRunning() // Returns false
+```
+
+### kill()
+
+```ts
+kill(opts?: Pick<SandboxOpts, "requestTimeoutMs">): Promise<void>
+```
+
+Kill the sandbox.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `opts`? | `Pick`\<`SandboxOpts`, `"requestTimeoutMs"`\> | connection options. |
+
+###### Returns
+
+`Promise`\<`void`\>
+
+### setTimeout()
+
+```ts
+setTimeout(timeoutMs: number, opts?: Pick<SandboxOpts, "requestTimeoutMs">): Promise<void>
+```
+
+Set the timeout of the sandbox.
+After the timeout expires the sandbox will be automatically killed.
+
+This method can extend or reduce the sandbox timeout set when creating the sandbox or from the last call to `.setTimeout`.
+Maximum time a sandbox can be kept alive is 24 hours (86_400_000 milliseconds) for Pro users and 1 hour (3_600_000 milliseconds) for Hobby users.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `timeoutMs` | `number` | timeout in **milliseconds**. |
+| `opts`? | `Pick`\<`SandboxOpts`, `"requestTimeoutMs"`\> | connection options. |
+
+###### Returns
+
+`Promise`\<`void`\>
+
+### uploadUrl()
+
+```ts
+uploadUrl(path?: string, opts?: SandboxUrlOpts): Promise<string>
+```
+
+Get the URL to upload a file to the sandbox.
+
+You have to send a POST request to this URL with the file as multipart/form-data.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `path`? | `string` | path to the file in the sandbox. |
+| `opts`? | `SandboxUrlOpts` | download url options. |
+
+###### Returns
+
+`Promise`\<`string`\>
+
+URL for uploading file.
+
+### betaCreate()
+
+###### betaCreate(this, opts)
+
+```ts
+static betaCreate<S>(this: S, opts?: SandboxBetaCreateOpts): Promise<InstanceType<S>>
+```
+
+**`Beta`**
+
+This feature is in beta and may change in the future.
+
+Create a new sandbox from the default `base` sandbox template.
+
+###### Type Parameters
+
+| Type Parameter |
+| ------ |
+| `S` *extends* *typeof* `Sandbox` |
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `this` | `S` | - |
+| `opts`? | `SandboxBetaCreateOpts` | connection options. |
+
+###### Returns
+
+`Promise`\<`InstanceType`\<`S`\>\>
+
+sandbox instance for the new sandbox.
+
+###### Example
+
+```ts
+const sandbox = await Sandbox.betaCreate()
+```
+
+###### Constructs
+
+Sandbox
+
+###### betaCreate(this, template, opts)
+
+```ts
+static betaCreate<S>(
+   this: S, 
+   template: string, 
+opts?: SandboxBetaCreateOpts): Promise<InstanceType<S>>
+```
+
+**`Beta`**
+
+This feature is in beta and may change in the future.
+
+Create a new sandbox from the specified sandbox template.
+
+###### Type Parameters
+
+| Type Parameter |
+| ------ |
+| `S` *extends* *typeof* `Sandbox` |
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `this` | `S` | - |
+| `template` | `string` | sandbox template name or ID. |
+| `opts`? | `SandboxBetaCreateOpts` | connection options. |
+
+###### Returns
+
+`Promise`\<`InstanceType`\<`S`\>\>
+
+sandbox instance for the new sandbox.
+
+###### Example
+
+```ts
+const sandbox = await Sandbox.betaCreate('<template-name-or-id>')
+```
+
+###### Constructs
+
+Sandbox
+
+### betaPause()
+
+```ts
+static betaPause(sandboxId: string, opts?: SandboxApiOpts): Promise<boolean>
+```
+
+Pause the sandbox specified by sandbox ID.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `sandboxId` | `string` | sandbox ID. |
+| `opts`? | `SandboxApiOpts` | connection options. |
+
+###### Returns
+
+`Promise`\<`boolean`\>
+
+`true` if the sandbox got paused, `false` if the sandbox was already paused.
+
+### connect()
+
+```ts
+static connect<S>(
+   this: S, 
+   sandboxId: string, 
+opts?: SandboxConnectOpts): Promise<InstanceType<S>>
+```
+
+Connect to a sandbox. If the sandbox is paused, it will be automatically resumed.
+Sandbox must be either running or be paused.
+
+With sandbox ID you can connect to the same sandbox from different places or environments (serverless functions, etc).
+
+###### Type Parameters
+
+| Type Parameter |
+| ------ |
+| `S` *extends* *typeof* `Sandbox` |
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `this` | `S` | - |
+| `sandboxId` | `string` | sandbox ID. |
+| `opts`? | `SandboxConnectOpts` | connection options. |
+
+###### Returns
+
+`Promise`\<`InstanceType`\<`S`\>\>
+
+A running sandbox instance
+
+###### Example
+
+```ts
+const sandbox = await Sandbox.create()
+const sandboxId = sandbox.sandboxId
+
+// Connect to the same sandbox.
+const sameSandbox = await Sandbox.connect(sandboxId)
+```
+
+### create()
+
+###### create(this, opts)
+
+```ts
+static create<S>(this: S, opts?: SandboxOpts): Promise<InstanceType<S>>
+```
+
+Create a new sandbox from the default `base` sandbox template.
+
+###### Type Parameters
+
+| Type Parameter |
+| ------ |
+| `S` *extends* *typeof* `Sandbox` |
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `this` | `S` | - |
+| `opts`? | `SandboxOpts` | connection options. |
+
+###### Returns
+
+`Promise`\<`InstanceType`\<`S`\>\>
+
+sandbox instance for the new sandbox.
+
+###### Example
+
+```ts
+const sandbox = await Sandbox.create()
+```
+
+###### Constructs
+
+Sandbox
+
+###### create(this, template, opts)
+
+```ts
+static create<S>(
+   this: S, 
+   template: string, 
+opts?: SandboxOpts): Promise<InstanceType<S>>
+```
+
+Create a new sandbox from the specified sandbox template.
+
+###### Type Parameters
+
+| Type Parameter |
+| ------ |
+| `S` *extends* *typeof* `Sandbox` |
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `this` | `S` | - |
+| `template` | `string` | sandbox template name or ID. |
+| `opts`? | `SandboxOpts` | connection options. |
+
+###### Returns
+
+`Promise`\<`InstanceType`\<`S`\>\>
+
+sandbox instance for the new sandbox.
+
+###### Example
+
+```ts
+const sandbox = await Sandbox.create('<template-name-or-id>')
+```
+
+###### Constructs
+
+Sandbox
+
+### getFullInfo()
+
+```ts
+static getFullInfo(sandboxId: string, opts?: SandboxApiOpts): Promise<object>
+```
+
+###### Parameters
+
+| Parameter | Type |
+| ------ | ------ |
+| `sandboxId` | `string` |
+| `opts`? | `SandboxApiOpts` |
+
+###### Returns
+
+`Promise`\<`object`\>
+
+| Name | Type | Default value |
+| ------ | ------ | ------ |
+| `cpuCount` | `number` | res.data.cpuCount |
+| `endAt` | `Date` | - |
+| `envdAccessToken` | `undefined` \| `string` | res.data.envdAccessToken |
+| `envdVersion` | `string` | res.data.envdVersion |
+| `memoryMB` | `number` | res.data.memoryMB |
+| `metadata` | `object` | - |
+| `name`? | `string` | res.data.alias |
+| `sandboxDomain` | `undefined` \| `string` | - |
+| `sandboxId` | `string` | res.data.sandboxID |
+| `startedAt` | `Date` | - |
+| `state` | `"running"` \| `"paused"` | res.data.state |
+| `templateId` | `string` | res.data.templateID |
+
+### getInfo()
+
+```ts
+static getInfo(sandboxId: string, opts?: SandboxApiOpts): Promise<SandboxInfo>
+```
+
+Get sandbox information like sandbox ID, template, metadata, started at/end at date.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `sandboxId` | `string` | sandbox ID. |
+| `opts`? | `SandboxApiOpts` | connection options. |
+
+###### Returns
+
+`Promise`\<`SandboxInfo`\>
+
+sandbox information.
+
+### getMetrics()
+
+```ts
+static getMetrics(sandboxId: string, opts?: SandboxMetricsOpts): Promise<SandboxMetrics[]>
+```
+
+Get the metrics of the sandbox.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `sandboxId` | `string` | sandbox ID. |
+| `opts`? | `SandboxMetricsOpts` | sandbox metrics options. |
+
+###### Returns
+
+`Promise`\<`SandboxMetrics`[]\>
+
+List of sandbox metrics containing CPU, memory and disk usage information.
+
+### kill()
+
+```ts
+static kill(sandboxId: string, opts?: SandboxApiOpts): Promise<boolean>
+```
+
+Kill the sandbox specified by sandbox ID.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `sandboxId` | `string` | sandbox ID. |
+| `opts`? | `SandboxApiOpts` | connection options. |
+
+###### Returns
+
+`Promise`\<`boolean`\>
+
+`true` if the sandbox was found and killed, `false` otherwise.
+
+### list()
+
+```ts
+static list(opts?: SandboxListOpts): SandboxPaginator
+```
+
+List all sandboxes.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `opts`? | `SandboxListOpts` | connection options. |
+
+###### Returns
+
+`SandboxPaginator`
+
+paginator for listing sandboxes.
+
+### setTimeout()
+
+```ts
+static setTimeout(
+   sandboxId: string, 
+   timeoutMs: number, 
+opts?: SandboxApiOpts): Promise<void>
+```
+
+Set the timeout of the specified sandbox.
+After the timeout expires the sandbox will be automatically killed.
+
+This method can extend or reduce the sandbox timeout set when creating the sandbox or from the last call to Sandbox.setTimeout.
+
+Maximum time a sandbox can be kept alive is 24 hours (86_400_000 milliseconds) for Pro users and 1 hour (3_600_000 milliseconds) for Hobby users.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `sandboxId` | `string` | sandbox ID. |
+| `timeoutMs` | `number` | timeout in **milliseconds**. |
+| `opts`? | `SandboxApiOpts` | connection options. |
+
+###### Returns
+
+`Promise`\<`void`\>
+
+## Interfaces
+
+### SandboxUrlOpts
+
+Options for sandbox upload/download URL generation.
+
+#### Properties
+
+### user?
+
+```ts
+optional user: Username;
+```
+
+User that will be used to access the file.
+
+### useSignatureExpiration?
+
+```ts
+optional useSignatureExpiration: number;
+```
+
+Use signature expiration for the URL.
+Optional parameter to set the expiration time for the signature in seconds.
