@@ -189,7 +189,7 @@ def test_traces_on_git_clone(build):
 
 
 @pytest.mark.skip_debug()
-def test_traces_on_start_cmd(build):
+def test_traces_on_set_start_cmd(build):
     template = Template()
     template = template.from_base_image()
     template = template.set_start_cmd(
