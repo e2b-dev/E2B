@@ -185,4 +185,4 @@ def test_traces_on_start_cmd(build):
     template = template.set_start_cmd(
         f"./{non_existent_path}", wait_for_timeout(10_000)
     )
-    _expect_to_throw_and_check_trace(lambda: build(template), "start_cmd")
+    _expect_to_throw_and_check_trace(lambda: build(template), "set_start_cmd")

@@ -193,4 +193,4 @@ async def test_traces_on_start_cmd(async_build):
     template = template.set_start_cmd(
         f"./{non_existent_path}", wait_for_timeout(10_000)
     )
-    await _expect_to_throw_and_check_trace(lambda: async_build(template), "start_cmd")
+    await _expect_to_throw_and_check_trace(lambda: async_build(template), "set_start_cmd")
