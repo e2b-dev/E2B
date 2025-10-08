@@ -3,4 +3,4 @@
 'e2b': patch
 ---
 
-updated methods signature, naming, consistency
+updated template methods signature, naming, consistency
