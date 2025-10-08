@@ -454,12 +454,12 @@ class TemplateBase:
 
     def from_aws_registry(
         self,
-        base_image: str,
+        image: str,
         access_key_id: str,
         secret_access_key: str,
         region: str,
     ) -> TemplateBuilder:
-        self._base_image = base_image
+        self._base_image = image
         self._base_template = None
 
         # Set the registry config if provided
@@ -478,9 +478,9 @@ class TemplateBase:
         return TemplateBuilder(self)
 
     def from_gcp_registry(
-        self, base_image: str, service_account_json: Union[str, dict]
+        self, image: str, service_account_json: Union[str, dict]
     ) -> TemplateBuilder:
-        self._base_image = base_image
+        self._base_image = image
         self._base_template = None
 
         # Set the registry config if provided
