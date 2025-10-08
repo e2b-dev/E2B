@@ -30,12 +30,13 @@ import {
   readDockerignore,
   readGCPServiceAccountJSON,
 } from './utils'
+import type { PathLike } from 'node:fs'
 
 export { type TemplateBuilder } from './types'
 
 type TemplateOptions = {
-  fileContextPath?: string
-  ignoreFilePaths?: string[]
+  fileContextPath?: PathLike
+  fileIgnorePatterns?: string[]
 }
 
 type BasicBuildOptions = {
@@ -65,16 +66,17 @@ export class TemplateBase
   // Force the next layer to be rebuilt
   private forceNextLayer: boolean = false
   private instructions: Instruction[] = []
-  private fileContextPath: string =
+  private fileContextPath: PathLike =
     runtime === 'browser' ? '.' : getCallerDirectory(STACK_TRACE_DEPTH) ?? '.'
-  private ignoreFilePaths: string[] = []
+  private fileIgnorePatterns: string[] = []
   private logsRefreshFrequency: number = 200
   private stackTraces: (string | undefined)[] = []
   private stackTracesEnabled: boolean = true
 
   constructor(options?: TemplateOptions) {
     this.fileContextPath = options?.fileContextPath ?? this.fileContextPath
-    this.ignoreFilePaths = options?.ignoreFilePaths ?? this.ignoreFilePaths
+    this.fileIgnorePatterns =
+      options?.fileIgnorePatterns ?? this.fileIgnorePatterns
   }
 
   static toJSON(
@@ -115,14 +117,18 @@ export class TemplateBase
 
   fromImage(
     baseImage: string,
-    options?: { registryConfig?: RegistryConfig }
+    credentials?: { username: string; password: string }
   ): TemplateBuilder {
     this.baseImage = baseImage
     this.baseTemplate = undefined
 
     // Set the registry config if provided
-    if (options?.registryConfig) {
-      this.registryConfig = options.registryConfig
+    if (credentials) {
+      this.registryConfig = {
+        type: 'registry',
+        username: credentials.username,
+        password: credentials.password,
+      }
     }
 
     // If we should force the next layer and it's a FROM command, invalidate whole template
@@ -168,84 +174,64 @@ export class TemplateBase
     return this
   }
 
-  fromRegistry(
-    image: string,
-    options: {
-      username: string
-      password: string
-    }
-  ): TemplateBuilder {
-    return this.runInNewStackTraceContext(() =>
-      this.fromImage(image, {
-        registryConfig: {
-          type: 'registry',
-          username: options.username,
-          password: options.password,
-        },
-      })
-    )
-  }
-
   fromAWSRegistry(
     image: string,
-    options: {
+    credentials: {
       accessKeyId: string
       secretAccessKey: string
       region: string
     }
   ): TemplateBuilder {
-    return this.runInNewStackTraceContext(() =>
-      this.fromImage(image, {
-        registryConfig: {
-          type: 'aws',
-          awsAccessKeyId: options.accessKeyId,
-          awsSecretAccessKey: options.secretAccessKey,
-          awsRegion: options.region,
-        },
-      })
-    )
+    this.baseImage = image
+    this.baseTemplate = undefined
+
+    // Set the registry config if provided
+    this.registryConfig = {
+      type: 'aws',
+      awsAccessKeyId: credentials.accessKeyId,
+      awsSecretAccessKey: credentials.secretAccessKey,
+      awsRegion: credentials.region,
+    }
+
+    // If we should force the next layer and it's a FROM command, invalidate whole template
+    if (this.forceNextLayer) {
+      this.force = true
+    }
+
+    this.collectStackTrace()
+    return this
   }
 
   fromGCPRegistry(
     image: string,
-    options: {
+    credentials: {
       serviceAccountJSON: string | object
     }
   ): TemplateBuilder {
-    return this.runInNewStackTraceContext(() =>
-      this.fromImage(image, {
-        registryConfig: {
-          type: 'gcp',
-          serviceAccountJson: readGCPServiceAccountJSON(
-            this.fileContextPath,
-            options.serviceAccountJSON
-          ),
-        },
-      })
-    )
+    this.baseImage = image
+    this.baseTemplate = undefined
+
+    // Set the registry config if provided
+    this.registryConfig = {
+      type: 'gcp',
+      serviceAccountJson: readGCPServiceAccountJSON(
+        this.fileContextPath.toString(),
+        credentials.serviceAccountJSON
+      ),
+    }
+
+    // If we should force the next layer and it's a FROM command, invalidate whole template
+    if (this.forceNextLayer) {
+      this.force = true
+    }
+
+    this.collectStackTrace()
+    return this
   }
 
   copy(
-    src: string,
-    dest: string,
-    options?: {
-      forceUpload?: true
-      user?: string
-      mode?: number
-      resolveSymlinks?: boolean
-    }
-  ): TemplateBuilder
-  copy(items: CopyItem[]): TemplateBuilder
-  copy(
-    srcOrItems: string | CopyItem[],
-    destOrOptions?:
-      | string
-      | {
-          forceUpload?: true
-          user?: string
-          mode?: number
-          resolveSymlinks?: boolean
-        },
+    src: PathLike | PathLike[],
+    dest: PathLike,
     options?: {
       forceUpload?: true
       user?: string
@@ -257,32 +243,22 @@ export class TemplateBase
       throw new Error('Browser runtime is not supported for copy')
     }
 
-    const items = Array.isArray(srcOrItems)
-      ? srcOrItems
-      : [
-          {
-            src: srcOrItems,
-            dest: destOrOptions as string,
-            mode: options?.mode,
-            user: options?.user,
-            forceUpload: options?.forceUpload,
-            resolveSymlinks: options?.resolveSymlinks,
-          },
-        ]
-    for (const item of items) {
+    const srcs = Array.isArray(src) ? src : [src]
+
+    for (const src of srcs) {
       const args = [
-        item.src,
-        item.dest,
-        item.user ?? '',
-        item.mode ? padOctal(item.mode) : '',
+        src.toString(),
+        dest.toString(),
+        options?.user ?? '',
+        options?.mode ? padOctal(options.mode) : '',
       ]
 
       this.instructions.push({
         type: InstructionType.COPY,
         args,
-        force: item.forceUpload ?? this.forceNextLayer,
-        forceUpload: item.forceUpload,
-        resolveSymlinks: item.resolveSymlinks,
+        force: options?.forceUpload || this.forceNextLayer,
+        forceUpload: options?.forceUpload,
+        resolveSymlinks: options?.resolveSymlinks,
       })
     }
 
@@ -290,26 +266,47 @@ export class TemplateBase
     return this
   }
 
+  copyItems(items: CopyItem[]): TemplateBuilder {
+    if (runtime === 'browser') {
+      throw new Error('Browser runtime is not supported for copyItems')
+    }
+
+    this.runInNewStackTraceContext(() => {
+      for (const item of items) {
+        this.copy(item.src, item.dest, {
+          forceUpload: item.forceUpload,
+          user: item.user,
+          mode: item.mode,
+          resolveSymlinks: item.resolveSymlinks,
+        })
+      }
+    })
+
+    return this
+  }
+
   remove(
-    path: string,
+    path: PathLike | PathLike[],
     options?: { force?: boolean; recursive?: boolean }
   ): TemplateBuilder {
-    const args = ['rm', path]
+    const paths = Array.isArray(path) ? path : [path]
+    const args = ['rm']
     if (options?.recursive) {
       args.push('-r')
     }
     if (options?.force) {
       args.push('-f')
     }
+    args.push(...paths.map((p) => p.toString()))
     return this.runInNewStackTraceContext(() => this.runCmd(args.join(' ')))
   }
 
   rename(
-    src: string,
-    dest: string,
+    src: PathLike,
+    dest: PathLike,
     options?: { force?: boolean }
   ): TemplateBuilder {
-    const args = ['mv', src, dest]
+    const args = ['mv', src.toString(), dest.toString()]
     if (options?.force) {
       args.push('-f')
     }
@@ -317,18 +314,20 @@ export class TemplateBase
   }
 
   makeDir(
-    paths: string | string[],
+    path: PathLike | PathLike[],
     options?: { mode?: number }
   ): TemplateBuilder {
-    const args = ['mkdir', '-p', ...(Array.isArray(paths) ? paths : [paths])]
+    const paths = Array.isArray(path) ? path : [path]
+    const args = ['mkdir', '-p']
     if (options?.mode) {
       args.push(`-m ${padOctal(options.mode)}`)
     }
+    args.push(...paths.map((p) => p.toString()))
     return this.runInNewStackTraceContext(() => this.runCmd(args.join(' ')))
   }
 
-  makeSymlink(src: string, dest: string): TemplateBuilder {
-    const args = ['ln', '-s', src, dest]
+  makeSymlink(src: PathLike, dest: PathLike): TemplateBuilder {
+    const args = ['ln', '-s', src.toString(), dest.toString()]
     return this.runInNewStackTraceContext(() => this.runCmd(args.join(' ')))
   }
 
@@ -357,10 +356,10 @@ export class TemplateBase
     return this
   }
 
-  setWorkdir(workdir: string): TemplateBuilder {
+  setWorkdir(workdir: PathLike): TemplateBuilder {
     this.instructions.push({
       type: InstructionType.WORKDIR,
-      args: [workdir],
+      args: [workdir.toString()],
       force: this.forceNextLayer,
     })
 
@@ -432,16 +431,19 @@ export class TemplateBase
 
   gitClone(
     url: string,
-    path?: string,
+    path?: PathLike,
     options?: { branch?: string; depth?: number }
   ): TemplateBuilder {
-    const args = ['git', 'clone', url, path]
+    const args = ['git', 'clone', url]
     if (options?.branch) {
       args.push(`--branch ${options.branch}`)
       args.push('--single-branch')
     }
     if (options?.depth) {
       args.push(`--depth ${options.depth}`)
+    }
+    if (path) {
+      args.push(path.toString())
     }
 
     return this.runInNewStackTraceContext(() => this.runCmd(args.join(' ')))
@@ -622,7 +624,7 @@ export class TemplateBase
           await uploadFile(
             {
               fileName: src,
-              fileContextPath: this.fileContextPath,
+              fileContextPath: this.fileContextPath.toString(),
               url,
               resolveSymlinks: instruction.resolveSymlinks ?? RESOLVE_SYMLINKS,
             },
@@ -697,12 +699,12 @@ export class TemplateBase
           filesHash: await calculateFilesHash(
             src,
             dest,
-            this.fileContextPath,
+            this.fileContextPath.toString(),
             [
-              ...this.ignoreFilePaths,
+              ...this.fileIgnorePatterns,
               ...(runtime === 'browser'
                 ? []
-                : readDockerignore(this.fileContextPath)),
+                : readDockerignore(this.fileContextPath.toString())),
             ],
             instruction.resolveSymlinks ?? RESOLVE_SYMLINKS,
             stackTrace

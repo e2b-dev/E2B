@@ -4,10 +4,11 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Literal
 from enum import Enum
+from pathlib import Path
 from e2b.template.utils import strip_ansi_escape_codes
 
 
-class InstructionType(Enum):
+class InstructionType(str, Enum):
     COPY = "COPY"
     ENV = "ENV"
     RUN = "RUN"
@@ -16,9 +17,9 @@ class InstructionType(Enum):
 
 
 class CopyItem(TypedDict):
-    src: str
-    dest: str
-    forceUpload: NotRequired[Optional[bool]]
+    src: Union[Union[str, Path], List[Union[str, Path]]]
+    dest: Union[str, Path]
+    forceUpload: NotRequired[Optional[Literal[True]]]
     user: NotRequired[Optional[str]]
     mode: NotRequired[Optional[int]]
     resolveSymlinks: NotRequired[Optional[bool]]
@@ -28,7 +29,7 @@ class Instruction(TypedDict):
     type: InstructionType
     args: List[str]
     force: bool
-    forceUpload: NotRequired[Optional[bool]]
+    forceUpload: NotRequired[Optional[Literal[True]]]
     filesHash: NotRequired[Optional[str]]
     resolveSymlinks: NotRequired[Optional[bool]]
 
