@@ -225,6 +225,11 @@ export class TemplateBase
       ),
     }
 
+    // If we should force the next layer and it's a FROM command, invalidate whole template
+    if (this.forceNextLayer) {
+      this.force = true
+    }
+
     this.collectStackTrace()
     return this
   }
