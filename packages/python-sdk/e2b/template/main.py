@@ -255,7 +255,7 @@ class TemplateBuilder:
         self._template._force_next_layer = True
         return self
 
-    def start_cmd(
+    def set_start_cmd(
         self, start_cmd: str, ready_cmd: Union[str, ReadyCmd]
     ) -> "TemplateFinal":
         self._template._start_cmd = start_cmd
@@ -267,7 +267,7 @@ class TemplateBuilder:
         self._template._collect_stack_trace()
         return TemplateFinal(self._template)
 
-    def ready_cmd(self, ready_cmd: Union[str, ReadyCmd]) -> "TemplateFinal":
+    def set_ready_cmd(self, ready_cmd: Union[str, ReadyCmd]) -> "TemplateFinal":
         if isinstance(ready_cmd, ReadyCmd):
             ready_cmd = ready_cmd.get_cmd()
 

@@ -59,8 +59,8 @@ export class TemplateBase
   private baseImage: string | undefined = this.defaultBaseImage
   private baseTemplate: string | undefined = undefined
   private registryConfig: RegistryConfig | undefined = undefined
-  private startCommand: string | undefined = undefined
-  private readyCommand: string | undefined = undefined
+  private startCmd: string | undefined = undefined
+  private readyCmd: string | undefined = undefined
   // Force the whole template to be rebuilt
   private force: boolean = false
   // Force the next layer to be rebuilt
@@ -454,27 +454,27 @@ export class TemplateBase
     return this.runInNewStackTraceContext(() => this.runCmd(args.join(' ')))
   }
 
-  startCmd(
+  setStartCmd(
     startCommand: string,
     readyCommand: string | ReadyCmd
   ): TemplateFinal {
-    this.startCommand = startCommand
+    this.startCmd = startCommand
 
     if (readyCommand instanceof ReadyCmd) {
-      this.readyCommand = readyCommand.getCmd()
+      this.readyCmd = readyCommand.getCmd()
     } else {
-      this.readyCommand = readyCommand
+      this.readyCmd = readyCommand
     }
 
     this.collectStackTrace()
     return this
   }
 
-  readyCmd(readyCommand: string | ReadyCmd): TemplateFinal {
+  setReadyCmd(readyCommand: string | ReadyCmd): TemplateFinal {
     if (readyCommand instanceof ReadyCmd) {
-      this.readyCommand = readyCommand.getCmd()
+      this.readyCmd = readyCommand.getCmd()
     } else {
-      this.readyCommand = readyCommand
+      this.readyCmd = readyCommand
     }
 
     this.collectStackTrace()
@@ -552,8 +552,8 @@ export class TemplateBase
     for (const instruction of this.instructions) {
       dockerfile += `${instruction.type} ${instruction.args.join(' ')}\n`
     }
-    if (this.startCommand) {
-      dockerfile += `ENTRYPOINT ${this.startCommand}\n`
+    if (this.startCmd) {
+      dockerfile += `ENTRYPOINT ${this.startCmd}\n`
     }
     return dockerfile
   }
@@ -721,8 +721,8 @@ export class TemplateBase
 
   private serialize(steps: Instruction[]): TriggerBuildTemplate {
     const templateData: TriggerBuildTemplate = {
-      startCmd: this.startCommand,
-      readyCmd: this.readyCommand,
+      startCmd: this.startCmd,
+      readyCmd: this.readyCmd,
       steps,
       force: this.force,
     }

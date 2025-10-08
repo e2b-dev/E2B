@@ -48,7 +48,7 @@ async def test_build_template(async_build, setup_test_folder):
         .copy("folder/*", "folder", force_upload=True)
         .run_cmd("cat folder/test.txt")
         .set_workdir("/app")
-        .start_cmd("echo 'Hello, world!'", wait_for_timeout(10_000))
+        .set_start_cmd("echo 'Hello, world!'", wait_for_timeout(10_000))
     )
 
     await async_build(template)

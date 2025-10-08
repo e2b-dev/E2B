@@ -6,4 +6,7 @@ export const template = Template()
   .copy('server.js', '.')
   .setUser('root')
   .setWorkdir('/home/user')
-  .startCmd('node server.js', 'curl -f http://localhost:3000/health || exit 1')
+  .setStartCmd(
+    'node server.js',
+    'curl -f http://localhost:3000/health || exit 1'
+  )

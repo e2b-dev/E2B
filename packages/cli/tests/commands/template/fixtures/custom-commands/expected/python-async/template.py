@@ -7,5 +7,5 @@ template = (
     .copy("server.js", ".")
     .set_user("root")
     .set_workdir("/home/user")
-    .start_cmd("node server.js", "curl -f http://localhost:3000/health || exit 1")
+    .set_start_cmd("node server.js", "curl -f http://localhost:3000/health || exit 1")
 )

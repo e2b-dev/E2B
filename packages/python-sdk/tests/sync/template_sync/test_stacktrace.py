@@ -182,5 +182,7 @@ def test_traces_on_git_clone(build):
 def test_traces_on_start_cmd(build):
     template = Template()
     template = template.from_base_image()
-    template = template.start_cmd(f"./{non_existent_path}", wait_for_timeout(10_000))
+    template = template.set_start_cmd(
+        f"./{non_existent_path}", wait_for_timeout(10_000)
+    )
     _expect_to_throw_and_check_trace(lambda: build(template), "start_cmd")

@@ -43,7 +43,7 @@ class DockerfileParserInterface(Protocol):
         """Handle ENV instruction."""
         ...
 
-    def start_cmd(
+    def set_start_cmd(
         self, start_cmd: str, ready_cmd: str
     ) -> "DockerfFileFinalParserInterface":
         """Handle CMD/ENTRYPOINT instruction."""
@@ -250,4 +250,4 @@ def _handle_cmd_entrypoint_instruction(
         seconds = max(1, timeout // 1000)
         return f"sleep {seconds}"
 
-    template_builder.start_cmd(command, wait_for_timeout(20_000))
+    template_builder.set_start_cmd(command, wait_for_timeout(20_000))

@@ -29,10 +29,10 @@ export const template = Template()
 {{#if readyCmd}}
   .setUser('root')
   .setWorkdir('/home/user')
-  .startCmd('{{{escapeQuotes startCmd}}}', '{{{escapeQuotes readyCmd}}}')
+  .setStartCmd('{{{escapeQuotes startCmd}}}', '{{{escapeQuotes readyCmd}}}')
 {{/if}}
 {{else if readyCmd}}
   .setUser('root')
   .setWorkdir('/home/user')
-  .readyCmd('{{{escapeQuotes readyCmd}}}')
+  .setReadyCmd('{{{escapeQuotes readyCmd}}}')
 {{/if}}
