@@ -19,7 +19,9 @@ export const template = Template()
   })
 {{/eq}}
 {{#eq type "RUN"}}
-  .runCmd('{{{args.[0]}}}')
+  .runCmd(
+    '{{{args.[0]}}}'
+  )
 {{/eq}}
 {{#eq type "COPY"}}
   .copy('{{{src}}}', '{{{dest}}}')
