@@ -1,6 +1,6 @@
 import { stripAnsi } from '../utils'
 import { ReadyCmd } from './readycmd'
-import { PathLike } from 'fs'
+import type { PathLike } from 'node:fs'
 
 export enum InstructionType {
   COPY = 'COPY',

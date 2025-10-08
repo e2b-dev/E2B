@@ -30,7 +30,7 @@ import {
   readDockerignore,
   readGCPServiceAccountJSON,
 } from './utils'
-import { PathLike } from 'fs'
+import type { PathLike } from 'node:fs'
 
 export { type TemplateBuilder } from './types'
 
