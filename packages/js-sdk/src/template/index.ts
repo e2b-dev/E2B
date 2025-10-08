@@ -256,7 +256,7 @@ export class TemplateBase
       this.instructions.push({
         type: InstructionType.COPY,
         args,
-        force: options?.forceUpload ?? this.forceNextLayer,
+        force: options?.forceUpload || this.forceNextLayer,
         forceUpload: options?.forceUpload,
         resolveSymlinks: options?.resolveSymlinks,
       })
