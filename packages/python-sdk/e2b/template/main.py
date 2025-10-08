@@ -387,22 +387,14 @@ class TemplateBase:
             lambda: self.from_image(self._default_base_image)
         )
 
-    @overload
-    def from_image(self, base_image: str) -> TemplateBuilder: ...
-
-    @overload
-    def from_image(
-        self, base_image: str, username: str, password: str
-    ) -> TemplateBuilder: ...
-
     def from_image(
         self,
-        base_image: str,
+        image: str,
         username: Optional[str] = None,
         password: Optional[str] = None,
     ) -> TemplateBuilder:
         """Private method to set base image without adding stack trace"""
-        self._base_image = base_image
+        self._base_image = image
         self._base_template = None
 
         # Set the registry config if provided
