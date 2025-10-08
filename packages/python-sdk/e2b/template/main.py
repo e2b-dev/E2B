@@ -307,9 +307,9 @@ class TemplateBase:
         self._instructions: List[Instruction] = []
         # If no file_context_path is provided, use the caller's directory
         self._file_context_path = (
-            file_context_path.as_posix() if isinstance(file_context_path, Path) else (
-                file_context_path or get_caller_directory(STACK_TRACE_DEPTH) or "."
-            )
+            file_context_path.as_posix()
+            if isinstance(file_context_path, Path)
+            else (file_context_path or get_caller_directory(STACK_TRACE_DEPTH) or ".")
         )
         self._ignore_file_patterns: List[str] = ignore_file_patterns or []
         self._stack_traces: List[Union[TracebackType, None]] = []
