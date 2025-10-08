@@ -1,5 +1,5 @@
 import json
-from typing import Dict, List, Optional, Union, overload
+from typing import Dict, List, Optional, Union, Literal, overload
 from pathlib import Path
 
 from httpx import Limits
@@ -33,7 +33,7 @@ class TemplateBuilder:
         self,
         src: Union[Union[str, Path], List[Union[str, Path]]],
         dest: Union[str, Path],
-        force_upload: Optional[bool] = None,
+        force_upload: Optional[Literal[True]] = None,
         user: Optional[str] = None,
         mode: Optional[int] = None,
         resolve_symlinks: Optional[bool] = None,

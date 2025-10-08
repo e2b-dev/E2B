@@ -14,7 +14,7 @@ export type Instruction = {
   type: InstructionType
   args: string[]
   force: boolean
-  forceUpload?: boolean
+  forceUpload?: true
   filesHash?: string
   resolveSymlinks?: boolean
 }
@@ -22,7 +22,7 @@ export type Instruction = {
 export type CopyItem = {
   src: PathLike | PathLike[]
   dest: PathLike
-  forceUpload?: boolean
+  forceUpload?: true
   user?: string
   mode?: number
   resolveSymlinks?: boolean
@@ -74,7 +74,7 @@ export interface TemplateBuilder {
     src: PathLike | PathLike[],
     dest: PathLike,
     options?: {
-      forceUpload?: boolean
+      forceUpload?: true
       user?: string
       mode?: number
       resolveSymlinks?: boolean

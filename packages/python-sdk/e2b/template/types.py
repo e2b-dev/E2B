@@ -19,7 +19,7 @@ class InstructionType(str, Enum):
 class CopyItem(TypedDict):
     src: Union[Union[str, Path], List[Union[str, Path]]]
     dest: Union[str, Path]
-    forceUpload: NotRequired[Optional[bool]]
+    forceUpload: NotRequired[Optional[Literal[True]]]
     user: NotRequired[Optional[str]]
     mode: NotRequired[Optional[int]]
     resolveSymlinks: NotRequired[Optional[bool]]
@@ -29,7 +29,7 @@ class Instruction(TypedDict):
     type: InstructionType
     args: List[str]
     force: bool
-    forceUpload: NotRequired[Optional[bool]]
+    forceUpload: NotRequired[Optional[Literal[True]]]
     filesHash: NotRequired[Optional[str]]
     resolveSymlinks: NotRequired[Optional[bool]]
 

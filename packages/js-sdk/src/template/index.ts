@@ -233,7 +233,7 @@ export class TemplateBase
     src: PathLike | PathLike[],
     dest: PathLike,
     options?: {
-      forceUpload?: boolean
+      forceUpload?: true
       user?: string
       mode?: number
       resolveSymlinks?: boolean
