@@ -121,9 +121,9 @@ export const buildV2Command = new commander.Command('build-v2')
         // Apply start/ready commands if provided
         let finalTemplate: TemplateClass = baseTemplate
         if (startCmd && readyCmd) {
-          finalTemplate = baseTemplate.setStartCmd(startCmd, readyCmd)
+          finalTemplate = baseTemplate.startCmd(startCmd, readyCmd)
         } else if (readyCmd) {
-          finalTemplate = baseTemplate.setReadyCmd(readyCmd)
+          finalTemplate = baseTemplate.readyCmd(readyCmd)
         } else if (startCmd) {
           console.error('Both start and ready commands must be provided.')
           process.exit(1)
