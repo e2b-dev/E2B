@@ -570,7 +570,7 @@ class AsyncSandbox(SandboxApi):
                         break
 
                 except Exception as e:
-                    logger.warn(f"Failed to POST MCP config: {e}")
+                    logger.warning(f"Failed to POST MCP config: {e}")
 
                     pass
 
