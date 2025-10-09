@@ -65,7 +65,7 @@ export interface TemplateFromImage {
     }
   ): TemplateBuilder
 
-  skipCache(): TemplateBuilder
+  skipCache(): TemplateFromImage
 }
 
 // Interface for the main builder state

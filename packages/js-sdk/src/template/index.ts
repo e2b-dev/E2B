@@ -67,7 +67,7 @@ export class TemplateBase
   private forceNextLayer: boolean = false
   private instructions: Instruction[] = []
   private fileContextPath: PathLike =
-    runtime === 'browser' ? '.' : (getCallerDirectory(STACK_TRACE_DEPTH) ?? '.')
+    runtime === 'browser' ? '.' : getCallerDirectory(STACK_TRACE_DEPTH) ?? '.'
   private fileIgnorePatterns: string[] = []
   private logsRefreshFrequency: number = 200
   private stackTraces: (string | undefined)[] = []
@@ -490,7 +490,7 @@ export class TemplateBase
     return this
   }
 
-  skipCache(): TemplateBuilder {
+  skipCache() {
     this.forceNextLayer = true
     return this
   }
