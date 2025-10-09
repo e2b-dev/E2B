@@ -103,3 +103,7 @@ function ansiRegex({ onlyFirst = false } = {}) {
 export function stripAnsi(text: string): string {
   return text.replace(ansiRegex(), '')
 }
+
+export async function wait(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}

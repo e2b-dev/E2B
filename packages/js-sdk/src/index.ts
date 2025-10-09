@@ -46,6 +46,8 @@ export type {
   SandboxPaginator,
 } from './sandbox/sandboxApi'
 
+export type { McpServer } from './sandbox/mcp'
+
 export type {
   ProcessInfo,
   CommandRequestOpts,

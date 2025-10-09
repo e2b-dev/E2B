@@ -9,6 +9,7 @@ import {
 } from '../connectionConfig'
 import { EnvdApiClient, handleEnvdApiError } from '../envd/api'
 import { createRpcLogger } from '../logs'
+import { wait } from '../utils'
 import { Commands, Pty } from './commands'
 import { Filesystem } from './filesystem'
 import {
@@ -64,6 +65,7 @@ export interface SandboxUrlOpts {
  */
 export class Sandbox extends SandboxApi {
   protected static readonly defaultTemplate: string = 'base'
+  protected static readonly defaultMcpTemplate: string = 'e2b-mcp-demo'
   protected static readonly defaultSandboxTimeoutMs = DEFAULT_SANDBOX_TIMEOUT_MS
 
   /**
@@ -90,6 +92,7 @@ export class Sandbox extends SandboxApi {
   readonly sandboxDomain: string
 
   protected readonly envdPort = 49983
+  protected readonly mcpPort = 8080
 
   protected readonly connectionConfig: ConnectionConfig
   protected readonly envdAccessToken?: string
@@ -312,30 +315,63 @@ export class Sandbox extends SandboxApi {
       }) as InstanceType<S>
     }
 
-    const sandbox = await SandboxApi.createSandbox(
-      template,
+    let usedTemplate: string
+
+    if (!template && !sandboxOpts?.mcp) {
+      // If we don't specify a template and we use MCP we use the default MCP template
+      usedTemplate = this.defaultMcpTemplate
+    } else if (!template) {
+      // If we don't specify a template we use the default template
+      usedTemplate = this.defaultTemplate
+    } else {
+      // If we specify a template we use the specified template
+      usedTemplate = template
+    }
+
+    const sandboxInfo = await SandboxApi.createSandbox(
+      usedTemplate,
       sandboxOpts?.timeoutMs ?? this.defaultSandboxTimeoutMs,
       sandboxOpts
     )
 
-    const instance = new this({ ...sandbox, ...config }) as InstanceType<S>
+    const sandbox = new this({ ...sandboxInfo, ...config }) as InstanceType<S>
 
     if (sandboxOpts?.mcp) {
-      const mcpUrl = `https://${instance.getHost(8080)}/config`
+      const mcpConfigUrl = `${config.debug ? 'http' : 'https'}://${sandbox.getHost(sandbox.mcpPort)}/config`
+
+      const signal = config.getSignal()
+
+      let mcpConfigured = false
+
+      // TODO: The MCP config seems to succeed on first attempt, but we are keeping the retry logic here for now.
       for (let i = 0; i < 5; i++) {
-        const res = await fetch(mcpUrl, {
-          method: 'POST',
-          body: JSON.stringify(sandboxOpts?.mcp),
-          signal: AbortSignal.timeout(5000),
-        })
-        if (res.ok) {
-          break
+        try {
+          const res = await fetch(mcpConfigUrl, {
+            method: 'POST',
+            body: JSON.stringify(sandboxOpts?.mcp),
+            signal,
+          })
+
+          if (res.ok) {
+            mcpConfigured = true
+
+            break
+          }
+        } catch (e) {
+          config.logger?.warn?.(`Failed to configure MCP server: ${e}`)
         }
-        await new Promise((resolve) => setTimeout(resolve, 250))
+
+        await wait(250)
+      }
+
+      if (!mcpConfigured) {
+        await sandbox.kill()
+
+        throw new SandboxError(`Failed to configure MCP server. The sandbox template '${usedTemplate}' might not be configured with MCP gateway inside.`)
       }
     }
 
-    return instance
+    return sandbox
   }
 
   /**
@@ -543,7 +579,7 @@ export class Sandbox extends SandboxApi {
    * @returns MCP URL for the sandbox.
    */
   betaGetMcpUrl(): string {
-    return `https://${this.getHost(8080)}/mcp`
+    return `https://${this.getHost(this.mcpPort)}/mcp`
   }
 
   /**

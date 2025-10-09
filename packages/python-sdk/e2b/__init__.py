@@ -57,6 +57,7 @@ from .sandbox.filesystem.watch_handle import (
     FilesystemEventType,
 )
 from .sandbox.filesystem.filesystem import EntryInfo, WriteInfo, FileType
+from .sandbox.mcp import McpServer
 
 from .sandbox_sync.main import Sandbox
 from .sandbox_sync.filesystem.watch_handle import WatchHandle
@@ -141,4 +142,6 @@ __all__ = [
     "wait_for_port",
     "wait_for_process",
     "wait_for_timeout",
+    # MCP
+    "McpServer",
 ]

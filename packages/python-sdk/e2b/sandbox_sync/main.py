@@ -534,8 +534,17 @@ class Sandbox(SandboxApi):
         Use this method instead of using the constructor to create a new sandbox.
         """
 
+        used_template: str
+
+        if not template and mcp:
+            used_template = cls.default_mcp_template
+        elif not template:
+            used_template = cls.default_template
+        else:
+            used_template = template
+
         sandbox = cls._create(
-            template=template,
+            template=used_template,
             auto_pause=auto_pause,
             timeout=timeout,
             metadata=metadata,
@@ -546,23 +555,41 @@ class Sandbox(SandboxApi):
         )
 
         if mcp is not None:
+            mcp_url = f"{'http' if sandbox.connection_config.debug else 'https'}://{sandbox.get_host(sandbox.mcp_port)}"
+
             mcp_api = httpx.Client(
-                base_url=sandbox.beta_mcp_server_url(),
+                base_url=mcp_url,
                 transport=sandbox._transport,
                 headers=sandbox.connection_config.sandbox_headers,
             )
+
+            mcp_configured = False
+
+            # TODO: The MCP config seems to succeed on first attempt, but we are keeping the retry logic here for now.
             for _ in range(5):
                 try:
                     res = mcp_api.post(
                         "/config",
                         json=mcp,
-                        timeout=5,
+                        timeout=sandbox.connection_config.get_request_timeout(),
                     )
+
                     if res.status_code == 200:
+                        mcp_configured = True
+
                         break
+
                 except Exception as e:
                     logger.warning(f"Failed to POST MCP config: {e}")
+
                 time.sleep(0.25)
+
+            if not mcp_configured:
+                sandbox.kill()
+
+                raise SandboxException(
+                    f"Failed to configure MCP server. The sandbox template '{used_template}' might not be configured with MCP gateway inside."
+                )
 
         return sandbox
 

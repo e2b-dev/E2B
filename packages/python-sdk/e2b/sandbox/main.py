@@ -28,7 +28,9 @@ class SandboxBase:
     mcp_port = 8080
 
     default_sandbox_timeout = 300
+
     default_template = "base"
+    default_mcp_template = "e2b-mcp-demo"
 
     def __init__(
         self,
