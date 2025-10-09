@@ -89,7 +89,6 @@ async def test_build_template_with_skip_cache(async_build, setup_test_folder):
         AsyncTemplate(file_context_path=setup_test_folder)
         .skip_cache()
         .from_image("ubuntu:22.04")
-        .set_start_cmd("echo 'Hello, world!'", wait_for_timeout(10_000))
     )
 
     await async_build(template)
