@@ -186,7 +186,6 @@ export interface McpServer {
      */
     cbUsername: string
   }
-  curl?: {}
   cyreslabAiShodan?: {
     shodanApiKey: string
   }
@@ -226,7 +225,6 @@ export interface McpServer {
   discord?: {
     discordToken: string
   }
-  docker?: {}
   dockerhub?: {
     hubPatToken: string
     username: string
@@ -271,7 +269,6 @@ export interface McpServer {
     apiAccessToken: string
   }
   fetch?: {}
-  ffmpeg?: {}
   fibery?: {
     apiToken: string
     host: string

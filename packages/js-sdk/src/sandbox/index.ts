@@ -367,7 +367,9 @@ export class Sandbox extends SandboxApi {
       if (!mcpConfigured) {
         await sandbox.kill()
 
-        throw new SandboxError(`Failed to configure MCP server. The sandbox template '${usedTemplate}' might not be configured with MCP gateway inside.`)
+        throw new SandboxError(
+          `Failed to configure MCP server. The sandbox template '${usedTemplate}' might not be configured with MCP gateway inside.`
+        )
       }
     }
 

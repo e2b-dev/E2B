@@ -563,10 +563,6 @@
       },
       "type": "object"
     },
-    "curl": {
-      "additionalProperties": false,
-      "type": "object"
-    },
     "cyreslabAiShodan": {
       "required": [
         "shodanApiKey"
@@ -699,10 +695,6 @@
           "type": "string"
         }
       },
-      "type": "object"
-    },
-    "docker": {
-      "additionalProperties": false,
       "type": "object"
     },
     "dockerhub": {
@@ -875,10 +867,6 @@
       "type": "object"
     },
     "fetch": {
-      "additionalProperties": false,
-      "type": "object"
-    },
-    "ffmpeg": {
       "additionalProperties": false,
       "type": "object"
     },
@@ -2491,10 +2479,10 @@
     },
     "schemacrawlerAi": {
       "required": [
-        "urlConnectionJdbcUrl",
-        "serverConnectionServer",
         "generalInfoLevel",
-        "volumeHostShare"
+        "volumeHostShare",
+        "urlConnectionJdbcUrl",
+        "serverConnectionServer"
       ],
       "additionalProperties": false,
       "properties": {
