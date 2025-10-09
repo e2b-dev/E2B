@@ -98,10 +98,13 @@ export class TemplateBase
     return (template as TemplateBase).toDockerfile()
   }
 
-  static build(template: TemplateClass, options: BuildOptions): Promise<void> {
+  static async build(
+    template: TemplateClass,
+    options: BuildOptions
+  ): Promise<void> {
     try {
       options.onBuildLogs?.(new LogEntryStart(new Date(), 'Build started'))
-      return (template as TemplateBase).build(options)
+      return await (template as TemplateBase).build(options)
     } finally {
       options.onBuildLogs?.(new LogEntryEnd(new Date(), 'Build finished'))
     }
