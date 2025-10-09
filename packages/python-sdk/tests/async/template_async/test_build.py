@@ -51,7 +51,7 @@ async def test_build_template(async_build, setup_test_folder):
         .set_start_cmd("echo 'Hello, world!'", wait_for_timeout(10_000))
     )
 
-    await async_build(template, False, default_build_logger())
+    await async_build(template, skip_cache=False, on_build_logs=default_build_logger())
 
 
 @pytest.mark.skip_debug()
