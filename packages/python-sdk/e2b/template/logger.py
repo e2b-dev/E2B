@@ -68,8 +68,11 @@ def set_interval(func, interval):
     stopped = threading.Event()
 
     def loop():
-        while not stopped.wait(interval):  # wait returns True if stopped
-            func()
+        while not stopped.is_set():
+            if stopped.wait(interval):  # wait returns True if stopped
+                break
+            if not stopped.is_set():  # Double-check before executing
+                func()
 
     threading.Thread(target=loop, daemon=True).start()
     return stopped.set  # Return the stop function
