@@ -65,7 +65,7 @@ export interface SandboxUrlOpts {
  */
 export class Sandbox extends SandboxApi {
   protected static readonly defaultTemplate: string = 'base'
-  protected static readonly defaultMcpTemplate: string = 'e2b-mcp-demo'
+  protected static readonly defaultMcpTemplate: string = 'mcp-gateway-v0'
   protected static readonly defaultSandboxTimeoutMs = DEFAULT_SANDBOX_TIMEOUT_MS
 
   /**
@@ -123,9 +123,8 @@ export class Sandbox extends SandboxApi {
     this.sandboxDomain = opts.sandboxDomain ?? this.connectionConfig.domain
 
     this.envdAccessToken = opts.envdAccessToken
-    this.envdApiUrl = `${
-      this.connectionConfig.debug ? 'http' : 'https'
-    }://${this.getHost(this.envdPort)}`
+    this.envdApiUrl = `${this.connectionConfig.debug ? 'http' : 'https'
+      }://${this.getHost(this.envdPort)}`
 
     const rpcTransport = createConnectTransport({
       baseUrl: this.envdApiUrl,
@@ -304,8 +303,16 @@ export class Sandbox extends SandboxApi {
   ): Promise<InstanceType<S>> {
     const { template, sandboxOpts } =
       typeof templateOrOpts === 'string'
-        ? { template: templateOrOpts, sandboxOpts: opts }
-        : { template: this.defaultTemplate, sandboxOpts: templateOrOpts }
+        ? {
+          template: templateOrOpts,
+          sandboxOpts: opts,
+        }
+        : {
+          template: templateOrOpts?.mcp
+            ? this.defaultMcpTemplate
+            : this.defaultTemplate,
+          sandboxOpts: templateOrOpts,
+        }
 
     const config = new ConnectionConfig(sandboxOpts)
     if (config.debug) {
@@ -316,21 +323,8 @@ export class Sandbox extends SandboxApi {
       }) as InstanceType<S>
     }
 
-    let usedTemplate: string
-
-    if (!template && !sandboxOpts?.mcp) {
-      // If we don't specify a template and we use MCP we use the default MCP template
-      usedTemplate = this.defaultMcpTemplate
-    } else if (!template) {
-      // If we don't specify a template we use the default template
-      usedTemplate = this.defaultTemplate
-    } else {
-      // If we specify a template we use the specified template
-      usedTemplate = template
-    }
-
     const sandboxInfo = await SandboxApi.createSandbox(
-      usedTemplate,
+      template,
       sandboxOpts?.timeoutMs ?? this.defaultSandboxTimeoutMs,
       sandboxOpts
     )
@@ -338,9 +332,8 @@ export class Sandbox extends SandboxApi {
     const sandbox = new this({ ...sandboxInfo, ...config }) as InstanceType<S>
 
     if (sandboxOpts?.mcp) {
-      const mcpConfigUrl = `${
-        config.debug ? 'http' : 'https'
-      }://${sandbox.getHost(sandbox.mcpPort)}/config`
+      const mcpConfigUrl = `${config.debug ? 'http' : 'https'
+        }://${sandbox.getHost(sandbox.mcpPort)}/config`
 
       const signal = config.getSignal()
 
@@ -371,7 +364,7 @@ export class Sandbox extends SandboxApi {
         await sandbox.kill()
 
         throw new SandboxError(
-          `Failed to configure MCP server. The sandbox template '${usedTemplate}' might not be configured with MCP gateway inside.`
+          `Failed to configure MCP server. The sandbox template '${template}' might not be configured with MCP gateway inside.`
         )
       }
     }
@@ -704,7 +697,7 @@ export class Sandbox extends SandboxApi {
       if (compareVersions(this.envdApi.version, '0.1.5') < 0) {
         throw new SandboxError(
           'You need to update the template to use the new SDK. ' +
-            'You can do this by running `e2b template build` in the directory with the template.'
+          'You can do this by running `e2b template build` in the directory with the template.'
         )
       }
 

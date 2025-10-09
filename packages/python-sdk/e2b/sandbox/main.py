@@ -30,7 +30,7 @@ class SandboxBase:
     default_sandbox_timeout = 300
 
     default_template = "base"
-    default_mcp_template = "e2b-mcp-demo"
+    default_mcp_template = "mcp-gateway-v0"
 
     def __init__(
         self,

@@ -528,17 +528,13 @@ class AsyncSandbox(SandboxApi):
         Use this method instead of using the constructor to create a new sandbox.
         """
 
-        used_template: str
-
-        if not template and mcp:
-            used_template = cls.default_mcp_template
+        if not template and mcp is not None:
+            template = cls.default_mcp_template
         elif not template:
-            used_template = cls.default_template
-        else:
-            used_template = template
+            template = cls.default_template
 
         sandbox = await cls._create(
-            template=used_template,
+            template=template,
             timeout=timeout,
             auto_pause=auto_pause,
             metadata=metadata,
