@@ -10,7 +10,7 @@ interface SandboxFixture {
 }
 
 interface BuildTemplateFixture {
-  buildTemplate: (template: TemplateClass) => Promise<void>
+  buildTemplate: (template: TemplateClass, skipCache?: boolean) => Promise<void>
 }
 
 function buildTemplate(template: TemplateClass, skipCache?: boolean) {

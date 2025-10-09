@@ -1,0 +1,722 @@
+
+
+
+
+
+## Sandbox
+
+```python
+class Sandbox(BaseSandbox)
+```
+
+E2B cloud sandbox is a secure and isolated cloud environment.
+
+The sandbox allows you to:
+- Access Linux OS
+- Create, list, and delete files and directories
+- Run commands
+- Run isolated code
+- Access the internet
+
+Check docs [here](https://e2b.dev/docs).
+
+Use the `Sandbox.create()` to create a new sandbox.
+
+**Example**:
+
+```python
+from e2b_code_interpreter import Sandbox
+
+sandbox = Sandbox.create()
+```
+
+
+### run\_code
+
+```python
+@overload
+def run_code(code: str,
+             language: Union[Literal["python"], None] = None,
+             on_stdout: Optional[OutputHandler[OutputMessage]] = None,
+             on_stderr: Optional[OutputHandler[OutputMessage]] = None,
+             on_result: Optional[OutputHandler[Result]] = None,
+             on_error: Optional[OutputHandler[ExecutionError]] = None,
+             envs: Optional[Dict[str, str]] = None,
+             timeout: Optional[float] = None,
+             request_timeout: Optional[float] = None) -> Execution
+```
+
+Runs the code as Python.
+
+Specify the `language` or `context` option to run the code as a different language or in a different `Context`.
+
+You can reference previously defined variables, imports, and functions in the code.
+
+**Arguments**:
+
+- `code`: Code to execute
+- `language`: Language to use for code execution. If not defined, the default Python context is used.
+- `on_stdout`: Callback for stdout messages
+- `on_stderr`: Callback for stderr messages
+- `on_result`: Callback for the `Result` object
+- `on_error`: Callback for the `ExecutionError` object
+- `envs`: Custom environment variables
+- `timeout`: Timeout for the code execution in **seconds**
+- `request_timeout`: Timeout for the request in **seconds**
+
+**Returns**:
+
+`Execution` result object
+
+
+### run\_code
+
+```python
+@overload
+def run_code(code: str,
+             language: Optional[str] = None,
+             on_stdout: Optional[OutputHandler[OutputMessage]] = None,
+             on_stderr: Optional[OutputHandler[OutputMessage]] = None,
+             on_result: Optional[OutputHandler[Result]] = None,
+             on_error: Optional[OutputHandler[ExecutionError]] = None,
+             envs: Optional[Dict[str, str]] = None,
+             timeout: Optional[float] = None,
+             request_timeout: Optional[float] = None) -> Execution
+```
+
+Runs the code for the specified language.
+
+Specify the `language` or `context` option to run the code as a different language or in a different `Context`.
+If no language is specified, Python is used.
+
+You can reference previously defined variables, imports, and functions in the code.
+
+**Arguments**:
+
+- `code`: Code to execute
+- `language`: Language to use for code execution. If not defined, the default Python context is used.
+- `on_stdout`: Callback for stdout messages
+- `on_stderr`: Callback for stderr messages
+- `on_result`: Callback for the `Result` object
+- `on_error`: Callback for the `ExecutionError` object
+- `envs`: Custom environment variables
+- `timeout`: Timeout for the code execution in **seconds**
+- `request_timeout`: Timeout for the request in **seconds**
+
+**Returns**:
+
+`Execution` result object
+
+
+### run\_code
+
+```python
+@overload
+def run_code(code: str,
+             context: Optional[Context] = None,
+             on_stdout: Optional[OutputHandler[OutputMessage]] = None,
+             on_stderr: Optional[OutputHandler[OutputMessage]] = None,
+             on_result: Optional[OutputHandler[Result]] = None,
+             on_error: Optional[OutputHandler[ExecutionError]] = None,
+             envs: Optional[Dict[str, str]] = None,
+             timeout: Optional[float] = None,
+             request_timeout: Optional[float] = None) -> Execution
+```
+
+Runs the code in the specified context, if not specified, the default context is used.
+
+Specify the `language` or `context` option to run the code as a different language or in a different `Context`.
+
+You can reference previously defined variables, imports, and functions in the code.
+
+**Arguments**:
+
+- `code`: Code to execute
+- `context`: Concrete context to run the code in. If not specified, the default context for the language is used. It's mutually exclusive with the language.
+- `on_stdout`: Callback for stdout messages
+- `on_stderr`: Callback for stderr messages
+- `on_result`: Callback for the `Result` object
+- `on_error`: Callback for the `ExecutionError` object
+- `envs`: Custom environment variables
+- `timeout`: Timeout for the code execution in **seconds**
+- `request_timeout`: Timeout for the request in **seconds**
+
+**Returns**:
+
+`Execution` result object
+
+
+### create\_code\_context
+
+```python
+def create_code_context(cwd: Optional[str] = None,
+                        language: Optional[str] = None,
+                        request_timeout: Optional[float] = None) -> Context
+```
+
+Creates a new context to run code in.
+
+**Arguments**:
+
+- `cwd`: Set the current working directory for the context, defaults to `/home/user`
+- `language`: Language of the context. If not specified, defaults to Python
+- `request_timeout`: Timeout for the request in **milliseconds**
+
+**Returns**:
+
+Context object
+
+
+
+
+
+
+
+
+## ChartType
+
+```python
+class ChartType(str, enum.Enum)
+```
+
+Chart types
+
+
+## ScaleType
+
+```python
+class ScaleType(str, enum.Enum)
+```
+
+Ax scale types
+
+
+## Chart
+
+```python
+class Chart()
+```
+
+Extracted data from a chart. It's useful for building an interactive charts or custom visualizations.
+
+
+
+
+## AsyncSandbox
+
+```python
+class AsyncSandbox(BaseAsyncSandbox)
+```
+
+E2B cloud sandbox is a secure and isolated cloud environment.
+
+The sandbox allows you to:
+- Access Linux OS
+- Create, list, and delete files and directories
+- Run commands
+- Run isolated code
+- Access the internet
+
+Check docs [here](https://e2b.dev/docs).
+
+Use the `AsyncSandbox.create()` to create a new sandbox.
+
+**Example**:
+
+```python
+from e2b_code_interpreter import AsyncSandbox
+sandbox = await AsyncSandbox.create()
+```
+
+
+### run\_code
+
+```python
+@overload
+async def run_code(code: str,
+                   language: Union[Literal["python"], None] = None,
+                   on_stdout: Optional[OutputHandler[OutputMessage]] = None,
+                   on_stderr: Optional[OutputHandler[OutputMessage]] = None,
+                   on_result: Optional[OutputHandler[Result]] = None,
+                   on_error: Optional[OutputHandler[ExecutionError]] = None,
+                   envs: Optional[Dict[str, str]] = None,
+                   timeout: Optional[float] = None,
+                   request_timeout: Optional[float] = None) -> Execution
+```
+
+Runs the code as Python.
+
+Specify the `language` or `context` option to run the code as a different language or in a different `Context`.
+
+You can reference previously defined variables, imports, and functions in the code.
+
+**Arguments**:
+
+- `code`: Code to execute
+- `language`: Language to use for code execution. If not defined, the default Python context is used.
+- `on_stdout`: Callback for stdout messages
+- `on_stderr`: Callback for stderr messages
+- `on_result`: Callback for the `Result` object
+- `on_error`: Callback for the `ExecutionError` object
+- `envs`: Custom environment variables
+- `timeout`: Timeout for the code execution in **seconds**
+- `request_timeout`: Timeout for the request in **seconds**
+
+**Returns**:
+
+`Execution` result object
+
+
+### run\_code
+
+```python
+@overload
+async def run_code(code: str,
+                   language: Optional[str] = None,
+                   on_stdout: Optional[OutputHandler[OutputMessage]] = None,
+                   on_stderr: Optional[OutputHandler[OutputMessage]] = None,
+                   on_result: Optional[OutputHandler[Result]] = None,
+                   on_error: Optional[OutputHandler[ExecutionError]] = None,
+                   envs: Optional[Dict[str, str]] = None,
+                   timeout: Optional[float] = None,
+                   request_timeout: Optional[float] = None) -> Execution
+```
+
+Runs the code for the specified language.
+
+Specify the `language` or `context` option to run the code as a different language or in a different `Context`.
+If no language is specified, Python is used.
+
+You can reference previously defined variables, imports, and functions in the code.
+
+**Arguments**:
+
+- `code`: Code to execute
+- `language`: Language to use for code execution. If not defined, the default Python context is used.
+- `on_stdout`: Callback for stdout messages
+- `on_stderr`: Callback for stderr messages
+- `on_result`: Callback for the `Result` object
+- `on_error`: Callback for the `ExecutionError` object
+- `envs`: Custom environment variables
+- `timeout`: Timeout for the code execution in **seconds**
+- `request_timeout`: Timeout for the request in **seconds**
+
+**Returns**:
+
+`Execution` result object
+
+
+### run\_code
+
+```python
+@overload
+async def run_code(code: str,
+                   context: Optional[Context] = None,
+                   on_stdout: Optional[OutputHandler[OutputMessage]] = None,
+                   on_stderr: Optional[OutputHandler[OutputMessage]] = None,
+                   on_result: Optional[OutputHandler[Result]] = None,
+                   on_error: Optional[OutputHandler[ExecutionError]] = None,
+                   envs: Optional[Dict[str, str]] = None,
+                   timeout: Optional[float] = None,
+                   request_timeout: Optional[float] = None) -> Execution
+```
+
+Runs the code in the specified context, if not specified, the default context is used.
+
+Specify the `language` or `context` option to run the code as a different language or in a different `Context`.
+
+You can reference previously defined variables, imports, and functions in the code.
+
+**Arguments**:
+
+- `code`: Code to execute
+- `context`: Concrete context to run the code in. If not specified, the default context for the language is used. It's mutually exclusive with the language.
+- `on_stdout`: Callback for stdout messages
+- `on_stderr`: Callback for stderr messages
+- `on_result`: Callback for the `Result` object
+- `on_error`: Callback for the `ExecutionError` object
+- `envs`: Custom environment variables
+- `timeout`: Timeout for the code execution in **seconds**
+- `request_timeout`: Timeout for the request in **seconds**
+
+**Returns**:
+
+`Execution` result object
+
+
+### create\_code\_context
+
+```python
+async def create_code_context(
+        cwd: Optional[str] = None,
+        language: Optional[str] = None,
+        request_timeout: Optional[float] = None) -> Context
+```
+
+Creates a new context to run code in.
+
+**Arguments**:
+
+- `cwd`: Set the current working directory for the context, defaults to `/home/user`
+- `language`: Language of the context. If not specified, defaults to Python
+- `request_timeout`: Timeout for the request in **milliseconds**
+
+**Returns**:
+
+Context object
+
+
+
+
+## OutputMessage
+
+```python
+@dataclass
+class OutputMessage()
+```
+
+Represents an output message from the sandbox code execution.
+
+
+### line
+
+The output line.
+
+
+### timestamp
+
+Unix epoch in nanoseconds
+
+
+### error
+
+Whether the output is an error.
+
+
+## ExecutionError
+
+```python
+@dataclass
+class ExecutionError()
+```
+
+Represents an error that occurred during the execution of a cell.
+The error contains the name of the error, the value of the error, and the traceback.
+
+
+### name
+
+Name of the error.
+
+
+### value
+
+Value of the error.
+
+
+### traceback
+
+The raw traceback of the error.
+
+
+### to\_json
+
+```python
+def to_json() -> str
+```
+
+Returns the JSON representation of the Error object.
+
+
+## MIMEType
+
+```python
+class MIMEType(str)
+```
+
+Represents a MIME type.
+
+
+## Result
+
+```python
+@dataclass
+class Result()
+```
+
+Represents the data to be displayed as a result of executing a cell in a Jupyter notebook.
+The result is similar to the structure returned by ipython kernel: https://ipython.readthedocs.io/en/stable/development/execution.html#execution-semantics
+
+The result can contain multiple types of data, such as text, images, plots, etc. Each type of data is represented
+as a string, and the result can contain multiple types of data. The display calls don't have to have text representation,
+for the actual result the representation is always present for the result, the other representations are always optional.
+
+
+### is\_main\_result
+
+Whether this data is the result of the cell. Data can be produced by display calls of which can be multiple in a cell.
+
+
+### extra
+
+Extra data that can be included. Not part of the standard types.
+
+
+### formats
+
+```python
+def formats() -> Iterable[str]
+```
+
+Returns all available formats of the result.
+
+**Returns**:
+
+All available formats of the result in MIME types.
+
+
+### \_\_str\_\_
+
+```python
+def __str__() -> Optional[str]
+```
+
+Returns the text representation of the data.
+
+**Returns**:
+
+The text representation of the data.
+
+
+### \_repr\_html\_
+
+```python
+def _repr_html_() -> Optional[str]
+```
+
+Returns the HTML representation of the data.
+
+**Returns**:
+
+The HTML representation of the data.
+
+
+### \_repr\_markdown\_
+
+```python
+def _repr_markdown_() -> Optional[str]
+```
+
+Returns the Markdown representation of the data.
+
+**Returns**:
+
+The Markdown representation of the data.
+
+
+### \_repr\_svg\_
+
+```python
+def _repr_svg_() -> Optional[str]
+```
+
+Returns the SVG representation of the data.
+
+**Returns**:
+
+The SVG representation of the data.
+
+
+### \_repr\_png\_
+
+```python
+def _repr_png_() -> Optional[str]
+```
+
+Returns the base64 representation of the PNG data.
+
+**Returns**:
+
+The base64 representation of the PNG data.
+
+
+### \_repr\_jpeg\_
+
+```python
+def _repr_jpeg_() -> Optional[str]
+```
+
+Returns the base64 representation of the JPEG data.
+
+**Returns**:
+
+The base64 representation of the JPEG data.
+
+
+### \_repr\_pdf\_
+
+```python
+def _repr_pdf_() -> Optional[str]
+```
+
+Returns the PDF representation of the data.
+
+**Returns**:
+
+The PDF representation of the data.
+
+
+### \_repr\_latex\_
+
+```python
+def _repr_latex_() -> Optional[str]
+```
+
+Returns the LaTeX representation of the data.
+
+**Returns**:
+
+The LaTeX representation of the data.
+
+
+### \_repr\_json\_
+
+```python
+def _repr_json_() -> Optional[dict]
+```
+
+Returns the JSON representation of the data.
+
+**Returns**:
+
+The JSON representation of the data.
+
+
+### \_repr\_javascript\_
+
+```python
+def _repr_javascript_() -> Optional[str]
+```
+
+Returns the JavaScript representation of the data.
+
+**Returns**:
+
+The JavaScript representation of the data.
+
+
+## Logs
+
+```python
+@dataclass(repr=False)
+class Logs()
+```
+
+Data printed to stdout and stderr during execution, usually by print statements, logs, warnings, subprocesses, etc.
+
+
+### stdout
+
+List of strings printed to stdout by prints, subprocesses, etc.
+
+
+### stderr
+
+List of strings printed to stderr by prints, subprocesses, etc.
+
+
+### to\_json
+
+```python
+def to_json() -> str
+```
+
+Returns the JSON representation of the Logs object.
+
+
+### serialize\_results
+
+```python
+def serialize_results(results: List[Result]) -> List[Dict[str, str]]
+```
+
+Serializes the results to JSON.
+
+
+## Execution
+
+```python
+@dataclass(repr=False)
+class Execution()
+```
+
+Represents the result of a cell execution.
+
+
+### results
+
+List of the result of the cell (interactively interpreted last line), display calls (e.g. matplotlib plots).
+
+
+### logs
+
+Logs printed to stdout and stderr during execution.
+
+
+### error
+
+Error object if an error occurred, None otherwise.
+
+
+### execution\_count
+
+Execution count of the cell.
+
+
+### text
+
+```python
+@property
+def text() -> Optional[str]
+```
+
+Returns the text representation of the result.
+
+**Returns**:
+
+The text representation of the result.
+
+
+### to\_json
+
+```python
+def to_json() -> str
+```
+
+Returns the JSON representation of the Execution object.
+
+
+## Context
+
+```python
+@dataclass
+class Context()
+```
+
+Represents a context for code execution.
+
+
+### id
+
+The ID of the context.
+
+
+### language
+
+The language of the context.
+
+
+### cwd
+
+The working directory of the context.
+

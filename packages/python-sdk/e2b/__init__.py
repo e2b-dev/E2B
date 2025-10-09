@@ -72,6 +72,8 @@ from .sandbox_sync.paginator import SandboxPaginator
 
 from .template.main import TemplateBase, TemplateClass
 
+from .template.types import CopyItem
+
 from .template_sync.main import Template
 from .template_async.main import AsyncTemplate
 
@@ -137,6 +139,7 @@ __all__ = [
     "AsyncTemplate",
     "TemplateBase",
     "TemplateClass",
+    "CopyItem",
     "wait_for_file",
     "wait_for_url",
     "wait_for_port",

@@ -64,6 +64,8 @@ export default Sandbox
 
 export { BuildError, FileUploadError } from './template/errors'
 
+export type { CopyItem } from './template/types'
+
 export {
   waitForPort,
   waitForURL,
