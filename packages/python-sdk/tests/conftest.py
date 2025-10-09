@@ -1,4 +1,5 @@
 import asyncio
+from typing import Callable, Optional
 import uuid
 
 import pytest
@@ -17,6 +18,7 @@ from e2b import (
     AsyncTemplate,
     Template,
     TemplateClass,
+    LogEntry,
 )
 
 
@@ -66,12 +68,18 @@ async def async_sandbox(template, debug, sandbox_test_id):
 
 @pytest.fixture
 def build():
-    def _build(template: TemplateClass):
+    def _build(
+        template: TemplateClass,
+        skip_cache: bool = False,
+        on_build_logs: Optional[Callable[[LogEntry], None]] = None,
+    ):
         return Template.build(
             template,
             alias=str(uuid4()),
             cpu_count=1,
             memory_mb=1024,
+            skip_cache=skip_cache,
+            on_build_logs=on_build_logs,
         )
 
     return _build
@@ -79,12 +87,18 @@ def build():
 
 @pytest_asyncio.fixture
 def async_build():
-    async def _async_build(template: TemplateClass):
+    async def _async_build(
+        template: TemplateClass,
+        skip_cache: bool = False,
+        on_build_logs: Optional[Callable[[LogEntry], None]] = None,
+    ):
         return await AsyncTemplate.build(
             template,
             alias=str(uuid4()),
             cpu_count=1,
             memory_mb=1024,
+            skip_cache=skip_cache,
+            on_build_logs=on_build_logs,
         )
 
     return _async_build

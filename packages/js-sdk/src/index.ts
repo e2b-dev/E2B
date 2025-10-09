@@ -75,6 +75,14 @@ export {
 } from './template/readycmd'
 
 export {
+  LogEntry,
+  LogEntryStart,
+  LogEntryEnd,
+  type LogEntryLevel,
+  defaultBuildLogger,
+} from './template/logger'
+
+export {
   Template,
   type TemplateClass,
   type TemplateBuilder,

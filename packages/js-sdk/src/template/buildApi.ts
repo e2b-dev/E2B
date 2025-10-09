@@ -1,7 +1,7 @@
 import { ApiClient, handleApiError, paths } from '../api'
 import { stripAnsi } from '../utils'
 import { BuildError, FileUploadError } from './errors'
-import { LogEntry } from './types'
+import { LogEntry } from './logger'
 import { getBuildStepIndex, tarFileStreamUpload } from './utils'
 
 type RequestBuildInput = {
@@ -193,7 +193,7 @@ export async function waitForBuildFinish(
   }: {
     templateID: string
     buildID: string
-    onBuildLogs?: (logEntry: InstanceType<typeof LogEntry>) => void
+    onBuildLogs?: (logEntry: LogEntry) => void
     logsRefreshFrequency: number
     stackTraces: (string | undefined)[]
   }

@@ -1,3 +1,4 @@
+import type { PathLike } from 'node:fs'
 import { ApiClient } from '../api'
 import { ConnectionConfig } from '../connectionConfig'
 import { runtime } from '../utils'
@@ -11,12 +12,12 @@ import {
 } from './buildApi'
 import { RESOLVE_SYMLINKS, STACK_TRACE_DEPTH } from './consts'
 import { parseDockerfile } from './dockerfileParser'
+import { LogEntry, LogEntryEnd, LogEntryStart } from './logger'
 import { ReadyCmd } from './readycmd'
 import {
   CopyItem,
   Instruction,
   InstructionType,
-  LogEntry,
   RegistryConfig,
   TemplateBuilder,
   TemplateFinal,
@@ -30,7 +31,6 @@ import {
   readDockerignore,
   readGCPServiceAccountJSON,
 } from './utils'
-import type { PathLike } from 'node:fs'
 
 export { type TemplateBuilder } from './types'
 
@@ -44,7 +44,7 @@ type BasicBuildOptions = {
   cpuCount?: number
   memoryMB?: number
   skipCache?: boolean
-  onBuildLogs?: (logEntry: InstanceType<typeof LogEntry>) => void
+  onBuildLogs?: (logEntry: LogEntry) => void
 }
 
 export type BuildOptions = BasicBuildOptions & {
@@ -90,8 +90,16 @@ export class TemplateBase
     return (template as TemplateBase).toDockerfile()
   }
 
-  static build(template: TemplateClass, options: BuildOptions): Promise<void> {
-    return (template as TemplateBase).build(options)
+  static async build(
+    template: TemplateClass,
+    options: BuildOptions
+  ): Promise<void> {
+    try {
+      options.onBuildLogs?.(new LogEntryStart(new Date(), 'Build started'))
+      return await (template as TemplateBase).build(options)
+    } finally {
+      options.onBuildLogs?.(new LogEntryEnd(new Date(), 'Build finished'))
+    }
   }
 
   // Built-in image mixins
