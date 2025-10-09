@@ -498,7 +498,7 @@ export class TemplateBase
     return this
   }
 
-  skipCache(): TemplateBuilder {
+  skipCache(): this {
     this.forceNextLayer = true
     return this
   }
