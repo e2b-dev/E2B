@@ -127,10 +127,10 @@ export function getCallerDirectory(depth: number): string | undefined {
   }
   const firstLine = lines[0]
 
-  // Matches path like "at <anonymous> (path/to/file.js:1:1)"
-  const match = firstLine.match(/(?<=\()([^:()]+)(?=:)/)
+  // Matches pathes like "at <anonymous> (/path/to/file.js:1:1)" or "at /path/to/file.js:1:1"
+  const match = firstLine.match(/\/[^:]+/)
   if (match) {
-    const filePath = match[1]
+    const filePath = match[0]
     return path.dirname(filePath)
   }
 
