@@ -25,7 +25,7 @@ class SandboxBase:
     )
 
     envd_port = 49983
-    mcp_port = 8080
+    mcp_port = 50005
 
     default_sandbox_timeout = 300
 
