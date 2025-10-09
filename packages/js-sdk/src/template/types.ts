@@ -65,7 +65,7 @@ export interface TemplateFromImage {
     }
   ): TemplateBuilder
 
-  skipCache(): TemplateFromImage
+  skipCache(): this
 }
 
 // Interface for the main builder state
@@ -131,7 +131,7 @@ export interface TemplateBuilder {
 
   setEnvs(envs: Record<string, string>): TemplateBuilder
 
-  skipCache(): TemplateBuilder
+  skipCache(): this
 
   setStartCmd(
     startCommand: string,
