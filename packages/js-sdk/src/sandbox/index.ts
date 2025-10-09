@@ -321,11 +321,12 @@ export class Sandbox extends SandboxApi {
     const instance = new this({ ...sandbox, ...config }) as InstanceType<S>
 
     if (sandboxOpts?.mcp) {
-      const mcpUrl = instance.getHost(8080)
+      const mcpUrl = `https://${instance.getHost(8080)}/config`
       for (let i = 0; i < 5; i++) {
-        const res = await fetch(`https://${mcpUrl}/config`, {
+        const res = await fetch(mcpUrl, {
           method: 'POST',
           body: JSON.stringify(sandboxOpts?.mcp),
+          signal: AbortSignal.timeout(5000),
         })
         if (res.ok) {
           break
