@@ -127,7 +127,7 @@ export function getCallerDirectory(depth: number): string | undefined {
   }
   const firstLine = lines[0]
 
-  const match = firstLine.match(/(?<=\()[^:()]+(?=:)/)
+  const match = firstLine.match(/(?<=\()([^:()]+)(?=:)/)
   if (match) {
     const filePath = match[1]
     return path.dirname(filePath)
