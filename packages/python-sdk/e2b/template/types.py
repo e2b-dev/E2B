@@ -1,9 +1,9 @@
-from typing import List, Optional, TypedDict, Union
-from typing_extensions import NotRequired
-from typing import Literal
 from enum import Enum
 from pathlib import Path
-from e2b.template.utils import strip_ansi_escape_codes
+from typing import List, Optional, TypedDict, Union
+from typing import Literal
+
+from typing_extensions import NotRequired
 
 
 class InstructionType(str, Enum):
