@@ -53,7 +53,8 @@ export type BuildOptions = BasicBuildOptions & {
 }
 
 export class TemplateBase
-  implements TemplateFromImage, TemplateBuilder, TemplateFinal {
+  implements TemplateFromImage, TemplateBuilder, TemplateFinal
+{
   private defaultBaseImage: string = 'e2bdev/base'
   private baseImage: string | undefined = this.defaultBaseImage
   private baseTemplate: string | undefined = undefined
@@ -534,7 +535,7 @@ export class TemplateBase
     if (this.baseTemplate !== undefined) {
       throw new Error(
         'Cannot convert template built from another template to Dockerfile. ' +
-        'Templates based on other templates can only be built using the E2B API.'
+          'Templates based on other templates can only be built using the E2B API.'
       )
     }
 
