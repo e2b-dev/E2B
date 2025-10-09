@@ -1,4 +1,5 @@
 import datetime
+import time
 import logging
 
 import httpx
@@ -14,6 +15,7 @@ from e2b.envd.api import ENVD_API_HEALTH_ROUTE, handle_envd_api_exception
 from e2b.envd.versions import ENVD_DEBUG_FALLBACK
 from e2b.exceptions import SandboxException, format_request_timeout_error
 from e2b.sandbox.main import SandboxOpts
+from e2b.sandbox.mcp import McpServer
 from e2b.sandbox.sandbox_api import SandboxMetrics
 from e2b.sandbox.utils import class_method_variant
 from e2b.sandbox_sync.filesystem.filesystem import Filesystem
@@ -508,6 +510,7 @@ class Sandbox(SandboxApi):
         envs: Optional[Dict[str, str]] = None,
         secure: bool = True,
         allow_internet_access: bool = True,
+        mcp: Optional[McpServer] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
         """
@@ -524,12 +527,21 @@ class Sandbox(SandboxApi):
         :param envs: Custom environment variables for the sandbox
         :param secure: Envd is secured with access token and cannot be used without it, defaults to `True`.
         :param allow_internet_access: Allow sandbox to access the internet, defaults to `True`.
+        :param mcp: MCP server to enable in the sandbox
 
         :return: A Sandbox instance for the new sandbox
 
         Use this method instead of using the constructor to create a new sandbox.
         """
-        return cls._create(
+
+        if not template and mcp is not None:
+            template = cls.default_mcp_template
+        elif not template:
+            template = cls.default_template
+
+        print("template", template)
+
+        sandbox = cls._create(
             template=template,
             auto_pause=auto_pause,
             timeout=timeout,
@@ -539,6 +551,45 @@ class Sandbox(SandboxApi):
             allow_internet_access=allow_internet_access,
             **opts,
         )
+
+        if mcp is not None:
+            mcp_url = f"{'http' if sandbox.connection_config.debug else 'https'}://{sandbox.get_host(sandbox.mcp_port)}"
+
+            mcp_api = httpx.Client(
+                base_url=mcp_url,
+                transport=sandbox._transport,
+                headers=sandbox.connection_config.sandbox_headers,
+            )
+
+            mcp_configured = False
+
+            # TODO: The MCP config seems to succeed on first attempt, but we are keeping the retry logic here for now.
+            for _ in range(5):
+                try:
+                    res = mcp_api.post(
+                        "/config",
+                        json=mcp,
+                        timeout=sandbox.connection_config.get_request_timeout(),
+                    )
+
+                    if res.status_code == 200:
+                        mcp_configured = True
+
+                        break
+
+                except Exception as e:
+                    logger.warning(f"Failed to POST MCP config: {e}")
+
+                time.sleep(0.25)
+
+            if not mcp_configured:
+                sandbox.kill()
+
+                raise SandboxException(
+                    f"Failed to configure MCP server. The sandbox template '{template}' might not be configured with MCP gateway inside."
+                )
+
+        return sandbox
 
     @overload
     def beta_pause(

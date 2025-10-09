@@ -1,7 +1,7 @@
 import pytest
 import linecache
 
-from e2b import AsyncTemplate, wait_for_timeout
+from e2b import AsyncTemplate, CopyItem, wait_for_timeout
 
 non_existent_path = "/nonexistent/path"
 
@@ -50,16 +50,14 @@ async def test_traces_on_from_dockerfile(async_build):
 
 
 @pytest.mark.skip_debug()
-async def test_traces_on_from_registry(async_build):
+async def test_traces_on_from_image_registry(async_build):
     template = AsyncTemplate()
-    template = template.skip_cache().from_registry(
+    template = template.skip_cache().from_image(
         "registry.example.com/nonexistent:latest",
         username="test",
         password="test",
     )
-    await _expect_to_throw_and_check_trace(
-        lambda: async_build(template), "from_registry"
-    )
+    await _expect_to_throw_and_check_trace(lambda: async_build(template), "from_image")
 
 
 @pytest.mark.skip_debug()
@@ -96,6 +94,16 @@ async def test_traces_on_copy(async_build):
     template = template.from_base_image()
     template = template.skip_cache().copy(non_existent_path, non_existent_path)
     await _expect_to_throw_and_check_trace(lambda: async_build(template), "copy")
+
+
+@pytest.mark.skip_debug()
+async def test_traces_on_copyItems(async_build):
+    template = AsyncTemplate()
+    template = template.from_base_image()
+    template = template.skip_cache().copy_items(
+        [CopyItem(src=non_existent_path, dest=non_existent_path)]
+    )
+    await _expect_to_throw_and_check_trace(lambda: async_build(template), "copy_items")
 
 
 @pytest.mark.skip_debug()
@@ -189,7 +197,7 @@ async def test_traces_on_git_clone(async_build):
 
 
 @pytest.mark.skip_debug()
-async def test_traces_on_set_start_cmd(async_build):
+async def test_traces_on_start_cmd(async_build):
     template = AsyncTemplate()
     template = template.from_base_image()
     template = template.set_start_cmd(

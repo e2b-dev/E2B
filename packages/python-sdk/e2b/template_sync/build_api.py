@@ -24,7 +24,8 @@ from e2b.api.client.models import (
     Error,
 )
 from e2b.template.exceptions import BuildException, FileUploadException
-from e2b.template.types import TemplateType, LogEntry
+from e2b.template.logger import LogEntry
+from e2b.template.types import TemplateType
 from e2b.template.utils import get_build_step_index
 
 

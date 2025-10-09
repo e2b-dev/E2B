@@ -46,6 +46,8 @@ export type {
   SandboxPaginator,
 } from './sandbox/sandboxApi'
 
+export type { McpServer } from './sandbox/mcp'
+
 export type {
   ProcessInfo,
   CommandRequestOpts,
@@ -62,6 +64,8 @@ export default Sandbox
 
 export { BuildError, FileUploadError } from './template/errors'
 
+export type { CopyItem } from './template/types'
+
 export {
   waitForPort,
   waitForURL,
@@ -69,6 +73,14 @@ export {
   waitForFile,
   waitForTimeout,
 } from './template/readycmd'
+
+export {
+  LogEntry,
+  LogEntryStart,
+  LogEntryEnd,
+  type LogEntryLevel,
+  defaultBuildLogger,
+} from './template/logger'
 
 export {
   Template,

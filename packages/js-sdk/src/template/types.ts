@@ -1,5 +1,5 @@
-import { stripAnsi } from '../utils'
 import { ReadyCmd } from './readycmd'
+import type { PathLike } from 'node:fs'
 
 export enum InstructionType {
   COPY = 'COPY',
@@ -13,15 +13,15 @@ export type Instruction = {
   type: InstructionType
   args: string[]
   force: boolean
-  forceUpload?: boolean
+  forceUpload?: true
   filesHash?: string
   resolveSymlinks?: boolean
 }
 
 export type CopyItem = {
-  src: string
-  dest: string
-  forceUpload?: boolean
+  src: PathLike | PathLike[]
+  dest: PathLike
+  forceUpload?: true
   user?: string
   mode?: number
   resolveSymlinks?: boolean
@@ -39,23 +39,18 @@ export interface TemplateFromImage {
 
   fromBaseImage(): TemplateBuilder
 
-  fromImage(baseImage: string): TemplateBuilder
+  fromImage(
+    baseImage: string,
+    credentials?: { username: string; password: string }
+  ): TemplateBuilder
 
   fromTemplate(template: string): TemplateBuilder
 
   fromDockerfile(dockerfileContent: string): TemplateBuilder
 
-  fromRegistry(
-    image: string,
-    options: {
-      username: string
-      password: string
-    }
-  ): TemplateBuilder
-
   fromAWSRegistry(
     image: string,
-    options: {
+    credentials: {
       accessKeyId: string
       secretAccessKey: string
       region: string
@@ -64,7 +59,7 @@ export interface TemplateFromImage {
 
   fromGCPRegistry(
     image: string,
-    options: {
+    credentials: {
       serviceAccountJSON: object | string
     }
   ): TemplateBuilder
@@ -75,8 +70,8 @@ export interface TemplateFromImage {
 // Interface for the main builder state
 export interface TemplateBuilder {
   copy(
-    src: string,
-    dest: string,
+    src: PathLike | PathLike[],
+    dest: PathLike,
     options?: {
       forceUpload?: true
       user?: string
@@ -85,25 +80,25 @@ export interface TemplateBuilder {
     }
   ): TemplateBuilder
 
-  copy(items: CopyItem[]): TemplateBuilder
+  copyItems(items: CopyItem[]): TemplateBuilder
 
   remove(
-    path: string,
+    path: PathLike | PathLike[],
     options?: { force?: boolean; recursive?: boolean }
   ): TemplateBuilder
 
   rename(
-    src: string,
-    dest: string,
+    src: PathLike,
+    dest: PathLike,
     options?: { force?: boolean }
   ): TemplateBuilder
 
   makeDir(
-    paths: string | string[],
+    path: PathLike | PathLike[],
     options?: { mode?: number }
   ): TemplateBuilder
 
-  makeSymlink(src: string, dest: string): TemplateBuilder
+  makeSymlink(src: PathLike, dest: PathLike): TemplateBuilder
 
   runCmd(command: string, options?: { user?: string }): TemplateBuilder
 
@@ -114,7 +109,7 @@ export interface TemplateBuilder {
     options?: { user?: string }
   ): TemplateBuilder
 
-  setWorkdir(workdir: string): TemplateBuilder
+  setWorkdir(workdir: PathLike): TemplateBuilder
 
   setUser(user: string): TemplateBuilder
 
@@ -129,7 +124,7 @@ export interface TemplateBuilder {
 
   gitClone(
     url: string,
-    path?: string,
+    path?: PathLike,
     options?: { branch?: string; depth?: number }
   ): TemplateBuilder
 
@@ -148,20 +143,6 @@ export interface TemplateBuilder {
 // Interface for the final state
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface TemplateFinal {}
-
-export class LogEntry {
-  constructor(
-    public readonly timestamp: Date,
-    public readonly level: 'debug' | 'info' | 'warn' | 'error',
-    public readonly message: string
-  ) {}
-
-  toString() {
-    return `[${this.timestamp.toISOString()}] [${this.level}] ${stripAnsi(
-      this.message
-    )}`
-  }
-}
 
 export type GenericDockerRegistry = {
   type: 'registry'

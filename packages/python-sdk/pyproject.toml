@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "e2b"
-version = "2.2.1"
+version = "2.2.4"
 description = "E2B SDK that give agents cloud environments"
 authors = ["e2b <hello@e2b.dev>"]
 license = "MIT"
@@ -20,6 +20,7 @@ attrs = ">=23.2.0"
 packaging = ">=24.1"
 typing-extensions = ">=4.1.0"
 dockerfile-parse = "^2.0.1"
+rich = ">=14.0.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.0"
@@ -28,6 +29,7 @@ python-dotenv = "^1.0.0"
 pytest-dotenv = "^0.5.2"
 pytest-asyncio = "^0.23.7"
 pydoc-markdown = "^4.8.2"
+datamodel-code-generator = "^0.34.0"
 ruff = "^0.11.12"
 
 [build-system]

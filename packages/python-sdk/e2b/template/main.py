@@ -1,5 +1,6 @@
 import json
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Union, Literal
+from pathlib import Path
 
 from httpx import Limits
 
@@ -30,65 +31,74 @@ class TemplateBuilder:
 
     def copy(
         self,
-        src: Union[str, List[CopyItem]],
-        dest: Optional[str] = None,
-        force_upload: Optional[bool] = None,
+        src: Union[Union[str, Path], List[Union[str, Path]]],
+        dest: Union[str, Path],
+        force_upload: Optional[Literal[True]] = None,
         user: Optional[str] = None,
         mode: Optional[int] = None,
         resolve_symlinks: Optional[bool] = None,
     ) -> "TemplateBuilder":
-        if isinstance(src, str):
-            # Single copy operation
-            if dest is None:
-                raise ValueError("dest parameter is required when src is a string")
-            copy_items: List[CopyItem] = [
-                CopyItem(
-                    src=src,
-                    dest=dest,
-                    forceUpload=force_upload,
-                    user=user,
-                    mode=mode,
-                    resolveSymlinks=resolve_symlinks,
-                )
-            ]
-        else:
-            # Multiple copy operations
-            copy_items = src
+        srcs = [src] if isinstance(src, (str, Path)) else src
 
-        for copy_item in copy_items:
+        for src_item in srcs:
             args = [
-                copy_item["src"],
-                copy_item["dest"],
+                str(src_item),
+                str(dest),
                 user or "",
                 pad_octal(mode) if mode else "",
             ]
 
-            instruction: Instruction = Instruction(
-                type=InstructionType.COPY,
-                args=args,
-                force=force_upload or self._template._force_next_layer,
-                forceUpload=force_upload,
-                resolveSymlinks=resolve_symlinks,
-            )
+            instruction: Instruction = {
+                "type": InstructionType.COPY,
+                "args": args,
+                "force": force_upload or self._template._force_next_layer,
+                "forceUpload": force_upload,
+                "resolveSymlinks": resolve_symlinks,
+            }
+
             self._template._instructions.append(instruction)
+
         self._template._collect_stack_trace()
         return self
 
+    def copy_items(self, items: List[CopyItem]) -> "TemplateBuilder":
+        self._template._run_in_new_stack_trace_context(
+            lambda: [
+                self.copy(
+                    item["src"],
+                    item["dest"],
+                    item.get("forceUpload"),
+                    item.get("user"),
+                    item.get("mode"),
+                    item.get("resolveSymlinks"),
+                )
+                for item in items
+            ]
+        )
+        return self
+
     def remove(
-        self, path: str, force: bool = False, recursive: bool = False
+        self,
+        path: Union[Union[str, Path], List[Union[str, Path]]],
+        force: bool = False,
+        recursive: bool = False,
     ) -> "TemplateBuilder":
-        args = ["rm", path]
+        paths = [path] if isinstance(path, (str, Path)) else path
+        args = ["rm"]
         if recursive:
             args.append("-r")
         if force:
             args.append("-f")
+        args.extend([str(p) for p in paths])
 
         return self._template._run_in_new_stack_trace_context(
             lambda: self.run_cmd(" ".join(args))
         )
 
-    def rename(self, src: str, dest: str, force: bool = False) -> "TemplateBuilder":
-        args = ["mv", src, dest]
+    def rename(
+        self, src: Union[str, Path], dest: Union[str, Path], force: bool = False
+    ) -> "TemplateBuilder":
+        args = ["mv", str(src), str(dest)]
         if force:
             args.append("-f")
 
@@ -97,21 +107,24 @@ class TemplateBuilder:
         )
 
     def make_dir(
-        self, paths: Union[str, List[str]], mode: Optional[int] = None
+        self,
+        path: Union[Union[str, Path], List[Union[str, Path]]],
+        mode: Optional[int] = None,
     ) -> "TemplateBuilder":
-        if isinstance(paths, str):
-            paths = [paths]
-
-        args = ["mkdir", "-p", *paths]
+        path_list = [path] if isinstance(path, (str, Path)) else path
+        args = ["mkdir", "-p"]
         if mode:
             args.append(f"-m {pad_octal(mode)}")
+        args.extend([str(p) for p in path_list])
 
         return self._template._run_in_new_stack_trace_context(
             lambda: self.run_cmd(" ".join(args))
         )
 
-    def make_symlink(self, src: str, dest: str) -> "TemplateBuilder":
-        args = ["ln", "-s", src, dest]
+    def make_symlink(
+        self, src: Union[str, Path], dest: Union[str, Path]
+    ) -> "TemplateBuilder":
+        args = ["ln", "-s", str(src), str(dest)]
         return self._template._run_in_new_stack_trace_context(
             lambda: self.run_cmd(" ".join(args))
         )
@@ -125,34 +138,34 @@ class TemplateBuilder:
         if user:
             args.append(user)
 
-        instruction: Instruction = Instruction(
-            type=InstructionType.RUN,
-            args=args,
-            force=self._template._force_next_layer,
-            forceUpload=None,
-        )
+        instruction: Instruction = {
+            "type": InstructionType.RUN,
+            "args": args,
+            "force": self._template._force_next_layer,
+            "forceUpload": None,
+        }
         self._template._instructions.append(instruction)
         self._template._collect_stack_trace()
         return self
 
-    def set_workdir(self, workdir: str) -> "TemplateBuilder":
-        instruction: Instruction = Instruction(
-            type=InstructionType.WORKDIR,
-            args=[workdir],
-            force=self._template._force_next_layer,
-            forceUpload=None,
-        )
+    def set_workdir(self, workdir: Union[str, Path]) -> "TemplateBuilder":
+        instruction: Instruction = {
+            "type": InstructionType.WORKDIR,
+            "args": [str(workdir)],
+            "force": self._template._force_next_layer,
+            "forceUpload": None,
+        }
         self._template._instructions.append(instruction)
         self._template._collect_stack_trace()
         return self
 
     def set_user(self, user: str) -> "TemplateBuilder":
-        instruction: Instruction = Instruction(
-            type=InstructionType.USER,
-            args=[user],
-            force=self._template._force_next_layer,
-            forceUpload=None,
-        )
+        instruction: Instruction = {
+            "type": InstructionType.USER,
+            "args": [user],
+            "force": self._template._force_next_layer,
+            "forceUpload": None,
+        }
         self._template._instructions.append(instruction)
         self._template._collect_stack_trace()
         return self
@@ -208,18 +221,18 @@ class TemplateBuilder:
     def git_clone(
         self,
         url: str,
-        path: Optional[str] = None,
+        path: Optional[Union[str, Path]] = None,
         branch: Optional[str] = None,
         depth: Optional[int] = None,
     ) -> "TemplateBuilder":
         args = ["git", "clone", url]
-        if path:
-            args.append(path)
         if branch:
             args.append(f"--branch {branch}")
             args.append("--single-branch")
         if depth:
             args.append(f"--depth {depth}")
+        if path:
+            args.append(str(path))
         return self._template._run_in_new_stack_trace_context(
             lambda: self.run_cmd(" ".join(args))
         )
@@ -228,12 +241,12 @@ class TemplateBuilder:
         if len(envs) == 0:
             return self
 
-        instruction: Instruction = Instruction(
-            type=InstructionType.ENV,
-            args=[item for key, value in envs.items() for item in [key, value]],
-            force=self._template._force_next_layer,
-            forceUpload=None,
-        )
+        instruction: Instruction = {
+            "type": InstructionType.ENV,
+            "args": [item for key, value in envs.items() for item in [key, value]],
+            "force": self._template._force_next_layer,
+            "forceUpload": None,
+        }
         self._template._instructions.append(instruction)
         self._template._collect_stack_trace()
         return self
@@ -278,8 +291,8 @@ class TemplateBase:
 
     def __init__(
         self,
-        file_context_path: Optional[str] = None,
-        ignore_file_paths: Optional[List[str]] = None,
+        file_context_path: Optional[Union[str, Path]] = None,
+        file_ignore_patterns: Optional[List[str]] = None,
     ):
         self._default_base_image: str = "e2bdev/base"
         self._base_image: Optional[str] = self._default_base_image
@@ -293,11 +306,13 @@ class TemplateBase:
         self._force_next_layer: bool = False
         self._instructions: List[Instruction] = []
         # If no file_context_path is provided, use the caller's directory
-        self._file_context_path: str = (
-            file_context_path or get_caller_directory(STACK_TRACE_DEPTH) or "."
+        self._file_context_path = (
+            file_context_path.as_posix()
+            if isinstance(file_context_path, Path)
+            else (file_context_path or get_caller_directory(STACK_TRACE_DEPTH) or ".")
         )
-        self._ignore_file_paths: List[str] = ignore_file_paths or []
-        self._stack_traces: List[TracebackType] = []
+        self._file_ignore_patterns: List[str] = file_ignore_patterns or []
+        self._stack_traces: List[Union[TracebackType, None]] = []
         self._stack_traces_enabled: bool = True
 
     def skip_cache(self) -> "TemplateBase":
@@ -306,7 +321,7 @@ class TemplateBase:
         return self
 
     def _collect_stack_trace(
-        self, stack_traces_depth: Optional[int] = STACK_TRACE_DEPTH
+        self, stack_traces_depth: int = STACK_TRACE_DEPTH
     ) -> "TemplateBase":
         """Collect stack trace if enabled"""
         if not self._stack_traces_enabled:
@@ -373,15 +388,22 @@ class TemplateBase:
         )
 
     def from_image(
-        self, base_image: str, registry_config: Optional[RegistryConfig] = None
+        self,
+        image: str,
+        username: Optional[str] = None,
+        password: Optional[str] = None,
     ) -> TemplateBuilder:
         """Private method to set base image without adding stack trace"""
-        self._base_image = base_image
+        self._base_image = image
         self._base_template = None
 
         # Set the registry config if provided
-        if registry_config is not None:
-            self._registry_config = registry_config
+        if username and password:
+            self._registry_config = {
+                "type": "registry",
+                "username": username,
+                "password": password,
+            }
 
         # If we should force the next layer and it's a FROM command, invalidate whole template
         if self._force_next_layer:
@@ -422,20 +444,6 @@ class TemplateBase:
         self._collect_stack_trace()
         return builder
 
-    def from_registry(
-        self, image: str, username: str, password: str
-    ) -> TemplateBuilder:
-        return self._run_in_new_stack_trace_context(
-            lambda: self.from_image(
-                image,
-                registry_config={
-                    "type": "registry",
-                    "username": username,
-                    "password": password,
-                },
-            )
-        )
-
     def from_aws_registry(
         self,
         image: str,
@@ -443,32 +451,44 @@ class TemplateBase:
         secret_access_key: str,
         region: str,
     ) -> TemplateBuilder:
-        return self._run_in_new_stack_trace_context(
-            lambda: self.from_image(
-                image,
-                registry_config={
-                    "type": "aws",
-                    "awsAccessKeyId": access_key_id,
-                    "awsSecretAccessKey": secret_access_key,
-                    "awsRegion": region,
-                },
-            )
-        )
+        self._base_image = image
+        self._base_template = None
+
+        # Set the registry config if provided
+        self._registry_config = {
+            "type": "aws",
+            "awsAccessKeyId": access_key_id,
+            "awsSecretAccessKey": secret_access_key,
+            "awsRegion": region,
+        }
+
+        # If we should force the next layer and it's a FROM command, invalidate whole template
+        if self._force_next_layer:
+            self._force = True
+
+        self._collect_stack_trace()
+        return TemplateBuilder(self)
 
     def from_gcp_registry(
         self, image: str, service_account_json: Union[str, dict]
     ) -> TemplateBuilder:
-        return self._run_in_new_stack_trace_context(
-            lambda: self.from_image(
-                image,
-                registry_config={
-                    "type": "gcp",
-                    "serviceAccountJson": read_gcp_service_account_json(
-                        self._file_context_path, service_account_json
-                    ),
-                },
-            )
-        )
+        self._base_image = image
+        self._base_template = None
+
+        # Set the registry config if provided
+        self._registry_config = {
+            "type": "gcp",
+            "serviceAccountJson": read_gcp_service_account_json(
+                self._file_context_path, service_account_json
+            ),
+        }
+
+        # If we should force the next layer and it's a FROM command, invalidate whole template
+        if self._force_next_layer:
+            self._force = True
+
+        self._collect_stack_trace()
+        return TemplateBuilder(self)
 
     @staticmethod
     def to_json(template: "TemplateClass") -> str:
@@ -508,13 +528,13 @@ class TemplateBase:
         steps: List[Instruction] = []
 
         for index, instruction in enumerate(self._instructions):
-            step: Instruction = Instruction(
-                type=instruction["type"],
-                args=instruction["args"],
-                force=instruction["force"],
-                forceUpload=instruction.get("forceUpload"),
-                resolveSymlinks=instruction.get("resolveSymlinks"),
-            )
+            step: Instruction = {
+                "type": instruction["type"],
+                "args": instruction["args"],
+                "force": instruction["force"],
+                "forceUpload": instruction.get("forceUpload"),
+                "resolveSymlinks": instruction.get("resolveSymlinks"),
+            }
 
             if instruction["type"] == InstructionType.COPY:
                 stack_trace = None
@@ -532,7 +552,7 @@ class TemplateBase:
                     dest,
                     self._file_context_path,
                     [
-                        *self._ignore_file_paths,
+                        *self._file_ignore_patterns,
                         *read_dockerignore(self._file_context_path),
                     ],
                     instruction.get("resolveSymlinks", RESOLVE_SYMLINKS),
@@ -546,12 +566,11 @@ class TemplateBase:
     def _serialize(self, steps: List[Instruction]) -> TemplateType:
         _steps: List[Instruction] = []
 
-        for index, instruction in enumerate(steps):
-            step = {
-                # Serialize enum to string value
-                "type": instruction["type"].value,
-                "args": instruction["args"],
-                "force": instruction["force"],
+        for _, instruction in enumerate(steps):
+            step: Instruction = {
+                "type": instruction.get("type"),
+                "args": instruction.get("args"),
+                "force": instruction.get("force"),
             }
 
             if instruction.get("filesHash") is not None:
