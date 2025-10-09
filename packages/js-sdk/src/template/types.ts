@@ -47,7 +47,7 @@ export interface TemplateFromImage {
 
   fromTemplate(template: string): TemplateBuilder
 
-  fromDockerfile(dockerfileContent: string): TemplateBuilder
+  fromDockerfile(dockerfileContentOrPath: string): TemplateBuilder
 
   fromAWSRegistry(
     image: string,
