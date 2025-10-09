@@ -70,3 +70,16 @@ buildTemplateTest(
     await buildTemplate(template)
   }
 )
+
+buildTemplateTest(
+  'build template with skipCache',
+  { timeout: 180000 },
+  async ({ buildTemplate }) => {
+    const template = Template()
+      .skipCache()
+      .fromImage('ubuntu:22.04')
+      .setStartCmd('echo "Hello, world!"', waitForTimeout(10_000))
+
+    await buildTemplate(template)
+  }
+)
