@@ -170,7 +170,7 @@ class SandboxBase:
 
         return f"{port}-{self.sandbox_id}.{self.sandbox_domain}"
 
-    def beta_mcp_server_url(self) -> str:
+    def beta_get_mcp_url(self) -> str:
         """
         [BETA] This feature is in beta and may change in the future.
 
@@ -179,15 +179,3 @@ class SandboxBase:
         :returns MCP URL for the sandbox.
         """
         return f"https://{self.get_host(self.mcp_port)}/mcp"
-
-
-#   /**
-#    * @beta This feature is in beta and may change in the future.
-#    *
-#    * Get the MCP URL for the sandbox.
-#    *
-#    * @returns MCP URL for the sandbox.
-#    */
-#   betaGetMcpUrl(): string {
-#     return `https://${this.getHost(8080)}/mcp`
-#   }
