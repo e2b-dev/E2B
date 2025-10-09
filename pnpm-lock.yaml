@@ -118,8 +118,8 @@ importers:
         specifier: ^1.2.1
         version: 1.2.1
       e2b:
-        specifier: ^2.2.4
-        version: 2.2.4
+        specifier: ^2.2.5
+        version: 2.2.5
       fast-glob:
         specifier: ^3.3.0
         version: 3.3.1
@@ -275,8 +275,8 @@ importers:
         specifier: ^0.6.1
         version: 0.6.1
       e2b:
-        specifier: ^2.2.2
-        version: 2.2.2
+        specifier: ^2.2.5
+        version: 2.2.5
       handlebars:
         specifier: ^4.7.8
         version: 4.7.8
@@ -356,6 +356,9 @@ importers:
       '@connectrpc/connect-web':
         specifier: 2.0.0-rc.3
         version: 2.0.0-rc.3(@bufbuild/protobuf@2.6.2)(@connectrpc/connect@2.0.0-rc.3(@bufbuild/protobuf@2.6.2))
+      chalk:
+        specifier: ^5.3.0
+        version: 5.3.0
       compare-versions:
         specifier: ^6.1.0
         version: 6.1.1
@@ -4007,12 +4010,8 @@ packages:
     resolution: {integrity: sha512-KIN/nDJBQRcXw0MLVhZE9iQHmG68qAVIBg9CqmUYjmQIhgij9U5MFvrqkUL5FbtyyzZuOeOt0zdeRe4UY7ct+A==}
     engines: {node: '>= 0.4'}
 
-  e2b@2.2.2:
-    resolution: {integrity: sha512-LKtmoT1jCXxWZ3z7+b4w0fyJcD94sPsdORM2gZdxMr8ISjqpTUWpdNCbypZixxLoswcwIm4WvMueWlFQHiNryA==}
-    engines: {node: '>=20'}
-
-  e2b@2.2.4:
-    resolution: {integrity: sha512-cFyMKn6oYpUu2otHIxazXyO4VD+poy5b70Iaot4VNM1YCCdC/s927N3i3UIU3lnpLQkZgfZhy3ocIfwlEKEZWQ==}
+  e2b@2.2.5:
+    resolution: {integrity: sha512-0FoNtcSOPOqgfePTQxez1ZNCyav3oN/vpX48y0MfrrCeADZAE7wMczUDM3j+K+ih+pbLQCA35KYtQEfcRaK9eA==}
     engines: {node: '>=20'}
 
   eastasianwidth@0.2.0:
@@ -12311,23 +12310,12 @@ snapshots:
       es-errors: 1.3.0
       gopd: 1.2.0
 
-  e2b@2.2.2:
+  e2b@2.2.5:
     dependencies:
       '@bufbuild/protobuf': 2.6.2
       '@connectrpc/connect': 2.0.0-rc.3(@bufbuild/protobuf@2.6.2)
       '@connectrpc/connect-web': 2.0.0-rc.3(@bufbuild/protobuf@2.6.2)(@connectrpc/connect@2.0.0-rc.3(@bufbuild/protobuf@2.6.2))
-      compare-versions: 6.1.1
-      dockerfile-ast: 0.7.1
-      glob: 11.0.3
-      openapi-fetch: 0.9.8
-      platform: 1.3.6
-      tar: 7.4.3
-
-  e2b@2.2.4:
-    dependencies:
-      '@bufbuild/protobuf': 2.6.2
-      '@connectrpc/connect': 2.0.0-rc.3(@bufbuild/protobuf@2.6.2)
-      '@connectrpc/connect-web': 2.0.0-rc.3(@bufbuild/protobuf@2.6.2)(@connectrpc/connect@2.0.0-rc.3(@bufbuild/protobuf@2.6.2))
+      chalk: 5.3.0
       compare-versions: 6.1.1
       dockerfile-ast: 0.7.1
       glob: 11.0.3

@@ -1,11 +1,9 @@
-from typing import List, Optional, TypedDict, Union
-from typing_extensions import NotRequired
-from dataclasses import dataclass
-from datetime import datetime
-from typing import Literal
 from enum import Enum
 from pathlib import Path
-from e2b.template.utils import strip_ansi_escape_codes
+from typing import List, Optional, TypedDict, Union
+from typing import Literal
+
+from typing_extensions import NotRequired
 
 
 class InstructionType(str, Enum):
@@ -32,19 +30,6 @@ class Instruction(TypedDict):
     forceUpload: NotRequired[Optional[Literal[True]]]
     filesHash: NotRequired[Optional[str]]
     resolveSymlinks: NotRequired[Optional[bool]]
-
-
-@dataclass
-class LogEntry:
-    timestamp: datetime
-    level: Literal["debug", "info", "warn", "error"]
-    message: str
-
-    def __post_init__(self):
-        self.message = strip_ansi_escape_codes(self.message)
-
-    def __str__(self) -> str:
-        return f"[{self.timestamp.isoformat()}] [{self.level}] {self.message}"
 
 
 class GenericDockerRegistry(TypedDict):

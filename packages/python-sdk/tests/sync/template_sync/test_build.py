@@ -4,7 +4,7 @@ import pytest
 import os
 import shutil
 
-from e2b import Template, wait_for_timeout
+from e2b import Template, wait_for_timeout, default_build_logger
 
 
 @pytest.fixture(scope="module")
@@ -51,7 +51,7 @@ def test_build_template(build, setup_test_folder):
         .set_start_cmd("echo 'Hello, world!'", wait_for_timeout(10_000))
     )
 
-    build(template)
+    build(template, skip_cache=False, on_build_logs=default_build_logger())
 
 
 @pytest.mark.skip_debug()

@@ -1,6 +1,6 @@
 import * as boxen from 'boxen'
 import * as commander from 'commander'
-import { Template, TemplateClass } from 'e2b'
+import { defaultBuildLogger, Template, TemplateClass } from 'e2b'
 import { connectionConfig, ensureAccessToken, ensureAPIKey } from 'src/api'
 import {
   defaultDockerfileName,
@@ -144,7 +144,7 @@ export const buildV2Command = new commander.Command('build-v2')
             skipCache: opts.noCache,
             apiKey: apiKey,
             domain: domain,
-            onBuildLogs: (logEntry) => console.log(logEntry.toString()),
+            onBuildLogs: defaultBuildLogger(),
           })
         } catch (error) {
           console.error('\n❌ Template build failed.')
