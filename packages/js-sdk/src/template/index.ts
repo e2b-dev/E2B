@@ -34,14 +34,6 @@ import {
 
 export { type TemplateBuilder } from './types'
 
-export {
-  defaultBuildLogger,
-  LogEntry,
-  LogEntryEnd,
-  LogEntryStart,
-  type LogEntryLevel,
-} from './logger'
-
 type TemplateOptions = {
   fileContextPath?: PathLike
   fileIgnorePatterns?: string[]
