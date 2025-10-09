@@ -23,7 +23,7 @@ export function Layout({
 
   return (
     <SectionProvider
-      sections={relativePathname ? allSections[relativePathname] ?? [] : []}
+      sections={relativePathname ? (allSections[relativePathname] ?? []) : []}
     >
       <div
         className={clsx('h-[100vh] w-full', {
