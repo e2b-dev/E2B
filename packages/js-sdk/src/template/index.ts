@@ -490,7 +490,7 @@ export class TemplateBase
     return this
   }
 
-  skipCache() {
+  skipCache(): this {
     this.forceNextLayer = true
     return this
   }
