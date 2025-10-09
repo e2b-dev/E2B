@@ -1,7 +1,7 @@
 import sys
 import threading
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Optional, TypedDict, Callable, Dict, Literal
 
@@ -29,14 +29,12 @@ class LogEntry:
 
 @dataclass
 class LogEntryStart(LogEntry):
-    def __init__(self, timestamp: datetime, message: str):
-        super().__init__(timestamp, "debug", message)
+    level: LogEntryLevel = field(default="debug", init=False)
 
 
 @dataclass
 class LogEntryEnd(LogEntry):
-    def __init__(self, timestamp: datetime, message: str):
-        super().__init__(timestamp, "debug", message)
+    level: LogEntryLevel = field(default="debug", init=False)
 
 
 TIMER_UPDATE_INTERVAL_MS = 150
