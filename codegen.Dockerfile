@@ -34,7 +34,7 @@ ENV PATH="/go/bin:${PATH}"
 
 # Install Python deps (e2b-openapi-python-client is patched version to fix issue with explode)
 # https://github.com/openapi-generators/openapi-python-client/pull/1296
-RUN pip install black==23.7.0 pyyaml==6.0.2 e2b-openapi-python-client==0.26.2
+RUN pip install black==23.7.0 pyyaml==6.0.2 e2b-openapi-python-client==0.26.2 datamodel-code-generator==0.34.0
 
 # Install Node.js and npm
 RUN apt-get update && \

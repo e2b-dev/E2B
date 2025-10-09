@@ -18,13 +18,25 @@ generate-envd:
 
 	ruff format .
 
-generate: generate-api generate-envd
+generate: generate-api generate-envd generate-mcp
 
 init:
-	pip install openapi-python-client
+	pip install openapi-python-client datamodel-code-generator
 
 lint:
 	ruff check .
 
 format:
 	ruff format .
+
+generate-mcp:
+	datamodel-codegen \
+			--input ../../spec/mcp-server.json \
+			--input-file-type jsonschema \
+			--output e2b/sandbox/mcp.py \
+			--output-model-type typing.TypedDict \
+			--target-python-version 3.9 \
+			--class-name McpServer \
+			--use-field-description \
+			--disable-timestamp \
+			--extra-fields forbid

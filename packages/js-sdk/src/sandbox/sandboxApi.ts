@@ -7,6 +7,7 @@ import {
 import { compareVersions } from 'compare-versions'
 import { NotFoundError, TemplateError } from '../errors'
 import { timeoutToSeconds } from '../utils'
+import type { McpServer } from './mcp'
 
 /**
  * Options for request to the Sandbox API.
@@ -69,6 +70,12 @@ export type SandboxBetaCreateOpts = SandboxOpts & {
    * @default false
    */
   autoPause?: boolean
+
+  /**
+   * MCP server to enable in the sandbox
+   * @default undefined
+   */
+  mcp?: McpServer
 }
 
 /**
