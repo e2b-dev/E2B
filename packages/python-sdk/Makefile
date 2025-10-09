@@ -21,7 +21,7 @@ generate-envd:
 generate: generate-api generate-envd generate-mcp
 
 init:
-	pip install openapi-python-client
+	pip install openapi-python-client datamodel-code-generator
 
 lint:
 	ruff check .
@@ -30,7 +30,7 @@ format:
 	ruff format .
 
 generate-mcp:
-	poetry run datamodel-codegen \
+	datamodel-codegen \
 			--input ../../spec/mcp-server.json \
 			--input-file-type jsonschema \
 			--output e2b/sandbox/mcp.py \
