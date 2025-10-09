@@ -31,7 +31,7 @@ format:
 
 generate-mcp:
 	poetry run datamodel-codegen \
-			--input ../../spec/mcp-spec.json \
+			--input ../../spec/mcp-server.json \
 			--input-file-type jsonschema \
 			--output e2b/sandbox/mcp.py \
 			--output-model-type typing.TypedDict \
