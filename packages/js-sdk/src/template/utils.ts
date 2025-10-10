@@ -112,6 +112,19 @@ export function getCallerFrame(depth: number): string | undefined {
 }
 
 /**
+ * Matches pathes like "at <anonymous> (/path/to/file.js:1:1)" or "at /path/to/file.js:1:1"
+ * @param line - The line to match
+ * @returns The directory of the file
+ */
+export function matchFileDir(line: string): string | undefined {
+  const match = line.match(/\/[^:]+/)
+  if (match) {
+    const filePath = match[0]
+    return path.dirname(filePath)
+  }
+}
+
+/**
  * Get the caller directory
  * @returns The caller directory
  */
@@ -125,16 +138,9 @@ export function getCallerDirectory(depth: number): string | undefined {
   if (lines.length === 0) {
     return
   }
+
   const firstLine = lines[0]
-
-  // Matches pathes like "at <anonymous> (/path/to/file.js:1:1)" or "at /path/to/file.js:1:1"
-  const match = firstLine.match(/\/[^:]+/)
-  if (match) {
-    const filePath = match[0]
-    return path.dirname(filePath)
-  }
-
-  return
+  return matchFileDir(firstLine)
 }
 
 export function padOctal(mode: number): string {
