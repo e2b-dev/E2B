@@ -112,7 +112,7 @@ export function getCallerFrame(depth: number): string | undefined {
 }
 
 /**
- * Matches pathes like "at <anonymous> (/path/to/file.js:1:1)" or "at /path/to/file.js:1:1"
+ * Matches paths like "at <anonymous> (/path/to/file.js:1:1)" or "at /path/to/file.js:1:1"
  * @param line - The line to match
  * @returns The directory of the file
  */
