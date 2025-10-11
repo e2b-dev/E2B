@@ -1,0 +1,110 @@
+---
+title: "Sandbox metrics"
+sidebarTitle: Metrics
+---
+
+The sandbox metrics allows you to get information about the sandbox's CPU, memory and disk usage.
+
+## Getting sandbox metrics
+Getting the metrics of a sandbox returns an array of timestamped metrics containing CPU, memory and disk usage information.
+The metrics are collected every 5 seconds.
+
+### Getting sandbox metrics using the SDKs
+
+<CodeGroup>
+```js JavaScript & TypeScript highlight={9}
+import { Sandbox } from '@e2b/code-interpreter'
+
+const sbx = await Sandbox.create()
+console.log('Sandbox created', sbx.sandboxId)
+
+// Wait for a few seconds to collect some metrics
+await new Promise((resolve) => setTimeout(resolve, 10_000))
+
+const metrics = await sbx.getMetrics()
+
+// You can also get the metrics by sandbox ID:
+// const metrics = await Sandbox.getMetrics(sbx.sandboxId)
+
+console.log('Sandbox metrics:', metrics)
+
+// Sandbox metrics:
+// [
+//   {
+//     timestamp: 2025-07-28T08:04:05.000Z,
+//     cpuUsedPct: 20.33,
+//     cpuCount: 2,
+//     memUsed: 32681984,  // in bytes
+//     memTotal: 507592704,  // in bytes
+//     diskUsed: 1514856448,  // in bytes
+//     diskTotal: 2573185024  // in bytes
+//   },
+//   {
+//     timestamp: 2025-07-28T08:04:10.000Z,
+//     cpuUsedPct: 0.2,
+//     cpuCount: 2,
+//     memUsed: 33316864,  // in bytes
+//     memTotal: 507592704, // in bytes
+//     diskUsed: 1514856448,  // in bytes
+//     diskTotal: 2573185024  // in bytes
+//   }
+// ]
+```
+```python Python highlight={10}
+from time import sleep
+from e2b_code_interpreter import Sandbox
+
+sbx = Sandbox.create()
+print('Sandbox created', sbx.sandbox_id)
+
+# Wait for a few seconds to collect some metrics
+sleep(10)
+
+metrics = sbx.get_metrics()
+
+# You can also get the metrics by sandbox ID:
+# metrics = Sandbox.get_metrics(sbx.sandbox_id)
+
+print('Sandbox metrics', metrics) 
+
+# Sandbox metrics
+# [
+#     SandboxMetric(
+#         cpu_count=2,
+#         cpu_used_pct=13.97,
+#         disk_total=2573185024,  # in bytes
+#         disk_used=1514856448,  # in bytes
+#         mem_total=507592704,  # in bytes
+#         mem_used=30588928,  # in bytes
+#         timestamp=datetime.datetime(2025, 7, 28, 8, 8, 15, tzinfo=tzutc()),
+#     ),
+#     SandboxMetric(
+#         cpu_count=2,
+#         cpu_used_pct=0.1,
+#         disk_total=2573185024,  # in bytes
+#         disk_used=1514856448,  # in bytes
+#         mem_total=507592704,  # in bytes
+#         mem_used=31084544,  # in bytes
+#         timestamp=datetime.datetime(2025, 7, 28, 8, 8, 20, tzinfo=tzutc()),
+#     ),
+# ]
+```
+</CodeGroup>
+
+### Getting sandbox metrics using the CLI
+<CodeGroup>
+```bash Terminal highlight={1}
+e2b sandbox metrics <sandbox_id> 
+
+# Metrics for sandbox <sandbox_id>
+# 
+# [2025-07-25 14:05:55Z]  CPU:  8.27% /  2 Cores | Memory:    31 / 484   MiB | Disk:  1445 / 2453  MiB
+# [2025-07-25 14:06:00Z]  CPU:   0.5% /  2 Cores | Memory:    32 / 484   MiB | Disk:  1445 / 2453  MiB
+# [2025-07-25 14:06:05Z]  CPU:   0.1% /  2 Cores | Memory:    32 / 484   MiB | Disk:  1445 / 2453  MiB
+# [2025-07-25 14:06:10Z]  CPU:   0.3% /  2 Cores | Memory:    32 / 484   MiB | Disk:  1445 / 2453  MiB
+```
+</CodeGroup>
+
+<Note>
+   It may take a second or more to get the first metrics after the sandbox is created. Until the first metrics are collected from the sandbox, you will get an empty array.
+</Note>
