@@ -52,8 +52,17 @@ class AsyncTemplate(TemplateBase):
             ```python
             from e2b import AsyncTemplate
 
-            template = AsyncTemplate().from_python_image('3.11')
-            await AsyncTemplate.build(template, alias='my-python-env', on_build_logs=lambda log: print(log.message))
+            template = (
+                AsyncTemplate()
+                .from_python_image('3.11')
+                .run_cmd('pip install numpy')
+            )
+
+            await AsyncTemplate.build(
+                template,
+                alias='my-python-env',
+                on_build_logs=lambda log: print(log.message)
+            )
             ```
         """
         try:

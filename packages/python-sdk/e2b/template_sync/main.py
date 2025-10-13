@@ -52,8 +52,17 @@ class Template(TemplateBase):
             ```python
             from e2b import Template
 
-            template = Template().from_python_image('3.11')
-            Template.build(template, alias='my-python-env', on_build_logs=lambda log: print(log.message))
+            template = (
+                Template()
+                .from_python_image('3.11')
+                .run_cmd('pip install numpy')
+            )
+
+            Template.build(
+                template,
+                alias='my-python-env',
+                on_build_logs=lambda log: print(log.message)
+            )
             ```
         """
         try:

@@ -586,18 +586,11 @@ class TemplateBase:
         ```python
         from e2b import Template
 
-        template = Template()
-        builder = template.from_python_image('3.11')
-        builder.copy('requirements.txt', '/home/user/')
-        builder.run_cmd('pip install -r /home/user/requirements.txt')
-        final = builder.set_start_cmd('python app.py', 'curl http://localhost:8000/health')
-
-        # Or with method chaining:
-        template = (Template()
+        # Method chaining:
+        template = (
+            Template()
             .from_python_image('3.11')
-            .copy('requirements.txt', '/home/user/')
-            .run_cmd('pip install -r /home/user/requirements.txt')
-            .set_start_cmd('python app.py', 'curl http://localhost:8000/health')
+            .pip_install('flask')
         )
         ```
     """
