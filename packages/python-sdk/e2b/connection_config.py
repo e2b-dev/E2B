@@ -100,8 +100,10 @@ class ConnectionConfig:
         else:
             self.request_timeout = REQUEST_TIMEOUT
 
-        self.api_url = api_url or ConnectionConfig._api_url() or (
-            "http://localhost:3000" if self.debug else f"https://api.{self.domain}"
+        self.api_url = (
+            api_url
+            or ConnectionConfig._api_url()
+            or ("http://localhost:3000" if self.debug else f"https://api.{self.domain}")
         )
 
     @staticmethod
@@ -148,6 +150,7 @@ class ConnectionConfig:
         return dict(
             ApiParams(
                 api_key=api_key if api_key is not None else self.api_key,
+                api_url=opts.get("api_url"),
                 domain=domain if domain is not None else self.domain,
                 debug=debug if debug is not None else self.debug,
                 request_timeout=self.get_request_timeout(request_timeout),
