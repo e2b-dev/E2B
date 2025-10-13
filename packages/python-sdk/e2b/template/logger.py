@@ -11,11 +11,16 @@ from rich.text import Text
 
 from e2b.template.utils import strip_ansi_escape_codes
 
+"""Log entry severity levels."""
 LogEntryLevel = Literal["debug", "info", "warn", "error"]
 
 
 @dataclass
 class LogEntry:
+    """
+    Represents a single log entry from the template build process.
+    """
+
     timestamp: datetime
     level: LogEntryLevel
     message: str
@@ -24,24 +29,48 @@ class LogEntry:
         self.message = strip_ansi_escape_codes(self.message)
 
     def __str__(self) -> str:
+        """
+        Convert the log entry to a string representation.
+
+        Returns:
+            Formatted log entry string with timestamp, level, and message
+        """
         return f"[{self.timestamp.isoformat()}] [{self.level}] {self.message}"
 
 
 @dataclass
 class LogEntryStart(LogEntry):
+    """
+    Special log entry indicating the start of a build process.
+    Used internally to trigger timer display in the logger.
+    """
+
     level: LogEntryLevel = field(default="debug", init=False)
 
 
 @dataclass
 class LogEntryEnd(LogEntry):
+    """
+    Special log entry indicating the end of a build process.
+    Used internally to stop timer display in the logger.
+    """
+
     level: LogEntryLevel = field(default="debug", init=False)
 
 
+"""
+Interval in milliseconds for updating the build timer display.
+"""
 TIMER_UPDATE_INTERVAL_MS = 150
 
+"""
+Default minimum log level to display.
+"""
 DEFAULT_LEVEL: LogEntryLevel = "info"
 
-# Level labels with Rich styles
+"""
+Colored labels for each log level.
+"""
 levels: Dict[LogEntryLevel, tuple[str, Style]] = {
     "error": ("ERROR", Style(color="red")),
     "warn": ("WARN ", Style(color="#FF4400")),
@@ -49,7 +78,9 @@ levels: Dict[LogEntryLevel, tuple[str, Style]] = {
     "debug": ("DEBUG", Style(color="bright_black")),
 }
 
-# Level ordering for comparison
+"""
+Numeric ordering of log levels for comparison (lower = less severe).
+"""
 level_order = {
     "debug": 0,
     "info": 1,
@@ -76,17 +107,17 @@ def set_interval(func, interval):
     return stopped.set  # Return the stop function
 
 
-class InitialState(TypedDict):
-    start_time: float
-    animation_frame: int
-    timer: Optional[Callable[[], None]]
+class DefaultBuildLoggerInitialState(TypedDict):
+    start_time: float  # When the build started (timestamp)
+    animation_frame: int  # Current frame of the loading animation
+    timer: Optional[Callable[[], None]]  # Interval timer for updating the display
 
 
-class BuildLogger:
+class DefaultBuildLogger:
     __console = Console()
 
     __min_level: LogEntryLevel
-    __state: InitialState
+    __state: DefaultBuildLoggerInitialState
 
     def __init__(self, min_level: Optional[LogEntryLevel] = None):
         self.__min_level = min_level if min_level is not None else DEFAULT_LEVEL
@@ -178,6 +209,34 @@ class BuildLogger:
 def default_build_logger(
     min_level: Optional[LogEntryLevel] = None,
 ) -> Callable[[LogEntry], None]:
-    build_logger = BuildLogger(min_level)
+    """
+    Create a default build logger with animated timer display.
+
+    This logger displays build progress with:
+    - Colored, formatted log messages
+    - Animated loading indicator
+    - Elapsed time counter
+    - Configurable minimum log level
+
+    Args:
+        min_level: Minimum log level to display (default: 'info')
+
+    Returns:
+        Logger function that accepts LogEntry instances
+
+    Example:
+        ```python
+        from e2b import Template, default_build_logger
+
+        template = Template().from_python_image()
+
+        # Use with build - implementation would be in build_async module
+        # await Template.build(template,
+        #     alias='my-template',
+        #     on_build_logs=default_build_logger(min_level='debug')
+        # )
+        ```
+    """
+    build_logger = DefaultBuildLogger(min_level)
 
     return build_logger.logger

@@ -195,7 +195,11 @@ export interface TemplateFromImage {
   ): TemplateBuilder
 
   /**
-   * Skip cache for the next layer.
+   * Skip cache for all subsequent build instructions from this point.
+   *
+   * When called before a from instruction, this forces the entire template
+   * to be rebuilt from scratch. When called before other instructions, it
+   * forces all subsequent layers to be rebuilt, ignoring any cached layers.
    */
   skipCache(): this
 }
@@ -344,7 +348,10 @@ export interface TemplateBuilder {
   setEnvs(envs: Record<string, string>): TemplateBuilder
 
   /**
-   * Skip cache for the next layer.
+   * Skip cache for all subsequent build instructions from this point.
+   *
+   * Call this before any instruction to force it and all following layers
+   * to be rebuilt, ignoring any cached layers.
    */
   skipCache(): this
 
