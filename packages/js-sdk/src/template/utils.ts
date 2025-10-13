@@ -222,9 +222,11 @@ export async function tarFileStream(
 /**
  * Create a tar stream and calculate its compressed size for upload.
  *
- * This function creates two streams:
- * 1. First pass calculates the content length
- * 2. Second pass provides the actual upload stream
+
+ * This function uses a two-pass approach:
+ * 1. First pass: Creates a temporary stream to calculate the total compressed size
+ * 2. Second pass: Creates a new stream for the actual upload operation
+
  *
  * @param fileName Glob pattern for files to include
  * @param fileContextPath Base directory for resolving file paths
