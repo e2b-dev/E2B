@@ -104,7 +104,7 @@ export class TemplateBase
    *
    * @example
    * ```ts
-   * const template = Template().fromPythonImage('3.11')
+   * const template = Template().fromPythonImage('3')
    * await Template.build(template, {
    *   alias: 'my-python-env',
    *   cpuCount: 2,
@@ -842,7 +842,7 @@ export class TemplateBase
  * import { Template } from 'e2b'
  *
  * const template = Template()
- *   .fromPythonImage('3.11')
+ *   .fromPythonImage('3')
  *   .copy('requirements.txt', '/app/')
  *   .pipInstall()
  *
