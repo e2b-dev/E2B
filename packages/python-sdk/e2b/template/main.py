@@ -794,19 +794,19 @@ class TemplateBase:
             lambda: self.from_image(f"ubuntu:{variant}")
         )
 
-    def from_python_image(self, version: str = "3.13") -> TemplateBuilder:
+    def from_python_image(self, version: str = "3") -> TemplateBuilder:
         """
         Start template from a Python base image.
 
         Args:
-            version: Python version (default: '3.13')
+            version: Python version (default: '3')
 
         Returns:
             TemplateBuilder for method chaining
 
         Example:
             ```python
-            Template().from_python_image('3.11')
+            Template().from_python_image('3')
             ```
         """
         return self._run_in_new_stack_trace_context(

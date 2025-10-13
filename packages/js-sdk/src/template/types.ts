@@ -161,7 +161,7 @@ export interface TemplateFromImage {
    *
    * @example
    * ```ts
-   * Template().fromImage('python:3.11-slim')
+   * Template().fromImage('python:3')
    *
    * // With credentials (optional)
    * Template().fromImage('myregistry.com/myimage:latest', {

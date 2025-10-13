@@ -132,7 +132,7 @@ export class TemplateBase
     return this.fromImage(`ubuntu:${variant}`)
   }
 
-  fromPythonImage(version: string = '3.13'): TemplateBuilder {
+  fromPythonImage(version: string = '3'): TemplateBuilder {
     return this.fromImage(`python:${version}`)
   }
 
