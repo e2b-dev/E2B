@@ -120,29 +120,54 @@ export interface TemplateFromImage {
   /**
    * Start from a Debian-based Docker image.
    * @param variant Debian variant (default: 'slim')
+   *
+   * @example
+   * ```ts
+   * template.fromDebianImage('bookworm-slim')
+   * ```
    */
   fromDebianImage(variant?: string): TemplateBuilder
 
   /**
    * Start from an Ubuntu-based Docker image.
    * @param variant Ubuntu variant (default: 'lts')
+   *
+   * @example
+   * ```ts
+   * template.fromUbuntuImage('22.04')
+   * ```
    */
   fromUbuntuImage(variant?: string): TemplateBuilder
 
   /**
    * Start from a Python-based Docker image.
    * @param version Python version (default: '3.13')
+   *
+   * @example
+   * ```ts
+   * template.fromPythonImage('3.11')
+   * ```
    */
   fromPythonImage(version?: string): TemplateBuilder
 
   /**
    * Start from a Node.js-based Docker image.
    * @param variant Node.js variant (default: 'lts')
+   *
+   * @example
+   * ```ts
+   * template.fromNodeImage('20')
+   * ```
    */
   fromNodeImage(variant?: string): TemplateBuilder
 
   /**
    * Start from E2B's default base image (e2bdev/base).
+   *
+   * @example
+   * ```ts
+   * template.fromBaseImage()
+   * ```
    */
   fromBaseImage(): TemplateBuilder
 
@@ -150,6 +175,15 @@ export interface TemplateFromImage {
    * Start from a custom Docker image.
    * @param baseImage Docker image name
    * @param credentials Optional credentials for private registries
+   *
+   * @example
+   * ```ts
+   * template.fromImage('python:3.11-slim')
+   * template.fromImage('myregistry.com/myimage:latest', {
+   *   username: 'user',
+   *   password: 'pass'
+   * })
+   * ```
    */
   fromImage(
     baseImage: string,
@@ -159,12 +193,23 @@ export interface TemplateFromImage {
   /**
    * Start from an existing E2B template.
    * @param template E2B template ID or alias
+   *
+   * @example
+   * ```ts
+   * template.fromTemplate('my-base-template')
+   * ```
    */
   fromTemplate(template: string): TemplateBuilder
 
   /**
    * Parse a Dockerfile and convert it to Template SDK format.
    * @param dockerfileContentOrPath Dockerfile content or path
+   *
+   * @example
+   * ```ts
+   * template.fromDockerfile('Dockerfile')
+   * template.fromDockerfile('FROM python:3.11\nRUN pip install numpy')
+   * ```
    */
   fromDockerfile(dockerfileContentOrPath: string): TemplateBuilder
 
@@ -172,6 +217,18 @@ export interface TemplateFromImage {
    * Start from a Docker image in AWS ECR.
    * @param image Full ECR image path
    * @param credentials AWS credentials
+   *
+   * @example
+   * ```ts
+   * template.fromAWSRegistry(
+   *   '123456789.dkr.ecr.us-west-2.amazonaws.com/myimage:latest',
+   *   {
+   *     accessKeyId: 'AKIA...',
+   *     secretAccessKey: '...',
+   *     region: 'us-west-2'
+   *   }
+   * )
+   * ```
    */
   fromAWSRegistry(
     image: string,
@@ -186,6 +243,14 @@ export interface TemplateFromImage {
    * Start from a Docker image in Google Container Registry.
    * @param image Full GCR/GAR image path
    * @param credentials GCP service account credentials
+   *
+   * @example
+   * ```ts
+   * template.fromGCPRegistry(
+   *   'gcr.io/myproject/myimage:latest',
+   *   { serviceAccountJSON: 'path/to/service-account.json' }
+   * )
+   * ```
    */
   fromGCPRegistry(
     image: string,
@@ -200,6 +265,11 @@ export interface TemplateFromImage {
    * When called before a from instruction, this forces the entire template
    * to be rebuilt from scratch. When called before other instructions, it
    * forces all subsequent layers to be rebuilt, ignoring any cached layers.
+   *
+   * @example
+   * ```ts
+   * template.skipCache().fromPythonImage('3.11')
+   * ```
    */
   skipCache(): this
 }
@@ -214,6 +284,12 @@ export interface TemplateBuilder {
    * @param src Source path(s)
    * @param dest Destination path
    * @param options Copy options
+   *
+   * @example
+   * ```ts
+   * template.copy('requirements.txt', '/home/user/')
+   * template.copy(['app.ts', 'config.ts'], '/app/', { mode: 0o755 })
+   * ```
    */
   copy(
     src: PathLike | PathLike[],
@@ -229,6 +305,14 @@ export interface TemplateBuilder {
   /**
    * Copy multiple items with individual options.
    * @param items Array of copy items
+   *
+   * @example
+   * ```ts
+   * template.copyItems([
+   *   { src: 'app.ts', dest: '/app/' },
+   *   { src: 'config.ts', dest: '/app/', mode: 0o644 }
+   * ])
+   * ```
    */
   copyItems(items: CopyItem[]): TemplateBuilder
 
@@ -236,6 +320,11 @@ export interface TemplateBuilder {
    * Remove files or directories.
    * @param path Path(s) to remove
    * @param options Remove options
+   *
+   * @example
+   * ```ts
+   * template.remove('/tmp/cache', { recursive: true, force: true })
+   * ```
    */
   remove(
     path: PathLike | PathLike[],
@@ -247,6 +336,11 @@ export interface TemplateBuilder {
    * @param src Source path
    * @param dest Destination path
    * @param options Rename options
+   *
+   * @example
+   * ```ts
+   * template.rename('/tmp/old.txt', '/tmp/new.txt')
+   * ```
    */
   rename(
     src: PathLike,
@@ -258,6 +352,12 @@ export interface TemplateBuilder {
    * Create directories.
    * @param path Directory path(s)
    * @param options Directory options
+   *
+   * @example
+   * ```ts
+   * template.makeDir('/app/data', { mode: 0o755 })
+   * template.makeDir(['/app/logs', '/app/cache'])
+   * ```
    */
   makeDir(
     path: PathLike | PathLike[],
@@ -268,6 +368,11 @@ export interface TemplateBuilder {
    * Create a symbolic link.
    * @param src Source path (target)
    * @param dest Destination path (symlink location)
+   *
+   * @example
+   * ```ts
+   * template.makeSymlink('/usr/bin/python3', '/usr/bin/python')
+   * ```
    */
   makeSymlink(src: PathLike, dest: PathLike): TemplateBuilder
 
@@ -275,6 +380,13 @@ export interface TemplateBuilder {
    * Run a shell command.
    * @param command Command string
    * @param options Command options
+   *
+   * @example
+   * ```ts
+   * template.runCmd('apt-get update')
+   * template.runCmd(['pip install numpy', 'pip install pandas'])
+   * template.runCmd('apt-get install vim', { user: 'root' })
+   * ```
    */
   runCmd(command: string, options?: { user?: string }): TemplateBuilder
 
@@ -298,18 +410,35 @@ export interface TemplateBuilder {
   /**
    * Set the working directory.
    * @param workdir Working directory path
+   *
+   * @example
+   * ```ts
+   * template.setWorkdir('/app')
+   * ```
    */
   setWorkdir(workdir: PathLike): TemplateBuilder
 
   /**
    * Set the user for subsequent commands.
    * @param user Username
+   *
+   * @example
+   * ```ts
+   * template.setUser('root')
+   * ```
    */
   setUser(user: string): TemplateBuilder
 
   /**
    * Install Python packages using pip.
    * @param packages Package name(s) or undefined for current directory
+   *
+   * @example
+   * ```ts
+   * template.pipInstall('numpy')
+   * template.pipInstall(['pandas', 'scikit-learn'])
+   * template.pipInstall()  // Installs from current directory
+   * ```
    */
   pipInstall(packages?: string | string[]): TemplateBuilder
 
@@ -317,6 +446,14 @@ export interface TemplateBuilder {
    * Install Node.js packages using npm.
    * @param packages Package name(s) or undefined for package.json
    * @param options Install options
+   *
+   * @example
+   * ```ts
+   * template.npmInstall('express')
+   * template.npmInstall(['lodash', 'axios'])
+   * template.npmInstall('typescript', { g: true })
+   * template.npmInstall()  // Installs from package.json
+   * ```
    */
   npmInstall(
     packages?: string | string[],
@@ -326,6 +463,12 @@ export interface TemplateBuilder {
   /**
    * Install Debian/Ubuntu packages using apt-get.
    * @param packages Package name(s)
+   *
+   * @example
+   * ```ts
+   * template.aptInstall('vim')
+   * template.aptInstall(['git', 'curl', 'wget'])
+   * ```
    */
   aptInstall(packages: string | string[]): TemplateBuilder
 
@@ -334,6 +477,15 @@ export interface TemplateBuilder {
    * @param url Repository URL
    * @param path Optional destination path
    * @param options Clone options
+   *
+   * @example
+   * ```ts
+   * template.gitClone('https://github.com/user/repo.git', '/app/repo')
+   * template.gitClone('https://github.com/user/repo.git', undefined, {
+   *   branch: 'main',
+   *   depth: 1
+   * })
+   * ```
    */
   gitClone(
     url: string,
@@ -344,6 +496,11 @@ export interface TemplateBuilder {
   /**
    * Set environment variables.
    * @param envs Environment variables
+   *
+   * @example
+   * ```ts
+   * template.setEnvs({ NODE_ENV: 'production', PORT: '8080' })
+   * ```
    */
   setEnvs(envs: Record<string, string>): TemplateBuilder
 
@@ -352,6 +509,11 @@ export interface TemplateBuilder {
    *
    * Call this before any instruction to force it and all following layers
    * to be rebuilt, ignoring any cached layers.
+   *
+   * @example
+   * ```ts
+   * template.skipCache().runCmd('apt-get update')
+   * ```
    */
   skipCache(): this
 
@@ -359,6 +521,14 @@ export interface TemplateBuilder {
    * Set the start command and ready check.
    * @param startCommand Command to run on startup
    * @param readyCommand Command to check readiness
+   *
+   * @example
+   * ```ts
+   * template.setStartCmd(
+   *   'node app.js',
+   *   'curl http://localhost:8000/health'
+   * )
+   * ```
    */
   setStartCmd(
     startCommand: string,
@@ -368,6 +538,11 @@ export interface TemplateBuilder {
   /**
    * Set or update the ready check command.
    * @param readyCommand Command to check readiness
+   *
+   * @example
+   * ```ts
+   * template.setReadyCmd('curl http://localhost:8000/health')
+   * ```
    */
   setReadyCmd(readyCommand: string | ReadyCmd): TemplateFinal
 }
