@@ -31,6 +31,9 @@ class ApiParams(TypedDict, total=False):
     domain: Optional[str]
     """E2B domain to use for authentication, defaults to `E2B_DOMAIN` environment variable."""
 
+    api_url: Optional[str]
+    """URL to use for the API, defaults to `https://api.<domain>`."""
+
     debug: Optional[bool]
     """Whether to use debug mode, defaults to `E2B_DEBUG` environment variable."""
 
@@ -56,6 +59,10 @@ class ConnectionConfig:
         return os.getenv("E2B_API_KEY")
 
     @staticmethod
+    def _api_url():
+        return os.getenv("E2B_API_URL")
+
+    @staticmethod
     def _access_token():
         return os.getenv("E2B_ACCESS_TOKEN")
 
@@ -64,6 +71,7 @@ class ConnectionConfig:
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
         api_key: Optional[str] = None,
+        api_url: Optional[str] = None,
         access_token: Optional[str] = None,
         request_timeout: Optional[float] = None,
         headers: Optional[Dict[str, str]] = None,
@@ -92,7 +100,7 @@ class ConnectionConfig:
         else:
             self.request_timeout = REQUEST_TIMEOUT
 
-        self.api_url = (
+        self.api_url = api_url or ConnectionConfig._api_url() or (
             "http://localhost:3000" if self.debug else f"https://api.{self.domain}"
         )
 
