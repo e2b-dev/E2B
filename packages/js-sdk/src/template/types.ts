@@ -106,7 +106,7 @@ export interface TemplateFromImage {
    *
    * @example
    * ```ts
-   * Template.fromDebianImage('bookworm-slim')
+   * Template().fromDebianImage('bookworm')
    * ```
    */
   fromDebianImage(variant?: string): TemplateBuilder
@@ -117,18 +117,18 @@ export interface TemplateFromImage {
    *
    * @example
    * ```ts
-   * Template().fromUbuntuImage('22.04')
+   * Template().fromUbuntuImage('24.04')
    * ```
    */
   fromUbuntuImage(variant?: string): TemplateBuilder
 
   /**
    * Start from a Python-based Docker image.
-   * @param version Python version (default: '3.13')
+   * @param version Python version (default: '3')
    *
    * @example
    * ```ts
-   * Template().fromPythonImage('3.11')
+   * Template().fromPythonImage('3')
    * ```
    */
   fromPythonImage(version?: string): TemplateBuilder
@@ -193,7 +193,7 @@ export interface TemplateFromImage {
    * @example
    * ```ts
    * Template().fromDockerfile('Dockerfile')
-   * Template().fromDockerfile('FROM python:3.11\nRUN pip install numpy')
+   * Template().fromDockerfile('FROM python:3\nRUN pip install numpy')
    * ```
    */
   fromDockerfile(dockerfileContentOrPath: string): TemplateBuilder
@@ -253,7 +253,7 @@ export interface TemplateFromImage {
    *
    * @example
    * ```ts
-   * Template().skipCache().fromPythonImage('3.11')
+   * Template().skipCache().fromPythonImage('3')
    * ```
    */
   skipCache(): this

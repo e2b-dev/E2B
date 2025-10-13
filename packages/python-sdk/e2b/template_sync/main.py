@@ -54,7 +54,7 @@ class Template(TemplateBase):
 
             template = (
                 Template()
-                .from_python_image('3.11')
+                .from_python_image('3')
                 .copy('requirements.txt', '/home/user/')
                 .run_cmd('pip install -r /home/user/requirements.txt')
             )

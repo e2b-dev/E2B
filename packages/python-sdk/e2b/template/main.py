@@ -29,12 +29,6 @@ class TemplateBuilder:
     """
     Builder class for adding instructions to an E2B template.
 
-    This class provides a fluent API for customizing sandbox templates by:
-    - Copying files and directories into the template
-    - Running commands to install dependencies and configure the environment
-    - Setting working directories and users
-    - Configuring environment variables
-
     All methods return self to allow method chaining.
     """
 
@@ -600,18 +594,6 @@ class TemplateFinal:
 class TemplateBase:
     """
     Base class for building E2B sandbox templates.
-
-    This class provides a fluent API for creating custom sandbox templates by:
-    - Starting from base images (Debian, Ubuntu, Python, Node, etc.) or existing templates
-    - Adding files and running commands to customize the environment
-    - Building and deploying templates to the E2B infrastructure
-
-    Example:
-        ```python
-        from e2b import Template
-
-        # Method chaining:
-        template = (
             Template()
             .from_python_image('3.11')
             .pip_install('flask')
@@ -768,7 +750,7 @@ class TemplateBase:
 
         Example:
             ```python
-            Template().from_debian_image('bookworm-slim')
+            Template().from_debian_image('bookworm')
             ```
         """
         return self._run_in_new_stack_trace_context(
@@ -787,7 +769,7 @@ class TemplateBase:
 
         Example:
             ```python
-            Template().from_ubuntu_image('22.04')
+            Template().from_ubuntu_image('24.04')
             ```
         """
         return self._run_in_new_stack_trace_context(
@@ -858,7 +840,7 @@ class TemplateBase:
         Start template from a Docker image.
 
         Args:
-            image: Docker image name (e.g., 'ubuntu:22.04')
+            image: Docker image name (e.g., 'ubuntu:24.04')
             username: Username for private registry authentication
             password: Password for private registry authentication
 
@@ -867,7 +849,7 @@ class TemplateBase:
 
         Example:
             ```python
-            Template().from_image('python:3.11-slim')
+            Template().from_image('python:3')
 
             # With credentials (optional)
             Template().from_image('myregistry.com/myimage:latest', username='user', password='pass')
@@ -930,7 +912,7 @@ class TemplateBase:
         Example:
             ```python
             Template().from_dockerfile('Dockerfile')
-            Template().from_dockerfile('FROM python:3.11\\nRUN pip install numpy')
+            Template().from_dockerfile('FROM python:3\\nRUN pip install numpy')
             ```
         """
         # Create a TemplateBuilder first to use its methods
@@ -1046,7 +1028,7 @@ class TemplateBase:
 
         Example:
             ```python
-            template = Template().from_python_image('3.11').copy('app.py', '/app/')
+            template = Template().from_python_image('3').copy('app.py', '/app/')
             json_str = TemplateBase.to_json(template)
             ```
         """
@@ -1075,7 +1057,7 @@ class TemplateBase:
 
         Example:
             ```python
-            template = Template().from_python_image('3.11').copy('app.py', '/app/')
+            template = Template().from_python_image('3').copy('app.py', '/app/')
             dockerfile = TemplateBase.to_dockerfile(template)
             ```
         """

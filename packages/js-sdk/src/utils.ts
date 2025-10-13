@@ -14,12 +14,6 @@ type Runtime =
   | 'cloudflare-worker'
   | 'unknown'
 
-/**
- * Detect the current JavaScript runtime environment.
- *
- * @returns Object containing the runtime name and version
- * @internal
- */
 function getRuntime(): { runtime: Runtime; version: string } {
   // @ts-ignore
   if ((globalThis as any).Bun) {
@@ -53,20 +47,8 @@ function getRuntime(): { runtime: Runtime; version: string } {
   return { runtime: 'unknown', version: 'unknown' }
 }
 
-/**
- * Detected runtime and version information.
- * @internal
- */
 export const { runtime, version: runtimeVersion } = getRuntime()
 
-/**
- * Calculate SHA-256 hash of a string.
- * Uses WebCrypto API when available, falls back to Node.js crypto.
- *
- * @param data String to hash
- * @returns Base64-encoded hash
- * @internal
- */
 export async function sha256(data: string): Promise<string> {
   // Use WebCrypto API if available
   if (typeof crypto !== 'undefined') {
@@ -84,13 +66,6 @@ export async function sha256(data: string): Promise<string> {
   return hash.toString('base64')
 }
 
-/**
- * Convert milliseconds to seconds, rounding up.
- *
- * @param timeout Time in milliseconds
- * @returns Time in seconds
- * @internal
- */
 export function timeoutToSeconds(timeout: number): number {
   return Math.ceil(timeout / 1000)
 }
