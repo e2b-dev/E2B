@@ -1,9 +1,9 @@
 import {
+  Client,
+  Code,
+  ConnectError,
   createClient,
   Transport,
-  Client,
-  ConnectError,
-  Code,
 } from '@connectrpc/connect'
 import {
   ConnectionConfig,
@@ -19,16 +19,19 @@ import { authenticationHeader, handleRpcError } from '../../envd/rpc'
 
 import { EnvdApiClient } from '../../envd/api'
 import {
-  FileType as FsFileType,
   Filesystem as FilesystemService,
+  FileType as FsFileType,
 } from '../../envd/filesystem/filesystem_pb'
 
 import { FilesystemEvent, WatchHandle } from './watchHandle'
 
-import { compareVersions } from 'compare-versions'
-import { InvalidArgumentError, TemplateError } from '../../errors'
-import { ENVD_VERSION_RECURSIVE_WATCH } from '../../envd/versions'
 import type { Timestamp } from '@bufbuild/protobuf/wkt'
+import { compareVersions } from 'compare-versions'
+import {
+  ENVD_DEFAULT_USER,
+  ENVD_VERSION_RECURSIVE_WATCH,
+} from '../../envd/versions'
+import { InvalidArgumentError, TemplateError } from '../../errors'
 
 /**
  * Sandbox filesystem object information.
@@ -247,11 +250,19 @@ export class Filesystem {
   ): Promise<unknown> {
     const format = opts?.format ?? 'text'
 
+    let user = opts?.user
+    if (
+      user == undefined &&
+      compareVersions(this.envdApi.version, ENVD_DEFAULT_USER) < 0
+    ) {
+      user = defaultUsername
+    }
+
     const res = await this.envdApi.api.GET('/files', {
       params: {
         query: {
           path,
-          username: opts?.user || defaultUsername,
+          username: user,
         },
       },
       parseAs: format === 'bytes' ? 'arrayBuffer' : format,
@@ -347,11 +358,19 @@ export class Filesystem {
       writeFiles.map((f) => new Response(f.data).blob())
     )
 
+    let user = writeOpts?.user
+    if (
+      user == undefined &&
+      compareVersions(this.envdApi.version, ENVD_DEFAULT_USER) < 0
+    ) {
+      user = defaultUsername
+    }
+
     const res = await this.envdApi.api.POST('/files', {
       params: {
         query: {
           path,
-          username: writeOpts?.user || defaultUsername,
+          username: user,
         },
       },
       bodySerializer() {
@@ -405,7 +424,7 @@ export class Filesystem {
           depth: opts?.depth ?? 1,
         },
         {
-          headers: authenticationHeader(opts?.user),
+          headers: authenticationHeader(this.envdApi.version, opts?.user),
           signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
         }
       )
@@ -450,7 +469,7 @@ export class Filesystem {
       await this.rpc.makeDir(
         { path },
         {
-          headers: authenticationHeader(opts?.user),
+          headers: authenticationHeader(this.envdApi.version, opts?.user),
           signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
         }
       )
@@ -488,7 +507,7 @@ export class Filesystem {
           destination: newPath,
         },
         {
-          headers: authenticationHeader(opts?.user),
+          headers: authenticationHeader(this.envdApi.version, opts?.user),
           signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
         }
       )
@@ -526,7 +545,7 @@ export class Filesystem {
       await this.rpc.remove(
         { path },
         {
-          headers: authenticationHeader(opts?.user),
+          headers: authenticationHeader(this.envdApi.version, opts?.user),
           signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
         }
       )
@@ -548,7 +567,7 @@ export class Filesystem {
       await this.rpc.stat(
         { path },
         {
-          headers: authenticationHeader(opts?.user),
+          headers: authenticationHeader(this.envdApi.version, opts?.user),
           signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
         }
       )
@@ -580,7 +599,7 @@ export class Filesystem {
     try {
       const res = await this.rpc.stat(
         { path },
-        { headers: authenticationHeader(opts?.user) }
+        { headers: authenticationHeader(this.envdApi.version, opts?.user) }
       )
 
       if (!res.entry) {
@@ -651,7 +670,7 @@ export class Filesystem {
       },
       {
         headers: {
-          ...authenticationHeader(opts?.user),
+          ...authenticationHeader(this.envdApi.version, opts?.user),
           [KEEPALIVE_PING_HEADER]: KEEPALIVE_PING_INTERVAL_SEC.toString(),
         },
         signal: controller.signal,

@@ -44,7 +44,7 @@ export interface PtyCreateOpts
   /**
    * User to use for the PTY.
    *
-   * @default `user`
+   * @default `last used user in the template`
    */
   user?: Username
   /**
@@ -66,12 +66,17 @@ export interface PtyCreateOpts
  */
 export class Pty {
   private readonly rpc: Client<typeof ProcessService>
+  private readonly envdVersion: string
 
   constructor(
     private readonly transport: Transport,
-    private readonly connectionConfig: ConnectionConfig
+    private readonly connectionConfig: ConnectionConfig,
+    metadata: {
+      version: string
+    }
   ) {
     this.rpc = createClient(ProcessService, this.transport)
+    this.envdVersion = metadata.version
   }
 
   /**
@@ -109,7 +114,7 @@ export class Pty {
       },
       {
         headers: {
-          ...authenticationHeader(opts?.user),
+          ...authenticationHeader(this.envdVersion, opts?.user),
           [KEEPALIVE_PING_HEADER]: KEEPALIVE_PING_INTERVAL_SEC.toString(),
         },
         signal: controller.signal,

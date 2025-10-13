@@ -1,28 +1,28 @@
 import {
+  Client,
   Code,
   ConnectError,
-  createClient,
-  Client,
   Transport,
+  createClient,
 } from '@connectrpc/connect'
 
-import {
-  Signal,
-  Process as ProcessService,
-} from '../../envd/process/process_pb'
+import { compareVersions } from 'compare-versions'
 import {
   ConnectionConfig,
-  Username,
   ConnectionOpts,
-  KEEPALIVE_PING_INTERVAL_SEC,
   KEEPALIVE_PING_HEADER,
+  KEEPALIVE_PING_INTERVAL_SEC,
+  Username,
 } from '../../connectionConfig'
-import { authenticationHeader, handleRpcError } from '../../envd/rpc'
-import { CommandResult, CommandHandle } from './commandHandle'
 import { handleProcessStartEvent } from '../../envd/api'
-import { compareVersions } from 'compare-versions'
+import {
+  Process as ProcessService,
+  Signal,
+} from '../../envd/process/process_pb'
+import { authenticationHeader, handleRpcError } from '../../envd/rpc'
 import { ENVD_COMMANDS_STDIN } from '../../envd/versions'
 import { SandboxError } from '../../errors'
+import { CommandHandle, CommandResult } from './commandHandle'
 export { Pty } from './pty'
 
 /**
@@ -49,7 +49,7 @@ export interface CommandStartOpts extends CommandRequestOpts {
   /**
    * User to run the command as.
    *
-   * @default `user`
+   * @default `last used user in the template`
    */
   user?: Username
   /**
@@ -393,7 +393,7 @@ export class Commands {
       },
       {
         headers: {
-          ...authenticationHeader(opts?.user),
+          ...authenticationHeader(this.envdVersion, opts?.user),
           [KEEPALIVE_PING_HEADER]: KEEPALIVE_PING_INTERVAL_SEC.toString(),
         },
         signal: controller.signal,
