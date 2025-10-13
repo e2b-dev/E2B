@@ -1,3 +1,6 @@
+/**
+ * Thrown when the build fails.
+ */
 export class BuildError extends Error {
   constructor(message: string, stackTrace?: string) {
     super(message)
@@ -8,6 +11,9 @@ export class BuildError extends Error {
   }
 }
 
+/**
+ * Thrown when the file upload fails.
+ */
 export class FileUploadError extends BuildError {
   constructor(message: string, stackTrace?: string) {
     super(message, stackTrace)

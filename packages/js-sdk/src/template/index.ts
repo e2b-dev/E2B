@@ -15,13 +15,16 @@ import { parseDockerfile } from './dockerfileParser'
 import { LogEntry, LogEntryEnd, LogEntryStart } from './logger'
 import { ReadyCmd } from './readycmd'
 import {
+  BuildOptions,
   CopyItem,
   Instruction,
   InstructionType,
   RegistryConfig,
   TemplateBuilder,
+  TemplateClass,
   TemplateFinal,
   TemplateFromImage,
+  TemplateOptions,
 } from './types'
 import {
   calculateFilesHash,
@@ -32,26 +35,27 @@ import {
   readGCPServiceAccountJSON,
 } from './utils'
 
-export { type TemplateBuilder } from './types'
-
-type TemplateOptions = {
-  fileContextPath?: PathLike
-  fileIgnorePatterns?: string[]
-}
-
-type BasicBuildOptions = {
-  alias: string
-  cpuCount?: number
-  memoryMB?: number
-  skipCache?: boolean
-  onBuildLogs?: (logEntry: LogEntry) => void
-}
-
-export type BuildOptions = BasicBuildOptions & {
-  apiKey?: string
-  domain?: string
-}
-
+/**
+ * Base class for building E2B sandbox templates.
+ *
+ * This class provides a fluent API for creating custom sandbox templates by:
+ * - Starting from base images (Debian, Ubuntu, Python, Node, etc.) or existing templates
+ * - Adding files and running commands to customize the environment
+ * - Building and deploying templates to the E2B infrastructure
+ *
+ * @example
+ * ```ts
+ * import { Template } from 'e2b'
+ *
+ * const template = Template()
+ *   .fromPythonImage('3.11')
+ *   .copy('requirements.txt', '/home/user/')
+ *   .runCmd('pip install -r /home/user/requirements.txt')
+ *   .setStartCmd('python app.py', 'curl http://localhost:8000/health')
+ *
+ * await Template.build(template, { alias: 'my-python-app' })
+ * ```
+ */
 export class TemplateBase
   implements TemplateFromImage, TemplateBuilder, TemplateFinal
 {
@@ -73,12 +77,24 @@ export class TemplateBase
   private stackTraces: (string | undefined)[] = []
   private stackTracesEnabled: boolean = true
 
+  /**
+   * Creates a new template builder instance.
+   *
+   * @param options Configuration options for the template
+   */
   constructor(options?: TemplateOptions) {
     this.fileContextPath = options?.fileContextPath ?? this.fileContextPath
     this.fileIgnorePatterns =
       options?.fileIgnorePatterns ?? this.fileIgnorePatterns
   }
 
+  /**
+   * Convert a template to JSON representation.
+   *
+   * @param template The template to convert
+   * @param computeHashes Whether to compute file hashes for cache invalidation
+   * @returns JSON string representation of the template
+   */
   static toJSON(
     template: TemplateClass,
     computeHashes: boolean = true
@@ -86,10 +102,33 @@ export class TemplateBase
     return (template as TemplateBase).toJSON(computeHashes)
   }
 
+  /**
+   * Convert a template to Dockerfile format.
+   * Note: Templates based on other E2B templates cannot be converted to Dockerfile.
+   *
+   * @param template The template to convert
+   * @returns Dockerfile string representation
+   * @throws Error if the template is based on another E2B template
+   */
   static toDockerfile(template: TemplateClass): string {
     return (template as TemplateBase).toDockerfile()
   }
 
+  /**
+   * Build and deploy a template to E2B infrastructure.
+   *
+   * @param template The template to build
+   * @param options Build configuration options
+   *
+   * @example
+   * ```ts
+   * const template = Template().fromPythonImage('3.11')
+   * await Template.build(template, {
+   *   alias: 'my-python-env',
+   *   onBuildLogs: (log) => console.log(log.message)
+   * })
+   * ```
+   */
   static async build(
     template: TemplateClass,
     options: BuildOptions
@@ -102,7 +141,6 @@ export class TemplateBase
     }
   }
 
-  // Built-in image mixins
   fromDebianImage(variant: string = 'slim'): TemplateBuilder {
     return this.fromImage(`debian:${variant}`)
   }
@@ -161,13 +199,6 @@ export class TemplateBase
     return this
   }
 
-  /**
-   * Parse a Dockerfile and convert it to Template SDK format
-   *
-   * @param dockerfileContentOrPath Either the Dockerfile content as a string,
-   *                                or a path to a Dockerfile file
-   * @returns TemplateBuilder instance for method chaining
-   */
   fromDockerfile(dockerfileContentOrPath: string): TemplateBuilder {
     const { baseImage } = parseDockerfile(dockerfileContentOrPath, this)
     this.baseImage = baseImage
@@ -503,6 +534,15 @@ export class TemplateBase
     return this
   }
 
+  /**
+   * Collect the current stack trace for debugging purposes.
+   *
+   * Stack traces are captured when template methods are called to provide
+   * better error messages that point to the user's code location.
+   *
+   * @param stackTracesDepth Depth to traverse in the call stack
+   * @returns this for method chaining
+   */
   private collectStackTrace(stackTracesDepth: number = STACK_TRACE_DEPTH) {
     if (!this.stackTracesEnabled) {
       return this
@@ -512,16 +552,39 @@ export class TemplateBase
     return this
   }
 
+  /**
+   * Temporarily disable stack trace collection.
+   *
+   * Used when helper methods call other template methods internally
+   * to avoid collecting unnecessary intermediate stack traces.
+   *
+   * @returns this for method chaining
+   */
   private disableStackTrace() {
     this.stackTracesEnabled = false
     return this
   }
 
+  /**
+   * Re-enable stack trace collection.
+   *
+   * @returns this for method chaining
+   */
   private enableStackTrace() {
     this.stackTracesEnabled = true
     return this
   }
 
+  /**
+   * Execute a function in a clean stack trace context.
+   *
+   * This is used for convenience methods (like `pipInstall`, `npmInstall`)
+   * that wrap `runCmd`. It disables stack trace collection during the function
+   * execution, then collects a single stack trace for the wrapper method.
+   *
+   * @param fn Function to execute
+   * @returns The result of the function
+   */
   private runInNewStackTraceContext<T>(fn: () => T): T {
     this.disableStackTrace()
     const result = fn()
@@ -530,6 +593,12 @@ export class TemplateBase
     return result
   }
 
+  /**
+   * Convert the template to JSON representation.
+   *
+   * @param computeHashes Whether to compute file hashes for COPY instructions
+   * @returns JSON string representation of the template
+   */
   private async toJSON(computeHashes: boolean): Promise<string> {
     let instructions = this.instructions
     if (computeHashes) {
@@ -539,6 +608,16 @@ export class TemplateBase
     return JSON.stringify(this.serialize(instructions), undefined, 2)
   }
 
+  /**
+   * Convert the template to Dockerfile format.
+   *
+   * Note: Only templates based on Docker images can be converted to Dockerfile.
+   * Templates based on other E2B templates cannot be converted because they
+   * may use features not available in standard Dockerfiles.
+   *
+   * @returns Dockerfile string representation
+   * @throws Error if template is based on another E2B template or has no base image
+   */
   private toDockerfile(): string {
     if (this.baseTemplate !== undefined) {
       throw new Error(
@@ -561,6 +640,19 @@ export class TemplateBase
     return dockerfile
   }
 
+  /**
+   * Internal implementation of the template build process.
+   *
+   * This method orchestrates the entire build workflow:
+   * 1. Creates a new template and build on the E2B API
+   * 2. Calculates hashes for all COPY instructions
+   * 3. Uploads files in parallel (skipping cached files)
+   * 4. Triggers the build with the template configuration
+   * 5. Polls for build completion while streaming logs
+   *
+   * @param options Build configuration options
+   * @throws BuildError if the build fails
+   */
   private async build(options: BuildOptions): Promise<void> {
     const config = new ConnectionConfig({
       domain: options.domain,
@@ -683,7 +775,20 @@ export class TemplateBase
     })
   }
 
-  // We might no longer need this as we move the logic server-side
+  /**
+   * Add file hashes to COPY instructions for cache invalidation.
+   *
+   * For each COPY instruction, this method calculates a hash of the files
+   * being copied (including content, metadata, and paths). These hashes
+   * are used to determine if files have changed and need to be re-uploaded.
+   *
+   * The hash includes:
+   * - File contents
+   * - File metadata (permissions, ownership, modification time)
+   * - Relative paths within the copied directory structure
+   *
+   * @returns Copy of instructions array with filesHash added to COPY instructions
+   */
   private async instructionsWithHashes(): Promise<Instruction[]> {
     return Promise.all(
       this.instructions.map(async (instruction, index) => {
@@ -722,6 +827,20 @@ export class TemplateBase
     )
   }
 
+  /**
+   * Serialize the template to the API request format.
+   *
+   * Converts the template configuration into the format expected by
+   * the E2B build API, including:
+   * - Start and ready commands
+   * - Build instructions (COPY, RUN, ENV, etc.)
+   * - Base image or template reference
+   * - Registry credentials (if using private registries)
+   * - Force rebuild flag
+   *
+   * @param steps Array of build instructions with file hashes
+   * @returns Template data formatted for the API
+   */
   private serialize(steps: Instruction[]): TriggerBuildTemplate {
     const templateData: TriggerBuildTemplate = {
       startCmd: this.startCmd,
@@ -746,7 +865,27 @@ export class TemplateBase
   }
 }
 
-// Factory function to create Template instances without 'new'
+/**
+ * Create a new E2B template builder instance.
+ *
+ * This is a function that creates a new template.
+ * Use this to start building custom sandbox templates.
+ *
+ * @param options Optional configuration for the template builder
+ * @returns A new template builder instance
+ *
+ * @example
+ * ```ts
+ * import { Template } from 'e2b'
+ *
+ * const template = Template()
+ *   .fromPythonImage('3.11')
+ *   .copy('requirements.txt', '/app/')
+ *   .pipInstall()
+ *
+ * await Template.build(template, { alias: 'my-python-app' })
+ * ```
+ */
 export function Template(options?: TemplateOptions): TemplateFromImage {
   return new TemplateBase(options)
 }
@@ -754,5 +893,3 @@ export function Template(options?: TemplateOptions): TemplateFromImage {
 Template.build = TemplateBase.build
 Template.toJSON = TemplateBase.toJSON
 Template.toDockerfile = TemplateBase.toDockerfile
-
-export type TemplateClass = TemplateBuilder | TemplateFinal

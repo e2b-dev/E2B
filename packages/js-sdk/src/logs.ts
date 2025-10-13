@@ -23,10 +23,21 @@ export interface Logger {
   error?: (...args: any[]) => void
 }
 
+/**
+ * Format a log object for serialization.
+ * @internal
+ */
 function formatLog(log: any) {
   return JSON.parse(JSON.stringify(log))
 }
 
+/**
+ * Create an RPC interceptor for logging gRPC/Connect requests and responses.
+ *
+ * @param logger Logger instance to use
+ * @returns Interceptor for Connect RPC client
+ * @internal
+ */
 export function createRpcLogger(logger: Logger): Interceptor {
   async function* logEach(stream: AsyncIterable<any>) {
     for await (const m of stream) {
@@ -52,6 +63,13 @@ export function createRpcLogger(logger: Logger): Interceptor {
   }
 }
 
+/**
+ * Create a middleware for logging API requests and responses.
+ *
+ * @param logger Logger instance to use
+ * @returns Middleware for openapi-fetch client
+ * @internal
+ */
 export function createApiLogger(logger: Logger): Middleware {
   return {
     async onRequest(req) {
