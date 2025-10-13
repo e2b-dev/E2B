@@ -10,24 +10,12 @@ export type LogEntryLevel = 'debug' | 'info' | 'warn' | 'error'
  * Represents a single log entry from the template build process.
  */
 export class LogEntry {
-  /**
-   * Create a new log entry.
-   *
-   * @param timestamp When the log entry was created
-   * @param level Severity level of the log entry
-   * @param message Log message content
-   */
   constructor(
     public readonly timestamp: Date,
     public readonly level: LogEntryLevel,
     public readonly message: string
   ) {}
 
-  /**
-   * Convert the log entry to a string representation.
-   *
-   * @returns Formatted log entry string with timestamp, level, and message
-   */
   toString() {
     return `[${this.timestamp.toISOString()}] [${this.level}] ${stripAnsi(
       this.message
@@ -37,15 +25,8 @@ export class LogEntry {
 
 /**
  * Special log entry indicating the start of a build process.
- * Used internally to trigger timer display in the logger.
  */
 export class LogEntryStart extends LogEntry {
-  /**
-   * Create a build start log entry.
-   *
-   * @param timestamp When the build started
-   * @param message Start message
-   */
   constructor(timestamp: Date, message: string) {
     super(timestamp, 'debug', message)
   }
@@ -53,15 +34,8 @@ export class LogEntryStart extends LogEntry {
 
 /**
  * Special log entry indicating the end of a build process.
- * Used internally to stop timer display in the logger.
  */
 export class LogEntryEnd extends LogEntry {
-  /**
-   * Create a build end log entry.
-   *
-   * @param timestamp When the build ended
-   * @param message End message
-   */
   constructor(timestamp: Date, message: string) {
     super(timestamp, 'debug', message)
   }
@@ -101,16 +75,9 @@ const level_order: Record<LogEntryLevel, number> = {
   error: 3,
 }
 
-/**
- * Internal state for the build logger.
- * @internal
- */
 interface DefaultBuildLoggerState {
-  /** When the build started (timestamp) */
   startTime: number
-  /** Current frame of the loading animation */
   animationFrame: number
-  /** Interval timer for updating the display */
   timerInterval: NodeJS.Timeout | undefined
 }
 

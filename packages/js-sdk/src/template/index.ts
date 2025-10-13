@@ -125,7 +125,8 @@ export class TemplateBase
    * const template = Template().fromPythonImage('3.11')
    * await Template.build(template, {
    *   alias: 'my-python-env',
-   *   onBuildLogs: (log) => console.log(log.message)
+   *   cpuCount: 2,
+   *   memoryMB: 1024
    * })
    * ```
    */
@@ -141,7 +142,7 @@ export class TemplateBase
     }
   }
 
-  fromDebianImage(variant: string = 'slim'): TemplateBuilder {
+  fromDebianImage(variant: string = 'stable'): TemplateBuilder {
     return this.fromImage(`debian:${variant}`)
   }
 
@@ -643,13 +644,6 @@ export class TemplateBase
   /**
    * Internal implementation of the template build process.
    *
-   * This method orchestrates the entire build workflow:
-   * 1. Creates a new template and build on the E2B API
-   * 2. Calculates hashes for all COPY instructions
-   * 3. Uploads files in parallel (skipping cached files)
-   * 4. Triggers the build with the template configuration
-   * 5. Polls for build completion while streaming logs
-   *
    * @param options Build configuration options
    * @throws BuildError if the build fails
    */
@@ -782,11 +776,6 @@ export class TemplateBase
    * being copied (including content, metadata, and paths). These hashes
    * are used to determine if files have changed and need to be re-uploaded.
    *
-   * The hash includes:
-   * - File contents
-   * - File metadata (permissions, ownership, modification time)
-   * - Relative paths within the copied directory structure
-   *
    * @returns Copy of instructions array with filesHash added to COPY instructions
    */
   private async instructionsWithHashes(): Promise<Instruction[]> {
@@ -829,14 +818,6 @@ export class TemplateBase
 
   /**
    * Serialize the template to the API request format.
-   *
-   * Converts the template configuration into the format expected by
-   * the E2B build API, including:
-   * - Start and ready commands
-   * - Build instructions (COPY, RUN, ENV, etc.)
-   * - Base image or template reference
-   * - Registry credentials (if using private registries)
-   * - Force rebuild flag
    *
    * @param steps Array of build instructions with file hashes
    * @returns Template data formatted for the API

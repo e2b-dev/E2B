@@ -64,15 +64,10 @@ export type BuildOptions = BasicBuildOptions & {
  * Types of instructions that can be used in a template.
  */
 export enum InstructionType {
-  /** Copy files or directories into the template */
   COPY = 'COPY',
-  /** Set environment variables */
   ENV = 'ENV',
-  /** Run a command */
   RUN = 'RUN',
-  /** Set the working directory */
   WORKDIR = 'WORKDIR',
-  /** Set the user */
   USER = 'USER',
 }
 
@@ -80,17 +75,11 @@ export enum InstructionType {
  * Represents a single instruction in the template build process.
  */
 export type Instruction = {
-  /** Type of instruction */
   type: InstructionType
-  /** Arguments for the instruction */
   args: string[]
-  /** Whether to force rebuild of this layer */
   force: boolean
-  /** Whether to force file upload (for COPY instructions) */
   forceUpload?: true
-  /** Hash of files being copied (for COPY instructions) */
   filesHash?: string
-  /** Whether to resolve symlinks when copying files */
   resolveSymlinks?: boolean
 }
 
@@ -98,17 +87,11 @@ export type Instruction = {
  * Configuration for a single file/directory copy operation.
  */
 export type CopyItem = {
-  /** Source path(s) to copy from */
   src: PathLike | PathLike[]
-  /** Destination path to copy to */
   dest: PathLike
-  /** Whether to force file upload even if cached */
   forceUpload?: true
-  /** Owner user for the copied files */
   user?: string
-  /** Unix file permissions */
   mode?: number
-  /** Whether to resolve symbolic links */
   resolveSymlinks?: boolean
 }
 
@@ -119,11 +102,11 @@ export type CopyItem = {
 export interface TemplateFromImage {
   /**
    * Start from a Debian-based Docker image.
-   * @param variant Debian variant (default: 'slim')
+   * @param variant Debian variant (default: 'stable')
    *
    * @example
    * ```ts
-   * template.fromDebianImage('bookworm-slim')
+   * Template.fromDebianImage('bookworm-slim')
    * ```
    */
   fromDebianImage(variant?: string): TemplateBuilder
@@ -134,7 +117,7 @@ export interface TemplateFromImage {
    *
    * @example
    * ```ts
-   * template.fromUbuntuImage('22.04')
+   * Template().fromUbuntuImage('22.04')
    * ```
    */
   fromUbuntuImage(variant?: string): TemplateBuilder
@@ -145,7 +128,7 @@ export interface TemplateFromImage {
    *
    * @example
    * ```ts
-   * template.fromPythonImage('3.11')
+   * Template().fromPythonImage('3.11')
    * ```
    */
   fromPythonImage(version?: string): TemplateBuilder
@@ -156,17 +139,17 @@ export interface TemplateFromImage {
    *
    * @example
    * ```ts
-   * template.fromNodeImage('20')
+   * Template().fromNodeImage('24')
    * ```
    */
   fromNodeImage(variant?: string): TemplateBuilder
 
   /**
-   * Start from E2B's default base image (e2bdev/base).
+   * Start from E2B's default base image (e2bdev/base:latest).
    *
    * @example
    * ```ts
-   * template.fromBaseImage()
+   * Template().fromBaseImage()
    * ```
    */
   fromBaseImage(): TemplateBuilder
@@ -178,8 +161,10 @@ export interface TemplateFromImage {
    *
    * @example
    * ```ts
-   * template.fromImage('python:3.11-slim')
-   * template.fromImage('myregistry.com/myimage:latest', {
+   * Template().fromImage('python:3.11-slim')
+   *
+   * // With credentials (optional)
+   * Template().fromImage('myregistry.com/myimage:latest', {
    *   username: 'user',
    *   password: 'pass'
    * })
@@ -196,7 +181,7 @@ export interface TemplateFromImage {
    *
    * @example
    * ```ts
-   * template.fromTemplate('my-base-template')
+   * Template().fromTemplate('my-base-template')
    * ```
    */
   fromTemplate(template: string): TemplateBuilder
@@ -207,8 +192,8 @@ export interface TemplateFromImage {
    *
    * @example
    * ```ts
-   * template.fromDockerfile('Dockerfile')
-   * template.fromDockerfile('FROM python:3.11\nRUN pip install numpy')
+   * Template().fromDockerfile('Dockerfile')
+   * Template().fromDockerfile('FROM python:3.11\nRUN pip install numpy')
    * ```
    */
   fromDockerfile(dockerfileContentOrPath: string): TemplateBuilder
@@ -220,7 +205,7 @@ export interface TemplateFromImage {
    *
    * @example
    * ```ts
-   * template.fromAWSRegistry(
+   * Template().fromAWSRegistry(
    *   '123456789.dkr.ecr.us-west-2.amazonaws.com/myimage:latest',
    *   {
    *     accessKeyId: 'AKIA...',
@@ -246,7 +231,7 @@ export interface TemplateFromImage {
    *
    * @example
    * ```ts
-   * template.fromGCPRegistry(
+   * Template().fromGCPRegistry(
    *   'gcr.io/myproject/myimage:latest',
    *   { serviceAccountJSON: 'path/to/service-account.json' }
    * )
@@ -268,7 +253,7 @@ export interface TemplateFromImage {
    *
    * @example
    * ```ts
-   * template.skipCache().fromPythonImage('3.11')
+   * Template().skipCache().fromPythonImage('3.11')
    * ```
    */
   skipCache(): this
