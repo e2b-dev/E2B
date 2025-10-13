@@ -539,8 +539,6 @@ class Sandbox(SandboxApi):
         elif not template:
             template = cls.default_template
 
-        print("template", template)
-
         sandbox = cls._create(
             template=template,
             auto_pause=auto_pause,
