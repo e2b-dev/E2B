@@ -51,16 +51,19 @@ export async function generateMetadata() {
   return {
     title: {
       template: '%s - E2B',
-      default: 'E2B - Code Interpreting for AI apps',
+      default: 'SDK Reference - E2B',
     },
-    description: 'Open-source secure sandboxes for AI code execution',
+    description:
+      'E2B Gives AI Agents Secure Computers with Real-World Tools. E2B is Used by 88% of Fortune 100 Companies for Frontier Agentic Workflows.',
     twitter: {
-      title: 'E2B - Code Interpreting for AI apps',
-      description: 'Open-source secure sandboxes for AI code execution',
+      title: 'SDK Reference - E2B',
+      description:
+        'E2B Gives AI Agents Secure Computers with Real-World Tools. E2B is Used by 88% of Fortune 100 Companies for Frontier Agentic Workflows.',
     },
     openGraph: {
-      title: 'E2B - Code Interpreting for AI apps',
-      description: 'Open-source secure sandboxes for AI code execution',
+      title: 'SDK Reference - E2B',
+      description:
+        'E2B Gives AI Agents Secure Computers with Real-World Tools. E2B is Used by 88% of Fortune 100 Companies for Frontier Agentic Workflows.',
     },
     alternates:
       isValid && pathname !== ''
