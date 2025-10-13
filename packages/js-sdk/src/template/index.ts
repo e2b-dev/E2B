@@ -37,24 +37,6 @@ import {
 
 /**
  * Base class for building E2B sandbox templates.
- *
- * This class provides a fluent API for creating custom sandbox templates by:
- * - Starting from base images (Debian, Ubuntu, Python, Node, etc.) or existing templates
- * - Adding files and running commands to customize the environment
- * - Building and deploying templates to the E2B infrastructure
- *
- * @example
- * ```ts
- * import { Template } from 'e2b'
- *
- * const template = Template()
- *   .fromPythonImage('3.11')
- *   .copy('requirements.txt', '/home/user/')
- *   .runCmd('pip install -r /home/user/requirements.txt')
- *   .setStartCmd('python app.py', 'curl http://localhost:8000/health')
- *
- * await Template.build(template, { alias: 'my-python-app' })
- * ```
  */
 export class TemplateBase
   implements TemplateFromImage, TemplateBuilder, TemplateFinal

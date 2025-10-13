@@ -29,12 +29,6 @@ class LogEntry:
         self.message = strip_ansi_escape_codes(self.message)
 
     def __str__(self) -> str:
-        """
-        Convert the log entry to a string representation.
-
-        Returns:
-            Formatted log entry string with timestamp, level, and message
-        """
         return f"[{self.timestamp.isoformat()}] [{self.level}] {self.message}"
 
 
@@ -42,7 +36,6 @@ class LogEntry:
 class LogEntryStart(LogEntry):
     """
     Special log entry indicating the start of a build process.
-    Used internally to trigger timer display in the logger.
     """
 
     level: LogEntryLevel = field(default="debug", init=False)
@@ -52,7 +45,6 @@ class LogEntryStart(LogEntry):
 class LogEntryEnd(LogEntry):
     """
     Special log entry indicating the end of a build process.
-    Used internally to stop timer display in the logger.
     """
 
     level: LogEntryLevel = field(default="debug", init=False)
@@ -108,9 +100,9 @@ def set_interval(func, interval):
 
 
 class DefaultBuildLoggerInitialState(TypedDict):
-    start_time: float  # When the build started (timestamp)
-    animation_frame: int  # Current frame of the loading animation
-    timer: Optional[Callable[[], None]]  # Interval timer for updating the display
+    start_time: float
+    animation_frame: int
+    timer: Optional[Callable[[], None]]
 
 
 class DefaultBuildLogger:

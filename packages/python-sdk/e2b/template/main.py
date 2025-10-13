@@ -756,19 +756,19 @@ class TemplateBase:
         return result
 
     # Built-in image mixins
-    def from_debian_image(self, variant: str = "slim") -> TemplateBuilder:
+    def from_debian_image(self, variant: str = "stable") -> TemplateBuilder:
         """
         Start template from a Debian base image.
 
         Args:
-            variant: Debian image variant (default: 'slim')
+            variant: Debian image variant
 
         Returns:
             TemplateBuilder for method chaining
 
         Example:
             ```python
-            template.from_debian_image('bookworm-slim')
+            Template().from_debian_image('bookworm-slim')
             ```
         """
         return self._run_in_new_stack_trace_context(
@@ -787,7 +787,7 @@ class TemplateBase:
 
         Example:
             ```python
-            template.from_ubuntu_image('22.04')
+            Template().from_ubuntu_image('22.04')
             ```
         """
         return self._run_in_new_stack_trace_context(
@@ -806,7 +806,7 @@ class TemplateBase:
 
         Example:
             ```python
-            template.from_python_image('3.11')
+            Template().from_python_image('3.11')
             ```
         """
         return self._run_in_new_stack_trace_context(
@@ -825,7 +825,7 @@ class TemplateBase:
 
         Example:
             ```python
-            template.from_node_image('20')
+            Template().from_node_image('24')
             ```
         """
         return self._run_in_new_stack_trace_context(
@@ -834,14 +834,14 @@ class TemplateBase:
 
     def from_base_image(self) -> TemplateBuilder:
         """
-        Start template from the E2B base image.
+        Start template from the E2B base image (e2bdev/base:latest).
 
         Returns:
             TemplateBuilder for method chaining
 
         Example:
             ```python
-            template.from_base_image()
+            Template().from_base_image()
             ```
         """
         return self._run_in_new_stack_trace_context(
@@ -867,8 +867,10 @@ class TemplateBase:
 
         Example:
             ```python
-            template.from_image('python:3.11-slim')
-            template.from_image('myregistry.com/myimage:latest', username='user', password='pass')
+            Template().from_image('python:3.11-slim')
+
+            # With credentials (optional)
+            Template().from_image('myregistry.com/myimage:latest', username='user', password='pass')
             ```
         """
         self._base_image = image
@@ -901,7 +903,7 @@ class TemplateBase:
 
         Example:
             ```python
-            template.from_template('my-base-template')
+            Template().from_template('my-base-template')
             ```
         """
         self._base_template = template
@@ -927,8 +929,8 @@ class TemplateBase:
 
         Example:
             ```python
-            template.from_dockerfile('Dockerfile')
-            template.from_dockerfile('FROM python:3.11\\nRUN pip install numpy')
+            Template().from_dockerfile('Dockerfile')
+            Template().from_dockerfile('FROM python:3.11\\nRUN pip install numpy')
             ```
         """
         # Create a TemplateBuilder first to use its methods
@@ -966,7 +968,7 @@ class TemplateBase:
 
         Example:
             ```python
-            template.from_aws_registry(
+            Template().from_aws_registry(
                 '123456789.dkr.ecr.us-west-2.amazonaws.com/myimage:latest',
                 access_key_id='AKIA...',
                 secret_access_key='...',
@@ -1007,7 +1009,7 @@ class TemplateBase:
 
         Example:
             ```python
-            template.from_gcp_registry(
+            Template().from_gcp_registry(
                 'gcr.io/myproject/myimage:latest',
                 service_account_json='path/to/service-account.json'
             )
@@ -1104,15 +1106,6 @@ class TemplateBase:
         """
         Add file hashes to COPY instructions for cache invalidation.
 
-        For each COPY instruction, this method calculates a hash of the files
-        being copied (including content, metadata, and paths). These hashes
-        are used to determine if files have changed and need to be re-uploaded.
-
-        The hash includes:
-        - File contents
-        - File metadata (permissions, ownership, modification time)
-        - Relative paths within the copied directory structure
-
         Returns:
             Copy of instructions list with filesHash added to COPY instructions
         """
@@ -1160,14 +1153,6 @@ class TemplateBase:
     def _serialize(self, steps: List[Instruction]) -> TemplateType:
         """
         Serialize the template to the API request format.
-
-        Converts the template configuration into the format expected by
-        the E2B build API, including:
-        - Start and ready commands
-        - Build instructions (COPY, RUN, ENV, etc.)
-        - Base image or template reference
-        - Registry credentials (if using private registries)
-        - Force rebuild flag
 
         Args:
             steps: List of build instructions with file hashes

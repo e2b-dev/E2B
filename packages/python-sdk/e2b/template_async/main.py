@@ -44,7 +44,7 @@ class AsyncTemplate(TemplateBase):
             cpu_count: Number of CPUs allocated to the sandbox
             memory_mb: Amount of memory in MB allocated to the sandbox
             skip_cache: If True, forces a complete rebuild ignoring cache
-            on_build_logs: Callback function to receive build logs
+            on_build_logs: Callback function to receive build logs during the build process
             api_key: E2B API key for authentication
             domain: Domain of the E2B API
 
@@ -55,13 +55,15 @@ class AsyncTemplate(TemplateBase):
             template = (
                 AsyncTemplate()
                 .from_python_image('3.11')
-                .run_cmd('pip install numpy')
+                .copy('requirements.txt', '/home/user/')
+                .run_cmd('pip install -r /home/user/requirements.txt')
             )
 
             await AsyncTemplate.build(
                 template,
                 alias='my-python-env',
-                on_build_logs=lambda log: print(log.message)
+                cpu_count=2,
+                memory_mb=1024
             )
             ```
         """
