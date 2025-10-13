@@ -18,6 +18,12 @@ from .build_api import (
 
 
 class AsyncTemplate(TemplateBase):
+    """
+    Asynchronous template builder for E2B sandboxes.
+    
+    Extends TemplateBase with a static async build method for deploying templates.
+    """
+
     @staticmethod
     async def build(
         template: TemplateClass,
@@ -29,6 +35,27 @@ class AsyncTemplate(TemplateBase):
         api_key: Optional[str] = None,
         domain: Optional[str] = None,
     ) -> None:
+        """
+        Build and deploy a template to E2B infrastructure.
+
+        Args:
+            template: The template to build
+            alias: Alias name for the template
+            cpu_count: Number of CPUs allocated to the sandbox
+            memory_mb: Amount of memory in MB allocated to the sandbox
+            skip_cache: If True, forces a complete rebuild ignoring cache
+            on_build_logs: Callback function to receive build logs
+            api_key: E2B API key for authentication
+            domain: Domain of the E2B API
+
+        Example:
+            ```python
+            from e2b import AsyncTemplate
+
+            template = AsyncTemplate().from_python_image('3.11')
+            await AsyncTemplate.build(template, alias='my-python-env', on_build_logs=lambda log: print(log.message))
+            ```
+        """
         try:
             if on_build_logs:
                 on_build_logs(
