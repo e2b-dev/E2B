@@ -524,9 +524,23 @@ export interface TemplateBuilder {
    *
    * @example
    * ```ts
+   * // Using a string command
    * template.setStartCmd(
    *   'node app.js',
    *   'curl http://localhost:8000/health'
+   * )
+   *
+   * // Using ReadyCmd helpers
+   * import { waitForPort, waitForURL } from 'e2b'
+   *
+   * template.setStartCmd(
+   *   'python -m http.server 8000',
+   *   waitForPort(8000)
+   * )
+   *
+   * template.setStartCmd(
+   *   'npm start',
+   *   waitForURL('http://localhost:3000/health', 200)
    * )
    * ```
    */
@@ -541,7 +555,17 @@ export interface TemplateBuilder {
    *
    * @example
    * ```ts
+   * // Using a string command
    * template.setReadyCmd('curl http://localhost:8000/health')
+   *
+   * // Using ReadyCmd helpers
+   * import { waitForPort, waitForFile, waitForProcess } from 'e2b'
+   *
+   * template.setReadyCmd(waitForPort(3000))
+   *
+   * template.setReadyCmd(waitForFile('/tmp/ready'))
+   *
+   * template.setReadyCmd(waitForProcess('nginx'))
    * ```
    */
   setReadyCmd(readyCommand: string | ReadyCmd): TemplateFinal

@@ -522,9 +522,23 @@ class TemplateBuilder:
 
         Example:
             ```python
+            # Using a string command
             template.set_start_cmd(
                 'python app.py',
                 'curl http://localhost:8000/health'
+            )
+            
+            # Using ReadyCmd helpers
+            from e2b import wait_for_port, wait_for_url
+            
+            template.set_start_cmd(
+                'python -m http.server 8000',
+                wait_for_port(8000)
+            )
+            
+            template.set_start_cmd(
+                'npm start',
+                wait_for_url('http://localhost:3000/health', 200)
             )
             ```
         """
@@ -549,7 +563,17 @@ class TemplateBuilder:
 
         Example:
             ```python
+            # Using a string command
             template.set_ready_cmd('curl http://localhost:8000/health')
+            
+            # Using ReadyCmd helpers
+            from e2b import wait_for_port, wait_for_file, wait_for_process
+            
+            template.set_ready_cmd(wait_for_port(3000))
+            
+            template.set_ready_cmd(wait_for_file('/tmp/ready'))
+            
+            template.set_ready_cmd(wait_for_process('nginx'))
             ```
         """
         if isinstance(ready_cmd, ReadyCmd):
