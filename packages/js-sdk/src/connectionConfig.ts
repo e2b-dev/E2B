@@ -30,6 +30,10 @@ export interface ConnectionOpts {
    */
   domain?: string
   /**
+   * API Url to use for the API.
+   */
+  apiUrl?: string
+  /**
    * If true the SDK starts in the debug mode and connects to the local envd API server.
    * @internal
    * @default E2B_DEBUG // environment variable or `false`
@@ -78,7 +82,7 @@ export class ConnectionConfig {
     this.headers = opts?.headers || {}
     this.headers['User-Agent'] = `e2b-js-sdk/${version}`
 
-    this.apiUrl = this.debug
+    this.apiUrl = opts?.apiUrl ?? this.debug
       ? 'http://localhost:3000'
       : `https://api.${this.domain}`
   }

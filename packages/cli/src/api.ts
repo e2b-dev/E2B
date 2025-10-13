@@ -87,5 +87,6 @@ const userConfig = getUserConfig()
 export const connectionConfig = new e2b.ConnectionConfig({
   accessToken: process.env.E2B_ACCESS_TOKEN || userConfig?.accessToken,
   apiKey: process.env.E2B_API_KEY || userConfig?.teamApiKey,
+  apiUrl: process.env.E2B_API_URL,
 })
 export const client = new e2b.ApiClient(connectionConfig)
