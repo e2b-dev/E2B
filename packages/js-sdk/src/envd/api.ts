@@ -18,7 +18,7 @@ import { WatchDirResponse } from './filesystem/filesystem_pb'
 export async function handleEnvdApiError<
   A extends { responses: Record<string, any> },
   B,
-  C extends `${string}/${string}`
+  C extends `${string}/${string}`,
 >(res: FetchResponse<A, B, C>) {
   if (!res.error) {
     return
