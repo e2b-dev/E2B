@@ -49,7 +49,7 @@ export interface CommandStartOpts extends CommandRequestOpts {
   /**
    * User to run the command as.
    *
-   * @default `last used user in the template`
+   * @default `default Sandbox user (as specified in the template)`
    */
   user?: Username
   /**

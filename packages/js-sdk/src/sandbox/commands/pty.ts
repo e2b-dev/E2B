@@ -44,7 +44,7 @@ export interface PtyCreateOpts
   /**
    * User to use for the PTY.
    *
-   * @default `last used user in the template`
+   * @default `default Sandbox user (as specified in the template)`
    */
   user?: Username
   /**
