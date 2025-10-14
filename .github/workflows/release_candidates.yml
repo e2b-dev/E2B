@@ -18,7 +18,7 @@ jobs:
           ref: ${{ github.head_ref }}
 
       - name: Parse .tool-versions
-        uses: wistia/parse-tool-versions@v2.0.0
+        uses: wistia/parse-tool-versions@v2.1.1
         with:
           filename: '.tool-versions'
           uppercase: 'true'
@@ -29,7 +29,7 @@ jobs:
         with:
           version: '${{ env.TOOL_VERSION_PNPM }}'
 
-      - name: Setup Node.js 20
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         if: ${{ contains( github.event.pull_request.labels.*.name, 'js-rc') || contains( github.event.pull_request.labels.*.name, 'cli-rc') || contains( github.event.pull_request.labels.*.name, 'python-rc') }}
         with:

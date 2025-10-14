@@ -12,7 +12,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Parse .tool-versions
-        uses: wistia/parse-tool-versions@v2.0.0
+        uses: wistia/parse-tool-versions@v2.1.1
         with:
           filename: '.tool-versions'
           uppercase: 'true'
@@ -22,7 +22,7 @@ jobs:
         uses: pnpm/action-setup@v4
         id: pnpm-install
         with:
-          version: 9.15.5
+          version: '${{ env.TOOL_VERSION_PNPM }}'
 
       - name: Setup Node
         uses: actions/setup-node@v4

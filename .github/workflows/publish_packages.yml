@@ -30,7 +30,7 @@ jobs:
           token: ${{ steps.app-token.outputs.token }}
 
       - name: Parse .tool-versions
-        uses: wistia/parse-tool-versions@v2.0.0
+        uses: wistia/parse-tool-versions@v2.1.1
         with:
           filename: '.tool-versions'
           uppercase: 'true'
@@ -53,7 +53,7 @@ jobs:
         with:
           version: '${{ env.TOOL_VERSION_PNPM }}'
 
-      - name: Setup Node.js 20
+      - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '${{ env.TOOL_VERSION_NODEJS }}'
