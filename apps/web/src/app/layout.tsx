@@ -54,16 +54,16 @@ export async function generateMetadata() {
       default: 'SDK Reference - E2B',
     },
     description:
-      'E2B Gives AI Agents Secure Computers with Real-World Tools. E2B is Used by 88% of Fortune 100 Companies for Frontier Agentic Workflows.',
+      'SDK Reference Documentation for E2B JavaScript and Python SDKs. API Methods, Classes, and Examples for Integrating Secure Cloud Sandboxes.',
     twitter: {
       title: 'SDK Reference - E2B',
       description:
-        'E2B Gives AI Agents Secure Computers with Real-World Tools. E2B is Used by 88% of Fortune 100 Companies for Frontier Agentic Workflows.',
+        'SDK Reference Documentation for E2B JavaScript and Python SDKs. API Methods, Classes, and Examples for Integrating Secure Cloud Sandboxes.',
     },
     openGraph: {
       title: 'SDK Reference - E2B',
       description:
-        'E2B Gives AI Agents Secure Computers with Real-World Tools. E2B is Used by 88% of Fortune 100 Companies for Frontier Agentic Workflows.',
+        'SDK Reference Documentation for E2B JavaScript and Python SDKs. API Methods, Classes, and Examples for Integrating Secure Cloud Sandboxes.',
     },
     alternates:
       isValid && pathname !== ''
