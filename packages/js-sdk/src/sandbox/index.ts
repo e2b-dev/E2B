@@ -336,8 +336,11 @@ export class Sandbox extends SandboxApi {
       sandbox.mcpToken = crypto.randomUUID()
       await new Promise<void>((resolve, reject) => {
         sandbox.commands.run(
-          `sudo mcp-gateway --token ${sandbox.mcpToken} --config '${JSON.stringify(sandboxOpts?.mcp)}'`,
+          `sudo -E mcp-gateway --config '${JSON.stringify(sandboxOpts?.mcp)}'`,
           {
+            envs: {
+              TOKEN: sandbox.mcpToken ?? '',
+            },
             background: true,
             timeoutMs: 0,
             onStdout: () => resolve(),

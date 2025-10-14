@@ -1,6 +1,8 @@
 import datetime
 import time
 import logging
+import uuid
+import json
 
 import httpx
 
@@ -551,41 +553,15 @@ class Sandbox(SandboxApi):
         )
 
         if mcp is not None:
-            mcp_url = f"{'http' if sandbox.connection_config.debug else 'https'}://{sandbox.get_host(sandbox.mcp_port)}"
+            token = str(uuid.uuid4())
+            sandbox._set_mcp_token(token)
 
-            mcp_api = httpx.Client(
-                base_url=mcp_url,
-                transport=sandbox._transport,
-                headers=sandbox.connection_config.sandbox_headers,
+            sandbox.commands.run(
+                f"sudo -E mcp-gateway --config '{json.dumps(mcp)}'",
+                background=True,
+                envs={"TOKEN": token},
+                timeout=0,
             )
-
-            mcp_configured = False
-
-            # TODO: The MCP config seems to succeed on first attempt, but we are keeping the retry logic here for now.
-            for _ in range(5):
-                try:
-                    res = mcp_api.post(
-                        "/config",
-                        json=mcp,
-                        timeout=sandbox.connection_config.get_request_timeout(),
-                    )
-
-                    if res.status_code == 200:
-                        mcp_configured = True
-
-                        break
-
-                except Exception as e:
-                    logger.warning(f"Failed to POST MCP config: {e}")
-
-                time.sleep(0.25)
-
-            if not mcp_configured:
-                sandbox.kill()
-
-                raise SandboxException(
-                    f"Failed to configure MCP server. The sandbox template '{template}' might not be configured with MCP gateway inside."
-                )
 
         return sandbox
 

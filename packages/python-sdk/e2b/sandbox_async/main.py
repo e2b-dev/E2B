@@ -2,6 +2,8 @@ import asyncio
 import datetime
 import logging
 import httpx
+import uuid
+import json
 
 from typing import Dict, Optional, overload, List
 
@@ -545,43 +547,31 @@ class AsyncSandbox(SandboxApi):
         )
 
         if mcp is not None:
-            mcp_url = f"{'http' if sandbox.connection_config.debug else 'https'}://{sandbox.get_host(sandbox.mcp_port)}"
+            token = str(uuid.uuid4())
+            sandbox._set_mcp_token(token)
 
-            mcp_api = httpx.AsyncClient(
-                base_url=mcp_url,
-                transport=sandbox._transport,
-                headers=sandbox.connection_config.sandbox_headers,
+            # Wait for MCP server to be ready by waiting for first stdout/stderr
+            resolved = False
+
+            async def on_stdout(_data: str) -> None:
+                nonlocal resolved
+                if not resolved:
+                    resolved = True
+
+            async def on_stderr(data: str) -> None:
+                nonlocal resolved
+                if not resolved:
+                    resolved = True
+                    raise SandboxException(data)
+
+            await sandbox.commands.run(
+                f"sudo -E mcp-gateway --config '{json.dumps(mcp)}'",
+                envs={"TOKEN": token},
+                background=True,
+                timeout=0,
+                on_stdout=on_stdout,
+                on_stderr=on_stderr,
             )
-
-            mcp_configured = False
-
-            # TODO: The MCP config seems to succeed on first attempt, but we are keeping the retry logic here for now.
-            for _ in range(5):
-                try:
-                    res = await mcp_api.post(
-                        "/config",
-                        json=mcp,
-                        timeout=sandbox.connection_config.get_request_timeout(),
-                    )
-
-                    if res.status_code == 200:
-                        mcp_configured = True
-
-                        break
-
-                except Exception as e:
-                    logger.warning(f"Failed to POST MCP config: {e}")
-
-                    pass
-
-                await asyncio.sleep(0.25)
-
-            if not mcp_configured:
-                await sandbox.kill()
-
-                raise SandboxException(
-                    f"Failed to configure MCP server. The sandbox template '{template}' might not be configured with MCP gateway inside."
-                )
 
         return sandbox
 

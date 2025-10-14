@@ -30,7 +30,7 @@ class SandboxBase:
     default_sandbox_timeout = 300
 
     default_template = "base"
-    default_mcp_template = "mcp-gateway-v0"
+    default_mcp_template = "mcp-gateway-v0-1"
 
     def __init__(
         self,
@@ -46,11 +46,16 @@ class SandboxBase:
         self.__envd_version = envd_version
         self.__envd_access_token = envd_access_token
         self.__envd_api_url = f"{'http' if self.connection_config.debug else 'https'}://{self.get_host(self.envd_port)}"
+        self.__mcp_token: Optional[str] = None
 
     @property
     def _envd_access_token(self) -> Optional[str]:
         """Private property to access the envd token"""
         return self.__envd_access_token
+
+    def _set_mcp_token(self, token: str) -> None:
+        """Protected method to set the MCP token"""
+        self.__mcp_token = token
 
     @property
     def connection_config(self) -> ConnectionConfig:
@@ -181,3 +186,13 @@ class SandboxBase:
         :returns MCP URL for the sandbox.
         """
         return f"https://{self.get_host(self.mcp_port)}/mcp"
+
+    def beta_get_mcp_token(self) -> Optional[str]:
+        """
+        [BETA] This feature is in beta and may change in the future.
+
+        Get the MCP token for the sandbox.
+
+        :returns MCP token for the sandbox, or None if MCP is not enabled.
+        """
+        return self.__mcp_token
