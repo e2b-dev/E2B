@@ -54,19 +54,18 @@ export function createRpcLogger(logger: Logger): Interceptor {
 
 export function createApiLogger(logger: Logger): Middleware {
   return {
-    async onRequest(req) {
-      logger.info?.(`Request ${req.method} ${req.url}`)
-
-      return req
+    async onRequest({ request }) {
+      logger.info?.(`Request ${request.method} ${request.url}`)
+      return request
     },
-    async onResponse(res) {
-      if (res.status >= 400) {
-        logger.error?.('Response:', res.status, res.statusText)
+    async onResponse({ response }) {
+      if (response.status >= 400) {
+        logger.error?.('Response:', response.status, response.statusText)
       } else {
-        logger.info?.('Response:', res.status, res.statusText)
+        logger.info?.('Response:', response.status, response.statusText)
       }
 
-      return res
+      return response
     },
   }
 }

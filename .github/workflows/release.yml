@@ -1,9 +1,7 @@
 name: Release
 
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
@@ -29,8 +27,8 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v3
         with:
-          node-version: "20.x"
-          registry-url: "https://registry.npmjs.org"
+          node-version: '20.x'
+          registry-url: 'https://registry.npmjs.org'
           cache: pnpm
           cache-dependency-path: pnpm-lock.yaml
 
@@ -70,8 +68,8 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v3
         with:
-          node-version: "20.x"
-          registry-url: "https://registry.npmjs.org"
+          node-version: '20.x'
+          registry-url: 'https://registry.npmjs.org'
           cache: pnpm
           cache-dependency-path: pnpm-lock.yaml
 

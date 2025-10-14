@@ -1,9 +1,9 @@
 .PHONY: codegen
 codegen:
-	@echo "Generating SDK code from openapi and envd spec"
-	@CODEGEN_IMAGE=$${CODEGEN_IMAGE:-$$(docker build -q -t codegen-env . -f codegen.Dockerfile)} ; \
-	echo "Using codegen image: $$CODEGEN_IMAGE" \
-	&& docker run -v $$PWD:/workspace $$CODEGEN_IMAGE make generate
+	@echo "Building codegen image"
+	docker build -q -t codegen-env . -f codegen.Dockerfile
+	@echo "Generating code"
+	docker run -v $$PWD:/workspace codegen-env make generate
 
 generate: generate-js generate-python
 
