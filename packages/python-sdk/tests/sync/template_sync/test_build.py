@@ -4,7 +4,7 @@ import pytest
 import os
 import shutil
 
-from e2b import Template, wait_for_timeout
+from e2b import Template, wait_for_timeout, default_build_logger
 
 
 @pytest.fixture(scope="module")
@@ -51,7 +51,7 @@ def test_build_template(build, setup_test_folder):
         .set_start_cmd("echo 'Hello, world!'", wait_for_timeout(10_000))
     )
 
-    build(template)
+    build(template, skip_cache=False, on_build_logs=default_build_logger())
 
 
 @pytest.mark.skip_debug()
@@ -78,6 +78,17 @@ def test_build_template_with_resolve_symlinks(build, setup_test_folder):
             resolve_symlinks=True,
         )
         .run_cmd("cat folder/symlink.txt")
+    )
+
+    build(template)
+
+
+@pytest.mark.skip_debug()
+def test_build_template_with_skip_cache(build, setup_test_folder):
+    template = (
+        Template(file_context_path=setup_test_folder)
+        .skip_cache()
+        .from_image("ubuntu:22.04")
     )
 
     build(template)

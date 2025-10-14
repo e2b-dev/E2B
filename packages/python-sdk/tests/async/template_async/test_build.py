@@ -4,7 +4,7 @@ import pytest
 import os
 import shutil
 
-from e2b import AsyncTemplate, wait_for_timeout
+from e2b import AsyncTemplate, wait_for_timeout, default_build_logger
 
 
 @pytest.fixture(scope="module")
@@ -51,7 +51,7 @@ async def test_build_template(async_build, setup_test_folder):
         .set_start_cmd("echo 'Hello, world!'", wait_for_timeout(10_000))
     )
 
-    await async_build(template)
+    await async_build(template, skip_cache=False, on_build_logs=default_build_logger())
 
 
 @pytest.mark.skip_debug()
@@ -78,6 +78,17 @@ async def test_build_template_with_resolve_symlinks(async_build, setup_test_fold
             resolve_symlinks=True,
         )
         .run_cmd("cat folder/symlink.txt")
+    )
+
+    await async_build(template)
+
+
+@pytest.mark.skip_debug()
+async def test_build_template_with_skip_cache(async_build, setup_test_folder):
+    template = (
+        AsyncTemplate(file_context_path=setup_test_folder)
+        .skip_cache()
+        .from_image("ubuntu:22.04")
     )
 
     await async_build(template)

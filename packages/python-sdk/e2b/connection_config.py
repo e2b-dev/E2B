@@ -151,7 +151,7 @@ class ConnectionConfig:
     @property
     def sandbox_headers(self):
         """
-        # We need this separate as we use the same header for E2B access token to API and envd access token to sandbox.
+        We need this separate as we use the same header for E2B access token to API and envd access token to sandbox.
         """
         return {
             **self.headers,

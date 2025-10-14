@@ -1,8 +1,8 @@
-import { afterAll, beforeAll } from 'vitest'
-import { buildTemplateTest } from '../setup'
-import { Template, waitForTimeout } from '../../src'
-import path from 'node:path'
 import fs from 'node:fs'
+import path from 'node:path'
+import { afterAll, beforeAll } from 'vitest'
+import { defaultBuildLogger, Template, waitForTimeout } from '../../src'
+import { buildTemplateTest } from '../setup'
 
 const folderPath = path.join(__dirname, 'folder')
 
@@ -38,7 +38,7 @@ buildTemplateTest(
       .setWorkdir('/app')
       .setStartCmd('echo "Hello, world!"', waitForTimeout(10_000))
 
-    await buildTemplate(template)
+    await buildTemplate(template, undefined, defaultBuildLogger())
   }
 )
 
@@ -67,6 +67,15 @@ buildTemplateTest(
       })
       .runCmd('cat folder/symlink.txt')
 
+    await buildTemplate(template)
+  }
+)
+
+buildTemplateTest(
+  'build template with skipCache',
+  { timeout: 180000 },
+  async ({ buildTemplate }) => {
+    const template = Template().skipCache().fromImage('ubuntu:22.04')
     await buildTemplate(template)
   }
 )

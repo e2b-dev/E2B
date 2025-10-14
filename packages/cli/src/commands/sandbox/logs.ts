@@ -103,8 +103,6 @@ export const logsCommand = new commander.Command('logs')
           console.log(`\nLogs for sandbox ${asBold(sandboxID)}:`)
         }
 
-        const isRunningPromise = isRunning(sandboxID)
-
         do {
           const logs = await listSandboxLogs({ sandboxID, start })
 
@@ -123,9 +121,9 @@ export const logsCommand = new commander.Command('logs')
             )
           }
 
-          const isRunning = await isRunningPromise
+          const isSandboxRunning = await isRunning(sandboxID)
 
-          if (!isRunning && logs.length === 0 && isFirstRun) {
+          if (!isSandboxRunning && logs.length === 0 && isFirstRun) {
             if (format === Format.PRETTY) {
               console.log(
                 `\nStopped printing logs — sandbox ${withUnderline(
@@ -136,7 +134,7 @@ export const logsCommand = new commander.Command('logs')
             break
           }
 
-          if (!isRunning) {
+          if (!isSandboxRunning) {
             if (format === Format.PRETTY) {
               console.log(
                 `\nStopped printing logs — sandbox is ${withUnderline(
