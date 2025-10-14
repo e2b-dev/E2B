@@ -1,4 +1,4 @@
-import createClient, { FetchResponse } from 'openapi-fetch'
+import createClient from 'openapi-fetch'
 
 import type { components, paths } from './schema.gen'
 import { ConnectionConfig } from '../connectionConfig'
