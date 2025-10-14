@@ -147,7 +147,6 @@ components:
       description: User used for setting the owner, or resolving relative paths.
       schema:
         type: string
-        pattern: '^(root|user|.+)$'
     Signature:
       name: signature
       in: query
