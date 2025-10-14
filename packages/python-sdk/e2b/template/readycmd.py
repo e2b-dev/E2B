@@ -24,9 +24,11 @@ def wait_for_port(port: int):
     ```python
     from e2b import Template, wait_for_port
 
-    template = Template()
-    builder = template.from_python_image()
-    builder.set_start_cmd('python -m http.server 8000', wait_for_port(8000))
+    template = (
+        Template()
+        .from_python_image()
+        .set_start_cmd('python -m http.server 8000', wait_for_port(8000))
+    )
     ```
     """
     cmd = f"ss -tuln | grep :{port}"
@@ -48,9 +50,11 @@ def wait_for_url(url: str, status_code: int = 200):
     ```python
     from e2b import Template, wait_for_url
 
-    template = Template()
-    builder = template.from_node_image()
-    builder.set_start_cmd('npm start', wait_for_url('http://localhost:3000/health'))
+    template = (
+        Template()
+        .from_node_image()
+        .set_start_cmd('npm start', wait_for_url('http://localhost:3000/health'))
+    )
     ```
     """
     cmd = f'curl -s -o /dev/null -w "%{{http_code}}" {url} | grep -q "{status_code}"'
@@ -71,9 +75,11 @@ def wait_for_process(process_name: str):
     ```python
     from e2b import Template, wait_for_process
 
-    template = Template()
-    builder = template.from_base_image()
-    builder.set_start_cmd('./my-daemon', wait_for_process('my-daemon'))
+    template = (
+        Template()
+        .from_base_image()
+        .set_start_cmd('./my-daemon', wait_for_process('my-daemon'))
+    )
     ```
     """
     cmd = f"pgrep {process_name} > /dev/null"
@@ -94,9 +100,11 @@ def wait_for_file(filename: str):
     ```python
     from e2b import Template, wait_for_file
 
-    template = Template()
-    builder = template.from_base_image()
-    builder.set_start_cmd('./init.sh', wait_for_file('/tmp/ready'))
+    template = (
+        Template()
+        .from_base_image()
+        .set_start_cmd('./init.sh', wait_for_file('/tmp/ready'))
+    )
     ```
     """
     cmd = f"[ -f {filename} ]"
@@ -117,9 +125,11 @@ def wait_for_timeout(timeout: int):
     ```python
     from e2b import Template, wait_for_timeout
 
-    template = Template()
-    builder = template.from_node_image()
-    builder.set_start_cmd('npm start', wait_for_timeout(5000))  # Wait 5 seconds
+    template = (
+        Template()
+        .from_node_image()
+        .set_start_cmd('npm start', wait_for_timeout(5000))  # Wait 5 seconds
+    )
     ```
     """
     # convert to seconds, but ensure minimum of 1 second

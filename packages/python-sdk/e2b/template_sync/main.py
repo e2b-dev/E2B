@@ -20,8 +20,6 @@ from e2b.template_sync.build_api import (
 class Template(TemplateBase):
     """
     Synchronous template builder for E2B sandboxes.
-
-    Extends TemplateBase with a static build method for deploying templates.
     """
 
     @staticmethod

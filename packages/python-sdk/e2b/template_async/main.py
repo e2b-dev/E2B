@@ -20,8 +20,6 @@ from .build_api import (
 class AsyncTemplate(TemplateBase):
     """
     Asynchronous template builder for E2B sandboxes.
-
-    Extends TemplateBase with a static async build method for deploying templates.
     """
 
     @staticmethod

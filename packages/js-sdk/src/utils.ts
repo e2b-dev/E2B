@@ -85,6 +85,7 @@ export async function dynamicTar(): Promise<typeof import('tar')> {
   return await import('tar')
 }
 
+// Source: https://github.com/chalk/ansi-regex/blob/main/index.js
 function ansiRegex({ onlyFirst = false } = {}) {
   // Valid string terminator sequences are BEL, ESC\, and 0x9c
   const ST = '(?:\\u0007|\\u001B\\u005C|\\u009C)'
