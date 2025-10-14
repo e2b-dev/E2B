@@ -359,17 +359,13 @@ export class Filesystem {
           // Important: RFC 7578, Section 4.2 requires that if a filename is provided,
           // the directory path information must not be used.
           // BUT in our case we need to use the directory path information with a custom
-          // muktipart part name getter in envd.
+          // multipart part name getter in envd.
           fd.append('file', blob, writeFiles[i].path)
 
           return fd
         }, new FormData())
       },
       body: {},
-      headers: {
-        'Content-Type': 'multipart/form-data',
-        'Bun-Content-Type': 'temporary-fix', // https://github.com/oven-sh/bun/issues/14988
-      },
     })
 
     const err = await handleEnvdApiError(res)

@@ -30,7 +30,7 @@ class SandboxBase:
     default_sandbox_timeout = 300
 
     default_template = "base"
-    default_mcp_template = "mcp-gateway-v0"
+    default_mcp_template = "mcp-gateway-v0-1"
 
     def __init__(
         self,
@@ -46,11 +46,20 @@ class SandboxBase:
         self.__envd_version = envd_version
         self.__envd_access_token = envd_access_token
         self.__envd_api_url = f"{'http' if self.connection_config.debug else 'https'}://{self.get_host(self.envd_port)}"
+        self.__mcp_token: Optional[str] = None
 
     @property
     def _envd_access_token(self) -> Optional[str]:
         """Private property to access the envd token"""
         return self.__envd_access_token
+
+    @property
+    def _mcp_token(self) -> Optional[str]:
+        return self.__mcp_token
+
+    @_mcp_token.setter
+    def _mcp_token(self, token: str) -> None:
+        self.__mcp_token = token
 
     @property
     def connection_config(self) -> ConnectionConfig:

@@ -1,10 +1,10 @@
 class BuildException(Exception):
     """
-    Raised when a build fails.
+    Raised when the build fails.
     """
 
 
 class FileUploadException(BuildException):
     """
-    Raised when a file upload fails.
+    Raised when the file upload fails.
     """

@@ -18,6 +18,10 @@ from e2b.template_sync.build_api import (
 
 
 class Template(TemplateBase):
+    """
+    Synchronous template builder for E2B sandboxes.
+    """
+
     @staticmethod
     def build(
         template: TemplateClass,
@@ -29,6 +33,37 @@ class Template(TemplateBase):
         api_key: Optional[str] = None,
         domain: Optional[str] = None,
     ) -> None:
+        """
+        Build and deploy a template to E2B infrastructure.
+
+        :param template: The template to build
+        :param alias: Alias name for the template
+        :param cpu_count: Number of CPUs allocated to the sandbox
+        :param memory_mb: Amount of memory in MB allocated to the sandbox
+        :param skip_cache: If True, forces a complete rebuild ignoring cache
+        :param on_build_logs: Callback function to receive build logs during the build process
+        :param api_key: E2B API key for authentication
+        :param domain: Domain of the E2B API
+
+        Example
+        ```python
+        from e2b import Template
+
+        template = (
+            Template()
+            .from_python_image('3')
+            .copy('requirements.txt', '/home/user/')
+            .run_cmd('pip install -r /home/user/requirements.txt')
+        )
+
+        Template.build(
+            template,
+            alias='my-python-env',
+            cpu_count=2,
+            memory_mb=1024
+        )
+        ```
+        """
         try:
             if on_build_logs:
                 on_build_logs(

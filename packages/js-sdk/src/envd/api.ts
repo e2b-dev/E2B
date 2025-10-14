@@ -1,4 +1,4 @@
-import createClient, { FetchResponse } from 'openapi-fetch'
+import createClient from 'openapi-fetch'
 
 import type { components, paths } from './schema.gen'
 import { ConnectionConfig } from '../connectionConfig'
@@ -15,9 +15,12 @@ import { StartResponse, ConnectResponse } from './process/process_pb'
 import { Code, ConnectError } from '@connectrpc/connect'
 import { WatchDirResponse } from './filesystem/filesystem_pb'
 
-export async function handleEnvdApiError<A, B, C extends `${string}/${string}`>(
-  res: FetchResponse<A, B, C>
-) {
+type ApiError = { message?: string } | string
+
+export async function handleEnvdApiError(res: {
+  error?: ApiError
+  response: Response
+}) {
   if (!res.error) {
     return
   }
