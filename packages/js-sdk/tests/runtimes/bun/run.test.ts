@@ -17,6 +17,11 @@ test(
 
       expect(cmd.exitCode).toBe(0)
       expect(cmd.stdout).toEqual(`${text}\n`)
+
+      await sbx.files.write('test.txt', text)
+      const test = await sbx.files.read('test.txt')
+
+      expect(test).toEqual(text)
     } finally {
       await sbx.kill()
     }

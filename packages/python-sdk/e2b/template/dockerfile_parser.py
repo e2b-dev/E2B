@@ -54,18 +54,15 @@ class DockerfileParserInterface(Protocol):
 def parse_dockerfile(
     dockerfile_content_or_path: str, template_builder: DockerfileParserInterface
 ) -> str:
-    """Parse a Dockerfile and convert it to Template SDK format.
+    """
+    Parse a Dockerfile and convert it to Template SDK format.
 
-    Args:
-        dockerfile_content_or_path: Either the Dockerfile content as a string,
-                                   or a path to a Dockerfile file
-        template_builder: Interface providing template builder methods
+    :param dockerfile_content_or_path: Either the Dockerfile content as a string, or a path to a Dockerfile file
+    :param template_builder: Interface providing template builder methods
 
-    Returns:
-        The base image from the Dockerfile
+    :return: The base image from the Dockerfile
 
-    Raises:
-        ValueError: If the Dockerfile is invalid or unsupported
+    :raises ValueError: If the Dockerfile is invalid or unsupported
     """
     # Check if input is a file path that exists
     if os.path.isfile(dockerfile_content_or_path):
@@ -103,6 +100,10 @@ def parse_dockerfile(
         # Remove AS alias if present (e.g., "node:18 AS builder" -> "node:18")
         if " as " in base_image.lower():
             base_image = base_image.split(" as ")[0].strip()
+
+        # Set the user and workdir to the Docker defaults
+        template_builder.set_user("root")
+        template_builder.set_workdir("/")
 
         # Process all other instructions
         for instruction_data in dfp.structure:

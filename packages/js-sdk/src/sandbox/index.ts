@@ -9,7 +9,6 @@ import {
 } from '../connectionConfig'
 import { EnvdApiClient, handleEnvdApiError } from '../envd/api'
 import { createRpcLogger } from '../logs'
-import { wait } from '../utils'
 import { Commands, Pty } from './commands'
 import { Filesystem } from './filesystem'
 import {
@@ -65,7 +64,7 @@ export interface SandboxUrlOpts {
  */
 export class Sandbox extends SandboxApi {
   protected static readonly defaultTemplate: string = 'base'
-  protected static readonly defaultMcpTemplate: string = 'mcp-gateway-v0'
+  protected static readonly defaultMcpTemplate: string = 'mcp-gateway-v0-1'
   protected static readonly defaultSandboxTimeoutMs = DEFAULT_SANDBOX_TIMEOUT_MS
 
   /**
@@ -98,6 +97,7 @@ export class Sandbox extends SandboxApi {
   protected readonly envdAccessToken?: string
   private readonly envdApiUrl: string
   private readonly envdApi: EnvdApiClient
+  private mcpToken?: string
 
   /**
    * Use {@link Sandbox.create} to create a new Sandbox instead.
@@ -333,42 +333,20 @@ export class Sandbox extends SandboxApi {
     const sandbox = new this({ ...sandboxInfo, ...config }) as InstanceType<S>
 
     if (sandboxOpts?.mcp) {
-      const mcpConfigUrl = `${
-        config.debug ? 'http' : 'https'
-      }://${sandbox.getHost(sandbox.mcpPort)}/config`
+      sandbox.mcpToken = crypto.randomUUID()
 
-      const signal = config.getSignal()
-
-      let mcpConfigured = false
-
-      // TODO: The MCP config seems to succeed on first attempt, but we are keeping the retry logic here for now.
-      for (let i = 0; i < 5; i++) {
-        try {
-          const res = await fetch(mcpConfigUrl, {
-            method: 'POST',
-            body: JSON.stringify(sandboxOpts?.mcp),
-            signal,
-          })
-
-          if (res.ok) {
-            mcpConfigured = true
-
-            break
-          }
-        } catch (e) {
-          config.logger?.warn?.(`Failed to configure MCP server: ${e}`)
+      const handle = await sandbox.commands.run(
+        `mcp-gateway --config '${JSON.stringify(sandboxOpts?.mcp)}'`,
+        {
+          user: 'root',
+          envs: {
+            GATEWAY_ACCESS_TOKEN: sandbox.mcpToken ?? '',
+          },
+          background: true,
+          timeoutMs: 0,
         }
-
-        await wait(250)
-      }
-
-      if (!mcpConfigured) {
-        await sandbox.kill()
-
-        throw new SandboxError(
-          `Failed to configure MCP server. The sandbox template '${template}' might not be configured with MCP gateway inside.`
-        )
-      }
+      )
+      await handle.disconnect()
     }
 
     return sandbox
@@ -580,6 +558,23 @@ export class Sandbox extends SandboxApi {
    */
   betaGetMcpUrl(): string {
     return `https://${this.getHost(this.mcpPort)}/mcp`
+  }
+
+  /**
+   * @beta This feature is in beta and may change in the future.
+   *
+   * Get the MCP token for the sandbox.
+   *
+   * @returns MCP token for the sandbox, or undefined if MCP is not enabled.
+   */
+  async betaGetMcpToken(): Promise<string | undefined> {
+    if (!this.mcpToken) {
+      this.mcpToken = await this.files.read('/etc/mcp-gateway/.token', {
+        user: 'root',
+      })
+    }
+
+    return this.mcpToken
   }
 
   /**
