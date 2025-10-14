@@ -32,7 +32,7 @@ class ApiParams(TypedDict, total=False):
     """E2B domain to use for authentication, defaults to `E2B_DOMAIN` environment variable."""
 
     api_url: Optional[str]
-    """URL to use for the API, defaults to `https://api.<domain>`."""
+    """URL to use for the API, defaults to `https://api.<domain>`. For internal use only."""
 
     debug: Optional[bool]
     """Whether to use debug mode, defaults to `E2B_DEBUG` environment variable."""
@@ -139,6 +139,7 @@ class ConnectionConfig:
         headers = opts.get("headers")
         request_timeout = opts.get("request_timeout")
         api_key = opts.get("api_key")
+        api_url = opts.get("api_url")
         domain = opts.get("domain")
         debug = opts.get("debug")
         proxy = opts.get("proxy")
@@ -150,7 +151,7 @@ class ConnectionConfig:
         return dict(
             ApiParams(
                 api_key=api_key if api_key is not None else self.api_key,
-                api_url=opts.get("api_url"),
+                api_url=api_url if api_url is not None else self.api_url,
                 domain=domain if domain is not None else self.domain,
                 debug=debug if debug is not None else self.debug,
                 request_timeout=self.get_request_timeout(request_timeout),
