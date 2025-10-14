@@ -53,8 +53,12 @@ class SandboxBase:
         """Private property to access the envd token"""
         return self.__envd_access_token
 
-    def _set_mcp_token(self, token: str) -> None:
-        """Protected method to set the MCP token"""
+    @property
+    def _mcp_token(self) -> Optional[str]:
+        return self.__mcp_token
+
+    @_mcp_token.setter
+    def _mcp_token(self, token: str) -> None:
         self.__mcp_token = token
 
     @property
@@ -186,13 +190,3 @@ class SandboxBase:
         :returns MCP URL for the sandbox.
         """
         return f"https://{self.get_host(self.mcp_port)}/mcp"
-
-    def beta_get_mcp_token(self) -> Optional[str]:
-        """
-        [BETA] This feature is in beta and may change in the future.
-
-        Get the MCP token for the sandbox.
-
-        :returns MCP token for the sandbox, or None if MCP is not enabled.
-        """
-        return self.__mcp_token

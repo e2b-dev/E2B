@@ -553,7 +553,7 @@ class Sandbox(SandboxApi):
 
         if mcp is not None:
             token = str(uuid.uuid4())
-            sandbox._set_mcp_token(token)
+            sandbox._mcp_token = token
 
             handle = sandbox.commands.run(
                 f"mcp-gateway --config '{json.dumps(mcp)}'",
@@ -620,12 +620,9 @@ class Sandbox(SandboxApi):
 
         :return: MCP token for the sandbox, or None if MCP is not enabled.
         """
-        token = super().beta_get_mcp_token()
-        if not token:
-            token = self.files.read("/etc/mcp-gateway/.token", user="root")
-            self._set_mcp_token(token)
-
-        return token
+        if not self._mcp_token:
+            self._mcp_token = self.files.read("/etc/mcp-gateway/.token", user="root")
+        return self._mcp_token
 
     @classmethod
     def _cls_connect(

@@ -10,8 +10,10 @@ logging.basicConfig(level=logging.ERROR)
 
 
 async def main():
-    sbx = await AsyncSandbox.create(timeout=10)
+    sbx = await AsyncSandbox.beta_create(timeout=10, mcp={"duckduckgo": {}})
     await sbx.set_timeout(20)
+
+    print(await sbx.beta_get_mcp_token())
 
 
 if __name__ == "__main__":
