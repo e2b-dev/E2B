@@ -551,7 +551,7 @@ class AsyncSandbox(SandboxApi):
 
             await sandbox.commands.run(
                 f"sudo -E mcp-gateway --config '{json.dumps(mcp)}'",
-                envs={"TOKEN": token},
+                envs={"GATEWAY_ACCESS_TOKEN": token},
                 background=True,
                 timeout=0,
             )

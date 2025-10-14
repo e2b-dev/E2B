@@ -558,7 +558,7 @@ class Sandbox(SandboxApi):
             sandbox.commands.run(
                 f"sudo -E mcp-gateway --config '{json.dumps(mcp)}'",
                 background=True,
-                envs={"TOKEN": token},
+                envs={"GATEWAY_ACCESS_TOKEN": token},
                 timeout=0,
             )
 

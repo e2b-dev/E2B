@@ -339,7 +339,7 @@ export class Sandbox extends SandboxApi {
         `sudo -E mcp-gateway --config '${JSON.stringify(sandboxOpts?.mcp)}'`,
         {
           envs: {
-            TOKEN: sandbox.mcpToken ?? '',
+            GATEWAY_ACCESS_TOKEN: sandbox.mcpToken ?? '',
           },
           background: true,
           timeoutMs: 0,
