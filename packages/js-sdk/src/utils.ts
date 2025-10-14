@@ -67,9 +67,6 @@ export function timeoutToSeconds(timeout: number): number {
   return Math.ceil(timeout / 1000)
 }
 
-/**
- * @internal
- */
 export async function dynamicGlob(): Promise<typeof import('glob')> {
   if (runtime === 'browser') {
     throw new Error('Browser runtime is not supported for glob')
@@ -79,9 +76,6 @@ export async function dynamicGlob(): Promise<typeof import('glob')> {
   return await import('glob')
 }
 
-/**
- * @internal
- */
 export async function dynamicTar(): Promise<typeof import('tar')> {
   if (runtime === 'browser') {
     throw new Error('Browser runtime is not supported for tar')
@@ -91,9 +85,6 @@ export async function dynamicTar(): Promise<typeof import('tar')> {
   return await import('tar')
 }
 
-/**
- * @internal
- */
 function ansiRegex({ onlyFirst = false } = {}) {
   // Valid string terminator sequences are BEL, ESC\, and 0x9c
   const ST = '(?:\\u0007|\\u001B\\u005C|\\u009C)'
@@ -108,16 +99,10 @@ function ansiRegex({ onlyFirst = false } = {}) {
   return new RegExp(pattern, onlyFirst ? undefined : 'g')
 }
 
-/**
- * @internal
- */
 export function stripAnsi(text: string): string {
   return text.replace(ansiRegex(), '')
 }
 
-/**
- * @internal
- */
 export async function wait(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }

@@ -1,19 +1,13 @@
 /**
- * Wrapper class for ready check commands.
+ * Class for ready check commands.
  */
 export class ReadyCmd {
   private cmd: string
 
-  /**
-   * @internal
-   */
   constructor(cmd: string) {
     this.cmd = cmd
   }
 
-  /**
-   * @internal
-   */
   getCmd(): string {
     return this.cmd
   }
