@@ -64,7 +64,12 @@ export default Sandbox
 
 export { BuildError, FileUploadError } from './template/errors'
 
-export type { CopyItem } from './template/types'
+export type {
+  BuildOptions,
+  CopyItem,
+  TemplateBuilder,
+  TemplateClass,
+} from './template/types'
 
 export {
   waitForPort,
@@ -82,9 +87,4 @@ export {
   defaultBuildLogger,
 } from './template/logger'
 
-export {
-  Template,
-  type TemplateClass,
-  type TemplateBuilder,
-  type TemplateBase,
-} from './template'
+export { Template, type TemplateBase } from './template'

@@ -2,6 +2,8 @@ import { Template } from 'e2b'
 
 export const template = Template()
   .fromImage('python:3.11-slim')
+  .setUser('root')
+  .setWorkdir('/')
   .runCmd('apt-get update && apt-get install -y gcc g++ make libpq-dev && rm -rf /var/lib/apt/lists/*')
   .setEnvs({
     'PYTHONDONTWRITEBYTECODE': '1',
