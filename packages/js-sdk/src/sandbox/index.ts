@@ -566,7 +566,13 @@ export class Sandbox extends SandboxApi {
    *
    * @returns MCP token for the sandbox, or undefined if MCP is not enabled.
    */
-  betaGetMcpToken(): string | undefined {
+  async betaGetMcpToken(): Promise<string | undefined> {
+    if (!this.mcpToken) {
+      this.mcpToken = await this.files.read('/etc/mcp-gateway/.token', {
+        user: 'root',
+      })
+    }
+
     return this.mcpToken
   }
 

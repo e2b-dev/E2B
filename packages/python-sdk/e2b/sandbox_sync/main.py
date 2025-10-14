@@ -611,6 +611,21 @@ class Sandbox(SandboxApi):
             **opts,
         )
 
+    def beta_get_mcp_token(self) -> Optional[str]:
+        """
+        [BETA] This feature is in beta and may change in the future.
+
+        Get the MCP token for the sandbox.
+
+        :return: MCP token for the sandbox, or None if MCP is not enabled.
+        """
+        token = super().beta_get_mcp_token()
+        if not token:
+            token = self.files.read("/etc/mcp-gateway/.token", user="root")
+            self._set_mcp_token(token)
+
+        return token
+
     @classmethod
     def _cls_connect(
         cls,
