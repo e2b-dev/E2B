@@ -159,7 +159,7 @@ class ConnectionConfig:
         }
 
 
-Username = Literal["root", "user"]
+Username = str
 """
 User used for the operation in the sandbox.
 """
