@@ -1,7 +1,8 @@
-import asyncio
 import datetime
 import logging
 import httpx
+import uuid
+import json
 
 from typing import Dict, Optional, overload, List
 
@@ -545,43 +546,17 @@ class AsyncSandbox(SandboxApi):
         )
 
         if mcp is not None:
-            mcp_url = f"{'http' if sandbox.connection_config.debug else 'https'}://{sandbox.get_host(sandbox.mcp_port)}"
+            token = str(uuid.uuid4())
+            sandbox._mcp_token = token
 
-            mcp_api = httpx.AsyncClient(
-                base_url=mcp_url,
-                transport=sandbox._transport,
-                headers=sandbox.connection_config.sandbox_headers,
+            handle = await sandbox.commands.run(
+                f"mcp-gateway --config '{json.dumps(mcp)}'",
+                user="root",
+                envs={"GATEWAY_ACCESS_TOKEN": token},
+                background=True,
+                timeout=0,
             )
-
-            mcp_configured = False
-
-            # TODO: The MCP config seems to succeed on first attempt, but we are keeping the retry logic here for now.
-            for _ in range(5):
-                try:
-                    res = await mcp_api.post(
-                        "/config",
-                        json=mcp,
-                        timeout=sandbox.connection_config.get_request_timeout(),
-                    )
-
-                    if res.status_code == 200:
-                        mcp_configured = True
-
-                        break
-
-                except Exception as e:
-                    logger.warning(f"Failed to POST MCP config: {e}")
-
-                    pass
-
-                await asyncio.sleep(0.25)
-
-            if not mcp_configured:
-                await sandbox.kill()
-
-                raise SandboxException(
-                    f"Failed to configure MCP server. The sandbox template '{template}' might not be configured with MCP gateway inside."
-                )
+            await handle.disconnect()
 
         return sandbox
 
@@ -633,6 +608,20 @@ class AsyncSandbox(SandboxApi):
             sandbox_id=self.sandbox_id,
             **opts,
         )
+
+    async def beta_get_mcp_token(self) -> Optional[str]:
+        """
+        [BETA] This feature is in beta and may change in the future.
+
+        Get the MCP token for the sandbox.
+
+        :return: MCP token for the sandbox, or None if MCP is not enabled.
+        """
+        if not self._mcp_token:
+            self._mcp_token = await self.files.read(
+                "/etc/mcp-gateway/.token", user="root"
+            )
+        return self._mcp_token
 
     @classmethod
     async def _cls_connect(
