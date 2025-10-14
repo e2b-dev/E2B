@@ -336,8 +336,9 @@ export class Sandbox extends SandboxApi {
       sandbox.mcpToken = crypto.randomUUID()
 
       await sandbox.commands.run(
-        `sudo -E mcp-gateway --config '${JSON.stringify(sandboxOpts?.mcp)}'`,
+        `mcp-gateway --config '${JSON.stringify(sandboxOpts?.mcp)}'`,
         {
+          user: 'root',
           envs: {
             GATEWAY_ACCESS_TOKEN: sandbox.mcpToken ?? '',
           },

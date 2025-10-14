@@ -556,8 +556,9 @@ class Sandbox(SandboxApi):
             sandbox._set_mcp_token(token)
 
             sandbox.commands.run(
-                f"sudo -E mcp-gateway --config '{json.dumps(mcp)}'",
+                f"mcp-gateway --config '{json.dumps(mcp)}'",
                 background=True,
+                user="root",
                 envs={"GATEWAY_ACCESS_TOKEN": token},
                 timeout=0,
             )
