@@ -104,6 +104,10 @@ def parse_dockerfile(
         if " as " in base_image.lower():
             base_image = base_image.split(" as ")[0].strip()
 
+        # Set the user and workdir to the Docker defaults
+        template_builder.set_user("root")
+        template_builder.set_workdir("/")
+
         # Process all other instructions
         for instruction_data in dfp.structure:
             instruction = instruction_data["instruction"]

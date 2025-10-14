@@ -1,4 +1,4 @@
-import { CopyItem, Instruction } from './types'
+import { CopyItem } from './types'
 import {
   Argument,
   DockerfileParser,
@@ -9,7 +9,6 @@ import { ReadyCmd, waitForTimeout } from './readycmd'
 
 export interface DockerfileParseResult {
   baseImage: string
-  instructions: Instruction[]
 }
 
 interface DockerfileFinalParserInterface {}
@@ -91,7 +90,9 @@ export function parseDockerfile(
     baseImage = argumentsData[0].getValue()
   }
 
-  const resultInstructions: Instruction[] = []
+  // Set the user and workdir to the Docker defaults
+  templateBuilder.setUser('root')
+  templateBuilder.setWorkdir('/')
 
   // Process all other instructions
   for (const instruction of instructions) {
@@ -145,7 +146,6 @@ export function parseDockerfile(
 
   return {
     baseImage,
-    instructions: resultInstructions,
   }
 }
 
