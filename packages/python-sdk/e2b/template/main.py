@@ -47,22 +47,20 @@ class TemplateBuilder:
         """
         Copy files or directories from the local filesystem into the template.
 
-        Args:
-            src: Source file(s) or directory path(s) to copy
-            dest: Destination path in the template
-            force_upload: Force upload even if files are cached
-            user: User and optionally group (user:group) to own the files
-            mode: File permissions in octal format (e.g., 0o755)
-            resolve_symlinks: Whether to resolve symlinks
+        :param src: Source file(s) or directory path(s) to copy
+        :param dest: Destination path in the template
+        :param force_upload: Force upload even if files are cached
+        :param user: User and optionally group (user:group) to own the files
+        :param mode: File permissions in octal format (e.g., 0o755)
+        :param resolve_symlinks: Whether to resolve symlinks
 
-        Returns:
-            TemplateBuilder
+        :return: `TemplateBuilder` class
 
-        Example:
-            ```python
-            template.copy('requirements.txt', '/home/user/')
-            template.copy(['app.py', 'config.py'], '/app/', mode=0o755)
-            ```
+        Example
+        ```python
+        template.copy('requirements.txt', '/home/user/')
+        template.copy(['app.py', 'config.py'], '/app/', mode=0o755)
+        ```
         """
         srcs = [src] if isinstance(src, (str, Path)) else src
 
@@ -91,19 +89,17 @@ class TemplateBuilder:
         """
         Copy multiple files or directories using a list of copy items.
 
-        Args:
-            items: List of CopyItem dictionaries with src, dest, and optional parameters
+        :param items: List of CopyItem dictionaries with src, dest, and optional parameters
 
-        Returns:
-            TemplateBuilder
+        :return: `TemplateBuilder` class
 
-        Example:
-            ```python
-            template.copy_items([
-                {'src': 'app.py', 'dest': '/app/'},
-                {'src': 'config.py', 'dest': '/app/', 'mode': 0o644}
-            ])
-            ```
+        Example
+        ```python
+        template.copy_items([
+            {'src': 'app.py', 'dest': '/app/'},
+            {'src': 'config.py', 'dest': '/app/', 'mode': 0o644}
+        ])
+        ```
         """
         self._template._run_in_new_stack_trace_context(
             lambda: [
@@ -129,18 +125,16 @@ class TemplateBuilder:
         """
         Remove files or directories in the template.
 
-        Args:
-            path: File(s) or directory path(s) to remove
-            force: Force removal without prompting
-            recursive: Remove directories recursively
+        :param path: File(s) or directory path(s) to remove
+        :param force: Force removal without prompting
+        :param recursive: Remove directories recursively
 
-        Returns:
-            TemplateBuilder
+        :return: `TemplateBuilder` class
 
-        Example:
-            ```python
-            template.remove('/tmp/cache', recursive=True, force=True)
-            ```
+        Example
+        ```python
+        template.remove('/tmp/cache', recursive=True, force=True)
+        ```
         """
         paths = [path] if isinstance(path, (str, Path)) else path
         args = ["rm"]
@@ -160,18 +154,16 @@ class TemplateBuilder:
         """
         Rename or move a file or directory in the template.
 
-        Args:
-            src: Source path
-            dest: Destination path
-            force: Force rename without prompting
+        :param src: Source path
+        :param dest: Destination path
+        :param force: Force rename without prompting
 
-        Returns:
-            TemplateBuilder
+        :return: `TemplateBuilder` class
 
-        Example:
-            ```python
-            template.rename('/tmp/old.txt', '/tmp/new.txt')
-            ```
+        Example
+        ```python
+        template.rename('/tmp/old.txt', '/tmp/new.txt')
+        ```
         """
         args = ["mv", str(src), str(dest)]
         if force:
@@ -189,18 +181,16 @@ class TemplateBuilder:
         """
         Create directory(ies) in the template.
 
-        Args:
-            path: Directory path(s) to create
-            mode: Directory permissions in octal format (e.g., 0o755)
+        :param path: Directory path(s) to create
+        :param mode: Directory permissions in octal format (e.g., 0o755)
 
-        Returns:
-            TemplateBuilder
+        :return: `TemplateBuilder` class
 
-        Example:
-            ```python
-            template.make_dir('/app/data', mode=0o755)
-            template.make_dir(['/app/logs', '/app/cache'])
-            ```
+        Example
+        ```python
+        template.make_dir('/app/data', mode=0o755)
+        template.make_dir(['/app/logs', '/app/cache'])
+        ```
         """
         path_list = [path] if isinstance(path, (str, Path)) else path
         args = ["mkdir", "-p"]
@@ -218,17 +208,15 @@ class TemplateBuilder:
         """
         Create a symbolic link in the template.
 
-        Args:
-            src: Source path (target of the symlink)
-            dest: Destination path (location of the symlink)
+        :param src: Source path (target of the symlink)
+        :param dest: Destination path (location of the symlink)
 
-        Returns:
-            TemplateBuilder
+        :return: `TemplateBuilder` class
 
-        Example:
-            ```python
-            template.make_symlink('/usr/bin/python3', '/usr/bin/python')
-            ```
+        Example
+        ```python
+        template.make_symlink('/usr/bin/python3', '/usr/bin/python')
+        ```
         """
         args = ["ln", "-s", str(src), str(dest)]
         return self._template._run_in_new_stack_trace_context(
@@ -241,19 +229,17 @@ class TemplateBuilder:
         """
         Run a shell command during template build.
 
-        Args:
-            command: Command string or list of commands to run (joined with &&)
-            user: User to run the command as
+        :param command: Command string or list of commands to run (joined with &&)
+        :param user: User to run the command as
 
-        Returns:
-            TemplateBuilder
+        :return: `TemplateBuilder` class
 
-        Example:
-            ```python
-            template.run_cmd('apt-get update')
-            template.run_cmd(['pip install numpy', 'pip install pandas'])
-            template.run_cmd('apt-get install vim', user='root')
-            ```
+        Example
+        ```python
+        template.run_cmd('apt-get update')
+        template.run_cmd(['pip install numpy', 'pip install pandas'])
+        template.run_cmd('apt-get install vim', user='root')
+        ```
         """
         commands = [command] if isinstance(command, str) else command
         args = [" && ".join(commands)]
@@ -275,16 +261,14 @@ class TemplateBuilder:
         """
         Set the working directory for subsequent commands in the template.
 
-        Args:
-            workdir: Path to set as the working directory
+        :param workdir: Path to set as the working directory
 
-        Returns:
-            TemplateBuilder
+        :return: `TemplateBuilder` class
 
-        Example:
-            ```python
-            template.set_workdir('/app')
-            ```
+        Example
+        ```python
+        template.set_workdir('/app')
+        ```
         """
         instruction: Instruction = {
             "type": InstructionType.WORKDIR,
@@ -300,16 +284,14 @@ class TemplateBuilder:
         """
         Set the user for subsequent commands in the template.
 
-        Args:
-            user: Username to set
+        :param user: Username to set
 
-        Returns:
-            TemplateBuilder
+        :return: `TemplateBuilder` class
 
-        Example:
-            ```python
-            template.set_user('root')
-            ```
+        Example
+        ```python
+        template.set_user('root')
+        ```
         """
         instruction: Instruction = {
             "type": InstructionType.USER,
@@ -327,18 +309,16 @@ class TemplateBuilder:
         """
         Install Python packages using pip.
 
-        Args:
-            packages: Package name(s) to install. If None, runs 'pip install .' in the current directory
+        :param packages: Package name(s) to install. If None, runs 'pip install .' in the current directory
 
-        Returns:
-            TemplateBuilder
+        :return: `TemplateBuilder` class
 
-        Example:
-            ```python
-            template.pip_install('numpy')
-            template.pip_install(['pandas', 'scikit-learn'])
-            template.pip_install()  # Installs from current directory
-            ```
+        Example
+        ```python
+        template.pip_install('numpy')
+        template.pip_install(['pandas', 'scikit-learn'])
+        template.pip_install()  # Installs from current directory
+        ```
         """
         if isinstance(packages, str):
             packages = [packages]
@@ -361,20 +341,18 @@ class TemplateBuilder:
         """
         Install Node.js packages using npm.
 
-        Args:
-            packages: Package name(s) to install. If None, installs from package.json
-            g: Install packages globally
+        :param packages: Package name(s) to install. If None, installs from package.json
+        :param g: Install packages globally
 
-        Returns:
-            TemplateBuilder
+        :return: `TemplateBuilder` class
 
-        Example:
-            ```python
-            template.npm_install('express')
-            template.npm_install(['lodash', 'axios'])
-            template.npm_install('typescript', g=True)
-            template.npm_install()  # Installs from package.json
-            ```
+        Example
+        ```python
+        template.npm_install('express')
+        template.npm_install(['lodash', 'axios'])
+        template.npm_install('typescript', g=True)
+        template.npm_install()  # Installs from package.json
+        ```
         """
         if isinstance(packages, str):
             packages = [packages]
@@ -393,17 +371,15 @@ class TemplateBuilder:
         """
         Install system packages using apt-get.
 
-        Args:
-            packages: Package name(s) to install
+        :param packages: Package name(s) to install
 
-        Returns:
-            TemplateBuilder
+        :return: `TemplateBuilder` class
 
-        Example:
-            ```python
-            template.apt_install('vim')
-            template.apt_install(['git', 'curl', 'wget'])
-            ```
+        Example
+        ```python
+        template.apt_install('vim')
+        template.apt_install(['git', 'curl', 'wget'])
+        ```
         """
         if isinstance(packages, str):
             packages = [packages]
@@ -428,20 +404,18 @@ class TemplateBuilder:
         """
         Clone a git repository into the template.
 
-        Args:
-            url: Git repository URL
-            path: Destination path for the clone
-            branch: Branch to clone
-            depth: Clone depth for shallow clones
+        :param url: Git repository URL
+        :param path: Destination path for the clone
+        :param branch: Branch to clone
+        :param depth: Clone depth for shallow clones
 
-        Returns:
-            TemplateBuilder
+        :return: `TemplateBuilder` class
 
-        Example:
-            ```python
-            template.git_clone('https://github.com/user/repo.git', '/app/repo')
-            template.git_clone('https://github.com/user/repo.git', branch='main', depth=1)
-            ```
+        Example
+        ```python
+        template.git_clone('https://github.com/user/repo.git', '/app/repo')
+        template.git_clone('https://github.com/user/repo.git', branch='main', depth=1)
+        ```
         """
         args = ["git", "clone", url]
         if branch:
@@ -459,16 +433,14 @@ class TemplateBuilder:
         """
         Set environment variables in the template.
 
-        Args:
-            envs: Dictionary of environment variable names and values
+        :param envs: Dictionary of environment variable names and values
 
-        Returns:
-            TemplateBuilder
+        :return: `TemplateBuilder` class
 
-        Example:
-            ```python
-            template.set_envs({'NODE_ENV': 'production', 'PORT': '8080'})
-            ```
+        Example
+        ```python
+        template.set_envs({'NODE_ENV': 'production', 'PORT': '8080'})
+        ```
         """
         if len(envs) == 0:
             return self
@@ -490,13 +462,12 @@ class TemplateBuilder:
         Call this before any instruction to force it and all following layers
         to be rebuilt, ignoring any cached layers.
 
-        Returns:
-            TemplateBuilder
+        :return: `TemplateBuilder` class
 
-        Example:
-            ```python
-            template.skip_cache().run_cmd('apt-get update')
-            ```
+        Example
+        ```python
+        template.skip_cache().run_cmd('apt-get update')
+        ```
         """
         self._template._force_next_layer = True
         return self
@@ -507,34 +478,32 @@ class TemplateBuilder:
         """
         Set the command to start when the sandbox launches and the ready check command.
 
-        Args:
-            start_cmd: Command to run when the sandbox starts
-            ready_cmd: Command or ReadyCmd to check if the sandbox is ready
+        :param start_cmd: Command to run when the sandbox starts
+        :param ready_cmd: Command or ReadyCmd to check if the sandbox is ready
 
-        Returns:
-            TemplateFinal
+        :return: `TemplateFinal` class
 
-        Example:
-            ```python
-            # Using a string command
-            template.set_start_cmd(
-                'python app.py',
-                'curl http://localhost:8000/health'
-            )
+        Example
+        ```python
+        # Using a string command
+        template.set_start_cmd(
+            'python app.py',
+            'curl http://localhost:8000/health'
+        )
 
-            # Using ReadyCmd helpers
-            from e2b import wait_for_port, wait_for_url
+        # Using ReadyCmd helpers
+        from e2b import wait_for_port, wait_for_url
 
-            template.set_start_cmd(
-                'python -m http.server 8000',
-                wait_for_port(8000)
-            )
+        template.set_start_cmd(
+            'python -m http.server 8000',
+            wait_for_port(8000)
+        )
 
-            template.set_start_cmd(
-                'npm start',
-                wait_for_url('http://localhost:3000/health', 200)
-            )
-            ```
+        template.set_start_cmd(
+            'npm start',
+            wait_for_url('http://localhost:3000/health', 200)
+        )
+        ```
         """
         self._template._start_cmd = start_cmd
 
@@ -549,26 +518,24 @@ class TemplateBuilder:
         """
         Set the command to check if the sandbox is ready.
 
-        Args:
-            ready_cmd: Command or ReadyCmd to check if the sandbox is ready
+        :param ready_cmd: Command or ReadyCmd to check if the sandbox is ready
 
-        Returns:
-            TemplateFinal
+        :return: `TemplateFinal` class
 
-        Example:
-            ```python
-            # Using a string command
-            template.set_ready_cmd('curl http://localhost:8000/health')
+        Example
+        ```python
+        # Using a string command
+        template.set_ready_cmd('curl http://localhost:8000/health')
 
-            # Using ReadyCmd helpers
-            from e2b import wait_for_port, wait_for_file, wait_for_process
+        # Using ReadyCmd helpers
+        from e2b import wait_for_port, wait_for_file, wait_for_process
 
-            template.set_ready_cmd(wait_for_port(3000))
+        template.set_ready_cmd(wait_for_port(3000))
 
-            template.set_ready_cmd(wait_for_file('/tmp/ready'))
+        template.set_ready_cmd(wait_for_file('/tmp/ready'))
 
-            template.set_ready_cmd(wait_for_process('nginx'))
-            ```
+        template.set_ready_cmd(wait_for_process('nginx'))
+        ```
         """
         if isinstance(ready_cmd, ReadyCmd):
             ready_cmd = ready_cmd.get_cmd()
@@ -607,9 +574,8 @@ class TemplateBase:
         """
         Create a new template builder instance.
 
-        Args:
-            file_context_path: Base path for resolving relative file paths in copy operations
-            file_ignore_patterns: List of glob patterns to ignore when copying files
+        :param file_context_path: Base path for resolving relative file paths in copy operations
+        :param file_ignore_patterns: List of glob patterns to ignore when copying files
         """
         self._default_base_image: str = "e2bdev/base"
         self._base_image: Optional[str] = self._default_base_image
@@ -636,13 +602,12 @@ class TemplateBase:
         """
         Skip cache for all subsequent build instructions from this point.
 
-        Returns:
-            TemplateBase
+        :return: `TemplateBase` class
 
-        Example:
-            ```python
-            template.skip_cache().from_python_image('3.11')
-            ```
+        Example
+        ```python
+        template.skip_cache().from_python_image('3.11')
+        ```
         """
         self._force_next_layer = True
         return self
@@ -653,11 +618,9 @@ class TemplateBase:
         """
         Collect the current stack trace for debugging purposes.
 
-        Args:
-            stack_traces_depth: Depth to traverse in the call stack
+        :param stack_traces_depth: Depth to traverse in the call stack
 
-        Returns:
-            TemplateBase
+        :return: `TemplateBase` class
         """
         if not self._stack_traces_enabled:
             return self
@@ -682,8 +645,7 @@ class TemplateBase:
         """
         Temporarily disable stack trace collection.
 
-        Returns:
-            TemplateBase
+        :return: `TemplateBase` class
         """
         self._stack_traces_enabled = False
         return self
@@ -692,8 +654,7 @@ class TemplateBase:
         """
         Re-enable stack trace collection.
 
-        Returns:
-            TemplateBase
+        :return: `TemplateBase` class
         """
         self._stack_traces_enabled = True
         return self
@@ -702,11 +663,9 @@ class TemplateBase:
         """
         Execute a function in a clean stack trace context.
 
-        Args:
-            fn: Function to execute
+        :param fn: Function to execute
 
-        Returns:
-            The result of the function
+        :return: The result of the function
         """
         self._disable_stack_trace()
         result = fn()
@@ -719,16 +678,14 @@ class TemplateBase:
         """
         Start template from a Debian base image.
 
-        Args:
-            variant: Debian image variant
+        :param variant: Debian image variant
 
-        Returns:
-            TemplateBuilder for method chaining
+        :return: `TemplateBuilder` class
 
-        Example:
-            ```python
-            Template().from_debian_image('bookworm')
-            ```
+        Example
+        ```python
+        Template().from_debian_image('bookworm')
+        ```
         """
         return self._run_in_new_stack_trace_context(
             lambda: self.from_image(f"debian:{variant}")
@@ -738,16 +695,14 @@ class TemplateBase:
         """
         Start template from an Ubuntu base image.
 
-        Args:
-            variant: Ubuntu image variant (default: 'lts')
+        :param variant: Ubuntu image variant (default: 'lts')
 
-        Returns:
-            TemplateBuilder for method chaining
+        :return: `TemplateBuilder` class
 
-        Example:
-            ```python
-            Template().from_ubuntu_image('24.04')
-            ```
+        Example
+        ```python
+        Template().from_ubuntu_image('24.04')
+        ```
         """
         return self._run_in_new_stack_trace_context(
             lambda: self.from_image(f"ubuntu:{variant}")
@@ -757,16 +712,14 @@ class TemplateBase:
         """
         Start template from a Python base image.
 
-        Args:
-            version: Python version (default: '3')
+        :param version: Python version (default: '3')
 
-        Returns:
-            TemplateBuilder for method chaining
+        :return: `TemplateBuilder` class
 
-        Example:
-            ```python
-            Template().from_python_image('3')
-            ```
+        Example
+        ```python
+        Template().from_python_image('3')
+        ```
         """
         return self._run_in_new_stack_trace_context(
             lambda: self.from_image(f"python:{version}")
@@ -776,16 +729,14 @@ class TemplateBase:
         """
         Start template from a Node.js base image.
 
-        Args:
-            variant: Node.js image variant (default: 'lts')
+        :param variant: Node.js image variant (default: 'lts')
 
-        Returns:
-            TemplateBuilder for method chaining
+        :return: `TemplateBuilder` class
 
-        Example:
-            ```python
-            Template().from_node_image('24')
-            ```
+        Example
+        ```python
+        Template().from_node_image('24')
+        ```
         """
         return self._run_in_new_stack_trace_context(
             lambda: self.from_image(f"node:{variant}")
@@ -795,13 +746,12 @@ class TemplateBase:
         """
         Start template from the E2B base image (e2bdev/base:latest).
 
-        Returns:
-            TemplateBuilder for method chaining
+        :return: `TemplateBuilder` class
 
-        Example:
-            ```python
-            Template().from_base_image()
-            ```
+        Example
+        ```python
+        Template().from_base_image()
+        ```
         """
         return self._run_in_new_stack_trace_context(
             lambda: self.from_image(self._default_base_image)
@@ -816,21 +766,19 @@ class TemplateBase:
         """
         Start template from a Docker image.
 
-        Args:
-            image: Docker image name (e.g., 'ubuntu:24.04')
-            username: Username for private registry authentication
-            password: Password for private registry authentication
+        :param image: Docker image name (e.g., 'ubuntu:24.04')
+        :param username: Username for private registry authentication
+        :param password: Password for private registry authentication
 
-        Returns:
-            TemplateBuilder for method chaining
+        :return: `TemplateBuilder` class
 
-        Example:
-            ```python
-            Template().from_image('python:3')
+        Example
+        ```python
+        Template().from_image('python:3')
 
-            # With credentials (optional)
-            Template().from_image('myregistry.com/myimage:latest', username='user', password='pass')
-            ```
+        # With credentials (optional)
+        Template().from_image('myregistry.com/myimage:latest', username='user', password='pass')
+        ```
         """
         self._base_image = image
         self._base_template = None
@@ -854,16 +802,14 @@ class TemplateBase:
         """
         Start template from an existing E2B template.
 
-        Args:
-            template: E2B template ID or alias
+        :param template: E2B template ID or alias
 
-        Returns:
-            TemplateBuilder for method chaining
+        :return: `TemplateBuilder` class
 
-        Example:
-            ```python
-            Template().from_template('my-base-template')
-            ```
+        Example
+        ```python
+        Template().from_template('my-base-template')
+        ```
         """
         self._base_template = template
         self._base_image = None
@@ -879,18 +825,15 @@ class TemplateBase:
         """
         Parse a Dockerfile and convert it to Template SDK format.
 
-        Args:
-            dockerfile_content_or_path: Either the Dockerfile content as a string,
-                                       or a path to a Dockerfile file
+        :param dockerfile_content_or_path: Either the Dockerfile content as a string, or a path to a Dockerfile file
 
-        Returns:
-            TemplateBuilder for method chaining
+        :return: `TemplateBuilder` class
 
-        Example:
-            ```python
-            Template().from_dockerfile('Dockerfile')
-            Template().from_dockerfile('FROM python:3\\nRUN pip install numpy')
-            ```
+        Example
+        ```python
+        Template().from_dockerfile('Dockerfile')
+        Template().from_dockerfile('FROM python:3\\nRUN pip install numpy')
+        ```
         """
         # Create a TemplateBuilder first to use its methods
         builder = TemplateBuilder(self)
@@ -916,24 +859,22 @@ class TemplateBase:
         """
         Start template from an AWS ECR registry image.
 
-        Args:
-            image: Docker image name from AWS ECR
-            access_key_id: AWS access key ID
-            secret_access_key: AWS secret access key
-            region: AWS region
+        :param image: Docker image name from AWS ECR
+        :param access_key_id: AWS access key ID
+        :param secret_access_key: AWS secret access key
+        :param region: AWS region
 
-        Returns:
-            TemplateBuilder for method chaining
+        :return: `TemplateBuilder` class
 
-        Example:
-            ```python
-            Template().from_aws_registry(
-                '123456789.dkr.ecr.us-west-2.amazonaws.com/myimage:latest',
-                access_key_id='AKIA...',
-                secret_access_key='...',
-                region='us-west-2'
-            )
-            ```
+        Example
+        ```python
+        Template().from_aws_registry(
+            '123456789.dkr.ecr.us-west-2.amazonaws.com/myimage:latest',
+            access_key_id='AKIA...',
+            secret_access_key='...',
+            region='us-west-2'
+        )
+        ```
         """
         self._base_image = image
         self._base_template = None
@@ -959,20 +900,18 @@ class TemplateBase:
         """
         Start template from a GCP Artifact Registry or Container Registry image.
 
-        Args:
-            image: Docker image name from GCP registry
-            service_account_json: Service account JSON string, dict, or path to JSON file
+        :param image: Docker image name from GCP registry
+        :param service_account_json: Service account JSON string, dict, or path to JSON file
 
-        Returns:
-            TemplateBuilder for method chaining
+        :return: `TemplateBuilder` class
 
-        Example:
-            ```python
-            Template().from_gcp_registry(
-                'gcr.io/myproject/myimage:latest',
-                service_account_json='path/to/service-account.json'
-            )
-            ```
+        Example
+        ```python
+        Template().from_gcp_registry(
+            'gcr.io/myproject/myimage:latest',
+            service_account_json='path/to/service-account.json'
+        )
+        ```
         """
         self._base_image = image
         self._base_template = None
@@ -997,17 +936,15 @@ class TemplateBase:
         """
         Convert a template to JSON representation.
 
-        Args:
-            template: The template to convert (TemplateBuilder or TemplateFinal instance)
+        :param template: The template to convert (TemplateBuilder or TemplateFinal instance)
 
-        Returns:
-            JSON string representation of the template
+        :return: JSON string representation of the template
 
-        Example:
-            ```python
-            template = Template().from_python_image('3').copy('app.py', '/app/')
-            json_str = TemplateBase.to_json(template)
-            ```
+        Example
+        ```python
+        template = Template().from_python_image('3').copy('app.py', '/app/')
+        json_str = TemplateBase.to_json(template)
+        ```
         """
         return json.dumps(
             template._template._serialize(
@@ -1023,20 +960,17 @@ class TemplateBase:
 
         Note: Templates based on other E2B templates cannot be converted to Dockerfile.
 
-        Args:
-            template: The template to convert (TemplateBuilder or TemplateFinal instance)
+        :param template: The template to convert (TemplateBuilder or TemplateFinal instance)
 
-        Returns:
-            Dockerfile string representation
+        :return: Dockerfile string representation
 
-        Raises:
-            ValueError: If the template is based on another E2B template or has no base image
+        :raises ValueError: If the template is based on another E2B template or has no base image
 
-        Example:
-            ```python
-            template = Template().from_python_image('3').copy('app.py', '/app/')
-            dockerfile = TemplateBase.to_dockerfile(template)
-            ```
+        Example
+        ```python
+        template = Template().from_python_image('3').copy('app.py', '/app/')
+        dockerfile = TemplateBase.to_dockerfile(template)
+        ```
         """
         if template._template._base_template is not None:
             raise ValueError(
@@ -1065,8 +999,7 @@ class TemplateBase:
         """
         Add file hashes to COPY instructions for cache invalidation.
 
-        Returns:
-            Copy of instructions list with filesHash added to COPY instructions
+        :return: Copy of instructions list with filesHash added to COPY instructions
         """
         steps: List[Instruction] = []
 
@@ -1113,11 +1046,9 @@ class TemplateBase:
         """
         Serialize the template to the API request format.
 
-        Args:
-            steps: List of build instructions with file hashes
+        :param steps: List of build instructions with file hashes
 
-        Returns:
-            Template data formatted for the API
+        :return: Template data formatted for the API
         """
         _steps: List[Instruction] = []
 

@@ -84,7 +84,13 @@ level_order = {
 def set_interval(func, interval):
     """
     Returns a stop function that can be called to cancel the interval.
+
     Similar to JavaScript's setInterval.
+
+    :param func: Function to execute at each interval
+    :param interval: Interval duration in **seconds**
+
+    :return: Stop function that can be called to cancel the interval
     """
     stopped = threading.Event()
 
@@ -204,24 +210,22 @@ def default_build_logger(
     """
     Create a default build logger with animated timer display.
 
-    Args:
-        min_level: Minimum log level to display (default: 'info')
+    :param min_level: Minimum log level to display (default: 'info')
 
-    Returns:
-        Logger function that accepts LogEntry instances
+    :return: Logger function that accepts LogEntry instances
 
-    Example:
-        ```python
-        from e2b import Template, default_build_logger
+    Example
+    ```python
+    from e2b import Template, default_build_logger
 
-        template = Template().from_python_image()
+    template = Template().from_python_image()
 
-        # Use with build - implementation would be in build_async module
-        # await Template.build(template,
-        #     alias='my-template',
-        #     on_build_logs=default_build_logger(min_level='debug')
-        # )
-        ```
+    # Use with build - implementation would be in build_async module
+    # await Template.build(template,
+    #     alias='my-template',
+    #     on_build_logs=default_build_logger(min_level='debug')
+    # )
+    ```
     """
     build_logger = DefaultBuildLogger(min_level)
 

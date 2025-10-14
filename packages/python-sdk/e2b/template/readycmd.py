@@ -16,20 +16,18 @@ def wait_for_port(port: int):
 
     Uses `ss` command to check if a port is open and listening.
 
-    Args:
-        port: Port number to wait for
+    :param port: Port number to wait for
 
-    Returns:
-        ReadyCmd that checks for the port
+    :return: ReadyCmd that checks for the port
 
-    Example:
-        ```python
-        from e2b import Template, wait_for_port
+    Example
+    ```python
+    from e2b import Template, wait_for_port
 
-        template = Template()
-        builder = template.from_python_image()
-        builder.set_start_cmd('python -m http.server 8000', wait_for_port(8000))
-        ```
+    template = Template()
+    builder = template.from_python_image()
+    builder.set_start_cmd('python -m http.server 8000', wait_for_port(8000))
+    ```
     """
     cmd = f"ss -tuln | grep :{port}"
     return ReadyCmd(cmd)
@@ -41,21 +39,19 @@ def wait_for_url(url: str, status_code: int = 200):
 
     Uses `curl` to make HTTP requests and check the response status.
 
-    Args:
-        url: URL to check (e.g., 'http://localhost:3000/health')
-        status_code: Expected HTTP status code (default: 200)
+    :param url: URL to check (e.g., 'http://localhost:3000/health')
+    :param status_code: Expected HTTP status code (default: 200)
 
-    Returns:
-        ReadyCmd that checks the URL
+    :return: ReadyCmd that checks the URL
 
-    Example:
-        ```python
-        from e2b import Template, wait_for_url
+    Example
+    ```python
+    from e2b import Template, wait_for_url
 
-        template = Template()
-        builder = template.from_node_image()
-        builder.set_start_cmd('npm start', wait_for_url('http://localhost:3000/health'))
-        ```
+    template = Template()
+    builder = template.from_node_image()
+    builder.set_start_cmd('npm start', wait_for_url('http://localhost:3000/health'))
+    ```
     """
     cmd = f'curl -s -o /dev/null -w "%{{http_code}}" {url} | grep -q "{status_code}"'
     return ReadyCmd(cmd)
@@ -67,20 +63,18 @@ def wait_for_process(process_name: str):
 
     Uses `pgrep` to check if a process exists.
 
-    Args:
-        process_name: Name of the process to wait for
+    :param process_name: Name of the process to wait for
 
-    Returns:
-        ReadyCmd that checks for the process
+    :return: ReadyCmd that checks for the process
 
-    Example:
-        ```python
-        from e2b import Template, wait_for_process
+    Example
+    ```python
+    from e2b import Template, wait_for_process
 
-        template = Template()
-        builder = template.from_base_image()
-        builder.set_start_cmd('./my-daemon', wait_for_process('my-daemon'))
-        ```
+    template = Template()
+    builder = template.from_base_image()
+    builder.set_start_cmd('./my-daemon', wait_for_process('my-daemon'))
+    ```
     """
     cmd = f"pgrep {process_name} > /dev/null"
     return ReadyCmd(cmd)
@@ -92,20 +86,18 @@ def wait_for_file(filename: str):
 
     Uses shell test command to check file existence.
 
-    Args:
-        filename: Path to the file to wait for
+    :param filename: Path to the file to wait for
 
-    Returns:
-        ReadyCmd that checks for the file
+    :return: ReadyCmd that checks for the file
 
-    Example:
-        ```python
-        from e2b import Template, wait_for_file
+    Example
+    ```python
+    from e2b import Template, wait_for_file
 
-        template = Template()
-        builder = template.from_base_image()
-        builder.set_start_cmd('./init.sh', wait_for_file('/tmp/ready'))
-        ```
+    template = Template()
+    builder = template.from_base_image()
+    builder.set_start_cmd('./init.sh', wait_for_file('/tmp/ready'))
+    ```
     """
     cmd = f"[ -f {filename} ]"
     return ReadyCmd(cmd)
@@ -117,20 +109,18 @@ def wait_for_timeout(timeout: int):
 
     Uses `sleep` command to wait for a fixed duration.
 
-    Args:
-        timeout: Time to wait in milliseconds (minimum: 1000ms / 1 second)
+    :param timeout: Time to wait in **milliseconds** (minimum: 1000ms / 1 second)
 
-    Returns:
-        ReadyCmd that waits for the specified duration
+    :return: ReadyCmd that waits for the specified duration
 
-    Example:
-        ```python
-        from e2b import Template, wait_for_timeout
+    Example
+    ```python
+    from e2b import Template, wait_for_timeout
 
-        template = Template()
-        builder = template.from_node_image()
-        builder.set_start_cmd('npm start', wait_for_timeout(5000))  # Wait 5 seconds
-        ```
+    template = Template()
+    builder = template.from_node_image()
+    builder.set_start_cmd('npm start', wait_for_timeout(5000))  # Wait 5 seconds
+    ```
     """
     # convert to seconds, but ensure minimum of 1 second
     seconds = max(1, timeout // 1000)

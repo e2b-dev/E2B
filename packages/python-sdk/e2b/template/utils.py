@@ -16,11 +16,9 @@ def read_dockerignore(context_path: str) -> List[str]:
     """
     Read and parse a .dockerignore file.
 
-    Args:
-        context_path: Directory path containing the .dockerignore file
+    :param context_path: Directory path containing the .dockerignore file
 
-    Returns:
-        Array of ignore patterns (empty lines and comments are filtered out)
+    :return: Array of ignore patterns (empty lines and comments are filtered out)
     """
     dockerignore_path = os.path.join(context_path, ".dockerignore")
     if not os.path.exists(dockerignore_path):
@@ -49,19 +47,16 @@ def calculate_files_hash(
 
     The hash includes file content, metadata (mode, uid, gid, size, mtime), and relative paths.
 
-    Args:
-        src: Source path pattern for files to copy
-        dest: Destination path where files will be copied
-        context_path: Base directory for resolving relative paths
-        ignore_patterns: Glob patterns to ignore
-        resolve_symlinks: Whether to resolve symbolic links when hashing
-        stack_trace: Optional stack trace for error reporting
+    :param src: Source path pattern for files to copy
+    :param dest: Destination path where files will be copied
+    :param context_path: Base directory for resolving relative paths
+    :param ignore_patterns: Glob patterns to ignore
+    :param resolve_symlinks: Whether to resolve symbolic links when hashing
+    :param stack_trace: Optional stack trace for error reporting
 
-    Returns:
-        Hex string hash of all files
+    :return: Hex string hash of all files
 
-    Raises:
-        ValueError: If no files match the source pattern
+    :raises ValueError: If no files match the source pattern
     """
     src_path = os.path.join(context_path, src)
     hash_obj = hashlib.sha256()
@@ -124,11 +119,9 @@ def strip_ansi_escape_codes(text: str) -> str:
 
     Source: https://github.com/chalk/ansi-regex/blob/main/index.js
 
-    Args:
-        text: String with ANSI escape codes
+    :param text: String with ANSI escape codes
 
-    Returns:
-        String without ANSI escape codes
+    :return: String without ANSI escape codes
     """
     # Valid string terminator sequences are BEL, ESC\, and 0x9c
     st = r"(?:\u0007|\u001B\u005C|\u009C)"
@@ -147,11 +140,9 @@ def get_caller_frame(depth: int) -> Optional[FrameType]:
     This is used to provide better error messages and debugging information
     by tracking where template methods were called from in user code.
 
-    Args:
-        depth: The depth of the stack trace to retrieve
+    :param depth: The depth of the stack trace to retrieve
 
-    Returns:
-        The caller frame, or None if not available
+    :return: The caller frame, or None if not available
     """
     stack = inspect.stack()[1:]
     if len(stack) < depth + 1:
@@ -166,11 +157,9 @@ def get_caller_directory(depth: int) -> Optional[str]:
     This is used to determine the file_context_path when creating a template,
     so file paths are resolved relative to the user's template file location.
 
-    Args:
-        depth: The depth of the stack trace
+    :param depth: The depth of the stack trace
 
-    Returns:
-        The caller's directory path, or None if not available
+    :return: The caller's directory path, or None if not available
     """
     try:
         # Get the stack trace
@@ -190,17 +179,15 @@ def pad_octal(mode: int) -> str:
     """
     Convert a numeric file mode to a zero-padded octal string.
 
-    Args:
-        mode: File mode as a number (e.g., 493 for 0o755)
+    :param mode: File mode as a number (e.g., 493 for 0o755)
 
-    Returns:
-        Zero-padded 4-digit octal string (e.g., "0755")
+    :return: Zero-padded 4-digit octal string (e.g., "0755")
 
-    Example:
-        ```python
-        pad_octal(0o755)  # Returns "0755"
-        pad_octal(0o644)  # Returns "0644"
-        ```
+    Example
+    ```python
+    pad_octal(0o755)  # Returns "0755"
+    pad_octal(0o644)  # Returns "0644"
+    ```
     """
     return f"{mode:04o}"
 
@@ -214,12 +201,10 @@ def get_build_step_index(step: str, stack_traces_length: int) -> int:
     - FINALIZE_STEP_NAME: Returns the last index
     - Numeric strings: Converted to number
 
-    Args:
-        step: Build step name or number as string
-        stack_traces_length: Total number of stack traces (used for FINALIZE_STEP_NAME)
+    :param step: Build step name or number as string
+    :param stack_traces_length: Total number of stack traces (used for FINALIZE_STEP_NAME)
 
-    Returns:
-        Index for the build step
+    :return: Index for the build step
     """
     if step == BASE_STEP_NAME:
         return 0
@@ -236,12 +221,10 @@ def read_gcp_service_account_json(
     """
     Read GCP service account JSON from a file or object.
 
-    Args:
-        context_path: Base directory for resolving relative file paths
-        path_or_content: Either a path to a JSON file or a service account object
+    :param context_path: Base directory for resolving relative file paths
+    :param path_or_content: Either a path to a JSON file or a service account object
 
-    Returns:
-        Service account JSON as a string
+    :return: Service account JSON as a string
     """
     if isinstance(path_or_content, str):
         with open(
