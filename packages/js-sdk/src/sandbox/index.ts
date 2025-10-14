@@ -335,7 +335,7 @@ export class Sandbox extends SandboxApi {
     if (sandboxOpts?.mcp) {
       sandbox.mcpToken = crypto.randomUUID()
 
-      await sandbox.commands.run(
+      const handle = await sandbox.commands.run(
         `mcp-gateway --config '${JSON.stringify(sandboxOpts?.mcp)}'`,
         {
           user: 'root',
@@ -346,6 +346,7 @@ export class Sandbox extends SandboxApi {
           timeoutMs: 0,
         }
       )
+      await handle.disconnect()
     }
 
     return sandbox

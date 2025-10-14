@@ -555,13 +555,14 @@ class Sandbox(SandboxApi):
             token = str(uuid.uuid4())
             sandbox._set_mcp_token(token)
 
-            sandbox.commands.run(
+            handle = sandbox.commands.run(
                 f"mcp-gateway --config '{json.dumps(mcp)}'",
                 background=True,
                 user="root",
                 envs={"GATEWAY_ACCESS_TOKEN": token},
                 timeout=0,
             )
+            handle.disconnect()
 
         return sandbox
 
