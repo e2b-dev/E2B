@@ -549,27 +549,11 @@ class AsyncSandbox(SandboxApi):
             token = str(uuid.uuid4())
             sandbox._set_mcp_token(token)
 
-            # Wait for MCP server to be ready by waiting for first stdout/stderr
-            resolved = False
-
-            async def on_stdout(_data: str) -> None:
-                nonlocal resolved
-                if not resolved:
-                    resolved = True
-
-            async def on_stderr(data: str) -> None:
-                nonlocal resolved
-                if not resolved:
-                    resolved = True
-                    raise SandboxException(data)
-
             await sandbox.commands.run(
                 f"sudo -E mcp-gateway --config '{json.dumps(mcp)}'",
                 envs={"TOKEN": token},
                 background=True,
                 timeout=0,
-                on_stdout=on_stdout,
-                on_stderr=on_stderr,
             )
 
         return sandbox
