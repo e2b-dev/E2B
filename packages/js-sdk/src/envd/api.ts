@@ -15,11 +15,12 @@ import { StartResponse, ConnectResponse } from './process/process_pb'
 import { Code, ConnectError } from '@connectrpc/connect'
 import { WatchDirResponse } from './filesystem/filesystem_pb'
 
-export async function handleEnvdApiError<
-  A extends { responses: Record<string, any> },
-  B,
-  C extends `${string}/${string}`,
->(res: FetchResponse<A, B, C>) {
+type ApiError = { message?: string } | string
+
+export async function handleEnvdApiError(res: {
+  error?: ApiError
+  response: Response
+}) {
   if (!res.error) {
     return
   }
@@ -27,7 +28,7 @@ export async function handleEnvdApiError<
   const message: string =
     typeof res.error == 'string'
       ? res.error
-      : (res.error as any)?.message || (await res.response.text())
+      : res.error?.message || (await res.response.text())
 
   switch (res.response.status) {
     case 400:
