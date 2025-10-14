@@ -187,12 +187,6 @@ class DefaultBuildLogger {
 /**
  * Create a default build logger with animated timer display.
  *
- * This logger displays build progress with:
- * - Colored, formatted log messages
- * - Animated loading indicator
- * - Elapsed time counter
- * - Configurable minimum log level
- *
  * @param options Logger configuration options
  * @param options.minLevel Minimum log level to display (default: 'info')
  * @returns Logger function that accepts LogEntry instances

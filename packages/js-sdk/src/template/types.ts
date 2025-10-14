@@ -247,10 +247,6 @@ export interface TemplateFromImage {
   /**
    * Skip cache for all subsequent build instructions from this point.
    *
-   * When called before a from instruction, this forces the entire template
-   * to be rebuilt from scratch. When called before other instructions, it
-   * forces all subsequent layers to be rebuilt, ignoring any cached layers.
-   *
    * @example
    * ```ts
    * Template().skipCache().fromPythonImage('3')
@@ -491,9 +487,6 @@ export interface TemplateBuilder {
 
   /**
    * Skip cache for all subsequent build instructions from this point.
-   *
-   * Call this before any instruction to force it and all following layers
-   * to be rebuilt, ignoring any cached layers.
    *
    * @example
    * ```ts

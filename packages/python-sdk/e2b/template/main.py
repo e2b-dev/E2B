@@ -56,7 +56,7 @@ class TemplateBuilder:
             resolve_symlinks: Whether to resolve symlinks
 
         Returns:
-            Self for method chaining
+            TemplateBuilder
 
         Example:
             ```python
@@ -95,7 +95,7 @@ class TemplateBuilder:
             items: List of CopyItem dictionaries with src, dest, and optional parameters
 
         Returns:
-            Self for method chaining
+            TemplateBuilder
 
         Example:
             ```python
@@ -135,7 +135,7 @@ class TemplateBuilder:
             recursive: Remove directories recursively
 
         Returns:
-            Self for method chaining
+            TemplateBuilder
 
         Example:
             ```python
@@ -166,7 +166,7 @@ class TemplateBuilder:
             force: Force rename without prompting
 
         Returns:
-            Self for method chaining
+            TemplateBuilder
 
         Example:
             ```python
@@ -194,7 +194,7 @@ class TemplateBuilder:
             mode: Directory permissions in octal format (e.g., 0o755)
 
         Returns:
-            Self for method chaining
+            TemplateBuilder
 
         Example:
             ```python
@@ -223,7 +223,7 @@ class TemplateBuilder:
             dest: Destination path (location of the symlink)
 
         Returns:
-            Self for method chaining
+            TemplateBuilder
 
         Example:
             ```python
@@ -246,7 +246,7 @@ class TemplateBuilder:
             user: User to run the command as
 
         Returns:
-            Self for method chaining
+            TemplateBuilder
 
         Example:
             ```python
@@ -279,7 +279,7 @@ class TemplateBuilder:
             workdir: Path to set as the working directory
 
         Returns:
-            Self for method chaining
+            TemplateBuilder
 
         Example:
             ```python
@@ -304,7 +304,7 @@ class TemplateBuilder:
             user: Username to set
 
         Returns:
-            Self for method chaining
+            TemplateBuilder
 
         Example:
             ```python
@@ -331,7 +331,7 @@ class TemplateBuilder:
             packages: Package name(s) to install. If None, runs 'pip install .' in the current directory
 
         Returns:
-            Self for method chaining
+            TemplateBuilder
 
         Example:
             ```python
@@ -366,7 +366,7 @@ class TemplateBuilder:
             g: Install packages globally
 
         Returns:
-            Self for method chaining
+            TemplateBuilder
 
         Example:
             ```python
@@ -397,7 +397,7 @@ class TemplateBuilder:
             packages: Package name(s) to install
 
         Returns:
-            Self for method chaining
+            TemplateBuilder
 
         Example:
             ```python
@@ -435,7 +435,7 @@ class TemplateBuilder:
             depth: Clone depth for shallow clones
 
         Returns:
-            Self for method chaining
+            TemplateBuilder
 
         Example:
             ```python
@@ -463,7 +463,7 @@ class TemplateBuilder:
             envs: Dictionary of environment variable names and values
 
         Returns:
-            Self for method chaining
+            TemplateBuilder
 
         Example:
             ```python
@@ -491,7 +491,7 @@ class TemplateBuilder:
         to be rebuilt, ignoring any cached layers.
 
         Returns:
-            Self for method chaining
+            TemplateBuilder
 
         Example:
             ```python
@@ -512,7 +512,7 @@ class TemplateBuilder:
             ready_cmd: Command or ReadyCmd to check if the sandbox is ready
 
         Returns:
-            TemplateFinal instance
+            TemplateFinal
 
         Example:
             ```python
@@ -553,7 +553,7 @@ class TemplateBuilder:
             ready_cmd: Command or ReadyCmd to check if the sandbox is ready
 
         Returns:
-            TemplateFinal instance
+            TemplateFinal
 
         Example:
             ```python
@@ -581,10 +581,6 @@ class TemplateBuilder:
 class TemplateFinal:
     """
     Final template state after start/ready commands are set.
-
-    This class wraps a template that has all required configuration
-    including start and ready commands. It provides access to static
-    methods for building and exporting templates.
     """
 
     def __init__(self, template: "TemplateBase"):
@@ -594,11 +590,6 @@ class TemplateFinal:
 class TemplateBase:
     """
     Base class for building E2B sandbox templates.
-            Template()
-            .from_python_image('3.11')
-            .pip_install('flask')
-        )
-        ```
     """
 
     _limits = Limits(
@@ -645,12 +636,8 @@ class TemplateBase:
         """
         Skip cache for all subsequent build instructions from this point.
 
-        When called before a from instruction, this forces the entire template
-        to be rebuilt from scratch. When called before other instructions, it
-        forces all subsequent layers to be rebuilt, ignoring any cached layers.
-
         Returns:
-            Self for method chaining
+            TemplateBase
 
         Example:
             ```python
@@ -666,14 +653,11 @@ class TemplateBase:
         """
         Collect the current stack trace for debugging purposes.
 
-        Stack traces are captured when template methods are called to provide
-        better error messages that point to the user's code location.
-
         Args:
             stack_traces_depth: Depth to traverse in the call stack
 
         Returns:
-            Self for method chaining
+            TemplateBase
         """
         if not self._stack_traces_enabled:
             return self
@@ -698,11 +682,8 @@ class TemplateBase:
         """
         Temporarily disable stack trace collection.
 
-        Used when helper methods call other template methods internally
-        to avoid collecting unnecessary intermediate stack traces.
-
         Returns:
-            Self for method chaining
+            TemplateBase
         """
         self._stack_traces_enabled = False
         return self
@@ -712,7 +693,7 @@ class TemplateBase:
         Re-enable stack trace collection.
 
         Returns:
-            Self for method chaining
+            TemplateBase
         """
         self._stack_traces_enabled = True
         return self
@@ -720,10 +701,6 @@ class TemplateBase:
     def _run_in_new_stack_trace_context(self, fn):
         """
         Execute a function in a clean stack trace context.
-
-        This is used for convenience methods (like `pip_install`, `npm_install`)
-        that wrap `run_cmd`. It disables stack trace collection during the function
-        execution, then collects a single stack trace for the wrapper method.
 
         Args:
             fn: Function to execute

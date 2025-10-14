@@ -204,12 +204,6 @@ def default_build_logger(
     """
     Create a default build logger with animated timer display.
 
-    This logger displays build progress with:
-    - Colored, formatted log messages
-    - Animated loading indicator
-    - Elapsed time counter
-    - Configurable minimum log level
-
     Args:
         min_level: Minimum log level to display (default: 'info')
 

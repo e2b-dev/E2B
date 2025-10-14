@@ -1,28 +1,12 @@
 class ReadyCmd:
     """
     Wrapper class for ready check commands.
-
-    Ready commands are shell commands that determine when a sandbox is ready to use
-    after the start command begins execution. They run repeatedly until they succeed
-    (exit with code 0) or timeout.
     """
 
     def __init__(self, cmd: str):
-        """
-        Create a new ReadyCmd instance.
-
-        Args:
-            cmd: Shell command to execute for readiness check
-        """
         self.__cmd = cmd
 
     def get_cmd(self):
-        """
-        Get the shell command string.
-
-        Returns:
-            The ready check command
-        """
         return self.__cmd
 
 

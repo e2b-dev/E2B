@@ -59,11 +59,6 @@ export class TemplateBase
   private stackTraces: (string | undefined)[] = []
   private stackTracesEnabled: boolean = true
 
-  /**
-   * Creates a new template builder instance.
-   *
-   * @param options Configuration options for the template
-   */
   constructor(options?: TemplateOptions) {
     this.fileContextPath = options?.fileContextPath ?? this.fileContextPath
     this.fileIgnorePatterns =
@@ -520,9 +515,6 @@ export class TemplateBase
   /**
    * Collect the current stack trace for debugging purposes.
    *
-   * Stack traces are captured when template methods are called to provide
-   * better error messages that point to the user's code location.
-   *
    * @param stackTracesDepth Depth to traverse in the call stack
    * @returns this for method chaining
    */
@@ -537,9 +529,6 @@ export class TemplateBase
 
   /**
    * Temporarily disable stack trace collection.
-   *
-   * Used when helper methods call other template methods internally
-   * to avoid collecting unnecessary intermediate stack traces.
    *
    * @returns this for method chaining
    */
@@ -560,10 +549,6 @@ export class TemplateBase
 
   /**
    * Execute a function in a clean stack trace context.
-   *
-   * This is used for convenience methods (like `pipInstall`, `npmInstall`)
-   * that wrap `runCmd`. It disables stack trace collection during the function
-   * execution, then collects a single stack trace for the wrapper method.
    *
    * @param fn Function to execute
    * @returns The result of the function
@@ -754,10 +739,6 @@ export class TemplateBase
   /**
    * Add file hashes to COPY instructions for cache invalidation.
    *
-   * For each COPY instruction, this method calculates a hash of the files
-   * being copied (including content, metadata, and paths). These hashes
-   * are used to determine if files have changed and need to be re-uploaded.
-   *
    * @returns Copy of instructions array with filesHash added to COPY instructions
    */
   private async instructionsWithHashes(): Promise<Instruction[]> {
@@ -830,9 +811,6 @@ export class TemplateBase
 
 /**
  * Create a new E2B template builder instance.
- *
- * This is a function that creates a new template.
- * Use this to start building custom sandbox templates.
  *
  * @param options Optional configuration for the template builder
  * @returns A new template builder instance

@@ -1,17 +1,10 @@
 /**
  * Wrapper class for ready check commands.
- *
- * Ready commands are shell commands that determine when a sandbox is ready to use
- * after the start command begins execution. They run repeatedly until they succeed
- * (exit with code 0) or timeout.
  */
 export class ReadyCmd {
   private cmd: string
 
   /**
-   * Create a new ReadyCmd instance.
-   *
-   * @param cmd Shell command to execute for readiness check
    * @internal
    */
   constructor(cmd: string) {
@@ -19,8 +12,6 @@ export class ReadyCmd {
   }
 
   /**
-   * Get the shell command string.
-   * @returns The ready check command
    * @internal
    */
   getCmd(): string {

@@ -2,9 +2,6 @@ import platform from 'platform'
 
 declare let window: any
 
-/**
- * Supported JavaScript/TypeScript runtimes.
- */
 type Runtime =
   | 'node'
   | 'browser'
@@ -71,11 +68,6 @@ export function timeoutToSeconds(timeout: number): number {
 }
 
 /**
- * Dynamically import the glob module.
- * Only works in Node.js/Bun/Deno runtimes.
- *
- * @returns glob module
- * @throws Error if called in browser runtime
  * @internal
  */
 export async function dynamicGlob(): Promise<typeof import('glob')> {
@@ -88,11 +80,6 @@ export async function dynamicGlob(): Promise<typeof import('glob')> {
 }
 
 /**
- * Dynamically import the tar module.
- * Only works in Node.js/Bun/Deno runtimes.
- *
- * @returns tar module
- * @throws Error if called in browser runtime
  * @internal
  */
 export async function dynamicTar(): Promise<typeof import('tar')> {
@@ -105,12 +92,6 @@ export async function dynamicTar(): Promise<typeof import('tar')> {
 }
 
 /**
- * Create a regex pattern to match ANSI escape codes.
- * Source: https://github.com/chalk/ansi-regex/blob/main/index.js
- *
- * @param options Configuration options
- * @param options.onlyFirst If true, matches only the first occurrence
- * @returns Regular expression to match ANSI escape codes
  * @internal
  */
 function ansiRegex({ onlyFirst = false } = {}) {
@@ -128,30 +109,14 @@ function ansiRegex({ onlyFirst = false } = {}) {
 }
 
 /**
- * Remove ANSI escape codes from a string.
- *
- * @param text String potentially containing ANSI codes
- * @returns String with all ANSI codes removed
- *
- * @example
- * ```ts
- * stripAnsi('\x1b[31mRed text\x1b[0m') // Returns "Red text"
- * ```
+ * @internal
  */
 export function stripAnsi(text: string): string {
   return text.replace(ansiRegex(), '')
 }
 
 /**
- * Wait for a specified number of milliseconds.
- *
- * @param ms Number of milliseconds to wait
- * @returns Promise that resolves after the specified time
- *
- * @example
- * ```ts
- * await wait(1000) // Wait for 1 second
- * ```
+ * @internal
  */
 export async function wait(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))

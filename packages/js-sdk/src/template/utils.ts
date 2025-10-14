@@ -113,9 +113,6 @@ export async function calculateFilesHash(
 /**
  * Get the caller's stack trace frame at a specific depth.
  *
- * This is used to provide better error messages and debugging information
- * by tracking where template methods were called from in user code.
- *
  * @param depth The depth of the stack trace to retrieve
  *   - Levels: caller (e.g., TemplateBase.fromImage) > original caller (e.g., user's template file)
  * @returns The caller frame as a string, or undefined if not available
@@ -154,9 +151,6 @@ export function matchFileDir(line: string): string | undefined {
 
 /**
  * Get the directory of the caller at a specific stack depth.
- *
- * This is used to determine the fileContextPath when creating a template,
- * so file paths are resolved relative to the user's template file location.
  *
  * @param depth The depth of the stack trace
  * @returns The caller's directory path, or undefined if not available
@@ -221,12 +215,6 @@ export async function tarFileStream(
 
 /**
  * Create a tar stream and calculate its compressed size for upload.
- *
-
- * This function uses a two-pass approach:
- * 1. First pass: Creates a temporary stream to calculate the total compressed size
- * 2. Second pass: Creates a new stream for the actual upload operation
-
  *
  * @param fileName Glob pattern for files to include
  * @param fileContextPath Base directory for resolving file paths
