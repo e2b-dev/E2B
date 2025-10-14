@@ -31,6 +31,8 @@ export interface ConnectionOpts {
   domain?: string
   /**
    * API Url to use for the API.
+   * @internal
+   * @default E2B_API_URL // environment variable or `https://api.${domain}`
    */
   apiUrl?: string
   /**
@@ -83,12 +85,16 @@ export class ConnectionConfig {
     this.headers['User-Agent'] = `e2b-js-sdk/${version}`
 
     this.apiUrl =
-      opts?.apiUrl ??
+      opts?.apiUrl ?? ConnectionConfig.apiUrl ??
       (this.debug ? 'http://localhost:3000' : `https://api.${this.domain}`)
   }
 
   private static get domain() {
     return getEnvVar('E2B_DOMAIN') || 'e2b.app'
+  }
+
+  private static get apiUrl() {
+    return getEnvVar('E2B_API_URL')
   }
 
   private static get debug() {
