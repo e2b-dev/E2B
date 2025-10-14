@@ -130,7 +130,7 @@ class SandboxBase:
             signature = get_signature(
                 path,
                 "read",
-                username or "",
+                username,
                 self._envd_access_token,
                 use_signature_expiration,
             )
@@ -167,7 +167,7 @@ class SandboxBase:
             signature = get_signature(
                 path,
                 "write",
-                username or "",
+                username,
                 self._envd_access_token,
                 use_signature_expiration,
             )

@@ -622,7 +622,7 @@ export class Sandbox extends SandboxApi {
       const sig = await getSignature({
         path: filePath,
         operation: 'write',
-        user: username ?? '',
+        user: username,
         expirationInSeconds: opts.useSignatureExpiration,
         envdAccessToken: this.envdAccessToken,
       })
@@ -673,7 +673,7 @@ export class Sandbox extends SandboxApi {
       const sig = await getSignature({
         path,
         operation: 'read',
-        user: username ?? '',
+        user: username,
         expirationInSeconds: opts.useSignatureExpiration,
         envdAccessToken: this.envdAccessToken,
       })
