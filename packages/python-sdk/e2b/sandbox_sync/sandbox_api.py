@@ -151,6 +151,7 @@ class SandboxApi(SandboxBase):
         metadata: Optional[Dict[str, str]],
         env_vars: Optional[Dict[str, str]],
         secure: bool,
+        mcp: Optional[Dict] = None,
         **opts: Unpack[ApiParams],
     ) -> SandboxCreateResponse:
         config = ConnectionConfig(**opts)
@@ -163,6 +164,7 @@ class SandboxApi(SandboxBase):
                     metadata=metadata or {},
                     timeout=timeout,
                     env_vars=env_vars or {},
+                    mcp=mcp or {},
                     secure=secure,
                     allow_internet_access=allow_internet_access,
                 ),
