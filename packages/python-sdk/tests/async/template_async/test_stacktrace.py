@@ -152,7 +152,7 @@ async def test_traces_on_run_cmd(async_build):
 async def test_traces_on_set_workdir(async_build):
     template = AsyncTemplate()
     template = template.from_base_image()
-    template = template.skip_cache().set_workdir(".bashrc")
+    template = template.set_user("root").skip_cache().set_workdir("/root/.bashrc")
     await _expect_to_throw_and_check_trace(lambda: async_build(template), "set_workdir")
 
 
