@@ -8,4 +8,6 @@ template = (
     .copy("package.json", "/app/")
     .copy("src/index.js", "./src/")
     .copy("config.json", "/etc/app/config.json")
+    .set_user("user")
+    .set_workdir("/home/user")
 )

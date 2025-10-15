@@ -11,7 +11,7 @@ template = (
     .set_envs({
         "PYTHONUNBUFFERED": "1",
     })
-    .set_user("root")
+    .set_user("user")
     .set_workdir("/home/user")
-    .set_start_cmd("node server.js", "sleep 20")
+    .set_start_cmd("sudo node server.js", "sleep 20")
 )

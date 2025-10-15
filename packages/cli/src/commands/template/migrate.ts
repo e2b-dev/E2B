@@ -124,17 +124,21 @@ export const migrateCommand = new commander.Command('migrate')
         const root = getRoot(opts.path)
         const configPath = getConfigPath(root, opts.config)
 
+        let config: E2BConfig = {
+          template_id: 'name-your-template',
+          dockerfile: defaultDockerfileName,
+        }
+
         // Validate config file exists
-        if (!fs.existsSync(configPath)) {
+        if (fs.existsSync(configPath)) {
+          config = await loadConfig(configPath)
+        } else {
           console.error(
             `Config file ${asLocalRelative(
               path.relative(root, configPath)
-            )} not found. Please ensure the config file exists.`
+            )} not found. Using defaults.`
           )
-          process.exit(1)
         }
-
-        const config = await loadConfig(configPath)
 
         // Determine Dockerfile path
         const dockerfilePath =

@@ -10,6 +10,6 @@ export const template = Template()
   .setEnvs({
     'PYTHONUNBUFFERED': '1',
   })
-  .setUser('root')
+  .setUser('user')
   .setWorkdir('/home/user')
-  .setStartCmd('node server.js', 'sleep 20')
+  .setStartCmd('sudo node server.js', 'sleep 20')
