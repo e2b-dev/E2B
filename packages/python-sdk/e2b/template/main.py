@@ -861,6 +861,7 @@ class TemplateBase:
         builder = TemplateBuilder(self)
 
         # Get the caller frame to use for stack trace override
+        # -1 as we're going up the call stack from the parse_dockerfile function
         caller_frame = get_caller_frame(STACK_TRACE_DEPTH - 1)
         stack_trace_override = None
         if caller_frame is not None:

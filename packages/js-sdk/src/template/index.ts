@@ -181,6 +181,7 @@ export class TemplateBase
   fromDockerfile(dockerfileContentOrPath: string): TemplateBuilder {
     const { baseImage } = this.runInStackTraceOverrideContext(
       () => parseDockerfile(dockerfileContentOrPath, this),
+      // -1 as we're going up the call stack from the parseDockerfile function
       getCallerFrame(STACK_TRACE_DEPTH - 1)
     )
     this.baseImage = baseImage
