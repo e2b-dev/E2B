@@ -191,6 +191,7 @@ export class TemplateBase
       this.force = true
     }
 
+    this.collectStackTrace()
     return this
   }
 

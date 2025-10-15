@@ -882,6 +882,7 @@ class TemplateBase:
         if self._force_next_layer:
             self._force = True
 
+        self._collect_stack_trace()
         return builder
 
     def from_aws_registry(
