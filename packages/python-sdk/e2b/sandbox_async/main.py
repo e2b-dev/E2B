@@ -117,6 +117,7 @@ class AsyncSandbox(SandboxApi):
             self.envd_api_url,
             self.connection_config,
             self._transport.pool,
+            self._envd_version,
         )
 
     async def is_running(self, request_timeout: Optional[float] = None) -> bool:
