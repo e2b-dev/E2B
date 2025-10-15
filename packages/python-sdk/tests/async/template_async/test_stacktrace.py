@@ -126,7 +126,7 @@ async def test_traces_on_rename(async_build):
 async def test_traces_on_make_dir(async_build):
     template = AsyncTemplate()
     template = template.from_base_image()
-    template = template.skip_cache().make_dir(".bashrc")
+    template = template.set_user("root").skip_cache().make_dir("/root/.bashrc")
     await _expect_to_throw_and_check_trace(lambda: async_build(template), "make_dir")
 
 
@@ -152,7 +152,7 @@ async def test_traces_on_run_cmd(async_build):
 async def test_traces_on_set_workdir(async_build):
     template = AsyncTemplate()
     template = template.from_base_image()
-    template = template.skip_cache().set_workdir(".bashrc")
+    template = template.set_user("root").skip_cache().set_workdir("/root/.bashrc")
     await _expect_to_throw_and_check_trace(lambda: async_build(template), "set_workdir")
 
 
@@ -160,7 +160,7 @@ async def test_traces_on_set_workdir(async_build):
 async def test_traces_on_set_user(async_build):
     template = AsyncTemplate()
     template = template.from_base_image()
-    template = template.skip_cache().set_user(";")
+    template = template.skip_cache().set_user("; exit 1")
     await _expect_to_throw_and_check_trace(lambda: async_build(template), "set_user")
 
 
