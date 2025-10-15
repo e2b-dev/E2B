@@ -450,6 +450,10 @@ components:
           $ref: "#/components/schemas/SandboxMetadata"
         envVars:
           $ref: "#/components/schemas/EnvVars"
+        mcp:
+          type: object
+          description: MCP server configuration
+          additionalProperties: true
 
     ResumedSandbox:
       properties:

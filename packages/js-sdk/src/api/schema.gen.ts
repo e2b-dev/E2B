@@ -1155,6 +1155,10 @@ export interface components {
              */
             autoPause: boolean;
             envVars?: components["schemas"]["EnvVars"];
+            /** @description MCP server configuration */
+            mcp?: {
+                [key: string]: unknown;
+            };
             metadata?: components["schemas"]["SandboxMetadata"];
             /** @description Secure all system communication with sandbox */
             secure?: boolean;
