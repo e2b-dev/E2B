@@ -690,9 +690,9 @@ class TemplateBase:
 
         :return: The result of the function
         """
-        self._stack_trace_override = stack_trace_override
+        self._stack_traces_override = stack_trace_override
         result = fn()
-        self._stack_trace_override = None
+        self._stack_traces_override = None
         return result
 
     # Built-in image mixins
