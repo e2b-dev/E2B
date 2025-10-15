@@ -141,17 +141,24 @@ describe('Template Migration', () => {
   })
 
   describe('Error Cases', () => {
-    test('should fail gracefully when config file is missing', async () => {
+    test('should succeed with warning when config file is missing', async () => {
       // Create only Dockerfile, no config
       const dockerfile = 'FROM node:18'
       await fs.writeFile(path.join(testDir, 'e2b.Dockerfile'), dockerfile)
 
-      // Run migration and expect it to fail
-      expect(() => {
-        execSync(`node ${cliPath} template migrate --language typescript`, {
+      // Run migration and expect it to succeed with warning (capture stderr + stdout)
+      const output = execSync(
+        `node ${cliPath} template migrate --language typescript 2>&1`,
+        {
           cwd: testDir,
-        })
-      }).toThrow()
+          encoding: 'utf-8',
+        }
+      )
+
+      expect(output).toContain(
+        'Config file ./e2b.toml not found. Using defaults.'
+      )
+      expect(output).toContain('Migration completed successfully')
     })
 
     test('should fail gracefully when Dockerfile is missing', async () => {

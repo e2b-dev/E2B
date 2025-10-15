@@ -19,3 +19,5 @@ export const template = Template()
     'SINGLE_VAR': 'single_value',
   })
   .setWorkdir('/app')
+  .setUser('user')
+  .setWorkdir('/home/user')
