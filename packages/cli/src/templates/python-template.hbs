@@ -28,13 +28,9 @@ template = (
 {{/each}}
 {{#if startCmd}}
 {{#if readyCmd}}
-    .set_user("root")
-    .set_workdir("/home/user")
-    .set_start_cmd("{{{escapeDoubleQuotes startCmd}}}", "{{{escapeDoubleQuotes readyCmd}}}")
+    .set_start_cmd("sudo {{{escapeDoubleQuotes startCmd}}}", "{{{escapeDoubleQuotes readyCmd}}}")
 {{/if}}
 {{else if readyCmd}}
-    .set_user("root")
-    .set_workdir("/home/user")
-    .set_ready_cmd("{{{escapeDoubleQuotes readyCmd}}}")
+    .set_ready_cmd("sudo {{{escapeDoubleQuotes readyCmd}}}")
 {{/if}}
 )

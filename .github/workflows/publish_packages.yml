@@ -29,27 +29,34 @@ jobs:
         with:
           token: ${{ steps.app-token.outputs.token }}
 
+      - name: Parse .tool-versions
+        uses: wistia/parse-tool-versions@v2.1.1
+        with:
+          filename: '.tool-versions'
+          uppercase: 'true'
+          prefix: 'tool_version_'
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.9'
+          python-version: '${{ env.TOOL_VERSION_PYTHON }}'
 
       - name: Install and configure Poetry
         uses: snok/install-poetry@v1
         with:
-          version: 1.8.3
+          version: '${{ env.TOOL_VERSION_POETRY }}'
           virtualenvs-create: true
           virtualenvs-in-project: true
           installer-parallel: true
 
       - uses: pnpm/action-setup@v4
         with:
-          version: 9.15.5
+          version: '${{ env.TOOL_VERSION_PNPM }}'
 
-      - name: Setup Node.js 20
+      - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '20.x'
+          node-version: '${{ env.TOOL_VERSION_NODEJS }}'
           cache: pnpm
 
       - name: Configure pnpm

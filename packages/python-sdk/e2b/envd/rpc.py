@@ -1,6 +1,7 @@
 import base64
 
 from typing import Optional
+from packaging.version import Version
 from e2b_connect.client import Code, ConnectException
 
 from e2b.exceptions import (
@@ -13,6 +14,7 @@ from e2b.exceptions import (
     RateLimitException,
 )
 from e2b.connection_config import Username, default_username
+from e2b.envd.versions import ENVD_DEFAULT_USER
 
 
 def handle_rpc_exception(e: Exception):
@@ -43,8 +45,16 @@ def handle_rpc_exception(e: Exception):
         return e
 
 
-def authentication_header(user: Optional[Username] = None):
-    value = f"{user if user is not None else default_username}:"
+def authentication_header(
+    envd_version: Version, user: Optional[Username] = None
+) -> dict[str, str]:
+    if user is None and envd_version < ENVD_DEFAULT_USER:
+        user = default_username
+
+    if not user:
+        return {}
+
+    value = f"{user}:"
 
     encoded = base64.b64encode(value.encode("utf-8")).decode("utf-8")
 

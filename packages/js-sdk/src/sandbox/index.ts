@@ -23,7 +23,7 @@ import {
 import { getSignature } from './signature'
 import { compareVersions } from 'compare-versions'
 import { SandboxError } from '../errors'
-import { ENVD_DEBUG_FALLBACK } from '../envd/versions'
+import { ENVD_DEBUG_FALLBACK, ENVD_DEFAULT_USER } from '../envd/versions'
 
 /**
  * Options for sandbox upload/download URL generation.
@@ -177,7 +177,9 @@ export class Sandbox extends SandboxApi {
     this.commands = new Commands(rpcTransport, this.connectionConfig, {
       version: opts.envdVersion,
     })
-    this.pty = new Pty(rpcTransport, this.connectionConfig)
+    this.pty = new Pty(rpcTransport, this.connectionConfig, {
+      version: opts.envdVersion,
+    })
   }
 
   /**
@@ -599,7 +601,14 @@ export class Sandbox extends SandboxApi {
       )
     }
 
-    const username = opts.user ?? defaultUsername
+    let username = opts.user
+    if (
+      username == undefined &&
+      compareVersions(this.envdApi.version, ENVD_DEFAULT_USER) < 0
+    ) {
+      username = defaultUsername
+    }
+
     const filePath = path ?? ''
     const fileUrl = this.fileUrl(filePath, username)
 
@@ -644,7 +653,14 @@ export class Sandbox extends SandboxApi {
       )
     }
 
-    const username = opts.user ?? defaultUsername
+    let username = opts.user
+    if (
+      username == undefined &&
+      compareVersions(this.envdApi.version, ENVD_DEFAULT_USER) < 0
+    ) {
+      username = defaultUsername
+    }
+
     const fileUrl = this.fileUrl(path, username)
 
     if (useSignature) {
@@ -711,10 +727,12 @@ export class Sandbox extends SandboxApi {
     })
   }
 
-  private fileUrl(path?: string, username?: string) {
+  private fileUrl(path: string | undefined, username: string | undefined) {
     const url = new URL('/files', this.envdApiUrl)
 
-    url.searchParams.set('username', username ?? defaultUsername)
+    if (username) {
+      url.searchParams.set('username', username)
+    }
     if (path) {
       url.searchParams.set('path', path)
     }

@@ -597,6 +597,7 @@ class TemplateBase:
         self._file_ignore_patterns: List[str] = file_ignore_patterns or []
         self._stack_traces: List[Union[TracebackType, None]] = []
         self._stack_traces_enabled: bool = True
+        self._stack_traces_override: Optional[Union[TracebackType, None]] = None
 
     def skip_cache(self) -> "TemplateBase":
         """
@@ -623,6 +624,11 @@ class TemplateBase:
         :return: `TemplateBase` class
         """
         if not self._stack_traces_enabled:
+            return self
+
+        # Use the override if set, otherwise get the caller frame
+        if self._stack_traces_override is not None:
+            self._stack_traces.append(self._stack_traces_override)
             return self
 
         stack = get_caller_frame(stack_traces_depth)
@@ -671,6 +677,22 @@ class TemplateBase:
         result = fn()
         self._enable_stack_trace()
         self._collect_stack_trace(STACK_TRACE_DEPTH + 1)
+        return result
+
+    def _run_in_stack_trace_override_context(
+        self, fn, stack_trace_override: Optional[Union[TracebackType, None]]
+    ):
+        """
+        Execute a function with a manual stack trace override.
+
+        :param fn: Function to execute
+        :param stack_trace_override: Stack trace to use instead of auto-collecting
+
+        :return: The result of the function
+        """
+        self._stack_traces_override = stack_trace_override
+        result = fn()
+        self._stack_traces_override = None
         return result
 
     # Built-in image mixins
@@ -838,8 +860,23 @@ class TemplateBase:
         # Create a TemplateBuilder first to use its methods
         builder = TemplateBuilder(self)
 
+        # Get the caller frame to use for stack trace override
+        # -1 as we're going up the call stack from the parse_dockerfile function
+        caller_frame = get_caller_frame(STACK_TRACE_DEPTH - 1)
+        stack_trace_override = None
+        if caller_frame is not None:
+            stack_trace_override = TracebackType(
+                tb_next=None,
+                tb_frame=caller_frame,
+                tb_lasti=caller_frame.f_lasti,
+                tb_lineno=caller_frame.f_lineno,
+            )
+
         # Parse the dockerfile using the builder as the interface
-        base_image = parse_dockerfile(dockerfile_content_or_path, builder)
+        base_image = self._run_in_stack_trace_override_context(
+            lambda: parse_dockerfile(dockerfile_content_or_path, builder),
+            stack_trace_override,
+        )
         self._base_image = base_image
 
         # If we should force the next layer and it's a FROM command, invalidate whole template

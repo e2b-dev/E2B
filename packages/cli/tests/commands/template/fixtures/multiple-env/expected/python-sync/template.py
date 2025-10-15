@@ -20,4 +20,6 @@ template = (
         "SINGLE_VAR": "single_value",
     })
     .set_workdir("/app")
+    .set_user("user")
+    .set_workdir("/home/user")
 )
