@@ -24,7 +24,7 @@ export const createCommand = new commander.Command('create')
     'build Dockerfile as a Sandbox template. This command reads a Dockerfile and builds it directly.'
   )
   .argument(
-    '[template-name]',
+    '<template-name>',
     'template name to create or rebuild. The template name must be lowercase and contain only letters, numbers, dashes and underscores.'
   )
   .addOption(pathOption)
