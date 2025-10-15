@@ -1,6 +1,6 @@
+import fs from 'node:fs'
 import { assert } from 'vitest'
 import { Template, waitForTimeout } from '../../src'
-import fs from 'node:fs'
 import { buildTemplateTest } from '../setup'
 
 const __fileContent = fs.readFileSync(__filename, 'utf8') // read current file content
@@ -181,8 +181,11 @@ buildTemplateTest('traces on runCmd', async ({ buildTemplate }) => {
 })
 
 buildTemplateTest('traces on setWorkdir', async ({ buildTemplate }) => {
-  let template = Template().fromBaseImage()
-  template = template.skipCache().setWorkdir('.bashrc')
+  const template = Template()
+    .fromBaseImage()
+    .setUser('root')
+    .skipCache()
+    .setWorkdir('/root/.bashrc')
   await expectToThrowAndCheckTrace(async () => {
     await buildTemplate(template)
   }, 'setWorkdir')
@@ -190,7 +193,7 @@ buildTemplateTest('traces on setWorkdir', async ({ buildTemplate }) => {
 
 buildTemplateTest('traces on setUser', async ({ buildTemplate }) => {
   let template = Template().fromBaseImage()
-  template = template.skipCache().setUser(';')
+  template = template.skipCache().setUser('; exit 1')
   await expectToThrowAndCheckTrace(async () => {
     await buildTemplate(template)
   }, 'setUser')

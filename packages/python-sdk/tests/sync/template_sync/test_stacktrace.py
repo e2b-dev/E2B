@@ -120,7 +120,7 @@ def test_traces_on_rename(build):
 def test_traces_on_make_dir(build):
     template = Template()
     template = template.from_base_image()
-    template = template.skip_cache().make_dir(".bashrc")
+    template = template.set_user("root").skip_cache().make_dir("/root/.bashrc")
     _expect_to_throw_and_check_trace(lambda: build(template), "make_dir")
 
 
@@ -144,7 +144,7 @@ def test_traces_on_run_cmd(build):
 def test_traces_on_set_workdir(build):
     template = Template()
     template = template.from_base_image()
-    template = template.skip_cache().set_workdir(".bashrc")
+    template = template.set_user("root").skip_cache().set_workdir("/root/.bashrc")
     _expect_to_throw_and_check_trace(lambda: build(template), "set_workdir")
 
 
@@ -152,7 +152,7 @@ def test_traces_on_set_workdir(build):
 def test_traces_on_set_user(build):
     template = Template()
     template = template.from_base_image()
-    template = template.skip_cache().set_user(";")
+    template = template.skip_cache().set_user("; exit 1")
     _expect_to_throw_and_check_trace(lambda: build(template), "set_user")
 
 
