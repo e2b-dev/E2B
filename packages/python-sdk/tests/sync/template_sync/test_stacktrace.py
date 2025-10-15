@@ -40,12 +40,11 @@ def test_traces_on_from_image(build):
 #     _expect_to_throw_and_check_trace(lambda: build(template), "from_template")
 
 
-# TODO: uncomment when the from_dockerfile exception handling is fixed
-# @pytest.mark.skip_debug()
-# def test_traces_on_from_dockerfile(build):
-#     template = Template()
-#     template = template.from_dockerfile("FROM ubuntu:22.04\nRUN nonexistent")
-#     _expect_to_throw_and_check_trace(lambda: build(template), "from_dockerfile")
+@pytest.mark.skip_debug()
+def test_traces_on_from_dockerfile(build):
+    template = Template()
+    template = template.from_dockerfile("FROM ubuntu:22.04\nRUN nonexistent")
+    _expect_to_throw_and_check_trace(lambda: build(template), "from_dockerfile")
 
 
 @pytest.mark.skip_debug()
