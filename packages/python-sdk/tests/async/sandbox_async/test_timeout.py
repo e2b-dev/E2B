@@ -11,7 +11,7 @@ async def test_shorten_timeout(async_sandbox: AsyncSandbox):
     await async_sandbox.set_timeout(5)
     sleep(6)
 
-    is_running = await async_sandbox.is_running()
+    is_running = await async_sandbox.is_running(request_timeout=5)
     assert is_running is False
 
 
@@ -21,7 +21,7 @@ async def test_shorten_then_lengthen_timeout(async_sandbox: AsyncSandbox):
     sleep(1)
     await async_sandbox.set_timeout(10)
     sleep(6)
-    await async_sandbox.is_running()
+    await async_sandbox.is_running(request_timeout=5)
 
 
 @pytest.mark.skip_debug()
