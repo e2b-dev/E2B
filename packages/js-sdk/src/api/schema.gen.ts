@@ -1137,6 +1137,10 @@ export interface components {
          * @enum {string}
          */
         LogLevel: "debug" | "info" | "warn" | "error";
+        /** @description MCP server configuration */
+        McpConfig: {
+            [key: string]: unknown;
+        };
         /**
          * Format: int32
          * @description Memory for the sandbox in MiB
@@ -1155,10 +1159,7 @@ export interface components {
              */
             autoPause: boolean;
             envVars?: components["schemas"]["EnvVars"];
-            /** @description MCP server configuration */
-            mcp?: {
-                [key: string]: unknown;
-            };
+            mcp?: components["schemas"]["McpConfig"];
             metadata?: components["schemas"]["SandboxMetadata"];
             /** @description Secure all system communication with sandbox */
             secure?: boolean;

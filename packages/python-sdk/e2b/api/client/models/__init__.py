@@ -17,7 +17,6 @@ from .listed_sandbox import ListedSandbox
 from .log_level import LogLevel
 from .new_access_token import NewAccessToken
 from .new_sandbox import NewSandbox
-from .new_sandbox_mcp import NewSandboxMcp
 from .new_team_api_key import NewTeamAPIKey
 from .node import Node
 from .node_detail import NodeDetail
@@ -71,7 +70,6 @@ __all__ = (
     "LogLevel",
     "NewAccessToken",
     "NewSandbox",
-    "NewSandboxMcp",
     "NewTeamAPIKey",
     "Node",
     "NodeDetail",

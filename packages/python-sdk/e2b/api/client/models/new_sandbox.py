@@ -1,14 +1,10 @@
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, TypeVar, Union
+from typing import Any, TypeVar, Union
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
 from ..types import UNSET, Unset
-
-if TYPE_CHECKING:
-    from ..models.new_sandbox_mcp import NewSandboxMcp
-
 
 T = TypeVar("T", bound="NewSandbox")
 
@@ -21,7 +17,7 @@ class NewSandbox:
         allow_internet_access (Union[Unset, bool]): Allow sandbox to access the internet
         auto_pause (Union[Unset, bool]): Automatically pauses the sandbox after the timeout Default: False.
         env_vars (Union[Unset, Any]):
-        mcp (Union[Unset, NewSandboxMcp]): MCP server configuration
+        mcp (Union[Unset, Any]): MCP server configuration
         metadata (Union[Unset, Any]):
         secure (Union[Unset, bool]): Secure all system communication with sandbox
         timeout (Union[Unset, int]): Time to live for the sandbox in seconds. Default: 15.
@@ -31,7 +27,7 @@ class NewSandbox:
     allow_internet_access: Union[Unset, bool] = UNSET
     auto_pause: Union[Unset, bool] = False
     env_vars: Union[Unset, Any] = UNSET
-    mcp: Union[Unset, "NewSandboxMcp"] = UNSET
+    mcp: Union[Unset, Any] = UNSET
     metadata: Union[Unset, Any] = UNSET
     secure: Union[Unset, bool] = UNSET
     timeout: Union[Unset, int] = 15
@@ -46,9 +42,7 @@ class NewSandbox:
 
         env_vars = self.env_vars
 
-        mcp: Union[Unset, dict[str, Any]] = UNSET
-        if not isinstance(self.mcp, Unset):
-            mcp = self.mcp.to_dict()
+        mcp = self.mcp
 
         metadata = self.metadata
 
@@ -82,8 +76,6 @@ class NewSandbox:
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
-        from ..models.new_sandbox_mcp import NewSandboxMcp
-
         d = dict(src_dict)
         template_id = d.pop("templateID")
 
@@ -93,12 +85,7 @@ class NewSandbox:
 
         env_vars = d.pop("envVars", UNSET)
 
-        _mcp = d.pop("mcp", UNSET)
-        mcp: Union[Unset, NewSandboxMcp]
-        if isinstance(_mcp, Unset):
-            mcp = UNSET
-        else:
-            mcp = NewSandboxMcp.from_dict(_mcp)
+        mcp = d.pop("mcp", UNSET)
 
         metadata = d.pop("metadata", UNSET)
 
