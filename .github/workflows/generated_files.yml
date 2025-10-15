@@ -11,16 +11,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Parse .tool-versions
+        uses: wistia/parse-tool-versions@v2.1.1
+        with:
+          filename: '.tool-versions'
+          uppercase: 'true'
+          prefix: 'tool_version_'
+
       - name: Install pnpm
         uses: pnpm/action-setup@v4
         id: pnpm-install
         with:
-          version: 9.15.5
+          version: '${{ env.TOOL_VERSION_PNPM }}'
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20.x'
+          node-version: '${{ env.TOOL_VERSION_NODEJS }}'
           registry-url: 'https://registry.npmjs.org'
           cache: pnpm
           cache-dependency-path: pnpm-lock.yaml
