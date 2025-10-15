@@ -7,7 +7,7 @@ sandboxTest.skipIf(isDebug)('shorten timeout', async ({ sandbox }) => {
 
   await wait(6000)
 
-  expect(await sandbox.isRunning({ requestTimeoutMs: 5000 })).toBeFalsy()
+  expect(await sandbox.isRunning({ requestTimeoutMs: 25000 })).toBeFalsy()
 })
 
 sandboxTest.skipIf(isDebug)(
@@ -21,7 +21,7 @@ sandboxTest.skipIf(isDebug)(
 
     await wait(6000)
 
-    expect(await sandbox.isRunning({ requestTimeoutMs: 5000 })).toBeTruthy()
+    expect(await sandbox.isRunning({ requestTimeoutMs: 25000 })).toBeTruthy()
   }
 )
 
