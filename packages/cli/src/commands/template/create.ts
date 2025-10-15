@@ -19,12 +19,12 @@ import {
 } from '../../utils/format'
 import { getDockerfile } from './build'
 
-export const buildV2Command = new commander.Command('build-v2')
+export const createCommand = new commander.Command('create')
   .description(
     'build Dockerfile as a Sandbox template. This command reads a Dockerfile and builds it directly.'
   )
   .argument(
-    '<template-name>',
+    '[template-name]',
     'template name to create or rebuild. The template name must be lowercase and contain only letters, numbers, dashes and underscores.'
   )
   .addOption(pathOption)
@@ -53,7 +53,7 @@ export const buildV2Command = new commander.Command('build-v2')
     parseInt
   )
   .option('--no-cache', 'skip cache when building the template.')
-  .alias('bd-v2')
+  .alias('ct')
   .action(
     async (
       templateName: string,
