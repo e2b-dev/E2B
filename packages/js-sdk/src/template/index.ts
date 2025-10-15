@@ -37,6 +37,7 @@ import {
 
 /**
  * Base class for building E2B sandbox templates.
+ * @internal
  */
 export class TemplateBase
   implements TemplateFromImage, TemplateBuilder, TemplateFinal
