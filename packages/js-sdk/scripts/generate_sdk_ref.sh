@@ -31,6 +31,15 @@ find sdk_ref -maxdepth 1 -type f -name "*.md" | while read -r file; do
     mv "$file" "sdk_ref/${filename}/page.mdx"
 done
 
+# Move template-related modules under template directory
+if [ -d "sdk_ref/template" ]; then
+    for module in logger readycmd types; do
+        if [ -d "sdk_ref/${module}" ]; then
+            mv "sdk_ref/${module}" "sdk_ref/template/"
+        fi
+    done
+fi
+
 cp -r sdk_ref/* "${ROUTES_DIR}"
 
 rm -rf sdk_ref
