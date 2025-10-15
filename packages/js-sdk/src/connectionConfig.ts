@@ -120,6 +120,6 @@ export class ConnectionConfig {
 /**
  * User used for the operation in the sandbox.
  */
-export type Username = 'root' | 'user'
 
 export const defaultUsername: Username = 'user'
+export type Username = string

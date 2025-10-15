@@ -1,6 +1,6 @@
 import os
 
-from typing import Literal, Optional, Dict, TypedDict
+from typing import Optional, Dict, TypedDict
 from httpx._types import ProxyTypes
 from typing_extensions import Unpack
 
@@ -159,7 +159,7 @@ class ConnectionConfig:
         }
 
 
-Username = Literal["root", "user"]
+Username = str
 """
 User used for the operation in the sandbox.
 """

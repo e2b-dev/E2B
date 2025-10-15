@@ -144,6 +144,10 @@ export function parseDockerfile(
     }
   }
 
+  // Set the user and workdir to the E2B defaults
+  templateBuilder.setUser('user')
+  templateBuilder.setWorkdir('/home/user')
+
   return {
     baseImage,
   }
