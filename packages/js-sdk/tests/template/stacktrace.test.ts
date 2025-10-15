@@ -73,7 +73,7 @@ buildTemplateTest('traces on fromImage', async ({ buildTemplate }) => {
 buildTemplateTest('traces on fromDockerfile', async ({ buildTemplate }) => {
   const templateFrom = Template()
   const template = templateFrom.fromDockerfile(
-    'FROM ub12312untu:22.04\nRUN nonexistent'
+    'FROM ubuntu:22.04\nRUN nonexistent'
   )
   await expectToThrowAndCheckTrace(async () => {
     await buildTemplate(template)
