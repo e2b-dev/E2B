@@ -400,20 +400,30 @@ export class TemplateBase
     return this
   }
 
-  pipInstall(packages?: string | string[]): TemplateBuilder {
+  pipInstall(
+    packages?: string | string[],
+    options: { g?: boolean } = { g: true }
+  ): TemplateBuilder {
     const args = ['pip', 'install']
     const packageList = packages
       ? Array.isArray(packages)
         ? packages
         : [packages]
       : undefined
+    if (options.g === false) {
+      args.push('--user')
+    }
     if (packageList) {
       args.push(...packageList)
     } else {
       args.push('.')
     }
 
-    return this.runInNewStackTraceContext(() => this.runCmd(args.join(' ')))
+    return this.runInNewStackTraceContext(() =>
+      this.runCmd(args.join(' '), {
+        user: options.g ? 'root' : undefined,
+      })
+    )
   }
 
   npmInstall(
@@ -433,7 +443,11 @@ export class TemplateBase
       args.push(...packageList)
     }
 
-    return this.runInNewStackTraceContext(() => this.runCmd(args.join(' ')))
+    return this.runInNewStackTraceContext(() =>
+      this.runCmd(args.join(' '), {
+        user: options?.g ? 'root' : undefined,
+      })
+    )
   }
 
   aptInstall(packages: string | string[]): TemplateBuilder {
