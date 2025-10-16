@@ -1,4 +1,3 @@
-import chalk from 'chalk'
 import { stripAnsi } from '../utils'
 
 /**
@@ -41,7 +40,13 @@ export class LogEntryEnd extends LogEntry {
   }
 }
 
+async function dynamicChalk() {
+  // @ts-ignore
+  return (await import('chalk')).default
+}
+
 /**
+ *
  * Interval in milliseconds for updating the build timer display.
  * @internal
  */
@@ -57,11 +62,15 @@ const DEFAULT_LEVEL: LogEntryLevel = 'info'
  * Colored labels for each log level.
  * @internal
  */
-const levels: Record<LogEntryLevel, string> = {
-  error: chalk.red('ERROR'),
-  warn: chalk.hex('#FF4400')('WARN '),
-  info: chalk.hex('#FF8800')('INFO '),
-  debug: chalk.gray('DEBUG'),
+async function getLevels(): Promise<Record<LogEntryLevel, string>> {
+  const chalk = await dynamicChalk()
+
+  return {
+    error: chalk.red('ERROR'),
+    warn: chalk.hex('#FF4400')('WARN '),
+    info: chalk.hex('#FF8800')('INFO '),
+    debug: chalk.gray('DEBUG'),
+  }
 }
 
 /**
@@ -106,11 +115,12 @@ class DefaultBuildLogger {
       return
     }
 
-    const formattedLine = this.formatLogLine(logEntry)
-    process.stdout.write(`${formattedLine}\n`)
+    this.formatLogLine(logEntry).then((formattedLine) => {
+      process.stdout.write(`${formattedLine}\n`)
 
-    // Redraw the timer line
-    this.updateTimer()
+      // Redraw the timer line
+      this.updateTimer()
+    })
   }
 
   private getInitialState(
@@ -136,7 +146,10 @@ class DefaultBuildLogger {
     return `${frames[idx]}`
   }
 
-  private formatLogLine(line: LogEntry) {
+  private async formatLogLine(line: LogEntry) {
+    const chalk = await dynamicChalk()
+    const levels = await getLevels()
+
     const timer = this.formatTimerLine().padEnd(5)
 
     const timestamp = chalk.dim(
