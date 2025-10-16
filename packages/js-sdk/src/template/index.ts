@@ -55,6 +55,7 @@ export class TemplateBase
   private logsRefreshFrequency: number = 200
   private stackTraces: (string | undefined)[] = []
   private stackTracesEnabled: boolean = true
+  private stackTracesOverride: string | undefined = undefined
 
   constructor(options?: TemplateOptions) {
     this.fileContextPath = options?.fileContextPath ?? this.fileContextPath
@@ -175,7 +176,11 @@ export class TemplateBase
   }
 
   fromDockerfile(dockerfileContentOrPath: string): TemplateBuilder {
-    const { baseImage } = parseDockerfile(dockerfileContentOrPath, this)
+    const { baseImage } = this.runInStackTraceOverrideContext(
+      () => parseDockerfile(dockerfileContentOrPath, this),
+      // -1 as we're going up the call stack from the parseDockerfile function
+      getCallerFrame(STACK_TRACE_DEPTH - 1)
+    )
     this.baseImage = baseImage
     this.baseTemplate = undefined
 
@@ -520,6 +525,11 @@ export class TemplateBase
       return this
     }
 
+    if (this.stackTracesOverride) {
+      this.stackTraces.push(this.stackTracesOverride)
+      return this
+    }
+
     this.stackTraces.push(getCallerFrame(stackTracesDepth))
     return this
   }
@@ -555,6 +565,16 @@ export class TemplateBase
     const result = fn()
     this.enableStackTrace()
     this.collectStackTrace(STACK_TRACE_DEPTH + 1)
+    return result
+  }
+
+  private runInStackTraceOverrideContext<T>(
+    fn: () => T,
+    stackTraceOverride: string | undefined
+  ): T {
+    this.stackTracesOverride = stackTraceOverride
+    const result = fn()
+    this.stackTracesOverride = undefined
     return result
   }
 
