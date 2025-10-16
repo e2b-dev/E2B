@@ -304,12 +304,13 @@ class TemplateBuilder:
         return self
 
     def pip_install(
-        self, packages: Optional[Union[str, List[str]]] = None
+        self, packages: Optional[Union[str, List[str]]] = None, g: bool = True
     ) -> "TemplateBuilder":
         """
         Install Python packages using pip.
 
         :param packages: Package name(s) to install. If None, runs 'pip install .' in the current directory
+        :param g: Install packages globally (default: True). If False, installs for user only
 
         :return: `TemplateBuilder` class
 
@@ -317,6 +318,7 @@ class TemplateBuilder:
         ```python
         template.pip_install('numpy')
         template.pip_install(['pandas', 'scikit-learn'])
+        template.pip_install('numpy', g=False)  # Install for user only
         template.pip_install()  # Installs from current directory
         ```
         """
@@ -324,13 +326,15 @@ class TemplateBuilder:
             packages = [packages]
 
         args = ["pip", "install"]
+        if not g:
+            args.append("--user")
         if packages:
             args.extend(packages)
         else:
             args.append(".")
 
         return self._template._run_in_new_stack_trace_context(
-            lambda: self.run_cmd(" ".join(args))
+            lambda: self.run_cmd(" ".join(args), user="root" if g else None)
         )
 
     def npm_install(
@@ -364,7 +368,7 @@ class TemplateBuilder:
             args.extend(packages)
 
         return self._template._run_in_new_stack_trace_context(
-            lambda: self.run_cmd(" ".join(args))
+            lambda: self.run_cmd(" ".join(args), user="root" if g else None)
         )
 
     def apt_install(self, packages: Union[str, List[str]]) -> "TemplateBuilder":
