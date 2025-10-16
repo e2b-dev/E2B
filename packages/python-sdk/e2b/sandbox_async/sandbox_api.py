@@ -1,6 +1,7 @@
 import datetime
 
 from typing import Optional, Dict, List
+from e2b.sandbox.mcp import McpServer
 from packaging.version import Version
 from typing_extensions import Unpack
 
@@ -152,7 +153,7 @@ class SandboxApi(SandboxBase):
         metadata: Optional[Dict[str, str]],
         env_vars: Optional[Dict[str, str]],
         secure: bool,
-        mcp: Optional[Dict] = None,
+        mcp: Optional[McpServer] = None,
         **opts: Unpack[ApiParams],
     ) -> SandboxCreateResponse:
         config = ConnectionConfig(**opts)
@@ -168,7 +169,7 @@ class SandboxApi(SandboxBase):
                     metadata=metadata or {},
                     timeout=timeout,
                     env_vars=env_vars or {},
-                    mcp=mcp or {},
+                    mcp=mcp,
                     secure=secure,
                     allow_internet_access=allow_internet_access,
                 ),
