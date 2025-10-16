@@ -63,3 +63,19 @@ import { Sandbox } from './sandbox'
 export default Sandbox
 
 export * from './template'
+
+export {
+  waitForPort,
+  waitForURL,
+  waitForProcess,
+  waitForFile,
+  waitForTimeout,
+} from './template/readycmd'
+
+export {
+  LogEntry,
+  LogEntryStart,
+  LogEntryEnd,
+  type LogEntryLevel,
+  defaultBuildLogger,
+} from './template/logger'

@@ -9,7 +9,6 @@
     "src/sandbox/commands/index.ts",
     "src/errors.ts",
     "src/template/index.ts",
-    "src/template/types.ts",
     "src/template/readycmd.ts",
     "src/template/logger.ts"
   ],

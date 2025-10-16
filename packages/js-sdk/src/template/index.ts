@@ -35,10 +35,6 @@ import {
   readGCPServiceAccountJSON,
 } from './utils'
 
-/**
- * Base class for building E2B sandbox templates.
- * @internal
- */
 export class TemplateBase
   implements TemplateFromImage, TemplateBuilder, TemplateFinal
 {
@@ -842,19 +838,3 @@ export type {
   TemplateBuilder,
   TemplateClass,
 } from './types'
-
-export {
-  waitForPort,
-  waitForURL,
-  waitForProcess,
-  waitForFile,
-  waitForTimeout,
-} from './readycmd'
-
-export {
-  LogEntry,
-  LogEntryStart,
-  LogEntryEnd,
-  type LogEntryLevel,
-  defaultBuildLogger,
-} from './logger'
