@@ -31,22 +31,13 @@ find sdk_ref -maxdepth 1 -type f -name "*.md" | while read -r file; do
     mv "$file" "sdk_ref/${filename}/page.mdx"
 done
 
-# Move template-related modules under template directory (except types which will be merged)
+# Move template-related modules under template directory
 if [ -d "sdk_ref/template" ]; then
     for module in logger readycmd; do
         if [ -d "sdk_ref/${module}" ]; then
             mv "sdk_ref/${module}" "sdk_ref/template/"
         fi
     done
-fi
-
-# Merge types content into template/page.mdx
-if [ -d "sdk_ref/types" ]; then
-    # Add a newline separator and then append types content to template page
-    echo "" >> "sdk_ref/template/page.mdx"
-    cat "sdk_ref/types/page.mdx" >> "sdk_ref/template/page.mdx"
-    # Remove the types directory since it's now merged
-    rm -rf "sdk_ref/types"
 fi
 
 cp -r sdk_ref/* "${ROUTES_DIR}"

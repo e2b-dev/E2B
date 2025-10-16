@@ -53,16 +53,4 @@ for submodule in "${template_submodules[@]}"; do
     mv "sdk_ref/${submodule}.mdx" "../../apps/web/src/app/(docs)/docs/sdk-reference/python-sdk/${PKG_VERSION}/template_async/${submodule}/page.mdx"
 done
 
-# Generate types documentation and merge it into main template pages
-poetry run pydoc-markdown -p e2b.template.types >sdk_ref/types.mdx
-process_mdx "sdk_ref/types.mdx"
-
-# Append types content to template_sync main page
-echo "" >> "../../apps/web/src/app/(docs)/docs/sdk-reference/python-sdk/${PKG_VERSION}/template_sync/page.mdx"
-cat "sdk_ref/types.mdx" >> "../../apps/web/src/app/(docs)/docs/sdk-reference/python-sdk/${PKG_VERSION}/template_sync/page.mdx"
-
-# Append types content to template_async main page
-echo "" >> "../../apps/web/src/app/(docs)/docs/sdk-reference/python-sdk/${PKG_VERSION}/template_async/page.mdx"
-cat "sdk_ref/types.mdx" >> "../../apps/web/src/app/(docs)/docs/sdk-reference/python-sdk/${PKG_VERSION}/template_async/page.mdx"
-
 rm -rf sdk_ref
