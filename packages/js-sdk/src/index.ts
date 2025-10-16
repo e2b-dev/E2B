@@ -64,12 +64,7 @@ import { Sandbox } from './sandbox'
 
 export default Sandbox
 
-export type {
-  BuildOptions,
-  CopyItem,
-  TemplateBuilder,
-  TemplateClass,
-} from './template/types'
+export * from './template'
 
 export {
   waitForPort,
@@ -86,5 +81,3 @@ export {
   type LogEntryLevel,
   defaultBuildLogger,
 } from './template/logger'
-
-export { Template, type TemplateBase } from './template'
