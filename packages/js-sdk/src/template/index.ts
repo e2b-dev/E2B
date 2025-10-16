@@ -835,3 +835,26 @@ export function Template(options?: TemplateOptions): TemplateFromImage {
 Template.build = TemplateBase.build
 Template.toJSON = TemplateBase.toJSON
 Template.toDockerfile = TemplateBase.toDockerfile
+
+export type {
+  BuildOptions,
+  CopyItem,
+  TemplateBuilder,
+  TemplateClass,
+} from './types'
+
+export {
+  waitForPort,
+  waitForURL,
+  waitForProcess,
+  waitForFile,
+  waitForTimeout,
+} from './readycmd'
+
+export {
+  LogEntry,
+  LogEntryStart,
+  LogEntryEnd,
+  type LogEntryLevel,
+  defaultBuildLogger,
+} from './logger'
