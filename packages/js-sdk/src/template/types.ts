@@ -413,15 +413,21 @@ export interface TemplateBuilder {
   /**
    * Install Python packages using pip.
    * @param packages Package name(s) or undefined for current directory
+   * @param options Install options
+   * @param options.g Install globally as root (default: true). Set to false for user-only installation with --user flag
    *
    * @example
    * ```ts
-   * template.pipInstall('numpy')
+   * template.pipInstall('numpy')  // Installs globally (default)
    * template.pipInstall(['pandas', 'scikit-learn'])
+   * template.pipInstall('numpy', { g: false })  // Install for user only
    * template.pipInstall()  // Installs from current directory
    * ```
    */
-  pipInstall(packages?: string | string[]): TemplateBuilder
+  pipInstall(
+    packages?: string | string[],
+    options?: { g?: boolean }
+  ): TemplateBuilder
 
   /**
    * Install Node.js packages using npm.
