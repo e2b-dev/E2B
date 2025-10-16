@@ -114,8 +114,8 @@ async function addPackageJsonScripts(
     pkgJson.update({
       scripts: {
         ...pkgJson.content.scripts,
-        'e2b:build:dev': `${cdPrefix}npx tsx ${files.buildDevFile}`,
-        'e2b:build:prod': `${cdPrefix}npx tsx ${files.buildProdFile}`,
+        'e2b:build:dev': `${cdPrefix}tsx ${files.buildDevFile}`,
+        'e2b:build:prod': `${cdPrefix}tsx ${files.buildProdFile}`,
       },
     })
 
