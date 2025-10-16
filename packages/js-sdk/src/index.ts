@@ -12,6 +12,8 @@ export {
   TemplateError,
   TimeoutError,
   RateLimitError,
+  BuildError,
+  FileUploadError,
 } from './errors'
 export type { Logger } from './logs'
 
@@ -61,8 +63,6 @@ export { Sandbox }
 import { Sandbox } from './sandbox'
 
 export default Sandbox
-
-export { BuildError, FileUploadError } from './template/errors'
 
 export type {
   BuildOptions,
