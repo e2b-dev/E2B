@@ -28,7 +28,7 @@ describe('Template Init', () => {
 
         // Run init command with CLI options
         execSync(
-          `node "${cliPath}" template init-v2 --name "${templateName}" --language "${language}" --path "${testDir}"`,
+          `node "${cliPath}" template init --name "${templateName}" --language "${language}" --path "${testDir}"`,
           { stdio: 'inherit' }
         )
 
@@ -71,7 +71,7 @@ describe('Template Init', () => {
       for (const invalidName of invalidNames) {
         expect(() => {
           execSync(
-            `node "${cliPath}" template init-v2 --name "${invalidName}" --language "typescript" --path "${testDir}"`,
+            `node "${cliPath}" template init --name "${invalidName}" --language "typescript" --path "${testDir}"`,
             { stdio: 'pipe' }
           )
         }).toThrow()
@@ -81,7 +81,7 @@ describe('Template Init', () => {
     test('should validate language parameter', async () => {
       expect(() => {
         execSync(
-          `node "${cliPath}" template init-v2 --name "test" --language "invalid-lang" --path "${testDir}"`,
+          `node "${cliPath}" template init --name "test" --language "invalid-lang" --path "${testDir}"`,
           { stdio: 'pipe' }
         )
       }).toThrow()
@@ -113,7 +113,7 @@ describe('Template Init', () => {
 
         // Should not throw
         execSync(
-          `node "${cliPath}" template init-v2 --name "${validName}" --language "typescript" --path "${testDir}"`,
+          `node "${cliPath}" template init --name "${validName}" --language "typescript" --path "${testDir}"`,
           { stdio: 'pipe' }
         )
 
@@ -145,7 +145,7 @@ describe('Template Init', () => {
 
       // Run init command
       execSync(
-        `node "${cliPath}" template init-v2 --name "test-template" --language "typescript" --path "${testDir}"`,
+        `node "${cliPath}" template init --name "test-template" --language "typescript" --path "${testDir}"`,
         { stdio: 'inherit' }
       )
 
@@ -162,7 +162,7 @@ describe('Template Init', () => {
     test('should work without package.json', async () => {
       // Run init command without package.json
       execSync(
-        `node "${cliPath}" template init-v2 --name "test-template" --language "typescript" --path "${testDir}"`,
+        `node "${cliPath}" template init --name "test-template" --language "typescript" --path "${testDir}"`,
         { stdio: 'inherit' }
       )
 
@@ -199,7 +199,7 @@ build/%:
 
       // Run init command
       execSync(
-        `node "${cliPath}" template init-v2 --name "test-template" --language "python-sync" --path "${testDir}"`,
+        `node "${cliPath}" template init --name "test-template" --language "python-sync" --path "${testDir}"`,
         { stdio: 'inherit' }
       )
 
@@ -216,7 +216,7 @@ build/%:
     test('should work without Makefile', async () => {
       // Run init command without Makefile
       execSync(
-        `node "${cliPath}" template init-v2 --name "test-template" --language "python-sync" --path "${testDir}"`,
+        `node "${cliPath}" template init --name "test-template" --language "python-sync" --path "${testDir}"`,
         { stdio: 'inherit' }
       )
 
@@ -243,7 +243,7 @@ build/%:
   describe('File Content Validation', () => {
     test('should generate correct TypeScript template content', async () => {
       execSync(
-        `node "${cliPath}" template init-v2 --name "test-ts" --language "typescript" --path "${testDir}"`,
+        `node "${cliPath}" template init --name "test-ts" --language "typescript" --path "${testDir}"`,
         { stdio: 'inherit' }
       )
 
@@ -262,7 +262,7 @@ build/%:
 
     test('should generate correct Python template content', async () => {
       execSync(
-        `node "${cliPath}" template init-v2 --name "test-py" --language "python-sync" --path "${testDir}"`,
+        `node "${cliPath}" template init --name "test-py" --language "python-sync" --path "${testDir}"`,
         { stdio: 'inherit' }
       )
 
@@ -282,7 +282,7 @@ build/%:
 
     test('should generate correct async Python template content', async () => {
       execSync(
-        `node "${cliPath}" template init-v2 --name "test-py-async" --language "python-async" --path "${testDir}"`,
+        `node "${cliPath}" template init --name "test-py-async" --language "python-async" --path "${testDir}"`,
         { stdio: 'inherit' }
       )
 
@@ -310,7 +310,7 @@ build/%:
       // Should fail when trying to create template with existing directory name
       expect(() => {
         execSync(
-          `node "${cliPath}" template init-v2 --name "test" --language "typescript" --path "${testDir}"`,
+          `node "${cliPath}" template init --name "test" --language "typescript" --path "${testDir}"`,
           { stdio: 'pipe' }
         )
       }).toThrow()

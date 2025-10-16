@@ -854,3 +854,10 @@ export function Template(options?: TemplateOptions): TemplateFromImage {
 Template.build = TemplateBase.build
 Template.toJSON = TemplateBase.toJSON
 Template.toDockerfile = TemplateBase.toDockerfile
+
+export type {
+  BuildOptions,
+  CopyItem,
+  TemplateBuilder,
+  TemplateClass,
+} from './types'
