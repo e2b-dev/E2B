@@ -7,9 +7,13 @@
     "src/sandbox/filesystem/index.ts",
     "src/sandbox/process/index.ts",
     "src/sandbox/commands/index.ts",
-    "src/errors.ts"
+    "src/errors.ts",
+    "src/template/index.ts",
+    "src/template/readycmd.ts",
+    "src/template/logger.ts"
   ],
   "excludeExternals": true,
+  "excludeInternal": true,
   "excludePrivate": true,
   "excludeProtected": true,
   "navigation": {

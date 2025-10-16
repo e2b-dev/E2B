@@ -41,6 +41,8 @@ from .exceptions import (
     InvalidArgumentException,
     NotEnoughSpaceException,
     TemplateException,
+    BuildException,
+    FileUploadException,
 )
 from .sandbox.commands.command_handle import (
     CommandResult,
@@ -67,7 +69,6 @@ from .sandbox_sync.commands.command_handle import CommandHandle
 from .sandbox_sync.filesystem.watch_handle import WatchHandle
 from .sandbox_sync.main import Sandbox
 from .sandbox_sync.paginator import SandboxPaginator
-from .template.exceptions import BuildException, FileUploadException
 from .template.logger import (
     LogEntry,
     LogEntryLevel,
