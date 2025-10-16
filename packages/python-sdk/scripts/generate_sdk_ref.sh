@@ -7,7 +7,7 @@ set -euo pipefail
 
 PKG_VERSION="v$(node -p "require('./package.json').version")"
 
-packages=("sandbox_sync" "sandbox_async" "exceptions" "template_sync" "template_async")
+packages=("sandbox_sync" "sandbox_async" "exceptions" "template" "template_sync" "template_async")
 template_submodules=("logger" "readycmd")
 
 mkdir -p ../../apps/web/src/app/\(docs\)/docs/sdk-reference/python-sdk/${PKG_VERSION}
