@@ -35,7 +35,7 @@ function buildDirectoryHierarchy(dirPath) {
 function formatModuleTitle(title) {
   // Replace underscore with space for _async and remove sync from name of python-sdk modules
   if (title.endsWith('_sync')) {
-    title = title.replace('_sync', 'sync')
+    title = title.replace('_sync', ' sync')
   } else if (title.endsWith('_async')) {
     title = title.replace('_async', ' async')
   }
