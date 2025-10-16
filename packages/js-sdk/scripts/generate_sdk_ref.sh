@@ -10,6 +10,8 @@ npx typedoc
 
 PKG_VERSION="v$(node -p "require('./package.json').version")"
 ROUTES_DIR="../../apps/web/src/app/(docs)/docs/sdk-reference/js-sdk/${PKG_VERSION}"
+template_submodules=("logger" "readycmd")
+
 # move to docs web app
 mkdir -p "${ROUTES_DIR}"
 
@@ -33,7 +35,7 @@ done
 
 # Move template-related modules under template directory
 if [ -d "sdk_ref/template" ]; then
-    for module in logger readycmd; do
+    for module in "${template_submodules[@]}"; do
         if [ -d "sdk_ref/${module}" ]; then
             mv "sdk_ref/${module}" "sdk_ref/template/"
         fi
