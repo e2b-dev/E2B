@@ -3,4 +3,4 @@
 'e2b': patch
 ---
 
-added docstrings
+docker stack trace context

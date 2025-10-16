@@ -1,15 +1,17 @@
 import { Code, ConnectError } from '@connectrpc/connect'
 import { runtime } from '../utils'
-import { defaultUsername } from '../connectionConfig'
 
+import { compareVersions } from 'compare-versions'
+import { defaultUsername } from '../connectionConfig'
 import {
-  SandboxError,
-  TimeoutError,
+  AuthenticationError,
   formatSandboxTimeoutError,
   InvalidArgumentError,
   NotFoundError,
-  AuthenticationError,
+  SandboxError,
+  TimeoutError,
 } from '../errors'
+import { ENVD_DEFAULT_USER } from './versions'
 
 export function handleRpcError(err: unknown): Error {
   if (err instanceof ConnectError) {
@@ -52,9 +54,21 @@ function encode64(value: string): string {
 }
 
 export function authenticationHeader(
-  username?: string
+  envdVersion: string,
+  username: string | undefined
 ): Record<string, string> {
-  const value = `${username || defaultUsername}:`
+  if (
+    username == undefined &&
+    compareVersions(envdVersion, ENVD_DEFAULT_USER) < 0
+  ) {
+    username = defaultUsername
+  }
+
+  if (!username) {
+    return {}
+  }
+
+  const value = `${username}:`
 
   const encoded = encode64(value)
 

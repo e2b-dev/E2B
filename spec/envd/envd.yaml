@@ -12,7 +12,7 @@ paths:
     get:
       summary: Check the health of the service
       responses:
-        "204":
+        '204':
           description: The service is healthy
 
   /metrics:
@@ -22,12 +22,12 @@ paths:
         - AccessTokenAuth: []
         - {}
       responses:
-        "200":
+        '200':
           description: The resource usage metrics of the service
           content:
             application/json:
-                schema:
-                  $ref: "#/components/schemas/Metrics"
+              schema:
+                $ref: '#/components/schemas/Metrics'
 
   /init:
     post:
@@ -41,13 +41,26 @@ paths:
             schema:
               type: object
               properties:
+                hyperloopIP:
+                  type: string
+                  description: IP address of the hyperloop server to connect to
                 envVars:
-                  $ref: "#/components/schemas/EnvVars"
+                  $ref: '#/components/schemas/EnvVars'
                 accessToken:
                   type: string
                   description: Access token for secure access to envd service
+                timestamp:
+                  type: string
+                  format: date-time
+                  description: The current timestamp in RFC3339 format
+                defaultUser:
+                  type: string
+                  description: The default user to use for operations
+                defaultWorkdir:
+                  type: string
+                  description: The default working directory to use for operations
       responses:
-        "204":
+        '204':
           description: Env vars set, the time and metadata is synced with the host
 
   /envs:
@@ -57,12 +70,12 @@ paths:
         - AccessTokenAuth: []
         - {}
       responses:
-        "200":
+        '200':
           description: Environment variables
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/EnvVars"
+                $ref: '#/components/schemas/EnvVars'
 
   /files:
     get:
@@ -72,21 +85,21 @@ paths:
         - AccessTokenAuth: []
         - {}
       parameters:
-        - $ref: "#/components/parameters/FilePath"
-        - $ref: "#/components/parameters/User"
-        - $ref: "#/components/parameters/Signature"
-        - $ref: "#/components/parameters/SignatureExpiration"
+        - $ref: '#/components/parameters/FilePath'
+        - $ref: '#/components/parameters/User'
+        - $ref: '#/components/parameters/Signature'
+        - $ref: '#/components/parameters/SignatureExpiration'
       responses:
-        "200":
-          $ref: "#/components/responses/DownloadSuccess"
-        "401":
-          $ref: "#/components/responses/InvalidUser"
-        "400":
-          $ref: "#/components/responses/InvalidPath"
-        "404":
-          $ref: "#/components/responses/FileNotFound"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+        '200':
+          $ref: '#/components/responses/DownloadSuccess'
+        '401':
+          $ref: '#/components/responses/InvalidUser'
+        '400':
+          $ref: '#/components/responses/InvalidPath'
+        '404':
+          $ref: '#/components/responses/FileNotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
     post:
       summary: Upload a file and ensure the parent directories exist. If the file exists, it will be overwritten.
       tags: [files]
@@ -94,23 +107,23 @@ paths:
         - AccessTokenAuth: []
         - {}
       parameters:
-        - $ref: "#/components/parameters/FilePath"
-        - $ref: "#/components/parameters/User"
-        - $ref: "#/components/parameters/Signature"
-        - $ref: "#/components/parameters/SignatureExpiration"
+        - $ref: '#/components/parameters/FilePath'
+        - $ref: '#/components/parameters/User'
+        - $ref: '#/components/parameters/Signature'
+        - $ref: '#/components/parameters/SignatureExpiration'
       requestBody:
-        $ref: "#/components/requestBodies/File"
+        $ref: '#/components/requestBodies/File'
       responses:
-        "200":
-          $ref: "#/components/responses/UploadSuccess"
-        "400":
-          $ref: "#/components/responses/InvalidPath"
-        "401":
-          $ref: "#/components/responses/InvalidUser"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
-        "507":
-          $ref: "#/components/responses/NotEnoughDiskSpace"
+        '200':
+          $ref: '#/components/responses/UploadSuccess'
+        '400':
+          $ref: '#/components/responses/InvalidPath'
+        '401':
+          $ref: '#/components/responses/InvalidUser'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '507':
+          $ref: '#/components/responses/NotEnoughDiskSpace'
 
 components:
   securitySchemes:
@@ -130,11 +143,10 @@ components:
     User:
       name: username
       in: query
-      required: true
+      required: false
       description: User used for setting the owner, or resolving relative paths.
       schema:
         type: string
-        pattern: "^(root|user)$"
     Signature:
       name: signature
       in: query
@@ -170,7 +182,7 @@ components:
           schema:
             type: array
             items:
-              $ref: "#/components/schemas/EntryInfo"
+              $ref: '#/components/schemas/EntryInfo'
 
     DownloadSuccess:
       description: Entire file downloaded successfully.
@@ -185,31 +197,31 @@ components:
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/Error"
+            $ref: '#/components/schemas/Error'
     InternalServerError:
       description: Internal server error
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/Error"
+            $ref: '#/components/schemas/Error'
     FileNotFound:
       description: File not found
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/Error"
+            $ref: '#/components/schemas/Error'
     InvalidUser:
       description: Invalid user
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/Error"
+            $ref: '#/components/schemas/Error'
     NotEnoughDiskSpace:
       description: Not enough disk space
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/Error"
+            $ref: '#/components/schemas/Error'
 
   schemas:
     Error:
@@ -239,20 +251,36 @@ components:
           type: string
           description: Type of the file
           enum:
-              - file
+            - file
     EnvVars:
       type: object
       description: Environment variables to set
       additionalProperties:
-          type: string
+        type: string
     Metrics:
       type: object
       description: Resource usage metrics
       properties:
+        ts:
+          type: integer
+          format: int64
+          description: Unix timestamp in UTC for current sandbox time
+        cpu_count:
+          type: integer
+          description: Number of CPU cores
         cpu_used_pct:
           type: number
           format: float
           description: CPU usage percentage
-        mem_bytes:
+        mem_total:
           type: integer
-          description: Total virtual memory usage in bytes
+          description: Total virtual memory in bytes
+        mem_used:
+          type: integer
+          description: Used virtual memory in bytes
+        disk_used:
+          type: integer
+          description: Used disk space in bytes
+        disk_total:
+          type: integer
+          description: Total disk space in bytes

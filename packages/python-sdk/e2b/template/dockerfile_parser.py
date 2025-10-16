@@ -129,6 +129,10 @@ def parse_dockerfile(
                 print(f"Unsupported instruction: {instruction}")
                 continue
 
+    # Set the user and workdir to the E2B defaults
+    template_builder.set_user("user")
+    template_builder.set_workdir("/home/user")
+
     return base_image
 
 

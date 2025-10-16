@@ -9,7 +9,6 @@ import {
 } from '../connectionConfig'
 import { EnvdApiClient, handleEnvdApiError } from '../envd/api'
 import { createRpcLogger } from '../logs'
-import { wait } from '../utils'
 import { Commands, Pty } from './commands'
 import { Filesystem } from './filesystem'
 import {
@@ -24,7 +23,7 @@ import {
 import { getSignature } from './signature'
 import { compareVersions } from 'compare-versions'
 import { SandboxError } from '../errors'
-import { ENVD_DEBUG_FALLBACK } from '../envd/versions'
+import { ENVD_DEBUG_FALLBACK, ENVD_DEFAULT_USER } from '../envd/versions'
 
 /**
  * Options for sandbox upload/download URL generation.
@@ -65,7 +64,7 @@ export interface SandboxUrlOpts {
  */
 export class Sandbox extends SandboxApi {
   protected static readonly defaultTemplate: string = 'base'
-  protected static readonly defaultMcpTemplate: string = 'mcp-gateway-v0'
+  protected static readonly defaultMcpTemplate: string = 'mcp-gateway-v0-1'
   protected static readonly defaultSandboxTimeoutMs = DEFAULT_SANDBOX_TIMEOUT_MS
 
   /**
@@ -98,6 +97,7 @@ export class Sandbox extends SandboxApi {
   protected readonly envdAccessToken?: string
   private readonly envdApiUrl: string
   private readonly envdApi: EnvdApiClient
+  private mcpToken?: string
 
   /**
    * Use {@link Sandbox.create} to create a new Sandbox instead.
@@ -177,7 +177,9 @@ export class Sandbox extends SandboxApi {
     this.commands = new Commands(rpcTransport, this.connectionConfig, {
       version: opts.envdVersion,
     })
-    this.pty = new Pty(rpcTransport, this.connectionConfig)
+    this.pty = new Pty(rpcTransport, this.connectionConfig, {
+      version: opts.envdVersion,
+    })
   }
 
   /**
@@ -333,42 +335,20 @@ export class Sandbox extends SandboxApi {
     const sandbox = new this({ ...sandboxInfo, ...config }) as InstanceType<S>
 
     if (sandboxOpts?.mcp) {
-      const mcpConfigUrl = `${
-        config.debug ? 'http' : 'https'
-      }://${sandbox.getHost(sandbox.mcpPort)}/config`
+      sandbox.mcpToken = crypto.randomUUID()
 
-      const signal = config.getSignal()
-
-      let mcpConfigured = false
-
-      // TODO: The MCP config seems to succeed on first attempt, but we are keeping the retry logic here for now.
-      for (let i = 0; i < 5; i++) {
-        try {
-          const res = await fetch(mcpConfigUrl, {
-            method: 'POST',
-            body: JSON.stringify(sandboxOpts?.mcp),
-            signal,
-          })
-
-          if (res.ok) {
-            mcpConfigured = true
-
-            break
-          }
-        } catch (e) {
-          config.logger?.warn?.(`Failed to configure MCP server: ${e}`)
+      const handle = await sandbox.commands.run(
+        `mcp-gateway --config '${JSON.stringify(sandboxOpts?.mcp)}'`,
+        {
+          user: 'root',
+          envs: {
+            GATEWAY_ACCESS_TOKEN: sandbox.mcpToken ?? '',
+          },
+          background: true,
+          timeoutMs: 0,
         }
-
-        await wait(250)
-      }
-
-      if (!mcpConfigured) {
-        await sandbox.kill()
-
-        throw new SandboxError(
-          `Failed to configure MCP server. The sandbox template '${template}' might not be configured with MCP gateway inside.`
-        )
-      }
+      )
+      await handle.disconnect()
     }
 
     return sandbox
@@ -583,6 +563,23 @@ export class Sandbox extends SandboxApi {
   }
 
   /**
+   * @beta This feature is in beta and may change in the future.
+   *
+   * Get the MCP token for the sandbox.
+   *
+   * @returns MCP token for the sandbox, or undefined if MCP is not enabled.
+   */
+  async betaGetMcpToken(): Promise<string | undefined> {
+    if (!this.mcpToken) {
+      this.mcpToken = await this.files.read('/etc/mcp-gateway/.token', {
+        user: 'root',
+      })
+    }
+
+    return this.mcpToken
+  }
+
+  /**
    * Get the URL to upload a file to the sandbox.
    *
    * You have to send a POST request to this URL with the file as multipart/form-data.
@@ -604,7 +601,14 @@ export class Sandbox extends SandboxApi {
       )
     }
 
-    const username = opts.user ?? defaultUsername
+    let username = opts.user
+    if (
+      username == undefined &&
+      compareVersions(this.envdApi.version, ENVD_DEFAULT_USER) < 0
+    ) {
+      username = defaultUsername
+    }
+
     const filePath = path ?? ''
     const fileUrl = this.fileUrl(filePath, username)
 
@@ -649,7 +653,14 @@ export class Sandbox extends SandboxApi {
       )
     }
 
-    const username = opts.user ?? defaultUsername
+    let username = opts.user
+    if (
+      username == undefined &&
+      compareVersions(this.envdApi.version, ENVD_DEFAULT_USER) < 0
+    ) {
+      username = defaultUsername
+    }
+
     const fileUrl = this.fileUrl(path, username)
 
     if (useSignature) {
@@ -716,10 +727,12 @@ export class Sandbox extends SandboxApi {
     })
   }
 
-  private fileUrl(path?: string, username?: string) {
+  private fileUrl(path: string | undefined, username: string | undefined) {
     const url = new URL('/files', this.envdApiUrl)
 
-    url.searchParams.set('username', username ?? defaultUsername)
+    if (username) {
+      url.searchParams.set('username', username)
+    }
     if (path) {
       url.searchParams.set('path', path)
     }
