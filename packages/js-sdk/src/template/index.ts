@@ -35,6 +35,9 @@ import {
   readGCPServiceAccountJSON,
 } from './utils'
 
+/**
+ * Base class for building E2B sandbox templates.
+ */
 export class TemplateBase
   implements TemplateFromImage, TemplateBuilder, TemplateFinal
 {
