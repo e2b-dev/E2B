@@ -402,15 +402,17 @@ export class TemplateBase
 
   pipInstall(
     packages?: string | string[],
-    options: { g?: boolean } = { g: true }
+    options?: { g?: boolean }
   ): TemplateBuilder {
+    const g = options?.g ?? true
+
     const args = ['pip', 'install']
     const packageList = packages
       ? Array.isArray(packages)
         ? packages
         : [packages]
       : undefined
-    if (options.g === false) {
+    if (g === false) {
       args.push('--user')
     }
     if (packageList) {
@@ -421,7 +423,7 @@ export class TemplateBase
 
     return this.runInNewStackTraceContext(() =>
       this.runCmd(args.join(' '), {
-        user: options.g ? 'root' : undefined,
+        user: g ? 'root' : undefined,
       })
     )
   }
