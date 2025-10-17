@@ -85,8 +85,8 @@ export class ConnectionConfig {
     this.headers['User-Agent'] = `e2b-js-sdk/${version}`
 
     this.apiUrl =
-      opts?.apiUrl ??
-      ConnectionConfig.apiUrl ??
+      opts?.apiUrl ||
+      ConnectionConfig.apiUrl ||
       (this.debug ? 'http://localhost:3000' : `https://api.${this.domain}`)
   }
 
