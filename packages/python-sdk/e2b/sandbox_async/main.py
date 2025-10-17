@@ -551,14 +551,13 @@ class AsyncSandbox(SandboxApi):
             token = str(uuid.uuid4())
             sandbox._mcp_token = token
 
-            handle = await sandbox.commands.run(
+            res = await sandbox.commands.run(
                 f"mcp-gateway --config '{json.dumps(mcp)}'",
                 user="root",
                 envs={"GATEWAY_ACCESS_TOKEN": token},
-                background=True,
-                timeout=0,
             )
-            await handle.disconnect()
+            if res.exit_code != 0:
+                raise Exception(f"Failed to start MCP gateway: {res.stderr}")
 
         return sandbox
 
