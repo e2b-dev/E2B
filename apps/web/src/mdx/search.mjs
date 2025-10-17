@@ -5,6 +5,7 @@ import { toString } from 'mdast-util-to-string'
 import * as path from 'path'
 import { remark } from 'remark'
 import remarkMdx from 'remark-mdx'
+import semver from 'semver'
 import { createLoader } from 'simple-functional-loader'
 import { filter } from 'unist-util-filter'
 import { SKIP, visit } from 'unist-util-visit'
@@ -13,6 +14,7 @@ import * as url from 'url'
 const __filename = url.fileURLToPath(import.meta.url)
 const processor = remark().use(remarkMdx).use(extractSections)
 const slugify = slugifyWithCounter()
+const SDK_REFERENCE_PATTERN = /docs\/sdk-reference\/([^/]+)\/v(\d+\.\d+\.\d+)\//
 
 function isObjectExpression(node) {
   return (
@@ -55,6 +57,44 @@ function extractSections() {
   }
 }
 
+function parseSdkReference(file) {
+  const match = file.match(SDK_REFERENCE_PATTERN)
+  if (!match) return null
+  const [, packageName, version] = match
+  return { packageName, version }
+}
+
+function getLatestSdkVersions(files) {
+  // Extract SDK reference files with versions
+  const versionsByPackage = new Map()
+
+  for (const file of files) {
+    const parsed = parseSdkReference(file)
+    if (parsed) {
+      const { packageName, version } = parsed
+      if (!versionsByPackage.has(packageName)) {
+        versionsByPackage.set(packageName, [])
+      }
+      versionsByPackage.get(packageName).push(version)
+    }
+  }
+
+  // Find the latest version for each package
+  const latestVersions = new Map()
+  for (const [packageName, versions] of versionsByPackage.entries()) {
+    const sortedVersions = versions
+      .filter((v) => semver.valid(v))
+      .sort((a, b) => semver.rcompare(a, b))
+
+    if (sortedVersions.length > 0) {
+      latestVersions.set(packageName, sortedVersions[0])
+      console.log(`Latest version for ${packageName}: ${sortedVersions[0]}`)
+    }
+  }
+
+  return latestVersions
+}
+
 // eslint-disable-next-line import/no-anonymous-default-export
 export default function (nextConfig = {}) {
   let cache = new Map()
@@ -74,6 +114,20 @@ export default function (nextConfig = {}) {
             // Exclude legacy docs
             files = files.filter((file) => !file.includes('docs/legacy'))
 
+            // Get latest SDK versions
+            const latestSdkVersions = getLatestSdkVersions(files)
+
+            // Filter to include only latest SDK versions
+            files = files.filter((file) => {
+              const parsed = parseSdkReference(file)
+              if (parsed) {
+                return (
+                  latestSdkVersions.get(parsed.packageName) === parsed.version
+                )
+              }
+              return true
+            })
+
             let data = files.map((file, index, arr) => {
               console.log(
                 `Processing MDX file ${index + 1}/${arr.length}: ${file}`
@@ -92,7 +146,14 @@ export default function (nextConfig = {}) {
                 cache.set(file, [mdx, sections])
               }
 
-              return { url, sections }
+              // Determine badge for SDK reference content
+              let badge = undefined
+              const parsed = parseSdkReference(file)
+              if (parsed) {
+                badge = `${parsed.packageName} v${parsed.version}`
+              }
+
+              return { url, sections, badge }
             })
 
             // When this file is imported within the application
@@ -116,10 +177,11 @@ export default function (nextConfig = {}) {
 
               let data = ${JSON.stringify(data)}
 
-              for (let { url, sections } of data) {
-                const isReference = url.includes('docs/sdk-reference') || url.includes('docs/api-reference')
+              for (let { url, sections, badge } of data) {
+                // Exclude api-reference but include sdk-reference (latest versions only)
+                const isApiReference = url.includes('docs/api-reference')
 
-                if (isReference) {
+                if (isApiReference) {
                   continue
                 }
 
@@ -130,7 +192,7 @@ export default function (nextConfig = {}) {
                     content: [title, ...content].join('\\n'),
                     pageTitle: hash ? sections[0][0] : undefined,
                     preview: content.join('\\n'),
-                    badge: undefined,
+                    badge: badge,
                   })
                 }
               }
