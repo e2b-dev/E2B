@@ -1,162 +1,5 @@
 
 
-
-## ReadyCmd
-
-```python
-class ReadyCmd()
-```
-
-Wrapper class for ready check commands.
-
-
-### wait\_for\_port
-
-```python
-def wait_for_port(port: int)
-```
-
-Wait for a port to be listening.
-
-Uses `ss` command to check if a port is open and listening.
-
-**Arguments**:
-
-- `port`: Port number to wait for
-
-**Returns**:
-
-ReadyCmd that checks for the port
-Example
-```python
-from e2b import Template, wait_for_port
-
-template = (
-    Template()
-    .from_python_image()
-    .set_start_cmd('python -m http.server 8000', wait_for_port(8000))
-)
-```
-
-
-### wait\_for\_url
-
-```python
-def wait_for_url(url: str, status_code: int = 200)
-```
-
-Wait for a URL to return a specific HTTP status code.
-
-Uses `curl` to make HTTP requests and check the response status.
-
-**Arguments**:
-
-- `url`: URL to check (e.g., 'http://localhost:3000/health')
-- `status_code`: Expected HTTP status code (default: 200)
-
-**Returns**:
-
-ReadyCmd that checks the URL
-Example
-```python
-from e2b import Template, wait_for_url
-
-template = (
-    Template()
-    .from_node_image()
-    .set_start_cmd('npm start', wait_for_url('http://localhost:3000/health'))
-)
-```
-
-
-### wait\_for\_process
-
-```python
-def wait_for_process(process_name: str)
-```
-
-Wait for a process with a specific name to be running.
-
-Uses `pgrep` to check if a process exists.
-
-**Arguments**:
-
-- `process_name`: Name of the process to wait for
-
-**Returns**:
-
-ReadyCmd that checks for the process
-Example
-```python
-from e2b import Template, wait_for_process
-
-template = (
-    Template()
-    .from_base_image()
-    .set_start_cmd('./my-daemon', wait_for_process('my-daemon'))
-)
-```
-
-
-### wait\_for\_file
-
-```python
-def wait_for_file(filename: str)
-```
-
-Wait for a file to exist.
-
-Uses shell test command to check file existence.
-
-**Arguments**:
-
-- `filename`: Path to the file to wait for
-
-**Returns**:
-
-ReadyCmd that checks for the file
-Example
-```python
-from e2b import Template, wait_for_file
-
-template = (
-    Template()
-    .from_base_image()
-    .set_start_cmd('./init.sh', wait_for_file('/tmp/ready'))
-)
-```
-
-
-### wait\_for\_timeout
-
-```python
-def wait_for_timeout(timeout: int)
-```
-
-Wait for a specified timeout before considering the sandbox ready.
-
-Uses `sleep` command to wait for a fixed duration.
-
-**Arguments**:
-
-- `timeout`: Time to wait in **milliseconds** (minimum: 1000ms / 1 second)
-
-**Returns**:
-
-ReadyCmd that waits for the specified duration
-Example
-```python
-from e2b import Template, wait_for_timeout
-
-template = (
-    Template()
-    .from_node_image()
-    .set_start_cmd('npm start', wait_for_timeout(5000))  # Wait 5 seconds
-)
-```
-
-
-
 Special step name for the finalization phase of template building.
 This is the last step that runs after all user-defined instructions.
 
@@ -183,175 +26,6 @@ for stack traces.
 
 Default setting for whether to resolve symbolic links when copying files.
 When False, symlinks are copied as symlinks rather than following them.
-
-
-
-
-## InstructionType
-
-```python
-class InstructionType(str, Enum)
-```
-
-Types of instructions that can be used in a template.
-
-
-## CopyItem
-
-```python
-class CopyItem(TypedDict)
-```
-
-Configuration for a single file/directory copy operation.
-
-
-## Instruction
-
-```python
-class Instruction(TypedDict)
-```
-
-Represents a single instruction in the template build process.
-
-
-## GenericDockerRegistry
-
-```python
-class GenericDockerRegistry(TypedDict)
-```
-
-Configuration for a generic Docker registry with basic authentication.
-
-
-## AWSRegistry
-
-```python
-class AWSRegistry(TypedDict)
-```
-
-Configuration for AWS Elastic Container Registry (ECR).
-
-
-## GCPRegistry
-
-```python
-class GCPRegistry(TypedDict)
-```
-
-Configuration for Google Container Registry (GCR) or Artifact Registry.
-
-
-## TemplateType
-
-```python
-class TemplateType(TypedDict)
-```
-
-Internal representation of a template for the E2B build API.
-
-
-
-
-## DockerfFileFinalParserInterface
-
-```python
-class DockerfFileFinalParserInterface(Protocol)
-```
-
-Protocol defining the final interface for Dockerfile parsing callbacks.
-
-
-## DockerfileParserInterface
-
-```python
-class DockerfileParserInterface(Protocol)
-```
-
-Protocol defining the interface for Dockerfile parsing callbacks.
-
-
-### run\_cmd
-
-```python
-def run_cmd(command: Union[str, List[str]],
-            user: Optional[str] = None) -> "DockerfileParserInterface"
-```
-
-Handle RUN instruction.
-
-
-### copy
-
-```python
-def copy(src: Union[str, List[CopyItem]],
-         dest: Optional[str] = None,
-         force_upload: Optional[Literal[True]] = None,
-         resolve_symlinks: Optional[bool] = None,
-         user: Optional[str] = None,
-         mode: Optional[int] = None) -> "DockerfileParserInterface"
-```
-
-Handle COPY instruction.
-
-
-### set\_workdir
-
-```python
-def set_workdir(workdir: str) -> "DockerfileParserInterface"
-```
-
-Handle WORKDIR instruction.
-
-
-### set\_user
-
-```python
-def set_user(user: str) -> "DockerfileParserInterface"
-```
-
-Handle USER instruction.
-
-
-### set\_envs
-
-```python
-def set_envs(envs: Dict[str, str]) -> "DockerfileParserInterface"
-```
-
-Handle ENV instruction.
-
-
-### set\_start\_cmd
-
-```python
-def set_start_cmd(start_cmd: str,
-                  ready_cmd: str) -> "DockerfFileFinalParserInterface"
-```
-
-Handle CMD/ENTRYPOINT instruction.
-
-
-### parse\_dockerfile
-
-```python
-def parse_dockerfile(dockerfile_content_or_path: str,
-                     template_builder: DockerfileParserInterface) -> str
-```
-
-Parse a Dockerfile and convert it to Template SDK format.
-
-**Arguments**:
-
-- `dockerfile_content_or_path`: Either the Dockerfile content as a string, or a path to a Dockerfile file
-- `template_builder`: Interface providing template builder methods
-
-**Raises**:
-
-- `ValueError`: If the Dockerfile is invalid or unsupported
-
-**Returns**:
-
-The base image from the Dockerfile
 
 
 
@@ -1128,6 +802,267 @@ Dockerfile string representation
 
 
 
+## DockerfFileFinalParserInterface
+
+```python
+class DockerfFileFinalParserInterface(Protocol)
+```
+
+Protocol defining the final interface for Dockerfile parsing callbacks.
+
+
+## DockerfileParserInterface
+
+```python
+class DockerfileParserInterface(Protocol)
+```
+
+Protocol defining the interface for Dockerfile parsing callbacks.
+
+
+### run\_cmd
+
+```python
+def run_cmd(command: Union[str, List[str]],
+            user: Optional[str] = None) -> "DockerfileParserInterface"
+```
+
+Handle RUN instruction.
+
+
+### copy
+
+```python
+def copy(src: Union[str, List[CopyItem]],
+         dest: Optional[str] = None,
+         force_upload: Optional[Literal[True]] = None,
+         resolve_symlinks: Optional[bool] = None,
+         user: Optional[str] = None,
+         mode: Optional[int] = None) -> "DockerfileParserInterface"
+```
+
+Handle COPY instruction.
+
+
+### set\_workdir
+
+```python
+def set_workdir(workdir: str) -> "DockerfileParserInterface"
+```
+
+Handle WORKDIR instruction.
+
+
+### set\_user
+
+```python
+def set_user(user: str) -> "DockerfileParserInterface"
+```
+
+Handle USER instruction.
+
+
+### set\_envs
+
+```python
+def set_envs(envs: Dict[str, str]) -> "DockerfileParserInterface"
+```
+
+Handle ENV instruction.
+
+
+### set\_start\_cmd
+
+```python
+def set_start_cmd(start_cmd: str,
+                  ready_cmd: str) -> "DockerfFileFinalParserInterface"
+```
+
+Handle CMD/ENTRYPOINT instruction.
+
+
+### parse\_dockerfile
+
+```python
+def parse_dockerfile(dockerfile_content_or_path: str,
+                     template_builder: DockerfileParserInterface) -> str
+```
+
+Parse a Dockerfile and convert it to Template SDK format.
+
+**Arguments**:
+
+- `dockerfile_content_or_path`: Either the Dockerfile content as a string, or a path to a Dockerfile file
+- `template_builder`: Interface providing template builder methods
+
+**Raises**:
+
+- `ValueError`: If the Dockerfile is invalid or unsupported
+
+**Returns**:
+
+The base image from the Dockerfile
+
+
+
+
+## ReadyCmd
+
+```python
+class ReadyCmd()
+```
+
+Wrapper class for ready check commands.
+
+
+### wait\_for\_port
+
+```python
+def wait_for_port(port: int)
+```
+
+Wait for a port to be listening.
+
+Uses `ss` command to check if a port is open and listening.
+
+**Arguments**:
+
+- `port`: Port number to wait for
+
+**Returns**:
+
+ReadyCmd that checks for the port
+Example
+```python
+from e2b import Template, wait_for_port
+
+template = (
+    Template()
+    .from_python_image()
+    .set_start_cmd('python -m http.server 8000', wait_for_port(8000))
+)
+```
+
+
+### wait\_for\_url
+
+```python
+def wait_for_url(url: str, status_code: int = 200)
+```
+
+Wait for a URL to return a specific HTTP status code.
+
+Uses `curl` to make HTTP requests and check the response status.
+
+**Arguments**:
+
+- `url`: URL to check (e.g., 'http://localhost:3000/health')
+- `status_code`: Expected HTTP status code (default: 200)
+
+**Returns**:
+
+ReadyCmd that checks the URL
+Example
+```python
+from e2b import Template, wait_for_url
+
+template = (
+    Template()
+    .from_node_image()
+    .set_start_cmd('npm start', wait_for_url('http://localhost:3000/health'))
+)
+```
+
+
+### wait\_for\_process
+
+```python
+def wait_for_process(process_name: str)
+```
+
+Wait for a process with a specific name to be running.
+
+Uses `pgrep` to check if a process exists.
+
+**Arguments**:
+
+- `process_name`: Name of the process to wait for
+
+**Returns**:
+
+ReadyCmd that checks for the process
+Example
+```python
+from e2b import Template, wait_for_process
+
+template = (
+    Template()
+    .from_base_image()
+    .set_start_cmd('./my-daemon', wait_for_process('my-daemon'))
+)
+```
+
+
+### wait\_for\_file
+
+```python
+def wait_for_file(filename: str)
+```
+
+Wait for a file to exist.
+
+Uses shell test command to check file existence.
+
+**Arguments**:
+
+- `filename`: Path to the file to wait for
+
+**Returns**:
+
+ReadyCmd that checks for the file
+Example
+```python
+from e2b import Template, wait_for_file
+
+template = (
+    Template()
+    .from_base_image()
+    .set_start_cmd('./init.sh', wait_for_file('/tmp/ready'))
+)
+```
+
+
+### wait\_for\_timeout
+
+```python
+def wait_for_timeout(timeout: int)
+```
+
+Wait for a specified timeout before considering the sandbox ready.
+
+Uses `sleep` command to wait for a fixed duration.
+
+**Arguments**:
+
+- `timeout`: Time to wait in **milliseconds** (minimum: 1000ms / 1 second)
+
+**Returns**:
+
+ReadyCmd that waits for the specified duration
+Example
+```python
+from e2b import Template, wait_for_timeout
+
+template = (
+    Template()
+    .from_node_image()
+    .set_start_cmd('npm start', wait_for_timeout(5000))  # Wait 5 seconds
+)
+```
+
+
+
+
 ### read\_dockerignore
 
 ```python
@@ -1389,4 +1324,69 @@ from e2b import Template, default_build_logger
 template = Template().from_python_image()
 
 ```
+
+
+
+
+## InstructionType
+
+```python
+class InstructionType(str, Enum)
+```
+
+Types of instructions that can be used in a template.
+
+
+## CopyItem
+
+```python
+class CopyItem(TypedDict)
+```
+
+Configuration for a single file/directory copy operation.
+
+
+## Instruction
+
+```python
+class Instruction(TypedDict)
+```
+
+Represents a single instruction in the template build process.
+
+
+## GenericDockerRegistry
+
+```python
+class GenericDockerRegistry(TypedDict)
+```
+
+Configuration for a generic Docker registry with basic authentication.
+
+
+## AWSRegistry
+
+```python
+class AWSRegistry(TypedDict)
+```
+
+Configuration for AWS Elastic Container Registry (ECR).
+
+
+## GCPRegistry
+
+```python
+class GCPRegistry(TypedDict)
+```
+
+Configuration for Google Container Registry (GCR) or Artifact Registry.
+
+
+## TemplateType
+
+```python
+class TemplateType(TypedDict)
+```
+
+Internal representation of a template for the E2B build API.
 
