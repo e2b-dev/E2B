@@ -1,6 +1,5 @@
 import { execSync } from 'node:child_process'
-import { beforeAll } from 'vitest'
 
-beforeAll(() => {
+export async function setup() {
   execSync('pnpm build', { stdio: 'inherit' })
-})
+}
