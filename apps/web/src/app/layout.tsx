@@ -51,16 +51,19 @@ export async function generateMetadata() {
   return {
     title: {
       template: '%s - E2B',
-      default: 'E2B - Code Interpreting for AI apps',
+      default: 'SDK Reference - E2B',
     },
-    description: 'Open-source secure sandboxes for AI code execution',
+    description:
+      'SDK Reference Documentation for E2B JavaScript and Python SDKs. API Methods, Classes, and Examples for Integrating Secure Cloud Sandboxes.',
     twitter: {
-      title: 'E2B - Code Interpreting for AI apps',
-      description: 'Open-source secure sandboxes for AI code execution',
+      title: 'SDK Reference - E2B',
+      description:
+        'SDK Reference Documentation for E2B JavaScript and Python SDKs. API Methods, Classes, and Examples for Integrating Secure Cloud Sandboxes.',
     },
     openGraph: {
-      title: 'E2B - Code Interpreting for AI apps',
-      description: 'Open-source secure sandboxes for AI code execution',
+      title: 'SDK Reference - E2B',
+      description:
+        'SDK Reference Documentation for E2B JavaScript and Python SDKs. API Methods, Classes, and Examples for Integrating Secure Cloud Sandboxes.',
     },
     alternates:
       isValid && pathname !== ''
