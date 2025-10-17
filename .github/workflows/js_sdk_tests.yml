@@ -52,6 +52,7 @@ jobs:
       - name: Install dependencies
         run: |
           pnpm install --frozen-lockfile
+          npx playwright install --with-deps
 
       - name: Test build
         run: pnpm build

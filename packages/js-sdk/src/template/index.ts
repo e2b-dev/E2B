@@ -400,20 +400,32 @@ export class TemplateBase
     return this
   }
 
-  pipInstall(packages?: string | string[]): TemplateBuilder {
+  pipInstall(
+    packages?: string | string[],
+    options?: { g?: boolean }
+  ): TemplateBuilder {
+    const g = options?.g ?? true
+
     const args = ['pip', 'install']
     const packageList = packages
       ? Array.isArray(packages)
         ? packages
         : [packages]
       : undefined
+    if (g === false) {
+      args.push('--user')
+    }
     if (packageList) {
       args.push(...packageList)
     } else {
       args.push('.')
     }
 
-    return this.runInNewStackTraceContext(() => this.runCmd(args.join(' ')))
+    return this.runInNewStackTraceContext(() =>
+      this.runCmd(args.join(' '), {
+        user: g ? 'root' : undefined,
+      })
+    )
   }
 
   npmInstall(
@@ -433,7 +445,11 @@ export class TemplateBase
       args.push(...packageList)
     }
 
-    return this.runInNewStackTraceContext(() => this.runCmd(args.join(' ')))
+    return this.runInNewStackTraceContext(() =>
+      this.runCmd(args.join(' '), {
+        user: options?.g ? 'root' : undefined,
+      })
+    )
   }
 
   aptInstall(packages: string | string[]): TemplateBuilder {
@@ -854,3 +870,10 @@ export function Template(options?: TemplateOptions): TemplateFromImage {
 Template.build = TemplateBase.build
 Template.toJSON = TemplateBase.toJSON
 Template.toDockerfile = TemplateBase.toDockerfile
+
+export type {
+  BuildOptions,
+  CopyItem,
+  TemplateBuilder,
+  TemplateClass,
+} from './types'

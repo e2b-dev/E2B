@@ -1,6 +1,6 @@
 {
   "name": "e2b",
-  "version": "2.2.10",
+  "version": "2.3.1",
   "description": "E2B SDK that give agents cloud environments",
   "homepage": "https://e2b.dev",
   "license": "MIT",
@@ -41,7 +41,6 @@
     "test:deno": "deno test tests/runtimes/deno/ --allow-net --allow-read --allow-env --unstable-sloppy-imports --trace-leaks",
     "test:integration": "E2B_INTEGRATION_TEST=1 vitest run tests/integration/**",
     "lint": "eslint src/ tests/",
-    "postinstall": "pnpm exec playwright install chromium",
     "format": "prettier --write src/ tests/ example.mts"
   },
   "devDependencies": {
