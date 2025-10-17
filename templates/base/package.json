@@ -4,7 +4,6 @@
   "description": "E2B Base Template",
   "scripts": {
     "build:dev": "tsx build.dev.ts",
-    "build:prod": "tsx build.prod.ts",
-    "build": "tsx build.prod.ts"
+    "build:prod": "tsx build.prod.ts"
   }
 }
