@@ -118,8 +118,8 @@ importers:
         specifier: ^1.2.1
         version: 1.2.1
       e2b:
-        specifier: ^2.3.1
-        version: 2.3.1
+        specifier: ^2.3.2
+        version: 2.3.2
       fast-glob:
         specifier: ^3.3.0
         version: 3.3.1
@@ -4100,8 +4100,8 @@ packages:
     resolution: {integrity: sha512-EX05vM7XnOuQMBc2IYXg7s5CS0k7cZ6SS++UVjEHSu+AnrBFCqvcaVLfGtjB1xgm7RFdjLvrUuh7sTAoHBTMEg==}
     engines: {node: '>=20'}
 
-  e2b@2.3.1:
-    resolution: {integrity: sha512-Pk1agF2VaFjL35AEJt0sCuKQbdCVHbMYOMTyp8flKX3YeTLqxe4kWnWBm8INYAfchkpAIokXWfXT2rpmlug+WQ==}
+  e2b@2.3.2:
+    resolution: {integrity: sha512-wvOzwLgWeZ8eZnvL0qW8FfP8OzuuSyYoYfhmTdqvRaZJimEXNZR25qwyPTJ6uvd4KJymzX7D/2mOXV1j7/ei+A==}
     engines: {node: '>=20'}
 
   eastasianwidth@0.2.0:
@@ -12392,7 +12392,7 @@ snapshots:
       platform: 1.3.6
       tar: 7.4.3
 
-  e2b@2.3.1:
+  e2b@2.3.2:
     dependencies:
       '@bufbuild/protobuf': 2.6.2
       '@connectrpc/connect': 2.0.0-rc.3(@bufbuild/protobuf@2.6.2)

@@ -1,0 +1,1392 @@
+
+
+Special step name for the finalization phase of template building.
+This is the last step that runs after all user-defined instructions.
+
+
+### FINALIZE\_STEP\_NAME
+
+Special step name for the base image phase of template building.
+This is the first step that sets up the base image.
+
+
+### BASE\_STEP\_NAME
+
+Stack trace depth for capturing caller information.
+
+Depth levels:
+1. TemplateClass
+2. Caller method (e.g., copy(), from_image(), etc.)
+
+This depth is used to determine the original caller's location
+for stack traces.
+
+
+### STACK\_TRACE\_DEPTH
+
+Default setting for whether to resolve symbolic links when copying files.
+When False, symlinks are copied as symlinks rather than following them.
+
+
+
+
+## TemplateBuilder
+
+```python
+class TemplateBuilder()
+```
+
+Builder class for adding instructions to an E2B template.
+
+All methods return self to allow method chaining.
+
+
+### copy
+
+```python
+def copy(src: Union[Union[str, Path], List[Union[str, Path]]],
+         dest: Union[str, Path],
+         force_upload: Optional[Literal[True]] = None,
+         user: Optional[str] = None,
+         mode: Optional[int] = None,
+         resolve_symlinks: Optional[bool] = None) -> "TemplateBuilder"
+```
+
+Copy files or directories from the local filesystem into the template.
+
+**Arguments**:
+
+- `src`: Source file(s) or directory path(s) to copy
+- `dest`: Destination path in the template
+- `force_upload`: Force upload even if files are cached
+- `user`: User and optionally group (user:group) to own the files
+- `mode`: File permissions in octal format (e.g., 0o755)
+- `resolve_symlinks`: Whether to resolve symlinks
+
+**Returns**:
+
+`TemplateBuilder` class
+Example
+```python
+template.copy('requirements.txt', '/home/user/')
+template.copy(['app.py', 'config.py'], '/app/', mode=0o755)
+```
+
+
+### copy\_items
+
+```python
+def copy_items(items: List[CopyItem]) -> "TemplateBuilder"
+```
+
+Copy multiple files or directories using a list of copy items.
+
+**Arguments**:
+
+- `items`: List of CopyItem dictionaries with src, dest, and optional parameters
+
+**Returns**:
+
+`TemplateBuilder` class
+Example
+```python
+template.copy_items([
+    {'src': 'app.py', 'dest': '/app/'},
+    {'src': 'config.py', 'dest': '/app/', 'mode': 0o644}
+])
+```
+
+
+### remove
+
+```python
+def remove(path: Union[Union[str, Path], List[Union[str, Path]]],
+           force: bool = False,
+           recursive: bool = False) -> "TemplateBuilder"
+```
+
+Remove files or directories in the template.
+
+**Arguments**:
+
+- `path`: File(s) or directory path(s) to remove
+- `force`: Force removal without prompting
+- `recursive`: Remove directories recursively
+
+**Returns**:
+
+`TemplateBuilder` class
+Example
+```python
+template.remove('/tmp/cache', recursive=True, force=True)
+```
+
+
+### rename
+
+```python
+def rename(src: Union[str, Path],
+           dest: Union[str, Path],
+           force: bool = False) -> "TemplateBuilder"
+```
+
+Rename or move a file or directory in the template.
+
+**Arguments**:
+
+- `src`: Source path
+- `dest`: Destination path
+- `force`: Force rename without prompting
+
+**Returns**:
+
+`TemplateBuilder` class
+Example
+```python
+template.rename('/tmp/old.txt', '/tmp/new.txt')
+```
+
+
+### make\_dir
+
+```python
+def make_dir(path: Union[Union[str, Path], List[Union[str, Path]]],
+             mode: Optional[int] = None) -> "TemplateBuilder"
+```
+
+Create directory(ies) in the template.
+
+**Arguments**:
+
+- `path`: Directory path(s) to create
+- `mode`: Directory permissions in octal format (e.g., 0o755)
+
+**Returns**:
+
+`TemplateBuilder` class
+Example
+```python
+template.make_dir('/app/data', mode=0o755)
+template.make_dir(['/app/logs', '/app/cache'])
+```
+
+
+### make\_symlink
+
+```python
+def make_symlink(src: Union[str, Path],
+                 dest: Union[str, Path]) -> "TemplateBuilder"
+```
+
+Create a symbolic link in the template.
+
+**Arguments**:
+
+- `src`: Source path (target of the symlink)
+- `dest`: Destination path (location of the symlink)
+
+**Returns**:
+
+`TemplateBuilder` class
+Example
+```python
+template.make_symlink('/usr/bin/python3', '/usr/bin/python')
+```
+
+
+### run\_cmd
+
+```python
+def run_cmd(command: Union[str, List[str]],
+            user: Optional[str] = None) -> "TemplateBuilder"
+```
+
+Run a shell command during template build.
+
+**Arguments**:
+
+- `command`: Command string or list of commands to run (joined with &&)
+- `user`: User to run the command as
+
+**Returns**:
+
+`TemplateBuilder` class
+Example
+```python
+template.run_cmd('apt-get update')
+template.run_cmd(['pip install numpy', 'pip install pandas'])
+template.run_cmd('apt-get install vim', user='root')
+```
+
+
+### set\_workdir
+
+```python
+def set_workdir(workdir: Union[str, Path]) -> "TemplateBuilder"
+```
+
+Set the working directory for subsequent commands in the template.
+
+**Arguments**:
+
+- `workdir`: Path to set as the working directory
+
+**Returns**:
+
+`TemplateBuilder` class
+Example
+```python
+template.set_workdir('/app')
+```
+
+
+### set\_user
+
+```python
+def set_user(user: str) -> "TemplateBuilder"
+```
+
+Set the user for subsequent commands in the template.
+
+**Arguments**:
+
+- `user`: Username to set
+
+**Returns**:
+
+`TemplateBuilder` class
+Example
+```python
+template.set_user('root')
+```
+
+
+### pip\_install
+
+```python
+def pip_install(packages: Optional[Union[str, List[str]]] = None,
+                g: bool = True) -> "TemplateBuilder"
+```
+
+Install Python packages using pip.
+
+**Arguments**:
+
+- `packages`: Package name(s) to install. If None, runs 'pip install .' in the current directory
+- `g`: Install packages globally (default: True). If False, installs for user only
+
+**Returns**:
+
+`TemplateBuilder` class
+Example
+```python
+template.pip_install('numpy')
+template.pip_install(['pandas', 'scikit-learn'])
+template.pip_install('numpy', g=False)  # Install for user only
+template.pip_install()  # Installs from current directory
+```
+
+
+### npm\_install
+
+```python
+def npm_install(packages: Optional[Union[str, List[str]]] = None,
+                g: Optional[bool] = False) -> "TemplateBuilder"
+```
+
+Install Node.js packages using npm.
+
+**Arguments**:
+
+- `packages`: Package name(s) to install. If None, installs from package.json
+- `g`: Install packages globally
+
+**Returns**:
+
+`TemplateBuilder` class
+Example
+```python
+template.npm_install('express')
+template.npm_install(['lodash', 'axios'])
+template.npm_install('typescript', g=True)
+template.npm_install()  # Installs from package.json
+```
+
+
+### apt\_install
+
+```python
+def apt_install(packages: Union[str, List[str]]) -> "TemplateBuilder"
+```
+
+Install system packages using apt-get.
+
+**Arguments**:
+
+- `packages`: Package name(s) to install
+
+**Returns**:
+
+`TemplateBuilder` class
+Example
+```python
+template.apt_install('vim')
+template.apt_install(['git', 'curl', 'wget'])
+```
+
+
+### git\_clone
+
+```python
+def git_clone(url: str,
+              path: Optional[Union[str, Path]] = None,
+              branch: Optional[str] = None,
+              depth: Optional[int] = None) -> "TemplateBuilder"
+```
+
+Clone a git repository into the template.
+
+**Arguments**:
+
+- `url`: Git repository URL
+- `path`: Destination path for the clone
+- `branch`: Branch to clone
+- `depth`: Clone depth for shallow clones
+
+**Returns**:
+
+`TemplateBuilder` class
+Example
+```python
+template.git_clone('https://github.com/user/repo.git', '/app/repo')
+template.git_clone('https://github.com/user/repo.git', branch='main', depth=1)
+```
+
+
+### set\_envs
+
+```python
+def set_envs(envs: Dict[str, str]) -> "TemplateBuilder"
+```
+
+Set environment variables in the template.
+
+**Arguments**:
+
+- `envs`: Dictionary of environment variable names and values
+
+**Returns**:
+
+`TemplateBuilder` class
+Example
+```python
+template.set_envs({'NODE_ENV': 'production', 'PORT': '8080'})
+```
+
+
+### skip\_cache
+
+```python
+def skip_cache() -> "TemplateBuilder"
+```
+
+Skip cache for all subsequent build instructions from this point.
+
+Call this before any instruction to force it and all following layers
+to be rebuilt, ignoring any cached layers.
+
+**Returns**:
+
+`TemplateBuilder` class
+Example
+```python
+template.skip_cache().run_cmd('apt-get update')
+```
+
+
+### set\_start\_cmd
+
+```python
+def set_start_cmd(start_cmd: str,
+                  ready_cmd: Union[str, ReadyCmd]) -> "TemplateFinal"
+```
+
+Set the command to start when the sandbox launches and the ready check command.
+
+**Arguments**:
+
+- `start_cmd`: Command to run when the sandbox starts
+- `ready_cmd`: Command or ReadyCmd to check if the sandbox is ready
+
+**Returns**:
+
+`TemplateFinal` class
+Example
+```python
+template.set_start_cmd(
+    'python app.py',
+    'curl http://localhost:8000/health'
+)
+
+from e2b import wait_for_port, wait_for_url
+
+template.set_start_cmd(
+    'python -m http.server 8000',
+    wait_for_port(8000)
+)
+
+template.set_start_cmd(
+    'npm start',
+    wait_for_url('http://localhost:3000/health', 200)
+)
+```
+
+
+### set\_ready\_cmd
+
+```python
+def set_ready_cmd(ready_cmd: Union[str, ReadyCmd]) -> "TemplateFinal"
+```
+
+Set the command to check if the sandbox is ready.
+
+**Arguments**:
+
+- `ready_cmd`: Command or ReadyCmd to check if the sandbox is ready
+
+**Returns**:
+
+`TemplateFinal` class
+Example
+```python
+template.set_ready_cmd('curl http://localhost:8000/health')
+
+from e2b import wait_for_port, wait_for_file, wait_for_process
+
+template.set_ready_cmd(wait_for_port(3000))
+
+template.set_ready_cmd(wait_for_file('/tmp/ready'))
+
+template.set_ready_cmd(wait_for_process('nginx'))
+```
+
+
+## TemplateFinal
+
+```python
+class TemplateFinal()
+```
+
+Final template state after start/ready commands are set.
+
+
+## TemplateBase
+
+```python
+class TemplateBase()
+```
+
+Base class for building E2B sandbox templates.
+
+
+### \_\_init\_\_
+
+```python
+def __init__(file_context_path: Optional[Union[str, Path]] = None,
+             file_ignore_patterns: Optional[List[str]] = None)
+```
+
+Create a new template builder instance.
+
+**Arguments**:
+
+- `file_context_path`: Base path for resolving relative file paths in copy operations
+- `file_ignore_patterns`: List of glob patterns to ignore when copying files
+
+
+### skip\_cache
+
+```python
+def skip_cache() -> "TemplateBase"
+```
+
+Skip cache for all subsequent build instructions from this point.
+
+**Returns**:
+
+`TemplateBase` class
+Example
+```python
+template.skip_cache().from_python_image('3.11')
+```
+
+
+### from\_debian\_image
+
+```python
+def from_debian_image(variant: str = "stable") -> TemplateBuilder
+```
+
+Start template from a Debian base image.
+
+**Arguments**:
+
+- `variant`: Debian image variant
+
+**Returns**:
+
+`TemplateBuilder` class
+Example
+```python
+Template().from_debian_image('bookworm')
+```
+
+
+### from\_ubuntu\_image
+
+```python
+def from_ubuntu_image(variant: str = "lts") -> TemplateBuilder
+```
+
+Start template from an Ubuntu base image.
+
+**Arguments**:
+
+- `variant`: Ubuntu image variant (default: 'lts')
+
+**Returns**:
+
+`TemplateBuilder` class
+Example
+```python
+Template().from_ubuntu_image('24.04')
+```
+
+
+### from\_python\_image
+
+```python
+def from_python_image(version: str = "3") -> TemplateBuilder
+```
+
+Start template from a Python base image.
+
+**Arguments**:
+
+- `version`: Python version (default: '3')
+
+**Returns**:
+
+`TemplateBuilder` class
+Example
+```python
+Template().from_python_image('3')
+```
+
+
+### from\_node\_image
+
+```python
+def from_node_image(variant: str = "lts") -> TemplateBuilder
+```
+
+Start template from a Node.js base image.
+
+**Arguments**:
+
+- `variant`: Node.js image variant (default: 'lts')
+
+**Returns**:
+
+`TemplateBuilder` class
+Example
+```python
+Template().from_node_image('24')
+```
+
+
+### from\_base\_image
+
+```python
+def from_base_image() -> TemplateBuilder
+```
+
+Start template from the E2B base image (e2bdev/base:latest).
+
+**Returns**:
+
+`TemplateBuilder` class
+Example
+```python
+Template().from_base_image()
+```
+
+
+### from\_image
+
+```python
+def from_image(image: str,
+               username: Optional[str] = None,
+               password: Optional[str] = None) -> TemplateBuilder
+```
+
+Start template from a Docker image.
+
+**Arguments**:
+
+- `image`: Docker image name (e.g., 'ubuntu:24.04')
+- `username`: Username for private registry authentication
+- `password`: Password for private registry authentication
+
+**Returns**:
+
+`TemplateBuilder` class
+Example
+```python
+Template().from_image('python:3')
+
+Template().from_image('myregistry.com/myimage:latest', username='user', password='pass')
+```
+
+
+### from\_template
+
+```python
+def from_template(template: str) -> TemplateBuilder
+```
+
+Start template from an existing E2B template.
+
+**Arguments**:
+
+- `template`: E2B template ID or alias
+
+**Returns**:
+
+`TemplateBuilder` class
+Example
+```python
+Template().from_template('my-base-template')
+```
+
+
+### from\_dockerfile
+
+```python
+def from_dockerfile(dockerfile_content_or_path: str) -> TemplateBuilder
+```
+
+Parse a Dockerfile and convert it to Template SDK format.
+
+**Arguments**:
+
+- `dockerfile_content_or_path`: Either the Dockerfile content as a string, or a path to a Dockerfile file
+
+**Returns**:
+
+`TemplateBuilder` class
+Example
+```python
+Template().from_dockerfile('Dockerfile')
+Template().from_dockerfile('FROM python:3\nRUN pip install numpy')
+```
+
+
+### from\_aws\_registry
+
+```python
+def from_aws_registry(image: str, access_key_id: str, secret_access_key: str,
+                      region: str) -> TemplateBuilder
+```
+
+Start template from an AWS ECR registry image.
+
+**Arguments**:
+
+- `image`: Docker image name from AWS ECR
+- `access_key_id`: AWS access key ID
+- `secret_access_key`: AWS secret access key
+- `region`: AWS region
+
+**Returns**:
+
+`TemplateBuilder` class
+Example
+```python
+Template().from_aws_registry(
+    '123456789.dkr.ecr.us-west-2.amazonaws.com/myimage:latest',
+    access_key_id='AKIA...',
+    secret_access_key='...',
+    region='us-west-2'
+)
+```
+
+
+### from\_gcp\_registry
+
+```python
+def from_gcp_registry(
+        image: str, service_account_json: Union[str, dict]) -> TemplateBuilder
+```
+
+Start template from a GCP Artifact Registry or Container Registry image.
+
+**Arguments**:
+
+- `image`: Docker image name from GCP registry
+- `service_account_json`: Service account JSON string, dict, or path to JSON file
+
+**Returns**:
+
+`TemplateBuilder` class
+Example
+```python
+Template().from_gcp_registry(
+    'gcr.io/myproject/myimage:latest',
+    service_account_json='path/to/service-account.json'
+)
+```
+
+
+### to\_json
+
+```python
+@staticmethod
+def to_json(template: "TemplateClass") -> str
+```
+
+Convert a template to JSON representation.
+
+**Arguments**:
+
+- `template`: The template to convert (TemplateBuilder or TemplateFinal instance)
+
+**Returns**:
+
+JSON string representation of the template
+Example
+```python
+template = Template().from_python_image('3').copy('app.py', '/app/')
+json_str = TemplateBase.to_json(template)
+```
+
+
+### to\_dockerfile
+
+```python
+@staticmethod
+def to_dockerfile(template: "TemplateClass") -> str
+```
+
+Convert a template to Dockerfile format.
+
+Note: Templates based on other E2B templates cannot be converted to Dockerfile.
+
+**Arguments**:
+
+- `template`: The template to convert (TemplateBuilder or TemplateFinal instance)
+
+**Raises**:
+
+- `ValueError`: If the template is based on another E2B template or has no base image
+Example
+```python
+template = Template().from_python_image('3').copy('app.py', '/app/')
+dockerfile = TemplateBase.to_dockerfile(template)
+```
+
+**Returns**:
+
+Dockerfile string representation
+
+
+
+
+## DockerfFileFinalParserInterface
+
+```python
+class DockerfFileFinalParserInterface(Protocol)
+```
+
+Protocol defining the final interface for Dockerfile parsing callbacks.
+
+
+## DockerfileParserInterface
+
+```python
+class DockerfileParserInterface(Protocol)
+```
+
+Protocol defining the interface for Dockerfile parsing callbacks.
+
+
+### run\_cmd
+
+```python
+def run_cmd(command: Union[str, List[str]],
+            user: Optional[str] = None) -> "DockerfileParserInterface"
+```
+
+Handle RUN instruction.
+
+
+### copy
+
+```python
+def copy(src: Union[str, List[CopyItem]],
+         dest: Optional[str] = None,
+         force_upload: Optional[Literal[True]] = None,
+         resolve_symlinks: Optional[bool] = None,
+         user: Optional[str] = None,
+         mode: Optional[int] = None) -> "DockerfileParserInterface"
+```
+
+Handle COPY instruction.
+
+
+### set\_workdir
+
+```python
+def set_workdir(workdir: str) -> "DockerfileParserInterface"
+```
+
+Handle WORKDIR instruction.
+
+
+### set\_user
+
+```python
+def set_user(user: str) -> "DockerfileParserInterface"
+```
+
+Handle USER instruction.
+
+
+### set\_envs
+
+```python
+def set_envs(envs: Dict[str, str]) -> "DockerfileParserInterface"
+```
+
+Handle ENV instruction.
+
+
+### set\_start\_cmd
+
+```python
+def set_start_cmd(start_cmd: str,
+                  ready_cmd: str) -> "DockerfFileFinalParserInterface"
+```
+
+Handle CMD/ENTRYPOINT instruction.
+
+
+### parse\_dockerfile
+
+```python
+def parse_dockerfile(dockerfile_content_or_path: str,
+                     template_builder: DockerfileParserInterface) -> str
+```
+
+Parse a Dockerfile and convert it to Template SDK format.
+
+**Arguments**:
+
+- `dockerfile_content_or_path`: Either the Dockerfile content as a string, or a path to a Dockerfile file
+- `template_builder`: Interface providing template builder methods
+
+**Raises**:
+
+- `ValueError`: If the Dockerfile is invalid or unsupported
+
+**Returns**:
+
+The base image from the Dockerfile
+
+
+
+
+## ReadyCmd
+
+```python
+class ReadyCmd()
+```
+
+Wrapper class for ready check commands.
+
+
+### wait\_for\_port
+
+```python
+def wait_for_port(port: int)
+```
+
+Wait for a port to be listening.
+
+Uses `ss` command to check if a port is open and listening.
+
+**Arguments**:
+
+- `port`: Port number to wait for
+
+**Returns**:
+
+ReadyCmd that checks for the port
+Example
+```python
+from e2b import Template, wait_for_port
+
+template = (
+    Template()
+    .from_python_image()
+    .set_start_cmd('python -m http.server 8000', wait_for_port(8000))
+)
+```
+
+
+### wait\_for\_url
+
+```python
+def wait_for_url(url: str, status_code: int = 200)
+```
+
+Wait for a URL to return a specific HTTP status code.
+
+Uses `curl` to make HTTP requests and check the response status.
+
+**Arguments**:
+
+- `url`: URL to check (e.g., 'http://localhost:3000/health')
+- `status_code`: Expected HTTP status code (default: 200)
+
+**Returns**:
+
+ReadyCmd that checks the URL
+Example
+```python
+from e2b import Template, wait_for_url
+
+template = (
+    Template()
+    .from_node_image()
+    .set_start_cmd('npm start', wait_for_url('http://localhost:3000/health'))
+)
+```
+
+
+### wait\_for\_process
+
+```python
+def wait_for_process(process_name: str)
+```
+
+Wait for a process with a specific name to be running.
+
+Uses `pgrep` to check if a process exists.
+
+**Arguments**:
+
+- `process_name`: Name of the process to wait for
+
+**Returns**:
+
+ReadyCmd that checks for the process
+Example
+```python
+from e2b import Template, wait_for_process
+
+template = (
+    Template()
+    .from_base_image()
+    .set_start_cmd('./my-daemon', wait_for_process('my-daemon'))
+)
+```
+
+
+### wait\_for\_file
+
+```python
+def wait_for_file(filename: str)
+```
+
+Wait for a file to exist.
+
+Uses shell test command to check file existence.
+
+**Arguments**:
+
+- `filename`: Path to the file to wait for
+
+**Returns**:
+
+ReadyCmd that checks for the file
+Example
+```python
+from e2b import Template, wait_for_file
+
+template = (
+    Template()
+    .from_base_image()
+    .set_start_cmd('./init.sh', wait_for_file('/tmp/ready'))
+)
+```
+
+
+### wait\_for\_timeout
+
+```python
+def wait_for_timeout(timeout: int)
+```
+
+Wait for a specified timeout before considering the sandbox ready.
+
+Uses `sleep` command to wait for a fixed duration.
+
+**Arguments**:
+
+- `timeout`: Time to wait in **milliseconds** (minimum: 1000ms / 1 second)
+
+**Returns**:
+
+ReadyCmd that waits for the specified duration
+Example
+```python
+from e2b import Template, wait_for_timeout
+
+template = (
+    Template()
+    .from_node_image()
+    .set_start_cmd('npm start', wait_for_timeout(5000))  # Wait 5 seconds
+)
+```
+
+
+
+
+### read\_dockerignore
+
+```python
+def read_dockerignore(context_path: str) -> List[str]
+```
+
+Read and parse a .dockerignore file.
+
+**Arguments**:
+
+- `context_path`: Directory path containing the .dockerignore file
+
+**Returns**:
+
+Array of ignore patterns (empty lines and comments are filtered out)
+
+
+### calculate\_files\_hash
+
+```python
+def calculate_files_hash(src: str, dest: str, context_path: str,
+                         ignore_patterns: List[str], resolve_symlinks: bool,
+                         stack_trace: Optional[TracebackType]) -> str
+```
+
+Calculate a hash of files being copied to detect changes for cache invalidation.
+
+The hash includes file content, metadata (mode, uid, gid, size, mtime), and relative paths.
+
+**Arguments**:
+
+- `src`: Source path pattern for files to copy
+- `dest`: Destination path where files will be copied
+- `context_path`: Base directory for resolving relative paths
+- `ignore_patterns`: Glob patterns to ignore
+- `resolve_symlinks`: Whether to resolve symbolic links when hashing
+- `stack_trace`: Optional stack trace for error reporting
+
+**Raises**:
+
+- `ValueError`: If no files match the source pattern
+
+**Returns**:
+
+Hex string hash of all files
+
+
+### strip\_ansi\_escape\_codes
+
+```python
+def strip_ansi_escape_codes(text: str) -> str
+```
+
+Strip ANSI escape codes from a string.
+
+Source: https://github.com/chalk/ansi-regex/blob/main/index.js
+
+**Arguments**:
+
+- `text`: String with ANSI escape codes
+
+**Returns**:
+
+String without ANSI escape codes
+
+
+### get\_caller\_frame
+
+```python
+def get_caller_frame(depth: int) -> Optional[FrameType]
+```
+
+Get the caller's stack frame at a specific depth.
+
+This is used to provide better error messages and debugging information
+by tracking where template methods were called from in user code.
+
+**Arguments**:
+
+- `depth`: The depth of the stack trace to retrieve
+
+**Returns**:
+
+The caller frame, or None if not available
+
+
+### get\_caller\_directory
+
+```python
+def get_caller_directory(depth: int) -> Optional[str]
+```
+
+Get the directory of the caller at a specific stack depth.
+
+This is used to determine the file_context_path when creating a template,
+so file paths are resolved relative to the user's template file location.
+
+**Arguments**:
+
+- `depth`: The depth of the stack trace
+
+**Returns**:
+
+The caller's directory path, or None if not available
+
+
+### pad\_octal
+
+```python
+def pad_octal(mode: int) -> str
+```
+
+Convert a numeric file mode to a zero-padded octal string.
+
+**Arguments**:
+
+- `mode`: File mode as a number (e.g., 493 for 0o755)
+
+**Returns**:
+
+Zero-padded 4-digit octal string (e.g., "0755")
+Example
+```python
+pad_octal(0o755)  # Returns "0755"
+pad_octal(0o644)  # Returns "0644"
+```
+
+
+### get\_build\_step\_index
+
+```python
+def get_build_step_index(step: str, stack_traces_length: int) -> int
+```
+
+Get the array index for a build step based on its name.
+
+Special steps:
+- BASE_STEP_NAME: Returns 0 (first step)
+- FINALIZE_STEP_NAME: Returns the last index
+- Numeric strings: Converted to number
+
+**Arguments**:
+
+- `step`: Build step name or number as string
+- `stack_traces_length`: Total number of stack traces (used for FINALIZE_STEP_NAME)
+
+**Returns**:
+
+Index for the build step
+
+
+### read\_gcp\_service\_account\_json
+
+```python
+def read_gcp_service_account_json(context_path: str,
+                                  path_or_content: Union[str, dict]) -> str
+```
+
+Read GCP service account JSON from a file or object.
+
+**Arguments**:
+
+- `context_path`: Base directory for resolving relative file paths
+- `path_or_content`: Either a path to a JSON file or a service account object
+
+**Returns**:
+
+Service account JSON as a string
+
+
+
+
+## LogEntry
+
+```python
+@dataclass
+class LogEntry()
+```
+
+Represents a single log entry from the template build process.
+
+
+## LogEntryStart
+
+```python
+@dataclass
+class LogEntryStart(LogEntry)
+```
+
+Special log entry indicating the start of a build process.
+
+
+## LogEntryEnd
+
+```python
+@dataclass
+class LogEntryEnd(LogEntry)
+```
+
+Special log entry indicating the end of a build process.
+
+
+### TIMER\_UPDATE\_INTERVAL\_MS
+
+Default minimum log level to display.
+
+
+### DEFAULT\_LEVEL
+
+Colored labels for each log level.
+
+
+### levels
+
+Numeric ordering of log levels for comparison (lower = less severe).
+
+
+### set\_interval
+
+```python
+def set_interval(func, interval)
+```
+
+Returns a stop function that can be called to cancel the interval.
+
+Similar to JavaScript's setInterval.
+
+**Arguments**:
+
+- `func`: Function to execute at each interval
+- `interval`: Interval duration in **seconds**
+
+**Returns**:
+
+Stop function that can be called to cancel the interval
+
+
+### default\_build\_logger
+
+```python
+def default_build_logger(
+        min_level: Optional[LogEntryLevel] = None
+) -> Callable[[LogEntry], None]
+```
+
+Create a default build logger with animated timer display.
+
+**Arguments**:
+
+- `min_level`: Minimum log level to display (default: 'info')
+
+**Returns**:
+
+Logger function that accepts LogEntry instances
+Example
+```python
+from e2b import Template, default_build_logger
+
+template = Template().from_python_image()
+
+```
+
+
+
+
+## InstructionType
+
+```python
+class InstructionType(str, Enum)
+```
+
+Types of instructions that can be used in a template.
+
+
+## CopyItem
+
+```python
+class CopyItem(TypedDict)
+```
+
+Configuration for a single file/directory copy operation.
+
+
+## Instruction
+
+```python
+class Instruction(TypedDict)
+```
+
+Represents a single instruction in the template build process.
+
+
+## GenericDockerRegistry
+
+```python
+class GenericDockerRegistry(TypedDict)
+```
+
+Configuration for a generic Docker registry with basic authentication.
+
+
+## AWSRegistry
+
+```python
+class AWSRegistry(TypedDict)
+```
+
+Configuration for AWS Elastic Container Registry (ECR).
+
+
+## GCPRegistry
+
+```python
+class GCPRegistry(TypedDict)
+```
+
+Configuration for Google Container Registry (GCR) or Artifact Registry.
+
+
+## TemplateType
+
+```python
+class TemplateType(TypedDict)
+```
+
+Internal representation of a template for the E2B build API.
+
