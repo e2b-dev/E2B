@@ -543,6 +543,7 @@ class AsyncSandbox(SandboxApi):
             envs=envs,
             secure=secure,
             allow_internet_access=allow_internet_access,
+            mcp=mcp,
             **opts,
         )
 
@@ -667,6 +668,7 @@ class AsyncSandbox(SandboxApi):
         metadata: Optional[Dict[str, str]],
         envs: Optional[Dict[str, str]],
         secure: bool,
+        mcp: Optional[McpServer] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
         extra_sandbox_headers = {}
@@ -686,6 +688,7 @@ class AsyncSandbox(SandboxApi):
                 env_vars=envs,
                 secure=secure,
                 allow_internet_access=allow_internet_access,
+                mcp=mcp,
                 **opts,
             )
 

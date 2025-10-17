@@ -549,6 +549,7 @@ class Sandbox(SandboxApi):
             envs=envs,
             secure=secure,
             allow_internet_access=allow_internet_access,
+            mcp=mcp,
             **opts,
         )
 
@@ -664,6 +665,7 @@ class Sandbox(SandboxApi):
         envs: Optional[Dict[str, str]],
         secure: bool,
         allow_internet_access: bool,
+        mcp: Optional[McpServer] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
         extra_sandbox_headers = {}
@@ -683,6 +685,7 @@ class Sandbox(SandboxApi):
                 env_vars=envs,
                 secure=secure,
                 allow_internet_access=allow_internet_access,
+                mcp=mcp,
                 **opts,
             )
 

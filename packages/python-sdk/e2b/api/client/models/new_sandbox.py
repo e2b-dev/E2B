@@ -17,6 +17,7 @@ class NewSandbox:
         allow_internet_access (Union[Unset, bool]): Allow sandbox to access the internet
         auto_pause (Union[Unset, bool]): Automatically pauses the sandbox after the timeout Default: False.
         env_vars (Union[Unset, Any]):
+        mcp (Union[Unset, Any]): MCP server configuration
         metadata (Union[Unset, Any]):
         secure (Union[Unset, bool]): Secure all system communication with sandbox
         timeout (Union[Unset, int]): Time to live for the sandbox in seconds. Default: 15.
@@ -26,6 +27,7 @@ class NewSandbox:
     allow_internet_access: Union[Unset, bool] = UNSET
     auto_pause: Union[Unset, bool] = False
     env_vars: Union[Unset, Any] = UNSET
+    mcp: Union[Unset, Any] = UNSET
     metadata: Union[Unset, Any] = UNSET
     secure: Union[Unset, bool] = UNSET
     timeout: Union[Unset, int] = 15
@@ -39,6 +41,8 @@ class NewSandbox:
         auto_pause = self.auto_pause
 
         env_vars = self.env_vars
+
+        mcp = self.mcp
 
         metadata = self.metadata
 
@@ -59,6 +63,8 @@ class NewSandbox:
             field_dict["autoPause"] = auto_pause
         if env_vars is not UNSET:
             field_dict["envVars"] = env_vars
+        if mcp is not UNSET:
+            field_dict["mcp"] = mcp
         if metadata is not UNSET:
             field_dict["metadata"] = metadata
         if secure is not UNSET:
@@ -79,6 +85,8 @@ class NewSandbox:
 
         env_vars = d.pop("envVars", UNSET)
 
+        mcp = d.pop("mcp", UNSET)
+
         metadata = d.pop("metadata", UNSET)
 
         secure = d.pop("secure", UNSET)
@@ -90,6 +98,7 @@ class NewSandbox:
             allow_internet_access=allow_internet_access,
             auto_pause=auto_pause,
             env_vars=env_vars,
+            mcp=mcp,
             metadata=metadata,
             secure=secure,
             timeout=timeout,
