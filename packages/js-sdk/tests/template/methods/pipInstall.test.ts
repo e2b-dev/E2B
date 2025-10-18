@@ -11,3 +11,13 @@ test('pip install', { timeout: 180000 }, async () => {
     alias: randomUUID(),
   })
 })
+
+test('pip install global', { timeout: 180000 }, async () => {
+  const template = Template()
+    .fromPythonImage('3.13.7-trixie')
+    .pipInstall(['six', 'pyyaml'], { g: true })
+
+  await Template.build(template, {
+    alias: randomUUID(),
+  })
+})

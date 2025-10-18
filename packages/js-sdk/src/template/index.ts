@@ -636,6 +636,14 @@ export class TemplateBase
 
     let dockerfile = `FROM ${this.baseImage}\n`
     for (const instruction of this.instructions) {
+      if (instruction.type === InstructionType.RUN) {
+        dockerfile += `RUN ${instruction.args[0]}\n`
+        continue
+      }
+      if (instruction.type === InstructionType.COPY) {
+        dockerfile += `COPY ${instruction.args[0]} ${instruction.args[1]}\n`
+        continue
+      }
       dockerfile += `${instruction.type} ${instruction.args.join(' ')}\n`
     }
     if (this.startCmd) {
