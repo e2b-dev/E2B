@@ -1025,6 +1025,16 @@ class TemplateBase:
         dockerfile = f"FROM {template._template._base_image}\n"
 
         for instruction in template._template._instructions:
+            if instruction["type"] == InstructionType.RUN:
+                dockerfile += f"RUN {instruction['args'][0]}\n"
+                continue
+
+            if instruction["type"] == InstructionType.COPY:
+                dockerfile += (
+                    f"COPY {instruction['args'][0]} {instruction['args'][1]}\n"
+                )
+                continue
+
             dockerfile += (
                 f"{instruction['type'].value} {' '.join(instruction['args'])}\n"
             )
