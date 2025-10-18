@@ -1,0 +1,132 @@
+---
+title: "Sandbox lifecycle"
+sidebarTitle: Lifecycle
+---
+
+When you start the sandbox, it stays alive for 5 minutes by default but you can change it by passing the `timeout` parameter.
+After the time passes, the sandbox will be automatically shutdown.
+<CodeGroup>
+```js JavaScript & TypeScript highlight={6}
+import { Sandbox } from '@e2b/code-interpreter'
+
+// Create sandbox with and keep it running for 60 seconds.
+// 🚨 Note: The units are milliseconds.
+const sandbox = await Sandbox.create({
+  timeoutMs: 60_000,
+})
+```
+```python Python highlight={6}
+from e2b_code_interpreter import Sandbox
+
+# Create sandbox with and keep it running for 60 seconds.
+# 🚨 Note: The units are seconds.
+sandbox = Sandbox.create(
+  timeout=60,
+)
+```
+</CodeGroup>
+
+
+## Change sandbox timeout during runtime
+
+You can change the sandbox timeout when it's running by calling the the `setTimeout` method in JavaScript or `set_timeout` method in Python.
+
+When you call the set timeout method, the sandbox timeout will be reset to the new value that you specified.
+
+This can be useful if you want to extend the sandbox lifetime when it's already running.
+You can for example start with a sandbox with 1 minute timeout and then periodically call set timout every time user interacts with it in your app.
+
+<CodeGroup>
+```js JavaScript & TypeScript
+import { Sandbox } from '@e2b/code-interpreter'
+
+// Create sandbox with and keep it running for 60 seconds.
+const sandbox = await Sandbox.create({ timeoutMs: 60_000 })
+
+// Change the sandbox timeout to 30 seconds.
+// 🚨 The new timeout will be 30 seconds from now.
+await sandbox.setTimeout(30_000)
+```
+```python Python
+from e2b_code_interpreter import Sandbox
+
+# Create sandbox with and keep it running for 60 seconds.
+sandbox = Sandbox.create(timeout=60)
+
+# Change the sandbox timeout to 30 seconds.
+# 🚨 The new timeout will be 30 seconds from now.
+sandbox.set_timeout(30)
+```
+</CodeGroup>
+
+## Retrieve sandbox information
+
+You can retrieve sandbox information like sandbox ID, template, metadata, started at/end at date by calling the `getInfo` method in JavaScript or `get_info` method in Python.
+
+<CodeGroup>
+```js JavaScript & TypeScript
+import { Sandbox } from '@e2b/code-interpreter'
+
+// Create sandbox with and keep it running for 60 seconds.
+const sandbox = await Sandbox.create({ timeoutMs: 60_000 })
+
+// Retrieve sandbox information.
+const info = await sandbox.getInfo()
+
+console.log(info)
+
+// {
+//   "sandboxId": "iiny0783cype8gmoawzmx-ce30bc46",
+//   "templateId": "rki5dems9wqfm4r03t7g",
+//   "name": "base",
+//   "metadata": {},
+//   "startedAt": "2025-03-24T15:37:58.076Z",
+//   "endAt": "2025-03-24T15:42:58.076Z"
+// }
+```
+
+```python Python
+from e2b_code_interpreter import Sandbox
+
+# Create sandbox with and keep it running for 60 seconds.
+sandbox = Sandbox.create(timeout=60)
+
+# Retrieve sandbox information.
+info = sandbox.get_info()
+
+print(info)
+
+# SandboxInfo(sandbox_id='ig6f1yt6idvxkxl562scj-419ff533',
+#   template_id='u7nqkmpn3jjf1tvftlsu',
+#   name='base',
+#   metadata={},
+#   started_at=datetime.datetime(2025, 3, 24, 15, 42, 59, 255612, tzinfo=tzutc()),
+#   end_at=datetime.datetime(2025, 3, 24, 15, 47, 59, 255612, tzinfo=tzutc())
+# )
+```
+</CodeGroup>
+
+## Shutdown sandbox
+
+You can shutdown the sandbox any time even before the timeout is up by calling the `kill` method.
+
+<CodeGroup>
+```js JavaScript & TypeScript
+import { Sandbox } from '@e2b/code-interpreter'
+
+// Create sandbox with and keep it running for 60 seconds.
+const sandbox = await Sandbox.create({ timeoutMs: 60_000 })
+
+// Shutdown the sandbox immediately.
+await sandbox.kill()
+```
+```python Python
+from e2b_code_interpreter import Sandbox
+
+# Create sandbox with and keep it running for 60 seconds.
+sandbox = Sandbox.create(timeout=60)
+
+# Shutdown the sandbox immediately.
+sandbox.kill()
+```
+</CodeGroup>
