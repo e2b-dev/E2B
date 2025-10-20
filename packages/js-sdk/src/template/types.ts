@@ -472,11 +472,11 @@ export interface TemplateBuilder {
    *
    * @example
    * ```ts
-   * template.addMCPServer('exa')
-   * template.addMCPServer(['brave', 'firecrawl', 'duckduckgo'])
+   * template.betaAddMcpServer('exa')
+   * template.betaAddMcpServer(['brave', 'firecrawl', 'duckduckgo'])
    * ```
    */
-  betaAddMCPServer(servers: McpServerName | McpServerName[]): TemplateBuilder
+  betaAddMcpServer(servers: McpServerName | McpServerName[]): TemplateBuilder
 
   /**
    * Clone a Git repository.
