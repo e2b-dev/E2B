@@ -64,8 +64,8 @@ from .sandbox.sandbox_api import (
     SandboxState,
     SandboxMetrics,
     McpServer,
-    GithubMcpServer,
-    GithubMcpServerConfig,
+    GitHubMcpServer,
+    GitHubMcpServerConfig,
 )
 from .sandbox_async.commands.command_handle import AsyncCommandHandle
 from .sandbox_async.filesystem.watch_handle import AsyncWatchHandle
