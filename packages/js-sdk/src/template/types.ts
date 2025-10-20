@@ -470,6 +470,7 @@ export interface TemplateBuilder {
    * Note: Requires a base image with mcp-gateway pre-installed (e.g., mcp-gateway).
    * @param servers MCP server name(s)
    *
+   * @throws {Error} If the base template is not mcp-gateway
    * @example
    * ```ts
    * template.betaAddMcpServer('exa')

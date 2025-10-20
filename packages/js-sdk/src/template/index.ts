@@ -469,6 +469,10 @@ export class TemplateBase
   }
 
   betaAddMcpServer(servers: McpServerName | McpServerName[]): TemplateBuilder {
+    if (this.baseTemplate !== 'mcp-gateway') {
+      throw new Error('MCP servers can only be added to mcp-gateway template')
+    }
+
     const serverList = Array.isArray(servers) ? servers : [servers]
     return this.runInNewStackTraceContext(() =>
       this.runCmd(`mcp-gateway pull ${serverList.join(' ')}`, {

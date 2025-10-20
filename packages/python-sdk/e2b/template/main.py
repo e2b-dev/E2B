@@ -414,6 +414,9 @@ class TemplateBuilder:
         template.beta_add_mcp_server(['brave', 'firecrawl', 'duckduckgo'])
         ```
         """
+        if self._base_template != "mcp-gateway":
+            raise ValueError("MCP servers can only be added to mcp-gateway template")
+
         if isinstance(servers, str):
             servers = [servers]
 
