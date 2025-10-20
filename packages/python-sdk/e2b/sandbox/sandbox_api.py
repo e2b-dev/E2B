@@ -14,11 +14,11 @@ class GithubMcpServerConfig(TypedDict):
     Configuration for a GitHub-based MCP server.
     """
 
-    runCmd: str
+    run_cmd: str
     """
     Command to run the MCP server. Must start a stdio-compatible server.
     """
-    installCmd: NotRequired[str]
+    install_cmd: NotRequired[str]
     """
     Command to install dependencies for the MCP server. Working directory is the root of the github repository.
     """
