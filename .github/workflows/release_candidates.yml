@@ -2,6 +2,11 @@ name: Release Candidates
 
 on:
   pull_request:
+    types:
+      - labeled
+      - opened
+      - reopened
+      - synchronize
 
 permissions:
   contents: write
