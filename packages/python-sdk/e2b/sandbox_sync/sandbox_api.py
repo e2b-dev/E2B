@@ -1,11 +1,10 @@
 import datetime
 
 from typing import Optional, Dict, List
-from e2b.sandbox.mcp import McpServer
 from packaging.version import Version
 from typing_extensions import Unpack
 
-from e2b.sandbox.sandbox_api import SandboxInfo, SandboxMetrics, SandboxQuery
+from e2b.sandbox.sandbox_api import SandboxInfo, SandboxMetrics, SandboxQuery, McpServer
 from e2b.sandbox.main import SandboxBase
 from e2b.exceptions import TemplateException, SandboxException, NotFoundException
 from e2b.api import ApiClient, SandboxCreateResponse

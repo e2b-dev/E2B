@@ -7,8 +7,30 @@ import {
 import { compareVersions } from 'compare-versions'
 import { NotFoundError, TemplateError } from '../errors'
 import { timeoutToSeconds } from '../utils'
-import type { McpServer } from './mcp'
+import type { McpServer as BaseMcpServer } from './mcp'
 
+/**
+ * Extended MCP server configuration that includes base servers
+ * and allows dynamic GitHub-based MCP servers with custom run and install commands.
+ */
+export type McpServer = BaseMcpServer & GithubMcpServer
+
+export type GithubMcpServer = {
+  [key: `github/${string}`]: {
+    /**
+     * Command to run the MCP server. Must start a stdio-compatible server.
+     */
+    runCmd: string
+    /**
+     * Command to install dependencies for the MCP server. Working directory is the root of the github repository.
+     */
+    installCmd?: string
+    /**
+     * Environment variables to set in the MCP process.
+     */
+    envs?: Record<string, string>
+  }
+}
 /**
  * Options for request to the Sandbox API.
  */

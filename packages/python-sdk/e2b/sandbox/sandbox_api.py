@@ -1,11 +1,40 @@
 from dataclasses import dataclass
-from typing import Optional, Dict, Union
-from typing_extensions import Unpack
+from typing import Optional, Dict, Union, Any, TypedDict
+from typing_extensions import Unpack, NotRequired
 from datetime import datetime
 
 from e2b import ConnectionConfig
 from e2b.api.client.models import SandboxState, SandboxDetail, ListedSandbox
 from e2b.connection_config import ApiParams
+from e2b.sandbox.mcp import McpServer as BaseMcpServer
+
+
+class GithubMcpServerConfig(TypedDict):
+    """
+    Configuration for a GitHub-based MCP server.
+    """
+
+    runCmd: str
+    """
+    Command to run the MCP server. Must start a stdio-compatible server.
+    """
+    installCmd: NotRequired[str]
+    """
+    Command to install dependencies for the MCP server. Working directory is the root of the github repository.
+    """
+    envs: NotRequired[Dict[str, str]]
+    """
+    Environment variables to set in the MCP process.
+    """
+
+
+# Extended MCP server configuration that includes base servers
+# and allows dynamic GitHub-based MCP servers with custom run and install commands.
+# For GitHub servers, use keys in the format "github/owner/repo"
+GithubMcpServer = Dict[str, Union[GithubMcpServerConfig, Any]]
+
+# Union type that combines base MCP servers with GitHub-based servers
+McpServer = Union[BaseMcpServer, GithubMcpServer]
 
 
 @dataclass

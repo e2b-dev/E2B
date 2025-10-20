@@ -58,8 +58,15 @@ from .sandbox.filesystem.watch_handle import (
     FilesystemEvent,
     FilesystemEventType,
 )
-from .sandbox.mcp import McpServer
-from .sandbox.sandbox_api import SandboxInfo, SandboxQuery, SandboxState, SandboxMetrics
+from .sandbox.sandbox_api import (
+    SandboxInfo,
+    SandboxQuery,
+    SandboxState,
+    SandboxMetrics,
+    McpServer,
+    GithubMcpServer,
+    GithubMcpServerConfig,
+)
 from .sandbox_async.commands.command_handle import AsyncCommandHandle
 from .sandbox_async.filesystem.watch_handle import AsyncWatchHandle
 from .sandbox_async.main import AsyncSandbox
@@ -154,4 +161,6 @@ __all__ = [
     "default_build_logger",
     # MCP
     "McpServer",
+    "GithubMcpServer",
+    "GithubMcpServerConfig",
 ]
