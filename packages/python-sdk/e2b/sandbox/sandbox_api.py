@@ -9,7 +9,7 @@ from e2b.connection_config import ApiParams
 from e2b.sandbox.mcp import McpServer as BaseMcpServer
 
 
-class GithubMcpServerConfig(TypedDict):
+class GitHubMcpServerConfig(TypedDict):
     """
     Configuration for a GitHub-based MCP server.
     """
@@ -31,10 +31,10 @@ class GithubMcpServerConfig(TypedDict):
 # Extended MCP server configuration that includes base servers
 # and allows dynamic GitHub-based MCP servers with custom run and install commands.
 # For GitHub servers, use keys in the format "github/owner/repo"
-GithubMcpServer = Dict[str, Union[GithubMcpServerConfig, Any]]
+GitHubMcpServer = Dict[str, Union[GitHubMcpServerConfig, Any]]
 
 # Union type that combines base MCP servers with GitHub-based servers
-McpServer = Union[BaseMcpServer, GithubMcpServer]
+McpServer = Union[BaseMcpServer, GitHubMcpServer]
 
 
 @dataclass
