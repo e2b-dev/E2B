@@ -64,7 +64,7 @@ export interface SandboxUrlOpts {
  */
 export class Sandbox extends SandboxApi {
   protected static readonly defaultTemplate: string = 'base'
-  protected static readonly defaultMcpTemplate: string = 'mcp-gateway-v0-2'
+  protected static readonly defaultMcpTemplate: string = 'mcp-gateway'
   protected static readonly defaultSandboxTimeoutMs = DEFAULT_SANDBOX_TIMEOUT_MS
 
   /**

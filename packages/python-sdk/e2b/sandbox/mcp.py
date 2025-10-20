@@ -119,6 +119,12 @@ class Brave(TypedDict):
     apiKey: str
 
 
+class Browserbase(TypedDict):
+    apiKey: str
+    geminiApiKey: str
+    projectId: str
+
+
 class Buildkite(TypedDict):
     apiToken: str
 
@@ -203,6 +209,12 @@ class Couchbase(TypedDict):
     """
     Username for the Couchbase cluster with access to the bucket.
     """
+
+
+class Cylera(TypedDict):
+    cyleraBaseUrl: str
+    cyleraPassword: str
+    cyleraUsername: str
 
 
 class CyreslabAiShodan(TypedDict):
@@ -675,6 +687,10 @@ class Openapi(TypedDict):
     mode: str
 
 
+class OpenapiSchema(TypedDict):
+    SchemaPath: str
+
+
 class Openweather(TypedDict):
     owmApiKey: str
 
@@ -1044,220 +1060,890 @@ class ZerodhaKite(TypedDict):
 
 class McpServer(TypedDict):
     airtable: NotRequired[Airtable]
+    """
+    Provides AI assistants with direct access to Airtable bases, allowing them to read schemas, query records, and interact with your Airtable data. Supports listing bases, retrieving table structures, and searching through records to help automate workflows and answer questions about your organized data.
+    """
     aks: NotRequired[Aks]
+    """
+    Azure Kubernetes Service (AKS) official MCP server.
+    """
     apiGateway: NotRequired[ApiGateway]
+    """
+    A universal MCP (Model Context Protocol) server to integrate any API with Claude Desktop using only Docker configurations.
+    """
     apify: NotRequired[Apify]
+    """
+    Apify is the world's largest marketplace of tools for web scraping, data extraction, and web automation. You can extract structured data from social media, e-commerce, search engines, maps, travel sites, or any other website.
+    """
     arxiv: NotRequired[Arxiv]
+    """
+    The ArXiv MCP Server provides a comprehensive bridge between AI assistants and arXiv's research repository through the Model Context Protocol (MCP).   Features: • Search arXiv papers with advanced filtering • Download and store papers locally as markdown • Read and analyze paper content • Deep research analysis prompts • Local paper management and storage • Enhanced tool descriptions optimized for local AI models • Docker MCP Gateway compatible with detailed context  Perfect for researchers, academics, and AI assistants conducting literature reviews and research analysis.  **Recent Update**: Enhanced tool descriptions specifically designed to resolve local AI model confusion and improve Docker MCP Gateway compatibility.
+    """
     astGrep: NotRequired[AstGrep]
+    """
+    ast-grep is a fast and polyglot tool for code structural search, lint, rewriting at large scale.
+    """
     astraDb: NotRequired[AstraDb]
+    """
+    An MCP server for Astra DB workloads.
+    """
     astroDocs: NotRequired[Dict[str, Any]]
+    """
+    Access the latest Astro web framework documentation, guides, and API references.
+    """
     atlan: NotRequired[Atlan]
+    """
+    MCP server for interacting with Atlan services including asset search, updates, and lineage traversal for comprehensive data governance and discovery.
+    """
     atlasDocs: NotRequired[AtlasDocs]
+    """
+    Provide LLMs hosted, clean markdown documentation of libraries and frameworks.
+    """
     atlassian: NotRequired[Atlassian]
+    """
+    Tools for Atlassian products (Confluence and Jira). This integration supports both Atlassian Cloud and Jira Server/Data Center deployments.
+    """
     audienseInsights: NotRequired[AudienseInsights]
+    """
+    Audiense Insights MCP Server is a server based on the Model Context Protocol (MCP) that allows Claude and other MCP-compatible clients to interact with your Audiense Insights account.
+    """
     awsCdk: NotRequired[Dict[str, Any]]
+    """
+    AWS Cloud Development Kit (CDK) best practices, infrastructure as code patterns, and security compliance with CDK Nag.
+    """
     awsCore: NotRequired[Dict[str, Any]]
+    """
+    Starting point for using the awslabs MCP servers.
+    """
     awsDiagram: NotRequired[Dict[str, Any]]
+    """
+    Seamlessly create diagrams using the Python diagrams package DSL. This server allows you to generate AWS diagrams, sequence diagrams, flow diagrams, and class diagrams using Python code.
+    """
     awsDocumentation: NotRequired[Dict[str, Any]]
+    """
+    Tools to access AWS documentation, search for content, and get recommendations.
+    """
     awsKbRetrievalServer: NotRequired[AwsKbRetrievalServer]
+    """
+    An MCP server implementation for retrieving information from the AWS Knowledge Base using the Bedrock Agent Runtime.
+    """
     awsTerraform: NotRequired[Dict[str, Any]]
+    """
+    Terraform on AWS best practices, infrastructure as code patterns, and security compliance with Checkov.
+    """
     azure: NotRequired[Dict[str, Any]]
+    """
+    The Azure MCP Server, bringing the power of Azure to your agents.
+    """
     beagleSecurity: NotRequired[BeagleSecurity]
+    """
+    Connects with the Beagle Security backend using a user token to manage applications, run automated security tests, track vulnerabilities across environments, and gain intelligence from Application and API vulnerability data.
+    """
     bitrefill: NotRequired[Bitrefill]
+    """
+    A Model Context Protocol Server connector for Bitrefill public API, to enable AI agents to search and shop on Bitrefill.
+    """
     box: NotRequired[Box]
+    """
+    An MCP server capable of interacting with the Box API.
+    """
     brave: NotRequired[Brave]
+    """
+    Search the Web for pages, images, news, videos, and more using the Brave Search API.
+    """
+    browserbase: NotRequired[Browserbase]
+    """
+    Allow LLMs to control a browser with Browserbase and Stagehand for AI-powered web automation, intelligent data extraction, and screenshot capture.
+    """
     buildkite: NotRequired[Buildkite]
+    """
+    Buildkite MCP lets agents interact with Buildkite Builds, Jobs, Logs, Packages and Test Suites.
+    """
     camunda: NotRequired[Camunda]
+    """
+    Tools to interact with the Camunda 7 Community Edition Engine using the Model Context Protocol (MCP). Whether you're automating workflows, querying process instances, or integrating with external systems, Camunda MCP Server is your agentic solution for seamless interaction with Camunda.
+    """
     cdataConnectcloud: NotRequired[CdataConnectcloud]
+    """
+    This fully functional MCP Server allows you to connect to any data source in Connect Cloud from Claude Desktop.
+    """
     charmhealth: NotRequired[Charmhealth]
+    """
+    An MCP server for CharmHealth EHR that allows LLMs and MCP clients to interact with patient records, encounters, and practice information.
+    """
     chroma: NotRequired[Chroma]
+    """
+    A Model Context Protocol (MCP) server implementation that provides database capabilities for Chroma.
+    """
     circleci: NotRequired[Circleci]
+    """
+    A specialized server implementation for the Model Context Protocol (MCP) designed to integrate with CircleCI's development workflow. This project serves as a bridge between CircleCI's infrastructure and the Model Context Protocol, enabling enhanced AI-powered development experiences.
+    """
     clickhouse: NotRequired[Clickhouse]
+    """
+    Official ClickHouse MCP Server.
+    """
     close: NotRequired[Close]
+    """
+    Streamline sales processes with integrated calling, email, SMS, and automated workflows for small and scaling businesses.
+    """
     cloudRun: NotRequired[CloudRun]
+    """
+    MCP server to deploy apps to Cloud Run.
+    """
     cloudflareDocs: NotRequired[Dict[str, Any]]
+    """
+    Access the latest documentation on Cloudflare products such as Workers, Pages, R2, D1, KV.
+    """
     cockroachdb: NotRequired[Cockroachdb]
+    """
+    Enable AI agents to manage, monitor, and query CockroachDB using natural language. Perform complex database operations, cluster management, and query execution seamlessly through AI-driven workflows. Integrate effortlessly with MCP clients for scalable and high-performance data operations.
+    """
     codeInterpreter: NotRequired[Dict[str, Any]]
+    """
+    A Python-based execution tool that mimics a Jupyter notebook environment. It accepts code snippets, executes them, and maintains state across sessions — preserving variables, imports, and past results. Ideal for iterative development, debugging, or code execution.
+    """
     context7: NotRequired[Dict[str, Any]]
+    """
+    Context7 MCP Server -- Up-to-date code documentation for LLMs and AI code editors.
+    """
     couchbase: NotRequired[Couchbase]
+    """
+    Couchbase is a distributed document database with a powerful search engine and in-built operational and analytical capabilities.
+    """
+    cylera: NotRequired[Cylera]
+    """
+    Brings context about device inventory, threats, risks and utilization powered by the Cylera Partner API into an LLM.
+    """
     cyreslabAiShodan: NotRequired[CyreslabAiShodan]
+    """
+    A Model Context Protocol server that provides access to Shodan API functionality.
+    """
     dappier: NotRequired[Dappier]
+    """
+    Enable fast, free real-time web search and access premium data from trusted media brands—news, financial markets, sports, entertainment, weather, and more. Build powerful AI agents with Dappier.
+    """
     dappierRemote: NotRequired[DappierRemote]
+    """
+    Enable fast, free real-time web search and access premium data from trusted media brands—news, financial markets, sports, entertainment, weather, and more. Build powerful AI agents with Dappier.
+    """
     dart: NotRequired[Dart]
+    """
+    Dart AI Model Context Protocol (MCP) server.
+    """
     databaseServer: NotRequired[DatabaseServer]
+    """
+    Comprehensive database server supporting PostgreSQL, MySQL, and SQLite with natural language SQL query capabilities. Enables AI agents to interact with databases through both direct SQL and natural language queries.
+    """
     databutton: NotRequired[Dict[str, Any]]
+    """
+    Databutton MCP Server.
+    """
     deepwiki: NotRequired[Dict[str, Any]]
+    """
+    Tools for fetching and asking questions about GitHub repositories.
+    """
     descope: NotRequired[Descope]
+    """
+    The Descope Model Context Protocol (MCP) server provides an interface to interact with Descope's Management APIs, enabling the search and retrieval of project-related information.
+    """
     desktopCommander: NotRequired[DesktopCommander]
+    """
+    Search, update, manage files and run terminal commands with AI.
+    """
     devhubCms: NotRequired[DevhubCms]
+    """
+    DevHub CMS LLM integration through the Model Context Protocol.
+    """
     discord: NotRequired[Discord]
+    """
+    Interact with the Discord platform.
+    """
     dockerhub: NotRequired[Dockerhub]
+    """
+    Docker Hub official MCP server.
+    """
     dodoPayments: NotRequired[DodoPayments]
+    """
+    Tools for cross-border payments, taxes, and compliance.
+    """
     dreamfactory: NotRequired[Dreamfactory]
+    """
+    DreamFactory is a REST API generation platform with support for hundreds of data sources, including Microsoft SQL Server, MySQL, PostgreSQL, and MongoDB. The DreamFactory MCP Server makes it easy for users to securely interact with their data sources via an MCP client.
+    """
     duckduckgo: NotRequired[Dict[str, Any]]
+    """
+    A Model Context Protocol (MCP) server that provides web search capabilities through DuckDuckGo, with additional features for content fetching and parsing.
+    """
     dynatrace: NotRequired[Dynatrace]
+    """
+    This MCP Server allows interaction with the Dynatrace observability platform, brining real-time observability data directly into your development workflow.
+    """
     e2b: NotRequired[E2b]
+    """
+    Giving Claude ability to run code with E2B via MCP (Model Context Protocol).
+    """
     edubase: NotRequired[Edubase]
+    """
+    The EduBase MCP server enables Claude and other LLMs to interact with EduBase's comprehensive e-learning platform through the Model Context Protocol (MCP).
+    """
     effect: NotRequired[Dict[str, Any]]
+    """
+    Tools and resources for writing Effect code in Typescript.
+    """
     elasticsearch: NotRequired[Elasticsearch]
+    """
+    Interact with your Elasticsearch indices through natural language conversations.
+    """
     elevenlabs: NotRequired[Elevenlabs]
+    """
+    Official ElevenLabs Model Context Protocol (MCP) server that enables interaction with powerful Text to Speech and audio processing APIs.
+    """
     everart: NotRequired[Everart]
+    """
+    Image generation server using EverArt's API.
+    """
     exa: NotRequired[Exa]
+    """
+    Exa MCP for web search and web crawling!.
+    """
     explorium: NotRequired[Explorium]
+    """
+    Discover companies, contacts, and business insights—powered by dozens of trusted external data sources.
+    """
     fetch: NotRequired[Dict[str, Any]]
+    """
+    Fetches a URL from the internet and extracts its contents as markdown.
+    """
     fibery: NotRequired[Fibery]
+    """
+    Interact with your Fibery workspace.
+    """
     filesystem: NotRequired[Filesystem]
+    """
+    Local filesystem access with configurable allowed paths.
+    """
     findADomain: NotRequired[Dict[str, Any]]
+    """
+    Tools for finding domain names.
+    """
     firecrawl: NotRequired[Firecrawl]
+    """
+    🔥 Official Firecrawl MCP Server - Adds powerful web scraping and search to Cursor, Claude and any other LLM clients.
+    """
     firewalla: NotRequired[Firewalla]
+    """
+    Real-time network monitoring, security analysis, and firewall management through 28 specialized tools. Access security alerts, network flows, device status, and firewall rules directly from your Firewalla device.
+    """
     flexprice: NotRequired[Flexprice]
+    """
+    Official flexprice MCP Server.
+    """
     git: NotRequired[Git]
+    """
+    Git repository interaction and automation.
+    """
     github: NotRequired[Github]
+    """
+    Tools for interacting with the GitHub API, enabling file operations, repository management, search functionality, and more.
+    """
     githubChat: NotRequired[GithubChat]
+    """
+    A Model Context Protocol (MCP) for analyzing and querying GitHub repositories using the GitHub Chat API.
+    """
     githubOfficial: NotRequired[GithubOfficial]
+    """
+    Official GitHub MCP Server, by GitHub. Provides seamless integration with GitHub APIs, enabling advanced automation and interaction capabilities for developers and tools.
+    """
     gitlab: NotRequired[Gitlab]
+    """
+    MCP Server for the GitLab API, enabling project management, file operations, and more.
+    """
     gitmcp: NotRequired[Dict[str, Any]]
+    """
+    Tools for interacting with Git repositories.
+    """
     glif: NotRequired[Glif]
+    """
+    Easily run glif.app AI workflows inside your LLM: image generators, memes, selfies, and more. Glif supports all major multimedia AI models inside one app.
+    """
     gmail: NotRequired[Gmail]
+    """
+    A Model Context Protocol server for Gmail operations using IMAP/SMTP with app password authentication. Supports listing messages, searching emails, and sending messages. To create your app password, visit your Google Account settings under Security > App Passwords. Or visit the link https://myaccount.google.com/apppasswords.
+    """
     googleMaps: NotRequired[GoogleMaps]
+    """
+    Tools for interacting with the Google Maps API.
+    """
     googleMapsComprehensive: NotRequired[GoogleMapsComprehensive]
+    """
+    Complete Google Maps integration with 8 tools including geocoding, places search, directions, elevation data, and more using Google's latest APIs.
+    """
     grafana: NotRequired[Grafana]
+    """
+    MCP server for Grafana.
+    """
     gyazo: NotRequired[Gyazo]
+    """
+    Official Model Context Protocol server for Gyazo.
+    """
     hackernews: NotRequired[Dict[str, Any]]
+    """
+    A Model Context Protocol (MCP) server that provides access to Hacker News stories, comments, and user data, with support for search and content retrieval.
+    """
     hackle: NotRequired[Hackle]
+    """
+    Model Context Protocol server for Hackle.
+    """
     handwritingOcr: NotRequired[HandwritingOcr]
+    """
+    Model Context Protocol (MCP) Server for Handwriting OCR.
+    """
     hdx: NotRequired[Hdx]
+    """
+    HDX MCP Server provides access to humanitarian data through the Humanitarian Data Exchange (HDX) API - https://data.humdata.org/hapi. This server offers 33 specialized tools for retrieving humanitarian information including affected populations (refugees, IDPs, returnees), baseline demographics, food security indicators, conflict data, funding information, and operational presence across hundreds of countries and territories. See repository for instructions on getting a free HDX_APP_INDENTIFIER for access.
+    """
     heroku: NotRequired[Heroku]
+    """
+    Heroku Platform MCP Server using the Heroku CLI.
+    """
     hostinger: NotRequired[Hostinger]
+    """
+    Interact with Hostinger services over the Hostinger API.
+    """
     hoverfly: NotRequired[Hoverfly]
+    """
+    A Model Context Protocol (MCP) server that exposes Hoverfly as a programmable tool for AI assistants like Cursor, Claude, GitHub Copilot, and others supporting MCP. It enables dynamic mocking of third-party APIs to unblock development, automate testing, and simulate unavailable services during integration.
+    """
     hubspot: NotRequired[Hubspot]
+    """
+    Unite marketing, sales, and customer service with AI-powered automation, lead management, and comprehensive analytics.
+    """
     huggingFace: NotRequired[Dict[str, Any]]
+    """
+    Tools for interacting with Hugging Face models, datasets, research papers, and more.
+    """
     hummingbot: NotRequired[Hummingbot]
+    """
+    Hummingbot MCP is an open-source toolset that lets you control and monitor your Hummingbot trading bots through AI-powered commands and automation.
+    """
     husqvarnaAutomower: NotRequired[HusqvarnaAutomower]
+    """
+    MCP Server for huqsvarna automower.
+    """
     hyperbrowser: NotRequired[Hyperbrowser]
+    """
+    A MCP server implementation for hyperbrowser.
+    """
     hyperspell: NotRequired[Hyperspell]
+    """
+    Hyperspell MCP Server.
+    """
     iaptic: NotRequired[Iaptic]
+    """
+    Model Context Protocol server for interacting with iaptic.
+    """
     inspektorGadget: NotRequired[InspektorGadget]
+    """
+    AI interface to troubleshoot and observe Kubernetes/Container workloads.
+    """
     javadocs: NotRequired[Dict[str, Any]]
+    """
+    Access to Java, Kotlin, and Scala library documentation.
+    """
     jetbrains: NotRequired[Jetbrains]
+    """
+    A model context protocol server to work with JetBrains IDEs: IntelliJ, PyCharm, WebStorm, etc. Also, works with Android Studio.
+    """
     kafkaSchemaReg: NotRequired[KafkaSchemaReg]
+    """
+    Comprehensive MCP server for Kafka Schema Registry operations. Features multi-registry support, schema contexts, migration tools, OAuth authentication, and 57+ tools for complete schema management. Supports SLIM_MODE for optimal performance.
+    """
     kagisearch: NotRequired[Kagisearch]
+    """
+    The Official Model Context Protocol (MCP) server for Kagi search & other tools.
+    """
     keboola: NotRequired[Keboola]
+    """
+    Keboola MCP Server is an open-source bridge between your Keboola project and modern AI tools.
+    """
     kong: NotRequired[Kong]
+    """
+    A Model Context Protocol (MCP) server for interacting with Kong Konnect APIs, allowing AI assistants to query and analyze Kong Gateway configurations, traffic, and analytics.
+    """
     kubectl: NotRequired[Kubectl]
+    """
+    MCP Server that enables AI assistants to interact with Kubernetes clusters via kubectl operations.
+    """
     kubernetes: NotRequired[Kubernetes]
+    """
+    Connect to a Kubernetes cluster and manage it.
+    """
     lara: NotRequired[Lara]
+    """
+    Connect to Lara Translate API, enabling powerful translation capabilities with support for language detection and context-aware translations.
+    """
     line: NotRequired[Line]
+    """
+    MCP server that integrates the LINE Messaging API to connect an AI Agent to the LINE Official Account.
+    """
     linkedin: NotRequired[Linkedin]
+    """
+    This MCP server allows Claude and other AI assistants to access your LinkedIn. Scrape LinkedIn profiles and companies, get your recommended jobs, and perform job searches. Set your li_at LinkedIn cookie to use this server.
+    """
     llmtxt: NotRequired[Dict[str, Any]]
+    """
+    Discovers and retrieves llms.txt from websites.
+    """
     maestro: NotRequired[Maestro]
+    """
+    A Model Context Protocol (MCP) server exposing Bitcoin blockchain data through the Maestro API platform. Provides tools to explore blocks, transactions, addresses, inscriptions, runes, and other metaprotocol data.
+    """
     manifold: NotRequired[Dict[str, Any]]
+    """
+    Tools for accessing the Manifold Markets online prediction market platform.
+    """
     mapbox: NotRequired[Mapbox]
+    """
+    Transform any AI agent into a geospatially-aware system with Mapbox APIs. Provides geocoding, POI search, routing, travel time matrices, isochrones, and static map generation.
+    """
     mapboxDevkit: NotRequired[MapboxDevkit]
+    """
+    Direct access to Mapbox developer APIs for AI assistants. Enables style management, token management, GeoJSON preview, and other developer tools for building Mapbox applications.
+    """
     markdownify: NotRequired[Markdownify]
+    """
+    A Model Context Protocol server for converting almost anything to Markdown.
+    """
     markitdown: NotRequired[Markitdown]
+    """
+    A lightweight MCP server for calling MarkItDown.
+    """
+    mavenTools: NotRequired[Dict[str, Any]]
+    """
+    JVM dependency intelligence for any build tool using Maven Central Repository. Includes Context7 integration for upgrade documentation and guidance.
+    """
     memory: NotRequired[Dict[str, Any]]
+    """
+    Knowledge graph-based persistent memory system.
+    """
     mercadoLibre: NotRequired[MercadoLibre]
+    """
+    Provides access to Mercado Libre E-Commerce API.
+    """
     mercadoPago: NotRequired[MercadoPago]
+    """
+    Provides access to Mercado Pago Marketplace API.
+    """
     metabase: NotRequired[Metabase]
+    """
+    A comprehensive MCP server for Metabase with 70+ tools.
+    """
     minecraftWiki: NotRequired[Dict[str, Any]]
+    """
+    A MCP Server for browsing the official Minecraft Wiki!.
+    """
     mongodb: NotRequired[Mongodb]
+    """
+    A Model Context Protocol server to connect to MongoDB databases and MongoDB Atlas Clusters.
+    """
     multiversxMx: NotRequired[MultiversxMx]
+    """
+    MCP Server for MultiversX.
+    """
     nasdaqDataLink: NotRequired[NasdaqDataLink]
+    """
+    MCP server to interact with the data feeds provided by the Nasdaq Data Link. Developed by the community and maintained by Stefano Amorelli.
+    """
     needle: NotRequired[Needle]
+    """
+    Production-ready RAG service to search and retrieve data from your documents.
+    """
     neo4jCloudAuraApi: NotRequired[Neo4jCloudAuraApi]
+    """
+    Manage Neo4j Aura database instances through the Neo4j Aura API.
+    """
     neo4jCypher: NotRequired[Neo4jCypher]
+    """
+    Interact with Neo4j using Cypher graph queries.
+    """
     neo4jDataModeling: NotRequired[Neo4jDataModeling]
+    """
+    MCP server that assists in creating, validating and visualizing graph data models.
+    """
     neo4jMemory: NotRequired[Neo4jMemory]
+    """
+    Provide persistent memory capabilities through Neo4j graph database integration.
+    """
     neon: NotRequired[Neon]
+    """
+    MCP server for interacting with Neon Management API and databases.
+    """
     nodeCodeSandbox: NotRequired[Dict[str, Any]]
+    """
+    A Node.js–based Model Context Protocol server that spins up disposable Docker containers to execute arbitrary JavaScript.
+    """
     notion: NotRequired[Notion]
+    """
+    Official Notion MCP Server.
+    """
     novita: NotRequired[Dict[str, Any]]
+    """
+    Seamless interaction with Novita AI platform resources.
+    """
     npmSentinel: NotRequired[Dict[str, Any]]
+    """
+    MCP server that enables intelligent NPM package analysis powered by AI.
+    """
     obsidian: NotRequired[Obsidian]
+    """
+    MCP server that interacts with Obsidian via the Obsidian rest API community plugin.
+    """
     oktaMcpFctr: NotRequired[OktaMcpFctr]
+    """
+    Secure Okta identity and access management via Model Context Protocol (MCP). Access Okta users, groups, applications, logs, and policies through AI assistants with enterprise-grade security.
+    """
     omi: NotRequired[Omi]
+    """
+    A Model Context Protocol server for Omi interaction and automation. This server provides tools to read, search, and manipulate Memories and Conversations.
+    """
     onlyofficeDocspace: NotRequired[OnlyofficeDocspace]
+    """
+    ONLYOFFICE DocSpace is a room-based collaborative platform which allows organizing a clear file structure depending on users' needs or project goals.
+    """
     openapi: NotRequired[Openapi]
+    """
+    Fetch, validate, and generate code or curl from any OpenAPI or Swagger spec - all from a single URL.
+    """
+    openapiSchema: NotRequired[OpenapiSchema]
+    """
+    OpenAPI Schema Model Context Protocol Server.
+    """
     openbnbAirbnb: NotRequired[Dict[str, Any]]
+    """
+    MCP Server for searching Airbnb and get listing details.
+    """
     openmesh: NotRequired[Dict[str, Any]]
+    """
+    Discover and connect to a curated marketplace of MCP servers for extending AI agent capabilities.
+    """
     openweather: NotRequired[Openweather]
+    """
+    A simple MCP service that provides current weather and 5-day forecast using the free OpenWeatherMap API.
+    """
     openzeppelinCairo: NotRequired[Dict[str, Any]]
+    """
+    Access to OpenZeppelin Cairo Contracts.
+    """
     openzeppelinSolidity: NotRequired[Dict[str, Any]]
+    """
+    Access to OpenZeppelin Solidity Contracts.
+    """
     openzeppelinStellar: NotRequired[Dict[str, Any]]
+    """
+    Access to OpenZeppelin Stellar Contracts.
+    """
     openzeppelinStylus: NotRequired[Dict[str, Any]]
+    """
+    Access to OpenZeppelin Stylus Contracts.
+    """
     opik: NotRequired[Opik]
+    """
+    Model Context Protocol (MCP) implementation for Opik enabling seamless IDE integration and unified access to prompts, projects, traces, and metrics.
+    """
     opine: NotRequired[Opine]
+    """
+    A Model Context Protocol (MCP) server for querying deals and evaluations from the Opine CRM API.
+    """
     oracle: NotRequired[Oracle]
+    """
+    Connect to Oracle databases via MCP, providing secure read-only access with support for schema exploration, query execution, and metadata inspection.
+    """
     ospMarketingTools: NotRequired[Dict[str, Any]]
+    """
+    A Model Context Protocol (MCP) server that empowers LLMs to use some of Open Srategy Partners' core writing and product marketing techniques.
+    """
     oxylabs: NotRequired[Oxylabs]
+    """
+    A Model Context Protocol (MCP) server that enables AI assistants like Claude to seamlessly access web data through Oxylabs' powerful web scraping technology.
+    """
     paperSearch: NotRequired[Dict[str, Any]]
+    """
+    A MCP for searching and downloading academic papers from multiple sources like arXiv, PubMed, bioRxiv, etc.
+    """
     perplexityAsk: NotRequired[PerplexityAsk]
+    """
+    Connector for Perplexity API, to enable real-time, web-wide research.
+    """
     pia: NotRequired[Pia]
+    """
+    An MCP server to help make U.S. Government open datasets AI-friendly.
+    """
     pinecone: NotRequired[Pinecone]
+    """
+    Pinecone Assistant MCP server.
+    """
     playwright: NotRequired[Playwright]
+    """
+    Playwright Model Context Protocol Server - Tool to automate Browsers and APIs in Claude Desktop, Cline, Cursor IDE and More 🔌.
+    """
     pluggedinMcpProxy: NotRequired[PluggedinMcpProxy]
+    """
+    A unified MCP proxy that aggregates multiple MCP servers into one interface, enabling seamless tool discovery and management across all your AI interactions. Manage all your MCP servers from a single connection point with RAG capabilities and real-time notifications.
+    """
     polarSignals: NotRequired[PolarSignals]
+    """
+    MCP server for Polar Signals Cloud continuous profiling platform, enabling AI assistants to analyze CPU performance, memory usage, and identify optimization opportunities in production systems.
+    """
     pomodash: NotRequired[Pomodash]
+    """
+    Connect your AI assistant to PomoDash for seamless task and project management.
+    """
     postgres: NotRequired[Postgres]
+    """
+    Connect with read-only access to PostgreSQL databases. This server enables LLMs to inspect database schemas and execute read-only queries.
+    """
     postman: NotRequired[Postman]
+    """
+    Postman's MCP server connects AI agents, assistants, and chatbots directly to your APIs on Postman. Use natural language to prompt AI to automate work across your Postman collections, environments, workspaces, and more.
+    """
     prefEditor: NotRequired[Dict[str, Any]]
+    """
+    Pref Editor is a tool for viewing and editing Android app preferences during development.
+    """
     prometheus: NotRequired[Prometheus]
+    """
+    A Model Context Protocol (MCP) server that enables AI assistants to query and analyze Prometheus metrics through standardized interfaces. Connect to your Prometheus instance to retrieve metrics, perform queries, and gain insights into your system's performance and health.
+    """
     puppeteer: NotRequired[Dict[str, Any]]
+    """
+    Browser automation and web scraping using Puppeteer.
+    """
     pythonRefactoring: NotRequired[Dict[str, Any]]
+    """
+    Educational Python refactoring assistant that provides guided suggestions for AI assistants.  Features: • Step-by-step refactoring instructions without modifying code • Comprehensive code analysis using professional tools (Rope, Radon, Vulture, Jedi, LibCST, Pyrefly) • Educational approach teaching refactoring patterns through guided practice • Support for both guide-only and apply-changes modes • Identifies long functions, high complexity, dead code, and type issues • Provides precise line numbers and specific refactoring instructions • Compatible with all AI assistants (Claude, GPT, Cursor, Continue, etc.)  Perfect for developers learning refactoring patterns while maintaining full control over code changes. Acts as a refactoring mentor rather than an automated code modifier.
+    """
     quantconnect: NotRequired[Quantconnect]
+    """
+    The QuantConnect MCP Server is a bridge for AIs (such as Claude and OpenAI o3 Pro) to interact with our cloud platform. When equipped with our MCP, the AI can perform tasks on your behalf through our API such as updating projects, writing strategies, backtesting, and deploying strategies to production live-trading.
+    """
     ramparts: NotRequired[Dict[str, Any]]
+    """
+    A comprehensive security scanner for MCP servers with YARA rules and static analysis capabilities.
+    """
     razorpay: NotRequired[Razorpay]
+    """
+    Razorpay's Official MCP Server.
+    """
     reddit: NotRequired[Reddit]
+    """
+    A comprehensive Model Context Protocol (MCP) server for Reddit integration. This server enables AI agents to interact with Reddit programmatically through a standardized interface.
+    """
     redis: NotRequired[Redis]
+    """
+    Access to Redis database operations.
+    """
     redisCloud: NotRequired[RedisCloud]
+    """
+    MCP Server for Redis Cloud's API, allowing you to manage your Redis Cloud resources using natural language.
+    """
     ref: NotRequired[Ref]
+    """
+    Ref powerful search tool connets your coding tools with documentation context. It includes an up-to-date index of public documentation and it can ingest your private documentation (eg. GitHub repos, PDFs) as well.
+    """
     remote: NotRequired[Dict[str, Any]]
+    """
+    Tools for finding remote MCP servers.
+    """
     render: NotRequired[Render]
+    """
+    Interact with your Render resources via LLMs.
+    """
     resend: NotRequired[Resend]
+    """
+    Send emails directly from Cursor with this email sending MCP server.
+    """
     risken: NotRequired[Risken]
+    """
+    RISKEN's official MCP Server.
+    """
     root: NotRequired[Root]
+    """
+    MCP server that provides container image vulnerability scanning and remediation capabilities through Root.io.
+    """
     ros2: NotRequired[Dict[str, Any]]
+    """
+    Python server implementing Model Context Protocol (MCP) for ROS2.
+    """
     rube: NotRequired[Rube]
+    """
+    Access to Rube's catalog of remote MCP servers.
+    """
     rustMcpFilesystem: NotRequired[RustMcpFilesystem]
+    """
+    The Rust MCP Filesystem is a high-performance, asynchronous, and lightweight Model Context Protocol (MCP) server built in Rust for secure and efficient filesystem operations. Designed with security in mind, it operates in read-only mode by default and restricts clients from updating allowed directories via MCP Roots unless explicitly enabled, ensuring robust protection against unauthorized access. Leveraging asynchronous I/O, it delivers blazingly fast performance with a minimal resource footprint. Optimized for token efficiency, the Rust MCP Filesystem enables large language models (LLMs) to precisely target searches and edits within specific sections of large files and restrict operations by file size range, making it ideal for efficient file exploration, automation, and system integration.
+    """
     schemacrawlerAi: NotRequired[SchemacrawlerAi]
+    """
+    The SchemaCrawler AI MCP Server enables natural language interaction with your database schema using an MCP client in "Agent" mode. It allows users to explore tables, columns, foreign keys, triggers, stored procedures and more simply by asking questions like "Explain the code for the interest calculation stored procedure". You can also ask it to help with SQL, since it knows your schema. This is ideal for developers, DBAs, and data analysts who want to streamline schema comprehension and query development without diving into dense documentation.
+    """
     schoginiMcpImageBorder: NotRequired[Dict[str, Any]]
+    """
+    This adds a border to an image and returns base64 encoded image.
+    """
     scrapegraph: NotRequired[Scrapegraph]
+    """
+    ScapeGraph MCP Server.
+    """
     scrapezy: NotRequired[Scrapezy]
+    """
+    A Model Context Protocol server for Scrapezy that enables AI models to extract structured data from websites.
+    """
     securenoteLink: NotRequired[Dict[str, Any]]
+    """
+    SecureNote.link MCP Server - allowing AI agents to securely share sensitive information through end-to-end encrypted notes.
+    """
     semgrep: NotRequired[Dict[str, Any]]
+    """
+    MCP server for using Semgrep to scan code for security vulnerabilities.
+    """
     sentry: NotRequired[Sentry]
+    """
+    A Model Context Protocol server for retrieving and analyzing issues from Sentry.io. This server provides tools to inspect error reports, stacktraces, and other debugging information from your Sentry account.
+    """
     sequa: NotRequired[Sequa]
+    """
+    Stop stitching context for Copilot and Cursor. With Sequa MCP, your AI tools know your entire codebase and docs out of the box.
+    """
     sequentialthinking: NotRequired[Dict[str, Any]]
+    """
+    Dynamic and reflective problem-solving through thought sequences.
+    """
     shortIo: NotRequired[ShortIo]
+    """
+    Access to Short.io's link shortener and analytics tools.
+    """
     simplechecklist: NotRequired[Dict[str, Any]]
+    """
+    Advanced SimpleCheckList with MCP server and SQLite database for comprehensive task management.  Features: • Complete project and task management system • Hierarchical organization (Projects → Groups → Task Lists → Tasks → Subtasks) • SQLite database for data persistence • RESTful API with comprehensive endpoints • MCP protocol compliance for AI assistant integration • Docker-optimized deployment with stability improvements  **v1.0.1 Update**: Enhanced Docker stability with improved container lifecycle management. Default mode optimized for containerized deployment with reliable startup and shutdown processes.  Perfect for AI assistants managing complex project workflows and task hierarchies.
+    """
     singlestore: NotRequired[Singlestore]
+    """
+    MCP server for interacting with SingleStore Management API and services.
+    """
     slack: NotRequired[Slack]
+    """
+    Interact with Slack Workspaces over the Slack API.
+    """
     smartbear: NotRequired[Smartbear]
+    """
+    MCP server for AI access to SmartBear tools, including BugSnag, Reflect, API Hub, PactFlow.
+    """
     sonarqube: NotRequired[Sonarqube]
+    """
+    Interact with SonarQube Cloud, Server and Community build over the web API. Analyze code to identify quality and security issues.
+    """
     sqlite: NotRequired[Dict[str, Any]]
+    """
+    Database interaction and business intelligence capabilities.
+    """
     stackgen: NotRequired[Stackgen]
+    """
+    AI-powered DevOps assistant for managing cloud infrastructure and applications.
+    """
     stackhawk: NotRequired[Stackhawk]
+    """
+    A Model Context Protocol (MCP) server for integrating with StackHawk's security scanning platform. Provides security analytics, YAML configuration management, sensitive data/threat surface analysis, and anti-hallucination tools for LLMs.
+    """
     stripe: NotRequired[Stripe]
+    """
+    Interact with Stripe services over the Stripe API.
+    """
     supadata: NotRequired[Supadata]
+    """
+    Official Supadata MCP Server - Adds powerful video & web scraping to Cursor, Claude and any other LLM clients.
+    """
     suzieq: NotRequired[Suzieq]
+    """
+    MCP Server to interact with a SuzieQ network observability instance via its REST API.
+    """
     taskOrchestrator: NotRequired[Dict[str, Any]]
+    """
+    Model Context Protocol (MCP) server for comprehensive task and feature management, providing AI assistants with a structured, context-efficient way to interact with project data.
+    """
     tavily: NotRequired[Tavily]
+    """
+    The Tavily MCP server provides seamless interaction with the tavily-search and tavily-extract tools, real-time web search capabilities through the tavily-search tool and Intelligent data extraction from web pages via the tavily-extract tool.
+    """
     teamwork: NotRequired[Teamwork]
+    """
+    Tools for Teamwork.com products.
+    """
     telnyx: NotRequired[Telnyx]
+    """
+    Enables interaction with powerful telephony, messaging, and AI assistant APIs.
+    """
     tembo: NotRequired[Tembo]
+    """
+    MCP server for Tembo Cloud's platform API.
+    """
     terraform: NotRequired[Dict[str, Any]]
+    """
+    The Terraform MCP Server provides seamless integration with Terraform ecosystem, enabling advanced automation and interaction capabilities for Infrastructure as Code (IaC) development.
+    """
     textToGraphql: NotRequired[TextToGraphql]
+    """
+    Transform natural language queries into GraphQL queries using an AI agent. Provides schema management, query validation, execution, and history tracking.
+    """
     tigris: NotRequired[Tigris]
+    """
+    Tigris is a globally distributed S3-compatible object storage service that provides low latency anywhere in the world, enabling developers to store and access any amount of data for a wide range of use cases.
+    """
     time: NotRequired[Dict[str, Any]]
+    """
+    Time and timezone conversion capabilities.
+    """
     triplewhale: NotRequired[Triplewhale]
+    """
+    Triplewhale MCP Server.
+    """
     unrealEngine: NotRequired[UnrealEngine]
+    """
+    A comprehensive Model Context Protocol (MCP) server that enables AI assistants to control Unreal Engine via Remote Control API. Built with TypeScript and designed for game development automation.
+    """
     veyrax: NotRequired[Veyrax]
+    """
+    VeyraX MCP is the only connection you need to access all your tools in any MCP-compatible environment.
+    """
     vizro: NotRequired[Dict[str, Any]]
+    """
+    provides tools and templates to create a functioning Vizro chart or dashboard step by step.
+    """
     vulnNist: NotRequired[Dict[str, Any]]
+    """
+    This MCP server exposes tools to query the NVD/CVE REST API and return formatted text results suitable for LLM consumption via the MCP protocol. It includes automatic query chunking for large date ranges and parallel processing for improved performance.
+    """
     wayfound: NotRequired[Wayfound]
+    """
+    Wayfound’s MCP server allows business users to govern, supervise, and improve AI Agents.
+    """
     webflow: NotRequired[Webflow]
+    """
+    Model Context Protocol (MCP) server for the Webflow Data API.
+    """
     wikipedia: NotRequired[Dict[str, Any]]
+    """
+    A Model Context Protocol (MCP) server that retrieves information from Wikipedia to provide context to LLMs.
+    """
     wolframAlpha: NotRequired[WolframAlpha]
+    """
+    Connect your chat repl to wolfram alpha computational intelligence.
+    """
     youtubeTranscript: NotRequired[Dict[str, Any]]
+    """
+    Retrieves transcripts for given YouTube video URLs.
+    """
     zerodhaKite: NotRequired[ZerodhaKite]
+    """
+    MCP server for Zerodha Kite Connect API - India's leading stock broker trading platform. Execute trades, manage portfolios, and access real-time market data for NSE, BSE, and other Indian exchanges.
+    """
