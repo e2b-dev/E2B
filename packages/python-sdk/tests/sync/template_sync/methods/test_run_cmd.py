@@ -16,7 +16,11 @@ def test_run_command():
 
 @pytest.mark.skip_debug()
 def test_run_command_as_different_user():
-    template = Template().from_image("ubuntu:22.04").run_cmd("ls -l", user="root")
+    template = (
+        Template()
+        .from_image("ubuntu:22.04")
+        .run_cmd('test "$(whoami)" = "root"', user="root")
+    )
 
     Template.build(
         template,
@@ -26,7 +30,7 @@ def test_run_command_as_different_user():
 
 @pytest.mark.skip_debug()
 def test_run_command_as_user_that_does_not_exist():
-    template = Template().from_image("ubuntu:22.04").run_cmd("ls -l", user="root123")
+    template = Template().from_image("ubuntu:22.04").run_cmd("whoami", user="root123")
 
     with pytest.raises(Exception) as exc_info:
         Template.build(
@@ -35,6 +39,6 @@ def test_run_command_as_user_that_does_not_exist():
         )
 
     assert (
-        "failed to run command 'ls -l': command failed: unauthenticated: invalid username: 'root123'"
+        "failed to run command 'whoami': command failed: unauthenticated: invalid username: 'root123'"
         in str(exc_info.value)
     )

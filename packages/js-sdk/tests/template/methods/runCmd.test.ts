@@ -13,7 +13,7 @@ test('run command', { timeout: 180000 }, async () => {
 test('run command as a different user', { timeout: 180000 }, async () => {
   const template = Template()
     .fromImage('ubuntu:22.04')
-    .runCmd('ls -l', { user: 'root' })
+    .runCmd('test "$(whoami)" = "root"', { user: 'root' })
 
   await Template.build(template, {
     alias: randomUUID(),
@@ -26,14 +26,14 @@ test(
   async () => {
     const template = Template()
       .fromImage('ubuntu:22.04')
-      .runCmd('ls -l', { user: 'root123' })
+      .runCmd('whoami', { user: 'root123' })
 
     await expect(
       Template.build(template, {
         alias: randomUUID(),
       })
     ).rejects.toThrow(
-      "failed to run command 'ls -l': command failed: unauthenticated: invalid username: 'root123'"
+      "failed to run command 'whoami': command failed: unauthenticated: invalid username: 'root123'"
     )
   }
 )
