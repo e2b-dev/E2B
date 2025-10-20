@@ -13,7 +13,7 @@ import type { McpServer as BaseMcpServer } from './mcp'
  * Extended MCP server configuration that includes base servers
  * and allows dynamic GitHub-based MCP servers with custom run and install commands.
  */
-export type McpServer = BaseMcpServer & GithubMcpServer
+export type McpServer = BaseMcpServer | GithubMcpServer
 
 export type GithubMcpServer = {
   [key: `github/${string}`]: {
