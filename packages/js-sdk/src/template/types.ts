@@ -305,11 +305,12 @@ export interface TemplateBuilder {
    * @example
    * ```ts
    * template.remove('/tmp/cache', { recursive: true, force: true })
+   * template.remove('/tmp/cache', { recursive: true, force: true, user: 'root' })
    * ```
    */
   remove(
     path: PathLike | PathLike[],
-    options?: { force?: boolean; recursive?: boolean }
+    options?: { force?: boolean; recursive?: boolean; user?: string }
   ): TemplateBuilder
 
   /**
@@ -321,12 +322,13 @@ export interface TemplateBuilder {
    * @example
    * ```ts
    * template.rename('/tmp/old.txt', '/tmp/new.txt')
+   * template.rename('/tmp/old.txt', '/tmp/new.txt', { user: 'root' })
    * ```
    */
   rename(
     src: PathLike,
     dest: PathLike,
-    options?: { force?: boolean }
+    options?: { force?: boolean; user?: string }
   ): TemplateBuilder
 
   /**
@@ -338,24 +340,31 @@ export interface TemplateBuilder {
    * ```ts
    * template.makeDir('/app/data', { mode: 0o755 })
    * template.makeDir(['/app/logs', '/app/cache'])
+   * template.makeDir('/app/data', { mode: 0o755, user: 'root' })
    * ```
    */
   makeDir(
     path: PathLike | PathLike[],
-    options?: { mode?: number }
+    options?: { mode?: number; user?: string }
   ): TemplateBuilder
 
   /**
    * Create a symbolic link.
    * @param src Source path (target)
    * @param dest Destination path (symlink location)
+   * @param options Symlink options
    *
    * @example
    * ```ts
    * template.makeSymlink('/usr/bin/python3', '/usr/bin/python')
+   * template.makeSymlink('/usr/bin/python3', '/usr/bin/python', { user: 'root' })
    * ```
    */
-  makeSymlink(src: PathLike, dest: PathLike): TemplateBuilder
+  makeSymlink(
+    src: PathLike,
+    dest: PathLike,
+    options?: { user?: string }
+  ): TemplateBuilder
 
   /**
    * Run a shell command.
@@ -472,12 +481,15 @@ export interface TemplateBuilder {
    *   branch: 'main',
    *   depth: 1
    * })
+   * template.gitClone('https://github.com/user/repo.git', '/app/repo', {
+   *   user: 'root'
+   * })
    * ```
    */
   gitClone(
     url: string,
     path?: PathLike,
-    options?: { branch?: string; depth?: number }
+    options?: { branch?: string; depth?: number; user?: string }
   ): TemplateBuilder
 
   /**

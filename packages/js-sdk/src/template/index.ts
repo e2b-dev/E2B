@@ -309,7 +309,7 @@ export class TemplateBase
 
   remove(
     path: PathLike | PathLike[],
-    options?: { force?: boolean; recursive?: boolean }
+    options?: { force?: boolean; recursive?: boolean; user?: string }
   ): TemplateBuilder {
     const paths = Array.isArray(path) ? path : [path]
     const args = ['rm']
@@ -320,24 +320,28 @@ export class TemplateBase
       args.push('-f')
     }
     args.push(...paths.map((p) => p.toString()))
-    return this.runInNewStackTraceContext(() => this.runCmd(args.join(' ')))
+    return this.runInNewStackTraceContext(() =>
+      this.runCmd(args.join(' '), { user: options?.user })
+    )
   }
 
   rename(
     src: PathLike,
     dest: PathLike,
-    options?: { force?: boolean }
+    options?: { force?: boolean; user?: string }
   ): TemplateBuilder {
     const args = ['mv', src.toString(), dest.toString()]
     if (options?.force) {
       args.push('-f')
     }
-    return this.runInNewStackTraceContext(() => this.runCmd(args.join(' ')))
+    return this.runInNewStackTraceContext(() =>
+      this.runCmd(args.join(' '), { user: options?.user })
+    )
   }
 
   makeDir(
     path: PathLike | PathLike[],
-    options?: { mode?: number }
+    options?: { mode?: number; user?: string }
   ): TemplateBuilder {
     const paths = Array.isArray(path) ? path : [path]
     const args = ['mkdir', '-p']
@@ -345,12 +349,20 @@ export class TemplateBase
       args.push(`-m ${padOctal(options.mode)}`)
     }
     args.push(...paths.map((p) => p.toString()))
-    return this.runInNewStackTraceContext(() => this.runCmd(args.join(' ')))
+    return this.runInNewStackTraceContext(() =>
+      this.runCmd(args.join(' '), { user: options?.user })
+    )
   }
 
-  makeSymlink(src: PathLike, dest: PathLike): TemplateBuilder {
+  makeSymlink(
+    src: PathLike,
+    dest: PathLike,
+    options?: { user?: string }
+  ): TemplateBuilder {
     const args = ['ln', '-s', src.toString(), dest.toString()]
-    return this.runInNewStackTraceContext(() => this.runCmd(args.join(' ')))
+    return this.runInNewStackTraceContext(() =>
+      this.runCmd(args.join(' '), { user: options?.user })
+    )
   }
 
   runCmd(command: string, options?: { user?: string }): TemplateBuilder
@@ -470,7 +482,7 @@ export class TemplateBase
   gitClone(
     url: string,
     path?: PathLike,
-    options?: { branch?: string; depth?: number }
+    options?: { branch?: string; depth?: number; user?: string }
   ): TemplateBuilder {
     const args = ['git', 'clone', url]
     if (options?.branch) {
@@ -484,7 +496,9 @@ export class TemplateBase
       args.push(path.toString())
     }
 
-    return this.runInNewStackTraceContext(() => this.runCmd(args.join(' ')))
+    return this.runInNewStackTraceContext(() =>
+      this.runCmd(args.join(' '), { user: options?.user })
+    )
   }
 
   setStartCmd(

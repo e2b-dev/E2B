@@ -121,6 +121,7 @@ class TemplateBuilder:
         path: Union[Union[str, Path], List[Union[str, Path]]],
         force: bool = False,
         recursive: bool = False,
+        user: Optional[str] = None,
     ) -> "TemplateBuilder":
         """
         Remove files or directories in the template.
@@ -128,12 +129,14 @@ class TemplateBuilder:
         :param path: File(s) or directory path(s) to remove
         :param force: Force removal without prompting
         :param recursive: Remove directories recursively
+        :param user: User to run the command as
 
         :return: `TemplateBuilder` class
 
         Example
         ```python
         template.remove('/tmp/cache', recursive=True, force=True)
+        template.remove('/tmp/cache', recursive=True, force=True, user='root')
         ```
         """
         paths = [path] if isinstance(path, (str, Path)) else path
@@ -145,11 +148,15 @@ class TemplateBuilder:
         args.extend([str(p) for p in paths])
 
         return self._template._run_in_new_stack_trace_context(
-            lambda: self.run_cmd(" ".join(args))
+            lambda: self.run_cmd(" ".join(args), user=user)
         )
 
     def rename(
-        self, src: Union[str, Path], dest: Union[str, Path], force: bool = False
+        self,
+        src: Union[str, Path],
+        dest: Union[str, Path],
+        force: bool = False,
+        user: Optional[str] = None,
     ) -> "TemplateBuilder":
         """
         Rename or move a file or directory in the template.
@@ -157,12 +164,14 @@ class TemplateBuilder:
         :param src: Source path
         :param dest: Destination path
         :param force: Force rename without prompting
+        :param user: User to run the command as
 
         :return: `TemplateBuilder` class
 
         Example
         ```python
         template.rename('/tmp/old.txt', '/tmp/new.txt')
+        template.rename('/tmp/old.txt', '/tmp/new.txt', user='root')
         ```
         """
         args = ["mv", str(src), str(dest)]
@@ -170,19 +179,21 @@ class TemplateBuilder:
             args.append("-f")
 
         return self._template._run_in_new_stack_trace_context(
-            lambda: self.run_cmd(" ".join(args))
+            lambda: self.run_cmd(" ".join(args), user=user)
         )
 
     def make_dir(
         self,
         path: Union[Union[str, Path], List[Union[str, Path]]],
         mode: Optional[int] = None,
+        user: Optional[str] = None,
     ) -> "TemplateBuilder":
         """
         Create directory(ies) in the template.
 
         :param path: Directory path(s) to create
         :param mode: Directory permissions in octal format (e.g., 0o755)
+        :param user: User to run the command as
 
         :return: `TemplateBuilder` class
 
@@ -190,6 +201,7 @@ class TemplateBuilder:
         ```python
         template.make_dir('/app/data', mode=0o755)
         template.make_dir(['/app/logs', '/app/cache'])
+        template.make_dir('/app/data', mode=0o755, user='root')
         ```
         """
         path_list = [path] if isinstance(path, (str, Path)) else path
@@ -199,28 +211,33 @@ class TemplateBuilder:
         args.extend([str(p) for p in path_list])
 
         return self._template._run_in_new_stack_trace_context(
-            lambda: self.run_cmd(" ".join(args))
+            lambda: self.run_cmd(" ".join(args), user=user)
         )
 
     def make_symlink(
-        self, src: Union[str, Path], dest: Union[str, Path]
+        self,
+        src: Union[str, Path],
+        dest: Union[str, Path],
+        user: Optional[str] = None,
     ) -> "TemplateBuilder":
         """
         Create a symbolic link in the template.
 
         :param src: Source path (target of the symlink)
         :param dest: Destination path (location of the symlink)
+        :param user: User to run the command as
 
         :return: `TemplateBuilder` class
 
         Example
         ```python
         template.make_symlink('/usr/bin/python3', '/usr/bin/python')
+        template.make_symlink('/usr/bin/python3', '/usr/bin/python', user='root')
         ```
         """
         args = ["ln", "-s", str(src), str(dest)]
         return self._template._run_in_new_stack_trace_context(
-            lambda: self.run_cmd(" ".join(args))
+            lambda: self.run_cmd(" ".join(args), user=user)
         )
 
     def run_cmd(
@@ -404,6 +421,7 @@ class TemplateBuilder:
         path: Optional[Union[str, Path]] = None,
         branch: Optional[str] = None,
         depth: Optional[int] = None,
+        user: Optional[str] = None,
     ) -> "TemplateBuilder":
         """
         Clone a git repository into the template.
@@ -412,6 +430,7 @@ class TemplateBuilder:
         :param path: Destination path for the clone
         :param branch: Branch to clone
         :param depth: Clone depth for shallow clones
+        :param user: User to run the command as
 
         :return: `TemplateBuilder` class
 
@@ -419,6 +438,7 @@ class TemplateBuilder:
         ```python
         template.git_clone('https://github.com/user/repo.git', '/app/repo')
         template.git_clone('https://github.com/user/repo.git', branch='main', depth=1)
+        template.git_clone('https://github.com/user/repo.git', '/app/repo', user='root')
         ```
         """
         args = ["git", "clone", url]
@@ -430,7 +450,7 @@ class TemplateBuilder:
         if path:
             args.append(str(path))
         return self._template._run_in_new_stack_trace_context(
-            lambda: self.run_cmd(" ".join(args))
+            lambda: self.run_cmd(" ".join(args), user=user)
         )
 
     def set_envs(self, envs: Dict[str, str]) -> "TemplateBuilder":
