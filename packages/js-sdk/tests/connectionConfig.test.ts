@@ -13,7 +13,7 @@ beforeEach(() => {
 
 afterEach(() => {
   // Restore original env vars
-  Object.keys(originalEnv).forEach(key => {
+  Object.keys(originalEnv).forEach((key) => {
     if (originalEnv[key] === undefined) {
       delete process.env[key]
     } else {
