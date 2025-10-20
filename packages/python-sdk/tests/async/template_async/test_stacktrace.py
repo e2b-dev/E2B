@@ -212,6 +212,7 @@ async def test_traces_on_start_cmd(async_build):
 
 @pytest.mark.skip_debug()
 async def test_traces_on_beta_add_mcp_server():
+    # needs mcp-gateway as base template, without it no mcp servers can be added
     await _expect_to_throw_and_check_trace(
         lambda: AsyncTemplate().from_base_image().beta_add_mcp_server("exa"),
         "beta_add_mcp_server",
