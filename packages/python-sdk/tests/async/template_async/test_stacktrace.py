@@ -208,3 +208,11 @@ async def test_traces_on_start_cmd(async_build):
     await _expect_to_throw_and_check_trace(
         lambda: async_build(template), "set_start_cmd"
     )
+
+
+@pytest.mark.skip_debug()
+async def test_traces_on_beta_add_mcp_server():
+    await _expect_to_throw_and_check_trace(
+        lambda: AsyncTemplate().from_base_image().beta_add_mcp_server("exa"),
+        "beta_add_mcp_server",
+    )

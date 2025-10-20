@@ -196,3 +196,11 @@ def test_traces_on_set_start_cmd(build):
         f"./{non_existent_path}", wait_for_timeout(10_000)
     )
     _expect_to_throw_and_check_trace(lambda: build(template), "set_start_cmd")
+
+
+@pytest.mark.skip_debug()
+def test_traces_on_beta_add_mcp_server():
+    _expect_to_throw_and_check_trace(
+        lambda: Template().from_base_image().beta_add_mcp_server("exa"),
+        "beta_add_mcp_server",
+    )

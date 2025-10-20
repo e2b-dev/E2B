@@ -1,6 +1,7 @@
 import datetime
 
 from typing import Optional, Dict, List
+from e2b.api.client.types import UNSET
 from e2b.sandbox.mcp import McpServer
 from packaging.version import Version
 from typing_extensions import Unpack
@@ -165,7 +166,7 @@ class SandboxApi(SandboxBase):
                     metadata=metadata or {},
                     timeout=timeout,
                     env_vars=env_vars or {},
-                    mcp=mcp,
+                    mcp=mcp or UNSET,
                     secure=secure,
                     allow_internet_access=allow_internet_access,
                 ),

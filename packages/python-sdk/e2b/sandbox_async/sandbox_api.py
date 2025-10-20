@@ -169,7 +169,7 @@ class SandboxApi(SandboxBase):
                     metadata=metadata or {},
                     timeout=timeout,
                     env_vars=env_vars or {},
-                    mcp=mcp,
+                    mcp=mcp or UNSET,
                     secure=secure,
                     allow_internet_access=allow_internet_access,
                 ),

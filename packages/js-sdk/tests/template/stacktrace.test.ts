@@ -242,3 +242,9 @@ buildTemplateTest('traces on setStartCmd', async ({ buildTemplate }) => {
     await buildTemplate(template)
   }, 'setStartCmd')
 })
+
+buildTemplateTest('traces on betaAddMcpServer', async () => {
+  await expectToThrowAndCheckTrace(async () => {
+    Template().fromBaseImage().betaAddMcpServer('exa')
+  }, 'betaAddMcpServer')
+})
