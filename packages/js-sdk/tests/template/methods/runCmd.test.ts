@@ -33,7 +33,7 @@ test(
         alias: randomUUID(),
       })
     ).rejects.toThrow(
-      `failed to run command 'ls -l': command failed: unauthenticated: invalid username: 'root123'`
+      "failed to run command 'ls -l': command failed: unauthenticated: invalid username: 'root123'"
     )
   }
 )
