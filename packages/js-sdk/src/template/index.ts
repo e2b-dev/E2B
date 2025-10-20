@@ -1,6 +1,7 @@
 import type { PathLike } from 'node:fs'
 import { ApiClient } from '../api'
 import { ConnectionConfig } from '../connectionConfig'
+import { BuildError } from '../errors'
 import { runtime } from '../utils'
 import {
   getFileUploadLink,
@@ -470,7 +471,10 @@ export class TemplateBase
 
   betaAddMcpServer(servers: McpServerName | McpServerName[]): TemplateBuilder {
     if (this.baseTemplate !== 'mcp-gateway') {
-      throw new Error('MCP servers can only be added to mcp-gateway template')
+      throw new BuildError(
+        'MCP servers can only be added to mcp-gateway template',
+        getCallerFrame(STACK_TRACE_DEPTH - 1)
+      )
     }
 
     const serverList = Array.isArray(servers) ? servers : [servers]
