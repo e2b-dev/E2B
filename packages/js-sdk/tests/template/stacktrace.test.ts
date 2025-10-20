@@ -242,3 +242,10 @@ buildTemplateTest('traces on setStartCmd', async ({ buildTemplate }) => {
     await buildTemplate(template)
   }, 'setStartCmd')
 })
+
+buildTemplateTest('traces on betaAddMcpServer', async () => {
+  // needs mcp-gateway as base template, without it no mcp servers can be added
+  await expectToThrowAndCheckTrace(async () => {
+    Template().fromBaseImage().betaAddMcpServer('exa')
+  }, 'betaAddMcpServer')
+})

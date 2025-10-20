@@ -4,6 +4,7 @@ from pathlib import Path
 
 from httpx import Limits
 
+from e2b.exceptions import BuildException
 from e2b.template.consts import STACK_TRACE_DEPTH, RESOLVE_SYMLINKS
 from e2b.template.dockerfile_parser import parse_dockerfile
 from e2b.template.readycmd import ReadyCmd
@@ -413,6 +414,43 @@ class TemplateBuilder:
                 ],
                 user="root",
             )
+        )
+
+    def beta_add_mcp_server(self, servers: Union[str, List[str]]) -> "TemplateBuilder":
+        """
+        Install MCP servers using mcp-gateway.
+
+        Note: Requires a base image with mcp-gateway pre-installed (e.g., mcp-gateway).
+
+        :param servers: MCP server name(s)
+
+        :return: `TemplateBuilder` class
+
+        Example
+        ```python
+        template.beta_add_mcp_server('exa')
+        template.beta_add_mcp_server(['brave', 'firecrawl', 'duckduckgo'])
+        ```
+        """
+        if self._template._base_template != "mcp-gateway":
+            caller_frame = get_caller_frame(STACK_TRACE_DEPTH - 1)
+            stack_trace = None
+            if caller_frame is not None:
+                stack_trace = TracebackType(
+                    tb_next=None,
+                    tb_frame=caller_frame,
+                    tb_lasti=caller_frame.f_lasti,
+                    tb_lineno=caller_frame.f_lineno,
+                )
+            raise BuildException(
+                "MCP servers can only be added to mcp-gateway template"
+            ).with_traceback(stack_trace)
+
+        if isinstance(servers, str):
+            servers = [servers]
+
+        return self._template._run_in_new_stack_trace_context(
+            lambda: self.run_cmd(f"mcp-gateway pull {' '.join(servers)}", user="root")
         )
 
     def git_clone(
