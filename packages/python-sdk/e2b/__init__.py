@@ -161,6 +161,6 @@ __all__ = [
     "default_build_logger",
     # MCP
     "McpServer",
-    "GithubMcpServer",
-    "GithubMcpServerConfig",
+    "GitHubMcpServer",
+    "GitHubMcpServerConfig",
 ]
