@@ -106,7 +106,7 @@ async function templateAction(
         return
       }
     } else {
-      const configPath = getConfigPath(root)
+      const configPath = getConfigPath(root, opts.config)
       const config = fs.existsSync(configPath)
         ? await loadConfig(configPath)
         : undefined

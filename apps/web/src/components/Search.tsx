@@ -264,7 +264,7 @@ function SearchResult({
           <HighlightQuery text={contextPreview} query={query} />
         </div>
       )}
-      {result.badge === 'Legacy' && (
+      {result.badge && (
         <div className="absolute top-3 right-4">
           <span className="rounded-full text-xs bg-zinc-900 py-1 px-3 text-white hover:bg-zinc-700 dark:bg-brand-400/10 dark:text-brand-400 dark:ring-1 dark:ring-inset dark:ring-brand-400/20 dark:hover:bg-brand-400/10 dark:hover:text-brand-300 dark:hover:ring-brand-300">
             {result.badge}

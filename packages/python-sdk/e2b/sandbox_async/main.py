@@ -543,6 +543,7 @@ class AsyncSandbox(SandboxApi):
             envs=envs,
             secure=secure,
             allow_internet_access=allow_internet_access,
+            mcp=mcp,
             **opts,
         )
 
@@ -550,14 +551,13 @@ class AsyncSandbox(SandboxApi):
             token = str(uuid.uuid4())
             sandbox._mcp_token = token
 
-            handle = await sandbox.commands.run(
+            res = await sandbox.commands.run(
                 f"mcp-gateway --config '{json.dumps(mcp)}'",
                 user="root",
                 envs={"GATEWAY_ACCESS_TOKEN": token},
-                background=True,
-                timeout=0,
             )
-            await handle.disconnect()
+            if res.exit_code != 0:
+                raise Exception(f"Failed to start MCP gateway: {res.stderr}")
 
         return sandbox
 
@@ -667,6 +667,7 @@ class AsyncSandbox(SandboxApi):
         metadata: Optional[Dict[str, str]],
         envs: Optional[Dict[str, str]],
         secure: bool,
+        mcp: Optional[McpServer] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
         extra_sandbox_headers = {}
@@ -686,6 +687,7 @@ class AsyncSandbox(SandboxApi):
                 env_vars=envs,
                 secure=secure,
                 allow_internet_access=allow_internet_access,
+                mcp=mcp,
                 **opts,
             )
 

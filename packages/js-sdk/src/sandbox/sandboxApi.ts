@@ -460,6 +460,7 @@ export class SandboxApi {
         autoPause: opts?.autoPause ?? false,
         templateID: template,
         metadata: opts?.metadata,
+        mcp: opts?.mcp as Record<string, unknown> | undefined,
         envVars: opts?.envs,
         timeout: timeoutToSeconds(timeoutMs),
         secure: opts?.secure ?? true,

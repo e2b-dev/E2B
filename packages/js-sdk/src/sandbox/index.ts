@@ -64,7 +64,7 @@ export interface SandboxUrlOpts {
  */
 export class Sandbox extends SandboxApi {
   protected static readonly defaultTemplate: string = 'base'
-  protected static readonly defaultMcpTemplate: string = 'mcp-gateway-v0-1'
+  protected static readonly defaultMcpTemplate: string = 'mcp-gateway-v0-2'
   protected static readonly defaultSandboxTimeoutMs = DEFAULT_SANDBOX_TIMEOUT_MS
 
   /**
@@ -336,19 +336,18 @@ export class Sandbox extends SandboxApi {
 
     if (sandboxOpts?.mcp) {
       sandbox.mcpToken = crypto.randomUUID()
-
-      const handle = await sandbox.commands.run(
+      const res = await sandbox.commands.run(
         `mcp-gateway --config '${JSON.stringify(sandboxOpts?.mcp)}'`,
         {
           user: 'root',
           envs: {
             GATEWAY_ACCESS_TOKEN: sandbox.mcpToken ?? '',
           },
-          background: true,
-          timeoutMs: 0,
         }
       )
-      await handle.disconnect()
+      if (res.exitCode !== 0) {
+        throw new Error(`Failed to start MCP gateway: ${res.stderr}`)
+      }
     }
 
     return sandbox
