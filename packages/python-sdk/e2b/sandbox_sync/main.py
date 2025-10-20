@@ -16,8 +16,7 @@ from e2b.envd.api import ENVD_API_HEALTH_ROUTE, handle_envd_api_exception
 from e2b.envd.versions import ENVD_DEBUG_FALLBACK
 from e2b.exceptions import SandboxException, format_request_timeout_error
 from e2b.sandbox.main import SandboxOpts
-from e2b.sandbox.mcp import McpServer
-from e2b.sandbox.sandbox_api import SandboxMetrics
+from e2b.sandbox.sandbox_api import SandboxMetrics, McpServer
 from e2b.sandbox.utils import class_method_variant
 from e2b.sandbox_sync.filesystem.filesystem import Filesystem
 from e2b.sandbox_sync.commands.command import Commands

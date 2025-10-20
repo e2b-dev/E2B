@@ -9,14 +9,13 @@ from typing import Dict, Optional, overload, List
 from packaging.version import Version
 from typing_extensions import Unpack, Self
 
-from e2b.sandbox.mcp import McpServer
 from e2b.api.client.types import Unset
 from e2b.connection_config import ConnectionConfig, ApiParams
 from e2b.envd.api import ENVD_API_HEALTH_ROUTE, ahandle_envd_api_exception
 from e2b.envd.versions import ENVD_DEBUG_FALLBACK
 from e2b.exceptions import format_request_timeout_error, SandboxException
 from e2b.sandbox.main import SandboxOpts
-from e2b.sandbox.sandbox_api import SandboxMetrics
+from e2b.sandbox.sandbox_api import SandboxMetrics, McpServer
 from e2b.sandbox.utils import class_method_variant
 from e2b.sandbox_async.filesystem.filesystem import Filesystem
 from e2b.sandbox_async.commands.command import Commands
