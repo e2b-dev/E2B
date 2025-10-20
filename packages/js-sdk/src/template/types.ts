@@ -467,7 +467,7 @@ export interface TemplateBuilder {
 
   /**
    * Install MCP servers using mcp-gateway.
-   * Note: Requires a base image with mcp-gateway pre-installed (e.g., mcp-gateway-v0-3).
+   * Note: Requires a base image with mcp-gateway pre-installed (e.g., mcp-gateway).
    * @param servers MCP server name(s)
    *
    * @example
