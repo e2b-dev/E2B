@@ -152,9 +152,9 @@ class TemplateBuilder:
         )
 
     def rename(
-        self, 
-        src: Union[str, Path], 
-        dest: Union[str, Path], 
+        self,
+        src: Union[str, Path],
+        dest: Union[str, Path],
         force: bool = False,
         user: Optional[str] = None,
     ) -> "TemplateBuilder":
@@ -215,8 +215,8 @@ class TemplateBuilder:
         )
 
     def make_symlink(
-        self, 
-        src: Union[str, Path], 
+        self,
+        src: Union[str, Path],
         dest: Union[str, Path],
         user: Optional[str] = None,
     ) -> "TemplateBuilder":
