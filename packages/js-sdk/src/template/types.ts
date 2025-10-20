@@ -1,6 +1,7 @@
 import { ReadyCmd } from './readycmd'
 import type { PathLike } from 'node:fs'
 import type { LogEntry } from './logger'
+import type { McpServer } from '../sandbox/mcp'
 
 /**
  * Options for creating a new template.
@@ -94,6 +95,11 @@ export type CopyItem = {
   mode?: number
   resolveSymlinks?: boolean
 }
+
+/**
+ * MCP server names that can be installed.
+ */
+export type McpServerName = keyof McpServer
 
 /**
  * Initial state of a template builder.
@@ -458,6 +464,19 @@ export interface TemplateBuilder {
    * ```
    */
   aptInstall(packages: string | string[]): TemplateBuilder
+
+  /**
+   * Install MCP servers using mcp-gateway.
+   * Note: Requires a base image with mcp-gateway pre-installed (e.g., mcp-gateway-v0-3).
+   * @param servers MCP server name(s)
+   *
+   * @example
+   * ```ts
+   * template.addMCPServer('exa')
+   * template.addMCPServer(['brave', 'firecrawl', 'duckduckgo'])
+   * ```
+   */
+  betaAddMCPServer(servers: McpServerName | McpServerName[]): TemplateBuilder
 
   /**
    * Clone a Git repository.

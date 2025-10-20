@@ -19,6 +19,7 @@ import {
   CopyItem,
   Instruction,
   InstructionType,
+  McpServerName,
   RegistryConfig,
   TemplateBuilder,
   TemplateClass,
@@ -467,6 +468,15 @@ export class TemplateBase
     )
   }
 
+  betaAddMCPServer(servers: McpServerName | McpServerName[]): TemplateBuilder {
+    const serverList = Array.isArray(servers) ? servers : [servers]
+    return this.runInNewStackTraceContext(() =>
+      this.runCmd(`mcp-gateway pull ${serverList.join(' ')}`, {
+        user: 'root',
+      })
+    )
+  }
+
   gitClone(
     url: string,
     path?: PathLike,
@@ -882,6 +892,7 @@ Template.toDockerfile = TemplateBase.toDockerfile
 export type {
   BuildOptions,
   CopyItem,
+  McpServerName,
   TemplateBuilder,
   TemplateClass,
 } from './types'
