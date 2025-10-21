@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto'
 import { test } from 'vitest'
 import { Template } from '../../../src'
 
-test('npm install', { timeout: 180000 }, async () => {
+test('npm install', async () => {
   const template = Template().fromNodeImage('24').npmInstall(['lodash', 'ms'])
 
   await Template.build(template, {
@@ -10,7 +10,7 @@ test('npm install', { timeout: 180000 }, async () => {
   })
 })
 
-test('npm install global', { timeout: 180000 }, async () => {
+test('npm install global', async () => {
   const template = Template()
     .fromNodeImage('24')
     .npmInstall(['lodash', 'ms'], { g: true })

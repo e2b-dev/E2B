@@ -6,7 +6,12 @@ export default defineWorkspace([
   {
     test: {
       include: ['tests/**/*.test.ts'],
-      exclude: ['tests/runtimes/**', 'tests/integration/**', 'tests/connectionConfig.test.ts'],
+      exclude: [
+        'tests/runtimes/**',
+        'tests/integration/**',
+        'tests/template/**',
+        'tests/connectionConfig.test.ts',
+      ],
       isolate: false, // for projects that don't rely on side effects, disabling isolation will improve the speed of the tests
       globals: false,
       testTimeout: 30_000,
@@ -55,7 +60,7 @@ export default defineWorkspace([
   },
   {
     test: {
-      include: ['tests/template/stacktrace.test.ts'],
+      include: ['tests/template/**/*.test.ts'],
       globals: false,
       testTimeout: 180_000,
       environment: 'node',
