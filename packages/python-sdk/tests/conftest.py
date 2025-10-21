@@ -75,7 +75,7 @@ def build():
     ):
         return Template.build(
             template,
-            alias=str(uuid4()),
+            alias=f"e2b-test-{uuid4()}",
             cpu_count=1,
             memory_mb=1024,
             skip_cache=skip_cache,
@@ -94,7 +94,7 @@ def async_build():
     ):
         return await AsyncTemplate.build(
             template,
-            alias=str(uuid4()),
+            alias=f"e2b-test-{uuid4()}",
             cpu_count=1,
             memory_mb=1024,
             skip_cache=skip_cache,
