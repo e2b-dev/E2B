@@ -413,7 +413,7 @@ class TemplateBuilder:
             lambda: self.run_cmd(
                 [
                     "apt-get update",
-                    f"DEBIAN_FRONTEND=noninteractive DEBCONF_NOWARNINGS=yes apt-get install -y {'--no-install-recommends' if no_install_recommends else ''} {' '.join(packages)}",
+                    f"DEBIAN_FRONTEND=noninteractive DEBCONF_NOWARNINGS=yes apt-get install -y {'--no-install-recommends' if no_install_recommends else ''}{' '.join(packages)}",
                 ],
                 user="root",
             )
