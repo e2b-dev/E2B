@@ -470,9 +470,13 @@ export interface TemplateBuilder {
    * ```ts
    * template.aptInstall('vim')
    * template.aptInstall(['git', 'curl', 'wget'])
+   * template.aptInstall(['vim'], { noInstallRecommends: true })
    * ```
    */
-  aptInstall(packages: string | string[]): TemplateBuilder
+  aptInstall(
+    packages: string | string[],
+    options?: { noInstallRecommends?: boolean }
+  ): TemplateBuilder
 
   /**
    * Install MCP servers using mcp-gateway.

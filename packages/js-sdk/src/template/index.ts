@@ -466,13 +466,16 @@ export class TemplateBase
     )
   }
 
-  aptInstall(packages: string | string[]): TemplateBuilder {
+  aptInstall(
+    packages: string | string[],
+    options?: { noInstallRecommends?: boolean }
+  ): TemplateBuilder {
     const packageList = Array.isArray(packages) ? packages : [packages]
     return this.runInNewStackTraceContext(() =>
       this.runCmd(
         [
           'apt-get update',
-          `DEBIAN_FRONTEND=noninteractive DEBCONF_NOWARNINGS=yes apt-get install -y --no-install-recommends ${packageList.join(
+          `DEBIAN_FRONTEND=noninteractive DEBCONF_NOWARNINGS=yes apt-get install -y ${options?.noInstallRecommends ? '--no-install-recommends ' : ''}${packageList.join(
             ' '
           )}`,
         ],
