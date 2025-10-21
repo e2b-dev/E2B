@@ -361,13 +361,11 @@ export class TemplateBase
     dest: PathLike,
     options?: { user?: string; force?: boolean }
   ): TemplateBuilder {
-    const args = [
-      'ln',
-      '-s',
-      options?.force ? '-f' : '',
-      src.toString(),
-      dest.toString(),
-    ]
+    const args = ['ln', '-s']
+    if (options?.force) {
+      args.push('-f')
+    }
+    args.push(src.toString(), dest.toString())
     return this.runInNewStackTraceContext(() =>
       this.runCmd(args.join(' '), { user: options?.user })
     )
