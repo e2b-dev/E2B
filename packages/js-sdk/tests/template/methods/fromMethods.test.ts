@@ -2,6 +2,22 @@ import { buildTemplateTest } from '../../setup'
 import { Template } from '../../../src'
 import path from 'node:path'
 import fs from 'node:fs'
+import { afterAll, beforeAll } from 'vitest'
+
+const fileContextPath = path.join(__dirname, 'dockerfile-context')
+
+beforeAll(async () => {
+  fs.mkdirSync(fileContextPath, { recursive: true })
+  fs.writeFileSync(
+    path.join(fileContextPath, 'package.json'),
+    JSON.stringify({ name: 'my-app', version: '1.0.0' }, null, 2),
+    'utf-8'
+  )
+})
+
+afterAll(async () => {
+  fs.rmSync(fileContextPath, { recursive: true, force: true })
+})
 
 buildTemplateTest(
   'fromBaseImage',
@@ -111,18 +127,8 @@ WORKDIR /app
 COPY . .
 RUN npm install`
 
-    const fileContextPath = path.join(__dirname, 'dockerfile-context')
-    fs.mkdirSync(fileContextPath, { recursive: true })
-    fs.writeFileSync(
-      path.join(fileContextPath, 'package.json'),
-      JSON.stringify({ name: 'my-app', version: '1.0.0' }, null, 2),
-      'utf-8'
-    )
-
     const template = Template({ fileContextPath }).fromDockerfile(dockerfile)
     await buildTemplate(template)
-
-    fs.rmSync(fileContextPath, { recursive: true, force: true })
   }
 )
 
