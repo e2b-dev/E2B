@@ -239,9 +239,7 @@ class TemplateBuilder:
         template.make_symlink('/usr/bin/python3', '/usr/bin/python', force=True)
         ```
         """
-        args = ["ln", "-s", str(src), str(dest)]
-        if force:
-            args.append("-f")
+        args = ["ln", "-s", "-f" if force else "", str(src), str(dest)]
         return self._template._run_in_new_stack_trace_context(
             lambda: self.run_cmd(" ".join(args), user=user)
         )
