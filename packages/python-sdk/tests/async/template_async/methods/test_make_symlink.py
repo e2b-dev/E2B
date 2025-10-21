@@ -9,6 +9,7 @@ async def test_make_symlink(async_build):
         AsyncTemplate()
         .from_image("ubuntu:22.04")
         .make_symlink(".bashrc", ".bashrc.local")
+        .run_cmd('test "$(readlink .bashrc.local)" = ".bashrc"')
     )
 
     await async_build(template)
@@ -20,6 +21,7 @@ async def test_make_symlink_force(async_build):
         AsyncTemplate()
         .from_image("ubuntu:22.04")
         .make_symlink(".bashrc", ".bashrc.local", force=True)
+        .run_cmd('test "$(readlink .bashrc.local)" = ".bashrc"')
     )
 
     await async_build(template)
