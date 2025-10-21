@@ -775,11 +775,11 @@ class TemplateBase:
             lambda: self.from_image(f"debian:{variant}")
         )
 
-    def from_ubuntu_image(self, variant: str = "lts") -> TemplateBuilder:
+    def from_ubuntu_image(self, variant: str = "latest") -> TemplateBuilder:
         """
         Start template from an Ubuntu base image.
 
-        :param variant: Ubuntu image variant (default: 'lts')
+        :param variant: Ubuntu image variant (default: 'latest')
 
         :return: `TemplateBuilder` class
 

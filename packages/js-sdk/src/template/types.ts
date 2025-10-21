@@ -119,7 +119,7 @@ export interface TemplateFromImage {
 
   /**
    * Start from an Ubuntu-based Docker image.
-   * @param variant Ubuntu variant (default: 'lts')
+   * @param variant Ubuntu variant (default: 'latest')
    *
    * @example
    * ```ts
