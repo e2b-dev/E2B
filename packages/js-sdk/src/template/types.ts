@@ -364,12 +364,13 @@ export interface TemplateBuilder {
    * ```ts
    * template.makeSymlink('/usr/bin/python3', '/usr/bin/python')
    * template.makeSymlink('/usr/bin/python3', '/usr/bin/python', { user: 'root' })
+   * template.makeSymlink('/usr/bin/python3', '/usr/bin/python', { force: true })
    * ```
    */
   makeSymlink(
     src: PathLike,
     dest: PathLike,
-    options?: { user?: string }
+    options?: { user?: string; force?: boolean }
   ): TemplateBuilder
 
   /**

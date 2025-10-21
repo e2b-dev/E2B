@@ -220,6 +220,7 @@ class TemplateBuilder:
         src: Union[str, Path],
         dest: Union[str, Path],
         user: Optional[str] = None,
+        force: bool = False,
     ) -> "TemplateBuilder":
         """
         Create a symbolic link in the template.
@@ -227,6 +228,7 @@ class TemplateBuilder:
         :param src: Source path (target of the symlink)
         :param dest: Destination path (location of the symlink)
         :param user: User to run the command as
+        :param force: Force symlink without prompting
 
         :return: `TemplateBuilder` class
 
@@ -234,9 +236,13 @@ class TemplateBuilder:
         ```python
         template.make_symlink('/usr/bin/python3', '/usr/bin/python')
         template.make_symlink('/usr/bin/python3', '/usr/bin/python', user='root')
+        template.make_symlink('/usr/bin/python3', '/usr/bin/python', force=True)
         ```
         """
-        args = ["ln", "-s", str(src), str(dest)]
+        args = ["ln", "-s"]
+        if force:
+            args.append("-f")
+        args.extend([str(src), str(dest)])
         return self._template._run_in_new_stack_trace_context(
             lambda: self.run_cmd(" ".join(args), user=user)
         )
