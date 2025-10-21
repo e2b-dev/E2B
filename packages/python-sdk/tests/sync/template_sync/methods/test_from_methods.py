@@ -12,10 +12,9 @@ from e2b import Template
 def setup_dockerfile_context():
     """Setup test directory with package.json for dockerfile context tests"""
     test_dir = tempfile.mkdtemp(prefix="python_sync_dockerfile_test_")
-    folder_path = os.path.join(test_dir, "dockerfile-context")
 
-    os.makedirs(folder_path, exist_ok=True)
-    with open(os.path.join(folder_path, "package.json"), "w") as f:
+    os.makedirs(test_dir, exist_ok=True)
+    with open(os.path.join(test_dir, "package.json"), "w") as f:
         json.dump({"name": "my-app", "version": "1.0.0"}, f, indent=2)
 
     yield test_dir
