@@ -97,7 +97,7 @@ buildTemplateTest(
   'fromTemplate',
   { timeout: 180000 },
   async ({ buildTemplate }) => {
-    const template = Template().fromTemplate('my-template')
+    const template = Template().fromTemplate('base')
     await buildTemplate(template)
   }
 )
@@ -106,13 +106,13 @@ buildTemplateTest(
   'fromDockerfile',
   { timeout: 180000 },
   async ({ buildTemplate }) => {
-    const dockerfile = `FROM ubuntu:24.04
-RUN apt-get update && apt-get install -y build-essential curl git && rm -rf /var/lib/apt/lists/*
+    const dockerfile = `FROM node:24
 WORKDIR /app
 COPY . .
 RUN npm install`
 
-    const fileContextPath = 'dockerfile-context'
+    const fileContextPath = path.join(__dirname, 'dockerfile-context')
+    fs.mkdirSync(fileContextPath, { recursive: true })
     fs.writeFileSync(
       path.join(fileContextPath, 'package.json'),
       JSON.stringify({ name: 'my-app', version: '1.0.0' }, null, 2),

@@ -126,7 +126,7 @@ export class TemplateBase
     return this.fromImage(`debian:${variant}`)
   }
 
-  fromUbuntuImage(variant: string = 'lts'): TemplateBuilder {
+  fromUbuntuImage(variant: string = 'latest'): TemplateBuilder {
     return this.fromImage(`ubuntu:${variant}`)
   }
 
