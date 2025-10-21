@@ -389,11 +389,14 @@ class TemplateBuilder:
             lambda: self.run_cmd(" ".join(args), user="root" if g else None)
         )
 
-    def apt_install(self, packages: Union[str, List[str]]) -> "TemplateBuilder":
+    def apt_install(
+        self, packages: Union[str, List[str]], no_install_recommends: bool = False
+    ) -> "TemplateBuilder":
         """
         Install system packages using apt-get.
 
         :param packages: Package name(s) to install
+        :param no_install_recommends: Whether to install recommended packages
 
         :return: `TemplateBuilder` class
 
@@ -410,7 +413,7 @@ class TemplateBuilder:
             lambda: self.run_cmd(
                 [
                     "apt-get update",
-                    f"DEBIAN_FRONTEND=noninteractive DEBCONF_NOWARNINGS=yes apt-get install -y --no-install-recommends {' '.join(packages)}",
+                    f"DEBIAN_FRONTEND=noninteractive DEBCONF_NOWARNINGS=yes apt-get install -y {'--no-install-recommends' if no_install_recommends else ''} {' '.join(packages)}",
                 ],
                 user="root",
             )
