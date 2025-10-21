@@ -475,7 +475,7 @@ export class TemplateBase
       this.runCmd(
         [
           'apt-get update',
-          `DEBIAN_FRONTEND=noninteractive DEBCONF_NOWARNINGS=yes apt-get install -y ${options?.noInstallRecommends ?? '--no-install-recommends'} ${packageList.join(
+          `DEBIAN_FRONTEND=noninteractive DEBCONF_NOWARNINGS=yes apt-get install -y ${options?.noInstallRecommends ? '--no-install-recommends' : ''} ${packageList.join(
             ' '
           )}`,
         ],
