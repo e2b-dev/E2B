@@ -92,7 +92,7 @@ async def test_from_template(async_build):
 async def test_from_dockerfile(async_build, setup_dockerfile_context):
     dockerfile = """FROM node:24
 WORKDIR /app
-COPY . .
+COPY package.json .
 RUN npm install"""
 
     template = AsyncTemplate(

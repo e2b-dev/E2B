@@ -124,7 +124,7 @@ buildTemplateTest(
   async ({ buildTemplate }) => {
     const dockerfile = `FROM node:24
 WORKDIR /app
-COPY . .
+COPY package.json .
 RUN npm install`
 
     const template = Template({ fileContextPath }).fromDockerfile(dockerfile)

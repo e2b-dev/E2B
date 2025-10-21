@@ -93,7 +93,7 @@ def test_from_template(build):
 def test_from_dockerfile(build, setup_dockerfile_context):
     dockerfile = """FROM node:24
 WORKDIR /app
-COPY . .
+COPY package.json .
 RUN npm install"""
 
     template = Template(file_context_path=setup_dockerfile_context).from_dockerfile(
