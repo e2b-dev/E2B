@@ -3,4 +3,4 @@
 'e2b': patch
 ---
 
-make --no-install recommends optional in apt_install
+make --no-install-recommends optional in apt_install
