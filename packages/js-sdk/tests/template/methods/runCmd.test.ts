@@ -1,38 +1,32 @@
-import { randomUUID } from 'node:crypto'
-import { expect, test } from 'vitest'
+import { expect } from 'vitest'
 import { Template } from '../../../src'
+import { buildTemplateTest } from '../../setup'
 
-test('run command', { timeout: 180000 }, async () => {
+buildTemplateTest('run command', async ({ buildTemplate }) => {
   const template = Template().fromImage('ubuntu:22.04').runCmd('ls -l')
 
-  await Template.build(template, {
-    alias: randomUUID(),
-  })
+  await buildTemplate(template)
 })
 
-test('run command as a different user', { timeout: 180000 }, async () => {
-  const template = Template()
-    .fromImage('ubuntu:22.04')
-    .runCmd('test "$(whoami)" = "root"', { user: 'root' })
+buildTemplateTest(
+  'run command as a different user',
+  async ({ buildTemplate }) => {
+    const template = Template()
+      .fromImage('ubuntu:22.04')
+      .runCmd('test "$(whoami)" = "root"', { user: 'root' })
 
-  await Template.build(template, {
-    alias: randomUUID(),
-  })
-})
+    await buildTemplate(template)
+  }
+)
 
-test(
+buildTemplateTest(
   'run command as user that does not exist',
-  { timeout: 180000 },
-  async () => {
+  async ({ buildTemplate }) => {
     const template = Template()
       .fromImage('ubuntu:22.04')
       .runCmd('whoami', { user: 'root123' })
 
-    await expect(
-      Template.build(template, {
-        alias: randomUUID(),
-      })
-    ).rejects.toThrow(
+    await expect(buildTemplate(template)).rejects.toThrow(
       "failed to run command 'whoami': command failed: unauthenticated: invalid username: 'root123'"
     )
   }

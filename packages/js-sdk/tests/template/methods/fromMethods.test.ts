@@ -19,123 +19,74 @@ afterAll(async () => {
   fs.rmSync(fileContextPath, { recursive: true, force: true })
 })
 
-buildTemplateTest(
-  'fromBaseImage',
-  { timeout: 180000 },
-  async ({ buildTemplate }) => {
-    const template = Template().fromBaseImage()
-    await buildTemplate(template)
-  }
-)
+buildTemplateTest('fromBaseImage', async ({ buildTemplate }) => {
+  const template = Template().fromBaseImage()
+  await buildTemplate(template)
+})
 
-buildTemplateTest(
-  'fromDebianImage',
-  { timeout: 180000 },
-  async ({ buildTemplate }) => {
-    const template = Template().fromDebianImage()
-    await buildTemplate(template)
-  }
-)
+buildTemplateTest('fromDebianImage', async ({ buildTemplate }) => {
+  const template = Template().fromDebianImage()
+  await buildTemplate(template)
+})
 
-buildTemplateTest(
-  'fromDebianImage with variant',
-  { timeout: 180000 },
-  async ({ buildTemplate }) => {
-    const template = Template().fromDebianImage('bookworm')
-    await buildTemplate(template)
-  }
-)
+buildTemplateTest('fromDebianImage with variant', async ({ buildTemplate }) => {
+  const template = Template().fromDebianImage('bookworm')
+  await buildTemplate(template)
+})
 
-buildTemplateTest(
-  'fromUbuntuImage',
-  { timeout: 180000 },
-  async ({ buildTemplate }) => {
-    const template = Template().fromUbuntuImage()
-    await buildTemplate(template)
-  }
-)
+buildTemplateTest('fromUbuntuImage', async ({ buildTemplate }) => {
+  const template = Template().fromUbuntuImage()
+  await buildTemplate(template)
+})
 
-buildTemplateTest(
-  'fromUbuntuImage with variant',
-  { timeout: 180000 },
-  async ({ buildTemplate }) => {
-    const template = Template().fromUbuntuImage('24.04')
-    await buildTemplate(template)
-  }
-)
+buildTemplateTest('fromUbuntuImage with variant', async ({ buildTemplate }) => {
+  const template = Template().fromUbuntuImage('24.04')
+  await buildTemplate(template)
+})
 
-buildTemplateTest(
-  'fromPythonImage',
-  { timeout: 180000 },
-  async ({ buildTemplate }) => {
-    const template = Template().fromPythonImage()
-    await buildTemplate(template)
-  }
-)
+buildTemplateTest('fromPythonImage', async ({ buildTemplate }) => {
+  const template = Template().fromPythonImage()
+  await buildTemplate(template)
+})
 
-buildTemplateTest(
-  'fromPythonImage with variant',
-  { timeout: 180000 },
-  async ({ buildTemplate }) => {
-    const template = Template().fromPythonImage('3.12')
-    await buildTemplate(template)
-  }
-)
+buildTemplateTest('fromPythonImage with variant', async ({ buildTemplate }) => {
+  const template = Template().fromPythonImage('3.12')
+  await buildTemplate(template)
+})
 
-buildTemplateTest(
-  'fromNodeImage',
-  { timeout: 180000 },
-  async ({ buildTemplate }) => {
-    const template = Template().fromNodeImage()
-    await buildTemplate(template)
-  }
-)
+buildTemplateTest('fromNodeImage', async ({ buildTemplate }) => {
+  const template = Template().fromNodeImage()
+  await buildTemplate(template)
+})
 
-buildTemplateTest(
-  'fromNodeImage with variant',
-  { timeout: 180000 },
-  async ({ buildTemplate }) => {
-    const template = Template().fromNodeImage('24')
-    await buildTemplate(template)
-  }
-)
+buildTemplateTest('fromNodeImage with variant', async ({ buildTemplate }) => {
+  const template = Template().fromNodeImage('24')
+  await buildTemplate(template)
+})
 
-buildTemplateTest(
-  'fromImage',
-  { timeout: 180000 },
-  async ({ buildTemplate }) => {
-    const template = Template().fromImage('ubuntu:22.04')
-    await buildTemplate(template)
-  }
-)
+buildTemplateTest('fromImage', async ({ buildTemplate }) => {
+  const template = Template().fromImage('ubuntu:22.04')
+  await buildTemplate(template)
+})
 
-buildTemplateTest(
-  'fromTemplate',
-  { timeout: 180000 },
-  async ({ buildTemplate }) => {
-    const template = Template().fromTemplate('base')
-    await buildTemplate(template)
-  }
-)
+buildTemplateTest('fromTemplate', async ({ buildTemplate }) => {
+  const template = Template().fromTemplate('base')
+  await buildTemplate(template)
+})
 
-buildTemplateTest(
-  'fromDockerfile',
-  { timeout: 180000 },
-  async ({ buildTemplate }) => {
-    const dockerfile = `FROM node:24
+buildTemplateTest('fromDockerfile', async ({ buildTemplate }) => {
+  const dockerfile = `FROM node:24
 WORKDIR /app
 COPY package.json .
 RUN npm install`
 
-    const template = Template({ fileContextPath }).fromDockerfile(dockerfile)
-    await buildTemplate(template)
-  }
-)
+  const template = Template({ fileContextPath }).fromDockerfile(dockerfile)
+  await buildTemplate(template)
+})
 
 // registry methods
 // buildTemplateTest(
 //   'fromGCPRegistry',
-//   { timeout: 180000 },
 //   async ({ buildTemplate }) => {
 //     const template = Template().fromGCPRegistry(
 //       'gcr.io/myproject/myimage:latest',
@@ -147,7 +98,6 @@ RUN npm install`
 
 // buildTemplateTest(
 //   'fromAWSRegistry',
-//   { timeout: 180000 },
 //   async ({ buildTemplate }) => {
 //     const template = Template().fromAWSRegistry(
 //       '123456789.dkr.ecr.us-west-2.amazonaws.com/myimage:latest',
@@ -159,7 +109,6 @@ RUN npm install`
 
 // buildTemplateTest(
 //   'fromImage',
-//   { timeout: 180000 },
 //   async ({ buildTemplate }) => {
 //     const template = Template().fromImage('myregistry.com/myimage:latest', {
 //       username: 'user',
