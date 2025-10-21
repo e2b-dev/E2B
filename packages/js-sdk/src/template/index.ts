@@ -359,9 +359,12 @@ export class TemplateBase
   makeSymlink(
     src: PathLike,
     dest: PathLike,
-    options?: { user?: string }
+    options?: { user?: string; force?: boolean }
   ): TemplateBuilder {
     const args = ['ln', '-s', src.toString(), dest.toString()]
+    if (options?.force) {
+      args.push('-f')
+    }
     return this.runInNewStackTraceContext(() =>
       this.runCmd(args.join(' '), { user: options?.user })
     )
