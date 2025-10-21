@@ -99,32 +99,3 @@ RUN npm install"""
         file_context_path=setup_dockerfile_context
     ).from_dockerfile(dockerfile)
     await async_build(template)
-
-
-# Registry methods (commented out like in JS version)
-# @pytest.mark.skip_debug()
-# async def test_from_gcp_registry(async_build):
-#     template = AsyncTemplate().from_gcp_registry(
-#         "gcr.io/myproject/myimage:latest",
-#         service_account_json="path/to/service-account.json"
-#     )
-#     await async_build(template)
-
-# @pytest.mark.skip_debug()
-# async def test_from_aws_registry(async_build):
-#     template = AsyncTemplate().from_aws_registry(
-#         "123456789.dkr.ecr.us-west-2.amazonaws.com/myimage:latest",
-#         access_key_id="AKIA...",
-#         secret_access_key="...",
-#         region="us-west-2"
-#     )
-#     await async_build(template)
-
-# @pytest.mark.skip_debug()
-# async def test_from_image_with_credentials(async_build):
-#     template = AsyncTemplate().from_image(
-#         "myregistry.com/myimage:latest",
-#         username="user",
-#         password="pass"
-#     )
-#     await async_build(template)

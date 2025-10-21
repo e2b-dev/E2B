@@ -100,32 +100,3 @@ RUN npm install"""
         dockerfile
     )
     build(template)
-
-
-# Registry methods (commented out like in JS version)
-# @pytest.mark.skip_debug()
-# def test_from_gcp_registry(build):
-#     template = Template().from_gcp_registry(
-#         "gcr.io/myproject/myimage:latest",
-#         service_account_json="path/to/service-account.json"
-#     )
-#     build(template)
-
-# @pytest.mark.skip_debug()
-# def test_from_aws_registry(build):
-#     template = Template().from_aws_registry(
-#         "123456789.dkr.ecr.us-west-2.amazonaws.com/myimage:latest",
-#         access_key_id="AKIA...",
-#         secret_access_key="...",
-#         region="us-west-2"
-#     )
-#     build(template)
-
-# @pytest.mark.skip_debug()
-# def test_from_image_with_credentials(build):
-#     template = Template().from_image(
-#         "myregistry.com/myimage:latest",
-#         username="user",
-#         password="pass"
-#     )
-#     build(template)

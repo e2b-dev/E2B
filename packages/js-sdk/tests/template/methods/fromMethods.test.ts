@@ -83,37 +83,3 @@ RUN npm install`
   const template = Template({ fileContextPath }).fromDockerfile(dockerfile)
   await buildTemplate(template)
 })
-
-// registry methods
-// buildTemplateTest(
-//   'fromGCPRegistry',
-//   async ({ buildTemplate }) => {
-//     const template = Template().fromGCPRegistry(
-//       'gcr.io/myproject/myimage:latest',
-//       { serviceAccountJSON: 'path/to/service-account.json' }
-//     )
-//     await buildTemplate(template)
-//   }
-// )
-
-// buildTemplateTest(
-//   'fromAWSRegistry',
-//   async ({ buildTemplate }) => {
-//     const template = Template().fromAWSRegistry(
-//       '123456789.dkr.ecr.us-west-2.amazonaws.com/myimage:latest',
-//       { accessKeyId: 'AKIA...', secretAccessKey: '...', region: 'us-west-2' }
-//     )
-//     await buildTemplate(template)
-//   }
-// )
-
-// buildTemplateTest(
-//   'fromImage',
-//   async ({ buildTemplate }) => {
-//     const template = Template().fromImage('myregistry.com/myimage:latest', {
-//       username: 'user',
-//       password: 'pass',
-//     })
-//     await buildTemplate(template)
-//   }
-// )
