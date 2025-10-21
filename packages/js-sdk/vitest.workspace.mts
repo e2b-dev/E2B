@@ -9,6 +9,7 @@ export default defineWorkspace([
       exclude: [
         'tests/runtimes/**',
         'tests/integration/**',
+        'tests/template/**',
         'tests/connectionConfig.test.ts',
       ],
       isolate: false, // for projects that don't rely on side effects, disabling isolation will improve the speed of the tests
