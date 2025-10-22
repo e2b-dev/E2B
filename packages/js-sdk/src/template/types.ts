@@ -487,11 +487,11 @@ export interface TemplateBuilder {
    * @throws {Error} If the base template is not mcp-gateway
    * @example
    * ```ts
-   * template.betaAddMcpServer('exa')
-   * template.betaAddMcpServer(['brave', 'firecrawl', 'duckduckgo'])
+   * template.addMcpServer('exa')
+   * template.addMcpServer(['brave', 'firecrawl', 'duckduckgo'])
    * ```
    */
-  betaAddMcpServer(servers: McpServerName | McpServerName[]): TemplateBuilder
+  addMcpServer(servers: McpServerName | McpServerName[]): TemplateBuilder
 
   /**
    * Clone a Git repository.

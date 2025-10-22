@@ -84,6 +84,12 @@ export interface SandboxOpts extends ConnectionOpts {
    * @default true
    */
   allowInternetAccess?: boolean
+
+  /**
+   * MCP server to enable in the sandbox
+   * @default undefined
+   */
+  mcp?: McpServer
 }
 
 export type SandboxBetaCreateOpts = SandboxOpts & {
@@ -92,12 +98,6 @@ export type SandboxBetaCreateOpts = SandboxOpts & {
    * @default false
    */
   autoPause?: boolean
-
-  /**
-   * MCP server to enable in the sandbox
-   * @default undefined
-   */
-  mcp?: McpServer
 }
 
 /**

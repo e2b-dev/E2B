@@ -167,6 +167,7 @@ class Sandbox(SandboxApi):
         envs: Optional[Dict[str, str]] = None,
         secure: bool = True,
         allow_internet_access: bool = True,
+        mcp: Optional[McpServer] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
         """
@@ -180,21 +181,42 @@ class Sandbox(SandboxApi):
         :param envs: Custom environment variables for the sandbox
         :param secure: Envd is secured with access token and cannot be used without it, defaults to `True`.
         :param allow_internet_access: Allow sandbox to access the internet, defaults to `True`.
+        :param mcp: MCP server to enable in the sandbox
 
         :return: A Sandbox instance for the new sandbox
 
         Use this method instead of using the constructor to create a new sandbox.
         """
-        return cls._create(
+        if not template and mcp is not None:
+            template = cls.default_mcp_template
+        elif not template:
+            template = cls.default_template
+
+        sandbox = cls._create(
             template=template,
+            auto_pause=False,
             timeout=timeout,
             metadata=metadata,
             envs=envs,
             secure=secure,
             allow_internet_access=allow_internet_access,
-            auto_pause=False,
+            mcp=mcp,
             **opts,
         )
+
+        if mcp is not None:
+            token = str(uuid.uuid4())
+            sandbox._mcp_token = token
+
+            res = sandbox.commands.run(
+                f"mcp-gateway --config '{json.dumps(mcp)}'",
+                user="root",
+                envs={"GATEWAY_ACCESS_TOKEN": token},
+            )
+            if res.exit_code != 0:
+                raise Exception(f"Failed to start MCP gateway: {res.stderr}")
+
+        return sandbox
 
     @overload
     def connect(
@@ -612,10 +634,8 @@ class Sandbox(SandboxApi):
             **opts,
         )
 
-    def beta_get_mcp_token(self) -> Optional[str]:
+    def get_mcp_token(self) -> Optional[str]:
         """
-        [BETA] This feature is in beta and may change in the future.
-
         Get the MCP token for the sandbox.
 
         :return: MCP token for the sandbox, or None if MCP is not enabled.
