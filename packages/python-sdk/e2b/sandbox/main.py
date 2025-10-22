@@ -200,10 +200,8 @@ class SandboxBase:
 
         return f"{port}-{self.sandbox_id}.{self.sandbox_domain}"
 
-    def beta_get_mcp_url(self) -> str:
+    def get_mcp_url(self) -> str:
         """
-        [BETA] This feature is in beta and may change in the future.
-
         Get the MCP URL for the sandbox.
 
         :returns MCP URL for the sandbox.
