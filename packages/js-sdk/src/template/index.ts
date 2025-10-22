@@ -488,7 +488,7 @@ export class TemplateBase
     )
   }
 
-  betaAddMcpServer(servers: McpServerName | McpServerName[]): TemplateBuilder {
+  addMcpServer(servers: McpServerName | McpServerName[]): TemplateBuilder {
     if (this.baseTemplate !== 'mcp-gateway') {
       throw new BuildError(
         'MCP servers can only be added to mcp-gateway template',

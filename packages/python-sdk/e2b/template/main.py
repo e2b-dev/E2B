@@ -425,7 +425,7 @@ class TemplateBuilder:
             )
         )
 
-    def beta_add_mcp_server(self, servers: Union[str, List[str]]) -> "TemplateBuilder":
+    def add_mcp_server(self, servers: Union[str, List[str]]) -> "TemplateBuilder":
         """
         Install MCP servers using mcp-gateway.
 
@@ -437,8 +437,8 @@ class TemplateBuilder:
 
         Example
         ```python
-        template.beta_add_mcp_server('exa')
-        template.beta_add_mcp_server(['brave', 'firecrawl', 'duckduckgo'])
+        template.add_mcp_server('exa')
+        template.add_mcp_server(['brave', 'firecrawl', 'duckduckgo'])
         ```
         """
         if self._template._base_template != "mcp-gateway":

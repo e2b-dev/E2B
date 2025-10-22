@@ -237,8 +237,16 @@ export class Sandbox extends SandboxApi {
   ): Promise<InstanceType<S>> {
     const { template, sandboxOpts } =
       typeof templateOrOpts === 'string'
-        ? { template: templateOrOpts, sandboxOpts: opts }
-        : { template: this.defaultTemplate, sandboxOpts: templateOrOpts }
+        ? {
+            template: templateOrOpts,
+            sandboxOpts: opts,
+          }
+        : {
+            template: templateOrOpts?.mcp
+              ? this.defaultMcpTemplate
+              : this.defaultTemplate,
+            sandboxOpts: templateOrOpts,
+          }
 
     const config = new ConnectionConfig(sandboxOpts)
     if (config.debug) {
@@ -249,13 +257,31 @@ export class Sandbox extends SandboxApi {
       }) as InstanceType<S>
     }
 
-    const sandbox = await SandboxApi.createSandbox(
+    const sandboxInfo = await SandboxApi.createSandbox(
       template,
       sandboxOpts?.timeoutMs ?? this.defaultSandboxTimeoutMs,
       sandboxOpts
     )
 
-    return new this({ ...sandbox, ...config }) as InstanceType<S>
+    const sandbox = new this({ ...sandboxInfo, ...config }) as InstanceType<S>
+
+    if (sandboxOpts?.mcp) {
+      sandbox.mcpToken = crypto.randomUUID()
+      const res = await sandbox.commands.run(
+        `mcp-gateway --config '${JSON.stringify(sandboxOpts?.mcp)}'`,
+        {
+          user: 'root',
+          envs: {
+            GATEWAY_ACCESS_TOKEN: sandbox.mcpToken ?? '',
+          },
+        }
+      )
+      if (res.exitCode !== 0) {
+        throw new Error(`Failed to start MCP gateway: ${res.stderr}`)
+      }
+    }
+
+    return sandbox
   }
 
   /**
@@ -551,24 +577,21 @@ export class Sandbox extends SandboxApi {
   }
 
   /**
-   * @beta This feature is in beta and may change in the future.
    *
    * Get the MCP URL for the sandbox.
    *
    * @returns MCP URL for the sandbox.
    */
-  betaGetMcpUrl(): string {
+  getMcpUrl(): string {
     return `https://${this.getHost(this.mcpPort)}/mcp`
   }
 
   /**
-   * @beta This feature is in beta and may change in the future.
-   *
    * Get the MCP token for the sandbox.
    *
    * @returns MCP token for the sandbox, or undefined if MCP is not enabled.
    */
-  async betaGetMcpToken(): Promise<string | undefined> {
+  async getMcpToken(): Promise<string | undefined> {
     if (!this.mcpToken) {
       this.mcpToken = await this.files.read('/etc/mcp-gateway/.token', {
         user: 'root',
