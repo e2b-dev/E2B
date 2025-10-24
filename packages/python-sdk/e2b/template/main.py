@@ -514,8 +514,7 @@ class TemplateBuilder:
         Example
         ```python
         template.git_clone('https://myrepo.com/project.git', '/my-devcontainer')
-        template.prebuild_devcontainer('/my-devcontainer')
-        template.prebuild_devcontainer('/my-devcontainer', user='root')
+        template.devcontainer_prebuild('/my-devcontainer')
         ```
         """
         return self._template._run_in_new_stack_trace_context(
@@ -546,11 +545,8 @@ class TemplateBuilder:
 
         # With prebuild
         template.git_clone('https://myrepo.com/project.git', '/my-devcontainer')
-        template.prebuild_devcontainer('/my-devcontainer')
-        template.set_start_devcontainer('/my-devcontainer')
-
-        # With custom user
-        template.set_start_devcontainer('/my-devcontainer', user='root')
+        template.devcontainer_prebuild('/my-devcontainer')
+        template.set_devcontainer_start('/my-devcontainer')
         ```
         """
 
