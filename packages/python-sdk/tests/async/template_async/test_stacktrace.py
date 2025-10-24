@@ -217,3 +217,23 @@ async def test_traces_on_add_mcp_server():
         lambda: AsyncTemplate().from_base_image().add_mcp_server("exa"),
         "add_mcp_server",
     )
+
+
+@pytest.mark.skip_debug()
+async def test_traces_on_devcontainer_prebuild(async_build):
+    template = AsyncTemplate()
+    template = template.from_base_image()
+    template = template.skip_cache().devcontainer_prebuild(non_existent_path)
+    await _expect_to_throw_and_check_trace(
+        lambda: async_build(template), "devcontainer_prebuild"
+    )
+
+
+@pytest.mark.skip_debug()
+async def test_traces_on_set_devcontainer_start(async_build):
+    template = AsyncTemplate()
+    template = template.from_base_image()
+    template = template.set_devcontainer_start(non_existent_path)
+    await _expect_to_throw_and_check_trace(
+        lambda: async_build(template), "set_devcontainer_start"
+    )
