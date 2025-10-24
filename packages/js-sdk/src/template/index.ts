@@ -572,7 +572,7 @@ export class TemplateBase
     return this
   }
 
-  devcontainerPrebuild(devcontainerDirectory: string): TemplateBuilder {
+  betaDevContainerPrebuild(devcontainerDirectory: string): TemplateBuilder {
     if (this.baseTemplate !== 'devcontainer') {
       throw new BuildError(
         'Devcontainers can only used in the devcontainer template',
@@ -588,7 +588,7 @@ export class TemplateBase
     })
   }
 
-  setDevcontainerStart(devcontainerDirectory: string): TemplateFinal {
+  betaSetDevContainerStart(devcontainerDirectory: string): TemplateFinal {
     if (this.baseTemplate !== 'devcontainer') {
       throw new BuildError(
         'Devcontainers can only used in the devcontainer template',

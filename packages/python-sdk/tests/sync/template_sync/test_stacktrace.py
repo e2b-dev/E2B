@@ -208,16 +208,20 @@ def test_traces_on_add_mcp_server():
 
 
 @pytest.mark.skip_debug()
-def test_traces_on_devcontainer_prebuild(build):
+def test_traces_on_dev_container_prebuild(build):
     template = Template()
     template = template.from_template("devcontainer")
-    template = template.skip_cache().devcontainer_prebuild(non_existent_path)
-    _expect_to_throw_and_check_trace(lambda: build(template), "devcontainer_prebuild")
+    template = template.skip_cache().beta_dev_container_prebuild(non_existent_path)
+    _expect_to_throw_and_check_trace(
+        lambda: build(template), "beta_dev_container_prebuild"
+    )
 
 
 @pytest.mark.skip_debug()
-def test_traces_on_set_devcontainer_start(build):
+def test_traces_on_set_dev_container_start(build):
     template = Template()
     template = template.from_template("devcontainer")
-    template = template.set_devcontainer_start(non_existent_path)
-    _expect_to_throw_and_check_trace(lambda: build(template), "set_devcontainer_start")
+    template = template.beta_set_dev_container_start(non_existent_path)
+    _expect_to_throw_and_check_trace(
+        lambda: build(template), "beta_set_dev_container_start"
+    )

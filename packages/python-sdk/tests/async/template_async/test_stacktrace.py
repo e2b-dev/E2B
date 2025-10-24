@@ -220,20 +220,20 @@ async def test_traces_on_add_mcp_server():
 
 
 @pytest.mark.skip_debug()
-async def test_traces_on_devcontainer_prebuild(async_build):
+async def test_traces_on_dev_container_prebuild(async_build):
     template = AsyncTemplate()
     template = template.from_template("devcontainer")
-    template = template.skip_cache().devcontainer_prebuild(non_existent_path)
+    template = template.skip_cache().beta_dev_container_prebuild(non_existent_path)
     await _expect_to_throw_and_check_trace(
-        lambda: async_build(template), "devcontainer_prebuild"
+        lambda: async_build(template), "beta_dev_container_prebuild"
     )
 
 
 @pytest.mark.skip_debug()
-async def test_traces_on_set_devcontainer_start(async_build):
+async def test_traces_on_set_dev_container_start(async_build):
     template = AsyncTemplate()
     template = template.from_template("devcontainer")
-    template = template.set_devcontainer_start(non_existent_path)
+    template = template.beta_set_dev_container_start(non_existent_path)
     await _expect_to_throw_and_check_trace(
-        lambda: async_build(template), "set_devcontainer_start"
+        lambda: async_build(template), "beta_set_dev_container_start"
     )
