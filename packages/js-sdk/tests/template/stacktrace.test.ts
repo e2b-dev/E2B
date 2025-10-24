@@ -251,26 +251,26 @@ buildTemplateTest('traces on addMcpServer', async () => {
 })
 
 buildTemplateTest(
-  'traces on devcontainerPrebuild',
+  'traces on betaDevContainerPrebuild',
   async ({ buildTemplate }) => {
     const template = Template()
       .fromTemplate('devcontainer')
       .skipCache()
-      .devcontainerPrebuild(nonExistentPath)
+      .betaDevContainerPrebuild(nonExistentPath)
     await expectToThrowAndCheckTrace(async () => {
       await buildTemplate(template)
-    }, 'devcontainerPrebuild')
+    }, 'betaDevContainerPrebuild')
   }
 )
 
 buildTemplateTest(
-  'traces on setDevcontainerStart',
+  'traces on betaSetDevContainerStart',
   async ({ buildTemplate }) => {
     const template = Template()
       .fromTemplate('devcontainer')
-      .setDevcontainerStart(nonExistentPath)
+      .betaSetDevContainerStart(nonExistentPath)
     await expectToThrowAndCheckTrace(async () => {
       await buildTemplate(template)
-    }, 'setDevcontainerStart')
+    }, 'betaSetDevContainerStart')
   }
 )

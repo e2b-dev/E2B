@@ -599,10 +599,10 @@ export interface TemplateBuilder {
    * ```ts
    * template
    *  .gitClone('https://myrepo.com/project.git', '/my-devcontainer')
-   *  .devcontainerPrebuild('/my-devcontainer')
+   *  .betaDevContainerPrebuild('/my-devcontainer')
    * ```
    */
-  devcontainerPrebuild(devcontainerDirectory: string): TemplateBuilder
+  betaDevContainerPrebuild(devcontainerDirectory: string): TemplateBuilder
 
   /**
    * Start a devcontainer from the specified directory.
@@ -617,12 +617,12 @@ export interface TemplateBuilder {
    * // Prebuild and start
    * template
    *  .gitClone('https://myrepo.com/project.git', '/my-devcontainer')
-   *  .devcontainerPrebuild('/my-devcontainer')
+   *  .betaDevContainerPrebuild('/my-devcontainer')
    *  // Other instructions...
-   *  .setDevcontainerStart('/my-devcontainer')
+   *  .betaSetDevContainerStart('/my-devcontainer')
    * ```
    */
-  setDevcontainerStart(devcontainerDirectory: string): TemplateFinal
+  betaSetDevContainerStart(devcontainerDirectory: string): TemplateFinal
 }
 
 /**

@@ -500,7 +500,7 @@ class TemplateBuilder:
             lambda: self.run_cmd(" ".join(args), user=user)
         )
 
-    def devcontainer_prebuild(
+    def beta_devcontainer_prebuild(
         self,
         devcontainer_directory: Union[str, Path],
     ) -> "TemplateBuilder":
@@ -514,7 +514,7 @@ class TemplateBuilder:
         Example
         ```python
         template.git_clone('https://myrepo.com/project.git', '/my-devcontainer')
-        template.devcontainer_prebuild('/my-devcontainer')
+        template.beta_devcontainer_prebuild('/my-devcontainer')
         ```
         """
         if self._template._base_template != "devcontainer":
@@ -538,7 +538,7 @@ class TemplateBuilder:
             )
         )
 
-    def set_devcontainer_start(
+    def beta_set_devcontainer_start(
         self,
         devcontainer_directory: Union[str, Path],
     ) -> "TemplateFinal":
@@ -555,12 +555,12 @@ class TemplateBuilder:
         ```python
         # Simple start
         template.git_clone('https://myrepo.com/project.git', '/my-devcontainer')
-        template.set_start_devcontainer('/my-devcontainer')
+        template.beta_set_devcontainer_start('/my-devcontainer')
 
         # With prebuild
         template.git_clone('https://myrepo.com/project.git', '/my-devcontainer')
-        template.devcontainer_prebuild('/my-devcontainer')
-        template.set_devcontainer_start('/my-devcontainer')
+        template.beta_devcontainer_prebuild('/my-devcontainer')
+        template.beta_set_devcontainer_start('/my-devcontainer')
         ```
         """
         if self._template._base_template != "devcontainer":
