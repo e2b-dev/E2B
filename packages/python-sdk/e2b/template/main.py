@@ -7,7 +7,7 @@ from httpx import Limits
 from e2b.exceptions import BuildException
 from e2b.template.consts import STACK_TRACE_DEPTH, RESOLVE_SYMLINKS
 from e2b.template.dockerfile_parser import parse_dockerfile
-from e2b.template.readycmd import ReadyCmd
+from e2b.template.readycmd import ReadyCmd, wait_for_file
 from e2b.template.types import (
     CopyItem,
     Instruction,
@@ -499,6 +499,95 @@ class TemplateBuilder:
         return self._template._run_in_new_stack_trace_context(
             lambda: self.run_cmd(" ".join(args), user=user)
         )
+
+    def devcontainer_prebuild(
+        self,
+        devcontainer_directory: Union[str, Path],
+    ) -> "TemplateBuilder":
+        """
+        Prebuild a devcontainer from the specified directory during the build process.
+
+        :param devcontainer_directory: Path to the devcontainer directory
+
+        :return: `TemplateBuilder` class
+
+        Example
+        ```python
+        template.git_clone('https://myrepo.com/project.git', '/my-devcontainer')
+        template.devcontainer_prebuild('/my-devcontainer')
+        ```
+        """
+        if self._template._base_template != "devcontainer":
+            caller_frame = get_caller_frame(STACK_TRACE_DEPTH - 1)
+            stack_trace = None
+            if caller_frame is not None:
+                stack_trace = TracebackType(
+                    tb_next=None,
+                    tb_frame=caller_frame,
+                    tb_lasti=caller_frame.f_lasti,
+                    tb_lineno=caller_frame.f_lineno,
+                )
+            raise BuildException(
+                "Devcontainers can only used in the devcontainer template"
+            ).with_traceback(stack_trace)
+
+        return self._template._run_in_new_stack_trace_context(
+            lambda: self.run_cmd(
+                f"devcontainer build --workspace-folder {devcontainer_directory}",
+                user="root",
+            )
+        )
+
+    def set_devcontainer_start(
+        self,
+        devcontainer_directory: Union[str, Path],
+    ) -> "TemplateFinal":
+        """
+        Start a devcontainer from the specified directory and set it as the start command.
+
+        This method returns `TemplateFinal`, which means it must be the last method in the chain.
+
+        :param devcontainer_directory: Path to the devcontainer directory
+
+        :return: `TemplateFinal` class
+
+        Example
+        ```python
+        # Simple start
+        template.git_clone('https://myrepo.com/project.git', '/my-devcontainer')
+        template.set_start_devcontainer('/my-devcontainer')
+
+        # With prebuild
+        template.git_clone('https://myrepo.com/project.git', '/my-devcontainer')
+        template.devcontainer_prebuild('/my-devcontainer')
+        template.set_devcontainer_start('/my-devcontainer')
+        ```
+        """
+        if self._template._base_template != "devcontainer":
+            caller_frame = get_caller_frame(STACK_TRACE_DEPTH - 1)
+            stack_trace = None
+            if caller_frame is not None:
+                stack_trace = TracebackType(
+                    tb_next=None,
+                    tb_frame=caller_frame,
+                    tb_lasti=caller_frame.f_lasti,
+                    tb_lineno=caller_frame.f_lineno,
+                )
+            raise BuildException(
+                "Devcontainers can only used in the devcontainer template"
+            ).with_traceback(stack_trace)
+
+        def _set_start():
+            return self.set_start_cmd(
+                "sudo devcontainer up --workspace-folder "
+                + devcontainer_directory
+                + " && sudo /prepare-exec.sh "
+                + devcontainer_directory
+                + " | sudo tee /devcontainer.sh > /dev/null && sudo chmod +x /devcontainer.sh && sudo touch /devcontainer.up",
+                wait_for_file("/devcontainer.up"),
+            )
+
+        return self._template._run_in_new_stack_trace_context(_set_start)
 
     def set_envs(self, envs: Dict[str, str]) -> "TemplateBuilder":
         """

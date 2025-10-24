@@ -590,6 +590,39 @@ export interface TemplateBuilder {
    * ```
    */
   setReadyCmd(readyCommand: string | ReadyCmd): TemplateFinal
+
+  /**
+   * Prebuild a devcontainer from the specified directory.
+   * @param devcontainerDirectory Path to the devcontainer directory
+   *
+   * @example
+   * ```ts
+   * template
+   *  .gitClone('https://myrepo.com/project.git', '/my-devcontainer')
+   *  .devcontainerPrebuild('/my-devcontainer')
+   * ```
+   */
+  devcontainerPrebuild(devcontainerDirectory: string): TemplateBuilder
+
+  /**
+   * Start a devcontainer from the specified directory.
+   * @param devcontainerDirectory Path to the devcontainer directory
+   *
+   * @example
+   * ```ts
+   * template
+   *  .gitClone('https://myrepo.com/project.git', '/my-devcontainer')
+   *  .startDevcontainer('/my-devcontainer')
+   *
+   * // Prebuild and start
+   * template
+   *  .gitClone('https://myrepo.com/project.git', '/my-devcontainer')
+   *  .devcontainerPrebuild('/my-devcontainer')
+   *  // Other instructions...
+   *  .setDevcontainerStart('/my-devcontainer')
+   * ```
+   */
+  setDevcontainerStart(devcontainerDirectory: string): TemplateFinal
 }
 
 /**
