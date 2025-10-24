@@ -573,6 +573,13 @@ export class TemplateBase
   }
 
   devcontainerPrebuild(devcontainerDirectory: string): TemplateBuilder {
+    if (this.baseTemplate !== 'devcontainer') {
+      throw new BuildError(
+        'Devcontainers can only used in the devcontainer template',
+        getCallerFrame(STACK_TRACE_DEPTH - 1)
+      )
+    }
+
     return this.runInNewStackTraceContext(() => {
       return this.runCmd(
         `devcontainer build --workspace-folder ${devcontainerDirectory}`,
@@ -582,6 +589,13 @@ export class TemplateBase
   }
 
   setDevcontainerStart(devcontainerDirectory: string): TemplateFinal {
+    if (this.baseTemplate !== 'devcontainer') {
+      throw new BuildError(
+        'Devcontainers can only used in the devcontainer template',
+        getCallerFrame(STACK_TRACE_DEPTH - 1)
+      )
+    }
+
     return this.runInNewStackTraceContext(() => {
       return this.setStartCmd(
         `sudo devcontainer up --workspace-folder ${devcontainerDirectory} && sudo /prepare-exec.sh ${devcontainerDirectory} | sudo tee /devcontainer.sh > /dev/null && sudo chmod +x /devcontainer.sh && sudo touch /devcontainer.up`,

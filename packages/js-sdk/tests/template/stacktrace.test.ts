@@ -253,7 +253,7 @@ buildTemplateTest('traces on addMcpServer', async () => {
 buildTemplateTest(
   'traces on devcontainerPrebuild',
   async ({ buildTemplate }) => {
-    let template = Template().fromBaseImage()
+    let template = Template().fromTemplate('devcontainer')
     template = template.skipCache().devcontainerPrebuild(nonExistentPath)
     await expectToThrowAndCheckTrace(async () => {
       await buildTemplate(template)
@@ -264,8 +264,9 @@ buildTemplateTest(
 buildTemplateTest(
   'traces on setDevcontainerStart',
   async ({ buildTemplate }) => {
-    let template: any = Template().fromBaseImage()
-    template = template.setDevcontainerStart(nonExistentPath)
+    const template = Template()
+      .fromTemplate('devcontainer')
+      .setDevcontainerStart(nonExistentPath)
     await expectToThrowAndCheckTrace(async () => {
       await buildTemplate(template)
     }, 'setDevcontainerStart')

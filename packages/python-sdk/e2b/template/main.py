@@ -517,6 +517,20 @@ class TemplateBuilder:
         template.devcontainer_prebuild('/my-devcontainer')
         ```
         """
+        if self._template._base_template != "devcontainer":
+            caller_frame = get_caller_frame(STACK_TRACE_DEPTH - 1)
+            stack_trace = None
+            if caller_frame is not None:
+                stack_trace = TracebackType(
+                    tb_next=None,
+                    tb_frame=caller_frame,
+                    tb_lasti=caller_frame.f_lasti,
+                    tb_lineno=caller_frame.f_lineno,
+                )
+            raise BuildException(
+                "Devcontainers can only used in the devcontainer template"
+            ).with_traceback(stack_trace)
+
         return self._template._run_in_new_stack_trace_context(
             lambda: self.run_cmd(
                 f"devcontainer build --workspace-folder {devcontainer_directory}",
@@ -549,6 +563,19 @@ class TemplateBuilder:
         template.set_devcontainer_start('/my-devcontainer')
         ```
         """
+        if self._template._base_template != "devcontainer":
+            caller_frame = get_caller_frame(STACK_TRACE_DEPTH - 1)
+            stack_trace = None
+            if caller_frame is not None:
+                stack_trace = TracebackType(
+                    tb_next=None,
+                    tb_frame=caller_frame,
+                    tb_lasti=caller_frame.f_lasti,
+                    tb_lineno=caller_frame.f_lineno,
+                )
+            raise BuildException(
+                "Devcontainers can only used in the devcontainer template"
+            ).with_traceback(stack_trace)
 
         def _set_start():
             return self.set_start_cmd(
