@@ -14,7 +14,7 @@ import {
 import { RESOLVE_SYMLINKS, STACK_TRACE_DEPTH } from './consts'
 import { parseDockerfile } from './dockerfileParser'
 import { LogEntry, LogEntryEnd, LogEntryStart } from './logger'
-import { ReadyCmd } from './readycmd'
+import { ReadyCmd, waitForFile } from './readycmd'
 import {
   BuildOptions,
   CopyItem,
@@ -570,6 +570,24 @@ export class TemplateBase
   skipCache(): this {
     this.forceNextLayer = true
     return this
+  }
+
+  devcontainerPrebuild(devcontainerDirectory: string): TemplateBuilder {
+    return this.runInNewStackTraceContext(() => {
+      return this.runCmd(
+        `devcontainer build --workspace-folder ${devcontainerDirectory}`,
+        { user: 'root' }
+      )
+    })
+  }
+
+  setDevcontainerStart(devcontainerDirectory: string): TemplateFinal {
+    return this.runInNewStackTraceContext(() => {
+      return this.setStartCmd(
+        `sudo devcontainer up --workspace-folder ${devcontainerDirectory} && sudo /prepare-exec.sh ${devcontainerDirectory} | sudo tee /devcontainer.sh > /dev/null && sudo chmod +x /devcontainer.sh && sudo touch /devcontainer.up`,
+        waitForFile('/devcontainer.up')
+      )
+    })
   }
 
   /**
