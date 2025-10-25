@@ -76,6 +76,9 @@ class SandboxApi(SandboxBase):
                 client=api_client,
             )
 
+            if res.status_code == 404:
+                raise NotFoundException(f"Sandbox {sandbox_id} not found")
+
             if res.status_code >= 300:
                 raise handle_api_exception(res)
 
@@ -138,6 +141,9 @@ class SandboxApi(SandboxBase):
                 client=api_client,
                 body=PostSandboxesSandboxIDTimeoutBody(timeout=timeout),
             )
+
+            if res.status_code == 404:
+                raise NotFoundException(f"Paused sandbox {sandbox_id} not found")
 
             if res.status_code >= 300:
                 raise handle_api_exception(res)
