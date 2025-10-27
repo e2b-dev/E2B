@@ -206,7 +206,7 @@ export const migrateCommand = new commander.Command('migrate')
         console.log('\n🎉 Migration completed successfully!')
 
         if (oldFilesRenamed.length > 0) {
-          console.log('\n📁 Old files no longer needed:')
+          console.log('\n📁 Old template files no longer needed:')
           oldFilesRenamed.forEach((file) => {
             console.log(
               `   ${asLocalRelative(file.oldPath)} → ${asLocalRelative(file.newPath)}`
