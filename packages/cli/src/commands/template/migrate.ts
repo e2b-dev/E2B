@@ -21,15 +21,13 @@ import {
 async function migrateToLanguage(
   root: string,
   config: E2BConfig,
-  dockerfilePath: string,
+  dockerfileContent: string,
   language: Language
 ): Promise<void> {
   // Initialize template with file context
   const template = Template({
     fileContextPath: root,
   })
-
-  const { dockerfileContent } = getDockerfile(root, dockerfilePath)
 
   // Parse Dockerfile using SDK
   let baseTemplate: TemplateBuilder
@@ -124,6 +122,9 @@ export const migrateCommand = new commander.Command('migrate')
         const root = getRoot(opts.path)
         const configPath = getConfigPath(root, opts.config)
 
+        const { dockerfileContent, dockerfilePath, dockerfileRelativePath } =
+          getDockerfile(root, opts.dockerfile)
+
         let config: E2BConfig = {
           template_id: 'name-your-template',
           dockerfile: defaultDockerfileName,
@@ -139,10 +140,6 @@ export const migrateCommand = new commander.Command('migrate')
             )} not found. Using defaults.`
           )
         }
-
-        // Determine Dockerfile path
-        const dockerfilePath =
-          opts.dockerfile || config.dockerfile || defaultDockerfileName
 
         // Determine target language
         let language: Language
@@ -176,7 +173,7 @@ export const migrateCommand = new commander.Command('migrate')
         }
 
         // Perform migration
-        await migrateToLanguage(root, config, dockerfilePath, language)
+        await migrateToLanguage(root, config, dockerfileContent, language)
 
         // Rename old files to .old extensions
         const oldFilesRenamed: { oldPath: string; newPath: string }[] = []
@@ -186,7 +183,7 @@ export const migrateCommand = new commander.Command('migrate')
           const oldDockerfilePath = `${dockerfilePath}.old`
           fs.renameSync(dockerfilePath, oldDockerfilePath)
           oldFilesRenamed.push({
-            oldPath: path.relative(root, dockerfilePath),
+            oldPath: dockerfileRelativePath,
             newPath: path.relative(root, oldDockerfilePath),
           })
         }
