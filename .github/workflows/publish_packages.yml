@@ -58,6 +58,7 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '${{ env.TOOL_VERSION_NODEJS }}'
+          registry-url: 'https://registry.npmjs.org'
           cache: pnpm
 
       - name: Configure pnpm
