@@ -203,8 +203,6 @@ export const migrateCommand = new commander.Command('migrate')
           })
         }
 
-        console.log('\n🎉 Migration completed successfully!')
-
         if (oldFilesRenamed.length > 0) {
           console.log('\n📁 Old template files no longer needed:')
           oldFilesRenamed.forEach((file) => {
@@ -213,6 +211,9 @@ export const migrateCommand = new commander.Command('migrate')
             )
           })
         }
+
+        console.log('\n🎉 Migration completed successfully!')
+
         console.log('\n🔨 You can now build your template using:')
         if (language === Language.TypeScript) {
           console.log(
