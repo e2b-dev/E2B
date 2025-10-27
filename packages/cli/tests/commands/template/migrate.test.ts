@@ -125,6 +125,40 @@ describe('Template Migration', () => {
         'utf-8'
       )
       expect(buildProdFile.trim()).toEqual(expectedBuildProd.trim())
+
+      // Check that old files are renamed to .old extensions
+      const oldDockerfilePath = path.join(testDir, 'e2b.Dockerfile.old')
+      const oldConfigPath = path.join(testDir, 'e2b.toml.old')
+
+      expect(
+        await fs
+          .access(oldDockerfilePath)
+          .then(() => true)
+          .catch(() => false)
+      ).toBe(true)
+      expect(
+        await fs
+          .access(oldConfigPath)
+          .then(() => true)
+          .catch(() => false)
+      ).toBe(true)
+
+      // Verify original files no longer exist
+      const originalDockerfilePath = path.join(testDir, 'e2b.Dockerfile')
+      const originalConfigPath = path.join(testDir, 'e2b.toml')
+
+      expect(
+        await fs
+          .access(originalDockerfilePath)
+          .then(() => true)
+          .catch(() => false)
+      ).toBe(false)
+      expect(
+        await fs
+          .access(originalConfigPath)
+          .then(() => true)
+          .catch(() => false)
+      ).toBe(false)
     }
 
     async function copyFixtureFiles(fixtureDir: string, targetDir: string) {
