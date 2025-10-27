@@ -182,23 +182,21 @@ export const migrateCommand = new commander.Command('migrate')
         const oldFilesRenamed: { oldPath: string; newPath: string }[] = []
 
         // Rename Dockerfile if it exists
-        const dockerfileFullPath = path.join(root, dockerfilePath)
-        if (fs.existsSync(dockerfileFullPath)) {
-          const oldDockerfilePath = `${dockerfileFullPath}.old`
-          fs.renameSync(dockerfileFullPath, oldDockerfilePath)
+        if (fs.existsSync(dockerfilePath)) {
+          const oldDockerfilePath = `${dockerfilePath}.old`
+          fs.renameSync(dockerfilePath, oldDockerfilePath)
           oldFilesRenamed.push({
-            oldPath: path.relative(root, dockerfileFullPath),
+            oldPath: path.relative(root, dockerfilePath),
             newPath: path.relative(root, oldDockerfilePath),
           })
         }
 
         // Rename e2b.toml if it exists
-        const configFullPath = path.join(root, 'e2b.toml')
-        if (fs.existsSync(configFullPath)) {
-          const oldConfigPath = `${configFullPath}.old`
-          fs.renameSync(configFullPath, oldConfigPath)
+        if (fs.existsSync(configPath)) {
+          const oldConfigPath = `${configPath}.old`
+          fs.renameSync(configPath, oldConfigPath)
           oldFilesRenamed.push({
-            oldPath: path.relative(root, configFullPath),
+            oldPath: path.relative(root, configPath),
             newPath: path.relative(root, oldConfigPath),
           })
         }
