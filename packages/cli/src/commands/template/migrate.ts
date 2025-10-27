@@ -178,8 +178,42 @@ export const migrateCommand = new commander.Command('migrate')
         // Perform migration
         await migrateToLanguage(root, config, dockerfilePath, language)
 
+        // Rename old files to .old extensions
+        const oldFilesRenamed: { oldPath: string; newPath: string }[] = []
+
+        // Rename Dockerfile if it exists
+        const dockerfileFullPath = path.join(root, dockerfilePath)
+        if (fs.existsSync(dockerfileFullPath)) {
+          const oldDockerfilePath = `${dockerfileFullPath}.old`
+          fs.renameSync(dockerfileFullPath, oldDockerfilePath)
+          oldFilesRenamed.push({
+            oldPath: path.relative(root, dockerfileFullPath),
+            newPath: path.relative(root, oldDockerfilePath),
+          })
+        }
+
+        // Rename e2b.toml if it exists
+        const configFullPath = path.join(root, 'e2b.toml')
+        if (fs.existsSync(configFullPath)) {
+          const oldConfigPath = `${configFullPath}.old`
+          fs.renameSync(configFullPath, oldConfigPath)
+          oldFilesRenamed.push({
+            oldPath: path.relative(root, configFullPath),
+            newPath: path.relative(root, oldConfigPath),
+          })
+        }
+
         console.log('\n🎉 Migration completed successfully!')
-        console.log('\nYou can now build your template using:')
+
+        if (oldFilesRenamed.length > 0) {
+          console.log('\n📁 Old files no longer needed:')
+          oldFilesRenamed.forEach((file) => {
+            console.log(
+              `   ${asLocalRelative(file.oldPath)} → ${asLocalRelative(file.newPath)}`
+            )
+          })
+        }
+        console.log('\n🔨 You can now build your template using:')
         if (language === Language.TypeScript) {
           console.log(
             `   ${asPrimary('npx tsx build.dev.ts')} (for development)`
