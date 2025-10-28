@@ -434,7 +434,7 @@ class TemplateBuilder:
             args.extend(packages)
 
         return self._template._run_in_new_stack_trace_context(
-            lambda: self.run_cmd(" ".join(args))
+            lambda: self.run_cmd(" ".join(args), user="root" if g else None)
         )
 
     def apt_install(

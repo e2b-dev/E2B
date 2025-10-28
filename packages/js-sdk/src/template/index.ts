@@ -497,7 +497,11 @@ export class TemplateBase
       args.push(...packageList)
     }
 
-    return this.runInNewStackTraceContext(() => this.runCmd(args.join(' ')))
+    return this.runInNewStackTraceContext(() =>
+      this.runCmd(args.join(' '), {
+        user: options?.g ? 'root' : undefined,
+      })
+    )
   }
 
   aptInstall(
