@@ -71,6 +71,18 @@ async def test_from_node_image(async_build):
 
 
 @pytest.mark.skip_debug()
+async def test_from_bun_image(async_build):
+    template = AsyncTemplate().from_bun_image()
+    await async_build(template)
+
+
+@pytest.mark.skip_debug()
+async def test_from_bun_image_with_variant(async_build):
+    template = AsyncTemplate().from_bun_image("1.3")
+    await async_build(template)
+
+
+@pytest.mark.skip_debug()
 async def test_from_node_image_with_variant(async_build):
     template = AsyncTemplate().from_node_image("24")
     await async_build(template)

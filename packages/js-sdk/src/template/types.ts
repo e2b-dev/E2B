@@ -151,6 +151,17 @@ export interface TemplateFromImage {
   fromNodeImage(variant?: string): TemplateBuilder
 
   /**
+   * Start from a Bun-based Docker image.
+   * @param variant Bun variant (default: 'latest')
+   *
+   * @example
+   * ```ts
+   * Template().fromBunImage('1.3')
+   * ```
+   */
+  fromBunImage(variant?: string): TemplateBuilder
+
+  /**
    * Start from E2B's default base image (e2bdev/base:latest).
    *
    * @example
@@ -454,13 +465,32 @@ export interface TemplateBuilder {
    * ```ts
    * template.npmInstall('express')
    * template.npmInstall(['lodash', 'axios'])
-   * template.npmInstall('typescript', { g: true })
+   * template.npmInstall('tsx', { g: true })
+   * template.npmInstall('typescript', { dev: true })
    * template.npmInstall()  // Installs from package.json
    * ```
    */
   npmInstall(
     packages?: string | string[],
-    options?: { g?: boolean }
+    options?: { g?: boolean; dev?: boolean }
+  ): TemplateBuilder
+  /**
+   * Install Bun packages using bun.
+   * @param packages Package name(s) or undefined for package.json
+   * @param options Install options
+   *
+   * @example
+   * ```ts
+   * template.bunInstall('express')
+   * template.bunInstall(['lodash', 'axios'])
+   * template.bunInstall('tsx', { g: true })
+   * template.bunInstall('typescript', { dev: true })
+   * template.bunInstall()  // Installs from package.json
+   * ```
+   */
+  bunInstall(
+    packages?: string | string[],
+    options?: { g?: boolean; dev?: boolean }
   ): TemplateBuilder
 
   /**

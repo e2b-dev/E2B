@@ -64,6 +64,16 @@ buildTemplateTest('fromNodeImage with variant', async ({ buildTemplate }) => {
   await buildTemplate(template)
 })
 
+buildTemplateTest('fromBunImage', async ({ buildTemplate }) => {
+  const template = Template().fromBunImage()
+  await buildTemplate(template)
+})
+
+buildTemplateTest('fromBunImage with variant', async ({ buildTemplate }) => {
+  const template = Template().fromBunImage('1.3')
+  await buildTemplate(template)
+})
+
 buildTemplateTest('fromImage', async ({ buildTemplate }) => {
   const template = Template().fromImage('ubuntu:22.04')
   await buildTemplate(template)

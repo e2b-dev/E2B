@@ -138,6 +138,10 @@ export class TemplateBase
     return this.fromImage(`node:${variant}`)
   }
 
+  fromBunImage(variant: string = 'latest'): TemplateBuilder {
+    return this.fromImage(`oven/bun:${variant}`)
+  }
+
   fromBaseImage(): TemplateBuilder {
     return this.fromImage(this.defaultBaseImage)
   }
@@ -448,7 +452,7 @@ export class TemplateBase
 
   npmInstall(
     packages?: string | string[],
-    options?: { g?: boolean }
+    options?: { g?: boolean; dev?: boolean }
   ): TemplateBuilder {
     const args = ['npm', 'install']
     const packageList = packages
@@ -459,6 +463,9 @@ export class TemplateBase
     if (options?.g) {
       args.push('-g')
     }
+    if (options?.dev) {
+      args.push('--save-dev')
+    }
     if (packageList) {
       args.push(...packageList)
     }
@@ -468,6 +475,29 @@ export class TemplateBase
         user: options?.g ? 'root' : undefined,
       })
     )
+  }
+
+  bunInstall(
+    packages?: string | string[],
+    options?: { g?: boolean; dev?: boolean }
+  ): TemplateBuilder {
+    const args = ['bun', 'install']
+    const packageList = packages
+      ? Array.isArray(packages)
+        ? packages
+        : [packages]
+      : undefined
+    if (options?.g) {
+      args.push('-g')
+    }
+    if (options?.dev) {
+      args.push('--dev')
+    }
+    if (packageList) {
+      args.push(...packageList)
+    }
+
+    return this.runInNewStackTraceContext(() => this.runCmd(args.join(' ')))
   }
 
   aptInstall(
