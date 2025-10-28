@@ -78,6 +78,18 @@ def test_from_node_image_with_variant(build):
 
 
 @pytest.mark.skip_debug()
+def test_from_bun_image(build):
+    template = Template().from_bun_image()
+    build(template)
+
+
+@pytest.mark.skip_debug()
+def test_from_bun_image_with_variant(build):
+    template = Template().from_bun_image("1.3")
+    build(template)
+
+
+@pytest.mark.skip_debug()
 def test_from_image(build):
     template = Template().from_image("ubuntu:22.04")
     build(template)

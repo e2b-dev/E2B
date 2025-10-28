@@ -365,12 +365,14 @@ class TemplateBuilder:
         self,
         packages: Optional[Union[str, List[str]]] = None,
         g: Optional[bool] = False,
+        dev: Optional[bool] = False,
     ) -> "TemplateBuilder":
         """
         Install Node.js packages using npm.
 
         :param packages: Package name(s) to install. If None, installs from package.json
         :param g: Install packages globally
+        :param dev: Install packages as dev dependencies
 
         :return: `TemplateBuilder` class
 
@@ -388,6 +390,47 @@ class TemplateBuilder:
         args = ["npm", "install"]
         if g:
             args.append("-g")
+        if dev:
+            args.append("--save-dev")
+        if packages:
+            args.extend(packages)
+
+        return self._template._run_in_new_stack_trace_context(
+            lambda: self.run_cmd(" ".join(args), user="root" if g else None)
+        )
+
+    def bun_install(
+        self,
+        packages: Optional[Union[str, List[str]]] = None,
+        g: Optional[bool] = False,
+        dev: Optional[bool] = False,
+    ) -> "TemplateBuilder":
+        """
+        Install Bun packages using bun.
+
+        :param packages: Package name(s) to install. If None, installs from package.json
+        :param g: Install packages globally
+        :param dev: Install packages as dev dependencies
+
+        :return: `TemplateBuilder` class
+
+        Example
+        ```python
+        template.bun_install('express')
+        template.bun_install(['lodash', 'axios'])
+        template.bun_install('tsx', g=True)
+        template.bun_install('typescript', dev=True)
+        template.bun_install()  // Installs from package.json
+        ```
+        """
+        if isinstance(packages, str):
+            packages = [packages]
+
+        args = ["bun", "install"]
+        if g:
+            args.append("-g")
+        if dev:
+            args.append("--dev")
         if packages:
             args.extend(packages)
 
@@ -922,6 +965,18 @@ class TemplateBase:
         """
         return self._run_in_new_stack_trace_context(
             lambda: self.from_image(f"node:{variant}")
+        )
+
+    def from_bun_image(self, variant: str = "latest") -> TemplateBuilder:
+        """
+        Start template from a Bun base image.
+
+        :param variant: Bun image variant (default: 'latest')
+
+        :return: `TemplateBuilder` class
+        """
+        return self._run_in_new_stack_trace_context(
+            lambda: self.from_image(f"oven/bun:{variant}")
         )
 
     def from_base_image(self) -> TemplateBuilder:
