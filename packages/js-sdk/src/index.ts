@@ -67,6 +67,7 @@ export default Sandbox
 export * from './template'
 
 export {
+  ReadyCmd,
   waitForPort,
   waitForURL,
   waitForProcess,
