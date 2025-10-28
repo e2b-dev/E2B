@@ -64,6 +64,10 @@ def calculate_files_hash(
 
     hash_obj.update(content.encode())
 
+    # check if the src_path is a directory appending ** if no pattern is used
+    if "*" not in src and os.path.isdir(src_path):
+        src_path = os.path.join(src_path, "**")
+
     files_glob = glob(src_path, recursive=True)
 
     files = []

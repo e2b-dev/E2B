@@ -45,11 +45,19 @@ export async function calculateFilesHash(
   stackTrace: string | undefined
 ): Promise<string> {
   const { glob } = await dynamicGlob()
-  const srcPath = path.join(contextPath, src)
+  let srcPath = path.join(contextPath, src)
   const hash = crypto.createHash('sha256')
   const content = `COPY ${src} ${dest}`
 
   hash.update(content)
+
+  // check if the srcPath is a directory appending ** if no pattern is used
+  if (
+    !src.includes('*') &&
+    fs.statSync(srcPath, { throwIfNoEntry: false })?.isDirectory()
+  ) {
+    srcPath = path.join(srcPath, '**')
+  }
 
   const files = await glob(srcPath, {
     ignore: ignorePatterns,
