@@ -85,6 +85,7 @@ from .template.logger import (
 )
 from .template.main import TemplateBase, TemplateClass
 from .template.readycmd import (
+    ReadyCmd,
     wait_for_file,
     wait_for_url,
     wait_for_port,
@@ -149,6 +150,7 @@ __all__ = [
     "TemplateBase",
     "TemplateClass",
     "CopyItem",
+    "ReadyCmd",
     "wait_for_file",
     "wait_for_url",
     "wait_for_port",
