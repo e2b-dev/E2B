@@ -373,6 +373,7 @@ class TemplateBuilder:
         :param packages: Package name(s) to install. If None, installs from package.json
         :param g: Install packages globally
         :param dev: Install packages as dev dependencies
+
         :return: `TemplateBuilder` class
 
         Example
