@@ -121,7 +121,7 @@ function mapModifiedTime(modifiedTime: Timestamp | undefined) {
 
   return new Date(
     Number(modifiedTime.seconds) * 1000 +
-    Math.floor(modifiedTime.nanos / 1_000_000)
+      Math.floor(modifiedTime.nanos / 1_000_000)
   )
 }
 
@@ -334,23 +334,23 @@ export class Filesystem {
     const { path, writeOpts, writeFiles } =
       typeof pathOrFiles === 'string'
         ? {
-          path: pathOrFiles,
-          writeOpts: opts as FilesystemRequestOpts,
-          writeFiles: [
-            {
-              data: dataOrOpts as
-                | string
-                | ArrayBuffer
-                | Blob
-                | ReadableStream,
-            },
-          ],
-        }
+            path: pathOrFiles,
+            writeOpts: opts as FilesystemRequestOpts,
+            writeFiles: [
+              {
+                data: dataOrOpts as
+                  | string
+                  | ArrayBuffer
+                  | Blob
+                  | ReadableStream,
+              },
+            ],
+          }
         : {
-          path: undefined,
-          writeOpts: dataOrOpts as FilesystemRequestOpts,
-          writeFiles: pathOrFiles as WriteEntry[],
-        }
+            path: undefined,
+            writeOpts: dataOrOpts as FilesystemRequestOpts,
+            writeFiles: pathOrFiles as WriteEntry[],
+          }
 
     if (writeFiles.length === 0) return [] as WriteInfo[]
 
@@ -648,7 +648,7 @@ export class Filesystem {
     ) {
       throw new TemplateError(
         'You need to update the template to use recursive watching. ' +
-        'You can do this by running `e2b template build` in the directory with the template.'
+          'You can do this by running `e2b template build` in the directory with the template.'
       )
     }
 
@@ -659,8 +659,8 @@ export class Filesystem {
 
     const reqTimeout = requestTimeoutMs
       ? setTimeout(() => {
-        controller.abort()
-      }, requestTimeoutMs)
+          controller.abort()
+        }, requestTimeoutMs)
       : undefined
 
     const events = this.rpc.watchDir(
