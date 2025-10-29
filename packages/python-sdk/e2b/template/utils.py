@@ -37,12 +37,12 @@ def read_dockerignore(context_path: str) -> List[str]:
 def contains_glob_pattern(path_str: str) -> bool:
     """
     Check if a path contains glob patterns.
-    
+
     :param path_str: The path to check for glob patterns
     :return: True if the path contains glob patterns, false otherwise
     """
     # Check for common glob patterns: *, ?, [abc], {a,b}, **
-    return bool(re.search(r'[*?\[\]{}]', path_str))
+    return bool(re.search(r"[*?\[\]{}]", path_str))
 
 
 def calculate_files_hash(
@@ -74,11 +74,10 @@ def calculate_files_hash(
     content = f"COPY {src} {dest}"
 
     hash_obj.update(content.encode())
-    
+
     # Only check if it's a directory if there are no glob patterns
-    if (
-        not contains_glob_pattern(os.path.basename(src_path))
-        and os.path.isdir(src_path)
+    if not contains_glob_pattern(os.path.basename(src_path)) and os.path.isdir(
+        src_path
     ):
         src_path = os.path.join(src_path, "**")
 

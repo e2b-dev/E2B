@@ -31,7 +31,7 @@ export function readDockerignore(contextPath: string): string[] {
  */
 function containsGlobPattern(pathStr: string): boolean {
   // Check for common glob patterns: *, ?, [abc], {a,b}, **
-  return /[*?\[\]{}]/.test(pathStr)
+  return /[*?[\]{}]/.test(pathStr)
 }
 
 /**
