@@ -10,7 +10,6 @@ from typing import Dict, Optional, overload, List
 from packaging.version import Version
 from typing_extensions import Unpack, Self
 
-from e2b.api import get_sync_transport
 from e2b.api.client.types import Unset
 from e2b.connection_config import ConnectionConfig, ApiParams
 from e2b.envd.api import ENVD_API_HEALTH_ROUTE, handle_envd_api_exception
@@ -23,6 +22,7 @@ from e2b.sandbox_sync.filesystem.filesystem import Filesystem
 from e2b.sandbox_sync.commands.command import Commands
 from e2b.sandbox_sync.commands.pty import Pty
 from e2b.sandbox_sync.sandbox_api import SandboxApi, SandboxInfo
+from e2b.sandbox_sync.utils import get_transport
 
 logger = logging.getLogger(__name__)
 
@@ -79,30 +79,30 @@ class Sandbox(SandboxApi):
         """
         super().__init__(**opts)
 
-        transport = get_sync_transport()
+        self._transport = get_transport()
 
         self._envd_api = httpx.Client(
             base_url=self.envd_api_url,
-            transport=transport,
+            transport=self._transport,
             headers=self.connection_config.sandbox_headers,
         )
         self._filesystem = Filesystem(
             self.envd_api_url,
             self._envd_version,
             self.connection_config,
-            transport.pool,
+            self._transport.pool,
             self._envd_api,
         )
         self._commands = Commands(
             self.envd_api_url,
             self.connection_config,
-            transport.pool,
+            self._transport.pool,
             self._envd_version,
         )
         self._pty = Pty(
             self.envd_api_url,
             self.connection_config,
-            transport.pool,
+            self._transport.pool,
             self._envd_version,
         )
 

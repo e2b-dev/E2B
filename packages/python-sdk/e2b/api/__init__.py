@@ -20,38 +20,11 @@ from e2b.api.client.types import Response
 
 logger = logging.getLogger(__name__)
 
-
-class TransportWithLogger(httpx.HTTPTransport):
-    def handle_request(self, request):
-        url = f"{request.url.scheme}://{request.url.host}{request.url.path}"
-        logger.info(f"Request: {request.method} {url}")
-        response = super().handle_request(request)
-
-        # data = connect.GzipCompressor.decompress(response.read()).decode()
-        logger.info(f"Response: {response.status_code} {url}")
-
-        return response
-
-    @property
-    def pool(self):
-        return self._pool
-
-
-_transport: TransportWithLogger | None = None
-
-
-def get_sync_transport() -> TransportWithLogger:
-    global _transport
-    if _transport is None:
-        _transport = TransportWithLogger(
-            limits=httpx.Limits(
-                max_keepalive_connections=int(os.getenv("E2B_MAX_KEEPALIVE_CONNECTIONS", "20")),
-                max_connections=int(os.getenv("E2B_MAX_CONNECTIONS", "100")),
-                keepalive_expiry=int(os.getenv("E2B_KEEPALIVE_EXPIRY", "300")),
-            ),
-        )
-
-    return _transport
+limits = httpx.Limits(
+    max_keepalive_connections=int(os.getenv("E2B_MAX_KEEPALIVE_CONNECTIONS", "20")),
+    max_connections=int(os.getenv("E2B_MAX_CONNECTIONS", "100")),
+    keepalive_expiry=int(os.getenv("E2B_KEEPALIVE_EXPIRY", "300")),
+)
 
 
 @dataclass
@@ -104,6 +77,7 @@ class ApiClient(AuthenticatedClient):
         require_api_key: bool = True,
         require_access_token: bool = False,
         limits: Optional[Limits] = None,
+        transport: Optional[httpx.BaseTransport | httpx.AsyncBaseTransport] = None,
         *args,
         **kwargs,
     ):
@@ -157,8 +131,7 @@ class ApiClient(AuthenticatedClient):
                     "response": [self._log_response],
                 },
                 "proxy": config.proxy,
-                "limits": limits,
-                "transport": get_sync_transport(),
+                "transport": transport,
             },
             headers=headers,
             token=token,

@@ -7,7 +7,6 @@ from e2b.sandbox.signature import get_signature
 from e2b.connection_config import ConnectionConfig, default_username
 from e2b.envd.api import ENVD_API_FILES_ROUTE
 from e2b.envd.versions import ENVD_DEFAULT_USER
-from httpx import Limits
 
 
 class SandboxOpts(TypedDict):
@@ -19,12 +18,6 @@ class SandboxOpts(TypedDict):
 
 
 class SandboxBase:
-    _limits = Limits(
-        max_keepalive_connections=40,
-        max_connections=40,
-        keepalive_expiry=300,
-    )
-
     envd_port = 49983
     mcp_port = 50005
 

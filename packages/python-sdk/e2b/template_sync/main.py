@@ -4,6 +4,7 @@ from typing import Callable, Optional
 
 from e2b.api import ApiClient
 from e2b.connection_config import ConnectionConfig
+from e2b.sandbox_sync.utils import get_transport
 from e2b.template.consts import RESOLVE_SYMLINKS
 from e2b.template.logger import LogEntry, LogEntryStart, LogEntryEnd
 from e2b.template.main import TemplateBase, TemplateClass
@@ -82,6 +83,7 @@ class Template(TemplateBase):
                 require_api_key=True,
                 require_access_token=False,
                 limits=TemplateBase._limits,
+                transport=get_transport(),
             )
 
             if skip_cache:

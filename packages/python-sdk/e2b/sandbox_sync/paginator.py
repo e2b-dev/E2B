@@ -1,17 +1,13 @@
 import urllib.parse
 from typing import Optional, List
 
-from e2b import ConnectionConfig
+from e2b.api import handle_api_exception
 from e2b.api.client.api.sandboxes import get_v2_sandboxes
+from e2b.api.client.models.error import Error
 from e2b.api.client.types import UNSET
 from e2b.exceptions import SandboxException
 from e2b.sandbox.sandbox_api import SandboxPaginatorBase, SandboxInfo
-from e2b.api import handle_api_exception, ApiClient
-from e2b.api.client.models.error import Error
-
-
-def get_api_client(config: ConnectionConfig) -> ApiClient:
-    return ApiClient(config)
+from e2b.sandbox_sync.utils import get_api_client
 
 
 class SandboxPaginator(SandboxPaginatorBase):

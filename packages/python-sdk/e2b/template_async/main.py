@@ -15,6 +15,7 @@ from .build_api import (
     upload_file,
     wait_for_build_finish,
 )
+from ..sandbox_async.utils import get_transport
 
 
 class AsyncTemplate(TemplateBase):
@@ -81,7 +82,7 @@ class AsyncTemplate(TemplateBase):
                 config,
                 require_api_key=True,
                 require_access_token=False,
-                limits=TemplateBase._limits,
+                transport=get_transport(),
             )
 
             if skip_cache:
