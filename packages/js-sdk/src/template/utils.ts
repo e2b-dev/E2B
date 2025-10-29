@@ -24,6 +24,17 @@ export function readDockerignore(contextPath: string): string[] {
 }
 
 /**
+ * Check if a path contains glob patterns.
+ *
+ * @param pathStr The path to check for glob patterns
+ * @returns True if the path contains glob patterns, false otherwise
+ */
+function containsGlobPattern(pathStr: string): boolean {
+  // Check for common glob patterns: *, ?, [abc], {a,b}, **
+  return /[*?\[\]{}]/.test(pathStr)
+}
+
+/**
  * Calculate a hash of files being copied to detect changes for cache invalidation.
  * The hash includes file content, metadata (mode, uid, gid, size, mtime), and relative paths.
  *
@@ -51,9 +62,9 @@ export async function calculateFilesHash(
 
   hash.update(content)
 
-  // check if the srcPath is a directory appending ** if no pattern is used
+  // Only check if it's a directory if there are no glob patterns
   if (
-    !src.endsWith('*') &&
+    !containsGlobPattern(src) &&
     fs.statSync(srcPath, { throwIfNoEntry: false })?.isDirectory()
   ) {
     srcPath = path.join(srcPath, '**')
