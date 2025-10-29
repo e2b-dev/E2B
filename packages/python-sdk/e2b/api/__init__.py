@@ -1,3 +1,4 @@
+import os
 from types import TracebackType
 import json
 import logging
@@ -44,9 +45,9 @@ def get_sync_transport() -> TransportWithLogger:
     if _transport is None:
         _transport = TransportWithLogger(
             limits=httpx.Limits(
-                max_keepalive_connections=40,
-                max_connections=40,
-                keepalive_expiry=300,
+                max_keepalive_connections=int(os.getenv("E2B_MAX_KEEPALIVE_CONNECTIONS", "20")),
+                max_connections=int(os.getenv("E2B_MAX_CONNECTIONS", "100")),
+                keepalive_expiry=int(os.getenv("E2B_KEEPALIVE_EXPIRY", "300")),
             ),
         )
 
