@@ -76,7 +76,10 @@ def calculate_files_hash(
     hash_obj.update(content.encode())
     
     # Only check if it's a directory if there are no glob patterns
-    if not  contains_glob_pattern(src) and os.path.isdir(src_path):
+    if (
+        not contains_glob_pattern(os.path.basename(src_path))
+        and os.path.isdir(src_path)
+    ):
         src_path = os.path.join(src_path, "**")
 
     files_glob = glob(src_path, recursive=True)

@@ -64,7 +64,7 @@ export async function calculateFilesHash(
 
   // Only check if it's a directory if there are no glob patterns
   if (
-    !containsGlobPattern(src) &&
+    !containsGlobPattern(path.basename(srcPath)) &&
     fs.statSync(srcPath, { throwIfNoEntry: false })?.isDirectory()
   ) {
     srcPath = path.join(srcPath, '**')
