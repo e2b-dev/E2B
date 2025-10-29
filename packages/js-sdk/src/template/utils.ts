@@ -53,7 +53,7 @@ export async function calculateFilesHash(
 
   // check if the srcPath is a directory appending ** if no pattern is used
   if (
-    !src.includes('*') &&
+    !src.endsWith('*') &&
     fs.statSync(srcPath, { throwIfNoEntry: false })?.isDirectory()
   ) {
     srcPath = path.join(srcPath, '**')
