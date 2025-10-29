@@ -10,6 +10,7 @@ from typing import Dict, Optional, overload, List
 from packaging.version import Version
 from typing_extensions import Unpack, Self
 
+from e2b.api import get_sync_transport
 from e2b.api.client.types import Unset
 from e2b.connection_config import ConnectionConfig, ApiParams
 from e2b.envd.api import ENVD_API_HEALTH_ROUTE, handle_envd_api_exception
@@ -24,22 +25,6 @@ from e2b.sandbox_sync.commands.pty import Pty
 from e2b.sandbox_sync.sandbox_api import SandboxApi, SandboxInfo
 
 logger = logging.getLogger(__name__)
-
-
-class TransportWithLogger(httpx.HTTPTransport):
-    def handle_request(self, request):
-        url = f"{request.url.scheme}://{request.url.host}{request.url.path}"
-        logger.info(f"Request: {request.method} {url}")
-        response = super().handle_request(request)
-
-        # data = connect.GzipCompressor.decompress(response.read()).decode()
-        logger.info(f"Response: {response.status_code} {url}")
-
-        return response
-
-    @property
-    def pool(self):
-        return self._pool
 
 
 class Sandbox(SandboxApi):
@@ -94,31 +79,30 @@ class Sandbox(SandboxApi):
         """
         super().__init__(**opts)
 
-        self._transport = TransportWithLogger(
-            limits=self._limits, proxy=self.connection_config.proxy
-        )
+        transport = get_sync_transport()
+
         self._envd_api = httpx.Client(
             base_url=self.envd_api_url,
-            transport=self._transport,
+            transport=transport,
             headers=self.connection_config.sandbox_headers,
         )
         self._filesystem = Filesystem(
             self.envd_api_url,
             self._envd_version,
             self.connection_config,
-            self._transport.pool,
+            transport.pool,
             self._envd_api,
         )
         self._commands = Commands(
             self.envd_api_url,
             self.connection_config,
-            self._transport.pool,
+            transport.pool,
             self._envd_version,
         )
         self._pty = Pty(
             self.envd_api_url,
             self.connection_config,
-            self._transport.pool,
+            transport.pool,
             self._envd_version,
         )
 

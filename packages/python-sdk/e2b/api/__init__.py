@@ -2,9 +2,10 @@ from types import TracebackType
 import json
 import logging
 from typing import Optional
+
+import httpx
 from httpx import Limits
 from dataclasses import dataclass
-
 
 from e2b.api.client.client import AuthenticatedClient
 from e2b.connection_config import ConnectionConfig
@@ -17,6 +18,39 @@ from e2b.exceptions import (
 from e2b.api.client.types import Response
 
 logger = logging.getLogger(__name__)
+
+
+class TransportWithLogger(httpx.HTTPTransport):
+    def handle_request(self, request):
+        url = f"{request.url.scheme}://{request.url.host}{request.url.path}"
+        logger.info(f"Request: {request.method} {url}")
+        response = super().handle_request(request)
+
+        # data = connect.GzipCompressor.decompress(response.read()).decode()
+        logger.info(f"Response: {response.status_code} {url}")
+
+        return response
+
+    @property
+    def pool(self):
+        return self._pool
+
+
+_transport: TransportWithLogger | None = None
+
+
+def get_sync_transport() -> TransportWithLogger:
+    global _transport
+    if _transport is None:
+        _transport = TransportWithLogger(
+            limits=httpx.Limits(
+                max_keepalive_connections=40,
+                max_connections=40,
+                keepalive_expiry=300,
+            ),
+        )
+
+    return _transport
 
 
 @dataclass
@@ -123,6 +157,7 @@ class ApiClient(AuthenticatedClient):
                 },
                 "proxy": config.proxy,
                 "limits": limits,
+                "transport": get_sync_transport(),
             },
             headers=headers,
             token=token,
