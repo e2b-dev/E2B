@@ -41,7 +41,9 @@ async def test_download_url_with_expired_signing(async_sandbox):
 
     await async_sandbox.files.write(file_path, file_content)
 
-    signed_url = async_sandbox.download_url(file_path, "user", use_signature_expiration=-120)
+    signed_url = async_sandbox.download_url(
+        file_path, "user", use_signature_expiration=-120
+    )
 
     with pytest.raises(urllib.error.HTTPError) as exc_info:
         urllib.request.urlopen(signed_url)
