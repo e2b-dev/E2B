@@ -5,7 +5,6 @@ import logging
 from typing import Optional, Union
 
 import httpx
-from httpx import Limits
 from dataclasses import dataclass
 
 from e2b.api.client.client import AuthenticatedClient
