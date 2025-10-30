@@ -24,14 +24,21 @@ export function readDockerignore(contextPath: string): string[] {
 }
 
 /**
- * Check if a path contains glob patterns.
+ * Hash the stats of a file or directory.
  *
- * @param pathStr The path to check for glob patterns
- * @returns True if the path contains glob patterns, false otherwise
+ * @param hash Hash object to update
+ * @param stats File or directory stats
  */
-function containsGlobPattern(pathStr: string): boolean {
-  // Check for common glob patterns: *, ?, [abc], {a,b}, **
-  return /[*?[\]{}]/.test(pathStr)
+function hashStats(hash: crypto.Hash, stats: fs.Stats | undefined): void {
+  if (!stats) {
+    return
+  }
+
+  hash.update(stats.mode.toString())
+  hash.update(stats.uid.toString())
+  hash.update(stats.gid.toString())
+  hash.update(stats.size.toString())
+  hash.update(stats.mtimeMs.toString())
 }
 
 /**
@@ -62,14 +69,6 @@ export async function calculateFilesHash(
 
   hash.update(content)
 
-  // Only check if it's a directory if there are no glob patterns
-  if (
-    !containsGlobPattern(path.basename(srcPath)) &&
-    fs.statSync(srcPath, { throwIfNoEntry: false })?.isDirectory()
-  ) {
-    srcPath = path.join(srcPath, '**')
-  }
-
   const files = await glob(srcPath, {
     ignore: ignorePatterns,
     withFileTypes: true,
@@ -83,31 +82,72 @@ export async function calculateFilesHash(
     throw error
   }
 
-  // Hash stats
-  const hashStats = (stats: fs.Stats) => {
-    hash.update(stats.mode.toString())
-    hash.update(stats.uid.toString())
-    hash.update(stats.gid.toString())
-    hash.update(stats.size.toString())
-    hash.update(stats.mtimeMs.toString())
-  }
+  // Process files recursively
+  await processFilesRecursively(
+    files,
+    contextPath,
+    ignorePatterns,
+    resolveSymlinks,
+    hash
+  )
+
+  return hash.digest('hex')
+}
+
+/**
+ * Recursively process files and directories for hash calculation.
+ *
+ * @param files Array of file entries to process
+ * @param contextPath Base directory for resolving relative paths
+ * @param ignorePatterns Glob patterns to ignore
+ * @param resolveSymlinks Whether to resolve symbolic links when hashing
+ * @param hash Hash object to update
+ * @param hashStats Function to hash file stats
+ */
+async function processFilesRecursively(
+  files: any[],
+  contextPath: string,
+  ignorePatterns: string[],
+  resolveSymlinks: boolean,
+  hash: crypto.Hash
+): Promise<void> {
+  const { glob } = await dynamicGlob()
 
   for (const file of files) {
-    // Add a relative path to hash calculation
+    const stats = fs.statSync(file.fullpath(), { throwIfNoEntry: false })
+    hashStats(hash, stats)
+
     const relativePath = path.relative(contextPath, file.fullpath())
     hash.update(relativePath)
+
+    if (file.isDirectory()) {
+      // Recursively process all files in the directory
+      const dirFiles = await glob(path.join(file.fullpath(), '**/*'), {
+        ignore: ignorePatterns,
+        withFileTypes: true,
+      })
+
+      // Recursively process the directory contents
+      await processFilesRecursively(
+        dirFiles,
+        contextPath,
+        ignorePatterns,
+        resolveSymlinks,
+        hash
+      )
+      continue
+    }
 
     // Add stat information to hash calculation
     if (file.isSymbolicLink()) {
       // If the symlink is broken, it will return undefined, otherwise it will return a stats object of the target
-      const stats = fs.statSync(file.fullpath(), { throwIfNoEntry: false })
       const shouldFollow =
         resolveSymlinks && (stats?.isFile() || stats?.isDirectory())
 
       if (!shouldFollow) {
         const stats = fs.lstatSync(file.fullpath())
 
-        hashStats(stats)
+        hashStats(hash, stats)
 
         const content = fs.readlinkSync(file.fullpath())
         hash.update(content)
@@ -116,17 +156,11 @@ export async function calculateFilesHash(
       }
     }
 
-    const stats = fs.statSync(file.fullpath())
-
-    hashStats(stats)
-
-    if (stats.isFile()) {
+    if (stats?.isFile()) {
       const content = fs.readFileSync(file.fullpath())
       hash.update(new Uint8Array(content))
     }
   }
-
-  return hash.digest('hex')
 }
 
 /**
