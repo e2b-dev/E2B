@@ -25,23 +25,12 @@ export function readDockerignore(contextPath: string): string[] {
 }
 
 /**
- * Hash the stats of a file or directory.
+ * Get all files for a given path and ignore patterns.
  *
- * @param hash Hash object to update
- * @param stats File or directory stats
+ * @param srcPath Path to the source directory
+ * @param ignorePatterns Ignore patterns
+ * @returns Array of files
  */
-function hashStats(hash: crypto.Hash, stats: fs.Stats | undefined): void {
-  if (!stats) {
-    return
-  }
-
-  hash.update(stats.mode.toString())
-  hash.update(stats.uid.toString())
-  hash.update(stats.gid.toString())
-  hash.update(stats.size.toString())
-  hash.update(stats.mtimeMs.toString())
-}
-
 async function getAllFilesForFilesHash(
   srcPath: string,
   ignorePatterns: string[]
@@ -56,7 +45,7 @@ async function getAllFilesForFilesHash(
 
   for (const file of globFiles) {
     if (file.isDirectory()) {
-      const dirFiles = await glob(path.join(srcPath, file.fullpath(), '**/*'), {
+      const dirFiles = await glob(path.join(file.fullpath(), '**/*'), {
         nodir: true,
         ignore: ignorePatterns,
         withFileTypes: true,
@@ -97,6 +86,18 @@ export async function calculateFilesHash(
   const content = `COPY ${src} ${dest}`
 
   hash.update(content)
+
+  function hashStats(hash: crypto.Hash, stats: fs.Stats | undefined): void {
+    if (!stats) {
+      return
+    }
+
+    hash.update(stats.mode.toString())
+    hash.update(stats.uid.toString())
+    hash.update(stats.gid.toString())
+    hash.update(stats.size.toString())
+    hash.update(stats.mtimeMs.toString())
+  }
 
   const files = await getAllFilesForFilesHash(srcPath, ignorePatterns)
 
