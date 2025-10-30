@@ -22,7 +22,6 @@ from e2b.api.client.models import (
     TemplateBuildFileUpload,
     TemplateBuild,
     Error,
-    TemplateBuildRequestV3,
 )
 from e2b.exceptions import BuildException, FileUploadException
 from e2b.template.logger import LogEntry
