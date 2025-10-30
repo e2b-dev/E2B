@@ -22,7 +22,7 @@ def get_api_client(
 ) -> AsyncApiClient:
     return AsyncApiClient(
         config,
-        transport=transport or get_transport(),
+        transport=transport or get_transport(config),
     )
 
 
@@ -45,8 +45,11 @@ class AsyncTransportWithLogger(httpx.AsyncHTTPTransport):
 _transport: Optional[AsyncTransportWithLogger] = None
 
 
-def get_transport() -> AsyncTransportWithLogger:
+def get_transport(config: ConnectionConfig) -> AsyncTransportWithLogger:
     global _transport
     if _transport is None:
-        _transport = AsyncTransportWithLogger(limits=limits)
+        _transport = AsyncTransportWithLogger(
+            limits=limits,
+            proxy=config.proxy,
+        )
     return _transport

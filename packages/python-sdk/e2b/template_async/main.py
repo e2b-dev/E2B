@@ -82,7 +82,7 @@ class AsyncTemplate(TemplateBase):
                 config,
                 require_api_key=True,
                 require_access_token=False,
-                transport=get_transport(),
+                transport=get_transport(config),
             )
 
             if skip_cache:

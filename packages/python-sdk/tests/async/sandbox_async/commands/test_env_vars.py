@@ -20,7 +20,7 @@ async def test_sandbox_envs(
         cmd = await sbx.commands.run("echo $FOO")
         assert cmd.stdout.strip() == "bar"
     finally:
-        await sbx.kill()
+        await sbx.kill(transport=httpx_async_transport)
 
 
 async def test_bash_command_scoped_env_vars(async_sandbox: AsyncSandbox):

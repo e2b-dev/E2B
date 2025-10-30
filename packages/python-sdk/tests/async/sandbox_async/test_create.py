@@ -12,7 +12,7 @@ async def test_start(template, httpx_async_transport):
         assert await sbx.is_running()
         assert sbx._envd_version is not None
     finally:
-        await sbx.kill()
+        await sbx.kill(transport=httpx_async_transport)
 
 
 @pytest.mark.skip_debug()

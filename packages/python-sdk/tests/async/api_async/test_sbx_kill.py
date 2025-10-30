@@ -10,7 +10,8 @@ async def test_kill_existing_sandbox(
     httpx_async_transport,
 ):
     assert await AsyncSandbox.kill(
-        async_sandbox.sandbox_id, transport=httpx_async_transport
+        async_sandbox.sandbox_id,
+        transport=httpx_async_transport
     )
 
     paginator = AsyncSandbox.list(

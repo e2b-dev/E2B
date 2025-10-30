@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 def get_api_client(config: ConnectionConfig) -> ApiClient:
     return ApiClient(
         config,
-        transport=get_transport(),
+        transport=get_transport(config),
     )
 
 
@@ -35,11 +35,12 @@ class TransportWithLogger(httpx.HTTPTransport):
 _transport: Optional[TransportWithLogger] = None
 
 
-def get_transport() -> TransportWithLogger:
+def get_transport(config: ConnectionConfig) -> TransportWithLogger:
     global _transport
     if _transport is None:
         _transport = TransportWithLogger(
             limits=limits,
+            proxy=config.proxy,
         )
 
     return _transport
