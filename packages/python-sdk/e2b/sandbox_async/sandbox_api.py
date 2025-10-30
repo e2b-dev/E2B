@@ -298,6 +298,7 @@ class SandboxApi(SandboxBase):
             await SandboxApi._cls_set_timeout(
                 sandbox_id=sandbox_id,
                 timeout=timeout,
+                transport=transport,
                 **opts,
             )
             return False
