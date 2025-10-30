@@ -1,0 +1,1 @@
+/Users/mish/Documents/Projects/E2B/E2B/packages/js-sdk/tests/template/folder/test.txt
