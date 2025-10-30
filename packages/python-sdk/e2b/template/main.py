@@ -2,7 +2,6 @@ import json
 from typing import Dict, List, Optional, Union, Literal
 from pathlib import Path
 
-from httpx import Limits
 
 from e2b.exceptions import BuildException
 from e2b.template.consts import STACK_TRACE_DEPTH, RESOLVE_SYMLINKS
