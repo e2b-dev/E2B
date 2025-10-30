@@ -11,9 +11,7 @@ async def test_start(async_sandbox):
 
 @pytest.mark.skip_debug()
 async def test_metadata(async_sandbox_factory):
-    sbx = await async_sandbox_factory(
-        timeout=5, metadata={"test-key": "test-value"}
-    )
+    sbx = await async_sandbox_factory(timeout=5, metadata={"test-key": "test-value"})
 
     paginator = AsyncSandbox.list(
         query=SandboxQuery(metadata={"test-key": "test-value"})

@@ -4,7 +4,6 @@ import json
 import pytest
 
 
-
 @pytest.mark.skip_debug()
 def test_download_url_with_signing(sandbox_factory):
     sbx = sandbox_factory(secure=True)

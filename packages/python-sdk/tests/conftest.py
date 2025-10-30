@@ -78,6 +78,7 @@ def async_sandbox_factory(request, template, sandbox_test_id, event_loop):
         def kill():
             async def _kill():
                 await sandbox.kill()
+
             event_loop.run_until_complete(_kill())
 
         request.addfinalizer(kill)

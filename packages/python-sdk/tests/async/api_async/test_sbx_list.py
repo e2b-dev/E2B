@@ -20,9 +20,7 @@ async def test_list_sandboxes_with_filter(sandbox_test_id: str, async_sandbox_fa
     unique_id = str(int(time.time()))
     extra_sbx = await async_sandbox_factory(metadata={"unique_id": unique_id})
 
-    paginator = AsyncSandbox.list(
-        query=SandboxQuery(metadata={"unique_id": unique_id})
-    )
+    paginator = AsyncSandbox.list(query=SandboxQuery(metadata={"unique_id": unique_id}))
     sandboxes = await paginator.next_items()
     assert len(sandboxes) == 1
     assert sandboxes[0].sandbox_id == extra_sbx.sandbox_id
@@ -68,9 +66,7 @@ async def test_list_paused_sandboxes(async_sandbox: AsyncSandbox, sandbox_test_i
 
 
 @pytest.mark.skip_debug()
-async def test_paginate_running_sandboxes(
-    sandbox_test_id: str, async_sandbox_factory
-):
+async def test_paginate_running_sandboxes(sandbox_test_id: str, async_sandbox_factory):
     sbx1 = await async_sandbox_factory()
     sbx2 = await async_sandbox_factory()
 
@@ -110,7 +106,9 @@ async def test_paginate_paused_sandboxes(
     await async_sandbox.beta_pause()
 
     # create another paused sandbox
-    extra_sbx = await async_sandbox_factory(metadata={"sandbox_test_id": sandbox_test_id})
+    extra_sbx = await async_sandbox_factory(
+        metadata={"sandbox_test_id": sandbox_test_id}
+    )
     extra_sbx_id = extra_sbx.sandbox_id.split("-")[0]
     await extra_sbx.beta_pause()
 
@@ -147,7 +145,9 @@ async def test_paginate_running_and_paused_sandboxes(
     async_sandbox: AsyncSandbox, sandbox_test_id: str, async_sandbox_factory
 ):
     # Create extra paused sandbox
-    extra_sbx = await async_sandbox_factory(metadata={"sandbox_test_id": sandbox_test_id})
+    extra_sbx = await async_sandbox_factory(
+        metadata={"sandbox_test_id": sandbox_test_id}
+    )
     extra_sbx_id = extra_sbx.sandbox_id.split("-")[0]
     await extra_sbx.beta_pause()
 

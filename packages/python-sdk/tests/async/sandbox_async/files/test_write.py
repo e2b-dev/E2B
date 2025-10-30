@@ -104,7 +104,7 @@ async def test_write_with_secured_envd(async_sandbox_factory):
     filename = f"non_existing_dir_{uuid.uuid4()}/test_write.txt"
     content = "This should succeed too."
 
-    sbx = await async_sandbox_factory( timeout=30, secure=True)
+    sbx = await async_sandbox_factory(timeout=30, secure=True)
 
     assert await sbx.is_running()
     assert sbx._envd_version is not None
