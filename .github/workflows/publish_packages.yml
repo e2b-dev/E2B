@@ -84,7 +84,7 @@ jobs:
           createGithubReleases: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: "" # See https://github.com/changesets/changesets/issues/1152#issuecomment-3190884868'
+          NPM_TOKEN: "" # See https://github.com/changesets/changesets/issues/1152#issuecomment-3190884868
           PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
 
       - name: Generate SDK reference
