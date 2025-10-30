@@ -359,7 +359,7 @@ class Client:
         )
 
         async with self.async_pool.stream(**req_data) as response:
-            async for chunk in response.stream:
+            async for chunk in response.aiter_stream():
                 for parsed in parser.parse(chunk):
                     yield parsed
 
