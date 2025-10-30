@@ -132,7 +132,7 @@ export async function calculateFilesHash(
     // Add file content to hash calculation
     hashStats(stats!)
 
-    if (stats?.isFile()) {
+    if (stats!.isFile()) {
       const content = fs.readFileSync(file.fullpath())
       hash.update(new Uint8Array(content))
     }
