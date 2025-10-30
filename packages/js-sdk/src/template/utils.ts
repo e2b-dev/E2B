@@ -110,7 +110,7 @@ export async function calculateFilesHash(
 
     // Add stat information to hash calculation
     if (file.isSymbolicLink()) {
-      const stats = fs.statSync(file.fullpath())
+      const stats = fs.statSync(file.fullpath(), { throwIfNoEntry: false })
 
       // If the symlink is broken, it will return undefined, otherwise it will return a stats object of the target
       const shouldFollow =
