@@ -384,6 +384,7 @@ export class Filesystem {
           return fd
         }, new FormData())
       },
+      signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
       body: {},
     })
 
@@ -595,7 +596,10 @@ export class Filesystem {
     try {
       const res = await this.rpc.stat(
         { path },
-        { headers: authenticationHeader(this.envdApi.version, opts?.user) }
+        {
+          headers: authenticationHeader(this.envdApi.version, opts?.user),
+          signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
+        }
       )
 
       if (!res.entry) {
