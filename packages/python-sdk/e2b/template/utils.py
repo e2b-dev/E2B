@@ -64,7 +64,7 @@ def get_all_files_for_files_hash(
             files.add(file)
             dir_files = glob(os.path.join(file, "**/*"), recursive=True)
             for dir_file in dir_files:
-                if ignore_patterns and spec.match_file(os.path.relpath(dir_file, file)):
+                if ignore_patterns and matches_ignore(dir_file):
                     continue
                 files.add(dir_file)
         else:
