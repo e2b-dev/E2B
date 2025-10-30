@@ -3,7 +3,7 @@ from types import TracebackType
 import json
 import logging
 from typing import Optional, Union
-from httpx import Limits
+from httpx import Limits, BaseTransport, AsyncBaseTransport
 from dataclasses import dataclass
 
 from e2b.api.client.client import AuthenticatedClient
@@ -74,9 +74,7 @@ class ApiClient(AuthenticatedClient):
         config: ConnectionConfig,
         require_api_key: bool = True,
         require_access_token: bool = False,
-        transport: Optional[
-            Union[httpx.BaseTransport, httpx.AsyncBaseTransport]
-        ] = None,
+        transport: Optional[Union[BaseTransport, AsyncBaseTransport]] = None,
         *args,
         **kwargs,
     ):
