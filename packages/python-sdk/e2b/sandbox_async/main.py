@@ -71,13 +71,18 @@ class AsyncSandbox(SandboxApi):
         """
         return self._pty
 
-    def __init__(self, **opts: Unpack[SandboxOpts]):
+    def __init__(
+        self,
+        *,
+        transport: Optional[AsyncBaseTransport] = None,
+        **opts: Unpack[SandboxOpts],
+    ):
         """
         Use `AsyncSandbox.create()` to create a new sandbox instead.
         """
         super().__init__(**opts)
 
-        self._transport = get_transport(self.connection_config)
+        self._transport = transport or get_transport(self.connection_config)
         self._envd_api = httpx.AsyncClient(
             base_url=self.envd_api_url,
             transport=self._transport,
