@@ -3,11 +3,11 @@ import os
 import json
 import stat
 from glob import glob
-import fnmatch
 import re
 import inspect
 from types import TracebackType, FrameType
 from typing import List, Optional, Union
+from pathspec import PathSpec
 
 from e2b.template.consts import BASE_STEP_NAME, FINALIZE_STEP_NAME
 
@@ -46,22 +46,25 @@ def get_all_files_for_files_hash(
     """
     files = set()
 
-    # Use glob to find all files matching the pattern
+    spec = PathSpec.from_lines("gitwildmatch", ignore_patterns)
+
+    def matches_ignore(path: str) -> bool:
+        base_for_src = os.path.dirname(src_path)
+        return spec.match_file(os.path.relpath(path, base_for_src))
+
+    # Use glob to find all files/directories matching the pattern
     files_glob = glob(src_path, recursive=True)
 
     for file in files_glob:
-        if ignore_patterns and any(
-            fnmatch.fnmatch(file, pattern) for pattern in ignore_patterns
-        ):
+        if ignore_patterns and matches_ignore(file):
             continue
 
         if os.path.isdir(file):
-            # If it's a directory, add all files in it recursively
+            # If it's a directory, add the directory and all entries recursively
+            files.add(file)
             dir_files = glob(os.path.join(file, "**/*"), recursive=True)
             for dir_file in dir_files:
-                if ignore_patterns and any(
-                    fnmatch.fnmatch(dir_file, pattern) for pattern in ignore_patterns
-                ):
+                if ignore_patterns and matches_ignore(dir_file):
                     continue
                 files.add(dir_file)
         else:

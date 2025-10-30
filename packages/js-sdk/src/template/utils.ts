@@ -31,28 +31,37 @@ export function readDockerignore(contextPath: string): string[] {
  * @param ignorePatterns Ignore patterns
  * @returns Array of files
  */
-async function getAllFilesForFilesHash(
+export async function getAllFilesForFilesHash(
   srcPath: string,
   ignorePatterns: string[]
 ) {
   const { glob } = await dynamicGlob()
   const files = new Set<Path>()
 
+  // Normalize ignore patterns to be absolute against a base directory.
+  // This ensures patterns like "temp*" or "**/*.spec.*" work regardless of cwd.
+  const baseForSrc = path.dirname(srcPath)
+  const toAbsoluteIgnores = (baseDir: string) =>
+    ignorePatterns.map((p) => (path.isAbsolute(p) ? p : path.join(baseDir, p)))
+
   const globFiles = await glob(srcPath, {
-    ignore: ignorePatterns,
+    ignore: toAbsoluteIgnores(baseForSrc),
     withFileTypes: true,
   })
 
   for (const file of globFiles) {
     if (file.isDirectory()) {
+      // For directories, add the directory itself and all files inside it
+      files.add(file)
       const dirFiles = await glob(path.join(file.fullpath(), '**/*'), {
-        ignore: ignorePatterns,
+        ignore: toAbsoluteIgnores(file.fullpath()),
         withFileTypes: true,
       })
       dirFiles.forEach((f) => files.add(f))
+    } else {
+      // For files, just add the file
+      files.add(file)
     }
-
-    files.add(file)
   }
 
   return Array.from(files).sort()
