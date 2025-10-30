@@ -46,7 +46,6 @@ async function getAllFilesForFilesHash(
   for (const file of globFiles) {
     if (file.isDirectory()) {
       const dirFiles = await glob(path.join(file.fullpath(), '**/*'), {
-        nodir: false,
         ignore: ignorePatterns,
         withFileTypes: true,
       })
