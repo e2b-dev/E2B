@@ -3,6 +3,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { dynamicGlob, dynamicTar } from '../utils'
 import { BASE_STEP_NAME, FINALIZE_STEP_NAME } from './consts'
+import type { Path } from 'glob'
 
 /**
  * Read and parse a .dockerignore file.
@@ -41,6 +42,35 @@ function hashStats(hash: crypto.Hash, stats: fs.Stats | undefined): void {
   hash.update(stats.mtimeMs.toString())
 }
 
+async function getAllFilesForFilesHash(
+  srcPath: string,
+  ignorePatterns: string[]
+) {
+  const { glob } = await dynamicGlob()
+  const files = new Set<Path>()
+
+  const globFiles = await glob(srcPath, {
+    ignore: ignorePatterns,
+    withFileTypes: true,
+  })
+
+  for (const file of globFiles) {
+    if (file.isDirectory()) {
+      const dirFiles = await glob(path.join(srcPath, file.fullpath(), '**/*'), {
+        nodir: true,
+        ignore: ignorePatterns,
+        withFileTypes: true,
+      })
+      dirFiles.forEach((f) => files.add(f))
+      continue
+    }
+
+    files.add(file)
+  }
+
+  return Array.from(files).sort()
+}
+
 /**
  * Calculate a hash of files being copied to detect changes for cache invalidation.
  * The hash includes file content, metadata (mode, uid, gid, size, mtime), and relative paths.
@@ -62,17 +92,13 @@ export async function calculateFilesHash(
   resolveSymlinks: boolean,
   stackTrace: string | undefined
 ): Promise<string> {
-  const { glob } = await dynamicGlob()
-  let srcPath = path.join(contextPath, src)
+  const srcPath = path.join(contextPath, src)
   const hash = crypto.createHash('sha256')
   const content = `COPY ${src} ${dest}`
 
   hash.update(content)
 
-  const files = await glob(srcPath, {
-    ignore: ignorePatterns,
-    withFileTypes: true,
-  })
+  const files = await getAllFilesForFilesHash(srcPath, ignorePatterns)
 
   if (files.length === 0) {
     const error = new Error(`No files found in ${srcPath}`)
@@ -83,60 +109,12 @@ export async function calculateFilesHash(
   }
 
   // Process files recursively
-  await processFilesRecursively(
-    files,
-    contextPath,
-    ignorePatterns,
-    resolveSymlinks,
-    hash
-  )
-
-  return hash.digest('hex')
-}
-
-/**
- * Recursively process files and directories for hash calculation.
- *
- * @param files Array of file entries to process
- * @param contextPath Base directory for resolving relative paths
- * @param ignorePatterns Glob patterns to ignore
- * @param resolveSymlinks Whether to resolve symbolic links when hashing
- * @param hash Hash object to update
- * @param hashStats Function to hash file stats
- */
-async function processFilesRecursively(
-  files: any[],
-  contextPath: string,
-  ignorePatterns: string[],
-  resolveSymlinks: boolean,
-  hash: crypto.Hash
-): Promise<void> {
-  const { glob } = await dynamicGlob()
-
   for (const file of files) {
     const stats = fs.statSync(file.fullpath(), { throwIfNoEntry: false })
     hashStats(hash, stats)
 
     const relativePath = path.relative(contextPath, file.fullpath())
     hash.update(relativePath)
-
-    if (file.isDirectory()) {
-      // Recursively process all files in the directory
-      const dirFiles = await glob(path.join(file.fullpath(), '**/*'), {
-        ignore: ignorePatterns,
-        withFileTypes: true,
-      })
-
-      // Recursively process the directory contents
-      await processFilesRecursively(
-        dirFiles,
-        contextPath,
-        ignorePatterns,
-        resolveSymlinks,
-        hash
-      )
-      continue
-    }
 
     // Add stat information to hash calculation
     if (file.isSymbolicLink()) {
@@ -161,6 +139,8 @@ async function processFilesRecursively(
       hash.update(new Uint8Array(content))
     }
   }
+
+  return hash.digest('hex')
 }
 
 /**
