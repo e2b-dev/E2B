@@ -4,8 +4,10 @@ from e2b import AsyncSandbox, SandboxQuery
 
 
 @pytest.mark.skip_debug()
-async def test_start(template):
-    sbx = await AsyncSandbox.create(template, timeout=5)
+async def test_start(template, httpx_async_transport):
+    sbx = await AsyncSandbox.create(
+        template, transport=httpx_async_transport, timeout=5
+    )
     try:
         assert await sbx.is_running()
         assert sbx._envd_version is not None

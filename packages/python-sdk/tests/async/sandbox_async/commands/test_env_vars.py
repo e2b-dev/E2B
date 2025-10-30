@@ -9,9 +9,14 @@ async def test_command_envs(async_sandbox: AsyncSandbox):
 
 
 @pytest.mark.skip_debug()
-async def test_sandbox_envs(template):
+async def test_sandbox_envs(
+    template, async_sandbox: AsyncSandbox, httpx_async_transport
+):
+    sbx = await AsyncSandbox.create(
+        template, envs={"FOO": "bar"}, transport=httpx_async_transport
+    )
+
     try:
-        sbx = await AsyncSandbox.create(template, envs={"FOO": "bar"})
         cmd = await sbx.commands.run("echo $FOO")
         assert cmd.stdout.strip() == "bar"
     finally:
