@@ -9,6 +9,8 @@ from uuid import uuid4
 
 from logging import warning
 
+from httpx import AsyncBaseTransport, AsyncHTTPTransport
+
 from e2b import (
     Sandbox,
     AsyncSandbox,
@@ -49,9 +51,16 @@ def sandbox(template, debug, sandbox_test_id):
 
 
 @pytest_asyncio.fixture
-async def async_sandbox(template, debug, sandbox_test_id):
+async def httpx_async_transport() -> AsyncBaseTransport:
+    return AsyncHTTPTransport()
+
+
+@pytest_asyncio.fixture
+async def async_sandbox(template, debug, sandbox_test_id, httpx_async_transport):
     sandbox = await AsyncSandbox.create(
-        template, metadata={"sandbox_test_id": sandbox_test_id}
+        template,
+        metadata={"sandbox_test_id": sandbox_test_id},
+        transport=httpx_async_transport,
     )
 
     try:

@@ -6,6 +6,7 @@ import json
 
 from typing import Dict, Optional, overload, List
 
+from httpx import AsyncBaseTransport
 from packaging.version import Version
 from typing_extensions import Unpack, Self
 
@@ -148,6 +149,7 @@ class AsyncSandbox(SandboxApi):
         secure: bool = True,
         allow_internet_access: bool = True,
         mcp: Optional[McpServer] = None,
+        transport: Optional[AsyncBaseTransport] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
         """
@@ -181,6 +183,7 @@ class AsyncSandbox(SandboxApi):
             secure=secure,
             allow_internet_access=allow_internet_access,
             mcp=mcp,
+            transport=transport,
             **opts,
         )
 
@@ -670,6 +673,7 @@ class AsyncSandbox(SandboxApi):
         envs: Optional[Dict[str, str]],
         secure: bool,
         mcp: Optional[McpServer] = None,
+        transport: Optional[AsyncBaseTransport] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
         extra_sandbox_headers = {}
@@ -690,6 +694,7 @@ class AsyncSandbox(SandboxApi):
                 secure=secure,
                 allow_internet_access=allow_internet_access,
                 mcp=mcp,
+                transport=transport,
                 **opts,
             )
 

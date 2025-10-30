@@ -1,6 +1,8 @@
 import datetime
 
 from typing import Optional, Dict, List
+
+from httpx import AsyncBaseTransport
 from packaging.version import Version
 from typing_extensions import Unpack
 
@@ -36,6 +38,7 @@ class SandboxApi(SandboxBase):
         query: Optional[SandboxQuery] = None,
         limit: Optional[int] = None,
         next_token: Optional[str] = None,
+        transport: Optional[AsyncBaseTransport] = None,
         **opts: Unpack[ApiParams],
     ) -> AsyncSandboxPaginator:
         """
@@ -51,6 +54,7 @@ class SandboxApi(SandboxBase):
             query=query,
             limit=limit,
             next_token=next_token,
+            transport=transport,
             **opts,
         )
 
@@ -58,6 +62,7 @@ class SandboxApi(SandboxBase):
     async def _cls_get_info(
         cls,
         sandbox_id: str,
+        transport: Optional[AsyncBaseTransport] = None,
         **opts: Unpack[ApiParams],
     ) -> SandboxInfo:
         """
@@ -68,7 +73,7 @@ class SandboxApi(SandboxBase):
         """
         config = ConnectionConfig(**opts)
 
-        api_client = get_api_client(config)
+        api_client = get_api_client(config, transport=transport)
         res = await get_sandboxes_sandbox_id.asyncio_detailed(
             sandbox_id,
             client=api_client,
@@ -89,6 +94,7 @@ class SandboxApi(SandboxBase):
     async def _cls_kill(
         cls,
         sandbox_id: str,
+        transport: Optional[AsyncBaseTransport] = None,
         **opts: Unpack[ApiParams],
     ) -> bool:
         config = ConnectionConfig(**opts)
@@ -97,7 +103,7 @@ class SandboxApi(SandboxBase):
             # Skip killing the sandbox in debug mode
             return True
 
-        api_client = get_api_client(config)
+        api_client = get_api_client(config, transport=transport)
         res = await delete_sandboxes_sandbox_id.asyncio_detailed(
             sandbox_id,
             client=api_client,
@@ -116,6 +122,7 @@ class SandboxApi(SandboxBase):
         cls,
         sandbox_id: str,
         timeout: int,
+        transport: Optional[AsyncBaseTransport] = None,
         **opts: Unpack[ApiParams],
     ) -> None:
         config = ConnectionConfig(**opts)
@@ -124,7 +131,7 @@ class SandboxApi(SandboxBase):
             # Skip setting the timeout in debug mode
             return
 
-        api_client = get_api_client(config)
+        api_client = get_api_client(config, transport=transport)
         res = await post_sandboxes_sandbox_id_timeout.asyncio_detailed(
             sandbox_id,
             client=api_client,
@@ -145,11 +152,12 @@ class SandboxApi(SandboxBase):
         env_vars: Optional[Dict[str, str]],
         secure: bool,
         mcp: Optional[McpServer] = None,
+        transport: Optional[AsyncBaseTransport] = None,
         **opts: Unpack[ApiParams],
     ) -> SandboxCreateResponse:
         config = ConnectionConfig(**opts)
 
-        api_client = get_api_client(config)
+        api_client = get_api_client(config, transport=transport)
         res = await post_sandboxes.asyncio_detailed(
             body=NewSandbox(
                 template_id=template,
@@ -193,6 +201,7 @@ class SandboxApi(SandboxBase):
         sandbox_id: str,
         start: Optional[datetime.datetime] = None,
         end: Optional[datetime.datetime] = None,
+        transport: Optional[AsyncBaseTransport] = None,
         **opts: Unpack[ApiParams],
     ) -> List[SandboxMetrics]:
         """
@@ -210,7 +219,7 @@ class SandboxApi(SandboxBase):
             # Skip getting the metrics in debug mode
             return []
 
-        api_client = get_api_client(config)
+        api_client = get_api_client(config, transport=transport)
         res = await get_sandboxes_sandbox_id_metrics.asyncio_detailed(
             sandbox_id,
             start=int(start.timestamp() * 1000) if start else UNSET,
@@ -246,11 +255,12 @@ class SandboxApi(SandboxBase):
     async def _cls_pause(
         cls,
         sandbox_id: str,
+        transport: Optional[AsyncBaseTransport] = None,
         **opts: Unpack[ApiParams],
     ) -> str:
         config = ConnectionConfig(**opts)
 
-        api_client = get_api_client(config)
+        api_client = get_api_client(config, transport=transport)
         res = await post_sandboxes_sandbox_id_pause.asyncio_detailed(
             sandbox_id,
             client=api_client,
@@ -272,6 +282,7 @@ class SandboxApi(SandboxBase):
         cls,
         sandbox_id: str,
         timeout: Optional[int] = None,
+        transport: Optional[AsyncBaseTransport] = None,
         **opts: Unpack[ApiParams],
     ) -> bool:
         timeout = timeout or SandboxBase.default_sandbox_timeout
@@ -294,7 +305,7 @@ class SandboxApi(SandboxBase):
             # Sandbox is not running, resume it
             config = ConnectionConfig(**opts)
 
-            api_client = get_api_client(config)
+            api_client = get_api_client(config, transport=transport)
             res = await post_sandboxes_sandbox_id_resume.asyncio_detailed(
                 sandbox_id,
                 client=api_client,

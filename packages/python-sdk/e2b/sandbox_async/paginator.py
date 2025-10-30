@@ -1,4 +1,5 @@
 import urllib.parse
+from asyncio import BaseTransport
 from typing import Optional, List
 
 from e2b.api.client.api.sandboxes import get_v2_sandboxes
@@ -24,6 +25,11 @@ class AsyncSandboxPaginator(SandboxPaginatorBase):
     ```
     """
 
+    def __init__(self, *args, transport: Optional[BaseTransport], **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self._transport = transport
+
     async def next_items(self) -> List[SandboxInfo]:
         """
         Returns the next page of sandboxes.
@@ -44,7 +50,7 @@ class AsyncSandboxPaginator(SandboxPaginatorBase):
             }
             metadata = urllib.parse.urlencode(quoted_metadata)
 
-        api_client = get_api_client(self._config)
+        api_client = get_api_client(self._config, transport=self._transport)
         res = await get_v2_sandboxes.asyncio_detailed(
             client=api_client,
             metadata=metadata if metadata else UNSET,
