@@ -137,6 +137,61 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/sandboxes/{sandboxID}/connect": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Returns sandbox details. If the sandbox is paused, it will be resumed. TTL is only extended. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    sandboxID: components["parameters"]["sandboxID"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ConnectSandbox"];
+                };
+            };
+            responses: {
+                /** @description The sandbox was already running */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Sandbox"];
+                    };
+                };
+                /** @description The sandbox was resumed successfully */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Sandbox"];
+                    };
+                };
+                400: components["responses"]["400"];
+                401: components["responses"]["401"];
+                404: components["responses"]["404"];
+                500: components["responses"]["500"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/sandboxes/{sandboxID}/logs": {
         parameters: {
             query?: never;
@@ -323,7 +378,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** @description Resume the sandbox */
+        /**
+         * @deprecated
+         * @description Resume the sandbox
+         */
         post: {
             parameters: {
                 query?: never;
@@ -535,6 +593,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/teams/{teamID}/metrics/max": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Get the maximum metrics for the team in the given interval */
+        get: {
+            parameters: {
+                query: {
+                    end?: number;
+                    /** @description Metric to retrieve the maximum value for */
+                    metric: "concurrent_sandboxes" | "sandbox_start_rate";
+                    /** @description Unix timestamp for the start of the interval, in seconds, for which the metrics */
+                    start?: number;
+                };
+                header?: never;
+                path: {
+                    teamID: components["parameters"]["teamID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Successfully returned the team metrics */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["MaxTeamMetric"];
+                    };
+                };
+                400: components["responses"]["400"];
+                401: components["responses"]["401"];
+                403: components["responses"]["403"];
+                500: components["responses"]["500"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/templates": {
         parameters: {
             query?: never;
@@ -568,7 +674,10 @@ export interface paths {
             };
         };
         put?: never;
-        /** @description Create a new template */
+        /**
+         * @deprecated
+         * @description Create a new template
+         */
         post: {
             parameters: {
                 query?: never;
@@ -588,7 +697,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["Template"];
+                        "application/json": components["schemas"]["TemplateLegacy"];
                     };
                 };
                 400: components["responses"]["400"];
@@ -611,7 +720,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** @description Rebuild an template */
+        /**
+         * @deprecated
+         * @description Rebuild an template
+         */
         post: {
             parameters: {
                 query?: never;
@@ -633,7 +745,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["Template"];
+                        "application/json": components["schemas"]["TemplateLegacy"];
                     };
                 };
                 401: components["responses"]["401"];
@@ -704,7 +816,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** @description Start the build */
+        /**
+         * @deprecated
+         * @description Start the build
+         */
         post: {
             parameters: {
                 query?: never;
@@ -880,7 +995,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** @description Create a new template */
+        /**
+         * @deprecated
+         * @description Create a new template
+         */
         post: {
             parameters: {
                 query?: never;
@@ -900,7 +1018,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["Template"];
+                        "application/json": components["schemas"]["TemplateLegacy"];
                     };
                 };
                 400: components["responses"]["400"];
@@ -957,6 +1075,49 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v3/templates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Create a new template */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["TemplateBuildRequestV3"];
+                };
+            };
+            responses: {
+                /** @description The build was requested successfully */
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TemplateRequestResponseV3"];
+                    };
+                };
+                400: components["responses"]["400"];
+                401: components["responses"]["401"];
+                500: components["responses"]["500"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -978,6 +1139,8 @@ export interface components {
             level: components["schemas"]["LogLevel"];
             /** @description Log message content */
             message: string;
+            /** @description Step in the build process related to the log entry */
+            step?: string;
             /**
              * Format: date-time
              * @description Timestamp of the log entry
@@ -985,10 +1148,22 @@ export interface components {
             timestamp: string;
         };
         BuildStatusReason: {
+            /**
+             * @description Log entries related to the status reason
+             * @default []
+             */
+            logEntries: components["schemas"]["BuildLogEntry"][];
             /** @description Message with the status reason, currently reporting only for error status */
             message: string;
             /** @description Step that failed */
             step?: string;
+        };
+        ConnectSandbox: {
+            /**
+             * Format: int32
+             * @description Timeout in seconds from the current time after which the sandbox should expire
+             */
+            timeout: number;
         };
         /**
          * Format: int32
@@ -1137,10 +1312,26 @@ export interface components {
          * @enum {string}
          */
         LogLevel: "debug" | "info" | "warn" | "error";
-        /** @description MCP server configuration */
-        McpConfig: {
-            [key: string]: unknown;
+        /** @description Team metric with timestamp */
+        MaxTeamMetric: {
+            /**
+             * Format: date-time
+             * @deprecated
+             * @description Timestamp of the metric entry
+             */
+            timestamp: string;
+            /**
+             * Format: int64
+             * @description Timestamp of the metric entry in Unix time (seconds since epoch)
+             */
+            timestampUnix: number;
+            /** @description The maximum value of the requested metric in the given interval */
+            value: number;
         };
+        /** @description MCP configuration for the sandbox */
+        Mcp: {
+            [key: string]: unknown;
+        } | null;
         /**
          * Format: int32
          * @description Memory for the sandbox in MiB
@@ -1159,7 +1350,7 @@ export interface components {
              */
             autoPause: boolean;
             envVars?: components["schemas"]["EnvVars"];
-            mcp?: components["schemas"]["McpConfig"];
+            mcp?: components["schemas"]["Mcp"];
             metadata?: components["schemas"]["SandboxMetadata"];
             /** @description Secure all system communication with sandbox */
             secure?: boolean;
@@ -1289,6 +1480,11 @@ export interface components {
          */
         NodeStatus: "ready" | "draining" | "connecting" | "unhealthy";
         NodeStatusChange: {
+            /**
+             * Format: uuid
+             * @description Identifier of the cluster
+             */
+            clusterID?: string;
             status: components["schemas"]["NodeStatus"];
         };
         ResumedSandbox: {
@@ -1426,9 +1622,15 @@ export interface components {
             memUsed: number;
             /**
              * Format: date-time
+             * @deprecated
              * @description Timestamp of the metric entry
              */
             timestamp: string;
+            /**
+             * Format: int64
+             * @description Timestamp of the metric entry in Unix time (seconds since epoch)
+             */
+            timestampUnix: number;
         };
         /**
          * @description State of the sandbox
@@ -1480,9 +1682,15 @@ export interface components {
             sandboxStartRate: number;
             /**
              * Format: date-time
+             * @deprecated
              * @description Timestamp of the metric entry
              */
             timestamp: string;
+            /**
+             * Format: int64
+             * @description Timestamp of the metric entry in Unix time (seconds since epoch)
+             */
+            timestampUnix: number;
         };
         TeamUser: {
             /** @description Email of the user */
@@ -1503,6 +1711,7 @@ export interface components {
             buildCount: number;
             /** @description Identifier of the last successful build for given template */
             buildID: string;
+            buildStatus: components["schemas"]["TemplateBuildStatus"];
             cpuCount: components["schemas"]["CPUCount"];
             /**
              * Format: date-time
@@ -1547,11 +1756,7 @@ export interface components {
              */
             logs: string[];
             reason?: components["schemas"]["BuildStatusReason"];
-            /**
-             * @description Status of the template
-             * @enum {string}
-             */
-            status: "building" | "waiting" | "ready" | "error";
+            status: components["schemas"]["TemplateBuildStatus"];
             /** @description Identifier of the template */
             templateID: string;
         };
@@ -1583,6 +1788,14 @@ export interface components {
             /** @description Identifier of the team */
             teamID?: string;
         };
+        TemplateBuildRequestV3: {
+            /** @description Alias of the template */
+            alias: string;
+            cpuCount?: components["schemas"]["CPUCount"];
+            memoryMB?: components["schemas"]["MemoryMB"];
+            /** @description Identifier of the team */
+            teamID?: string;
+        };
         TemplateBuildStartV2: {
             /**
              * @description Whether the whole build should be forced to run regardless of the cache
@@ -1603,6 +1816,61 @@ export interface components {
              * @default []
              */
             steps: components["schemas"]["TemplateStep"][];
+        };
+        /**
+         * @description Status of the template build
+         * @enum {string}
+         */
+        TemplateBuildStatus: "building" | "waiting" | "ready" | "error";
+        TemplateLegacy: {
+            /** @description Aliases of the template */
+            aliases: string[];
+            /**
+             * Format: int32
+             * @description Number of times the template was built
+             */
+            buildCount: number;
+            /** @description Identifier of the last successful build for given template */
+            buildID: string;
+            cpuCount: components["schemas"]["CPUCount"];
+            /**
+             * Format: date-time
+             * @description Time when the template was created
+             */
+            createdAt: string;
+            createdBy: components["schemas"]["TeamUser"] | null;
+            diskSizeMB: components["schemas"]["DiskSizeMB"];
+            envdVersion: components["schemas"]["EnvdVersion"];
+            /**
+             * Format: date-time
+             * @description Time when the template was last used
+             */
+            lastSpawnedAt: string | null;
+            memoryMB: components["schemas"]["MemoryMB"];
+            /** @description Whether the template is public or only accessible by the team */
+            public: boolean;
+            /**
+             * Format: int64
+             * @description Number of times the template was used
+             */
+            spawnCount: number;
+            /** @description Identifier of the template */
+            templateID: string;
+            /**
+             * Format: date-time
+             * @description Time when the template was last updated
+             */
+            updatedAt: string;
+        };
+        TemplateRequestResponseV3: {
+            /** @description Aliases of the template */
+            aliases: string[];
+            /** @description Identifier of the last successful build for given template */
+            buildID: string;
+            /** @description Whether the template is public or only accessible by the team */
+            public: boolean;
+            /** @description Identifier of the template */
+            templateID: string;
         };
         /** @description Step in the template build process */
         TemplateStep: {

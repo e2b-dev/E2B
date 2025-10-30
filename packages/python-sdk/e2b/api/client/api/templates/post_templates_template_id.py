@@ -6,8 +6,8 @@ import httpx
 from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.error import Error
-from ...models.template import Template
 from ...models.template_build_request import TemplateBuildRequest
+from ...models.template_legacy import TemplateLegacy
 from ...types import Response
 
 
@@ -33,9 +33,9 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Optional[Union[Error, Template]]:
+) -> Optional[Union[Error, TemplateLegacy]]:
     if response.status_code == 202:
-        response_202 = Template.from_dict(response.json())
+        response_202 = TemplateLegacy.from_dict(response.json())
 
         return response_202
     if response.status_code == 401:
@@ -54,7 +54,7 @@ def _parse_response(
 
 def _build_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Response[Union[Error, Template]]:
+) -> Response[Union[Error, TemplateLegacy]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -68,7 +68,7 @@ def sync_detailed(
     *,
     client: AuthenticatedClient,
     body: TemplateBuildRequest,
-) -> Response[Union[Error, Template]]:
+) -> Response[Union[Error, TemplateLegacy]]:
     """Rebuild an template
 
     Args:
@@ -80,7 +80,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Error, Template]]
+        Response[Union[Error, TemplateLegacy]]
     """
 
     kwargs = _get_kwargs(
@@ -100,7 +100,7 @@ def sync(
     *,
     client: AuthenticatedClient,
     body: TemplateBuildRequest,
-) -> Optional[Union[Error, Template]]:
+) -> Optional[Union[Error, TemplateLegacy]]:
     """Rebuild an template
 
     Args:
@@ -112,7 +112,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Error, Template]
+        Union[Error, TemplateLegacy]
     """
 
     return sync_detailed(
@@ -127,7 +127,7 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient,
     body: TemplateBuildRequest,
-) -> Response[Union[Error, Template]]:
+) -> Response[Union[Error, TemplateLegacy]]:
     """Rebuild an template
 
     Args:
@@ -139,7 +139,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Error, Template]]
+        Response[Union[Error, TemplateLegacy]]
     """
 
     kwargs = _get_kwargs(
@@ -157,7 +157,7 @@ async def asyncio(
     *,
     client: AuthenticatedClient,
     body: TemplateBuildRequest,
-) -> Optional[Union[Error, Template]]:
+) -> Optional[Union[Error, TemplateLegacy]]:
     """Rebuild an template
 
     Args:
@@ -169,7 +169,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Error, Template]
+        Union[Error, TemplateLegacy]
     """
 
     return (

@@ -10,14 +10,14 @@ import httpx
 
 from e2b.api import handle_api_exception
 from e2b.api.client.api.templates import (
-    post_v2_templates,
+    post_v3_templates,
     get_templates_template_id_files_hash,
     post_v_2_templates_template_id_builds_build_id,
     get_templates_template_id_builds_build_id_status,
 )
 from e2b.api.client.client import AuthenticatedClient
 from e2b.api.client.models import (
-    TemplateBuildRequestV2,
+    TemplateBuildRequestV3,
     TemplateBuildStartV2,
     TemplateBuildFileUpload,
     TemplateBuild,
@@ -32,9 +32,9 @@ from e2b.template.utils import get_build_step_index
 async def request_build(
     client: AuthenticatedClient, name: str, cpu_count: int, memory_mb: int
 ):
-    res = await post_v2_templates.asyncio_detailed(
+    res = await post_v3_templates.asyncio_detailed(
         client=client,
-        body=TemplateBuildRequestV2(
+        body=TemplateBuildRequestV3(
             alias=name,
             cpu_count=cpu_count,
             memory_mb=memory_mb,

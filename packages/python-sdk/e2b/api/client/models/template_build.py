@@ -22,7 +22,7 @@ class TemplateBuild:
         build_id (str): Identifier of the build
         log_entries (list['BuildLogEntry']): Build logs structured
         logs (list[str]): Build logs
-        status (TemplateBuildStatus): Status of the template
+        status (TemplateBuildStatus): Status of the template build
         template_id (str): Identifier of the template
         reason (Union[Unset, BuildStatusReason]):
     """

@@ -6,23 +6,20 @@ from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 from dateutil.parser import isoparse
 
-from ..models.template_build_status import TemplateBuildStatus
-
 if TYPE_CHECKING:
     from ..models.team_user import TeamUser
 
 
-T = TypeVar("T", bound="Template")
+T = TypeVar("T", bound="TemplateLegacy")
 
 
 @_attrs_define
-class Template:
+class TemplateLegacy:
     """
     Attributes:
         aliases (list[str]): Aliases of the template
         build_count (int): Number of times the template was built
         build_id (str): Identifier of the last successful build for given template
-        build_status (TemplateBuildStatus): Status of the template build
         cpu_count (int): CPU cores for the sandbox
         created_at (datetime.datetime): Time when the template was created
         created_by (Union['TeamUser', None]):
@@ -39,7 +36,6 @@ class Template:
     aliases: list[str]
     build_count: int
     build_id: str
-    build_status: TemplateBuildStatus
     cpu_count: int
     created_at: datetime.datetime
     created_by: Union["TeamUser", None]
@@ -61,8 +57,6 @@ class Template:
         build_count = self.build_count
 
         build_id = self.build_id
-
-        build_status = self.build_status.value
 
         cpu_count = self.cpu_count
 
@@ -101,7 +95,6 @@ class Template:
                 "aliases": aliases,
                 "buildCount": build_count,
                 "buildID": build_id,
-                "buildStatus": build_status,
                 "cpuCount": cpu_count,
                 "createdAt": created_at,
                 "createdBy": created_by,
@@ -128,8 +121,6 @@ class Template:
         build_count = d.pop("buildCount")
 
         build_id = d.pop("buildID")
-
-        build_status = TemplateBuildStatus(d.pop("buildStatus"))
 
         cpu_count = d.pop("cpuCount")
 
@@ -179,11 +170,10 @@ class Template:
 
         updated_at = isoparse(d.pop("updatedAt"))
 
-        template = cls(
+        template_legacy = cls(
             aliases=aliases,
             build_count=build_count,
             build_id=build_id,
-            build_status=build_status,
             cpu_count=cpu_count,
             created_at=created_at,
             created_by=created_by,
@@ -197,8 +187,8 @@ class Template:
             updated_at=updated_at,
         )
 
-        template.additional_properties = d
-        return template
+        template_legacy.additional_properties = d
+        return template_legacy
 
     @property
     def additional_keys(self) -> list[str]:
