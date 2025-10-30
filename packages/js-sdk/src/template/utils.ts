@@ -38,15 +38,10 @@ export async function getAllFilesForFilesHash(
   const { glob } = await dynamicGlob()
   const files = new Set<Path>()
 
-  // Normalize ignore patterns to be absolute against a base directory.
-  // This ensures patterns like "temp*" or "**/*.spec.*" work regardless of cwd.
-  const baseForSrc = path.dirname(srcPath)
-  const toAbsoluteIgnores = (baseDir: string) =>
-    ignorePatterns.map((p) => (path.isAbsolute(p) ? p : path.join(baseDir, p)))
-
   const globFiles = await glob(srcPath, {
-    ignore: toAbsoluteIgnores(baseForSrc),
+    ignore: ignorePatterns,
     withFileTypes: true,
+    cwd: path.dirname(srcPath),
   })
 
   for (const file of globFiles) {
@@ -54,8 +49,9 @@ export async function getAllFilesForFilesHash(
       // For directories, add the directory itself and all files inside it
       files.add(file)
       const dirFiles = await glob(path.join(file.fullpath(), '**/*'), {
-        ignore: toAbsoluteIgnores(file.fullpath()),
+        ignore: ignorePatterns,
         withFileTypes: true,
+        cwd: file.fullpath(),
       })
       dirFiles.forEach((f) => files.add(f))
     } else {
