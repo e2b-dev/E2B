@@ -95,6 +95,7 @@ export async function calculateFilesHash(
     throw error
   }
 
+  // Hash stats
   const hashStats = (stats: fs.Stats) => {
     hash.update(stats.mode.toString())
     hash.update(stats.uid.toString())
@@ -109,11 +110,10 @@ export async function calculateFilesHash(
     const relativePath = path.relative(contextPath, file.fullpath())
     hash.update(relativePath)
 
-    const stats = fs.statSync(file.fullpath(), { throwIfNoEntry: false })
-
     // Add stat information to hash calculation
     if (file.isSymbolicLink()) {
       // If the symlink is broken, it will return undefined, otherwise it will return a stats object of the target
+      const stats = fs.statSync(file.fullpath(), { throwIfNoEntry: false })
       const shouldFollow =
         resolveSymlinks && (stats?.isFile() || stats?.isDirectory())
 
@@ -130,9 +130,10 @@ export async function calculateFilesHash(
     }
 
     // Add file content to hash calculation
-    hashStats(stats!)
+    const stats = fs.statSync(file.fullpath())
+    hashStats(stats)
 
-    if (stats!.isFile()) {
+    if (stats.isFile()) {
       const content = fs.readFileSync(file.fullpath())
       hash.update(new Uint8Array(content))
     }
