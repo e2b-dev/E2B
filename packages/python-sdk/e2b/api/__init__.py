@@ -76,7 +76,9 @@ class ApiClient(AuthenticatedClient):
         config: ConnectionConfig,
         require_api_key: bool = True,
         require_access_token: bool = False,
-        transport: Optional[Union[httpx.BaseTransport | httpx.AsyncBaseTransport]] = None,
+        transport: Optional[
+            Union[httpx.BaseTransport, httpx.AsyncBaseTransport]
+        ] = None,
         *args,
         **kwargs,
     ):
