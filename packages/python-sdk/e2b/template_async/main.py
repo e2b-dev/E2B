@@ -4,18 +4,18 @@ from typing import Callable, Optional
 
 from e2b.api import AsyncApiClient
 from e2b.connection_config import ConnectionConfig
+from e2b.sandbox_async.utils import get_transport
 from e2b.template.consts import RESOLVE_SYMLINKS
 from e2b.template.logger import LogEntry, LogEntryStart, LogEntryEnd
 from e2b.template.main import TemplateBase, TemplateClass
 from e2b.template.types import InstructionType
-from .build_api import (
+from e2b.template_async.build_api import (
     get_file_upload_link,
     request_build,
     trigger_build,
     upload_file,
     wait_for_build_finish,
 )
-from ..sandbox_async.utils import get_transport
 
 
 class AsyncTemplate(TemplateBase):
