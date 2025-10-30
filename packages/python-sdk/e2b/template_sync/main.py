@@ -146,6 +146,7 @@ class Template(TemplateBase):
                     file_info.present is False and file_info.url
                 ):
                     upload_file(
+                        api_client,
                         src,
                         template._template._file_context_path,
                         file_info.url,
