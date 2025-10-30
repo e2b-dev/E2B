@@ -7,8 +7,6 @@ import pytest_asyncio
 import os
 from uuid import uuid4
 
-from logging import warning
-
 from e2b import (
     Sandbox,
     AsyncSandbox,
@@ -33,19 +31,27 @@ def template():
 
 
 @pytest.fixture()
-def sandbox(template, debug, sandbox_test_id):
-    sandbox = Sandbox.create(template, metadata={"sandbox_test_id": sandbox_test_id})
+def sandbox_factory(request, template, sandbox_test_id):
+    def factory(
+        *, template_name: str = template, timeout: int = 5, secure: bool = False
+    ):
+        sandbox = Sandbox.create(
+            template_name,
+            metadata={"sandbox_test_id": sandbox_test_id},
+            secure=secure,
+            timeout=timeout,
+        )
 
-    try:
-        yield sandbox
-    finally:
-        try:
-            sandbox.kill()
-        except (Exception, RuntimeError):
-            if not debug:
-                warning(
-                    "Failed to kill sandbox — this is expected if the test runs with local envd."
-                )
+        request.addfinalizer(lambda: sandbox.kill())
+
+        return sandbox
+
+    return factory
+
+
+@pytest.fixture()
+def sandbox(sandbox_factory):
+    return sandbox_factory()
 
 
 # override the event loop so it never closes
