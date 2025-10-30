@@ -27,21 +27,23 @@ export function readDockerignore(contextPath: string): string[] {
 /**
  * Get all files for a given path and ignore patterns.
  *
- * @param srcPath Path to the source directory
+ * @param src Path to the source directory
+ * @param contextPath Base directory for resolving relative paths
  * @param ignorePatterns Ignore patterns
  * @returns Array of files
  */
 export async function getAllFilesForFilesHash(
-  srcPath: string,
+  src: string,
+  contextPath: string,
   ignorePatterns: string[]
 ) {
   const { glob } = await dynamicGlob()
   const files = new Set<Path>()
 
-  const globFiles = await glob(srcPath, {
+  const globFiles = await glob(src, {
     ignore: ignorePatterns,
     withFileTypes: true,
-    cwd: path.dirname(srcPath),
+    cwd: contextPath,
   })
 
   for (const file of globFiles) {
@@ -84,16 +86,15 @@ export async function calculateFilesHash(
   resolveSymlinks: boolean,
   stackTrace: string | undefined
 ): Promise<string> {
-  const srcPath = path.join(contextPath, src)
   const hash = crypto.createHash('sha256')
   const content = `COPY ${src} ${dest}`
 
   hash.update(content)
 
-  const files = await getAllFilesForFilesHash(srcPath, ignorePatterns)
+  const files = await getAllFilesForFilesHash(src, contextPath, ignorePatterns)
 
   if (files.length === 0) {
-    const error = new Error(`No files found in ${srcPath}`)
+    const error = new Error(`No files found in ${src}`)
     if (stackTrace) {
       error.stack = stackTrace
     }

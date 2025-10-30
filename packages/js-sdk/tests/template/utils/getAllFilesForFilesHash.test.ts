@@ -26,7 +26,7 @@ describe('getAllFilesForFilesHash', () => {
     await writeFile(join(testDir, 'file2.txt'), 'content2')
     await writeFile(join(testDir, 'file3.js'), 'content3')
 
-    const files = await getAllFilesForFilesHash(join(testDir, '*.txt'), [])
+    const files = await getAllFilesForFilesHash('*.txt', testDir, [])
 
     expect(files).toHaveLength(2)
     expect(files.some((f) => f.fullpath().endsWith('file1.txt'))).toBe(true)
@@ -51,7 +51,7 @@ describe('getAllFilesForFilesHash', () => {
     )
     await writeFile(join(testDir, 'README.md'), 'readme content')
 
-    const files = await getAllFilesForFilesHash(join(testDir, 'src'), [])
+    const files = await getAllFilesForFilesHash('src', testDir, [])
 
     expect(files).toHaveLength(6) // 3 files + 3 directories (src, components, utils)
     expect(files.some((f) => f.fullpath().endsWith('index.ts'))).toBe(true)
@@ -67,7 +67,7 @@ describe('getAllFilesForFilesHash', () => {
     await writeFile(join(testDir, 'temp.txt'), 'temp content')
     await writeFile(join(testDir, 'backup.txt'), 'backup content')
 
-    const files = await getAllFilesForFilesHash(join(testDir, '*.txt'), [
+    const files = await getAllFilesForFilesHash('*.txt', testDir, [
       'temp*',
       'backup*',
     ])
@@ -105,7 +105,7 @@ describe('getAllFilesForFilesHash', () => {
       'spec content'
     )
 
-    const files = await getAllFilesForFilesHash(join(testDir, 'src'), [
+    const files = await getAllFilesForFilesHash('src', testDir, [
       '**/*.test.*',
       '**/*.spec.*',
     ])
@@ -126,7 +126,7 @@ describe('getAllFilesForFilesHash', () => {
     await mkdir(join(testDir, 'empty'), { recursive: true })
     await writeFile(join(testDir, 'file.txt'), 'content')
 
-    const files = await getAllFilesForFilesHash(join(testDir, 'empty'), [])
+    const files = await getAllFilesForFilesHash('empty', testDir, [])
 
     expect(files).toHaveLength(1) // The empty directory itself
   })
@@ -138,7 +138,7 @@ describe('getAllFilesForFilesHash', () => {
     await writeFile(join(testDir, 'dir1', 'file2.txt'), 'content2')
     await writeFile(join(testDir, 'file3.txt'), 'content3')
 
-    const files = await getAllFilesForFilesHash(join(testDir, '*'), [])
+    const files = await getAllFilesForFilesHash('*', testDir, [])
 
     expect(files).toHaveLength(4) // 3 files + 1 directory
     expect(files.some((f) => f.fullpath().endsWith('file1.txt'))).toBe(true)
@@ -166,7 +166,7 @@ describe('getAllFilesForFilesHash', () => {
       'css content'
     )
 
-    const files = await getAllFilesForFilesHash(join(testDir, 'src/**/*'), [])
+    const files = await getAllFilesForFilesHash('src/**/*', testDir, [])
 
     expect(files).toHaveLength(9) // 4 files + 5 directories (including nested ones)
     expect(files.some((f) => f.fullpath().endsWith('index.ts'))).toBe(true)
@@ -181,7 +181,7 @@ describe('getAllFilesForFilesHash', () => {
     await writeFile(join(testDir, 'file3.tsx'), 'tsx content')
     await writeFile(join(testDir, 'file4.css'), 'css content')
 
-    const files = await getAllFilesForFilesHash(join(testDir, '*.ts'), [])
+    const files = await getAllFilesForFilesHash('*.ts', testDir, [])
 
     expect(files).toHaveLength(1)
     expect(files.some((f) => f.fullpath().endsWith('file1.ts'))).toBe(true)
@@ -192,7 +192,7 @@ describe('getAllFilesForFilesHash', () => {
     await writeFile(join(testDir, 'apple.txt'), 'a content')
     await writeFile(join(testDir, 'banana.txt'), 'b content')
 
-    const files = await getAllFilesForFilesHash(join(testDir, '*.txt'), [])
+    const files = await getAllFilesForFilesHash('*.txt', testDir, [])
 
     expect(files).toHaveLength(3)
     // Files are sorted by full path, not just filename
@@ -203,7 +203,7 @@ describe('getAllFilesForFilesHash', () => {
   test('should handle no matching files', async () => {
     await writeFile(join(testDir, 'file.txt'), 'content')
 
-    const files = await getAllFilesForFilesHash(join(testDir, '*.js'), [])
+    const files = await getAllFilesForFilesHash('*.js', testDir, [])
 
     expect(files).toHaveLength(0)
   })
@@ -232,7 +232,7 @@ describe('getAllFilesForFilesHash', () => {
     await writeFile(join(testDir, 'dist', 'bundle.js'), 'bundle content')
     await writeFile(join(testDir, 'README.md'), 'readme content')
 
-    const files = await getAllFilesForFilesHash(join(testDir, 'src'), [
+    const files = await getAllFilesForFilesHash('src', testDir, [
       '**/tests/**',
       '**/*.spec.*',
     ])
