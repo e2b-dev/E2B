@@ -32,15 +32,14 @@ def template():
 
 @pytest.fixture()
 def sandbox_factory(request, template, sandbox_test_id):
-    def factory(
-        *, template_name: str = template, timeout: int = 5, secure: bool = False
-    ):
-        sandbox = Sandbox.create(
-            template_name,
-            metadata={"sandbox_test_id": sandbox_test_id},
-            secure=secure,
-            timeout=timeout,
-        )
+    def factory(*, template_name: str = template, **kwargs):
+        kwargs.setdefault("secure", False)
+        kwargs.setdefault("timeout", 5)
+
+        metadata = kwargs.setdefault("metadata", dict())
+        metadata.setdefault("sandbox_test_id", sandbox_test_id)
+
+        sandbox = Sandbox.create(template_name, **kwargs)
 
         request.addfinalizer(lambda: sandbox.kill())
 
@@ -67,16 +66,30 @@ def event_loop():
 
 
 @pytest.fixture
-async def async_sandbox(template, debug, sandbox_test_id):
-    sandbox = await AsyncSandbox.create(
-        template,
-        metadata={"sandbox_test_id": sandbox_test_id},
-        timeout=5,
-    )
+def async_sandbox_factory(request, template, sandbox_test_id, event_loop):
+    async def factory(*, template_name: str = template, **kwargs):
+        kwargs.setdefault("timeout", 5)
 
-    yield sandbox
+        metadata = kwargs.setdefault("metadata", dict())
+        metadata.setdefault("sandbox_test_id", sandbox_test_id)
 
-    await sandbox.kill()
+        sandbox = await AsyncSandbox.create(template_name, **kwargs)
+
+        def kill():
+            async def _kill():
+                await sandbox.kill()
+            event_loop.run_until_complete(_kill())
+
+        request.addfinalizer(kill)
+
+        return sandbox
+
+    return factory
+
+
+@pytest.fixture
+async def async_sandbox(async_sandbox_factory):
+    return await async_sandbox_factory()
 
 
 @pytest.fixture

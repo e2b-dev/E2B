@@ -100,23 +100,20 @@ async def test_write_to_non_existing_directory(async_sandbox: AsyncSandbox):
     assert read_content == content
 
 
-async def test_write_with_secured_envd(template):
+async def test_write_with_secured_envd(async_sandbox_factory):
     filename = f"non_existing_dir_{uuid.uuid4()}/test_write.txt"
     content = "This should succeed too."
 
-    sbx = await AsyncSandbox.create(template, timeout=30, secure=True)
-    try:
-        assert await sbx.is_running()
-        assert sbx._envd_version is not None
-        assert sbx._envd_access_token is not None
+    sbx = await async_sandbox_factory( timeout=30, secure=True)
 
-        await sbx.files.write(filename, content)
+    assert await sbx.is_running()
+    assert sbx._envd_version is not None
+    assert sbx._envd_access_token is not None
 
-        exists = await sbx.files.exists(filename)
-        assert exists
+    await sbx.files.write(filename, content)
 
-        read_content = await sbx.files.read(filename)
-        assert read_content == content
+    exists = await sbx.files.exists(filename)
+    assert exists
 
-    finally:
-        await sbx.kill()
+    read_content = await sbx.files.read(filename)
+    assert read_content == content
