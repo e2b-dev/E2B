@@ -2,7 +2,6 @@ import datetime
 
 from typing import Optional, Dict, List
 
-from httpx import AsyncBaseTransport
 from packaging.version import Version
 from typing_extensions import Unpack
 
@@ -38,7 +37,6 @@ class SandboxApi(SandboxBase):
         query: Optional[SandboxQuery] = None,
         limit: Optional[int] = None,
         next_token: Optional[str] = None,
-        transport: Optional[AsyncBaseTransport] = None,
         **opts: Unpack[ApiParams],
     ) -> AsyncSandboxPaginator:
         """
@@ -54,7 +52,6 @@ class SandboxApi(SandboxBase):
             query=query,
             limit=limit,
             next_token=next_token,
-            transport=transport,
             **opts,
         )
 

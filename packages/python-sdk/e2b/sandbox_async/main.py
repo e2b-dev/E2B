@@ -6,7 +6,6 @@ import json
 
 from typing import Dict, Optional, overload, List
 
-from httpx import AsyncBaseTransport
 from packaging.version import Version
 from typing_extensions import Unpack, Self
 
@@ -73,8 +72,6 @@ class AsyncSandbox(SandboxApi):
 
     def __init__(
         self,
-        *,
-        transport: Optional[AsyncBaseTransport] = None,
         **opts: Unpack[SandboxOpts],
     ):
         """
@@ -82,7 +79,7 @@ class AsyncSandbox(SandboxApi):
         """
         super().__init__(**opts)
 
-        self._transport = transport or get_transport(self.connection_config)
+        self._transport = get_transport(self.connection_config)
         self._envd_api = httpx.AsyncClient(
             base_url=self.envd_api_url,
             transport=self._transport,
@@ -154,7 +151,6 @@ class AsyncSandbox(SandboxApi):
         secure: bool = True,
         allow_internet_access: bool = True,
         mcp: Optional[McpServer] = None,
-        transport: Optional[AsyncBaseTransport] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
         """
@@ -188,7 +184,6 @@ class AsyncSandbox(SandboxApi):
             secure=secure,
             allow_internet_access=allow_internet_access,
             mcp=mcp,
-            transport=transport,
             **opts,
         )
 
@@ -327,7 +322,10 @@ class AsyncSandbox(SandboxApi):
         ...
 
     @class_method_variant("_cls_kill")
-    async def kill(self, **opts: Unpack[ApiParams]) -> bool:
+    async def kill(
+        self,
+        **opts: Unpack[ApiParams],
+    ) -> bool:
         """
         Kill the sandbox specified by sandbox ID.
 
@@ -675,7 +673,6 @@ class AsyncSandbox(SandboxApi):
         envs: Optional[Dict[str, str]],
         secure: bool,
         mcp: Optional[McpServer] = None,
-        transport: Optional[AsyncBaseTransport] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
         extra_sandbox_headers = {}
@@ -715,7 +712,6 @@ class AsyncSandbox(SandboxApi):
         )
 
         return cls(
-            transport=transport,
             sandbox_id=sandbox_id,
             sandbox_domain=sandbox_domain,
             envd_version=envd_version,
