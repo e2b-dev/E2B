@@ -20,9 +20,9 @@ from e2b.api.client.types import Response
 
 logger = logging.getLogger(__name__)
 
-limits = httpx.Limits(
+limits = Limits(
     max_keepalive_connections=int(os.getenv("E2B_MAX_KEEPALIVE_CONNECTIONS", "20")),
-    max_connections=int(os.getenv("E2B_MAX_CONNECTIONS", "100")),
+    max_connections=int(os.getenv("E2B_MAX_CONNECTIONS", "2000")),
     keepalive_expiry=int(os.getenv("E2B_KEEPALIVE_EXPIRY", "300")),
 )
 
