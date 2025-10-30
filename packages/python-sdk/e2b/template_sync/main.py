@@ -82,7 +82,6 @@ class Template(TemplateBase):
                 config,
                 require_api_key=True,
                 require_access_token=False,
-                limits=TemplateBase._limits,
                 transport=get_transport(),
             )
 

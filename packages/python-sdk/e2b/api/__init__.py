@@ -2,7 +2,7 @@ import os
 from types import TracebackType
 import json
 import logging
-from typing import Optional
+from typing import Optional, Union
 
 import httpx
 from httpx import Limits
@@ -76,8 +76,7 @@ class ApiClient(AuthenticatedClient):
         config: ConnectionConfig,
         require_api_key: bool = True,
         require_access_token: bool = False,
-        limits: Optional[Limits] = None,
-        transport: Optional[httpx.BaseTransport | httpx.AsyncBaseTransport] = None,
+        transport: Optional[Union[httpx.BaseTransport | httpx.AsyncBaseTransport]] = None,
         *args,
         **kwargs,
     ):

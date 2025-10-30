@@ -762,11 +762,6 @@ class TemplateBase:
     Base class for building E2B sandbox templates.
     """
 
-    _limits = Limits(
-        max_keepalive_connections=40,
-        max_connections=40,
-        keepalive_expiry=300,
-    )
     _logs_refresh_frequency = 0.2
 
     def __init__(
