@@ -35,12 +35,13 @@ def read_dockerignore(context_path: str) -> List[str]:
 
 
 def get_all_files_for_files_hash(
-    src_path: str, ignore_patterns: List[str]
+    src: str, context_path: str, ignore_patterns: List[str]
 ) -> List[str]:
     """
     Get all files for a given path and ignore patterns.
 
-    :param src_path: Path to the source directory
+    :param src: Path to the source directory
+    :param context_path: Base directory for resolving relative paths
     :param ignore_patterns: Ignore patterns
     :return: Array of files
     """
@@ -49,11 +50,10 @@ def get_all_files_for_files_hash(
     spec = PathSpec.from_lines("gitwildmatch", ignore_patterns)
 
     def matches_ignore(path: str) -> bool:
-        base_for_src = os.path.dirname(src_path)
-        return spec.match_file(os.path.relpath(path, base_for_src))
+        return spec.match_file(os.path.relpath(path, context_path))
 
-    # Use glob to find all files/directories matching the pattern
-    files_glob = glob(src_path, recursive=True)
+    # Use glob to find all files/directories matching the pattern under context_path
+    files_glob = glob(os.path.join(context_path, src), recursive=True)
 
     for file in files_glob:
         if ignore_patterns and matches_ignore(file):
@@ -64,7 +64,7 @@ def get_all_files_for_files_hash(
             files.add(file)
             dir_files = glob(os.path.join(file, "**/*"), recursive=True)
             for dir_file in dir_files:
-                if ignore_patterns and matches_ignore(dir_file):
+                if ignore_patterns and spec.match_file(os.path.relpath(dir_file, file)):
                     continue
                 files.add(dir_file)
         else:
@@ -97,16 +97,15 @@ def calculate_files_hash(
 
     :raises ValueError: If no files match the source pattern
     """
-    src_path = os.path.join(context_path, src)
     hash_obj = hashlib.sha256()
     content = f"COPY {src} {dest}"
 
     hash_obj.update(content.encode())
 
-    files = get_all_files_for_files_hash(src_path, ignore_patterns)
+    files = get_all_files_for_files_hash(src, context_path, ignore_patterns)
 
     if len(files) == 0:
-        raise ValueError(f"No files found in {src_path}").with_traceback(stack_trace)
+        raise ValueError(f"No files found in {src}").with_traceback(stack_trace)
 
     def hash_stats(stat_info: os.stat_result) -> None:
         hash_obj.update(str(stat_info.st_mode).encode())
