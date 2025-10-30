@@ -129,10 +129,10 @@ export async function calculateFilesHash(
       }
     }
 
-    // Add file content to hash calculation
     const stats = fs.statSync(file.fullpath())
     hashStats(stats)
 
+    // Add file content to hash calculation
     if (stats.isFile()) {
       const content = fs.readFileSync(file.fullpath())
       hash.update(new Uint8Array(content))
