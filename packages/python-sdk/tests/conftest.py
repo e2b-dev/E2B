@@ -65,6 +65,7 @@ async def async_sandbox(template, debug, sandbox_test_id):
     sandbox = await AsyncSandbox.create(
         template,
         metadata={"sandbox_test_id": sandbox_test_id},
+        timeout=5,
     )
 
     yield sandbox

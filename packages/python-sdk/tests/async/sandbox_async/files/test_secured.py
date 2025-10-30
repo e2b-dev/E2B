@@ -3,9 +3,11 @@ import urllib.error
 import json
 import pytest
 
+from e2b.sandbox_async.main import AsyncSandbox
+
 
 @pytest.mark.skip_debug()
-async def test_download_url_with_signing(async_sandbox):
+async def test_download_url_with_signing(async_sandbox: AsyncSandbox):
     file_path = "test_download_url_with_signing.txt"
     file_content = "This file will be watched."
 
@@ -20,7 +22,7 @@ async def test_download_url_with_signing(async_sandbox):
 
 
 @pytest.mark.skip_debug()
-async def test_download_url_with_signing_and_expiration(async_sandbox):
+async def test_download_url_with_signing_and_expiration(async_sandbox: AsyncSandbox):
     file_path = "test_download_url_with_signing.txt"
     file_content = "This file will be watched."
 
@@ -35,7 +37,7 @@ async def test_download_url_with_signing_and_expiration(async_sandbox):
 
 
 @pytest.mark.skip_debug()
-async def test_download_url_with_expired_signing(async_sandbox):
+async def test_download_url_with_expired_signing(async_sandbox: AsyncSandbox):
     file_path = "test_download_url_with_signing.txt"
     file_content = "This file will be watched."
 

@@ -4,10 +4,7 @@ from e2b import AsyncSandbox, SandboxQuery, SandboxState
 
 
 @pytest.mark.skip_debug()
-async def test_kill_existing_sandbox(
-    async_sandbox: AsyncSandbox,
-    sandbox_test_id: str,
-):
+async def test_kill_existing_sandbox(async_sandbox: AsyncSandbox, sandbox_test_id: str):
     assert await AsyncSandbox.kill(async_sandbox.sandbox_id)
 
     paginator = AsyncSandbox.list(

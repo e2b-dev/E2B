@@ -358,8 +358,12 @@ class Client:
             response_type=self._response_type,
         )
 
-        async with self.async_pool.stream(**req_data) as response:
-            async for chunk in response.aiter_stream():
+        async with self.async_pool.stream(**req_data) as http_resp:
+            if http_resp.status != 200:
+                await http_resp.aread()
+                raise error_for_response(http_resp)
+
+            async for chunk in http_resp.aiter_stream():
                 for parsed in parser.parse(chunk):
                     yield parsed
 
@@ -388,8 +392,12 @@ class Client:
             response_type=self._response_type,
         )
 
-        with self.pool.stream(**req_data) as response:
-            for chunk in response.iter_stream():
+        with self.pool.stream(**req_data) as http_resp:
+            if http_resp.status != 200:
+                http_resp.read()
+                raise error_for_response(http_resp)
+
+            for chunk in http_resp.iter_stream():
                 for parsed in parser.parse(chunk):
                     yield parsed
 
