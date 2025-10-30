@@ -53,7 +53,7 @@ jobs:
           version: '${{ env.TOOL_VERSION_PNPM }}'
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v6
         with:
           node-version: '${{ env.TOOL_VERSION_NODEJS }}'
           registry-url: 'https://registry.npmjs.org'
