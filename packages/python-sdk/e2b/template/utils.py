@@ -34,15 +34,40 @@ def read_dockerignore(context_path: str) -> List[str]:
     ]
 
 
-def contains_glob_pattern(path_str: str) -> bool:
+def get_all_files_for_files_hash(
+    src_path: str, ignore_patterns: List[str]
+) -> List[str]:
     """
-    Check if a path contains glob patterns.
+    Get all files for a given path and ignore patterns.
 
-    :param path_str: The path to check for glob patterns
-    :return: True if the path contains glob patterns, false otherwise
+    :param src_path: Path to the source directory
+    :param ignore_patterns: Ignore patterns
+    :return: Array of files
     """
-    # Check for common glob patterns: *, ?, [abc], {a,b}, **
-    return bool(re.search(r"[*?\[\]{}]", path_str))
+    files = set()
+
+    # Use glob to find all files matching the pattern
+    files_glob = glob(src_path, recursive=True)
+
+    for file in files_glob:
+        if ignore_patterns and any(
+            fnmatch.fnmatch(file, pattern) for pattern in ignore_patterns
+        ):
+            continue
+
+        if os.path.isdir(file):
+            # If it's a directory, add all files in it recursively
+            dir_files = glob(os.path.join(file, "**/*"), recursive=True)
+            for dir_file in dir_files:
+                if ignore_patterns and any(
+                    fnmatch.fnmatch(dir_file, pattern) for pattern in ignore_patterns
+                ):
+                    continue
+                files.add(dir_file)
+        else:
+            files.add(file)
+
+    return sorted(list(files))
 
 
 def calculate_files_hash(
@@ -75,21 +100,7 @@ def calculate_files_hash(
 
     hash_obj.update(content.encode())
 
-    # Only check if it's a directory if there are no glob patterns
-    if not contains_glob_pattern(os.path.basename(src_path)) and os.path.isdir(
-        src_path
-    ):
-        src_path = os.path.join(src_path, "**")
-
-    files_glob = glob(src_path, recursive=True)
-
-    files = []
-    for file in files_glob:
-        if ignore_patterns and any(
-            fnmatch.fnmatch(file, pattern) for pattern in ignore_patterns
-        ):
-            continue
-        files.append(file)
+    files = get_all_files_for_files_hash(src_path, ignore_patterns)
 
     if len(files) == 0:
         raise ValueError(f"No files found in {src_path}").with_traceback(stack_trace)
