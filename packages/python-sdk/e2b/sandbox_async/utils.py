@@ -3,8 +3,6 @@ import logging
 
 from typing import TypeVar, Union, Callable, Awaitable, Optional
 
-from httpx import BaseTransport
-
 from e2b.connection_config import ConnectionConfig
 from e2b.api import limits, AsyncApiClient
 
@@ -17,12 +15,10 @@ OutputHandler = Union[
 logger = logging.getLogger(__name__)
 
 
-def get_api_client(
-    config: ConnectionConfig, *, transport: Optional[BaseTransport] = None
-) -> AsyncApiClient:
+def get_api_client(config: ConnectionConfig) -> AsyncApiClient:
     return AsyncApiClient(
         config,
-        transport=transport or get_transport(config),
+        transport=get_transport(config),
     )
 
 

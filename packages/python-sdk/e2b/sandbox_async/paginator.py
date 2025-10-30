@@ -50,7 +50,7 @@ class AsyncSandboxPaginator(SandboxPaginatorBase):
             }
             metadata = urllib.parse.urlencode(quoted_metadata)
 
-        api_client = get_api_client(self._config, transport=self._transport)
+        api_client = get_api_client(self._config)
         res = await get_v2_sandboxes.asyncio_detailed(
             client=api_client,
             metadata=metadata if metadata else UNSET,

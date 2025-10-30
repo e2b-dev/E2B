@@ -335,7 +335,6 @@ class AsyncSandbox(SandboxApi):
         """
         return await SandboxApi._cls_kill(
             sandbox_id=self.sandbox_id,
-            transport=self._transport,
             **self.connection_config.get_api_params(**opts),
         )
 
@@ -697,7 +696,6 @@ class AsyncSandbox(SandboxApi):
                 secure=secure,
                 allow_internet_access=allow_internet_access,
                 mcp=mcp,
-                transport=transport,
                 **opts,
             )
 
