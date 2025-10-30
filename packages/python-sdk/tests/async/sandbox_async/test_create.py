@@ -4,15 +4,9 @@ from e2b import AsyncSandbox, SandboxQuery
 
 
 @pytest.mark.skip_debug()
-async def test_start(template, httpx_async_transport):
-    sbx = await AsyncSandbox.create(
-        template, transport=httpx_async_transport, timeout=5
-    )
-    try:
-        assert await sbx.is_running()
-        assert sbx._envd_version is not None
-    finally:
-        await sbx.kill(transport=httpx_async_transport)
+async def test_start(async_sandbox):
+    assert await async_sandbox.is_running()
+    assert async_sandbox._envd_version is not None
 
 
 @pytest.mark.skip_debug()

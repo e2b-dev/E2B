@@ -6,7 +6,7 @@ import json
 
 from typing import Dict, Optional, overload, List
 
-from httpx import AsyncBaseTransport, BaseTransport
+from httpx import AsyncBaseTransport
 from packaging.version import Version
 from typing_extensions import Unpack, Self
 
@@ -327,11 +327,7 @@ class AsyncSandbox(SandboxApi):
         ...
 
     @class_method_variant("_cls_kill")
-    async def kill(
-        self,
-        transport: Optional[BaseTransport] = None,
-        **opts: Unpack[ApiParams],
-    ) -> bool:
+    async def kill(self, **opts: Unpack[ApiParams]) -> bool:
         """
         Kill the sandbox specified by sandbox ID.
 
@@ -339,7 +335,7 @@ class AsyncSandbox(SandboxApi):
         """
         return await SandboxApi._cls_kill(
             sandbox_id=self.sandbox_id,
-            transport=transport,
+            transport=self._transport,
             **self.connection_config.get_api_params(**opts),
         )
 
@@ -721,6 +717,7 @@ class AsyncSandbox(SandboxApi):
         )
 
         return cls(
+            transport=transport,
             sandbox_id=sandbox_id,
             sandbox_domain=sandbox_domain,
             envd_version=envd_version,

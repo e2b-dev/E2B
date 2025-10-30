@@ -9,8 +9,6 @@ from uuid import uuid4
 
 from logging import warning
 
-from httpx import AsyncBaseTransport, AsyncHTTPTransport
-
 from e2b import (
     Sandbox,
     AsyncSandbox,
@@ -50,29 +48,28 @@ def sandbox(template, debug, sandbox_test_id):
                 )
 
 
-@pytest_asyncio.fixture
-async def httpx_async_transport() -> AsyncBaseTransport:
-    return AsyncHTTPTransport()
+# override the event loop so it never closes
+# this helps us with the global-scoped async http transport
+@pytest.fixture(scope="session")
+def event_loop():
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+    yield loop
+    loop.close()
 
 
-@pytest_asyncio.fixture
-async def async_sandbox(template, debug, sandbox_test_id, httpx_async_transport):
+@pytest.fixture
+async def async_sandbox(template, debug, sandbox_test_id):
     sandbox = await AsyncSandbox.create(
         template,
         metadata={"sandbox_test_id": sandbox_test_id},
-        transport=httpx_async_transport,
     )
 
-    try:
-        yield sandbox
-    finally:
-        try:
-            await sandbox.kill()
-        except (Exception, RuntimeError):
-            if not debug:
-                warning(
-                    "Failed to kill sandbox — this is expected if the test runs with local envd."
-                )
+    yield sandbox
+
+    await sandbox.kill()
 
 
 @pytest.fixture

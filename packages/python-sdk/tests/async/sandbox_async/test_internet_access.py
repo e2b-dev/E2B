@@ -37,15 +37,12 @@ async def test_internet_access_disabled(template):
 
 
 @pytest.mark.skip_debug()
-async def test_internet_access_default(template):
+async def test_internet_access_default(async_sandbox):
     """Test that sandbox with default settings (no explicit allow_internet_access) has internet access."""
-    sbx = await AsyncSandbox.create(template)
-    try:
-        # Test internet connectivity by making a curl request to a reliable external site
-        result = await sbx.commands.run(
-            "curl -s -o /dev/null -w '%{http_code}' https://e2b.dev"
-        )
-        assert result.exit_code == 0
-        assert result.stdout.strip() == "200"
-    finally:
-        await sbx.kill()
+    # Test internet connectivity by making a curl request to a reliable external site
+
+    result = await async_sandbox.commands.run(
+        "curl -s -o /dev/null -w '%{http_code}' https://e2b.dev"
+    )
+    assert result.exit_code == 0
+    assert result.stdout.strip() == "200"

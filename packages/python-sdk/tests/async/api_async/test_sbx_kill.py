@@ -7,11 +7,8 @@ from e2b import AsyncSandbox, SandboxQuery, SandboxState
 async def test_kill_existing_sandbox(
     async_sandbox: AsyncSandbox,
     sandbox_test_id: str,
-    httpx_async_transport,
 ):
-    assert await AsyncSandbox.kill(
-        async_sandbox.sandbox_id, transport=httpx_async_transport
-    )
+    assert await AsyncSandbox.kill(async_sandbox.sandbox_id)
 
     paginator = AsyncSandbox.list(
         query=SandboxQuery(
