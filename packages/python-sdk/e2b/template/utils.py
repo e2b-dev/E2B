@@ -2,12 +2,11 @@ import hashlib
 import os
 import json
 import stat
-from glob import glob
+from wcmatch import glob
 import re
 import inspect
 from types import TracebackType, FrameType
 from typing import List, Optional, Union
-from pathspec import PathSpec
 
 from e2b.template.consts import BASE_STEP_NAME, FINALIZE_STEP_NAME
 
@@ -47,24 +46,17 @@ def get_all_files_for_files_hash(
     """
     files = set()
 
-    spec = None
-    if ignore_patterns:
-        spec = PathSpec.from_lines("gitwildmatch", ignore_patterns)
-
-    def matches_ignore(path: str) -> bool:
-        if spec is None:
-            return False
-        return spec.match_file(os.path.relpath(path, context_path))
-
     # Use glob to find all files/directories matching the pattern under context_path
-    files_glob = glob(src, recursive=True, root_dir=os.path.abspath(context_path))
+    abs_context_path = os.path.abspath(context_path)
+    files_glob = glob.glob(
+        src,
+        flags=glob.GLOBSTAR,
+        root_dir=abs_context_path,
+        exclude=ignore_patterns,
+    )
 
     for file in files_glob:
-        if matches_ignore(file):
-            continue
-
-        # Resolve file path relative to context_path since glob with root_dir returns paths
-        # relative to current working directory, not root_dir
+        # Resolve file path relative to context_path
         file_path = (
             os.path.join(context_path, file) if not os.path.isabs(file) else file
         )
@@ -72,14 +64,13 @@ def get_all_files_for_files_hash(
         if os.path.isdir(file_path):
             # If it's a directory, add the directory and all entries recursively
             files.add(file)
-            dir_files = glob(
+            dir_files = glob.glob(
                 os.path.join(file, "**/*"),
-                recursive=True,
-                root_dir=os.path.abspath(context_path),
+                flags=glob.GLOBSTAR,
+                root_dir=abs_context_path,
+                exclude=ignore_patterns,
             )
             for dir_file in dir_files:
-                if matches_ignore(dir_file):
-                    continue
                 files.add(dir_file)
         else:
             files.add(file)
