@@ -65,12 +65,18 @@ def get_all_files_for_files_hash(
 
         # Resolve file path relative to context_path since glob with root_dir returns paths
         # relative to current working directory, not root_dir
-        file_path = os.path.join(context_path, file) if not os.path.isabs(file) else file
+        file_path = (
+            os.path.join(context_path, file) if not os.path.isabs(file) else file
+        )
 
         if os.path.isdir(file_path):
             # If it's a directory, add the directory and all entries recursively
             files.add(file)
-            dir_files = glob(os.path.join(file, "**/*"), recursive=True, root_dir=os.path.abspath(context_path))
+            dir_files = glob(
+                os.path.join(file, "**/*"),
+                recursive=True,
+                root_dir=os.path.abspath(context_path),
+            )
             for dir_file in dir_files:
                 if matches_ignore(dir_file):
                     continue
