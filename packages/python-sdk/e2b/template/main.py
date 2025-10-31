@@ -1246,6 +1246,14 @@ class TemplateBase:
                 )
                 continue
 
+            if instruction["type"] == InstructionType.ENV:
+                args = instruction["args"]
+                values = []
+                for i in range(0, len(args), 2):
+                    values.append(f"{args[i]}={args[i + 1]}")
+                dockerfile += f"ENV {' '.join(values)}\n"
+                continue
+
             dockerfile += (
                 f"{instruction['type'].value} {' '.join(instruction['args'])}\n"
             )

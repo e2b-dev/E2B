@@ -749,6 +749,14 @@ export class TemplateBase
         dockerfile += `COPY ${instruction.args[0]} ${instruction.args[1]}\n`
         continue
       }
+      if (instruction.type === InstructionType.ENV) {
+        const values: string[] = []
+        for (let i = 0; i < instruction.args.length; i += 2) {
+          values.push(`${instruction.args[i]}=${instruction.args[i + 1]}`)
+        }
+        dockerfile += `ENV ${values.join(' ')}\n`
+        continue
+      }
       dockerfile += `${instruction.type} ${instruction.args.join(' ')}\n`
     }
     if (this.startCmd) {
