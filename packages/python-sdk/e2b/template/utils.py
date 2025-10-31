@@ -120,8 +120,9 @@ def calculate_files_hash(
         hash_obj.update(str(stat_info.st_mtime).encode())
 
     for file in files:
-        # Hash the relative path (normalized by glob, matching JavaScript path.relative behavior)
-        hash_obj.update(os.path.relpath(file, context_path).encode())
+        # Hash the relative path
+        relative_path = os.path.relpath(file, context_path)
+        hash_obj.update(relative_path.encode())
 
         # Add stat information to hash calculation
         if os.path.islink(file):
