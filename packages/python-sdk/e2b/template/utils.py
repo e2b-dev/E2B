@@ -47,24 +47,32 @@ def get_all_files_for_files_hash(
     """
     files = set()
 
-    spec = PathSpec.from_lines("gitwildmatch", ignore_patterns)
+    spec = None
+    if ignore_patterns:
+        spec = PathSpec.from_lines("gitwildmatch", ignore_patterns)
 
     def matches_ignore(path: str) -> bool:
+        if spec is None:
+            return False
         return spec.match_file(os.path.relpath(path, context_path))
 
     # Use glob to find all files/directories matching the pattern under context_path
-    files_glob = glob(os.path.join(context_path, src), recursive=True)
+    files_glob = glob(src, recursive=True, root_dir=os.path.abspath(context_path))
 
     for file in files_glob:
-        if ignore_patterns and matches_ignore(file):
+        if matches_ignore(file):
             continue
 
-        if os.path.isdir(file):
+        # Resolve file path relative to context_path since glob with root_dir returns paths
+        # relative to current working directory, not root_dir
+        file_path = os.path.join(context_path, file) if not os.path.isabs(file) else file
+
+        if os.path.isdir(file_path):
             # If it's a directory, add the directory and all entries recursively
             files.add(file)
-            dir_files = glob(os.path.join(file, "**/*"), recursive=True)
+            dir_files = glob(os.path.join(file, "**/*"), recursive=True, root_dir=os.path.abspath(context_path))
             for dir_file in dir_files:
-                if ignore_patterns and matches_ignore(dir_file):
+                if matches_ignore(dir_file):
                     continue
                 files.add(dir_file)
         else:
