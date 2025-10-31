@@ -623,9 +623,9 @@ class TemplateBuilder:
         def _set_start():
             return self.set_start_cmd(
                 "sudo devcontainer up --workspace-folder "
-                + devcontainer_directory
+                + str(devcontainer_directory)
                 + " && sudo /prepare-exec.sh "
-                + devcontainer_directory
+                + str(devcontainer_directory)
                 + " | sudo tee /devcontainer.sh > /dev/null && sudo chmod +x /devcontainer.sh && sudo touch /devcontainer.up",
                 wait_for_file("/devcontainer.up"),
             )
