@@ -3,4 +3,4 @@
 'e2b': patch
 ---
 
-add doublestar pattern when not specified to folder when calling .copy()
+fix cache invalidation when calling .copy() on updated folder during the template build
