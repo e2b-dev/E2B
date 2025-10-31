@@ -231,6 +231,7 @@ class Sandbox(SandboxApi):
         With sandbox ID you can connect to the same sandbox from different places or environments (serverless functions, etc).
 
         :param timeout: Timeout for the sandbox in **seconds**
+            For running sandboxes, the timeout will update only if the new timeout is longer than the existing one.
         :return: A running sandbox instance
 
         @example
@@ -260,7 +261,8 @@ class Sandbox(SandboxApi):
         With sandbox ID you can connect to the same sandbox from different places or environments (serverless functions, etc).
 
         :param sandbox_id: Sandbox ID
-        :param timeout: Timeout for the sandbox in **seconds**
+        :param timeout: Timeout for the sandbox in **seconds**.
+            For running sandboxes, the timeout will update only if the new timeout is longer than the existing one.
         :return: A running sandbox instance
 
         @example
@@ -286,7 +288,8 @@ class Sandbox(SandboxApi):
 
         With sandbox ID you can connect to the same sandbox from different places or environments (serverless functions, etc).
 
-        :param timeout: Timeout for the sandbox in **seconds**
+        :param timeout: Timeout for the sandbox in **seconds**.
+            For running sandboxes, the timeout will update only if the new timeout is longer than the existing one.
         :return: A running sandbox instance
 
         @example
@@ -298,7 +301,7 @@ class Sandbox(SandboxApi):
         same_sandbox = sandbox.connect()
         ```
         """
-        SandboxApi._cls_resume(
+        SandboxApi._cls_connect(
             sandbox_id=self.sandbox_id,
             timeout=timeout,
             **opts,
@@ -651,12 +654,10 @@ class Sandbox(SandboxApi):
         timeout: Optional[int] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
-        SandboxApi._cls_resume(sandbox_id, timeout, **opts)
-
-        response = cls._cls_get_info(sandbox_id, **opts)
+        sandbox = SandboxApi._cls_connect(sandbox_id, timeout, **opts)
 
         sandbox_headers = {}
-        envd_access_token = response._envd_access_token
+        envd_access_token = sandbox.envd_access_token
         if envd_access_token is not None and not isinstance(envd_access_token, Unset):
             sandbox_headers["X-Access-Token"] = envd_access_token
 
@@ -667,9 +668,9 @@ class Sandbox(SandboxApi):
 
         return cls(
             sandbox_id=sandbox_id,
-            sandbox_domain=response.sandbox_domain,
+            sandbox_domain=sandbox.domain,
             connection_config=connection_config,
-            envd_version=Version(response.envd_version),
+            envd_version=Version(sandbox.envd_version),
             envd_access_token=envd_access_token,
         )
 

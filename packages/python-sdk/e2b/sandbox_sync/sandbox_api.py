@@ -13,7 +13,8 @@ from e2b.api.client.models import (
     NewSandbox,
     PostSandboxesSandboxIDTimeoutBody,
     Error,
-    ResumedSandbox,
+    ConnectSandbox,
+    Sandbox,
 )
 from e2b.api.client.api.sandboxes import (
     get_sandboxes_sandbox_id,
@@ -21,7 +22,7 @@ from e2b.api.client.api.sandboxes import (
     delete_sandboxes_sandbox_id,
     post_sandboxes,
     get_sandboxes_sandbox_id_metrics,
-    post_sandboxes_sandbox_id_resume,
+    post_sandboxes_sandbox_id_connect,
     post_sandboxes_sandbox_id_pause,
 )
 from e2b.connection_config import ConnectionConfig, ApiParams
@@ -244,52 +245,36 @@ class SandboxApi(SandboxBase):
             ]
 
     @classmethod
-    def _cls_resume(
+    def _cls_connect(
         cls,
         sandbox_id: str,
         timeout: Optional[int] = None,
         **opts: Unpack[ApiParams],
-    ) -> bool:
+    ) -> Sandbox:
         timeout = timeout or SandboxBase.default_sandbox_timeout
 
-        # Temporary solution (02/12/2025),
-        # Options discussed:
-        # 1. No set - never sure how long the sandbox will be running
-        # 2. Always set the timeout in code - the user can't just connect to the sandbox
-        #       without changing the timeout, round trip to the server time
-        # 3. Set the timeout in resume on backend - side effect on error
-        # 4. Create new endpoint for connect
-        try:
-            cls._cls_set_timeout(
-                sandbox_id=sandbox_id,
-                timeout=timeout,
-                **opts,
+        config = ConnectionConfig(**opts)
+
+        with ApiClient(
+            config,
+            limits=SandboxBase._limits,
+        ) as api_client:
+            res = post_sandboxes_sandbox_id_connect.sync_detailed(
+                sandbox_id,
+                client=api_client,
+                body=ConnectSandbox(timeout=timeout),
             )
-            return False
-        except SandboxException:
-            # Sandbox is not running, resume it
-            config = ConnectionConfig(**opts)
 
-            with ApiClient(
-                config,
-                limits=SandboxBase._limits,
-            ) as api_client:
-                res = post_sandboxes_sandbox_id_resume.sync_detailed(
-                    sandbox_id,
-                    client=api_client,
-                    body=ResumedSandbox(timeout=timeout),
-                )
+            if res.status_code == 404:
+                raise NotFoundException(f"Paused sandbox {sandbox_id} not found")
 
-                if res.status_code == 404:
-                    raise NotFoundException(f"Paused sandbox {sandbox_id} not found")
+            if res.status_code >= 300:
+                raise handle_api_exception(res)
 
-                if res.status_code == 409:
-                    return False
+            if isinstance(res.parsed, Error):
+                raise SandboxException(f"{res.parsed.message}: Request failed")
 
-                if res.status_code >= 300:
-                    raise handle_api_exception(res)
-
-                return True
+            return res.parsed
 
     @classmethod
     def _cls_pause(
