@@ -51,9 +51,9 @@ def test_connect_does_not_shorten_timeout_on_running_sandbox(template):
         info_after = Sandbox.get_info(sbx.sandbox_id)
 
         # The end_at time should not have been shortened. It should be the same
-        assert (
-            info_after.end_at == info_before.end_at
-        ), f"Timeout was shortened: before={info_before.end_at}, after={info_after.end_at}"
+        assert info_after.end_at == info_before.end_at, (
+            f"Timeout was shortened: before={info_before.end_at}, after={info_after.end_at}"
+        )
     finally:
         sbx.kill()
 
@@ -70,6 +70,6 @@ def test_connect_extends_timeout_on_running_sandbox(sandbox):
     info_after = sandbox.get_info()
 
     # The end_at time should have been extended
-    assert (
-        info_after.end_at > info_before.end_at
-    ), f"Timeout was not extended: before={info_before.end_at}, after={info_after.end_at}"
+    assert info_after.end_at > info_before.end_at, (
+        f"Timeout was not extended: before={info_before.end_at}, after={info_after.end_at}"
+    )

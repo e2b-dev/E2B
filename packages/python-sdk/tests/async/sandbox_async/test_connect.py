@@ -51,9 +51,9 @@ async def test_connect_does_not_shorten_timeout_on_running_sandbox(template):
         info_after = await AsyncSandbox.get_info(sbx.sandbox_id)
 
         # The end_at time should not have been shortened. It should be the same
-        assert (
-            info_after.end_at == info_before.end_at
-        ), f"Timeout was changed: before={info_before.end_at}, after={info_after.end_at}"
+        assert info_after.end_at == info_before.end_at, (
+            f"Timeout was changed: before={info_before.end_at}, after={info_after.end_at}"
+        )
     finally:
         await sbx.kill()
 
@@ -73,6 +73,6 @@ async def test_connect_extends_timeout_on_running_sandbox(async_sandbox):
     info_after = await AsyncSandbox.get_info(async_sandbox.sandbox_id)
 
     # The end_at time should have been extended
-    assert (
-        info_after.end_at > info_before.end_at
-    ), f"Timeout was not extended: before={info_before.end_at}, after={info_after.end_at}"
+    assert info_after.end_at > info_before.end_at, (
+        f"Timeout was not extended: before={info_before.end_at}, after={info_after.end_at}"
+    )
