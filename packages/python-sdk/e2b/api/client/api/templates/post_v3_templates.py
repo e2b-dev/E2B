@@ -6,20 +6,20 @@ import httpx
 from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.error import Error
-from ...models.template_build_request import TemplateBuildRequest
-from ...models.template_legacy import TemplateLegacy
+from ...models.template_build_request_v3 import TemplateBuildRequestV3
+from ...models.template_request_response_v3 import TemplateRequestResponseV3
 from ...types import Response
 
 
 def _get_kwargs(
     *,
-    body: TemplateBuildRequest,
+    body: TemplateBuildRequestV3,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
 
     _kwargs: dict[str, Any] = {
         "method": "post",
-        "url": "/templates",
+        "url": "/v3/templates",
     }
 
     _kwargs["json"] = body.to_dict()
@@ -32,9 +32,9 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Optional[Union[Error, TemplateLegacy]]:
+) -> Optional[Union[Error, TemplateRequestResponseV3]]:
     if response.status_code == 202:
-        response_202 = TemplateLegacy.from_dict(response.json())
+        response_202 = TemplateRequestResponseV3.from_dict(response.json())
 
         return response_202
     if response.status_code == 400:
@@ -57,7 +57,7 @@ def _parse_response(
 
 def _build_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Response[Union[Error, TemplateLegacy]]:
+) -> Response[Union[Error, TemplateRequestResponseV3]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -69,19 +69,19 @@ def _build_response(
 def sync_detailed(
     *,
     client: AuthenticatedClient,
-    body: TemplateBuildRequest,
-) -> Response[Union[Error, TemplateLegacy]]:
+    body: TemplateBuildRequestV3,
+) -> Response[Union[Error, TemplateRequestResponseV3]]:
     """Create a new template
 
     Args:
-        body (TemplateBuildRequest):
+        body (TemplateBuildRequestV3):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Error, TemplateLegacy]]
+        Response[Union[Error, TemplateRequestResponseV3]]
     """
 
     kwargs = _get_kwargs(
@@ -98,19 +98,19 @@ def sync_detailed(
 def sync(
     *,
     client: AuthenticatedClient,
-    body: TemplateBuildRequest,
-) -> Optional[Union[Error, TemplateLegacy]]:
+    body: TemplateBuildRequestV3,
+) -> Optional[Union[Error, TemplateRequestResponseV3]]:
     """Create a new template
 
     Args:
-        body (TemplateBuildRequest):
+        body (TemplateBuildRequestV3):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Error, TemplateLegacy]
+        Union[Error, TemplateRequestResponseV3]
     """
 
     return sync_detailed(
@@ -122,19 +122,19 @@ def sync(
 async def asyncio_detailed(
     *,
     client: AuthenticatedClient,
-    body: TemplateBuildRequest,
-) -> Response[Union[Error, TemplateLegacy]]:
+    body: TemplateBuildRequestV3,
+) -> Response[Union[Error, TemplateRequestResponseV3]]:
     """Create a new template
 
     Args:
-        body (TemplateBuildRequest):
+        body (TemplateBuildRequestV3):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Error, TemplateLegacy]]
+        Response[Union[Error, TemplateRequestResponseV3]]
     """
 
     kwargs = _get_kwargs(
@@ -149,19 +149,19 @@ async def asyncio_detailed(
 async def asyncio(
     *,
     client: AuthenticatedClient,
-    body: TemplateBuildRequest,
-) -> Optional[Union[Error, TemplateLegacy]]:
+    body: TemplateBuildRequestV3,
+) -> Optional[Union[Error, TemplateRequestResponseV3]]:
     """Create a new template
 
     Args:
-        body (TemplateBuildRequest):
+        body (TemplateBuildRequestV3):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Error, TemplateLegacy]
+        Union[Error, TemplateRequestResponseV3]
     """
 
     return (

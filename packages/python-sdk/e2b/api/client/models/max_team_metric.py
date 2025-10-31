@@ -1,76 +1,65 @@
 import datetime
 from collections.abc import Mapping
-from typing import Any, TypeVar, Union
+from typing import Any, TypeVar
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 from dateutil.parser import isoparse
 
-from ..models.log_level import LogLevel
-from ..types import UNSET, Unset
-
-T = TypeVar("T", bound="BuildLogEntry")
+T = TypeVar("T", bound="MaxTeamMetric")
 
 
 @_attrs_define
-class BuildLogEntry:
-    """
+class MaxTeamMetric:
+    """Team metric with timestamp
+
     Attributes:
-        level (LogLevel): State of the sandbox
-        message (str): Log message content
-        timestamp (datetime.datetime): Timestamp of the log entry
-        step (Union[Unset, str]): Step in the build process related to the log entry
+        timestamp (datetime.datetime): Timestamp of the metric entry
+        timestamp_unix (int): Timestamp of the metric entry in Unix time (seconds since epoch)
+        value (float): The maximum value of the requested metric in the given interval
     """
 
-    level: LogLevel
-    message: str
     timestamp: datetime.datetime
-    step: Union[Unset, str] = UNSET
+    timestamp_unix: int
+    value: float
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        level = self.level.value
-
-        message = self.message
-
         timestamp = self.timestamp.isoformat()
 
-        step = self.step
+        timestamp_unix = self.timestamp_unix
+
+        value = self.value
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
-                "level": level,
-                "message": message,
                 "timestamp": timestamp,
+                "timestampUnix": timestamp_unix,
+                "value": value,
             }
         )
-        if step is not UNSET:
-            field_dict["step"] = step
 
         return field_dict
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        level = LogLevel(d.pop("level"))
-
-        message = d.pop("message")
-
         timestamp = isoparse(d.pop("timestamp"))
 
-        step = d.pop("step", UNSET)
+        timestamp_unix = d.pop("timestampUnix")
 
-        build_log_entry = cls(
-            level=level,
-            message=message,
+        value = d.pop("value")
+
+        max_team_metric = cls(
             timestamp=timestamp,
-            step=step,
+            timestamp_unix=timestamp_unix,
+            value=value,
         )
 
-        build_log_entry.additional_properties = d
-        return build_log_entry
+        max_team_metric.additional_properties = d
+        return max_team_metric
 
     @property
     def additional_keys(self) -> list[str]:
