@@ -106,7 +106,7 @@ export type SandboxBetaCreateOpts = SandboxOpts & {
 export type SandboxConnectOpts = ConnectionOpts & {
   /**
    * Timeout for the sandbox in **milliseconds**.
-   * If the sandbox is running, it will only update the timeout if the new timeout is longer than the current one.
+   * For running sandboxes, the timeout will update only if the new timeout is longer than the existing one.
    * Maximum time a sandbox can be kept alive is 24 hours (86_400_000 milliseconds) for Pro users and 1 hour (3_600_000 milliseconds) for Hobby users.
    *
    * @default 300_000 // 5 minutes

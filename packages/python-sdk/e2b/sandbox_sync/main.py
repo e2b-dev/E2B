@@ -231,7 +231,7 @@ class Sandbox(SandboxApi):
         With sandbox ID you can connect to the same sandbox from different places or environments (serverless functions, etc).
 
         :param timeout: Timeout for the sandbox in **seconds**
-            If the sandbox is running, it will only update the timeout if the new timeout is longer than the current one.
+            For running sandboxes, the timeout will update only if the new timeout is longer than the existing one.
         :return: A running sandbox instance
 
         @example
@@ -262,7 +262,7 @@ class Sandbox(SandboxApi):
 
         :param sandbox_id: Sandbox ID
         :param timeout: Timeout for the sandbox in **seconds**.
-            If the sandbox is running, it will only update the timeout if the new timeout is longer than the current one.
+            For running sandboxes, the timeout will update only if the new timeout is longer than the existing one.
         :return: A running sandbox instance
 
         @example
@@ -289,7 +289,7 @@ class Sandbox(SandboxApi):
         With sandbox ID you can connect to the same sandbox from different places or environments (serverless functions, etc).
 
         :param timeout: Timeout for the sandbox in **seconds**.
-            If the sandbox is running, it will only update the timeout if the new timeout is longer than the current one.
+            For running sandboxes, the timeout will update only if the new timeout is longer than the existing one.
         :return: A running sandbox instance
 
         @example
