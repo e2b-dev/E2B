@@ -254,13 +254,6 @@ export interface SandboxMetrics {
   diskTotal: number
 }
 
-interface Sandbox {
-  sandboxId: string
-  sandboxDomain?: string
-  envdVersion: string
-  envdAccessToken?: string
-}
-
 export class SandboxApi {
   protected constructor() {}
 
@@ -484,7 +477,7 @@ export class SandboxApi {
     template: string,
     timeoutMs: number,
     opts?: SandboxBetaCreateOpts
-  ): Promise<Sandbox> {
+  ) {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
 
@@ -526,7 +519,7 @@ export class SandboxApi {
   protected static async connectSandbox(
     sandboxId: string,
     opts?: SandboxConnectOpts
-  ): Promise<Sandbox> {
+  ) {
     const timeoutMs = opts?.timeoutMs ?? DEFAULT_SANDBOX_TIMEOUT_MS
 
     const config = new ConnectionConfig(opts)
