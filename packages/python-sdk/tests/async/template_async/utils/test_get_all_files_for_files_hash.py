@@ -221,9 +221,7 @@ class TestGetAllFilesForFilesHash:
             "src", test_dir, ["**/tests/**", "**/*.spec.*"]
         )
 
-        assert (
-            len(files) == 7
-        )  # 3 files + 4 directories (src, components, utils, tests excluded)
+        assert len(files) == 6  # 3 files + 3 directories (src, components, utils)
         assert any("index.ts" in f for f in files)
         assert any("Button.tsx" in f for f in files)
         assert any("helper.ts" in f for f in files)
@@ -272,8 +270,8 @@ class TestGetAllFilesForFilesHash:
         files = get_all_files_for_files_hash("src", test_dir, ["**/ui/**"])
 
         assert (
-            len(files) == 8
-        )  # 3 files + 5 directories (src, components, forms, utils)
+            len(files) == 7
+        )  # 3 files + 4 directories (src, components, forms, utils)
         assert any("index.ts" in f for f in files)
         assert any("Input.tsx" in f for f in files)
         assert any("helper.ts" in f for f in files)
