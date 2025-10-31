@@ -121,29 +121,30 @@ def calculate_files_hash(
         hash_obj.update(str(stat_info.st_mtime).encode())
 
     for file in files:
-        # Add a relative path to hash calculation
-        relative_path = os.path.relpath(file, context_path)
-        hash_obj.update(relative_path.encode())
+        # file is a relative path from get_all_files_for_files_hash
+        # Join it with context_path to get the absolute path
+        file_path = os.path.join(context_path, file) if not os.path.isabs(file) else file
+        hash_obj.update(file.encode())
 
         # Add stat information to hash calculation
-        if os.path.islink(file):
-            stats = os.lstat(file)
+        if os.path.islink(file_path):
+            stats = os.lstat(file_path)
             should_follow = resolve_symlinks and (
-                os.path.isfile(file) or os.path.isdir(file)
+                os.path.isfile(file_path) or os.path.isdir(file_path)
             )
 
             if not should_follow:
                 hash_stats(stats)
 
-                content = os.readlink(file)
+                content = os.readlink(file_path)
                 hash_obj.update(content.encode())
                 continue
 
-        stats = os.stat(file)
+        stats = os.stat(file_path)
         hash_stats(stats)
 
         if stat.S_ISREG(stats.st_mode):
-            with open(file, "rb") as f:
+            with open(file_path, "rb") as f:
                 hash_obj.update(f.read())
 
     return hash_obj.hexdigest()
