@@ -86,6 +86,7 @@ export async function calculateFilesHash(
   resolveSymlinks: boolean,
   stackTrace: string | undefined
 ): Promise<string> {
+  const srcPath = path.join(contextPath, src)
   const hash = crypto.createHash('sha256')
   const content = `COPY ${src} ${dest}`
 
@@ -94,7 +95,7 @@ export async function calculateFilesHash(
   const files = await getAllFilesForFilesHash(src, contextPath, ignorePatterns)
 
   if (files.length === 0) {
-    const error = new Error(`No files found in ${src}`)
+    const error = new Error(`No files found in ${srcPath}`)
     if (stackTrace) {
       error.stack = stackTrace
     }

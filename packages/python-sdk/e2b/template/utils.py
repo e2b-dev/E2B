@@ -97,6 +97,7 @@ def calculate_files_hash(
 
     :raises ValueError: If no files match the source pattern
     """
+    src_path = os.path.join(context_path, src)
     hash_obj = hashlib.sha256()
     content = f"COPY {src} {dest}"
 
@@ -105,7 +106,7 @@ def calculate_files_hash(
     files = get_all_files_for_files_hash(src, context_path, ignore_patterns)
 
     if len(files) == 0:
-        raise ValueError(f"No files found in {src}").with_traceback(stack_trace)
+        raise ValueError(f"No files found in {src_path}").with_traceback(stack_trace)
 
     def hash_stats(stat_info: os.stat_result) -> None:
         hash_obj.update(str(stat_info.st_mode).encode())
