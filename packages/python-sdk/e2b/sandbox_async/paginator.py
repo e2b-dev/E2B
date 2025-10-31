@@ -4,10 +4,10 @@ from typing import Optional, List
 from e2b.api.client.api.sandboxes import get_v2_sandboxes
 from e2b.api.client.types import UNSET
 from e2b.exceptions import SandboxException
-from e2b.sandbox.main import SandboxBase
 from e2b.sandbox.sandbox_api import SandboxPaginatorBase, SandboxInfo
-from e2b.api import AsyncApiClient, handle_api_exception
+from e2b.api import handle_api_exception
 from e2b.api.client.models.error import Error
+from e2b.sandbox_async.utils import get_api_client
 
 
 class AsyncSandboxPaginator(SandboxPaginatorBase):
@@ -44,29 +44,26 @@ class AsyncSandboxPaginator(SandboxPaginatorBase):
             }
             metadata = urllib.parse.urlencode(quoted_metadata)
 
-        async with AsyncApiClient(
-            self._config,
-            limits=SandboxBase._limits,
-        ) as api_client:
-            res = await get_v2_sandboxes.asyncio_detailed(
-                client=api_client,
-                metadata=metadata if metadata else UNSET,
-                state=self.query.state if self.query and self.query.state else UNSET,
-                limit=self.limit if self.limit else UNSET,
-                next_token=self._next_token if self._next_token else UNSET,
-            )
+        api_client = get_api_client(self._config)
+        res = await get_v2_sandboxes.asyncio_detailed(
+            client=api_client,
+            metadata=metadata if metadata else UNSET,
+            state=self.query.state if self.query and self.query.state else UNSET,
+            limit=self.limit if self.limit else UNSET,
+            next_token=self._next_token if self._next_token else UNSET,
+        )
 
-            if res.status_code >= 300:
-                raise handle_api_exception(res)
+        if res.status_code >= 300:
+            raise handle_api_exception(res)
 
-            self._next_token = res.headers.get("x-next-token")
-            self._has_next = bool(self._next_token)
+        self._next_token = res.headers.get("x-next-token")
+        self._has_next = bool(self._next_token)
 
-            if res.parsed is None:
-                return []
+        if res.parsed is None:
+            return []
 
-            # Check if res.parse is Error
-            if isinstance(res.parsed, Error):
-                raise SandboxException(f"{res.parsed.message}: Request failed")
+        # Check if res.parse is Error
+        if isinstance(res.parsed, Error):
+            raise SandboxException(f"{res.parsed.message}: Request failed")
 
-            return [SandboxInfo._from_listed_sandbox(sandbox) for sandbox in res.parsed]
+        return [SandboxInfo._from_listed_sandbox(sandbox) for sandbox in res.parsed]

@@ -1,32 +1,26 @@
+from typing import Optional
+
 import httpx
 import logging
 
-from typing import TypeVar, Union, Callable, Awaitable, Optional
-
+from e2b.api import ApiClient, limits
 from e2b.connection_config import ConnectionConfig
-from e2b.api import limits, AsyncApiClient
-
-T = TypeVar("T")
-OutputHandler = Union[
-    Callable[[T], None],
-    Callable[[T], Awaitable[None]],
-]
 
 logger = logging.getLogger(__name__)
 
 
-def get_api_client(config: ConnectionConfig) -> AsyncApiClient:
-    return AsyncApiClient(
+def get_api_client(config: ConnectionConfig) -> ApiClient:
+    return ApiClient(
         config,
         transport=get_transport(config),
     )
 
 
-class AsyncTransportWithLogger(httpx.AsyncHTTPTransport):
-    async def handle_async_request(self, request):
+class TransportWithLogger(httpx.HTTPTransport):
+    def handle_request(self, request):
         url = f"{request.url.scheme}://{request.url.host}{request.url.path}"
         logger.info(f"Request: {request.method} {url}")
-        response = await super().handle_async_request(request)
+        response = super().handle_request(request)
 
         # data = connect.GzipCompressor.decompress(response.read()).decode()
         logger.info(f"Response: {response.status_code} {url}")
@@ -38,14 +32,15 @@ class AsyncTransportWithLogger(httpx.AsyncHTTPTransport):
         return self._pool
 
 
-_transport: Optional[AsyncTransportWithLogger] = None
+_transport: Optional[TransportWithLogger] = None
 
 
-def get_transport(config: ConnectionConfig) -> AsyncTransportWithLogger:
+def get_transport(config: ConnectionConfig) -> TransportWithLogger:
     global _transport
     if _transport is None:
-        _transport = AsyncTransportWithLogger(
+        _transport = TransportWithLogger(
             limits=limits,
             proxy=config.proxy,
         )
+
     return _transport

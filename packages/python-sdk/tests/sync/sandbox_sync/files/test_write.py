@@ -2,7 +2,6 @@ import io
 import uuid
 
 from e2b.sandbox.filesystem.filesystem import WriteInfo, WriteEntry
-from e2b.sandbox_sync.main import Sandbox
 
 
 def test_write_text_file(sandbox):
@@ -102,23 +101,20 @@ def test_write_to_non_existing_directory(sandbox):
     assert read_content == content
 
 
-def test_write_with_secured_envd(template):
+def test_write_with_secured_envd(sandbox_factory):
     filename = f"non_existing_dir_{uuid.uuid4()}/test_write.txt"
     content = "This should succeed too."
 
-    sbx = Sandbox.create(template, timeout=30, secure=True)
-    try:
-        assert sbx.is_running()
-        assert sbx._envd_version is not None
-        assert sbx._envd_access_token is not None
+    sbx = sandbox_factory(timeout=30, secure=True)
 
-        sbx.files.write(filename, content)
+    assert sbx.is_running()
+    assert sbx._envd_version is not None
+    assert sbx._envd_access_token is not None
 
-        exists = sbx.files.exists(filename)
-        assert exists
+    sbx.files.write(filename, content)
 
-        read_content = sbx.files.read(filename)
-        assert read_content == content
+    exists = sbx.files.exists(filename)
+    assert exists
 
-    finally:
-        sbx.kill()
+    read_content = sbx.files.read(filename)
+    assert read_content == content

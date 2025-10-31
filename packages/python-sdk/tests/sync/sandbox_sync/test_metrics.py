@@ -2,15 +2,14 @@ import time
 
 import pytest
 
-from e2b import Sandbox
-
 
 @pytest.mark.skip_debug()
-def test_sbx_metrics(sandbox: Sandbox) -> None:
+def test_sbx_metrics(sandbox_factory) -> None:
+    sbx = sandbox_factory(timeout=60)
     # Wait for the sandbox to have some metrics
     metrics = []
     for _ in range(15):
-        metrics = sandbox.get_metrics()
+        metrics = sbx.get_metrics()
         if len(metrics) > 0:
             break
         time.sleep(1)

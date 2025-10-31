@@ -9,13 +9,11 @@ def test_command_envs(sandbox: Sandbox):
 
 
 @pytest.mark.skip_debug()
-def test_sandbox_envs(template):
-    sandbox = Sandbox.create(template, envs={"FOO": "bar"})
-    try:
-        cmd = sandbox.commands.run("echo $FOO")
-        assert cmd.stdout.strip() == "bar"
-    finally:
-        sandbox.kill()
+def test_sandbox_envs(sandbox_factory):
+    sbx = sandbox_factory(envs={"FOO": "bar"})
+
+    cmd = sbx.commands.run("echo $FOO")
+    assert cmd.stdout.strip() == "bar"
 
 
 def test_bash_command_scoped_env_vars(sandbox: Sandbox):

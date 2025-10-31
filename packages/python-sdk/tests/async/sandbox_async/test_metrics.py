@@ -2,15 +2,15 @@ import asyncio
 
 import pytest
 
-from e2b import AsyncSandbox
-
 
 @pytest.mark.skip_debug()
-async def test_sbx_metrics(async_sandbox: AsyncSandbox):
+async def test_sbx_metrics(async_sandbox_factory):
+    sbx = await async_sandbox_factory(timeout=20)
+
     # Wait for the sandbox to have some metrics
     metrics = []
     for _ in range(15):
-        metrics = await async_sandbox.get_metrics()
+        metrics = await sbx.get_metrics()
         if len(metrics) > 0:
             break
         await asyncio.sleep(1)
