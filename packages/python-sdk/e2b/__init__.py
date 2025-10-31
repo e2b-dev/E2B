@@ -41,6 +41,8 @@ from .exceptions import (
     InvalidArgumentException,
     NotEnoughSpaceException,
     TemplateException,
+    BuildException,
+    FileUploadException,
 )
 from .sandbox.commands.command_handle import (
     CommandResult,
@@ -56,8 +58,15 @@ from .sandbox.filesystem.watch_handle import (
     FilesystemEvent,
     FilesystemEventType,
 )
-from .sandbox.mcp import McpServer
-from .sandbox.sandbox_api import SandboxInfo, SandboxQuery, SandboxState, SandboxMetrics
+from .sandbox.sandbox_api import (
+    SandboxInfo,
+    SandboxQuery,
+    SandboxState,
+    SandboxMetrics,
+    McpServer,
+    GitHubMcpServer,
+    GitHubMcpServerConfig,
+)
 from .sandbox_async.commands.command_handle import AsyncCommandHandle
 from .sandbox_async.filesystem.watch_handle import AsyncWatchHandle
 from .sandbox_async.main import AsyncSandbox
@@ -67,7 +76,6 @@ from .sandbox_sync.commands.command_handle import CommandHandle
 from .sandbox_sync.filesystem.watch_handle import WatchHandle
 from .sandbox_sync.main import Sandbox
 from .sandbox_sync.paginator import SandboxPaginator
-from .template.exceptions import BuildException, FileUploadException
 from .template.logger import (
     LogEntry,
     LogEntryLevel,
@@ -77,6 +85,7 @@ from .template.logger import (
 )
 from .template.main import TemplateBase, TemplateClass
 from .template.readycmd import (
+    ReadyCmd,
     wait_for_file,
     wait_for_url,
     wait_for_port,
@@ -141,6 +150,7 @@ __all__ = [
     "TemplateBase",
     "TemplateClass",
     "CopyItem",
+    "ReadyCmd",
     "wait_for_file",
     "wait_for_url",
     "wait_for_port",
@@ -153,4 +163,6 @@ __all__ = [
     "default_build_logger",
     # MCP
     "McpServer",
+    "GitHubMcpServer",
+    "GitHubMcpServerConfig",
 ]

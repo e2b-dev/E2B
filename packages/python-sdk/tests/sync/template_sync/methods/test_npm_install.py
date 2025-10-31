@@ -1,24 +1,24 @@
 import pytest
-from uuid import uuid4
 
 from e2b import Template
 
 
 @pytest.mark.skip_debug()
-def test_npm_install():
-    template = Template().from_node_image("24").npm_install(["lodash", "ms"])
+def test_npm_install(build):
+    template = Template().from_node_image("24").npm_install(["lodash", "axios"])
 
-    Template.build(
-        template,
-        alias=str(uuid4()),
-    )
+    build(template)
 
 
 @pytest.mark.skip_debug()
-def test_npm_install_global():
-    template = Template().from_node_image("24").npm_install(["lodash", "ms"], g=True)
+def test_npm_install_global(build):
+    template = Template().from_node_image("24").npm_install(["tsx"], g=True)
 
-    Template.build(
-        template,
-        alias=str(uuid4()),
-    )
+    build(template)
+
+
+@pytest.mark.skip_debug()
+def test_npm_install_dev(build):
+    template = Template().from_node_image("24").npm_install(["typescript"], dev=True)
+
+    build(template)

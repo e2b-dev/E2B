@@ -4,8 +4,9 @@ from packaging.version import Version
 from typing import Optional, TypedDict
 
 from e2b.sandbox.signature import get_signature
-from e2b.connection_config import ConnectionConfig
+from e2b.connection_config import ConnectionConfig, default_username
 from e2b.envd.api import ENVD_API_FILES_ROUTE
+from e2b.envd.versions import ENVD_DEFAULT_USER
 from httpx import Limits
 
 
@@ -30,7 +31,7 @@ class SandboxBase:
     default_sandbox_timeout = 300
 
     default_template = "base"
-    default_mcp_template = "mcp-gateway-v0"
+    default_mcp_template = "mcp-gateway"
 
     def __init__(
         self,
@@ -46,11 +47,20 @@ class SandboxBase:
         self.__envd_version = envd_version
         self.__envd_access_token = envd_access_token
         self.__envd_api_url = f"{'http' if self.connection_config.debug else 'https'}://{self.get_host(self.envd_port)}"
+        self.__mcp_token: Optional[str] = None
 
     @property
     def _envd_access_token(self) -> Optional[str]:
         """Private property to access the envd token"""
         return self.__envd_access_token
+
+    @property
+    def _mcp_token(self) -> Optional[str]:
+        return self.__mcp_token
+
+    @_mcp_token.setter
+    def _mcp_token(self, token: str) -> None:
+        self.__mcp_token = token
 
     @property
     def connection_config(self) -> ConnectionConfig:
@@ -78,13 +88,15 @@ class SandboxBase:
     def _file_url(
         self,
         path: str,
-        user: str = "user",
+        user: Optional[str] = None,
         signature: Optional[str] = None,
         signature_expiration: Optional[int] = None,
     ) -> str:
         url = urllib.parse.urljoin(self.envd_api_url, ENVD_API_FILES_ROUTE)
         query = {"path": path} if path else {}
-        query = {**query, "username": user}
+
+        if user:
+            query["username"] = user
 
         if signature:
             query["signature"] = signature
@@ -105,34 +117,42 @@ class SandboxBase:
     def download_url(
         self,
         path: str,
-        user: str = "user",
+        user: Optional[str] = None,
         use_signature_expiration: Optional[int] = None,
     ) -> str:
         """
         Get the URL to download a file from the sandbox.
 
         :param path: Path to the file to download
-        :param user: User to upload the file as
+        :param user: User to download the file as
         :param use_signature_expiration: Expiration time for the signed URL in seconds
 
         :return: URL for downloading file
         """
 
+        username = user
+        if username is None and self._envd_version < ENVD_DEFAULT_USER:
+            username = default_username
+
         use_signature = self._envd_access_token is not None
         if use_signature:
             signature = get_signature(
-                path, "read", user, self._envd_access_token, use_signature_expiration
+                path,
+                "read",
+                username,
+                self._envd_access_token,
+                use_signature_expiration,
             )
             return self._file_url(
-                path, user, signature["signature"], signature["expiration"]
+                path, username, signature["signature"], signature["expiration"]
             )
         else:
-            return self._file_url(path)
+            return self._file_url(path, username)
 
     def upload_url(
         self,
         path: str,
-        user: str = "user",
+        user: Optional[str] = None,
         use_signature_expiration: Optional[int] = None,
     ) -> str:
         """
@@ -147,16 +167,24 @@ class SandboxBase:
         :return: URL for uploading file
         """
 
+        username = user
+        if username is None and self._envd_version < ENVD_DEFAULT_USER:
+            username = default_username
+
         use_signature = self._envd_access_token is not None
         if use_signature:
             signature = get_signature(
-                path, "write", user, self._envd_access_token, use_signature_expiration
+                path,
+                "write",
+                username,
+                self._envd_access_token,
+                use_signature_expiration,
             )
             return self._file_url(
-                path, user, signature["signature"], signature["expiration"]
+                path, username, signature["signature"], signature["expiration"]
             )
         else:
-            return self._file_url(path)
+            return self._file_url(path, username)
 
     def get_host(self, port: int) -> str:
         """
@@ -172,10 +200,8 @@ class SandboxBase:
 
         return f"{port}-{self.sandbox_id}.{self.sandbox_domain}"
 
-    def beta_get_mcp_url(self) -> str:
+    def get_mcp_url(self) -> str:
         """
-        [BETA] This feature is in beta and may change in the future.
-
         Get the MCP URL for the sandbox.
 
         :returns MCP URL for the sandbox.

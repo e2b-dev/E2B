@@ -1,0 +1,135 @@
+## e2b sandbox
+
+
+work with sandboxes
+
+### Usage
+
+```bash
+e2b sandbox [options] [command]
+```
+## e2b sandbox connect
+
+
+connect terminal to already running sandbox
+
+### Usage
+
+```bash
+e2b sandbox connect [options] <sandboxID>
+```
+
+
+## e2b sandbox list
+
+
+list all sandboxes, by default it list only running ones
+
+### Usage
+
+```bash
+e2b sandbox list [options]
+```
+
+### Options
+
+
+ - `-s, --state <state>: filter by state, eg. running, paused. Defaults to running `
+ - `-m, --metadata <metadata>: filter by metadata, eg. key1=value1 `
+ - `-l, --limit <limit>: limit the number of sandboxes returned `
+ - `-f, --format <format>: output format, eg. json, pretty `
+
+
+## e2b sandbox kill
+
+
+kill sandbox
+
+### Usage
+
+```bash
+e2b sandbox kill [options] [sandboxIDs...]
+```
+
+### Options
+
+
+ - `-a, --all: kill all sandboxes `
+ - `-s, --state <state>: when used with -a/--all flag, filter by state, eg. running, paused. Defaults to running `
+ - `-m, --metadata <metadata>: when used with -a/--all flag, filter by metadata, eg. key1=value1 `
+
+
+## e2b sandbox create
+
+
+create sandbox and connect terminal to it
+
+### Usage
+
+```bash
+e2b sandbox create [options] [template]
+```
+
+### Options
+
+
+ - `-p, --path <path>: change root directory where command is executed to <path> directory `
+ - `--config <e2b-toml>: specify path to the E2B config toml. By default E2B tries to find ./e2b.toml in root directory. `
+
+
+## e2b sandbox spawn
+
+
+create sandbox and connect terminal to it
+
+### Usage
+
+```bash
+e2b sandbox spawn [options] [template]
+```
+
+### Options
+
+
+ - `-p, --path <path>: change root directory where command is executed to <path> directory `
+ - `--config <e2b-toml>: specify path to the E2B config toml. By default E2B tries to find ./e2b.toml in root directory. `
+
+
+## e2b sandbox logs
+
+
+show logs for sandbox
+
+### Usage
+
+```bash
+e2b sandbox logs [options] <sandboxID>
+```
+
+### Options
+
+
+ - `--level <level>: filter logs by level (DEBUG, INFO, WARN, ERROR). The logs with the higher levels will be also shown. [default: INFO]`
+ - `-f, --follow: keep streaming logs until the sandbox is closed `
+ - `--format <format>: specify format for printing logs (json, pretty) [default: pretty]`
+ - `--loggers [loggers]: filter logs by loggers. Specify multiple loggers by separating them with a comma. `
+
+
+## e2b sandbox metrics
+
+
+show metrics for sandbox
+
+### Usage
+
+```bash
+e2b sandbox metrics [options] <sandboxID>
+```
+
+### Options
+
+
+ - `-f, --follow: keep streaming metrics until the sandbox is closed `
+ - `--format <format>: specify format for printing metrics (json, pretty) [default: pretty]`
+
+

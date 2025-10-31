@@ -1,12 +1,13 @@
 import datetime
 from collections.abc import Mapping
-from typing import Any, TypeVar
+from typing import Any, TypeVar, Union
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 from dateutil.parser import isoparse
 
 from ..models.log_level import LogLevel
+from ..types import UNSET, Unset
 
 T = TypeVar("T", bound="BuildLogEntry")
 
@@ -18,11 +19,13 @@ class BuildLogEntry:
         level (LogLevel): State of the sandbox
         message (str): Log message content
         timestamp (datetime.datetime): Timestamp of the log entry
+        step (Union[Unset, str]): Step in the build process related to the log entry
     """
 
     level: LogLevel
     message: str
     timestamp: datetime.datetime
+    step: Union[Unset, str] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -31,6 +34,8 @@ class BuildLogEntry:
         message = self.message
 
         timestamp = self.timestamp.isoformat()
+
+        step = self.step
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
@@ -41,6 +46,8 @@ class BuildLogEntry:
                 "timestamp": timestamp,
             }
         )
+        if step is not UNSET:
+            field_dict["step"] = step
 
         return field_dict
 
@@ -53,10 +60,13 @@ class BuildLogEntry:
 
         timestamp = isoparse(d.pop("timestamp"))
 
+        step = d.pop("step", UNSET)
+
         build_log_entry = cls(
             level=level,
             message=message,
             timestamp=timestamp,
+            step=step,
         )
 
         build_log_entry.additional_properties = d

@@ -35,3 +35,54 @@ sandboxTest.skipIf(isDebug)(
     )
   }
 )
+
+test.skipIf(isDebug)(
+  'connect does not shorten timeout on running sandbox',
+  async () => {
+    // Create sandbox with a 300 second timeout
+    const sbx = await Sandbox.create(template, { timeoutMs: 300_000 })
+
+    try {
+      const isRunning = await sbx.isRunning()
+      assert.isTrue(isRunning)
+
+      // Get initial info to check endAt
+      const infoBefore = await Sandbox.getInfo(sbx.sandboxId)
+
+      // Connect with a shorter timeout (10 seconds)
+      await Sandbox.connect(sbx.sandboxId, { timeoutMs: 10_000 })
+
+      // Get info after connection
+      const infoAfter = await sbx.getInfo()
+
+      // The endAt time should not have been shortened. It should be the same
+      assert.equal(
+        infoAfter.endAt.getTime(),
+        infoBefore.endAt.getTime(),
+        `Timeout was shortened: before=${infoBefore.endAt.toISOString()}, after=${infoAfter.endAt.toISOString()}`
+      )
+    } finally {
+      await sbx.kill()
+    }
+  }
+)
+
+sandboxTest.skipIf(isDebug)(
+  'connect extends timeout on running sandbox',
+  async ({ sandbox }) => {
+    // Get initial info to check endAt
+    const infoBefore = await sandbox.getInfo()
+
+    // Connect with a longer timeout
+    await sandbox.connect({ timeoutMs: 600_000 })
+
+    // Get info after connection
+    const infoAfter = await sandbox.getInfo()
+
+    // The endAt time should have been extended
+    assert.isTrue(
+      infoAfter.endAt.getTime() > infoBefore.endAt.getTime(),
+      `Timeout was not extended: before=${infoBefore.endAt.toISOString()}, after=${infoAfter.endAt.toISOString()}`
+    )
+  }
+)

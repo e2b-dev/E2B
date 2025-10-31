@@ -34,10 +34,12 @@ async def test_traces_on_from_image(async_build):
     await _expect_to_throw_and_check_trace(lambda: async_build(template), "from_image")
 
 
-# @pytest.mark.skip_debug()
-# async def test_traces_on_from_template(async_build):
-#     template = AsyncTemplate().from_template("this-template-does-not-exist")
-#     await _expect_to_throw_and_check_trace(lambda: async_build(template), "from_template")
+@pytest.mark.skip_debug()
+async def test_traces_on_from_template(async_build):
+    template = AsyncTemplate().from_template("this-template-does-not-exist")
+    await _expect_to_throw_and_check_trace(
+        lambda: async_build(template), "from_template"
+    )
 
 
 @pytest.mark.skip_debug()
@@ -126,7 +128,7 @@ async def test_traces_on_rename(async_build):
 async def test_traces_on_make_dir(async_build):
     template = AsyncTemplate()
     template = template.from_base_image()
-    template = template.skip_cache().make_dir(".bashrc")
+    template = template.set_user("root").skip_cache().make_dir("/root/.bashrc")
     await _expect_to_throw_and_check_trace(lambda: async_build(template), "make_dir")
 
 
@@ -152,7 +154,7 @@ async def test_traces_on_run_cmd(async_build):
 async def test_traces_on_set_workdir(async_build):
     template = AsyncTemplate()
     template = template.from_base_image()
-    template = template.skip_cache().set_workdir(".bashrc")
+    template = template.set_user("root").skip_cache().set_workdir("/root/.bashrc")
     await _expect_to_throw_and_check_trace(lambda: async_build(template), "set_workdir")
 
 
@@ -160,7 +162,7 @@ async def test_traces_on_set_workdir(async_build):
 async def test_traces_on_set_user(async_build):
     template = AsyncTemplate()
     template = template.from_base_image()
-    template = template.skip_cache().set_user(";")
+    template = template.skip_cache().set_user("; exit 1")
     await _expect_to_throw_and_check_trace(lambda: async_build(template), "set_user")
 
 
@@ -205,4 +207,33 @@ async def test_traces_on_start_cmd(async_build):
     )
     await _expect_to_throw_and_check_trace(
         lambda: async_build(template), "set_start_cmd"
+    )
+
+
+@pytest.mark.skip_debug()
+async def test_traces_on_add_mcp_server():
+    # needs mcp-gateway as base template, without it no mcp servers can be added
+    await _expect_to_throw_and_check_trace(
+        lambda: AsyncTemplate().from_base_image().add_mcp_server("exa"),
+        "add_mcp_server",
+    )
+
+
+@pytest.mark.skip_debug()
+async def test_traces_on_dev_container_prebuild(async_build):
+    template = AsyncTemplate()
+    template = template.from_template("devcontainer")
+    template = template.skip_cache().beta_dev_container_prebuild(non_existent_path)
+    await _expect_to_throw_and_check_trace(
+        lambda: async_build(template), "beta_dev_container_prebuild"
+    )
+
+
+@pytest.mark.skip_debug()
+async def test_traces_on_set_dev_container_start(async_build):
+    template = AsyncTemplate()
+    template = template.from_template("devcontainer")
+    template = template.beta_set_dev_container_start(non_existent_path)
+    await _expect_to_throw_and_check_trace(
+        lambda: async_build(template), "beta_set_dev_container_start"
     )

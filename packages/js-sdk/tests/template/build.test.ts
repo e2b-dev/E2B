@@ -27,37 +27,28 @@ afterAll(() => {
   fs.rmSync(folderPath, { recursive: true })
 })
 
-buildTemplateTest(
-  'build template',
-  { timeout: 180000 },
-  async ({ buildTemplate }) => {
-    const template = Template()
-      .fromImage('ubuntu:22.04')
-      .copy('folder/*', 'folder', { forceUpload: true })
-      .runCmd('cat folder/test.txt')
-      .setWorkdir('/app')
-      .setStartCmd('echo "Hello, world!"', waitForTimeout(10_000))
+buildTemplateTest('build template', async ({ buildTemplate }) => {
+  const template = Template()
+    .fromImage('ubuntu:22.04')
+    .copy('folder/*', 'folder', { forceUpload: true })
+    .runCmd('cat folder/test.txt')
+    .setWorkdir('/app')
+    .setStartCmd('echo "Hello, world!"', waitForTimeout(10_000))
 
-    await buildTemplate(template, undefined, defaultBuildLogger())
-  }
-)
+  await buildTemplate(template, undefined, defaultBuildLogger())
+})
 
-buildTemplateTest(
-  'build template with symlinks',
-  { timeout: 180000 },
-  async ({ buildTemplate }) => {
-    const template = Template()
-      .fromImage('ubuntu:22.04')
-      .copy('folder/*', 'folder', { forceUpload: true })
-      .runCmd('cat folder/symlink.txt')
+buildTemplateTest('build template with symlinks', async ({ buildTemplate }) => {
+  const template = Template()
+    .fromImage('ubuntu:22.04')
+    .copy('folder/*', 'folder', { forceUpload: true })
+    .runCmd('cat folder/symlink.txt')
 
-    await buildTemplate(template)
-  }
-)
+  await buildTemplate(template)
+})
 
 buildTemplateTest(
   'build template with resolveSymlinks',
-  { timeout: 180000 },
   async ({ buildTemplate }) => {
     const template = Template()
       .fromImage('ubuntu:22.04')
@@ -73,7 +64,6 @@ buildTemplateTest(
 
 buildTemplateTest(
   'build template with skipCache',
-  { timeout: 180000 },
   async ({ buildTemplate }) => {
     const template = Template().skipCache().fromImage('ubuntu:22.04')
     await buildTemplate(template)

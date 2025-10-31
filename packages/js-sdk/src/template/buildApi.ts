@@ -1,6 +1,6 @@
 import { ApiClient, handleApiError, paths } from '../api'
 import { stripAnsi } from '../utils'
-import { BuildError, FileUploadError } from './errors'
+import { BuildError, FileUploadError } from '../errors'
 import { LogEntry } from './logger'
 import { getBuildStepIndex, tarFileStreamUpload } from './utils'
 
@@ -37,7 +37,7 @@ export async function requestBuild(
   client: ApiClient,
   { alias, cpuCount, memoryMB }: RequestBuildInput
 ) {
-  const requestBuildRes = await client.api.POST('/v2/templates', {
+  const requestBuildRes = await client.api.POST('/v3/templates', {
     body: {
       alias,
       cpuCount,

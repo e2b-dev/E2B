@@ -8,11 +8,12 @@ import httpcore
 import httpx
 from packaging.version import Version
 
-from e2b.envd.versions import ENVD_VERSION_RECURSIVE_WATCH
+from e2b.envd.versions import ENVD_VERSION_RECURSIVE_WATCH, ENVD_DEFAULT_USER
 from e2b.exceptions import SandboxException, TemplateException, InvalidArgumentException
 from e2b.connection_config import (
     ConnectionConfig,
     Username,
+    default_username,
     KEEPALIVE_PING_HEADER,
     KEEPALIVE_PING_INTERVAL_SEC,
 )
@@ -60,7 +61,7 @@ class Filesystem:
         self,
         path: str,
         format: Literal["text"] = "text",
-        user: Username = "user",
+        user: Optional[Username] = None,
         request_timeout: Optional[float] = None,
     ) -> str:
         """
@@ -80,7 +81,7 @@ class Filesystem:
         self,
         path: str,
         format: Literal["bytes"],
-        user: Username = "user",
+        user: Optional[Username] = None,
         request_timeout: Optional[float] = None,
     ) -> bytearray:
         """
@@ -100,7 +101,7 @@ class Filesystem:
         self,
         path: str,
         format: Literal["stream"],
-        user: Username = "user",
+        user: Optional[Username] = None,
         request_timeout: Optional[float] = None,
     ) -> Iterator[bytes]:
         """
@@ -119,12 +120,20 @@ class Filesystem:
         self,
         path: str,
         format: Literal["text", "bytes", "stream"] = "text",
-        user: Username = "user",
+        user: Optional[Username] = None,
         request_timeout: Optional[float] = None,
     ):
+        username = user
+        if username is None and self._envd_version < ENVD_DEFAULT_USER:
+            username = default_username
+
+        params = {"path": path}
+        if username:
+            params["username"] = username
+
         r = self._envd_api.get(
             ENVD_API_FILES_ROUTE,
-            params={"path": path, "username": user},
+            params=params,
             timeout=self._connection_config.get_request_timeout(request_timeout),
         )
 
@@ -143,7 +152,7 @@ class Filesystem:
         self,
         path: str,
         data: Union[str, bytes, IO],
-        user: Username = "user",
+        user: Optional[Username] = None,
         request_timeout: Optional[float] = None,
     ) -> WriteInfo:
         """
@@ -173,7 +182,7 @@ class Filesystem:
     def write_files(
         self,
         files: List[WriteEntry],
-        user: Username = "user",
+        user: Optional[Username] = None,
         request_timeout: Optional[float] = None,
     ) -> List[WriteInfo]:
         """
@@ -187,7 +196,13 @@ class Filesystem:
         :param request_timeout: Timeout for the request
         :return: Information about the written files
         """
-        params = {"username": user}
+        username = user
+        if username is None and self._envd_version < ENVD_DEFAULT_USER:
+            username = default_username
+
+        params = {}
+        if username:
+            params["username"] = username
         if len(files) == 1:
             params["path"] = files[0]["path"]
 
@@ -230,7 +245,7 @@ class Filesystem:
         self,
         path: str,
         depth: Optional[int] = 1,
-        user: Username = "user",
+        user: Optional[Username] = None,
         request_timeout: Optional[float] = None,
     ) -> List[EntryInfo]:
         """
@@ -252,7 +267,7 @@ class Filesystem:
                 request_timeout=self._connection_config.get_request_timeout(
                     request_timeout
                 ),
-                headers=authentication_header(user),
+                headers=authentication_header(self._envd_version, user),
             )
 
             entries: List[EntryInfo] = []
@@ -287,7 +302,7 @@ class Filesystem:
     def exists(
         self,
         path: str,
-        user: Username = "user",
+        user: Optional[Username] = None,
         request_timeout: Optional[float] = None,
     ) -> bool:
         """
@@ -305,7 +320,7 @@ class Filesystem:
                 request_timeout=self._connection_config.get_request_timeout(
                     request_timeout
                 ),
-                headers=authentication_header(user),
+                headers=authentication_header(self._envd_version, user),
             )
             return True
 
@@ -318,7 +333,7 @@ class Filesystem:
     def get_info(
         self,
         path: str,
-        user: Username = "user",
+        user: Optional[Username] = None,
         request_timeout: Optional[float] = None,
     ) -> EntryInfo:
         """
@@ -336,7 +351,7 @@ class Filesystem:
                 request_timeout=self._connection_config.get_request_timeout(
                     request_timeout
                 ),
-                headers=authentication_header(user),
+                headers=authentication_header(self._envd_version, user),
             )
 
             return EntryInfo(
@@ -362,7 +377,7 @@ class Filesystem:
     def remove(
         self,
         path: str,
-        user: Username = "user",
+        user: Optional[Username] = None,
         request_timeout: Optional[float] = None,
     ) -> None:
         """
@@ -378,7 +393,7 @@ class Filesystem:
                 request_timeout=self._connection_config.get_request_timeout(
                     request_timeout
                 ),
-                headers=authentication_header(user),
+                headers=authentication_header(self._envd_version, user),
             )
         except Exception as e:
             raise handle_rpc_exception(e)
@@ -387,7 +402,7 @@ class Filesystem:
         self,
         old_path: str,
         new_path: str,
-        user: Username = "user",
+        user: Optional[Username] = None,
         request_timeout: Optional[float] = None,
     ) -> EntryInfo:
         """
@@ -409,7 +424,7 @@ class Filesystem:
                 request_timeout=self._connection_config.get_request_timeout(
                     request_timeout
                 ),
-                headers=authentication_header(user),
+                headers=authentication_header(self._envd_version, user),
             )
 
             return EntryInfo(
@@ -435,7 +450,7 @@ class Filesystem:
     def make_dir(
         self,
         path: str,
-        user: Username = "user",
+        user: Optional[Username] = None,
         request_timeout: Optional[float] = None,
     ) -> bool:
         """
@@ -453,7 +468,7 @@ class Filesystem:
                 request_timeout=self._connection_config.get_request_timeout(
                     request_timeout
                 ),
-                headers=authentication_header(user),
+                headers=authentication_header(self._envd_version, user),
             )
 
             return True
@@ -466,7 +481,7 @@ class Filesystem:
     def watch_dir(
         self,
         path: str,
-        user: Username = "user",
+        user: Optional[Username] = None,
         request_timeout: Optional[float] = None,
         recursive: bool = False,
     ) -> WatchHandle:
@@ -493,7 +508,7 @@ class Filesystem:
                     request_timeout
                 ),
                 headers={
-                    **authentication_header(user),
+                    **authentication_header(self._envd_version, user),
                     KEEPALIVE_PING_HEADER: str(KEEPALIVE_PING_INTERVAL_SEC),
                 },
             )

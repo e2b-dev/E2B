@@ -23,7 +23,7 @@ function buildTemplate(
   onBuildLogs?: (logEntry: LogEntry) => void
 ) {
   return Template.build(template, {
-    alias: randomUUID(),
+    alias: `e2b-test-${randomUUID()}`,
     cpuCount: 1,
     memoryMB: 1024,
     skipCache: skipCache,

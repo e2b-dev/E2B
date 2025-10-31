@@ -5,13 +5,12 @@ on:
     secrets:
       E2B_API_KEY:
         required: true
-      NPM_TOKEN:
-        required: true
       PYPI_TOKEN:
         required: true
 
 permissions:
   contents: write
+  id-token: write
 
 jobs:
   test:
@@ -29,33 +28,46 @@ jobs:
         with:
           token: ${{ steps.app-token.outputs.token }}
 
+      - name: Parse .tool-versions
+        uses: wistia/parse-tool-versions@v2.1.1
+        with:
+          filename: '.tool-versions'
+          uppercase: 'true'
+          prefix: 'tool_version_'
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.9'
+          python-version: '${{ env.TOOL_VERSION_PYTHON }}'
 
       - name: Install and configure Poetry
         uses: snok/install-poetry@v1
         with:
-          version: 1.8.3
+          version: '${{ env.TOOL_VERSION_POETRY }}'
           virtualenvs-create: true
           virtualenvs-in-project: true
           installer-parallel: true
 
       - uses: pnpm/action-setup@v4
         with:
-          version: 9.15.5
+          version: '${{ env.TOOL_VERSION_PNPM }}'
 
-      - name: Setup Node.js 20
-        uses: actions/setup-node@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
         with:
-          node-version: '20.x'
+          node-version: '${{ env.TOOL_VERSION_NODEJS }}'
+          registry-url: 'https://registry.npmjs.org'
           cache: pnpm
 
       - name: Configure pnpm
         run: |
           pnpm config set auto-install-peers true
           pnpm config set exclude-links-from-lockfile true
+
+      - name: Update npm
+        run: |
+          npm install -g npm@^11.6
+          npm --version
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -72,7 +84,7 @@ jobs:
           createGithubReleases: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_TOKEN: "" # See https://github.com/changesets/changesets/issues/1152#issuecomment-3190884868
           PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
 
       - name: Generate SDK reference

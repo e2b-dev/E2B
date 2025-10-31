@@ -7,8 +7,30 @@ import {
 import { compareVersions } from 'compare-versions'
 import { NotFoundError, TemplateError } from '../errors'
 import { timeoutToSeconds } from '../utils'
-import type { McpServer } from './mcp'
+import type { McpServer as BaseMcpServer } from './mcp'
 
+/**
+ * Extended MCP server configuration that includes base servers
+ * and allows dynamic GitHub-based MCP servers with custom run and install commands.
+ */
+export type McpServer = BaseMcpServer | GitHubMcpServer
+
+export type GitHubMcpServer = {
+  [key: `github/${string}`]: {
+    /**
+     * Command to run the MCP server. Must start a stdio-compatible server.
+     */
+    runCmd: string
+    /**
+     * Command to install dependencies for the MCP server. Working directory is the root of the github repository.
+     */
+    installCmd?: string
+    /**
+     * Environment variables to set in the MCP process.
+     */
+    envs?: Record<string, string>
+  }
+}
 /**
  * Options for request to the Sandbox API.
  */
@@ -62,14 +84,6 @@ export interface SandboxOpts extends ConnectionOpts {
    * @default true
    */
   allowInternetAccess?: boolean
-}
-
-export type SandboxBetaCreateOpts = SandboxOpts & {
-  /**
-   * Automatically pause the sandbox after the timeout expires.
-   * @default false
-   */
-  autoPause?: boolean
 
   /**
    * MCP server to enable in the sandbox
@@ -78,10 +92,27 @@ export type SandboxBetaCreateOpts = SandboxOpts & {
   mcp?: McpServer
 }
 
+export type SandboxBetaCreateOpts = SandboxOpts & {
+  /**
+   * Automatically pause the sandbox after the timeout expires.
+   * @default false
+   */
+  autoPause?: boolean
+}
+
 /**
  * Options for connecting to a Sandbox.
  */
-export type SandboxConnectOpts = Omit<SandboxOpts, 'metadata' | 'envs'>
+export type SandboxConnectOpts = ConnectionOpts & {
+  /**
+   * Timeout for the sandbox in **milliseconds**.
+   * For running sandboxes, the timeout will update only if the new timeout is longer than the existing one.
+   * Maximum time a sandbox can be kept alive is 24 hours (86_400_000 milliseconds) for Pro users and 1 hour (3_600_000 milliseconds) for Hobby users.
+   *
+   * @default 300_000 // 5 minutes
+   */
+  timeoutMs?: number
+}
 
 /**
  * State of the sandbox.
@@ -454,12 +485,7 @@ export class SandboxApi {
     template: string,
     timeoutMs: number,
     opts?: SandboxBetaCreateOpts
-  ): Promise<{
-    sandboxId: string
-    sandboxDomain?: string
-    envdVersion: string
-    envdAccessToken?: string
-  }> {
+  ) {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
 
@@ -468,6 +494,7 @@ export class SandboxApi {
         autoPause: opts?.autoPause ?? false,
         templateID: template,
         metadata: opts?.metadata,
+        mcp: opts?.mcp as Record<string, unknown> | undefined,
         envVars: opts?.envs,
         timeout: timeoutToSeconds(timeoutMs),
         secure: opts?.secure ?? true,
@@ -497,16 +524,16 @@ export class SandboxApi {
     }
   }
 
-  protected static async resumeSandbox(
+  protected static async connectSandbox(
     sandboxId: string,
     opts?: SandboxConnectOpts
-  ): Promise<boolean> {
+  ) {
     const timeoutMs = opts?.timeoutMs ?? DEFAULT_SANDBOX_TIMEOUT_MS
 
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
 
-    const res = await client.api.POST('/sandboxes/{sandboxID}/resume', {
+    const res = await client.api.POST('/sandboxes/{sandboxID}/connect', {
       params: {
         path: {
           sandboxID: sandboxId,
@@ -522,17 +549,17 @@ export class SandboxApi {
       throw new NotFoundError(`Paused sandbox ${sandboxId} not found`)
     }
 
-    if (res.error?.code === 409) {
-      // Sandbox is already running
-      return false
-    }
-
     const err = handleApiError(res)
     if (err) {
       throw err
     }
 
-    return true
+    return {
+      sandboxId: res.data!.sandboxID,
+      sandboxDomain: res.data!.domain || undefined,
+      envdVersion: res.data!.envdVersion,
+      envdAccessToken: res.data!.envdAccessToken,
+    }
   }
 }
 
