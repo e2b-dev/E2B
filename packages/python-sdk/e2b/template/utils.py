@@ -56,14 +56,12 @@ def get_all_files_for_files_hash(
     )
 
     for file in files_glob:
-        # Resolve file path relative to context_path
-        file_path = (
-            os.path.join(context_path, file) if not os.path.isabs(file) else file
-        )
+        # Join it with context_path to get the absolute path
+        file_path = os.path.join(context_path, file)
 
         if os.path.isdir(file_path):
             # If it's a directory, add the directory and all entries recursively
-            files.add(file)
+            files.add(file_path)
             dir_files = glob.glob(
                 os.path.join(file, "**/*"),
                 flags=glob.GLOBSTAR,
@@ -71,9 +69,10 @@ def get_all_files_for_files_hash(
                 exclude=ignore_patterns,
             )
             for dir_file in dir_files:
-                files.add(dir_file)
+                dir_file_path = os.path.join(context_path, dir_file)
+                files.add(dir_file_path)
         else:
-            files.add(file)
+            files.add(file_path)
 
     return sorted(list(files))
 
@@ -121,32 +120,28 @@ def calculate_files_hash(
         hash_obj.update(str(stat_info.st_mtime).encode())
 
     for file in files:
-        # file is a relative path from get_all_files_for_files_hash
-        # Join it with context_path to get the absolute path
-        file_path = (
-            os.path.join(context_path, file) if not os.path.isabs(file) else file
-        )
+        # Hash the relative path (normalized by glob, matching JavaScript path.relative behavior)
         hash_obj.update(file.encode())
 
         # Add stat information to hash calculation
-        if os.path.islink(file_path):
-            stats = os.lstat(file_path)
+        if os.path.islink(file):
+            stats = os.lstat(file)
             should_follow = resolve_symlinks and (
-                os.path.isfile(file_path) or os.path.isdir(file_path)
+                os.path.isfile(file) or os.path.isdir(file)
             )
 
             if not should_follow:
                 hash_stats(stats)
 
-                content = os.readlink(file_path)
+                content = os.readlink(file)
                 hash_obj.update(content.encode())
                 continue
 
-        stats = os.stat(file_path)
+        stats = os.stat(file)
         hash_stats(stats)
 
         if stat.S_ISREG(stats.st_mode):
-            with open(file_path, "rb") as f:
+            with open(file, "rb") as f:
                 hash_obj.update(f.read())
 
     return hash_obj.hexdigest()
