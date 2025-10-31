@@ -123,7 +123,9 @@ def calculate_files_hash(
     for file in files:
         # file is a relative path from get_all_files_for_files_hash
         # Join it with context_path to get the absolute path
-        file_path = os.path.join(context_path, file) if not os.path.isabs(file) else file
+        file_path = (
+            os.path.join(context_path, file) if not os.path.isabs(file) else file
+        )
         hash_obj.update(file.encode())
 
         # Add stat information to hash calculation
