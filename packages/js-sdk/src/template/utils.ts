@@ -50,11 +50,14 @@ export async function getAllFilesForFilesHash(
     if (file.isDirectory()) {
       // For directories, add the directory itself and all files inside it
       files.add(file)
-      const dirFiles = await glob(path.join(file.fullpath(), '**/*'), {
-        ignore: ignorePatterns,
-        withFileTypes: true,
-        cwd: file.fullpath(),
-      })
+      const dirFiles = await glob(
+        path.join(path.relative(contextPath, file.fullpath()), '**/*'),
+        {
+          ignore: ignorePatterns,
+          withFileTypes: true,
+          cwd: contextPath,
+        }
+      )
       dirFiles.forEach((f) => files.add(f))
     } else {
       // For files, just add the file
