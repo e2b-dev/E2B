@@ -38,7 +38,7 @@ export async function getAllFilesForFilesHash(
   ignorePatterns: string[]
 ) {
   const { glob } = await dynamicGlob()
-  const files = new Set<Path>()
+  const files = new Map<string, Path>()
 
   const globFiles = await glob(src, {
     ignore: ignorePatterns,
@@ -49,7 +49,7 @@ export async function getAllFilesForFilesHash(
   for (const file of globFiles) {
     if (file.isDirectory()) {
       // For directories, add the directory itself and all files inside it
-      files.add(file)
+      files.set(file.fullpath(), file)
       const dirFiles = await glob(
         path.join(path.relative(contextPath, file.fullpath()), '**/*'),
         {
@@ -58,14 +58,14 @@ export async function getAllFilesForFilesHash(
           cwd: contextPath,
         }
       )
-      dirFiles.forEach((f) => files.add(f))
+      dirFiles.forEach((f) => files.set(f.fullpath(), f))
     } else {
       // For files, just add the file
-      files.add(file)
+      files.set(file.fullpath(), file)
     }
   }
 
-  return Array.from(files).sort()
+  return Array.from(files.values()).sort()
 }
 
 /**

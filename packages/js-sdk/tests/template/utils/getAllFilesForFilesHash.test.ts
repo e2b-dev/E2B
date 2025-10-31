@@ -168,7 +168,7 @@ describe('getAllFilesForFilesHash', () => {
 
     const files = await getAllFilesForFilesHash('src/**/*', testDir, [])
 
-    expect(files).toHaveLength(9) // 4 files + 5 directories (including nested ones)
+    expect(files).toHaveLength(6) // 4 files + 2 directories (components, utils)
     expect(files.some((f) => f.fullpath().endsWith('index.ts'))).toBe(true)
     expect(files.some((f) => f.fullpath().endsWith('Button.tsx'))).toBe(true)
     expect(files.some((f) => f.fullpath().endsWith('helper.ts'))).toBe(true)
