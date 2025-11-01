@@ -1,0 +1,55 @@
+---
+title: "Customizing Sandbox"
+---
+
+<Callout icon="circle-exclamation" color="#ff8800" iconType="regular">You are reading a legacy (pre v1.0) document.</Callout>
+
+
+Custom sandboxes allows you to spawn a sandbox with a pre-defined environment by you and then control it with our SDK.
+
+You can build a custom sandbox by creating the [Sandbox Template](/legacy/sandbox/templates/overview). Sandbox template is a Dockerfile that describes the environment of your sandbox.
+
+Once you build your custom sandbox template, you can spawn multiple isolated sandboxes from it.
+
+## How it works
+1. [Provide the sandbox template file](/legacy/sandbox/templates/template-file)
+1. [Build a sandbox template from it using our CLI](/legacy/guide/custom-sandbox#4-build-custom-sandbox)
+1. Get a template ID from the CLI:
+    ```sh
+    # ... truncated CLI output
+    ✅ Building sandbox template 3y5bvra6kgq0kaumgztu finished.
+    ```
+1. Pass the template ID to our SDK like this:
+    <CodeGroup title="Using custom sandbox with SDK" isRunnable={false}>
+      ```js JavaScript & TypeScript
+      import { Sandbox } from 'e2b'
+
+      // Create new sandbox
+      const sandbox = await Sandbox.create({
+        template: '<sandbox-template-id>', // You get sandbox template ID from the CLI after you run `$ e2b template build`
+      })
+
+      // Close sandbox once done
+      await sandbox.close()
+      ```
+
+      ```python Python
+      from e2b import Sandbox
+
+      # Create new sandbox
+      sandbox = Sandbox.create(
+        template="<sandbox-template>", # You get sandbox template from the CLI after you run `$ e2b template build`
+      )
+
+      # Close sandbox once done
+      sandbox.close()
+      ```
+    </CodeGroup>
+1. Run the code and we spawn a sandbox based on the template you built in step 2
+
+Now you can do step 4/5 multiple times using the same ID, always creating a separate sandbox instance.
+
+
+<Note>
+Read more on [Sandbox Templates](/legacy/sandbox/templates/overview) if you want to create your own custom sandbox.
+</Note>
