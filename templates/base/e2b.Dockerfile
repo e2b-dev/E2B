@@ -7,8 +7,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y \
   gh; \
   rm -rf /var/lib/apt/lists/*
 
-RUN groupadd --gid 1000 node \
-  && useradd --uid 1000 --gid node --shell /bin/bash --create-home node
+RUN groupadd -r node && useradd -r -g node -s /bin/bash -m node
 
 ENV NODE_VERSION 20.9.0
 
