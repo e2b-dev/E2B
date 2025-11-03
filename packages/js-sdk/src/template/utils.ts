@@ -43,6 +43,7 @@ export async function getAllFilesForFilesHash(
   const globFiles = await glob(src, {
     ignore: ignorePatterns,
     withFileTypes: true,
+    // this is required so that the ignore pattern is relative to the file path
     cwd: contextPath,
   })
 
