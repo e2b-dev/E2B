@@ -56,8 +56,8 @@ def get_all_files_for_files_hash(
     )
 
     for file in files_glob:
-        # Join it with context_path to get the absolute path
-        file_path = os.path.join(context_path, file)
+        # Join it with abs_context_path to get the absolute path
+        file_path = os.path.join(abs_context_path, file)
 
         if os.path.isdir(file_path):
             # If it's a directory, add the directory and all entries recursively
@@ -69,7 +69,7 @@ def get_all_files_for_files_hash(
                 exclude=ignore_patterns,
             )
             for dir_file in dir_files:
-                dir_file_path = os.path.join(context_path, dir_file)
+                dir_file_path = os.path.join(abs_context_path, dir_file)
                 files.add(dir_file_path)
         else:
             files.add(file_path)
