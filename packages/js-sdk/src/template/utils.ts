@@ -3,6 +3,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { dynamicGlob, dynamicTar } from '../utils'
 import { BASE_STEP_NAME, FINALIZE_STEP_NAME } from './consts'
+import type { Path } from 'glob'
 
 /**
  * Read and parse a .dockerignore file.
@@ -21,6 +22,51 @@ export function readDockerignore(contextPath: string): string[] {
     .split('\n')
     .map((line) => line.trim())
     .filter((line) => line && !line.startsWith('#'))
+}
+
+/**
+ * Get all files for a given path and ignore patterns.
+ *
+ * @param src Path to the source directory
+ * @param contextPath Base directory for resolving relative paths
+ * @param ignorePatterns Ignore patterns
+ * @returns Array of files
+ */
+export async function getAllFilesForFilesHash(
+  src: string,
+  contextPath: string,
+  ignorePatterns: string[]
+) {
+  const { glob } = await dynamicGlob()
+  const files = new Map<string, Path>()
+
+  const globFiles = await glob(src, {
+    ignore: ignorePatterns,
+    withFileTypes: true,
+    // this is required so that the ignore pattern is relative to the file path
+    cwd: contextPath,
+  })
+
+  for (const file of globFiles) {
+    if (file.isDirectory()) {
+      // For directories, add the directory itself and all files inside it
+      files.set(file.fullpath(), file)
+      const dirFiles = await glob(
+        path.join(path.relative(contextPath, file.fullpath()), '**/*'),
+        {
+          ignore: ignorePatterns,
+          withFileTypes: true,
+          cwd: contextPath,
+        }
+      )
+      dirFiles.forEach((f) => files.set(f.fullpath(), f))
+    } else {
+      // For files, just add the file
+      files.set(file.fullpath(), file)
+    }
+  }
+
+  return Array.from(files.values()).sort()
 }
 
 /**
@@ -44,17 +90,13 @@ export async function calculateFilesHash(
   resolveSymlinks: boolean,
   stackTrace: string | undefined
 ): Promise<string> {
-  const { glob } = await dynamicGlob()
   const srcPath = path.join(contextPath, src)
   const hash = crypto.createHash('sha256')
   const content = `COPY ${src} ${dest}`
 
   hash.update(content)
 
-  const files = await glob(srcPath, {
-    ignore: ignorePatterns,
-    withFileTypes: true,
-  })
+  const files = await getAllFilesForFilesHash(src, contextPath, ignorePatterns)
 
   if (files.length === 0) {
     const error = new Error(`No files found in ${srcPath}`)
@@ -73,6 +115,7 @@ export async function calculateFilesHash(
     hash.update(stats.mtimeMs.toString())
   }
 
+  // Process files recursively
   for (const file of files) {
     // Add a relative path to hash calculation
     const relativePath = path.relative(contextPath, file.fullpath())
@@ -98,9 +141,9 @@ export async function calculateFilesHash(
     }
 
     const stats = fs.statSync(file.fullpath())
-
     hashStats(stats)
 
+    // Add file content to hash calculation
     if (stats.isFile()) {
       const content = fs.readFileSync(file.fullpath())
       hash.update(new Uint8Array(content))

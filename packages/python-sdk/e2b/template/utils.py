@@ -2,8 +2,7 @@ import hashlib
 import os
 import json
 import stat
-from glob import glob
-import fnmatch
+from wcmatch import glob
 import re
 import inspect
 from types import TracebackType, FrameType
@@ -32,6 +31,50 @@ def read_dockerignore(context_path: str) -> List[str]:
         for line in content.split("\n")
         if line.strip() and not line.strip().startswith("#")
     ]
+
+
+def get_all_files_for_files_hash(
+    src: str, context_path: str, ignore_patterns: List[str]
+) -> List[str]:
+    """
+    Get all files for a given path and ignore patterns.
+
+    :param src: Path to the source directory
+    :param context_path: Base directory for resolving relative paths
+    :param ignore_patterns: Ignore patterns
+    :return: Array of files
+    """
+    files = set()
+
+    # Use glob to find all files/directories matching the pattern under context_path
+    abs_context_path = os.path.abspath(context_path)
+    files_glob = glob.glob(
+        src,
+        flags=glob.GLOBSTAR,
+        root_dir=abs_context_path,
+        exclude=ignore_patterns,
+    )
+
+    for file in files_glob:
+        # Join it with abs_context_path to get the absolute path
+        file_path = os.path.join(abs_context_path, file)
+
+        if os.path.isdir(file_path):
+            # If it's a directory, add the directory and all entries recursively
+            files.add(file_path)
+            dir_files = glob.glob(
+                os.path.join(file, "**/*"),
+                flags=glob.GLOBSTAR,
+                root_dir=abs_context_path,
+                exclude=ignore_patterns,
+            )
+            for dir_file in dir_files:
+                dir_file_path = os.path.join(abs_context_path, dir_file)
+                files.add(dir_file_path)
+        else:
+            files.add(file_path)
+
+    return sorted(list(files))
 
 
 def calculate_files_hash(
@@ -64,15 +107,7 @@ def calculate_files_hash(
 
     hash_obj.update(content.encode())
 
-    files_glob = glob(src_path, recursive=True)
-
-    files = []
-    for file in files_glob:
-        if ignore_patterns and any(
-            fnmatch.fnmatch(file, pattern) for pattern in ignore_patterns
-        ):
-            continue
-        files.append(file)
+    files = get_all_files_for_files_hash(src, context_path, ignore_patterns)
 
     if len(files) == 0:
         raise ValueError(f"No files found in {src_path}").with_traceback(stack_trace)
@@ -85,7 +120,7 @@ def calculate_files_hash(
         hash_obj.update(str(stat_info.st_mtime).encode())
 
     for file in files:
-        # Add a relative path to hash calculation
+        # Hash the relative path
         relative_path = os.path.relpath(file, context_path)
         hash_obj.update(relative_path.encode())
 
