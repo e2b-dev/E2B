@@ -76,7 +76,7 @@
   },
   "dependencies": {
     "@iarna/toml": "^2.2.5",
-    "@inquirer/prompts": "^5.5.0",
+    "@inquirer/prompts": "^7.9.0",
     "@npmcli/package-json": "^5.2.1",
     "async-listen": "^3.0.1",
     "boxen": "^7.1.1",
@@ -88,7 +88,7 @@
     "dockerfile-ast": "^0.6.1",
     "e2b": "^2.6.1",
     "handlebars": "^4.7.8",
-    "inquirer": "^9.2.12",
+    "inquirer": "^12.10.0",
     "open": "^9.1.0",
     "statuses": "^2.0.1",
     "strip-ansi": "^7.1.0",
