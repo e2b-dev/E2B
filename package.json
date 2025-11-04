@@ -13,7 +13,7 @@
     "generate-sdk-reference": "pnpm --if-present --recursive run generate-sdk-reference",
     "lint": "pnpm --if-present --recursive run lint",
     "format": "pnpm --if-present --recursive run format",
-    "changeset": "npx @changesets/cli"
+    "changeset": "pnpx @changesets/cli"
   },
   "packageManager": "pnpm@9.15.5",
   "dependencies": {
