@@ -2,8 +2,8 @@
   "name": "e2b",
   "private": true,
   "scripts": {
-    "version": "changeset version && pnpm run -r postVersion",
-    "publish": "changeset publish && pnpm run -r postPublish",
+    "version": "pnpm changeset version && pnpm run -r postVersion",
+    "publish": "pnpm changeset publish && pnpm run -r postPublish",
     "test": "pnpm test --recursive --if-present",
     "dev:web": "pnpm --prefix apps/web run dev",
     "build:web": "pnpm --prefix apps/web run build",
