@@ -1,7 +1,6 @@
 import crypto from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
-import { spawnSync } from 'node:child_process'
 import { dynamicGlob, dynamicTar } from '../utils'
 import { BASE_STEP_NAME, FINALIZE_STEP_NAME } from './consts'
 import type { Path } from 'glob'
