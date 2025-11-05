@@ -88,7 +88,8 @@ def calculate_files_hash(
     """
     Calculate a hash of files being copied to detect changes for cache invalidation.
 
-    The hash includes file content, metadata (mode, uid, gid, size, mtime), and relative paths.
+    The hash includes file content, metadata (mode, size), and relative paths.
+    Note: uid, gid, and mtime are excluded to ensure stable hashes across environments.
 
     :param src: Source path pattern for files to copy
     :param dest: Destination path where files will be copied
@@ -113,11 +114,10 @@ def calculate_files_hash(
         raise ValueError(f"No files found in {src_path}").with_traceback(stack_trace)
 
     def hash_stats(stat_info: os.stat_result) -> None:
+        # Only include stable metadata (mode, size)
+        # Exclude uid, gid, and mtime to ensure consistent hashes across environments
         hash_obj.update(str(stat_info.st_mode).encode())
-        hash_obj.update(str(stat_info.st_uid).encode())
-        hash_obj.update(str(stat_info.st_gid).encode())
         hash_obj.update(str(stat_info.st_size).encode())
-        hash_obj.update(str(stat_info.st_mtime).encode())
 
     for file in files:
         # Hash the relative path
