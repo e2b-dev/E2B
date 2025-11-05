@@ -25,7 +25,10 @@ async def test_run_command_as_different_user(async_build):
 @pytest.mark.skip_debug()
 async def test_run_command_as_user_that_does_not_exist(async_build):
     template = (
-        AsyncTemplate().from_image("ubuntu:22.04").skip_cache().run_cmd("whoami", user="root123")
+        AsyncTemplate()
+        .from_image("ubuntu:22.04")
+        .skip_cache()
+        .run_cmd("whoami", user="root123")
     )
 
     with pytest.raises(Exception) as exc_info:

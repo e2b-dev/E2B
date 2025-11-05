@@ -30,7 +30,9 @@ async def _expect_to_throw_and_check_trace(func, expected_method: str):
 @pytest.mark.skip_debug()
 async def test_traces_on_from_image(async_build):
     template = AsyncTemplate().from_image("e2b.dev/this-image-does-not-exist")
-    await _expect_to_throw_and_check_trace(lambda: async_build(template, skip_cache=True), "from_image")
+    await _expect_to_throw_and_check_trace(
+        lambda: async_build(template, skip_cache=True), "from_image"
+    )
 
 
 @pytest.mark.skip_debug()
@@ -56,7 +58,9 @@ async def test_traces_on_from_image_registry(async_build):
         username="test",
         password="test",
     )
-    await _expect_to_throw_and_check_trace(lambda: async_build(template, skip_cache=True), "from_image")
+    await _expect_to_throw_and_check_trace(
+        lambda: async_build(template, skip_cache=True), "from_image"
+    )
 
 
 @pytest.mark.skip_debug()

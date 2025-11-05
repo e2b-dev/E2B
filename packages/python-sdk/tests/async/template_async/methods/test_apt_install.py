@@ -5,7 +5,9 @@ from e2b import AsyncTemplate
 
 @pytest.mark.skip_debug()
 async def test_apt_install(async_build):
-    template = AsyncTemplate().from_image("ubuntu:24.04").skip_cache().apt_install(["vim"])
+    template = (
+        AsyncTemplate().from_image("ubuntu:24.04").skip_cache().apt_install(["vim"])
+    )
 
     await async_build(template)
 

@@ -31,7 +31,9 @@ def _expect_to_throw_and_check_trace(func, expected_method: str):
 def test_traces_on_from_image(build):
     template = Template()
     template = template.from_image("e2b.dev/this-image-does-not-exist")
-    _expect_to_throw_and_check_trace(lambda: build(template, skip_cache=True), "from_image")
+    _expect_to_throw_and_check_trace(
+        lambda: build(template, skip_cache=True), "from_image"
+    )
 
 
 @pytest.mark.skip_debug()
@@ -59,7 +61,9 @@ def test_traces_on_from_image_registry(build):
         username="test",
         password="test",
     )
-    _expect_to_throw_and_check_trace(lambda: build(template, skip_cache=True), "from_image")
+    _expect_to_throw_and_check_trace(
+        lambda: build(template, skip_cache=True), "from_image"
+    )
 
 
 @pytest.mark.skip_debug()
