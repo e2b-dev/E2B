@@ -12,21 +12,21 @@ interface SandboxFixture {
 interface BuildTemplateFixture {
   buildTemplate: (
     template: TemplateClass,
-    skipCache?: boolean,
+    options?: { skipCache?: boolean },
     onBuildLogs?: (logEntry: LogEntry) => void
   ) => Promise<void>
 }
 
 function buildTemplate(
   template: TemplateClass,
-  skipCache?: boolean,
+  options?: { skipCache?: boolean },
   onBuildLogs?: (logEntry: LogEntry) => void
 ) {
   return Template.build(template, {
     alias: `e2b-test-${randomUUID()}`,
     cpuCount: 1,
     memoryMB: 1024,
-    skipCache: skipCache,
+    skipCache: options?.skipCache,
     onBuildLogs: onBuildLogs,
   })
 }

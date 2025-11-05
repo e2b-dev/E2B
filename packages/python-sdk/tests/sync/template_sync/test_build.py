@@ -51,7 +51,7 @@ def test_build_template(build, setup_test_folder):
         .set_start_cmd("echo 'Hello, world!'", wait_for_timeout(10_000))
     )
 
-    build(template, skip_cache=False, on_build_logs=default_build_logger())
+    build(template, skip_cache=True, on_build_logs=default_build_logger())
 
 
 @pytest.mark.skip_debug()
@@ -59,6 +59,7 @@ def test_build_template_with_symlinks(build, setup_test_folder):
     template = (
         Template(file_context_path=setup_test_folder)
         .from_image("ubuntu:22.04")
+        .skip_cache()
         .copy("folder/*", "folder", force_upload=True)
         .run_cmd("cat folder/symlink.txt")
     )
@@ -71,6 +72,7 @@ def test_build_template_with_resolve_symlinks(build, setup_test_folder):
     template = (
         Template(file_context_path=setup_test_folder)
         .from_image("ubuntu:22.04")
+        .skip_cache()
         .copy(
             "folder/symlink.txt",
             "folder/symlink.txt",

@@ -30,56 +30,64 @@ def _expect_to_throw_and_check_trace(func, expected_method: str):
 @pytest.mark.skip_debug()
 def test_traces_on_from_image(build):
     template = Template()
-    template = template.skip_cache().from_image("e2b.dev/this-image-does-not-exist")
-    _expect_to_throw_and_check_trace(lambda: build(template), "from_image")
+    template = template.from_image("e2b.dev/this-image-does-not-exist")
+    _expect_to_throw_and_check_trace(lambda: build(template, skip_cache=True), "from_image")
 
 
 @pytest.mark.skip_debug()
 def test_traces_on_from_template(build):
     template = Template().from_template("this-template-does-not-exist")
-    _expect_to_throw_and_check_trace(lambda: build(template), "from_template")
+    _expect_to_throw_and_check_trace(
+        lambda: build(template, skip_cache=True), "from_template"
+    )
 
 
 @pytest.mark.skip_debug()
 def test_traces_on_from_dockerfile(build):
     template = Template()
     template = template.from_dockerfile("FROM ubuntu:22.04\nRUN nonexistent")
-    _expect_to_throw_and_check_trace(lambda: build(template), "from_dockerfile")
+    _expect_to_throw_and_check_trace(
+        lambda: build(template, skip_cache=True), "from_dockerfile"
+    )
 
 
 @pytest.mark.skip_debug()
 def test_traces_on_from_image_registry(build):
     template = Template()
-    template = template.skip_cache().from_image(
+    template = template.from_image(
         "registry.example.com/nonexistent:latest",
         username="test",
         password="test",
     )
-    _expect_to_throw_and_check_trace(lambda: build(template), "from_image")
+    _expect_to_throw_and_check_trace(lambda: build(template, skip_cache=True), "from_image")
 
 
 @pytest.mark.skip_debug()
 def test_traces_on_from_aws_registry(build):
     template = Template()
-    template = template.skip_cache().from_aws_registry(
+    template = template.from_aws_registry(
         "123456789.dkr.ecr.us-east-1.amazonaws.com/nonexistent:latest",
         access_key_id="test",
         secret_access_key="test",
         region="us-east-1",
     )
-    _expect_to_throw_and_check_trace(lambda: build(template), "from_aws_registry")
+    _expect_to_throw_and_check_trace(
+        lambda: build(template, skip_cache=True), "from_aws_registry"
+    )
 
 
 @pytest.mark.skip_debug()
 def test_traces_on_from_gcp_registry(build):
     template = Template()
-    template = template.skip_cache().from_gcp_registry(
+    template = template.from_gcp_registry(
         "gcr.io/nonexistent-project/nonexistent:latest",
         service_account_json={
             "type": "service_account",
         },
     )
-    _expect_to_throw_and_check_trace(lambda: build(template), "from_gcp_registry")
+    _expect_to_throw_and_check_trace(
+        lambda: build(template, skip_cache=True), "from_gcp_registry"
+    )
 
 
 @pytest.mark.skip_debug()
@@ -202,7 +210,7 @@ def test_traces_on_set_start_cmd(build):
 def test_traces_on_add_mcp_server():
     # needs mcp-gateway as base template, without it no mcp servers can be added
     _expect_to_throw_and_check_trace(
-        lambda: Template().from_base_image().add_mcp_server("exa"),
+        lambda: Template().from_base_image().skip_cache().add_mcp_server("exa"),
         "add_mcp_server",
     )
 

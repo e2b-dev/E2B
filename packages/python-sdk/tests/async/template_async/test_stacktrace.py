@@ -29,64 +29,59 @@ async def _expect_to_throw_and_check_trace(func, expected_method: str):
 
 @pytest.mark.skip_debug()
 async def test_traces_on_from_image(async_build):
-    template = AsyncTemplate()
-    template = template.skip_cache().from_image("e2b.dev/this-image-does-not-exist")
-    await _expect_to_throw_and_check_trace(lambda: async_build(template), "from_image")
+    template = AsyncTemplate().from_image("e2b.dev/this-image-does-not-exist")
+    await _expect_to_throw_and_check_trace(lambda: async_build(template, skip_cache=True), "from_image")
 
 
 @pytest.mark.skip_debug()
 async def test_traces_on_from_template(async_build):
     template = AsyncTemplate().from_template("this-template-does-not-exist")
     await _expect_to_throw_and_check_trace(
-        lambda: async_build(template), "from_template"
+        lambda: async_build(template, skip_cache=True), "from_template"
     )
 
 
 @pytest.mark.skip_debug()
 async def test_traces_on_from_dockerfile(async_build):
-    template = AsyncTemplate()
-    template = template.from_dockerfile("FROM ubuntu:22.04\nRUN nonexistent")
+    template = AsyncTemplate().from_dockerfile("FROM ubuntu:22.04\nRUN nonexistent")
     await _expect_to_throw_and_check_trace(
-        lambda: async_build(template), "from_dockerfile"
+        lambda: async_build(template, skip_cache=True), "from_dockerfile"
     )
 
 
 @pytest.mark.skip_debug()
 async def test_traces_on_from_image_registry(async_build):
-    template = AsyncTemplate()
-    template = template.skip_cache().from_image(
+    template = AsyncTemplate().from_image(
         "registry.example.com/nonexistent:latest",
         username="test",
         password="test",
     )
-    await _expect_to_throw_and_check_trace(lambda: async_build(template), "from_image")
+    await _expect_to_throw_and_check_trace(lambda: async_build(template, skip_cache=True), "from_image")
 
 
 @pytest.mark.skip_debug()
 async def test_traces_on_from_aws_registry(async_build):
-    template = AsyncTemplate()
-    template = template.skip_cache().from_aws_registry(
+    template = AsyncTemplate().from_aws_registry(
         "123456789.dkr.ecr.us-east-1.amazonaws.com/nonexistent:latest",
         access_key_id="test",
         secret_access_key="test",
         region="us-east-1",
     )
     await _expect_to_throw_and_check_trace(
-        lambda: async_build(template), "from_aws_registry"
+        lambda: async_build(template, skip_cache=True), "from_aws_registry"
     )
 
 
 @pytest.mark.skip_debug()
 async def test_traces_on_from_gcp_registry(async_build):
-    template = AsyncTemplate()
-    template = template.skip_cache().from_gcp_registry(
+    template = AsyncTemplate().from_gcp_registry(
         "gcr.io/nonexistent-project/nonexistent:latest",
         service_account_json={
             "type": "service_account",
         },
     )
     await _expect_to_throw_and_check_trace(
-        lambda: async_build(template), "from_gcp_registry"
+        lambda: async_build(template, skip_cache=True), "from_gcp_registry"
     )
 
 
@@ -214,7 +209,7 @@ async def test_traces_on_start_cmd(async_build):
 async def test_traces_on_add_mcp_server():
     # needs mcp-gateway as base template, without it no mcp servers can be added
     await _expect_to_throw_and_check_trace(
-        lambda: AsyncTemplate().from_base_image().add_mcp_server("exa"),
+        lambda: AsyncTemplate().from_base_image().skip_cache().add_mcp_server("exa"),
         "add_mcp_server",
     )
 

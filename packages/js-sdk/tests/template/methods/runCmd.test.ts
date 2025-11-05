@@ -3,7 +3,10 @@ import { Template } from '../../../src'
 import { buildTemplateTest } from '../../setup'
 
 buildTemplateTest('run command', async ({ buildTemplate }) => {
-  const template = Template().fromImage('ubuntu:22.04').runCmd('ls -l')
+  const template = Template()
+    .fromImage('ubuntu:22.04')
+    .skipCache()
+    .runCmd('ls -l')
 
   await buildTemplate(template)
 })
@@ -13,6 +16,7 @@ buildTemplateTest(
   async ({ buildTemplate }) => {
     const template = Template()
       .fromImage('ubuntu:22.04')
+      .skipCache()
       .runCmd('test "$(whoami)" = "root"', { user: 'root' })
 
     await buildTemplate(template)
@@ -24,6 +28,7 @@ buildTemplateTest(
   async ({ buildTemplate }) => {
     const template = Template()
       .fromImage('ubuntu:22.04')
+      .skipCache()
       .runCmd('whoami', { user: 'root123' })
 
     await expect(buildTemplate(template)).rejects.toThrow(
