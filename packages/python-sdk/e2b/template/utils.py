@@ -114,7 +114,7 @@ def calculate_files_hash(
 
     hash_obj.update(content.encode())
 
-    files = get_all_files_in_path(src, context_path, ignore_patterns)
+    files = get_all_files_in_path(src, context_path, ignore_patterns, True)
 
     if len(files) == 0:
         raise ValueError(f"No files found in {src_path}").with_traceback(stack_trace)
@@ -178,10 +178,10 @@ def tar_file_stream(
         dereference=resolve_symlinks,
     ) as tar:
         files = get_all_files_in_path(
-            file_name, file_context_path, ignore_patterns, False
+            file_name, file_context_path, ignore_patterns, True
         )
         for file in files:
-            tar.add(file, arcname=os.path.relpath(file, file_context_path))
+            tar.add(file, arcname=os.path.relpath(file, file_context_path), recursive=False)
 
     return tar_buffer
 

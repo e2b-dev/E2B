@@ -99,7 +99,7 @@ export async function calculateFilesHash(
 
   hash.update(content)
 
-  const files = await getAllFilesInPath(src, contextPath, ignorePatterns)
+  const files = await getAllFilesInPath(src, contextPath, ignorePatterns, true)
 
   if (files.length === 0) {
     const error = new Error(`No files found in ${srcPath}`)
@@ -253,7 +253,7 @@ export async function tarFileStream(
     fileName,
     fileContextPath,
     ignorePatterns,
-    false
+    true
   )
 
   const filePaths = allFiles.map((file) =>
@@ -265,6 +265,7 @@ export async function tarFileStream(
       gzip: true,
       cwd: fileContextPath,
       follow: resolveSymlinks,
+      noDirRecurse: true,
     },
     filePaths
   )
