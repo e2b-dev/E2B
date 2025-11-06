@@ -76,6 +76,11 @@ export type BuildInfo = {
 }
 
 /**
+ * Response from getting build status.
+ */
+export type GetBuildStatusOptions = AuthOptions & { logsOffset?: number }
+
+/**
  * Types of instructions that can be used in a template.
  */
 export enum InstructionType {

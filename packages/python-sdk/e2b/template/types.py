@@ -1,7 +1,7 @@
+from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import List, Optional, TypedDict, Union
-from typing import Literal
+from typing import List, Literal, Optional, TypedDict, Union
 
 from typing_extensions import NotRequired
 
@@ -94,11 +94,12 @@ class TemplateType(TypedDict):
     force: bool
 
 
-class BuildInfo(TypedDict):
+@dataclass
+class BuildInfo:
     """
     Information about a built template.
     """
 
     alias: str
-    templateId: str
-    buildId: str
+    template_id: str
+    build_id: str

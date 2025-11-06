@@ -18,10 +18,10 @@ import { parseDockerfile } from './dockerfileParser'
 import { LogEntry, LogEntryEnd, LogEntryStart } from './logger'
 import { ReadyCmd, waitForFile } from './readycmd'
 import {
-  AuthOptions,
   BuildInfo,
   BuildOptions,
   CopyItem,
+  GetBuildStatusOptions,
   Instruction,
   InstructionType,
   McpServerName,
@@ -166,7 +166,7 @@ export class TemplateBase
    */
   static async buildInBackground(
     template: TemplateClass,
-    options: Omit<BuildOptions, 'onBuildLogs'>
+    options: BuildOptions
   ): Promise<BuildInfo> {
     const config = new ConnectionConfig({
       domain: options.domain,
@@ -190,7 +190,7 @@ export class TemplateBase
    */
   static async getBuildStatus(
     data: Pick<BuildInfo, 'templateId' | 'buildId'>,
-    options?: AuthOptions & { logsOffset?: number }
+    options?: GetBuildStatusOptions
   ): Promise<GetBuildStatusResponse> {
     const config = new ConnectionConfig({
       domain: options?.domain,
@@ -851,6 +851,7 @@ export class TemplateBase
   /**
    * Internal implementation of the template build process.
    *
+   * @param client API client for communicating with E2B backend
    * @param options Build configuration options
    * @throws BuildError if the build fails
    */
@@ -1069,10 +1070,10 @@ Template.toJSON = TemplateBase.toJSON
 Template.toDockerfile = TemplateBase.toDockerfile
 
 export type {
-  AuthOptions,
   BuildInfo,
   BuildOptions,
   CopyItem,
+  GetBuildStatusOptions,
   McpServerName,
   TemplateBuilder,
   TemplateClass,
