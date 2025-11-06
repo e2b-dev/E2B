@@ -1,10 +1,10 @@
+import os
+import shutil
 import tempfile
 
 import pytest
-import os
-import shutil
 
-from e2b import AsyncTemplate, wait_for_timeout, default_build_logger
+from e2b import AsyncTemplate, default_build_logger, wait_for_timeout
 
 
 @pytest.fixture(scope="module")
