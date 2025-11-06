@@ -240,11 +240,15 @@ export function padOctal(mode: number): string {
 export async function tarFileStream(
   fileName: string,
   fileContextPath: string,
+  ignorePatterns: string[],
   resolveSymlinks: boolean
 ) {
   const { globSync } = await dynamicGlob()
   const { create } = await dynamicTar()
-  const files = globSync(fileName, { cwd: fileContextPath })
+  const files = globSync(fileName, {
+    cwd: fileContextPath,
+    ignore: ignorePatterns,
+  })
 
   return create(
     {
@@ -267,12 +271,14 @@ export async function tarFileStream(
 export async function tarFileStreamUpload(
   fileName: string,
   fileContextPath: string,
+  ignorePatterns: string[],
   resolveSymlinks: boolean
 ) {
   // First pass: calculate the compressed size
   const sizeCalculationStream = await tarFileStream(
     fileName,
     fileContextPath,
+    ignorePatterns,
     resolveSymlinks
   )
   let contentLength = 0
@@ -285,6 +291,7 @@ export async function tarFileStreamUpload(
     uploadStream: await tarFileStream(
       fileName,
       fileContextPath,
+      ignorePatterns,
       resolveSymlinks
     ),
   }

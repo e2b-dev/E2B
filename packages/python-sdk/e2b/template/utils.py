@@ -1,5 +1,7 @@
 import hashlib
 import os
+import io
+import tarfile
 import json
 import stat
 from wcmatch import glob
@@ -146,6 +148,38 @@ def calculate_files_hash(
                 hash_obj.update(f.read())
 
     return hash_obj.hexdigest()
+
+
+def tar_file_stream(
+    file_name: str,
+    file_context_path: str,
+    ignore_patterns: List[str],
+    resolve_symlinks: bool,
+) -> io.BytesIO:
+    """
+    Create a tar stream of files matching a pattern.
+
+    :param file_name: Glob pattern for files to include
+    :param file_context_path: Base directory for resolving file paths
+    :param ignore_patterns: Ignore patterns
+    :param resolve_symlinks: Whether to resolve symbolic links
+
+    :return: Tar stream
+    """
+    tar_buffer = io.BytesIO()
+    with tarfile.open(
+        fileobj=tar_buffer,
+        mode="w:gz",
+        dereference=resolve_symlinks,
+    ) as tar:
+        files = glob.glob(
+            file_name, root_dir=file_context_path, exclude=ignore_patterns
+        )
+        for file in files:
+            file_path = os.path.join(file_context_path, file)
+            tar.add(file_path, arcname=file)
+
+    return tar_buffer
 
 
 def strip_ansi_escape_codes(text: str) -> str:

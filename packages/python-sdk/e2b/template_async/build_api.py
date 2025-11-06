@@ -1,10 +1,6 @@
 import asyncio
-import io
-import os
-import tarfile
-from glob import glob
 from types import TracebackType
-from typing import Callable, Literal, Optional, List
+from typing import Callable, Literal, Optional, List, Union
 
 import httpx
 
@@ -26,7 +22,7 @@ from e2b.api.client.models import (
 from e2b.exceptions import BuildException, FileUploadException
 from e2b.template.logger import LogEntry
 from e2b.template.types import TemplateType
-from e2b.template.utils import get_build_step_index
+from e2b.template.utils import get_build_step_index, tar_file_stream
 
 
 async def request_build(
@@ -85,28 +81,14 @@ async def upload_file(
     file_name: str,
     context_path: str,
     url: str,
+    ignore_patterns: List[str],
     resolve_symlinks: bool,
     stack_trace: Optional[TracebackType],
 ):
-    tar_buffer = io.BytesIO()
-
     try:
-        with tarfile.open(
-            fileobj=tar_buffer,
-            mode="w:gz",
-            dereference=resolve_symlinks,
-        ) as tar:
-            src_path = os.path.join(context_path, file_name)
-            files = glob(src_path, recursive=True)
-            for file in files:
-                arcname = os.path.relpath(file, context_path)
-                tar.add(file, arcname=arcname)
-    except Exception as e:
-        raise FileUploadException(f"Failed to create tar file: {e}").with_traceback(
-            stack_trace
+        tar_buffer = tar_file_stream(
+            file_name, context_path, ignore_patterns, resolve_symlinks
         )
-
-    try:
         async with httpx.AsyncClient() as client:
             response = await client.put(url, content=tar_buffer.getvalue())
             response.raise_for_status()
@@ -168,7 +150,7 @@ async def wait_for_build_finish(
     build_id: str,
     on_build_logs: Optional[Callable[[LogEntry], None]] = None,
     logs_refresh_frequency: float = 0.2,
-    stack_traces: List[TracebackType] = [],
+    stack_traces: List[Union[TracebackType, None]] = [],
 ):
     logs_offset = 0
     status: Literal["building", "waiting", "ready", "error"] = "building"

@@ -130,8 +130,8 @@ class Template(TemplateBase):
                     src = args[0] if len(args) > 0 else None
                     force_upload = file_upload.get("forceUpload")
                     files_hash = file_upload.get("filesHash", None)
-                    resolve_symlinks = file_upload.get(
-                        "resolveSymlinks", RESOLVE_SYMLINKS
+                    resolve_symlinks = (
+                        file_upload.get("resolveSymlinks") or RESOLVE_SYMLINKS
                     )
 
                     if src is None or files_hash is None:
@@ -152,6 +152,7 @@ class Template(TemplateBase):
                             src,
                             template._template._file_context_path,
                             file_info.url,
+                            template._template._file_ignore_patterns,
                             resolve_symlinks,
                             stack_trace,
                         )

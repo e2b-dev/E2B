@@ -91,15 +91,18 @@ export async function uploadFile(
     fileName: string
     fileContextPath: string
     url: string
+    ignorePatterns: string[]
     resolveSymlinks: boolean
   },
   stackTrace: string | undefined
 ) {
-  const { fileName, url, fileContextPath, resolveSymlinks } = options
+  const { fileName, url, fileContextPath, ignorePatterns, resolveSymlinks } =
+    options
   try {
     const { contentLength, uploadStream } = await tarFileStreamUpload(
       fileName,
       fileContextPath,
+      ignorePatterns,
       resolveSymlinks
     )
 

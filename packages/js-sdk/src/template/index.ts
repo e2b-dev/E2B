@@ -844,6 +844,7 @@ export class TemplateBase
               fileName: src,
               fileContextPath: this.fileContextPath.toString(),
               url,
+              ignorePatterns: this.fileIgnorePatterns,
               resolveSymlinks: instruction.resolveSymlinks ?? RESOLVE_SYMLINKS,
             },
             stackTrace
