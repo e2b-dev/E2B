@@ -2,7 +2,10 @@ import { Template } from '../../../src'
 import { buildTemplateTest } from '../../setup'
 
 buildTemplateTest('apt install', async ({ buildTemplate }) => {
-  const template = Template().fromImage('ubuntu:24.04').aptInstall(['vim'])
+  const template = Template()
+    .fromImage('ubuntu:24.04')
+    .skipCache()
+    .aptInstall(['vim'])
 
   await buildTemplate(template)
 })
@@ -12,6 +15,7 @@ buildTemplateTest(
   async ({ buildTemplate }) => {
     const template = Template()
       .fromImage('ubuntu:24.04')
+      .skipCache()
       .aptInstall(['vim'], { noInstallRecommends: true })
 
     await buildTemplate(template)

@@ -21,67 +21,67 @@ afterAll(async () => {
 
 buildTemplateTest('fromBaseImage', async ({ buildTemplate }) => {
   const template = Template().fromBaseImage()
-  await buildTemplate(template)
+  await buildTemplate(template, { skipCache: true })
 })
 
 buildTemplateTest('fromDebianImage', async ({ buildTemplate }) => {
   const template = Template().fromDebianImage()
-  await buildTemplate(template)
+  await buildTemplate(template, { skipCache: true })
 })
 
 buildTemplateTest('fromDebianImage with variant', async ({ buildTemplate }) => {
   const template = Template().fromDebianImage('bookworm')
-  await buildTemplate(template)
+  await buildTemplate(template, { skipCache: true })
 })
 
 buildTemplateTest('fromUbuntuImage', async ({ buildTemplate }) => {
   const template = Template().fromUbuntuImage()
-  await buildTemplate(template)
+  await buildTemplate(template, { skipCache: true })
 })
 
 buildTemplateTest('fromUbuntuImage with variant', async ({ buildTemplate }) => {
   const template = Template().fromUbuntuImage('24.04')
-  await buildTemplate(template)
+  await buildTemplate(template, { skipCache: true })
 })
 
 buildTemplateTest('fromPythonImage', async ({ buildTemplate }) => {
   const template = Template().fromPythonImage()
-  await buildTemplate(template)
+  await buildTemplate(template, { skipCache: true })
 })
 
 buildTemplateTest('fromPythonImage with variant', async ({ buildTemplate }) => {
   const template = Template().fromPythonImage('3.12')
-  await buildTemplate(template)
+  await buildTemplate(template, { skipCache: true })
 })
 
 buildTemplateTest('fromNodeImage', async ({ buildTemplate }) => {
   const template = Template().fromNodeImage()
-  await buildTemplate(template)
+  await buildTemplate(template, { skipCache: true })
 })
 
 buildTemplateTest('fromNodeImage with variant', async ({ buildTemplate }) => {
   const template = Template().fromNodeImage('24')
-  await buildTemplate(template)
+  await buildTemplate(template, { skipCache: true })
 })
 
 buildTemplateTest('fromBunImage', async ({ buildTemplate }) => {
   const template = Template().fromBunImage()
-  await buildTemplate(template)
+  await buildTemplate(template, { skipCache: true })
 })
 
 buildTemplateTest('fromBunImage with variant', async ({ buildTemplate }) => {
   const template = Template().fromBunImage('1.3')
-  await buildTemplate(template)
+  await buildTemplate(template, { skipCache: true })
 })
 
 buildTemplateTest('fromImage', async ({ buildTemplate }) => {
   const template = Template().fromImage('ubuntu:22.04')
-  await buildTemplate(template)
+  await buildTemplate(template, { skipCache: true })
 })
 
 buildTemplateTest('fromTemplate', async ({ buildTemplate }) => {
   const template = Template().fromTemplate('base')
-  await buildTemplate(template)
+  await buildTemplate(template, { skipCache: true })
 })
 
 buildTemplateTest('fromDockerfile', async ({ buildTemplate }) => {
@@ -91,5 +91,5 @@ COPY package.json .
 RUN npm install`
 
   const template = Template({ fileContextPath }).fromDockerfile(dockerfile)
-  await buildTemplate(template)
+  await buildTemplate(template, { skipCache: true })
 })

@@ -71,7 +71,8 @@ export async function getAllFilesForFilesHash(
 
 /**
  * Calculate a hash of files being copied to detect changes for cache invalidation.
- * The hash includes file content, metadata (mode, uid, gid, size, mtime), and relative paths.
+ * The hash includes file content, metadata (mode, size), and relative paths.
+ * Note: uid, gid, and mtime are excluded to ensure stable hashes across environments.
  *
  * @param src Source path pattern for files to copy
  * @param dest Destination path where files will be copied
@@ -106,13 +107,11 @@ export async function calculateFilesHash(
     throw error
   }
 
-  // Hash stats
+  // Hash stats - only include stable metadata (mode, size)
+  // Exclude uid, gid, and mtime to ensure consistent hashes across environments
   const hashStats = (stats: fs.Stats) => {
     hash.update(stats.mode.toString())
-    hash.update(stats.uid.toString())
-    hash.update(stats.gid.toString())
     hash.update(stats.size.toString())
-    hash.update(stats.mtimeMs.toString())
   }
 
   // Process files recursively
