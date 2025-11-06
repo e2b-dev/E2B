@@ -32,10 +32,11 @@ export function readDockerignore(contextPath: string): string[] {
  * @param ignorePatterns Ignore patterns
  * @returns Array of files
  */
-export async function getAllFilesForFilesHash(
+export async function getAllFilesInPath(
   src: string,
   contextPath: string,
-  ignorePatterns: string[]
+  ignorePatterns: string[],
+  includeDirectories: boolean = true
 ) {
   const { glob } = await dynamicGlob()
   const files = new Map<string, Path>()
@@ -50,7 +51,9 @@ export async function getAllFilesForFilesHash(
   for (const file of globFiles) {
     if (file.isDirectory()) {
       // For directories, add the directory itself and all files inside it
-      files.set(file.fullpath(), file)
+      if (includeDirectories) {
+        files.set(file.fullpath(), file)
+      }
       const dirFiles = await glob(
         path.join(path.relative(contextPath, file.fullpath()), '**/*'),
         {
@@ -96,7 +99,7 @@ export async function calculateFilesHash(
 
   hash.update(content)
 
-  const files = await getAllFilesForFilesHash(src, contextPath, ignorePatterns)
+  const files = await getAllFilesInPath(src, contextPath, ignorePatterns)
 
   if (files.length === 0) {
     const error = new Error(`No files found in ${srcPath}`)
@@ -234,6 +237,7 @@ export function padOctal(mode: number): string {
  *
  * @param fileName Glob pattern for files to include
  * @param fileContextPath Base directory for resolving file paths
+ * @param ignorePatterns Ignore patterns to exclude from the archive
  * @param resolveSymlinks Whether to follow symbolic links
  * @returns A readable stream of the gzipped tar archive
  */
@@ -243,12 +247,18 @@ export async function tarFileStream(
   ignorePatterns: string[],
   resolveSymlinks: boolean
 ) {
-  const { globSync } = await dynamicGlob()
   const { create } = await dynamicTar()
-  const files = globSync(fileName, {
-    cwd: fileContextPath,
-    ignore: ignorePatterns,
-  })
+
+  const allFiles = await getAllFilesInPath(
+    fileName,
+    fileContextPath,
+    ignorePatterns,
+    false
+  )
+
+  const filePaths = allFiles.map((file) =>
+    path.relative(fileContextPath, file.fullpath())
+  )
 
   return create(
     {
@@ -256,7 +266,7 @@ export async function tarFileStream(
       cwd: fileContextPath,
       follow: resolveSymlinks,
     },
-    files
+    filePaths
   )
 }
 

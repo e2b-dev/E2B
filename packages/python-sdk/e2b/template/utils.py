@@ -35,8 +35,11 @@ def read_dockerignore(context_path: str) -> List[str]:
     ]
 
 
-def get_all_files_for_files_hash(
-    src: str, context_path: str, ignore_patterns: List[str]
+def get_all_files_in_path(
+    src: str,
+    context_path: str,
+    ignore_patterns: List[str],
+    include_directories: bool = True,
 ) -> List[str]:
     """
     Get all files for a given path and ignore patterns.
@@ -44,6 +47,7 @@ def get_all_files_for_files_hash(
     :param src: Path to the source directory
     :param context_path: Base directory for resolving relative paths
     :param ignore_patterns: Ignore patterns
+    :param include_directories: Whether to include directories
     :return: Array of files
     """
     files = set()
@@ -63,7 +67,8 @@ def get_all_files_for_files_hash(
 
         if os.path.isdir(file_path):
             # If it's a directory, add the directory and all entries recursively
-            files.add(file_path)
+            if include_directories:
+                files.add(file_path)
             dir_files = glob.glob(
                 os.path.join(file, "**/*"),
                 flags=glob.GLOBSTAR,
@@ -109,7 +114,7 @@ def calculate_files_hash(
 
     hash_obj.update(content.encode())
 
-    files = get_all_files_for_files_hash(src, context_path, ignore_patterns)
+    files = get_all_files_in_path(src, context_path, ignore_patterns)
 
     if len(files) == 0:
         raise ValueError(f"No files found in {src_path}").with_traceback(stack_trace)
@@ -172,12 +177,11 @@ def tar_file_stream(
         mode="w:gz",
         dereference=resolve_symlinks,
     ) as tar:
-        files = glob.glob(
-            file_name, root_dir=file_context_path, exclude=ignore_patterns
+        files = get_all_files_in_path(
+            file_name, file_context_path, ignore_patterns, False
         )
         for file in files:
-            file_path = os.path.join(file_context_path, file)
-            tar.add(file_path, arcname=file)
+            tar.add(file, arcname=os.path.relpath(file, file_context_path))
 
     return tar_buffer
 
