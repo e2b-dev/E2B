@@ -5,10 +5,12 @@ from typing import Callable, Optional
 from e2b.api import AsyncApiClient
 from e2b.connection_config import ConnectionConfig
 from e2b.template.consts import RESOLVE_SYMLINKS
-from e2b.template.logger import LogEntry, LogEntryStart, LogEntryEnd
+from e2b.template.logger import LogEntry, LogEntryEnd, LogEntryStart
 from e2b.template.main import TemplateBase, TemplateClass
-from e2b.template.types import InstructionType
+from e2b.template.types import BuildInfo, InstructionType
+
 from .build_api import (
+    get_build_status,
     get_file_upload_link,
     request_build,
     trigger_build,
@@ -224,3 +226,160 @@ class AsyncTemplate(TemplateBase):
                         message="Build finished",
                     )
                 )
+
+    @staticmethod
+    async def build_in_background(
+        template: TemplateClass,
+        alias: str,
+        cpu_count: int = 2,
+        memory_mb: int = 1024,
+        skip_cache: bool = False,
+        api_key: Optional[str] = None,
+        domain: Optional[str] = None,
+    ) -> BuildInfo:
+        """
+        Build and deploy a template to E2B infrastructure without waiting for completion.
+
+        :param template: The template to build
+        :param alias: Alias name for the template
+        :param cpu_count: Number of CPUs allocated to the sandbox
+        :param memory_mb: Amount of memory in MB allocated to the sandbox
+        :param skip_cache: If True, forces a complete rebuild ignoring cache
+        :param api_key: E2B API key for authentication
+        :param domain: Domain of the E2B API
+        :return: BuildInfo containing the template ID and build ID
+
+        Example
+        ```python
+        from e2b import AsyncTemplate
+
+        template = (
+            AsyncTemplate()
+            .from_python_image('3')
+            .run_cmd('echo "test"')
+            .set_start_cmd('echo "Hello"', 'sleep 1')
+        )
+
+        build_info = await AsyncTemplate.build_in_background(
+            template,
+            alias='my-python-env',
+            cpu_count=2,
+            memory_mb=1024
+        )
+        ```
+        """
+        domain = domain or os.environ.get("E2B_DOMAIN", "e2b.dev")
+        config = ConnectionConfig(
+            domain=domain, api_key=api_key or os.environ.get("E2B_API_KEY")
+        )
+        client = AsyncApiClient(
+            config,
+            require_api_key=True,
+            require_access_token=False,
+            limits=TemplateBase._limits,
+        )
+
+        if skip_cache:
+            template._template._force = True
+
+        with client as api_client:
+            response = await request_build(
+                api_client,
+                name=alias,
+                cpu_count=cpu_count,
+                memory_mb=memory_mb,
+            )
+
+            template_id = response.template_id
+            build_id = response.build_id
+
+            instructions_with_hashes = template._template._instructions_with_hashes()
+
+            # Upload files
+            for index, file_upload in enumerate(instructions_with_hashes):
+                if file_upload["type"] != InstructionType.COPY:
+                    continue
+
+                args = file_upload.get("args", [])
+                src = args[0] if len(args) > 0 else None
+                force_upload = file_upload.get("forceUpload")
+                files_hash = file_upload.get("filesHash", None)
+                resolve_symlinks = file_upload.get("resolveSymlinks", RESOLVE_SYMLINKS)
+
+                if src is None or files_hash is None:
+                    raise ValueError("Source path and files hash are required")
+
+                stack_trace = None
+                if index + 1 < len(template._template._stack_traces):
+                    stack_trace = template._template._stack_traces[index + 1]
+
+                file_info = await get_file_upload_link(
+                    api_client, template_id, files_hash, stack_trace
+                )
+
+                if (force_upload and file_info.url) or (
+                    file_info.present is False and file_info.url
+                ):
+                    await upload_file(
+                        src,
+                        template._template._file_context_path,
+                        file_info.url,
+                        resolve_symlinks,
+                        stack_trace,
+                    )
+
+            await trigger_build(
+                api_client,
+                template_id,
+                build_id,
+                template._template._serialize(instructions_with_hashes),
+            )
+
+            return BuildInfo(
+                alias=alias,
+                templateId=template_id,
+                buildId=build_id,
+            )
+
+    @staticmethod
+    async def get_build_status(
+        build_info: BuildInfo,
+        logs_offset: int = 0,
+        api_key: Optional[str] = None,
+        domain: Optional[str] = None,
+    ):
+        """
+        Get the status of a build.
+
+        :param build_info: Build identifiers returned from build_in_background
+        :param logs_offset: Offset for fetching logs
+        :param api_key: E2B API key for authentication
+        :param domain: Domain of the E2B API
+        :return: TemplateBuild containing the build status and logs
+
+        Example
+        ```python
+        from e2b import AsyncTemplate
+
+        build_info = await AsyncTemplate.build_in_background(template, alias='my-template')
+        status = await AsyncTemplate.get_build_status(build_info, logs_offset=0)
+        ```
+        """
+        domain = domain or os.environ.get("E2B_DOMAIN", "e2b.dev")
+        config = ConnectionConfig(
+            domain=domain, api_key=api_key or os.environ.get("E2B_API_KEY")
+        )
+        client = AsyncApiClient(
+            config,
+            require_api_key=True,
+            require_access_token=False,
+            limits=TemplateBase._limits,
+        )
+
+        with client as api_client:
+            return await get_build_status(
+                api_client,
+                build_info["templateId"],
+                build_info["buildId"],
+                logs_offset,
+            )

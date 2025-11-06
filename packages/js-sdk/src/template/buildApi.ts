@@ -24,7 +24,7 @@ type TriggerBuildInput = {
 type GetBuildStatusInput = {
   templateID: string
   buildID: string
-  logsOffset: number
+  logsOffset?: number
 }
 
 export type GetBuildStatusResponse =
@@ -154,7 +154,7 @@ export async function triggerBuild(
 export async function getBuildStatus(
   client: ApiClient,
   { templateID, buildID, logsOffset }: GetBuildStatusInput
-) {
+): Promise<GetBuildStatusResponse> {
   const buildStatusRes = await client.api.GET(
     '/templates/{templateID}/builds/{buildID}/status',
     {

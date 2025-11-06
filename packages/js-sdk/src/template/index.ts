@@ -4,6 +4,8 @@ import { ConnectionConfig } from '../connectionConfig'
 import { BuildError } from '../errors'
 import { runtime } from '../utils'
 import {
+  getBuildStatus,
+  GetBuildStatusResponse,
   getFileUploadLink,
   requestBuild,
   triggerBuild,
@@ -16,6 +18,8 @@ import { parseDockerfile } from './dockerfileParser'
 import { LogEntry, LogEntryEnd, LogEntryStart } from './logger'
 import { ReadyCmd, waitForFile } from './readycmd'
 import {
+  AuthOptions,
+  BuildInfo,
   BuildOptions,
   CopyItem,
   Instruction,
@@ -113,13 +117,92 @@ export class TemplateBase
   static async build(
     template: TemplateClass,
     options: BuildOptions
-  ): Promise<void> {
+  ): Promise<BuildInfo> {
     try {
       options.onBuildLogs?.(new LogEntryStart(new Date(), 'Build started'))
-      return await (template as TemplateBase).build(options)
+      const baseTemplate = template as TemplateBase
+
+      const config = new ConnectionConfig({
+        domain: options.domain,
+        apiKey: options.apiKey,
+      })
+      const client = new ApiClient(config)
+
+      const data = await baseTemplate.build(client, options)
+
+      options.onBuildLogs?.(
+        new LogEntry(new Date(), 'info', 'Waiting for logs...')
+      )
+
+      await waitForBuildFinish(client, {
+        templateID: data.templateId,
+        buildID: data.buildId,
+        onBuildLogs: options.onBuildLogs,
+        logsRefreshFrequency: baseTemplate.logsRefreshFrequency,
+        stackTraces: baseTemplate.stackTraces,
+      })
+
+      return data
     } finally {
       options.onBuildLogs?.(new LogEntryEnd(new Date(), 'Build finished'))
     }
+  }
+
+  /**
+   * Build and deploy a template to E2B infrastructure.
+   *
+   * @param template The template to build
+   * @param options Build configuration options
+   *
+   * @example
+   * ```ts
+   * const template = Template().fromPythonImage('3')
+   * const data = await Template.buildInBackground(template, {
+   *   alias: 'my-python-env',
+   *   cpuCount: 2,
+   *   memoryMB: 1024
+   * })
+   * ```
+   */
+  static async buildInBackground(
+    template: TemplateClass,
+    options: Omit<BuildOptions, 'onBuildLogs'>
+  ): Promise<BuildInfo> {
+    const config = new ConnectionConfig({
+      domain: options.domain,
+      apiKey: options.apiKey,
+    })
+    const client = new ApiClient(config)
+
+    return await (template as TemplateBase).build(client, options)
+  }
+
+  /**
+   * Get the status of a build.
+   *
+   * @param data Build identifiers
+   * @param options Authentication options
+   *
+   * @example
+   * ```ts
+   * const status = await Template.getBuildStatus(data, { logsOffset: 0 })
+   * ```
+   */
+  static async getBuildStatus(
+    data: Pick<BuildInfo, 'templateId' | 'buildId'>,
+    options?: AuthOptions & { logsOffset?: number }
+  ): Promise<GetBuildStatusResponse> {
+    const config = new ConnectionConfig({
+      domain: options?.domain,
+      apiKey: options?.apiKey,
+    })
+    const client = new ApiClient(config)
+
+    return await getBuildStatus(client, {
+      templateID: data.templateId,
+      buildID: data.buildId,
+      logsOffset: options?.logsOffset,
+    })
   }
 
   fromDebianImage(variant: string = 'stable'): TemplateBuilder {
@@ -771,13 +854,10 @@ export class TemplateBase
    * @param options Build configuration options
    * @throws BuildError if the build fails
    */
-  private async build(options: BuildOptions): Promise<void> {
-    const config = new ConnectionConfig({
-      domain: options.domain,
-      apiKey: options.apiKey,
-    })
-    const client = new ApiClient(config)
-
+  private async build(
+    client: ApiClient,
+    options: BuildOptions
+  ): Promise<BuildInfo> {
     if (options.skipCache) {
       this.force = true
     }
@@ -880,17 +960,11 @@ export class TemplateBase
       template: this.serialize(instructionsWithHashes),
     })
 
-    options.onBuildLogs?.(
-      new LogEntry(new Date(), 'info', 'Waiting for logs...')
-    )
-
-    await waitForBuildFinish(client, {
-      templateID,
-      buildID,
-      onBuildLogs: options.onBuildLogs,
-      logsRefreshFrequency: this.logsRefreshFrequency,
-      stackTraces: this.stackTraces,
-    })
+    return {
+      alias: options.alias,
+      templateId: templateID,
+      buildId: buildID,
+    }
   }
 
   /**
@@ -989,10 +1063,14 @@ export function Template(options?: TemplateOptions): TemplateFromImage {
 }
 
 Template.build = TemplateBase.build
+Template.buildInBackground = TemplateBase.buildInBackground
+Template.getBuildStatus = TemplateBase.getBuildStatus
 Template.toJSON = TemplateBase.toJSON
 Template.toDockerfile = TemplateBase.toDockerfile
 
 export type {
+  AuthOptions,
+  BuildInfo,
   BuildOptions,
   CopyItem,
   McpServerName,

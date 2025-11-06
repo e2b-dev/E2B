@@ -92,3 +92,13 @@ class TemplateType(TypedDict):
     readyCmd: NotRequired[str]
     steps: List[Instruction]
     force: bool
+
+
+class BuildInfo(TypedDict):
+    """
+    Information about a built template.
+    """
+
+    alias: str
+    templateId: str
+    buildId: str

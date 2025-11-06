@@ -48,9 +48,9 @@ export type BasicBuildOptions = {
 }
 
 /**
- * Options for building a template with authentication.
+ * Authentication options for E2B API.
  */
-export type BuildOptions = BasicBuildOptions & {
+export type AuthOptions = {
   /**
    * E2B API key for authentication.
    */
@@ -59,6 +59,20 @@ export type BuildOptions = BasicBuildOptions & {
    * Domain of the E2B API.
    */
   domain?: string
+}
+
+/**
+ * Options for building a template with authentication.
+ */
+export type BuildOptions = AuthOptions & BasicBuildOptions
+
+/**
+ * Information about a built template.
+ */
+export type BuildInfo = {
+  alias: string
+  templateId: string
+  buildId: string
 }
 
 /**
