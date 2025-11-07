@@ -5,7 +5,7 @@ from e2b import Template
 
 @pytest.mark.skip_debug()
 def test_apt_install(build):
-    template = Template().from_image("ubuntu:24.04").apt_install(["vim"])
+    template = Template().from_image("ubuntu:24.04").skip_cache().apt_install(["vim"])
 
     build(template)
 
@@ -15,6 +15,7 @@ def test_apt_install_no_install_recommends(build):
     template = (
         Template()
         .from_image("ubuntu:24.04")
+        .skip_cache()
         .apt_install(["vim"], no_install_recommends=True)
     )
 

@@ -54,34 +54,30 @@ async function expectToThrowAndCheckTrace(
 }
 
 buildTemplateTest('traces on fromImage', async ({ buildTemplate }) => {
-  const templateFrom = Template()
-  const template = templateFrom.fromImage('e2b.dev/this-image-does-not-exist')
+  const template = Template().fromImage('e2b.dev/this-image-does-not-exist')
   await expectToThrowAndCheckTrace(async () => {
-    await buildTemplate(template, true)
+    await buildTemplate(template, { skipCache: true })
   }, 'fromImage')
 })
 
 buildTemplateTest('traces on fromTemplate', async ({ buildTemplate }) => {
-  const templateFrom = Template()
-  const template = templateFrom.fromTemplate('this-template-does-not-exist')
+  const template = Template().fromTemplate('this-template-does-not-exist')
   await expectToThrowAndCheckTrace(async () => {
-    await buildTemplate(template)
+    await buildTemplate(template, { skipCache: true })
   }, 'fromTemplate')
 })
 
 buildTemplateTest('traces on fromDockerfile', async ({ buildTemplate }) => {
-  const templateFrom = Template()
-  const template = templateFrom.fromDockerfile(
+  const template = Template().fromDockerfile(
     'FROM ubuntu:22.04\nRUN nonexistent'
   )
   await expectToThrowAndCheckTrace(async () => {
-    await buildTemplate(template)
+    await buildTemplate(template, { skipCache: true })
   }, 'fromDockerfile')
 })
 
 buildTemplateTest('traces on fromImage registry', async ({ buildTemplate }) => {
-  const templateFrom = Template()
-  const template = templateFrom.fromImage(
+  const template = Template().fromImage(
     'registry.example.com/nonexistent:latest',
     {
       username: 'test',
@@ -89,13 +85,12 @@ buildTemplateTest('traces on fromImage registry', async ({ buildTemplate }) => {
     }
   )
   await expectToThrowAndCheckTrace(async () => {
-    await buildTemplate(template, true)
+    await buildTemplate(template, { skipCache: true })
   }, 'fromImage')
 })
 
 buildTemplateTest('traces on fromAWSRegistry', async ({ buildTemplate }) => {
-  const templateFrom = Template()
-  const template = templateFrom.fromAWSRegistry(
+  const template = Template().fromAWSRegistry(
     '123456789.dkr.ecr.us-east-1.amazonaws.com/nonexistent:latest',
     {
       accessKeyId: 'test',
@@ -104,20 +99,19 @@ buildTemplateTest('traces on fromAWSRegistry', async ({ buildTemplate }) => {
     }
   )
   await expectToThrowAndCheckTrace(async () => {
-    await buildTemplate(template, true)
+    await buildTemplate(template, { skipCache: true })
   }, 'fromAWSRegistry')
 })
 
 buildTemplateTest('traces on fromGCPRegistry', async ({ buildTemplate }) => {
-  const templateFrom = Template()
-  const template = templateFrom.fromGCPRegistry(
+  const template = Template().fromGCPRegistry(
     'gcr.io/nonexistent-project/nonexistent:latest',
     {
       serviceAccountJSON: { type: 'service_account' },
     }
   )
   await expectToThrowAndCheckTrace(async () => {
-    await buildTemplate(template, true)
+    await buildTemplate(template, { skipCache: true })
   }, 'fromGCPRegistry')
 })
 
@@ -246,7 +240,7 @@ buildTemplateTest('traces on setStartCmd', async ({ buildTemplate }) => {
 buildTemplateTest('traces on addMcpServer', async () => {
   // needs mcp-gateway as base template, without it no mcp servers can be added
   await expectToThrowAndCheckTrace(async () => {
-    Template().fromBaseImage().addMcpServer('exa')
+    Template().fromBaseImage().skipCache().addMcpServer('exa')
   }, 'addMcpServer')
 })
 
