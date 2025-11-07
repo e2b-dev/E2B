@@ -28,3 +28,13 @@ test('matchFileDir file:// protocol Windows', () => {
 test('matchFileDir file:// protocol Windows (no anonymous)', () => {
   expect(matchFileDir('at (file:///C:/path/to/file.js:1:1)')).toBe('C:/path/to')
 })
+
+test('matchFileDir with parentheses in path', () => {
+  expect(matchFileDir('at /path/to(1)/file.js:1:1')).toBe('/path/to(1)')
+})
+
+test('matchFileDir with parentheses in path (anonymous)', () => {
+  expect(matchFileDir('at <anonymous> (/path/to(1)/file.js:1:1)')).toBe(
+    '/path/to(1)'
+  )
+})

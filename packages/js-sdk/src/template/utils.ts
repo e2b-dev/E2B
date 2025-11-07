@@ -186,7 +186,7 @@ export function getCallerFrame(depth: number): string | undefined {
  */
 export function matchFileDir(line: string): string | undefined {
   const match = line.match(
-    /(?:file:\/\/\/)?([A-Za-z]:)?([/\\][^:)]+)(?::\d+:\d+)?\)?/
+    /(?:file:\/\/\/)?([A-Za-z]:)?([/\\][^:]+)(?::\d+:\d+)?\)?/
   )
   if (match) {
     // Extract the full matched path
