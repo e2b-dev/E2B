@@ -925,7 +925,10 @@ export class TemplateBase
               fileName: src,
               fileContextPath: this.fileContextPath.toString(),
               url,
-              ignorePatterns: this.fileIgnorePatterns,
+              ignorePatterns: [
+                ...this.fileIgnorePatterns,
+                ...readDockerignore(this.fileContextPath.toString()),
+              ],
               resolveSymlinks: instruction.resolveSymlinks ?? RESOLVE_SYMLINKS,
             },
             stackTrace

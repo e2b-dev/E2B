@@ -17,6 +17,7 @@ from e2b.template_sync.build_api import (
     upload_file,
     wait_for_build_finish,
 )
+from e2b.template.utils import read_dockerignore
 
 
 class Template(TemplateBase):
@@ -108,7 +109,10 @@ class Template(TemplateBase):
                     src,
                     template._template._file_context_path,
                     file_info.url,
-                    template._template._file_ignore_patterns,
+                    [
+                        *template._template._file_ignore_patterns,
+                        *read_dockerignore(template._template._file_context_path),
+                    ],
                     resolve_symlinks,
                     stack_trace,
                 )
