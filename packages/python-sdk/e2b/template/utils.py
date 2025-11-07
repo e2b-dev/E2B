@@ -181,7 +181,9 @@ def tar_file_stream(
             file_name, file_context_path, ignore_patterns, True
         )
         for file in files:
-            tar.add(file, arcname=os.path.relpath(file, file_context_path), recursive=False)
+            tar.add(
+                file, arcname=os.path.relpath(file, file_context_path), recursive=False
+            )
 
     return tar_buffer
 

@@ -108,8 +108,8 @@ class Template(TemplateBase):
                     src,
                     template._template._file_context_path,
                     file_info.url,
-                    resolve_symlinks,
                     template._template._file_ignore_patterns,
+                    resolve_symlinks,
                     stack_trace,
                 )
                 if on_build_logs:
