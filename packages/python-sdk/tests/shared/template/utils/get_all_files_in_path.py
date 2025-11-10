@@ -1,10 +1,10 @@
 import os
 import tempfile
 import pytest
-from e2b.template.utils import get_all_files_for_files_hash
+from e2b.template.utils import get_all_files_in_path
 
 
-class TestGetAllFilesForFilesHash:
+class TestGetAllFilesInPath:
     @pytest.fixture
     def test_dir(self):
         """Create a temporary directory for testing."""
@@ -21,7 +21,7 @@ class TestGetAllFilesForFilesHash:
         with open(os.path.join(test_dir, "file3.js"), "w") as f:
             f.write("content3")
 
-        files = get_all_files_for_files_hash("*.txt", test_dir, [])
+        files = get_all_files_in_path("*.txt", test_dir, [])
 
         assert len(files) == 2
         assert any("file1.txt" in f for f in files)
@@ -43,7 +43,7 @@ class TestGetAllFilesForFilesHash:
         with open(os.path.join(test_dir, "README.md"), "w") as f:
             f.write("readme content")
 
-        files = get_all_files_for_files_hash("src", test_dir, [])
+        files = get_all_files_in_path("src", test_dir, [])
 
         assert len(files) == 6  # 3 files + 3 directories (src, components, utils)
         assert any("index.ts" in f for f in files)
@@ -63,7 +63,7 @@ class TestGetAllFilesForFilesHash:
         with open(os.path.join(test_dir, "backup.txt"), "w") as f:
             f.write("backup content")
 
-        files = get_all_files_for_files_hash("*.txt", test_dir, ["temp*", "backup*"])
+        files = get_all_files_in_path("*.txt", test_dir, ["temp*", "backup*"])
 
         assert len(files) == 2
         assert any("file1.txt" in f for f in files)
@@ -93,9 +93,7 @@ class TestGetAllFilesForFilesHash:
         with open(os.path.join(test_dir, "src", "utils", "helper.spec.ts"), "w") as f:
             f.write("spec content")
 
-        files = get_all_files_for_files_hash(
-            "src", test_dir, ["**/*.test.*", "**/*.spec.*"]
-        )
+        files = get_all_files_in_path("src", test_dir, ["**/*.test.*", "**/*.spec.*"])
 
         assert len(files) == 6  # 3 files + 3 directories (src, components, utils)
         assert any("index.ts" in f for f in files)
@@ -110,7 +108,7 @@ class TestGetAllFilesForFilesHash:
         with open(os.path.join(test_dir, "file.txt"), "w") as f:
             f.write("content")
 
-        files = get_all_files_for_files_hash("empty", test_dir, [])
+        files = get_all_files_in_path("empty", test_dir, [])
 
         assert len(files) == 1
 
@@ -125,7 +123,7 @@ class TestGetAllFilesForFilesHash:
         with open(os.path.join(test_dir, "file3.txt"), "w") as f:
             f.write("content3")
 
-        files = get_all_files_for_files_hash("*", test_dir, [])
+        files = get_all_files_in_path("*", test_dir, [])
 
         assert len(files) == 4
         assert any("file1.txt" in f for f in files)
@@ -147,7 +145,7 @@ class TestGetAllFilesForFilesHash:
         with open(os.path.join(test_dir, "src", "components", "Button.css"), "w") as f:
             f.write("css content")
 
-        files = get_all_files_for_files_hash("src/**/*", test_dir, [])
+        files = get_all_files_in_path("src/**/*", test_dir, [])
 
         assert len(files) == 6
         assert any("index.ts" in f for f in files)
@@ -166,7 +164,7 @@ class TestGetAllFilesForFilesHash:
         with open(os.path.join(test_dir, "file4.css"), "w") as f:
             f.write("css content")
 
-        files = get_all_files_for_files_hash("*.ts", test_dir, [])
+        files = get_all_files_in_path("*.ts", test_dir, [])
 
         assert len(files) == 1
         assert any("file1.ts" in f for f in files)
@@ -180,7 +178,7 @@ class TestGetAllFilesForFilesHash:
         with open(os.path.join(test_dir, "banana.txt"), "w") as f:
             f.write("b content")
 
-        files = get_all_files_for_files_hash("*.txt", test_dir, [])
+        files = get_all_files_in_path("*.txt", test_dir, [])
 
         assert len(files) == 3
         assert "apple.txt" in files[0]
@@ -192,7 +190,7 @@ class TestGetAllFilesForFilesHash:
         with open(os.path.join(test_dir, "file.txt"), "w") as f:
             f.write("content")
 
-        files = get_all_files_for_files_hash("*.js", test_dir, [])
+        files = get_all_files_in_path("*.js", test_dir, [])
 
         assert len(files) == 0
 
@@ -217,9 +215,7 @@ class TestGetAllFilesForFilesHash:
         with open(os.path.join(test_dir, "README.md"), "w") as f:
             f.write("readme content")
 
-        files = get_all_files_for_files_hash(
-            "src", test_dir, ["**/tests/**", "**/*.spec.*"]
-        )
+        files = get_all_files_in_path("src", test_dir, ["**/tests/**", "**/*.spec.*"])
 
         assert len(files) == 6  # 3 files + 3 directories (src, components, utils)
         assert any("index.ts" in f for f in files)
@@ -237,7 +233,7 @@ class TestGetAllFilesForFilesHash:
         if hasattr(os, "symlink"):
             os.symlink("original.txt", os.path.join(test_dir, "link.txt"))
 
-            files = get_all_files_for_files_hash("*.txt", test_dir, [])
+            files = get_all_files_in_path("*.txt", test_dir, [])
 
             assert len(files) == 2
             assert any("original.txt" in f for f in files)
@@ -267,7 +263,7 @@ class TestGetAllFilesForFilesHash:
         ) as f:
             f.write("test content")
 
-        files = get_all_files_for_files_hash("src", test_dir, ["**/ui/**"])
+        files = get_all_files_in_path("src", test_dir, ["**/ui/**"])
 
         assert (
             len(files) == 7

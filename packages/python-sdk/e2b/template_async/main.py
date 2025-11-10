@@ -9,7 +9,7 @@ from e2b.template.consts import RESOLVE_SYMLINKS
 from e2b.template.logger import LogEntry, LogEntryEnd, LogEntryStart
 from e2b.template.main import TemplateBase, TemplateClass
 from e2b.template.types import BuildInfo, InstructionType
-
+from e2b.template.utils import read_dockerignore
 from .build_api import (
     get_build_status,
     get_file_upload_link,
@@ -109,6 +109,10 @@ class AsyncTemplate(TemplateBase):
                     src,
                     template._template._file_context_path,
                     file_info.url,
+                    [
+                        *template._template._file_ignore_patterns,
+                        *read_dockerignore(template._template._file_context_path),
+                    ],
                     resolve_symlinks,
                     stack_trace,
                 )
