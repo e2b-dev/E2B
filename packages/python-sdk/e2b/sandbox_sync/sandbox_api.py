@@ -1,32 +1,38 @@
 import datetime
+from typing import Dict, List, Optional
 
-from typing import Optional, Dict, List
-from e2b.api.client.types import UNSET
 from packaging.version import Version
 from typing_extensions import Unpack
 
-from e2b.sandbox.sandbox_api import SandboxInfo, SandboxMetrics, SandboxQuery, McpServer
-from e2b.sandbox.main import SandboxBase
-from e2b.exceptions import TemplateException, SandboxException, NotFoundException
-from e2b.api import ApiClient, SandboxCreateResponse
-from e2b.api.client.models import (
-    NewSandbox,
-    PostSandboxesSandboxIDTimeoutBody,
-    Error,
-    ConnectSandbox,
-    Sandbox,
-)
+from e2b.api import ApiClient, SandboxCreateResponse, handle_api_exception
 from e2b.api.client.api.sandboxes import (
-    get_sandboxes_sandbox_id,
-    post_sandboxes_sandbox_id_timeout,
     delete_sandboxes_sandbox_id,
-    post_sandboxes,
+    get_sandboxes_sandbox_id,
     get_sandboxes_sandbox_id_metrics,
+    post_sandboxes,
     post_sandboxes_sandbox_id_connect,
     post_sandboxes_sandbox_id_pause,
+    post_sandboxes_sandbox_id_timeout,
 )
-from e2b.connection_config import ConnectionConfig, ApiParams
-from e2b.api import handle_api_exception
+from e2b.api.client.models import (
+    ConnectSandbox,
+    Error,
+    NewSandbox,
+    PostSandboxesSandboxIDTimeoutBody,
+    Sandbox,
+    SandboxNetworkConfig,
+)
+from e2b.api.client.types import UNSET
+from e2b.connection_config import ApiParams, ConnectionConfig
+from e2b.exceptions import NotFoundException, SandboxException, TemplateException
+from e2b.sandbox.main import SandboxBase
+from e2b.sandbox.sandbox_api import (
+    McpServer,
+    SandboxInfo,
+    SandboxMetrics,
+    SandboxNetworkOpts,
+    SandboxQuery,
+)
 from e2b.sandbox_sync.paginator import SandboxPaginator
 
 
@@ -160,9 +166,18 @@ class SandboxApi(SandboxBase):
         env_vars: Optional[Dict[str, str]],
         secure: bool,
         mcp: Optional[McpServer] = None,
+        network: Optional[SandboxNetworkOpts] = None,
         **opts: Unpack[ApiParams],
     ) -> SandboxCreateResponse:
         config = ConnectionConfig(**opts)
+
+        # Convert SandboxNetworkOpts to SandboxNetworkConfig
+        network_config = UNSET
+        if network:
+            network_config = SandboxNetworkConfig(
+                allow_out=network.get("allow_out", UNSET),
+                block_out=network.get("block_out", UNSET),
+            )
 
         with ApiClient(config, limits=SandboxBase._limits) as api_client:
             res = post_sandboxes.sync_detailed(
@@ -175,6 +190,7 @@ class SandboxApi(SandboxBase):
                     mcp=mcp or UNSET,
                     secure=secure,
                     allow_internet_access=allow_internet_access,
+                    network=network_config,
                 ),
                 client=api_client,
             )

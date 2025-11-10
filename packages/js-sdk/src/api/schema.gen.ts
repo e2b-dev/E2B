@@ -718,7 +718,36 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** @description List all builds for a template */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Maximum number of items to return per page */
+                    limit?: components["parameters"]["paginationLimit"];
+                    /** @description Cursor to start the list from */
+                    nextToken?: components["parameters"]["paginationNextToken"];
+                };
+                header?: never;
+                path: {
+                    templateID: components["parameters"]["templateID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Successfully returned the template with its builds */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TemplateWithBuilds"];
+                    };
+                };
+                401: components["responses"]["401"];
+                500: components["responses"]["500"];
+            };
+        };
         put?: never;
         /**
          * @deprecated
@@ -879,7 +908,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["TemplateBuild"];
+                        "application/json": components["schemas"]["TemplateBuildInfo"];
                     };
                 };
                 401: components["responses"]["401"];
@@ -950,11 +979,11 @@ export interface paths {
             parameters: {
                 query?: {
                     /** @description Maximum number of items to return per page */
-                    limit?: number;
+                    limit?: components["parameters"]["paginationLimit"];
                     /** @description Metadata query used to filter the sandboxes (e.g. "user=abc&app=prod"). Each key and values must be URL encoded. */
                     metadata?: string;
                     /** @description Cursor to start the list from */
-                    nextToken?: string;
+                    nextToken?: components["parameters"]["paginationNextToken"];
                     /** @description Filter sandboxes by one or more states */
                     state?: components["schemas"]["SandboxState"][];
                 };
@@ -1352,6 +1381,7 @@ export interface components {
             envVars?: components["schemas"]["EnvVars"];
             mcp?: components["schemas"]["Mcp"];
             metadata?: components["schemas"]["SandboxMetadata"];
+            network?: components["schemas"]["SandboxNetworkConfig"];
             /** @description Secure all system communication with sandbox */
             secure?: boolean;
             /** @description Identifier of the required template */
@@ -1632,6 +1662,12 @@ export interface components {
              */
             timestampUnix: number;
         };
+        SandboxNetworkConfig: {
+            /** @description List of allowed CIDR blocks or IP addresses for egress traffic */
+            allowOut?: string[];
+            /** @description List of blocked CIDR blocks or IP addresses for egress traffic */
+            blockOut?: string[];
+        };
         /**
          * @description State of the sandbox
          * @enum {string}
@@ -1743,6 +1779,39 @@ export interface components {
             updatedAt: string;
         };
         TemplateBuild: {
+            /**
+             * Format: uuid
+             * @description Identifier of the build
+             */
+            buildID: string;
+            cpuCount: components["schemas"]["CPUCount"];
+            /**
+             * Format: date-time
+             * @description Time when the build was created
+             */
+            createdAt: string;
+            diskSizeMB?: components["schemas"]["DiskSizeMB"];
+            envdVersion?: components["schemas"]["EnvdVersion"];
+            /**
+             * Format: date-time
+             * @description Time when the build was finished
+             */
+            finishedAt?: string;
+            memoryMB: components["schemas"]["MemoryMB"];
+            status: components["schemas"]["TemplateBuildStatus"];
+            /**
+             * Format: date-time
+             * @description Time when the build was last updated
+             */
+            updatedAt: string;
+        };
+        TemplateBuildFileUpload: {
+            /** @description Whether the file is already present in the cache */
+            present: boolean;
+            /** @description Url where the file should be uploaded to */
+            url?: string;
+        };
+        TemplateBuildInfo: {
             /** @description Identifier of the build */
             buildID: string;
             /**
@@ -1759,12 +1828,6 @@ export interface components {
             status: components["schemas"]["TemplateBuildStatus"];
             /** @description Identifier of the template */
             templateID: string;
-        };
-        TemplateBuildFileUpload: {
-            /** @description Whether the file is already present in the cache */
-            present: boolean;
-            /** @description Url where the file should be uploaded to */
-            url?: string;
         };
         TemplateBuildRequest: {
             /** @description Alias of the template */
@@ -1893,6 +1956,36 @@ export interface components {
             /** @description Whether the template is public or only accessible by the team */
             public?: boolean;
         };
+        TemplateWithBuilds: {
+            /** @description Aliases of the template */
+            aliases: string[];
+            /** @description List of builds for the template */
+            builds: components["schemas"]["TemplateBuild"][];
+            /**
+             * Format: date-time
+             * @description Time when the template was created
+             */
+            createdAt: string;
+            /**
+             * Format: date-time
+             * @description Time when the template was last used
+             */
+            lastSpawnedAt: string | null;
+            /** @description Whether the template is public or only accessible by the team */
+            public: boolean;
+            /**
+             * Format: int64
+             * @description Number of times the template was used
+             */
+            spawnCount: number;
+            /** @description Identifier of the template */
+            templateID: string;
+            /**
+             * Format: date-time
+             * @description Time when the template was last updated
+             */
+            updatedAt: string;
+        };
         UpdateTeamAPIKey: {
             /** @description New name for the API key */
             name: string;
@@ -1959,6 +2052,10 @@ export interface components {
         apiKeyID: string;
         buildID: string;
         nodeID: string;
+        /** @description Maximum number of items to return per page */
+        paginationLimit: number;
+        /** @description Cursor to start the list from */
+        paginationNextToken: string;
         sandboxID: string;
         teamID: string;
         templateID: string;

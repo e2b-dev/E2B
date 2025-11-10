@@ -1,25 +1,24 @@
 import datetime
-import logging
-import httpx
-import uuid
 import json
+import logging
+import uuid
+from typing import Dict, List, Optional, overload
 
-from typing import Dict, Optional, overload, List
-
+import httpx
 from packaging.version import Version
-from typing_extensions import Unpack, Self
+from typing_extensions import Self, Unpack
 
 from e2b.api.client.types import Unset
-from e2b.connection_config import ConnectionConfig, ApiParams
+from e2b.connection_config import ApiParams, ConnectionConfig
 from e2b.envd.api import ENVD_API_HEALTH_ROUTE, ahandle_envd_api_exception
 from e2b.envd.versions import ENVD_DEBUG_FALLBACK
-from e2b.exceptions import format_request_timeout_error, SandboxException
+from e2b.exceptions import SandboxException, format_request_timeout_error
 from e2b.sandbox.main import SandboxOpts
-from e2b.sandbox.sandbox_api import SandboxMetrics, McpServer
+from e2b.sandbox.sandbox_api import McpServer, SandboxMetrics, SandboxNetworkOpts
 from e2b.sandbox.utils import class_method_variant
-from e2b.sandbox_async.filesystem.filesystem import Filesystem
 from e2b.sandbox_async.commands.command import Commands
 from e2b.sandbox_async.commands.pty import Pty
+from e2b.sandbox_async.filesystem.filesystem import Filesystem
 from e2b.sandbox_async.sandbox_api import SandboxApi, SandboxInfo
 
 logger = logging.getLogger(__name__)
@@ -165,6 +164,7 @@ class AsyncSandbox(SandboxApi):
         secure: bool = True,
         allow_internet_access: bool = True,
         mcp: Optional[McpServer] = None,
+        network: Optional[SandboxNetworkOpts] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
         """
@@ -179,6 +179,7 @@ class AsyncSandbox(SandboxApi):
         :param secure: Envd is secured with access token and cannot be used without it, defaults to `True`.
         :param allow_internet_access: Allow sandbox to access the internet, defaults to `True`.
         :param mcp: MCP server to enable in the sandbox
+        :param network: Sandbox network configuration
 
         :return: A Sandbox instance for the new sandbox
 
@@ -198,6 +199,7 @@ class AsyncSandbox(SandboxApi):
             secure=secure,
             allow_internet_access=allow_internet_access,
             mcp=mcp,
+            network=network,
             **opts,
         )
 
@@ -688,6 +690,7 @@ class AsyncSandbox(SandboxApi):
         envs: Optional[Dict[str, str]],
         secure: bool,
         mcp: Optional[McpServer] = None,
+        network: Optional[SandboxNetworkOpts] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
         extra_sandbox_headers = {}
@@ -708,6 +711,7 @@ class AsyncSandbox(SandboxApi):
                 secure=secure,
                 allow_internet_access=allow_internet_access,
                 mcp=mcp,
+                network=network,
                 **opts,
             )
 

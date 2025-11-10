@@ -31,6 +31,26 @@ export type GitHubMcpServer = {
     envs?: Record<string, string>
   }
 }
+
+export type SandboxNetworkOpts = {
+  /**
+   * Allow outbound traffic from the sandbox to the specified addresses.
+   * If `allowOut` is not specified, all outbound traffic is allowed.
+   *
+   * Examples:
+   * - To allow traffic to a specific addresses: `["1.1.1.1", "8.8.8.0/24", "8.8.8.7-8.8.8.8"]`
+   */
+  allowOut?: string[]
+
+  /**
+   * Block outbound traffic from the sandbox to the specified addresses.
+   *
+   * Examples:
+   * - To block traffic to a specific addresses: `["1.1.1.1", "8.8.8.0/24", "8.8.8.7-8.8.8.8"]`
+   */
+  blockOut?: string[]
+}
+
 /**
  * Options for request to the Sandbox API.
  */
@@ -90,6 +110,11 @@ export interface SandboxOpts extends ConnectionOpts {
    * @default undefined
    */
   mcp?: McpServer
+
+  /**
+   * Sandbox network configuration
+   */
+  network?: SandboxNetworkOpts
 }
 
 export type SandboxBetaCreateOpts = SandboxOpts & {
@@ -499,6 +524,7 @@ export class SandboxApi {
         timeout: timeoutToSeconds(timeoutMs),
         secure: opts?.secure ?? true,
         allow_internet_access: opts?.allowInternetAccess ?? true,
+        network: opts?.network,
       },
       signal: config.getSignal(opts?.requestTimeoutMs),
     })

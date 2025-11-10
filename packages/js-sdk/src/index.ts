@@ -46,9 +46,12 @@ export type {
   SandboxState,
   SandboxListOpts,
   SandboxPaginator,
+  SandboxNetworkOpts,
 } from './sandbox/sandboxApi'
 
 export type { McpServer } from './sandbox/mcp'
+
+export { allTraffic } from './sandbox/network'
 
 export type {
   ProcessInfo,

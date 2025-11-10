@@ -1,10 +1,11 @@
 from dataclasses import dataclass
-from typing import Optional, Dict, Union, Any, TypedDict
-from typing_extensions import Unpack, NotRequired
 from datetime import datetime
+from typing import Any, Dict, List, Optional, TypedDict, Union
+
+from typing_extensions import NotRequired, Unpack
 
 from e2b import ConnectionConfig
-from e2b.api.client.models import SandboxState, SandboxDetail, ListedSandbox
+from e2b.api.client.models import ListedSandbox, SandboxDetail, SandboxState
 from e2b.connection_config import ApiParams
 from e2b.sandbox.mcp import McpServer as BaseMcpServer
 
@@ -35,6 +36,29 @@ GitHubMcpServer = Dict[str, Union[GitHubMcpServerConfig, Any]]
 
 # Union type that combines base MCP servers with GitHub-based servers
 McpServer = Union[BaseMcpServer, GitHubMcpServer]
+
+
+class SandboxNetworkOpts(TypedDict, total=False):
+    """
+    Sandbox network configuration options.
+    """
+
+    allow_out: List[str]
+    """
+    Allow outbound traffic from the sandbox to the specified addresses.
+    If `allow_out` is not specified, all outbound traffic is allowed.
+
+    Examples:
+    - To allow traffic to specific addresses: `["1.1.1.1", "8.8.8.0/24", "8.8.8.7-8.8.8.8"]`
+    """
+
+    block_out: List[str]
+    """
+    Block outbound traffic from the sandbox to the specified addresses.
+
+    Examples:
+    - To block traffic to specific addresses: `["1.1.1.1", "8.8.8.0/24", "8.8.8.7-8.8.8.8"]`
+    """
 
 
 @dataclass
