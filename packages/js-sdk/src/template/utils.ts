@@ -187,7 +187,7 @@ export function callsites(depth: number): NodeJS.CallSite[] {
       return callSitesWithoutCurrent
     }
 
-    new Error().stack // eslint-disable-line unicorn/error-message, no-unused-expressions
+    new Error().stack
     return result
   } finally {
     Error.prepareStackTrace = _prepareStackTrace
