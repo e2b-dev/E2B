@@ -178,7 +178,7 @@ export function getCallerFrame(depth: number): string | undefined {
 
 // adopted from https://github.com/sindresorhus/callsites
 export function callsites(depth: number): NodeJS.CallSite[] {
-  const _prepareStackTrace = Error.prepareStackTrace
+  const _originalPrepareStackTrace = Error.prepareStackTrace
   try {
     let result: NodeJS.CallSite[] = []
     Error.prepareStackTrace = (_, callSites) => {
@@ -190,7 +190,7 @@ export function callsites(depth: number): NodeJS.CallSite[] {
     new Error().stack
     return result
   } finally {
-    Error.prepareStackTrace = _prepareStackTrace
+    Error.prepareStackTrace = _originalPrepareStackTrace
   }
 }
 
