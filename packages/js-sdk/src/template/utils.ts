@@ -182,14 +182,28 @@ export function getCallerFrame(depth: number): string | undefined {
  * Matches patterns like:
  * - "at <anonymous> (/path/to/file.js:1:1)"
  * - "at /path/to/file.js:1:1"
- *
+ * - "at <anonymous> (file:///C:/path/to/file.js:1:1)"
+ * - "at (file:///C:/path/to/file.js:1:1)"
  * @param line A line from a stack trace
  * @returns The directory of the file, or undefined if not found
  */
 export function matchFileDir(line: string): string | undefined {
-  const match = line.match(/\/[^:]+/)
+  const match = line.match(
+    /(?:file:\/\/\/)?([A-Za-z]:)?([/\\][^:]+)(?::\d+:\d+)?\)?/
+  )
   if (match) {
-    const filePath = match[0]
+    // Extract the full matched path
+    let filePath = match[0]
+
+    // Remove file:/// protocol prefix if present
+    filePath = filePath.replace(/^file:\/\/\//, '')
+
+    // Remove trailing closing parenthesis if present
+    filePath = filePath.replace(/\)$/, '')
+
+    // Remove :line:column suffix if present
+    filePath = filePath.replace(/:\d+:\d+$/, '')
+
     return path.dirname(filePath)
   }
 }
