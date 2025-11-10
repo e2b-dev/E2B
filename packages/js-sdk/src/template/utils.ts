@@ -176,35 +176,21 @@ export function getCallerFrame(depth: number): string | undefined {
   return lines.slice(depth).join('\n')
 }
 
-/**
- * Extract the directory path from a stack trace line.
- *
- * Matches patterns like:
- * - "at <anonymous> (/path/to/file.js:1:1)"
- * - "at /path/to/file.js:1:1"
- * - "at <anonymous> (file:///C:/path/to/file.js:1:1)"
- * - "at (file:///C:/path/to/file.js:1:1)"
- * @param line A line from a stack trace
- * @returns The directory of the file, or undefined if not found
- */
-export function matchFileDir(line: string): string | undefined {
-  const match = line.match(
-    /(?:file:\/\/\/)?([A-Za-z]:)?([/\\][^:]+)(?::\d+:\d+)?\)?/
-  )
-  if (match) {
-    // Extract the full matched path
-    let filePath = match[0]
+// adopted from https://github.com/sindresorhus/callsites
+export function callsites(depth: number): NodeJS.CallSite[] {
+  const _prepareStackTrace = Error.prepareStackTrace
+  try {
+    let result: NodeJS.CallSite[] = []
+    Error.prepareStackTrace = (_, callSites) => {
+      const callSitesWithoutCurrent = callSites.slice(depth)
+      result = callSitesWithoutCurrent
+      return callSitesWithoutCurrent
+    }
 
-    // Remove file:/// protocol prefix if present
-    filePath = filePath.replace(/^file:\/\/\//, '')
-
-    // Remove trailing closing parenthesis if present
-    filePath = filePath.replace(/\)$/, '')
-
-    // Remove :line:column suffix if present
-    filePath = filePath.replace(/:\d+:\d+$/, '')
-
-    return path.dirname(filePath)
+    new Error().stack // eslint-disable-line unicorn/error-message, no-unused-expressions
+    return result
+  } finally {
+    Error.prepareStackTrace = _prepareStackTrace
   }
 }
 
@@ -215,18 +201,18 @@ export function matchFileDir(line: string): string | undefined {
  * @returns The caller's directory path, or undefined if not available
  */
 export function getCallerDirectory(depth: number): string | undefined {
-  const caller = getCallerFrame(depth + 1) // +1 depth to skip this function (getCallerDirectory)
-  if (!caller) {
-    return
+  // +1 depth to skip this function (getCallerDirectory)
+  const callSites = callsites(depth + 1)
+  if (callSites.length === 0) {
+    return undefined
   }
 
-  const lines = caller.split('\n')
-  if (lines.length === 0) {
-    return
+  const fileName = callSites[0].getFileName()
+  if (!fileName) {
+    return undefined
   }
 
-  const firstLine = lines[0]
-  return matchFileDir(firstLine)
+  return path.dirname(fileName)
 }
 
 /**
