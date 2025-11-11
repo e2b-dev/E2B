@@ -242,8 +242,12 @@ export async function waitForBuildFinish(
           stackError = stackTraces[step]
         }
 
-        // Collect error logs from reason.logEntries if available
+        // Collect error logs - always fetch with offset 0 when build fails
+        // to ensure we get all logs including error logs from Loki
         let errorLogs: string[] = []
+        const failedStep = buildStatus.reason?.step
+
+        // First, collect logs from reason.logEntries if available
         if (
           buildStatus.reason?.logEntries &&
           buildStatus.reason.logEntries.length > 0
@@ -251,33 +255,53 @@ export async function waitForBuildFinish(
           errorLogs = buildStatus.reason.logEntries.map(
             (entry) => stripAnsi(entry.message)
           )
-        } else {
-          // If reason.logEntries is empty, fetch logs with offset 0 to get all logs
-          // This ensures we capture error logs even when offset was too high
-          try {
-            const errorBuildStatus = await getBuildStatus(client, {
-              templateID,
-              buildID,
-              logsOffset: 0,
+        }
+
+        // Always fetch logs with offset 0 to ensure we capture all error logs
+        // This is important because when offset is too high, error logs might be missed
+        try {
+          const errorBuildStatus = await getBuildStatus(client, {
+            templateID,
+            buildID,
+            logsOffset: 0,
+          })
+
+          // Filter logs for the failed step if step is known
+          if (failedStep) {
+            const stepLogs = errorBuildStatus.logEntries
+              .filter((entry) => entry.step === failedStep)
+              .map((entry) => stripAnsi(entry.message))
+
+            // Merge with reason.logEntries, avoiding duplicates
+            const existingMessages = new Set(errorLogs)
+            stepLogs.forEach((log) => {
+              if (!existingMessages.has(log)) {
+                errorLogs.push(log)
+                existingMessages.add(log)
+              }
             })
-            // Filter logs for the failed step if step is known
-            if (buildStatus.reason?.step) {
-              errorLogs = errorBuildStatus.logEntries
-                .filter(
-                  (entry) =>
-                    entry.step === buildStatus.reason?.step ||
-                    entry.level === 'error'
-                )
-                .map((entry) => stripAnsi(entry.message))
-            } else {
-              // Include all error-level logs
-              errorLogs = errorBuildStatus.logEntries
-                .filter((entry) => entry.level === 'error')
-                .map((entry) => stripAnsi(entry.message))
-            }
-          } catch (fetchError) {
-            // If fetching logs fails, continue with just the error message
+          } else {
+            // If no step info, include all error-level logs and stderr logs
+            const additionalLogs = errorBuildStatus.logEntries
+              .filter(
+                (entry) =>
+                  entry.level === 'error' ||
+                  (entry.message.includes('[stderr]') ||
+                    entry.message.toLowerCase().includes('error'))
+              )
+              .map((entry) => stripAnsi(entry.message))
+
+            // Merge avoiding duplicates
+            const existingMessages = new Set(errorLogs)
+            additionalLogs.forEach((log) => {
+              if (!existingMessages.has(log)) {
+                errorLogs.push(log)
+                existingMessages.add(log)
+              }
+            })
           }
+        } catch (fetchError) {
+          // If fetching logs fails, continue with just the error message and reason.logEntries
         }
 
         // Build error message with logs if available
