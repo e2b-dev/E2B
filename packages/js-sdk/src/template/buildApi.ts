@@ -242,10 +242,51 @@ export async function waitForBuildFinish(
           stackError = stackTraces[step]
         }
 
-        throw new BuildError(
-          buildStatus?.reason?.message ?? 'Unknown error',
-          stackError
-        )
+        // Collect error logs from reason.logEntries if available
+        let errorLogs: string[] = []
+        if (
+          buildStatus.reason?.logEntries &&
+          buildStatus.reason.logEntries.length > 0
+        ) {
+          errorLogs = buildStatus.reason.logEntries.map(
+            (entry) => stripAnsi(entry.message)
+          )
+        } else {
+          // If reason.logEntries is empty, fetch logs with offset 0 to get all logs
+          // This ensures we capture error logs even when offset was too high
+          try {
+            const errorBuildStatus = await getBuildStatus(client, {
+              templateID,
+              buildID,
+              logsOffset: 0,
+            })
+            // Filter logs for the failed step if step is known
+            if (buildStatus.reason?.step) {
+              errorLogs = errorBuildStatus.logEntries
+                .filter(
+                  (entry) =>
+                    entry.step === buildStatus.reason?.step ||
+                    entry.level === 'error'
+                )
+                .map((entry) => stripAnsi(entry.message))
+            } else {
+              // Include all error-level logs
+              errorLogs = errorBuildStatus.logEntries
+                .filter((entry) => entry.level === 'error')
+                .map((entry) => stripAnsi(entry.message))
+            }
+          } catch (fetchError) {
+            // If fetching logs fails, continue with just the error message
+          }
+        }
+
+        // Build error message with logs if available
+        let errorMessage = buildStatus?.reason?.message ?? 'Unknown error'
+        if (errorLogs.length > 0) {
+          errorMessage += '\n\nError logs:\n' + errorLogs.join('\n')
+        }
+
+        throw new BuildError(errorMessage, stackError)
       }
     }
 
