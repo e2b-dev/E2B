@@ -176,7 +176,7 @@ class SandboxApi(SandboxBase):
         if network:
             network_config = SandboxNetworkConfig(
                 allow_out=network.get("allow_out", UNSET),
-                block_out=network.get("block_out", UNSET),
+                deny_out=network.get("deny_out", UNSET),
             )
 
         with ApiClient(config, limits=SandboxBase._limits) as api_client:

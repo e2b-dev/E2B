@@ -38,17 +38,17 @@ export type SandboxNetworkOpts = {
    * If `allowOut` is not specified, all outbound traffic is allowed.
    *
    * Examples:
-   * - To allow traffic to a specific addresses: `["1.1.1.1", "8.8.8.0/24", "8.8.8.7-8.8.8.8"]`
+   * - To allow traffic to a specific addresses: `["1.1.1.1", "8.8.8.0/24"]`
    */
   allowOut?: string[]
 
   /**
-   * Block outbound traffic from the sandbox to the specified addresses.
+   * Deny outbound traffic from the sandbox to the specified addresses.
    *
    * Examples:
-   * - To block traffic to a specific addresses: `["1.1.1.1", "8.8.8.0/24", "8.8.8.7-8.8.8.8"]`
+   * - To deny traffic to a specific addresses: `["1.1.1.1", "8.8.8.0/24"]`
    */
-  blockOut?: string[]
+  denyOut?: string[]
 }
 
 /**

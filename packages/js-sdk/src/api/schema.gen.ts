@@ -1371,7 +1371,7 @@ export interface components {
             name: string;
         };
         NewSandbox: {
-            /** @description Allow sandbox to access the internet */
+            /** @description Allow sandbox to access the internet. When set to false, it behaves the same as specifying denyOut to 0.0.0.0/0 in the network config. */
             allow_internet_access?: boolean;
             /**
              * @description Automatically pauses the sandbox after the timeout
@@ -1663,10 +1663,10 @@ export interface components {
             timestampUnix: number;
         };
         SandboxNetworkConfig: {
-            /** @description List of allowed CIDR blocks or IP addresses for egress traffic */
+            /** @description List of allowed CIDR blocks or IP addresses for egress traffic. Allowed addresses always take precedence over blocked addresses. */
             allowOut?: string[];
-            /** @description List of blocked CIDR blocks or IP addresses for egress traffic */
-            blockOut?: string[];
+            /** @description List of denied CIDR blocks or IP addresses for egress traffic */
+            denyOut?: string[];
         };
         /**
          * @description State of the sandbox

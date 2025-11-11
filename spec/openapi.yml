@@ -222,12 +222,12 @@ components:
       properties:
         allowOut:
           type: array
-          description: List of allowed CIDR blocks or IP addresses for egress traffic
+          description: List of allowed CIDR blocks or IP addresses for egress traffic. Allowed addresses always take precedence over blocked addresses.
           items:
             type: string
-        blockOut:
+        denyOut:
           type: array
-          description: List of blocked CIDR blocks or IP addresses for egress traffic
+          description: List of denied CIDR blocks or IP addresses for egress traffic
           items:
             type: string
 
@@ -489,7 +489,9 @@ components:
           description: Secure all system communication with sandbox
         allow_internet_access:
           type: boolean
-          description: Allow sandbox to access the internet
+          description:
+            Allow sandbox to access the internet. When set to false, it behaves the same as specifying denyOut
+            to 0.0.0.0/0 in the network config.
         network:
           $ref: '#/components/schemas/SandboxNetworkConfig'
         metadata:

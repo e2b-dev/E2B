@@ -1,24 +1,23 @@
 import asyncio
-from typing import Callable, Optional
+import os
 import uuid
+from logging import warning
+from typing import Callable, Optional
+from uuid import uuid4
 
 import pytest
 import pytest_asyncio
-import os
-from uuid import uuid4
-
-from logging import warning
 
 from e2b import (
-    Sandbox,
-    AsyncSandbox,
     AsyncCommandHandle,
+    AsyncSandbox,
+    AsyncTemplate,
     CommandExitException,
     CommandHandle,
-    AsyncTemplate,
+    LogEntry,
+    Sandbox,
     Template,
     TemplateClass,
-    LogEntry,
 )
 
 
@@ -33,8 +32,16 @@ def template():
 
 
 @pytest.fixture()
-def sandbox(template, debug, sandbox_test_id):
-    sandbox = Sandbox.create(template, metadata={"sandbox_test_id": sandbox_test_id})
+def sandbox_opts(request):
+    """Fixture to allow tests to specify additional sandbox options like network config."""
+    return getattr(request, "param", {})
+
+
+@pytest.fixture()
+def sandbox(template, debug, sandbox_test_id, sandbox_opts):
+    sandbox = Sandbox.create(
+        template, metadata={"sandbox_test_id": sandbox_test_id}, **sandbox_opts
+    )
 
     try:
         yield sandbox
@@ -49,9 +56,9 @@ def sandbox(template, debug, sandbox_test_id):
 
 
 @pytest_asyncio.fixture
-async def async_sandbox(template, debug, sandbox_test_id):
+async def async_sandbox(template, debug, sandbox_test_id, sandbox_opts):
     sandbox = await AsyncSandbox.create(
-        template, metadata={"sandbox_test_id": sandbox_test_id}
+        template, metadata={"sandbox_test_id": sandbox_test_id}, **sandbox_opts
     )
 
     try:

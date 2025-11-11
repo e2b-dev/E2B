@@ -49,15 +49,15 @@ class SandboxNetworkOpts(TypedDict, total=False):
     If `allow_out` is not specified, all outbound traffic is allowed.
 
     Examples:
-    - To allow traffic to specific addresses: `["1.1.1.1", "8.8.8.0/24", "8.8.8.7-8.8.8.8"]`
+    - To allow traffic to specific addresses: `["1.1.1.1", "8.8.8.0/24"]`
     """
 
-    block_out: List[str]
+    deny_out: List[str]
     """
-    Block outbound traffic from the sandbox to the specified addresses.
+    Deny outbound traffic from the sandbox to the specified addresses.
 
     Examples:
-    - To block traffic to specific addresses: `["1.1.1.1", "8.8.8.0/24", "8.8.8.7-8.8.8.8"]`
+    - To deny traffic to specific addresses: `["1.1.1.1", "8.8.8.0/24"]`
     """
 
 

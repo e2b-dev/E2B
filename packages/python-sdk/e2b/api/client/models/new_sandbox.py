@@ -19,7 +19,8 @@ class NewSandbox:
     """
     Attributes:
         template_id (str): Identifier of the required template
-        allow_internet_access (Union[Unset, bool]): Allow sandbox to access the internet
+        allow_internet_access (Union[Unset, bool]): Allow sandbox to access the internet. When set to false, it behaves
+            the same as specifying denyOut to 0.0.0.0/0 in the network config.
         auto_pause (Union[Unset, bool]): Automatically pauses the sandbox after the timeout Default: False.
         env_vars (Union[Unset, Any]):
         mcp (Union['McpType0', None, Unset]): MCP configuration for the sandbox
