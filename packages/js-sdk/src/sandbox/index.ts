@@ -113,7 +113,7 @@ export class Sandbox extends SandboxApi {
       sandboxDomain?: string
       envdVersion: string
       envdAccessToken?: string
-    },
+    }
   ) {
     super()
 
@@ -145,10 +145,10 @@ export class Sandbox extends SandboxApi {
 
         const headers = new Headers(this.connectionConfig.headers)
         new Headers(options?.headers).forEach((value, key) =>
-          headers.append(key, value),
+          headers.append(key, value)
         )
         new Headers(sandboxHeaders).forEach((value, key) =>
-          headers.append(key, value),
+          headers.append(key, value)
         )
 
         if (this.envdAccessToken) {
@@ -176,12 +176,12 @@ export class Sandbox extends SandboxApi {
       },
       {
         version: opts.envdVersion,
-      },
+      }
     )
     this.files = new Filesystem(
       rpcTransport,
       this.envdApi,
-      this.connectionConfig,
+      this.connectionConfig
     )
     this.commands = new Commands(rpcTransport, this.connectionConfig, {
       version: opts.envdVersion,
@@ -242,7 +242,7 @@ export class Sandbox extends SandboxApi {
   static async create<S extends typeof Sandbox>(
     this: S,
     templateOrOpts?: SandboxOpts | string,
-    opts?: SandboxOpts,
+    opts?: SandboxOpts
   ): Promise<InstanceType<S>> {
     const { template, sandboxOpts } =
       typeof templateOrOpts === 'string'
@@ -269,7 +269,7 @@ export class Sandbox extends SandboxApi {
     const sandboxInfo = await SandboxApi.createSandbox(
       template,
       sandboxOpts?.timeoutMs ?? this.defaultSandboxTimeoutMs,
-      sandboxOpts,
+      sandboxOpts
     )
 
     const sandbox = new this({ ...sandboxInfo, ...config }) as InstanceType<S>
@@ -283,7 +283,7 @@ export class Sandbox extends SandboxApi {
           envs: {
             GATEWAY_ACCESS_TOKEN: sandbox.mcpToken ?? '',
           },
-        },
+        }
       )
       if (res.exitCode !== 0) {
         throw new Error(`Failed to start MCP gateway: ${res.stderr}`)
@@ -337,7 +337,7 @@ export class Sandbox extends SandboxApi {
   static async betaCreate<S extends typeof Sandbox>(
     this: S,
     templateOrOpts?: SandboxBetaCreateOpts | string,
-    opts?: SandboxBetaCreateOpts,
+    opts?: SandboxBetaCreateOpts
   ): Promise<InstanceType<S>> {
     const { template, sandboxOpts } =
       typeof templateOrOpts === 'string'
@@ -364,7 +364,7 @@ export class Sandbox extends SandboxApi {
     const sandboxInfo = await SandboxApi.createSandbox(
       template,
       sandboxOpts?.timeoutMs ?? this.defaultSandboxTimeoutMs,
-      sandboxOpts,
+      sandboxOpts
     )
 
     const sandbox = new this({ ...sandboxInfo, ...config }) as InstanceType<S>
@@ -378,7 +378,7 @@ export class Sandbox extends SandboxApi {
           envs: {
             GATEWAY_ACCESS_TOKEN: sandbox.mcpToken ?? '',
           },
-        },
+        }
       )
       if (res.exitCode !== 0) {
         throw new Error(`Failed to start MCP gateway: ${res.stderr}`)
@@ -411,7 +411,7 @@ export class Sandbox extends SandboxApi {
   static async connect<S extends typeof Sandbox>(
     this: S,
     sandboxId: string,
-    opts?: SandboxConnectOpts,
+    opts?: SandboxConnectOpts
   ): Promise<InstanceType<S>> {
     const sandbox = await SandboxApi.connectSandbox(sandboxId, opts)
     const config = new ConnectionConfig(opts)
@@ -471,7 +471,7 @@ export class Sandbox extends SandboxApi {
     return this.connectionConfig.getHost(
       this.sandboxId,
       port,
-      this.sandboxDomain,
+      this.sandboxDomain
     )
   }
 
@@ -490,7 +490,7 @@ export class Sandbox extends SandboxApi {
    * ```
    */
   async isRunning(
-    opts?: Pick<ConnectionOpts, 'requestTimeoutMs'>,
+    opts?: Pick<ConnectionOpts, 'requestTimeoutMs'>
   ): Promise<boolean> {
     const signal = this.connectionConfig.getSignal(opts?.requestTimeoutMs)
 
@@ -522,7 +522,7 @@ export class Sandbox extends SandboxApi {
    */
   async setTimeout(
     timeoutMs: number,
-    opts?: Pick<SandboxOpts, 'requestTimeoutMs'>,
+    opts?: Pick<SandboxOpts, 'requestTimeoutMs'>
   ) {
     if (this.connectionConfig.debug) {
       // Skip timeout in debug mode
@@ -605,7 +605,7 @@ export class Sandbox extends SandboxApi {
 
     if (!useSignature && opts.useSignatureExpiration != undefined) {
       throw new Error(
-        'Signature expiration can be used only when sandbox is created as secured.',
+        'Signature expiration can be used only when sandbox is created as secured.'
       )
     }
 
@@ -657,7 +657,7 @@ export class Sandbox extends SandboxApi {
 
     if (!useSignature && opts.useSignatureExpiration != undefined) {
       throw new Error(
-        'Signature expiration can be used only when sandbox is created as secured.',
+        'Signature expiration can be used only when sandbox is created as secured.'
       )
     }
 
@@ -718,13 +718,13 @@ export class Sandbox extends SandboxApi {
       if (compareVersions(this.envdApi.version, '0.1.5') < 0) {
         throw new SandboxError(
           'You need to update the template to use the new SDK. ' +
-            'You can do this by running `e2b template build` in the directory with the template.',
+            'You can do this by running `e2b template build` in the directory with the template.'
         )
       }
 
       if (compareVersions(this.envdApi.version, '0.2.4') < 0) {
         this.connectionConfig.logger?.warn?.(
-          'Disk metrics are not supported in this version of the sandbox, please rebuild the template to get disk metrics.',
+          'Disk metrics are not supported in this version of the sandbox, please rebuild the template to get disk metrics.'
         )
       }
     }

@@ -133,7 +133,7 @@ export class ConnectionConfig {
 
   getSandboxUrl(
     sandboxId: string,
-    opts: { sandboxDomain: string; envdPort: number },
+    opts: { sandboxDomain: string; envdPort: number }
   ) {
     if (this.sandboxUrl) {
       return this.sandboxUrl
