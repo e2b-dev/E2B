@@ -287,9 +287,10 @@ class Client:
         req,
         request_timeout=None,
         timeout=None,
-        headers={},
+        headers=None,
         **opts,
     ):
+        headers = headers or {}
         data = self._codec.encode(req)
         flags = EnvelopeFlags(0)
 

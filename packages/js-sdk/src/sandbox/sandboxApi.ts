@@ -90,6 +90,11 @@ export interface SandboxOpts extends ConnectionOpts {
    * @default undefined
    */
   mcp?: McpServer
+
+  /**
+   * Sandbox URL. Used for local development
+   */
+  sandboxUrl?: string
 }
 
 export type SandboxBetaCreateOpts = SandboxOpts & {
@@ -267,7 +272,7 @@ export class SandboxApi {
    */
   static async kill(
     sandboxId: string,
-    opts?: SandboxApiOpts
+    opts?: SandboxApiOpts,
   ): Promise<boolean> {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
@@ -303,7 +308,7 @@ export class SandboxApi {
    */
   static async getInfo(
     sandboxId: string,
-    opts?: SandboxApiOpts
+    opts?: SandboxApiOpts,
   ): Promise<SandboxInfo> {
     const fullInfo = await this.getFullInfo(sandboxId, opts)
     delete fullInfo.envdAccessToken
@@ -322,7 +327,7 @@ export class SandboxApi {
    */
   static async getMetrics(
     sandboxId: string,
-    opts?: SandboxMetricsOpts
+    opts?: SandboxMetricsOpts,
   ): Promise<SandboxMetrics[]> {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
@@ -371,7 +376,7 @@ export class SandboxApi {
   static async setTimeout(
     sandboxId: string,
     timeoutMs: number,
-    opts?: SandboxApiOpts
+    opts?: SandboxApiOpts,
   ): Promise<void> {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
@@ -450,7 +455,7 @@ export class SandboxApi {
    */
   static async betaPause(
     sandboxId: string,
-    opts?: SandboxApiOpts
+    opts?: SandboxApiOpts,
   ): Promise<boolean> {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
@@ -484,7 +489,7 @@ export class SandboxApi {
   protected static async createSandbox(
     template: string,
     timeoutMs: number,
-    opts?: SandboxBetaCreateOpts
+    opts?: SandboxBetaCreateOpts,
   ) {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
@@ -512,7 +517,7 @@ export class SandboxApi {
       await this.kill(res.data!.sandboxID, opts)
       throw new TemplateError(
         'You need to update the template to use the new SDK. ' +
-          'You can do this by running `e2b template build` in the directory with the template.'
+          'You can do this by running `e2b template build` in the directory with the template.',
       )
     }
 
@@ -526,7 +531,7 @@ export class SandboxApi {
 
   protected static async connectSandbox(
     sandboxId: string,
-    opts?: SandboxConnectOpts
+    opts?: SandboxConnectOpts,
   ) {
     const timeoutMs = opts?.timeoutMs ?? DEFAULT_SANDBOX_TIMEOUT_MS
 
@@ -629,7 +634,7 @@ export class SandboxPaginator {
         Object.entries(this.query.metadata).map(([key, value]) => [
           encodeURIComponent(key),
           encodeURIComponent(value),
-        ])
+        ]),
       )
 
       metadata = new URLSearchParams(encodedPairs).toString()
@@ -668,7 +673,7 @@ export class SandboxPaginator {
         cpuCount: sandbox.cpuCount,
         memoryMB: sandbox.memoryMB,
         envdVersion: sandbox.envdVersion,
-      })
+      }),
     )
   }
 }
