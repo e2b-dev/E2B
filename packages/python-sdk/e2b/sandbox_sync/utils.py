@@ -3,6 +3,8 @@ from typing import Optional
 import httpx
 import logging
 
+from typing_extensions import Self
+
 from e2b.api import ApiClient, limits
 from e2b.connection_config import ConnectionConfig
 
@@ -18,6 +20,8 @@ def get_api_client(config: ConnectionConfig, **kwargs) -> ApiClient:
 
 
 class TransportWithLogger(httpx.HTTPTransport):
+    singleton: Optional[Self] = None
+
     def handle_request(self, request):
         url = f"{request.url.scheme}://{request.url.host}{request.url.path}"
         logger.info(f"Request: {request.method} {url}")
@@ -37,11 +41,12 @@ _transport: Optional[TransportWithLogger] = None
 
 
 def get_transport(config: ConnectionConfig) -> TransportWithLogger:
-    global _transport
-    if _transport is None:
-        _transport = TransportWithLogger(
-            limits=limits,
-            proxy=config.proxy,
-        )
+    if TransportWithLogger.singleton is not None:
+        return TransportWithLogger.singleton
 
-    return _transport
+    transport = TransportWithLogger(
+        limits=limits,
+        proxy=config.proxy,
+    )
+    TransportWithLogger.singleton = transport
+    return transport

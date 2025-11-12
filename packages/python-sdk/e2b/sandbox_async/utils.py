@@ -3,6 +3,8 @@ import logging
 
 from typing import TypeVar, Union, Callable, Awaitable, Optional
 
+from typing_extensions import Self
+
 from e2b.connection_config import ConnectionConfig
 from e2b.api import limits, AsyncApiClient
 
@@ -24,6 +26,8 @@ def get_api_client(config: ConnectionConfig, **kwargs) -> AsyncApiClient:
 
 
 class AsyncTransportWithLogger(httpx.AsyncHTTPTransport):
+    singleton: Optional[Self] = None
+
     async def handle_async_request(self, request):
         url = f"{request.url.scheme}://{request.url.host}{request.url.path}"
         logger.info(f"Request: {request.method} {url}")
@@ -39,14 +43,13 @@ class AsyncTransportWithLogger(httpx.AsyncHTTPTransport):
         return self._pool
 
 
-_transport: Optional[AsyncTransportWithLogger] = None
-
-
 def get_transport(config: ConnectionConfig) -> AsyncTransportWithLogger:
-    global _transport
-    if _transport is None:
-        _transport = AsyncTransportWithLogger(
-            limits=limits,
-            proxy=config.proxy,
-        )
-    return _transport
+    if AsyncTransportWithLogger.singleton is not None:
+        return AsyncTransportWithLogger.singleton
+
+    transport = AsyncTransportWithLogger(
+        limits=limits,
+        proxy=config.proxy,
+    )
+    AsyncTransportWithLogger.singleton = transport
+    return transport
