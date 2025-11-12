@@ -6,7 +6,7 @@ import pytest
 
 @pytest.mark.skip_debug()
 def test_download_url_with_signing(sandbox_factory):
-    sbx = sandbox_factory(secure=True)
+    sbx = sandbox_factory(timeout=100, secure=True)
     file_path = "test_download_url_with_signing.txt"
     file_content = "This file will be watched."
 
