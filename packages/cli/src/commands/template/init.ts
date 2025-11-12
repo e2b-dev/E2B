@@ -288,10 +288,13 @@ export const initCommand = new commander.Command('init')
         console.log(
           `\nTemplate created in: ${asPrimary(`./${templateDirName}/`)}`
         )
-        console.log('\nYou can now build your template using:')
+        console.log('\n🔨 To get started with your template:')
 
         switch (language) {
           case Language.TypeScript:
+            console.log(
+              `   ${asPrimary('npm install e2b')} (install e2b dependency)`
+            )
             console.log(
               `   ${asPrimary('npm run e2b:build:dev')} (for development)`
             )
@@ -301,6 +304,9 @@ export const initCommand = new commander.Command('init')
             break
           case Language.PythonAsync:
           case Language.PythonSync:
+            console.log(
+              `   ${asPrimary('pip install e2b')} (install e2b dependency)`
+            )
             console.log(
               `   ${asPrimary('make e2b:build:dev')} (for development)`
             )

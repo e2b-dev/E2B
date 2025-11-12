@@ -4,16 +4,17 @@ from typing import Optional, Dict, List
 from packaging.version import Version
 from typing_extensions import Unpack
 
-from e2b.api import SandboxCreateResponse
-from e2b.api import handle_api_exception
+from e2b.api import SandboxCreateResponse, handle_api_exception
+from e2b.api.client.models import (
+    Sandbox,
+)
 from e2b.api.client.api.sandboxes import (
     get_sandboxes_sandbox_id,
     post_sandboxes_sandbox_id_timeout,
     delete_sandboxes_sandbox_id,
     post_sandboxes,
     get_sandboxes_sandbox_id_metrics,
-    post_sandboxes_sandbox_id_resume,
-    post_sandboxes_sandbox_id_pause,
+    post_sandboxes_sandbox_id_pause, post_sandboxes_sandbox_id_resume,
 )
 from e2b.api.client.models import (
     NewSandbox,
@@ -73,6 +74,9 @@ class SandboxApi(SandboxBase):
             client=api_client,
         )
 
+        if res.status_code == 404:
+            raise NotFoundException(f"Sandbox {sandbox_id} not found")
+
         if res.status_code >= 300:
             raise handle_api_exception(res)
 
@@ -129,6 +133,10 @@ class SandboxApi(SandboxBase):
             client=api_client,
             body=PostSandboxesSandboxIDTimeoutBody(timeout=timeout),
         )
+
+
+        if res.status_code == 404:
+            raise NotFoundException(f"Sandbox {sandbox_id} not found")
 
         if res.status_code >= 300:
             raise handle_api_exception(res)
@@ -232,49 +240,30 @@ class SandboxApi(SandboxBase):
         ]
 
     @classmethod
-    def _cls_resume(
+    def _cls_connect(
         cls,
         sandbox_id: str,
         timeout: Optional[int] = None,
         **opts: Unpack[ApiParams],
-    ) -> bool:
+    ) -> Sandbox:
         timeout = timeout or SandboxBase.default_sandbox_timeout
 
-        # Temporary solution (02/12/2025),
-        # Options discussed:
-        # 1. No set - never sure how long the sandbox will be running
-        # 2. Always set the timeout in code - the user can't just connect to the sandbox
-        #       without changing the timeout, round trip to the server time
-        # 3. Set the timeout in resume on backend - side effect on error
-        # 4. Create new endpoint for connect
-        try:
-            cls._cls_set_timeout(
-                sandbox_id=sandbox_id,
-                timeout=timeout,
-                **opts,
-            )
-            return False
-        except SandboxException:
-            # Sandbox is not running, resume it
-            config = ConnectionConfig(**opts)
+        config = ConnectionConfig(**opts)
 
-            api_client = get_api_client(config)
-            res = post_sandboxes_sandbox_id_resume.sync_detailed(
-                sandbox_id,
-                client=api_client,
-                body=ResumedSandbox(timeout=timeout),
-            )
+        api_client = get_api_client(config)
+        res = post_sandboxes_sandbox_id_resume.sync_detailed(
+            sandbox_id,
+            client=api_client,
+            body=ResumedSandbox(timeout=timeout),
+        )
 
-            if res.status_code == 404:
-                raise NotFoundException(f"Paused sandbox {sandbox_id} not found")
+        if res.status_code == 404:
+            raise NotFoundException(f"Paused sandbox {sandbox_id} not found")
 
-            if res.status_code == 409:
-                return False
+        if res.status_code >= 300:
+            raise handle_api_exception(res)
 
-            if res.status_code >= 300:
-                raise handle_api_exception(res)
-
-            return True
+        return res.parsed
 
     @classmethod
     def _cls_pause(

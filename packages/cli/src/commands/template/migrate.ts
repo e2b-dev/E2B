@@ -209,20 +209,26 @@ export const migrateCommand = new commander.Command('migrate')
 
         console.log('\n🎉 Migration completed successfully!')
 
-        console.log('\n🔨 You can now build your template using:')
+        console.log('\n🔨 To get started with your template:')
         if (language === Language.TypeScript) {
           console.log(
-            `   ${asPrimary('npx tsx build.dev.ts')} (for development)`
+            `   ${asPrimary('npm install e2b')} (install e2b dependency)`
           )
           console.log(
-            `   ${asPrimary('npx tsx build.prod.ts')} (for production)`
+            `   ${asPrimary('npx tsx build.dev.ts')} (run development build)`
+          )
+          console.log(
+            `   ${asPrimary('npx tsx build.prod.ts')} (run production build)`
           )
         } else {
           console.log(
-            `   ${asPrimary('python build_dev.py')} (for development)`
+            `   ${asPrimary('pip install e2b')} (install e2b dependency)`
           )
           console.log(
-            `   ${asPrimary('python build_prod.py')} (for production)`
+            `   ${asPrimary('python build_dev.py')} (run development build)`
+          )
+          console.log(
+            `   ${asPrimary('python build_prod.py')} (run production build)`
           )
         }
 

@@ -40,3 +40,6 @@ generate-mcp:
 			--use-field-description \
 			--disable-timestamp \
 			--extra-fields forbid
+
+test:
+	poetry run pytest --verbose -x

@@ -3,6 +3,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { dynamicGlob, dynamicTar } from '../utils'
 import { BASE_STEP_NAME, FINALIZE_STEP_NAME } from './consts'
+import type { Path } from 'glob'
 
 /**
  * Read and parse a .dockerignore file.
@@ -24,8 +25,57 @@ export function readDockerignore(contextPath: string): string[] {
 }
 
 /**
+ * Get all files for a given path and ignore patterns.
+ *
+ * @param src Path to the source directory
+ * @param contextPath Base directory for resolving relative paths
+ * @param ignorePatterns Ignore patterns
+ * @returns Array of files
+ */
+export async function getAllFilesInPath(
+  src: string,
+  contextPath: string,
+  ignorePatterns: string[],
+  includeDirectories: boolean = true
+) {
+  const { glob } = await dynamicGlob()
+  const files = new Map<string, Path>()
+
+  const globFiles = await glob(src, {
+    ignore: ignorePatterns,
+    withFileTypes: true,
+    // this is required so that the ignore pattern is relative to the file path
+    cwd: contextPath,
+  })
+
+  for (const file of globFiles) {
+    if (file.isDirectory()) {
+      // For directories, add the directory itself and all files inside it
+      if (includeDirectories) {
+        files.set(file.fullpath(), file)
+      }
+      const dirFiles = await glob(
+        path.join(path.relative(contextPath, file.fullpath()), '**/*'),
+        {
+          ignore: ignorePatterns,
+          withFileTypes: true,
+          cwd: contextPath,
+        }
+      )
+      dirFiles.forEach((f) => files.set(f.fullpath(), f))
+    } else {
+      // For files, just add the file
+      files.set(file.fullpath(), file)
+    }
+  }
+
+  return Array.from(files.values()).sort()
+}
+
+/**
  * Calculate a hash of files being copied to detect changes for cache invalidation.
- * The hash includes file content, metadata (mode, uid, gid, size, mtime), and relative paths.
+ * The hash includes file content, metadata (mode, size), and relative paths.
+ * Note: uid, gid, and mtime are excluded to ensure stable hashes across environments.
  *
  * @param src Source path pattern for files to copy
  * @param dest Destination path where files will be copied
@@ -44,17 +94,13 @@ export async function calculateFilesHash(
   resolveSymlinks: boolean,
   stackTrace: string | undefined
 ): Promise<string> {
-  const { glob } = await dynamicGlob()
   const srcPath = path.join(contextPath, src)
   const hash = crypto.createHash('sha256')
   const content = `COPY ${src} ${dest}`
 
   hash.update(content)
 
-  const files = await glob(srcPath, {
-    ignore: ignorePatterns,
-    withFileTypes: true,
-  })
+  const files = await getAllFilesInPath(src, contextPath, ignorePatterns, true)
 
   if (files.length === 0) {
     const error = new Error(`No files found in ${srcPath}`)
@@ -64,15 +110,14 @@ export async function calculateFilesHash(
     throw error
   }
 
-  // Hash stats
+  // Hash stats - only include stable metadata (mode, size)
+  // Exclude uid, gid, and mtime to ensure consistent hashes across environments
   const hashStats = (stats: fs.Stats) => {
     hash.update(stats.mode.toString())
-    hash.update(stats.uid.toString())
-    hash.update(stats.gid.toString())
     hash.update(stats.size.toString())
-    hash.update(stats.mtimeMs.toString())
   }
 
+  // Process files recursively
   for (const file of files) {
     // Add a relative path to hash calculation
     const relativePath = path.relative(contextPath, file.fullpath())
@@ -98,9 +143,9 @@ export async function calculateFilesHash(
     }
 
     const stats = fs.statSync(file.fullpath())
-
     hashStats(stats)
 
+    // Add file content to hash calculation
     if (stats.isFile()) {
       const content = fs.readFileSync(file.fullpath())
       hash.update(new Uint8Array(content))
@@ -137,14 +182,28 @@ export function getCallerFrame(depth: number): string | undefined {
  * Matches patterns like:
  * - "at <anonymous> (/path/to/file.js:1:1)"
  * - "at /path/to/file.js:1:1"
- *
+ * - "at <anonymous> (file:///C:/path/to/file.js:1:1)"
+ * - "at (file:///C:/path/to/file.js:1:1)"
  * @param line A line from a stack trace
  * @returns The directory of the file, or undefined if not found
  */
 export function matchFileDir(line: string): string | undefined {
-  const match = line.match(/\/[^:]+/)
+  const match = line.match(
+    /(?:file:\/\/\/)?([A-Za-z]:)?([/\\][^:]+)(?::\d+:\d+)?\)?/
+  )
   if (match) {
-    const filePath = match[0]
+    // Extract the full matched path
+    let filePath = match[0]
+
+    // Remove file:/// protocol prefix if present
+    filePath = filePath.replace(/^file:\/\/\//, '')
+
+    // Remove trailing closing parenthesis if present
+    filePath = filePath.replace(/\)$/, '')
+
+    // Remove :line:column suffix if present
+    filePath = filePath.replace(/:\d+:\d+$/, '')
+
     return path.dirname(filePath)
   }
 }
@@ -191,25 +250,37 @@ export function padOctal(mode: number): string {
  *
  * @param fileName Glob pattern for files to include
  * @param fileContextPath Base directory for resolving file paths
+ * @param ignorePatterns Ignore patterns to exclude from the archive
  * @param resolveSymlinks Whether to follow symbolic links
  * @returns A readable stream of the gzipped tar archive
  */
 export async function tarFileStream(
   fileName: string,
   fileContextPath: string,
+  ignorePatterns: string[],
   resolveSymlinks: boolean
 ) {
-  const { globSync } = await dynamicGlob()
   const { create } = await dynamicTar()
-  const files = globSync(fileName, { cwd: fileContextPath })
+
+  const allFiles = await getAllFilesInPath(
+    fileName,
+    fileContextPath,
+    ignorePatterns,
+    true
+  )
+
+  const filePaths = allFiles.map((file) =>
+    path.relative(fileContextPath, file.fullpath())
+  )
 
   return create(
     {
       gzip: true,
       cwd: fileContextPath,
       follow: resolveSymlinks,
+      noDirRecurse: true,
     },
-    files
+    filePaths
   )
 }
 
@@ -224,12 +295,14 @@ export async function tarFileStream(
 export async function tarFileStreamUpload(
   fileName: string,
   fileContextPath: string,
+  ignorePatterns: string[],
   resolveSymlinks: boolean
 ) {
   // First pass: calculate the compressed size
   const sizeCalculationStream = await tarFileStream(
     fileName,
     fileContextPath,
+    ignorePatterns,
     resolveSymlinks
   )
   let contentLength = 0
@@ -242,6 +315,7 @@ export async function tarFileStreamUpload(
     uploadStream: await tarFileStream(
       fileName,
       fileContextPath,
+      ignorePatterns,
       resolveSymlinks
     ),
   }

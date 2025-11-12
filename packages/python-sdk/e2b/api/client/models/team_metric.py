@@ -17,11 +17,13 @@ class TeamMetric:
         concurrent_sandboxes (int): The number of concurrent sandboxes for the team
         sandbox_start_rate (float): Number of sandboxes started per second
         timestamp (datetime.datetime): Timestamp of the metric entry
+        timestamp_unix (int): Timestamp of the metric entry in Unix time (seconds since epoch)
     """
 
     concurrent_sandboxes: int
     sandbox_start_rate: float
     timestamp: datetime.datetime
+    timestamp_unix: int
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -31,6 +33,8 @@ class TeamMetric:
 
         timestamp = self.timestamp.isoformat()
 
+        timestamp_unix = self.timestamp_unix
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
@@ -38,6 +42,7 @@ class TeamMetric:
                 "concurrentSandboxes": concurrent_sandboxes,
                 "sandboxStartRate": sandbox_start_rate,
                 "timestamp": timestamp,
+                "timestampUnix": timestamp_unix,
             }
         )
 
@@ -52,10 +57,13 @@ class TeamMetric:
 
         timestamp = isoparse(d.pop("timestamp"))
 
+        timestamp_unix = d.pop("timestampUnix")
+
         team_metric = cls(
             concurrent_sandboxes=concurrent_sandboxes,
             sandbox_start_rate=sandbox_start_rate,
             timestamp=timestamp,
+            timestamp_unix=timestamp_unix,
         )
 
         team_metric.additional_properties = d

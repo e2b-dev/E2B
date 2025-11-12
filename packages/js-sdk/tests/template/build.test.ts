@@ -35,12 +35,13 @@ buildTemplateTest('build template', async ({ buildTemplate }) => {
     .setWorkdir('/app')
     .setStartCmd('echo "Hello, world!"', waitForTimeout(10_000))
 
-  await buildTemplate(template, undefined, defaultBuildLogger())
+  await buildTemplate(template, { skipCache: true }, defaultBuildLogger())
 })
 
 buildTemplateTest('build template with symlinks', async ({ buildTemplate }) => {
   const template = Template()
     .fromImage('ubuntu:22.04')
+    .skipCache()
     .copy('folder/*', 'folder', { forceUpload: true })
     .runCmd('cat folder/symlink.txt')
 
@@ -52,6 +53,7 @@ buildTemplateTest(
   async ({ buildTemplate }) => {
     const template = Template()
       .fromImage('ubuntu:22.04')
+      .skipCache()
       .copy('folder/symlink.txt', 'folder/symlink.txt', {
         forceUpload: true,
         resolveSymlinks: true,

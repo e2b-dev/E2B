@@ -404,29 +404,14 @@ export class Sandbox extends SandboxApi {
     sandboxId: string,
     opts?: SandboxConnectOpts
   ): Promise<InstanceType<S>> {
-    try {
-      await SandboxApi.setTimeout(
-        sandboxId,
-        opts?.timeoutMs || DEFAULT_SANDBOX_TIMEOUT_MS,
-        opts
-      )
-    } catch (e) {
-      if (e instanceof SandboxError) {
-        await SandboxApi.resumeSandbox(sandboxId, opts)
-      } else {
-        throw e
-      }
-    }
-
-    const info = await SandboxApi.getFullInfo(sandboxId, opts)
-
+    const sandbox = await SandboxApi.connectSandbox(sandboxId, opts)
     const config = new ConnectionConfig(opts)
 
     return new this({
       sandboxId,
-      sandboxDomain: info.sandboxDomain,
-      envdAccessToken: info.envdAccessToken,
-      envdVersion: info.envdVersion,
+      sandboxDomain: sandbox.sandboxDomain,
+      envdAccessToken: sandbox.envdAccessToken,
+      envdVersion: sandbox.envdVersion,
       ...config,
     }) as InstanceType<S>
   }
@@ -451,15 +436,7 @@ export class Sandbox extends SandboxApi {
    * ```
    */
   async connect(opts?: SandboxBetaCreateOpts): Promise<this> {
-    try {
-      await SandboxApi.setTimeout(
-        this.sandboxId,
-        opts?.timeoutMs || DEFAULT_SANDBOX_TIMEOUT_MS,
-        opts
-      )
-    } catch (e) {
-      await SandboxApi.resumeSandbox(this.sandboxId, opts)
-    }
+    await SandboxApi.connectSandbox(this.sandboxId, opts)
 
     return this
   }

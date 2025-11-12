@@ -1,9 +1,10 @@
 import hashlib
 import os
+import io
+import tarfile
 import json
 import stat
-from glob import glob
-import fnmatch
+from wcmatch import glob
 import re
 import inspect
 from types import TracebackType, FrameType
@@ -34,6 +35,55 @@ def read_dockerignore(context_path: str) -> List[str]:
     ]
 
 
+def get_all_files_in_path(
+    src: str,
+    context_path: str,
+    ignore_patterns: List[str],
+    include_directories: bool = True,
+) -> List[str]:
+    """
+    Get all files for a given path and ignore patterns.
+
+    :param src: Path to the source directory
+    :param context_path: Base directory for resolving relative paths
+    :param ignore_patterns: Ignore patterns
+    :param include_directories: Whether to include directories
+    :return: Array of files
+    """
+    files = set()
+
+    # Use glob to find all files/directories matching the pattern under context_path
+    abs_context_path = os.path.abspath(context_path)
+    files_glob = glob.glob(
+        src,
+        flags=glob.GLOBSTAR,
+        root_dir=abs_context_path,
+        exclude=ignore_patterns,
+    )
+
+    for file in files_glob:
+        # Join it with abs_context_path to get the absolute path
+        file_path = os.path.join(abs_context_path, file)
+
+        if os.path.isdir(file_path):
+            # If it's a directory, add the directory and all entries recursively
+            if include_directories:
+                files.add(file_path)
+            dir_files = glob.glob(
+                os.path.join(file, "**/*"),
+                flags=glob.GLOBSTAR,
+                root_dir=abs_context_path,
+                exclude=ignore_patterns,
+            )
+            for dir_file in dir_files:
+                dir_file_path = os.path.join(abs_context_path, dir_file)
+                files.add(dir_file_path)
+        else:
+            files.add(file_path)
+
+    return sorted(list(files))
+
+
 def calculate_files_hash(
     src: str,
     dest: str,
@@ -45,7 +95,8 @@ def calculate_files_hash(
     """
     Calculate a hash of files being copied to detect changes for cache invalidation.
 
-    The hash includes file content, metadata (mode, uid, gid, size, mtime), and relative paths.
+    The hash includes file content, metadata (mode, size), and relative paths.
+    Note: uid, gid, and mtime are excluded to ensure stable hashes across environments.
 
     :param src: Source path pattern for files to copy
     :param dest: Destination path where files will be copied
@@ -64,28 +115,19 @@ def calculate_files_hash(
 
     hash_obj.update(content.encode())
 
-    files_glob = glob(src_path, recursive=True)
-
-    files = []
-    for file in files_glob:
-        if ignore_patterns and any(
-            fnmatch.fnmatch(file, pattern) for pattern in ignore_patterns
-        ):
-            continue
-        files.append(file)
+    files = get_all_files_in_path(src, context_path, ignore_patterns, True)
 
     if len(files) == 0:
         raise ValueError(f"No files found in {src_path}").with_traceback(stack_trace)
 
     def hash_stats(stat_info: os.stat_result) -> None:
+        # Only include stable metadata (mode, size)
+        # Exclude uid, gid, and mtime to ensure consistent hashes across environments
         hash_obj.update(str(stat_info.st_mode).encode())
-        hash_obj.update(str(stat_info.st_uid).encode())
-        hash_obj.update(str(stat_info.st_gid).encode())
         hash_obj.update(str(stat_info.st_size).encode())
-        hash_obj.update(str(stat_info.st_mtime).encode())
 
     for file in files:
-        # Add a relative path to hash calculation
+        # Hash the relative path
         relative_path = os.path.relpath(file, context_path)
         hash_obj.update(relative_path.encode())
 
@@ -111,6 +153,39 @@ def calculate_files_hash(
                 hash_obj.update(f.read())
 
     return hash_obj.hexdigest()
+
+
+def tar_file_stream(
+    file_name: str,
+    file_context_path: str,
+    ignore_patterns: List[str],
+    resolve_symlinks: bool,
+) -> io.BytesIO:
+    """
+    Create a tar stream of files matching a pattern.
+
+    :param file_name: Glob pattern for files to include
+    :param file_context_path: Base directory for resolving file paths
+    :param ignore_patterns: Ignore patterns
+    :param resolve_symlinks: Whether to resolve symbolic links
+
+    :return: Tar stream
+    """
+    tar_buffer = io.BytesIO()
+    with tarfile.open(
+        fileobj=tar_buffer,
+        mode="w:gz",
+        dereference=resolve_symlinks,
+    ) as tar:
+        files = get_all_files_in_path(
+            file_name, file_context_path, ignore_patterns, True
+        )
+        for file in files:
+            tar.add(
+                file, arcname=os.path.relpath(file, file_context_path), recursive=False
+            )
+
+    return tar_buffer
 
 
 def strip_ansi_escape_codes(text: str) -> str:

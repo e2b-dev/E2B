@@ -24,7 +24,7 @@ type TriggerBuildInput = {
 type GetBuildStatusInput = {
   templateID: string
   buildID: string
-  logsOffset: number
+  logsOffset?: number
 }
 
 export type GetBuildStatusResponse =
@@ -37,7 +37,7 @@ export async function requestBuild(
   client: ApiClient,
   { alias, cpuCount, memoryMB }: RequestBuildInput
 ) {
-  const requestBuildRes = await client.api.POST('/v2/templates', {
+  const requestBuildRes = await client.api.POST('/v3/templates', {
     body: {
       alias,
       cpuCount,
@@ -91,15 +91,18 @@ export async function uploadFile(
     fileName: string
     fileContextPath: string
     url: string
+    ignorePatterns: string[]
     resolveSymlinks: boolean
   },
   stackTrace: string | undefined
 ) {
-  const { fileName, url, fileContextPath, resolveSymlinks } = options
+  const { fileName, url, fileContextPath, ignorePatterns, resolveSymlinks } =
+    options
   try {
     const { contentLength, uploadStream } = await tarFileStreamUpload(
       fileName,
       fileContextPath,
+      ignorePatterns,
       resolveSymlinks
     )
 
@@ -154,7 +157,7 @@ export async function triggerBuild(
 export async function getBuildStatus(
   client: ApiClient,
   { templateID, buildID, logsOffset }: GetBuildStatusInput
-) {
+): Promise<GetBuildStatusResponse> {
   const buildStatusRes = await client.api.GET(
     '/templates/{templateID}/builds/{buildID}/status',
     {

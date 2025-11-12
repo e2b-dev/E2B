@@ -622,9 +622,9 @@ class TemplateBuilder:
         def _set_start():
             return self.set_start_cmd(
                 "sudo devcontainer up --workspace-folder "
-                + devcontainer_directory
+                + str(devcontainer_directory)
                 + " && sudo /prepare-exec.sh "
-                + devcontainer_directory
+                + str(devcontainer_directory)
                 + " | sudo tee /devcontainer.sh > /dev/null && sudo chmod +x /devcontainer.sh && sudo touch /devcontainer.up",
                 wait_for_file("/devcontainer.up"),
             )
@@ -1238,6 +1238,14 @@ class TemplateBase:
                 dockerfile += (
                     f"COPY {instruction['args'][0]} {instruction['args'][1]}\n"
                 )
+                continue
+
+            if instruction["type"] == InstructionType.ENV:
+                args = instruction["args"]
+                values = []
+                for i in range(0, len(args), 2):
+                    values.append(f"{args[i]}={args[i + 1]}")
+                dockerfile += f"ENV {' '.join(values)}\n"
                 continue
 
             dockerfile += (
