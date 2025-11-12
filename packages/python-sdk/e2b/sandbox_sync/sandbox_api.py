@@ -14,7 +14,8 @@ from e2b.api.client.api.sandboxes import (
     delete_sandboxes_sandbox_id,
     post_sandboxes,
     get_sandboxes_sandbox_id_metrics,
-    post_sandboxes_sandbox_id_pause, post_sandboxes_sandbox_id_resume,
+    post_sandboxes_sandbox_id_pause,
+    post_sandboxes_sandbox_id_resume,
 )
 from e2b.api.client.models import (
     NewSandbox,
@@ -133,7 +134,6 @@ class SandboxApi(SandboxBase):
             client=api_client,
             body=PostSandboxesSandboxIDTimeoutBody(timeout=timeout),
         )
-
 
         if res.status_code == 404:
             raise NotFoundException(f"Sandbox {sandbox_id} not found")

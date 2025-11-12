@@ -14,7 +14,8 @@ from e2b.api.client.models import (
     NewSandbox,
     PostSandboxesSandboxIDTimeoutBody,
     Error,
-    Sandbox, ConnectSandbox,
+    Sandbox,
+    ConnectSandbox,
 )
 from e2b.api.client.api.sandboxes import (
     get_sandboxes_sandbox_id,
