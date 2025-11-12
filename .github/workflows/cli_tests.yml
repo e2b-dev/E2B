@@ -17,6 +17,7 @@ jobs:
     defaults:
       run:
         working-directory: ./packages/cli
+        shell: bash
     name: CLI - Build (${{ matrix.os }})
     strategy:
       matrix:

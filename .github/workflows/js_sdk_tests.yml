@@ -17,6 +17,7 @@ jobs:
     defaults:
       run:
         working-directory: ./packages/js-sdk
+        shell: bash
     name: JS SDK - Build and test (${{ matrix.os }})
     strategy:
       matrix:
