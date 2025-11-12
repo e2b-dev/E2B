@@ -7,6 +7,7 @@ from typing_extensions import Unpack
 from e2b.api import SandboxCreateResponse, handle_api_exception
 from e2b.api.client.models import (
     Sandbox,
+    ConnectSandbox,
 )
 from e2b.api.client.api.sandboxes import (
     get_sandboxes_sandbox_id,
@@ -15,13 +16,12 @@ from e2b.api.client.api.sandboxes import (
     post_sandboxes,
     get_sandboxes_sandbox_id_metrics,
     post_sandboxes_sandbox_id_pause,
-    post_sandboxes_sandbox_id_resume,
+    post_sandboxes_sandbox_id_connect,
 )
 from e2b.api.client.models import (
     NewSandbox,
     PostSandboxesSandboxIDTimeoutBody,
     Error,
-    ResumedSandbox,
 )
 from e2b.api.client.types import UNSET
 from e2b.connection_config import ConnectionConfig, ApiParams
@@ -251,10 +251,10 @@ class SandboxApi(SandboxBase):
         config = ConnectionConfig(**opts)
 
         api_client = get_api_client(config)
-        res = post_sandboxes_sandbox_id_resume.sync_detailed(
+        res = post_sandboxes_sandbox_id_connect.sync_detailed(
             sandbox_id,
             client=api_client,
-            body=ResumedSandbox(timeout=timeout),
+            body=ConnectSandbox(timeout=timeout),
         )
 
         if res.status_code == 404:
@@ -262,6 +262,9 @@ class SandboxApi(SandboxBase):
 
         if res.status_code >= 300:
             raise handle_api_exception(res)
+
+        if isinstance(res.parsed, Error):
+            raise SandboxException(f"{res.parsed.message}: Request failed")
 
         return res.parsed
 
