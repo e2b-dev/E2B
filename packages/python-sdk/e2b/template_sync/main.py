@@ -2,9 +2,10 @@ import os
 from datetime import datetime
 from typing import Callable, Optional
 
-from e2b.api import ApiClient
 from e2b.api.client.client import AuthenticatedClient
 from e2b.connection_config import ConnectionConfig
+
+from e2b.sandbox_sync.utils import get_api_client
 from e2b.template.consts import RESOLVE_SYMLINKS
 from e2b.template.logger import LogEntry, LogEntryEnd, LogEntryStart
 from e2b.template.main import TemplateBase, TemplateClass
@@ -221,43 +222,41 @@ class Template(TemplateBase):
             config = ConnectionConfig(
                 domain=domain, api_key=api_key or os.environ.get("E2B_API_KEY")
             )
-            client = ApiClient(
+            api_client = get_api_client(
                 config,
                 require_api_key=True,
                 require_access_token=False,
-                limits=TemplateBase._limits,
             )
 
-            with client as api_client:
-                data = Template._build(
-                    template,
-                    api_client,
-                    alias,
-                    cpu_count,
-                    memory_mb,
-                    skip_cache,
-                    on_build_logs,
-                )
+            data = Template._build(
+                template,
+                api_client,
+                alias,
+                cpu_count,
+                memory_mb,
+                skip_cache,
+                on_build_logs,
+            )
 
-                if on_build_logs:
-                    on_build_logs(
-                        LogEntry(
-                            timestamp=datetime.now(),
-                            level="info",
-                            message="Waiting for logs...",
-                        )
+            if on_build_logs:
+                on_build_logs(
+                    LogEntry(
+                        timestamp=datetime.now(),
+                        level="info",
+                        message="Waiting for logs...",
                     )
-
-                wait_for_build_finish(
-                    api_client,
-                    data.template_id,
-                    data.build_id,
-                    on_build_logs,
-                    logs_refresh_frequency=TemplateBase._logs_refresh_frequency,
-                    stack_traces=template._template._stack_traces,
                 )
 
-                return data
+            wait_for_build_finish(
+                api_client,
+                data.template_id,
+                data.build_id,
+                on_build_logs,
+                logs_refresh_frequency=TemplateBase._logs_refresh_frequency,
+                stack_traces=template._template._stack_traces,
+            )
+
+            return data
         finally:
             if on_build_logs:
                 on_build_logs(
@@ -313,23 +312,21 @@ class Template(TemplateBase):
         config = ConnectionConfig(
             domain=domain, api_key=api_key or os.environ.get("E2B_API_KEY")
         )
-        client = ApiClient(
+        api_client = get_api_client(
             config,
             require_api_key=True,
             require_access_token=False,
-            limits=TemplateBase._limits,
         )
 
-        with client as api_client:
-            return Template._build(
-                template,
-                api_client,
-                alias,
-                cpu_count,
-                memory_mb,
-                skip_cache,
-                on_build_logs,
-            )
+        return Template._build(
+            template,
+            api_client,
+            alias,
+            cpu_count,
+            memory_mb,
+            skip_cache,
+            on_build_logs,
+        )
 
     @staticmethod
     def get_build_status(
@@ -359,17 +356,15 @@ class Template(TemplateBase):
         config = ConnectionConfig(
             domain=domain, api_key=api_key or os.environ.get("E2B_API_KEY")
         )
-        client = ApiClient(
+        api_client = get_api_client(
             config,
             require_api_key=True,
             require_access_token=False,
-            limits=TemplateBase._limits,
         )
 
-        with client as api_client:
-            return get_build_status(
-                api_client,
-                build_info.template_id,
-                build_info.build_id,
-                logs_offset,
-            )
+        return get_build_status(
+            api_client,
+            build_info.template_id,
+            build_info.build_id,
+            logs_offset,
+        )

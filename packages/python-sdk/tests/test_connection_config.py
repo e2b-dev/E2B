@@ -1,5 +1,3 @@
-from tkinter.dnd import Tester
-
 from e2b import ConnectionConfig
 
 

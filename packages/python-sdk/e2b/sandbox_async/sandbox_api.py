@@ -14,7 +14,7 @@ from e2b.api.client.models import (
     NewSandbox,
     PostSandboxesSandboxIDTimeoutBody,
     Error,
-    Sandbox, ResumedSandbox,
+    Sandbox, ConnectSandbox,
 )
 from e2b.api.client.api.sandboxes import (
     get_sandboxes_sandbox_id,
@@ -23,7 +23,7 @@ from e2b.api.client.api.sandboxes import (
     post_sandboxes,
     get_sandboxes_sandbox_id_metrics,
     post_sandboxes_sandbox_id_pause,
-    post_sandboxes_sandbox_id_resume,
+    post_sandboxes_sandbox_id_connect,
 )
 from e2b.connection_config import ConnectionConfig, ApiParams
 from e2b.api import handle_api_exception
@@ -291,10 +291,10 @@ class SandboxApi(SandboxBase):
         config = ConnectionConfig(**opts)
 
         api_client = get_api_client(config)
-        res = await post_sandboxes_sandbox_id_resume.asyncio_detailed(
+        res = await post_sandboxes_sandbox_id_connect.asyncio_detailed(
             sandbox_id,
             client=api_client,
-            body=ResumedSandbox(timeout=timeout),
+            body=ConnectSandbox(timeout=timeout),
         )
 
         if res.status_code == 404:
@@ -302,7 +302,6 @@ class SandboxApi(SandboxBase):
 
         if res.status_code >= 300:
             raise handle_api_exception(res)
-
 
         # Check if res.parse is Error
         if isinstance(res.parsed, Error):
