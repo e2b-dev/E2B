@@ -22,6 +22,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-22.04, windows-latest]
+      fail-fast: false
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout repository
