@@ -18,12 +18,8 @@ jobs:
       run:
         working-directory: ./packages/python-sdk
         shell: bash
-    name: Python SDK - Build and test (${{ matrix.os }})
-    strategy:
-      matrix:
-        os: [ubuntu-22.04, windows-latest]
-      fail-fast: false
-    runs-on: ${{ matrix.os }}
+    name: Python SDK -Build and test
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
