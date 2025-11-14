@@ -21,7 +21,7 @@ from e2b.sandbox_async.filesystem.filesystem import Filesystem
 from e2b.sandbox_async.commands.command import Commands
 from e2b.sandbox_async.commands.pty import Pty
 from e2b.sandbox_async.sandbox_api import SandboxApi, SandboxInfo
-from e2b.sandbox_async.utils import get_transport
+from e2b.api.client_async import get_transport
 
 logger = logging.getLogger(__name__)
 

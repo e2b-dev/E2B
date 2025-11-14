@@ -17,7 +17,7 @@ from .build_api import (
     upload_file,
     wait_for_build_finish,
 )
-from ..sandbox_async.utils import get_api_client
+from e2b.api.client_async import get_api_client
 
 
 class AsyncTemplate(TemplateBase):

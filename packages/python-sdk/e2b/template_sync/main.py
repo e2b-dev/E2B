@@ -5,7 +5,7 @@ from typing import Callable, Optional
 from e2b.api.client.client import AuthenticatedClient
 from e2b.connection_config import ConnectionConfig
 
-from e2b.sandbox_sync.utils import get_api_client
+from e2b.api.client_sync import get_api_client
 from e2b.template.consts import RESOLVE_SYMLINKS
 from e2b.template.logger import LogEntry, LogEntryEnd, LogEntryStart
 from e2b.template.main import TemplateBase, TemplateClass

@@ -78,7 +78,7 @@ async def get_file_upload_link(
 
 
 async def upload_file(
-    api_client: AsyncApiClient,
+    api_client: AuthenticatedClient,
     file_name: str,
     context_path: str,
     url: str,

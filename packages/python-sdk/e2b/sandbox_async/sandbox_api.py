@@ -29,7 +29,7 @@ from e2b.api.client.api.sandboxes import (
 from e2b.connection_config import ConnectionConfig, ApiParams
 from e2b.api import handle_api_exception
 from e2b.sandbox_async.paginator import AsyncSandboxPaginator
-from e2b.sandbox_async.utils import get_api_client
+from e2b.api.client_async import get_api_client
 
 
 class SandboxApi(SandboxBase):

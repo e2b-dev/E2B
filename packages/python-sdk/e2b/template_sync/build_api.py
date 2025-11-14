@@ -4,7 +4,6 @@ from typing import Callable, Literal, Optional, List, Union
 
 import httpx
 
-from e2b import ApiClient
 from e2b.api import handle_api_exception
 from e2b.api.client.api.templates import (
     post_v3_templates,
@@ -79,7 +78,7 @@ def get_file_upload_link(
 
 
 def upload_file(
-    api_client: ApiClient,
+    api_client: AuthenticatedClient,
     file_name: str,
     context_path: str,
     url: str,

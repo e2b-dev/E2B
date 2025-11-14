@@ -7,7 +7,7 @@ from e2b.exceptions import SandboxException
 from e2b.sandbox.sandbox_api import SandboxPaginatorBase, SandboxInfo
 from e2b.api import handle_api_exception
 from e2b.api.client.models.error import Error
-from e2b.sandbox_async.utils import get_api_client
+from e2b.api.client_async import get_api_client
 
 
 class AsyncSandboxPaginator(SandboxPaginatorBase):
