@@ -115,9 +115,9 @@ class ApiClient(AuthenticatedClient):
         }
 
         # Prevent passing these parameters twice
-        more_headers = kwargs.pop("headers", None)
+        more_headers: Optional[dict] = kwargs.pop("headers", None)
         if more_headers:
-            headers += more_headers
+            headers.update(more_headers)
         kwargs.pop("token", None)
         kwargs.pop("auth_header_name", None)
         kwargs.pop("prefix", None)
