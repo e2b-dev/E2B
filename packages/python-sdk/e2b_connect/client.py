@@ -1,4 +1,5 @@
 import gzip
+import inspect
 import json
 import struct
 import typing
@@ -106,17 +107,38 @@ def make_error(error):
     return ConnectException(status, error.get("message", ""))
 
 
+def _sync_retry(func, exc, retries):
+    def retry(*args, **kwargs):
+        for _ in range(retries):
+            try:
+                return func(*args, **kwargs)
+            except exc:
+                continue
+
+        return func(*args, **kwargs)
+
+    return retry
+
+
+def _async_retry(func, exc, retries):
+    async def retry(*args, **kwargs):
+        for _ in range(retries):
+            try:
+                return await func(*args, **kwargs)
+            except exc:
+                continue
+
+        return await func(*args, **kwargs)
+
+    return retry
+
+
 def _retry(exc: typing.Type[Exception], retries: int):
     def decorator(func):
-        def wrapper(*args, **kwargs):
-            for _ in range(retries):
-                try:
-                    return func(*args, **kwargs)
-                except exc:
-                    continue
-            return func(*args, **kwargs)
+        if inspect.iscoroutinefunction(func):
+            return _async_retry(func, exc, retries)
 
-        return wrapper
+        return _sync_retry(func, exc, retries)
 
     return decorator
 
