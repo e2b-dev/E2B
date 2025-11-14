@@ -4,7 +4,7 @@ from typing import Callable, Literal, Optional, List, Union
 
 import httpx
 
-from e2b.api import handle_api_exception, AsyncApiClient
+from e2b.api import handle_api_exception
 from e2b.api.client.api.templates import (
     post_v3_templates,
     get_templates_template_id_files_hash,
