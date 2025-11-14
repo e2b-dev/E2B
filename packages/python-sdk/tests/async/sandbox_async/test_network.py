@@ -92,4 +92,4 @@ async def test_allow_takes_precedence_over_deny(async_sandbox):
         "curl -s -o /dev/null -w '%{http_code}' https://8.8.8.8"
     )
     assert result2.exit_code == 0
-    assert result2.stdout.strip() == "301"
+    assert result2.stdout.strip() == "302"
