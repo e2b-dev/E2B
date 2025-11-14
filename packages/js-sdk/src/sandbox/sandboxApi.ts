@@ -115,6 +115,11 @@ export interface SandboxOpts extends ConnectionOpts {
    * Sandbox network configuration
    */
   network?: SandboxNetworkOpts
+
+  /**
+   * Sandbox URL. Used for local development
+   */
+  sandboxUrl?: string
 }
 
 export type SandboxBetaCreateOpts = SandboxOpts & {

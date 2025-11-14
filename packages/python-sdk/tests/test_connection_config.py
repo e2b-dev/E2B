@@ -1,7 +1,9 @@
 from e2b import ConnectionConfig
 
 
-def test_api_url_defaults_correctly():
+def test_api_url_defaults_correctly(monkeypatch):
+    monkeypatch.setenv("E2B_DOMAIN", "")
+
     config = ConnectionConfig()
     assert config.api_url == "https://api.e2b.app"
 

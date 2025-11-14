@@ -318,6 +318,10 @@ class SandboxApi(SandboxBase):
         async with AsyncApiClient(
             config,
             limits=SandboxBase._limits,
+            headers={
+                "E2b-Sandbox-Id": sandbox_id,
+                "E2b-Sandbox-Port": config.envd_port,
+            },
         ) as api_client:
             res = await post_sandboxes_sandbox_id_connect.asyncio_detailed(
                 sandbox_id,
