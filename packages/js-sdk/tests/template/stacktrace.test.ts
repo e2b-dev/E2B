@@ -37,7 +37,13 @@ function getStackTraceCallerMethod(
   }
 
   // Extract the method name from the line
-  return parsedLine.slice(columnNumber - 1)
+  const methodNameMatch = parsedLine
+    .slice(columnNumber - 1)
+    .match(/^(\w+)\s*\(/)
+  if (methodNameMatch) {
+    return methodNameMatch[1]
+  }
+  return null
 }
 
 async function expectToThrowAndCheckTrace(
