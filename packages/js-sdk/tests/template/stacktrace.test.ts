@@ -31,7 +31,7 @@ function getStackTraceCallerMethod(
   const columnNumber = parseInt(lineColumnMatch[2])
 
   const lines = fileContent.split('\n')
-  const parsedLine = lines[lineNumber - 1].slice(columnNumber - 1)
+  const parsedLine = lines[lineNumber - 1]
   if (!parsedLine) {
     return null
   }
