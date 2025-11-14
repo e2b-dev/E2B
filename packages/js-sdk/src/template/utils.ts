@@ -63,14 +63,11 @@ export async function getAllFilesInPath(
       if (includeDirectories) {
         files.set(file.fullpath(), file)
       }
-      const dirFiles = await glob(
-        normalizePath(path.relative(contextPath, file.fullpath())) + '/**/*',
-        {
-          ignore: ignorePatterns,
-          withFileTypes: true,
-          cwd: contextPath,
-        }
-      )
+      const dirFiles = await glob(normalizePath(file.relative()) + '/**/*', {
+        ignore: ignorePatterns,
+        withFileTypes: true,
+        cwd: contextPath,
+      })
       dirFiles.forEach((f) => files.set(f.fullpath(), f))
     } else {
       // For files, just add the file
@@ -129,7 +126,7 @@ export async function calculateFilesHash(
   // Process files recursively
   for (const file of files) {
     // Add a relative path to hash calculation
-    const relativePath = path.relative(contextPath, file.fullpath())
+    const relativePath = file.relative()
     hash.update(relativePath)
 
     // Add stat information to hash calculation
@@ -264,9 +261,7 @@ export async function tarFileStream(
     true
   )
 
-  const filePaths = allFiles.map((file) =>
-    path.relative(fileContextPath, file.fullpath())
-  )
+  const filePaths = allFiles.map((file) => file.relative())
 
   return create(
     {
