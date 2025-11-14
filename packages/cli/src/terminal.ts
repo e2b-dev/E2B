@@ -14,7 +14,8 @@ function isRetryableError(err: unknown): boolean {
   if (err instanceof (e2b as any).TimeoutError) return true
 
   // Some environments throw AbortError for aborted/timeout fetches
-  if (err && typeof err === 'object' && (err as any).name === 'AbortError') return true
+  if (err && typeof err === 'object' && (err as any).name === 'AbortError')
+    return true
 
   // Network/system-level transient errors commonly exposed via code property
   const code = (err as any)?.code ?? (err as any)?.cause?.code
@@ -34,7 +35,8 @@ function isRetryableError(err: unknown): boolean {
   // Undici/Fetch may surface as TypeError: fetch failed with nested cause
   if ((err as any) instanceof TypeError) {
     const msg = String((err as any).message || '').toLowerCase()
-    if (msg.includes('fetch failed') || msg.includes('network error')) return true
+    if (msg.includes('fetch failed') || msg.includes('network error'))
+      return true
   }
 
   return false
@@ -75,7 +77,7 @@ export async function spawnConnectedTerminal(sandbox: e2b.Sandbox) {
   }, FLUSH_INPUT_INTERVAL_MS)
 
   const resizeListener = process.stdout.on('resize', () =>
-    sandbox.pty.resize(terminalSession.pid, getStdoutSize()),
+    sandbox.pty.resize(terminalSession.pid, getStdoutSize())
   )
   const stdinListener = process.stdin.on('data', (data) => {
     inputQueue.push(data)
@@ -114,9 +116,8 @@ class BatchedQueue<T> {
 
   constructor(
     private flushHandler: (batch: T[]) => Promise<void>,
-    private flushIntervalMs: number,
-  ) {
-  }
+    private flushIntervalMs: number
+  ) {}
 
   push(item: T) {
     this.queue.push(item)
