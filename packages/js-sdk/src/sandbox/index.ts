@@ -123,9 +123,15 @@ export class Sandbox extends SandboxApi {
     this.sandboxDomain = opts.sandboxDomain ?? this.connectionConfig.domain
 
     this.envdAccessToken = opts.envdAccessToken
-    this.envdApiUrl = `${
-      this.connectionConfig.debug ? 'http' : 'https'
-    }://${this.getHost(this.envdPort)}`
+    this.envdApiUrl = this.connectionConfig.getSandboxUrl(this.sandboxId, {
+      sandboxDomain: this.sandboxDomain,
+      envdPort: this.envdPort,
+    })
+
+    const sandboxHeaders = {
+      'E2b-Sandbox-Id': this.sandboxId,
+      'E2b-Sandbox-Port': this.envdPort.toString(),
+    }
 
     const rpcTransport = createConnectTransport({
       baseUrl: this.envdApiUrl,
@@ -139,6 +145,9 @@ export class Sandbox extends SandboxApi {
 
         const headers = new Headers(this.connectionConfig.headers)
         new Headers(options?.headers).forEach((value, key) =>
+          headers.append(key, value)
+        )
+        new Headers(sandboxHeaders).forEach((value, key) =>
           headers.append(key, value)
         )
 
@@ -459,11 +468,11 @@ export class Sandbox extends SandboxApi {
    * ```
    */
   getHost(port: number) {
-    if (this.connectionConfig.debug) {
-      return `localhost:${port}`
-    }
-
-    return `${port}-${this.sandboxId}.${this.sandboxDomain}`
+    return this.connectionConfig.getHost(
+      this.sandboxId,
+      port,
+      this.sandboxDomain
+    )
   }
 
   /**

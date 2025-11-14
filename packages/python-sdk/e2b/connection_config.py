@@ -41,11 +41,16 @@ class ApiParams(TypedDict, total=False):
     proxy: Optional[ProxyTypes]
     """Proxy to use for the request. In case of a sandbox it applies to all **requests made to the returned sandbox**."""
 
+    sandbox_url: Optional[str]
+    """URL to connect to sandbox, defaults to `E2B_SANDBOX_URL` environment variable."""
+
 
 class ConnectionConfig:
     """
     Configuration for the connection to the API.
     """
+
+    envd_port = 49983
 
     @staticmethod
     def _domain():
@@ -64,6 +69,10 @@ class ConnectionConfig:
         return os.getenv("E2B_API_URL")
 
     @staticmethod
+    def _sandbox_url():
+        return os.getenv("E2B_SANDBOX_URL")
+
+    @staticmethod
     def _access_token():
         return os.getenv("E2B_ACCESS_TOKEN")
 
@@ -73,6 +82,7 @@ class ConnectionConfig:
         debug: Optional[bool] = None,
         api_key: Optional[str] = None,
         api_url: Optional[str] = None,
+        sandbox_url: Optional[str] = None,
         access_token: Optional[str] = None,
         request_timeout: Optional[float] = None,
         headers: Optional[Dict[str, str]] = None,
@@ -107,6 +117,8 @@ class ConnectionConfig:
             or ("http://localhost:3000" if self.debug else f"https://api.{self.domain}")
         )
 
+        self._sandbox_url = sandbox_url or ConnectionConfig._sandbox_url()
+
     @staticmethod
     def _get_request_timeout(
         default_timeout: Optional[float],
@@ -121,6 +133,28 @@ class ConnectionConfig:
 
     def get_request_timeout(self, request_timeout: Optional[float] = None):
         return self._get_request_timeout(self.request_timeout, request_timeout)
+
+    def get_sandbox_url(self, sandbox_id: str, sandbox_domain: str) -> str:
+        if self._sandbox_url:
+            return self._sandbox_url
+
+        return f"{'http' if self.debug else 'https'}://{self.get_host(sandbox_id, sandbox_domain, self.envd_port)}"
+
+    def get_host(self, sandbox_id: str, sandbox_domain: str, port: int) -> str:
+        """
+        Get the host address to connect to the sandbox.
+        You can then use this address to connect to the sandbox port from outside the sandbox via HTTP or WebSocket.
+
+        :param port: Port to connect to
+        :param sandbox_domain: Domain to connect to
+        :param sandbox_id: Sandbox to connect to
+
+        :return: Host address to connect to
+        """
+        if self.debug:
+            return f"localhost:{port}"
+
+        return f"{port}-{sandbox_id}.{sandbox_domain}"
 
     def get_api_params(
         self,

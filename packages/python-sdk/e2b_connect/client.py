@@ -296,9 +296,9 @@ class Client:
         headers: Optional[dict] = None,
         **opts,
     ) -> dict:
+        headers = headers or {}
         data = self._codec.encode(req)
         flags = EnvelopeFlags(0)
-        headers = headers or {}
 
         extensions = (
             None

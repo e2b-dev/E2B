@@ -14,11 +14,11 @@ class SandboxOpts(TypedDict):
     sandbox_domain: Optional[str]
     envd_version: Version
     envd_access_token: Optional[str]
+    sandbox_url: Optional[str]
     connection_config: ConnectionConfig
 
 
 class SandboxBase:
-    envd_port = 49983
     mcp_port = 50005
 
     default_sandbox_timeout = 300
@@ -39,7 +39,9 @@ class SandboxBase:
         self.__sandbox_domain = sandbox_domain or self.connection_config.domain
         self.__envd_version = envd_version
         self.__envd_access_token = envd_access_token
-        self.__envd_api_url = f"{'http' if self.connection_config.debug else 'https'}://{self.get_host(self.envd_port)}"
+        self.__envd_api_url = self.connection_config.get_sandbox_url(
+            self.sandbox_id, self.sandbox_domain
+        )
         self.__mcp_token: Optional[str] = None
 
     @property
@@ -188,10 +190,9 @@ class SandboxBase:
 
         :return: Host address to connect to
         """
-        if self.connection_config.debug:
-            return f"localhost:{port}"
-
-        return f"{port}-{self.sandbox_id}.{self.sandbox_domain}"
+        return self.connection_config.get_host(
+            self.sandbox_id, self.sandbox_domain, port
+        )
 
     def get_mcp_url(self) -> str:
         """
