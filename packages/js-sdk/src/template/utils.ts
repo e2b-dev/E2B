@@ -126,7 +126,7 @@ export async function calculateFilesHash(
   // Process files recursively
   for (const file of files) {
     // Add a relative path to hash calculation
-    const relativePath = file.relative()
+    const relativePath = file.relativePosix()
     hash.update(relativePath)
 
     // Add stat information to hash calculation
@@ -261,7 +261,7 @@ export async function tarFileStream(
     true
   )
 
-  const filePaths = allFiles.map((file) => file.relative())
+  const filePaths = allFiles.map((file) => file.relativePosix())
 
   return create(
     {
