@@ -60,6 +60,21 @@ class SandboxNetworkOpts(TypedDict):
     - To deny traffic to specific addresses: `["1.1.1.1", "8.8.8.0/24"]`
     """
 
+    allow_public_traffic: NotRequired[bool]
+    """
+    Controls whether sandbox URLs should be publicly accessible or require authentication.
+    Defaults to True.
+    """
+
+    mask_request_host: NotRequired[str]
+    """
+    Allows specifying a custom host mask for all sandbox requests.
+    Supports ${PORT} variable. Defaults to "${PORT}-sandboxid.e2b.app".
+
+    Examples:
+    - Custom subdomain: `"${PORT}-myapp.example.com"`
+    """
+
 
 @dataclass
 class SandboxInfo:

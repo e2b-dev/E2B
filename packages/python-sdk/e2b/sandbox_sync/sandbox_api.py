@@ -199,6 +199,7 @@ class SandboxApi(SandboxBase):
             sandbox_domain=res.parsed.domain,
             envd_version=res.parsed.envd_version,
             envd_access_token=res.parsed.envd_access_token,
+            traffic_access_token=res.parsed.traffic_access_token,
         )
 
     @classmethod

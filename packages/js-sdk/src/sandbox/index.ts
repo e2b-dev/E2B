@@ -90,6 +90,11 @@ export class Sandbox extends SandboxApi {
    */
   readonly sandboxDomain: string
 
+  /**
+   * Traffic access token for accessing sandbox services with restricted public traffic.
+   */
+  readonly trafficAccessToken?: string
+
   protected readonly envdPort = 49983
   protected readonly mcpPort = 50005
 
@@ -113,6 +118,7 @@ export class Sandbox extends SandboxApi {
       sandboxDomain?: string
       envdVersion: string
       envdAccessToken?: string
+      trafficAccessToken?: string
     }
   ) {
     super()
@@ -123,6 +129,7 @@ export class Sandbox extends SandboxApi {
     this.sandboxDomain = opts.sandboxDomain ?? this.connectionConfig.domain
 
     this.envdAccessToken = opts.envdAccessToken
+    this.trafficAccessToken = opts.trafficAccessToken
     this.envdApiUrl = this.connectionConfig.getSandboxUrl(this.sandboxId, {
       sandboxDomain: this.sandboxDomain,
       envdPort: this.envdPort,
@@ -420,6 +427,7 @@ export class Sandbox extends SandboxApi {
       sandboxId,
       sandboxDomain: sandbox.sandboxDomain,
       envdAccessToken: sandbox.envdAccessToken,
+      trafficAccessToken: sandbox.trafficAccessToken,
       envdVersion: sandbox.envdVersion,
       ...config,
     }) as InstanceType<S>

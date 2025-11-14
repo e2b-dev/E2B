@@ -657,6 +657,7 @@ class Sandbox(SandboxApi):
             connection_config=connection_config,
             envd_version=Version(sandbox.envd_version),
             envd_access_token=envd_access_token,
+            traffic_access_token=sandbox.traffic_access_token,
         )
 
     @classmethod
@@ -681,6 +682,7 @@ class Sandbox(SandboxApi):
             sandbox_domain = None
             envd_version = ENVD_DEBUG_FALLBACK
             envd_access_token = None
+            traffic_access_token = None
         else:
             response = SandboxApi._create_sandbox(
                 template=template or cls.default_template,
@@ -699,6 +701,7 @@ class Sandbox(SandboxApi):
             sandbox_domain = response.sandbox_domain
             envd_version = Version(response.envd_version)
             envd_access_token = response.envd_access_token
+            traffic_access_token = response.traffic_access_token
 
             if envd_access_token is not None and not isinstance(
                 envd_access_token, Unset
@@ -718,5 +721,6 @@ class Sandbox(SandboxApi):
             sandbox_domain=sandbox_domain,
             envd_version=envd_version,
             envd_access_token=envd_access_token,
+            traffic_access_token=traffic_access_token,
             connection_config=connection_config,
         )

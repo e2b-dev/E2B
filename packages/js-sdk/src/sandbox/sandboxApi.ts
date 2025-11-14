@@ -49,6 +49,19 @@ export type SandboxNetworkOpts = {
    * - To deny traffic to a specific addresses: `["1.1.1.1", "8.8.8.0/24"]`
    */
   denyOut?: string[]
+
+  /**
+   * Specify if the sandbox URLs should be accessible only with authentication.
+   * @default true
+   */
+  allowPublicTraffic?: boolean
+
+  /** Specify host mask which will be used for all sandbox requests in the header.
+   * You can use the ${PORT} variable that will be replaced with the actual port number of the service.
+   *
+   * @default ${PORT}-sandboxid.e2b.app
+   */
+  maskRequestHost?: string
 }
 
 /**
@@ -552,6 +565,7 @@ export class SandboxApi {
       sandboxDomain: res.data!.domain || undefined,
       envdVersion: res.data!.envdVersion,
       envdAccessToken: res.data!.envdAccessToken,
+      trafficAccessToken: res.data!.trafficAccessToken || undefined,
     }
   }
 
@@ -590,6 +604,7 @@ export class SandboxApi {
       sandboxDomain: res.data!.domain || undefined,
       envdVersion: res.data!.envdVersion,
       envdAccessToken: res.data!.envdAccessToken,
+      trafficAccessToken: res.data!.trafficAccessToken || undefined,
     }
   }
 }
