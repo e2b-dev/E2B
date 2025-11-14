@@ -17,7 +17,6 @@ jobs:
     defaults:
       run:
         working-directory: ./packages/python-sdk
-        shell: bash
     name: Python SDK -Build and test
     runs-on: ubuntu-22.04
     steps:
@@ -51,6 +50,6 @@ jobs:
         run: poetry build
 
       - name: Run tests
-        run: poetry run pytest --verbose --numprocesses=4
+        run: make test
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
