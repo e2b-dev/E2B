@@ -220,6 +220,10 @@ components:
     SandboxNetworkConfig:
       type: object
       properties:
+        allowPublicTraffic:
+          type: boolean
+          default: true
+          description: Specify if the sandbox URLs should be accessible only with authentication.
         allowOut:
           type: array
           description: List of allowed CIDR blocks or IP addresses for egress traffic. Allowed addresses always take precedence over blocked addresses.
@@ -230,6 +234,9 @@ components:
           description: List of denied CIDR blocks or IP addresses for egress traffic
           items:
             type: string
+        maskRequestHost:
+          type: string
+          description: Specify host mask which will be used for all sandbox requests
 
     SandboxLog:
       description: Log entry with timestamp and line
@@ -353,6 +360,10 @@ components:
         envdAccessToken:
           type: string
           description: Access token used for envd communication
+        trafficAccessToken:
+          type: string
+          nullable: true
+          description: Token required for accessing sandbox via proxy.
         domain:
           type: string
           nullable: true

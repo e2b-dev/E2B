@@ -1,6 +1,4 @@
 /**
- * Returns the CIDR range that represents all traffic.
+ * CIDR range that represents all traffic.
  */
-export function allTraffic() {
-  return '0.0.0.0/0'
-}
+export const ALL_TRAFFIC = '0.0.0.0/0'

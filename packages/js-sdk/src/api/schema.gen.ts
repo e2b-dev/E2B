@@ -1181,7 +1181,7 @@ export interface components {
              * @description Log entries related to the status reason
              * @default []
              */
-            logEntries: components["schemas"]["BuildLogEntry"][];
+            logEntries?: components["schemas"]["BuildLogEntry"][];
             /** @description Message with the status reason, currently reporting only for error status */
             message: string;
             /** @description Step that failed */
@@ -1377,7 +1377,7 @@ export interface components {
              * @description Automatically pauses the sandbox after the timeout
              * @default false
              */
-            autoPause: boolean;
+            autoPause?: boolean;
             envVars?: components["schemas"]["EnvVars"];
             mcp?: components["schemas"]["Mcp"];
             metadata?: components["schemas"]["SandboxMetadata"];
@@ -1391,7 +1391,7 @@ export interface components {
              * @description Time to live for the sandbox in seconds.
              * @default 15
              */
-            timeout: number;
+            timeout?: number;
         };
         NewTeamAPIKey: {
             /** @description Name of the API key */
@@ -1528,7 +1528,7 @@ export interface components {
              * @description Time to live for the sandbox in seconds.
              * @default 15
              */
-            timeout: number;
+            timeout?: number;
         };
         Sandbox: {
             /** @description Alias of the template */
@@ -1547,6 +1547,8 @@ export interface components {
             sandboxID: string;
             /** @description Identifier of the template from which is the sandbox created */
             templateID: string;
+            /** @description Token required for accessing sandbox via proxy. */
+            trafficAccessToken?: string | null;
         };
         SandboxDetail: {
             /** @description Alias of the template */
@@ -1665,8 +1667,15 @@ export interface components {
         SandboxNetworkConfig: {
             /** @description List of allowed CIDR blocks or IP addresses for egress traffic. Allowed addresses always take precedence over blocked addresses. */
             allowOut?: string[];
+            /**
+             * @description Specify if the sandbox URLs should be accessible only with authentication.
+             * @default true
+             */
+            allowPublicTraffic?: boolean;
             /** @description List of denied CIDR blocks or IP addresses for egress traffic */
             denyOut?: string[];
+            /** @description Specify host mask which will be used for all sandbox requests */
+            maskRequestHost?: string;
         };
         /**
          * @description State of the sandbox
@@ -1864,7 +1873,7 @@ export interface components {
              * @description Whether the whole build should be forced to run regardless of the cache
              * @default false
              */
-            force: boolean;
+            force?: boolean;
             /** @description Image to use as a base for the template build */
             fromImage?: string;
             fromImageRegistry?: components["schemas"]["FromImageRegistry"];
@@ -1878,7 +1887,7 @@ export interface components {
              * @description List of steps to execute in the template build
              * @default []
              */
-            steps: components["schemas"]["TemplateStep"][];
+            steps?: components["schemas"]["TemplateStep"][];
         };
         /**
          * @description Status of the template build
@@ -1941,14 +1950,14 @@ export interface components {
              * @description Arguments for the step
              * @default []
              */
-            args: string[];
+            args?: string[];
             /** @description Hash of the files used in the step */
             filesHash?: string;
             /**
              * @description Whether the step should be forced to run regardless of the cache
              * @default false
              */
-            force: boolean;
+            force?: boolean;
             /** @description Type of the step */
             type: string;
         };

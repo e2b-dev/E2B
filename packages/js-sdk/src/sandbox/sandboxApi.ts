@@ -99,7 +99,7 @@ export interface SandboxOpts extends ConnectionOpts {
   secure?: boolean
 
   /**
-   * Allow sandbox to access the internet
+   * Allow sandbox to access the internet. If set to `False`, it works the same as setting network `denyOut` to `[0.0.0.0/0]`.
    *
    * @default true
    */

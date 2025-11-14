@@ -58,7 +58,7 @@ from .sandbox.filesystem.watch_handle import (
     FilesystemEvent,
     FilesystemEventType,
 )
-from .sandbox.network import all_traffic
+from .sandbox.network import ALL_TRAFFIC
 from .sandbox.sandbox_api import (
     GitHubMcpServer,
     GitHubMcpServerConfig,
@@ -137,7 +137,7 @@ __all__ = [
     "FileType",
     # Network
     "SandboxNetworkOpts",
-    "all_traffic",
+    "ALL_TRAFFIC",
     # Sync sandbox
     "Sandbox",
     "SandboxPaginator",

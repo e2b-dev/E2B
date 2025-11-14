@@ -51,7 +51,7 @@ export type {
 
 export type { McpServer } from './sandbox/mcp'
 
-export { allTraffic } from './sandbox/network'
+export { ALL_TRAFFIC } from './sandbox/network'
 
 export type {
   ProcessInfo,

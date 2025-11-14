@@ -10,6 +10,7 @@ from e2b.template.logger import LogEntry, LogEntryEnd, LogEntryStart
 from e2b.template.main import TemplateBase, TemplateClass
 from e2b.template.types import BuildInfo, InstructionType
 from e2b.template.utils import read_dockerignore
+
 from .build_api import (
     get_build_status,
     get_file_upload_link,

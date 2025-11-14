@@ -1,13 +1,13 @@
-import { assert } from 'vitest'
+import { assert, expect } from 'vitest'
 
-import { CommandExitError, allTraffic } from '../../src'
+import { CommandExitError, ALL_TRAFFIC } from '../../src'
 import { sandboxTest, isDebug } from '../setup.js'
 
 sandboxTest
   .extend({
     sandboxOpts: {
       network: {
-        denyOut: [allTraffic()],
+        denyOut: [ALL_TRAFFIC],
         allowOut: ['1.1.1.1'],
       },
     },
@@ -23,15 +23,11 @@ sandboxTest
     assert.equal(result.stdout.trim(), '301')
 
     // Test that other IPs are denied
-    try {
-      await sandbox.commands.run(
+    await expect(
+      sandbox.commands.run(
         'curl --connect-timeout 3 --max-time 5 -Is https://8.8.8.8'
       )
-      assert.fail('Expected command to fail for non-allowed IP')
-    } catch (error) {
-      assert.isTrue(error instanceof CommandExitError)
-      assert.notEqual(error.exitCode, 0)
-    }
+    ).rejects.toBeInstanceOf(CommandExitError)
   }
 )
 
@@ -45,15 +41,11 @@ sandboxTest
   })
   .skipIf(isDebug)('deny specific IP address', async ({ sandbox }) => {
   // Test that denied IP fails
-  try {
+  await expect(
     await sandbox.commands.run(
       'curl --connect-timeout 3 --max-time 5 -Is https://8.8.8.8'
     )
-    assert.fail('Expected command to fail for denied IP')
-  } catch (error) {
-    assert.isTrue(error instanceof CommandExitError)
-    assert.notEqual(error.exitCode, 0)
-  }
+  ).rejects.toBeInstanceOf(CommandExitError)
 
   // Test that other IPs work
   const result = await sandbox.commands.run(
@@ -67,7 +59,7 @@ sandboxTest
   .extend({
     sandboxOpts: {
       network: {
-        denyOut: [allTraffic()],
+        denyOut: [ALL_TRAFFIC],
       },
     },
   })
@@ -75,25 +67,17 @@ sandboxTest
   'deny all traffic using allTraffic helper',
   async ({ sandbox }) => {
     // Test that all traffic is denied
-    try {
+    await expect(
       await sandbox.commands.run(
         'curl --connect-timeout 3 --max-time 5 -Is https://1.1.1.1'
       )
-      assert.fail('Expected command to fail when all traffic is denied')
-    } catch (error) {
-      assert.isTrue(error instanceof CommandExitError)
-      assert.notEqual(error.exitCode, 0)
-    }
+    ).rejects.toBeInstanceOf(CommandExitError)
 
-    try {
+    await expect(
       await sandbox.commands.run(
         'curl --connect-timeout 3 --max-time 5 -Is https://8.8.8.8'
       )
-      assert.fail('Expected command to fail when all traffic is denied')
-    } catch (error) {
-      assert.isTrue(error instanceof CommandExitError)
-      assert.notEqual(error.exitCode, 0)
-    }
+    ).rejects.toBeInstanceOf(CommandExitError)
   }
 )
 
@@ -101,7 +85,7 @@ sandboxTest
   .extend({
     sandboxOpts: {
       network: {
-        denyOut: [allTraffic()],
+        denyOut: [ALL_TRAFFIC],
         allowOut: ['1.1.1.1', '8.8.8.8'],
       },
     },

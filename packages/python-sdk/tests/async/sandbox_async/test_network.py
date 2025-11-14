@@ -1,13 +1,13 @@
 import pytest
 
-from e2b import all_traffic
+from e2b import ALL_TRAFFIC
 from e2b.sandbox.commands.command_handle import CommandExitException
 
 
 @pytest.mark.skip_debug()
 @pytest.mark.parametrize(
     "sandbox_opts",
-    [{"network": {"deny_out": [all_traffic()], "allow_out": ["1.1.1.1"]}}],
+    [{"network": {"deny_out": [ALL_TRAFFIC], "allow_out": ["1.1.1.1"]}}],
     indirect=True,
 )
 async def test_allow_specific_ip_with_deny_all(async_sandbox):
@@ -53,7 +53,7 @@ async def test_deny_specific_ip(async_sandbox):
 @pytest.mark.skip_debug()
 @pytest.mark.parametrize(
     "sandbox_opts",
-    [{"network": {"deny_out": [all_traffic()]}}],
+    [{"network": {"deny_out": [ALL_TRAFFIC]}}],
     indirect=True,
 )
 async def test_deny_all_traffic(async_sandbox):
@@ -75,7 +75,7 @@ async def test_deny_all_traffic(async_sandbox):
 @pytest.mark.skip_debug()
 @pytest.mark.parametrize(
     "sandbox_opts",
-    [{"network": {"deny_out": [all_traffic()], "allow_out": ["1.1.1.1", "8.8.8.8"]}}],
+    [{"network": {"deny_out": [ALL_TRAFFIC], "allow_out": ["1.1.1.1", "8.8.8.8"]}}],
     indirect=True,
 )
 async def test_allow_takes_precedence_over_deny(async_sandbox):

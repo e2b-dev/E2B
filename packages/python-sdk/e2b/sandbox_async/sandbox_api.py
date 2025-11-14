@@ -171,14 +171,6 @@ class SandboxApi(SandboxBase):
     ) -> SandboxCreateResponse:
         config = ConnectionConfig(**opts)
 
-        # Convert SandboxNetworkOpts to SandboxNetworkConfig
-        network_config = UNSET
-        if network:
-            network_config = SandboxNetworkConfig(
-                allow_out=network.get("allow_out", UNSET),
-                deny_out=network.get("deny_out", UNSET),
-            )
-
         async with AsyncApiClient(
             config,
             limits=SandboxBase._limits,
@@ -193,7 +185,7 @@ class SandboxApi(SandboxBase):
                     mcp=mcp or UNSET,
                     secure=secure,
                     allow_internet_access=allow_internet_access,
-                    network=network_config,
+                    network=SandboxNetworkConfig(**network) if network else UNSET,
                 ),
                 client=api_client,
             )

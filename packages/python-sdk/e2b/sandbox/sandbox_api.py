@@ -38,12 +38,12 @@ GitHubMcpServer = Dict[str, Union[GitHubMcpServerConfig, Any]]
 McpServer = Union[BaseMcpServer, GitHubMcpServer]
 
 
-class SandboxNetworkOpts(TypedDict, total=False):
+class SandboxNetworkOpts(TypedDict):
     """
     Sandbox network configuration options.
     """
 
-    allow_out: List[str]
+    allow_out: NotRequired[List[str]]
     """
     Allow outbound traffic from the sandbox to the specified addresses.
     If `allow_out` is not specified, all outbound traffic is allowed.
@@ -52,7 +52,7 @@ class SandboxNetworkOpts(TypedDict, total=False):
     - To allow traffic to specific addresses: `["1.1.1.1", "8.8.8.0/24"]`
     """
 
-    deny_out: List[str]
+    deny_out: NotRequired[List[str]]
     """
     Deny outbound traffic from the sandbox to the specified addresses.
 

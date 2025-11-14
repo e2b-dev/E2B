@@ -179,7 +179,7 @@ class Sandbox(SandboxApi):
         :param metadata: Custom metadata for the sandbox
         :param envs: Custom environment variables for the sandbox
         :param secure: Envd is secured with access token and cannot be used without it, defaults to `True`.
-        :param allow_internet_access: Allow sandbox to access the internet, defaults to `True`.
+        :param allow_internet_access: Allow sandbox to access the internet, defaults to `True`. If set to `False`, it works the same as setting network `deny_out` to `[0.0.0.0/0]`.
         :param mcp: MCP server to enable in the sandbox
         :param network: Sandbox network configuration
 
