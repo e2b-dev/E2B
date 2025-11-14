@@ -42,7 +42,7 @@ sandboxTest
   .skipIf(isDebug)('deny specific IP address', async ({ sandbox }) => {
   // Test that denied IP fails
   await expect(
-    await sandbox.commands.run(
+    sandbox.commands.run(
       'curl --connect-timeout 3 --max-time 5 -Is https://8.8.8.8'
     )
   ).rejects.toBeInstanceOf(CommandExitError)
@@ -68,13 +68,13 @@ sandboxTest
   async ({ sandbox }) => {
     // Test that all traffic is denied
     await expect(
-      await sandbox.commands.run(
+      sandbox.commands.run(
         'curl --connect-timeout 3 --max-time 5 -Is https://1.1.1.1'
       )
     ).rejects.toBeInstanceOf(CommandExitError)
 
     await expect(
-      await sandbox.commands.run(
+      sandbox.commands.run(
         'curl --connect-timeout 3 --max-time 5 -Is https://8.8.8.8'
       )
     ).rejects.toBeInstanceOf(CommandExitError)
