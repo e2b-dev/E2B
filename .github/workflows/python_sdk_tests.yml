@@ -50,6 +50,6 @@ jobs:
         run: poetry build
 
       - name: Run tests
-        run: poetry run pytest --verbose -x
+        run: make test
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
