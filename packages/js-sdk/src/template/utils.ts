@@ -25,6 +25,15 @@ export function readDockerignore(contextPath: string): string[] {
 }
 
 /**
+ * Normalize path separators to forward slashes for glob patterns (glob expects / even on Windows)
+ * @param path - The path to normalize
+ * @returns The normalized path
+ */
+function normalizePath(path: string): string {
+  return path.replace(/\\/g, '/')
+}
+
+/**
  * Get all files for a given path and ignore patterns.
  *
  * @param src Path to the source directory
@@ -55,7 +64,7 @@ export async function getAllFilesInPath(
         files.set(file.fullpath(), file)
       }
       const dirFiles = await glob(
-        path.join(path.relative(contextPath, file.fullpath()), '**/*'),
+        normalizePath(path.relative(contextPath, file.fullpath())) + '/**/*',
         {
           ignore: ignorePatterns,
           withFileTypes: true,
