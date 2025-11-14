@@ -295,7 +295,7 @@ class SandboxApi(SandboxBase):
             config,
             headers={
                 "E2b-Sandbox-Id": sandbox_id,
-                "E2b-Sandbox-Port": config.envd_port,
+                "E2b-Sandbox-Port": str(config.envd_port),
             },
         )
         res = await post_sandboxes_sandbox_id_connect.asyncio_detailed(
