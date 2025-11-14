@@ -264,6 +264,10 @@ class SandboxApi(SandboxBase):
         with ApiClient(
             config,
             limits=SandboxBase._limits,
+            headers={
+                "E2b-Sandbox-Id": sandbox_id,
+                "E2b-Sandbox-Port": config.envd_port,
+            },
         ) as api_client:
             res = post_sandboxes_sandbox_id_connect.sync_detailed(
                 sandbox_id,

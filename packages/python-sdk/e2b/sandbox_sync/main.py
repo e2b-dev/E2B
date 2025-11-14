@@ -718,6 +718,9 @@ class Sandbox(SandboxApi):
             ):
                 extra_sandbox_headers["X-Access-Token"] = envd_access_token
 
+        extra_sandbox_headers["E2b-Sandbox-Id"] = sandbox_id
+        extra_sandbox_headers["E2b-Sandbox-Port"] = str(ConnectionConfig.envd_port)
+
         connection_config = ConnectionConfig(
             extra_sandbox_headers=extra_sandbox_headers,
             **opts,

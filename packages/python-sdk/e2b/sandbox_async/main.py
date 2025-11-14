@@ -95,7 +95,9 @@ class AsyncSandbox(SandboxApi):
             limits=self._limits, proxy=self.connection_config.proxy
         )
         self._envd_api = httpx.AsyncClient(
-            base_url=self.envd_api_url,
+            base_url=self.connection_config.get_sandbox_url(
+                self.sandbox_id, self.sandbox_domain
+            ),
             transport=self._transport,
             headers=self.connection_config.sandbox_headers,
         )
@@ -720,6 +722,9 @@ class AsyncSandbox(SandboxApi):
                 envd_access_token, Unset
             ):
                 extra_sandbox_headers["X-Access-Token"] = envd_access_token
+
+        extra_sandbox_headers["E2b-Sandbox-Id"] = sandbox_id
+        extra_sandbox_headers["E2b-Sandbox-Port"] = str(ConnectionConfig.envd_port)
 
         connection_config = ConnectionConfig(
             extra_sandbox_headers=extra_sandbox_headers,
