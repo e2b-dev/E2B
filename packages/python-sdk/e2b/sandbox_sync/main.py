@@ -22,24 +22,9 @@ from e2b.sandbox_sync.filesystem.filesystem import Filesystem
 from e2b.sandbox_sync.commands.command import Commands
 from e2b.sandbox_sync.commands.pty import Pty
 from e2b.sandbox_sync.sandbox_api import SandboxApi, SandboxInfo
+from e2b.api.client_sync import get_transport
 
 logger = logging.getLogger(__name__)
-
-
-class TransportWithLogger(httpx.HTTPTransport):
-    def handle_request(self, request):
-        url = f"{request.url.scheme}://{request.url.host}{request.url.path}"
-        logger.info(f"Request: {request.method} {url}")
-        response = super().handle_request(request)
-
-        # data = connect.GzipCompressor.decompress(response.read()).decode()
-        logger.info(f"Response: {response.status_code} {url}")
-
-        return response
-
-    @property
-    def pool(self):
-        return self._pool
 
 
 class Sandbox(SandboxApi):
@@ -94,9 +79,8 @@ class Sandbox(SandboxApi):
         """
         super().__init__(**opts)
 
-        self._transport = TransportWithLogger(
-            limits=self._limits, proxy=self.connection_config.proxy
-        )
+        self._transport = get_transport(self.connection_config)
+
         self._envd_api = httpx.Client(
             base_url=self.envd_api_url,
             transport=self._transport,
