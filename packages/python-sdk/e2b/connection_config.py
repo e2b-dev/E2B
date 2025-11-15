@@ -1,6 +1,5 @@
 import os
-
-from typing import Optional, Dict, TypedDict
+from typing import Any, Dict, Optional, TypedDict
 
 from httpx._types import ProxyTypes
 from typing_extensions import Unpack
@@ -117,7 +116,7 @@ class ConnectionConfig:
             or ("http://localhost:3000" if self.debug else f"https://api.{self.domain}")
         )
 
-        self._sandbox_url = sandbox_url or ConnectionConfig._sandbox_url()
+        self.sandbox_url = sandbox_url or ConnectionConfig._sandbox_url()
 
     @staticmethod
     def _get_request_timeout(
@@ -135,8 +134,9 @@ class ConnectionConfig:
         return self._get_request_timeout(self.request_timeout, request_timeout)
 
     def get_sandbox_url(self, sandbox_id: str, sandbox_domain: str) -> str:
-        if self._sandbox_url:
-            return self._sandbox_url
+        url = self._sandbox_url()
+        if url is not None:
+            return url
 
         return f"{'http' if self.debug else 'https'}://{self.get_host(sandbox_id, sandbox_domain, self.envd_port)}"
 
@@ -159,7 +159,7 @@ class ConnectionConfig:
     def get_api_params(
         self,
         **opts: Unpack[ApiParams],
-    ) -> dict:
+    ) -> dict[str, Any]:
         """
         Get the parameters for the API call.
 
