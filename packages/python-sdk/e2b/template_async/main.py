@@ -3,12 +3,14 @@ from datetime import datetime
 from typing import Callable, Optional
 
 from e2b.api.client.client import AuthenticatedClient
+from e2b.api.client_async import get_api_client
 from e2b.connection_config import ConnectionConfig
 from e2b.template.consts import RESOLVE_SYMLINKS
 from e2b.template.logger import LogEntry, LogEntryEnd, LogEntryStart
 from e2b.template.main import TemplateBase, TemplateClass
 from e2b.template.types import BuildInfo, InstructionType
 from e2b.template.utils import read_dockerignore
+
 from .build_api import (
     get_build_status,
     get_file_upload_link,
@@ -17,7 +19,6 @@ from .build_api import (
     upload_file,
     wait_for_build_finish,
 )
-from e2b.api.client_async import get_api_client
 
 
 class AsyncTemplate(TemplateBase):
@@ -89,7 +90,9 @@ class AsyncTemplate(TemplateBase):
             src = args[0] if len(args) > 0 else None
             force_upload = file_upload.get("forceUpload")
             files_hash = file_upload.get("filesHash", None)
-            resolve_symlinks = file_upload.get("resolveSymlinks", RESOLVE_SYMLINKS)
+            resolve_symlinks = file_upload.get("resolveSymlinks", None)
+            if resolve_symlinks is None:
+                resolve_symlinks = RESOLVE_SYMLINKS
 
             if src is None or files_hash is None:
                 raise ValueError("Source path and files hash are required")

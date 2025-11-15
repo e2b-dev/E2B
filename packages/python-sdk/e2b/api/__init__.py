@@ -1,20 +1,21 @@
-import os
-from types import TracebackType
 import json
 import logging
-from typing import Optional, Union
-from httpx import Limits, BaseTransport, AsyncBaseTransport
+import os
 from dataclasses import dataclass
+from types import TracebackType
+from typing import Any, Optional, Union
+
+from httpx import AsyncBaseTransport, BaseTransport, Limits
 
 from e2b.api.client.client import AuthenticatedClient
-from e2b.connection_config import ConnectionConfig
+from e2b.api.client.types import Response
 from e2b.api.metadata import default_headers
+from e2b.connection_config import ConnectionConfig
 from e2b.exceptions import (
     AuthenticationException,
-    SandboxException,
     RateLimitException,
+    SandboxException,
 )
-from e2b.api.client.types import Response
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +35,7 @@ class SandboxCreateResponse:
 
 
 def handle_api_exception(
-    e: Response,
+    e: Response[Any],
     default_exception_class: type[Exception] = SandboxException,
     stack_trace: Optional[TracebackType] = None,
 ):
@@ -106,6 +107,11 @@ class ApiClient(AuthenticatedClient):
                 )
             token = config.access_token
 
+        if token is None:
+            raise AuthenticationException(
+                "Authentication token is required but not provided.",
+            )
+
         auth_header_name = "X-API-KEY" if require_api_key else "Authorization"
         prefix = "" if require_api_key else "Bearer"
 
@@ -115,7 +121,7 @@ class ApiClient(AuthenticatedClient):
         }
 
         # Prevent passing these parameters twice
-        more_headers: Optional[dict] = kwargs.pop("headers", None)
+        more_headers: Optional[dict[str, str]] = kwargs.pop("headers", None)
         if more_headers:
             headers.update(more_headers)
         kwargs.pop("token", None)
@@ -143,7 +149,7 @@ class ApiClient(AuthenticatedClient):
     def _log_request(self, request):
         logger.info(f"Request {request.method} {request.url}")
 
-    def _log_response(self, response: Response):
+    def _log_response(self, response: Response[Any]):
         if response.status_code >= 400:
             logger.error(f"Response {response.status_code}")
         else:
@@ -155,7 +161,7 @@ class AsyncApiClient(ApiClient):
     async def _log_request(self, request):
         logger.info(f"Request {request.method} {request.url}")
 
-    async def _log_response(self, response: Response):
+    async def _log_response(self, response: Response[Any]):
         if response.status_code >= 400:
             logger.error(f"Response {response.status_code}")
         else:

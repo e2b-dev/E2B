@@ -23,6 +23,7 @@ dockerfile-parse = "^2.0.1"
 rich = ">=14.0.0"
 
 [tool.poetry.group.dev.dependencies]
+pyright = "^1.1.407"
 pytest = "^7.4.0"
 pytest-xdist = "^3.3.1"
 python-dotenv = "^1.0.0"
@@ -44,3 +45,21 @@ build-backend = "poetry.core.masonry.api"
 exclude = [
     "e2b/envd/filesystem/filesystem_pb2.py"
 ]
+
+[tool.pyright]
+include = ["e2b"]
+exclude = ["**/__pycache__",
+    "e2b/envd/filesystem",
+    "e2b/envd/process",
+]
+pythonVersion = "3.9"
+typeCheckingMode = "standard"
+reportImplicitStringConcatenation = false
+reportUnknownVariableType = false
+reportExplicitAny = false
+reportUnknownMemberType = false
+reportMissingParameterType = false
+reportUnknownParameterType = false
+reportUnknownArgumentType = false
+reportInconsistentOverload = false
+reportIncompatibleMethodOverride = false

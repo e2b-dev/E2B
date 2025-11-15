@@ -1,35 +1,34 @@
 import datetime
-
-from typing import Optional, Dict, List
+from typing import Dict, List, Optional
 
 from packaging.version import Version
 from typing_extensions import Unpack
 
-from e2b.api.client.types import UNSET
-from e2b.sandbox.main import SandboxBase
-from e2b.sandbox.sandbox_api import SandboxInfo, SandboxMetrics, SandboxQuery, McpServer
-from e2b.exceptions import TemplateException, SandboxException, NotFoundException
-from e2b.api import SandboxCreateResponse
+from e2b.api import SandboxCreateResponse, handle_api_exception
+from e2b.api.client.api.sandboxes import (
+    delete_sandboxes_sandbox_id,
+    get_sandboxes_sandbox_id,
+    get_sandboxes_sandbox_id_metrics,
+    post_sandboxes,
+    post_sandboxes_sandbox_id_connect,
+    post_sandboxes_sandbox_id_pause,
+    post_sandboxes_sandbox_id_timeout,
+)
 from e2b.api.client.models import (
+    ConnectSandbox,
+    Error,
+    McpType0,
     NewSandbox,
     PostSandboxesSandboxIDTimeoutBody,
-    Error,
     Sandbox,
-    ConnectSandbox,
 )
-from e2b.api.client.api.sandboxes import (
-    get_sandboxes_sandbox_id,
-    post_sandboxes_sandbox_id_timeout,
-    delete_sandboxes_sandbox_id,
-    post_sandboxes,
-    get_sandboxes_sandbox_id_metrics,
-    post_sandboxes_sandbox_id_pause,
-    post_sandboxes_sandbox_id_connect,
-)
-from e2b.connection_config import ConnectionConfig, ApiParams
-from e2b.api import handle_api_exception
-from e2b.sandbox_async.paginator import AsyncSandboxPaginator
+from e2b.api.client.types import UNSET, Unset
 from e2b.api.client_async import get_api_client
+from e2b.connection_config import ApiParams, ConnectionConfig
+from e2b.exceptions import NotFoundException, SandboxException, TemplateException
+from e2b.sandbox.main import SandboxBase
+from e2b.sandbox.sandbox_api import McpServer, SandboxInfo, SandboxMetrics, SandboxQuery
+from e2b.sandbox_async.paginator import AsyncSandboxPaginator
 
 
 class SandboxApi(SandboxBase):
@@ -165,7 +164,7 @@ class SandboxApi(SandboxBase):
                 metadata=metadata or {},
                 timeout=timeout,
                 env_vars=env_vars or {},
-                mcp=mcp or UNSET,
+                mcp=McpType0(**mcp) if mcp is not None else UNSET,
                 secure=secure,
                 allow_internet_access=allow_internet_access,
             ),
@@ -190,9 +189,13 @@ class SandboxApi(SandboxBase):
 
         return SandboxCreateResponse(
             sandbox_id=res.parsed.sandbox_id,
-            sandbox_domain=res.parsed.domain,
+            sandbox_domain=res.parsed.domain
+            if not isinstance(res.parsed.domain, Unset)
+            else None,
             envd_version=res.parsed.envd_version,
-            envd_access_token=res.parsed.envd_access_token,
+            envd_access_token=res.parsed.envd_access_token
+            if not isinstance(res.parsed.envd_access_token, Unset)
+            else "",
         )
 
     @classmethod
@@ -313,5 +316,8 @@ class SandboxApi(SandboxBase):
         # Check if res.parse is Error
         if isinstance(res.parsed, Error):
             raise SandboxException(f"{res.parsed.message}: Request failed")
+
+        if res.parsed is None:
+            raise SandboxException("Body of the connect request is None")
 
         return res.parsed

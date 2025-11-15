@@ -1,27 +1,26 @@
 import datetime
-import logging
-import httpx
-import uuid
 import json
+import logging
+import uuid
+from typing import Dict, List, Optional, overload
 
-from typing import Dict, Optional, overload, List
-
+import httpx
 from packaging.version import Version
-from typing_extensions import Unpack, Self
+from typing_extensions import Self, Unpack
 
 from e2b.api.client.types import Unset
-from e2b.connection_config import ConnectionConfig, ApiParams
+from e2b.api.client_async import get_transport
+from e2b.connection_config import ApiParams, ConnectionConfig
 from e2b.envd.api import ENVD_API_HEALTH_ROUTE, ahandle_envd_api_exception
 from e2b.envd.versions import ENVD_DEBUG_FALLBACK
-from e2b.exceptions import format_request_timeout_error, SandboxException
+from e2b.exceptions import SandboxException, format_request_timeout_error
 from e2b.sandbox.main import SandboxOpts
-from e2b.sandbox.sandbox_api import SandboxMetrics, McpServer
+from e2b.sandbox.sandbox_api import McpServer, SandboxMetrics
 from e2b.sandbox.utils import class_method_variant
-from e2b.sandbox_async.filesystem.filesystem import Filesystem
 from e2b.sandbox_async.commands.command import Commands
 from e2b.sandbox_async.commands.pty import Pty
+from e2b.sandbox_async.filesystem.filesystem import Filesystem
 from e2b.sandbox_async.sandbox_api import SandboxApi, SandboxInfo
-from e2b.api.client_async import get_transport
 
 logger = logging.getLogger(__name__)
 
@@ -659,9 +658,13 @@ class AsyncSandbox(SandboxApi):
 
         return cls(
             sandbox_id=sandbox.sandbox_id,
-            sandbox_domain=sandbox.domain,
+            sandbox_domain=sandbox.domain
+            if not isinstance(sandbox.domain, Unset)
+            else None,
             envd_version=Version(sandbox.envd_version),
-            envd_access_token=envd_access_token,
+            envd_access_token=envd_access_token
+            if not isinstance(envd_access_token, Unset)
+            else None,
             connection_config=connection_config,
         )
 

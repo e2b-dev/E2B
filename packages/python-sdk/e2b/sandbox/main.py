@@ -1,12 +1,12 @@
 import urllib.parse
-from packaging.version import Version
-
 from typing import Optional, TypedDict
 
-from e2b.sandbox.signature import get_signature
+from packaging.version import Version
+
 from e2b.connection_config import ConnectionConfig, default_username
 from e2b.envd.api import ENVD_API_FILES_ROUTE
 from e2b.envd.versions import ENVD_DEFAULT_USER
+from e2b.sandbox.signature import get_signature
 
 
 class SandboxOpts(TypedDict):
@@ -14,7 +14,6 @@ class SandboxOpts(TypedDict):
     sandbox_domain: Optional[str]
     envd_version: Version
     envd_access_token: Optional[str]
-    sandbox_url: Optional[str]
     connection_config: ConnectionConfig
 
 
@@ -66,7 +65,7 @@ class SandboxBase:
         return self.__envd_version
 
     @property
-    def sandbox_domain(self) -> Optional[str]:
+    def sandbox_domain(self) -> str:
         return self.__sandbox_domain
 
     @property

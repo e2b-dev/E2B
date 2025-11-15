@@ -25,6 +25,7 @@ init:
 
 lint:
 	ruff check .
+	pyright
 
 format:
 	ruff format .

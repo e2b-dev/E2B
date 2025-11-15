@@ -1,20 +1,22 @@
 from typing import Dict, List, Literal, Optional, Union, overload
 
-import e2b_connect
 import httpcore
 from packaging.version import Version
+
+import e2b_connect
 from e2b.connection_config import (
-    ConnectionConfig,
-    Username,
     KEEPALIVE_PING_HEADER,
     KEEPALIVE_PING_INTERVAL_SEC,
+    ConnectionConfig,
+    Username,
+    default_username,
 )
 from e2b.envd.process import process_connect, process_pb2
 from e2b.envd.rpc import authentication_header, handle_rpc_exception
-from e2b.envd.versions import ENVD_COMMANDS_STDIN
+from e2b.envd.versions import ENVD_COMMANDS_STDIN, ENVD_DEFAULT_USER
 from e2b.exceptions import SandboxException
-from e2b.sandbox.commands.main import ProcessInfo
 from e2b.sandbox.commands.command_handle import CommandResult
+from e2b.sandbox.commands.main import ProcessInfo
 from e2b.sandbox_async.commands.command_handle import AsyncCommandHandle, Stderr, Stdout
 from e2b.sandbox_async.utils import OutputHandler
 
@@ -220,10 +222,14 @@ class Commands:
         # Default to `False`
         stdin = stdin or False
 
+        username = user
+        if username is None and self._envd_version < ENVD_DEFAULT_USER:
+            username = default_username
+
         proc = await self._start(
             cmd,
             envs,
-            user,
+            username,
             cwd,
             timeout,
             request_timeout,
@@ -238,7 +244,7 @@ class Commands:
         self,
         cmd: str,
         envs: Optional[Dict[str, str]],
-        user: Username,
+        user: Optional[Username],
         cwd: Optional[str],
         timeout: Optional[float],
         request_timeout: Optional[float],

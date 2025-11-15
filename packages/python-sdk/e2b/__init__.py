@@ -31,41 +31,39 @@ from .api import (
 )
 from .connection_config import (
     ConnectionConfig,
-    ProxyTypes,
 )
 from .exceptions import (
-    SandboxException,
-    TimeoutException,
-    NotFoundException,
     AuthenticationException,
-    InvalidArgumentException,
-    NotEnoughSpaceException,
-    TemplateException,
     BuildException,
     FileUploadException,
+    InvalidArgumentException,
+    NotEnoughSpaceException,
+    NotFoundException,
+    SandboxException,
+    TemplateException,
+    TimeoutException,
 )
 from .sandbox.commands.command_handle import (
-    CommandResult,
-    Stderr,
-    Stdout,
     CommandExitException,
+    CommandResult,
     PtyOutput,
     PtySize,
+    Stderr,
+    Stdout,
 )
 from .sandbox.commands.main import ProcessInfo
-from .sandbox.filesystem.filesystem import EntryInfo, WriteInfo, FileType
+from .sandbox.filesystem.filesystem import EntryInfo, FileType, WriteInfo
 from .sandbox.filesystem.watch_handle import (
     FilesystemEvent,
     FilesystemEventType,
 )
 from .sandbox.sandbox_api import (
-    SandboxInfo,
-    SandboxQuery,
-    SandboxState,
-    SandboxMetrics,
-    McpServer,
     GitHubMcpServer,
     GitHubMcpServerConfig,
+    McpServer,
+    SandboxInfo,
+    SandboxMetrics,
+    SandboxQuery,
 )
 from .sandbox_async.commands.command_handle import AsyncCommandHandle
 from .sandbox_async.filesystem.watch_handle import AsyncWatchHandle
@@ -78,21 +76,21 @@ from .sandbox_sync.main import Sandbox
 from .sandbox_sync.paginator import SandboxPaginator
 from .template.logger import (
     LogEntry,
+    LogEntryEnd,
     LogEntryLevel,
     LogEntryStart,
-    LogEntryEnd,
     default_build_logger,
 )
 from .template.main import TemplateBase, TemplateClass
 from .template.readycmd import (
     ReadyCmd,
     wait_for_file,
-    wait_for_url,
     wait_for_port,
     wait_for_process,
     wait_for_timeout,
+    wait_for_url,
 )
-from .template.types import CopyItem, BuildInfo
+from .template.types import BuildInfo, CopyItem
 from .template_async.main import AsyncTemplate
 from .template_sync.main import Template
 
@@ -102,7 +100,6 @@ __all__ = [
     "client",
     # Connection config
     "ConnectionConfig",
-    "ProxyTypes",
     # Exceptions
     "SandboxException",
     "TimeoutException",
@@ -118,7 +115,6 @@ __all__ = [
     "SandboxMetrics",
     "ProcessInfo",
     "SandboxQuery",
-    "SandboxState",
     "SandboxMetrics",
     # Command handle
     "CommandResult",

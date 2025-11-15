@@ -1,28 +1,26 @@
 import datetime
+import json
 import logging
 import uuid
-import json
+from typing import Dict, List, Optional, overload
 
 import httpx
-
-from typing import Dict, Optional, overload, List
-
 from packaging.version import Version
-from typing_extensions import Unpack, Self
+from typing_extensions import Self, Unpack
 
 from e2b.api.client.types import Unset
-from e2b.connection_config import ConnectionConfig, ApiParams
+from e2b.api.client_sync import get_transport
+from e2b.connection_config import ApiParams, ConnectionConfig
 from e2b.envd.api import ENVD_API_HEALTH_ROUTE, handle_envd_api_exception
 from e2b.envd.versions import ENVD_DEBUG_FALLBACK
 from e2b.exceptions import SandboxException, format_request_timeout_error
 from e2b.sandbox.main import SandboxOpts
-from e2b.sandbox.sandbox_api import SandboxMetrics, McpServer
+from e2b.sandbox.sandbox_api import McpServer, SandboxMetrics
 from e2b.sandbox.utils import class_method_variant
-from e2b.sandbox_sync.filesystem.filesystem import Filesystem
 from e2b.sandbox_sync.commands.command import Commands
 from e2b.sandbox_sync.commands.pty import Pty
+from e2b.sandbox_sync.filesystem.filesystem import Filesystem
 from e2b.sandbox_sync.sandbox_api import SandboxApi, SandboxInfo
-from e2b.api.client_sync import get_transport
 
 logger = logging.getLogger(__name__)
 
@@ -652,10 +650,14 @@ class Sandbox(SandboxApi):
 
         return cls(
             sandbox_id=sandbox_id,
-            sandbox_domain=sandbox.domain,
+            sandbox_domain=sandbox.domain
+            if not isinstance(sandbox.domain, Unset)
+            else None,
             connection_config=connection_config,
             envd_version=Version(sandbox.envd_version),
-            envd_access_token=envd_access_token,
+            envd_access_token=envd_access_token
+            if not isinstance(envd_access_token, Unset)
+            else None,
         )
 
     @classmethod
