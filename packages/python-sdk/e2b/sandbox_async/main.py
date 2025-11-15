@@ -21,24 +21,9 @@ from e2b.sandbox_async.filesystem.filesystem import Filesystem
 from e2b.sandbox_async.commands.command import Commands
 from e2b.sandbox_async.commands.pty import Pty
 from e2b.sandbox_async.sandbox_api import SandboxApi, SandboxInfo
+from e2b.api.client_async import get_transport
 
 logger = logging.getLogger(__name__)
-
-
-class AsyncTransportWithLogger(httpx.AsyncHTTPTransport):
-    async def handle_async_request(self, request):
-        url = f"{request.url.scheme}://{request.url.host}{request.url.path}"
-        logger.info(f"Request: {request.method} {url}")
-        response = await super().handle_async_request(request)
-
-        # data = connect.GzipCompressor.decompress(response.read()).decode()
-        logger.info(f"Response: {response.status_code} {url}")
-
-        return response
-
-    @property
-    def pool(self):
-        return self._pool
 
 
 class AsyncSandbox(SandboxApi):
@@ -85,17 +70,20 @@ class AsyncSandbox(SandboxApi):
         """
         return self._pty
 
-    def __init__(self, **opts: Unpack[SandboxOpts]):
+    def __init__(
+        self,
+        **opts: Unpack[SandboxOpts],
+    ):
         """
         Use `AsyncSandbox.create()` to create a new sandbox instead.
         """
         super().__init__(**opts)
 
-        self._transport = AsyncTransportWithLogger(
-            limits=self._limits, proxy=self.connection_config.proxy
-        )
+        self._transport = get_transport(self.connection_config)
         self._envd_api = httpx.AsyncClient(
-            base_url=self.envd_api_url,
+            base_url=self.connection_config.get_sandbox_url(
+                self.sandbox_id, self.sandbox_domain
+            ),
             transport=self._transport,
             headers=self.connection_config.sandbox_headers,
         )
@@ -720,6 +708,9 @@ class AsyncSandbox(SandboxApi):
                 envd_access_token, Unset
             ):
                 extra_sandbox_headers["X-Access-Token"] = envd_access_token
+
+        extra_sandbox_headers["E2b-Sandbox-Id"] = sandbox_id
+        extra_sandbox_headers["E2b-Sandbox-Port"] = str(ConnectionConfig.envd_port)
 
         connection_config = ConnectionConfig(
             extra_sandbox_headers=extra_sandbox_headers,

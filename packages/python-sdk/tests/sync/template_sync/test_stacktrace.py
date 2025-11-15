@@ -1,3 +1,5 @@
+import traceback
+
 import pytest
 import linecache
 
@@ -23,8 +25,8 @@ def _expect_to_throw_and_check_trace(func, expected_method: str):
                     saw_expected_method = True
                     break
             tb = tb.tb_next
-        assert saw_this_file
-        assert saw_expected_method
+        assert saw_this_file, traceback.format_exc()
+        assert saw_expected_method, traceback.format_exc()
 
 
 @pytest.mark.skip_debug()

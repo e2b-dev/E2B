@@ -90,6 +90,11 @@ export interface SandboxOpts extends ConnectionOpts {
    * @default undefined
    */
   mcp?: McpServer
+
+  /**
+   * Sandbox URL. Used for local development
+   */
+  sandboxUrl?: string
 }
 
 export type SandboxBetaCreateOpts = SandboxOpts & {

@@ -36,7 +36,6 @@ jobs:
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
-        id: pnpm-install
         with:
           version: '${{ env.TOOL_VERSION_PNPM }}'
 
@@ -51,15 +50,20 @@ jobs:
       - name: Configure pnpm
         run: |
           pnpm config set auto-install-peers true
-          pnpm config set exclude-links-from-lockfile true
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Test build
+      - name: Build the SDK (pre-requisite for the tests)
         run: pnpm build
+        working-directory: ./packages/js-sdk
+
+      - name: Build the CLI
+        run: pnpm build
+        working-directory: ./packages/cli
 
       - name: Run tests
         run: pnpm test
+        working-directory: ./packages/cli
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
