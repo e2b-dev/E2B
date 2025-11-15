@@ -1,25 +1,24 @@
 import datetime
-import logging
-import httpx
-import uuid
 import json
+import logging
+import uuid
+from typing import Dict, List, Optional, overload
 
-from typing import Dict, Optional, overload, List
-
+import httpx
 from packaging.version import Version
-from typing_extensions import Unpack, Self
+from typing_extensions import Self, Unpack
 
 from e2b.api.client.types import Unset
-from e2b.connection_config import ConnectionConfig, ApiParams
+from e2b.connection_config import ApiParams, ConnectionConfig
 from e2b.envd.api import ENVD_API_HEALTH_ROUTE, ahandle_envd_api_exception
 from e2b.envd.versions import ENVD_DEBUG_FALLBACK
-from e2b.exceptions import format_request_timeout_error, SandboxException
+from e2b.exceptions import SandboxException, format_request_timeout_error
 from e2b.sandbox.main import SandboxOpts
-from e2b.sandbox.sandbox_api import SandboxMetrics, McpServer
+from e2b.sandbox.sandbox_api import McpServer, SandboxMetrics, SandboxNetworkOpts
 from e2b.sandbox.utils import class_method_variant
-from e2b.sandbox_async.filesystem.filesystem import Filesystem
 from e2b.sandbox_async.commands.command import Commands
 from e2b.sandbox_async.commands.pty import Pty
+from e2b.sandbox_async.filesystem.filesystem import Filesystem
 from e2b.sandbox_async.sandbox_api import SandboxApi, SandboxInfo
 from e2b.api.client_async import get_transport
 
@@ -153,6 +152,7 @@ class AsyncSandbox(SandboxApi):
         secure: bool = True,
         allow_internet_access: bool = True,
         mcp: Optional[McpServer] = None,
+        network: Optional[SandboxNetworkOpts] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
         """
@@ -165,8 +165,9 @@ class AsyncSandbox(SandboxApi):
         :param metadata: Custom metadata for the sandbox
         :param envs: Custom environment variables for the sandbox
         :param secure: Envd is secured with access token and cannot be used without it, defaults to `True`.
-        :param allow_internet_access: Allow sandbox to access the internet, defaults to `True`.
+        :param allow_internet_access: Allow sandbox to access the internet, defaults to `True`. If set to `False`, it works the same as setting network `deny_out` to `[0.0.0.0/0]`.
         :param mcp: MCP server to enable in the sandbox
+        :param network: Sandbox network configuration
 
         :return: A Sandbox instance for the new sandbox
 
@@ -186,6 +187,7 @@ class AsyncSandbox(SandboxApi):
             secure=secure,
             allow_internet_access=allow_internet_access,
             mcp=mcp,
+            network=network,
             **opts,
         )
 
@@ -662,6 +664,7 @@ class AsyncSandbox(SandboxApi):
             sandbox_domain=sandbox.domain,
             envd_version=Version(sandbox.envd_version),
             envd_access_token=envd_access_token,
+            traffic_access_token=sandbox.traffic_access_token,
             connection_config=connection_config,
         )
 
@@ -676,6 +679,7 @@ class AsyncSandbox(SandboxApi):
         envs: Optional[Dict[str, str]],
         secure: bool,
         mcp: Optional[McpServer] = None,
+        network: Optional[SandboxNetworkOpts] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
         extra_sandbox_headers = {}
@@ -686,6 +690,7 @@ class AsyncSandbox(SandboxApi):
             sandbox_domain = None
             envd_version = ENVD_DEBUG_FALLBACK
             envd_access_token = None
+            traffic_access_token = None
         else:
             response = await SandboxApi._create_sandbox(
                 template=template or cls.default_template,
@@ -696,6 +701,7 @@ class AsyncSandbox(SandboxApi):
                 secure=secure,
                 allow_internet_access=allow_internet_access,
                 mcp=mcp,
+                network=network,
                 **opts,
             )
 
@@ -703,6 +709,7 @@ class AsyncSandbox(SandboxApi):
             sandbox_domain = response.sandbox_domain
             envd_version = Version(response.envd_version)
             envd_access_token = response.envd_access_token
+            traffic_access_token = response.traffic_access_token
 
             if envd_access_token is not None and not isinstance(
                 envd_access_token, Unset
@@ -722,5 +729,6 @@ class AsyncSandbox(SandboxApi):
             sandbox_domain=sandbox_domain,
             envd_version=envd_version,
             envd_access_token=envd_access_token,
+            traffic_access_token=traffic_access_token,
             connection_config=connection_config,
         )

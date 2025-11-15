@@ -1,22 +1,22 @@
 import asyncio
-from typing import Callable, Optional
+import os
 import uuid
+from typing import Callable, Optional
+from uuid import uuid4
 
 import pytest
 import pytest_asyncio
-import os
-from uuid import uuid4
 
 from e2b import (
-    Sandbox,
-    AsyncSandbox,
     AsyncCommandHandle,
+    AsyncSandbox,
+    AsyncTemplate,
     CommandExitException,
     CommandHandle,
-    AsyncTemplate,
+    LogEntry,
+    Sandbox,
     Template,
     TemplateClass,
-    LogEntry,
 )
 
 
