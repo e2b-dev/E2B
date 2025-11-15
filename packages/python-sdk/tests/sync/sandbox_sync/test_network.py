@@ -1,17 +1,16 @@
 import pytest
 
-from e2b import ALL_TRAFFIC
+from e2b import ALL_TRAFFIC, SandboxNetworkOpts
 from e2b.sandbox.commands.command_handle import CommandExitException
 
 
 @pytest.mark.skip_debug()
-@pytest.mark.parametrize(
-    "sandbox_opts",
-    [{"network": {"deny_out": [ALL_TRAFFIC], "allow_out": ["1.1.1.1"]}}],
-    indirect=True,
-)
-def test_allow_specific_ip_with_deny_all(sandbox):
+def test_allow_specific_ip_with_deny_all(sandbox_factory):
     """Test that sandbox with denyOut all and allowOut creates a whitelist."""
+    sandbox = sandbox_factory(
+        network=SandboxNetworkOpts(deny_out=[ALL_TRAFFIC], allow_out=["1.1.1.1"])
+    )
+
     # Test that allowed IP works
     result = sandbox.commands.run(
         "curl -s -o /dev/null -w '%{http_code}' https://1.1.1.1"
@@ -28,13 +27,10 @@ def test_allow_specific_ip_with_deny_all(sandbox):
 
 
 @pytest.mark.skip_debug()
-@pytest.mark.parametrize(
-    "sandbox_opts",
-    [{"network": {"deny_out": ["8.8.8.8"]}}],
-    indirect=True,
-)
-def test_deny_specific_ip(sandbox):
+def test_deny_specific_ip(sandbox_factory):
     """Test that sandbox with denyOut denies specified IP addresses."""
+    sandbox = sandbox_factory(network=SandboxNetworkOpts(deny_out=["8.8.8.8"]))
+
     # Test that denied IP fails
     with pytest.raises(CommandExitException) as exc_info:
         sandbox.commands.run(
@@ -51,13 +47,10 @@ def test_deny_specific_ip(sandbox):
 
 
 @pytest.mark.skip_debug()
-@pytest.mark.parametrize(
-    "sandbox_opts",
-    [{"network": {"deny_out": [ALL_TRAFFIC]}}],
-    indirect=True,
-)
-def test_deny_all_traffic(sandbox):
+def test_deny_all_traffic(sandbox_factory):
     """Test that sandbox can deny all traffic using all_traffic helper."""
+    sandbox = sandbox_factory(network=SandboxNetworkOpts(deny_out=[ALL_TRAFFIC]))
+
     # Test that all traffic is denied
     with pytest.raises(CommandExitException) as exc_info:
         sandbox.commands.run(
@@ -73,13 +66,14 @@ def test_deny_all_traffic(sandbox):
 
 
 @pytest.mark.skip_debug()
-@pytest.mark.parametrize(
-    "sandbox_opts",
-    [{"network": {"deny_out": [ALL_TRAFFIC], "allow_out": ["1.1.1.1", "8.8.8.8"]}}],
-    indirect=True,
-)
-def test_allow_takes_precedence_over_deny(sandbox):
+def test_allow_takes_precedence_over_deny(sandbox_factory):
     """Test that allowOut takes precedence over denyOut."""
+    sandbox = sandbox_factory(
+        network=SandboxNetworkOpts(
+            deny_out=[ALL_TRAFFIC], allow_out=["1.1.1.1", "8.8.8.8"]
+        )
+    )
+
     # Test that 1.1.1.1 works (explicitly allowed)
     result1 = sandbox.commands.run(
         "curl -s -o /dev/null -w '%{http_code}' https://1.1.1.1"
