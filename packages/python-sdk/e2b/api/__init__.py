@@ -1,20 +1,21 @@
-import os
-from types import TracebackType
 import json
 import logging
-from typing import Optional, Union
-from httpx import Limits, BaseTransport, AsyncBaseTransport
+import os
 from dataclasses import dataclass
+from types import TracebackType
+from typing import Optional, Union
+
+from httpx import AsyncBaseTransport, BaseTransport, Limits
 
 from e2b.api.client.client import AuthenticatedClient
-from e2b.connection_config import ConnectionConfig
+from e2b.api.client.types import Response
 from e2b.api.metadata import default_headers
+from e2b.connection_config import ConnectionConfig
 from e2b.exceptions import (
     AuthenticationException,
-    SandboxException,
     RateLimitException,
+    SandboxException,
 )
-from e2b.api.client.types import Response
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +32,7 @@ class SandboxCreateResponse:
     sandbox_domain: Optional[str]
     envd_version: str
     envd_access_token: str
+    traffic_access_token: Optional[str]
 
 
 def handle_api_exception(

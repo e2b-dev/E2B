@@ -119,3 +119,130 @@ describe('allow takes precedence over deny', () => {
     }
   )
 })
+
+describe('allowPublicTraffic=false', () => {
+  sandboxTest.scoped({
+    sandboxOpts: {
+      network: {
+        allowPublicTraffic: false,
+      },
+    },
+  })
+
+  sandboxTest.skipIf(isDebug)(
+    'sandbox requires traffic access token',
+    async ({ sandbox }) => {
+      // Verify the sandbox was created successfully and has a traffic access token
+      assert(sandbox.trafficAccessToken)
+
+      // Start a simple HTTP server in the sandbox
+      const port = 8080
+      sandbox.commands.run(`python3 -m http.server ${port}`, {
+        background: true,
+      })
+
+      // Wait for server to start
+      await new Promise((resolve) => setTimeout(resolve, 3000))
+
+      // Get the public URL for the sandbox
+      const sandboxUrl = `https://${sandbox.getHost(port)}`
+
+      // Test 1: Request without traffic access token should fail with 403
+      const response1 = await fetch(sandboxUrl)
+      assert.equal(response1.status, 403)
+
+      // Test 2: Request with valid traffic access token should succeed
+      const response2 = await fetch(sandboxUrl, {
+        headers: {
+          'e2b-traffic-access-token': sandbox.trafficAccessToken,
+        },
+      })
+      assert.equal(response2.status, 200)
+    }
+  )
+})
+
+describe('allowPublicTraffic=true', () => {
+  sandboxTest.scoped({
+    sandboxOpts: {
+      network: {
+        allowPublicTraffic: true,
+      },
+    },
+  })
+
+  sandboxTest.skipIf(isDebug)(
+    'sandbox works without token',
+    async ({ sandbox }) => {
+      // Start a simple HTTP server in the sandbox
+      const port = 8080
+      sandbox.commands.run(`python3 -m http.server ${port}`, {
+        background: true,
+      })
+
+      // Wait for server to start
+      await new Promise((resolve) => setTimeout(resolve, 3000))
+
+      // Get the public URL for the sandbox
+      const sandboxUrl = `https://${sandbox.getHost(port)}`
+
+      // Request without traffic access token should succeed (public access enabled)
+      const response = await fetch(sandboxUrl)
+      assert.equal(response.status, 200)
+    }
+  )
+})
+
+describe('maskRequestHost option', () => {
+  sandboxTest.scoped({
+    sandboxOpts: {
+      network: {
+        maskRequestHost: 'custom-host.example.com:${PORT}',
+      },
+    },
+  })
+
+  sandboxTest.skipIf(isDebug)(
+    'verify maskRequestHost modifies Host header correctly',
+    async ({ sandbox }) => {
+      // Install netcat for testing
+      await sandbox.commands.run('apt-get update', { user: 'root' })
+      await sandbox.commands.run('apt-get install -y netcat-traditional', {
+        user: 'root',
+      })
+
+      const port = 8080
+      const outputFile = '/tmp/nc_output.txt'
+
+      // Start netcat listener in background to capture request headers
+      sandbox.commands.run(`nc -l -p ${port} > ${outputFile}`, {
+        background: true,
+        user: 'root',
+      })
+
+      // Wait for netcat to start
+      await new Promise((resolve) => setTimeout(resolve, 3000))
+
+      // Get the public URL for the sandbox
+      const sandboxUrl = `https://${sandbox.getHost(port)}`
+
+      // Make a request from OUTSIDE the sandbox through the proxy
+      // The Host header should be modified according to maskRequestHost
+      try {
+        await fetch(sandboxUrl, { signal: AbortSignal.timeout(5000) })
+      } catch (error) {
+        // Request may fail since netcat doesn't respond properly, but headers are captured
+      }
+
+      // Read the captured output from inside the sandbox
+      const result = await sandbox.commands.run(`cat ${outputFile}`, {
+        user: 'root',
+      })
+
+      // Verify the Host header was modified according to maskRequestHost
+      assert.include(result.stdout, 'Host:')
+      assert.include(result.stdout, 'custom-host.example.com')
+      assert.include(result.stdout, `${port}`)
+    }
+  )
+})
