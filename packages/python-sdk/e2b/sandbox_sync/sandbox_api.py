@@ -1,32 +1,38 @@
 import datetime
-from typing import Optional, Dict, List
+from typing import Dict, List, Optional
 
 from packaging.version import Version
 from typing_extensions import Unpack
 
 from e2b.api import SandboxCreateResponse, handle_api_exception
-from e2b.api.client.models import (
-    Sandbox,
-    ConnectSandbox,
-)
 from e2b.api.client.api.sandboxes import (
     delete_sandboxes_sandbox_id,
     get_sandboxes_sandbox_id,
     get_sandboxes_sandbox_id_metrics,
-    post_sandboxes_sandbox_id_pause,
+    post_sandboxes,
     post_sandboxes_sandbox_id_connect,
+    post_sandboxes_sandbox_id_pause,
+    post_sandboxes_sandbox_id_timeout,
 )
 from e2b.api.client.models import (
+    ConnectSandbox,
+    Error,
     NewSandbox,
     PostSandboxesSandboxIDTimeoutBody,
-    Error,
+    Sandbox,
     SandboxNetworkConfig,
 )
 from e2b.api.client.types import UNSET
-from e2b.connection_config import ConnectionConfig, ApiParams
-from e2b.exceptions import TemplateException, SandboxException, NotFoundException
+from e2b.connection_config import ApiParams, ConnectionConfig
+from e2b.exceptions import NotFoundException, SandboxException, TemplateException
 from e2b.sandbox.main import SandboxBase
-from e2b.sandbox.sandbox_api import SandboxInfo, SandboxMetrics, SandboxQuery, McpServer
+from e2b.sandbox.sandbox_api import (
+    McpServer,
+    SandboxInfo,
+    SandboxMetrics,
+    SandboxNetworkOpts,
+    SandboxQuery,
+)
 from e2b.sandbox_sync.paginator import SandboxPaginator, get_api_client
 
 
