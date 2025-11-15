@@ -78,6 +78,7 @@ async def get_file_upload_link(
 
 
 async def upload_file(
+    api_client: AuthenticatedClient,
     file_name: str,
     context_path: str,
     url: str,
@@ -89,9 +90,10 @@ async def upload_file(
         tar_buffer = tar_file_stream(
             file_name, context_path, ignore_patterns, resolve_symlinks
         )
-        async with httpx.AsyncClient() as client:
-            response = await client.put(url, content=tar_buffer.getvalue())
-            response.raise_for_status()
+
+        client = api_client.get_async_httpx_client()
+        response = await client.put(url, content=tar_buffer.getvalue())
+        response.raise_for_status()
     except httpx.HTTPStatusError as e:
         raise FileUploadException(f"Failed to upload file: {e}").with_traceback(
             stack_trace

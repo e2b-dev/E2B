@@ -78,6 +78,7 @@ def get_file_upload_link(
 
 
 def upload_file(
+    api_client: AuthenticatedClient,
     file_name: str,
     context_path: str,
     url: str,
@@ -89,9 +90,9 @@ def upload_file(
         tar_buffer = tar_file_stream(
             file_name, context_path, ignore_patterns, resolve_symlinks
         )
-        with httpx.Client() as client:
-            response = client.put(url, content=tar_buffer.getvalue())
-            response.raise_for_status()
+        client = api_client.get_httpx_client()
+        response = client.put(url, content=tar_buffer.getvalue())
+        response.raise_for_status()
     except httpx.HTTPStatusError as e:
         raise FileUploadException(f"Failed to upload file: {e}").with_traceback(
             stack_trace
