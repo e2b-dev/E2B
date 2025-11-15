@@ -163,7 +163,8 @@ async def test_allow_public_traffic_true(async_sandbox_factory):
 async def test_mask_request_host(async_sandbox_factory):
     """Test that mask_request_host modifies the Host header correctly."""
     async_sandbox = await async_sandbox_factory(
-        network=SandboxNetworkOpts(mask_request_host="custom-host.example.com:${PORT}")
+        network=SandboxNetworkOpts(mask_request_host="custom-host.example.com:${PORT}"),
+        timeout=60,
     )
 
     import asyncio

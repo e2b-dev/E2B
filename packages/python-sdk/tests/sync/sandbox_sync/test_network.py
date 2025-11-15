@@ -162,6 +162,7 @@ def test_mask_request_host(sandbox_factory):
     """Test that mask_request_host modifies the Host header correctly."""
     sandbox = sandbox_factory(
         network=SandboxNetworkOpts(mask_request_host="custom-host.example.com:${PORT}"),
+        timeout=60,
     )
 
     import time
