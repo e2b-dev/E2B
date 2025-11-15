@@ -49,7 +49,9 @@ def test_deny_specific_ip(sandbox_factory):
 @pytest.mark.skip_debug()
 def test_deny_all_traffic(sandbox_factory):
     """Test that sandbox can deny all traffic using all_traffic helper."""
-    sandbox = sandbox_factory(network=SandboxNetworkOpts(deny_out=[ALL_TRAFFIC]))
+    sandbox = sandbox_factory(
+        network=SandboxNetworkOpts(deny_out=[ALL_TRAFFIC]), timeout=30
+    )
 
     # Test that all traffic is denied
     with pytest.raises(CommandExitException) as exc_info:
@@ -92,7 +94,9 @@ def test_allow_takes_precedence_over_deny(sandbox_factory):
 @pytest.mark.skip_debug()
 def test_allow_public_traffic_false(sandbox_factory):
     """Test that sandbox with allow_public_traffic=False requires traffic access token."""
-    sandbox = sandbox_factory(network=SandboxNetworkOpts(allow_public_traffic=False))
+    sandbox = sandbox_factory(
+        secure=True, network=SandboxNetworkOpts(allow_public_traffic=False)
+    )
 
     import time
 
@@ -157,7 +161,7 @@ def test_allow_public_traffic_true(sandbox_factory):
 def test_mask_request_host(sandbox_factory):
     """Test that mask_request_host modifies the Host header correctly."""
     sandbox = sandbox_factory(
-        network=SandboxNetworkOpts(mask_request_host="custom-host.example.com:${PORT}")
+        network=SandboxNetworkOpts(mask_request_host="custom-host.example.com:${PORT}"),
     )
 
     import time

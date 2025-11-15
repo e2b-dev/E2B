@@ -7,7 +7,7 @@ from e2b.sandbox.commands.command_handle import CommandExitException
 @pytest.mark.skip_debug()
 async def test_allow_specific_ip_with_deny_all(async_sandbox_factory):
     """Test that sandbox with denyOut all and allowOut creates a whitelist."""
-    async_sandbox = async_sandbox_factory(
+    async_sandbox = await async_sandbox_factory(
         network=SandboxNetworkOpts(deny_out=[ALL_TRAFFIC], allow_out=["1.1.1.1"])
     )
 
@@ -29,7 +29,7 @@ async def test_allow_specific_ip_with_deny_all(async_sandbox_factory):
 @pytest.mark.skip_debug()
 async def test_deny_specific_ip(async_sandbox_factory):
     """Test that sandbox with denyOut denies specified IP addresses."""
-    async_sandbox = async_sandbox_factory(
+    async_sandbox = await async_sandbox_factory(
         network=SandboxNetworkOpts(deny_out=["8.8.8.8"])
     )
 
@@ -51,8 +51,8 @@ async def test_deny_specific_ip(async_sandbox_factory):
 @pytest.mark.skip_debug()
 async def test_deny_all_traffic(async_sandbox_factory):
     """Test that sandbox can deny all traffic using all_traffic helper."""
-    async_sandbox = async_sandbox_factory(
-        network=SandboxNetworkOpts(deny_out=[ALL_TRAFFIC])
+    async_sandbox = await async_sandbox_factory(
+        network=SandboxNetworkOpts(deny_out=[ALL_TRAFFIC]), timeout=30
     )
 
     # Test that all traffic is denied
@@ -72,7 +72,7 @@ async def test_deny_all_traffic(async_sandbox_factory):
 @pytest.mark.skip_debug()
 async def test_allow_takes_precedence_over_deny(async_sandbox_factory):
     """Test that allowOut takes precedence over denyOut."""
-    async_sandbox = async_sandbox_factory(
+    async_sandbox = await async_sandbox_factory(
         network=SandboxNetworkOpts(
             deny_out=[ALL_TRAFFIC], allow_out=["1.1.1.1", "8.8.8.8"]
         )
@@ -96,8 +96,8 @@ async def test_allow_takes_precedence_over_deny(async_sandbox_factory):
 @pytest.mark.skip_debug()
 async def test_allow_public_traffic_false(async_sandbox_factory):
     """Test that sandbox with allow_public_traffic=False requires traffic access token."""
-    async_sandbox = async_sandbox_factory(
-        network=SandboxNetworkOpts(allow_public_traffic=False)
+    async_sandbox = await async_sandbox_factory(
+        secure=True, network=SandboxNetworkOpts(allow_public_traffic=False)
     )
 
     import asyncio
@@ -109,9 +109,8 @@ async def test_allow_public_traffic_false(async_sandbox_factory):
 
     # Start a simple HTTP server in the sandbox
     port = 8080
-    async_sandbox.commands.run(
-        f"python3 -m http.server {port}",
-        background=True,
+    await async_sandbox.commands.run(
+        f"python3 -m http.server {port}", background=True, timeout=0
     )
 
     # Wait for server to start
@@ -134,7 +133,7 @@ async def test_allow_public_traffic_false(async_sandbox_factory):
 @pytest.mark.skip_debug()
 async def test_allow_public_traffic_true(async_sandbox_factory):
     """Test that sandbox with allow_public_traffic=True works without token."""
-    async_sandbox = async_sandbox_factory(
+    async_sandbox = await async_sandbox_factory(
         network=SandboxNetworkOpts(allow_public_traffic=True)
     )
 
@@ -144,9 +143,8 @@ async def test_allow_public_traffic_true(async_sandbox_factory):
 
     # Start a simple HTTP server in the sandbox
     port = 8080
-    async_sandbox.commands.run(
-        f"python3 -m http.server {port}",
-        background=True,
+    await async_sandbox.commands.run(
+        f"python3 -m http.server {port}", background=True, timeout=0
     )
 
     # Wait for server to start
@@ -164,7 +162,7 @@ async def test_allow_public_traffic_true(async_sandbox_factory):
 @pytest.mark.skip_debug()
 async def test_mask_request_host(async_sandbox_factory):
     """Test that mask_request_host modifies the Host header correctly."""
-    async_sandbox = async_sandbox_factory(
+    async_sandbox = await async_sandbox_factory(
         network=SandboxNetworkOpts(mask_request_host="custom-host.example.com:${PORT}")
     )
 
@@ -182,9 +180,10 @@ async def test_mask_request_host(async_sandbox_factory):
     output_file = "/tmp/nc_output.txt"
 
     # Start netcat listener in background to capture request headers
-    async_sandbox.commands.run(
+    await async_sandbox.commands.run(
         f"nc -l -p {port} > {output_file}",
         background=True,
+        timeout=0,
         user="root",
     )
 
