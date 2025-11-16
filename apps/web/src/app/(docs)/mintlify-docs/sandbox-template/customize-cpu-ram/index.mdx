@@ -1,0 +1,18 @@
+---
+title: "Customize sandbox CPU & RAM"
+sidebarTitle: Customize CPU & RAM
+---
+
+You can customize the CPU and RAM of your sandbox template via E2B CLI.
+
+You'll need to create a sandbox [template first](/sandbox-template).
+
+During the build step, you can specify the CPU and RAM of your sandbox template.
+
+The following command will create a sandbox template with 2 CPUs and 2GB of RAM.
+
+<CodeGroup>
+```bash  Terminal
+e2b template build -c "/root/.jupyter/start-up.sh" --cpu-count 2 --memory-mb 2048
+```
+</CodeGroup>
