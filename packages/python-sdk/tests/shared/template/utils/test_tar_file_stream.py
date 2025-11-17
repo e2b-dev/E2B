@@ -10,8 +10,9 @@ class TestTarFileStream:
     @pytest.fixture
     def test_dir(self):
         """Create a temporary directory for testing."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            yield tmpdir
+        tmpdir = tempfile.TemporaryDirectory()
+        yield tmpdir.name
+        tmpdir.cleanup()
 
     def _extract_tar_contents(self, tar_buffer: io.BytesIO) -> dict:
         """Extract tar contents into a dictionary mapping paths to file contents."""
