@@ -14,8 +14,15 @@ permissions:
 
 jobs:
   test:
-    name: CLI - Build
-    runs-on: ubuntu-22.04
+    defaults:
+      run:
+        working-directory: ./packages/cli
+        shell: bash
+    name: CLI - Build (${{ matrix.os }})
+    strategy:
+      matrix:
+        os: [ubuntu-22.04, windows-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
