@@ -90,6 +90,11 @@ export class Sandbox extends SandboxApi {
    */
   readonly sandboxDomain: string
 
+  /**
+   * Traffic access token for accessing sandbox services with restricted public traffic.
+   */
+  readonly trafficAccessToken?: string
+
   protected readonly envdPort = 49983
   protected readonly mcpPort = 50005
 
@@ -113,6 +118,7 @@ export class Sandbox extends SandboxApi {
       sandboxDomain?: string
       envdVersion: string
       envdAccessToken?: string
+      trafficAccessToken?: string
     }
   ) {
     super()
@@ -123,9 +129,16 @@ export class Sandbox extends SandboxApi {
     this.sandboxDomain = opts.sandboxDomain ?? this.connectionConfig.domain
 
     this.envdAccessToken = opts.envdAccessToken
-    this.envdApiUrl = `${
-      this.connectionConfig.debug ? 'http' : 'https'
-    }://${this.getHost(this.envdPort)}`
+    this.trafficAccessToken = opts.trafficAccessToken
+    this.envdApiUrl = this.connectionConfig.getSandboxUrl(this.sandboxId, {
+      sandboxDomain: this.sandboxDomain,
+      envdPort: this.envdPort,
+    })
+
+    const sandboxHeaders = {
+      'E2b-Sandbox-Id': this.sandboxId,
+      'E2b-Sandbox-Port': this.envdPort.toString(),
+    }
 
     const rpcTransport = createConnectTransport({
       baseUrl: this.envdApiUrl,
@@ -139,6 +152,9 @@ export class Sandbox extends SandboxApi {
 
         const headers = new Headers(this.connectionConfig.headers)
         new Headers(options?.headers).forEach((value, key) =>
+          headers.append(key, value)
+        )
+        new Headers(sandboxHeaders).forEach((value, key) =>
           headers.append(key, value)
         )
 
@@ -411,6 +427,7 @@ export class Sandbox extends SandboxApi {
       sandboxId,
       sandboxDomain: sandbox.sandboxDomain,
       envdAccessToken: sandbox.envdAccessToken,
+      trafficAccessToken: sandbox.trafficAccessToken,
       envdVersion: sandbox.envdVersion,
       ...config,
     }) as InstanceType<S>
@@ -459,11 +476,11 @@ export class Sandbox extends SandboxApi {
    * ```
    */
   getHost(port: number) {
-    if (this.connectionConfig.debug) {
-      return `localhost:${port}`
-    }
-
-    return `${port}-${this.sandboxId}.${this.sandboxDomain}`
+    return this.connectionConfig.getHost(
+      this.sandboxId,
+      port,
+      this.sandboxDomain
+    )
   }
 
   /**

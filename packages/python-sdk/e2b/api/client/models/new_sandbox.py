@@ -8,6 +8,7 @@ from ..types import UNSET, Unset
 
 if TYPE_CHECKING:
     from ..models.mcp_type_0 import McpType0
+    from ..models.sandbox_network_config import SandboxNetworkConfig
 
 
 T = TypeVar("T", bound="NewSandbox")
@@ -18,11 +19,13 @@ class NewSandbox:
     """
     Attributes:
         template_id (str): Identifier of the required template
-        allow_internet_access (Union[Unset, bool]): Allow sandbox to access the internet
+        allow_internet_access (Union[Unset, bool]): Allow sandbox to access the internet. When set to false, it behaves
+            the same as specifying denyOut to 0.0.0.0/0 in the network config.
         auto_pause (Union[Unset, bool]): Automatically pauses the sandbox after the timeout Default: False.
         env_vars (Union[Unset, Any]):
         mcp (Union['McpType0', None, Unset]): MCP configuration for the sandbox
         metadata (Union[Unset, Any]):
+        network (Union[Unset, SandboxNetworkConfig]):
         secure (Union[Unset, bool]): Secure all system communication with sandbox
         timeout (Union[Unset, int]): Time to live for the sandbox in seconds. Default: 15.
     """
@@ -33,6 +36,7 @@ class NewSandbox:
     env_vars: Union[Unset, Any] = UNSET
     mcp: Union["McpType0", None, Unset] = UNSET
     metadata: Union[Unset, Any] = UNSET
+    network: Union[Unset, "SandboxNetworkConfig"] = UNSET
     secure: Union[Unset, bool] = UNSET
     timeout: Union[Unset, int] = 15
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
@@ -58,6 +62,10 @@ class NewSandbox:
 
         metadata = self.metadata
 
+        network: Union[Unset, dict[str, Any]] = UNSET
+        if not isinstance(self.network, Unset):
+            network = self.network.to_dict()
+
         secure = self.secure
 
         timeout = self.timeout
@@ -79,6 +87,8 @@ class NewSandbox:
             field_dict["mcp"] = mcp
         if metadata is not UNSET:
             field_dict["metadata"] = metadata
+        if network is not UNSET:
+            field_dict["network"] = network
         if secure is not UNSET:
             field_dict["secure"] = secure
         if timeout is not UNSET:
@@ -89,6 +99,7 @@ class NewSandbox:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         from ..models.mcp_type_0 import McpType0
+        from ..models.sandbox_network_config import SandboxNetworkConfig
 
         d = dict(src_dict)
         template_id = d.pop("templateID")
@@ -118,6 +129,13 @@ class NewSandbox:
 
         metadata = d.pop("metadata", UNSET)
 
+        _network = d.pop("network", UNSET)
+        network: Union[Unset, SandboxNetworkConfig]
+        if isinstance(_network, Unset):
+            network = UNSET
+        else:
+            network = SandboxNetworkConfig.from_dict(_network)
+
         secure = d.pop("secure", UNSET)
 
         timeout = d.pop("timeout", UNSET)
@@ -129,6 +147,7 @@ class NewSandbox:
             env_vars=env_vars,
             mcp=mcp,
             metadata=metadata,
+            network=network,
             secure=secure,
             timeout=timeout,
         )

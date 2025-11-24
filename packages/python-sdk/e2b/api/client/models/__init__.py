@@ -38,6 +38,7 @@ from .sandbox_log_entry import SandboxLogEntry
 from .sandbox_log_entry_fields import SandboxLogEntryFields
 from .sandbox_logs import SandboxLogs
 from .sandbox_metric import SandboxMetric
+from .sandbox_network_config import SandboxNetworkConfig
 from .sandbox_state import SandboxState
 from .sandboxes_with_metrics import SandboxesWithMetrics
 from .team import Team
@@ -47,6 +48,7 @@ from .team_user import TeamUser
 from .template import Template
 from .template_build import TemplateBuild
 from .template_build_file_upload import TemplateBuildFileUpload
+from .template_build_info import TemplateBuildInfo
 from .template_build_request import TemplateBuildRequest
 from .template_build_request_v2 import TemplateBuildRequestV2
 from .template_build_request_v3 import TemplateBuildRequestV3
@@ -56,6 +58,7 @@ from .template_legacy import TemplateLegacy
 from .template_request_response_v3 import TemplateRequestResponseV3
 from .template_step import TemplateStep
 from .template_update_request import TemplateUpdateRequest
+from .template_with_builds import TemplateWithBuilds
 from .update_team_api_key import UpdateTeamAPIKey
 
 __all__ = (
@@ -96,6 +99,7 @@ __all__ = (
     "SandboxLogEntryFields",
     "SandboxLogs",
     "SandboxMetric",
+    "SandboxNetworkConfig",
     "SandboxState",
     "Team",
     "TeamAPIKey",
@@ -104,6 +108,7 @@ __all__ = (
     "Template",
     "TemplateBuild",
     "TemplateBuildFileUpload",
+    "TemplateBuildInfo",
     "TemplateBuildRequest",
     "TemplateBuildRequestV2",
     "TemplateBuildRequestV3",
@@ -113,5 +118,6 @@ __all__ = (
     "TemplateRequestResponseV3",
     "TemplateStep",
     "TemplateUpdateRequest",
+    "TemplateWithBuilds",
     "UpdateTeamAPIKey",
 )
