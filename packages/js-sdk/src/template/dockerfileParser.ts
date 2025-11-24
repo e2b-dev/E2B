@@ -115,13 +115,13 @@ export function parseDockerfile(
         break
 
       case 'WORKDIR':
-        workdirChanged = true
         handleWorkdirInstruction(instruction, templateBuilder)
+        workdirChanged = true
         break
 
       case 'USER':
-        userChanged = true
         handleUserInstruction(instruction, templateBuilder)
+        userChanged = true
         break
 
       case 'ENV':

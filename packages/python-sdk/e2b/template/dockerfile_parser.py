@@ -121,11 +121,11 @@ def parse_dockerfile(
             elif instruction in ["COPY", "ADD"]:
                 _handle_copy_instruction(value, template_builder)
             elif instruction == "WORKDIR":
-                workdir_changed = True
                 _handle_workdir_instruction(value, template_builder)
+                workdir_changed = True
             elif instruction == "USER":
-                user_changed = True
                 _handle_user_instruction(value, template_builder)
+                user_changed = True
             elif instruction in ["ENV", "ARG"]:
                 _handle_env_instruction(value, instruction, template_builder)
             elif instruction in ["CMD", "ENTRYPOINT"]:
