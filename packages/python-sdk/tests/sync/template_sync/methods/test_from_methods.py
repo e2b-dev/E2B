@@ -117,7 +117,7 @@ RUN npm install"""
 
 @pytest.mark.skip_debug()
 def test_from_dockerfile_with_default_user_and_workdir(setup_dockerfile_context):
-    dockerfile = """FROM node:24"""
+    dockerfile = "FROM node:24"
 
     template = Template(file_context_path=setup_dockerfile_context).from_dockerfile(
         dockerfile
@@ -131,7 +131,7 @@ def test_from_dockerfile_with_default_user_and_workdir(setup_dockerfile_context)
 
 @pytest.mark.skip_debug()
 def test_from_dockerfile_with_custom_user_and_workdir(setup_dockerfile_context):
-    dockerfile = """FROM node:24\nUSER mish\nWORKDIR /home/mish"""
+    dockerfile = "FROM node:24\nUSER mish\nWORKDIR /home/mish"
 
     template = Template(file_context_path=setup_dockerfile_context).from_dockerfile(
         dockerfile

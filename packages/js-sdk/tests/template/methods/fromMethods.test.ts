@@ -96,7 +96,7 @@ RUN npm install`
 })
 
 buildTemplateTest('fromDockerfile with default user and workdir', () => {
-  const dockerfile = `FROM node:24`
+  const dockerfile = 'FROM node:24'
   const template = Template({ fileContextPath }).fromDockerfile(dockerfile)
 
   assert.equal(
@@ -122,7 +122,7 @@ buildTemplateTest('fromDockerfile with default user and workdir', () => {
 })
 
 buildTemplateTest('fromDockerfile with custom user and workdir', () => {
-  const dockerfile = `FROM node:24\nUSER mish\nWORKDIR /home/mish`
+  const dockerfile = 'FROM node:24\nUSER mish\nWORKDIR /home/mish'
   const template = Template({ fileContextPath }).fromDockerfile(dockerfile)
 
   assert.equal(
