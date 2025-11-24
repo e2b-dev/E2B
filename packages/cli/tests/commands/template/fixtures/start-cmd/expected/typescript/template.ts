@@ -11,5 +11,4 @@ export const template = Template()
     'PYTHONUNBUFFERED': '1',
   })
   .setUser('user')
-  .setWorkdir('/home/user')
   .setStartCmd('sudo node server.js', 'sleep 20')

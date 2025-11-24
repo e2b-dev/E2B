@@ -8,6 +8,5 @@ template = (
     .set_workdir("/app")
     .copy("server.js", ".")
     .set_user("user")
-    .set_workdir("/home/user")
     .set_start_cmd("sudo node server.js", "curl -f http://localhost:3000/health || exit 1")
 )
