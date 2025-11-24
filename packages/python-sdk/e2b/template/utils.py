@@ -35,6 +35,16 @@ def read_dockerignore(context_path: str) -> List[str]:
     ]
 
 
+def normalize_path(path: str) -> str:
+    """
+    Normalize path separators to forward slashes for glob patterns (glob expects / even on Windows).
+
+    :param path: The path to normalize
+    :return: The normalized path
+    """
+    return path.replace(os.sep, "/")
+
+
 def get_all_files_in_path(
     src: str,
     context_path: str,
@@ -70,7 +80,7 @@ def get_all_files_in_path(
             if include_directories:
                 files.add(file_path)
             dir_files = glob.glob(
-                os.path.join(file, "**/*"),
+                normalize_path(file) + "/**/*",
                 flags=glob.GLOBSTAR,
                 root_dir=abs_context_path,
                 exclude=ignore_patterns,
