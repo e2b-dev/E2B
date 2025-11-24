@@ -1,10 +1,11 @@
 from dataclasses import dataclass
-from typing import Optional, Dict, Union, Any, TypedDict
-from typing_extensions import Unpack, NotRequired
 from datetime import datetime
+from typing import Any, Dict, List, Optional, TypedDict, Union
+
+from typing_extensions import NotRequired, Unpack
 
 from e2b import ConnectionConfig
-from e2b.api.client.models import SandboxState, SandboxDetail, ListedSandbox
+from e2b.api.client.models import ListedSandbox, SandboxDetail, SandboxState
 from e2b.connection_config import ApiParams
 from e2b.sandbox.mcp import McpServer as BaseMcpServer
 
@@ -35,6 +36,44 @@ GitHubMcpServer = Dict[str, Union[GitHubMcpServerConfig, Any]]
 
 # Union type that combines base MCP servers with GitHub-based servers
 McpServer = Union[BaseMcpServer, GitHubMcpServer]
+
+
+class SandboxNetworkOpts(TypedDict):
+    """
+    Sandbox network configuration options.
+    """
+
+    allow_out: NotRequired[List[str]]
+    """
+    Allow outbound traffic from the sandbox to the specified addresses.
+    If `allow_out` is not specified, all outbound traffic is allowed.
+
+    Examples:
+    - To allow traffic to specific addresses: `["1.1.1.1", "8.8.8.0/24"]`
+    """
+
+    deny_out: NotRequired[List[str]]
+    """
+    Deny outbound traffic from the sandbox to the specified addresses.
+
+    Examples:
+    - To deny traffic to specific addresses: `["1.1.1.1", "8.8.8.0/24"]`
+    """
+
+    allow_public_traffic: NotRequired[bool]
+    """
+    Controls whether sandbox URLs should be publicly accessible or require authentication.
+    Defaults to True.
+    """
+
+    mask_request_host: NotRequired[str]
+    """
+    Allows specifying a custom host mask for all sandbox requests.
+    Supports ${PORT} variable. Defaults to "${PORT}-sandboxid.e2b.app".
+
+    Examples:
+    - Custom subdomain: `"${PORT}-myapp.example.com"`
+    """
 
 
 @dataclass
