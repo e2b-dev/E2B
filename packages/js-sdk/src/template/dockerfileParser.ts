@@ -86,6 +86,8 @@ export function parseDockerfile(
   const fromInstruction = fromInstructions[0]
   const argumentsData = fromInstruction.getArguments()
   let baseImage = 'e2bdev/base' // default fallback
+  let userChanged = false
+  let workdirChanged = false
   if (argumentsData && argumentsData.length > 0) {
     baseImage = argumentsData[0].getValue()
   }
@@ -113,10 +115,12 @@ export function parseDockerfile(
         break
 
       case 'WORKDIR':
+        workdirChanged = true
         handleWorkdirInstruction(instruction, templateBuilder)
         break
 
       case 'USER':
+        userChanged = true
         handleUserInstruction(instruction, templateBuilder)
         break
 
@@ -145,8 +149,12 @@ export function parseDockerfile(
   }
 
   // Set the user and workdir to the E2B defaults
-  templateBuilder.setUser('user')
-  templateBuilder.setWorkdir('/home/user')
+  if (!userChanged) {
+    templateBuilder.setUser('user')
+  }
+  if (!workdirChanged) {
+    templateBuilder.setWorkdir('/home/user')
+  }
 
   return {
     baseImage,

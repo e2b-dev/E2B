@@ -6,6 +6,7 @@ import json
 import pytest
 
 from e2b import Template
+from e2b.template.types import InstructionType
 
 
 @pytest.fixture(scope="module")
@@ -112,3 +113,31 @@ RUN npm install"""
         dockerfile
     )
     build(template, skip_cache=True)
+
+
+@pytest.mark.skip_debug()
+def test_from_dockerfile_with_default_user_and_workdir(setup_dockerfile_context):
+    dockerfile = """FROM node:24"""
+
+    template = Template(file_context_path=setup_dockerfile_context).from_dockerfile(
+        dockerfile
+    )
+
+    assert template._template._instructions[-2]["type"] == InstructionType.USER
+    assert template._template._instructions[-2]["args"][0] == "user"
+    assert template._template._instructions[-1]["type"] == InstructionType.WORKDIR
+    assert template._template._instructions[-1]["args"][0] == "/home/user"
+
+
+@pytest.mark.skip_debug()
+def test_from_dockerfile_with_custom_user_and_workdir(setup_dockerfile_context):
+    dockerfile = """FROM node:24\nUSER mish\nWORKDIR /home/mish"""
+
+    template = Template(file_context_path=setup_dockerfile_context).from_dockerfile(
+        dockerfile
+    )
+
+    assert template._template._instructions[-2]["type"] == InstructionType.USER
+    assert template._template._instructions[-2]["args"][0] == "mish"
+    assert template._template._instructions[-1]["type"] == InstructionType.WORKDIR
+    assert template._template._instructions[-1]["args"][0] == "/home/mish"

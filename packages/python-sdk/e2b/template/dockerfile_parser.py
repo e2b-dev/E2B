@@ -101,6 +101,9 @@ def parse_dockerfile(
         if " as " in base_image.lower():
             base_image = base_image.split(" as ")[0].strip()
 
+        user_changed = False
+        workdir_changed = False
+
         # Set the user and workdir to the Docker defaults
         template_builder.set_user("root")
         template_builder.set_workdir("/")
@@ -118,8 +121,10 @@ def parse_dockerfile(
             elif instruction in ["COPY", "ADD"]:
                 _handle_copy_instruction(value, template_builder)
             elif instruction == "WORKDIR":
+                workdir_changed = True
                 _handle_workdir_instruction(value, template_builder)
             elif instruction == "USER":
+                user_changed = True
                 _handle_user_instruction(value, template_builder)
             elif instruction in ["ENV", "ARG"]:
                 _handle_env_instruction(value, instruction, template_builder)
@@ -130,8 +135,10 @@ def parse_dockerfile(
                 continue
 
     # Set the user and workdir to the E2B defaults
-    template_builder.set_user("user")
-    template_builder.set_workdir("/home/user")
+    if not user_changed:
+        template_builder.set_user("user")
+    if not workdir_changed:
+        template_builder.set_workdir("/home/user")
 
     return base_image
 
