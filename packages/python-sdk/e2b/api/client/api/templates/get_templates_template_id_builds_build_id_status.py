@@ -7,7 +7,7 @@ from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.error import Error
 from ...models.log_level import LogLevel
-from ...models.template_build import TemplateBuild
+from ...models.template_build_info import TemplateBuildInfo
 from ...types import UNSET, Response, Unset
 
 
@@ -41,9 +41,9 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Optional[Union[Error, TemplateBuild]]:
+) -> Optional[Union[Error, TemplateBuildInfo]]:
     if response.status_code == 200:
-        response_200 = TemplateBuild.from_dict(response.json())
+        response_200 = TemplateBuildInfo.from_dict(response.json())
 
         return response_200
     if response.status_code == 401:
@@ -66,7 +66,7 @@ def _parse_response(
 
 def _build_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Response[Union[Error, TemplateBuild]]:
+) -> Response[Union[Error, TemplateBuildInfo]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -82,7 +82,7 @@ def sync_detailed(
     client: AuthenticatedClient,
     logs_offset: Union[Unset, int] = 0,
     level: Union[Unset, LogLevel] = UNSET,
-) -> Response[Union[Error, TemplateBuild]]:
+) -> Response[Union[Error, TemplateBuildInfo]]:
     """Get template build info
 
     Args:
@@ -96,7 +96,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Error, TemplateBuild]]
+        Response[Union[Error, TemplateBuildInfo]]
     """
 
     kwargs = _get_kwargs(
@@ -120,7 +120,7 @@ def sync(
     client: AuthenticatedClient,
     logs_offset: Union[Unset, int] = 0,
     level: Union[Unset, LogLevel] = UNSET,
-) -> Optional[Union[Error, TemplateBuild]]:
+) -> Optional[Union[Error, TemplateBuildInfo]]:
     """Get template build info
 
     Args:
@@ -134,7 +134,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Error, TemplateBuild]
+        Union[Error, TemplateBuildInfo]
     """
 
     return sync_detailed(
@@ -153,7 +153,7 @@ async def asyncio_detailed(
     client: AuthenticatedClient,
     logs_offset: Union[Unset, int] = 0,
     level: Union[Unset, LogLevel] = UNSET,
-) -> Response[Union[Error, TemplateBuild]]:
+) -> Response[Union[Error, TemplateBuildInfo]]:
     """Get template build info
 
     Args:
@@ -167,7 +167,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Error, TemplateBuild]]
+        Response[Union[Error, TemplateBuildInfo]]
     """
 
     kwargs = _get_kwargs(
@@ -189,7 +189,7 @@ async def asyncio(
     client: AuthenticatedClient,
     logs_offset: Union[Unset, int] = 0,
     level: Union[Unset, LogLevel] = UNSET,
-) -> Optional[Union[Error, TemplateBuild]]:
+) -> Optional[Union[Error, TemplateBuildInfo]]:
     """Get template build info
 
     Args:
@@ -203,7 +203,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Error, TemplateBuild]
+        Union[Error, TemplateBuildInfo]
     """
 
     return (

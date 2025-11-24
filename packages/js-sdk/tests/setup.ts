@@ -1,12 +1,20 @@
 import { randomUUID } from 'node:crypto'
 import { test as base } from 'vitest'
-import { BuildInfo, LogEntry, Sandbox, Template, TemplateClass } from '../src'
+import {
+  BuildInfo,
+  LogEntry,
+  Sandbox,
+  SandboxOpts,
+  Template,
+  TemplateClass,
+} from '../src'
 import { template } from './template'
 
 interface SandboxFixture {
   sandbox: Sandbox
   template: string
   sandboxTestId: string
+  sandboxOpts: Partial<SandboxOpts>
 }
 
 interface BuildTemplateFixture {
@@ -41,10 +49,12 @@ export const sandboxTest = base.extend<SandboxFixture>({
     },
     { auto: true },
   ],
+  sandboxOpts: {},
   sandbox: [
-    async ({ sandboxTestId }, use) => {
+    async ({ sandboxTestId, sandboxOpts }, use) => {
       const sandbox = await Sandbox.create(template, {
         metadata: { sandboxTestId },
+        ...sandboxOpts,
       })
       try {
         await use(sandbox)

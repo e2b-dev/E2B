@@ -1,24 +1,22 @@
 import asyncio
-from typing import Callable, Optional
+import os
 import uuid
+from typing import Callable, Optional
+from uuid import uuid4
 
 import pytest
 import pytest_asyncio
-import os
-from uuid import uuid4
-
-from logging import warning
 
 from e2b import (
-    Sandbox,
-    AsyncSandbox,
     AsyncCommandHandle,
+    AsyncSandbox,
+    AsyncTemplate,
     CommandExitException,
     CommandHandle,
-    AsyncTemplate,
+    LogEntry,
+    Sandbox,
     Template,
     TemplateClass,
-    LogEntry,
 )
 
 
@@ -33,37 +31,66 @@ def template():
 
 
 @pytest.fixture()
-def sandbox(template, debug, sandbox_test_id):
-    sandbox = Sandbox.create(template, metadata={"sandbox_test_id": sandbox_test_id})
+def sandbox_factory(request, template, sandbox_test_id):
+    def factory(*, template_name: str = template, **kwargs):
+        kwargs.setdefault("secure", False)
+        kwargs.setdefault("timeout", 5)
 
+        metadata = kwargs.setdefault("metadata", dict())
+        metadata.setdefault("sandbox_test_id", sandbox_test_id)
+
+        sandbox = Sandbox.create(template_name, **kwargs)
+
+        request.addfinalizer(lambda: sandbox.kill())
+
+        return sandbox
+
+    return factory
+
+
+@pytest.fixture()
+def sandbox(sandbox_factory):
+    return sandbox_factory()
+
+
+# override the event loop so it never closes
+# this helps us with the global-scoped async http transport
+@pytest.fixture(scope="session")
+def event_loop():
     try:
-        yield sandbox
-    finally:
-        try:
-            sandbox.kill()
-        except (Exception, RuntimeError):
-            if not debug:
-                warning(
-                    "Failed to kill sandbox — this is expected if the test runs with local envd."
-                )
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+    yield loop
+    loop.close()
 
 
-@pytest_asyncio.fixture
-async def async_sandbox(template, debug, sandbox_test_id):
-    sandbox = await AsyncSandbox.create(
-        template, metadata={"sandbox_test_id": sandbox_test_id}
-    )
+@pytest.fixture
+def async_sandbox_factory(request, template, sandbox_test_id, event_loop):
+    async def factory(*, template_name: str = template, **kwargs):
+        kwargs.setdefault("timeout", 5)
 
-    try:
-        yield sandbox
-    finally:
-        try:
-            await sandbox.kill()
-        except (Exception, RuntimeError):
-            if not debug:
-                warning(
-                    "Failed to kill sandbox — this is expected if the test runs with local envd."
-                )
+        metadata = kwargs.setdefault("metadata", dict())
+        metadata.setdefault("sandbox_test_id", sandbox_test_id)
+
+        sandbox = await AsyncSandbox.create(template_name, **kwargs)
+
+        def kill():
+            async def _kill():
+                await sandbox.kill()
+
+            event_loop.run_until_complete(_kill())
+
+        request.addfinalizer(kill)
+
+        return sandbox
+
+    return factory
+
+
+@pytest.fixture
+async def async_sandbox(async_sandbox_factory):
+    return await async_sandbox_factory()
 
 
 @pytest.fixture
