@@ -1392,6 +1392,23 @@ Read and parse a .dockerignore file.
 Array of ignore patterns (empty lines and comments are filtered out)
 
 
+### normalize\_path
+
+```python
+def normalize_path(path: str) -> str
+```
+
+Normalize path separators to forward slashes for glob patterns (glob expects / even on Windows).
+
+**Arguments**:
+
+- `path`: The path to normalize
+
+**Returns**:
+
+The normalized path
+
+
 ### get\_all\_files\_in\_path
 
 ```python
