@@ -17,8 +17,13 @@ jobs:
     defaults:
       run:
         working-directory: ./packages/js-sdk
-    name: JS SDK - Build and test
-    runs-on: ubuntu-22.04
+        shell: bash
+    name: JS SDK - Build and test (${{ matrix.os }})
+    strategy:
+      matrix:
+        os: [ubuntu-22.04, windows-latest]
+      fail-fast: false
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

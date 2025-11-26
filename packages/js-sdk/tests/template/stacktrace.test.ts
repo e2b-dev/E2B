@@ -20,9 +20,15 @@ function getStackTraceCallerMethod(
   }
   const callerTrace = stackTraceLines[0]
 
-  const [, line, column] = callerTrace.split(':')
-  const lineNumber = parseInt(line)
-  const columnNumber = parseInt(column)
+  // Match line and column numbers at the end of the stack trace line
+  // Format: ...file.ts:123:45) or ...file.ts:123:45
+  // This handles Windows paths (C:\Users\...) and Unix paths
+  const lineColumnMatch = callerTrace.match(/:(\d+):(\d+)\)?$/)
+  if (!lineColumnMatch) {
+    return null
+  }
+  const lineNumber = parseInt(lineColumnMatch[1])
+  const columnNumber = parseInt(lineColumnMatch[2])
 
   const lines = fileContent.split('\n')
   const parsedLine = lines[lineNumber - 1]
@@ -30,9 +36,12 @@ function getStackTraceCallerMethod(
     return null
   }
 
-  const match = parsedLine.slice(columnNumber - 1).match(/^(\w+)\s*\(/)
-  if (match) {
-    return match[1]
+  // Extract the method name from the line
+  const methodNameMatch = parsedLine
+    .slice(columnNumber - 1)
+    .match(/^(\w+)\s*\(/)
+  if (methodNameMatch) {
+    return methodNameMatch[1]
   }
   return null
 }

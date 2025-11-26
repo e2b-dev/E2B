@@ -25,6 +25,15 @@ export function readDockerignore(contextPath: string): string[] {
 }
 
 /**
+ * Normalize path separators to forward slashes for glob patterns (glob expects / even on Windows)
+ * @param path - The path to normalize
+ * @returns The normalized path
+ */
+function normalizePath(path: string): string {
+  return path.replace(/\\/g, '/')
+}
+
+/**
  * Get all files for a given path and ignore patterns.
  *
  * @param src Path to the source directory
@@ -54,14 +63,11 @@ export async function getAllFilesInPath(
       if (includeDirectories) {
         files.set(file.fullpath(), file)
       }
-      const dirFiles = await glob(
-        path.join(path.relative(contextPath, file.fullpath()), '**/*'),
-        {
-          ignore: ignorePatterns,
-          withFileTypes: true,
-          cwd: contextPath,
-        }
-      )
+      const dirFiles = await glob(normalizePath(file.relative()) + '/**/*', {
+        ignore: ignorePatterns,
+        withFileTypes: true,
+        cwd: contextPath,
+      })
       dirFiles.forEach((f) => files.set(f.fullpath(), f))
     } else {
       // For files, just add the file
@@ -120,7 +126,7 @@ export async function calculateFilesHash(
   // Process files recursively
   for (const file of files) {
     // Add a relative path to hash calculation
-    const relativePath = path.relative(contextPath, file.fullpath())
+    const relativePath = file.relativePosix()
     hash.update(relativePath)
 
     // Add stat information to hash calculation
@@ -255,9 +261,7 @@ export async function tarFileStream(
     true
   )
 
-  const filePaths = allFiles.map((file) =>
-    path.relative(fileContextPath, file.fullpath())
-  )
+  const filePaths = allFiles.map((file) => file.relativePosix())
 
   return create(
     {
