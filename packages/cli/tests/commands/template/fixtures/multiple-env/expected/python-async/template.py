@@ -21,5 +21,4 @@ template = (
     })
     .set_workdir("/app")
     .set_user("user")
-    .set_workdir("/home/user")
 )

@@ -1,8 +1,9 @@
 import { buildTemplateTest } from '../../setup'
 import { Template } from '../../../src'
+import { InstructionType } from '../../../src/template/types'
 import path from 'node:path'
 import fs from 'node:fs'
-import { afterAll, beforeAll } from 'vitest'
+import { afterAll, beforeAll, assert } from 'vitest'
 
 const fileContextPath = path.join(__dirname, 'dockerfile-context')
 
@@ -92,4 +93,56 @@ RUN npm install`
 
   const template = Template({ fileContextPath }).fromDockerfile(dockerfile)
   await buildTemplate(template, { skipCache: true })
+})
+
+buildTemplateTest('fromDockerfile with default user and workdir', () => {
+  const dockerfile = 'FROM node:24'
+  const template = Template({ fileContextPath }).fromDockerfile(dockerfile)
+
+  assert.equal(
+    // @ts-expect-error - instructions is not a property of TemplateBuilder
+    template.instructions[template.instructions.length - 2].type,
+    InstructionType.USER
+  )
+  assert.equal(
+    // @ts-expect-error - instructions is not a property of TemplateBuilder
+    template.instructions[template.instructions.length - 2].args[0],
+    'user'
+  )
+  assert.equal(
+    // @ts-expect-error - instructions is not a property of TemplateBuilder
+    template.instructions[template.instructions.length - 1].type,
+    InstructionType.WORKDIR
+  )
+  assert.equal(
+    // @ts-expect-error - instructions is not a property of TemplateBuilder
+    template.instructions[template.instructions.length - 1].args[0],
+    '/home/user'
+  )
+})
+
+buildTemplateTest('fromDockerfile with custom user and workdir', () => {
+  const dockerfile = 'FROM node:24\nUSER mish\nWORKDIR /home/mish'
+  const template = Template({ fileContextPath }).fromDockerfile(dockerfile)
+
+  assert.equal(
+    // @ts-expect-error - instructions is not a property of TemplateBuilder
+    template.instructions[template.instructions.length - 2].type,
+    InstructionType.USER
+  )
+  assert.equal(
+    // @ts-expect-error - instructions is not a property of TemplateBuilder
+    template.instructions[template.instructions.length - 2].args[0],
+    'mish'
+  )
+  assert.equal(
+    // @ts-expect-error - instructions is not a property of TemplateBuilder
+    template.instructions[template.instructions.length - 1].type,
+    InstructionType.WORKDIR
+  )
+  assert.equal(
+    // @ts-expect-error - instructions is not a property of TemplateBuilder
+    template.instructions[template.instructions.length - 1].args[0],
+    '/home/mish'
+  )
 })
