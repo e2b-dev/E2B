@@ -56,7 +56,6 @@ export const restHandlers = [
     'https://api.e2b.app/templates/:templateID/builds/:buildID/status',
     ({ params }) => {
       const { templateID } = params
-      console.log(templateID)
       return HttpResponse.json({
         status: 'error',
         reason: {
