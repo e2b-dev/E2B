@@ -58,6 +58,24 @@ jobs:
         run: |
           pnpm install --frozen-lockfile
 
+      - name: Cache Playwright binaries (Linux)
+        if: matrix.os == 'ubuntu-22.04'
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ env.TOOL_VERSION_NODEJS }}-${{ hashFiles('packages/js-sdk/package.json') }}
+          restore-keys: |
+            playwright-${{ runner.os }}-${{ env.TOOL_VERSION_NODEJS }}-
+
+      - name: Cache Playwright binaries (Windows)
+        if: matrix.os == 'windows-latest'
+        uses: actions/cache@v4
+        with:
+          path: ~/AppData/Local/ms-playwright
+          key: playwright-${{ runner.os }}-${{ env.TOOL_VERSION_NODEJS }}-${{ hashFiles('packages/js-sdk/package.json') }}
+          restore-keys: |
+            playwright-${{ runner.os }}-${{ env.TOOL_VERSION_NODEJS }}-
+
       - name: Test build
         run: pnpm build
 
