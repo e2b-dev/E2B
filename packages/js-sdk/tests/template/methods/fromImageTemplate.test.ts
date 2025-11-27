@@ -1,9 +1,8 @@
 import { buildTemplateTest } from '../../setup'
 import { Template } from '../../../src'
-import { InstructionType } from '../../../src/template/types'
 import path from 'node:path'
 import fs from 'node:fs'
-import { afterAll, beforeAll, assert } from 'vitest'
+import { afterAll, beforeAll } from 'vitest'
 
 const fileContextPath = path.join(__dirname, 'dockerfile-context')
 
