@@ -27,32 +27,52 @@ buildTemplateTest('fromDockerfile', async () => {
   assert.equal(
     // @ts-expect-error - instructions is not a property of TemplateBuilder
     template.instructions[1].args[0],
-    '/app'
+    '/'
   )
   assert.equal(
     // @ts-expect-error - instructions is not a property of TemplateBuilder
     template.instructions[2].type,
-    InstructionType.COPY
+    InstructionType.WORKDIR
   )
   assert.equal(
     // @ts-expect-error - instructions is not a property of TemplateBuilder
     template.instructions[2].args[0],
-    'package.json'
-  )
-  assert.equal(
-    // @ts-expect-error - instructions is not a property of TemplateBuilder
-    template.instructions[2].args[1],
-    '.'
+    '/app'
   )
   assert.equal(
     // @ts-expect-error - instructions is not a property of TemplateBuilder
     template.instructions[3].type,
-    InstructionType.RUN
+    InstructionType.COPY
   )
   assert.equal(
     // @ts-expect-error - instructions is not a property of TemplateBuilder
     template.instructions[3].args[0],
+    'package.json'
+  )
+  assert.equal(
+    // @ts-expect-error - instructions is not a property of TemplateBuilder
+    template.instructions[3].args[1],
+    '.'
+  )
+  assert.equal(
+    // @ts-expect-error - instructions is not a property of TemplateBuilder
+    template.instructions[4].type,
+    InstructionType.RUN
+  )
+  assert.equal(
+    // @ts-expect-error - instructions is not a property of TemplateBuilder
+    template.instructions[4].args[0],
     'npm install'
+  )
+  assert.equal(
+    // @ts-expect-error - instructions is not a property of TemplateBuilder
+    template.instructions[5].type,
+    InstructionType.USER
+  )
+  assert.equal(
+    // @ts-expect-error - instructions is not a property of TemplateBuilder
+    template.instructions[5].args[0],
+    'user'
   )
 })
 

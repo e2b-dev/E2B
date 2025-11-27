@@ -29,7 +29,8 @@ afterAll(() => {
 
 buildTemplateTest('build template', async ({ buildTemplate }) => {
   const template = Template()
-    .fromImage('ubuntu:22.04')
+    // using base image to avoid re-building ubuntu:22.04 image
+    .fromBaseImage()
     .copy('folder/*', 'folder', { forceUpload: true })
     .runCmd('cat folder/test.txt')
     .setWorkdir('/app')
