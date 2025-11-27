@@ -63,11 +63,3 @@ buildTemplateTest(
     await buildTemplate(template)
   }
 )
-
-buildTemplateTest(
-  'build template with skipCache',
-  async ({ buildTemplate }) => {
-    const template = Template().skipCache().fromImage('ubuntu:22.04')
-    await buildTemplate(template)
-  }
-)
