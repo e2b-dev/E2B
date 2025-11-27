@@ -7,45 +7,37 @@ import linecache
 
 from e2b import Template, CopyItem, wait_for_timeout
 from e2b.api.client.models import TemplateBuildStatus
-from e2b.template_sync import build_api
+import e2b.template_sync.main as template_sync_main
+import e2b.template_sync.build_api as build_api_mod
 
 non_existent_path = "/nonexistent/path"
+
 
 @pytest.fixture(autouse=True)
 def mock_template_build(monkeypatch):
     def mock_request_build(client, name: str, cpu_count: int, memory_mb: int):
         return SimpleNamespace(template_id=name, build_id=str(uuid4()))
 
-    def mock_trigger_build(
-        client,
-        template_id: str,
-        build_id: str,
-        template,
-    ):
+    def mock_trigger_build(client, template_id: str, build_id: str, template):
         return None
 
     def mock_get_build_status(
-        client,
-        template_id: str,
-        build_id: str,
-        logs_offset: int,
+        client, template_id: str, build_id: str, logs_offset: int
     ):
-        # Using "-1" to pick the last stack trace.
         reason = SimpleNamespace(
             message="Mocked API build error",
             step="-1",
             log_entries=[],
         )
-
         return SimpleNamespace(
             status=TemplateBuildStatus.ERROR,
             log_entries=[],
             reason=reason,
         )
 
-    monkeypatch.setattr(build_api, "request_build", mock_request_build)
-    monkeypatch.setattr(build_api, "trigger_build", mock_trigger_build)
-    monkeypatch.setattr(build_api, "get_build_status", mock_get_build_status)
+    monkeypatch.setattr(template_sync_main, "request_build", mock_request_build)
+    monkeypatch.setattr(template_sync_main, "trigger_build", mock_trigger_build)
+    monkeypatch.setattr(build_api_mod, "get_build_status", mock_get_build_status)
 
 
 def _expect_to_throw_and_check_trace(func, expected_method: str):
