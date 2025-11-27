@@ -21,8 +21,8 @@ def test_make_symlink_force(build):
     template = (
         Template()
         .from_image("ubuntu:22.04")
-        .skip_cache()
         .make_symlink(".bashrc", ".bashrc.local")
+        .skip_cache()
         .make_symlink(
             ".bashrc", ".bashrc.local", force=True
         )  # Overwrite existing symlink

@@ -5,7 +5,7 @@ buildTemplateTest('apt install', async ({ buildTemplate }) => {
   const template = Template()
     .fromImage('ubuntu:24.04')
     .skipCache()
-    .aptInstall(['rolldice'])
+    .aptInstall('rolldice')
 
   await buildTemplate(template)
 })
@@ -16,7 +16,7 @@ buildTemplateTest(
     const template = Template()
       .fromImage('ubuntu:24.04')
       .skipCache()
-      .aptInstall(['rolldice'], { noInstallRecommends: true })
+      .aptInstall('rolldice', { noInstallRecommends: true })
 
     await buildTemplate(template)
   }
