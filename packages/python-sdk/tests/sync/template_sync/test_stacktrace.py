@@ -1,11 +1,51 @@
 import traceback
+from types import SimpleNamespace
+from uuid import uuid4
 
 import pytest
 import linecache
 
 from e2b import Template, CopyItem, wait_for_timeout
+from e2b.api.client.models import TemplateBuildStatus
+from e2b.template_sync import build_api
 
 non_existent_path = "/nonexistent/path"
+
+@pytest.fixture(autouse=True)
+def mock_template_build(monkeypatch):
+    def mock_request_build(client, name: str, cpu_count: int, memory_mb: int):
+        return SimpleNamespace(template_id=name, build_id=str(uuid4()))
+
+    def mock_trigger_build(
+        client,
+        template_id: str,
+        build_id: str,
+        template,
+    ):
+        return None
+
+    def mock_get_build_status(
+        client,
+        template_id: str,
+        build_id: str,
+        logs_offset: int,
+    ):
+        # Using "-1" to pick the last stack trace.
+        reason = SimpleNamespace(
+            message="Mocked API build error",
+            step="-1",
+            log_entries=[],
+        )
+
+        return SimpleNamespace(
+            status=TemplateBuildStatus.ERROR,
+            log_entries=[],
+            reason=reason,
+        )
+
+    monkeypatch.setattr(build_api, "request_build", mock_request_build)
+    monkeypatch.setattr(build_api, "trigger_build", mock_trigger_build)
+    monkeypatch.setattr(build_api, "get_build_status", mock_get_build_status)
 
 
 def _expect_to_throw_and_check_trace(func, expected_method: str):
