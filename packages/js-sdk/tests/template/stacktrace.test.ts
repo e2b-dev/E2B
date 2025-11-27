@@ -166,7 +166,6 @@ buildTemplateTest('traces on fromImage registry', async ({ buildTemplate }) => {
   await expectToThrowAndCheckTrace(async () => {
     await buildTemplate(template, {
       alias: 'fromImageRegistry',
-      skipCache: true,
     })
   }, 'fromImage')
 })
@@ -181,7 +180,7 @@ buildTemplateTest('traces on fromAWSRegistry', async ({ buildTemplate }) => {
     }
   )
   await expectToThrowAndCheckTrace(async () => {
-    await buildTemplate(template, { alias: 'fromAWSRegistry', skipCache: true })
+    await buildTemplate(template, { alias: 'fromAWSRegistry' })
   }, 'fromAWSRegistry')
 })
 
@@ -193,7 +192,7 @@ buildTemplateTest('traces on fromGCPRegistry', async ({ buildTemplate }) => {
     }
   )
   await expectToThrowAndCheckTrace(async () => {
-    await buildTemplate(template, { alias: 'fromGCPRegistry', skipCache: true })
+    await buildTemplate(template, { alias: 'fromGCPRegistry' })
   }, 'fromGCPRegistry')
 })
 
@@ -201,7 +200,7 @@ buildTemplateTest('traces on copy', async ({ buildTemplate }) => {
   let template = Template().fromBaseImage()
   template = template.skipCache().copy(nonExistentPath, nonExistentPath)
   await expectToThrowAndCheckTrace(async () => {
-    await buildTemplate(template, { alias: 'copy', skipCache: true })
+    await buildTemplate(template, { alias: 'copy' })
   }, 'copy')
 })
 
@@ -211,7 +210,7 @@ buildTemplateTest('traces on copyItems', async ({ buildTemplate }) => {
     .skipCache()
     .copyItems([{ src: nonExistentPath, dest: nonExistentPath }])
   await expectToThrowAndCheckTrace(async () => {
-    await buildTemplate(template, { alias: 'copyItems', skipCache: true })
+    await buildTemplate(template, { alias: 'copyItems' })
   }, 'copyItems')
 })
 
@@ -219,7 +218,7 @@ buildTemplateTest('traces on remove', async ({ buildTemplate }) => {
   let template = Template().fromBaseImage()
   template = template.skipCache().remove(nonExistentPath)
   await expectToThrowAndCheckTrace(async () => {
-    await buildTemplate(template, { alias: 'remove', skipCache: true })
+    await buildTemplate(template, { alias: 'remove' })
   }, 'remove')
 })
 
@@ -227,7 +226,7 @@ buildTemplateTest('traces on rename', async ({ buildTemplate }) => {
   let template = Template().fromBaseImage()
   template = template.skipCache().rename(nonExistentPath, '/tmp/dest.txt')
   await expectToThrowAndCheckTrace(async () => {
-    await buildTemplate(template, { alias: 'rename', skipCache: true })
+    await buildTemplate(template, { alias: 'rename' })
   }, 'rename')
 })
 
@@ -235,7 +234,7 @@ buildTemplateTest('traces on makeDir', async ({ buildTemplate }) => {
   let template = Template().fromBaseImage()
   template = template.skipCache().makeDir('.bashrc')
   await expectToThrowAndCheckTrace(async () => {
-    await buildTemplate(template, { alias: 'makeDir', skipCache: true })
+    await buildTemplate(template, { alias: 'makeDir' })
   }, 'makeDir')
 })
 
@@ -243,7 +242,7 @@ buildTemplateTest('traces on makeSymlink', async ({ buildTemplate }) => {
   let template = Template().fromBaseImage()
   template = template.skipCache().makeSymlink('.bashrc', '.bashrc')
   await expectToThrowAndCheckTrace(async () => {
-    await buildTemplate(template, { alias: 'makeSymlink', skipCache: true })
+    await buildTemplate(template, { alias: 'makeSymlink' })
   }, 'makeSymlink')
 })
 
@@ -251,7 +250,7 @@ buildTemplateTest('traces on runCmd', async ({ buildTemplate }) => {
   let template = Template().fromBaseImage()
   template = template.skipCache().runCmd(`./${nonExistentPath}`)
   await expectToThrowAndCheckTrace(async () => {
-    await buildTemplate(template, { alias: 'runCmd', skipCache: true })
+    await buildTemplate(template, { alias: 'runCmd' })
   }, 'runCmd')
 })
 
@@ -259,7 +258,7 @@ buildTemplateTest('traces on setWorkdir', async ({ buildTemplate }) => {
   let template = Template().fromBaseImage()
   template = template.skipCache().setWorkdir('/root/.bashrc')
   await expectToThrowAndCheckTrace(async () => {
-    await buildTemplate(template, { alias: 'setWorkdir', skipCache: true })
+    await buildTemplate(template, { alias: 'setWorkdir' })
   }, 'setWorkdir')
 })
 
@@ -267,7 +266,7 @@ buildTemplateTest('traces on setUser', async ({ buildTemplate }) => {
   let template = Template().fromBaseImage()
   template = template.skipCache().setUser('; exit 1')
   await expectToThrowAndCheckTrace(async () => {
-    await buildTemplate(template, { alias: 'setUser', skipCache: true })
+    await buildTemplate(template, { alias: 'setUser' })
   }, 'setUser')
 })
 
@@ -275,7 +274,7 @@ buildTemplateTest('traces on pipInstall', async ({ buildTemplate }) => {
   let template = Template().fromBaseImage()
   template = template.skipCache().pipInstall('nonexistent-package')
   await expectToThrowAndCheckTrace(async () => {
-    await buildTemplate(template, { alias: 'pipInstall', skipCache: true })
+    await buildTemplate(template, { alias: 'pipInstall' })
   }, 'pipInstall')
 })
 
@@ -283,7 +282,7 @@ buildTemplateTest('traces on npmInstall', async ({ buildTemplate }) => {
   let template = Template().fromBaseImage()
   template = template.skipCache().npmInstall('nonexistent-package')
   await expectToThrowAndCheckTrace(async () => {
-    await buildTemplate(template, { alias: 'npmInstall', skipCache: true })
+    await buildTemplate(template, { alias: 'npmInstall' })
   }, 'npmInstall')
 })
 
@@ -291,7 +290,7 @@ buildTemplateTest('traces on aptInstall', async ({ buildTemplate }) => {
   let template = Template().fromBaseImage()
   template = template.skipCache().aptInstall('nonexistent-package')
   await expectToThrowAndCheckTrace(async () => {
-    await buildTemplate(template, { alias: 'aptInstall', skipCache: true })
+    await buildTemplate(template, { alias: 'aptInstall' })
   }, 'aptInstall')
 })
 
@@ -301,7 +300,7 @@ buildTemplateTest('traces on gitClone', async ({ buildTemplate }) => {
     .skipCache()
     .gitClone('https://github.com/nonexistent/repo.git')
   await expectToThrowAndCheckTrace(async () => {
-    await buildTemplate(template, { alias: 'gitClone', skipCache: true })
+    await buildTemplate(template, { alias: 'gitClone' })
   }, 'gitClone')
 })
 
@@ -312,7 +311,7 @@ buildTemplateTest('traces on setStartCmd', async ({ buildTemplate }) => {
     waitForTimeout(10_000)
   )
   await expectToThrowAndCheckTrace(async () => {
-    await buildTemplate(template, { alias: 'setStartCmd', skipCache: true })
+    await buildTemplate(template, { alias: 'setStartCmd' })
   }, 'setStartCmd')
 })
 
@@ -333,7 +332,6 @@ buildTemplateTest(
     await expectToThrowAndCheckTrace(async () => {
       await buildTemplate(template, {
         alias: 'betaDevContainerPrebuild',
-        skipCache: true,
       })
     }, 'betaDevContainerPrebuild')
   }
@@ -348,7 +346,6 @@ buildTemplateTest(
     await expectToThrowAndCheckTrace(async () => {
       await buildTemplate(template, {
         alias: 'betaSetDevContainerStart',
-        skipCache: true,
       })
     }, 'betaSetDevContainerStart')
   }
