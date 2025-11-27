@@ -1,9 +1,43 @@
+import traceback
+from types import SimpleNamespace
+from uuid import uuid4
+
 import pytest
 import linecache
 
 from e2b import AsyncTemplate, CopyItem, wait_for_timeout
+from e2b.api.client.models import TemplateBuildStatus
+import e2b.template_async.main as template_async_main
+import e2b.template_async.build_api as build_api_mod
 
 non_existent_path = "/nonexistent/path"
+
+
+@pytest.fixture(autouse=True)
+def mock_template_build(monkeypatch):
+    async def mock_request_build(client, name: str, cpu_count: int, memory_mb: int):
+        return SimpleNamespace(template_id=name, build_id=str(uuid4()))
+
+    async def mock_trigger_build(client, template_id: str, build_id: str, template):
+        return None
+
+    async def mock_get_build_status(
+        client, template_id: str, build_id: str, logs_offset: int
+    ):
+        reason = SimpleNamespace(
+            message="Mocked API build error",
+            step="-1",
+            log_entries=[],
+        )
+        return SimpleNamespace(
+            status=TemplateBuildStatus.ERROR,
+            log_entries=[],
+            reason=reason,
+        )
+
+    monkeypatch.setattr(template_async_main, "request_build", mock_request_build)
+    monkeypatch.setattr(template_async_main, "trigger_build", mock_trigger_build)
+    monkeypatch.setattr(build_api_mod, "get_build_status", mock_get_build_status)
 
 
 async def _expect_to_throw_and_check_trace(func, expected_method: str):
@@ -23,8 +57,8 @@ async def _expect_to_throw_and_check_trace(func, expected_method: str):
                     saw_expected_method = True
                     break
             tb = tb.tb_next
-        assert saw_this_file
-        assert saw_expected_method
+        assert saw_this_file, traceback.format_exc()
+        assert saw_expected_method, traceback.format_exc()
 
 
 @pytest.mark.skip_debug()

@@ -6,10 +6,7 @@ from e2b import AsyncTemplate
 @pytest.mark.skip_debug()
 async def test_npm_install(async_build):
     template = (
-        AsyncTemplate()
-        .from_node_image("24")
-        .skip_cache()
-        .npm_install(["lodash", "axios"])
+        AsyncTemplate().from_node_image("24").skip_cache().npm_install("left-pad")
     )
 
     await async_build(template)
@@ -18,7 +15,10 @@ async def test_npm_install(async_build):
 @pytest.mark.skip_debug()
 async def test_npm_install_global(async_build):
     template = (
-        AsyncTemplate().from_node_image("24").skip_cache().npm_install(["tsx"], g=True)
+        AsyncTemplate()
+        .from_node_image("24")
+        .skip_cache()
+        .npm_install("left-pad", g=True)
     )
 
     await async_build(template)
@@ -30,7 +30,7 @@ async def test_npm_install_dev(async_build):
         AsyncTemplate()
         .from_node_image("24")
         .skip_cache()
-        .npm_install(["typescript"], dev=True)
+        .npm_install("left-pad", dev=True)
     )
 
     await async_build(template)
