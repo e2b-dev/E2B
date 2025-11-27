@@ -12,15 +12,15 @@ const __fileContent = fs.readFileSync(__filename, 'utf8') // read current file c
 const nonExistentPath = '/nonexistent/path'
 
 // map template alias -> failed step index
-const failureMap: Record<string, number> = {
+const failureMap: Record<string, number | undefined> = {
   fromImage: 0,
   fromTemplate: 0,
   fromDockerfile: 0,
   fromImageRegistry: 0,
   fromAWSRegistry: 0,
   fromGCPRegistry: 0,
-  copy: 0,
-  copyItems: 0,
+  copy: undefined,
+  copyItems: undefined,
   remove: 1,
   rename: 1,
   makeDir: 1,
@@ -33,7 +33,7 @@ const failureMap: Record<string, number> = {
   aptInstall: 1,
   gitClone: 1,
   setStartCmd: 1,
-  addMcpServer: 0,
+  addMcpServer: undefined,
   betaDevContainerPrebuild: 1,
   betaSetDevContainerStart: 1,
 }
