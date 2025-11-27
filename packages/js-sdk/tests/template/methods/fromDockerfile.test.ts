@@ -2,9 +2,6 @@ import { buildTemplateTest } from '../../setup'
 import { Template } from '../../../src'
 import { InstructionType } from '../../../src/template/types'
 import { assert } from 'vitest'
-import path from 'node:path'
-
-const fileContextPath = path.join(__dirname, 'dockerfile-context')
 
 buildTemplateTest('fromDockerfile', async () => {
   const dockerfile = `FROM node:24
@@ -12,7 +9,7 @@ buildTemplateTest('fromDockerfile', async () => {
   COPY package.json .
   RUN npm install`
 
-  const template = Template({ fileContextPath }).fromDockerfile(dockerfile)
+  const template = Template().fromDockerfile(dockerfile)
 
   assert.equal(
     // @ts-expect-error - baseImage is not a property of TemplateBuilder
@@ -78,7 +75,7 @@ buildTemplateTest('fromDockerfile', async () => {
 
 buildTemplateTest('fromDockerfile with default user and workdir', () => {
   const dockerfile = 'FROM node:24'
-  const template = Template({ fileContextPath }).fromDockerfile(dockerfile)
+  const template = Template().fromDockerfile(dockerfile)
 
   assert.equal(
     // @ts-expect-error - instructions is not a property of TemplateBuilder
@@ -104,7 +101,7 @@ buildTemplateTest('fromDockerfile with default user and workdir', () => {
 
 buildTemplateTest('fromDockerfile with custom user and workdir', () => {
   const dockerfile = 'FROM node:24\nUSER mish\nWORKDIR /home/mish'
-  const template = Template({ fileContextPath }).fromDockerfile(dockerfile)
+  const template = Template().fromDockerfile(dockerfile)
 
   assert.equal(
     // @ts-expect-error - instructions is not a property of TemplateBuilder

@@ -5,7 +5,7 @@ buildTemplateTest('pip install', async ({ buildTemplate }) => {
   const template = Template()
     .fromPythonImage('3.13.7-trixie')
     .skipCache()
-    .pipInstall(['six', 'pyyaml'])
+    .pipInstall('pip-install-test')
 
   await buildTemplate(template)
 })
@@ -14,7 +14,7 @@ buildTemplateTest('pip install (user)', async ({ buildTemplate }) => {
   const template = Template()
     .fromPythonImage('3.13.7-trixie')
     .skipCache()
-    .pipInstall(['six', 'pyyaml'], { g: false })
+    .pipInstall('pip-install-test', { g: false })
 
   await buildTemplate(template)
 })

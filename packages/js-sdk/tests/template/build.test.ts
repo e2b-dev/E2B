@@ -39,6 +39,14 @@ buildTemplateTest('build template', async ({ buildTemplate }) => {
   await buildTemplate(template, { skipCache: true }, defaultBuildLogger())
 })
 
+buildTemplateTest(
+  'build template from base template',
+  async ({ buildTemplate }) => {
+    const template = Template().fromTemplate('base')
+    await buildTemplate(template, { skipCache: true })
+  }
+)
+
 buildTemplateTest('build template with symlinks', async ({ buildTemplate }) => {
   const template = Template()
     .fromImage('ubuntu:22.04')
