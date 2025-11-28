@@ -52,10 +52,11 @@ def mock_template_build(monkeypatch):
     async def mock_get_build_status(
         client, template_id: str, build_id: str, logs_offset: int
     ):
+        step = failure_map[template_id]
         reason = SimpleNamespace(
             message="Mocked API build error",
-            step=str(failure_map[template_id]),
             log_entries=[],
+            step=str(step) if step is not None else None,
         )
         return SimpleNamespace(
             status=TemplateBuildStatus.ERROR,

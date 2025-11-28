@@ -5,9 +5,9 @@ import { assert } from 'vitest'
 
 buildTemplateTest('fromDockerfile', async () => {
   const dockerfile = `FROM node:24
-  WORKDIR /app
-  COPY package.json .
-  RUN npm install`
+WORKDIR /app
+COPY package.json .
+RUN npm install`
 
   const template = Template().fromDockerfile(dockerfile)
 
