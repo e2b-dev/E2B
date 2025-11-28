@@ -208,6 +208,24 @@ describe('getAllFilesInPath', () => {
     expect(files).toHaveLength(0)
   })
 
+  test('should handle listing all files in current directory with dot pattern', async () => {
+    // Create a small directory tree inside the test directory
+    await writeFile(join(testDir, 'root.txt'), 'root')
+    await mkdir(join(testDir, 'subdir'), { recursive: true })
+    await writeFile(join(testDir, 'subdir', 'nested.txt'), 'nested')
+
+    const files = await getAllFilesInPath('.', testDir, [])
+
+    // We should get at least the testDir itself (.) plus its children
+    expect(files.length).toBeGreaterThanOrEqual(3)
+
+    // All returned paths must stay within the testDir - we must not traverse the whole filesystem
+    const allWithinTestDir = files.every((f) =>
+      f.fullpath().startsWith(testDir)
+    )
+    expect(allWithinTestDir).toBe(true)
+  })
+
   test('should handle complex ignore patterns with directories', async () => {
     // Create a complex structure
     await mkdir(join(testDir, 'src'), { recursive: true })

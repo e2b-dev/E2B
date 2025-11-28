@@ -63,7 +63,13 @@ export async function getAllFilesInPath(
       if (includeDirectories) {
         files.set(file.fullpath(), file)
       }
-      const dirFiles = await glob(normalizePath(file.relative()) + '/**/*', {
+      const dirPattern = normalizePath(
+        // When the matched directory is '.', `file.relative()` can be an empty string.
+        // In that case, we want to match all files under the current directory instead of
+        // creating an absolute glob like '/**/*' which would traverse the entire filesystem.
+        path.join(file.relative() || '.', '**/*')
+      )
+      const dirFiles = await glob(dirPattern, {
         ignore: ignorePatterns,
         withFileTypes: true,
         cwd: contextPath,
