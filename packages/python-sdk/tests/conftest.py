@@ -97,7 +97,7 @@ async def async_sandbox(async_sandbox_factory):
 def build():
     def _build(
         template: TemplateClass,
-        alias: str | None = None,
+        alias: Optional[str] = None,
         skip_cache: bool = False,
         on_build_logs: Optional[Callable[[LogEntry], None]] = None,
     ):
@@ -117,7 +117,7 @@ def build():
 def async_build():
     async def _async_build(
         template: TemplateClass,
-        alias: str | None = None,
+        alias: Optional[str] = None,
         skip_cache: bool = False,
         on_build_logs: Optional[Callable[[LogEntry], None]] = None,
     ):

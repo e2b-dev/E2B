@@ -1,5 +1,6 @@
 import traceback
 from types import SimpleNamespace
+from typing import Optional
 from uuid import uuid4
 
 import pytest
@@ -13,7 +14,7 @@ import e2b.template_sync.build_api as build_api_mod
 non_existent_path = "/nonexistent/path"
 
 # map template alias -> failed step index
-failure_map: dict[str, int | None] = {
+failure_map: dict[str, Optional[int]] = {
     "from_image": 0,
     "from_template": 0,
     "from_dockerfile": 0,
