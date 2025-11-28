@@ -97,12 +97,13 @@ async def async_sandbox(async_sandbox_factory):
 def build():
     def _build(
         template: TemplateClass,
+        alias: str | None = None,
         skip_cache: bool = False,
         on_build_logs: Optional[Callable[[LogEntry], None]] = None,
     ):
         return Template.build(
             template,
-            alias=f"e2b-test-{uuid4()}",
+            alias=alias or f"e2b-test-{uuid4()}",
             cpu_count=1,
             memory_mb=1024,
             skip_cache=skip_cache,
@@ -116,12 +117,13 @@ def build():
 def async_build():
     async def _async_build(
         template: TemplateClass,
+        alias: str | None = None,
         skip_cache: bool = False,
         on_build_logs: Optional[Callable[[LogEntry], None]] = None,
     ):
         return await AsyncTemplate.build(
             template,
-            alias=f"e2b-test-{uuid4()}",
+            alias=alias or f"e2b-test-{uuid4()}",
             cpu_count=1,
             memory_mb=1024,
             skip_cache=skip_cache,

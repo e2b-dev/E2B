@@ -12,6 +12,33 @@ import e2b.template_sync.build_api as build_api_mod
 
 non_existent_path = "/nonexistent/path"
 
+# map template alias -> failed step index
+failure_map: dict[str, int | None] = {
+    "from_image": 0,
+    "from_template": 0,
+    "from_dockerfile": 0,
+    "from_image_registry": 0,
+    "from_aws_registry": 0,
+    "from_gcp_registry": 0,
+    "copy": None,
+    "copy_items": None,
+    "remove": 1,
+    "rename": 1,
+    "make_dir": 1,
+    "make_symlink": 1,
+    "run_cmd": 1,
+    "set_workdir": 1,
+    "set_user": 1,
+    "pip_install": 1,
+    "npm_install": 1,
+    "apt_install": 1,
+    "git_clone": 1,
+    "set_start_cmd": 1,
+    "add_mcp_server": None,
+    "beta_dev_container_prebuild": 1,
+    "beta_set_dev_container_start": 1,
+}
+
 
 @pytest.fixture(autouse=True)
 def mock_template_build(monkeypatch):
@@ -26,7 +53,7 @@ def mock_template_build(monkeypatch):
     ):
         reason = SimpleNamespace(
             message="Mocked API build error",
-            step="-1",
+            step=str(failure_map[template_id]),
             log_entries=[],
         )
         return SimpleNamespace(
@@ -66,7 +93,7 @@ def test_traces_on_from_image(build):
     template = Template()
     template = template.from_image("e2b.dev/this-image-does-not-exist")
     _expect_to_throw_and_check_trace(
-        lambda: build(template, skip_cache=True), "from_image"
+        lambda: build(template, alias="from_image", skip_cache=True), "from_image"
     )
 
 
@@ -74,7 +101,7 @@ def test_traces_on_from_image(build):
 def test_traces_on_from_template(build):
     template = Template().from_template("this-template-does-not-exist")
     _expect_to_throw_and_check_trace(
-        lambda: build(template, skip_cache=True), "from_template"
+        lambda: build(template, alias="from_template", skip_cache=True), "from_template"
     )
 
 
@@ -83,7 +110,8 @@ def test_traces_on_from_dockerfile(build):
     template = Template()
     template = template.from_dockerfile("FROM ubuntu:22.04\nRUN nonexistent")
     _expect_to_throw_and_check_trace(
-        lambda: build(template, skip_cache=True), "from_dockerfile"
+        lambda: build(template, alias="from_dockerfile", skip_cache=True),
+        "from_dockerfile",
     )
 
 
@@ -96,7 +124,8 @@ def test_traces_on_from_image_registry(build):
         password="test",
     )
     _expect_to_throw_and_check_trace(
-        lambda: build(template, skip_cache=True), "from_image"
+        lambda: build(template, alias="from_image_registry", skip_cache=True),
+        "from_image",
     )
 
 
@@ -110,7 +139,7 @@ def test_traces_on_from_aws_registry(build):
         region="us-east-1",
     )
     _expect_to_throw_and_check_trace(
-        lambda: build(template, skip_cache=True), "from_aws_registry"
+        lambda: build(template, alias="from_aws_registry"), "from_aws_registry"
     )
 
 
@@ -124,7 +153,7 @@ def test_traces_on_from_gcp_registry(build):
         },
     )
     _expect_to_throw_and_check_trace(
-        lambda: build(template, skip_cache=True), "from_gcp_registry"
+        lambda: build(template, alias="from_gcp_registry"), "from_gcp_registry"
     )
 
 
@@ -133,7 +162,7 @@ def test_traces_on_copy(build):
     template = Template()
     template = template.from_base_image()
     template = template.skip_cache().copy(non_existent_path, non_existent_path)
-    _expect_to_throw_and_check_trace(lambda: build(template), "copy")
+    _expect_to_throw_and_check_trace(lambda: build(template, alias="copy"), "copy")
 
 
 @pytest.mark.skip_debug()
@@ -143,7 +172,9 @@ def test_traces_on_copyItems(build):
     template = template.skip_cache().copy_items(
         [CopyItem(src=non_existent_path, dest=non_existent_path)]
     )
-    _expect_to_throw_and_check_trace(lambda: build(template), "copy_items")
+    _expect_to_throw_and_check_trace(
+        lambda: build(template, alias="copy_items"), "copy_items"
+    )
 
 
 @pytest.mark.skip_debug()
@@ -151,7 +182,7 @@ def test_traces_on_remove(build):
     template = Template()
     template = template.from_base_image()
     template = template.skip_cache().remove(non_existent_path)
-    _expect_to_throw_and_check_trace(lambda: build(template), "remove")
+    _expect_to_throw_and_check_trace(lambda: build(template, alias="remove"), "remove")
 
 
 @pytest.mark.skip_debug()
@@ -159,7 +190,7 @@ def test_traces_on_rename(build):
     template = Template()
     template = template.from_base_image()
     template = template.skip_cache().rename(non_existent_path, "/tmp/dest.txt")
-    _expect_to_throw_and_check_trace(lambda: build(template), "rename")
+    _expect_to_throw_and_check_trace(lambda: build(template, alias="rename"), "rename")
 
 
 @pytest.mark.skip_debug()
@@ -167,7 +198,9 @@ def test_traces_on_make_dir(build):
     template = Template()
     template = template.from_base_image()
     template = template.set_user("root").skip_cache().make_dir("/root/.bashrc")
-    _expect_to_throw_and_check_trace(lambda: build(template), "make_dir")
+    _expect_to_throw_and_check_trace(
+        lambda: build(template, alias="make_dir"), "make_dir"
+    )
 
 
 @pytest.mark.skip_debug()
@@ -175,7 +208,9 @@ def test_traces_on_make_symlink(build):
     template = Template()
     template = template.from_base_image()
     template = template.skip_cache().make_symlink(".bashrc", ".bashrc")
-    _expect_to_throw_and_check_trace(lambda: build(template), "make_symlink")
+    _expect_to_throw_and_check_trace(
+        lambda: build(template, alias="make_symlink"), "make_symlink"
+    )
 
 
 @pytest.mark.skip_debug()
@@ -183,7 +218,9 @@ def test_traces_on_run_cmd(build):
     template = Template()
     template = template.from_base_image()
     template = template.skip_cache().run_cmd(f"cat {non_existent_path}")
-    _expect_to_throw_and_check_trace(lambda: build(template), "run_cmd")
+    _expect_to_throw_and_check_trace(
+        lambda: build(template, alias="run_cmd"), "run_cmd"
+    )
 
 
 @pytest.mark.skip_debug()
@@ -191,7 +228,9 @@ def test_traces_on_set_workdir(build):
     template = Template()
     template = template.from_base_image()
     template = template.set_user("root").skip_cache().set_workdir("/root/.bashrc")
-    _expect_to_throw_and_check_trace(lambda: build(template), "set_workdir")
+    _expect_to_throw_and_check_trace(
+        lambda: build(template, alias="set_workdir"), "set_workdir"
+    )
 
 
 @pytest.mark.skip_debug()
@@ -199,7 +238,9 @@ def test_traces_on_set_user(build):
     template = Template()
     template = template.from_base_image()
     template = template.skip_cache().set_user("; exit 1")
-    _expect_to_throw_and_check_trace(lambda: build(template), "set_user")
+    _expect_to_throw_and_check_trace(
+        lambda: build(template, alias="set_user"), "set_user"
+    )
 
 
 @pytest.mark.skip_debug()
@@ -207,7 +248,9 @@ def test_traces_on_pip_install(build):
     template = Template()
     template = template.from_base_image()
     template = template.skip_cache().pip_install("nonexistent-package")
-    _expect_to_throw_and_check_trace(lambda: build(template), "pip_install")
+    _expect_to_throw_and_check_trace(
+        lambda: build(template, alias="pip_install"), "pip_install"
+    )
 
 
 @pytest.mark.skip_debug()
@@ -215,7 +258,9 @@ def test_traces_on_npm_install(build):
     template = Template()
     template = template.from_base_image()
     template = template.skip_cache().npm_install("nonexistent-package")
-    _expect_to_throw_and_check_trace(lambda: build(template), "npm_install")
+    _expect_to_throw_and_check_trace(
+        lambda: build(template, alias="npm_install"), "npm_install"
+    )
 
 
 @pytest.mark.skip_debug()
@@ -223,7 +268,9 @@ def test_traces_on_apt_install(build):
     template = Template()
     template = template.from_base_image()
     template = template.skip_cache().apt_install("nonexistent-package")
-    _expect_to_throw_and_check_trace(lambda: build(template), "apt_install")
+    _expect_to_throw_and_check_trace(
+        lambda: build(template, alias="apt_install"), "apt_install"
+    )
 
 
 @pytest.mark.skip_debug()
@@ -231,7 +278,9 @@ def test_traces_on_git_clone(build):
     template = Template()
     template = template.from_base_image()
     template = template.skip_cache().git_clone("https://github.com/repo.git")
-    _expect_to_throw_and_check_trace(lambda: build(template), "git_clone")
+    _expect_to_throw_and_check_trace(
+        lambda: build(template, alias="git_clone"), "git_clone"
+    )
 
 
 @pytest.mark.skip_debug()
@@ -241,7 +290,9 @@ def test_traces_on_set_start_cmd(build):
     template = template.set_start_cmd(
         f"./{non_existent_path}", wait_for_timeout(10_000)
     )
-    _expect_to_throw_and_check_trace(lambda: build(template), "set_start_cmd")
+    _expect_to_throw_and_check_trace(
+        lambda: build(template, alias="set_start_cmd"), "set_start_cmd"
+    )
 
 
 @pytest.mark.skip_debug()
@@ -259,7 +310,8 @@ def test_traces_on_dev_container_prebuild(build):
     template = template.from_template("devcontainer")
     template = template.skip_cache().beta_dev_container_prebuild(non_existent_path)
     _expect_to_throw_and_check_trace(
-        lambda: build(template), "beta_dev_container_prebuild"
+        lambda: build(template, alias="beta_dev_container_prebuild"),
+        "beta_dev_container_prebuild",
     )
 
 
@@ -269,5 +321,6 @@ def test_traces_on_set_dev_container_start(build):
     template = template.from_template("devcontainer")
     template = template.beta_set_dev_container_start(non_existent_path)
     _expect_to_throw_and_check_trace(
-        lambda: build(template), "beta_set_dev_container_start"
+        lambda: build(template, alias="beta_set_dev_container_start"),
+        "beta_set_dev_container_start",
     )
