@@ -1,0 +1,70 @@
+---
+title: "Pricing"
+---
+
+<Callout icon="circle-exclamation" color="#ff8800" iconType="regular">You are reading a legacy (pre v1.0) document.</Callout>
+
+
+import SandboxSpec from "/snippets/SandboxSpec.mdx";
+
+[Manage Billing](https://e2b.dev/dashboard?tab=billing)
+
+We charge you based on your real sandbox usage. All new users get one-time free $100 worth of usage in credits.
+
+---
+
+# Plans pricing
+Additionally to the usage costs, you can also select a tier that includes dedicated support, prioritized features, and higher sandbox limits.
+
+## Hobby tier
+**$0/month + usage costs**
+
+- One-time $100 of usage in credits
+- Community support
+- Up to 1 hour sandbox session length
+- Up to 20 concurrently running sandboxes
+
+## Pro tier
+**$150/month + usage costs**
+
+- One-time $100 of usage in credits
+- Dedicated Slack channel with live Pro support from our team
+- Prioritized features
+- Customize your [sandbox compute](/legacy/sandbox/compute)
+- Up to 24 hours sandbox session length
+- Up to 100 concurrently running sandboxes
+
+
+If you need any additional features or resources, please [reach out to us](/legacy/getting-help) with your use case.
+
+---
+
+# Compute pricing
+We charge per second of a running sandbox.
+- vCPU: $0.000014 per second (~$0.05 per hour)
+- GiB RAM: $0.0000045 per second (~$0.018 per hour)
+- GiB storage: Free
+
+<Note>
+1 GiB is equal to 1,024 MiB
+</Note>
+
+## Sandbox compute
+Pro customers can customize the sandbox with **any combination** of the CPU and RAM based on the following tables.
+
+<Note>
+<b>By default your sandbox has 2 vCPU and 512 MiB RAM.</b>
+
+To customize your sandbox compute, you need to build your custom sandbox template using the [E2B CLI](/legacy/cli/installation).
+Run [`e2b template build`](/legacy/cli/commands#template-build) and specify the `--cpu-count` and `--memory-mb` options.
+
+For example this custom build gives your sandbox 8 vCPU and 4GiB of RAM
+```sh
+e2b template build --cpu-count 8 --memory-mb 4096
+```
+</Note>
+
+<SandboxSpec/>
+
+<br/>
+[Let us know](/legacy/getting-help) if you need more powerful compute.
