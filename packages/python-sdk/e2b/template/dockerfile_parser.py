@@ -1,3 +1,4 @@
+import json
 import os
 import re
 import tempfile
@@ -256,6 +257,14 @@ def _handle_cmd_entrypoint_instruction(
     if not value.strip():
         return
     command = value.strip()
+
+    # Try to parse as JSON (for array format like CMD ["sleep", "infinity"])
+    try:
+        parsed_command = json.loads(command)
+        if isinstance(parsed_command, list):
+            command = " ".join(str(item) for item in parsed_command)
+    except Exception:
+        pass
 
     # Import wait_for_timeout locally to avoid circular dependency
     def wait_for_timeout(timeout: int) -> str:

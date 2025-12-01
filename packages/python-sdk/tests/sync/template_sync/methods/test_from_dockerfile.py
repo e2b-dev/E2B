@@ -9,7 +9,8 @@ def test_from_dockerfile():
     dockerfile = """FROM node:24
 WORKDIR /app
 COPY package.json .
-RUN npm install"""
+RUN npm install
+ENTRYPOINT ["sleep", "20"]"""
 
     template = Template().from_dockerfile(dockerfile)
 
@@ -36,6 +37,9 @@ RUN npm install"""
     # E2B defaults appended
     assert instructions[5]["type"] == InstructionType.USER
     assert instructions[5]["args"][0] == "user"
+
+    # Start command
+    assert template._template._start_cmd == "sleep 20"
 
 
 @pytest.mark.skip_debug()
