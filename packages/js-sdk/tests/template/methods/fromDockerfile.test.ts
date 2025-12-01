@@ -7,7 +7,8 @@ buildTemplateTest('fromDockerfile', async () => {
   const dockerfile = `FROM node:24
 WORKDIR /app
 COPY package.json .
-RUN npm install`
+RUN npm install
+ENTRYPOINT ["sleep", "20"]`
 
   const template = Template().fromDockerfile(dockerfile)
 
@@ -70,6 +71,11 @@ RUN npm install`
     // @ts-expect-error - instructions is not a property of TemplateBuilder
     template.instructions[5].args[0],
     'user'
+  )
+  assert.equal(
+    // @ts-expect-error - startCmd is not a property of TemplateBuilder
+    template.startCmd,
+    'sleep 20'
   )
 })
 
