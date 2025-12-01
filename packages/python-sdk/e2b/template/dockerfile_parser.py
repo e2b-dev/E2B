@@ -262,9 +262,8 @@ def _handle_cmd_entrypoint_instruction(
     try:
         parsed_command = json.loads(command)
         if isinstance(parsed_command, list):
-            command = " ".join(parsed_command)
-    except (json.JSONDecodeError, ValueError):
-        # If parsing fails, use the command as-is
+            command = " ".join(str(item) for item in parsed_command)
+    except Exception:
         pass
 
     # Import wait_for_timeout locally to avoid circular dependency
