@@ -1,0 +1,55 @@
+---
+title: "List sandboxes"
+---
+
+You can list all sandboxes using the following command:
+
+<CodeGroup>
+```bash Terminal
+e2b sandbox list
+```
+</CodeGroup>
+
+This will return running sandboxes, you can specify `--state` to get paused or both.
+
+### Filter by state
+
+To filter the sandboxes by their state you can specify the `--state` flag, which can either be "**running**", "**paused**" or both.
+
+```bash
+e2b sandbox list --state running,paused
+```
+
+### Filter by metadata
+
+To filter the sandboxes by their metadata, use the `--metadata` flag.
+
+```bash
+e2b sandbox list --metadata key1=value1,key2=value2
+```
+
+### List limit
+
+To limit the amount of sandboxes returned by the command, use the `--limit` flag.
+
+```bash
+e2b sandbox list --limit 10
+```
+
+By default, the command will return all sandboxes.
+
+### Output format
+
+To output the sandboxes in JSON format, use the `--format` flag.
+
+**Pretty print (default)**
+
+```bash
+e2b sandbox list --format pretty
+```
+
+**JSON**
+
+```bash
+e2b sandbox list --format json
+```
