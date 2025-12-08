@@ -1,6 +1,7 @@
 import crypto from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { dynamicGlob, dynamicTar } from '../utils'
 import { BASE_STEP_NAME, FINALIZE_STEP_NAME } from './consts'
 import type { Path } from 'glob'
@@ -219,9 +220,14 @@ export function getCallerDirectory(depth: number): string | undefined {
     return undefined
   }
 
-  const fileName = callSites[0].getFileName()
+  let fileName = callSites[0].getFileName()
   if (!fileName) {
     return undefined
+  }
+
+  // Handle file:// URLs returned by getFileName() in ESM modules
+  if (fileName.startsWith('file:')) {
+    fileName = fileURLToPath(fileName)
   }
 
   return path.dirname(fileName)
