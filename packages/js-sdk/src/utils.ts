@@ -85,6 +85,14 @@ export async function dynamicTar(): Promise<typeof import('tar')> {
   return await import('tar')
 }
 
+export function dynamicNodeURL(): typeof import('node:url') {
+  if (runtime === 'browser') {
+    throw new Error('Browser runtime is not supported for url')
+  }
+
+  return require('node:url')
+}
+
 // Source: https://github.com/chalk/ansi-regex/blob/main/index.js
 function ansiRegex({ onlyFirst = false } = {}) {
   // Valid string terminator sequences are BEL, ESC\, and 0x9c

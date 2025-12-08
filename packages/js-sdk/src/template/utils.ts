@@ -1,8 +1,7 @@
 import crypto from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
-import { dynamicGlob, dynamicTar } from '../utils'
+import { dynamicGlob, dynamicNodeURL, dynamicTar } from '../utils'
 import { BASE_STEP_NAME, FINALIZE_STEP_NAME } from './consts'
 import type { Path } from 'glob'
 
@@ -227,7 +226,9 @@ export function getCallerDirectory(depth: number): string | undefined {
 
   // Handle file:// URLs returned by getFileName() in ESM modules
   if (fileName.startsWith('file:')) {
-    fileName = fileURLToPath(fileName)
+    // we use the dynamic import to avoid bundling node:url for browser compatibility
+    // getCallerDirectory method is not called in the browser
+    fileName = dynamicNodeURL().fileURLToPath(fileName)
   }
 
   return path.dirname(fileName)
