@@ -1,7 +1,7 @@
 import crypto from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
-import { dynamicGlob, dynamicTar } from '../utils'
+import { dynamicImport, dynamicRequire } from '../utils'
 import { BASE_STEP_NAME, FINALIZE_STEP_NAME } from './consts'
 import type { Path } from 'glob'
 
@@ -47,7 +47,7 @@ export async function getAllFilesInPath(
   ignorePatterns: string[],
   includeDirectories: boolean = true
 ) {
-  const { glob } = await dynamicGlob()
+  const { glob } = await dynamicImport<typeof import('glob')>('glob')
   const files = new Map<string, Path>()
 
   const globFiles = await glob(src, {
@@ -219,9 +219,18 @@ export function getCallerDirectory(depth: number): string | undefined {
     return undefined
   }
 
-  const fileName = callSites[0].getFileName()
+  let fileName = callSites[0].getFileName()
   if (!fileName) {
     return undefined
+  }
+
+  // Handle file:// URLs returned by getFileName() in ESM modules
+  if (fileName.startsWith('file:')) {
+    // we use the dynamic import to avoid bundling node:url for browser compatibility
+    // getCallerDirectory method is not called in the browser
+    const { fileURLToPath } =
+      dynamicRequire<typeof import('node:url')>('node:url')
+    fileName = fileURLToPath(fileName)
   }
 
   return path.dirname(fileName)
@@ -258,7 +267,7 @@ export async function tarFileStream(
   ignorePatterns: string[],
   resolveSymlinks: boolean
 ) {
-  const { create } = await dynamicTar()
+  const { create } = await dynamicImport<typeof import('tar')>('tar')
 
   const allFiles = await getAllFilesInPath(
     fileName,
