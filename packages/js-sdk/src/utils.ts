@@ -67,30 +67,21 @@ export function timeoutToSeconds(timeout: number): number {
   return Math.ceil(timeout / 1000)
 }
 
-export async function dynamicGlob(): Promise<typeof import('glob')> {
+export function dynamicRequire<T>(module: string): T {
   if (runtime === 'browser') {
-    throw new Error('Browser runtime is not supported for glob')
+    throw new Error('Browser runtime is not supported for require')
+  }
+
+  return require(module)
+}
+
+export async function dynamicImport<T>(module: string): Promise<T> {
+  if (runtime === 'browser') {
+    throw new Error('Browser runtime is not supported for dynamic import')
   }
 
   // @ts-ignore
-  return await import('glob')
-}
-
-export async function dynamicTar(): Promise<typeof import('tar')> {
-  if (runtime === 'browser') {
-    throw new Error('Browser runtime is not supported for tar')
-  }
-
-  // @ts-ignore
-  return await import('tar')
-}
-
-export function dynamicNodeURL(): typeof import('node:url') {
-  if (runtime === 'browser') {
-    throw new Error('Browser runtime is not supported for url')
-  }
-
-  return require('node:url')
+  return await import(module)
 }
 
 // Source: https://github.com/chalk/ansi-regex/blob/main/index.js
