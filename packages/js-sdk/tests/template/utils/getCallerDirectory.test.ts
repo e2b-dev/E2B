@@ -1,6 +1,7 @@
 import { expect, test } from 'vitest'
+import os from 'node:os'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import { getCallerDirectory } from '../../../src/template/utils'
 
 test('getCallerDirectory', () => {
@@ -12,19 +13,12 @@ test('getCallerDirectory', () => {
 test('getCallerDirectory handles file:// URLs from ESM modules', () => {
   // In ESM modules, CallSite.getFileName() returns file:// URLs
   // This test verifies that the conversion works correctly
-  const testPath = '/Users/test/project/src/template.ts'
-  const fileUrl = `file://${testPath}`
+  const testDirectoryPath = path.join(os.tmpdir(), 'test', 'project', 'src')
+  const testFilePath = path.join(testDirectoryPath, 'template.ts')
+  const fileUrl = pathToFileURL(testFilePath)
 
   // Verify that fileURLToPath correctly converts the URL
   // This is the same conversion used in getCallerDirectory
-  expect(fileURLToPath(fileUrl)).toBe(testPath)
-  expect(path.dirname(fileURLToPath(fileUrl))).toBe('/Users/test/project/src')
-})
-
-test('getCallerDirectory handles file:// URLs with three slashes', () => {
-  // file:///path is the standard format on Unix systems
-  const testPath = '/Users/test/project/src/template.ts'
-  const fileUrl = `file:///${testPath.slice(1)}` // file:///Users/test/...
-
-  expect(fileURLToPath(fileUrl)).toBe(testPath)
+  expect(fileURLToPath(fileUrl)).toBe(testFilePath)
+  expect(path.dirname(fileURLToPath(fileUrl))).toBe(testDirectoryPath)
 })
