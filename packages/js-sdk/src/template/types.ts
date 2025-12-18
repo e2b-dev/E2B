@@ -567,7 +567,8 @@ export interface TemplateBuilder {
   ): TemplateBuilder
 
   /**
-   * Set environment variables.
+   * Set environment variables. 
+   * Note: Environment variables defined here are available only during template build
    * @param envs Environment variables
    *
    * @example
@@ -679,7 +680,7 @@ export interface TemplateBuilder {
  * The template can only be built in this state.
  */
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface TemplateFinal {}
+export interface TemplateFinal { }
 
 /**
  * Configuration for a generic Docker registry with basic authentication.
