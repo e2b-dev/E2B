@@ -634,7 +634,6 @@ class TemplateBuilder:
     def set_envs(self, envs: Dict[str, str]) -> "TemplateBuilder":
         """
         Set environment variables.
-
         Note: Environment variables defined here are available only during template build.
 
         :param envs: Dictionary of environment variable names and values
