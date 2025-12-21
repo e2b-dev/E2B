@@ -80,6 +80,8 @@ export class Pty {
 
   private readonly defaultPtyConnectionTimeout = 60_000 // 60 seconds
 
+  private readonly defaultPtyConnectionTimeout = 60_000 // 60 seconds
+
   constructor(
     private readonly transport: Transport,
     private readonly connectionConfig: ConnectionConfig,
