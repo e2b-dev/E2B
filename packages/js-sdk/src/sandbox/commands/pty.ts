@@ -80,8 +80,6 @@ export class Pty {
 
   private readonly defaultPtyConnectionTimeout = 60_000 // 60 seconds
 
-  private readonly defaultPtyConnectionTimeout = 60_000 // 60 seconds
-
   constructor(
     private readonly transport: Transport,
     private readonly connectionConfig: ConnectionConfig,
@@ -158,7 +156,7 @@ export class Pty {
   /**
    * Connect to a running PTY.
    *
-   * @param pid process ID of the PTY to connect to. You can get the list of running PTYs using {@link Pty.list}.
+   * @param pid process ID of the PTY to connect to. You can get the list of running PTYs using {@link Commands.list}.
    * @param opts connection options.
    * 
    * @returns handle to interact with the PTY.
