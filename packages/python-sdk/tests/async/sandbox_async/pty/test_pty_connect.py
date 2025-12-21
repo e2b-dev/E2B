@@ -1,6 +1,4 @@
-import pytest
-
-from e2b import AsyncSandbox, NotFoundException
+from e2b import AsyncSandbox
 from e2b.sandbox.commands.command_handle import PtySize
 
 
