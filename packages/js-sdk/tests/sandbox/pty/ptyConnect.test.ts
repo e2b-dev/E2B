@@ -21,7 +21,7 @@ sandboxTest('pty connect/reconnect', async ({ sandbox }) => {
     new Uint8Array(Buffer.from('echo $FOO\n'))
   )
   // Give time for the command output in the first connection
-  await new Promise(r => setTimeout(r, 300))
+  await new Promise((r) => setTimeout(r, 300))
 
   await terminal.disconnect()
 
@@ -29,7 +29,7 @@ sandboxTest('pty connect/reconnect', async ({ sandbox }) => {
   const reconnectHandle = await sandbox.pty.connect(terminal.pid, {
     onData: (data: Uint8Array) => {
       output2 += decoder.decode(data)
-    }
+    },
   })
 
   await sandbox.pty.sendInput(

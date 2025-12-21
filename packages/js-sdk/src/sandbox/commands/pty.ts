@@ -64,12 +64,8 @@ export interface PtyCreateOpts
 /**
  * Options for connecting to a command.
  */
-export type PtyConnectOpts = Pick<
-  PtyCreateOpts,
-  'onData' | 'timeoutMs'
-> &
+export type PtyConnectOpts = Pick<PtyCreateOpts, 'onData' | 'timeoutMs'> &
   Pick<ConnectionOpts, 'requestTimeoutMs'>
-
 
 /**
  * Module for interacting with PTYs (pseudo-terminals) in the sandbox.
@@ -158,13 +154,10 @@ export class Pty {
    *
    * @param pid process ID of the PTY to connect to. You can get the list of running PTYs using {@link Commands.list}.
    * @param opts connection options.
-   * 
+   *
    * @returns handle to interact with the PTY.
    */
-  async connect(
-    pid: number,
-    opts?: PtyConnectOpts
-  ): Promise<CommandHandle> {
+  async connect(pid: number, opts?: PtyConnectOpts): Promise<CommandHandle> {
     const requestTimeoutMs =
       opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
 
@@ -172,8 +165,8 @@ export class Pty {
 
     const reqTimeout = requestTimeoutMs
       ? setTimeout(() => {
-        controller.abort()
-      }, requestTimeoutMs)
+          controller.abort()
+        }, requestTimeoutMs)
       : undefined
 
     const events = this.rpc.connect(
