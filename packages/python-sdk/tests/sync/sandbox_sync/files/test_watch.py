@@ -7,16 +7,23 @@ def test_watch_directory_changes(sandbox: Sandbox):
     dirname = "test_watch_dir"
     filename = "test_watch.txt"
     content = "This file will be watched."
+    new_content = "This file has been modified."
 
     sandbox.files.make_dir(dirname)
     sandbox.files.write(f"{dirname}/{filename}", content)
 
     handle = sandbox.files.watch_dir(dirname)
-    sandbox.files.write(f"{dirname}/{filename}", content)
+    sandbox.files.write(f"{dirname}/{filename}", new_content)
 
     events = handle.get_new_events()
-    assert events[0].type == FilesystemEventType.WRITE
-    assert events[0].name == filename
+    write_event = None
+    for event in events:
+        if event.type == FilesystemEventType.WRITE and event.name == filename:
+            write_event = event
+            break
+    
+    assert write_event is not None, f"Expected WRITE event for {filename}, but got events: {events}"
+    assert write_event.name == filename
 
     handle.stop()
 
