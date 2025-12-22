@@ -169,17 +169,17 @@ class Pty:
     async def connect(
         self,
         pid: int,
+        on_data: OutputHandler[PtyOutput],
         timeout: Optional[float] = 60,
         request_timeout: Optional[float] = None,
-        on_data: Optional[OutputHandler[PtyOutput]] = None,
     ) -> AsyncCommandHandle:
         """
         Connect to a running PTY.
 
         :param pid: Process ID of the PTY to connect to. You can get the list of running PTYs using `sandbox.pty.list()`.
+        :param on_data: Callback to handle PTY data
         :param timeout: Timeout for the PTY connection in **seconds**. Using `0` will not limit the connection time
         :param request_timeout: Timeout for the request in **seconds**
-        :param on_data: Callback to handle PTY data
 
         :return: Handle to interact with the PTY
         """
