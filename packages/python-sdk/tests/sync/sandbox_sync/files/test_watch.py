@@ -21,8 +21,10 @@ def test_watch_directory_changes(sandbox: Sandbox):
         if event.type == FilesystemEventType.WRITE and event.name == filename:
             write_event = event
             break
-    
-    assert write_event is not None, f"Expected WRITE event for {filename}, but got events: {events}"
+
+    assert write_event is not None, (
+        f"Expected WRITE event for {filename}, but got events: {events}"
+    )
     assert write_event.name == filename
 
     handle.stop()
