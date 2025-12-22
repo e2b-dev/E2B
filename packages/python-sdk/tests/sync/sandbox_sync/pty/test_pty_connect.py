@@ -1,8 +1,7 @@
-import time
-
 import pytest
 
 from e2b.sandbox.commands.command_handle import PtySize
+
 
 @pytest.mark.skip_debug()
 def test_connect_to_pty(sandbox_factory):
@@ -28,4 +27,4 @@ def test_connect_to_pty(sandbox_factory):
     assert terminal.pid == reconnect_handle.pid
     assert result.exit_code == 0
 
-    assert "bar" in "".join(output)    
+    assert "bar" in "".join(output)
