@@ -20,6 +20,7 @@ sandboxTest('pty connect/reconnect', async ({ sandbox }) => {
     terminal.pid,
     new Uint8Array(Buffer.from('echo $FOO\n'))
   )
+
   // Give time for the command output in the first connection
   await new Promise((r) => setTimeout(r, 300))
 
@@ -34,14 +35,14 @@ sandboxTest('pty connect/reconnect', async ({ sandbox }) => {
 
   await sandbox.pty.sendInput(
     terminal.pid,
-    new Uint8Array(Buffer.from('echo RECONNECTED\nexit\n'))
+    new Uint8Array(Buffer.from('echo $FOO\nexit\n'))
   )
 
   await reconnectHandle.wait()
+
+  assert.equal(terminal.pid, reconnectHandle.pid)
   assert.equal(reconnectHandle.exitCode, 0)
 
-  // Output1 should have the first echo
   assert.include(output1, 'bar')
-  // Output2 should have the reconnected echo
-  assert.include(output2, 'RECONNECTED')
+  assert.include(output2, 'bar')
 })
