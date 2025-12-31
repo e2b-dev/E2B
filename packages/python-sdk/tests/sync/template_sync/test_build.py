@@ -90,3 +90,33 @@ def test_build_template_with_resolve_symlinks(build, setup_test_folder):
     )
 
     build(template)
+
+
+@pytest.mark.skip_debug()
+def test_build_template_with_absolute_paths(build, setup_test_folder):
+    # Resolves to be (./README.md)
+    package_readme = os.path.join(os.getcwd(), "README.md")
+
+    # Resolves to be (../../README.md)
+    root_readme = os.path.join(os.getcwd(), "..", "..", "README.md")
+
+    template = (
+        Template(file_context_path=setup_test_folder)
+        .from_image("ubuntu:22.04")
+        .skip_cache()
+        .copy(
+            package_readme,
+            "package_readme.md",
+            force_upload=True,
+            resolve_symlinks=True,
+        )
+        .copy(
+            root_readme,
+            "root_readme.md",
+            force_upload=True,
+            resolve_symlinks=True,
+        )
+        .run_cmd("ls -l .")
+    )
+
+    build(template)
