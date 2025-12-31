@@ -73,19 +73,22 @@ buildTemplateTest(
   }
 )
 
-buildTemplateTest('build template with absolute paths', async ({ buildTemplate }) => {
-  // Resolves to be inside the package (./README.md)
-  const packageReadme = path.resolve(process.cwd(), 'README.md')
+buildTemplateTest(
+  'build template with absolute paths',
+  async ({ buildTemplate }) => {
+    // Resolves to be inside the package (./README.md)
+    const packageReadme = path.resolve(process.cwd(), 'README.md')
 
-  // Resolves to be (../../README.md)
-  const rootReadme = path.resolve(process.cwd(), '..', '..', 'README.md')
+    // Resolves to be (../../README.md)
+    const rootReadme = path.resolve(process.cwd(), '..', '..', 'README.md')
 
-  const template = Template()
-    // using base image to avoid re-building ubuntu:22.04 image
-    .fromBaseImage()
-    .copy(packageReadme, 'package_readme.md', { forceUpload: true })
-    .copy(rootReadme, 'root_readme.md', { forceUpload: true })
-    .setStartCmd('ls -l .', waitForTimeout(10_000))
+    const template = Template()
+      // using base image to avoid re-building ubuntu:22.04 image
+      .fromBaseImage()
+      .copy(packageReadme, 'package_readme.md', { forceUpload: true })
+      .copy(rootReadme, 'root_readme.md', { forceUpload: true })
+      .setStartCmd('ls -l .', waitForTimeout(10_000))
 
-  await buildTemplate(template, { skipCache: true }, defaultBuildLogger())
-})
+    await buildTemplate(template, { skipCache: true }, defaultBuildLogger())
+  }
+)
