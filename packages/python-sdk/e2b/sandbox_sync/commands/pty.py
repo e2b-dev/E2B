@@ -159,6 +159,50 @@ class Pty:
         except Exception as e:
             raise handle_rpc_exception(e)
 
+    def connect(
+        self,
+        pid: int,
+        timeout: Optional[float] = 60,
+        request_timeout: Optional[float] = None,
+    ) -> CommandHandle:
+        """
+        Connect to a running PTY.
+
+        :param pid: Process ID of the PTY to connect to. You can get the list of running PTYs using `sandbox.pty.list()`.
+        :param timeout: Timeout for the PTY connection in **seconds**. Using `0` will not limit the connection time
+        :param request_timeout: Timeout for the request in **seconds**
+
+        :return: Handle to interact with the PTY
+        """
+        events = self._rpc.connect(
+            process_pb2.ConnectRequest(
+                process=process_pb2.ProcessSelector(pid=pid),
+            ),
+            headers={
+                KEEPALIVE_PING_HEADER: str(KEEPALIVE_PING_INTERVAL_SEC),
+            },
+            timeout=timeout,
+            request_timeout=self._connection_config.get_request_timeout(
+                request_timeout
+            ),
+        )
+
+        try:
+            start_event = events.__next__()
+
+            if not start_event.HasField("event"):
+                raise SandboxException(
+                    f"Failed to connect to process: expected start event, got {start_event}"
+                )
+
+            return CommandHandle(
+                pid=start_event.event.start.pid,
+                handle_kill=lambda: self.kill(start_event.event.start.pid),
+                events=events,
+            )
+        except Exception as e:
+            raise handle_rpc_exception(e)
+
     def resize(
         self,
         pid: int,

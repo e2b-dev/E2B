@@ -10,8 +10,9 @@ class TestTarFileStream:
     @pytest.fixture
     def test_dir(self):
         """Create a temporary directory for testing."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            yield tmpdir
+        tmpdir = tempfile.TemporaryDirectory()
+        yield tmpdir.name
+        tmpdir.cleanup()
 
     def _extract_tar_contents(self, tar_buffer: io.BytesIO) -> dict:
         """Extract tar contents into a dictionary mapping paths to file contents."""
@@ -85,9 +86,8 @@ class TestTarFileStream:
         contents = self._extract_tar_contents(tar_buffer)
 
         # Should include the directory and files
-        assert "src" in contents or any("src" in name for name in contents.keys())
-        assert any("index.ts" in name for name in contents.keys())
-        assert any("Button.tsx" in name for name in contents.keys())
+        assert "src/index.ts" in contents
+        assert "src/components/Button.tsx" in contents
 
     def test_should_resolve_symlinks_when_enabled(self, test_dir):
         """Test that function resolves symlinks when resolve_symlinks=True."""

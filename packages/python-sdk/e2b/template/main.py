@@ -2,7 +2,6 @@ import json
 from typing import Dict, List, Optional, Union, Literal
 from pathlib import Path
 
-from httpx import Limits
 
 from e2b.exceptions import BuildException
 from e2b.template.consts import STACK_TRACE_DEPTH, RESOLVE_SYMLINKS
@@ -634,7 +633,8 @@ class TemplateBuilder:
 
     def set_envs(self, envs: Dict[str, str]) -> "TemplateBuilder":
         """
-        Set environment variables in the template.
+        Set environment variables.
+        Note: Environment variables defined here are available only during template build.
 
         :param envs: Dictionary of environment variable names and values
 
@@ -762,11 +762,6 @@ class TemplateBase:
     Base class for building E2B sandbox templates.
     """
 
-    _limits = Limits(
-        max_keepalive_connections=40,
-        max_connections=40,
-        keepalive_expiry=300,
-    )
     _logs_refresh_frequency = 0.2
 
     def __init__(

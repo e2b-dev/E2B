@@ -1,29 +1,37 @@
 import { randomUUID } from 'node:crypto'
 import { test as base } from 'vitest'
-import { BuildInfo, LogEntry, Sandbox, Template, TemplateClass } from '../src'
+import {
+  BuildInfo,
+  LogEntry,
+  Sandbox,
+  SandboxOpts,
+  Template,
+  TemplateClass,
+} from '../src'
 import { template } from './template'
 
 interface SandboxFixture {
   sandbox: Sandbox
   template: string
   sandboxTestId: string
+  sandboxOpts: Partial<SandboxOpts>
 }
 
 interface BuildTemplateFixture {
   buildTemplate: (
     template: TemplateClass,
-    options?: { skipCache?: boolean },
+    options?: { alias?: string; skipCache?: boolean },
     onBuildLogs?: (logEntry: LogEntry) => void
   ) => Promise<BuildInfo>
 }
 
 function buildTemplate(
   template: TemplateClass,
-  options?: { skipCache?: boolean },
+  options?: { alias?: string; skipCache?: boolean },
   onBuildLogs?: (logEntry: LogEntry) => void
 ) {
   return Template.build(template, {
-    alias: `e2b-test-${randomUUID()}`,
+    alias: options?.alias || `e2b-test-${randomUUID()}`,
     cpuCount: 1,
     memoryMB: 1024,
     skipCache: options?.skipCache,
@@ -41,10 +49,12 @@ export const sandboxTest = base.extend<SandboxFixture>({
     },
     { auto: true },
   ],
+  sandboxOpts: {},
   sandbox: [
-    async ({ sandboxTestId }, use) => {
+    async ({ sandboxTestId, sandboxOpts }, use) => {
       const sandbox = await Sandbox.create(template, {
         metadata: { sandboxTestId },
+        ...sandboxOpts,
       })
       try {
         await use(sandbox)

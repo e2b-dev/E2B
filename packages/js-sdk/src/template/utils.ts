@@ -1,7 +1,7 @@
 import crypto from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
-import { dynamicGlob, dynamicTar } from '../utils'
+import { dynamicImport, dynamicRequire } from '../utils'
 import { BASE_STEP_NAME, FINALIZE_STEP_NAME } from './consts'
 import type { Path } from 'glob'
 
@@ -25,6 +25,15 @@ export function readDockerignore(contextPath: string): string[] {
 }
 
 /**
+ * Normalize path separators to forward slashes for glob patterns (glob expects / even on Windows)
+ * @param path - The path to normalize
+ * @returns The normalized path
+ */
+function normalizePath(path: string): string {
+  return path.replace(/\\/g, '/')
+}
+
+/**
  * Get all files for a given path and ignore patterns.
  *
  * @param src Path to the source directory
@@ -38,7 +47,7 @@ export async function getAllFilesInPath(
   ignorePatterns: string[],
   includeDirectories: boolean = true
 ) {
-  const { glob } = await dynamicGlob()
+  const { glob } = await dynamicImport<typeof import('glob')>('glob')
   const files = new Map<string, Path>()
 
   const globFiles = await glob(src, {
@@ -54,14 +63,17 @@ export async function getAllFilesInPath(
       if (includeDirectories) {
         files.set(file.fullpath(), file)
       }
-      const dirFiles = await glob(
-        path.join(path.relative(contextPath, file.fullpath()), '**/*'),
-        {
-          ignore: ignorePatterns,
-          withFileTypes: true,
-          cwd: contextPath,
-        }
+      const dirPattern = normalizePath(
+        // When the matched directory is '.', `file.relative()` can be an empty string.
+        // In that case, we want to match all files under the current directory instead of
+        // creating an absolute glob like '/**/*' which would traverse the entire filesystem.
+        path.join(file.relative() || '.', '**/*')
       )
+      const dirFiles = await glob(dirPattern, {
+        ignore: ignorePatterns,
+        withFileTypes: true,
+        cwd: contextPath,
+      })
       dirFiles.forEach((f) => files.set(f.fullpath(), f))
     } else {
       // For files, just add the file
@@ -120,7 +132,7 @@ export async function calculateFilesHash(
   // Process files recursively
   for (const file of files) {
     // Add a relative path to hash calculation
-    const relativePath = path.relative(contextPath, file.fullpath())
+    const relativePath = file.relativePosix()
     hash.update(relativePath)
 
     // Add stat information to hash calculation
@@ -207,9 +219,18 @@ export function getCallerDirectory(depth: number): string | undefined {
     return undefined
   }
 
-  const fileName = callSites[0].getFileName()
+  let fileName = callSites[0].getFileName()
   if (!fileName) {
     return undefined
+  }
+
+  // Handle file:// URLs returned by getFileName() in ESM modules
+  if (fileName.startsWith('file:')) {
+    // we use the dynamic import to avoid bundling node:url for browser compatibility
+    // getCallerDirectory method is not called in the browser
+    const { fileURLToPath } =
+      dynamicRequire<typeof import('node:url')>('node:url')
+    fileName = fileURLToPath(fileName)
   }
 
   return path.dirname(fileName)
@@ -246,7 +267,7 @@ export async function tarFileStream(
   ignorePatterns: string[],
   resolveSymlinks: boolean
 ) {
-  const { create } = await dynamicTar()
+  const { create } = await dynamicImport<typeof import('tar')>('tar')
 
   const allFiles = await getAllFilesInPath(
     fileName,
@@ -255,9 +276,7 @@ export async function tarFileStream(
     true
   )
 
-  const filePaths = allFiles.map((file) =>
-    path.relative(fileContextPath, file.fullpath())
-  )
+  const filePaths = allFiles.map((file) => file.relativePosix())
 
   return create(
     {

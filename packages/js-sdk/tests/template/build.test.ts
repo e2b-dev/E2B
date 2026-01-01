@@ -29,7 +29,8 @@ afterAll(() => {
 
 buildTemplateTest('build template', async ({ buildTemplate }) => {
   const template = Template()
-    .fromImage('ubuntu:22.04')
+    // using base image to avoid re-building ubuntu:22.04 image
+    .fromBaseImage()
     .copy('folder/*', 'folder', { forceUpload: true })
     .runCmd('cat folder/test.txt')
     .setWorkdir('/app')
@@ -37,6 +38,14 @@ buildTemplateTest('build template', async ({ buildTemplate }) => {
 
   await buildTemplate(template, { skipCache: true }, defaultBuildLogger())
 })
+
+buildTemplateTest(
+  'build template from base template',
+  async ({ buildTemplate }) => {
+    const template = Template().fromTemplate('base')
+    await buildTemplate(template, { skipCache: true })
+  }
+)
 
 buildTemplateTest('build template with symlinks', async ({ buildTemplate }) => {
   const template = Template()
@@ -60,14 +69,6 @@ buildTemplateTest(
       })
       .runCmd('cat folder/symlink.txt')
 
-    await buildTemplate(template)
-  }
-)
-
-buildTemplateTest(
-  'build template with skipCache',
-  async ({ buildTemplate }) => {
-    const template = Template().skipCache().fromImage('ubuntu:22.04')
     await buildTemplate(template)
   }
 )

@@ -31,6 +31,39 @@ export type GitHubMcpServer = {
     envs?: Record<string, string>
   }
 }
+
+export type SandboxNetworkOpts = {
+  /**
+   * Allow outbound traffic from the sandbox to the specified addresses.
+   * If `allowOut` is not specified, all outbound traffic is allowed.
+   *
+   * Examples:
+   * - To allow traffic to a specific addresses: `["1.1.1.1", "8.8.8.0/24"]`
+   */
+  allowOut?: string[]
+
+  /**
+   * Deny outbound traffic from the sandbox to the specified addresses.
+   *
+   * Examples:
+   * - To deny traffic to a specific addresses: `["1.1.1.1", "8.8.8.0/24"]`
+   */
+  denyOut?: string[]
+
+  /**
+   * Specify if the sandbox URLs should be accessible only with authentication.
+   * @default true
+   */
+  allowPublicTraffic?: boolean
+
+  /** Specify host mask which will be used for all sandbox requests in the header.
+   * You can use the ${PORT} variable that will be replaced with the actual port number of the service.
+   *
+   * @default ${PORT}-sandboxid.e2b.app
+   */
+  maskRequestHost?: string
+}
+
 /**
  * Options for request to the Sandbox API.
  */
@@ -79,7 +112,7 @@ export interface SandboxOpts extends ConnectionOpts {
   secure?: boolean
 
   /**
-   * Allow sandbox to access the internet
+   * Allow sandbox to access the internet. If set to `False`, it works the same as setting network `denyOut` to `[0.0.0.0/0]`.
    *
    * @default true
    */
@@ -90,6 +123,16 @@ export interface SandboxOpts extends ConnectionOpts {
    * @default undefined
    */
   mcp?: McpServer
+
+  /**
+   * Sandbox network configuration
+   */
+  network?: SandboxNetworkOpts
+
+  /**
+   * Sandbox URL. Used for local development
+   */
+  sandboxUrl?: string
 }
 
 export type SandboxBetaCreateOpts = SandboxOpts & {
@@ -499,6 +542,7 @@ export class SandboxApi {
         timeout: timeoutToSeconds(timeoutMs),
         secure: opts?.secure ?? true,
         allow_internet_access: opts?.allowInternetAccess ?? true,
+        network: opts?.network,
       },
       signal: config.getSignal(opts?.requestTimeoutMs),
     })
@@ -521,6 +565,7 @@ export class SandboxApi {
       sandboxDomain: res.data!.domain || undefined,
       envdVersion: res.data!.envdVersion,
       envdAccessToken: res.data!.envdAccessToken,
+      trafficAccessToken: res.data!.trafficAccessToken || undefined,
     }
   }
 
@@ -559,6 +604,7 @@ export class SandboxApi {
       sandboxDomain: res.data!.domain || undefined,
       envdVersion: res.data!.envdVersion,
       envdAccessToken: res.data!.envdAccessToken,
+      trafficAccessToken: res.data!.trafficAccessToken || undefined,
     }
   }
 }

@@ -9,7 +9,7 @@ def test_pip_install(build):
         Template()
         .from_python_image("3.13.7-trixie")
         .skip_cache()
-        .pip_install(["six", "pyyaml"])
+        .pip_install("pip-install-test")
     )
 
     build(template)
@@ -21,7 +21,7 @@ def test_pip_install_user(build):
         Template()
         .from_python_image("3.13.7-trixie")
         .skip_cache()
-        .pip_install(["six", "pyyaml"], g=False)
+        .pip_install("pip-install-test", g=False)
     )
 
     build(template)

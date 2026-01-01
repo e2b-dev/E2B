@@ -9,7 +9,7 @@ async def test_pip_install(async_build):
         AsyncTemplate()
         .from_python_image("3.13.7-trixie")
         .skip_cache()
-        .pip_install(["six", "pyyaml"])
+        .pip_install("pip-install-test")
     )
 
     await async_build(template)
@@ -21,7 +21,7 @@ async def test_pip_install_user(async_build):
         AsyncTemplate()
         .from_python_image("3.13.7-trixie")
         .skip_cache()
-        .pip_install(["six", "pyyaml"], g=False)
+        .pip_install("pip-install-test", g=False)
     )
 
     await async_build(template)

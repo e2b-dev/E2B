@@ -5,7 +5,7 @@ import { join } from 'path'
 import { tmpdir } from 'os'
 import { pipeline } from 'stream/promises'
 import { tarFileStream } from '../../../src/template/utils'
-import { dynamicTar } from '../../../src/utils'
+import * as tar from 'tar'
 import { ReadEntry } from 'tar'
 
 describe('tarFileStream', () => {
@@ -36,7 +36,6 @@ describe('tarFileStream', () => {
     const writeStream = createWriteStream(tarFile)
     await pipeline(stream, writeStream)
 
-    const tar = await dynamicTar()
     const contents = new Map<string, Buffer | null>()
 
     // Extract files to a temp directory and collect members
@@ -86,7 +85,6 @@ describe('tarFileStream', () => {
     const writeStream = createWriteStream(tarFile)
     await pipeline(stream, writeStream)
 
-    const tar = await dynamicTar()
     const members = new Map<string, ReadEntry>()
 
     const extractDir = join(tmpdir(), `tar-extract-${Date.now()}`)

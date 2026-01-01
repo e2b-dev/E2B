@@ -1,6 +1,6 @@
 import { expect, test, describe, beforeAll, afterAll, beforeEach } from 'vitest'
 import { writeFile, mkdir, rm } from 'fs/promises'
-import { join } from 'path'
+import { join, basename } from 'path'
 import { getAllFilesInPath } from '../../../src/template/utils'
 
 describe('getAllFilesInPath', () => {
@@ -196,7 +196,7 @@ describe('getAllFilesInPath', () => {
 
     expect(files).toHaveLength(3)
     // Files are sorted by full path, not just filename
-    const fileNames = files.map((f) => f.fullpath().split('/').pop()).sort()
+    const fileNames = files.map((f) => basename(f.fullpath())).sort()
     expect(fileNames).toEqual(['apple.txt', 'banana.txt', 'zebra.txt'])
   })
 
@@ -206,6 +206,24 @@ describe('getAllFilesInPath', () => {
     const files = await getAllFilesInPath('*.js', testDir, [])
 
     expect(files).toHaveLength(0)
+  })
+
+  test('should handle listing all files in current directory with dot pattern', async () => {
+    // Create a small directory tree inside the test directory
+    await writeFile(join(testDir, 'root.txt'), 'root')
+    await mkdir(join(testDir, 'subdir'), { recursive: true })
+    await writeFile(join(testDir, 'subdir', 'nested.txt'), 'nested')
+
+    const files = await getAllFilesInPath('.', testDir, [])
+
+    // We should get at least the testDir itself (.) plus its children
+    expect(files.length).toBeGreaterThanOrEqual(3)
+
+    // All returned paths must stay within the testDir - we must not traverse the whole filesystem
+    const allWithinTestDir = files.every((f) =>
+      f.fullpath().startsWith(testDir)
+    )
+    expect(allWithinTestDir).toBe(true)
   })
 
   test('should handle complex ignore patterns with directories', async () => {

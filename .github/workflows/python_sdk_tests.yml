@@ -17,8 +17,13 @@ jobs:
     defaults:
       run:
         working-directory: ./packages/python-sdk
-    name: Python SDK -Build and test
-    runs-on: ubuntu-22.04
+        shell: bash
+    name: Python SDK - Build and test (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, windows-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -50,6 +55,6 @@ jobs:
         run: poetry build
 
       - name: Run tests
-        run: make test
+        run: poetry run pytest --verbose --numprocesses=4
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}

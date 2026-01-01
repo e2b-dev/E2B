@@ -568,6 +568,7 @@ export interface TemplateBuilder {
 
   /**
    * Set environment variables.
+   * Note: Environment variables defined here are available only during template build.
    * @param envs Environment variables
    *
    * @example

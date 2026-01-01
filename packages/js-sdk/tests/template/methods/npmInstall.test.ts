@@ -5,7 +5,7 @@ buildTemplateTest('npm install', async ({ buildTemplate }) => {
   const template = Template()
     .fromNodeImage('24')
     .skipCache()
-    .npmInstall(['lodash', 'axios'])
+    .npmInstall('left-pad')
 
   await buildTemplate(template)
 })
@@ -14,7 +14,7 @@ buildTemplateTest('npm install global', async ({ buildTemplate }) => {
   const template = Template()
     .fromNodeImage('24')
     .skipCache()
-    .npmInstall(['tsx'], { g: true })
+    .npmInstall('left-pad', { g: true })
 
   await buildTemplate(template)
 })
@@ -23,7 +23,7 @@ buildTemplateTest('npm install dev', async ({ buildTemplate }) => {
   const template = Template()
     .fromNodeImage('24')
     .skipCache()
-    .npmInstall(['typescript'], { dev: true })
+    .npmInstall('left-pad', { dev: true })
 
   await buildTemplate(template)
 })

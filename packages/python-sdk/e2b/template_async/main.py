@@ -2,7 +2,6 @@ import os
 from datetime import datetime
 from typing import Callable, Optional
 
-from e2b.api import AsyncApiClient
 from e2b.api.client.client import AuthenticatedClient
 from e2b.connection_config import ConnectionConfig
 from e2b.template.consts import RESOLVE_SYMLINKS
@@ -10,6 +9,7 @@ from e2b.template.logger import LogEntry, LogEntryEnd, LogEntryStart
 from e2b.template.main import TemplateBase, TemplateClass
 from e2b.template.types import BuildInfo, InstructionType
 from e2b.template.utils import read_dockerignore
+
 from .build_api import (
     get_build_status,
     get_file_upload_link,
@@ -18,6 +18,7 @@ from .build_api import (
     upload_file,
     wait_for_build_finish,
 )
+from e2b.api.client_async import get_api_client
 
 
 class AsyncTemplate(TemplateBase):
@@ -106,6 +107,7 @@ class AsyncTemplate(TemplateBase):
                 file_info.present is False and file_info.url
             ):
                 await upload_file(
+                    api_client,
                     src,
                     template._template._file_context_path,
                     file_info.url,
@@ -221,43 +223,41 @@ class AsyncTemplate(TemplateBase):
             config = ConnectionConfig(
                 domain=domain, api_key=api_key or os.environ.get("E2B_API_KEY")
             )
-            client = AsyncApiClient(
+            api_client = get_api_client(
                 config,
                 require_api_key=True,
                 require_access_token=False,
-                limits=TemplateBase._limits,
             )
 
-            with client as api_client:
-                data = await AsyncTemplate._build(
-                    template,
-                    api_client,
-                    alias,
-                    cpu_count,
-                    memory_mb,
-                    skip_cache,
-                    on_build_logs,
-                )
+            data = await AsyncTemplate._build(
+                template,
+                api_client,
+                alias,
+                cpu_count,
+                memory_mb,
+                skip_cache,
+                on_build_logs,
+            )
 
-                if on_build_logs:
-                    on_build_logs(
-                        LogEntry(
-                            timestamp=datetime.now(),
-                            level="info",
-                            message="Waiting for logs...",
-                        )
+            if on_build_logs:
+                on_build_logs(
+                    LogEntry(
+                        timestamp=datetime.now(),
+                        level="info",
+                        message="Waiting for logs...",
                     )
-
-                await wait_for_build_finish(
-                    api_client,
-                    data.template_id,
-                    data.build_id,
-                    on_build_logs,
-                    logs_refresh_frequency=TemplateBase._logs_refresh_frequency,
-                    stack_traces=template._template._stack_traces,
                 )
 
-                return data
+            await wait_for_build_finish(
+                api_client,
+                data.template_id,
+                data.build_id,
+                on_build_logs,
+                logs_refresh_frequency=TemplateBase._logs_refresh_frequency,
+                stack_traces=template._template._stack_traces,
+            )
+
+            return data
         finally:
             if on_build_logs:
                 on_build_logs(
@@ -313,23 +313,21 @@ class AsyncTemplate(TemplateBase):
         config = ConnectionConfig(
             domain=domain, api_key=api_key or os.environ.get("E2B_API_KEY")
         )
-        client = AsyncApiClient(
+        api_client = get_api_client(
             config,
             require_api_key=True,
             require_access_token=False,
-            limits=TemplateBase._limits,
         )
 
-        with client as api_client:
-            return await AsyncTemplate._build(
-                template,
-                api_client,
-                alias,
-                cpu_count,
-                memory_mb,
-                skip_cache,
-                on_build_logs,
-            )
+        return await AsyncTemplate._build(
+            template,
+            api_client,
+            alias,
+            cpu_count,
+            memory_mb,
+            skip_cache,
+            on_build_logs,
+        )
 
     @staticmethod
     async def get_build_status(
@@ -359,17 +357,10 @@ class AsyncTemplate(TemplateBase):
         config = ConnectionConfig(
             domain=domain, api_key=api_key or os.environ.get("E2B_API_KEY")
         )
-        client = AsyncApiClient(
-            config,
-            require_api_key=True,
-            require_access_token=False,
-            limits=TemplateBase._limits,
+        api_client = get_api_client(config)
+        return await get_build_status(
+            api_client,
+            build_info.template_id,
+            build_info.build_id,
+            logs_offset,
         )
-
-        with client as api_client:
-            return await get_build_status(
-                api_client,
-                build_info.template_id,
-                build_info.build_id,
-                logs_offset,
-            )
