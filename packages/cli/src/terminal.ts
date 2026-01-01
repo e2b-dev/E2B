@@ -61,19 +61,15 @@ export async function spawnConnectedTerminal(sandbox: e2b.Sandbox) {
     const combined = Buffer.concat(batch)
 
     const maxRetries = 3
-    let retry = 0
-    do {
+    for (let retry = 0; ; retry++) {
       try {
         await sandbox.pty.sendInput(terminalSession.pid, combined)
         break
       } catch (err) {
-        if (!isRetryableError(err)) {
-          // Do not retry on errors that come with valid HTTP/gRPC responses
-          throw err
-        }
-        retry++
+        // Do not retry on errors that come with valid HTTP/gRPC responses
+        if (!isRetryableError(err) || retry >= maxRetries) throw err
       }
-    } while (retry < maxRetries)
+    }
   }, FLUSH_INPUT_INTERVAL_MS)
 
   const resizeListener = process.stdout.on('resize', () =>
