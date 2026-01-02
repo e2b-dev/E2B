@@ -101,6 +101,10 @@ export type Instruction = {
   forceUpload?: true
   filesHash?: string
   resolveSymlinks?: boolean
+  /**
+   * Base path used for resolving and hashing the instruction's source files.
+   */
+  contextPath?: string
 }
 
 /**

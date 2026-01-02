@@ -1,5 +1,5 @@
 import crypto from 'node:crypto'
-import fs from 'node:fs'
+import fs, { PathLike } from 'node:fs'
 import path from 'node:path'
 import { dynamicImport, dynamicRequire } from '../utils'
 import { BASE_STEP_NAME, FINALIZE_STEP_NAME } from './consts'
@@ -31,6 +31,52 @@ export function readDockerignore(contextPath: string): string[] {
  */
 function normalizePath(path: string): string {
   return path.replace(/\\/g, '/')
+}
+
+export function normalizeCopySourcePath(
+  src: string,
+  fileContextPath: PathLike
+): {
+  normalizedSrc: string
+  contextPathForInstruction: string
+} {
+  const defaultContext = path.resolve(fileContextPath.toString())
+  const absoluteSrc = path.isAbsolute(src)
+    ? src
+    : path.resolve(defaultContext, src)
+
+  const relativeToDefault = path.relative(defaultContext, absoluteSrc)
+  const withinDefaultContext =
+    relativeToDefault &&
+    !relativeToDefault.startsWith('..') &&
+    !path.isAbsolute(relativeToDefault)
+
+  if (withinDefaultContext) {
+    return {
+      normalizedSrc: (relativeToDefault || '.').replace(/\\/g, '/'),
+      contextPathForInstruction: defaultContext,
+    }
+  }
+
+  const globPattern = /[*?[{]/
+  let baseCandidate = absoluteSrc
+  while (globPattern.test(baseCandidate)) {
+    baseCandidate = path.dirname(baseCandidate)
+  }
+
+  const contextPathForInstruction =
+    baseCandidate === '' || baseCandidate === absoluteSrc
+      ? path.dirname(absoluteSrc)
+      : path.resolve(baseCandidate)
+
+  const normalizedSrc =
+    path.relative(contextPathForInstruction, absoluteSrc).replace(/\\/g, '/') ||
+    '.'
+
+  return {
+    normalizedSrc,
+    contextPathForInstruction,
+  }
 }
 
 /**

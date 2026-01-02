@@ -36,6 +36,7 @@ import {
   calculateFilesHash,
   getCallerDirectory,
   getCallerFrame,
+  normalizeCopySourcePath,
   padOctal,
   readDockerignore,
   readGCPServiceAccountJSON,
@@ -357,8 +358,10 @@ export class TemplateBase
     const srcs = Array.isArray(src) ? src : [src]
 
     for (const src of srcs) {
+      const { normalizedSrc, contextPathForInstruction } =
+        normalizeCopySourcePath(src.toString(), this.fileContextPath)
       const args = [
-        src.toString(),
+        normalizedSrc,
         dest.toString(),
         options?.user ?? '',
         options?.mode ? padOctal(options.mode) : '',
@@ -370,6 +373,7 @@ export class TemplateBase
         force: options?.forceUpload || this.forceNextLayer,
         forceUpload: options?.forceUpload,
         resolveSymlinks: options?.resolveSymlinks,
+        contextPath: contextPathForInstruction,
       })
     }
 
@@ -477,6 +481,7 @@ export class TemplateBase
       type: InstructionType.RUN,
       args,
       force: this.forceNextLayer,
+      contextPath: this.fileContextPath.toString(),
     })
 
     this.collectStackTrace()
@@ -488,6 +493,7 @@ export class TemplateBase
       type: InstructionType.WORKDIR,
       args: [workdir.toString()],
       force: this.forceNextLayer,
+      contextPath: this.fileContextPath.toString(),
     })
 
     this.collectStackTrace()
@@ -499,6 +505,7 @@ export class TemplateBase
       type: InstructionType.USER,
       args: [user],
       force: this.forceNextLayer,
+      contextPath: this.fileContextPath.toString(),
     })
 
     this.collectStackTrace()
@@ -679,6 +686,7 @@ export class TemplateBase
       type: InstructionType.ENV,
       args: Object.entries(envs).flatMap(([key, value]) => [key, value]),
       force: this.forceNextLayer,
+      contextPath: this.fileContextPath.toString(),
     })
     this.collectStackTrace()
     return this
@@ -901,6 +909,9 @@ export class TemplateBase
           throw new Error('Source path and files hash are required')
         }
 
+        const contextPathForInstruction =
+          instruction.contextPath ?? this.fileContextPath.toString()
+
         const forceUpload = instruction.forceUpload
         let stackTrace = undefined
         if (index + 1 >= 0 && index + 1 < this.stackTraces.length) {
@@ -923,11 +934,11 @@ export class TemplateBase
           await uploadFile(
             {
               fileName: src,
-              fileContextPath: this.fileContextPath.toString(),
+              fileContextPath: contextPathForInstruction,
               url,
               ignorePatterns: [
                 ...this.fileIgnorePatterns,
-                ...readDockerignore(this.fileContextPath.toString()),
+                ...readDockerignore(contextPathForInstruction),
               ],
               resolveSymlinks: instruction.resolveSymlinks ?? RESOLVE_SYMLINKS,
             },
@@ -990,6 +1001,9 @@ export class TemplateBase
           throw new Error('Source path and destination path are required')
         }
 
+        const contextPathForInstruction =
+          instruction.contextPath ?? this.fileContextPath.toString()
+
         let stackTrace = undefined
         if (index + 1 >= 0 && index + 1 < this.stackTraces.length) {
           stackTrace = this.stackTraces[index + 1]
@@ -1000,12 +1014,12 @@ export class TemplateBase
           filesHash: await calculateFilesHash(
             src,
             dest,
-            this.fileContextPath.toString(),
+            contextPathForInstruction,
             [
               ...this.fileIgnorePatterns,
               ...(runtime === 'browser'
                 ? []
-                : readDockerignore(this.fileContextPath.toString())),
+                : readDockerignore(contextPathForInstruction)),
             ],
             instruction.resolveSymlinks ?? RESOLVE_SYMLINKS,
             stackTrace
