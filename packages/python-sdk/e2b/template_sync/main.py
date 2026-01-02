@@ -86,14 +86,12 @@ class Template(TemplateBase):
             if file_upload["type"] != InstructionType.COPY:
                 continue
 
-            args = file_upload.get("args", [])
-            file_name = args[0] if len(args) > 0 else None
             file_path = file_upload.get("filePath")
             force_upload = file_upload.get("forceUpload")
             files_hash = file_upload.get("filesHash", None)
             resolve_symlinks = file_upload.get("resolveSymlinks", RESOLVE_SYMLINKS)
 
-            if file_name is None or file_path is None or files_hash is None:
+            if file_path is None or files_hash is None:
                 raise ValueError("Source path and files hash are required")
 
             stack_trace = None
@@ -110,7 +108,6 @@ class Template(TemplateBase):
                 upload_file(
                     api_client,
                     str(file_path),
-                    file_name,
                     template._template._file_context_path,
                     file_info.url,
                     [

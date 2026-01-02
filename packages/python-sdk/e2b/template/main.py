@@ -66,12 +66,8 @@ class TemplateBuilder:
         srcs = [src] if isinstance(src, (str, Path)) else src
 
         for src_item in srcs:
-            relativized_path = relativize_path(
-                str(src_item), self._template._file_context_path
-            )
-
             args = [
-                relativized_path,
+                relativize_path(str(src_item), self._template._file_context_path),
                 str(dest),
                 user or "",
                 pad_octal(mode) if mode else "",

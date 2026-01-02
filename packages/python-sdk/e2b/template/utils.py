@@ -167,7 +167,6 @@ def calculate_files_hash(
 
 def tar_file_stream(
     file_path: str,
-    file_name: str,
     file_context_path: str,
     ignore_patterns: List[str],
     resolve_symlinks: bool,
@@ -176,7 +175,6 @@ def tar_file_stream(
     Create a tar stream of a file from the given path with the given name.
 
     :param file_path: Path to the file (relative to file_context_path)
-    :param file_name: Name for the file in the tar archive
     :param file_context_path: Base directory for resolving file paths
     :param ignore_patterns: Ignore patterns
     :param resolve_symlinks: Whether to resolve symbolic links
@@ -193,7 +191,9 @@ def tar_file_stream(
             file_path, file_context_path, ignore_patterns, True
         )
         for file in files:
-            tar.add(file, arcname=file_name, recursive=False)
+            tar.add(
+                file, arcname=relativize_path(file, file_context_path), recursive=False
+            )
 
     return tar_buffer
 

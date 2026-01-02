@@ -358,10 +358,8 @@ export class TemplateBase
     const srcs = Array.isArray(src) ? src : [src]
 
     for (const src of srcs) {
-      const relativizedPath = relativizePath(src, this.fileContextPath)
-
       const args = [
-        relativizedPath,
+        relativizePath(src, this.fileContextPath),
         dest.toString(),
         options?.user ?? '',
         options?.mode ? padOctal(options.mode) : '',
@@ -929,7 +927,6 @@ export class TemplateBase
           await uploadFile(
             {
               filePath: filePath.toString(),
-              fileName,
               fileContextPath: this.fileContextPath.toString(),
               url,
               ignorePatterns: [

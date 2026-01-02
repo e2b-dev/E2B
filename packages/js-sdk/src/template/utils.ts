@@ -264,7 +264,6 @@ export function padOctal(mode: number): string {
  */
 export async function tarFileStream(
   filePath: string,
-  fileName: string,
   fileContextPath: string,
   ignorePatterns: string[],
   resolveSymlinks: boolean
@@ -289,18 +288,19 @@ export async function tarFileStream(
 
   for (const file of allFiles) {
     const sourcePath = file.fullpathPosix()
+    const targetPath = relativizePath(sourcePath, fileContextPath)
 
     if (file.isDirectory()) {
       sources.push({
         type: 'directory',
         source: sourcePath,
-        target: fileName,
+        target: targetPath,
       })
     } else {
       sources.push({
         type: 'file',
         source: sourcePath,
-        target: fileName,
+        target: targetPath,
       })
     }
   }
@@ -327,7 +327,6 @@ export async function tarFileStream(
  */
 export async function tarFileStreamUpload(
   filePath: string,
-  fileName: string,
   fileContextPath: string,
   ignorePatterns: string[],
   resolveSymlinks: boolean
@@ -335,7 +334,6 @@ export async function tarFileStreamUpload(
   // First pass: calculate the compressed size
   const sizeCalculationStream = await tarFileStream(
     filePath,
-    fileName,
     fileContextPath,
     ignorePatterns,
     resolveSymlinks
@@ -349,7 +347,6 @@ export async function tarFileStreamUpload(
     contentLength,
     uploadStream: await tarFileStream(
       filePath,
-      fileName,
       fileContextPath,
       ignorePatterns,
       resolveSymlinks
