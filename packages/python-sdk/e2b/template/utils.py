@@ -341,4 +341,6 @@ def relativize_path(src: str, file_context_path: str) -> str:
 
     # Strip up directories (../ or ..\ on Windows)
     rewritten_path = re.sub(r"\.\.[/\\]", "", rewritten_path)
-    return rewritten_path
+
+    # Normalize to forward slashes for cross-platform compatibility (tar archives require forward slashes)
+    return normalize_path(rewritten_path)

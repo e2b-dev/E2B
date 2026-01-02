@@ -405,7 +405,7 @@ export function readGCPServiceAccountJSON(
  *
  * @param src Absolute path to convert
  * @param fileContextPath Base directory for resolving relative paths
- * @returns Relative path
+ * @returns Relative path with forward slashes (for tar/cross-platform compatibility)
  */
 export function relativizePath(
   src: PathLike,
@@ -422,5 +422,7 @@ export function relativizePath(
 
   // Strip up directories (../ or ..\ on Windows)
   rewrittenPath = rewrittenPath.replace(/\.\.(\/|\\)/g, '')
-  return rewrittenPath
+
+  // Normalize to forward slashes for cross-platform compatibility (tar archives require forward slashes)
+  return normalizePath(rewrittenPath)
 }
