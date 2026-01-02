@@ -45,33 +45,21 @@ export function normalizeCopySourcePath(
     ? src
     : path.resolve(defaultContext, src)
 
-  const relativeToDefault = path.relative(defaultContext, absoluteSrc)
-  const withinDefaultContext =
-    relativeToDefault &&
-    !relativeToDefault.startsWith('..') &&
-    !path.isAbsolute(relativeToDefault)
+  let contextPathForInstruction = path.isAbsolute(src)
+    ? path.dirname(absoluteSrc)
+    : defaultContext
 
-  if (withinDefaultContext) {
-    return {
-      normalizedSrc: (relativeToDefault || '.').replace(/\\/g, '/'),
-      contextPathForInstruction: defaultContext,
+  // If a relative path escapes the default context, fall back to its own directory
+  if (!path.isAbsolute(src)) {
+    const relativeToDefault = path.relative(defaultContext, absoluteSrc)
+    if (relativeToDefault.startsWith('..')) {
+      contextPathForInstruction = path.dirname(absoluteSrc)
     }
   }
 
-  const globPattern = /[*?[{]/
-  let baseCandidate = absoluteSrc
-  while (globPattern.test(baseCandidate)) {
-    baseCandidate = path.dirname(baseCandidate)
-  }
-
-  const contextPathForInstruction =
-    baseCandidate === '' || baseCandidate === absoluteSrc
-      ? path.dirname(absoluteSrc)
-      : path.resolve(baseCandidate)
-
+  // Normalize the source path to forward slashes
   const normalizedSrc =
-    path.relative(contextPathForInstruction, absoluteSrc).replace(/\\/g, '/') ||
-    '.'
+    normalizePath(path.relative(contextPathForInstruction, absoluteSrc)) || '.'
 
   return {
     normalizedSrc,
@@ -322,7 +310,11 @@ export async function tarFileStream(
     true
   )
 
-  const filePaths = allFiles.map((file) => file.relativePosix())
+  const filePaths = allFiles.map((file) => {
+    const rel = path.relative(fileContextPath, file.fullpath())
+    const normalized = normalizePath(rel || '.')
+    return normalized
+  })
 
   return create(
     {
