@@ -54,7 +54,8 @@ export async function getAllFilesInPath(
     ignore: ignorePatterns,
     withFileTypes: true,
     // this is required so that the ignore pattern is relative to the file path
-    cwd: contextPath,
+    // if the contextPath is absolute, we don't need to set the cwd
+    cwd: path.isAbsolute(contextPath) ? undefined : contextPath,
   })
 
   for (const file of globFiles) {
@@ -72,7 +73,7 @@ export async function getAllFilesInPath(
       const dirFiles = await glob(dirPattern, {
         ignore: ignorePatterns,
         withFileTypes: true,
-        cwd: contextPath,
+        cwd: path.isAbsolute(contextPath) ? undefined : contextPath,
       })
       dirFiles.forEach((f) => files.set(f.fullpath(), f))
     } else {

@@ -67,7 +67,7 @@ def get_all_files_in_path(
     files_glob = glob.glob(
         src,
         flags=glob.GLOBSTAR,
-        root_dir=abs_context_path,
+        root_dir=abs_context_path if not os.path.isabs(src) else None,
         exclude=ignore_patterns,
     )
 
@@ -82,7 +82,7 @@ def get_all_files_in_path(
             dir_files = glob.glob(
                 normalize_path(file) + "/**/*",
                 flags=glob.GLOBSTAR,
-                root_dir=abs_context_path,
+                root_dir=abs_context_path if not os.path.isabs(src) else None,
                 exclude=ignore_patterns,
             )
             for dir_file in dir_files:
