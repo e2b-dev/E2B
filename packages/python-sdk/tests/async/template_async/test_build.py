@@ -109,7 +109,7 @@ async def test_build_template_with_absolute_paths(async_build, setup_test_folder
     # Absolute path to test.txt in the folder
     package_txt = os.path.join(folder_path, "test.txt")
 
-    # Absolute path to package.json in the repo root (../../package.json from python-sdk)
+    # Absolute path to package.json in the repo root
     root_json = os.path.join(os.getcwd(), "..", "..", "package.json")
 
     template = (
