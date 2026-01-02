@@ -33,6 +33,15 @@ function normalizePath(path: string): string {
   return path.replace(/\\/g, '/')
 }
 
+/**
+ * Normalize a COPY source path into a context-relative pattern and its context.
+ *
+ * - Absolute sources: context is the source's directory; normalized path is the
+ *   relative path from that directory ('.' when the source is the directory itself).
+ * - Relative sources: context defaults to `fileContextPath`; if the path escapes
+ *   that context (e.g., '../../../foo'), use the escaped path's directory instead.
+ * - Always returns POSIX separators for glob/tar friendliness.
+ */
 export function normalizeCopySourcePath(
   src: string,
   fileContextPath: PathLike
