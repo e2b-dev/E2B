@@ -3,9 +3,6 @@ import { stripAnsi } from '../utils'
 import { BuildError, FileUploadError } from '../errors'
 import { LogEntry } from './logger'
 import { getBuildStepIndex, tarFileStreamUpload } from './utils'
-import path from 'node:path'
-import fs from 'node:fs/promises'
-import os from 'node:os'
 
 type RequestBuildInput = {
   alias: string

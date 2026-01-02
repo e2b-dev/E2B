@@ -1,5 +1,4 @@
 import type { PathLike } from 'node:fs'
-import path from 'node:path'
 import { ApiClient } from '../api'
 import { ConnectionConfig } from '../connectionConfig'
 import { BuildError } from '../errors'
