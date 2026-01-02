@@ -44,7 +44,6 @@ def setup_test_folder():
 def test_build_template(build, setup_test_folder):
     template = (
         Template(file_context_path=setup_test_folder)
-        # using base image to avoid re-building ubuntu:22.04 image
         .from_base_image()
         .copy("folder/*", "folder", force_upload=True)
         .run_cmd("cat folder/test.txt")
@@ -100,7 +99,7 @@ def test_build_template_with_absolute_paths(build, setup_test_folder):
     package_txt = os.path.join(folder_path, "test.txt")
 
     # Absolute path to package.json in the repo root
-    root_json = os.path.join(os.getcwd(), "..", "..", "..", "..", "package.json")
+    root_json = os.path.join(os.getcwd(), "..", "..", "package.json")
 
     template = (
         Template(file_context_path=setup_test_folder)
