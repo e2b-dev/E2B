@@ -77,14 +77,13 @@ buildTemplateTest(
   'build template with absolute paths',
   async ({ buildTemplate }) => {
     const packageTxt = path.resolve(process.cwd(), folderPath, 'test.txt')
-    const rootTxt = path.resolve(process.cwd(), '..', '..', 'package.json')
 
     const template = Template()
       // using base image to avoid re-building ubuntu:22.04 image
       .fromBaseImage()
       .skipCache()
       .copy(packageTxt, 'text.txt', { forceUpload: true })
-      .copy(rootTxt, 'package.json', { forceUpload: true })
+      .copy('../../../../package.json', 'package.json', { forceUpload: true })
       .runCmd(['ls -l .', 'cat text.txt', 'cat package.json'])
 
     await buildTemplate(template, {}, defaultBuildLogger())
