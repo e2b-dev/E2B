@@ -1044,7 +1044,6 @@ export class TemplateBase
       templateData.fromImageRegistry = this.registryConfig
     }
 
-    console.log(JSON.stringify(templateData, undefined, 2))
     return templateData
   }
 }
