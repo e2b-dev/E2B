@@ -1,5 +1,5 @@
 import crypto from 'node:crypto'
-import fs from 'node:fs'
+import fs, { PathLike } from 'node:fs'
 import path from 'node:path'
 import { dynamicImport, dynamicRequire } from '../utils'
 import { BASE_STEP_NAME, FINALIZE_STEP_NAME } from './consts'
@@ -255,38 +255,66 @@ export function padOctal(mode: number): string {
 /**
  * Create a compressed tar stream of files matching a pattern.
  *
- * @param fileName Glob pattern for files to include
+ * @param filePath Glob pattern for files to include
+ * @param fileName Name of the file in the tar archive
  * @param fileContextPath Base directory for resolving file paths
  * @param ignorePatterns Ignore patterns to exclude from the archive
  * @param resolveSymlinks Whether to follow symbolic links
  * @returns A readable stream of the gzipped tar archive
  */
 export async function tarFileStream(
+  filePath: string,
   fileName: string,
   fileContextPath: string,
   ignorePatterns: string[],
   resolveSymlinks: boolean
 ) {
-  const { create } = await dynamicImport<typeof import('tar')>('tar')
+  const { packTar } =
+    await dynamicImport<typeof import('modern-tar/fs')>('modern-tar/fs')
+  const { createGzip } =
+    await dynamicImport<typeof import('node:zlib')>('node:zlib')
 
   const allFiles = await getAllFilesInPath(
-    fileName,
+    filePath,
     fileContextPath,
     ignorePatterns,
     true
   )
 
-  const filePaths = allFiles.map((file) => file.relativePosix())
+  const sources: Array<{
+    type: 'file' | 'directory'
+    source: string
+    target: string
+  }> = []
 
-  return create(
-    {
-      gzip: true,
-      cwd: fileContextPath,
-      follow: resolveSymlinks,
-      noDirRecurse: true,
-    },
-    filePaths
-  )
+  for (const file of allFiles) {
+    const sourcePath = file.fullpathPosix()
+
+    if (file.isDirectory()) {
+      sources.push({
+        type: 'directory',
+        source: sourcePath,
+        target: fileName,
+      })
+    } else {
+      sources.push({
+        type: 'file',
+        source: sourcePath,
+        target: fileName,
+      })
+    }
+  }
+
+  // Create tar stream with gzip compression
+  const tarStream = packTar(sources, {
+    dereference: resolveSymlinks, // Follow symlinks when resolveSymlinks is true
+  })
+
+  // Pipe through gzip compression
+  const gzipStream = createGzip()
+  tarStream.pipe(gzipStream)
+
+  return gzipStream
 }
 
 /**
@@ -298,6 +326,7 @@ export async function tarFileStream(
  * @returns Object containing the content length and upload stream
  */
 export async function tarFileStreamUpload(
+  filePath: string,
   fileName: string,
   fileContextPath: string,
   ignorePatterns: string[],
@@ -305,6 +334,7 @@ export async function tarFileStreamUpload(
 ) {
   // First pass: calculate the compressed size
   const sizeCalculationStream = await tarFileStream(
+    filePath,
     fileName,
     fileContextPath,
     ignorePatterns,
@@ -318,6 +348,7 @@ export async function tarFileStreamUpload(
   return {
     contentLength,
     uploadStream: await tarFileStream(
+      filePath,
       fileName,
       fileContextPath,
       ignorePatterns,
@@ -368,4 +399,31 @@ export function readGCPServiceAccountJSON(
     return fs.readFileSync(path.join(contextPath, pathOrContent), 'utf-8')
   }
   return JSON.stringify(pathOrContent)
+}
+
+/**
+ * Convert absolute paths to relativized paths.
+ * In addition to converting absolute paths to relative paths,
+ * it strips up directories (../ or ..\ on Windows).
+ *
+ * @param src Absolute path to convert
+ * @param fileContextPath Base directory for resolving relative paths
+ * @returns Relative path
+ */
+export function relativizePath(
+  src: PathLike,
+  fileContextPath: PathLike
+): string {
+  let rewrittenPath = src.toString()
+
+  // Convert absolute paths to relative paths
+  if (path.isAbsolute(rewrittenPath)) {
+    const contextPath = path.resolve(fileContextPath.toString())
+    const relativePath = path.relative(contextPath, rewrittenPath)
+    rewrittenPath = relativePath
+  }
+
+  // Strip up directories (../ or ..\ on Windows)
+  rewrittenPath = rewrittenPath.replace(/\.\.(\/|\\)/g, '')
+  return rewrittenPath
 }

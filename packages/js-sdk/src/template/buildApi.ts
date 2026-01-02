@@ -3,6 +3,9 @@ import { stripAnsi } from '../utils'
 import { BuildError, FileUploadError } from '../errors'
 import { LogEntry } from './logger'
 import { getBuildStepIndex, tarFileStreamUpload } from './utils'
+import path from 'node:path'
+import fs from 'node:fs/promises'
+import os from 'node:os'
 
 type RequestBuildInput = {
   alias: string
@@ -88,6 +91,7 @@ export async function getFileUploadLink(
 
 export async function uploadFile(
   options: {
+    filePath: string
     fileName: string
     fileContextPath: string
     url: string
@@ -96,10 +100,17 @@ export async function uploadFile(
   },
   stackTrace: string | undefined
 ) {
-  const { fileName, url, fileContextPath, ignorePatterns, resolveSymlinks } =
-    options
+  const {
+    filePath,
+    fileName,
+    url,
+    fileContextPath,
+    ignorePatterns,
+    resolveSymlinks,
+  } = options
   try {
     const { contentLength, uploadStream } = await tarFileStreamUpload(
+      filePath,
       fileName,
       fileContextPath,
       ignorePatterns,

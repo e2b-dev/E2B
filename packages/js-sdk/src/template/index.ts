@@ -40,6 +40,7 @@ import {
   padOctal,
   readDockerignore,
   readGCPServiceAccountJSON,
+  relativizePath,
 } from './utils'
 
 /**
@@ -358,19 +359,10 @@ export class TemplateBase
     const srcs = Array.isArray(src) ? src : [src]
 
     for (const src of srcs) {
-      // Convert absolute paths to relative paths
-      let rewrittenPath = src.toString()
-      if (path.isAbsolute(rewrittenPath)) {
-        const contextPath = path.resolve(this.fileContextPath.toString())
-        const relativePath = path.relative(contextPath, rewrittenPath)
-        rewrittenPath = relativePath
-      }
-
-      // Strip parent directory (../ or ..\)
-      rewrittenPath = rewrittenPath.replace(/\.\.(\/|\\)/g, '')
+      const relativizedPath = relativizePath(src, this.fileContextPath)
 
       const args = [
-        rewrittenPath,
+        relativizedPath,
         dest.toString(),
         options?.user ?? '',
         options?.mode ? padOctal(options.mode) : '',
@@ -908,9 +900,11 @@ export class TemplateBase
           return
         }
 
-        const src = instruction.args.length > 0 ? instruction.args[0] : null
+        const fileName =
+          instruction.args.length > 0 ? instruction.args[0] : null
+        const filePath = instruction.filePath ?? null
         const filesHash = instruction.filesHash ?? null
-        if (src === null || filesHash === null) {
+        if (!fileName || !filePath || !filesHash) {
           throw new Error('Source path and files hash are required')
         }
 
@@ -935,7 +929,8 @@ export class TemplateBase
         ) {
           await uploadFile(
             {
-              fileName: src,
+              filePath: filePath.toString(),
+              fileName,
               fileContextPath: this.fileContextPath.toString(),
               url,
               ignorePatterns: [
@@ -947,14 +942,14 @@ export class TemplateBase
             stackTrace
           )
           options.onBuildLogs?.(
-            new LogEntry(new Date(), 'info', `Uploaded '${src}'`)
+            new LogEntry(new Date(), 'info', `Uploaded '${filePath}'`)
           )
         } else {
           options.onBuildLogs?.(
             new LogEntry(
               new Date(),
               'info',
-              `Skipping upload of '${src}', already cached`
+              `Skipping upload of '${filePath}', already cached`
             )
           )
         }
@@ -997,9 +992,8 @@ export class TemplateBase
           return instruction
         }
 
-        const src = instruction.args.length > 0 ? instruction.args[0] : null
         const dest = instruction.args.length > 1 ? instruction.args[1] : null
-        if (src === null || dest === null) {
+        if (!instruction.filePath || !dest) {
           throw new Error('Source path and destination path are required')
         }
 
@@ -1011,7 +1005,7 @@ export class TemplateBase
         return {
           ...instruction,
           filesHash: await calculateFilesHash(
-            src,
+            instruction.filePath.toString(),
             dest,
             this.fileContextPath.toString(),
             [

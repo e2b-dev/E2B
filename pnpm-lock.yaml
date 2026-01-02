@@ -368,15 +368,15 @@ importers:
       glob:
         specifier: ^11.1.0
         version: 11.1.0
+      modern-tar:
+        specifier: ^0.7.3
+        version: 0.7.3
       openapi-fetch:
         specifier: ^0.14.1
         version: 0.14.1
       platform:
         specifier: ^1.3.6
         version: 1.3.6
-      tar:
-        specifier: ^7.5.2
-        version: 7.5.2
     devDependencies:
       '@testing-library/react':
         specifier: ^16.2.0
@@ -432,6 +432,9 @@ importers:
       react:
         specifier: ^18.3.1
         version: 18.3.1
+      tar:
+        specifier: ^7.5.2
+        version: 7.5.2
       tsup:
         specifier: ^8.4.0
         version: 8.4.0(jiti@2.4.2)(postcss@8.5.6)(typescript@5.5.3)(yaml@2.5.1)
@@ -5708,6 +5711,10 @@ packages:
     resolution: {integrity: sha512-vVqVZQyf3WLx2Shd0qJ9xuvqgAyKPLAiqITEtqW0oIUjzo3PePDd6fW9iFz30ef7Ysp/oiWqbhszeGWW2T6Gzw==}
     engines: {node: '>=10'}
     hasBin: true
+
+  modern-tar@0.7.3:
+    resolution: {integrity: sha512-4W79zekKGyYU4JXVmB78DOscMFaJth2gGhgfTl2alWE4rNe3nf4N2pqenQ0rEtIewrnD79M687Ouba3YGTLOvg==}
+    engines: {node: '>=18.0.0'}
 
   module-details-from-path@1.0.3:
     resolution: {integrity: sha512-ySViT69/76t8VhE1xXHK6Ch4NcDd26gx0MzKXLO+F7NOtnqH68d9zF94nT8ZWSxXh8ELOERsnJO/sWt1xZYw5A==}
@@ -14088,6 +14095,8 @@ snapshots:
       minipass: 7.1.2
 
   mkdirp@1.0.4: {}
+
+  modern-tar@0.7.3: {}
 
   module-details-from-path@1.0.3: {}
 
