@@ -79,6 +79,7 @@ async def get_file_upload_link(
 
 async def upload_file(
     api_client: AuthenticatedClient,
+    file_path: str,
     file_name: str,
     context_path: str,
     url: str,
@@ -88,7 +89,7 @@ async def upload_file(
 ):
     try:
         tar_buffer = tar_file_stream(
-            file_name, context_path, ignore_patterns, resolve_symlinks
+            file_path, file_name, context_path, ignore_patterns, resolve_symlinks
         )
 
         client = api_client.get_async_httpx_client()

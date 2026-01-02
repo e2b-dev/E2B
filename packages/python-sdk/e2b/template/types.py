@@ -42,6 +42,7 @@ class Instruction(TypedDict):
     forceUpload: NotRequired[Optional[Literal[True]]]
     filesHash: NotRequired[Optional[str]]
     resolveSymlinks: NotRequired[Optional[bool]]
+    filePath: NotRequired[Optional[Union[str, Path]]]
 
 
 class GenericDockerRegistry(TypedDict):

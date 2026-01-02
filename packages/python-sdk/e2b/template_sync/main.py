@@ -87,12 +87,13 @@ class Template(TemplateBase):
                 continue
 
             args = file_upload.get("args", [])
-            src = args[0] if len(args) > 0 else None
+            file_name = args[0] if len(args) > 0 else None
+            file_path = file_upload.get("filePath")
             force_upload = file_upload.get("forceUpload")
             files_hash = file_upload.get("filesHash", None)
             resolve_symlinks = file_upload.get("resolveSymlinks", RESOLVE_SYMLINKS)
 
-            if src is None or files_hash is None:
+            if file_name is None or file_path is None or files_hash is None:
                 raise ValueError("Source path and files hash are required")
 
             stack_trace = None
@@ -108,7 +109,8 @@ class Template(TemplateBase):
             ):
                 upload_file(
                     api_client,
-                    src,
+                    str(file_path),
+                    file_name,
                     template._template._file_context_path,
                     file_info.url,
                     [
@@ -123,7 +125,7 @@ class Template(TemplateBase):
                         LogEntry(
                             timestamp=datetime.now(),
                             level="info",
-                            message=f"Uploaded '{src}'",
+                            message=f"Uploaded '{file_path}'",
                         )
                     )
             else:
@@ -132,7 +134,7 @@ class Template(TemplateBase):
                         LogEntry(
                             timestamp=datetime.now(),
                             level="info",
-                            message=f"Skipping upload of '{src}', already cached",
+                            message=f"Skipping upload of '{file_path}', already cached",
                         )
                     )
 

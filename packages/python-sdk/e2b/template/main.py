@@ -21,6 +21,7 @@ from e2b.template.utils import (
     read_dockerignore,
     read_gcp_service_account_json,
     get_caller_frame,
+    relativize_path,
 )
 from types import TracebackType
 
@@ -65,8 +66,12 @@ class TemplateBuilder:
         srcs = [src] if isinstance(src, (str, Path)) else src
 
         for src_item in srcs:
+            relativized_path = relativize_path(
+                str(src_item), self._template._file_context_path
+            )
+
             args = [
-                str(src_item),
+                relativized_path,
                 str(dest),
                 user or "",
                 pad_octal(mode) if mode else "",
@@ -78,6 +83,7 @@ class TemplateBuilder:
                 "force": force_upload or self._template._force_next_layer,
                 "forceUpload": force_upload,
                 "resolveSymlinks": resolve_symlinks,
+                "filePath": src_item,
             }
 
             self._template._instructions.append(instruction)
@@ -1283,14 +1289,15 @@ class TemplateBase:
                     stack_trace = self._stack_traces[index + 1]
 
                 args = instruction.get("args", [])
-                src = args[0] if len(args) > 0 else None
+                file_path = instruction.get("filePath")
                 dest = args[1] if len(args) > 1 else None
-                if src is None or dest is None:
+                if file_path is None or dest is None:
                     raise ValueError("Source path and destination path are required")
 
                 resolve_symlinks = instruction.get("resolveSymlinks")
+                step["filePath"] = file_path
                 step["filesHash"] = calculate_files_hash(
-                    src,
+                    str(file_path),
                     dest,
                     self._file_context_path,
                     [
