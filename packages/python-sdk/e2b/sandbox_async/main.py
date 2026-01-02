@@ -9,6 +9,7 @@ from packaging.version import Version
 from typing_extensions import Self, Unpack
 
 from e2b.api.client.types import Unset
+from e2b.api.client_async import get_transport
 from e2b.connection_config import ApiParams, ConnectionConfig
 from e2b.envd.api import ENVD_API_HEALTH_ROUTE, ahandle_envd_api_exception
 from e2b.envd.versions import ENVD_DEBUG_FALLBACK
@@ -20,7 +21,6 @@ from e2b.sandbox_async.commands.command import Commands
 from e2b.sandbox_async.commands.pty import Pty
 from e2b.sandbox_async.filesystem.filesystem import Filesystem
 from e2b.sandbox_async.sandbox_api import SandboxApi, SandboxInfo
-from e2b.api.client_async import get_transport
 
 logger = logging.getLogger(__name__)
 
@@ -351,7 +351,6 @@ class AsyncSandbox(SandboxApi):
     ) -> None:
         """
         Set the timeout of the sandbox.
-        After the timeout expires, the sandbox will be automatically killed.
         This method can extend or reduce the sandbox timeout set when creating the sandbox or from the last call to `.set_timeout`.
 
         The maximum time a sandbox can be kept alive is 24 hours (86_400 seconds) for Pro users and 1 hour (3_600 seconds) for Hobby users.
@@ -369,7 +368,6 @@ class AsyncSandbox(SandboxApi):
     ) -> None:
         """
         Set the timeout of the specified sandbox.
-        After the timeout expires, the sandbox will be automatically killed.
         This method can extend or reduce the sandbox timeout set when creating the sandbox or from the last call to `.set_timeout`.
 
         The maximum time a sandbox can be kept alive is 24 hours (86_400 seconds) for Pro users and 1 hour (3_600 seconds) for Hobby users.
@@ -387,7 +385,6 @@ class AsyncSandbox(SandboxApi):
     ) -> None:
         """
         Set the timeout of the specified sandbox.
-        After the timeout expires, the sandbox will be automatically killed.
         This method can extend or reduce the sandbox timeout set when creating the sandbox or from the last call to `.set_timeout`.
 
         The maximum time a sandbox can be kept alive is 24 hours (86_400 seconds) for Pro users and 1 hour (3_600 seconds) for Hobby users.
