@@ -76,19 +76,17 @@ buildTemplateTest(
 buildTemplateTest(
   'build template with absolute paths',
   async ({ buildTemplate }) => {
-    // Resolves to be inside the package (./README.md)
-    const packageReadme = path.resolve(process.cwd(), 'README.md')
-
-    // Resolves to be (../../README.md)
-    const rootReadme = path.resolve(process.cwd(), '..', '..', 'README.md')
+    const packageTxt = path.resolve(process.cwd(), folderPath, 'test.txt')
+    const rootTxt = path.resolve(process.cwd(), '..', '..', 'package.json')
 
     const template = Template()
       // using base image to avoid re-building ubuntu:22.04 image
       .fromBaseImage()
-      .copy(packageReadme, 'package_readme.md', { forceUpload: true })
-      .copy(rootReadme, 'root_readme.md', { forceUpload: true })
-      .setStartCmd('ls -l .', waitForTimeout(10_000))
+      .skipCache()
+      .copy(packageTxt, 'text.txt', { forceUpload: true })
+      .copy(rootTxt, 'package.json', { forceUpload: true })
+      .runCmd(['ls -l .', 'cat text.txt', 'cat package.json'])
 
-    await buildTemplate(template, { skipCache: true }, defaultBuildLogger())
+    await buildTemplate(template, {}, defaultBuildLogger())
   }
 )

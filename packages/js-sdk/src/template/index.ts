@@ -1,4 +1,5 @@
 import type { PathLike } from 'node:fs'
+import path from 'node:path'
 import { ApiClient } from '../api'
 import { ConnectionConfig } from '../connectionConfig'
 import { BuildError } from '../errors'
@@ -357,8 +358,19 @@ export class TemplateBase
     const srcs = Array.isArray(src) ? src : [src]
 
     for (const src of srcs) {
+      // Convert absolute paths to relative paths
+      let rewrittenPath = src.toString()
+      if (path.isAbsolute(rewrittenPath)) {
+        const contextPath = path.resolve(this.fileContextPath.toString())
+        const relativePath = path.relative(contextPath, rewrittenPath)
+        rewrittenPath = relativePath
+      }
+
+      // Strip parent directory (../ or ..\)
+      rewrittenPath = rewrittenPath.replace(/\.\.(\/|\\)/g, '')
+
       const args = [
-        src.toString(),
+        rewrittenPath,
         dest.toString(),
         options?.user ?? '',
         options?.mode ? padOctal(options.mode) : '',
@@ -369,6 +381,7 @@ export class TemplateBase
         args,
         force: options?.forceUpload || this.forceNextLayer,
         forceUpload: options?.forceUpload,
+        filePath: src,
         resolveSymlinks: options?.resolveSymlinks,
       })
     }
@@ -1041,6 +1054,7 @@ export class TemplateBase
       templateData.fromImageRegistry = this.registryConfig
     }
 
+    console.log(JSON.stringify(templateData, undefined, 2))
     return templateData
   }
 }

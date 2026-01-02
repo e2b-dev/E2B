@@ -101,6 +101,7 @@ export type Instruction = {
   forceUpload?: true
   filesHash?: string
   resolveSymlinks?: boolean
+  filePath?: PathLike
 }
 
 /**
