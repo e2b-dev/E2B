@@ -109,7 +109,7 @@ export async function calculateFilesHash(
   resolveSymlinks: boolean,
   stackTrace: string | undefined
 ): Promise<string> {
-  const srcPath = path.join(contextPath, src)
+  const srcPath = path.isAbsolute(src) ? src : path.join(contextPath, src)
   const hash = crypto.createHash('sha256')
   const content = `COPY ${src} ${dest}`
 

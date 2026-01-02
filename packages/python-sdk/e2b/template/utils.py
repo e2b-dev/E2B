@@ -119,7 +119,7 @@ def calculate_files_hash(
 
     :raises ValueError: If no files match the source pattern
     """
-    src_path = os.path.join(context_path, src)
+    src_path = src if os.path.isabs(src) else os.path.join(context_path, src)
     hash_obj = hashlib.sha256()
     content = f"COPY {src} {dest}"
 
