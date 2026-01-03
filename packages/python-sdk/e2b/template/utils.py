@@ -67,8 +67,8 @@ def normalize_copy_source_path(src: str, file_context_path: str) -> (str, str):
     )
 
     if os.path.isabs(src):
-        context_path_for_instruction = "/"
-        normalized_src = normalize_path(os.path.relpath(absolute_src, "/")) or "."
+        context_path_for_instruction = ""
+        normalized_src = normalize_path(absolute_src) or "."
         return normalized_src, context_path_for_instruction
 
     relative_to_default = os.path.relpath(absolute_src, default_context)
@@ -77,10 +77,10 @@ def normalize_copy_source_path(src: str, file_context_path: str) -> (str, str):
         or relative_to_default.startswith(".." + os.path.sep)
         or relative_to_default.startswith("../")
     )
-    context_path_for_instruction = "/" if escapes_default else default_context
+    context_path_for_instruction = "" if escapes_default else default_context
 
     normalized_src = (
-        normalize_path(os.path.relpath(absolute_src, context_path_for_instruction))
+        normalize_path(absolute_src)
         or "."
     )
 
@@ -124,7 +124,7 @@ def get_all_files_in_path(
             if include_directories:
                 files.add(file_path)
             dir_files = glob.glob(
-                normalize_path(file if is_abs_src else file) + "/**/*",
+                normalize_path(file_path) + "/**/*",
                 flags=glob.GLOBSTAR,
                 root_dir=None if is_abs_src else abs_context_path,
                 exclude=ignore_patterns,
