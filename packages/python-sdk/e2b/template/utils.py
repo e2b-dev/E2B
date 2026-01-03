@@ -68,9 +68,7 @@ def normalize_copy_source_path(src: str, file_context_path: str) -> (str, str):
 
     if os.path.isabs(src):
         context_path_for_instruction = "/"
-        normalized_src = (
-            normalize_path(os.path.relpath(absolute_src, "/")) or "."
-        )
+        normalized_src = normalize_path(os.path.relpath(absolute_src, "/")) or "."
         return normalized_src, context_path_for_instruction
 
     relative_to_default = os.path.relpath(absolute_src, default_context)
