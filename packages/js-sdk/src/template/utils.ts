@@ -100,12 +100,13 @@ export async function getAllFilesInPath(
 ) {
   const { glob } = await dynamicImport<typeof import('glob')>('glob')
   const files = new Map<string, Path>()
+  const isAbsoluteSrc = path.isAbsolute(src)
 
   const globFiles = await glob(src, {
     ignore: ignorePatterns,
     withFileTypes: true,
     // this is required so that the ignore pattern is relative to the file path
-    cwd: contextPath,
+    cwd: isAbsoluteSrc ? undefined : contextPath,
   })
 
   for (const file of globFiles) {
@@ -115,15 +116,17 @@ export async function getAllFilesInPath(
         files.set(file.fullpath(), file)
       }
       const dirPattern = normalizePath(
-        // When the matched directory is '.', `file.relative()` can be an empty string.
-        // In that case, we want to match all files under the current directory instead of
-        // creating an absolute glob like '/**/*' which would traverse the entire filesystem.
-        path.join(file.relative() || '.', '**/*')
+        isAbsoluteSrc
+          ? path.join(file.fullpath(), '**/*')
+          : // When the matched directory is '.', `file.relative()` can be an empty string.
+            // In that case, we want to match all files under the current directory instead of
+            // creating an absolute glob like '/**/*' which would traverse the entire filesystem.
+            path.join(file.relative() || '.', '**/*')
       )
       const dirFiles = await glob(dirPattern, {
         ignore: ignorePatterns,
         withFileTypes: true,
-        cwd: contextPath,
+        cwd: isAbsoluteSrc ? undefined : contextPath,
       })
       dirFiles.forEach((f) => files.set(f.fullpath(), f))
     } else {

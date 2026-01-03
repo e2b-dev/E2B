@@ -68,14 +68,7 @@ def normalize_copy_source_path(src: str, file_context_path: str) -> (str, str):
 
     if os.path.isabs(src):
         context_path_for_instruction = "/"
-        # On Windows, os.path.relpath raises when the source is on a different drive.
-        # Strip the drive letter and treat the path as root-anchored to keep behavior consistent.
-        if os.name == "nt":
-            _, tail = os.path.splitdrive(absolute_src)
-            stripped = tail.lstrip("\\/")
-            normalized_src = normalize_path(stripped) or "."
-        else:
-            normalized_src = normalize_path(os.path.relpath(absolute_src, "/")) or "."
+        normalized_src = normalize_path(os.path.relpath(absolute_src, "/")) or "."
         return normalized_src, context_path_for_instruction
 
     relative_to_default = os.path.relpath(absolute_src, default_context)
@@ -111,31 +104,33 @@ def get_all_files_in_path(
     """
     files = set()
 
-    # Use glob to find all files/directories matching the pattern under context_path
+    # Use glob to find all files/directories. Only set root_dir for relative patterns;
+    # absolute patterns must be matched as-is (particularly on Windows where drives differ).
     abs_context_path = os.path.abspath(context_path)
+    is_abs_src = os.path.isabs(src)
     files_glob = glob.glob(
         src,
         flags=glob.GLOBSTAR,
-        root_dir=abs_context_path,
+        root_dir=None if is_abs_src else abs_context_path,
         exclude=ignore_patterns,
     )
 
     for file in files_glob:
-        # Join it with abs_context_path to get the absolute path
-        file_path = os.path.join(abs_context_path, file)
+        # If glob returned a relative path, anchor it to abs_context_path
+        file_path = file if is_abs_src else os.path.join(abs_context_path, file)
 
         if os.path.isdir(file_path):
             # If it's a directory, add the directory and all entries recursively
             if include_directories:
                 files.add(file_path)
             dir_files = glob.glob(
-                normalize_path(file) + "/**/*",
+                normalize_path(file if is_abs_src else file) + "/**/*",
                 flags=glob.GLOBSTAR,
-                root_dir=abs_context_path,
+                root_dir=None if is_abs_src else abs_context_path,
                 exclude=ignore_patterns,
             )
             for dir_file in dir_files:
-                dir_file_path = os.path.join(abs_context_path, dir_file)
+                dir_file_path = dir_file if is_abs_src else os.path.join(abs_context_path, dir_file)
                 files.add(dir_file_path)
         else:
             files.add(file_path)
