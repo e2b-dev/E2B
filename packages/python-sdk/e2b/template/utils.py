@@ -45,6 +45,40 @@ def normalize_path(path: str) -> str:
     return path.replace(os.sep, "/")
 
 
+def normalize_copy_source_path(src: str, file_context_path: str) -> (str, str):
+    """
+    Normalize a COPY source path into a context-relative pattern and its context.
+
+    - Absolute sources: context is the source's directory; normalized path is the
+      relative path from that directory ('.' when the source is the directory itself).
+    - Relative sources: context defaults to file_context_path; if the path escapes
+      that context (e.g., '../../../foo'), use the escaped path's directory instead.
+    - Always returns POSIX separators for glob/tar friendliness.
+    """
+    default_context = os.path.abspath(file_context_path)
+    absolute_src = (
+        src
+        if os.path.isabs(src)
+        else os.path.abspath(os.path.join(default_context, src))
+    )
+
+    context_path_for_instruction = (
+        os.path.dirname(absolute_src) if os.path.isabs(src) else default_context
+    )
+
+    if not os.path.isabs(src):
+        relative_to_default = os.path.relpath(absolute_src, default_context)
+        if relative_to_default.startswith(".."):
+            context_path_for_instruction = os.path.dirname(absolute_src)
+
+    normalized_src = (
+        normalize_path(os.path.relpath(absolute_src, context_path_for_instruction))
+        or "."
+    )
+
+    return normalized_src, context_path_for_instruction
+
+
 def get_all_files_in_path(
     src: str,
     context_path: str,

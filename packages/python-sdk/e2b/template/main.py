@@ -21,6 +21,7 @@ from e2b.template.utils import (
     read_dockerignore,
     read_gcp_service_account_json,
     get_caller_frame,
+    normalize_copy_source_path,
 )
 from types import TracebackType
 
@@ -65,8 +66,11 @@ class TemplateBuilder:
         srcs = [src] if isinstance(src, (str, Path)) else src
 
         for src_item in srcs:
+            normalized_src, context_path_for_instruction = normalize_copy_source_path(
+                str(src_item), self._template._file_context_path
+            )
             args = [
-                str(src_item),
+                normalized_src,
                 str(dest),
                 user or "",
                 pad_octal(mode) if mode else "",
@@ -78,6 +82,7 @@ class TemplateBuilder:
                 "force": force_upload or self._template._force_next_layer,
                 "forceUpload": force_upload,
                 "resolveSymlinks": resolve_symlinks,
+                "contextPath": context_path_for_instruction,
             }
 
             self._template._instructions.append(instruction)
@@ -1275,6 +1280,7 @@ class TemplateBase:
                 "force": instruction["force"],
                 "forceUpload": instruction.get("forceUpload"),
                 "resolveSymlinks": instruction.get("resolveSymlinks"),
+                "contextPath": instruction.get("contextPath"),
             }
 
             if instruction["type"] == InstructionType.COPY:
@@ -1289,13 +1295,17 @@ class TemplateBase:
                     raise ValueError("Source path and destination path are required")
 
                 resolve_symlinks = instruction.get("resolveSymlinks")
+                context_path_for_instruction = (
+                    instruction.get("contextPath") or self._file_context_path
+                )
+
                 step["filesHash"] = calculate_files_hash(
                     src,
                     dest,
-                    self._file_context_path,
+                    context_path_for_instruction,
                     [
                         *self._file_ignore_patterns,
-                        *read_dockerignore(self._file_context_path),
+                        *read_dockerignore(context_path_for_instruction),
                     ],
                     resolve_symlinks
                     if resolve_symlinks is not None
