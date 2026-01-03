@@ -49,10 +49,10 @@ def normalize_copy_source_path(src: str, file_context_path: str) -> (str, str):
     """
     Normalize a COPY source path into a context-relative pattern and its context.
 
-    - Absolute sources: context is the source's directory; normalized path is the
-      relative path from that directory ('.' when the source is the directory itself).
+    - Absolute sources: anchor context at '/', keep full path structure
+      (relpath from '/'; '.' when the source is '/').
     - Relative sources: context defaults to file_context_path; if the path escapes
-      that context (e.g., '../../../foo'), use the escaped path's directory instead.
+      that context (e.g., '../../../foo'), anchor at '/' to preserve structure.
     - Always returns POSIX separators for glob/tar friendliness.
 
     :param src: The source path to normalize
@@ -66,14 +66,16 @@ def normalize_copy_source_path(src: str, file_context_path: str) -> (str, str):
         else os.path.abspath(os.path.join(default_context, src))
     )
 
-    context_path_for_instruction = (
-        os.path.dirname(absolute_src) if os.path.isabs(src) else default_context
-    )
+    if os.path.isabs(src):
+        context_path_for_instruction = os.path.sep
+        normalized_src = (
+            normalize_path(os.path.relpath(absolute_src, os.path.sep)) or "."
+        )
+        return normalized_src, context_path_for_instruction
 
-    if not os.path.isabs(src):
-        relative_to_default = os.path.relpath(absolute_src, default_context)
-        if relative_to_default.startswith(".."):
-            context_path_for_instruction = os.path.dirname(absolute_src)
+    relative_to_default = os.path.relpath(absolute_src, default_context)
+    escapes_default = relative_to_default.startswith("..")
+    context_path_for_instruction = os.path.sep if escapes_default else default_context
 
     normalized_src = (
         normalize_path(os.path.relpath(absolute_src, context_path_for_instruction))

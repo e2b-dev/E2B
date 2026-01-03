@@ -58,19 +58,20 @@ export function normalizeCopySourcePath(
     ? src
     : path.resolve(defaultContext, src)
 
-  let contextPathForInstruction = path.isAbsolute(src)
-    ? path.dirname(absoluteSrc)
-    : defaultContext
-
-  // If a relative path escapes the default context, fall back to its own directory
-  if (!path.isAbsolute(src)) {
-    const relativeToDefault = path.relative(defaultContext, absoluteSrc)
-    if (relativeToDefault.startsWith('..')) {
-      contextPathForInstruction = path.dirname(absoluteSrc)
+  // Absolute sources: keep full path structure in the archive by anchoring at '/'
+  if (path.isAbsolute(src)) {
+    const normalizedSrc = normalizePath(path.relative('/', absoluteSrc)) || '.'
+    return {
+      normalizedSrc,
+      contextPathForInstruction: '/',
     }
   }
 
-  // Normalize the source path to forward slashes
+  // Relative sources: prefer default context, but if they escape, anchor at '/'
+  const relativeToDefault = path.relative(defaultContext, absoluteSrc)
+  const escapesDefault = relativeToDefault.startsWith('..')
+
+  const contextPathForInstruction = escapesDefault ? '/' : defaultContext
   const normalizedSrc =
     normalizePath(path.relative(contextPathForInstruction, absoluteSrc)) || '.'
 
