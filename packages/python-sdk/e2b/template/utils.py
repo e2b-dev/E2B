@@ -124,7 +124,7 @@ def get_all_files_in_path(
             if include_directories:
                 files.add(file_path)
             dir_files = glob.glob(
-                normalize_path(file_path) + "/**/*",
+                normalize_path(file) + "/**/*",
                 flags=glob.GLOBSTAR,
                 root_dir=None if is_abs_src else abs_context_path,
                 exclude=ignore_patterns,
