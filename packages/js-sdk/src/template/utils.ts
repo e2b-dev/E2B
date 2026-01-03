@@ -69,7 +69,10 @@ export function normalizeCopySourcePath(
 
   // Relative sources: prefer default context, but if they escape, anchor at '/'
   const relativeToDefault = path.relative(defaultContext, absoluteSrc)
-  const escapesDefault = relativeToDefault.startsWith('..')
+  const escapesDefault =
+    relativeToDefault === '..' ||
+    relativeToDefault.startsWith(`..${path.sep}`) ||
+    relativeToDefault.startsWith('../')
 
   const contextPathForInstruction = escapesDefault ? '/' : defaultContext
   const normalizedSrc =

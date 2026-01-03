@@ -74,7 +74,11 @@ def normalize_copy_source_path(src: str, file_context_path: str) -> (str, str):
         return normalized_src, context_path_for_instruction
 
     relative_to_default = os.path.relpath(absolute_src, default_context)
-    escapes_default = relative_to_default.startswith("..")
+    escapes_default = (
+        relative_to_default == ".."
+        or relative_to_default.startswith(".." + os.path.sep)
+        or relative_to_default.startswith("../")
+    )
     context_path_for_instruction = "/" if escapes_default else default_context
 
     normalized_src = (
