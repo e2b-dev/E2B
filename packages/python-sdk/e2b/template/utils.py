@@ -54,6 +54,10 @@ def normalize_copy_source_path(src: str, file_context_path: str) -> (str, str):
     - Relative sources: context defaults to file_context_path; if the path escapes
       that context (e.g., '../../../foo'), use the escaped path's directory instead.
     - Always returns POSIX separators for glob/tar friendliness.
+
+    :param src: The source path to normalize
+    :param file_context_path: The context path to use
+    :return: A tuple containing the normalized source path and the context path
     """
     default_context = os.path.abspath(file_context_path)
     absolute_src = (

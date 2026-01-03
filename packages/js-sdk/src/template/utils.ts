@@ -41,6 +41,10 @@ function normalizePath(path: string): string {
  * - Relative sources: context defaults to `fileContextPath`; if the path escapes
  *   that context (e.g., '../../../foo'), use the escaped path's directory instead.
  * - Always returns POSIX separators for glob/tar friendliness.
+ *
+ * @param src The source path to normalize
+ * @param fileContextPath The context path to use
+ * @returns An object containing the normalized source path and the context path
  */
 export function normalizeCopySourcePath(
   src: string,
