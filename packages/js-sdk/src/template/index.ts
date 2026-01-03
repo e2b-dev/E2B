@@ -481,7 +481,6 @@ export class TemplateBase
       type: InstructionType.RUN,
       args,
       force: this.forceNextLayer,
-      contextPath: this.fileContextPath.toString(),
     })
 
     this.collectStackTrace()
@@ -493,7 +492,6 @@ export class TemplateBase
       type: InstructionType.WORKDIR,
       args: [workdir.toString()],
       force: this.forceNextLayer,
-      contextPath: this.fileContextPath.toString(),
     })
 
     this.collectStackTrace()
@@ -505,7 +503,6 @@ export class TemplateBase
       type: InstructionType.USER,
       args: [user],
       force: this.forceNextLayer,
-      contextPath: this.fileContextPath.toString(),
     })
 
     this.collectStackTrace()
@@ -686,7 +683,6 @@ export class TemplateBase
       type: InstructionType.ENV,
       args: Object.entries(envs).flatMap(([key, value]) => [key, value]),
       force: this.forceNextLayer,
-      contextPath: this.fileContextPath.toString(),
     })
     this.collectStackTrace()
     return this
