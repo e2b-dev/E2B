@@ -89,17 +89,20 @@ def get_all_files_in_path(
     abs_context_path = os.path.abspath(context_path)
     is_absolute_src = os.path.isabs(src)
 
+    # Normalize path separators for glob (glob expects forward slashes even on Windows)
+    glob_pattern = normalize_path(src)
+
     # For absolute paths, don't use root_dir as glob will handle them directly
     # For relative paths, use root_dir to resolve relative to context_path
     if is_absolute_src:
         files_glob = glob.glob(
-            src,
+            glob_pattern,
             flags=glob.GLOBSTAR,
             exclude=ignore_patterns,
         )
     else:
         files_glob = glob.glob(
-            src,
+            glob_pattern,
             flags=glob.GLOBSTAR,
             root_dir=abs_context_path,
             exclude=ignore_patterns,
