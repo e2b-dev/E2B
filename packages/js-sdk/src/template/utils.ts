@@ -312,6 +312,10 @@ export async function tarFileStream(
 
   // Compress with gzip
   const gzipStream = zlib.createGzip()
+
+  // Forward errors from tarStream to gzipStream to prevent hanging on errors
+  // (e.g., file read failure, permission issues)
+  tarStream.on('error', (err) => gzipStream.destroy(err))
   tarStream.pipe(gzipStream)
 
   return gzipStream
