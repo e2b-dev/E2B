@@ -18,7 +18,9 @@ class TestRewriteSrc:
 
             # ../../file.txt from subdir should resolve to parent of tmpdir in POSIX format
             result = rewrite_src("../../file.txt", context_path)
-            expected = to_posix_path(os.path.normpath(os.path.join(tmpdir, "..", "file.txt")))
+            expected = to_posix_path(
+                os.path.normpath(os.path.join(tmpdir, "..", "file.txt"))
+            )
             assert result == expected
 
     def test_should_preserve_relative_paths(self):

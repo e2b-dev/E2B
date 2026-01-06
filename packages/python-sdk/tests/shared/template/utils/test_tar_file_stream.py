@@ -181,7 +181,9 @@ class TestTarFileStream:
         contents = self._extract_tar_contents(tar_buffer)
 
         # For .. paths, the full resolved path should be used in the archive
-        resolved_path = os.path.normpath(os.path.join(test_dir, "project", "config.txt"))
+        resolved_path = os.path.normpath(
+            os.path.join(test_dir, "project", "config.txt")
+        )
         # Tar uses POSIX format (forward slashes, no drive letter, no leading slash)
         expected_path = to_posix_path(resolved_path)
         assert expected_path in contents
