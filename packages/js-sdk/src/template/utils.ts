@@ -278,19 +278,19 @@ export async function tarFileStream(
     true
   )
 
-  const isOutsideContext =
-    filePath.startsWith('..') || path.isAbsolute(filePath)
-
   const sources = allFiles.map((file) => {
     const fullPath = file.fullpath()
     const relativePath = file.relativePosix()
     const stats = fs.lstatSync(fullPath)
 
     let targetPath: string
-    if (isOutsideContext) {
-      targetPath = path.basename(fullPath)
+    if (path.isAbsolute(filePath)) {
+      targetPath = fullPath
     } else {
-      targetPath = relativePath
+      // handle paths outside of the context directory
+      targetPath = filePath.startsWith('..')
+        ? path.basename(fullPath)
+        : relativePath
     }
 
     if (stats.isDirectory()) {
@@ -408,8 +408,8 @@ export function readGCPServiceAccountJSON(
  * @returns The rewritten source path
  */
 export function rewriteSrc(src: string): string {
-  // return only the basename for up dirs and absolute paths
-  if (src.startsWith('..') || path.isAbsolute(src)) {
+  // return only the basename for up dirs
+  if (src.startsWith('..')) {
     return path.basename(src.toString())
   }
   return src.toString()
