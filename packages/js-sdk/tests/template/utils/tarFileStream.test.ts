@@ -4,7 +4,7 @@ import { createWriteStream } from 'fs'
 import { join } from 'path'
 import { tmpdir } from 'os'
 import { pipeline } from 'stream/promises'
-import { tarFileStream } from '../../../src/template/utils'
+import { tarFileStream, toPosixPath } from '../../../src/template/utils'
 import * as tar from 'tar'
 import { ReadEntry } from 'tar'
 
@@ -227,24 +227,6 @@ describe('tarFileStream', () => {
     expect(link.linkpath).toBe('original.txt')
   })
 
-  /**
-   * Convert a filesystem path to the format used in tar archives.
-   *
-   * Tar archives use POSIX-style paths (forward slashes).
-   * On Windows, the drive letter (C:) is stripped.
-   * On all platforms, the leading slash is stripped.
-   */
-  function toTarPath(fsPath: string): string {
-    // Normalize to forward slashes (POSIX format used by tar)
-    let posixPath = fsPath.replace(/\\/g, '/')
-    // Strip Windows drive letter (e.g., C:)
-    if (posixPath.length >= 2 && posixPath[1] === ':') {
-      posixPath = posixPath.slice(2)
-    }
-    // Strip leading slash
-    return posixPath.replace(/^\//, '')
-  }
-
   test('should handle absolute paths', async () => {
     // Create test file
     const filePath = join(testDir, 'file.txt')
@@ -257,7 +239,7 @@ describe('tarFileStream', () => {
 
     // For absolute paths, the full path is preserved in the archive
     // Tar uses POSIX format (forward slashes, no drive letter, no leading slash)
-    const expectedPath = toTarPath(filePath)
+    const expectedPath = toPosixPath(filePath)
     expect(contents.has(expectedPath)).toBe(true)
     expect(contents.get(expectedPath)?.toString()).toBe('content')
   })
@@ -278,7 +260,7 @@ describe('tarFileStream', () => {
     // For .. paths, the full resolved path should be used in the archive
     // Tar uses POSIX format (forward slashes, no drive letter, no leading slash)
     const resolvedPath = join(testDir, 'project', 'config.txt')
-    const expectedPath = toTarPath(resolvedPath)
+    const expectedPath = toPosixPath(resolvedPath)
     expect(contents.has(expectedPath)).toBe(true)
     expect(contents.get(expectedPath)?.toString()).toBe('config content')
   })

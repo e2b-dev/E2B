@@ -34,6 +34,32 @@ function normalizePath(path: string): string {
 }
 
 /**
+ * Convert a filesystem path to POSIX format for use in tar archives and Dockerfiles.
+ *
+ * Tar archives and Docker expect POSIX-style paths (forward slashes).
+ * On Windows, the drive letter (e.g., C:) is stripped and backslashes are converted.
+ *
+ * @param fsPath - The filesystem path to convert
+ * @returns The POSIX-formatted path suitable for tar/Docker
+ *
+ * @example
+ * ```ts
+ * toPosixPath('D:\\a\\E2B\\file.txt') // Returns 'a/E2B/file.txt'
+ * toPosixPath('/home/user/file.txt') // Returns 'home/user/file.txt'
+ * ```
+ */
+export function toPosixPath(fsPath: string): string {
+  // Normalize to forward slashes (POSIX format used by tar)
+  let posixPath = fsPath.replace(/\\/g, '/')
+  // Strip Windows drive letter (e.g., C:)
+  if (posixPath.length >= 2 && posixPath[1] === ':') {
+    posixPath = posixPath.slice(2)
+  }
+  // Strip leading slash
+  return posixPath.replace(/^\//, '')
+}
+
+/**
  * Get all files for a given path and ignore patterns.
  *
  * @param src Path to the source directory
@@ -302,11 +328,11 @@ export async function tarFileStream(
     let targetPath: string
     // Must match what rewriteSrc produces for COPY instruction consistency
     if (path.isAbsolute(filePath)) {
-      // For absolute paths, use the full path (matching rewriteSrc behavior)
-      targetPath = fullPath
+      // For absolute paths, use the full path in POSIX format (matching rewriteSrc behavior)
+      targetPath = toPosixPath(fullPath)
     } else if (filePath.startsWith('..')) {
-      // For paths outside of the context directory, use the full resolved path
-      targetPath = fullPath
+      // For paths outside of the context directory, use the full resolved path in POSIX format
+      targetPath = toPosixPath(fullPath)
     } else {
       // For relative paths within context, use the relative path
       targetPath = relativePath
@@ -427,14 +453,21 @@ export function readGCPServiceAccountJSON(
 /**
  * Rewrite the source path to the target path.
  *
+ * For paths outside the context directory (starting with ..) or absolute paths,
+ * returns the full resolved path in POSIX format for Docker/tar compatibility.
+ *
  * @param src Source path
  * @param fileContextPath Base directory for resolving relative paths
- * @returns The rewritten source path
+ * @returns The rewritten source path in POSIX format
  */
 export function rewriteSrc(src: string, fileContextPath: string): string {
-  // return the full path for paths outside of the context directory
+  // For absolute paths, convert to POSIX format for Docker/tar compatibility
+  if (path.isAbsolute(src)) {
+    return toPosixPath(src)
+  }
+  // For paths outside of the context directory, return the full resolved path in POSIX format
   if (src.startsWith('..')) {
-    return path.resolve(fileContextPath, src)
+    return toPosixPath(path.resolve(fileContextPath, src))
   }
   return src
 }
