@@ -255,38 +255,69 @@ export function padOctal(mode: number): string {
 /**
  * Create a compressed tar stream of files matching a pattern.
  *
- * @param fileName Glob pattern for files to include
- * @param fileContextPath Base directory for resolving file paths
+ * @param filePath Original file path pattern (may include .. for outside-context files)
+ * @param fileContextPath Base directory for resolving relative paths
  * @param ignorePatterns Ignore patterns to exclude from the archive
  * @param resolveSymlinks Whether to follow symbolic links
  * @returns A readable stream of the gzipped tar archive
  */
 export async function tarFileStream(
-  fileName: string,
+  filePath: string,
   fileContextPath: string,
   ignorePatterns: string[],
   resolveSymlinks: boolean
 ) {
-  const { create } = await dynamicImport<typeof import('tar')>('tar')
+  const modernTar =
+    dynamicRequire<typeof import('modern-tar/fs')>('modern-tar/fs')
+  const zlib = dynamicRequire<typeof import('node:zlib')>('node:zlib')
 
   const allFiles = await getAllFilesInPath(
-    fileName,
+    filePath,
     fileContextPath,
     ignorePatterns,
     true
   )
 
-  const filePaths = allFiles.map((file) => file.relativePosix())
+  const isOutsideContext =
+    filePath.startsWith('..') || path.isAbsolute(filePath)
 
-  return create(
-    {
-      gzip: true,
-      cwd: fileContextPath,
-      follow: resolveSymlinks,
-      noDirRecurse: true,
-    },
-    filePaths
-  )
+  const sources = allFiles.map((file) => {
+    const fullPath = file.fullpath()
+    const relativePath = file.relativePosix()
+    const stats = fs.lstatSync(fullPath)
+
+    let targetPath: string
+    if (isOutsideContext) {
+      targetPath = path.basename(fullPath)
+    } else {
+      targetPath = relativePath
+    }
+
+    if (stats.isDirectory()) {
+      return {
+        type: 'directory' as const,
+        source: fullPath,
+        target: targetPath,
+      }
+    }
+
+    return {
+      type: 'file' as const,
+      source: fullPath,
+      target: targetPath,
+    }
+  })
+
+  // packTar returns a Node.js Readable stream
+  const tarStream = modernTar.packTar(sources, {
+    dereference: resolveSymlinks,
+  })
+
+  // Compress with gzip
+  const gzipStream = zlib.createGzip()
+  tarStream.pipe(gzipStream)
+
+  return gzipStream
 }
 
 /**
@@ -298,14 +329,14 @@ export async function tarFileStream(
  * @returns Object containing the content length and upload stream
  */
 export async function tarFileStreamUpload(
-  fileName: string,
+  filePath: string,
   fileContextPath: string,
   ignorePatterns: string[],
   resolveSymlinks: boolean
 ) {
   // First pass: calculate the compressed size
   const sizeCalculationStream = await tarFileStream(
-    fileName,
+    filePath,
     fileContextPath,
     ignorePatterns,
     resolveSymlinks
@@ -318,7 +349,7 @@ export async function tarFileStreamUpload(
   return {
     contentLength,
     uploadStream: await tarFileStream(
-      fileName,
+      filePath,
       fileContextPath,
       ignorePatterns,
       resolveSymlinks
@@ -368,4 +399,18 @@ export function readGCPServiceAccountJSON(
     return fs.readFileSync(path.join(contextPath, pathOrContent), 'utf-8')
   }
   return JSON.stringify(pathOrContent)
+}
+
+/**
+ * Rewrite the source path to the target path.
+ *
+ * @param src Source path
+ * @returns The rewritten source path
+ */
+export function rewriteSrc(src: string): string {
+  // return only the basename for up dirs and absolute paths
+  if (src.startsWith('..') || path.isAbsolute(src)) {
+    return path.basename(src.toString())
+  }
+  return src.toString()
 }

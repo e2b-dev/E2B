@@ -39,6 +39,7 @@ import {
   padOctal,
   readDockerignore,
   readGCPServiceAccountJSON,
+  rewriteSrc,
 } from './utils'
 
 /**
@@ -358,7 +359,7 @@ export class TemplateBase
 
     for (const src of srcs) {
       const args = [
-        src.toString(),
+        rewriteSrc(src.toString()),
         dest.toString(),
         options?.user ?? '',
         options?.mode ? padOctal(options.mode) : '',
@@ -370,6 +371,7 @@ export class TemplateBase
         force: options?.forceUpload || this.forceNextLayer,
         forceUpload: options?.forceUpload,
         resolveSymlinks: options?.resolveSymlinks,
+        filePath: src.toString(),
       })
     }
 
@@ -896,8 +898,9 @@ export class TemplateBase
         }
 
         const src = instruction.args.length > 0 ? instruction.args[0] : null
+        const filePath = instruction.filePath ?? null
         const filesHash = instruction.filesHash ?? null
-        if (src === null || filesHash === null) {
+        if (src === null || filePath === null || filesHash === null) {
           throw new Error('Source path and files hash are required')
         }
 
@@ -922,7 +925,7 @@ export class TemplateBase
         ) {
           await uploadFile(
             {
-              fileName: src,
+              filePath,
               fileContextPath: this.fileContextPath.toString(),
               url,
               ignorePatterns: [
@@ -984,9 +987,9 @@ export class TemplateBase
           return instruction
         }
 
-        const src = instruction.args.length > 0 ? instruction.args[0] : null
+        const filePath = instruction.filePath ?? null
         const dest = instruction.args.length > 1 ? instruction.args[1] : null
-        if (src === null || dest === null) {
+        if (filePath === null || dest === null) {
           throw new Error('Source path and destination path are required')
         }
 
@@ -998,7 +1001,7 @@ export class TemplateBase
         return {
           ...instruction,
           filesHash: await calculateFilesHash(
-            src,
+            filePath,
             dest,
             this.fileContextPath.toString(),
             [
