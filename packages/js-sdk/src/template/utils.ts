@@ -284,13 +284,10 @@ export async function tarFileStream(
     const stats = fs.lstatSync(fullPath)
 
     let targetPath: string
-    if (path.isAbsolute(filePath)) {
-      targetPath = fullPath
+    if (path.isAbsolute(filePath) || filePath.startsWith('..')) {
+      targetPath = rewriteSrc(filePath, fileContextPath)
     } else {
-      // handle paths outside of the context directory
-      targetPath = filePath.startsWith('..')
-        ? path.basename(fullPath)
-        : relativePath
+      targetPath = relativePath
     }
 
     if (stats.isDirectory()) {
@@ -405,12 +402,13 @@ export function readGCPServiceAccountJSON(
  * Rewrite the source path to the target path.
  *
  * @param src Source path
+ * @param fileContextPath Base directory for resolving relative paths
  * @returns The rewritten source path
  */
-export function rewriteSrc(src: string): string {
-  // return only the basename for up dirs
+export function rewriteSrc(src: string, fileContextPath: string): string {
+  // return the full path for paths outside of the context directory
   if (src.startsWith('..')) {
-    return path.basename(src)
+    return path.resolve(fileContextPath, src)
   }
   return src
 }

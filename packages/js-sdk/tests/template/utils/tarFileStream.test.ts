@@ -255,8 +255,9 @@ describe('tarFileStream', () => {
     const stream = await tarFileStream('../config.txt', subdir, [], false)
     const contents = await extractTarContents(stream)
 
-    // For .. paths, only the basename should be used in the archive
-    expect(contents.has('config.txt')).toBe(true)
-    expect(contents.get('config.txt')?.toString()).toBe('config content')
+    // For .. paths, the full resolved path should be used in the archive
+    const resolvedPath = join(testDir, 'project', 'config.txt')
+    expect(contents.has(resolvedPath)).toBe(true)
+    expect(contents.get(resolvedPath)?.toString()).toBe('config content')
   })
 })

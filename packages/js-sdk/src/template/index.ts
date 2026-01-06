@@ -359,7 +359,7 @@ export class TemplateBase
 
     for (const src of srcs) {
       const args = [
-        rewriteSrc(src.toString()),
+        rewriteSrc(src.toString(), this.fileContextPath.toString()),
         dest.toString(),
         options?.user ?? '',
         options?.mode ? padOctal(options.mode) : '',

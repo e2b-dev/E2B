@@ -194,12 +194,8 @@ def tar_file_stream(
             relative_path = os.path.relpath(file, file_context_path)
 
             # Determine the target path based on the source path type
-            if os.path.isabs(file_path):
-                # For absolute paths, use the full path
-                target_path = file
-            elif file_path.startswith(".."):
-                # For paths outside of the context directory, use only the basename
-                target_path = os.path.basename(file)
+            if os.path.isabs(file_path) or file_path.startswith(".."):
+                target_path = rewrite_src(file_path, file_context_path)
             else:
                 # For relative paths, preserve the relative structure
                 target_path = relative_path
@@ -331,18 +327,19 @@ def read_gcp_service_account_json(
         return json.dumps(path_or_content)
 
 
-def rewrite_src(src: str) -> str:
+def rewrite_src(src: str, file_context_path: str) -> str:
     """
     Rewrite the source path to the target path.
 
-    For paths starting with '..', returns only the basename to match the tar archive structure.
-    Absolute paths are preserved.
+    For paths starting with '..', returns the full resolved path for outside-context files.
+    Other paths are preserved as-is.
 
     :param src: Source path
+    :param file_context_path: Base directory for resolving relative paths
 
     :return: The rewritten source path
     """
-    # Return only the basename for parent directory paths (..)
+    # Return the full path for paths outside of the context directory
     if src.startswith(".."):
-        return os.path.basename(src)
+        return os.path.normpath(os.path.join(file_context_path, src))
     return src

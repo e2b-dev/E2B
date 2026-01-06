@@ -166,7 +166,7 @@ class TestTarFileStream:
         assert contents[expected_path] == b"content"
 
     def test_should_handle_parent_directory_paths(self, test_dir):
-        """Test that function handles .. paths correctly by using basename."""
+        """Test that function handles .. paths correctly by using resolved path."""
         # Create a subdirectory structure
         subdir = os.path.join(test_dir, "project", "src")
         os.makedirs(subdir, exist_ok=True)
@@ -180,6 +180,9 @@ class TestTarFileStream:
         tar_buffer = tar_file_stream("../config.txt", subdir, [], False)
         contents = self._extract_tar_contents(tar_buffer)
 
-        # For .. paths, only the basename should be used in the archive
-        assert "config.txt" in contents
-        assert contents["config.txt"] == b"config content"
+        # For .. paths, the full resolved path should be used in the archive
+        resolved_path = os.path.join(test_dir, "project", "config.txt")
+        # tarfile strips the leading slash, so /var/... becomes var/...
+        expected_path = resolved_path.lstrip(os.sep)
+        assert expected_path in contents
+        assert contents[expected_path] == b"config content"
