@@ -330,14 +330,14 @@ def rewrite_src(src: str) -> str:
     """
     Rewrite the source path to the target path.
 
-    For paths that reference parent directories (starting with '..'),
-    returns only the basename to avoid path traversal issues.
+    For paths outside the context directory (starting with '..' or absolute paths),
+    returns only the basename to match the tar archive structure.
 
     :param src: Source path
 
     :return: The rewritten source path
     """
-    # Return only the basename for up dirs
-    if src.startswith(".."):
+    # Return only the basename for paths outside context (.. or absolute)
+    if src.startswith("..") or os.path.isabs(src):
         return os.path.basename(src)
     return src
