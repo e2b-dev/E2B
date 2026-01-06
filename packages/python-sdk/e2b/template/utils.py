@@ -194,11 +194,15 @@ def tar_file_stream(
             relative_path = os.path.relpath(file, file_context_path)
 
             # Determine the target path based on the source path type
-            if file_path.startswith(".."):
+            # Must match what rewrite_src produces for COPY instruction consistency
+            if os.path.isabs(file_path):
+                # For absolute paths, use the full path (matching rewrite_src behavior)
+                target_path = os.path.normpath(file)
+            elif file_path.startswith(".."):
                 # For paths outside of the context directory, use the full resolved path
-                target_path = file
+                target_path = os.path.normpath(file)
             else:
-                # For relative and absolute paths within context, use the relative path
+                # For relative paths within context, use the relative path
                 target_path = relative_path
 
             tar.add(file, arcname=target_path, recursive=False)

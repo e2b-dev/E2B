@@ -237,9 +237,11 @@ describe('tarFileStream', () => {
     const stream = await tarFileStream(absPattern, testDir, [], false)
     const contents = await extractTarContents(stream)
 
-    // For absolute paths, relative path within context is preserved
-    expect(contents.has('file.txt')).toBe(true)
-    expect(contents.get('file.txt')?.toString()).toBe('content')
+    // For absolute paths, the full path is preserved in the archive
+    // (tar strips the leading slash, so /var/... becomes var/...)
+    const expectedPath = filePath.replace(/^\//, '')
+    expect(contents.has(expectedPath)).toBe(true)
+    expect(contents.get(expectedPath)?.toString()).toBe('content')
   })
 
   test('should handle parent directory paths', async () => {

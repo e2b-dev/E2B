@@ -284,11 +284,15 @@ export async function tarFileStream(
     const stats = fs.lstatSync(fullPath)
 
     let targetPath: string
-    if (filePath.startsWith('..')) {
+    // Must match what rewriteSrc produces for COPY instruction consistency
+    if (path.isAbsolute(filePath)) {
+      // For absolute paths, use the full path (matching rewriteSrc behavior)
+      targetPath = fullPath
+    } else if (filePath.startsWith('..')) {
       // For paths outside of the context directory, use the full resolved path
       targetPath = fullPath
     } else {
-      // For relative and absolute paths within context, use the relative path
+      // For relative paths within context, use the relative path
       targetPath = relativePath
     }
 
