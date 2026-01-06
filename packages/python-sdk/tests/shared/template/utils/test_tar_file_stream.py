@@ -3,7 +3,7 @@ import tempfile
 import tarfile
 import io
 import pytest
-from e2b.template.utils import tar_file_stream
+from e2b.template.utils import tar_file_stream, to_posix_path
 
 
 class TestTarFileStream:
@@ -147,21 +147,6 @@ class TestTarFileStream:
             assert members["link.txt"].issym()
             assert members["link.txt"].linkname == "original.txt"
 
-    def _to_tar_path(self, path: str) -> str:
-        """Convert a filesystem path to the format used in tar archives.
-        
-        Tar archives use POSIX-style paths (forward slashes).
-        On Windows, the drive letter (C:) is stripped.
-        On all platforms, the leading slash is stripped.
-        """
-        # Normalize to forward slashes (POSIX format used by tar)
-        posix_path = path.replace(os.sep, "/")
-        # Strip Windows drive letter (e.g., C:)
-        if len(posix_path) >= 2 and posix_path[1] == ":":
-            posix_path = posix_path[2:]
-        # Strip leading slash
-        return posix_path.lstrip("/")
-
     def test_should_handle_absolute_paths(self, test_dir):
         """Test that function handles absolute paths correctly."""
         # Create test file
@@ -176,7 +161,7 @@ class TestTarFileStream:
 
         # For absolute paths, the full path is preserved in the archive
         # Tar uses POSIX format (forward slashes, no drive letter, no leading slash)
-        expected_path = self._to_tar_path(file_path)
+        expected_path = to_posix_path(file_path)
         assert expected_path in contents
         assert contents[expected_path] == b"content"
 
@@ -198,6 +183,6 @@ class TestTarFileStream:
         # For .. paths, the full resolved path should be used in the archive
         resolved_path = os.path.normpath(os.path.join(test_dir, "project", "config.txt"))
         # Tar uses POSIX format (forward slashes, no drive letter, no leading slash)
-        expected_path = self._to_tar_path(resolved_path)
+        expected_path = to_posix_path(resolved_path)
         assert expected_path in contents
         assert contents[expected_path] == b"config content"

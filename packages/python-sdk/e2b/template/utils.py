@@ -45,6 +45,31 @@ def normalize_path(path: str) -> str:
     return path.replace(os.sep, "/")
 
 
+def to_posix_path(fs_path: str) -> str:
+    """
+    Convert a filesystem path to POSIX format for use in tar archives and Dockerfiles.
+
+    Tar archives and Docker expect POSIX-style paths (forward slashes).
+    On Windows, the drive letter (e.g., C:) is stripped and backslashes are converted.
+
+    :param fs_path: The filesystem path to convert
+    :return: The POSIX-formatted path suitable for tar/Docker
+
+    Example:
+    ```python
+    to_posix_path("D:\\a\\E2B\\file.txt")  # Returns "a/E2B/file.txt"
+    to_posix_path("/home/user/file.txt")   # Returns "home/user/file.txt"
+    ```
+    """
+    # Normalize to forward slashes (POSIX format used by tar)
+    posix_path = fs_path.replace(os.sep, "/")
+    # Strip Windows drive letter (e.g., C:)
+    if len(posix_path) >= 2 and posix_path[1] == ":":
+        posix_path = posix_path[2:]
+    # Strip leading slash
+    return posix_path.lstrip("/")
+
+
 def get_all_files_in_path(
     src: str,
     context_path: str,
@@ -220,14 +245,15 @@ def tar_file_stream(
             # Determine the target path based on the source path type
             # Must match what rewrite_src produces for COPY instruction consistency
             if os.path.isabs(file_path):
-                # For absolute paths, use the full path (matching rewrite_src behavior)
-                target_path = os.path.normpath(file)
+                # For absolute paths, use the full path in POSIX format (matching rewrite_src behavior)
+                target_path = to_posix_path(os.path.normpath(file))
             elif file_path.startswith(".."):
-                # For paths outside of the context directory, use the full resolved path
-                target_path = os.path.normpath(file)
+                # For paths outside of the context directory, use the full resolved path in POSIX format
+                target_path = to_posix_path(os.path.normpath(file))
             else:
                 # For relative paths within context, use the relative path
-                target_path = relative_path
+                # Convert to POSIX format for consistency across platforms
+                target_path = relative_path.replace(os.sep, "/")
 
             tar.add(file, arcname=target_path, recursive=False)
 
@@ -360,15 +386,18 @@ def rewrite_src(src: str, file_context_path: str) -> str:
     """
     Rewrite the source path to the target path.
 
-    For paths starting with '..', returns the full resolved path for outside-context files.
-    Other paths are preserved as-is.
+    For paths outside the context directory (starting with ..) or absolute paths,
+    returns the full resolved path in POSIX format for Docker/tar compatibility.
 
     :param src: Source path
     :param file_context_path: Base directory for resolving relative paths
 
-    :return: The rewritten source path
+    :return: The rewritten source path in POSIX format
     """
-    # Return the full path for paths outside of the context directory
+    # For absolute paths, convert to POSIX format for Docker/tar compatibility
+    if os.path.isabs(src):
+        return to_posix_path(src)
+    # For paths outside of the context directory, return the full resolved path in POSIX format
     if src.startswith(".."):
-        return os.path.normpath(os.path.join(file_context_path, src))
+        return to_posix_path(os.path.normpath(os.path.join(file_context_path, src)))
     return src
