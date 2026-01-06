@@ -68,7 +68,7 @@ class TemplateBuilder:
         for src_item in srcs:
             src_str = str(src_item)
             args = [
-                rewrite_src(src_str),
+                rewrite_src(src_str, self._template._file_context_path),
                 str(dest),
                 user or "",
                 pad_octal(mode) if mode else "",
