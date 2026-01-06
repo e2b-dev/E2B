@@ -256,8 +256,10 @@ describe('tarFileStream', () => {
     const contents = await extractTarContents(stream)
 
     // For .. paths, the full resolved path should be used in the archive
+    // (tar strips the leading slash, so /var/... becomes var/...)
     const resolvedPath = join(testDir, 'project', 'config.txt')
-    expect(contents.has(resolvedPath)).toBe(true)
-    expect(contents.get(resolvedPath)?.toString()).toBe('config content')
+    const expectedPath = resolvedPath.replace(/^\//, '')
+    expect(contents.has(expectedPath)).toBe(true)
+    expect(contents.get(expectedPath)?.toString()).toBe('config content')
   })
 })
