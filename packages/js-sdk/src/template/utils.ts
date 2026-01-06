@@ -80,12 +80,15 @@ export async function getAllFilesInPath(
   // For relative paths, use cwd to resolve relative to contextPath
   const isAbsoluteSrc = path.isAbsolute(src)
 
+  // Normalize path separators for glob (glob expects forward slashes even on Windows)
+  const globPattern = normalizePath(src)
+
   const globFiles = isAbsoluteSrc
-    ? await glob(src, {
+    ? await glob(globPattern, {
         ignore: ignorePatterns,
         withFileTypes: true,
       })
-    : await glob(src, {
+    : await glob(globPattern, {
         ignore: ignorePatterns,
         withFileTypes: true,
         cwd: contextPath,
