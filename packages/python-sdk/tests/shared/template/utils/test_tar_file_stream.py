@@ -159,9 +159,11 @@ class TestTarFileStream:
         tar_buffer = tar_file_stream(abs_pattern, test_dir, [], False)
         contents = self._extract_tar_contents(tar_buffer)
 
-        # For absolute paths (outside context), only the basename should be used
-        assert "file.txt" in contents
-        assert contents["file.txt"] == b"content"
+        # For absolute paths, the full path is preserved in the archive
+        # (tarfile strips the leading slash, so /var/... becomes var/...)
+        expected_path = file_path.lstrip(os.sep)
+        assert expected_path in contents
+        assert contents[expected_path] == b"content"
 
     def test_should_handle_parent_directory_paths(self, test_dir):
         """Test that function handles .. paths correctly by using basename."""

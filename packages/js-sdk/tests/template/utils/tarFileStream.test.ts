@@ -237,7 +237,7 @@ describe('tarFileStream', () => {
     const stream = await tarFileStream(absPattern, testDir, [], false)
     const contents = await extractTarContents(stream)
 
-    // For absolute paths (outside context), only the basename should be used
+    // For absolute paths, relative path within context is preserved
     expect(contents.has('file.txt')).toBe(true)
     expect(contents.get('file.txt')?.toString()).toBe('content')
   })

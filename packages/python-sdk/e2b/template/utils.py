@@ -172,14 +172,14 @@ def tar_file_stream(
     resolve_symlinks: bool,
 ) -> io.BytesIO:
     """
-    Create a tar stream of files matching a pattern.
+    Create a compressed tar stream of files matching a pattern.
 
     :param file_path: Original file path pattern (may include .. for outside-context files)
     :param file_context_path: Base directory for resolving file paths
     :param ignore_patterns: Ignore patterns
-    :param resolve_symlinks: Whether to resolve symbolic links
+    :param resolve_symlinks: Whether to follow symbolic links
 
-    :return: Tar stream
+    :return: A gzipped tar stream
     """
     tar_buffer = io.BytesIO()
     with tarfile.open(
@@ -193,11 +193,16 @@ def tar_file_stream(
         for file in files:
             relative_path = os.path.relpath(file, file_context_path)
 
-            # For paths outside of the context directory (absolute or ..), use only the basename
-            is_outside_context = os.path.isabs(file_path) or file_path.startswith("..")
-            target_path = (
-                os.path.basename(file) if is_outside_context else relative_path
-            )
+            # Determine the target path based on the source path type
+            if os.path.isabs(file_path):
+                # For absolute paths, use the full path
+                target_path = file
+            elif file_path.startswith(".."):
+                # For paths outside of the context directory, use only the basename
+                target_path = os.path.basename(file)
+            else:
+                # For relative paths, preserve the relative structure
+                target_path = relative_path
 
             tar.add(file, arcname=target_path, recursive=False)
 
@@ -330,14 +335,14 @@ def rewrite_src(src: str) -> str:
     """
     Rewrite the source path to the target path.
 
-    For paths outside the context directory (starting with '..' or absolute paths),
-    returns only the basename to match the tar archive structure.
+    For paths starting with '..', returns only the basename to match the tar archive structure.
+    Absolute paths are preserved.
 
     :param src: Source path
 
     :return: The rewritten source path
     """
-    # Return only the basename for paths outside context (.. or absolute)
-    if src.startswith("..") or os.path.isabs(src):
+    # Return only the basename for parent directory paths (..)
+    if src.startswith(".."):
         return os.path.basename(src)
     return src

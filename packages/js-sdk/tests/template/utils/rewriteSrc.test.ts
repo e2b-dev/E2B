@@ -17,9 +17,11 @@ describe('rewriteSrc', () => {
     )
   })
 
-  test('should return basename for absolute paths', () => {
-    expect(rewriteSrc('/usr/local/file.txt')).toBe('file.txt')
-    expect(rewriteSrc('/home/user/project/file.py')).toBe('file.py')
+  test('should preserve absolute paths', () => {
+    expect(rewriteSrc('/usr/local/file.txt')).toBe('/usr/local/file.txt')
+    expect(rewriteSrc('/home/user/project/file.py')).toBe(
+      '/home/user/project/file.py'
+    )
   })
 
   test('should handle glob patterns', () => {
