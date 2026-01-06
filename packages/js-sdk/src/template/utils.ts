@@ -283,15 +283,10 @@ export async function tarFileStream(
     const relativePath = file.relativePosix()
     const stats = fs.lstatSync(fullPath)
 
-    let targetPath: string
-    if (path.isAbsolute(filePath)) {
-      targetPath = fullPath
-    } else {
-      // handle paths outside of the context directory
-      targetPath = filePath.startsWith('..')
-        ? path.basename(fullPath)
-        : relativePath
-    }
+    const isOutsideContext =
+      path.isAbsolute(filePath) || filePath.startsWith('..')
+
+    const targetPath = isOutsideContext ? path.basename(fullPath) : relativePath
 
     if (stats.isDirectory()) {
       return {
@@ -409,8 +404,8 @@ export function readGCPServiceAccountJSON(
  */
 export function rewriteSrc(src: string): string {
   // return only the basename for up dirs
-  if (src.startsWith('..')) {
-    return path.basename(src.toString())
+  if (src.startsWith('..') || path.isAbsolute(src)) {
+    return path.basename(src)
   }
-  return src.toString()
+  return src
 }

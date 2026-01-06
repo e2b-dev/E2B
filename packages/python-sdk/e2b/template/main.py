@@ -21,6 +21,7 @@ from e2b.template.utils import (
     read_dockerignore,
     read_gcp_service_account_json,
     get_caller_frame,
+    rewrite_src,
 )
 from types import TracebackType
 
@@ -65,8 +66,9 @@ class TemplateBuilder:
         srcs = [src] if isinstance(src, (str, Path)) else src
 
         for src_item in srcs:
+            src_str = str(src_item)
             args = [
-                str(src_item),
+                rewrite_src(src_str),
                 str(dest),
                 user or "",
                 pad_octal(mode) if mode else "",
@@ -78,6 +80,7 @@ class TemplateBuilder:
                 "force": force_upload or self._template._force_next_layer,
                 "forceUpload": force_upload,
                 "resolveSymlinks": resolve_symlinks,
+                "filePath": src_str,
             }
 
             self._template._instructions.append(instruction)
@@ -1275,6 +1278,7 @@ class TemplateBase:
                 "force": instruction["force"],
                 "forceUpload": instruction.get("forceUpload"),
                 "resolveSymlinks": instruction.get("resolveSymlinks"),
+                "filePath": instruction.get("filePath"),
             }
 
             if instruction["type"] == InstructionType.COPY:
@@ -1282,15 +1286,15 @@ class TemplateBase:
                 if index + 1 < len(self._stack_traces):
                     stack_trace = self._stack_traces[index + 1]
 
+                file_path = instruction.get("filePath")
                 args = instruction.get("args", [])
-                src = args[0] if len(args) > 0 else None
                 dest = args[1] if len(args) > 1 else None
-                if src is None or dest is None:
+                if file_path is None or dest is None:
                     raise ValueError("Source path and destination path are required")
 
                 resolve_symlinks = instruction.get("resolveSymlinks")
                 step["filesHash"] = calculate_files_hash(
-                    src,
+                    file_path,
                     dest,
                     self._file_context_path,
                     [

@@ -166,7 +166,7 @@ def calculate_files_hash(
 
 
 def tar_file_stream(
-    file_name: str,
+    file_path: str,
     file_context_path: str,
     ignore_patterns: List[str],
     resolve_symlinks: bool,
@@ -174,7 +174,7 @@ def tar_file_stream(
     """
     Create a tar stream of files matching a pattern.
 
-    :param file_name: Glob pattern for files to include
+    :param file_path: Original file path pattern (may include .. for outside-context files)
     :param file_context_path: Base directory for resolving file paths
     :param ignore_patterns: Ignore patterns
     :param resolve_symlinks: Whether to resolve symbolic links
@@ -188,12 +188,18 @@ def tar_file_stream(
         dereference=resolve_symlinks,
     ) as tar:
         files = get_all_files_in_path(
-            file_name, file_context_path, ignore_patterns, True
+            file_path, file_context_path, ignore_patterns, True
         )
         for file in files:
-            tar.add(
-                file, arcname=os.path.relpath(file, file_context_path), recursive=False
+            relative_path = os.path.relpath(file, file_context_path)
+
+            # For paths outside of the context directory (absolute or ..), use only the basename
+            is_outside_context = os.path.isabs(file_path) or file_path.startswith("..")
+            target_path = (
+                os.path.basename(file) if is_outside_context else relative_path
             )
+
+            tar.add(file, arcname=target_path, recursive=False)
 
     return tar_buffer
 
@@ -318,3 +324,20 @@ def read_gcp_service_account_json(
             return f.read()
     else:
         return json.dumps(path_or_content)
+
+
+def rewrite_src(src: str) -> str:
+    """
+    Rewrite the source path to the target path.
+
+    For paths that reference parent directories (starting with '..'),
+    returns only the basename to avoid path traversal issues.
+
+    :param src: Source path
+
+    :return: The rewritten source path
+    """
+    # Return only the basename for up dirs
+    if src.startswith(".."):
+        return os.path.basename(src)
+    return src

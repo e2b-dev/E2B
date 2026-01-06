@@ -226,4 +226,37 @@ describe('tarFileStream', () => {
     expect(link.type).toBe('SymbolicLink')
     expect(link.linkpath).toBe('original.txt')
   })
+
+  test('should handle absolute paths', async () => {
+    // Create test file
+    const filePath = join(testDir, 'file.txt')
+    await writeFile(filePath, 'content')
+
+    // Use absolute path pattern
+    const absPattern = join(testDir, '*.txt')
+    const stream = await tarFileStream(absPattern, testDir, [], false)
+    const contents = await extractTarContents(stream)
+
+    // For absolute paths (outside context), only the basename should be used
+    expect(contents.has('file.txt')).toBe(true)
+    expect(contents.get('file.txt')?.toString()).toBe('content')
+  })
+
+  test('should handle parent directory paths', async () => {
+    // Create a subdirectory structure
+    const subdir = join(testDir, 'project', 'src')
+    await mkdir(subdir, { recursive: true })
+
+    // Create a file in the parent directory
+    const parentFile = join(testDir, 'project', 'config.txt')
+    await writeFile(parentFile, 'config content')
+
+    // Use .. pattern from the subdirectory context
+    const stream = await tarFileStream('../config.txt', subdir, [], false)
+    const contents = await extractTarContents(stream)
+
+    // For .. paths, only the basename should be used in the archive
+    expect(contents.has('config.txt')).toBe(true)
+    expect(contents.get('config.txt')?.toString()).toBe('config content')
+  })
 })
