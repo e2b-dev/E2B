@@ -1,20 +1,33 @@
 import { expect, test, describe } from 'vitest'
 import { rewriteSrc } from '../../../src/template/utils'
+import path from 'node:path'
+import os from 'node:os'
+import fs from 'node:fs'
 
 describe('rewriteSrc', () => {
-  const contextPath = '/home/user/project'
-
   test('should return resolved path for parent directory paths', () => {
-    expect(rewriteSrc('../file.txt', contextPath)).toBe('/home/user/file.txt')
-    expect(rewriteSrc('../../config.json', contextPath)).toBe(
-      '/home/config.json'
-    )
-    expect(rewriteSrc('../dir/file.py', contextPath)).toBe(
-      '/home/user/dir/file.py'
-    )
+    // Use a real temp directory for cross-platform compatibility
+    const tmpdir = fs.mkdtempSync(path.join(os.tmpdir(), 'rewrite-src-test-'))
+    const contextPath = path.join(tmpdir, 'subdir')
+    fs.mkdirSync(contextPath)
+
+    try {
+      // ../file.txt from subdir should resolve to tmpdir/file.txt
+      const result = rewriteSrc('../file.txt', contextPath)
+      const expected = path.resolve(tmpdir, 'file.txt')
+      expect(result).toBe(expected)
+
+      // ../../file.txt from subdir should resolve to parent of tmpdir
+      const result2 = rewriteSrc('../../file.txt', contextPath)
+      const expected2 = path.resolve(tmpdir, '..', 'file.txt')
+      expect(result2).toBe(expected2)
+    } finally {
+      fs.rmSync(tmpdir, { recursive: true, force: true })
+    }
   })
 
   test('should preserve relative paths', () => {
+    const contextPath = path.join('some', 'path')
     expect(rewriteSrc('file.txt', contextPath)).toBe('file.txt')
     expect(rewriteSrc('dir/file.txt', contextPath)).toBe('dir/file.txt')
     expect(rewriteSrc('./file.txt', contextPath)).toBe('./file.txt')
@@ -24,17 +37,30 @@ describe('rewriteSrc', () => {
   })
 
   test('should preserve absolute paths', () => {
-    expect(rewriteSrc('/usr/local/file.txt', contextPath)).toBe(
-      '/usr/local/file.txt'
-    )
-    expect(rewriteSrc('/home/user/project/file.py', contextPath)).toBe(
-      '/home/user/project/file.py'
-    )
+    const contextPath = path.join('some', 'path')
+    // Use platform-appropriate absolute paths
+    const absPath =
+      process.platform === 'win32'
+        ? 'C:\\Users\\test\\file.txt'
+        : '/usr/local/file.txt'
+    expect(rewriteSrc(absPath, contextPath)).toBe(absPath)
   })
 
   test('should handle glob patterns', () => {
-    expect(rewriteSrc('*.txt', contextPath)).toBe('*.txt')
-    expect(rewriteSrc('**/*.py', contextPath)).toBe('**/*.py')
-    expect(rewriteSrc('../*.txt', contextPath)).toBe('/home/user/*.txt')
+    const tmpdir = fs.mkdtempSync(path.join(os.tmpdir(), 'rewrite-src-test-'))
+    const contextPath = path.join(tmpdir, 'subdir')
+    fs.mkdirSync(contextPath)
+
+    try {
+      expect(rewriteSrc('*.txt', contextPath)).toBe('*.txt')
+      expect(rewriteSrc('**/*.py', contextPath)).toBe('**/*.py')
+
+      // ../*.txt from subdir should resolve to tmpdir/*.txt
+      const result = rewriteSrc('../*.txt', contextPath)
+      const expected = path.resolve(tmpdir, '*.txt')
+      expect(result).toBe(expected)
+    } finally {
+      fs.rmSync(tmpdir, { recursive: true, force: true })
+    }
   })
 })

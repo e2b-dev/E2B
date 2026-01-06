@@ -61,33 +61,57 @@ def get_all_files_in_path(
     :return: Array of files
     """
     files = set()
-
-    # Use glob to find all files/directories matching the pattern under context_path
     abs_context_path = os.path.abspath(context_path)
-    files_glob = glob.glob(
-        src,
-        flags=glob.GLOBSTAR,
-        root_dir=abs_context_path,
-        exclude=ignore_patterns,
-    )
+    is_absolute_src = os.path.isabs(src)
+
+    # For absolute paths, don't use root_dir as glob will handle them directly
+    # For relative paths, use root_dir to resolve relative to context_path
+    if is_absolute_src:
+        files_glob = glob.glob(
+            src,
+            flags=glob.GLOBSTAR,
+            exclude=ignore_patterns,
+        )
+    else:
+        files_glob = glob.glob(
+            src,
+            flags=glob.GLOBSTAR,
+            root_dir=abs_context_path,
+            exclude=ignore_patterns,
+        )
 
     for file in files_glob:
-        # Join it with abs_context_path to get the absolute path
-        file_path = os.path.join(abs_context_path, file)
+        # For absolute patterns, glob returns absolute paths
+        # For relative patterns, join with context_path
+        if is_absolute_src:
+            file_path = file
+        else:
+            file_path = os.path.join(abs_context_path, file)
 
         if os.path.isdir(file_path):
             # If it's a directory, add the directory and all entries recursively
             if include_directories:
                 files.add(file_path)
-            dir_files = glob.glob(
-                normalize_path(file) + "/**/*",
-                flags=glob.GLOBSTAR,
-                root_dir=abs_context_path,
-                exclude=ignore_patterns,
-            )
-            for dir_file in dir_files:
-                dir_file_path = os.path.join(abs_context_path, dir_file)
-                files.add(dir_file_path)
+
+            if is_absolute_src:
+                dir_pattern = normalize_path(file_path) + "/**/*"
+                dir_files = glob.glob(
+                    dir_pattern,
+                    flags=glob.GLOBSTAR,
+                    exclude=ignore_patterns,
+                )
+                for dir_file in dir_files:
+                    files.add(dir_file)
+            else:
+                dir_files = glob.glob(
+                    normalize_path(file) + "/**/*",
+                    flags=glob.GLOBSTAR,
+                    root_dir=abs_context_path,
+                    exclude=ignore_patterns,
+                )
+                for dir_file in dir_files:
+                    dir_file_path = os.path.join(abs_context_path, dir_file)
+                    files.add(dir_file_path)
         else:
             files.add(file_path)
 

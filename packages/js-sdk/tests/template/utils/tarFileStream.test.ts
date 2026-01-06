@@ -227,6 +227,24 @@ describe('tarFileStream', () => {
     expect(link.linkpath).toBe('original.txt')
   })
 
+  /**
+   * Convert a filesystem path to the format used in tar archives.
+   *
+   * Tar archives use POSIX-style paths (forward slashes).
+   * On Windows, the drive letter (C:) is stripped.
+   * On all platforms, the leading slash is stripped.
+   */
+  function toTarPath(fsPath: string): string {
+    // Normalize to forward slashes (POSIX format used by tar)
+    let posixPath = fsPath.replace(/\\/g, '/')
+    // Strip Windows drive letter (e.g., C:)
+    if (posixPath.length >= 2 && posixPath[1] === ':') {
+      posixPath = posixPath.slice(2)
+    }
+    // Strip leading slash
+    return posixPath.replace(/^\//, '')
+  }
+
   test('should handle absolute paths', async () => {
     // Create test file
     const filePath = join(testDir, 'file.txt')
@@ -238,8 +256,8 @@ describe('tarFileStream', () => {
     const contents = await extractTarContents(stream)
 
     // For absolute paths, the full path is preserved in the archive
-    // (tar strips the leading slash, so /var/... becomes var/...)
-    const expectedPath = filePath.replace(/^\//, '')
+    // Tar uses POSIX format (forward slashes, no drive letter, no leading slash)
+    const expectedPath = toTarPath(filePath)
     expect(contents.has(expectedPath)).toBe(true)
     expect(contents.get(expectedPath)?.toString()).toBe('content')
   })
@@ -258,9 +276,9 @@ describe('tarFileStream', () => {
     const contents = await extractTarContents(stream)
 
     // For .. paths, the full resolved path should be used in the archive
-    // (tar strips the leading slash, so /var/... becomes var/...)
+    // Tar uses POSIX format (forward slashes, no drive letter, no leading slash)
     const resolvedPath = join(testDir, 'project', 'config.txt')
-    const expectedPath = resolvedPath.replace(/^\//, '')
+    const expectedPath = toTarPath(resolvedPath)
     expect(contents.has(expectedPath)).toBe(true)
     expect(contents.get(expectedPath)?.toString()).toBe('config content')
   })

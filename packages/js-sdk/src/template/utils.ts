@@ -50,12 +50,20 @@ export async function getAllFilesInPath(
   const { glob } = await dynamicImport<typeof import('glob')>('glob')
   const files = new Map<string, Path>()
 
-  const globFiles = await glob(src, {
-    ignore: ignorePatterns,
-    withFileTypes: true,
-    // this is required so that the ignore pattern is relative to the file path
-    cwd: contextPath,
-  })
+  // For absolute paths, don't use cwd as glob will handle them directly
+  // For relative paths, use cwd to resolve relative to contextPath
+  const isAbsoluteSrc = path.isAbsolute(src)
+
+  const globFiles = isAbsoluteSrc
+    ? await glob(src, {
+        ignore: ignorePatterns,
+        withFileTypes: true,
+      })
+    : await glob(src, {
+        ignore: ignorePatterns,
+        withFileTypes: true,
+        cwd: contextPath,
+      })
 
   for (const file of globFiles) {
     if (file.isDirectory()) {
@@ -64,16 +72,24 @@ export async function getAllFilesInPath(
         files.set(file.fullpath(), file)
       }
       const dirPattern = normalizePath(
-        // When the matched directory is '.', `file.relative()` can be an empty string.
-        // In that case, we want to match all files under the current directory instead of
-        // creating an absolute glob like '/**/*' which would traverse the entire filesystem.
-        path.join(file.relative() || '.', '**/*')
+        isAbsoluteSrc
+          ? // For absolute paths, use the full path for the pattern
+            path.join(file.fullpath(), '**/*')
+          : // When the matched directory is '.', `file.relative()` can be an empty string.
+            // In that case, we want to match all files under the current directory instead of
+            // creating an absolute glob like '/**/*' which would traverse the entire filesystem.
+            path.join(file.relative() || '.', '**/*')
       )
-      const dirFiles = await glob(dirPattern, {
-        ignore: ignorePatterns,
-        withFileTypes: true,
-        cwd: contextPath,
-      })
+      const dirFiles = isAbsoluteSrc
+        ? await glob(dirPattern, {
+            ignore: ignorePatterns,
+            withFileTypes: true,
+          })
+        : await glob(dirPattern, {
+            ignore: ignorePatterns,
+            withFileTypes: true,
+            cwd: contextPath,
+          })
       dirFiles.forEach((f) => files.set(f.fullpath(), f))
     } else {
       // For files, just add the file
