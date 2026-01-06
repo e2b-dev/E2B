@@ -284,9 +284,11 @@ export async function tarFileStream(
     const stats = fs.lstatSync(fullPath)
 
     let targetPath: string
-    if (path.isAbsolute(filePath) || filePath.startsWith('..')) {
-      targetPath = rewriteSrc(filePath, fileContextPath)
+    if (filePath.startsWith('..')) {
+      // For paths outside of the context directory, use the full resolved path
+      targetPath = fullPath
     } else {
+      // For relative and absolute paths within context, use the relative path
       targetPath = relativePath
     }
 
