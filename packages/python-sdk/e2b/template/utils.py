@@ -242,30 +242,24 @@ def tar_file_stream(
 
     :return: A gzipped tar stream
     """
+    all_files = get_all_files_in_path(
+        file_path, file_context_path, ignore_patterns, True
+    )
+
+    as_absolute_path = os.path.isabs(file_path) or file_path.startswith("..")
+
     tar_buffer = io.BytesIO()
     with tarfile.open(
         fileobj=tar_buffer,
         mode="w:gz",
         dereference=resolve_symlinks,
     ) as tar:
-        files = get_all_files_in_path(
-            file_path, file_context_path, ignore_patterns, True
-        )
-        for file in files:
-            relative_path = os.path.relpath(file, file_context_path)
-
-            # Determine the target path based on the source path type
-            # Must match what rewrite_src produces for COPY instruction consistency
-            if os.path.isabs(file_path):
-                # For absolute paths, use the full path in POSIX format (matching rewrite_src behavior)
-                target_path = to_posix_path(os.path.normpath(file))
-            elif file_path.startswith(".."):
-                # For paths outside of the context directory, use the full resolved path in POSIX format
-                target_path = to_posix_path(os.path.normpath(file))
-            else:
-                # For relative paths within context, use the relative path
-                # Convert to POSIX format for consistency across platforms
-                target_path = relative_path.replace(os.sep, "/")
+        for file in all_files:
+            full_path = os.path.normpath(file)
+            relative_path = os.path.relpath(file, file_context_path).replace(
+                os.sep, "/"
+            )
+            target_path = to_posix_path(full_path) if as_absolute_path else relative_path
 
             tar.add(file, arcname=target_path, recursive=False)
 
