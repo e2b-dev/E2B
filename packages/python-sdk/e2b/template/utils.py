@@ -37,21 +37,12 @@ def read_dockerignore(context_path: str) -> List[str]:
 
 def normalize_path(path: str) -> str:
     """
-    Normalize path separators to forward slashes for glob patterns.
-
-    For relative paths, converts backslashes to forward slashes for cross-platform compatibility.
-    For Windows absolute paths (with drive letters like C:), keeps native separators
-    because wcmatch handles them correctly and mixing drive letters with forward slashes
-    can cause issues.
+    Normalize path separators to forward slashes for glob patterns (glob expects / even on Windows)
 
     :param path: The path to normalize
     :return: The normalized path
     """
-    # On Windows, absolute paths with drive letters (e.g., C:\...) should keep native separators
-    # because wcmatch handles them correctly, but C:/... mixed format can cause issues
-    if os.name == "nt" and len(path) >= 2 and path[1] == ":":
-        return path
-    return path.replace(os.sep, "/")
+    return path.replace("\\", "/")
 
 
 def to_posix_path(fs_path: str) -> str:
