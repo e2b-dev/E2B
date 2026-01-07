@@ -259,7 +259,9 @@ def tar_file_stream(
             relative_path = os.path.relpath(file, file_context_path).replace(
                 os.sep, "/"
             )
-            target_path = to_posix_path(full_path) if as_absolute_path else relative_path
+            target_path = (
+                to_posix_path(full_path) if as_absolute_path else relative_path
+            )
 
             tar.add(file, arcname=target_path, recursive=False)
 
