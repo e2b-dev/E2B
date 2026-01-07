@@ -4,6 +4,7 @@ import path from 'node:path'
 import { dynamicImport, dynamicRequire } from '../utils'
 import { BASE_STEP_NAME, FINALIZE_STEP_NAME } from './consts'
 import type { Path } from 'glob'
+import type { TarSource } from 'modern-tar/fs'
 
 /**
  * Read and parse a .dockerignore file.
@@ -82,17 +83,13 @@ export async function getAllFilesInPath(
 
   // Normalize path separators for glob (glob expects forward slashes even on Windows)
   const globPattern = normalizePath(src)
+  const cwd = isAbsoluteSrc ? process.cwd() : contextPath
 
-  const globFiles = isAbsoluteSrc
-    ? await glob(globPattern, {
-        ignore: ignorePatterns,
-        withFileTypes: true,
-      })
-    : await glob(globPattern, {
-        ignore: ignorePatterns,
-        withFileTypes: true,
-        cwd: contextPath,
-      })
+  const globFiles = await glob(globPattern, {
+    ignore: ignorePatterns,
+    withFileTypes: true,
+    cwd,
+  })
 
   for (const file of globFiles) {
     if (file.isDirectory()) {
@@ -100,25 +97,12 @@ export async function getAllFilesInPath(
       if (includeDirectories) {
         files.set(file.fullpath(), file)
       }
-      const dirPattern = normalizePath(
-        isAbsoluteSrc
-          ? // For absolute paths, use the full path for the pattern
-            path.join(file.fullpath(), '**/*')
-          : // When the matched directory is '.', `file.relative()` can be an empty string.
-            // In that case, we want to match all files under the current directory instead of
-            // creating an absolute glob like '/**/*' which would traverse the entire filesystem.
-            path.join(file.relative() || '.', '**/*')
-      )
-      const dirFiles = isAbsoluteSrc
-        ? await glob(dirPattern, {
-            ignore: ignorePatterns,
-            withFileTypes: true,
-          })
-        : await glob(dirPattern, {
-            ignore: ignorePatterns,
-            withFileTypes: true,
-            cwd: contextPath,
-          })
+      const dirPattern = normalizePath(path.join(file.fullpath(), '**/*'))
+      const dirFiles = await glob(dirPattern, {
+        ignore: ignorePatterns,
+        withFileTypes: true,
+        cwd,
+      })
       dirFiles.forEach((f) => files.set(f.fullpath(), f))
     } else {
       // For files, just add the file
@@ -323,37 +307,27 @@ export async function tarFileStream(
     true
   )
 
-  const sources = allFiles.map((file) => {
+  const sources: TarSource[] = allFiles.map((file) => {
     const fullPath = file.fullpath()
     const relativePath = file.relativePosix()
-    const stats = fs.lstatSync(fullPath)
 
-    let targetPath: string
-    // Must match what rewriteSrc produces for COPY instruction consistency
-    if (path.isAbsolute(filePath)) {
-      // For absolute paths, use the full path in POSIX format (matching rewriteSrc behavior)
-      targetPath = toPosixPath(fullPath)
-    } else if (filePath.startsWith('..')) {
-      // For paths outside of the context directory, use the full resolved path in POSIX format
-      targetPath = toPosixPath(fullPath)
-    } else {
-      // For relative paths within context, use the relative path
-      targetPath = relativePath
-    }
+    const asAbsolutePath =
+      path.isAbsolute(filePath) || filePath.startsWith('..')
+    const targetPath = asAbsolutePath ? toPosixPath(fullPath) : relativePath
 
-    if (stats.isDirectory()) {
+    if (file.isDirectory()) {
       return {
         type: 'directory' as const,
         source: fullPath,
         target: targetPath,
-      }
+      } as const
     }
 
     return {
       type: 'file' as const,
       source: fullPath,
       target: targetPath,
-    }
+    } as const
   })
 
   // packTar returns a Node.js Readable stream
