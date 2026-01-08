@@ -1,7 +1,7 @@
 import type { PathLike } from 'node:fs'
 import { ApiClient } from '../api'
 import { ConnectionConfig } from '../connectionConfig'
-import { BuildError, FileUploadError } from '../errors'
+import { BuildError } from '../errors'
 import { runtime } from '../utils'
 import {
   getBuildStatus,
@@ -40,7 +40,6 @@ import {
   readDockerignore,
   readGCPServiceAccountJSON,
 } from './utils'
-import path from 'node:path'
 
 /**
  * Base class for building E2B sandbox templates.
