@@ -878,6 +878,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/templates/{templateID}/builds/{buildID}/logs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Get template build logs */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Starting timestamp of the logs that should be returned in milliseconds */
+                    cursor?: number;
+                    direction?: components["schemas"]["LogsDirection"];
+                    level?: components["schemas"]["LogLevel"];
+                    /** @description Maximum number of logs that should be returned */
+                    limit?: number;
+                    /** @description Source of the logs that should be returned from */
+                    source?: components["schemas"]["LogsSource"];
+                };
+                header?: never;
+                path: {
+                    buildID: components["parameters"]["buildID"];
+                    templateID: components["parameters"]["templateID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Successfully returned the template build logs */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TemplateBuildLogsResponse"];
+                    };
+                };
+                401: components["responses"]["401"];
+                404: components["responses"]["404"];
+                500: components["responses"]["500"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/templates/{templateID}/builds/{buildID}/status": {
         parameters: {
             query?: never;
@@ -890,6 +941,8 @@ export interface paths {
             parameters: {
                 query?: {
                     level?: components["schemas"]["LogLevel"];
+                    /** @description Maximum number of logs that should be returned */
+                    limit?: number;
                     /** @description Index of the starting build log that should be returned with the template */
                     logsOffset?: number;
                 };
@@ -955,6 +1008,48 @@ export interface paths {
                 };
                 400: components["responses"]["400"];
                 401: components["responses"]["401"];
+                404: components["responses"]["404"];
+                500: components["responses"]["500"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/templates/aliases/{alias}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Check if template with given alias exists */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    alias: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Successfully queried template by alias */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TemplateAliasResponse"];
+                    };
+                };
+                400: components["responses"]["400"];
+                403: components["responses"]["403"];
                 404: components["responses"]["404"];
                 500: components["responses"]["500"];
             };
@@ -1151,6 +1246,18 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        AdminSandboxKillResult: {
+            /** @description Number of sandboxes that failed to kill */
+            failedCount: number;
+            /** @description Number of sandboxes successfully killed */
+            killedCount: number;
+        };
+        AssignTemplateTagRequest: {
+            /** @description Names of the template */
+            names: string[];
+            /** @description Target template name in "alias:tag" format */
+            target: string;
+        };
         AWSRegistry: {
             /** @description AWS Access Key ID for ECR authentication */
             awsAccessKeyId: string;
@@ -1341,6 +1448,26 @@ export interface components {
          * @enum {string}
          */
         LogLevel: "debug" | "info" | "warn" | "error";
+        /**
+         * @description Direction of the logs that should be returned
+         * @enum {string}
+         */
+        LogsDirection: "forward" | "backward";
+        /**
+         * @description Source of the logs that should be returned
+         * @enum {string}
+         */
+        LogsSource: "temporary" | "persistent";
+        MachineInfo: {
+            /** @description CPU architecture of the node */
+            cpuArchitecture: string;
+            /** @description CPU family of the node */
+            cpuFamily: string;
+            /** @description CPU model of the node */
+            cpuModel: string;
+            /** @description CPU model name of the node */
+            cpuModelName: string;
+        };
         /** @description Team metric with timestamp */
         MaxTeamMetric: {
             /**
@@ -1414,6 +1541,7 @@ export interface components {
             createSuccesses: number;
             /** @description Identifier of the node */
             id: string;
+            machineInfo: components["schemas"]["MachineInfo"];
             metrics: components["schemas"]["NodeMetrics"];
             /**
              * @deprecated
@@ -1455,6 +1583,7 @@ export interface components {
             createSuccesses: number;
             /** @description Identifier of the node */
             id: string;
+            machineInfo: components["schemas"]["MachineInfo"];
             metrics: components["schemas"]["NodeMetrics"];
             /**
              * @deprecated
@@ -1787,6 +1916,12 @@ export interface components {
              */
             updatedAt: string;
         };
+        TemplateAliasResponse: {
+            /** @description Whether the template is public or only accessible by the team */
+            public: boolean;
+            /** @description Identifier of the template */
+            templateID: string;
+        };
         TemplateBuild: {
             /**
              * Format: uuid
@@ -1838,6 +1973,13 @@ export interface components {
             /** @description Identifier of the template */
             templateID: string;
         };
+        TemplateBuildLogsResponse: {
+            /**
+             * @description Build logs structured
+             * @default []
+             */
+            logs: components["schemas"]["BuildLogEntry"][];
+        };
         TemplateBuildRequest: {
             /** @description Alias of the template */
             alias?: string;
@@ -1861,10 +2003,15 @@ export interface components {
             teamID?: string;
         };
         TemplateBuildRequestV3: {
-            /** @description Alias of the template */
-            alias: string;
+            /**
+             * @deprecated
+             * @description Alias of the template. Deprecated, use names instead.
+             */
+            alias?: string;
             cpuCount?: components["schemas"]["CPUCount"];
             memoryMB?: components["schemas"]["MemoryMB"];
+            /** @description Names of the template */
+            names?: string[];
             /** @description Identifier of the team */
             teamID?: string;
         };
@@ -1960,6 +2107,15 @@ export interface components {
             force?: boolean;
             /** @description Type of the step */
             type: string;
+        };
+        TemplateTag: {
+            /**
+             * Format: uuid
+             * @description Identifier of the build associated with this tag
+             */
+            buildID: string;
+            /** @description Tags of the template */
+            tags: string[];
         };
         TemplateUpdateRequest: {
             /** @description Whether the template is public or only accessible by the team */
@@ -2066,6 +2222,7 @@ export interface components {
         /** @description Cursor to start the list from */
         paginationNextToken: string;
         sandboxID: string;
+        tag: string;
         teamID: string;
         templateID: string;
     };
