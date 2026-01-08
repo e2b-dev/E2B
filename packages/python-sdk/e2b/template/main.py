@@ -1,9 +1,10 @@
 import json
+import os
 from typing import Dict, List, Optional, Union, Literal
 from pathlib import Path
 
 
-from e2b.exceptions import BuildException
+from e2b.exceptions import BuildException, FileUploadException
 from e2b.template.consts import STACK_TRACE_DEPTH, RESOLVE_SYMLINKS
 from e2b.template.dockerfile_parser import parse_dockerfile
 from e2b.template.readycmd import ReadyCmd, wait_for_file
@@ -65,6 +66,27 @@ class TemplateBuilder:
         srcs = [src] if isinstance(src, (str, Path)) else src
 
         for src_item in srcs:
+            # check that src is not an absolute path or a path outside of the context directory
+            src_str = str(src_item)
+            if (
+                os.path.isabs(src_str)
+                or src_str == ".."
+                or src_str.startswith("../")
+                or src_str.startswith("..\\")
+            ):
+                caller_frame = get_caller_frame(STACK_TRACE_DEPTH - 1)
+                stack_trace = None
+                if caller_frame is not None:
+                    stack_trace = TracebackType(
+                        tb_next=None,
+                        tb_frame=caller_frame,
+                        tb_lasti=caller_frame.f_lasti,
+                        tb_lineno=caller_frame.f_lineno,
+                    )
+                raise FileUploadException(
+                    f"Source path {src_item} is outside of the context directory."
+                ).with_traceback(stack_trace)
+
             args = [
                 str(src_item),
                 str(dest),

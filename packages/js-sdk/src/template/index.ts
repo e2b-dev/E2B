@@ -1,7 +1,7 @@
 import type { PathLike } from 'node:fs'
 import { ApiClient } from '../api'
 import { ConnectionConfig } from '../connectionConfig'
-import { BuildError } from '../errors'
+import { BuildError, FileUploadError } from '../errors'
 import { runtime } from '../utils'
 import {
   getBuildStatus,
@@ -40,6 +40,7 @@ import {
   readDockerignore,
   readGCPServiceAccountJSON,
 } from './utils'
+import path from 'node:path'
 
 /**
  * Base class for building E2B sandbox templates.
@@ -357,6 +358,20 @@ export class TemplateBase
     const srcs = Array.isArray(src) ? src : [src]
 
     for (const src of srcs) {
+      // check that src is not an absolute path or a path outside of the context directory
+      const srcStr = src.toString()
+      if (
+        path.isAbsolute(srcStr) ||
+        srcStr === '..' ||
+        srcStr.startsWith('../') ||
+        srcStr.startsWith('..\\')
+      ) {
+        throw new FileUploadError(
+          `Source path ${src} is outside of the context directory.`,
+          getCallerFrame(STACK_TRACE_DEPTH - 1)
+        )
+      }
+
       const args = [
         src.toString(),
         dest.toString(),
