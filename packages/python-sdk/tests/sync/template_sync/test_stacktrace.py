@@ -11,7 +11,7 @@ from e2b.api.client.models import TemplateBuildStatus
 import e2b.template_sync.main as template_sync_main
 import e2b.template_sync.build_api as build_api_mod
 
-non_existent_path = "/nonexistent/path"
+non_existent_path = "./nonexistent/path"
 
 # map template alias -> failed step index
 failure_map: dict[str, Optional[int]] = {
