@@ -121,8 +121,15 @@ def calculate_files_hash(
     """
     # check that src is not an absolute path or a path outside of the context directory
     norm_path = os.path.normpath(src)
-    if os.path.isabs(norm_path) or norm_path == ".." or norm_path.startswith("../") or norm_path.startswith("..\\"):
-        raise ValueError(f"Source path {src} is outside of the context directory.").with_traceback(stack_trace)
+    if (
+        os.path.isabs(norm_path)
+        or norm_path == ".."
+        or norm_path.startswith("../")
+        or norm_path.startswith("..\\")
+    ):
+        raise ValueError(
+            f"Source path {src} is outside of the context directory."
+        ).with_traceback(stack_trace)
     src_path = os.path.join(context_path, src)
     hash_obj = hashlib.sha256()
     content = f"COPY {src} {dest}"
