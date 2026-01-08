@@ -358,20 +358,6 @@ export class TemplateBase
     const srcs = Array.isArray(src) ? src : [src]
 
     for (const src of srcs) {
-      // check that src is not an absolute path or a path outside of the context directory
-      const normalizedSrc = path.normalize(src.toString())
-      if (
-        path.isAbsolute(normalizedSrc) ||
-        normalizedSrc === '..' ||
-        normalizedSrc.startsWith('../') ||
-        normalizedSrc.startsWith('..\\')
-      ) {
-        throw new FileUploadError(
-          `Source path ${src} is outside of the context directory.`,
-          getCallerFrame(STACK_TRACE_DEPTH - 1)
-        )
-      }
-
       const args = [
         src.toString(),
         dest.toString(),

@@ -220,9 +220,9 @@ buildTemplateTest('traces on copyItems', async ({ buildTemplate }) => {
 buildTemplateTest(
   'traces on copy with absolute path',
   async ({ buildTemplate }) => {
+    let template = Template().fromBaseImage()
+    template = template.skipCache().copy('/absolute/path', '/tmp/dest.txt')
     await expectToThrowAndCheckTrace(async () => {
-      let template = Template().fromBaseImage()
-      template = template.skipCache().copy('/absolute/path', '/tmp/dest.txt')
       await buildTemplate(template, { alias: 'copyWithAbsolutePath' })
     }, 'copy')
   }
@@ -231,9 +231,9 @@ buildTemplateTest(
 buildTemplateTest(
   'traces on copy with up relative path',
   async ({ buildTemplate }) => {
+    let template = Template().fromBaseImage()
+    template = template.skipCache().copy('../relative/path', '/tmp/dest.txt')
     await expectToThrowAndCheckTrace(async () => {
-      let template = Template().fromBaseImage()
-      template = template.skipCache().copy('../relative/path', '/tmp/dest.txt')
       await buildTemplate(template, { alias: 'copyWithRelativePath' })
     }, 'copy')
   }
@@ -242,11 +242,9 @@ buildTemplateTest(
 buildTemplateTest(
   'traces on copy with embedded .. path',
   async ({ buildTemplate }) => {
+    let template = Template().fromBaseImage()
+    template = template.skipCache().copy('assets/../../secret', '/tmp/dest.txt')
     await expectToThrowAndCheckTrace(async () => {
-      let template = Template().fromBaseImage()
-      template = template
-        .skipCache()
-        .copy('assets/../../secret', '/tmp/dest.txt')
       await buildTemplate(template, { alias: 'copyWithEmbeddedDotDot' })
     }, 'copy')
   }

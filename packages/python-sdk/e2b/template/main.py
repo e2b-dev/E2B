@@ -66,27 +66,6 @@ class TemplateBuilder:
         srcs = [src] if isinstance(src, (str, Path)) else src
 
         for src_item in srcs:
-            # check that src is not an absolute path or a path outside of the context directory
-            normalized_src = os.path.normpath(str(src_item))
-            if (
-                os.path.isabs(normalized_src)
-                or normalized_src == ".."
-                or normalized_src.startswith("../")
-                or normalized_src.startswith("..\\")
-            ):
-                caller_frame = get_caller_frame(STACK_TRACE_DEPTH - 1)
-                stack_trace = None
-                if caller_frame is not None:
-                    stack_trace = TracebackType(
-                        tb_next=None,
-                        tb_frame=caller_frame,
-                        tb_lasti=caller_frame.f_lasti,
-                        tb_lineno=caller_frame.f_lineno,
-                    )
-                raise FileUploadException(
-                    f"Source path {src_item} is outside of the context directory."
-                ).with_traceback(stack_trace)
-
             args = [
                 str(src_item),
                 str(dest),
