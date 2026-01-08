@@ -15,7 +15,7 @@ export interface paths {
         get: {
             parameters: {
                 query?: {
-                    /** @description Metadata query used to filter the sandboxes (e.g. "user=abc&app=prod"). Each key and values must be URL encoded. */
+                    /** @description Metadata query used to filter the sandboxes (e.g. 'user=abc&app=prod'). Each key and values must be URL encoded. */
                     metadata?: string;
                 };
                 header?: never;
@@ -1075,7 +1075,7 @@ export interface paths {
                 query?: {
                     /** @description Maximum number of items to return per page */
                     limit?: components["parameters"]["paginationLimit"];
-                    /** @description Metadata query used to filter the sandboxes (e.g. "user=abc&app=prod"). Each key and values must be URL encoded. */
+                    /** @description Metadata query used to filter the sandboxes (e.g. 'user=abc&app=prod'). Each key and values must be URL encoded. */
                     metadata?: string;
                     /** @description Cursor to start the list from */
                     nextToken?: components["parameters"]["paginationNextToken"];
@@ -1255,7 +1255,7 @@ export interface components {
         AssignTemplateTagRequest: {
             /** @description Names of the template */
             names: string[];
-            /** @description Target template name in "alias:tag" format */
+            /** @description Target template name in 'alias:tag' format */
             target: string;
         };
         AWSRegistry: {

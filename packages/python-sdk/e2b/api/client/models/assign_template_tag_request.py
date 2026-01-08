@@ -12,7 +12,7 @@ class AssignTemplateTagRequest:
     """
     Attributes:
         names (list[str]): Names of the template
-        target (str): Target template name in "alias:tag" format
+        target (str): Target template name in 'alias:tag' format
     """
 
     names: list[str]
