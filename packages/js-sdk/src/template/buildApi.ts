@@ -206,19 +206,19 @@ export async function checkAliasExists(
     return false
   }
 
-    // If we get a Forbidden, alias exists, but you are not owner
-    if (aliasRes.response.status === 403) {
-        return true
-    }
+  // If we get a Forbidden, alias exists, but you are not owner
+  if (aliasRes.response.status === 403) {
+    return true
+  }
 
-    // Handle other errors
+  // Handle other errors
   const error = handleApiError(aliasRes, BuildError)
   if (error) {
     throw error
   }
 
-    // If we get Ok with data, you are owner and the alias exists
-    return aliasRes.data !== undefined
+  // If we get Ok with data, you are owner and the alias exists
+  return aliasRes.data !== undefined
 }
 
 export async function waitForBuildFinish(
