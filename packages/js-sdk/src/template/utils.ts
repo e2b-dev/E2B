@@ -108,6 +108,7 @@ export async function calculateFilesHash(
 ): Promise<string> {
   const normPath = path.normalize(src)
   if (
+    path.isAbsolute(normPath) ||
     normPath === '..' ||
     normPath.startsWith('../') ||
     normPath.startsWith('..\\')
