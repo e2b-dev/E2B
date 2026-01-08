@@ -359,12 +359,12 @@ export class TemplateBase
 
     for (const src of srcs) {
       // check that src is not an absolute path or a path outside of the context directory
-      const srcStr = src.toString()
+      const normalizedSrc = path.normalize(src.toString())
       if (
-        path.isAbsolute(srcStr) ||
-        srcStr === '..' ||
-        srcStr.startsWith('../') ||
-        srcStr.startsWith('..\\')
+        path.isAbsolute(normalizedSrc) ||
+        normalizedSrc === '..' ||
+        normalizedSrc.startsWith('../') ||
+        normalizedSrc.startsWith('..\\')
       ) {
         throw new FileUploadError(
           `Source path ${src} is outside of the context directory.`,

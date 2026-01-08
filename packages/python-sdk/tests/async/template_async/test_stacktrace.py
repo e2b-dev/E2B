@@ -25,6 +25,7 @@ failure_map: dict[str, Optional[int]] = {
     "copy_items": None,
     "copy_with_absolute_path": None,
     "copy_with_relative_path": None,
+    "copy_with_embedded_dotdot": None,
     "remove": 1,
     "rename": 1,
     "make_dir": 1,
@@ -196,6 +197,16 @@ async def test_traces_on_copy_with_relative_path(async_build):
     template = template.skip_cache().copy("../relative/path", "/tmp/dest.txt")
     await _expect_to_throw_and_check_trace(
         lambda: async_build(template, alias="copy_with_relative_path"), "copy"
+    )
+
+
+@pytest.mark.skip_debug()
+async def test_traces_on_copy_with_embedded_dotdot(async_build):
+    template = AsyncTemplate()
+    template = template.from_base_image()
+    template = template.skip_cache().copy("assets/../../secret", "/tmp/dest.txt")
+    await _expect_to_throw_and_check_trace(
+        lambda: async_build(template, alias="copy_with_embedded_dotdot"), "copy"
     )
 
 

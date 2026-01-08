@@ -23,6 +23,7 @@ const failureMap: Record<string, number | undefined> = {
   copyItems: undefined,
   copyWithAbsolutePath: undefined,
   copyWithRelativePath: undefined,
+  copyWithEmbeddedDotDot: undefined,
   remove: 1,
   rename: 1,
   makeDir: 1,
@@ -234,6 +235,19 @@ buildTemplateTest(
       let template = Template().fromBaseImage()
       template = template.skipCache().copy('../relative/path', '/tmp/dest.txt')
       await buildTemplate(template, { alias: 'copyWithRelativePath' })
+    }, 'copy')
+  }
+)
+
+buildTemplateTest(
+  'traces on copy with embedded .. path',
+  async ({ buildTemplate }) => {
+    await expectToThrowAndCheckTrace(async () => {
+      let template = Template().fromBaseImage()
+      template = template
+        .skipCache()
+        .copy('assets/../../secret', '/tmp/dest.txt')
+      await buildTemplate(template, { alias: 'copyWithEmbeddedDotDot' })
     }, 'copy')
   }
 )
