@@ -1,10 +1,9 @@
 import json
-import os
 from typing import Dict, List, Optional, Union, Literal
 from pathlib import Path
 
 
-from e2b.exceptions import BuildException, FileUploadException
+from e2b.exceptions import BuildException
 from e2b.template.consts import STACK_TRACE_DEPTH, RESOLVE_SYMLINKS
 from e2b.template.dockerfile_parser import parse_dockerfile
 from e2b.template.readycmd import ReadyCmd, wait_for_file
