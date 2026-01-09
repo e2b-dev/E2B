@@ -7,6 +7,7 @@ from attrs import field as _attrs_field
 from ..models.node_status import NodeStatus
 
 if TYPE_CHECKING:
+    from ..models.machine_info import MachineInfo
     from ..models.node_metrics import NodeMetrics
 
 
@@ -22,6 +23,7 @@ class Node:
         create_fails (int): Number of sandbox create fails
         create_successes (int): Number of sandbox create successes
         id (str): Identifier of the node
+        machine_info (MachineInfo):
         metrics (NodeMetrics): Node metrics
         node_id (str): Identifier of the nomad node
         sandbox_count (int): Number of sandboxes running on the node
@@ -36,6 +38,7 @@ class Node:
     create_fails: int
     create_successes: int
     id: str
+    machine_info: "MachineInfo"
     metrics: "NodeMetrics"
     node_id: str
     sandbox_count: int
@@ -55,6 +58,8 @@ class Node:
         create_successes = self.create_successes
 
         id = self.id
+
+        machine_info = self.machine_info.to_dict()
 
         metrics = self.metrics.to_dict()
 
@@ -79,6 +84,7 @@ class Node:
                 "createFails": create_fails,
                 "createSuccesses": create_successes,
                 "id": id,
+                "machineInfo": machine_info,
                 "metrics": metrics,
                 "nodeID": node_id,
                 "sandboxCount": sandbox_count,
@@ -93,6 +99,7 @@ class Node:
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
+        from ..models.machine_info import MachineInfo
         from ..models.node_metrics import NodeMetrics
 
         d = dict(src_dict)
@@ -105,6 +112,8 @@ class Node:
         create_successes = d.pop("createSuccesses")
 
         id = d.pop("id")
+
+        machine_info = MachineInfo.from_dict(d.pop("machineInfo"))
 
         metrics = NodeMetrics.from_dict(d.pop("metrics"))
 
@@ -126,6 +135,7 @@ class Node:
             create_fails=create_fails,
             create_successes=create_successes,
             id=id,
+            machine_info=machine_info,
             metrics=metrics,
             node_id=node_id,
             sandbox_count=sandbox_count,

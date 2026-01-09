@@ -81,6 +81,11 @@ export type BuildInfo = {
 export type GetBuildStatusOptions = AuthOptions & { logsOffset?: number }
 
 /**
+ * Options for checking if a template alias exists.
+ */
+export type AliasExistsOptions = AuthOptions
+
+/**
  * Types of instructions that can be used in a template.
  */
 export enum InstructionType {

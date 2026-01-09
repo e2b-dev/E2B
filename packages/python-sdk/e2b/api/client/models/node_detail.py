@@ -8,6 +8,7 @@ from ..models.node_status import NodeStatus
 
 if TYPE_CHECKING:
     from ..models.listed_sandbox import ListedSandbox
+    from ..models.machine_info import MachineInfo
     from ..models.node_metrics import NodeMetrics
 
 
@@ -24,6 +25,7 @@ class NodeDetail:
         create_fails (int): Number of sandbox create fails
         create_successes (int): Number of sandbox create successes
         id (str): Identifier of the node
+        machine_info (MachineInfo):
         metrics (NodeMetrics): Node metrics
         node_id (str): Identifier of the nomad node
         sandboxes (list['ListedSandbox']): List of sandboxes running on the node
@@ -38,6 +40,7 @@ class NodeDetail:
     create_fails: int
     create_successes: int
     id: str
+    machine_info: "MachineInfo"
     metrics: "NodeMetrics"
     node_id: str
     sandboxes: list["ListedSandbox"]
@@ -58,6 +61,8 @@ class NodeDetail:
         create_successes = self.create_successes
 
         id = self.id
+
+        machine_info = self.machine_info.to_dict()
 
         metrics = self.metrics.to_dict()
 
@@ -84,6 +89,7 @@ class NodeDetail:
                 "createFails": create_fails,
                 "createSuccesses": create_successes,
                 "id": id,
+                "machineInfo": machine_info,
                 "metrics": metrics,
                 "nodeID": node_id,
                 "sandboxes": sandboxes,
@@ -98,6 +104,7 @@ class NodeDetail:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         from ..models.listed_sandbox import ListedSandbox
+        from ..models.machine_info import MachineInfo
         from ..models.node_metrics import NodeMetrics
 
         d = dict(src_dict)
@@ -112,6 +119,8 @@ class NodeDetail:
         create_successes = d.pop("createSuccesses")
 
         id = d.pop("id")
+
+        machine_info = MachineInfo.from_dict(d.pop("machineInfo"))
 
         metrics = NodeMetrics.from_dict(d.pop("metrics"))
 
@@ -137,6 +146,7 @@ class NodeDetail:
             create_fails=create_fails,
             create_successes=create_successes,
             id=id,
+            machine_info=machine_info,
             metrics=metrics,
             node_id=node_id,
             sandboxes=sandboxes,

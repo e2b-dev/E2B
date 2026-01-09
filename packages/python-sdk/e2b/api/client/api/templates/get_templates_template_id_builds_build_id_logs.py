@@ -7,7 +7,9 @@ from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.error import Error
 from ...models.log_level import LogLevel
-from ...models.template_build_info import TemplateBuildInfo
+from ...models.logs_direction import LogsDirection
+from ...models.logs_source import LogsSource
+from ...models.template_build_logs_response import TemplateBuildLogsResponse
 from ...types import UNSET, Response, Unset
 
 
@@ -15,15 +17,23 @@ def _get_kwargs(
     template_id: str,
     build_id: str,
     *,
-    logs_offset: Union[Unset, int] = 0,
+    cursor: Union[Unset, int] = UNSET,
     limit: Union[Unset, int] = 100,
+    direction: Union[Unset, LogsDirection] = UNSET,
     level: Union[Unset, LogLevel] = UNSET,
+    source: Union[Unset, LogsSource] = UNSET,
 ) -> dict[str, Any]:
     params: dict[str, Any] = {}
 
-    params["logsOffset"] = logs_offset
+    params["cursor"] = cursor
 
     params["limit"] = limit
+
+    json_direction: Union[Unset, str] = UNSET
+    if not isinstance(direction, Unset):
+        json_direction = direction.value
+
+    params["direction"] = json_direction
 
     json_level: Union[Unset, str] = UNSET
     if not isinstance(level, Unset):
@@ -31,11 +41,17 @@ def _get_kwargs(
 
     params["level"] = json_level
 
+    json_source: Union[Unset, str] = UNSET
+    if not isinstance(source, Unset):
+        json_source = source.value
+
+    params["source"] = json_source
+
     params = {k: v for k, v in params.items() if v is not UNSET and v is not None}
 
     _kwargs: dict[str, Any] = {
         "method": "get",
-        "url": f"/templates/{template_id}/builds/{build_id}/status",
+        "url": f"/templates/{template_id}/builds/{build_id}/logs",
         "params": params,
     }
 
@@ -44,9 +60,9 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Optional[Union[Error, TemplateBuildInfo]]:
+) -> Optional[Union[Error, TemplateBuildLogsResponse]]:
     if response.status_code == 200:
-        response_200 = TemplateBuildInfo.from_dict(response.json())
+        response_200 = TemplateBuildLogsResponse.from_dict(response.json())
 
         return response_200
     if response.status_code == 401:
@@ -69,7 +85,7 @@ def _parse_response(
 
 def _build_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Response[Union[Error, TemplateBuildInfo]]:
+) -> Response[Union[Error, TemplateBuildLogsResponse]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -83,33 +99,39 @@ def sync_detailed(
     build_id: str,
     *,
     client: AuthenticatedClient,
-    logs_offset: Union[Unset, int] = 0,
+    cursor: Union[Unset, int] = UNSET,
     limit: Union[Unset, int] = 100,
+    direction: Union[Unset, LogsDirection] = UNSET,
     level: Union[Unset, LogLevel] = UNSET,
-) -> Response[Union[Error, TemplateBuildInfo]]:
-    """Get template build info
+    source: Union[Unset, LogsSource] = UNSET,
+) -> Response[Union[Error, TemplateBuildLogsResponse]]:
+    """Get template build logs
 
     Args:
         template_id (str):
         build_id (str):
-        logs_offset (Union[Unset, int]):  Default: 0.
+        cursor (Union[Unset, int]):
         limit (Union[Unset, int]):  Default: 100.
+        direction (Union[Unset, LogsDirection]): Direction of the logs that should be returned
         level (Union[Unset, LogLevel]): State of the sandbox
+        source (Union[Unset, LogsSource]): Source of the logs that should be returned
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Error, TemplateBuildInfo]]
+        Response[Union[Error, TemplateBuildLogsResponse]]
     """
 
     kwargs = _get_kwargs(
         template_id=template_id,
         build_id=build_id,
-        logs_offset=logs_offset,
+        cursor=cursor,
         limit=limit,
+        direction=direction,
         level=level,
+        source=source,
     )
 
     response = client.get_httpx_client().request(
@@ -124,34 +146,40 @@ def sync(
     build_id: str,
     *,
     client: AuthenticatedClient,
-    logs_offset: Union[Unset, int] = 0,
+    cursor: Union[Unset, int] = UNSET,
     limit: Union[Unset, int] = 100,
+    direction: Union[Unset, LogsDirection] = UNSET,
     level: Union[Unset, LogLevel] = UNSET,
-) -> Optional[Union[Error, TemplateBuildInfo]]:
-    """Get template build info
+    source: Union[Unset, LogsSource] = UNSET,
+) -> Optional[Union[Error, TemplateBuildLogsResponse]]:
+    """Get template build logs
 
     Args:
         template_id (str):
         build_id (str):
-        logs_offset (Union[Unset, int]):  Default: 0.
+        cursor (Union[Unset, int]):
         limit (Union[Unset, int]):  Default: 100.
+        direction (Union[Unset, LogsDirection]): Direction of the logs that should be returned
         level (Union[Unset, LogLevel]): State of the sandbox
+        source (Union[Unset, LogsSource]): Source of the logs that should be returned
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Error, TemplateBuildInfo]
+        Union[Error, TemplateBuildLogsResponse]
     """
 
     return sync_detailed(
         template_id=template_id,
         build_id=build_id,
         client=client,
-        logs_offset=logs_offset,
+        cursor=cursor,
         limit=limit,
+        direction=direction,
         level=level,
+        source=source,
     ).parsed
 
 
@@ -160,33 +188,39 @@ async def asyncio_detailed(
     build_id: str,
     *,
     client: AuthenticatedClient,
-    logs_offset: Union[Unset, int] = 0,
+    cursor: Union[Unset, int] = UNSET,
     limit: Union[Unset, int] = 100,
+    direction: Union[Unset, LogsDirection] = UNSET,
     level: Union[Unset, LogLevel] = UNSET,
-) -> Response[Union[Error, TemplateBuildInfo]]:
-    """Get template build info
+    source: Union[Unset, LogsSource] = UNSET,
+) -> Response[Union[Error, TemplateBuildLogsResponse]]:
+    """Get template build logs
 
     Args:
         template_id (str):
         build_id (str):
-        logs_offset (Union[Unset, int]):  Default: 0.
+        cursor (Union[Unset, int]):
         limit (Union[Unset, int]):  Default: 100.
+        direction (Union[Unset, LogsDirection]): Direction of the logs that should be returned
         level (Union[Unset, LogLevel]): State of the sandbox
+        source (Union[Unset, LogsSource]): Source of the logs that should be returned
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Error, TemplateBuildInfo]]
+        Response[Union[Error, TemplateBuildLogsResponse]]
     """
 
     kwargs = _get_kwargs(
         template_id=template_id,
         build_id=build_id,
-        logs_offset=logs_offset,
+        cursor=cursor,
         limit=limit,
+        direction=direction,
         level=level,
+        source=source,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -199,25 +233,29 @@ async def asyncio(
     build_id: str,
     *,
     client: AuthenticatedClient,
-    logs_offset: Union[Unset, int] = 0,
+    cursor: Union[Unset, int] = UNSET,
     limit: Union[Unset, int] = 100,
+    direction: Union[Unset, LogsDirection] = UNSET,
     level: Union[Unset, LogLevel] = UNSET,
-) -> Optional[Union[Error, TemplateBuildInfo]]:
-    """Get template build info
+    source: Union[Unset, LogsSource] = UNSET,
+) -> Optional[Union[Error, TemplateBuildLogsResponse]]:
+    """Get template build logs
 
     Args:
         template_id (str):
         build_id (str):
-        logs_offset (Union[Unset, int]):  Default: 0.
+        cursor (Union[Unset, int]):
         limit (Union[Unset, int]):  Default: 100.
+        direction (Union[Unset, LogsDirection]): Direction of the logs that should be returned
         level (Union[Unset, LogLevel]): State of the sandbox
+        source (Union[Unset, LogsSource]): Source of the logs that should be returned
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Error, TemplateBuildInfo]
+        Union[Error, TemplateBuildLogsResponse]
     """
 
     return (
@@ -225,8 +263,10 @@ async def asyncio(
             template_id=template_id,
             build_id=build_id,
             client=client,
-            logs_offset=logs_offset,
+            cursor=cursor,
             limit=limit,
+            direction=direction,
             level=level,
+            source=source,
         )
     ).parsed

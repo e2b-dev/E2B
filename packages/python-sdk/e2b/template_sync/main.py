@@ -11,6 +11,7 @@ from e2b.template.logger import LogEntry, LogEntryEnd, LogEntryStart
 from e2b.template.main import TemplateBase, TemplateClass
 from e2b.template.types import BuildInfo, InstructionType
 from e2b.template_sync.build_api import (
+    check_alias_exists,
     get_build_status,
     get_file_upload_link,
     request_build,
@@ -369,3 +370,38 @@ class Template(TemplateBase):
             build_info.build_id,
             logs_offset,
         )
+
+    @staticmethod
+    def alias_exists(
+        alias: str,
+        api_key: Optional[str] = None,
+        domain: Optional[str] = None,
+    ) -> bool:
+        """
+        Check if a template with the given alias exists.
+
+        :param alias: Template alias to check
+        :param api_key: E2B API key for authentication
+        :param domain: Domain of the E2B API
+        :return: True if the alias exists, False otherwise
+
+        Example
+        ```python
+        from e2b import Template
+
+        exists = Template.alias_exists('base')
+        if exists:
+            print('Template exists!')
+        ```
+        """
+        domain = domain or os.environ.get("E2B_DOMAIN", "e2b.dev")
+        config = ConnectionConfig(
+            domain=domain, api_key=api_key or os.environ.get("E2B_API_KEY")
+        )
+        api_client = get_api_client(
+            config,
+            require_api_key=True,
+            require_access_token=False,
+        )
+
+        return check_alias_exists(api_client, alias)
