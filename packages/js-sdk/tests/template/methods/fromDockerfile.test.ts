@@ -130,3 +130,27 @@ buildTemplateTest('fromDockerfile with custom user and workdir', () => {
     '/home/mish'
   )
 })
+
+buildTemplateTest('fromDockerfile with COPY --chown', () => {
+  const dockerfile = `FROM node:24
+COPY --chown=myuser:mygroup app.js /app/
+COPY --chown=anotheruser config.json /config/`
+
+  const template = Template().fromDockerfile(dockerfile)
+
+  // First COPY instruction (after initial USER root and WORKDIR /)
+  // @ts-expect-error - instructions is not a property of TemplateBuilder
+  const copyInstruction1 = template.instructions[2]
+  assert.equal(copyInstruction1.type, InstructionType.COPY)
+  assert.equal(copyInstruction1.args[0], 'app.js')
+  assert.equal(copyInstruction1.args[1], '/app/')
+  assert.equal(copyInstruction1.args[2], 'myuser:mygroup') // user from --chown
+
+  // Second COPY instruction
+  // @ts-expect-error - instructions is not a property of TemplateBuilder
+  const copyInstruction2 = template.instructions[3]
+  assert.equal(copyInstruction2.type, InstructionType.COPY)
+  assert.equal(copyInstruction2.args[0], 'config.json')
+  assert.equal(copyInstruction2.args[1], '/config/')
+  assert.equal(copyInstruction2.args[2], 'anotheruser') // user from --chown (without group)
+})
