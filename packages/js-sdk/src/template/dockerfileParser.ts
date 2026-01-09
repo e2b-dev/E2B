@@ -3,6 +3,7 @@ import {
   Argument,
   DockerfileParser,
   Instruction as DockerfileInstruction,
+  ModifiableInstruction,
 } from 'dockerfile-ast'
 import fs from 'node:fs'
 import { ReadyCmd, waitForTimeout } from './readycmd'
@@ -111,7 +112,10 @@ export function parseDockerfile(
 
       case 'COPY':
       case 'ADD':
-        handleCopyInstruction(instruction, templateBuilder)
+        handleCopyInstruction(
+          instruction as ModifiableInstruction,
+          templateBuilder
+        )
         break
 
       case 'WORKDIR':
@@ -175,14 +179,22 @@ function handleRunInstruction(
 }
 
 function handleCopyInstruction(
-  instruction: DockerfileInstruction,
+  instruction: ModifiableInstruction,
   templateBuilder: DockerfileParserInterface
 ): void {
   const argumentsData = instruction.getArguments()
   if (argumentsData && argumentsData.length >= 2) {
     const src = argumentsData[0].getValue()
     const dest = argumentsData[argumentsData.length - 1].getValue()
-    templateBuilder.copy(src, dest)
+
+    let user: string | undefined
+    const flags = instruction.getFlags()
+    const chownFlag = flags.find((flag) => flag.getName() === 'chown')
+    if (chownFlag) {
+      user = chownFlag.getValue() ?? undefined
+    }
+
+    templateBuilder.copy(src, dest, { user })
   }
 }
 
