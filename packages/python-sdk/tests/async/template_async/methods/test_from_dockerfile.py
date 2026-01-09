@@ -88,4 +88,6 @@ COPY --chown=anotheruser config.json /config/"""
     assert copy_instruction2["type"] == InstructionType.COPY
     assert copy_instruction2["args"][0] == "config.json"
     assert copy_instruction2["args"][1] == "/config/"
-    assert copy_instruction2["args"][2] == "anotheruser"  # user from --chown (without group)
+    assert (
+        copy_instruction2["args"][2] == "anotheruser"
+    )  # user from --chown (without group)
