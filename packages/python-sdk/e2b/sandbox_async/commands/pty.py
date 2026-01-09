@@ -126,7 +126,9 @@ class Pty:
         :return: Handle to interact with the PTY
         """
         envs = envs or {}
-        envs["TERM"] = "xterm-256color"
+        envs.setdefault("TERM", "xterm-256color")
+        envs.setdefault("LANG", "C.UTF-8")
+        envs.setdefault("LC_ALL", "C.UTF-8")
         events = self._rpc.astart(
             process_pb2.StartRequest(
                 process=process_pb2.ProcessConfig(
