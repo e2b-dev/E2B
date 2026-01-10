@@ -88,7 +88,7 @@ export async function getFileUploadLink(
 
 export async function uploadFile(
   options: {
-    fileName: string
+    filePath: string
     fileContextPath: string
     url: string
     ignorePatterns: string[]
@@ -96,11 +96,11 @@ export async function uploadFile(
   },
   stackTrace: string | undefined
 ) {
-  const { fileName, url, fileContextPath, ignorePatterns, resolveSymlinks } =
+  const { filePath, url, fileContextPath, ignorePatterns, resolveSymlinks } =
     options
   try {
     const { contentLength, uploadStream } = await tarFileStreamUpload(
-      fileName,
+      filePath,
       fileContextPath,
       ignorePatterns,
       resolveSymlinks

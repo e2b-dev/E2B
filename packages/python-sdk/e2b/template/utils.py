@@ -37,12 +37,37 @@ def read_dockerignore(context_path: str) -> List[str]:
 
 def normalize_path(path: str) -> str:
     """
-    Normalize path separators to forward slashes for glob patterns (glob expects / even on Windows).
+    Normalize path separators to forward slashes for glob patterns (glob expects / even on Windows)
 
     :param path: The path to normalize
     :return: The normalized path
     """
-    return path.replace(os.sep, "/")
+    return path.replace("\\", "/")
+
+
+def to_posix_path(fs_path: str) -> str:
+    """
+    Convert a filesystem path to POSIX format for use in tar archives and Dockerfiles.
+
+    Tar archives and Docker expect POSIX-style paths (forward slashes).
+    On Windows, the drive letter (e.g., C:) is stripped and backslashes are converted.
+
+    :param fs_path: The filesystem path to convert
+    :return: The POSIX-formatted path suitable for tar/Docker
+
+    Example:
+    ```python
+    to_posix_path("D:\\a\\E2B\\file.txt")  # Returns "a/E2B/file.txt"
+    to_posix_path("/home/user/file.txt")   # Returns "home/user/file.txt"
+    ```
+    """
+    # Normalize to forward slashes (POSIX format used by tar)
+    posix_path = fs_path.replace(os.sep, "/")
+    # Strip Windows drive letter (e.g., C:)
+    if len(posix_path) >= 2 and posix_path[1] == ":":
+        posix_path = posix_path[2:]
+    # Strip leading slash
+    return posix_path.lstrip("/")
 
 
 def get_all_files_in_path(
@@ -61,33 +86,60 @@ def get_all_files_in_path(
     :return: Array of files
     """
     files = set()
-
-    # Use glob to find all files/directories matching the pattern under context_path
     abs_context_path = os.path.abspath(context_path)
-    files_glob = glob.glob(
-        src,
-        flags=glob.GLOBSTAR,
-        root_dir=abs_context_path,
-        exclude=ignore_patterns,
-    )
+    is_absolute_src = os.path.isabs(src)
+
+    # Normalize path separators for glob (glob expects forward slashes even on Windows)
+    glob_pattern = normalize_path(src)
+
+    # For absolute paths, don't use root_dir as glob will handle them directly
+    # For relative paths, use root_dir to resolve relative to context_path
+    if is_absolute_src:
+        files_glob = glob.glob(
+            glob_pattern,
+            flags=glob.GLOBSTAR,
+            exclude=ignore_patterns,
+        )
+    else:
+        files_glob = glob.glob(
+            glob_pattern,
+            flags=glob.GLOBSTAR,
+            root_dir=abs_context_path,
+            exclude=ignore_patterns,
+        )
 
     for file in files_glob:
-        # Join it with abs_context_path to get the absolute path
-        file_path = os.path.join(abs_context_path, file)
+        # For absolute patterns, glob returns absolute paths
+        # For relative patterns, join with context_path
+        if is_absolute_src:
+            file_path = file
+        else:
+            file_path = os.path.join(abs_context_path, file)
 
         if os.path.isdir(file_path):
             # If it's a directory, add the directory and all entries recursively
             if include_directories:
                 files.add(file_path)
-            dir_files = glob.glob(
-                normalize_path(file) + "/**/*",
-                flags=glob.GLOBSTAR,
-                root_dir=abs_context_path,
-                exclude=ignore_patterns,
-            )
-            for dir_file in dir_files:
-                dir_file_path = os.path.join(abs_context_path, dir_file)
-                files.add(dir_file_path)
+
+            if is_absolute_src:
+                dir_pattern = normalize_path(file_path) + "/**/*"
+                dir_files = glob.glob(
+                    dir_pattern,
+                    flags=glob.GLOBSTAR,
+                    exclude=ignore_patterns,
+                )
+                for dir_file in dir_files:
+                    files.add(dir_file)
+            else:
+                dir_files = glob.glob(
+                    normalize_path(file) + "/**/*",
+                    flags=glob.GLOBSTAR,
+                    root_dir=abs_context_path,
+                    exclude=ignore_patterns,
+                )
+                for dir_file in dir_files:
+                    dir_file_path = os.path.join(abs_context_path, dir_file)
+                    files.add(dir_file_path)
         else:
             files.add(file_path)
 
@@ -166,34 +218,43 @@ def calculate_files_hash(
 
 
 def tar_file_stream(
-    file_name: str,
+    file_path: str,
     file_context_path: str,
     ignore_patterns: List[str],
     resolve_symlinks: bool,
 ) -> io.BytesIO:
     """
-    Create a tar stream of files matching a pattern.
+    Create a compressed tar stream of files matching a pattern.
 
-    :param file_name: Glob pattern for files to include
+    :param file_path: Original file path pattern (may include .. for outside-context files)
     :param file_context_path: Base directory for resolving file paths
     :param ignore_patterns: Ignore patterns
-    :param resolve_symlinks: Whether to resolve symbolic links
+    :param resolve_symlinks: Whether to follow symbolic links
 
-    :return: Tar stream
+    :return: A gzipped tar stream
     """
+    all_files = get_all_files_in_path(
+        file_path, file_context_path, ignore_patterns, True
+    )
+
+    as_absolute_path = os.path.isabs(file_path) or file_path.startswith("..")
+
     tar_buffer = io.BytesIO()
     with tarfile.open(
         fileobj=tar_buffer,
         mode="w:gz",
         dereference=resolve_symlinks,
     ) as tar:
-        files = get_all_files_in_path(
-            file_name, file_context_path, ignore_patterns, True
-        )
-        for file in files:
-            tar.add(
-                file, arcname=os.path.relpath(file, file_context_path), recursive=False
+        for file in all_files:
+            full_path = os.path.normpath(file)
+            relative_path = os.path.relpath(file, file_context_path).replace(
+                os.sep, "/"
             )
+            target_path = (
+                to_posix_path(full_path) if as_absolute_path else relative_path
+            )
+
+            tar.add(file, arcname=target_path, recursive=False)
 
     return tar_buffer
 
@@ -318,3 +379,24 @@ def read_gcp_service_account_json(
             return f.read()
     else:
         return json.dumps(path_or_content)
+
+
+def rewrite_src(src: str, file_context_path: str) -> str:
+    """
+    Rewrite the source path to the target path.
+
+    For paths outside the context directory (starting with ..) or absolute paths,
+    returns the full resolved path in POSIX format for Docker/tar compatibility.
+
+    :param src: Source path
+    :param file_context_path: Base directory for resolving relative paths
+
+    :return: The rewritten source path in POSIX format
+    """
+    # For absolute paths, convert to POSIX format for Docker/tar compatibility
+    if os.path.isabs(src):
+        return to_posix_path(src)
+    # For paths outside of the context directory, return the full resolved path in POSIX format
+    if src.startswith(".."):
+        return to_posix_path(os.path.normpath(os.path.join(file_context_path, src)))
+    return src

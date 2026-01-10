@@ -3,7 +3,7 @@ import tempfile
 import tarfile
 import io
 import pytest
-from e2b.template.utils import tar_file_stream
+from e2b.template.utils import tar_file_stream, to_posix_path
 
 
 class TestTarFileStream:
@@ -146,3 +146,45 @@ class TestTarFileStream:
             # Link should be a symlink
             assert members["link.txt"].issym()
             assert members["link.txt"].linkname == "original.txt"
+
+    def test_should_handle_absolute_paths(self, test_dir):
+        """Test that function handles absolute paths correctly."""
+        # Create test file
+        file_path = os.path.join(test_dir, "file.txt")
+        with open(file_path, "w") as f:
+            f.write("content")
+
+        # Use absolute path pattern
+        abs_pattern = os.path.join(test_dir, "*.txt")
+        tar_buffer = tar_file_stream(abs_pattern, test_dir, [], False)
+        contents = self._extract_tar_contents(tar_buffer)
+
+        # For absolute paths, the full path is preserved in the archive
+        # Tar uses POSIX format (forward slashes, no drive letter, no leading slash)
+        expected_path = to_posix_path(file_path)
+        assert expected_path in contents
+        assert contents[expected_path] == b"content"
+
+    def test_should_handle_parent_directory_paths(self, test_dir):
+        """Test that function handles .. paths correctly by using resolved path."""
+        # Create a subdirectory structure
+        subdir = os.path.join(test_dir, "project", "src")
+        os.makedirs(subdir, exist_ok=True)
+
+        # Create a file in the parent directory
+        parent_file = os.path.join(test_dir, "project", "config.txt")
+        with open(parent_file, "w") as f:
+            f.write("config content")
+
+        # Use .. pattern from the subdirectory context
+        tar_buffer = tar_file_stream("../config.txt", subdir, [], False)
+        contents = self._extract_tar_contents(tar_buffer)
+
+        # For .. paths, the full resolved path should be used in the archive
+        resolved_path = os.path.normpath(
+            os.path.join(test_dir, "project", "config.txt")
+        )
+        # Tar uses POSIX format (forward slashes, no drive letter, no leading slash)
+        expected_path = to_posix_path(resolved_path)
+        assert expected_path in contents
+        assert contents[expected_path] == b"config content"
