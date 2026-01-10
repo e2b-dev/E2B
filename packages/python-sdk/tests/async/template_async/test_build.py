@@ -92,11 +92,23 @@ async def test_build_template_with_resolve_symlinks(async_build, setup_test_fold
 
 
 @pytest.mark.skip_debug()
-async def test_build_template_with_skip_cache(async_build, setup_test_folder):
+async def test_build_template_with_absolute_paths(async_build, setup_test_folder):
+    folder_path = os.path.join(setup_test_folder, "folder")
+
+    # Absolute path to test.txt in the folder
+    package_txt = os.path.abspath(os.path.join(folder_path, "test.txt"))
+
+    # Absolute path to package.json in the repo root
+    root_json = os.path.abspath(os.path.join(os.getcwd(), "..", "..", "package.json"))
+
     template = (
         AsyncTemplate(file_context_path=setup_test_folder)
+        # using base image to avoid re-building ubuntu:22.04 image
+        .from_base_image()
         .skip_cache()
-        .from_image("ubuntu:22.04")
+        .copy(package_txt, "text.txt", force_upload=True)
+        .copy(root_json, "package.json", force_upload=True)
+        .run_cmd(["ls -l .", "cat text.txt", "cat package.json"])
     )
 
-    await async_build(template)
+    await async_build(template, on_build_logs=default_build_logger())
