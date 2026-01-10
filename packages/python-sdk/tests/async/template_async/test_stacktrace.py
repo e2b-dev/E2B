@@ -11,7 +11,7 @@ from e2b.api.client.models import TemplateBuildStatus
 import e2b.template_async.main as template_async_main
 import e2b.template_async.build_api as build_api_mod
 
-non_existent_path = "/nonexistent/path"
+non_existent_path = "./nonexistent/path"
 
 # map template alias -> failed step index
 failure_map: dict[str, Optional[int]] = {
@@ -23,6 +23,9 @@ failure_map: dict[str, Optional[int]] = {
     "from_gcp_registry": 0,
     "copy": None,
     "copy_items": None,
+    "copy_with_absolute_path": None,
+    "copy_with_relative_path": None,
+    "copy_with_embedded_dotdot": None,
     "remove": 1,
     "rename": 1,
     "make_dir": 1,
@@ -174,6 +177,36 @@ async def test_traces_on_copyItems(async_build):
     )
     await _expect_to_throw_and_check_trace(
         lambda: async_build(template, alias="copy_items"), "copy_items"
+    )
+
+
+@pytest.mark.skip_debug()
+async def test_traces_on_copy_with_absolute_path(async_build):
+    template = AsyncTemplate()
+    template = template.from_base_image()
+    template = template.skip_cache().copy("/absolute/path", "/tmp/dest.txt")
+    await _expect_to_throw_and_check_trace(
+        lambda: async_build(template, alias="copy_with_absolute_path"), "copy"
+    )
+
+
+@pytest.mark.skip_debug()
+async def test_traces_on_copy_with_relative_path(async_build):
+    template = AsyncTemplate()
+    template = template.from_base_image()
+    template = template.skip_cache().copy("../relative/path", "/tmp/dest.txt")
+    await _expect_to_throw_and_check_trace(
+        lambda: async_build(template, alias="copy_with_relative_path"), "copy"
+    )
+
+
+@pytest.mark.skip_debug()
+async def test_traces_on_copy_with_embedded_dotdot(async_build):
+    template = AsyncTemplate()
+    template = template.from_base_image()
+    template = template.skip_cache().copy("assets/../../secret", "/tmp/dest.txt")
+    await _expect_to_throw_and_check_trace(
+        lambda: async_build(template, alias="copy_with_embedded_dotdot"), "copy"
     )
 
 
