@@ -91,6 +91,12 @@ class Template(TemplateBase):
             force_upload = file_upload.get("forceUpload")
             files_hash = file_upload.get("filesHash", None)
             resolve_symlinks = file_upload.get("resolveSymlinks", RESOLVE_SYMLINKS)
+            context_path_for_instruction = (
+                file_upload.get("contextPath") or template._template._file_context_path
+            )
+            resolved_symlinks = (
+                resolve_symlinks if resolve_symlinks is not None else RESOLVE_SYMLINKS
+            )
 
             if src is None or files_hash is None:
                 raise ValueError("Source path and files hash are required")
@@ -109,13 +115,13 @@ class Template(TemplateBase):
                 upload_file(
                     api_client,
                     src,
-                    template._template._file_context_path,
+                    context_path_for_instruction,
                     file_info.url,
                     [
                         *template._template._file_ignore_patterns,
-                        *read_dockerignore(template._template._file_context_path),
+                        *read_dockerignore(context_path_for_instruction),
                     ],
-                    resolve_symlinks,
+                    resolved_symlinks,
                     stack_trace,
                 )
                 if on_build_logs:

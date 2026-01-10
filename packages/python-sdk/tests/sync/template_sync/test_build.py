@@ -44,7 +44,6 @@ def setup_test_folder():
 def test_build_template(build, setup_test_folder):
     template = (
         Template(file_context_path=setup_test_folder)
-        # using base image to avoid re-building ubuntu:22.04 image
         .from_base_image()
         .copy("folder/*", "folder", force_upload=True)
         .run_cmd("cat folder/test.txt")
@@ -90,3 +89,23 @@ def test_build_template_with_resolve_symlinks(build, setup_test_folder):
     )
 
     build(template)
+
+
+@pytest.mark.skip_debug()
+def test_build_template_with_absolute_paths(build, setup_test_folder):
+    folder_path = os.path.join(setup_test_folder, "folder")
+
+    # Absolute path to test.txt in the folder
+    package_txt = os.path.abspath(os.path.join(folder_path, "test.txt"))
+
+    template = (
+        Template()
+        # using base image to avoid re-building ubuntu:22.04 image
+        .from_base_image()
+        .skip_cache()
+        .copy(package_txt, "text.txt", force_upload=True)
+        .copy("../../../package.json", "package.json", force_upload=True)
+        .run_cmd(["ls -l .", "cat text.txt", "cat package.json"])
+    )
+
+    build(template, on_build_logs=default_build_logger())
