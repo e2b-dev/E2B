@@ -1,0 +1,25 @@
+{
+    "name": "E2B JS SDK Dev",
+    "build": {
+        "dockerfile": "Dockerfile",
+        "context": ".."
+    },
+    "runArgs": [
+        "--ipc=host"
+    ],
+    "customizations": {
+        "vscode": {
+            "settings": {
+                "terminal.integrated.defaultProfile.linux": "bash",
+                "editor.formatOnSave": true
+            },
+            "extensions": [
+                "dbaeumer.vscode-eslint",
+                "esbenp.prettier-vscode",
+                "ms-playwright.playwright"
+            ]
+        }
+    },
+    "remoteUser": "node",
+    "postCreateCommand": "pnpm install"
+}
