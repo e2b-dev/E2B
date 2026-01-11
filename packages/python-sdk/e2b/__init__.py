@@ -97,6 +97,7 @@ from .template.readycmd import (
 from .template.types import BuildInfo, CopyItem
 from .template_async.main import AsyncTemplate
 from .template_sync.main import Template
+from .governance import GovernanceError, GovernedSandbox
 
 __all__ = [
     # API
@@ -171,4 +172,7 @@ __all__ = [
     "McpServer",
     "GitHubMcpServer",
     "GitHubMcpServerConfig",
+    # Governance
+    "GovernanceError",
+    "GovernedSandbox",
 ]
