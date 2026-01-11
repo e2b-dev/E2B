@@ -305,9 +305,9 @@ class Client:
         res = self.pool.request(**req_data)
         return self._process_unary_response(res)
 
-    def _create_stream_timeout(self, timeout: Optional[int]):
+    def _create_stream_timeout(self, timeout: Optional[float]):
         if timeout:
-            return {"connect-timeout-ms": str(timeout * 1000)}
+            return {"connect-timeout-ms": str(int(timeout * 1000))}
         return {}
 
     def _prepare_server_stream_request(
