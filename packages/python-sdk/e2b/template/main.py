@@ -1,7 +1,6 @@
 import json
 from typing import Dict, List, Optional, Union, Literal
 from pathlib import Path
-import os
 
 
 from e2b.exceptions import BuildException
