@@ -4,6 +4,7 @@ import { ConnectionConfig } from '../connectionConfig'
 import { BuildError } from '../errors'
 import { runtime } from '../utils'
 import {
+  checkAliasExists,
   getBuildStatus,
   GetBuildStatusResponse,
   getFileUploadLink,
@@ -18,6 +19,7 @@ import { parseDockerfile } from './dockerfileParser'
 import { LogEntry, LogEntryEnd, LogEntryStart } from './logger'
 import { ReadyCmd, waitForFile } from './readycmd'
 import {
+  AliasExistsOptions,
   BuildInfo,
   BuildOptions,
   CopyItem,
@@ -122,10 +124,7 @@ export class TemplateBase
       options.onBuildLogs?.(new LogEntryStart(new Date(), 'Build started'))
       const baseTemplate = template as TemplateBase
 
-      const config = new ConnectionConfig({
-        domain: options.domain,
-        apiKey: options.apiKey,
-      })
+      const config = new ConnectionConfig(options)
       const client = new ApiClient(config)
 
       const data = await baseTemplate.build(client, options)
@@ -168,10 +167,7 @@ export class TemplateBase
     template: TemplateClass,
     options: BuildOptions
   ): Promise<BuildInfo> {
-    const config = new ConnectionConfig({
-      domain: options.domain,
-      apiKey: options.apiKey,
-    })
+    const config = new ConnectionConfig(options)
     const client = new ApiClient(config)
 
     return await (template as TemplateBase).build(client, options)
@@ -192,10 +188,7 @@ export class TemplateBase
     data: Pick<BuildInfo, 'templateId' | 'buildId'>,
     options?: GetBuildStatusOptions
   ): Promise<GetBuildStatusResponse> {
-    const config = new ConnectionConfig({
-      domain: options?.domain,
-      apiKey: options?.apiKey,
-    })
+    const config = new ConnectionConfig(options)
     const client = new ApiClient(config)
 
     return await getBuildStatus(client, {
@@ -203,6 +196,31 @@ export class TemplateBase
       buildID: data.buildId,
       logsOffset: options?.logsOffset,
     })
+  }
+
+  /**
+   * Check if a template with the given alias exists.
+   *
+   * @param alias Template alias to check
+   * @param options Authentication options
+   * @returns True if the alias exists, false otherwise
+   *
+   * @example
+   * ```ts
+   * const exists = await Template.aliasExists('my-python-env')
+   * if (exists) {
+   *   console.log('Template exists!')
+   * }
+   * ```
+   */
+  static async aliasExists(
+    alias: string,
+    options?: AliasExistsOptions
+  ): Promise<boolean> {
+    const config = new ConnectionConfig(options)
+    const client = new ApiClient(config)
+
+    return checkAliasExists(client, { alias })
   }
 
   fromDebianImage(variant: string = 'stable'): TemplateBuilder {
@@ -1070,10 +1088,12 @@ export function Template(options?: TemplateOptions): TemplateFromImage {
 Template.build = TemplateBase.build
 Template.buildInBackground = TemplateBase.buildInBackground
 Template.getBuildStatus = TemplateBase.getBuildStatus
+Template.aliasExists = TemplateBase.aliasExists
 Template.toJSON = TemplateBase.toJSON
 Template.toDockerfile = TemplateBase.toDockerfile
 
 export type {
+  AliasExistsOptions,
   BuildInfo,
   BuildOptions,
   CopyItem,

@@ -1,5 +1,7 @@
 """Contains all the data models used in inputs/outputs"""
 
+from .admin_sandbox_kill_result import AdminSandboxKillResult
+from .assign_template_tag_request import AssignTemplateTagRequest
 from .aws_registry import AWSRegistry
 from .aws_registry_type import AWSRegistryType
 from .build_log_entry import BuildLogEntry
@@ -16,6 +18,9 @@ from .general_registry_type import GeneralRegistryType
 from .identifier_masking_details import IdentifierMaskingDetails
 from .listed_sandbox import ListedSandbox
 from .log_level import LogLevel
+from .logs_direction import LogsDirection
+from .logs_source import LogsSource
+from .machine_info import MachineInfo
 from .max_team_metric import MaxTeamMetric
 from .mcp_type_0 import McpType0
 from .new_access_token import NewAccessToken
@@ -46,9 +51,11 @@ from .team_api_key import TeamAPIKey
 from .team_metric import TeamMetric
 from .team_user import TeamUser
 from .template import Template
+from .template_alias_response import TemplateAliasResponse
 from .template_build import TemplateBuild
 from .template_build_file_upload import TemplateBuildFileUpload
 from .template_build_info import TemplateBuildInfo
+from .template_build_logs_response import TemplateBuildLogsResponse
 from .template_build_request import TemplateBuildRequest
 from .template_build_request_v2 import TemplateBuildRequestV2
 from .template_build_request_v3 import TemplateBuildRequestV3
@@ -57,11 +64,14 @@ from .template_build_status import TemplateBuildStatus
 from .template_legacy import TemplateLegacy
 from .template_request_response_v3 import TemplateRequestResponseV3
 from .template_step import TemplateStep
+from .template_tag import TemplateTag
 from .template_update_request import TemplateUpdateRequest
 from .template_with_builds import TemplateWithBuilds
 from .update_team_api_key import UpdateTeamAPIKey
 
 __all__ = (
+    "AdminSandboxKillResult",
+    "AssignTemplateTagRequest",
     "AWSRegistry",
     "AWSRegistryType",
     "BuildLogEntry",
@@ -78,6 +88,9 @@ __all__ = (
     "IdentifierMaskingDetails",
     "ListedSandbox",
     "LogLevel",
+    "LogsDirection",
+    "LogsSource",
+    "MachineInfo",
     "MaxTeamMetric",
     "McpType0",
     "NewAccessToken",
@@ -106,9 +119,11 @@ __all__ = (
     "TeamMetric",
     "TeamUser",
     "Template",
+    "TemplateAliasResponse",
     "TemplateBuild",
     "TemplateBuildFileUpload",
     "TemplateBuildInfo",
+    "TemplateBuildLogsResponse",
     "TemplateBuildRequest",
     "TemplateBuildRequestV2",
     "TemplateBuildRequestV3",
@@ -117,6 +132,7 @@ __all__ = (
     "TemplateLegacy",
     "TemplateRequestResponseV3",
     "TemplateStep",
+    "TemplateTag",
     "TemplateUpdateRequest",
     "TemplateWithBuilds",
     "UpdateTeamAPIKey",

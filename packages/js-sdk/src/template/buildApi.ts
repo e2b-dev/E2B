@@ -27,6 +27,10 @@ type GetBuildStatusInput = {
   logsOffset?: number
 }
 
+type CheckAliasExistsInput = {
+  alias: string
+}
+
 export type GetBuildStatusResponse =
   paths['/templates/{templateID}/builds/{buildID}/status']['get']['responses']['200']['content']['application/json']
 
@@ -183,6 +187,38 @@ export async function getBuildStatus(
   }
 
   return buildStatusRes.data
+}
+
+export async function checkAliasExists(
+  client: ApiClient,
+  { alias }: CheckAliasExistsInput
+): Promise<boolean> {
+  const aliasRes = await client.api.GET('/templates/aliases/{alias}', {
+    params: {
+      path: {
+        alias,
+      },
+    },
+  })
+
+  // If we get a NotFound, the alias doesn't exist
+  if (aliasRes.response.status === 404) {
+    return false
+  }
+
+  // If we get a Forbidden, alias exists, but you are not owner
+  if (aliasRes.response.status === 403) {
+    return true
+  }
+
+  // Handle other errors
+  const error = handleApiError(aliasRes, BuildError)
+  if (error) {
+    throw error
+  }
+
+  // If we get Ok with data, you are owner and the alias exists
+  return aliasRes.data !== undefined
 }
 
 export async function waitForBuildFinish(

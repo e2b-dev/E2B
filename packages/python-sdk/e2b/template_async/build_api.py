@@ -10,6 +10,7 @@ from e2b.api.client.api.templates import (
     get_templates_template_id_files_hash,
     post_v_2_templates_template_id_builds_build_id,
     get_templates_template_id_builds_build_id_status,
+    get_templates_aliases_alias,
 )
 from e2b.api.client.client import AuthenticatedClient
 from e2b.api.client.models import (
@@ -200,3 +201,35 @@ async def wait_for_build_finish(
         await asyncio.sleep(logs_refresh_frequency)
 
     raise BuildException("Unknown build error occurred.")
+
+
+async def check_alias_exists(client: AuthenticatedClient, alias: str) -> bool:
+    """
+    Check if a template with the given alias exists.
+
+    Args:
+        client: Authenticated API client
+        alias: Template alias to check
+
+    Returns:
+        True if the alias exists, False otherwise
+    """
+    res = await get_templates_aliases_alias.asyncio_detailed(
+        alias=alias,
+        client=client,
+    )
+
+    # If we get a NotFound, the alias doesn't exist
+    if res.status_code == 404:
+        return False
+
+    # If we get a Forbidden, alias exists, but you are not owner
+    if res.status_code == 403:
+        return True
+
+    # Handle other errors
+    if res.status_code >= 300:
+        raise handle_api_exception(res, BuildException)
+
+    # If we get Ok with data, you are owner and the alias exists
+    return res.parsed is not None

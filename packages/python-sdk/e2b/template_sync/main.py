@@ -1,9 +1,10 @@
-import os
 from datetime import datetime
 from typing import Callable, Optional
 
+from typing_extensions import Unpack
+
 from e2b.api.client.client import AuthenticatedClient
-from e2b.connection_config import ConnectionConfig
+from e2b.connection_config import ApiParams, ConnectionConfig
 
 from e2b.api.client_sync import get_api_client
 from e2b.template.consts import RESOLVE_SYMLINKS
@@ -11,6 +12,7 @@ from e2b.template.logger import LogEntry, LogEntryEnd, LogEntryStart
 from e2b.template.main import TemplateBase, TemplateClass
 from e2b.template.types import BuildInfo, InstructionType
 from e2b.template_sync.build_api import (
+    check_alias_exists,
     get_build_status,
     get_file_upload_link,
     request_build,
@@ -176,8 +178,7 @@ class Template(TemplateBase):
         memory_mb: int = 1024,
         skip_cache: bool = False,
         on_build_logs: Optional[Callable[[LogEntry], None]] = None,
-        api_key: Optional[str] = None,
-        domain: Optional[str] = None,
+        **opts: Unpack[ApiParams],
     ) -> BuildInfo:
         """
         Build and deploy a template to E2B infrastructure.
@@ -188,8 +189,6 @@ class Template(TemplateBase):
         :param memory_mb: Amount of memory in MB allocated to the sandbox
         :param skip_cache: If True, forces a complete rebuild ignoring cache
         :param on_build_logs: Callback function to receive build logs during the build process
-        :param api_key: E2B API key for authentication
-        :param domain: Domain of the E2B API
 
         Example
         ```python
@@ -219,10 +218,7 @@ class Template(TemplateBase):
                     )
                 )
 
-            domain = domain or os.environ.get("E2B_DOMAIN", "e2b.dev")
-            config = ConnectionConfig(
-                domain=domain, api_key=api_key or os.environ.get("E2B_API_KEY")
-            )
+            config = ConnectionConfig(**opts)
             api_client = get_api_client(
                 config,
                 require_api_key=True,
@@ -275,8 +271,7 @@ class Template(TemplateBase):
         memory_mb: int = 1024,
         skip_cache: bool = False,
         on_build_logs: Optional[Callable[[LogEntry], None]] = None,
-        api_key: Optional[str] = None,
-        domain: Optional[str] = None,
+        **opts: Unpack[ApiParams],
     ) -> BuildInfo:
         """
         Build and deploy a template to E2B infrastructure without waiting for completion.
@@ -286,8 +281,6 @@ class Template(TemplateBase):
         :param cpu_count: Number of CPUs allocated to the sandbox
         :param memory_mb: Amount of memory in MB allocated to the sandbox
         :param skip_cache: If True, forces a complete rebuild ignoring cache
-        :param api_key: E2B API key for authentication
-        :param domain: Domain of the E2B API
         :return: BuildInfo containing the template ID and build ID
 
         Example
@@ -309,10 +302,7 @@ class Template(TemplateBase):
         )
         ```
         """
-        domain = domain or os.environ.get("E2B_DOMAIN", "e2b.dev")
-        config = ConnectionConfig(
-            domain=domain, api_key=api_key or os.environ.get("E2B_API_KEY")
-        )
+        config = ConnectionConfig(**opts)
         api_client = get_api_client(
             config,
             require_api_key=True,
@@ -333,16 +323,13 @@ class Template(TemplateBase):
     def get_build_status(
         build_info: BuildInfo,
         logs_offset: int = 0,
-        api_key: Optional[str] = None,
-        domain: Optional[str] = None,
+        **opts: Unpack[ApiParams],
     ):
         """
         Get the status of a build.
 
         :param build_info: Build identifiers returned from build_in_background
         :param logs_offset: Offset for fetching logs
-        :param api_key: E2B API key for authentication
-        :param domain: Domain of the E2B API
         :return: TemplateBuild containing the build status and logs
 
         Example
@@ -353,10 +340,7 @@ class Template(TemplateBase):
         status = Template.get_build_status(build_info, logs_offset=0)
         ```
         """
-        domain = domain or os.environ.get("E2B_DOMAIN", "e2b.dev")
-        config = ConnectionConfig(
-            domain=domain, api_key=api_key or os.environ.get("E2B_API_KEY")
-        )
+        config = ConnectionConfig(**opts)
         api_client = get_api_client(
             config,
             require_api_key=True,
@@ -369,3 +353,32 @@ class Template(TemplateBase):
             build_info.build_id,
             logs_offset,
         )
+
+    @staticmethod
+    def alias_exists(
+        alias: str,
+        **opts: Unpack[ApiParams],
+    ) -> bool:
+        """
+        Check if a template with the given alias exists.
+
+        :param alias: Template alias to check
+        :return: True if the alias exists, False otherwise
+
+        Example
+        ```python
+        from e2b import Template
+
+        exists = Template.alias_exists('base')
+        if exists:
+            print('Template exists!')
+        ```
+        """
+        config = ConnectionConfig(**opts)
+        api_client = get_api_client(
+            config,
+            require_api_key=True,
+            require_access_token=False,
+        )
+
+        return check_alias_exists(api_client, alias)
