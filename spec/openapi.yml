@@ -75,6 +75,13 @@ components:
       required: true
       schema:
         type: string
+    tag:
+      name: tag
+      in: path
+      required: true
+      schema:
+        type: string
+        description: Tag name
     paginationLimit:
       name: limit
       in: query
@@ -582,6 +589,18 @@ components:
           type: number
           description: The maximum value of the requested metric in the given interval
 
+    AdminSandboxKillResult:
+      required:
+        - killedCount
+        - failedCount
+      properties:
+        killedCount:
+          type: integer
+          description: Number of sandboxes successfully killed
+        failedCount:
+          type: integer
+          description: Number of sandboxes that failed to kill
+
     Template:
       required:
         - templateID
@@ -818,6 +837,18 @@ components:
           items:
             $ref: '#/components/schemas/TemplateBuild'
 
+    TemplateAliasResponse:
+      required:
+        - templateID
+        - public
+      properties:
+        templateID:
+          type: string
+          description: Identifier of the template
+        public:
+          type: boolean
+          description: Whether the template is public or only accessible by the team
+
     TemplateBuildRequest:
       required:
         - dockerfile
@@ -865,12 +896,16 @@ components:
           description: Whether the step should be forced to run regardless of the cache
 
     TemplateBuildRequestV3:
-      required:
-        - alias
       properties:
         alias:
-          description: Alias of the template
+          description: Alias of the template. Deprecated, use names instead.
           type: string
+          deprecated: true
+        names:
+          type: array
+          description: Names of the template
+          items:
+            type: string
         teamID:
           type: string
           description: Identifier of the team
@@ -1084,6 +1119,37 @@ components:
         reason:
           $ref: '#/components/schemas/BuildStatusReason'
 
+    TemplateBuildLogsResponse:
+      required:
+        - logs
+      properties:
+        logs:
+          default: []
+          description: Build logs structured
+          type: array
+          items:
+            $ref: '#/components/schemas/BuildLogEntry'
+
+    LogsDirection:
+      type: string
+      description: Direction of the logs that should be returned
+      enum:
+        - forward
+        - backward
+      x-enum-varnames:
+        - LogsDirectionForward
+        - LogsDirectionBackward
+
+    LogsSource:
+      type: string
+      description: Source of the logs that should be returned
+      enum:
+        - temporary
+        - persistent
+      x-enum-varnames:
+        - LogsSourceTemporary
+        - LogsSourcePersistent
+
     NodeStatus:
       type: string
       description: Status of the node
@@ -1175,6 +1241,25 @@ components:
           description: Detailed metrics for each disk/mount point
           items:
             $ref: '#/components/schemas/DiskMetrics'
+    MachineInfo:
+      required:
+        - cpuFamily
+        - cpuModel
+        - cpuModelName
+        - cpuArchitecture
+      properties:
+        cpuFamily:
+          type: string
+          description: CPU family of the node
+        cpuModel:
+          type: string
+          description: CPU model of the node
+        cpuModelName:
+          type: string
+          description: CPU model name of the node
+        cpuArchitecture:
+          type: string
+          description: CPU architecture of the node
 
     Node:
       required:
@@ -1190,6 +1275,7 @@ components:
         - sandboxStartingCount
         - version
         - commit
+        - machineInfo
       properties:
         version:
           type: string
@@ -1210,6 +1296,8 @@ components:
         clusterID:
           type: string
           description: Identifier of the cluster
+        machineInfo:
+          $ref: '#/components/schemas/MachineInfo'
         status:
           $ref: '#/components/schemas/NodeStatus'
         sandboxCount:
@@ -1245,6 +1333,7 @@ components:
         - version
         - commit
         - metrics
+        - machineInfo
       properties:
         clusterID:
           type: string
@@ -1265,6 +1354,8 @@ components:
           type: string
           deprecated: true
           description: Identifier of the nomad node
+        machineInfo:
+          $ref: '#/components/schemas/MachineInfo'
         status:
           $ref: '#/components/schemas/NodeStatus'
         sandboxes:
@@ -1401,6 +1492,35 @@ components:
           type: string
           description: New name for the API key
 
+    TemplateTag:
+      required:
+        - tags
+        - buildID
+      properties:
+        tags:
+          type: array
+          items:
+            type: string
+          description: Tags of the template
+        buildID:
+          type: string
+          format: uuid
+          description: Identifier of the build associated with this tag
+
+    AssignTemplateTagRequest:
+      required:
+        - target
+        - names
+      properties:
+        target:
+          type: string
+          description: Target template name in 'alias:tag' format
+        names:
+          description: Names of the template
+          type: array
+          items:
+            type: string
+
     Error:
       required:
         - code
@@ -1440,6 +1560,7 @@ tags:
   - name: auth
   - name: access-tokens
   - name: api-keys
+  - name: tags
 
 paths:
   /health:
@@ -1573,7 +1694,7 @@ paths:
       parameters:
         - name: metadata
           in: query
-          description: Metadata query used to filter the sandboxes (e.g. "user=abc&app=prod"). Each key and values must be URL encoded.
+          description: Metadata query used to filter the sandboxes (e.g. 'user=abc&app=prod'). Each key and values must be URL encoded.
           required: false
           schema:
             type: string
@@ -1631,7 +1752,7 @@ paths:
       parameters:
         - name: metadata
           in: query
-          description: Metadata query used to filter the sandboxes (e.g. "user=abc&app=prod"). Each key and values must be URL encoded.
+          description: Metadata query used to filter the sandboxes (e.g. 'user=abc&app=prod'). Each key and values must be URL encoded.
           required: false
           schema:
             type: string
@@ -2280,6 +2401,15 @@ paths:
             minimum: 0
           description: Index of the starting build log that should be returned with the template
         - in: query
+          name: limit
+          schema:
+            default: 100
+            type: integer
+            format: int32
+            minimum: 0
+            maximum: 100
+          description: Maximum number of logs that should be returned
+        - in: query
           name: level
           schema:
             $ref: '#/components/schemas/LogLevel'
@@ -2292,6 +2422,147 @@ paths:
                 $ref: '#/components/schemas/TemplateBuildInfo'
         '401':
           $ref: '#/components/responses/401'
+        '404':
+          $ref: '#/components/responses/404'
+        '500':
+          $ref: '#/components/responses/500'
+
+  /templates/{templateID}/builds/{buildID}/logs:
+    get:
+      description: Get template build logs
+      tags: [templates]
+      security:
+        - AccessTokenAuth: []
+        - ApiKeyAuth: []
+        - Supabase1TokenAuth: []
+      parameters:
+        - $ref: '#/components/parameters/templateID'
+        - $ref: '#/components/parameters/buildID'
+        - in: query
+          name: cursor
+          schema:
+            type: integer
+            format: int64
+            minimum: 0
+          description: Starting timestamp of the logs that should be returned in milliseconds
+        - in: query
+          name: limit
+          schema:
+            default: 100
+            type: integer
+            format: int32
+            minimum: 0
+            maximum: 100
+          description: Maximum number of logs that should be returned
+        - in: query
+          name: direction
+          schema:
+            $ref: '#/components/schemas/LogsDirection'
+        - in: query
+          name: level
+          schema:
+            $ref: '#/components/schemas/LogLevel'
+        - in: query
+          name: source
+          schema:
+            $ref: '#/components/schemas/LogsSource'
+          description: Source of the logs that should be returned from
+      responses:
+        '200':
+          description: Successfully returned the template build logs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemplateBuildLogsResponse'
+        '401':
+          $ref: '#/components/responses/401'
+        '404':
+          $ref: '#/components/responses/404'
+        '500':
+          $ref: '#/components/responses/500'
+
+  /templates/tags:
+    post:
+      description: Assign tag(s) to a template build
+      tags: [tags]
+      security:
+        - ApiKeyAuth: []
+        - Supabase1TokenAuth: []
+          Supabase2TeamAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignTemplateTagRequest'
+      responses:
+        '201':
+          description: Tag assigned successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemplateTag'
+        '400':
+          $ref: '#/components/responses/400'
+        '401':
+          $ref: '#/components/responses/401'
+        '404':
+          $ref: '#/components/responses/404'
+        '500':
+          $ref: '#/components/responses/500'
+  /templates/tags/{name}:
+    parameters:
+      - name: name
+        in: path
+        required: true
+        schema:
+          type: string
+          description: Template name in 'alias:tag' format
+    delete:
+      description: Delete a tag from a template
+      tags: [tags]
+      security:
+        - ApiKeyAuth: []
+        - Supabase1TokenAuth: []
+          Supabase2TeamAuth: []
+      responses:
+        '204':
+          description: Tag deleted successfully
+        '400':
+          $ref: '#/components/responses/400'
+        '401':
+          $ref: '#/components/responses/401'
+        '404':
+          $ref: '#/components/responses/404'
+        '500':
+          $ref: '#/components/responses/500'
+
+  /templates/aliases/{alias}:
+    get:
+      description: Check if template with given alias exists
+      tags: [templates]
+      security:
+        - ApiKeyAuth: []
+        - Supabase1TokenAuth: []
+          Supabase2TeamAuth: []
+      parameters:
+        - name: alias
+          in: path
+          required: true
+          schema:
+            type: string
+            description: Template alias
+      responses:
+        '200':
+          description: Successfully queried template by alias
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemplateAliasResponse'
+        '400':
+          $ref: '#/components/responses/400'
+        '403':
+          $ref: '#/components/responses/403'
         '404':
           $ref: '#/components/responses/404'
         '500':
@@ -2361,6 +2632,35 @@ paths:
       responses:
         '204':
           description: The node status was changed successfully
+        '401':
+          $ref: '#/components/responses/401'
+        '404':
+          $ref: '#/components/responses/404'
+        '500':
+          $ref: '#/components/responses/500'
+
+  /admin/teams/{teamID}/sandboxes/kill:
+    post:
+      summary: Kill all sandboxes for a team
+      description: Kills all sandboxes for the specified team
+      tags: [admin]
+      security:
+        - AdminTokenAuth: []
+      parameters:
+        - name: teamID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Team ID
+      responses:
+        '200':
+          description: Successfully killed sandboxes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminSandboxKillResult'
         '401':
           $ref: '#/components/responses/401'
         '404':

@@ -98,7 +98,9 @@ export class Pty {
     const requestTimeoutMs =
       opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
     const envs = opts?.envs ?? {}
-    envs.TERM = 'xterm-256color'
+    envs.TERM = envs.TERM ?? 'xterm-256color'
+    envs.LANG = envs.LANG ?? 'C.UTF-8'
+    envs.LC_ALL = envs.LC_ALL ?? 'C.UTF-8'
     const controller = new AbortController()
 
     const reqTimeout = setTimeout(() => {

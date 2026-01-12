@@ -16,11 +16,14 @@ def _get_kwargs(
     build_id: str,
     *,
     logs_offset: Union[Unset, int] = 0,
+    limit: Union[Unset, int] = 100,
     level: Union[Unset, LogLevel] = UNSET,
 ) -> dict[str, Any]:
     params: dict[str, Any] = {}
 
     params["logsOffset"] = logs_offset
+
+    params["limit"] = limit
 
     json_level: Union[Unset, str] = UNSET
     if not isinstance(level, Unset):
@@ -81,6 +84,7 @@ def sync_detailed(
     *,
     client: AuthenticatedClient,
     logs_offset: Union[Unset, int] = 0,
+    limit: Union[Unset, int] = 100,
     level: Union[Unset, LogLevel] = UNSET,
 ) -> Response[Union[Error, TemplateBuildInfo]]:
     """Get template build info
@@ -89,6 +93,7 @@ def sync_detailed(
         template_id (str):
         build_id (str):
         logs_offset (Union[Unset, int]):  Default: 0.
+        limit (Union[Unset, int]):  Default: 100.
         level (Union[Unset, LogLevel]): State of the sandbox
 
     Raises:
@@ -103,6 +108,7 @@ def sync_detailed(
         template_id=template_id,
         build_id=build_id,
         logs_offset=logs_offset,
+        limit=limit,
         level=level,
     )
 
@@ -119,6 +125,7 @@ def sync(
     *,
     client: AuthenticatedClient,
     logs_offset: Union[Unset, int] = 0,
+    limit: Union[Unset, int] = 100,
     level: Union[Unset, LogLevel] = UNSET,
 ) -> Optional[Union[Error, TemplateBuildInfo]]:
     """Get template build info
@@ -127,6 +134,7 @@ def sync(
         template_id (str):
         build_id (str):
         logs_offset (Union[Unset, int]):  Default: 0.
+        limit (Union[Unset, int]):  Default: 100.
         level (Union[Unset, LogLevel]): State of the sandbox
 
     Raises:
@@ -142,6 +150,7 @@ def sync(
         build_id=build_id,
         client=client,
         logs_offset=logs_offset,
+        limit=limit,
         level=level,
     ).parsed
 
@@ -152,6 +161,7 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient,
     logs_offset: Union[Unset, int] = 0,
+    limit: Union[Unset, int] = 100,
     level: Union[Unset, LogLevel] = UNSET,
 ) -> Response[Union[Error, TemplateBuildInfo]]:
     """Get template build info
@@ -160,6 +170,7 @@ async def asyncio_detailed(
         template_id (str):
         build_id (str):
         logs_offset (Union[Unset, int]):  Default: 0.
+        limit (Union[Unset, int]):  Default: 100.
         level (Union[Unset, LogLevel]): State of the sandbox
 
     Raises:
@@ -174,6 +185,7 @@ async def asyncio_detailed(
         template_id=template_id,
         build_id=build_id,
         logs_offset=logs_offset,
+        limit=limit,
         level=level,
     )
 
@@ -188,6 +200,7 @@ async def asyncio(
     *,
     client: AuthenticatedClient,
     logs_offset: Union[Unset, int] = 0,
+    limit: Union[Unset, int] = 100,
     level: Union[Unset, LogLevel] = UNSET,
 ) -> Optional[Union[Error, TemplateBuildInfo]]:
     """Get template build info
@@ -196,6 +209,7 @@ async def asyncio(
         template_id (str):
         build_id (str):
         logs_offset (Union[Unset, int]):  Default: 0.
+        limit (Union[Unset, int]):  Default: 100.
         level (Union[Unset, LogLevel]): State of the sandbox
 
     Raises:
@@ -212,6 +226,7 @@ async def asyncio(
             build_id=build_id,
             client=client,
             logs_offset=logs_offset,
+            limit=limit,
             level=level,
         )
     ).parsed
