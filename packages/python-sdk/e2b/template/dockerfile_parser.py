@@ -191,10 +191,20 @@ def _handle_copy_instruction(
     if current_part:
         parts.append(current_part)
 
-    if len(parts) >= 2:
-        src = parts[0]
-        dest = parts[-1]  # Last part is destination
-        template_builder.copy(src, dest)
+    # Extract --chown flag and separate from paths
+    user = None
+    non_flag_parts = []
+    for part in parts:
+        if part.startswith("--chown="):
+            user = part[8:]  # Extract value after "--chown="
+        elif not part.startswith("--"):
+            non_flag_parts.append(part)
+
+    if len(non_flag_parts) >= 2:
+        src = non_flag_parts[0]
+        dest = non_flag_parts[-1]  # Last part is destination
+
+        template_builder.copy(src, dest, user=user)
 
 
 def _handle_workdir_instruction(
