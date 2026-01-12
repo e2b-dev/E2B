@@ -124,10 +124,7 @@ export class TemplateBase
       options.onBuildLogs?.(new LogEntryStart(new Date(), 'Build started'))
       const baseTemplate = template as TemplateBase
 
-      const config = new ConnectionConfig({
-        domain: options.domain,
-        apiKey: options.apiKey,
-      })
+      const config = new ConnectionConfig(options)
       const client = new ApiClient(config)
 
       const data = await baseTemplate.build(client, options)
@@ -170,10 +167,7 @@ export class TemplateBase
     template: TemplateClass,
     options: BuildOptions
   ): Promise<BuildInfo> {
-    const config = new ConnectionConfig({
-      domain: options.domain,
-      apiKey: options.apiKey,
-    })
+    const config = new ConnectionConfig(options)
     const client = new ApiClient(config)
 
     return await (template as TemplateBase).build(client, options)
@@ -194,10 +188,7 @@ export class TemplateBase
     data: Pick<BuildInfo, 'templateId' | 'buildId'>,
     options?: GetBuildStatusOptions
   ): Promise<GetBuildStatusResponse> {
-    const config = new ConnectionConfig({
-      domain: options?.domain,
-      apiKey: options?.apiKey,
-    })
+    const config = new ConnectionConfig(options)
     const client = new ApiClient(config)
 
     return await getBuildStatus(client, {
@@ -226,10 +217,7 @@ export class TemplateBase
     alias: string,
     options?: AliasExistsOptions
   ): Promise<boolean> {
-    const config = new ConnectionConfig({
-      domain: options?.domain,
-      apiKey: options?.apiKey,
-    })
+    const config = new ConnectionConfig(options)
     const client = new ApiClient(config)
 
     return checkAliasExists(client, { alias })
