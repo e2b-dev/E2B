@@ -43,7 +43,6 @@ import {
   readDockerignore,
   readGCPServiceAccountJSON,
 } from './utils'
-import path from 'node:path'
 
 /**
  * Base class for building E2B sandbox templates.
