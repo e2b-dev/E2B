@@ -1,6 +1,7 @@
 import json
 from typing import Dict, List, Optional, Union, Literal
 from pathlib import Path
+import os
 
 
 from e2b.exceptions import BuildException
@@ -21,6 +22,7 @@ from e2b.template.utils import (
     read_dockerignore,
     read_gcp_service_account_json,
     get_caller_frame,
+    is_path_outside_context,
 )
 from types import TracebackType
 
@@ -65,8 +67,24 @@ class TemplateBuilder:
         srcs = [src] if isinstance(src, (str, Path)) else src
 
         for src_item in srcs:
+            norm_path = os.path.normpath(str(src_item))
+            if is_path_outside_context(norm_path):
+                caller_frame = get_caller_frame(STACK_TRACE_DEPTH - 1)
+                stack_trace = None
+                if caller_frame is not None:
+                    stack_trace = TracebackType(
+                        tb_next=None,
+                        tb_frame=caller_frame,
+                        tb_lasti=caller_frame.f_lasti,
+                        tb_lineno=caller_frame.f_lineno,
+                    )
+
+                raise ValueError(
+                    f"Source path {src_item} is outside of the context directory."
+                ).with_traceback(stack_trace)
+
             args = [
-                str(src_item),
+                norm_path,
                 str(dest),
                 user or "",
                 pad_octal(mode) if mode else "",

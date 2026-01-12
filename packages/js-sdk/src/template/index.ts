@@ -38,10 +38,12 @@ import {
   calculateFilesHash,
   getCallerDirectory,
   getCallerFrame,
+  isPathOutsideContext,
   padOctal,
   readDockerignore,
   readGCPServiceAccountJSON,
 } from './utils'
+import path from 'node:path'
 
 /**
  * Base class for building E2B sandbox templates.
@@ -375,8 +377,20 @@ export class TemplateBase
     const srcs = Array.isArray(src) ? src : [src]
 
     for (const src of srcs) {
+      const normPath = path.normalize(src.toString())
+      if (isPathOutsideContext(normPath)) {
+        const error = new Error(
+          `Source path ${src} is outside of the context directory.`
+        )
+        const stackTrace = getCallerFrame(STACK_TRACE_DEPTH - 1)
+        if (stackTrace) {
+          error.stack = stackTrace
+        }
+        throw error
+      }
+
       const args = [
-        src.toString(),
+        normPath,
         dest.toString(),
         options?.user ?? '',
         options?.mode ? padOctal(options.mode) : '',

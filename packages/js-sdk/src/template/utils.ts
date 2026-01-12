@@ -106,23 +106,7 @@ export async function calculateFilesHash(
   resolveSymlinks: boolean,
   stackTrace: string | undefined
 ): Promise<string> {
-  const normPath = path.normalize(src)
-  if (
-    path.isAbsolute(normPath) ||
-    normPath === '..' ||
-    normPath.startsWith('../') ||
-    normPath.startsWith('..\\')
-  ) {
-    const error = new Error(
-      `Source path ${src} is outside of the context directory.`
-    )
-    if (stackTrace) {
-      error.stack = stackTrace
-    }
-    throw error
-  }
-
-  const srcPath = path.join(contextPath, normPath)
+  const srcPath = path.join(contextPath, src)
   const hash = crypto.createHash('sha256')
   const content = `COPY ${src} ${dest}`
 
@@ -384,4 +368,17 @@ export function readGCPServiceAccountJSON(
     return fs.readFileSync(path.join(contextPath, pathOrContent), 'utf-8')
   }
   return JSON.stringify(pathOrContent)
+}
+
+export function isPathOutsideContext(src: string): boolean {
+  // Check for Windows drive letters (e.g., C:foo, D:\path).
+  // Drive-relative paths like 'C:foo' bypass path.isAbsolute()
+  const hasDriveLetter = /^[a-zA-Z]:/.test(src)
+  return (
+    path.isAbsolute(src) ||
+    hasDriveLetter ||
+    src === '..' ||
+    src.startsWith('../') ||
+    src.startsWith('..\\')
+  )
 }

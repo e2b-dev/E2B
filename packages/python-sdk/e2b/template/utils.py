@@ -119,17 +119,6 @@ def calculate_files_hash(
 
     :raises ValueError: If no files match the source pattern
     """
-    # check that src is not an absolute path or a path outside of the context directory
-    norm_path = os.path.normpath(src)
-    if (
-        os.path.isabs(norm_path)
-        or norm_path == ".."
-        or norm_path.startswith("../")
-        or norm_path.startswith("..\\")
-    ):
-        raise ValueError(
-            f"Source path {src} is outside of the context directory."
-        ).with_traceback(stack_trace)
     src_path = os.path.join(context_path, src)
     hash_obj = hashlib.sha256()
     content = f"COPY {src} {dest}"
@@ -329,3 +318,18 @@ def read_gcp_service_account_json(
             return f.read()
     else:
         return json.dumps(path_or_content)
+
+
+def is_path_outside_context(src: str) -> bool:
+    """
+    Check if a path is outside of the context directory.
+
+    :param src: Path to check
+    :return: True if the path is outside of the context directory, False otherwise
+    """
+    return (
+        os.path.isabs(src)
+        or src == ".."
+        or src.startswith("../")
+        or src.startswith("..\\")
+    )
