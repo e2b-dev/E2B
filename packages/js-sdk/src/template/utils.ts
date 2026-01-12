@@ -373,12 +373,13 @@ export function readGCPServiceAccountJSON(
 export function isPathOutsideContext(src: string): boolean {
   // Check for Windows drive letters (e.g., C:foo, D:\path).
   // Drive-relative paths like 'C:foo' bypass path.isAbsolute()
-  const hasDriveLetter = /^[a-zA-Z]:/.test(src)
+  const normPath = path.normalize(src)
+  const hasDriveLetter = /^[a-zA-Z]:/.test(normPath)
   return (
-    path.isAbsolute(src) ||
+    path.isAbsolute(normPath) ||
     hasDriveLetter ||
-    src === '..' ||
-    src.startsWith('../') ||
-    src.startsWith('..\\')
+    normPath === '..' ||
+    normPath.startsWith('../') ||
+    normPath.startsWith('..\\')
   )
 }

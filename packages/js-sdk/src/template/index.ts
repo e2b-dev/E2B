@@ -377,8 +377,7 @@ export class TemplateBase
     const srcs = Array.isArray(src) ? src : [src]
 
     for (const src of srcs) {
-      const normPath = path.normalize(src.toString())
-      if (isPathOutsideContext(normPath)) {
+      if (isPathOutsideContext(src.toString())) {
         const error = new Error(
           `Source path ${src} is outside of the context directory.`
         )
@@ -390,7 +389,7 @@ export class TemplateBase
       }
 
       const args = [
-        normPath,
+        src.toString(),
         dest.toString(),
         options?.user ?? '',
         options?.mode ? padOctal(options.mode) : '',

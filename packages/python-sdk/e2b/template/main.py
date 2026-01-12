@@ -67,8 +67,7 @@ class TemplateBuilder:
         srcs = [src] if isinstance(src, (str, Path)) else src
 
         for src_item in srcs:
-            norm_path = os.path.normpath(str(src_item))
-            if is_path_outside_context(norm_path):
+            if is_path_outside_context(str(src_item)):
                 caller_frame = get_caller_frame(STACK_TRACE_DEPTH - 1)
                 stack_trace = None
                 if caller_frame is not None:
@@ -84,7 +83,7 @@ class TemplateBuilder:
                 ).with_traceback(stack_trace)
 
             args = [
-                norm_path,
+                str(src_item),
                 str(dest),
                 user or "",
                 pad_octal(mode) if mode else "",

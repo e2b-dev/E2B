@@ -327,9 +327,10 @@ def is_path_outside_context(src: str) -> bool:
     :param src: Path to check
     :return: True if the path is outside of the context directory, False otherwise
     """
+    norm_path = os.path.normpath(src)
     return (
-        os.path.isabs(src)
-        or src == ".."
-        or src.startswith("../")
-        or src.startswith("..\\")
+        os.path.isabs(norm_path)
+        or norm_path == ".."
+        or norm_path.startswith("../")
+        or norm_path.startswith("..\\")
     )
