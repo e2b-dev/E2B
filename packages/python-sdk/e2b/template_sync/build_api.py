@@ -20,7 +20,7 @@ from e2b.api.client.models import (
     TemplateBuild,
     Error,
 )
-from e2b.exceptions import BuildException, FileUploadException
+from e2b.exceptions import BuildException, FileUploadException, TemplateException
 from e2b.template.logger import LogEntry
 from e2b.template.types import TemplateType
 from e2b.template.utils import get_build_step_index, tar_file_stream
@@ -226,7 +226,7 @@ def check_alias_exists(client: AuthenticatedClient, alias: str) -> bool:
 
     # Handle other errors
     if res.status_code >= 300:
-        raise handle_api_exception(res, BuildException)
+        raise handle_api_exception(res, TemplateException)
 
     # If we get Ok with data, you are owner and the alias exists
     return res.parsed is not None
