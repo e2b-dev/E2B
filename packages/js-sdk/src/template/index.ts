@@ -232,7 +232,7 @@ export class TemplateBase
     })
     const client = new ApiClient(config)
 
-    return await checkAliasExists(client, { alias })
+    return checkAliasExists(client, { alias })
   }
 
   fromDebianImage(variant: string = 'stable'): TemplateBuilder {
