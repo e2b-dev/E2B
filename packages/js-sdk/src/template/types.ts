@@ -2,6 +2,7 @@ import { ReadyCmd } from './readycmd'
 import type { PathLike } from 'node:fs'
 import type { LogEntry } from './logger'
 import type { McpServer } from '../sandbox/mcp'
+import { ConnectionOpts } from '../connectionConfig'
 
 /**
  * Options for creating a new template.
@@ -48,23 +49,9 @@ export type BasicBuildOptions = {
 }
 
 /**
- * Authentication options for E2B API.
- */
-export type AuthOptions = {
-  /**
-   * E2B API key for authentication.
-   */
-  apiKey?: string
-  /**
-   * Domain of the E2B API.
-   */
-  domain?: string
-}
-
-/**
  * Options for building a template with authentication.
  */
-export type BuildOptions = AuthOptions & BasicBuildOptions
+export type BuildOptions = ConnectionOpts & BasicBuildOptions
 
 /**
  * Information about a built template.
@@ -78,12 +65,12 @@ export type BuildInfo = {
 /**
  * Response from getting build status.
  */
-export type GetBuildStatusOptions = AuthOptions & { logsOffset?: number }
+export type GetBuildStatusOptions = ConnectionOpts & { logsOffset?: number }
 
 /**
  * Options for checking if a template alias exists.
  */
-export type AliasExistsOptions = AuthOptions
+export type AliasExistsOptions = ConnectionOpts
 
 /**
  * Types of instructions that can be used in a template.
