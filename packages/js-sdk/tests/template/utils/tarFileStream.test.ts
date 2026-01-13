@@ -4,7 +4,7 @@ import { createWriteStream } from 'fs'
 import { join } from 'path'
 import { tmpdir } from 'os'
 import { pipeline } from 'stream/promises'
-import { tarFileStream } from '../../../src/template/utils'
+import { tarFileStream, toPosixPath } from '../../../src/template/utils'
 import * as tar from 'tar'
 import { ReadEntry } from 'tar'
 
@@ -225,5 +225,43 @@ describe('tarFileStream', () => {
     const link = members.get('link.txt')!
     expect(link.type).toBe('SymbolicLink')
     expect(link.linkpath).toBe('original.txt')
+  })
+
+  test('should handle absolute paths', async () => {
+    // Create test file
+    const filePath = join(testDir, 'file.txt')
+    await writeFile(filePath, 'content')
+
+    // Use absolute path pattern
+    const absPattern = join(testDir, '*.txt')
+    const stream = await tarFileStream(absPattern, testDir, [], false)
+    const contents = await extractTarContents(stream)
+
+    // For absolute paths, the full path is preserved in the archive
+    // Tar uses POSIX format (forward slashes, no drive letter, no leading slash)
+    const expectedPath = toPosixPath(filePath)
+    expect(contents.has(expectedPath)).toBe(true)
+    expect(contents.get(expectedPath)?.toString()).toBe('content')
+  })
+
+  test('should handle parent directory paths', async () => {
+    // Create a subdirectory structure
+    const subdir = join(testDir, 'project', 'src')
+    await mkdir(subdir, { recursive: true })
+
+    // Create a file in the parent directory
+    const parentFile = join(testDir, 'project', 'config.txt')
+    await writeFile(parentFile, 'config content')
+
+    // Use .. pattern from the subdirectory context
+    const stream = await tarFileStream('../config.txt', subdir, [], false)
+    const contents = await extractTarContents(stream)
+
+    // For .. paths, the full resolved path should be used in the archive
+    // Tar uses POSIX format (forward slashes, no drive letter, no leading slash)
+    const resolvedPath = join(testDir, 'project', 'config.txt')
+    const expectedPath = toPosixPath(resolvedPath)
+    expect(contents.has(expectedPath)).toBe(true)
+    expect(contents.get(expectedPath)?.toString()).toBe('config content')
   })
 })

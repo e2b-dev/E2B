@@ -4,6 +4,7 @@ import path from 'node:path'
 import { dynamicImport, dynamicRequire } from '../utils'
 import { BASE_STEP_NAME, FINALIZE_STEP_NAME } from './consts'
 import type { Path } from 'glob'
+import type { TarSource } from 'modern-tar/fs'
 
 /**
  * Read and parse a .dockerignore file.
@@ -34,6 +35,32 @@ function normalizePath(path: string): string {
 }
 
 /**
+ * Convert a filesystem path to POSIX format for use in tar archives and Dockerfiles.
+ *
+ * Tar archives and Docker expect POSIX-style paths (forward slashes).
+ * On Windows, the drive letter (e.g., C:) is stripped and backslashes are converted.
+ *
+ * @param fsPath - The filesystem path to convert
+ * @returns The POSIX-formatted path suitable for tar/Docker
+ *
+ * @example
+ * ```ts
+ * toPosixPath('D:\\a\\E2B\\file.txt') // Returns 'a/E2B/file.txt'
+ * toPosixPath('/home/user/file.txt') // Returns 'home/user/file.txt'
+ * ```
+ */
+export function toPosixPath(fsPath: string): string {
+  // Normalize to forward slashes (POSIX format used by tar)
+  let posixPath = fsPath.replace(/\\/g, '/')
+  // Strip Windows drive letter (e.g., C:)
+  if (posixPath.length >= 2 && posixPath[1] === ':') {
+    posixPath = posixPath.slice(2)
+  }
+  // Strip leading slash
+  return posixPath.replace(/^\//, '')
+}
+
+/**
  * Get all files for a given path and ignore patterns.
  *
  * @param src Path to the source directory
@@ -50,11 +77,18 @@ export async function getAllFilesInPath(
   const { glob } = await dynamicImport<typeof import('glob')>('glob')
   const files = new Map<string, Path>()
 
-  const globFiles = await glob(src, {
+  // For absolute paths, don't use cwd as glob will handle them directly
+  // For relative paths, use cwd to resolve relative to contextPath
+  const isAbsoluteSrc = path.isAbsolute(src)
+
+  // Normalize path separators for glob (glob expects forward slashes even on Windows)
+  const globPattern = normalizePath(src)
+  const cwd = isAbsoluteSrc ? process.cwd() : contextPath
+
+  const globFiles = await glob(globPattern, {
     ignore: ignorePatterns,
     withFileTypes: true,
-    // this is required so that the ignore pattern is relative to the file path
-    cwd: contextPath,
+    cwd,
   })
 
   for (const file of globFiles) {
@@ -63,16 +97,11 @@ export async function getAllFilesInPath(
       if (includeDirectories) {
         files.set(file.fullpath(), file)
       }
-      const dirPattern = normalizePath(
-        // When the matched directory is '.', `file.relative()` can be an empty string.
-        // In that case, we want to match all files under the current directory instead of
-        // creating an absolute glob like '/**/*' which would traverse the entire filesystem.
-        path.join(file.relative() || '.', '**/*')
-      )
+      const dirPattern = normalizePath(path.join(file.fullpath(), '**/*'))
       const dirFiles = await glob(dirPattern, {
         ignore: ignorePatterns,
         withFileTypes: true,
-        cwd: contextPath,
+        cwd,
       })
       dirFiles.forEach((f) => files.set(f.fullpath(), f))
     } else {
@@ -255,38 +284,66 @@ export function padOctal(mode: number): string {
 /**
  * Create a compressed tar stream of files matching a pattern.
  *
- * @param fileName Glob pattern for files to include
- * @param fileContextPath Base directory for resolving file paths
+ * @param filePath Original file path pattern (may include .. for outside-context files)
+ * @param fileContextPath Base directory for resolving relative paths
  * @param ignorePatterns Ignore patterns to exclude from the archive
  * @param resolveSymlinks Whether to follow symbolic links
  * @returns A readable stream of the gzipped tar archive
  */
 export async function tarFileStream(
-  fileName: string,
+  filePath: string,
   fileContextPath: string,
   ignorePatterns: string[],
   resolveSymlinks: boolean
 ) {
-  const { create } = await dynamicImport<typeof import('tar')>('tar')
+  const modernTar =
+    dynamicRequire<typeof import('modern-tar/fs')>('modern-tar/fs')
+  const zlib = dynamicRequire<typeof import('node:zlib')>('node:zlib')
 
   const allFiles = await getAllFilesInPath(
-    fileName,
+    filePath,
     fileContextPath,
     ignorePatterns,
     true
   )
 
-  const filePaths = allFiles.map((file) => file.relativePosix())
+  const sources: TarSource[] = allFiles.map((file) => {
+    const fullPath = file.fullpath()
+    const relativePath = file.relativePosix()
 
-  return create(
-    {
-      gzip: true,
-      cwd: fileContextPath,
-      follow: resolveSymlinks,
-      noDirRecurse: true,
-    },
-    filePaths
-  )
+    const asAbsolutePath =
+      path.isAbsolute(filePath) || filePath.startsWith('..')
+    const targetPath = asAbsolutePath ? toPosixPath(fullPath) : relativePath
+
+    if (file.isDirectory()) {
+      return {
+        type: 'directory' as const,
+        source: fullPath,
+        target: targetPath,
+      } as const
+    }
+
+    return {
+      type: 'file' as const,
+      source: fullPath,
+      target: targetPath,
+    } as const
+  })
+
+  // packTar returns a Node.js Readable stream
+  const tarStream = modernTar.packTar(sources, {
+    dereference: resolveSymlinks,
+  })
+
+  // Compress with gzip
+  const gzipStream = zlib.createGzip()
+
+  // Forward errors from tarStream to gzipStream to prevent hanging on errors
+  // (e.g., file read failure, permission issues)
+  tarStream.on('error', (err) => gzipStream.destroy(err))
+  tarStream.pipe(gzipStream)
+
+  return gzipStream
 }
 
 /**
@@ -298,14 +355,14 @@ export async function tarFileStream(
  * @returns Object containing the content length and upload stream
  */
 export async function tarFileStreamUpload(
-  fileName: string,
+  filePath: string,
   fileContextPath: string,
   ignorePatterns: string[],
   resolveSymlinks: boolean
 ) {
   // First pass: calculate the compressed size
   const sizeCalculationStream = await tarFileStream(
-    fileName,
+    filePath,
     fileContextPath,
     ignorePatterns,
     resolveSymlinks
@@ -318,7 +375,7 @@ export async function tarFileStreamUpload(
   return {
     contentLength,
     uploadStream: await tarFileStream(
-      fileName,
+      filePath,
       fileContextPath,
       ignorePatterns,
       resolveSymlinks
@@ -368,4 +425,26 @@ export function readGCPServiceAccountJSON(
     return fs.readFileSync(path.join(contextPath, pathOrContent), 'utf-8')
   }
   return JSON.stringify(pathOrContent)
+}
+
+/**
+ * Rewrite the source path to the target path.
+ *
+ * For paths outside the context directory (starting with ..) or absolute paths,
+ * returns the full resolved path in POSIX format for Docker/tar compatibility.
+ *
+ * @param src Source path
+ * @param fileContextPath Base directory for resolving relative paths
+ * @returns The rewritten source path in POSIX format
+ */
+export function rewriteSrc(src: string, fileContextPath: string): string {
+  // For absolute paths, convert to POSIX format for Docker/tar compatibility
+  if (path.isAbsolute(src)) {
+    return toPosixPath(src)
+  }
+  // For paths outside of the context directory, return the full resolved path in POSIX format
+  if (src.startsWith('..')) {
+    return toPosixPath(path.resolve(fileContextPath, src))
+  }
+  return src
 }
