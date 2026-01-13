@@ -378,8 +378,12 @@ export function readGCPServiceAccountJSON(
  */
 export function isPathOutsideContext(src: string): boolean {
   const normPath = path.normalize(src)
+
+  // on Windows, Node's path.isAbsolute() returns false for rooted paths (e.g., /foo or \foo) which lack a drive letter
+  const isRootedPath = normPath.startsWith('/') || normPath.startsWith('\\')
   return (
     path.isAbsolute(normPath) ||
+    isRootedPath ||
     normPath === '..' ||
     normPath.startsWith('../') ||
     normPath.startsWith('..\\')
