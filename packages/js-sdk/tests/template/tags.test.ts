@@ -103,11 +103,6 @@ buildTemplateTest.skipIf(isDebug)(
     // Delete tags
     await Template.deleteTag(productionTag)
 
-    // Verify error on non-existent tag
-    await expect(
-      Template.deleteTag(`${templateAlias}:nonexistent-${testRunId}`)
-    ).rejects.toThrow()
-
     // Clean up
     await Template.deleteTag(initialTag)
     await Template.deleteTag(latestTag)

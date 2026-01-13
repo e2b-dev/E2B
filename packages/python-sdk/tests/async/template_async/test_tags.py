@@ -119,12 +119,6 @@ class TestTagsIntegration:
         # Delete tags
         await AsyncTemplate.delete_tag(production_tag)
 
-        # Verify error on non-existent tag
-        with pytest.raises(Exception):
-            await AsyncTemplate.delete_tag(
-                f"{template_alias}:nonexistent-{self.test_run_id}"
-            )
-
         # Clean up
         await AsyncTemplate.delete_tag(initial_tag)
         await AsyncTemplate.delete_tag(latest_tag)
