@@ -57,7 +57,7 @@ class Template(TemplateBase):
             template._template._force = True
 
         # Create template
-        template_identifier = ', '.join(names) if names else alias or 'unknown'
+        template_identifier = ", ".join(names) if names else alias or "unknown"
         if on_build_logs:
             on_build_logs(
                 LogEntry(

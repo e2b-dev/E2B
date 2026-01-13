@@ -43,7 +43,9 @@ failure_map: dict[str, Optional[int]] = {
 
 @pytest.fixture(autouse=True)
 def mock_template_build(monkeypatch):
-    async def mock_request_build(client, cpu_count: int, memory_mb: int, names=None, alias=None):
+    async def mock_request_build(
+        client, cpu_count: int, memory_mb: int, names=None, alias=None
+    ):
         template_id = names[0] if names else alias or "unknown"
         return SimpleNamespace(template_id=template_id, build_id=str(uuid4()))
 
