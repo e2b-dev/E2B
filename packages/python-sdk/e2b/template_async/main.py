@@ -5,7 +5,6 @@ from typing_extensions import Unpack
 
 from e2b.api.client.client import AuthenticatedClient
 from e2b.connection_config import ApiParams, ConnectionConfig
-from e2b.exceptions import BuildException
 from e2b.template.consts import RESOLVE_SYMLINKS
 from e2b.template.logger import LogEntry, LogEntryEnd, LogEntryStart
 from e2b.template.main import TemplateBase, TemplateClass
@@ -35,41 +34,45 @@ class AsyncTemplate(TemplateBase):
     async def _build(
         template: TemplateClass,
         api_client: AuthenticatedClient,
-        names: List[str],
         cpu_count: int = 2,
         memory_mb: int = 1024,
         skip_cache: bool = False,
         on_build_logs: Optional[Callable[[LogEntry], None]] = None,
+        names: Optional[List[str]] = None,
+        alias: Optional[str] = None,
     ) -> BuildInfo:
         """
         Internal implementation of the template build process
 
         :param template: The template to build
         :param api_client: Authenticated API client
-        :param names: Names for the template in 'alias:tag' format
         :param cpu_count: Number of CPUs allocated to the sandbox
         :param memory_mb: Amount of memory in MB allocated to the sandbox
         :param skip_cache: If True, forces a complete rebuild ignoring cache
         :param on_build_logs: Callback function to receive build logs during the build process
+        :param names: Names for the template in 'alias:tag' format
+        :param alias: (Deprecated) Alias name for the template
         """
         if skip_cache:
             template._template._force = True
 
         # Create template
+        template_identifier = ', '.join(names) if names else alias or 'unknown'
         if on_build_logs:
             on_build_logs(
                 LogEntry(
                     timestamp=datetime.now(),
                     level="info",
-                    message=f"Requesting build for template: {', '.join(names)}",
+                    message=f"Requesting build for template: {template_identifier}",
                 )
             )
 
         response = await request_build(
             api_client,
-            names=names,
             cpu_count=cpu_count,
             memory_mb=memory_mb,
+            names=names,
+            alias=alias,
         )
 
         template_id = response.template_id
@@ -218,16 +221,13 @@ class AsyncTemplate(TemplateBase):
         await AsyncTemplate.build(template, alias='my-python-env')
         ```
         """
-        # Normalize names parameter
+        # Normalize names to list if string provided
+        names_list: Optional[List[str]] = None
         if names is not None:
             if isinstance(names, str):
                 names_list = [names]
             else:
                 names_list = names
-        elif alias is not None:
-            names_list = [alias]
-        else:
-            raise BuildException("Either names or alias must be provided")
 
         try:
             if on_build_logs:
@@ -248,11 +248,12 @@ class AsyncTemplate(TemplateBase):
             data = await AsyncTemplate._build(
                 template,
                 api_client,
-                names_list,
-                cpu_count,
-                memory_mb,
-                skip_cache,
-                on_build_logs,
+                cpu_count=cpu_count,
+                memory_mb=memory_mb,
+                skip_cache=skip_cache,
+                on_build_logs=on_build_logs,
+                names=names_list,
+                alias=alias,
             )
 
             if on_build_logs:
@@ -327,16 +328,13 @@ class AsyncTemplate(TemplateBase):
         build_info = await AsyncTemplate.build_in_background(template, alias='my-python-env')
         ```
         """
-        # Normalize names parameter
+        # Normalize names to list if string provided
+        names_list: Optional[List[str]] = None
         if names is not None:
             if isinstance(names, str):
                 names_list = [names]
             else:
                 names_list = names
-        elif alias is not None:
-            names_list = [alias]
-        else:
-            raise BuildException("Either names or alias must be provided")
 
         config = ConnectionConfig(**opts)
         api_client = get_api_client(
@@ -348,11 +346,12 @@ class AsyncTemplate(TemplateBase):
         return await AsyncTemplate._build(
             template,
             api_client,
-            names_list,
-            cpu_count,
-            memory_mb,
-            skip_cache,
-            on_build_logs,
+            cpu_count=cpu_count,
+            memory_mb=memory_mb,
+            skip_cache=skip_cache,
+            on_build_logs=on_build_logs,
+            names=names_list,
+            alias=alias,
         )
 
     @staticmethod

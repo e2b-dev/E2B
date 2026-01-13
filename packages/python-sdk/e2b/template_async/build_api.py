@@ -34,14 +34,16 @@ from e2b.template.utils import get_build_step_index, tar_file_stream
 
 async def request_build(
     client: AuthenticatedClient,
-    names: List[str],
     cpu_count: int,
     memory_mb: int,
+    names: Optional[List[str]] = None,
+    alias: Optional[str] = None,
 ):
     res = await post_v3_templates.asyncio_detailed(
         client=client,
         body=TemplateBuildRequestV3(
             names=names,
+            alias=alias,
             cpu_count=cpu_count,
             memory_mb=memory_mb,
         ),

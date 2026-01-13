@@ -44,10 +44,8 @@ export async function requestBuild(
 ) {
   const requestBuildRes = await client.api.POST('/v3/templates', {
     body: {
-      // Use names if provided, otherwise convert alias to names array
-      names: names ?? (alias ? [alias] : undefined),
-      // Keep alias for backward compat with older API versions
-      alias: !names ? alias : undefined,
+      names,
+      alias,
       cpuCount,
       memoryMB,
     },
