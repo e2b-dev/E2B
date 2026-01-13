@@ -31,36 +31,62 @@ export function readDockerignore(contextPath: string): string[] {
  * @returns The normalized path
  */
 export function normalizePath(path: string): string {
-  // Normalize the path (resolve . and .., remove redundant slashes)
-  let normPath = path
-    .replace(/\\/g, '/') // Convert backslashes to forward slashes
-    .replace(/\/+/g, '/') // Replace multiple slashes with single slash
-    .replace(/\/\.\//g, '/') // Remove /./ segments
-    .replace(/\/\.$/, '') // Remove trailing /.
+  if (!path || path === '.') {
+    return '.'
+  }
 
-  // Handle ../ segments
-  const parts = normPath.split('/')
-  const stack = []
+  // Detect Windows path (drive letter or UNC path)
+  const isWindows = /^[a-zA-Z]:/.test(path) || path.startsWith('\\\\')
+  const separator = isWindows ? '\\' : '/'
+
+  // Extract drive letter if present (e.g., 'C:')
+  let driveLetter = ''
+  let workingPath = path
+
+  if (/^[a-zA-Z]:/.test(path)) {
+    driveLetter = path.substring(0, 2)
+    workingPath = path.substring(2)
+  }
+
+  // Check if path is absolute
+  const isAbsolute = workingPath.startsWith('/') || workingPath.startsWith('\\')
+
+  // Normalize separators and split
+  const normalizedPath = workingPath.replace(/[\\/]+/g, '/')
+  const parts = normalizedPath.split('/').filter((part) => part && part !== '.')
+
+  const normalized: string[] = []
 
   for (const part of parts) {
-    if (part === '..' && stack.length > 0 && stack[stack.length - 1] !== '..') {
-      stack.pop()
-    } else if (part !== '.' && part !== '') {
-      stack.push(part)
-    } else if (part === '' && stack.length === 0) {
-      // Preserve leading slash for absolute paths
-      stack.push(part)
+    if (part === '..') {
+      // Go up one directory if possible (but not past root for absolute paths)
+      if (normalized.length > 0 && normalized[normalized.length - 1] !== '..') {
+        normalized.pop()
+      } else if (!isAbsolute) {
+        // For relative paths, keep the '..' if we can't go up further
+        normalized.push('..')
+      }
+    } else {
+      normalized.push(part)
     }
   }
 
-  normPath = stack.join('/')
+  // Build the final path
+  let result = normalized.join('/')
 
-  // Strip drive letter if present (e.g., C:/)
-  if (normPath.length > 1 && normPath[1] === ':') {
-    normPath = normPath.slice(2)
+  // Add drive letter back if present
+  if (driveLetter) {
+    result =
+      driveLetter + (isAbsolute ? '\\' : '') + result.replace(/\//g, '\\')
+  } else if (isAbsolute) {
+    result = separator + result.replace(/\//g, separator)
+  } else {
+    // For relative paths, use appropriate separator
+    result = result.replace(/\//g, separator)
   }
 
-  return normPath
+  // Return '.' for empty relative paths
+  return result || '.'
 }
 
 /**
