@@ -3,7 +3,7 @@ from unittest.mock import patch
 
 import pytest
 
-from e2b import TagInfo, Template, default_build_logger
+from e2b import TagInfo, Template
 
 
 class TestAssignTag:
@@ -78,29 +78,21 @@ class TestDeleteTag:
             Template.delete_tag("nonexistent:tag")
 
 
-# Integration tests - run with E2B_INTEGRATION_TEST=1
+# Integration tests
 class TestTagsIntegration:
     """Integration tests for Template tags functionality."""
 
     test_run_id = uuid.uuid4().hex[:8]
 
-    @pytest.mark.integration
-    @pytest.mark.timeout(300)
-    def test_build_template_with_tags_assign_and_delete(self):
+    @pytest.mark.skip_debug()
+    def test_build_template_with_tags_assign_and_delete(self, build):
         """Test building a template with tags, assigning new tags, and deleting."""
         template_alias = f"e2b-tags-test-{self.test_run_id}"
         initial_tag = f"{template_alias}:v1.0"
 
         # Build a template with initial tag
         template = Template().from_base_image()
-        build_info = Template.build(
-            template,
-            initial_tag,
-            cpu_count=1,
-            memory_mb=1024,
-            skip_cache=True,
-            on_build_logs=default_build_logger(),
-        )
+        build_info = build(template, name=initial_tag)
 
         assert build_info.build_id
         assert build_info.template_id
@@ -126,21 +118,14 @@ class TestTagsIntegration:
         Template.delete_tag(initial_tag)
         Template.delete_tag(latest_tag)
 
-    @pytest.mark.integration
-    @pytest.mark.timeout(300)
-    def test_assign_single_tag_to_existing_template(self):
+    @pytest.mark.skip_debug()
+    def test_assign_single_tag_to_existing_template(self, build):
         """Test assigning a single tag (not array) to an existing template."""
         template_alias = f"e2b-single-tag-{self.test_run_id}"
         initial_tag = f"{template_alias}:v1.0"
 
         template = Template().from_base_image()
-        Template.build(
-            template,
-            initial_tag,
-            cpu_count=1,
-            memory_mb=1024,
-            skip_cache=True,
-        )
+        build(template, name=initial_tag)
 
         # Assign single tag (not array)
         stable_tag = f"{template_alias}:stable"

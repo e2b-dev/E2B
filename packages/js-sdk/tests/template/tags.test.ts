@@ -4,8 +4,8 @@ import { afterAll, afterEach, beforeAll, describe, expect, test } from 'vitest'
 import { http, HttpResponse } from 'msw'
 import { setupServer } from 'msw/node'
 
-import { defaultBuildLogger, Template } from '../../src'
-import { isIntegrationTest } from '../setup'
+import { Template } from '../../src'
+import { buildTemplateTest, isDebug } from '../setup'
 
 // Mock handlers for tag API endpoints
 const mockHandlers = [
@@ -29,118 +29,110 @@ const mockHandlers = [
 
 const server = setupServer(...mockHandlers)
 
-beforeAll(() => server.listen({ onUnhandledRequest: 'error' }))
-afterAll(() => server.close())
-afterEach(() => server.resetHandlers())
+// Unit tests with mock server
+describe('Template tags unit tests', () => {
+  beforeAll(() => server.listen({ onUnhandledRequest: 'error' }))
+  afterAll(() => server.close())
+  afterEach(() => server.resetHandlers())
 
-describe('Template.assignTag', () => {
-  test('assigns a single tag', async () => {
-    const result = await Template.assignTag(
-      'my-template:v1.0',
-      'my-template:production'
-    )
-    expect(result.buildId).toBe('mock-build-id')
-    expect(result.tags).toContain('my-template:production')
-  })
+  describe('Template.assignTag', () => {
+    test('assigns a single tag', async () => {
+      const result = await Template.assignTag(
+        'my-template:v1.0',
+        'my-template:production'
+      )
+      expect(result.buildId).toBe('mock-build-id')
+      expect(result.tags).toContain('my-template:production')
+    })
 
-  test('assigns multiple tags', async () => {
-    const result = await Template.assignTag('my-template:v1.0', [
-      'my-template:production',
-      'my-template:stable',
-    ])
-    expect(result.buildId).toBe('mock-build-id')
-    expect(result.tags).toContain('my-template:production')
-    expect(result.tags).toContain('my-template:stable')
-  })
-})
-
-describe('Template.deleteTag', () => {
-  test('deletes a tag', async () => {
-    // Should not throw
-    await expect(
-      Template.deleteTag('my-template:production')
-    ).resolves.toBeUndefined()
-  })
-
-  test('handles 404 error for nonexistent tag', async () => {
-    await expect(Template.deleteTag('nonexistent:tag')).rejects.toThrow()
-  })
-})
-
-// Integration tests - run with E2B_INTEGRATION_TEST=1
-describe.skipIf(!isIntegrationTest)('Template tags integration', () => {
-  const testRunId = randomUUID().slice(0, 8)
-
-  test(
-    'build template with tags, assign and delete',
-    async () => {
-      const templateAlias = `e2b-tags-test-${testRunId}`
-      const initialTag = `${templateAlias}:v1.0`
-
-      // Build a template with initial tag
-      const template = Template().fromBaseImage()
-      const buildInfo = await Template.build(template, initialTag, {
-        cpuCount: 1,
-        memoryMB: 1024,
-        skipCache: true,
-        onBuildLogs: defaultBuildLogger(),
-      })
-
-      expect(buildInfo.buildId).toBeTruthy()
-      expect(buildInfo.templateId).toBeTruthy()
-
-      // Assign additional tags
-      const productionTag = `${templateAlias}:production`
-      const latestTag = `${templateAlias}:latest`
-
-      const tagInfo = await Template.assignTag(initialTag, [
-        productionTag,
-        latestTag,
+    test('assigns multiple tags', async () => {
+      const result = await Template.assignTag('my-template:v1.0', [
+        'my-template:production',
+        'my-template:stable',
       ])
+      expect(result.buildId).toBe('mock-build-id')
+      expect(result.tags).toContain('my-template:production')
+      expect(result.tags).toContain('my-template:stable')
+    })
+  })
 
-      expect(tagInfo.buildId).toBeTruthy()
-      expect(tagInfo.tags).toContain(productionTag)
-      expect(tagInfo.tags).toContain(latestTag)
-
-      // Delete tags
-      await Template.deleteTag(productionTag)
-
-      // Verify error on non-existent tag
+  describe('Template.deleteTag', () => {
+    test('deletes a tag', async () => {
+      // Should not throw
       await expect(
-        Template.deleteTag(`${templateAlias}:nonexistent-${testRunId}`)
-      ).rejects.toThrow()
+        Template.deleteTag('my-template:production')
+      ).resolves.toBeUndefined()
+    })
 
-      // Clean up
-      await Template.deleteTag(initialTag)
-      await Template.deleteTag(latestTag)
-    },
-    { timeout: 300_000 }
-  )
-
-  test(
-    'assign single tag to existing template',
-    async () => {
-      const templateAlias = `e2b-single-tag-${testRunId}`
-      const initialTag = `${templateAlias}:v1.0`
-
-      const template = Template().fromBaseImage()
-      await Template.build(template, initialTag, {
-        cpuCount: 1,
-        memoryMB: 1024,
-        skipCache: true,
-      })
-
-      // Assign single tag (not array)
-      const stableTag = `${templateAlias}:stable`
-      const tagInfo = await Template.assignTag(initialTag, stableTag)
-
-      expect(tagInfo.buildId).toBeTruthy()
-      expect(tagInfo.tags).toContain(stableTag)
-
-      // Clean up
-      await Template.deleteTag(initialTag)
-      await Template.deleteTag(stableTag)
-    },
-    { timeout: 300_000 }
-  )
+    test('handles 404 error for nonexistent tag', async () => {
+      await expect(Template.deleteTag('nonexistent:tag')).rejects.toThrow()
+    })
+  })
 })
+
+// Integration tests
+const testRunId = randomUUID().slice(0, 8)
+
+buildTemplateTest.skipIf(isDebug)(
+  'build template with tags, assign and delete',
+  async ({ buildTemplate }) => {
+    const templateAlias = `e2b-tags-test-${testRunId}`
+    const initialTag = `${templateAlias}:v1.0`
+
+    // Build a template with initial tag
+    const template = Template().fromBaseImage()
+    const buildInfo = await buildTemplate(template, { name: initialTag })
+
+    expect(buildInfo.buildId).toBeTruthy()
+    expect(buildInfo.templateId).toBeTruthy()
+
+    // Assign additional tags
+    const productionTag = `${templateAlias}:production`
+    const latestTag = `${templateAlias}:latest`
+
+    const tagInfo = await Template.assignTag(initialTag, [
+      productionTag,
+      latestTag,
+    ])
+
+    expect(tagInfo.buildId).toBeTruthy()
+    expect(tagInfo.tags).toContain(productionTag)
+    expect(tagInfo.tags).toContain(latestTag)
+
+    // Delete tags
+    await Template.deleteTag(productionTag)
+
+    // Verify error on non-existent tag
+    await expect(
+      Template.deleteTag(`${templateAlias}:nonexistent-${testRunId}`)
+    ).rejects.toThrow()
+
+    // Clean up
+    await Template.deleteTag(initialTag)
+    await Template.deleteTag(latestTag)
+  },
+  { timeout: 300_000 }
+)
+
+buildTemplateTest.skipIf(isDebug)(
+  'assign single tag to existing template',
+  async ({ buildTemplate }) => {
+    const templateAlias = `e2b-single-tag-${testRunId}`
+    const initialTag = `${templateAlias}:v1.0`
+
+    const template = Template().fromBaseImage()
+    await buildTemplate(template, { name: initialTag })
+
+    // Assign single tag (not array)
+    const stableTag = `${templateAlias}:stable`
+    const tagInfo = await Template.assignTag(initialTag, stableTag)
+
+    expect(tagInfo.buildId).toBeTruthy()
+    expect(tagInfo.tags).toContain(stableTag)
+
+    // Clean up
+    await Template.deleteTag(initialTag)
+    await Template.deleteTag(stableTag)
+  },
+  { timeout: 300_000 }
+)

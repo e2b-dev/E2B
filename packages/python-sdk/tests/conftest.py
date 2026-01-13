@@ -97,13 +97,13 @@ async def async_sandbox(async_sandbox_factory):
 def build():
     def _build(
         template: TemplateClass,
-        alias: Optional[str] = None,
+        name: Optional[str] = None,
         skip_cache: bool = False,
         on_build_logs: Optional[Callable[[LogEntry], None]] = None,
     ):
         return Template.build(
             template,
-            alias=alias or f"e2b-test-{uuid4()}",
+            name or f"e2b-test-{uuid4()}",
             cpu_count=1,
             memory_mb=1024,
             skip_cache=skip_cache,
@@ -117,13 +117,13 @@ def build():
 def async_build():
     async def _async_build(
         template: TemplateClass,
-        alias: Optional[str] = None,
+        name: Optional[str] = None,
         skip_cache: bool = False,
         on_build_logs: Optional[Callable[[LogEntry], None]] = None,
     ):
         return await AsyncTemplate.build(
             template,
-            alias=alias or f"e2b-test-{uuid4()}",
+            name or f"e2b-test-{uuid4()}",
             cpu_count=1,
             memory_mb=1024,
             skip_cache=skip_cache,
@@ -143,18 +143,6 @@ def skip_by_debug(request, debug):
     if request.node.get_closest_marker("skip_debug"):
         if debug:
             pytest.skip("skipped because E2B_DEBUG is set")
-
-
-@pytest.fixture
-def is_integration_test():
-    return os.getenv("E2B_INTEGRATION_TEST") is not None
-
-
-@pytest.fixture(autouse=True)
-def skip_integration(request, is_integration_test):
-    if request.node.get_closest_marker("integration"):
-        if not is_integration_test:
-            pytest.skip("skipped because E2B_INTEGRATION_TEST is not set")
 
 
 class Helpers:
