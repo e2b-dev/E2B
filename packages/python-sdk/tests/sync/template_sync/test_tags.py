@@ -104,8 +104,9 @@ class TestTagsIntegration:
         tag_info = Template.assign_tag(initial_tag, [production_tag, latest_tag])
 
         assert tag_info.build_id
-        assert production_tag in tag_info.tags
-        assert latest_tag in tag_info.tags
+        # API returns just the tag portion, not the full alias:tag
+        assert "production" in tag_info.tags
+        assert "latest" in tag_info.tags
 
         # Delete tags
         Template.delete_tag(production_tag)
@@ -132,7 +133,8 @@ class TestTagsIntegration:
         tag_info = Template.assign_tag(initial_tag, stable_tag)
 
         assert tag_info.build_id
-        assert stable_tag in tag_info.tags
+        # API returns just the tag portion, not the full alias:tag
+        assert "stable" in tag_info.tags
 
         # Clean up
         Template.delete_tag(initial_tag)

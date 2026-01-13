@@ -96,8 +96,9 @@ buildTemplateTest.skipIf(isDebug)(
     ])
 
     expect(tagInfo.buildId).toBeTruthy()
-    expect(tagInfo.tags).toContain(productionTag)
-    expect(tagInfo.tags).toContain(latestTag)
+    // API returns just the tag portion, not the full alias:tag
+    expect(tagInfo.tags).toContain('production')
+    expect(tagInfo.tags).toContain('latest')
 
     // Delete tags
     await Template.deleteTag(productionTag)
@@ -128,7 +129,8 @@ buildTemplateTest.skipIf(isDebug)(
     const tagInfo = await Template.assignTag(initialTag, stableTag)
 
     expect(tagInfo.buildId).toBeTruthy()
-    expect(tagInfo.tags).toContain(stableTag)
+    // API returns just the tag portion, not the full alias:tag
+    expect(tagInfo.tags).toContain('stable')
 
     // Clean up
     await Template.deleteTag(initialTag)

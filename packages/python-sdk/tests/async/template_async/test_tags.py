@@ -112,8 +112,9 @@ class TestTagsIntegration:
         )
 
         assert tag_info.build_id
-        assert production_tag in tag_info.tags
-        assert latest_tag in tag_info.tags
+        # API returns just the tag portion, not the full alias:tag
+        assert "production" in tag_info.tags
+        assert "latest" in tag_info.tags
 
         # Delete tags
         await AsyncTemplate.delete_tag(production_tag)
@@ -142,7 +143,8 @@ class TestTagsIntegration:
         tag_info = await AsyncTemplate.assign_tag(initial_tag, stable_tag)
 
         assert tag_info.build_id
-        assert stable_tag in tag_info.tags
+        # API returns just the tag portion, not the full alias:tag
+        assert "stable" in tag_info.tags
 
         # Clean up
         await AsyncTemplate.delete_tag(initial_tag)
