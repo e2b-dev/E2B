@@ -1,6 +1,7 @@
 import hashlib
 import os
 import io
+from pathlib import Path
 import tarfile
 import json
 import stat
@@ -37,12 +38,17 @@ def read_dockerignore(context_path: str) -> List[str]:
 
 def normalize_path(path: str) -> str:
     """
-    Normalize path separators to forward slashes for glob patterns (glob expects / even on Windows).
+    Normalize paths on Windows and Unix
 
     :param path: The path to normalize
     :return: The normalized path
     """
-    return path.replace(os.sep, "/")
+    norm_path = Path(os.path.normpath(path)).as_posix()
+    # strip drive letter if present
+    if len(norm_path) > 1 and norm_path[1] == ":":
+        norm_path = norm_path[2:]
+
+    return norm_path
 
 
 def get_all_files_in_path(
@@ -320,20 +326,18 @@ def read_gcp_service_account_json(
         return json.dumps(path_or_content)
 
 
-def is_path_outside_context(src: str) -> bool:
+def is_safe_relative(src: str) -> bool:
     """
-    Check if a path is outside of the context directory.
+    Returns True if src is a relative path and does not contain any up-path parts.
+    Works on both Windows and Unix.
 
-    :param src: Path to check
-    :return: True if the path is outside of the context directory, False otherwise
+    :param src: The path to check
+
+    :return: True if the path is a safe relative path, False otherwise
     """
-    norm_path = os.path.normpath(src)
-
-    # on Windows, os.path.isabs() returns false for rooted paths (e.g., /foo or \foo) which lack a drive letter
-    is_rooted_path = norm_path.startswith("/") or norm_path.startswith("\\")
-    return (
+    norm_path = normalize_path(src)
+    return not (
         os.path.isabs(norm_path)
-        or is_rooted_path
         or norm_path == ".."
         or norm_path.startswith("../")
         or norm_path.startswith("..\\")

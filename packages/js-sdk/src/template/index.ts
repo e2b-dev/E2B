@@ -38,10 +38,11 @@ import {
   calculateFilesHash,
   getCallerDirectory,
   getCallerFrame,
-  isPathOutsideContext,
   padOctal,
   readDockerignore,
   readGCPServiceAccountJSON,
+  isSafeRelative,
+  normalizePath,
 } from './utils'
 
 /**
@@ -376,7 +377,10 @@ export class TemplateBase
     const srcs = Array.isArray(src) ? src : [src]
 
     for (const src of srcs) {
-      if (isPathOutsideContext(src.toString())) {
+      const normalizedSrc = normalizePath(src.toString())
+      const normalizedDest = normalizePath(dest.toString())
+
+      if (!isSafeRelative(normalizedSrc)) {
         const error = new Error(
           `Source path ${src} is outside of the context directory.`
         )
@@ -388,8 +392,8 @@ export class TemplateBase
       }
 
       const args = [
-        src.toString(),
-        dest.toString(),
+        normalizedSrc,
+        normalizedDest,
         options?.user ?? '',
         options?.mode ? padOctal(options.mode) : '',
       ]

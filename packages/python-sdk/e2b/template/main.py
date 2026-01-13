@@ -21,7 +21,8 @@ from e2b.template.utils import (
     read_dockerignore,
     read_gcp_service_account_json,
     get_caller_frame,
-    is_path_outside_context,
+    is_safe_relative,
+    normalize_path,
 )
 from types import TracebackType
 
@@ -66,7 +67,10 @@ class TemplateBuilder:
         srcs = [src] if isinstance(src, (str, Path)) else src
 
         for src_item in srcs:
-            if is_path_outside_context(str(src_item)):
+            normalized_src_item = normalize_path(str(src_item))
+            normalized_dest = normalize_path(str(dest))
+
+            if not is_safe_relative(str(src_item)):
                 caller_frame = get_caller_frame(STACK_TRACE_DEPTH - 1)
                 stack_trace = None
                 if caller_frame is not None:
@@ -82,8 +86,8 @@ class TemplateBuilder:
                 ).with_traceback(stack_trace)
 
             args = [
-                str(src_item),
-                str(dest),
+                normalized_src_item,
+                normalized_dest,
                 user or "",
                 pad_octal(mode) if mode else "",
             ]

@@ -25,12 +25,42 @@ export function readDockerignore(contextPath: string): string[] {
 }
 
 /**
- * Normalize path separators to forward slashes for glob patterns (glob expects / even on Windows)
+ * Normalize paths on Windows and Unix
+ *
  * @param path - The path to normalize
  * @returns The normalized path
  */
-function normalizePath(path: string): string {
-  return path.replace(/\\/g, '/')
+export function normalizePath(path: string): string {
+  // Normalize the path (resolve . and .., remove redundant slashes)
+  let normPath = path
+    .replace(/\\/g, '/') // Convert backslashes to forward slashes
+    .replace(/\/+/g, '/') // Replace multiple slashes with single slash
+    .replace(/\/\.\//g, '/') // Remove /./ segments
+    .replace(/\/\.$/, '') // Remove trailing /.
+
+  // Handle ../ segments
+  const parts = normPath.split('/')
+  const stack = []
+
+  for (const part of parts) {
+    if (part === '..' && stack.length > 0 && stack[stack.length - 1] !== '..') {
+      stack.pop()
+    } else if (part !== '.' && part !== '') {
+      stack.push(part)
+    } else if (part === '' && stack.length === 0) {
+      // Preserve leading slash for absolute paths
+      stack.push(part)
+    }
+  }
+
+  normPath = stack.join('/')
+
+  // Strip drive letter if present (e.g., C:/)
+  if (normPath.length > 1 && normPath[1] === ':') {
+    normPath = normPath.slice(2)
+  }
+
+  return normPath
 }
 
 /**
@@ -371,19 +401,16 @@ export function readGCPServiceAccountJSON(
 }
 
 /**
- * Check if a path is outside of the context directory.
+ * Returns true if src is a relative path and does not contain any up-path parts.
+ * Works on both Windows and Unix.
  *
  * @param src Source path
- * @returns True if the path is outside of the context directory, False otherwise
+ * @returns boolean
  */
-export function isPathOutsideContext(src: string): boolean {
-  const normPath = path.normalize(src)
-
-  // on Windows, Node's path.isAbsolute() returns false for rooted paths (e.g., /foo or \foo) which lack a drive letter
-  const isRootedPath = normPath.startsWith('/') || normPath.startsWith('\\')
-  return (
+export function isSafeRelative(src: string): boolean {
+  const normPath = normalizePath(src)
+  return !(
     path.isAbsolute(normPath) ||
-    isRootedPath ||
     normPath === '..' ||
     normPath.startsWith('../') ||
     normPath.startsWith('..\\')
