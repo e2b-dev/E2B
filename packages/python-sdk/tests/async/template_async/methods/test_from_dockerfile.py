@@ -80,14 +80,14 @@ COPY --chown=anotheruser config.json /config/"""
     copy_instruction1 = instructions[2]
     assert copy_instruction1["type"] == InstructionType.COPY
     assert copy_instruction1["args"][0] == "app.js"
-    assert copy_instruction1["args"][1] == "/app/"
+    assert copy_instruction1["args"][1] == "/app"
     assert copy_instruction1["args"][2] == "myuser:mygroup"  # user from --chown
 
     # Second COPY instruction
     copy_instruction2 = instructions[3]
     assert copy_instruction2["type"] == InstructionType.COPY
     assert copy_instruction2["args"][0] == "config.json"
-    assert copy_instruction2["args"][1] == "/config/"
+    assert copy_instruction2["args"][1] == "/config"
     assert (
         copy_instruction2["args"][2] == "anotheruser"
     )  # user from --chown (without group)
