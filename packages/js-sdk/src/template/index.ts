@@ -376,9 +376,7 @@ export class TemplateBase
     const srcs = Array.isArray(src) ? src : [src]
 
     for (const src of srcs) {
-      if (
-        isPathOutsideContext(src.toString(), this.fileContextPath.toString())
-      ) {
+      if (isPathOutsideContext(src.toString())) {
         const error = new Error(
           `Source path ${src} is outside of the context directory.`
         )
