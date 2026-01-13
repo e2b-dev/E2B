@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Callable, Optional
+from typing import Callable, List, Optional, Union
 
 from typing_extensions import Unpack
 
@@ -7,12 +7,15 @@ from e2b.api.client.client import AuthenticatedClient
 from e2b.connection_config import ApiParams, ConnectionConfig
 
 from e2b.api.client_sync import get_api_client
+from e2b.exceptions import BuildException
 from e2b.template.consts import RESOLVE_SYMLINKS
 from e2b.template.logger import LogEntry, LogEntryEnd, LogEntryStart
 from e2b.template.main import TemplateBase, TemplateClass
-from e2b.template.types import BuildInfo, InstructionType
+from e2b.template.types import BuildInfo, InstructionType, TagInfo
 from e2b.template_sync.build_api import (
+    assign_tag,
     check_alias_exists,
+    delete_tag,
     get_build_status,
     get_file_upload_link,
     request_build,
@@ -32,7 +35,7 @@ class Template(TemplateBase):
     def _build(
         template: TemplateClass,
         api_client: AuthenticatedClient,
-        alias: str,
+        names: List[str],
         cpu_count: int = 2,
         memory_mb: int = 1024,
         skip_cache: bool = False,
@@ -43,7 +46,7 @@ class Template(TemplateBase):
 
         :param template: The template to build
         :param api_client: Authenticated API client
-        :param alias: Alias name for the template
+        :param names: Names for the template in 'alias:tag' format
         :param cpu_count: Number of CPUs allocated to the sandbox
         :param memory_mb: Amount of memory in MB allocated to the sandbox
         :param skip_cache: If True, forces a complete rebuild ignoring cache
@@ -58,13 +61,13 @@ class Template(TemplateBase):
                 LogEntry(
                     timestamp=datetime.now(),
                     level="info",
-                    message=f"Requesting build for template: {alias}",
+                    message=f"Requesting build for template: {', '.join(names)}",
                 )
             )
 
         response = request_build(
             api_client,
-            name=alias,
+            names=names,
             cpu_count=cpu_count,
             memory_mb=memory_mb,
         )
@@ -165,15 +168,18 @@ class Template(TemplateBase):
         )
 
         return BuildInfo(
-            alias=alias,
             template_id=template_id,
             build_id=build_id,
+            names=names,
+            alias=names[0] if names else "",
         )
 
     @staticmethod
     def build(
         template: TemplateClass,
-        alias: str,
+        names: Optional[Union[str, List[str]]] = None,
+        *,
+        alias: Optional[str] = None,
         cpu_count: int = 2,
         memory_mb: int = 1024,
         skip_cache: bool = False,
@@ -184,7 +190,8 @@ class Template(TemplateBase):
         Build and deploy a template to E2B infrastructure.
 
         :param template: The template to build
-        :param alias: Alias name for the template
+        :param names: Name(s) for the template in 'alias:tag' format (string or list)
+        :param alias: (Deprecated) Alias name for the template. Use names instead.
         :param cpu_count: Number of CPUs allocated to the sandbox
         :param memory_mb: Amount of memory in MB allocated to the sandbox
         :param skip_cache: If True, forces a complete rebuild ignoring cache
@@ -201,14 +208,27 @@ class Template(TemplateBase):
             .run_cmd('pip install -r /home/user/requirements.txt')
         )
 
-        Template.build(
-            template,
-            alias='my-python-env',
-            cpu_count=2,
-            memory_mb=1024
-        )
+        # New way - single name
+        Template.build(template, 'my-python-env:v1.0')
+
+        # New way - multiple names
+        Template.build(template, ['my-python-env:v1.0', 'my-python-env:latest'])
+
+        # Old way (deprecated)
+        Template.build(template, alias='my-python-env')
         ```
         """
+        # Normalize names parameter
+        if names is not None:
+            if isinstance(names, str):
+                names_list = [names]
+            else:
+                names_list = names
+        elif alias is not None:
+            names_list = [alias]
+        else:
+            raise BuildException("Either names or alias must be provided")
+
         try:
             if on_build_logs:
                 on_build_logs(
@@ -228,7 +248,7 @@ class Template(TemplateBase):
             data = Template._build(
                 template,
                 api_client,
-                alias,
+                names_list,
                 cpu_count,
                 memory_mb,
                 skip_cache,
@@ -266,7 +286,9 @@ class Template(TemplateBase):
     @staticmethod
     def build_in_background(
         template: TemplateClass,
-        alias: str,
+        names: Optional[Union[str, List[str]]] = None,
+        *,
+        alias: Optional[str] = None,
         cpu_count: int = 2,
         memory_mb: int = 1024,
         skip_cache: bool = False,
@@ -277,7 +299,8 @@ class Template(TemplateBase):
         Build and deploy a template to E2B infrastructure without waiting for completion.
 
         :param template: The template to build
-        :param alias: Alias name for the template
+        :param names: Name(s) for the template in 'alias:tag' format (string or list)
+        :param alias: (Deprecated) Alias name for the template. Use names instead.
         :param cpu_count: Number of CPUs allocated to the sandbox
         :param memory_mb: Amount of memory in MB allocated to the sandbox
         :param skip_cache: If True, forces a complete rebuild ignoring cache
@@ -294,14 +317,27 @@ class Template(TemplateBase):
             .set_start_cmd('echo "Hello"', 'sleep 1')
         )
 
-        build_info = Template.build_in_background(
-            template,
-            alias='my-python-env',
-            cpu_count=2,
-            memory_mb=1024
-        )
+        # New way - single name
+        build_info = Template.build_in_background(template, 'my-python-env:v1.0')
+
+        # New way - multiple names
+        build_info = Template.build_in_background(template, ['my-python-env:v1.0', 'my-python-env:latest'])
+
+        # Old way (deprecated)
+        build_info = Template.build_in_background(template, alias='my-python-env')
         ```
         """
+        # Normalize names parameter
+        if names is not None:
+            if isinstance(names, str):
+                names_list = [names]
+            else:
+                names_list = names
+        elif alias is not None:
+            names_list = [alias]
+        else:
+            raise BuildException("Either names or alias must be provided")
+
         config = ConnectionConfig(**opts)
         api_client = get_api_client(
             config,
@@ -312,7 +348,7 @@ class Template(TemplateBase):
         return Template._build(
             template,
             api_client,
-            alias,
+            names_list,
             cpu_count,
             memory_mb,
             skip_cache,
@@ -382,3 +418,63 @@ class Template(TemplateBase):
         )
 
         return check_alias_exists(api_client, alias)
+
+    @staticmethod
+    def assign_tag(
+        target: str,
+        names: Union[str, List[str]],
+        **opts: Unpack[ApiParams],
+    ) -> TagInfo:
+        """
+        Assign tag(s) to an existing template build.
+
+        :param target: Target template in 'alias:tag' format (the source build)
+        :param names: Tag(s) to assign in 'alias:tag' format (string or list)
+        :return: TagInfo with build_id and assigned tags
+
+        Example
+        ```python
+        from e2b import Template
+
+        # Assign a single tag
+        result = Template.assign_tag('my-template:v1.0', 'my-template:production')
+
+        # Assign multiple tags
+        result = Template.assign_tag('my-template:v1.0', ['my-template:production', 'my-template:stable'])
+        ```
+        """
+        config = ConnectionConfig(**opts)
+        api_client = get_api_client(
+            config,
+            require_api_key=True,
+            require_access_token=False,
+        )
+
+        names_list = [names] if isinstance(names, str) else names
+        return assign_tag(api_client, target, names_list)
+
+    @staticmethod
+    def delete_tag(
+        name: str,
+        **opts: Unpack[ApiParams],
+    ) -> None:
+        """
+        Delete a tag from a template.
+
+        :param name: Template tag in 'alias:tag' format to delete
+
+        Example
+        ```python
+        from e2b import Template
+
+        Template.delete_tag('my-template:production')
+        ```
+        """
+        config = ConnectionConfig(**opts)
+        api_client = get_api_client(
+            config,
+            require_api_key=True,
+            require_access_token=False,
+        )
+
+        delete_tag(api_client, name)

@@ -29,7 +29,7 @@
     "example": "tsx example.mts",
     "test": "vitest run",
     "generate": "npm-run-all generate:* && pnpm run format",
-    "generate:api": "python ./../../spec/remove_extra_tags.py sandboxes templates auth && openapi-typescript ../../spec/openapi_generated.yml -x api_key --array-length --alphabetize --default-non-nullable false --output src/api/schema.gen.ts",
+    "generate:api": "python ./../../spec/remove_extra_tags.py sandboxes templates tags auth && openapi-typescript ../../spec/openapi_generated.yml -x api_key --array-length --alphabetize --default-non-nullable false --output src/api/schema.gen.ts",
     "generate:envd": "cd ../../spec/envd && buf generate --template buf-js.gen.yaml\n",
     "generate:envd-api": "openapi-typescript ../../spec/envd/envd.yaml -x api_key --array-length --alphabetize --output src/envd/schema.gen.ts",
     "generate:mcp": "json2ts -i ./../../spec/mcp-server.json -o src/sandbox/mcp.d.ts --unreachableDefinitions --style.singleQuote --no-style.semi",

@@ -12,6 +12,10 @@ from e2b.api.client.api.templates import (
     get_templates_template_id_builds_build_id_status,
     get_templates_aliases_alias,
 )
+from e2b.api.client.api.tags import (
+    post_templates_tags,
+    delete_templates_tags_name,
+)
 from e2b.api.client.client import AuthenticatedClient
 from e2b.api.client.models import (
     TemplateBuildRequestV3,
@@ -19,7 +23,9 @@ from e2b.api.client.models import (
     TemplateBuildFileUpload,
     TemplateBuild,
     Error,
+    AssignTemplateTagRequest,
 )
+from e2b.template.types import TagInfo
 from e2b.exceptions import BuildException, FileUploadException, TemplateException
 from e2b.template.logger import LogEntry
 from e2b.template.types import TemplateType
@@ -27,12 +33,15 @@ from e2b.template.utils import get_build_step_index, tar_file_stream
 
 
 async def request_build(
-    client: AuthenticatedClient, name: str, cpu_count: int, memory_mb: int
+    client: AuthenticatedClient,
+    names: List[str],
+    cpu_count: int,
+    memory_mb: int,
 ):
     res = await post_v3_templates.asyncio_detailed(
         client=client,
         body=TemplateBuildRequestV3(
-            alias=name,
+            names=names,
             cpu_count=cpu_count,
             memory_mb=memory_mb,
         ),
@@ -233,3 +242,57 @@ async def check_alias_exists(client: AuthenticatedClient, alias: str) -> bool:
 
     # If we get Ok with data, you are owner and the alias exists
     return res.parsed is not None
+
+
+async def assign_tag(
+    client: AuthenticatedClient, target: str, names: List[str]
+) -> TagInfo:
+    """
+    Assign tag(s) to an existing template build.
+
+    Args:
+        client: Authenticated API client
+        target: Target template in 'alias:tag' format (the source build)
+        names: Tag(s) to assign in 'alias:tag' format
+
+    Returns:
+        TagInfo with build_id and assigned tags
+    """
+    res = await post_templates_tags.asyncio_detailed(
+        client=client,
+        body=AssignTemplateTagRequest(
+            target=target,
+            names=names,
+        ),
+    )
+
+    if res.status_code >= 300:
+        raise handle_api_exception(res, TemplateException)
+
+    if isinstance(res.parsed, Error):
+        raise TemplateException(f"API error: {res.parsed.message}")
+
+    if res.parsed is None:
+        raise TemplateException("Failed to assign tag")
+
+    return TagInfo(
+        build_id=str(res.parsed.build_id),
+        tags=res.parsed.tags,
+    )
+
+
+async def delete_tag(client: AuthenticatedClient, name: str) -> None:
+    """
+    Delete a tag from a template.
+
+    Args:
+        client: Authenticated API client
+        name: Template tag in 'alias:tag' format to delete
+    """
+    res = await delete_templates_tags_name.asyncio_detailed(
+        name=name,
+        client=client,
+    )
+
+    if res.status_code >= 300:
+        raise handle_api_exception(res, TemplateException)

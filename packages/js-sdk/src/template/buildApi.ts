@@ -5,7 +5,8 @@ import { LogEntry } from './logger'
 import { getBuildStepIndex, tarFileStreamUpload } from './utils'
 
 type RequestBuildInput = {
-  alias: string
+  alias?: string
+  names?: string[]
   cpuCount: number
   memoryMB: number
 }
@@ -39,11 +40,14 @@ export type TriggerBuildTemplate =
 
 export async function requestBuild(
   client: ApiClient,
-  { alias, cpuCount, memoryMB }: RequestBuildInput
+  { alias, names, cpuCount, memoryMB }: RequestBuildInput
 ) {
   const requestBuildRes = await client.api.POST('/v3/templates', {
     body: {
-      alias,
+      // Use names if provided, otherwise convert alias to names array
+      names: names ?? (alias ? [alias] : undefined),
+      // Keep alias for backward compat with older API versions
+      alias: !names ? alias : undefined,
       cpuCount,
       memoryMB,
     },
@@ -290,4 +294,38 @@ export async function waitForBuildFinish(
   }
 
   throw new BuildError('Unknown build error occurred.')
+}
+
+export async function assignTag(
+  client: ApiClient,
+  { target, names }: { target: string; names: string[] }
+): Promise<{ buildId: string; tags: string[] }> {
+  const res = await client.api.POST('/templates/tags', {
+    body: { target, names },
+  })
+
+  const error = handleApiError(res, TemplateError)
+  if (error) {
+    throw error
+  }
+
+  if (!res.data) {
+    throw new TemplateError('Failed to assign tag')
+  }
+
+  return { buildId: res.data.buildID, tags: res.data.tags }
+}
+
+export async function deleteTag(
+  client: ApiClient,
+  { name }: { name: string }
+): Promise<void> {
+  const res = await client.api.DELETE('/templates/tags/{name}', {
+    params: { path: { name } },
+  })
+
+  const error = handleApiError(res, TemplateError)
+  if (error) {
+    throw error
+  }
 }

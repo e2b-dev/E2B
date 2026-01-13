@@ -25,8 +25,9 @@ export type TemplateOptions = {
 export type BasicBuildOptions = {
   /**
    * Alias name for the template.
+   * @deprecated Use the `name` or `names` parameter of `Template.build()` instead.
    */
-  alias: string
+  alias?: string
   /**
    * Number of CPUs allocated to the sandbox.
    * @default 2
@@ -57,7 +58,15 @@ export type BuildOptions = ConnectionOpts & BasicBuildOptions
  * Information about a built template.
  */
 export type BuildInfo = {
+  /**
+   * First alias from the build (for backward compatibility).
+   * @deprecated Use `names` instead.
+   */
   alias: string
+  /**
+   * All names/tags assigned to this build.
+   */
+  names: string[]
   templateId: string
   buildId: string
 }
@@ -71,6 +80,30 @@ export type GetBuildStatusOptions = ConnectionOpts & { logsOffset?: number }
  * Options for checking if a template alias exists.
  */
 export type AliasExistsOptions = ConnectionOpts
+
+/**
+ * Options for assigning tags to a template.
+ */
+export type AssignTagOptions = ConnectionOpts
+
+/**
+ * Options for deleting a tag from a template.
+ */
+export type DeleteTagOptions = ConnectionOpts
+
+/**
+ * Information about assigned tags.
+ */
+export type TagInfo = {
+  /**
+   * The build ID that the tags are assigned to.
+   */
+  buildId: string
+  /**
+   * The tags that were assigned.
+   */
+  tags: string[]
+}
 
 /**
  * Types of instructions that can be used in a template.

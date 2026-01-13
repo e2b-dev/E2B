@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
 from typing import List, Literal, Optional, TypedDict, Union
@@ -100,6 +100,18 @@ class BuildInfo:
     Information about a built template.
     """
 
-    alias: str
     template_id: str
     build_id: str
+    names: List[str] = field(default_factory=list)
+    # Deprecated: use names instead
+    alias: str = ""
+
+
+@dataclass
+class TagInfo:
+    """
+    Information about assigned tags.
+    """
+
+    build_id: str
+    tags: List[str]
