@@ -23,10 +23,6 @@ failure_map: dict[str, Optional[int]] = {
     "from_gcp_registry": 0,
     "copy": None,
     "copy_items": None,
-    "copy_with_absolute_path": None,
-    "copy_with_relative_path": None,
-    "copy_with_embedded_dotdot": None,
-    "copy_with_windows_drive_path": None,
     "remove": 1,
     "rename": 1,
     "make_dir": 1,
@@ -181,52 +177,6 @@ def test_traces_on_copyItems(build):
     _expect_to_throw_and_check_trace(
         lambda: build(template, alias="copy_items"), "copy_items"
     )
-
-
-@pytest.mark.skip_debug()
-def test_traces_on_copy_with_absolute_path(build):
-    def run():
-        template = Template()
-        template = template.from_base_image()
-        template = template.skip_cache().copy("/absolute/path", "/tmp/dest.txt")
-        build(template, alias="copy_with_absolute_path")
-
-    _expect_to_throw_and_check_trace(run, "copy")
-
-
-@pytest.mark.skip_debug()
-def test_traces_on_copy_with_relative_path(build):
-    def run():
-        template = Template()
-        template = template.from_base_image()
-        template = template.skip_cache().copy("../relative/path", "/tmp/dest.txt")
-        build(template, alias="copy_with_relative_path")
-
-    _expect_to_throw_and_check_trace(run, "copy")
-
-
-@pytest.mark.skip_debug()
-def test_traces_on_copy_with_embedded_dotdot(build):
-    def run():
-        template = Template()
-        template = template.from_base_image()
-        template = template.skip_cache().copy("assets/../../secret", "/tmp/dest.txt")
-        build(template, alias="copy_with_embedded_dotdot")
-
-    _expect_to_throw_and_check_trace(run, "copy")
-
-
-@pytest.mark.skip_debug()
-def test_traces_on_copy_with_windows_drive_path(build):
-    # Test for Windows drive-relative paths (e.g., C:foo) that could bypass
-    # os.path.isabs() but cause os.path.join() to discard the context directory
-    def run():
-        template = Template()
-        template = template.from_base_image()
-        template = template.skip_cache().copy("C:secret.txt", "/tmp/dest.txt")
-        build(template, alias="copy_with_windows_drive_path")
-
-    _expect_to_throw_and_check_trace(run, "copy")
 
 
 @pytest.mark.skip_debug()

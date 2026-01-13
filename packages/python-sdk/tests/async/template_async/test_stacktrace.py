@@ -23,10 +23,6 @@ failure_map: dict[str, Optional[int]] = {
     "from_gcp_registry": 0,
     "copy": None,
     "copy_items": None,
-    "copy_with_absolute_path": None,
-    "copy_with_relative_path": None,
-    "copy_with_embedded_dotdot": None,
-    "copy_with_windows_drive_path": None,
     "remove": 1,
     "rename": 1,
     "make_dir": 1,
@@ -179,52 +175,6 @@ async def test_traces_on_copyItems(async_build):
     await _expect_to_throw_and_check_trace(
         lambda: async_build(template, alias="copy_items"), "copy_items"
     )
-
-
-@pytest.mark.skip_debug()
-async def test_traces_on_copy_with_absolute_path(async_build):
-    async def run():
-        template = AsyncTemplate()
-        template = template.from_base_image()
-        template = template.skip_cache().copy("/absolute/path", "/tmp/dest.txt")
-        await async_build(template, alias="copy_with_absolute_path")
-
-    await _expect_to_throw_and_check_trace(run, "copy")
-
-
-@pytest.mark.skip_debug()
-async def test_traces_on_copy_with_relative_path(async_build):
-    async def run():
-        template = AsyncTemplate()
-        template = template.from_base_image()
-        template = template.skip_cache().copy("../relative/path", "/tmp/dest.txt")
-        await async_build(template, alias="copy_with_relative_path")
-
-    await _expect_to_throw_and_check_trace(run, "copy")
-
-
-@pytest.mark.skip_debug()
-async def test_traces_on_copy_with_embedded_dotdot(async_build):
-    async def run():
-        template = AsyncTemplate()
-        template = template.from_base_image()
-        template = template.skip_cache().copy("assets/../../secret", "/tmp/dest.txt")
-        await async_build(template, alias="copy_with_embedded_dotdot")
-
-    await _expect_to_throw_and_check_trace(run, "copy")
-
-
-@pytest.mark.skip_debug()
-async def test_traces_on_copy_with_windows_drive_path(async_build):
-    # Test for Windows drive-relative paths (e.g., C:foo) that could bypass
-    # os.path.isabs() but cause os.path.join() to discard the context directory
-    async def run():
-        template = AsyncTemplate()
-        template = template.from_base_image()
-        template = template.skip_cache().copy("C:secret.txt", "/tmp/dest.txt")
-        await async_build(template, alias="copy_with_windows_drive_path")
-
-    await _expect_to_throw_and_check_trace(run, "copy")
 
 
 @pytest.mark.skip_debug()

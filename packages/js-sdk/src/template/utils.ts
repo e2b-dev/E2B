@@ -377,13 +377,9 @@ export function readGCPServiceAccountJSON(
  * @returns True if the path is outside of the context directory, False otherwise
  */
 export function isPathOutsideContext(src: string): boolean {
-  // Check for Windows drive letters (e.g., C:foo, D:\path).
-  // Drive-relative paths like 'C:foo' bypass path.isAbsolute()
   const normPath = path.normalize(src)
-  const hasDriveLetter = /^[a-zA-Z]:/.test(normPath)
   return (
     path.isAbsolute(normPath) ||
-    hasDriveLetter ||
     normPath === '..' ||
     normPath.startsWith('../') ||
     normPath.startsWith('..\\')

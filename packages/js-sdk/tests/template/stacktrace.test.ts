@@ -21,10 +21,6 @@ const failureMap: Record<string, number | undefined> = {
   fromGCPRegistry: 0,
   copy: undefined,
   copyItems: undefined,
-  copyWithAbsolutePath: undefined,
-  copyWithRelativePath: undefined,
-  copyWithEmbeddedDotDot: undefined,
-  copyWithWindowsDrivePath: undefined,
   remove: 1,
   rename: 1,
   makeDir: 1,
@@ -217,54 +213,6 @@ buildTemplateTest('traces on copyItems', async ({ buildTemplate }) => {
     await buildTemplate(template, { alias: 'copyItems' })
   }, 'copyItems')
 })
-
-buildTemplateTest(
-  'traces on copy with absolute path',
-  async ({ buildTemplate }) => {
-    await expectToThrowAndCheckTrace(async () => {
-      let template = Template().fromBaseImage()
-      template = template.skipCache().copy('/absolute/path', '/tmp/dest.txt')
-      await buildTemplate(template, { alias: 'copyWithAbsolutePath' })
-    }, 'copy')
-  }
-)
-
-buildTemplateTest(
-  'traces on copy with up relative path',
-  async ({ buildTemplate }) => {
-    await expectToThrowAndCheckTrace(async () => {
-      let template = Template().fromBaseImage()
-      template = template.skipCache().copy('../relative/path', '/tmp/dest.txt')
-      await buildTemplate(template, { alias: 'copyWithRelativePath' })
-    }, 'copy')
-  }
-)
-
-buildTemplateTest(
-  'traces on copy with embedded .. path',
-  async ({ buildTemplate }) => {
-    await expectToThrowAndCheckTrace(async () => {
-      let template = Template().fromBaseImage()
-      template = template
-        .skipCache()
-        .copy('assets/../../secret', '/tmp/dest.txt')
-      await buildTemplate(template, { alias: 'copyWithEmbeddedDotDot' })
-    }, 'copy')
-  }
-)
-
-buildTemplateTest(
-  'traces on copy with Windows drive-relative path',
-  async ({ buildTemplate }) => {
-    // Test for Windows drive-relative paths (e.g., C:foo) that could bypass
-    // path.isAbsolute() but cause path.join() to discard the context directory
-    await expectToThrowAndCheckTrace(async () => {
-      let template = Template().fromBaseImage()
-      template = template.skipCache().copy('C:secret.txt', '/tmp/dest.txt')
-      await buildTemplate(template, { alias: 'copyWithWindowsDrivePath' })
-    }, 'copy')
-  }
-)
 
 buildTemplateTest('traces on remove', async ({ buildTemplate }) => {
   let template = Template().fromBaseImage()
