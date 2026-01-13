@@ -46,14 +46,10 @@ export function waitForSandboxEnd(sandboxID: string) {
   return () => isRunning
 }
 
-export function getShortID(sandboxID: string) {
-  return sandboxID.split('-')[0]
-}
-
 export async function isRunning(sandboxID: string) {
   try {
     const apiKey = ensureAPIKey()
-    const info = await Sandbox.getInfo(getShortID(sandboxID), {
+    const info = await Sandbox.getInfo(sandboxID, {
       apiKey,
     })
     return info.state === 'running'
