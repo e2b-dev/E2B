@@ -69,8 +69,8 @@ async def test_from_dockerfile_with_custom_user_and_workdir():
 @pytest.mark.skip_debug()
 async def test_from_dockerfile_with_copy_chown():
     dockerfile = """FROM node:24
-COPY --chown=myuser:mygroup app.js /app/
-COPY --chown=anotheruser config.json /config/"""
+COPY --chown=myuser:mygroup app.js /app
+COPY --chown=anotheruser config.json /config"""
 
     template = AsyncTemplate().from_dockerfile(dockerfile)
 

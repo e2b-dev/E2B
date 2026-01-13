@@ -133,8 +133,8 @@ buildTemplateTest('fromDockerfile with custom user and workdir', () => {
 
 buildTemplateTest('fromDockerfile with COPY --chown', () => {
   const dockerfile = `FROM node:24
-COPY --chown=myuser:mygroup app.js /app/
-COPY --chown=anotheruser config.json /config/`
+COPY --chown=myuser:mygroup app.js /app
+COPY --chown=anotheruser config.json /config`
 
   const template = Template().fromDockerfile(dockerfile)
 
