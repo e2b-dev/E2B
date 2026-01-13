@@ -166,7 +166,7 @@ buildTemplateTest('traces on fromImage registry', async ({ buildTemplate }) => {
   )
   await expectToThrowAndCheckTrace(async () => {
     await buildTemplate(template, {
-      alias: 'fromImageRegistry',
+      name: 'fromImageRegistry',
     })
   }, 'fromImage')
 })
@@ -332,7 +332,7 @@ buildTemplateTest(
       .betaDevContainerPrebuild(nonExistentPath)
     await expectToThrowAndCheckTrace(async () => {
       await buildTemplate(template, {
-        alias: 'betaDevContainerPrebuild',
+        name: 'betaDevContainerPrebuild',
       })
     }, 'betaDevContainerPrebuild')
   }
@@ -346,7 +346,7 @@ buildTemplateTest(
       .betaSetDevContainerStart(nonExistentPath)
     await expectToThrowAndCheckTrace(async () => {
       await buildTemplate(template, {
-        alias: 'betaSetDevContainerStart',
+        name: 'betaSetDevContainerStart',
       })
     }, 'betaSetDevContainerStart')
   }
