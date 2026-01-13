@@ -43,8 +43,11 @@ failure_map: dict[str, Optional[int]] = {
 
 @pytest.fixture(autouse=True)
 def mock_template_build(monkeypatch):
-    async def mock_request_build(client, cpu_count: int, memory_mb: int, name=None):
-        return SimpleNamespace(template_id=name or "unknown", build_id=str(uuid4()))
+    async def mock_request_build(
+        client, cpu_count: int, memory_mb: int, names=None, alias=None
+    ):
+        template_name = (names[0] if names else None) or alias or "unknown"
+        return SimpleNamespace(template_id=template_name, build_id=str(uuid4()))
 
     async def mock_trigger_build(client, template_id: str, build_id: str, template):
         return None
