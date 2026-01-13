@@ -370,6 +370,12 @@ export function readGCPServiceAccountJSON(
   return JSON.stringify(pathOrContent)
 }
 
+/**
+ * Check if a path is outside of the context directory.
+ *
+ * @param src Source path
+ * @returns True if the path is outside of the context directory, False otherwise
+ */
 export function isPathOutsideContext(src: string): boolean {
   // Check for Windows drive letters (e.g., C:foo, D:\path).
   // Drive-relative paths like 'C:foo' bypass path.isAbsolute()
