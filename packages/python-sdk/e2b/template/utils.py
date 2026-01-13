@@ -67,7 +67,7 @@ def get_all_files_in_path(
     files_glob = glob.glob(
         src,
         flags=glob.GLOBSTAR,
-        root_dir=abs_context_path,
+        root_dir=abs_context_path if not os.path.isabs(src) else None,
         exclude=ignore_patterns,
     )
 
@@ -82,7 +82,7 @@ def get_all_files_in_path(
             dir_files = glob.glob(
                 normalize_path(file) + "/**/*",
                 flags=glob.GLOBSTAR,
-                root_dir=abs_context_path,
+                root_dir=abs_context_path if not os.path.isabs(src) else None,
                 exclude=ignore_patterns,
             )
             for dir_file in dir_files:
@@ -119,7 +119,7 @@ def calculate_files_hash(
 
     :raises ValueError: If no files match the source pattern
     """
-    src_path = os.path.join(context_path, src)
+    src_path = src if os.path.isabs(src) else os.path.join(context_path, src)
     hash_obj = hashlib.sha256()
     content = f"COPY {src} {dest}"
 
@@ -166,15 +166,15 @@ def calculate_files_hash(
 
 
 def tar_file_stream(
-    file_name: str,
+    file_path: str,
     file_context_path: str,
     ignore_patterns: List[str],
     resolve_symlinks: bool,
 ) -> io.BytesIO:
     """
-    Create a tar stream of files matching a pattern.
+    Create a tar stream of a file from the given path with the given name.
 
-    :param file_name: Glob pattern for files to include
+    :param file_path: Path to the file (relative to file_context_path)
     :param file_context_path: Base directory for resolving file paths
     :param ignore_patterns: Ignore patterns
     :param resolve_symlinks: Whether to resolve symbolic links
@@ -188,11 +188,11 @@ def tar_file_stream(
         dereference=resolve_symlinks,
     ) as tar:
         files = get_all_files_in_path(
-            file_name, file_context_path, ignore_patterns, True
+            file_path, file_context_path, ignore_patterns, True
         )
         for file in files:
             tar.add(
-                file, arcname=os.path.relpath(file, file_context_path), recursive=False
+                file, arcname=relativize_path(file, file_context_path), recursive=False
             )
 
     return tar_buffer
@@ -318,3 +318,29 @@ def read_gcp_service_account_json(
             return f.read()
     else:
         return json.dumps(path_or_content)
+
+
+def relativize_path(src: str, file_context_path: str) -> str:
+    r"""
+    Convert absolute paths to relativized paths.
+    In addition to converting absolute paths to relative paths,
+    it strips up directories (../ or ..\ on Windows).
+
+    :param src: Absolute path to convert
+    :param file_context_path: Base directory for resolving relative paths
+
+    :return: Relative path
+    """
+    rewritten_path = str(src)
+
+    # Convert absolute paths to relative paths
+    if os.path.isabs(rewritten_path):
+        context_path = os.path.abspath(file_context_path)
+        relative_path = os.path.relpath(rewritten_path, context_path)
+        rewritten_path = relative_path
+
+    # Strip up directories (../ or ..\ on Windows)
+    rewritten_path = re.sub(r"\.\.[/\\]", "", rewritten_path)
+
+    # Normalize to forward slashes for cross-platform compatibility (tar archives require forward slashes)
+    return normalize_path(rewritten_path)
