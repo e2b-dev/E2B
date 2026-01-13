@@ -220,9 +220,7 @@ def test_traces_on_run_cmd(build):
     template = Template()
     template = template.from_base_image()
     template = template.skip_cache().run_cmd(f"cat {non_existent_path}")
-    _expect_to_throw_and_check_trace(
-        lambda: build(template, name="run_cmd"), "run_cmd"
-    )
+    _expect_to_throw_and_check_trace(lambda: build(template, name="run_cmd"), "run_cmd")
 
 
 @pytest.mark.skip_debug()
