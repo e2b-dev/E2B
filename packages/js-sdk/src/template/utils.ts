@@ -35,23 +35,16 @@ export function normalizePath(path: string): string {
     return '.'
   }
 
-  // Detect Windows path (drive letter or UNC path)
-  const isWindows = /^[a-zA-Z]:/.test(path) || path.startsWith('\\\\')
-  const separator = isWindows ? '\\' : '/'
-
-  // Extract drive letter if present (e.g., 'C:')
-  let driveLetter = ''
+  // Remove drive letter if present (e.g., 'C:')
   let workingPath = path
-
   if (/^[a-zA-Z]:/.test(path)) {
-    driveLetter = path.substring(0, 2)
     workingPath = path.substring(2)
   }
 
   // Check if path is absolute
   const isAbsolute = workingPath.startsWith('/') || workingPath.startsWith('\\')
 
-  // Normalize separators and split
+  // Normalize all separators to forward slashes and split
   const normalizedPath = workingPath.replace(/[\\/]+/g, '/')
   const parts = normalizedPath.split('/').filter((part) => part && part !== '.')
 
@@ -71,19 +64,8 @@ export function normalizePath(path: string): string {
     }
   }
 
-  // Build the final path
-  let result = normalized.join('/')
-
-  // Add drive letter back if present
-  if (driveLetter) {
-    result =
-      driveLetter + (isAbsolute ? '\\' : '') + result.replace(/\//g, '\\')
-  } else if (isAbsolute) {
-    result = separator + result.replace(/\//g, separator)
-  } else {
-    // For relative paths, use appropriate separator
-    result = result.replace(/\//g, separator)
-  }
+  // Build the final path in POSIX style
+  const result = (isAbsolute ? '/' : '') + normalized.join('/')
 
   // Return '.' for empty relative paths
   return result || '.'
