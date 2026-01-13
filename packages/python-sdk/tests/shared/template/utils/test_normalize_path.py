@@ -41,9 +41,7 @@ class TestWindowsPathsConvertedToPosixStyle:
         assert normalize_path("c:/foo/bar") == "/foo/bar"
 
     def test_should_strip_drive_letter_with_simple_path(self):
-        # Note: Python's os.path.normpath normalizes "D:/" to "D:" on Unix,
-        # and after stripping drive letter and calling as_posix(), result is empty string
-        assert normalize_path("D:/") == ""
+        assert normalize_path("D:/") == "/"
 
 
 class TestEdgeCases:

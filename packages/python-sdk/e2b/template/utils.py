@@ -47,6 +47,9 @@ def normalize_path(path: str) -> str:
     # strip drive letter if present
     if len(norm_path) > 1 and norm_path[1] == ":":
         norm_path = norm_path[2:]
+        # A bare drive letter (e.g., "D:/") should become "/" (the root)
+        if norm_path == "":
+            norm_path = "/"
 
     return norm_path
 
