@@ -328,8 +328,12 @@ def is_path_outside_context(src: str) -> bool:
     :return: True if the path is outside of the context directory, False otherwise
     """
     norm_path = os.path.normpath(src)
+
+    # on Windows, os.path.isabs() returns false for rooted paths (e.g., /foo or \foo) which lack a drive letter
+    is_rooted_path = norm_path.startswith("/") or norm_path.startswith("\\")
     return (
         os.path.isabs(norm_path)
+        or is_rooted_path
         or norm_path == ".."
         or norm_path.startswith("../")
         or norm_path.startswith("..\\")
