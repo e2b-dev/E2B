@@ -1,4 +1,3 @@
-import { randomUUID } from 'node:crypto'
 import { afterAll, afterEach, beforeAll, describe, expect, test } from 'vitest'
 
 import { http, HttpResponse } from 'msw'
@@ -9,8 +8,7 @@ import { Template } from '../../src'
 // Mock handlers for tag API endpoints
 const mockHandlers = [
   http.post('https://api.e2b.app/templates/tags', async ({ request }) => {
-    const { target, names } = (await request.clone().json()) as {
-      target: string
+    const { names } = (await request.clone().json()) as {
       names: string[]
     }
     return HttpResponse.json({
