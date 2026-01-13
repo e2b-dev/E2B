@@ -82,12 +82,10 @@ class TestDeleteTag:
 class TestTagsIntegration:
     """Integration tests for Template tags functionality."""
 
-    test_run_id = uuid.uuid4().hex[:8]
-
     @pytest.mark.skip_debug()
     def test_build_template_with_tags_assign_and_delete(self, build):
         """Test building a template with tags, assigning new tags, and deleting."""
-        template_alias = f"e2b-tags-test-{self.test_run_id}"
+        template_alias = f"e2b-sync-tags-test-{uuid.uuid4().hex[:8]}"
         initial_tag = f"{template_alias}:v1.0"
 
         # Build a template with initial tag
@@ -118,7 +116,7 @@ class TestTagsIntegration:
     @pytest.mark.skip_debug()
     def test_assign_single_tag_to_existing_template(self, build):
         """Test assigning a single tag (not array) to an existing template."""
-        template_alias = f"e2b-single-tag-{self.test_run_id}"
+        template_alias = f"e2b-sync-single-tag-{uuid.uuid4().hex[:8]}"
         initial_tag = f"{template_alias}:v1.0"
 
         template = Template().from_base_image()

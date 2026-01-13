@@ -71,12 +71,10 @@ describe('Template tags unit tests', () => {
 })
 
 // Integration tests
-const testRunId = randomUUID().slice(0, 8)
-
 buildTemplateTest.skipIf(isDebug)(
   'build template with tags, assign and delete',
   async ({ buildTemplate }) => {
-    const templateAlias = `e2b-tags-test-${testRunId}`
+    const templateAlias = `e2b-js-tags-test-${randomUUID().slice(0, 8)}`
     const initialTag = `${templateAlias}:v1.0`
 
     // Build a template with initial tag
@@ -113,7 +111,7 @@ buildTemplateTest.skipIf(isDebug)(
 buildTemplateTest.skipIf(isDebug)(
   'assign single tag to existing template',
   async ({ buildTemplate }) => {
-    const templateAlias = `e2b-single-tag-${testRunId}`
+    const templateAlias = `e2b-js-single-tag-${randomUUID().slice(0, 8)}`
     const initialTag = `${templateAlias}:v1.0`
 
     const template = Template().fromBaseImage()
