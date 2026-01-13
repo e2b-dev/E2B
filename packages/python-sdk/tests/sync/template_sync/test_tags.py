@@ -1,8 +1,9 @@
+import uuid
 from unittest.mock import patch
 
 import pytest
 
-from e2b import TagInfo, Template
+from e2b import TagInfo, Template, default_build_logger
 
 
 class TestAssignTag:
@@ -75,3 +76,79 @@ class TestDeleteTag:
 
         with pytest.raises(TemplateException):
             Template.delete_tag("nonexistent:tag")
+
+
+# Integration tests - run with E2B_INTEGRATION_TEST=1
+class TestTagsIntegration:
+    """Integration tests for Template tags functionality."""
+
+    test_run_id = uuid.uuid4().hex[:8]
+
+    @pytest.mark.integration
+    @pytest.mark.timeout(300)
+    def test_build_template_with_tags_assign_and_delete(self):
+        """Test building a template with tags, assigning new tags, and deleting."""
+        template_alias = f"e2b-tags-test-{self.test_run_id}"
+        initial_tag = f"{template_alias}:v1.0"
+
+        # Build a template with initial tag
+        template = Template().from_base_image()
+        build_info = Template.build(
+            template,
+            initial_tag,
+            cpu_count=1,
+            memory_mb=1024,
+            skip_cache=True,
+            on_build_logs=default_build_logger(),
+        )
+
+        assert build_info.build_id
+        assert build_info.template_id
+
+        # Assign additional tags
+        production_tag = f"{template_alias}:production"
+        latest_tag = f"{template_alias}:latest"
+
+        tag_info = Template.assign_tag(initial_tag, [production_tag, latest_tag])
+
+        assert tag_info.build_id
+        assert production_tag in tag_info.tags
+        assert latest_tag in tag_info.tags
+
+        # Delete tags
+        Template.delete_tag(production_tag)
+
+        # Verify error on non-existent tag
+        with pytest.raises(Exception):
+            Template.delete_tag(f"{template_alias}:nonexistent-{self.test_run_id}")
+
+        # Clean up
+        Template.delete_tag(initial_tag)
+        Template.delete_tag(latest_tag)
+
+    @pytest.mark.integration
+    @pytest.mark.timeout(300)
+    def test_assign_single_tag_to_existing_template(self):
+        """Test assigning a single tag (not array) to an existing template."""
+        template_alias = f"e2b-single-tag-{self.test_run_id}"
+        initial_tag = f"{template_alias}:v1.0"
+
+        template = Template().from_base_image()
+        Template.build(
+            template,
+            initial_tag,
+            cpu_count=1,
+            memory_mb=1024,
+            skip_cache=True,
+        )
+
+        # Assign single tag (not array)
+        stable_tag = f"{template_alias}:stable"
+        tag_info = Template.assign_tag(initial_tag, stable_tag)
+
+        assert tag_info.build_id
+        assert stable_tag in tag_info.tags
+
+        # Clean up
+        Template.delete_tag(initial_tag)
+        Template.delete_tag(stable_tag)

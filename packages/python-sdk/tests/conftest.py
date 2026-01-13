@@ -145,6 +145,18 @@ def skip_by_debug(request, debug):
             pytest.skip("skipped because E2B_DEBUG is set")
 
 
+@pytest.fixture
+def is_integration_test():
+    return os.getenv("E2B_INTEGRATION_TEST") is not None
+
+
+@pytest.fixture(autouse=True)
+def skip_integration(request, is_integration_test):
+    if request.node.get_closest_marker("integration"):
+        if not is_integration_test:
+            pytest.skip("skipped because E2B_INTEGRATION_TEST is not set")
+
+
 class Helpers:
     @staticmethod
     def catch_cmd_exit_error_in_background(cmd: AsyncCommandHandle):
