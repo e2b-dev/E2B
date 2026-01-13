@@ -115,3 +115,17 @@ class TagInfo:
 
     build_id: str
     tags: List[str]
+
+
+def normalize_names(names: Optional[Union[str, List[str]]]) -> Optional[List[str]]:
+    """
+    Normalize names parameter to a list if string provided.
+
+    :param names: Single name string or list of names
+    :return: List of names or None if not provided
+    """
+    if names is None:
+        return None
+    if isinstance(names, str):
+        return [names]
+    return names

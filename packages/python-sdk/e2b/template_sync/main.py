@@ -10,7 +10,7 @@ from e2b.api.client_sync import get_api_client
 from e2b.template.consts import RESOLVE_SYMLINKS
 from e2b.template.logger import LogEntry, LogEntryEnd, LogEntryStart
 from e2b.template.main import TemplateBase, TemplateClass
-from e2b.template.types import BuildInfo, InstructionType, TagInfo
+from e2b.template.types import BuildInfo, InstructionType, TagInfo, normalize_names
 from e2b.template_sync.build_api import (
     assign_tag,
     check_alias_exists,
@@ -221,13 +221,7 @@ class Template(TemplateBase):
         Template.build(template, alias='my-python-env')
         ```
         """
-        # Normalize names to list if string provided
-        names_list: Optional[List[str]] = None
-        if names is not None:
-            if isinstance(names, str):
-                names_list = [names]
-            else:
-                names_list = names
+        names_list = normalize_names(names)
 
         try:
             if on_build_logs:
@@ -328,13 +322,7 @@ class Template(TemplateBase):
         build_info = Template.build_in_background(template, alias='my-python-env')
         ```
         """
-        # Normalize names to list if string provided
-        names_list: Optional[List[str]] = None
-        if names is not None:
-            if isinstance(names, str):
-                names_list = [names]
-            else:
-                names_list = names
+        names_list = normalize_names(names)
 
         config = ConnectionConfig(**opts)
         api_client = get_api_client(

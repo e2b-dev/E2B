@@ -49,6 +49,35 @@ import {
 } from './utils'
 
 /**
+ * Normalize build arguments from different overload signatures.
+ * Handles string name, string array, or legacy options object with alias.
+ */
+function normalizeBuildArguments(
+  nameOrNamesOrOptions: string | string[] | BuildOptions,
+  options?: Omit<BuildOptions, 'alias'>
+): { names: string[]; buildOptions: BuildOptions } {
+  let names: string[]
+  let buildOptions: BuildOptions
+  if (typeof nameOrNamesOrOptions === 'string') {
+    names = [nameOrNamesOrOptions]
+    buildOptions = options ?? {}
+  } else if (Array.isArray(nameOrNamesOrOptions)) {
+    names = nameOrNamesOrOptions
+    buildOptions = options ?? {}
+  } else {
+    // Legacy: options object with alias
+    names = nameOrNamesOrOptions.alias ? [nameOrNamesOrOptions.alias] : []
+    buildOptions = nameOrNamesOrOptions
+  }
+
+  if (names.length === 0) {
+    throw new BuildError('Template name must be provided')
+  }
+
+  return { names, buildOptions }
+}
+
+/**
  * Base class for building E2B sandbox templates.
  */
 export class TemplateBase
@@ -166,25 +195,10 @@ export class TemplateBase
     nameOrNamesOrOptions: string | string[] | BuildOptions,
     options?: Omit<BuildOptions, 'alias'>
   ): Promise<BuildInfo> {
-    // Normalize arguments
-    let names: string[]
-    let buildOptions: BuildOptions
-    if (typeof nameOrNamesOrOptions === 'string') {
-      names = [nameOrNamesOrOptions]
-      buildOptions = options ?? {}
-    } else if (Array.isArray(nameOrNamesOrOptions)) {
-      names = nameOrNamesOrOptions
-      buildOptions = options ?? {}
-    } else {
-      // Legacy: options object with alias
-      names = nameOrNamesOrOptions.alias ? [nameOrNamesOrOptions.alias] : []
-      buildOptions = nameOrNamesOrOptions
-    }
-
-    // Validate: names must be provided
-    if (names.length === 0) {
-      throw new BuildError('Template name must be provided')
-    }
+    const { names, buildOptions } = normalizeBuildArguments(
+      nameOrNamesOrOptions,
+      options
+    )
 
     try {
       buildOptions.onBuildLogs?.(new LogEntryStart(new Date(), 'Build started'))
@@ -274,25 +288,10 @@ export class TemplateBase
     nameOrNamesOrOptions: string | string[] | BuildOptions,
     options?: Omit<BuildOptions, 'alias'>
   ): Promise<BuildInfo> {
-    // Normalize arguments
-    let names: string[]
-    let buildOptions: BuildOptions
-    if (typeof nameOrNamesOrOptions === 'string') {
-      names = [nameOrNamesOrOptions]
-      buildOptions = options ?? {}
-    } else if (Array.isArray(nameOrNamesOrOptions)) {
-      names = nameOrNamesOrOptions
-      buildOptions = options ?? {}
-    } else {
-      // Legacy: options object with alias
-      names = nameOrNamesOrOptions.alias ? [nameOrNamesOrOptions.alias] : []
-      buildOptions = nameOrNamesOrOptions
-    }
-
-    // Validate: names must be provided
-    if (names.length === 0) {
-      throw new BuildError('Template name must be provided')
-    }
+    const { names, buildOptions } = normalizeBuildArguments(
+      nameOrNamesOrOptions,
+      options
+    )
 
     const config = new ConnectionConfig(buildOptions)
     const client = new ApiClient(config)
