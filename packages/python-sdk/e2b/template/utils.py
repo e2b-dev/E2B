@@ -45,6 +45,48 @@ def normalize_path(path: str) -> str:
     return path.replace(os.sep, "/")
 
 
+def normalize_copy_source_path(src: str, file_context_path: str) -> (str, str):
+    """
+    Normalize a COPY source path into a context-relative pattern and its context.
+
+    - Absolute sources: anchor context at '/', keep full path structure
+      (relpath from '/'; '.' when the source is '/').
+    - Relative sources: context defaults to file_context_path; if the path escapes
+      that context (e.g., '../../../foo'), anchor at '/' to preserve structure.
+    - Always returns POSIX separators for glob/tar friendliness.
+
+    :param src: The source path to normalize
+    :param file_context_path: The context path to use
+    :return: A tuple containing the normalized source path and the context path
+    """
+    default_context = os.path.abspath(file_context_path)
+    absolute_src = (
+        src
+        if os.path.isabs(src)
+        else os.path.abspath(os.path.join(default_context, src))
+    )
+
+    if os.path.isabs(src):
+        context_path_for_instruction = "/"
+        normalized_src = normalize_path(os.path.relpath(absolute_src, "/")) or "."
+        return normalized_src, context_path_for_instruction
+
+    relative_to_default = os.path.relpath(absolute_src, default_context)
+    escapes_default = (
+        relative_to_default == ".."
+        or relative_to_default.startswith(".." + os.path.sep)
+        or relative_to_default.startswith("../")
+    )
+    context_path_for_instruction = "/" if escapes_default else default_context
+
+    normalized_src = (
+        normalize_path(os.path.relpath(absolute_src, context_path_for_instruction))
+        or "."
+    )
+
+    return normalized_src, context_path_for_instruction
+
+
 def get_all_files_in_path(
     src: str,
     context_path: str,
@@ -62,18 +104,20 @@ def get_all_files_in_path(
     """
     files = set()
 
-    # Use glob to find all files/directories matching the pattern under context_path
+    # Use glob to find all files/directories. Only set root_dir for relative patterns;
+    # absolute patterns must be matched as-is (particularly on Windows where drives differ).
     abs_context_path = os.path.abspath(context_path)
+    is_abs_src = os.path.isabs(src)
     files_glob = glob.glob(
         src,
         flags=glob.GLOBSTAR,
-        root_dir=abs_context_path,
+        root_dir=None if is_abs_src else abs_context_path,
         exclude=ignore_patterns,
     )
 
     for file in files_glob:
-        # Join it with abs_context_path to get the absolute path
-        file_path = os.path.join(abs_context_path, file)
+        # If glob returned a relative path, anchor it to abs_context_path
+        file_path = file if is_abs_src else os.path.join(abs_context_path, file)
 
         if os.path.isdir(file_path):
             # If it's a directory, add the directory and all entries recursively
@@ -82,11 +126,11 @@ def get_all_files_in_path(
             dir_files = glob.glob(
                 normalize_path(file) + "/**/*",
                 flags=glob.GLOBSTAR,
-                root_dir=abs_context_path,
+                root_dir=None if is_abs_src else abs_context_path,
                 exclude=ignore_patterns,
             )
             for dir_file in dir_files:
-                dir_file_path = os.path.join(abs_context_path, dir_file)
+                dir_file_path = dir_file if is_abs_src else os.path.join(abs_context_path, dir_file)
                 files.add(dir_file_path)
         else:
             files.add(file_path)
