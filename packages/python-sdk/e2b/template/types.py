@@ -105,13 +105,3 @@ class BuildInfo:
     names: List[str] = field(default_factory=list)
     # Deprecated: use names instead
     alias: str = ""
-
-
-@dataclass
-class TagInfo:
-    """
-    Information about assigned tags.
-    """
-
-    build_id: str
-    tags: List[str]

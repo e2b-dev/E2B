@@ -14,8 +14,8 @@ const mockHandlers = [
       names: string[]
     }
     return HttpResponse.json({
-      buildID: 'mock-build-id',
-      tags: names,
+      buildID: '00000000-0000-0000-0000-000000000000',
+      names: names,
     })
   }),
   http.delete(/https:\/\/api\.e2b.app\/templates\/tags\/.*/, ({ request }) => {
@@ -42,8 +42,8 @@ describe('Template tags unit tests', () => {
         'my-template:v1.0',
         'my-template:production'
       )
-      expect(result.buildId).toBe('mock-build-id')
-      expect(result.tags).toContain('my-template:production')
+      expect(result.buildID).toBe('00000000-0000-0000-0000-000000000000')
+      expect(result.names).toContain('my-template:production')
     })
 
     test('assigns multiple tags', async () => {
@@ -51,9 +51,9 @@ describe('Template tags unit tests', () => {
         'my-template:production',
         'my-template:stable',
       ])
-      expect(result.buildId).toBe('mock-build-id')
-      expect(result.tags).toContain('my-template:production')
-      expect(result.tags).toContain('my-template:stable')
+      expect(result.buildID).toBe('00000000-0000-0000-0000-000000000000')
+      expect(result.names).toContain('my-template:production')
+      expect(result.names).toContain('my-template:stable')
     })
   })
 
@@ -94,10 +94,10 @@ buildTemplateTest.skipIf(isDebug)(
       latestTag,
     ])
 
-    expect(tagInfo.buildId).toBeTruthy()
+    expect(tagInfo.buildID).toBeTruthy()
     // API returns just the tag portion, not the full alias:tag
-    expect(tagInfo.tags).toContain('production')
-    expect(tagInfo.tags).toContain('latest')
+    expect(tagInfo.names).toContain('production')
+    expect(tagInfo.names).toContain('latest')
 
     // Delete tags
     await Template.deleteTag(productionTag)
@@ -122,9 +122,9 @@ buildTemplateTest.skipIf(isDebug)(
     const stableTag = `${templateAlias}:stable`
     const tagInfo = await Template.assignTag(initialTag, stableTag)
 
-    expect(tagInfo.buildId).toBeTruthy()
+    expect(tagInfo.buildID).toBeTruthy()
     // API returns just the tag portion, not the full alias:tag
-    expect(tagInfo.tags).toContain('stable')
+    expect(tagInfo.names).toContain('stable')
 
     // Clean up
     await Template.deleteTag(initialTag)

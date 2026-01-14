@@ -37,6 +37,9 @@ export type GetBuildStatusResponse =
 export type TriggerBuildTemplate =
   paths['/v2/templates/{templateID}/builds/{buildID}']['post']['requestBody']['content']['application/json']
 
+export type TagInfo =
+  paths['/templates/tags']['post']['responses']['201']['content']['application/json']
+
 export async function requestBuild(
   client: ApiClient,
   { names, cpuCount, memoryMB }: RequestBuildInput
@@ -295,7 +298,7 @@ export async function waitForBuildFinish(
 export async function assignTag(
   client: ApiClient,
   { target, names }: { target: string; names: string[] }
-): Promise<{ buildId: string; tags: string[] }> {
+): Promise<TagInfo> {
   const res = await client.api.POST('/templates/tags', {
     body: { target, names },
   })
@@ -309,7 +312,7 @@ export async function assignTag(
     throw new TemplateError('Failed to assign tag')
   }
 
-  return { buildId: res.data.buildID, tags: res.data.tags }
+  return res.data
 }
 
 export async function deleteTag(

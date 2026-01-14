@@ -11,6 +11,7 @@ import {
   GetBuildStatusResponse,
   getFileUploadLink,
   requestBuild,
+  TagInfo,
   triggerBuild,
   TriggerBuildTemplate,
   uploadFile,
@@ -30,7 +31,6 @@ import {
   InstructionType,
   McpServerName,
   RegistryConfig,
-  TagInfo,
   TemplateBuilder,
   TemplateClass,
   TemplateFinal,
@@ -1251,7 +1251,6 @@ export type {
   CopyItem,
   GetBuildStatusOptions,
   McpServerName,
-  TagInfo,
   TemplateBuilder,
   TemplateClass,
 } from './types'

@@ -24,8 +24,8 @@ from e2b.api.client.models import (
     TemplateBuild,
     Error,
     AssignTemplateTagRequest,
+    TemplateTag,
 )
-from e2b.template.types import TagInfo
 from e2b.exceptions import BuildException, FileUploadException, TemplateException
 from e2b.template.logger import LogEntry
 from e2b.template.types import TemplateType
@@ -241,7 +241,9 @@ def check_alias_exists(client: AuthenticatedClient, alias: str) -> bool:
     return res.parsed is not None
 
 
-def assign_tag(client: AuthenticatedClient, target: str, names: List[str]) -> TagInfo:
+def assign_tag(
+    client: AuthenticatedClient, target: str, names: List[str]
+) -> TemplateTag:
     """
     Assign tag(s) to an existing template build.
 
@@ -251,7 +253,7 @@ def assign_tag(client: AuthenticatedClient, target: str, names: List[str]) -> Ta
         names: Tag(s) to assign in 'alias:tag' format
 
     Returns:
-        TagInfo with build_id and assigned tags
+        TemplateTag with build_id and assigned names
     """
     res = post_templates_tags.sync_detailed(
         client=client,
@@ -270,10 +272,7 @@ def assign_tag(client: AuthenticatedClient, target: str, names: List[str]) -> Ta
     if res.parsed is None:
         raise TemplateException("Failed to assign tag")
 
-    return TagInfo(
-        build_id=str(res.parsed.build_id),
-        tags=res.parsed.tags,
-    )
+    return res.parsed
 
 
 def delete_tag(client: AuthenticatedClient, name: str) -> None:

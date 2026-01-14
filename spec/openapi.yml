@@ -102,42 +102,42 @@ components:
         type: string
 
   responses:
-    '400':
+    "400":
       description: Bad request
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/Error'
-    '401':
+            $ref: "#/components/schemas/Error"
+    "401":
       description: Authentication error
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/Error'
-    '403':
+            $ref: "#/components/schemas/Error"
+    "403":
       description: Forbidden
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/Error'
-    '404':
+            $ref: "#/components/schemas/Error"
+    "404":
       description: Not found
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/Error'
-    '409':
+            $ref: "#/components/schemas/Error"
+    "409":
       description: Conflict
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/Error'
-    '500':
+            $ref: "#/components/schemas/Error"
+    "500":
       description: Server error
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/Error'
+            $ref: "#/components/schemas/Error"
 
   schemas:
     Team:
@@ -274,7 +274,7 @@ components:
           type: string
           description: Log message content
         level:
-          $ref: '#/components/schemas/LogLevel'
+          $ref: "#/components/schemas/LogLevel"
         fields:
           type: object
           additionalProperties:
@@ -289,12 +289,12 @@ components:
           description: Logs of the sandbox
           type: array
           items:
-            $ref: '#/components/schemas/SandboxLog'
+            $ref: "#/components/schemas/SandboxLog"
         logEntries:
           description: Structured logs of the sandbox
           type: array
           items:
-            $ref: '#/components/schemas/SandboxLogEntry'
+            $ref: "#/components/schemas/SandboxLogEntry"
 
     SandboxMetric:
       description: Metric entry with timestamp and line
@@ -363,7 +363,7 @@ components:
           deprecated: true
           description: Identifier of the client
         envdVersion:
-          $ref: '#/components/schemas/EnvdVersion'
+          $ref: "#/components/schemas/EnvdVersion"
         envdAccessToken:
           type: string
           description: Access token used for envd communication
@@ -411,7 +411,7 @@ components:
           format: date-time
           description: Time when the sandbox will expire
         envdVersion:
-          $ref: '#/components/schemas/EnvdVersion'
+          $ref: "#/components/schemas/EnvdVersion"
         envdAccessToken:
           type: string
           description: Access token used for envd communication
@@ -420,15 +420,15 @@ components:
           nullable: true
           description: Base domain where the sandbox traffic is accessible
         cpuCount:
-          $ref: '#/components/schemas/CPUCount'
+          $ref: "#/components/schemas/CPUCount"
         memoryMB:
-          $ref: '#/components/schemas/MemoryMB'
+          $ref: "#/components/schemas/MemoryMB"
         diskSizeMB:
-          $ref: '#/components/schemas/DiskSizeMB'
+          $ref: "#/components/schemas/DiskSizeMB"
         metadata:
-          $ref: '#/components/schemas/SandboxMetadata'
+          $ref: "#/components/schemas/SandboxMetadata"
         state:
-          $ref: '#/components/schemas/SandboxState'
+          $ref: "#/components/schemas/SandboxState"
 
     ListedSandbox:
       required:
@@ -465,17 +465,17 @@ components:
           format: date-time
           description: Time when the sandbox will expire
         cpuCount:
-          $ref: '#/components/schemas/CPUCount'
+          $ref: "#/components/schemas/CPUCount"
         memoryMB:
-          $ref: '#/components/schemas/MemoryMB'
+          $ref: "#/components/schemas/MemoryMB"
         diskSizeMB:
-          $ref: '#/components/schemas/DiskSizeMB'
+          $ref: "#/components/schemas/DiskSizeMB"
         metadata:
-          $ref: '#/components/schemas/SandboxMetadata'
+          $ref: "#/components/schemas/SandboxMetadata"
         state:
-          $ref: '#/components/schemas/SandboxState'
+          $ref: "#/components/schemas/SandboxState"
         envdVersion:
-          $ref: '#/components/schemas/EnvdVersion'
+          $ref: "#/components/schemas/EnvdVersion"
 
     SandboxesWithMetrics:
       required:
@@ -483,7 +483,7 @@ components:
       properties:
         sandboxes:
           additionalProperties:
-            $ref: '#/components/schemas/SandboxMetric'
+            $ref: "#/components/schemas/SandboxMetric"
 
     NewSandbox:
       required:
@@ -511,13 +511,13 @@ components:
             Allow sandbox to access the internet. When set to false, it behaves the same as specifying denyOut
             to 0.0.0.0/0 in the network config.
         network:
-          $ref: '#/components/schemas/SandboxNetworkConfig'
+          $ref: "#/components/schemas/SandboxNetworkConfig"
         metadata:
-          $ref: '#/components/schemas/SandboxMetadata'
+          $ref: "#/components/schemas/SandboxMetadata"
         envVars:
-          $ref: '#/components/schemas/EnvVars'
+          $ref: "#/components/schemas/EnvVars"
         mcp:
-          $ref: '#/components/schemas/Mcp'
+          $ref: "#/components/schemas/Mcp"
 
     ResumedSandbox:
       properties:
@@ -626,11 +626,11 @@ components:
           type: string
           description: Identifier of the last successful build for given template
         cpuCount:
-          $ref: '#/components/schemas/CPUCount'
+          $ref: "#/components/schemas/CPUCount"
         memoryMB:
-          $ref: '#/components/schemas/MemoryMB'
+          $ref: "#/components/schemas/MemoryMB"
         diskSizeMB:
-          $ref: '#/components/schemas/DiskSizeMB'
+          $ref: "#/components/schemas/DiskSizeMB"
         public:
           type: boolean
           description: Whether the template is public or only accessible by the team
@@ -649,7 +649,7 @@ components:
           description: Time when the template was last updated
         createdBy:
           allOf:
-            - $ref: '#/components/schemas/TeamUser'
+            - $ref: "#/components/schemas/TeamUser"
           nullable: true
         lastSpawnedAt:
           type: string
@@ -665,9 +665,9 @@ components:
           format: int32
           description: Number of times the template was built
         envdVersion:
-          $ref: '#/components/schemas/EnvdVersion'
+          $ref: "#/components/schemas/EnvdVersion"
         buildStatus:
-          $ref: '#/components/schemas/TemplateBuildStatus'
+          $ref: "#/components/schemas/TemplateBuildStatus"
 
     TemplateRequestResponseV3:
       required:
@@ -715,11 +715,11 @@ components:
           type: string
           description: Identifier of the last successful build for given template
         cpuCount:
-          $ref: '#/components/schemas/CPUCount'
+          $ref: "#/components/schemas/CPUCount"
         memoryMB:
-          $ref: '#/components/schemas/MemoryMB'
+          $ref: "#/components/schemas/MemoryMB"
         diskSizeMB:
-          $ref: '#/components/schemas/DiskSizeMB'
+          $ref: "#/components/schemas/DiskSizeMB"
         public:
           type: boolean
           description: Whether the template is public or only accessible by the team
@@ -738,7 +738,7 @@ components:
           description: Time when the template was last updated
         createdBy:
           allOf:
-            - $ref: '#/components/schemas/TeamUser'
+            - $ref: "#/components/schemas/TeamUser"
           nullable: true
         lastSpawnedAt:
           type: string
@@ -754,7 +754,7 @@ components:
           format: int32
           description: Number of times the template was built
         envdVersion:
-          $ref: '#/components/schemas/EnvdVersion'
+          $ref: "#/components/schemas/EnvdVersion"
 
     TemplateBuild:
       required:
@@ -770,7 +770,7 @@ components:
           format: uuid
           description: Identifier of the build
         status:
-          $ref: '#/components/schemas/TemplateBuildStatus'
+          $ref: "#/components/schemas/TemplateBuildStatus"
         createdAt:
           type: string
           format: date-time
@@ -784,13 +784,13 @@ components:
           format: date-time
           description: Time when the build was finished
         cpuCount:
-          $ref: '#/components/schemas/CPUCount'
+          $ref: "#/components/schemas/CPUCount"
         memoryMB:
-          $ref: '#/components/schemas/MemoryMB'
+          $ref: "#/components/schemas/MemoryMB"
         diskSizeMB:
-          $ref: '#/components/schemas/DiskSizeMB'
+          $ref: "#/components/schemas/DiskSizeMB"
         envdVersion:
-          $ref: '#/components/schemas/EnvdVersion'
+          $ref: "#/components/schemas/EnvdVersion"
 
     TemplateWithBuilds:
       required:
@@ -835,7 +835,7 @@ components:
           type: array
           description: List of builds for the template
           items:
-            $ref: '#/components/schemas/TemplateBuild'
+            $ref: "#/components/schemas/TemplateBuild"
 
     TemplateAliasResponse:
       required:
@@ -869,9 +869,9 @@ components:
           description: Ready check command to execute in the template after the build
           type: string
         cpuCount:
-          $ref: '#/components/schemas/CPUCount'
+          $ref: "#/components/schemas/CPUCount"
         memoryMB:
-          $ref: '#/components/schemas/MemoryMB'
+          $ref: "#/components/schemas/MemoryMB"
 
     TemplateStep:
       description: Step in the template build process
@@ -907,12 +907,13 @@ components:
           items:
             type: string
         teamID:
+          deprecated: true
           type: string
           description: Identifier of the team
         cpuCount:
-          $ref: '#/components/schemas/CPUCount'
+          $ref: "#/components/schemas/CPUCount"
         memoryMB:
-          $ref: '#/components/schemas/MemoryMB'
+          $ref: "#/components/schemas/MemoryMB"
 
     TemplateBuildRequestV2:
       required:
@@ -922,24 +923,25 @@ components:
           description: Alias of the template
           type: string
         teamID:
+          deprecated: true
           type: string
           description: Identifier of the team
         cpuCount:
-          $ref: '#/components/schemas/CPUCount'
+          $ref: "#/components/schemas/CPUCount"
         memoryMB:
-          $ref: '#/components/schemas/MemoryMB'
+          $ref: "#/components/schemas/MemoryMB"
 
     FromImageRegistry:
       oneOf:
-        - $ref: '#/components/schemas/AWSRegistry'
-        - $ref: '#/components/schemas/GCPRegistry'
-        - $ref: '#/components/schemas/GeneralRegistry'
+        - $ref: "#/components/schemas/AWSRegistry"
+        - $ref: "#/components/schemas/GCPRegistry"
+        - $ref: "#/components/schemas/GeneralRegistry"
       discriminator:
         propertyName: type
         mapping:
-          aws: '#/components/schemas/AWSRegistry'
-          gcp: '#/components/schemas/GCPRegistry'
-          registry: '#/components/schemas/GeneralRegistry'
+          aws: "#/components/schemas/AWSRegistry"
+          gcp: "#/components/schemas/GCPRegistry"
+          registry: "#/components/schemas/GeneralRegistry"
 
     AWSRegistry:
       type: object
@@ -1005,7 +1007,7 @@ components:
           type: string
           description: Template to use as a base for the template build
         fromImageRegistry:
-          $ref: '#/components/schemas/FromImageRegistry'
+          $ref: "#/components/schemas/FromImageRegistry"
         force:
           default: false
           type: boolean
@@ -1015,7 +1017,7 @@ components:
           description: List of steps to execute in the template build
           type: array
           items:
-            $ref: '#/components/schemas/TemplateStep'
+            $ref: "#/components/schemas/TemplateStep"
         startCmd:
           description: Start command to execute in the template after the build
           type: string
@@ -1057,7 +1059,7 @@ components:
           type: string
           description: Log message content
         level:
-          $ref: '#/components/schemas/LogLevel'
+          $ref: "#/components/schemas/LogLevel"
         step:
           type: string
           description: Step in the build process related to the log entry
@@ -1077,7 +1079,7 @@ components:
           description: Log entries related to the status reason
           type: array
           items:
-            $ref: '#/components/schemas/BuildLogEntry'
+            $ref: "#/components/schemas/BuildLogEntry"
 
     TemplateBuildStatus:
       type: string
@@ -1107,7 +1109,7 @@ components:
           description: Build logs structured
           type: array
           items:
-            $ref: '#/components/schemas/BuildLogEntry'
+            $ref: "#/components/schemas/BuildLogEntry"
         templateID:
           type: string
           description: Identifier of the template
@@ -1115,9 +1117,9 @@ components:
           type: string
           description: Identifier of the build
         status:
-          $ref: '#/components/schemas/TemplateBuildStatus'
+          $ref: "#/components/schemas/TemplateBuildStatus"
         reason:
-          $ref: '#/components/schemas/BuildStatusReason'
+          $ref: "#/components/schemas/BuildStatusReason"
 
     TemplateBuildLogsResponse:
       required:
@@ -1128,7 +1130,7 @@ components:
           description: Build logs structured
           type: array
           items:
-            $ref: '#/components/schemas/BuildLogEntry'
+            $ref: "#/components/schemas/BuildLogEntry"
 
     LogsDirection:
       type: string
@@ -1173,7 +1175,7 @@ components:
           format: uuid
           description: Identifier of the cluster
         status:
-          $ref: '#/components/schemas/NodeStatus'
+          $ref: "#/components/schemas/NodeStatus"
 
     DiskMetrics:
       required:
@@ -1240,7 +1242,7 @@ components:
           type: array
           description: Detailed metrics for each disk/mount point
           items:
-            $ref: '#/components/schemas/DiskMetrics'
+            $ref: "#/components/schemas/DiskMetrics"
     MachineInfo:
       required:
         - cpuFamily
@@ -1297,15 +1299,15 @@ components:
           type: string
           description: Identifier of the cluster
         machineInfo:
-          $ref: '#/components/schemas/MachineInfo'
+          $ref: "#/components/schemas/MachineInfo"
         status:
-          $ref: '#/components/schemas/NodeStatus'
+          $ref: "#/components/schemas/NodeStatus"
         sandboxCount:
           type: integer
           format: uint32
           description: Number of sandboxes running on the node
         metrics:
-          $ref: '#/components/schemas/NodeMetrics'
+          $ref: "#/components/schemas/NodeMetrics"
         createSuccesses:
           type: integer
           format: uint64
@@ -1355,16 +1357,16 @@ components:
           deprecated: true
           description: Identifier of the nomad node
         machineInfo:
-          $ref: '#/components/schemas/MachineInfo'
+          $ref: "#/components/schemas/MachineInfo"
         status:
-          $ref: '#/components/schemas/NodeStatus'
+          $ref: "#/components/schemas/NodeStatus"
         sandboxes:
           type: array
           description: List of sandboxes running on the node
           items:
-            $ref: '#/components/schemas/ListedSandbox'
+            $ref: "#/components/schemas/ListedSandbox"
         metrics:
-          $ref: '#/components/schemas/NodeMetrics'
+          $ref: "#/components/schemas/NodeMetrics"
         cachedBuilds:
           type: array
           description: List of cached builds id on the node
@@ -1398,7 +1400,7 @@ components:
           type: string
           description: The fully created access token
         mask:
-          $ref: '#/components/schemas/IdentifierMaskingDetails'
+          $ref: "#/components/schemas/IdentifierMaskingDetails"
         createdAt:
           type: string
           format: date-time
@@ -1427,14 +1429,14 @@ components:
           type: string
           description: Name of the API key
         mask:
-          $ref: '#/components/schemas/IdentifierMaskingDetails'
+          $ref: "#/components/schemas/IdentifierMaskingDetails"
         createdAt:
           type: string
           format: date-time
           description: Timestamp of API key creation
         createdBy:
           allOf:
-            - $ref: '#/components/schemas/TeamUser'
+            - $ref: "#/components/schemas/TeamUser"
           nullable: true
         lastUsed:
           type: string
@@ -1458,7 +1460,7 @@ components:
           type: string
           description: Raw value of the API key
         mask:
-          $ref: '#/components/schemas/IdentifierMaskingDetails'
+          $ref: "#/components/schemas/IdentifierMaskingDetails"
         name:
           type: string
           description: Name of the API key
@@ -1468,7 +1470,7 @@ components:
           description: Timestamp of API key creation
         createdBy:
           allOf:
-            - $ref: '#/components/schemas/TeamUser'
+            - $ref: "#/components/schemas/TeamUser"
           nullable: true
         lastUsed:
           type: string
@@ -1494,14 +1496,14 @@ components:
 
     TemplateTag:
       required:
-        - tags
+        - names
         - buildID
       properties:
-        tags:
+        names:
           type: array
           items:
             type: string
-          description: Tags of the template
+          description: Assigned names of the template
         buildID:
           type: string
           format: uuid
@@ -1514,7 +1516,7 @@ components:
       properties:
         target:
           type: string
-          description: Target template name in 'alias:tag' format
+          description: Target template name in "alias:tag" format
         names:
           description: Names of the template
           type: array
@@ -1567,10 +1569,10 @@ paths:
     get:
       description: Health check
       responses:
-        '200':
+        "200":
           description: Request was successful
-        '401':
-          $ref: '#/components/responses/401'
+        "401":
+          $ref: "#/components/responses/401"
 
   /teams:
     get:
@@ -1580,7 +1582,7 @@ paths:
         - AccessTokenAuth: []
         - Supabase1TokenAuth: []
       responses:
-        '200':
+        "200":
           description: Successfully returned all teams
           content:
             application/json:
@@ -1588,11 +1590,11 @@ paths:
                 type: array
                 items:
                   allOf:
-                    - $ref: '#/components/schemas/Team'
-        '401':
-          $ref: '#/components/responses/401'
-        '500':
-          $ref: '#/components/responses/500'
+                    - $ref: "#/components/schemas/Team"
+        "401":
+          $ref: "#/components/responses/401"
+        "500":
+          $ref: "#/components/responses/500"
 
   /teams/{teamID}/metrics:
     get:
@@ -1603,7 +1605,7 @@ paths:
         - Supabase1TokenAuth: []
           Supabase2TeamAuth: []
       parameters:
-        - $ref: '#/components/parameters/teamID'
+        - $ref: "#/components/parameters/teamID"
         - in: query
           name: start
           schema:
@@ -1619,22 +1621,22 @@ paths:
             minimum: 0
             description: Unix timestamp for the end of the interval, in seconds, for which the metrics
       responses:
-        '200':
+        "200":
           description: Successfully returned the team metrics
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/TeamMetric'
-        '400':
-          $ref: '#/components/responses/400'
-        '401':
-          $ref: '#/components/responses/401'
-        '403':
-          $ref: '#/components/responses/403'
-        '500':
-          $ref: '#/components/responses/500'
+                  $ref: "#/components/schemas/TeamMetric"
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "403":
+          $ref: "#/components/responses/403"
+        "500":
+          $ref: "#/components/responses/500"
 
   /teams/{teamID}/metrics/max:
     get:
@@ -1645,7 +1647,7 @@ paths:
         - Supabase1TokenAuth: []
           Supabase2TeamAuth: []
       parameters:
-        - $ref: '#/components/parameters/teamID'
+        - $ref: "#/components/parameters/teamID"
         - in: query
           name: start
           schema:
@@ -1668,20 +1670,20 @@ paths:
             enum: [concurrent_sandboxes, sandbox_start_rate]
           description: Metric to retrieve the maximum value for
       responses:
-        '200':
+        "200":
           description: Successfully returned the team metrics
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MaxTeamMetric'
-        '400':
-          $ref: '#/components/responses/400'
-        '401':
-          $ref: '#/components/responses/401'
-        '403':
-          $ref: '#/components/responses/403'
-        '500':
-          $ref: '#/components/responses/500'
+                $ref: "#/components/schemas/MaxTeamMetric"
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "403":
+          $ref: "#/components/responses/403"
+        "500":
+          $ref: "#/components/responses/500"
 
   /sandboxes:
     get:
@@ -1694,12 +1696,12 @@ paths:
       parameters:
         - name: metadata
           in: query
-          description: Metadata query used to filter the sandboxes (e.g. 'user=abc&app=prod'). Each key and values must be URL encoded.
+          description: Metadata query used to filter the sandboxes (e.g. "user=abc&app=prod"). Each key and values must be URL encoded.
           required: false
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: Successfully returned all running sandboxes
           content:
             application/json:
@@ -1707,13 +1709,13 @@ paths:
                 type: array
                 items:
                   allOf:
-                    - $ref: '#/components/schemas/ListedSandbox'
-        '401':
-          $ref: '#/components/responses/401'
-        '400':
-          $ref: '#/components/responses/400'
-        '500':
-          $ref: '#/components/responses/500'
+                    - $ref: "#/components/schemas/ListedSandbox"
+        "401":
+          $ref: "#/components/responses/401"
+        "400":
+          $ref: "#/components/responses/400"
+        "500":
+          $ref: "#/components/responses/500"
     post:
       description: Create a sandbox from the template
       tags: [sandboxes]
@@ -1726,20 +1728,20 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/NewSandbox'
+              $ref: "#/components/schemas/NewSandbox"
       responses:
-        '201':
+        "201":
           description: The sandbox was created successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Sandbox'
-        '401':
-          $ref: '#/components/responses/401'
-        '400':
-          $ref: '#/components/responses/400'
-        '500':
-          $ref: '#/components/responses/500'
+                $ref: "#/components/schemas/Sandbox"
+        "401":
+          $ref: "#/components/responses/401"
+        "400":
+          $ref: "#/components/responses/400"
+        "500":
+          $ref: "#/components/responses/500"
 
   /v2/sandboxes:
     get:
@@ -1752,7 +1754,7 @@ paths:
       parameters:
         - name: metadata
           in: query
-          description: Metadata query used to filter the sandboxes (e.g. 'user=abc&app=prod'). Each key and values must be URL encoded.
+          description: Metadata query used to filter the sandboxes (e.g. "user=abc&app=prod"). Each key and values must be URL encoded.
           required: false
           schema:
             type: string
@@ -1763,13 +1765,13 @@ paths:
           schema:
             type: array
             items:
-              $ref: '#/components/schemas/SandboxState'
+              $ref: "#/components/schemas/SandboxState"
           style: form
           explode: false
-        - $ref: '#/components/parameters/paginationNextToken'
-        - $ref: '#/components/parameters/paginationLimit'
+        - $ref: "#/components/parameters/paginationNextToken"
+        - $ref: "#/components/parameters/paginationLimit"
       responses:
-        '200':
+        "200":
           description: Successfully returned all running sandboxes
           content:
             application/json:
@@ -1777,13 +1779,13 @@ paths:
                 type: array
                 items:
                   allOf:
-                    - $ref: '#/components/schemas/ListedSandbox'
-        '401':
-          $ref: '#/components/responses/401'
-        '400':
-          $ref: '#/components/responses/400'
-        '500':
-          $ref: '#/components/responses/500'
+                    - $ref: "#/components/schemas/ListedSandbox"
+        "401":
+          $ref: "#/components/responses/401"
+        "400":
+          $ref: "#/components/responses/400"
+        "500":
+          $ref: "#/components/responses/500"
 
   /sandboxes/metrics:
     get:
@@ -1806,18 +1808,18 @@ paths:
             maxItems: 100
             uniqueItems: true
       responses:
-        '200':
+        "200":
           description: Successfully returned all running sandboxes with metrics
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SandboxesWithMetrics'
-        '401':
-          $ref: '#/components/responses/401'
-        '400':
-          $ref: '#/components/responses/400'
-        '500':
-          $ref: '#/components/responses/500'
+                $ref: "#/components/schemas/SandboxesWithMetrics"
+        "401":
+          $ref: "#/components/responses/401"
+        "400":
+          $ref: "#/components/responses/400"
+        "500":
+          $ref: "#/components/responses/500"
 
   /sandboxes/{sandboxID}/logs:
     get:
@@ -1828,7 +1830,7 @@ paths:
         - Supabase1TokenAuth: []
           Supabase2TeamAuth: []
       parameters:
-        - $ref: '#/components/parameters/sandboxID'
+        - $ref: "#/components/parameters/sandboxID"
         - in: query
           name: start
           schema:
@@ -1845,18 +1847,18 @@ paths:
             type: integer
           description: Maximum number of logs that should be returned
       responses:
-        '200':
+        "200":
           description: Successfully returned the sandbox logs
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SandboxLogs'
-        '404':
-          $ref: '#/components/responses/404'
-        '401':
-          $ref: '#/components/responses/401'
-        '500':
-          $ref: '#/components/responses/500'
+                $ref: "#/components/schemas/SandboxLogs"
+        "404":
+          $ref: "#/components/responses/404"
+        "401":
+          $ref: "#/components/responses/401"
+        "500":
+          $ref: "#/components/responses/500"
 
   /sandboxes/{sandboxID}:
     get:
@@ -1867,20 +1869,20 @@ paths:
         - Supabase1TokenAuth: []
           Supabase2TeamAuth: []
       parameters:
-        - $ref: '#/components/parameters/sandboxID'
+        - $ref: "#/components/parameters/sandboxID"
       responses:
-        '200':
+        "200":
           description: Successfully returned the sandbox
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SandboxDetail'
-        '404':
-          $ref: '#/components/responses/404'
-        '401':
-          $ref: '#/components/responses/401'
-        '500':
-          $ref: '#/components/responses/500'
+                $ref: "#/components/schemas/SandboxDetail"
+        "404":
+          $ref: "#/components/responses/404"
+        "401":
+          $ref: "#/components/responses/401"
+        "500":
+          $ref: "#/components/responses/500"
 
     delete:
       description: Kill a sandbox
@@ -1890,16 +1892,16 @@ paths:
         - Supabase1TokenAuth: []
           Supabase2TeamAuth: []
       parameters:
-        - $ref: '#/components/parameters/sandboxID'
+        - $ref: "#/components/parameters/sandboxID"
       responses:
-        '204':
+        "204":
           description: The sandbox was killed successfully
-        '404':
-          $ref: '#/components/responses/404'
-        '401':
-          $ref: '#/components/responses/401'
-        '500':
-          $ref: '#/components/responses/500'
+        "404":
+          $ref: "#/components/responses/404"
+        "401":
+          $ref: "#/components/responses/401"
+        "500":
+          $ref: "#/components/responses/500"
 
   /sandboxes/{sandboxID}/metrics:
     get:
@@ -1910,7 +1912,7 @@ paths:
         - Supabase1TokenAuth: []
           Supabase2TeamAuth: []
       parameters:
-        - $ref: '#/components/parameters/sandboxID'
+        - $ref: "#/components/parameters/sandboxID"
         - in: query
           name: start
           schema:
@@ -1927,22 +1929,22 @@ paths:
             description: Unix timestamp for the end of the interval, in seconds, for which the metrics
 
       responses:
-        '200':
+        "200":
           description: Successfully returned the sandbox metrics
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/SandboxMetric'
-        '400':
-          $ref: '#/components/responses/400'
-        '401':
-          $ref: '#/components/responses/401'
-        '404':
-          $ref: '#/components/responses/404'
-        '500':
-          $ref: '#/components/responses/500'
+                  $ref: "#/components/schemas/SandboxMetric"
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "404":
+          $ref: "#/components/responses/404"
+        "500":
+          $ref: "#/components/responses/500"
 
   # TODO: Pause and resume might be exposed as POST /sandboxes/{sandboxID}/snapshot and then POST /sandboxes with specified snapshotting setup
   /sandboxes/{sandboxID}/pause:
@@ -1954,18 +1956,18 @@ paths:
         - Supabase1TokenAuth: []
           Supabase2TeamAuth: []
       parameters:
-        - $ref: '#/components/parameters/sandboxID'
+        - $ref: "#/components/parameters/sandboxID"
       responses:
-        '204':
+        "204":
           description: The sandbox was paused successfully and can be resumed
-        '409':
-          $ref: '#/components/responses/409'
-        '404':
-          $ref: '#/components/responses/404'
-        '401':
-          $ref: '#/components/responses/401'
-        '500':
-          $ref: '#/components/responses/500'
+        "409":
+          $ref: "#/components/responses/409"
+        "404":
+          $ref: "#/components/responses/404"
+        "401":
+          $ref: "#/components/responses/401"
+        "500":
+          $ref: "#/components/responses/500"
 
   /sandboxes/{sandboxID}/resume:
     post:
@@ -1977,28 +1979,28 @@ paths:
         - Supabase1TokenAuth: []
           Supabase2TeamAuth: []
       parameters:
-        - $ref: '#/components/parameters/sandboxID'
+        - $ref: "#/components/parameters/sandboxID"
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ResumedSandbox'
+              $ref: "#/components/schemas/ResumedSandbox"
       responses:
-        '201':
+        "201":
           description: The sandbox was resumed successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Sandbox'
-        '409':
-          $ref: '#/components/responses/409'
-        '404':
-          $ref: '#/components/responses/404'
-        '401':
-          $ref: '#/components/responses/401'
-        '500':
-          $ref: '#/components/responses/500'
+                $ref: "#/components/schemas/Sandbox"
+        "409":
+          $ref: "#/components/responses/409"
+        "404":
+          $ref: "#/components/responses/404"
+        "401":
+          $ref: "#/components/responses/401"
+        "500":
+          $ref: "#/components/responses/500"
 
   /sandboxes/{sandboxID}/connect:
     post:
@@ -2009,34 +2011,34 @@ paths:
         - Supabase1TokenAuth: []
           Supabase2TeamAuth: []
       parameters:
-        - $ref: '#/components/parameters/sandboxID'
+        - $ref: "#/components/parameters/sandboxID"
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ConnectSandbox'
+              $ref: "#/components/schemas/ConnectSandbox"
       responses:
-        '200':
+        "200":
           description: The sandbox was already running
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Sandbox'
-        '201':
+                $ref: "#/components/schemas/Sandbox"
+        "201":
           description: The sandbox was resumed successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Sandbox'
-        '400':
-          $ref: '#/components/responses/400'
-        '401':
-          $ref: '#/components/responses/401'
-        '404':
-          $ref: '#/components/responses/404'
-        '500':
-          $ref: '#/components/responses/500'
+                $ref: "#/components/schemas/Sandbox"
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "404":
+          $ref: "#/components/responses/404"
+        "500":
+          $ref: "#/components/responses/500"
 
   /sandboxes/{sandboxID}/timeout:
     post:
@@ -2060,16 +2062,16 @@ paths:
                   format: int32
                   minimum: 0
       parameters:
-        - $ref: '#/components/parameters/sandboxID'
+        - $ref: "#/components/parameters/sandboxID"
       responses:
-        '204':
+        "204":
           description: Successfully set the sandbox timeout
-        '401':
-          $ref: '#/components/responses/401'
-        '404':
-          $ref: '#/components/responses/404'
-        '500':
-          $ref: '#/components/responses/500'
+        "401":
+          $ref: "#/components/responses/401"
+        "404":
+          $ref: "#/components/responses/404"
+        "500":
+          $ref: "#/components/responses/500"
 
   /sandboxes/{sandboxID}/refreshes:
     post:
@@ -2091,14 +2093,14 @@ paths:
                   maximum: 3600 # 1 hour
                   minimum: 0
       parameters:
-        - $ref: '#/components/parameters/sandboxID'
+        - $ref: "#/components/parameters/sandboxID"
       responses:
-        '204':
+        "204":
           description: Successfully refreshed the sandbox
-        '401':
-          $ref: '#/components/responses/401'
-        '404':
-          $ref: '#/components/responses/404'
+        "401":
+          $ref: "#/components/responses/401"
+        "404":
+          $ref: "#/components/responses/404"
 
   /v3/templates:
     post:
@@ -2107,26 +2109,27 @@ paths:
       security:
         - ApiKeyAuth: []
         - Supabase1TokenAuth: []
+          Supabase2TeamAuth: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TemplateBuildRequestV3'
+              $ref: "#/components/schemas/TemplateBuildRequestV3"
 
       responses:
-        '202':
+        "202":
           description: The build was requested successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TemplateRequestResponseV3'
-        '400':
-          $ref: '#/components/responses/400'
-        '401':
-          $ref: '#/components/responses/401'
-        '500':
-          $ref: '#/components/responses/500'
+                $ref: "#/components/schemas/TemplateRequestResponseV3"
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "500":
+          $ref: "#/components/responses/500"
 
   /v2/templates:
     post:
@@ -2136,26 +2139,27 @@ paths:
       security:
         - ApiKeyAuth: []
         - Supabase1TokenAuth: []
+          Supabase2TeamAuth: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TemplateBuildRequestV2'
+              $ref: "#/components/schemas/TemplateBuildRequestV2"
 
       responses:
-        '202':
+        "202":
           description: The build was requested successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TemplateLegacy'
-        '400':
-          $ref: '#/components/responses/400'
-        '401':
-          $ref: '#/components/responses/401'
-        '500':
-          $ref: '#/components/responses/500'
+                $ref: "#/components/schemas/TemplateLegacy"
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "500":
+          $ref: "#/components/responses/500"
 
   /templates/{templateID}/files/{hash}:
     get:
@@ -2165,8 +2169,9 @@ paths:
         - AccessTokenAuth: []
         - ApiKeyAuth: []
         - Supabase1TokenAuth: []
+          Supabase2TeamAuth: []
       parameters:
-        - $ref: '#/components/parameters/templateID'
+        - $ref: "#/components/parameters/templateID"
         - in: path
           name: hash
           required: true
@@ -2175,20 +2180,20 @@ paths:
             description: Hash of the files
 
       responses:
-        '201':
+        "201":
           description: The upload link where to upload the tar file
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TemplateBuildFileUpload'
-        '400':
-          $ref: '#/components/responses/400'
-        '401':
-          $ref: '#/components/responses/401'
-        '404':
-          $ref: '#/components/responses/404'
-        '500':
-          $ref: '#/components/responses/500'
+                $ref: "#/components/schemas/TemplateBuildFileUpload"
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "404":
+          $ref: "#/components/responses/404"
+        "500":
+          $ref: "#/components/responses/500"
 
   /templates:
     get:
@@ -2198,6 +2203,7 @@ paths:
         - ApiKeyAuth: []
         - AccessTokenAuth: []
         - Supabase1TokenAuth: []
+          Supabase2TeamAuth: []
       parameters:
         - in: query
           required: false
@@ -2206,7 +2212,7 @@ paths:
             type: string
             description: Identifier of the team
       responses:
-        '200':
+        "200":
           description: Successfully returned all templates
           content:
             application/json:
@@ -2214,11 +2220,11 @@ paths:
                 type: array
                 items:
                   allOf:
-                    - $ref: '#/components/schemas/Template'
-        '401':
-          $ref: '#/components/responses/401'
-        '500':
-          $ref: '#/components/responses/500'
+                    - $ref: "#/components/schemas/Template"
+        "401":
+          $ref: "#/components/responses/401"
+        "500":
+          $ref: "#/components/responses/500"
     post:
       description: Create a new template
       deprecated: true
@@ -2226,26 +2232,27 @@ paths:
       security:
         - AccessTokenAuth: []
         - Supabase1TokenAuth: []
+          Supabase2TeamAuth: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TemplateBuildRequest'
+              $ref: "#/components/schemas/TemplateBuildRequest"
 
       responses:
-        '202':
+        "202":
           description: The build was accepted
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TemplateLegacy'
-        '400':
-          $ref: '#/components/responses/400'
-        '401':
-          $ref: '#/components/responses/401'
-        '500':
-          $ref: '#/components/responses/500'
+                $ref: "#/components/schemas/TemplateLegacy"
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "500":
+          $ref: "#/components/responses/500"
 
   /templates/{templateID}:
     get:
@@ -2256,20 +2263,20 @@ paths:
         - Supabase1TokenAuth: []
           Supabase2TeamAuth: []
       parameters:
-        - $ref: '#/components/parameters/templateID'
-        - $ref: '#/components/parameters/paginationNextToken'
-        - $ref: '#/components/parameters/paginationLimit'
+        - $ref: "#/components/parameters/templateID"
+        - $ref: "#/components/parameters/paginationNextToken"
+        - $ref: "#/components/parameters/paginationLimit"
       responses:
-        '200':
+        "200":
           description: Successfully returned the template with its builds
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TemplateWithBuilds'
-        '401':
-          $ref: '#/components/responses/401'
-        '500':
-          $ref: '#/components/responses/500'
+                $ref: "#/components/schemas/TemplateWithBuilds"
+        "401":
+          $ref: "#/components/responses/401"
+        "500":
+          $ref: "#/components/responses/500"
     post:
       description: Rebuild an template
       deprecated: true
@@ -2277,26 +2284,27 @@ paths:
       security:
         - AccessTokenAuth: []
         - Supabase1TokenAuth: []
+          Supabase2TeamAuth: []
       parameters:
-        - $ref: '#/components/parameters/templateID'
+        - $ref: "#/components/parameters/templateID"
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TemplateBuildRequest'
+              $ref: "#/components/schemas/TemplateBuildRequest"
 
       responses:
-        '202':
+        "202":
           description: The build was accepted
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TemplateLegacy'
-        '401':
-          $ref: '#/components/responses/401'
-        '500':
-          $ref: '#/components/responses/500'
+                $ref: "#/components/schemas/TemplateLegacy"
+        "401":
+          $ref: "#/components/responses/401"
+        "500":
+          $ref: "#/components/responses/500"
     delete:
       description: Delete a template
       tags: [templates]
@@ -2304,15 +2312,16 @@ paths:
         - ApiKeyAuth: []
         - AccessTokenAuth: []
         - Supabase1TokenAuth: []
+          Supabase2TeamAuth: []
       parameters:
-        - $ref: '#/components/parameters/templateID'
+        - $ref: "#/components/parameters/templateID"
       responses:
-        '204':
+        "204":
           description: The template was deleted successfully
-        '401':
-          $ref: '#/components/responses/401'
-        '500':
-          $ref: '#/components/responses/500'
+        "401":
+          $ref: "#/components/responses/401"
+        "500":
+          $ref: "#/components/responses/500"
     patch:
       description: Update template
       tags: [templates]
@@ -2320,23 +2329,24 @@ paths:
         - ApiKeyAuth: []
         - AccessTokenAuth: []
         - Supabase1TokenAuth: []
+          Supabase2TeamAuth: []
       parameters:
-        - $ref: '#/components/parameters/templateID'
+        - $ref: "#/components/parameters/templateID"
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TemplateUpdateRequest'
+              $ref: "#/components/schemas/TemplateUpdateRequest"
       responses:
-        '200':
+        "200":
           description: The template was updated successfully
-        '400':
-          $ref: '#/components/responses/400'
-        '401':
-          $ref: '#/components/responses/401'
-        '500':
-          $ref: '#/components/responses/500'
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "500":
+          $ref: "#/components/responses/500"
 
   /templates/{templateID}/builds/{buildID}:
     post:
@@ -2346,16 +2356,17 @@ paths:
       security:
         - AccessTokenAuth: []
         - Supabase1TokenAuth: []
+          Supabase2TeamAuth: []
       parameters:
-        - $ref: '#/components/parameters/templateID'
-        - $ref: '#/components/parameters/buildID'
+        - $ref: "#/components/parameters/templateID"
+        - $ref: "#/components/parameters/buildID"
       responses:
-        '202':
+        "202":
           description: The build has started
-        '401':
-          $ref: '#/components/responses/401'
-        '500':
-          $ref: '#/components/responses/500'
+        "401":
+          $ref: "#/components/responses/401"
+        "500":
+          $ref: "#/components/responses/500"
 
   /v2/templates/{templateID}/builds/{buildID}:
     post:
@@ -2364,22 +2375,23 @@ paths:
       security:
         - ApiKeyAuth: []
         - Supabase1TokenAuth: []
+          Supabase2TeamAuth: []
       parameters:
-        - $ref: '#/components/parameters/templateID'
-        - $ref: '#/components/parameters/buildID'
+        - $ref: "#/components/parameters/templateID"
+        - $ref: "#/components/parameters/buildID"
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TemplateBuildStartV2'
+              $ref: "#/components/schemas/TemplateBuildStartV2"
       responses:
-        '202':
+        "202":
           description: The build has started
-        '401':
-          $ref: '#/components/responses/401'
-        '500':
-          $ref: '#/components/responses/500'
+        "401":
+          $ref: "#/components/responses/401"
+        "500":
+          $ref: "#/components/responses/500"
 
   /templates/{templateID}/builds/{buildID}/status:
     get:
@@ -2389,9 +2401,10 @@ paths:
         - AccessTokenAuth: []
         - ApiKeyAuth: []
         - Supabase1TokenAuth: []
+          Supabase2TeamAuth: []
       parameters:
-        - $ref: '#/components/parameters/templateID'
-        - $ref: '#/components/parameters/buildID'
+        - $ref: "#/components/parameters/templateID"
+        - $ref: "#/components/parameters/buildID"
         - in: query
           name: logsOffset
           schema:
@@ -2412,20 +2425,20 @@ paths:
         - in: query
           name: level
           schema:
-            $ref: '#/components/schemas/LogLevel'
+            $ref: "#/components/schemas/LogLevel"
       responses:
-        '200':
+        "200":
           description: Successfully returned the template
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TemplateBuildInfo'
-        '401':
-          $ref: '#/components/responses/401'
-        '404':
-          $ref: '#/components/responses/404'
-        '500':
-          $ref: '#/components/responses/500'
+                $ref: "#/components/schemas/TemplateBuildInfo"
+        "401":
+          $ref: "#/components/responses/401"
+        "404":
+          $ref: "#/components/responses/404"
+        "500":
+          $ref: "#/components/responses/500"
 
   /templates/{templateID}/builds/{buildID}/logs:
     get:
@@ -2435,9 +2448,10 @@ paths:
         - AccessTokenAuth: []
         - ApiKeyAuth: []
         - Supabase1TokenAuth: []
+          Supabase2TeamAuth: []
       parameters:
-        - $ref: '#/components/parameters/templateID'
-        - $ref: '#/components/parameters/buildID'
+        - $ref: "#/components/parameters/templateID"
+        - $ref: "#/components/parameters/buildID"
         - in: query
           name: cursor
           schema:
@@ -2457,29 +2471,29 @@ paths:
         - in: query
           name: direction
           schema:
-            $ref: '#/components/schemas/LogsDirection'
+            $ref: "#/components/schemas/LogsDirection"
         - in: query
           name: level
           schema:
-            $ref: '#/components/schemas/LogLevel'
+            $ref: "#/components/schemas/LogLevel"
         - in: query
           name: source
           schema:
-            $ref: '#/components/schemas/LogsSource'
+            $ref: "#/components/schemas/LogsSource"
           description: Source of the logs that should be returned from
       responses:
-        '200':
+        "200":
           description: Successfully returned the template build logs
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TemplateBuildLogsResponse'
-        '401':
-          $ref: '#/components/responses/401'
-        '404':
-          $ref: '#/components/responses/404'
-        '500':
-          $ref: '#/components/responses/500'
+                $ref: "#/components/schemas/TemplateBuildLogsResponse"
+        "401":
+          $ref: "#/components/responses/401"
+        "404":
+          $ref: "#/components/responses/404"
+        "500":
+          $ref: "#/components/responses/500"
 
   /templates/tags:
     post:
@@ -2494,22 +2508,22 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/AssignTemplateTagRequest'
+              $ref: "#/components/schemas/AssignTemplateTagRequest"
       responses:
-        '201':
+        "201":
           description: Tag assigned successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TemplateTag'
-        '400':
-          $ref: '#/components/responses/400'
-        '401':
-          $ref: '#/components/responses/401'
-        '404':
-          $ref: '#/components/responses/404'
-        '500':
-          $ref: '#/components/responses/500'
+                $ref: "#/components/schemas/TemplateTag"
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "404":
+          $ref: "#/components/responses/404"
+        "500":
+          $ref: "#/components/responses/500"
   /templates/tags/{name}:
     parameters:
       - name: name
@@ -2517,7 +2531,7 @@ paths:
         required: true
         schema:
           type: string
-          description: Template name in 'alias:tag' format
+          description: Template name in "alias:tag" format
     delete:
       description: Delete a tag from a template
       tags: [tags]
@@ -2526,16 +2540,16 @@ paths:
         - Supabase1TokenAuth: []
           Supabase2TeamAuth: []
       responses:
-        '204':
+        "204":
           description: Tag deleted successfully
-        '400':
-          $ref: '#/components/responses/400'
-        '401':
-          $ref: '#/components/responses/401'
-        '404':
-          $ref: '#/components/responses/404'
-        '500':
-          $ref: '#/components/responses/500'
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "404":
+          $ref: "#/components/responses/404"
+        "500":
+          $ref: "#/components/responses/500"
 
   /templates/aliases/{alias}:
     get:
@@ -2553,20 +2567,20 @@ paths:
             type: string
             description: Template alias
       responses:
-        '200':
+        "200":
           description: Successfully queried template by alias
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TemplateAliasResponse'
-        '400':
-          $ref: '#/components/responses/400'
-        '403':
-          $ref: '#/components/responses/403'
-        '404':
-          $ref: '#/components/responses/404'
-        '500':
-          $ref: '#/components/responses/500'
+                $ref: "#/components/schemas/TemplateAliasResponse"
+        "400":
+          $ref: "#/components/responses/400"
+        "403":
+          $ref: "#/components/responses/403"
+        "404":
+          $ref: "#/components/responses/404"
+        "500":
+          $ref: "#/components/responses/500"
 
   /nodes:
     get:
@@ -2575,7 +2589,7 @@ paths:
       security:
         - AdminTokenAuth: []
       responses:
-        '200':
+        "200":
           description: Successfully returned all nodes
           content:
             application/json:
@@ -2583,11 +2597,11 @@ paths:
                 type: array
                 items:
                   allOf:
-                    - $ref: '#/components/schemas/Node'
-        '401':
-          $ref: '#/components/responses/401'
-        '500':
-          $ref: '#/components/responses/500'
+                    - $ref: "#/components/schemas/Node"
+        "401":
+          $ref: "#/components/responses/401"
+        "500":
+          $ref: "#/components/responses/500"
 
   /nodes/{nodeID}:
     get:
@@ -2596,7 +2610,7 @@ paths:
       security:
         - AdminTokenAuth: []
       parameters:
-        - $ref: '#/components/parameters/nodeID'
+        - $ref: "#/components/parameters/nodeID"
         - in: query
           name: clusterID
           description: Identifier of the cluster
@@ -2605,39 +2619,39 @@ paths:
             type: string
             format: uuid
       responses:
-        '200':
+        "200":
           description: Successfully returned the node
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/NodeDetail'
-        '401':
-          $ref: '#/components/responses/401'
-        '404':
-          $ref: '#/components/responses/404'
-        '500':
-          $ref: '#/components/responses/500'
+                $ref: "#/components/schemas/NodeDetail"
+        "401":
+          $ref: "#/components/responses/401"
+        "404":
+          $ref: "#/components/responses/404"
+        "500":
+          $ref: "#/components/responses/500"
     post:
       description: Change status of a node
       tags: [admin]
       security:
         - AdminTokenAuth: []
       parameters:
-        - $ref: '#/components/parameters/nodeID'
+        - $ref: "#/components/parameters/nodeID"
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/NodeStatusChange'
+              $ref: "#/components/schemas/NodeStatusChange"
       responses:
-        '204':
+        "204":
           description: The node status was changed successfully
-        '401':
-          $ref: '#/components/responses/401'
-        '404':
-          $ref: '#/components/responses/404'
-        '500':
-          $ref: '#/components/responses/500'
+        "401":
+          $ref: "#/components/responses/401"
+        "404":
+          $ref: "#/components/responses/404"
+        "500":
+          $ref: "#/components/responses/500"
 
   /admin/teams/{teamID}/sandboxes/kill:
     post:
@@ -2655,18 +2669,18 @@ paths:
             format: uuid
           description: Team ID
       responses:
-        '200':
+        "200":
           description: Successfully killed sandboxes
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AdminSandboxKillResult'
-        '401':
-          $ref: '#/components/responses/401'
-        '404':
-          $ref: '#/components/responses/404'
-        '500':
-          $ref: '#/components/responses/500'
+                $ref: "#/components/schemas/AdminSandboxKillResult"
+        "401":
+          $ref: "#/components/responses/401"
+        "404":
+          $ref: "#/components/responses/404"
+        "500":
+          $ref: "#/components/responses/500"
 
   /access-tokens:
     post:
@@ -2679,18 +2693,18 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/NewAccessToken'
+              $ref: "#/components/schemas/NewAccessToken"
       responses:
-        '201':
+        "201":
           description: Access token created successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CreatedAccessToken'
-        '401':
-          $ref: '#/components/responses/401'
-        '500':
-          $ref: '#/components/responses/500'
+                $ref: "#/components/schemas/CreatedAccessToken"
+        "401":
+          $ref: "#/components/responses/401"
+        "500":
+          $ref: "#/components/responses/500"
 
   /access-tokens/{accessTokenID}:
     delete:
@@ -2699,16 +2713,16 @@ paths:
       security:
         - Supabase1TokenAuth: []
       parameters:
-        - $ref: '#/components/parameters/accessTokenID'
+        - $ref: "#/components/parameters/accessTokenID"
       responses:
-        '204':
+        "204":
           description: Access token deleted successfully
-        '401':
-          $ref: '#/components/responses/401'
-        '404':
-          $ref: '#/components/responses/404'
-        '500':
-          $ref: '#/components/responses/500'
+        "401":
+          $ref: "#/components/responses/401"
+        "404":
+          $ref: "#/components/responses/404"
+        "500":
+          $ref: "#/components/responses/500"
 
   /api-keys:
     get:
@@ -2718,18 +2732,18 @@ paths:
         - Supabase1TokenAuth: []
           Supabase2TeamAuth: []
       responses:
-        '200':
+        "200":
           description: Successfully returned all team API keys
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/TeamAPIKey'
-        '401':
-          $ref: '#/components/responses/401'
-        '500':
-          $ref: '#/components/responses/500'
+                  $ref: "#/components/schemas/TeamAPIKey"
+        "401":
+          $ref: "#/components/responses/401"
+        "500":
+          $ref: "#/components/responses/500"
     post:
       description: Create a new team API key
       tags: [api-keys]
@@ -2741,18 +2755,18 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/NewTeamAPIKey'
+              $ref: "#/components/schemas/NewTeamAPIKey"
       responses:
-        '201':
+        "201":
           description: Team API key created successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CreatedTeamAPIKey'
-        '401':
-          $ref: '#/components/responses/401'
-        '500':
-          $ref: '#/components/responses/500'
+                $ref: "#/components/schemas/CreatedTeamAPIKey"
+        "401":
+          $ref: "#/components/responses/401"
+        "500":
+          $ref: "#/components/responses/500"
 
   /api-keys/{apiKeyID}:
     patch:
@@ -2762,22 +2776,22 @@ paths:
         - Supabase1TokenAuth: []
           Supabase2TeamAuth: []
       parameters:
-        - $ref: '#/components/parameters/apiKeyID'
+        - $ref: "#/components/parameters/apiKeyID"
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UpdateTeamAPIKey'
+              $ref: "#/components/schemas/UpdateTeamAPIKey"
       responses:
-        '200':
+        "200":
           description: Team API key updated successfully
-        '401':
-          $ref: '#/components/responses/401'
-        '404':
-          $ref: '#/components/responses/404'
-        '500':
-          $ref: '#/components/responses/500'
+        "401":
+          $ref: "#/components/responses/401"
+        "404":
+          $ref: "#/components/responses/404"
+        "500":
+          $ref: "#/components/responses/500"
     delete:
       description: Delete a team API key
       tags: [api-keys]
@@ -2785,13 +2799,13 @@ paths:
         - Supabase1TokenAuth: []
           Supabase2TeamAuth: []
       parameters:
-        - $ref: '#/components/parameters/apiKeyID'
+        - $ref: "#/components/parameters/apiKeyID"
       responses:
-        '204':
+        "204":
           description: Team API key deleted successfully
-        '401':
-          $ref: '#/components/responses/401'
-        '404':
-          $ref: '#/components/responses/404'
-        '500':
-          $ref: '#/components/responses/500'
+        "401":
+          $ref: "#/components/responses/401"
+        "404":
+          $ref: "#/components/responses/404"
+        "500":
+          $ref: "#/components/responses/500"

@@ -82,20 +82,6 @@ export type GetBuildStatusOptions = ConnectionOpts & { logsOffset?: number }
 export type AliasExistsOptions = ConnectionOpts
 
 /**
- * Information about assigned tags.
- */
-export type TagInfo = {
-  /**
-   * The build ID that the tags are assigned to.
-   */
-  buildId: string
-  /**
-   * The tags that were assigned.
-   */
-  tags: string[]
-}
-
-/**
  * Types of instructions that can be used in a template.
  */
 export enum InstructionType {

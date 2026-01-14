@@ -15,7 +15,7 @@ export interface paths {
         get: {
             parameters: {
                 query?: {
-                    /** @description Metadata query used to filter the sandboxes (e.g. 'user=abc&app=prod'). Each key and values must be URL encoded. */
+                    /** @description Metadata query used to filter the sandboxes (e.g. "user=abc&app=prod"). Each key and values must be URL encoded. */
                     metadata?: string;
                 };
                 header?: never;
@@ -1161,7 +1161,7 @@ export interface paths {
                 query?: {
                     /** @description Maximum number of items to return per page */
                     limit?: components["parameters"]["paginationLimit"];
-                    /** @description Metadata query used to filter the sandboxes (e.g. 'user=abc&app=prod'). Each key and values must be URL encoded. */
+                    /** @description Metadata query used to filter the sandboxes (e.g. "user=abc&app=prod"). Each key and values must be URL encoded. */
                     metadata?: string;
                     /** @description Cursor to start the list from */
                     nextToken?: components["parameters"]["paginationNextToken"];
@@ -1341,7 +1341,7 @@ export interface components {
         AssignTemplateTagRequest: {
             /** @description Names of the template */
             names: string[];
-            /** @description Target template name in 'alias:tag' format */
+            /** @description Target template name in "alias:tag" format */
             target: string;
         };
         AWSRegistry: {
@@ -2085,7 +2085,10 @@ export interface components {
             alias: string;
             cpuCount?: components["schemas"]["CPUCount"];
             memoryMB?: components["schemas"]["MemoryMB"];
-            /** @description Identifier of the team */
+            /**
+             * @deprecated
+             * @description Identifier of the team
+             */
             teamID?: string;
         };
         TemplateBuildRequestV3: {
@@ -2098,7 +2101,10 @@ export interface components {
             memoryMB?: components["schemas"]["MemoryMB"];
             /** @description Names of the template */
             names?: string[];
-            /** @description Identifier of the team */
+            /**
+             * @deprecated
+             * @description Identifier of the team
+             */
             teamID?: string;
         };
         TemplateBuildStartV2: {
@@ -2200,8 +2206,8 @@ export interface components {
              * @description Identifier of the build associated with this tag
              */
             buildID: string;
-            /** @description Tags of the template */
-            tags: string[];
+            /** @description Assigned names of the template */
+            names: string[];
         };
         TemplateUpdateRequest: {
             /** @description Whether the template is public or only accessible by the team */

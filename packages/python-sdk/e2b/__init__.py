@@ -94,7 +94,8 @@ from .template.readycmd import (
     wait_for_timeout,
     wait_for_url,
 )
-from .template.types import BuildInfo, CopyItem, TagInfo
+from .template.types import BuildInfo, CopyItem
+from .api.client.models import TemplateTag
 from .template_async.main import AsyncTemplate
 from .template_sync.main import Template
 
@@ -156,7 +157,7 @@ __all__ = [
     "TemplateClass",
     "CopyItem",
     "BuildInfo",
-    "TagInfo",
+    "TemplateTag",
     "ReadyCmd",
     "wait_for_file",
     "wait_for_url",
