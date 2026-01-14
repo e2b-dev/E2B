@@ -7,8 +7,6 @@ body:
     id: sandbox_id
     attributes:
       label: Sandbox ID or Build ID
-      description: Output of `sbx.sandbox_id` or the build ID printed in the console during the build
-      placeholder: e.g. sbx_123456
     validations:
       required: true
 
@@ -30,19 +28,13 @@ body:
     validations:
       required: true
 
-  - type: input
-    id: start_time
-    attributes:
-      label: When did this start happening?
-      placeholder: e.g. Today / Yesterday / After upgrading SDK
-
   - type: dropdown
     id: frequency
     attributes:
       label: Frequency
       options:
         - One-time occurrence
-        - Happens sometimes
+        - Happens occasionally
         - Happens every time
     validations:
       required: true
