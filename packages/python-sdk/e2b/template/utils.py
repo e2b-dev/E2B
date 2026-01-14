@@ -1,7 +1,6 @@
 import hashlib
 import os
 import io
-from pathlib import Path
 import tarfile
 import json
 import stat
@@ -73,6 +72,7 @@ def normalize_path(path: str) -> str:
     result = ("/" if is_absolute else "") + "/".join(normalized)
 
     return result or "."
+
 
 def get_all_files_in_path(
     src: str,
