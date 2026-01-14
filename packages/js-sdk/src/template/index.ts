@@ -1070,7 +1070,7 @@ export class TemplateBase
       )
     )
 
-    const { templateID, buildID, aliases } = await requestBuild(client, {
+    const { templateID, buildID } = await requestBuild(client, {
       names,
       cpuCount: options.cpuCount ?? 2,
       memoryMB: options.memoryMB ?? 1024,
@@ -1164,8 +1164,8 @@ export class TemplateBase
     })
 
     return {
-      alias: aliases?.[0] ?? '',
-      names: aliases ?? [],
+      alias: names[0] ?? '',
+      names: names,
       templateId: templateID,
       buildId: buildID,
     }
