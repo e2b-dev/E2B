@@ -171,6 +171,7 @@ class Template(TemplateBase):
             template_id=template_id,
             build_id=build_id,
             names=names,
+            alias=names[0] if names else "",
         )
 
     @staticmethod

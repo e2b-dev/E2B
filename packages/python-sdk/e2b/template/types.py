@@ -129,7 +129,7 @@ def normalize_names(
     """
 
     if alias is not None and names is not None:
-        raise ValueError("Either names or alias must be provided")
+        raise ValueError("Cannot provide both names and alias, use only names")
 
     names_list = []
     if names is not None:
