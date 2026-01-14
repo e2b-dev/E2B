@@ -25,7 +25,6 @@ from e2b.api.client.models import (
     Error,
     AssignTemplateTagRequest,
 )
-from e2b.api.client.types import UNSET
 from e2b.template.types import TagInfo
 from e2b.exceptions import BuildException, FileUploadException, TemplateException
 from e2b.template.logger import LogEntry
@@ -35,16 +34,14 @@ from e2b.template.utils import get_build_step_index, tar_file_stream
 
 def request_build(
     client: AuthenticatedClient,
+    names: List[str],
     cpu_count: int,
     memory_mb: int,
-    names: Optional[List[str]] = None,
-    alias: Optional[str] = None,
 ):
     res = post_v3_templates.sync_detailed(
         client=client,
         body=TemplateBuildRequestV3(
-            names=names if names is not None else UNSET,
-            alias=alias if alias is not None else UNSET,
+            names=names,
             cpu_count=cpu_count,
             memory_mb=memory_mb,
         ),

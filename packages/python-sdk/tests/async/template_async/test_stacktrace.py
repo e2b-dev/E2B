@@ -1,6 +1,6 @@
 import traceback
 from types import SimpleNamespace
-from typing import Optional
+from typing import List, Optional
 from uuid import uuid4
 
 import pytest
@@ -44,10 +44,9 @@ failure_map: dict[str, Optional[int]] = {
 @pytest.fixture(autouse=True)
 def mock_template_build(monkeypatch):
     async def mock_request_build(
-        client, cpu_count: int, memory_mb: int, names=None, alias=None
+        client, names: List[str], cpu_count: int, memory_mb: int
     ):
-        template_name = (names[0] if names else None) or alias or "unknown"
-        return SimpleNamespace(template_id=template_name, build_id=str(uuid4()))
+        return SimpleNamespace(template_id=names[0], build_id=str(uuid4()))
 
     async def mock_trigger_build(client, template_id: str, build_id: str, template):
         return None

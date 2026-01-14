@@ -5,8 +5,7 @@ import { LogEntry } from './logger'
 import { getBuildStepIndex, tarFileStreamUpload } from './utils'
 
 type RequestBuildInput = {
-  alias?: string
-  names?: string[]
+  names: string[]
   cpuCount: number
   memoryMB: number
 }
@@ -40,12 +39,11 @@ export type TriggerBuildTemplate =
 
 export async function requestBuild(
   client: ApiClient,
-  { alias, names, cpuCount, memoryMB }: RequestBuildInput
+  { names, cpuCount, memoryMB }: RequestBuildInput
 ) {
   const requestBuildRes = await client.api.POST('/v3/templates', {
     body: {
       names,
-      alias,
       cpuCount,
       memoryMB,
     },

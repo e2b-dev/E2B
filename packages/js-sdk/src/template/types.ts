@@ -27,7 +27,7 @@ export type BasicBuildOptions = {
    * Alias name for the template.
    * @deprecated Use the `name` or `names` parameter of `Template.build()` instead.
    */
-  alias?: string
+  alias: string
   /**
    * Number of CPUs allocated to the sandbox.
    * @default 2

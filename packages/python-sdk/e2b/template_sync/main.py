@@ -34,30 +34,28 @@ class Template(TemplateBase):
     def _build(
         template: TemplateClass,
         api_client: AuthenticatedClient,
+        names: List[str],
         cpu_count: int = 2,
         memory_mb: int = 1024,
         skip_cache: bool = False,
         on_build_logs: Optional[Callable[[LogEntry], None]] = None,
-        names: Optional[List[str]] = None,
-        alias: Optional[str] = None,
     ) -> BuildInfo:
         """
         Internal implementation of the template build process
 
         :param template: The template to build
         :param api_client: Authenticated API client
+        :param names: Names for the template in 'alias:tag' format
         :param cpu_count: Number of CPUs allocated to the sandbox
         :param memory_mb: Amount of memory in MB allocated to the sandbox
         :param skip_cache: If True, forces a complete rebuild ignoring cache
         :param on_build_logs: Callback function to receive build logs during the build process
-        :param names: Names for the template in 'alias:tag' format
-        :param alias: (Deprecated) Alias name for the template
         """
         if skip_cache:
             template._template._force = True
 
         # Create template
-        template_identifier = ", ".join(names) if names else alias or "unknown"
+        template_identifier = ", ".join(names)
         if on_build_logs:
             on_build_logs(
                 LogEntry(
@@ -69,10 +67,9 @@ class Template(TemplateBase):
 
         response = request_build(
             api_client,
+            names=names,
             cpu_count=cpu_count,
             memory_mb=memory_mb,
-            names=names,
-            alias=alias,
         )
 
         template_id = response.template_id
@@ -174,7 +171,6 @@ class Template(TemplateBase):
             template_id=template_id,
             build_id=build_id,
             names=names,
-            alias=names[0] if names else "",
         )
 
     @staticmethod
@@ -221,7 +217,7 @@ class Template(TemplateBase):
         Template.build(template, alias='my-python-env')
         ```
         """
-        names_list = normalize_names(names)
+        names_list = normalize_names(names, alias)
 
         try:
             if on_build_logs:
@@ -247,7 +243,6 @@ class Template(TemplateBase):
                 skip_cache=skip_cache,
                 on_build_logs=on_build_logs,
                 names=names_list,
-                alias=alias,
             )
 
             if on_build_logs:
@@ -322,7 +317,7 @@ class Template(TemplateBase):
         build_info = Template.build_in_background(template, alias='my-python-env')
         ```
         """
-        names_list = normalize_names(names)
+        names_list = normalize_names(names, alias)
 
         config = ConnectionConfig(**opts)
         api_client = get_api_client(
@@ -339,7 +334,6 @@ class Template(TemplateBase):
             skip_cache=skip_cache,
             on_build_logs=on_build_logs,
             names=names_list,
-            alias=alias,
         )
 
     @staticmethod

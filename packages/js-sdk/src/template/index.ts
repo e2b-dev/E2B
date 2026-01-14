@@ -55,9 +55,9 @@ import {
 function normalizeBuildArguments(
   nameOrNamesOrOptions: string | string[] | BuildOptions,
   options?: Omit<BuildOptions, 'alias'>
-): { names: string[]; buildOptions: BuildOptions } {
-  let names: string[]
-  let buildOptions: BuildOptions
+): { names: string[]; buildOptions: Omit<BuildOptions, 'alias'> } {
+  let names: string[] = []
+  let buildOptions: Omit<BuildOptions, 'alias'>
   if (typeof nameOrNamesOrOptions === 'string') {
     names = [nameOrNamesOrOptions]
     buildOptions = options ?? {}
@@ -66,8 +66,9 @@ function normalizeBuildArguments(
     buildOptions = options ?? {}
   } else {
     // Legacy: options object with alias
-    names = nameOrNamesOrOptions.alias ? [nameOrNamesOrOptions.alias] : []
-    buildOptions = nameOrNamesOrOptions
+    const { alias, ...restOpts } = nameOrNamesOrOptions
+    names = [alias]
+    buildOptions = restOpts
   }
 
   if (names.length === 0) {
@@ -1054,7 +1055,7 @@ export class TemplateBase
   private async build(
     client: ApiClient,
     names: string[],
-    options: BuildOptions
+    options: Omit<BuildOptions, 'alias'>
   ): Promise<BuildInfo> {
     if (options.skipCache) {
       this.force = true
