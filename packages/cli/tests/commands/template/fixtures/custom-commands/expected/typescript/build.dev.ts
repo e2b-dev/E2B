@@ -2,8 +2,7 @@ import { Template, defaultBuildLogger } from 'e2b'
 import { template } from './template'
 
 async function main() {
-  await Template.build(template, {
-    alias: 'custom-app-dev',
+  await Template.build(template, 'custom-app-dev', {
     onBuildLogs: defaultBuildLogger(),
   });
 }

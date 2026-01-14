@@ -6,7 +6,7 @@ from .template import template
 async def main():
     await AsyncTemplate.build(
         template,
-        alias="{{alias}}",
+        "{{alias}}",
 {{#if cpuCount}}
         cpu_count={{cpuCount}},
 {{/if}}
