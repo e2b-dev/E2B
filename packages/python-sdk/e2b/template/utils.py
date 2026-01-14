@@ -38,21 +38,41 @@ def read_dockerignore(context_path: str) -> List[str]:
 
 def normalize_path(path: str) -> str:
     """
-    Normalize paths on Windows and Unix
-
-    :param path: The path to normalize
-    :return: The normalized path
+    Normalize paths in a platform-independent, POSIX-style manner.
+    Mirrors the JS normalizePath behavior.
     """
-    norm_path = Path(os.path.normpath(path)).as_posix()
-    # strip drive letter if present
-    if len(norm_path) > 1 and norm_path[1] == ":":
-        norm_path = norm_path[2:]
-        # A bare drive letter (e.g., "D:/") should become "/" (the root)
-        if norm_path == "":
-            norm_path = "/"
+    if not path or path == ".":
+        return "."
 
-    return norm_path
+    # Remove drive letter if present (e.g. "C:")
+    working_path = path
+    if re.match(r"^[a-zA-Z]:", path):
+        working_path = path[2:]
 
+    # Determine if absolute
+    is_absolute = working_path.startswith("/") or working_path.startswith("\\")
+
+    # Normalize separators to '/'
+    normalized_path = re.sub(r"[\\/]+", "/", working_path)
+
+    # Split and process components
+    parts = [p for p in normalized_path.split("/") if p and p != "."]
+
+    normalized = []
+
+    for part in parts:
+        if part == "..":
+            if normalized and normalized[-1] != "..":
+                normalized.pop()
+            elif not is_absolute:
+                normalized.append("..")
+        else:
+            normalized.append(part)
+
+    # Reconstruct path
+    result = ("/" if is_absolute else "") + "/".join(normalized)
+
+    return result or "."
 
 def get_all_files_in_path(
     src: str,
