@@ -48,26 +48,39 @@ body:
     validations:
       required: true
 
-  - type: markdown
-    attributes:
-      value: |
-        ### How to report this issue
-
-        Please include the following in the field below:
-
-        1. Bug description  
-        2. Steps to reproduce  
-          - Go to `...`  
-          - Run `...`  
-          - See error  
-        3. Expected behavior  
-        4. Actual behavior  
-        5. Additional context (logs, screenshots, etc.)
-
   - type: textarea
-    id: issue_details
+    id: expected-behavior
     attributes:
-      label: Issue details
-      description: Describe the issue using the guidance above
+      label: Expected behavior
+      description: What did you expect to happen?
+      placeholder: Describe the expected behavior...
     validations:
       required: true
+
+  - type: textarea
+    id: actual-behavior
+    attributes:
+      label: Actual behavior
+      description: What actually happened?
+      placeholder: Describe what actually occurred...
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Issue reproduction
+      description: Steps to reproduce the issue
+      placeholder: |
+        1. Go to `...`
+        2. Run `...`
+        3. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional context
+      description: Logs, screenshots, or any other relevant information
+      placeholder: Add any additional context here...
