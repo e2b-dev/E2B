@@ -91,7 +91,7 @@ class TestTagsIntegration:
     @pytest.mark.skip_debug()
     async def test_build_template_with_tags_assign_and_delete(self, async_build):
         """Test building a template with tags, assigning new tags, and deleting."""
-        template_alias = f"e2b-async-tags-test-{uuid.uuid4().hex[:8]}"
+        template_alias = f"e2b-async-tags-test-{uuid.uuid4().hex}"
         initial_tag = f"{template_alias}:v1.0"
 
         # Build a template with initial tag
@@ -124,7 +124,7 @@ class TestTagsIntegration:
     @pytest.mark.skip_debug()
     async def test_assign_single_tag_to_existing_template(self, async_build):
         """Test assigning a single tag (not array) to an existing template."""
-        template_alias = f"e2b-async-single-tag-{uuid.uuid4().hex[:8]}"
+        template_alias = f"e2b-async-single-tag-{uuid.uuid4().hex}"
         initial_tag = f"{template_alias}:v1.0"
 
         template = Template().from_base_image()
