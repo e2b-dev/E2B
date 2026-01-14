@@ -1164,8 +1164,8 @@ export class TemplateBase
     })
 
     return {
-      alias: aliases?.[0] ?? names[0] ?? '',
-      names: aliases ?? names,
+      alias: aliases?.[0] ?? '',
+      names: aliases ?? [],
       templateId: templateID,
       buildId: buildID,
     }
