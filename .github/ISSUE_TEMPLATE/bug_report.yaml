@@ -1,0 +1,81 @@
+name: Bug report
+description: Create a report to help us improve
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: input
+    id: sandbox_id
+    attributes:
+      label: Sandbox ID or Build ID
+      description: Output of `sbx.sandbox_id` or the build ID printed in the console during the build
+      placeholder: e.g. sbx_123456
+    validations:
+      required: true
+
+  - type: input
+    id: sdk_version
+    attributes:
+      label: SDK version
+      description: Can be found in `pip list` or `npm list`
+      placeholder: e.g. e2b==1.2.3
+    validations:
+      required: true
+
+  - type: input
+    id: timestamp
+    attributes:
+      label: Timestamp of the issue
+      description: When did the error occur? (include timezone please)
+      placeholder: e.g. 2026-01-12 14:32 UTC
+    validations:
+      required: true
+
+  - type: input
+    id: start_time
+    attributes:
+      label: When did this start happening?
+      placeholder: e.g. Today / Yesterday / After upgrading SDK
+
+  - type: dropdown
+    id: frequency
+    attributes:
+      label: Frequency
+      options:
+        - One-time occurrence
+        - Happens sometimes
+        - Happens every time
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      description: OS used to run your code (not the sandbox OS)
+      placeholder: e.g. macOS 14, Ubuntu 22.04, Windows 11
+    validations:
+      required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        ### How to report this issue
+
+        Please include the following in the field below:
+
+        1. Bug description  
+        2. Steps to reproduce  
+          - Go to `...`  
+          - Run `...`  
+          - See error  
+        3. Expected behavior  
+        4. Actual behavior  
+        5. Additional context (logs, screenshots, etc.)
+
+  - type: textarea
+    id: issue_details
+    attributes:
+      label: Issue details
+      description: Describe the issue using the guidance above
+    validations:
+      required: true
