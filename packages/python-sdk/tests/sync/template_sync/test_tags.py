@@ -133,3 +133,35 @@ class TestTagsIntegration:
         # Clean up
         Template.delete_tag(initial_tag)
         Template.delete_tag(stable_tag)
+
+    @pytest.mark.skip_debug()
+    def test_rejects_invalid_tag_format_missing_alias(self, build):
+        """Test that tag without alias (starts with colon) is rejected."""
+        template_alias = f"e2b-sync-invalid-tag-{uuid.uuid4().hex}"
+        initial_tag = f"{template_alias}:v1.0"
+
+        template = Template().from_base_image()
+        build(template, name=initial_tag)
+
+        # Tag without alias (starts with colon) should be rejected
+        with pytest.raises(Exception):
+            Template.assign_tag(initial_tag, ":invalid-tag")
+
+        # Clean up
+        Template.delete_tag(initial_tag)
+
+    @pytest.mark.skip_debug()
+    def test_rejects_invalid_tag_format_missing_tag(self, build):
+        """Test that tag without tag portion (ends with colon) is rejected."""
+        template_alias = f"e2b-sync-invalid-tag2-{uuid.uuid4().hex}"
+        initial_tag = f"{template_alias}:v1.0"
+
+        template = Template().from_base_image()
+        build(template, name=initial_tag)
+
+        # Tag without tag portion (ends with colon) should be rejected
+        with pytest.raises(Exception):
+            Template.assign_tag(initial_tag, f"{template_alias}:")
+
+        # Clean up
+        Template.delete_tag(initial_tag)

@@ -1,6 +1,6 @@
 import type { PathLike } from 'node:fs'
 import { ApiClient } from '../api'
-import { ConnectionConfig } from '../connectionConfig'
+import { ConnectionConfig, ConnectionOpts } from '../connectionConfig'
 import { BuildError } from '../errors'
 import { runtime } from '../utils'
 import {
@@ -22,11 +22,9 @@ import { LogEntry, LogEntryEnd, LogEntryStart } from './logger'
 import { ReadyCmd, waitForFile } from './readycmd'
 import {
   AliasExistsOptions,
-  AssignTagOptions,
   BuildInfo,
   BuildOptions,
   CopyItem,
-  DeleteTagOptions,
   GetBuildStatusOptions,
   Instruction,
   InstructionType,
@@ -43,40 +41,11 @@ import {
   calculateFilesHash,
   getCallerDirectory,
   getCallerFrame,
+  normalizeBuildArguments,
   padOctal,
   readDockerignore,
   readGCPServiceAccountJSON,
 } from './utils'
-
-/**
- * Normalize build arguments from different overload signatures.
- * Handles string name, string array, or legacy options object with alias.
- */
-function normalizeBuildArguments(
-  nameOrNamesOrOptions: string | string[] | BuildOptions,
-  options?: Omit<BuildOptions, 'alias'>
-): { names: string[]; buildOptions: Omit<BuildOptions, 'alias'> } {
-  let names: string[] = []
-  let buildOptions: Omit<BuildOptions, 'alias'>
-  if (typeof nameOrNamesOrOptions === 'string') {
-    names = [nameOrNamesOrOptions]
-    buildOptions = options ?? {}
-  } else if (Array.isArray(nameOrNamesOrOptions)) {
-    names = nameOrNamesOrOptions
-    buildOptions = options ?? {}
-  } else {
-    // Legacy: options object with alias
-    const { alias, ...restOpts } = nameOrNamesOrOptions
-    names = [alias]
-    buildOptions = restOpts
-  }
-
-  if (names.length === 0) {
-    throw new BuildError('Template name must be provided')
-  }
-
-  return { names, buildOptions }
-}
 
 /**
  * Base class for building E2B sandbox templates.
@@ -297,7 +266,7 @@ export class TemplateBase
     const config = new ConnectionConfig(buildOptions)
     const client = new ApiClient(config)
 
-    return await (template as TemplateBase).build(client, names, buildOptions)
+    return (template as TemplateBase).build(client, names, buildOptions)
   }
 
   /**
@@ -373,7 +342,7 @@ export class TemplateBase
   static async assignTag(
     target: string,
     names: string | string[],
-    options?: AssignTagOptions
+    options?: ConnectionOpts
   ): Promise<TagInfo> {
     const config = new ConnectionConfig(options)
     const client = new ApiClient(config)
@@ -394,7 +363,7 @@ export class TemplateBase
    */
   static async deleteTag(
     name: string,
-    options?: DeleteTagOptions
+    options?: ConnectionOpts
   ): Promise<void> {
     const config = new ConnectionConfig(options)
     const client = new ApiClient(config)
@@ -1277,11 +1246,9 @@ Template.toDockerfile = TemplateBase.toDockerfile
 
 export type {
   AliasExistsOptions,
-  AssignTagOptions,
   BuildInfo,
   BuildOptions,
   CopyItem,
-  DeleteTagOptions,
   GetBuildStatusOptions,
   McpServerName,
   TagInfo,

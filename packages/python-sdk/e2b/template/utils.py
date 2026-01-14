@@ -318,3 +318,35 @@ def read_gcp_service_account_json(
             return f.read()
     else:
         return json.dumps(path_or_content)
+
+
+def normalize_names(
+    names: Optional[Union[str, List[str]]], alias: Optional[str] = None
+) -> List[str]:
+    """
+    Normalize names parameter to a list if string provided.
+
+    :param names: Single name string or list of names
+    :param alias: (Deprecated) Alias name for the template. Use names instead.
+    :return: List of names
+    :raises ValueError: If both names and alias are provided, or if neither is provided
+    """
+    if alias is not None and names is not None:
+        raise ValueError("Cannot provide both names and alias, use only names")
+
+    names_list = []
+    if names is not None:
+        if isinstance(names, str):
+            names_list.append(names)
+        elif isinstance(names, list):
+            names_list.extend(names)
+        else:
+            raise ValueError("names must be a string or list of strings")
+
+    if alias is not None:
+        names_list.append(alias)
+
+    if len(names_list) == 0:
+        raise ValueError("Either names or alias must be provided")
+
+    return names_list

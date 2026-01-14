@@ -115,33 +115,3 @@ class TagInfo:
 
     build_id: str
     tags: List[str]
-
-
-def normalize_names(
-    names: Optional[Union[str, List[str]]], alias: Optional[str] = None
-) -> List[str]:
-    """
-    Normalize names parameter to a list if string provided.
-
-    :param names: Single name string or list of names
-    :param alias: (Deprecated) Alias name for the template. Use names instead.
-    :return: List of names
-    """
-
-    if alias is not None and names is not None:
-        raise ValueError("Cannot provide both names and alias, use only names")
-
-    names_list = []
-    if names is not None:
-        if isinstance(names, str):
-            names_list.append(names)
-        else:
-            names_list.extend(names)
-
-    if alias is not None:
-        names_list.append(alias)
-
-    if len(names_list) == 0:
-        raise ValueError("Either names or alias must be provided")
-
-    return names_list

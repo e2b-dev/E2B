@@ -18,8 +18,9 @@ const mockHandlers = [
       tags: names,
     })
   }),
-  http.delete('https://api.e2b.app/templates/tags/:name', ({ params }) => {
-    const { name } = params
+  http.delete(/https:\/\/api\.e2b.app\/templates\/tags\/.*/, ({ request }) => {
+    const url = new URL(request.url)
+    const name = decodeURIComponent(url.pathname.split('/').pop() || '')
     if (name === 'nonexistent:tag') {
       return HttpResponse.json({ message: 'Tag not found' }, { status: 404 })
     }
@@ -128,6 +129,46 @@ buildTemplateTest.skipIf(isDebug)(
     // Clean up
     await Template.deleteTag(initialTag)
     await Template.deleteTag(stableTag)
+  },
+  { timeout: 300_000 }
+)
+
+buildTemplateTest.skipIf(isDebug)(
+  'rejects invalid tag format - missing alias',
+  async ({ buildTemplate }) => {
+    const templateAlias = `e2b-js-invalid-tag-${randomUUID()}`
+    const initialTag = `${templateAlias}:v1.0`
+
+    const template = Template().fromBaseImage()
+    await buildTemplate(template, { name: initialTag })
+
+    // Tag without alias (starts with colon) should be rejected
+    await expect(
+      Template.assignTag(initialTag, ':invalid-tag')
+    ).rejects.toThrow()
+
+    // Clean up
+    await Template.deleteTag(initialTag)
+  },
+  { timeout: 300_000 }
+)
+
+buildTemplateTest.skipIf(isDebug)(
+  'rejects invalid tag format - missing tag',
+  async ({ buildTemplate }) => {
+    const templateAlias = `e2b-js-invalid-tag2-${randomUUID()}`
+    const initialTag = `${templateAlias}:v1.0`
+
+    const template = Template().fromBaseImage()
+    await buildTemplate(template, { name: initialTag })
+
+    // Tag without tag portion (ends with colon) should be rejected
+    await expect(
+      Template.assignTag(initialTag, `${templateAlias}:`)
+    ).rejects.toThrow()
+
+    // Clean up
+    await Template.deleteTag(initialTag)
   },
   { timeout: 300_000 }
 )

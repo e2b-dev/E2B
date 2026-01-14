@@ -40,8 +40,8 @@ const failureMap: Record<string, number | undefined> = {
 
 export const restHandlers = [
   http.post('https://api.e2b.app/v3/templates', async ({ request }) => {
-    const { names } = (await request.clone().json()) as { names?: string[] }
-    const templateID = names?.[0] ?? 'unknown'
+    const { names } = (await request.clone().json()) as { names: string[] }
+    const templateID = names[0]
     return HttpResponse.json({
       buildID: randomUUID(),
       templateID,

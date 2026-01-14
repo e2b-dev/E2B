@@ -82,16 +82,6 @@ export type GetBuildStatusOptions = ConnectionOpts & { logsOffset?: number }
 export type AliasExistsOptions = ConnectionOpts
 
 /**
- * Options for assigning tags to a template.
- */
-export type AssignTagOptions = ConnectionOpts
-
-/**
- * Options for deleting a tag from a template.
- */
-export type DeleteTagOptions = ConnectionOpts
-
-/**
  * Information about assigned tags.
  */
 export type TagInfo = {

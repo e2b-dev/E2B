@@ -8,7 +8,8 @@ from e2b.connection_config import ApiParams, ConnectionConfig
 from e2b.template.consts import RESOLVE_SYMLINKS
 from e2b.template.logger import LogEntry, LogEntryEnd, LogEntryStart
 from e2b.template.main import TemplateBase, TemplateClass
-from e2b.template.types import BuildInfo, InstructionType, TagInfo, normalize_names
+from e2b.template.types import BuildInfo, InstructionType, TagInfo
+from e2b.template.utils import normalize_names
 from e2b.template.utils import read_dockerignore
 
 from .build_api import (
@@ -55,13 +56,12 @@ class AsyncTemplate(TemplateBase):
             template._template._force = True
 
         # Create template
-        template_identifier = ", ".join(names)
         if on_build_logs:
             on_build_logs(
                 LogEntry(
                     timestamp=datetime.now(),
                     level="info",
-                    message=f"Requesting build for template: {template_identifier}",
+                    message=f"Requesting build for template: {', '.join(names)}",
                 )
             )
 
@@ -171,7 +171,7 @@ class AsyncTemplate(TemplateBase):
             template_id=template_id,
             build_id=build_id,
             names=names,
-            alias=names[0] if names else "",
+            alias=names[0],
         )
 
     @staticmethod
@@ -208,14 +208,11 @@ class AsyncTemplate(TemplateBase):
             .run_cmd('pip install -r /home/user/requirements.txt')
         )
 
-        # New way - single name
+        # Single name
         await AsyncTemplate.build(template, 'my-python-env:v1.0')
 
-        # New way - multiple names
+        # Multiple names
         await AsyncTemplate.build(template, ['my-python-env:v1.0', 'my-python-env:latest'])
-
-        # Old way (deprecated)
-        await AsyncTemplate.build(template, alias='my-python-env')
         ```
         """
         names_list = normalize_names(names, alias)
@@ -308,14 +305,11 @@ class AsyncTemplate(TemplateBase):
             .set_start_cmd('echo "Hello"', 'sleep 1')
         )
 
-        # New way - single name
+        # Single name
         build_info = await AsyncTemplate.build_in_background(template, 'my-python-env:v1.0')
 
-        # New way - multiple names
+        # Multiple names
         build_info = await AsyncTemplate.build_in_background(template, ['my-python-env:v1.0', 'my-python-env:latest'])
-
-        # Old way (deprecated)
-        build_info = await AsyncTemplate.build_in_background(template, alias='my-python-env')
         ```
         """
         names_list = normalize_names(names, alias)
