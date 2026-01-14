@@ -1133,7 +1133,7 @@ export class TemplateBase
     })
 
     return {
-      alias: names[0] ?? '',
+      alias: names[0],
       names: names,
       templateId: templateID,
       buildId: buildID,

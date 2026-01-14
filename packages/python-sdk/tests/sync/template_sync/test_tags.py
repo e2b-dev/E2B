@@ -1,41 +1,56 @@
 import uuid
-from unittest.mock import patch
 
 import pytest
 
 from e2b import TagInfo, Template
+from e2b.exceptions import TemplateException
+import e2b.template_sync.main as template_sync_main
 
 
 class TestAssignTag:
     """Tests for Template.assign_tag method."""
 
-    @patch("e2b.template_sync.main.get_api_client")
-    @patch("e2b.template_sync.main.assign_tag")
-    def test_assign_single_tag(self, mock_assign_tag, mock_get_api_client):
+    def test_assign_single_tag(self, monkeypatch):
         """Test assigning a single tag to a template."""
-        mock_assign_tag.return_value = TagInfo(
-            build_id="mock-build-id",
-            tags=["my-template:production"],
+        call_args_capture = []
+
+        def mock_assign_tag(client, target, names):
+            call_args_capture.append((client, target, names))
+            return TagInfo(
+                build_id="mock-build-id",
+                tags=["my-template:production"],
+            )
+
+        monkeypatch.setattr(
+            template_sync_main, "get_api_client", lambda *args, **kwargs: None
         )
+        monkeypatch.setattr(template_sync_main, "assign_tag", mock_assign_tag)
 
         result = Template.assign_tag("my-template:v1.0", "my-template:production")
 
         assert result.build_id == "mock-build-id"
         assert "my-template:production" in result.tags
-        mock_assign_tag.assert_called_once()
+        assert len(call_args_capture) == 1
         # Verify the names were converted to a list
-        call_args = mock_assign_tag.call_args
-        assert call_args[0][1] == "my-template:v1.0"  # target
-        assert call_args[0][2] == ["my-template:production"]  # names as list
+        _, target, names = call_args_capture[0]
+        assert target == "my-template:v1.0"
+        assert names == ["my-template:production"]
 
-    @patch("e2b.template_sync.main.get_api_client")
-    @patch("e2b.template_sync.main.assign_tag")
-    def test_assign_multiple_tags(self, mock_assign_tag, mock_get_api_client):
+    def test_assign_multiple_tags(self, monkeypatch):
         """Test assigning multiple tags to a template."""
-        mock_assign_tag.return_value = TagInfo(
-            build_id="mock-build-id",
-            tags=["my-template:production", "my-template:stable"],
+        call_args_capture = []
+
+        def mock_assign_tag(client, target, names):
+            call_args_capture.append((client, target, names))
+            return TagInfo(
+                build_id="mock-build-id",
+                tags=["my-template:production", "my-template:stable"],
+            )
+
+        monkeypatch.setattr(
+            template_sync_main, "get_api_client", lambda *args, **kwargs: None
         )
+        monkeypatch.setattr(template_sync_main, "assign_tag", mock_assign_tag)
 
         result = Template.assign_tag(
             "my-template:v1.0", ["my-template:production", "my-template:stable"]
@@ -44,35 +59,45 @@ class TestAssignTag:
         assert result.build_id == "mock-build-id"
         assert "my-template:production" in result.tags
         assert "my-template:stable" in result.tags
-        mock_assign_tag.assert_called_once()
+        assert len(call_args_capture) == 1
         # Verify the names were passed as-is (already a list)
-        call_args = mock_assign_tag.call_args
-        assert call_args[0][2] == ["my-template:production", "my-template:stable"]
+        _, _, names = call_args_capture[0]
+        assert names == ["my-template:production", "my-template:stable"]
 
 
 class TestDeleteTag:
     """Tests for Template.delete_tag method."""
 
-    @patch("e2b.template_sync.main.get_api_client")
-    @patch("e2b.template_sync.main.delete_tag")
-    def test_delete_tag(self, mock_delete_tag, mock_get_api_client):
+    def test_delete_tag(self, monkeypatch):
         """Test deleting a tag from a template."""
-        mock_delete_tag.return_value = None
+        call_args_capture = []
+
+        def mock_delete_tag(client, name):
+            call_args_capture.append((client, name))
+            return None
+
+        monkeypatch.setattr(
+            template_sync_main, "get_api_client", lambda *args, **kwargs: None
+        )
+        monkeypatch.setattr(template_sync_main, "delete_tag", mock_delete_tag)
 
         # Should not raise
         Template.delete_tag("my-template:production")
 
-        mock_delete_tag.assert_called_once()
-        call_args = mock_delete_tag.call_args
-        assert call_args[0][1] == "my-template:production"
+        assert len(call_args_capture) == 1
+        _, name = call_args_capture[0]
+        assert name == "my-template:production"
 
-    @patch("e2b.template_sync.main.get_api_client")
-    @patch("e2b.template_sync.main.delete_tag")
-    def test_delete_tag_error(self, mock_delete_tag, mock_get_api_client):
+    def test_delete_tag_error(self, monkeypatch):
         """Test that delete_tag raises an error for nonexistent tags."""
-        from e2b.exceptions import TemplateException
 
-        mock_delete_tag.side_effect = TemplateException("Tag not found")
+        def mock_delete_tag(client, name):
+            raise TemplateException("Tag not found")
+
+        monkeypatch.setattr(
+            template_sync_main, "get_api_client", lambda *args, **kwargs: None
+        )
+        monkeypatch.setattr(template_sync_main, "delete_tag", mock_delete_tag)
 
         with pytest.raises(TemplateException):
             Template.delete_tag("nonexistent:tag")

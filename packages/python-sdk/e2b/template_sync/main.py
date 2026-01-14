@@ -236,11 +236,11 @@ class Template(TemplateBase):
             data = Template._build(
                 template,
                 api_client,
+                names_list,
                 cpu_count=cpu_count,
                 memory_mb=memory_mb,
                 skip_cache=skip_cache,
                 on_build_logs=on_build_logs,
-                names=names_list,
             )
 
             if on_build_logs:
