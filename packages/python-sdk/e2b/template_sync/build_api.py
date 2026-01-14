@@ -1,6 +1,6 @@
 import time
 from types import TracebackType
-from typing import Callable, Literal, Optional, List, Union
+from typing import Callable, Optional, List, Union
 
 import httpx
 
@@ -21,14 +21,21 @@ from e2b.api.client.models import (
     TemplateBuildRequestV3,
     TemplateBuildStartV2,
     TemplateBuildFileUpload,
-    TemplateBuild,
     Error,
     AssignTemplateTagRequest,
-    TemplateTag,
 )
+from e2b.api.client.types import Unset
 from e2b.exceptions import BuildException, FileUploadException, TemplateException
 from e2b.template.logger import LogEntry
-from e2b.template.types import TemplateType
+from e2b.template.types import (
+    TemplateType,
+    BuildLogEntry,
+    BuildLogLevel,
+    BuildStatusReason,
+    TemplateBuildStatus,
+    TemplateBuildStatusResponse,
+    TemplateTagInfo,
+)
 from e2b.template.utils import get_build_step_index, tar_file_stream
 
 
@@ -133,9 +140,30 @@ def trigger_build(
         raise handle_api_exception(res, BuildException)
 
 
+def _map_log_entry(entry) -> BuildLogEntry:
+    """Map API log entry to custom BuildLogEntry type."""
+    return BuildLogEntry(
+        level=BuildLogLevel(entry.level.value),
+        message=entry.message,
+        timestamp=entry.timestamp,
+        step=entry.step,
+    )
+
+
+def _map_build_status_reason(reason) -> Optional[BuildStatusReason]:
+    """Map API build status reason to custom BuildStatusReason type."""
+    if reason is None or isinstance(reason, Unset):
+        return None
+    return BuildStatusReason(
+        message=reason.message,
+        step=reason.step,
+        log_entries=[_map_log_entry(e) for e in (reason.log_entries or [])],
+    )
+
+
 def get_build_status(
     client: AuthenticatedClient, template_id: str, build_id: str, logs_offset: int
-) -> TemplateBuild:
+) -> TemplateBuildStatusResponse:
     res = get_templates_template_id_builds_build_id_status.sync_detailed(
         template_id=template_id,
         build_id=build_id,
@@ -152,7 +180,14 @@ def get_build_status(
     if res.parsed is None:
         raise BuildException("Failed to get build status")
 
-    return res.parsed
+    return TemplateBuildStatusResponse(
+        build_id=res.parsed.build_id,
+        template_id=res.parsed.template_id,
+        status=TemplateBuildStatus(res.parsed.status.value),
+        log_entries=[_map_log_entry(e) for e in res.parsed.log_entries],
+        logs=res.parsed.logs,
+        reason=_map_build_status_reason(res.parsed.reason),
+    )
 
 
 def wait_for_build_finish(
@@ -164,9 +199,9 @@ def wait_for_build_finish(
     stack_traces: List[Union[TracebackType, None]] = [],
 ):
     logs_offset = 0
-    status: Literal["building", "waiting", "ready", "error"] = "building"
+    status = TemplateBuildStatus.BUILDING
 
-    while status in ["building", "waiting"]:
+    while status in [TemplateBuildStatus.BUILDING, TemplateBuildStatus.WAITING]:
         build_status = get_build_status(client, template_id, build_id, logs_offset)
 
         logs_offset += len(build_status.log_entries)
@@ -181,15 +216,15 @@ def wait_for_build_finish(
                     )
                 )
 
-        status = build_status.status.value
+        status = build_status.status
 
-        if status == "ready":
+        if status == TemplateBuildStatus.READY:
             return
 
-        elif status == "waiting":
+        elif status == TemplateBuildStatus.WAITING:
             pass
 
-        elif status == "error":
+        elif status == TemplateBuildStatus.ERROR:
             traceback = None
             if build_status.reason and build_status.reason.step:
                 # Find the corresponding stack trace for the failed step
@@ -243,7 +278,7 @@ def check_alias_exists(client: AuthenticatedClient, alias: str) -> bool:
 
 def assign_tag(
     client: AuthenticatedClient, target: str, names: List[str]
-) -> TemplateTag:
+) -> TemplateTagInfo:
     """
     Assign tag(s) to an existing template build.
 
@@ -253,7 +288,7 @@ def assign_tag(
         names: Tag(s) to assign in 'alias:tag' format
 
     Returns:
-        TemplateTag with build_id and assigned names
+        TemplateTagInfo with build_id and assigned names
     """
     res = post_templates_tags.sync_detailed(
         client=client,
@@ -272,7 +307,10 @@ def assign_tag(
     if res.parsed is None:
         raise TemplateException("Failed to assign tag")
 
-    return res.parsed
+    return TemplateTagInfo(
+        build_id=str(res.parsed.build_id),
+        names=res.parsed.names,
+    )
 
 
 def delete_tag(client: AuthenticatedClient, name: str) -> None:

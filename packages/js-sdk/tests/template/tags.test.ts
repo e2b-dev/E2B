@@ -9,7 +9,7 @@ import { buildTemplateTest, isDebug } from '../setup'
 
 // Mock handlers for tag API endpoints
 const mockHandlers = [
-  http.post('https://api.e2b.app/templates/tags', async ({ request }) => {
+  http.post(/https:\/\/api\.[^/]+\/templates\/tags/, async ({ request }) => {
     const { names } = (await request.clone().json()) as {
       names: string[]
     }
@@ -18,7 +18,7 @@ const mockHandlers = [
       names: names,
     })
   }),
-  http.delete(/https:\/\/api\.e2b.app\/templates\/tags\/.*/, ({ request }) => {
+  http.delete(/https:\/\/api\.[^/]+\/templates\/tags\/.*/, ({ request }) => {
     const url = new URL(request.url)
     const name = decodeURIComponent(url.pathname.split('/').pop() || '')
     if (name === 'nonexistent:tag') {
@@ -42,7 +42,7 @@ describe('Template tags unit tests', () => {
         'my-template:v1.0',
         'my-template:production'
       )
-      expect(result.buildID).toBe('00000000-0000-0000-0000-000000000000')
+      expect(result.buildId).toBe('00000000-0000-0000-0000-000000000000')
       expect(result.names).toContain('my-template:production')
     })
 
@@ -51,7 +51,7 @@ describe('Template tags unit tests', () => {
         'my-template:production',
         'my-template:stable',
       ])
-      expect(result.buildID).toBe('00000000-0000-0000-0000-000000000000')
+      expect(result.buildId).toBe('00000000-0000-0000-0000-000000000000')
       expect(result.names).toContain('my-template:production')
       expect(result.names).toContain('my-template:stable')
     })
@@ -94,7 +94,7 @@ buildTemplateTest.skipIf(isDebug)(
       latestTag,
     ])
 
-    expect(tagInfo.buildID).toBeTruthy()
+    expect(tagInfo.buildId).toBeTruthy()
     // API returns just the tag portion, not the full alias:tag
     expect(tagInfo.names).toContain('production')
     expect(tagInfo.names).toContain('latest')
@@ -122,7 +122,7 @@ buildTemplateTest.skipIf(isDebug)(
     const stableTag = `${templateAlias}:stable`
     const tagInfo = await Template.assignTag(initialTag, stableTag)
 
-    expect(tagInfo.buildID).toBeTruthy()
+    expect(tagInfo.buildId).toBeTruthy()
     // API returns just the tag portion, not the full alias:tag
     expect(tagInfo.names).toContain('stable')
 

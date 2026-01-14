@@ -72,9 +72,104 @@ export type BuildInfo = {
 }
 
 /**
- * Response from getting build status.
+ * Options for getting build status.
  */
 export type GetBuildStatusOptions = ConnectionOpts & { logsOffset?: number }
+
+/**
+ * Log level for build log entries.
+ */
+export type BuildLogLevel = 'debug' | 'info' | 'warn' | 'error'
+
+/**
+ * A single log entry from the template build process.
+ */
+export type BuildLogEntry = {
+  /**
+   * Log level of the entry.
+   */
+  level: BuildLogLevel
+  /**
+   * Log message content.
+   */
+  message: string
+  /**
+   * Step in the build process related to the log entry.
+   */
+  step?: string
+  /**
+   * Timestamp of the log entry.
+   */
+  timestamp: Date
+}
+
+/**
+ * Status of a template build.
+ */
+export type TemplateBuildStatus = 'building' | 'waiting' | 'ready' | 'error'
+
+/**
+ * Reason for the current build status (typically for errors).
+ */
+export type BuildStatusReason = {
+  /**
+   * Message with the status reason.
+   */
+  message: string
+  /**
+   * Step that failed.
+   */
+  step?: string
+  /**
+   * Log entries related to the status reason.
+   */
+  logEntries: BuildLogEntry[]
+}
+
+/**
+ * Response from getting build status.
+ */
+export type TemplateBuildStatusResponse = {
+  /**
+   * Build identifier.
+   */
+  buildID: string
+  /**
+   * Template identifier.
+   */
+  templateID: string
+  /**
+   * Current status of the build.
+   */
+  status: TemplateBuildStatus
+  /**
+   * Build log entries.
+   */
+  logEntries: BuildLogEntry[]
+  /**
+   * Build logs (raw strings).
+   * @deprecated Use `logEntries` instead.
+   */
+  logs: string[]
+  /**
+   * Reason for the current status (typically for errors).
+   */
+  reason?: BuildStatusReason
+}
+
+/**
+ * Information about assigned template tags.
+ */
+export type TemplateTagInfo = {
+  /**
+   * Build identifier associated with this tag.
+   */
+  buildId: string
+  /**
+   * Assigned names/tags of the template.
+   */
+  names: string[]
+}
 
 /**
  * Options for checking if a template alias exists.

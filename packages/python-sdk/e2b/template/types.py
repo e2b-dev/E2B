@@ -1,9 +1,105 @@
 from dataclasses import dataclass, field
+from datetime import datetime
 from enum import Enum
 from pathlib import Path
 from typing import List, Literal, Optional, TypedDict, Union
 
 from typing_extensions import NotRequired
+
+
+class BuildLogLevel(str, Enum):
+    """
+    Log level for build log entries.
+    """
+
+    DEBUG = "debug"
+    INFO = "info"
+    WARN = "warn"
+    ERROR = "error"
+
+
+class TemplateBuildStatus(str, Enum):
+    """
+    Status of a template build.
+    """
+
+    BUILDING = "building"
+    WAITING = "waiting"
+    READY = "ready"
+    ERROR = "error"
+
+
+@dataclass
+class BuildLogEntry:
+    """
+    A single log entry from the template build process.
+    """
+
+    level: BuildLogLevel
+    """Log level of the entry."""
+
+    message: str
+    """Log message content."""
+
+    timestamp: datetime
+    """Timestamp of the log entry."""
+
+    step: Optional[str] = None
+    """Step in the build process related to the log entry."""
+
+
+@dataclass
+class BuildStatusReason:
+    """
+    Reason for the current build status (typically for errors).
+    """
+
+    message: str
+    """Message with the status reason."""
+
+    step: Optional[str] = None
+    """Step that failed."""
+
+    log_entries: List[BuildLogEntry] = field(default_factory=list)
+    """Log entries related to the status reason."""
+
+
+@dataclass
+class TemplateBuildStatusResponse:
+    """
+    Response from getting build status.
+    """
+
+    build_id: str
+    """Build identifier."""
+
+    template_id: str
+    """Template identifier."""
+
+    status: TemplateBuildStatus
+    """Current status of the build."""
+
+    log_entries: List[BuildLogEntry]
+    """Build log entries."""
+
+    logs: List[str]
+    """Build logs (raw strings). Deprecated: use log_entries instead."""
+
+    reason: Optional[BuildStatusReason] = None
+    """Reason for the current status (typically for errors)."""
+
+
+@dataclass
+class TemplateTagInfo:
+    """
+    Information about assigned template tags.
+    """
+
+    build_id: str
+    """Build identifier associated with this tag."""
+
+    names: List[str]
+    """Assigned names/tags of the template."""
 
 
 class InstructionType(str, Enum):

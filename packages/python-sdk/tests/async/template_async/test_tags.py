@@ -1,9 +1,8 @@
 import uuid
-from uuid import UUID
 
 import pytest
 
-from e2b import AsyncTemplate, TemplateTag, Template
+from e2b import AsyncTemplate, TemplateTagInfo, Template
 from e2b.exceptions import TemplateException
 import e2b.template_async.main as template_async_main
 
@@ -18,8 +17,8 @@ class TestAssignTag:
 
         async def mock_assign_tag(client, target, names):
             call_args_capture.append((client, target, names))
-            return TemplateTag(
-                build_id=UUID("00000000-0000-0000-0000-000000000000"),
+            return TemplateTagInfo(
+                build_id="00000000-0000-0000-0000-000000000000",
                 names=["my-template:production"],
             )
 
@@ -32,7 +31,7 @@ class TestAssignTag:
             "my-template:v1.0", "my-template:production"
         )
 
-        assert result.build_id == UUID("00000000-0000-0000-0000-000000000000")
+        assert result.build_id == "00000000-0000-0000-0000-000000000000"
         assert "my-template:production" in result.names
         assert len(call_args_capture) == 1
         # Verify the names were converted to a list
@@ -47,8 +46,8 @@ class TestAssignTag:
 
         async def mock_assign_tag(client, target, names):
             call_args_capture.append((client, target, names))
-            return TemplateTag(
-                build_id=UUID("00000000-0000-0000-0000-000000000000"),
+            return TemplateTagInfo(
+                build_id="00000000-0000-0000-0000-000000000000",
                 names=["my-template:production", "my-template:stable"],
             )
 
@@ -61,7 +60,7 @@ class TestAssignTag:
             "my-template:v1.0", ["my-template:production", "my-template:stable"]
         )
 
-        assert result.build_id == UUID("00000000-0000-0000-0000-000000000000")
+        assert result.build_id == "00000000-0000-0000-0000-000000000000"
         assert "my-template:production" in result.names
         assert "my-template:stable" in result.names
         assert len(call_args_capture) == 1

@@ -3,6 +3,13 @@ import { stripAnsi } from '../utils'
 import { BuildError, FileUploadError, TemplateError } from '../errors'
 import { LogEntry } from './logger'
 import { getBuildStepIndex, tarFileStreamUpload } from './utils'
+import {
+  BuildLogEntry,
+  BuildStatusReason,
+  TemplateBuildStatus,
+  TemplateBuildStatusResponse,
+  TemplateTagInfo,
+} from './types'
 
 type RequestBuildInput = {
   names: string[]
@@ -31,14 +38,11 @@ type CheckAliasExistsInput = {
   alias: string
 }
 
-export type GetBuildStatusResponse =
+type ApiBuildStatusResponse =
   paths['/templates/{templateID}/builds/{buildID}/status']['get']['responses']['200']['content']['application/json']
 
 export type TriggerBuildTemplate =
   paths['/v2/templates/{templateID}/builds/{buildID}']['post']['requestBody']['content']['application/json']
-
-export type TagInfo =
-  paths['/templates/tags']['post']['responses']['201']['content']['application/json']
 
 export async function requestBuild(
   client: ApiClient,
@@ -161,10 +165,34 @@ export async function triggerBuild(
   }
 }
 
+function mapLogEntry(
+  entry: ApiBuildStatusResponse['logEntries'][number]
+): BuildLogEntry {
+  return {
+    level: entry.level,
+    message: entry.message,
+    step: entry.step,
+    timestamp: new Date(entry.timestamp),
+  }
+}
+
+function mapBuildStatusReason(
+  reason: ApiBuildStatusResponse['reason']
+): BuildStatusReason | undefined {
+  if (!reason) {
+    return undefined
+  }
+  return {
+    message: reason.message,
+    step: reason.step,
+    logEntries: (reason.logEntries ?? []).map(mapLogEntry),
+  }
+}
+
 export async function getBuildStatus(
   client: ApiClient,
   { templateID, buildID, logsOffset }: GetBuildStatusInput
-): Promise<GetBuildStatusResponse> {
+): Promise<TemplateBuildStatusResponse> {
   const buildStatusRes = await client.api.GET(
     '/templates/{templateID}/builds/{buildID}/status',
     {
@@ -189,7 +217,14 @@ export async function getBuildStatus(
     throw new BuildError('Failed to get build status')
   }
 
-  return buildStatusRes.data
+  return {
+    buildID: buildStatusRes.data.buildID,
+    templateID: buildStatusRes.data.templateID,
+    status: buildStatusRes.data.status,
+    logEntries: buildStatusRes.data.logEntries.map(mapLogEntry),
+    logs: buildStatusRes.data.logs,
+    reason: mapBuildStatusReason(buildStatusRes.data.reason),
+  }
 }
 
 export async function checkAliasExists(
@@ -241,7 +276,7 @@ export async function waitForBuildFinish(
   }
 ): Promise<void> {
   let logsOffset = 0
-  let status: GetBuildStatusResponse['status'] = 'building'
+  let status: TemplateBuildStatus = 'building'
 
   while (status === 'building' || status === 'waiting') {
     const buildStatus = await getBuildStatus(client, {
@@ -252,15 +287,14 @@ export async function waitForBuildFinish(
 
     logsOffset += buildStatus.logEntries.length
 
-    buildStatus.logEntries.forEach(
-      (logEntry: GetBuildStatusResponse['logEntries'][number]) =>
-        onBuildLogs?.(
-          new LogEntry(
-            new Date(logEntry.timestamp),
-            logEntry.level,
-            stripAnsi(logEntry.message)
-          )
+    buildStatus.logEntries.forEach((logEntry) =>
+      onBuildLogs?.(
+        new LogEntry(
+          logEntry.timestamp,
+          logEntry.level,
+          stripAnsi(logEntry.message)
         )
+      )
     )
 
     status = buildStatus.status
@@ -298,7 +332,7 @@ export async function waitForBuildFinish(
 export async function assignTag(
   client: ApiClient,
   { target, names }: { target: string; names: string[] }
-): Promise<TagInfo> {
+): Promise<TemplateTagInfo> {
   const res = await client.api.POST('/templates/tags', {
     body: { target, names },
   })
@@ -312,7 +346,10 @@ export async function assignTag(
     throw new TemplateError('Failed to assign tag')
   }
 
-  return res.data
+  return {
+    buildId: res.data.buildID,
+    names: res.data.names,
+  }
 }
 
 export async function deleteTag(

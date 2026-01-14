@@ -10,8 +10,7 @@ from e2b.api.client_sync import get_api_client
 from e2b.template.consts import RESOLVE_SYMLINKS
 from e2b.template.logger import LogEntry, LogEntryEnd, LogEntryStart
 from e2b.template.main import TemplateBase, TemplateClass
-from e2b.template.types import BuildInfo, InstructionType
-from e2b.api.client.models import TemplateTag
+from e2b.template.types import BuildInfo, InstructionType, TemplateTagInfo
 from e2b.template.utils import normalize_names
 from e2b.template_sync.build_api import (
     assign_tag,
@@ -401,13 +400,13 @@ class Template(TemplateBase):
         target: str,
         names: Union[str, List[str]],
         **opts: Unpack[ApiParams],
-    ) -> TemplateTag:
+    ) -> TemplateTagInfo:
         """
         Assign tag(s) to an existing template build.
 
         :param target: Target template in 'alias:tag' format (the source build)
         :param names: Tag(s) to assign in 'alias:tag' format (string or list)
-        :return: TemplateTag with build_id and assigned names
+        :return: TemplateTagInfo with build_id and assigned names
 
         Example
         ```python

@@ -8,10 +8,8 @@ import {
   checkAliasExists,
   deleteTag,
   getBuildStatus,
-  GetBuildStatusResponse,
   getFileUploadLink,
   requestBuild,
-  TagInfo,
   triggerBuild,
   TriggerBuildTemplate,
   uploadFile,
@@ -32,10 +30,12 @@ import {
   McpServerName,
   RegistryConfig,
   TemplateBuilder,
+  TemplateBuildStatusResponse,
   TemplateClass,
   TemplateFinal,
   TemplateFromImage,
   TemplateOptions,
+  TemplateTagInfo,
 } from './types'
 import {
   calculateFilesHash,
@@ -283,7 +283,7 @@ export class TemplateBase
   static async getBuildStatus(
     data: Pick<BuildInfo, 'templateId' | 'buildId'>,
     options?: GetBuildStatusOptions
-  ): Promise<GetBuildStatusResponse> {
+  ): Promise<TemplateBuildStatusResponse> {
     const config = new ConnectionConfig(options)
     const client = new ApiClient(config)
 
@@ -343,7 +343,7 @@ export class TemplateBase
     target: string,
     names: string | string[],
     options?: ConnectionOpts
-  ): Promise<TagInfo> {
+  ): Promise<TemplateTagInfo> {
     const config = new ConnectionConfig(options)
     const client = new ApiClient(config)
     const nameArray = Array.isArray(names) ? names : [names]
@@ -1247,10 +1247,16 @@ Template.toDockerfile = TemplateBase.toDockerfile
 export type {
   AliasExistsOptions,
   BuildInfo,
+  BuildLogEntry,
+  BuildLogLevel,
   BuildOptions,
+  BuildStatusReason,
   CopyItem,
   GetBuildStatusOptions,
   McpServerName,
   TemplateBuilder,
+  TemplateBuildStatus,
+  TemplateBuildStatusResponse,
   TemplateClass,
+  TemplateTagInfo,
 } from './types'
