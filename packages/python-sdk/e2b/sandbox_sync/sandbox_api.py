@@ -219,8 +219,8 @@ class SandboxApi(SandboxBase):
         api_client = get_api_client(config)
         res = get_sandboxes_sandbox_id_metrics.sync_detailed(
             sandbox_id,
-            start=int(start.timestamp() * 1000) if start else None,
-            end=int(end.timestamp() * 1000) if end else None,
+            start=int(start.timestamp()) if start else None,
+            end=int(end.timestamp()) if end else None,
             client=api_client,
         )
 

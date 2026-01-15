@@ -229,8 +229,8 @@ class SandboxApi(SandboxBase):
         api_client = get_api_client(config)
         res = await get_sandboxes_sandbox_id_metrics.asyncio_detailed(
             sandbox_id,
-            start=int(start.timestamp() * 1000) if start else UNSET,
-            end=int(end.timestamp() * 1000) if end else UNSET,
+            start=int(start.timestamp()) if start else UNSET,
+            end=int(end.timestamp()) if end else UNSET,
             client=api_client,
         )
 
