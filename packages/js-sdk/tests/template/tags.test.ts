@@ -101,10 +101,6 @@ buildTemplateTest.skipIf(isDebug)(
 
     // Delete tags
     await Template.removeTag(productionTag)
-
-    // Clean up
-    await Template.removeTag(initialTag)
-    await Template.removeTag(latestTag)
   },
   { timeout: 300_000 }
 )
@@ -125,10 +121,6 @@ buildTemplateTest.skipIf(isDebug)(
     expect(tagInfo.buildId).toBeTruthy()
     // API returns just the tag portion, not the full alias:tag
     expect(tagInfo.names).toContain('stable')
-
-    // Clean up
-    await Template.removeTag(initialTag)
-    await Template.removeTag(stableTag)
   },
   { timeout: 300_000 }
 )
@@ -146,9 +138,6 @@ buildTemplateTest.skipIf(isDebug)(
     await expect(
       Template.assignTag(initialTag, ':invalid-tag')
     ).rejects.toThrow()
-
-    // Clean up
-    await Template.removeTag(initialTag)
   },
   { timeout: 300_000 }
 )
@@ -166,9 +155,6 @@ buildTemplateTest.skipIf(isDebug)(
     await expect(
       Template.assignTag(initialTag, `${templateAlias}:`)
     ).rejects.toThrow()
-
-    // Clean up
-    await Template.removeTag(initialTag)
   },
   { timeout: 300_000 }
 )

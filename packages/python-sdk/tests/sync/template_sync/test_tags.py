@@ -134,10 +134,6 @@ class TestTagsIntegration:
         # Delete tags
         Template.remove_tag(production_tag)
 
-        # Clean up
-        Template.remove_tag(initial_tag)
-        Template.remove_tag(latest_tag)
-
     @pytest.mark.skip_debug()
     def test_assign_single_tag_to_existing_template(self, build):
         """Test assigning a single tag (not array) to an existing template."""
@@ -155,10 +151,6 @@ class TestTagsIntegration:
         # API returns just the tag portion, not the full alias:tag
         assert "stable" in tag_info.names
 
-        # Clean up
-        Template.remove_tag(initial_tag)
-        Template.remove_tag(stable_tag)
-
     @pytest.mark.skip_debug()
     def test_rejects_invalid_tag_format_missing_alias(self, build):
         """Test that tag without alias (starts with colon) is rejected."""
@@ -172,9 +164,6 @@ class TestTagsIntegration:
         with pytest.raises(Exception):
             Template.assign_tag(initial_tag, ":invalid-tag")
 
-        # Clean up
-        Template.remove_tag(initial_tag)
-
     @pytest.mark.skip_debug()
     def test_rejects_invalid_tag_format_missing_tag(self, build):
         """Test that tag without tag portion (ends with colon) is rejected."""
@@ -187,6 +176,3 @@ class TestTagsIntegration:
         # Tag without tag portion (ends with colon) should be rejected
         with pytest.raises(Exception):
             Template.assign_tag(initial_tag, f"{template_alias}:")
-
-        # Clean up
-        Template.remove_tag(initial_tag)
