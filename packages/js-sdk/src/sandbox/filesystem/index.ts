@@ -402,6 +402,72 @@ export class Filesystem {
   }
 
   /**
+   * Write multiple files.
+   *
+   * Writes a list of files to the filesystem.
+   * When writing to a file that doesn't exist, the file will get created.
+   * When writing to a file that already exists, the file will get overwritten.
+   * When writing to a file that's in a directory that doesn't exist, you'll get an error.
+   *
+   * @param files list of files to write as `WriteEntry` objects, each containing `path` and `data`.
+   * @param opts connection options.
+   *
+   * @returns information about the written files
+   */
+  async writeFiles(
+    files: WriteEntry[],
+    opts?: FilesystemRequestOpts
+  ): Promise<WriteInfo[]> {
+    if (files.length === 0) return []
+
+    const blobs = await Promise.all(
+      files.map((f) => new Response(f.data).blob())
+    )
+
+    let user = opts?.user
+    if (
+      user == undefined &&
+      compareVersions(this.envdApi.version, ENVD_DEFAULT_USER) < 0
+    ) {
+      user = defaultUsername
+    }
+
+    const res = await this.envdApi.api.POST('/files', {
+      params: {
+        query: {
+          path: files.length === 1 ? files[0].path : undefined,
+          username: user,
+        },
+      },
+      bodySerializer() {
+        return blobs.reduce((fd, blob, i) => {
+          // Important: RFC 7578, Section 4.2 requires that if a filename is provided,
+          // the directory path information must not be used.
+          // BUT in our case we need to use the directory path information with a custom
+          // multipart part name getter in envd.
+          fd.append('file', blob, files[i].path)
+
+          return fd
+        }, new FormData())
+      },
+      signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
+      body: {},
+    })
+
+    const err = await handleEnvdApiError(res)
+    if (err) {
+      throw err
+    }
+
+    const writtenFiles = res.data as WriteInfo[]
+    if (!Array.isArray(writtenFiles) || writtenFiles.length === 0) {
+      throw new Error('Expected to receive information about written file')
+    }
+
+    return writtenFiles
+  }
+
+  /**
    * List entries in a directory.
    *
    * @param path path to the directory.
