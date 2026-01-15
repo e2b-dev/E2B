@@ -370,6 +370,7 @@ export class SandboxApi {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
 
+    // JS timestamp is in milliseconds, convert to unix (seconds)
     const start = opts?.start
       ? Math.round(opts.start.getTime() / 1000)
       : undefined
