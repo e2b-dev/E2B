@@ -6,7 +6,7 @@ import { runtime } from '../utils'
 import {
   assignTag,
   checkAliasExists,
-  deleteTag,
+  removeTag,
   getBuildStatus,
   getFileUploadLink,
   requestBuild,
@@ -353,21 +353,21 @@ export class TemplateBase
   /**
    * Delete a tag from a template.
    *
-   * @param name Template tag in 'alias:tag' format to delete
+   * @param name Template tag in 'alias:tag' format to remove
    * @param options Authentication options
    *
    * @example
    * ```ts
-   * await Template.deleteTag('my-template:production')
+   * await Template.removeTag('my-template:production')
    * ```
    */
-  static async deleteTag(
+  static async removeTag(
     name: string,
     options?: ConnectionOpts
   ): Promise<void> {
     const config = new ConnectionConfig(options)
     const client = new ApiClient(config)
-    return deleteTag(client, { name })
+    return removeTag(client, { name })
   }
 
   fromDebianImage(variant: string = 'stable'): TemplateBuilder {
@@ -1240,7 +1240,7 @@ Template.buildInBackground = TemplateBase.buildInBackground
 Template.getBuildStatus = TemplateBase.getBuildStatus
 Template.aliasExists = TemplateBase.aliasExists
 Template.assignTag = TemplateBase.assignTag
-Template.deleteTag = TemplateBase.deleteTag
+Template.removeTag = TemplateBase.removeTag
 Template.toJSON = TemplateBase.toJSON
 Template.toDockerfile = TemplateBase.toDockerfile
 

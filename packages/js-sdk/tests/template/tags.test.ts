@@ -57,16 +57,16 @@ describe('Template tags unit tests', () => {
     })
   })
 
-  describe('Template.deleteTag', () => {
+  describe('Template.removeTag', () => {
     test('deletes a tag', async () => {
       // Should not throw
       await expect(
-        Template.deleteTag('my-template:production')
+        Template.removeTag('my-template:production')
       ).resolves.toBeUndefined()
     })
 
     test('handles 404 error for nonexistent tag', async () => {
-      await expect(Template.deleteTag('nonexistent:tag')).rejects.toThrow()
+      await expect(Template.removeTag('nonexistent:tag')).rejects.toThrow()
     })
   })
 })
@@ -100,11 +100,11 @@ buildTemplateTest.skipIf(isDebug)(
     expect(tagInfo.names).toContain('latest')
 
     // Delete tags
-    await Template.deleteTag(productionTag)
+    await Template.removeTag(productionTag)
 
     // Clean up
-    await Template.deleteTag(initialTag)
-    await Template.deleteTag(latestTag)
+    await Template.removeTag(initialTag)
+    await Template.removeTag(latestTag)
   },
   { timeout: 300_000 }
 )
@@ -127,8 +127,8 @@ buildTemplateTest.skipIf(isDebug)(
     expect(tagInfo.names).toContain('stable')
 
     // Clean up
-    await Template.deleteTag(initialTag)
-    await Template.deleteTag(stableTag)
+    await Template.removeTag(initialTag)
+    await Template.removeTag(stableTag)
   },
   { timeout: 300_000 }
 )
@@ -148,7 +148,7 @@ buildTemplateTest.skipIf(isDebug)(
     ).rejects.toThrow()
 
     // Clean up
-    await Template.deleteTag(initialTag)
+    await Template.removeTag(initialTag)
   },
   { timeout: 300_000 }
 )
@@ -168,7 +168,7 @@ buildTemplateTest.skipIf(isDebug)(
     ).rejects.toThrow()
 
     // Clean up
-    await Template.deleteTag(initialTag)
+    await Template.removeTag(initialTag)
   },
   { timeout: 300_000 }
 )

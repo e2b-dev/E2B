@@ -70,43 +70,43 @@ class TestAssignTag:
 
 
 class TestDeleteTag:
-    """Tests for AsyncTemplate.delete_tag method."""
+    """Tests for AsyncTemplate.remove_tag method."""
 
     @pytest.mark.asyncio
-    async def test_delete_tag(self, monkeypatch):
+    async def test_remove_tag(self, monkeypatch):
         """Test deleting a tag from a template."""
         call_args_capture = []
 
-        async def mock_delete_tag(client, name):
+        async def mock_remove_tag(client, name):
             call_args_capture.append((client, name))
             return None
 
         monkeypatch.setattr(
             template_async_main, "get_api_client", lambda *args, **kwargs: None
         )
-        monkeypatch.setattr(template_async_main, "delete_tag", mock_delete_tag)
+        monkeypatch.setattr(template_async_main, "remove_tag", mock_remove_tag)
 
         # Should not raise
-        await AsyncTemplate.delete_tag("my-template:production")
+        await AsyncTemplate.remove_tag("my-template:production")
 
         assert len(call_args_capture) == 1
         _, name = call_args_capture[0]
         assert name == "my-template:production"
 
     @pytest.mark.asyncio
-    async def test_delete_tag_error(self, monkeypatch):
-        """Test that delete_tag raises an error for nonexistent tags."""
+    async def test_remove_tag_error(self, monkeypatch):
+        """Test that remove_tag raises an error for nonexistent tags."""
 
-        async def mock_delete_tag(client, name):
+        async def mock_remove_tag(client, name):
             raise TemplateException("Tag not found")
 
         monkeypatch.setattr(
             template_async_main, "get_api_client", lambda *args, **kwargs: None
         )
-        monkeypatch.setattr(template_async_main, "delete_tag", mock_delete_tag)
+        monkeypatch.setattr(template_async_main, "remove_tag", mock_remove_tag)
 
         with pytest.raises(TemplateException):
-            await AsyncTemplate.delete_tag("nonexistent:tag")
+            await AsyncTemplate.remove_tag("nonexistent:tag")
 
 
 # Integration tests
@@ -140,11 +140,11 @@ class TestTagsIntegration:
         assert "latest" in tag_info.names
 
         # Delete tags
-        await AsyncTemplate.delete_tag(production_tag)
+        await AsyncTemplate.remove_tag(production_tag)
 
         # Clean up
-        await AsyncTemplate.delete_tag(initial_tag)
-        await AsyncTemplate.delete_tag(latest_tag)
+        await AsyncTemplate.remove_tag(initial_tag)
+        await AsyncTemplate.remove_tag(latest_tag)
 
     @pytest.mark.skip_debug()
     async def test_assign_single_tag_to_existing_template(self, async_build):
@@ -164,8 +164,8 @@ class TestTagsIntegration:
         assert "stable" in tag_info.names
 
         # Clean up
-        await AsyncTemplate.delete_tag(initial_tag)
-        await AsyncTemplate.delete_tag(stable_tag)
+        await AsyncTemplate.remove_tag(initial_tag)
+        await AsyncTemplate.remove_tag(stable_tag)
 
     @pytest.mark.skip_debug()
     async def test_rejects_invalid_tag_format_missing_alias(self, async_build):
@@ -181,7 +181,7 @@ class TestTagsIntegration:
             await AsyncTemplate.assign_tag(initial_tag, ":invalid-tag")
 
         # Clean up
-        await AsyncTemplate.delete_tag(initial_tag)
+        await AsyncTemplate.remove_tag(initial_tag)
 
     @pytest.mark.skip_debug()
     async def test_rejects_invalid_tag_format_missing_tag(self, async_build):
@@ -197,4 +197,4 @@ class TestTagsIntegration:
             await AsyncTemplate.assign_tag(initial_tag, f"{template_alias}:")
 
         # Clean up
-        await AsyncTemplate.delete_tag(initial_tag)
+        await AsyncTemplate.remove_tag(initial_tag)

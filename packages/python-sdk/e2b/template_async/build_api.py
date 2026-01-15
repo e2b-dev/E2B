@@ -316,13 +316,13 @@ async def assign_tag(
     )
 
 
-async def delete_tag(client: AuthenticatedClient, name: str) -> None:
+async def remove_tag(client: AuthenticatedClient, name: str) -> None:
     """
-    Delete a tag from a template.
+    Remove a tag from a template.
 
     Args:
         client: Authenticated API client
-        name: Template tag in 'alias:tag' format to delete
+        name: Template tag in 'alias:tag' format to remove
     """
     res = await delete_templates_tags_name.asyncio_detailed(
         name=name,

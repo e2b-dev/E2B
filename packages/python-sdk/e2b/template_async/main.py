@@ -15,7 +15,7 @@ from e2b.template.utils import read_dockerignore
 from .build_api import (
     assign_tag,
     check_alias_exists,
-    delete_tag,
+    remove_tag,
     get_build_status,
     get_file_upload_link,
     request_build,
@@ -429,20 +429,20 @@ class AsyncTemplate(TemplateBase):
         return await assign_tag(api_client, target, names_list)
 
     @staticmethod
-    async def delete_tag(
+    async def remove_tag(
         name: str,
         **opts: Unpack[ApiParams],
     ) -> None:
         """
-        Delete a tag from a template.
+        Remove a tag from a template.
 
-        :param name: Template tag in 'alias:tag' format to delete
+        :param name: Template tag in 'alias:tag' format to remove
 
         Example
         ```python
         from e2b import AsyncTemplate
 
-        await AsyncTemplate.delete_tag('my-template:production')
+        await AsyncTemplate.remove_tag('my-template:production')
         ```
         """
         config = ConnectionConfig(**opts)
@@ -452,4 +452,4 @@ class AsyncTemplate(TemplateBase):
             require_access_token=False,
         )
 
-        await delete_tag(api_client, name)
+        await remove_tag(api_client, name)

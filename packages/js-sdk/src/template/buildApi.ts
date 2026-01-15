@@ -352,7 +352,7 @@ export async function assignTag(
   }
 }
 
-export async function deleteTag(
+export async function removeTag(
   client: ApiClient,
   { name }: { name: string }
 ): Promise<void> {

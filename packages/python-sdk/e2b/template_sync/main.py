@@ -15,7 +15,7 @@ from e2b.template.utils import normalize_names
 from e2b.template_sync.build_api import (
     assign_tag,
     check_alias_exists,
-    delete_tag,
+    remove_tag,
     get_build_status,
     get_file_upload_link,
     request_build,
@@ -430,20 +430,20 @@ class Template(TemplateBase):
         return assign_tag(api_client, target, names_list)
 
     @staticmethod
-    def delete_tag(
+    def remove_tag(
         name: str,
         **opts: Unpack[ApiParams],
     ) -> None:
         """
-        Delete a tag from a template.
+        Remove a tag from a template.
 
-        :param name: Template tag in 'alias:tag' format to delete
+        :param name: Template tag in 'alias:tag' format to remove
 
         Example
         ```python
         from e2b import Template
 
-        Template.delete_tag('my-template:production')
+        Template.remove_tag('my-template:production')
         ```
         """
         config = ConnectionConfig(**opts)
@@ -453,4 +453,4 @@ class Template(TemplateBase):
             require_access_token=False,
         )
 
-        delete_tag(api_client, name)
+        remove_tag(api_client, name)

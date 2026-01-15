@@ -313,13 +313,13 @@ def assign_tag(
     )
 
 
-def delete_tag(client: AuthenticatedClient, name: str) -> None:
+def remove_tag(client: AuthenticatedClient, name: str) -> None:
     """
-    Delete a tag from a template.
+    Remove a tag from a template.
 
     Args:
         client: Authenticated API client
-        name: Template tag in 'alias:tag' format to delete
+        name: Template tag in 'alias:tag' format to remove
     """
     res = delete_templates_tags_name.sync_detailed(
         name=name,
