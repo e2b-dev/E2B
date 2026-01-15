@@ -370,8 +370,8 @@ export class SandboxApi {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
 
-    const start = opts?.start ? opts.start.getTime() / 1000 : undefined
-    const end = opts?.end ? opts.end.getTime() / 1000 : undefined
+    const start = opts?.start ? Math.round(opts.start.getTime() / 1000) : undefined
+    const end = opts?.end ? Math.round(opts.end.getTime() / 1000) : undefined
     const res = await client.api.GET('/sandboxes/{sandboxID}/metrics', {
       params: {
         path: {
