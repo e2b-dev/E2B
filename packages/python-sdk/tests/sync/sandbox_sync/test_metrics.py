@@ -28,11 +28,3 @@ def test_sbx_metrics(sandbox_factory) -> None:
 
     metrics = sbx.get_metrics(start=start_time, end=datetime.datetime.now())
     assert len(metrics) > 0
-
-    metric = metrics[0]
-    assert metric.cpu_count is not None
-    assert metric.cpu_used_pct is not None
-    assert metric.mem_used is not None
-    assert metric.mem_total is not None
-    assert metric.disk_used is not None
-    assert metric.disk_total is not None

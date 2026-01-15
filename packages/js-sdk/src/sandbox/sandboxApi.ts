@@ -193,11 +193,11 @@ export interface SandboxMetricsOpts extends SandboxApiOpts {
   /**
    * Start time for the metrics, defaults to the start of the sandbox
    */
-  start?: string | Date
+  start?: Date
   /**
    * End time for the metrics, defaults to the current time
    */
-  end?: string | Date
+  end?: Date
 }
 
 /**
@@ -370,12 +370,14 @@ export class SandboxApi {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
 
+    const start = opts?.start ? opts.start.getTime() / 1000 : undefined
+    const end = opts?.end ? opts.end.getTime() / 1000 : undefined
     const res = await client.api.GET('/sandboxes/{sandboxID}/metrics', {
       params: {
         path: {
           sandboxID: sandboxId,
-          start: opts?.start,
-          end: opts?.end,
+          start,
+          end,
         },
       },
       signal: config.getSignal(opts?.requestTimeoutMs),
