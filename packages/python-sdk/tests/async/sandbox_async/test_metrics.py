@@ -27,7 +27,7 @@ async def test_sbx_metrics(async_sandbox_factory):
     assert metric.disk_used is not None
     assert metric.disk_total is not None
 
-    metrics = sbx.get_metrics(start_time=start_time, end=time.time())
+    metrics = await sbx.get_metrics(start=start_time, end=time.time())
     assert len(metrics) > 0
 
     metric = metrics[0]
