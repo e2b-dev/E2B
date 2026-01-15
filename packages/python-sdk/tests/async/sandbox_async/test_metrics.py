@@ -1,12 +1,12 @@
 import asyncio
-import time
+import datetime
 
 import pytest
 
 
 @pytest.mark.skip_debug()
 async def test_sbx_metrics(async_sandbox_factory):
-    start_time = time.time()
+    start_time = datetime.datetime.now()
     sbx = await async_sandbox_factory(timeout=20)
 
     # Wait for the sandbox to have some metrics
@@ -27,7 +27,7 @@ async def test_sbx_metrics(async_sandbox_factory):
     assert metric.disk_used is not None
     assert metric.disk_total is not None
 
-    metrics = await sbx.get_metrics(start=start_time, end=time.time())
+    metrics = await sbx.get_metrics(start=start_time, end=datetime.datetime.now())
     assert len(metrics) > 0
 
     metric = metrics[0]
