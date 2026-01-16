@@ -17,11 +17,11 @@ def test_build_in_background_should_start_build_and_return_info():
         .set_start_cmd('echo "Hello"', wait_for_timeout(10_000))
     )
 
-    alias = f"e2b-test-{uuid.uuid4()}"
+    name = f"e2b-test-{uuid.uuid4()}"
 
     build_info = Template.build_in_background(
         template,
-        alias=alias,
+        name,
         cpu_count=1,
         memory_mb=1024,
     )

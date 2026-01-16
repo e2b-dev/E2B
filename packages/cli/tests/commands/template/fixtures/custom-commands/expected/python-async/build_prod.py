@@ -6,7 +6,7 @@ from .template import template
 async def main():
     await AsyncTemplate.build(
         template,
-        alias="custom-app",
+        "custom-app",
         on_build_logs=default_build_logger(),
     )
 

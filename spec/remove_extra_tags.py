@@ -15,7 +15,14 @@ tags_to_keep = sys.argv[1:] if len(sys.argv) > 1 else None
 filtered_paths = {}
 
 for path, methods in spec.get("paths", {}).items():
+    # Store path-level parameters if they exist
+    path_level_params = methods.get("parameters")
+
     for method, operation in methods.items():
+        # Skip path-level parameters key as it's not a method
+        if method == "parameters":
+            continue
+
         if "tags" in operation:
             for tag in tags_to_keep:
                 if tag in operation["tags"]:
@@ -23,6 +30,9 @@ for path, methods in spec.get("paths", {}).items():
                         filtered_paths[path][method] = operation
                     else:
                         filtered_paths[path] = {method: operation}
+                        # Add path-level parameters if they exist
+                        if path_level_params:
+                            filtered_paths[path]["parameters"] = path_level_params
                     break
 
 

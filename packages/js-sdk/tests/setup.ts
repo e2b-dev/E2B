@@ -20,18 +20,17 @@ interface SandboxFixture {
 interface BuildTemplateFixture {
   buildTemplate: (
     template: TemplateClass,
-    options?: { alias?: string; skipCache?: boolean },
+    options?: { name?: string; skipCache?: boolean },
     onBuildLogs?: (logEntry: LogEntry) => void
   ) => Promise<BuildInfo>
 }
 
 function buildTemplate(
   template: TemplateClass,
-  options?: { alias?: string; skipCache?: boolean },
+  options?: { name?: string; skipCache?: boolean },
   onBuildLogs?: (logEntry: LogEntry) => void
 ) {
-  return Template.build(template, {
-    alias: options?.alias || `e2b-test-${randomUUID()}`,
+  return Template.build(template, options?.name || `e2b-test-${randomUUID()}`, {
     cpuCount: 1,
     memoryMB: 1024,
     skipCache: options?.skipCache,

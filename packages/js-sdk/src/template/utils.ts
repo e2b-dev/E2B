@@ -2,8 +2,45 @@ import crypto from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
 import { dynamicImport, dynamicRequire } from '../utils'
+import { TemplateError } from '../errors'
 import { BASE_STEP_NAME, FINALIZE_STEP_NAME } from './consts'
 import type { Path } from 'glob'
+import type { BuildOptions } from './types'
+
+/**
+ * Normalize build arguments from different overload signatures.
+ * Handles string name, string array, or legacy options object with alias.
+ *
+ * @param nameOrNamesOrOptions Name, array of names, or legacy options with alias
+ * @param options Optional build options (when first arg is name/names)
+ * @returns Object with normalized names array and build options
+ * @throws TemplateError if no template name is provided
+ */
+export function normalizeBuildArguments(
+  nameOrNamesOrOptions: string | string[] | BuildOptions,
+  options?: Omit<BuildOptions, 'alias'>
+): { names: string[]; buildOptions: Omit<BuildOptions, 'alias'> } {
+  let names: string[] = []
+  let buildOptions: Omit<BuildOptions, 'alias'>
+  if (typeof nameOrNamesOrOptions === 'string') {
+    names = [nameOrNamesOrOptions]
+    buildOptions = options ?? {}
+  } else if (Array.isArray(nameOrNamesOrOptions)) {
+    names = nameOrNamesOrOptions
+    buildOptions = options ?? {}
+  } else {
+    // Legacy: options object with alias
+    const { alias, ...restOpts } = nameOrNamesOrOptions
+    names = [alias]
+    buildOptions = restOpts
+  }
+
+  if (names.length === 0) {
+    throw new TemplateError('Template name must be provided')
+  }
+
+  return { names, buildOptions }
+}
 
 /**
  * Read and parse a .dockerignore file.
