@@ -7,15 +7,13 @@ body:
     id: sandbox_id
     attributes:
       label: Sandbox ID or Build ID
-    validations:
-      required: true
 
-  - type: input
-    id: sdk_version
+  - type: textarea
+    id: environment
     attributes:
-      label: SDK version
-      description: Can be found in `pip list` or `npm list`
-      placeholder: e.g. e2b==1.2.3
+      label: Environment
+      description: Environment details (used libraries version, OS, etc..)
+      placeholder: e2b==1.2.3, macOS 14
     validations:
       required: true
 
@@ -36,15 +34,6 @@ body:
         - One-time occurrence
         - Happens occasionally
         - Happens every time
-    validations:
-      required: true
-
-  - type: input
-    id: os
-    attributes:
-      label: Operating system
-      description: OS used to run your code (not the sandbox OS)
-      placeholder: e.g. macOS 14, Ubuntu 22.04, Windows 11
     validations:
       required: true
 
