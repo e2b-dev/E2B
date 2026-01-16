@@ -418,53 +418,7 @@ export class Filesystem {
     files: WriteEntry[],
     opts?: FilesystemRequestOpts
   ): Promise<WriteInfo[]> {
-    if (files.length === 0) return []
-
-    const blobs = await Promise.all(
-      files.map((f) => new Response(f.data).blob())
-    )
-
-    let user = opts?.user
-    if (
-      user == undefined &&
-      compareVersions(this.envdApi.version, ENVD_DEFAULT_USER) < 0
-    ) {
-      user = defaultUsername
-    }
-
-    const res = await this.envdApi.api.POST('/files', {
-      params: {
-        query: {
-          path: files.length === 1 ? files[0].path : undefined,
-          username: user,
-        },
-      },
-      bodySerializer() {
-        return blobs.reduce((fd, blob, i) => {
-          // Important: RFC 7578, Section 4.2 requires that if a filename is provided,
-          // the directory path information must not be used.
-          // BUT in our case we need to use the directory path information with a custom
-          // multipart part name getter in envd.
-          fd.append('file', blob, files[i].path)
-
-          return fd
-        }, new FormData())
-      },
-      signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
-      body: {},
-    })
-
-    const err = await handleEnvdApiError(res)
-    if (err) {
-      throw err
-    }
-
-    const writtenFiles = res.data as WriteInfo[]
-    if (!Array.isArray(writtenFiles) || writtenFiles.length === 0) {
-      throw new Error('Expected to receive information about written file')
-    }
-
-    return writtenFiles
+    return this.write(files, opts) as Promise<WriteInfo[]>
   }
 
   /**
