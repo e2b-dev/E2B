@@ -157,3 +157,135 @@ sandboxTest('write to non-existing directory', async ({ sandbox }) => {
   const readContent = await sandbox.files.read(filename)
   assert.equal(readContent, content)
 })
+
+sandboxTest('writeFiles with empty array', async ({ sandbox }) => {
+  const emptyInfo = await sandbox.files.writeFiles([])
+  assert.isTrue(Array.isArray(emptyInfo))
+  assert.equal(emptyInfo.length, 0)
+})
+
+sandboxTest('writeFiles with single file', async ({ sandbox }) => {
+  const info = await sandbox.files.writeFiles([
+    { path: 'writefiles_one.txt', data: 'This is a test file.' },
+  ])
+
+  assert.isTrue(Array.isArray(info))
+  assert.equal(info.length, 1)
+  assert.equal(info[0].name, 'writefiles_one.txt')
+  assert.equal(info[0].type, 'file')
+  assert.equal(info[0].path, '/home/user/writefiles_one.txt')
+
+  const exists = await sandbox.files.exists(info[0].path)
+  assert.isTrue(exists)
+
+  const readContent = await sandbox.files.read(info[0].path)
+  assert.equal(readContent, 'This is a test file.')
+})
+
+sandboxTest('writeFiles with multiple files', async ({ sandbox }) => {
+  const files: WriteEntry[] = []
+
+  for (let i = 0; i < 10; i++) {
+    const filePath = `writefiles_test_${i}.txt`
+
+    if (isDebug) {
+      onTestFinished(async () => await sandbox.files.remove(filePath))
+    }
+
+    files.push({
+      path: filePath,
+      data: `This is a test file ${i}.`,
+    })
+  }
+
+  const infos = await sandbox.files.writeFiles(files)
+
+  assert.isTrue(Array.isArray(infos))
+  assert.equal(infos.length, files.length)
+
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i]
+    const info = infos[i]
+
+    assert.equal(info.name, path.basename(file.path))
+    assert.equal(info.path, `/home/user/${file.path}`)
+    assert.equal(info.type, 'file')
+
+    const exists = await sandbox.files.exists(info.path)
+    assert.isTrue(exists)
+
+    const readContent = await sandbox.files.read(info.path)
+    assert.equal(readContent, file.data)
+  }
+})
+
+sandboxTest('writeFiles with different data types', async ({ sandbox }) => {
+  const textData = 'Text string data'
+  const arrayBufferData = new TextEncoder().encode('ArrayBuffer data').buffer
+  const blobData = new Blob(['Blob data'], { type: 'text/plain' })
+
+  const files: WriteEntry[] = [
+    { path: 'writefiles_text.txt', data: textData },
+    { path: 'writefiles_arraybuffer.txt', data: arrayBufferData },
+    { path: 'writefiles_blob.txt', data: blobData },
+  ]
+
+  const infos = await sandbox.files.writeFiles(files)
+
+  assert.equal(infos.length, 3)
+
+  // Verify text file
+  const textContent = await sandbox.files.read('writefiles_text.txt')
+  assert.equal(textContent, textData)
+
+  // Verify ArrayBuffer file
+  const arrayBufferContent = await sandbox.files.read(
+    'writefiles_arraybuffer.txt'
+  )
+  assert.equal(arrayBufferContent, 'ArrayBuffer data')
+
+  // Verify Blob file
+  const blobContent = await sandbox.files.read('writefiles_blob.txt')
+  assert.equal(blobContent, 'Blob data')
+})
+
+sandboxTest('writeFiles creates parent directories', async ({ sandbox }) => {
+  const files: WriteEntry[] = [
+    {
+      path: 'writefiles_nested_dir/nested/file1.txt',
+      data: 'Content in nested directory',
+    },
+  ]
+
+  const infos = await sandbox.files.writeFiles(files)
+
+  assert.equal(infos.length, 1)
+  assert.equal(
+    infos[0].path,
+    '/home/user/writefiles_nested_dir/nested/file1.txt'
+  )
+
+  const exists = await sandbox.files.exists(infos[0].path)
+  assert.isTrue(exists)
+
+  const content = await sandbox.files.read(infos[0].path)
+  assert.equal(content, 'Content in nested directory')
+})
+
+sandboxTest('writeFiles overwrites existing files', async ({ sandbox }) => {
+  const filename = 'writefiles_overwrite.txt'
+  const initialContent = 'Initial content'
+  const newContent = 'New content'
+
+  // Write initial file
+  await sandbox.files.writeFiles([{ path: filename, data: initialContent }])
+
+  let readContent = await sandbox.files.read(filename)
+  assert.equal(readContent, initialContent)
+
+  // Overwrite with new content
+  await sandbox.files.writeFiles([{ path: filename, data: newContent }])
+
+  readContent = await sandbox.files.read(filename)
+  assert.equal(readContent, newContent)
+})
