@@ -121,7 +121,7 @@ function mapModifiedTime(modifiedTime: Timestamp | undefined) {
 
   return new Date(
     Number(modifiedTime.seconds) * 1000 +
-      Math.floor(modifiedTime.nanos / 1_000_000)
+    Math.floor(modifiedTime.nanos / 1_000_000)
   )
 }
 
@@ -334,23 +334,23 @@ export class Filesystem {
     const { path, writeOpts, writeFiles } =
       typeof pathOrFiles === 'string'
         ? {
-            path: pathOrFiles,
-            writeOpts: opts as FilesystemRequestOpts,
-            writeFiles: [
-              {
-                data: dataOrOpts as
-                  | string
-                  | ArrayBuffer
-                  | Blob
-                  | ReadableStream,
-              },
-            ],
-          }
+          path: pathOrFiles,
+          writeOpts: opts as FilesystemRequestOpts,
+          writeFiles: [
+            {
+              data: dataOrOpts as
+                | string
+                | ArrayBuffer
+                | Blob
+                | ReadableStream,
+            },
+          ],
+        }
         : {
-            path: undefined,
-            writeOpts: dataOrOpts as FilesystemRequestOpts,
-            writeFiles: pathOrFiles as WriteEntry[],
-          }
+          path: undefined,
+          writeOpts: dataOrOpts as FilesystemRequestOpts,
+          writeFiles: pathOrFiles as WriteEntry[],
+        }
 
     if (writeFiles.length === 0) return [] as WriteInfo[]
 
@@ -404,10 +404,12 @@ export class Filesystem {
   /**
    * Write multiple files.
    *
-   * Writes a list of files to the filesystem.
-   * When writing to a file that doesn't exist, the file will get created.
-   * When writing to a file that already exists, the file will get overwritten.
-   * When writing to a file that's in a directory that doesn't exist, you'll get an error.
+   *
+   * Writing to a file that doesn't exist creates the file.
+   *
+   * Writing to a file that already exists overwrites the file.
+   *
+   * Writing to a file at path that doesn't exist creates the necessary directories.
    *
    * @param files list of files to write as `WriteEntry` objects, each containing `path` and `data`.
    * @param opts connection options.
@@ -668,7 +670,7 @@ export class Filesystem {
     ) {
       throw new TemplateError(
         'You need to update the template to use recursive watching. ' +
-          'You can do this by running `e2b template build` in the directory with the template.'
+        'You can do this by running `e2b template build` in the directory with the template.'
       )
     }
 
@@ -679,8 +681,8 @@ export class Filesystem {
 
     const reqTimeout = requestTimeoutMs
       ? setTimeout(() => {
-          controller.abort()
-        }, requestTimeoutMs)
+        controller.abort()
+      }, requestTimeoutMs)
       : undefined
 
     const events = this.rpc.watchDir(
