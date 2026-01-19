@@ -128,7 +128,7 @@ function mapModifiedTime(modifiedTime: Timestamp | undefined) {
 /**
  * Options for the sandbox filesystem operations.
  */
-export interface FilesystemRequestOpts 
+export interface FilesystemRequestOpts
   extends Partial<Pick<ConnectionOpts, 'requestTimeoutMs'>> {
   /**
    * User to use for the operation in the sandbox.
