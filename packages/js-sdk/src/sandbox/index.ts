@@ -177,9 +177,12 @@ export class Sandbox extends SandboxApi {
         apiUrl: this.envdApiUrl,
         logger: opts?.logger,
         accessToken: this.envdAccessToken,
-        headers: this.envdAccessToken
-          ? { 'X-Access-Token': this.envdAccessToken }
-          : {},
+        headers: {
+          ...this.connectionConfig.headers,
+          ...(this.envdAccessToken
+            ? { 'X-Access-Token': this.envdAccessToken }
+            : {}),
+        },
       },
       {
         version: opts.envdVersion,
