@@ -286,9 +286,7 @@ sandboxTest('writeFiles creates parent directories', async ({ sandbox }) => {
   ]
 
   if (isDebug) {
-    onTestFinished(
-      async () => await sandbox.files.remove(files[0].path)
-    )
+    onTestFinished(async () => await sandbox.files.remove(files[0].path))
   }
 
   const infos = await sandbox.files.writeFiles(files)
