@@ -8,6 +8,10 @@ sandboxTest('write file', async ({ sandbox }) => {
   const filename = 'test_write.txt'
   const content = 'This is a test file.'
 
+  if (isDebug) {
+    onTestFinished(async () => await sandbox.files.remove(filename))
+  }
+
   // Attempt to write with undefined path and content
   await sandbox.files
     // @ts-ignore
@@ -124,6 +128,10 @@ sandboxTest('write file', async ({ sandbox }) => {
   const filename = 'test_write.txt'
   const content = 'This is a test file.'
 
+  if (isDebug) {
+    onTestFinished(async () => await sandbox.files.remove(filename))
+  }
+
   const info = await sandbox.files.write(filename, content)
   assert.isFalse(Array.isArray(info))
   assert.equal(info.name, filename)
@@ -141,6 +149,10 @@ sandboxTest('overwrite file', async ({ sandbox }) => {
   const initialContent = 'Initial content.'
   const newContent = 'New content.'
 
+  if (isDebug) {
+    onTestFinished(async () => await sandbox.files.remove(filename))
+  }
+
   await sandbox.files.write(filename, initialContent)
   await sandbox.files.write(filename, newContent)
   const readContent = await sandbox.files.read(filename)
@@ -150,6 +162,10 @@ sandboxTest('overwrite file', async ({ sandbox }) => {
 sandboxTest('write to non-existing directory', async ({ sandbox }) => {
   const filename = 'non_existing_dir/test_write.txt'
   const content = 'This should succeed too.'
+
+  if (isDebug) {
+    onTestFinished(async () => await sandbox.files.remove(filename))
+  }
 
   await sandbox.files.write(filename, content)
   const exists = await sandbox.files.exists(filename)
@@ -165,8 +181,14 @@ sandboxTest('writeFiles with empty array', async ({ sandbox }) => {
 })
 
 sandboxTest('writeFiles with single file', async ({ sandbox }) => {
+  const filename = 'writefiles_one.txt'
+
+  if (isDebug) {
+    onTestFinished(async () => await sandbox.files.remove(filename))
+  }
+
   const info = await sandbox.files.writeFiles([
-    { path: 'writefiles_one.txt', data: 'This is a test file.' },
+    { path: filename, data: 'This is a test file.' },
   ])
 
   assert.isTrue(Array.isArray(info))
@@ -230,6 +252,12 @@ sandboxTest('writeFiles with different data types', async ({ sandbox }) => {
     { path: 'writefiles_blob.txt', data: blobData },
   ]
 
+  if (isDebug) {
+    for (const file of files) {
+      onTestFinished(async () => await sandbox.files.remove(file.path))
+    }
+  }
+
   const infos = await sandbox.files.writeFiles(files)
 
   assert.equal(infos.length, 3)
@@ -257,6 +285,12 @@ sandboxTest('writeFiles creates parent directories', async ({ sandbox }) => {
     },
   ]
 
+  if (isDebug) {
+    onTestFinished(
+      async () => await sandbox.files.remove(files[0].path)
+    )
+  }
+
   const infos = await sandbox.files.writeFiles(files)
 
   assert.equal(infos.length, 1)
@@ -276,6 +310,10 @@ sandboxTest('writeFiles overwrites existing files', async ({ sandbox }) => {
   const filename = 'writefiles_overwrite.txt'
   const initialContent = 'Initial content'
   const newContent = 'New content'
+
+  if (isDebug) {
+    onTestFinished(async () => await sandbox.files.remove(filename))
+  }
 
   // Write initial file
   await sandbox.files.writeFiles([{ path: filename, data: initialContent }])
