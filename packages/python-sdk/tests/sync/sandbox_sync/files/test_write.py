@@ -9,7 +9,9 @@ def test_write_text_file(sandbox, debug, request):
     content = "This is a test file."
 
     if debug:
-        request.addfinalizer(lambda: sandbox.files.remove(filename) if sandbox._is_open else None)
+        request.addfinalizer(
+            lambda: sandbox.files.remove(filename) if sandbox._is_open else None
+        )
 
     info = sandbox.files.write(filename, content)
     assert info.path == f"/home/user/{filename}"
@@ -28,7 +30,9 @@ def test_write_binary_file(sandbox, debug, request):
     content = io.BytesIO(text.encode("utf-8"))
 
     if debug:
-        request.addfinalizer(lambda: sandbox.files.remove(filename) if sandbox._is_open else None)
+        request.addfinalizer(
+            lambda: sandbox.files.remove(filename) if sandbox._is_open else None
+        )
 
     info = sandbox.files.write(filename, content)
     assert info.path == f"/home/user/{filename}"
@@ -56,7 +60,9 @@ def test_write_multiple_files(sandbox, debug, request):
     )
 
     if debug:
-        request.addfinalizer(lambda: sandbox.files.remove(one_file_path) if sandbox._is_open else None)
+        request.addfinalizer(
+            lambda: sandbox.files.remove(one_file_path) if sandbox._is_open else None
+        )
 
     assert isinstance(info, list)
     assert len(info) == 1
@@ -78,7 +84,9 @@ def test_write_multiple_files(sandbox, debug, request):
 
         if debug:
             # Use default argument to capture current value of path
-            request.addfinalizer(lambda p=path: sandbox.files.remove(p) if sandbox._is_open else None)
+            request.addfinalizer(
+                lambda p=path: sandbox.files.remove(p) if sandbox._is_open else None
+            )
 
     infos = sandbox.files.write_files(files)
     assert isinstance(infos, list)
@@ -99,7 +107,9 @@ def test_overwrite_file(sandbox, debug, request):
     new_content = "New content."
 
     if debug:
-        request.addfinalizer(lambda: sandbox.files.remove(filename) if sandbox._is_open else None)
+        request.addfinalizer(
+            lambda: sandbox.files.remove(filename) if sandbox._is_open else None
+        )
 
     sandbox.files.write(filename, initial_content)
     sandbox.files.write(filename, new_content)
@@ -112,7 +122,9 @@ def test_write_to_non_existing_directory(sandbox, debug, request):
     content = "This should succeed too."
 
     if debug:
-        request.addfinalizer(lambda: sandbox.files.remove(filename) if sandbox._is_open else None)
+        request.addfinalizer(
+            lambda: sandbox.files.remove(filename) if sandbox._is_open else None
+        )
 
     sandbox.files.write(filename, content)
     exists = sandbox.files.exists(filename)
