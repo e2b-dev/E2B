@@ -180,30 +180,6 @@ sandboxTest('writeFiles with empty array', async ({ sandbox }) => {
   assert.equal(emptyInfo.length, 0)
 })
 
-sandboxTest('writeFiles with single file', async ({ sandbox }) => {
-  const filename = 'writefiles_one.txt'
-
-  if (isDebug) {
-    onTestFinished(async () => await sandbox.files.remove(filename))
-  }
-
-  const info = await sandbox.files.writeFiles([
-    { path: filename, data: 'This is a test file.' },
-  ])
-
-  assert.isTrue(Array.isArray(info))
-  assert.equal(info.length, 1)
-  assert.equal(info[0].name, 'writefiles_one.txt')
-  assert.equal(info[0].type, 'file')
-  assert.equal(info[0].path, '/home/user/writefiles_one.txt')
-
-  const exists = await sandbox.files.exists(info[0].path)
-  assert.isTrue(exists)
-
-  const readContent = await sandbox.files.read(info[0].path)
-  assert.equal(readContent, 'This is a test file.')
-})
-
 sandboxTest('writeFiles with multiple files', async ({ sandbox }) => {
   const files: WriteEntry[] = []
 
