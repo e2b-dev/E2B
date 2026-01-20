@@ -4,9 +4,12 @@ import uuid
 from e2b.sandbox.filesystem.filesystem import WriteInfo, WriteEntry
 
 
-def test_write_text_file(sandbox):
+def test_write_text_file(sandbox, debug, request):
     filename = "test_write.txt"
     content = "This is a test file."
+
+    if debug:
+        request.addfinalizer(lambda: sandbox.files.remove(filename) if sandbox._is_open else None)
 
     info = sandbox.files.write(filename, content)
     assert info.path == f"/home/user/{filename}"
@@ -18,11 +21,14 @@ def test_write_text_file(sandbox):
     assert read_content == content
 
 
-def test_write_binary_file(sandbox):
+def test_write_binary_file(sandbox, debug, request):
     filename = "test_write.bin"
     text = "This is a test binary file."
     # equivalent to `open("path/to/local/file", "rb")`
     content = io.BytesIO(text.encode("utf-8"))
+
+    if debug:
+        request.addfinalizer(lambda: sandbox.files.remove(filename) if sandbox._is_open else None)
 
     info = sandbox.files.write(filename, content)
     assert info.path == f"/home/user/{filename}"
@@ -34,7 +40,7 @@ def test_write_binary_file(sandbox):
     assert read_content == text
 
 
-def test_write_multiple_files(sandbox):
+def test_write_multiple_files(sandbox, debug, request):
     # Attempt to write with empty files array
     empty_info = sandbox.files.write_files([])
     assert isinstance(empty_info, list)
@@ -44,9 +50,14 @@ def test_write_multiple_files(sandbox):
     assert sandbox.files.write_files([]) == []
 
     # Attempt to write with one file in array
+    one_file_path = "one_test_file.txt"
     info = sandbox.files.write_files(
-        [WriteEntry(path="one_test_file.txt", data="This is a test file.")]
+        [WriteEntry(path=one_file_path, data="This is a test file.")]
     )
+
+    if debug:
+        request.addfinalizer(lambda: sandbox.files.remove(one_file_path) if sandbox._is_open else None)
+
     assert isinstance(info, list)
     assert len(info) == 1
     info = info[0]
@@ -65,6 +76,10 @@ def test_write_multiple_files(sandbox):
         content = f"This is a test file {i}."
         files.append(WriteEntry(path=path, data=content))
 
+        if debug:
+            # Use default argument to capture current value of path
+            request.addfinalizer(lambda p=path: sandbox.files.remove(p) if sandbox._is_open else None)
+
     infos = sandbox.files.write_files(files)
     assert isinstance(infos, list)
     assert len(infos) == len(files)
@@ -78,10 +93,13 @@ def test_write_multiple_files(sandbox):
         assert read_content == files[i]["data"]
 
 
-def test_overwrite_file(sandbox):
+def test_overwrite_file(sandbox, debug, request):
     filename = "test_overwrite.txt"
     initial_content = "Initial content."
     new_content = "New content."
+
+    if debug:
+        request.addfinalizer(lambda: sandbox.files.remove(filename) if sandbox._is_open else None)
 
     sandbox.files.write(filename, initial_content)
     sandbox.files.write(filename, new_content)
@@ -89,9 +107,12 @@ def test_overwrite_file(sandbox):
     assert read_content == new_content
 
 
-def test_write_to_non_existing_directory(sandbox):
+def test_write_to_non_existing_directory(sandbox, debug, request):
     filename = "non_existing_dir/test_write.txt"
     content = "This should succeed too."
+
+    if debug:
+        request.addfinalizer(lambda: sandbox.files.remove(filename) if sandbox._is_open else None)
 
     sandbox.files.write(filename, content)
     exists = sandbox.files.exists(filename)
@@ -106,7 +127,6 @@ def test_write_with_secured_envd(sandbox_factory):
     content = "This should succeed too."
 
     sbx = sandbox_factory(timeout=30, secure=True)
-
     assert sbx.is_running()
     assert sbx._envd_version is not None
     assert sbx._envd_access_token is not None
