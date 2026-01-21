@@ -278,9 +278,11 @@ export async function tarFileStream(
 
   const filePaths = allFiles.map((file) => file.relativePosix())
 
+  // portable: true ensures deterministic gzip output across runs
   return create(
     {
       gzip: true,
+      portable: true,
       cwd: fileContextPath,
       follow: resolveSymlinks,
       noDirRecurse: true,
