@@ -316,9 +316,7 @@ def assign_tags(
     )
 
 
-def remove_tags(
-    client: AuthenticatedClient, name: str, tags: List[str]
-) -> None:
+def remove_tags(client: AuthenticatedClient, name: str, tags: List[str]) -> None:
     """
     Remove tag(s) from a template.
 

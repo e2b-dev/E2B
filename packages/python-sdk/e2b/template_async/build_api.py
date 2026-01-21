@@ -319,9 +319,7 @@ async def assign_tags(
     )
 
 
-async def remove_tags(
-    client: AuthenticatedClient, name: str, tags: List[str]
-) -> None:
+async def remove_tags(client: AuthenticatedClient, name: str, tags: List[str]) -> None:
     """
     Remove tag(s) from a template.
 
