@@ -5,11 +5,11 @@ import { http, HttpResponse } from 'msw'
 import { setupServer } from 'msw/node'
 
 import { Template } from '../../src'
-import { buildTemplateTest, isDebug } from '../setup'
+import { apiUrl, buildTemplateTest, isDebug } from '../setup'
 
 // Mock handlers for tag API endpoints
 const mockHandlers = [
-  http.post(/https:\/\/api\.[^/]+\/templates\/tags/, async ({ request }) => {
+  http.post(apiUrl('/templates/tags'), async ({ request }) => {
     const { names } = (await request.clone().json()) as {
       names: string[]
     }
@@ -18,14 +18,16 @@ const mockHandlers = [
       names: names,
     })
   }),
-  http.delete(/https:\/\/api\.[^/]+\/templates\/tags\/.*/, ({ request }) => {
-    const url = new URL(request.url)
-    const name = decodeURIComponent(url.pathname.split('/').pop() || '')
-    if (name === 'nonexistent:tag') {
-      return HttpResponse.json({ message: 'Tag not found' }, { status: 404 })
+  http.delete<{ name: string }>(
+    apiUrl('/templates/tags/:name'),
+    ({ params }) => {
+      const name = decodeURIComponent(params.name)
+      if (name === 'nonexistent:tag') {
+        return HttpResponse.json({ message: 'Tag not found' }, { status: 404 })
+      }
+      return new HttpResponse(null, { status: 204 })
     }
-    return new HttpResponse(null, { status: 204 })
-  }),
+  ),
 ]
 
 const server = setupServer(...mockHandlers)

@@ -5,7 +5,7 @@ import { http, HttpResponse } from 'msw'
 import { setupServer } from 'msw/node'
 
 import { Template, waitForTimeout } from '../../src'
-import { buildTemplateTest } from '../setup'
+import { apiUrl, buildTemplateTest } from '../setup'
 import { randomUUID } from 'node:crypto'
 
 const __fileContent = fs.readFileSync(__filename, 'utf8') // read current file content
@@ -39,7 +39,7 @@ const failureMap: Record<string, number | undefined> = {
 }
 
 export const restHandlers = [
-  http.post('https://api.e2b.app/v3/templates', async ({ request }) => {
+  http.post(apiUrl('/v3/templates'), async ({ request }) => {
     const { names } = (await request.clone().json()) as { names: string[] }
     const templateID = names[0]
     return HttpResponse.json({
@@ -47,14 +47,11 @@ export const restHandlers = [
       templateID,
     })
   }),
-  http.post(
-    'https://api.e2b.app/v2/templates/:templateID/builds/:buildID',
-    () => {
-      return HttpResponse.json({})
-    }
-  ),
+  http.post(apiUrl('/v2/templates/:templateID/builds/:buildID'), () => {
+    return HttpResponse.json({})
+  }),
   http.get<{ templateID: string; buildID: string }>(
-    'https://api.e2b.app/templates/:templateID/builds/:buildID/status',
+    apiUrl('/templates/:templateID/builds/:buildID/status'),
     ({ params }) => {
       const { templateID } = params
       return HttpResponse.json({

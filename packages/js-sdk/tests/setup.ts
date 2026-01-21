@@ -96,4 +96,13 @@ export async function wait(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
+/**
+ * Returns the API URL for the given path, using E2B_DOMAIN env var.
+ * Supports msw path parameters like :templateID
+ */
+export function apiUrl(path: string): string {
+  const domain = process.env.E2B_DOMAIN || 'e2b.dev'
+  return `https://api.${domain}${path}`
+}
+
 export { template }
