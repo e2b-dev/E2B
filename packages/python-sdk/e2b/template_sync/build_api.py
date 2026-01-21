@@ -149,7 +149,7 @@ def _map_log_entry(entry) -> BuildLogEntry:
         level=BuildLogLevel(entry.level.value),
         message=entry.message,
         timestamp=entry.timestamp,
-        step=entry.step,
+        step=entry.step if not isinstance(entry.step, Unset) else None,
     )
 
 
@@ -159,7 +159,7 @@ def _map_build_status_reason(reason) -> Optional[BuildStatusReason]:
         return None
     return BuildStatusReason(
         message=reason.message,
-        step=reason.step,
+        step=reason.step if not isinstance(reason.step, Unset) else None,
         log_entries=[_map_log_entry(e) for e in (reason.log_entries or [])],
     )
 
