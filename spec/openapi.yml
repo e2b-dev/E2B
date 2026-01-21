@@ -675,6 +675,8 @@ components:
         - buildID
         - public
         - aliases
+        - names
+        - tags
       properties:
         templateID:
           type: string
@@ -685,9 +687,20 @@ components:
         public:
           type: boolean
           description: Whether the template is public or only accessible by the team
+        names:
+          type: array
+          description: Names of the template
+          items:
+            type: string
+        tags:
+          type: array
+          description: Tags assigned to the template build
+          items:
+            type: string
         aliases:
           type: array
           description: Aliases of the template
+          deprecated: true
           items:
             type: string
 
@@ -897,15 +910,18 @@ components:
 
     TemplateBuildRequestV3:
       properties:
-        alias:
-          description: Alias of the template. Deprecated, use names instead.
+        name:
+          description: Name of the template. Can include a tag with colon separator (e.g. "my-template" or "my-template:v1"). If tag is included, it will be treated as if the tag was provided in the tags array.
           type: string
-          deprecated: true
-        names:
+        tags:
           type: array
-          description: Names of the template
+          description: Tags to assign to the template build
           items:
             type: string
+        alias:
+          description: Alias of the template. Deprecated, use name instead.
+          type: string
+          deprecated: true
         teamID:
           deprecated: true
           type: string
@@ -1494,31 +1510,45 @@ components:
           type: string
           description: New name for the API key
 
-    TemplateTag:
+    AssignedTemplateTags:
       required:
-        - names
+        - tags
         - buildID
       properties:
-        names:
+        tags:
           type: array
           items:
             type: string
-          description: Assigned names of the template
+          description: Assigned tags of the template
         buildID:
           type: string
           format: uuid
-          description: Identifier of the build associated with this tag
+          description: Identifier of the build associated with these tags
 
-    AssignTemplateTagRequest:
+    AssignTemplateTagsRequest:
       required:
         - target
-        - names
+        - tags
       properties:
         target:
           type: string
-          description: Target template name in "alias:tag" format
-        names:
-          description: Names of the template
+          description: Target template in "name:tag" format
+        tags:
+          description: Tags to assign to the template
+          type: array
+          items:
+            type: string
+
+    DeleteTemplateTagsRequest:
+      required:
+        - name
+        - tags
+      properties:
+        name:
+          type: string
+          description: Name of the template
+        tags:
+          description: Tags to delete
           type: array
           items:
             type: string
@@ -2508,14 +2538,38 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/AssignTemplateTagRequest"
+              $ref: "#/components/schemas/AssignTemplateTagsRequest"
       responses:
         "201":
           description: Tag assigned successfully
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/TemplateTag"
+                $ref: "#/components/schemas/AssignedTemplateTags"
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "404":
+          $ref: "#/components/responses/404"
+        "500":
+          $ref: "#/components/responses/500"
+    delete:
+      description: Delete multiple tags from templates
+      tags: [tags]
+      security:
+        - ApiKeyAuth: []
+        - Supabase1TokenAuth: []
+          Supabase2TeamAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeleteTemplateTagsRequest"
+      responses:
+        "204":
+          description: Tags deleted successfully
         "400":
           $ref: "#/components/responses/400"
         "401":
@@ -2531,7 +2585,7 @@ paths:
         required: true
         schema:
           type: string
-          description: Template name in "alias:tag" format
+          description: Template in "name:tag" format
     delete:
       description: Delete a tag from a template
       tags: [tags]

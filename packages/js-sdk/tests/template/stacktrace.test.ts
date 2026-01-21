@@ -40,11 +40,11 @@ const failureMap: Record<string, number | undefined> = {
 
 export const restHandlers = [
   http.post(apiUrl('/v3/templates'), async ({ request }) => {
-    const { names } = (await request.clone().json()) as { names: string[] }
-    const templateID = names[0]
+    const { name } = (await request.clone().json()) as { name: string }
     return HttpResponse.json({
       buildID: randomUUID(),
-      templateID,
+      templateID: name,
+      tags: [],
     })
   }),
   http.post(apiUrl('/v2/templates/:templateID/builds/:buildID'), () => {

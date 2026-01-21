@@ -4,32 +4,32 @@ from typing import Any, TypeVar, cast
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
-T = TypeVar("T", bound="AssignTemplateTagRequest")
+T = TypeVar("T", bound="DeleteTemplateTagsRequest")
 
 
 @_attrs_define
-class AssignTemplateTagRequest:
+class DeleteTemplateTagsRequest:
     """
     Attributes:
-        names (list[str]): Names of the template
-        target (str): Target template name in "alias:tag" format
+        name (str): Name of the template
+        tags (list[str]): Tags to delete
     """
 
-    names: list[str]
-    target: str
+    name: str
+    tags: list[str]
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        names = self.names
+        name = self.name
 
-        target = self.target
+        tags = self.tags
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
-                "names": names,
-                "target": target,
+                "name": name,
+                "tags": tags,
             }
         )
 
@@ -38,17 +38,17 @@ class AssignTemplateTagRequest:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        names = cast(list[str], d.pop("names"))
+        name = d.pop("name")
 
-        target = d.pop("target")
+        tags = cast(list[str], d.pop("tags"))
 
-        assign_template_tag_request = cls(
-            names=names,
-            target=target,
+        delete_template_tags_request = cls(
+            name=name,
+            tags=tags,
         )
 
-        assign_template_tag_request.additional_properties = d
-        return assign_template_tag_request
+        delete_template_tags_request.additional_properties = d
+        return delete_template_tags_request
 
     @property
     def additional_keys(self) -> list[str]:

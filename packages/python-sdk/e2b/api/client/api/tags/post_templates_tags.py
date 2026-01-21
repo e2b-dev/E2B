@@ -5,15 +5,15 @@ import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
-from ...models.assign_template_tag_request import AssignTemplateTagRequest
+from ...models.assign_template_tags_request import AssignTemplateTagsRequest
+from ...models.assigned_template_tags import AssignedTemplateTags
 from ...models.error import Error
-from ...models.template_tag import TemplateTag
 from ...types import Response
 
 
 def _get_kwargs(
     *,
-    body: AssignTemplateTagRequest,
+    body: AssignTemplateTagsRequest,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
 
@@ -32,9 +32,9 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Optional[Union[Error, TemplateTag]]:
+) -> Optional[Union[AssignedTemplateTags, Error]]:
     if response.status_code == 201:
-        response_201 = TemplateTag.from_dict(response.json())
+        response_201 = AssignedTemplateTags.from_dict(response.json())
 
         return response_201
     if response.status_code == 400:
@@ -61,7 +61,7 @@ def _parse_response(
 
 def _build_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Response[Union[Error, TemplateTag]]:
+) -> Response[Union[AssignedTemplateTags, Error]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -73,19 +73,19 @@ def _build_response(
 def sync_detailed(
     *,
     client: AuthenticatedClient,
-    body: AssignTemplateTagRequest,
-) -> Response[Union[Error, TemplateTag]]:
+    body: AssignTemplateTagsRequest,
+) -> Response[Union[AssignedTemplateTags, Error]]:
     """Assign tag(s) to a template build
 
     Args:
-        body (AssignTemplateTagRequest):
+        body (AssignTemplateTagsRequest):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Error, TemplateTag]]
+        Response[Union[AssignedTemplateTags, Error]]
     """
 
     kwargs = _get_kwargs(
@@ -102,19 +102,19 @@ def sync_detailed(
 def sync(
     *,
     client: AuthenticatedClient,
-    body: AssignTemplateTagRequest,
-) -> Optional[Union[Error, TemplateTag]]:
+    body: AssignTemplateTagsRequest,
+) -> Optional[Union[AssignedTemplateTags, Error]]:
     """Assign tag(s) to a template build
 
     Args:
-        body (AssignTemplateTagRequest):
+        body (AssignTemplateTagsRequest):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Error, TemplateTag]
+        Union[AssignedTemplateTags, Error]
     """
 
     return sync_detailed(
@@ -126,19 +126,19 @@ def sync(
 async def asyncio_detailed(
     *,
     client: AuthenticatedClient,
-    body: AssignTemplateTagRequest,
-) -> Response[Union[Error, TemplateTag]]:
+    body: AssignTemplateTagsRequest,
+) -> Response[Union[AssignedTemplateTags, Error]]:
     """Assign tag(s) to a template build
 
     Args:
-        body (AssignTemplateTagRequest):
+        body (AssignTemplateTagsRequest):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Error, TemplateTag]]
+        Response[Union[AssignedTemplateTags, Error]]
     """
 
     kwargs = _get_kwargs(
@@ -153,19 +153,19 @@ async def asyncio_detailed(
 async def asyncio(
     *,
     client: AuthenticatedClient,
-    body: AssignTemplateTagRequest,
-) -> Optional[Union[Error, TemplateTag]]:
+    body: AssignTemplateTagsRequest,
+) -> Optional[Union[AssignedTemplateTags, Error]]:
     """Assign tag(s) to a template build
 
     Args:
-        body (AssignTemplateTagRequest):
+        body (AssignTemplateTagsRequest):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Error, TemplateTag]
+        Union[AssignedTemplateTags, Error]
     """
 
     return (

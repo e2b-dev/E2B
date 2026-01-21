@@ -12,7 +12,8 @@ import {
 } from './types'
 
 type RequestBuildInput = {
-  names: string[]
+  name: string
+  tags?: string[]
   cpuCount: number
   memoryMB: number
 }
@@ -46,11 +47,12 @@ export type TriggerBuildTemplate =
 
 export async function requestBuild(
   client: ApiClient,
-  { names, cpuCount, memoryMB }: RequestBuildInput
+  { name, tags, cpuCount, memoryMB }: RequestBuildInput
 ) {
   const requestBuildRes = await client.api.POST('/v3/templates', {
     body: {
-      names,
+      name,
+      tags,
       cpuCount,
       memoryMB,
     },
@@ -329,12 +331,12 @@ export async function waitForBuildFinish(
   throw new BuildError('Unknown build error occurred.')
 }
 
-export async function assignTag(
+export async function assignTags(
   client: ApiClient,
-  { target, names }: { target: string; names: string[] }
+  { target, tags }: { target: string; tags: string[] }
 ): Promise<TemplateTagInfo> {
   const res = await client.api.POST('/templates/tags', {
-    body: { target, names },
+    body: { target, tags },
   })
 
   const error = handleApiError(res, TemplateError)
@@ -343,25 +345,38 @@ export async function assignTag(
   }
 
   if (!res.data) {
-    throw new TemplateError('Failed to assign tag')
+    throw new TemplateError('Failed to assign tags')
   }
 
   return {
     buildId: res.data.buildID,
-    names: res.data.names,
+    tags: res.data.tags,
   }
 }
 
-export async function removeTag(
+export async function removeTags(
   client: ApiClient,
-  { name }: { name: string }
+  { name, tags }: { name: string; tags?: string[] }
 ): Promise<void> {
-  const res = await client.api.DELETE('/templates/tags/{name}', {
-    params: { path: { name } },
-  })
+  // If tags are provided, use bulk deletion endpoint
+  if (tags && tags.length > 0) {
+    const res = await client.api.DELETE('/templates/tags', {
+      body: { name, tags },
+    })
 
-  const error = handleApiError(res, TemplateError)
-  if (error) {
-    throw error
+    const error = handleApiError(res, TemplateError)
+    if (error) {
+      throw error
+    }
+  } else {
+    // Single tag deletion (name is in "alias:tag" format)
+    const res = await client.api.DELETE('/templates/tags/{name}', {
+      params: { path: { name } },
+    })
+
+    const error = handleApiError(res, TemplateError)
+    if (error) {
+      throw error
+    }
   }
 }

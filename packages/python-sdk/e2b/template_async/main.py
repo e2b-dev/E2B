@@ -9,13 +9,12 @@ from e2b.template.consts import RESOLVE_SYMLINKS
 from e2b.template.logger import LogEntry, LogEntryEnd, LogEntryStart
 from e2b.template.main import TemplateBase, TemplateClass
 from e2b.template.types import BuildInfo, InstructionType, TemplateTagInfo
-from e2b.template.utils import normalize_names
-from e2b.template.utils import read_dockerignore
+from e2b.template.utils import normalize_build_arguments, read_dockerignore
 
 from .build_api import (
-    assign_tag,
+    assign_tags,
     check_alias_exists,
-    remove_tag,
+    remove_tags,
     get_build_status,
     get_file_upload_link,
     request_build,
@@ -35,45 +34,50 @@ class AsyncTemplate(TemplateBase):
     async def _build(
         template: TemplateClass,
         api_client: AuthenticatedClient,
-        names: List[str],
+        name: str,
         cpu_count: int = 2,
         memory_mb: int = 1024,
         skip_cache: bool = False,
         on_build_logs: Optional[Callable[[LogEntry], None]] = None,
+        tags: Optional[List[str]] = None,
     ) -> BuildInfo:
         """
         Internal implementation of the template build process
 
         :param template: The template to build
         :param api_client: Authenticated API client
-        :param names: Names for the template in 'alias:tag' format
+        :param name: Name for the template
         :param cpu_count: Number of CPUs allocated to the sandbox
         :param memory_mb: Amount of memory in MB allocated to the sandbox
         :param skip_cache: If True, forces a complete rebuild ignoring cache
         :param on_build_logs: Callback function to receive build logs during the build process
+        :param tags: Optional tags for the template
         """
         if skip_cache:
             template._template._force = True
 
         # Create template
+        tag_str = f" with tags: {', '.join(tags)}" if tags else ""
         if on_build_logs:
             on_build_logs(
                 LogEntry(
                     timestamp=datetime.now(),
                     level="info",
-                    message=f"Requesting build for template: {', '.join(names)}",
+                    message=f"Requesting build for template: {name}{tag_str}",
                 )
             )
 
         response = await request_build(
             api_client,
-            names=names,
+            name=name,
             cpu_count=cpu_count,
             memory_mb=memory_mb,
+            tags=tags,
         )
 
         template_id = response.template_id
         build_id = response.build_id
+        response_tags = response.tags
 
         if on_build_logs:
             on_build_logs(
@@ -170,32 +174,35 @@ class AsyncTemplate(TemplateBase):
         return BuildInfo(
             template_id=template_id,
             build_id=build_id,
-            names=names,
-            alias=names[0],
+            alias=name,
+            name=name,
+            tags=response_tags,
         )
 
     @staticmethod
     async def build(
         template: TemplateClass,
-        names: Optional[Union[str, List[str]]] = None,
+        name: Optional[str] = None,
         *,
         alias: Optional[str] = None,
         cpu_count: int = 2,
         memory_mb: int = 1024,
         skip_cache: bool = False,
         on_build_logs: Optional[Callable[[LogEntry], None]] = None,
+        tags: Optional[List[str]] = None,
         **opts: Unpack[ApiParams],
     ) -> BuildInfo:
         """
         Build and deploy a template to E2B infrastructure.
 
         :param template: The template to build
-        :param names: Name(s) for the template in 'alias:tag' format (string or list)
-        :param alias: (Deprecated) Alias name for the template. Use names instead.
+        :param name: Template name in 'name' or 'name:tag' format
+        :param alias: (Deprecated) Alias name for the template. Use name instead.
         :param cpu_count: Number of CPUs allocated to the sandbox
         :param memory_mb: Amount of memory in MB allocated to the sandbox
         :param skip_cache: If True, forces a complete rebuild ignoring cache
         :param on_build_logs: Callback function to receive build logs during the build process
+        :param tags: Optional additional tags to assign to the template
 
         Example
         ```python
@@ -208,14 +215,14 @@ class AsyncTemplate(TemplateBase):
             .run_cmd('pip install -r /home/user/requirements.txt')
         )
 
-        # Single name
+        # Build with single tag
         await AsyncTemplate.build(template, 'my-python-env:v1.0')
 
-        # Multiple names
-        await AsyncTemplate.build(template, ['my-python-env:v1.0', 'my-python-env:latest'])
+        # Build with multiple tags
+        await AsyncTemplate.build(template, 'my-python-env', tags=['v1.1.0', 'stable'])
         ```
         """
-        names_list = normalize_names(names, alias)
+        name = normalize_build_arguments(name, alias)
 
         try:
             if on_build_logs:
@@ -236,11 +243,12 @@ class AsyncTemplate(TemplateBase):
             data = await AsyncTemplate._build(
                 template,
                 api_client,
-                names_list,
+                name=name,
                 cpu_count=cpu_count,
                 memory_mb=memory_mb,
                 skip_cache=skip_cache,
                 on_build_logs=on_build_logs,
+                tags=tags,
             )
 
             if on_build_logs:
@@ -274,24 +282,26 @@ class AsyncTemplate(TemplateBase):
     @staticmethod
     async def build_in_background(
         template: TemplateClass,
-        names: Optional[Union[str, List[str]]] = None,
+        name: Optional[str] = None,
         *,
         alias: Optional[str] = None,
         cpu_count: int = 2,
         memory_mb: int = 1024,
         skip_cache: bool = False,
         on_build_logs: Optional[Callable[[LogEntry], None]] = None,
+        tags: Optional[List[str]] = None,
         **opts: Unpack[ApiParams],
     ) -> BuildInfo:
         """
         Build and deploy a template to E2B infrastructure without waiting for completion.
 
         :param template: The template to build
-        :param names: Name(s) for the template in 'alias:tag' format (string or list)
-        :param alias: (Deprecated) Alias name for the template. Use names instead.
+        :param name: Template name in 'name' or 'name:tag' format
+        :param alias: (Deprecated) Alias name for the template. Use name instead.
         :param cpu_count: Number of CPUs allocated to the sandbox
         :param memory_mb: Amount of memory in MB allocated to the sandbox
         :param skip_cache: If True, forces a complete rebuild ignoring cache
+        :param tags: Optional additional tags to assign to the template
         :return: BuildInfo containing the template ID and build ID
 
         Example
@@ -305,14 +315,14 @@ class AsyncTemplate(TemplateBase):
             .set_start_cmd('echo "Hello"', 'sleep 1')
         )
 
-        # Single name
+        # Build with single tag
         build_info = await AsyncTemplate.build_in_background(template, 'my-python-env:v1.0')
 
-        # Multiple names
-        build_info = await AsyncTemplate.build_in_background(template, ['my-python-env:v1.0', 'my-python-env:latest'])
+        # Build with multiple tags
+        build_info = await AsyncTemplate.build_in_background(template, 'my-python-env', tags=['v1.1.0', 'stable'])
         ```
         """
-        names_list = normalize_names(names, alias)
+        name = normalize_build_arguments(name, alias)
 
         config = ConnectionConfig(**opts)
         api_client = get_api_client(
@@ -324,11 +334,12 @@ class AsyncTemplate(TemplateBase):
         return await AsyncTemplate._build(
             template,
             api_client,
+            name=name,
             cpu_count=cpu_count,
             memory_mb=memory_mb,
             skip_cache=skip_cache,
             on_build_logs=on_build_logs,
-            names=names_list,
+            tags=tags,
         )
 
     @staticmethod
@@ -395,27 +406,27 @@ class AsyncTemplate(TemplateBase):
         return await check_alias_exists(api_client, alias)
 
     @staticmethod
-    async def assign_tag(
+    async def assign_tags(
         target: str,
-        names: Union[str, List[str]],
+        tags: Union[str, List[str]],
         **opts: Unpack[ApiParams],
     ) -> TemplateTagInfo:
         """
         Assign tag(s) to an existing template build.
 
-        :param target: Target template in 'alias:tag' format (the source build)
-        :param names: Tag(s) to assign in 'alias:tag' format (string or list)
-        :return: TemplateTagInfo with build_id and assigned names
+        :param target: Target template in 'name:tag' format (the source build)
+        :param tags: Tag(s) to assign (string or list)
+        :return: TemplateTagInfo with build_id and assigned tags
 
         Example
         ```python
         from e2b import AsyncTemplate
 
         # Assign a single tag
-        result = await AsyncTemplate.assign_tag('my-template:v1.0', 'my-template:production')
+        result = await AsyncTemplate.assign_tags('my-template:v1.0', 'production')
 
         # Assign multiple tags
-        result = await AsyncTemplate.assign_tag('my-template:v1.0', ['my-template:production', 'my-template:stable'])
+        result = await AsyncTemplate.assign_tags('my-template:v1.0', tags=['production', 'stable'])
         ```
         """
         config = ConnectionConfig(**opts)
@@ -425,24 +436,30 @@ class AsyncTemplate(TemplateBase):
             require_access_token=False,
         )
 
-        names_list = [names] if isinstance(names, str) else names
-        return await assign_tag(api_client, target, names_list)
+        tags_list = [tags] if isinstance(tags, str) else tags
+        return await assign_tags(api_client, target, tags_list)
 
     @staticmethod
-    async def remove_tag(
+    async def remove_tags(
         name: str,
+        tags: Optional[Union[str, List[str]]] = None,
         **opts: Unpack[ApiParams],
     ) -> None:
         """
-        Remove a tag from a template.
+        Remove tag(s) from a template.
 
-        :param name: Template tag in 'alias:tag' format to remove
+        :param name: Template name or 'name:tag' format (for single tag removal)
+        :param tags: Optional tag(s) to remove (for bulk removal)
 
         Example
         ```python
         from e2b import AsyncTemplate
 
-        await AsyncTemplate.remove_tag('my-template:production')
+        # Remove a single tag
+        await AsyncTemplate.remove_tags('my-template:production')
+
+        # Remove multiple tags
+        await AsyncTemplate.remove_tags('my-template', tags=['production', 'stable'])
         ```
         """
         config = ConnectionConfig(**opts)
@@ -452,4 +469,8 @@ class AsyncTemplate(TemplateBase):
             require_access_token=False,
         )
 
-        await remove_tag(api_client, name)
+        tags_list = None
+        if tags is not None:
+            tags_list = [tags] if isinstance(tags, str) else tags
+
+        await remove_tags(api_client, name, tags_list)

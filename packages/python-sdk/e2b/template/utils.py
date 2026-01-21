@@ -14,6 +14,26 @@ from e2b.exceptions import TemplateException
 from e2b.template.consts import BASE_STEP_NAME, FINALIZE_STEP_NAME
 
 
+def normalize_build_arguments(
+    name: Optional[str] = None,
+    alias: Optional[str] = None,
+) -> str:
+    """
+    Normalize build arguments from different parameter signatures.
+    Handles string name or legacy alias parameter.
+
+    :param name: Template name in 'name' or 'name:tag' format
+    :param alias: (Deprecated) Alias name for the template. Use name instead.
+    :return: Normalized template name
+    :raises TemplateException: If no template name is provided
+    """
+    if name:
+        return name
+    if alias:
+        return alias
+    raise TemplateException("Name must be provided")
+
+
 def read_dockerignore(context_path: str) -> List[str]:
     """
     Read and parse a .dockerignore file.
@@ -319,35 +339,3 @@ def read_gcp_service_account_json(
             return f.read()
     else:
         return json.dumps(path_or_content)
-
-
-def normalize_names(
-    names: Optional[Union[str, List[str]]], alias: Optional[str] = None
-) -> List[str]:
-    """
-    Normalize names parameter to a list if string provided.
-
-    :param names: Single name string or list of names
-    :param alias: (Deprecated) Alias name for the template. Use names instead.
-    :return: List of names
-    :raises ValueError: If both names and alias are provided, or if neither is provided
-    """
-    if alias is not None and names is not None:
-        raise TemplateException("Cannot provide both names and alias, use only names")
-
-    names_list = []
-    if names is not None:
-        if isinstance(names, str):
-            names_list.append(names)
-        elif isinstance(names, list):
-            names_list.extend(names)
-        else:
-            raise TemplateException("names must be a string or list of strings")
-
-    if alias is not None:
-        names_list.append(alias)
-
-    if len(names_list) == 0:
-        raise TemplateException("Either names or alias must be provided")
-
-    return names_list

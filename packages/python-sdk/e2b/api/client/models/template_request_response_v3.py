@@ -13,13 +13,17 @@ class TemplateRequestResponseV3:
     Attributes:
         aliases (list[str]): Aliases of the template
         build_id (str): Identifier of the last successful build for given template
+        names (list[str]): Names of the template
         public (bool): Whether the template is public or only accessible by the team
+        tags (list[str]): Tags assigned to the template build
         template_id (str): Identifier of the template
     """
 
     aliases: list[str]
     build_id: str
+    names: list[str]
     public: bool
+    tags: list[str]
     template_id: str
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
@@ -28,7 +32,11 @@ class TemplateRequestResponseV3:
 
         build_id = self.build_id
 
+        names = self.names
+
         public = self.public
+
+        tags = self.tags
 
         template_id = self.template_id
 
@@ -38,7 +46,9 @@ class TemplateRequestResponseV3:
             {
                 "aliases": aliases,
                 "buildID": build_id,
+                "names": names,
                 "public": public,
+                "tags": tags,
                 "templateID": template_id,
             }
         )
@@ -52,14 +62,20 @@ class TemplateRequestResponseV3:
 
         build_id = d.pop("buildID")
 
+        names = cast(list[str], d.pop("names"))
+
         public = d.pop("public")
+
+        tags = cast(list[str], d.pop("tags"))
 
         template_id = d.pop("templateID")
 
         template_request_response_v3 = cls(
             aliases=aliases,
             build_id=build_id,
+            names=names,
             public=public,
+            tags=tags,
             template_id=template_id,
         )
 

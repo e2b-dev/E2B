@@ -10,14 +10,29 @@ import { apiUrl, buildTemplateTest, isDebug } from '../setup'
 // Mock handlers for tag API endpoints
 const mockHandlers = [
   http.post(apiUrl('/templates/tags'), async ({ request }) => {
-    const { names } = (await request.clone().json()) as {
-      names: string[]
+    const { tags } = (await request.clone().json()) as {
+      tags: string[]
     }
     return HttpResponse.json({
       buildID: '00000000-0000-0000-0000-000000000000',
-      names: names,
+      tags: tags,
     })
   }),
+  // Bulk delete endpoint
+  http.delete(apiUrl('/templates/tags'), async ({ request }) => {
+    const { name } = (await request.clone().json()) as {
+      name: string
+      tags: string[]
+    }
+    if (name === 'nonexistent') {
+      return HttpResponse.json(
+        { message: 'Template not found' },
+        { status: 404 }
+      )
+    }
+    return new HttpResponse(null, { status: 204 })
+  }),
+  // Single tag delete endpoint
   http.delete<{ name: string }>(
     apiUrl('/templates/tags/:name'),
     ({ params }) => {
@@ -38,37 +53,41 @@ describe('Template tags unit tests', () => {
   afterAll(() => server.close())
   afterEach(() => server.resetHandlers())
 
-  describe('Template.assignTag', () => {
+  describe('Template.assignTags', () => {
     test('assigns a single tag', async () => {
-      const result = await Template.assignTag(
-        'my-template:v1.0',
-        'my-template:production'
-      )
+      const result = await Template.assignTags('my-template:v1.0', 'production')
       expect(result.buildId).toBe('00000000-0000-0000-0000-000000000000')
-      expect(result.names).toContain('my-template:production')
+      expect(result.tags).toContain('production')
     })
 
     test('assigns multiple tags', async () => {
-      const result = await Template.assignTag('my-template:v1.0', [
-        'my-template:production',
-        'my-template:stable',
+      const result = await Template.assignTags('my-template:v1.0', [
+        'production',
+        'stable',
       ])
       expect(result.buildId).toBe('00000000-0000-0000-0000-000000000000')
-      expect(result.names).toContain('my-template:production')
-      expect(result.names).toContain('my-template:stable')
+      expect(result.tags).toContain('production')
+      expect(result.tags).toContain('stable')
     })
   })
 
-  describe('Template.removeTag', () => {
-    test('deletes a tag', async () => {
+  describe('Template.removeTags', () => {
+    test('deletes a single tag using name:tag format', async () => {
       // Should not throw
       await expect(
-        Template.removeTag('my-template:production')
+        Template.removeTags('my-template:production')
+      ).resolves.toBeUndefined()
+    })
+
+    test('deletes multiple tags using bulk endpoint', async () => {
+      // Should not throw
+      await expect(
+        Template.removeTags('my-template', ['production', 'staging'])
       ).resolves.toBeUndefined()
     })
 
     test('handles 404 error for nonexistent tag', async () => {
-      await expect(Template.removeTag('nonexistent:tag')).rejects.toThrow()
+      await expect(Template.removeTags('nonexistent:tag')).rejects.toThrow()
     })
   })
 })
@@ -87,22 +106,18 @@ buildTemplateTest.skipIf(isDebug)(
     expect(buildInfo.buildId).toBeTruthy()
     expect(buildInfo.templateId).toBeTruthy()
 
-    // Assign additional tags
-    const productionTag = `${templateAlias}:production`
-    const latestTag = `${templateAlias}:latest`
-
-    const tagInfo = await Template.assignTag(initialTag, [
-      productionTag,
-      latestTag,
+    // Assign additional tags (just tag names, not full alias:tag format)
+    const tagInfo = await Template.assignTags(initialTag, [
+      'production',
+      'latest',
     ])
 
     expect(tagInfo.buildId).toBeTruthy()
-    // API returns just the tag portion, not the full alias:tag
-    expect(tagInfo.names).toContain('production')
-    expect(tagInfo.names).toContain('latest')
+    expect(tagInfo.tags).toContain('production')
+    expect(tagInfo.tags).toContain('latest')
 
-    // Delete tags
-    await Template.removeTag(productionTag)
+    // Delete tag using name:tag format
+    await Template.removeTags(`${templateAlias}:production`)
   },
   { timeout: 300_000 }
 )
@@ -116,13 +131,11 @@ buildTemplateTest.skipIf(isDebug)(
     const template = Template().fromBaseImage()
     await buildTemplate(template, { name: initialTag })
 
-    // Assign single tag (not array)
-    const stableTag = `${templateAlias}:stable`
-    const tagInfo = await Template.assignTag(initialTag, stableTag)
+    // Assign single tag (just tag name, not full alias:tag format)
+    const tagInfo = await Template.assignTags(initialTag, 'stable')
 
     expect(tagInfo.buildId).toBeTruthy()
-    // API returns just the tag portion, not the full alias:tag
-    expect(tagInfo.names).toContain('stable')
+    expect(tagInfo.tags).toContain('stable')
   },
   { timeout: 300_000 }
 )
@@ -138,7 +151,7 @@ buildTemplateTest.skipIf(isDebug)(
 
     // Tag without alias (starts with colon) should be rejected
     await expect(
-      Template.assignTag(initialTag, ':invalid-tag')
+      Template.assignTags(initialTag, ':invalid-tag')
     ).rejects.toThrow()
   },
   { timeout: 300_000 }
@@ -155,7 +168,7 @@ buildTemplateTest.skipIf(isDebug)(
 
     // Tag without tag portion (ends with colon) should be rejected
     await expect(
-      Template.assignTag(initialTag, `${templateAlias}:`)
+      Template.assignTags(initialTag, `${templateAlias}:`)
     ).rejects.toThrow()
   },
   { timeout: 300_000 }

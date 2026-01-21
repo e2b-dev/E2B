@@ -5,18 +5,27 @@ import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
+from ...models.delete_template_tags_request import DeleteTemplateTagsRequest
 from ...models.error import Error
 from ...types import Response
 
 
 def _get_kwargs(
-    name: str,
+    *,
+    body: DeleteTemplateTagsRequest,
 ) -> dict[str, Any]:
+    headers: dict[str, Any] = {}
+
     _kwargs: dict[str, Any] = {
         "method": "delete",
-        "url": f"/templates/tags/{name}",
+        "url": "/templates/tags",
     }
 
+    _kwargs["json"] = body.to_dict()
+
+    headers["Content-Type"] = "application/json"
+
+    _kwargs["headers"] = headers
     return _kwargs
 
 
@@ -60,14 +69,14 @@ def _build_response(
 
 
 def sync_detailed(
-    name: str,
     *,
     client: AuthenticatedClient,
+    body: DeleteTemplateTagsRequest,
 ) -> Response[Union[Any, Error]]:
-    """Delete a tag from a template
+    """Delete multiple tags from templates
 
     Args:
-        name (str): Template in "name:tag" format
+        body (DeleteTemplateTagsRequest):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -78,7 +87,7 @@ def sync_detailed(
     """
 
     kwargs = _get_kwargs(
-        name=name,
+        body=body,
     )
 
     response = client.get_httpx_client().request(
@@ -89,14 +98,14 @@ def sync_detailed(
 
 
 def sync(
-    name: str,
     *,
     client: AuthenticatedClient,
+    body: DeleteTemplateTagsRequest,
 ) -> Optional[Union[Any, Error]]:
-    """Delete a tag from a template
+    """Delete multiple tags from templates
 
     Args:
-        name (str): Template in "name:tag" format
+        body (DeleteTemplateTagsRequest):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -107,20 +116,20 @@ def sync(
     """
 
     return sync_detailed(
-        name=name,
         client=client,
+        body=body,
     ).parsed
 
 
 async def asyncio_detailed(
-    name: str,
     *,
     client: AuthenticatedClient,
+    body: DeleteTemplateTagsRequest,
 ) -> Response[Union[Any, Error]]:
-    """Delete a tag from a template
+    """Delete multiple tags from templates
 
     Args:
-        name (str): Template in "name:tag" format
+        body (DeleteTemplateTagsRequest):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -131,7 +140,7 @@ async def asyncio_detailed(
     """
 
     kwargs = _get_kwargs(
-        name=name,
+        body=body,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -140,14 +149,14 @@ async def asyncio_detailed(
 
 
 async def asyncio(
-    name: str,
     *,
     client: AuthenticatedClient,
+    body: DeleteTemplateTagsRequest,
 ) -> Optional[Union[Any, Error]]:
-    """Delete a tag from a template
+    """Delete multiple tags from templates
 
     Args:
-        name (str): Template in "name:tag" format
+        body (DeleteTemplateTagsRequest):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -159,7 +168,7 @@ async def asyncio(
 
     return (
         await asyncio_detailed(
-            name=name,
             client=client,
+            body=body,
         )
     ).parsed

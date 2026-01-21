@@ -1,36 +1,35 @@
 from collections.abc import Mapping
 from typing import Any, TypeVar, cast
-from uuid import UUID
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
-T = TypeVar("T", bound="TemplateTag")
+T = TypeVar("T", bound="AssignTemplateTagsRequest")
 
 
 @_attrs_define
-class TemplateTag:
+class AssignTemplateTagsRequest:
     """
     Attributes:
-        build_id (UUID): Identifier of the build associated with this tag
-        names (list[str]): Assigned names of the template
+        tags (list[str]): Tags to assign to the template
+        target (str): Target template in "name:tag" format
     """
 
-    build_id: UUID
-    names: list[str]
+    tags: list[str]
+    target: str
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        build_id = str(self.build_id)
+        tags = self.tags
 
-        names = self.names
+        target = self.target
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
-                "buildID": build_id,
-                "names": names,
+                "tags": tags,
+                "target": target,
             }
         )
 
@@ -39,17 +38,17 @@ class TemplateTag:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        build_id = UUID(d.pop("buildID"))
+        tags = cast(list[str], d.pop("tags"))
 
-        names = cast(list[str], d.pop("names"))
+        target = d.pop("target")
 
-        template_tag = cls(
-            build_id=build_id,
-            names=names,
+        assign_template_tags_request = cls(
+            tags=tags,
+            target=target,
         )
 
-        template_tag.additional_properties = d
-        return template_tag
+        assign_template_tags_request.additional_properties = d
+        return assign_template_tags_request
 
     @property
     def additional_keys(self) -> list[str]:

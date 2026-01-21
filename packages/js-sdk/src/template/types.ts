@@ -25,9 +25,13 @@ export type TemplateOptions = {
 export type BasicBuildOptions = {
   /**
    * Alias name for the template.
-   * @deprecated Use the `name` or `names` parameter of `Template.build()` instead.
+   * @deprecated Use the `name` parameter of `Template.build()` instead.
    */
   alias: string
+  /**
+   * Tags to assign to the template build.
+   */
+  tags?: string[]
   /**
    * Number of CPUs allocated to the sandbox.
    * @default 2
@@ -60,14 +64,24 @@ export type BuildOptions = ConnectionOpts & BasicBuildOptions
 export type BuildInfo = {
   /**
    * First alias from the build (for backward compatibility).
-   * @deprecated Use `names` instead.
+   * @deprecated Use `name` instead.
    */
   alias: string
   /**
-   * All names/tags assigned to this build.
+   * Name of the template.
    */
-  names: string[]
+  name: string
+  /**
+   * Tags assigned to this build.
+   */
+  tags: string[]
+  /**
+   * Template identifier.
+   */
   templateId: string
+  /**
+   * Build identifier.
+   */
   buildId: string
 }
 
@@ -166,9 +180,9 @@ export type TemplateTagInfo = {
    */
   buildId: string
   /**
-   * Assigned names/tags of the template.
+   * Assigned tags of the template.
    */
-  names: string[]
+  tags: string[]
 }
 
 /**

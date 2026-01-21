@@ -9,37 +9,38 @@ import type { BuildOptions } from './types'
 
 /**
  * Normalize build arguments from different overload signatures.
- * Handles string name, string array, or legacy options object with alias.
+ * Handles string name or legacy options object with alias.
  *
- * @param nameOrNamesOrOptions Name, array of names, or legacy options with alias
- * @param options Optional build options (when first arg is name/names)
- * @returns Object with normalized names array and build options
+ * @param nameOrOptions Name or legacy options with alias
+ * @param options Optional build options (when first arg is name)
+ * @returns Object with normalized name, tags, and build options
  * @throws TemplateError if no template name is provided
  */
 export function normalizeBuildArguments(
-  nameOrNamesOrOptions: string | string[] | BuildOptions,
+  nameOrOptions: string | BuildOptions,
   options?: Omit<BuildOptions, 'alias'>
-): { names: string[]; buildOptions: Omit<BuildOptions, 'alias'> } {
-  let names: string[] = []
+): {
+  name: string
+  buildOptions: Omit<BuildOptions, 'alias'>
+} {
+  let name: string
   let buildOptions: Omit<BuildOptions, 'alias'>
-  if (typeof nameOrNamesOrOptions === 'string') {
-    names = [nameOrNamesOrOptions]
-    buildOptions = options ?? {}
-  } else if (Array.isArray(nameOrNamesOrOptions)) {
-    names = nameOrNamesOrOptions
+
+  if (typeof nameOrOptions === 'string') {
+    name = nameOrOptions
     buildOptions = options ?? {}
   } else {
     // Legacy: options object with alias
-    const { alias, ...restOpts } = nameOrNamesOrOptions
-    names = [alias]
+    const { alias, ...restOpts } = nameOrOptions
+    name = alias
     buildOptions = restOpts
   }
 
-  if (names.length === 0) {
-    throw new TemplateError('Template name must be provided')
+  if (!name) {
+    throw new TemplateError('Name must be provided')
   }
 
-  return { names, buildOptions }
+  return { name, buildOptions }
 }
 
 /**

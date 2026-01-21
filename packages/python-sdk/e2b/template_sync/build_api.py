@@ -15,6 +15,7 @@ from e2b.api.client.api.templates import (
 from e2b.api.client.api.tags import (
     post_templates_tags,
     delete_templates_tags_name,
+    delete_templates_tags,
 )
 from e2b.api.client.client import AuthenticatedClient
 from e2b.api.client.models import (
@@ -22,9 +23,10 @@ from e2b.api.client.models import (
     TemplateBuildStartV2,
     TemplateBuildFileUpload,
     Error,
-    AssignTemplateTagRequest,
+    AssignTemplateTagsRequest,
+    DeleteTemplateTagsRequest,
 )
-from e2b.api.client.types import Unset
+from e2b.api.client.types import UNSET, Unset
 from e2b.exceptions import BuildException, FileUploadException, TemplateException
 from e2b.template.logger import LogEntry
 from e2b.template.types import (
@@ -41,14 +43,16 @@ from e2b.template.utils import get_build_step_index, tar_file_stream
 
 def request_build(
     client: AuthenticatedClient,
-    names: List[str],
+    name: str,
     cpu_count: int,
     memory_mb: int,
+    tags: Optional[List[str]],
 ):
     res = post_v3_templates.sync_detailed(
         client=client,
         body=TemplateBuildRequestV3(
-            names=names,
+            name=name,
+            tags=tags if tags else UNSET,
             cpu_count=cpu_count,
             memory_mb=memory_mb,
         ),
@@ -276,25 +280,25 @@ def check_alias_exists(client: AuthenticatedClient, alias: str) -> bool:
     return res.parsed is not None
 
 
-def assign_tag(
-    client: AuthenticatedClient, target: str, names: List[str]
+def assign_tags(
+    client: AuthenticatedClient, target: str, tags: List[str]
 ) -> TemplateTagInfo:
     """
     Assign tag(s) to an existing template build.
 
     Args:
         client: Authenticated API client
-        target: Target template in 'alias:tag' format (the source build)
-        names: Tag(s) to assign in 'alias:tag' format
+        target: Target template in 'name:tag' format (the source build)
+        tags: Tag(s) to assign
 
     Returns:
-        TemplateTagInfo with build_id and assigned names
+        TemplateTagInfo with build_id and assigned tags
     """
     res = post_templates_tags.sync_detailed(
         client=client,
-        body=AssignTemplateTagRequest(
+        body=AssignTemplateTagsRequest(
             target=target,
-            names=names,
+            tags=tags,
         ),
     )
 
@@ -305,26 +309,40 @@ def assign_tag(
         raise TemplateException(f"API error: {res.parsed.message}")
 
     if res.parsed is None:
-        raise TemplateException("Failed to assign tag")
+        raise TemplateException("Failed to assign tags")
 
     return TemplateTagInfo(
         build_id=str(res.parsed.build_id),
-        names=res.parsed.names,
+        tags=res.parsed.tags,
     )
 
 
-def remove_tag(client: AuthenticatedClient, name: str) -> None:
+def remove_tags(
+    client: AuthenticatedClient, name: str, tags: Optional[List[str]] = None
+) -> None:
     """
-    Remove a tag from a template.
+    Remove tag(s) from a template.
 
     Args:
         client: Authenticated API client
-        name: Template tag in 'alias:tag' format to remove
+        name: Template name (for bulk removal) or 'name:tag' format (for single removal)
+        tags: Optional list of tags to remove (for bulk removal)
     """
-    res = delete_templates_tags_name.sync_detailed(
-        name=name,
-        client=client,
-    )
+    if tags and len(tags) > 0:
+        # Bulk deletion
+        res = delete_templates_tags.sync_detailed(
+            client=client,
+            body=DeleteTemplateTagsRequest(
+                name=name,
+                tags=tags,
+            ),
+        )
+    else:
+        # Single tag deletion (name is in "name:tag" format)
+        res = delete_templates_tags_name.sync_detailed(
+            name=name,
+            client=client,
+        )
 
     if res.status_code >= 300:
         raise handle_api_exception(res, TemplateException)

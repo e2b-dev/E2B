@@ -7,100 +7,99 @@ from e2b.exceptions import TemplateException
 import e2b.template_sync.main as template_sync_main
 
 
-class TestAssignTag:
-    """Tests for Template.assign_tag method."""
+class TestAssignTags:
+    """Tests for Template.assign_tags method."""
 
     def test_assign_single_tag(self, monkeypatch):
         """Test assigning a single tag to a template."""
         call_args_capture = []
 
-        def mock_assign_tag(client, target, names):
-            call_args_capture.append((client, target, names))
+        def mock_assign_tags(client, target, tags):
+            call_args_capture.append((client, target, tags))
             return TemplateTagInfo(
                 build_id="00000000-0000-0000-0000-000000000000",
-                names=["my-template:production"],
+                tags=["production"],
             )
 
         monkeypatch.setattr(
             template_sync_main, "get_api_client", lambda *args, **kwargs: None
         )
-        monkeypatch.setattr(template_sync_main, "assign_tag", mock_assign_tag)
+        monkeypatch.setattr(template_sync_main, "assign_tags", mock_assign_tags)
 
-        result = Template.assign_tag("my-template:v1.0", "my-template:production")
+        result = Template.assign_tags("my-template:v1.0", "production")
 
         assert result.build_id == "00000000-0000-0000-0000-000000000000"
-        assert "my-template:production" in result.names
+        assert "production" in result.tags
         assert len(call_args_capture) == 1
-        # Verify the names were converted to a list
-        _, target, names = call_args_capture[0]
+        # Verify the tags were converted to a list
+        _, target, tags = call_args_capture[0]
         assert target == "my-template:v1.0"
-        assert names == ["my-template:production"]
+        assert tags == ["production"]
 
     def test_assign_multiple_tags(self, monkeypatch):
         """Test assigning multiple tags to a template."""
         call_args_capture = []
 
-        def mock_assign_tag(client, target, names):
-            call_args_capture.append((client, target, names))
+        def mock_assign_tags(client, target, tags):
+            call_args_capture.append((client, target, tags))
             return TemplateTagInfo(
                 build_id="00000000-0000-0000-0000-000000000000",
-                names=["my-template:production", "my-template:stable"],
+                tags=["production", "stable"],
             )
 
         monkeypatch.setattr(
             template_sync_main, "get_api_client", lambda *args, **kwargs: None
         )
-        monkeypatch.setattr(template_sync_main, "assign_tag", mock_assign_tag)
+        monkeypatch.setattr(template_sync_main, "assign_tags", mock_assign_tags)
 
-        result = Template.assign_tag(
-            "my-template:v1.0", ["my-template:production", "my-template:stable"]
-        )
+        result = Template.assign_tags("my-template:v1.0", ["production", "stable"])
 
         assert result.build_id == "00000000-0000-0000-0000-000000000000"
-        assert "my-template:production" in result.names
-        assert "my-template:stable" in result.names
+        assert "production" in result.tags
+        assert "stable" in result.tags
         assert len(call_args_capture) == 1
-        # Verify the names were passed as-is (already a list)
-        _, _, names = call_args_capture[0]
-        assert names == ["my-template:production", "my-template:stable"]
+        # Verify the tags were passed as-is (already a list)
+        _, _, tags = call_args_capture[0]
+        assert tags == ["production", "stable"]
 
 
-class TestDeleteTag:
-    """Tests for Template.remove_tag method."""
+class TestRemoveTags:
+    """Tests for Template.remove_tags method."""
 
-    def test_remove_tag(self, monkeypatch):
-        """Test deleting a tag from a template."""
+    def test_remove_single_tag(self, monkeypatch):
+        """Test deleting a single tag from a template."""
         call_args_capture = []
 
-        def mock_remove_tag(client, name):
-            call_args_capture.append((client, name))
+        def mock_remove_tags(client, name, tags):
+            call_args_capture.append((client, name, tags))
             return None
 
         monkeypatch.setattr(
             template_sync_main, "get_api_client", lambda *args, **kwargs: None
         )
-        monkeypatch.setattr(template_sync_main, "remove_tag", mock_remove_tag)
+        monkeypatch.setattr(template_sync_main, "remove_tags", mock_remove_tags)
 
         # Should not raise
-        Template.remove_tag("my-template:production")
+        Template.remove_tags("my-template:production")
 
         assert len(call_args_capture) == 1
-        _, name = call_args_capture[0]
+        _, name, tags = call_args_capture[0]
         assert name == "my-template:production"
+        assert tags is None
 
-    def test_remove_tag_error(self, monkeypatch):
-        """Test that remove_tag raises an error for nonexistent tags."""
+    def test_remove_tags_error(self, monkeypatch):
+        """Test that remove_tags raises an error for nonexistent tags."""
 
-        def mock_remove_tag(client, name):
+        def mock_remove_tags(client, name, tags):
             raise TemplateException("Tag not found")
 
         monkeypatch.setattr(
             template_sync_main, "get_api_client", lambda *args, **kwargs: None
         )
-        monkeypatch.setattr(template_sync_main, "remove_tag", mock_remove_tag)
+        monkeypatch.setattr(template_sync_main, "remove_tags", mock_remove_tags)
 
         with pytest.raises(TemplateException):
-            Template.remove_tag("nonexistent:tag")
+            Template.remove_tags("nonexistent:tag")
 
 
 # Integration tests
@@ -121,18 +120,15 @@ class TestTagsIntegration:
         assert build_info.template_id
 
         # Assign additional tags
-        production_tag = f"{template_alias}:production"
-        latest_tag = f"{template_alias}:latest"
-
-        tag_info = Template.assign_tag(initial_tag, [production_tag, latest_tag])
+        tag_info = Template.assign_tags(initial_tag, ["production", "latest"])
 
         assert tag_info.build_id
         # API returns just the tag portion, not the full alias:tag
-        assert "production" in tag_info.names
-        assert "latest" in tag_info.names
+        assert "production" in tag_info.tags
+        assert "latest" in tag_info.tags
 
         # Delete tags
-        Template.remove_tag(production_tag)
+        Template.remove_tags(f"{template_alias}:production")
 
     @pytest.mark.skip_debug()
     def test_assign_single_tag_to_existing_template(self, build):
@@ -144,12 +140,11 @@ class TestTagsIntegration:
         build(template, name=initial_tag)
 
         # Assign single tag (not array)
-        stable_tag = f"{template_alias}:stable"
-        tag_info = Template.assign_tag(initial_tag, stable_tag)
+        tag_info = Template.assign_tags(initial_tag, "stable")
 
         assert tag_info.build_id
         # API returns just the tag portion, not the full alias:tag
-        assert "stable" in tag_info.names
+        assert "stable" in tag_info.tags
 
     @pytest.mark.skip_debug()
     def test_rejects_invalid_tag_format_missing_alias(self, build):
@@ -162,7 +157,7 @@ class TestTagsIntegration:
 
         # Tag without alias (starts with colon) should be rejected
         with pytest.raises(Exception):
-            Template.assign_tag(initial_tag, ":invalid-tag")
+            Template.assign_tags(initial_tag, ":invalid-tag")
 
     @pytest.mark.skip_debug()
     def test_rejects_invalid_tag_format_missing_tag(self, build):
@@ -175,4 +170,4 @@ class TestTagsIntegration:
 
         # Tag without tag portion (ends with colon) should be rejected
         with pytest.raises(Exception):
-            Template.assign_tag(initial_tag, f"{template_alias}:")
+            Template.assign_tags(initial_tag, f"{template_alias}:")

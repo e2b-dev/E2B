@@ -98,8 +98,8 @@ class TemplateTagInfo:
     build_id: str
     """Build identifier associated with this tag."""
 
-    names: List[str]
-    """Assigned names/tags of the template."""
+    tags: List[str]
+    """Assigned tags of the template."""
 
 
 class InstructionType(str, Enum):
@@ -198,6 +198,7 @@ class BuildInfo:
 
     template_id: str
     build_id: str
-    names: List[str] = field(default_factory=list)
-    # Deprecated: use names instead
-    alias: str = ""
+    name: str
+    # Deprecated: use name instead
+    alias: str
+    tags: List[str] = field(default_factory=list)

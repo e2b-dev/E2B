@@ -7,7 +7,7 @@ import pytest
 import linecache
 
 from e2b import Template, CopyItem, wait_for_timeout
-from e2b.api.client.models import TemplateBuildStatus
+from e2b.template.types import TemplateBuildStatus
 import e2b.template_sync.main as template_sync_main
 import e2b.template_sync.build_api as build_api_mod
 
@@ -43,8 +43,10 @@ failure_map: dict[str, Optional[int]] = {
 
 @pytest.fixture(autouse=True)
 def mock_template_build(monkeypatch):
-    def mock_request_build(client, names: List[str], cpu_count: int, memory_mb: int):
-        return SimpleNamespace(template_id=names[0], build_id=str(uuid4()))
+    def mock_request_build(
+        client, name: str, cpu_count: int, memory_mb: int, tags: Optional[List[str]]
+    ):
+        return SimpleNamespace(template_id=name, build_id=str(uuid4()), tags=tags or [])
 
     def mock_trigger_build(client, template_id: str, build_id: str, template):
         return None
