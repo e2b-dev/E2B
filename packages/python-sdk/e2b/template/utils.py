@@ -10,6 +10,7 @@ import inspect
 from types import TracebackType, FrameType
 from typing import List, Optional, Union
 
+from e2b.exceptions import TemplateException
 from e2b.template.consts import BASE_STEP_NAME, FINALIZE_STEP_NAME
 
 
@@ -332,7 +333,7 @@ def normalize_names(
     :raises ValueError: If both names and alias are provided, or if neither is provided
     """
     if alias is not None and names is not None:
-        raise ValueError("Cannot provide both names and alias, use only names")
+        raise TemplateException("Cannot provide both names and alias, use only names")
 
     names_list = []
     if names is not None:
@@ -341,12 +342,12 @@ def normalize_names(
         elif isinstance(names, list):
             names_list.extend(names)
         else:
-            raise ValueError("names must be a string or list of strings")
+            raise TemplateException("names must be a string or list of strings")
 
     if alias is not None:
         names_list.append(alias)
 
     if len(names_list) == 0:
-        raise ValueError("Either names or alias must be provided")
+        raise TemplateException("Either names or alias must be provided")
 
     return names_list
