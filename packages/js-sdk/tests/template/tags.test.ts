@@ -32,17 +32,6 @@ const mockHandlers = [
     }
     return new HttpResponse(null, { status: 204 })
   }),
-  // Single tag delete endpoint
-  http.delete<{ name: string }>(
-    apiUrl('/templates/tags/:name'),
-    ({ params }) => {
-      const name = decodeURIComponent(params.name)
-      if (name === 'nonexistent:tag') {
-        return HttpResponse.json({ message: 'Tag not found' }, { status: 404 })
-      }
-      return new HttpResponse(null, { status: 204 })
-    }
-  ),
 ]
 
 const server = setupServer(...mockHandlers)
@@ -72,22 +61,24 @@ describe('Template tags unit tests', () => {
   })
 
   describe('Template.removeTags', () => {
-    test('deletes a single tag using name:tag format', async () => {
+    test('deletes a single tag', async () => {
       // Should not throw
       await expect(
-        Template.removeTags('my-template:production')
+        Template.removeTags('my-template', 'production')
       ).resolves.toBeUndefined()
     })
 
-    test('deletes multiple tags using bulk endpoint', async () => {
+    test('deletes multiple tags', async () => {
       // Should not throw
       await expect(
         Template.removeTags('my-template', ['production', 'staging'])
       ).resolves.toBeUndefined()
     })
 
-    test('handles 404 error for nonexistent tag', async () => {
-      await expect(Template.removeTags('nonexistent:tag')).rejects.toThrow()
+    test('handles 404 error for nonexistent template', async () => {
+      await expect(
+        Template.removeTags('nonexistent', ['tag'])
+      ).rejects.toThrow()
     })
   })
 })
@@ -116,8 +107,8 @@ buildTemplateTest.skipIf(isDebug)(
     expect(tagInfo.tags).toContain('production')
     expect(tagInfo.tags).toContain('latest')
 
-    // Delete tag using name:tag format
-    await Template.removeTags(`${templateAlias}:production`)
+    // Delete tag
+    await Template.removeTags(templateAlias, 'production')
   },
   { timeout: 300_000 }
 )

@@ -14,7 +14,6 @@ from e2b.api.client.api.templates import (
 )
 from e2b.api.client.api.tags import (
     post_templates_tags,
-    delete_templates_tags_name,
     delete_templates_tags,
 )
 from e2b.api.client.client import AuthenticatedClient
@@ -318,31 +317,23 @@ def assign_tags(
 
 
 def remove_tags(
-    client: AuthenticatedClient, name: str, tags: Optional[List[str]] = None
+    client: AuthenticatedClient, name: str, tags: List[str]
 ) -> None:
     """
     Remove tag(s) from a template.
 
     Args:
         client: Authenticated API client
-        name: Template name (for bulk removal) or 'name:tag' format (for single removal)
-        tags: Optional list of tags to remove (for bulk removal)
+        name: Template name
+        tags: List of tags to remove
     """
-    if tags and len(tags) > 0:
-        # Bulk deletion
-        res = delete_templates_tags.sync_detailed(
-            client=client,
-            body=DeleteTemplateTagsRequest(
-                name=name,
-                tags=tags,
-            ),
-        )
-    else:
-        # Single tag deletion (name is in "name:tag" format)
-        res = delete_templates_tags_name.sync_detailed(
+    res = delete_templates_tags.sync_detailed(
+        client=client,
+        body=DeleteTemplateTagsRequest(
             name=name,
-            client=client,
-        )
+            tags=tags,
+        ),
+    )
 
     if res.status_code >= 300:
         raise handle_api_exception(res, TemplateException)

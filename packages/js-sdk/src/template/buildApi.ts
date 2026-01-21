@@ -356,27 +356,14 @@ export async function assignTags(
 
 export async function removeTags(
   client: ApiClient,
-  { name, tags }: { name: string; tags?: string[] }
+  { name, tags }: { name: string; tags: string[] }
 ): Promise<void> {
-  // If tags are provided, use bulk deletion endpoint
-  if (tags && tags.length > 0) {
-    const res = await client.api.DELETE('/templates/tags', {
-      body: { name, tags },
-    })
+  const res = await client.api.DELETE('/templates/tags', {
+    body: { name, tags },
+  })
 
-    const error = handleApiError(res, TemplateError)
-    if (error) {
-      throw error
-    }
-  } else {
-    // Single tag deletion (name is in "alias:tag" format)
-    const res = await client.api.DELETE('/templates/tags/{name}', {
-      params: { path: { name } },
-    })
-
-    const error = handleApiError(res, TemplateError)
-    if (error) {
-      throw error
-    }
+  const error = handleApiError(res, TemplateError)
+  if (error) {
+    throw error
   }
 }

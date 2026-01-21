@@ -324,14 +324,14 @@ export class TemplateBase
   /**
    * Remove tag(s) from a template.
    *
-   * @param name Template name (for bulk removal) or 'name:tag' format (for single removal)
-   * @param tags Optional tag(s) to remove (for bulk removal)
+   * @param name Template name
+   * @param tags Tag(s) to remove
    * @param options Authentication options
    *
    * @example
    * ```ts
-   * // Remove a single tag using name:tag format
-   * await Template.removeTags('my-template:production')
+   * // Remove a single tag
+   * await Template.removeTags('my-template', 'production')
    *
    * // Remove multiple tags from a template
    * await Template.removeTags('my-template', ['production', 'staging'])
@@ -339,12 +339,12 @@ export class TemplateBase
    */
   static async removeTags(
     name: string,
-    tags?: string | string[],
+    tags: string | string[],
     options?: ConnectionOpts
   ): Promise<void> {
     const config = new ConnectionConfig(options)
     const client = new ApiClient(config)
-    const tagArray = tags ? (Array.isArray(tags) ? tags : [tags]) : undefined
+    const tagArray = Array.isArray(tags) ? tags : [tags]
     return removeTags(client, { name, tags: tagArray })
   }
 

@@ -80,18 +80,39 @@ class TestRemoveTags:
         monkeypatch.setattr(template_sync_main, "remove_tags", mock_remove_tags)
 
         # Should not raise
-        Template.remove_tags("my-template:production")
+        Template.remove_tags("my-template", "production")
 
         assert len(call_args_capture) == 1
         _, name, tags = call_args_capture[0]
-        assert name == "my-template:production"
-        assert tags is None
+        assert name == "my-template"
+        assert tags == ["production"]
 
-    def test_remove_tags_error(self, monkeypatch):
-        """Test that remove_tags raises an error for nonexistent tags."""
+    def test_remove_multiple_tags(self, monkeypatch):
+        """Test deleting multiple tags from a template."""
+        call_args_capture = []
 
         def mock_remove_tags(client, name, tags):
-            raise TemplateException("Tag not found")
+            call_args_capture.append((client, name, tags))
+            return None
+
+        monkeypatch.setattr(
+            template_sync_main, "get_api_client", lambda *args, **kwargs: None
+        )
+        monkeypatch.setattr(template_sync_main, "remove_tags", mock_remove_tags)
+
+        # Should not raise
+        Template.remove_tags("my-template", ["production", "staging"])
+
+        assert len(call_args_capture) == 1
+        _, name, tags = call_args_capture[0]
+        assert name == "my-template"
+        assert tags == ["production", "staging"]
+
+    def test_remove_tags_error(self, monkeypatch):
+        """Test that remove_tags raises an error for nonexistent template."""
+
+        def mock_remove_tags(client, name, tags):
+            raise TemplateException("Template not found")
 
         monkeypatch.setattr(
             template_sync_main, "get_api_client", lambda *args, **kwargs: None
@@ -99,7 +120,7 @@ class TestRemoveTags:
         monkeypatch.setattr(template_sync_main, "remove_tags", mock_remove_tags)
 
         with pytest.raises(TemplateException):
-            Template.remove_tags("nonexistent:tag")
+            Template.remove_tags("nonexistent", ["tag"])
 
 
 # Integration tests
@@ -128,7 +149,7 @@ class TestTagsIntegration:
         assert "latest" in tag_info.tags
 
         # Delete tags
-        Template.remove_tags(f"{template_alias}:production")
+        Template.remove_tags(template_alias, "production")
 
     @pytest.mark.skip_debug()
     def test_assign_single_tag_to_existing_template(self, build):

@@ -442,21 +442,21 @@ class AsyncTemplate(TemplateBase):
     @staticmethod
     async def remove_tags(
         name: str,
-        tags: Optional[Union[str, List[str]]] = None,
+        tags: Union[str, List[str]],
         **opts: Unpack[ApiParams],
     ) -> None:
         """
         Remove tag(s) from a template.
 
-        :param name: Template name or 'name:tag' format (for single tag removal)
-        :param tags: Optional tag(s) to remove (for bulk removal)
+        :param name: Template name
+        :param tags: Tag(s) to remove
 
         Example
         ```python
         from e2b import AsyncTemplate
 
         # Remove a single tag
-        await AsyncTemplate.remove_tags('my-template:production')
+        await AsyncTemplate.remove_tags('my-template', 'production')
 
         # Remove multiple tags
         await AsyncTemplate.remove_tags('my-template', tags=['production', 'stable'])
@@ -469,8 +469,6 @@ class AsyncTemplate(TemplateBase):
             require_access_token=False,
         )
 
-        tags_list = None
-        if tags is not None:
-            tags_list = [tags] if isinstance(tags, str) else tags
+        tags_list = [tags] if isinstance(tags, str) else tags
 
         await remove_tags(api_client, name, tags_list)
