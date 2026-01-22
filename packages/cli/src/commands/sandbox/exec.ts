@@ -170,6 +170,10 @@ async function runCommand(
   } catch (err) {
     removeSignalHandlers()
 
+    if (handle.error) {
+      console.error(handle.error)
+    }
+
     // If we're exiting due to a signal, use the signal exit code
     if (signalExit !== null) {
       process.exit(signalExit)
