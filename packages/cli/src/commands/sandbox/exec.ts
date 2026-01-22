@@ -186,7 +186,9 @@ function handleExecError(err: unknown, sandboxID: string): never {
   }
 
   if (err instanceof AuthenticationError) {
-    console.error(`e2b: authentication failed - check E2B_API_KEY: ${err.message}`)
+    console.error(
+      `e2b: authentication failed - check E2B_API_KEY: ${err.message}`
+    )
     process.exit(1)
   }
 
