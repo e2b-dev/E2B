@@ -146,7 +146,13 @@ async function runCommand(
 
     // Kill the remote process and wait for it.
     // The exec handler should also remove the signal handler and process exit.
-    await handle.kill()
+    try {
+      await handle.kill()
+    } catch {
+      // Ignore kill errors (sandbox may already be gone) or there might be network issues.
+      removeSignalHandlers()
+      process.exit(signalExit)
+    }
   })
 
   try {
