@@ -1,3 +1,12 @@
+/**
+ * Execute a command in a running sandbox.
+ *
+ * NOTE: Stdin piping (e.g., `echo "data" | e2b exec sandbox cmd`) is not supported.
+ * The SDK/envd protocol lacks a way to signal EOF to remote commands. Commands that
+ * read until EOF (cat, grep, wc, etc.) would hang indefinitely. This requires envd
+ * to add stdin close signaling before it can be implemented.
+ */
+
 import * as e2b from 'e2b'
 import {
   CommandExitError,
@@ -38,6 +47,13 @@ export const execCommand = new commander.Command('exec')
   .alias('ex')
   .action(
     async (sandboxID: string, commandParts: string[], opts: ExecOptions) => {
+      // Warn if stdin is being piped (not supported)
+      if (!process.stdin.isTTY) {
+        console.error(
+          'e2b: warning: stdin piping is not supported, input will be ignored'
+        )
+      }
+
       try {
         const apiKey = ensureAPIKey()
         const command = commandParts.join(' ')
@@ -89,61 +105,13 @@ function setupSignalHandlers(onSignal: () => Promise<void>): () => void {
   return () => signals.forEach((sig) => process.removeListener(sig, handler))
 }
 
-function setupStdinForwarding(sendStdin: (data: string) => Promise<void>) {
-  const bufferedData: Buffer[] = []
-  let ended = false
-
-  process.stdin.on('data', (data) => bufferedData.push(data))
-  process.stdin.on('end', () => {
-    ended = true
-  })
-  process.stdin.resume()
-
-  return {
-    ended: () => ended,
-    async flushBuffered() {
-      if (bufferedData.length > 0) {
-        const combined = Buffer.concat(bufferedData).toString()
-        bufferedData.length = 0
-        try {
-          await sendStdin(combined)
-        } catch {
-          // Command may have exited
-        }
-      }
-    },
-    startForwarding() {
-      process.stdin.removeAllListeners('data')
-      process.stdin.on('data', async (data) => {
-        try {
-          await sendStdin(data.toString())
-        } catch {
-          // Command may have exited
-        }
-      })
-    },
-    cleanup() {
-      process.stdin.pause()
-      process.stdin.removeAllListeners()
-    },
-  }
-}
-
 async function runCommand(
   sandbox: e2b.Sandbox,
   command: string,
   opts: ExecOptions
 ) {
-  const hasPipedInput = !process.stdin.isTTY
-  const stdinForwarder = hasPipedInput
-    ? setupStdinForwarding((data) =>
-        sandbox.commands.sendStdin(handle.pid, data)
-      )
-    : null
-
   const handle = await sandbox.commands.run(command, {
     background: true,
-    ...(hasPipedInput && { stdin: true }),
     cwd: opts.cwd,
     user: opts.user,
     envs: opts.env,
@@ -155,14 +123,6 @@ async function runCommand(
       process.stderr.write(data)
     },
   })
-
-  if (stdinForwarder) {
-    await stdinForwarder.flushBuffered()
-
-    if (!stdinForwarder.ended()) {
-      stdinForwarder.startForwarding()
-    }
-  }
 
   const removeSignalHandlers = setupSignalHandlers(async () => {
     await handle.kill().catch(() => {})
@@ -182,7 +142,6 @@ async function runCommand(
     throw err
   } finally {
     removeSignalHandlers()
-    stdinForwarder?.cleanup()
   }
 }
 
@@ -211,12 +170,12 @@ function handleExecError(err: unknown, sandboxID: string): never {
   }
 
   // Invalid argument - translate SDK params to CLI flags
+  // Only replace technical terms unlikely to appear in normal text
   if (err instanceof InvalidArgumentError) {
     let message = err.message
-    message = message.replace(/\bcwd\b/gi, '--cwd')
-    message = message.replace(/\buser\b/gi, '--user')
-    message = message.replace(/\benvs?\b/gi, '--env')
-    message = message.replace(/\btimeoutMs\b/gi, '--timeout')
+    message = message.replace(/\bcwd\b/g, '--cwd')
+    message = message.replace(/\benvs?\b/g, '--env')
+    message = message.replace(/\btimeoutMs\b/g, '--timeout')
     console.error(`e2b: ${message}`)
     process.exit(1)
   }
