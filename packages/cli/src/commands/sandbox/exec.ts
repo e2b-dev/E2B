@@ -173,9 +173,8 @@ function handleExecError(err: unknown, sandboxID: string): never {
   // Only replace technical terms unlikely to appear in normal text
   if (err instanceof InvalidArgumentError) {
     let message = err.message
-    message = message.replace(/\bcwd\b/g, '--cwd')
-    message = message.replace(/\benvs?\b/g, '--env')
-    message = message.replace(/\btimeoutMs\b/g, '--timeout')
+    message = message.replace(/\btimeout\b/g, '--timeout')
+
     console.error(`e2b: ${message}`)
     process.exit(1)
   }
@@ -183,7 +182,8 @@ function handleExecError(err: unknown, sandboxID: string): never {
   // Generic error - translate common SDK params to CLI flags
   const errMessage = err instanceof Error ? err.message : String(err)
   let message = errMessage
-  message = message.replace(/\btimeoutMs\b/gi, '--timeout')
+  message = message.replace(/\btimeout\b/gi, '--timeout')
+
   console.error(`e2b: ${message}`)
   process.exit(1)
 }
