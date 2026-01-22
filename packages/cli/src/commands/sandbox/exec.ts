@@ -153,6 +153,11 @@ async function runCommand(
     const result = await handle.wait()
     removeSignalHandlers()
 
+    // If we're exiting due to a signal, use the signal exit code.
+    if (signalExit !== null) {
+      process.exit(signalExit)
+    }
+
     if (result.error) {
       console.error(result.error)
     }
