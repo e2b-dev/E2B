@@ -111,7 +111,7 @@ def get_all_files_in_path(
             if include_directories:
                 files.add(file_path)
             dir_files = glob.glob(
-                str(pathlib.PurePath(file).joinpath("/**/*")),
+                str(pathlib.PurePath(file).joinpath("**/*")),
                 flags=glob.GLOBSTAR,
                 root_dir=abs_context_path,
                 exclude=ignore_patterns,
