@@ -23,7 +23,6 @@ from e2b.template.utils import (
     read_gcp_service_account_json,
     get_caller_frame,
     is_safe_relative,
-    normalize_path,
 )
 from types import TracebackType
 
