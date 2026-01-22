@@ -1,6 +1,12 @@
+import os
+
+import pytest
+
 from e2b.template.utils import normalize_path
 
 
+# Skip if not on Linux/Unix
+@pytest.mark.skipif(not os.name == "posix", reason="Unix-specific path tests")
 class TestBasicPathNormalization:
     def test_should_resolve_parent_directory_references(self):
         assert normalize_path("/foo/bar/../baz") == "/foo/baz"
@@ -24,6 +30,8 @@ class TestBasicPathNormalization:
         assert normalize_path("./foo/bar") == "foo/bar"
 
 
+# Skip if not on Windows
+@pytest.mark.skipif(not os.name == "nt", reason="Windows-specific path tests")
 class TestWindowsPathsConvertedToPosixStyle:
     """
     Note: On Unix systems, backslash is a valid filename character, not a path separator.

@@ -67,7 +67,7 @@ class TemplateBuilder:
         """
         srcs = [src] if isinstance(src, (str, Path)) else src
 
-        normalized_dest = str(pathlib.PurePath(dest))
+        normalized_dest = str(pathlib.PurePosixPath(dest))
 
         for src_item in srcs:
             src_item = str(pathlib.PurePath(src_item))
