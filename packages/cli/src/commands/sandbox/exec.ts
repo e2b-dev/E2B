@@ -59,28 +59,33 @@ export const execCommand = new commander.Command('exec')
 
       const apiKey = ensureAPIKey()
       const command = commandParts.join(' ')
-      const sandbox = await Sandbox.connect(sandboxID, { apiKey })
+      try {
+        const sandbox = await Sandbox.connect(sandboxID, { apiKey })
 
-      if (opts.background) {
-        const handle = await sandbox.commands.run(command, {
-          background: true,
-          cwd: opts.cwd,
-          user: opts.user,
-          envs: opts.env,
-          timeoutMs: NO_COMMAND_TIMEOUT,
-        })
+        if (opts.background) {
+          const handle = await sandbox.commands.run(command, {
+            background: true,
+            cwd: opts.cwd,
+            user: opts.user,
+            envs: opts.env,
+            timeoutMs: NO_COMMAND_TIMEOUT,
+          })
 
-        console.error(handle.pid)
+          console.error(handle.pid)
 
-        await handle.disconnect()
+          await handle.disconnect()
 
-        // We always exit with code 0 when running in background.
-        process.exit(0)
+          // We always exit with code 0 when running in background.
+          process.exit(0)
+        }
+
+        const exitCode = await runCommand(sandbox, command, opts)
+
+        process.exit(exitCode)
+      } catch (err: any) {
+        console.error(err)
+        process.exit(1)
       }
-
-      const exitCode = await runCommand(sandbox, command, opts)
-
-      process.exit(exitCode)
     }
   )
 
@@ -96,10 +101,20 @@ async function runCommand(
     envs: opts.env,
     timeoutMs: NO_COMMAND_TIMEOUT,
     onStdout: (data) => {
-      process.stdout.write(data)
+      try {
+        process.stdout.write(data)
+      } catch (err: any) {
+        console.error(err)
+        handle.kill()
+      }
     },
     onStderr: (data) => {
-      process.stderr.write(data)
+      try {
+        process.stderr.write(data)
+      } catch (err: any) {
+        console.error(err)
+        handle.kill()
+      }
     },
   })
 
