@@ -101,20 +101,20 @@ async function runCommand(
     user: opts.user,
     envs: opts.env,
     timeoutMs: NO_COMMAND_TIMEOUT,
-    onStdout: (data) => {
+    onStdout: async (data) => {
       try {
         process.stdout.write(data)
       } catch (err: any) {
         console.error(err)
-        handle.kill()
+        await handle.kill()
       }
     },
-    onStderr: (data) => {
+    onStderr: async (data) => {
       try {
         process.stderr.write(data)
       } catch (err: any) {
         console.error(err)
-        handle.kill()
+        await handle.kill()
       }
     },
   })
