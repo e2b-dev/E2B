@@ -8,20 +8,12 @@
  */
 
 import * as fs from 'fs'
-import * as os from 'os'
 
-import * as e2b from 'e2b'
-import {
-  CommandExitError,
-  SandboxError,
-  TimeoutError,
-  NotFoundError,
-  AuthenticationError,
-  InvalidArgumentError,
-} from 'e2b'
+import { Sandbox, CommandExitError } from 'e2b'
 import * as commander from 'commander'
 
 import { ensureAPIKey } from '../../api'
+import { setupSignalHandlers } from 'src/utils/signal'
 
 interface ExecOptions {
   background?: boolean
@@ -65,63 +57,38 @@ export const execCommand = new commander.Command('exec')
         // fstatSync may fail in some environments, ignore
       }
 
-      try {
-        const apiKey = ensureAPIKey()
-        const command = commandParts.join(' ')
-        const sandbox = await e2b.Sandbox.connect(sandboxID, { apiKey })
+      const apiKey = ensureAPIKey()
+      const command = commandParts.join(' ')
+      const sandbox = await Sandbox.connect(sandboxID, { apiKey })
 
-        if (opts.background) {
-          const handle = await sandbox.commands.run(command, {
-            background: true,
-            cwd: opts.cwd,
-            user: opts.user,
-            envs: opts.env,
-            timeoutMs: NO_COMMAND_TIMEOUT,
-          })
+      if (opts.background) {
+        const handle = await sandbox.commands.run(command, {
+          background: true,
+          cwd: opts.cwd,
+          user: opts.user,
+          envs: opts.env,
+          timeoutMs: NO_COMMAND_TIMEOUT,
+        })
 
-          console.error(handle.pid)
+        console.error(handle.pid)
 
-          await handle.disconnect()
+        await handle.disconnect()
 
-          process.exit(0)
-        }
-
-        await runCommand(sandbox, command, opts)
-      } catch (err: any) {
-        handleExecError(err, sandboxID)
+        // We always exit with code 0 when running in background.
+        process.exit(0)
       }
+
+      const exitCode = await runCommand(sandbox, command, opts)
+
+      process.exit(exitCode)
     }
   )
 
-function getSignalExitCode(signal: NodeJS.Signals): number {
-  // Standard Unix convention: 128 + signal number
-  const signalNumber = os.constants.signals[signal] ?? 1
-
-  return 128 + signalNumber
-}
-
-// Signals we handle - filtered to those defined by the OS
-// Note: SIGKILL and SIGSTOP cannot be caught
-const HANDLED_SIGNALS = (
-  ['SIGINT', 'SIGTERM', 'SIGHUP', 'SIGQUIT', 'SIGABRT', 'SIGPIPE'] as const
-).filter((sig) => sig in os.constants.signals)
-
-function setupSignalHandlers(
-  onSignal: (signal: NodeJS.Signals) => Promise<void>
-): () => void {
-  const handler = (signal: NodeJS.Signals) => onSignal(signal)
-
-  HANDLED_SIGNALS.forEach((sig) => process.on(sig, handler))
-
-  return () =>
-    HANDLED_SIGNALS.forEach((sig) => process.removeListener(sig, handler))
-}
-
 async function runCommand(
-  sandbox: e2b.Sandbox,
+  sandbox: Sandbox,
   command: string,
   opts: ExecOptions
-) {
+): Promise<number> {
   const handle = await sandbox.commands.run(command, {
     background: true,
     cwd: opts.cwd,
@@ -136,84 +103,27 @@ async function runCommand(
     },
   })
 
-  let signalExit: number | null = null
-
-  const removeSignalHandlers = setupSignalHandlers(async (signal) => {
-    // Mark that we're exiting due to signal
-    signalExit = getSignalExitCode(signal)
-
-    // Kill the remote process and wait for it.
-    // The exec handler should also remove the signal handler and process exit.
-    try {
-      await handle.kill()
-    } catch {
-      // Ignore kill errors (sandbox may already be gone) or there might be network issues.
-      removeSignalHandlers()
-      process.exit(signalExit)
-    }
+  const removeSignalHandlers = setupSignalHandlers(async () => {
+    // Kill the remote process - main loop handles exit code.
+    await handle.kill()
   })
 
   try {
     const result = await handle.wait()
-    removeSignalHandlers()
 
-    // If we're exiting due to a signal, use the signal exit code.
-    if (signalExit !== null) {
-      process.exit(signalExit)
-    }
-
-    if (result.error) {
-      console.error(result.error)
-    }
-
-    process.exit(result.exitCode)
+    return result.exitCode
   } catch (err) {
-    removeSignalHandlers()
-
     if (handle.error) {
       console.error(handle.error)
     }
 
-    // If we're exiting due to a signal, use the signal exit code
-    if (signalExit !== null) {
-      process.exit(signalExit)
+    if (err instanceof CommandExitError) {
+      return err.exitCode
     }
 
-    handleExecError(err, sandbox.sandboxId)
+    // If exit code is not from the command we throw the error.
+    throw err
+  } finally {
+    removeSignalHandlers()
   }
-}
-
-function handleExecError(err: unknown, sandboxID: string): never {
-  if (err instanceof CommandExitError) {
-    process.exit(err.exitCode)
-  }
-
-  if (err instanceof TimeoutError) {
-    console.error(`e2b: timeout: ${err.message}`)
-    process.exit(124)
-  }
-
-  if (err instanceof NotFoundError) {
-    console.error(`e2b: sandbox '${sandboxID}' not found: ${err.message}`)
-    process.exit(1)
-  }
-
-  if (err instanceof AuthenticationError) {
-    console.error(
-      `e2b: authentication failed - check E2B_API_KEY: ${err.message}`
-    )
-    process.exit(1)
-  }
-
-  if (err instanceof InvalidArgumentError) {
-    console.error(`e2b: invalid argument: ${err.message}`)
-    process.exit(1)
-  }
-
-  if (err instanceof SandboxError) {
-    console.error(`e2b: error: ${err.message}`)
-    process.exit(1)
-  }
-
-  throw err
 }
