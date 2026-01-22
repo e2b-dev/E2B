@@ -7,9 +7,13 @@
  * to add stdin close signaling before it can be implemented.
  */
 
+import * as fs from 'fs'
+import * as os from 'os'
+
 import * as e2b from 'e2b'
 import {
   CommandExitError,
+  SandboxError,
   TimeoutError,
   NotFoundError,
   AuthenticationError,
@@ -18,6 +22,15 @@ import {
 import * as commander from 'commander'
 
 import { ensureAPIKey } from '../../api'
+
+interface ExecOptions {
+  background?: boolean
+  cwd?: string
+  user?: string
+  env?: Record<string, string>
+}
+
+const NO_COMMAND_TIMEOUT = 0
 
 export const execCommand = new commander.Command('exec')
   .description('execute a command in a running sandbox')
@@ -38,20 +51,18 @@ export const execCommand = new commander.Command('exec')
     },
     {} as Record<string, string>
   )
-  .option(
-    '-t, --timeout <ms>',
-    'timeout in milliseconds (default 0 = no timeout)',
-    parseInt,
-    0
-  )
   .alias('ex')
   .action(
     async (sandboxID: string, commandParts: string[], opts: ExecOptions) => {
-      // Warn if stdin is being piped (not supported)
-      if (!process.stdin.isTTY) {
-        console.error(
-          'e2b: warning: stdin piping is not supported, input will be ignored'
-        )
+      // Check if stdin is a pipe (data being piped in) - not supported
+      try {
+        const stdinStats = fs.fstatSync(0)
+        if (stdinStats.isFIFO()) {
+          console.error('e2b: stdin piping is not supported')
+          process.exit(2)
+        }
+      } catch {
+        // fstatSync may fail in some environments, ignore
       }
 
       try {
@@ -65,12 +76,12 @@ export const execCommand = new commander.Command('exec')
             cwd: opts.cwd,
             user: opts.user,
             envs: opts.env,
-            timeoutMs: opts.timeout,
+            timeoutMs: NO_COMMAND_TIMEOUT,
           })
 
           console.error(handle.pid)
 
-          handle.disconnect()
+          await handle.disconnect()
 
           process.exit(0)
         }
@@ -84,25 +95,28 @@ export const execCommand = new commander.Command('exec')
     }
   )
 
-interface ExecOptions {
-  background?: boolean
-  cwd?: string
-  user?: string
-  env?: Record<string, string>
-  timeout?: number
+function getSignalExitCode(signal: NodeJS.Signals): number {
+  // Standard Unix convention: 128 + signal number
+  const signalNumber = os.constants.signals[signal] ?? 1
+
+  return 128 + signalNumber
 }
 
-function setupSignalHandlers(onSignal: () => Promise<void>): () => void {
-  const signals: NodeJS.Signals[] = ['SIGINT', 'SIGTERM', 'SIGHUP']
+// Signals we handle - filtered to those defined by the OS
+// Note: SIGKILL and SIGSTOP cannot be caught
+const HANDLED_SIGNALS = (
+  ['SIGINT', 'SIGTERM', 'SIGHUP', 'SIGQUIT', 'SIGABRT', 'SIGPIPE'] as const
+).filter((sig) => sig in os.constants.signals)
 
-  const handler = async (signal: NodeJS.Signals) => {
-    await onSignal()
-    process.exit(signal === 'SIGINT' ? 130 : signal === 'SIGTERM' ? 143 : 129)
-  }
+function setupSignalHandlers(
+  onSignal: (signal: NodeJS.Signals) => Promise<void>
+): () => void {
+  const handler = (signal: NodeJS.Signals) => onSignal(signal)
 
-  signals.forEach((sig) => process.on(sig, handler))
+  HANDLED_SIGNALS.forEach((sig) => process.on(sig, handler))
 
-  return () => signals.forEach((sig) => process.removeListener(sig, handler))
+  return () =>
+    HANDLED_SIGNALS.forEach((sig) => process.removeListener(sig, handler))
 }
 
 async function runCommand(
@@ -115,7 +129,7 @@ async function runCommand(
     cwd: opts.cwd,
     user: opts.user,
     envs: opts.env,
-    timeoutMs: opts.timeout,
+    timeoutMs: NO_COMMAND_TIMEOUT,
     onStdout: (data) => {
       process.stdout.write(data)
     },
@@ -124,66 +138,67 @@ async function runCommand(
     },
   })
 
-  const removeSignalHandlers = setupSignalHandlers(async () => {
-    await handle.kill().catch(() => {})
+  let signalExit: number | null = null
+
+  const removeSignalHandlers = setupSignalHandlers(async (signal) => {
+    // Mark that we're exiting due to signal
+    signalExit = getSignalExitCode(signal)
+
+    // Kill the remote process and wait for it.
+    // The exec handler should also remove the signal handler and process exit.
+    await handle.kill()
   })
 
   try {
     const result = await handle.wait()
-
-    if (result.exitCode !== 0) {
-      process.exit(result.exitCode)
-    }
-  } catch (err) {
-    if (err instanceof CommandExitError) {
-      process.exit(err.exitCode)
-    }
-
-    throw err
-  } finally {
     removeSignalHandlers()
+
+    if (result.error) {
+      console.error(result.error)
+    }
+
+    process.exit(result.exitCode)
+  } catch (err) {
+    removeSignalHandlers()
+
+    // If we're exiting due to a signal, use the signal exit code
+    if (signalExit !== null) {
+      process.exit(signalExit)
+    }
+
+    handleExecError(err, sandbox.sandboxId)
   }
 }
 
 function handleExecError(err: unknown, sandboxID: string): never {
-  // Command exited with non-zero - propagate exit code silently
   if (err instanceof CommandExitError) {
     process.exit(err.exitCode)
   }
 
-  // Timeout from -t flag (exit 124, like Linux timeout command)
   if (err instanceof TimeoutError) {
-    console.error('e2b: command timed out')
+    console.error(`e2b: timeout: ${err.message}`)
     process.exit(124)
   }
 
-  // Sandbox not found
   if (err instanceof NotFoundError) {
-    console.error(`e2b: sandbox '${sandboxID}' not found`)
+    console.error(`e2b: sandbox '${sandboxID}' not found: ${err.message}`)
     process.exit(1)
   }
 
-  // Authentication failed
   if (err instanceof AuthenticationError) {
-    console.error('e2b: authentication failed - check E2B_API_KEY')
+    console.error(`e2b: authentication failed - check E2B_API_KEY: ${err.message}`)
     process.exit(1)
   }
 
-  // Invalid argument - translate SDK params to CLI flags
-  // Only replace technical terms unlikely to appear in normal text
   if (err instanceof InvalidArgumentError) {
-    let message = err.message
-    message = message.replace(/\btimeout\b/g, '--timeout')
-
-    console.error(`e2b: ${message}`)
+    console.error(`e2b: invalid argument: ${err.message}`)
     process.exit(1)
   }
 
-  // Generic error - translate common SDK params to CLI flags
-  const errMessage = err instanceof Error ? err.message : String(err)
-  let message = errMessage
-  message = message.replace(/\btimeout\b/gi, '--timeout')
+  if (err instanceof SandboxError) {
+    console.error(`e2b: error: ${err.message}`)
+    process.exit(1)
+  }
 
-  console.error(`e2b: ${message}`)
-  process.exit(1)
+  throw err
 }
