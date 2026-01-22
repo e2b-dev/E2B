@@ -1,9 +1,11 @@
 import hashlib
 import os
+import pathlib
 import io
 import tarfile
 import json
 import stat
+
 from wcmatch import glob
 import re
 import inspect
@@ -109,7 +111,7 @@ def get_all_files_in_path(
             if include_directories:
                 files.add(file_path)
             dir_files = glob.glob(
-                normalize_path(file) + "/**/*",
+                str(pathlib.PurePath(file).joinpath("/**/*")),
                 flags=glob.GLOBSTAR,
                 root_dir=abs_context_path,
                 exclude=ignore_patterns,
@@ -351,17 +353,12 @@ def read_gcp_service_account_json(
 
 def is_safe_relative(src: str) -> bool:
     """
-    Returns True if src is a relative path and does not contain any up-path parts.
-    Works on both Windows and Unix.
+    Returns True if src is a relative path that stays within the context directory.
+    Rejects absolute paths and paths that traverse outside via '..'.
 
-    :param src: The path to check
-
-    :return: True if the path is a safe relative path, False otherwise
+    :param src: Source path to validate
+    :return: True if the path is safe (relative and doesn't escape), False otherwise
     """
-    norm_path = normalize_path(src)
-    return not (
-        os.path.isabs(norm_path)
-        or norm_path == ".."
-        or norm_path.startswith("../")
-        or norm_path.startswith("..\\")
-    )
+    normalized = pathlib.PurePath(src)
+    # After normalize_path, all separators are forward slashes
+    return not normalized.is_absolute() and ".." not in normalized.parts

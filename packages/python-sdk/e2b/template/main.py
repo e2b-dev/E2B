@@ -1,4 +1,5 @@
 import json
+import pathlib
 from typing import Dict, List, Optional, Union, Literal
 from pathlib import Path
 
@@ -66,11 +67,11 @@ class TemplateBuilder:
         """
         srcs = [src] if isinstance(src, (str, Path)) else src
 
-        for src_item in srcs:
-            normalized_src_item = normalize_path(str(src_item))
-            normalized_dest = normalize_path(str(dest))
+        normalized_dest = str(pathlib.PurePath(dest))
 
-            if not is_safe_relative(str(src_item)):
+        for src_item in srcs:
+            src_item = str(pathlib.PurePath(src_item))
+            if not is_safe_relative(src_item):
                 caller_frame = get_caller_frame(STACK_TRACE_DEPTH - 1)
                 stack_trace = None
                 if caller_frame is not None:
@@ -86,7 +87,7 @@ class TemplateBuilder:
                 ).with_traceback(stack_trace)
 
             args = [
-                normalized_src_item,
+                src_item,
                 normalized_dest,
                 user or "",
                 pad_octal(mode) if mode else "",
@@ -1317,9 +1318,11 @@ class TemplateBase:
                         *self._file_ignore_patterns,
                         *read_dockerignore(self._file_context_path),
                     ],
-                    resolve_symlinks
-                    if resolve_symlinks is not None
-                    else RESOLVE_SYMLINKS,
+                    (
+                        resolve_symlinks
+                        if resolve_symlinks is not None
+                        else RESOLVE_SYMLINKS
+                    ),
                     stack_trace,
                 )
 
