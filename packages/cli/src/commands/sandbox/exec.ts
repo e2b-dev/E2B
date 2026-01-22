@@ -57,9 +57,10 @@ export const execCommand = new commander.Command('exec')
         // fstatSync may fail in some environments, ignore
       }
 
-      const apiKey = ensureAPIKey()
       const command = commandParts.join(' ')
       try {
+        const apiKey = ensureAPIKey()
+
         const sandbox = await Sandbox.connect(sandboxID, { apiKey })
 
         if (opts.background) {
