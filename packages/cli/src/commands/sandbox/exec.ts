@@ -143,7 +143,7 @@ async function runCommand(
 
   const handle = await sandbox.commands.run(command, {
     background: true,
-    stdin: hasPipedInput,
+    ...(hasPipedInput && { stdin: true }),
     cwd: opts.cwd,
     user: opts.user,
     envs: opts.env,
