@@ -87,8 +87,6 @@ export const execCommand = new commander.Command('exec')
         }
 
         await runCommand(sandbox, command, opts)
-
-        process.exit(0)
       } catch (err: any) {
         handleExecError(err, sandboxID)
       }
