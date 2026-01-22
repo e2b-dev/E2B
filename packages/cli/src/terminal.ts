@@ -62,7 +62,7 @@ export async function spawnConnectedTerminal(sandbox: e2b.Sandbox) {
   }
 }
 
-class BatchedQueue<T> {
+export class BatchedQueue<T> {
   private queue: T[] = []
   private isFlushing = false
   private intervalId?: NodeJS.Timeout
@@ -93,6 +93,14 @@ class BatchedQueue<T> {
     }
 
     await this.flush()
+  }
+
+  cancel() {
+    if (this.intervalId) {
+      clearInterval(this.intervalId)
+      this.intervalId = undefined
+    }
+    this.queue = []
   }
 
   private async flush() {
