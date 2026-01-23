@@ -402,6 +402,28 @@ export class Filesystem {
   }
 
   /**
+   * Write multiple files.
+   *
+   *
+   * Writing to a file that doesn't exist creates the file.
+   *
+   * Writing to a file that already exists overwrites the file.
+   *
+   * Writing to a file at path that doesn't exist creates the necessary directories.
+   *
+   * @param files list of files to write as `WriteEntry` objects, each containing `path` and `data`.
+   * @param opts connection options.
+   *
+   * @returns information about the written files
+   */
+  async writeFiles(
+    files: WriteEntry[],
+    opts?: FilesystemRequestOpts
+  ): Promise<WriteInfo[]> {
+    return this.write(files, opts) as Promise<WriteInfo[]>
+  }
+
+  /**
    * List entries in a directory.
    *
    * @param path path to the directory.
