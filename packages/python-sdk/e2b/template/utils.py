@@ -38,6 +38,11 @@ def read_dockerignore(context_path: str) -> List[str]:
     ]
 
 
+def _posix_pattern(p: str) -> str:
+    # wcmatch expects Unix-style separators in patterns
+    return p.replace("\\", "/")
+
+
 def get_all_files_in_path(
     src: str,
     context_path: str,
@@ -57,33 +62,41 @@ def get_all_files_in_path(
 
     # Use glob to find all files/directories matching the pattern under context_path
     abs_context_path = os.path.abspath(context_path)
+
+    src_pat = _posix_pattern(src)
+    ignore_pats = [_posix_pattern(p) for p in ignore_patterns]
+
     files_glob = glob.glob(
         # Replace backslashes with forward slashes for glob compatibility
-        src.replace("\\", "/"),
+        src_pat,
         flags=glob.GLOBSTAR,
         root_dir=abs_context_path,
-        exclude=ignore_patterns,
+        exclude=ignore_pats,
     )
 
-    for file in files_glob:
+    for rel in files_glob:
         # Join it with abs_context_path to get the absolute path
-        file_path = os.path.join(abs_context_path, file)
+        abs_path = os.path.normpath(os.path.join(abs_context_path, rel))
 
-        if os.path.isdir(file_path):
+        if os.path.isdir(abs_path):
             # If it's a directory, add the directory and all entries recursively
             if include_directories:
-                files.add(file_path)
+                files.add(abs_path)
+
+            rel_pat = _posix_pattern(rel).rstrip("/")
+            dir_pat = f"{rel_pat}/**/*"
+
             dir_files = glob.glob(
-                str(pathlib.Path(file) / "**" / "*"),
+                dir_pat,
                 flags=glob.GLOBSTAR,
                 root_dir=abs_context_path,
                 exclude=ignore_patterns,
             )
             for dir_file in dir_files:
-                dir_file_path = os.path.join(abs_context_path, dir_file)
-                files.add(dir_file_path)
+                files.add(os.path.normpath(os.path.join(abs_context_path, dir_file)))
+
         else:
-            files.add(file_path)
+            files.add(abs_path)
 
     return sorted(list(files))
 
