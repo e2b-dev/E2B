@@ -106,9 +106,7 @@ async def test_overwrite_file(async_sandbox: AsyncSandbox, debug):
         await async_sandbox.files.remove(filename)
 
 
-async def test_write_to_non_existing_directory(
-    async_sandbox: AsyncSandbox, debug
-):
+async def test_write_to_non_existing_directory(async_sandbox: AsyncSandbox, debug):
     filename = f"non_existing_dir_{uuid.uuid4()}/test_write.txt"
     content = "This should succeed too."
 
