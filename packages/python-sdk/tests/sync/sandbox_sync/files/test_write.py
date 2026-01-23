@@ -4,7 +4,7 @@ import uuid
 from e2b.sandbox.filesystem.filesystem import WriteInfo, WriteEntry
 
 
-def test_write_text_file(sandbox, debug, request):
+def test_write_text_file(sandbox, debug):
     filename = "test_write.txt"
     content = "This is a test file."
 
@@ -17,11 +17,11 @@ def test_write_text_file(sandbox, debug, request):
     read_content = sandbox.files.read(filename)
     assert read_content == content
 
-    if debug and sandbox._is_open:
+    if debug:
         sandbox.files.remove(filename)
 
 
-def test_write_binary_file(sandbox, debug, request):
+def test_write_binary_file(sandbox, debug):
     filename = "test_write.bin"
     text = "This is a test binary file."
     # equivalent to `open("path/to/local/file", "rb")`
@@ -36,11 +36,11 @@ def test_write_binary_file(sandbox, debug, request):
     read_content = sandbox.files.read(filename)
     assert read_content == text
 
-    if debug and sandbox._is_open:
+    if debug:
         sandbox.files.remove(filename)
 
 
-def test_write_multiple_files(sandbox, debug, request):
+def test_write_multiple_files(sandbox, debug):
     num_test_files = 10
 
     # Attempt to write with empty files array
@@ -87,13 +87,13 @@ def test_write_multiple_files(sandbox, debug, request):
         read_content = sandbox.files.read(info.path)
         assert read_content == files[i]["data"]
 
-    if debug and sandbox._is_open:
+    if debug:
         sandbox.files.remove(one_file_path)
         for i in range(num_test_files):
             sandbox.files.remove(f"test_write_{i}.txt")
 
 
-def test_overwrite_file(sandbox, debug, request):
+def test_overwrite_file(sandbox, debug):
     filename = "test_overwrite.txt"
     initial_content = "Initial content."
     new_content = "New content."
@@ -103,11 +103,11 @@ def test_overwrite_file(sandbox, debug, request):
     read_content = sandbox.files.read(filename)
     assert read_content == new_content
 
-    if debug and sandbox._is_open:
+    if debug:
         sandbox.files.remove(filename)
 
 
-def test_write_to_non_existing_directory(sandbox, debug, request):
+def test_write_to_non_existing_directory(sandbox, debug):
     filename = "non_existing_dir/test_write.txt"
     content = "This should succeed too."
 
@@ -118,7 +118,7 @@ def test_write_to_non_existing_directory(sandbox, debug, request):
     read_content = sandbox.files.read(filename)
     assert read_content == content
 
-    if debug and sandbox._is_open:
+    if debug:
         sandbox.files.remove(filename)
 
 
