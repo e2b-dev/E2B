@@ -197,9 +197,10 @@ def tar_file_stream(
             file_name, file_context_path, ignore_patterns, True
         )
         for file in files:
-            tar.add(
-                file, arcname=os.path.relpath(file, file_context_path), recursive=False
-            )
+            # Use POSIX-style paths for tar arcnames (forward slashes)
+            # regardless of the platform, since tars are extracted on Linux
+            arcname = pathlib.PurePath(os.path.relpath(file, file_context_path)).as_posix()
+            tar.add(file, arcname=arcname, recursive=False)
 
     return tar_buffer
 
