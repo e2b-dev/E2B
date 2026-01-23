@@ -6,8 +6,13 @@ from e2b.template.utils import is_safe_relative
 
 
 class TestAbsolutePaths:
-    def test_should_return_true_for_unix_absolute_paths(self):
+    @pytest.mark.skipif(not os.name == "nt", reason="Windows-specific path tests")
+    def test_should_return_true_for_absolute_paths_unix(self):
         assert is_safe_relative("/absolute/path") is False
+
+    @pytest.mark.skipif(not os.name == "posix", reason="Unix-specific path tests")
+    def test_should_return_true_for_absolute_paths_windows(self):
+        assert is_safe_relative("C:\\absolute\\path") is False
 
 
 class TestParentDirectoryTraversal:
