@@ -10,13 +10,6 @@ async def test_write_text_file(async_sandbox: AsyncSandbox, debug, request):
     filename = "test_write.txt"
     content = "This is a test file."
 
-    if debug:
-        request.addfinalizer(
-            lambda: async_sandbox.files.remove(filename)
-            if async_sandbox._is_open
-            else None
-        )
-
     info = await async_sandbox.files.write(filename, content)
     assert info.path == f"/home/user/{filename}"
 
@@ -26,19 +19,15 @@ async def test_write_text_file(async_sandbox: AsyncSandbox, debug, request):
     read_content = await async_sandbox.files.read(filename)
     assert read_content == content
 
+    if debug and async_sandbox._is_open:
+        await async_sandbox.files.remove(filename)
+
 
 async def test_write_binary_file(async_sandbox: AsyncSandbox, debug, request):
     filename = "test_write.bin"
     text = "This is a test binary file."
     # equivalent to `open("path/to/local/file", "rb")`
     content = io.BytesIO(text.encode("utf-8"))
-
-    if debug:
-        request.addfinalizer(
-            lambda: async_sandbox.files.remove(filename)
-            if async_sandbox._is_open
-            else None
-        )
 
     info = await async_sandbox.files.write(filename, content)
     assert info.path == f"/home/user/{filename}"
@@ -49,8 +38,13 @@ async def test_write_binary_file(async_sandbox: AsyncSandbox, debug, request):
     read_content = await async_sandbox.files.read(filename)
     assert read_content == text
 
+    if debug and async_sandbox._is_open:
+        await async_sandbox.files.remove(filename)
+
 
 async def test_write_multiple_files(async_sandbox: AsyncSandbox, debug, request):
+    num_test_files = 10
+
     # Attempt to write with empty files array
     empty_info = await async_sandbox.files.write_files([])
     assert isinstance(empty_info, list)
@@ -61,13 +55,6 @@ async def test_write_multiple_files(async_sandbox: AsyncSandbox, debug, request)
     info = await async_sandbox.files.write_files(
         [WriteEntry(path=one_file_path, data="This is a test file.")]
     )
-
-    if debug:
-        request.addfinalizer(
-            lambda: async_sandbox.files.remove(one_file_path)
-            if async_sandbox._is_open
-            else None
-        )
 
     assert isinstance(info, list)
     assert len(info) == 1
@@ -82,18 +69,10 @@ async def test_write_multiple_files(async_sandbox: AsyncSandbox, debug, request)
 
     # Attempt to write with multiple files in array
     files = []
-    for i in range(10):
+    for i in range(num_test_files):
         path = f"test_write_{i}.txt"
         content = f"This is a test file {i}."
         files.append(WriteEntry(path=path, data=content))
-
-        if debug:
-            # Use default argument to capture current value of path
-            request.addfinalizer(
-                lambda p=path: async_sandbox.files.remove(p)
-                if async_sandbox._is_open
-                else None
-            )
 
     infos = await async_sandbox.files.write_files(files)
     assert isinstance(infos, list)
@@ -107,23 +86,24 @@ async def test_write_multiple_files(async_sandbox: AsyncSandbox, debug, request)
         read_content = await async_sandbox.files.read(info.path)
         assert read_content == files[i]["data"]
 
+    if debug and async_sandbox._is_open:
+        await async_sandbox.files.remove(one_file_path)
+        for i in range(num_test_files):
+            await async_sandbox.files.remove(f"test_write_{i}.txt")
+
 
 async def test_overwrite_file(async_sandbox: AsyncSandbox, debug, request):
     filename = "test_overwrite.txt"
     initial_content = "Initial content."
     new_content = "New content."
 
-    if debug:
-        request.addfinalizer(
-            lambda: async_sandbox.files.remove(filename)
-            if async_sandbox._is_open
-            else None
-        )
-
     await async_sandbox.files.write(filename, initial_content)
     await async_sandbox.files.write(filename, new_content)
     read_content = await async_sandbox.files.read(filename)
     assert read_content == new_content
+
+    if debug and async_sandbox._is_open:
+        await async_sandbox.files.remove(filename)
 
 
 async def test_write_to_non_existing_directory(
@@ -132,19 +112,15 @@ async def test_write_to_non_existing_directory(
     filename = f"non_existing_dir_{uuid.uuid4()}/test_write.txt"
     content = "This should succeed too."
 
-    if debug:
-        request.addfinalizer(
-            lambda: async_sandbox.files.remove(filename)
-            if async_sandbox._is_open
-            else None
-        )
-
     await async_sandbox.files.write(filename, content)
     exists = await async_sandbox.files.exists(filename)
     assert exists
 
     read_content = await async_sandbox.files.read(filename)
     assert read_content == content
+
+    if debug and async_sandbox._is_open:
+        await async_sandbox.files.remove(filename)
 
 
 async def test_write_with_secured_envd(async_sandbox_factory):

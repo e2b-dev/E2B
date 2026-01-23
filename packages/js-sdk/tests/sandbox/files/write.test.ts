@@ -1,5 +1,5 @@
 import path from 'path'
-import { assert, onTestFinished } from 'vitest'
+import { assert } from 'vitest'
 
 import { WriteEntry } from '../../../src/sandbox/filesystem'
 import { isDebug, sandboxTest } from '../../setup.js'
@@ -7,10 +7,6 @@ import { isDebug, sandboxTest } from '../../setup.js'
 sandboxTest('write file', async ({ sandbox }) => {
   const filename = 'test_write.txt'
   const content = 'This is a test file.'
-
-  if (isDebug) {
-    onTestFinished(async () => await sandbox.files.remove(filename))
-  }
 
   // Attempt to write with undefined path and content
   await sandbox.files
@@ -34,9 +30,15 @@ sandboxTest('write file', async ({ sandbox }) => {
   assert.isTrue(exists)
   const readContent = await sandbox.files.read(filename)
   assert.equal(readContent, content)
+
+  if (isDebug) {
+    await sandbox.files.remove(filename)
+  }
 })
 
 sandboxTest('write multiple files', async ({ sandbox }) => {
+  const numTestFiles = 10
+
   // Attempt to write with empty files array
   const emptyInfo = await sandbox.files.write([])
   assert.isTrue(Array.isArray(emptyInfo))
@@ -85,16 +87,12 @@ sandboxTest('write multiple files', async ({ sandbox }) => {
   // Attempt to write with multiple files in array
   const files: WriteEntry[] = []
 
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < numTestFiles; i++) {
     let path = ''
     if (i % 2 == 0) {
       path = `/${i}/multi_test_file${i}.txt`
     } else {
       path = `/home/user/multi_test_file${i}.txt`
-    }
-
-    if (isDebug) {
-      onTestFinished(async () => await sandbox.files.remove(path))
     }
 
     files.push({
@@ -122,15 +120,17 @@ sandboxTest('write multiple files', async ({ sandbox }) => {
     const readContent = await sandbox.files.read(file.path)
     assert.equal(readContent, file.data)
   }
+
+  if (isDebug) {
+    for (const file of files) {
+      await sandbox.files.remove(file.path)
+    }
+  }
 })
 
 sandboxTest('write file', async ({ sandbox }) => {
   const filename = 'test_write.txt'
   const content = 'This is a test file.'
-
-  if (isDebug) {
-    onTestFinished(async () => await sandbox.files.remove(filename))
-  }
 
   const info = await sandbox.files.write(filename, content)
   assert.isFalse(Array.isArray(info))
@@ -142,6 +142,10 @@ sandboxTest('write file', async ({ sandbox }) => {
   assert.isTrue(exists)
   const readContent = await sandbox.files.read(filename)
   assert.equal(readContent, content)
+
+  if (isDebug) {
+    await sandbox.files.remove(filename)
+  }
 })
 
 sandboxTest('overwrite file', async ({ sandbox }) => {
@@ -149,29 +153,29 @@ sandboxTest('overwrite file', async ({ sandbox }) => {
   const initialContent = 'Initial content.'
   const newContent = 'New content.'
 
-  if (isDebug) {
-    onTestFinished(async () => await sandbox.files.remove(filename))
-  }
-
   await sandbox.files.write(filename, initialContent)
   await sandbox.files.write(filename, newContent)
   const readContent = await sandbox.files.read(filename)
   assert.equal(readContent, newContent)
+
+  if (isDebug) {
+    await sandbox.files.remove(filename)
+  }
 })
 
 sandboxTest('write to non-existing directory', async ({ sandbox }) => {
   const filename = 'non_existing_dir/test_write.txt'
   const content = 'This should succeed too.'
 
-  if (isDebug) {
-    onTestFinished(async () => await sandbox.files.remove(filename))
-  }
-
   await sandbox.files.write(filename, content)
   const exists = await sandbox.files.exists(filename)
   assert.isTrue(exists)
   const readContent = await sandbox.files.read(filename)
   assert.equal(readContent, content)
+
+  if (isDebug) {
+    await sandbox.files.remove(filename)
+  }
 })
 
 sandboxTest('writeFiles with empty array', async ({ sandbox }) => {
@@ -181,14 +185,11 @@ sandboxTest('writeFiles with empty array', async ({ sandbox }) => {
 })
 
 sandboxTest('writeFiles with multiple files', async ({ sandbox }) => {
+  const numTestFiles = 10
   const files: WriteEntry[] = []
 
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < numTestFiles; i++) {
     const filePath = `writefiles_test_${i}.txt`
-
-    if (isDebug) {
-      onTestFinished(async () => await sandbox.files.remove(filePath))
-    }
 
     files.push({
       path: filePath,
@@ -215,6 +216,12 @@ sandboxTest('writeFiles with multiple files', async ({ sandbox }) => {
     const readContent = await sandbox.files.read(info.path)
     assert.equal(readContent, file.data)
   }
+
+  if (isDebug) {
+    for (const file of files) {
+      await sandbox.files.remove(file.path)
+    }
+  }
 })
 
 sandboxTest('writeFiles with different data types', async ({ sandbox }) => {
@@ -227,12 +234,6 @@ sandboxTest('writeFiles with different data types', async ({ sandbox }) => {
     { path: 'writefiles_arraybuffer.txt', data: arrayBufferData },
     { path: 'writefiles_blob.txt', data: blobData },
   ]
-
-  if (isDebug) {
-    for (const file of files) {
-      onTestFinished(async () => await sandbox.files.remove(file.path))
-    }
-  }
 
   const infos = await sandbox.files.writeFiles(files)
 
@@ -251,6 +252,12 @@ sandboxTest('writeFiles with different data types', async ({ sandbox }) => {
   // Verify Blob file
   const blobContent = await sandbox.files.read('writefiles_blob.txt')
   assert.equal(blobContent, 'Blob data')
+
+  if (isDebug) {
+    for (const file of files) {
+      await sandbox.files.remove(file.path)
+    }
+  }
 })
 
 sandboxTest('writeFiles creates parent directories', async ({ sandbox }) => {
@@ -260,10 +267,6 @@ sandboxTest('writeFiles creates parent directories', async ({ sandbox }) => {
       data: 'Content in nested directory',
     },
   ]
-
-  if (isDebug) {
-    onTestFinished(async () => await sandbox.files.remove(files[0].path))
-  }
 
   const infos = await sandbox.files.writeFiles(files)
 
@@ -278,16 +281,16 @@ sandboxTest('writeFiles creates parent directories', async ({ sandbox }) => {
 
   const content = await sandbox.files.read(infos[0].path)
   assert.equal(content, 'Content in nested directory')
+
+  if (isDebug) {
+    await sandbox.files.remove(files[0].path)
+  }
 })
 
 sandboxTest('writeFiles overwrites existing files', async ({ sandbox }) => {
   const filename = 'writefiles_overwrite.txt'
   const initialContent = 'Initial content'
   const newContent = 'New content'
-
-  if (isDebug) {
-    onTestFinished(async () => await sandbox.files.remove(filename))
-  }
 
   // Write initial file
   await sandbox.files.writeFiles([{ path: filename, data: initialContent }])
@@ -300,4 +303,8 @@ sandboxTest('writeFiles overwrites existing files', async ({ sandbox }) => {
 
   readContent = await sandbox.files.read(filename)
   assert.equal(readContent, newContent)
+
+  if (isDebug) {
+    await sandbox.files.remove(filename)
+  }
 })
