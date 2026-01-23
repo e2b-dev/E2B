@@ -56,13 +56,13 @@ def get_all_files_in_path(
 
     # Use glob to find all files/directories matching the pattern under context_path
     abs_context_path = os.path.abspath(context_path)
-    files_glob = glob.glob(
-        src,
-        flags=glob.GLOBSTAR,
-        root_dir=abs_context_path,
-        exclude=ignore_patterns,
-    )
+    root = pathlib.Path(abs_context_path)
 
+    files_glob = [
+        str(p)
+        for p in root.glob(src)
+        if not any(p.match(pattern) for pattern in ignore_patterns)
+    ]
     for file in files_glob:
         # Join it with abs_context_path to get the absolute path
         file_path = os.path.join(abs_context_path, file)
