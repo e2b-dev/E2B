@@ -6,7 +6,6 @@ import tarfile
 import json
 import stat
 
-import glob2
 from wcmatch import glob
 import re
 import inspect
