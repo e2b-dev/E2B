@@ -36,7 +36,7 @@ export function normalizeBuildArguments(
     buildOptions = restOpts
   }
 
-  if (!name) {
+  if (!name || name.length === 0) {
     throw new TemplateError('Name must be provided')
   }
 

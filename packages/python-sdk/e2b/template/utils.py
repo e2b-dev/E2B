@@ -27,9 +27,9 @@ def normalize_build_arguments(
     :return: Normalized template name
     :raises TemplateException: If no template name is provided
     """
-    if name:
+    if name and len(name) > 0:
         return name
-    if alias:
+    if alias and len(alias) > 0:
         return alias
     raise TemplateException("Name must be provided")
 

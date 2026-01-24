@@ -333,10 +333,10 @@ export async function waitForBuildFinish(
 
 export async function assignTags(
   client: ApiClient,
-  { target, tags }: { target: string; tags: string[] }
+  { targetName, tags }: { targetName: string; tags: string[] }
 ): Promise<TemplateTagInfo> {
   const res = await client.api.POST('/templates/tags', {
-    body: { target, tags },
+    body: { target: targetName, tags },
   })
 
   const error = handleApiError(res, TemplateError)

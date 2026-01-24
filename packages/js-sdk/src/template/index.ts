@@ -296,8 +296,8 @@ export class TemplateBase
   /**
    * Assign tag(s) to an existing template build.
    *
-   * @param target Target template in 'name:tag' format (the source build)
-   * @param tags Tag(s) to assign (string or array of strings)
+   * @param targetName Template name in 'name:tag' format (the source build to tag from)
+   * @param tags Tag or tags to assign
    * @param options Authentication options
    * @returns Tag info with buildId and assigned tags
    *
@@ -311,21 +311,21 @@ export class TemplateBase
    * ```
    */
   static async assignTags(
-    target: string,
+    targetName: string,
     tags: string | string[],
     options?: ConnectionOpts
   ): Promise<TemplateTagInfo> {
     const config = new ConnectionConfig(options)
     const client = new ApiClient(config)
-    const tagArray = Array.isArray(tags) ? tags : [tags]
-    return assignTags(client, { target, tags: tagArray })
+    const normalizedTags = Array.isArray(tags) ? tags : [tags]
+    return assignTags(client, { targetName, tags: normalizedTags })
   }
 
   /**
    * Remove tag(s) from a template.
    *
    * @param name Template name
-   * @param tags Tag(s) to remove
+   * @param tags Tag or tags to remove
    * @param options Authentication options
    *
    * @example
@@ -344,8 +344,8 @@ export class TemplateBase
   ): Promise<void> {
     const config = new ConnectionConfig(options)
     const client = new ApiClient(config)
-    const tagArray = Array.isArray(tags) ? tags : [tags]
-    return removeTags(client, { name, tags: tagArray })
+    const normalizedTags = Array.isArray(tags) ? tags : [tags]
+    return removeTags(client, { name, tags: normalizedTags })
   }
 
   fromDebianImage(variant: string = 'stable'): TemplateBuilder {

@@ -280,15 +280,15 @@ def check_alias_exists(client: AuthenticatedClient, alias: str) -> bool:
 
 
 def assign_tags(
-    client: AuthenticatedClient, target: str, tags: List[str]
+    client: AuthenticatedClient, target_name: str, tags: List[str]
 ) -> TemplateTagInfo:
     """
     Assign tag(s) to an existing template build.
 
     Args:
         client: Authenticated API client
-        target: Target template in 'name:tag' format (the source build)
-        tags: Tag(s) to assign
+        target_name: Template name in 'name:tag' format (the source build to tag from)
+        tags: Tags to assign
 
     Returns:
         TemplateTagInfo with build_id and assigned tags
@@ -296,7 +296,7 @@ def assign_tags(
     res = post_templates_tags.sync_detailed(
         client=client,
         body=AssignTemplateTagsRequest(
-            target=target,
+            target=target_name,
             tags=tags,
         ),
     )
