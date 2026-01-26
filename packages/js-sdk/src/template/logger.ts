@@ -1,12 +1,10 @@
 import chalk from 'chalk'
 import { stripAnsi } from '../utils'
-import type { BuildLogLevel } from './types'
 
 /**
  * Log entry severity levels.
- * Reuses BuildLogLevel from types for consistency.
  */
-export type LogEntryLevel = BuildLogLevel
+export type LogEntryLevel = 'debug' | 'info' | 'warn' | 'error'
 
 /**
  * Represents a single log entry from the template build process.
@@ -15,7 +13,8 @@ export class LogEntry {
   constructor(
     public readonly timestamp: Date,
     public readonly level: LogEntryLevel,
-    public readonly message: string
+    public readonly message: string,
+    public readonly step?: string
   ) {}
 
   toString() {

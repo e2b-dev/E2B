@@ -30,8 +30,6 @@ from e2b.exceptions import BuildException, FileUploadException, TemplateExceptio
 from e2b.template.logger import LogEntry
 from e2b.template.types import (
     TemplateType,
-    BuildLogEntry,
-    BuildLogLevel,
     BuildStatusReason,
     TemplateBuildStatus,
     TemplateBuildStatusResponse,
@@ -143,12 +141,12 @@ def trigger_build(
         raise handle_api_exception(res, BuildException)
 
 
-def _map_log_entry(entry) -> BuildLogEntry:
-    """Map API log entry to custom BuildLogEntry type."""
-    return BuildLogEntry(
-        level=BuildLogLevel(entry.level.value),
-        message=entry.message,
+def _map_log_entry(entry) -> LogEntry:
+    """Map API log entry to LogEntry type."""
+    return LogEntry(
         timestamp=entry.timestamp,
+        level=entry.level.value,
+        message=entry.message,
         step=entry.step if not isinstance(entry.step, Unset) else None,
     )
 
@@ -211,13 +209,7 @@ def wait_for_build_finish(
 
         for log_entry in build_status.log_entries:
             if on_build_logs:
-                on_build_logs(
-                    LogEntry(
-                        timestamp=log_entry.timestamp,
-                        level=log_entry.level.value,
-                        message=log_entry.message,
-                    )
-                )
+                on_build_logs(log_entry)
 
         status = build_status.status
 

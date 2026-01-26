@@ -96,8 +96,6 @@ from .template.readycmd import (
 )
 from .template.types import (
     BuildInfo,
-    BuildLogEntry,
-    BuildLogLevel,
     BuildStatusReason,
     CopyItem,
     TemplateBuildStatus,
@@ -165,8 +163,6 @@ __all__ = [
     "TemplateClass",
     "CopyItem",
     "BuildInfo",
-    "BuildLogEntry",
-    "BuildLogLevel",
     "BuildStatusReason",
     "TemplateBuildStatus",
     "TemplateBuildStatusResponse",

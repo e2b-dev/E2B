@@ -1,21 +1,11 @@
 from dataclasses import dataclass, field
-from datetime import datetime
 from enum import Enum
 from pathlib import Path
 from typing import List, Literal, Optional, TypedDict, Union
 
 from typing_extensions import NotRequired
 
-
-class BuildLogLevel(str, Enum):
-    """
-    Log level for build log entries.
-    """
-
-    DEBUG = "debug"
-    INFO = "info"
-    WARN = "warn"
-    ERROR = "error"
+from e2b.template.logger import LogEntry
 
 
 class TemplateBuildStatus(str, Enum):
@@ -30,25 +20,6 @@ class TemplateBuildStatus(str, Enum):
 
 
 @dataclass
-class BuildLogEntry:
-    """
-    A single log entry from the template build process.
-    """
-
-    level: BuildLogLevel
-    """Log level of the entry."""
-
-    message: str
-    """Log message content."""
-
-    timestamp: datetime
-    """Timestamp of the log entry."""
-
-    step: Optional[str] = None
-    """Step in the build process related to the log entry."""
-
-
-@dataclass
 class BuildStatusReason:
     """
     Reason for the current build status (typically for errors).
@@ -60,7 +31,7 @@ class BuildStatusReason:
     step: Optional[str] = None
     """Step that failed."""
 
-    log_entries: List[BuildLogEntry] = field(default_factory=list)
+    log_entries: List[LogEntry] = field(default_factory=list)
     """Log entries related to the status reason."""
 
 
@@ -79,7 +50,7 @@ class TemplateBuildStatusResponse:
     status: TemplateBuildStatus
     """Current status of the build."""
 
-    log_entries: List[BuildLogEntry]
+    log_entries: List[LogEntry]
     """Build log entries."""
 
     logs: List[str]

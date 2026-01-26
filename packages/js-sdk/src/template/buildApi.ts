@@ -4,7 +4,6 @@ import { BuildError, FileUploadError, TemplateError } from '../errors'
 import { LogEntry } from './logger'
 import { getBuildStepIndex, tarFileStreamUpload } from './utils'
 import {
-  BuildLogEntry,
   BuildStatusReason,
   TemplateBuildStatus,
   TemplateBuildStatusResponse,
@@ -169,13 +168,13 @@ export async function triggerBuild(
 
 function mapLogEntry(
   entry: ApiBuildStatusResponse['logEntries'][number]
-): BuildLogEntry {
-  return {
-    level: entry.level,
-    message: entry.message,
-    step: entry.step,
-    timestamp: new Date(entry.timestamp),
-  }
+): LogEntry {
+  return new LogEntry(
+    new Date(entry.timestamp),
+    entry.level,
+    entry.message,
+    entry.step
+  )
 }
 
 function mapBuildStatusReason(

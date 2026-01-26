@@ -91,33 +91,6 @@ export type BuildInfo = {
 export type GetBuildStatusOptions = ConnectionOpts & { logsOffset?: number }
 
 /**
- * Log level for build log entries.
- */
-export type BuildLogLevel = 'debug' | 'info' | 'warn' | 'error'
-
-/**
- * A single log entry from the template build process.
- */
-export type BuildLogEntry = {
-  /**
-   * Log level of the entry.
-   */
-  level: BuildLogLevel
-  /**
-   * Log message content.
-   */
-  message: string
-  /**
-   * Step in the build process related to the log entry.
-   */
-  step?: string
-  /**
-   * Timestamp of the log entry.
-   */
-  timestamp: Date
-}
-
-/**
  * Status of a template build.
  */
 export type TemplateBuildStatus = 'building' | 'waiting' | 'ready' | 'error'
@@ -137,7 +110,7 @@ export type BuildStatusReason = {
   /**
    * Log entries related to the status reason.
    */
-  logEntries: BuildLogEntry[]
+  logEntries: LogEntry[]
 }
 
 /**
@@ -159,7 +132,7 @@ export type TemplateBuildStatusResponse = {
   /**
    * Build log entries.
    */
-  logEntries: BuildLogEntry[]
+  logEntries: LogEntry[]
   /**
    * Build logs (raw strings).
    * @deprecated Use `logEntries` instead.

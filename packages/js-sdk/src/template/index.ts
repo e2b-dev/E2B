@@ -1232,8 +1232,6 @@ Template.toDockerfile = TemplateBase.toDockerfile
 export type {
   AliasExistsOptions,
   BuildInfo,
-  BuildLogEntry,
-  BuildLogLevel,
   BuildOptions,
   BuildStatusReason,
   CopyItem,

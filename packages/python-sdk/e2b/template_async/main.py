@@ -62,7 +62,7 @@ class AsyncTemplate(TemplateBase):
                 LogEntry(
                     timestamp=datetime.now(),
                     level="info",
-                    message=f"Requesting build for template: {name}{f' with tags: {', '.join(tags)}' if tags else ''}",
+                    message=f"Requesting build for template: {name}{f' with tags: {", ".join(tags)}' if tags else ''}",
                 )
             )
 
