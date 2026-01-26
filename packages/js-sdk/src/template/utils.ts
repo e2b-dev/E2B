@@ -278,9 +278,10 @@ export async function tarFileStream(
 
   const filePaths = allFiles.map((file) => file.relativePosix())
 
+  // gzip.portable ensures deterministic gzip header without affecting file modes
   return create(
     {
-      gzip: true,
+      gzip: { portable: true },
       cwd: fileContextPath,
       follow: resolveSymlinks,
       noDirRecurse: true,
