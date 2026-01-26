@@ -1,5 +1,5 @@
 import crypto from 'node:crypto'
-import fs from 'node:fs'
+import fs, { PathLike } from 'node:fs'
 import path from 'node:path'
 import { dynamicImport, dynamicRequire } from '../utils'
 import { BASE_STEP_NAME, FINALIZE_STEP_NAME } from './consts'
@@ -34,6 +34,57 @@ function normalizePath(path: string): string {
 }
 
 /**
+ * Normalize a COPY source path into a context-relative pattern and its context.
+ *
+ * - Absolute sources: context is the source's directory; normalized path is the
+ *   relative path from that directory ('.' when the source is the directory itself).
+ * - Relative sources: context defaults to `fileContextPath`; if the path escapes
+ *   that context (e.g., '../../../foo'), use the escaped path's directory instead.
+ * - Always returns POSIX separators for glob/tar friendliness.
+ *
+ * @param src The source path to normalize
+ * @param fileContextPath The context path to use
+ * @returns An object containing the normalized source path and the context path
+ */
+export function normalizeCopySourcePath(
+  src: string,
+  fileContextPath: PathLike
+): {
+  normalizedSrc: string
+  contextPathForInstruction: string
+} {
+  const defaultContext = path.resolve(fileContextPath.toString())
+  const absoluteSrc = path.isAbsolute(src)
+    ? src
+    : path.resolve(defaultContext, src)
+
+  // Absolute sources: keep full path structure in the archive by anchoring at '/'
+  if (path.isAbsolute(src)) {
+    const normalizedSrc = normalizePath(path.relative('/', absoluteSrc)) || '.'
+    return {
+      normalizedSrc,
+      contextPathForInstruction: '/',
+    }
+  }
+
+  // Relative sources: prefer default context, but if they escape, anchor at '/'
+  const relativeToDefault = path.relative(defaultContext, absoluteSrc)
+  const escapesDefault =
+    relativeToDefault === '..' ||
+    relativeToDefault.startsWith(`..${path.sep}`) ||
+    relativeToDefault.startsWith('../')
+
+  const contextPathForInstruction = escapesDefault ? '/' : defaultContext
+  const normalizedSrc =
+    normalizePath(path.relative(contextPathForInstruction, absoluteSrc)) || '.'
+
+  return {
+    normalizedSrc,
+    contextPathForInstruction,
+  }
+}
+
+/**
  * Get all files for a given path and ignore patterns.
  *
  * @param src Path to the source directory
@@ -49,12 +100,13 @@ export async function getAllFilesInPath(
 ) {
   const { glob } = await dynamicImport<typeof import('glob')>('glob')
   const files = new Map<string, Path>()
+  const isAbsoluteSrc = path.isAbsolute(src)
 
   const globFiles = await glob(src, {
     ignore: ignorePatterns,
     withFileTypes: true,
     // this is required so that the ignore pattern is relative to the file path
-    cwd: contextPath,
+    cwd: isAbsoluteSrc ? undefined : contextPath,
   })
 
   for (const file of globFiles) {
@@ -64,15 +116,17 @@ export async function getAllFilesInPath(
         files.set(file.fullpath(), file)
       }
       const dirPattern = normalizePath(
-        // When the matched directory is '.', `file.relative()` can be an empty string.
-        // In that case, we want to match all files under the current directory instead of
-        // creating an absolute glob like '/**/*' which would traverse the entire filesystem.
-        path.join(file.relative() || '.', '**/*')
+        isAbsoluteSrc
+          ? path.join(file.fullpath(), '**/*')
+          : // When the matched directory is '.', `file.relative()` can be an empty string.
+            // In that case, we want to match all files under the current directory instead of
+            // creating an absolute glob like '/**/*' which would traverse the entire filesystem.
+            path.join(file.relative() || '.', '**/*')
       )
       const dirFiles = await glob(dirPattern, {
         ignore: ignorePatterns,
         withFileTypes: true,
-        cwd: contextPath,
+        cwd: isAbsoluteSrc ? undefined : contextPath,
       })
       dirFiles.forEach((f) => files.set(f.fullpath(), f))
     } else {
@@ -276,7 +330,11 @@ export async function tarFileStream(
     true
   )
 
-  const filePaths = allFiles.map((file) => file.relativePosix())
+  const filePaths = allFiles.map((file) => {
+    const rel = path.relative(fileContextPath, file.fullpath())
+    const normalized = normalizePath(rel || '.')
+    return normalized
+  })
 
   // gzip.portable ensures deterministic gzip header without affecting file modes
   return create(
