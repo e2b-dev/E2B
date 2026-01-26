@@ -32,6 +32,7 @@ import {
   ENVD_VERSION_RECURSIVE_WATCH,
 } from '../../envd/versions'
 import { InvalidArgumentError, TemplateError } from '../../errors'
+import { toBlob } from '../../utils'
 
 /**
  * Sandbox filesystem object information.
@@ -121,7 +122,7 @@ function mapModifiedTime(modifiedTime: Timestamp | undefined) {
 
   return new Date(
     Number(modifiedTime.seconds) * 1000 +
-      Math.floor(modifiedTime.nanos / 1_000_000)
+    Math.floor(modifiedTime.nanos / 1_000_000)
   )
 }
 
@@ -334,29 +335,31 @@ export class Filesystem {
     const { path, writeOpts, writeFiles } =
       typeof pathOrFiles === 'string'
         ? {
-            path: pathOrFiles,
-            writeOpts: opts as FilesystemRequestOpts,
-            writeFiles: [
-              {
-                data: dataOrOpts as
-                  | string
-                  | ArrayBuffer
-                  | Blob
-                  | ReadableStream,
-              },
-            ],
-          }
+          path: pathOrFiles,
+          writeOpts: opts as FilesystemRequestOpts,
+          writeFiles: [
+            {
+              data: dataOrOpts as
+                | string
+                | ArrayBuffer
+                | Blob
+                | ReadableStream,
+            },
+          ],
+        }
         : {
-            path: undefined,
-            writeOpts: dataOrOpts as FilesystemRequestOpts,
-            writeFiles: pathOrFiles as WriteEntry[],
-          }
+          path: undefined,
+          writeOpts: dataOrOpts as FilesystemRequestOpts,
+          writeFiles: pathOrFiles as WriteEntry[],
+        }
 
     if (writeFiles.length === 0) return [] as WriteInfo[]
 
-    const blobs = await Promise.all(
-      writeFiles.map((f) => new Response(f.data).blob())
-    )
+    const formData = new FormData()
+    for (let i = 0; i < writeFiles.length; i++) {
+      const file = writeFiles[i]
+      formData.append('file', await toBlob(file.data), writeFiles[i].path)
+    }
 
     let user = writeOpts?.user
     if (
@@ -373,17 +376,7 @@ export class Filesystem {
           username: user,
         },
       },
-      bodySerializer() {
-        return blobs.reduce((fd, blob, i) => {
-          // Important: RFC 7578, Section 4.2 requires that if a filename is provided,
-          // the directory path information must not be used.
-          // BUT in our case we need to use the directory path information with a custom
-          // multipart part name getter in envd.
-          fd.append('file', blob, writeFiles[i].path)
-
-          return fd
-        }, new FormData())
-      },
+      bodySerializer: () => formData,
       signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
       body: {},
     })
@@ -670,7 +663,7 @@ export class Filesystem {
     ) {
       throw new TemplateError(
         'You need to update the template to use recursive watching. ' +
-          'You can do this by running `e2b template build` in the directory with the template.'
+        'You can do this by running `e2b template build` in the directory with the template.'
       )
     }
 
@@ -681,8 +674,8 @@ export class Filesystem {
 
     const reqTimeout = requestTimeoutMs
       ? setTimeout(() => {
-          controller.abort()
-        }, requestTimeoutMs)
+        controller.abort()
+      }, requestTimeoutMs)
       : undefined
 
     const events = this.rpc.watchDir(

@@ -210,10 +210,8 @@ class Filesystem:
         httpx_files = []
         for file in files:
             file_path, file_data = file["path"], file["data"]
-            if isinstance(file_data, str) or isinstance(file_data, bytes):
+            if isinstance(file_data, (str, bytes, IOBase)):
                 httpx_files.append(("file", (file_path, file_data)))
-            elif isinstance(file_data, IOBase):
-                httpx_files.append(("file", (file_path, file_data.read())))
             else:
                 raise InvalidArgumentException(
                     f"Unsupported data type for file {file_path}"
