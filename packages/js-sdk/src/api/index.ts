@@ -73,7 +73,7 @@ class ApiClient {
     this.api = createClient<paths>({
       baseUrl: config.apiUrl,
       // this is only for documentation purposes, as undici (Node.js HTTP client)  always keeps connections alive
-      keepalive: true,
+      // keepalive: true,
       headers: {
         ...defaultHeaders,
         ...(config.apiKey && { 'X-API-KEY': config.apiKey }),

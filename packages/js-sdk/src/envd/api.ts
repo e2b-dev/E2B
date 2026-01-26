@@ -114,7 +114,7 @@ class EnvdApiClient {
       fetch: config?.fetch,
       headers: config?.headers,
       // this is only for documentation purposes, as undici (Node.js HTTP client)  always keeps connections alive
-      keepalive: true,
+      // keepalive: true,
     })
     this.version = metadata.version
 
