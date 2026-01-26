@@ -293,7 +293,8 @@ export async function waitForBuildFinish(
         new LogEntry(
           logEntry.timestamp,
           logEntry.level,
-          stripAnsi(logEntry.message)
+          stripAnsi(logEntry.message),
+          logEntry.step
         )
       )
     )
