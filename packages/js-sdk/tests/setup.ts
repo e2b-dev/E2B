@@ -101,7 +101,7 @@ export async function wait(ms: number) {
  * Supports msw path parameters like :templateID
  */
 export function apiUrl(path: string): string {
-  const domain = process.env.E2B_DOMAIN || 'e2b.dev'
+  const domain = process.env.E2B_DOMAIN || 'e2b.app'
   return `https://api.${domain}${path}`
 }
 

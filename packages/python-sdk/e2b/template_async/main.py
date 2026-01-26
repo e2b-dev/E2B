@@ -58,11 +58,12 @@ class AsyncTemplate(TemplateBase):
 
         # Create template
         if on_build_logs:
+            tags_msg = f" with tags: {', '.join(tags)}" if tags else ""
             on_build_logs(
                 LogEntry(
                     timestamp=datetime.now(),
                     level="info",
-                    message=f"Requesting build for template: {name}{f' with tags: {", ".join(tags)}' if tags else ''}",
+                    message=f"Requesting build for template: {name}{tags_msg}",
                 )
             )
 
