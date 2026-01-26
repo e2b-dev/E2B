@@ -1,10 +1,12 @@
 import chalk from 'chalk'
 import { stripAnsi } from '../utils'
+import type { BuildLogLevel } from './types'
 
 /**
  * Log entry severity levels.
+ * Reuses BuildLogLevel from types for consistency.
  */
-export type LogEntryLevel = 'debug' | 'info' | 'warn' | 'error'
+export type LogEntryLevel = BuildLogLevel
 
 /**
  * Represents a single log entry from the template build process.

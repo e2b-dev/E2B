@@ -106,9 +106,6 @@ buildTemplateTest.skipIf(isDebug)(
     expect(tagInfo.buildId).toBeTruthy()
     expect(tagInfo.tags).toContain('production')
     expect(tagInfo.tags).toContain('latest')
-
-    // Delete tag
-    await Template.removeTags(templateAlias, 'production')
   },
   { timeout: 300_000 }
 )
