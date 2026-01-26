@@ -1,6 +1,6 @@
 import httpcore
 import httpx
-from io import IOBase
+from io import IOBase, TextIOBase
 from packaging.version import Version
 from typing import AsyncIterator, IO, List, Literal, Optional, overload, Union
 from e2b.sandbox.filesystem.filesystem import WriteEntry
@@ -209,7 +209,14 @@ class Filesystem:
         httpx_files = []
         for file in files:
             file_path, file_data = file["path"], file["data"]
-            if isinstance(file_data, (str, bytes, IOBase)):
+            if isinstance(file_data, (str, bytes)):
+                # str and bytes can be passed directly
+                httpx_files.append(("file", (file_path, file_data)))
+            elif isinstance(file_data, TextIOBase):
+                # Text streams must be read first
+                httpx_files.append(("file", (file_path, file_data.read())))
+            elif isinstance(file_data, IOBase):
+                # Binary streams can be passed directly
                 httpx_files.append(("file", (file_path, file_data)))
             else:
                 raise InvalidArgumentException(
