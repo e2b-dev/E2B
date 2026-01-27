@@ -46,4 +46,13 @@ describe('git utils', () => {
     expect(branches.branches).toEqual(['main', 'feature'])
     expect(branches.currentBranch).toBe('main')
   })
+
+  it('detects detached HEAD status', () => {
+    const output = '## HEAD (detached at abc123)\n'
+
+    const status = parseGitStatus(output)
+
+    expect(status.detached).toBe(true)
+    expect(status.currentBranch).toBeUndefined()
+  })
 })

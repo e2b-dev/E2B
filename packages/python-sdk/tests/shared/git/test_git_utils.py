@@ -39,3 +39,11 @@ def test_parse_git_branches():
 
     assert branches.branches == ["main", "feature"]
     assert branches.current_branch == "main"
+
+
+def test_parse_git_status_detects_detached_head():
+    output = "## HEAD (detached at abc123)\n"
+    status = parse_git_status(output)
+
+    assert status.detached is True
+    assert status.current_branch is None

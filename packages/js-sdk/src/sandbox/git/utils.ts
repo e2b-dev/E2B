@@ -307,11 +307,11 @@ export function parseGitStatus(output: string): GitStatus {
     const aheadPart =
       aheadStart === -1 ? undefined : branchInfo.slice(aheadStart + 2, -1)
     const normalizedBranch = normalizeBranchName(branchPart)
+    const rawBranch = branchPart
+    const isDetached =
+      rawBranch.startsWith('HEAD (detached at ') || rawBranch.includes('detached')
 
-    if (
-      normalizedBranch.startsWith('HEAD') ||
-      normalizedBranch.includes('detached')
-    ) {
+    if (isDetached || normalizedBranch.startsWith('HEAD')) {
       detached = true
     } else if (normalizedBranch.includes('...')) {
       const [branch, upstreamBranch] = normalizedBranch.split('...')
