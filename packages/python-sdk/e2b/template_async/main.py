@@ -377,7 +377,7 @@ class AsyncTemplate(TemplateBase):
         )
 
     @staticmethod
-    async def name_exists(
+    async def exists(
         name: str,
         **opts: Unpack[ApiParams],
     ) -> bool:
@@ -391,7 +391,7 @@ class AsyncTemplate(TemplateBase):
         ```python
         from e2b import AsyncTemplate
 
-        exists = await AsyncTemplate.name_exists('base')
+        exists = await AsyncTemplate.exists('base')
         if exists:
             print('Template exists!')
         ```

@@ -20,7 +20,6 @@ import { parseDockerfile } from './dockerfileParser'
 import { LogEntry, LogEntryEnd, LogEntryStart } from './logger'
 import { ReadyCmd, waitForFile } from './readycmd'
 import {
-  AliasExistsOptions,
   BuildInfo,
   BuildOptions,
   CopyItem,
@@ -28,7 +27,6 @@ import {
   Instruction,
   InstructionType,
   McpServerName,
-  NameExistsOptions,
   RegistryConfig,
   TemplateBuilder,
   TemplateBuildStatusResponse,
@@ -52,7 +50,8 @@ import {
  * Base class for building E2B sandbox templates.
  */
 export class TemplateBase
-  implements TemplateFromImage, TemplateBuilder, TemplateFinal {
+  implements TemplateFromImage, TemplateBuilder, TemplateFinal
+{
   private defaultBaseImage: string = 'e2bdev/base'
   private baseImage: string | undefined = this.defaultBaseImage
   private baseTemplate: string | undefined = undefined
@@ -277,15 +276,15 @@ export class TemplateBase
    *
    * @example
    * ```ts
-   * const exists = await Template.nameExists('my-python-env')
+   * const exists = await Template.exists('my-python-env')
    * if (exists) {
    *   console.log('Template exists!')
    * }
    * ```
    */
-  static async nameExists(
+  static async exists(
     name: string,
-    options?: NameExistsOptions
+    options?: ConnectionOpts
   ): Promise<boolean> {
     return TemplateBase.aliasExists(name, options)
   }
@@ -308,7 +307,7 @@ export class TemplateBase
    */
   static async aliasExists(
     alias: string,
-    options?: AliasExistsOptions
+    options?: ConnectionOpts
   ): Promise<boolean> {
     const config = new ConnectionConfig(options)
     const client = new ApiClient(config)
@@ -980,7 +979,7 @@ export class TemplateBase
     if (this.baseTemplate !== undefined) {
       throw new Error(
         'Cannot convert template built from another template to Dockerfile. ' +
-        'Templates based on other templates can only be built using the E2B API.'
+          'Templates based on other templates can only be built using the E2B API.'
       )
     }
 
@@ -1246,7 +1245,7 @@ export function Template(options?: TemplateOptions): TemplateFromImage {
 Template.build = TemplateBase.build
 Template.buildInBackground = TemplateBase.buildInBackground
 Template.getBuildStatus = TemplateBase.getBuildStatus
-Template.nameExists = TemplateBase.nameExists
+Template.exists = TemplateBase.exists
 Template.aliasExists = TemplateBase.aliasExists
 Template.assignTags = TemplateBase.assignTags
 Template.removeTags = TemplateBase.removeTags
@@ -1254,14 +1253,12 @@ Template.toJSON = TemplateBase.toJSON
 Template.toDockerfile = TemplateBase.toDockerfile
 
 export type {
-  AliasExistsOptions,
   BuildInfo,
   BuildOptions,
   BuildStatusReason,
   CopyItem,
   GetBuildStatusOptions,
   McpServerName,
-  NameExistsOptions,
   TemplateBuilder,
   TemplateBuildStatus,
   TemplateBuildStatusResponse,

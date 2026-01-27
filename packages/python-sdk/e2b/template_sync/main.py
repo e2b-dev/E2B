@@ -378,7 +378,7 @@ class Template(TemplateBase):
         )
 
     @staticmethod
-    def name_exists(
+    def exists(
         name: str,
         **opts: Unpack[ApiParams],
     ) -> bool:
@@ -392,7 +392,7 @@ class Template(TemplateBase):
         ```python
         from e2b import Template
 
-        exists = Template.name_exists('base')
+        exists = Template.exists('base')
         if exists:
             print('Template exists!')
         ```
