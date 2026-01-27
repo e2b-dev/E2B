@@ -81,4 +81,3 @@ def test_git_missing_surfaces_command_exit_error(sandbox_factory):
     assert caught is not None, "expected git.status to raise CommandExitException"
     assert caught.exit_code != 0
     assert "command not found" in caught.stderr.lower()
-

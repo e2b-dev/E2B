@@ -18,9 +18,7 @@ if os.getenv("E2B_DEBUG_GITHUB_CREATE_REPO") is None:
 
 TOKEN = os.getenv("E2B_DEBUG_GITHUB_TOKEN")
 if not TOKEN and not (
-    os.getenv("GITHUB_PAT")
-    or os.getenv("GITHUB_TOKEN")
-    or os.getenv("GH_TOKEN")
+    os.getenv("GITHUB_PAT") or os.getenv("GITHUB_TOKEN") or os.getenv("GH_TOKEN")
 ):
     pytest.skip(
         "Set E2B_DEBUG_GITHUB_TOKEN or GITHUB_PAT/GITHUB_TOKEN/GH_TOKEN to run debug-only GitHub create repo tests.",

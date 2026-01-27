@@ -130,13 +130,9 @@ class Git:
         ]
         return any(snippet in message for snippet in auth_snippets)
 
-    def _build_auth_error_message(
-        self, action: str, missing_password: bool
-    ) -> str:
+    def _build_auth_error_message(self, action: str, missing_password: bool) -> str:
         if missing_password:
-            return (
-                f"Git {action} requires a password/token for private repositories."
-            )
+            return f"Git {action} requires a password/token for private repositories."
         return f"Git {action} requires credentials for private repositories."
 
     async def _resolve_remote_name(
@@ -284,6 +280,7 @@ class Git:
         :param dangerously_store_credentials: Store credentials in the cloned repository when True
         :return: Command result from the command runner
         """
+
         async def attempt_clone(
             auth_username: Optional[str], auth_password: Optional[str]
         ):
@@ -371,9 +368,7 @@ class Git:
         if bare:
             args.append("--bare")
         args.append(path)
-        return await self._run(
-            args, None, envs, user, cwd, timeout, request_timeout
-        )
+        return await self._run(args, None, envs, user, cwd, timeout, request_timeout)
 
     def _resolve_github_token(
         self, token: Optional[str], envs: Optional[Dict[str, str]] = None
@@ -863,9 +858,7 @@ class Git:
         :return: Command result from the command runner
         """
         args = ["branch", "-D" if force else "-d", branch]
-        return await self._run(
-            args, path, envs, user, cwd, timeout, request_timeout
-        )
+        return await self._run(args, path, envs, user, cwd, timeout, request_timeout)
 
     async def add(
         self,
@@ -897,9 +890,7 @@ class Git:
         else:
             args.append("--")
             args.extend(files)
-        return await self._run(
-            args, path, envs, user, cwd, timeout, request_timeout
-        )
+        return await self._run(args, path, envs, user, cwd, timeout, request_timeout)
 
     async def commit(
         self,
@@ -943,9 +934,7 @@ class Git:
                 "-c",
                 f"user.email={author_email}",
             ] + args
-        return await self._run(
-            args, path, envs, user, cwd, timeout, request_timeout
-        )
+        return await self._run(args, path, envs, user, cwd, timeout, request_timeout)
 
     async def push(
         self,
@@ -977,6 +966,7 @@ class Git:
         :param request_timeout: Timeout for the request in **seconds**
         :return: Command result from the command runner
         """
+
         def build_args(remote_name: Optional[str] = None) -> List[str]:
             args = ["push"]
             if set_upstream:
@@ -1059,6 +1049,7 @@ class Git:
         :param request_timeout: Timeout for the request in **seconds**
         :return: Command result from the command runner
         """
+
         def build_args(remote_name: Optional[str] = None) -> List[str]:
             args = ["pull"]
             target_remote = remote_name or remote

@@ -130,13 +130,9 @@ class Git:
         ]
         return any(snippet in message for snippet in auth_snippets)
 
-    def _build_auth_error_message(
-        self, action: str, missing_password: bool
-    ) -> str:
+    def _build_auth_error_message(self, action: str, missing_password: bool) -> str:
         if missing_password:
-            return (
-                f"Git {action} requires a password/token for private repositories."
-            )
+            return f"Git {action} requires a password/token for private repositories."
         return f"Git {action} requires credentials for private repositories."
 
     def _get_remote_url(
@@ -284,9 +280,8 @@ class Git:
         :param dangerously_store_credentials: Store credentials in the cloned repository when True
         :return: Command result from the command runner
         """
-        def attempt_clone(
-            auth_username: Optional[str], auth_password: Optional[str]
-        ):
+
+        def attempt_clone(auth_username: Optional[str], auth_password: Optional[str]):
             clone_url = (
                 with_credentials(url, auth_username, auth_password)
                 if auth_username and auth_password
@@ -310,9 +305,7 @@ class Git:
                 args.extend(["--depth", str(depth)])
             if path:
                 args.append(path)
-            result = self._run(
-                args, None, envs, user, cwd, timeout, request_timeout
-            )
+            result = self._run(args, None, envs, user, cwd, timeout, request_timeout)
             if should_strip and repo_path:
                 self._run(
                     ["remote", "set-url", "origin", sanitized_url],
@@ -970,6 +963,7 @@ class Git:
         :param request_timeout: Timeout for the request in **seconds**
         :return: Command result from the command runner
         """
+
         def build_args(remote_name: Optional[str] = None) -> List[str]:
             args = ["push"]
             if set_upstream:
@@ -1052,6 +1046,7 @@ class Git:
         :param request_timeout: Timeout for the request in **seconds**
         :return: Command result from the command runner
         """
+
         def build_args(remote_name: Optional[str] = None) -> List[str]:
             args = ["pull"]
             target_remote = remote_name or remote

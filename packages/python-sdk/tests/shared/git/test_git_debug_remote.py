@@ -42,4 +42,3 @@ def test_remote_add_sets_and_overwrites_remote_url(sandbox_factory):
         assert _get_remote_url(sandbox, REPO_PATH, REMOTE_NAME) == SECOND_URL
     finally:
         sandbox.commands.run(f'rm -rf "{REPO_PATH}"')
-
