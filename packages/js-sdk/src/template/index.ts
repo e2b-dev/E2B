@@ -28,6 +28,7 @@ import {
   Instruction,
   InstructionType,
   McpServerName,
+  NameExistsOptions,
   RegistryConfig,
   TemplateBuilder,
   TemplateBuildStatusResponse,
@@ -269,12 +270,38 @@ export class TemplateBase
   }
 
   /**
+   * Check if a template with the given name exists.
+   *
+   * @param name Template name to check
+   * @param options Authentication options
+   * @returns True if the name exists, false otherwise
+   *
+   * @example
+   * ```ts
+   * const exists = await Template.nameExists('my-python-env')
+   * if (exists) {
+   *   console.log('Template exists!')
+   * }
+   * ```
+   */
+  static async nameExists(
+    name: string,
+    options?: NameExistsOptions
+  ): Promise<boolean> {
+    const config = new ConnectionConfig(options)
+    const client = new ApiClient(config)
+
+    return checkAliasExists(client, { alias: name })
+  }
+
+  /**
    * Check if a template with the given alias exists.
    *
    * @param alias Template alias to check
    * @param options Authentication options
    * @returns True if the alias exists, false otherwise
    *
+   * @deprecated Use `nameExists` instead.
    * @example
    * ```ts
    * const exists = await Template.aliasExists('my-python-env')
@@ -287,10 +314,7 @@ export class TemplateBase
     alias: string,
     options?: AliasExistsOptions
   ): Promise<boolean> {
-    const config = new ConnectionConfig(options)
-    const client = new ApiClient(config)
-
-    return checkAliasExists(client, { alias })
+    return TemplateBase.nameExists(alias, options)
   }
 
   /**
@@ -1223,6 +1247,7 @@ export function Template(options?: TemplateOptions): TemplateFromImage {
 Template.build = TemplateBase.build
 Template.buildInBackground = TemplateBase.buildInBackground
 Template.getBuildStatus = TemplateBase.getBuildStatus
+Template.nameExists = TemplateBase.nameExists
 Template.aliasExists = TemplateBase.aliasExists
 Template.assignTags = TemplateBase.assignTags
 Template.removeTags = TemplateBase.removeTags
@@ -1237,6 +1262,7 @@ export type {
   CopyItem,
   GetBuildStatusOptions,
   McpServerName,
+  NameExistsOptions,
   TemplateBuilder,
   TemplateBuildStatus,
   TemplateBuildStatusResponse,

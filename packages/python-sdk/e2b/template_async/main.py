@@ -377,12 +377,37 @@ class AsyncTemplate(TemplateBase):
         )
 
     @staticmethod
+    async def name_exists(
+        name: str,
+        **opts: Unpack[ApiParams],
+    ) -> bool:
+        """
+        Check if a template with the given name exists.
+
+        :param name: Template name to check
+        :return: True if the name exists, False otherwise
+
+        Example
+        ```python
+        from e2b import AsyncTemplate
+
+        exists = await AsyncTemplate.name_exists('base')
+        if exists:
+            print('Template exists!')
+        ```
+        """
+
+        return await AsyncTemplate.alias_exists(name, **opts)
+
+    @staticmethod
     async def alias_exists(
         alias: str,
         **opts: Unpack[ApiParams],
     ) -> bool:
         """
         Check if a template with the given alias exists.
+
+        Deprecated Use `name_exists` instead.
 
         :param alias: Template alias to check
         :return: True if the alias exists, False otherwise

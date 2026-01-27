@@ -160,8 +160,14 @@ export type TemplateTagInfo = {
 
 /**
  * Options for checking if a template alias exists.
+ * @deprecated Use `NameExistsOptions` instead.
  */
 export type AliasExistsOptions = ConnectionOpts
+
+/**
+ * Options for checking if a template name exists.
+ */
+export type NameExistsOptions = ConnectionOpts
 
 /**
  * Types of instructions that can be used in a template.
