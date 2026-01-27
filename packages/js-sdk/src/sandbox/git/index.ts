@@ -25,7 +25,7 @@ export interface GitRequestOpts
       CommandStartOpts,
       'envs' | 'user' | 'cwd' | 'timeoutMs' | 'requestTimeoutMs'
     >
-  > { }
+  > {}
 
 /**
  * Options for cloning a repository.
@@ -128,6 +128,27 @@ export interface GitPullOpts extends GitRequestOpts {
 }
 
 /**
+ * Supported scopes for git config operations.
+ */
+export type GitConfigScope = 'global' | 'local' | 'system'
+
+/**
+ * Options for git config operations.
+ */
+export interface GitConfigOpts extends GitRequestOpts {
+  /**
+   * Scope for the git config command.
+   *
+   * @default "global"
+   */
+  scope?: GitConfigScope
+  /**
+   * Repository path required when `scope` is `"local"`.
+   */
+  path?: string
+}
+
+/**
  * Options for dangerously authenticating git globally via the credential helper.
  */
 export interface GitDangerouslyAuthenticateOpts extends GitRequestOpts {
@@ -157,7 +178,7 @@ export interface GitDangerouslyAuthenticateOpts extends GitRequestOpts {
  * Module for running git operations in the sandbox.
  */
 export class Git {
-  constructor(private readonly commands: Commands) { }
+  constructor(private readonly commands: Commands) {}
 
   /**
    * Clone a git repository into the sandbox.
@@ -364,6 +385,58 @@ export class Git {
   }
 
   /**
+   * Set a git config value.
+   *
+   * Use `scope: "local"` together with `path` to configure a specific repository.
+   *
+   * @param key Git config key (for example, `"pull.rebase"`).
+   * @param value Git config value.
+   * @param opts Config options.
+   * @returns Command result from the command runner.
+   */
+  async configSet(
+    key: string,
+    value: string,
+    opts?: GitConfigOpts
+  ): Promise<CommandResult> {
+    if (!key) {
+      throw new InvalidArgumentError('Git config key is required.')
+    }
+
+    const scope = opts?.scope ?? 'global'
+    const scopeFlag = this.getScopeFlag(scope)
+    const repoPath = this.getRepoPathForScope(scope, opts?.path)
+
+    return this.run(['config', scopeFlag, key, value], repoPath, opts)
+  }
+
+  /**
+   * Get a git config value.
+   *
+   * Returns `undefined` when the key is not set in the requested scope.
+   *
+   * @param key Git config key (for example, `"pull.rebase"`).
+   * @param opts Config options.
+   * @returns The config value if present.
+   */
+  async configGet(
+    key: string,
+    opts?: GitConfigOpts
+  ): Promise<string | undefined> {
+    if (!key) {
+      throw new InvalidArgumentError('Git config key is required.')
+    }
+
+    const scope = opts?.scope ?? 'global'
+    const scopeFlag = this.getScopeFlag(scope)
+    const repoPath = this.getRepoPathForScope(scope, opts?.path)
+    const cmd = `${buildGitCommand(['config', scopeFlag, '--get', key], repoPath)} || true`
+    const result = await this.runShell(cmd, opts)
+    const trimmed = result.stdout.trim()
+    return trimmed.length > 0 ? trimmed : undefined
+  }
+
+  /**
    * Dangerously authenticate git globally via the credential helper.
    *
    * This persists credentials in the credential store.
@@ -424,11 +497,8 @@ export class Git {
       throw new InvalidArgumentError('Both name and email are required.')
     }
 
-    const cmd = `${buildGitCommand(['config', '--global', 'user.name', name])} && ${buildGitCommand(
-      ['config', '--global', 'user.email', email]
-    )}`
-
-    return this.runShell(cmd, opts)
+    await this.configSet('user.name', name, { ...opts, scope: 'global' })
+    return this.configSet('user.email', email, { ...opts, scope: 'global' })
   }
 
   /**
@@ -468,6 +538,34 @@ export class Git {
       ...rest,
       envs: mergedEnvs,
     })
+  }
+
+  private getScopeFlag(
+    scope: GitConfigScope
+  ): '--global' | '--local' | '--system' {
+    switch (scope) {
+      case 'global':
+        return '--global'
+      case 'system':
+        return '--system'
+      case 'local':
+        return '--local'
+    }
+  }
+
+  private getRepoPathForScope(
+    scope: GitConfigScope,
+    path?: string
+  ): string | undefined {
+    if (scope !== 'local') {
+      return undefined
+    }
+    if (!path) {
+      throw new InvalidArgumentError(
+        'A repository path is required when using scope "local".'
+      )
+    }
+    return path
   }
 }
 

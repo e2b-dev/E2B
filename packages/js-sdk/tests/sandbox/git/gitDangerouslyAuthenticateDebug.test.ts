@@ -14,6 +14,7 @@ const password = 'token'
 const expectedCredential = `${protocol}://${username}:${password}@${host}`
 const configuredName = 'E2B Debug'
 const configuredEmail = 'debug@e2b.dev'
+const configRepoPath = '/tmp/e2b-git-config-repo'
 
 debugGitTest(
   'dangerouslyAuthenticate configures global credentials and user (debug-only)',
@@ -22,17 +23,15 @@ debugGitTest(
     const credentialsPath = `${home}/.git-credentials`
     const credentialsBackupPath = `${credentialsPath}.__bak__`
 
-    const originalHelper = (
-      await sandbox.commands.run(
-        'git config --global --get credential.helper || true'
-      )
-    ).stdout.trim()
-    const originalName = (
-      await sandbox.commands.run('git config --global --get user.name || true')
-    ).stdout.trim()
-    const originalEmail = (
-      await sandbox.commands.run('git config --global --get user.email || true')
-    ).stdout.trim()
+    const originalHelper = await sandbox.git.configGet('credential.helper', {
+      scope: 'global',
+    })
+    const originalName = await sandbox.git.configGet('user.name', {
+      scope: 'global',
+    })
+    const originalEmail = await sandbox.git.configGet('user.email', {
+      scope: 'global',
+    })
 
     await sandbox.commands.run(
       `if [ -f "${credentialsPath}" ]; then cp "${credentialsPath}" "${credentialsBackupPath}"; else rm -f "${credentialsBackupPath}"; fi`
@@ -47,11 +46,9 @@ debugGitTest(
       })
       await sandbox.git.configureUser(configuredName, configuredEmail)
 
-      const helperAfter = (
-        await sandbox.commands.run(
-          'git config --global --get credential.helper || true'
-        )
-      ).stdout.trim()
+      const helperAfter = await sandbox.git.configGet('credential.helper', {
+        scope: 'global',
+      })
       expect(helperAfter).toBe('store')
 
       const credentialCheck = (
@@ -61,32 +58,59 @@ debugGitTest(
       ).stdout.trim()
       expect(credentialCheck).toBe('found')
 
-      const nameAfter = (
-        await sandbox.commands.run(
-          'git config --global --get user.name || true'
-        )
-      ).stdout.trim()
-      const emailAfter = (
-        await sandbox.commands.run(
-          'git config --global --get user.email || true'
-        )
-      ).stdout.trim()
+      const nameAfter = await sandbox.git.configGet('user.name', {
+        scope: 'global',
+      })
+      const emailAfter = await sandbox.git.configGet('user.email', {
+        scope: 'global',
+      })
       expect(nameAfter).toBe(configuredName)
       expect(emailAfter).toBe(configuredEmail)
-    } finally {
-      const restoreHelperCmd = originalHelper
-        ? `git config --global credential.helper ${shellEscape(originalHelper)}`
-        : 'git config --global --unset credential.helper || true'
-      const restoreNameCmd = originalName
-        ? `git config --global user.name ${shellEscape(originalName)}`
-        : 'git config --global --unset user.name || true'
-      const restoreEmailCmd = originalEmail
-        ? `git config --global user.email ${shellEscape(originalEmail)}`
-        : 'git config --global --unset user.email || true'
 
-      await sandbox.commands.run(restoreHelperCmd)
-      await sandbox.commands.run(restoreNameCmd)
-      await sandbox.commands.run(restoreEmailCmd)
+      await sandbox.commands.run(
+        [
+          `rm -rf "${configRepoPath}"`,
+          `mkdir -p "${configRepoPath}"`,
+          `git -C "${configRepoPath}" init`,
+        ].join(' && ')
+      )
+      await sandbox.git.configSet('pull.rebase', 'true', {
+        scope: 'local',
+        path: configRepoPath,
+      })
+      const localPullRebase = await sandbox.git.configGet('pull.rebase', {
+        scope: 'local',
+        path: configRepoPath,
+      })
+      expect(localPullRebase).toBe('true')
+    } finally {
+      if (originalHelper) {
+        await sandbox.git.configSet('credential.helper', originalHelper, {
+          scope: 'global',
+        })
+      } else {
+        await sandbox.commands.run(
+          'git config --global --unset credential.helper || true'
+        )
+      }
+      if (originalName) {
+        await sandbox.git.configSet('user.name', originalName, {
+          scope: 'global',
+        })
+      } else {
+        await sandbox.commands.run(
+          'git config --global --unset user.name || true'
+        )
+      }
+      if (originalEmail) {
+        await sandbox.git.configSet('user.email', originalEmail, {
+          scope: 'global',
+        })
+      } else {
+        await sandbox.commands.run(
+          'git config --global --unset user.email || true'
+        )
+      }
       await sandbox.commands.run(
         `if [ -f "${credentialsBackupPath}" ]; then mv "${credentialsBackupPath}" "${credentialsPath}"; else rm -f "${credentialsPath}"; fi`
       )

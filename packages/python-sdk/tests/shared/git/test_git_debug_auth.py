@@ -18,14 +18,15 @@ PASSWORD = "token"
 EXPECTED_CREDENTIAL = f"{PROTOCOL}://{USERNAME}:{PASSWORD}@{HOST}"
 CONFIGURED_NAME = "E2B Debug"
 CONFIGURED_EMAIL = "debug@e2b.dev"
+CONFIG_REPO_PATH = "/tmp/e2b-git-config-repo"
 
 
 def _quote(value: str) -> str:
     return shlex.quote(value)
 
 
-def _get_config(sandbox, key: str) -> str:
-    return sandbox.commands.run(f"git config --global --get {key} || true").stdout.strip()
+def _get_global_config(sandbox, key: str) -> str | None:
+    return sandbox.git.config_get(key, scope="global")
 
 
 def test_dangerously_authenticate_configures_global_credentials_and_user(
@@ -37,9 +38,9 @@ def test_dangerously_authenticate_configures_global_credentials_and_user(
     credentials_path = f"{home}/.git-credentials"
     credentials_backup_path = f"{credentials_path}.__bak__"
 
-    original_helper = _get_config(sandbox, "credential.helper")
-    original_name = _get_config(sandbox, "user.name")
-    original_email = _get_config(sandbox, "user.email")
+    original_helper = _get_global_config(sandbox, "credential.helper")
+    original_name = _get_global_config(sandbox, "user.name")
+    original_email = _get_global_config(sandbox, "user.email")
 
     sandbox.commands.run(
         f'if [ -f "{credentials_path}" ]; then cp "{credentials_path}" "{credentials_backup_path}"; else rm -f "{credentials_backup_path}"; fi'
@@ -54,7 +55,7 @@ def test_dangerously_authenticate_configures_global_credentials_and_user(
         )
         sandbox.git.configure_user(CONFIGURED_NAME, CONFIGURED_EMAIL)
 
-        helper_after = _get_config(sandbox, "credential.helper")
+        helper_after = _get_global_config(sandbox, "credential.helper")
         assert helper_after == "store"
 
         credential_check = sandbox.commands.run(
@@ -62,30 +63,55 @@ def test_dangerously_authenticate_configures_global_credentials_and_user(
         ).stdout.strip()
         assert credential_check == "found"
 
-        name_after = _get_config(sandbox, "user.name")
-        email_after = _get_config(sandbox, "user.email")
+        name_after = _get_global_config(sandbox, "user.name")
+        email_after = _get_global_config(sandbox, "user.email")
         assert name_after == CONFIGURED_NAME
         assert email_after == CONFIGURED_EMAIL
-    finally:
-        helper_restore_cmd = (
-            f"git config --global credential.helper {_quote(original_helper)}"
-            if original_helper
-            else "git config --global --unset credential.helper || true"
-        )
-        name_restore_cmd = (
-            f"git config --global user.name {_quote(original_name)}"
-            if original_name
-            else "git config --global --unset user.name || true"
-        )
-        email_restore_cmd = (
-            f"git config --global user.email {_quote(original_email)}"
-            if original_email
-            else "git config --global --unset user.email || true"
-        )
 
-        sandbox.commands.run(helper_restore_cmd)
-        sandbox.commands.run(name_restore_cmd)
-        sandbox.commands.run(email_restore_cmd)
+        sandbox.commands.run(
+            f'rm -rf "{CONFIG_REPO_PATH}" && '
+            f'mkdir -p "{CONFIG_REPO_PATH}" && '
+            f'git -C "{CONFIG_REPO_PATH}" init'
+        )
+        sandbox.git.config_set(
+            "pull.rebase",
+            "true",
+            scope="local",
+            path=CONFIG_REPO_PATH,
+        )
+        local_pull_rebase = sandbox.git.config_get(
+            "pull.rebase",
+            scope="local",
+            path=CONFIG_REPO_PATH,
+        )
+        assert local_pull_rebase == "true"
+    finally:
+        if original_helper:
+            sandbox.git.config_set(
+                "credential.helper",
+                original_helper,
+                scope="global",
+            )
+        else:
+            sandbox.commands.run(
+                "git config --global --unset credential.helper || true"
+            )
+        if original_name:
+            sandbox.git.config_set(
+                "user.name",
+                original_name,
+                scope="global",
+            )
+        else:
+            sandbox.commands.run("git config --global --unset user.name || true")
+        if original_email:
+            sandbox.git.config_set(
+                "user.email",
+                original_email,
+                scope="global",
+            )
+        else:
+            sandbox.commands.run("git config --global --unset user.email || true")
         sandbox.commands.run(
             f'if [ -f "{credentials_backup_path}" ]; then mv "{credentials_backup_path}" "{credentials_path}"; else rm -f "{credentials_path}"; fi'
         )

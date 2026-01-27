@@ -427,6 +427,92 @@ class Git:
             args.append(branch)
         return self._run(args, path, envs, user, cwd, timeout, request_timeout)
 
+    def config_set(
+        self,
+        key: str,
+        value: str,
+        scope: str = "global",
+        path: Optional[str] = None,
+        envs: Optional[Dict[str, str]] = None,
+        user: Optional[str] = None,
+        cwd: Optional[str] = None,
+        timeout: Optional[float] = None,
+        request_timeout: Optional[float] = None,
+    ):
+        """
+        Set a git config value.
+
+        Use `scope="local"` together with `path` to configure a specific repository.
+
+        :param key: Git config key (e.g. `pull.rebase`)
+        :param value: Git config value
+        :param scope: Config scope: `global`, `local`, or `system`
+        :param path: Repository path required when `scope` is `local`
+        :param envs: Environment variables used for the command
+        :param user: User to run the command as
+        :param cwd: Working directory to run the command
+        :param timeout: Timeout for the command connection in **seconds**
+        :param request_timeout: Timeout for the request in **seconds**
+        :return: Command result from the command runner
+        """
+        if not key:
+            raise InvalidArgumentException("Git config key is required.")
+
+        scope_flag, repo_path = self._resolve_config_scope(scope, path)
+        return self._run(
+            ["config", scope_flag, key, value],
+            repo_path,
+            envs,
+            user,
+            cwd,
+            timeout,
+            request_timeout,
+        )
+
+    def config_get(
+        self,
+        key: str,
+        scope: str = "global",
+        path: Optional[str] = None,
+        envs: Optional[Dict[str, str]] = None,
+        user: Optional[str] = None,
+        cwd: Optional[str] = None,
+        timeout: Optional[float] = None,
+        request_timeout: Optional[float] = None,
+    ) -> Optional[str]:
+        """
+        Get a git config value.
+
+        Returns `None` when the key is not set in the requested scope.
+
+        :param key: Git config key (e.g. `pull.rebase`)
+        :param scope: Config scope: `global`, `local`, or `system`
+        :param path: Repository path required when `scope` is `local`
+        :param envs: Environment variables used for the command
+        :param user: User to run the command as
+        :param cwd: Working directory to run the command
+        :param timeout: Timeout for the command connection in **seconds**
+        :param request_timeout: Timeout for the request in **seconds**
+        :return: Config value if present, otherwise `None`
+        """
+        if not key:
+            raise InvalidArgumentException("Git config key is required.")
+
+        scope_flag, repo_path = self._resolve_config_scope(scope, path)
+        cmd = (
+            f"{build_git_command(['config', scope_flag, '--get', key], repo_path)} "
+            "|| true"
+        )
+        result = self._run_shell(
+            cmd,
+            envs,
+            user,
+            cwd,
+            timeout,
+            request_timeout,
+        ).stdout.strip()
+        return result or None
+
     def dangerously_authenticate(
         self,
         username: str,
@@ -474,14 +560,15 @@ class Git:
             ]
         )
 
-        self._run(
-            ["config", "--global", "credential.helper", "store"],
-            None,
-            envs,
-            user,
-            cwd,
-            timeout,
-            request_timeout,
+        self.config_set(
+            "credential.helper",
+            "store",
+            scope="global",
+            envs=envs,
+            user=user,
+            cwd=cwd,
+            timeout=timeout,
+            request_timeout=request_timeout,
         )
         approve_cmd = (
             f"printf %s {shell_escape(credential_input)} | "
@@ -521,15 +608,44 @@ class Git:
         if not name or not email:
             raise InvalidArgumentException("Both name and email are required.")
 
-        cmd = (
-            f"{build_git_command(['config', '--global', 'user.name', name])} && "
-            f"{build_git_command(['config', '--global', 'user.email', email])}"
+        self.config_set(
+            "user.name",
+            name,
+            scope="global",
+            envs=envs,
+            user=user,
+            cwd=cwd,
+            timeout=timeout,
+            request_timeout=request_timeout,
         )
-        return self._run_shell(
-            cmd,
-            envs,
-            user,
-            cwd,
-            timeout,
-            request_timeout,
+        return self.config_set(
+            "user.email",
+            email,
+            scope="global",
+            envs=envs,
+            user=user,
+            cwd=cwd,
+            timeout=timeout,
+            request_timeout=request_timeout,
         )
+
+    def _resolve_config_scope(
+        self, scope: str, path: Optional[str]
+    ) -> tuple[str, Optional[str]]:
+        scope_name = (scope or "global").strip().lower()
+        if scope_name not in {"global", "local", "system"}:
+            raise InvalidArgumentException(
+                "Git config scope must be one of: global, local, system."
+            )
+
+        if scope_name == "local":
+            if not path:
+                raise InvalidArgumentException(
+                    "Repository path is required when scope is local."
+                )
+            return "--local", path
+
+        if scope_name == "system":
+            return "--system", None
+
+        return "--global", None
