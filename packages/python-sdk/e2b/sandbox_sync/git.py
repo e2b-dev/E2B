@@ -17,6 +17,7 @@ from e2b.sandbox.git_utils import (
     with_credentials,
 )
 from e2b.exceptions import InvalidArgumentException
+from e2b.sandbox.commands.command_handle import CommandExitException
 from e2b.sandbox_sync.commands.command import Commands
 
 
@@ -114,6 +115,32 @@ class Git:
             request_timeout=request_timeout,
         )
 
+    def _is_auth_failure(self, err: Exception) -> bool:
+        if not isinstance(err, CommandExitException):
+            return False
+
+        message = f"{err.stderr}\n{err.stdout}".lower()
+        auth_snippets = [
+            "authentication failed",
+            "terminal prompts disabled",
+            "could not read username",
+            "invalid username or password",
+            "repository not found",
+            "access denied",
+            "permission denied",
+            "not authorized",
+        ]
+        return any(snippet in message for snippet in auth_snippets)
+
+    def _build_auth_error_message(
+        self, action: str, missing_password: bool
+    ) -> str:
+        if missing_password:
+            return (
+                f"Git {action} requires a password/token for private repositories."
+            )
+        return f"Git {action} requires credentials for private repositories."
+
     def _get_remote_url(
         self,
         path: str,
@@ -139,6 +166,93 @@ class Git:
                 f'Remote "{remote}" URL not found in repository.'
             )
         return url
+
+    def _resolve_remote_name(
+        self,
+        path: str,
+        remote: Optional[str],
+        envs: Optional[Dict[str, str]] = None,
+        user: Optional[str] = None,
+        cwd: Optional[str] = None,
+        timeout: Optional[float] = None,
+        request_timeout: Optional[float] = None,
+    ) -> str:
+        if remote:
+            return remote
+
+        result = self._run(
+            ["remote"],
+            path,
+            envs,
+            user,
+            cwd,
+            timeout,
+            request_timeout,
+        )
+        remotes = [line.strip() for line in result.stdout.splitlines() if line.strip()]
+        if len(remotes) == 1:
+            return remotes[0]
+
+        raise InvalidArgumentException(
+            "Remote is required when using username/password and the repository has multiple remotes."
+        )
+
+    def _with_remote_credentials(
+        self,
+        path: str,
+        remote: str,
+        username: str,
+        password: str,
+        envs: Optional[Dict[str, str]] = None,
+        user: Optional[str] = None,
+        cwd: Optional[str] = None,
+        timeout: Optional[float] = None,
+        request_timeout: Optional[float] = None,
+        operation=None,
+    ):
+        original_url = self._get_remote_url(
+            path, remote, envs, user, cwd, timeout, request_timeout
+        )
+        credential_url = with_credentials(original_url, username, password)
+        self._run(
+            ["remote", "set-url", remote, credential_url],
+            path,
+            envs,
+            user,
+            cwd,
+            timeout,
+            request_timeout,
+        )
+
+        result = None
+        operation_error: Exception | None = None
+        try:
+            if operation is None:
+                raise InvalidArgumentException("Operation is required.")
+            result = operation()
+        except Exception as err:
+            operation_error = err
+
+        restore_error: Exception | None = None
+        try:
+            self._run(
+                ["remote", "set-url", remote, original_url],
+                path,
+                envs,
+                user,
+                cwd,
+                timeout,
+                request_timeout,
+            )
+        except Exception as err:
+            restore_error = err
+
+        if operation_error:
+            raise operation_error
+        if restore_error:
+            raise restore_error
+
+        return result
 
     def clone(
         self,
@@ -172,33 +286,62 @@ class Git:
         :param dangerously_store_credentials: Store credentials in the cloned repository when True
         :return: Command result from the command runner
         """
-        clone_url = with_credentials(url, username, password)
-        sanitized_url = strip_credentials(clone_url)
-        should_strip = not dangerously_store_credentials and sanitized_url != clone_url
-        repo_path = path if not should_strip else path or derive_repo_dir_from_url(url)
-        if should_strip and not repo_path:
+        def attempt_clone(
+            auth_username: Optional[str], auth_password: Optional[str]
+        ):
+            clone_url = (
+                with_credentials(url, auth_username, auth_password)
+                if auth_username and auth_password
+                else url
+            )
+            sanitized_url = strip_credentials(clone_url)
+            should_strip = (
+                not dangerously_store_credentials and sanitized_url != clone_url
+            )
+            repo_path = (
+                path if not should_strip else path or derive_repo_dir_from_url(url)
+            )
+            if should_strip and not repo_path:
+                raise InvalidArgumentException(
+                    "A destination path is required when using credentials without storing them."
+                )
+            args = ["clone", clone_url]
+            if branch:
+                args.extend(["--branch", branch, "--single-branch"])
+            if depth:
+                args.extend(["--depth", str(depth)])
+            if path:
+                args.append(path)
+            result = self._run(
+                args, None, envs, user, cwd, timeout, request_timeout
+            )
+            if should_strip and repo_path:
+                self._run(
+                    ["remote", "set-url", "origin", sanitized_url],
+                    repo_path,
+                    envs,
+                    user,
+                    cwd,
+                    timeout,
+                    request_timeout,
+                )
+            return result
+
+        if password and not username:
             raise InvalidArgumentException(
-                "A destination path is required when using credentials without storing them."
+                "Username is required when using a password or token for git clone."
             )
-        args = ["clone", clone_url]
-        if branch:
-            args.extend(["--branch", branch, "--single-branch"])
-        if depth:
-            args.extend(["--depth", str(depth)])
-        if path:
-            args.append(path)
-        result = self._run(args, None, envs, user, cwd, timeout, request_timeout)
-        if should_strip and repo_path:
-            self._run(
-                ["remote", "set-url", "origin", sanitized_url],
-                repo_path,
-                envs,
-                user,
-                cwd,
-                timeout,
-                request_timeout,
-            )
-        return result
+
+        try:
+            return attempt_clone(username, password)
+        except CommandExitException as err:
+            if self._is_auth_failure(err):
+                raise InvalidArgumentException(
+                    self._build_auth_error_message(
+                        "clone", bool(username) and not password
+                    )
+                ) from err
+            raise
 
     def init(
         self,
@@ -689,60 +832,59 @@ class Git:
         :param request_timeout: Timeout for the request in **seconds**
         :return: Command result from the command runner
         """
-        args = ["push"]
-        if set_upstream:
-            args.append("--set-upstream")
-        if remote:
-            args.append(remote)
-        if branch:
-            args.append(branch)
-        if username or password:
-            if not username or not password:
-                raise InvalidArgumentException(
-                    "Both username and password are required to authenticate git push."
-                )
-            if not remote:
-                raise InvalidArgumentException(
-                    "Remote is required when using username/password for git push."
-                )
+        def build_args(remote_name: Optional[str] = None) -> List[str]:
+            args = ["push"]
+            if set_upstream:
+                args.append("--set-upstream")
+            target_remote = remote_name or remote
+            if target_remote:
+                args.append(target_remote)
+            if branch:
+                args.append(branch)
+            return args
 
-            original_url = self._get_remote_url(
+        if password and not username:
+            raise InvalidArgumentException(
+                "Username is required when using a password or token for git push."
+            )
+
+        if username and password:
+            remote_name = self._resolve_remote_name(
                 path, remote, envs, user, cwd, timeout, request_timeout
             )
-            credential_url = with_credentials(original_url, username, password)
-            self._run(
-                ["remote", "set-url", remote, credential_url],
+            return self._with_remote_credentials(
                 path,
+                remote_name,
+                username,
+                password,
                 envs,
                 user,
                 cwd,
                 timeout,
                 request_timeout,
+                operation=lambda: self._run(
+                    build_args(remote_name),
+                    path,
+                    envs,
+                    user,
+                    cwd,
+                    timeout,
+                    request_timeout,
+                ),
             )
-            push_error: Exception | None = None
-            try:
-                return self._run(
-                    args, path, envs, user, cwd, timeout, request_timeout
-                )
-            except Exception as err:
-                push_error = err
-                raise
-            finally:
-                try:
-                    self._run(
-                        ["remote", "set-url", remote, original_url],
-                        path,
-                        envs,
-                        user,
-                        cwd,
-                        timeout,
-                        request_timeout,
-                    )
-                except Exception:
-                    if push_error is None:
-                        raise
 
-        return self._run(args, path, envs, user, cwd, timeout, request_timeout)
+        try:
+            return self._run(
+                build_args(), path, envs, user, cwd, timeout, request_timeout
+            )
+        except CommandExitException as err:
+            if self._is_auth_failure(err):
+                raise InvalidArgumentException(
+                    self._build_auth_error_message(
+                        "push", bool(username) and not password
+                    )
+                ) from err
+            raise
 
     def pull(
         self,
@@ -772,58 +914,57 @@ class Git:
         :param request_timeout: Timeout for the request in **seconds**
         :return: Command result from the command runner
         """
-        args = ["pull"]
-        if remote:
-            args.append(remote)
-        if branch:
-            args.append(branch)
-        if username or password:
-            if not username or not password:
-                raise InvalidArgumentException(
-                    "Both username and password are required to authenticate git pull."
-                )
-            if not remote:
-                raise InvalidArgumentException(
-                    "Remote is required when using username/password for git pull."
-                )
+        def build_args(remote_name: Optional[str] = None) -> List[str]:
+            args = ["pull"]
+            target_remote = remote_name or remote
+            if target_remote:
+                args.append(target_remote)
+            if branch:
+                args.append(branch)
+            return args
 
-            original_url = self._get_remote_url(
+        if password and not username:
+            raise InvalidArgumentException(
+                "Username is required when using a password or token for git pull."
+            )
+
+        if username and password:
+            remote_name = self._resolve_remote_name(
                 path, remote, envs, user, cwd, timeout, request_timeout
             )
-            credential_url = with_credentials(original_url, username, password)
-            self._run(
-                ["remote", "set-url", remote, credential_url],
+            return self._with_remote_credentials(
                 path,
+                remote_name,
+                username,
+                password,
                 envs,
                 user,
                 cwd,
                 timeout,
                 request_timeout,
+                operation=lambda: self._run(
+                    build_args(remote_name),
+                    path,
+                    envs,
+                    user,
+                    cwd,
+                    timeout,
+                    request_timeout,
+                ),
             )
-            pull_error: Exception | None = None
-            try:
-                return self._run(
-                    args, path, envs, user, cwd, timeout, request_timeout
-                )
-            except Exception as err:
-                pull_error = err
-                raise
-            finally:
-                try:
-                    self._run(
-                        ["remote", "set-url", remote, original_url],
-                        path,
-                        envs,
-                        user,
-                        cwd,
-                        timeout,
-                        request_timeout,
-                    )
-                except Exception:
-                    if pull_error is None:
-                        raise
 
-        return self._run(args, path, envs, user, cwd, timeout, request_timeout)
+        try:
+            return self._run(
+                build_args(), path, envs, user, cwd, timeout, request_timeout
+            )
+        except CommandExitException as err:
+            if self._is_auth_failure(err):
+                raise InvalidArgumentException(
+                    self._build_auth_error_message(
+                        "pull", bool(username) and not password
+                    )
+                ) from err
+            raise
 
     def config_set(
         self,

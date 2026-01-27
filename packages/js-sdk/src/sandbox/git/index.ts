@@ -1,6 +1,6 @@
 import { InvalidArgumentError } from '../../errors'
 import type { CommandStartOpts } from '../commands'
-import type { CommandResult } from '../commands/commandHandle'
+import { CommandExitError, type CommandResult } from '../commands/commandHandle'
 import { Commands } from '../commands'
 import {
   buildGitCommand,
@@ -372,42 +372,67 @@ export class Git {
       dangerouslyStoreCredentials,
       ...rest
     } = opts ?? {}
-    const cloneUrl = withCredentials(url, username, password)
-    const sanitizedUrl = stripCredentials(cloneUrl)
-    const shouldStripCredentials =
-      !dangerouslyStoreCredentials && sanitizedUrl !== cloneUrl
-    const repoPath = shouldStripCredentials
-      ? (path ?? deriveRepoDirFromUrl(url))
-      : path
+    const attemptClone = async (
+      authUsername?: string,
+      authPassword?: string
+    ): Promise<CommandResult> => {
+      const cloneUrl =
+        authUsername && authPassword
+          ? withCredentials(url, authUsername, authPassword)
+          : url
+      const sanitizedUrl = stripCredentials(cloneUrl)
+      const shouldStripCredentials =
+        !dangerouslyStoreCredentials && sanitizedUrl !== cloneUrl
+      const repoPath = shouldStripCredentials
+        ? (path ?? deriveRepoDirFromUrl(url))
+        : path
 
-    if (shouldStripCredentials && !repoPath) {
+      if (shouldStripCredentials && !repoPath) {
+        throw new InvalidArgumentError(
+          'A destination path is required when using credentials without storing them.'
+        )
+      }
+
+      const args = ['clone', cloneUrl]
+      if (branch) {
+        args.push('--branch', branch, '--single-branch')
+      }
+      if (depth) {
+        args.push('--depth', depth.toString())
+      }
+      if (path) {
+        args.push(path)
+      }
+
+      const result = await this.run(args, undefined, rest)
+
+      if (shouldStripCredentials && repoPath) {
+        await this.run(
+          ['remote', 'set-url', 'origin', sanitizedUrl],
+          repoPath,
+          rest
+        )
+      }
+
+      return result
+    }
+
+    if (password && !username) {
       throw new InvalidArgumentError(
-        'A destination path is required when using credentials without storing them.'
+        'Username is required when using a password or token for git clone.'
       )
     }
 
-    const args = ['clone', cloneUrl]
-    if (branch) {
-      args.push('--branch', branch, '--single-branch')
+    try {
+      return await attemptClone(username, password)
+    } catch (err) {
+      if (this.isAuthFailure(err)) {
+        throw new InvalidArgumentError(
+          this.buildAuthErrorMessage('clone', Boolean(username) && !password)
+        )
+      }
+      throw err
     }
-    if (depth) {
-      args.push('--depth', depth.toString())
-    }
-    if (path) {
-      args.push(path)
-    }
-
-    const result = await this.run(args, undefined, rest)
-
-    if (shouldStripCredentials && repoPath) {
-      await this.run(
-        ['remote', 'set-url', 'origin', sanitizedUrl],
-        repoPath,
-        rest
-      )
-    }
-
-    return result
   }
 
   /**
@@ -720,41 +745,49 @@ export class Git {
   async push(path: string, opts?: GitPushOpts): Promise<CommandResult> {
     const { remote, branch, setUpstream, username, password, ...rest } =
       opts ?? {}
-    const args = ['push']
-
-    if (setUpstream) {
-      args.push('--set-upstream')
-    }
-    if (remote) {
-      args.push(remote)
-    }
-    if (branch) {
-      args.push(branch)
-    }
-
-    if (username || password) {
-      if (!username || !password) {
-        throw new InvalidArgumentError(
-          'Both username and password are required to authenticate git push.'
-        )
+    const buildArgs = (remoteName?: string) => {
+      const args = ['push']
+      if (setUpstream) {
+        args.push('--set-upstream')
       }
-      if (!remote) {
-        throw new InvalidArgumentError(
-          'Remote is required when using username/password for git push.'
-        )
+      const targetRemote = remoteName ?? remote
+      if (targetRemote) {
+        args.push(targetRemote)
       }
+      if (branch) {
+        args.push(branch)
+      }
+      return args
+    }
 
-      return this.withRemoteCredentials(
-        path,
-        remote,
-        username,
-        password,
-        rest,
-        () => this.run(args, path, rest)
+    if (password && !username) {
+      throw new InvalidArgumentError(
+        'Username is required when using a password or token for git push.'
       )
     }
 
-    return this.run(args, path, rest)
+    if (username && password) {
+      const remoteName = await this.resolveRemoteName(path, remote, rest)
+      return this.withRemoteCredentials(
+        path,
+        remoteName,
+        username,
+        password,
+        rest,
+        () => this.run(buildArgs(remoteName), path, rest)
+      )
+    }
+
+    try {
+      return await this.run(buildArgs(), path, rest)
+    } catch (err) {
+      if (this.isAuthFailure(err)) {
+        throw new InvalidArgumentError(
+          this.buildAuthErrorMessage('push', Boolean(username) && !password)
+        )
+      }
+      throw err
+    }
   }
 
   /**
@@ -766,38 +799,46 @@ export class Git {
    */
   async pull(path: string, opts?: GitPullOpts): Promise<CommandResult> {
     const { remote, branch, username, password, ...rest } = opts ?? {}
-    const args = ['pull']
-
-    if (remote) {
-      args.push(remote)
-    }
-    if (branch) {
-      args.push(branch)
-    }
-
-    if (username || password) {
-      if (!username || !password) {
-        throw new InvalidArgumentError(
-          'Both username and password are required to authenticate git pull.'
-        )
+    const buildArgs = (remoteName?: string) => {
+      const args = ['pull']
+      const targetRemote = remoteName ?? remote
+      if (targetRemote) {
+        args.push(targetRemote)
       }
-      if (!remote) {
-        throw new InvalidArgumentError(
-          'Remote is required when using username/password for git pull.'
-        )
+      if (branch) {
+        args.push(branch)
       }
+      return args
+    }
 
-      return this.withRemoteCredentials(
-        path,
-        remote,
-        username,
-        password,
-        rest,
-        () => this.run(args, path, rest)
+    if (password && !username) {
+      throw new InvalidArgumentError(
+        'Username is required when using a password or token for git pull.'
       )
     }
 
-    return this.run(args, path, rest)
+    if (username && password) {
+      const remoteName = await this.resolveRemoteName(path, remote, rest)
+      return this.withRemoteCredentials(
+        path,
+        remoteName,
+        username,
+        password,
+        rest,
+        () => this.run(buildArgs(remoteName), path, rest)
+      )
+    }
+
+    try {
+      return await this.run(buildArgs(), path, rest)
+    } catch (err) {
+      if (this.isAuthFailure(err)) {
+        throw new InvalidArgumentError(
+          this.buildAuthErrorMessage('pull', Boolean(username) && !password)
+        )
+      }
+      throw err
+    }
   }
 
   /**
@@ -969,6 +1010,60 @@ export class Git {
       )
     }
     return url
+  }
+
+  private async resolveRemoteName(
+    path: string,
+    remote: string | undefined,
+    opts?: GitRequestOpts
+  ): Promise<string> {
+    if (remote) {
+      return remote
+    }
+
+    const result = await this.run(['remote'], path, opts)
+    const remotes = result.stdout
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean)
+
+    if (remotes.length === 1) {
+      return remotes[0]
+    }
+
+    throw new InvalidArgumentError(
+      'Remote is required when using username/password and the repository has multiple remotes.'
+    )
+  }
+
+  private isAuthFailure(err: unknown): boolean {
+    if (!(err instanceof CommandExitError)) {
+      return false
+    }
+
+    const message = `${err.stderr}\n${err.stdout}`.toLowerCase()
+    const authSnippets = [
+      'authentication failed',
+      'terminal prompts disabled',
+      'could not read username',
+      'invalid username or password',
+      'repository not found',
+      'access denied',
+      'permission denied',
+      'not authorized',
+    ]
+
+    return authSnippets.some((snippet) => message.includes(snippet))
+  }
+
+  private buildAuthErrorMessage(
+    action: 'clone' | 'push' | 'pull',
+    missingPassword: boolean
+  ): string {
+    if (missingPassword) {
+      return `Git ${action} requires a password/token for private repositories.`
+    }
+    return `Git ${action} requires credentials for private repositories.`
   }
 
   private async withRemoteCredentials<T>(
