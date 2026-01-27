@@ -1047,7 +1047,6 @@ export class Git {
       'terminal prompts disabled',
       'could not read username',
       'invalid username or password',
-      'repository not found',
       'access denied',
       'permission denied',
       'not authorized',
