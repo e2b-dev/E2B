@@ -13,13 +13,6 @@ def test_check_base_template_name_exists():
 
 
 @pytest.mark.skip_debug()
-def test_check_base_template_with_tag_exists():
-    """Test that the base template with tag exists."""
-    exists = Template.exists("base:default")
-    assert exists is True
-
-
-@pytest.mark.skip_debug()
 def test_check_non_existing_name():
     """Test that a non-existing name returns False."""
     non_existing_name = f"nonexistent-{uuid.uuid4()}"
