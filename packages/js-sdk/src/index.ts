@@ -62,6 +62,20 @@ export type {
   Pty,
 } from './sandbox/commands'
 
+export { Git } from './sandbox/git'
+export type {
+  GitRequestOpts,
+  GitCloneOpts,
+  GitCommitOpts,
+  GitAddOpts,
+  GitDeleteBranchOpts,
+  GitPushOpts,
+  GitPullOpts,
+  GitBranches,
+  GitFileStatus,
+  GitStatus,
+} from './sandbox/git'
+
 export { Sandbox }
 import { Sandbox } from './sandbox'
 

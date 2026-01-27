@@ -11,6 +11,7 @@ import { EnvdApiClient, handleEnvdApiError } from '../envd/api'
 import { createRpcLogger } from '../logs'
 import { Commands, Pty } from './commands'
 import { Filesystem } from './filesystem'
+import { Git } from './git'
 import {
   SandboxOpts,
   SandboxConnectOpts,
@@ -48,6 +49,7 @@ export interface SandboxUrlOpts {
  * - Access Linux OS
  * - Create, list, and delete files and directories
  * - Run commands
+ * - Run git operations
  * - Run isolated code
  * - Access the internet
  *
@@ -79,6 +81,10 @@ export class Sandbox extends SandboxApi {
    * Module for interacting with the sandbox pseudo-terminals
    */
   readonly pty: Pty
+  /**
+   * Module for running git operations in the sandbox
+   */
+  readonly git: Git
 
   /**
    * Unique identifier of the sandbox.
@@ -199,6 +205,7 @@ export class Sandbox extends SandboxApi {
     this.pty = new Pty(rpcTransport, this.connectionConfig, {
       version: opts.envdVersion,
     })
+    this.git = new Git(this.commands)
   }
 
   /**
