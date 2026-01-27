@@ -3,7 +3,11 @@ import { expect } from 'vitest'
 import { isDebug, sandboxTest } from '../../setup.js'
 
 const enabled = process.env.E2B_DEBUG_GITHUB_CREATE_REPO !== undefined
-const token = process.env.E2B_DEBUG_GITHUB_TOKEN
+const token =
+  process.env.E2B_DEBUG_GITHUB_TOKEN ??
+  process.env.GITHUB_PAT ??
+  process.env.GITHUB_TOKEN ??
+  process.env.GH_TOKEN
 const org = process.env.E2B_DEBUG_GITHUB_ORG
 const repoPrefix = process.env.E2B_DEBUG_GITHUB_REPO_PREFIX ?? 'e2b-debug-git-'
 const apiBaseUrl =

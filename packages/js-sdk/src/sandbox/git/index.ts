@@ -115,8 +115,11 @@ export interface GitHubCreateRepoRemoteOpts {
 export interface GitHubCreateRepoOpts extends GitRequestOpts {
   /**
    * GitHub personal access token or app token.
+   *
+   * If omitted, uses `GITHUB_PAT`, `GITHUB_TOKEN`, or `GH_TOKEN` from the
+   * local environment.
    */
-  token: string
+  token?: string
   /**
    * Repository name to create.
    */
@@ -401,9 +404,15 @@ export class Git {
       ...requestOpts
     } = opts
 
-    if (!token || !name) {
+    const resolvedToken =
+      token ??
+      process.env.GITHUB_PAT ??
+      process.env.GITHUB_TOKEN ??
+      process.env.GH_TOKEN
+
+    if (!resolvedToken || !name) {
       throw new InvalidArgumentError(
-        'Both token and name are required to create a GitHub repository.'
+        'GitHub token and repository name are required to create a GitHub repository.'
       )
     }
 
@@ -427,7 +436,7 @@ export class Git {
       method: 'POST',
       headers: {
         Accept: 'application/vnd.github+json',
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${resolvedToken}`,
         'X-GitHub-Api-Version': '2022-11-28',
         'Content-Type': 'application/json',
       },

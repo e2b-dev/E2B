@@ -17,9 +17,13 @@ if os.getenv("E2B_DEBUG_GITHUB_CREATE_REPO") is None:
 
 
 TOKEN = os.getenv("E2B_DEBUG_GITHUB_TOKEN")
-if not TOKEN:
+if not TOKEN and not (
+    os.getenv("GITHUB_PAT")
+    or os.getenv("GITHUB_TOKEN")
+    or os.getenv("GH_TOKEN")
+):
     pytest.skip(
-        "Set E2B_DEBUG_GITHUB_TOKEN to run debug-only GitHub create repo tests.",
+        "Set E2B_DEBUG_GITHUB_TOKEN or GITHUB_PAT/GITHUB_TOKEN/GH_TOKEN to run debug-only GitHub create repo tests.",
         allow_module_level=True,
     )
 
@@ -84,8 +88,8 @@ def test_create_github_repo_creates_remote_and_wires_origin(sandbox_factory):
         sandbox.git.init(REPO_PATH, initial_branch="main")
 
         repo = sandbox.git.create_github_repo(
-            TOKEN,
             repo_name,
+            token=TOKEN,
             org=ORG,
             private=True,
             auto_init=False,
@@ -101,5 +105,5 @@ def test_create_github_repo_creates_remote_and_wires_origin(sandbox_factory):
         assert repo_name in remote_url
     finally:
         sandbox.commands.run(f'rm -rf "{REPO_PATH}"')
-        if owner_login:
+        if owner_login and TOKEN:
             _github_delete_repo(TOKEN, owner_login, repo_name, API_BASE_URL)

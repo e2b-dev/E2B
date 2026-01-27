@@ -1,5 +1,6 @@
 import asyncio
 import json
+import os
 from typing import Any, Dict, List, Optional, TypedDict
 from urllib import error as urllib_error
 from urllib import parse as urllib_parse
@@ -119,12 +120,13 @@ class Git:
         branch: Optional[str] = None,
         depth: Optional[int] = None,
         username: Optional[str] = None,
-        password: Optional[str] = None,
+        password: Optional[str] = None, #TODO: make sure that we aren't storing this in the .git; if the user needs auth need to handle asking for PAT on every call
         envs: Optional[Dict[str, str]] = None,
         user: Optional[str] = None,
         cwd: Optional[str] = None,
         timeout: Optional[float] = None,
         request_timeout: Optional[float] = None,
+        dangerously_store_credentials: bool = False, #TODO: I think this makes sense to do
     ):
         """
         Clone a git repository into the sandbox.
@@ -188,6 +190,19 @@ class Git:
             args, None, envs, user, cwd, timeout, request_timeout
         )
 
+    def _resolve_github_token(self, token: Optional[str]) -> str:
+        resolved = (
+            token
+            or os.getenv("GITHUB_PAT")
+            or os.getenv("GITHUB_TOKEN")
+            or os.getenv("GH_TOKEN")
+        )
+        if not resolved:
+            raise InvalidArgumentException(
+                "GitHub token is required. Pass token or set GITHUB_PAT/GITHUB_TOKEN/GH_TOKEN."
+            )
+        return resolved
+
     def _github_request_sync(
         self,
         method: str,
@@ -238,8 +253,9 @@ class Git:
 
     async def create_github_repo(
         self,
-        token: str,
         name: str,
+        *,
+        token: Optional[str] = None,
         org: Optional[str] = None,
         description: Optional[str] = None,
         private: Optional[bool] = None,
@@ -265,11 +281,16 @@ class Git:
         When ``add_remote_path`` is provided, the created repository is added as
         a remote in an existing sandbox repository.
         It does not initialize a local repository.
+
+        ``token`` is optional if one of ``GITHUB_PAT``, ``GITHUB_TOKEN``,
+        or ``GH_TOKEN`` is set in the local environment.
         """
-        if not token or not name:
+        if not name:
             raise InvalidArgumentException(
-                "Both token and name are required to create a GitHub repository."
+                "Repository name is required to create a GitHub repository."
             )
+
+        resolved_token = self._resolve_github_token(token)
 
         base_url = api_base_url.rstrip("/")
         if org:
@@ -292,7 +313,7 @@ class Git:
             payload["license_template"] = license_template
 
         data = await self._github_request(
-            "POST", f"{base_url}{endpoint}", token, payload
+            "POST", f"{base_url}{endpoint}", resolved_token, payload
         )
 
         repo: GitHubRepoInfo = {

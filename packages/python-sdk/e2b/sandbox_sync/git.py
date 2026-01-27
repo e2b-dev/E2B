@@ -1,4 +1,5 @@
 import json
+import os
 from typing import Any, Dict, List, Optional, TypedDict
 from urllib import error as urllib_error
 from urllib import parse as urllib_parse
@@ -183,6 +184,19 @@ class Git:
         args.append(path)
         return self._run(args, None, envs, user, cwd, timeout, request_timeout)
 
+    def _resolve_github_token(self, token: Optional[str]) -> str:
+        resolved = (
+            token
+            or os.getenv("GITHUB_PAT")
+            or os.getenv("GITHUB_TOKEN")
+            or os.getenv("GH_TOKEN")
+        )
+        if not resolved:
+            raise InvalidArgumentException(
+                "GitHub token is required. Pass token or set GITHUB_PAT/GITHUB_TOKEN/GH_TOKEN."
+            )
+        return resolved
+
     def _github_request(
         self,
         method: str,
@@ -225,8 +239,9 @@ class Git:
 
     def create_github_repo(
         self,
-        token: str,
         name: str,
+        *,
+        token: Optional[str] = None,
         org: Optional[str] = None,
         description: Optional[str] = None,
         private: Optional[bool] = None,
@@ -252,11 +267,16 @@ class Git:
         When ``add_remote_path`` is provided, the created repository is added as
         a remote in an existing sandbox repository.
         It does not initialize a local repository.
+
+        ``token`` is optional if one of ``GITHUB_PAT``, ``GITHUB_TOKEN``,
+        or ``GH_TOKEN`` is set in the local environment.
         """
-        if not token or not name:
+        if not name:
             raise InvalidArgumentException(
-                "Both token and name are required to create a GitHub repository."
+                "Repository name is required to create a GitHub repository."
             )
+
+        resolved_token = self._resolve_github_token(token)
 
         base_url = api_base_url.rstrip("/")
         if org:
@@ -278,7 +298,9 @@ class Git:
         if license_template is not None:
             payload["license_template"] = license_template
 
-        data = self._github_request("POST", f"{base_url}{endpoint}", token, payload)
+        data = self._github_request(
+            "POST", f"{base_url}{endpoint}", resolved_token, payload
+        )
 
         repo: GitHubRepoInfo = {
             "name": data.get("name", ""),
