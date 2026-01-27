@@ -8,7 +8,6 @@ const debugGitTest = sandboxTest.skipIf(shouldSkip)
 
 const initialBranch = 'main'
 const repoPathInit = '/tmp/e2b-git-init-repo-init'
-const repoPathCreate = '/tmp/e2b-git-init-repo-create'
 
 async function assertRepoInitialized(
   sandbox: any,
@@ -38,15 +37,6 @@ debugGitTest(
   async ({ sandbox }) => {
     await assertRepoInitialized(sandbox, repoPathInit, () =>
       sandbox.git.init(repoPathInit, { initialBranch })
-    )
-  }
-)
-
-debugGitTest(
-  'createRepo initializes a repo with the requested initial branch (debug-only)',
-  async ({ sandbox }) => {
-    await assertRepoInitialized(sandbox, repoPathCreate, () =>
-      sandbox.git.createRepo(repoPathCreate, { initialBranch })
     )
   }
 )

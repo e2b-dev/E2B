@@ -183,43 +183,6 @@ class Git:
         args.append(path)
         return self._run(args, None, envs, user, cwd, timeout, request_timeout)
 
-    def create_repo(
-        self,
-        path: str,
-        bare: bool = False,
-        initial_branch: Optional[str] = None,
-        envs: Optional[Dict[str, str]] = None,
-        user: Optional[str] = None,
-        cwd: Optional[str] = None,
-        timeout: Optional[float] = None,
-        request_timeout: Optional[float] = None,
-    ):
-        """
-        Create a new git repository.
-
-        This is an alias for :meth:`init` for discoverability.
-
-        :param path: Destination path for the repository
-        :param bare: Create a bare repository when True
-        :param initial_branch: Initial branch name (for example, "main")
-        :param envs: Environment variables used for the command
-        :param user: User to run the command as
-        :param cwd: Working directory to run the command
-        :param timeout: Timeout for the command connection in **seconds**
-        :param request_timeout: Timeout for the request in **seconds**
-        :return: Command result from the command runner
-        """
-        return self.init(
-            path=path,
-            bare=bare,
-            initial_branch=initial_branch,
-            envs=envs,
-            user=user,
-            cwd=cwd,
-            timeout=timeout,
-            request_timeout=request_timeout,
-        )
-
     def _github_request(
         self,
         method: str,
@@ -284,10 +247,11 @@ class Git:
         request_timeout: Optional[float] = None,
     ) -> GitHubRepoInfo:
         """
-        Create a new GitHub repository.
+        Create a new GitHub repository (remote).
 
         When ``add_remote_path`` is provided, the created repository is added as
-        a remote in the given sandbox repository.
+        a remote in an existing sandbox repository.
+        It does not initialize a local repository.
         """
         if not token or not name:
             raise InvalidArgumentException(

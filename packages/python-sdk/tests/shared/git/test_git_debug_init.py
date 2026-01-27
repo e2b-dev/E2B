@@ -12,7 +12,6 @@ if os.getenv("E2B_DEBUG_GIT_INIT") is None:
 
 INITIAL_BRANCH = "main"
 REPO_PATH_INIT = "/tmp/e2b-git-init-repo-init"
-REPO_PATH_CREATE = "/tmp/e2b-git-init-repo-create"
 
 
 def _assert_repo_initialized(sandbox, repo_path: str, init_fn) -> None:
@@ -41,16 +40,4 @@ def test_git_init_initializes_repo_with_initial_branch(sandbox_factory):
         sandbox,
         REPO_PATH_INIT,
         lambda: sandbox.git.init(REPO_PATH_INIT, initial_branch=INITIAL_BRANCH),
-    )
-
-
-def test_create_repo_initializes_repo_with_initial_branch(sandbox_factory):
-    sandbox = sandbox_factory(debug=True, secure=False, timeout=5)
-
-    _assert_repo_initialized(
-        sandbox,
-        REPO_PATH_CREATE,
-        lambda: sandbox.git.create_repo(
-            REPO_PATH_CREATE, initial_branch=INITIAL_BRANCH
-        ),
     )

@@ -376,23 +376,11 @@ export class Git {
   }
 
   /**
-   * Create a new git repository.
-   *
-   * This is an alias for {@link init} for discoverability.
-   *
-   * @param path Destination path for the repository.
-   * @param opts Init options.
-   * @returns Command result from the command runner.
-   */
-  async createRepo(path: string, opts?: GitInitOpts): Promise<CommandResult> {
-    return this.init(path, opts)
-  }
-
-  /**
-   * Create a new GitHub repository.
+   * Create a new GitHub repository (remote).
    *
    * When `addRemote` is provided, the created repository is added as a remote
-   * in the given sandbox repository.
+   * in an existing sandbox repository.
+   * It does not initialize a local repository.
    *
    * @param opts GitHub repository creation options.
    * @returns Minimal information about the created repository.

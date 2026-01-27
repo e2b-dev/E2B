@@ -56,7 +56,7 @@ debugGitTest(
     await sandbox.commands.run(`rm -rf "${repoPath}"`)
 
     try {
-      await sandbox.git.createRepo(repoPath, { initialBranch: 'main' })
+      await sandbox.git.init(repoPath, { initialBranch: 'main' })
 
       const repo = await sandbox.git.createGitHubRepo({
         token: token!,

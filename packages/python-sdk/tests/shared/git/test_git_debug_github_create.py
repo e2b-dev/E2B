@@ -81,7 +81,7 @@ def test_create_github_repo_creates_remote_and_wires_origin(sandbox_factory):
     sandbox.commands.run(f'rm -rf "{REPO_PATH}"')
 
     try:
-        sandbox.git.create_repo(REPO_PATH, initial_branch="main")
+        sandbox.git.init(REPO_PATH, initial_branch="main")
 
         repo = sandbox.git.create_github_repo(
             TOKEN,
@@ -103,4 +103,3 @@ def test_create_github_repo_creates_remote_and_wires_origin(sandbox_factory):
         sandbox.commands.run(f'rm -rf "{REPO_PATH}"')
         if owner_login:
             _github_delete_repo(TOKEN, owner_login, repo_name, API_BASE_URL)
-
