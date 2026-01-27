@@ -392,7 +392,7 @@ class Template(TemplateBase):
         ```python
         from e2b import Template
 
-        exists = Template.exists('base')
+        exists = Template.exists('my-python-env')
         if exists:
             print('Template exists!')
         ```
@@ -417,7 +417,7 @@ class Template(TemplateBase):
         ```python
         from e2b import Template
 
-        exists = Template.alias_exists('base')
+        exists = Template.alias_exists('my-python-env')
         if exists:
             print('Template exists!')
         ```

@@ -391,7 +391,7 @@ class AsyncTemplate(TemplateBase):
         ```python
         from e2b import AsyncTemplate
 
-        exists = await AsyncTemplate.exists('base')
+        exists = await AsyncTemplate.exists('my-python-env')
         if exists:
             print('Template exists!')
         ```
@@ -416,7 +416,7 @@ class AsyncTemplate(TemplateBase):
         ```python
         from e2b import AsyncTemplate
 
-        exists = await AsyncTemplate.alias_exists('base')
+        exists = await AsyncTemplate.alias_exists('my-python-env')
         if exists:
             print('Template exists!')
         ```
