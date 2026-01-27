@@ -157,7 +157,14 @@ def _map_build_status_reason(reason) -> Optional[BuildStatusReason]:
     return BuildStatusReason(
         message=reason.message,
         step=reason.step if not isinstance(reason.step, Unset) else None,
-        log_entries=[_map_log_entry(e) for e in (reason.log_entries if not isinstance(reason.log_entries, Unset) and reason.log_entries else [])],
+        log_entries=[
+            _map_log_entry(e)
+            for e in (
+                reason.log_entries
+                if not isinstance(reason.log_entries, Unset) and reason.log_entries
+                else []
+            )
+        ],
     )
 
 
