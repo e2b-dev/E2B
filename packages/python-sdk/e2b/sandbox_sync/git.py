@@ -1,9 +1,8 @@
 import json
 import os
+import textwrap
 from typing import Any, Dict, List, Optional, TypedDict
-from urllib import error as urllib_error
 from urllib import parse as urllib_parse
-from urllib import request as urllib_request
 
 from e2b.sandbox.git_utils import (
     GitBranches,
@@ -374,9 +373,15 @@ class Git:
         args.append(path)
         return self._run(args, None, envs, user, cwd, timeout, request_timeout)
 
-    def _resolve_github_token(self, token: Optional[str]) -> str:
+    def _resolve_github_token(
+        self, token: Optional[str], envs: Optional[Dict[str, str]] = None
+    ) -> str:
+        envs = envs or {}
         resolved = (
             token
+            or envs.get("GITHUB_PAT")
+            or envs.get("GITHUB_TOKEN")
+            or envs.get("GH_TOKEN")
             or os.getenv("GITHUB_PAT")
             or os.getenv("GITHUB_TOKEN")
             or os.getenv("GH_TOKEN")
@@ -393,39 +398,161 @@ class Git:
         url: str,
         token: str,
         payload: Optional[Dict[str, Any]] = None,
+        envs: Optional[Dict[str, str]] = None,
+        user: Optional[str] = None,
+        cwd: Optional[str] = None,
+        timeout: Optional[float] = None,
+        request_timeout: Optional[float] = None,
     ) -> Dict[str, Any]:
         """
-        Execute a GitHub API request and return the parsed JSON response.
+        Execute a GitHub API request inside the sandbox and return the parsed JSON response.
         """
-        data = (
-            json.dumps(payload).encode("utf-8")
-            if payload is not None
-            else None
+        request_envs = dict(envs or {})
+        request_envs.update(
+            {
+                "E2B_GITHUB_TOKEN": token,
+                "E2B_GITHUB_REQUEST_URL": url,
+                "E2B_GITHUB_METHOD": method.upper(),
+            }
         )
-        headers = {
-            "Accept": "application/vnd.github+json",
-            "Authorization": f"Bearer {token}",
-            "X-GitHub-Api-Version": "2022-11-28",
-        }
-        if data is not None:
-            headers["Content-Type"] = "application/json"
+        if payload is not None:
+            request_envs["E2B_GITHUB_PAYLOAD_JSON"] = json.dumps(payload)
+        if request_timeout is not None:
+            request_envs["E2B_GITHUB_HTTP_TIMEOUT"] = str(request_timeout)
 
-        req = urllib_request.Request(url, data=data, headers=headers, method=method)
+        script = textwrap.dedent(
+            """
+            if command -v python3 >/dev/null 2>&1; then
+            python3 - <<'PY'
+            import json
+            import os
+            import urllib.error
+            import urllib.request
 
-        try:
-            with urllib_request.urlopen(req) as resp:
-                body = resp.read().decode("utf-8")
-                return json.loads(body) if body else {}
-        except urllib_error.HTTPError as err:
-            body = err.read().decode("utf-8") if err.fp else ""
+            def _parse_timeout(value):
+                if not value:
+                    return None
+                try:
+                    return float(value)
+                except Exception:
+                    return None
+
+            method = os.environ.get("E2B_GITHUB_METHOD", "GET")
+            url = os.environ.get("E2B_GITHUB_REQUEST_URL")
+            token = os.environ.get("E2B_GITHUB_TOKEN")
+            payload_raw = os.environ.get("E2B_GITHUB_PAYLOAD_JSON", "")
+            timeout = _parse_timeout(os.environ.get("E2B_GITHUB_HTTP_TIMEOUT"))
+
+            if not url or not token:
+                print(json.dumps({"error": "Missing GitHub request URL or token.", "status": 0}))
+                raise SystemExit(0)
+
+            data = payload_raw.encode("utf-8") if payload_raw else None
+            headers = {
+                "Accept": "application/vnd.github+json",
+                "Authorization": f"Bearer {token}",
+                "X-GitHub-Api-Version": "2022-11-28",
+            }
+            if data is not None:
+                headers["Content-Type"] = "application/json"
+
+            req = urllib.request.Request(url, data=data, headers=headers, method=method)
             try:
-                parsed = json.loads(body) if body else {}
-            except Exception:
-                parsed = {}
-            message = parsed.get("message") or body or err.reason
+                with urllib.request.urlopen(req, timeout=timeout) as resp:
+                    body = resp.read().decode("utf-8")
+                    print(body or "{}")
+            except urllib.error.HTTPError as err:
+                body = err.read().decode("utf-8") if err.fp else ""
+                message = None
+                try:
+                    parsed = json.loads(body) if body else {}
+                    message = parsed.get("message")
+                except Exception:
+                    message = None
+                message = message or body or getattr(err, "reason", "")
+                print(json.dumps({"error": message, "status": err.code}))
+            except Exception as err:
+                print(json.dumps({"error": str(err), "status": 0}))
+            PY
+            exit 0
+            fi
+
+            if command -v curl >/dev/null 2>&1; then
+            method="${E2B_GITHUB_METHOD:-GET}"
+            url="${E2B_GITHUB_REQUEST_URL:-}"
+            token="${E2B_GITHUB_TOKEN:-}"
+            payload="${E2B_GITHUB_PAYLOAD_JSON:-}"
+            timeout="${E2B_GITHUB_HTTP_TIMEOUT:-}"
+
+            if [ -z "$url" ] || [ -z "$token" ]; then
+              printf '{"error":"Missing GitHub request URL or token.","status":0}'
+              exit 0
+            fi
+
+            tmp_file="$(mktemp 2>/dev/null || echo \"/tmp/e2b_github_resp_$$\")"
+            curl_args=(-sS -X "$method" \\
+              -H "Accept: application/vnd.github+json" \\
+              -H "Authorization: Bearer $token" \\
+              -H "X-GitHub-Api-Version: 2022-11-28")
+
+            if [ -n "$payload" ]; then
+              curl_args+=(-H "Content-Type: application/json" --data "$payload")
+            fi
+            if [ -n "$timeout" ]; then
+              curl_args+=(--max-time "$timeout")
+            fi
+
+            status="$(curl "${curl_args[@]}" -o "$tmp_file" -w "%{http_code}" "$url")"
+            curl_exit=$?
+            body="$(cat "$tmp_file" 2>/dev/null || true)"
+            rm -f "$tmp_file"
+
+            if [ "$curl_exit" -ne 0 ]; then
+              printf '{"error":"curl failed with exit %s","status":0}' "$curl_exit"
+              exit 0
+            fi
+
+            if [ "$status" -ge 400 ]; then
+              esc="$(printf '%s' "$body" | sed -e 's/\\\\/\\\\\\\\/g' -e 's/\"/\\\\\"/g' -e 's/\\r/\\\\r/g' -e ':a;N;$!ba;s/\\n/\\\\n/g')"
+              printf '{"error":"%s","status":%s}' "$esc" "$status"
+              exit 0
+            fi
+
+            printf '%s' "$body"
+            exit 0
+            fi
+
+            printf '{"error":"python3 or curl is required to call the GitHub API.","status":0}'
+            """
+        ).strip()
+
+        result = self._run_shell(
+            script,
+            envs=request_envs,
+            user=user,
+            cwd=cwd,
+            timeout=timeout,
+            request_timeout=request_timeout,
+        )
+        output = result.stdout.strip()
+        if not output:
+            return {}
+        try:
+            data = json.loads(output)
+        except json.JSONDecodeError as err:
             raise InvalidArgumentException(
-                f"GitHub API request failed ({err.code}): {message}"
+                "GitHub API response was not valid JSON."
             ) from err
+
+        if isinstance(data, dict) and data.get("error") is not None:
+            status = data.get("status", "unknown")
+            message = data.get("error")
+            raise InvalidArgumentException(
+                f"GitHub API request failed ({status}): {message}"
+            )
+        if not isinstance(data, dict):
+            raise InvalidArgumentException("GitHub API response was not a JSON object.")
+        return data
 
     def create_github_repo(
         self,
@@ -466,7 +593,7 @@ class Git:
                 "Repository name is required to create a GitHub repository."
             )
 
-        resolved_token = self._resolve_github_token(token)
+        resolved_token = self._resolve_github_token(token, envs)
 
         base_url = api_base_url.rstrip("/")
         if org:
@@ -489,7 +616,15 @@ class Git:
             payload["license_template"] = license_template
 
         data = self._github_request(
-            "POST", f"{base_url}{endpoint}", resolved_token, payload
+            "POST",
+            f"{base_url}{endpoint}",
+            resolved_token,
+            payload,
+            envs=envs,
+            user=user,
+            cwd=cwd,
+            timeout=timeout,
+            request_timeout=request_timeout,
         )
 
         repo: GitHubRepoInfo = {

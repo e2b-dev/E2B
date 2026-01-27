@@ -485,6 +485,9 @@ export class Git {
 
     const resolvedToken =
       token ??
+      requestOpts.envs?.GITHUB_PAT ??
+      requestOpts.envs?.GITHUB_TOKEN ??
+      requestOpts.envs?.GH_TOKEN ??
       process.env.GITHUB_PAT ??
       process.env.GITHUB_TOKEN ??
       process.env.GH_TOKEN
@@ -511,18 +514,127 @@ export class Git {
     if (licenseTemplate !== undefined)
       payload.license_template = licenseTemplate
 
-    const response = await fetch(`${baseUrl}${endpoint}`, {
-      method: 'POST',
-      headers: {
-        Accept: 'application/vnd.github+json',
-        Authorization: `Bearer ${resolvedToken}`,
-        'X-GitHub-Api-Version': '2022-11-28',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
+    const requestEnv: Record<string, string> = {
+      ...(requestOpts.envs ?? {}),
+      E2B_GITHUB_TOKEN: resolvedToken,
+      E2B_GITHUB_REQUEST_URL: `${baseUrl}${endpoint}`,
+      E2B_GITHUB_METHOD: 'POST',
+      E2B_GITHUB_PAYLOAD_JSON: JSON.stringify(payload),
+    }
+
+    if (requestOpts.requestTimeoutMs !== undefined) {
+      requestEnv.E2B_GITHUB_HTTP_TIMEOUT = (
+        requestOpts.requestTimeoutMs / 1000
+      ).toString()
+    }
+
+    const script = [
+      'if command -v python3 >/dev/null 2>&1; then',
+      "python3 - <<'PY'",
+      'import json',
+      'import os',
+      'import urllib.error',
+      'import urllib.request',
+      '',
+      'def _parse_timeout(value):',
+      '    if not value:',
+      '        return None',
+      '    try:',
+      '        return float(value)',
+      '    except Exception:',
+      '        return None',
+      '',
+      'method = os.environ.get("E2B_GITHUB_METHOD", "GET")',
+      'url = os.environ.get("E2B_GITHUB_REQUEST_URL")',
+      'token = os.environ.get("E2B_GITHUB_TOKEN")',
+      'payload_raw = os.environ.get("E2B_GITHUB_PAYLOAD_JSON", "")',
+      'timeout = _parse_timeout(os.environ.get("E2B_GITHUB_HTTP_TIMEOUT"))',
+      '',
+      'if not url or not token:',
+      '    print(json.dumps({"error": "Missing GitHub request URL or token.", "status": 0}))',
+      '    raise SystemExit(0)',
+      '',
+      'data = payload_raw.encode("utf-8") if payload_raw else None',
+      'headers = {',
+      '    "Accept": "application/vnd.github+json",',
+      '    "Authorization": f"Bearer {token}",',
+      '    "X-GitHub-Api-Version": "2022-11-28",',
+      '}',
+      'if data is not None:',
+      '    headers["Content-Type"] = "application/json"',
+      '',
+      'req = urllib.request.Request(url, data=data, headers=headers, method=method)',
+      'try:',
+      '    with urllib.request.urlopen(req, timeout=timeout) as resp:',
+      '        body = resp.read().decode("utf-8")',
+      '        print(body or "{}")',
+      'except urllib.error.HTTPError as err:',
+      '    body = err.read().decode("utf-8") if err.fp else ""',
+      '    message = None',
+      '    try:',
+      '        parsed = json.loads(body) if body else {}',
+      '        message = parsed.get("message")',
+      '    except Exception:',
+      '        message = None',
+      '    message = message or body or getattr(err, "reason", "")',
+      '    print(json.dumps({"error": message, "status": err.code}))',
+      'except Exception as err:',
+      '    print(json.dumps({"error": str(err), "status": 0}))',
+      'PY',
+      'exit 0',
+      'fi',
+      '',
+      'if command -v curl >/dev/null 2>&1; then',
+      'method="${E2B_GITHUB_METHOD:-GET}"',
+      'url="${E2B_GITHUB_REQUEST_URL:-}"',
+      'token="${E2B_GITHUB_TOKEN:-}"',
+      'payload="${E2B_GITHUB_PAYLOAD_JSON:-}"',
+      'timeout="${E2B_GITHUB_HTTP_TIMEOUT:-}"',
+      '',
+      'if [ -z "$url" ] || [ -z "$token" ]; then',
+      '  printf \'{"error":"Missing GitHub request URL or token.","status":0}\'',
+      '  exit 0',
+      'fi',
+      '',
+      'tmp_file="$(mktemp 2>/dev/null || echo "/tmp/e2b_github_resp_$$")"',
+      'curl_args=(-sS -X "$method" -H "Accept: application/vnd.github+json" -H "Authorization: Bearer $token" -H "X-GitHub-Api-Version: 2022-11-28")',
+      '',
+      'if [ -n "$payload" ]; then',
+      '  curl_args+=(-H "Content-Type: application/json" --data "$payload")',
+      'fi',
+      'if [ -n "$timeout" ]; then',
+      '  curl_args+=(--max-time "$timeout")',
+      'fi',
+      '',
+      'status="$(curl "${curl_args[@]}" -o "$tmp_file" -w "%{http_code}" "$url")"',
+      'curl_exit=$?',
+      'body="$(cat "$tmp_file" 2>/dev/null || true)"',
+      'rm -f "$tmp_file"',
+      '',
+      'if [ "$curl_exit" -ne 0 ]; then',
+      '  printf \'{"error":"curl failed with exit %s","status":0}\' "$curl_exit"',
+      '  exit 0',
+      'fi',
+      '',
+      'if [ "$status" -ge 400 ]; then',
+      '  esc="$(printf \'%s\' "$body" | sed -e \'s/\\\\/\\\\\\\\/g\' -e \'s/\\"/\\\\\\"/g\' -e \'s/\\r/\\\\r/g\' -e \':a;N;$!ba;s/\\n/\\\\n/g\')"',
+      '  printf \'{"error":"%s","status":%s}\' "$esc" "$status"',
+      '  exit 0',
+      'fi',
+      '',
+      'printf \'%s\' "$body"',
+      'exit 0',
+      'fi',
+      '',
+      'printf \'{"error":"python3 or curl is required to call the GitHub API.","status":0}\'',
+    ].join('\n')
+
+    const result = await this.runShell(script, {
+      ...requestOpts,
+      envs: requestEnv,
     })
 
-    const responseText = await response.text()
+    const responseText = result.stdout.trim()
     let data: any = undefined
     try {
       data = responseText ? JSON.parse(responseText) : undefined
@@ -530,12 +642,17 @@ export class Git {
       data = undefined
     }
 
-    if (!response.ok) {
+    if (!data || typeof data !== 'object') {
+      throw new InvalidArgumentError('GitHub API response was not valid JSON.')
+    }
+    if ('error' in data) {
+      const status = data.status ?? 'unknown'
       const message =
-        (data && typeof data.message === 'string' && data.message) ||
-        responseText ||
-        `GitHub API request failed with status ${response.status}.`
-      throw new InvalidArgumentError(message)
+        (typeof data.error === 'string' && data.error) ||
+        'GitHub API request failed.'
+      throw new InvalidArgumentError(
+        `GitHub API request failed (${status}): ${message}`
+      )
     }
 
     const repo: GitHubRepoInfo = {
