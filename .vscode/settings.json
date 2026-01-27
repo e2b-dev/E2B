@@ -79,9 +79,6 @@
     "./packages/python-sdk/.venv/bin/python"
   ],
   "cursorpyright.analysis.typeCheckingMode": "basic",
-  "debug.javascript.defaultRuntimeExecutable": {
-    "pwa-node": "${workspaceFolder}/.vscode/mise-tools/node"
-  },
   // "python.analysis.pylanceLspClientEnabled": true,
   // "python.analysis.inlayHints.functionReturnTypes": true,
   // "python.analysis.inlayHints.pytestParameters": true,
