@@ -25,17 +25,42 @@ interface BuildTemplateFixture {
   ) => Promise<BuildInfo>
 }
 
-function buildTemplate(
+async function buildTemplate(
   template: TemplateClass,
   options?: { name?: string; skipCache?: boolean },
   onBuildLogs?: (logEntry: LogEntry) => void
-) {
-  return Template.build(template, options?.name || `e2b-test-${randomUUID()}`, {
-    cpuCount: 1,
-    memoryMB: 1024,
-    skipCache: options?.skipCache,
-    onBuildLogs: onBuildLogs,
-  })
+): Promise<BuildInfo> {
+  const buildName = options?.name || `e2b-test-${randomUUID()}`
+  const buildInfo: { templateId?: string; buildId?: string } = {}
+
+  const captureLogs = (log: LogEntry) => {
+    if (log.message.includes('Template created with ID:')) {
+      const match = log.message.match(
+        /Template created with ID: ([^,]+), Build ID: (.+)/
+      )
+      if (match) {
+        buildInfo.templateId = match[1]
+        buildInfo.buildId = match[2]
+      }
+    }
+    onBuildLogs?.(log)
+  }
+
+  try {
+    return await Template.build(template, buildName, {
+      cpuCount: 1,
+      memoryMB: 1024,
+      skipCache: options?.skipCache,
+      onBuildLogs: captureLogs,
+    })
+  } catch (e) {
+    console.error(
+      `\n[BUILD FAILED] name=${buildName}, ` +
+        `template_id=${buildInfo.templateId}, ` +
+        `build_id=${buildInfo.buildId}, error=${e}`
+    )
+    throw e
+  }
 }
 
 export const sandboxTest = base.extend<SandboxFixture>({

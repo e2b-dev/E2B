@@ -108,8 +108,8 @@ export class TemplateBase
    * Build and deploy a template to E2B infrastructure.
    *
    * @param template The template to build
-   * @param options Optional build configuration options
    * @param name Template name in 'name' or 'name:tag' format
+   * @param options Optional build configuration options
    *
    * @example
    * ```ts
@@ -188,8 +188,8 @@ export class TemplateBase
    * Build and deploy a template to E2B infrastructure without waiting for completion.
    *
    * @param template The template to build
-   * @param options Optional build configuration options
    * @param name Template name in 'name' or 'name:tag' format
+   * @param options Optional build configuration options
    *
    * @example
    * ```ts

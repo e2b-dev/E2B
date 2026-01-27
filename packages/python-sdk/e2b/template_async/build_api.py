@@ -41,9 +41,9 @@ from e2b.template.utils import get_build_step_index, tar_file_stream
 async def request_build(
     client: AuthenticatedClient,
     name: str,
+    tags: Optional[List[str]],
     cpu_count: int,
     memory_mb: int,
-    tags: Optional[List[str]],
 ):
     res = await post_v3_templates.asyncio_detailed(
         client=client,
