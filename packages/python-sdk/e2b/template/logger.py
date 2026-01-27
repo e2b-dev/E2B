@@ -24,7 +24,6 @@ class LogEntry:
     timestamp: datetime
     level: LogEntryLevel
     message: str
-    step: Optional[str] = None
 
     def __post_init__(self):
         self.message = strip_ansi_escape_codes(self.message)

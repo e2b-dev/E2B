@@ -169,12 +169,7 @@ export async function triggerBuild(
 function mapLogEntry(
   entry: ApiBuildStatusResponse['logEntries'][number]
 ): LogEntry {
-  return new LogEntry(
-    new Date(entry.timestamp),
-    entry.level,
-    entry.message,
-    entry.step
-  )
+  return new LogEntry(new Date(entry.timestamp), entry.level, entry.message)
 }
 
 function mapBuildStatusReason(
@@ -293,8 +288,7 @@ export async function waitForBuildFinish(
         new LogEntry(
           logEntry.timestamp,
           logEntry.level,
-          stripAnsi(logEntry.message),
-          logEntry.step
+          stripAnsi(logEntry.message)
         )
       )
     )

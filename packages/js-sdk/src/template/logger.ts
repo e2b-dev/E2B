@@ -13,8 +13,7 @@ export class LogEntry {
   constructor(
     public readonly timestamp: Date,
     public readonly level: LogEntryLevel,
-    public readonly message: string,
-    public readonly step?: string
+    public readonly message: string
   ) {}
 
   toString() {

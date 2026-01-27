@@ -148,7 +148,6 @@ def _map_log_entry(entry) -> LogEntry:
         timestamp=entry.timestamp,
         level=entry.level.value,
         message=entry.message,
-        step=entry.step if not isinstance(entry.step, Unset) else None,
     )
 
 
