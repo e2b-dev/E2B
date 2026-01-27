@@ -3,4 +3,4 @@
 'e2b': patch
 ---
 
-deprecate aliasexists and add namexists
+deprecate aliasexists and add exists
