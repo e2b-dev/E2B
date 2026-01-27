@@ -9,6 +9,8 @@ import {
   parseGitBranches,
   parseGitStatus,
   shellEscape,
+  stripCredentials,
+  deriveRepoDirFromUrl,
   withCredentials,
 } from './utils'
 
@@ -51,6 +53,12 @@ export interface GitCloneOpts extends GitRequestOpts {
    * Password or token for HTTP(S) authentication.
    */
   password?: string
+  /**
+   * Store credentials in the cloned repository when `true`.
+   *
+   * @default false
+   */
+  dangerouslyStoreCredentials?: boolean
 }
 
 /**
@@ -262,6 +270,14 @@ export interface GitPushOpts extends GitRequestOpts {
    * Set upstream tracking when `true`.
    */
   setUpstream?: boolean
+  /**
+   * Username for HTTP(S) authentication.
+   */
+  username?: string
+  /**
+   * Password or token for HTTP(S) authentication.
+   */
+  password?: string
 }
 
 /**
@@ -276,6 +292,14 @@ export interface GitPullOpts extends GitRequestOpts {
    * Branch name to pull.
    */
   branch?: string
+  /**
+   * Username for HTTP(S) authentication.
+   */
+  username?: string
+  /**
+   * Password or token for HTTP(S) authentication.
+   */
+  password?: string
 }
 
 /**
@@ -339,8 +363,28 @@ export class Git {
    * @returns Command result from the command runner.
    */
   async clone(url: string, opts?: GitCloneOpts): Promise<CommandResult> {
-    const { username, password, branch, depth, path, ...rest } = opts ?? {}
+    const {
+      username,
+      password,
+      branch,
+      depth,
+      path,
+      dangerouslyStoreCredentials,
+      ...rest
+    } = opts ?? {}
     const cloneUrl = withCredentials(url, username, password)
+    const sanitizedUrl = stripCredentials(cloneUrl)
+    const shouldStripCredentials =
+      !dangerouslyStoreCredentials && sanitizedUrl !== cloneUrl
+    const repoPath = shouldStripCredentials
+      ? (path ?? deriveRepoDirFromUrl(url))
+      : path
+
+    if (shouldStripCredentials && !repoPath) {
+      throw new InvalidArgumentError(
+        'A destination path is required when using credentials without storing them.'
+      )
+    }
 
     const args = ['clone', cloneUrl]
     if (branch) {
@@ -353,7 +397,17 @@ export class Git {
       args.push(path)
     }
 
-    return this.run(args, undefined, rest)
+    const result = await this.run(args, undefined, rest)
+
+    if (shouldStripCredentials && repoPath) {
+      await this.run(
+        ['remote', 'set-url', 'origin', sanitizedUrl],
+        repoPath,
+        rest
+      )
+    }
+
+    return result
   }
 
   /**
@@ -664,7 +718,8 @@ export class Git {
    * @returns Command result from the command runner.
    */
   async push(path: string, opts?: GitPushOpts): Promise<CommandResult> {
-    const { remote, branch, setUpstream, ...rest } = opts ?? {}
+    const { remote, branch, setUpstream, username, password, ...rest } =
+      opts ?? {}
     const args = ['push']
 
     if (setUpstream) {
@@ -675,6 +730,28 @@ export class Git {
     }
     if (branch) {
       args.push(branch)
+    }
+
+    if (username || password) {
+      if (!username || !password) {
+        throw new InvalidArgumentError(
+          'Both username and password are required to authenticate git push.'
+        )
+      }
+      if (!remote) {
+        throw new InvalidArgumentError(
+          'Remote is required when using username/password for git push.'
+        )
+      }
+
+      return this.withRemoteCredentials(
+        path,
+        remote,
+        username,
+        password,
+        rest,
+        () => this.run(args, path, rest)
+      )
     }
 
     return this.run(args, path, rest)
@@ -688,7 +765,7 @@ export class Git {
    * @returns Command result from the command runner.
    */
   async pull(path: string, opts?: GitPullOpts): Promise<CommandResult> {
-    const { remote, branch, ...rest } = opts ?? {}
+    const { remote, branch, username, password, ...rest } = opts ?? {}
     const args = ['pull']
 
     if (remote) {
@@ -696,6 +773,28 @@ export class Git {
     }
     if (branch) {
       args.push(branch)
+    }
+
+    if (username || password) {
+      if (!username || !password) {
+        throw new InvalidArgumentError(
+          'Both username and password are required to authenticate git pull.'
+        )
+      }
+      if (!remote) {
+        throw new InvalidArgumentError(
+          'Remote is required when using username/password for git pull.'
+        )
+      }
+
+      return this.withRemoteCredentials(
+        path,
+        remote,
+        username,
+        password,
+        rest,
+        () => this.run(args, path, rest)
+      )
     }
 
     return this.run(args, path, rest)
@@ -855,6 +954,59 @@ export class Git {
       ...rest,
       envs: mergedEnvs,
     })
+  }
+
+  private async getRemoteUrl(
+    path: string,
+    remote: string,
+    opts?: GitRequestOpts
+  ): Promise<string> {
+    const result = await this.run(['remote', 'get-url', remote], path, opts)
+    const url = result.stdout.trim()
+    if (!url) {
+      throw new InvalidArgumentError(
+        `Remote "${remote}" URL not found in repository.`
+      )
+    }
+    return url
+  }
+
+  private async withRemoteCredentials<T>(
+    path: string,
+    remote: string,
+    username: string,
+    password: string,
+    opts: GitRequestOpts | undefined,
+    operation: () => Promise<T>
+  ): Promise<T> {
+    const originalUrl = await this.getRemoteUrl(path, remote, opts)
+    const credentialUrl = withCredentials(originalUrl, username, password)
+
+    await this.run(['remote', 'set-url', remote, credentialUrl], path, opts)
+
+    let result: T | undefined
+    let operationError: unknown
+    try {
+      result = await operation()
+    } catch (err) {
+      operationError = err
+    }
+
+    let restoreError: unknown
+    try {
+      await this.run(['remote', 'set-url', remote, originalUrl], path, opts)
+    } catch (err) {
+      restoreError = err
+    }
+
+    if (operationError) {
+      throw operationError
+    }
+    if (restoreError) {
+      throw restoreError
+    }
+
+    return result as T
   }
 
   private getScopeFlag(

@@ -96,6 +96,45 @@ def with_credentials(url: str, username: Optional[str], password: Optional[str])
     return urlunparse(parsed._replace(netloc=netloc))
 
 
+def strip_credentials(url: str) -> str:
+    """
+    Strip HTTP(S) credentials from a Git URL.
+
+    :param url: Git repository URL
+    :return: URL without embedded credentials
+    """
+    parsed = urlparse(url)
+    if parsed.scheme not in ("http", "https"):
+        return url
+    if not parsed.username and not parsed.password:
+        return url
+
+    host = parsed.hostname or ""
+    if parsed.port:
+        host = f"{host}:{parsed.port}"
+
+    return urlunparse(parsed._replace(netloc=host))
+
+
+def derive_repo_dir_from_url(url: str) -> Optional[str]:
+    """
+    Derive the default repository directory name from a Git URL.
+
+    :param url: Git repository URL
+    :return: Repository directory name, if it can be determined
+    """
+    parsed = urlparse(url)
+    if parsed.scheme not in ("http", "https"):
+        return None
+    trimmed_path = parsed.path.rstrip("/")
+    if not trimmed_path:
+        return None
+    last_segment = trimmed_path.split("/")[-1]
+    if not last_segment:
+        return None
+    return last_segment[:-4] if last_segment.endswith(".git") else last_segment
+
+
 def build_git_command(args: List[str], repo_path: Optional[str] = None) -> str:
     """
     Build a shell-safe git command string.

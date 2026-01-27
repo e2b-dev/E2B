@@ -140,6 +140,56 @@ export function withCredentials(
 }
 
 /**
+ * Strip HTTP(S) credentials from a Git URL.
+ *
+ * @param url Git repository URL.
+ * @returns URL without embedded credentials.
+ */
+export function stripCredentials(url: string): string {
+  let parsed: URL
+  try {
+    parsed = new URL(url)
+  } catch {
+    return url
+  }
+
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+    return url
+  }
+
+  if (!parsed.username && !parsed.password) {
+    return url
+  }
+
+  parsed.username = ''
+  parsed.password = ''
+  return parsed.toString()
+}
+
+/**
+ * Derive the default repository directory name from a Git URL.
+ *
+ * @param url Git repository URL.
+ * @returns Repository directory name, if it can be determined.
+ */
+export function deriveRepoDirFromUrl(url: string): string | undefined {
+  let parsed: URL
+  try {
+    parsed = new URL(url)
+  } catch {
+    return undefined
+  }
+
+  const trimmedPath = parsed.pathname.replace(/\/+$/, '')
+  const lastSegment = trimmedPath.split('/').pop()
+  if (!lastSegment) {
+    return undefined
+  }
+
+  return lastSegment.endsWith('.git') ? lastSegment.slice(0, -4) : lastSegment
+}
+
+/**
  * Build a shell-safe git command string.
  *
  * @param args Git command arguments.

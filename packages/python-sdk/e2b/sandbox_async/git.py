@@ -14,6 +14,8 @@ from e2b.sandbox.git_utils import (
     parse_git_branches,
     parse_git_status,
     shell_escape,
+    strip_credentials,
+    derive_repo_dir_from_url,
     with_credentials,
 )
 from e2b.sandbox_async.commands.command import Commands
@@ -113,6 +115,32 @@ class Git:
             request_timeout=request_timeout,
         )
 
+    async def _get_remote_url(
+        self,
+        path: str,
+        remote: str,
+        envs: Optional[Dict[str, str]] = None,
+        user: Optional[str] = None,
+        cwd: Optional[str] = None,
+        timeout: Optional[float] = None,
+        request_timeout: Optional[float] = None,
+    ) -> str:
+        result = await self._run(
+            ["remote", "get-url", remote],
+            path,
+            envs,
+            user,
+            cwd,
+            timeout,
+            request_timeout,
+        )
+        url = result.stdout.strip()
+        if not url:
+            raise InvalidArgumentException(
+                f'Remote "{remote}" URL not found in repository.'
+            )
+        return url
+
     async def clone(
         self,
         url: str,
@@ -120,13 +148,13 @@ class Git:
         branch: Optional[str] = None,
         depth: Optional[int] = None,
         username: Optional[str] = None,
-        password: Optional[str] = None, #TODO: make sure that we aren't storing this in the .git; if the user needs auth need to handle asking for PAT on every call
+        password: Optional[str] = None,
         envs: Optional[Dict[str, str]] = None,
         user: Optional[str] = None,
         cwd: Optional[str] = None,
         timeout: Optional[float] = None,
         request_timeout: Optional[float] = None,
-        dangerously_store_credentials: bool = False, #TODO: I think this makes sense to do
+        dangerously_store_credentials: bool = False,
     ):
         """
         Clone a git repository into the sandbox.
@@ -142,9 +170,17 @@ class Git:
         :param cwd: Working directory to run the command
         :param timeout: Timeout for the command connection in **seconds**
         :param request_timeout: Timeout for the request in **seconds**
+        :param dangerously_store_credentials: Store credentials in the cloned repository when True
         :return: Command result from the command runner
         """
         clone_url = with_credentials(url, username, password)
+        sanitized_url = strip_credentials(clone_url)
+        should_strip = not dangerously_store_credentials and sanitized_url != clone_url
+        repo_path = path if not should_strip else path or derive_repo_dir_from_url(url)
+        if should_strip and not repo_path:
+            raise InvalidArgumentException(
+                "A destination path is required when using credentials without storing them."
+            )
         args = ["clone", clone_url]
         if branch:
             args.extend(["--branch", branch, "--single-branch"])
@@ -152,9 +188,20 @@ class Git:
             args.extend(["--depth", str(depth)])
         if path:
             args.append(path)
-        return await self._run(
+        result = await self._run(
             args, None, envs, user, cwd, timeout, request_timeout
         )
+        if should_strip and repo_path:
+            await self._run(
+                ["remote", "set-url", "origin", sanitized_url],
+                repo_path,
+                envs,
+                user,
+                cwd,
+                timeout,
+                request_timeout,
+            )
+        return result
 
     async def init(
         self,
@@ -639,6 +686,8 @@ class Git:
         remote: Optional[str] = None,
         branch: Optional[str] = None,
         set_upstream: bool = False,
+        username: Optional[str] = None,
+        password: Optional[str] = None,
         envs: Optional[Dict[str, str]] = None,
         user: Optional[str] = None,
         cwd: Optional[str] = None,
@@ -652,6 +701,8 @@ class Git:
         :param remote: Remote name, e.g. `origin`
         :param branch: Branch name to push
         :param set_upstream: Set upstream tracking when `True`
+        :param username: Username for HTTP(S) authentication
+        :param password: Password or token for HTTP(S) authentication
         :param envs: Environment variables used for the command
         :param user: User to run the command as
         :param cwd: Working directory to run the command
@@ -666,6 +717,52 @@ class Git:
             args.append(remote)
         if branch:
             args.append(branch)
+        if username or password:
+            if not username or not password:
+                raise InvalidArgumentException(
+                    "Both username and password are required to authenticate git push."
+                )
+            if not remote:
+                raise InvalidArgumentException(
+                    "Remote is required when using username/password for git push."
+                )
+
+            original_url = await self._get_remote_url(
+                path, remote, envs, user, cwd, timeout, request_timeout
+            )
+            credential_url = with_credentials(original_url, username, password)
+            await self._run(
+                ["remote", "set-url", remote, credential_url],
+                path,
+                envs,
+                user,
+                cwd,
+                timeout,
+                request_timeout,
+            )
+            push_error: Exception | None = None
+            try:
+                return await self._run(
+                    args, path, envs, user, cwd, timeout, request_timeout
+                )
+            except Exception as err:
+                push_error = err
+                raise
+            finally:
+                try:
+                    await self._run(
+                        ["remote", "set-url", remote, original_url],
+                        path,
+                        envs,
+                        user,
+                        cwd,
+                        timeout,
+                        request_timeout,
+                    )
+                except Exception:
+                    if push_error is None:
+                        raise
+
         return await self._run(
             args, path, envs, user, cwd, timeout, request_timeout
         )
@@ -675,6 +772,8 @@ class Git:
         path: str,
         remote: Optional[str] = None,
         branch: Optional[str] = None,
+        username: Optional[str] = None,
+        password: Optional[str] = None,
         envs: Optional[Dict[str, str]] = None,
         user: Optional[str] = None,
         cwd: Optional[str] = None,
@@ -687,6 +786,8 @@ class Git:
         :param path: Repository path
         :param remote: Remote name, e.g. `origin`
         :param branch: Branch name to pull
+        :param username: Username for HTTP(S) authentication
+        :param password: Password or token for HTTP(S) authentication
         :param envs: Environment variables used for the command
         :param user: User to run the command as
         :param cwd: Working directory to run the command
@@ -699,6 +800,52 @@ class Git:
             args.append(remote)
         if branch:
             args.append(branch)
+        if username or password:
+            if not username or not password:
+                raise InvalidArgumentException(
+                    "Both username and password are required to authenticate git pull."
+                )
+            if not remote:
+                raise InvalidArgumentException(
+                    "Remote is required when using username/password for git pull."
+                )
+
+            original_url = await self._get_remote_url(
+                path, remote, envs, user, cwd, timeout, request_timeout
+            )
+            credential_url = with_credentials(original_url, username, password)
+            await self._run(
+                ["remote", "set-url", remote, credential_url],
+                path,
+                envs,
+                user,
+                cwd,
+                timeout,
+                request_timeout,
+            )
+            pull_error: Exception | None = None
+            try:
+                return await self._run(
+                    args, path, envs, user, cwd, timeout, request_timeout
+                )
+            except Exception as err:
+                pull_error = err
+                raise
+            finally:
+                try:
+                    await self._run(
+                        ["remote", "set-url", remote, original_url],
+                        path,
+                        envs,
+                        user,
+                        cwd,
+                        timeout,
+                        request_timeout,
+                    )
+                except Exception:
+                    if pull_error is None:
+                        raise
+
         return await self._run(
             args, path, envs, user, cwd, timeout, request_timeout
         )
