@@ -159,11 +159,6 @@ export type TemplateTagInfo = {
 }
 
 /**
- * Options for checking if a template alias exists.
- */
-export type AliasExistsOptions = ConnectionOpts
-
-/**
  * Types of instructions that can be used in a template.
  */
 export enum InstructionType {

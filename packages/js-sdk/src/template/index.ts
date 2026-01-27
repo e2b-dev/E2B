@@ -20,7 +20,6 @@ import { parseDockerfile } from './dockerfileParser'
 import { LogEntry, LogEntryEnd, LogEntryStart } from './logger'
 import { ReadyCmd, waitForFile } from './readycmd'
 import {
-  AliasExistsOptions,
   BuildInfo,
   BuildOptions,
   CopyItem,
@@ -269,12 +268,35 @@ export class TemplateBase
   }
 
   /**
+   * Check if a template with the given name exists.
+   *
+   * @param name Template name to check
+   * @param options Authentication options
+   * @returns True if the name exists, false otherwise
+   *
+   * @example
+   * ```ts
+   * const exists = await Template.exists('my-python-env')
+   * if (exists) {
+   *   console.log('Template exists!')
+   * }
+   * ```
+   */
+  static async exists(
+    name: string,
+    options?: ConnectionOpts
+  ): Promise<boolean> {
+    return TemplateBase.aliasExists(name, options)
+  }
+
+  /**
    * Check if a template with the given alias exists.
    *
    * @param alias Template alias to check
    * @param options Authentication options
    * @returns True if the alias exists, false otherwise
    *
+   * @deprecated Use `exists` instead.
    * @example
    * ```ts
    * const exists = await Template.aliasExists('my-python-env')
@@ -285,7 +307,7 @@ export class TemplateBase
    */
   static async aliasExists(
     alias: string,
-    options?: AliasExistsOptions
+    options?: ConnectionOpts
   ): Promise<boolean> {
     const config = new ConnectionConfig(options)
     const client = new ApiClient(config)
@@ -1223,6 +1245,7 @@ export function Template(options?: TemplateOptions): TemplateFromImage {
 Template.build = TemplateBase.build
 Template.buildInBackground = TemplateBase.buildInBackground
 Template.getBuildStatus = TemplateBase.getBuildStatus
+Template.exists = TemplateBase.exists
 Template.aliasExists = TemplateBase.aliasExists
 Template.assignTags = TemplateBase.assignTags
 Template.removeTags = TemplateBase.removeTags
@@ -1230,7 +1253,6 @@ Template.toJSON = TemplateBase.toJSON
 Template.toDockerfile = TemplateBase.toDockerfile
 
 export type {
-  AliasExistsOptions,
   BuildInfo,
   BuildOptions,
   BuildStatusReason,

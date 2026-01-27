@@ -378,12 +378,37 @@ class Template(TemplateBase):
         )
 
     @staticmethod
+    def exists(
+        name: str,
+        **opts: Unpack[ApiParams],
+    ) -> bool:
+        """
+        Check if a template with the given name exists.
+
+        :param name: Template name to check
+        :return: True if the name exists, False otherwise
+
+        Example
+        ```python
+        from e2b import Template
+
+        exists = Template.exists('my-python-env')
+        if exists:
+            print('Template exists!')
+        ```
+        """
+
+        return Template.alias_exists(name, **opts)
+
+    @staticmethod
     def alias_exists(
         alias: str,
         **opts: Unpack[ApiParams],
     ) -> bool:
         """
         Check if a template with the given alias exists.
+
+        Deprecated Use `exists` instead.
 
         :param alias: Template alias to check
         :return: True if the alias exists, False otherwise
@@ -392,7 +417,7 @@ class Template(TemplateBase):
         ```python
         from e2b import Template
 
-        exists = Template.alias_exists('base')
+        exists = Template.alias_exists('my-python-env')
         if exists:
             print('Template exists!')
         ```
