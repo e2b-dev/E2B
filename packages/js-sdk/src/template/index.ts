@@ -287,7 +287,7 @@ export class TemplateBase
     name: string,
     options?: NameExistsOptions
   ): Promise<boolean> {
-    return TemplateBase.nameExists(name, options)
+    return TemplateBase.aliasExists(name, options)
   }
 
   /**
