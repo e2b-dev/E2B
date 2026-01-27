@@ -15,7 +15,7 @@ export interface paths {
         get: {
             parameters: {
                 query?: {
-                    /** @description Metadata query used to filter the sandboxes (e.g. 'user=abc&app=prod'). Each key and values must be URL encoded. */
+                    /** @description Metadata query used to filter the sandboxes (e.g. "user=abc&app=prod"). Each key and values must be URL encoded. */
                     metadata?: string;
                 };
                 header?: never;
@@ -1062,6 +1062,76 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/templates/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Assign tag(s) to a template build */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["AssignTemplateTagsRequest"];
+                };
+            };
+            responses: {
+                /** @description Tag assigned successfully */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AssignedTemplateTags"];
+                    };
+                };
+                400: components["responses"]["400"];
+                401: components["responses"]["401"];
+                404: components["responses"]["404"];
+                500: components["responses"]["500"];
+            };
+        };
+        /** @description Delete multiple tags from templates */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["DeleteTemplateTagsRequest"];
+                };
+            };
+            responses: {
+                /** @description Tags deleted successfully */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                400: components["responses"]["400"];
+                401: components["responses"]["401"];
+                404: components["responses"]["404"];
+                500: components["responses"]["500"];
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v2/sandboxes": {
         parameters: {
             query?: never;
@@ -1075,7 +1145,7 @@ export interface paths {
                 query?: {
                     /** @description Maximum number of items to return per page */
                     limit?: components["parameters"]["paginationLimit"];
-                    /** @description Metadata query used to filter the sandboxes (e.g. 'user=abc&app=prod'). Each key and values must be URL encoded. */
+                    /** @description Metadata query used to filter the sandboxes (e.g. "user=abc&app=prod"). Each key and values must be URL encoded. */
                     metadata?: string;
                     /** @description Cursor to start the list from */
                     nextToken?: components["parameters"]["paginationNextToken"];
@@ -1252,10 +1322,19 @@ export interface components {
             /** @description Number of sandboxes successfully killed */
             killedCount: number;
         };
-        AssignTemplateTagRequest: {
-            /** @description Names of the template */
-            names: string[];
-            /** @description Target template name in 'alias:tag' format */
+        AssignedTemplateTags: {
+            /**
+             * Format: uuid
+             * @description Identifier of the build associated with these tags
+             */
+            buildID: string;
+            /** @description Assigned tags of the template */
+            tags: string[];
+        };
+        AssignTemplateTagsRequest: {
+            /** @description Tags to assign to the template */
+            tags: string[];
+            /** @description Target template in "name:tag" format */
             target: string;
         };
         AWSRegistry: {
@@ -1345,6 +1424,12 @@ export interface components {
             mask: components["schemas"]["IdentifierMaskingDetails"];
             /** @description Name of the API key */
             name: string;
+        };
+        DeleteTemplateTagsRequest: {
+            /** @description Name of the template */
+            name: string;
+            /** @description Tags to delete */
+            tags: string[];
         };
         DiskMetrics: {
             /** @description Device name */
@@ -1999,20 +2084,28 @@ export interface components {
             alias: string;
             cpuCount?: components["schemas"]["CPUCount"];
             memoryMB?: components["schemas"]["MemoryMB"];
-            /** @description Identifier of the team */
+            /**
+             * @deprecated
+             * @description Identifier of the team
+             */
             teamID?: string;
         };
         TemplateBuildRequestV3: {
             /**
              * @deprecated
-             * @description Alias of the template. Deprecated, use names instead.
+             * @description Alias of the template. Deprecated, use name instead.
              */
             alias?: string;
             cpuCount?: components["schemas"]["CPUCount"];
             memoryMB?: components["schemas"]["MemoryMB"];
-            /** @description Names of the template */
-            names?: string[];
-            /** @description Identifier of the team */
+            /** @description Name of the template. Can include a tag with colon separator (e.g. "my-template" or "my-template:v1"). If tag is included, it will be treated as if the tag was provided in the tags array. */
+            name?: string;
+            /** @description Tags to assign to the template build */
+            tags?: string[];
+            /**
+             * @deprecated
+             * @description Identifier of the team
+             */
             teamID?: string;
         };
         TemplateBuildStartV2: {
@@ -2082,12 +2175,19 @@ export interface components {
             updatedAt: string;
         };
         TemplateRequestResponseV3: {
-            /** @description Aliases of the template */
+            /**
+             * @deprecated
+             * @description Aliases of the template
+             */
             aliases: string[];
             /** @description Identifier of the last successful build for given template */
             buildID: string;
+            /** @description Names of the template */
+            names: string[];
             /** @description Whether the template is public or only accessible by the team */
             public: boolean;
+            /** @description Tags assigned to the template build */
+            tags: string[];
             /** @description Identifier of the template */
             templateID: string;
         };
@@ -2107,15 +2207,6 @@ export interface components {
             force?: boolean;
             /** @description Type of the step */
             type: string;
-        };
-        TemplateTag: {
-            /**
-             * Format: uuid
-             * @description Identifier of the build associated with this tag
-             */
-            buildID: string;
-            /** @description Tags of the template */
-            tags: string[];
         };
         TemplateUpdateRequest: {
             /** @description Whether the template is public or only accessible by the team */
