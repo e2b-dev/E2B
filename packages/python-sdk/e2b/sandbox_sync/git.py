@@ -132,6 +132,38 @@ class Git:
             args.append(path)
         return self._run(args, None, envs, user, cwd, timeout, request_timeout)
 
+    def init(
+        self,
+        path: str,
+        bare: bool = False,
+        initial_branch: Optional[str] = None,
+        envs: Optional[Dict[str, str]] = None,
+        user: Optional[str] = None,
+        cwd: Optional[str] = None,
+        timeout: Optional[float] = None,
+        request_timeout: Optional[float] = None,
+    ):
+        """
+        Initialize a new git repository.
+
+        :param path: Destination path for the repository
+        :param bare: Create a bare repository when True
+        :param initial_branch: Initial branch name (for example, "main")
+        :param envs: Environment variables used for the command
+        :param user: User to run the command as
+        :param cwd: Working directory to run the command
+        :param timeout: Timeout for the command connection in **seconds**
+        :param request_timeout: Timeout for the request in **seconds**
+        :return: Command result from the command runner
+        """
+        args = ["init"]
+        if initial_branch:
+            args.extend(["--initial-branch", initial_branch])
+        if bare:
+            args.append("--bare")
+        args.append(path)
+        return self._run(args, None, envs, user, cwd, timeout, request_timeout)
+
     def status(
         self,
         path: str,

@@ -54,6 +54,20 @@ export interface GitCloneOpts extends GitRequestOpts {
 }
 
 /**
+ * Options for initializing a repository.
+ */
+export interface GitInitOpts extends GitRequestOpts {
+  /**
+   * Create a bare repository when `true`.
+   */
+  bare?: boolean
+  /**
+   * Initial branch name (for example, `"main"`).
+   */
+  initialBranch?: string
+}
+
+/**
  * Options for creating a commit.
  */
 export interface GitCommitOpts extends GitRequestOpts {
@@ -202,6 +216,28 @@ export class Git {
       args.push(path)
     }
 
+    return this.run(args, undefined, rest)
+  }
+
+  /**
+   * Initialize a new git repository.
+   *
+   * @param path Destination path for the repository.
+   * @param opts Init options.
+   * @returns Command result from the command runner.
+   */
+  async init(path: string, opts?: GitInitOpts): Promise<CommandResult> {
+    const { bare, initialBranch, ...rest } = opts ?? {}
+    const args = ['init']
+
+    if (initialBranch) {
+      args.push('--initial-branch', initialBranch)
+    }
+    if (bare) {
+      args.push('--bare')
+    }
+
+    args.push(path)
     return this.run(args, undefined, rest)
   }
 

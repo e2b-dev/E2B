@@ -66,6 +66,7 @@ export { Git } from './sandbox/git'
 export type {
   GitRequestOpts,
   GitCloneOpts,
+  GitInitOpts,
   GitCommitOpts,
   GitAddOpts,
   GitDeleteBranchOpts,
