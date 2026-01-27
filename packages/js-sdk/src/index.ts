@@ -71,6 +71,7 @@ export type {
   GitDeleteBranchOpts,
   GitPushOpts,
   GitPullOpts,
+  GitDangerouslyAuthenticateOpts,
   GitBranches,
   GitFileStatus,
   GitStatus,

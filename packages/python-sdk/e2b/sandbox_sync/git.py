@@ -6,6 +6,7 @@ from e2b.sandbox.git_utils import (
     build_git_command,
     parse_git_branches,
     parse_git_status,
+    shell_escape,
     with_credentials,
 )
 from e2b.exceptions import InvalidArgumentException
@@ -51,6 +52,36 @@ class Git:
         :return: Command result from the command runner
         """
         cmd = build_git_command(args, repo_path)
+        merged_envs = {**DEFAULT_GIT_ENV, **(envs or {})}
+        return self._commands.run(
+            cmd,
+            envs=merged_envs,
+            user=user,
+            cwd=cwd,
+            timeout=timeout,
+            request_timeout=request_timeout,
+        )
+
+    def _run_shell(
+        self,
+        cmd: str,
+        envs: Optional[Dict[str, str]] = None,
+        user: Optional[str] = None,
+        cwd: Optional[str] = None,
+        timeout: Optional[float] = None,
+        request_timeout: Optional[float] = None,
+    ):
+        """
+        Execute a raw shell command while applying default git environment variables.
+
+        :param cmd: Shell command to execute
+        :param envs: Extra environment variables for the command
+        :param user: User to run the command as
+        :param cwd: Working directory to run the command
+        :param timeout: Timeout for the command connection in **seconds**
+        :param request_timeout: Timeout for the request in **seconds**
+        :return: Command result from the command runner
+        """
         merged_envs = {**DEFAULT_GIT_ENV, **(envs or {})}
         return self._commands.run(
             cmd,
@@ -395,3 +426,110 @@ class Git:
         if branch:
             args.append(branch)
         return self._run(args, path, envs, user, cwd, timeout, request_timeout)
+
+    def dangerously_authenticate(
+        self,
+        username: str,
+        password: str,
+        host: str = "github.com",
+        protocol: str = "https",
+        envs: Optional[Dict[str, str]] = None,
+        user: Optional[str] = None,
+        cwd: Optional[str] = None,
+        timeout: Optional[float] = None,
+        request_timeout: Optional[float] = None,
+    ):
+        """
+        Dangerously authenticate git globally via the credential helper.
+
+        This persists credentials in the credential store and may leak secrets to logs.
+        Prefer short-lived credentials when possible.
+
+        :param username: Username for HTTP(S) authentication
+        :param password: Password or token for HTTP(S) authentication
+        :param host: Host to authenticate for, defaults to `github.com`
+        :param protocol: Protocol to authenticate for, defaults to `https`
+        :param envs: Environment variables used for the command
+        :param user: User to run the command as
+        :param cwd: Working directory to run the command
+        :param timeout: Timeout for the command connection in **seconds**
+        :param request_timeout: Timeout for the request in **seconds**
+        :return: Command result from the command runner
+        """
+        if not username or not password:
+            raise InvalidArgumentException(
+                "Both username and password are required to authenticate git."
+            )
+
+        target_host = host.strip() or "github.com"
+        target_protocol = protocol.strip() or "https"
+        credential_input = "\n".join(
+            [
+                f"protocol={target_protocol}",
+                f"host={target_host}",
+                f"username={username}",
+                f"password={password}",
+                "",
+                "",
+            ]
+        )
+
+        self._run(
+            ["config", "--global", "credential.helper", "store"],
+            None,
+            envs,
+            user,
+            cwd,
+            timeout,
+            request_timeout,
+        )
+        approve_cmd = (
+            f"printf %s {shell_escape(credential_input)} | "
+            f"{build_git_command(['credential', 'approve'])}"
+        )
+        return self._run_shell(
+            approve_cmd,
+            envs,
+            user,
+            cwd,
+            timeout,
+            request_timeout,
+        )
+
+    def configure_user(
+        self,
+        name: str,
+        email: str,
+        envs: Optional[Dict[str, str]] = None,
+        user: Optional[str] = None,
+        cwd: Optional[str] = None,
+        timeout: Optional[float] = None,
+        request_timeout: Optional[float] = None,
+    ):
+        """
+        Configure global git user name and email.
+
+        :param name: Git user name
+        :param email: Git user email
+        :param envs: Environment variables used for the command
+        :param user: User to run the command as
+        :param cwd: Working directory to run the command
+        :param timeout: Timeout for the command connection in **seconds**
+        :param request_timeout: Timeout for the request in **seconds**
+        :return: Command result from the command runner
+        """
+        if not name or not email:
+            raise InvalidArgumentException("Both name and email are required.")
+
+        cmd = (
+            f"{build_git_command(['config', '--global', 'user.name', name])} && "
+            f"{build_git_command(['config', '--global', 'user.email', email])}"
+        )
+        return self._run_shell(
+            cmd,
+            envs,
+            user,
+            cwd,
+            timeout,
+            request_timeout,
+        )

@@ -8,6 +8,7 @@ import {
   GitStatus,
   parseGitBranches,
   parseGitStatus,
+  shellEscape,
   withCredentials,
 } from './utils'
 
@@ -24,7 +25,7 @@ export interface GitRequestOpts
       CommandStartOpts,
       'envs' | 'user' | 'cwd' | 'timeoutMs' | 'requestTimeoutMs'
     >
-  > {}
+  > { }
 
 /**
  * Options for cloning a repository.
@@ -127,10 +128,36 @@ export interface GitPullOpts extends GitRequestOpts {
 }
 
 /**
+ * Options for dangerously authenticating git globally via the credential helper.
+ */
+export interface GitDangerouslyAuthenticateOpts extends GitRequestOpts {
+  /**
+   * Username for HTTP(S) authentication.
+   */
+  username: string
+  /**
+   * Password or token for HTTP(S) authentication.
+   */
+  password: string
+  /**
+   * Host to authenticate for.
+   *
+   * @default "github.com"
+   */
+  host?: string
+  /**
+   * Protocol to authenticate for.
+   *
+   * @default "https"
+   */
+  protocol?: string
+}
+
+/**
  * Module for running git operations in the sandbox.
  */
 export class Git {
-  constructor(private readonly commands: Commands) {}
+  constructor(private readonly commands: Commands) { }
 
   /**
    * Clone a git repository into the sandbox.
@@ -337,6 +364,74 @@ export class Git {
   }
 
   /**
+   * Dangerously authenticate git globally via the credential helper.
+   *
+   * This persists credentials in the credential store.
+   * Prefer short-lived credentials when possible.
+   *
+   * @param opts Authentication options.
+   * @returns Command result from the command runner.
+   */
+  async dangerouslyAuthenticate(
+    opts: GitDangerouslyAuthenticateOpts
+  ): Promise<CommandResult> {
+    const { username, password, host, protocol, ...rest } = opts
+
+    if (!username || !password) {
+      throw new InvalidArgumentError(
+        'Both username and password are required to authenticate git.'
+      )
+    }
+
+    const targetHost = (host ?? 'github.com').trim()
+    const targetProtocol = (protocol ?? 'https').trim()
+    const credentialInput = [
+      `protocol=${targetProtocol}`,
+      `host=${targetHost}`,
+      `username=${username}`,
+      `password=${password}`,
+      '',
+      '',
+    ].join('\n')
+
+    await this.run(
+      ['config', '--global', 'credential.helper', 'store'],
+      undefined,
+      rest
+    )
+
+    const approveCmd = `printf %s ${shellEscape(credentialInput)} | ${buildGitCommand(
+      ['credential', 'approve']
+    )}`
+
+    return this.runShell(approveCmd, rest)
+  }
+
+  /**
+   * Configure global git user name and email.
+   *
+   * @param name Git user name.
+   * @param email Git user email.
+   * @param opts Command execution options.
+   * @returns Command result from the command runner.
+   */
+  async configureUser(
+    name: string,
+    email: string,
+    opts?: GitRequestOpts
+  ): Promise<CommandResult> {
+    if (!name || !email) {
+      throw new InvalidArgumentError('Both name and email are required.')
+    }
+
+    const cmd = `${buildGitCommand(['config', '--global', 'user.name', name])} && ${buildGitCommand(
+      ['config', '--global', 'user.email', email]
+    )}`
+
+    return this.runShell(cmd, opts)
+  }
+
+  /**
    * Build and execute a git command inside the sandbox.
    *
    * @param args Git arguments to pass to the git binary.
@@ -351,6 +446,22 @@ export class Git {
   ): Promise<CommandResult> {
     const { envs, ...rest } = opts ?? {}
     const cmd = buildGitCommand(args, repoPath)
+    const mergedEnvs = { ...DEFAULT_GIT_ENV, ...(envs ?? {}) }
+
+    return this.commands.run(cmd, {
+      ...rest,
+      envs: mergedEnvs,
+    })
+  }
+
+  /**
+   * Execute a raw shell command while applying default git environment variables.
+   */
+  private async runShell(
+    cmd: string,
+    opts?: GitRequestOpts
+  ): Promise<CommandResult> {
+    const { envs, ...rest } = opts ?? {}
     const mergedEnvs = { ...DEFAULT_GIT_ENV, ...(envs ?? {}) }
 
     return this.commands.run(cmd, {
