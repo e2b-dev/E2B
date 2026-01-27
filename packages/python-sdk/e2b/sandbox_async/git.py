@@ -576,8 +576,12 @@ class Git:
 
         add_cmd = build_git_command(args, path)
         set_url_cmd = build_git_command(["remote", "set-url", name, url], path)
+        cmd = f"{add_cmd} || {set_url_cmd}"
+        if fetch:
+            fetch_cmd = build_git_command(["fetch", name], path)
+            cmd = f"({cmd}) && {fetch_cmd}"
         return await self._run_shell(
-            f"{add_cmd} || {set_url_cmd}",
+            cmd,
             envs,
             user,
             cwd,

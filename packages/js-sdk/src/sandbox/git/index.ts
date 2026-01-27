@@ -598,7 +598,12 @@ export class Git {
 
     const addCmd = buildGitCommand(addArgs, path)
     const setUrlCmd = buildGitCommand(['remote', 'set-url', name, url], path)
-    return this.runShell(`${addCmd} || ${setUrlCmd}`, rest)
+    let cmd = `${addCmd} || ${setUrlCmd}`
+    if (fetch) {
+      const fetchCmd = buildGitCommand(['fetch', name], path)
+      cmd = `(${cmd}) && ${fetchCmd}`
+    }
+    return this.runShell(cmd, rest)
   }
 
   /**
