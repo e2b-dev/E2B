@@ -228,16 +228,25 @@ sandboxTest('writeFiles with different data types', async ({ sandbox }) => {
   const textData = 'Text string data'
   const arrayBufferData = new TextEncoder().encode('ArrayBuffer data').buffer
   const blobData = new Blob(['Blob data'], { type: 'text/plain' })
+  const streamContent = 'ReadableStream data'
+  const encoder = new TextEncoder()
+  const streamData = new ReadableStream({
+    start(controller) {
+      controller.enqueue(encoder.encode(streamContent))
+      controller.close()
+    },
+  })
 
   const files: WriteEntry[] = [
     { path: 'writefiles_text.txt', data: textData },
     { path: 'writefiles_arraybuffer.txt', data: arrayBufferData },
     { path: 'writefiles_blob.txt', data: blobData },
+    { path: 'writefiles_stream.txt', data: streamData },
   ]
 
   const infos = await sandbox.files.writeFiles(files)
 
-  assert.equal(infos.length, 3)
+  assert.equal(infos.length, 4)
 
   // Verify text file
   const textContent = await sandbox.files.read('writefiles_text.txt')
@@ -252,6 +261,10 @@ sandboxTest('writeFiles with different data types', async ({ sandbox }) => {
   // Verify Blob file
   const blobContent = await sandbox.files.read('writefiles_blob.txt')
   assert.equal(blobContent, 'Blob data')
+
+  // Verify ReadableStream file
+  const streamFileContent = await sandbox.files.read('writefiles_stream.txt')
+  assert.equal(streamFileContent, streamContent)
 
   if (isDebug) {
     for (const file of files) {

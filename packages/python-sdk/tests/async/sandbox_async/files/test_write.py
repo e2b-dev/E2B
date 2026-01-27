@@ -138,3 +138,39 @@ async def test_write_with_secured_envd(async_sandbox_factory):
 
     read_content = await sbx.files.read(filename)
     assert read_content == content
+
+
+async def test_write_files_with_different_data_types(
+    async_sandbox: AsyncSandbox, debug
+):
+    text_data = "Text string data"
+    bytes_data = b"Bytes data"
+    bytes_io_data = io.BytesIO(b"BytesIO data")
+    string_io_data = io.StringIO("StringIO data")
+
+    files = [
+        WriteEntry(path="writefiles_text.txt", data=text_data),
+        WriteEntry(path="writefiles_bytes.bin", data=bytes_data),
+        WriteEntry(path="writefiles_bytesio.bin", data=bytes_io_data),
+        WriteEntry(path="writefiles_stringio.txt", data=string_io_data),
+    ]
+
+    infos = await async_sandbox.files.write_files(files)
+
+    assert len(infos) == 4
+
+    text_content = await async_sandbox.files.read("writefiles_text.txt")
+    assert text_content == text_data
+
+    bytes_content = await async_sandbox.files.read("writefiles_bytes.bin")
+    assert bytes_content == "Bytes data"
+
+    bytes_io_content = await async_sandbox.files.read("writefiles_bytesio.bin")
+    assert bytes_io_content == "BytesIO data"
+
+    string_io_content = await async_sandbox.files.read("writefiles_stringio.txt")
+    assert string_io_content == "StringIO data"
+
+    if debug:
+        for file in files:
+            await async_sandbox.files.remove(file["path"])
