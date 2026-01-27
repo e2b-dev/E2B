@@ -168,6 +168,60 @@ class Git:
             args, None, envs, user, cwd, timeout, request_timeout
         )
 
+    async def remote_add(
+        self,
+        path: str,
+        name: str,
+        url: str,
+        fetch: bool = False,
+        overwrite: bool = False,
+        envs: Optional[Dict[str, str]] = None,
+        user: Optional[str] = None,
+        cwd: Optional[str] = None,
+        timeout: Optional[float] = None,
+        request_timeout: Optional[float] = None,
+    ):
+        """
+        Add (or update) a remote for a repository.
+
+        :param path: Repository path
+        :param name: Remote name (for example, "origin")
+        :param url: Remote URL
+        :param fetch: Fetch the remote after adding it when True
+        :param overwrite: Overwrite the remote URL if it already exists when True
+        :param envs: Environment variables used for the command
+        :param user: User to run the command as
+        :param cwd: Working directory to run the command
+        :param timeout: Timeout for the command connection in **seconds**
+        :param request_timeout: Timeout for the request in **seconds**
+        :return: Command result from the command runner
+        """
+        if not name or not url:
+            raise InvalidArgumentException(
+                "Both remote name and URL are required to add a git remote."
+            )
+
+        args = ["remote", "add"]
+        if fetch:
+            args.append("-f")
+        args.extend([name, url])
+
+        if not overwrite:
+            return await self._run(
+                args, path, envs, user, cwd, timeout, request_timeout
+            )
+
+        add_cmd = build_git_command(args, path)
+        set_url_cmd = build_git_command(["remote", "set-url", name, url], path)
+        return await self._run_shell(
+            f"{add_cmd} || {set_url_cmd}",
+            envs,
+            user,
+            cwd,
+            timeout,
+            request_timeout,
+        )
+
     async def status(
         self,
         path: str,

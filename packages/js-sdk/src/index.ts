@@ -67,6 +67,7 @@ export type {
   GitRequestOpts,
   GitCloneOpts,
   GitInitOpts,
+  GitRemoteAddOpts,
   GitCommitOpts,
   GitAddOpts,
   GitDeleteBranchOpts,

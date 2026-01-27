@@ -68,6 +68,20 @@ export interface GitInitOpts extends GitRequestOpts {
 }
 
 /**
+ * Options for adding a git remote.
+ */
+export interface GitRemoteAddOpts extends GitRequestOpts {
+  /**
+   * Fetch the remote after adding it when `true`.
+   */
+  fetch?: boolean
+  /**
+   * Overwrite the remote URL if the remote already exists when `true`.
+   */
+  overwrite?: boolean
+}
+
+/**
  * Options for creating a commit.
  */
 export interface GitCommitOpts extends GitRequestOpts {
@@ -239,6 +253,45 @@ export class Git {
 
     args.push(path)
     return this.run(args, undefined, rest)
+  }
+
+  /**
+   * Add (or update) a remote for a repository.
+   *
+   * @param path Repository path.
+   * @param name Remote name (for example, `"origin"`).
+   * @param url Remote URL.
+   * @param opts Remote add options.
+   * @returns Command result from the command runner.
+   */
+  async remoteAdd(
+    path: string,
+    name: string,
+    url: string,
+    opts?: GitRemoteAddOpts
+  ): Promise<CommandResult> {
+    if (!name || !url) {
+      throw new InvalidArgumentError(
+        'Both remote name and URL are required to add a git remote.'
+      )
+    }
+
+    const { fetch, overwrite, ...rest } = opts ?? {}
+    const addArgs = ['remote', 'add']
+
+    if (fetch) {
+      addArgs.push('-f')
+    }
+
+    addArgs.push(name, url)
+
+    if (!overwrite) {
+      return this.run(addArgs, path, rest)
+    }
+
+    const addCmd = buildGitCommand(addArgs, path)
+    const setUrlCmd = buildGitCommand(['remote', 'set-url', name, url], path)
+    return this.runShell(`${addCmd} || ${setUrlCmd}`, rest)
   }
 
   /**
