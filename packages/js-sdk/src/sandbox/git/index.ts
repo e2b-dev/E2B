@@ -82,6 +82,126 @@ export interface GitRemoteAddOpts extends GitRequestOpts {
 }
 
 /**
+ * Options for wiring a newly created remote to a local repository.
+ */
+export interface GitHubCreateRepoRemoteOpts {
+  /**
+   * Repository path inside the sandbox.
+   */
+  path: string
+  /**
+   * Remote name to use.
+   *
+   * @default "origin"
+   */
+  remoteName?: string
+  /**
+   * Use the SSH URL instead of the HTTPS clone URL when `true`.
+   */
+  useSsh?: boolean
+  /**
+   * Fetch after adding the remote when `true`.
+   */
+  fetch?: boolean
+  /**
+   * Overwrite the remote if it already exists when `true`.
+   */
+  overwrite?: boolean
+}
+
+/**
+ * Options for creating a GitHub repository.
+ */
+export interface GitHubCreateRepoOpts extends GitRequestOpts {
+  /**
+   * GitHub personal access token or app token.
+   */
+  token: string
+  /**
+   * Repository name to create.
+   */
+  name: string
+  /**
+   * Organization to create the repository in.
+   *
+   * When omitted, creates the repository for the authenticated user.
+   */
+  org?: string
+  /**
+   * Repository description.
+   */
+  description?: string
+  /**
+   * Whether the repository is private.
+   */
+  private?: boolean
+  /**
+   * Whether to create an initial commit.
+   */
+  autoInit?: boolean
+  /**
+   * Homepage URL.
+   */
+  homepage?: string
+  /**
+   * Gitignore template name.
+   */
+  gitignoreTemplate?: string
+  /**
+   * License template name.
+   */
+  licenseTemplate?: string
+  /**
+   * Base URL for the GitHub API.
+   *
+   * @default "https://api.github.com"
+   */
+  apiBaseUrl?: string
+  /**
+   * Optionally add the created repo as a remote in a sandbox repository.
+   */
+  addRemote?: GitHubCreateRepoRemoteOpts
+}
+
+/**
+ * Minimal GitHub repository information returned by {@link createGitHubRepo}.
+ */
+export interface GitHubRepoInfo {
+  /**
+   * Repository name.
+   */
+  name: string
+  /**
+   * Owner and repository name combined.
+   */
+  fullName: string
+  /**
+   * Clone URL over HTTPS.
+   */
+  cloneUrl: string
+  /**
+   * Clone URL over SSH.
+   */
+  sshUrl: string
+  /**
+   * Web URL for the repository.
+   */
+  htmlUrl: string
+  /**
+   * Owner login.
+   */
+  ownerLogin: string
+  /**
+   * Default branch name, if available.
+   */
+  defaultBranch?: string
+  /**
+   * Whether the repository is private.
+   */
+  private: boolean
+}
+
+/**
  * Options for creating a commit.
  */
 export interface GitCommitOpts extends GitRequestOpts {
@@ -253,6 +373,117 @@ export class Git {
 
     args.push(path)
     return this.run(args, undefined, rest)
+  }
+
+  /**
+   * Create a new git repository.
+   *
+   * This is an alias for {@link init} for discoverability.
+   *
+   * @param path Destination path for the repository.
+   * @param opts Init options.
+   * @returns Command result from the command runner.
+   */
+  async createRepo(path: string, opts?: GitInitOpts): Promise<CommandResult> {
+    return this.init(path, opts)
+  }
+
+  /**
+   * Create a new GitHub repository.
+   *
+   * When `addRemote` is provided, the created repository is added as a remote
+   * in the given sandbox repository.
+   *
+   * @param opts GitHub repository creation options.
+   * @returns Minimal information about the created repository.
+   */
+  async createGitHubRepo(opts: GitHubCreateRepoOpts): Promise<GitHubRepoInfo> {
+    const {
+      token,
+      name,
+      org,
+      description,
+      private: isPrivate,
+      autoInit,
+      homepage,
+      gitignoreTemplate,
+      licenseTemplate,
+      apiBaseUrl,
+      addRemote,
+      ...requestOpts
+    } = opts
+
+    if (!token || !name) {
+      throw new InvalidArgumentError(
+        'Both token and name are required to create a GitHub repository.'
+      )
+    }
+
+    const baseUrl = (apiBaseUrl ?? 'https://api.github.com').replace(/\/+$/, '')
+    const endpoint = org
+      ? `/orgs/${encodeURIComponent(org)}/repos`
+      : '/user/repos'
+
+    const payload: Record<string, unknown> = { name }
+    if (description !== undefined) payload.description = description
+    if (isPrivate !== undefined) payload.private = isPrivate
+    if (autoInit !== undefined) payload.auto_init = autoInit
+    if (homepage !== undefined) payload.homepage = homepage
+    if (gitignoreTemplate !== undefined) {
+      payload.gitignore_template = gitignoreTemplate
+    }
+    if (licenseTemplate !== undefined)
+      payload.license_template = licenseTemplate
+
+    const response = await fetch(`${baseUrl}${endpoint}`, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/vnd.github+json',
+        Authorization: `Bearer ${token}`,
+        'X-GitHub-Api-Version': '2022-11-28',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    })
+
+    const responseText = await response.text()
+    let data: any = undefined
+    try {
+      data = responseText ? JSON.parse(responseText) : undefined
+    } catch {
+      data = undefined
+    }
+
+    if (!response.ok) {
+      const message =
+        (data && typeof data.message === 'string' && data.message) ||
+        responseText ||
+        `GitHub API request failed with status ${response.status}.`
+      throw new InvalidArgumentError(message)
+    }
+
+    const repo: GitHubRepoInfo = {
+      name: data.name,
+      fullName: data.full_name,
+      cloneUrl: data.clone_url,
+      sshUrl: data.ssh_url,
+      htmlUrl: data.html_url,
+      ownerLogin: data.owner?.login,
+      defaultBranch: data.default_branch,
+      private: Boolean(data.private),
+    }
+
+    if (addRemote) {
+      const remoteName = addRemote.remoteName ?? 'origin'
+      const remoteUrl = addRemote.useSsh ? repo.sshUrl : repo.cloneUrl
+      await this.remoteAdd(addRemote.path, remoteName, remoteUrl, {
+        ...requestOpts,
+        fetch: addRemote.fetch,
+        overwrite: addRemote.overwrite,
+      })
+    }
+
+    return repo
   }
 
   /**

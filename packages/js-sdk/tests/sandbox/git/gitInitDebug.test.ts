@@ -6,28 +6,47 @@ const gitInitEnabled = process.env.E2B_DEBUG_GIT_INIT !== undefined
 const shouldSkip = !isDebug || !gitInitEnabled
 const debugGitTest = sandboxTest.skipIf(shouldSkip)
 
-const repoPath = '/tmp/e2b-git-init-repo'
 const initialBranch = 'main'
+const repoPathInit = '/tmp/e2b-git-init-repo-init'
+const repoPathCreate = '/tmp/e2b-git-init-repo-create'
+
+async function assertRepoInitialized(
+  sandbox: any,
+  repoPath: string,
+  initFn: () => Promise<unknown>
+) {
+  await sandbox.commands.run(`rm -rf "${repoPath}"`)
+
+  try {
+    await initFn()
+
+    const repoCheck = await sandbox.commands.run(
+      `if [ -d "${repoPath}/.git" ]; then echo found; else echo missing; fi`
+    )
+    expect(repoCheck.stdout.trim()).toBe('found')
+
+    const branchCheck = await sandbox.commands.run(
+      `git -C "${repoPath}" symbolic-ref --short HEAD`
+    )
+    expect(branchCheck.stdout.trim()).toBe(initialBranch)
+  } finally {
+    await sandbox.commands.run(`rm -rf "${repoPath}"`)
+  }
+}
+debugGitTest(
+  'init initializes a repo with the requested initial branch (debug-only)',
+  async ({ sandbox }) => {
+    await assertRepoInitialized(sandbox, repoPathInit, () =>
+      sandbox.git.init(repoPathInit, { initialBranch })
+    )
+  }
+)
 
 debugGitTest(
-  'git init creates a repo with the requested initial branch (debug-only)',
+  'createRepo initializes a repo with the requested initial branch (debug-only)',
   async ({ sandbox }) => {
-    await sandbox.commands.run(`rm -rf "${repoPath}"`)
-
-    try {
-      await sandbox.git.init(repoPath, { initialBranch })
-
-      const repoCheck = await sandbox.commands.run(
-        `if [ -d "${repoPath}/.git" ]; then echo found; else echo missing; fi`
-      )
-      expect(repoCheck.stdout.trim()).toBe('found')
-
-      const branchCheck = await sandbox.commands.run(
-        `git -C "${repoPath}" symbolic-ref --short HEAD`
-      )
-      expect(branchCheck.stdout.trim()).toBe(initialBranch)
-    } finally {
-      await sandbox.commands.run(`rm -rf "${repoPath}"`)
-    }
+    await assertRepoInitialized(sandbox, repoPathCreate, () =>
+      sandbox.git.createRepo(repoPathCreate, { initialBranch })
+    )
   }
 )

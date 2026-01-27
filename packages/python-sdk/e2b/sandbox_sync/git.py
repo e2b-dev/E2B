@@ -1,4 +1,8 @@
-from typing import Dict, List, Optional
+import json
+from typing import Any, Dict, List, Optional, TypedDict
+from urllib import error as urllib_error
+from urllib import parse as urllib_parse
+from urllib import request as urllib_request
 
 from e2b.sandbox.git_utils import (
     GitBranches,
@@ -14,6 +18,21 @@ from e2b.sandbox_sync.commands.command import Commands
 
 
 DEFAULT_GIT_ENV = {"GIT_TERMINAL_PROMPT": "0"}
+
+
+class GitHubRepoInfo(TypedDict, total=False):
+    """
+    Minimal GitHub repository information returned by :meth:`create_github_repo`.
+    """
+
+    name: str
+    full_name: str
+    clone_url: str
+    ssh_url: str
+    html_url: str
+    owner_login: str
+    default_branch: str
+    private: bool
 
 
 class Git:
@@ -163,6 +182,167 @@ class Git:
             args.append("--bare")
         args.append(path)
         return self._run(args, None, envs, user, cwd, timeout, request_timeout)
+
+    def create_repo(
+        self,
+        path: str,
+        bare: bool = False,
+        initial_branch: Optional[str] = None,
+        envs: Optional[Dict[str, str]] = None,
+        user: Optional[str] = None,
+        cwd: Optional[str] = None,
+        timeout: Optional[float] = None,
+        request_timeout: Optional[float] = None,
+    ):
+        """
+        Create a new git repository.
+
+        This is an alias for :meth:`init` for discoverability.
+
+        :param path: Destination path for the repository
+        :param bare: Create a bare repository when True
+        :param initial_branch: Initial branch name (for example, "main")
+        :param envs: Environment variables used for the command
+        :param user: User to run the command as
+        :param cwd: Working directory to run the command
+        :param timeout: Timeout for the command connection in **seconds**
+        :param request_timeout: Timeout for the request in **seconds**
+        :return: Command result from the command runner
+        """
+        return self.init(
+            path=path,
+            bare=bare,
+            initial_branch=initial_branch,
+            envs=envs,
+            user=user,
+            cwd=cwd,
+            timeout=timeout,
+            request_timeout=request_timeout,
+        )
+
+    def _github_request(
+        self,
+        method: str,
+        url: str,
+        token: str,
+        payload: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        """
+        Execute a GitHub API request and return the parsed JSON response.
+        """
+        data = (
+            json.dumps(payload).encode("utf-8")
+            if payload is not None
+            else None
+        )
+        headers = {
+            "Accept": "application/vnd.github+json",
+            "Authorization": f"Bearer {token}",
+            "X-GitHub-Api-Version": "2022-11-28",
+        }
+        if data is not None:
+            headers["Content-Type"] = "application/json"
+
+        req = urllib_request.Request(url, data=data, headers=headers, method=method)
+
+        try:
+            with urllib_request.urlopen(req) as resp:
+                body = resp.read().decode("utf-8")
+                return json.loads(body) if body else {}
+        except urllib_error.HTTPError as err:
+            body = err.read().decode("utf-8") if err.fp else ""
+            try:
+                parsed = json.loads(body) if body else {}
+            except Exception:
+                parsed = {}
+            message = parsed.get("message") or body or err.reason
+            raise InvalidArgumentException(
+                f"GitHub API request failed ({err.code}): {message}"
+            ) from err
+
+    def create_github_repo(
+        self,
+        token: str,
+        name: str,
+        org: Optional[str] = None,
+        description: Optional[str] = None,
+        private: Optional[bool] = None,
+        auto_init: Optional[bool] = None,
+        homepage: Optional[str] = None,
+        gitignore_template: Optional[str] = None,
+        license_template: Optional[str] = None,
+        api_base_url: str = "https://api.github.com",
+        add_remote_path: Optional[str] = None,
+        add_remote_name: str = "origin",
+        add_remote_use_ssh: bool = False,
+        add_remote_fetch: bool = False,
+        add_remote_overwrite: bool = False,
+        envs: Optional[Dict[str, str]] = None,
+        user: Optional[str] = None,
+        cwd: Optional[str] = None,
+        timeout: Optional[float] = None,
+        request_timeout: Optional[float] = None,
+    ) -> GitHubRepoInfo:
+        """
+        Create a new GitHub repository.
+
+        When ``add_remote_path`` is provided, the created repository is added as
+        a remote in the given sandbox repository.
+        """
+        if not token or not name:
+            raise InvalidArgumentException(
+                "Both token and name are required to create a GitHub repository."
+            )
+
+        base_url = api_base_url.rstrip("/")
+        if org:
+            endpoint = f"/orgs/{urllib_parse.quote(org)}/repos"
+        else:
+            endpoint = "/user/repos"
+
+        payload: Dict[str, Any] = {"name": name}
+        if description is not None:
+            payload["description"] = description
+        if private is not None:
+            payload["private"] = private
+        if auto_init is not None:
+            payload["auto_init"] = auto_init
+        if homepage is not None:
+            payload["homepage"] = homepage
+        if gitignore_template is not None:
+            payload["gitignore_template"] = gitignore_template
+        if license_template is not None:
+            payload["license_template"] = license_template
+
+        data = self._github_request("POST", f"{base_url}{endpoint}", token, payload)
+
+        repo: GitHubRepoInfo = {
+            "name": data.get("name", ""),
+            "full_name": data.get("full_name", ""),
+            "clone_url": data.get("clone_url", ""),
+            "ssh_url": data.get("ssh_url", ""),
+            "html_url": data.get("html_url", ""),
+            "owner_login": (data.get("owner") or {}).get("login", ""),
+            "default_branch": data.get("default_branch", ""),
+            "private": bool(data.get("private", False)),
+        }
+
+        if add_remote_path:
+            remote_url = repo["ssh_url"] if add_remote_use_ssh else repo["clone_url"]
+            self.remote_add(
+                add_remote_path,
+                add_remote_name,
+                remote_url,
+                fetch=add_remote_fetch,
+                overwrite=add_remote_overwrite,
+                envs=envs,
+                user=user,
+                cwd=cwd,
+                timeout=timeout,
+                request_timeout=request_timeout,
+            )
+
+        return repo
 
     def remote_add(
         self,
