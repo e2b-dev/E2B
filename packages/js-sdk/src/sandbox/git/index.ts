@@ -617,7 +617,7 @@ export class Git {
       'fi',
       '',
       'if [ "$status" -ge 400 ]; then',
-      '  esc="$(printf \'%s\' "$body" | sed -e \'s/\\\\/\\\\\\\\/g\' -e \'s/\\"/\\\\\\"/g\' -e \'s/\\r/\\\\r/g\' -e \':a;N;$!ba;s/\\n/\\\\n/g\')"',
+      "  esc=\"$(printf '%s' \"$body\" | sed -e 's/\\\\/\\\\\\\\/g' -e 's/\\\"/\\\\\\\"/g' -e 's/\\r/\\\\r/g' -e ':a;N;$!ba;s/\\n/\\\\n/g')\"",
       '  printf \'{"error":"%s","status":%s}\' "$esc" "$status"',
       '  exit 0',
       'fi',

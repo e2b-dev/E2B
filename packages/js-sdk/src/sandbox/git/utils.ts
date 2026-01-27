@@ -309,7 +309,8 @@ export function parseGitStatus(output: string): GitStatus {
     const normalizedBranch = normalizeBranchName(branchPart)
     const rawBranch = branchPart
     const isDetached =
-      rawBranch.startsWith('HEAD (detached at ') || rawBranch.includes('detached')
+      rawBranch.startsWith('HEAD (detached at ') ||
+      rawBranch.includes('detached')
 
     if (isDetached || normalizedBranch.startsWith('HEAD')) {
       detached = true
