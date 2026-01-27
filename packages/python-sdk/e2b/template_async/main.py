@@ -407,7 +407,7 @@ class AsyncTemplate(TemplateBase):
         """
         Check if a template with the given alias exists.
 
-        Deprecated Use `name_exists` instead.
+        Deprecated Use `exists` instead.
 
         :param alias: Template alias to check
         :return: True if the alias exists, False otherwise
