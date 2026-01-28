@@ -32,7 +32,7 @@ class Git:
         """
         self._commands = commands
 
-    async def _run(
+    async def _run_git(
         self,
         args: List[str],
         repo_path: Optional[str],
@@ -160,7 +160,7 @@ class Git:
         if remote:
             return remote
 
-        result = await self._run(
+        result = await self._run_git(
             ["remote"],
             path,
             envs,
@@ -194,7 +194,7 @@ class Git:
             path, remote, envs, user, cwd, timeout, request_timeout
         )
         credential_url = with_credentials(original_url, username, password)
-        await self._run(
+        await self._run_git(
             ["remote", "set-url", remote, credential_url],
             path,
             envs,
@@ -215,7 +215,7 @@ class Git:
 
         restore_error: Exception | None = None
         try:
-            await self._run(
+            await self._run_git(
                 ["remote", "set-url", remote, original_url],
                 path,
                 envs,
@@ -244,7 +244,7 @@ class Git:
         timeout: Optional[float] = None,
         request_timeout: Optional[float] = None,
     ) -> str:
-        result = await self._run(
+        result = await self._run_git(
             ["remote", "get-url", remote],
             path,
             envs,
@@ -323,11 +323,11 @@ class Git:
                 args.extend(["--depth", str(depth)])
             if path:
                 args.append(path)
-            result = await self._run(
+            result = await self._run_git(
                 args, None, envs, user, cwd, timeout, request_timeout
             )
             if should_strip and repo_path:
-                await self._run(
+                await self._run_git(
                     ["remote", "set-url", "origin", sanitized_url],
                     repo_path,
                     envs,
@@ -379,7 +379,7 @@ class Git:
         if bare:
             args.append("--bare")
         args.append(path)
-        return await self._run(args, None, envs, user, cwd, timeout, request_timeout)
+        return await self._run_git(args, None, envs, user, cwd, timeout, request_timeout)
 
     async def remote_add(
         self,
@@ -420,7 +420,7 @@ class Git:
         args.extend([name, url])
 
         if not overwrite:
-            return await self._run(
+            return await self._run_git(
                 args, path, envs, user, cwd, timeout, request_timeout
             )
 
@@ -499,7 +499,7 @@ class Git:
         :param request_timeout: Timeout for the request in **seconds**
         :return: Parsed git status
         """
-        result = await self._run(
+        result = await self._run_git(
             ["status", "--porcelain=1", "-b"],
             path,
             envs,
@@ -530,7 +530,7 @@ class Git:
         :param request_timeout: Timeout for the request in **seconds**
         :return: Parsed branch list
         """
-        result = await self._run(
+        result = await self._run_git(
             ["branch", "--format=%(refname:short)\t%(HEAD)"],
             path,
             envs,
@@ -563,7 +563,7 @@ class Git:
         :param request_timeout: Timeout for the request in **seconds**
         :return: Command result from the command runner
         """
-        return await self._run(
+        return await self._run_git(
             ["checkout", "-b", branch],
             path,
             envs,
@@ -595,7 +595,7 @@ class Git:
         :param request_timeout: Timeout for the request in **seconds**
         :return: Command result from the command runner
         """
-        return await self._run(
+        return await self._run_git(
             ["checkout", branch],
             path,
             envs,
@@ -630,7 +630,7 @@ class Git:
         :return: Command result from the command runner
         """
         args = ["branch", "-D" if force else "-d", branch]
-        return await self._run(args, path, envs, user, cwd, timeout, request_timeout)
+        return await self._run_git(args, path, envs, user, cwd, timeout, request_timeout)
 
     async def add(
         self,
@@ -662,7 +662,7 @@ class Git:
         else:
             args.append("--")
             args.extend(files)
-        return await self._run(args, path, envs, user, cwd, timeout, request_timeout)
+        return await self._run_git(args, path, envs, user, cwd, timeout, request_timeout)
 
     async def commit(
         self,
@@ -702,7 +702,7 @@ class Git:
             author_args.extend(["-c", f"user.email={author_email}"])
         if author_args:
             args = author_args + args
-        return await self._run(args, path, envs, user, cwd, timeout, request_timeout)
+        return await self._run_git(args, path, envs, user, cwd, timeout, request_timeout)
 
     async def push(
         self,
@@ -764,7 +764,7 @@ class Git:
                 cwd,
                 timeout,
                 request_timeout,
-                operation=lambda: self._run(
+                operation=lambda: self._run_git(
                     build_args(remote_name),
                     path,
                     envs,
@@ -776,7 +776,7 @@ class Git:
             )
 
         try:
-            return await self._run(
+            return await self._run_git(
                 build_args(), path, envs, user, cwd, timeout, request_timeout
             )
         except CommandExitException as err:
@@ -848,7 +848,7 @@ class Git:
                 cwd,
                 timeout,
                 request_timeout,
-                operation=lambda: self._run(
+                operation=lambda: self._run_git(
                     build_args(remote_name),
                     path,
                     envs,
@@ -860,7 +860,7 @@ class Git:
             )
 
         try:
-            return await self._run(
+            return await self._run_git(
                 build_args(), path, envs, user, cwd, timeout, request_timeout
             )
         except CommandExitException as err:
@@ -908,7 +908,7 @@ class Git:
             raise InvalidArgumentException("Git config key is required.")
 
         scope_flag, repo_path = self._resolve_config_scope(scope, path)
-        return await self._run(
+        return await self._run_git(
             ["config", scope_flag, key, value],
             repo_path,
             envs,

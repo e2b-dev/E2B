@@ -332,10 +332,10 @@ export class Git {
         args.push(path)
       }
 
-      const result = await this.run(args, undefined, rest)
+      const result = await this.runGit(args, undefined, rest)
 
       if (shouldStripCredentials && repoPath) {
-        await this.run(
+        await this.runGit(
           ['remote', 'set-url', 'origin', sanitizedUrl],
           repoPath,
           rest
@@ -376,7 +376,7 @@ export class Git {
     }
 
     args.push(path)
-    return this.run(args, undefined, rest)
+    return this.runGit(args, undefined, rest)
   }
 
   /**
@@ -410,7 +410,7 @@ export class Git {
     addArgs.push(name, url)
 
     if (!overwrite) {
-      return this.run(addArgs, path, rest)
+      return this.runGit(addArgs, path, rest)
     }
 
     const addCmd = buildGitCommand(addArgs, path)
@@ -456,7 +456,7 @@ export class Git {
    * @returns Parsed git status.
    */
   async status(path: string, opts?: GitRequestOpts): Promise<GitStatus> {
-    const result = await this.run(['status', '--porcelain=1', '-b'], path, opts)
+    const result = await this.runGit(['status', '--porcelain=1', '-b'], path, opts)
     return parseGitStatus(result.stdout)
   }
 
@@ -468,7 +468,7 @@ export class Git {
    * @returns Parsed branch list.
    */
   async branches(path: string, opts?: GitRequestOpts): Promise<GitBranches> {
-    const result = await this.run(
+    const result = await this.runGit(
       ['branch', '--format=%(refname:short)\t%(HEAD)'],
       path,
       opts
@@ -489,7 +489,7 @@ export class Git {
     branch: string,
     opts?: GitRequestOpts
   ): Promise<CommandResult> {
-    return this.run(['checkout', '-b', branch], path, opts)
+    return this.runGit(['checkout', '-b', branch], path, opts)
   }
 
   /**
@@ -505,7 +505,7 @@ export class Git {
     branch: string,
     opts?: GitRequestOpts
   ): Promise<CommandResult> {
-    return this.run(['checkout', branch], path, opts)
+    return this.runGit(['checkout', branch], path, opts)
   }
 
   /**
@@ -523,7 +523,7 @@ export class Git {
   ): Promise<CommandResult> {
     const { force, ...rest } = opts ?? {}
     const args = ['branch', force ? '-D' : '-d', branch]
-    return this.run(args, path, rest)
+    return this.runGit(args, path, rest)
   }
 
   /**
@@ -543,7 +543,7 @@ export class Git {
       args.push('--', ...files)
     }
 
-    return this.run(args, path, rest)
+    return this.runGit(args, path, rest)
   }
 
   /**
@@ -574,7 +574,7 @@ export class Git {
       authorArgs.push('-c', `user.email=${authorEmail}`)
     }
 
-    return this.run([...authorArgs, ...args], path, rest)
+    return this.runGit([...authorArgs, ...args], path, rest)
   }
 
   /**
@@ -611,7 +611,7 @@ export class Git {
       args.push('--', ...paths)
     }
 
-    return this.run(args, path, rest)
+    return this.runGit(args, path, rest)
   }
 
   /**
@@ -657,7 +657,7 @@ export class Git {
     }
     args.push('--', ...paths)
 
-    return this.run(args, path, rest)
+    return this.runGit(args, path, rest)
   }
 
   /**
@@ -700,12 +700,12 @@ export class Git {
         username,
         password,
         rest,
-        () => this.run(buildArgs(remoteName), path, rest)
+        () => this.runGit(buildArgs(remoteName), path, rest)
       )
     }
 
     try {
-      return await this.run(buildArgs(), path, rest)
+      return await this.runGit(buildArgs(), path, rest)
     } catch (err) {
       if (this.isAuthFailure(err)) {
         throw new InvalidArgumentError(
@@ -754,12 +754,12 @@ export class Git {
         username,
         password,
         rest,
-        () => this.run(buildArgs(remoteName), path, rest)
+        () => this.runGit(buildArgs(remoteName), path, rest)
       )
     }
 
     try {
-      return await this.run(buildArgs(), path, rest)
+      return await this.runGit(buildArgs(), path, rest)
     } catch (err) {
       if (this.isAuthFailure(err)) {
         throw new InvalidArgumentError(
@@ -796,7 +796,7 @@ export class Git {
     const scopeFlag = this.getScopeFlag(scope)
     const repoPath = this.getRepoPathForScope(scope, opts?.path)
 
-    return this.run(['config', scopeFlag, key, value], repoPath, opts)
+    return this.runGit(['config', scopeFlag, key, value], repoPath, opts)
   }
 
   /**
@@ -856,7 +856,7 @@ export class Git {
       '',
     ].join('\n')
 
-    await this.run(
+    await this.runGit(
       ['config', '--global', 'credential.helper', 'store'],
       undefined,
       rest
@@ -898,7 +898,7 @@ export class Git {
    * @param opts Command execution options.
    * @returns Command result from the command runner.
    */
-  private async run(
+  private async runGit(
     args: string[],
     repoPath?: string,
     opts?: GitRequestOpts
@@ -934,7 +934,7 @@ export class Git {
     remote: string,
     opts?: GitRequestOpts
   ): Promise<string> {
-    const result = await this.run(['remote', 'get-url', remote], path, opts)
+    const result = await this.runGit(['remote', 'get-url', remote], path, opts)
     const url = result.stdout.trim()
     if (!url) {
       throw new InvalidArgumentError(
@@ -953,7 +953,7 @@ export class Git {
       return remote
     }
 
-    const result = await this.run(['remote'], path, opts)
+    const result = await this.runGit(['remote'], path, opts)
     const remotes = result.stdout
       .split('\n')
       .map((line) => line.trim())
@@ -1044,7 +1044,7 @@ export class Git {
     const originalUrl = await this.getRemoteUrl(path, remote, opts)
     const credentialUrl = withCredentials(originalUrl, username, password)
 
-    await this.run(['remote', 'set-url', remote, credentialUrl], path, opts)
+    await this.runGit(['remote', 'set-url', remote, credentialUrl], path, opts)
 
     let result: T | undefined
     let operationError: unknown
@@ -1056,7 +1056,7 @@ export class Git {
 
     let restoreError: unknown
     try {
-      await this.run(['remote', 'set-url', remote, originalUrl], path, opts)
+      await this.runGit(['remote', 'set-url', remote, originalUrl], path, opts)
     } catch (err) {
       restoreError = err
     }

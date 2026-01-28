@@ -32,7 +32,7 @@ class Git:
         """
         self._commands = commands
 
-    def _run(
+    def _run_git(
         self,
         args: List[str],
         repo_path: Optional[str],
@@ -157,7 +157,7 @@ class Git:
         timeout: Optional[float] = None,
         request_timeout: Optional[float] = None,
     ) -> str:
-        result = self._run(
+        result = self._run_git(
             ["remote", "get-url", remote],
             path,
             envs,
@@ -186,7 +186,7 @@ class Git:
         if remote:
             return remote
 
-        result = self._run(
+        result = self._run_git(
             ["remote"],
             path,
             envs,
@@ -220,7 +220,7 @@ class Git:
             path, remote, envs, user, cwd, timeout, request_timeout
         )
         credential_url = with_credentials(original_url, username, password)
-        self._run(
+        self._run_git(
             ["remote", "set-url", remote, credential_url],
             path,
             envs,
@@ -241,7 +241,7 @@ class Git:
 
         restore_error: Exception | None = None
         try:
-            self._run(
+            self._run_git(
                 ["remote", "set-url", remote, original_url],
                 path,
                 envs,
@@ -321,9 +321,9 @@ class Git:
                 args.extend(["--depth", str(depth)])
             if path:
                 args.append(path)
-            result = self._run(args, None, envs, user, cwd, timeout, request_timeout)
+            result = self._run_git(args, None, envs, user, cwd, timeout, request_timeout)
             if should_strip and repo_path:
-                self._run(
+                self._run_git(
                     ["remote", "set-url", "origin", sanitized_url],
                     repo_path,
                     envs,
@@ -375,7 +375,7 @@ class Git:
         if bare:
             args.append("--bare")
         args.append(path)
-        return self._run(args, None, envs, user, cwd, timeout, request_timeout)
+        return self._run_git(args, None, envs, user, cwd, timeout, request_timeout)
 
     def remote_add(
         self,
@@ -416,7 +416,7 @@ class Git:
         args.extend([name, url])
 
         if not overwrite:
-            return self._run(args, path, envs, user, cwd, timeout, request_timeout)
+            return self._run_git(args, path, envs, user, cwd, timeout, request_timeout)
 
         add_cmd = build_git_command(args, path)
         set_url_cmd = build_git_command(["remote", "set-url", name, url], path)
@@ -491,7 +491,7 @@ class Git:
         :param request_timeout: Timeout for the request in **seconds**
         :return: Parsed git status
         """
-        result = self._run(
+        result = self._run_git(
             ["status", "--porcelain=1", "-b"],
             path,
             envs,
@@ -522,7 +522,7 @@ class Git:
         :param request_timeout: Timeout for the request in **seconds**
         :return: Parsed branch list
         """
-        result = self._run(
+        result = self._run_git(
             ["branch", "--format=%(refname:short)\t%(HEAD)"],
             path,
             envs,
@@ -555,7 +555,7 @@ class Git:
         :param request_timeout: Timeout for the request in **seconds**
         :return: Command result from the command runner
         """
-        return self._run(
+        return self._run_git(
             ["checkout", "-b", branch],
             path,
             envs,
@@ -587,7 +587,7 @@ class Git:
         :param request_timeout: Timeout for the request in **seconds**
         :return: Command result from the command runner
         """
-        return self._run(
+        return self._run_git(
             ["checkout", branch],
             path,
             envs,
@@ -622,7 +622,7 @@ class Git:
         :return: Command result from the command runner
         """
         args = ["branch", "-D" if force else "-d", branch]
-        return self._run(args, path, envs, user, cwd, timeout, request_timeout)
+        return self._run_git(args, path, envs, user, cwd, timeout, request_timeout)
 
     def add(
         self,
@@ -654,7 +654,7 @@ class Git:
         else:
             args.append("--")
             args.extend(files)
-        return self._run(args, path, envs, user, cwd, timeout, request_timeout)
+        return self._run_git(args, path, envs, user, cwd, timeout, request_timeout)
 
     def commit(
         self,
@@ -694,7 +694,7 @@ class Git:
             author_args.extend(["-c", f"user.email={author_email}"])
         if author_args:
             args = author_args + args
-        return self._run(args, path, envs, user, cwd, timeout, request_timeout)
+        return self._run_git(args, path, envs, user, cwd, timeout, request_timeout)
 
     def reset(
         self,
@@ -736,7 +736,7 @@ class Git:
         if paths:
             args.append("--")
             args.extend(paths)
-        return self._run(args, path, envs, user, cwd, timeout, request_timeout)
+        return self._run_git(args, path, envs, user, cwd, timeout, request_timeout)
 
     def restore(
         self,
@@ -792,7 +792,7 @@ class Git:
             args.extend(["--source", source])
         args.append("--")
         args.extend(paths)
-        return self._run(args, path, envs, user, cwd, timeout, request_timeout)
+        return self._run_git(args, path, envs, user, cwd, timeout, request_timeout)
 
     def push(
         self,
@@ -854,7 +854,7 @@ class Git:
                 cwd,
                 timeout,
                 request_timeout,
-                operation=lambda: self._run(
+                operation=lambda: self._run_git(
                     build_args(remote_name),
                     path,
                     envs,
@@ -866,7 +866,7 @@ class Git:
             )
 
         try:
-            return self._run(
+            return self._run_git(
                 build_args(), path, envs, user, cwd, timeout, request_timeout
             )
         except CommandExitException as err:
@@ -938,7 +938,7 @@ class Git:
                 cwd,
                 timeout,
                 request_timeout,
-                operation=lambda: self._run(
+                operation=lambda: self._run_git(
                     build_args(remote_name),
                     path,
                     envs,
@@ -950,7 +950,7 @@ class Git:
             )
 
         try:
-            return self._run(
+            return self._run_git(
                 build_args(), path, envs, user, cwd, timeout, request_timeout
             )
         except CommandExitException as err:
@@ -998,7 +998,7 @@ class Git:
             raise InvalidArgumentException("Git config key is required.")
 
         scope_flag, repo_path = self._resolve_config_scope(scope, path)
-        return self._run(
+        return self._run_git(
             ["config", scope_flag, key, value],
             repo_path,
             envs,
