@@ -1,3 +1,6 @@
+import pytest
+
+@pytest.mark.skip_debug()
 def test_init_creates_repo(git_sandbox, git_base_dir):
     repo_path = f"{git_base_dir}/repo"
 

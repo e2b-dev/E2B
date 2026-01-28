@@ -1,3 +1,6 @@
+import pytest
+
+@pytest.mark.skip_debug()
 def test_remote_add_overwrite(git_sandbox, git_repo, git_daemon):
     repo_path = git_repo
     remote_url = git_daemon["remote_url"]

@@ -1,3 +1,6 @@
+import pytest
+
+@pytest.mark.skip_debug()
 def test_pull_updates_clone(git_sandbox, git_repo_with_commit, git_daemon, git_base_dir, git_author):
     repo_path = git_repo_with_commit
     remote_url = git_daemon["remote_url"]

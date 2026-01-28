@@ -1,3 +1,6 @@
+import pytest
+
+@pytest.mark.skip_debug()
 def test_branches_lists_current_and_feature(git_sandbox, git_repo_with_commit):
     repo_path = git_repo_with_commit
 

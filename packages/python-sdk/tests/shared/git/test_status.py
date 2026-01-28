@@ -1,3 +1,6 @@
+import pytest
+
+@pytest.mark.skip_debug()
 def test_status_reports_untracked_file(git_sandbox, git_repo):
     git_sandbox.files.write(f"{git_repo}/README.md", "hello\n")
 

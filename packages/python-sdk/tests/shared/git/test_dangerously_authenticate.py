@@ -1,3 +1,6 @@
+import pytest
+
+@pytest.mark.skip_debug()
 def test_dangerously_authenticate_sets_helper(git_sandbox, git_credentials):
     username, password, host, protocol = git_credentials
 

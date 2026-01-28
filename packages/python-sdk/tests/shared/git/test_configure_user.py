@@ -1,3 +1,6 @@
+import pytest
+
+@pytest.mark.skip_debug()
 def test_configure_user_sets_global_config(git_sandbox, git_author):
     author_name, author_email = git_author
 

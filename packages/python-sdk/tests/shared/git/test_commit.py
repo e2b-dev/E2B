@@ -1,3 +1,6 @@
+import pytest
+
+@pytest.mark.skip_debug()
 def test_commit_creates_commit(git_sandbox, git_repo, git_author):
     author_name, author_email = git_author
 

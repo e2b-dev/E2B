@@ -1,3 +1,6 @@
+import pytest
+
+@pytest.mark.skip_debug()
 def test_checkout_branch_switches_branch(git_sandbox, git_repo_with_commit):
     repo_path = git_repo_with_commit
 
