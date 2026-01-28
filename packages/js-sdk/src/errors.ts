@@ -79,6 +79,16 @@ export class AuthenticationError extends Error {
 }
 
 /**
+ * Thrown when git authentication fails.
+ */
+export class GitAuthError extends AuthenticationError {
+  constructor(message: string) {
+    super(message)
+    this.name = 'GitAuthError'
+  }
+}
+
+/**
  * Thrown when the template uses old envd version. It isn't compatible with the new SDK.
  */
 export class TemplateError extends SandboxError {

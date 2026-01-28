@@ -1,6 +1,6 @@
 from typing import Dict, List, Optional
 
-from e2b.exceptions import InvalidArgumentException
+from e2b.exceptions import GitAuthException, InvalidArgumentException
 from e2b.sandbox.commands.command_handle import CommandExitException
 from e2b.sandbox.git_utils import (
     GitBranches,
@@ -342,7 +342,7 @@ class Git:
             return await attempt_clone(username, password)
         except CommandExitException as err:
             if self._is_auth_failure(err):
-                raise InvalidArgumentException(
+                raise GitAuthException(
                     self._build_auth_error_message(
                         "clone", bool(username) and not password
                     )
@@ -789,7 +789,7 @@ class Git:
             )
         except CommandExitException as err:
             if self._is_auth_failure(err):
-                raise InvalidArgumentException(
+                raise GitAuthException(
                     self._build_auth_error_message(
                         "push", bool(username) and not password
                     )
@@ -873,7 +873,7 @@ class Git:
             )
         except CommandExitException as err:
             if self._is_auth_failure(err):
-                raise InvalidArgumentException(
+                raise GitAuthException(
                     self._build_auth_error_message(
                         "pull", bool(username) and not password
                     )

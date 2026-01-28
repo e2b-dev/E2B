@@ -35,6 +35,7 @@ from .connection_config import (
 )
 from .exceptions import (
     AuthenticationException,
+    GitAuthException,
     BuildException,
     FileUploadException,
     InvalidArgumentException,
@@ -111,6 +112,7 @@ __all__ = [
     "TimeoutException",
     "NotFoundException",
     "AuthenticationException",
+    "GitAuthException",
     "InvalidArgumentException",
     "NotEnoughSpaceException",
     "TemplateException",

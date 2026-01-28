@@ -1,4 +1,4 @@
-import { InvalidArgumentError } from '../../errors'
+import { GitAuthError, InvalidArgumentError } from '../../errors'
 import type { CommandStartOpts } from '../commands'
 import { CommandExitError, type CommandResult } from '../commands/commandHandle'
 import { Commands } from '../commands'
@@ -349,7 +349,7 @@ export class Git {
       return await attemptClone(username, password)
     } catch (err) {
       if (this.isAuthFailure(err)) {
-        throw new InvalidArgumentError(
+        throw new GitAuthError(
           this.buildAuthErrorMessage('clone', Boolean(username) && !password)
         )
       }
@@ -712,7 +712,7 @@ export class Git {
       return await this.runGit(buildArgs(), path, rest)
     } catch (err) {
       if (this.isAuthFailure(err)) {
-        throw new InvalidArgumentError(
+        throw new GitAuthError(
           this.buildAuthErrorMessage('push', Boolean(username) && !password)
         )
       }
@@ -766,7 +766,7 @@ export class Git {
       return await this.runGit(buildArgs(), path, rest)
     } catch (err) {
       if (this.isAuthFailure(err)) {
-        throw new InvalidArgumentError(
+        throw new GitAuthError(
           this.buildAuthErrorMessage('pull', Boolean(username) && !password)
         )
       }

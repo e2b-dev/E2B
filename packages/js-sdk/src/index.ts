@@ -5,6 +5,7 @@ export { ConnectionConfig } from './connectionConfig'
 export type { ConnectionOpts, Username } from './connectionConfig'
 export {
   AuthenticationError,
+  GitAuthError,
   InvalidArgumentError,
   NotEnoughSpaceError,
   NotFoundError,
