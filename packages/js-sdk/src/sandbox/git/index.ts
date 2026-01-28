@@ -308,37 +308,34 @@ export class Git {
       authUsername?: string,
       authPassword?: string
     ): Promise<CommandResult> => {
-      const cloneUrl =
+      const urlWithCreds =
         authUsername && authPassword
           ? withCredentials(url, authUsername, authPassword)
           : url
-      const sanitizedUrl = stripCredentials(cloneUrl)
-      const shouldStripCredentials =
-        !dangerouslyStoreCredentials && sanitizedUrl !== cloneUrl
-      const repoPath = shouldStripCredentials
+
+      const sanitizedUrl = stripCredentials(urlWithCreds)
+      const stripInlineCreds =
+        !dangerouslyStoreCredentials && sanitizedUrl !== urlWithCreds
+
+      const repoPath = stripInlineCreds
         ? (path ?? deriveRepoDirFromUrl(url))
         : path
 
-      if (shouldStripCredentials && !repoPath) {
+      if (stripInlineCreds && !repoPath) {
         throw new InvalidArgumentError(
           'A destination path is required when using credentials without storing them.'
         )
       }
 
-      const args = ['clone', cloneUrl]
-      if (branch) {
-        args.push('--branch', branch, '--single-branch')
-      }
-      if (depth) {
-        args.push('--depth', depth.toString())
-      }
-      if (path) {
-        args.push(path)
-      }
+      const args = ['clone', urlWithCreds]
+
+      if (branch) args.push('--branch', branch, '--single-branch')
+      if (depth) args.push('--depth', depth.toString())
+      if (repoPath) args.push(repoPath)
 
       const result = await this.runGit(args, undefined, rest)
 
-      if (shouldStripCredentials && repoPath) {
+      if (stripInlineCreds) {
         await this.runGit(
           ['remote', 'set-url', 'origin', sanitizedUrl],
           repoPath,
