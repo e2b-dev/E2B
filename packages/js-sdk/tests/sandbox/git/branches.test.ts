@@ -43,22 +43,23 @@ sandboxTest('git checkoutBranch switches branch', async ({ sandbox }) => {
   }
 })
 
-sandboxTest('git createBranch creates and checks out branch', async ({
-  sandbox,
-}) => {
-  const baseDir = await createBaseDir(sandbox)
+sandboxTest(
+  'git createBranch creates and checks out branch',
+  async ({ sandbox }) => {
+    const baseDir = await createBaseDir(sandbox)
 
-  try {
-    const repoPath = await createRepoWithCommit(sandbox, baseDir)
-    await sandbox.git.createBranch(repoPath, 'feature')
+    try {
+      const repoPath = await createRepoWithCommit(sandbox, baseDir)
+      await sandbox.git.createBranch(repoPath, 'feature')
 
-    const branches = await sandbox.git.branches(repoPath)
-    expect(branches.branches).toContain('feature')
-    expect(branches.currentBranch).toBe('feature')
-  } finally {
-    await cleanupBaseDir(sandbox, baseDir)
+      const branches = await sandbox.git.branches(repoPath)
+      expect(branches.branches).toContain('feature')
+      expect(branches.currentBranch).toBe('feature')
+    } finally {
+      await cleanupBaseDir(sandbox, baseDir)
+    }
   }
-})
+)
 
 sandboxTest('git deleteBranch removes branch', async ({ sandbox }) => {
   const baseDir = await createBaseDir(sandbox)
