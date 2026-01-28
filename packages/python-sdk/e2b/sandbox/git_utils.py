@@ -46,6 +46,13 @@ class GitStatus:
     detached: bool
     file_status: List[GitFileStatus]
 
+    @property
+    def is_clean(self) -> bool:
+        """
+        Return True when there are no tracked or untracked file changes.
+        """
+        return len(self.file_status) == 0
+
 
 @dataclass
 class GitBranches:

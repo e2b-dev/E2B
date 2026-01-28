@@ -12,3 +12,4 @@ def test_status_reports_untracked_file(git_sandbox, git_repo):
 
     assert entry is not None
     assert entry.status == "untracked"
+    assert status.is_clean is False

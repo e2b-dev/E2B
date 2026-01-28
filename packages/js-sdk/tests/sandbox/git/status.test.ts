@@ -15,6 +15,7 @@ sandboxTest('git status reports untracked file', async ({ sandbox }) => {
       (file: any) => file.name === 'README.md'
     )
     expect(entry?.status).toBe('untracked')
+    expect(status.isClean).toBe(false)
   } finally {
     await cleanupBaseDir(sandbox, baseDir)
   }

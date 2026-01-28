@@ -72,6 +72,10 @@ export interface GitStatus {
    * List of file status entries.
    */
   fileStatus: GitFileStatus[]
+  /**
+   * Whether the repository has no tracked or untracked file changes.
+   */
+  isClean: boolean
 }
 
 /**
@@ -295,6 +299,7 @@ export function parseGitStatus(output: string): GitStatus {
       behind,
       detached,
       fileStatus,
+      isClean: true,
     }
   }
 
@@ -374,6 +379,7 @@ export function parseGitStatus(output: string): GitStatus {
     behind,
     detached,
     fileStatus,
+    isClean: fileStatus.length === 0,
   }
 }
 
