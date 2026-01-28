@@ -44,6 +44,8 @@ import {
   padOctal,
   readDockerignore,
   readGCPServiceAccountJSON,
+  isSafeRelative,
+  normalizePath,
 } from './utils'
 
 /**
@@ -522,9 +524,23 @@ export class TemplateBase
     const srcs = Array.isArray(src) ? src : [src]
 
     for (const src of srcs) {
+      const normalizedSrc = normalizePath(src.toString())
+      const normalizedDest = normalizePath(dest.toString())
+
+      if (!isSafeRelative(normalizedSrc)) {
+        const error = new Error(
+          `Source path ${src} is outside of the context directory.`
+        )
+        const stackTrace = getCallerFrame(STACK_TRACE_DEPTH - 1)
+        if (stackTrace) {
+          error.stack = stackTrace
+        }
+        throw error
+      }
+
       const args = [
-        src.toString(),
-        dest.toString(),
+        normalizedSrc,
+        normalizedDest,
         options?.user ?? '',
         options?.mode ? padOctal(options.mode) : '',
       ]
