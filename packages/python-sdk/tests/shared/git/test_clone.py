@@ -1,7 +1,10 @@
 import pytest
 
+
 @pytest.mark.skip_debug()
-def test_clone_fetches_repo(git_sandbox, git_repo_with_commit, git_daemon, git_base_dir):
+def test_clone_fetches_repo(
+    git_sandbox, git_repo_with_commit, git_daemon, git_base_dir
+):
     repo_path = git_repo_with_commit
     remote_url = git_daemon["remote_url"]
     clone_path = f"{git_base_dir}/clone"

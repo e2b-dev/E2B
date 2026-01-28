@@ -55,13 +55,11 @@ def git_repo_with_commit(git_sandbox, git_repo, git_author):
 @pytest.fixture
 def git_daemon(git_sandbox, git_base_dir):
     remote_path = f"{git_base_dir}/remote.git"
-    git_sandbox.commands.run(
-        f'git init --bare --initial-branch=main "{remote_path}"'
-    )
+    git_sandbox.commands.run(f'git init --bare --initial-branch=main "{remote_path}"')
     port = 9418 + random.randint(0, 1000)
     cmd = (
         f'git daemon --reuseaddr --base-path="{git_base_dir}" --export-all '
-        f'--enable=receive-pack --informative-errors --listen=127.0.0.1 --port={port}'
+        f"--enable=receive-pack --informative-errors --listen=127.0.0.1 --port={port}"
     )
     handle = git_sandbox.commands.run(cmd, background=True)
     git_sandbox.commands.run("sleep 1")

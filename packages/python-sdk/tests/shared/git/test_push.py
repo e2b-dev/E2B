@@ -1,5 +1,6 @@
 import pytest
 
+
 @pytest.mark.skip_debug()
 def test_push_updates_remote(git_sandbox, git_repo_with_commit, git_daemon):
     repo_path = git_repo_with_commit

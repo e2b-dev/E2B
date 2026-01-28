@@ -1,5 +1,6 @@
 import pytest
 
+
 @pytest.mark.skip_debug()
 def test_config_set_updates_local_config(git_sandbox, git_repo):
     git_sandbox.git.config_set(

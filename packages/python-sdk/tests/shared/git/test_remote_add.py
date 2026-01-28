@@ -1,5 +1,6 @@
 import pytest
 
+
 @pytest.mark.skip_debug()
 def test_remote_add_overwrite(git_sandbox, git_repo, git_daemon):
     repo_path = git_repo
@@ -12,9 +13,7 @@ def test_remote_add_overwrite(git_sandbox, git_repo, git_daemon):
     assert current_url == remote_url
 
     second_path = f"{git_daemon['base_dir']}/remote-2.git"
-    git_sandbox.commands.run(
-        f'git init --bare --initial-branch=main "{second_path}"'
-    )
+    git_sandbox.commands.run(f'git init --bare --initial-branch=main "{second_path}"')
     second_url = f"git://127.0.0.1:{git_daemon['port']}/remote-2.git"
     git_sandbox.git.remote_add(repo_path, "origin", second_url, overwrite=True)
 
