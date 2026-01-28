@@ -1,50 +1,19 @@
-# Releasing e2b cli
+# Releasing e2b cli 
 
-to create a changeset run     
-```bash
-pnpm dlx @changesets/cli
+to create a changeset run `npx changeset`
+
+
+# Enter Nix development shell 
+
+install nix and enable flakes
+
+```
+curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install
 ```
 
-# Development setup
-
-## Prerequisites
-
-### 1. Install `mise`
-
-macOS (Homebrew):
-
-```sh
-brew install mise
+enter the dev shell 
 ```
-
-macOS/Linux (zsh installer + activation):
-
-```sh
-curl https://mise.run/zsh | sh
+nix develop --command zsh
+# or
+nix develop --command bash
 ```
-
-Activate `mise` in zsh (needed for shims to work):
-
-```sh
-echo 'eval "$(mise activate zsh)"' >> ~/.zshrc
-exec $SHELL -l
-```
-
-### 2. Install `pipx`
-
-macOS (Homebrew):
-
-```sh
-brew install pipx
-pipx ensurepath
-```
-
-### 3. Install tool versions
-
-From the repo root, install everything in `.tool-versions`:
-
-```sh
-mise install
-```
-
-
