@@ -1074,17 +1074,13 @@ export class Git {
     return result as T
   }
 
-  private getScopeFlag(
-    scope: GitConfigScope
-  ): '--global' | '--local' | '--system' {
-    switch (scope) {
-      case 'global':
-        return '--global'
-      case 'system':
-        return '--system'
-      case 'local':
-        return '--local'
+  private getScopeFlag(scope: GitConfigScope): `--${GitConfigScope}` {
+    if (scope !== 'global' && scope !== 'local' && scope !== 'system') {
+      throw new InvalidArgumentError(
+        'Git config scope must be one of: global, local, system.'
+      )
     }
+    return `--${scope}`
   }
 
   private getRepoPathForScope(
