@@ -269,6 +269,27 @@ export interface GitResetOpts extends GitRequestOpts {
 }
 
 /**
+ * Options for restoring files or unstaging changes.
+ */
+export interface GitRestoreOpts extends GitRequestOpts {
+  /**
+   * Paths to restore (use `['.']` for all).
+   */
+  paths: string[]
+  /**
+   * Restore the index (unstage).
+   */
+  staged?: boolean
+  /**
+   * Restore working tree files.
+   */
+  worktree?: boolean
+  /**
+   * Restore from the given source (commit, branch, or ref).
+   */
+  source?: string
+}
+/**
  * Options for deleting a branch.
  */
 export interface GitDeleteBranchOpts extends GitRequestOpts {
@@ -917,6 +938,52 @@ export class Git {
     if (paths && paths.length > 0) {
       args.push('--', ...paths)
     }
+
+    return this.run(args, path, rest)
+  }
+
+  /**
+   * Restore working tree files or unstage changes.
+   *
+   * @param path Repository path.
+   * @param opts Restore options.
+   * @returns Command result from the command runner.
+   */
+  async restore(path: string, opts: GitRestoreOpts): Promise<CommandResult> {
+    const { paths, staged, worktree, source, ...rest } = opts
+
+    if (!paths || paths.length === 0) {
+      throw new InvalidArgumentError('At least one path is required.')
+    }
+
+    let resolvedStaged = staged
+    let resolvedWorktree = worktree
+
+    if (staged === undefined && worktree === undefined) {
+      resolvedWorktree = true
+    } else if (staged === true && worktree === undefined) {
+      resolvedWorktree = false
+    } else if (staged === undefined && worktree !== undefined) {
+      resolvedStaged = false
+    }
+
+    if (resolvedStaged === false && resolvedWorktree === false) {
+      throw new InvalidArgumentError(
+        'At least one of staged or worktree must be true.'
+      )
+    }
+
+    const args = ['restore']
+    if (resolvedWorktree) {
+      args.push('--worktree')
+    }
+    if (resolvedStaged) {
+      args.push('--staged')
+    }
+    if (source) {
+      args.push('--source', source)
+    }
+    args.push('--', ...paths)
 
     return this.run(args, path, rest)
   }

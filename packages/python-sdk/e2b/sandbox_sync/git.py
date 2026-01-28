@@ -1006,6 +1006,62 @@ class Git:
             args.extend(paths)
         return self._run(args, path, envs, user, cwd, timeout, request_timeout)
 
+    def restore(
+        self,
+        path: str,
+        paths: List[str],
+        staged: Optional[bool] = None,
+        worktree: Optional[bool] = None,
+        source: Optional[str] = None,
+        envs: Optional[Dict[str, str]] = None,
+        user: Optional[str] = None,
+        cwd: Optional[str] = None,
+        timeout: Optional[float] = None,
+        request_timeout: Optional[float] = None,
+    ):
+        """
+        Restore working tree files or unstage changes.
+
+        :param path: Repository path
+        :param paths: Paths to restore (use ["."] for all)
+        :param staged: When True, restore the index (unstage)
+        :param worktree: When True, restore working tree files
+        :param source: Restore from the given source (commit, branch, or ref)
+        :param envs: Environment variables used for the command
+        :param user: User to run the command as
+        :param cwd: Working directory to run the command
+        :param timeout: Timeout for the command connection in **seconds**
+        :param request_timeout: Timeout for the request in **seconds**
+        :return: Command result from the command runner
+        """
+        if not paths:
+            raise InvalidArgumentException("At least one path is required.")
+
+        resolved_staged = staged
+        resolved_worktree = worktree
+        if staged is None and worktree is None:
+            resolved_worktree = True
+        elif staged is True and worktree is None:
+            resolved_worktree = False
+        elif staged is None and worktree is not None:
+            resolved_staged = False
+
+        if resolved_staged is False and resolved_worktree is False:
+            raise InvalidArgumentException(
+                "At least one of staged or worktree must be true."
+            )
+
+        args = ["restore"]
+        if resolved_worktree:
+            args.append("--worktree")
+        if resolved_staged:
+            args.append("--staged")
+        if source:
+            args.extend(["--source", source])
+        args.append("--")
+        args.extend(paths)
+        return self._run(args, path, envs, user, cwd, timeout, request_timeout)
+
     def push(
         self,
         path: str,
