@@ -20,7 +20,9 @@ sandboxTest('git remoteAdd overwrite', async ({ sandbox }) => {
       const currentUrl = (
         await sandbox.commands.run(`git -C "${repoPath}" remote get-url origin`)
       ).stdout.trim()
+      const currentRemote = await sandbox.git.remoteGet(repoPath, 'origin')
       expect(currentUrl).toBe(daemon.remoteUrl)
+      expect(currentRemote).toBe(daemon.remoteUrl)
 
       const secondPath = `${baseDir}/remote-2.git`
       await sandbox.commands.run(
@@ -34,7 +36,9 @@ sandboxTest('git remoteAdd overwrite', async ({ sandbox }) => {
       const updatedUrl = (
         await sandbox.commands.run(`git -C "${repoPath}" remote get-url origin`)
       ).stdout.trim()
+      const updatedRemote = await sandbox.git.remoteGet(repoPath, 'origin')
       expect(updatedUrl).toBe(secondUrl)
+      expect(updatedRemote).toBe(secondUrl)
     } finally {
       await daemon.handle.kill()
     }

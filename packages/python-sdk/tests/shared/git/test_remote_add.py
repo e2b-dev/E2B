@@ -10,7 +10,9 @@ def test_remote_add_overwrite(git_sandbox, git_repo, git_daemon):
     current_url = git_sandbox.commands.run(
         f'git -C "{repo_path}" remote get-url origin'
     ).stdout.strip()
+    current_remote = git_sandbox.git.remote_get(repo_path, "origin")
     assert current_url == remote_url
+    assert current_remote == remote_url
 
     second_path = f"{git_daemon['base_dir']}/remote-2.git"
     git_sandbox.commands.run(f'git init --bare --initial-branch=main "{second_path}"')
@@ -20,4 +22,6 @@ def test_remote_add_overwrite(git_sandbox, git_repo, git_daemon):
     updated_url = git_sandbox.commands.run(
         f'git -C "{repo_path}" remote get-url origin'
     ).stdout.strip()
+    updated_remote = git_sandbox.git.remote_get(repo_path, "origin")
     assert updated_url == second_url
+    assert updated_remote == second_url

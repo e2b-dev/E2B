@@ -73,7 +73,9 @@ sandboxTest('git deleteBranch removes branch', async ({ sandbox }) => {
     const branch = (
       await sandbox.commands.run(`git -C "${repoPath}" branch --list feature`)
     ).stdout.trim()
+    const branches = await sandbox.git.branches(repoPath)
     expect(branch).toBe('')
+    expect(branches.branches).not.toContain('feature')
   } finally {
     await cleanupBaseDir(sandbox, baseDir)
   }

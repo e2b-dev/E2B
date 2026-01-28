@@ -47,4 +47,6 @@ def test_delete_branch_removes_branch(git_sandbox, git_repo_with_commit):
     branch = git_sandbox.commands.run(
         f'git -C "{repo_path}" branch --list feature'
     ).stdout.strip()
+    branches = git_sandbox.git.branches(repo_path)
     assert branch == ""
+    assert "feature" not in branches.branches

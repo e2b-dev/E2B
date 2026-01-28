@@ -16,7 +16,13 @@ sandboxTest('git getConfig reads local config', async ({ sandbox }) => {
       scope: 'local',
       path: repoPath,
     })
+    const commandValue = (
+      await sandbox.commands.run(
+        `git -C "${repoPath}" config --local --get pull.rebase`
+      )
+    ).stdout.trim()
     expect(value).toBe('true')
+    expect(commandValue).toBe('true')
   } finally {
     await cleanupBaseDir(sandbox, baseDir)
   }
@@ -38,7 +44,12 @@ sandboxTest('git setConfig updates local config', async ({ sandbox }) => {
         `git -C "${repoPath}" config --local --get pull.rebase`
       )
     ).stdout.trim()
+    const configuredValue = await sandbox.git.getConfig('pull.rebase', {
+      scope: 'local',
+      path: repoPath,
+    })
     expect(value).toBe('true')
+    expect(configuredValue).toBe('true')
   } finally {
     await cleanupBaseDir(sandbox, baseDir)
   }
