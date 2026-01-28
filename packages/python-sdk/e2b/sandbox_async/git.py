@@ -439,6 +439,46 @@ class Git:
             request_timeout,
         )
 
+    async def remote_get(
+        self,
+        path: str,
+        name: str,
+        envs: Optional[Dict[str, str]] = None,
+        user: Optional[str] = None,
+        cwd: Optional[str] = None,
+        timeout: Optional[float] = None,
+        request_timeout: Optional[float] = None,
+    ) -> Optional[str]:
+        """
+        Get the URL for a git remote.
+
+        Returns `None` when the remote does not exist.
+
+        :param path: Repository path
+        :param name: Remote name (for example, "origin")
+        :param envs: Environment variables used for the command
+        :param user: User to run the command as
+        :param cwd: Working directory to run the command
+        :param timeout: Timeout for the command connection in **seconds**
+        :param request_timeout: Timeout for the request in **seconds**
+        :return: Remote URL if present, otherwise `None`
+        """
+        if not name:
+            raise InvalidArgumentException("Remote name is required.")
+
+        cmd = f"{build_git_command(['remote', 'get-url', name], path)} || true"
+        result = (
+            await self._run_shell(
+                cmd,
+                envs,
+                user,
+                cwd,
+                timeout,
+                request_timeout,
+            )
+        ).stdout.strip()
+        return result or None
+
     async def status(
         self,
         path: str,

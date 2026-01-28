@@ -424,6 +424,31 @@ export class Git {
   }
 
   /**
+   * Get the URL for a git remote.
+   *
+   * Returns `undefined` when the remote does not exist.
+   *
+   * @param path Repository path.
+   * @param name Remote name (for example, `"origin"`).
+   * @param opts Command execution options.
+   * @returns Remote URL if present.
+   */
+  async remoteGet(
+    path: string,
+    name: string,
+    opts?: GitRequestOpts
+  ): Promise<string | undefined> {
+    if (!name) {
+      throw new InvalidArgumentError('Remote name is required.')
+    }
+
+    const cmd = `${buildGitCommand(['remote', 'get-url', name], path)} || true`
+    const result = await this.runShell(cmd, opts)
+    const trimmed = result.stdout.trim()
+    return trimmed.length > 0 ? trimmed : undefined
+  }
+
+  /**
    * Get repository status information.
    *
    * @param path Repository path.
