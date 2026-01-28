@@ -379,7 +379,9 @@ class Git:
         if bare:
             args.append("--bare")
         args.append(path)
-        return await self._run_git(args, None, envs, user, cwd, timeout, request_timeout)
+        return await self._run_git(
+            args, None, envs, user, cwd, timeout, request_timeout
+        )
 
     async def remote_add(
         self,
@@ -630,7 +632,9 @@ class Git:
         :return: Command result from the command runner
         """
         args = ["branch", "-D" if force else "-d", branch]
-        return await self._run_git(args, path, envs, user, cwd, timeout, request_timeout)
+        return await self._run_git(
+            args, path, envs, user, cwd, timeout, request_timeout
+        )
 
     async def add(
         self,
@@ -662,7 +666,9 @@ class Git:
         else:
             args.append("--")
             args.extend(files)
-        return await self._run_git(args, path, envs, user, cwd, timeout, request_timeout)
+        return await self._run_git(
+            args, path, envs, user, cwd, timeout, request_timeout
+        )
 
     async def commit(
         self,
@@ -702,7 +708,9 @@ class Git:
             author_args.extend(["-c", f"user.email={author_email}"])
         if author_args:
             args = author_args + args
-        return await self._run_git(args, path, envs, user, cwd, timeout, request_timeout)
+        return await self._run_git(
+            args, path, envs, user, cwd, timeout, request_timeout
+        )
 
     async def push(
         self,

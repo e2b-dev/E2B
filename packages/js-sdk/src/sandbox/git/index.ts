@@ -27,7 +27,7 @@ export interface GitRequestOpts
       CommandStartOpts,
       'envs' | 'user' | 'cwd' | 'timeoutMs' | 'requestTimeoutMs'
     >
-  > { }
+  > {}
 
 /**
  * Options for cloning a repository.
@@ -274,7 +274,7 @@ export interface GitDangerouslyAuthenticateOpts extends GitRequestOpts {
  * Module for running git operations in the sandbox.
  */
 export class Git {
-  constructor(private readonly commands: Commands) { }
+  constructor(private readonly commands: Commands) {}
 
   /**
    * Clone a git repository into the sandbox.
@@ -456,7 +456,11 @@ export class Git {
    * @returns Parsed git status.
    */
   async status(path: string, opts?: GitRequestOpts): Promise<GitStatus> {
-    const result = await this.runGit(['status', '--porcelain=1', '-b'], path, opts)
+    const result = await this.runGit(
+      ['status', '--porcelain=1', '-b'],
+      path,
+      opts
+    )
     return parseGitStatus(result.stdout)
   }
 

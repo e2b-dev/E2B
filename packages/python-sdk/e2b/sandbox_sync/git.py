@@ -321,7 +321,9 @@ class Git:
                 args.extend(["--depth", str(depth)])
             if path:
                 args.append(path)
-            result = self._run_git(args, None, envs, user, cwd, timeout, request_timeout)
+            result = self._run_git(
+                args, None, envs, user, cwd, timeout, request_timeout
+            )
             if should_strip and repo_path:
                 self._run_git(
                     ["remote", "set-url", "origin", sanitized_url],
