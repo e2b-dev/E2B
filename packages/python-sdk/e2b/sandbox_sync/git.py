@@ -1239,7 +1239,7 @@ class Git:
         """
         Dangerously authenticate git globally via the credential helper.
 
-        This persists credentials in the credential store and may leak secrets to logs.
+        This persists credentials in the credential store and may be accessable to agents running on the sandbox.
         Prefer short-lived credentials when possible.
 
         :param username: Username for HTTP(S) authentication
