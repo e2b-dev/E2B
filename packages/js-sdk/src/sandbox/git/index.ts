@@ -27,7 +27,7 @@ export interface GitRequestOpts
       CommandStartOpts,
       'envs' | 'user' | 'cwd' | 'timeoutMs' | 'requestTimeoutMs'
     >
-  > {}
+  > { }
 
 /**
  * Options for cloning a repository.
@@ -274,7 +274,7 @@ export interface GitDangerouslyAuthenticateOpts extends GitRequestOpts {
  * Module for running git operations in the sandbox.
  */
 export class Git {
-  constructor(private readonly commands: Commands) {}
+  constructor(private readonly commands: Commands) { }
 
   /**
    * Clone a git repository into the sandbox.
@@ -534,7 +534,7 @@ export class Git {
    * @returns Command result from the command runner.
    */
   async add(path: string, opts?: GitAddOpts): Promise<CommandResult> {
-    const { files, all, ...rest } = opts ?? {}
+    const { files, all = true, ...rest } = opts ?? {}
     const args = ['add']
 
     if (!files || files.length === 0) {

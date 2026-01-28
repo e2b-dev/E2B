@@ -636,7 +636,7 @@ class Git:
         self,
         path: str,
         files: Optional[List[str]] = None,
-        all: bool = False,
+        all: bool = True,
         envs: Optional[Dict[str, str]] = None,
         user: Optional[str] = None,
         cwd: Optional[str] = None,
