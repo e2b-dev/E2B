@@ -30,6 +30,6 @@ def test_push_without_upstream_warns(git_sandbox, git_repo_with_commit, git_daem
     git_sandbox.git.remote_add(repo_path, "origin", remote_url)
 
     with pytest.raises(InvalidArgumentException) as exc:
-        git_sandbox.git.push(repo_path)
+        git_sandbox.git.push(repo_path, set_upstream=False)
 
     assert "no upstream branch is configured" in str(exc.value).lower()

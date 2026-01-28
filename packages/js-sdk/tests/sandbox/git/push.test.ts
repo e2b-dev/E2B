@@ -47,9 +47,9 @@ sandboxTest('git push warns when no upstream', async ({ sandbox }) => {
     try {
       await sandbox.git.remoteAdd(repoPath, 'origin', daemon.remoteUrl)
 
-      await expect(sandbox.git.push(repoPath)).rejects.toThrow(
-        /no upstream branch is configured/i
-      )
+      await expect(
+        sandbox.git.push(repoPath, { setUpstream: false })
+      ).rejects.toThrow(/no upstream branch is configured/i)
     } finally {
       await daemon.handle.kill()
     }

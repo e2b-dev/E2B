@@ -147,6 +147,24 @@ class Git:
             "set_upstream=True or run: git branch --set-upstream-to=origin/<branch> <branch>)."
         )
 
+    def _build_push_args(
+        self,
+        remote_name: Optional[str],
+        *,
+        remote: Optional[str],
+        branch: Optional[str],
+        set_upstream: bool,
+    ) -> List[str]:
+        args = ["push"]
+        if set_upstream:
+            args.append("--set-upstream")
+        target_remote = remote_name or remote
+        if target_remote:
+            args.append(target_remote)
+        if branch:
+            args.append(branch)
+        return args
+
     async def _resolve_remote_name(
         self,
         path: str,
@@ -717,7 +735,7 @@ class Git:
         path: str,
         remote: Optional[str] = None,
         branch: Optional[str] = None,
-        set_upstream: bool = False,
+        set_upstream: bool = True,
         username: Optional[str] = None,
         password: Optional[str] = None,
         envs: Optional[Dict[str, str]] = None,
@@ -747,17 +765,6 @@ class Git:
                 "Username is required when using a password or token for git push."
             )
 
-        def build_args(remote_name: Optional[str] = None) -> List[str]:
-            args = ["push"]
-            if set_upstream:
-                args.append("--set-upstream")
-            target_remote = remote_name or remote
-            if target_remote:
-                args.append(target_remote)
-            if branch:
-                args.append(branch)
-            return args
-
         if username and password:
             remote_name = await self._resolve_remote_name(
                 path, remote, envs, user, cwd, timeout, request_timeout
@@ -773,7 +780,12 @@ class Git:
                 timeout,
                 request_timeout,
                 operation=lambda: self._run_git(
-                    build_args(remote_name),
+                    self._build_push_args(
+                        remote_name,
+                        remote=remote,
+                        branch=branch,
+                        set_upstream=set_upstream,
+                    ),
                     path,
                     envs,
                     user,
@@ -785,7 +797,18 @@ class Git:
 
         try:
             return await self._run_git(
-                build_args(), path, envs, user, cwd, timeout, request_timeout
+                self._build_push_args(
+                    None,
+                    remote=remote,
+                    branch=branch,
+                    set_upstream=set_upstream,
+                ),
+                path,
+                envs,
+                user,
+                cwd,
+                timeout,
+                request_timeout,
             )
         except CommandExitException as err:
             if self._is_auth_failure(err):

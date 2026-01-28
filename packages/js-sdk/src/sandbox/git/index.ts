@@ -672,28 +672,19 @@ export class Git {
    * @returns Command result from the command runner.
    */
   async push(path: string, opts?: GitPushOpts): Promise<CommandResult> {
-    const { remote, branch, setUpstream, username, password, ...rest } =
-      opts ?? {}
+    const {
+      remote,
+      branch,
+      setUpstream = true,
+      username,
+      password,
+      ...rest
+    } = opts ?? {}
 
     if (password && !username) {
       throw new InvalidArgumentError(
         'Username is required when using a password or token for git push.'
       )
-    }
-
-    const buildArgs = (remoteName?: string) => {
-      const args = ['push']
-      if (setUpstream) {
-        args.push('--set-upstream')
-      }
-      const targetRemote = remoteName ?? remote
-      if (targetRemote) {
-        args.push(targetRemote)
-      }
-      if (branch) {
-        args.push(branch)
-      }
-      return args
     }
 
     if (username && password) {
@@ -704,12 +695,21 @@ export class Git {
         username,
         password,
         rest,
-        () => this.runGit(buildArgs(remoteName), path, rest)
+        () =>
+          this.runGit(
+            this.buildPushArgs(remoteName, { remote, branch, setUpstream }),
+            path,
+            rest
+          )
       )
     }
 
     try {
-      return await this.runGit(buildArgs(), path, rest)
+      return await this.runGit(
+        this.buildPushArgs(undefined, { remote, branch, setUpstream }),
+        path,
+        rest
+      )
     } catch (err) {
       if (this.isAuthFailure(err)) {
         throw new GitAuthError(
@@ -895,6 +895,33 @@ export class Git {
 
     await this.setConfig('user.name', name, configOpts)
     return this.setConfig('user.email', email, configOpts)
+  }
+
+  /**
+   * Builds the args for a git push command.
+   *
+   * @param remoteName Resolved remote name, if any.
+   * @param opts Push options.
+   * @returns Array of git push arguments.
+   */
+
+  private buildPushArgs(
+    remoteName: string | undefined,
+    opts: Pick<GitPushOpts, 'remote' | 'branch' | 'setUpstream'>
+  ): string[] {
+    const { remote, branch, setUpstream } = opts
+    const args = ['push']
+    if (setUpstream) {
+      args.push('--set-upstream')
+    }
+    const targetRemote = remoteName ?? remote
+    if (targetRemote) {
+      args.push(targetRemote)
+    }
+    if (branch) {
+      args.push(branch)
+    }
+    return args
   }
 
   /**
