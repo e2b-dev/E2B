@@ -966,7 +966,7 @@ class Git:
                 ) from err
             raise
 
-    def config_set(
+    def set_config(
         self,
         key: str,
         value: str,
@@ -1008,7 +1008,7 @@ class Git:
             request_timeout,
         )
 
-    def config_get(
+    def get_config(
         self,
         key: str,
         scope: str = "global",
@@ -1099,7 +1099,7 @@ class Git:
             ]
         )
 
-        self.config_set(
+        self.set_config(
             "credential.helper",
             "store",
             scope="global",
@@ -1147,7 +1147,7 @@ class Git:
         if not name or not email:
             raise InvalidArgumentException("Both name and email are required.")
 
-        self.config_set(
+        self.set_config(
             "user.name",
             name,
             scope="global",
@@ -1157,7 +1157,7 @@ class Git:
             timeout=timeout,
             request_timeout=request_timeout,
         )
-        return self.config_set(
+        return self.set_config(
             "user.email",
             email,
             scope="global",

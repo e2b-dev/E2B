@@ -783,7 +783,7 @@ export class Git {
    * @param opts Config options.
    * @returns Command result from the command runner.
    */
-  async configSet(
+  async setConfig(
     key: string,
     value: string,
     opts?: GitConfigOpts
@@ -808,7 +808,7 @@ export class Git {
    * @param opts Config options.
    * @returns The config value if present.
    */
-  async configGet(
+  async getConfig(
     key: string,
     opts?: GitConfigOpts
   ): Promise<string | undefined> {
@@ -886,8 +886,8 @@ export class Git {
       throw new InvalidArgumentError('Both name and email are required.')
     }
 
-    await this.configSet('user.name', name, { ...opts, scope: 'global' })
-    return this.configSet('user.email', email, { ...opts, scope: 'global' })
+    await this.setConfig('user.name', name, { ...opts, scope: 'global' })
+    return this.setConfig('user.email', email, { ...opts, scope: 'global' })
   }
 
   /**

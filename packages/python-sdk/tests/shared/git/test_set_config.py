@@ -2,8 +2,8 @@ import pytest
 
 
 @pytest.mark.skip_debug()
-def test_config_set_updates_local_config(git_sandbox, git_repo):
-    git_sandbox.git.config_set(
+def test_set_config_updates_local_config(git_sandbox, git_repo):
+    git_sandbox.git.set_config(
         "pull.rebase",
         "true",
         scope="local",
