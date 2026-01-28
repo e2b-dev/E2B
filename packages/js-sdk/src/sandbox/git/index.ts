@@ -1,3 +1,4 @@
+import { getEnvVar } from '../../api/metadata'
 import { InvalidArgumentError } from '../../errors'
 import type { CommandStartOpts } from '../commands'
 import { CommandExitError, type CommandResult } from '../commands/commandHandle'
@@ -483,14 +484,17 @@ export class Git {
       ...requestOpts
     } = opts
 
+    const envToken =
+      getEnvVar('GITHUB_PAT') ||
+      getEnvVar('GITHUB_TOKEN') ||
+      getEnvVar('GH_TOKEN')
+
     const resolvedToken =
       token ??
       requestOpts.envs?.GITHUB_PAT ??
       requestOpts.envs?.GITHUB_TOKEN ??
       requestOpts.envs?.GH_TOKEN ??
-      process.env.GITHUB_PAT ??
-      process.env.GITHUB_TOKEN ??
-      process.env.GH_TOKEN
+      envToken
 
     if (!resolvedToken || !name) {
       throw new InvalidArgumentError(
