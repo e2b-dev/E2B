@@ -1126,6 +1126,8 @@ class Git:
         self,
         name: str,
         email: str,
+        scope: str = "global",
+        path: Optional[str] = None,
         envs: Optional[Dict[str, str]] = None,
         user: Optional[str] = None,
         cwd: Optional[str] = None,
@@ -1133,10 +1135,12 @@ class Git:
         request_timeout: Optional[float] = None,
     ):
         """
-        Configure global git user name and email.
+        Configure git user name and email.
 
         :param name: Git user name
         :param email: Git user email
+        :param scope: Config scope: `global`, `local`, or `system`
+        :param path: Repository path required when `scope` is `local`
         :param envs: Environment variables used for the command
         :param user: User to run the command as
         :param cwd: Working directory to run the command
@@ -1150,7 +1154,8 @@ class Git:
         self.set_config(
             "user.name",
             name,
-            scope="global",
+            scope=scope,
+            path=path,
             envs=envs,
             user=user,
             cwd=cwd,
@@ -1160,7 +1165,8 @@ class Git:
         return self.set_config(
             "user.email",
             email,
-            scope="global",
+            scope=scope,
+            path=path,
             envs=envs,
             user=user,
             cwd=cwd,

@@ -870,24 +870,27 @@ export class Git {
   }
 
   /**
-   * Configure global git user name and email.
+   * Configure git user name and email.
    *
    * @param name Git user name.
    * @param email Git user email.
-   * @param opts Command execution options.
+   * @param opts Config options.
    * @returns Command result from the command runner.
    */
   async configureUser(
     name: string,
     email: string,
-    opts?: GitRequestOpts
+    opts?: GitConfigOpts
   ): Promise<CommandResult> {
     if (!name || !email) {
       throw new InvalidArgumentError('Both name and email are required.')
     }
 
-    await this.setConfig('user.name', name, { ...opts, scope: 'global' })
-    return this.setConfig('user.email', email, { ...opts, scope: 'global' })
+    const scope = opts?.scope ?? 'global'
+    const configOpts = { ...opts, scope }
+
+    await this.setConfig('user.name', name, configOpts)
+    return this.setConfig('user.email', email, configOpts)
   }
 
   /**
