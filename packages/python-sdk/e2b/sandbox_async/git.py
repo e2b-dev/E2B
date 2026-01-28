@@ -1,6 +1,10 @@
 from typing import Dict, List, Optional
 
-from e2b.exceptions import GitAuthException, InvalidArgumentException
+from e2b.exceptions import (
+    GitAuthException,
+    GitUpstreamException,
+    InvalidArgumentException,
+)
 from e2b.sandbox.commands.command_handle import CommandExitException
 from e2b.sandbox.git_utils import (
     GitBranches,
@@ -147,6 +151,29 @@ class Git:
             "set_upstream=True or run: git branch --set-upstream-to=origin/<branch> <branch>)."
         )
 
+    async def _has_upstream(
+        self,
+        path: str,
+        envs: Optional[Dict[str, str]] = None,
+        user: Optional[str] = None,
+        cwd: Optional[str] = None,
+        timeout: Optional[float] = None,
+        request_timeout: Optional[float] = None,
+    ) -> bool:
+        try:
+            result = await self._run_git(
+                ["rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}"],
+                path,
+                envs,
+                user,
+                cwd,
+                timeout,
+                request_timeout,
+            )
+            return bool(result.stdout.strip())
+        except Exception:
+            return False
+
     def _build_push_args(
         self,
         remote_name: Optional[str],
@@ -156,9 +183,9 @@ class Git:
         set_upstream: bool,
     ) -> List[str]:
         args = ["push"]
-        if set_upstream:
-            args.append("--set-upstream")
         target_remote = remote_name or remote
+        if set_upstream and target_remote:
+            args.append("--set-upstream")
         if target_remote:
             args.append(target_remote)
         if branch:
@@ -818,7 +845,7 @@ class Git:
                     )
                 ) from err
             if self._is_missing_upstream(err):
-                raise InvalidArgumentException(
+                raise GitUpstreamException(
                     self._build_upstream_error_message("push")
                 ) from err
             raise
@@ -855,6 +882,13 @@ class Git:
             raise InvalidArgumentException(
                 "Username is required when using a password or token for git pull."
             )
+
+        if not remote and not branch:
+            has_upstream = await self._has_upstream(
+                path, envs, user, cwd, timeout, request_timeout
+            )
+            if not has_upstream:
+                raise GitUpstreamException(self._build_upstream_error_message("pull"))
 
         def build_args(remote_name: Optional[str] = None) -> List[str]:
             args = ["pull"]
@@ -902,7 +936,7 @@ class Git:
                     )
                 ) from err
             if self._is_missing_upstream(err):
-                raise InvalidArgumentException(
+                raise GitUpstreamException(
                     self._build_upstream_error_message("pull")
                 ) from err
             raise

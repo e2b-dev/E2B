@@ -1,4 +1,8 @@
-import { GitAuthError, InvalidArgumentError } from '../../errors'
+import {
+  GitAuthError,
+  GitUpstreamError,
+  InvalidArgumentError,
+} from '../../errors'
 import type { CommandStartOpts } from '../commands'
 import { CommandExitError, type CommandResult } from '../commands/commandHandle'
 import { Commands } from '../commands'
@@ -717,7 +721,7 @@ export class Git {
         )
       }
       if (this.isMissingUpstream(err)) {
-        throw new InvalidArgumentError(this.buildUpstreamErrorMessage('push'))
+        throw new GitUpstreamError(this.buildUpstreamErrorMessage('push'))
       }
       throw err
     }
@@ -736,6 +740,13 @@ export class Git {
       throw new InvalidArgumentError(
         'Username is required when using a password or token for git pull.'
       )
+    }
+
+    if (!remote && !branch) {
+      const hasUpstream = await this.hasUpstream(path, rest)
+      if (!hasUpstream) {
+        throw new GitUpstreamError(this.buildUpstreamErrorMessage('pull'))
+      }
     }
 
     const buildArgs = (remoteName?: string) => {
@@ -771,7 +782,7 @@ export class Git {
         )
       }
       if (this.isMissingUpstream(err)) {
-        throw new InvalidArgumentError(this.buildUpstreamErrorMessage('pull'))
+        throw new GitUpstreamError(this.buildUpstreamErrorMessage('pull'))
       }
       throw err
     }
@@ -911,10 +922,10 @@ export class Git {
   ): string[] {
     const { remote, branch, setUpstream } = opts
     const args = ['push']
-    if (setUpstream) {
+    const targetRemote = remoteName ?? remote
+    if (setUpstream && targetRemote) {
       args.push('--set-upstream')
     }
-    const targetRemote = remoteName ?? remote
     if (targetRemote) {
       args.push(targetRemote)
     }
@@ -1103,6 +1114,22 @@ export class Git {
     }
 
     return result as T
+  }
+
+  private async hasUpstream(
+    path: string,
+    opts?: GitRequestOpts
+  ): Promise<boolean> {
+    try {
+      const result = await this.runGit(
+        ['rev-parse', '--abbrev-ref', '--symbolic-full-name', '@{u}'],
+        path,
+        opts
+      )
+      return result.stdout.trim().length > 0
+    } catch {
+      return false
+    }
   }
 
   private getScopeFlag(scope: GitConfigScope): `--${GitConfigScope}` {

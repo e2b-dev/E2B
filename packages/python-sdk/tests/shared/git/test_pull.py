@@ -1,6 +1,6 @@
 import pytest
 
-from e2b.exceptions import InvalidArgumentException
+from e2b.exceptions import GitUpstreamException
 
 
 @pytest.mark.skip_debug()
@@ -43,7 +43,7 @@ def test_pull_without_upstream_warns(git_sandbox, git_repo_with_commit, git_daem
 
     git_sandbox.git.remote_add(repo_path, "origin", remote_url)
 
-    with pytest.raises(InvalidArgumentException) as exc:
+    with pytest.raises(GitUpstreamException) as exc:
         git_sandbox.git.pull(repo_path)
 
     assert "no upstream branch is configured" in str(exc.value).lower()

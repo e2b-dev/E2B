@@ -15,8 +15,6 @@ def test_dangerously_authenticate_sets_helper(git_sandbox, git_credentials):
     helper = git_sandbox.commands.run(
         "git config --global --get credential.helper"
     ).stdout.strip()
-    configured_helper = git_sandbox.git.get_config(
-        "credential.helper", scope="global"
-    )
+    configured_helper = git_sandbox.git.get_config("credential.helper", scope="global")
     assert helper == "store"
     assert configured_helper == "store"

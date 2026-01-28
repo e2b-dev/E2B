@@ -89,6 +89,16 @@ export class GitAuthError extends AuthenticationError {
 }
 
 /**
+ * Thrown when git upstream tracking is missing.
+ */
+export class GitUpstreamError extends SandboxError {
+  constructor(message: string, stackTrace?: string) {
+    super(message, stackTrace)
+    this.name = 'GitUpstreamError'
+  }
+}
+
+/**
  * Thrown when the template uses old envd version. It isn't compatible with the new SDK.
  */
 export class TemplateError extends SandboxError {
