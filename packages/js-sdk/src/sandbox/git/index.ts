@@ -566,18 +566,13 @@ export class Git {
       args.push('--allow-empty')
     }
 
-    const hasAuthorName = Boolean(authorName)
-    const hasAuthorEmail = Boolean(authorEmail)
-    if (hasAuthorName !== hasAuthorEmail) {
-      throw new InvalidArgumentError(
-        'Both authorName and authorEmail are required to set commit author.'
-      )
+    const authorArgs: string[] = []
+    if (authorName) {
+      authorArgs.push('-c', `user.name=${authorName}`)
     }
-
-    const authorArgs =
-      authorName && authorEmail
-        ? ['-c', `user.name=${authorName}`, '-c', `user.email=${authorEmail}`]
-        : []
+    if (authorEmail) {
+      authorArgs.push('-c', `user.email=${authorEmail}`)
+    }
 
     return this.run([...authorArgs, ...args], path, rest)
   }

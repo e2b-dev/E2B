@@ -18,3 +18,27 @@ def test_commit_creates_commit(git_sandbox, git_repo, git_author):
         f'git -C "{git_repo}" log -1 --pretty=%B'
     ).stdout.strip()
     assert message == "Initial commit"
+
+
+@pytest.mark.skip_debug()
+def test_commit_uses_config_for_missing_author(git_sandbox, git_repo, git_author):
+    _, expected_email = git_author
+
+    git_sandbox.files.write(f"{git_repo}/README.md", "hello\n")
+    git_sandbox.git.add(git_repo, all=True)
+    override_name = "Override Bot"
+    git_sandbox.git.commit(
+        git_repo,
+        message="Partial author commit",
+        author_name=override_name,
+    )
+
+    author_name = git_sandbox.commands.run(
+        f'git -C "{git_repo}" log -1 --pretty=%an'
+    ).stdout.strip()
+    logged_email = git_sandbox.commands.run(
+        f'git -C "{git_repo}" log -1 --pretty=%ae'
+    ).stdout.strip()
+
+    assert author_name == override_name
+    assert logged_email == expected_email

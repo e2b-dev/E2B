@@ -695,17 +695,13 @@ class Git:
         args = ["commit", "-m", message]
         if allow_empty:
             args.append("--allow-empty")
-        if (author_name and not author_email) or (author_email and not author_name):
-            raise InvalidArgumentException(
-                "Both author_name and author_email are required to set commit author."
-            )
-        if author_name and author_email:
-            args = [
-                "-c",
-                f"user.name={author_name}",
-                "-c",
-                f"user.email={author_email}",
-            ] + args
+        author_args: List[str] = []
+        if author_name:
+            author_args.extend(["-c", f"user.name={author_name}"])
+        if author_email:
+            author_args.extend(["-c", f"user.email={author_email}"])
+        if author_args:
+            args = author_args + args
         return await self._run(args, path, envs, user, cwd, timeout, request_timeout)
 
     async def push(
