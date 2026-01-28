@@ -15,7 +15,7 @@ sandboxTest('git commit creates commit', async ({ sandbox }) => {
   try {
     const repoPath = await createRepo(sandbox, baseDir)
     await sandbox.files.write(`${repoPath}/README.md`, 'hello\n')
-    await sandbox.git.add(repoPath, { all: true })
+    await sandbox.git.add(repoPath)
 
     await sandbox.git.commit(repoPath, 'Initial commit', {
       authorName: AUTHOR_NAME,
@@ -43,7 +43,7 @@ sandboxTest(
       )
 
       await sandbox.files.write(`${repoPath}/README.md`, 'hello\n')
-      await sandbox.git.add(repoPath, { all: true })
+      await sandbox.git.add(repoPath)
 
       const overrideName = 'Override Bot'
       await sandbox.git.commit(repoPath, 'Partial author commit', {

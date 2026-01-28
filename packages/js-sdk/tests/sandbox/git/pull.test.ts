@@ -28,7 +28,7 @@ sandboxTest('git pull updates clone', async ({ sandbox }) => {
       await sandbox.git.clone(daemon.remoteUrl, { path: clonePath })
 
       await sandbox.files.write(`${repoPath}/README.md`, 'hello\nmore\n')
-      await sandbox.git.add(repoPath, { all: true })
+      await sandbox.git.add(repoPath)
       await sandbox.git.commit(repoPath, 'Update README', {
         authorName: AUTHOR_NAME,
         authorEmail: AUTHOR_EMAIL,

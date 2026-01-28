@@ -10,7 +10,7 @@ sandboxTest('git add stages files', async ({ sandbox }) => {
     const repoPath = await createRepo(sandbox, baseDir)
     await sandbox.files.write(`${repoPath}/README.md`, 'hello\n')
 
-    await sandbox.git.add(repoPath, { all: true })
+    await sandbox.git.add(repoPath)
 
     const status = await sandbox.git.status(repoPath)
     const entry = status.fileStatus.find(

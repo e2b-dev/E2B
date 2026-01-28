@@ -28,7 +28,7 @@ export async function createRepo(sandbox: any, baseDir: string) {
 export async function createRepoWithCommit(sandbox: any, baseDir: string) {
   const repoPath = await createRepo(sandbox, baseDir)
   await sandbox.files.write(`${repoPath}/README.md`, 'hello\n')
-  await sandbox.git.add(repoPath, { all: true })
+  await sandbox.git.add(repoPath)
   await sandbox.git.commit(repoPath, 'Initial commit', {
     authorName: AUTHOR_NAME,
     authorEmail: AUTHOR_EMAIL,
@@ -44,7 +44,7 @@ export async function startGitDaemon(sandbox: any, baseDir: string) {
   const port = 9418 + Math.floor(Math.random() * 1000)
   const handle = await sandbox.commands.run(
     `git daemon --reuseaddr --base-path="${baseDir}" --export-all ` +
-      `--enable=receive-pack --informative-errors --listen=127.0.0.1 --port=${port}`,
+    `--enable=receive-pack --informative-errors --listen=127.0.0.1 --port=${port}`,
     { background: true }
   )
   await sandbox.commands.run('sleep 1')
