@@ -35,6 +35,8 @@ from .connection_config import (
 )
 from .exceptions import (
     AuthenticationException,
+    GitAuthException,
+    GitUpstreamException,
     BuildException,
     FileUploadException,
     InvalidArgumentException,
@@ -58,6 +60,7 @@ from .sandbox.filesystem.watch_handle import (
     FilesystemEvent,
     FilesystemEventType,
 )
+from .sandbox.git_utils import GitBranches, GitFileStatus, GitStatus
 from .sandbox.network import ALL_TRAFFIC
 from .sandbox.sandbox_api import (
     GitHubMcpServer,
@@ -117,6 +120,8 @@ __all__ = [
     "TimeoutException",
     "NotFoundException",
     "AuthenticationException",
+    "GitAuthException",
+    "GitUpstreamException",
     "InvalidArgumentException",
     "NotEnoughSpaceException",
     "TemplateException",
@@ -129,6 +134,9 @@ __all__ = [
     "SandboxQuery",
     "SandboxState",
     "SandboxMetrics",
+    "GitStatus",
+    "GitBranches",
+    "GitFileStatus",
     # Command handle
     "CommandResult",
     "Stderr",
