@@ -908,6 +908,9 @@ export class Git {
           this.buildAuthErrorMessage('push', Boolean(username) && !password)
         )
       }
+      if (this.isMissingUpstream(err)) {
+        throw new InvalidArgumentError(this.buildUpstreamErrorMessage('push'))
+      }
       throw err
     }
   }
@@ -958,6 +961,9 @@ export class Git {
         throw new InvalidArgumentError(
           this.buildAuthErrorMessage('pull', Boolean(username) && !password)
         )
+      }
+      if (this.isMissingUpstream(err)) {
+        throw new InvalidArgumentError(this.buildUpstreamErrorMessage('pull'))
       }
       throw err
     }
@@ -1177,6 +1183,26 @@ export class Git {
     return authSnippets.some((snippet) => message.includes(snippet))
   }
 
+  private isMissingUpstream(err: unknown): boolean {
+    if (!(err instanceof CommandExitError)) {
+      return false
+    }
+
+    const message = `${err.stderr}\n${err.stdout}`.toLowerCase()
+    const upstreamSnippets = [
+      'has no upstream branch',
+      'no upstream branch',
+      'no upstream configured',
+      'no tracking information for the current branch',
+      'no tracking information',
+      'set the remote as upstream',
+      'set the upstream branch',
+      'please specify which branch you want to merge with',
+    ]
+
+    return upstreamSnippets.some((snippet) => message.includes(snippet))
+  }
+
   private buildAuthErrorMessage(
     action: 'clone' | 'push' | 'pull',
     missingPassword: boolean
@@ -1185,6 +1211,22 @@ export class Git {
       return `Git ${action} requires a password/token for private repositories.`
     }
     return `Git ${action} requires credentials for private repositories.`
+  }
+
+  private buildUpstreamErrorMessage(action: 'push' | 'pull'): string {
+    if (action === 'push') {
+      return (
+        'Git push failed because no upstream branch is configured. ' +
+        'Set upstream once with { setUpstream: true } (and optional remote/branch), ' +
+        'or pass remote and branch explicitly.'
+      )
+    }
+
+    return (
+      'Git pull failed because no upstream branch is configured. ' +
+      'Pass remote and branch explicitly, or set upstream once (push with { setUpstream: true } ' +
+      'or run: git branch --set-upstream-to=origin/<branch> <branch>).'
+    )
   }
 
   private async withRemoteCredentials<T>(

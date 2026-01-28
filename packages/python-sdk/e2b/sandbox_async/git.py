@@ -130,10 +130,41 @@ class Git:
         ]
         return any(snippet in message for snippet in auth_snippets)
 
+    def _is_missing_upstream(self, err: Exception) -> bool:
+        if not isinstance(err, CommandExitException):
+            return False
+
+        message = f"{err.stderr}\n{err.stdout}".lower()
+        upstream_snippets = [
+            "has no upstream branch",
+            "no upstream branch",
+            "no upstream configured",
+            "no tracking information for the current branch",
+            "no tracking information",
+            "set the remote as upstream",
+            "set the upstream branch",
+            "please specify which branch you want to merge with",
+        ]
+        return any(snippet in message for snippet in upstream_snippets)
+
     def _build_auth_error_message(self, action: str, missing_password: bool) -> str:
         if missing_password:
             return f"Git {action} requires a password/token for private repositories."
         return f"Git {action} requires credentials for private repositories."
+
+    def _build_upstream_error_message(self, action: str) -> str:
+        if action == "push":
+            return (
+                "Git push failed because no upstream branch is configured. "
+                "Set upstream once with set_upstream=True (and optional remote/branch), "
+                "or pass remote and branch explicitly."
+            )
+
+        return (
+            "Git pull failed because no upstream branch is configured. "
+            "Pass remote and branch explicitly, or set upstream once (push with "
+            "set_upstream=True or run: git branch --set-upstream-to=origin/<branch> <branch>)."
+        )
 
     async def _resolve_remote_name(
         self,
@@ -1019,6 +1050,10 @@ class Git:
                         "push", bool(username) and not password
                     )
                 ) from err
+            if self._is_missing_upstream(err):
+                raise InvalidArgumentException(
+                    self._build_upstream_error_message("push")
+                ) from err
             raise
 
     async def pull(
@@ -1099,6 +1134,10 @@ class Git:
                     self._build_auth_error_message(
                         "pull", bool(username) and not password
                     )
+                ) from err
+            if self._is_missing_upstream(err):
+                raise InvalidArgumentException(
+                    self._build_upstream_error_message("pull")
                 ) from err
             raise
 
