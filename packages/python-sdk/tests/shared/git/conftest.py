@@ -8,7 +8,7 @@ BASE_DIR = "/tmp/test-git"
 
 @pytest.fixture
 def git_sandbox(sandbox_factory):
-    return sandbox_factory(debug=True, secure=False, timeout=10)
+    return sandbox_factory(secure=False, timeout=10)
 
 
 @pytest.fixture
