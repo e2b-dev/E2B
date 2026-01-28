@@ -1,7 +1,12 @@
 import { expect } from 'vitest'
 
 import { sandboxTest } from '../../setup.js'
-import { cleanupBaseDir, createBaseDir, createRepoWithCommit, startGitDaemon } from './helpers.js'
+import {
+  cleanupBaseDir,
+  createBaseDir,
+  createRepoWithCommit,
+  startGitDaemon,
+} from './helpers.js'
 
 sandboxTest('git push updates remote', async ({ sandbox }) => {
   const baseDir = await createBaseDir(sandbox)
@@ -18,9 +23,11 @@ sandboxTest('git push updates remote', async ({ sandbox }) => {
         setUpstream: true,
       })
 
-      const message = (await sandbox.commands.run(
-        `git --git-dir="${daemon.remotePath}" log -1 --pretty=%B`
-      )).stdout.trim()
+      const message = (
+        await sandbox.commands.run(
+          `git --git-dir="${daemon.remotePath}" log -1 --pretty=%B`
+        )
+      ).stdout.trim()
       expect(message).toBe('Initial commit')
     } finally {
       await daemon.handle.kill()

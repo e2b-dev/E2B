@@ -14,9 +14,11 @@ sandboxTest('git configSet updates local config', async ({ sandbox }) => {
       path: repoPath,
     })
 
-    const value = (await sandbox.commands.run(
-      `git -C "${repoPath}" config --local --get pull.rebase`
-    )).stdout.trim()
+    const value = (
+      await sandbox.commands.run(
+        `git -C "${repoPath}" config --local --get pull.rebase`
+      )
+    ).stdout.trim()
     expect(value).toBe('true')
   } finally {
     await cleanupBaseDir(sandbox, baseDir)

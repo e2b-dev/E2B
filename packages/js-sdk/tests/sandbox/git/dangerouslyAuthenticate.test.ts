@@ -11,8 +11,8 @@ sandboxTest('git dangerouslyAuthenticate sets helper', async ({ sandbox }) => {
     protocol: PROTOCOL,
   })
 
-  const helper = (await sandbox.commands.run(
-    'git config --global --get credential.helper'
-  )).stdout.trim()
+  const helper = (
+    await sandbox.commands.run('git config --global --get credential.helper')
+  ).stdout.trim()
   expect(helper).toBe('store')
 })

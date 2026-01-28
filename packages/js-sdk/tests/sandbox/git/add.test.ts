@@ -13,7 +13,9 @@ sandboxTest('git add stages files', async ({ sandbox }) => {
     await sandbox.git.add(repoPath, { all: true })
 
     const status = await sandbox.git.status(repoPath)
-    const entry = status.fileStatus.find((file: any) => file.name === 'README.md')
+    const entry = status.fileStatus.find(
+      (file: any) => file.name === 'README.md'
+    )
     expect(entry?.status).toBe('added')
     expect(entry?.staged).toBe(true)
   } finally {

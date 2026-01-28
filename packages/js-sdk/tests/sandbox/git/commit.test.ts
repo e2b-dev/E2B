@@ -1,7 +1,13 @@
 import { expect } from 'vitest'
 
 import { sandboxTest } from '../../setup.js'
-import { AUTHOR_EMAIL, AUTHOR_NAME, cleanupBaseDir, createBaseDir, createRepo } from './helpers.js'
+import {
+  AUTHOR_EMAIL,
+  AUTHOR_NAME,
+  cleanupBaseDir,
+  createBaseDir,
+  createRepo,
+} from './helpers.js'
 
 sandboxTest('git commit creates commit', async ({ sandbox }) => {
   const baseDir = await createBaseDir(sandbox)
@@ -16,9 +22,9 @@ sandboxTest('git commit creates commit', async ({ sandbox }) => {
       authorEmail: AUTHOR_EMAIL,
     })
 
-    const message = (await sandbox.commands.run(
-      `git -C "${repoPath}" log -1 --pretty=%B`
-    )).stdout.trim()
+    const message = (
+      await sandbox.commands.run(`git -C "${repoPath}" log -1 --pretty=%B`)
+    ).stdout.trim()
     expect(message).toBe('Initial commit')
   } finally {
     await cleanupBaseDir(sandbox, baseDir)

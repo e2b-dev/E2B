@@ -1,7 +1,11 @@
 import { expect } from 'vitest'
 
 import { sandboxTest } from '../../setup.js'
-import { cleanupBaseDir, createBaseDir, createRepoWithCommit } from './helpers.js'
+import {
+  cleanupBaseDir,
+  createBaseDir,
+  createRepoWithCommit,
+} from './helpers.js'
 
 sandboxTest('git checkoutBranch switches branch', async ({ sandbox }) => {
   const baseDir = await createBaseDir(sandbox)
@@ -12,9 +16,11 @@ sandboxTest('git checkoutBranch switches branch', async ({ sandbox }) => {
 
     await sandbox.git.checkoutBranch(repoPath, 'feature')
 
-    const head = (await sandbox.commands.run(
-      `git -C "${repoPath}" rev-parse --abbrev-ref HEAD`
-    )).stdout.trim()
+    const head = (
+      await sandbox.commands.run(
+        `git -C "${repoPath}" rev-parse --abbrev-ref HEAD`
+      )
+    ).stdout.trim()
     expect(head).toBe('feature')
   } finally {
     await cleanupBaseDir(sandbox, baseDir)

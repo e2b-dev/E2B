@@ -1,7 +1,12 @@
 import { expect } from 'vitest'
 
 import { sandboxTest } from '../../setup.js'
-import { cleanupBaseDir, createBaseDir, createRepoWithCommit, startGitDaemon } from './helpers.js'
+import {
+  cleanupBaseDir,
+  createBaseDir,
+  createRepoWithCommit,
+  startGitDaemon,
+} from './helpers.js'
 
 sandboxTest('git clone fetches repo', async ({ sandbox }) => {
   const baseDir = await createBaseDir(sandbox)

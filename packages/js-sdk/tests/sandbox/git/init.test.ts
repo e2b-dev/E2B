@@ -12,9 +12,11 @@ sandboxTest('git init', async ({ sandbox }) => {
     await sandbox.git.init(repoPath, { initialBranch: 'main' })
 
     expect(await sandbox.files.exists(`${repoPath}/.git`)).toBe(true)
-    const head = (await sandbox.commands.run(
-      `git -C "${repoPath}" symbolic-ref --short HEAD`
-    )).stdout.trim()
+    const head = (
+      await sandbox.commands.run(
+        `git -C "${repoPath}" symbolic-ref --short HEAD`
+      )
+    ).stdout.trim()
     expect(head).toBe('main')
   } finally {
     await cleanupBaseDir(sandbox, baseDir)
