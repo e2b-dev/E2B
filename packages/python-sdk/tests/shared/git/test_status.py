@@ -13,3 +13,12 @@ def test_status_reports_untracked_file(git_sandbox, git_repo):
     assert entry is not None
     assert entry.status == "untracked"
     assert status.is_clean is False
+    assert status.has_changes is True
+    assert status.has_untracked is True
+    assert status.has_staged is False
+    assert status.has_conflicts is False
+    assert status.total_count == 1
+    assert status.staged_count == 0
+    assert status.unstaged_count == 1
+    assert status.untracked_count == 1
+    assert status.conflict_count == 0

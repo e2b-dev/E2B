@@ -76,6 +76,42 @@ export interface GitStatus {
    * Whether the repository has no tracked or untracked file changes.
    */
   isClean: boolean
+  /**
+   * Whether the repository has any tracked or untracked file changes.
+   */
+  hasChanges: boolean
+  /**
+   * Whether there are staged changes.
+   */
+  hasStaged: boolean
+  /**
+   * Whether there are untracked files.
+   */
+  hasUntracked: boolean
+  /**
+   * Whether there are merge conflicts.
+   */
+  hasConflicts: boolean
+  /**
+   * Total number of changed files.
+   */
+  totalCount: number
+  /**
+   * Number of files with staged changes.
+   */
+  stagedCount: number
+  /**
+   * Number of files with unstaged changes.
+   */
+  unstagedCount: number
+  /**
+   * Number of untracked files.
+   */
+  untrackedCount: number
+  /**
+   * Number of files with merge conflicts.
+   */
+  conflictCount: number
 }
 
 /**
@@ -300,6 +336,15 @@ export function parseGitStatus(output: string): GitStatus {
       detached,
       fileStatus,
       isClean: true,
+      hasChanges: false,
+      hasStaged: false,
+      hasUntracked: false,
+      hasConflicts: false,
+      totalCount: 0,
+      stagedCount: 0,
+      unstagedCount: 0,
+      untrackedCount: 0,
+      conflictCount: 0,
     }
   }
 
@@ -372,6 +417,16 @@ export function parseGitStatus(output: string): GitStatus {
     })
   }
 
+  const totalCount = fileStatus.length
+  const stagedCount = fileStatus.filter((item) => item.staged).length
+  const untrackedCount = fileStatus.filter(
+    (item) => item.status === 'untracked'
+  ).length
+  const conflictCount = fileStatus.filter(
+    (item) => item.status === 'conflict'
+  ).length
+  const unstagedCount = totalCount - stagedCount
+
   return {
     currentBranch,
     upstream,
@@ -379,7 +434,16 @@ export function parseGitStatus(output: string): GitStatus {
     behind,
     detached,
     fileStatus,
-    isClean: fileStatus.length === 0,
+    isClean: totalCount === 0,
+    hasChanges: totalCount > 0,
+    hasStaged: stagedCount > 0,
+    hasUntracked: untrackedCount > 0,
+    hasConflicts: conflictCount > 0,
+    totalCount,
+    stagedCount,
+    unstagedCount,
+    untrackedCount,
+    conflictCount,
   }
 }
 

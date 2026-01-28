@@ -53,6 +53,69 @@ class GitStatus:
         """
         return len(self.file_status) == 0
 
+    @property
+    def has_changes(self) -> bool:
+        """
+        Return True when there are any tracked or untracked file changes.
+        """
+        return len(self.file_status) > 0
+
+    @property
+    def has_staged(self) -> bool:
+        """
+        Return True when at least one file has staged changes.
+        """
+        return any(item.staged for item in self.file_status)
+
+    @property
+    def has_untracked(self) -> bool:
+        """
+        Return True when at least one file is untracked.
+        """
+        return any(item.status == "untracked" for item in self.file_status)
+
+    @property
+    def has_conflicts(self) -> bool:
+        """
+        Return True when at least one file is in conflict.
+        """
+        return any(item.status == "conflict" for item in self.file_status)
+
+    @property
+    def total_count(self) -> int:
+        """
+        Return the total number of changed files.
+        """
+        return len(self.file_status)
+
+    @property
+    def staged_count(self) -> int:
+        """
+        Return the number of files with staged changes.
+        """
+        return sum(1 for item in self.file_status if item.staged)
+
+    @property
+    def unstaged_count(self) -> int:
+        """
+        Return the number of files with unstaged changes.
+        """
+        return sum(1 for item in self.file_status if not item.staged)
+
+    @property
+    def untracked_count(self) -> int:
+        """
+        Return the number of untracked files.
+        """
+        return sum(1 for item in self.file_status if item.status == "untracked")
+
+    @property
+    def conflict_count(self) -> int:
+        """
+        Return the number of files with merge conflicts.
+        """
+        return sum(1 for item in self.file_status if item.status == "conflict")
+
 
 @dataclass
 class GitBranches:
