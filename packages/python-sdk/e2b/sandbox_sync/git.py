@@ -964,6 +964,48 @@ class Git:
             ] + args
         return self._run(args, path, envs, user, cwd, timeout, request_timeout)
 
+    def reset(
+        self,
+        path: str,
+        mode: Optional[str] = None,
+        target: Optional[str] = None,
+        paths: Optional[List[str]] = None,
+        envs: Optional[Dict[str, str]] = None,
+        user: Optional[str] = None,
+        cwd: Optional[str] = None,
+        timeout: Optional[float] = None,
+        request_timeout: Optional[float] = None,
+    ):
+        """
+        Reset the current HEAD to a specified state.
+
+        :param path: Repository path
+        :param mode: Reset mode (soft, mixed, hard, merge, keep)
+        :param target: Commit, branch, or ref to reset to (defaults to HEAD)
+        :param paths: Paths to reset
+        :param envs: Environment variables used for the command
+        :param user: User to run the command as
+        :param cwd: Working directory to run the command
+        :param timeout: Timeout for the command connection in **seconds**
+        :param request_timeout: Timeout for the request in **seconds**
+        :return: Command result from the command runner
+        """
+        allowed_modes = {"soft", "mixed", "hard", "merge", "keep"}
+        if mode and mode not in allowed_modes:
+            raise InvalidArgumentException(
+                f"Reset mode must be one of {', '.join(sorted(allowed_modes))}."
+            )
+
+        args = ["reset"]
+        if mode:
+            args.append(f"--{mode}")
+        if target:
+            args.append(target)
+        if paths:
+            args.append("--")
+            args.extend(paths)
+        return self._run(args, path, envs, user, cwd, timeout, request_timeout)
+
     def push(
         self,
         path: str,

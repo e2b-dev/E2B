@@ -246,6 +246,29 @@ export interface GitAddOpts extends GitRequestOpts {
 }
 
 /**
+ * Supported reset modes.
+ */
+export type GitResetMode = 'soft' | 'mixed' | 'hard' | 'merge' | 'keep'
+
+/**
+ * Options for resetting a repository.
+ */
+export interface GitResetOpts extends GitRequestOpts {
+  /**
+   * Reset mode to use.
+   */
+  mode?: GitResetMode
+  /**
+   * Commit, branch, or ref to reset to (defaults to HEAD).
+   */
+  target?: string
+  /**
+   * Paths to reset.
+   */
+  paths?: string[]
+}
+
+/**
  * Options for deleting a branch.
  */
 export interface GitDeleteBranchOpts extends GitRequestOpts {
@@ -859,6 +882,43 @@ export class Git {
         : []
 
     return this.run([...authorArgs, ...args], path, rest)
+  }
+
+  /**
+   * Reset the current HEAD to a specified state.
+   *
+   * @param path Repository path.
+   * @param opts Reset options.
+   * @returns Command result from the command runner.
+   */
+  async reset(path: string, opts?: GitResetOpts): Promise<CommandResult> {
+    const { mode, target, paths, ...rest } = opts ?? {}
+    const allowedModes: GitResetMode[] = [
+      'soft',
+      'mixed',
+      'hard',
+      'merge',
+      'keep',
+    ]
+
+    if (mode && !allowedModes.includes(mode)) {
+      throw new InvalidArgumentError(
+        `Reset mode must be one of ${allowedModes.join(', ')}.`
+      )
+    }
+
+    const args = ['reset']
+    if (mode) {
+      args.push(`--${mode}`)
+    }
+    if (target) {
+      args.push(target)
+    }
+    if (paths && paths.length > 0) {
+      args.push('--', ...paths)
+    }
+
+    return this.run(args, path, rest)
   }
 
   /**
