@@ -292,6 +292,10 @@ class Git:
         :param dangerously_store_credentials: Store credentials in the cloned repository when True
         :return: Command result from the command runner
         """
+        if password and not username:
+            raise InvalidArgumentException(
+                "Username is required when using a password or token for git clone."
+            )
 
         async def attempt_clone(
             auth_username: Optional[str], auth_password: Optional[str]
@@ -333,11 +337,6 @@ class Git:
                     request_timeout,
                 )
             return result
-
-        if password and not username:
-            raise InvalidArgumentException(
-                "Username is required when using a password or token for git clone."
-            )
 
         try:
             return await attempt_clone(username, password)
@@ -699,6 +698,10 @@ class Git:
         :param request_timeout: Timeout for the request in **seconds**
         :return: Command result from the command runner
         """
+        if password and not username:
+            raise InvalidArgumentException(
+                "Username is required when using a password or token for git push."
+            )
 
         def build_args(remote_name: Optional[str] = None) -> List[str]:
             args = ["push"]
@@ -710,11 +713,6 @@ class Git:
             if branch:
                 args.append(branch)
             return args
-
-        if password and not username:
-            raise InvalidArgumentException(
-                "Username is required when using a password or token for git push."
-            )
 
         if username and password:
             remote_name = await self._resolve_remote_name(
@@ -786,6 +784,10 @@ class Git:
         :param request_timeout: Timeout for the request in **seconds**
         :return: Command result from the command runner
         """
+        if password and not username:
+            raise InvalidArgumentException(
+                "Username is required when using a password or token for git pull."
+            )
 
         def build_args(remote_name: Optional[str] = None) -> List[str]:
             args = ["pull"]
@@ -795,11 +797,6 @@ class Git:
             if branch:
                 args.append(branch)
             return args
-
-        if password and not username:
-            raise InvalidArgumentException(
-                "Username is required when using a password or token for git pull."
-            )
 
         if username and password:
             remote_name = await self._resolve_remote_name(

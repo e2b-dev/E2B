@@ -293,6 +293,13 @@ export class Git {
       dangerouslyStoreCredentials,
       ...rest
     } = opts ?? {}
+
+    if (password && !username) {
+      throw new InvalidArgumentError(
+        'Username is required when using a password or token for git clone.'
+      )
+    }
+
     const attemptClone = async (
       authUsername?: string,
       authPassword?: string
@@ -336,12 +343,6 @@ export class Git {
       }
 
       return result
-    }
-
-    if (password && !username) {
-      throw new InvalidArgumentError(
-        'Username is required when using a password or token for git clone.'
-      )
     }
 
     try {
@@ -649,6 +650,13 @@ export class Git {
   async push(path: string, opts?: GitPushOpts): Promise<CommandResult> {
     const { remote, branch, setUpstream, username, password, ...rest } =
       opts ?? {}
+
+    if (password && !username) {
+      throw new InvalidArgumentError(
+        'Username is required when using a password or token for git push.'
+      )
+    }
+
     const buildArgs = (remoteName?: string) => {
       const args = ['push']
       if (setUpstream) {
@@ -662,12 +670,6 @@ export class Git {
         args.push(branch)
       }
       return args
-    }
-
-    if (password && !username) {
-      throw new InvalidArgumentError(
-        'Username is required when using a password or token for git push.'
-      )
     }
 
     if (username && password) {
@@ -706,6 +708,12 @@ export class Git {
    */
   async pull(path: string, opts?: GitPullOpts): Promise<CommandResult> {
     const { remote, branch, username, password, ...rest } = opts ?? {}
+    if (password && !username) {
+      throw new InvalidArgumentError(
+        'Username is required when using a password or token for git pull.'
+      )
+    }
+
     const buildArgs = (remoteName?: string) => {
       const args = ['pull']
       const targetRemote = remoteName ?? remote
@@ -716,12 +724,6 @@ export class Git {
         args.push(branch)
       }
       return args
-    }
-
-    if (password && !username) {
-      throw new InvalidArgumentError(
-        'Username is required when using a password or token for git pull.'
-      )
     }
 
     if (username && password) {
