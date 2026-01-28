@@ -21,3 +21,25 @@ sandboxTest('git getConfig reads local config', async ({ sandbox }) => {
     await cleanupBaseDir(sandbox, baseDir)
   }
 })
+
+sandboxTest('git setConfig updates local config', async ({ sandbox }) => {
+  const baseDir = await createBaseDir(sandbox)
+
+  try {
+    const repoPath = await createRepo(sandbox, baseDir)
+
+    await sandbox.git.setConfig('pull.rebase', 'true', {
+      scope: 'local',
+      path: repoPath,
+    })
+
+    const value = (
+      await sandbox.commands.run(
+        `git -C "${repoPath}" config --local --get pull.rebase`
+      )
+    ).stdout.trim()
+    expect(value).toBe('true')
+  } finally {
+    await cleanupBaseDir(sandbox, baseDir)
+  }
+})
