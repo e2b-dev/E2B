@@ -44,7 +44,7 @@ export async function startGitDaemon(sandbox: any, baseDir: string) {
   const port = 9418 + Math.floor(Math.random() * 1000)
   const handle = await sandbox.commands.run(
     `git daemon --reuseaddr --base-path="${baseDir}" --export-all ` +
-    `--enable=receive-pack --informative-errors --listen=127.0.0.1 --port=${port}`,
+      `--enable=receive-pack --informative-errors --listen=127.0.0.1 --port=${port}`,
     { background: true }
   )
   await sandbox.commands.run('sleep 1')
