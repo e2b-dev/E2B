@@ -1,12 +1,13 @@
 import type { PathLike } from 'node:fs'
 import { ApiClient } from '../api'
-import { ConnectionConfig } from '../connectionConfig'
+import { ConnectionConfig, ConnectionOpts } from '../connectionConfig'
 import { BuildError } from '../errors'
 import { runtime } from '../utils'
 import {
+  assignTags,
   checkAliasExists,
+  removeTags,
   getBuildStatus,
-  GetBuildStatusResponse,
   getFileUploadLink,
   requestBuild,
   triggerBuild,
@@ -19,7 +20,6 @@ import { parseDockerfile } from './dockerfileParser'
 import { LogEntry, LogEntryEnd, LogEntryStart } from './logger'
 import { ReadyCmd, waitForFile } from './readycmd'
 import {
-  AliasExistsOptions,
   BuildInfo,
   BuildOptions,
   CopyItem,
@@ -29,15 +29,18 @@ import {
   McpServerName,
   RegistryConfig,
   TemplateBuilder,
+  TemplateBuildStatusResponse,
   TemplateClass,
   TemplateFinal,
   TemplateFromImage,
   TemplateOptions,
+  TemplateTagInfo,
 } from './types'
 import {
   calculateFilesHash,
   getCallerDirectory,
   getCallerFrame,
+  normalizeBuildArguments,
   padOctal,
   readDockerignore,
   readGCPServiceAccountJSON,
@@ -106,73 +109,139 @@ export class TemplateBase
    * Build and deploy a template to E2B infrastructure.
    *
    * @param template The template to build
-   * @param options Build configuration options
+   * @param name Template name in 'name' or 'name:tag' format
+   * @param options Optional build configuration options
    *
    * @example
    * ```ts
    * const template = Template().fromPythonImage('3')
-   * await Template.build(template, {
-   *   alias: 'my-python-env',
-   *   cpuCount: 2,
-   *   memoryMB: 1024
-   * })
+   *
+   * // Build with single tag in name
+   * await Template.build(template, 'my-python-env:v1.0')
+   *
+   * // Build with multiple tags
+   * await Template.build(template, 'my-python-env', { tags: ['v1.0', 'stable'] })
+   * ```
+   */
+  static async build(
+    template: TemplateClass,
+    name: string,
+    options?: Omit<BuildOptions, 'alias'>
+  ): Promise<BuildInfo>
+  /**
+   * Build and deploy a template to E2B infrastructure.
+   *
+   * @param template The template to build
+   * @param options Build configuration options with alias (deprecated)
+   *
+   * @deprecated Use the overload with `name` parameter instead.
+   * @example
+   * ```ts
+   * // Deprecated:
+   * await Template.build(template, { alias: 'my-python-env' })
+   *
+   * // Use instead:
+   * await Template.build(template, 'my-python-env:v1.0')
    * ```
    */
   static async build(
     template: TemplateClass,
     options: BuildOptions
+  ): Promise<BuildInfo>
+  static async build(
+    template: TemplateClass,
+    nameOrOptions: string | BuildOptions,
+    options?: Omit<BuildOptions, 'alias'>
   ): Promise<BuildInfo> {
+    const { name, buildOptions } = normalizeBuildArguments(
+      nameOrOptions,
+      options
+    )
+
     try {
-      options.onBuildLogs?.(new LogEntryStart(new Date(), 'Build started'))
+      buildOptions.onBuildLogs?.(new LogEntryStart(new Date(), 'Build started'))
       const baseTemplate = template as TemplateBase
 
-      const config = new ConnectionConfig(options)
+      const config = new ConnectionConfig(buildOptions)
       const client = new ApiClient(config)
 
-      const data = await baseTemplate.build(client, options)
+      const data = await baseTemplate.build(client, name, buildOptions)
 
-      options.onBuildLogs?.(
+      buildOptions.onBuildLogs?.(
         new LogEntry(new Date(), 'info', 'Waiting for logs...')
       )
 
       await waitForBuildFinish(client, {
         templateID: data.templateId,
         buildID: data.buildId,
-        onBuildLogs: options.onBuildLogs,
+        onBuildLogs: buildOptions.onBuildLogs,
         logsRefreshFrequency: baseTemplate.logsRefreshFrequency,
         stackTraces: baseTemplate.stackTraces,
       })
 
       return data
     } finally {
-      options.onBuildLogs?.(new LogEntryEnd(new Date(), 'Build finished'))
+      buildOptions.onBuildLogs?.(new LogEntryEnd(new Date(), 'Build finished'))
     }
   }
 
   /**
-   * Build and deploy a template to E2B infrastructure.
+   * Build and deploy a template to E2B infrastructure without waiting for completion.
    *
    * @param template The template to build
-   * @param options Build configuration options
+   * @param name Template name in 'name' or 'name:tag' format
+   * @param options Optional build configuration options
    *
    * @example
    * ```ts
    * const template = Template().fromPythonImage('3')
-   * const data = await Template.buildInBackground(template, {
-   *   alias: 'my-python-env',
-   *   cpuCount: 2,
-   *   memoryMB: 1024
-   * })
+   *
+   * // Build with single tag in name
+   * const data = await Template.buildInBackground(template, 'my-python-env:v1.0')
+   *
+   * // Build with multiple tags
+   * const data = await Template.buildInBackground(template, 'my-python-env', { tags: ['v1.0', 'stable'] })
+   * ```
+   */
+  static async buildInBackground(
+    template: TemplateClass,
+    name: string,
+    options?: Omit<BuildOptions, 'alias'>
+  ): Promise<BuildInfo>
+  /**
+   * Build and deploy a template to E2B infrastructure without waiting for completion.
+   *
+   * @param template The template to build
+   * @param options Build configuration options with alias (deprecated)
+   *
+   * @deprecated Use the overload with `name` parameter instead.
+   * @example
+   * ```ts
+   * // Deprecated:
+   * await Template.buildInBackground(template, { alias: 'my-python-env' })
+   *
+   * // Use instead:
+   * await Template.buildInBackground(template, 'my-python-env:v1.0')
    * ```
    */
   static async buildInBackground(
     template: TemplateClass,
     options: BuildOptions
+  ): Promise<BuildInfo>
+  static async buildInBackground(
+    template: TemplateClass,
+    nameOrOptions: string | BuildOptions,
+    options?: Omit<BuildOptions, 'alias'>
   ): Promise<BuildInfo> {
-    const config = new ConnectionConfig(options)
+    const { name, buildOptions } = normalizeBuildArguments(
+      nameOrOptions,
+      options
+    )
+
+    const config = new ConnectionConfig(buildOptions)
     const client = new ApiClient(config)
 
-    return await (template as TemplateBase).build(client, options)
+    return (template as TemplateBase).build(client, name, buildOptions)
   }
 
   /**
@@ -189,7 +258,7 @@ export class TemplateBase
   static async getBuildStatus(
     data: Pick<BuildInfo, 'templateId' | 'buildId'>,
     options?: GetBuildStatusOptions
-  ): Promise<GetBuildStatusResponse> {
+  ): Promise<TemplateBuildStatusResponse> {
     const config = new ConnectionConfig(options)
     const client = new ApiClient(config)
 
@@ -201,12 +270,35 @@ export class TemplateBase
   }
 
   /**
+   * Check if a template with the given name exists.
+   *
+   * @param name Template name to check
+   * @param options Authentication options
+   * @returns True if the name exists, false otherwise
+   *
+   * @example
+   * ```ts
+   * const exists = await Template.exists('my-python-env')
+   * if (exists) {
+   *   console.log('Template exists!')
+   * }
+   * ```
+   */
+  static async exists(
+    name: string,
+    options?: ConnectionOpts
+  ): Promise<boolean> {
+    return TemplateBase.aliasExists(name, options)
+  }
+
+  /**
    * Check if a template with the given alias exists.
    *
    * @param alias Template alias to check
    * @param options Authentication options
    * @returns True if the alias exists, false otherwise
    *
+   * @deprecated Use `exists` instead.
    * @example
    * ```ts
    * const exists = await Template.aliasExists('my-python-env')
@@ -217,12 +309,67 @@ export class TemplateBase
    */
   static async aliasExists(
     alias: string,
-    options?: AliasExistsOptions
+    options?: ConnectionOpts
   ): Promise<boolean> {
     const config = new ConnectionConfig(options)
     const client = new ApiClient(config)
 
     return checkAliasExists(client, { alias })
+  }
+
+  /**
+   * Assign tag(s) to an existing template build.
+   *
+   * @param targetName Template name in 'name:tag' format (the source build to tag from)
+   * @param tags Tag or tags to assign
+   * @param options Authentication options
+   * @returns Tag info with buildId and assigned tags
+   *
+   * @example
+   * ```ts
+   * // Assign a single tag
+   * await Template.assignTags('my-template:v1.0', 'production')
+   *
+   * // Assign multiple tags
+   * await Template.assignTags('my-template:v1.0', ['production', 'stable'])
+   * ```
+   */
+  static async assignTags(
+    targetName: string,
+    tags: string | string[],
+    options?: ConnectionOpts
+  ): Promise<TemplateTagInfo> {
+    const config = new ConnectionConfig(options)
+    const client = new ApiClient(config)
+    const normalizedTags = Array.isArray(tags) ? tags : [tags]
+    return assignTags(client, { targetName, tags: normalizedTags })
+  }
+
+  /**
+   * Remove tag(s) from a template.
+   *
+   * @param name Template name
+   * @param tags Tag or tags to remove
+   * @param options Authentication options
+   *
+   * @example
+   * ```ts
+   * // Remove a single tag
+   * await Template.removeTags('my-template', 'production')
+   *
+   * // Remove multiple tags from a template
+   * await Template.removeTags('my-template', ['production', 'staging'])
+   * ```
+   */
+  static async removeTags(
+    name: string,
+    tags: string | string[],
+    options?: ConnectionOpts
+  ): Promise<void> {
+    const config = new ConnectionConfig(options)
+    const client = new ApiClient(config)
+    const normalizedTags = Array.isArray(tags) ? tags : [tags]
+    return removeTags(client, { name, tags: normalizedTags })
   }
 
   fromDebianImage(variant: string = 'stable'): TemplateBuilder {
@@ -886,12 +1033,15 @@ export class TemplateBase
    * Internal implementation of the template build process.
    *
    * @param client API client for communicating with E2B backend
+   * @param name Template name in 'name' or 'name:tag' format
+   * @param tags Additional tags to assign to the build
    * @param options Build configuration options
    * @throws BuildError if the build fails
    */
   private async build(
     client: ApiClient,
-    options: BuildOptions
+    name: string,
+    options: Omit<BuildOptions, 'alias'>
   ): Promise<BuildInfo> {
     if (options.skipCache) {
       this.force = true
@@ -902,12 +1052,17 @@ export class TemplateBase
       new LogEntry(
         new Date(),
         'info',
-        `Requesting build for template: ${options.alias}`
+        `Requesting build for template: ${name}${options.tags && options.tags.length > 0 ? ` with tags ${options.tags.join(', ')}` : ''}`
       )
     )
 
-    const { templateID, buildID } = await requestBuild(client, {
-      alias: options.alias,
+    const {
+      templateID,
+      buildID,
+      tags: responseTags,
+    } = await requestBuild(client, {
+      name,
+      tags: options.tags,
       cpuCount: options.cpuCount ?? 2,
       memoryMB: options.memoryMB ?? 1024,
     })
@@ -1000,7 +1155,9 @@ export class TemplateBase
     })
 
     return {
-      alias: options.alias,
+      alias: name,
+      name: name,
+      tags: responseTags,
       templateId: templateID,
       buildId: buildID,
     }
@@ -1094,7 +1251,7 @@ export class TemplateBase
  *   .copy('requirements.txt', '/app/')
  *   .pipInstall()
  *
- * await Template.build(template, { alias: 'my-python-app' })
+ * await Template.build(template, 'my-python-app:v1.0')
  * ```
  */
 export function Template(options?: TemplateOptions): TemplateFromImage {
@@ -1104,17 +1261,23 @@ export function Template(options?: TemplateOptions): TemplateFromImage {
 Template.build = TemplateBase.build
 Template.buildInBackground = TemplateBase.buildInBackground
 Template.getBuildStatus = TemplateBase.getBuildStatus
+Template.exists = TemplateBase.exists
 Template.aliasExists = TemplateBase.aliasExists
+Template.assignTags = TemplateBase.assignTags
+Template.removeTags = TemplateBase.removeTags
 Template.toJSON = TemplateBase.toJSON
 Template.toDockerfile = TemplateBase.toDockerfile
 
 export type {
-  AliasExistsOptions,
   BuildInfo,
   BuildOptions,
+  BuildStatusReason,
   CopyItem,
   GetBuildStatusOptions,
   McpServerName,
   TemplateBuilder,
+  TemplateBuildStatus,
+  TemplateBuildStatusResponse,
   TemplateClass,
+  TemplateTagInfo,
 } from './types'

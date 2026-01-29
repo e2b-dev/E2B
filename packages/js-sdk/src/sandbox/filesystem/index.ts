@@ -32,6 +32,7 @@ import {
   ENVD_VERSION_RECURSIVE_WATCH,
 } from '../../envd/versions'
 import { InvalidArgumentError, TemplateError } from '../../errors'
+import { toBlob } from '../../utils'
 
 /**
  * Sandbox filesystem object information.
@@ -354,9 +355,11 @@ export class Filesystem {
 
     if (writeFiles.length === 0) return [] as WriteInfo[]
 
-    const blobs = await Promise.all(
-      writeFiles.map((f) => new Response(f.data).blob())
-    )
+    const formData = new FormData()
+    for (let i = 0; i < writeFiles.length; i++) {
+      const file = writeFiles[i]
+      formData.append('file', await toBlob(file.data), writeFiles[i].path)
+    }
 
     let user = writeOpts?.user
     if (
@@ -373,17 +376,7 @@ export class Filesystem {
           username: user,
         },
       },
-      bodySerializer() {
-        return blobs.reduce((fd, blob, i) => {
-          // Important: RFC 7578, Section 4.2 requires that if a filename is provided,
-          // the directory path information must not be used.
-          // BUT in our case we need to use the directory path information with a custom
-          // multipart part name getter in envd.
-          fd.append('file', blob, writeFiles[i].path)
-
-          return fd
-        }, new FormData())
-      },
+      bodySerializer: () => formData,
       signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
       body: {},
     })
@@ -399,6 +392,28 @@ export class Filesystem {
     }
 
     return files.length === 1 && path ? files[0] : files
+  }
+
+  /**
+   * Write multiple files.
+   *
+   *
+   * Writing to a file that doesn't exist creates the file.
+   *
+   * Writing to a file that already exists overwrites the file.
+   *
+   * Writing to a file at path that doesn't exist creates the necessary directories.
+   *
+   * @param files list of files to write as `WriteEntry` objects, each containing `path` and `data`.
+   * @param opts connection options.
+   *
+   * @returns information about the written files
+   */
+  async writeFiles(
+    files: WriteEntry[],
+    opts?: FilesystemRequestOpts
+  ): Promise<WriteInfo[]> {
+    return this.write(files, opts) as Promise<WriteInfo[]>
   }
 
   /**

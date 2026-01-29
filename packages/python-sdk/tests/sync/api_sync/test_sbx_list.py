@@ -59,9 +59,8 @@ def test_list_paused_sandboxes(sandbox: Sandbox, sandbox_test_id: str):
     assert len(sandboxes) >= 1
 
     # Verify our paused sandbox is in the list
-    paused_sandbox_id = sandbox.sandbox_id.split("-")[0]
     assert any(
-        s.sandbox_id.startswith(paused_sandbox_id) and s.state == SandboxState.PAUSED
+        s.sandbox_id == sandbox.sandbox_id and s.state == SandboxState.PAUSED
         for s in sandboxes
     )
 
@@ -105,12 +104,10 @@ def test_paginate_running_sandboxes(sandbox: Sandbox, sandbox_test_id: str):
 
 @pytest.mark.skip_debug()
 def test_paginate_paused_sandboxes(sandbox: Sandbox, sandbox_test_id: str):
-    sandbox_id = sandbox.sandbox_id.split("-")[0]
     sandbox.beta_pause()
 
     # create another paused sandbox
     extra_sbx = Sandbox.create(metadata={"sandbox_test_id": sandbox_test_id})
-    extra_sbx_id = extra_sbx.sandbox_id.split("-")[0]
     extra_sbx.beta_pause()
 
     try:
@@ -130,7 +127,7 @@ def test_paginate_paused_sandboxes(sandbox: Sandbox, sandbox_test_id: str):
         assert sandboxes[0].state == SandboxState.PAUSED
         assert paginator.has_next is True
         assert paginator.next_token is not None
-        assert sandboxes[0].sandbox_id.startswith(extra_sbx_id) is True
+        assert sandboxes[0].sandbox_id == extra_sbx.sandbox_id
 
         # Get second page
         sandboxes = paginator.next_items()
@@ -140,7 +137,7 @@ def test_paginate_paused_sandboxes(sandbox: Sandbox, sandbox_test_id: str):
         assert sandboxes[0].state == SandboxState.PAUSED
         assert paginator.has_next is False
         assert paginator.next_token is None
-        assert sandboxes[0].sandbox_id.startswith(sandbox_id) is True
+        assert sandboxes[0].sandbox_id == sandbox.sandbox_id
     finally:
         extra_sbx.kill()
 
@@ -149,7 +146,6 @@ def test_paginate_paused_sandboxes(sandbox: Sandbox, sandbox_test_id: str):
 def test_paginate_running_and_paused_sandboxes(sandbox: Sandbox, sandbox_test_id: str):
     # Create extra paused sandbox
     extra_sbx = Sandbox.create(metadata={"sandbox_test_id": sandbox_test_id})
-    extra_sbx_id = extra_sbx.sandbox_id.split("-")[0]
     extra_sbx.beta_pause()
 
     try:
@@ -169,7 +165,7 @@ def test_paginate_running_and_paused_sandboxes(sandbox: Sandbox, sandbox_test_id
         assert sandboxes[0].state == SandboxState.PAUSED
         assert paginator.has_next is True
         assert paginator.next_token is not None
-        assert sandboxes[0].sandbox_id.startswith(extra_sbx_id) is True
+        assert sandboxes[0].sandbox_id == extra_sbx.sandbox_id
 
         # Get second page
         sandboxes = paginator.next_items()

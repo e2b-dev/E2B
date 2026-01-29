@@ -9,10 +9,9 @@ test('build template in background', async () => {
     .runCmd('sleep 5') // Add a delay to ensure build takes time
     .setStartCmd('echo "Hello"', waitForTimeout(10_000))
 
-  const alias = `e2b-test-${randomUUID()}`
+  const name = `e2b-test-${randomUUID()}`
 
-  const buildInfo = await Template.buildInBackground(template, {
-    alias,
+  const buildInfo = await Template.buildInBackground(template, name, {
     cpuCount: 1,
     memoryMB: 1024,
   })

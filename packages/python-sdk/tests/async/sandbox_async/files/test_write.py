@@ -6,7 +6,7 @@ from e2b.sandbox.filesystem.filesystem import WriteEntry
 from e2b.sandbox_async.filesystem.filesystem import WriteInfo
 
 
-async def test_write_text_file(async_sandbox: AsyncSandbox):
+async def test_write_text_file(async_sandbox: AsyncSandbox, debug):
     filename = "test_write.txt"
     content = "This is a test file."
 
@@ -19,8 +19,11 @@ async def test_write_text_file(async_sandbox: AsyncSandbox):
     read_content = await async_sandbox.files.read(filename)
     assert read_content == content
 
+    if debug:
+        await async_sandbox.files.remove(filename)
 
-async def test_write_binary_file(async_sandbox: AsyncSandbox):
+
+async def test_write_binary_file(async_sandbox: AsyncSandbox, debug):
     filename = "test_write.bin"
     text = "This is a test binary file."
     # equivalent to `open("path/to/local/file", "rb")`
@@ -35,17 +38,24 @@ async def test_write_binary_file(async_sandbox: AsyncSandbox):
     read_content = await async_sandbox.files.read(filename)
     assert read_content == text
 
+    if debug:
+        await async_sandbox.files.remove(filename)
 
-async def test_write_multiple_files(async_sandbox: AsyncSandbox):
+
+async def test_write_multiple_files(async_sandbox: AsyncSandbox, debug):
+    num_test_files = 10
+
     # Attempt to write with empty files array
     empty_info = await async_sandbox.files.write_files([])
     assert isinstance(empty_info, list)
     assert len(empty_info) == 0
 
     # Attempt to write with one file in array
+    one_file_path = "one_test_file.txt"
     info = await async_sandbox.files.write_files(
-        [WriteEntry(path="one_test_file.txt", data="This is a test file.")]
+        [WriteEntry(path=one_file_path, data="This is a test file.")]
     )
+
     assert isinstance(info, list)
     assert len(info) == 1
     info = info[0]
@@ -59,7 +69,7 @@ async def test_write_multiple_files(async_sandbox: AsyncSandbox):
 
     # Attempt to write with multiple files in array
     files = []
-    for i in range(10):
+    for i in range(num_test_files):
         path = f"test_write_{i}.txt"
         content = f"This is a test file {i}."
         files.append(WriteEntry(path=path, data=content))
@@ -76,8 +86,13 @@ async def test_write_multiple_files(async_sandbox: AsyncSandbox):
         read_content = await async_sandbox.files.read(info.path)
         assert read_content == files[i]["data"]
 
+    if debug:
+        await async_sandbox.files.remove(one_file_path)
+        for i in range(num_test_files):
+            await async_sandbox.files.remove(f"test_write_{i}.txt")
 
-async def test_overwrite_file(async_sandbox: AsyncSandbox):
+
+async def test_overwrite_file(async_sandbox: AsyncSandbox, debug):
     filename = "test_overwrite.txt"
     initial_content = "Initial content."
     new_content = "New content."
@@ -87,8 +102,11 @@ async def test_overwrite_file(async_sandbox: AsyncSandbox):
     read_content = await async_sandbox.files.read(filename)
     assert read_content == new_content
 
+    if debug:
+        await async_sandbox.files.remove(filename)
 
-async def test_write_to_non_existing_directory(async_sandbox: AsyncSandbox):
+
+async def test_write_to_non_existing_directory(async_sandbox: AsyncSandbox, debug):
     filename = f"non_existing_dir_{uuid.uuid4()}/test_write.txt"
     content = "This should succeed too."
 
@@ -98,6 +116,9 @@ async def test_write_to_non_existing_directory(async_sandbox: AsyncSandbox):
 
     read_content = await async_sandbox.files.read(filename)
     assert read_content == content
+
+    if debug:
+        await async_sandbox.files.remove(filename)
 
 
 async def test_write_with_secured_envd(async_sandbox_factory):
@@ -117,3 +138,39 @@ async def test_write_with_secured_envd(async_sandbox_factory):
 
     read_content = await sbx.files.read(filename)
     assert read_content == content
+
+
+async def test_write_files_with_different_data_types(
+    async_sandbox: AsyncSandbox, debug
+):
+    text_data = "Text string data"
+    bytes_data = b"Bytes data"
+    bytes_io_data = io.BytesIO(b"BytesIO data")
+    string_io_data = io.StringIO("StringIO data")
+
+    files = [
+        WriteEntry(path="writefiles_text.txt", data=text_data),
+        WriteEntry(path="writefiles_bytes.bin", data=bytes_data),
+        WriteEntry(path="writefiles_bytesio.bin", data=bytes_io_data),
+        WriteEntry(path="writefiles_stringio.txt", data=string_io_data),
+    ]
+
+    infos = await async_sandbox.files.write_files(files)
+
+    assert len(infos) == 4
+
+    text_content = await async_sandbox.files.read("writefiles_text.txt")
+    assert text_content == text_data
+
+    bytes_content = await async_sandbox.files.read("writefiles_bytes.bin")
+    assert bytes_content == "Bytes data"
+
+    bytes_io_content = await async_sandbox.files.read("writefiles_bytesio.bin")
+    assert bytes_io_content == "BytesIO data"
+
+    string_io_content = await async_sandbox.files.read("writefiles_stringio.txt")
+    assert string_io_content == "StringIO data"
+
+    if debug:
+        for file in files:
+            await async_sandbox.files.remove(file["path"])
