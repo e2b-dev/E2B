@@ -554,21 +554,23 @@ export class TemplateBase
       throw new Error('Browser runtime is not supported for copyItems')
     }
 
-    // Validate all paths at the copyItems call site before delegating to copy
-    // This ensures validation errors point to user code, not internal SDK code
+    // Stack trace that will be used to re-throw the error with
     const stackTrace = getCallerFrame(STACK_TRACE_DEPTH - 1)
-    for (const item of items) {
-      validateRelativePath(item.src.toString(), stackTrace)
-    }
 
     this.runInNewStackTraceContext(() => {
       for (const item of items) {
-        this.copy(item.src, item.dest, {
-          forceUpload: item.forceUpload,
-          user: item.user,
-          mode: item.mode,
-          resolveSymlinks: item.resolveSymlinks,
-        })
+        try {
+          this.copy(item.src, item.dest, {
+            forceUpload: item.forceUpload,
+            user: item.user,
+            mode: item.mode,
+            resolveSymlinks: item.resolveSymlinks,
+          })
+        } catch (error) {
+          const copyError = error as Error
+          copyError.stack = stackTrace
+          throw copyError
+        }
       }
     })
 

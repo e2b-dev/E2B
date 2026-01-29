@@ -118,8 +118,7 @@ class TemplateBuilder:
         ])
         ```
         """
-        # Validate all paths at the copy_items call site before delegating to copy
-        # This ensures validation errors point to user code, not internal SDK code
+        # Get the stack trace at the copy_items call site
         caller_frame = get_caller_frame(STACK_TRACE_DEPTH - 1)
         stack_trace = None
         if caller_frame is not None:
@@ -129,22 +128,30 @@ class TemplateBuilder:
                 tb_lasti=caller_frame.f_lasti,
                 tb_lineno=caller_frame.f_lineno,
             )
-        for item in items:
-            validate_relative_path(str(item["src"]), stack_trace)
 
-        self._template._run_in_new_stack_trace_context(
-            lambda: [
-                self.copy(
-                    item["src"],
-                    item["dest"],
-                    item.get("forceUpload"),
-                    item.get("user"),
-                    item.get("mode"),
-                    item.get("resolveSymlinks"),
-                )
-                for item in items
-            ]
-        )
+        def _copy_items():
+            for item in items:
+                src = str(item["src"])
+
+                # Validate that the source path is a relative path within the context directory
+                validate_relative_path(src, stack_trace)
+
+                try:
+                    self.copy(
+                        item["src"],
+                        item["dest"],
+                        item.get("forceUpload"),
+                        item.get("user"),
+                        item.get("mode"),
+                        item.get("resolveSymlinks"),
+                    )
+                except Exception as error:
+                    # Re-raise the error with the captured stack trace
+                    if stack_trace is not None:
+                        raise error.with_traceback(stack_trace)
+                    raise
+
+        self._template._run_in_new_stack_trace_context(_copy_items)
         return self
 
     def remove(
