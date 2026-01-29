@@ -11,9 +11,7 @@ from e2b.template.types import TemplateBuildStatus
 import e2b.template_sync.main as template_sync_main
 import e2b.template_sync.build_api as build_api_mod
 
-non_existent_path = "/nonexistent/path"
-# Use a relative path for copy tests since absolute paths are now rejected
-non_existent_relative_path = "nonexistent/path"
+non_existent_path = "nonexistent/path"
 
 # map template alias -> failed step index
 failure_map: dict[str, Optional[int]] = {
@@ -168,7 +166,7 @@ def test_traces_on_copy(build):
     template = Template()
     template = template.from_base_image()
     template = template.skip_cache().copy(
-        non_existent_relative_path, non_existent_relative_path
+        non_existent_path, non_existent_path
     )
     _expect_to_throw_and_check_trace(lambda: build(template, name="copy"), "copy")
 
@@ -178,7 +176,7 @@ def test_traces_on_copyItems(build):
     template = Template()
     template = template.from_base_image()
     template = template.skip_cache().copy_items(
-        [CopyItem(src=non_existent_relative_path, dest=non_existent_relative_path)]
+        [CopyItem(src=non_existent_path, dest=non_existent_path)]
     )
     _expect_to_throw_and_check_trace(
         lambda: build(template, name="copy_items"), "copy_items"
