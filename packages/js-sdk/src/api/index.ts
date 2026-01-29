@@ -58,21 +58,21 @@ class ApiClient {
     if (opts?.requireApiKey && !config.apiKey) {
       throw new AuthenticationError(
         'API key is required, please visit the Team tab at https://e2b.dev/dashboard to get your API key. ' +
-          'You can either set the environment variable `E2B_API_KEY` ' +
-          "or you can pass it directly to the sandbox like Sandbox.create({ apiKey: 'e2b_...' })"
+        'You can either set the environment variable `E2B_API_KEY` ' +
+        "or you can pass it directly to the sandbox like Sandbox.create({ apiKey: 'e2b_...' })"
       )
     }
 
     if (opts?.requireAccessToken && !config.accessToken) {
       throw new AuthenticationError(
         'Access token is required, please visit the Personal tab at https://e2b.dev/dashboard to get your access token. ' +
-          'You can set the environment variable `E2B_ACCESS_TOKEN` or pass the `accessToken` in options.'
+        'You can set the environment variable `E2B_ACCESS_TOKEN` or pass the `accessToken` in options.'
       )
     }
 
     this.api = createClient<paths>({
       baseUrl: config.apiUrl,
-      // this is only for documentation purposes, as undici (Node.js HTTP client)  always keeps connections alive
+      // In HTTP 1.1, all connections are considered persistent unless declared otherwise
       // keepalive: true,
       headers: {
         ...defaultHeaders,
