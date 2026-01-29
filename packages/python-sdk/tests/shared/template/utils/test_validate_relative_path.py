@@ -73,6 +73,10 @@ class TestValidateRelativePathInvalidEscape:
         with pytest.raises(TemplateException):
             validate_relative_path("..", None)
 
+    def test_rejects_current_directory_followed_by_parent(self):
+        with pytest.raises(TemplateException):
+            validate_relative_path("./..", None)
+
     def test_rejects_deeply_nested_escape(self):
         with pytest.raises(TemplateException):
             validate_relative_path("a/b/c/../../../../escape", None)

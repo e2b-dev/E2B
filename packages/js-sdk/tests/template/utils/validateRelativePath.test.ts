@@ -119,6 +119,10 @@ describe('validateRelativePath', () => {
       expect(() => validateRelativePath('..', undefined)).toThrow(TemplateError)
     })
 
+    test('rejects current directory followed by parent', () => {
+      expect(() => validateRelativePath('./..', undefined)).toThrow(TemplateError)
+    })
+
     test('rejects deeply nested escape', () => {
       expect(() =>
         validateRelativePath('a/b/c/../../../../escape', undefined)
