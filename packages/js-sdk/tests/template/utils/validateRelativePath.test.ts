@@ -56,22 +56,20 @@ describe('validateRelativePath', () => {
       expect(() => validateRelativePath('/', undefined)).toThrow(TemplateError)
     })
 
-    // Windows path tests - path.isAbsolute handles these correctly on all platforms
+    // Windows path tests - using path.win32.isAbsolute ensures cross-platform detection
     test('rejects Windows drive letter path', () => {
-      // Note: On Unix, path.isAbsolute('C:\\foo') returns false, but we check both
-      // path separators. For cross-platform safety, we mainly rely on the
-      // normalization check which catches most escape attempts.
-      // This test verifies the behavior on the current platform.
-      const windowsPath = 'C:\\Windows\\System32'
-      // path.isAbsolute behavior differs by platform:
-      // - On Windows: returns true for 'C:\...'
-      // - On Unix: returns false for 'C:\...'
-      // The validation should at minimum not allow the path to escape
-      if (process.platform === 'win32') {
-        expect(() => validateRelativePath(windowsPath, undefined)).toThrow(
-          TemplateError
-        )
-      }
+      expect(() =>
+        validateRelativePath('C:\\Windows\\System32', undefined)
+      ).toThrow(TemplateError)
+      expect(() =>
+        validateRelativePath('C:\\Windows\\System32', undefined)
+      ).toThrow('absolute paths are not allowed')
+    })
+
+    test('rejects Windows UNC path', () => {
+      expect(() =>
+        validateRelativePath('\\\\server\\share', undefined)
+      ).toThrow(TemplateError)
     })
   })
 

@@ -30,8 +30,9 @@ export function validateRelativePath(
   stackTrace: string | undefined
 ): void {
   // Check for absolute paths (Unix-style starting with / or Windows-style with drive letter)
-  // path.isAbsolute handles both Unix (/foo) and Windows (C:\foo, \\server\share) paths
-  if (path.isAbsolute(src)) {
+  // path.isAbsolute uses platform-specific rules, so we also check path.win32.isAbsolute
+  // to catch Windows absolute paths (C:\foo, \\server\share) when running on Unix
+  if (path.isAbsolute(src) || path.win32.isAbsolute(src)) {
     const error = new TemplateError(
       `Invalid source path "${src}": absolute paths are not allowed. Use a relative path within the context directory.`,
       stackTrace
