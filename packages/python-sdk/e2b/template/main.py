@@ -131,11 +131,6 @@ class TemplateBuilder:
 
         def _copy_items():
             for item in items:
-                src = str(item["src"])
-
-                # Validate that the source path is a relative path within the context directory
-                validate_relative_path(src, stack_trace)
-
                 try:
                     self.copy(
                         item["src"],
