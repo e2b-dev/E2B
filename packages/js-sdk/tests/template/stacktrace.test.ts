@@ -196,9 +196,7 @@ buildTemplateTest('traces on fromGCPRegistry', async ({ buildTemplate }) => {
 
 buildTemplateTest('traces on copy', async ({ buildTemplate }) => {
   let template = Template().fromBaseImage()
-  template = template
-    .skipCache()
-    .copy(nonExistentPath, nonExistentPath)
+  template = template.skipCache().copy(nonExistentPath, nonExistentPath)
   await expectToThrowAndCheckTrace(async () => {
     await buildTemplate(template, { name: 'copy' })
   }, 'copy')
@@ -208,9 +206,7 @@ buildTemplateTest('traces on copyItems', async ({ buildTemplate }) => {
   let template = Template().fromBaseImage()
   template = template
     .skipCache()
-    .copyItems([
-      { src: nonExistentPath, dest: nonExistentPath },
-    ])
+    .copyItems([{ src: nonExistentPath, dest: nonExistentPath }])
   await expectToThrowAndCheckTrace(async () => {
     await buildTemplate(template, { name: 'copyItems' })
   }, 'copyItems')

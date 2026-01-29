@@ -165,9 +165,7 @@ def test_traces_on_from_gcp_registry(build):
 def test_traces_on_copy(build):
     template = Template()
     template = template.from_base_image()
-    template = template.skip_cache().copy(
-        non_existent_path, non_existent_path
-    )
+    template = template.skip_cache().copy(non_existent_path, non_existent_path)
     _expect_to_throw_and_check_trace(lambda: build(template, name="copy"), "copy")
 
 
