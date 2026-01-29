@@ -30,6 +30,12 @@ class TestValidateRelativePathValid:
         validate_relative_path("**/*.ts", None)
         validate_relative_path("src/**/*", None)
 
+    def test_accepts_filenames_starting_with_double_dots(self):
+        validate_relative_path("..myconfig", None)
+        validate_relative_path("..cache", None)
+        validate_relative_path("...something", None)
+        validate_relative_path("foo/..myconfig", None)
+
 
 class TestValidateRelativePathInvalidAbsolute:
     """Test cases for invalid absolute paths."""

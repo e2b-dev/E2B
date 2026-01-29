@@ -40,6 +40,17 @@ describe('validateRelativePath', () => {
         validateRelativePath('.config/settings', undefined)
       ).not.toThrow()
     })
+
+    test('accepts filenames starting with double dots', () => {
+      expect(() => validateRelativePath('..myconfig', undefined)).not.toThrow()
+      expect(() => validateRelativePath('..cache', undefined)).not.toThrow()
+      expect(() =>
+        validateRelativePath('...something', undefined)
+      ).not.toThrow()
+      expect(() =>
+        validateRelativePath('foo/..myconfig', undefined)
+      ).not.toThrow()
+    })
   })
 
   describe('invalid paths - absolute', () => {

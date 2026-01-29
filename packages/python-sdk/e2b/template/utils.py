@@ -1,5 +1,6 @@
 import hashlib
 import os
+import ntpath
 import io
 import tarfile
 import json
@@ -55,17 +56,24 @@ def validate_relative_path(
         ).with_traceback(stack_trace)
 
     # Normalize the path and check if it escapes the context directory
-    # os.path.normpath handles both Unix and Windows path separators
+    # We check both native and Windows normalization to catch escapes on all platforms
     normalized = os.path.normpath(src)
+    normalized_win = ntpath.normpath(src)
 
-    # After normalization, a path that escapes would start with '..' or be '..'
+    # After normalization, a path that escapes would be '..' or start with '../' (or '..\' on Windows)
+    # We check for '..' followed by path separator to avoid false positives on filenames like '..myconfig'
+    # We also check Windows-style paths (using ntpath) to catch '..\' escapes when running on Unix
     # Examples:
     # - '../foo' -> '../foo' (escapes)
     # - 'foo/../../bar' -> '../bar' (escapes)
     # - './foo/../../../bar' -> '../../bar' (escapes)
     # - 'foo/../bar' -> 'bar' (doesn't escape)
     # - './foo/bar' -> 'foo/bar' (doesn't escape)
-    if normalized.startswith("..") or normalized == "..":
+    # - '..myconfig' -> '..myconfig' (valid filename, doesn't escape)
+    escapes_native = normalized == ".." or normalized.startswith(".." + os.sep)
+    escapes_win = normalized_win == ".." or normalized_win.startswith(".." + ntpath.sep)
+
+    if escapes_native or escapes_win:
         raise TemplateException(
             f'Invalid source path "{src}": path escapes the context directory. '
             "The path must stay within the context directory."

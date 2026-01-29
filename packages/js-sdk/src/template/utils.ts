@@ -41,17 +41,27 @@ export function validateRelativePath(
   }
 
   // Normalize the path and check if it escapes the context directory
-  // path.normalize handles both Unix and Windows path separators
+  // We check both native and Windows normalization to catch escapes on all platforms
   const normalized = path.normalize(src)
+  const normalizedWin32 = path.win32.normalize(src)
 
-  // After normalization, a path that escapes would start with '..' or be '..'
+  // After normalization, a path that escapes would be '..' or start with '../' (or '..\' on Windows)
+  // We check for '..' followed by path separator to avoid false positives on filenames like '..myconfig'
+  // We also check Windows-style paths (using path.win32) to catch '..\' escapes when running on Unix
   // Examples:
   // - '../foo' -> '../foo' (escapes)
   // - 'foo/../../bar' -> '../bar' (escapes)
   // - './foo/../../../bar' -> '../../bar' (escapes)
   // - 'foo/../bar' -> 'bar' (doesn't escape)
   // - './foo/bar' -> 'foo/bar' (doesn't escape)
-  if (normalized.startsWith('..') || normalized === '..') {
+  // - '..myconfig' -> '..myconfig' (valid filename, doesn't escape)
+  const escapesNative =
+    normalized === '..' || normalized.startsWith('..' + path.sep)
+  const escapesWin32 =
+    normalizedWin32 === '..' ||
+    normalizedWin32.startsWith('..' + path.win32.sep)
+
+  if (escapesNative || escapesWin32) {
     const error = new TemplateError(
       `Invalid source path "${src}": path escapes the context directory. The path must stay within the context directory.`,
       stackTrace
