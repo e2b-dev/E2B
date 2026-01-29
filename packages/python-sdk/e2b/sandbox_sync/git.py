@@ -1,21 +1,21 @@
 from typing import Dict, List, Optional
 
 from e2b.sandbox.git_utils import (
-  GitBranches,
-  GitStatus,
-  build_auth_error_message,
-  build_git_command,
-  build_push_args,
-  build_upstream_error_message,
-  is_auth_failure,
-  is_missing_upstream,
-  parse_git_branches,
-  parse_git_status,
-  resolve_config_scope,
-  shell_escape,
-  strip_credentials,
-  derive_repo_dir_from_url,
-  with_credentials,
+    GitBranches,
+    GitStatus,
+    build_auth_error_message,
+    build_git_command,
+    build_push_args,
+    build_upstream_error_message,
+    is_auth_failure,
+    is_missing_upstream,
+    parse_git_branches,
+    parse_git_status,
+    resolve_config_scope,
+    shell_escape,
+    strip_credentials,
+    derive_repo_dir_from_url,
+    with_credentials,
 )
 from e2b.exceptions import (
     GitAuthException,
@@ -322,9 +322,7 @@ class Git:
         except CommandExitException as err:
             if is_auth_failure(err):
                 raise GitAuthException(
-                    build_auth_error_message(
-                        "clone", bool(username) and not password
-                    )
+                    build_auth_error_message("clone", bool(username) and not password)
                 ) from err
             raise
 
@@ -860,9 +858,7 @@ class Git:
         except CommandExitException as err:
             if is_auth_failure(err):
                 raise GitAuthException(
-                    build_auth_error_message(
-                        "push", bool(username) and not password
-                    )
+                    build_auth_error_message("push", bool(username) and not password)
                 ) from err
             if is_missing_upstream(err):
                 raise GitUpstreamException(
@@ -948,9 +944,7 @@ class Git:
         except CommandExitException as err:
             if is_auth_failure(err):
                 raise GitAuthException(
-                    build_auth_error_message(
-                        "pull", bool(username) and not password
-                    )
+                    build_auth_error_message("pull", bool(username) and not password)
                 ) from err
             if is_missing_upstream(err):
                 raise GitUpstreamException(

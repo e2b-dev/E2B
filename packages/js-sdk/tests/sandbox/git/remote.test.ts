@@ -8,17 +8,20 @@ import {
   startGitDaemon,
 } from './helpers.js'
 
-sandboxTest('git remoteGet returns undefined for missing remote', async ({ sandbox }) => {
-  const baseDir = await createBaseDir(sandbox)
+sandboxTest(
+  'git remoteGet returns undefined for missing remote',
+  async ({ sandbox }) => {
+    const baseDir = await createBaseDir(sandbox)
 
-  try {
-    const repoPath = await createRepo(sandbox, baseDir)
-    const missingUrl = await sandbox.git.remoteGet(repoPath, 'origin')
-    expect(missingUrl).toBeUndefined()
-  } finally {
-    await cleanupBaseDir(sandbox, baseDir)
+    try {
+      const repoPath = await createRepo(sandbox, baseDir)
+      const missingUrl = await sandbox.git.remoteGet(repoPath, 'origin')
+      expect(missingUrl).toBeUndefined()
+    } finally {
+      await cleanupBaseDir(sandbox, baseDir)
+    }
   }
-})
+)
 
 sandboxTest('git remoteAdd adds remote', async ({ sandbox }) => {
   const baseDir = await createBaseDir(sandbox)

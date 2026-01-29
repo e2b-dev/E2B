@@ -39,7 +39,7 @@ export interface GitRequestOpts
       CommandStartOpts,
       'envs' | 'user' | 'cwd' | 'timeoutMs' | 'requestTimeoutMs'
     >
-  > { }
+  > {}
 
 /**
  * Options for cloning a repository.
@@ -284,7 +284,7 @@ export interface GitDangerouslyAuthenticateOpts extends GitRequestOpts {
  * Module for running git operations in the sandbox.
  */
 export class Git {
-  constructor(private readonly commands: Commands) { }
+  constructor(private readonly commands: Commands) {}
 
   /**
    * Clone a git repository into the sandbox.
@@ -1044,7 +1044,6 @@ export class Git {
       return false
     }
   }
-
 }
 
 export type {
