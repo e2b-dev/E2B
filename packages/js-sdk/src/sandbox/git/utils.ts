@@ -1,4 +1,5 @@
 import { InvalidArgumentError } from '../../errors'
+import { CommandExitError } from '../commands/commandHandle'
 
 /**
  * Parsed git status entry for a file.
@@ -43,6 +44,11 @@ export type GitStatusLabel =
   | 'typechange'
   | 'untracked'
   | 'unknown'
+
+/**
+ * Scope for git config operations.
+ */
+export type GitConfigScope = 'global' | 'local' | 'system'
 
 /**
  * Parsed git repository status.
@@ -244,6 +250,31 @@ export function buildGitCommand(args: string[], repoPath?: string): string {
   parts.push(...args)
 
   return parts.map((part) => shellEscape(part)).join(' ')
+}
+
+type GitPushArgsOptions = {
+  remote?: string
+  branch?: string
+  setUpstream: boolean
+}
+
+export function buildPushArgs(
+  remoteName: string | undefined,
+  opts: GitPushArgsOptions
+): string[] {
+  const { remote, branch, setUpstream } = opts
+  const args = ['push']
+  const targetRemote = remoteName ?? remote
+  if (setUpstream && targetRemote) {
+    args.push('--set-upstream')
+  }
+  if (targetRemote) {
+    args.push(targetRemote)
+  }
+  if (branch) {
+    args.push(branch)
+  }
+  return args
 }
 
 function parseAheadBehind(segment?: string): { ahead: number; behind: number } {
@@ -472,4 +503,93 @@ export function parseGitBranches(output: string): GitBranches {
   }
 
   return { branches, currentBranch }
+}
+
+export function isAuthFailure(err: unknown): boolean {
+  if (!(err instanceof CommandExitError)) {
+    return false
+  }
+
+  const message = `${err.stderr}\n${err.stdout}`.toLowerCase()
+  const authSnippets = [
+    'authentication failed',
+    'terminal prompts disabled',
+    'could not read username',
+    'invalid username or password',
+    'access denied',
+    'permission denied',
+    'not authorized',
+  ]
+
+  return authSnippets.some((snippet) => message.includes(snippet))
+}
+
+export function getScopeFlag(scope: GitConfigScope): `--${GitConfigScope}` {
+  if (scope !== 'global' && scope !== 'local' && scope !== 'system') {
+    throw new InvalidArgumentError(
+      'Git config scope must be one of: global, local, system.'
+    )
+  }
+  return `--${scope}`
+}
+
+export function isMissingUpstream(err: unknown): boolean {
+  if (!(err instanceof CommandExitError)) {
+    return false
+  }
+
+  const message = `${err.stderr}\n${err.stdout}`.toLowerCase()
+  const upstreamSnippets = [
+    'has no upstream branch',
+    'no upstream branch',
+    'no upstream configured',
+    'no tracking information for the current branch',
+    'no tracking information',
+    'set the remote as upstream',
+    'set the upstream branch',
+    'please specify which branch you want to merge with',
+  ]
+
+  return upstreamSnippets.some((snippet) => message.includes(snippet))
+}
+
+export function buildAuthErrorMessage(
+  action: 'clone' | 'push' | 'pull',
+  missingPassword: boolean
+): string {
+  if (missingPassword) {
+    return `Git ${action} requires a password/token for private repositories.`
+  }
+  return `Git ${action} requires credentials for private repositories.`
+}
+
+export function buildUpstreamErrorMessage(action: 'push' | 'pull'): string {
+  if (action === 'push') {
+    return (
+      'Git push failed because no upstream branch is configured. ' +
+      'Set upstream once with { setUpstream: true } (and optional remote/branch), ' +
+      'or pass remote and branch explicitly.'
+    )
+  }
+
+  return (
+    'Git pull failed because no upstream branch is configured. ' +
+    'Pass remote and branch explicitly, or set upstream once (push with { setUpstream: true } ' +
+    'or run: git branch --set-upstream-to=origin/<branch> <branch>).'
+  )
+}
+
+export function getRepoPathForScope(
+  scope: GitConfigScope,
+  path?: string
+): string | undefined {
+  if (scope !== 'local') {
+    return undefined
+  }
+  if (!path) {
+    throw new InvalidArgumentError(
+      'A repository path is required when using scope "local".'
+    )
+  }
+  return path
 }

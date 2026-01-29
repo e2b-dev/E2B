@@ -7,15 +7,21 @@ from e2b.exceptions import (
 )
 from e2b.sandbox.commands.command_handle import CommandExitException
 from e2b.sandbox.git_utils import (
-    GitBranches,
-    GitStatus,
-    build_git_command,
-    parse_git_branches,
-    parse_git_status,
-    shell_escape,
-    strip_credentials,
-    derive_repo_dir_from_url,
-    with_credentials,
+  GitBranches,
+  GitStatus,
+  build_auth_error_message,
+  build_git_command,
+  build_push_args,
+  build_upstream_error_message,
+  is_auth_failure,
+  is_missing_upstream,
+  parse_git_branches,
+  parse_git_status,
+  resolve_config_scope,
+  shell_escape,
+  strip_credentials,
+  derive_repo_dir_from_url,
+  with_credentials,
 )
 from e2b.sandbox_async.commands.command import Commands
 
@@ -99,58 +105,6 @@ class Git:
             request_timeout=request_timeout,
         )
 
-    def _is_auth_failure(self, err: Exception) -> bool:
-        if not isinstance(err, CommandExitException):
-            return False
-
-        message = f"{err.stderr}\n{err.stdout}".lower()
-        auth_snippets = [
-            "authentication failed",
-            "terminal prompts disabled",
-            "could not read username",
-            "invalid username or password",
-            "access denied",
-            "permission denied",
-            "not authorized",
-        ]
-        return any(snippet in message for snippet in auth_snippets)
-
-    def _is_missing_upstream(self, err: Exception) -> bool:
-        if not isinstance(err, CommandExitException):
-            return False
-
-        message = f"{err.stderr}\n{err.stdout}".lower()
-        upstream_snippets = [
-            "has no upstream branch",
-            "no upstream branch",
-            "no upstream configured",
-            "no tracking information for the current branch",
-            "no tracking information",
-            "set the remote as upstream",
-            "set the upstream branch",
-            "please specify which branch you want to merge with",
-        ]
-        return any(snippet in message for snippet in upstream_snippets)
-
-    def _build_auth_error_message(self, action: str, missing_password: bool) -> str:
-        if missing_password:
-            return f"Git {action} requires a password/token for private repositories."
-        return f"Git {action} requires credentials for private repositories."
-
-    def _build_upstream_error_message(self, action: str) -> str:
-        if action == "push":
-            return (
-                "Git push failed because no upstream branch is configured. "
-                "Set upstream once with set_upstream=True (and optional remote/branch), "
-                "or pass remote and branch explicitly."
-            )
-
-        return (
-            "Git pull failed because no upstream branch is configured. "
-            "Pass remote and branch explicitly, or set upstream once (push with "
-            "set_upstream=True or run: git branch --set-upstream-to=origin/<branch> <branch>)."
-        )
-
     async def _has_upstream(
         self,
         path: str,
@@ -173,24 +127,6 @@ class Git:
             return bool(result.stdout.strip())
         except Exception:
             return False
-
-    def _build_push_args(
-        self,
-        remote_name: Optional[str],
-        *,
-        remote: Optional[str],
-        branch: Optional[str],
-        set_upstream: bool,
-    ) -> List[str]:
-        args = ["push"]
-        target_remote = remote_name or remote
-        if set_upstream and target_remote:
-            args.append("--set-upstream")
-        if target_remote:
-            args.append(target_remote)
-        if branch:
-            args.append(branch)
-        return args
 
     async def _resolve_remote_name(
         self,
@@ -386,9 +322,9 @@ class Git:
         try:
             return await attempt_clone(username, password)
         except CommandExitException as err:
-            if self._is_auth_failure(err):
+            if is_auth_failure(err):
                 raise GitAuthException(
-                    self._build_auth_error_message(
+                    build_auth_error_message(
                         "clone", bool(username) and not password
                     )
                 ) from err
@@ -807,7 +743,7 @@ class Git:
                 timeout,
                 request_timeout,
                 operation=lambda: self._run_git(
-                    self._build_push_args(
+                    build_push_args(
                         remote_name,
                         remote=remote,
                         branch=branch,
@@ -824,7 +760,7 @@ class Git:
 
         try:
             return await self._run_git(
-                self._build_push_args(
+                build_push_args(
                     None,
                     remote=remote,
                     branch=branch,
@@ -838,15 +774,15 @@ class Git:
                 request_timeout,
             )
         except CommandExitException as err:
-            if self._is_auth_failure(err):
+            if is_auth_failure(err):
                 raise GitAuthException(
-                    self._build_auth_error_message(
+                    build_auth_error_message(
                         "push", bool(username) and not password
                     )
                 ) from err
-            if self._is_missing_upstream(err):
+            if is_missing_upstream(err):
                 raise GitUpstreamException(
-                    self._build_upstream_error_message("push")
+                    build_upstream_error_message("push")
                 ) from err
             raise
 
@@ -888,7 +824,7 @@ class Git:
                 path, envs, user, cwd, timeout, request_timeout
             )
             if not has_upstream:
-                raise GitUpstreamException(self._build_upstream_error_message("pull"))
+                raise GitUpstreamException(build_upstream_error_message("pull"))
 
         def build_args(remote_name: Optional[str] = None) -> List[str]:
             args = ["pull"]
@@ -929,15 +865,15 @@ class Git:
                 build_args(), path, envs, user, cwd, timeout, request_timeout
             )
         except CommandExitException as err:
-            if self._is_auth_failure(err):
+            if is_auth_failure(err):
                 raise GitAuthException(
-                    self._build_auth_error_message(
+                    build_auth_error_message(
                         "pull", bool(username) and not password
                     )
                 ) from err
-            if self._is_missing_upstream(err):
+            if is_missing_upstream(err):
                 raise GitUpstreamException(
-                    self._build_upstream_error_message("pull")
+                    build_upstream_error_message("pull")
                 ) from err
             raise
 
@@ -972,7 +908,7 @@ class Git:
         if not key:
             raise InvalidArgumentException("Git config key is required.")
 
-        scope_flag, repo_path = self._resolve_config_scope(scope, path)
+        scope_flag, repo_path = resolve_config_scope(scope, path)
         return await self._run_git(
             ["config", scope_flag, key, value],
             repo_path,
@@ -1012,7 +948,7 @@ class Git:
         if not key:
             raise InvalidArgumentException("Git config key is required.")
 
-        scope_flag, repo_path = self._resolve_config_scope(scope, path)
+        scope_flag, repo_path = resolve_config_scope(scope, path)
         cmd = (
             f"{build_git_command(['config', scope_flag, '--get', key], repo_path)} "
             "|| true"
@@ -1150,24 +1086,3 @@ class Git:
             timeout=timeout,
             request_timeout=request_timeout,
         )
-
-    def _resolve_config_scope(
-        self, scope: str, path: Optional[str]
-    ) -> tuple[str, Optional[str]]:
-        scope_name = (scope or "global").strip().lower()
-        if scope_name not in {"global", "local", "system"}:
-            raise InvalidArgumentException(
-                "Git config scope must be one of: global, local, system."
-            )
-
-        if scope_name == "local":
-            if not path:
-                raise InvalidArgumentException(
-                    "Repository path is required when scope is local."
-                )
-            return "--local", path
-
-        if scope_name == "system":
-            return "--system", None
-
-        return "--global", None

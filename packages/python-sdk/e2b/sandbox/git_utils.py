@@ -3,6 +3,7 @@ from typing import List, Optional
 from urllib.parse import urlparse, urlunparse
 
 from e2b.exceptions import InvalidArgumentException
+from e2b.sandbox.commands.command_handle import CommandExitException
 
 
 @dataclass
@@ -218,6 +219,143 @@ def build_git_command(args: List[str], repo_path: Optional[str] = None) -> str:
         parts.extend(["-C", repo_path])
     parts.extend(args)
     return " ".join(shell_escape(part) for part in parts)
+
+
+def build_push_args(
+    remote_name: Optional[str],
+    *,
+    remote: Optional[str],
+    branch: Optional[str],
+    set_upstream: bool,
+) -> List[str]:
+    """
+    Build arguments for a git push command.
+
+    :param remote_name: Resolved remote name, if any
+    :param remote: Remote name override
+    :param branch: Branch name to push
+    :param set_upstream: Whether to set upstream tracking
+    :return: List of git push arguments
+    """
+    args = ["push"]
+    target_remote = remote_name or remote
+    if set_upstream and target_remote:
+        args.append("--set-upstream")
+    if target_remote:
+        args.append(target_remote)
+    if branch:
+        args.append(branch)
+    return args
+
+
+def is_auth_failure(err: Exception) -> bool:
+    """
+    Check whether a git command failed due to authentication issues.
+
+    :param err: Exception raised by a git command
+    :return: True when the error matches common authentication failures
+    """
+    if not isinstance(err, CommandExitException):
+        return False
+
+    message = f"{err.stderr}\n{err.stdout}".lower()
+    auth_snippets = [
+        "authentication failed",
+        "terminal prompts disabled",
+        "could not read username",
+        "invalid username or password",
+        "access denied",
+        "permission denied",
+        "not authorized",
+    ]
+    return any(snippet in message for snippet in auth_snippets)
+
+
+def is_missing_upstream(err: Exception) -> bool:
+    """
+    Check whether a git command failed due to missing upstream tracking.
+
+    :param err: Exception raised by a git command
+    :return: True when the error matches common upstream failures
+    """
+    if not isinstance(err, CommandExitException):
+        return False
+
+    message = f"{err.stderr}\n{err.stdout}".lower()
+    upstream_snippets = [
+        "has no upstream branch",
+        "no upstream branch",
+        "no upstream configured",
+        "no tracking information for the current branch",
+        "no tracking information",
+        "set the remote as upstream",
+        "set the upstream branch",
+        "please specify which branch you want to merge with",
+    ]
+    return any(snippet in message for snippet in upstream_snippets)
+
+
+def build_auth_error_message(action: str, missing_password: bool) -> str:
+    """
+    Build a git authentication error message for the given action.
+
+    :param action: Git action name
+    :param missing_password: Whether the password/token is missing
+    :return: Error message string
+    """
+    if missing_password:
+        return f"Git {action} requires a password/token for private repositories."
+    return f"Git {action} requires credentials for private repositories."
+
+
+def build_upstream_error_message(action: str) -> str:
+    """
+    Build a git upstream tracking error message for the given action.
+
+    :param action: Git action name
+    :return: Error message string
+    """
+    if action == "push":
+        return (
+            "Git push failed because no upstream branch is configured. "
+            "Set upstream once with set_upstream=True (and optional remote/branch), "
+            "or pass remote and branch explicitly."
+        )
+
+    return (
+        "Git pull failed because no upstream branch is configured. "
+        "Pass remote and branch explicitly, or set upstream once (push with "
+        "set_upstream=True or run: git branch --set-upstream-to=origin/<branch> <branch>)."
+    )
+
+
+def resolve_config_scope(
+    scope: Optional[str], path: Optional[str]
+) -> tuple[str, Optional[str]]:
+    """
+    Resolve a git config scope flag and repository path.
+
+    :param scope: Requested scope ("global", "local", "system")
+    :param path: Repository path for local scope
+    :return: Tuple of (scope flag, repository path)
+    """
+    scope_name = (scope or "global").strip().lower()
+    if scope_name not in {"global", "local", "system"}:
+        raise InvalidArgumentException(
+            "Git config scope must be one of: global, local, system."
+        )
+
+    if scope_name == "local":
+        if not path:
+            raise InvalidArgumentException(
+                "Repository path is required when scope is local."
+            )
+        return "--local", path
+
+    if scope_name == "system":
+        return "--system", None
+
+    return "--global", None
 
 
 def _parse_ahead_behind(segment: Optional[str]) -> tuple[int, int]:

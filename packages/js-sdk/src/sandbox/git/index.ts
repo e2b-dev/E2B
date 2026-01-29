@@ -4,12 +4,20 @@ import {
   InvalidArgumentError,
 } from '../../errors'
 import type { CommandStartOpts } from '../commands'
-import { CommandExitError, type CommandResult } from '../commands/commandHandle'
+import type { CommandResult } from '../commands/commandHandle'
 import { Commands } from '../commands'
 import {
+  buildAuthErrorMessage,
   buildGitCommand,
+  buildPushArgs,
+  buildUpstreamErrorMessage,
   GitBranches,
+  GitConfigScope,
   GitStatus,
+  getRepoPathForScope,
+  getScopeFlag,
+  isAuthFailure,
+  isMissingUpstream,
   parseGitBranches,
   parseGitStatus,
   shellEscape,
@@ -31,7 +39,7 @@ export interface GitRequestOpts
       CommandStartOpts,
       'envs' | 'user' | 'cwd' | 'timeoutMs' | 'requestTimeoutMs'
     >
-  > {}
+  > { }
 
 /**
  * Options for cloning a repository.
@@ -230,8 +238,6 @@ export interface GitPullOpts extends GitRequestOpts {
 /**
  * Supported scopes for git config operations.
  */
-export type GitConfigScope = 'global' | 'local' | 'system'
-
 /**
  * Options for git config operations.
  */
@@ -278,7 +284,7 @@ export interface GitDangerouslyAuthenticateOpts extends GitRequestOpts {
  * Module for running git operations in the sandbox.
  */
 export class Git {
-  constructor(private readonly commands: Commands) {}
+  constructor(private readonly commands: Commands) { }
 
   /**
    * Clone a git repository into the sandbox.
@@ -349,9 +355,9 @@ export class Git {
     try {
       return await attemptClone(username, password)
     } catch (err) {
-      if (this.isAuthFailure(err)) {
+      if (isAuthFailure(err)) {
         throw new GitAuthError(
-          this.buildAuthErrorMessage('clone', Boolean(username) && !password)
+          buildAuthErrorMessage('clone', Boolean(username) && !password)
         )
       }
       throw err
@@ -698,7 +704,7 @@ export class Git {
         rest,
         () =>
           this.runGit(
-            this.buildPushArgs(remoteName, { remote, branch, setUpstream }),
+            buildPushArgs(remoteName, { remote, branch, setUpstream }),
             path,
             rest
           )
@@ -707,18 +713,18 @@ export class Git {
 
     try {
       return await this.runGit(
-        this.buildPushArgs(undefined, { remote, branch, setUpstream }),
+        buildPushArgs(undefined, { remote, branch, setUpstream }),
         path,
         rest
       )
     } catch (err) {
-      if (this.isAuthFailure(err)) {
+      if (isAuthFailure(err)) {
         throw new GitAuthError(
-          this.buildAuthErrorMessage('push', Boolean(username) && !password)
+          buildAuthErrorMessage('push', Boolean(username) && !password)
         )
       }
-      if (this.isMissingUpstream(err)) {
-        throw new GitUpstreamError(this.buildUpstreamErrorMessage('push'))
+      if (isMissingUpstream(err)) {
+        throw new GitUpstreamError(buildUpstreamErrorMessage('push'))
       }
       throw err
     }
@@ -742,7 +748,7 @@ export class Git {
     if (!remote && !branch) {
       const hasUpstream = await this.hasUpstream(path, rest)
       if (!hasUpstream) {
-        throw new GitUpstreamError(this.buildUpstreamErrorMessage('pull'))
+        throw new GitUpstreamError(buildUpstreamErrorMessage('pull'))
       }
     }
 
@@ -773,13 +779,13 @@ export class Git {
     try {
       return await this.runGit(buildArgs(), path, rest)
     } catch (err) {
-      if (this.isAuthFailure(err)) {
+      if (isAuthFailure(err)) {
         throw new GitAuthError(
-          this.buildAuthErrorMessage('pull', Boolean(username) && !password)
+          buildAuthErrorMessage('pull', Boolean(username) && !password)
         )
       }
-      if (this.isMissingUpstream(err)) {
-        throw new GitUpstreamError(this.buildUpstreamErrorMessage('pull'))
+      if (isMissingUpstream(err)) {
+        throw new GitUpstreamError(buildUpstreamErrorMessage('pull'))
       }
       throw err
     }
@@ -805,8 +811,8 @@ export class Git {
     }
 
     const scope = opts?.scope ?? 'global'
-    const scopeFlag = this.getScopeFlag(scope)
-    const repoPath = this.getRepoPathForScope(scope, opts?.path)
+    const scopeFlag = getScopeFlag(scope)
+    const repoPath = getRepoPathForScope(scope, opts?.path)
 
     return this.runGit(['config', scopeFlag, key, value], repoPath, opts)
   }
@@ -829,8 +835,8 @@ export class Git {
     }
 
     const scope = opts?.scope ?? 'global'
-    const scopeFlag = this.getScopeFlag(scope)
-    const repoPath = this.getRepoPathForScope(scope, opts?.path)
+    const scopeFlag = getScopeFlag(scope)
+    const repoPath = getRepoPathForScope(scope, opts?.path)
     const cmd = `${buildGitCommand(['config', scopeFlag, '--get', key], repoPath)} || true`
     const result = await this.runShell(cmd, opts)
     const trimmed = result.stdout.trim()
@@ -906,33 +912,6 @@ export class Git {
   }
 
   /**
-   * Builds the args for a git push command.
-   *
-   * @param remoteName Resolved remote name, if any.
-   * @param opts Push options.
-   * @returns Array of git push arguments.
-   */
-
-  private buildPushArgs(
-    remoteName: string | undefined,
-    opts: Pick<GitPushOpts, 'remote' | 'branch' | 'setUpstream'>
-  ): string[] {
-    const { remote, branch, setUpstream } = opts
-    const args = ['push']
-    const targetRemote = remoteName ?? remote
-    if (setUpstream && targetRemote) {
-      args.push('--set-upstream')
-    }
-    if (targetRemote) {
-      args.push(targetRemote)
-    }
-    if (branch) {
-      args.push(branch)
-    }
-    return args
-  }
-
-  /**
    * Build and execute a git command inside the sandbox.
    *
    * @param args Git arguments to pass to the git binary.
@@ -957,6 +936,8 @@ export class Git {
 
   /**
    * Execute a raw shell command while applying default git environment variables.
+   * 
+   Note: We can liekly just modify runGit later to allow appending commands to the git but for now it's separate.
    */
   private async runShell(
     cmd: string,
@@ -1007,71 +988,6 @@ export class Git {
 
     throw new InvalidArgumentError(
       'Remote is required when using username/password and the repository has multiple remotes.'
-    )
-  }
-
-  private isAuthFailure(err: unknown): boolean {
-    if (!(err instanceof CommandExitError)) {
-      return false
-    }
-
-    const message = `${err.stderr}\n${err.stdout}`.toLowerCase()
-    const authSnippets = [
-      'authentication failed',
-      'terminal prompts disabled',
-      'could not read username',
-      'invalid username or password',
-      'access denied',
-      'permission denied',
-      'not authorized',
-    ]
-
-    return authSnippets.some((snippet) => message.includes(snippet))
-  }
-
-  private isMissingUpstream(err: unknown): boolean {
-    if (!(err instanceof CommandExitError)) {
-      return false
-    }
-
-    const message = `${err.stderr}\n${err.stdout}`.toLowerCase()
-    const upstreamSnippets = [
-      'has no upstream branch',
-      'no upstream branch',
-      'no upstream configured',
-      'no tracking information for the current branch',
-      'no tracking information',
-      'set the remote as upstream',
-      'set the upstream branch',
-      'please specify which branch you want to merge with',
-    ]
-
-    return upstreamSnippets.some((snippet) => message.includes(snippet))
-  }
-
-  private buildAuthErrorMessage(
-    action: 'clone' | 'push' | 'pull',
-    missingPassword: boolean
-  ): string {
-    if (missingPassword) {
-      return `Git ${action} requires a password/token for private repositories.`
-    }
-    return `Git ${action} requires credentials for private repositories.`
-  }
-
-  private buildUpstreamErrorMessage(action: 'push' | 'pull'): string {
-    if (action === 'push') {
-      return (
-        'Git push failed because no upstream branch is configured. ' +
-        'Set upstream once with { setUpstream: true } (and optional remote/branch), ' +
-        'or pass remote and branch explicitly.'
-      )
-    }
-
-    return (
-      'Git pull failed because no upstream branch is configured. ' +
-      'Pass remote and branch explicitly, or set upstream once (push with { setUpstream: true } ' +
-      'or run: git branch --set-upstream-to=origin/<branch> <branch>).'
     )
   }
 
@@ -1129,29 +1045,11 @@ export class Git {
     }
   }
 
-  private getScopeFlag(scope: GitConfigScope): `--${GitConfigScope}` {
-    if (scope !== 'global' && scope !== 'local' && scope !== 'system') {
-      throw new InvalidArgumentError(
-        'Git config scope must be one of: global, local, system.'
-      )
-    }
-    return `--${scope}`
-  }
-
-  private getRepoPathForScope(
-    scope: GitConfigScope,
-    path?: string
-  ): string | undefined {
-    if (scope !== 'local') {
-      return undefined
-    }
-    if (!path) {
-      throw new InvalidArgumentError(
-        'A repository path is required when using scope "local".'
-      )
-    }
-    return path
-  }
 }
 
-export type { GitBranches, GitFileStatus, GitStatus } from './utils'
+export type {
+  GitBranches,
+  GitConfigScope,
+  GitFileStatus,
+  GitStatus,
+} from './utils'
