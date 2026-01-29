@@ -21,7 +21,6 @@ sandboxTest('git clone fetches repo', async ({ sandbox }) => {
       await sandbox.git.push(repoPath, {
         remote: 'origin',
         branch: 'main',
-        setUpstream: true,
       })
 
       await sandbox.git.clone(daemon.remoteUrl, { path: clonePath })

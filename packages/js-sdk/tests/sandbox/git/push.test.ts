@@ -20,7 +20,6 @@ sandboxTest('git push updates remote', async ({ sandbox }) => {
       await sandbox.git.push(repoPath, {
         remote: 'origin',
         branch: 'main',
-        setUpstream: true,
       })
 
       const message = (

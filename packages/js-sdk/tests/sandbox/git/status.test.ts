@@ -46,7 +46,7 @@ sandboxTest(
       await sandbox.files.write(`${repoPath}/README.md`, 'hello\n')
       await sandbox.files.write(`${repoPath}/DELETE.md`, 'delete me\n')
       await sandbox.files.write(`${repoPath}/RENAME.md`, 'rename me\n')
-      await sandbox.git.add(repoPath, { all: true })
+      await sandbox.git.add(repoPath)
       await sandbox.git.commit(repoPath, 'Initial commit', {
         authorName: AUTHOR_NAME,
         authorEmail: AUTHOR_EMAIL,
