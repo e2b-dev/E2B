@@ -8,7 +8,38 @@ import {
   startGitDaemon,
 } from './helpers.js'
 
-sandboxTest('git remoteAdd overwrite', async ({ sandbox }) => {
+sandboxTest('git remoteGet returns undefined for missing remote', async ({ sandbox }) => {
+  const baseDir = await createBaseDir(sandbox)
+
+  try {
+    const repoPath = await createRepo(sandbox, baseDir)
+    const missingUrl = await sandbox.git.remoteGet(repoPath, 'origin')
+    expect(missingUrl).toBeUndefined()
+  } finally {
+    await cleanupBaseDir(sandbox, baseDir)
+  }
+})
+
+sandboxTest('git remoteAdd adds remote', async ({ sandbox }) => {
+  const baseDir = await createBaseDir(sandbox)
+
+  try {
+    const repoPath = await createRepo(sandbox, baseDir)
+    const daemon = await startGitDaemon(sandbox, baseDir)
+
+    try {
+      await sandbox.git.remoteAdd(repoPath, 'origin', daemon.remoteUrl)
+      const remoteUrl = await sandbox.git.remoteGet(repoPath, 'origin')
+      expect(remoteUrl).toBe(daemon.remoteUrl)
+    } finally {
+      await daemon.handle.kill()
+    }
+  } finally {
+    await cleanupBaseDir(sandbox, baseDir)
+  }
+})
+
+sandboxTest('git remoteAdd overwrites existing remote', async ({ sandbox }) => {
   const baseDir = await createBaseDir(sandbox)
 
   try {
