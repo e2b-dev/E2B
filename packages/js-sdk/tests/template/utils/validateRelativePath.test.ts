@@ -33,6 +33,11 @@ describe('validateRelativePath', () => {
       expect(() => validateRelativePath('**/*.ts', undefined)).not.toThrow()
       expect(() => validateRelativePath('src/**/*', undefined)).not.toThrow()
     })
+
+    test('accepts hidden files and directories', () => {
+      expect(() => validateRelativePath('.hidden', undefined)).not.toThrow()
+      expect(() => validateRelativePath('.config/settings', undefined)).not.toThrow()
+    })
   })
 
   describe('invalid paths - absolute', () => {
@@ -75,6 +80,18 @@ describe('validateRelativePath', () => {
       )
       expect(() => validateRelativePath('../foo', undefined)).toThrow(
         'path escapes the context directory'
+      )
+    })
+
+    test('rejects parent directory escape with forward slash', () => {
+      expect(() => validateRelativePath('../file.txt', undefined)).toThrow(
+        TemplateError
+      )
+    })
+
+    test('rejects parent directory escape with backslash', () => {
+      expect(() => validateRelativePath('..\\file.txt', undefined)).toThrow(
+        TemplateError
       )
     })
 
