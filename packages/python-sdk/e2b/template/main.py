@@ -1,4 +1,5 @@
 import json
+import pathlib
 from typing import Dict, List, Optional, Union, Literal
 from pathlib import Path
 
@@ -21,6 +22,7 @@ from e2b.template.utils import (
     read_dockerignore,
     read_gcp_service_account_json,
     get_caller_frame,
+    is_safe_relative,
 )
 from types import TracebackType
 
@@ -64,10 +66,28 @@ class TemplateBuilder:
         """
         srcs = [src] if isinstance(src, (str, Path)) else src
 
+        normalized_dest = str(pathlib.PurePosixPath(dest))
+
         for src_item in srcs:
+            src_item = str(pathlib.PurePath(src_item))
+            if not is_safe_relative(src_item):
+                caller_frame = get_caller_frame(STACK_TRACE_DEPTH - 1)
+                stack_trace = None
+                if caller_frame is not None:
+                    stack_trace = TracebackType(
+                        tb_next=None,
+                        tb_frame=caller_frame,
+                        tb_lasti=caller_frame.f_lasti,
+                        tb_lineno=caller_frame.f_lineno,
+                    )
+
+                raise ValueError(
+                    f"Source path {src_item} is outside of the context directory."
+                ).with_traceback(stack_trace)
+
             args = [
-                str(src_item),
-                str(dest),
+                src_item,
+                normalized_dest,
                 user or "",
                 pad_octal(mode) if mode else "",
             ]
@@ -1297,9 +1317,11 @@ class TemplateBase:
                         *self._file_ignore_patterns,
                         *read_dockerignore(self._file_context_path),
                     ],
-                    resolve_symlinks
-                    if resolve_symlinks is not None
-                    else RESOLVE_SYMLINKS,
+                    (
+                        resolve_symlinks
+                        if resolve_symlinks is not None
+                        else RESOLVE_SYMLINKS
+                    ),
                     stack_trace,
                 )
 

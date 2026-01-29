@@ -1,9 +1,11 @@
 import hashlib
 import os
+import pathlib
 import io
 import tarfile
 import json
 import stat
+
 from wcmatch import glob
 import re
 import inspect
@@ -56,14 +58,9 @@ def read_dockerignore(context_path: str) -> List[str]:
     ]
 
 
-def normalize_path(path: str) -> str:
-    """
-    Normalize path separators to forward slashes for glob patterns (glob expects / even on Windows).
-
-    :param path: The path to normalize
-    :return: The normalized path
-    """
-    return path.replace(os.sep, "/")
+def _posix_pattern(p: str) -> str:
+    # wcmatch expects Unix-style separators in patterns
+    return p.replace("\\", "/")
 
 
 def get_all_files_in_path(
@@ -85,32 +82,41 @@ def get_all_files_in_path(
 
     # Use glob to find all files/directories matching the pattern under context_path
     abs_context_path = os.path.abspath(context_path)
+
+    src_pat = _posix_pattern(src)
+    ignore_pats = [_posix_pattern(p) for p in ignore_patterns]
+
     files_glob = glob.glob(
-        src,
+        # Replace backslashes with forward slashes for glob compatibility
+        src_pat,
         flags=glob.GLOBSTAR,
         root_dir=abs_context_path,
-        exclude=ignore_patterns,
+        exclude=ignore_pats,
     )
 
-    for file in files_glob:
+    for rel in files_glob:
         # Join it with abs_context_path to get the absolute path
-        file_path = os.path.join(abs_context_path, file)
+        abs_path = os.path.normpath(os.path.join(abs_context_path, rel))
 
-        if os.path.isdir(file_path):
+        if os.path.isdir(abs_path):
             # If it's a directory, add the directory and all entries recursively
             if include_directories:
-                files.add(file_path)
+                files.add(abs_path)
+
+            rel_pat = _posix_pattern(rel).rstrip("/")
+            dir_pat = f"{rel_pat}/**/*"
+
             dir_files = glob.glob(
-                normalize_path(file) + "/**/*",
+                dir_pat,
                 flags=glob.GLOBSTAR,
                 root_dir=abs_context_path,
                 exclude=ignore_patterns,
             )
             for dir_file in dir_files:
-                dir_file_path = os.path.join(abs_context_path, dir_file)
-                files.add(dir_file_path)
+                files.add(os.path.normpath(os.path.join(abs_context_path, dir_file)))
+
         else:
-            files.add(file_path)
+            files.add(abs_path)
 
     return sorted(list(files))
 
@@ -212,9 +218,10 @@ def tar_file_stream(
             file_name, file_context_path, ignore_patterns, True
         )
         for file in files:
-            tar.add(
-                file, arcname=os.path.relpath(file, file_context_path), recursive=False
-            )
+            # Use POSIX-style paths for tar arcnames (forward slashes)
+            # regardless of the platform, since tars are extracted on Linux
+            arcname = pathlib.PurePath(os.path.relpath(file, file_context_path)).as_posix()
+            tar.add(file, arcname=arcname, recursive=False)
 
     return tar_buffer
 
@@ -339,3 +346,16 @@ def read_gcp_service_account_json(
             return f.read()
     else:
         return json.dumps(path_or_content)
+
+
+def is_safe_relative(src: str) -> bool:
+    """
+    Returns True if src is a relative path that stays within the context directory.
+    Rejects absolute paths and paths that traverse outside via '..'.
+
+    :param src: Source path to validate
+    :return: True if the path is safe (relative and doesn't escape), False otherwise
+    """
+    normalized = pathlib.PurePath(src)
+    # After normalize_path, all separators are forward slashes
+    return not normalized.is_absolute() and ".." not in normalized.parts

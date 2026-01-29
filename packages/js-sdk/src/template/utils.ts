@@ -63,12 +63,50 @@ export function readDockerignore(contextPath: string): string[] {
 }
 
 /**
- * Normalize path separators to forward slashes for glob patterns (glob expects / even on Windows)
+ * Normalize paths on Windows and Unix
+ *
  * @param path - The path to normalize
  * @returns The normalized path
  */
-function normalizePath(path: string): string {
-  return path.replace(/\\/g, '/')
+export function normalizePath(path: string): string {
+  if (!path || path === '.') {
+    return '.'
+  }
+
+  // Remove drive letter if present (e.g., 'C:')
+  let workingPath = path
+  if (/^[a-zA-Z]:/.test(path)) {
+    workingPath = path.substring(2)
+  }
+
+  // Check if path is absolute
+  const isAbsolute = workingPath.startsWith('/') || workingPath.startsWith('\\')
+
+  // Normalize all separators to forward slashes and split
+  const normalizedPath = workingPath.replace(/[\\/]+/g, '/')
+  const parts = normalizedPath.split('/').filter((part) => part && part !== '.')
+
+  const normalized: string[] = []
+
+  for (const part of parts) {
+    if (part === '..') {
+      // Go up one directory if possible (but not past root for absolute paths)
+      if (normalized.length > 0 && normalized[normalized.length - 1] !== '..') {
+        normalized.pop()
+      } else if (!isAbsolute) {
+        // For relative paths, keep the '..' if we can't go up further
+        normalized.push('..')
+      }
+    } else {
+      normalized.push(part)
+    }
+  }
+
+  // Build the final path in POSIX style
+  const result = (isAbsolute ? '/' : '') + normalized.join('/')
+
+  // Return '.' for empty relative paths
+  return result || '.'
 }
 
 /**
@@ -407,4 +445,21 @@ export function readGCPServiceAccountJSON(
     return fs.readFileSync(path.join(contextPath, pathOrContent), 'utf-8')
   }
   return JSON.stringify(pathOrContent)
+}
+
+/**
+ * Returns true if src is a relative path and does not contain any up-path parts.
+ * Works on both Windows and Unix.
+ *
+ * @param src Source path
+ * @returns boolean
+ */
+export function isSafeRelative(src: string): boolean {
+  const normPath = normalizePath(src)
+  return !(
+    path.isAbsolute(normPath) ||
+    normPath === '..' ||
+    normPath.startsWith('../') ||
+    normPath.startsWith('..\\')
+  )
 }
