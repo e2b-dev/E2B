@@ -23,7 +23,6 @@ failure_map: dict[str, Optional[int]] = {
     "from_gcp_registry": 0,
     "copy": None,
     "copy_items": None,
-    "copy_absolute": None,
     "remove": 1,
     "rename": 1,
     "make_dir": 1,

@@ -21,7 +21,6 @@ const failureMap: Record<string, number | undefined> = {
   fromGCPRegistry: 0,
   copy: undefined,
   copyItems: undefined,
-  copyAbsolute: undefined,
   remove: 1,
   rename: 1,
   makeDir: 1,
