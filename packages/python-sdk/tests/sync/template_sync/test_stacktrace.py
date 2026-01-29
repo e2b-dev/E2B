@@ -23,6 +23,7 @@ failure_map: dict[str, Optional[int]] = {
     "from_gcp_registry": 0,
     "copy": None,
     "copy_items": None,
+    "copy_absolute": None,
     "remove": 1,
     "rename": 1,
     "make_dir": 1,
@@ -178,6 +179,14 @@ def test_traces_on_copyItems(build):
     )
     _expect_to_throw_and_check_trace(
         lambda: build(template, name="copy_items"), "copy_items"
+    )
+
+
+@pytest.mark.skip_debug()
+def test_traces_on_copy_absolute_path():
+    _expect_to_throw_and_check_trace(
+        lambda: Template().from_base_image().copy("/absolute/path", "/absolute/path"),
+        "copy",
     )
 
 

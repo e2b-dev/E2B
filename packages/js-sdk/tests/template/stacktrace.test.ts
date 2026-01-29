@@ -21,6 +21,7 @@ const failureMap: Record<string, number | undefined> = {
   fromGCPRegistry: 0,
   copy: undefined,
   copyItems: undefined,
+  copyAbsolute: undefined,
   remove: 1,
   rename: 1,
   makeDir: 1,
@@ -210,6 +211,12 @@ buildTemplateTest('traces on copyItems', async ({ buildTemplate }) => {
   await expectToThrowAndCheckTrace(async () => {
     await buildTemplate(template, { name: 'copyItems' })
   }, 'copyItems')
+})
+
+buildTemplateTest('traces on copy absolute path', async () => {
+  await expectToThrowAndCheckTrace(async () => {
+    Template().fromBaseImage().copy('/absolute/path', '/absolute/path')
+  }, 'copy')
 })
 
 buildTemplateTest('traces on remove', async ({ buildTemplate }) => {
