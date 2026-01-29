@@ -220,7 +220,9 @@ buildTemplateTest('traces on copy absolute path', async () => {
 
 buildTemplateTest('traces on copyItems absolute path', async () => {
   await expectToThrowAndCheckTrace(async () => {
-    Template().fromBaseImage().copyItems([{ src: '/absolute/path', dest: '/absolute/path' }])
+    Template()
+      .fromBaseImage()
+      .copyItems([{ src: '/absolute/path', dest: '/absolute/path' }])
   }, 'copyItems')
 })
 
