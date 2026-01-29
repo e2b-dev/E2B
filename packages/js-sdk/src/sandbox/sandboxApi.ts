@@ -67,12 +67,13 @@ export type SandboxNetworkOpts = {
 /**
  * Options for request to the Sandbox API.
  */
-export interface SandboxApiOpts extends Partial<
-  Pick<
-    ConnectionOpts,
-    'apiKey' | 'headers' | 'debug' | 'domain' | 'requestTimeoutMs'
-  >
-> {}
+export interface SandboxApiOpts
+  extends Partial<
+    Pick<
+      ConnectionOpts,
+      'apiKey' | 'headers' | 'debug' | 'domain' | 'requestTimeoutMs'
+    >
+  > {}
 
 /**
  * Options for creating a new Sandbox.
