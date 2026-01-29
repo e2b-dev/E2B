@@ -21,8 +21,10 @@ import { CommandHandle } from './commandHandle'
 import { authenticationHeader, handleRpcError } from '../../envd/rpc'
 import { handleProcessStartEvent } from '../../envd/api'
 
-export interface PtyCreateOpts
-  extends Pick<ConnectionOpts, 'requestTimeoutMs'> {
+export interface PtyCreateOpts extends Pick<
+  ConnectionOpts,
+  'requestTimeoutMs'
+> {
   /**
    * Number of columns for the PTY.
    */

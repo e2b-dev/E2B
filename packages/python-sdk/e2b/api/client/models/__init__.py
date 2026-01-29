@@ -48,6 +48,7 @@ from .sandbox_metric import SandboxMetric
 from .sandbox_network_config import SandboxNetworkConfig
 from .sandbox_state import SandboxState
 from .sandboxes_with_metrics import SandboxesWithMetrics
+from .snapshot_info import SnapshotInfo
 from .team import Team
 from .team_api_key import TeamAPIKey
 from .team_metric import TeamMetric
@@ -118,6 +119,7 @@ __all__ = (
     "SandboxMetric",
     "SandboxNetworkConfig",
     "SandboxState",
+    "SnapshotInfo",
     "Team",
     "TeamAPIKey",
     "TeamMetric",
