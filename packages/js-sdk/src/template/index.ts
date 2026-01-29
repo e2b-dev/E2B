@@ -44,14 +44,14 @@ import {
   padOctal,
   readDockerignore,
   readGCPServiceAccountJSON,
+  validateRelativePath,
 } from './utils'
 
 /**
  * Base class for building E2B sandbox templates.
  */
 export class TemplateBase
-  implements TemplateFromImage, TemplateBuilder, TemplateFinal
-{
+  implements TemplateFromImage, TemplateBuilder, TemplateFinal {
   private defaultBaseImage: string = 'e2bdev/base'
   private baseImage: string | undefined = this.defaultBaseImage
   private baseTemplate: string | undefined = undefined
@@ -520,10 +520,16 @@ export class TemplateBase
     }
 
     const srcs = Array.isArray(src) ? src : [src]
+    const stackTrace = getCallerFrame(STACK_TRACE_DEPTH - 1)
 
     for (const src of srcs) {
+      const srcString = src.toString()
+
+      // Validate that the source path is a relative path within the context directory
+      validateRelativePath(srcString, stackTrace)
+
       const args = [
-        src.toString(),
+        srcString,
         dest.toString(),
         options?.user ?? '',
         options?.mode ? padOctal(options.mode) : '',
@@ -979,7 +985,7 @@ export class TemplateBase
     if (this.baseTemplate !== undefined) {
       throw new Error(
         'Cannot convert template built from another template to Dockerfile. ' +
-          'Templates based on other templates can only be built using the E2B API.'
+        'Templates based on other templates can only be built using the E2B API.'
       )
     }
 

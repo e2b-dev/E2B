@@ -21,6 +21,7 @@ from e2b.template.utils import (
     read_dockerignore,
     read_gcp_service_account_json,
     get_caller_frame,
+    validate_relative_path,
 )
 from types import TracebackType
 
@@ -64,9 +65,25 @@ class TemplateBuilder:
         """
         srcs = [src] if isinstance(src, (str, Path)) else src
 
+        # Get the caller frame for stack trace in validation errors
+        caller_frame = get_caller_frame(STACK_TRACE_DEPTH - 1)
+        stack_trace = None
+        if caller_frame is not None:
+            stack_trace = TracebackType(
+                tb_next=None,
+                tb_frame=caller_frame,
+                tb_lasti=caller_frame.f_lasti,
+                tb_lineno=caller_frame.f_lineno,
+            )
+
         for src_item in srcs:
+            src_string = str(src_item)
+
+            # Validate that the source path is a relative path within the context directory
+            validate_relative_path(src_string, stack_trace)
+
             args = [
-                str(src_item),
+                src_string,
                 str(dest),
                 user or "",
                 pad_octal(mode) if mode else "",

@@ -12,6 +12,8 @@ import e2b.template_async.main as template_async_main
 import e2b.template_async.build_api as build_api_mod
 
 non_existent_path = "/nonexistent/path"
+# Use a relative path for copy tests since absolute paths are now rejected
+non_existent_relative_path = "nonexistent/path"
 
 # map template alias -> failed step index
 failure_map: dict[str, Optional[int]] = {
@@ -161,7 +163,9 @@ async def test_traces_on_from_gcp_registry(async_build):
 async def test_traces_on_copy(async_build):
     template = AsyncTemplate()
     template = template.from_base_image()
-    template = template.skip_cache().copy(non_existent_path, non_existent_path)
+    template = template.skip_cache().copy(
+        non_existent_relative_path, non_existent_relative_path
+    )
     await _expect_to_throw_and_check_trace(
         lambda: async_build(template, name="copy"), "copy"
     )
@@ -172,7 +176,7 @@ async def test_traces_on_copyItems(async_build):
     template = AsyncTemplate()
     template = template.from_base_image()
     template = template.skip_cache().copy_items(
-        [CopyItem(src=non_existent_path, dest=non_existent_path)]
+        [CopyItem(src=non_existent_relative_path, dest=non_existent_relative_path)]
     )
     await _expect_to_throw_and_check_trace(
         lambda: async_build(template, name="copy_items"), "copy_items"

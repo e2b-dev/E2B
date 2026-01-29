@@ -10,6 +10,8 @@ import { randomUUID } from 'node:crypto'
 
 const __fileContent = fs.readFileSync(__filename, 'utf8') // read current file content
 const nonExistentPath = '/nonexistent/path'
+// Use a relative path for copy tests since absolute paths are now rejected
+const nonExistentRelativePath = 'nonexistent/path'
 
 // map template alias -> failed step index
 const failureMap: Record<string, number | undefined> = {
@@ -196,7 +198,9 @@ buildTemplateTest('traces on fromGCPRegistry', async ({ buildTemplate }) => {
 
 buildTemplateTest('traces on copy', async ({ buildTemplate }) => {
   let template = Template().fromBaseImage()
-  template = template.skipCache().copy(nonExistentPath, nonExistentPath)
+  template = template
+    .skipCache()
+    .copy(nonExistentRelativePath, nonExistentRelativePath)
   await expectToThrowAndCheckTrace(async () => {
     await buildTemplate(template, { name: 'copy' })
   }, 'copy')
@@ -206,7 +210,7 @@ buildTemplateTest('traces on copyItems', async ({ buildTemplate }) => {
   let template = Template().fromBaseImage()
   template = template
     .skipCache()
-    .copyItems([{ src: nonExistentPath, dest: nonExistentPath }])
+    .copyItems([{ src: nonExistentRelativePath, dest: nonExistentRelativePath }])
   await expectToThrowAndCheckTrace(async () => {
     await buildTemplate(template, { name: 'copyItems' })
   }, 'copyItems')

@@ -9,9 +9,67 @@ import re
 import inspect
 from types import TracebackType, FrameType
 from typing import List, Optional, Union
+from pathlib import PurePosixPath, PureWindowsPath
 
 from e2b.exceptions import TemplateException
 from e2b.template.consts import BASE_STEP_NAME, FINALIZE_STEP_NAME
+
+
+def validate_relative_path(
+    src: str,
+    stack_trace: Optional[TracebackType],
+) -> None:
+    """
+    Validate that a source path for copy operations is a relative path that stays
+    within the context directory. This prevents path traversal attacks and ensures
+    files are copied from within the expected directory.
+
+    :param src: The source path to validate
+    :param stack_trace: Optional stack trace for error reporting
+
+    :raises TemplateException: If the path is absolute or escapes the context directory
+
+    Invalid paths:
+    - Absolute paths: /absolute/path, C:\\Windows\\path
+    - Parent directory escapes: ../foo, foo/../../bar, ./foo/../../../bar
+
+    Valid paths:
+    - Simple relative: foo, foo/bar
+    - Current directory prefix: ./foo, ./foo/bar
+    - Internal parent refs that don't escape: foo/../bar (stays within context)
+    """
+    # Check for absolute paths (Unix-style starting with / or Windows-style with drive letter)
+    # os.path.isabs handles Unix paths, but we also need to check Windows paths on Unix
+    if os.path.isabs(src):
+        raise TemplateException(
+            f'Invalid source path "{src}": absolute paths are not allowed. '
+            "Use a relative path within the context directory."
+        ).with_traceback(stack_trace)
+
+    # Also check for Windows-style absolute paths (drive letter) when running on Unix
+    # PureWindowsPath can detect Windows absolute paths on any platform
+    if PureWindowsPath(src).is_absolute():
+        raise TemplateException(
+            f'Invalid source path "{src}": absolute paths are not allowed. '
+            "Use a relative path within the context directory."
+        ).with_traceback(stack_trace)
+
+    # Normalize the path and check if it escapes the context directory
+    # os.path.normpath handles both Unix and Windows path separators
+    normalized = os.path.normpath(src)
+
+    # After normalization, a path that escapes would start with '..' or be '..'
+    # Examples:
+    # - '../foo' -> '../foo' (escapes)
+    # - 'foo/../../bar' -> '../bar' (escapes)
+    # - './foo/../../../bar' -> '../../bar' (escapes)
+    # - 'foo/../bar' -> 'bar' (doesn't escape)
+    # - './foo/bar' -> 'foo/bar' (doesn't escape)
+    if normalized.startswith("..") or normalized == "..":
+        raise TemplateException(
+            f'Invalid source path "{src}": path escapes the context directory. '
+            "The path must stay within the context directory."
+        ).with_traceback(stack_trace)
 
 
 def normalize_build_arguments(
