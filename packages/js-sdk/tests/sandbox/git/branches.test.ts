@@ -68,7 +68,7 @@ sandboxTest('git deleteBranch removes branch', async ({ sandbox }) => {
     const repoPath = await createRepoWithCommit(sandbox, baseDir)
     await sandbox.commands.run(`git -C "${repoPath}" branch feature`)
 
-    await sandbox.git.deleteBranch(repoPath, 'feature', { force: true })
+    await sandbox.git.deleteBranch(repoPath, 'feature')
 
     const branch = (
       await sandbox.commands.run(`git -C "${repoPath}" branch --list feature`)
