@@ -190,6 +190,16 @@ async def test_traces_on_copy_absolute_path():
 
 
 @pytest.mark.skip_debug()
+async def test_traces_on_copyItems_absolute_path():
+    await _expect_to_throw_and_check_trace(
+        lambda: AsyncTemplate()
+        .from_base_image()
+        .copy_items([CopyItem(src="/absolute/path", dest="/absolute/path")]),
+        "copy_items",
+    )
+
+
+@pytest.mark.skip_debug()
 async def test_traces_on_remove(async_build):
     template = AsyncTemplate()
     template = template.from_base_image()

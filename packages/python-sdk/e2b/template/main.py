@@ -118,6 +118,20 @@ class TemplateBuilder:
         ])
         ```
         """
+        # Validate all paths at the copy_items call site before delegating to copy
+        # This ensures validation errors point to user code, not internal SDK code
+        caller_frame = get_caller_frame(STACK_TRACE_DEPTH - 1)
+        stack_trace = None
+        if caller_frame is not None:
+            stack_trace = TracebackType(
+                tb_next=None,
+                tb_frame=caller_frame,
+                tb_lasti=caller_frame.f_lasti,
+                tb_lineno=caller_frame.f_lineno,
+            )
+        for item in items:
+            validate_relative_path(str(item["src"]), stack_trace)
+
         self._template._run_in_new_stack_trace_context(
             lambda: [
                 self.copy(

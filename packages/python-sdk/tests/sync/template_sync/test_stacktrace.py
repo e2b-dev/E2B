@@ -190,6 +190,16 @@ def test_traces_on_copy_absolute_path():
 
 
 @pytest.mark.skip_debug()
+def test_traces_on_copyItems_absolute_path():
+    _expect_to_throw_and_check_trace(
+        lambda: Template()
+        .from_base_image()
+        .copy_items([CopyItem(src="/absolute/path", dest="/absolute/path")]),
+        "copy_items",
+    )
+
+
+@pytest.mark.skip_debug()
 def test_traces_on_remove(build):
     template = Template()
     template = template.from_base_image()

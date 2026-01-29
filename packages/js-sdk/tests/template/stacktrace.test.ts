@@ -218,6 +218,12 @@ buildTemplateTest('traces on copy absolute path', async () => {
   }, 'copy')
 })
 
+buildTemplateTest('traces on copyItems absolute path', async () => {
+  await expectToThrowAndCheckTrace(async () => {
+    Template().fromBaseImage().copyItems([{ src: '/absolute/path', dest: '/absolute/path' }])
+  }, 'copyItems')
+})
+
 buildTemplateTest('traces on remove', async ({ buildTemplate }) => {
   let template = Template().fromBaseImage()
   template = template.skipCache().remove(nonExistentPath)
