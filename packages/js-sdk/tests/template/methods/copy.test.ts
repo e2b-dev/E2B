@@ -42,17 +42,13 @@ describe('Template.copy validation', () => {
 
     test('rejects absolute path in array', () => {
       expect(() =>
-        Template()
-          .fromBaseImage()
-          .copy(['valid.txt', '/etc/passwd'], '/app')
+        Template().fromBaseImage().copy(['valid.txt', '/etc/passwd'], '/app')
       ).toThrow(TemplateError)
     })
 
     test('rejects escape path in array', () => {
       expect(() =>
-        Template()
-          .fromBaseImage()
-          .copy(['valid.txt', '../secret'], '/app')
+        Template().fromBaseImage().copy(['valid.txt', '../secret'], '/app')
       ).toThrow(TemplateError)
     })
   })
@@ -97,9 +93,7 @@ describe('Template.copy validation', () => {
 
     test('accepts array of valid paths', () => {
       expect(() =>
-        Template()
-          .fromBaseImage()
-          .copy(['file1.txt', 'file2.txt'], '/app')
+        Template().fromBaseImage().copy(['file1.txt', 'file2.txt'], '/app')
       ).not.toThrow()
     })
   })

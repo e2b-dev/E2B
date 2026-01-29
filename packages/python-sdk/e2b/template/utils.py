@@ -9,7 +9,7 @@ import re
 import inspect
 from types import TracebackType, FrameType
 from typing import List, Optional, Union
-from pathlib import PurePosixPath, PureWindowsPath
+from pathlib import PureWindowsPath
 
 from e2b.exceptions import TemplateException
 from e2b.template.consts import BASE_STEP_NAME, FINALIZE_STEP_NAME

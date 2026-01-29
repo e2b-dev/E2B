@@ -36,7 +36,9 @@ describe('validateRelativePath', () => {
 
     test('accepts hidden files and directories', () => {
       expect(() => validateRelativePath('.hidden', undefined)).not.toThrow()
-      expect(() => validateRelativePath('.config/settings', undefined)).not.toThrow()
+      expect(() =>
+        validateRelativePath('.config/settings', undefined)
+      ).not.toThrow()
     })
   })
 
@@ -102,9 +104,9 @@ describe('validateRelativePath', () => {
     })
 
     test('rejects path that escapes via nested parent refs', () => {
-      expect(() =>
-        validateRelativePath('foo/../../bar', undefined)
-      ).toThrow(TemplateError)
+      expect(() => validateRelativePath('foo/../../bar', undefined)).toThrow(
+        TemplateError
+      )
     })
 
     test('rejects path with ./ prefix that escapes', () => {
