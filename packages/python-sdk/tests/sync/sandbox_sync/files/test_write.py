@@ -138,3 +138,37 @@ def test_write_with_secured_envd(sandbox_factory):
 
     read_content = sbx.files.read(filename)
     assert read_content == content
+
+
+def test_write_files_with_different_data_types(sandbox, debug):
+    text_data = "Text string data"
+    bytes_data = b"Bytes data"
+    bytes_io_data = io.BytesIO(b"BytesIO data")
+    string_io_data = io.StringIO("StringIO data")
+
+    files = [
+        WriteEntry(path="writefiles_text.txt", data=text_data),
+        WriteEntry(path="writefiles_bytes.bin", data=bytes_data),
+        WriteEntry(path="writefiles_bytesio.bin", data=bytes_io_data),
+        WriteEntry(path="writefiles_stringio.txt", data=string_io_data),
+    ]
+
+    infos = sandbox.files.write_files(files)
+
+    assert len(infos) == 4
+
+    text_content = sandbox.files.read("writefiles_text.txt")
+    assert text_content == text_data
+
+    bytes_content = sandbox.files.read("writefiles_bytes.bin")
+    assert bytes_content == "Bytes data"
+
+    bytes_io_content = sandbox.files.read("writefiles_bytesio.bin")
+    assert bytes_io_content == "BytesIO data"
+
+    string_io_content = sandbox.files.read("writefiles_stringio.txt")
+    assert string_io_content == "StringIO data"
+
+    if debug:
+        for file in files:
+            sandbox.files.remove(file["path"])

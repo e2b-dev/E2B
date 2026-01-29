@@ -1,7 +1,8 @@
 """Contains all the data models used in inputs/outputs"""
 
 from .admin_sandbox_kill_result import AdminSandboxKillResult
-from .assign_template_tag_request import AssignTemplateTagRequest
+from .assign_template_tags_request import AssignTemplateTagsRequest
+from .assigned_template_tags import AssignedTemplateTags
 from .aws_registry import AWSRegistry
 from .aws_registry_type import AWSRegistryType
 from .build_log_entry import BuildLogEntry
@@ -9,6 +10,7 @@ from .build_status_reason import BuildStatusReason
 from .connect_sandbox import ConnectSandbox
 from .created_access_token import CreatedAccessToken
 from .created_team_api_key import CreatedTeamAPIKey
+from .delete_template_tags_request import DeleteTemplateTagsRequest
 from .disk_metrics import DiskMetrics
 from .error import Error
 from .gcp_registry import GCPRegistry
@@ -64,14 +66,15 @@ from .template_build_status import TemplateBuildStatus
 from .template_legacy import TemplateLegacy
 from .template_request_response_v3 import TemplateRequestResponseV3
 from .template_step import TemplateStep
-from .template_tag import TemplateTag
 from .template_update_request import TemplateUpdateRequest
+from .template_update_response import TemplateUpdateResponse
 from .template_with_builds import TemplateWithBuilds
 from .update_team_api_key import UpdateTeamAPIKey
 
 __all__ = (
     "AdminSandboxKillResult",
-    "AssignTemplateTagRequest",
+    "AssignedTemplateTags",
+    "AssignTemplateTagsRequest",
     "AWSRegistry",
     "AWSRegistryType",
     "BuildLogEntry",
@@ -79,6 +82,7 @@ __all__ = (
     "ConnectSandbox",
     "CreatedAccessToken",
     "CreatedTeamAPIKey",
+    "DeleteTemplateTagsRequest",
     "DiskMetrics",
     "Error",
     "GCPRegistry",
@@ -132,8 +136,8 @@ __all__ = (
     "TemplateLegacy",
     "TemplateRequestResponseV3",
     "TemplateStep",
-    "TemplateTag",
     "TemplateUpdateRequest",
+    "TemplateUpdateResponse",
     "TemplateWithBuilds",
     "UpdateTeamAPIKey",
 )

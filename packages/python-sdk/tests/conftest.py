@@ -1,7 +1,7 @@
 import asyncio
 import os
 import uuid
-from typing import Callable, Optional
+from typing import Callable, Dict, Optional
 from uuid import uuid4
 
 import pytest
@@ -97,18 +97,42 @@ async def async_sandbox(async_sandbox_factory):
 def build():
     def _build(
         template: TemplateClass,
-        alias: Optional[str] = None,
+        name: Optional[str] = None,
         skip_cache: bool = False,
         on_build_logs: Optional[Callable[[LogEntry], None]] = None,
     ):
-        return Template.build(
-            template,
-            alias=alias or f"e2b-test-{uuid4()}",
-            cpu_count=1,
-            memory_mb=1024,
-            skip_cache=skip_cache,
-            on_build_logs=on_build_logs,
-        )
+        build_name = name or f"e2b-test-{uuid4()}"
+        build_info: Dict[str, Optional[str]] = {"template_id": None, "build_id": None}
+
+        def capture_logs(log: LogEntry):
+            import re
+
+            if "Template created with ID:" in log.message:
+                match = re.search(
+                    r"Template created with ID: ([^,]+), Build ID: (.+)", log.message
+                )
+                if match:
+                    build_info["template_id"] = match.group(1)
+                    build_info["build_id"] = match.group(2)
+            if on_build_logs:
+                on_build_logs(log)
+
+        try:
+            return Template.build(
+                template,
+                build_name,
+                cpu_count=1,
+                memory_mb=1024,
+                skip_cache=skip_cache,
+                on_build_logs=capture_logs,
+            )
+        except Exception as e:
+            print(
+                f"\n[BUILD FAILED] name={build_name}, "
+                f"template_id={build_info['template_id']}, "
+                f"build_id={build_info['build_id']}, error={e}"
+            )
+            raise
 
     return _build
 
@@ -117,18 +141,42 @@ def build():
 def async_build():
     async def _async_build(
         template: TemplateClass,
-        alias: Optional[str] = None,
+        name: Optional[str] = None,
         skip_cache: bool = False,
         on_build_logs: Optional[Callable[[LogEntry], None]] = None,
     ):
-        return await AsyncTemplate.build(
-            template,
-            alias=alias or f"e2b-test-{uuid4()}",
-            cpu_count=1,
-            memory_mb=1024,
-            skip_cache=skip_cache,
-            on_build_logs=on_build_logs,
-        )
+        build_name = name or f"e2b-test-{uuid4()}"
+        build_info: Dict[str, Optional[str]] = {"template_id": None, "build_id": None}
+
+        def capture_logs(log: LogEntry):
+            import re
+
+            if "Template created with ID:" in log.message:
+                match = re.search(
+                    r"Template created with ID: ([^,]+), Build ID: (.+)", log.message
+                )
+                if match:
+                    build_info["template_id"] = match.group(1)
+                    build_info["build_id"] = match.group(2)
+            if on_build_logs:
+                on_build_logs(log)
+
+        try:
+            return await AsyncTemplate.build(
+                template,
+                build_name,
+                cpu_count=1,
+                memory_mb=1024,
+                skip_cache=skip_cache,
+                on_build_logs=capture_logs,
+            )
+        except Exception as e:
+            print(
+                f"\n[BUILD FAILED] name={build_name}, "
+                f"template_id={build_info['template_id']}, "
+                f"build_id={build_info['build_id']}, error={e}"
+            )
+            raise
 
     return _async_build
 

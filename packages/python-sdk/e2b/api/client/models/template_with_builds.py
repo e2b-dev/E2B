@@ -21,6 +21,7 @@ class TemplateWithBuilds:
         builds (list['TemplateBuild']): List of builds for the template
         created_at (datetime.datetime): Time when the template was created
         last_spawned_at (Union[None, datetime.datetime]): Time when the template was last used
+        names (list[str]): Names of the template (namespace/alias format when namespaced)
         public (bool): Whether the template is public or only accessible by the team
         spawn_count (int): Number of times the template was used
         template_id (str): Identifier of the template
@@ -31,6 +32,7 @@ class TemplateWithBuilds:
     builds: list["TemplateBuild"]
     created_at: datetime.datetime
     last_spawned_at: Union[None, datetime.datetime]
+    names: list[str]
     public: bool
     spawn_count: int
     template_id: str
@@ -53,6 +55,8 @@ class TemplateWithBuilds:
         else:
             last_spawned_at = self.last_spawned_at
 
+        names = self.names
+
         public = self.public
 
         spawn_count = self.spawn_count
@@ -69,6 +73,7 @@ class TemplateWithBuilds:
                 "builds": builds,
                 "createdAt": created_at,
                 "lastSpawnedAt": last_spawned_at,
+                "names": names,
                 "public": public,
                 "spawnCount": spawn_count,
                 "templateID": template_id,
@@ -109,6 +114,8 @@ class TemplateWithBuilds:
 
         last_spawned_at = _parse_last_spawned_at(d.pop("lastSpawnedAt"))
 
+        names = cast(list[str], d.pop("names"))
+
         public = d.pop("public")
 
         spawn_count = d.pop("spawnCount")
@@ -122,6 +129,7 @@ class TemplateWithBuilds:
             builds=builds,
             created_at=created_at,
             last_spawned_at=last_spawned_at,
+            names=names,
             public=public,
             spawn_count=spawn_count,
             template_id=template_id,

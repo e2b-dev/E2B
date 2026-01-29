@@ -7,6 +7,7 @@ let originalEnv: { [key: string]: string | undefined }
 beforeEach(() => {
   originalEnv = {
     E2B_API_URL: process.env.E2B_API_URL,
+    E2B_DOMAIN: process.env.E2B_DOMAIN,
     E2B_DEBUG: process.env.E2B_DEBUG,
   }
 })
@@ -25,6 +26,7 @@ afterEach(() => {
 test('api_url defaults correctly', () => {
   // Ensure no env vars interfere
   delete process.env.E2B_API_URL
+  delete process.env.E2B_DOMAIN
   delete process.env.E2B_DEBUG
 
   const config = new ConnectionConfig()

@@ -106,3 +106,21 @@ export function stripAnsi(text: string): string {
 export async function wait(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
+
+/**
+ * Convert data to a Blob, avoiding unnecessary conversions when possible.
+ */
+export function toBlob(
+  data: string | ArrayBuffer | Blob | ReadableStream
+): Blob | Promise<Blob> {
+  // Already a Blob - use directly
+  if (data instanceof Blob) {
+    return data
+  }
+  // String or ArrayBuffer - create Blob
+  if (typeof data === 'string' || data instanceof ArrayBuffer) {
+    return new Blob([data])
+  }
+  // ReadableStream - must consume to get Blob
+  return new Response(data).blob()
+}

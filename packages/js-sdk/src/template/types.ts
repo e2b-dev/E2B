@@ -25,8 +25,13 @@ export type TemplateOptions = {
 export type BasicBuildOptions = {
   /**
    * Alias name for the template.
+   * @deprecated Use the `name` parameter of `Template.build()` instead.
    */
   alias: string
+  /**
+   * Tags to assign to the template build.
+   */
+  tags?: string[]
   /**
    * Number of CPUs allocated to the sandbox.
    * @default 2
@@ -57,20 +62,101 @@ export type BuildOptions = ConnectionOpts & BasicBuildOptions
  * Information about a built template.
  */
 export type BuildInfo = {
+  /**
+   * First alias from the build (for backward compatibility).
+   * @deprecated Use `name` instead.
+   */
   alias: string
+  /**
+   * Name of the template.
+   */
+  name: string
+  /**
+   * Tags assigned to this build.
+   */
+  tags: string[]
+  /**
+   * Template identifier.
+   */
   templateId: string
+  /**
+   * Build identifier.
+   */
   buildId: string
+}
+
+/**
+ * Options for getting build status.
+ */
+export type GetBuildStatusOptions = ConnectionOpts & { logsOffset?: number }
+
+/**
+ * Status of a template build.
+ */
+export type TemplateBuildStatus = 'building' | 'waiting' | 'ready' | 'error'
+
+/**
+ * Reason for the current build status (typically for errors).
+ */
+export type BuildStatusReason = {
+  /**
+   * Message with the status reason.
+   */
+  message: string
+  /**
+   * Step that failed.
+   */
+  step?: string
+  /**
+   * Log entries related to the status reason.
+   */
+  logEntries: LogEntry[]
 }
 
 /**
  * Response from getting build status.
  */
-export type GetBuildStatusOptions = ConnectionOpts & { logsOffset?: number }
+export type TemplateBuildStatusResponse = {
+  /**
+   * Build identifier.
+   */
+  buildID: string
+  /**
+   * Template identifier.
+   */
+  templateID: string
+  /**
+   * Current status of the build.
+   */
+  status: TemplateBuildStatus
+  /**
+   * Build log entries.
+   */
+  logEntries: LogEntry[]
+  /**
+   * Build logs (raw strings).
+   * @deprecated Use `logEntries` instead.
+   */
+  logs: string[]
+  /**
+   * Reason for the current status (typically for errors).
+   */
+  reason?: BuildStatusReason
+}
 
 /**
- * Options for checking if a template alias exists.
+ * Information about assigned template tags.
  */
-export type AliasExistsOptions = ConnectionOpts
+export type TemplateTagInfo = {
+  /**
+   * Build identifier associated with this tag.
+   */
+  buildId: string
+  /**
+   * Assigned tags of the template.
+   */
+  tags: string[]
+}
 
 /**
  * Types of instructions that can be used in a template.

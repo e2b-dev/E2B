@@ -2,8 +2,46 @@ import crypto from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
 import { dynamicImport, dynamicRequire } from '../utils'
+import { TemplateError } from '../errors'
 import { BASE_STEP_NAME, FINALIZE_STEP_NAME } from './consts'
 import type { Path } from 'glob'
+import type { BuildOptions } from './types'
+
+/**
+ * Normalize build arguments from different overload signatures.
+ * Handles string name or legacy options object with alias.
+ *
+ * @param nameOrOptions Name or legacy options with alias
+ * @param options Optional build options (when first arg is name)
+ * @returns Object with normalized name, tags, and build options
+ * @throws TemplateError if no template name is provided
+ */
+export function normalizeBuildArguments(
+  nameOrOptions: string | BuildOptions,
+  options?: Omit<BuildOptions, 'alias'>
+): {
+  name: string
+  buildOptions: Omit<BuildOptions, 'alias'>
+} {
+  let name: string
+  let buildOptions: Omit<BuildOptions, 'alias'>
+
+  if (typeof nameOrOptions === 'string') {
+    name = nameOrOptions
+    buildOptions = options ?? {}
+  } else {
+    // Legacy: options object with alias
+    const { alias, ...restOpts } = nameOrOptions
+    name = alias
+    buildOptions = restOpts
+  }
+
+  if (!name || name.length === 0) {
+    throw new TemplateError('Name must be provided')
+  }
+
+  return { name, buildOptions }
+}
 
 /**
  * Read and parse a .dockerignore file.
@@ -278,9 +316,10 @@ export async function tarFileStream(
 
   const filePaths = allFiles.map((file) => file.relativePosix())
 
+  // gzip.portable ensures deterministic gzip header without affecting file modes
   return create(
     {
-      gzip: true,
+      gzip: { portable: true },
       cwd: fileContextPath,
       follow: resolveSymlinks,
       noDirRecurse: true,

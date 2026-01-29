@@ -10,7 +10,28 @@ import inspect
 from types import TracebackType, FrameType
 from typing import List, Optional, Union
 
+from e2b.exceptions import TemplateException
 from e2b.template.consts import BASE_STEP_NAME, FINALIZE_STEP_NAME
+
+
+def normalize_build_arguments(
+    name: Optional[str] = None,
+    alias: Optional[str] = None,
+) -> str:
+    """
+    Normalize build arguments from different parameter signatures.
+    Handles string name or legacy alias parameter.
+
+    :param name: Template name in 'name' or 'name:tag' format
+    :param alias: (Deprecated) Alias name for the template. Use name instead.
+    :return: Normalized template name
+    :raises TemplateException: If no template name is provided
+    """
+    if name and len(name) > 0:
+        return name
+    if alias and len(alias) > 0:
+        return alias
+    raise TemplateException("Name must be provided")
 
 
 def read_dockerignore(context_path: str) -> List[str]:
