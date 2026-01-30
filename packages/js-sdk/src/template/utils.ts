@@ -95,13 +95,15 @@ export async function getAllFilesInPath(
   const globFiles = await glob(patterns, {
     ignore: ignorePatterns,
     withFileTypes: true,
-    nodir: !includeDirectories,
     cwd: contextPath,
   })
 
   // Deduplicate by full path
   const files = new Map<string, Path>()
   for (const file of globFiles) {
+    if (!includeDirectories && file.isDirectory()) {
+      continue
+    }
     files.set(file.fullpath(), file)
   }
 
