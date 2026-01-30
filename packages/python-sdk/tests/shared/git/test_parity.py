@@ -1,4 +1,3 @@
-import asyncio
 import inspect
 
 from e2b.sandbox_async.git import Git as AsyncGit
@@ -31,4 +30,4 @@ def test_identical_method_signatures():
 
 def test_async_methods_are_coroutines():
     for name, method in _public_methods(AsyncGit).items():
-        assert asyncio.iscoroutinefunction(method), f"AsyncGit.{name} is not async"
+        assert inspect.iscoroutinefunction(method), f"AsyncGit.{name} is not async"
