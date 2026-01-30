@@ -691,6 +691,108 @@ class Git:
             args, path, envs, user, cwd, timeout, request_timeout
         )
 
+    async def reset(
+        self,
+        path: str,
+        mode: Optional[str] = None,
+        target: Optional[str] = None,
+        paths: Optional[List[str]] = None,
+        envs: Optional[Dict[str, str]] = None,
+        user: Optional[str] = None,
+        cwd: Optional[str] = None,
+        timeout: Optional[float] = None,
+        request_timeout: Optional[float] = None,
+    ):
+        """
+        Reset the current HEAD to a specified state.
+
+        :param path: Repository path
+        :param mode: Reset mode (soft, mixed, hard, merge, keep)
+        :param target: Commit, branch, or ref to reset to (defaults to HEAD)
+        :param paths: Paths to reset
+        :param envs: Environment variables used for the command
+        :param user: User to run the command as
+        :param cwd: Working directory to run the command
+        :param timeout: Timeout for the command connection in **seconds**
+        :param request_timeout: Timeout for the request in **seconds**
+        :return: Command result from the command runner
+        """
+        allowed_modes = {"soft", "mixed", "hard", "merge", "keep"}
+        if mode and mode not in allowed_modes:
+            raise InvalidArgumentException(
+                f"Reset mode must be one of {', '.join(sorted(allowed_modes))}."
+            )
+
+        args = ["reset"]
+        if mode:
+            args.append(f"--{mode}")
+        if target:
+            args.append(target)
+        if paths:
+            args.append("--")
+            args.extend(paths)
+        return await self._run_git(
+            args, path, envs, user, cwd, timeout, request_timeout
+        )
+
+    async def restore(
+        self,
+        path: str,
+        paths: List[str],
+        staged: Optional[bool] = None,
+        worktree: Optional[bool] = None,
+        source: Optional[str] = None,
+        envs: Optional[Dict[str, str]] = None,
+        user: Optional[str] = None,
+        cwd: Optional[str] = None,
+        timeout: Optional[float] = None,
+        request_timeout: Optional[float] = None,
+    ):
+        """
+        Restore working tree files or unstage changes.
+
+        :param path: Repository path
+        :param paths: Paths to restore (use ["."] for all)
+        :param staged: When True, restore the index (unstage)
+        :param worktree: When True, restore working tree files
+        :param source: Restore from the given source (commit, branch, or ref)
+        :param envs: Environment variables used for the command
+        :param user: User to run the command as
+        :param cwd: Working directory to run the command
+        :param timeout: Timeout for the command connection in **seconds**
+        :param request_timeout: Timeout for the request in **seconds**
+        :return: Command result from the command runner
+        """
+        if not paths:
+            raise InvalidArgumentException("At least one path is required.")
+
+        resolved_staged = staged
+        resolved_worktree = worktree
+        if staged is None and worktree is None:
+            resolved_worktree = True
+        elif staged is True and worktree is None:
+            resolved_worktree = False
+        elif staged is None and worktree is not None:
+            resolved_staged = False
+
+        if resolved_staged is False and resolved_worktree is False:
+            raise InvalidArgumentException(
+                "At least one of staged or worktree must be true."
+            )
+
+        args = ["restore"]
+        if resolved_worktree:
+            args.append("--worktree")
+        if resolved_staged:
+            args.append("--staged")
+        if source:
+            args.extend(["--source", source])
+        args.append("--")
+        args.extend(paths)
+        return await self._run_git(
+            args, path, envs, user, cwd, timeout, request_timeout
+        )
+
     async def push(
         self,
         path: str,
