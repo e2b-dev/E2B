@@ -1,12 +1,5 @@
-"""Compatibility re-exports for git helpers."""
-
-from e2b.sandbox.git import (
-    ClonePlan,
-    GitBranches,
-    GitFileStatus,
-    GitStatus,
+from e2b.sandbox.git.args import (
     build_add_args,
-    build_auth_error_message,
     build_branches_args,
     build_checkout_branch_args,
     build_clone_plan,
@@ -22,17 +15,23 @@ from e2b.sandbox.git import (
     build_reset_args,
     build_restore_args,
     build_status_args,
+    shell_escape,
+)
+from e2b.sandbox.git.auth import (
+    build_auth_error_message,
     build_upstream_error_message,
-    derive_repo_dir_from_url,
     is_auth_failure,
     is_missing_upstream,
-    parse_git_branches,
-    parse_git_status,
-    resolve_config_scope,
-    shell_escape,
     strip_credentials,
     with_credentials,
 )
+from e2b.sandbox.git.config import resolve_config_scope
+from e2b.sandbox.git.parse import (
+    derive_repo_dir_from_url,
+    parse_git_branches,
+    parse_git_status,
+)
+from e2b.sandbox.git.types import ClonePlan, GitBranches, GitFileStatus, GitStatus
 
 __all__ = [
     "build_add_args",
