@@ -119,12 +119,26 @@ def build_remote_add_shell_command(
     :return: Shell command string
     """
     add_cmd = build_git_command(args, path)
-    set_url_cmd = build_git_command(["remote", "set-url", name, url], path)
+    set_url_cmd = build_git_command(build_remote_set_url_args(name, url), path)
     cmd = f"{add_cmd} || {set_url_cmd}"
     if fetch:
         fetch_cmd = build_git_command(["fetch", name], path)
         cmd = f"({cmd}) && {fetch_cmd}"
     return cmd
+
+
+def build_remote_get_url_args(name: str) -> List[str]:
+    """
+    Build arguments for a git remote get-url command.
+    """
+    return ["remote", "get-url", name]
+
+
+def build_remote_set_url_args(name: str, url: str) -> List[str]:
+    """
+    Build arguments for a git remote set-url command.
+    """
+    return ["remote", "set-url", name, url]
 
 
 def build_remote_get_command(path: str, name: str) -> str:
@@ -138,7 +152,41 @@ def build_remote_get_command(path: str, name: str) -> str:
     if not name:
         raise InvalidArgumentException("Remote name is required.")
 
-    return f"{build_git_command(['remote', 'get-url', name], path)} || true"
+    return f"{build_git_command(build_remote_get_url_args(name), path)} || true"
+
+
+def build_credential_approve_command(
+    username: str,
+    password: str,
+    host: str,
+    protocol: str,
+) -> str:
+    """
+    Build a git credential approve command for the given credentials.
+    """
+    target_host = host.strip() or "github.com"
+    target_protocol = protocol.strip() or "https"
+    credential_input = "\n".join(
+        [
+            f"protocol={target_protocol}",
+            f"host={target_host}",
+            f"username={username}",
+            f"password={password}",
+            "",
+            "",
+        ]
+    )
+    return (
+        f"printf %s {shell_escape(credential_input)} | "
+        f"{build_git_command(['credential', 'approve'])}"
+    )
+
+
+def build_has_upstream_args() -> List[str]:
+    """
+    Build arguments for a git upstream check command.
+    """
+    return ["rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}"]
 
 
 def build_status_args() -> List[str]:

@@ -15,14 +15,18 @@ from e2b.sandbox.git import (
     build_checkout_branch_args,
     build_clone_plan,
     build_commit_args,
+    build_credential_approve_command,
     build_create_branch_args,
     build_delete_branch_args,
     build_git_command,
+    build_has_upstream_args,
     build_pull_args,
     build_push_args,
     build_remote_add_args,
     build_remote_add_shell_command,
     build_remote_get_command,
+    build_remote_get_url_args,
+    build_remote_set_url_args,
     build_reset_args,
     build_restore_args,
     build_status_args,
@@ -31,8 +35,9 @@ from e2b.sandbox.git import (
     is_missing_upstream,
     parse_git_branches,
     parse_git_status,
+    parse_remote_url,
     resolve_config_scope,
-    shell_escape,
+    with_credentials,
 )
 from e2b.sandbox_async.commands.command import Commands
 
@@ -127,7 +132,7 @@ class Git:
     ) -> bool:
         try:
             result = await self._run_git(
-                ["rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}"],
+                build_has_upstream_args(),
                 path,
                 envs,
                 user,
@@ -237,7 +242,7 @@ class Git:
         request_timeout: Optional[float] = None,
     ) -> str:
         result = await self._run_git(
-            ["remote", "get-url", remote],
+            build_remote_get_url_args(remote),
             path,
             envs,
             user,
@@ -245,12 +250,7 @@ class Git:
             timeout,
             request_timeout,
         )
-        url = result.stdout.strip()
-        if not url:
-            raise InvalidArgumentException(
-                f'Remote "{remote}" URL not found in repository.'
-            )
-        return url
+        return parse_remote_url(result.stdout, remote)
 
     async def clone(
         self,
@@ -306,7 +306,7 @@ class Git:
             )
             if plan.should_strip and plan.repo_path and plan.sanitized_url:
                 await self._run_git(
-                    ["remote", "set-url", "origin", plan.sanitized_url],
+                    build_remote_set_url_args("origin", plan.sanitized_url),
                     plan.repo_path,
                     envs,
                     user,
@@ -1021,19 +1021,6 @@ class Git:
                 "Both username and password are required to authenticate git."
             )
 
-        target_host = host.strip() or "github.com"
-        target_protocol = protocol.strip() or "https"
-        credential_input = "\n".join(
-            [
-                f"protocol={target_protocol}",
-                f"host={target_host}",
-                f"username={username}",
-                f"password={password}",
-                "",
-                "",
-            ]
-        )
-
         await self.set_config(
             "credential.helper",
             "store",
@@ -1044,9 +1031,11 @@ class Git:
             timeout=timeout,
             request_timeout=request_timeout,
         )
-        approve_cmd = (
-            f"printf %s {shell_escape(credential_input)} | "
-            f"{build_git_command(['credential', 'approve'])}"
+        approve_cmd = build_credential_approve_command(
+            username=username,
+            password=password,
+            host=host,
+            protocol=protocol,
         )
         return await self._run_shell(
             approve_cmd,

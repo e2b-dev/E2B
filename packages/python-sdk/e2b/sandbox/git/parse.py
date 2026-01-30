@@ -1,6 +1,7 @@
 from typing import List, Optional
 from urllib.parse import urlparse
 
+from e2b.exceptions import InvalidArgumentException
 from e2b.sandbox.git.types import GitBranches, GitFileStatus, GitStatus
 
 
@@ -203,3 +204,19 @@ def parse_git_branches(output: str) -> GitBranches:
             current_branch = name
 
     return GitBranches(branches=branches, current_branch=current_branch)
+
+
+def parse_remote_url(output: str, remote: str) -> str:
+    """
+    Parse a git remote URL output and validate it's present.
+
+    :param output: Git remote get-url output
+    :param remote: Remote name for the error message
+    :return: Remote URL
+    """
+    url = output.strip()
+    if not url:
+        raise InvalidArgumentException(
+            f'Remote "{remote}" URL not found in repository.'
+        )
+    return url
