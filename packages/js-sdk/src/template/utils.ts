@@ -1,5 +1,6 @@
 import crypto from 'node:crypto'
 import fs from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 import { dynamicImport, dynamicRequire } from '../utils'
 import { TemplateError } from '../errors'
@@ -342,26 +343,46 @@ export async function tarFileStreamUpload(
   ignorePatterns: string[],
   resolveSymlinks: boolean
 ) {
-  // First pass: calculate the compressed size
-  const sizeCalculationStream = await tarFileStream(
+  const stream = await tarFileStream(
     fileName,
     fileContextPath,
     ignorePatterns,
     resolveSymlinks
   )
-  let contentLength = 0
-  for await (const chunk of sizeCalculationStream as unknown as AsyncIterable<Buffer>) {
-    contentLength += chunk.length
-  }
 
-  return {
-    contentLength,
-    uploadStream: await tarFileStream(
-      fileName,
-      fileContextPath,
-      ignorePatterns,
-      resolveSymlinks
-    ),
+  // Write the tar.gz stream to a temp file to avoid holding the entire
+  // archive in memory and to guarantee that Content-Length matches the
+  // body (gzip output is non-deterministic across separate runs).
+  const tmpDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'e2b-upload-'))
+  const tmpFile = path.join(tmpDir, 'archive.tar.gz')
+  try {
+    const writeStream = fs.createWriteStream(tmpFile)
+    for await (const chunk of stream as unknown as AsyncIterable<Uint8Array>) {
+      writeStream.write(chunk)
+    }
+    await new Promise<void>((resolve, reject) => {
+      writeStream.end(() => resolve())
+      writeStream.on('error', reject)
+    })
+
+    const stat = await fs.promises.stat(tmpFile)
+    const readStream = fs.createReadStream(tmpFile)
+
+    // Clean up temp file once the read stream is fully consumed or closed
+    readStream.on('close', () => {
+      fs.promises.unlink(tmpFile).catch(() => {})
+      fs.promises.rmdir(tmpDir).catch(() => {})
+    })
+
+    return {
+      contentLength: stat.size,
+      uploadStream: readStream,
+    }
+  } catch (err) {
+    // Clean up on error during temp file creation
+    await fs.promises.unlink(tmpFile).catch(() => {})
+    await fs.promises.rmdir(tmpDir).catch(() => {})
+    throw err
   }
 }
 
