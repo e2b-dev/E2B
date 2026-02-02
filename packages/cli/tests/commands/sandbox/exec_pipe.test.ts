@@ -25,8 +25,8 @@ const templateId =
   'base'
 const isDebug = process.env.E2B_DEBUG !== undefined
 const hasCreds = Boolean(apiKey)
-const shouldRun = hasCreds && !isDebug
-const testIf = shouldRun ? test : test.skip
+const shouldSkip = !hasCreds || isDebug
+const testIf = test.skipIf(shouldSkip)
 const includeBinary =
   process.env.E2B_PIPE_SMOKE_STRICT === '1' ||
   process.env.E2B_PIPE_SMOKE_BINARY === '1' ||
@@ -111,10 +111,6 @@ describe('sandbox exec stdin piping (integration)', () => {
     'pipes stdin to remote command',
     { timeout: testTimeoutMs },
     async () => {
-      if (!shouldRun) {
-        return
-      }
-
       const sandbox = await Sandbox.create(templateId, {
         apiKey,
         domain,
