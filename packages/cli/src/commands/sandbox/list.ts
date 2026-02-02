@@ -2,7 +2,7 @@ import * as tablePrinter from 'console-table-printer'
 import * as commander from 'commander'
 import { components, Sandbox, SandboxInfo } from 'e2b'
 
-import { ensureAPIKey } from 'src/api'
+import { ensureAPIKey, getDomain } from 'src/api'
 import { parseMetadata } from './utils'
 
 function getStateTitle(state?: components['schemas']['SandboxState'][]) {
@@ -136,6 +136,7 @@ export async function listSandboxes({
   metadataRaw,
 }: ListSandboxesOptions = {}): Promise<SandboxInfo[]> {
   const apiKey = ensureAPIKey()
+  const domain = getDomain()
   const metadata = parseMetadata(metadataRaw)
 
   let pageLimit = limit
@@ -147,6 +148,7 @@ export async function listSandboxes({
   const sandboxes: SandboxInfo[] = []
   const iterator = Sandbox.list({
     apiKey: apiKey,
+    domain,
     limit: pageLimit,
     query: { state, metadata },
   })

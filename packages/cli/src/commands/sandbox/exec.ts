@@ -8,7 +8,7 @@
 import { Sandbox, CommandExitError } from 'e2b'
 import * as commander from 'commander'
 
-import { ensureAPIKey } from '../../api'
+import { ensureAPIKey, getDomain } from '../../api'
 import { setupSignalHandlers } from 'src/utils/signal'
 import {
   buildCommand,
@@ -53,9 +53,10 @@ export const execCommand = new commander.Command('exec')
       const command = buildCommand(commandParts)
       try {
         const apiKey = ensureAPIKey()
+        const domain = getDomain()
         const sandbox = isDebug
-          ? await Sandbox.create({ apiKey })
-          : await Sandbox.connect(sandboxID, { apiKey })
+          ? await Sandbox.create({ apiKey, domain })
+          : await Sandbox.connect(sandboxID, { apiKey, domain })
         if (isDebug) {
           console.warn(
             `e2b: E2B_DEBUG is enabled, ignoring sandbox ID ${sandboxID}`

@@ -6,6 +6,7 @@ import { asBold, asPrimary } from './utils/format'
 
 export let apiKey = process.env.E2B_API_KEY
 export let accessToken = process.env.E2B_ACCESS_TOKEN
+const userConfig = getUserConfig()
 
 const authErrorBox = (keyName: string) => {
   let link
@@ -82,10 +83,13 @@ export function ensureAccessToken() {
   }
 }
 
-const userConfig = getUserConfig()
+export function getDomain() {
+  return process.env.E2B_DOMAIN || userConfig?.domain
+}
 
 export const connectionConfig = new e2b.ConnectionConfig({
   accessToken: process.env.E2B_ACCESS_TOKEN || userConfig?.accessToken,
   apiKey: process.env.E2B_API_KEY || userConfig?.teamApiKey,
+  domain: getDomain(),
 })
 export const client = new e2b.ApiClient(connectionConfig)
