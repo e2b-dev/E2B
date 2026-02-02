@@ -32,6 +32,24 @@ export const isPipedStdin = (fd = 0, fsModule: FsLike = fs as FsLike) => {
   }
 }
 
+type ReadStdinOptions = {
+  fd?: number
+  fsModule?: FsLike
+  stream?: NodeJS.ReadableStream
+}
+
+export const readStdinIfPiped = async (
+  options: ReadStdinOptions = {}
+): Promise<string | undefined> => {
+  const fd = options.fd ?? 0
+  const fsModule = options.fsModule ?? (fs as FsLike)
+  if (!isPipedStdin(fd, fsModule)) {
+    return undefined
+  }
+  const stream = options.stream ?? process.stdin
+  return await readStdinFrom(stream)
+}
+
 export const chunkStringByBytes = (
   data: string,
   maxBytes: number

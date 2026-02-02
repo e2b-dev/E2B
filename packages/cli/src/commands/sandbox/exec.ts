@@ -13,8 +13,7 @@ import { setupSignalHandlers } from 'src/utils/signal'
 import {
   buildCommand,
   chunkStringByBytes,
-  isPipedStdin,
-  readStdinFrom,
+  readStdinIfPiped,
 } from './exec_helpers'
 
 interface ExecOptions {
@@ -49,10 +48,7 @@ export const execCommand = new commander.Command('exec')
   .action(
     async (sandboxID: string, commandParts: string[], opts: ExecOptions) => {
       // If stdin is a pipe, capture data to stream to the remote command.
-      let stdinData: string | undefined
-      if (isPipedStdin()) {
-        stdinData = await readStdinFrom(process.stdin)
-      }
+      const stdinData = await readStdinIfPiped()
 
       const command = buildCommand(commandParts)
       try {

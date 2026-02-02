@@ -1,10 +1,11 @@
-import { Readable } from 'node:stream'
+import { PassThrough, Readable } from 'node:stream'
 import { describe, expect, test } from 'vitest'
 
 import {
   buildCommand,
   chunkStringByBytes,
   isPipedStdin,
+  readStdinIfPiped,
   readStdinFrom,
   shellQuote,
 } from '../../../src/commands/sandbox/exec_helpers'
@@ -44,6 +45,29 @@ describe('exec helpers', () => {
   test('readStdinFrom handles EOF without trailing newline', async () => {
     const stream = Readable.from(['no-newline'])
     await expect(readStdinFrom(stream)).resolves.toBe('no-newline')
+  })
+
+  test('readStdinIfPiped returns undefined when stdin is not a pipe', async () => {
+    const fsMock = {
+      fstatSync: () => ({ isFIFO: () => false }),
+    }
+    const stream = new PassThrough()
+    stream.end('data')
+    await expect(readStdinIfPiped({ fsModule: fsMock, stream })).resolves.toBe(
+      undefined
+    )
+  })
+
+  test('readStdinIfPiped reads from provided stream when piped', async () => {
+    const fsMock = {
+      fstatSync: () => ({ isFIFO: () => true }),
+    }
+    const stream = new PassThrough()
+    const promise = readStdinIfPiped({ fsModule: fsMock, stream })
+    stream.write(Buffer.from([0xe2, 0x98]))
+    stream.write(Buffer.from([0x83]))
+    stream.end(Buffer.from([0x21]))
+    await expect(promise).resolves.toBe('\u2603!')
   })
 
   test('isPipedStdin returns true for FIFO', () => {
