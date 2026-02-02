@@ -1,19 +1,21 @@
 /**
  * Execute a command in a running sandbox.
  *
- * NOTE: Stdin piping (e.g., `echo "data" | e2b exec sandbox cmd`) is not supported.
- * The SDK/envd protocol lacks a way to signal EOF to remote commands. Commands that
- * read until EOF (cat, grep, wc, etc.) would hang indefinitely. This requires envd
- * to add stdin close signaling before it can be implemented.
+ * NOTE: Stdin piping is best-effort. The SDK/envd protocol lacks a way to signal EOF
+ * to remote commands, so commands that read until EOF (cat, grep, wc, etc.) may hang.
  */
-
-import * as fs from 'fs'
 
 import { Sandbox, CommandExitError } from 'e2b'
 import * as commander from 'commander'
 
 import { ensureAPIKey } from '../../api'
 import { setupSignalHandlers } from 'src/utils/signal'
+import {
+  buildCommand,
+  chunkStringByBytes,
+  isPipedStdin,
+  readStdinFrom,
+} from './exec_helpers'
 
 interface ExecOptions {
   background?: boolean
@@ -23,7 +25,7 @@ interface ExecOptions {
 }
 
 const NO_COMMAND_TIMEOUT = 0
-
+const isDebug = (process.env.E2B_DEBUG || 'false').toLowerCase() === 'true'
 export const execCommand = new commander.Command('exec')
   .description('execute a command in a running sandbox')
   .argument('<sandboxID>', 'sandbox ID to execute command in')
@@ -46,22 +48,23 @@ export const execCommand = new commander.Command('exec')
   .alias('ex')
   .action(
     async (sandboxID: string, commandParts: string[], opts: ExecOptions) => {
-      // Check if stdin is a pipe (data being piped in) - not supported
-      try {
-        const stdinStats = fs.fstatSync(0)
-        if (stdinStats.isFIFO()) {
-          console.error('e2b: stdin piping is not supported')
-          process.exit(2)
-        }
-      } catch {
-        // fstatSync may fail in some environments, ignore
+      // If stdin is a pipe, capture data to stream to the remote command.
+      let stdinData: string | undefined
+      if (isPipedStdin()) {
+        stdinData = await readStdinFrom(process.stdin)
       }
 
-      const command = commandParts.join(' ')
+      const command = buildCommand(commandParts)
       try {
         const apiKey = ensureAPIKey()
-
-        const sandbox = await Sandbox.connect(sandboxID, { apiKey })
+        const sandbox = isDebug
+          ? await Sandbox.create({ apiKey })
+          : await Sandbox.connect(sandboxID, { apiKey })
+        if (isDebug) {
+          console.warn(
+            `e2b: E2B_DEBUG is enabled, ignoring sandbox ID ${sandboxID}`
+          )
+        }
 
         if (opts.background) {
           const handle = await sandbox.commands.run(command, {
@@ -69,8 +72,13 @@ export const execCommand = new commander.Command('exec')
             cwd: opts.cwd,
             user: opts.user,
             envs: opts.env,
+            stdin: stdinData !== undefined,
             timeoutMs: NO_COMMAND_TIMEOUT,
           })
+
+          if (stdinData) {
+            await sendStdin(sandbox, handle.pid, stdinData)
+          }
 
           console.error(handle.pid)
 
@@ -80,7 +88,7 @@ export const execCommand = new commander.Command('exec')
           process.exit(0)
         }
 
-        const exitCode = await runCommand(sandbox, command, opts)
+        const exitCode = await runCommand(sandbox, command, opts, stdinData)
 
         process.exit(exitCode)
       } catch (err: any) {
@@ -93,13 +101,15 @@ export const execCommand = new commander.Command('exec')
 async function runCommand(
   sandbox: Sandbox,
   command: string,
-  opts: ExecOptions
+  opts: ExecOptions,
+  stdinData?: string
 ): Promise<number> {
   const handle = await sandbox.commands.run(command, {
     background: true,
     cwd: opts.cwd,
     user: opts.user,
     envs: opts.env,
+    stdin: stdinData !== undefined,
     timeoutMs: NO_COMMAND_TIMEOUT,
     onStdout: async (data) => {
       try {
@@ -118,6 +128,10 @@ async function runCommand(
       }
     },
   })
+
+  if (stdinData) {
+    await sendStdin(sandbox, handle.pid, stdinData)
+  }
 
   const removeSignalHandlers = setupSignalHandlers(async () => {
     // Kill the remote process - main loop handles exit code.
@@ -141,5 +155,17 @@ async function runCommand(
     throw err
   } finally {
     removeSignalHandlers()
+  }
+}
+
+async function sendStdin(
+  sandbox: Sandbox,
+  pid: number,
+  data: string
+): Promise<void> {
+  const chunkSizeBytes = 64 * 1024
+  const chunks = chunkStringByBytes(data, chunkSizeBytes)
+  for (const chunk of chunks) {
+    await sandbox.commands.sendStdin(pid, chunk)
   }
 }
