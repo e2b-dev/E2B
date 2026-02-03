@@ -1,6 +1,6 @@
 from typing import Dict, List, Optional
 
-from e2b.sandbox.git import (
+from e2b.sandbox._git import (
     GitBranches,
     GitStatus,
     build_add_args,

@@ -1,9 +1,9 @@
 from typing import List, Optional
 
 from e2b.exceptions import InvalidArgumentException
-from e2b.sandbox.git.auth import strip_credentials, with_credentials
-from e2b.sandbox.git.parse import derive_repo_dir_from_url
-from e2b.sandbox.git.types import ClonePlan
+from e2b.sandbox._git.auth import strip_credentials, with_credentials
+from e2b.sandbox._git.parse import derive_repo_dir_from_url
+from e2b.sandbox._git.types import ClonePlan
 
 
 def shell_escape(value: str) -> str:

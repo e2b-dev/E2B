@@ -1,6 +1,6 @@
 """Compatibility re-exports for git helpers."""
 
-from e2b.sandbox.git import (
+from e2b.sandbox._git import (
     ClonePlan,
     GitBranches,
     GitFileStatus,

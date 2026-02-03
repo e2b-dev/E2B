@@ -6,7 +6,7 @@ from e2b.exceptions import (
     InvalidArgumentException,
 )
 from e2b.sandbox.commands.command_handle import CommandExitException
-from e2b.sandbox.git import (
+from e2b.sandbox._git import (
     GitBranches,
     GitStatus,
     build_add_args,
