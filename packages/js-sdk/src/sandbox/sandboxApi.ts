@@ -141,6 +141,11 @@ export type SandboxBetaCreateOpts = SandboxOpts & {
    * @default false
    */
   autoPause?: boolean
+  /**
+   * Auto-resume policy for paused sandboxes. Omit to disable auto-resume.
+   * @default undefined
+   */
+  autoResume?: 'any' | 'authed'
 }
 
 /**
@@ -540,6 +545,7 @@ export class SandboxApi {
     const res = await client.api.POST('/sandboxes', {
       body: {
         autoPause: opts?.autoPause ?? false,
+        autoResume: opts?.autoResume,
         templateID: template,
         metadata: opts?.metadata,
         mcp: opts?.mcp as Record<string, unknown> | undefined,

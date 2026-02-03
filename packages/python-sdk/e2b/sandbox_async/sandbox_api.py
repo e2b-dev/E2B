@@ -153,6 +153,7 @@ class SandboxApi(SandboxBase):
         template: str,
         timeout: int,
         auto_pause: bool,
+        auto_resume: Optional[str],
         allow_internet_access: bool,
         metadata: Optional[Dict[str, str]],
         env_vars: Optional[Dict[str, str]],
@@ -168,6 +169,7 @@ class SandboxApi(SandboxBase):
             body=NewSandbox(
                 template_id=template,
                 auto_pause=auto_pause,
+                auto_resume=auto_resume,
                 metadata=metadata or {},
                 timeout=timeout,
                 env_vars=env_vars or {},

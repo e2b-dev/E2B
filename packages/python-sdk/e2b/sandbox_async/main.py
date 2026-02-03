@@ -191,6 +191,7 @@ class AsyncSandbox(SandboxApi):
             template=template,
             timeout=timeout,
             auto_pause=False,
+            auto_resume=None,
             metadata=metadata,
             envs=envs,
             secure=secure,
@@ -522,6 +523,7 @@ class AsyncSandbox(SandboxApi):
         template: Optional[str] = None,
         timeout: Optional[int] = None,
         auto_pause: bool = False,
+        auto_resume: Optional[str] = None,
         metadata: Optional[Dict[str, str]] = None,
         envs: Optional[Dict[str, str]] = None,
         secure: bool = True,
@@ -539,6 +541,7 @@ class AsyncSandbox(SandboxApi):
         :param template: Sandbox template name or ID
         :param timeout: Timeout for the sandbox in **seconds**, default to 300 seconds. The maximum time a sandbox can be kept alive is 24 hours (86_400 seconds) for Pro users and 1 hour (3_600 seconds) for Hobby users.
         :param auto_pause: Automatically pause the sandbox after the timeout expires. Defaults to `False`.
+        :param auto_resume: Auto-resume policy for paused sandboxes. Use `"any"` to allow any request, `"authed"` to allow only authenticated requests. Omit to disable auto-resume.
         :param metadata: Custom metadata for the sandbox
         :param envs: Custom environment variables for the sandbox
         :param secure: Envd is secured with access token and cannot be used without it, defaults to `True`.
@@ -559,6 +562,7 @@ class AsyncSandbox(SandboxApi):
             template=template,
             timeout=timeout,
             auto_pause=auto_pause,
+            auto_resume=auto_resume,
             metadata=metadata,
             envs=envs,
             secure=secure,
@@ -680,6 +684,7 @@ class AsyncSandbox(SandboxApi):
         template: Optional[str],
         timeout: Optional[int],
         auto_pause: bool,
+        auto_resume: Optional[str],
         allow_internet_access: bool,
         metadata: Optional[Dict[str, str]],
         envs: Optional[Dict[str, str]],
@@ -702,6 +707,7 @@ class AsyncSandbox(SandboxApi):
                 template=template or cls.default_template,
                 timeout=timeout or cls.default_sandbox_timeout,
                 auto_pause=auto_pause,
+                auto_resume=auto_resume,
                 metadata=metadata,
                 env_vars=envs,
                 secure=secure,

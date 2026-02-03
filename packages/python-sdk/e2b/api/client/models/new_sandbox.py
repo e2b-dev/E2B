@@ -22,6 +22,7 @@ class NewSandbox:
         allow_internet_access (Union[Unset, bool]): Allow sandbox to access the internet. When set to false, it behaves
             the same as specifying denyOut to 0.0.0.0/0 in the network config.
         auto_pause (Union[Unset, bool]): Automatically pauses the sandbox after the timeout Default: False.
+        auto_resume (Union[Unset, str]): Auto-resume policy for paused sandboxes. "any" to allow any traffic to resume, "authed" for authed traffic only. Omit to disable auto-resume.
         env_vars (Union[Unset, Any]):
         mcp (Union['McpType0', None, Unset]): MCP configuration for the sandbox
         metadata (Union[Unset, Any]):
@@ -33,6 +34,7 @@ class NewSandbox:
     template_id: str
     allow_internet_access: Union[Unset, bool] = UNSET
     auto_pause: Union[Unset, bool] = False
+    auto_resume: Union[Unset, str] = UNSET
     env_vars: Union[Unset, Any] = UNSET
     mcp: Union["McpType0", None, Unset] = UNSET
     metadata: Union[Unset, Any] = UNSET
@@ -49,6 +51,8 @@ class NewSandbox:
         allow_internet_access = self.allow_internet_access
 
         auto_pause = self.auto_pause
+
+        auto_resume = self.auto_resume
 
         env_vars = self.env_vars
 
@@ -81,6 +85,8 @@ class NewSandbox:
             field_dict["allow_internet_access"] = allow_internet_access
         if auto_pause is not UNSET:
             field_dict["autoPause"] = auto_pause
+        if auto_resume is not UNSET:
+            field_dict["autoResume"] = auto_resume
         if env_vars is not UNSET:
             field_dict["envVars"] = env_vars
         if mcp is not UNSET:
@@ -107,6 +113,8 @@ class NewSandbox:
         allow_internet_access = d.pop("allow_internet_access", UNSET)
 
         auto_pause = d.pop("autoPause", UNSET)
+
+        auto_resume = d.pop("autoResume", UNSET)
 
         env_vars = d.pop("envVars", UNSET)
 
@@ -144,6 +152,7 @@ class NewSandbox:
             template_id=template_id,
             allow_internet_access=allow_internet_access,
             auto_pause=auto_pause,
+            auto_resume=auto_resume,
             env_vars=env_vars,
             mcp=mcp,
             metadata=metadata,
