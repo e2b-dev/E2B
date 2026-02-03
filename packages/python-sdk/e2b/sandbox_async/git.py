@@ -6,21 +6,37 @@ from e2b.exceptions import (
     InvalidArgumentException,
 )
 from e2b.sandbox.commands.command_handle import CommandExitException
-from e2b.sandbox.git_utils import (
+from e2b.sandbox._git import (
     GitBranches,
     GitStatus,
+    build_add_args,
     build_auth_error_message,
+    build_branches_args,
+    build_checkout_branch_args,
+    build_clone_plan,
+    build_commit_args,
+    build_credential_approve_command,
+    build_create_branch_args,
+    build_delete_branch_args,
     build_git_command,
+    build_has_upstream_args,
+    build_pull_args,
     build_push_args,
+    build_remote_add_args,
+    build_remote_add_shell_command,
+    build_remote_get_command,
+    build_remote_get_url_args,
+    build_remote_set_url_args,
+    build_reset_args,
+    build_restore_args,
+    build_status_args,
     build_upstream_error_message,
     is_auth_failure,
     is_missing_upstream,
     parse_git_branches,
     parse_git_status,
+    parse_remote_url,
     resolve_config_scope,
-    shell_escape,
-    strip_credentials,
-    derive_repo_dir_from_url,
     with_credentials,
 )
 from e2b.sandbox_async.commands.command import Commands
@@ -116,7 +132,7 @@ class Git:
     ) -> bool:
         try:
             result = await self._run_git(
-                ["rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}"],
+                build_has_upstream_args(),
                 path,
                 envs,
                 user,
@@ -226,7 +242,7 @@ class Git:
         request_timeout: Optional[float] = None,
     ) -> str:
         result = await self._run_git(
-            ["remote", "get-url", remote],
+            build_remote_get_url_args(remote),
             path,
             envs,
             user,
@@ -234,12 +250,7 @@ class Git:
             timeout,
             request_timeout,
         )
-        url = result.stdout.strip()
-        if not url:
-            raise InvalidArgumentException(
-                f'Remote "{remote}" URL not found in repository.'
-            )
-        return url
+        return parse_remote_url(result.stdout, remote)
 
     async def clone(
         self,
@@ -281,36 +292,22 @@ class Git:
         async def attempt_clone(
             auth_username: Optional[str], auth_password: Optional[str]
         ):
-            clone_url = (
-                with_credentials(url, auth_username, auth_password)
-                if auth_username and auth_password
-                else url
+            plan = build_clone_plan(
+                url=url,
+                path=path,
+                branch=branch,
+                depth=depth,
+                auth_username=auth_username,
+                auth_password=auth_password,
+                dangerously_store_credentials=dangerously_store_credentials,
             )
-            sanitized_url = strip_credentials(clone_url)
-            should_strip = (
-                not dangerously_store_credentials and sanitized_url != clone_url
-            )
-            repo_path = (
-                path if not should_strip else path or derive_repo_dir_from_url(url)
-            )
-            if should_strip and not repo_path:
-                raise InvalidArgumentException(
-                    "A destination path is required when using credentials without storing them."
-                )
-            args = ["clone", clone_url]
-            if branch:
-                args.extend(["--branch", branch, "--single-branch"])
-            if depth:
-                args.extend(["--depth", str(depth)])
-            if path:
-                args.append(path)
             result = await self._run_git(
-                args, None, envs, user, cwd, timeout, request_timeout
+                plan.args, None, envs, user, cwd, timeout, request_timeout
             )
-            if should_strip and repo_path:
+            if plan.should_strip and plan.repo_path and plan.sanitized_url:
                 await self._run_git(
-                    ["remote", "set-url", "origin", sanitized_url],
-                    repo_path,
+                    build_remote_set_url_args("origin", plan.sanitized_url),
+                    plan.repo_path,
                     envs,
                     user,
                     cwd,
@@ -390,27 +387,14 @@ class Git:
         :param request_timeout: Timeout for the request in **seconds**
         :return: Command result from the command runner
         """
-        if not name or not url:
-            raise InvalidArgumentException(
-                "Both remote name and URL are required to add a git remote."
-            )
-
-        args = ["remote", "add"]
-        if fetch:
-            args.append("-f")
-        args.extend([name, url])
+        args = build_remote_add_args(name, url, fetch)
 
         if not overwrite:
             return await self._run_git(
                 args, path, envs, user, cwd, timeout, request_timeout
             )
 
-        add_cmd = build_git_command(args, path)
-        set_url_cmd = build_git_command(["remote", "set-url", name, url], path)
-        cmd = f"{add_cmd} || {set_url_cmd}"
-        if fetch:
-            fetch_cmd = build_git_command(["fetch", name], path)
-            cmd = f"({cmd}) && {fetch_cmd}"
+        cmd = build_remote_add_shell_command(args, path, name, url, fetch)
         return await self._run_shell(
             cmd,
             envs,
@@ -444,10 +428,7 @@ class Git:
         :param request_timeout: Timeout for the request in **seconds**
         :return: Remote URL if present, otherwise `None`
         """
-        if not name:
-            raise InvalidArgumentException("Remote name is required.")
-
-        cmd = f"{build_git_command(['remote', 'get-url', name], path)} || true"
+        cmd = build_remote_get_command(path, name)
         result = (
             await self._run_shell(
                 cmd,
@@ -481,7 +462,7 @@ class Git:
         :return: Parsed git status
         """
         result = await self._run_git(
-            ["status", "--porcelain=1", "-b"],
+            build_status_args(),
             path,
             envs,
             user,
@@ -512,7 +493,7 @@ class Git:
         :return: Parsed branch list
         """
         result = await self._run_git(
-            ["branch", "--format=%(refname:short)\t%(HEAD)"],
+            build_branches_args(),
             path,
             envs,
             user,
@@ -545,7 +526,7 @@ class Git:
         :return: Command result from the command runner
         """
         return await self._run_git(
-            ["checkout", "-b", branch],
+            build_create_branch_args(branch),
             path,
             envs,
             user,
@@ -577,7 +558,7 @@ class Git:
         :return: Command result from the command runner
         """
         return await self._run_git(
-            ["checkout", branch],
+            build_checkout_branch_args(branch),
             path,
             envs,
             user,
@@ -610,7 +591,7 @@ class Git:
         :param request_timeout: Timeout for the request in **seconds**
         :return: Command result from the command runner
         """
-        args = ["branch", "-D" if force else "-d", branch]
+        args = build_delete_branch_args(branch, force)
         return await self._run_git(
             args, path, envs, user, cwd, timeout, request_timeout
         )
@@ -639,12 +620,7 @@ class Git:
         :param request_timeout: Timeout for the request in **seconds**
         :return: Command result from the command runner
         """
-        args = ["add"]
-        if not files:
-            args.append("-A" if all else ".")
-        else:
-            args.append("--")
-            args.extend(files)
+        args = build_add_args(files, all)
         return await self._run_git(
             args, path, envs, user, cwd, timeout, request_timeout
         )
@@ -677,16 +653,71 @@ class Git:
         :param request_timeout: Timeout for the request in **seconds**
         :return: Command result from the command runner
         """
-        args = ["commit", "-m", message]
-        if allow_empty:
-            args.append("--allow-empty")
-        author_args: List[str] = []
-        if author_name:
-            author_args.extend(["-c", f"user.name={author_name}"])
-        if author_email:
-            author_args.extend(["-c", f"user.email={author_email}"])
-        if author_args:
-            args = author_args + args
+        args = build_commit_args(message, author_name, author_email, allow_empty)
+        return await self._run_git(
+            args, path, envs, user, cwd, timeout, request_timeout
+        )
+
+    async def reset(
+        self,
+        path: str,
+        mode: Optional[str] = None,
+        target: Optional[str] = None,
+        paths: Optional[List[str]] = None,
+        envs: Optional[Dict[str, str]] = None,
+        user: Optional[str] = None,
+        cwd: Optional[str] = None,
+        timeout: Optional[float] = None,
+        request_timeout: Optional[float] = None,
+    ):
+        """
+        Reset the current HEAD to a specified state.
+
+        :param path: Repository path
+        :param mode: Reset mode (soft, mixed, hard, merge, keep)
+        :param target: Commit, branch, or ref to reset to (defaults to HEAD)
+        :param paths: Paths to reset
+        :param envs: Environment variables used for the command
+        :param user: User to run the command as
+        :param cwd: Working directory to run the command
+        :param timeout: Timeout for the command connection in **seconds**
+        :param request_timeout: Timeout for the request in **seconds**
+        :return: Command result from the command runner
+        """
+        args = build_reset_args(mode, target, paths)
+        return await self._run_git(
+            args, path, envs, user, cwd, timeout, request_timeout
+        )
+
+    async def restore(
+        self,
+        path: str,
+        paths: List[str],
+        staged: Optional[bool] = None,
+        worktree: Optional[bool] = None,
+        source: Optional[str] = None,
+        envs: Optional[Dict[str, str]] = None,
+        user: Optional[str] = None,
+        cwd: Optional[str] = None,
+        timeout: Optional[float] = None,
+        request_timeout: Optional[float] = None,
+    ):
+        """
+        Restore working tree files or unstage changes.
+
+        :param path: Repository path
+        :param paths: Paths to restore (use ["."] for all)
+        :param staged: When True, restore the index (unstage)
+        :param worktree: When True, restore working tree files
+        :param source: Restore from the given source (commit, branch, or ref)
+        :param envs: Environment variables used for the command
+        :param user: User to run the command as
+        :param cwd: Working directory to run the command
+        :param timeout: Timeout for the command connection in **seconds**
+        :param request_timeout: Timeout for the request in **seconds**
+        :return: Command result from the command runner
+        """
+        args = build_restore_args(paths, staged, worktree, source)
         return await self._run_git(
             args, path, envs, user, cwd, timeout, request_timeout
         )
@@ -822,15 +853,6 @@ class Git:
             if not has_upstream:
                 raise GitUpstreamException(build_upstream_error_message("pull"))
 
-        def build_args(remote_name: Optional[str] = None) -> List[str]:
-            args = ["pull"]
-            target_remote = remote_name or remote
-            if target_remote:
-                args.append(target_remote)
-            if branch:
-                args.append(branch)
-            return args
-
         if username and password:
             remote_name = await self._resolve_remote_name(
                 path, remote, envs, user, cwd, timeout, request_timeout
@@ -846,7 +868,7 @@ class Git:
                 timeout,
                 request_timeout,
                 operation=lambda: self._run_git(
-                    build_args(remote_name),
+                    build_pull_args(remote, branch, remote_name),
                     path,
                     envs,
                     user,
@@ -858,7 +880,13 @@ class Git:
 
         try:
             return await self._run_git(
-                build_args(), path, envs, user, cwd, timeout, request_timeout
+                build_pull_args(remote, branch),
+                path,
+                envs,
+                user,
+                cwd,
+                timeout,
+                request_timeout,
             )
         except CommandExitException as err:
             if is_auth_failure(err):
@@ -993,19 +1021,6 @@ class Git:
                 "Both username and password are required to authenticate git."
             )
 
-        target_host = host.strip() or "github.com"
-        target_protocol = protocol.strip() or "https"
-        credential_input = "\n".join(
-            [
-                f"protocol={target_protocol}",
-                f"host={target_host}",
-                f"username={username}",
-                f"password={password}",
-                "",
-                "",
-            ]
-        )
-
         await self.set_config(
             "credential.helper",
             "store",
@@ -1016,9 +1031,11 @@ class Git:
             timeout=timeout,
             request_timeout=request_timeout,
         )
-        approve_cmd = (
-            f"printf %s {shell_escape(credential_input)} | "
-            f"{build_git_command(['credential', 'approve'])}"
+        approve_cmd = build_credential_approve_command(
+            username=username,
+            password=password,
+            host=host,
+            protocol=protocol,
         )
         return await self._run_shell(
             approve_cmd,
