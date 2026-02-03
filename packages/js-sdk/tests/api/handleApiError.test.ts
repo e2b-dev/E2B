@@ -1,12 +1,20 @@
 import { assert, test, describe } from 'vitest'
 import { handleApiError } from '../../src/api'
-import { AuthenticationError, RateLimitError, SandboxError } from '../../src/errors'
+import {
+  AuthenticationError,
+  RateLimitError,
+  SandboxError,
+} from '../../src/errors'
 
 function createMockResponse(
   status: number,
   error: unknown,
   data?: unknown
-): { response: { status: number; ok: boolean }; error: unknown; data: unknown } {
+): {
+  response: { status: number; ok: boolean }
+  error: unknown
+  data: unknown
+} {
   return {
     response: { status, ok: status >= 200 && status < 300 },
     error,
