@@ -9,7 +9,7 @@ import { apiUrl, buildTemplateTest } from '../setup'
 import { randomUUID } from 'node:crypto'
 
 const __fileContent = fs.readFileSync(__filename, 'utf8') // read current file content
-const nonExistentPath = '/nonexistent/path'
+const nonExistentPath = './nonexistent/path'
 
 // map template alias -> failed step index
 const failureMap: Record<string, number | undefined> = {
