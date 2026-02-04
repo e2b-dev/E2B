@@ -14,6 +14,23 @@ from e2b.exceptions import TemplateException
 from e2b.template.consts import BASE_STEP_NAME, FINALIZE_STEP_NAME
 
 
+def make_traceback(caller_frame: Optional[FrameType]) -> Optional[TracebackType]:
+    """
+    Create a TracebackType from a caller frame for error reporting.
+
+    :param caller_frame: The caller's frame object, or None
+    :return: A TracebackType object for use with exception.with_traceback(), or None
+    """
+    if caller_frame is None:
+        return None
+    return TracebackType(
+        tb_next=None,
+        tb_frame=caller_frame,
+        tb_lasti=caller_frame.f_lasti,
+        tb_lineno=caller_frame.f_lineno,
+    )
+
+
 def validate_relative_path(
     src: str,
     stack_trace: Optional[TracebackType],

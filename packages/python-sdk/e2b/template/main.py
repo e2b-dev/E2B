@@ -17,6 +17,7 @@ from e2b.template.types import (
 from e2b.template.utils import (
     calculate_files_hash,
     get_caller_directory,
+    make_traceback,
     pad_octal,
     read_dockerignore,
     read_gcp_service_account_json,
@@ -67,14 +68,7 @@ class TemplateBuilder:
 
         # Get the caller frame for stack trace in validation errors
         caller_frame = get_caller_frame(STACK_TRACE_DEPTH - 1)
-        stack_trace = None
-        if caller_frame is not None:
-            stack_trace = TracebackType(
-                tb_next=None,
-                tb_frame=caller_frame,
-                tb_lasti=caller_frame.f_lasti,
-                tb_lineno=caller_frame.f_lineno,
-            )
+        stack_trace = make_traceback(caller_frame)
 
         for src_item in srcs:
             src_string = str(src_item)
@@ -120,14 +114,7 @@ class TemplateBuilder:
         """
         # Get the stack trace at the copy_items call site
         caller_frame = get_caller_frame(STACK_TRACE_DEPTH - 1)
-        stack_trace = None
-        if caller_frame is not None:
-            stack_trace = TracebackType(
-                tb_next=None,
-                tb_frame=caller_frame,
-                tb_lasti=caller_frame.f_lasti,
-                tb_lineno=caller_frame.f_lineno,
-            )
+        stack_trace = make_traceback(caller_frame)
 
         def _copy_items():
             for item in items:
@@ -518,14 +505,7 @@ class TemplateBuilder:
         """
         if self._template._base_template != "mcp-gateway":
             caller_frame = get_caller_frame(STACK_TRACE_DEPTH - 1)
-            stack_trace = None
-            if caller_frame is not None:
-                stack_trace = TracebackType(
-                    tb_next=None,
-                    tb_frame=caller_frame,
-                    tb_lasti=caller_frame.f_lasti,
-                    tb_lineno=caller_frame.f_lineno,
-                )
+            stack_trace = make_traceback(caller_frame)
             raise BuildException(
                 "MCP servers can only be added to mcp-gateway template"
             ).with_traceback(stack_trace)
@@ -594,14 +574,7 @@ class TemplateBuilder:
         """
         if self._template._base_template != "devcontainer":
             caller_frame = get_caller_frame(STACK_TRACE_DEPTH - 1)
-            stack_trace = None
-            if caller_frame is not None:
-                stack_trace = TracebackType(
-                    tb_next=None,
-                    tb_frame=caller_frame,
-                    tb_lasti=caller_frame.f_lasti,
-                    tb_lineno=caller_frame.f_lineno,
-                )
+            stack_trace = make_traceback(caller_frame)
             raise BuildException(
                 "Devcontainers can only used in the devcontainer template"
             ).with_traceback(stack_trace)
@@ -640,14 +613,7 @@ class TemplateBuilder:
         """
         if self._template._base_template != "devcontainer":
             caller_frame = get_caller_frame(STACK_TRACE_DEPTH - 1)
-            stack_trace = None
-            if caller_frame is not None:
-                stack_trace = TracebackType(
-                    tb_next=None,
-                    tb_frame=caller_frame,
-                    tb_lasti=caller_frame.f_lasti,
-                    tb_lineno=caller_frame.f_lineno,
-                )
+            stack_trace = make_traceback(caller_frame)
             raise BuildException(
                 "Devcontainers can only used in the devcontainer template"
             ).with_traceback(stack_trace)
@@ -863,19 +829,7 @@ class TemplateBase:
             return self
 
         stack = get_caller_frame(stack_traces_depth)
-        if stack is None:
-            self._stack_traces.append(None)
-            return self
-
-        # Create a traceback object from the caller frame
-        capture_stack_trace = TracebackType(
-            tb_next=None,
-            tb_frame=stack,
-            tb_lasti=stack.f_lasti,
-            tb_lineno=stack.f_lineno,
-        )
-
-        self._stack_traces.append(capture_stack_trace)
+        self._stack_traces.append(make_traceback(stack))
         return self
 
     def _disable_stack_trace(self) -> "TemplateBase":
@@ -1106,14 +1060,7 @@ class TemplateBase:
         # Get the caller frame to use for stack trace override
         # -1 as we're going up the call stack from the parse_dockerfile function
         caller_frame = get_caller_frame(STACK_TRACE_DEPTH - 1)
-        stack_trace_override = None
-        if caller_frame is not None:
-            stack_trace_override = TracebackType(
-                tb_next=None,
-                tb_frame=caller_frame,
-                tb_lasti=caller_frame.f_lasti,
-                tb_lineno=caller_frame.f_lineno,
-            )
+        stack_trace_override = make_traceback(caller_frame)
 
         # Parse the dockerfile using the builder as the interface
         base_image = self._run_in_stack_trace_override_context(
