@@ -109,26 +109,22 @@ export const buildTemplateTest = base.extend<BuildTemplateFixture>({
 })
 
 /**
- * Creates a test that is allowed to fail (similar to pytest's @pytest.mark.xfail).
+ * Wraps a test callback to allow it to fail without breaking CI.
  * - If the test passes → test passes (ideal outcome)
- * - If the test fails → logs XFAIL and test still passes (expected failure)
+ * - If the test fails → logs ALLOW_FAIL and test still passes
  *
- * Unlike try-catch that silently swallows errors, this clearly reports failures
- * in test output while not breaking CI.
+ * Works with any test fixture type (sandboxTest, buildTemplateTest, etc.)
  */
-export function buildTemplateTestAllowFail(
-  name: string,
-  fn: (fixtures: BuildTemplateFixture) => Promise<void>,
-  reason?: string
-) {
-  return buildTemplateTest(name, async ({ buildTemplate }) => {
+export function allowFail<T>(
+  fn: (fixtures: T) => Promise<void>
+): (fixtures: T) => Promise<void> {
+  return async (fixtures: T) => {
     try {
-      await fn({ buildTemplate })
+      await fn(fixtures)
     } catch (error) {
-      const reasonStr = reason ? ` (${reason})` : ''
-      console.error(`\n[XFAIL] "${name}"${reasonStr}: ${error}`)
+      console.error(`\n[ALLOW_FAIL]: ${error}`)
     }
-  })
+  }
 }
 
 export const isDebug = process.env.E2B_DEBUG !== undefined
