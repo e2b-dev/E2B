@@ -1642,7 +1642,7 @@ export interface components {
              * @description Auto-resume policy for paused sandboxes. Omit to disable auto-resume.
              * @enum {string}
              */
-            autoResume?: "any" | "authed";
+            autoResume?: "any" | "authed" | null;
             envVars?: components["schemas"]["EnvVars"];
             mcp?: components["schemas"]["Mcp"];
             metadata?: components["schemas"]["SandboxMetadata"];

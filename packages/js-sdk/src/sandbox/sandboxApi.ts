@@ -142,10 +142,10 @@ export type SandboxBetaCreateOpts = SandboxOpts & {
    */
   autoPause?: boolean
   /**
-   * Auto-resume policy for paused sandboxes. Omit to disable auto-resume.
+   * Auto-resume policy for paused sandboxes. Set to null or omit to disable auto-resume.
    * @default undefined
    */
-  autoResume?: 'any' | 'authed'
+  autoResume?: 'any' | 'authed' | null
 }
 
 /**
@@ -542,19 +542,21 @@ export class SandboxApi {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
 
+    const body = {
+      autoPause: opts?.autoPause ?? false,
+      ...(opts?.autoResume == null ? {} : { autoResume: opts.autoResume }),
+      templateID: template,
+      metadata: opts?.metadata,
+      mcp: opts?.mcp as Record<string, unknown> | undefined,
+      envVars: opts?.envs,
+      timeout: timeoutToSeconds(timeoutMs),
+      secure: opts?.secure ?? true,
+      allow_internet_access: opts?.allowInternetAccess ?? true,
+      network: opts?.network,
+    }
+
     const res = await client.api.POST('/sandboxes', {
-      body: {
-        autoPause: opts?.autoPause ?? false,
-        autoResume: opts?.autoResume,
-        templateID: template,
-        metadata: opts?.metadata,
-        mcp: opts?.mcp as Record<string, unknown> | undefined,
-        envVars: opts?.envs,
-        timeout: timeoutToSeconds(timeoutMs),
-        secure: opts?.secure ?? true,
-        allow_internet_access: opts?.allowInternetAccess ?? true,
-        network: opts?.network,
-      },
+      body,
       signal: config.getSignal(opts?.requestTimeoutMs),
     })
 
