@@ -115,12 +115,12 @@ export const buildTemplateTest = base.extend<BuildTemplateFixture>({
  *
  * Works with any test fixture type (sandboxTest, buildTemplateTest, etc.)
  */
-export function allowFail<T>(
+export function allowFail<T extends object>(
   fn: (fixtures: T) => Promise<void>
 ): (fixtures: T) => Promise<void> {
-  return async (fixtures: T) => {
+  return async ({ ...fixtures }: T) => {
     try {
-      await fn(fixtures)
+      await fn(fixtures as T)
     } catch (error) {
       console.error(`\n[ALLOW_FAIL]: ${error}`)
     }
