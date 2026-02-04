@@ -109,22 +109,21 @@ export const buildTemplateTest = base.extend<BuildTemplateFixture>({
 })
 
 /**
- * Wraps a test callback to allow it to fail without breaking CI.
+ * Creates a build template test that is allowed to fail without breaking CI.
  * - If the test passes → test passes (ideal outcome)
  * - If the test fails → logs ALLOW_FAIL and test still passes
- *
- * Works with any test fixture type (sandboxTest, buildTemplateTest, etc.)
  */
-export function allowFail<T extends object>(
-  fn: (fixtures: T) => Promise<void>
-): (fixtures: T) => Promise<void> {
-  return async ({ ...fixtures }: T) => {
+export function buildTemplateTestAllowFail(
+  name: string,
+  fn: (fixtures: BuildTemplateFixture) => Promise<void>
+) {
+  return buildTemplateTest(name, async ({ buildTemplate }) => {
     try {
-      await fn(fixtures as T)
+      await fn({ buildTemplate })
     } catch (error) {
-      console.error(`\n[ALLOW_FAIL]: ${error}`)
+      console.error(`\n[ALLOW_FAIL] ${name}: ${error}`)
     }
-  }
+  })
 }
 
 export const isDebug = process.env.E2B_DEBUG !== undefined
