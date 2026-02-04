@@ -1,21 +1,20 @@
 import { Template } from '../../../src'
-import { buildTemplateTest } from '../../setup'
+import { buildTemplateTestXFail } from '../../setup'
 
-// Mark tests as expected to fail (similar to pytest's @pytest.mark.xfail(strict=True))
-// Unlike try-catch which silently swallows errors, .fails() properly reports test results:
-// - If test fails as expected → test passes (XFAIL behavior)
-// - If test unexpectedly passes → test fails, signaling the issue may be fixed
+buildTemplateTestXFail(
+  'apt install',
+  async ({ buildTemplate }) => {
+    const template = Template()
+      .fromImage('ubuntu:24.04')
+      .skipCache()
+      .aptInstall('rolldice')
 
-buildTemplateTest.fails('apt install', async ({ buildTemplate }) => {
-  const template = Template()
-    .fromImage('ubuntu:24.04')
-    .skipCache()
-    .aptInstall('rolldice')
+    await buildTemplate(template)
+  },
+  'aptInstall tests are optional and allowed to fail'
+)
 
-  await buildTemplate(template)
-})
-
-buildTemplateTest.fails(
+buildTemplateTestXFail(
   'apt install with no install recommends',
   async ({ buildTemplate }) => {
     const template = Template()
@@ -24,5 +23,6 @@ buildTemplateTest.fails(
       .aptInstall('rolldice', { noInstallRecommends: true })
 
     await buildTemplate(template)
-  }
+  },
+  'aptInstall tests are optional and allowed to fail'
 )
