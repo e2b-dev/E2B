@@ -116,7 +116,7 @@ export const buildTemplateTest = base.extend<BuildTemplateFixture>({
  * Unlike try-catch that silently swallows errors, this clearly reports failures
  * in test output while not breaking CI.
  */
-export function buildTemplateTestXFail(
+export function buildTemplateTestAllowFail(
   name: string,
   fn: (fixtures: BuildTemplateFixture) => Promise<void>,
   reason?: string

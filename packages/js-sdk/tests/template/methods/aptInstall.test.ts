@@ -1,7 +1,7 @@
 import { Template } from '../../../src'
-import { buildTemplateTestXFail } from '../../setup'
+import { buildTemplateTestAllowFail } from '../../setup'
 
-buildTemplateTestXFail(
+buildTemplateTestAllowFail(
   'apt install',
   async ({ buildTemplate }) => {
     const template = Template()
@@ -14,7 +14,7 @@ buildTemplateTestXFail(
   'aptInstall tests are optional and allowed to fail'
 )
 
-buildTemplateTestXFail(
+buildTemplateTestAllowFail(
   'apt install with no install recommends',
   async ({ buildTemplate }) => {
     const template = Template()
