@@ -14,7 +14,9 @@ export function handleApiError(
   ) => Error = SandboxError,
   stackTrace?: string
 ): Error | undefined {
-  if (!response.error) {
+  // openapi-fetch returns empty string for error when response body is empty,
+  // so we check !== undefined instead of truthiness
+  if (response.error === undefined) {
     return
   }
 

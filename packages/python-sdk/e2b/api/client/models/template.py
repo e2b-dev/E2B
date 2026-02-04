@@ -30,6 +30,7 @@ class Template:
         envd_version (str): Version of the envd running in the sandbox
         last_spawned_at (Union[None, datetime.datetime]): Time when the template was last used
         memory_mb (int): Memory for the sandbox in MiB
+        names (list[str]): Names of the template (namespace/alias format when namespaced)
         public (bool): Whether the template is public or only accessible by the team
         spawn_count (int): Number of times the template was used
         template_id (str): Identifier of the template
@@ -47,6 +48,7 @@ class Template:
     envd_version: str
     last_spawned_at: Union[None, datetime.datetime]
     memory_mb: int
+    names: list[str]
     public: bool
     spawn_count: int
     template_id: str
@@ -86,6 +88,8 @@ class Template:
 
         memory_mb = self.memory_mb
 
+        names = self.names
+
         public = self.public
 
         spawn_count = self.spawn_count
@@ -109,6 +113,7 @@ class Template:
                 "envdVersion": envd_version,
                 "lastSpawnedAt": last_spawned_at,
                 "memoryMB": memory_mb,
+                "names": names,
                 "public": public,
                 "spawnCount": spawn_count,
                 "templateID": template_id,
@@ -171,6 +176,8 @@ class Template:
 
         memory_mb = d.pop("memoryMB")
 
+        names = cast(list[str], d.pop("names"))
+
         public = d.pop("public")
 
         spawn_count = d.pop("spawnCount")
@@ -191,6 +198,7 @@ class Template:
             envd_version=envd_version,
             last_spawned_at=last_spawned_at,
             memory_mb=memory_mb,
+            names=names,
             public=public,
             spawn_count=spawn_count,
             template_id=template_id,

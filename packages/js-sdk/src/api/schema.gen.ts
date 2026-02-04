@@ -806,7 +806,10 @@ export interface paths {
         };
         options?: never;
         head?: never;
-        /** @description Update template */
+        /**
+         * @deprecated
+         * @description Update template
+         */
         patch: {
             parameters: {
                 query?: never;
@@ -1224,6 +1227,51 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/v2/templates/{templateID}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** @description Update template */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    templateID: components["parameters"]["templateID"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["TemplateUpdateRequest"];
+                };
+            };
+            responses: {
+                /** @description The template was updated successfully */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TemplateUpdateResponse"];
+                    };
+                };
+                400: components["responses"]["400"];
+                401: components["responses"]["401"];
+                500: components["responses"]["500"];
+            };
+        };
         trace?: never;
     };
     "/v2/templates/{templateID}/builds/{buildID}": {
@@ -1961,7 +2009,10 @@ export interface components {
             id: string;
         };
         Template: {
-            /** @description Aliases of the template */
+            /**
+             * @deprecated
+             * @description Aliases of the template
+             */
             aliases: string[];
             /**
              * Format: int32
@@ -1986,6 +2037,8 @@ export interface components {
              */
             lastSpawnedAt: string | null;
             memoryMB: components["schemas"]["MemoryMB"];
+            /** @description Names of the template (namespace/alias format when namespaced) */
+            names: string[];
             /** @description Whether the template is public or only accessible by the team */
             public: boolean;
             /**
@@ -2212,8 +2265,15 @@ export interface components {
             /** @description Whether the template is public or only accessible by the team */
             public?: boolean;
         };
+        TemplateUpdateResponse: {
+            /** @description Names of the template (namespace/alias format when namespaced) */
+            names: string[];
+        };
         TemplateWithBuilds: {
-            /** @description Aliases of the template */
+            /**
+             * @deprecated
+             * @description Aliases of the template
+             */
             aliases: string[];
             /** @description List of builds for the template */
             builds: components["schemas"]["TemplateBuild"][];
@@ -2227,6 +2287,8 @@ export interface components {
              * @description Time when the template was last used
              */
             lastSpawnedAt: string | null;
+            /** @description Names of the template (namespace/alias format when namespaced) */
+            names: string[];
             /** @description Whether the template is public or only accessible by the team */
             public: boolean;
             /**
