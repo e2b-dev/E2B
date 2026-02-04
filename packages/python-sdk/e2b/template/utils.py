@@ -1,6 +1,5 @@
 import hashlib
 import os
-import ntpath
 import io
 import tarfile
 import json
@@ -10,7 +9,6 @@ import re
 import inspect
 from types import TracebackType, FrameType
 from typing import List, Optional, Union
-from pathlib import PureWindowsPath
 
 from e2b.exceptions import TemplateException
 from e2b.template.consts import BASE_STEP_NAME, FINALIZE_STEP_NAME
@@ -39,30 +37,18 @@ def validate_relative_path(
     - Current directory prefix: ./foo, ./foo/bar
     - Internal parent refs that don't escape: foo/../bar (stays within context)
     """
-    # Check for absolute paths (Unix-style starting with / or Windows-style with drive letter)
-    # os.path.isabs handles Unix paths, but we also need to check Windows paths on Unix
+    # Check for absolute paths using Python's cross-platform implementation
     if os.path.isabs(src):
         raise TemplateException(
             f'Invalid source path "{src}": absolute paths are not allowed. '
             "Use a relative path within the context directory."
         ).with_traceback(stack_trace)
 
-    # Also check for Windows-style absolute paths (drive letter) when running on Unix
-    # PureWindowsPath can detect Windows absolute paths on any platform
-    if PureWindowsPath(src).is_absolute():
-        raise TemplateException(
-            f'Invalid source path "{src}": absolute paths are not allowed. '
-            "Use a relative path within the context directory."
-        ).with_traceback(stack_trace)
-
     # Normalize the path and check if it escapes the context directory
-    # We check both native and Windows normalization to catch escapes on all platforms
     normalized = os.path.normpath(src)
-    normalized_win = ntpath.normpath(src)
 
-    # After normalization, a path that escapes would be '..' or start with '../' (or '..\' on Windows)
+    # After normalization, a path that escapes would be '..' or start with '../'
     # We check for '..' followed by path separator to avoid false positives on filenames like '..myconfig'
-    # We also check Windows-style paths (using ntpath) to catch '..\' escapes when running on Unix
     # Examples:
     # - '../foo' -> '../foo' (escapes)
     # - 'foo/../../bar' -> '../bar' (escapes)
@@ -70,10 +56,9 @@ def validate_relative_path(
     # - 'foo/../bar' -> 'bar' (doesn't escape)
     # - './foo/bar' -> 'foo/bar' (doesn't escape)
     # - '..myconfig' -> '..myconfig' (valid filename, doesn't escape)
-    escapes_native = normalized == ".." or normalized.startswith(".." + os.sep)
-    escapes_win = normalized_win == ".." or normalized_win.startswith(".." + ntpath.sep)
+    escapes = normalized == ".." or normalized.startswith(".." + os.sep)
 
-    if escapes_native or escapes_win:
+    if escapes:
         raise TemplateException(
             f'Invalid source path "{src}": path escapes the context directory. '
             "The path must stay within the context directory."

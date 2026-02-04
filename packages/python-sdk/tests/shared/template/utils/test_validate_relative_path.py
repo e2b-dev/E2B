@@ -1,7 +1,10 @@
+import sys
 import pytest
 
 from e2b.template.utils import validate_relative_path
 from e2b.exceptions import TemplateException
+
+is_windows = sys.platform == "win32"
 
 
 class TestValidateRelativePathValid:
@@ -49,6 +52,7 @@ class TestValidateRelativePathInvalidAbsolute:
         with pytest.raises(TemplateException):
             validate_relative_path("/", None)
 
+    @pytest.mark.skipif(not is_windows, reason="Windows path test only runs on Windows")
     def test_rejects_windows_drive_letter_path(self):
         with pytest.raises(TemplateException) as excinfo:
             validate_relative_path("C:\\Windows\\System32", None)

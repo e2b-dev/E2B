@@ -2,6 +2,8 @@ import { describe, expect, test } from 'vitest'
 import { validateRelativePath } from '../../../src/template/utils'
 import { TemplateError } from '../../../src/errors'
 
+const isWindows = process.platform === 'win32'
+
 describe('validateRelativePath', () => {
   describe('valid paths', () => {
     test('accepts simple relative path', () => {
@@ -67,8 +69,8 @@ describe('validateRelativePath', () => {
       expect(() => validateRelativePath('/', undefined)).toThrow(TemplateError)
     })
 
-    // Windows path tests - using path.win32.isAbsolute ensures cross-platform detection
-    test('rejects Windows drive letter path', () => {
+    // Windows path tests - only run on Windows where path.isAbsolute detects them
+    test.skipIf(!isWindows)('rejects Windows drive letter path', () => {
       expect(() =>
         validateRelativePath('C:\\Windows\\System32', undefined)
       ).toThrow(TemplateError)
@@ -77,7 +79,7 @@ describe('validateRelativePath', () => {
       ).toThrow('absolute paths are not allowed')
     })
 
-    test('rejects Windows UNC path', () => {
+    test.skipIf(!isWindows)('rejects Windows UNC path', () => {
       expect(() =>
         validateRelativePath('\\\\server\\share', undefined)
       ).toThrow(TemplateError)
@@ -100,11 +102,14 @@ describe('validateRelativePath', () => {
       )
     })
 
-    test('rejects parent directory escape with backslash', () => {
-      expect(() => validateRelativePath('..\\file.txt', undefined)).toThrow(
-        TemplateError
-      )
-    })
+    test.skipIf(!isWindows)(
+      'rejects parent directory escape with backslash',
+      () => {
+        expect(() => validateRelativePath('..\\file.txt', undefined)).toThrow(
+          TemplateError
+        )
+      }
+    )
 
     test('rejects double parent directory escape', () => {
       expect(() => validateRelativePath('../../foo', undefined)).toThrow(

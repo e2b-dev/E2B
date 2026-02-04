@@ -29,10 +29,8 @@ export function validateRelativePath(
   src: string,
   stackTrace: string | undefined
 ): void {
-  // Check for absolute paths (Unix-style starting with / or Windows-style with drive letter)
-  // path.isAbsolute uses platform-specific rules, so we also check path.win32.isAbsolute
-  // to catch Windows absolute paths (C:\foo, \\server\share) when running on Unix
-  if (path.isAbsolute(src) || path.win32.isAbsolute(src)) {
+  // Check for absolute paths using Node's cross-platform implementation
+  if (path.isAbsolute(src)) {
     const error = new TemplateError(
       `Invalid source path "${src}": absolute paths are not allowed. Use a relative path within the context directory.`,
       stackTrace
@@ -41,13 +39,10 @@ export function validateRelativePath(
   }
 
   // Normalize the path and check if it escapes the context directory
-  // We check both native and Windows normalization to catch escapes on all platforms
   const normalized = path.normalize(src)
-  const normalizedWin32 = path.win32.normalize(src)
 
-  // After normalization, a path that escapes would be '..' or start with '../' (or '..\' on Windows)
+  // After normalization, a path that escapes would be '..' or start with '../'
   // We check for '..' followed by path separator to avoid false positives on filenames like '..myconfig'
-  // We also check Windows-style paths (using path.win32) to catch '..\' escapes when running on Unix
   // Examples:
   // - '../foo' -> '../foo' (escapes)
   // - 'foo/../../bar' -> '../bar' (escapes)
@@ -55,13 +50,9 @@ export function validateRelativePath(
   // - 'foo/../bar' -> 'bar' (doesn't escape)
   // - './foo/bar' -> 'foo/bar' (doesn't escape)
   // - '..myconfig' -> '..myconfig' (valid filename, doesn't escape)
-  const escapesNative =
-    normalized === '..' || normalized.startsWith('..' + path.sep)
-  const escapesWin32 =
-    normalizedWin32 === '..' ||
-    normalizedWin32.startsWith('..' + path.win32.sep)
+  const escapes = normalized === '..' || normalized.startsWith('..' + path.sep)
 
-  if (escapesNative || escapesWin32) {
+  if (escapes) {
     const error = new TemplateError(
       `Invalid source path "${src}": path escapes the context directory. The path must stay within the context directory.`,
       stackTrace
