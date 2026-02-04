@@ -121,9 +121,9 @@ export function buildTemplateTestXFail(
   fn: (fixtures: BuildTemplateFixture) => Promise<void>,
   reason?: string
 ) {
-  return buildTemplateTest(name, async (fixtures) => {
+  return buildTemplateTest(name, async ({ buildTemplate }) => {
     try {
-      await fn(fixtures)
+      await fn({ buildTemplate })
     } catch (error) {
       const reasonStr = reason ? ` (${reason})` : ''
       console.error(`\n[XFAIL] "${name}"${reasonStr}: ${error}`)
