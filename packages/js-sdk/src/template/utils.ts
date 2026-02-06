@@ -373,7 +373,7 @@ export async function tarFileStream(
   // gzip.portable ensures deterministic gzip header without affecting file modes
   return create(
     {
-      gzip: { portable: true },
+      gzip: true,
       cwd: fileContextPath,
       follow: resolveSymlinks,
       noDirRecurse: true,
@@ -383,12 +383,12 @@ export async function tarFileStream(
 }
 
 /**
- * Create a tar stream and calculate its compressed size for upload.
+ * Create a tar stream for upload using chunked transfer encoding.
  *
  * @param fileName Glob pattern for files to include
  * @param fileContextPath Base directory for resolving file paths
  * @param resolveSymlinks Whether to follow symbolic links
- * @returns Object containing the content length and upload stream
+ * @returns A readable stream of the gzipped tar archive
  */
 export async function tarFileStreamUpload(
   fileName: string,
@@ -396,27 +396,12 @@ export async function tarFileStreamUpload(
   ignorePatterns: string[],
   resolveSymlinks: boolean
 ) {
-  // First pass: calculate the compressed size
-  const sizeCalculationStream = await tarFileStream(
+  return tarFileStream(
     fileName,
     fileContextPath,
     ignorePatterns,
     resolveSymlinks
   )
-  let contentLength = 0
-  for await (const chunk of sizeCalculationStream as unknown as AsyncIterable<Buffer>) {
-    contentLength += chunk.length
-  }
-
-  return {
-    contentLength,
-    uploadStream: await tarFileStream(
-      fileName,
-      fileContextPath,
-      ignorePatterns,
-      resolveSymlinks
-    ),
-  }
 }
 
 /**
