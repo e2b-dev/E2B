@@ -159,13 +159,13 @@ class Sandbox(SandboxApi):
         cls,
         template: Optional[str] = None,
         timeout: Optional[int] = None,
-        auto_resume: Optional[SandboxAutoResumeConfig] = None,
         metadata: Optional[Dict[str, str]] = None,
         envs: Optional[Dict[str, str]] = None,
         secure: bool = True,
         allow_internet_access: bool = True,
         mcp: Optional[McpServer] = None,
         network: Optional[SandboxNetworkOpts] = None,
+        auto_resume: Optional[SandboxAutoResumeConfig] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
         """
@@ -175,13 +175,13 @@ class Sandbox(SandboxApi):
 
         :param template: Sandbox template name or ID
         :param timeout: Timeout for the sandbox in **seconds**, default to 300 seconds. The maximum time a sandbox can be kept alive is 24 hours (86_400 seconds) for Pro users and 1 hour (3_600 seconds) for Hobby users.
-        :param auto_resume: Auto-resume configuration for paused sandboxes. Use `{"policy": "any" | "off"}` (default is "off"). Set to `{"policy": "any"}` to allow any request, or omit/`{"policy": "off"}` to disable.
         :param metadata: Custom metadata for the sandbox
         :param envs: Custom environment variables for the sandbox
         :param secure: Envd is secured with access token and cannot be used without it, defaults to `True`.
         :param allow_internet_access: Allow sandbox to access the internet, defaults to `True`. If set to `False`, it works the same as setting network `deny_out` to `[0.0.0.0/0]`.
         :param mcp: MCP server to enable in the sandbox
         :param network: Sandbox network configuration
+        :param auto_resume: Auto-resume configuration for paused sandboxes. Use `{"policy": "any" | "off"}` (default is "off"). Set to `{"policy": "any"}` to allow any request, or omit/`{"policy": "off"}` to disable.
 
         :return: A Sandbox instance for the new sandbox
 
@@ -531,12 +531,12 @@ class Sandbox(SandboxApi):
         template: Optional[str] = None,
         timeout: Optional[int] = None,
         auto_pause: bool = False,
-        auto_resume: Optional[SandboxAutoResumeConfig] = None,
         metadata: Optional[Dict[str, str]] = None,
         envs: Optional[Dict[str, str]] = None,
         secure: bool = True,
         allow_internet_access: bool = True,
         mcp: Optional[McpServer] = None,
+        auto_resume: Optional[SandboxAutoResumeConfig] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
         """
@@ -549,12 +549,12 @@ class Sandbox(SandboxApi):
         :param template: Sandbox template name or ID
         :param timeout: Timeout for the sandbox in **seconds**, default to 300 seconds. The maximum time a sandbox can be kept alive is 24 hours (86_400 seconds) for Pro users and 1 hour (3_600 seconds) for Hobby users.
         :param auto_pause: Automatically pause the sandbox after the timeout expires. Defaults to `False`.
-        :param auto_resume: Auto-resume configuration for paused sandboxes. Use `{"policy": "any"}` to allow any request. Omit or use `{"policy": "off"}` to disable auto-resume.
         :param metadata: Custom metadata for the sandbox
         :param envs: Custom environment variables for the sandbox
         :param secure: Envd is secured with access token and cannot be used without it, defaults to `True`.
         :param allow_internet_access: Allow sandbox to access the internet, defaults to `True`.
         :param mcp: MCP server to enable in the sandbox
+        :param auto_resume: Auto-resume configuration for paused sandboxes. Use `{"policy": "any"}` to allow any request. Omit or use `{"policy": "off"}` to disable auto-resume.
 
         :return: A Sandbox instance for the new sandbox
 
