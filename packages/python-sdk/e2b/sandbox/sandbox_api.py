@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Dict, List, Optional, TypedDict, Union
+from typing import Any, Dict, List, Literal, Optional, TypedDict, Union
 
 from typing_extensions import NotRequired, Unpack
 
@@ -73,6 +73,20 @@ class SandboxNetworkOpts(TypedDict):
 
     Examples:
     - Custom subdomain: `"${PORT}-myapp.example.com"`
+    """
+
+
+SandboxAutoResumePolicy = Literal["any", "off"]
+
+
+class SandboxAutoResumeConfig(TypedDict):
+    """
+    Auto-resume configuration for paused sandboxes.
+    """
+
+    policy: NotRequired[SandboxAutoResumePolicy]
+    """
+    Auto-resume policy for paused sandboxes. Default is "off".
     """
 
 

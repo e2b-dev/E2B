@@ -15,7 +15,12 @@ from e2b.envd.api import ENVD_API_HEALTH_ROUTE, ahandle_envd_api_exception
 from e2b.envd.versions import ENVD_DEBUG_FALLBACK
 from e2b.exceptions import SandboxException, format_request_timeout_error
 from e2b.sandbox.main import SandboxOpts
-from e2b.sandbox.sandbox_api import McpServer, SandboxMetrics, SandboxNetworkOpts
+from e2b.sandbox.sandbox_api import (
+    McpServer,
+    SandboxAutoResumeConfig,
+    SandboxMetrics,
+    SandboxNetworkOpts,
+)
 from e2b.sandbox.utils import class_method_variant
 from e2b.sandbox_async.commands.command import Commands
 from e2b.sandbox_async.commands.pty import Pty
@@ -156,6 +161,7 @@ class AsyncSandbox(SandboxApi):
         cls,
         template: Optional[str] = None,
         timeout: Optional[int] = None,
+        auto_resume: Optional[SandboxAutoResumeConfig] = None,
         metadata: Optional[Dict[str, str]] = None,
         envs: Optional[Dict[str, str]] = None,
         secure: bool = True,
@@ -171,6 +177,7 @@ class AsyncSandbox(SandboxApi):
 
         :param template: Sandbox template name or ID
         :param timeout: Timeout for the sandbox in **seconds**, default to 300 seconds. The maximum time a sandbox can be kept alive is 24 hours (86_400 seconds) for Pro users and 1 hour (3_600 seconds) for Hobby users.
+        :param auto_resume: Auto-resume configuration for paused sandboxes. Use `{"policy": "any" | "off"}` (default is "off"). Set to `{"policy": "any"}` to allow any request, or omit/`{"policy": "off"}` to disable.
         :param metadata: Custom metadata for the sandbox
         :param envs: Custom environment variables for the sandbox
         :param secure: Envd is secured with access token and cannot be used without it, defaults to `True`.
@@ -191,7 +198,7 @@ class AsyncSandbox(SandboxApi):
             template=template,
             timeout=timeout,
             auto_pause=False,
-            auto_resume=None,
+            auto_resume=auto_resume,
             metadata=metadata,
             envs=envs,
             secure=secure,
@@ -523,7 +530,7 @@ class AsyncSandbox(SandboxApi):
         template: Optional[str] = None,
         timeout: Optional[int] = None,
         auto_pause: bool = False,
-        auto_resume: Optional[str] = None,
+        auto_resume: Optional[SandboxAutoResumeConfig] = None,
         metadata: Optional[Dict[str, str]] = None,
         envs: Optional[Dict[str, str]] = None,
         secure: bool = True,
@@ -541,7 +548,7 @@ class AsyncSandbox(SandboxApi):
         :param template: Sandbox template name or ID
         :param timeout: Timeout for the sandbox in **seconds**, default to 300 seconds. The maximum time a sandbox can be kept alive is 24 hours (86_400 seconds) for Pro users and 1 hour (3_600 seconds) for Hobby users.
         :param auto_pause: Automatically pause the sandbox after the timeout expires. Defaults to `False`.
-        :param auto_resume: Auto-resume policy for paused sandboxes. Use `"any"` to allow any request, `"authed"` to allow only authenticated requests. Omit to disable auto-resume.
+        :param auto_resume: Auto-resume configuration for paused sandboxes. Use `{"policy": "any"}` to allow any request. Omit or use `{"policy": "off"}` to disable auto-resume.
         :param metadata: Custom metadata for the sandbox
         :param envs: Custom environment variables for the sandbox
         :param secure: Envd is secured with access token and cannot be used without it, defaults to `True`.
@@ -684,7 +691,7 @@ class AsyncSandbox(SandboxApi):
         template: Optional[str],
         timeout: Optional[int],
         auto_pause: bool,
-        auto_resume: Optional[str],
+        auto_resume: Optional[SandboxAutoResumeConfig],
         allow_internet_access: bool,
         metadata: Optional[Dict[str, str]],
         envs: Optional[Dict[str, str]],

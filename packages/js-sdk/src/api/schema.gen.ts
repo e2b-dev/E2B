@@ -1638,11 +1638,7 @@ export interface components {
              * @default false
              */
             autoPause?: boolean;
-            /**
-             * @description Auto-resume policy for paused sandboxes. Omit to disable auto-resume.
-             * @enum {string}
-             */
-            autoResume?: "any" | "authed" | null;
+            autoResume?: components["schemas"]["SandboxAutoResumeConfig"];
             envVars?: components["schemas"]["EnvVars"];
             mcp?: components["schemas"]["Mcp"];
             metadata?: components["schemas"]["SandboxMetadata"];
@@ -1944,6 +1940,16 @@ export interface components {
             /** @description Specify host mask which will be used for all sandbox requests */
             maskRequestHost?: string;
         };
+        /** @description Auto-resume configuration for paused sandboxes. Default is off. */
+        SandboxAutoResumeConfig: {
+            policy?: components["schemas"]["SandboxAutoResumePolicy"];
+        };
+        /**
+         * @description Auto-resume policy for paused sandboxes. Default is off.
+         * @default off
+         * @enum {string}
+         */
+        SandboxAutoResumePolicy: "any" | "off";
         /**
          * @description State of the sandbox
          * @enum {string}

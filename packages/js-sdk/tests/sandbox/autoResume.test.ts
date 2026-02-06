@@ -57,18 +57,4 @@ describe('Sandbox.create autoResume', () => {
       false
     )
   })
-
-  test('omits autoResume when null', async () => {
-    await Sandbox.create(templateId, {
-      apiKey: 'test-api-key',
-      autoResume: null,
-      apiUrl: apiUrl(''),
-      debug: false,
-    })
-
-    expect(lastBody).toBeDefined()
-    expect(Object.prototype.hasOwnProperty.call(lastBody, 'autoResume')).toBe(
-      false
-    )
-  })
 })

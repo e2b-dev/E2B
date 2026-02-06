@@ -29,6 +29,7 @@ from e2b.exceptions import NotFoundException, SandboxException, TemplateExceptio
 from e2b.sandbox.main import SandboxBase
 from e2b.sandbox.sandbox_api import (
     McpServer,
+    SandboxAutoResumeConfig,
     SandboxInfo,
     SandboxMetrics,
     SandboxNetworkOpts,
@@ -153,7 +154,7 @@ class SandboxApi(SandboxBase):
         template: str,
         timeout: int,
         auto_pause: bool,
-        auto_resume: Optional[str],
+        auto_resume: Optional[SandboxAutoResumeConfig],
         allow_internet_access: bool,
         metadata: Optional[Dict[str, str]],
         env_vars: Optional[Dict[str, str]],

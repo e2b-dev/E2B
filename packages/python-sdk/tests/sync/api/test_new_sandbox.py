@@ -3,9 +3,9 @@ from e2b.api.client.types import UNSET
 
 
 def test_new_sandbox_includes_auto_resume_when_set():
-    payload = NewSandbox(template_id="base", auto_resume="authed").to_dict()
+    payload = NewSandbox(template_id="base", auto_resume={"policy": "any"}).to_dict()
 
-    assert payload["autoResume"] == "authed"
+    assert payload["autoResume"] == {"policy": "any"}
 
 
 def test_new_sandbox_omits_auto_resume_when_unset():
