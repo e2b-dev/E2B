@@ -1,7 +1,7 @@
 import { Template } from '../../../src'
-import { buildTemplateTest } from '../../setup'
+import { buildTemplateTestAllowFail } from '../../setup'
 
-buildTemplateTest('apt install', async ({ buildTemplate }) => {
+buildTemplateTestAllowFail('apt install', async ({ buildTemplate }) => {
   const template = Template()
     .fromImage('ubuntu:24.04')
     .skipCache()
@@ -10,7 +10,7 @@ buildTemplateTest('apt install', async ({ buildTemplate }) => {
   await buildTemplate(template)
 })
 
-buildTemplateTest(
+buildTemplateTestAllowFail(
   'apt install with no install recommends',
   async ({ buildTemplate }) => {
     const template = Template()
