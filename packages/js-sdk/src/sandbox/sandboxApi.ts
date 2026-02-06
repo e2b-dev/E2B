@@ -64,6 +64,15 @@ export type SandboxNetworkOpts = {
   maskRequestHost?: string
 }
 
+export type SandboxAutoResumePolicy = 'any' | 'off'
+
+export type SandboxAutoResumeConfig = {
+  /**
+   * Auto-resume policy for paused sandboxes. Default is `off`.
+   */
+  policy?: SandboxAutoResumePolicy
+}
+
 /**
  * Options for request to the Sandbox API.
  */
@@ -119,6 +128,12 @@ export interface SandboxOpts extends ConnectionOpts {
   allowInternetAccess?: boolean
 
   /**
+   * Auto-resume configuration for paused sandboxes. Omit to disable auto-resume.
+   * @default undefined
+   */
+  autoResume?: SandboxAutoResumeConfig
+
+  /**
    * MCP server to enable in the sandbox
    * @default undefined
    */
@@ -141,11 +156,6 @@ export type SandboxBetaCreateOpts = SandboxOpts & {
    * @default false
    */
   autoPause?: boolean
-  /**
-   * Auto-resume policy for paused sandboxes. Set to null or omit to disable auto-resume.
-   * @default undefined
-   */
-  autoResume?: 'any' | 'authed' | null
 }
 
 /**

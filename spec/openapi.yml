@@ -255,6 +255,21 @@ components:
           type: string
           description: Specify host mask which will be used for all sandbox requests
 
+    SandboxAutoResumePolicy:
+      type: string
+      description: Auto-resume policy for paused sandboxes. Default is off.
+      default: "off"
+      enum:
+        - any
+        - off
+
+    SandboxAutoResumeConfig:
+      type: object
+      description: Auto-resume configuration for paused sandboxes. Default is off.
+      properties:
+        policy:
+          $ref: "#/components/schemas/SandboxAutoResumePolicy"
+
     SandboxLog:
       description: Log entry with timestamp and line
       required:
@@ -302,6 +317,17 @@ components:
             $ref: "#/components/schemas/SandboxLog"
         logEntries:
           description: Structured logs of the sandbox
+          type: array
+          items:
+            $ref: "#/components/schemas/SandboxLogEntry"
+
+    SandboxLogsV2Response:
+      required:
+        - logs
+      properties:
+        logs:
+          default: []
+          description: Sandbox logs structured
           type: array
           items:
             $ref: "#/components/schemas/SandboxLogEntry"
@@ -512,6 +538,8 @@ components:
           type: boolean
           default: false
           description: Automatically pauses the sandbox after the timeout
+        autoResume:
+          $ref: "#/components/schemas/SandboxAutoResumeConfig"
         secure:
           type: boolean
           description: Secure all system communication with sandbox
@@ -520,13 +548,6 @@ components:
           description:
             Allow sandbox to access the internet. When set to false, it behaves the same as specifying denyOut
             to 0.0.0.0/0 in the network config.
-        autoResume:
-          type: string
-          enum:
-            - any
-            - authed
-          nullable: true
-          description: Auto-resume policy for paused sandboxes. Set to null or omit to disable auto-resume.
         network:
           $ref: "#/components/schemas/SandboxNetworkConfig"
         metadata:

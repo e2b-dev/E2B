@@ -37,12 +37,12 @@ describe('Sandbox.create autoResume', () => {
   test('sends autoResume when provided', async () => {
     await Sandbox.create(templateId, {
       apiKey: 'test-api-key',
-      autoResume: 'authed',
+      autoResume: { policy: 'any' },
       apiUrl: apiUrl(''),
       debug: false,
     })
 
-    expect(lastBody?.autoResume).toBe('authed')
+    expect(lastBody?.autoResume).toEqual({ policy: 'any' })
   })
 
   test('omits autoResume when not provided', async () => {

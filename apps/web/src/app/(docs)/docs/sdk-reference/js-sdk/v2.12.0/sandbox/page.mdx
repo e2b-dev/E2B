@@ -496,7 +496,7 @@ const sandbox = await Sandbox.create()
 
 ```ts
 const sandbox = await Sandbox.create({
-  autoResume: 'authed',
+  autoResume: { policy: 'any' },
 })
 ```
 
