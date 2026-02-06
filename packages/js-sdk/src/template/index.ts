@@ -44,6 +44,7 @@ import {
   padOctal,
   readDockerignore,
   readGCPServiceAccountJSON,
+  validateRelativePath,
 } from './utils'
 
 /**
@@ -520,10 +521,16 @@ export class TemplateBase
     }
 
     const srcs = Array.isArray(src) ? src : [src]
+    const stackTrace = getCallerFrame(STACK_TRACE_DEPTH - 1)
 
     for (const src of srcs) {
+      const srcString = src.toString()
+
+      // Validate that the source path is a relative path within the context directory
+      validateRelativePath(srcString, stackTrace)
+
       const args = [
-        src.toString(),
+        srcString,
         dest.toString(),
         options?.user ?? '',
         options?.mode ? padOctal(options.mode) : '',
@@ -547,14 +554,23 @@ export class TemplateBase
       throw new Error('Browser runtime is not supported for copyItems')
     }
 
+    // Stack trace that will be used to re-throw the error with
+    const stackTrace = getCallerFrame(STACK_TRACE_DEPTH - 1)
+
     this.runInNewStackTraceContext(() => {
       for (const item of items) {
-        this.copy(item.src, item.dest, {
-          forceUpload: item.forceUpload,
-          user: item.user,
-          mode: item.mode,
-          resolveSymlinks: item.resolveSymlinks,
-        })
+        try {
+          this.copy(item.src, item.dest, {
+            forceUpload: item.forceUpload,
+            user: item.user,
+            mode: item.mode,
+            resolveSymlinks: item.resolveSymlinks,
+          })
+        } catch (error) {
+          const copyError = error as Error
+          copyError.stack = stackTrace
+          throw copyError
+        }
       }
     })
 
