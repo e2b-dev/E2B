@@ -5,7 +5,7 @@ import {
   DEFAULT_SANDBOX_TIMEOUT_MS,
 } from '../connectionConfig'
 import { compareVersions } from 'compare-versions'
-import { NotFoundError, TemplateError } from '../errors'
+import { NotFoundError, SandboxError, TemplateError } from '../errors'
 import { timeoutToSeconds } from '../utils'
 import type { McpServer as BaseMcpServer } from './mcp'
 
@@ -67,13 +67,12 @@ export type SandboxNetworkOpts = {
 /**
  * Options for request to the Sandbox API.
  */
-export interface SandboxApiOpts
-  extends Partial<
-    Pick<
-      ConnectionOpts,
-      'apiKey' | 'headers' | 'debug' | 'domain' | 'requestTimeoutMs'
-    >
-  > {}
+export interface SandboxApiOpts extends Partial<
+  Pick<
+    ConnectionOpts,
+    'apiKey' | 'headers' | 'debug' | 'domain' | 'requestTimeoutMs'
+  >
+> {}
 
 /**
  * Options for creating a new Sandbox.
@@ -198,6 +197,44 @@ export interface SandboxMetricsOpts extends SandboxApiOpts {
    * End time for the metrics, defaults to the current time
    */
   end?: Date
+}
+
+/**
+ * Options for creating a snapshot.
+ */
+export interface SnapshotOpts extends SandboxApiOpts {}
+
+/**
+ * Options for listing snapshots.
+ */
+export interface SnapshotListOpts extends SandboxApiOpts {
+  /**
+   * Filter snapshots by source sandbox ID.
+   */
+  sandboxId?: string
+
+  /**
+   * Number of snapshots to return per page.
+   *
+   * @default 100
+   */
+  limit?: number
+
+  /**
+   * Token to the next page.
+   */
+  nextToken?: string
+}
+
+/**
+ * Information about a snapshot.
+ */
+export interface SnapshotInfo {
+  /**
+   * Unique identifier for the snapshot.
+   * Can be used as templateId in Sandbox.create() to create a new sandbox from this snapshot.
+   */
+  snapshotId: string
 }
 
 /**
@@ -529,6 +566,100 @@ export class SandboxApi {
     return true
   }
 
+  /**
+   * Create a snapshot from a sandbox.
+   *
+   * The snapshot can be used to create new sandboxes with the same state.
+   * The snapshot is a persistent image that survives sandbox deletion.
+   *
+   * @param sandboxId sandbox ID to create snapshot from.
+   * @param opts snapshot options.
+   *
+   * @returns snapshot information including the snapshot ID that can be used with Sandbox.create().
+   */
+  static async createSnapshot(
+    sandboxId: string,
+    opts?: SnapshotOpts
+  ): Promise<SnapshotInfo> {
+    const config = new ConnectionConfig(opts)
+    const client = new ApiClient(config)
+
+    const res = await client.api.POST('/sandboxes/{sandboxID}/snapshots', {
+      params: {
+        path: {
+          sandboxID: sandboxId,
+        },
+      },
+      signal: config.getSignal(opts?.requestTimeoutMs),
+    })
+
+    if (res.error?.code === 404 || res.response.status === 404) {
+      throw new NotFoundError(`Sandbox ${sandboxId} not found`)
+    }
+
+    const err = handleApiError(res)
+    if (err) {
+      throw err
+    }
+
+    // Additional check for non-success status codes that might not have error body
+    if (!res.data || res.response.status >= 400) {
+      const errorMessage = res.error?.message || `HTTP ${res.response.status}`
+      throw new SandboxError(`Failed to create snapshot: ${errorMessage}`)
+    }
+
+    return {
+      snapshotId: res.data.snapshotID,
+    }
+  }
+
+  /**
+   * List all snapshots.
+   *
+   * @param opts list options including filters and pagination.
+   *
+   * @returns paginator for listing snapshots.
+   */
+  static listSnapshots(opts?: SnapshotListOpts): SnapshotPaginator {
+    return new SnapshotPaginator(opts)
+  }
+
+  /**
+   * Delete a snapshot.
+   *
+   * @param snapshotId snapshot ID.
+   * @param opts connection options.
+   *
+   * @returns `true` if the snapshot was deleted, `false` if it was not found.
+   */
+  static async deleteSnapshot(
+    snapshotId: string,
+    opts?: SandboxApiOpts
+  ): Promise<boolean> {
+    const config = new ConnectionConfig(opts)
+    const client = new ApiClient(config)
+
+    const res = await client.api.DELETE('/templates/{templateID}', {
+      params: {
+        path: {
+          templateID: snapshotId,
+        },
+      },
+      signal: config.getSignal(opts?.requestTimeoutMs),
+    })
+
+    if (res.error?.code === 404 || res.response.status === 404) {
+      return false
+    }
+
+    const err = handleApiError(res)
+    if (err) {
+      throw err
+    }
+
+    return true
+  }
+
   protected static async createSandbox(
     template: string,
     timeoutMs: number,
@@ -547,7 +678,10 @@ export class SandboxApi {
         timeout: timeoutToSeconds(timeoutMs),
         secure: opts?.secure ?? true,
         allow_internet_access: opts?.allowInternetAccess ?? true,
-        network: opts?.network,
+        network: opts?.network && {
+          ...opts.network,
+          allowPublicTraffic: opts.network.allowPublicTraffic ?? true,
+        },
       },
       signal: config.getSignal(opts?.requestTimeoutMs),
     })
@@ -619,8 +753,16 @@ export class SandboxApi {
  *
  * @example
  * ```ts
- * const paginator = Sandbox.list()
+ * // Using async iterator
+ * for await (const sandbox of Sandbox.list()) {
+ *   console.log(sandbox.sandboxId)
+ * }
  *
+ * // Or collect all to array
+ * const sandboxes = await Array.fromAsync(Sandbox.list())
+ *
+ * // Manual pagination
+ * const paginator = Sandbox.list()
  * while (paginator.hasNext) {
  *   const sandboxes = await paginator.nextItems()
  *   console.log(sandboxes)
@@ -721,5 +863,118 @@ export class SandboxPaginator {
         envdVersion: sandbox.envdVersion,
       })
     )
+  }
+
+  async *[Symbol.asyncIterator](): AsyncIterableIterator<SandboxInfo> {
+    while (this.hasNext) {
+      const items = await this.nextItems()
+      for (const item of items) {
+        yield item
+      }
+    }
+  }
+}
+
+/**
+ * Paginator for listing snapshots.
+ *
+ * @example
+ * ```ts
+ * // Using async iterator
+ * for await (const snapshot of Sandbox.listSnapshots()) {
+ *   console.log(snapshot.snapshotId)
+ * }
+ *
+ * // Or collect all to array
+ * const snapshots = await Array.fromAsync(Sandbox.listSnapshots())
+ *
+ * // Manual pagination
+ * const paginator = Sandbox.listSnapshots()
+ * while (paginator.hasNext) {
+ *   const snapshots = await paginator.nextItems()
+ *   console.log(snapshots)
+ * }
+ * ```
+ */
+export class SnapshotPaginator {
+  private _hasNext: boolean
+  private _nextToken?: string
+
+  private readonly config: ConnectionConfig
+  private client: ApiClient
+
+  private readonly sandboxId?: string
+  private readonly limit?: number
+
+  constructor(opts?: SnapshotListOpts) {
+    this.config = new ConnectionConfig(opts)
+    this.client = new ApiClient(this.config)
+
+    this._hasNext = true
+    this._nextToken = opts?.nextToken
+
+    this.sandboxId = opts?.sandboxId
+    this.limit = opts?.limit
+  }
+
+  /**
+   * Returns True if there are more items to fetch.
+   */
+  get hasNext(): boolean {
+    return this._hasNext
+  }
+
+  /**
+   * Returns the next token to use for pagination.
+   */
+  get nextToken(): string | undefined {
+    return this._nextToken
+  }
+
+  /**
+   * Get the next page of snapshots.
+   *
+   * @throws Error if there are no more items to fetch. Call this method only if `hasNext` is `true`.
+   *
+   * @returns List of snapshots
+   */
+  async nextItems(): Promise<SnapshotInfo[]> {
+    if (!this.hasNext) {
+      throw new Error('No more items to fetch')
+    }
+
+    const res = await this.client.api.GET('/snapshots', {
+      params: {
+        query: {
+          sandboxID: this.sandboxId,
+          limit: this.limit,
+          nextToken: this.nextToken,
+        },
+      },
+      signal: this.config.getSignal(),
+    })
+
+    const err = handleApiError(res)
+    if (err) {
+      throw err
+    }
+
+    this._nextToken = res.response.headers.get('x-next-token') || undefined
+    this._hasNext = !!this._nextToken
+
+    return (res.data ?? []).map(
+      (snapshot: components['schemas']['SnapshotInfo']) => ({
+        snapshotId: snapshot.snapshotID,
+      })
+    )
+  }
+
+  async *[Symbol.asyncIterator](): AsyncIterableIterator<SnapshotInfo> {
+    while (this.hasNext) {
+      const items = await this.nextItems()
+      for (const item of items) {
+        yield item
+      }
+    }
   }
 }
