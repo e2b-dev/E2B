@@ -18,6 +18,7 @@ interface ExecOptions {
   cwd?: string
   user?: string
   env?: Record<string, string>
+  timeout?: string
 }
 
 const NO_COMMAND_TIMEOUT = 0
@@ -41,6 +42,10 @@ export const execCommand = new commander.Command('exec')
     },
     {} as Record<string, string>
   )
+  .option(
+    '-t, --timeout <ms>',
+    'maximum time in milliseconds the command can run'
+  )
   .alias('ex')
   .action(
     async (sandboxID: string, commandParts: string[], opts: ExecOptions) => {
@@ -50,6 +55,9 @@ export const execCommand = new commander.Command('exec')
       const openStdin = stdinData !== undefined && stdinData.byteLength > 0
 
       const command = buildCommand(commandParts)
+      const timeoutMs = opts.timeout
+        ? Number.parseInt(opts.timeout, 10)
+        : NO_COMMAND_TIMEOUT
       try {
         const apiKey = ensureAPIKey()
         const domain = getDomain()
@@ -69,7 +77,7 @@ export const execCommand = new commander.Command('exec')
             user: opts.user,
             envs: opts.env,
             stdin: openStdin,
-            timeoutMs: NO_COMMAND_TIMEOUT,
+            timeoutMs,
           })
 
           if (openStdin && stdinData) {
@@ -84,7 +92,13 @@ export const execCommand = new commander.Command('exec')
           process.exit(0)
         }
 
-        const exitCode = await runCommand(sandbox, command, opts, stdinData)
+        const exitCode = await runCommand(
+          sandbox,
+          command,
+          opts,
+          timeoutMs,
+          stdinData
+        )
 
         process.exit(exitCode)
       } catch (err: any) {
@@ -98,6 +112,7 @@ async function runCommand(
   sandbox: Sandbox,
   command: string,
   opts: ExecOptions,
+  timeoutMs: number,
   stdinData?: Uint8Array
 ): Promise<number> {
   const openStdin = stdinData !== undefined && stdinData.byteLength > 0
@@ -107,7 +122,7 @@ async function runCommand(
     user: opts.user,
     envs: opts.env,
     stdin: openStdin,
-    timeoutMs: NO_COMMAND_TIMEOUT,
+    timeoutMs,
     onStdout: async (data) => {
       try {
         process.stdout.write(data)
