@@ -9,7 +9,8 @@ export const shellQuote = (arg: string): string => {
   if (SHELL_SAFE_RE.test(arg)) {
     return arg
   }
-  return `'${arg.replace(/'/g, `'\"'\"'`)}'`
+  const q = '\'"\'"\''
+  return `'${arg.replace(/'/g, q)}'`
 }
 
 export const buildCommand = (commandParts: string[]): string => {

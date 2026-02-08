@@ -50,8 +50,7 @@ const textCases: SmokeCase[] = [
     data: Buffer.alloc(0),
     readBytes: 1,
     expr: 'len(data)',
-    expectTimeout: true,
-    timeoutMs: emptyTimeoutMs,
+    expected: '0',
   },
   {
     name: 'ascii_newline',

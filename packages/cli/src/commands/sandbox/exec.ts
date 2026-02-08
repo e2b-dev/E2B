@@ -1,8 +1,5 @@
 /**
  * Execute a command in a running sandbox.
- *
- * NOTE: Stdin piping is best-effort. The SDK/envd protocol lacks a way to signal EOF
- * to remote commands, so commands that read until EOF (cat, grep, wc, etc.) may hang.
  */
 
 import { Sandbox, CommandExitError } from 'e2b'
@@ -126,7 +123,7 @@ async function runCommand(
     },
   })
 
-  if (stdinData) {
+  if (stdinData !== undefined) {
     await sendStdin(sandbox, handle.pid, stdinData)
   }
 
@@ -164,5 +161,12 @@ async function sendStdin(
   const chunks = chunkStringByBytes(data, chunkSizeBytes)
   for (const chunk of chunks) {
     await sandbox.commands.sendStdin(pid, chunk)
+  }
+  // Signal EOF so commands like cat/wc/grep terminate.
+  // Silently ignore if the envd version doesn't support CloseStdin yet.
+  try {
+    await sandbox.commands.closeStdin(pid)
+  } catch {
+    // envd doesn't support CloseStdin — fall back to best-effort behavior
   }
 }
