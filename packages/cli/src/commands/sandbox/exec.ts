@@ -46,6 +46,8 @@ export const execCommand = new commander.Command('exec')
     async (sandboxID: string, commandParts: string[], opts: ExecOptions) => {
       // If stdin is a pipe, capture data to stream to the remote command.
       const stdinData = await readStdinIfPiped()
+      // Don't open remote stdin for empty pipes — process gets EOF immediately.
+      const openStdin = stdinData !== undefined && stdinData.byteLength > 0
 
       const command = buildCommand(commandParts)
       try {
@@ -66,11 +68,11 @@ export const execCommand = new commander.Command('exec')
             cwd: opts.cwd,
             user: opts.user,
             envs: opts.env,
-            stdin: stdinData !== undefined,
+            stdin: openStdin,
             timeoutMs: NO_COMMAND_TIMEOUT,
           })
 
-          if (stdinData !== undefined) {
+          if (openStdin && stdinData) {
             await sendStdin(sandbox, handle.pid, stdinData)
           }
 
@@ -98,12 +100,13 @@ async function runCommand(
   opts: ExecOptions,
   stdinData?: Uint8Array
 ): Promise<number> {
+  const openStdin = stdinData !== undefined && stdinData.byteLength > 0
   const handle = await sandbox.commands.run(command, {
     background: true,
     cwd: opts.cwd,
     user: opts.user,
     envs: opts.env,
-    stdin: stdinData !== undefined,
+    stdin: openStdin,
     timeoutMs: NO_COMMAND_TIMEOUT,
     onStdout: async (data) => {
       try {
@@ -123,7 +126,7 @@ async function runCommand(
     },
   })
 
-  if (stdinData !== undefined) {
+  if (openStdin && stdinData) {
     await sendStdin(sandbox, handle.pid, stdinData)
   }
 
