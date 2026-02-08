@@ -3,7 +3,7 @@ import { describe, expect, test } from 'vitest'
 
 import {
   buildCommand,
-  chunkStringByBytes,
+  chunkBytesBySize,
   isPipedStdin,
   readStdinIfPiped,
   readStdinFrom,
@@ -39,12 +39,14 @@ describe('exec helpers', () => {
 
   test('readStdinFrom reads full input and resolves on EOF', async () => {
     const stream = Readable.from(['foo', 'bar'])
-    await expect(readStdinFrom(stream)).resolves.toBe('foobar')
+    await expect(readStdinFrom(stream)).resolves.toEqual(Buffer.from('foobar'))
   })
 
   test('readStdinFrom handles EOF without trailing newline', async () => {
     const stream = Readable.from(['no-newline'])
-    await expect(readStdinFrom(stream)).resolves.toBe('no-newline')
+    await expect(readStdinFrom(stream)).resolves.toEqual(
+      Buffer.from('no-newline')
+    )
   })
 
   test('readStdinIfPiped returns undefined when stdin is not a pipe', async () => {
@@ -67,7 +69,7 @@ describe('exec helpers', () => {
     stream.write(Buffer.from([0xe2, 0x98]))
     stream.write(Buffer.from([0x83]))
     stream.end(Buffer.from([0x21]))
-    await expect(promise).resolves.toBe('\u2603!')
+    await expect(promise).resolves.toEqual(Buffer.from([0xe2, 0x98, 0x83, 0x21]))
   })
 
   test('isPipedStdin returns true for FIFO', () => {
@@ -91,31 +93,31 @@ describe('exec helpers', () => {
     expect(isPipedStdin(0, fsMockThrow)).toBe(false)
   })
 
-  test('chunkStringByBytes splits large input into byte-sized chunks', () => {
+  test('chunkBytesBySize splits large input into byte-sized chunks', () => {
     const maxBytes = 64 * 1024
-    const data = 'a'.repeat(maxBytes * 2 + 1)
-    const chunks = chunkStringByBytes(data, maxBytes)
+    const data = Buffer.from('a'.repeat(maxBytes * 2 + 1))
+    const chunks = chunkBytesBySize(data, maxBytes)
 
     expect(chunks).toHaveLength(3)
-    expect(Buffer.byteLength(chunks[0])).toBe(maxBytes)
-    expect(Buffer.byteLength(chunks[1])).toBe(maxBytes)
-    expect(Buffer.byteLength(chunks[2])).toBe(1)
-    expect(chunks.join('')).toBe(data)
+    expect(chunks[0].byteLength).toBe(maxBytes)
+    expect(chunks[1].byteLength).toBe(maxBytes)
+    expect(chunks[2].byteLength).toBe(1)
+    expect(Buffer.concat(chunks.map((c) => Buffer.from(c)))).toEqual(data)
   })
 
-  test('chunkStringByBytes keeps UTF-8 characters intact', () => {
+  test('chunkBytesBySize keeps byte content intact', () => {
     const maxBytes = 64 * 1024
-    const data = '\u{1F600}'.repeat(20000) // 😀 (4 bytes each)
-    const chunks = chunkStringByBytes(data, maxBytes)
+    const data = Buffer.from('\u{1F600}'.repeat(20000)) // 😀 (4 bytes each)
+    const chunks = chunkBytesBySize(data, maxBytes)
 
     for (const chunk of chunks) {
-      expect(Buffer.byteLength(chunk)).toBeLessThanOrEqual(maxBytes)
+      expect(chunk.byteLength).toBeLessThanOrEqual(maxBytes)
     }
-    expect(chunks.join('')).toBe(data)
+    expect(Buffer.concat(chunks.map((c) => Buffer.from(c)))).toEqual(data)
   })
 
-  test('chunkStringByBytes throws on invalid maxBytes', () => {
-    expect(() => chunkStringByBytes('data', 0)).toThrow()
-    expect(() => chunkStringByBytes('data', -1)).toThrow()
+  test('chunkBytesBySize throws on invalid maxBytes', () => {
+    expect(() => chunkBytesBySize(Buffer.from('data'), 0)).toThrow()
+    expect(() => chunkBytesBySize(Buffer.from('data'), -1)).toThrow()
   })
 })

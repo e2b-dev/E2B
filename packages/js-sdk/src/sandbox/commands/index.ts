@@ -178,10 +178,13 @@ export class Commands {
    */
   async sendStdin(
     pid: number,
-    data: string,
+    data: string | Uint8Array,
     opts?: CommandRequestOpts
   ): Promise<void> {
     try {
+      const payload =
+        typeof data === 'string' ? new TextEncoder().encode(data) : data
+
       await this.rpc.sendInput(
         {
           process: {
@@ -193,7 +196,7 @@ export class Commands {
           input: {
             input: {
               case: 'stdin',
-              value: new TextEncoder().encode(data),
+              value: payload,
             },
           },
         },

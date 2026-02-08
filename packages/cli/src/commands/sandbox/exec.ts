@@ -9,7 +9,7 @@ import { ensureAPIKey, getDomain } from '../../api'
 import { setupSignalHandlers } from 'src/utils/signal'
 import {
   buildCommand,
-  chunkStringByBytes,
+  chunkBytesBySize,
   readStdinIfPiped,
 } from './exec_helpers'
 
@@ -70,7 +70,7 @@ export const execCommand = new commander.Command('exec')
             timeoutMs: NO_COMMAND_TIMEOUT,
           })
 
-          if (stdinData) {
+          if (stdinData !== undefined) {
             await sendStdin(sandbox, handle.pid, stdinData)
           }
 
@@ -96,7 +96,7 @@ async function runCommand(
   sandbox: Sandbox,
   command: string,
   opts: ExecOptions,
-  stdinData?: string
+  stdinData?: Uint8Array
 ): Promise<number> {
   const handle = await sandbox.commands.run(command, {
     background: true,
@@ -155,10 +155,10 @@ async function runCommand(
 async function sendStdin(
   sandbox: Sandbox,
   pid: number,
-  data: string
+  data: Uint8Array
 ): Promise<void> {
   const chunkSizeBytes = 64 * 1024
-  const chunks = chunkStringByBytes(data, chunkSizeBytes)
+  const chunks = chunkBytesBySize(data, chunkSizeBytes)
   for (const chunk of chunks) {
     await sandbox.commands.sendStdin(pid, chunk)
   }
