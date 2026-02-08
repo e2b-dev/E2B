@@ -207,11 +207,8 @@ export class Commands {
   }
 
   /**
-   * Close stdin of a running command to signal EOF.
-   * Only works for non-PTY processes.
-   *
-   * @param pid process ID of the command. You can get the list of running commands using {@link Commands.list}.
-   * @param opts connection options.
+   * @hidden
+   * @internal
    */
   async closeStdin(pid: number, opts?: CommandRequestOpts): Promise<void> {
     try {
