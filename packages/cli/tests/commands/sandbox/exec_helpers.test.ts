@@ -74,14 +74,32 @@ describe('exec helpers', () => {
 
   test('isPipedStdin returns true for FIFO', () => {
     const fsMock = {
-      fstatSync: () => ({ isFIFO: () => true }),
+      fstatSync: () => ({ isFIFO: () => true, isCharacterDevice: () => false }),
     }
     expect(isPipedStdin(0, fsMock)).toBe(true)
   })
 
+  test('isPipedStdin returns true for file redirection', () => {
+    const fsMock = {
+      fstatSync: () => ({ isFile: () => true, isCharacterDevice: () => false }),
+    }
+    expect(isPipedStdin(0, fsMock)).toBe(true)
+  })
+
+  test('isPipedStdin returns false for interactive terminal', () => {
+    const fsMock = {
+      fstatSync: () => ({
+        isCharacterDevice: () => true,
+        isFIFO: () => false,
+        isFile: () => false,
+      }),
+    }
+    expect(isPipedStdin(0, fsMock)).toBe(false)
+  })
+
   test('isPipedStdin returns false for non-FIFO or errors', () => {
     const fsMockFalse = {
-      fstatSync: () => ({ isFIFO: () => false }),
+      fstatSync: () => ({ isFIFO: () => false, isCharacterDevice: () => false }),
     }
     expect(isPipedStdin(0, fsMockFalse)).toBe(false)
 

@@ -21,13 +21,25 @@ export const buildCommand = (commandParts: string[]): string => {
   return commandParts.map(shellQuote).join(' ')
 }
 
-type StatLike = { isFIFO: () => boolean }
+type StatLike = {
+  isFIFO?: () => boolean
+  isFile?: () => boolean
+  isSocket?: () => boolean
+  isCharacterDevice?: () => boolean
+}
 type FsLike = { fstatSync: (fd: number) => StatLike }
 
 export const isPipedStdin = (fd = 0, fsModule: FsLike = fs as FsLike) => {
   try {
     const stdinStats = fsModule.fstatSync(fd)
-    return stdinStats.isFIFO()
+    // Treat any non-interactive stdin as "piped": FIFO pipes and file redirection (`< file`).
+    // Keep this conservative so normal terminal stdin doesn't get eagerly drained.
+    if (stdinStats.isCharacterDevice?.()) {
+      return false
+    }
+    return Boolean(
+      stdinStats.isFIFO?.() || stdinStats.isFile?.() || stdinStats.isSocket?.()
+    )
   } catch {
     return false
   }
