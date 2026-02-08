@@ -2,7 +2,7 @@
  * Execute a command in a running sandbox.
  */
 
-import { Sandbox, CommandExitError } from 'e2b'
+import { Sandbox, CommandExitError, NotFoundError } from 'e2b'
 import * as commander from 'commander'
 
 import { ensureAPIKey, getDomain } from '../../api'
@@ -178,13 +178,30 @@ async function sendStdin(
   const chunkSizeBytes = 64 * 1024
   const chunks = chunkBytesBySize(data, chunkSizeBytes)
   for (const chunk of chunks) {
-    await sandbox.commands.sendStdin(pid, chunk)
+    try {
+      await sandbox.commands.sendStdin(pid, chunk)
+    } catch (err) {
+      if (err instanceof NotFoundError) {
+        console.error(
+          'e2b: Remote command exited before stdin could be delivered.'
+        )
+        return
+      }
+      throw err
+    }
   }
   // Signal EOF so commands like cat/wc/grep terminate.
-  // Silently ignore if the envd version doesn't support CloseStdin yet.
   try {
     await sandbox.commands.closeStdin(pid)
-  } catch {
-    // envd doesn't support CloseStdin — fall back to best-effort behavior
+  } catch (err) {
+    if (err instanceof NotFoundError) {
+      // Process already exited — EOF is moot.
+      return
+    }
+    console.error(
+      'e2b: Warning: Could not signal EOF to remote process.\n' +
+        'e2b: Commands that read stdin until EOF (cat, python, wc, etc.) may hang.\n' +
+        'e2b: Rebuild your template to pick up the latest sandbox version.'
+    )
   }
 }
