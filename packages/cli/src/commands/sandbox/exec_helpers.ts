@@ -9,7 +9,7 @@ export const shellQuote = (arg: string): string => {
   if (SHELL_SAFE_RE.test(arg)) {
     return arg
   }
-  const q = '\'"\'"\''
+  const q = "'\"'\"'"
   return `'${arg.replace(/'/g, q)}'`
 }
 

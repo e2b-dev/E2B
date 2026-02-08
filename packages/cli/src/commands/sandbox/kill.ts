@@ -6,11 +6,7 @@ import * as e2b from 'e2b'
 import { Sandbox, components } from 'e2b'
 import { parseMetadata } from './utils'
 
-async function killSandbox(
-  sandboxID: string,
-  apiKey: string,
-  domain?: string
-) {
+async function killSandbox(sandboxID: string, apiKey: string, domain?: string) {
   const killed = await e2b.Sandbox.kill(sandboxID, { apiKey, domain })
   if (killed) {
     console.log(`Sandbox ${asBold(sandboxID)} has been killed`)

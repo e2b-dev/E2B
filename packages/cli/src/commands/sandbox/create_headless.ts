@@ -15,10 +15,7 @@ export const createHeadlessCommand = new commander.Command('create-headless')
   .description(
     'create sandbox without attaching a terminal (prints sandbox ID)'
   )
-  .argument(
-    '[template]',
-    `create sandbox specified by ${asBold('[template]')}`
-  )
+  .argument('[template]', `create sandbox specified by ${asBold('[template]')}`)
   .addOption(pathOption)
   .addOption(configOption)
   .option(
