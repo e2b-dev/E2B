@@ -9,10 +9,8 @@ import { shellQuote } from 'src/commands/sandbox/exec_helpers'
 type SmokeCase = {
   name: string
   data: Buffer
-  readBytes: number
   expr: string
   expected?: string
-  expectTimeout?: boolean
   timeoutMs?: number
 }
 
@@ -27,7 +25,7 @@ const isDebug = process.env.E2B_DEBUG !== undefined
 const hasCreds = Boolean(apiKey)
 const shouldSkip = !hasCreds || isDebug
 const testIf = test.skipIf(shouldSkip)
-const includeBinary =
+const includeLargeBinary =
   process.env.E2B_PIPE_SMOKE_STRICT === '1' ||
   process.env.E2B_PIPE_SMOKE_BINARY === '1' ||
   process.env.STRICT === '1'
@@ -37,70 +35,58 @@ const defaultCmdTimeoutMs = parseEnvInt(
   'E2B_PIPE_CMD_TIMEOUT_MS',
   Math.min(3_000, testTimeoutMs)
 )
-const emptyTimeoutMs = parseEnvInt(
-  'E2B_PIPE_EMPTY_TIMEOUT_MS',
-  Math.min(750, defaultCmdTimeoutMs)
-)
 
 const cliPath = path.join(process.cwd(), 'dist', 'index.js')
 
-const textCases: SmokeCase[] = [
+const defaultCases: SmokeCase[] = [
   {
-    name: 'empty_blocks',
+    name: 'empty_eof',
     data: Buffer.alloc(0),
-    readBytes: 1,
     expr: 'len(data)',
     expected: '0',
   },
   {
     name: 'ascii_newline',
     data: Buffer.from('hello\n'),
-    readBytes: 6,
     expr: 'len(data)',
     expected: '6',
   },
   {
     name: 'ascii_no_newline',
     data: Buffer.from('hello'),
-    readBytes: 5,
     expr: 'len(data)',
     expected: '5',
   },
   {
     name: 'utf8_multibyte',
-    data: Buffer.from([0x68, 0x69, 0x2d, 0xe2, 0x98, 0x83]), // "hi-\\u2603"
-    readBytes: 6,
+    data: Buffer.from([0x68, 0x69, 0x2d, 0xe2, 0x98, 0x83]), // "hi-☃"
     expr: 'len(data)',
     expected: '6',
   },
   {
+    name: 'binary_nul_ff_hex',
+    data: Buffer.from([0x00, 0x01, 0x02, 0xff, 0x00, 0x41]),
+    expr: 'data.hex()',
+    expected: '000102ff0041',
+  },
+  {
     name: 'chunk_64k',
     data: Buffer.from('a'.repeat(64 * 1024)),
-    readBytes: 64 * 1024,
     expr: 'len(data)',
     expected: String(64 * 1024),
   },
   {
     name: 'chunk_64k_plus_1',
     data: Buffer.from('a'.repeat(64 * 1024 + 1)),
-    readBytes: 64 * 1024 + 1,
     expr: 'len(data)',
     expected: String(64 * 1024 + 1),
   },
 ]
 
-const binaryCases: SmokeCase[] = [
-  {
-    name: 'binary_nul_ff_hex',
-    data: Buffer.from([0x00, 0x01, 0x02, 0xff, 0x00, 0x41]),
-    readBytes: 6,
-    expr: 'data.hex()',
-    expected: '000102ff0041',
-  },
+const largeBinaryCases: SmokeCase[] = [
   {
     name: 'binary_random_sha256',
     data: randomBytes(1024),
-    readBytes: 1024,
     expr: 'hashlib.sha256(data).hexdigest()',
   },
 ]
@@ -117,9 +103,9 @@ describe('sandbox exec stdin piping (integration)', () => {
       })
 
       try {
-        const cases = includeBinary
-          ? [...textCases, ...binaryCases]
-          : textCases
+        const cases = includeLargeBinary
+          ? [...defaultCases, ...largeBinaryCases]
+          : defaultCases
 
         for (const testCase of cases) {
           const expected =
@@ -129,19 +115,13 @@ describe('sandbox exec stdin piping (integration)', () => {
               : undefined)
 
           const result = runExecPipe(sandbox.sandboxId, testCase)
-          const timedOut = isTimeout(result)
-
-          if (testCase.expectTimeout) {
-            expect(timedOut, `${testCase.name} should timeout`).toBe(true)
-            continue
-          }
-
-          if (timedOut) {
-            throw new Error(`${testCase.name} timed out unexpectedly`)
-          }
 
           if (result.error) {
-            throw result.error
+            const timedOut =
+              (result.error as NodeJS.ErrnoException).code === 'ETIMEDOUT'
+            throw new Error(
+              `${testCase.name} ${timedOut ? 'timed out' : 'failed'}: ${result.error.message}`
+            )
           }
 
           const stderr = bufferToText(result.stderr).trim()
@@ -173,7 +153,7 @@ function runExecPipe(
   sandboxId: string,
   testCase: SmokeCase
 ): ReturnType<typeof spawnSync> {
-  const pythonCmd = `import sys,hashlib; data=sys.stdin.buffer.read(${testCase.readBytes}); print(${testCase.expr})`
+  const pythonCmd = `import sys,hashlib; data=sys.stdin.buffer.read(); print(${testCase.expr})`
   const cliCmd = [
     'node',
     cliPath,
@@ -216,11 +196,6 @@ function bufferToText(value: Buffer | string | null | undefined): string {
     return ''
   }
   return typeof value === 'string' ? value : value.toString('utf8')
-}
-
-function isTimeout(result: ReturnType<typeof spawnSync>): boolean {
-  const err = result.error as NodeJS.ErrnoException | undefined
-  return Boolean(err && err.code === 'ETIMEDOUT')
 }
 
 function hashBytes(value: Buffer): string {

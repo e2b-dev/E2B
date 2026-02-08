@@ -116,8 +116,25 @@ describe('exec helpers', () => {
     expect(Buffer.concat(chunks.map((c) => Buffer.from(c)))).toEqual(data)
   })
 
+  test('chunkBytesBySize returns empty array for empty input', () => {
+    const chunks = chunkBytesBySize(Buffer.alloc(0), 64 * 1024)
+    expect(chunks).toHaveLength(0)
+  })
+
+  test('chunkBytesBySize returns single chunk for small input', () => {
+    const data = Buffer.from('hello')
+    const chunks = chunkBytesBySize(data, 64 * 1024)
+    expect(chunks).toHaveLength(1)
+    expect(Buffer.from(chunks[0])).toEqual(data)
+  })
+
   test('chunkBytesBySize throws on invalid maxBytes', () => {
     expect(() => chunkBytesBySize(Buffer.from('data'), 0)).toThrow()
     expect(() => chunkBytesBySize(Buffer.from('data'), -1)).toThrow()
+  })
+
+  test('readStdinFrom resolves with empty buffer on immediate EOF', async () => {
+    const stream = Readable.from([])
+    await expect(readStdinFrom(stream)).resolves.toEqual(Buffer.alloc(0))
   })
 })
