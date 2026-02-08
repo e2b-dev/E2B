@@ -4,6 +4,8 @@
 // @ts-nocheck
 
 import {
+  CloseStdinRequest,
+  CloseStdinResponse,
   ConnectRequest,
   ConnectResponse,
   ListRequest,
@@ -90,6 +92,18 @@ export const Process = {
       name: 'SendSignal',
       I: SendSignalRequest,
       O: SendSignalResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * Close stdin to signal EOF to the process.
+     * Only works for non-PTY processes. For PTY, send Ctrl+D (0x04) instead.
+     *
+     * @generated from rpc process.Process.CloseStdin
+     */
+    closeStdin: {
+      name: 'CloseStdin',
+      I: CloseStdinRequest,
+      O: CloseStdinResponse,
       kind: MethodKind.Unary,
     },
   },

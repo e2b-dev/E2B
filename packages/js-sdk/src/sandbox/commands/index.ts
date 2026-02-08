@@ -207,6 +207,33 @@ export class Commands {
   }
 
   /**
+   * Close stdin of a running command to signal EOF.
+   * Only works for non-PTY processes.
+   *
+   * @param pid process ID of the command. You can get the list of running commands using {@link Commands.list}.
+   * @param opts connection options.
+   */
+  async closeStdin(pid: number, opts?: CommandRequestOpts): Promise<void> {
+    try {
+      await this.rpc.closeStdin(
+        {
+          process: {
+            selector: {
+              case: 'pid',
+              value: pid,
+            },
+          },
+        },
+        {
+          signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
+        }
+      )
+    } catch (err) {
+      throw handleRpcError(err)
+    }
+  }
+
+  /**
    * Kill a running command specified by its process ID.
    * It uses `SIGKILL` signal to kill the command.
    *
