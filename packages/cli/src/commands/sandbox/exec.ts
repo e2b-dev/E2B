@@ -5,7 +5,7 @@
 import { Sandbox, CommandExitError, NotFoundError } from 'e2b'
 import * as commander from 'commander'
 
-import { ensureAPIKey, getDomain } from '../../api'
+import { ensureAPIKey } from '../../api'
 import { setupSignalHandlers } from 'src/utils/signal'
 import {
   buildCommand,
@@ -18,11 +18,9 @@ interface ExecOptions {
   cwd?: string
   user?: string
   env?: Record<string, string>
-  timeout?: string
 }
 
 const NO_COMMAND_TIMEOUT = 0
-const isDebug = (process.env.E2B_DEBUG || 'false').toLowerCase() === 'true'
 export const execCommand = new commander.Command('exec')
   .description('execute a command in a running sandbox')
   .argument('<sandboxID>', 'sandbox ID to execute command in')
@@ -42,10 +40,6 @@ export const execCommand = new commander.Command('exec')
     },
     {} as Record<string, string>
   )
-  .option(
-    '-t, --timeout <ms>',
-    'maximum time in milliseconds the command can run'
-  )
   .alias('ex')
   .action(
     async (sandboxID: string, commandParts: string[], opts: ExecOptions) => {
@@ -55,20 +49,9 @@ export const execCommand = new commander.Command('exec')
       const openStdin = stdinData !== undefined && stdinData.byteLength > 0
 
       const command = buildCommand(commandParts)
-      const timeoutMs = opts.timeout
-        ? Number.parseInt(opts.timeout, 10)
-        : NO_COMMAND_TIMEOUT
       try {
         const apiKey = ensureAPIKey()
-        const domain = getDomain()
-        const sandbox = isDebug
-          ? await Sandbox.create({ apiKey, domain })
-          : await Sandbox.connect(sandboxID, { apiKey, domain })
-        if (isDebug) {
-          console.warn(
-            `e2b: E2B_DEBUG is enabled, ignoring sandbox ID ${sandboxID}`
-          )
-        }
+        const sandbox = await Sandbox.connect(sandboxID, { apiKey })
 
         if (opts.background) {
           const handle = await sandbox.commands.run(command, {
@@ -77,7 +60,7 @@ export const execCommand = new commander.Command('exec')
             user: opts.user,
             envs: opts.env,
             stdin: openStdin,
-            timeoutMs,
+            timeoutMs: NO_COMMAND_TIMEOUT,
           })
 
           if (openStdin && stdinData) {
@@ -96,7 +79,6 @@ export const execCommand = new commander.Command('exec')
           sandbox,
           command,
           opts,
-          timeoutMs,
           stdinData
         )
 
@@ -112,7 +94,6 @@ async function runCommand(
   sandbox: Sandbox,
   command: string,
   opts: ExecOptions,
-  timeoutMs: number,
   stdinData?: Uint8Array
 ): Promise<number> {
   const openStdin = stdinData !== undefined && stdinData.byteLength > 0
@@ -122,7 +103,7 @@ async function runCommand(
     user: opts.user,
     envs: opts.env,
     stdin: openStdin,
-    timeoutMs,
+    timeoutMs: NO_COMMAND_TIMEOUT,
     onStdout: async (data) => {
       try {
         process.stdout.write(data)

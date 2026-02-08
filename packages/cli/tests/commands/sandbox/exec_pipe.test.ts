@@ -15,7 +15,7 @@ type SmokeCase = {
 }
 
 const userConfig = safeGetUserConfig()
-const domain = process.env.E2B_DOMAIN || userConfig?.domain || 'e2b.app'
+const domain = process.env.E2B_DOMAIN || 'e2b.app'
 const apiKey = process.env.E2B_API_KEY || userConfig?.teamApiKey
 const templateId =
   process.env.E2B_PIPE_TEMPLATE_ID ||

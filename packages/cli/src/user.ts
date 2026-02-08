@@ -11,7 +11,6 @@ export interface UserConfig {
   teamName: string
   teamId: string
   teamApiKey: string
-  domain?: string
   dockerProxySet?: boolean
 }
 

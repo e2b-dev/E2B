@@ -2,7 +2,7 @@ import * as e2b from 'e2b'
 import * as commander from 'commander'
 import * as path from 'path'
 
-import { ensureAPIKey, getDomain } from 'src/api'
+import { ensureAPIKey } from 'src/api'
 import { spawnConnectedTerminal } from 'src/terminal'
 import { asBold, asFormattedSandboxTemplate } from 'src/utils/format'
 import { getRoot } from '../../utils/filesystem'
@@ -89,10 +89,7 @@ export async function connectSandbox({
   apiKey: string
   template: Pick<e2b.components['schemas']['Template'], 'templateID'>
 }) {
-  const sandbox = await e2b.Sandbox.create(template.templateID, {
-    apiKey,
-    domain: getDomain(),
-  })
+  const sandbox = await e2b.Sandbox.create(template.templateID, { apiKey })
 
   // keep-alive loop
   const intervalId = setInterval(async () => {
