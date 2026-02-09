@@ -2,7 +2,7 @@ import datetime
 import json
 import logging
 import uuid
-from typing import Dict, List, Optional, overload
+from typing import Dict, List, Optional
 
 import httpx
 from packaging.version import Version
@@ -212,66 +212,8 @@ class Sandbox(SandboxApi):
 
         return sandbox
 
-    @overload
-    def connect(
-        self,
-        timeout: Optional[int] = None,
-        **opts: Unpack[ApiParams],
-    ) -> Self:
-        """
-        Connect to a sandbox. If the sandbox is paused, it will be automatically resumed.
-        Sandbox must be either running or be paused.
-
-        With sandbox ID you can connect to the same sandbox from different places or environments (serverless functions, etc).
-
-        :param timeout: Timeout for the sandbox in **seconds**
-            For running sandboxes, the timeout will update only if the new timeout is longer than the existing one.
-        :return: A running sandbox instance
-
-        @example
-        ```python
-        sandbox = Sandbox.create()
-        sandbox.beta_pause()
-
-        # Another code block
-        same_sandbox = sandbox.connect()
-
-        :return: A running sandbox instance
-        """
-        ...
-
-    @overload
-    @classmethod
-    def connect(
-        cls,
-        sandbox_id: str,
-        timeout: Optional[int] = None,
-        **opts: Unpack[ApiParams],
-    ) -> Self:
-        """
-        Connect to a sandbox. If the sandbox is paused, it will be automatically resumed.
-        Sandbox must be either running or be paused.
-
-        With sandbox ID you can connect to the same sandbox from different places or environments (serverless functions, etc).
-
-        :param sandbox_id: Sandbox ID
-        :param timeout: Timeout for the sandbox in **seconds**.
-            For running sandboxes, the timeout will update only if the new timeout is longer than the existing one.
-        :return: A running sandbox instance
-
-        @example
-        ```python
-        sandbox = Sandbox.create()
-        Sandbox.beta_pause(sandbox.sandbox_id)
-
-        # Another code block
-        same_sandbox = Sandbox.connect(sandbox.sandbox_id)
-        ```
-        """
-        ...
-
     @class_method_variant("_cls_connect")
-    def connect(  # type: ignore[invalid-overload]
+    def connect(
         self,
         timeout: Optional[int] = None,
         **opts: Unpack[ApiParams],
@@ -307,37 +249,10 @@ class Sandbox(SandboxApi):
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        self.kill()  # type: ignore[no-matching-overload]
-
-    @overload
-    def kill(
-        self,
-        **opts: Unpack[ApiParams],
-    ) -> bool:
-        """
-        Kill the sandbox.
-
-        :return: `True` if the sandbox was killed, `False` if the sandbox was not found
-        """
-        ...
-
-    @overload
-    @staticmethod
-    def kill(
-        sandbox_id: str,
-        **opts: Unpack[ApiParams],
-    ) -> bool:
-        """
-        Kill the sandbox specified by sandbox ID.
-
-        :param sandbox_id: Sandbox ID
-
-        :return: `True` if the sandbox was killed, `False` if the sandbox was not found
-        """
-        ...
+        self.kill()
 
     @class_method_variant("_cls_kill")
-    def kill(  # type: ignore[invalid-overload]
+    def kill(
         self,
         **opts: Unpack[ApiParams],
     ) -> bool:
@@ -351,42 +266,8 @@ class Sandbox(SandboxApi):
             **self.connection_config.get_api_params(**opts),
         )
 
-    @overload
-    def set_timeout(
-        self,
-        timeout: int,
-        **opts: Unpack[ApiParams],
-    ) -> None:
-        """
-        Set the timeout of the sandbox.
-        This method can extend or reduce the sandbox timeout set when creating the sandbox or from the last call to `.set_timeout`.
-
-        The maximum time a sandbox can be kept alive is 24 hours (86_400 seconds) for Pro users and 1 hour (3_600 seconds) for Hobby users.
-
-        :param timeout: Timeout for the sandbox in **seconds**
-        """
-        ...
-
-    @overload
-    @staticmethod
-    def set_timeout(
-        sandbox_id: str,
-        timeout: int,
-        **opts: Unpack[ApiParams],
-    ) -> None:
-        """
-        Set the timeout of the sandbox specified by sandbox ID.
-        This method can extend or reduce the sandbox timeout set when creating the sandbox or from the last call to `.set_timeout`.
-
-        The maximum time a sandbox can be kept alive is 24 hours (86_400 seconds) for Pro users and 1 hour (3_600 seconds) for Hobby users.
-
-        :param sandbox_id: Sandbox ID
-        :param timeout: Timeout for the sandbox in **seconds**
-        """
-        ...
-
     @class_method_variant("_cls_set_timeout")
-    def set_timeout(  # type: ignore[invalid-overload]
+    def set_timeout(
         self,
         timeout: int,
         **opts: Unpack[ApiParams],
@@ -407,35 +288,8 @@ class Sandbox(SandboxApi):
             **self.connection_config.get_api_params(**opts),
         )
 
-    @overload
-    def get_info(
-        self,
-        **opts: Unpack[ApiParams],
-    ) -> SandboxInfo:
-        """
-        Get sandbox information like sandbox ID, template, metadata, started at/end at date.
-
-        :return: Sandbox info
-        """
-        ...
-
-    @overload
-    @staticmethod
-    def get_info(
-        sandbox_id: str,
-        **opts: Unpack[ApiParams],
-    ) -> SandboxInfo:
-        """
-        Get sandbox information like sandbox ID, template, metadata, started at/end at date.
-
-        :param sandbox_id: Sandbox ID
-
-        :return: Sandbox info
-        """
-        ...
-
     @class_method_variant("_cls_get_info")
-    def get_info(  # type: ignore[invalid-overload]
+    def get_info(
         self,
         **opts: Unpack[ApiParams],
     ) -> SandboxInfo:
@@ -449,44 +303,8 @@ class Sandbox(SandboxApi):
             **self.connection_config.get_api_params(**opts),
         )
 
-    @overload
-    def get_metrics(
-        self,
-        start: Optional[datetime.datetime] = None,
-        end: Optional[datetime.datetime] = None,
-        **opts: Unpack[ApiParams],
-    ) -> List[SandboxMetrics]:
-        """
-        Get the metrics of the current sandbox.
-
-        :param start: Start time for the metrics, defaults to the start of the sandbox
-        :param end: End time for the metrics, defaults to the current time
-
-        :return: List of sandbox metrics containing CPU, memory and disk usage information
-        """
-        ...
-
-    @overload
-    @staticmethod
-    def get_metrics(
-        sandbox_id: str,
-        start: Optional[datetime.datetime] = None,
-        end: Optional[datetime.datetime] = None,
-        **opts: Unpack[ApiParams],
-    ) -> List[SandboxMetrics]:
-        """
-        Get the metrics of the sandbox specified by sandbox ID.
-
-        :param sandbox_id: Sandbox ID
-        :param start: Start time for the metrics, defaults to the start of the sandbox
-        :param end: End time for the metrics, defaults to the current time
-
-        :return: List of sandbox metrics containing CPU, memory and disk usage information
-        """
-        ...
-
     @class_method_variant("_cls_get_metrics")
-    def get_metrics(  # type: ignore[invalid-overload]
+    def get_metrics(
         self,
         start: Optional[datetime.datetime] = None,
         end: Optional[datetime.datetime] = None,
@@ -582,36 +400,8 @@ class Sandbox(SandboxApi):
 
         return sandbox
 
-    @overload
-    def beta_pause(
-        self,
-        **opts: Unpack[ApiParams],
-    ) -> None:
-        """
-        [BETA] This feature is in beta and may change in the future.
-
-        Pause the sandbox.
-        """
-        ...
-
-    @overload
-    @classmethod
-    def beta_pause(
-        cls,
-        sandbox_id: str,
-        **opts: Unpack[ApiParams],
-    ) -> None:
-        """
-        [BETA] This feature is in beta and may change in the future.
-
-        Pause the sandbox specified by sandbox ID.
-
-        :param sandbox_id: Sandbox ID
-        """
-        ...
-
     @class_method_variant("_cls_pause")
-    def beta_pause(  # type: ignore[invalid-overload]
+    def beta_pause(
         self,
         **opts: Unpack[ApiParams],
     ) -> None:

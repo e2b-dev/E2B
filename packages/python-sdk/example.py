@@ -11,7 +11,7 @@ logging.basicConfig(level=logging.ERROR)
 
 async def main():
     sbx = await AsyncSandbox.create(timeout=10)
-    await sbx.set_timeout(20)  # type: ignore[no-matching-overload]
+    await sbx.set_timeout(20)
 
 
 if __name__ == "__main__":
