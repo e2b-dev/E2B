@@ -2,7 +2,7 @@ import datetime
 import json
 import logging
 import uuid
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, overload
 
 import httpx
 from packaging.version import Version
@@ -214,6 +214,20 @@ class AsyncSandbox(SandboxApi):
 
         return sandbox
 
+    @overload
+    async def connect(
+        self,
+        timeout: Optional[int] = None,
+        **opts: Unpack[ApiParams],
+    ) -> Self: ...
+
+    @overload
+    async def connect(
+        self: str,
+        timeout: Optional[int] = None,
+        **opts: Unpack[ApiParams],
+    ) -> "AsyncSandbox": ...
+
     @class_method_variant("_cls_connect_sandbox")
     async def connect(
         self,
@@ -253,6 +267,12 @@ class AsyncSandbox(SandboxApi):
     async def __aexit__(self, exc_type, exc_value, traceback):
         await self.kill()
 
+    @overload
+    async def kill(self, **opts: Unpack[ApiParams]) -> bool: ...
+
+    @overload
+    async def kill(self: str, **opts: Unpack[ApiParams]) -> bool: ...
+
     @class_method_variant("_cls_kill")
     async def kill(
         self,
@@ -267,6 +287,14 @@ class AsyncSandbox(SandboxApi):
             sandbox_id=self.sandbox_id,
             **self.connection_config.get_api_params(**opts),
         )
+
+    @overload
+    async def set_timeout(self, timeout: int, **opts: Unpack[ApiParams]) -> None: ...
+
+    @overload
+    async def set_timeout(
+        self: str, timeout: int, **opts: Unpack[ApiParams]
+    ) -> None: ...
 
     @class_method_variant("_cls_set_timeout")
     async def set_timeout(
@@ -288,6 +316,12 @@ class AsyncSandbox(SandboxApi):
             **self.connection_config.get_api_params(**opts),
         )
 
+    @overload
+    async def get_info(self, **opts: Unpack[ApiParams]) -> SandboxInfo: ...
+
+    @overload
+    async def get_info(self: str, **opts: Unpack[ApiParams]) -> SandboxInfo: ...
+
     @class_method_variant("_cls_get_info")
     async def get_info(
         self,
@@ -303,6 +337,22 @@ class AsyncSandbox(SandboxApi):
             sandbox_id=self.sandbox_id,
             **self.connection_config.get_api_params(**opts),
         )
+
+    @overload
+    async def get_metrics(
+        self,
+        start: Optional[datetime.datetime] = None,
+        end: Optional[datetime.datetime] = None,
+        **opts: Unpack[ApiParams],
+    ) -> List[SandboxMetrics]: ...
+
+    @overload
+    async def get_metrics(
+        self: str,
+        start: Optional[datetime.datetime] = None,
+        end: Optional[datetime.datetime] = None,
+        **opts: Unpack[ApiParams],
+    ) -> List[SandboxMetrics]: ...
 
     @class_method_variant("_cls_get_metrics")
     async def get_metrics(
@@ -400,6 +450,12 @@ class AsyncSandbox(SandboxApi):
                 raise Exception(f"Failed to start MCP gateway: {res.stderr}")
 
         return sandbox
+
+    @overload
+    async def beta_pause(self, **opts: Unpack[ApiParams]) -> None: ...
+
+    @overload
+    async def beta_pause(self: str, **opts: Unpack[ApiParams]) -> None: ...
 
     @class_method_variant("_cls_pause")
     async def beta_pause(

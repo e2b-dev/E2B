@@ -2,7 +2,7 @@ import datetime
 import json
 import logging
 import uuid
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, overload
 
 import httpx
 from packaging.version import Version
@@ -212,6 +212,20 @@ class Sandbox(SandboxApi):
 
         return sandbox
 
+    @overload
+    def connect(
+        self,
+        timeout: Optional[int] = None,
+        **opts: Unpack[ApiParams],
+    ) -> Self: ...
+
+    @overload
+    def connect(
+        self: str,
+        timeout: Optional[int] = None,
+        **opts: Unpack[ApiParams],
+    ) -> "Sandbox": ...
+
     @class_method_variant("_cls_connect_sandbox")
     def connect(
         self,
@@ -251,6 +265,12 @@ class Sandbox(SandboxApi):
     def __exit__(self, exc_type, exc_value, traceback):
         self.kill()
 
+    @overload
+    def kill(self, **opts: Unpack[ApiParams]) -> bool: ...
+
+    @overload
+    def kill(self: str, **opts: Unpack[ApiParams]) -> bool: ...
+
     @class_method_variant("_cls_kill")
     def kill(
         self,
@@ -265,6 +285,12 @@ class Sandbox(SandboxApi):
             sandbox_id=self.sandbox_id,
             **self.connection_config.get_api_params(**opts),
         )
+
+    @overload
+    def set_timeout(self, timeout: int, **opts: Unpack[ApiParams]) -> None: ...
+
+    @overload
+    def set_timeout(self: str, timeout: int, **opts: Unpack[ApiParams]) -> None: ...
 
     @class_method_variant("_cls_set_timeout")
     def set_timeout(
@@ -288,6 +314,12 @@ class Sandbox(SandboxApi):
             **self.connection_config.get_api_params(**opts),
         )
 
+    @overload
+    def get_info(self, **opts: Unpack[ApiParams]) -> SandboxInfo: ...
+
+    @overload
+    def get_info(self: str, **opts: Unpack[ApiParams]) -> SandboxInfo: ...
+
     @class_method_variant("_cls_get_info")
     def get_info(
         self,
@@ -302,6 +334,22 @@ class Sandbox(SandboxApi):
             sandbox_id=self.sandbox_id,
             **self.connection_config.get_api_params(**opts),
         )
+
+    @overload
+    def get_metrics(
+        self,
+        start: Optional[datetime.datetime] = None,
+        end: Optional[datetime.datetime] = None,
+        **opts: Unpack[ApiParams],
+    ) -> List[SandboxMetrics]: ...
+
+    @overload
+    def get_metrics(
+        self: str,
+        start: Optional[datetime.datetime] = None,
+        end: Optional[datetime.datetime] = None,
+        **opts: Unpack[ApiParams],
+    ) -> List[SandboxMetrics]: ...
 
     @class_method_variant("_cls_get_metrics")
     def get_metrics(
@@ -399,6 +447,12 @@ class Sandbox(SandboxApi):
                 raise Exception(f"Failed to start MCP gateway: {res.stderr}")
 
         return sandbox
+
+    @overload
+    def beta_pause(self, **opts: Unpack[ApiParams]) -> None: ...
+
+    @overload
+    def beta_pause(self: str, **opts: Unpack[ApiParams]) -> None: ...
 
     @class_method_variant("_cls_pause")
     def beta_pause(
