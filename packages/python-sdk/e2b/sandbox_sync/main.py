@@ -212,7 +212,7 @@ class Sandbox(SandboxApi):
 
         return sandbox
 
-    @class_method_variant("_cls_connect")
+    @class_method_variant("_cls_connect_sandbox")
     def connect(
         self,
         timeout: Optional[int] = None,
@@ -429,7 +429,7 @@ class Sandbox(SandboxApi):
         return self._mcp_token
 
     @classmethod
-    def _cls_connect(  # type: ignore[invalid-method-override]
+    def _cls_connect_sandbox(
         cls,
         sandbox_id: str,
         timeout: Optional[int] = None,
