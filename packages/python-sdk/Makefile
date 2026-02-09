@@ -24,7 +24,7 @@ init:
 	pip install openapi-python-client datamodel-code-generator
 
 typecheck:
-	ty check
+	basedpyright
 
 lint:
 	ruff check .

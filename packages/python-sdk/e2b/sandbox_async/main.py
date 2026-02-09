@@ -666,10 +666,16 @@ class AsyncSandbox(SandboxApi):
 
         return cls(
             sandbox_id=sandbox.sandbox_id,
-            sandbox_domain=sandbox.domain,
+            sandbox_domain=sandbox.domain
+            if not isinstance(sandbox.domain, Unset)
+            else None,
             envd_version=Version(sandbox.envd_version),
-            envd_access_token=envd_access_token,
-            traffic_access_token=sandbox.traffic_access_token,
+            envd_access_token=envd_access_token
+            if not isinstance(envd_access_token, Unset)
+            else None,
+            traffic_access_token=sandbox.traffic_access_token
+            if not isinstance(sandbox.traffic_access_token, Unset)
+            else None,
             connection_config=connection_config,
         )
 

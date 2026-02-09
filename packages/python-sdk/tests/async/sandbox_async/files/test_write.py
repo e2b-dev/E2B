@@ -69,6 +69,7 @@ async def test_write_multiple_files(async_sandbox: AsyncSandbox, debug):
 
     # Attempt to write with multiple files in array
     files = []
+    path = ""
     for i in range(num_test_files):
         path = f"test_write_{i}.txt"
         content = f"This is a test file {i}."

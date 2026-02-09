@@ -69,7 +69,7 @@ class ConnectionConfig:
         return os.getenv("E2B_API_URL")
 
     @staticmethod
-    def _sandbox_url():
+    def _sandbox_url_env():
         return os.getenv("E2B_SANDBOX_URL")
 
     @staticmethod
@@ -118,7 +118,7 @@ class ConnectionConfig:
         )
 
         self._sandbox_url: Optional[str] = (
-            sandbox_url or ConnectionConfig._sandbox_url()
+            sandbox_url or ConnectionConfig._sandbox_url_env()
         )
 
     @staticmethod
@@ -137,7 +137,7 @@ class ConnectionConfig:
         return self._get_request_timeout(self.request_timeout, request_timeout)
 
     def get_sandbox_url(self, sandbox_id: str, sandbox_domain: str) -> str:
-        sandbox_url: Optional[str] = self._sandbox_url  # type: ignore[assignment]
+        sandbox_url: Optional[str] = self._sandbox_url
         if sandbox_url:
             return sandbox_url
 

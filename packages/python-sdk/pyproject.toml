@@ -32,7 +32,7 @@ pydoc-markdown = "^4.8.2"
 datamodel-code-generator = "^0.34.0"
 ruff = "^0.11.12"
 pytest-timeout = "^2.4.0"
-ty = "^0.0.15"
+basedpyright = "^1.29.0"
 
 [build-system]
 requires = ["poetry-core"]
@@ -42,19 +42,14 @@ build-backend = "poetry.core.masonry.api"
 "Bug Tracker" = "https://github.com/e2b-dev/e2b/issues"
 
 [tool.basedpyright]
+typeCheckingMode = "standard"
 reportInconsistentOverload = false
-
-[tool.ty.rules]
-invalid-overload = "ignore"
-no-matching-overload = "ignore"
-
-[[tool.ty.overrides]]
-include = ["e2b/api/client/models/**"]
-rules = { invalid-argument-type = "ignore" }
-
-[[tool.ty.overrides]]
-include = ["e2b/envd/**/*.pyi"]
-rules = { conflicting-metaclass = "ignore", unresolved-attribute = "ignore" }
+reportIncompatibleMethodOverride = false
+exclude = [
+    "e2b/api/client/models",
+    "e2b/envd",
+    "tests/bugs",
+]
 
 [tool.ruff]
 exclude = [

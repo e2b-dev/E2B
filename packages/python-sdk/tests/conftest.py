@@ -190,9 +190,7 @@ def debug():
 def skip_by_debug(request, debug):
     if request.node.get_closest_marker("skip_debug"):
         if debug:
-            pytest.skip(
-                "skipped because E2B_DEBUG is set"  # ty: ignore[too-many-positional-arguments]
-            )  # ty: ignore[invalid-argument-type]
+            pytest.skip("skipped because E2B_DEBUG is set")
 
 
 class Helpers:

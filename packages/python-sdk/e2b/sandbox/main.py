@@ -14,7 +14,6 @@ class SandboxOpts(TypedDict):
     sandbox_domain: Optional[str]
     envd_version: Version
     envd_access_token: Optional[str]
-    sandbox_url: Optional[str]
     traffic_access_token: Optional[str]
     connection_config: ConnectionConfig
 
