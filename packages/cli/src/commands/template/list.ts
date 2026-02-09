@@ -4,10 +4,9 @@ import * as e2b from 'e2b'
 
 import { listAliases } from '../../utils/format'
 import { sortTemplatesAliases } from 'src/utils/templateSort'
-import { client, ensureAccessToken } from 'src/api'
+import { client, ensureAccessToken, resolveTeamId } from 'src/api'
 import { teamOption } from '../../options'
 import { handleE2BRequestError } from '../../utils/errors'
-import { getUserConfig } from '../../user'
 
 export const listCommand = new commander.Command('list')
   .description('list sandbox templates')
@@ -17,12 +16,11 @@ export const listCommand = new commander.Command('list')
   .action(async (opts: { team: string; format: string }) => {
     try {
       const format = opts.format || 'pretty'
-      const userConfig = getUserConfig()
       ensureAccessToken()
       process.stdout.write('\n')
 
       const templates = await listSandboxTemplates({
-        teamID: opts.team || userConfig?.teamId,
+        teamID: resolveTeamId(opts.team),
       })
 
       for (const template of templates) {
