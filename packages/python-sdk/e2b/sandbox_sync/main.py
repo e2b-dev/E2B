@@ -220,8 +220,10 @@ class Sandbox(SandboxApi):
     ) -> Self: ...
 
     @overload
+    @classmethod
     def connect(
-        self: str,
+        cls,
+        sandbox_id: str,
         timeout: Optional[int] = None,
         **opts: Unpack[ApiParams],
     ) -> "Sandbox": ...
@@ -263,13 +265,14 @@ class Sandbox(SandboxApi):
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        self.kill()
+        self.kill()  # ty: ignore[invalid-argument-type]
 
     @overload
     def kill(self, **opts: Unpack[ApiParams]) -> bool: ...
 
     @overload
-    def kill(self: str, **opts: Unpack[ApiParams]) -> bool: ...
+    @classmethod
+    def kill(cls, sandbox_id: str, **opts: Unpack[ApiParams]) -> bool: ...
 
     @class_method_variant("_cls_kill")
     def kill(
@@ -290,7 +293,10 @@ class Sandbox(SandboxApi):
     def set_timeout(self, timeout: int, **opts: Unpack[ApiParams]) -> None: ...
 
     @overload
-    def set_timeout(self: str, timeout: int, **opts: Unpack[ApiParams]) -> None: ...
+    @classmethod
+    def set_timeout(
+        cls, sandbox_id: str, timeout: int, **opts: Unpack[ApiParams]
+    ) -> None: ...
 
     @class_method_variant("_cls_set_timeout")
     def set_timeout(
@@ -318,7 +324,8 @@ class Sandbox(SandboxApi):
     def get_info(self, **opts: Unpack[ApiParams]) -> SandboxInfo: ...
 
     @overload
-    def get_info(self: str, **opts: Unpack[ApiParams]) -> SandboxInfo: ...
+    @classmethod
+    def get_info(cls, sandbox_id: str, **opts: Unpack[ApiParams]) -> SandboxInfo: ...
 
     @class_method_variant("_cls_get_info")
     def get_info(
@@ -344,8 +351,10 @@ class Sandbox(SandboxApi):
     ) -> List[SandboxMetrics]: ...
 
     @overload
+    @classmethod
     def get_metrics(
-        self: str,
+        cls,
+        sandbox_id: str,
         start: Optional[datetime.datetime] = None,
         end: Optional[datetime.datetime] = None,
         **opts: Unpack[ApiParams],
@@ -452,7 +461,8 @@ class Sandbox(SandboxApi):
     def beta_pause(self, **opts: Unpack[ApiParams]) -> None: ...
 
     @overload
-    def beta_pause(self: str, **opts: Unpack[ApiParams]) -> None: ...
+    @classmethod
+    def beta_pause(cls, sandbox_id: str, **opts: Unpack[ApiParams]) -> None: ...
 
     @class_method_variant("_cls_pause")
     def beta_pause(

@@ -222,8 +222,10 @@ class AsyncSandbox(SandboxApi):
     ) -> Self: ...
 
     @overload
+    @classmethod
     async def connect(
-        self: str,
+        cls,
+        sandbox_id: str,
         timeout: Optional[int] = None,
         **opts: Unpack[ApiParams],
     ) -> "AsyncSandbox": ...
@@ -265,13 +267,14 @@ class AsyncSandbox(SandboxApi):
         return self
 
     async def __aexit__(self, exc_type, exc_value, traceback):
-        await self.kill()
+        await self.kill()  # ty: ignore[invalid-argument-type]
 
     @overload
     async def kill(self, **opts: Unpack[ApiParams]) -> bool: ...
 
     @overload
-    async def kill(self: str, **opts: Unpack[ApiParams]) -> bool: ...
+    @classmethod
+    async def kill(cls, sandbox_id: str, **opts: Unpack[ApiParams]) -> bool: ...
 
     @class_method_variant("_cls_kill")
     async def kill(
@@ -292,8 +295,9 @@ class AsyncSandbox(SandboxApi):
     async def set_timeout(self, timeout: int, **opts: Unpack[ApiParams]) -> None: ...
 
     @overload
+    @classmethod
     async def set_timeout(
-        self: str, timeout: int, **opts: Unpack[ApiParams]
+        cls, sandbox_id: str, timeout: int, **opts: Unpack[ApiParams]
     ) -> None: ...
 
     @class_method_variant("_cls_set_timeout")
@@ -320,7 +324,10 @@ class AsyncSandbox(SandboxApi):
     async def get_info(self, **opts: Unpack[ApiParams]) -> SandboxInfo: ...
 
     @overload
-    async def get_info(self: str, **opts: Unpack[ApiParams]) -> SandboxInfo: ...
+    @classmethod
+    async def get_info(
+        cls, sandbox_id: str, **opts: Unpack[ApiParams]
+    ) -> SandboxInfo: ...
 
     @class_method_variant("_cls_get_info")
     async def get_info(
@@ -347,8 +354,10 @@ class AsyncSandbox(SandboxApi):
     ) -> List[SandboxMetrics]: ...
 
     @overload
+    @classmethod
     async def get_metrics(
-        self: str,
+        cls,
+        sandbox_id: str,
         start: Optional[datetime.datetime] = None,
         end: Optional[datetime.datetime] = None,
         **opts: Unpack[ApiParams],
@@ -455,7 +464,8 @@ class AsyncSandbox(SandboxApi):
     async def beta_pause(self, **opts: Unpack[ApiParams]) -> None: ...
 
     @overload
-    async def beta_pause(self: str, **opts: Unpack[ApiParams]) -> None: ...
+    @classmethod
+    async def beta_pause(cls, sandbox_id: str, **opts: Unpack[ApiParams]) -> None: ...
 
     @class_method_variant("_cls_pause")
     async def beta_pause(
