@@ -7,7 +7,6 @@
     "prebuild": "node prebuild.js",
     "build": "node prebuild.js && next build",
     "start": "next start",
-    "typecheck": "tsc --noEmit",
     "lint": "next lint",
     "format": "prettier --write .",
     "rm-next-cache": "rm -rf .next/cache",
