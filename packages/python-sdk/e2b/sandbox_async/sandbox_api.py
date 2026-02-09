@@ -199,7 +199,7 @@ class SandboxApi(SandboxBase):
         envd_token = (
             res.parsed.envd_access_token
             if isinstance(res.parsed.envd_access_token, str)
-            else ""
+            else None
         )
         traffic_token = (
             res.parsed.traffic_access_token
