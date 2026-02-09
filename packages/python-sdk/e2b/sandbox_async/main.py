@@ -219,7 +219,27 @@ class AsyncSandbox(SandboxApi):
         self,
         timeout: Optional[int] = None,
         **opts: Unpack[ApiParams],
-    ) -> Self: ...
+    ) -> Self:
+        """
+        Connect to a sandbox. If the sandbox is paused, it will be automatically resumed.
+        Sandbox must be either running or be paused.
+
+        With sandbox ID you can connect to the same sandbox from different places or environments (serverless functions, etc).
+
+        :param timeout: Timeout for the sandbox in **seconds**
+            For running sandboxes, the timeout will update only if the new timeout is longer than the existing one.
+        :return: A running sandbox instance
+
+        @example
+        ```python
+        sandbox = await AsyncSandbox.create()
+        await sandbox.beta_pause()
+
+        # Another code block
+        same_sandbox = await sandbox.connect()
+        ```
+        """
+        ...
 
     @overload
     @classmethod
@@ -228,7 +248,28 @@ class AsyncSandbox(SandboxApi):
         sandbox_id: str,
         timeout: Optional[int] = None,
         **opts: Unpack[ApiParams],
-    ) -> "AsyncSandbox": ...
+    ) -> "AsyncSandbox":
+        """
+        Connect to a sandbox. If the sandbox is paused, it will be automatically resumed.
+        Sandbox must be either running or be paused.
+
+        With sandbox ID you can connect to the same sandbox from different places or environments (serverless functions, etc).
+
+        :param sandbox_id: Sandbox ID
+        :param timeout: Timeout for the sandbox in **seconds**
+            For running sandboxes, the timeout will update only if the new timeout is longer than the existing one.
+        :return: A running sandbox instance
+
+        @example
+        ```python
+        sandbox = await AsyncSandbox.create()
+        await AsyncSandbox.beta_pause(sandbox.sandbox_id)
+
+        # Another code block
+        same_sandbox = await AsyncSandbox.connect(sandbox.sandbox_id))
+        ```
+        """
+        ...
 
     @class_method_variant("_cls_connect_sandbox")
     async def connect(
@@ -270,11 +311,32 @@ class AsyncSandbox(SandboxApi):
         await self.kill()  # ty: ignore[invalid-argument-type]
 
     @overload
-    async def kill(self, **opts: Unpack[ApiParams]) -> bool: ...
+    async def kill(
+        self,
+        **opts: Unpack[ApiParams],
+    ) -> bool:
+        """
+        Kill the sandbox.
+
+        :return: `True` if the sandbox was killed, `False` if the sandbox was not found
+        """
+        ...
 
     @overload
     @classmethod
-    async def kill(cls, sandbox_id: str, **opts: Unpack[ApiParams]) -> bool: ...
+    async def kill(
+        cls,
+        sandbox_id: str,
+        **opts: Unpack[ApiParams],
+    ) -> bool:
+        """
+        Kill the sandbox specified by sandbox ID.
+
+        :param sandbox_id: Sandbox ID
+
+        :return: `True` if the sandbox was killed, `False` if the sandbox was not found
+        """
+        ...
 
     @class_method_variant("_cls_kill")
     async def kill(
@@ -292,13 +354,39 @@ class AsyncSandbox(SandboxApi):
         )
 
     @overload
-    async def set_timeout(self, timeout: int, **opts: Unpack[ApiParams]) -> None: ...
+    async def set_timeout(
+        self,
+        timeout: int,
+        **opts: Unpack[ApiParams],
+    ) -> None:
+        """
+        Set the timeout of the sandbox.
+        This method can extend or reduce the sandbox timeout set when creating the sandbox or from the last call to `.set_timeout`.
+
+        The maximum time a sandbox can be kept alive is 24 hours (86_400 seconds) for Pro users and 1 hour (3_600 seconds) for Hobby users.
+
+        :param timeout: Timeout for the sandbox in **seconds**
+        """
+        ...
 
     @overload
     @classmethod
     async def set_timeout(
-        cls, sandbox_id: str, timeout: int, **opts: Unpack[ApiParams]
-    ) -> None: ...
+        cls,
+        sandbox_id: str,
+        timeout: int,
+        **opts: Unpack[ApiParams],
+    ) -> None:
+        """
+        Set the timeout of the specified sandbox.
+        This method can extend or reduce the sandbox timeout set when creating the sandbox or from the last call to `.set_timeout`.
+
+        The maximum time a sandbox can be kept alive is 24 hours (86_400 seconds) for Pro users and 1 hour (3_600 seconds) for Hobby users.
+
+        :param sandbox_id: Sandbox ID
+        :param timeout: Timeout for the sandbox in **seconds**
+        """
+        ...
 
     @class_method_variant("_cls_set_timeout")
     async def set_timeout(
@@ -321,13 +409,31 @@ class AsyncSandbox(SandboxApi):
         )
 
     @overload
-    async def get_info(self, **opts: Unpack[ApiParams]) -> SandboxInfo: ...
+    async def get_info(
+        self,
+        **opts: Unpack[ApiParams],
+    ) -> SandboxInfo:
+        """
+        Get sandbox information like sandbox ID, template, metadata, started at/end at date.
+
+        :return: Sandbox info
+        """
+        ...
 
     @overload
     @classmethod
     async def get_info(
-        cls, sandbox_id: str, **opts: Unpack[ApiParams]
-    ) -> SandboxInfo: ...
+        cls,
+        sandbox_id: str,
+        **opts: Unpack[ApiParams],
+    ) -> SandboxInfo:
+        """
+        Get sandbox information like sandbox ID, template, metadata, started at/end at date.
+        :param sandbox_id: Sandbox ID
+
+        :return: Sandbox info
+        """
+        ...
 
     @class_method_variant("_cls_get_info")
     async def get_info(
@@ -351,7 +457,16 @@ class AsyncSandbox(SandboxApi):
         start: Optional[datetime.datetime] = None,
         end: Optional[datetime.datetime] = None,
         **opts: Unpack[ApiParams],
-    ) -> List[SandboxMetrics]: ...
+    ) -> List[SandboxMetrics]:
+        """
+        Get the metrics of the current sandbox.
+
+        :param start: Start time for the metrics, defaults to the start of the sandbox
+        :param end: End time for the metrics, defaults to the current time
+
+        :return: List of sandbox metrics containing CPU, memory and disk usage information
+        """
+        ...
 
     @overload
     @classmethod
@@ -361,7 +476,17 @@ class AsyncSandbox(SandboxApi):
         start: Optional[datetime.datetime] = None,
         end: Optional[datetime.datetime] = None,
         **opts: Unpack[ApiParams],
-    ) -> List[SandboxMetrics]: ...
+    ) -> List[SandboxMetrics]:
+        """
+        Get the metrics of the sandbox specified by sandbox ID.
+
+        :param sandbox_id: Sandbox ID
+        :param start: Start time for the metrics, defaults to the start of the sandbox
+        :param end: End time for the metrics, defaults to the current time
+
+        :return: List of sandbox metrics containing CPU, memory and disk usage information
+        """
+        ...
 
     @class_method_variant("_cls_get_metrics")
     async def get_metrics(
@@ -461,11 +586,36 @@ class AsyncSandbox(SandboxApi):
         return sandbox
 
     @overload
-    async def beta_pause(self, **opts: Unpack[ApiParams]) -> None: ...
+    async def beta_pause(
+        self,
+        **opts: Unpack[ApiParams],
+    ) -> None:
+        """
+        [BETA] This feature is in beta and may change in the future.
+
+        Pause the sandbox.
+
+        :return: Sandbox ID that can be used to resume the sandbox
+        """
+        ...
 
     @overload
     @classmethod
-    async def beta_pause(cls, sandbox_id: str, **opts: Unpack[ApiParams]) -> None: ...
+    async def beta_pause(
+        cls,
+        sandbox_id: str,
+        **opts: Unpack[ApiParams],
+    ) -> None:
+        """
+        [BETA] This feature is in beta and may change in the future.
+
+        Pause the sandbox specified by sandbox ID.
+
+        :param sandbox_id: Sandbox ID
+
+        :return: Sandbox ID that can be used to resume the sandbox
+        """
+        ...
 
     @class_method_variant("_cls_pause")
     async def beta_pause(
