@@ -241,9 +241,8 @@ class Sandbox(SandboxApi):
         ...
 
     @overload
-    @classmethod
+    @staticmethod
     def connect(
-        cls,
         sandbox_id: str,
         timeout: Optional[int] = None,
         **opts: Unpack[ApiParams],
@@ -307,7 +306,7 @@ class Sandbox(SandboxApi):
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        self.kill()  # ty: ignore[invalid-argument-type]
+        self.kill()  # ty: ignore[no-matching-overload]
 
     @overload
     def kill(
@@ -322,9 +321,8 @@ class Sandbox(SandboxApi):
         ...
 
     @overload
-    @classmethod
+    @staticmethod
     def kill(
-        cls,
         sandbox_id: str,
         **opts: Unpack[ApiParams],
     ) -> bool:
@@ -369,9 +367,8 @@ class Sandbox(SandboxApi):
         ...
 
     @overload
-    @classmethod
+    @staticmethod
     def set_timeout(
-        cls,
         sandbox_id: str,
         timeout: int,
         **opts: Unpack[ApiParams],
@@ -422,9 +419,8 @@ class Sandbox(SandboxApi):
         ...
 
     @overload
-    @classmethod
+    @staticmethod
     def get_info(
-        cls,
         sandbox_id: str,
         **opts: Unpack[ApiParams],
     ) -> SandboxInfo:
@@ -470,9 +466,8 @@ class Sandbox(SandboxApi):
         ...
 
     @overload
-    @classmethod
+    @staticmethod
     def get_metrics(
-        cls,
         sandbox_id: str,
         start: Optional[datetime.datetime] = None,
         end: Optional[datetime.datetime] = None,
@@ -599,9 +594,8 @@ class Sandbox(SandboxApi):
         ...
 
     @overload
-    @classmethod
+    @staticmethod
     def beta_pause(
-        cls,
         sandbox_id: str,
         **opts: Unpack[ApiParams],
     ) -> None:

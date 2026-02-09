@@ -242,9 +242,8 @@ class AsyncSandbox(SandboxApi):
         ...
 
     @overload
-    @classmethod
+    @staticmethod
     async def connect(
-        cls,
         sandbox_id: str,
         timeout: Optional[int] = None,
         **opts: Unpack[ApiParams],
@@ -308,7 +307,7 @@ class AsyncSandbox(SandboxApi):
         return self
 
     async def __aexit__(self, exc_type, exc_value, traceback):
-        await self.kill()  # ty: ignore[invalid-argument-type]
+        await self.kill()  # ty: ignore[no-matching-overload]
 
     @overload
     async def kill(
@@ -323,9 +322,8 @@ class AsyncSandbox(SandboxApi):
         ...
 
     @overload
-    @classmethod
+    @staticmethod
     async def kill(
-        cls,
         sandbox_id: str,
         **opts: Unpack[ApiParams],
     ) -> bool:
@@ -370,9 +368,8 @@ class AsyncSandbox(SandboxApi):
         ...
 
     @overload
-    @classmethod
+    @staticmethod
     async def set_timeout(
-        cls,
         sandbox_id: str,
         timeout: int,
         **opts: Unpack[ApiParams],
@@ -421,9 +418,8 @@ class AsyncSandbox(SandboxApi):
         ...
 
     @overload
-    @classmethod
+    @staticmethod
     async def get_info(
-        cls,
         sandbox_id: str,
         **opts: Unpack[ApiParams],
     ) -> SandboxInfo:
@@ -469,9 +465,8 @@ class AsyncSandbox(SandboxApi):
         ...
 
     @overload
-    @classmethod
+    @staticmethod
     async def get_metrics(
-        cls,
         sandbox_id: str,
         start: Optional[datetime.datetime] = None,
         end: Optional[datetime.datetime] = None,
@@ -600,9 +595,8 @@ class AsyncSandbox(SandboxApi):
         ...
 
     @overload
-    @classmethod
+    @staticmethod
     async def beta_pause(
-        cls,
         sandbox_id: str,
         **opts: Unpack[ApiParams],
     ) -> None:
