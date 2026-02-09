@@ -92,7 +92,9 @@ class TestTarFileStream:
     def test_should_resolve_symlinks_when_enabled(self, test_dir):
         """Test that function resolves symlinks when resolve_symlinks=True."""
         if not hasattr(os, "symlink"):
-            pytest.skip("Symlinks not supported on this platform")
+            pytest.skip(
+                "Symlinks not supported on this platform"  # ty: ignore[too-many-positional-arguments]
+            )  # ty: ignore[invalid-argument-type]
 
         # Create original file
         original_path = os.path.join(test_dir, "original.txt")
@@ -117,7 +119,9 @@ class TestTarFileStream:
     def test_should_preserve_symlinks_when_disabled(self, test_dir):
         """Test that function preserves symlinks when resolve_symlinks=False."""
         if not hasattr(os, "symlink"):
-            pytest.skip("Symlinks not supported on this platform")
+            pytest.skip(
+                "Symlinks not supported on this platform"  # ty: ignore[too-many-positional-arguments]
+            )  # ty: ignore[invalid-argument-type]
 
         # Create original file
         original_path = os.path.join(test_dir, "original.txt")

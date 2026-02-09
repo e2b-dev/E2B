@@ -307,7 +307,7 @@ class AsyncSandbox(SandboxApi):
         return self
 
     async def __aexit__(self, exc_type, exc_value, traceback):
-        await self.kill()  # ty: ignore[no-matching-overload]
+        await self.kill()
 
     @overload
     async def kill(

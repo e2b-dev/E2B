@@ -306,7 +306,7 @@ class Sandbox(SandboxApi):
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        self.kill()  # ty: ignore[no-matching-overload]
+        self.kill()
 
     @overload
     def kill(

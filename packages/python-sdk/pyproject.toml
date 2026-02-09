@@ -46,6 +46,15 @@ reportInconsistentOverload = false
 
 [tool.ty.rules]
 invalid-overload = "ignore"
+no-matching-overload = "ignore"
+
+[[tool.ty.overrides]]
+include = ["e2b/api/client/models/**"]
+rules = { invalid-argument-type = "ignore" }
+
+[[tool.ty.overrides]]
+include = ["e2b/envd/**/*.pyi"]
+rules = { conflicting-metaclass = "ignore", unresolved-attribute = "ignore" }
 
 [tool.ruff]
 exclude = [
