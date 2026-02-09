@@ -1,5 +1,5 @@
 import datetime
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional, cast
 
 from packaging.version import Version
 from typing_extensions import Unpack
@@ -170,7 +170,7 @@ class SandboxApi(SandboxBase):
                 metadata=metadata or {},
                 timeout=timeout,
                 env_vars=env_vars or {},
-                mcp=mcp or UNSET,  # type: ignore[invalid-argument-type]
+                mcp=cast(Any, mcp) if mcp is not None else UNSET,
                 secure=secure,
                 allow_internet_access=allow_internet_access,
                 network=SandboxNetworkConfig(**network) if network else UNSET,

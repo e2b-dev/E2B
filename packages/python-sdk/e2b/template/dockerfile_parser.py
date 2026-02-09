@@ -5,7 +5,6 @@ import tempfile
 from typing import Dict, List, Optional, Protocol, Union, Literal
 
 from dockerfile_parse import DockerfileParser
-from e2b.template.types import CopyItem
 
 
 class DockerfFileFinalParserInterface(Protocol):
@@ -23,7 +22,7 @@ class DockerfileParserInterface(Protocol):
 
     def copy(
         self,
-        src: Union[str, List[CopyItem]],
+        src: str,
         dest: str,
         force_upload: Optional[Literal[True]] = None,
         user: Optional[str] = None,

@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Dict, List, Optional, TypedDict, Union
+from typing import Any, Dict, List, Optional, TypedDict, Union, cast
 
 from typing_extensions import NotRequired, Unpack
 
@@ -117,7 +117,10 @@ class SandboxInfo:
             sandbox_id=sandbox.sandbox_id,
             template_id=sandbox.template_id,
             name=(sandbox.alias if isinstance(sandbox.alias, str) else None),
-            metadata=(sandbox.metadata if isinstance(sandbox.metadata, dict) else {}),  # type: ignore[invalid-argument-type]
+            metadata=cast(
+                Dict[str, str],
+                sandbox.metadata if isinstance(sandbox.metadata, dict) else {},
+            ),
             started_at=sandbox.started_at,
             end_at=sandbox.end_at,
             state=sandbox.state,
