@@ -194,18 +194,25 @@ class SandboxApi(SandboxBase):
                 "You can do this by running `e2b template build` in the directory with the template."
             )
 
+        parsed = res.parsed
+        domain = parsed.domain if isinstance(parsed.domain, str) else None
+        envd_token = (
+            parsed.envd_access_token
+            if isinstance(parsed.envd_access_token, str)
+            else ""
+        )
+        traffic_token = (
+            parsed.traffic_access_token
+            if isinstance(parsed.traffic_access_token, str)
+            else None
+        )
+
         return SandboxCreateResponse(
-            sandbox_id=res.parsed.sandbox_id,
-            sandbox_domain=res.parsed.domain
-            if isinstance(res.parsed.domain, str)
-            else None,
-            envd_version=res.parsed.envd_version,
-            envd_access_token=res.parsed.envd_access_token
-            if isinstance(res.parsed.envd_access_token, str)
-            else "",
-            traffic_access_token=res.parsed.traffic_access_token
-            if isinstance(res.parsed.traffic_access_token, str)
-            else None,
+            sandbox_id=parsed.sandbox_id,
+            sandbox_domain=domain,
+            envd_version=parsed.envd_version,
+            envd_access_token=envd_token,
+            traffic_access_token=traffic_token,
         )
 
     @classmethod
