@@ -238,7 +238,7 @@ class Commands:
         self,
         cmd: str,
         envs: Optional[Dict[str, str]],
-        user: Username,
+        user: Optional[Username],
         cwd: Optional[str],
         timeout: Optional[float],
         request_timeout: Optional[float],

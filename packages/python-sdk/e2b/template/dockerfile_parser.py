@@ -24,11 +24,11 @@ class DockerfileParserInterface(Protocol):
     def copy(
         self,
         src: Union[str, List[CopyItem]],
-        dest: Optional[str] = None,
+        dest: str,
         force_upload: Optional[Literal[True]] = None,
-        resolve_symlinks: Optional[bool] = None,
         user: Optional[str] = None,
         mode: Optional[int] = None,
+        resolve_symlinks: Optional[bool] = None,
     ) -> "DockerfileParserInterface":
         """Handle COPY instruction."""
         ...

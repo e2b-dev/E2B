@@ -135,7 +135,7 @@ class ApiClient(AuthenticatedClient):
                 "transport": transport,
             },
             headers=headers,
-            token=token,
+            token=token or "",
             auth_header_name=auth_header_name,
             prefix=prefix,
             *args,

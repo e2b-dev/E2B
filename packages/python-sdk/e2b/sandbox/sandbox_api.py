@@ -117,7 +117,7 @@ class SandboxInfo:
             sandbox_id=sandbox.sandbox_id,
             template_id=sandbox.template_id,
             name=(sandbox.alias if isinstance(sandbox.alias, str) else None),
-            metadata=(sandbox.metadata if isinstance(sandbox.metadata, dict) else {}),
+            metadata=(sandbox.metadata if isinstance(sandbox.metadata, dict) else {}),  # type: ignore[invalid-argument-type]
             started_at=sandbox.started_at,
             end_at=sandbox.end_at,
             state=sandbox.state,

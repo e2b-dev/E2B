@@ -171,7 +171,7 @@ class SandboxApi(SandboxBase):
                 metadata=metadata or {},
                 timeout=timeout,
                 env_vars=env_vars or {},
-                mcp=mcp or UNSET,
+                mcp=mcp or UNSET,  # type: ignore[invalid-argument-type]
                 secure=secure,
                 allow_internet_access=allow_internet_access,
                 network=SandboxNetworkConfig(**network) if network else UNSET,
@@ -197,10 +197,16 @@ class SandboxApi(SandboxBase):
 
         return SandboxCreateResponse(
             sandbox_id=res.parsed.sandbox_id,
-            sandbox_domain=res.parsed.domain,
+            sandbox_domain=res.parsed.domain
+            if isinstance(res.parsed.domain, str)
+            else None,
             envd_version=res.parsed.envd_version,
-            envd_access_token=res.parsed.envd_access_token,
-            traffic_access_token=res.parsed.traffic_access_token,
+            envd_access_token=res.parsed.envd_access_token
+            if isinstance(res.parsed.envd_access_token, str)
+            else "",
+            traffic_access_token=res.parsed.traffic_access_token
+            if isinstance(res.parsed.traffic_access_token, str)
+            else None,
         )
 
     @classmethod
@@ -321,5 +327,8 @@ class SandboxApi(SandboxBase):
         # Check if res.parse is Error
         if isinstance(res.parsed, Error):
             raise SandboxException(f"{res.parsed.message}: Request failed")
+
+        if res.parsed is None:
+            raise SandboxException("Body of the request is None")
 
         return res.parsed

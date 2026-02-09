@@ -271,7 +271,7 @@ class Sandbox(SandboxApi):
         ...
 
     @class_method_variant("_cls_connect")
-    def connect(
+    def connect(  # type: ignore[invalid-overload]
         self,
         timeout: Optional[int] = None,
         **opts: Unpack[ApiParams],
@@ -307,7 +307,7 @@ class Sandbox(SandboxApi):
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        self.kill()
+        self.kill()  # type: ignore[no-matching-overload]
 
     @overload
     def kill(
@@ -337,7 +337,7 @@ class Sandbox(SandboxApi):
         ...
 
     @class_method_variant("_cls_kill")
-    def kill(
+    def kill(  # type: ignore[invalid-overload]
         self,
         **opts: Unpack[ApiParams],
     ) -> bool:
@@ -386,7 +386,7 @@ class Sandbox(SandboxApi):
         ...
 
     @class_method_variant("_cls_set_timeout")
-    def set_timeout(
+    def set_timeout(  # type: ignore[invalid-overload]
         self,
         timeout: int,
         **opts: Unpack[ApiParams],
@@ -435,7 +435,7 @@ class Sandbox(SandboxApi):
         ...
 
     @class_method_variant("_cls_get_info")
-    def get_info(
+    def get_info(  # type: ignore[invalid-overload]
         self,
         **opts: Unpack[ApiParams],
     ) -> SandboxInfo:
@@ -486,7 +486,7 @@ class Sandbox(SandboxApi):
         ...
 
     @class_method_variant("_cls_get_metrics")
-    def get_metrics(
+    def get_metrics(  # type: ignore[invalid-overload]
         self,
         start: Optional[datetime.datetime] = None,
         end: Optional[datetime.datetime] = None,
@@ -611,7 +611,7 @@ class Sandbox(SandboxApi):
         ...
 
     @class_method_variant("_cls_pause")
-    def beta_pause(
+    def beta_pause(  # type: ignore[invalid-overload]
         self,
         **opts: Unpack[ApiParams],
     ) -> None:
@@ -639,7 +639,7 @@ class Sandbox(SandboxApi):
         return self._mcp_token
 
     @classmethod
-    def _cls_connect(
+    def _cls_connect(  # type: ignore[invalid-method-override]
         cls,
         sandbox_id: str,
         timeout: Optional[int] = None,

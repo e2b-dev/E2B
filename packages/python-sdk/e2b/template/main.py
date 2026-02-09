@@ -1064,7 +1064,7 @@ class TemplateBase:
 
         # Parse the dockerfile using the builder as the interface
         base_image = self._run_in_stack_trace_override_context(
-            lambda: parse_dockerfile(dockerfile_content_or_path, builder),
+            lambda: parse_dockerfile(dockerfile_content_or_path, builder),  # type: ignore[invalid-argument-type]
             stack_trace_override,
         )
         self._base_image = base_image

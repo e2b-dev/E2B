@@ -272,7 +272,7 @@ class AsyncSandbox(SandboxApi):
         ...
 
     @class_method_variant("_cls_connect")
-    async def connect(
+    async def connect(  # type: ignore[invalid-overload]
         self,
         timeout: Optional[int] = None,
         **opts: Unpack[ApiParams],
@@ -308,7 +308,7 @@ class AsyncSandbox(SandboxApi):
         return self
 
     async def __aexit__(self, exc_type, exc_value, traceback):
-        await self.kill()
+        await self.kill()  # type: ignore[no-matching-overload]
 
     @overload
     async def kill(
@@ -338,7 +338,7 @@ class AsyncSandbox(SandboxApi):
         ...
 
     @class_method_variant("_cls_kill")
-    async def kill(
+    async def kill(  # type: ignore[invalid-overload]
         self,
         **opts: Unpack[ApiParams],
     ) -> bool:
@@ -387,7 +387,7 @@ class AsyncSandbox(SandboxApi):
         ...
 
     @class_method_variant("_cls_set_timeout")
-    async def set_timeout(
+    async def set_timeout(  # type: ignore[invalid-overload]
         self,
         timeout: int,
         **opts: Unpack[ApiParams],
@@ -433,7 +433,7 @@ class AsyncSandbox(SandboxApi):
         ...
 
     @class_method_variant("_cls_get_info")
-    async def get_info(
+    async def get_info(  # type: ignore[invalid-overload]
         self,
         **opts: Unpack[ApiParams],
     ) -> SandboxInfo:
@@ -485,7 +485,7 @@ class AsyncSandbox(SandboxApi):
         ...
 
     @class_method_variant("_cls_get_metrics")
-    async def get_metrics(
+    async def get_metrics(  # type: ignore[invalid-overload]
         self,
         start: Optional[datetime.datetime] = None,
         end: Optional[datetime.datetime] = None,
@@ -613,7 +613,7 @@ class AsyncSandbox(SandboxApi):
         ...
 
     @class_method_variant("_cls_pause")
-    async def beta_pause(
+    async def beta_pause(  # type: ignore[invalid-overload]
         self,
         **opts: Unpack[ApiParams],
     ) -> None:
@@ -643,7 +643,7 @@ class AsyncSandbox(SandboxApi):
         return self._mcp_token
 
     @classmethod
-    async def _cls_connect(
+    async def _cls_connect(  # type: ignore[invalid-method-override]
         cls,
         sandbox_id: str,
         timeout: Optional[int] = None,
