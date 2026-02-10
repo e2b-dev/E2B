@@ -20,7 +20,7 @@ import {
   Signal,
 } from '../../envd/process/process_pb'
 import { authenticationHeader, handleRpcError } from '../../envd/rpc'
-import { ENVD_COMMANDS_STDIN } from '../../envd/versions'
+import { ENVD_COMMANDS_STDIN, PROXY_AUTO_RESUME } from '../../envd/versions'
 import { SandboxError } from '../../errors'
 import { CommandHandle, CommandResult } from './commandHandle'
 export { Pty } from './pty'
@@ -214,6 +214,12 @@ export class Commands {
    * @internal
    */
   async closeStdin(pid: number, opts?: CommandRequestOpts): Promise<void> {
+    if (compareVersions(this.envdVersion, PROXY_AUTO_RESUME) < 0) {
+      throw new SandboxError(
+        `Sandbox envd version ${this.envdVersion} doesn't support closeStdin. Please rebuild your template to pick up the latest sandbox version.`
+      )
+    }
+
     try {
       await this.rpc.closeStdin(
         {
