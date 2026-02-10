@@ -107,9 +107,10 @@ from .template.types import (
 )
 from .template_async.main import AsyncTemplate
 from .template_sync.main import Template
-from .volume_info import VolumeInfo
-from .volume_sync import Volume
-from .volume_async import AsyncVolume
+
+from .volume.volume_sync import Volume
+from .volume.volume_async import AsyncVolume
+from .volume.types import VolumeInfo
 
 __all__ = [
     # API

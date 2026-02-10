@@ -8,9 +8,6 @@ import httpx
 from packaging.version import Version
 from typing_extensions import Self, Unpack
 
-if TYPE_CHECKING:
-    from e2b.volume_async import AsyncVolume
-
 from e2b.api.client.types import Unset
 from e2b.api.client_async import get_transport
 from e2b.connection_config import ApiParams, ConnectionConfig
@@ -25,8 +22,12 @@ from e2b.sandbox_async.commands.pty import Pty
 from e2b.sandbox_async.filesystem.filesystem import Filesystem
 from e2b.sandbox_async.git import Git
 from e2b.sandbox_async.sandbox_api import SandboxApi, SandboxInfo
+from e2b.volume.volume_async import AsyncVolume
+from e2b.api.client.models import SandboxVolumeMount as SandboxVolumeMountAPI
 
 logger = logging.getLogger(__name__)
+
+SandboxAsyncVolumeMount = Dict[str, Union[AsyncVolume, str]]
 
 
 class AsyncSandbox(SandboxApi):
@@ -165,7 +166,7 @@ class AsyncSandbox(SandboxApi):
         allow_internet_access: bool = True,
         mcp: Optional[McpServer] = None,
         network: Optional[SandboxNetworkOpts] = None,
-        volume_mounts: Optional[Dict[str, Union["AsyncVolume", str]]] = None,
+        volume_mounts: Optional[SandboxAsyncVolumeMount] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
         """
@@ -187,18 +188,16 @@ class AsyncSandbox(SandboxApi):
 
         Use this method instead of using the constructor to create a new sandbox.
         """
-        from e2b.api.client.models import SandboxVolumeMount
-
         if not template and mcp is not None:
             template = cls.default_mcp_template
         elif not template:
             template = cls.default_template
 
-        transformed_mounts = None
+        transformed_mounts: Optional[List[SandboxVolumeMountAPI]] = None
         if volume_mounts:
             transformed_mounts = [
-                SandboxVolumeMount(
-                    name=vol.name if hasattr(vol, "name") else vol,
+                SandboxVolumeMountAPI(
+                    name=vol.name if isinstance(vol, AsyncVolume) else vol,
                     path=path,
                 )
                 for path, vol in volume_mounts.items()
@@ -545,7 +544,7 @@ class AsyncSandbox(SandboxApi):
         secure: bool = True,
         allow_internet_access: bool = True,
         mcp: Optional[McpServer] = None,
-        volume_mounts: Optional[Dict[str, Union["AsyncVolume", str]]] = None,
+        volume_mounts: Optional[SandboxAsyncVolumeMount] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
         """
@@ -569,18 +568,16 @@ class AsyncSandbox(SandboxApi):
 
         Use this method instead of using the constructor to create a new sandbox.
         """
-        from e2b.api.client.models import SandboxVolumeMount
-
         if not template and mcp is not None:
             template = cls.default_mcp_template
         elif not template:
             template = cls.default_template
 
-        transformed_mounts = None
+        transformed_mounts: Optional[List[SandboxVolumeMountAPI]] = None
         if volume_mounts:
             transformed_mounts = [
-                SandboxVolumeMount(
-                    name=vol.name if hasattr(vol, "name") else vol,
+                SandboxVolumeMountAPI(
+                    name=vol.name if isinstance(vol, AsyncVolume) else vol,
                     path=path,
                 )
                 for path, vol in volume_mounts.items()

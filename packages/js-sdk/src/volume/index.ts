@@ -1,6 +1,6 @@
-import { ApiClient, handleApiError } from './api'
-import { ConnectionConfig, ConnectionOpts } from './connectionConfig'
-import { NotFoundError } from './errors'
+import { ApiClient, handleApiError } from '../api'
+import { ConnectionConfig, ConnectionOpts } from '../connectionConfig'
+import { NotFoundError } from '../errors'
 
 /**
  * Information about a volume.
@@ -17,6 +17,10 @@ export interface VolumeInfo {
   name: string
 }
 
+export function Volume(volumeId: string): VolumeBase {
+  return new VolumeBase(volumeId)
+}
+
 /**
  * Options for request to the Volume API.
  */
@@ -26,15 +30,15 @@ export interface VolumeApiOpts
       ConnectionOpts,
       'apiKey' | 'headers' | 'debug' | 'domain' | 'requestTimeoutMs'
     >
-  > {}
+  > { }
 
 /**
  * Module for interacting with E2B volumes.
  *
- * Create a `Volume` instance to interact with a volume by its ID,
+ * Create a `VolumeBase` instance to interact with a volume by its ID,
  * or use the static methods to manage volumes.
  */
-export class Volume {
+export class VolumeBase {
   /**
    * Volume ID.
    */
@@ -50,9 +54,9 @@ export class Volume {
    *
    * @param volumeId volume ID.
    */
-  constructor(volumeId: string) {
+  constructor(volumeId: string, name?: string) {
     this.volumeId = volumeId
-    this.name = volumeId
+    this.name = name ?? volumeId
   }
 
   /**
@@ -61,9 +65,9 @@ export class Volume {
    * @param name name of the volume.
    * @param opts connection options.
    *
-   * @returns new Volume instance.
+   * @returns new VolumeBase instance.
    */
-  static async create(name: string, opts?: VolumeApiOpts): Promise<Volume> {
+  static async create(name: string, opts?: VolumeApiOpts): Promise<VolumeBase> {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
 
@@ -79,11 +83,7 @@ export class Volume {
       throw err
     }
 
-    const vol = new Volume(res.data!.id)
-    // Override name with the value returned from the API
-    ;(vol as { name: string }).name = res.data!.name
-
-    return vol
+    return new VolumeBase(res.data!.id, res.data!.name)
   }
 
   /**
@@ -171,7 +171,7 @@ export class Volume {
     })
 
     if (res.error?.code === 404) {
-      return
+      throw new NotFoundError(`Volume ${volumeId} not found`)
     }
 
     const err = handleApiError(res)

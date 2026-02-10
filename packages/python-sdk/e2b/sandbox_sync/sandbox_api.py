@@ -21,6 +21,7 @@ from e2b.api.client.models import (
     PostSandboxesSandboxIDTimeoutBody,
     Sandbox,
     SandboxNetworkConfig,
+    SandboxVolumeMount as SandboxVolumeMountAPI,
 )
 from e2b.api.client.types import UNSET
 from e2b.connection_config import ApiParams, ConnectionConfig
@@ -158,7 +159,7 @@ class SandboxApi(SandboxBase):
         secure: bool,
         mcp: Optional[McpServer] = None,
         network: Optional[SandboxNetworkOpts] = None,
-        volume_mounts: Optional[list] = None,
+        volume_mounts: Optional[List[SandboxVolumeMountAPI]] = None,
         **opts: Unpack[ApiParams],
     ) -> SandboxCreateResponse:
         config = ConnectionConfig(**opts)
