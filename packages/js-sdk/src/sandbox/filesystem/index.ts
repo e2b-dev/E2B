@@ -267,7 +267,7 @@ export class Filesystem {
 
     const headers: Record<string, string> = {}
     if (opts?.contentEncoding) {
-      headers['Content-Encoding'] = opts.contentEncoding
+      headers['Accept-Encoding'] = opts.contentEncoding
     }
 
     const res = await this.envdApi.api.GET('/files', {

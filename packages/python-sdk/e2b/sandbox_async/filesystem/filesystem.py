@@ -140,7 +140,7 @@ class Filesystem:
 
         headers = {}
         if content_encoding:
-            headers["Content-Encoding"] = content_encoding
+            headers["Accept-Encoding"] = content_encoding
 
         r = await self._envd_api.get(
             ENVD_API_FILES_ROUTE,
