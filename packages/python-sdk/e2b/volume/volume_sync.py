@@ -13,7 +13,7 @@ from e2b.api.client.models import NewVolume as NewVolumeModel, Error
 from e2b.api.client_sync import get_api_client
 from e2b.connection_config import ApiParams, ConnectionConfig
 from e2b.exceptions import NotFoundException
-from e2b.volume_info import VolumeInfo
+from e2b.volume.types import VolumeInfo
 
 
 class Volume:

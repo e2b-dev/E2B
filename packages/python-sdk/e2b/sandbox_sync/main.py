@@ -8,9 +8,6 @@ import httpx
 from packaging.version import Version
 from typing_extensions import Self, Unpack
 
-if TYPE_CHECKING:
-    from e2b.volume_sync import Volume
-
 from e2b.api.client.types import Unset
 from e2b.api.client_sync import get_transport
 from e2b.connection_config import ApiParams, ConnectionConfig
@@ -35,8 +32,12 @@ from e2b.sandbox_sync.filesystem.filesystem import Filesystem
 from e2b.sandbox_sync.git import Git
 from e2b.sandbox_sync.sandbox_api import SandboxApi, SandboxInfo
 from e2b.sandbox_sync.paginator import SnapshotPaginator
+from e2b.api.client.models import SandboxVolumeMount as SandboxVolumeMountAPI
+from e2b.volume.volume_sync import Volume
 
 logger = logging.getLogger(__name__)
+
+SandboxVolumeMount = Dict[str, Union[Volume, str]]
 
 
 class Sandbox(SandboxApi):
@@ -174,7 +175,7 @@ class Sandbox(SandboxApi):
         mcp: Optional[McpServer] = None,
         network: Optional[SandboxNetworkOpts] = None,
         lifecycle: Optional[SandboxLifecycle] = None,
-        volume_mounts: Optional[Dict[str, Union["Volume", str]]] = None,
+        volume_mounts: Optional[SandboxVolumeMount] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
         """
@@ -197,8 +198,6 @@ class Sandbox(SandboxApi):
 
         Use this method instead of using the constructor to create a new sandbox.
         """
-        from e2b.api.client.models import SandboxVolumeMount
-
         if not template and mcp is not None:
             template = cls.default_mcp_template
         elif not template:
@@ -207,8 +206,8 @@ class Sandbox(SandboxApi):
         transformed_mounts = None
         if volume_mounts:
             transformed_mounts = [
-                SandboxVolumeMount(
-                    name=vol.name if hasattr(vol, "name") else vol,
+                SandboxVolumeMountAPI(
+                    name=vol.name if isinstance(vol, Volume) else vol,
                     path=path,
                 )
                 for path, vol in volume_mounts.items()
@@ -558,7 +557,7 @@ class Sandbox(SandboxApi):
         secure: bool = True,
         allow_internet_access: bool = True,
         mcp: Optional[McpServer] = None,
-        volume_mounts: Optional[Dict[str, Union["Volume", str]]] = None,
+        volume_mounts: Optional[SandboxVolumeMount] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
         """
@@ -582,8 +581,6 @@ class Sandbox(SandboxApi):
 
         Use this method instead of using the constructor to create a new sandbox.
         """
-        from e2b.api.client.models import SandboxVolumeMount
-
         if not template and mcp is not None:
             template = cls.default_mcp_template
         elif not template:
@@ -592,8 +589,8 @@ class Sandbox(SandboxApi):
         transformed_mounts = None
         if volume_mounts:
             transformed_mounts = [
-                SandboxVolumeMount(
-                    name=vol.name if hasattr(vol, "name") else vol,
+                SandboxVolumeMountAPI(
+                    name=vol.name if isinstance(vol, Volume) else vol,
                     path=path,
                 )
                 for path, vol in volume_mounts.items()
