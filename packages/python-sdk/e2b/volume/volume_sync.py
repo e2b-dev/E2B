@@ -118,7 +118,7 @@ class Volume:
         return [VolumeInfo(volume_id=v.id, name=v.name) for v in res.parsed]
 
     @staticmethod
-    def destroy(volume_id: str, **opts: Unpack[ApiParams]) -> None:
+    def destroy(volume_id: str, **opts: Unpack[ApiParams]) -> bool:
         """
         Destroy a volume.
 
@@ -133,7 +133,9 @@ class Volume:
         )
 
         if res.status_code == 404:
-            raise NotFoundException(f"Volume {volume_id} not found")
+            return False
 
         if res.status_code >= 300:
             raise handle_api_exception(res)
+
+        return True
