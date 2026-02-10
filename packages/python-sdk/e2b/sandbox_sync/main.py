@@ -589,9 +589,7 @@ class Sandbox(SandboxApi):
                     path=path,
                 )
                 for path, vol in volume_mounts.items()
-            ]
-            if volume_mounts is not None
-            else [],
+            ],
             **opts,
         )
 
