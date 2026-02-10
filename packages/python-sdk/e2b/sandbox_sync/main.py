@@ -2,7 +2,7 @@ import datetime
 import json
 import logging
 import uuid
-from typing import TYPE_CHECKING, Dict, List, Optional, Union, overload
+from typing import Dict, List, Optional, Union, overload
 
 import httpx
 from packaging.version import Version
