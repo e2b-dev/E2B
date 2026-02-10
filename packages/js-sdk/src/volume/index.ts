@@ -157,7 +157,7 @@ export class VolumeBase {
    * @param volumeId volume ID.
    * @param opts connection options.
    */
-  static async destroy(volumeId: string, opts?: VolumeApiOpts): Promise<void> {
+  static async destroy(volumeId: string, opts?: VolumeApiOpts): Promise<boolean> {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
 
@@ -171,12 +171,14 @@ export class VolumeBase {
     })
 
     if (res.error?.code === 404) {
-      throw new NotFoundError(`Volume ${volumeId} not found`)
+      return false
     }
 
     const err = handleApiError(res)
     if (err) {
       throw err
     }
+
+    return true
   }
 }
