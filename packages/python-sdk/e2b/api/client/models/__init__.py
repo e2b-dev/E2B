@@ -28,6 +28,7 @@ from .mcp_type_0 import McpType0
 from .new_access_token import NewAccessToken
 from .new_sandbox import NewSandbox
 from .new_team_api_key import NewTeamAPIKey
+from .new_volume import NewVolume
 from .node import Node
 from .node_detail import NodeDetail
 from .node_metrics import NodeMetrics
@@ -44,9 +45,11 @@ from .sandbox_log import SandboxLog
 from .sandbox_log_entry import SandboxLogEntry
 from .sandbox_log_entry_fields import SandboxLogEntryFields
 from .sandbox_logs import SandboxLogs
+from .sandbox_logs_v2_response import SandboxLogsV2Response
 from .sandbox_metric import SandboxMetric
 from .sandbox_network_config import SandboxNetworkConfig
 from .sandbox_state import SandboxState
+from .sandbox_volume_mount import SandboxVolumeMount
 from .sandboxes_with_metrics import SandboxesWithMetrics
 from .team import Team
 from .team_api_key import TeamAPIKey
@@ -70,6 +73,7 @@ from .template_update_request import TemplateUpdateRequest
 from .template_update_response import TemplateUpdateResponse
 from .template_with_builds import TemplateWithBuilds
 from .update_team_api_key import UpdateTeamAPIKey
+from .volume import Volume
 
 __all__ = (
     "AdminSandboxKillResult",
@@ -100,6 +104,7 @@ __all__ = (
     "NewAccessToken",
     "NewSandbox",
     "NewTeamAPIKey",
+    "NewVolume",
     "Node",
     "NodeDetail",
     "NodeMetrics",
@@ -115,9 +120,11 @@ __all__ = (
     "SandboxLogEntry",
     "SandboxLogEntryFields",
     "SandboxLogs",
+    "SandboxLogsV2Response",
     "SandboxMetric",
     "SandboxNetworkConfig",
     "SandboxState",
+    "SandboxVolumeMount",
     "Team",
     "TeamAPIKey",
     "TeamMetric",
@@ -140,4 +147,5 @@ __all__ = (
     "TemplateUpdateResponse",
     "TemplateWithBuilds",
     "UpdateTeamAPIKey",
+    "Volume",
 )
