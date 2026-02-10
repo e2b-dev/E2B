@@ -53,17 +53,27 @@ export const execCommand = new commander.Command('exec')
         const apiKey = ensureAPIKey()
         const sandbox = await Sandbox.connect(sandboxID, { apiKey })
 
+        if (openStdin && !sandbox.commands.supportsStdinClose) {
+          console.error(
+            'e2b: Warning: Piped stdin is not supported by this sandbox version.\n' +
+              'e2b: Rebuild your template to pick up the latest sandbox version.\n' +
+              'e2b: Ignoring piped stdin.'
+          )
+        }
+
+        const canPipeStdin = openStdin && sandbox.commands.supportsStdinClose
+
         if (opts.background) {
           const handle = await sandbox.commands.run(command, {
             background: true,
             cwd: opts.cwd,
             user: opts.user,
             envs: opts.env,
-            stdin: openStdin,
+            stdin: canPipeStdin,
             timeoutMs: NO_COMMAND_TIMEOUT,
           })
 
-          if (openStdin && stdinData) {
+          if (canPipeStdin && stdinData) {
             await sendStdin(sandbox, handle.pid, stdinData)
           }
 
@@ -79,7 +89,7 @@ export const execCommand = new commander.Command('exec')
           sandbox,
           command,
           opts,
-          stdinData
+          canPipeStdin ? stdinData : undefined
         )
 
         process.exit(exitCode)
