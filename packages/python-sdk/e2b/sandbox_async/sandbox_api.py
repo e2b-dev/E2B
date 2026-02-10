@@ -171,7 +171,7 @@ class SandboxApi(SandboxBase):
                 metadata=metadata or {},
                 timeout=timeout,
                 env_vars=env_vars or {},
-                mcp=cast(Any, mcp) if mcp is not None else UNSET,
+                mcp=cast(Any, mcp) or UNSET,
                 secure=secure,
                 allow_internet_access=allow_internet_access,
                 network=SandboxNetworkConfig(**network) if network else UNSET,

@@ -137,9 +137,8 @@ class ConnectionConfig:
         return self._get_request_timeout(self.request_timeout, request_timeout)
 
     def get_sandbox_url(self, sandbox_id: str, sandbox_domain: str) -> str:
-        sandbox_url: Optional[str] = self._sandbox_url  # type: ignore[assignment]
-        if sandbox_url:
-            return sandbox_url
+        if self._sandbox_url:
+            return self._sandbox_url  # type: ignore[return-value]
 
         return f"{'http' if self.debug else 'https'}://{self.get_host(sandbox_id, sandbox_domain, self.envd_port)}"
 
