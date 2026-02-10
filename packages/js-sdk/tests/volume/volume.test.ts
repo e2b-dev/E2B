@@ -25,19 +25,16 @@ const restHandlers = [
   }),
 
   // GET /volumes/:volumeID - get info
-  http.get<{ volumeID: string }>(
-    apiUrl('/volumes/:volumeID'),
-    ({ params }) => {
-      const vol = volumes.get(params.volumeID)
-      if (!vol) {
-        return HttpResponse.json(
-          { code: 404, message: 'Not found' },
-          { status: 404 }
-        )
-      }
-      return HttpResponse.json(vol)
+  http.get<{ volumeID: string }>(apiUrl('/volumes/:volumeID'), ({ params }) => {
+    const vol = volumes.get(params.volumeID)
+    if (!vol) {
+      return HttpResponse.json(
+        { code: 404, message: 'Not found' },
+        { status: 404 }
+      )
     }
-  ),
+    return HttpResponse.json(vol)
+  }),
 
   // DELETE /volumes/:volumeID - destroy
   http.delete<{ volumeID: string }>(
