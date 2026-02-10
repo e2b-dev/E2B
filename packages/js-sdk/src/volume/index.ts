@@ -30,7 +30,7 @@ export interface VolumeApiOpts
       ConnectionOpts,
       'apiKey' | 'headers' | 'debug' | 'domain' | 'requestTimeoutMs'
     >
-  > { }
+  > {}
 
 /**
  * Module for interacting with E2B volumes.
@@ -157,7 +157,10 @@ export class VolumeBase {
    * @param volumeId volume ID.
    * @param opts connection options.
    */
-  static async destroy(volumeId: string, opts?: VolumeApiOpts): Promise<boolean> {
+  static async destroy(
+    volumeId: string,
+    opts?: VolumeApiOpts
+  ): Promise<boolean> {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
 
