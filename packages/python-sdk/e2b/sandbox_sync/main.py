@@ -2,11 +2,14 @@ import datetime
 import json
 import logging
 import uuid
-from typing import Dict, List, Optional, overload
+from typing import TYPE_CHECKING, Dict, List, Optional, Union, overload
 
 import httpx
 from packaging.version import Version
 from typing_extensions import Self, Unpack
+
+if TYPE_CHECKING:
+    from e2b.volume_sync import Volume
 
 from e2b.api.client.types import Unset
 from e2b.api.client_sync import get_transport
@@ -171,6 +174,7 @@ class Sandbox(SandboxApi):
         mcp: Optional[McpServer] = None,
         network: Optional[SandboxNetworkOpts] = None,
         lifecycle: Optional[SandboxLifecycle] = None,
+        volume_mounts: Optional[Dict[str, Union["Volume", str]]] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
         """
@@ -187,15 +191,28 @@ class Sandbox(SandboxApi):
         :param mcp: MCP server to enable in the sandbox
         :param network: Sandbox network configuration
         :param lifecycle: Sandbox lifecycle configuration — ``on_timeout``: ``"kill"`` (default) or ``"pause"``; ``auto_resume``: ``False`` (default) or ``True`` (only when ``on_timeout="pause"``). Example: ``{"on_timeout": "pause", "auto_resume": True}``
+        :param volume_mounts: Dictionary mapping mount paths to Volume instances or volume names
 
         :return: A Sandbox instance for the new sandbox
 
         Use this method instead of using the constructor to create a new sandbox.
         """
+        from e2b.api.client.models import SandboxVolumeMount
+
         if not template and mcp is not None:
             template = cls.default_mcp_template
         elif not template:
             template = cls.default_template
+
+        transformed_mounts = None
+        if volume_mounts:
+            transformed_mounts = [
+                SandboxVolumeMount(
+                    name=vol.name if hasattr(vol, "name") else vol,
+                    path=path,
+                )
+                for path, vol in volume_mounts.items()
+            ]
 
         sandbox = cls._create(
             template=template,
@@ -208,6 +225,7 @@ class Sandbox(SandboxApi):
             mcp=mcp,
             network=network,
             lifecycle=lifecycle,
+            volume_mounts=transformed_mounts,
             **opts,
         )
 
@@ -540,6 +558,7 @@ class Sandbox(SandboxApi):
         secure: bool = True,
         allow_internet_access: bool = True,
         mcp: Optional[McpServer] = None,
+        volume_mounts: Optional[Dict[str, Union["Volume", str]]] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
         """
@@ -557,16 +576,28 @@ class Sandbox(SandboxApi):
         :param secure: Envd is secured with access token and cannot be used without it, defaults to `True`.
         :param allow_internet_access: Allow sandbox to access the internet, defaults to `True`.
         :param mcp: MCP server to enable in the sandbox
+        :param volume_mounts: Dictionary mapping mount paths to Volume instances or volume names
 
         :return: A Sandbox instance for the new sandbox
 
         Use this method instead of using the constructor to create a new sandbox.
         """
+        from e2b.api.client.models import SandboxVolumeMount
 
         if not template and mcp is not None:
             template = cls.default_mcp_template
         elif not template:
             template = cls.default_template
+
+        transformed_mounts = None
+        if volume_mounts:
+            transformed_mounts = [
+                SandboxVolumeMount(
+                    name=vol.name if hasattr(vol, "name") else vol,
+                    path=path,
+                )
+                for path, vol in volume_mounts.items()
+            ]
 
         sandbox = cls._create(
             template=template,
@@ -580,6 +611,7 @@ class Sandbox(SandboxApi):
             lifecycle=(
                 {"on_timeout": "pause", "auto_resume": False} if auto_pause else None
             ),
+            volume_mounts=transformed_mounts,
             **opts,
         )
 
@@ -858,6 +890,7 @@ class Sandbox(SandboxApi):
         mcp: Optional[McpServer] = None,
         network: Optional[SandboxNetworkOpts] = None,
         lifecycle: Optional[SandboxLifecycle] = None,
+        volume_mounts: Optional[list] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
         extra_sandbox_headers = {}
@@ -881,6 +914,7 @@ class Sandbox(SandboxApi):
                 mcp=mcp,
                 network=network,
                 lifecycle=lifecycle,
+                volume_mounts=volume_mounts,
                 **opts,
             )
 
