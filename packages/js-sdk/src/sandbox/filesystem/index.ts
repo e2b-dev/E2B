@@ -32,7 +32,7 @@ import {
   ENVD_VERSION_RECURSIVE_WATCH,
 } from '../../envd/versions'
 import { InvalidArgumentError, TemplateError } from '../../errors'
-import { toBlob } from '../../utils'
+import { gzipCompress, toBlob } from '../../utils'
 
 /**
  * Sandbox filesystem object information.
@@ -136,6 +136,12 @@ export interface FilesystemRequestOpts
    * This affects the resolution of relative paths and ownership of the created filesystem objects.
    */
   user?: Username
+  /**
+   * Content encoding to use for the request/response body.
+   * When set to `'gzip'`, uploads will compress the body and the header
+   * `Content-Encoding: gzip` will be set on the request.
+   */
+  contentEncoding?: 'gzip'
 }
 
 export interface FilesystemListOpts extends FilesystemRequestOpts {
@@ -259,6 +265,11 @@ export class Filesystem {
       user = defaultUsername
     }
 
+    const headers: Record<string, string> = {}
+    if (opts?.contentEncoding) {
+      headers['Content-Encoding'] = opts.contentEncoding
+    }
+
     const res = await this.envdApi.api.GET('/files', {
       params: {
         query: {
@@ -268,6 +279,7 @@ export class Filesystem {
       },
       parseAs: format === 'bytes' ? 'arrayBuffer' : format,
       signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
+      headers,
     })
 
     const err = await handleEnvdApiError(res)
@@ -355,10 +367,16 @@ export class Filesystem {
 
     if (writeFiles.length === 0) return [] as WriteInfo[]
 
+    const useGzip = writeOpts?.contentEncoding === 'gzip'
+
     const formData = new FormData()
     for (let i = 0; i < writeFiles.length; i++) {
       const file = writeFiles[i]
-      formData.append('file', await toBlob(file.data), writeFiles[i].path)
+      let blob = await toBlob(file.data)
+      if (useGzip) {
+        blob = await gzipCompress(blob)
+      }
+      formData.append('file', blob, writeFiles[i].path)
     }
 
     let user = writeOpts?.user
@@ -367,6 +385,11 @@ export class Filesystem {
       compareVersions(this.envdApi.version, ENVD_DEFAULT_USER) < 0
     ) {
       user = defaultUsername
+    }
+
+    const headers: Record<string, string> = {}
+    if (useGzip) {
+      headers['Content-Encoding'] = 'gzip'
     }
 
     const res = await this.envdApi.api.POST('/files', {
@@ -379,6 +402,7 @@ export class Filesystem {
       bodySerializer: () => formData,
       signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
       body: {},
+      headers,
     })
 
     const err = await handleEnvdApiError(res)
