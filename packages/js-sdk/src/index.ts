@@ -90,6 +90,9 @@ export type {
   GitStatus,
 } from './sandbox/git'
 
+export { Volume } from './volume'
+export type { VolumeInfo, VolumeApiOpts } from './volume'
+
 export { Sandbox }
 import { Sandbox } from './sandbox'
 

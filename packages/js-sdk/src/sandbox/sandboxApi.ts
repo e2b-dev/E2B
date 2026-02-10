@@ -157,6 +157,17 @@ export interface SandboxOpts extends ConnectionOpts {
   network?: SandboxNetworkOpts
 
   /**
+   * Volume mounts for the sandbox.
+   *
+   * The keys are mount paths inside the sandbox and the values are either
+   * a Volume instance (or any object with `volumeId` and `name`) or a string
+   * representing the volume name.
+   *
+   * @default undefined
+   */
+  volumeMounts?: Record<string, { volumeId: string; name: string } | string>
+
+  /**
    * Sandbox URL. Used for local development
    */
   sandboxUrl?: string
@@ -773,6 +784,15 @@ export class SandboxApi {
       ...(autoResumeEnabled !== undefined
         ? { autoResume: { enabled: autoResumeEnabled } }
         : {}),
+    }
+
+    if (opts?.volumeMounts) {
+      body.volumeMounts = Object.entries(opts.volumeMounts).map(
+        ([mountPath, vol]) => ({
+          name: typeof vol === 'string' ? vol : vol.name,
+          path: mountPath,
+        })
+      )
     }
 
     const res = await client.api.POST('/sandboxes', {
