@@ -100,7 +100,7 @@ export interface SandboxApiOpts
       ConnectionOpts,
       'apiKey' | 'headers' | 'debug' | 'domain' | 'requestTimeoutMs'
     >
-  > { }
+  > {}
 
 /**
  * Options for creating a new Sandbox.
@@ -411,7 +411,7 @@ function getLifecycle(
 }
 
 export class SandboxApi {
-  protected constructor() { }
+  protected constructor() {}
 
   /**
    * Kill the sandbox specified by sandbox ID.
@@ -809,7 +809,7 @@ export class SandboxApi {
       await this.kill(res.data!.sandboxID, opts)
       throw new TemplateError(
         'You need to update the template to use the new SDK. ' +
-        'You can do this by running `e2b template build` in the directory with the template.'
+          'You can do this by running `e2b template build` in the directory with the template.'
       )
     }
 
