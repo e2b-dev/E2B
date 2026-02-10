@@ -57,7 +57,7 @@ async def test_read_bytes_with_gzip(async_sandbox: AsyncSandbox, debug):
     read_bytes = await async_sandbox.files.read(
         filename, format="bytes", content_encoding="gzip"
     )
-    assert isinstance(read_bytes, bytes)
+    assert isinstance(read_bytes, bytearray)
     assert read_bytes.decode("utf-8") == content
 
     if debug:
