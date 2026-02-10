@@ -129,14 +129,6 @@ export class Commands {
   private readonly defaultProcessConnectionTimeout = 60_000 // 60 seconds
   private readonly envdVersion: string
 
-  /**
-   * @hidden
-   * @internal
-   */
-  get supportsStdinClose(): boolean {
-    return compareVersions(this.envdVersion, PROXY_AUTO_RESUME) >= 0
-  }
-
   constructor(
     transport: Transport,
     private readonly connectionConfig: ConnectionConfig,
@@ -146,6 +138,14 @@ export class Commands {
   ) {
     this.rpc = createClient(ProcessService, transport)
     this.envdVersion = metadata.version
+  }
+
+  /**
+   * @hidden
+   * @internal
+   */
+  get supportsStdinClose(): boolean {
+    return compareVersions(this.envdVersion, PROXY_AUTO_RESUME) >= 0
   }
 
   /**
