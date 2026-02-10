@@ -2,11 +2,14 @@ import datetime
 import json
 import logging
 import uuid
-from typing import Dict, List, Optional, overload
+from typing import TYPE_CHECKING, Dict, List, Optional, Union, overload
 
 import httpx
 from packaging.version import Version
 from typing_extensions import Self, Unpack
+
+if TYPE_CHECKING:
+    from e2b.volume_async import AsyncVolume
 
 from e2b.api.client.types import Unset
 from e2b.api.client_async import get_transport
@@ -162,6 +165,7 @@ class AsyncSandbox(SandboxApi):
         allow_internet_access: bool = True,
         mcp: Optional[McpServer] = None,
         network: Optional[SandboxNetworkOpts] = None,
+        volume_mounts: Optional[Dict[str, Union["AsyncVolume", str]]] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
         """
@@ -177,15 +181,28 @@ class AsyncSandbox(SandboxApi):
         :param allow_internet_access: Allow sandbox to access the internet, defaults to `True`. If set to `False`, it works the same as setting network `deny_out` to `[0.0.0.0/0]`.
         :param mcp: MCP server to enable in the sandbox
         :param network: Sandbox network configuration
+        :param volume_mounts: Dictionary mapping mount paths to AsyncVolume instances or volume names
 
         :return: A Sandbox instance for the new sandbox
 
         Use this method instead of using the constructor to create a new sandbox.
         """
+        from e2b.api.client.models import SandboxVolumeMount
+
         if not template and mcp is not None:
             template = cls.default_mcp_template
         elif not template:
             template = cls.default_template
+
+        transformed_mounts = None
+        if volume_mounts:
+            transformed_mounts = [
+                SandboxVolumeMount(
+                    name=vol.name if hasattr(vol, "name") else vol,
+                    path=path,
+                )
+                for path, vol in volume_mounts.items()
+            ]
 
         sandbox = await cls._create(
             template=template,
@@ -197,6 +214,7 @@ class AsyncSandbox(SandboxApi):
             allow_internet_access=allow_internet_access,
             mcp=mcp,
             network=network,
+            volume_mounts=transformed_mounts,
             **opts,
         )
 
@@ -527,6 +545,7 @@ class AsyncSandbox(SandboxApi):
         secure: bool = True,
         allow_internet_access: bool = True,
         mcp: Optional[McpServer] = None,
+        volume_mounts: Optional[Dict[str, Union["AsyncVolume", str]]] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
         """
@@ -544,16 +563,28 @@ class AsyncSandbox(SandboxApi):
         :param secure: Envd is secured with access token and cannot be used without it, defaults to `True`.
         :param allow_internet_access: Allow sandbox to access the internet, defaults to `True`.
         :param mcp: MCP server to enable in the sandbox
+        :param volume_mounts: Dictionary mapping mount paths to AsyncVolume instances or volume names
 
         :return: A Sandbox instance for the new sandbox
 
         Use this method instead of using the constructor to create a new sandbox.
         """
+        from e2b.api.client.models import SandboxVolumeMount
 
         if not template and mcp is not None:
             template = cls.default_mcp_template
         elif not template:
             template = cls.default_template
+
+        transformed_mounts = None
+        if volume_mounts:
+            transformed_mounts = [
+                SandboxVolumeMount(
+                    name=vol.name if hasattr(vol, "name") else vol,
+                    path=path,
+                )
+                for path, vol in volume_mounts.items()
+            ]
 
         sandbox = await cls._create(
             template=template,
@@ -564,6 +595,7 @@ class AsyncSandbox(SandboxApi):
             secure=secure,
             allow_internet_access=allow_internet_access,
             mcp=mcp,
+            volume_mounts=transformed_mounts,
             **opts,
         )
 
@@ -686,6 +718,7 @@ class AsyncSandbox(SandboxApi):
         secure: bool,
         mcp: Optional[McpServer] = None,
         network: Optional[SandboxNetworkOpts] = None,
+        volume_mounts: Optional[list] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
         extra_sandbox_headers = {}
@@ -708,6 +741,7 @@ class AsyncSandbox(SandboxApi):
                 allow_internet_access=allow_internet_access,
                 mcp=mcp,
                 network=network,
+                volume_mounts=volume_mounts,
                 **opts,
             )
 

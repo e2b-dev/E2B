@@ -100,6 +100,12 @@ components:
       required: false
       schema:
         type: string
+    volumeID:
+      name: volumeID
+      in: path
+      required: true
+      schema:
+        type: string
 
   responses:
     "400":
@@ -306,6 +312,17 @@ components:
           items:
             $ref: "#/components/schemas/SandboxLogEntry"
 
+    SandboxLogsV2Response:
+      required:
+        - logs
+      properties:
+        logs:
+          default: []
+          description: Sandbox logs structured
+          type: array
+          items:
+            $ref: "#/components/schemas/SandboxLogEntry"
+
     SandboxMetric:
       description: Metric entry with timestamp and line
       required:
@@ -351,6 +368,19 @@ components:
           type: integer
           format: int64
           description: Total disk space in bytes
+
+    SandboxVolumeMount:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Name of the volume
+        path:
+          type: string
+          description: Path of the volume
+      required:
+        - name
+        - path
 
     Sandbox:
       required:
@@ -528,6 +558,10 @@ components:
           $ref: "#/components/schemas/EnvVars"
         mcp:
           $ref: "#/components/schemas/Mcp"
+        volumeMounts:
+          type: array
+          items:
+            $ref: "#/components/schemas/SandboxVolumeMount"
 
     ResumedSandbox:
       properties:
@@ -1610,6 +1644,29 @@ components:
           type: string
           description: Suffix used in masked version of the token or key
 
+    Volume:
+      type: object
+      properties:
+        id:
+          type: string
+          description: ID of the volume
+        name:
+          type: string
+          description: Name of the volume
+      required:
+        - id
+        - name
+
+    NewVolume:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Name of the volume
+          pattern: "^[a-zA-Z0-9_-]+$"
+      required:
+        - name
+
 tags:
   - name: templates
   - name: sandboxes
@@ -1617,6 +1674,7 @@ tags:
   - name: access-tokens
   - name: api-keys
   - name: tags
+  - name: volumes
 
 paths:
   /health:
@@ -1877,7 +1935,8 @@ paths:
 
   /sandboxes/{sandboxID}/logs:
     get:
-      description: Get sandbox logs
+      description: Get sandbox logs. Use /v2/sandboxes/{sandboxID}/logs instead.
+      deprecated: true
       tags: [sandboxes]
       security:
         - ApiKeyAuth: []
@@ -1911,6 +1970,51 @@ paths:
           $ref: "#/components/responses/404"
         "401":
           $ref: "#/components/responses/401"
+        "500":
+          $ref: "#/components/responses/500"
+
+  /v2/sandboxes/{sandboxID}/logs:
+    get:
+      description: Get sandbox logs
+      tags: [sandboxes]
+      security:
+        - ApiKeyAuth: []
+        - Supabase1TokenAuth: []
+          Supabase2TeamAuth: []
+      parameters:
+        - $ref: "#/components/parameters/sandboxID"
+        - in: query
+          name: cursor
+          schema:
+            type: integer
+            format: int64
+            minimum: 0
+          description: Starting timestamp of the logs that should be returned in milliseconds
+        - in: query
+          name: limit
+          schema:
+            default: 1000
+            type: integer
+            format: int32
+            minimum: 0
+            maximum: 1000
+          description: Maximum number of logs that should be returned
+        - in: query
+          name: direction
+          schema:
+            $ref: "#/components/schemas/LogsDirection"
+          description: Direction of the logs that should be returned
+      responses:
+        "200":
+          description: Successfully returned the sandbox logs
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SandboxLogsV2Response"
+        "401":
+          $ref: "#/components/responses/401"
+        "404":
+          $ref: "#/components/responses/404"
         "500":
           $ref: "#/components/responses/500"
 
@@ -2887,6 +2991,102 @@ paths:
       responses:
         "204":
           description: Team API key deleted successfully
+        "401":
+          $ref: "#/components/responses/401"
+        "404":
+          $ref: "#/components/responses/404"
+        "500":
+          $ref: "#/components/responses/500"
+
+  /volumes:
+    get:
+      description: List all team volumes
+      tags: [volumes]
+      security:
+        - AccessTokenAuth: []
+        - ApiKeyAuth: []
+        - Supabase1TokenAuth: []
+          Supabase2TeamAuth: []
+      responses:
+        "200":
+          description: Successfully listed all team volumes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Volume"
+        "401":
+          $ref: "#/components/responses/401"
+        "500":
+          $ref: "#/components/responses/500"
+
+    post:
+      description: Create a new team volume
+      tags: [volumes]
+      security:
+        - AccessTokenAuth: []
+        - ApiKeyAuth: []
+        - Supabase1TokenAuth: []
+          Supabase2TeamAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NewVolume"
+      responses:
+        "201":
+          description: Successfully created a new team volume
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Volume"
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "500":
+          $ref: "#/components/responses/500"
+
+  /volumes/{volumeID}:
+    get:
+      description: Get team volume info
+      tags: [volumes]
+      security:
+        - AccessTokenAuth: []
+        - ApiKeyAuth: []
+        - Supabase1TokenAuth: []
+          Supabase2TeamAuth: []
+      parameters:
+        - $ref: "#/components/parameters/volumeID"
+      responses:
+        "200":
+          description: Successfully retrieved a team volume
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Volume"
+        "401":
+          $ref: "#/components/responses/401"
+        "404":
+          $ref: "#/components/responses/404"
+        "500":
+          $ref: "#/components/responses/500"
+
+    delete:
+      description: Delete a team volume
+      tags: [volumes]
+      security:
+        - AccessTokenAuth: []
+        - ApiKeyAuth: []
+        - Supabase1TokenAuth: []
+          Supabase2TeamAuth: []
+      parameters:
+        - $ref: "#/components/parameters/volumeID"
+      responses:
+        "204":
+          description: Successfully deleted a team volume
         "401":
           $ref: "#/components/responses/401"
         "404":
