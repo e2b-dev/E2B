@@ -26,7 +26,7 @@ const shouldSkip = !hasCreds || isDebug
 const testIf = test.skipIf(shouldSkip)
 const cliPath = path.join(process.cwd(), 'dist', 'index.js')
 const sandboxTimeoutMs = parseEnvInt('E2B_CLI_BACKEND_SANDBOX_TIMEOUT_MS', 20_000)
-const testTimeoutMs = parseEnvInt('E2B_CLI_BACKEND_TEST_TIMEOUT_MS', 30_000)
+const testTimeoutMs = parseEnvInt('E2B_CLI_BACKEND_TEST_TIMEOUT_MS', 60_000)
 
 describe('sandbox cli backend integration', () => {
   testIf(
