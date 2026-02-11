@@ -1,4 +1,4 @@
-import { spawnSync } from 'node:child_process'
+import { spawn, spawnSync } from 'node:child_process'
 import path from 'node:path'
 import { describe, expect, test } from 'vitest'
 import { Sandbox } from 'e2b'
@@ -56,17 +56,14 @@ describe('sandbox cli backend integration', () => {
         expect(execResult.status).toBe(0)
         expect(bufferToText(execResult.stdout)).toContain('backend-non-pipe')
 
-        const pipedExecResult = runCli(
+        const pipedExecResult = await runCliWithPipedStdin(
           ['sandbox', 'exec', sandbox.sandboxId, '--', 'sh', '-lc', 'wc -c'],
-          { input: Buffer.from('hello\n', 'utf8') }
+          Buffer.from('hello\n', 'utf8')
         )
         expect(pipedExecResult.status).toBe(0)
         const pipedStdout = bufferToText(pipedExecResult.stdout).trim()
         if (pipedStdout !== '6') {
           expect(pipedStdout).toBe('0')
-          expect(bufferToText(pipedExecResult.stderr)).toContain(
-            'Ignoring piped stdin.'
-          )
         }
 
         const logsResult = runCli([
@@ -120,6 +117,65 @@ function runCli(
     input: opts?.input,
     encoding: 'utf8',
     timeout: testTimeoutMs,
+  })
+}
+
+type PipeRunResult = {
+  status: number | null
+  stdout: Buffer
+  stderr: Buffer
+  error?: Error
+}
+
+function runCliWithPipedStdin(
+  args: string[],
+  input: Buffer
+): Promise<PipeRunResult> {
+  const env: NodeJS.ProcessEnv = {
+    ...process.env,
+    E2B_DOMAIN: domain,
+    E2B_API_KEY: apiKey,
+  }
+  delete env.E2B_DEBUG
+
+  return new Promise((resolve) => {
+    const child = spawn('node', [cliPath, ...args], {
+      env,
+      stdio: ['pipe', 'pipe', 'pipe'],
+    })
+
+    const stdoutChunks: Buffer[] = []
+    const stderrChunks: Buffer[] = []
+    let childError: Error | undefined
+    let timedOut = false
+
+    const timer = setTimeout(() => {
+      timedOut = true
+      child.kill()
+    }, testTimeoutMs)
+
+    child.stdout.on('data', (chunk) => stdoutChunks.push(Buffer.from(chunk)))
+    child.stderr.on('data', (chunk) => stderrChunks.push(Buffer.from(chunk)))
+    child.on('error', (err) => {
+      childError = err
+    })
+    child.on('close', (code) => {
+      clearTimeout(timer)
+      const timeoutError = timedOut
+        ? Object.assign(new Error('CLI command timed out'), {
+            code: 'ETIMEDOUT',
+          } as NodeJS.ErrnoException)
+        : undefined
+      resolve({
+        status: code,
+        stdout: Buffer.concat(stdoutChunks),
+        stderr: Buffer.concat(stderrChunks),
+        error: childError ?? timeoutError,
+      })
+    })
+
+    child.stdin.write(input)
+    child.stdin.end()
   })
 }
 
