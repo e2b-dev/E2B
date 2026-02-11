@@ -29,7 +29,7 @@ export { Pty } from './pty'
  * Options for sending a command request.
  */
 export interface CommandRequestOpts
-  extends Partial<Pick<ConnectionOpts, 'requestTimeoutMs'>> { }
+  extends Partial<Pick<ConnectionOpts, 'requestTimeoutMs'>> {}
 
 /**
  * Options for starting a new command.
@@ -305,8 +305,8 @@ export class Commands {
 
     const reqTimeout = requestTimeoutMs
       ? setTimeout(() => {
-        controller.abort()
-      }, requestTimeoutMs)
+          controller.abort()
+        }, requestTimeoutMs)
       : undefined
 
     const events = this.rpc.connect(
@@ -409,8 +409,8 @@ export class Commands {
 
     const reqTimeout = requestTimeoutMs
       ? setTimeout(() => {
-        controller.abort()
-      }, requestTimeoutMs)
+          controller.abort()
+        }, requestTimeoutMs)
       : undefined
 
     if (

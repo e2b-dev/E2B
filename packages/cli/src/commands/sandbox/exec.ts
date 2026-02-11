@@ -54,7 +54,8 @@ export const execCommand = new commander.Command('exec')
           )
         }
 
-        const canPipeStdin = hasPipedStdin && sandbox.commands.supportsStdinClose
+        const canPipeStdin =
+          hasPipedStdin && sandbox.commands.supportsStdinClose
 
         if (opts.background) {
           const handle = await sandbox.commands.run(command, {
@@ -78,12 +79,7 @@ export const execCommand = new commander.Command('exec')
           process.exit(0)
         }
 
-        const exitCode = await runCommand(
-          sandbox,
-          command,
-          opts,
-          canPipeStdin
-        )
+        const exitCode = await runCommand(sandbox, command, opts, canPipeStdin)
 
         process.exit(exitCode)
       } catch (err: any) {
@@ -125,12 +121,7 @@ async function runCommand(
   })
 
   if (openStdin) {
-    try {
-      await sendStdin(sandbox, handle.pid)
-    } catch (err) {
-      // Log but don't abort — let the command finish so we get its real exit code.
-      console.error('e2b: stdin delivery failed:', err)
-    }
+    await sendStdin(sandbox, handle.pid)
   }
 
   const removeSignalHandlers = setupSignalHandlers(async () => {
@@ -158,10 +149,7 @@ async function runCommand(
   }
 }
 
-async function sendStdin(
-  sandbox: Sandbox,
-  pid: number
-): Promise<void> {
+async function sendStdin(sandbox: Sandbox, pid: number): Promise<void> {
   const chunkSizeBytes = 64 * 1024
   let processExited = false
 
