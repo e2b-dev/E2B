@@ -7,6 +7,7 @@ import {
   isPipedStdin,
   readStdinIfPiped,
   readStdinFrom,
+  streamStdinChunks,
   shellQuote,
 } from '../../../src/commands/sandbox/exec_helpers'
 
@@ -154,5 +155,55 @@ describe('exec helpers', () => {
   test('readStdinFrom resolves with empty buffer on immediate EOF', async () => {
     const stream = Readable.from([])
     await expect(readStdinFrom(stream)).resolves.toEqual(Buffer.alloc(0))
+  })
+
+  test('streamStdinChunks delivers chunks incrementally before EOF', async () => {
+    const stream = new PassThrough()
+    const seen: Buffer[] = []
+    let resolveFirstChunk: (() => void) | undefined
+    const firstChunkSeen = new Promise<void>((resolve) => {
+      resolveFirstChunk = resolve
+    })
+    const done = streamStdinChunks(
+      stream,
+      async (chunk) => {
+        seen.push(Buffer.from(chunk))
+        if (resolveFirstChunk) {
+          resolveFirstChunk()
+          resolveFirstChunk = undefined
+        }
+      },
+      64 * 1024
+    )
+
+    stream.write('first')
+    await firstChunkSeen
+
+    expect(seen).toEqual([Buffer.from('first')])
+
+    stream.end('second')
+    await done
+
+    expect(seen).toEqual([Buffer.from('first'), Buffer.from('second')])
+  })
+
+  test('streamStdinChunks splits oversized stream chunks by max bytes', async () => {
+    const stream = Readable.from([Buffer.from('a'.repeat(64 * 1024 + 3))])
+    const chunks: Uint8Array[] = []
+
+    await streamStdinChunks(
+      stream,
+      async (chunk) => {
+        chunks.push(chunk)
+      },
+      64 * 1024
+    )
+
+    expect(chunks).toHaveLength(2)
+    expect(chunks[0].byteLength).toBe(64 * 1024)
+    expect(chunks[1].byteLength).toBe(3)
+    expect(Buffer.concat(chunks.map((c) => Buffer.from(c)))).toEqual(
+      Buffer.from('a'.repeat(64 * 1024 + 3))
+    )
   })
 })

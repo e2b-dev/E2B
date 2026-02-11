@@ -7,11 +7,7 @@ import * as commander from 'commander'
 
 import { ensureAPIKey } from '../../api'
 import { setupSignalHandlers } from 'src/utils/signal'
-import {
-  buildCommand,
-  chunkBytesBySize,
-  readStdinIfPiped,
-} from './exec_helpers'
+import { buildCommand, isPipedStdin, streamStdinChunks } from './exec_helpers'
 
 interface ExecOptions {
   background?: boolean
@@ -43,25 +39,22 @@ export const execCommand = new commander.Command('exec')
   .alias('ex')
   .action(
     async (sandboxID: string, commandParts: string[], opts: ExecOptions) => {
-      // If stdin is a pipe, capture data to stream to the remote command.
-      const stdinData = await readStdinIfPiped()
-      // Don't open remote stdin for empty pipes — process gets EOF immediately.
-      const openStdin = stdinData !== undefined && stdinData.byteLength > 0
+      const hasPipedStdin = isPipedStdin()
 
       const command = buildCommand(commandParts)
       try {
         const apiKey = ensureAPIKey()
         const sandbox = await Sandbox.connect(sandboxID, { apiKey })
 
-        if (openStdin && !sandbox.commands.supportsStdinClose) {
+        if (hasPipedStdin && !sandbox.commands.supportsStdinClose) {
           console.error(
             'e2b: Warning: Piped stdin is not supported by this sandbox version.\n' +
-            'e2b: Rebuild your template to pick up the latest sandbox version.\n' +
-            'e2b: Ignoring piped stdin.'
+              'e2b: Rebuild your template to pick up the latest sandbox version.\n' +
+              'e2b: Ignoring piped stdin.'
           )
         }
 
-        const canPipeStdin = openStdin && sandbox.commands.supportsStdinClose
+        const canPipeStdin = hasPipedStdin && sandbox.commands.supportsStdinClose
 
         if (opts.background) {
           const handle = await sandbox.commands.run(command, {
@@ -70,11 +63,11 @@ export const execCommand = new commander.Command('exec')
             user: opts.user,
             envs: opts.env,
             timeoutMs: NO_COMMAND_TIMEOUT,
-            ...(canPipeStdin ? { stdin: true } : {}), // on envd < 0.3.0 stdin false fails in start()
+            ...(canPipeStdin ? { stdin: true } : {}),
           })
 
-          if (canPipeStdin && stdinData) {
-            await sendStdin(sandbox, handle.pid, stdinData)
+          if (canPipeStdin) {
+            await sendStdin(sandbox, handle.pid)
           }
 
           console.error(handle.pid)
@@ -89,7 +82,7 @@ export const execCommand = new commander.Command('exec')
           sandbox,
           command,
           opts,
-          canPipeStdin ? stdinData : undefined
+          canPipeStdin
         )
 
         process.exit(exitCode)
@@ -104,9 +97,8 @@ async function runCommand(
   sandbox: Sandbox,
   command: string,
   opts: ExecOptions,
-  stdinData?: Uint8Array
+  openStdin: boolean
 ): Promise<number> {
-  const openStdin = stdinData !== undefined && stdinData.byteLength > 0
   const handle = await sandbox.commands.run(command, {
     background: true,
     cwd: opts.cwd,
@@ -132,8 +124,8 @@ async function runCommand(
     ...(openStdin ? { stdin: true } : {}),
   })
 
-  if (openStdin && stdinData) {
-    await sendStdin(sandbox, handle.pid, stdinData)
+  if (openStdin) {
+    await sendStdin(sandbox, handle.pid)
   }
 
   const removeSignalHandlers = setupSignalHandlers(async () => {
@@ -163,24 +155,38 @@ async function runCommand(
 
 async function sendStdin(
   sandbox: Sandbox,
-  pid: number,
-  data: Uint8Array
+  pid: number
 ): Promise<void> {
   const chunkSizeBytes = 64 * 1024
-  const chunks = chunkBytesBySize(data, chunkSizeBytes)
-  for (const chunk of chunks) {
-    try {
-      await sandbox.commands.sendStdin(pid, chunk)
-    } catch (err) {
-      if (err instanceof NotFoundError) {
-        console.error(
-          'e2b: Remote command exited before stdin could be delivered.'
-        )
+  let processExited = false
+
+  await streamStdinChunks(
+    process.stdin,
+    async (chunk) => {
+      if (processExited) {
         return
       }
-      throw err
-    }
+
+      try {
+        await sandbox.commands.sendStdin(pid, chunk)
+      } catch (err) {
+        if (err instanceof NotFoundError) {
+          processExited = true
+          console.error(
+            'e2b: Remote command exited before stdin could be delivered.'
+          )
+          return
+        }
+        throw err
+      }
+    },
+    chunkSizeBytes
+  )
+
+  if (processExited) {
+    return
   }
+
   // Signal EOF so commands like cat/wc/grep terminate.
   try {
     await sandbox.commands.closeStdin(pid)

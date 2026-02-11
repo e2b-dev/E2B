@@ -6,7 +6,8 @@ const mocks = vi.hoisted(() => {
   const sendStdin = vi.fn()
   const closeStdin = vi.fn()
   const ensureAPIKey = vi.fn(() => 'test-api-key')
-  const readStdinIfPiped = vi.fn()
+  const isPipedStdin = vi.fn()
+  const streamStdinChunks = vi.fn()
   const setupSignalHandlers = vi.fn(() => () => {})
 
   return {
@@ -15,7 +16,8 @@ const mocks = vi.hoisted(() => {
     sendStdin,
     closeStdin,
     ensureAPIKey,
-    readStdinIfPiped,
+    isPipedStdin,
+    streamStdinChunks,
     setupSignalHandlers,
   }
 })
@@ -53,7 +55,8 @@ vi.mock('../../../src/commands/sandbox/exec_helpers', async (importOriginal) => 
     await importOriginal<typeof import('../../../src/commands/sandbox/exec_helpers')>()
   return {
     ...actual,
-    readStdinIfPiped: mocks.readStdinIfPiped,
+    isPipedStdin: mocks.isPipedStdin,
+    streamStdinChunks: mocks.streamStdinChunks,
   }
 })
 
@@ -73,6 +76,8 @@ describe('sandbox exec stdin run flag', () => {
     mocks.run.mockResolvedValue(handle)
     mocks.sendStdin.mockResolvedValue(undefined)
     mocks.closeStdin.mockResolvedValue(undefined)
+    mocks.isPipedStdin.mockReturnValue(false)
+    mocks.streamStdinChunks.mockResolvedValue(undefined)
     mocks.connect.mockResolvedValue({
       commands: {
         run: mocks.run,
@@ -88,7 +93,6 @@ describe('sandbox exec stdin run flag', () => {
   })
 
   test('does not pass stdin flag when stdin is not piped', async () => {
-    mocks.readStdinIfPiped.mockResolvedValue(undefined)
     const exitSpy = vi
       .spyOn(process, 'exit')
       .mockImplementation((() => undefined) as never)
@@ -101,11 +105,21 @@ describe('sandbox exec stdin run flag', () => {
     expect(mocks.run).toHaveBeenCalledTimes(1)
     const runOpts = mocks.run.mock.calls[0][1]
     expect(runOpts).not.toHaveProperty('stdin')
+    expect(mocks.streamStdinChunks).not.toHaveBeenCalled()
     expect(exitSpy).toHaveBeenCalledWith(0)
   })
 
   test('passes stdin: true when stdin piping is active', async () => {
-    mocks.readStdinIfPiped.mockResolvedValue(Buffer.from('hello'))
+    mocks.isPipedStdin.mockReturnValue(true)
+    mocks.streamStdinChunks.mockImplementation(
+      async (
+        _stream: NodeJS.ReadableStream,
+        onChunk: (chunk: Uint8Array) => Promise<void>,
+        _maxBytes: number
+      ) => {
+        await onChunk(Buffer.from('hello'))
+      }
+    )
     const exitSpy = vi
       .spyOn(process, 'exit')
       .mockImplementation((() => undefined) as never)
@@ -118,6 +132,7 @@ describe('sandbox exec stdin run flag', () => {
     expect(mocks.run).toHaveBeenCalledTimes(1)
     const runOpts = mocks.run.mock.calls[0][1]
     expect(runOpts).toHaveProperty('stdin', true)
+    expect(mocks.streamStdinChunks).toHaveBeenCalled()
     expect(mocks.sendStdin).toHaveBeenCalled()
     expect(mocks.closeStdin).toHaveBeenCalled()
     expect(exitSpy).toHaveBeenCalledWith(0)

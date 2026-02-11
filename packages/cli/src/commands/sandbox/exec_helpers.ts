@@ -51,6 +51,8 @@ type ReadStdinOptions = {
   stream?: NodeJS.ReadableStream
 }
 
+type StdinChunk = Uint8Array | Buffer | string
+
 export const readStdinIfPiped = async (
   options: ReadStdinOptions = {}
 ): Promise<Buffer | undefined> => {
@@ -76,6 +78,30 @@ export const chunkBytesBySize = (
     chunks.push(data.subarray(offset, offset + maxBytes))
   }
   return chunks
+}
+
+export async function streamStdinChunks(
+  stream: NodeJS.ReadableStream,
+  onChunk: (chunk: Uint8Array) => Promise<void> | void,
+  maxBytes: number
+): Promise<void> {
+  if (maxBytes <= 0) {
+    throw new Error('maxBytes must be greater than 0')
+  }
+
+  for await (const rawChunk of stream as AsyncIterable<StdinChunk>) {
+    const chunk =
+      typeof rawChunk === 'string' ? Buffer.from(rawChunk) : Buffer.from(rawChunk)
+
+    if (chunk.byteLength === 0) {
+      continue
+    }
+
+    const pieces = chunkBytesBySize(chunk, maxBytes)
+    for (const piece of pieces) {
+      await onChunk(piece)
+    }
+  }
 }
 
 export async function readStdinFrom(
