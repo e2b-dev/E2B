@@ -285,6 +285,18 @@ class SendSignalResponse(_message.Message):
     __slots__ = ()
     def __init__(self) -> None: ...
 
+class CloseStdinRequest(_message.Message):
+    __slots__ = ("process",)
+    PROCESS_FIELD_NUMBER: _ClassVar[int]
+    process: ProcessSelector
+    def __init__(
+        self, process: _Optional[_Union[ProcessSelector, _Mapping]] = ...
+    ) -> None: ...
+
+class CloseStdinResponse(_message.Message):
+    __slots__ = ()
+    def __init__(self) -> None: ...
+
 class ConnectRequest(_message.Message):
     __slots__ = ("process",)
     PROCESS_FIELD_NUMBER: _ClassVar[int]
