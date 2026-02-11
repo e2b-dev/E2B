@@ -222,7 +222,7 @@ export class Commands {
    * @internal
    */
   async closeStdin(pid: number, opts?: CommandRequestOpts): Promise<void> {
-    if (compareVersions(this.envdVersion, ENVD_ENVD_CLOSE) < 0) {
+    if (!this.supportsStdinClose) {
       throw new SandboxError(
         `Sandbox envd version ${this.envdVersion} doesn't support closeStdin. Please rebuild your template to pick up the latest sandbox version.`
       )
