@@ -157,7 +157,7 @@ async function sendStdin(sandbox: Sandbox, pid: number): Promise<void> {
     process.stdin,
     async (chunk) => {
       if (processExited) {
-        return
+        return false
       }
 
       try {
@@ -168,7 +168,7 @@ async function sendStdin(sandbox: Sandbox, pid: number): Promise<void> {
           console.error(
             'e2b: Remote command exited before stdin could be delivered.'
           )
-          return
+          return false
         }
         throw err
       }

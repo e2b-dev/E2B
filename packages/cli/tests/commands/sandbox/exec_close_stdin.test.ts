@@ -145,4 +145,40 @@ describe('sandbox exec closeStdin handling', () => {
     expect(mocks.wait).toHaveBeenCalledTimes(1)
     expect(exitSpy).toHaveBeenCalledWith(0)
   })
+
+  test('stops stdin streaming after NotFoundError from sendStdin', async () => {
+    const { NotFoundError } = await import('e2b')
+    mocks.sendStdin.mockRejectedValueOnce(new NotFoundError('already exited'))
+    mocks.streamStdinChunks.mockImplementation(
+      async (
+        _stream: NodeJS.ReadableStream,
+        onChunk: (chunk: Uint8Array) => Promise<void | boolean>,
+        _maxBytes: number
+      ) => {
+        const shouldContinue = await onChunk(Buffer.from('first'))
+        if (shouldContinue === false) {
+          return
+        }
+        await onChunk(Buffer.from('second'))
+      }
+    )
+
+    const exitSpy = vi
+      .spyOn(process, 'exit')
+      .mockImplementation((() => undefined) as never)
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+
+    const { execCommand } = await import('../../../src/commands/sandbox/exec')
+    await execCommand.parseAsync(['sandbox-id', 'cat'], {
+      from: 'user',
+    })
+
+    expect(mocks.sendStdin).toHaveBeenCalledTimes(1)
+    expect(mocks.closeStdin).not.toHaveBeenCalled()
+    expect(mocks.wait).toHaveBeenCalledTimes(1)
+    expect(errorSpy).toHaveBeenCalledWith(
+      'e2b: Remote command exited before stdin could be delivered.'
+    )
+    expect(exitSpy).toHaveBeenCalledWith(0)
+  })
 })

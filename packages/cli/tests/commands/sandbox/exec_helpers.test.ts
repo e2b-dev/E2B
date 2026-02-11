@@ -206,4 +206,21 @@ describe('exec helpers', () => {
       Buffer.from('a'.repeat(64 * 1024 + 3))
     )
   })
+
+  test('streamStdinChunks stops early when onChunk returns false', async () => {
+    const stream = Readable.from([Buffer.from('first'), Buffer.from('second')])
+    const chunks: Uint8Array[] = []
+
+    await streamStdinChunks(
+      stream,
+      async (chunk) => {
+        chunks.push(chunk)
+        return false
+      },
+      64 * 1024
+    )
+
+    expect(chunks).toHaveLength(1)
+    expect(Buffer.from(chunks[0])).toEqual(Buffer.from('first'))
+  })
 })

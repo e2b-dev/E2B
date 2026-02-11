@@ -82,7 +82,7 @@ export const chunkBytesBySize = (
 
 export async function streamStdinChunks(
   stream: NodeJS.ReadableStream,
-  onChunk: (chunk: Uint8Array) => Promise<void> | void,
+  onChunk: (chunk: Uint8Array) => Promise<void | boolean> | void | boolean,
   maxBytes: number
 ): Promise<void> {
   if (maxBytes <= 0) {
@@ -101,7 +101,10 @@ export async function streamStdinChunks(
 
     const pieces = chunkBytesBySize(chunk, maxBytes)
     for (const piece of pieces) {
-      await onChunk(piece)
+      const shouldContinue = await onChunk(piece)
+      if (shouldContinue === false) {
+        return
+      }
     }
   }
 }
