@@ -91,7 +91,9 @@ export async function streamStdinChunks(
 
   for await (const rawChunk of stream as AsyncIterable<StdinChunk>) {
     const chunk =
-      typeof rawChunk === 'string' ? Buffer.from(rawChunk) : Buffer.from(rawChunk)
+      typeof rawChunk === 'string'
+        ? Buffer.from(rawChunk)
+        : Buffer.from(rawChunk)
 
     if (chunk.byteLength === 0) {
       continue
