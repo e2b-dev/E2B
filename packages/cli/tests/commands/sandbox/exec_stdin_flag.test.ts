@@ -111,13 +111,22 @@ describe('sandbox exec stdin run flag', () => {
 
   test('passes stdin: true when stdin piping is active', async () => {
     mocks.isPipedStdin.mockReturnValue(true)
+    const events: string[] = []
+    mocks.setupSignalHandlers.mockImplementation(() => {
+      events.push('setup')
+      return () => {
+        events.push('cleanup')
+      }
+    })
     mocks.streamStdinChunks.mockImplementation(
       async (
         _stream: NodeJS.ReadableStream,
-        onChunk: (chunk: Uint8Array) => Promise<void>,
+        onChunk: (chunk: Uint8Array) => Promise<void | boolean>,
         _maxBytes: number
       ) => {
+        events.push('stream-start')
         await onChunk(Buffer.from('hello'))
+        events.push('stream-end')
       }
     )
     const exitSpy = vi
@@ -135,6 +144,10 @@ describe('sandbox exec stdin run flag', () => {
     expect(mocks.streamStdinChunks).toHaveBeenCalled()
     expect(mocks.sendStdin).toHaveBeenCalled()
     expect(mocks.closeStdin).toHaveBeenCalled()
+    expect(events).toContain('setup')
+    expect(events).toContain('stream-start')
+    expect(events.indexOf('setup')).toBeLessThan(events.indexOf('stream-start'))
+    expect(events).toContain('cleanup')
     expect(exitSpy).toHaveBeenCalledWith(0)
   })
 })

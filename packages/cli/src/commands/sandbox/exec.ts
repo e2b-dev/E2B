@@ -67,8 +67,16 @@ export const execCommand = new commander.Command('exec')
             ...(canPipeStdin ? { stdin: true } : {}),
           })
 
-          if (canPipeStdin) {
-            await sendStdin(sandbox, handle.pid)
+          const removeSignalHandlers = setupSignalHandlers(async () => {
+            await handle.kill()
+          })
+
+          try {
+            if (canPipeStdin) {
+              await sendStdin(sandbox, handle.pid)
+            }
+          } finally {
+            removeSignalHandlers()
           }
 
           console.error(handle.pid)
@@ -120,16 +128,16 @@ async function runCommand(
     ...(openStdin ? { stdin: true } : {}),
   })
 
-  if (openStdin) {
-    await sendStdin(sandbox, handle.pid)
-  }
-
   const removeSignalHandlers = setupSignalHandlers(async () => {
     // Kill the remote process - main loop handles exit code.
     await handle.kill()
   })
 
   try {
+    if (openStdin) {
+      await sendStdin(sandbox, handle.pid)
+    }
+
     const result = await handle.wait()
 
     return result.exitCode
