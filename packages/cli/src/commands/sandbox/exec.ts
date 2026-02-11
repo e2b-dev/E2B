@@ -56,8 +56,8 @@ export const execCommand = new commander.Command('exec')
         if (openStdin && !sandbox.commands.supportsStdinClose) {
           console.error(
             'e2b: Warning: Piped stdin is not supported by this sandbox version.\n' +
-              'e2b: Rebuild your template to pick up the latest sandbox version.\n' +
-              'e2b: Ignoring piped stdin.'
+            'e2b: Rebuild your template to pick up the latest sandbox version.\n' +
+            'e2b: Ignoring piped stdin.'
           )
         }
 
@@ -69,8 +69,8 @@ export const execCommand = new commander.Command('exec')
             cwd: opts.cwd,
             user: opts.user,
             envs: opts.env,
-            stdin: canPipeStdin,
             timeoutMs: NO_COMMAND_TIMEOUT,
+            ...(canPipeStdin ? { stdin: true } : {}), // on envd < 0.3.0 stdin false fails in start()
           })
 
           if (canPipeStdin && stdinData) {
@@ -112,7 +112,6 @@ async function runCommand(
     cwd: opts.cwd,
     user: opts.user,
     envs: opts.env,
-    stdin: openStdin,
     timeoutMs: NO_COMMAND_TIMEOUT,
     onStdout: async (data) => {
       try {
@@ -130,6 +129,7 @@ async function runCommand(
         await handle.kill()
       }
     },
+    ...(openStdin ? { stdin: true } : {}),
   })
 
   if (openStdin && stdinData) {
@@ -191,8 +191,8 @@ async function sendStdin(
     }
     console.error(
       'e2b: Warning: Could not signal EOF to remote process.\n' +
-        'e2b: Commands that read stdin until EOF (cat, python, wc, etc.) may hang.\n' +
-        'e2b: Rebuild your template to pick up the latest sandbox version.'
+      'e2b: Commands that read stdin until EOF (cat, python, wc, etc.) may hang.\n' +
+      'e2b: Rebuild your template to pick up the latest sandbox version.'
     )
   }
 }
