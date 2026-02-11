@@ -20,7 +20,7 @@ import {
   Signal,
 } from '../../envd/process/process_pb'
 import { authenticationHeader, handleRpcError } from '../../envd/rpc'
-import { ENVD_COMMANDS_STDIN, PROXY_AUTO_RESUME } from '../../envd/versions'
+import { ENVD_COMMANDS_STDIN, ENVD_ENVD_CLOSE } from '../../envd/versions'
 import { SandboxError } from '../../errors'
 import { CommandHandle, CommandResult } from './commandHandle'
 export { Pty } from './pty'
@@ -29,7 +29,7 @@ export { Pty } from './pty'
  * Options for sending a command request.
  */
 export interface CommandRequestOpts
-  extends Partial<Pick<ConnectionOpts, 'requestTimeoutMs'>> {}
+  extends Partial<Pick<ConnectionOpts, 'requestTimeoutMs'>> { }
 
 /**
  * Options for starting a new command.
@@ -145,7 +145,7 @@ export class Commands {
    * @internal
    */
   get supportsStdinClose(): boolean {
-    return compareVersions(this.envdVersion, PROXY_AUTO_RESUME) >= 0
+    return compareVersions(this.envdVersion, ENVD_ENVD_CLOSE) >= 0
   }
 
   /**
@@ -222,7 +222,7 @@ export class Commands {
    * @internal
    */
   async closeStdin(pid: number, opts?: CommandRequestOpts): Promise<void> {
-    if (compareVersions(this.envdVersion, PROXY_AUTO_RESUME) < 0) {
+    if (compareVersions(this.envdVersion, ENVD_ENVD_CLOSE) < 0) {
       throw new SandboxError(
         `Sandbox envd version ${this.envdVersion} doesn't support closeStdin. Please rebuild your template to pick up the latest sandbox version.`
       )
@@ -305,8 +305,8 @@ export class Commands {
 
     const reqTimeout = requestTimeoutMs
       ? setTimeout(() => {
-          controller.abort()
-        }, requestTimeoutMs)
+        controller.abort()
+      }, requestTimeoutMs)
       : undefined
 
     const events = this.rpc.connect(
@@ -409,8 +409,8 @@ export class Commands {
 
     const reqTimeout = requestTimeoutMs
       ? setTimeout(() => {
-          controller.abort()
-        }, requestTimeoutMs)
+        controller.abort()
+      }, requestTimeoutMs)
       : undefined
 
     if (
