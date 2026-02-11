@@ -11,7 +11,7 @@ from e2b.template.types import TemplateBuildStatus
 import e2b.template_async.main as template_async_main
 import e2b.template_async.build_api as build_api_mod
 
-non_existent_path = "/nonexistent/path"
+non_existent_path = "nonexistent/path"
 
 # map template alias -> failed step index
 failure_map: dict[str, Optional[int]] = {
@@ -176,6 +176,26 @@ async def test_traces_on_copyItems(async_build):
     )
     await _expect_to_throw_and_check_trace(
         lambda: async_build(template, name="copy_items"), "copy_items"
+    )
+
+
+@pytest.mark.skip_debug()
+async def test_traces_on_copy_absolute_path():
+    await _expect_to_throw_and_check_trace(
+        lambda: AsyncTemplate()
+        .from_base_image()
+        .copy("/absolute/path", "/absolute/path"),
+        "copy",
+    )
+
+
+@pytest.mark.skip_debug()
+async def test_traces_on_copyItems_absolute_path():
+    await _expect_to_throw_and_check_trace(
+        lambda: AsyncTemplate()
+        .from_base_image()
+        .copy_items([CopyItem(src="/absolute/path", dest="/absolute/path")]),
+        "copy_items",
     )
 
 

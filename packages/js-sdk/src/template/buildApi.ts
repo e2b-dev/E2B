@@ -111,7 +111,7 @@ export async function uploadFile(
   const { fileName, url, fileContextPath, ignorePatterns, resolveSymlinks } =
     options
   try {
-    const { contentLength, uploadStream } = await tarFileStreamUpload(
+    const uploadStream = await tarFileStreamUpload(
       fileName,
       fileContextPath,
       ignorePatterns,
@@ -123,9 +123,6 @@ export async function uploadFile(
       method: 'PUT',
       // @ts-expect-error
       body: uploadStream,
-      headers: {
-        'Content-Length': contentLength.toString(),
-      },
       duplex: 'half',
     })
 
