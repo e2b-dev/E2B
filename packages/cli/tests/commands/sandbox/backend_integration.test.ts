@@ -1,6 +1,6 @@
 import { spawn, spawnSync } from 'node:child_process'
 import path from 'node:path'
-import { describe, expect, test } from 'vitest'
+import { afterAll, beforeAll, describe, expect, test } from 'vitest'
 import { Sandbox } from 'e2b'
 import { getUserConfig } from 'src/user'
 
@@ -25,78 +25,116 @@ const hasCreds = Boolean(apiKey)
 const shouldSkip = !hasCreds || isDebug
 const testIf = test.skipIf(shouldSkip)
 const cliPath = path.join(process.cwd(), 'dist', 'index.js')
-const sandboxTimeoutMs = parseEnvInt('E2B_CLI_BACKEND_SANDBOX_TIMEOUT_MS', 20_000)
-const testTimeoutMs = parseEnvInt('E2B_CLI_BACKEND_TEST_TIMEOUT_MS', 60_000)
+const sandboxTimeoutMs = parseEnvInt(
+  'E2B_CLI_BACKEND_SANDBOX_TIMEOUT_MS',
+  20_000
+)
+const perTestTimeoutMs = parseEnvInt('E2B_CLI_BACKEND_TEST_TIMEOUT_MS', 30_000)
+const spawnTimeoutMs = perTestTimeoutMs
 
 describe('sandbox cli backend integration', () => {
+  let sandbox: Sandbox
+
+  beforeAll(async () => {
+    if (shouldSkip) return
+
+    sandbox = await Sandbox.create(templateId, {
+      apiKey,
+      domain,
+      timeoutMs: sandboxTimeoutMs,
+    })
+  }, 30_000)
+
+  afterAll(async () => {
+    if (!sandbox) return
+
+    try {
+      await sandbox.kill()
+    } catch (err) {
+      console.warn(
+        `Failed to kill sandbox ${sandbox.sandboxId} in cleanup: ${String(err)}`
+      )
+    }
+  }, 15_000)
+
+  testIf('list shows the sandbox', { timeout: perTestTimeoutMs }, async () => {
+    const listResult = runCli(['sandbox', 'list', '--format', 'json'])
+    expect(listResult.status).toBe(0)
+    expect(sandboxExistsInList(listResult.stdout, sandbox.sandboxId)).toBe(true)
+  })
+
   testIf(
-    'runs list/exec/logs/metrics/kill against backend',
-    { timeout: testTimeoutMs },
+    'exec runs a command without piped stdin',
+    { timeout: perTestTimeoutMs },
     async () => {
-      const sandbox = await Sandbox.create(templateId, {
-        apiKey,
-        domain,
-        timeoutMs: sandboxTimeoutMs,
-      })
+      const execResult = runCli([
+        'sandbox',
+        'exec',
+        sandbox.sandboxId,
+        '--',
+        'sh',
+        '-lc',
+        'echo backend-non-pipe',
+      ])
+      expect(execResult.status).toBe(0)
+      expect(bufferToText(execResult.stdout)).toContain('backend-non-pipe')
+    }
+  )
 
-      try {
-        const listResult = runCli(['sandbox', 'list', '--format', 'json'])
-        expect(listResult.status).toBe(0)
-        expect(sandboxExistsInList(listResult.stdout, sandbox.sandboxId)).toBe(true)
-
-        const execResult = runCli([
-          'sandbox',
-          'exec',
-          sandbox.sandboxId,
-          '--',
-          'sh',
-          '-lc',
-          'echo backend-non-pipe',
-        ])
-        expect(execResult.status).toBe(0)
-        expect(bufferToText(execResult.stdout)).toContain('backend-non-pipe')
-
-        const pipedExecResult = await runCliWithPipedStdin(
-          ['sandbox', 'exec', sandbox.sandboxId, '--', 'sh', '-lc', 'wc -c'],
-          Buffer.from('hello\n', 'utf8')
-        )
-        expect(pipedExecResult.status).toBe(0)
-        const pipedStdout = bufferToText(pipedExecResult.stdout).trim()
-        if (pipedStdout !== '6') {
-          expect(pipedStdout).toBe('0')
-        }
-
-        const logsResult = runCli([
-          'sandbox',
-          'logs',
-          sandbox.sandboxId,
-          '--format',
-          'json',
-        ])
-        expect(logsResult.status).toBe(0)
-
-        const metricsResult = runCli([
-          'sandbox',
-          'metrics',
-          sandbox.sandboxId,
-          '--format',
-          'json',
-        ])
-        expect(metricsResult.status).toBe(0)
-
-        const killResult = runCli(['sandbox', 'kill', sandbox.sandboxId])
-        expect(killResult.status).toBe(0)
-
-        await assertSandboxNotListed(sandbox.sandboxId)
-      } finally {
-        try {
-          await sandbox.kill()
-        } catch (err) {
-          console.warn(
-            `Failed to kill sandbox ${sandbox.sandboxId} in cleanup: ${String(err)}`
-          )
-        }
+  testIf(
+    'exec runs a command with piped stdin',
+    { timeout: perTestTimeoutMs },
+    async () => {
+      const pipedExecResult = await runCliWithPipedStdin(
+        ['sandbox', 'exec', sandbox.sandboxId, '--', 'sh', '-lc', 'wc -c'],
+        Buffer.from('hello\n', 'utf8')
+      )
+      expect(pipedExecResult.status).toBe(0)
+      const pipedStdout = bufferToText(pipedExecResult.stdout).trim()
+      if (pipedStdout !== '6') {
+        expect(pipedStdout).toBe('0')
       }
+    }
+  )
+
+  testIf(
+    'logs returns successfully',
+    { timeout: perTestTimeoutMs },
+    async () => {
+      const logsResult = runCli([
+        'sandbox',
+        'logs',
+        sandbox.sandboxId,
+        '--format',
+        'json',
+      ])
+      expect(logsResult.status).toBe(0)
+    }
+  )
+
+  testIf(
+    'metrics returns successfully',
+    { timeout: perTestTimeoutMs },
+    async () => {
+      const metricsResult = runCli([
+        'sandbox',
+        'metrics',
+        sandbox.sandboxId,
+        '--format',
+        'json',
+      ])
+      expect(metricsResult.status).toBe(0)
+    }
+  )
+
+  testIf(
+    'kill removes the sandbox',
+    { timeout: perTestTimeoutMs },
+    async () => {
+      const killResult = runCli(['sandbox', 'kill', sandbox.sandboxId])
+      expect(killResult.status).toBe(0)
+
+      await assertSandboxNotListed(sandbox.sandboxId)
     }
   )
 })
@@ -116,7 +154,7 @@ function runCli(
     env,
     input: opts?.input,
     encoding: 'utf8',
-    timeout: testTimeoutMs,
+    timeout: spawnTimeoutMs,
   })
 }
 
@@ -152,7 +190,7 @@ function runCliWithPipedStdin(
     const timer = setTimeout(() => {
       timedOut = true
       child.kill()
-    }, testTimeoutMs)
+    }, spawnTimeoutMs)
 
     child.stdout.on('data', (chunk) => stdoutChunks.push(Buffer.from(chunk)))
     child.stderr.on('data', (chunk) => stderrChunks.push(Buffer.from(chunk)))
