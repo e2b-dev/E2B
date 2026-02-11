@@ -125,7 +125,12 @@ async function runCommand(
   })
 
   if (openStdin) {
-    await sendStdin(sandbox, handle.pid)
+    try {
+      await sendStdin(sandbox, handle.pid)
+    } catch (err) {
+      // Log but don't abort — let the command finish so we get its real exit code.
+      console.error('e2b: stdin delivery failed:', err)
+    }
   }
 
   const removeSignalHandlers = setupSignalHandlers(async () => {
@@ -195,10 +200,23 @@ async function sendStdin(
       // Process already exited — EOF is moot.
       return
     }
+
+    // Fail fast instead of leaving a command blocked on stdin forever.
+    await killProcessBestEffort(sandbox, pid)
+    throw err
+  }
+}
+
+async function killProcessBestEffort(
+  sandbox: Sandbox,
+  pid: number
+): Promise<void> {
+  try {
+    await sandbox.commands.kill(pid)
+  } catch (killErr) {
     console.error(
-      'e2b: Warning: Could not signal EOF to remote process.\n' +
-      'e2b: Commands that read stdin until EOF (cat, python, wc, etc.) may hang.\n' +
-      'e2b: Rebuild your template to pick up the latest sandbox version.'
+      'e2b: Failed to kill remote process after stdin EOF signaling failed.'
     )
+    console.error(killErr)
   }
 }
