@@ -2694,6 +2694,29 @@ export interface components {
             /** @description ID of the volume */
             volumeID: string;
         };
+        VolumeDirectoryItem: {
+            /**
+             * Format: date-time
+             * @description Create time of the file or directory
+             */
+            ctime?: string;
+            /** @description Whether the item is a directory */
+            isDirectory?: boolean;
+            /** @description File mode */
+            mode?: number;
+            /**
+             * Format: date-time
+             * @description Last modification time of the file or directory
+             */
+            mtime?: string;
+            /** @description Name of the file or directory */
+            name?: string;
+            /** @description File size in bytes */
+            size?: number;
+        };
+        VolumeDirectoryListing: {
+            files?: components["schemas"]["VolumeDirectoryItem"][];
+        };
     };
     responses: {
         /** @description Bad request */
@@ -2760,6 +2783,7 @@ export interface components {
         paginationLimit: number;
         /** @description Cursor to start the list from */
         paginationNextToken: string;
+        path: string;
         sandboxID: string;
         snapshotID: string;
         tag: string;

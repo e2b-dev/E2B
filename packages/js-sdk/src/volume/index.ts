@@ -83,7 +83,7 @@ export class VolumeBase {
       throw err
     }
 
-    return new VolumeBase(res.data!.id, res.data!.name)
+    return new VolumeBase(res.data!.volumeID, res.data!.name)
   }
 
   /**
@@ -120,7 +120,7 @@ export class VolumeBase {
     }
 
     return {
-      volumeId: res.data!.id,
+      volumeId: res.data!.volumeID,
       name: res.data!.name,
     }
   }
@@ -146,7 +146,7 @@ export class VolumeBase {
     }
 
     return (res.data ?? []).map((vol) => ({
-      volumeId: vol.id,
+      volumeId: vol.volumeID,
       name: vol.name,
     }))
   }
