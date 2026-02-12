@@ -57,7 +57,7 @@ class AsyncVolume:
         if isinstance(res.parsed, Error):
             raise Exception(f"{res.parsed.message}: Request failed")
 
-        vol = cls(volume_id=res.parsed.id)
+        vol = cls(volume_id=res.parsed.volume_id)
         vol._name = res.parsed.name
         return vol
 
@@ -90,7 +90,7 @@ class AsyncVolume:
         if isinstance(res.parsed, Error):
             raise Exception(f"{res.parsed.message}: Request failed")
 
-        return VolumeInfo(volume_id=res.parsed.id, name=res.parsed.name)
+        return VolumeInfo(volume_id=res.parsed.volume_id, name=res.parsed.name)
 
     @staticmethod
     async def list(**opts: Unpack[ApiParams]) -> List[VolumeInfo]:
@@ -115,7 +115,7 @@ class AsyncVolume:
         if isinstance(res.parsed, Error):
             raise Exception(f"{res.parsed.message}: Request failed")
 
-        return [VolumeInfo(volume_id=v.id, name=v.name) for v in res.parsed]
+        return [VolumeInfo(volume_id=v.volume_id, name=v.name) for v in res.parsed]
 
     @staticmethod
     async def destroy(volume_id: str, **opts: Unpack[ApiParams]) -> bool:

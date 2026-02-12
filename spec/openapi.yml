@@ -100,6 +100,12 @@ components:
       required: false
       schema:
         type: string
+    path:
+      name: path
+      in: query
+      required: true
+      schema:
+        type: string
     volumeID:
       name: volumeID
       in: path
@@ -260,6 +266,23 @@ components:
         maskRequestHost:
           type: string
           description: Specify host mask which will be used for all sandbox requests
+
+    SandboxAutoResumePolicy:
+      type: string
+      description: Auto-resume policy for paused sandboxes. Default is off.
+      default: "off"
+      enum:
+        - any
+        - off
+
+    SandboxAutoResumeConfig:
+      type: object
+      description: Auto-resume configuration for paused sandboxes. Default is off.
+      required:
+        - policy
+      properties:
+        policy:
+          $ref: "#/components/schemas/SandboxAutoResumePolicy"
 
     SandboxLog:
       description: Log entry with timestamp and line
@@ -428,6 +451,7 @@ components:
         - endAt
         - state
         - envdVersion
+        - volumeMounts
       properties:
         templateID:
           type: string
@@ -469,6 +493,10 @@ components:
           $ref: "#/components/schemas/SandboxMetadata"
         state:
           $ref: "#/components/schemas/SandboxState"
+        volumeMounts:
+          type: array
+          items:
+            $ref: "#/components/schemas/SandboxVolumeMount"
 
     ListedSandbox:
       required:
@@ -482,6 +510,7 @@ components:
         - endAt
         - state
         - envdVersion
+        - volumeMounts
       properties:
         templateID:
           type: string
@@ -516,6 +545,10 @@ components:
           $ref: "#/components/schemas/SandboxState"
         envdVersion:
           $ref: "#/components/schemas/EnvdVersion"
+        volumeMounts:
+          type: array
+          items:
+            $ref: "#/components/schemas/SandboxVolumeMount"
 
     SandboxesWithMetrics:
       required:
@@ -542,6 +575,8 @@ components:
           type: boolean
           default: false
           description: Automatically pauses the sandbox after the timeout
+        autoResume:
+          $ref: "#/components/schemas/SandboxAutoResumeConfig"
         secure:
           type: boolean
           description: Secure all system communication with sandbox
@@ -1647,14 +1682,14 @@ components:
     Volume:
       type: object
       properties:
-        id:
+        volumeID:
           type: string
           description: ID of the volume
         name:
           type: string
           description: Name of the volume
       required:
-        - id
+        - volumeID
         - name
 
     NewVolume:
@@ -1666,6 +1701,38 @@ components:
           pattern: "^[a-zA-Z0-9_-]+$"
       required:
         - name
+
+    VolumeDirectoryItem:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Name of the file or directory
+        isDirectory:
+          type: boolean
+          description: Whether the item is a directory
+        mode:
+          type: integer
+          description: File mode
+        size:
+          type: integer
+          description: File size in bytes
+        ctime:
+          type: string
+          format: date-time
+          description: Create time of the file or directory
+        mtime:
+          type: string
+          format: date-time
+          description: Last modification time of the file or directory
+
+    VolumeDirectoryListing:
+      type: object
+      properties:
+        files:
+          type: array
+          items:
+            $ref: "#/components/schemas/VolumeDirectoryItem"
 
 tags:
   - name: templates
@@ -3091,5 +3158,133 @@ paths:
           $ref: "#/components/responses/401"
         "404":
           $ref: "#/components/responses/404"
+        "500":
+          $ref: "#/components/responses/500"
+
+  /volumes/{volumeID}/dir:
+    get:
+      description: List directory contents
+      tags: [volume_content]
+      security:
+        - AccessTokenAuth: []
+        - ApiKeyAuth: []
+        - Supabase1TokenAuth: []
+          Supabase2TeamAuth: []
+      parameters:
+        - $ref: "#/components/parameters/volumeID"
+        - $ref: "#/components/parameters/path"
+      responses:
+        "200":
+          description: "Successfully retrieved a directory listing"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VolumeDirectoryListing"
+        "404":
+          description: "path not found"
+        "500":
+          $ref: "#/components/responses/500"        
+    post:
+      description: List directory contents
+      tags: [volume_content]
+      security:
+        - AccessTokenAuth: []
+        - ApiKeyAuth: []
+        - Supabase1TokenAuth: []
+          Supabase2TeamAuth: []
+      parameters:
+        - $ref: "#/components/parameters/volumeID"
+        - $ref: "#/components/parameters/path"
+      responses:
+        "204":
+          description: "Successfully created a directory"
+        "404":
+          description: "path not found"
+        "500":
+          $ref: "#/components/responses/500"        
+    delete:
+      description: Delete a directory
+      tags: [volume_content]
+      security:
+        - AccessTokenAuth: []
+        - ApiKeyAuth: []
+        - Supabase1TokenAuth: []
+          Supabase2TeamAuth: []
+      parameters:
+        - $ref: "#/components/parameters/volumeID"
+        - $ref: "#/components/parameters/path"
+      responses:
+        "204":
+          description: "Successfully deleted a directory"
+        "404":
+          description: "path not found"
+        "500":
+          $ref: "#/components/responses/500"
+
+  /volumes/{volumeID}/file:
+    get:
+      description: Download file
+      tags: [volume_content]
+      security:
+        - AccessTokenAuth: []
+        - ApiKeyAuth: []
+        - Supabase1TokenAuth: []
+          Supabase2TeamAuth: []
+      parameters:
+        - $ref: "#/components/parameters/volumeID"
+        - $ref: "#/components/parameters/path"
+      responses:
+        "200":
+          description: "Successfully downloaded a file"
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        "404":
+          description: "path not found"
+        "500":
+          $ref: "#/components/responses/500"
+    post:
+      description: Create file
+      tags: [volume_content]
+      security:
+        - AccessTokenAuth: []
+        - ApiKeyAuth: []
+        - Supabase1TokenAuth: []
+          Supabase2TeamAuth: []
+      parameters:
+        - $ref: "#/components/parameters/volumeID"
+        - $ref: "#/components/parameters/path"
+      requestBody:
+        required: true
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+      responses:
+        "200":
+          description: "Successfully created a file"
+        "404":
+          description: "path not found"
+        "500":
+          $ref: "#/components/responses/500"
+    delete:
+      description: Delete a file
+      tags: [volume_content]
+      security:
+        - AccessTokenAuth: []
+        - ApiKeyAuth: []
+        - Supabase1TokenAuth: []
+          Supabase2TeamAuth: []
+      parameters:
+        - $ref: "#/components/parameters/volumeID"
+        - $ref: "#/components/parameters/path"
+      responses:
+        "204":
+          description: "Successfully deleted a file"
+        "404":
+          description: "path not found"
         "500":
           $ref: "#/components/responses/500"

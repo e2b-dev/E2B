@@ -1755,6 +1755,7 @@ export interface components {
             state: components["schemas"]["SandboxState"];
             /** @description Identifier of the template from which is the sandbox created */
             templateID: string;
+            volumeMounts: components["schemas"]["SandboxVolumeMount"][];
         };
         /**
          * @description State of the sandbox
@@ -1818,6 +1819,7 @@ export interface components {
              * @default false
              */
             autoPause?: boolean;
+            autoResume?: components["schemas"]["SandboxAutoResumeConfig"];
             envVars?: components["schemas"]["EnvVars"];
             mcp?: components["schemas"]["Mcp"];
             metadata?: components["schemas"]["SandboxMetadata"];
@@ -1997,6 +1999,16 @@ export interface components {
             /** @description Token required for accessing sandbox via proxy. */
             trafficAccessToken?: string | null;
         };
+        /** @description Auto-resume configuration for paused sandboxes. Default is off. */
+        SandboxAutoResumeConfig: {
+            policy: components["schemas"]["SandboxAutoResumePolicy"];
+        };
+        /**
+         * @description Auto-resume policy for paused sandboxes. Default is off.
+         * @default off
+         * @enum {string}
+         */
+        SandboxAutoResumePolicy: "any" | false;
         SandboxDetail: {
             /** @description Alias of the template */
             alias?: string;
@@ -2029,6 +2041,7 @@ export interface components {
             state: components["schemas"]["SandboxState"];
             /** @description Identifier of the template from which is the sandbox created */
             templateID: string;
+            volumeMounts: components["schemas"]["SandboxVolumeMount"][];
         };
         SandboxesWithMetrics: {
             sandboxes: {
@@ -2507,10 +2520,33 @@ export interface components {
             name: string;
         };
         Volume: {
-            /** @description ID of the volume */
-            id: string;
             /** @description Name of the volume */
             name: string;
+            /** @description ID of the volume */
+            volumeID: string;
+        };
+        VolumeDirectoryItem: {
+            /**
+             * Format: date-time
+             * @description Create time of the file or directory
+             */
+            ctime?: string;
+            /** @description Whether the item is a directory */
+            isDirectory?: boolean;
+            /** @description File mode */
+            mode?: number;
+            /**
+             * Format: date-time
+             * @description Last modification time of the file or directory
+             */
+            mtime?: string;
+            /** @description Name of the file or directory */
+            name?: string;
+            /** @description File size in bytes */
+            size?: number;
+        };
+        VolumeDirectoryListing: {
+            files?: components["schemas"]["VolumeDirectoryItem"][];
         };
     };
     responses: {
@@ -2578,6 +2614,7 @@ export interface components {
         paginationLimit: number;
         /** @description Cursor to start the list from */
         paginationNextToken: string;
+        path: string;
         sandboxID: string;
         tag: string;
         teamID: string;

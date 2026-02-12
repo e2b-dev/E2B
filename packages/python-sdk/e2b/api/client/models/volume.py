@@ -11,25 +11,25 @@ T = TypeVar("T", bound="Volume")
 class Volume:
     """
     Attributes:
-        id (str): ID of the volume
         name (str): Name of the volume
+        volume_id (str): ID of the volume
     """
 
-    id: str
     name: str
+    volume_id: str
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        id = self.id
-
         name = self.name
+
+        volume_id = self.volume_id
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
-                "id": id,
                 "name": name,
+                "volumeID": volume_id,
             }
         )
 
@@ -38,13 +38,13 @@ class Volume:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        id = d.pop("id")
-
         name = d.pop("name")
 
+        volume_id = d.pop("volumeID")
+
         volume = cls(
-            id=id,
             name=name,
+            volume_id=volume_id,
         )
 
         volume.additional_properties = d
