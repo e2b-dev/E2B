@@ -1,0 +1,78 @@
+---
+title: "Run JavaScript and TypeScript code"
+sidebarTitle: "JavaScript and TypeScript"
+---
+
+Use the `runCode`/`run_code` method to run JavaScript and TypeScript code inside the sandbox.
+You'll need to pass the `language` parameter with value `javascript` or `js` for JavaScript and `typescript` or `ts` for TypeScript.
+
+<Note>
+The E2B Code Interpreter supports TypeScript, top-level await, ESM-style imports and automatic promises resolution.
+</Note>
+
+<CodeGroup>
+```js JavaScript & TypeScript
+import { Sandbox } from "@e2b/code-interpreter";
+
+// Create a new sandbox
+const sbx = await Sandbox.create();
+
+// Install the axios package
+await sbx.commands.run("npm install axios");
+
+// Run the code
+const execution = await sbx.runCode(`
+  import axios from "axios";
+
+  const url: string = "https://api.github.com/status";
+  const response = await axios.get(url);
+  response.data;
+`,
+  { language: "ts" }
+);
+
+console.log(execution);
+
+// Execution {
+//   results: [],
+//   logs: {
+//     stdout: [ "{ message: 'GitHub lives! (2025-05-28 10:49:55 -0700) (1)' }\n" ],
+//     stderr: [],
+//   },
+//   error: undefined,
+//   executionCount: 1,
+//   text: [Getter],
+//   toJSON: [Function: toJSON],
+// }
+```
+```python Python
+from e2b_code_interpreter import Sandbox
+
+# Create a new sandbox
+sbx = Sandbox.create()
+
+# Install the axios package
+sbx.commands.run("npm install axios")
+
+#  Run the code
+execution = sbx.run_code("""
+  import axios from "axios";
+
+  const url: string = "https://api.github.com/status";
+  const response = await axios.get(url);
+  response.data;
+""",
+    language="ts",
+)
+
+print(execution)
+
+# Execution(
+#   Results: [
+#     Result({ message: 'GitHub lives! (2025-05-28 10:48:47 -0700) (1)' })
+#   ],
+#   Logs: Logs(stdout: [], stderr: []),
+#   Error: None
+# )
+```
+</CodeGroup>
