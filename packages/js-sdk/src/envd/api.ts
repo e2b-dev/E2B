@@ -113,7 +113,8 @@ class EnvdApiClient {
       baseUrl: config.apiUrl,
       fetch: config?.fetch,
       headers: config?.headers,
-      // keepalive: true, // TODO: Return keepalive
+      // In HTTP 1.1, all connections are considered persistent unless declared otherwise
+      // keepalive: true,
     })
     this.version = metadata.version
 
