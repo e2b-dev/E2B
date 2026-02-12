@@ -22,7 +22,7 @@ def mock_volume_api(monkeypatch):
 
     async def mock_post_volumes(*, client, body):
         vol_id = str(uuid4())
-        vol = VolumeModel(id=vol_id, name=body.name)
+        vol = VolumeModel(volume_id=vol_id, name=body.name)
         _volumes[vol_id] = vol
         return Response(
             status_code=HTTPStatus(201),
