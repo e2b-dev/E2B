@@ -1,19 +1,13 @@
 /**
  * Execute a command in a running sandbox.
- *
- * NOTE: Stdin piping (e.g., `echo "data" | e2b exec sandbox cmd`) is not supported.
- * The SDK/envd protocol lacks a way to signal EOF to remote commands. Commands that
- * read until EOF (cat, grep, wc, etc.) would hang indefinitely. This requires envd
- * to add stdin close signaling before it can be implemented.
  */
 
-import * as fs from 'fs'
-
-import { Sandbox, CommandExitError } from 'e2b'
+import { Sandbox, CommandExitError, NotFoundError } from 'e2b'
 import * as commander from 'commander'
 
 import { ensureAPIKey } from '../../api'
 import { setupSignalHandlers } from 'src/utils/signal'
+import { buildCommand, isPipedStdin, streamStdinChunks } from './exec_helpers'
 
 interface ExecOptions {
   background?: boolean
@@ -23,7 +17,6 @@ interface ExecOptions {
 }
 
 const NO_COMMAND_TIMEOUT = 0
-
 export const execCommand = new commander.Command('exec')
   .description('execute a command in a running sandbox')
   .argument('<sandboxID>', 'sandbox ID to execute command in')
@@ -46,22 +39,23 @@ export const execCommand = new commander.Command('exec')
   .alias('ex')
   .action(
     async (sandboxID: string, commandParts: string[], opts: ExecOptions) => {
-      // Check if stdin is a pipe (data being piped in) - not supported
-      try {
-        const stdinStats = fs.fstatSync(0)
-        if (stdinStats.isFIFO()) {
-          console.error('e2b: stdin piping is not supported')
-          process.exit(2)
-        }
-      } catch {
-        // fstatSync may fail in some environments, ignore
-      }
+      const hasPipedStdin = isPipedStdin()
 
-      const command = commandParts.join(' ')
+      const command = buildCommand(commandParts)
       try {
         const apiKey = ensureAPIKey()
-
         const sandbox = await Sandbox.connect(sandboxID, { apiKey })
+
+        if (hasPipedStdin && !sandbox.commands.supportsStdinClose) {
+          console.error(
+            'e2b: Warning: Piped stdin is not supported by this sandbox version.\n' +
+              'e2b: Rebuild your template to pick up the latest sandbox version.\n' +
+              'e2b: Ignoring piped stdin.'
+          )
+        }
+
+        const canPipeStdin =
+          hasPipedStdin && sandbox.commands.supportsStdinClose
 
         if (opts.background) {
           const handle = await sandbox.commands.run(command, {
@@ -70,7 +64,20 @@ export const execCommand = new commander.Command('exec')
             user: opts.user,
             envs: opts.env,
             timeoutMs: NO_COMMAND_TIMEOUT,
+            ...(canPipeStdin ? { stdin: true } : {}),
           })
+
+          const removeSignalHandlers = setupSignalHandlers(async () => {
+            await handle.kill()
+          })
+
+          try {
+            if (canPipeStdin) {
+              await sendStdin(sandbox, handle.pid)
+            }
+          } finally {
+            removeSignalHandlers()
+          }
 
           console.error(handle.pid)
 
@@ -80,7 +87,7 @@ export const execCommand = new commander.Command('exec')
           process.exit(0)
         }
 
-        const exitCode = await runCommand(sandbox, command, opts)
+        const exitCode = await runCommand(sandbox, command, opts, canPipeStdin)
 
         process.exit(exitCode)
       } catch (err: any) {
@@ -93,7 +100,8 @@ export const execCommand = new commander.Command('exec')
 async function runCommand(
   sandbox: Sandbox,
   command: string,
-  opts: ExecOptions
+  opts: ExecOptions,
+  openStdin: boolean
 ): Promise<number> {
   const handle = await sandbox.commands.run(command, {
     background: true,
@@ -117,6 +125,7 @@ async function runCommand(
         await handle.kill()
       }
     },
+    ...(openStdin ? { stdin: true } : {}),
   })
 
   const removeSignalHandlers = setupSignalHandlers(async () => {
@@ -125,6 +134,10 @@ async function runCommand(
   })
 
   try {
+    if (openStdin) {
+      await sendStdin(sandbox, handle.pid)
+    }
+
     const result = await handle.wait()
 
     return result.exitCode
@@ -141,5 +154,65 @@ async function runCommand(
     throw err
   } finally {
     removeSignalHandlers()
+  }
+}
+
+async function sendStdin(sandbox: Sandbox, pid: number): Promise<void> {
+  const chunkSizeBytes = 64 * 1024
+  let processExited = false
+
+  await streamStdinChunks(
+    process.stdin,
+    async (chunk) => {
+      if (processExited) {
+        return false
+      }
+
+      try {
+        await sandbox.commands.sendStdin(pid, chunk)
+      } catch (err) {
+        if (err instanceof NotFoundError) {
+          processExited = true
+          console.error(
+            'e2b: Remote command exited before stdin could be delivered.'
+          )
+          return false
+        }
+        throw err
+      }
+    },
+    chunkSizeBytes
+  )
+
+  if (processExited) {
+    return
+  }
+
+  // Signal EOF so commands like cat/wc/grep terminate.
+  try {
+    await sandbox.commands.closeStdin(pid)
+  } catch (err) {
+    if (err instanceof NotFoundError) {
+      // Process already exited — EOF is moot.
+      return
+    }
+
+    // Fail fast instead of leaving a command blocked on stdin forever.
+    await killProcessBestEffort(sandbox, pid)
+    throw err
+  }
+}
+
+async function killProcessBestEffort(
+  sandbox: Sandbox,
+  pid: number
+): Promise<void> {
+  try {
+    await sandbox.commands.kill(pid)
+  } catch (killErr) {
+    console.error(
+      'e2b: Failed to kill remote process after stdin EOF signaling failed.'
+    )
+    console.error(killErr)
   }
 }
