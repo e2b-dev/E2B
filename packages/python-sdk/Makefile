@@ -23,6 +23,9 @@ generate: generate-api generate-envd generate-mcp
 init:
 	pip install openapi-python-client datamodel-code-generator
 
+typecheck:
+	ty check
+
 lint:
 	ruff check .
 	ruff format --check .

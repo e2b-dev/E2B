@@ -259,13 +259,12 @@ class AsyncSandbox(SandboxApi):
         ...
 
     @overload
-    @classmethod
+    @staticmethod
     async def connect(
-        cls,
         sandbox_id: str,
         timeout: Optional[int] = None,
         **opts: Unpack[ApiParams],
-    ) -> Self:
+    ) -> "AsyncSandbox":
         """
         Connect to a sandbox. If the sandbox is paused, it will be automatically resumed.
         Sandbox must be either running or be paused.
@@ -288,7 +287,7 @@ class AsyncSandbox(SandboxApi):
         """
         ...
 
-    @class_method_variant("_cls_connect")
+    @class_method_variant("_cls_connect_sandbox")
     async def connect(
         self,
         timeout: Optional[int] = None,
@@ -672,7 +671,7 @@ class AsyncSandbox(SandboxApi):
         return self._mcp_token
 
     @classmethod
-    async def _cls_connect(
+    async def _cls_connect_sandbox(
         cls,
         sandbox_id: str,
         timeout: Optional[int] = None,

@@ -258,13 +258,12 @@ class Sandbox(SandboxApi):
         ...
 
     @overload
-    @classmethod
+    @staticmethod
     def connect(
-        cls,
         sandbox_id: str,
         timeout: Optional[int] = None,
         **opts: Unpack[ApiParams],
-    ) -> Self:
+    ) -> "Sandbox":
         """
         Connect to a sandbox. If the sandbox is paused, it will be automatically resumed.
         Sandbox must be either running or be paused.
@@ -287,7 +286,7 @@ class Sandbox(SandboxApi):
         """
         ...
 
-    @class_method_variant("_cls_connect")
+    @class_method_variant("_cls_connect_sandbox")
     def connect(
         self,
         timeout: Optional[int] = None,
@@ -620,9 +619,8 @@ class Sandbox(SandboxApi):
         ...
 
     @overload
-    @classmethod
+    @staticmethod
     def beta_pause(
-        cls,
         sandbox_id: str,
         **opts: Unpack[ApiParams],
     ) -> None:
@@ -664,7 +662,7 @@ class Sandbox(SandboxApi):
         return self._mcp_token
 
     @classmethod
-    def _cls_connect(
+    def _cls_connect_sandbox(
         cls,
         sandbox_id: str,
         timeout: Optional[int] = None,
