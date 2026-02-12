@@ -83,6 +83,15 @@ class ProcessClient:
             json=json,
             **opts,
         )
+        self._close_stdin = connect.Client(
+            pool=pool,
+            async_pool=async_pool,
+            url=f"{base_url}/{ProcessName}/CloseStdin",
+            response_type=process_dot_process__pb2.CloseStdinResponse,
+            compressor=compressor,
+            json=json,
+            **opts,
+        )
 
     def list(
         self, req: process_dot_process__pb2.ListRequest, **opts
@@ -153,3 +162,13 @@ class ProcessClient:
         self, req: process_dot_process__pb2.SendSignalRequest, **opts
     ) -> Coroutine[Any, Any, process_dot_process__pb2.SendSignalResponse]:
         return self._send_signal.acall_unary(req, **opts)
+
+    def close_stdin(
+        self, req: process_dot_process__pb2.CloseStdinRequest, **opts
+    ) -> process_dot_process__pb2.CloseStdinResponse:
+        return self._close_stdin.call_unary(req, **opts)
+
+    def aclose_stdin(
+        self, req: process_dot_process__pb2.CloseStdinRequest, **opts
+    ) -> Coroutine[Any, Any, process_dot_process__pb2.CloseStdinResponse]:
+        return self._close_stdin.acall_unary(req, **opts)

@@ -161,7 +161,7 @@ Either a `CommandHandle` or a `CommandResult` (depending on `opts.background`).
 ```ts
 sendStdin(
    pid: number, 
-   data: string, 
+   data: string | Uint8Array, 
 opts?: CommandRequestOpts): Promise<void>
 ```
 
@@ -172,7 +172,7 @@ Send data to command stdin.
 | Parameter | Type | Description |
 | ------ | ------ | ------ |
 | `pid` | `number` | process ID of the command. You can get the list of running commands using Commands.list. |
-| `data` | `string` | data to send to the command. |
+| `data` | `string` \| `Uint8Array` | data to send to the command. |
 | `opts`? | `CommandRequestOpts` | connection options. |
 
 ###### Returns
