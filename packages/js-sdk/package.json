@@ -41,6 +41,7 @@
     "test:bun": "bun test tests/runtimes/bun --env-file=.env",
     "test:deno": "deno test tests/runtimes/deno/ --allow-net --allow-read --allow-env --unstable-sloppy-imports --trace-leaks",
     "test:integration": "E2B_INTEGRATION_TEST=1 vitest run tests/integration/**",
+    "typecheck": "tsc --noEmit",
     "lint": "eslint src/ tests/",
     "format": "prettier --write src/ tests/ example.mts"
   },

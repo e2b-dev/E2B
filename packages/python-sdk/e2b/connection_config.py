@@ -117,7 +117,9 @@ class ConnectionConfig:
             or ("http://localhost:3000" if self.debug else f"https://api.{self.domain}")
         )
 
-        self._sandbox_url = sandbox_url or ConnectionConfig._sandbox_url()
+        self._sandbox_url: Optional[str] = (
+            sandbox_url or ConnectionConfig._sandbox_url()
+        )
 
     @staticmethod
     def _get_request_timeout(
@@ -136,7 +138,7 @@ class ConnectionConfig:
 
     def get_sandbox_url(self, sandbox_id: str, sandbox_domain: str) -> str:
         if self._sandbox_url:
-            return self._sandbox_url
+            return self._sandbox_url  # type: ignore[return-value]
 
         return f"{'http' if self.debug else 'https'}://{self.get_host(sandbox_id, sandbox_domain, self.envd_port)}"
 
