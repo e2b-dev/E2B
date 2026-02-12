@@ -82,6 +82,8 @@ from .template_update_response import TemplateUpdateResponse
 from .template_with_builds import TemplateWithBuilds
 from .update_team_api_key import UpdateTeamAPIKey
 from .volume import Volume
+from .volume_directory_item import VolumeDirectoryItem
+from .volume_directory_listing import VolumeDirectoryListing
 
 __all__ = (
     "AdminSandboxKillResult",
@@ -162,4 +164,6 @@ __all__ = (
     "TemplateWithBuilds",
     "UpdateTeamAPIKey",
     "Volume",
+    "VolumeDirectoryItem",
+    "VolumeDirectoryListing",
 )
