@@ -40,6 +40,8 @@ from .post_sandboxes_sandbox_id_refreshes_body import (
 from .post_sandboxes_sandbox_id_timeout_body import PostSandboxesSandboxIDTimeoutBody
 from .resumed_sandbox import ResumedSandbox
 from .sandbox import Sandbox
+from .sandbox_auto_resume_config import SandboxAutoResumeConfig
+from .sandbox_auto_resume_policy import SandboxAutoResumePolicy
 from .sandbox_detail import SandboxDetail
 from .sandbox_log import SandboxLog
 from .sandbox_log_entry import SandboxLogEntry
@@ -74,6 +76,8 @@ from .template_update_response import TemplateUpdateResponse
 from .template_with_builds import TemplateWithBuilds
 from .update_team_api_key import UpdateTeamAPIKey
 from .volume import Volume
+from .volume_directory_item import VolumeDirectoryItem
+from .volume_directory_listing import VolumeDirectoryListing
 
 __all__ = (
     "AdminSandboxKillResult",
@@ -114,6 +118,8 @@ __all__ = (
     "PostSandboxesSandboxIDTimeoutBody",
     "ResumedSandbox",
     "Sandbox",
+    "SandboxAutoResumeConfig",
+    "SandboxAutoResumePolicy",
     "SandboxDetail",
     "SandboxesWithMetrics",
     "SandboxLog",
@@ -148,4 +154,6 @@ __all__ = (
     "TemplateWithBuilds",
     "UpdateTeamAPIKey",
     "Volume",
+    "VolumeDirectoryItem",
+    "VolumeDirectoryListing",
 )

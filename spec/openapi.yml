@@ -273,7 +273,7 @@ components:
       default: "off"
       enum:
         - any
-        - off
+        - "off"
 
     SandboxAutoResumeConfig:
       type: object

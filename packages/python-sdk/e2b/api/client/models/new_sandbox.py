@@ -8,6 +8,7 @@ from ..types import UNSET, Unset
 
 if TYPE_CHECKING:
     from ..models.mcp_type_0 import McpType0
+    from ..models.sandbox_auto_resume_config import SandboxAutoResumeConfig
     from ..models.sandbox_network_config import SandboxNetworkConfig
     from ..models.sandbox_volume_mount import SandboxVolumeMount
 
@@ -23,6 +24,8 @@ class NewSandbox:
         allow_internet_access (Union[Unset, bool]): Allow sandbox to access the internet. When set to false, it behaves
             the same as specifying denyOut to 0.0.0.0/0 in the network config.
         auto_pause (Union[Unset, bool]): Automatically pauses the sandbox after the timeout Default: False.
+        auto_resume (Union[Unset, SandboxAutoResumeConfig]): Auto-resume configuration for paused sandboxes. Default is
+            off.
         env_vars (Union[Unset, Any]):
         mcp (Union['McpType0', None, Unset]): MCP configuration for the sandbox
         metadata (Union[Unset, Any]):
@@ -35,6 +38,7 @@ class NewSandbox:
     template_id: str
     allow_internet_access: Union[Unset, bool] = UNSET
     auto_pause: Union[Unset, bool] = False
+    auto_resume: Union[Unset, "SandboxAutoResumeConfig"] = UNSET
     env_vars: Union[Unset, Any] = UNSET
     mcp: Union["McpType0", None, Unset] = UNSET
     metadata: Union[Unset, Any] = UNSET
@@ -52,6 +56,10 @@ class NewSandbox:
         allow_internet_access = self.allow_internet_access
 
         auto_pause = self.auto_pause
+
+        auto_resume: Union[Unset, dict[str, Any]] = UNSET
+        if not isinstance(self.auto_resume, Unset):
+            auto_resume = self.auto_resume.to_dict()
 
         env_vars = self.env_vars
 
@@ -91,6 +99,8 @@ class NewSandbox:
             field_dict["allow_internet_access"] = allow_internet_access
         if auto_pause is not UNSET:
             field_dict["autoPause"] = auto_pause
+        if auto_resume is not UNSET:
+            field_dict["autoResume"] = auto_resume
         if env_vars is not UNSET:
             field_dict["envVars"] = env_vars
         if mcp is not UNSET:
@@ -111,6 +121,7 @@ class NewSandbox:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         from ..models.mcp_type_0 import McpType0
+        from ..models.sandbox_auto_resume_config import SandboxAutoResumeConfig
         from ..models.sandbox_network_config import SandboxNetworkConfig
         from ..models.sandbox_volume_mount import SandboxVolumeMount
 
@@ -120,6 +131,13 @@ class NewSandbox:
         allow_internet_access = d.pop("allow_internet_access", UNSET)
 
         auto_pause = d.pop("autoPause", UNSET)
+
+        _auto_resume = d.pop("autoResume", UNSET)
+        auto_resume: Union[Unset, SandboxAutoResumeConfig]
+        if isinstance(_auto_resume, Unset):
+            auto_resume = UNSET
+        else:
+            auto_resume = SandboxAutoResumeConfig.from_dict(_auto_resume)
 
         env_vars = d.pop("envVars", UNSET)
 
@@ -164,6 +182,7 @@ class NewSandbox:
             template_id=template_id,
             allow_internet_access=allow_internet_access,
             auto_pause=auto_pause,
+            auto_resume=auto_resume,
             env_vars=env_vars,
             mcp=mcp,
             metadata=metadata,

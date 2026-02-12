@@ -2008,7 +2008,7 @@ export interface components {
          * @default off
          * @enum {string}
          */
-        SandboxAutoResumePolicy: "any" | false;
+        SandboxAutoResumePolicy: "any" | "off";
         SandboxDetail: {
             /** @description Alias of the template */
             alias?: string;
