@@ -150,7 +150,7 @@ class Volume:
 
         return True
 
-    def list_items(self, path: str, **opts: Unpack[ApiParams]) -> List[VolumeEntryStat]:
+    def list(self, path: str, **opts: Unpack[ApiParams]) -> List[VolumeEntryStat]:
         """
         List directory contents.
 
