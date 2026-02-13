@@ -7,15 +7,15 @@ import { VolumeBase, NotFoundError } from '../../src'
 import { apiUrl } from '../setup'
 
 // In-memory store for mock volumes
-const volumes = new Map<string, { id: string; name: string }>()
+const volumes = new Map<string, { volumeID: string; name: string }>()
 
 const restHandlers = [
   // POST /volumes - create
   http.post(apiUrl('/volumes'), async ({ request }) => {
     const { name } = (await request.clone().json()) as { name: string }
-    const id = randomUUID()
-    const vol = { id, name }
-    volumes.set(id, vol)
+    const volumeID = randomUUID()
+    const vol = { volumeID, name }
+    volumes.set(volumeID, vol)
     return HttpResponse.json(vol, { status: 201 })
   }),
 
