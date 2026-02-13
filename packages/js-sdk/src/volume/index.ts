@@ -225,7 +225,7 @@ export class VolumeBase {
       throw err
     }
 
-    return (res.data ?? []).map((vol) => ({
+    return (res.data ?? []).map((vol: components['schemas']['Volume']) => ({
       volumeId: vol.volumeID,
       name: vol.name,
     }))
