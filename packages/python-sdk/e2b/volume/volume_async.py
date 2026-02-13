@@ -150,7 +150,7 @@ class AsyncVolume:
 
         return True
 
-    async def list(
+    async def list(  # noqa: F811
         self, path: str, **opts: Unpack[ApiParams]
     ) -> List[VolumeEntryStat]:
         """
