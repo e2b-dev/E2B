@@ -132,3 +132,28 @@ async def test_async_with_multiple_await_calls():
     result = await f()
     assert result is True
     assert total == 2
+
+
+from e2b_connect.client import Client
+
+
+def test_server_stream_timeout_extensions_include_read_write():
+    c = Client(url="http://localhost", response_type=object)
+    c._codec = type("Codec", (), {"encode": staticmethod(lambda _: b"x"), "content_type": "proto"})
+
+    req = c._prepare_server_stream_request(req=object(), request_timeout=5)
+    timeout = req["extensions"]["timeout"]
+
+    assert timeout["connect"] == 5
+    assert timeout["pool"] == 5
+    assert timeout["read"] == 5
+    assert timeout["write"] == 5
+
+
+def test_server_stream_timeout_extensions_none_when_timeout_unset():
+    c = Client(url="http://localhost", response_type=object)
+    c._codec = type("Codec", (), {"encode": staticmethod(lambda _: b"x"), "content_type": "proto"})
+
+    req = c._prepare_server_stream_request(req=object(), request_timeout=None)
+
+    assert req["extensions"] is None
