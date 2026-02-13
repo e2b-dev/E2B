@@ -1,13 +1,11 @@
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, TypeVar, Union
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
-from ..types import UNSET, Unset
-
 if TYPE_CHECKING:
-    from ..models.volume_directory_item import VolumeDirectoryItem
+    from ..models.volume_entry_stat import VolumeEntryStat
 
 
 T = TypeVar("T", bound="VolumeDirectoryListing")
@@ -17,37 +15,37 @@ T = TypeVar("T", bound="VolumeDirectoryListing")
 class VolumeDirectoryListing:
     """
     Attributes:
-        files (Union[Unset, list['VolumeDirectoryItem']]):
+        files (list['VolumeEntryStat']):
     """
 
-    files: Union[Unset, list["VolumeDirectoryItem"]] = UNSET
+    files: list["VolumeEntryStat"]
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        files: Union[Unset, list[dict[str, Any]]] = UNSET
-        if not isinstance(self.files, Unset):
-            files = []
-            for files_item_data in self.files:
-                files_item = files_item_data.to_dict()
-                files.append(files_item)
+        files = []
+        for files_item_data in self.files:
+            files_item = files_item_data.to_dict()
+            files.append(files_item)
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
-        field_dict.update({})
-        if files is not UNSET:
-            field_dict["files"] = files
+        field_dict.update(
+            {
+                "files": files,
+            }
+        )
 
         return field_dict
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
-        from ..models.volume_directory_item import VolumeDirectoryItem
+        from ..models.volume_entry_stat import VolumeEntryStat
 
         d = dict(src_dict)
         files = []
-        _files = d.pop("files", UNSET)
-        for files_item_data in _files or []:
-            files_item = VolumeDirectoryItem.from_dict(files_item_data)
+        _files = d.pop("files")
+        for files_item_data in _files:
+            files_item = VolumeEntryStat.from_dict(files_item_data)
 
             files.append(files_item)
 
