@@ -116,7 +116,7 @@ from .template_sync.main import Template
 
 from .volume.volume_sync import Volume
 from .volume.volume_async import AsyncVolume
-from .volume.types import VolumeInfo
+from .volume.types import VolumeInfo, VolumeEntryStat, VolumeFileType, VolumeWriteInfo
 
 __all__ = [
     # API
@@ -213,4 +213,7 @@ __all__ = [
     "Volume",
     "AsyncVolume",
     "VolumeInfo",
+    "VolumeEntryStat",
+    "VolumeFileType",
+    "VolumeWriteInfo",
 ]
