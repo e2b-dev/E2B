@@ -107,7 +107,7 @@ describe('sandbox exec closeStdin handling', () => {
     vi.restoreAllMocks()
   })
 
-  test('fails fast when closeStdin throws non-NotFoundError', async () => {
+  test('fails fast and kills remote process when closeStdin throws non-NotFoundError', async () => {
     mocks.closeStdin.mockRejectedValue(new Error('close failed'))
 
     const exitSpy = vi
@@ -121,7 +121,7 @@ describe('sandbox exec closeStdin handling', () => {
     })
 
     expect(mocks.closeStdin).toHaveBeenCalledTimes(1)
-    expect(mocks.kill).not.toHaveBeenCalled()
+    expect(mocks.kill).toHaveBeenCalledWith(1234)
     expect(mocks.wait).not.toHaveBeenCalled()
     expect(exitSpy).toHaveBeenCalledWith(1)
   })

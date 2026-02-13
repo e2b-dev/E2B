@@ -197,7 +197,22 @@ async function sendStdin(sandbox: Sandbox, pid: number): Promise<void> {
       return
     }
 
-    // Fail fast on EOF signaling errors.
+    // Fail fast, and avoid leaking a process blocked on stdin.
+    await killProcessBestEffort(sandbox, pid)
     throw err
+  }
+}
+
+async function killProcessBestEffort(
+  sandbox: Sandbox,
+  pid: number
+): Promise<void> {
+  try {
+    await sandbox.commands.kill(pid)
+  } catch (killErr) {
+    console.error(
+      'e2b: Failed to kill remote process after stdin EOF signaling failed.'
+    )
+    console.error(killErr)
   }
 }
