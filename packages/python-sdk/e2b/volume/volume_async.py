@@ -150,14 +150,14 @@ class AsyncVolume:
 
         return True
 
-    async def list_entries(self, path: str, **opts: Unpack[ApiParams]) -> List[VolumeEntryStat]:
+    async def list_items(self, path: str, **opts: Unpack[ApiParams]) -> List[VolumeEntryStat]:
         """
         List directory contents.
 
         :param path: Path to the directory
         :param opts: Connection options
 
-        :return: List of entries in the directory
+        :return: List of items (files and directories) in the directory
         """
         config = ConnectionConfig(**opts)
         api_client = get_api_client(config)
