@@ -150,7 +150,7 @@ class AsyncVolume:
 
         return True
 
-    async def list(self, path: str, **opts: Unpack[ApiParams]) -> List[VolumeEntryStat]:  # noqa: F811
+    async def list_entries(self, path: str, **opts: Unpack[ApiParams]) -> List[VolumeEntryStat]:
         """
         List directory contents.
 
