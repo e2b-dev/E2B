@@ -56,6 +56,10 @@ rules = { invalid-argument-type = "ignore" }
 include = ["e2b/envd/**/*.pyi"]
 rules = { conflicting-metaclass = "ignore", unresolved-attribute = "ignore" }
 
+[[tool.ty.overrides]]
+include = ["e2b/volume/**", "tests/**/volume*/**"]
+rules = { missing-argument = "ignore", unresolved-attribute = "ignore" }
+
 [tool.ruff]
 exclude = [
     "e2b/envd/filesystem/filesystem_pb2.py"
