@@ -1,11 +1,13 @@
 import { ApiClient, handleApiError } from '../api'
 import { ConnectionConfig, ConnectionOpts } from '../connectionConfig'
 import { NotFoundError } from '../errors'
+import { toBlob } from '../utils'
+import type { components } from '../api/schema.gen'
 
 /**
  * Information about a volume.
  */
-export interface VolumeInfo {
+export type VolumeInfo = {
   /**
    * Volume ID.
    */
@@ -17,6 +19,85 @@ export interface VolumeInfo {
   name: string
 }
 
+/**
+ * File type enum.
+ */
+export type VolumeFileType = components['schemas']['VolumeEntryStat']['type']
+
+/**
+ * Information about a written file.
+ */
+export type VolumeWriteInfo = {
+  /**
+   * Name of the filesystem object.
+   */
+  name: string
+
+  /**
+   * Type of the filesystem object.
+   */
+  type?: VolumeFileType
+
+  /**
+   * Path to the filesystem object.
+   */
+  path: string
+}
+
+/**
+ * Volume entry stat with dates converted to Date objects.
+ */
+export type VolumeEntryStat = Omit<
+  components['schemas']['VolumeEntryStat'],
+  'mtime' | 'ctime'
+> & {
+  /**
+   * Modification time as a Date object.
+   */
+  mtime: Date
+
+  /**
+   * Creation time as a Date object.
+   */
+  ctime: Date
+}
+
+/**
+ * Options for file and directory operations.
+ */
+export type VolumeWriteOptions = {
+  /**
+   * User ID of the created file or directory.
+   */
+  userID?: number
+
+  /**
+   * Group ID of the created file or directory.
+   */
+  groupID?: number
+
+  /**
+   * Mode of the created file or directory.
+   */
+  mode?: number
+
+  /**
+   * For makeDir: Create parent directories if they don't exist.
+   * For writeFile: Force overwrite of an existing file.
+   */
+  force?: boolean
+}
+
+/**
+ * Options for remove operation.
+ */
+export type VolumeRemoveOptions = {
+  /**
+   * Delete all files and directories recursively.
+   */
+  force?: boolean
+}
+
 export function Volume(volumeId: string): VolumeBase {
   return new VolumeBase(volumeId)
 }
@@ -24,13 +105,12 @@ export function Volume(volumeId: string): VolumeBase {
 /**
  * Options for request to the Volume API.
  */
-export interface VolumeApiOpts
-  extends Partial<
-    Pick<
-      ConnectionOpts,
-      'apiKey' | 'headers' | 'debug' | 'domain' | 'requestTimeoutMs'
-    >
-  > {}
+export type VolumeApiOpts = Partial<
+  Pick<
+    ConnectionOpts,
+    'apiKey' | 'headers' | 'debug' | 'domain' | 'requestTimeoutMs'
+  >
+>
 
 /**
  * Module for interacting with E2B volumes.
@@ -183,5 +263,330 @@ export class VolumeBase {
     }
 
     return true
+  }
+
+  /**
+   * List directory contents.
+   *
+   * @param path path to the directory.
+   * @param opts connection options.
+   *
+   * @returns list of entries in the directory.
+   */
+  async list(path: string, opts?: VolumeApiOpts): Promise<VolumeEntryStat[]> {
+    const config = new ConnectionConfig(opts)
+    const client = new ApiClient(config)
+
+    const res = await client.api.GET('/volumes/{volumeID}/dir', {
+      params: {
+        path: {
+          volumeID: this.volumeId,
+        },
+        query: {
+          path,
+        },
+      },
+      signal: config.getSignal(opts?.requestTimeoutMs),
+    })
+
+    if (res.error?.code === 404) {
+      throw new NotFoundError(`Path ${path} not found`)
+    }
+
+    const err = handleApiError(res)
+    if (err) {
+      throw err
+    }
+
+    return (res.data?.files ?? []).map(
+      (entry: components['schemas']['VolumeEntryStat']): VolumeEntryStat => ({
+        ...entry,
+        mtime: new Date(entry.mtime),
+        ctime: new Date(entry.ctime),
+      })
+    )
+  }
+
+  /**
+   * Create a directory.
+   *
+   * @param path path to the directory to create.
+   * @param options directory creation options.
+   * @param opts connection options.
+   */
+  async makeDir(
+    path: string,
+    options?: VolumeWriteOptions,
+    opts?: VolumeApiOpts
+  ): Promise<void> {
+    const config = new ConnectionConfig(opts)
+    const client = new ApiClient(config)
+
+    const res = await client.api.POST('/volumes/{volumeID}/dir', {
+      params: {
+        path: {
+          volumeID: this.volumeId,
+        },
+        query: {
+          path,
+          userID: options?.userID,
+          groupID: options?.groupID,
+          mode: options?.mode,
+          create_parents: options?.force,
+        },
+      },
+      signal: config.getSignal(opts?.requestTimeoutMs),
+    })
+
+    if (res.error?.code === 404) {
+      throw new NotFoundError(`Path ${path} not found`)
+    }
+
+    const err = handleApiError(res)
+    if (err) {
+      throw err
+    }
+  }
+
+  /**
+   * Get information about a file or directory.
+   *
+   * @param path path to the file or directory.
+   * @param opts connection options.
+   *
+   * @returns information about the entry.
+   */
+  async getEntryInfo(
+    path: string,
+    opts?: VolumeApiOpts
+  ): Promise<VolumeEntryStat> {
+    const config = new ConnectionConfig(opts)
+    const client = new ApiClient(config)
+
+    const res = await client.api.GET('/volumes/{volumeID}/stat', {
+      params: {
+        path: {
+          volumeID: this.volumeId,
+        },
+        query: {
+          path,
+        },
+      },
+      signal: config.getSignal(opts?.requestTimeoutMs),
+    })
+
+    if (res.error?.code === 404) {
+      throw new NotFoundError(`Path ${path} not found`)
+    }
+
+    const err = handleApiError(res)
+    if (err) {
+      throw err
+    }
+
+    const entry = res.data as components['schemas']['VolumeEntryStat']
+    return {
+      ...entry,
+      mtime: new Date(entry.mtime),
+      ctime: new Date(entry.ctime),
+    }
+  }
+
+  /**
+   * Read file content as a `string`.
+   *
+   * You can pass `text`, `bytes`, `blob`, or `stream` to `opts.format` to change the return type.
+   *
+   * @param path path to the file.
+   * @param opts connection options.
+   * @param [opts.format] format of the file content—`text` by default.
+   *
+   * @returns file content as string
+   */
+  async readFile(
+    path: string,
+    opts?: VolumeApiOpts & { format?: 'text' }
+  ): Promise<string>
+  /**
+   * Read file content as a `Uint8Array`.
+   *
+   * You can pass `text`, `bytes`, `blob`, or `stream` to `opts.format` to change the return type.
+   *
+   * @param path path to the file.
+   * @param opts connection options.
+   * @param [opts.format] format of the file content—`bytes`.
+   *
+   * @returns file content as `Uint8Array`
+   */
+  async readFile(
+    path: string,
+    opts?: VolumeApiOpts & { format: 'bytes' }
+  ): Promise<Uint8Array>
+  /**
+   * Read file content as a `Blob`.
+   *
+   * You can pass `text`, `bytes`, `blob`, or `stream` to `opts.format` to change the return type.
+   *
+   * @param path path to the file.
+   * @param opts connection options.
+   * @param [opts.format] format of the file content—`blob`.
+   *
+   * @returns file content as `Blob`
+   */
+  async readFile(
+    path: string,
+    opts?: VolumeApiOpts & { format: 'blob' }
+  ): Promise<Blob>
+  /**
+   * Read file content as a `ReadableStream`.
+   *
+   * You can pass `text`, `bytes`, `blob`, or `stream` to `opts.format` to change the return type.
+   *
+   * @param path path to the file.
+   * @param opts connection options.
+   * @param [opts.format] format of the file content—`stream`.
+   *
+   * @returns file content as `ReadableStream`
+   */
+  async readFile(
+    path: string,
+    opts?: VolumeApiOpts & { format: 'stream' }
+  ): Promise<ReadableStream<Uint8Array>>
+  async readFile(
+    path: string,
+    opts?: VolumeApiOpts & {
+      format?: 'text' | 'stream' | 'bytes' | 'blob'
+    }
+  ): Promise<unknown> {
+    const format = opts?.format ?? 'text'
+    const config = new ConnectionConfig(opts)
+    const client = new ApiClient(config)
+
+    const res = await client.api.GET('/volumes/{volumeID}/file', {
+      params: {
+        path: {
+          volumeID: this.volumeId,
+        },
+        query: {
+          path,
+        },
+      },
+      parseAs: format === 'bytes' ? 'arrayBuffer' : format,
+      signal: config.getSignal(opts?.requestTimeoutMs),
+    })
+
+    if (res.error?.code === 404) {
+      throw new NotFoundError(`Path ${path} not found`)
+    }
+
+    const err = handleApiError(res)
+    if (err) {
+      throw err
+    }
+
+    if (format === 'bytes') {
+      return new Uint8Array(res.data as ArrayBuffer)
+    }
+
+    // When the file is empty, res.data is parsed as `{}`. This is a workaround to return an empty string.
+    if (res.response.headers.get('content-length') === '0') {
+      return ''
+    }
+
+    return res.data
+  }
+
+  /**
+   * Write content to a file.
+   *
+   * Writing to a file that doesn't exist creates the file.
+   *
+   * Writing to a file that already exists overwrites the file.
+   *
+   * @param path path to the file.
+   * @param data data to write to the file. Data can be a string, `ArrayBuffer`, `Blob`, or `ReadableStream`.
+   * @param options file creation options.
+   * @param opts connection options.
+   *
+   * @returns information about the written file
+   */
+  async writeFile(
+    path: string,
+    data: string | ArrayBuffer | Blob | ReadableStream<Uint8Array>,
+    options?: VolumeWriteOptions,
+    opts?: VolumeApiOpts
+  ): Promise<void> {
+    const config = new ConnectionConfig(opts)
+    const client = new ApiClient(config)
+
+    // Convert data to Blob using the same utility as sandbox.files.write
+    const blob = await toBlob(data)
+
+    // Convert Blob to ArrayBuffer for the API request
+    // The API expects application/octet-stream
+    const arrayBuffer = await blob.arrayBuffer()
+
+    const res = await client.api.POST('/volumes/{volumeID}/file', {
+      params: {
+        path: {
+          volumeID: this.volumeId,
+        },
+        query: {
+          path,
+          userID: options?.userID,
+          groupID: options?.groupID,
+          mode: options?.mode,
+          force: options?.force,
+        },
+      },
+      body: arrayBuffer as any,
+      signal: config.getSignal(opts?.requestTimeoutMs),
+    })
+
+    if (res.error?.code === 404) {
+      throw new NotFoundError(`Path ${path} not found`)
+    }
+
+    const err = handleApiError(res)
+    if (err) {
+      throw err
+    }
+  }
+
+  /**
+   * Remove a file or directory.
+   *
+   * @param path path to the file or directory to remove.
+   * @param options removal options (currently unused, kept for API compatibility).
+   * @param opts connection options.
+   */
+  async remove(
+    path: string,
+    options?: VolumeRemoveOptions,
+    opts?: VolumeApiOpts
+  ): Promise<void> {
+    const config = new ConnectionConfig(opts)
+    const client = new ApiClient(config)
+
+    const res = await client.api.DELETE('/volumes/{volumeID}/file', {
+      params: {
+        path: {
+          volumeID: this.volumeId,
+        },
+        query: {
+          path,
+        },
+      },
+      signal: config.getSignal(opts?.requestTimeoutMs),
+    })
+
+    if (res.error?.code === 404) {
+      throw new NotFoundError(`Path ${path} not found`)
+    }
+
+    const err = handleApiError(res)
+    if (err) {
+      throw err
+    }
   }
 }

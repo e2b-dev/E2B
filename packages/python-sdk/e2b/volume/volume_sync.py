@@ -1,4 +1,5 @@
-from typing import List
+from typing import IO, Iterator, List, Literal, Optional, Union, overload
+from http import HTTPStatus
 
 from typing_extensions import Unpack
 
@@ -8,20 +9,29 @@ from e2b.api.client.api.volumes import (
     get_volumes,
     get_volumes_volume_id,
     delete_volumes_volume_id,
+    get_volumes_volume_id_stat,
 )
-from e2b.api.client.models import NewVolume as NewVolumeModel, Error
+from e2b.api.client.models import (
+    NewVolume as NewVolumeModel,
+    Error,
+    VolumeDirectoryListing,
+)
+from e2b.api.client.types import Response
 from e2b.api.client_sync import get_api_client
 from e2b.connection_config import ApiParams, ConnectionConfig
 from e2b.exceptions import NotFoundException
-from e2b.volume.types import VolumeInfo
+from e2b.volume.types import (
+    VolumeInfo,
+    VolumeEntryStat,
+)
 
 
 class Volume:
     """E2B Volume for persistent storage that can be mounted to sandboxes."""
 
-    def __init__(self, volume_id: str):
+    def __init__(self, volume_id: str, name: Optional[str] = None):
         self._volume_id = volume_id
-        self._name = volume_id
+        self._name = name if name is not None else volume_id
 
     @property
     def volume_id(self) -> str:
@@ -139,3 +149,308 @@ class Volume:
             raise handle_api_exception(res)
 
         return True
+
+    def list(self, path: str, **opts: Unpack[ApiParams]) -> List[VolumeEntryStat]:  # noqa: F811
+        """
+        List directory contents.
+
+        :param path: Path to the directory
+        :param opts: Connection options
+
+        :return: List of entries in the directory
+        """
+        config = ConnectionConfig(**opts)
+        api_client = get_api_client(config)
+
+        params = {"path": path}
+        response = api_client.get_httpx_client().request(
+            method="GET",
+            url=f"/volumes/{self._volume_id}/dir",
+            params=params,
+            timeout=config.get_request_timeout(opts.get("request_timeout")),
+        )
+
+        if response.status_code == 404:
+            raise NotFoundException(f"Path {path} not found")
+
+        if response.status_code >= 300:
+            api_response = Response(
+                status_code=HTTPStatus(response.status_code),
+                content=response.content,
+                headers=response.headers,
+                parsed=None,
+            )
+            err = handle_api_exception(api_response)
+            if err:
+                raise err
+
+        data = response.json()
+        listing = VolumeDirectoryListing.from_dict(data)
+
+        # Return the API model entries directly (they already have datetime objects)
+        # Handle case where files might be None or missing
+        return listing.files if listing.files else []
+
+    def make_dir(
+        self,
+        path: str,
+        user_id: Optional[int] = None,
+        group_id: Optional[int] = None,
+        mode: Optional[int] = None,
+        create_parents: Optional[bool] = None,
+        **opts: Unpack[ApiParams],
+    ) -> None:
+        """
+        Create a directory.
+
+        :param path: Path to the directory to create
+        :param user_id: User ID of the created directory
+        :param group_id: Group ID of the created directory
+        :param mode: Mode of the created directory
+        :param create_parents: Create parent directories if they don't exist
+        :param opts: Connection options
+        """
+        config = ConnectionConfig(**opts)
+        api_client = get_api_client(config)
+
+        params: dict[str, Union[str, int, bool, None]] = {
+            "path": path,
+            "userID": user_id,
+            "groupID": group_id,
+            "mode": mode,
+            "create_parents": create_parents,
+        }
+
+        response = api_client.get_httpx_client().request(
+            method="POST",
+            url=f"/volumes/{self._volume_id}/dir",
+            params=params,
+            timeout=config.get_request_timeout(opts.get("request_timeout")),
+        )
+
+        if response.status_code == 404:
+            raise NotFoundException(f"Path {path} not found")
+
+        if response.status_code >= 300:
+            api_response = Response(
+                status_code=HTTPStatus(response.status_code),
+                content=response.content,
+                headers=response.headers,
+                parsed=None,
+            )
+            err = handle_api_exception(api_response)
+            if err:
+                raise err
+
+    def get_entry_info(self, path: str, **opts: Unpack[ApiParams]) -> VolumeEntryStat:
+        """
+        Get information about a file or directory.
+
+        :param path: Path to the file or directory
+        :param opts: Connection options
+
+        :return: Information about the entry
+        """
+        config = ConnectionConfig(**opts)
+        api_client = get_api_client(config)
+
+        res = get_volumes_volume_id_stat.sync_detailed(
+            volume_id=self._volume_id,
+            path=path,
+            client=api_client,
+        )
+
+        if res.status_code == 404:
+            raise NotFoundException(f"Path {path} not found")
+
+        if res.status_code >= 300:
+            raise handle_api_exception(res)
+
+        if res.parsed is None:
+            raise Exception("Body of the request is None")
+
+        if isinstance(res.parsed, Error):
+            raise Exception(f"{res.parsed.message}: Request failed")
+
+        # Return the API model entry directly (it already has datetime objects)
+        return res.parsed
+
+    @overload
+    def read_file(
+        self,
+        path: str,
+        format: Literal["text"] = "text",
+        **opts: Unpack[ApiParams],
+    ) -> str: ...
+
+    @overload
+    def read_file(
+        self,
+        path: str,
+        format: Literal["bytes"],
+        **opts: Unpack[ApiParams],
+    ) -> bytes: ...
+
+    @overload
+    def read_file(
+        self,
+        path: str,
+        format: Literal["stream"],
+        **opts: Unpack[ApiParams],
+    ) -> Iterator[bytes]: ...
+
+    def read_file(
+        self,
+        path: str,
+        format: Literal["text", "bytes", "stream"] = "text",
+        **opts: Unpack[ApiParams],
+    ) -> Union[str, bytes, Iterator[bytes]]:
+        """
+        Read file content.
+
+        You can pass `text`, `bytes`, or `stream` to `format` to change the return type.
+
+        :param path: Path to the file
+        :param format: Format of the file content—`text` by default
+        :param opts: Connection options
+
+        :return: File content as string, bytes, or iterator of bytes
+        """
+        config = ConnectionConfig(**opts)
+        api_client = get_api_client(config)
+
+        params = {"path": path}
+        response = api_client.get_httpx_client().request(
+            method="GET",
+            url=f"/volumes/{self._volume_id}/file",
+            params=params,
+            timeout=config.get_request_timeout(opts.get("request_timeout")),
+        )
+
+        if response.status_code == 404:
+            raise NotFoundException(f"Path {path} not found")
+
+        if response.status_code >= 300:
+            api_response = Response(
+                status_code=HTTPStatus(response.status_code),
+                content=response.content,
+                headers=response.headers,
+                parsed=None,
+            )
+            err = handle_api_exception(api_response)
+            if err:
+                raise err
+
+        if format == "bytes":
+            return response.content
+        elif format == "stream":
+            return response.iter_bytes()
+        else:  # format == "text"
+            # When the file is empty, response.text might be empty. This is a workaround to return an empty string.
+            if response.headers.get("content-length") == "0":
+                return ""
+            return response.text
+
+    def write_file(
+        self,
+        path: str,
+        data: Union[str, bytes, IO[bytes]],
+        user_id: Optional[int] = None,
+        group_id: Optional[int] = None,
+        mode: Optional[int] = None,
+        force: Optional[bool] = None,
+        **opts: Unpack[ApiParams],
+    ) -> None:
+        """
+        Write content to a file.
+
+        Writing to a file that doesn't exist creates the file.
+        Writing to a file that already exists overwrites the file.
+
+        :param path: Path to the file
+        :param data: Data to write to the file. Data can be a string, bytes, or IO.
+        :param user_id: User ID of the created file
+        :param group_id: Group ID of the created file
+        :param mode: Mode of the created file
+        :param force: Force overwrite of an existing file
+        :param opts: Connection options
+        """
+        config = ConnectionConfig(**opts)
+        api_client = get_api_client(config)
+
+        # Convert data to bytes
+        if isinstance(data, str):
+            data_bytes = data.encode("utf-8")
+        elif isinstance(data, bytes):
+            data_bytes = data
+        elif hasattr(data, "read"):
+            data_bytes = data.read()
+        else:
+            raise ValueError(f"Unsupported data type: {type(data)}")
+
+        params: dict[str, Union[str, int, bool, None]] = {
+            "path": path,
+            "userID": user_id,
+            "groupID": group_id,
+            "mode": mode,
+            "force": force,
+        }
+
+        response = api_client.get_httpx_client().request(
+            method="POST",
+            url=f"/volumes/{self._volume_id}/file",
+            params=params,
+            content=data_bytes,
+            headers={"Content-Type": "application/octet-stream"},
+            timeout=config.get_request_timeout(opts.get("request_timeout")),
+        )
+
+        if response.status_code == 404:
+            raise NotFoundException(f"Path {path} not found")
+
+        if response.status_code >= 300:
+            api_response = Response(
+                status_code=HTTPStatus(response.status_code),
+                content=response.content,
+                headers=response.headers,
+                parsed=None,
+            )
+            err = handle_api_exception(api_response)
+            if err:
+                raise err
+
+    def remove(
+        self,
+        path: str,
+        **opts: Unpack[ApiParams],
+    ) -> None:
+        """
+        Remove a file or directory.
+
+        :param path: Path to the file or directory to remove
+        :param opts: Connection options
+        """
+        config = ConnectionConfig(**opts)
+        api_client = get_api_client(config)
+
+        params = {"path": path}
+        response = api_client.get_httpx_client().request(
+            method="DELETE",
+            url=f"/volumes/{self._volume_id}/file",
+            params=params,
+            timeout=config.get_request_timeout(opts.get("request_timeout")),
+        )
+
+        if response.status_code == 404:
+            raise NotFoundException(f"Path {path} not found")
+
+        if response.status_code >= 300:
+            api_response = Response(
+                status_code=HTTPStatus(response.status_code),
+                content=response.content,
+                headers=response.headers,
+                parsed=None,
+            )
+            err = handle_api_exception(api_response)
+            if err:
+                raise err
