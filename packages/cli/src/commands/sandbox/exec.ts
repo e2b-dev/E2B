@@ -49,8 +49,8 @@ export const execCommand = new commander.Command('exec')
         if (hasPipedStdin && !sandbox.commands.supportsStdinClose) {
           console.error(
             'e2b: Warning: Piped stdin is not supported by this sandbox version.\n' +
-              'e2b: Rebuild your template to pick up the latest sandbox version.\n' +
-              'e2b: Ignoring piped stdin.'
+            'e2b: Rebuild your template to pick up the latest sandbox version.\n' +
+            'e2b: Ignoring piped stdin.'
           )
         }
 
@@ -198,21 +198,14 @@ async function sendStdin(sandbox: Sandbox, pid: number): Promise<void> {
     }
 
     // Fail fast, and avoid leaking a process blocked on stdin.
-    await killProcessBestEffort(sandbox, pid)
+    try {
+      await sandbox.commands.kill(pid)
+    } catch (killErr) {
+      console.error(
+        'e2b: Failed to kill remote process after stdin EOF signaling failed.'
+      )
+      console.error(killErr)
+    }
     throw err
-  }
-}
-
-async function killProcessBestEffort(
-  sandbox: Sandbox,
-  pid: number
-): Promise<void> {
-  try {
-    await sandbox.commands.kill(pid)
-  } catch (killErr) {
-    console.error(
-      'e2b: Failed to kill remote process after stdin EOF signaling failed.'
-    )
-    console.error(killErr)
   }
 }
