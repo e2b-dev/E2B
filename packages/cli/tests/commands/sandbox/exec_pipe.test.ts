@@ -1,14 +1,13 @@
 import { randomBytes } from 'node:crypto'
 import { describe, expect, test } from 'vitest'
 import { Sandbox } from 'e2b'
-
 import {
   type CliRunResult,
   bufferToText,
+  isDebug,
   parseEnvInt,
-  resolveSandboxConfig,
   runCliWithPipedStdin,
-} from './integration_helpers'
+} from '../../setup'
 
 type PipeCase = {
   name: string
@@ -17,15 +16,14 @@ type PipeCase = {
   timeoutMs?: number
 }
 
-const { domain, apiKey, templateId, shouldSkip } = resolveSandboxConfig({
-  templateEnvVars: ['E2B_PIPE_TEMPLATE_ID', 'E2B_TEMPLATE_ID'],
-})
-const testIf = test.skipIf(shouldSkip)
+const integrationTest = test.skipIf(isDebug)
+const templateId =
+  process.env.E2B_PIPE_TEMPLATE_ID ||
+  process.env.E2B_TEMPLATE_ID ||
+  'base'
 const includeLargeBinary =
   process.env.E2B_PIPE_INTEGRATION_STRICT === '1' ||
   process.env.E2B_PIPE_INTEGRATION_BINARY === '1' ||
-  process.env.E2B_PIPE_SMOKE_STRICT === '1' || // Backward compatibility.
-  process.env.E2B_PIPE_SMOKE_BINARY === '1' || // Backward compatibility.
   process.env.STRICT === '1'
 const sandboxTimeoutMs = parseEnvInt('E2B_PIPE_SANDBOX_TIMEOUT_MS', 10_000)
 const testTimeoutMs = parseEnvInt('E2B_PIPE_TEST_TIMEOUT_MS', 60_000)
@@ -81,13 +79,11 @@ const largeBinaryCases: PipeCase[] = [
 ]
 
 describe('sandbox exec stdin piping (integration)', () => {
-  testIf(
+  integrationTest(
     'pipes stdin to remote command',
     { timeout: testTimeoutMs },
     async () => {
       const sandbox = await Sandbox.create(templateId, {
-        apiKey,
-        domain,
         timeoutMs: sandboxTimeoutMs,
       })
 
@@ -96,23 +92,18 @@ describe('sandbox exec stdin piping (integration)', () => {
           ? [...defaultCases, ...largeBinaryCases]
           : defaultCases
 
-        const probeCase: PipeCase = {
-          name: 'capability_probe_ascii_newline',
-          data: Buffer.from('hello\n'),
-          expectedBytes: 6,
-        }
-        const probe = await runExecPipe(sandbox.sandboxId, probeCase)
-        assertExecSucceeded(probeCase.name, probe)
+        // Probe with a simple case first — some environments (notably Windows
+        // CI) don't expose piped stdin so the remote byte count is 0.
+        const probe = cases[1] // ascii_newline
+        const probeResult = await runExecPipe(sandbox.sandboxId, probe)
+        assertExecSucceeded(probe.name, probeResult)
 
-        const probeStdout = bufferToText(probe.stdout).trim()
+        const probeStdout = bufferToText(probeResult.stdout).trim()
         if (probeStdout === '0') {
-          // Some environments (notably Windows CI) may not expose piped stdin
-          // in a way that our detector treats as piped. In that case stdin isn't
-          // forwarded and remote byte count is 0 without the legacy warning.
           return
         }
 
-        expect(probeStdout).toBe(String(probeCase.expectedBytes))
+        expect(probeStdout).toBe(String(probe.expectedBytes))
 
         for (const testCase of cases) {
           const result = await runExecPipe(sandbox.sandboxId, testCase)
@@ -141,8 +132,6 @@ function runExecPipe(
     ['sandbox', 'exec', sandboxId, '--', 'sh', '-lc', 'wc -c'],
     testCase.data,
     {
-      domain,
-      apiKey,
       timeoutMs: testCase.timeoutMs ?? defaultCmdTimeoutMs,
     }
   )

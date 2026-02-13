@@ -1,34 +1,36 @@
 import { afterAll, beforeAll, describe, expect, test } from 'vitest'
 import { Sandbox } from 'e2b'
-
 import {
   bufferToText,
+  isDebug,
   parseEnvInt,
-  resolveSandboxConfig,
   runCli,
   runCliWithPipedStdin,
-} from './integration_helpers'
+} from '../../setup'
 
-const { domain, apiKey, templateId, shouldSkip } = resolveSandboxConfig({
-  templateEnvVars: ['E2B_CLI_BACKEND_TEMPLATE_ID', 'E2B_TEMPLATE_ID'],
-})
-const testIf = test.skipIf(shouldSkip)
+const integrationTest = test.skipIf(isDebug)
+const templateId =
+  process.env.E2B_CLI_BACKEND_TEMPLATE_ID ||
+  process.env.E2B_TEMPLATE_ID ||
+  'base'
 const sandboxTimeoutMs = parseEnvInt(
   'E2B_CLI_BACKEND_SANDBOX_TIMEOUT_MS',
   20_000
 )
 const perTestTimeoutMs = parseEnvInt('E2B_CLI_BACKEND_TEST_TIMEOUT_MS', 30_000)
 const spawnTimeoutMs = perTestTimeoutMs
+const runCliInSandbox = (args: string[]) =>
+  runCli(args, { timeoutMs: spawnTimeoutMs })
+const runCliWithPipeInSandbox = (args: string[], input: Buffer) =>
+  runCliWithPipedStdin(args, input, { timeoutMs: spawnTimeoutMs })
 
 describe('sandbox cli backend integration', () => {
   let sandbox: Sandbox
 
   beforeAll(async () => {
-    if (shouldSkip) return
+    if (isDebug) return
 
     sandbox = await Sandbox.create(templateId, {
-      apiKey,
-      domain,
       timeoutMs: sandboxTimeoutMs,
     })
   }, 30_000)
@@ -45,36 +47,35 @@ describe('sandbox cli backend integration', () => {
     }
   }, 15_000)
 
-  testIf('list shows the sandbox', { timeout: perTestTimeoutMs }, async () => {
-    const listResult = runCli(['sandbox', 'list', '--format', 'json'], {
-      domain,
-      apiKey,
-      timeoutMs: spawnTimeoutMs,
-    })
-    expect(listResult.status).toBe(0)
-    expect(sandboxExistsInList(listResult.stdout, sandbox.sandboxId)).toBe(true)
-  })
+  integrationTest(
+    'list shows the sandbox',
+    { timeout: perTestTimeoutMs },
+    async () => {
+      const listResult = runCliInSandbox(['sandbox', 'list', '--format', 'json'])
+      expect(listResult.status).toBe(0)
+      expect(sandboxExistsInList(listResult.stdout, sandbox.sandboxId)).toBe(true)
+    }
+  )
 
-  testIf(
+  integrationTest(
     'exec runs a command without piped stdin',
     { timeout: perTestTimeoutMs },
     async () => {
-      const execResult = runCli([
+      const execResult = runCliInSandbox([
         'sandbox', 'exec', sandbox.sandboxId, '--', 'sh', '-lc', 'echo backend-non-pipe',
-      ], { domain, apiKey, timeoutMs: spawnTimeoutMs })
+      ])
       expect(execResult.status).toBe(0)
       expect(bufferToText(execResult.stdout)).toContain('backend-non-pipe')
     }
   )
 
-  testIf(
+  integrationTest(
     'exec runs a command with piped stdin',
     { timeout: perTestTimeoutMs },
     async () => {
-      const pipedExecResult = await runCliWithPipedStdin(
+      const pipedExecResult = await runCliWithPipeInSandbox(
         ['sandbox', 'exec', sandbox.sandboxId, '--', 'sh', '-lc', 'wc -c'],
-        Buffer.from('hello\n', 'utf8'),
-        { domain, apiKey, timeoutMs: spawnTimeoutMs }
+        Buffer.from('hello\n', 'utf8')
       )
       expect(pipedExecResult.status).toBe(0)
       const pipedStdout = bufferToText(pipedExecResult.stdout).trim()
@@ -84,45 +85,41 @@ describe('sandbox cli backend integration', () => {
     }
   )
 
-  testIf(
+  integrationTest(
     'logs returns successfully',
     { timeout: perTestTimeoutMs },
     async () => {
-      const logsResult = runCli([
+      const logsResult = runCliInSandbox([
         'sandbox',
         'logs',
         sandbox.sandboxId,
         '--format',
         'json',
-      ], { domain, apiKey, timeoutMs: spawnTimeoutMs })
+      ])
       expect(logsResult.status).toBe(0)
     }
   )
 
-  testIf(
+  integrationTest(
     'metrics returns successfully',
     { timeout: perTestTimeoutMs },
     async () => {
-      const metricsResult = runCli([
+      const metricsResult = runCliInSandbox([
         'sandbox',
         'metrics',
         sandbox.sandboxId,
         '--format',
         'json',
-      ], { domain, apiKey, timeoutMs: spawnTimeoutMs })
+      ])
       expect(metricsResult.status).toBe(0)
     }
   )
 
-  testIf(
+  integrationTest(
     'kill removes the sandbox',
     { timeout: perTestTimeoutMs },
     async () => {
-      const killResult = runCli(['sandbox', 'kill', sandbox.sandboxId], {
-        domain,
-        apiKey,
-        timeoutMs: spawnTimeoutMs,
-      })
+      const killResult = runCliInSandbox(['sandbox', 'kill', sandbox.sandboxId])
       expect(killResult.status).toBe(0)
 
       await assertSandboxNotListed(sandbox.sandboxId)
@@ -135,11 +132,7 @@ async function assertSandboxNotListed(sandboxId: string): Promise<void> {
   const delayMs = 500
 
   for (let i = 0; i < retries; i++) {
-    const listResult = runCli(['sandbox', 'list', '--format', 'json'], {
-      domain,
-      apiKey,
-      timeoutMs: spawnTimeoutMs,
-    })
+    const listResult = runCliInSandbox(['sandbox', 'list', '--format', 'json'])
     if (listResult.status === 0) {
       const exists = sandboxExistsInList(listResult.stdout, sandboxId)
       if (!exists) {
