@@ -85,35 +85,22 @@ describe('sandbox cli backend integration', () => {
     }
   )
 
-  integrationTest(
-    'logs returns successfully',
-    { timeout: perTestTimeoutMs },
-    async () => {
-      const logsResult = runCliInSandbox([
-        'sandbox',
-        'logs',
-        sandbox.sandboxId,
-        '--format',
-        'json',
-      ])
-      expect(logsResult.status).toBe(0)
-    }
-  )
-
-  integrationTest(
-    'metrics returns successfully',
-    { timeout: perTestTimeoutMs },
-    async () => {
-      const metricsResult = runCliInSandbox([
-        'sandbox',
-        'metrics',
-        sandbox.sandboxId,
-        '--format',
-        'json',
-      ])
-      expect(metricsResult.status).toBe(0)
-    }
-  )
+  for (const command of ['logs', 'metrics'] as const) {
+    integrationTest(
+      `${command} returns successfully`,
+      { timeout: perTestTimeoutMs },
+      async () => {
+        const result = runCliInSandbox([
+          'sandbox',
+          command,
+          sandbox.sandboxId,
+          '--format',
+          'json',
+        ])
+        expect(result.status).toBe(0)
+      }
+    )
+  }
 
   integrationTest(
     'kill removes the sandbox',
