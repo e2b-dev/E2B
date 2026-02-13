@@ -1,37 +1,43 @@
+import datetime
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import Any, TypeVar
+from uuid import UUID
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
+from dateutil.parser import isoparse
 
-if TYPE_CHECKING:
-    from ..models.volume_entry_stat import VolumeEntryStat
-
-
-T = TypeVar("T", bound="VolumeDirectoryListing")
+T = TypeVar("T", bound="TemplateTag")
 
 
 @_attrs_define
-class VolumeDirectoryListing:
+class TemplateTag:
     """
     Attributes:
-        files (list['VolumeEntryStat']):
+        build_id (UUID): Identifier of the build associated with this tag
+        created_at (datetime.datetime): Time when the tag was assigned
+        tag (str): The tag name
     """
 
-    files: list["VolumeEntryStat"]
+    build_id: UUID
+    created_at: datetime.datetime
+    tag: str
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        files = []
-        for files_item_data in self.files:
-            files_item = files_item_data.to_dict()
-            files.append(files_item)
+        build_id = str(self.build_id)
+
+        created_at = self.created_at.isoformat()
+
+        tag = self.tag
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
-                "files": files,
+                "buildID": build_id,
+                "createdAt": created_at,
+                "tag": tag,
             }
         )
 
@@ -39,22 +45,21 @@ class VolumeDirectoryListing:
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
-        from ..models.volume_entry_stat import VolumeEntryStat
-
         d = dict(src_dict)
-        files = []
-        _files = d.pop("files")
-        for files_item_data in _files:
-            files_item = VolumeEntryStat.from_dict(files_item_data)
+        build_id = UUID(d.pop("buildID"))
 
-            files.append(files_item)
+        created_at = isoparse(d.pop("createdAt"))
 
-        volume_directory_listing = cls(
-            files=files,
+        tag = d.pop("tag")
+
+        template_tag = cls(
+            build_id=build_id,
+            created_at=created_at,
+            tag=tag,
         )
 
-        volume_directory_listing.additional_properties = d
-        return volume_directory_listing
+        template_tag.additional_properties = d
+        return template_tag
 
     @property
     def additional_keys(self) -> list[str]:

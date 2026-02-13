@@ -71,13 +71,15 @@ from .template_build_status import TemplateBuildStatus
 from .template_legacy import TemplateLegacy
 from .template_request_response_v3 import TemplateRequestResponseV3
 from .template_step import TemplateStep
+from .template_tag import TemplateTag
 from .template_update_request import TemplateUpdateRequest
 from .template_update_response import TemplateUpdateResponse
 from .template_with_builds import TemplateWithBuilds
 from .update_team_api_key import UpdateTeamAPIKey
 from .volume import Volume
-from .volume_directory_item import VolumeDirectoryItem
 from .volume_directory_listing import VolumeDirectoryListing
+from .volume_entry_stat import VolumeEntryStat
+from .volume_entry_stat_type import VolumeEntryStatType
 
 __all__ = (
     "AdminSandboxKillResult",
@@ -149,11 +151,13 @@ __all__ = (
     "TemplateLegacy",
     "TemplateRequestResponseV3",
     "TemplateStep",
+    "TemplateTag",
     "TemplateUpdateRequest",
     "TemplateUpdateResponse",
     "TemplateWithBuilds",
     "UpdateTeamAPIKey",
     "Volume",
-    "VolumeDirectoryItem",
     "VolumeDirectoryListing",
+    "VolumeEntryStat",
+    "VolumeEntryStatType",
 )
