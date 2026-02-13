@@ -573,6 +573,16 @@ class Sandbox(SandboxApi):
         elif not template:
             template = cls.default_template
 
+        transformed_mounts = None
+        if volume_mounts:
+            transformed_mounts = [
+                SandboxVolumeMountAPI(
+                    name=vol.name if isinstance(vol, Volume) else vol,
+                    path=path,
+                )
+                for path, vol in volume_mounts.items()
+            ]
+
         sandbox = cls._create(
             template=template,
             auto_pause=auto_pause,
@@ -582,13 +592,7 @@ class Sandbox(SandboxApi):
             secure=secure,
             allow_internet_access=allow_internet_access,
             mcp=mcp,
-            volume_mounts=[
-                SandboxVolumeMountAPI(
-                    name=vol.name if isinstance(vol, Volume) else vol,
-                    path=path,
-                )
-                for path, vol in volume_mounts.items()
-            ],
+            volume_mounts=transformed_mounts,
             **opts,
         )
 
