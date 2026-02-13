@@ -108,6 +108,10 @@ from .template.types import (
 from .template_async.main import AsyncTemplate
 from .template_sync.main import Template
 
+from .volume.volume_sync import Volume
+from .volume.volume_async import AsyncVolume
+from .volume.types import VolumeInfo, VolumeEntryStat, VolumeFileType, VolumeWriteInfo
+
 __all__ = [
     # API
     "ApiClient",
@@ -190,4 +194,11 @@ __all__ = [
     "McpServer",
     "GitHubMcpServer",
     "GitHubMcpServerConfig",
+    # Volume
+    "Volume",
+    "AsyncVolume",
+    "VolumeInfo",
+    "VolumeEntryStat",
+    "VolumeFileType",
+    "VolumeWriteInfo",
 ]

@@ -199,7 +199,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description Get sandbox logs */
+        /**
+         * @deprecated
+         * @description Get sandbox logs. Use /v2/sandboxes/{sandboxID}/logs instead.
+         */
         get: {
             parameters: {
                 query?: {
@@ -1023,6 +1026,48 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/templates/{templateID}/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description List all tags for a template */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    templateID: components["parameters"]["templateID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Successfully returned the template tags */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TemplateTag"][];
+                    };
+                };
+                401: components["responses"]["401"];
+                403: components["responses"]["403"];
+                404: components["responses"]["404"];
+                500: components["responses"]["500"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/templates/aliases/{alias}": {
         parameters: {
             query?: never;
@@ -1172,6 +1217,54 @@ export interface paths {
                 };
                 400: components["responses"]["400"];
                 401: components["responses"]["401"];
+                500: components["responses"]["500"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/sandboxes/{sandboxID}/logs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Get sandbox logs */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Starting timestamp of the logs that should be returned in milliseconds */
+                    cursor?: number;
+                    /** @description Direction of the logs that should be returned */
+                    direction?: components["schemas"]["LogsDirection"];
+                    /** @description Maximum number of logs that should be returned */
+                    limit?: number;
+                };
+                header?: never;
+                path: {
+                    sandboxID: components["parameters"]["sandboxID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Successfully returned the sandbox logs */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SandboxLogsV2Response"];
+                    };
+                };
+                401: components["responses"]["401"];
+                404: components["responses"]["404"];
                 500: components["responses"]["500"];
             };
         };
@@ -1354,6 +1447,421 @@ export interface paths {
                 500: components["responses"]["500"];
             };
         };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/volumes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description List all team volumes */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Successfully listed all team volumes */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Volume"][];
+                    };
+                };
+                401: components["responses"]["401"];
+                500: components["responses"]["500"];
+            };
+        };
+        put?: never;
+        /** @description Create a new team volume */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["NewVolume"];
+                };
+            };
+            responses: {
+                /** @description Successfully created a new team volume */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Volume"];
+                    };
+                };
+                400: components["responses"]["400"];
+                401: components["responses"]["401"];
+                500: components["responses"]["500"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/volumes/{volumeID}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Get team volume info */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    volumeID: components["parameters"]["volumeID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Successfully retrieved a team volume */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Volume"];
+                    };
+                };
+                401: components["responses"]["401"];
+                404: components["responses"]["404"];
+                500: components["responses"]["500"];
+            };
+        };
+        put?: never;
+        post?: never;
+        /** @description Delete a team volume */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    volumeID: components["parameters"]["volumeID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Successfully deleted a team volume */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                401: components["responses"]["401"];
+                404: components["responses"]["404"];
+                500: components["responses"]["500"];
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/volumes/{volumeID}/dir": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description List directory contents */
+        get: {
+            parameters: {
+                query: {
+                    path: components["parameters"]["path"];
+                };
+                header?: never;
+                path: {
+                    volumeID: components["parameters"]["volumeID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Successfully retrieved a directory listing */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["VolumeDirectoryListing"];
+                    };
+                };
+                /** @description Invalid path provided */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description path not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                500: components["responses"]["500"];
+            };
+        };
+        put?: never;
+        /** @description Create a directory */
+        post: {
+            parameters: {
+                query: {
+                    /** @description Force overwrite of an existing directory */
+                    create_parents?: boolean;
+                    /** @description Group ID of the created directory */
+                    groupID?: number;
+                    /** @description Mode of the created directory */
+                    mode?: number;
+                    path: components["parameters"]["path"];
+                    /** @description User ID of the created directory */
+                    userID?: number;
+                };
+                header?: never;
+                path: {
+                    volumeID: components["parameters"]["volumeID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Successfully created a directory */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description path not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                500: components["responses"]["500"];
+            };
+        };
+        /** @description Delete a directory */
+        delete: {
+            parameters: {
+                query: {
+                    path: components["parameters"]["path"];
+                    /** @description Delete all files and directories recursively */
+                    recursive?: boolean;
+                };
+                header?: never;
+                path: {
+                    volumeID: components["parameters"]["volumeID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Successfully deleted a directory */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description path not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                500: components["responses"]["500"];
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/volumes/{volumeID}/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Download file */
+        get: {
+            parameters: {
+                query: {
+                    path: components["parameters"]["path"];
+                };
+                header?: never;
+                path: {
+                    volumeID: components["parameters"]["volumeID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Successfully downloaded a file */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/octet-stream": string;
+                    };
+                };
+                /** @description path not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                500: components["responses"]["500"];
+            };
+        };
+        put?: never;
+        /** @description Create file */
+        post: {
+            parameters: {
+                query: {
+                    /** @description Force overwrite of an existing file */
+                    force?: boolean;
+                    /** @description Group ID of the created file */
+                    groupID?: number;
+                    /** @description Mode of the created file */
+                    mode?: number;
+                    path: components["parameters"]["path"];
+                    /** @description User ID of the created file */
+                    userID?: number;
+                };
+                header?: never;
+                path: {
+                    volumeID: components["parameters"]["volumeID"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/octet-stream": string;
+                };
+            };
+            responses: {
+                /** @description Successfully created a file */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description path not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                500: components["responses"]["500"];
+            };
+        };
+        /** @description Delete a file */
+        delete: {
+            parameters: {
+                query: {
+                    path: components["parameters"]["path"];
+                };
+                header?: never;
+                path: {
+                    volumeID: components["parameters"]["volumeID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Successfully deleted a file */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description path not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                500: components["responses"]["500"];
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/volumes/{volumeID}/stat": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Get path information */
+        get: {
+            parameters: {
+                query: {
+                    path: components["parameters"]["path"];
+                };
+                header?: never;
+                path: {
+                    volumeID: components["parameters"]["volumeID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Successfully retrieved path information */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["VolumeEntryStat"];
+                    };
+                };
+                404: components["responses"]["404"];
+            };
+        };
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1575,6 +2083,7 @@ export interface components {
             state: components["schemas"]["SandboxState"];
             /** @description Identifier of the template from which is the sandbox created */
             templateID: string;
+            volumeMounts: components["schemas"]["SandboxVolumeMount"][];
         };
         /**
          * @description State of the sandbox
@@ -1638,6 +2147,7 @@ export interface components {
              * @default false
              */
             autoPause?: boolean;
+            autoResume?: components["schemas"]["SandboxAutoResumeConfig"];
             envVars?: components["schemas"]["EnvVars"];
             mcp?: components["schemas"]["Mcp"];
             metadata?: components["schemas"]["SandboxMetadata"];
@@ -1652,9 +2162,14 @@ export interface components {
              * @default 15
              */
             timeout?: number;
+            volumeMounts?: components["schemas"]["SandboxVolumeMount"][];
         };
         NewTeamAPIKey: {
             /** @description Name of the API key */
+            name: string;
+        };
+        NewVolume: {
+            /** @description Name of the volume */
             name: string;
         };
         Node: {
@@ -1812,6 +2327,16 @@ export interface components {
             /** @description Token required for accessing sandbox via proxy. */
             trafficAccessToken?: string | null;
         };
+        /** @description Auto-resume configuration for paused sandboxes. Default is off. */
+        SandboxAutoResumeConfig: {
+            policy: components["schemas"]["SandboxAutoResumePolicy"];
+        };
+        /**
+         * @description Auto-resume policy for paused sandboxes. Default is off.
+         * @default off
+         * @enum {string}
+         */
+        SandboxAutoResumePolicy: "any" | "off";
         SandboxDetail: {
             /** @description Alias of the template */
             alias?: string;
@@ -1844,6 +2369,7 @@ export interface components {
             state: components["schemas"]["SandboxState"];
             /** @description Identifier of the template from which is the sandbox created */
             templateID: string;
+            volumeMounts: components["schemas"]["SandboxVolumeMount"][];
         };
         SandboxesWithMetrics: {
             sandboxes: {
@@ -1878,6 +2404,13 @@ export interface components {
             logEntries: components["schemas"]["SandboxLogEntry"][];
             /** @description Logs of the sandbox */
             logs: components["schemas"]["SandboxLog"][];
+        };
+        SandboxLogsV2Response: {
+            /**
+             * @description Sandbox logs structured
+             * @default []
+             */
+            logs: components["schemas"]["SandboxLogEntry"][];
         };
         SandboxMetadata: {
             [key: string]: string;
@@ -1944,6 +2477,12 @@ export interface components {
          * @enum {string}
          */
         SandboxState: "running" | "paused";
+        SandboxVolumeMount: {
+            /** @description Name of the volume */
+            name: string;
+            /** @description Path of the volume */
+            path: string;
+        };
         Team: {
             /** @description API key for the team */
             apiKey: string;
@@ -2261,6 +2800,20 @@ export interface components {
             /** @description Type of the step */
             type: string;
         };
+        TemplateTag: {
+            /**
+             * Format: uuid
+             * @description Identifier of the build associated with this tag
+             */
+            buildID: string;
+            /**
+             * Format: date-time
+             * @description Time when the tag was assigned
+             */
+            createdAt: string;
+            /** @description The tag name */
+            tag: string;
+        };
         TemplateUpdateRequest: {
             /** @description Whether the template is public or only accessible by the team */
             public?: boolean;
@@ -2307,6 +2860,34 @@ export interface components {
         UpdateTeamAPIKey: {
             /** @description New name for the API key */
             name: string;
+        };
+        Volume: {
+            /** @description Name of the volume */
+            name: string;
+            /** @description ID of the volume */
+            volumeID: string;
+        };
+        VolumeDirectoryListing: {
+            files: components["schemas"]["VolumeEntryStat"][];
+        };
+        VolumeEntryStat: {
+            /** Format: date-time */
+            ctime: string;
+            /** Format: uint32 */
+            group: number;
+            /** Format: uint32 */
+            mode: number;
+            /** Format: date-time */
+            mtime: string;
+            name: string;
+            /** Format: uint32 */
+            owner: number;
+            path: string;
+            /** Format: int64 */
+            size: number;
+            target?: string;
+            /** @enum {string} */
+            type: "unknown" | "file" | "directory" | "symlink";
         };
     };
     responses: {
@@ -2374,10 +2955,12 @@ export interface components {
         paginationLimit: number;
         /** @description Cursor to start the list from */
         paginationNextToken: string;
+        path: string;
         sandboxID: string;
         tag: string;
         teamID: string;
         templateID: string;
+        volumeID: string;
     };
     requestBodies: never;
     headers: never;

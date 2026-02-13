@@ -6,27 +6,24 @@ import httpx
 from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.error import Error
-from ...models.sandbox_logs import SandboxLogs
-from ...types import UNSET, Response, Unset
+from ...models.volume_entry_stat import VolumeEntryStat
+from ...types import UNSET, Response
 
 
 def _get_kwargs(
-    sandbox_id: str,
+    volume_id: str,
     *,
-    start: Union[Unset, int] = UNSET,
-    limit: Union[Unset, int] = 1000,
+    path: str,
 ) -> dict[str, Any]:
     params: dict[str, Any] = {}
 
-    params["start"] = start
-
-    params["limit"] = limit
+    params["path"] = path
 
     params = {k: v for k, v in params.items() if v is not UNSET and v is not None}
 
     _kwargs: dict[str, Any] = {
         "method": "get",
-        "url": f"/sandboxes/{sandbox_id}/logs",
+        "url": f"/volumes/{volume_id}/stat",
         "params": params,
     }
 
@@ -35,23 +32,15 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Optional[Union[Error, SandboxLogs]]:
+) -> Optional[Union[Error, VolumeEntryStat]]:
     if response.status_code == 200:
-        response_200 = SandboxLogs.from_dict(response.json())
+        response_200 = VolumeEntryStat.from_dict(response.json())
 
         return response_200
-    if response.status_code == 401:
-        response_401 = Error.from_dict(response.json())
-
-        return response_401
     if response.status_code == 404:
         response_404 = Error.from_dict(response.json())
 
         return response_404
-    if response.status_code == 500:
-        response_500 = Error.from_dict(response.json())
-
-        return response_500
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
     else:
@@ -60,7 +49,7 @@ def _parse_response(
 
 def _build_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Response[Union[Error, SandboxLogs]]:
+) -> Response[Union[Error, VolumeEntryStat]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -70,31 +59,28 @@ def _build_response(
 
 
 def sync_detailed(
-    sandbox_id: str,
+    volume_id: str,
     *,
     client: AuthenticatedClient,
-    start: Union[Unset, int] = UNSET,
-    limit: Union[Unset, int] = 1000,
-) -> Response[Union[Error, SandboxLogs]]:
-    """Get sandbox logs. Use /v2/sandboxes/{sandboxID}/logs instead.
+    path: str,
+) -> Response[Union[Error, VolumeEntryStat]]:
+    """Get path information
 
     Args:
-        sandbox_id (str):
-        start (Union[Unset, int]):
-        limit (Union[Unset, int]):  Default: 1000.
+        volume_id (str):
+        path (str):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Error, SandboxLogs]]
+        Response[Union[Error, VolumeEntryStat]]
     """
 
     kwargs = _get_kwargs(
-        sandbox_id=sandbox_id,
-        start=start,
-        limit=limit,
+        volume_id=volume_id,
+        path=path,
     )
 
     response = client.get_httpx_client().request(
@@ -105,61 +91,55 @@ def sync_detailed(
 
 
 def sync(
-    sandbox_id: str,
+    volume_id: str,
     *,
     client: AuthenticatedClient,
-    start: Union[Unset, int] = UNSET,
-    limit: Union[Unset, int] = 1000,
-) -> Optional[Union[Error, SandboxLogs]]:
-    """Get sandbox logs. Use /v2/sandboxes/{sandboxID}/logs instead.
+    path: str,
+) -> Optional[Union[Error, VolumeEntryStat]]:
+    """Get path information
 
     Args:
-        sandbox_id (str):
-        start (Union[Unset, int]):
-        limit (Union[Unset, int]):  Default: 1000.
+        volume_id (str):
+        path (str):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Error, SandboxLogs]
+        Union[Error, VolumeEntryStat]
     """
 
     return sync_detailed(
-        sandbox_id=sandbox_id,
+        volume_id=volume_id,
         client=client,
-        start=start,
-        limit=limit,
+        path=path,
     ).parsed
 
 
 async def asyncio_detailed(
-    sandbox_id: str,
+    volume_id: str,
     *,
     client: AuthenticatedClient,
-    start: Union[Unset, int] = UNSET,
-    limit: Union[Unset, int] = 1000,
-) -> Response[Union[Error, SandboxLogs]]:
-    """Get sandbox logs. Use /v2/sandboxes/{sandboxID}/logs instead.
+    path: str,
+) -> Response[Union[Error, VolumeEntryStat]]:
+    """Get path information
 
     Args:
-        sandbox_id (str):
-        start (Union[Unset, int]):
-        limit (Union[Unset, int]):  Default: 1000.
+        volume_id (str):
+        path (str):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Error, SandboxLogs]]
+        Response[Union[Error, VolumeEntryStat]]
     """
 
     kwargs = _get_kwargs(
-        sandbox_id=sandbox_id,
-        start=start,
-        limit=limit,
+        volume_id=volume_id,
+        path=path,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -168,32 +148,29 @@ async def asyncio_detailed(
 
 
 async def asyncio(
-    sandbox_id: str,
+    volume_id: str,
     *,
     client: AuthenticatedClient,
-    start: Union[Unset, int] = UNSET,
-    limit: Union[Unset, int] = 1000,
-) -> Optional[Union[Error, SandboxLogs]]:
-    """Get sandbox logs. Use /v2/sandboxes/{sandboxID}/logs instead.
+    path: str,
+) -> Optional[Union[Error, VolumeEntryStat]]:
+    """Get path information
 
     Args:
-        sandbox_id (str):
-        start (Union[Unset, int]):
-        limit (Union[Unset, int]):  Default: 1000.
+        volume_id (str):
+        path (str):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Error, SandboxLogs]
+        Union[Error, VolumeEntryStat]
     """
 
     return (
         await asyncio_detailed(
-            sandbox_id=sandbox_id,
+            volume_id=volume_id,
             client=client,
-            start=start,
-            limit=limit,
+            path=path,
         )
     ).parsed
