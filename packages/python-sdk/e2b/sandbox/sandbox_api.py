@@ -102,6 +102,8 @@ class SandboxInfo:
     """Sandbox Memory size in MiB."""
     envd_version: str
     """Envd version."""
+    volume_mounts: List[Dict[str, str]]
+    """Volume mounts for the sandbox."""
     _envd_access_token: Optional[str]
     """Envd access token."""
 
@@ -127,6 +129,9 @@ class SandboxInfo:
             cpu_count=sandbox.cpu_count,
             memory_mb=sandbox.memory_mb,
             envd_version=sandbox.envd_version,
+            volume_mounts=[
+                {"name": vm.name, "path": vm.path} for vm in sandbox.volume_mounts
+            ],
             _envd_access_token=envd_access_token,
         )
 
