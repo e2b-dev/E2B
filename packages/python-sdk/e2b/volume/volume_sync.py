@@ -384,7 +384,11 @@ class Volume:
         elif isinstance(data, bytes):
             data_bytes = data
         elif hasattr(data, "read"):
-            data_bytes = data.read()
+            content = data.read()
+            if isinstance(content, bytes):
+                data_bytes = content
+            else:
+                data_bytes = content.encode("utf-8")
         else:
             raise ValueError(f"Unsupported data type: {type(data)}")
 
