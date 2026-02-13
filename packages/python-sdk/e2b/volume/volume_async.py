@@ -150,7 +150,9 @@ class AsyncVolume:
 
         return True
 
-    async def list_items(self, path: str, **opts: Unpack[ApiParams]) -> List[VolumeEntryStat]:
+    async def list_items(
+        self, path: str, **opts: Unpack[ApiParams]
+    ) -> List[VolumeEntryStat]:
         """
         List directory contents.
 
