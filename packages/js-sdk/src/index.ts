@@ -84,7 +84,7 @@ export type {
 } from './sandbox/git'
 
 export { Volume, VolumeBase } from './volume'
-export type { VolumeInfo, VolumeApiOpts } from './volume'
+export type { VolumeInfo, VolumeApiOpts, VolumeEntryStat, VolumeFileType } from './volume'
 
 export { Sandbox }
 import { Sandbox } from './sandbox'
