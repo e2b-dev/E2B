@@ -49,8 +49,8 @@ export const execCommand = new commander.Command('exec')
         if (hasPipedStdin && !sandbox.commands.supportsStdinClose) {
           console.error(
             'e2b: Warning: Piped stdin is not supported by this sandbox version.\n' +
-            'e2b: Rebuild your template to pick up the latest sandbox version.\n' +
-            'e2b: Ignoring piped stdin.'
+              'e2b: Rebuild your template to pick up the latest sandbox version.\n' +
+              'e2b: Ignoring piped stdin.'
           )
         }
 
