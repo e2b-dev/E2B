@@ -1739,29 +1739,46 @@ components:
       required:
         - name
 
-    VolumeDirectoryItem:
+    VolumeEntryStat:
       type: object
       properties:
         name:
           type: string
-          description: Name of the file or directory
-        isDirectory:
-          type: boolean
-          description: Whether the item is a directory
-        mode:
-          type: integer
-          description: File mode
+        type:
+          type: string
+          enum: [unknown, file, directory, symlink]
+        path:
+          type: string
         size:
           type: integer
-          description: File size in bytes
-        ctime:
-          type: string
-          format: date-time
-          description: Create time of the file or directory
+          format: int64
+        mode:
+          type: integer
+          format: uint32
+        owner:
+          type: integer
+          format: uint32
+        group:
+          type: integer
+          format: uint32
         mtime:
           type: string
           format: date-time
-          description: Last modification time of the file or directory
+        ctime:
+          type: string
+          format: date-time
+        target:
+          type: string
+      required:
+        - name
+        - type
+        - path
+        - size
+        - mode
+        - owner
+        - group
+        - mtime
+        - ctime
 
     VolumeDirectoryListing:
       type: object
@@ -1769,7 +1786,9 @@ components:
         files:
           type: array
           items:
-            $ref: "#/components/schemas/VolumeDirectoryItem"
+            $ref: "#/components/schemas/VolumeEntryStat"
+      required:
+        - files
 
 tags:
   - name: templates
@@ -3293,10 +3312,32 @@ paths:
         "500":
           $ref: "#/components/responses/500"
 
+  /volumes/{volumeID}/stat:
+    get:
+      description: Get path information
+      tags: [volumes]
+      security:
+        - AccessTokenAuth: []
+        - ApiKeyAuth: []
+        - Supabase1TokenAuth: []
+          Supabase2TeamAuth: []
+      parameters:
+        - $ref: "#/components/parameters/volumeID"
+        - $ref: "#/components/parameters/path"
+      responses:
+        "200":
+          description: Successfully retrieved path information
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VolumeEntryStat"
+        "404":
+          $ref: "#/components/responses/404"
+
   /volumes/{volumeID}/dir:
     get:
       description: List directory contents
-      tags: [volume_content]
+      tags: [volumes]
       security:
         - AccessTokenAuth: []
         - ApiKeyAuth: []
@@ -3312,13 +3353,15 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/VolumeDirectoryListing"
+        "400":
+          description: "Invalid path provided"
         "404":
           description: "path not found"
         "500":
-          $ref: "#/components/responses/500"        
+          $ref: "#/components/responses/500"
     post:
-      description: List directory contents
-      tags: [volume_content]
+      description: "Create a directory"
+      tags: [volumes]
       security:
         - AccessTokenAuth: []
         - ApiKeyAuth: []
@@ -3327,16 +3370,39 @@ paths:
       parameters:
         - $ref: "#/components/parameters/volumeID"
         - $ref: "#/components/parameters/path"
+        - name: userID
+          in: query
+          description: User ID of the created directory
+          schema:
+            type: integer
+            format: uint32
+        - name: groupID
+          in: query
+          description: Group ID of the created directory
+          schema:
+            type: integer
+            format: uint32
+        - name: mode
+          in: query
+          description: Mode of the created directory
+          schema:
+            type: integer
+            format: uint32
+        - name: create_parents
+          in: query
+          description: Force overwrite of an existing directory
+          schema:
+            type: boolean
       responses:
         "204":
           description: "Successfully created a directory"
         "404":
           description: "path not found"
         "500":
-          $ref: "#/components/responses/500"        
+          $ref: "#/components/responses/500"
     delete:
       description: Delete a directory
-      tags: [volume_content]
+      tags: [volumes]
       security:
         - AccessTokenAuth: []
         - ApiKeyAuth: []
@@ -3345,6 +3411,11 @@ paths:
       parameters:
         - $ref: "#/components/parameters/volumeID"
         - $ref: "#/components/parameters/path"
+        - name: recursive
+          in: query
+          description: Delete all files and directories recursively
+          schema:
+            type: boolean
       responses:
         "204":
           description: "Successfully deleted a directory"
@@ -3356,7 +3427,7 @@ paths:
   /volumes/{volumeID}/file:
     get:
       description: Download file
-      tags: [volume_content]
+      tags: [volumes]
       security:
         - AccessTokenAuth: []
         - ApiKeyAuth: []
@@ -3379,7 +3450,7 @@ paths:
           $ref: "#/components/responses/500"
     post:
       description: Create file
-      tags: [volume_content]
+      tags: [volumes]
       security:
         - AccessTokenAuth: []
         - ApiKeyAuth: []
@@ -3388,6 +3459,29 @@ paths:
       parameters:
         - $ref: "#/components/parameters/volumeID"
         - $ref: "#/components/parameters/path"
+        - name: userID
+          in: query
+          description: User ID of the created file
+          schema:
+            type: integer
+            format: uint32
+        - name: groupID
+          in: query
+          description: Group ID of the created file
+          schema:
+            type: integer
+            format: uint32
+        - name: mode
+          in: query
+          description: Mode of the created file
+          schema:
+            type: integer
+            format: uint32
+        - name: force
+          in: query
+          description: Force overwrite of an existing file
+          schema:
+            type: boolean
       requestBody:
         required: true
         content:
@@ -3396,7 +3490,7 @@ paths:
               type: string
               format: binary
       responses:
-        "200":
+        "204":
           description: "Successfully created a file"
         "404":
           description: "path not found"
@@ -3404,7 +3498,7 @@ paths:
           $ref: "#/components/responses/500"
     delete:
       description: Delete a file
-      tags: [volume_content]
+      tags: [volumes]
       security:
         - AccessTokenAuth: []
         - ApiKeyAuth: []
