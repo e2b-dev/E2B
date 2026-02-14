@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import datetime
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -18,9 +20,9 @@ class TemplateWithBuilds:
     """
     Attributes:
         aliases (list[str]): Aliases of the template
-        builds (list['TemplateBuild']): List of builds for the template
+        builds (list[TemplateBuild]): List of builds for the template
         created_at (datetime.datetime): Time when the template was created
-        last_spawned_at (Union[None, datetime.datetime]): Time when the template was last used
+        last_spawned_at (datetime.datetime | None): Time when the template was last used
         names (list[str]): Names of the template (namespace/alias format when namespaced)
         public (bool): Whether the template is public or only accessible by the team
         spawn_count (int): Number of times the template was used
@@ -29,9 +31,9 @@ class TemplateWithBuilds:
     """
 
     aliases: list[str]
-    builds: list["TemplateBuild"]
+    builds: list[TemplateBuild]
     created_at: datetime.datetime
-    last_spawned_at: Union[None, datetime.datetime]
+    last_spawned_at: datetime.datetime | None
     names: list[str]
     public: bool
     spawn_count: int
@@ -49,7 +51,7 @@ class TemplateWithBuilds:
 
         created_at = self.created_at.isoformat()
 
-        last_spawned_at: Union[None, str]
+        last_spawned_at: None | str
         if isinstance(self.last_spawned_at, datetime.datetime):
             last_spawned_at = self.last_spawned_at.isoformat()
         else:
@@ -99,7 +101,7 @@ class TemplateWithBuilds:
 
         created_at = isoparse(d.pop("createdAt"))
 
-        def _parse_last_spawned_at(data: object) -> Union[None, datetime.datetime]:
+        def _parse_last_spawned_at(data: object) -> datetime.datetime | None:
             if data is None:
                 return data
             try:
@@ -108,9 +110,9 @@ class TemplateWithBuilds:
                 last_spawned_at_type_0 = isoparse(data)
 
                 return last_spawned_at_type_0
-            except:  # noqa: E722
+            except (TypeError, ValueError, AttributeError, KeyError):
                 pass
-            return cast(Union[None, datetime.datetime], data)
+            return cast(datetime.datetime | None, data)
 
         last_spawned_at = _parse_last_spawned_at(d.pop("lastSpawnedAt"))
 

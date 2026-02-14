@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, TypeVar
 
@@ -16,12 +18,12 @@ T = TypeVar("T", bound="SandboxLogs")
 class SandboxLogs:
     """
     Attributes:
-        log_entries (list['SandboxLogEntry']): Structured logs of the sandbox
-        logs (list['SandboxLog']): Logs of the sandbox
+        log_entries (list[SandboxLogEntry]): Structured logs of the sandbox
+        logs (list[SandboxLog]): Logs of the sandbox
     """
 
-    log_entries: list["SandboxLogEntry"]
-    logs: list["SandboxLog"]
+    log_entries: list[SandboxLogEntry]
+    logs: list[SandboxLog]
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:

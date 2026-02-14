@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -19,26 +21,26 @@ class NewSandbox:
     """
     Attributes:
         template_id (str): Identifier of the required template
-        allow_internet_access (Union[Unset, bool]): Allow sandbox to access the internet. When set to false, it behaves
-            the same as specifying denyOut to 0.0.0.0/0 in the network config.
-        auto_pause (Union[Unset, bool]): Automatically pauses the sandbox after the timeout Default: False.
-        env_vars (Union[Unset, Any]):
-        mcp (Union['McpType0', None, Unset]): MCP configuration for the sandbox
-        metadata (Union[Unset, Any]):
-        network (Union[Unset, SandboxNetworkConfig]):
-        secure (Union[Unset, bool]): Secure all system communication with sandbox
-        timeout (Union[Unset, int]): Time to live for the sandbox in seconds. Default: 15.
+        allow_internet_access (bool | Unset): Allow sandbox to access the internet. When set to false, it behaves the
+            same as specifying denyOut to 0.0.0.0/0 in the network config.
+        auto_pause (bool | Unset): Automatically pauses the sandbox after the timeout Default: False.
+        env_vars (Any | Unset):
+        mcp (McpType0 | None | Unset): MCP configuration for the sandbox
+        metadata (Any | Unset):
+        network (SandboxNetworkConfig | Unset):
+        secure (bool | Unset): Secure all system communication with sandbox
+        timeout (int | Unset): Time to live for the sandbox in seconds. Default: 15.
     """
 
     template_id: str
-    allow_internet_access: Union[Unset, bool] = UNSET
-    auto_pause: Union[Unset, bool] = False
-    env_vars: Union[Unset, Any] = UNSET
-    mcp: Union["McpType0", None, Unset] = UNSET
-    metadata: Union[Unset, Any] = UNSET
-    network: Union[Unset, "SandboxNetworkConfig"] = UNSET
-    secure: Union[Unset, bool] = UNSET
-    timeout: Union[Unset, int] = 15
+    allow_internet_access: bool | Unset = UNSET
+    auto_pause: bool | Unset = False
+    env_vars: Any | Unset = UNSET
+    mcp: McpType0 | None | Unset = UNSET
+    metadata: Any | Unset = UNSET
+    network: SandboxNetworkConfig | Unset = UNSET
+    secure: bool | Unset = UNSET
+    timeout: int | Unset = 15
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -52,7 +54,7 @@ class NewSandbox:
 
         env_vars = self.env_vars
 
-        mcp: Union[None, Unset, dict[str, Any]]
+        mcp: dict[str, Any] | None | Unset
         if isinstance(self.mcp, Unset):
             mcp = UNSET
         elif isinstance(self.mcp, McpType0):
@@ -62,7 +64,7 @@ class NewSandbox:
 
         metadata = self.metadata
 
-        network: Union[Unset, dict[str, Any]] = UNSET
+        network: dict[str, Any] | Unset = UNSET
         if not isinstance(self.network, Unset):
             network = self.network.to_dict()
 
@@ -110,7 +112,7 @@ class NewSandbox:
 
         env_vars = d.pop("envVars", UNSET)
 
-        def _parse_mcp(data: object) -> Union["McpType0", None, Unset]:
+        def _parse_mcp(data: object) -> McpType0 | None | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -121,16 +123,16 @@ class NewSandbox:
                 componentsschemas_mcp_type_0 = McpType0.from_dict(data)
 
                 return componentsschemas_mcp_type_0
-            except:  # noqa: E722
+            except (TypeError, ValueError, AttributeError, KeyError):
                 pass
-            return cast(Union["McpType0", None, Unset], data)
+            return cast(McpType0 | None | Unset, data)
 
         mcp = _parse_mcp(d.pop("mcp", UNSET))
 
         metadata = d.pop("metadata", UNSET)
 
         _network = d.pop("network", UNSET)
-        network: Union[Unset, SandboxNetworkConfig]
+        network: SandboxNetworkConfig | Unset
         if isinstance(_network, Unset):
             network = UNSET
         else:

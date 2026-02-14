@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, TypeVar, Union
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -20,25 +22,22 @@ T = TypeVar("T", bound="TemplateBuildStartV2")
 class TemplateBuildStartV2:
     """
     Attributes:
-        force (Union[Unset, bool]): Whether the whole build should be forced to run regardless of the cache Default:
-            False.
-        from_image (Union[Unset, str]): Image to use as a base for the template build
-        from_image_registry (Union['AWSRegistry', 'GCPRegistry', 'GeneralRegistry', Unset]):
-        from_template (Union[Unset, str]): Template to use as a base for the template build
-        ready_cmd (Union[Unset, str]): Ready check command to execute in the template after the build
-        start_cmd (Union[Unset, str]): Start command to execute in the template after the build
-        steps (Union[Unset, list['TemplateStep']]): List of steps to execute in the template build
+        force (bool | Unset): Whether the whole build should be forced to run regardless of the cache Default: False.
+        from_image (str | Unset): Image to use as a base for the template build
+        from_image_registry (AWSRegistry | GCPRegistry | GeneralRegistry | Unset):
+        from_template (str | Unset): Template to use as a base for the template build
+        ready_cmd (str | Unset): Ready check command to execute in the template after the build
+        start_cmd (str | Unset): Start command to execute in the template after the build
+        steps (list[TemplateStep] | Unset): List of steps to execute in the template build
     """
 
-    force: Union[Unset, bool] = False
-    from_image: Union[Unset, str] = UNSET
-    from_image_registry: Union[
-        "AWSRegistry", "GCPRegistry", "GeneralRegistry", Unset
-    ] = UNSET
-    from_template: Union[Unset, str] = UNSET
-    ready_cmd: Union[Unset, str] = UNSET
-    start_cmd: Union[Unset, str] = UNSET
-    steps: Union[Unset, list["TemplateStep"]] = UNSET
+    force: bool | Unset = False
+    from_image: str | Unset = UNSET
+    from_image_registry: AWSRegistry | GCPRegistry | GeneralRegistry | Unset = UNSET
+    from_template: str | Unset = UNSET
+    ready_cmd: str | Unset = UNSET
+    start_cmd: str | Unset = UNSET
+    steps: list[TemplateStep] | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -49,7 +48,7 @@ class TemplateBuildStartV2:
 
         from_image = self.from_image
 
-        from_image_registry: Union[Unset, dict[str, Any]]
+        from_image_registry: dict[str, Any] | Unset
         if isinstance(self.from_image_registry, Unset):
             from_image_registry = UNSET
         elif isinstance(self.from_image_registry, AWSRegistry):
@@ -65,7 +64,7 @@ class TemplateBuildStartV2:
 
         start_cmd = self.start_cmd
 
-        steps: Union[Unset, list[dict[str, Any]]] = UNSET
+        steps: list[dict[str, Any]] | Unset = UNSET
         if not isinstance(self.steps, Unset):
             steps = []
             for steps_item_data in self.steps:
@@ -106,7 +105,7 @@ class TemplateBuildStartV2:
 
         def _parse_from_image_registry(
             data: object,
-        ) -> Union["AWSRegistry", "GCPRegistry", "GeneralRegistry", Unset]:
+        ) -> AWSRegistry | GCPRegistry | GeneralRegistry | Unset:
             if isinstance(data, Unset):
                 return data
             try:
@@ -117,7 +116,7 @@ class TemplateBuildStartV2:
                 )
 
                 return componentsschemas_from_image_registry_type_0
-            except:  # noqa: E722
+            except (TypeError, ValueError, AttributeError, KeyError):
                 pass
             try:
                 if not isinstance(data, dict):
@@ -127,7 +126,7 @@ class TemplateBuildStartV2:
                 )
 
                 return componentsschemas_from_image_registry_type_1
-            except:  # noqa: E722
+            except (TypeError, ValueError, AttributeError, KeyError):
                 pass
             if not isinstance(data, dict):
                 raise TypeError()
@@ -147,12 +146,14 @@ class TemplateBuildStartV2:
 
         start_cmd = d.pop("startCmd", UNSET)
 
-        steps = []
         _steps = d.pop("steps", UNSET)
-        for steps_item_data in _steps or []:
-            steps_item = TemplateStep.from_dict(steps_item_data)
+        steps: list[TemplateStep] | Unset = UNSET
+        if _steps is not UNSET:
+            steps = []
+            for steps_item_data in _steps:
+                steps_item = TemplateStep.from_dict(steps_item_data)
 
-            steps.append(steps_item)
+                steps.append(steps_item)
 
         template_build_start_v2 = cls(
             force=force,

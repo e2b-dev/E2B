@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from collections.abc import Mapping
-from typing import Any, TypeVar, Union, cast
+from typing import Any, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -13,21 +15,21 @@ T = TypeVar("T", bound="TemplateBuildRequestV3")
 class TemplateBuildRequestV3:
     """
     Attributes:
-        alias (Union[Unset, str]): Alias of the template. Deprecated, use name instead.
-        cpu_count (Union[Unset, int]): CPU cores for the sandbox
-        memory_mb (Union[Unset, int]): Memory for the sandbox in MiB
-        name (Union[Unset, str]): Name of the template. Can include a tag with colon separator (e.g. "my-template" or
-            "my-template:v1"). If tag is included, it will be treated as if the tag was provided in the tags array.
-        tags (Union[Unset, list[str]]): Tags to assign to the template build
-        team_id (Union[Unset, str]): Identifier of the team
+        alias (str | Unset): Alias of the template. Deprecated, use name instead.
+        cpu_count (int | Unset): CPU cores for the sandbox
+        memory_mb (int | Unset): Memory for the sandbox in MiB
+        name (str | Unset): Name of the template. Can include a tag with colon separator (e.g. "my-template" or "my-
+            template:v1"). If tag is included, it will be treated as if the tag was provided in the tags array.
+        tags (list[str] | Unset): Tags to assign to the template build
+        team_id (str | Unset): Identifier of the team
     """
 
-    alias: Union[Unset, str] = UNSET
-    cpu_count: Union[Unset, int] = UNSET
-    memory_mb: Union[Unset, int] = UNSET
-    name: Union[Unset, str] = UNSET
-    tags: Union[Unset, list[str]] = UNSET
-    team_id: Union[Unset, str] = UNSET
+    alias: str | Unset = UNSET
+    cpu_count: int | Unset = UNSET
+    memory_mb: int | Unset = UNSET
+    name: str | Unset = UNSET
+    tags: list[str] | Unset = UNSET
+    team_id: str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -39,7 +41,7 @@ class TemplateBuildRequestV3:
 
         name = self.name
 
-        tags: Union[Unset, list[str]] = UNSET
+        tags: list[str] | Unset = UNSET
         if not isinstance(self.tags, Unset):
             tags = self.tags
 

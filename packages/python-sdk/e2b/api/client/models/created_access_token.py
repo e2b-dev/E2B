@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import datetime
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, TypeVar
@@ -27,7 +29,7 @@ class CreatedAccessToken:
 
     created_at: datetime.datetime
     id: UUID
-    mask: "IdentifierMaskingDetails"
+    mask: IdentifierMaskingDetails
     name: str
     token: str
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)

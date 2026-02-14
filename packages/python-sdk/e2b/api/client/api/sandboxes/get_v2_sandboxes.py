@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional, Union
+from typing import Any
 
 import httpx
 
@@ -13,24 +13,24 @@ from ...types import UNSET, Response, Unset
 
 def _get_kwargs(
     *,
-    metadata: Union[Unset, str] = UNSET,
-    state: Union[Unset, list[SandboxState]] = UNSET,
-    next_token: Union[Unset, str] = UNSET,
-    limit: Union[Unset, int] = 100,
+    metadata: str | Unset = UNSET,
+    state: list[SandboxState] | Unset = UNSET,
+    next_token: str | Unset = UNSET,
+    limit: int | Unset = 100,
 ) -> dict[str, Any]:
+
     params: dict[str, Any] = {}
 
     params["metadata"] = metadata
 
-    json_state: Union[Unset, list[str]] = UNSET
+    json_state: list[str] | Unset = UNSET
     if not isinstance(state, Unset):
         json_state = []
         for state_item_data in state:
             state_item = state_item_data.value
             json_state.append(state_item)
 
-    if not isinstance(json_state, Unset):
-        params["state"] = ",".join(str(item) for item in json_state)
+    params["state"] = json_state
 
     params["nextToken"] = next_token
 
@@ -48,8 +48,8 @@ def _get_kwargs(
 
 
 def _parse_response(
-    *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Optional[Union[Error, list["ListedSandbox"]]]:
+    *, client: AuthenticatedClient | Client, response: httpx.Response
+) -> Error | list[ListedSandbox] | None:
     if response.status_code == 200:
         response_200 = []
         _response_200 = response.json()
@@ -59,18 +59,22 @@ def _parse_response(
             response_200.append(response_200_item)
 
         return response_200
+
     if response.status_code == 400:
         response_400 = Error.from_dict(response.json())
 
         return response_400
+
     if response.status_code == 401:
         response_401 = Error.from_dict(response.json())
 
         return response_401
+
     if response.status_code == 500:
         response_500 = Error.from_dict(response.json())
 
         return response_500
+
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
     else:
@@ -78,8 +82,8 @@ def _parse_response(
 
 
 def _build_response(
-    *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Response[Union[Error, list["ListedSandbox"]]]:
+    *, client: AuthenticatedClient | Client, response: httpx.Response
+) -> Response[Error | list[ListedSandbox]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -91,25 +95,25 @@ def _build_response(
 def sync_detailed(
     *,
     client: AuthenticatedClient,
-    metadata: Union[Unset, str] = UNSET,
-    state: Union[Unset, list[SandboxState]] = UNSET,
-    next_token: Union[Unset, str] = UNSET,
-    limit: Union[Unset, int] = 100,
-) -> Response[Union[Error, list["ListedSandbox"]]]:
+    metadata: str | Unset = UNSET,
+    state: list[SandboxState] | Unset = UNSET,
+    next_token: str | Unset = UNSET,
+    limit: int | Unset = 100,
+) -> Response[Error | list[ListedSandbox]]:
     """List all sandboxes
 
     Args:
-        metadata (Union[Unset, str]):
-        state (Union[Unset, list[SandboxState]]):
-        next_token (Union[Unset, str]):
-        limit (Union[Unset, int]):  Default: 100.
+        metadata (str | Unset):
+        state (list[SandboxState] | Unset):
+        next_token (str | Unset):
+        limit (int | Unset):  Default: 100.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Error, list['ListedSandbox']]]
+        Response[Error | list[ListedSandbox]]
     """
 
     kwargs = _get_kwargs(
@@ -129,25 +133,25 @@ def sync_detailed(
 def sync(
     *,
     client: AuthenticatedClient,
-    metadata: Union[Unset, str] = UNSET,
-    state: Union[Unset, list[SandboxState]] = UNSET,
-    next_token: Union[Unset, str] = UNSET,
-    limit: Union[Unset, int] = 100,
-) -> Optional[Union[Error, list["ListedSandbox"]]]:
+    metadata: str | Unset = UNSET,
+    state: list[SandboxState] | Unset = UNSET,
+    next_token: str | Unset = UNSET,
+    limit: int | Unset = 100,
+) -> Error | list[ListedSandbox] | None:
     """List all sandboxes
 
     Args:
-        metadata (Union[Unset, str]):
-        state (Union[Unset, list[SandboxState]]):
-        next_token (Union[Unset, str]):
-        limit (Union[Unset, int]):  Default: 100.
+        metadata (str | Unset):
+        state (list[SandboxState] | Unset):
+        next_token (str | Unset):
+        limit (int | Unset):  Default: 100.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Error, list['ListedSandbox']]
+        Error | list[ListedSandbox]
     """
 
     return sync_detailed(
@@ -162,25 +166,25 @@ def sync(
 async def asyncio_detailed(
     *,
     client: AuthenticatedClient,
-    metadata: Union[Unset, str] = UNSET,
-    state: Union[Unset, list[SandboxState]] = UNSET,
-    next_token: Union[Unset, str] = UNSET,
-    limit: Union[Unset, int] = 100,
-) -> Response[Union[Error, list["ListedSandbox"]]]:
+    metadata: str | Unset = UNSET,
+    state: list[SandboxState] | Unset = UNSET,
+    next_token: str | Unset = UNSET,
+    limit: int | Unset = 100,
+) -> Response[Error | list[ListedSandbox]]:
     """List all sandboxes
 
     Args:
-        metadata (Union[Unset, str]):
-        state (Union[Unset, list[SandboxState]]):
-        next_token (Union[Unset, str]):
-        limit (Union[Unset, int]):  Default: 100.
+        metadata (str | Unset):
+        state (list[SandboxState] | Unset):
+        next_token (str | Unset):
+        limit (int | Unset):  Default: 100.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Error, list['ListedSandbox']]]
+        Response[Error | list[ListedSandbox]]
     """
 
     kwargs = _get_kwargs(
@@ -198,25 +202,25 @@ async def asyncio_detailed(
 async def asyncio(
     *,
     client: AuthenticatedClient,
-    metadata: Union[Unset, str] = UNSET,
-    state: Union[Unset, list[SandboxState]] = UNSET,
-    next_token: Union[Unset, str] = UNSET,
-    limit: Union[Unset, int] = 100,
-) -> Optional[Union[Error, list["ListedSandbox"]]]:
+    metadata: str | Unset = UNSET,
+    state: list[SandboxState] | Unset = UNSET,
+    next_token: str | Unset = UNSET,
+    limit: int | Unset = 100,
+) -> Error | list[ListedSandbox] | None:
     """List all sandboxes
 
     Args:
-        metadata (Union[Unset, str]):
-        state (Union[Unset, list[SandboxState]]):
-        next_token (Union[Unset, str]):
-        limit (Union[Unset, int]):  Default: 100.
+        metadata (str | Unset):
+        state (list[SandboxState] | Unset):
+        next_token (str | Unset):
+        limit (int | Unset):  Default: 100.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Error, list['ListedSandbox']]
+        Error | list[ListedSandbox]
     """
 
     return (

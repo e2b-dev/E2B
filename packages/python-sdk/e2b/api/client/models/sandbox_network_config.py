@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from collections.abc import Mapping
-from typing import Any, TypeVar, Union, cast
+from typing import Any, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -13,28 +15,28 @@ T = TypeVar("T", bound="SandboxNetworkConfig")
 class SandboxNetworkConfig:
     """
     Attributes:
-        allow_out (Union[Unset, list[str]]): List of allowed CIDR blocks or IP addresses for egress traffic. Allowed
-            addresses always take precedence over blocked addresses.
-        allow_public_traffic (Union[Unset, bool]): Specify if the sandbox URLs should be accessible only with
-            authentication. Default: True.
-        deny_out (Union[Unset, list[str]]): List of denied CIDR blocks or IP addresses for egress traffic
-        mask_request_host (Union[Unset, str]): Specify host mask which will be used for all sandbox requests
+        allow_out (list[str] | Unset): List of allowed CIDR blocks or IP addresses for egress traffic. Allowed addresses
+            always take precedence over blocked addresses.
+        allow_public_traffic (bool | Unset): Specify if the sandbox URLs should be accessible only with authentication.
+            Default: True.
+        deny_out (list[str] | Unset): List of denied CIDR blocks or IP addresses for egress traffic
+        mask_request_host (str | Unset): Specify host mask which will be used for all sandbox requests
     """
 
-    allow_out: Union[Unset, list[str]] = UNSET
-    allow_public_traffic: Union[Unset, bool] = True
-    deny_out: Union[Unset, list[str]] = UNSET
-    mask_request_host: Union[Unset, str] = UNSET
+    allow_out: list[str] | Unset = UNSET
+    allow_public_traffic: bool | Unset = True
+    deny_out: list[str] | Unset = UNSET
+    mask_request_host: str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        allow_out: Union[Unset, list[str]] = UNSET
+        allow_out: list[str] | Unset = UNSET
         if not isinstance(self.allow_out, Unset):
             allow_out = self.allow_out
 
         allow_public_traffic = self.allow_public_traffic
 
-        deny_out: Union[Unset, list[str]] = UNSET
+        deny_out: list[str] | Unset = UNSET
         if not isinstance(self.deny_out, Unset):
             deny_out = self.deny_out
 

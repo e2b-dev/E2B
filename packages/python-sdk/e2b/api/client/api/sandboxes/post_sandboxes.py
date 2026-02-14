@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional, Union
+from typing import Any
 
 import httpx
 
@@ -31,24 +31,28 @@ def _get_kwargs(
 
 
 def _parse_response(
-    *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Optional[Union[Error, Sandbox]]:
+    *, client: AuthenticatedClient | Client, response: httpx.Response
+) -> Error | Sandbox | None:
     if response.status_code == 201:
         response_201 = Sandbox.from_dict(response.json())
 
         return response_201
+
     if response.status_code == 400:
         response_400 = Error.from_dict(response.json())
 
         return response_400
+
     if response.status_code == 401:
         response_401 = Error.from_dict(response.json())
 
         return response_401
+
     if response.status_code == 500:
         response_500 = Error.from_dict(response.json())
 
         return response_500
+
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
     else:
@@ -56,8 +60,8 @@ def _parse_response(
 
 
 def _build_response(
-    *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Response[Union[Error, Sandbox]]:
+    *, client: AuthenticatedClient | Client, response: httpx.Response
+) -> Response[Error | Sandbox]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -70,7 +74,7 @@ def sync_detailed(
     *,
     client: AuthenticatedClient,
     body: NewSandbox,
-) -> Response[Union[Error, Sandbox]]:
+) -> Response[Error | Sandbox]:
     """Create a sandbox from the template
 
     Args:
@@ -81,7 +85,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Error, Sandbox]]
+        Response[Error | Sandbox]
     """
 
     kwargs = _get_kwargs(
@@ -99,7 +103,7 @@ def sync(
     *,
     client: AuthenticatedClient,
     body: NewSandbox,
-) -> Optional[Union[Error, Sandbox]]:
+) -> Error | Sandbox | None:
     """Create a sandbox from the template
 
     Args:
@@ -110,7 +114,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Error, Sandbox]
+        Error | Sandbox
     """
 
     return sync_detailed(
@@ -123,7 +127,7 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient,
     body: NewSandbox,
-) -> Response[Union[Error, Sandbox]]:
+) -> Response[Error | Sandbox]:
     """Create a sandbox from the template
 
     Args:
@@ -134,7 +138,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Error, Sandbox]]
+        Response[Error | Sandbox]
     """
 
     kwargs = _get_kwargs(
@@ -150,7 +154,7 @@ async def asyncio(
     *,
     client: AuthenticatedClient,
     body: NewSandbox,
-) -> Optional[Union[Error, Sandbox]]:
+) -> Error | Sandbox | None:
     """Create a sandbox from the template
 
     Args:
@@ -161,7 +165,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Error, Sandbox]
+        Error | Sandbox
     """
 
     return (

@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from collections.abc import Mapping
-from typing import Any, TypeVar, Union, cast
+from typing import Any, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -15,21 +17,21 @@ class TemplateStep:
 
     Attributes:
         type_ (str): Type of the step
-        args (Union[Unset, list[str]]): Arguments for the step
-        files_hash (Union[Unset, str]): Hash of the files used in the step
-        force (Union[Unset, bool]): Whether the step should be forced to run regardless of the cache Default: False.
+        args (list[str] | Unset): Arguments for the step
+        files_hash (str | Unset): Hash of the files used in the step
+        force (bool | Unset): Whether the step should be forced to run regardless of the cache Default: False.
     """
 
     type_: str
-    args: Union[Unset, list[str]] = UNSET
-    files_hash: Union[Unset, str] = UNSET
-    force: Union[Unset, bool] = False
+    args: list[str] | Unset = UNSET
+    files_hash: str | Unset = UNSET
+    force: bool | Unset = False
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         type_ = self.type_
 
-        args: Union[Unset, list[str]] = UNSET
+        args: list[str] | Unset = UNSET
         if not isinstance(self.args, Unset):
             args = self.args
 

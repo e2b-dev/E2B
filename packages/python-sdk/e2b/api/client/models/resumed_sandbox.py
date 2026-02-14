@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from collections.abc import Mapping
-from typing import Any, TypeVar, Union
+from typing import Any, TypeVar
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -13,12 +15,12 @@ T = TypeVar("T", bound="ResumedSandbox")
 class ResumedSandbox:
     """
     Attributes:
-        auto_pause (Union[Unset, bool]): Automatically pauses the sandbox after the timeout
-        timeout (Union[Unset, int]): Time to live for the sandbox in seconds. Default: 15.
+        auto_pause (bool | Unset): Automatically pauses the sandbox after the timeout
+        timeout (int | Unset): Time to live for the sandbox in seconds. Default: 15.
     """
 
-    auto_pause: Union[Unset, bool] = UNSET
-    timeout: Union[Unset, int] = 15
+    auto_pause: bool | Unset = UNSET
+    timeout: int | Unset = 15
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:

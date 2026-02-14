@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, TypeVar, Union
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -18,19 +20,19 @@ class BuildStatusReason:
     """
     Attributes:
         message (str): Message with the status reason, currently reporting only for error status
-        log_entries (Union[Unset, list['BuildLogEntry']]): Log entries related to the status reason
-        step (Union[Unset, str]): Step that failed
+        log_entries (list[BuildLogEntry] | Unset): Log entries related to the status reason
+        step (str | Unset): Step that failed
     """
 
     message: str
-    log_entries: Union[Unset, list["BuildLogEntry"]] = UNSET
-    step: Union[Unset, str] = UNSET
+    log_entries: list[BuildLogEntry] | Unset = UNSET
+    step: str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         message = self.message
 
-        log_entries: Union[Unset, list[dict[str, Any]]] = UNSET
+        log_entries: list[dict[str, Any]] | Unset = UNSET
         if not isinstance(self.log_entries, Unset):
             log_entries = []
             for log_entries_item_data in self.log_entries:
@@ -60,12 +62,14 @@ class BuildStatusReason:
         d = dict(src_dict)
         message = d.pop("message")
 
-        log_entries = []
         _log_entries = d.pop("logEntries", UNSET)
-        for log_entries_item_data in _log_entries or []:
-            log_entries_item = BuildLogEntry.from_dict(log_entries_item_data)
+        log_entries: list[BuildLogEntry] | Unset = UNSET
+        if _log_entries is not UNSET:
+            log_entries = []
+            for log_entries_item_data in _log_entries:
+                log_entries_item = BuildLogEntry.from_dict(log_entries_item_data)
 
-            log_entries.append(log_entries_item)
+                log_entries.append(log_entries_item)
 
         step = d.pop("step", UNSET)
 

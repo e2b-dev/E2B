@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from collections.abc import Mapping
-from typing import Any, TypeVar, Union
+from typing import Any, TypeVar
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -14,11 +16,11 @@ class TemplateBuildFileUpload:
     """
     Attributes:
         present (bool): Whether the file is already present in the cache
-        url (Union[Unset, str]): Url where the file should be uploaded to
+        url (str | Unset): Url where the file should be uploaded to
     """
 
     present: bool
-    url: Union[Unset, str] = UNSET
+    url: str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:

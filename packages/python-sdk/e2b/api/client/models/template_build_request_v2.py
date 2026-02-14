@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from collections.abc import Mapping
-from typing import Any, TypeVar, Union
+from typing import Any, TypeVar
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -14,15 +16,15 @@ class TemplateBuildRequestV2:
     """
     Attributes:
         alias (str): Alias of the template
-        cpu_count (Union[Unset, int]): CPU cores for the sandbox
-        memory_mb (Union[Unset, int]): Memory for the sandbox in MiB
-        team_id (Union[Unset, str]): Identifier of the team
+        cpu_count (int | Unset): CPU cores for the sandbox
+        memory_mb (int | Unset): Memory for the sandbox in MiB
+        team_id (str | Unset): Identifier of the team
     """
 
     alias: str
-    cpu_count: Union[Unset, int] = UNSET
-    memory_mb: Union[Unset, int] = UNSET
-    team_id: Union[Unset, str] = UNSET
+    cpu_count: int | Unset = UNSET
+    memory_mb: int | Unset = UNSET
+    team_id: str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:

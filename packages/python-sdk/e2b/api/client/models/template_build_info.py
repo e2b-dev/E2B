@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -20,19 +22,19 @@ class TemplateBuildInfo:
     """
     Attributes:
         build_id (str): Identifier of the build
-        log_entries (list['BuildLogEntry']): Build logs structured
+        log_entries (list[BuildLogEntry]): Build logs structured
         logs (list[str]): Build logs
         status (TemplateBuildStatus): Status of the template build
         template_id (str): Identifier of the template
-        reason (Union[Unset, BuildStatusReason]):
+        reason (BuildStatusReason | Unset):
     """
 
     build_id: str
-    log_entries: list["BuildLogEntry"]
+    log_entries: list[BuildLogEntry]
     logs: list[str]
     status: TemplateBuildStatus
     template_id: str
-    reason: Union[Unset, "BuildStatusReason"] = UNSET
+    reason: BuildStatusReason | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -49,7 +51,7 @@ class TemplateBuildInfo:
 
         template_id = self.template_id
 
-        reason: Union[Unset, dict[str, Any]] = UNSET
+        reason: dict[str, Any] | Unset = UNSET
         if not isinstance(self.reason, Unset):
             reason = self.reason.to_dict()
 
@@ -91,7 +93,7 @@ class TemplateBuildInfo:
         template_id = d.pop("templateID")
 
         _reason = d.pop("reason", UNSET)
-        reason: Union[Unset, BuildStatusReason]
+        reason: BuildStatusReason | Unset
         if isinstance(_reason, Unset):
             reason = UNSET
         else:
