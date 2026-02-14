@@ -1,4 +1,4 @@
-import { ApiClient, handleApiError, paths } from '../api'
+import { ApiClient, handleApiError, paths, components } from '../api'
 import { stripAnsi } from '../utils'
 import { BuildError, FileUploadError, TemplateError } from '../errors'
 import { LogEntry } from './logger'
@@ -381,7 +381,7 @@ export async function getTemplateTags(
     throw new TemplateError('Failed to get template tags')
   }
 
-  return res.data.map((item) => ({
+  return res.data.map((item: components['schemas']['TemplateTag']) => ({
     tag: item.tag,
     buildId: item.buildID,
     createdAt: new Date(item.createdAt),
