@@ -1023,6 +1023,47 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/templates/{templateID}/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description List all tags for a template */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    templateID: components["parameters"]["templateID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Successfully listed template tags */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TemplateTag"][];
+                    };
+                };
+                401: components["responses"]["401"];
+                404: components["responses"]["404"];
+                500: components["responses"]["500"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/templates/aliases/{alias}": {
         parameters: {
             query?: never;
@@ -2260,6 +2301,20 @@ export interface components {
             force?: boolean;
             /** @description Type of the step */
             type: string;
+        };
+        TemplateTag: {
+            /**
+             * Format: uuid
+             * @description Identifier of the build associated with this tag
+             */
+            buildID: string;
+            /**
+             * Format: date-time
+             * @description When this tag was assigned
+             */
+            createdAt: string;
+            /** @description Name of the tag */
+            tag: string;
         };
         TemplateUpdateRequest: {
             /** @description Whether the template is public or only accessible by the team */

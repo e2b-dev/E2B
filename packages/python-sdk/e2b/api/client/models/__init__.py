@@ -66,6 +66,7 @@ from .template_build_status import TemplateBuildStatus
 from .template_legacy import TemplateLegacy
 from .template_request_response_v3 import TemplateRequestResponseV3
 from .template_step import TemplateStep
+from .template_tag import TemplateTag
 from .template_update_request import TemplateUpdateRequest
 from .template_update_response import TemplateUpdateResponse
 from .template_with_builds import TemplateWithBuilds
@@ -136,6 +137,7 @@ __all__ = (
     "TemplateLegacy",
     "TemplateRequestResponseV3",
     "TemplateStep",
+    "TemplateTag",
     "TemplateUpdateRequest",
     "TemplateUpdateResponse",
     "TemplateWithBuilds",
