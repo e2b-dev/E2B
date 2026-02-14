@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import datetime
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, TypeVar
@@ -27,7 +25,7 @@ class SandboxLogEntry:
         timestamp (datetime.datetime): Timestamp of the log entry
     """
 
-    fields: SandboxLogEntryFields
+    fields: "SandboxLogEntryFields"
     level: LogLevel
     message: str
     timestamp: datetime.datetime

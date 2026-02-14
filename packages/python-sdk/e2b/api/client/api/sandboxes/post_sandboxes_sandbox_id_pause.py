@@ -1,6 +1,5 @@
 from http import HTTPStatus
-from typing import Any, cast
-from urllib.parse import quote
+from typing import Any, Optional, Union, cast
 
 import httpx
 
@@ -13,44 +12,36 @@ from ...types import Response
 def _get_kwargs(
     sandbox_id: str,
 ) -> dict[str, Any]:
-
     _kwargs: dict[str, Any] = {
         "method": "post",
-        "url": "/sandboxes/{sandbox_id}/pause".format(
-            sandbox_id=quote(str(sandbox_id), safe=""),
-        ),
+        "url": f"/sandboxes/{sandbox_id}/pause",
     }
 
     return _kwargs
 
 
 def _parse_response(
-    *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Any | Error | None:
+    *, client: Union[AuthenticatedClient, Client], response: httpx.Response
+) -> Optional[Union[Any, Error]]:
     if response.status_code == 204:
         response_204 = cast(Any, None)
         return response_204
-
     if response.status_code == 401:
         response_401 = Error.from_dict(response.json())
 
         return response_401
-
     if response.status_code == 404:
         response_404 = Error.from_dict(response.json())
 
         return response_404
-
     if response.status_code == 409:
         response_409 = Error.from_dict(response.json())
 
         return response_409
-
     if response.status_code == 500:
         response_500 = Error.from_dict(response.json())
 
         return response_500
-
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
     else:
@@ -58,8 +49,8 @@ def _parse_response(
 
 
 def _build_response(
-    *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[Any | Error]:
+    *, client: Union[AuthenticatedClient, Client], response: httpx.Response
+) -> Response[Union[Any, Error]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -72,7 +63,7 @@ def sync_detailed(
     sandbox_id: str,
     *,
     client: AuthenticatedClient,
-) -> Response[Any | Error]:
+) -> Response[Union[Any, Error]]:
     """Pause the sandbox
 
     Args:
@@ -83,7 +74,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Any | Error]
+        Response[Union[Any, Error]]
     """
 
     kwargs = _get_kwargs(
@@ -101,7 +92,7 @@ def sync(
     sandbox_id: str,
     *,
     client: AuthenticatedClient,
-) -> Any | Error | None:
+) -> Optional[Union[Any, Error]]:
     """Pause the sandbox
 
     Args:
@@ -112,7 +103,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Any | Error
+        Union[Any, Error]
     """
 
     return sync_detailed(
@@ -125,7 +116,7 @@ async def asyncio_detailed(
     sandbox_id: str,
     *,
     client: AuthenticatedClient,
-) -> Response[Any | Error]:
+) -> Response[Union[Any, Error]]:
     """Pause the sandbox
 
     Args:
@@ -136,7 +127,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Any | Error]
+        Response[Union[Any, Error]]
     """
 
     kwargs = _get_kwargs(
@@ -152,7 +143,7 @@ async def asyncio(
     sandbox_id: str,
     *,
     client: AuthenticatedClient,
-) -> Any | Error | None:
+) -> Optional[Union[Any, Error]]:
     """Pause the sandbox
 
     Args:
@@ -163,7 +154,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Any | Error
+        Union[Any, Error]
     """
 
     return (

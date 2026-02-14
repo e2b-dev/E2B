@@ -1,8 +1,6 @@
-from __future__ import annotations
-
 import datetime
 from collections.abc import Mapping
-from typing import Any, TypeVar
+from typing import Any, TypeVar, Union
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -28,8 +26,8 @@ class ListedSandbox:
         started_at (datetime.datetime): Time when the sandbox was started
         state (SandboxState): State of the sandbox
         template_id (str): Identifier of the template from which is the sandbox created
-        alias (str | Unset): Alias of the template
-        metadata (Any | Unset):
+        alias (Union[Unset, str]): Alias of the template
+        metadata (Union[Unset, Any]):
     """
 
     client_id: str
@@ -42,8 +40,8 @@ class ListedSandbox:
     started_at: datetime.datetime
     state: SandboxState
     template_id: str
-    alias: str | Unset = UNSET
-    metadata: Any | Unset = UNSET
+    alias: Union[Unset, str] = UNSET
+    metadata: Union[Unset, Any] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:

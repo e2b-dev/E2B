@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, TypeVar
 
@@ -17,10 +15,10 @@ T = TypeVar("T", bound="TemplateBuildLogsResponse")
 class TemplateBuildLogsResponse:
     """
     Attributes:
-        logs (list[BuildLogEntry]): Build logs structured
+        logs (list['BuildLogEntry']): Build logs structured
     """
 
-    logs: list[BuildLogEntry]
+    logs: list["BuildLogEntry"]
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:

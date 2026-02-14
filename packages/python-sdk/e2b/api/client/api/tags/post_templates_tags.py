@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any
+from typing import Any, Optional, Union
 
 import httpx
 
@@ -31,33 +31,28 @@ def _get_kwargs(
 
 
 def _parse_response(
-    *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> AssignedTemplateTags | Error | None:
+    *, client: Union[AuthenticatedClient, Client], response: httpx.Response
+) -> Optional[Union[AssignedTemplateTags, Error]]:
     if response.status_code == 201:
         response_201 = AssignedTemplateTags.from_dict(response.json())
 
         return response_201
-
     if response.status_code == 400:
         response_400 = Error.from_dict(response.json())
 
         return response_400
-
     if response.status_code == 401:
         response_401 = Error.from_dict(response.json())
 
         return response_401
-
     if response.status_code == 404:
         response_404 = Error.from_dict(response.json())
 
         return response_404
-
     if response.status_code == 500:
         response_500 = Error.from_dict(response.json())
 
         return response_500
-
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
     else:
@@ -65,8 +60,8 @@ def _parse_response(
 
 
 def _build_response(
-    *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[AssignedTemplateTags | Error]:
+    *, client: Union[AuthenticatedClient, Client], response: httpx.Response
+) -> Response[Union[AssignedTemplateTags, Error]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -79,7 +74,7 @@ def sync_detailed(
     *,
     client: AuthenticatedClient,
     body: AssignTemplateTagsRequest,
-) -> Response[AssignedTemplateTags | Error]:
+) -> Response[Union[AssignedTemplateTags, Error]]:
     """Assign tag(s) to a template build
 
     Args:
@@ -90,7 +85,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[AssignedTemplateTags | Error]
+        Response[Union[AssignedTemplateTags, Error]]
     """
 
     kwargs = _get_kwargs(
@@ -108,7 +103,7 @@ def sync(
     *,
     client: AuthenticatedClient,
     body: AssignTemplateTagsRequest,
-) -> AssignedTemplateTags | Error | None:
+) -> Optional[Union[AssignedTemplateTags, Error]]:
     """Assign tag(s) to a template build
 
     Args:
@@ -119,7 +114,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        AssignedTemplateTags | Error
+        Union[AssignedTemplateTags, Error]
     """
 
     return sync_detailed(
@@ -132,7 +127,7 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient,
     body: AssignTemplateTagsRequest,
-) -> Response[AssignedTemplateTags | Error]:
+) -> Response[Union[AssignedTemplateTags, Error]]:
     """Assign tag(s) to a template build
 
     Args:
@@ -143,7 +138,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[AssignedTemplateTags | Error]
+        Response[Union[AssignedTemplateTags, Error]]
     """
 
     kwargs = _get_kwargs(
@@ -159,7 +154,7 @@ async def asyncio(
     *,
     client: AuthenticatedClient,
     body: AssignTemplateTagsRequest,
-) -> AssignedTemplateTags | Error | None:
+) -> Optional[Union[AssignedTemplateTags, Error]]:
     """Assign tag(s) to a template build
 
     Args:
@@ -170,7 +165,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        AssignedTemplateTags | Error
+        Union[AssignedTemplateTags, Error]
     """
 
     return (

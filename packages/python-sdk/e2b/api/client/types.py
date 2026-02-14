@@ -2,7 +2,7 @@
 
 from collections.abc import Mapping, MutableMapping
 from http import HTTPStatus
-from typing import IO, BinaryIO, Generic, Literal, TypeVar
+from typing import IO, BinaryIO, Generic, Literal, Optional, TypeVar, Union
 
 from attrs import define
 
@@ -15,13 +15,13 @@ class Unset:
 UNSET: Unset = Unset()
 
 # The types that `httpx.Client(files=)` can accept, copied from that library.
-FileContent = IO[bytes] | bytes | str
-FileTypes = (
+FileContent = Union[IO[bytes], bytes, str]
+FileTypes = Union[
     # (filename, file (or bytes), content_type)
-    tuple[str | None, FileContent, str | None]
+    tuple[Optional[str], FileContent, Optional[str]],
     # (filename, file (or bytes), content_type, headers)
-    | tuple[str | None, FileContent, str | None, Mapping[str, str]]
-)
+    tuple[Optional[str], FileContent, Optional[str], Mapping[str, str]],
+]
 RequestFiles = list[tuple[str, FileTypes]]
 
 
@@ -30,8 +30,8 @@ class File:
     """Contains information for file uploads"""
 
     payload: BinaryIO
-    file_name: str | None = None
-    mime_type: str | None = None
+    file_name: Optional[str] = None
+    mime_type: Optional[str] = None
 
     def to_tuple(self) -> FileTypes:
         """Return a tuple representation that httpx will accept for multipart/form-data"""
@@ -48,7 +48,7 @@ class Response(Generic[T]):
     status_code: HTTPStatus
     content: bytes
     headers: MutableMapping[str, str]
-    parsed: T | None
+    parsed: Optional[T]
 
 
 __all__ = ["UNSET", "File", "FileTypes", "RequestFiles", "Response", "Unset"]

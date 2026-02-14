@@ -1,7 +1,5 @@
-from __future__ import annotations
-
 from collections.abc import Mapping
-from typing import Any, TypeVar, cast
+from typing import Any, TypeVar, Union, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -19,20 +17,20 @@ class Sandbox:
         envd_version (str): Version of the envd running in the sandbox
         sandbox_id (str): Identifier of the sandbox
         template_id (str): Identifier of the template from which is the sandbox created
-        alias (str | Unset): Alias of the template
-        domain (None | str | Unset): Base domain where the sandbox traffic is accessible
-        envd_access_token (str | Unset): Access token used for envd communication
-        traffic_access_token (None | str | Unset): Token required for accessing sandbox via proxy.
+        alias (Union[Unset, str]): Alias of the template
+        domain (Union[None, Unset, str]): Base domain where the sandbox traffic is accessible
+        envd_access_token (Union[Unset, str]): Access token used for envd communication
+        traffic_access_token (Union[None, Unset, str]): Token required for accessing sandbox via proxy.
     """
 
     client_id: str
     envd_version: str
     sandbox_id: str
     template_id: str
-    alias: str | Unset = UNSET
-    domain: None | str | Unset = UNSET
-    envd_access_token: str | Unset = UNSET
-    traffic_access_token: None | str | Unset = UNSET
+    alias: Union[Unset, str] = UNSET
+    domain: Union[None, Unset, str] = UNSET
+    envd_access_token: Union[Unset, str] = UNSET
+    traffic_access_token: Union[None, Unset, str] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -46,7 +44,7 @@ class Sandbox:
 
         alias = self.alias
 
-        domain: None | str | Unset
+        domain: Union[None, Unset, str]
         if isinstance(self.domain, Unset):
             domain = UNSET
         else:
@@ -54,7 +52,7 @@ class Sandbox:
 
         envd_access_token = self.envd_access_token
 
-        traffic_access_token: None | str | Unset
+        traffic_access_token: Union[None, Unset, str]
         if isinstance(self.traffic_access_token, Unset):
             traffic_access_token = UNSET
         else:
@@ -94,23 +92,23 @@ class Sandbox:
 
         alias = d.pop("alias", UNSET)
 
-        def _parse_domain(data: object) -> None | str | Unset:
+        def _parse_domain(data: object) -> Union[None, Unset, str]:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(None | str | Unset, data)
+            return cast(Union[None, Unset, str], data)
 
         domain = _parse_domain(d.pop("domain", UNSET))
 
         envd_access_token = d.pop("envdAccessToken", UNSET)
 
-        def _parse_traffic_access_token(data: object) -> None | str | Unset:
+        def _parse_traffic_access_token(data: object) -> Union[None, Unset, str]:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(None | str | Unset, data)
+            return cast(Union[None, Unset, str], data)
 
         traffic_access_token = _parse_traffic_access_token(
             d.pop("trafficAccessToken", UNSET)

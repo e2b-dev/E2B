@@ -1,7 +1,5 @@
-from __future__ import annotations
-
 from collections.abc import Mapping
-from typing import Any, TypeVar
+from typing import Any, TypeVar, Union
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -15,10 +13,10 @@ T = TypeVar("T", bound="PostSandboxesSandboxIDRefreshesBody")
 class PostSandboxesSandboxIDRefreshesBody:
     """
     Attributes:
-        duration (int | Unset): Duration for which the sandbox should be kept alive in seconds
+        duration (Union[Unset, int]): Duration for which the sandbox should be kept alive in seconds
     """
 
-    duration: int | Unset = UNSET
+    duration: Union[Unset, int] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:

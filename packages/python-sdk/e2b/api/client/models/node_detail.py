@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, TypeVar, cast
 
@@ -30,7 +28,7 @@ class NodeDetail:
         machine_info (MachineInfo):
         metrics (NodeMetrics): Node metrics
         node_id (str): Identifier of the nomad node
-        sandboxes (list[ListedSandbox]): List of sandboxes running on the node
+        sandboxes (list['ListedSandbox']): List of sandboxes running on the node
         service_instance_id (str): Service instance identifier of the node
         status (NodeStatus): Status of the node
         version (str): Version of the orchestrator
@@ -42,10 +40,10 @@ class NodeDetail:
     create_fails: int
     create_successes: int
     id: str
-    machine_info: MachineInfo
-    metrics: NodeMetrics
+    machine_info: "MachineInfo"
+    metrics: "NodeMetrics"
     node_id: str
-    sandboxes: list[ListedSandbox]
+    sandboxes: list["ListedSandbox"]
     service_instance_id: str
     status: NodeStatus
     version: str

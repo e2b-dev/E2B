@@ -1,8 +1,6 @@
-from __future__ import annotations
-
 import datetime
 from collections.abc import Mapping
-from typing import Any, TypeVar
+from typing import Any, TypeVar, Union
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -21,13 +19,13 @@ class BuildLogEntry:
         level (LogLevel): State of the sandbox
         message (str): Log message content
         timestamp (datetime.datetime): Timestamp of the log entry
-        step (str | Unset): Step in the build process related to the log entry
+        step (Union[Unset, str]): Step in the build process related to the log entry
     """
 
     level: LogLevel
     message: str
     timestamp: datetime.datetime
-    step: str | Unset = UNSET
+    step: Union[Unset, str] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:

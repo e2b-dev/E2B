@@ -1,6 +1,5 @@
 from http import HTTPStatus
-from typing import Any, cast
-from urllib.parse import quote
+from typing import Any, Optional, Union, cast
 
 import httpx
 
@@ -20,9 +19,7 @@ def _get_kwargs(
 
     _kwargs: dict[str, Any] = {
         "method": "patch",
-        "url": "/templates/{template_id}".format(
-            template_id=quote(str(template_id), safe=""),
-        ),
+        "url": f"/templates/{template_id}",
     }
 
     _kwargs["json"] = body.to_dict()
@@ -34,27 +31,23 @@ def _get_kwargs(
 
 
 def _parse_response(
-    *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Any | Error | None:
+    *, client: Union[AuthenticatedClient, Client], response: httpx.Response
+) -> Optional[Union[Any, Error]]:
     if response.status_code == 200:
         response_200 = cast(Any, None)
         return response_200
-
     if response.status_code == 400:
         response_400 = Error.from_dict(response.json())
 
         return response_400
-
     if response.status_code == 401:
         response_401 = Error.from_dict(response.json())
 
         return response_401
-
     if response.status_code == 500:
         response_500 = Error.from_dict(response.json())
 
         return response_500
-
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
     else:
@@ -62,8 +55,8 @@ def _parse_response(
 
 
 def _build_response(
-    *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[Any | Error]:
+    *, client: Union[AuthenticatedClient, Client], response: httpx.Response
+) -> Response[Union[Any, Error]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -77,7 +70,7 @@ def sync_detailed(
     *,
     client: AuthenticatedClient,
     body: TemplateUpdateRequest,
-) -> Response[Any | Error]:
+) -> Response[Union[Any, Error]]:
     """Update template
 
     Args:
@@ -89,7 +82,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Any | Error]
+        Response[Union[Any, Error]]
     """
 
     kwargs = _get_kwargs(
@@ -109,7 +102,7 @@ def sync(
     *,
     client: AuthenticatedClient,
     body: TemplateUpdateRequest,
-) -> Any | Error | None:
+) -> Optional[Union[Any, Error]]:
     """Update template
 
     Args:
@@ -121,7 +114,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Any | Error
+        Union[Any, Error]
     """
 
     return sync_detailed(
@@ -136,7 +129,7 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient,
     body: TemplateUpdateRequest,
-) -> Response[Any | Error]:
+) -> Response[Union[Any, Error]]:
     """Update template
 
     Args:
@@ -148,7 +141,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Any | Error]
+        Response[Union[Any, Error]]
     """
 
     kwargs = _get_kwargs(
@@ -166,7 +159,7 @@ async def asyncio(
     *,
     client: AuthenticatedClient,
     body: TemplateUpdateRequest,
-) -> Any | Error | None:
+) -> Optional[Union[Any, Error]]:
     """Update template
 
     Args:
@@ -178,7 +171,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Any | Error
+        Union[Any, Error]
     """
 
     return (

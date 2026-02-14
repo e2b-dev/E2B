@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any
+from typing import Any, Optional, Union
 
 import httpx
 
@@ -14,12 +14,11 @@ def _get_kwargs(
     *,
     sandbox_ids: list[str],
 ) -> dict[str, Any]:
-
     params: dict[str, Any] = {}
 
     json_sandbox_ids = sandbox_ids
 
-    params["sandbox_ids"] = json_sandbox_ids
+    params["sandbox_ids"] = ",".join(str(item) for item in json_sandbox_ids)
 
     params = {k: v for k, v in params.items() if v is not UNSET and v is not None}
 
@@ -33,28 +32,24 @@ def _get_kwargs(
 
 
 def _parse_response(
-    *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Error | SandboxesWithMetrics | None:
+    *, client: Union[AuthenticatedClient, Client], response: httpx.Response
+) -> Optional[Union[Error, SandboxesWithMetrics]]:
     if response.status_code == 200:
         response_200 = SandboxesWithMetrics.from_dict(response.json())
 
         return response_200
-
     if response.status_code == 400:
         response_400 = Error.from_dict(response.json())
 
         return response_400
-
     if response.status_code == 401:
         response_401 = Error.from_dict(response.json())
 
         return response_401
-
     if response.status_code == 500:
         response_500 = Error.from_dict(response.json())
 
         return response_500
-
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
     else:
@@ -62,8 +57,8 @@ def _parse_response(
 
 
 def _build_response(
-    *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[Error | SandboxesWithMetrics]:
+    *, client: Union[AuthenticatedClient, Client], response: httpx.Response
+) -> Response[Union[Error, SandboxesWithMetrics]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -76,7 +71,7 @@ def sync_detailed(
     *,
     client: AuthenticatedClient,
     sandbox_ids: list[str],
-) -> Response[Error | SandboxesWithMetrics]:
+) -> Response[Union[Error, SandboxesWithMetrics]]:
     """List metrics for given sandboxes
 
     Args:
@@ -87,7 +82,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Error | SandboxesWithMetrics]
+        Response[Union[Error, SandboxesWithMetrics]]
     """
 
     kwargs = _get_kwargs(
@@ -105,7 +100,7 @@ def sync(
     *,
     client: AuthenticatedClient,
     sandbox_ids: list[str],
-) -> Error | SandboxesWithMetrics | None:
+) -> Optional[Union[Error, SandboxesWithMetrics]]:
     """List metrics for given sandboxes
 
     Args:
@@ -116,7 +111,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Error | SandboxesWithMetrics
+        Union[Error, SandboxesWithMetrics]
     """
 
     return sync_detailed(
@@ -129,7 +124,7 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient,
     sandbox_ids: list[str],
-) -> Response[Error | SandboxesWithMetrics]:
+) -> Response[Union[Error, SandboxesWithMetrics]]:
     """List metrics for given sandboxes
 
     Args:
@@ -140,7 +135,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Error | SandboxesWithMetrics]
+        Response[Union[Error, SandboxesWithMetrics]]
     """
 
     kwargs = _get_kwargs(
@@ -156,7 +151,7 @@ async def asyncio(
     *,
     client: AuthenticatedClient,
     sandbox_ids: list[str],
-) -> Error | SandboxesWithMetrics | None:
+) -> Optional[Union[Error, SandboxesWithMetrics]]:
     """List metrics for given sandboxes
 
     Args:
@@ -167,7 +162,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Error | SandboxesWithMetrics
+        Union[Error, SandboxesWithMetrics]
     """
 
     return (

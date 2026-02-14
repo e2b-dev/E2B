@@ -1,8 +1,6 @@
-from __future__ import annotations
-
 import datetime
 from collections.abc import Mapping
-from typing import Any, TypeVar
+from typing import Any, TypeVar, Union
 from uuid import UUID
 
 from attrs import define as _attrs_define
@@ -25,9 +23,9 @@ class TemplateBuild:
         memory_mb (int): Memory for the sandbox in MiB
         status (TemplateBuildStatus): Status of the template build
         updated_at (datetime.datetime): Time when the build was last updated
-        disk_size_mb (int | Unset): Disk size for the sandbox in MiB
-        envd_version (str | Unset): Version of the envd running in the sandbox
-        finished_at (datetime.datetime | Unset): Time when the build was finished
+        disk_size_mb (Union[Unset, int]): Disk size for the sandbox in MiB
+        envd_version (Union[Unset, str]): Version of the envd running in the sandbox
+        finished_at (Union[Unset, datetime.datetime]): Time when the build was finished
     """
 
     build_id: UUID
@@ -36,9 +34,9 @@ class TemplateBuild:
     memory_mb: int
     status: TemplateBuildStatus
     updated_at: datetime.datetime
-    disk_size_mb: int | Unset = UNSET
-    envd_version: str | Unset = UNSET
-    finished_at: datetime.datetime | Unset = UNSET
+    disk_size_mb: Union[Unset, int] = UNSET
+    envd_version: Union[Unset, str] = UNSET
+    finished_at: Union[Unset, datetime.datetime] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -58,7 +56,7 @@ class TemplateBuild:
 
         envd_version = self.envd_version
 
-        finished_at: str | Unset = UNSET
+        finished_at: Union[Unset, str] = UNSET
         if not isinstance(self.finished_at, Unset):
             finished_at = self.finished_at.isoformat()
 
@@ -103,7 +101,7 @@ class TemplateBuild:
         envd_version = d.pop("envdVersion", UNSET)
 
         _finished_at = d.pop("finishedAt", UNSET)
-        finished_at: datetime.datetime | Unset
+        finished_at: Union[Unset, datetime.datetime]
         if isinstance(_finished_at, Unset):
             finished_at = UNSET
         else:

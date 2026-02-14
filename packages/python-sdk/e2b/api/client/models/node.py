@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, TypeVar
 
@@ -40,8 +38,8 @@ class Node:
     create_fails: int
     create_successes: int
     id: str
-    machine_info: MachineInfo
-    metrics: NodeMetrics
+    machine_info: "MachineInfo"
+    metrics: "NodeMetrics"
     node_id: str
     sandbox_count: int
     sandbox_starting_count: int

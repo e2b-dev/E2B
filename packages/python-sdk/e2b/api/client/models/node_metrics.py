@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, TypeVar
 
@@ -22,7 +20,7 @@ class NodeMetrics:
         allocated_memory_bytes (int): Amount of allocated memory in bytes
         cpu_count (int): Total number of CPU cores on the node
         cpu_percent (int): Node CPU usage percentage
-        disks (list[DiskMetrics]): Detailed metrics for each disk/mount point
+        disks (list['DiskMetrics']): Detailed metrics for each disk/mount point
         memory_total_bytes (int): Total node memory in bytes
         memory_used_bytes (int): Node memory used in bytes
     """
@@ -31,7 +29,7 @@ class NodeMetrics:
     allocated_memory_bytes: int
     cpu_count: int
     cpu_percent: int
-    disks: list[DiskMetrics]
+    disks: list["DiskMetrics"]
     memory_total_bytes: int
     memory_used_bytes: int
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)

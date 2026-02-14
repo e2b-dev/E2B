@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import datetime
 from collections.abc import Mapping
 from typing import Any, TypeVar
