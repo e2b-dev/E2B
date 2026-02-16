@@ -47,9 +47,13 @@ jobs:
       IS_CLI: ${{ contains(github.event.pull_request.labels.*.name, 'cli-rc') || (github.event_name == 'workflow_dispatch' && github.event.inputs.cli == 'true') }}
       IS_PYTHON: ${{ contains(github.event.pull_request.labels.*.name, 'python-rc') || (github.event_name == 'workflow_dispatch' && github.event.inputs.python-sdk == 'true') }}
       PUBLISH_TAG: ${{ github.event.inputs.tag || 'rc' }}
-      PREID: ${{ github.event.inputs.preid || github.head_ref || github.ref_name }}
 
     steps:
+      - name: Sanitize preid
+        run: |
+          RAW_PREID="${{ github.event.inputs.preid || github.head_ref || github.ref_name }}"
+          echo "PREID=$(echo "$RAW_PREID" | sed 's/[^0-9A-Za-z-]/-/g')" >> "$GITHUB_ENV"
+
       - name: Block production tags
         if: ${{ github.event_name == 'workflow_dispatch' }}
         run: |
