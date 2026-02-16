@@ -137,11 +137,11 @@ export interface FilesystemRequestOpts
    */
   user?: Username
   /**
-   * Content encoding to use for the request/response body.
-   * When set to `'gzip'`, uploads will compress the body and the header
-   * `Content-Encoding: gzip` will be set on the request.
+   * Encoding to use for the request/response body.
+   * When set to `'gzip'`, uploads will be compressed and downloads
+   * will request gzip-encoded responses.
    */
-  contentEncoding?: 'gzip'
+  encoding?: 'gzip'
 }
 
 export interface FilesystemListOpts extends FilesystemRequestOpts {
@@ -266,8 +266,8 @@ export class Filesystem {
     }
 
     const headers: Record<string, string> = {}
-    if (opts?.contentEncoding) {
-      headers['Accept-Encoding'] = opts.contentEncoding
+    if (opts?.encoding) {
+      headers['Accept-Encoding'] = opts.encoding
     }
 
     const res = await this.envdApi.api.GET('/files', {
@@ -367,7 +367,7 @@ export class Filesystem {
 
     if (writeFiles.length === 0) return [] as WriteInfo[]
 
-    const useGzip = writeOpts?.contentEncoding === 'gzip'
+    const useGzip = writeOpts?.encoding === 'gzip'
 
     const formData = new FormData()
     for (let i = 0; i < writeFiles.length; i++) {

@@ -65,7 +65,7 @@ class Filesystem:
         format: Literal["text"] = "text",
         user: Optional[Username] = None,
         request_timeout: Optional[float] = None,
-        content_encoding: Optional[Literal["gzip"]] = None,
+        encoding: Optional[Literal["gzip"]] = None,
     ) -> str:
         """
         Read file content as a `str`.
@@ -74,7 +74,7 @@ class Filesystem:
         :param user: Run the operation as this user
         :param format: Format of the file content—`text` by default
         :param request_timeout: Timeout for the request in **seconds**
-        :param content_encoding: Content encoding to use for the request
+        :param encoding: Encoding to use for the request
 
         :return: File content as a `str`
         """
@@ -87,7 +87,7 @@ class Filesystem:
         format: Literal["bytes"],
         user: Optional[Username] = None,
         request_timeout: Optional[float] = None,
-        content_encoding: Optional[Literal["gzip"]] = None,
+        encoding: Optional[Literal["gzip"]] = None,
     ) -> bytearray:
         """
         Read file content as a `bytearray`.
@@ -96,7 +96,7 @@ class Filesystem:
         :param user: Run the operation as this user
         :param format: Format of the file content—`bytes`
         :param request_timeout: Timeout for the request in **seconds**
-        :param content_encoding: Content encoding to use for the request
+        :param encoding: Encoding to use for the request
 
         :return: File content as a `bytearray`
         """
@@ -109,7 +109,7 @@ class Filesystem:
         format: Literal["stream"],
         user: Optional[Username] = None,
         request_timeout: Optional[float] = None,
-        content_encoding: Optional[Literal["gzip"]] = None,
+        encoding: Optional[Literal["gzip"]] = None,
     ) -> Iterator[bytes]:
         """
         Read file content as a `Iterator[bytes]`.
@@ -118,7 +118,7 @@ class Filesystem:
         :param user: Run the operation as this user
         :param format: Format of the file content—`stream`
         :param request_timeout: Timeout for the request in **seconds**
-        :param content_encoding: Content encoding to use for the request
+        :param encoding: Encoding to use for the request
 
         :return: File content as an `Iterator[bytes]`
         """
@@ -130,7 +130,7 @@ class Filesystem:
         format: Literal["text", "bytes", "stream"] = "text",
         user: Optional[Username] = None,
         request_timeout: Optional[float] = None,
-        content_encoding: Optional[Literal["gzip"]] = None,
+        encoding: Optional[Literal["gzip"]] = None,
     ):
         username = user
         if username is None and self._envd_version < ENVD_DEFAULT_USER:
@@ -141,8 +141,8 @@ class Filesystem:
             params["username"] = username
 
         headers = {}
-        if content_encoding:
-            headers["Accept-Encoding"] = content_encoding
+        if encoding:
+            headers["Accept-Encoding"] = encoding
 
         r = self._envd_api.get(
             ENVD_API_FILES_ROUTE,
@@ -168,7 +168,7 @@ class Filesystem:
         data: Union[str, bytes, IO],
         user: Optional[Username] = None,
         request_timeout: Optional[float] = None,
-        content_encoding: Optional[Literal["gzip"]] = None,
+        encoding: Optional[Literal["gzip"]] = None,
     ) -> WriteInfo:
         """
         Write content to a file on the path.
@@ -180,7 +180,7 @@ class Filesystem:
         :param data: Data to write to the file, can be a `str`, `bytes`, or `IO`.
         :param user: Run the operation as this user
         :param request_timeout: Timeout for the request in **seconds**
-        :param content_encoding: Content encoding to use for the request
+        :param encoding: Encoding to use for the request
 
         :return: Information about the written file
         """
@@ -188,7 +188,7 @@ class Filesystem:
             [WriteEntry(path=path, data=data)],
             user=user,
             request_timeout=request_timeout,
-            content_encoding=content_encoding,
+            encoding=encoding,
         )
 
         if len(result) != 1:
@@ -201,7 +201,7 @@ class Filesystem:
         files: List[WriteEntry],
         user: Optional[Username] = None,
         request_timeout: Optional[float] = None,
-        content_encoding: Optional[Literal["gzip"]] = None,
+        encoding: Optional[Literal["gzip"]] = None,
     ) -> List[WriteInfo]:
         """
         Writes a list of files to the filesystem.
@@ -212,7 +212,7 @@ class Filesystem:
         :param files: list of files to write as `WriteEntry` objects, each containing `path` and `data`
         :param user: Run the operation as this user
         :param request_timeout: Timeout for the request
-        :param content_encoding: Content encoding to use for the request
+        :param encoding: Encoding to use for the request
         :return: Information about the written files
         """
         username = user
@@ -225,7 +225,7 @@ class Filesystem:
         if len(files) == 1:
             params["path"] = files[0]["path"]
 
-        use_gzip = content_encoding == "gzip"
+        use_gzip = encoding == "gzip"
 
         # Prepare the files for the multipart/form-data request
         httpx_files = []

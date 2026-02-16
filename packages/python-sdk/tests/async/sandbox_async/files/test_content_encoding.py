@@ -6,10 +6,10 @@ async def test_write_and_read_with_gzip(async_sandbox: AsyncSandbox, debug):
     filename = "test_gzip_write.txt"
     content = "This is a test file with gzip encoding."
 
-    info = await async_sandbox.files.write(filename, content, content_encoding="gzip")
+    info = await async_sandbox.files.write(filename, content, encoding="gzip")
     assert info.path == f"/home/user/{filename}"
 
-    read_content = await async_sandbox.files.read(filename, content_encoding="gzip")
+    read_content = await async_sandbox.files.read(filename, encoding="gzip")
     assert read_content == content
 
     if debug:
@@ -20,7 +20,7 @@ async def test_write_gzip_read_plain(async_sandbox: AsyncSandbox, debug):
     filename = "test_gzip_write_plain_read.txt"
     content = "Written with gzip, read without."
 
-    await async_sandbox.files.write(filename, content, content_encoding="gzip")
+    await async_sandbox.files.write(filename, content, encoding="gzip")
 
     read_content = await async_sandbox.files.read(filename)
     assert read_content == content
@@ -36,7 +36,7 @@ async def test_write_files_with_gzip(async_sandbox: AsyncSandbox, debug):
         WriteEntry(path="gzip_multi_3.txt", data="File 3 content"),
     ]
 
-    infos = await async_sandbox.files.write_files(files, content_encoding="gzip")
+    infos = await async_sandbox.files.write_files(files, encoding="gzip")
     assert len(infos) == len(files)
 
     for file in files:
@@ -55,7 +55,7 @@ async def test_read_bytes_with_gzip(async_sandbox: AsyncSandbox, debug):
     await async_sandbox.files.write(filename, content)
 
     read_bytes = await async_sandbox.files.read(
-        filename, format="bytes", content_encoding="gzip"
+        filename, format="bytes", encoding="gzip"
     )
     assert isinstance(read_bytes, bytearray)
     assert read_bytes.decode("utf-8") == content
