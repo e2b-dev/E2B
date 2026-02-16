@@ -1,14 +1,14 @@
-name: Lint
-permissions:
-  contents: read
+name: Typecheck
 
 on:
   pull_request:
 
 jobs:
-  lint:
-    name: Lint
+  typecheck:
+    name: Typecheck
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout Repo
@@ -57,21 +57,6 @@ jobs:
         run: |
           poetry install --with dev
 
-      - name: Run linting
+      - name: Run typecheck
         run: |
-          pnpm run lint
-
-      - name: Run formatting
-        run: |
-          pnpm run format
-
-      - name: Check for uncommitted changes
-        run: |
-          if [[ -n $(git status --porcelain) ]]; then
-            echo "❌ Files are not formatted properly:"
-            git status --short
-            git diff
-            exit 1
-          else
-            echo "✅ No changes detected."
-          fi
+          pnpm run typecheck

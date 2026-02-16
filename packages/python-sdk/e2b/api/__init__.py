@@ -31,7 +31,7 @@ class SandboxCreateResponse:
     sandbox_id: str
     sandbox_domain: Optional[str]
     envd_version: str
-    envd_access_token: str
+    envd_access_token: Optional[str]
     traffic_access_token: Optional[str]
 
 
@@ -135,7 +135,7 @@ class ApiClient(AuthenticatedClient):
                 "transport": transport,
             },
             headers=headers,
-            token=token,
+            token=token or "",
             auth_header_name=auth_header_name,
             prefix=prefix,
             *args,

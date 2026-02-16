@@ -12,6 +12,7 @@
     "pnpm-install-hack": "cd packages/js-sdk && sed -i '' 's/\"version\": \".*\"/\"version\": \"9.9.9\"/g' package.json && cd ../.. && pnpm i && git checkout -- packages/js-sdk/package.json",
     "generate-sdk-reference": "pnpm --if-present --recursive run generate-sdk-reference",
     "lint": "pnpm --if-present --recursive run lint",
+    "typecheck": "pnpm --if-present --recursive run typecheck",
     "format": "pnpm --if-present --recursive run format",
     "changeset": "pnpx @changesets/cli"
   },
