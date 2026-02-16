@@ -1,7 +1,7 @@
 import gzip
 import httpcore
 import httpx
-from io import IOBase
+from io import IOBase, TextIOBase
 from packaging.version import Version
 from typing import AsyncIterator, IO, List, Literal, Optional, overload, Union
 from e2b.sandbox.filesystem.filesystem import WriteEntry
@@ -232,7 +232,7 @@ class Filesystem:
         for file in files:
             file_path, file_data = file["path"], file["data"]
             if isinstance(file_data, str):
-                raw = file_data.encode("utf-8") if use_gzip else file_data
+                raw = file_data.encode("utf-8")
                 httpx_files.append(
                     ("file", (file_path, gzip.compress(raw) if use_gzip else raw))
                 )
@@ -252,6 +252,9 @@ class Filesystem:
                     if isinstance(raw, str):
                         raw = raw.encode("utf-8")
                     httpx_files.append(("file", (file_path, gzip.compress(raw))))
+                elif isinstance(file_data, TextIOBase):
+                    # Text streams must be read first
+                    httpx_files.append(("file", (file_path, file_data.read())))
                 else:
                     httpx_files.append(("file", (file_path, file_data)))
             else:
