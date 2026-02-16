@@ -1,36 +1,37 @@
 from collections.abc import Mapping
-from typing import Any, TypeVar, cast
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
-T = TypeVar("T", bound="SnapshotInfo")
+if TYPE_CHECKING:
+    from ..models.sandbox_log_entry import SandboxLogEntry
+
+
+T = TypeVar("T", bound="SandboxLogsV2Response")
 
 
 @_attrs_define
-class SnapshotInfo:
+class SandboxLogsV2Response:
     """
     Attributes:
-        names (list[str]): Full names of the snapshot template including team namespace and tag (e.g. team-slug/my-
-            snapshot:v2)
-        snapshot_id (str): Identifier of the snapshot template
+        logs (list['SandboxLogEntry']): Sandbox logs structured
     """
 
-    names: list[str]
-    snapshot_id: str
+    logs: list["SandboxLogEntry"]
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        names = self.names
-
-        snapshot_id = self.snapshot_id
+        logs = []
+        for logs_item_data in self.logs:
+            logs_item = logs_item_data.to_dict()
+            logs.append(logs_item)
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
-                "names": names,
-                "snapshotID": snapshot_id,
+                "logs": logs,
             }
         )
 
@@ -38,18 +39,22 @@ class SnapshotInfo:
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
+        from ..models.sandbox_log_entry import SandboxLogEntry
+
         d = dict(src_dict)
-        names = cast(list[str], d.pop("names"))
+        logs = []
+        _logs = d.pop("logs")
+        for logs_item_data in _logs:
+            logs_item = SandboxLogEntry.from_dict(logs_item_data)
 
-        snapshot_id = d.pop("snapshotID")
+            logs.append(logs_item)
 
-        snapshot_info = cls(
-            names=names,
-            snapshot_id=snapshot_id,
+        sandbox_logs_v2_response = cls(
+            logs=logs,
         )
 
-        snapshot_info.additional_properties = d
-        return snapshot_info
+        sandbox_logs_v2_response.additional_properties = d
+        return sandbox_logs_v2_response
 
     @property
     def additional_keys(self) -> list[str]:

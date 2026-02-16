@@ -1,36 +1,30 @@
 from collections.abc import Mapping
-from typing import Any, TypeVar, cast
+from typing import Any, TypeVar
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
-T = TypeVar("T", bound="SnapshotInfo")
+T = TypeVar("T", bound="NewVolume")
 
 
 @_attrs_define
-class SnapshotInfo:
+class NewVolume:
     """
     Attributes:
-        names (list[str]): Full names of the snapshot template including team namespace and tag (e.g. team-slug/my-
-            snapshot:v2)
-        snapshot_id (str): Identifier of the snapshot template
+        name (str): Name of the volume
     """
 
-    names: list[str]
-    snapshot_id: str
+    name: str
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        names = self.names
-
-        snapshot_id = self.snapshot_id
+        name = self.name
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
-                "names": names,
-                "snapshotID": snapshot_id,
+                "name": name,
             }
         )
 
@@ -39,17 +33,14 @@ class SnapshotInfo:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        names = cast(list[str], d.pop("names"))
+        name = d.pop("name")
 
-        snapshot_id = d.pop("snapshotID")
-
-        snapshot_info = cls(
-            names=names,
-            snapshot_id=snapshot_id,
+        new_volume = cls(
+            name=name,
         )
 
-        snapshot_info.additional_properties = d
-        return snapshot_info
+        new_volume.additional_properties = d
+        return new_volume
 
     @property
     def additional_keys(self) -> list[str]:

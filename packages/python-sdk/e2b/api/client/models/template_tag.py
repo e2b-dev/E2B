@@ -1,36 +1,43 @@
+import datetime
 from collections.abc import Mapping
-from typing import Any, TypeVar, cast
+from typing import Any, TypeVar
+from uuid import UUID
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
+from dateutil.parser import isoparse
 
-T = TypeVar("T", bound="SnapshotInfo")
+T = TypeVar("T", bound="TemplateTag")
 
 
 @_attrs_define
-class SnapshotInfo:
+class TemplateTag:
     """
     Attributes:
-        names (list[str]): Full names of the snapshot template including team namespace and tag (e.g. team-slug/my-
-            snapshot:v2)
-        snapshot_id (str): Identifier of the snapshot template
+        build_id (UUID): Identifier of the build associated with this tag
+        created_at (datetime.datetime): Time when the tag was assigned
+        tag (str): The tag name
     """
 
-    names: list[str]
-    snapshot_id: str
+    build_id: UUID
+    created_at: datetime.datetime
+    tag: str
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        names = self.names
+        build_id = str(self.build_id)
 
-        snapshot_id = self.snapshot_id
+        created_at = self.created_at.isoformat()
+
+        tag = self.tag
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
-                "names": names,
-                "snapshotID": snapshot_id,
+                "buildID": build_id,
+                "createdAt": created_at,
+                "tag": tag,
             }
         )
 
@@ -39,17 +46,20 @@ class SnapshotInfo:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        names = cast(list[str], d.pop("names"))
+        build_id = UUID(d.pop("buildID"))
 
-        snapshot_id = d.pop("snapshotID")
+        created_at = isoparse(d.pop("createdAt"))
 
-        snapshot_info = cls(
-            names=names,
-            snapshot_id=snapshot_id,
+        tag = d.pop("tag")
+
+        template_tag = cls(
+            build_id=build_id,
+            created_at=created_at,
+            tag=tag,
         )
 
-        snapshot_info.additional_properties = d
-        return snapshot_info
+        template_tag.additional_properties = d
+        return template_tag
 
     @property
     def additional_keys(self) -> list[str]:

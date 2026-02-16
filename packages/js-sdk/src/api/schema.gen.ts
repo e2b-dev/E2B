@@ -73,48 +73,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/sandboxes/metrics": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** @description List metrics for given sandboxes */
-        get: {
-            parameters: {
-                query: {
-                    /** @description Comma-separated list of sandbox IDs to get metrics for */
-                    sandbox_ids: string[];
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Successfully returned all running sandboxes with metrics */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["SandboxesWithMetrics"];
-                    };
-                };
-                400: components["responses"]["400"];
-                401: components["responses"]["401"];
-                500: components["responses"]["500"];
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/sandboxes/{sandboxID}": {
         parameters: {
             query?: never;
@@ -241,14 +199,17 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description Get sandbox logs */
+        /**
+         * @deprecated
+         * @description Get sandbox logs. Use /v2/sandboxes/{sandboxID}/logs instead.
+         */
         get: {
             parameters: {
                 query?: {
-                    /** @description Starting timestamp of the logs that should be returned in milliseconds */
-                    start?: number;
                     /** @description Maximum number of logs that should be returned */
                     limit?: number;
+                    /** @description Starting timestamp of the logs that should be returned in milliseconds */
+                    start?: number;
                 };
                 header?: never;
                 path: {
@@ -291,9 +252,9 @@ export interface paths {
         get: {
             parameters: {
                 query?: {
+                    end?: number;
                     /** @description Unix timestamp for the start of the interval, in seconds, for which the metrics */
                     start?: number;
-                    end?: number;
                 };
                 header?: never;
                 path: {
@@ -479,7 +440,14 @@ export interface paths {
                 };
                 cookie?: never;
             };
-            requestBody?: never;
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @description Optional name for the snapshot template. If a snapshot template with this name already exists, a new build will be assigned to the existing template instead of creating a new one. */
+                        name?: string;
+                    };
+                };
+            };
             responses: {
                 /** @description Snapshot created successfully */
                 201: {
@@ -551,6 +519,48 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/sandboxes/metrics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description List metrics for given sandboxes */
+        get: {
+            parameters: {
+                query: {
+                    /** @description Comma-separated list of sandbox IDs to get metrics for */
+                    sandbox_ids: string[];
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Successfully returned all running sandboxes with metrics */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SandboxesWithMetrics"];
+                    };
+                };
+                400: components["responses"]["400"];
+                401: components["responses"]["401"];
+                500: components["responses"]["500"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/snapshots": {
         parameters: {
             query?: never;
@@ -562,11 +572,11 @@ export interface paths {
         get: {
             parameters: {
                 query?: {
-                    sandboxID?: string;
                     /** @description Maximum number of items to return per page */
                     limit?: components["parameters"]["paginationLimit"];
                     /** @description Cursor to start the list from */
                     nextToken?: components["parameters"]["paginationNextToken"];
+                    sandboxID?: string;
                 };
                 header?: never;
                 path?: never;
@@ -584,6 +594,138 @@ export interface paths {
                     };
                 };
                 401: components["responses"]["401"];
+                500: components["responses"]["500"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/teams": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description List all teams */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Successfully returned all teams */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Team"][];
+                    };
+                };
+                401: components["responses"]["401"];
+                500: components["responses"]["500"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/teams/{teamID}/metrics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Get metrics for the team */
+        get: {
+            parameters: {
+                query?: {
+                    end?: number;
+                    /** @description Unix timestamp for the start of the interval, in seconds, for which the metrics */
+                    start?: number;
+                };
+                header?: never;
+                path: {
+                    teamID: components["parameters"]["teamID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Successfully returned the team metrics */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TeamMetric"][];
+                    };
+                };
+                400: components["responses"]["400"];
+                401: components["responses"]["401"];
+                403: components["responses"]["403"];
+                500: components["responses"]["500"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/teams/{teamID}/metrics/max": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Get the maximum metrics for the team in the given interval */
+        get: {
+            parameters: {
+                query: {
+                    end?: number;
+                    /** @description Metric to retrieve the maximum value for */
+                    metric: "concurrent_sandboxes" | "sandbox_start_rate";
+                    /** @description Unix timestamp for the start of the interval, in seconds, for which the metrics */
+                    start?: number;
+                };
+                header?: never;
+                path: {
+                    teamID: components["parameters"]["teamID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Successfully returned the team metrics */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["MaxTeamMetric"];
+                    };
+                };
+                400: components["responses"]["400"];
+                401: components["responses"]["401"];
+                403: components["responses"]["403"];
                 500: components["responses"]["500"];
             };
         };
@@ -665,118 +807,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/templates/aliases/{alias}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** @description Check if template with given alias exists */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    alias: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Successfully queried template by alias */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["TemplateAliasResponse"];
-                    };
-                };
-                400: components["responses"]["400"];
-                403: components["responses"]["403"];
-                404: components["responses"]["404"];
-                500: components["responses"]["500"];
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/templates/tags": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** @description Assign tag(s) to a template build */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["AssignTemplateTagsRequest"];
-                };
-            };
-            responses: {
-                /** @description Tag assigned successfully */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["AssignedTemplateTags"];
-                    };
-                };
-                400: components["responses"]["400"];
-                401: components["responses"]["401"];
-                404: components["responses"]["404"];
-                500: components["responses"]["500"];
-            };
-        };
-        /** @description Delete multiple tags from templates */
-        delete: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["DeleteTemplateTagsRequest"];
-                };
-            };
-            responses: {
-                /** @description Tags deleted successfully */
-                204: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                400: components["responses"]["400"];
-                401: components["responses"]["401"];
-                404: components["responses"]["404"];
-                500: components["responses"]["500"];
-            };
-        };
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/templates/{templateID}": {
         parameters: {
             query?: never;
@@ -788,10 +818,10 @@ export interface paths {
         get: {
             parameters: {
                 query?: {
-                    /** @description Cursor to start the list from */
-                    nextToken?: components["parameters"]["paginationNextToken"];
                     /** @description Maximum number of items to return per page */
                     limit?: components["parameters"]["paginationLimit"];
+                    /** @description Cursor to start the list from */
+                    nextToken?: components["parameters"]["paginationNextToken"];
                 };
                 header?: never;
                 path: {
@@ -923,8 +953,8 @@ export interface paths {
                 query?: never;
                 header?: never;
                 path: {
-                    templateID: components["parameters"]["templateID"];
                     buildID: components["parameters"]["buildID"];
+                    templateID: components["parameters"]["templateID"];
                 };
                 cookie?: never;
             };
@@ -960,17 +990,17 @@ export interface paths {
                 query?: {
                     /** @description Starting timestamp of the logs that should be returned in milliseconds */
                     cursor?: number;
-                    /** @description Maximum number of logs that should be returned */
-                    limit?: number;
                     direction?: components["schemas"]["LogsDirection"];
                     level?: components["schemas"]["LogLevel"];
+                    /** @description Maximum number of logs that should be returned */
+                    limit?: number;
                     /** @description Source of the logs that should be returned from */
                     source?: components["schemas"]["LogsSource"];
                 };
                 header?: never;
                 path: {
-                    templateID: components["parameters"]["templateID"];
                     buildID: components["parameters"]["buildID"];
+                    templateID: components["parameters"]["templateID"];
                 };
                 cookie?: never;
             };
@@ -1009,16 +1039,16 @@ export interface paths {
         get: {
             parameters: {
                 query?: {
-                    /** @description Index of the starting build log that should be returned with the template */
-                    logsOffset?: number;
+                    level?: components["schemas"]["LogLevel"];
                     /** @description Maximum number of logs that should be returned */
                     limit?: number;
-                    level?: components["schemas"]["LogLevel"];
+                    /** @description Index of the starting build log that should be returned with the template */
+                    logsOffset?: number;
                 };
                 header?: never;
                 path: {
-                    templateID: components["parameters"]["templateID"];
                     buildID: components["parameters"]["buildID"];
+                    templateID: components["parameters"]["templateID"];
                 };
                 cookie?: never;
             };
@@ -1059,8 +1089,8 @@ export interface paths {
                 query?: never;
                 header?: never;
                 path: {
-                    templateID: components["parameters"]["templateID"];
                     hash: string;
+                    templateID: components["parameters"]["templateID"];
                 };
                 cookie?: never;
             };
@@ -1089,6 +1119,160 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/templates/{templateID}/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description List all tags for a template */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    templateID: components["parameters"]["templateID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Successfully returned the template tags */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TemplateTag"][];
+                    };
+                };
+                401: components["responses"]["401"];
+                403: components["responses"]["403"];
+                404: components["responses"]["404"];
+                500: components["responses"]["500"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/templates/aliases/{alias}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Check if template with given alias exists */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    alias: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Successfully queried template by alias */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TemplateAliasResponse"];
+                    };
+                };
+                400: components["responses"]["400"];
+                403: components["responses"]["403"];
+                404: components["responses"]["404"];
+                500: components["responses"]["500"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/templates/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Assign tag(s) to a template build */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["AssignTemplateTagsRequest"];
+                };
+            };
+            responses: {
+                /** @description Tag assigned successfully */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AssignedTemplateTags"];
+                    };
+                };
+                400: components["responses"]["400"];
+                401: components["responses"]["401"];
+                404: components["responses"]["404"];
+                500: components["responses"]["500"];
+            };
+        };
+        /** @description Delete multiple tags from templates */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["DeleteTemplateTagsRequest"];
+                };
+            };
+            responses: {
+                /** @description Tags deleted successfully */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                400: components["responses"]["400"];
+                401: components["responses"]["401"];
+                404: components["responses"]["404"];
+                500: components["responses"]["500"];
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v2/sandboxes": {
         parameters: {
             query?: never;
@@ -1100,14 +1284,14 @@ export interface paths {
         get: {
             parameters: {
                 query?: {
-                    /** @description Metadata query used to filter the sandboxes (e.g. "user=abc&app=prod"). Each key and values must be URL encoded. */
-                    metadata?: string;
-                    /** @description Filter sandboxes by one or more states */
-                    state?: components["schemas"]["SandboxState"][];
-                    /** @description Cursor to start the list from */
-                    nextToken?: components["parameters"]["paginationNextToken"];
                     /** @description Maximum number of items to return per page */
                     limit?: components["parameters"]["paginationLimit"];
+                    /** @description Metadata query used to filter the sandboxes (e.g. "user=abc&app=prod"). Each key and values must be URL encoded. */
+                    metadata?: string;
+                    /** @description Cursor to start the list from */
+                    nextToken?: components["parameters"]["paginationNextToken"];
+                    /** @description Filter sandboxes by one or more states */
+                    state?: components["schemas"]["SandboxState"][];
                 };
                 header?: never;
                 path?: never;
@@ -1126,6 +1310,54 @@ export interface paths {
                 };
                 400: components["responses"]["400"];
                 401: components["responses"]["401"];
+                500: components["responses"]["500"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/sandboxes/{sandboxID}/logs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Get sandbox logs */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Starting timestamp of the logs that should be returned in milliseconds */
+                    cursor?: number;
+                    /** @description Direction of the logs that should be returned */
+                    direction?: components["schemas"]["LogsDirection"];
+                    /** @description Maximum number of logs that should be returned */
+                    limit?: number;
+                };
+                header?: never;
+                path: {
+                    sandboxID: components["parameters"]["sandboxID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Successfully returned the sandbox logs */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SandboxLogsV2Response"];
+                    };
+                };
+                401: components["responses"]["401"];
+                404: components["responses"]["404"];
                 500: components["responses"]["500"];
             };
         };
@@ -1243,8 +1475,8 @@ export interface paths {
                 query?: never;
                 header?: never;
                 path: {
-                    templateID: components["parameters"]["templateID"];
                     buildID: components["parameters"]["buildID"];
+                    templateID: components["parameters"]["templateID"];
                 };
                 cookie?: never;
             };
@@ -1318,6 +1550,27 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        AdminSandboxKillResult: {
+            /** @description Number of sandboxes that failed to kill */
+            failedCount: number;
+            /** @description Number of sandboxes successfully killed */
+            killedCount: number;
+        };
+        AssignedTemplateTags: {
+            /**
+             * Format: uuid
+             * @description Identifier of the build associated with these tags
+             */
+            buildID: string;
+            /** @description Assigned tags of the template */
+            tags: string[];
+        };
+        AssignTemplateTagsRequest: {
+            /** @description Tags to assign to the template */
+            tags: string[];
+            /** @description Target template in "name:tag" format */
+            target: string;
+        };
         AWSRegistry: {
             /** @description AWS Access Key ID for ECR authentication */
             awsAccessKeyId: string;
@@ -1330,27 +1583,6 @@ export interface components {
              * @enum {string}
              */
             type: "aws";
-        };
-        AdminSandboxKillResult: {
-            /** @description Number of sandboxes that failed to kill */
-            failedCount: number;
-            /** @description Number of sandboxes successfully killed */
-            killedCount: number;
-        };
-        AssignTemplateTagsRequest: {
-            /** @description Tags to assign to the template */
-            tags: string[];
-            /** @description Target template in "name:tag" format */
-            target: string;
-        };
-        AssignedTemplateTags: {
-            /**
-             * Format: uuid
-             * @description Identifier of the build associated with these tags
-             */
-            buildID: string;
-            /** @description Assigned tags of the template */
-            tags: string[];
         };
         BuildLogEntry: {
             level: components["schemas"]["LogLevel"];
@@ -1369,17 +1601,12 @@ export interface components {
              * @description Log entries related to the status reason
              * @default []
              */
-            logEntries: components["schemas"]["BuildLogEntry"][];
+            logEntries?: components["schemas"]["BuildLogEntry"][];
             /** @description Message with the status reason, currently reporting only for error status */
             message: string;
             /** @description Step that failed */
             step?: string;
         };
-        /**
-         * Format: int32
-         * @description CPU cores for the sandbox
-         */
-        CPUCount: number;
         ConnectSandbox: {
             /**
              * Format: int32
@@ -1387,6 +1614,11 @@ export interface components {
              */
             timeout: number;
         };
+        /**
+         * Format: int32
+         * @description CPU cores for the sandbox
+         */
+        CPUCount: number;
         CreatedAccessToken: {
             /**
              * Format: date-time
@@ -1456,11 +1688,11 @@ export interface components {
          * @description Disk size for the sandbox in MiB
          */
         DiskSizeMB: number;
+        /** @description Version of the envd running in the sandbox */
+        EnvdVersion: string;
         EnvVars: {
             [key: string]: string;
         };
-        /** @description Version of the envd running in the sandbox */
-        EnvdVersion: string;
         Error: {
             /**
              * Format: int32
@@ -1529,6 +1761,7 @@ export interface components {
             state: components["schemas"]["SandboxState"];
             /** @description Identifier of the template from which is the sandbox created */
             templateID: string;
+            volumeMounts: components["schemas"]["SandboxVolumeMount"][];
         };
         /**
          * @description State of the sandbox
@@ -1591,7 +1824,8 @@ export interface components {
              * @description Automatically pauses the sandbox after the timeout
              * @default false
              */
-            autoPause: boolean;
+            autoPause?: boolean;
+            autoResume?: components["schemas"]["SandboxAutoResumeConfig"];
             envVars?: components["schemas"]["EnvVars"];
             mcp?: components["schemas"]["Mcp"];
             metadata?: components["schemas"]["SandboxMetadata"];
@@ -1605,10 +1839,15 @@ export interface components {
              * @description Time to live for the sandbox in seconds.
              * @default 15
              */
-            timeout: number;
+            timeout?: number;
+            volumeMounts?: components["schemas"]["SandboxVolumeMount"][];
         };
         NewTeamAPIKey: {
             /** @description Name of the API key */
+            name: string;
+        };
+        NewVolume: {
+            /** @description Name of the volume */
             name: string;
         };
         Node: {
@@ -1744,7 +1983,7 @@ export interface components {
              * @description Time to live for the sandbox in seconds.
              * @default 15
              */
-            timeout: number;
+            timeout?: number;
         };
         Sandbox: {
             /** @description Alias of the template */
@@ -1766,6 +2005,16 @@ export interface components {
             /** @description Token required for accessing sandbox via proxy. */
             trafficAccessToken?: string | null;
         };
+        /** @description Auto-resume configuration for paused sandboxes. Default is off. */
+        SandboxAutoResumeConfig: {
+            policy: components["schemas"]["SandboxAutoResumePolicy"];
+        };
+        /**
+         * @description Auto-resume policy for paused sandboxes. Default is off.
+         * @default off
+         * @enum {string}
+         */
+        SandboxAutoResumePolicy: "any" | "off";
         SandboxDetail: {
             /** @description Alias of the template */
             alias?: string;
@@ -1798,6 +2047,12 @@ export interface components {
             state: components["schemas"]["SandboxState"];
             /** @description Identifier of the template from which is the sandbox created */
             templateID: string;
+            volumeMounts: components["schemas"]["SandboxVolumeMount"][];
+        };
+        SandboxesWithMetrics: {
+            sandboxes: {
+                [key: string]: components["schemas"]["SandboxMetric"];
+            };
         };
         /** @description Log entry with timestamp and line */
         SandboxLog: {
@@ -1827,6 +2082,13 @@ export interface components {
             logEntries: components["schemas"]["SandboxLogEntry"][];
             /** @description Logs of the sandbox */
             logs: components["schemas"]["SandboxLog"][];
+        };
+        SandboxLogsV2Response: {
+            /**
+             * @description Sandbox logs structured
+             * @default []
+             */
+            logs: components["schemas"]["SandboxLogEntry"][];
         };
         SandboxMetadata: {
             [key: string]: string;
@@ -1882,7 +2144,7 @@ export interface components {
              * @description Specify if the sandbox URLs should be accessible only with authentication.
              * @default true
              */
-            allowPublicTraffic: boolean;
+            allowPublicTraffic?: boolean;
             /** @description List of denied CIDR blocks or IP addresses for egress traffic */
             denyOut?: string[];
             /** @description Specify host mask which will be used for all sandbox requests */
@@ -1893,13 +2155,16 @@ export interface components {
          * @enum {string}
          */
         SandboxState: "running" | "paused";
-        SandboxesWithMetrics: {
-            sandboxes: {
-                [key: string]: components["schemas"]["SandboxMetric"];
-            };
+        SandboxVolumeMount: {
+            /** @description Name of the volume */
+            name: string;
+            /** @description Path of the volume */
+            path: string;
         };
         SnapshotInfo: {
-            /** @description Unique identifier for the snapshot, can be used as template name */
+            /** @description Full names of the snapshot template including team namespace and tag (e.g. team-slug/my-snapshot:v2) */
+            names: string[];
+            /** @description Identifier of the snapshot template */
             snapshotID: string;
         };
         Team: {
@@ -2124,7 +2389,7 @@ export interface components {
              * @description Whether the whole build should be forced to run regardless of the cache
              * @default false
              */
-            force: boolean;
+            force?: boolean;
             /** @description Image to use as a base for the template build */
             fromImage?: string;
             fromImageRegistry?: components["schemas"]["FromImageRegistry"];
@@ -2138,7 +2403,7 @@ export interface components {
              * @description List of steps to execute in the template build
              * @default []
              */
-            steps: components["schemas"]["TemplateStep"][];
+            steps?: components["schemas"]["TemplateStep"][];
         };
         /**
          * @description Status of the template build
@@ -2208,16 +2473,30 @@ export interface components {
              * @description Arguments for the step
              * @default []
              */
-            args: string[];
+            args?: string[];
             /** @description Hash of the files used in the step */
             filesHash?: string;
             /**
              * @description Whether the step should be forced to run regardless of the cache
              * @default false
              */
-            force: boolean;
+            force?: boolean;
             /** @description Type of the step */
             type: string;
+        };
+        TemplateTag: {
+            /**
+             * Format: uuid
+             * @description Identifier of the build associated with this tag
+             */
+            buildID: string;
+            /**
+             * Format: date-time
+             * @description Time when the tag was assigned
+             */
+            createdAt: string;
+            /** @description The tag name */
+            tag: string;
         };
         TemplateUpdateRequest: {
             /** @description Whether the template is public or only accessible by the team */
@@ -2265,6 +2544,12 @@ export interface components {
         UpdateTeamAPIKey: {
             /** @description New name for the API key */
             name: string;
+        };
+        Volume: {
+            /** @description Name of the volume */
+            name: string;
+            /** @description ID of the volume */
+            volumeID: string;
         };
     };
     responses: {
@@ -2337,6 +2622,7 @@ export interface components {
         tag: string;
         teamID: string;
         templateID: string;
+        volumeID: string;
     };
     requestBodies: never;
     headers: never;

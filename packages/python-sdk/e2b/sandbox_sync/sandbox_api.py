@@ -20,6 +20,7 @@ from e2b.api.client.models import (
     ConnectSandbox,
     Error,
     NewSandbox,
+    PostSandboxesSandboxIDSnapshotsBody,
     PostSandboxesSandboxIDTimeoutBody,
     Sandbox,
     SandboxNetworkConfig,
@@ -312,6 +313,7 @@ class SandboxApi(SandboxBase):
         res = post_sandboxes_sandbox_id_snapshots.sync_detailed(
             sandbox_id,
             client=api_client,
+            body=PostSandboxesSandboxIDSnapshotsBody(),
         )
 
         if res.status_code == 404:

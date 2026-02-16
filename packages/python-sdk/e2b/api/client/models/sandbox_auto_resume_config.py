@@ -1,36 +1,33 @@
 from collections.abc import Mapping
-from typing import Any, TypeVar, cast
+from typing import Any, TypeVar
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
-T = TypeVar("T", bound="SnapshotInfo")
+from ..models.sandbox_auto_resume_policy import SandboxAutoResumePolicy
+
+T = TypeVar("T", bound="SandboxAutoResumeConfig")
 
 
 @_attrs_define
-class SnapshotInfo:
-    """
+class SandboxAutoResumeConfig:
+    """Auto-resume configuration for paused sandboxes. Default is off.
+
     Attributes:
-        names (list[str]): Full names of the snapshot template including team namespace and tag (e.g. team-slug/my-
-            snapshot:v2)
-        snapshot_id (str): Identifier of the snapshot template
+        policy (SandboxAutoResumePolicy): Auto-resume policy for paused sandboxes. Default is off.
     """
 
-    names: list[str]
-    snapshot_id: str
+    policy: SandboxAutoResumePolicy
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        names = self.names
-
-        snapshot_id = self.snapshot_id
+        policy = self.policy.value
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
-                "names": names,
-                "snapshotID": snapshot_id,
+                "policy": policy,
             }
         )
 
@@ -39,17 +36,14 @@ class SnapshotInfo:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        names = cast(list[str], d.pop("names"))
+        policy = SandboxAutoResumePolicy(d.pop("policy"))
 
-        snapshot_id = d.pop("snapshotID")
-
-        snapshot_info = cls(
-            names=names,
-            snapshot_id=snapshot_id,
+        sandbox_auto_resume_config = cls(
+            policy=policy,
         )
 
-        snapshot_info.additional_properties = d
-        return snapshot_info
+        sandbox_auto_resume_config.additional_properties = d
+        return sandbox_auto_resume_config
 
     @property
     def additional_keys(self) -> list[str]:

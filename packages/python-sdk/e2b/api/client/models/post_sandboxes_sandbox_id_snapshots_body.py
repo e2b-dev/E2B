@@ -1,55 +1,47 @@
 from collections.abc import Mapping
-from typing import Any, TypeVar, cast
+from typing import Any, TypeVar, Union
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
-T = TypeVar("T", bound="SnapshotInfo")
+from ..types import UNSET, Unset
+
+T = TypeVar("T", bound="PostSandboxesSandboxIDSnapshotsBody")
 
 
 @_attrs_define
-class SnapshotInfo:
+class PostSandboxesSandboxIDSnapshotsBody:
     """
     Attributes:
-        names (list[str]): Full names of the snapshot template including team namespace and tag (e.g. team-slug/my-
-            snapshot:v2)
-        snapshot_id (str): Identifier of the snapshot template
+        name (Union[Unset, str]): Optional name for the snapshot template. If a snapshot template with this name already
+            exists, a new build will be assigned to the existing template instead of creating a new one.
     """
 
-    names: list[str]
-    snapshot_id: str
+    name: Union[Unset, str] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        names = self.names
-
-        snapshot_id = self.snapshot_id
+        name = self.name
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
-        field_dict.update(
-            {
-                "names": names,
-                "snapshotID": snapshot_id,
-            }
-        )
+        field_dict.update({})
+        if name is not UNSET:
+            field_dict["name"] = name
 
         return field_dict
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        names = cast(list[str], d.pop("names"))
+        name = d.pop("name", UNSET)
 
-        snapshot_id = d.pop("snapshotID")
-
-        snapshot_info = cls(
-            names=names,
-            snapshot_id=snapshot_id,
+        post_sandboxes_sandbox_id_snapshots_body = cls(
+            name=name,
         )
 
-        snapshot_info.additional_properties = d
-        return snapshot_info
+        post_sandboxes_sandbox_id_snapshots_body.additional_properties = d
+        return post_sandboxes_sandbox_id_snapshots_body
 
     @property
     def additional_keys(self) -> list[str]:

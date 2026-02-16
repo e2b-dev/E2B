@@ -1,36 +1,35 @@
 from collections.abc import Mapping
-from typing import Any, TypeVar, cast
+from typing import Any, TypeVar
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
-T = TypeVar("T", bound="SnapshotInfo")
+T = TypeVar("T", bound="SandboxVolumeMount")
 
 
 @_attrs_define
-class SnapshotInfo:
+class SandboxVolumeMount:
     """
     Attributes:
-        names (list[str]): Full names of the snapshot template including team namespace and tag (e.g. team-slug/my-
-            snapshot:v2)
-        snapshot_id (str): Identifier of the snapshot template
+        name (str): Name of the volume
+        path (str): Path of the volume
     """
 
-    names: list[str]
-    snapshot_id: str
+    name: str
+    path: str
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        names = self.names
+        name = self.name
 
-        snapshot_id = self.snapshot_id
+        path = self.path
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
-                "names": names,
-                "snapshotID": snapshot_id,
+                "name": name,
+                "path": path,
             }
         )
 
@@ -39,17 +38,17 @@ class SnapshotInfo:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        names = cast(list[str], d.pop("names"))
+        name = d.pop("name")
 
-        snapshot_id = d.pop("snapshotID")
+        path = d.pop("path")
 
-        snapshot_info = cls(
-            names=names,
-            snapshot_id=snapshot_id,
+        sandbox_volume_mount = cls(
+            name=name,
+            path=path,
         )
 
-        snapshot_info.additional_properties = d
-        return snapshot_info
+        sandbox_volume_mount.additional_properties = d
+        return sandbox_volume_mount
 
     @property
     def additional_keys(self) -> list[str]:
