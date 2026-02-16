@@ -601,13 +601,13 @@ export class Sandbox extends SandboxApi {
    * await sandbox.files.write('/app/state.json', '{"step": 1}')
    *
    * // Create a snapshot
-   * const snapshot = await sandbox.snapshot()
+   * const snapshot = await sandbox.createSnapshot()
    *
    * // Create a new sandbox from the snapshot
    * const newSandbox = await Sandbox.create(snapshot.snapshotId)
    * ```
    */
-  async snapshot(opts?: SnapshotOpts): Promise<SnapshotInfo> {
+  async createSnapshot(opts?: SnapshotOpts): Promise<SnapshotInfo> {
     return await SandboxApi.createSnapshot(this.sandboxId, {
       ...this.connectionConfig,
       ...opts,

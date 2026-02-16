@@ -182,6 +182,45 @@ class SandboxMetrics:
     """Timestamp of the metric entry."""
 
 
+@dataclass
+class SnapshotInfo:
+    """Information about a snapshot."""
+
+    snapshot_id: str
+    """Unique identifier for the snapshot. Can be used as template ID in Sandbox.create() to create a new sandbox from this snapshot."""
+
+
+class SnapshotPaginatorBase:
+    def __init__(
+        self,
+        sandbox_id: Optional[str] = None,
+        limit: Optional[int] = None,
+        next_token: Optional[str] = None,
+        **opts: Unpack[ApiParams],
+    ):
+        self._config = ConnectionConfig(**opts)
+
+        self.sandbox_id = sandbox_id
+        self.limit = limit
+
+        self._has_next = True
+        self._next_token = next_token
+
+    @property
+    def has_next(self) -> bool:
+        """
+        Returns True if there are more items to fetch.
+        """
+        return self._has_next
+
+    @property
+    def next_token(self) -> Optional[str]:
+        """
+        Returns the next token to use for pagination.
+        """
+        return self._next_token
+
+
 class SandboxPaginatorBase:
     def __init__(
         self,

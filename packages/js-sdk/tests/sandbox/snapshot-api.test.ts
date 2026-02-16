@@ -10,7 +10,7 @@ sandboxTest.skipIf(isDebug)(
     await sandbox.files.write('/home/user/test.txt', 'snapshot test content')
 
     // Create a snapshot
-    const snapshot = await sandbox.snapshot()
+    const snapshot = await sandbox.createSnapshot()
 
     assert.isString(snapshot.snapshotId)
     assert.isTrue(snapshot.snapshotId.length > 0)
@@ -29,7 +29,7 @@ sandboxTest.skipIf(isDebug)(
     await sandbox.files.write('/home/user/test.txt', testContent)
 
     // Create a snapshot
-    const snapshot = await sandbox.snapshot()
+    const snapshot = await sandbox.createSnapshot()
 
     try {
       // Create a new sandbox from the snapshot
@@ -57,7 +57,7 @@ sandboxTest.skipIf(isDebug)(
 
     await sandbox.files.write('/home/user/shared.txt', testContent)
 
-    const snapshot = await sandbox.snapshot()
+    const snapshot = await sandbox.createSnapshot()
 
     try {
       // Create two sandboxes from the same snapshot
@@ -103,7 +103,7 @@ sandboxTest.skipIf(isDebug)(
 
 sandboxTest.skipIf(isDebug)('list snapshots', async ({ sandbox }) => {
   // Create a snapshot
-  const snapshot = await sandbox.snapshot()
+  const snapshot = await sandbox.createSnapshot()
 
   try {
     // List all snapshots
@@ -125,7 +125,7 @@ sandboxTest.skipIf(isDebug)(
   'list snapshots for specific sandbox',
   async ({ sandbox }) => {
     // Create a snapshot
-    const snapshot = await sandbox.snapshot()
+    const snapshot = await sandbox.createSnapshot()
 
     try {
       // List snapshots for this sandbox using instance method
@@ -142,7 +142,7 @@ sandboxTest.skipIf(isDebug)(
 )
 
 sandboxTest.skipIf(isDebug)('delete snapshot', async ({ sandbox }) => {
-  const snapshot = await sandbox.snapshot()
+  const snapshot = await sandbox.createSnapshot()
 
   // Delete should succeed
   const deleted = await Sandbox.deleteSnapshot(snapshot.snapshotId)
@@ -161,7 +161,7 @@ sandboxTest.skipIf(isDebug)(
     await sandbox.files.write('/home/user/app/config.json', '{"env": "test"}')
     await sandbox.files.write('/home/user/app/data.txt', 'important data')
 
-    const snapshot = await sandbox.snapshot()
+    const snapshot = await sandbox.createSnapshot()
 
     try {
       const newSandbox = await Sandbox.create(snapshot.snapshotId, {

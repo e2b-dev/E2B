@@ -15,13 +15,19 @@ from e2b.envd.api import ENVD_API_HEALTH_ROUTE, handle_envd_api_exception
 from e2b.envd.versions import ENVD_DEBUG_FALLBACK
 from e2b.exceptions import SandboxException, format_request_timeout_error
 from e2b.sandbox.main import SandboxOpts
-from e2b.sandbox.sandbox_api import McpServer, SandboxMetrics, SandboxNetworkOpts
+from e2b.sandbox.sandbox_api import (
+    McpServer,
+    SandboxMetrics,
+    SandboxNetworkOpts,
+    SnapshotInfo,
+)
 from e2b.sandbox.utils import class_method_variant
 from e2b.sandbox_sync.commands.command import Commands
 from e2b.sandbox_sync.commands.pty import Pty
 from e2b.sandbox_sync.filesystem.filesystem import Filesystem
 from e2b.sandbox_sync.git import Git
 from e2b.sandbox_sync.sandbox_api import SandboxApi, SandboxInfo
+from e2b.sandbox_sync.paginator import SnapshotPaginator
 
 logger = logging.getLogger(__name__)
 
@@ -623,6 +629,97 @@ class Sandbox(SandboxApi):
 
         SandboxApi._cls_pause(
             sandbox_id=self.sandbox_id,
+            **opts,
+        )
+
+    @overload
+    def create_snapshot(
+        self,
+        **opts: Unpack[ApiParams],
+    ) -> SnapshotInfo:
+        """
+        Create a snapshot of the sandbox's current state.
+
+        The snapshot can be used to create new sandboxes with the same filesystem and state.
+        Snapshots are persistent and survive sandbox deletion.
+
+        Use the returned `snapshot_id` with `Sandbox.create(snapshot_id)` to create a new sandbox from the snapshot.
+
+        :return: Snapshot information including the snapshot ID
+        """
+        ...
+
+    @overload
+    @staticmethod
+    def create_snapshot(
+        sandbox_id: str,
+        **opts: Unpack[ApiParams],
+    ) -> SnapshotInfo:
+        """
+        Create a snapshot from the sandbox specified by sandbox ID.
+
+        :param sandbox_id: Sandbox ID
+
+        :return: Snapshot information including the snapshot ID
+        """
+        ...
+
+    @class_method_variant("_cls_create_snapshot")
+    def create_snapshot(
+        self,
+        **opts: Unpack[ApiParams],
+    ) -> SnapshotInfo:
+        """
+        Create a snapshot of the sandbox's current state.
+
+        The snapshot can be used to create new sandboxes with the same filesystem and state.
+        Snapshots are persistent and survive sandbox deletion.
+
+        Use the returned `snapshot_id` with `Sandbox.create(snapshot_id)` to create a new sandbox from the snapshot.
+
+        :return: Snapshot information including the snapshot ID
+        """
+        return SandboxApi._cls_create_snapshot(
+            sandbox_id=self.sandbox_id,
+            **self.connection_config.get_api_params(**opts),
+        )
+
+    @staticmethod
+    def list_snapshots(
+        sandbox_id: Optional[str] = None,
+        limit: Optional[int] = None,
+        next_token: Optional[str] = None,
+        **opts: Unpack[ApiParams],
+    ) -> SnapshotPaginator:
+        """
+        List all snapshots.
+
+        :param sandbox_id: Filter snapshots by source sandbox ID
+        :param limit: Maximum number of snapshots to return per page
+        :param next_token: Token for pagination
+
+        :return: Paginator for listing snapshots
+        """
+        return SnapshotPaginator(
+            sandbox_id=sandbox_id,
+            limit=limit,
+            next_token=next_token,
+            **opts,
+        )
+
+    @staticmethod
+    def delete_snapshot(
+        snapshot_id: str,
+        **opts: Unpack[ApiParams],
+    ) -> bool:
+        """
+        Delete a snapshot.
+
+        :param snapshot_id: Snapshot ID
+        :return: `True` if the snapshot was deleted, `False` if it was not found
+        """
+        return SandboxApi._cls_delete_snapshot(
+            snapshot_id=snapshot_id,
             **opts,
         )
 

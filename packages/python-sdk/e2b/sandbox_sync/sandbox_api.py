@@ -12,8 +12,10 @@ from e2b.api.client.api.sandboxes import (
     post_sandboxes,
     post_sandboxes_sandbox_id_connect,
     post_sandboxes_sandbox_id_pause,
+    post_sandboxes_sandbox_id_snapshots,
     post_sandboxes_sandbox_id_timeout,
 )
+from e2b.api.client.api.templates import delete_templates_template_id
 from e2b.api.client.models import (
     ConnectSandbox,
     Error,
@@ -32,6 +34,7 @@ from e2b.sandbox.sandbox_api import (
     SandboxMetrics,
     SandboxNetworkOpts,
     SandboxQuery,
+    SnapshotInfo,
 )
 from e2b.sandbox_sync.paginator import SandboxPaginator, get_api_client
 
@@ -296,6 +299,56 @@ class SandboxApi(SandboxBase):
             raise SandboxException("Body of the request is None")
 
         return res.parsed
+
+    @classmethod
+    def _cls_create_snapshot(
+        cls,
+        sandbox_id: str,
+        **opts: Unpack[ApiParams],
+    ) -> SnapshotInfo:
+        config = ConnectionConfig(**opts)
+
+        api_client = get_api_client(config)
+        res = post_sandboxes_sandbox_id_snapshots.sync_detailed(
+            sandbox_id,
+            client=api_client,
+        )
+
+        if res.status_code == 404:
+            raise NotFoundException(f"Sandbox {sandbox_id} not found")
+
+        if res.status_code >= 300:
+            raise handle_api_exception(res)
+
+        if res.parsed is None:
+            raise SandboxException("Body of the request is None")
+
+        if isinstance(res.parsed, Error):
+            raise SandboxException(f"{res.parsed.message}: Request failed")
+
+        return SnapshotInfo(snapshot_id=res.parsed.snapshot_id)
+
+    @classmethod
+    def _cls_delete_snapshot(
+        cls,
+        snapshot_id: str,
+        **opts: Unpack[ApiParams],
+    ) -> bool:
+        config = ConnectionConfig(**opts)
+
+        api_client = get_api_client(config)
+        res = delete_templates_template_id.sync_detailed(
+            snapshot_id,
+            client=api_client,
+        )
+
+        if res.status_code == 404:
+            return False
+
+        if res.status_code >= 300:
+            raise handle_api_exception(res)
+
+        return True
 
     @classmethod
     def _cls_pause(
