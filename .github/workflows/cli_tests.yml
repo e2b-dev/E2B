@@ -2,12 +2,14 @@ name: Test CLI
 
 on:
   workflow_call:
+    inputs:
+      E2B_DOMAIN:
+        required: false
+        type: string
+        default: ''
     secrets:
       E2B_API_KEY:
         required: true
-  pull_request:
-    branches:
-      - main
 
 permissions:
   contents: read
@@ -62,8 +64,16 @@ jobs:
         run: pnpm build
         working-directory: ./packages/cli
 
+      - name: Debug E2B_DOMAIN
+        run: |
+          echo "inputs.E2B_DOMAIN=${{ inputs.E2B_DOMAIN }}"
+          echo "E2B_DOMAIN=${E2B_DOMAIN:-(not set)}"
+        env:
+          E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
+
       - name: Run tests
         run: pnpm test
         working-directory: ./packages/cli
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+          E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
