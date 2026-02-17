@@ -11,19 +11,19 @@ permissions:
 
 jobs:
   js-tests:
-    name: JS SDK Tests
+    name: Production / JS SDK Tests
     uses: ./.github/workflows/js_sdk_tests.yml
     secrets:
       E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
 
   python-tests:
-    name: Python SDK Tests
+    name: Production / Python SDK Tests
     uses: ./.github/workflows/python_sdk_tests.yml
     secrets:
       E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
 
   cli-tests:
-    name: CLI Tests
+    name: Production / CLI Tests
     uses: ./.github/workflows/cli_tests.yml
     secrets:
       E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
