@@ -187,7 +187,7 @@ class SnapshotInfo:
     """Information about a snapshot."""
 
     snapshot_id: str
-    """Unique identifier for the snapshot. Can be used as template ID in Sandbox.create() to create a new sandbox from this snapshot."""
+    """Snapshot identifier — template ID with tag, or namespaced name with tag (e.g. my-snapshot:latest). Can be used with Sandbox.create() to create a new sandbox from this snapshot."""
 
 
 class SnapshotPaginatorBase:

@@ -232,8 +232,8 @@ export interface SnapshotListOpts extends SandboxApiOpts {
  */
 export interface SnapshotInfo {
   /**
-   * Unique identifier for the snapshot.
-   * Can be used as templateId in Sandbox.create() to create a new sandbox from this snapshot.
+   * Snapshot identifier — template ID with tag, or namespaced name with tag (e.g. my-snapshot:latest).
+   * Can be used with Sandbox.create() to create a new sandbox from this snapshot.
    */
   snapshotId: string
 }
@@ -576,7 +576,7 @@ export class SandboxApi {
    * @param sandboxId sandbox ID to create snapshot from.
    * @param opts snapshot options.
    *
-   * @returns snapshot information including the snapshot ID that can be used with Sandbox.create().
+   * @returns snapshot information including the snapshot name that can be used with Sandbox.create().
    */
   static async createSnapshot(
     sandboxId: string,
