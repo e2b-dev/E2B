@@ -1,0 +1,53 @@
+name: SDK Tests
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  js-tests:
+    name: Production / JS SDK Tests
+    uses: ./.github/workflows/js_sdk_tests.yml
+    secrets:
+      E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+
+  python-tests:
+    name: Production / Python SDK Tests
+    uses: ./.github/workflows/python_sdk_tests.yml
+    secrets:
+      E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+
+  cli-tests:
+    name: Production / CLI Tests
+    uses: ./.github/workflows/cli_tests.yml
+    secrets:
+      E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+
+  js-tests-staging:
+    name: Staging / JS SDK Tests
+    uses: ./.github/workflows/js_sdk_tests.yml
+    with:
+      E2B_DOMAIN: ${{ vars.E2B_DOMAIN_STAGING }}
+    secrets:
+      E2B_API_KEY: ${{ secrets.E2B_API_KEY_STAGING }}
+
+  python-tests-staging:
+    name: Staging / Python SDK Tests
+    uses: ./.github/workflows/python_sdk_tests.yml
+    with:
+      E2B_DOMAIN: ${{ vars.E2B_DOMAIN_STAGING }}
+    secrets:
+      E2B_API_KEY: ${{ secrets.E2B_API_KEY_STAGING }}
+
+  cli-tests-staging:
+    name: Staging / CLI Tests
+    uses: ./.github/workflows/cli_tests.yml
+    with:
+      E2B_DOMAIN: ${{ vars.E2B_DOMAIN_STAGING }}
+    secrets:
+      E2B_API_KEY: ${{ secrets.E2B_API_KEY_STAGING }}
