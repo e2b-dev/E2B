@@ -206,7 +206,7 @@ jobs:
   rc-publish:
     name: Publish RC
     needs: [rc-validate, rc-python-tests, rc-js-tests, rc-cli-tests]
-    if: (!cancelled()) && !contains(needs.*.result, 'failure')
+    if: (!cancelled()) && !contains(needs.*.result, 'failure') && needs.rc-validate.result == 'success'
     uses: ./.github/workflows/publish_candidates.yml
     with:
       js-sdk: ${{ github.event.inputs.js-sdk == 'true' }}

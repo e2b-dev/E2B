@@ -85,7 +85,8 @@ jobs:
         if: ${{ inputs.python-sdk }}
         working-directory: packages/python-sdk
         run: |
-          poetry version prerelease
+          BASE_VERSION=$(poetry version -s)
+          poetry version "${BASE_VERSION}rc${{ github.run_number }}"
           poetry build
           poetry config pypi-token.pypi ${PYPI_TOKEN} && poetry publish --skip-existing
         env:
@@ -99,7 +100,7 @@ jobs:
         if: ${{ inputs.js-sdk }}
         working-directory: packages/js-sdk
         run: |
-          npm version prerelease --preid=${{ inputs.preid }}
+          npm version prerelease --preid=${{ inputs.preid }}.${{ github.run_number }} --no-git-tag-version
           npm publish --tag ${{ inputs.tag }} --provenance
 
       - name: Reinstall dependencies
@@ -110,5 +111,5 @@ jobs:
         if: ${{ inputs.cli }}
         working-directory: packages/cli
         run: |
-          npm version prerelease --preid=${{ inputs.preid }}
+          npm version prerelease --preid=${{ inputs.preid }}.${{ github.run_number }} --no-git-tag-version
           npm publish --tag ${{ inputs.tag }} --provenance

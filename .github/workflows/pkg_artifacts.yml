@@ -40,8 +40,9 @@ jobs:
           pnpm config set exclude-links-from-lockfile true
 
       - name: Sanitize branch name
+        env:
+          BRANCH: ${{ github.head_ref }}
         run: |
-          BRANCH="${{ github.head_ref }}"
           echo "BRANCH_ID=$(echo "$BRANCH" | sed 's/[^0-9A-Za-z-]/-/g')" >> "$GITHUB_ENV"
 
       - name: Install dependencies
