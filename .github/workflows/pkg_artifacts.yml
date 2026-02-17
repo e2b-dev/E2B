@@ -136,6 +136,7 @@ jobs:
           BODY+='```'$'\n'
 
           COMMENT_ID=$(gh api "repos/${{ github.repository }}/issues/${PR_NUMBER}/comments" \
+            --paginate \
             --jq '.[] | select(.body | contains("<!-- e2b-pkg-artifacts -->")) | .id' \
             | tail -1)
 
