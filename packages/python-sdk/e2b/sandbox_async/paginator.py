@@ -39,7 +39,7 @@ class AsyncSandboxPaginator(SandboxPaginatorBase):
         :returns: List of sandboxes
         """
         if not self.has_next:
-            raise Exception("No more items to fetch")
+            raise SandboxException("No more items to fetch")
 
         # Convert filters to the format expected by the API
         metadata: Optional[str] = None
@@ -68,7 +68,7 @@ class AsyncSandboxPaginator(SandboxPaginatorBase):
         if res.parsed is None:
             return []
 
-        # Check if res.parse is Error
+        # Check if res.parsed is Error
         if isinstance(res.parsed, Error):
             raise SandboxException(f"{res.parsed.message}: Request failed")
 
@@ -98,7 +98,7 @@ class AsyncSnapshotPaginator(SnapshotPaginatorBase):
         :returns: List of snapshots
         """
         if not self.has_next:
-            raise Exception("No more items to fetch")
+            raise SandboxException("No more items to fetch")
 
         api_client = get_api_client(self._config)
         res = await get_snapshots.asyncio_detailed(

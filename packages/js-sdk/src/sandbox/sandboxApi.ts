@@ -793,7 +793,7 @@ export class SandboxPaginator {
   }
 
   /**
-   * Returns True if there are more items to fetch.
+   * Returns true if there are more items to fetch.
    */
   get hasNext(): boolean {
     return this._hasNext
@@ -920,7 +920,7 @@ export class SnapshotPaginator {
   }
 
   /**
-   * Returns True if there are more items to fetch.
+   * Returns true if there are more items to fetch.
    */
   get hasNext(): boolean {
     return this._hasNext
