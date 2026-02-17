@@ -30,9 +30,9 @@ class ListedSandbox:
         started_at (datetime.datetime): Time when the sandbox was started
         state (SandboxState): State of the sandbox
         template_id (str): Identifier of the template from which is the sandbox created
-        volume_mounts (list['SandboxVolumeMount']):
         alias (Union[Unset, str]): Alias of the template
         metadata (Union[Unset, Any]):
+        volume_mounts (Union[Unset, list['SandboxVolumeMount']]):
     """
 
     client_id: str
@@ -45,9 +45,9 @@ class ListedSandbox:
     started_at: datetime.datetime
     state: SandboxState
     template_id: str
-    volume_mounts: list["SandboxVolumeMount"]
     alias: Union[Unset, str] = UNSET
     metadata: Union[Unset, Any] = UNSET
+    volume_mounts: Union[Unset, list["SandboxVolumeMount"]] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -71,14 +71,16 @@ class ListedSandbox:
 
         template_id = self.template_id
 
-        volume_mounts = []
-        for volume_mounts_item_data in self.volume_mounts:
-            volume_mounts_item = volume_mounts_item_data.to_dict()
-            volume_mounts.append(volume_mounts_item)
-
         alias = self.alias
 
         metadata = self.metadata
+
+        volume_mounts: Union[Unset, list[dict[str, Any]]] = UNSET
+        if not isinstance(self.volume_mounts, Unset):
+            volume_mounts = []
+            for volume_mounts_item_data in self.volume_mounts:
+                volume_mounts_item = volume_mounts_item_data.to_dict()
+                volume_mounts.append(volume_mounts_item)
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
@@ -94,13 +96,14 @@ class ListedSandbox:
                 "startedAt": started_at,
                 "state": state,
                 "templateID": template_id,
-                "volumeMounts": volume_mounts,
             }
         )
         if alias is not UNSET:
             field_dict["alias"] = alias
         if metadata is not UNSET:
             field_dict["metadata"] = metadata
+        if volume_mounts is not UNSET:
+            field_dict["volumeMounts"] = volume_mounts
 
         return field_dict
 
@@ -129,16 +132,16 @@ class ListedSandbox:
 
         template_id = d.pop("templateID")
 
-        volume_mounts = []
-        _volume_mounts = d.pop("volumeMounts")
-        for volume_mounts_item_data in _volume_mounts:
-            volume_mounts_item = SandboxVolumeMount.from_dict(volume_mounts_item_data)
-
-            volume_mounts.append(volume_mounts_item)
-
         alias = d.pop("alias", UNSET)
 
         metadata = d.pop("metadata", UNSET)
+
+        volume_mounts = []
+        _volume_mounts = d.pop("volumeMounts", UNSET)
+        for volume_mounts_item_data in _volume_mounts or []:
+            volume_mounts_item = SandboxVolumeMount.from_dict(volume_mounts_item_data)
+
+            volume_mounts.append(volume_mounts_item)
 
         listed_sandbox = cls(
             client_id=client_id,
@@ -151,9 +154,9 @@ class ListedSandbox:
             started_at=started_at,
             state=state,
             template_id=template_id,
-            volume_mounts=volume_mounts,
             alias=alias,
             metadata=metadata,
+            volume_mounts=volume_mounts,
         )
 
         listed_sandbox.additional_properties = d
