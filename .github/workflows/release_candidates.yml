@@ -33,6 +33,11 @@ on:
         required: false
         default: ''
         type: string
+      skip-tests:
+        description: 'Skip tests before publishing'
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: write
@@ -47,6 +52,7 @@ jobs:
       IS_CLI: ${{ contains(github.event.pull_request.labels.*.name, 'cli-rc') || (github.event_name == 'workflow_dispatch' && github.event.inputs.cli == 'true') }}
       IS_PYTHON: ${{ contains(github.event.pull_request.labels.*.name, 'python-rc') || (github.event_name == 'workflow_dispatch' && github.event.inputs.python-sdk == 'true') }}
       PUBLISH_TAG: ${{ github.event.inputs.tag || 'rc' }}
+      SKIP_TESTS: ${{ github.event.inputs.skip-tests == 'true' }}
 
     steps:
       - name: Sanitize preid
@@ -109,7 +115,7 @@ jobs:
           installer-parallel: true
 
       - name: Test Python SDK
-        if: ${{ env.IS_PYTHON == 'true' }}
+        if: ${{ env.IS_PYTHON == 'true' && env.SKIP_TESTS != 'true' }}
         working-directory: packages/python-sdk
         run: |
           poetry install
@@ -134,7 +140,7 @@ jobs:
 
       - name: Test JS SDK
         working-directory: packages/js-sdk
-        if: ${{ env.IS_JS == 'true' }}
+        if: ${{ env.IS_JS == 'true' && env.SKIP_TESTS != 'true' }}
         run: |
           pnpm run test
         env:
