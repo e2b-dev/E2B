@@ -7,6 +7,32 @@ on:
       - opened
       - reopened
       - synchronize
+  workflow_dispatch:
+    inputs:
+      js-sdk:
+        description: 'Release JS SDK'
+        required: false
+        default: false
+        type: boolean
+      python-sdk:
+        description: 'Release Python SDK'
+        required: false
+        default: false
+        type: boolean
+      cli:
+        description: 'Release CLI'
+        required: false
+        default: false
+        type: boolean
+      tag:
+        description: 'Dist-tag (e.g. rc, beta, snapshot)'
+        required: true
+        type: string
+      preid:
+        description: 'Prerelease identifier (defaults to branch name if empty)'
+        required: false
+        default: ''
+        type: string
 
 permissions:
   contents: write
@@ -16,11 +42,30 @@ jobs:
     name: Release Candidate
     runs-on: ubuntu-latest
 
+    env:
+      IS_JS: ${{ contains(github.event.pull_request.labels.*.name, 'js-rc') || (github.event_name == 'workflow_dispatch' && github.event.inputs.js-sdk == 'true') }}
+      IS_CLI: ${{ contains(github.event.pull_request.labels.*.name, 'cli-rc') || (github.event_name == 'workflow_dispatch' && github.event.inputs.cli == 'true') }}
+      IS_PYTHON: ${{ contains(github.event.pull_request.labels.*.name, 'python-rc') || (github.event_name == 'workflow_dispatch' && github.event.inputs.python-sdk == 'true') }}
+      PUBLISH_TAG: ${{ github.event.inputs.tag || 'rc' }}
+
     steps:
+      - name: Sanitize preid
+        run: |
+          RAW_PREID="${{ github.event.inputs.preid || github.head_ref || github.ref_name }}"
+          echo "PREID=$(echo "$RAW_PREID" | sed 's/[^0-9A-Za-z-]/-/g')" >> "$GITHUB_ENV"
+
+      - name: Block production tags
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        run: |
+          if [ "${{ github.event.inputs.tag }}" = "latest" ]; then
+            echo "::error::Publishing with the 'latest' tag is not allowed from this workflow. Use the Release workflow instead."
+            exit 1
+          fi
+
       - name: Checkout Repo
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.head_ref }}
+          ref: ${{ github.head_ref || github.ref }}
 
       - name: Parse .tool-versions
         uses: wistia/parse-tool-versions@v2.1.1
@@ -30,33 +75,33 @@ jobs:
           prefix: 'tool_version_'
 
       - uses: pnpm/action-setup@v4
-        if: ${{ contains( github.event.pull_request.labels.*.name, 'js-rc') || contains( github.event.pull_request.labels.*.name, 'cli-rc') }}
+        if: ${{ env.IS_JS == 'true' || env.IS_CLI == 'true' }}
         with:
           version: '${{ env.TOOL_VERSION_PNPM }}'
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
-        if: ${{ contains( github.event.pull_request.labels.*.name, 'js-rc') || contains( github.event.pull_request.labels.*.name, 'cli-rc') || contains( github.event.pull_request.labels.*.name, 'python-rc') }}
+        if: ${{ env.IS_JS == 'true' || env.IS_CLI == 'true' || env.IS_PYTHON == 'true' }}
         with:
           node-version: '${{ env.TOOL_VERSION_NODEJS }}'
           registry-url: https://registry.npmjs.org
           cache: pnpm
 
       - name: Configure pnpm
-        if: ${{ contains( github.event.pull_request.labels.*.name, 'js-rc') || contains( github.event.pull_request.labels.*.name, 'cli-rc') }}
+        if: ${{ env.IS_JS == 'true' || env.IS_CLI == 'true' }}
         run: |
           pnpm config set auto-install-peers true
           pnpm config set exclude-links-from-lockfile true
 
       - name: Set up Python
         uses: actions/setup-python@v4
-        if: ${{ contains( github.event.pull_request.labels.*.name, 'python-rc') }}
+        if: ${{ env.IS_PYTHON == 'true' }}
         with:
           python-version: '${{ env.TOOL_VERSION_PYTHON }}'
 
       - name: Install and configure Poetry
         uses: snok/install-poetry@v1
-        if: ${{ contains( github.event.pull_request.labels.*.name, 'python-rc') }}
+        if: ${{ env.IS_PYTHON == 'true' }}
         with:
           version: '${{ env.TOOL_VERSION_POETRY }}'
           virtualenvs-create: true
@@ -64,7 +109,7 @@ jobs:
           installer-parallel: true
 
       - name: Test Python SDK
-        if: ${{ contains( github.event.pull_request.labels.*.name, 'python-rc') }}
+        if: ${{ env.IS_PYTHON == 'true' }}
         working-directory: packages/python-sdk
         run: |
           poetry install
@@ -73,7 +118,7 @@ jobs:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
 
       - name: Release Candidate
-        if: ${{ contains( github.event.pull_request.labels.*.name, 'python-rc') }}
+        if: ${{ env.IS_PYTHON == 'true' }}
         working-directory: packages/python-sdk
         run: |
           poetry version prerelease
@@ -83,13 +128,13 @@ jobs:
           PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
 
       - name: Install JS dependencies
-        if: ${{ contains( github.event.pull_request.labels.*.name, 'js-rc') || contains( github.event.pull_request.labels.*.name, 'cli-rc') }}
+        if: ${{ env.IS_JS == 'true' || env.IS_CLI == 'true' }}
         run: |
           pnpm install --frozen-lockfile
 
       - name: Test JS SDK
         working-directory: packages/js-sdk
-        if: ${{ contains( github.event.pull_request.labels.*.name, 'js-rc') }}
+        if: ${{ env.IS_JS == 'true' }}
         run: |
           pnpm run test
         env:
@@ -97,29 +142,29 @@ jobs:
 
       - name: Release JS Candidate
         working-directory: packages/js-sdk
-        if: ${{ contains( github.event.pull_request.labels.*.name, 'js-rc') }}
+        if: ${{ env.IS_JS == 'true' }}
         run: |
-          npm version prerelease --preid=${{ github.head_ref }}
-          npm publish --tag rc
+          npm version prerelease --preid=${{ env.PREID }}
+          npm publish --tag ${{ env.PUBLISH_TAG }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Install dependencies
-        if: ${{ contains( github.event.pull_request.labels.*.name, 'js-rc') || contains( github.event.pull_request.labels.*.name, 'cli-rc') }}
+        if: ${{ env.IS_JS == 'true' || env.IS_CLI == 'true' }}
         run: |
           pnpm install --frozen-lockfile
 
       - name: Release CLI Candidate
         working-directory: packages/cli
-        if: ${{ contains( github.event.pull_request.labels.*.name, 'cli-rc') }}
+        if: ${{ env.IS_CLI == 'true' }}
         run: |
-          npm version prerelease --preid=${{ github.head_ref }}
-          npm publish --tag rc
+          npm version prerelease --preid=${{ env.PREID }}
+          npm publish --tag ${{ env.PUBLISH_TAG }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Commit new versions
-        if: ${{ contains( github.event.pull_request.labels.*.name, 'js-rc') || contains( github.event.pull_request.labels.*.name, 'cli-rc') || contains( github.event.pull_request.labels.*.name, 'python-rc') }}
+        if: ${{ env.IS_JS == 'true' || env.IS_CLI == 'true' || env.IS_PYTHON == 'true' }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
