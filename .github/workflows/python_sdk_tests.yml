@@ -53,13 +53,6 @@ jobs:
       - name: Install dependencies
         run: poetry install
 
-      - name: Debug E2B_DOMAIN
-        run: |
-          echo "inputs.E2B_DOMAIN=${{ inputs.E2B_DOMAIN }}"
-          echo "E2B_DOMAIN=${E2B_DOMAIN:-(not set)}"
-        env:
-          E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
-
       - name: Test build
         run: poetry build
 

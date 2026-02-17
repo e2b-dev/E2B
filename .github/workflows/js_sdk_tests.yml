@@ -78,13 +78,6 @@ jobs:
           restore-keys: |
             playwright-${{ runner.os }}-${{ env.TOOL_VERSION_NODEJS }}-
 
-      - name: Debug E2B_DOMAIN
-        run: |
-          echo "inputs.E2B_DOMAIN=${{ inputs.E2B_DOMAIN }}"
-          echo "E2B_DOMAIN=${E2B_DOMAIN:-(not set)}"
-        env:
-          E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
-
       - name: Test build
         run: pnpm build
 
