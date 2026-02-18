@@ -30,8 +30,10 @@ from .api import (
     client,
 )
 from .connection_config import (
+    ApiParams,
     ConnectionConfig,
     ProxyTypes,
+    Username,
 )
 from .exceptions import (
     AuthenticationException,
@@ -43,6 +45,7 @@ from .exceptions import (
     InvalidArgumentException,
     NotEnoughSpaceException,
     NotFoundException,
+    RateLimitException,
     SandboxException,
     SandboxNotFoundException,
     TemplateException,
@@ -63,7 +66,9 @@ from .sandbox.filesystem.watch_handle import (
     FilesystemEventType,
 )
 from .sandbox._git import GitBranches, GitFileStatus, GitStatus
+from .sandbox_sync.git import Git
 from .sandbox.network import ALL_TRAFFIC
+from .sandbox.signature import get_signature
 from .sandbox.sandbox_api import (
     GitHubMcpServer,
     GitHubMcpServerConfig,
@@ -116,7 +121,15 @@ from .template_sync.main import Template
 
 from .volume.volume_sync import Volume
 from .volume.volume_async import AsyncVolume
-from .volume.types import VolumeInfo, VolumeEntryStat, VolumeFileType, VolumeWriteInfo
+from .volume.types import (
+    VolumeInfo,
+    VolumeEntryStat,
+    VolumeFileType,
+    VolumeWriteInfo,
+    VolumeMetadataOptions,
+    VolumeWriteOptions,
+    VolumeRemoveOptions,
+)
 
 __all__ = [
     # API
@@ -125,6 +138,8 @@ __all__ = [
     # Connection config
     "ConnectionConfig",
     "ProxyTypes",
+    "ApiParams",
+    "Username",
     # Exceptions
     "SandboxException",
     "TimeoutException",
@@ -139,6 +154,7 @@ __all__ = [
     "TemplateException",
     "BuildException",
     "FileUploadException",
+    "RateLimitException",
     # Sandbox API
     "SandboxInfo",
     "SandboxInfoLifecycle",
@@ -171,6 +187,8 @@ __all__ = [
     "SnapshotInfo",
     "SnapshotPaginator",
     "AsyncSnapshotPaginator",
+    # Signature
+    "get_signature",
     # Sync sandbox
     "Sandbox",
     "SandboxPaginator",
@@ -209,6 +227,8 @@ __all__ = [
     "McpServer",
     "GitHubMcpServer",
     "GitHubMcpServerConfig",
+    # Git
+    "Git",
     # Volume
     "Volume",
     "AsyncVolume",
@@ -216,4 +236,7 @@ __all__ = [
     "VolumeEntryStat",
     "VolumeFileType",
     "VolumeWriteInfo",
+    "VolumeMetadataOptions",
+    "VolumeWriteOptions",
+    "VolumeRemoveOptions",
 ]
