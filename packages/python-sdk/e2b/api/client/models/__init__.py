@@ -34,6 +34,7 @@ from .node_detail import NodeDetail
 from .node_metrics import NodeMetrics
 from .node_status import NodeStatus
 from .node_status_change import NodeStatusChange
+from .patch_volumes_volume_id_file_body import PatchVolumesVolumeIDFileBody
 from .post_sandboxes_sandbox_id_refreshes_body import (
     PostSandboxesSandboxIDRefreshesBody,
 )
@@ -80,7 +81,6 @@ from .template_update_response import TemplateUpdateResponse
 from .template_with_builds import TemplateWithBuilds
 from .update_team_api_key import UpdateTeamAPIKey
 from .volume import Volume
-from .volume_directory_listing import VolumeDirectoryListing
 from .volume_entry_stat import VolumeEntryStat
 from .volume_entry_stat_type import VolumeEntryStatType
 
@@ -119,6 +119,7 @@ __all__ = (
     "NodeMetrics",
     "NodeStatus",
     "NodeStatusChange",
+    "PatchVolumesVolumeIDFileBody",
     "PostSandboxesSandboxIDRefreshesBody",
     "PostSandboxesSandboxIDSnapshotsBody",
     "PostSandboxesSandboxIDTimeoutBody",
@@ -161,7 +162,6 @@ __all__ = (
     "TemplateWithBuilds",
     "UpdateTeamAPIKey",
     "Volume",
-    "VolumeDirectoryListing",
     "VolumeEntryStat",
     "VolumeEntryStatType",
 )

@@ -250,7 +250,7 @@ components:
       properties:
         snapshotID:
           type: string
-          description: Identifier of the snapshot template
+          description: Identifier of the snapshot template including the tag. Uses namespace/alias when a name was provided (e.g. team-slug/my-snapshot:default), otherwise falls back to the raw template ID (e.g. abc123:default).
         names:
           type: array
           items:
@@ -1393,7 +1393,6 @@ components:
 
     Node:
       required:
-        - nodeID
         - id
         - serviceInstanceID
         - clusterID
@@ -1413,10 +1412,6 @@ components:
         commit:
           type: string
           description: Commit of the orchestrator
-        nodeID:
-          type: string
-          deprecated: true
-          description: Identifier of the nomad node
         id:
           type: string
           description: Identifier of the node
@@ -1451,12 +1446,11 @@ components:
 
     NodeDetail:
       required:
-        - nodeID
         - id
         - serviceInstanceID
         - clusterID
         - status
-        - sandboxes
+        - sandboxCount
         - cachedBuilds
         - createSuccesses
         - createFails
@@ -1480,19 +1474,14 @@ components:
         serviceInstanceID:
           type: string
           description: Service instance identifier of the node
-        nodeID:
-          type: string
-          deprecated: true
-          description: Identifier of the nomad node
         machineInfo:
           $ref: "#/components/schemas/MachineInfo"
         status:
           $ref: "#/components/schemas/NodeStatus"
-        sandboxes:
-          type: array
-          description: List of sandboxes running on the node
-          items:
-            $ref: "#/components/schemas/ListedSandbox"
+        sandboxCount:
+          type: integer
+          format: uint32
+          description: Number of sandboxes running on the node
         metrics:
           $ref: "#/components/schemas/NodeMetrics"
         cachedBuilds:
@@ -1755,10 +1744,10 @@ components:
         mode:
           type: integer
           format: uint32
-        owner:
+        uid:
           type: integer
           format: uint32
-        group:
+        gid:
           type: integer
           format: uint32
         mtime:
@@ -1775,20 +1764,15 @@ components:
         - path
         - size
         - mode
-        - owner
-        - group
+        - uid
+        - gid
         - mtime
         - ctime
 
     VolumeDirectoryListing:
-      type: object
-      properties:
-        files:
-          type: array
-          items:
-            $ref: "#/components/schemas/VolumeEntryStat"
-      required:
-        - files
+      type: array
+      items:
+        $ref: "#/components/schemas/VolumeEntryStat"
 
 tags:
   - name: templates
@@ -3346,6 +3330,13 @@ paths:
       parameters:
         - $ref: "#/components/parameters/volumeID"
         - $ref: "#/components/parameters/path"
+        - name: depth
+          in: query
+          description: Number of layers deep to recurse into the directory
+          schema:
+            type: integer
+            format: uint32
+            default: 1
       responses:
         "200":
           description: "Successfully retrieved a directory listing"
@@ -3370,13 +3361,13 @@ paths:
       parameters:
         - $ref: "#/components/parameters/volumeID"
         - $ref: "#/components/parameters/path"
-        - name: userID
+        - name: uid
           in: query
           description: User ID of the created directory
           schema:
             type: integer
             format: uint32
-        - name: groupID
+        - name: gid
           in: query
           description: Group ID of the created directory
           schema:
@@ -3388,14 +3379,18 @@ paths:
           schema:
             type: integer
             format: uint32
-        - name: create_parents
+        - name: createParents
           in: query
           description: Force overwrite of an existing directory
           schema:
             type: boolean
       responses:
-        "204":
+        "201":
           description: "Successfully created a directory"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VolumeEntryStat"
         "404":
           description: "path not found"
         "500":
@@ -3448,8 +3443,8 @@ paths:
           description: "path not found"
         "500":
           $ref: "#/components/responses/500"
-    post:
-      description: Create file
+    patch:
+      description: Update file metadata
       tags: [volumes]
       security:
         - AccessTokenAuth: []
@@ -3459,21 +3454,61 @@ paths:
       parameters:
         - $ref: "#/components/parameters/volumeID"
         - $ref: "#/components/parameters/path"
-        - name: userID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                uid:
+                  type: integer
+                  format: uint32
+                gid:
+                  type: integer
+                  format: uint32
+                mode:
+                  type: integer
+                  format: uint32
+      responses:
+        "200":
+          description: "Successfully updated a file's metadata"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VolumeEntryStat"
+        "400":
+          description: "Invalid metadata provided"
+        "404":
+          description: "path not found"
+        "500":
+          description: "Internal server error"
+    put:
+      description: Upload file
+      tags: [volumes]
+      security:
+        - AccessTokenAuth: []
+        - ApiKeyAuth: []
+        - Supabase1TokenAuth: []
+          Supabase2TeamAuth: []
+      parameters:
+        - $ref: "#/components/parameters/volumeID"
+        - $ref: "#/components/parameters/path"
+        - name: uid
           in: query
-          description: User ID of the created file
+          description: User ID of the uploaded file
           schema:
             type: integer
             format: uint32
-        - name: groupID
+        - name: gid
           in: query
-          description: Group ID of the created file
+          description: Group ID of the uploaded file
           schema:
             type: integer
             format: uint32
         - name: mode
           in: query
-          description: Mode of the created file
+          description: Mode of the uploaded file
           schema:
             type: integer
             format: uint32
@@ -3490,8 +3525,12 @@ paths:
               type: string
               format: binary
       responses:
-        "204":
+        "201":
           description: "Successfully created a file"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VolumeEntryStat"
         "404":
           description: "path not found"
         "500":
