@@ -25,7 +25,6 @@ class Node:
         id (str): Identifier of the node
         machine_info (MachineInfo):
         metrics (NodeMetrics): Node metrics
-        node_id (str): Identifier of the nomad node
         sandbox_count (int): Number of sandboxes running on the node
         sandbox_starting_count (int): Number of starting Sandboxes
         service_instance_id (str): Service instance identifier of the node
@@ -40,7 +39,6 @@ class Node:
     id: str
     machine_info: "MachineInfo"
     metrics: "NodeMetrics"
-    node_id: str
     sandbox_count: int
     sandbox_starting_count: int
     service_instance_id: str
@@ -63,8 +61,6 @@ class Node:
 
         metrics = self.metrics.to_dict()
 
-        node_id = self.node_id
-
         sandbox_count = self.sandbox_count
 
         sandbox_starting_count = self.sandbox_starting_count
@@ -86,7 +82,6 @@ class Node:
                 "id": id,
                 "machineInfo": machine_info,
                 "metrics": metrics,
-                "nodeID": node_id,
                 "sandboxCount": sandbox_count,
                 "sandboxStartingCount": sandbox_starting_count,
                 "serviceInstanceID": service_instance_id,
@@ -117,8 +112,6 @@ class Node:
 
         metrics = NodeMetrics.from_dict(d.pop("metrics"))
 
-        node_id = d.pop("nodeID")
-
         sandbox_count = d.pop("sandboxCount")
 
         sandbox_starting_count = d.pop("sandboxStartingCount")
@@ -137,7 +130,6 @@ class Node:
             id=id,
             machine_info=machine_info,
             metrics=metrics,
-            node_id=node_id,
             sandbox_count=sandbox_count,
             sandbox_starting_count=sandbox_starting_count,
             service_instance_id=service_instance_id,

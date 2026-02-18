@@ -63,24 +63,29 @@ export type VolumeEntryStat = Omit<
 }
 
 /**
- * Options for file and directory operations.
+ * Options for updating file metadata.
  */
-export type VolumeWriteOptions = {
+export type VolumeMetadataOptions = {
   /**
-   * User ID of the created file or directory.
+   * User ID of the file or directory.
    */
-  userID?: number
+  uid?: number
 
   /**
-   * Group ID of the created file or directory.
+   * Group ID of the file or directory.
    */
-  groupID?: number
+  gid?: number
 
   /**
-   * Mode of the created file or directory.
+   * Mode of the file or directory.
    */
   mode?: number
+}
 
+/**
+ * Options for file and directory operations.
+ */
+export type VolumeWriteOptions = VolumeMetadataOptions & {
   /**
    * For makeDir: Create parent directories if they don't exist.
    * For writeFile: Force overwrite of an existing file.
@@ -93,13 +98,26 @@ export type VolumeWriteOptions = {
  */
 export type VolumeRemoveOptions = {
   /**
-   * Delete all files and directories recursively.
+   * Delete all files and directories recursively (for directories only).
    */
-  force?: boolean
+  recursive?: boolean
 }
 
 export function Volume(volumeId: string): VolumeBase {
   return new VolumeBase(volumeId)
+}
+
+/**
+ * Convert API VolumeEntryStat to SDK VolumeEntryStat.
+ */
+function convertVolumeEntryStat(
+  entry: components['schemas']['VolumeEntryStat']
+): VolumeEntryStat {
+  return {
+    ...entry,
+    mtime: new Date(entry.mtime),
+    ctime: new Date(entry.ctime),
+  }
 }
 
 /**
@@ -270,10 +288,14 @@ export class VolumeBase {
    *
    * @param path path to the directory.
    * @param opts connection options.
+   * @param [opts.depth] number of layers deep to recurse into the directory (default: 1).
    *
    * @returns list of entries in the directory.
    */
-  async list(path: string, opts?: VolumeApiOpts): Promise<VolumeEntryStat[]> {
+  async list(
+    path: string,
+    opts?: VolumeApiOpts & { depth?: number }
+  ): Promise<VolumeEntryStat[]> {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
 
@@ -284,6 +306,7 @@ export class VolumeBase {
         },
         query: {
           path,
+          depth: opts?.depth,
         },
       },
       signal: config.getSignal(opts?.requestTimeoutMs),
@@ -298,13 +321,9 @@ export class VolumeBase {
       throw err
     }
 
-    return (res.data?.files ?? []).map(
-      (entry: components['schemas']['VolumeEntryStat']): VolumeEntryStat => ({
-        ...entry,
-        mtime: new Date(entry.mtime),
-        ctime: new Date(entry.ctime),
-      })
-    )
+    // VolumeDirectoryListing is an array according to the spec
+    const entries = Array.isArray(res.data) ? res.data : []
+    return entries.map(convertVolumeEntryStat)
   }
 
   /**
@@ -329,10 +348,10 @@ export class VolumeBase {
         },
         query: {
           path,
-          userID: options?.userID,
-          groupID: options?.groupID,
+          uid: options?.uid,
+          gid: options?.gid,
           mode: options?.mode,
-          create_parents: options?.force,
+          createParents: options?.force,
         },
       },
       signal: config.getSignal(opts?.requestTimeoutMs),
@@ -384,12 +403,65 @@ export class VolumeBase {
       throw err
     }
 
-    const entry = res.data as components['schemas']['VolumeEntryStat']
-    return {
-      ...entry,
-      mtime: new Date(entry.mtime),
-      ctime: new Date(entry.ctime),
+    if (!res.data) {
+      throw new Error('Response data is missing')
     }
+
+    return convertVolumeEntryStat(
+      res.data as components['schemas']['VolumeEntryStat']
+    )
+  }
+
+  /**
+   * Update file or directory metadata.
+   *
+   * @param path path to the file or directory.
+   * @param metadata metadata to update (uid, gid, mode).
+   * @param opts connection options.
+   *
+   * @returns updated entry information.
+   */
+  async updateMetadata(
+    path: string,
+    metadata: VolumeMetadataOptions,
+    opts?: VolumeApiOpts
+  ): Promise<VolumeEntryStat> {
+    const config = new ConnectionConfig(opts)
+    const client = new ApiClient(config)
+
+    const res = await client.api.PATCH('/volumes/{volumeID}/file', {
+      params: {
+        path: {
+          volumeID: this.volumeId,
+        },
+        query: {
+          path,
+        },
+      },
+      body: {
+        uid: metadata.uid,
+        gid: metadata.gid,
+        mode: metadata.mode,
+      },
+      signal: config.getSignal(opts?.requestTimeoutMs),
+    })
+
+    if (res.response.status === 404) {
+      throw new NotFoundError(`Path ${path} not found`)
+    }
+
+    const err = handleApiError(res)
+    if (err) {
+      throw err
+    }
+
+    if (!res.data) {
+      throw new Error('Response data is missing')
+    }
+
+    return convertVolumeEntryStat(
+      res.data as components['schemas']['VolumeEntryStat']
+    )
   }
 
   /**
@@ -526,20 +598,20 @@ export class VolumeBase {
     // The API expects application/octet-stream
     const arrayBuffer = await blob.arrayBuffer()
 
-    const res = await client.api.POST('/volumes/{volumeID}/file', {
+    const res = await client.api.PUT('/volumes/{volumeID}/file', {
       params: {
         path: {
           volumeID: this.volumeId,
         },
         query: {
           path,
-          userID: options?.userID,
-          groupID: options?.groupID,
+          uid: options?.uid,
+          gid: options?.gid,
           mode: options?.mode,
           force: options?.force,
         },
       },
-      body: arrayBuffer as any,
+      body: arrayBuffer as unknown as string,
       signal: config.getSignal(opts?.requestTimeoutMs),
     })
 
@@ -557,7 +629,7 @@ export class VolumeBase {
    * Remove a file or directory.
    *
    * @param path path to the file or directory to remove.
-   * @param options removal options (currently unused, kept for API compatibility).
+   * @param options removal options.
    * @param opts connection options.
    */
   async remove(
@@ -568,13 +640,27 @@ export class VolumeBase {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
 
-    const res = await client.api.DELETE('/volumes/{volumeID}/file', {
+    // Determine if it's a directory by checking entry info
+    let isDirectory = false
+    try {
+      const entryInfo = await this.getEntryInfo(path, opts)
+      isDirectory = entryInfo.type === 'directory'
+    } catch (err) {
+      // If we can't get entry info, assume it's a file and try the file endpoint
+      // If that fails, the error will be thrown below
+    }
+
+    const endpoint = isDirectory
+      ? '/volumes/{volumeID}/dir'
+      : '/volumes/{volumeID}/file'
+    const res = await client.api.DELETE(endpoint, {
       params: {
         path: {
           volumeID: this.volumeId,
         },
         query: {
           path,
+          recursive: isDirectory ? options?.recursive : undefined,
         },
       },
       signal: config.getSignal(opts?.requestTimeoutMs),

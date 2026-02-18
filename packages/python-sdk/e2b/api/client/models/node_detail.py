@@ -7,7 +7,6 @@ from attrs import field as _attrs_field
 from ..models.node_status import NodeStatus
 
 if TYPE_CHECKING:
-    from ..models.listed_sandbox import ListedSandbox
     from ..models.machine_info import MachineInfo
     from ..models.node_metrics import NodeMetrics
 
@@ -27,8 +26,7 @@ class NodeDetail:
         id (str): Identifier of the node
         machine_info (MachineInfo):
         metrics (NodeMetrics): Node metrics
-        node_id (str): Identifier of the nomad node
-        sandboxes (list['ListedSandbox']): List of sandboxes running on the node
+        sandbox_count (int): Number of sandboxes running on the node
         service_instance_id (str): Service instance identifier of the node
         status (NodeStatus): Status of the node
         version (str): Version of the orchestrator
@@ -42,8 +40,7 @@ class NodeDetail:
     id: str
     machine_info: "MachineInfo"
     metrics: "NodeMetrics"
-    node_id: str
-    sandboxes: list["ListedSandbox"]
+    sandbox_count: int
     service_instance_id: str
     status: NodeStatus
     version: str
@@ -66,12 +63,7 @@ class NodeDetail:
 
         metrics = self.metrics.to_dict()
 
-        node_id = self.node_id
-
-        sandboxes = []
-        for sandboxes_item_data in self.sandboxes:
-            sandboxes_item = sandboxes_item_data.to_dict()
-            sandboxes.append(sandboxes_item)
+        sandbox_count = self.sandbox_count
 
         service_instance_id = self.service_instance_id
 
@@ -91,8 +83,7 @@ class NodeDetail:
                 "id": id,
                 "machineInfo": machine_info,
                 "metrics": metrics,
-                "nodeID": node_id,
-                "sandboxes": sandboxes,
+                "sandboxCount": sandbox_count,
                 "serviceInstanceID": service_instance_id,
                 "status": status,
                 "version": version,
@@ -103,7 +94,6 @@ class NodeDetail:
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
-        from ..models.listed_sandbox import ListedSandbox
         from ..models.machine_info import MachineInfo
         from ..models.node_metrics import NodeMetrics
 
@@ -124,14 +114,7 @@ class NodeDetail:
 
         metrics = NodeMetrics.from_dict(d.pop("metrics"))
 
-        node_id = d.pop("nodeID")
-
-        sandboxes = []
-        _sandboxes = d.pop("sandboxes")
-        for sandboxes_item_data in _sandboxes:
-            sandboxes_item = ListedSandbox.from_dict(sandboxes_item_data)
-
-            sandboxes.append(sandboxes_item)
+        sandbox_count = d.pop("sandboxCount")
 
         service_instance_id = d.pop("serviceInstanceID")
 
@@ -148,8 +131,7 @@ class NodeDetail:
             id=id,
             machine_info=machine_info,
             metrics=metrics,
-            node_id=node_id,
-            sandboxes=sandboxes,
+            sandbox_count=sandbox_count,
             service_instance_id=service_instance_id,
             status=status,
             version=version,
