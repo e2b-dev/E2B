@@ -1685,8 +1685,8 @@ export interface paths {
         post: {
             parameters: {
                 query: {
-                    /** @description Force overwrite of an existing directory */
-                    createParents?: boolean;
+                    /** @description Create the parents of a directory if they don't exist */
+                    force?: boolean;
                     /** @description Group ID of the created directory */
                     gid?: number;
                     /** @description Mode of the created directory */
@@ -1820,7 +1820,7 @@ export interface paths {
                 };
                 cookie?: never;
             };
-            requestBody: {
+            requestBody?: {
                 content: {
                     "application/octet-stream": string;
                 };

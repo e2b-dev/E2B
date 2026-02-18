@@ -282,7 +282,7 @@ export class Volume {
           uid: options?.uid,
           gid: options?.gid,
           mode: options?.mode,
-          createParents: options?.force,
+          force: options?.force,
         },
       },
       signal: config.getSignal(opts?.requestTimeoutMs),
@@ -585,6 +585,16 @@ export class Volume {
     const endpoint = isDirectory
       ? '/volumes/{volumeID}/dir'
       : '/volumes/{volumeID}/file'
+
+    // For directories, default recursive to true if not explicitly set.
+    // This ensures directories are actually removed, as the API may require
+    // recursive to be explicitly set to true for directory removal to work.
+    const recursive = isDirectory
+      ? options?.recursive !== undefined
+        ? options.recursive
+        : true
+      : undefined
+
     const res = await client.api.DELETE(endpoint, {
       params: {
         path: {
@@ -592,7 +602,7 @@ export class Volume {
         },
         query: {
           path,
-          recursive: isDirectory ? options?.recursive : undefined,
+          recursive,
         },
       },
       signal: config.getSignal(opts?.requestTimeoutMs),
@@ -606,6 +616,8 @@ export class Volume {
     if (err) {
       throw err
     }
+
+    console.log('res', res)
   }
 }
 
