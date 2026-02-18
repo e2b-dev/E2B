@@ -17,33 +17,33 @@ class VolumeEntryStat:
     """
     Attributes:
         ctime (datetime.datetime):
-        group (int):
+        gid (int):
         mode (int):
         mtime (datetime.datetime):
         name (str):
-        owner (int):
         path (str):
         size (int):
         type_ (VolumeEntryStatType):
+        uid (int):
         target (Union[Unset, str]):
     """
 
     ctime: datetime.datetime
-    group: int
+    gid: int
     mode: int
     mtime: datetime.datetime
     name: str
-    owner: int
     path: str
     size: int
     type_: VolumeEntryStatType
+    uid: int
     target: Union[Unset, str] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         ctime = self.ctime.isoformat()
 
-        group = self.group
+        gid = self.gid
 
         mode = self.mode
 
@@ -51,13 +51,13 @@ class VolumeEntryStat:
 
         name = self.name
 
-        owner = self.owner
-
         path = self.path
 
         size = self.size
 
         type_ = self.type_.value
+
+        uid = self.uid
 
         target = self.target
 
@@ -66,14 +66,14 @@ class VolumeEntryStat:
         field_dict.update(
             {
                 "ctime": ctime,
-                "group": group,
+                "gid": gid,
                 "mode": mode,
                 "mtime": mtime,
                 "name": name,
-                "owner": owner,
                 "path": path,
                 "size": size,
                 "type": type_,
+                "uid": uid,
             }
         )
         if target is not UNSET:
@@ -86,7 +86,7 @@ class VolumeEntryStat:
         d = dict(src_dict)
         ctime = isoparse(d.pop("ctime"))
 
-        group = d.pop("group")
+        gid = d.pop("gid")
 
         mode = d.pop("mode")
 
@@ -94,26 +94,26 @@ class VolumeEntryStat:
 
         name = d.pop("name")
 
-        owner = d.pop("owner")
-
         path = d.pop("path")
 
         size = d.pop("size")
 
         type_ = VolumeEntryStatType(d.pop("type"))
 
+        uid = d.pop("uid")
+
         target = d.pop("target", UNSET)
 
         volume_entry_stat = cls(
             ctime=ctime,
-            group=group,
+            gid=gid,
             mode=mode,
             mtime=mtime,
             name=name,
-            owner=owner,
             path=path,
             size=size,
             type_=type_,
+            uid=uid,
             target=target,
         )
 

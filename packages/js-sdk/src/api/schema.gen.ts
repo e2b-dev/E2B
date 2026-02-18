@@ -1686,6 +1686,8 @@ export interface paths {
         get: {
             parameters: {
                 query: {
+                    /** @description Number of layers deep to recurse into the directory */
+                    depth?: number;
                     path: components["parameters"]["path"];
                 };
                 header?: never;
@@ -1728,14 +1730,14 @@ export interface paths {
             parameters: {
                 query: {
                     /** @description Force overwrite of an existing directory */
-                    create_parents?: boolean;
+                    createParents?: boolean;
                     /** @description Group ID of the created directory */
-                    groupID?: number;
+                    gid?: number;
                     /** @description Mode of the created directory */
                     mode?: number;
                     path: components["parameters"]["path"];
                     /** @description User ID of the created directory */
-                    userID?: number;
+                    uid?: number;
                 };
                 header?: never;
                 path: {
@@ -1746,11 +1748,13 @@ export interface paths {
             requestBody?: never;
             responses: {
                 /** @description Successfully created a directory */
-                204: {
+                201: {
                     headers: {
                         [name: string]: unknown;
                     };
-                    content?: never;
+                    content: {
+                        "application/json": components["schemas"]["VolumeEntryStat"];
+                    };
                 };
                 /** @description path not found */
                 404: {
@@ -1840,20 +1844,19 @@ export interface paths {
                 500: components["responses"]["500"];
             };
         };
-        put?: never;
-        /** @description Create file */
-        post: {
+        /** @description Upload file */
+        put: {
             parameters: {
                 query: {
                     /** @description Force overwrite of an existing file */
                     force?: boolean;
-                    /** @description Group ID of the created file */
-                    groupID?: number;
-                    /** @description Mode of the created file */
+                    /** @description Group ID of the uploaded file */
+                    gid?: number;
+                    /** @description Mode of the uploaded file */
                     mode?: number;
                     path: components["parameters"]["path"];
-                    /** @description User ID of the created file */
-                    userID?: number;
+                    /** @description User ID of the uploaded file */
+                    uid?: number;
                 };
                 header?: never;
                 path: {
@@ -1868,11 +1871,13 @@ export interface paths {
             };
             responses: {
                 /** @description Successfully created a file */
-                204: {
+                201: {
                     headers: {
                         [name: string]: unknown;
                     };
-                    content?: never;
+                    content: {
+                        "application/json": components["schemas"]["VolumeEntryStat"];
+                    };
                 };
                 /** @description path not found */
                 404: {
@@ -1884,6 +1889,7 @@ export interface paths {
                 500: components["responses"]["500"];
             };
         };
+        post?: never;
         /** @description Delete a file */
         delete: {
             parameters: {
@@ -1917,7 +1923,63 @@ export interface paths {
         };
         options?: never;
         head?: never;
-        patch?: never;
+        /** @description Update file metadata */
+        patch: {
+            parameters: {
+                query: {
+                    path: components["parameters"]["path"];
+                };
+                header?: never;
+                path: {
+                    volumeID: components["parameters"]["volumeID"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: uint32 */
+                        gid?: number;
+                        /** Format: uint32 */
+                        mode?: number;
+                        /** Format: uint32 */
+                        uid?: number;
+                    };
+                };
+            };
+            responses: {
+                /** @description Successfully updated a file's metadata */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["VolumeEntryStat"];
+                    };
+                };
+                /** @description Invalid metadata provided */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description path not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Internal server error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
         trace?: never;
     };
     "/volumes/{volumeID}/stat": {
@@ -2285,11 +2347,6 @@ export interface components {
             machineInfo: components["schemas"]["MachineInfo"];
             metrics: components["schemas"]["NodeMetrics"];
             /**
-             * @deprecated
-             * @description Identifier of the nomad node
-             */
-            nodeID: string;
-            /**
              * Format: uint32
              * @description Number of sandboxes running on the node
              */
@@ -2327,12 +2384,10 @@ export interface components {
             machineInfo: components["schemas"]["MachineInfo"];
             metrics: components["schemas"]["NodeMetrics"];
             /**
-             * @deprecated
-             * @description Identifier of the nomad node
+             * Format: uint32
+             * @description Number of sandboxes running on the node
              */
-            nodeID: string;
-            /** @description List of sandboxes running on the node */
-            sandboxes: components["schemas"]["ListedSandbox"][];
+            sandboxCount: number;
             /** @description Service instance identifier of the node */
             serviceInstanceID: string;
             status: components["schemas"]["NodeStatus"];
@@ -2593,7 +2648,7 @@ export interface components {
         SnapshotInfo: {
             /** @description Full names of the snapshot template including team namespace and tag (e.g. team-slug/my-snapshot:v2) */
             names: string[];
-            /** @description Identifier of the snapshot template */
+            /** @description Identifier of the snapshot template including the tag. Uses namespace/alias when a name was provided (e.g. team-slug/my-snapshot:default), otherwise falls back to the raw template ID (e.g. abc123:default). */
             snapshotID: string;
         };
         Team: {
@@ -2980,27 +3035,25 @@ export interface components {
             /** @description ID of the volume */
             volumeID: string;
         };
-        VolumeDirectoryListing: {
-            files: components["schemas"]["VolumeEntryStat"][];
-        };
+        VolumeDirectoryListing: components["schemas"]["VolumeEntryStat"][];
         VolumeEntryStat: {
             /** Format: date-time */
             ctime: string;
             /** Format: uint32 */
-            group: number;
+            gid: number;
             /** Format: uint32 */
             mode: number;
             /** Format: date-time */
             mtime: string;
             name: string;
-            /** Format: uint32 */
-            owner: number;
             path: string;
             /** Format: int64 */
             size: number;
             target?: string;
             /** @enum {string} */
             type: "unknown" | "file" | "directory" | "symlink";
+            /** Format: uint32 */
+            uid: number;
         };
     };
     responses: {
