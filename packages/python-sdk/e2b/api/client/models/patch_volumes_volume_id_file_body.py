@@ -1,60 +1,64 @@
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import Any, TypeVar, Union
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
-if TYPE_CHECKING:
-    from ..models.volume_entry_stat import VolumeEntryStat
+from ..types import UNSET, Unset
 
-
-T = TypeVar("T", bound="VolumeDirectoryListing")
+T = TypeVar("T", bound="PatchVolumesVolumeIDFileBody")
 
 
 @_attrs_define
-class VolumeDirectoryListing:
+class PatchVolumesVolumeIDFileBody:
     """
     Attributes:
-        files (list['VolumeEntryStat']):
+        gid (Union[Unset, int]):
+        mode (Union[Unset, int]):
+        uid (Union[Unset, int]):
     """
 
-    files: list["VolumeEntryStat"]
+    gid: Union[Unset, int] = UNSET
+    mode: Union[Unset, int] = UNSET
+    uid: Union[Unset, int] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        files = []
-        for files_item_data in self.files:
-            files_item = files_item_data.to_dict()
-            files.append(files_item)
+        gid = self.gid
+
+        mode = self.mode
+
+        uid = self.uid
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
-        field_dict.update(
-            {
-                "files": files,
-            }
-        )
+        field_dict.update({})
+        if gid is not UNSET:
+            field_dict["gid"] = gid
+        if mode is not UNSET:
+            field_dict["mode"] = mode
+        if uid is not UNSET:
+            field_dict["uid"] = uid
 
         return field_dict
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
-        from ..models.volume_entry_stat import VolumeEntryStat
-
         d = dict(src_dict)
-        files = []
-        _files = d.pop("files")
-        for files_item_data in _files:
-            files_item = VolumeEntryStat.from_dict(files_item_data)
+        gid = d.pop("gid", UNSET)
 
-            files.append(files_item)
+        mode = d.pop("mode", UNSET)
 
-        volume_directory_listing = cls(
-            files=files,
+        uid = d.pop("uid", UNSET)
+
+        patch_volumes_volume_id_file_body = cls(
+            gid=gid,
+            mode=mode,
+            uid=uid,
         )
 
-        volume_directory_listing.additional_properties = d
-        return volume_directory_listing
+        patch_volumes_volume_id_file_body.additional_properties = d
+        return patch_volumes_volume_id_file_body
 
     @property
     def additional_keys(self) -> list[str]:
