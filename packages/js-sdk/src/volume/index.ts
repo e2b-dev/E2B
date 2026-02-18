@@ -525,10 +525,7 @@ export class Volume {
     // Convert data to Blob using the same utility as sandbox.files.write
     const blob = await toBlob(data)
 
-    // Convert Blob to ArrayBuffer for the API request
-    // The API expects application/octet-stream
-    const arrayBuffer = await blob.arrayBuffer()
-
+    // Use bodySerializer to send binary data with correct Content-Type header
     const res = await client.api.PUT('/volumes/{volumeID}/file', {
       params: {
         path: {
@@ -542,7 +539,11 @@ export class Volume {
           force: options?.force,
         },
       },
-      body: arrayBuffer as unknown as string,
+      bodySerializer: () => blob,
+      body: {} as any,
+      headers: {
+        'Content-Type': 'application/octet-stream',
+      },
       signal: config.getSignal(opts?.requestTimeoutMs),
     })
 
