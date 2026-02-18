@@ -412,6 +412,14 @@ export class Sandbox extends SandboxApi {
    *
    * @param sandboxId sandbox ID.
    * @param opts connection options.
+   *
+   * @returns A running sandbox instance
+   *
+   * @example
+   * ```ts
+   * const sandbox = await Sandbox.create()
+   * const sameSandbox = await Sandbox.connect(sandbox.sandboxId)
+   * ```
    */
   static async connect<S extends typeof Sandbox>(
     this: S,
@@ -438,6 +446,14 @@ export class Sandbox extends SandboxApi {
    * @param opts connection options.
    *
    * @returns A running sandbox instance
+   *
+   * @example
+   * ```ts
+   * const sandbox = await Sandbox.create()
+   * await sandbox.pause()
+   *
+   * const resumedSandbox = await Sandbox.resume(sandbox.sandboxId)
+   * ```
    */
   static async resume<S extends typeof Sandbox>(
     this: S,
@@ -461,6 +477,12 @@ export class Sandbox extends SandboxApi {
    * Connect to the current sandbox.
    *
    * If the sandbox is paused, it will be resumed.
+   *
+   * @example
+   * ```ts
+   * const sandbox = await Sandbox.create()
+   * const sameSandbox = await sandbox.connect()
+   * ```
    */
   async connect(opts?: SandboxConnectOpts): Promise<this> {
     await SandboxApi.connectSandbox(this.sandboxId, opts)
@@ -470,6 +492,14 @@ export class Sandbox extends SandboxApi {
 
   /**
    * Resume the current sandbox.
+   *
+   * @example
+   * ```ts
+   * const sandbox = await Sandbox.create()
+   * await sandbox.pause()
+   *
+   * await sandbox.resume()
+   * ```
    */
   async resume(opts?: SandboxConnectOpts): Promise<this> {
     await SandboxApi.resumeSandbox(this.sandboxId, opts)
@@ -581,6 +611,12 @@ export class Sandbox extends SandboxApi {
    * @param opts connection options.
    *
    * @returns `true` if the sandbox was paused, `false` if it was already paused.
+   *
+   * @example
+   * ```ts
+   * const sandbox = await Sandbox.create()
+   * await sandbox.pause()
+   * ```
    */
   async pause(opts?: ConnectionOpts): Promise<boolean> {
     return await SandboxApi.pause(this.sandboxId, opts)

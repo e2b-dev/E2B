@@ -232,6 +232,7 @@ class Sandbox(SandboxApi):
     ) -> Self:
         """
         Connect to a sandbox. If the sandbox is paused, it will be resumed.
+        Sandbox must be either running or be paused.
 
         With sandbox ID you can connect to the same sandbox from different places or environments (serverless functions, etc).
 
@@ -260,6 +261,7 @@ class Sandbox(SandboxApi):
     ) -> "Sandbox":
         """
         Connect to a sandbox. If the sandbox is paused, it will be resumed.
+        Sandbox must be either running or be paused.
 
         With sandbox ID you can connect to the same sandbox from different places or environments (serverless functions, etc).
 
@@ -287,6 +289,7 @@ class Sandbox(SandboxApi):
     ) -> Self:
         """
         Connect to a sandbox. If the sandbox is paused, it will be resumed.
+        Sandbox must be either running or be paused.
 
         With sandbox ID you can connect to the same sandbox from different places or environments (serverless functions, etc).
 
@@ -319,6 +322,7 @@ class Sandbox(SandboxApi):
     ) -> Self:
         """
         Resume a paused sandbox.
+        Sandbox must be either running or be paused.
 
         :param timeout: Timeout for the sandbox in **seconds**.
         :return: A running sandbox instance
@@ -334,6 +338,7 @@ class Sandbox(SandboxApi):
     ) -> "Sandbox":
         """
         Resume a paused sandbox.
+        Sandbox must be either running or be paused.
 
         :param sandbox_id: Sandbox ID
         :param timeout: Timeout for the sandbox in **seconds**.
