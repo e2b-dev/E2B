@@ -103,10 +103,6 @@ export type VolumeRemoveOptions = {
   recursive?: boolean
 }
 
-export function Volume(volumeId: string): VolumeBase {
-  return new VolumeBase(volumeId)
-}
-
 /**
  * Convert API VolumeEntryStat to SDK VolumeEntryStat.
  */
@@ -133,10 +129,10 @@ export type VolumeApiOpts = Partial<
 /**
  * Module for interacting with E2B volumes.
  *
- * Create a `VolumeBase` instance to interact with a volume by its ID,
+ * Create a `Volume` instance to interact with a volume by its ID,
  * or use the static methods to manage volumes.
  */
-export class VolumeBase {
+export class Volume {
   /**
    * Volume ID.
    */
@@ -163,9 +159,9 @@ export class VolumeBase {
    * @param name name of the volume.
    * @param opts connection options.
    *
-   * @returns new VolumeBase instance.
+   * @returns new Volume instance.
    */
-  static async create(name: string, opts?: VolumeApiOpts): Promise<VolumeBase> {
+  static async create(name: string, opts?: VolumeApiOpts): Promise<Volume> {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
 
@@ -181,7 +177,43 @@ export class VolumeBase {
       throw err
     }
 
-    return new VolumeBase(res.data!.volumeID, res.data!.name)
+    return new Volume(res.data!.volumeID, res.data!.name)
+  }
+
+  /**
+   * Connect to an existing volume by ID.
+   *
+   * @param volumeId volume ID.
+   * @param opts connection options.
+   *
+   * @returns Volume instance.
+   */
+  static async connect(
+    volumeId: string,
+    opts?: VolumeApiOpts
+  ): Promise<Volume> {
+    const config = new ConnectionConfig(opts)
+    const client = new ApiClient(config)
+
+    const res = await client.api.GET('/volumes/{volumeID}', {
+      params: {
+        path: {
+          volumeID: volumeId,
+        },
+      },
+      signal: config.getSignal(opts?.requestTimeoutMs),
+    })
+
+    if (res.error?.code === 404) {
+      throw new NotFoundError(`Volume ${volumeId} not found`)
+    }
+
+    const err = handleApiError(res)
+    if (err) {
+      throw err
+    }
+
+    return new Volume(res.data!.volumeID, res.data!.name)
   }
 
   /**

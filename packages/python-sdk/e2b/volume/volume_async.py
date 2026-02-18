@@ -54,9 +54,9 @@ def _convert_volume_entry_stat(api_stat: VolumeEntryStatApi) -> VolumeEntryStat:
 class AsyncVolume:
     """E2B Volume for persistent storage that can be mounted to sandboxes (async)."""
 
-    def __init__(self, volume_id: str, name: Optional[str] = None):
+    def __init__(self, volume_id: str, name: str):
         self._volume_id = volume_id
-        self._name = name if name is not None else volume_id
+        self._name = name
 
     @property
     def volume_id(self) -> str:
@@ -92,8 +92,39 @@ class AsyncVolume:
         if isinstance(res.parsed, Error):
             raise Exception(f"{res.parsed.message}: Request failed")
 
-        vol = cls(volume_id=res.parsed.volume_id)
-        vol._name = res.parsed.name
+        vol = cls(volume_id=res.parsed.volume_id, name=res.parsed.name)
+        return vol
+
+    @classmethod
+    async def connect(cls, volume_id: str, **opts: Unpack[ApiParams]) -> "AsyncVolume":
+        """
+        Connect to an existing volume by ID.
+
+        :param volume_id: Volume ID
+
+        :return: An AsyncVolume instance for the existing volume
+        """
+        config = ConnectionConfig(**opts)
+
+        api_client = get_api_client(config)
+        res = await get_volumes_volume_id.asyncio_detailed(
+            volume_id,
+            client=api_client,
+        )
+
+        if res.status_code == 404:
+            raise NotFoundException(f"Volume {volume_id} not found")
+
+        if res.status_code >= 300:
+            raise handle_api_exception(res)
+
+        if res.parsed is None:
+            raise Exception("Body of the request is None")
+
+        if isinstance(res.parsed, Error):
+            raise Exception(f"{res.parsed.message}: Request failed")
+
+        vol = cls(volume_id=res.parsed.volume_id, name=res.parsed.name)
         return vol
 
     @staticmethod

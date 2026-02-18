@@ -83,7 +83,7 @@ export type {
   GitStatus,
 } from './sandbox/git'
 
-export { Volume, VolumeBase } from './volume'
+export { Volume } from './volume'
 export type {
   VolumeInfo,
   VolumeApiOpts,
