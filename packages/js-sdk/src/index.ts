@@ -86,9 +86,13 @@ export type {
 export { Volume } from './volume'
 export type {
   VolumeInfo,
-  VolumeApiOpts,
   VolumeEntryStat,
   VolumeFileType,
+  VolumeWriteInfo,
+  VolumeMetadataOptions,
+  VolumeWriteOptions,
+  VolumeRemoveOptions,
+  VolumeApiOpts,
 } from './volume'
 
 export { Sandbox }

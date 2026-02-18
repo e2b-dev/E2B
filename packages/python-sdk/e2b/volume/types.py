@@ -55,9 +55,37 @@ class VolumeWriteInfo(TypedDict, total=False):
     """Path to the filesystem object."""
 
 
+class VolumeMetadataOptions(TypedDict, total=False):
+    """Options for updating file metadata."""
+
+    uid: Optional[int]
+    """User ID of the file or directory."""
+    gid: Optional[int]
+    """Group ID of the file or directory."""
+    mode: Optional[int]
+    """Mode of the file or directory."""
+
+
+class VolumeWriteOptions(VolumeMetadataOptions, total=False):
+    """Options for file and directory operations."""
+
+    force: Optional[bool]
+    """For makeDir: Create parent directories if they don't exist. For writeFile: Force overwrite of an existing file."""
+
+
+class VolumeRemoveOptions(TypedDict, total=False):
+    """Options for remove operation."""
+
+    recursive: Optional[bool]
+    """Delete all files and directories recursively (for directories only)."""
+
+
 __all__ = [
     "VolumeInfo",
     "VolumeWriteInfo",
     "VolumeEntryStat",
     "VolumeFileType",
+    "VolumeMetadataOptions",
+    "VolumeWriteOptions",
+    "VolumeRemoveOptions",
 ]
