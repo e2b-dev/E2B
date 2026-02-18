@@ -1,0 +1,148 @@
+name: Package Artifacts
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  build:
+    name: Build Packages
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Parse .tool-versions
+        uses: wistia/parse-tool-versions@v2.1.1
+        with:
+          filename: '.tool-versions'
+          uppercase: 'true'
+          prefix: 'tool_version_'
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: '${{ env.TOOL_VERSION_PNPM }}'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '${{ env.TOOL_VERSION_NODEJS }}'
+          cache: pnpm
+
+      - name: Configure pnpm
+        run: |
+          pnpm config set auto-install-peers true
+          pnpm config set exclude-links-from-lockfile true
+
+      - name: Sanitize branch name
+        env:
+          BRANCH: ${{ github.head_ref }}
+        run: |
+          echo "BRANCH_ID=$(echo "$BRANCH" | sed 's/[^0-9A-Za-z-]/-/g')" >> "$GITHUB_ENV"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build JS SDK
+        working-directory: packages/js-sdk
+        run: pnpm run build
+
+      - name: Pack JS SDK
+        working-directory: packages/js-sdk
+        run: |
+          npm version prerelease --preid=${{ env.BRANCH_ID }} --no-git-tag-version
+          npm pack
+
+      - name: Upload JS SDK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2b-js-sdk
+          path: packages/js-sdk/*.tgz
+
+      - name: Build CLI
+        working-directory: packages/cli
+        run: pnpm run build
+
+      - name: Pack CLI
+        working-directory: packages/cli
+        run: |
+          npm version prerelease --preid=${{ env.BRANCH_ID }} --no-git-tag-version
+          npm pack
+
+      - name: Upload CLI artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2b-cli
+          path: packages/cli/*.tgz
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '${{ env.TOOL_VERSION_PYTHON }}'
+
+      - name: Install and configure Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: '${{ env.TOOL_VERSION_POETRY }}'
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+          installer-parallel: true
+
+      - name: Build Python SDK
+        working-directory: packages/python-sdk
+        run: |
+          BASE_VERSION=$(poetry version -s)
+          poetry version "${BASE_VERSION}+${BRANCH_ID}"
+          poetry build
+
+      - name: Upload Python SDK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2b-python-sdk
+          path: packages/python-sdk/dist/*
+
+      - name: Comment on PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          JS_VERSION=$(node -p "require('./packages/js-sdk/package.json').version")
+          CLI_VERSION=$(node -p "require('./packages/cli/package.json').version")
+          JS_TGZ=$(ls packages/js-sdk/*.tgz | xargs -n1 basename)
+          CLI_TGZ=$(ls packages/cli/*.tgz | xargs -n1 basename)
+          PY_VERSION=$(grep '^version' packages/python-sdk/pyproject.toml | head -1 | sed 's/.*"\(.*\)"/\1/')
+          PY_WHL=$(ls packages/python-sdk/dist/*.whl | xargs -n1 basename)
+
+          BODY="<!-- e2b-pkg-artifacts -->"$'\n'
+          BODY+="### Package Artifacts"$'\n\n'
+          BODY+="Built from ${GITHUB_SHA::7}. Download artifacts from [this workflow run](${RUN_URL})."$'\n\n'
+          BODY+="**JS SDK** (\`e2b@${JS_VERSION}\`):"$'\n'
+          BODY+='```sh'$'\n'
+          BODY+="npm install ./${JS_TGZ}"$'\n'
+          BODY+='```'$'\n\n'
+          BODY+="**CLI** (\`@e2b/cli@${CLI_VERSION}\`):"$'\n'
+          BODY+='```sh'$'\n'
+          BODY+="npm install ./${CLI_TGZ}"$'\n'
+          BODY+='```'$'\n\n'
+          BODY+="**Python SDK** (\`e2b==${PY_VERSION}\`):"$'\n'
+          BODY+='```sh'$'\n'
+          BODY+="pip install ./${PY_WHL}"$'\n'
+          BODY+='```'$'\n'
+
+          COMMENT_ID=$(gh api "repos/${{ github.repository }}/issues/${PR_NUMBER}/comments" \
+            --paginate \
+            --jq '.[] | select(.body | contains("<!-- e2b-pkg-artifacts -->")) | .id' \
+            | tail -1)
+
+          if [ -n "$COMMENT_ID" ]; then
+            gh api "repos/${{ github.repository }}/issues/comments/${COMMENT_ID}" \
+              -X PATCH -f body="$BODY"
+          else
+            gh pr comment "$PR_NUMBER" --body "$BODY"
+          fi
