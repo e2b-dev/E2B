@@ -14,6 +14,74 @@ from e2b.exceptions import TemplateException
 from e2b.template.consts import BASE_STEP_NAME, FINALIZE_STEP_NAME
 
 
+def make_traceback(caller_frame: Optional[FrameType]) -> Optional[TracebackType]:
+    """
+    Create a TracebackType from a caller frame for error reporting.
+
+    :param caller_frame: The caller's frame object, or None
+    :return: A TracebackType object for use with exception.with_traceback(), or None
+    """
+    if caller_frame is None:
+        return None
+    return TracebackType(
+        tb_next=None,
+        tb_frame=caller_frame,
+        tb_lasti=caller_frame.f_lasti,
+        tb_lineno=caller_frame.f_lineno,
+    )
+
+
+def validate_relative_path(
+    src: str,
+    stack_trace: Optional[TracebackType],
+) -> None:
+    """
+    Validate that a source path for copy operations is a relative path that stays
+    within the context directory. This prevents path traversal attacks and ensures
+    files are copied from within the expected directory.
+
+    :param src: The source path to validate
+    :param stack_trace: Optional stack trace for error reporting
+
+    :raises TemplateException: If the path is absolute or escapes the context directory
+
+    Invalid paths:
+    - Absolute paths: /absolute/path, C:\\Windows\\path
+    - Parent directory escapes: ../foo, foo/../../bar, ./foo/../../../bar
+
+    Valid paths:
+    - Simple relative: foo, foo/bar
+    - Current directory prefix: ./foo, ./foo/bar
+    - Internal parent refs that don't escape: foo/../bar (stays within context)
+    """
+    # Check for absolute paths using Python's cross-platform implementation
+    if os.path.isabs(src):
+        raise TemplateException(
+            f'Invalid source path "{src}": absolute paths are not allowed. '
+            "Use a relative path within the context directory."
+        ).with_traceback(stack_trace)
+
+    # Normalize the path and check if it escapes the context directory
+    normalized = os.path.normpath(src)
+
+    # After normalization, a path that escapes would be '..' or start with '../'
+    # We check for '..' followed by path separator to avoid false positives on filenames like '..myconfig'
+    # Examples:
+    # - '../foo' -> '../foo' (escapes)
+    # - 'foo/../../bar' -> '../bar' (escapes)
+    # - './foo/../../../bar' -> '../../bar' (escapes)
+    # - 'foo/../bar' -> 'bar' (doesn't escape)
+    # - './foo/bar' -> 'foo/bar' (doesn't escape)
+    # - '..myconfig' -> '..myconfig' (valid filename, doesn't escape)
+    escapes = normalized == ".." or normalized.startswith(".." + os.sep)
+
+    if escapes:
+        raise TemplateException(
+            f'Invalid source path "{src}": path escapes the context directory. '
+            "The path must stay within the context directory."
+        ).with_traceback(stack_trace)
+
+
 def normalize_build_arguments(
     name: Optional[str] = None,
     alias: Optional[str] = None,

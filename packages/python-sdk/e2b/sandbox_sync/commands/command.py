@@ -240,7 +240,7 @@ class Commands:
         self,
         cmd: str,
         envs: Optional[Dict[str, str]],
-        user: Username,
+        user: Optional[Username],
         cwd: Optional[str],
         stdin: bool,
         timeout: Optional[float],

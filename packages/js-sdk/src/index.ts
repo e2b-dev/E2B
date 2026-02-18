@@ -5,6 +5,8 @@ export { ConnectionConfig } from './connectionConfig'
 export type { ConnectionOpts, Username } from './connectionConfig'
 export {
   AuthenticationError,
+  GitAuthError,
+  GitUpstreamError,
   InvalidArgumentError,
   NotEnoughSpaceError,
   NotFoundError,
@@ -61,6 +63,25 @@ export type {
   Commands,
   Pty,
 } from './sandbox/commands'
+
+export { Git } from './sandbox/git'
+export type {
+  GitRequestOpts,
+  GitCloneOpts,
+  GitInitOpts,
+  GitRemoteAddOpts,
+  GitCommitOpts,
+  GitAddOpts,
+  GitDeleteBranchOpts,
+  GitPushOpts,
+  GitPullOpts,
+  GitDangerouslyAuthenticateOpts,
+  GitConfigOpts,
+  GitConfigScope,
+  GitBranches,
+  GitFileStatus,
+  GitStatus,
+} from './sandbox/git'
 
 export { Sandbox }
 import { Sandbox } from './sandbox'

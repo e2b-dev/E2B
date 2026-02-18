@@ -20,6 +20,7 @@ from e2b.sandbox.utils import class_method_variant
 from e2b.sandbox_async.commands.command import Commands
 from e2b.sandbox_async.commands.pty import Pty
 from e2b.sandbox_async.filesystem.filesystem import Filesystem
+from e2b.sandbox_async.git import Git
 from e2b.sandbox_async.sandbox_api import SandboxApi, SandboxInfo
 
 logger = logging.getLogger(__name__)
@@ -69,6 +70,13 @@ class AsyncSandbox(SandboxApi):
         """
         return self._pty
 
+    @property
+    def git(self) -> Git:
+        """
+        Module for running git operations in the sandbox.
+        """
+        return self._git
+
     def __init__(
         self,
         **opts: Unpack[SandboxOpts],
@@ -105,6 +113,7 @@ class AsyncSandbox(SandboxApi):
             self._transport.pool,
             self._envd_version,
         )
+        self._git = Git(self._commands)
 
     async def is_running(self, request_timeout: Optional[float] = None) -> bool:
         """
@@ -233,13 +242,12 @@ class AsyncSandbox(SandboxApi):
         ...
 
     @overload
-    @classmethod
+    @staticmethod
     async def connect(
-        cls,
         sandbox_id: str,
         timeout: Optional[int] = None,
         **opts: Unpack[ApiParams],
-    ) -> Self:
+    ) -> "AsyncSandbox":
         """
         Connect to a sandbox. If the sandbox is paused, it will be automatically resumed.
         Sandbox must be either running or be paused.
@@ -262,7 +270,7 @@ class AsyncSandbox(SandboxApi):
         """
         ...
 
-    @class_method_variant("_cls_connect")
+    @class_method_variant("_cls_connect_sandbox")
     async def connect(
         self,
         timeout: Optional[int] = None,
@@ -634,7 +642,7 @@ class AsyncSandbox(SandboxApi):
         return self._mcp_token
 
     @classmethod
-    async def _cls_connect(
+    async def _cls_connect_sandbox(
         cls,
         sandbox_id: str,
         timeout: Optional[int] = None,

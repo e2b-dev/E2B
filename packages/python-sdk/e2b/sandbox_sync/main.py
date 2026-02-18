@@ -20,6 +20,7 @@ from e2b.sandbox.utils import class_method_variant
 from e2b.sandbox_sync.commands.command import Commands
 from e2b.sandbox_sync.commands.pty import Pty
 from e2b.sandbox_sync.filesystem.filesystem import Filesystem
+from e2b.sandbox_sync.git import Git
 from e2b.sandbox_sync.sandbox_api import SandboxApi, SandboxInfo
 
 logger = logging.getLogger(__name__)
@@ -69,6 +70,13 @@ class Sandbox(SandboxApi):
         """
         return self._pty
 
+    @property
+    def git(self) -> Git:
+        """
+        Module for running git operations in the sandbox.
+        """
+        return self._git
+
     def __init__(self, **opts: Unpack[SandboxOpts]):
         """
         :deprecated: This constructor is deprecated
@@ -103,6 +111,7 @@ class Sandbox(SandboxApi):
             self._transport.pool,
             self._envd_version,
         )
+        self._git = Git(self._commands)
 
     def is_running(self, request_timeout: Optional[float] = None) -> bool:
         """
@@ -232,13 +241,12 @@ class Sandbox(SandboxApi):
         ...
 
     @overload
-    @classmethod
+    @staticmethod
     def connect(
-        cls,
         sandbox_id: str,
         timeout: Optional[int] = None,
         **opts: Unpack[ApiParams],
-    ) -> Self:
+    ) -> "Sandbox":
         """
         Connect to a sandbox. If the sandbox is paused, it will be automatically resumed.
         Sandbox must be either running or be paused.
@@ -261,7 +269,7 @@ class Sandbox(SandboxApi):
         """
         ...
 
-    @class_method_variant("_cls_connect")
+    @class_method_variant("_cls_connect_sandbox")
     def connect(
         self,
         timeout: Optional[int] = None,
@@ -586,9 +594,8 @@ class Sandbox(SandboxApi):
         ...
 
     @overload
-    @classmethod
+    @staticmethod
     def beta_pause(
-        cls,
         sandbox_id: str,
         **opts: Unpack[ApiParams],
     ) -> None:
@@ -630,7 +637,7 @@ class Sandbox(SandboxApi):
         return self._mcp_token
 
     @classmethod
-    def _cls_connect(
+    def _cls_connect_sandbox(
         cls,
         sandbox_id: str,
         timeout: Optional[int] = None,

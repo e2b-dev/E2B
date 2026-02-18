@@ -20,6 +20,14 @@ from e2b import (
 )
 
 
+@pytest.hookimpl(tryfirst=True, hookwrapper=True)
+def pytest_runtest_makereport(item, call):
+    outcome = yield
+    rep = outcome.get_result()
+    if rep.when == "call":
+        item._test_failed = rep.failed
+
+
 @pytest.fixture(scope="session")
 def sandbox_test_id():
     return f"test_{uuid.uuid4()}"
@@ -41,7 +49,12 @@ def sandbox_factory(request, template, sandbox_test_id):
 
         sandbox = Sandbox.create(template_name, **kwargs)
 
-        request.addfinalizer(lambda: sandbox.kill())
+        def finalizer():
+            if getattr(request.node, "_test_failed", False):
+                print(f"\n[TEST FAILED] Sandbox ID: {sandbox.sandbox_id}")
+            sandbox.kill()
+
+        request.addfinalizer(finalizer)
 
         return sandbox
 
@@ -75,13 +88,16 @@ def async_sandbox_factory(request, template, sandbox_test_id, event_loop):
 
         sandbox = await AsyncSandbox.create(template_name, **kwargs)
 
-        def kill():
+        def finalizer():
+            if getattr(request.node, "_test_failed", False):
+                print(f"\n[TEST FAILED] Sandbox ID: {sandbox.sandbox_id}")
+
             async def _kill():
                 await sandbox.kill()
 
             event_loop.run_until_complete(_kill())
 
-        request.addfinalizer(kill)
+        request.addfinalizer(finalizer)
 
         return sandbox
 
@@ -190,7 +206,9 @@ def debug():
 def skip_by_debug(request, debug):
     if request.node.get_closest_marker("skip_debug"):
         if debug:
-            pytest.skip("skipped because E2B_DEBUG is set")
+            pytest.skip(
+                "skipped because E2B_DEBUG is set"  # ty: ignore[too-many-positional-arguments]
+            )  # ty: ignore[invalid-argument-type]
 
 
 class Helpers:

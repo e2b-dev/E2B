@@ -26,9 +26,8 @@ import { getRoot } from 'src/utils/filesystem'
 import { listSandboxTemplates } from './list'
 import { getPromptTemplates } from 'src/utils/templatePrompt'
 import { confirm } from 'src/utils/confirm'
-import { client } from 'src/api'
+import { client, resolveTeamId } from 'src/api'
 import { handleE2BRequestError } from '../../utils/errors'
-import { getUserConfig } from 'src/user'
 
 async function deleteTemplate(templateID: string) {
   const res = await client.api.DELETE('/templates/{templateID}', {
@@ -84,10 +83,7 @@ export const deleteCommand = new commander.Command('delete')
             template_id: template,
           })
         } else if (opts.select) {
-          const userConfig = getUserConfig()
-          if (userConfig) {
-            teamId = teamId || userConfig.teamId
-          }
+          teamId = resolveTeamId(teamId)
 
           const allTemplates = await listSandboxTemplates({
             teamID: teamId,

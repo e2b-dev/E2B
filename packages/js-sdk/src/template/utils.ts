@@ -8,6 +8,60 @@ import type { Path } from 'glob'
 import type { BuildOptions } from './types'
 
 /**
+ * Validate that a source path for copy operations is a relative path that stays
+ * within the context directory. This prevents path traversal attacks and ensures
+ * files are copied from within the expected directory.
+ *
+ * @param src The source path to validate
+ * @param stackTrace Optional stack trace for error reporting
+ * @throws TemplateError if the path is absolute or escapes the context directory
+ *
+ * Invalid paths:
+ * - Absolute paths: /absolute/path, C:\Windows\path
+ * - Parent directory escapes: ../foo, foo/../../bar, ./foo/../../../bar
+ *
+ * Valid paths:
+ * - Simple relative: foo, foo/bar
+ * - Current directory prefix: ./foo, ./foo/bar
+ * - Internal parent refs that don't escape: foo/../bar (stays within context)
+ */
+export function validateRelativePath(
+  src: string,
+  stackTrace: string | undefined
+): void {
+  // Check for absolute paths using Node's cross-platform implementation
+  if (path.isAbsolute(src)) {
+    const error = new TemplateError(
+      `Invalid source path "${src}": absolute paths are not allowed. Use a relative path within the context directory.`,
+      stackTrace
+    )
+    throw error
+  }
+
+  // Normalize the path and check if it escapes the context directory
+  const normalized = path.normalize(src)
+
+  // After normalization, a path that escapes would be '..' or start with '../'
+  // We check for '..' followed by path separator to avoid false positives on filenames like '..myconfig'
+  // Examples:
+  // - '../foo' -> '../foo' (escapes)
+  // - 'foo/../../bar' -> '../bar' (escapes)
+  // - './foo/../../../bar' -> '../../bar' (escapes)
+  // - 'foo/../bar' -> 'bar' (doesn't escape)
+  // - './foo/bar' -> 'foo/bar' (doesn't escape)
+  // - '..myconfig' -> '..myconfig' (valid filename, doesn't escape)
+  const escapes = normalized === '..' || normalized.startsWith('..' + path.sep)
+
+  if (escapes) {
+    const error = new TemplateError(
+      `Invalid source path "${src}": path escapes the context directory. The path must stay within the context directory.`,
+      stackTrace
+    )
+    throw error
+  }
+}
+
+/**
  * Normalize build arguments from different overload signatures.
  * Handles string name or legacy options object with alias.
  *
@@ -319,7 +373,7 @@ export async function tarFileStream(
   // gzip.portable ensures deterministic gzip header without affecting file modes
   return create(
     {
-      gzip: { portable: true },
+      gzip: true,
       cwd: fileContextPath,
       follow: resolveSymlinks,
       noDirRecurse: true,
@@ -329,12 +383,12 @@ export async function tarFileStream(
 }
 
 /**
- * Create a tar stream and calculate its compressed size for upload.
+ * Create a tar stream for upload using chunked transfer encoding.
  *
  * @param fileName Glob pattern for files to include
  * @param fileContextPath Base directory for resolving file paths
  * @param resolveSymlinks Whether to follow symbolic links
- * @returns Object containing the content length and upload stream
+ * @returns A readable stream of the gzipped tar archive
  */
 export async function tarFileStreamUpload(
   fileName: string,
@@ -342,27 +396,12 @@ export async function tarFileStreamUpload(
   ignorePatterns: string[],
   resolveSymlinks: boolean
 ) {
-  // First pass: calculate the compressed size
-  const sizeCalculationStream = await tarFileStream(
+  return tarFileStream(
     fileName,
     fileContextPath,
     ignorePatterns,
     resolveSymlinks
   )
-  let contentLength = 0
-  for await (const chunk of sizeCalculationStream as unknown as AsyncIterable<Buffer>) {
-    contentLength += chunk.length
-  }
-
-  return {
-    contentLength,
-    uploadStream: await tarFileStream(
-      fileName,
-      fileContextPath,
-      ignorePatterns,
-      resolveSymlinks
-    ),
-  }
 }
 
 /**
