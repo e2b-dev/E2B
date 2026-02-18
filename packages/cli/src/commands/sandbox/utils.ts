@@ -53,7 +53,8 @@ export async function isRunning(sandboxID: string) {
       apiKey,
     })
     return info.state === 'running'
-  } catch {
+  } catch (err) {
+    console.error(`Failed to check sandbox status: ${err}`)
     return false
   }
 }

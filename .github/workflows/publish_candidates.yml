@@ -99,9 +99,12 @@ jobs:
       - name: Publish JS RC
         if: ${{ inputs.js-sdk }}
         working-directory: packages/js-sdk
+        env:
+          RC_PREID: ${{ inputs.preid }}
+          RC_TAG: ${{ inputs.tag }}
         run: |
-          npm version prerelease --preid=${{ inputs.preid }}.${{ github.run_number }} --no-git-tag-version
-          npm publish --tag ${{ inputs.tag }} --provenance
+          npm version prerelease --preid="${RC_PREID}.${{ github.run_number }}" --no-git-tag-version
+          npm publish --tag "$RC_TAG" --provenance
 
       - name: Reinstall dependencies
         if: ${{ inputs.js-sdk || inputs.cli }}
@@ -110,6 +113,9 @@ jobs:
       - name: Publish CLI RC
         if: ${{ inputs.cli }}
         working-directory: packages/cli
+        env:
+          RC_PREID: ${{ inputs.preid }}
+          RC_TAG: ${{ inputs.tag }}
         run: |
-          npm version prerelease --preid=${{ inputs.preid }}.${{ github.run_number }} --no-git-tag-version
-          npm publish --tag ${{ inputs.tag }} --provenance
+          npm version prerelease --preid="${RC_PREID}.${{ github.run_number }}" --no-git-tag-version
+          npm publish --tag "$RC_TAG" --provenance
