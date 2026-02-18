@@ -1,6 +1,6 @@
 {
   "name": "@e2b/cli",
-  "version": "2.2.9",
+  "version": "2.7.0",
   "description": "CLI for managing e2b sandbox templates",
   "homepage": "https://e2b.dev",
   "license": "MIT",
@@ -38,6 +38,7 @@
     "prepublishOnly": "pnpm build",
     "build": "tsc --noEmit --skipLibCheck && tsup --minify",
     "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit --skipLibCheck",
     "lint": "eslint src",
     "format": "prettier --write src",
     "test:interactive": "pnpm build && ./dist/index.js",
@@ -45,7 +46,6 @@
     "test:watch": "vitest watch",
     "test:coverage": "vitest run --coverage",
     "check-deps": "knip",
-    "update-deps": "ncu -u && pnpm i",
     "generate-ref": "./scripts/generate_sdk_ref.sh"
   },
   "devDependencies": {
@@ -60,7 +60,6 @@
     "@vitest/coverage-v8": "^3.2.4",
     "json2md": "^2.0.1",
     "knip": "^5.43.6",
-    "npm-check-updates": "^16.14.6",
     "tsup": "^8.4.0",
     "typescript": "^5.2.2",
     "vitest": "^3.2.4"
@@ -76,7 +75,7 @@
   },
   "dependencies": {
     "@iarna/toml": "^2.2.5",
-    "@inquirer/prompts": "^5.5.0",
+    "@inquirer/prompts": "^7.9.0",
     "@npmcli/package-json": "^5.2.1",
     "async-listen": "^3.0.1",
     "boxen": "^7.1.1",
@@ -86,9 +85,9 @@
     "commander": "^11.1.0",
     "console-table-printer": "^2.11.2",
     "dockerfile-ast": "^0.6.1",
-    "e2b": "^2.2.5",
+    "e2b": "^2.11.2",
     "handlebars": "^4.7.8",
-    "inquirer": "^9.2.12",
+    "inquirer": "^12.10.0",
     "open": "^9.1.0",
     "statuses": "^2.0.1",
     "strip-ansi": "^7.1.0",

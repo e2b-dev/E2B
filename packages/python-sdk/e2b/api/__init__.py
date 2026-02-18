@@ -1,22 +1,29 @@
-from types import TracebackType
 import json
 import logging
-from typing import Optional
-from httpx import Limits
+import os
 from dataclasses import dataclass
+from types import TracebackType
+from typing import Optional, Union
 
+from httpx import AsyncBaseTransport, BaseTransport, Limits
 
 from e2b.api.client.client import AuthenticatedClient
-from e2b.connection_config import ConnectionConfig
+from e2b.api.client.types import Response
 from e2b.api.metadata import default_headers
+from e2b.connection_config import ConnectionConfig
 from e2b.exceptions import (
     AuthenticationException,
-    SandboxException,
     RateLimitException,
+    SandboxException,
 )
-from e2b.api.client.types import Response
 
 logger = logging.getLogger(__name__)
+
+limits = Limits(
+    max_keepalive_connections=int(os.getenv("E2B_MAX_KEEPALIVE_CONNECTIONS", "20")),
+    max_connections=int(os.getenv("E2B_MAX_CONNECTIONS", "2000")),
+    keepalive_expiry=int(os.getenv("E2B_KEEPALIVE_EXPIRY", "300")),
+)
 
 
 @dataclass
@@ -24,7 +31,8 @@ class SandboxCreateResponse:
     sandbox_id: str
     sandbox_domain: Optional[str]
     envd_version: str
-    envd_access_token: str
+    envd_access_token: Optional[str]
+    traffic_access_token: Optional[str]
 
 
 def handle_api_exception(
@@ -68,7 +76,7 @@ class ApiClient(AuthenticatedClient):
         config: ConnectionConfig,
         require_api_key: bool = True,
         require_access_token: bool = False,
-        limits: Optional[Limits] = None,
+        transport: Optional[Union[BaseTransport, AsyncBaseTransport]] = None,
         *args,
         **kwargs,
     ):
@@ -109,7 +117,9 @@ class ApiClient(AuthenticatedClient):
         }
 
         # Prevent passing these parameters twice
-        kwargs.pop("headers", None)
+        more_headers: Optional[dict] = kwargs.pop("headers", None)
+        if more_headers:
+            headers.update(more_headers)
         kwargs.pop("token", None)
         kwargs.pop("auth_header_name", None)
         kwargs.pop("prefix", None)
@@ -122,10 +132,10 @@ class ApiClient(AuthenticatedClient):
                     "response": [self._log_response],
                 },
                 "proxy": config.proxy,
-                "limits": limits,
+                "transport": transport,
             },
             headers=headers,
-            token=token,
+            token=token or "",
             auth_header_name=auth_header_name,
             prefix=prefix,
             *args,

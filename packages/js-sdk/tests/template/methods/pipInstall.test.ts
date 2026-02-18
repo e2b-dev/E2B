@@ -1,13 +1,20 @@
-import { randomUUID } from 'node:crypto'
-import { test } from 'vitest'
 import { Template } from '../../../src'
+import { buildTemplateTest } from '../../setup'
 
-test('pip install', { timeout: 180000 }, async () => {
+buildTemplateTest('pip install', async ({ buildTemplate }) => {
   const template = Template()
     .fromPythonImage('3.13.7-trixie')
-    .pipInstall(['six', 'pyyaml'])
+    .skipCache()
+    .pipInstall('pip-install-test')
 
-  await Template.build(template, {
-    alias: randomUUID(),
-  })
+  await buildTemplate(template)
+})
+
+buildTemplateTest('pip install (user)', async ({ buildTemplate }) => {
+  const template = Template()
+    .fromPythonImage('3.13.7-trixie')
+    .skipCache()
+    .pipInstall('pip-install-test', { g: false })
+
+  await buildTemplate(template)
 })

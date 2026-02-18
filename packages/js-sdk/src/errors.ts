@@ -79,6 +79,26 @@ export class AuthenticationError extends Error {
 }
 
 /**
+ * Thrown when git authentication fails.
+ */
+export class GitAuthError extends AuthenticationError {
+  constructor(message: string) {
+    super(message)
+    this.name = 'GitAuthError'
+  }
+}
+
+/**
+ * Thrown when git upstream tracking is missing.
+ */
+export class GitUpstreamError extends SandboxError {
+  constructor(message: string, stackTrace?: string) {
+    super(message, stackTrace)
+    this.name = 'GitUpstreamError'
+  }
+}
+
+/**
  * Thrown when the template uses old envd version. It isn't compatible with the new SDK.
  */
 export class TemplateError extends SandboxError {
@@ -95,5 +115,28 @@ export class RateLimitError extends SandboxError {
   constructor(message: string) {
     super(message)
     this.name = 'RateLimitError'
+  }
+}
+
+/**
+ * Thrown when the build fails.
+ */
+export class BuildError extends Error {
+  constructor(message: string, stackTrace?: string) {
+    super(message)
+    this.name = 'BuildError'
+    if (stackTrace) {
+      this.stack = stackTrace
+    }
+  }
+}
+
+/**
+ * Thrown when the file upload fails.
+ */
+export class FileUploadError extends BuildError {
+  constructor(message: string, stackTrace?: string) {
+    super(message, stackTrace)
+    this.name = 'FileUploadError'
   }
 }

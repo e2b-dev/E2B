@@ -1,10 +1,14 @@
 from collections.abc import Mapping
-from typing import Any, TypeVar, Union
+from typing import TYPE_CHECKING, Any, TypeVar, Union
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
 from ..types import UNSET, Unset
+
+if TYPE_CHECKING:
+    from ..models.build_log_entry import BuildLogEntry
+
 
 T = TypeVar("T", bound="BuildStatusReason")
 
@@ -14,15 +18,24 @@ class BuildStatusReason:
     """
     Attributes:
         message (str): Message with the status reason, currently reporting only for error status
+        log_entries (Union[Unset, list['BuildLogEntry']]): Log entries related to the status reason
         step (Union[Unset, str]): Step that failed
     """
 
     message: str
+    log_entries: Union[Unset, list["BuildLogEntry"]] = UNSET
     step: Union[Unset, str] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         message = self.message
+
+        log_entries: Union[Unset, list[dict[str, Any]]] = UNSET
+        if not isinstance(self.log_entries, Unset):
+            log_entries = []
+            for log_entries_item_data in self.log_entries:
+                log_entries_item = log_entries_item_data.to_dict()
+                log_entries.append(log_entries_item)
 
         step = self.step
 
@@ -33,6 +46,8 @@ class BuildStatusReason:
                 "message": message,
             }
         )
+        if log_entries is not UNSET:
+            field_dict["logEntries"] = log_entries
         if step is not UNSET:
             field_dict["step"] = step
 
@@ -40,13 +55,23 @@ class BuildStatusReason:
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
+        from ..models.build_log_entry import BuildLogEntry
+
         d = dict(src_dict)
         message = d.pop("message")
+
+        log_entries = []
+        _log_entries = d.pop("logEntries", UNSET)
+        for log_entries_item_data in _log_entries or []:
+            log_entries_item = BuildLogEntry.from_dict(log_entries_item_data)
+
+            log_entries.append(log_entries_item)
 
         step = d.pop("step", UNSET)
 
         build_status_reason = cls(
             message=message,
+            log_entries=log_entries,
             step=step,
         )
 

@@ -3,6 +3,8 @@ from e2b import Template
 template = (
     Template()
     .from_image("node:18")
+    .set_user("root")
+    .set_workdir("/")
     .set_envs({
         "NODE_ENV": "production",
     })
@@ -18,4 +20,5 @@ template = (
         "SINGLE_VAR": "single_value",
     })
     .set_workdir("/app")
+    .set_user("user")
 )

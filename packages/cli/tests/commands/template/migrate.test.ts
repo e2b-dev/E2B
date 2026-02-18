@@ -125,6 +125,40 @@ describe('Template Migration', () => {
         'utf-8'
       )
       expect(buildProdFile.trim()).toEqual(expectedBuildProd.trim())
+
+      // Check that old files are renamed to .old extensions
+      const oldDockerfilePath = path.join(testDir, 'e2b.Dockerfile.old')
+      const oldConfigPath = path.join(testDir, 'e2b.toml.old')
+
+      expect(
+        await fs
+          .access(oldDockerfilePath)
+          .then(() => true)
+          .catch(() => false)
+      ).toBe(true)
+      expect(
+        await fs
+          .access(oldConfigPath)
+          .then(() => true)
+          .catch(() => false)
+      ).toBe(true)
+
+      // Verify original files no longer exist
+      const originalDockerfilePath = path.join(testDir, 'e2b.Dockerfile')
+      const originalConfigPath = path.join(testDir, 'e2b.toml')
+
+      expect(
+        await fs
+          .access(originalDockerfilePath)
+          .then(() => true)
+          .catch(() => false)
+      ).toBe(false)
+      expect(
+        await fs
+          .access(originalConfigPath)
+          .then(() => true)
+          .catch(() => false)
+      ).toBe(false)
     }
 
     async function copyFixtureFiles(fixtureDir: string, targetDir: string) {
@@ -141,17 +175,24 @@ describe('Template Migration', () => {
   })
 
   describe('Error Cases', () => {
-    test('should fail gracefully when config file is missing', async () => {
+    test('should succeed with warning when config file is missing', async () => {
       // Create only Dockerfile, no config
       const dockerfile = 'FROM node:18'
       await fs.writeFile(path.join(testDir, 'e2b.Dockerfile'), dockerfile)
 
-      // Run migration and expect it to fail
-      expect(() => {
-        execSync(`node ${cliPath} template migrate --language typescript`, {
+      // Run migration and expect it to succeed with warning (capture stderr + stdout)
+      const output = execSync(
+        `node ${cliPath} template migrate --language typescript 2>&1`,
+        {
           cwd: testDir,
-        })
-      }).toThrow()
+          encoding: 'utf-8',
+        }
+      )
+
+      expect(output).toContain(
+        'Config file ./e2b.toml not found. Using defaults.'
+      )
+      expect(output).toContain('Migration completed successfully')
     })
 
     test('should fail gracefully when Dockerfile is missing', async () => {

@@ -2,8 +2,7 @@ import { Template, defaultBuildLogger } from 'e2b'
 import { template } from './template'
 
 async function main() {
-  await Template.build(template, {
-    alias: 'start-cmd-dev',
+  await Template.build(template, 'start-cmd-dev', {
     cpuCount: 2,
     memoryMB: 1024,
     onBuildLogs: defaultBuildLogger(),

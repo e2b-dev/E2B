@@ -21,6 +21,7 @@ class SandboxMetric:
         mem_total (int): Total memory in bytes
         mem_used (int): Memory used in bytes
         timestamp (datetime.datetime): Timestamp of the metric entry
+        timestamp_unix (int): Timestamp of the metric entry in Unix time (seconds since epoch)
     """
 
     cpu_count: int
@@ -30,6 +31,7 @@ class SandboxMetric:
     mem_total: int
     mem_used: int
     timestamp: datetime.datetime
+    timestamp_unix: int
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -47,6 +49,8 @@ class SandboxMetric:
 
         timestamp = self.timestamp.isoformat()
 
+        timestamp_unix = self.timestamp_unix
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
@@ -58,6 +62,7 @@ class SandboxMetric:
                 "memTotal": mem_total,
                 "memUsed": mem_used,
                 "timestamp": timestamp,
+                "timestampUnix": timestamp_unix,
             }
         )
 
@@ -80,6 +85,8 @@ class SandboxMetric:
 
         timestamp = isoparse(d.pop("timestamp"))
 
+        timestamp_unix = d.pop("timestampUnix")
+
         sandbox_metric = cls(
             cpu_count=cpu_count,
             cpu_used_pct=cpu_used_pct,
@@ -88,6 +95,7 @@ class SandboxMetric:
             mem_total=mem_total,
             mem_used=mem_used,
             timestamp=timestamp,
+            timestamp_unix=timestamp_unix,
         )
 
         sandbox_metric.additional_properties = d

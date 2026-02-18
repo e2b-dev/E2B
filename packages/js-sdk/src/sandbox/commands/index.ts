@@ -1,28 +1,28 @@
 import {
+  Client,
   Code,
   ConnectError,
-  createClient,
-  Client,
   Transport,
+  createClient,
 } from '@connectrpc/connect'
 
-import {
-  Signal,
-  Process as ProcessService,
-} from '../../envd/process/process_pb'
+import { compareVersions } from 'compare-versions'
 import {
   ConnectionConfig,
-  Username,
   ConnectionOpts,
-  KEEPALIVE_PING_INTERVAL_SEC,
   KEEPALIVE_PING_HEADER,
+  KEEPALIVE_PING_INTERVAL_SEC,
+  Username,
 } from '../../connectionConfig'
-import { authenticationHeader, handleRpcError } from '../../envd/rpc'
-import { CommandResult, CommandHandle } from './commandHandle'
 import { handleProcessStartEvent } from '../../envd/api'
-import { compareVersions } from 'compare-versions'
-import { ENVD_COMMANDS_STDIN } from '../../envd/versions'
+import {
+  Process as ProcessService,
+  Signal,
+} from '../../envd/process/process_pb'
+import { authenticationHeader, handleRpcError } from '../../envd/rpc'
+import { ENVD_COMMANDS_STDIN, ENVD_ENVD_CLOSE } from '../../envd/versions'
 import { SandboxError } from '../../errors'
+import { CommandHandle, CommandResult } from './commandHandle'
 export { Pty } from './pty'
 
 /**
@@ -49,7 +49,7 @@ export interface CommandStartOpts extends CommandRequestOpts {
   /**
    * User to run the command as.
    *
-   * @default `user`
+   * @default `default Sandbox user (as specified in the template)`
    */
   user?: Username
   /**
@@ -141,6 +141,14 @@ export class Commands {
   }
 
   /**
+   * @hidden
+   * @internal
+   */
+  get supportsStdinClose(): boolean {
+    return compareVersions(this.envdVersion, ENVD_ENVD_CLOSE) >= 0
+  }
+
+  /**
    * List all running commands and PTY sessions.
    *
    * @param opts connection options.
@@ -178,10 +186,13 @@ export class Commands {
    */
   async sendStdin(
     pid: number,
-    data: string,
+    data: string | Uint8Array,
     opts?: CommandRequestOpts
   ): Promise<void> {
     try {
+      const payload =
+        typeof data === 'string' ? new TextEncoder().encode(data) : data
+
       await this.rpc.sendInput(
         {
           process: {
@@ -193,7 +204,37 @@ export class Commands {
           input: {
             input: {
               case: 'stdin',
-              value: new TextEncoder().encode(data),
+              value: payload,
+            },
+          },
+        },
+        {
+          signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
+        }
+      )
+    } catch (err) {
+      throw handleRpcError(err)
+    }
+  }
+
+  /**
+   * @hidden
+   * @internal
+   */
+  async closeStdin(pid: number, opts?: CommandRequestOpts): Promise<void> {
+    if (!this.supportsStdinClose) {
+      throw new SandboxError(
+        `Sandbox envd version ${this.envdVersion} doesn't support closeStdin. Please rebuild your template to pick up the latest sandbox version.`
+      )
+    }
+
+    try {
+      await this.rpc.closeStdin(
+        {
+          process: {
+            selector: {
+              case: 'pid',
+              value: pid,
             },
           },
         },
@@ -393,7 +434,7 @@ export class Commands {
       },
       {
         headers: {
-          ...authenticationHeader(opts?.user),
+          ...authenticationHeader(this.envdVersion, opts?.user),
           [KEEPALIVE_PING_HEADER]: KEEPALIVE_PING_INTERVAL_SEC.toString(),
         },
         signal: controller.signal,

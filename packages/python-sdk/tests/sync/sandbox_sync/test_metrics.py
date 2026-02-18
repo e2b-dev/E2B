@@ -1,16 +1,17 @@
+import datetime
 import time
 
 import pytest
 
-from e2b import Sandbox
-
 
 @pytest.mark.skip_debug()
-def test_sbx_metrics(sandbox: Sandbox) -> None:
+def test_sbx_metrics(sandbox_factory) -> None:
+    start_time = datetime.datetime.now()
+    sbx = sandbox_factory(timeout=60)
     # Wait for the sandbox to have some metrics
     metrics = []
     for _ in range(15):
-        metrics = sandbox.get_metrics()
+        metrics = sbx.get_metrics()
         if len(metrics) > 0:
             break
         time.sleep(1)
@@ -24,3 +25,6 @@ def test_sbx_metrics(sandbox: Sandbox) -> None:
     assert metric.mem_total is not None
     assert metric.disk_used is not None
     assert metric.disk_total is not None
+
+    metrics = sbx.get_metrics(start=start_time, end=datetime.datetime.now())
+    assert len(metrics) > 0

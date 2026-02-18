@@ -1,21 +1,29 @@
-import { randomUUID } from 'node:crypto'
-import { test } from 'vitest'
 import { Template } from '../../../src'
+import { buildTemplateTest } from '../../setup'
 
-test('npm install', { timeout: 180000 }, async () => {
-  const template = Template().fromNodeImage('24').npmInstall(['lodash', 'ms'])
-
-  await Template.build(template, {
-    alias: randomUUID(),
-  })
-})
-
-test('npm install global', { timeout: 180000 }, async () => {
+buildTemplateTest('npm install', async ({ buildTemplate }) => {
   const template = Template()
     .fromNodeImage('24')
-    .npmInstall(['lodash', 'ms'], { g: true })
+    .skipCache()
+    .npmInstall('left-pad')
 
-  await Template.build(template, {
-    alias: randomUUID(),
-  })
+  await buildTemplate(template)
+})
+
+buildTemplateTest('npm install global', async ({ buildTemplate }) => {
+  const template = Template()
+    .fromNodeImage('24')
+    .skipCache()
+    .npmInstall('left-pad', { g: true })
+
+  await buildTemplate(template)
+})
+
+buildTemplateTest('npm install dev', async ({ buildTemplate }) => {
+  const template = Template()
+    .fromNodeImage('24')
+    .skipCache()
+    .npmInstall('left-pad', { dev: true })
+
+  await buildTemplate(template)
 })

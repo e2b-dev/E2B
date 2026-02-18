@@ -5,7 +5,12 @@ import * as commander from 'commander'
 import * as e2b from 'e2b'
 import * as fs from 'fs'
 import * as path from 'path'
-import { client, connectionConfig, ensureAccessToken } from 'src/api'
+import {
+  client,
+  connectionConfig,
+  ensureAccessToken,
+  resolveTeamId,
+} from 'src/api'
 import { configName, getConfigPath, loadConfig, saveConfig } from 'src/config'
 import {
   defaultDockerfileName,
@@ -198,6 +203,33 @@ export const buildCommand = new commander.Command('build')
       }
     ) => {
       try {
+        // Display deprecation warning
+        const deprecationMessage = `${asBold('DEPRECATION WARNING')}
+
+This is the v1 build system which is now deprecated.
+Please migrate to the new build system v2.
+
+Migration guide: ${asPrimary('https://e2b.dev/docs/template/migration-v2')}`
+
+        const deprecationWarning = boxen.default(deprecationMessage, {
+          padding: {
+            bottom: 0,
+            top: 0,
+            left: 2,
+            right: 2,
+          },
+          margin: {
+            top: 1,
+            bottom: 1,
+            left: 0,
+            right: 0,
+          },
+          borderColor: 'yellow',
+          borderStyle: 'round',
+        })
+
+        console.log(deprecationWarning)
+
         const dockerInstalled = commandExists.sync('docker')
         if (!dockerInstalled) {
           console.error(
@@ -261,13 +293,9 @@ export const buildCommand = new commander.Command('build')
           readyCmd = opts.readyCmd || config.ready_cmd
           cpuCount = opts.cpuCount || config.cpu_count
           memoryMB = opts.memoryMb || config.memory_mb
-          teamID = opts.team || config.team_id
         }
 
-        const userConfig = getUserConfig()
-        if (userConfig) {
-          teamID = teamID || userConfig.teamId
-        }
+        teamID = resolveTeamId(opts.team, config?.team_id)
 
         if (config && templateID && config.template_id !== templateID) {
           // error: you can't specify different ID than the one in config
@@ -417,6 +445,7 @@ export const buildCommand = new commander.Command('build')
             cwd: root,
           })
         } catch (err: any) {
+          const userConfig = getUserConfig()
           await buildWithProxy(
             userConfig,
             connectionConfig,

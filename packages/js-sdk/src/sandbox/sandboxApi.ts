@@ -7,7 +7,62 @@ import {
 import { compareVersions } from 'compare-versions'
 import { NotFoundError, TemplateError } from '../errors'
 import { timeoutToSeconds } from '../utils'
-import type { McpServer } from './mcp'
+import type { McpServer as BaseMcpServer } from './mcp'
+
+/**
+ * Extended MCP server configuration that includes base servers
+ * and allows dynamic GitHub-based MCP servers with custom run and install commands.
+ */
+export type McpServer = BaseMcpServer | GitHubMcpServer
+
+export type GitHubMcpServer = {
+  [key: `github/${string}`]: {
+    /**
+     * Command to run the MCP server. Must start a stdio-compatible server.
+     */
+    runCmd: string
+    /**
+     * Command to install dependencies for the MCP server. Working directory is the root of the github repository.
+     */
+    installCmd?: string
+    /**
+     * Environment variables to set in the MCP process.
+     */
+    envs?: Record<string, string>
+  }
+}
+
+export type SandboxNetworkOpts = {
+  /**
+   * Allow outbound traffic from the sandbox to the specified addresses.
+   * If `allowOut` is not specified, all outbound traffic is allowed.
+   *
+   * Examples:
+   * - To allow traffic to a specific addresses: `["1.1.1.1", "8.8.8.0/24"]`
+   */
+  allowOut?: string[]
+
+  /**
+   * Deny outbound traffic from the sandbox to the specified addresses.
+   *
+   * Examples:
+   * - To deny traffic to a specific addresses: `["1.1.1.1", "8.8.8.0/24"]`
+   */
+  denyOut?: string[]
+
+  /**
+   * Specify if the sandbox URLs should be accessible only with authentication.
+   * @default true
+   */
+  allowPublicTraffic?: boolean
+
+  /** Specify host mask which will be used for all sandbox requests in the header.
+   * You can use the ${PORT} variable that will be replaced with the actual port number of the service.
+   *
+   * @default ${PORT}-sandboxid.e2b.app
+   */
+  maskRequestHost?: string
+}
 
 /**
  * Options for request to the Sandbox API.
@@ -57,11 +112,27 @@ export interface SandboxOpts extends ConnectionOpts {
   secure?: boolean
 
   /**
-   * Allow sandbox to access the internet
+   * Allow sandbox to access the internet. If set to `False`, it works the same as setting network `denyOut` to `[0.0.0.0/0]`.
    *
    * @default true
    */
   allowInternetAccess?: boolean
+
+  /**
+   * MCP server to enable in the sandbox
+   * @default undefined
+   */
+  mcp?: McpServer
+
+  /**
+   * Sandbox network configuration
+   */
+  network?: SandboxNetworkOpts
+
+  /**
+   * Sandbox URL. Used for local development
+   */
+  sandboxUrl?: string
 }
 
 export type SandboxBetaCreateOpts = SandboxOpts & {
@@ -70,18 +141,21 @@ export type SandboxBetaCreateOpts = SandboxOpts & {
    * @default false
    */
   autoPause?: boolean
-
-  /**
-   * MCP server to enable in the sandbox
-   * @default undefined
-   */
-  mcp?: McpServer
 }
 
 /**
  * Options for connecting to a Sandbox.
  */
-export type SandboxConnectOpts = Omit<SandboxOpts, 'metadata' | 'envs'>
+export type SandboxConnectOpts = ConnectionOpts & {
+  /**
+   * Timeout for the sandbox in **milliseconds**.
+   * For running sandboxes, the timeout will update only if the new timeout is longer than the existing one.
+   * Maximum time a sandbox can be kept alive is 24 hours (86_400_000 milliseconds) for Pro users and 1 hour (3_600_000 milliseconds) for Hobby users.
+   *
+   * @default 300_000 // 5 minutes
+   */
+  timeoutMs?: number
+}
 
 /**
  * State of the sandbox.
@@ -119,11 +193,11 @@ export interface SandboxMetricsOpts extends SandboxApiOpts {
   /**
    * Start time for the metrics, defaults to the start of the sandbox
    */
-  start?: string | Date
+  start?: Date
   /**
    * End time for the metrics, defaults to the current time
    */
-  end?: string | Date
+  end?: Date
 }
 
 /**
@@ -296,12 +370,17 @@ export class SandboxApi {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
 
+    // JS timestamp is in milliseconds, convert to unix (seconds)
+    const start = opts?.start
+      ? Math.round(opts.start.getTime() / 1000)
+      : undefined
+    const end = opts?.end ? Math.round(opts.end.getTime() / 1000) : undefined
     const res = await client.api.GET('/sandboxes/{sandboxID}/metrics', {
       params: {
         path: {
           sandboxID: sandboxId,
-          start: opts?.start,
-          end: opts?.end,
+          start,
+          end,
         },
       },
       signal: config.getSignal(opts?.requestTimeoutMs),
@@ -357,6 +436,10 @@ export class SandboxApi {
       signal: config.getSignal(opts?.requestTimeoutMs),
     })
 
+    if (res.error?.code === 404) {
+      throw new NotFoundError(`Sandbox ${sandboxId} not found`)
+    }
+
     const err = handleApiError(res)
     if (err) {
       throw err
@@ -375,6 +458,10 @@ export class SandboxApi {
       },
       signal: config.getSignal(opts?.requestTimeoutMs),
     })
+
+    if (res.error?.code === 404) {
+      throw new NotFoundError(`Sandbox ${sandboxId} not found`)
+    }
 
     const err = handleApiError(res)
     if (err) {
@@ -446,12 +533,7 @@ export class SandboxApi {
     template: string,
     timeoutMs: number,
     opts?: SandboxBetaCreateOpts
-  ): Promise<{
-    sandboxId: string
-    sandboxDomain?: string
-    envdVersion: string
-    envdAccessToken?: string
-  }> {
+  ) {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
 
@@ -460,10 +542,12 @@ export class SandboxApi {
         autoPause: opts?.autoPause ?? false,
         templateID: template,
         metadata: opts?.metadata,
+        mcp: opts?.mcp as Record<string, unknown> | undefined,
         envVars: opts?.envs,
         timeout: timeoutToSeconds(timeoutMs),
         secure: opts?.secure ?? true,
         allow_internet_access: opts?.allowInternetAccess ?? true,
+        network: opts?.network,
       },
       signal: config.getSignal(opts?.requestTimeoutMs),
     })
@@ -486,19 +570,20 @@ export class SandboxApi {
       sandboxDomain: res.data!.domain || undefined,
       envdVersion: res.data!.envdVersion,
       envdAccessToken: res.data!.envdAccessToken,
+      trafficAccessToken: res.data!.trafficAccessToken || undefined,
     }
   }
 
-  protected static async resumeSandbox(
+  protected static async connectSandbox(
     sandboxId: string,
     opts?: SandboxConnectOpts
-  ): Promise<boolean> {
+  ) {
     const timeoutMs = opts?.timeoutMs ?? DEFAULT_SANDBOX_TIMEOUT_MS
 
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
 
-    const res = await client.api.POST('/sandboxes/{sandboxID}/resume', {
+    const res = await client.api.POST('/sandboxes/{sandboxID}/connect', {
       params: {
         path: {
           sandboxID: sandboxId,
@@ -514,17 +599,18 @@ export class SandboxApi {
       throw new NotFoundError(`Paused sandbox ${sandboxId} not found`)
     }
 
-    if (res.error?.code === 409) {
-      // Sandbox is already running
-      return false
-    }
-
     const err = handleApiError(res)
     if (err) {
       throw err
     }
 
-    return true
+    return {
+      sandboxId: res.data!.sandboxID,
+      sandboxDomain: res.data!.domain || undefined,
+      envdVersion: res.data!.envdVersion,
+      envdAccessToken: res.data!.envdAccessToken,
+      trafficAccessToken: res.data!.trafficAccessToken || undefined,
+    }
   }
 }
 

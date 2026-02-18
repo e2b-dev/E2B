@@ -1,11 +1,18 @@
 import { ApiClient, handleApiError, paths } from '../api'
 import { stripAnsi } from '../utils'
-import { BuildError, FileUploadError } from './errors'
+import { BuildError, FileUploadError, TemplateError } from '../errors'
 import { LogEntry } from './logger'
 import { getBuildStepIndex, tarFileStreamUpload } from './utils'
+import {
+  BuildStatusReason,
+  TemplateBuildStatus,
+  TemplateBuildStatusResponse,
+  TemplateTagInfo,
+} from './types'
 
 type RequestBuildInput = {
-  alias: string
+  name: string
+  tags?: string[]
   cpuCount: number
   memoryMB: number
 }
@@ -24,10 +31,14 @@ type TriggerBuildInput = {
 type GetBuildStatusInput = {
   templateID: string
   buildID: string
-  logsOffset: number
+  logsOffset?: number
 }
 
-export type GetBuildStatusResponse =
+type CheckAliasExistsInput = {
+  alias: string
+}
+
+type ApiBuildStatusResponse =
   paths['/templates/{templateID}/builds/{buildID}/status']['get']['responses']['200']['content']['application/json']
 
 export type TriggerBuildTemplate =
@@ -35,11 +46,12 @@ export type TriggerBuildTemplate =
 
 export async function requestBuild(
   client: ApiClient,
-  { alias, cpuCount, memoryMB }: RequestBuildInput
+  { name, tags, cpuCount, memoryMB }: RequestBuildInput
 ) {
-  const requestBuildRes = await client.api.POST('/v2/templates', {
+  const requestBuildRes = await client.api.POST('/v3/templates', {
     body: {
-      alias,
+      name,
+      tags,
       cpuCount,
       memoryMB,
     },
@@ -91,15 +103,18 @@ export async function uploadFile(
     fileName: string
     fileContextPath: string
     url: string
+    ignorePatterns: string[]
     resolveSymlinks: boolean
   },
   stackTrace: string | undefined
 ) {
-  const { fileName, url, fileContextPath, resolveSymlinks } = options
+  const { fileName, url, fileContextPath, ignorePatterns, resolveSymlinks } =
+    options
   try {
-    const { contentLength, uploadStream } = await tarFileStreamUpload(
+    const uploadStream = await tarFileStreamUpload(
       fileName,
       fileContextPath,
+      ignorePatterns,
       resolveSymlinks
     )
 
@@ -108,9 +123,6 @@ export async function uploadFile(
       method: 'PUT',
       // @ts-expect-error
       body: uploadStream,
-      headers: {
-        'Content-Length': contentLength.toString(),
-      },
       duplex: 'half',
     })
 
@@ -151,10 +163,29 @@ export async function triggerBuild(
   }
 }
 
+function mapLogEntry(
+  entry: ApiBuildStatusResponse['logEntries'][number]
+): LogEntry {
+  return new LogEntry(new Date(entry.timestamp), entry.level, entry.message)
+}
+
+function mapBuildStatusReason(
+  reason: ApiBuildStatusResponse['reason']
+): BuildStatusReason | undefined {
+  if (!reason) {
+    return undefined
+  }
+  return {
+    message: reason.message,
+    step: reason.step,
+    logEntries: (reason.logEntries ?? []).map(mapLogEntry),
+  }
+}
+
 export async function getBuildStatus(
   client: ApiClient,
   { templateID, buildID, logsOffset }: GetBuildStatusInput
-) {
+): Promise<TemplateBuildStatusResponse> {
   const buildStatusRes = await client.api.GET(
     '/templates/{templateID}/builds/{buildID}/status',
     {
@@ -179,7 +210,46 @@ export async function getBuildStatus(
     throw new BuildError('Failed to get build status')
   }
 
-  return buildStatusRes.data
+  return {
+    buildID: buildStatusRes.data.buildID,
+    templateID: buildStatusRes.data.templateID,
+    status: buildStatusRes.data.status,
+    logEntries: buildStatusRes.data.logEntries.map(mapLogEntry),
+    logs: buildStatusRes.data.logs,
+    reason: mapBuildStatusReason(buildStatusRes.data.reason),
+  }
+}
+
+export async function checkAliasExists(
+  client: ApiClient,
+  { alias }: CheckAliasExistsInput
+): Promise<boolean> {
+  const aliasRes = await client.api.GET('/templates/aliases/{alias}', {
+    params: {
+      path: {
+        alias,
+      },
+    },
+  })
+
+  // If we get a NotFound, the alias doesn't exist
+  if (aliasRes.response.status === 404) {
+    return false
+  }
+
+  // If we get a Forbidden, alias exists, but you are not owner
+  if (aliasRes.response.status === 403) {
+    return true
+  }
+
+  // Handle other errors
+  const error = handleApiError(aliasRes, TemplateError)
+  if (error) {
+    throw error
+  }
+
+  // If we get Ok with data, you are owner and the alias exists
+  return aliasRes.data !== undefined
 }
 
 export async function waitForBuildFinish(
@@ -199,7 +269,7 @@ export async function waitForBuildFinish(
   }
 ): Promise<void> {
   let logsOffset = 0
-  let status: GetBuildStatusResponse['status'] = 'building'
+  let status: TemplateBuildStatus = 'building'
 
   while (status === 'building' || status === 'waiting') {
     const buildStatus = await getBuildStatus(client, {
@@ -210,15 +280,14 @@ export async function waitForBuildFinish(
 
     logsOffset += buildStatus.logEntries.length
 
-    buildStatus.logEntries.forEach(
-      (logEntry: GetBuildStatusResponse['logEntries'][number]) =>
-        onBuildLogs?.(
-          new LogEntry(
-            new Date(logEntry.timestamp),
-            logEntry.level,
-            stripAnsi(logEntry.message)
-          )
+    buildStatus.logEntries.forEach((logEntry) =>
+      onBuildLogs?.(
+        new LogEntry(
+          logEntry.timestamp,
+          logEntry.level,
+          stripAnsi(logEntry.message)
         )
+      )
     )
 
     status = buildStatus.status
@@ -251,4 +320,41 @@ export async function waitForBuildFinish(
   }
 
   throw new BuildError('Unknown build error occurred.')
+}
+
+export async function assignTags(
+  client: ApiClient,
+  { targetName, tags }: { targetName: string; tags: string[] }
+): Promise<TemplateTagInfo> {
+  const res = await client.api.POST('/templates/tags', {
+    body: { target: targetName, tags },
+  })
+
+  const error = handleApiError(res, TemplateError)
+  if (error) {
+    throw error
+  }
+
+  if (!res.data) {
+    throw new TemplateError('Failed to assign tags')
+  }
+
+  return {
+    buildId: res.data.buildID,
+    tags: res.data.tags,
+  }
+}
+
+export async function removeTags(
+  client: ApiClient,
+  { name, tags }: { name: string; tags: string[] }
+): Promise<void> {
+  const res = await client.api.DELETE('/templates/tags', {
+    body: { name, tags },
+  })
+
+  const error = handleApiError(res, TemplateError)
+  if (error) {
+    throw error
+  }
 }

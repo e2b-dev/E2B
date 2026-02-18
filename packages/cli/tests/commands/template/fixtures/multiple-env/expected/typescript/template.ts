@@ -2,6 +2,8 @@ import { Template } from 'e2b'
 
 export const template = Template()
   .fromImage('node:18')
+  .setUser('root')
+  .setWorkdir('/')
   .setEnvs({
     'NODE_ENV': 'production',
   })
@@ -17,3 +19,4 @@ export const template = Template()
     'SINGLE_VAR': 'single_value',
   })
   .setWorkdir('/app')
+  .setUser('user')

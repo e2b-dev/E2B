@@ -1,8 +1,14 @@
 import chalk from 'chalk'
 import { stripAnsi } from '../utils'
 
+/**
+ * Log entry severity levels.
+ */
 export type LogEntryLevel = 'debug' | 'info' | 'warn' | 'error'
 
+/**
+ * Represents a single log entry from the template build process.
+ */
 export class LogEntry {
   constructor(
     public readonly timestamp: Date,
@@ -17,22 +23,40 @@ export class LogEntry {
   }
 }
 
+/**
+ * Special log entry indicating the start of a build process.
+ */
 export class LogEntryStart extends LogEntry {
   constructor(timestamp: Date, message: string) {
     super(timestamp, 'debug', message)
   }
 }
 
+/**
+ * Special log entry indicating the end of a build process.
+ */
 export class LogEntryEnd extends LogEntry {
   constructor(timestamp: Date, message: string) {
     super(timestamp, 'debug', message)
   }
 }
 
+/**
+ * Interval in milliseconds for updating the build timer display.
+ * @internal
+ */
 const TIMER_UPDATE_INTERVAL_MS = 150
 
+/**
+ * Default minimum log level to display.
+ * @internal
+ */
 const DEFAULT_LEVEL: LogEntryLevel = 'info'
 
+/**
+ * Colored labels for each log level.
+ * @internal
+ */
 const levels: Record<LogEntryLevel, string> = {
   error: chalk.red('ERROR'),
   warn: chalk.hex('#FF4400')('WARN '),
@@ -40,7 +64,10 @@ const levels: Record<LogEntryLevel, string> = {
   debug: chalk.gray('DEBUG'),
 }
 
-// Level ordering for comparison (assuming lower = less severe)
+/**
+ * Numeric ordering of log levels for comparison (lower = less severe).
+ * @internal
+ */
 const level_order: Record<LogEntryLevel, number> = {
   debug: 0,
   info: 1,
@@ -48,15 +75,15 @@ const level_order: Record<LogEntryLevel, number> = {
   error: 3,
 }
 
-interface BuildLoggerState {
+interface DefaultBuildLoggerState {
   startTime: number
   animationFrame: number
   timerInterval: NodeJS.Timeout | undefined
 }
 
-class BuildLogger {
+class DefaultBuildLogger {
   private minLevel: LogEntryLevel
-  private state: BuildLoggerState
+  private state: DefaultBuildLoggerState
 
   constructor(minLevel?: LogEntryLevel) {
     this.minLevel = minLevel ?? DEFAULT_LEVEL
@@ -86,7 +113,9 @@ class BuildLogger {
     this.updateTimer()
   }
 
-  private getInitialState(timerInterval?: NodeJS.Timeout): BuildLoggerState {
+  private getInitialState(
+    timerInterval?: NodeJS.Timeout
+  ): DefaultBuildLoggerState {
     return {
       startTime: Date.now(),
       animationFrame: 0,
@@ -155,10 +184,29 @@ class BuildLogger {
   }
 }
 
+/**
+ * Create a default build logger with animated timer display.
+ *
+ * @param options Logger configuration options
+ * @param options.minLevel Minimum log level to display (default: 'info')
+ * @returns Logger function that accepts LogEntry instances
+ *
+ * @example
+ * ```ts
+ * import { Template, defaultBuildLogger } from 'e2b'
+ *
+ * const template = Template().fromPythonImage()
+ *
+ * await Template.build(template, {
+ *   alias: 'my-template',
+ *   onBuildLogs: defaultBuildLogger({ minLevel: 'debug' })
+ * })
+ * ```
+ */
 export function defaultBuildLogger(options?: {
   minLevel?: LogEntryLevel
 }): (logEntry: LogEntry) => void {
-  const buildLogger = new BuildLogger(options?.minLevel)
+  const buildLogger = new DefaultBuildLogger(options?.minLevel)
 
   return buildLogger.logger.bind(buildLogger)
 }

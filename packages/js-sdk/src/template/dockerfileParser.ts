@@ -1,15 +1,15 @@
-import { CopyItem, Instruction } from './types'
+import { CopyItem } from './types'
 import {
   Argument,
   DockerfileParser,
   Instruction as DockerfileInstruction,
+  ModifiableInstruction,
 } from 'dockerfile-ast'
 import fs from 'node:fs'
 import { ReadyCmd, waitForTimeout } from './readycmd'
 
 export interface DockerfileParseResult {
   baseImage: string
-  instructions: Instruction[]
 }
 
 interface DockerfileFinalParserInterface {}
@@ -87,11 +87,15 @@ export function parseDockerfile(
   const fromInstruction = fromInstructions[0]
   const argumentsData = fromInstruction.getArguments()
   let baseImage = 'e2bdev/base' // default fallback
+  let userChanged = false
+  let workdirChanged = false
   if (argumentsData && argumentsData.length > 0) {
     baseImage = argumentsData[0].getValue()
   }
 
-  const resultInstructions: Instruction[] = []
+  // Set the user and workdir to the Docker defaults
+  templateBuilder.setUser('root')
+  templateBuilder.setWorkdir('/')
 
   // Process all other instructions
   for (const instruction of instructions) {
@@ -108,15 +112,20 @@ export function parseDockerfile(
 
       case 'COPY':
       case 'ADD':
-        handleCopyInstruction(instruction, templateBuilder)
+        handleCopyInstruction(
+          instruction as ModifiableInstruction,
+          templateBuilder
+        )
         break
 
       case 'WORKDIR':
         handleWorkdirInstruction(instruction, templateBuilder)
+        workdirChanged = true
         break
 
       case 'USER':
         handleUserInstruction(instruction, templateBuilder)
+        userChanged = true
         break
 
       case 'ENV':
@@ -143,9 +152,16 @@ export function parseDockerfile(
     }
   }
 
+  // Set the user and workdir to the E2B defaults
+  if (!userChanged) {
+    templateBuilder.setUser('user')
+  }
+  if (!workdirChanged) {
+    templateBuilder.setWorkdir('/home/user')
+  }
+
   return {
     baseImage,
-    instructions: resultInstructions,
   }
 }
 
@@ -163,14 +179,22 @@ function handleRunInstruction(
 }
 
 function handleCopyInstruction(
-  instruction: DockerfileInstruction,
+  instruction: ModifiableInstruction,
   templateBuilder: DockerfileParserInterface
 ): void {
   const argumentsData = instruction.getArguments()
   if (argumentsData && argumentsData.length >= 2) {
     const src = argumentsData[0].getValue()
     const dest = argumentsData[argumentsData.length - 1].getValue()
-    templateBuilder.copy(src, dest)
+
+    let user: string | undefined
+    const flags = instruction.getFlags()
+    const chownFlag = flags.find((flag) => flag.getName() === 'chown')
+    if (chownFlag) {
+      user = chownFlag.getValue() ?? undefined
+    }
+
+    templateBuilder.copy(src, dest, { user })
   }
 }
 

@@ -34,30 +34,44 @@ from .connection_config import (
     ProxyTypes,
 )
 from .exceptions import (
-    SandboxException,
-    TimeoutException,
-    NotFoundException,
     AuthenticationException,
+    GitAuthException,
+    GitUpstreamException,
+    BuildException,
+    FileUploadException,
     InvalidArgumentException,
     NotEnoughSpaceException,
+    NotFoundException,
+    SandboxException,
     TemplateException,
+    TimeoutException,
 )
 from .sandbox.commands.command_handle import (
-    CommandResult,
-    Stderr,
-    Stdout,
     CommandExitException,
+    CommandResult,
     PtyOutput,
     PtySize,
+    Stderr,
+    Stdout,
 )
 from .sandbox.commands.main import ProcessInfo
-from .sandbox.filesystem.filesystem import EntryInfo, WriteInfo, FileType
+from .sandbox.filesystem.filesystem import EntryInfo, FileType, WriteInfo
 from .sandbox.filesystem.watch_handle import (
     FilesystemEvent,
     FilesystemEventType,
 )
-from .sandbox.mcp import McpServer
-from .sandbox.sandbox_api import SandboxInfo, SandboxQuery, SandboxState, SandboxMetrics
+from .sandbox._git import GitBranches, GitFileStatus, GitStatus
+from .sandbox.network import ALL_TRAFFIC
+from .sandbox.sandbox_api import (
+    GitHubMcpServer,
+    GitHubMcpServerConfig,
+    McpServer,
+    SandboxInfo,
+    SandboxMetrics,
+    SandboxNetworkOpts,
+    SandboxQuery,
+    SandboxState,
+)
 from .sandbox_async.commands.command_handle import AsyncCommandHandle
 from .sandbox_async.filesystem.watch_handle import AsyncWatchHandle
 from .sandbox_async.main import AsyncSandbox
@@ -67,23 +81,30 @@ from .sandbox_sync.commands.command_handle import CommandHandle
 from .sandbox_sync.filesystem.watch_handle import WatchHandle
 from .sandbox_sync.main import Sandbox
 from .sandbox_sync.paginator import SandboxPaginator
-from .template.exceptions import BuildException, FileUploadException
 from .template.logger import (
     LogEntry,
+    LogEntryEnd,
     LogEntryLevel,
     LogEntryStart,
-    LogEntryEnd,
     default_build_logger,
 )
 from .template.main import TemplateBase, TemplateClass
 from .template.readycmd import (
+    ReadyCmd,
     wait_for_file,
-    wait_for_url,
     wait_for_port,
     wait_for_process,
     wait_for_timeout,
+    wait_for_url,
 )
-from .template.types import CopyItem
+from .template.types import (
+    BuildInfo,
+    BuildStatusReason,
+    CopyItem,
+    TemplateBuildStatus,
+    TemplateBuildStatusResponse,
+    TemplateTagInfo,
+)
 from .template_async.main import AsyncTemplate
 from .template_sync.main import Template
 
@@ -99,6 +120,8 @@ __all__ = [
     "TimeoutException",
     "NotFoundException",
     "AuthenticationException",
+    "GitAuthException",
+    "GitUpstreamException",
     "InvalidArgumentException",
     "NotEnoughSpaceException",
     "TemplateException",
@@ -111,6 +134,9 @@ __all__ = [
     "SandboxQuery",
     "SandboxState",
     "SandboxMetrics",
+    "GitStatus",
+    "GitBranches",
+    "GitFileStatus",
     # Command handle
     "CommandResult",
     "Stderr",
@@ -124,6 +150,9 @@ __all__ = [
     "EntryInfo",
     "WriteInfo",
     "FileType",
+    # Network
+    "SandboxNetworkOpts",
+    "ALL_TRAFFIC",
     # Sync sandbox
     "Sandbox",
     "SandboxPaginator",
@@ -141,6 +170,12 @@ __all__ = [
     "TemplateBase",
     "TemplateClass",
     "CopyItem",
+    "BuildInfo",
+    "BuildStatusReason",
+    "TemplateBuildStatus",
+    "TemplateBuildStatusResponse",
+    "TemplateTagInfo",
+    "ReadyCmd",
     "wait_for_file",
     "wait_for_url",
     "wait_for_port",
@@ -153,4 +188,6 @@ __all__ = [
     "default_build_logger",
     # MCP
     "McpServer",
+    "GitHubMcpServer",
+    "GitHubMcpServerConfig",
 ]

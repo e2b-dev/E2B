@@ -1,9 +1,9 @@
 import {
+  Client,
+  Code,
+  ConnectError,
   createClient,
   Transport,
-  Client,
-  ConnectError,
-  Code,
 } from '@connectrpc/connect'
 import {
   ConnectionConfig,
@@ -19,16 +19,20 @@ import { authenticationHeader, handleRpcError } from '../../envd/rpc'
 
 import { EnvdApiClient } from '../../envd/api'
 import {
-  FileType as FsFileType,
   Filesystem as FilesystemService,
+  FileType as FsFileType,
 } from '../../envd/filesystem/filesystem_pb'
 
 import { FilesystemEvent, WatchHandle } from './watchHandle'
 
-import { compareVersions } from 'compare-versions'
-import { InvalidArgumentError, TemplateError } from '../../errors'
-import { ENVD_VERSION_RECURSIVE_WATCH } from '../../envd/versions'
 import type { Timestamp } from '@bufbuild/protobuf/wkt'
+import { compareVersions } from 'compare-versions'
+import {
+  ENVD_DEFAULT_USER,
+  ENVD_VERSION_RECURSIVE_WATCH,
+} from '../../envd/versions'
+import { InvalidArgumentError, TemplateError } from '../../errors'
+import { toBlob } from '../../utils'
 
 /**
  * Sandbox filesystem object information.
@@ -247,11 +251,19 @@ export class Filesystem {
   ): Promise<unknown> {
     const format = opts?.format ?? 'text'
 
+    let user = opts?.user
+    if (
+      user == undefined &&
+      compareVersions(this.envdApi.version, ENVD_DEFAULT_USER) < 0
+    ) {
+      user = defaultUsername
+    }
+
     const res = await this.envdApi.api.GET('/files', {
       params: {
         query: {
           path,
-          username: opts?.user || defaultUsername,
+          username: user,
         },
       },
       parseAs: format === 'bytes' ? 'arrayBuffer' : format,
@@ -343,33 +355,30 @@ export class Filesystem {
 
     if (writeFiles.length === 0) return [] as WriteInfo[]
 
-    const blobs = await Promise.all(
-      writeFiles.map((f) => new Response(f.data).blob())
-    )
+    const formData = new FormData()
+    for (let i = 0; i < writeFiles.length; i++) {
+      const file = writeFiles[i]
+      formData.append('file', await toBlob(file.data), writeFiles[i].path)
+    }
+
+    let user = writeOpts?.user
+    if (
+      user == undefined &&
+      compareVersions(this.envdApi.version, ENVD_DEFAULT_USER) < 0
+    ) {
+      user = defaultUsername
+    }
 
     const res = await this.envdApi.api.POST('/files', {
       params: {
         query: {
           path,
-          username: writeOpts?.user || defaultUsername,
+          username: user,
         },
       },
-      bodySerializer() {
-        return blobs.reduce((fd, blob, i) => {
-          // Important: RFC 7578, Section 4.2 requires that if a filename is provided,
-          // the directory path information must not be used.
-          // BUT in our case we need to use the directory path information with a custom
-          // muktipart part name getter in envd.
-          fd.append('file', blob, writeFiles[i].path)
-
-          return fd
-        }, new FormData())
-      },
+      bodySerializer: () => formData,
+      signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
       body: {},
-      headers: {
-        'Content-Type': 'multipart/form-data',
-        'Bun-Content-Type': 'temporary-fix', // https://github.com/oven-sh/bun/issues/14988
-      },
     })
 
     const err = await handleEnvdApiError(res)
@@ -383,6 +392,28 @@ export class Filesystem {
     }
 
     return files.length === 1 && path ? files[0] : files
+  }
+
+  /**
+   * Write multiple files.
+   *
+   *
+   * Writing to a file that doesn't exist creates the file.
+   *
+   * Writing to a file that already exists overwrites the file.
+   *
+   * Writing to a file at path that doesn't exist creates the necessary directories.
+   *
+   * @param files list of files to write as `WriteEntry` objects, each containing `path` and `data`.
+   * @param opts connection options.
+   *
+   * @returns information about the written files
+   */
+  async writeFiles(
+    files: WriteEntry[],
+    opts?: FilesystemRequestOpts
+  ): Promise<WriteInfo[]> {
+    return this.write(files, opts) as Promise<WriteInfo[]>
   }
 
   /**
@@ -405,7 +436,7 @@ export class Filesystem {
           depth: opts?.depth ?? 1,
         },
         {
-          headers: authenticationHeader(opts?.user),
+          headers: authenticationHeader(this.envdApi.version, opts?.user),
           signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
         }
       )
@@ -450,7 +481,7 @@ export class Filesystem {
       await this.rpc.makeDir(
         { path },
         {
-          headers: authenticationHeader(opts?.user),
+          headers: authenticationHeader(this.envdApi.version, opts?.user),
           signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
         }
       )
@@ -488,7 +519,7 @@ export class Filesystem {
           destination: newPath,
         },
         {
-          headers: authenticationHeader(opts?.user),
+          headers: authenticationHeader(this.envdApi.version, opts?.user),
           signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
         }
       )
@@ -526,7 +557,7 @@ export class Filesystem {
       await this.rpc.remove(
         { path },
         {
-          headers: authenticationHeader(opts?.user),
+          headers: authenticationHeader(this.envdApi.version, opts?.user),
           signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
         }
       )
@@ -548,7 +579,7 @@ export class Filesystem {
       await this.rpc.stat(
         { path },
         {
-          headers: authenticationHeader(opts?.user),
+          headers: authenticationHeader(this.envdApi.version, opts?.user),
           signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
         }
       )
@@ -580,7 +611,10 @@ export class Filesystem {
     try {
       const res = await this.rpc.stat(
         { path },
-        { headers: authenticationHeader(opts?.user) }
+        {
+          headers: authenticationHeader(this.envdApi.version, opts?.user),
+          signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
+        }
       )
 
       if (!res.entry) {
@@ -651,7 +685,7 @@ export class Filesystem {
       },
       {
         headers: {
-          ...authenticationHeader(opts?.user),
+          ...authenticationHeader(this.envdApi.version, opts?.user),
           [KEEPALIVE_PING_HEADER]: KEEPALIVE_PING_INTERVAL_SEC.toString(),
         },
         signal: controller.signal,

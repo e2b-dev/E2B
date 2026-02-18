@@ -44,7 +44,7 @@ export interface PtyCreateOpts
   /**
    * User to use for the PTY.
    *
-   * @default `user`
+   * @default `default Sandbox user (as specified in the template)`
    */
   user?: Username
   /**
@@ -62,16 +62,29 @@ export interface PtyCreateOpts
 }
 
 /**
+ * Options for connecting to a command.
+ */
+export type PtyConnectOpts = Pick<PtyCreateOpts, 'onData' | 'timeoutMs'> &
+  Pick<ConnectionOpts, 'requestTimeoutMs'>
+
+/**
  * Module for interacting with PTYs (pseudo-terminals) in the sandbox.
  */
 export class Pty {
   private readonly rpc: Client<typeof ProcessService>
+  private readonly envdVersion: string
+
+  private readonly defaultPtyConnectionTimeout = 60_000 // 60 seconds
 
   constructor(
     private readonly transport: Transport,
-    private readonly connectionConfig: ConnectionConfig
+    private readonly connectionConfig: ConnectionConfig,
+    metadata: {
+      version: string
+    }
   ) {
     this.rpc = createClient(ProcessService, this.transport)
+    this.envdVersion = metadata.version
   }
 
   /**
@@ -85,7 +98,9 @@ export class Pty {
     const requestTimeoutMs =
       opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
     const envs = opts?.envs ?? {}
-    envs.TERM = 'xterm-256color'
+    envs.TERM = envs.TERM ?? 'xterm-256color'
+    envs.LANG = envs.LANG ?? 'C.UTF-8'
+    envs.LC_ALL = envs.LC_ALL ?? 'C.UTF-8'
     const controller = new AbortController()
 
     const reqTimeout = setTimeout(() => {
@@ -109,11 +124,11 @@ export class Pty {
       },
       {
         headers: {
-          ...authenticationHeader(opts?.user),
+          ...authenticationHeader(this.envdVersion, opts?.user),
           [KEEPALIVE_PING_HEADER]: KEEPALIVE_PING_INTERVAL_SEC.toString(),
         },
         signal: controller.signal,
-        timeoutMs: opts?.timeoutMs ?? 60_000,
+        timeoutMs: opts?.timeoutMs ?? this.defaultPtyConnectionTimeout,
       }
     )
 
@@ -130,6 +145,63 @@ export class Pty {
         undefined,
         undefined,
         opts.onData
+      )
+    } catch (err) {
+      throw handleRpcError(err)
+    }
+  }
+
+  /**
+   * Connect to a running PTY.
+   *
+   * @param pid process ID of the PTY to connect to. You can get the list of running PTYs using {@link Commands.list}.
+   * @param opts connection options.
+   *
+   * @returns handle to interact with the PTY.
+   */
+  async connect(pid: number, opts?: PtyConnectOpts): Promise<CommandHandle> {
+    const requestTimeoutMs =
+      opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
+
+    const controller = new AbortController()
+
+    const reqTimeout = requestTimeoutMs
+      ? setTimeout(() => {
+          controller.abort()
+        }, requestTimeoutMs)
+      : undefined
+
+    const events = this.rpc.connect(
+      {
+        process: {
+          selector: {
+            case: 'pid',
+            value: pid,
+          },
+        },
+      },
+      {
+        signal: controller.signal,
+        headers: {
+          [KEEPALIVE_PING_HEADER]: KEEPALIVE_PING_INTERVAL_SEC.toString(),
+        },
+        timeoutMs: opts?.timeoutMs ?? this.defaultPtyConnectionTimeout,
+      }
+    )
+
+    try {
+      const pid = await handleProcessStartEvent(events)
+
+      clearTimeout(reqTimeout)
+
+      return new CommandHandle(
+        pid,
+        () => controller.abort(),
+        () => this.kill(pid),
+        events,
+        undefined,
+        undefined,
+        opts?.onData
       )
     } catch (err) {
       throw handleRpcError(err)

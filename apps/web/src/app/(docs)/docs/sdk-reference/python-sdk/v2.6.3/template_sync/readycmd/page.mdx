@@ -1,0 +1,157 @@
+
+
+
+## ReadyCmd
+
+```python
+class ReadyCmd()
+```
+
+Wrapper class for ready check commands.
+
+
+### wait\_for\_port
+
+```python
+def wait_for_port(port: int)
+```
+
+Wait for a port to be listening.
+
+Uses `ss` command to check if a port is open and listening.
+
+**Arguments**:
+
+- `port`: Port number to wait for
+
+**Returns**:
+
+ReadyCmd that checks for the port
+Example
+```python
+from e2b import Template, wait_for_port
+
+template = (
+    Template()
+    .from_python_image()
+    .set_start_cmd('python -m http.server 8000', wait_for_port(8000))
+)
+```
+
+
+### wait\_for\_url
+
+```python
+def wait_for_url(url: str, status_code: int = 200)
+```
+
+Wait for a URL to return a specific HTTP status code.
+
+Uses `curl` to make HTTP requests and check the response status.
+
+**Arguments**:
+
+- `url`: URL to check (e.g., 'http://localhost:3000/health')
+- `status_code`: Expected HTTP status code (default: 200)
+
+**Returns**:
+
+ReadyCmd that checks the URL
+Example
+```python
+from e2b import Template, wait_for_url
+
+template = (
+    Template()
+    .from_node_image()
+    .set_start_cmd('npm start', wait_for_url('http://localhost:3000/health'))
+)
+```
+
+
+### wait\_for\_process
+
+```python
+def wait_for_process(process_name: str)
+```
+
+Wait for a process with a specific name to be running.
+
+Uses `pgrep` to check if a process exists.
+
+**Arguments**:
+
+- `process_name`: Name of the process to wait for
+
+**Returns**:
+
+ReadyCmd that checks for the process
+Example
+```python
+from e2b import Template, wait_for_process
+
+template = (
+    Template()
+    .from_base_image()
+    .set_start_cmd('./my-daemon', wait_for_process('my-daemon'))
+)
+```
+
+
+### wait\_for\_file
+
+```python
+def wait_for_file(filename: str)
+```
+
+Wait for a file to exist.
+
+Uses shell test command to check file existence.
+
+**Arguments**:
+
+- `filename`: Path to the file to wait for
+
+**Returns**:
+
+ReadyCmd that checks for the file
+Example
+```python
+from e2b import Template, wait_for_file
+
+template = (
+    Template()
+    .from_base_image()
+    .set_start_cmd('./init.sh', wait_for_file('/tmp/ready'))
+)
+```
+
+
+### wait\_for\_timeout
+
+```python
+def wait_for_timeout(timeout: int)
+```
+
+Wait for a specified timeout before considering the sandbox ready.
+
+Uses `sleep` command to wait for a fixed duration.
+
+**Arguments**:
+
+- `timeout`: Time to wait in **milliseconds** (minimum: 1000ms / 1 second)
+
+**Returns**:
+
+ReadyCmd that waits for the specified duration
+Example
+```python
+from e2b import Template, wait_for_timeout
+
+template = (
+    Template()
+    .from_node_image()
+    .set_start_cmd('npm start', wait_for_timeout(5000))  # Wait 5 seconds
+)
+```
+

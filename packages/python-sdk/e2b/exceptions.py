@@ -71,6 +71,22 @@ class AuthenticationException(Exception):
     pass
 
 
+class GitAuthException(AuthenticationException):
+    """
+    Raised when git authentication fails.
+    """
+
+    pass
+
+
+class GitUpstreamException(SandboxException):
+    """
+    Raised when git upstream tracking is missing.
+    """
+
+    pass
+
+
 class TemplateException(SandboxException):
     """
     Exception raised when the template uses old envd version. It isn't compatible with the new SDK.
@@ -80,4 +96,16 @@ class TemplateException(SandboxException):
 class RateLimitException(SandboxException):
     """
     Raised when the API rate limit is exceeded.
+    """
+
+
+class BuildException(Exception):
+    """
+    Raised when the build fails.
+    """
+
+
+class FileUploadException(BuildException):
+    """
+    Raised when the file upload fails.
     """

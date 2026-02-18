@@ -1,11 +1,16 @@
 """Contains all the data models used in inputs/outputs"""
 
+from .admin_sandbox_kill_result import AdminSandboxKillResult
+from .assign_template_tags_request import AssignTemplateTagsRequest
+from .assigned_template_tags import AssignedTemplateTags
 from .aws_registry import AWSRegistry
 from .aws_registry_type import AWSRegistryType
 from .build_log_entry import BuildLogEntry
 from .build_status_reason import BuildStatusReason
+from .connect_sandbox import ConnectSandbox
 from .created_access_token import CreatedAccessToken
 from .created_team_api_key import CreatedTeamAPIKey
+from .delete_template_tags_request import DeleteTemplateTagsRequest
 from .disk_metrics import DiskMetrics
 from .error import Error
 from .gcp_registry import GCPRegistry
@@ -15,6 +20,11 @@ from .general_registry_type import GeneralRegistryType
 from .identifier_masking_details import IdentifierMaskingDetails
 from .listed_sandbox import ListedSandbox
 from .log_level import LogLevel
+from .logs_direction import LogsDirection
+from .logs_source import LogsSource
+from .machine_info import MachineInfo
+from .max_team_metric import MaxTeamMetric
+from .mcp_type_0 import McpType0
 from .new_access_token import NewAccessToken
 from .new_sandbox import NewSandbox
 from .new_team_api_key import NewTeamAPIKey
@@ -35,6 +45,7 @@ from .sandbox_log_entry import SandboxLogEntry
 from .sandbox_log_entry_fields import SandboxLogEntryFields
 from .sandbox_logs import SandboxLogs
 from .sandbox_metric import SandboxMetric
+from .sandbox_network_config import SandboxNetworkConfig
 from .sandbox_state import SandboxState
 from .sandboxes_with_metrics import SandboxesWithMetrics
 from .team import Team
@@ -42,23 +53,36 @@ from .team_api_key import TeamAPIKey
 from .team_metric import TeamMetric
 from .team_user import TeamUser
 from .template import Template
+from .template_alias_response import TemplateAliasResponse
 from .template_build import TemplateBuild
 from .template_build_file_upload import TemplateBuildFileUpload
+from .template_build_info import TemplateBuildInfo
+from .template_build_logs_response import TemplateBuildLogsResponse
 from .template_build_request import TemplateBuildRequest
 from .template_build_request_v2 import TemplateBuildRequestV2
+from .template_build_request_v3 import TemplateBuildRequestV3
 from .template_build_start_v2 import TemplateBuildStartV2
 from .template_build_status import TemplateBuildStatus
+from .template_legacy import TemplateLegacy
+from .template_request_response_v3 import TemplateRequestResponseV3
 from .template_step import TemplateStep
 from .template_update_request import TemplateUpdateRequest
+from .template_update_response import TemplateUpdateResponse
+from .template_with_builds import TemplateWithBuilds
 from .update_team_api_key import UpdateTeamAPIKey
 
 __all__ = (
+    "AdminSandboxKillResult",
+    "AssignedTemplateTags",
+    "AssignTemplateTagsRequest",
     "AWSRegistry",
     "AWSRegistryType",
     "BuildLogEntry",
     "BuildStatusReason",
+    "ConnectSandbox",
     "CreatedAccessToken",
     "CreatedTeamAPIKey",
+    "DeleteTemplateTagsRequest",
     "DiskMetrics",
     "Error",
     "GCPRegistry",
@@ -68,6 +92,11 @@ __all__ = (
     "IdentifierMaskingDetails",
     "ListedSandbox",
     "LogLevel",
+    "LogsDirection",
+    "LogsSource",
+    "MachineInfo",
+    "MaxTeamMetric",
+    "McpType0",
     "NewAccessToken",
     "NewSandbox",
     "NewTeamAPIKey",
@@ -87,19 +116,28 @@ __all__ = (
     "SandboxLogEntryFields",
     "SandboxLogs",
     "SandboxMetric",
+    "SandboxNetworkConfig",
     "SandboxState",
     "Team",
     "TeamAPIKey",
     "TeamMetric",
     "TeamUser",
     "Template",
+    "TemplateAliasResponse",
     "TemplateBuild",
     "TemplateBuildFileUpload",
+    "TemplateBuildInfo",
+    "TemplateBuildLogsResponse",
     "TemplateBuildRequest",
     "TemplateBuildRequestV2",
+    "TemplateBuildRequestV3",
     "TemplateBuildStartV2",
     "TemplateBuildStatus",
+    "TemplateLegacy",
+    "TemplateRequestResponseV3",
     "TemplateStep",
     "TemplateUpdateRequest",
+    "TemplateUpdateResponse",
+    "TemplateWithBuilds",
     "UpdateTeamAPIKey",
 )

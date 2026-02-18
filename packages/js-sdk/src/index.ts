@@ -5,6 +5,8 @@ export { ConnectionConfig } from './connectionConfig'
 export type { ConnectionOpts, Username } from './connectionConfig'
 export {
   AuthenticationError,
+  GitAuthError,
+  GitUpstreamError,
   InvalidArgumentError,
   NotEnoughSpaceError,
   NotFoundError,
@@ -12,6 +14,8 @@ export {
   TemplateError,
   TimeoutError,
   RateLimitError,
+  BuildError,
+  FileUploadError,
 } from './errors'
 export type { Logger } from './logs'
 
@@ -44,9 +48,12 @@ export type {
   SandboxState,
   SandboxListOpts,
   SandboxPaginator,
+  SandboxNetworkOpts,
 } from './sandbox/sandboxApi'
 
 export type { McpServer } from './sandbox/mcp'
+
+export { ALL_TRAFFIC } from './sandbox/network'
 
 export type {
   ProcessInfo,
@@ -57,16 +64,34 @@ export type {
   Pty,
 } from './sandbox/commands'
 
+export { Git } from './sandbox/git'
+export type {
+  GitRequestOpts,
+  GitCloneOpts,
+  GitInitOpts,
+  GitRemoteAddOpts,
+  GitCommitOpts,
+  GitAddOpts,
+  GitDeleteBranchOpts,
+  GitPushOpts,
+  GitPullOpts,
+  GitDangerouslyAuthenticateOpts,
+  GitConfigOpts,
+  GitConfigScope,
+  GitBranches,
+  GitFileStatus,
+  GitStatus,
+} from './sandbox/git'
+
 export { Sandbox }
 import { Sandbox } from './sandbox'
 
 export default Sandbox
 
-export { BuildError, FileUploadError } from './template/errors'
-
-export type { CopyItem } from './template/types'
+export * from './template'
 
 export {
+  ReadyCmd,
   waitForPort,
   waitForURL,
   waitForProcess,
@@ -81,10 +106,3 @@ export {
   type LogEntryLevel,
   defaultBuildLogger,
 } from './template/logger'
-
-export {
-  Template,
-  type TemplateClass,
-  type TemplateBuilder,
-  type TemplateBase,
-} from './template'

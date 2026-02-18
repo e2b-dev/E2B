@@ -15,7 +15,7 @@ class Signature(TypedDict):
 def get_signature(
     path: str,
     operation: Operation,
-    user: str,
+    user: Optional[str],
     envd_access_token: Optional[str],
     expiration_in_seconds: Optional[int] = None,
 ) -> Signature:
@@ -28,6 +28,10 @@ def get_signature(
     expiration = (
         int(time.time()) + expiration_in_seconds if expiration_in_seconds else None
     )
+
+    # if user is None, set it to empty string to handle default user
+    if user is None:
+        user = ""
 
     raw = (
         f"{path}:{operation}:{user}:{envd_access_token}"

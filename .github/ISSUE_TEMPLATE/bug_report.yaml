@@ -1,0 +1,75 @@
+name: Bug report
+description: Create a report to help us improve
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: input
+    id: sandbox_id
+    attributes:
+      label: Sandbox ID or Build ID
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Environment details (used libraries version, OS, etc..)
+      placeholder: e2b==1.2.3, macOS 14
+    validations:
+      required: true
+
+  - type: input
+    id: timestamp
+    attributes:
+      label: Timestamp of the issue
+      description: When did the error occur? (include timezone please)
+      placeholder: e.g. 2026-01-12 14:32 UTC
+    validations:
+      required: true
+
+  - type: dropdown
+    id: frequency
+    attributes:
+      label: Frequency
+      options:
+        - One-time occurrence
+        - Happens occasionally
+        - Happens every time
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: Expected behavior
+      description: What did you expect to happen?
+      placeholder: Describe the expected behavior...
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual-behavior
+    attributes:
+      label: Actual behavior
+      description: What actually happened?
+      placeholder: Describe what actually occurred...
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Issue reproduction
+      description: Steps to reproduce the issue
+      placeholder: |
+        1. Go to `...`
+        2. Run `...`
+        3. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional context
+      description: Logs, screenshots, or any other relevant information
+      placeholder: Add any additional context here...

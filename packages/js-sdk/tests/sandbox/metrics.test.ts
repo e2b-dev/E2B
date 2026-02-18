@@ -4,6 +4,7 @@ import { SandboxMetrics } from '../../src'
 import { sandboxTest, isDebug, wait } from '../setup.js'
 
 sandboxTest.skipIf(isDebug)('sbx metrics', async ({ sandbox }) => {
+  const now = new Date()
   let metrics: SandboxMetrics[]
   for (let i = 0; i < 15; i++) {
     metrics = await sandbox.getMetrics()
@@ -21,4 +22,7 @@ sandboxTest.skipIf(isDebug)('sbx metrics', async ({ sandbox }) => {
   expect(metric.memUsed).toBeDefined()
   expect(metric.cpuUsedPct).toBeDefined()
   expect(metric.cpuCount).toBeDefined()
+
+  metrics = await sandbox.getMetrics({ start: now, end: new Date() })
+  expect(metrics.length).toBeGreaterThan(0)
 })

@@ -1,6 +1,7 @@
 import os
 
-from typing import Literal, Optional, Dict, TypedDict
+from typing import Optional, Dict, TypedDict
+
 from httpx._types import ProxyTypes
 from typing_extensions import Unpack
 
@@ -31,17 +32,25 @@ class ApiParams(TypedDict, total=False):
     domain: Optional[str]
     """E2B domain to use for authentication, defaults to `E2B_DOMAIN` environment variable."""
 
+    api_url: Optional[str]
+    """URL to use for the API, defaults to `https://api.<domain>`. For internal use only."""
+
     debug: Optional[bool]
     """Whether to use debug mode, defaults to `E2B_DEBUG` environment variable."""
 
     proxy: Optional[ProxyTypes]
     """Proxy to use for the request. In case of a sandbox it applies to all **requests made to the returned sandbox**."""
 
+    sandbox_url: Optional[str]
+    """URL to connect to sandbox, defaults to `E2B_SANDBOX_URL` environment variable."""
+
 
 class ConnectionConfig:
     """
     Configuration for the connection to the API.
     """
+
+    envd_port = 49983
 
     @staticmethod
     def _domain():
@@ -56,6 +65,14 @@ class ConnectionConfig:
         return os.getenv("E2B_API_KEY")
 
     @staticmethod
+    def _api_url():
+        return os.getenv("E2B_API_URL")
+
+    @staticmethod
+    def _sandbox_url():
+        return os.getenv("E2B_SANDBOX_URL")
+
+    @staticmethod
     def _access_token():
         return os.getenv("E2B_ACCESS_TOKEN")
 
@@ -64,6 +81,8 @@ class ConnectionConfig:
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
         api_key: Optional[str] = None,
+        api_url: Optional[str] = None,
+        sandbox_url: Optional[str] = None,
         access_token: Optional[str] = None,
         request_timeout: Optional[float] = None,
         headers: Optional[Dict[str, str]] = None,
@@ -93,7 +112,13 @@ class ConnectionConfig:
             self.request_timeout = REQUEST_TIMEOUT
 
         self.api_url = (
-            "http://localhost:3000" if self.debug else f"https://api.{self.domain}"
+            api_url
+            or ConnectionConfig._api_url()
+            or ("http://localhost:3000" if self.debug else f"https://api.{self.domain}")
+        )
+
+        self._sandbox_url: Optional[str] = (
+            sandbox_url or ConnectionConfig._sandbox_url()
         )
 
     @staticmethod
@@ -110,6 +135,28 @@ class ConnectionConfig:
 
     def get_request_timeout(self, request_timeout: Optional[float] = None):
         return self._get_request_timeout(self.request_timeout, request_timeout)
+
+    def get_sandbox_url(self, sandbox_id: str, sandbox_domain: str) -> str:
+        if self._sandbox_url:
+            return self._sandbox_url  # type: ignore[return-value]
+
+        return f"{'http' if self.debug else 'https'}://{self.get_host(sandbox_id, sandbox_domain, self.envd_port)}"
+
+    def get_host(self, sandbox_id: str, sandbox_domain: str, port: int) -> str:
+        """
+        Get the host address to connect to the sandbox.
+        You can then use this address to connect to the sandbox port from outside the sandbox via HTTP or WebSocket.
+
+        :param port: Port to connect to
+        :param sandbox_domain: Domain to connect to
+        :param sandbox_id: Sandbox to connect to
+
+        :return: Host address to connect to
+        """
+        if self.debug:
+            return f"localhost:{port}"
+
+        return f"{port}-{sandbox_id}.{sandbox_domain}"
 
     def get_api_params(
         self,
@@ -129,6 +176,7 @@ class ConnectionConfig:
         headers = opts.get("headers")
         request_timeout = opts.get("request_timeout")
         api_key = opts.get("api_key")
+        api_url = opts.get("api_url")
         domain = opts.get("domain")
         debug = opts.get("debug")
         proxy = opts.get("proxy")
@@ -140,6 +188,7 @@ class ConnectionConfig:
         return dict(
             ApiParams(
                 api_key=api_key if api_key is not None else self.api_key,
+                api_url=api_url if api_url is not None else self.api_url,
                 domain=domain if domain is not None else self.domain,
                 debug=debug if debug is not None else self.debug,
                 request_timeout=self.get_request_timeout(request_timeout),
@@ -159,7 +208,7 @@ class ConnectionConfig:
         }
 
 
-Username = Literal["root", "user"]
+Username = str
 """
 User used for the operation in the sandbox.
 """

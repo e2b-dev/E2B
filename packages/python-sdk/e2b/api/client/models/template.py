@@ -6,6 +6,8 @@ from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 from dateutil.parser import isoparse
 
+from ..models.template_build_status import TemplateBuildStatus
+
 if TYPE_CHECKING:
     from ..models.team_user import TeamUser
 
@@ -20,6 +22,7 @@ class Template:
         aliases (list[str]): Aliases of the template
         build_count (int): Number of times the template was built
         build_id (str): Identifier of the last successful build for given template
+        build_status (TemplateBuildStatus): Status of the template build
         cpu_count (int): CPU cores for the sandbox
         created_at (datetime.datetime): Time when the template was created
         created_by (Union['TeamUser', None]):
@@ -27,6 +30,7 @@ class Template:
         envd_version (str): Version of the envd running in the sandbox
         last_spawned_at (Union[None, datetime.datetime]): Time when the template was last used
         memory_mb (int): Memory for the sandbox in MiB
+        names (list[str]): Names of the template (namespace/alias format when namespaced)
         public (bool): Whether the template is public or only accessible by the team
         spawn_count (int): Number of times the template was used
         template_id (str): Identifier of the template
@@ -36,6 +40,7 @@ class Template:
     aliases: list[str]
     build_count: int
     build_id: str
+    build_status: TemplateBuildStatus
     cpu_count: int
     created_at: datetime.datetime
     created_by: Union["TeamUser", None]
@@ -43,6 +48,7 @@ class Template:
     envd_version: str
     last_spawned_at: Union[None, datetime.datetime]
     memory_mb: int
+    names: list[str]
     public: bool
     spawn_count: int
     template_id: str
@@ -57,6 +63,8 @@ class Template:
         build_count = self.build_count
 
         build_id = self.build_id
+
+        build_status = self.build_status.value
 
         cpu_count = self.cpu_count
 
@@ -80,6 +88,8 @@ class Template:
 
         memory_mb = self.memory_mb
 
+        names = self.names
+
         public = self.public
 
         spawn_count = self.spawn_count
@@ -95,6 +105,7 @@ class Template:
                 "aliases": aliases,
                 "buildCount": build_count,
                 "buildID": build_id,
+                "buildStatus": build_status,
                 "cpuCount": cpu_count,
                 "createdAt": created_at,
                 "createdBy": created_by,
@@ -102,6 +113,7 @@ class Template:
                 "envdVersion": envd_version,
                 "lastSpawnedAt": last_spawned_at,
                 "memoryMB": memory_mb,
+                "names": names,
                 "public": public,
                 "spawnCount": spawn_count,
                 "templateID": template_id,
@@ -121,6 +133,8 @@ class Template:
         build_count = d.pop("buildCount")
 
         build_id = d.pop("buildID")
+
+        build_status = TemplateBuildStatus(d.pop("buildStatus"))
 
         cpu_count = d.pop("cpuCount")
 
@@ -162,6 +176,8 @@ class Template:
 
         memory_mb = d.pop("memoryMB")
 
+        names = cast(list[str], d.pop("names"))
+
         public = d.pop("public")
 
         spawn_count = d.pop("spawnCount")
@@ -174,6 +190,7 @@ class Template:
             aliases=aliases,
             build_count=build_count,
             build_id=build_id,
+            build_status=build_status,
             cpu_count=cpu_count,
             created_at=created_at,
             created_by=created_by,
@@ -181,6 +198,7 @@ class Template:
             envd_version=envd_version,
             last_spawned_at=last_spawned_at,
             memory_mb=memory_mb,
+            names=names,
             public=public,
             spawn_count=spawn_count,
             template_id=template_id,

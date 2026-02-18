@@ -3,6 +3,8 @@ from e2b import Template
 template = (
     Template()
     .from_image("python:3.11-slim")
+    .set_user("root")
+    .set_workdir("/")
     .run_cmd("apt-get update && apt-get install -y gcc g++ make libpq-dev && rm -rf /var/lib/apt/lists/*")
     .set_envs({
         "PYTHONDONTWRITEBYTECODE": "1",
@@ -14,7 +16,5 @@ template = (
     .run_cmd("pip install --upgrade pip && pip install -r requirements.txt")
     .copy("app.py", ".")
     .set_user("appuser")
-    .set_user("root")
-    .set_workdir("/home/user")
-    .set_start_cmd("gunicorn --bind 0.0.0.0:8000 app:application", "sleep 20")
+    .set_start_cmd("sudo gunicorn --bind 0.0.0.0:8000 app:application", "sleep 20")
 )

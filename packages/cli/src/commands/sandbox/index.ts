@@ -6,6 +6,7 @@ import { killCommand } from './kill'
 import { createCommand } from './create'
 import { logsCommand } from './logs'
 import { metricsCommand } from './metrics'
+import { execCommand } from './exec'
 
 export const sandboxCommand = new commander.Command('sandbox')
   .description('work with sandboxes')
@@ -17,3 +18,4 @@ export const sandboxCommand = new commander.Command('sandbox')
   .addCommand(createCommand('spawn', 'sp', true), { hidden: true })
   .addCommand(logsCommand)
   .addCommand(metricsCommand)
+  .addCommand(execCommand)

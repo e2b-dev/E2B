@@ -21,15 +21,13 @@ import {
 async function migrateToLanguage(
   root: string,
   config: E2BConfig,
-  dockerfilePath: string,
+  dockerfileContent: string,
   language: Language
 ): Promise<void> {
   // Initialize template with file context
   const template = Template({
     fileContextPath: root,
   })
-
-  const { dockerfileContent } = getDockerfile(root, dockerfilePath)
 
   // Parse Dockerfile using SDK
   let baseTemplate: TemplateBuilder
@@ -124,21 +122,24 @@ export const migrateCommand = new commander.Command('migrate')
         const root = getRoot(opts.path)
         const configPath = getConfigPath(root, opts.config)
 
+        const { dockerfileContent, dockerfilePath, dockerfileRelativePath } =
+          getDockerfile(root, opts.dockerfile)
+
+        let config: E2BConfig = {
+          template_id: 'name-your-template',
+          dockerfile: defaultDockerfileName,
+        }
+
         // Validate config file exists
-        if (!fs.existsSync(configPath)) {
+        if (fs.existsSync(configPath)) {
+          config = await loadConfig(configPath)
+        } else {
           console.error(
             `Config file ${asLocalRelative(
               path.relative(root, configPath)
-            )} not found. Please ensure the config file exists.`
+            )} not found. Using defaults.`
           )
-          process.exit(1)
         }
-
-        const config = await loadConfig(configPath)
-
-        // Determine Dockerfile path
-        const dockerfilePath =
-          opts.dockerfile || config.dockerfile || defaultDockerfileName
 
         // Determine target language
         let language: Language
@@ -172,23 +173,62 @@ export const migrateCommand = new commander.Command('migrate')
         }
 
         // Perform migration
-        await migrateToLanguage(root, config, dockerfilePath, language)
+        await migrateToLanguage(root, config, dockerfileContent, language)
+
+        // Rename old files to .old extensions
+        const oldFilesRenamed: { oldPath: string; newPath: string }[] = []
+
+        // Rename Dockerfile if it exists
+        if (fs.existsSync(dockerfilePath)) {
+          const oldDockerfilePath = `${dockerfilePath}.old`
+          fs.renameSync(dockerfilePath, oldDockerfilePath)
+          oldFilesRenamed.push({
+            oldPath: dockerfileRelativePath,
+            newPath: path.relative(root, oldDockerfilePath),
+          })
+        }
+
+        // Rename e2b.toml if it exists
+        if (fs.existsSync(configPath)) {
+          const oldConfigPath = `${configPath}.old`
+          fs.renameSync(configPath, oldConfigPath)
+          oldFilesRenamed.push({
+            oldPath: path.relative(root, configPath),
+            newPath: path.relative(root, oldConfigPath),
+          })
+        }
+
+        if (oldFilesRenamed.length > 0) {
+          console.log('\n📁 Old template files no longer needed:')
+          oldFilesRenamed.forEach((file) => {
+            console.log(
+              `   ${asLocalRelative(file.oldPath)} → ${asLocalRelative(file.newPath)}`
+            )
+          })
+        }
 
         console.log('\n🎉 Migration completed successfully!')
-        console.log('\nYou can now build your template using:')
+
+        console.log('\n🔨 To get started with your template:')
         if (language === Language.TypeScript) {
           console.log(
-            `   ${asPrimary('npx tsx build.dev.ts')} (for development)`
+            `   ${asPrimary('npm install e2b')} (install e2b dependency)`
           )
           console.log(
-            `   ${asPrimary('npx tsx build.prod.ts')} (for production)`
+            `   ${asPrimary('npx tsx build.dev.ts')} (run development build)`
+          )
+          console.log(
+            `   ${asPrimary('npx tsx build.prod.ts')} (run production build)`
           )
         } else {
           console.log(
-            `   ${asPrimary('python build_dev.py')} (for development)`
+            `   ${asPrimary('pip install e2b')} (install e2b dependency)`
           )
           console.log(
-            `   ${asPrimary('python build_prod.py')} (for production)`
+            `   ${asPrimary('python build_dev.py')} (run development build)`
+          )
+          console.log(
+            `   ${asPrimary('python build_prod.py')} (run production build)`
           )
         }
 
