@@ -1,0 +1,115 @@
+name: Publish Candidates
+
+on:
+  workflow_call:
+    inputs:
+      js-sdk:
+        required: false
+        type: boolean
+        default: false
+      python-sdk:
+        required: false
+        type: boolean
+        default: false
+      cli:
+        required: false
+        type: boolean
+        default: false
+      tag:
+        required: true
+        type: string
+      preid:
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    name: Publish Release Candidates
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: Parse .tool-versions
+        uses: wistia/parse-tool-versions@v2.1.1
+        with:
+          filename: '.tool-versions'
+          uppercase: 'true'
+          prefix: 'tool_version_'
+
+      - uses: pnpm/action-setup@v4
+        if: ${{ inputs.js-sdk || inputs.cli }}
+        with:
+          version: '${{ env.TOOL_VERSION_PNPM }}'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        if: ${{ inputs.js-sdk || inputs.cli }}
+        with:
+          node-version: '${{ env.TOOL_VERSION_NODEJS }}'
+          registry-url: https://registry.npmjs.org
+          cache: pnpm
+
+      - name: Configure pnpm
+        if: ${{ inputs.js-sdk || inputs.cli }}
+        run: |
+          pnpm config set auto-install-peers true
+          pnpm config set exclude-links-from-lockfile true
+
+      - name: Update npm
+        if: ${{ inputs.js-sdk || inputs.cli }}
+        run: |
+          npm install -g npm@^11.6
+          npm --version
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        if: ${{ inputs.python-sdk }}
+        with:
+          python-version: '${{ env.TOOL_VERSION_PYTHON }}'
+
+      - name: Install and configure Poetry
+        uses: snok/install-poetry@v1
+        if: ${{ inputs.python-sdk }}
+        with:
+          version: '${{ env.TOOL_VERSION_POETRY }}'
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+          installer-parallel: true
+
+      - name: Publish Python RC
+        if: ${{ inputs.python-sdk }}
+        working-directory: packages/python-sdk
+        run: |
+          BASE_VERSION=$(poetry version -s)
+          poetry version "${BASE_VERSION}rc${{ github.run_number }}"
+          poetry build
+          poetry config pypi-token.pypi ${PYPI_TOKEN} && poetry publish --skip-existing
+        env:
+          PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
+
+      - name: Install JS dependencies
+        if: ${{ inputs.js-sdk || inputs.cli }}
+        run: pnpm install --frozen-lockfile
+
+      - name: Publish JS RC
+        if: ${{ inputs.js-sdk }}
+        working-directory: packages/js-sdk
+        run: |
+          npm version prerelease --preid=${{ inputs.preid }}.${{ github.run_number }} --no-git-tag-version
+          npm publish --tag ${{ inputs.tag }} --provenance
+
+      - name: Reinstall dependencies
+        if: ${{ inputs.js-sdk || inputs.cli }}
+        run: pnpm install --frozen-lockfile
+
+      - name: Publish CLI RC
+        if: ${{ inputs.cli }}
+        working-directory: packages/cli
+        run: |
+          npm version prerelease --preid=${{ inputs.preid }}.${{ github.run_number }} --no-git-tag-version
+          npm publish --tag ${{ inputs.tag }} --provenance
