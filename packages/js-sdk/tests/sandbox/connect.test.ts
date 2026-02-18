@@ -20,6 +20,14 @@ test.skipIf(isDebug)('connect', async () => {
   }
 })
 
+sandboxTest.skipIf(isDebug)('connect resumes paused sandbox', async ({ sandbox }) => {
+  await sandbox.pause()
+  assert.isFalse(await sandbox.isRunning())
+
+  const resumed = await Sandbox.connect(sandbox.sandboxId)
+  assert.isTrue(await resumed.isRunning())
+})
+
 sandboxTest.skipIf(isDebug)(
   'connect to non-running sandbox',
   async ({ sandbox }) => {
@@ -37,7 +45,7 @@ sandboxTest.skipIf(isDebug)(
 )
 
 test.skipIf(isDebug)(
-  'connect does not shorten timeout on running sandbox',
+  'resume does not shorten timeout on running sandbox',
   async () => {
     // Create sandbox with a 300 second timeout
     const sbx = await Sandbox.create(template, { timeoutMs: 300_000 })
@@ -49,8 +57,8 @@ test.skipIf(isDebug)(
       // Get initial info to check endAt
       const infoBefore = await Sandbox.getInfo(sbx.sandboxId)
 
-      // Connect with a shorter timeout (10 seconds)
-      await Sandbox.connect(sbx.sandboxId, { timeoutMs: 10_000 })
+      // Resume with a shorter timeout (10 seconds)
+      await Sandbox.resume(sbx.sandboxId, { timeoutMs: 10_000 })
 
       // Get info after connection
       const infoAfter = await sbx.getInfo()
@@ -68,13 +76,13 @@ test.skipIf(isDebug)(
 )
 
 sandboxTest.skipIf(isDebug)(
-  'connect extends timeout on running sandbox',
+  'resume extends timeout on running sandbox',
   async ({ sandbox }) => {
     // Get initial info to check endAt
     const infoBefore = await sandbox.getInfo()
 
-    // Connect with a longer timeout
-    await sandbox.connect({ timeoutMs: 600_000 })
+    // Resume with a longer timeout
+    await sandbox.resume({ timeoutMs: 600_000 })
 
     // Get info after connection
     const infoAfter = await sandbox.getInfo()

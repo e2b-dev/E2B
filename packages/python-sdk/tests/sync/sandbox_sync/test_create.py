@@ -1,6 +1,6 @@
 import pytest
 
-from e2b import Sandbox
+from e2b import InvalidArgumentException, Sandbox
 from e2b.sandbox.sandbox_api import SandboxQuery
 
 
@@ -26,3 +26,10 @@ def test_metadata(sandbox_factory):
             break
     else:
         assert False, "Sandbox not found"
+
+
+def test_invalid_lifecycle_raises():
+    with pytest.raises(InvalidArgumentException):
+        Sandbox.create(
+            lifecycle={"on_timeout": "kill", "resume_on": "any"},
+        )

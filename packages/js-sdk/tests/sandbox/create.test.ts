@@ -1,4 +1,4 @@
-import { assert, test } from 'vitest'
+import { assert, expect, test } from 'vitest'
 
 import { Sandbox } from '../../src'
 import { template, isDebug } from '../setup.js'
@@ -31,4 +31,19 @@ test.skipIf(isDebug)('metadata', async () => {
   } finally {
     await sbx.kill()
   }
+})
+
+test('invalid lifecycle throws', async () => {
+  await expect(
+    Sandbox.create(template, {
+      lifecycle: {
+        onTimeout: 'kill',
+        resumeOn: 'any',
+      },
+    })
+  ).rejects.toThrowError(
+    expect.objectContaining({
+      name: 'InvalidArgumentError',
+    })
+  )
 })

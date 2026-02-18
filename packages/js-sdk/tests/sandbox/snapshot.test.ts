@@ -7,11 +7,11 @@ sandboxTest.skipIf(isDebug)(
   async ({ sandbox }) => {
     assert.isTrue(await sandbox.isRunning())
 
-    await sandbox.betaPause()
+    await sandbox.pause()
 
     assert.isFalse(await sandbox.isRunning())
 
-    const resumedSandbox = await sandbox.connect()
+    const resumedSandbox = await sandbox.resume()
     assert.equal(resumedSandbox.sandboxId, sandbox.sandboxId)
 
     assert.isTrue(await sandbox.isRunning())
@@ -35,11 +35,11 @@ describe('pause and resume with env vars', () => {
       assert.equal(cmd.exitCode, 0)
       assert.equal(cmd.stdout.trim(), 'sfisback')
 
-      await sandbox.betaPause()
+      await sandbox.pause()
 
       assert.isFalse(await sandbox.isRunning())
 
-      const resumedSandbox = await sandbox.connect()
+      const resumedSandbox = await sandbox.resume()
       assert.isTrue(await sandbox.isRunning())
       assert.isTrue(await resumedSandbox.isRunning())
       assert.equal(resumedSandbox.sandboxId, sandbox.sandboxId)
@@ -68,10 +68,10 @@ sandboxTest.skipIf(isDebug)(
     const readContent = await sandbox.files.read(filename)
     assert.equal(readContent, content)
 
-    await sandbox.betaPause()
+    await sandbox.pause()
     assert.isFalse(await sandbox.isRunning())
 
-    await sandbox.connect()
+    await sandbox.resume()
     assert.isTrue(await sandbox.isRunning())
 
     const exists2 = await sandbox.files.exists(filename)
@@ -87,10 +87,10 @@ sandboxTest.skipIf(isDebug)(
     const cmd = await sandbox.commands.run('sleep 3600', { background: true })
     const expectedPid = cmd.pid
 
-    await sandbox.betaPause()
+    await sandbox.pause()
     assert.isFalse(await sandbox.isRunning())
 
-    await sandbox.connect()
+    await sandbox.resume()
     assert.isTrue(await sandbox.isRunning())
 
     // First check that the command is in list
@@ -121,10 +121,10 @@ sandboxTest.skipIf(isDebug)(
     const exists = await sandbox.files.exists(filename)
     assert.isFalse(exists)
 
-    await sandbox.betaPause()
+    await sandbox.pause()
     assert.isFalse(await sandbox.isRunning())
 
-    await sandbox.connect()
+    await sandbox.resume()
     assert.isTrue(await sandbox.isRunning())
 
     // the file should be created after more than 2 seconds have elapsed
@@ -151,10 +151,10 @@ sandboxTest.skipIf(isDebug)(
     const response1 = await fetch(`https://${url}`)
     assert.equal(response1.status, 200)
 
-    await sandbox.betaPause()
+    await sandbox.pause()
     assert.isFalse(await sandbox.isRunning())
 
-    await sandbox.connect()
+    await sandbox.resume()
     assert.isTrue(await sandbox.isRunning())
 
     url = await sandbox.getHost(8000)
