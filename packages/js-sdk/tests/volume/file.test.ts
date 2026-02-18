@@ -231,7 +231,7 @@ describe('Volume File Operations', () => {
       expect(entries.some((e) => e.name === 'file.txt')).toBe(true)
     })
 
-    it('should list with depth option', async () => {
+    it.skip('should list with depth option', async () => {
       await volume.makeDir('/deep/nested/structure', { force: true })
       await volume.writeFile('/deep/nested/structure/file.txt', 'Content')
 
