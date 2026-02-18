@@ -2,6 +2,44 @@ name: Release
 
 on:
   workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Release mode'
+        type: choice
+        options:
+          - release
+          - candidate
+        default: release
+      js-sdk:
+        description: 'Release JS SDK (candidate only)'
+        required: false
+        default: false
+        type: boolean
+      python-sdk:
+        description: 'Release Python SDK (candidate only)'
+        required: false
+        default: false
+        type: boolean
+      cli:
+        description: 'Release CLI (candidate only)'
+        required: false
+        default: false
+        type: boolean
+      tag:
+        description: 'Dist-tag for candidate (e.g. rc, beta, snapshot)'
+        required: false
+        default: 'rc'
+        type: string
+      preid:
+        description: 'Prerelease identifier (defaults to branch name, candidate only)'
+        required: false
+        default: ''
+        type: string
+      skip-tests:
+        description: 'Skip tests (candidate only)'
+        required: false
+        default: false
+        type: boolean
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
@@ -10,11 +48,16 @@ permissions:
   contents: write
 
 jobs:
-  is_release:
-    name: Is release?
+  # ── Production release ───────────────────────────────────
+  preflight:
+    name: Release preflight
+    if: github.event.inputs.mode != 'candidate'
     runs-on: ubuntu-latest
     outputs:
       release: ${{ steps.version.outputs.release }}
+      js-sdk: ${{ steps.js.outputs.release }}
+      python-sdk: ${{ steps.python.outputs.release }}
+      cli: ${{ steps.cli.outputs.release }}
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v3
@@ -54,91 +97,52 @@ jobs:
           IS_RELEASE=$(./.github/scripts/is_release.sh)
           echo "release=$IS_RELEASE" >> "$GITHUB_OUTPUT"
 
-  changes:
-    name: Repository changes
-    needs: [is_release]
-    if: needs.is_release.outputs.release == 'true'
-    runs-on: ubuntu-latest
-    outputs:
-      js-sdk: ${{ steps.js.outputs.release }}
-      python-sdk: ${{ steps.python.outputs.release }}
-      cli: ${{ steps.cli.outputs.release }}
-    steps:
-      - name: Checkout Repo
-        uses: actions/checkout@v3
-
-      - name: Parse .tool-versions
-        uses: wistia/parse-tool-versions@v2.1.1
-        with:
-          filename: '.tool-versions'
-          uppercase: 'true'
-          prefix: 'tool_version_'
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
-        id: pnpm-install
-        with:
-          version: '${{ env.TOOL_VERSION_PNPM }}'
-
-      - name: Setup Node
-        uses: actions/setup-node@v6
-        with:
-          node-version: '${{ env.TOOL_VERSION_NODEJS }}'
-          registry-url: 'https://registry.npmjs.org'
-          cache: pnpm
-          cache-dependency-path: pnpm-lock.yaml
-
-      - name: Configure pnpm
-        run: |
-          pnpm config set auto-install-peers true
-          pnpm config set exclude-links-from-lockfile true
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Check JavasScript SDK Release
+      - name: Check JavaScript SDK Release
         id: js
+        if: steps.version.outputs.release == 'true'
         run: |
           IS_RELEASE=$(./.github/scripts/is_release_for_package.sh "e2b")
           echo "release=$IS_RELEASE" >> "$GITHUB_OUTPUT"
 
       - name: Check Python SDK Release
         id: python
+        if: steps.version.outputs.release == 'true'
         run: |
           IS_RELEASE=$(./.github/scripts/is_release_for_package.sh "@e2b/python-sdk")
           echo "release=$IS_RELEASE" >> "$GITHUB_OUTPUT"
 
       - name: Check CLI Release
         id: cli
+        if: steps.version.outputs.release == 'true'
         run: |
           IS_RELEASE=$(./.github/scripts/is_release_for_package.sh "@e2b/cli")
           echo "release=$IS_RELEASE" >> "$GITHUB_OUTPUT"
 
   python-tests:
     name: Python SDK Tests
-    needs: [changes]
-    if: needs.changes.outputs.python-sdk == 'true'
+    needs: [preflight]
+    if: needs.preflight.outputs.python-sdk == 'true'
     uses: ./.github/workflows/python_sdk_tests.yml
     secrets: inherit
 
   js-tests:
     name: JS SDK Tests
-    needs: [changes]
-    if: needs.changes.outputs.js-sdk == 'true'
+    needs: [preflight]
+    if: needs.preflight.outputs.js-sdk == 'true'
     uses: ./.github/workflows/js_sdk_tests.yml
     secrets: inherit
 
   cli-tests:
     name: CLI Tests
-    needs: [changes]
-    if: needs.changes.outputs.cli == 'true'
+    needs: [preflight]
+    if: needs.preflight.outputs.cli == 'true'
     uses: ./.github/workflows/cli_tests.yml
     secrets: inherit
 
   publish:
     name: Publish
-    needs: [is_release, python-tests, js-tests, cli-tests]
-    if: (!cancelled()) && !contains(needs.*.result, 'failure') && needs.is_release.outputs.release == 'true'
+    needs: [preflight, python-tests, js-tests, cli-tests]
+    if: (!cancelled()) && !contains(needs.*.result, 'failure') && needs.preflight.outputs.release == 'true'
     uses: ./.github/workflows/publish_packages.yml
     secrets: inherit
 
@@ -156,3 +160,68 @@ jobs:
           SLACK_TITLE: Release Failed
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
           SLACK_CHANNEL: 'monitoring-releases'
+
+  # ── Release candidate ────────────────────────────────────
+  rc-validate:
+    name: Validate RC inputs
+    if: github.event.inputs.mode == 'candidate'
+    runs-on: ubuntu-latest
+    outputs:
+      preid: ${{ steps.preid.outputs.preid }}
+      tag: ${{ steps.tag.outputs.tag }}
+    steps:
+      - name: Sanitize tag
+        id: tag
+        env:
+          RAW_TAG: ${{ github.event.inputs.tag }}
+        run: |
+          SAFE_TAG="$(echo "$RAW_TAG" | sed 's/[^0-9A-Za-z-]/-/g')"
+          echo "tag=$SAFE_TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Block production tags
+        run: |
+          if [ "${{ steps.tag.outputs.tag }}" = "latest" ]; then
+            echo "::error::Publishing with the 'latest' tag is not allowed for candidates. Use 'release' mode instead."
+            exit 1
+          fi
+
+      - name: Sanitize preid
+        id: preid
+        env:
+          RAW_PREID: ${{ github.event.inputs.preid || github.ref_name }}
+        run: |
+          echo "preid=$(echo "$RAW_PREID" | sed 's/[^0-9A-Za-z-]/-/g')" >> "$GITHUB_OUTPUT"
+
+  rc-python-tests:
+    name: RC Python Tests
+    needs: [rc-validate]
+    if: github.event.inputs.python-sdk == 'true' && github.event.inputs.skip-tests != 'true'
+    uses: ./.github/workflows/python_sdk_tests.yml
+    secrets: inherit
+
+  rc-js-tests:
+    name: RC JS Tests
+    needs: [rc-validate]
+    if: github.event.inputs.js-sdk == 'true' && github.event.inputs.skip-tests != 'true'
+    uses: ./.github/workflows/js_sdk_tests.yml
+    secrets: inherit
+
+  rc-cli-tests:
+    name: RC CLI Tests
+    needs: [rc-validate]
+    if: github.event.inputs.cli == 'true' && github.event.inputs.skip-tests != 'true'
+    uses: ./.github/workflows/cli_tests.yml
+    secrets: inherit
+
+  rc-publish:
+    name: Publish RC
+    needs: [rc-validate, rc-python-tests, rc-js-tests, rc-cli-tests]
+    if: (!cancelled()) && !contains(needs.*.result, 'failure') && needs.rc-validate.result == 'success'
+    uses: ./.github/workflows/publish_candidates.yml
+    with:
+      js-sdk: ${{ github.event.inputs.js-sdk == 'true' }}
+      python-sdk: ${{ github.event.inputs.python-sdk == 'true' }}
+      cli: ${{ github.event.inputs.cli == 'true' }}
+      tag: ${{ needs.rc-validate.outputs.tag }}
+      preid: ${{ needs.rc-validate.outputs.preid }}
+    secrets: inherit
