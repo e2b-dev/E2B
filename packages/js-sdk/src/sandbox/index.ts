@@ -406,24 +406,12 @@ export class Sandbox extends SandboxApi {
   }
 
   /**
-   * Connect to a sandbox. If the sandbox is paused, it will be automatically resumed.
-   * Sandbox must be either running or be paused.
+   * Connect to a sandbox.
    *
-   * With sandbox ID you can connect to the same sandbox from different places or environments (serverless functions, etc).
+   * If the sandbox is paused, it will be resumed.
    *
    * @param sandboxId sandbox ID.
    * @param opts connection options.
-   *
-   * @returns A running sandbox instance
-   *
-   * @example
-   * ```ts
-   * const sandbox = await Sandbox.create()
-   * const sandboxId = sandbox.sandboxId
-   *
-   * // Connect to the same sandbox.
-   * const sameSandbox = await Sandbox.connect(sandboxId)
-   * ```
    */
   static async connect<S extends typeof Sandbox>(
     this: S,
@@ -444,26 +432,47 @@ export class Sandbox extends SandboxApi {
   }
 
   /**
-   * Connect to a sandbox. If the sandbox is paused, it will be automatically resumed.
-   * Sandbox must be either running or be paused.
+   * Resume a paused sandbox.
    *
-   * With sandbox ID you can connect to the same sandbox from different places or environments (serverless functions, etc).
-   *
+   * @param sandboxId sandbox ID.
    * @param opts connection options.
    *
    * @returns A running sandbox instance
-   *
-   * @example
-   * ```ts
-   * const sandbox = await Sandbox.create()
-   * await sandbox.betaPause()
-   *
-   * // Connect to the same sandbox.
-   * const sameSandbox = await sandbox.connect()
-   * ```
    */
-  async connect(opts?: SandboxBetaCreateOpts): Promise<this> {
+  static async resume<S extends typeof Sandbox>(
+    this: S,
+    sandboxId: string,
+    opts?: SandboxConnectOpts
+  ): Promise<InstanceType<S>> {
+    const sandbox = await SandboxApi.resumeSandbox(sandboxId, opts)
+    const config = new ConnectionConfig(opts)
+
+    return new this({
+      sandboxId,
+      sandboxDomain: sandbox.sandboxDomain,
+      envdAccessToken: sandbox.envdAccessToken,
+      trafficAccessToken: sandbox.trafficAccessToken,
+      envdVersion: sandbox.envdVersion,
+      ...config,
+    }) as InstanceType<S>
+  }
+
+  /**
+   * Connect to the current sandbox.
+   *
+   * If the sandbox is paused, it will be resumed.
+   */
+  async connect(opts?: SandboxConnectOpts): Promise<this> {
     await SandboxApi.connectSandbox(this.sandboxId, opts)
+
+    return this
+  }
+
+  /**
+   * Resume the current sandbox.
+   */
+  async resume(opts?: SandboxConnectOpts): Promise<this> {
+    await SandboxApi.resumeSandbox(this.sandboxId, opts)
 
     return this
   }
@@ -567,16 +576,21 @@ export class Sandbox extends SandboxApi {
   }
 
   /**
-   * @beta This feature is in beta and may change in the future.
-   *
-   * Pause a sandbox by its ID.
+   * Pause the sandbox.
    *
    * @param opts connection options.
    *
-   * @returns sandbox ID that can be used to resume the sandbox.
+   * @returns `true` if the sandbox was paused, `false` if it was already paused.
+   */
+  async pause(opts?: ConnectionOpts): Promise<boolean> {
+    return await SandboxApi.pause(this.sandboxId, opts)
+  }
+
+  /**
+   * @deprecated Use {@link Sandbox.pause} instead.
    */
   async betaPause(opts?: ConnectionOpts): Promise<boolean> {
-    return await SandboxApi.betaPause(this.sandboxId, opts)
+    return this.pause(opts)
   }
 
   /**

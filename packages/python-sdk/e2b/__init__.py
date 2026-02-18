@@ -68,6 +68,7 @@ from .sandbox.sandbox_api import (
     McpServer,
     SandboxInfo,
     SandboxMetrics,
+    SandboxLifecycle,
     SandboxNetworkOpts,
     SandboxQuery,
     SandboxState,
@@ -152,6 +153,7 @@ __all__ = [
     "FileType",
     # Network
     "SandboxNetworkOpts",
+    "SandboxLifecycle",
     "ALL_TRAFFIC",
     # Sync sandbox
     "Sandbox",

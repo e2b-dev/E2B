@@ -24,9 +24,15 @@ from e2b.api.client.models import (
 )
 from e2b.api.client.types import UNSET
 from e2b.connection_config import ApiParams, ConnectionConfig
-from e2b.exceptions import NotFoundException, SandboxException, TemplateException
+from e2b.exceptions import (
+    InvalidArgumentException,
+    NotFoundException,
+    SandboxException,
+    TemplateException,
+)
 from e2b.sandbox.main import SandboxBase
 from e2b.sandbox.sandbox_api import (
+    SandboxLifecycle,
     McpServer,
     SandboxInfo,
     SandboxMetrics,
@@ -34,6 +40,26 @@ from e2b.sandbox.sandbox_api import (
     SandboxQuery,
 )
 from e2b.sandbox_sync.paginator import SandboxPaginator, get_api_client
+
+
+def _serialize_lifecycle(
+    lifecycle: Optional[SandboxLifecycle],
+) -> Optional[Dict[str, Any]]:
+    if lifecycle is None:
+        return None
+
+    on_timeout = lifecycle["on_timeout"]
+    resume_on = lifecycle["resume_on"]
+
+    if resume_on == "any" and on_timeout != "pause":
+        raise InvalidArgumentException(
+            "`lifecycle.resume_on` can be 'any' only when `lifecycle.on_timeout` is 'pause'"
+        )
+
+    return {
+        "auto_pause": on_timeout == "pause",
+        "auto_resume_policy": "any" if resume_on == "any" else "off",
+    }
 
 
 class SandboxApi(SandboxBase):
@@ -151,30 +177,43 @@ class SandboxApi(SandboxBase):
         cls,
         template: str,
         timeout: int,
-        auto_pause: bool,
+        auto_pause: Optional[bool],
         allow_internet_access: bool,
         metadata: Optional[Dict[str, str]],
         env_vars: Optional[Dict[str, str]],
         secure: bool,
         mcp: Optional[McpServer] = None,
         network: Optional[SandboxNetworkOpts] = None,
+        lifecycle: Optional[SandboxLifecycle] = None,
         **opts: Unpack[ApiParams],
     ) -> SandboxCreateResponse:
         config = ConnectionConfig(**opts)
 
+        lifecycle_payload = _serialize_lifecycle(lifecycle)
+        effective_auto_pause = (
+            lifecycle_payload["auto_pause"]
+            if lifecycle_payload is not None
+            else auto_pause
+        )
+        body = NewSandbox(
+            template_id=template,
+            auto_pause=(
+                effective_auto_pause if effective_auto_pause is not None else UNSET
+            ),
+            metadata=metadata or {},
+            timeout=timeout,
+            env_vars=env_vars or {},
+            mcp=cast(Any, mcp) or UNSET,
+            secure=secure,
+            allow_internet_access=allow_internet_access,
+            network=SandboxNetworkConfig(**network) if network else UNSET,
+        )
+        if lifecycle_payload is not None:
+            body["autoResume"] = {"policy": lifecycle_payload["auto_resume_policy"]}
+
         api_client = get_api_client(config)
         res = post_sandboxes.sync_detailed(
-            body=NewSandbox(
-                template_id=template,
-                auto_pause=auto_pause,
-                metadata=metadata or {},
-                timeout=timeout,
-                env_vars=env_vars or {},
-                mcp=cast(Any, mcp) or UNSET,
-                secure=secure,
-                allow_internet_access=allow_internet_access,
-                network=SandboxNetworkConfig(**network) if network else UNSET,
-            ),
+            body=body,
             client=api_client,
         )
 
@@ -266,10 +305,22 @@ class SandboxApi(SandboxBase):
         timeout: Optional[int] = None,
         **opts: Unpack[ApiParams],
     ) -> Sandbox:
+        return cls._cls_resume(
+            sandbox_id=sandbox_id,
+            timeout=timeout,
+            **opts,
+        )
+
+    @classmethod
+    def _cls_resume(
+        cls,
+        sandbox_id: str,
+        timeout: Optional[int] = None,
+        **opts: Unpack[ApiParams],
+    ) -> Sandbox:
         timeout = timeout or SandboxBase.default_sandbox_timeout
 
         config = ConnectionConfig(**opts)
-
         api_client = get_api_client(
             config,
             headers={
@@ -284,7 +335,7 @@ class SandboxApi(SandboxBase):
         )
 
         if res.status_code == 404:
-            raise NotFoundException(f"Paused sandbox {sandbox_id} not found")
+            raise NotFoundException(f"Sandbox {sandbox_id} not found")
 
         if res.status_code >= 300:
             raise handle_api_exception(res)

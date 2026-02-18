@@ -49,6 +49,7 @@ export type {
   SandboxListOpts,
   SandboxPaginator,
   SandboxNetworkOpts,
+  SandboxLifecycle,
 } from './sandbox/sandboxApi'
 
 export type { McpServer } from './sandbox/mcp'
