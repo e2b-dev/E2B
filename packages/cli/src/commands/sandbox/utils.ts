@@ -51,9 +51,11 @@ export async function isRunning(sandboxID: string) {
     const apiKey = ensureAPIKey()
     const info = await Sandbox.getInfo(sandboxID, {
       apiKey,
+      requestTimeoutMs: 10_000,
     })
     return info.state === 'running'
-  } catch {
+  } catch (err) {
+    console.error(`Failed to check sandbox status: ${err}`)
     return false
   }
 }
