@@ -3,7 +3,7 @@ import { http, HttpResponse } from 'msw'
 import { setupServer } from 'msw/node'
 import { randomUUID } from 'node:crypto'
 
-import { VolumeBase, NotFoundError } from '../../src'
+import { Volume, NotFoundError } from '../../src'
 import { apiUrl } from '../setup'
 
 // In-memory store for mock volumes
@@ -63,7 +63,7 @@ afterEach(() => {
 
 describe('Volume CRUD', () => {
   it('should create a volume', async () => {
-    const vol = await VolumeBase.create('test-volume')
+    const vol = await Volume.create('test-volume')
 
     expect(vol).toBeDefined()
     expect(vol.volumeId).toBeDefined()
@@ -71,70 +71,70 @@ describe('Volume CRUD', () => {
   })
 
   it('should get volume info', async () => {
-    const created = await VolumeBase.create('info-volume')
-    const info = await VolumeBase.getInfo(created.volumeId)
+    const created = await Volume.create('info-volume')
+    const info = await Volume.getInfo(created.volumeId)
 
     expect(info.volumeId).toBe(created.volumeId)
     expect(info.name).toBe('info-volume')
   })
 
   it('should list volumes', async () => {
-    await VolumeBase.create('vol-a')
-    await VolumeBase.create('vol-b')
+    await Volume.create('vol-a')
+    await Volume.create('vol-b')
 
-    const list = await VolumeBase.list()
+    const list = await Volume.list()
 
     expect(list).toHaveLength(2)
     expect(list.map((v) => v.name).sort()).toEqual(['vol-a', 'vol-b'])
   })
 
   it('should return empty list when no volumes exist', async () => {
-    const list = await VolumeBase.list()
+    const list = await Volume.list()
     expect(list).toHaveLength(0)
   })
 
   it('should destroy a volume', async () => {
-    const vol = await VolumeBase.create('to-delete')
-    const result = await VolumeBase.destroy(vol.volumeId)
+    const vol = await Volume.create('to-delete')
+    const result = await Volume.destroy(vol.volumeId)
 
     expect(result).toBe(true)
 
     // Verify it's gone
-    const list = await VolumeBase.list()
+    const list = await Volume.list()
     expect(list).toHaveLength(0)
   })
 
   it('should return false when destroying a non-existent volume', async () => {
-    const result = await VolumeBase.destroy('non-existent-id')
+    const result = await Volume.destroy('non-existent-id')
     expect(result).toBe(false)
   })
 
   it('should throw NotFoundError when getting info of non-existent volume', async () => {
-    await expect(VolumeBase.getInfo('non-existent-id')).rejects.toThrow(
+    await expect(Volume.getInfo('non-existent-id')).rejects.toThrow(
       NotFoundError
     )
   })
 
   it('should handle full lifecycle: create, get, list, destroy', async () => {
     // Create
-    const vol = await VolumeBase.create('lifecycle-vol')
+    const vol = await Volume.create('lifecycle-vol')
     expect(vol.name).toBe('lifecycle-vol')
 
     // Get info
-    const info = await VolumeBase.getInfo(vol.volumeId)
+    const info = await Volume.getInfo(vol.volumeId)
     expect(info.name).toBe('lifecycle-vol')
 
     // List - should contain the volume
-    const list = await VolumeBase.list()
+    const list = await Volume.list()
     expect(list).toHaveLength(1)
     expect(list[0].volumeId).toBe(vol.volumeId)
 
     // Destroy
-    const destroyed = await VolumeBase.destroy(vol.volumeId)
+    const destroyed = await Volume.destroy(vol.volumeId)
     expect(destroyed).toBe(true)
 
     // List again - should be empty
-    const listAfter = await VolumeBase.list()
+    const listAfter = await Volume.list()
     expect(listAfter).toHaveLength(0)
   })
 })
