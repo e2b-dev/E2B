@@ -48,6 +48,7 @@ from .exceptions import (
     SandboxException,
     TemplateException,
     TimeoutException,
+    VolumeException,
 )
 from .sandbox.commands.command_handle import (
     CommandExitException,
@@ -150,6 +151,7 @@ __all__ = [
     "BuildException",
     "FileUploadException",
     "RateLimitException",
+    "VolumeException",
     # Sandbox API
     "SandboxInfo",
     "SandboxMetrics",
