@@ -1,6 +1,6 @@
 import { ApiClient, handleApiError } from '../api'
 import { ConnectionConfig } from '../connectionConfig'
-import { NotFoundError } from '../errors'
+import { NotFoundError, VolumeError } from '../errors'
 import { toBlob } from '../utils'
 import type { components } from '../api/schema.gen'
 import type {
@@ -71,7 +71,7 @@ export class Volume {
       signal: config.getSignal(opts?.requestTimeoutMs),
     })
 
-    const err = handleApiError(res)
+    const err = handleApiError(res, VolumeError)
     if (err) {
       throw err
     }
@@ -107,7 +107,7 @@ export class Volume {
       throw new NotFoundError(`Volume ${volumeId} not found`)
     }
 
-    const err = handleApiError(res)
+    const err = handleApiError(res, VolumeError)
     if (err) {
       throw err
     }
@@ -143,7 +143,7 @@ export class Volume {
       throw new NotFoundError(`Volume ${volumeId} not found`)
     }
 
-    const err = handleApiError(res)
+    const err = handleApiError(res, VolumeError)
     if (err) {
       throw err
     }
@@ -169,7 +169,7 @@ export class Volume {
       signal: config.getSignal(opts?.requestTimeoutMs),
     })
 
-    const err = handleApiError(res)
+    const err = handleApiError(res, VolumeError)
     if (err) {
       throw err
     }
@@ -206,7 +206,7 @@ export class Volume {
       return false
     }
 
-    const err = handleApiError(res)
+    const err = handleApiError(res, VolumeError)
     if (err) {
       throw err
     }
@@ -247,7 +247,7 @@ export class Volume {
       throw new NotFoundError(`Path ${path} not found`)
     }
 
-    const err = handleApiError(res)
+    const err = handleApiError(res, VolumeError)
     if (err) {
       throw err
     }
@@ -292,7 +292,7 @@ export class Volume {
       throw new NotFoundError(`Path ${path} not found`)
     }
 
-    const err = handleApiError(res)
+    const err = handleApiError(res, VolumeError)
     if (err) {
       throw err
     }
@@ -329,7 +329,7 @@ export class Volume {
       throw new NotFoundError(`Path ${path} not found`)
     }
 
-    const err = handleApiError(res)
+    const err = handleApiError(res, VolumeError)
     if (err) {
       throw err
     }
@@ -381,7 +381,7 @@ export class Volume {
       throw new NotFoundError(`Path ${path} not found`)
     }
 
-    const err = handleApiError(res)
+    const err = handleApiError(res, VolumeError)
     if (err) {
       throw err
     }
@@ -482,7 +482,7 @@ export class Volume {
       throw new NotFoundError(`Path ${path} not found`)
     }
 
-    const err = handleApiError(res)
+    const err = handleApiError(res, VolumeError)
     if (err) {
       throw err
     }
@@ -550,7 +550,7 @@ export class Volume {
       throw new NotFoundError(`Path ${path} not found`)
     }
 
-    const err = handleApiError(res)
+    const err = handleApiError(res, VolumeError)
     if (err) {
       throw err
     }
@@ -601,7 +601,7 @@ export class Volume {
       throw new NotFoundError(`Path ${path} not found`)
     }
 
-    const err = handleApiError(res)
+    const err = handleApiError(res, VolumeError)
     if (err) {
       throw err
     }

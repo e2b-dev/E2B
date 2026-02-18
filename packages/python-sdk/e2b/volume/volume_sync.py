@@ -22,7 +22,7 @@ from e2b.api.client.models import (
 from e2b.api.client.types import Response, UNSET
 from e2b.api.client_sync import get_api_client
 from e2b.connection_config import ApiParams, ConnectionConfig
-from e2b.exceptions import NotFoundException
+from e2b.exceptions import NotFoundException, VolumeException
 from e2b.volume.types import (
     VolumeInfo,
     VolumeEntryStat,
@@ -82,7 +82,7 @@ class Volume:
         )
 
         if res.status_code >= 300:
-            raise handle_api_exception(res)
+            raise handle_api_exception(res, VolumeException)
 
         if res.parsed is None:
             raise Exception("Body of the request is None")
@@ -114,7 +114,7 @@ class Volume:
             raise NotFoundException(f"Volume {volume_id} not found")
 
         if res.status_code >= 300:
-            raise handle_api_exception(res)
+            raise handle_api_exception(res, VolumeException)
 
         if res.parsed is None:
             raise Exception("Body of the request is None")
@@ -146,7 +146,7 @@ class Volume:
             raise NotFoundException(f"Volume {volume_id} not found")
 
         if res.status_code >= 300:
-            raise handle_api_exception(res)
+            raise handle_api_exception(res, VolumeException)
 
         if res.parsed is None:
             raise Exception("Body of the request is None")
@@ -171,7 +171,7 @@ class Volume:
         )
 
         if res.status_code >= 300:
-            raise handle_api_exception(res)
+            raise handle_api_exception(res, VolumeException)
 
         if res.parsed is None:
             return []
@@ -200,7 +200,7 @@ class Volume:
             return False
 
         if res.status_code >= 300:
-            raise handle_api_exception(res)
+            raise handle_api_exception(res, VolumeException)
 
         return True
 
@@ -230,7 +230,7 @@ class Volume:
             raise NotFoundException(f"Path {path} not found")
 
         if res.status_code >= 300:
-            raise handle_api_exception(res)
+            raise handle_api_exception(res, VolumeException)
 
         if res.parsed is None:
             return []
@@ -290,7 +290,7 @@ class Volume:
                 headers=response.headers,
                 parsed=None,
             )
-            err = handle_api_exception(api_response)
+            err = handle_api_exception(api_response, VolumeException)
             if err:
                 raise err
 
@@ -316,7 +316,7 @@ class Volume:
             raise NotFoundException(f"Path {path} not found")
 
         if res.status_code >= 300:
-            raise handle_api_exception(res)
+            raise handle_api_exception(res, VolumeException)
 
         if res.parsed is None:
             raise Exception("Body of the request is None")
@@ -365,7 +365,7 @@ class Volume:
             raise NotFoundException(f"Path {path} not found")
 
         if res.status_code >= 300:
-            raise handle_api_exception(res)
+            raise handle_api_exception(res, VolumeException)
 
         if res.parsed is None:
             raise Exception("Body of the request is None")
@@ -434,7 +434,7 @@ class Volume:
                 headers=response.headers,
                 parsed=None,
             )
-            err = handle_api_exception(api_response)
+            err = handle_api_exception(api_response, VolumeException)
             if err:
                 raise err
 
@@ -516,7 +516,7 @@ class Volume:
                 headers=response.headers,
                 parsed=None,
             )
-            err = handle_api_exception(api_response)
+            err = handle_api_exception(api_response, VolumeException)
             if err:
                 raise err
 
@@ -572,6 +572,6 @@ class Volume:
                 headers=response.headers,
                 parsed=None,
             )
-            err = handle_api_exception(api_response)
+            err = handle_api_exception(api_response, VolumeException)
             if err:
                 raise err

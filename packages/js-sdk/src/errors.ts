@@ -140,3 +140,15 @@ export class FileUploadError extends BuildError {
     this.name = 'FileUploadError'
   }
 }
+
+/**
+ * Base class for all volume errors.
+ *
+ * Thrown when general volume errors occur.
+ */
+export class VolumeError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'VolumeError'
+  }
+}
