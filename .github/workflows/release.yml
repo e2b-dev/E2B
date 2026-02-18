@@ -168,10 +168,18 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       preid: ${{ steps.preid.outputs.preid }}
+      tag: ${{ steps.tag.outputs.tag }}
     steps:
+      - name: Sanitize tag
+        id: tag
+        run: |
+          RAW_TAG="${{ github.event.inputs.tag }}"
+          SAFE_TAG="$(echo "$RAW_TAG" | sed 's/[^0-9A-Za-z-]/-/g')"
+          echo "tag=$SAFE_TAG" >> "$GITHUB_OUTPUT"
+
       - name: Block production tags
         run: |
-          if [ "${{ github.event.inputs.tag }}" = "latest" ]; then
+          if [ "${{ steps.tag.outputs.tag }}" = "latest" ]; then
             echo "::error::Publishing with the 'latest' tag is not allowed for candidates. Use 'release' mode instead."
             exit 1
           fi
@@ -212,6 +220,6 @@ jobs:
       js-sdk: ${{ github.event.inputs.js-sdk == 'true' }}
       python-sdk: ${{ github.event.inputs.python-sdk == 'true' }}
       cli: ${{ github.event.inputs.cli == 'true' }}
-      tag: ${{ github.event.inputs.tag }}
+      tag: ${{ needs.rc-validate.outputs.tag }}
       preid: ${{ needs.rc-validate.outputs.preid }}
     secrets: inherit
