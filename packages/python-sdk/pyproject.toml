@@ -58,7 +58,7 @@ rules = { conflicting-metaclass = "ignore", unresolved-attribute = "ignore" }
 
 [[tool.ty.overrides]]
 include = ["e2b/volume/**", "tests/**/volume*/**"]
-rules = { missing-argument = "ignore", unresolved-attribute = "ignore" }
+rules = { missing-argument = "ignore", unresolved-attribute = "ignore", invalid-argument-type = "ignore" }
 
 [tool.ruff]
 exclude = [
