@@ -76,7 +76,7 @@ export type SandboxLifecycle = {
    * @default "off"
    * Can be `any` only when `onTimeout` is `pause`.
    */
-  resumeOn: 'any' | 'off'
+  resumeOn?: 'any' | 'off'
 }
 
 /**
@@ -325,7 +325,11 @@ function validateLifecycle(lifecycle: SandboxLifecycle) {
       `\`lifecycle.onTimeout\` must be 'kill' or 'pause', got '${lifecycle.onTimeout}'`
     )
   }
-  if (!['off', 'any'].includes(lifecycle.resumeOn)) {
+  if (
+    lifecycle.resumeOn != null &&
+    lifecycle.resumeOn !== 'off' &&
+    lifecycle.resumeOn !== 'any'
+  ) {
     throw new InvalidArgumentError(
       `\`lifecycle.resumeOn\` must be 'off' or 'any', got '${lifecycle.resumeOn}'`
     )

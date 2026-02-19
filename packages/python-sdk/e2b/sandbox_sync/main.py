@@ -797,7 +797,7 @@ class Sandbox(SandboxApi):
                 raise InvalidArgumentException(
                     f"`lifecycle.on_timeout` must be 'kill' or 'pause', got '{on_timeout}'"
                 )
-            if resume_on not in ("off", "any"):
+            if resume_on is not None and resume_on not in ("off", "any"):
                 raise InvalidArgumentException(
                     f"`lifecycle.resume_on` must be 'off' or 'any', got '{resume_on}'"
                 )

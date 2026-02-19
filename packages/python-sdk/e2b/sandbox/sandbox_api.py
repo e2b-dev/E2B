@@ -87,9 +87,9 @@ class SandboxLifecycle(TypedDict):
     Action to take when timeout is reached.
     """
 
-    resume_on: Literal["any", "off"]
+    resume_on: NotRequired[Literal["any", "off"]]
     """
-    Auto-resume policy.
+    Auto-resume policy. Defaults to `"off"`.
     Can be `any` only when `on_timeout` is `pause`.
     """
 

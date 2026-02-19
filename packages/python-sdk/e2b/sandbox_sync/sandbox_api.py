@@ -25,7 +25,6 @@ from e2b.api.client.models import (
 from e2b.api.client.types import UNSET
 from e2b.connection_config import ApiParams, ConnectionConfig
 from e2b.exceptions import (
-    InvalidArgumentException,
     NotFoundException,
     SandboxException,
     TemplateException,
@@ -49,16 +48,11 @@ def _serialize_lifecycle(
         return None
 
     on_timeout = lifecycle["on_timeout"]
-    resume_on = lifecycle["resume_on"]
-
-    if resume_on == "any" and on_timeout != "pause":
-        raise InvalidArgumentException(
-            "`lifecycle.resume_on` can be 'any' only when `lifecycle.on_timeout` is 'pause'"
-        )
+    resume_on = lifecycle.get("resume_on")
 
     return {
         "auto_pause": on_timeout == "pause",
-        "auto_resume_policy": "any" if resume_on == "any" else "off",
+        "auto_resume_policy": resume_on if resume_on is not None else "off",
     }
 
 
