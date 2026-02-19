@@ -587,14 +587,14 @@ export class Volume {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
 
-    // Determine if it's a directory by checking entry info
     let isDirectory = false
     try {
       const entryInfo = await this.getInfo(path, opts)
       isDirectory = entryInfo.type === 'directory'
     } catch (err) {
-      // If we can't get entry info, assume it's a file and try the file endpoint
-      // If that fails, the error will be thrown below
+      if (!(err instanceof NotFoundError)) {
+        throw err
+      }
     }
 
     const endpoint = isDirectory
