@@ -103,7 +103,7 @@ export class Volume {
       signal: config.getSignal(opts?.requestTimeoutMs),
     })
 
-    if (res.error?.code === 404) {
+    if (res.response.status === 404) {
       throw new NotFoundError(`Volume ${volumeId} not found`)
     }
 
@@ -139,7 +139,7 @@ export class Volume {
       signal: config.getSignal(opts?.requestTimeoutMs),
     })
 
-    if (res.error?.code === 404) {
+    if (res.response.status === 404) {
       throw new NotFoundError(`Volume ${volumeId} not found`)
     }
 
@@ -202,7 +202,7 @@ export class Volume {
       signal: config.getSignal(opts?.requestTimeoutMs),
     })
 
-    if (res.error?.code === 404) {
+    if (res.response.status === 404) {
       return false
     }
 
