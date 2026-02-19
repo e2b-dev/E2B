@@ -1,8 +1,8 @@
 import asyncio
 import os
-import uuid
+import random
+import string
 from typing import Callable, Dict, Optional
-from uuid import uuid4
 
 import pytest
 import pytest_asyncio
@@ -11,12 +11,14 @@ from e2b import (
     AsyncCommandHandle,
     AsyncSandbox,
     AsyncTemplate,
+    AsyncVolume,
     CommandExitException,
     CommandHandle,
     LogEntry,
     Sandbox,
     Template,
     TemplateClass,
+    Volume,
 )
 
 
@@ -30,7 +32,7 @@ def pytest_runtest_makereport(item, call):
 
 @pytest.fixture(scope="session")
 def sandbox_test_id():
-    return f"test_{uuid.uuid4()}"
+    return f"test_{_generate_random_string()}"
 
 
 @pytest.fixture()
@@ -112,7 +114,7 @@ def build():
         skip_cache: bool = False,
         on_build_logs: Optional[Callable[[LogEntry], None]] = None,
     ):
-        build_name = name or f"e2b-test-{uuid4()}"
+        build_name = name or f"e2b-test-{_generate_random_string()}"
         build_info: Dict[str, Optional[str]] = {"template_id": None, "build_id": None}
 
         def capture_logs(log: LogEntry):
@@ -156,7 +158,7 @@ def async_build():
         skip_cache: bool = False,
         on_build_logs: Optional[Callable[[LogEntry], None]] = None,
     ):
-        build_name = name or f"e2b-test-{uuid4()}"
+        build_name = name or f"e2b-test-{_generate_random_string()}"
         build_info: Dict[str, Optional[str]] = {"template_id": None, "build_id": None}
 
         def capture_logs(log: LogEntry):
@@ -241,3 +243,43 @@ class Helpers:
 @pytest.fixture
 def helpers():
     return Helpers
+
+
+def _generate_random_string(length: int = 8) -> str:
+    return "".join(random.choices(string.ascii_lowercase + string.digits, k=length))
+
+
+@pytest.fixture
+def volume(request):
+    vol = Volume.create(f"test-vol-{_generate_random_string()}")
+
+    def finalizer():
+        if getattr(request.node, "_test_failed", False):
+            print(f"\n[TEST FAILED] Volume ID: {vol.volume_id}")
+        try:
+            Volume.destroy(vol.volume_id)
+        except Exception:
+            pass
+
+    request.addfinalizer(finalizer)
+    return vol
+
+
+@pytest.fixture
+async def async_volume(request, event_loop):
+    vol = await AsyncVolume.create(f"test-vol-{_generate_random_string()}")
+
+    def finalizer():
+        if getattr(request.node, "_test_failed", False):
+            print(f"\n[TEST FAILED] Volume ID: {vol.volume_id}")
+
+        async def _destroy():
+            try:
+                await AsyncVolume.destroy(vol.volume_id)
+            except Exception:
+                pass
+
+        event_loop.run_until_complete(_destroy())
+
+    request.addfinalizer(finalizer)
+    return vol

@@ -28,6 +28,7 @@ from e2b.volume.types import (
     VolumeInfo,
     VolumeEntryStat,
 )
+from e2b.volume.utils import DualMethod
 
 
 def _convert_volume_entry_stat(api_stat: VolumeEntryStatApi) -> VolumeEntryStat:
@@ -129,7 +130,7 @@ class AsyncVolume:
         return vol
 
     @staticmethod
-    async def get_info(volume_id: str, **opts: Unpack[ApiParams]) -> VolumeInfo:
+    async def _class_get_info(volume_id: str, **opts: Unpack[ApiParams]) -> VolumeInfo:
         """
         Get information about a volume.
 
@@ -160,7 +161,7 @@ class AsyncVolume:
         return VolumeInfo(volume_id=res.parsed.volume_id, name=res.parsed.name)
 
     @staticmethod
-    async def list(**opts: Unpack[ApiParams]) -> List[VolumeInfo]:
+    async def _class_list(**opts: Unpack[ApiParams]) -> List[VolumeInfo]:
         """
         List all volumes.
 
@@ -207,7 +208,7 @@ class AsyncVolume:
 
         return True
 
-    async def list(  # noqa: F811
+    async def _instance_list(
         self, path: str, depth: Optional[int] = None, **opts: Unpack[ApiParams]
     ) -> List[VolumeEntryStat]:
         """
@@ -302,7 +303,9 @@ class AsyncVolume:
         except NotFoundException:
             return False
 
-    async def get_info(self, path: str, **opts: Unpack[ApiParams]) -> VolumeEntryStat:  # noqa: F811
+    async def _instance_get_info(
+        self, path: str, **opts: Unpack[ApiParams]
+    ) -> VolumeEntryStat:
         """
         Get information about a file or directory.
 
@@ -333,6 +336,9 @@ class AsyncVolume:
             raise Exception(f"{res.parsed.message}: Request failed")
 
         return _convert_volume_entry_stat(res.parsed)
+
+    get_info = DualMethod(_class_get_info.__func__, _instance_get_info)
+    list = DualMethod(_class_list.__func__, _instance_list)
 
     async def update_metadata(
         self,
@@ -497,13 +503,15 @@ class AsyncVolume:
         else:
             raise ValueError(f"Unsupported data type: {type(data)}")
 
-        params: dict[str, Union[str, int, bool, None]] = {
-            "path": path,
-            "uid": uid,
-            "gid": gid,
-            "mode": mode,
-            "force": force,
-        }
+        params: dict[str, Union[str, int, bool]] = {"path": path}
+        if uid is not None:
+            params["uid"] = uid
+        if gid is not None:
+            params["gid"] = gid
+        if mode is not None:
+            params["mode"] = mode
+        if force is not None:
+            params["force"] = force
 
         response = await api_client.get_async_httpx_client().request(
             method="PUT",
