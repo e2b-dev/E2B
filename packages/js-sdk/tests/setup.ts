@@ -1,4 +1,3 @@
-import { randomUUID } from 'node:crypto'
 import { test as base, onTestFailed } from 'vitest'
 import {
   BuildInfo,
@@ -7,6 +6,7 @@ import {
   SandboxOpts,
   Template,
   TemplateClass,
+  Volume,
 } from '../src'
 import { template } from './template'
 
@@ -15,6 +15,10 @@ interface SandboxFixture {
   template: string
   sandboxTestId: string
   sandboxOpts: Partial<SandboxOpts>
+}
+
+interface VolumeFixture {
+  volume: Volume
 }
 
 interface BuildTemplateFixture {
@@ -30,7 +34,7 @@ async function buildTemplate(
   options?: { name?: string; skipCache?: boolean },
   onBuildLogs?: (logEntry: LogEntry) => void
 ): Promise<BuildInfo> {
-  const buildName = options?.name || `e2b-test-${randomUUID()}`
+  const buildName = options?.name || `e2b-test-${generateRandomString()}`
   const buildInfo: { templateId?: string; buildId?: string } = {}
 
   const captureLogs = (log: LogEntry) => {
@@ -56,8 +60,8 @@ async function buildTemplate(
   } catch (e) {
     console.error(
       `\n[BUILD FAILED] name=${buildName}, ` +
-        `template_id=${buildInfo.templateId}, ` +
-        `build_id=${buildInfo.buildId}, error=${e}`
+      `template_id=${buildInfo.templateId}, ` +
+      `build_id=${buildInfo.buildId}, error=${e}`
     )
     throw e
   }
@@ -67,7 +71,7 @@ export const sandboxTest = base.extend<SandboxFixture>({
   template,
   sandboxTestId: [
     // eslint-disable-next-line no-empty-pattern
-    async ({}, use) => {
+    async ({ }, use) => {
       const id = `test-${generateRandomString()}`
       await use(id)
     },
@@ -104,10 +108,31 @@ export const sandboxTest = base.extend<SandboxFixture>({
 export const buildTemplateTest = base.extend<BuildTemplateFixture>({
   buildTemplate: [
     // eslint-disable-next-line no-empty-pattern
-    async ({}, use) => {
+    async ({ }, use) => {
       await use(buildTemplate)
     },
     { auto: true },
+  ],
+})
+
+export const volumeTest = base.extend<VolumeFixture>({
+  volume: [
+    async ({ }, use) => {
+      const volume = await Volume.create(`test-vol-${generateRandomString()}`)
+      onTestFailed(() => {
+        console.error(`\n[TEST FAILED] Volume ID: ${volume.volumeId}`)
+      })
+      try {
+        await use(volume)
+      } finally {
+        try {
+          await Volume.destroy(volume.volumeId)
+        } catch {
+          // Ignore cleanup errors
+        }
+      }
+    },
+    { auto: false },
   ],
 })
 
