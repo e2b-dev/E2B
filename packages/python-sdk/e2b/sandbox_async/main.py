@@ -187,7 +187,7 @@ class AsyncSandbox(SandboxApi):
         :param allow_internet_access: Allow sandbox to access the internet, defaults to `True`. If set to `False`, it works the same as setting network `deny_out` to `[0.0.0.0/0]`.
         :param mcp: MCP server to enable in the sandbox
         :param network: Sandbox network configuration
-        :param lifecycle: Sandbox lifecycle configuration — ``on_timeout``: ``"kill"`` (default) or ``"pause"``; ``resume_on``: ``"none"`` (default) or ``"any"`` (only when ``on_timeout="pause"``). Example: ``{"on_timeout": "pause", "resume_on": "any"}``
+        :param lifecycle: Sandbox lifecycle configuration — ``on_timeout``: ``"kill"`` (default) or ``"pause"``; ``resume_on``: ``"off"`` (default) or ``"any"`` (only when ``on_timeout="pause"``). Example: ``{"on_timeout": "pause", "resume_on": "any"}``
 
         :return: A Sandbox instance for the new sandbox
 
@@ -622,7 +622,7 @@ class AsyncSandbox(SandboxApi):
             allow_internet_access=allow_internet_access,
             mcp=mcp,
             lifecycle=(
-                {"on_timeout": "pause", "resume_on": "none"} if auto_pause else None
+                {"on_timeout": "pause", "resume_on": "off"} if auto_pause else None
             ),
             **opts,
         )
@@ -798,14 +798,22 @@ class AsyncSandbox(SandboxApi):
         lifecycle: Optional[SandboxLifecycle] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
-        if (
-            lifecycle is not None
-            and lifecycle["resume_on"] == "any"
-            and lifecycle["on_timeout"] != "pause"
-        ):
-            raise InvalidArgumentException(
-                "`lifecycle.resume_on` can be 'any' only when `lifecycle.on_timeout` is 'pause'"
-            )
+        if lifecycle is not None:
+            on_timeout = lifecycle.get("on_timeout")
+            resume_on = lifecycle.get("resume_on")
+
+            if on_timeout not in ("kill", "pause"):
+                raise InvalidArgumentException(
+                    f"`lifecycle.on_timeout` must be 'kill' or 'pause', got '{on_timeout}'"
+                )
+            if resume_on not in ("off", "any"):
+                raise InvalidArgumentException(
+                    f"`lifecycle.resume_on` must be 'off' or 'any', got '{resume_on}'"
+                )
+            if resume_on == "any" and on_timeout != "pause":
+                raise InvalidArgumentException(
+                    "`lifecycle.resume_on` can be 'any' only when `lifecycle.on_timeout` is 'pause'"
+                )
 
         extra_sandbox_headers = {}
 

@@ -73,10 +73,10 @@ export type SandboxLifecycle = {
 
   /**
    * Auto-resume policy.
-   * @default "none"
+   * @default "off"
    * Can be `any` only when `onTimeout` is `pause`.
    */
-  resumeOn: 'any' | 'none'
+  resumeOn: 'any' | 'off'
 }
 
 /**
@@ -320,6 +320,16 @@ export interface SandboxMetrics {
 }
 
 function validateLifecycle(lifecycle: SandboxLifecycle) {
+  if (!['kill', 'pause'].includes(lifecycle.onTimeout)) {
+    throw new InvalidArgumentError(
+      `\`lifecycle.onTimeout\` must be 'kill' or 'pause', got '${lifecycle.onTimeout}'`
+    )
+  }
+  if (!['off', 'any'].includes(lifecycle.resumeOn)) {
+    throw new InvalidArgumentError(
+      `\`lifecycle.resumeOn\` must be 'off' or 'any', got '${lifecycle.resumeOn}'`
+    )
+  }
   if (lifecycle.resumeOn === 'any' && lifecycle.onTimeout !== 'pause') {
     throw new InvalidArgumentError(
       "`lifecycle.resumeOn` can be 'any' only when `lifecycle.onTimeout` is 'pause'"
@@ -338,7 +348,7 @@ function getLifecycle(
   if (opts?.autoPause) {
     return {
       onTimeout: 'pause',
-      resumeOn: 'none',
+      resumeOn: 'off',
     }
   }
 
