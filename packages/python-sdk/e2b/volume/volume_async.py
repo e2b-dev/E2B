@@ -456,10 +456,7 @@ class AsyncVolume:
             return response.content
         elif format == "stream":
             return response.aiter_bytes()
-        else:  # format == "text"
-            # When the file is empty, response.text might be empty. This is a workaround to return an empty string.
-            if response.headers.get("content-length") == "0":
-                return ""
+        else:
             return response.text
 
     async def write_file(
@@ -562,12 +559,9 @@ class AsyncVolume:
             pass
 
         if is_directory:
-            # Default recursive to True for directories so they are actually removed
-            recursive_val = recursive if recursive is not None else True
-            params: dict[str, Union[str, bool, None]] = {
-                "path": path,
-                "recursive": recursive_val,
-            }
+            params: dict[str, Union[str, bool]] = {"path": path}
+            if recursive is not None:
+                params["recursive"] = recursive
             url = f"/volumes/{self._volume_id}/dir"
         else:
             params = {"path": path}
