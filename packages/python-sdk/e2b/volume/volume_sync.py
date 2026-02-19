@@ -300,7 +300,7 @@ class Volume:
         except NotFoundException:
             return False
 
-    def get_info(self, path: str, **opts: Unpack[ApiParams]) -> VolumeEntryStat:
+    def get_info(self, path: str, **opts: Unpack[ApiParams]) -> VolumeEntryStat:  # noqa: F811
         """
         Get information about a file or directory.
 
