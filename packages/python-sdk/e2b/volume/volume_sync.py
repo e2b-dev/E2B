@@ -553,9 +553,7 @@ class Volume:
 
         if is_directory:
             # Default recursive to True for directories so they are actually removed
-            recursive_val = (
-                recursive if recursive is not None else True
-            )
+            recursive_val = recursive if recursive is not None else True
             params: dict[str, Union[str, bool, None]] = {
                 "path": path,
                 "recursive": recursive_val,
