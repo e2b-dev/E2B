@@ -501,7 +501,7 @@ export class SandboxApi {
       cpuCount: res.data.cpuCount,
       memoryMB: res.data.memoryMB,
       sandboxDomain: res.data.domain || undefined,
-      volumeMounts: res.data.volumeMounts,
+      volumeMounts: res.data.volumeMounts ?? [],
     }
   }
 
@@ -742,7 +742,7 @@ export class SandboxPaginator {
         cpuCount: sandbox.cpuCount,
         memoryMB: sandbox.memoryMB,
         envdVersion: sandbox.envdVersion,
-        volumeMounts: sandbox.volumeMounts,
+        volumeMounts: sandbox.volumeMounts ?? [],
       })
     )
   }

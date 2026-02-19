@@ -3382,9 +3382,9 @@ paths:
           schema:
             type: integer
             format: uint32
-        - name: createParents
+        - name: force
           in: query
-          description: Force overwrite of an existing directory
+          description: Create the parents of a directory if they don't exist
           schema:
             type: boolean
       responses:
@@ -3521,7 +3521,6 @@ paths:
           schema:
             type: boolean
       requestBody:
-        required: true
         content:
           application/octet-stream:
             schema:
