@@ -17,7 +17,7 @@ def _get_kwargs(
     uid: Union[Unset, int] = UNSET,
     gid: Union[Unset, int] = UNSET,
     mode: Union[Unset, int] = UNSET,
-    create_parents: Union[Unset, bool] = UNSET,
+    force: Union[Unset, bool] = UNSET,
 ) -> dict[str, Any]:
     params: dict[str, Any] = {}
 
@@ -29,7 +29,7 @@ def _get_kwargs(
 
     params["mode"] = mode
 
-    params["createParents"] = create_parents
+    params["force"] = force
 
     params = {k: v for k, v in params.items() if v is not UNSET and v is not None}
 
@@ -81,7 +81,7 @@ def sync_detailed(
     uid: Union[Unset, int] = UNSET,
     gid: Union[Unset, int] = UNSET,
     mode: Union[Unset, int] = UNSET,
-    create_parents: Union[Unset, bool] = UNSET,
+    force: Union[Unset, bool] = UNSET,
 ) -> Response[Union[Any, Error, VolumeEntryStat]]:
     """Create a directory
 
@@ -91,7 +91,7 @@ def sync_detailed(
         uid (Union[Unset, int]):
         gid (Union[Unset, int]):
         mode (Union[Unset, int]):
-        create_parents (Union[Unset, bool]):
+        force (Union[Unset, bool]):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -107,7 +107,7 @@ def sync_detailed(
         uid=uid,
         gid=gid,
         mode=mode,
-        create_parents=create_parents,
+        force=force,
     )
 
     response = client.get_httpx_client().request(
@@ -125,7 +125,7 @@ def sync(
     uid: Union[Unset, int] = UNSET,
     gid: Union[Unset, int] = UNSET,
     mode: Union[Unset, int] = UNSET,
-    create_parents: Union[Unset, bool] = UNSET,
+    force: Union[Unset, bool] = UNSET,
 ) -> Optional[Union[Any, Error, VolumeEntryStat]]:
     """Create a directory
 
@@ -135,7 +135,7 @@ def sync(
         uid (Union[Unset, int]):
         gid (Union[Unset, int]):
         mode (Union[Unset, int]):
-        create_parents (Union[Unset, bool]):
+        force (Union[Unset, bool]):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -152,7 +152,7 @@ def sync(
         uid=uid,
         gid=gid,
         mode=mode,
-        create_parents=create_parents,
+        force=force,
     ).parsed
 
 
@@ -164,7 +164,7 @@ async def asyncio_detailed(
     uid: Union[Unset, int] = UNSET,
     gid: Union[Unset, int] = UNSET,
     mode: Union[Unset, int] = UNSET,
-    create_parents: Union[Unset, bool] = UNSET,
+    force: Union[Unset, bool] = UNSET,
 ) -> Response[Union[Any, Error, VolumeEntryStat]]:
     """Create a directory
 
@@ -174,7 +174,7 @@ async def asyncio_detailed(
         uid (Union[Unset, int]):
         gid (Union[Unset, int]):
         mode (Union[Unset, int]):
-        create_parents (Union[Unset, bool]):
+        force (Union[Unset, bool]):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -190,7 +190,7 @@ async def asyncio_detailed(
         uid=uid,
         gid=gid,
         mode=mode,
-        create_parents=create_parents,
+        force=force,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -206,7 +206,7 @@ async def asyncio(
     uid: Union[Unset, int] = UNSET,
     gid: Union[Unset, int] = UNSET,
     mode: Union[Unset, int] = UNSET,
-    create_parents: Union[Unset, bool] = UNSET,
+    force: Union[Unset, bool] = UNSET,
 ) -> Optional[Union[Any, Error, VolumeEntryStat]]:
     """Create a directory
 
@@ -216,7 +216,7 @@ async def asyncio(
         uid (Union[Unset, int]):
         gid (Union[Unset, int]):
         mode (Union[Unset, int]):
-        create_parents (Union[Unset, bool]):
+        force (Union[Unset, bool]):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -234,6 +234,6 @@ async def asyncio(
             uid=uid,
             gid=gid,
             mode=mode,
-            create_parents=create_parents,
+            force=force,
         )
     ).parsed
