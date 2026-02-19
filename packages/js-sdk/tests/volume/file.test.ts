@@ -195,7 +195,6 @@ describe('Volume File Operations', () => {
       })
 
       const info = await volume.getInfo(path)
-      console.log(info)
       expect(info.type).toBe('directory')
       expect(info.uid).toBe(1000)
       expect(info.gid).toBe(1000)
