@@ -1,0 +1,191 @@
+### LogEntry
+
+Represents a single log entry from the template build process.
+
+#### Extended by
+
+- `LogEntryStart`
+- `LogEntryEnd`
+
+#### Constructors
+
+```ts
+new LogEntry(
+   timestamp: Date, 
+   level: LogEntryLevel, 
+   message: string): LogEntry
+```
+
+###### Parameters
+
+| Parameter | Type |
+| ------ | ------ |
+| `timestamp` | `Date` |
+| `level` | `LogEntryLevel` |
+| `message` | `string` |
+
+###### Returns
+
+`LogEntry`
+
+#### Properties
+
+| Property | Modifier | Type |
+| ------ | ------ | ------ |
+| `level` | `readonly` | `LogEntryLevel` |
+| `message` | `readonly` | `string` |
+| `timestamp` | `readonly` | `Date` |
+
+#### Methods
+
+### toString()
+
+```ts
+toString(): string
+```
+
+###### Returns
+
+`string`
+
+***
+
+### LogEntryEnd
+
+Special log entry indicating the end of a build process.
+
+#### Constructors
+
+```ts
+new LogEntryEnd(timestamp: Date, message: string): LogEntryEnd
+```
+
+###### Parameters
+
+| Parameter | Type |
+| ------ | ------ |
+| `timestamp` | `Date` |
+| `message` | `string` |
+
+###### Returns
+
+`LogEntryEnd`
+
+#### Properties
+
+| Property | Modifier | Type | Inherited from |
+| ------ | ------ | ------ | ------ |
+| `level` | `readonly` | `LogEntryLevel` | `LogEntry`.`level` |
+| `message` | `readonly` | `string` | `LogEntry`.`message` |
+| `timestamp` | `readonly` | `Date` | `LogEntry`.`timestamp` |
+
+#### Methods
+
+### toString()
+
+```ts
+toString(): string
+```
+
+###### Returns
+
+`string`
+
+***
+
+### LogEntryStart
+
+Special log entry indicating the start of a build process.
+
+#### Constructors
+
+```ts
+new LogEntryStart(timestamp: Date, message: string): LogEntryStart
+```
+
+###### Parameters
+
+| Parameter | Type |
+| ------ | ------ |
+| `timestamp` | `Date` |
+| `message` | `string` |
+
+###### Returns
+
+`LogEntryStart`
+
+#### Properties
+
+| Property | Modifier | Type | Inherited from |
+| ------ | ------ | ------ | ------ |
+| `level` | `readonly` | `LogEntryLevel` | `LogEntry`.`level` |
+| `message` | `readonly` | `string` | `LogEntry`.`message` |
+| `timestamp` | `readonly` | `Date` | `LogEntry`.`timestamp` |
+
+#### Methods
+
+### toString()
+
+```ts
+toString(): string
+```
+
+###### Returns
+
+`string`
+
+## Type Aliases
+
+### LogEntryLevel
+
+```ts
+type LogEntryLevel: "debug" | "info" | "warn" | "error";
+```
+
+Log entry severity levels.
+
+## Functions
+
+### defaultBuildLogger()
+
+```ts
+function defaultBuildLogger(options?: object): (logEntry: LogEntry) => void
+```
+
+Create a default build logger with animated timer display.
+
+#### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `options`? | `object` | Logger configuration options |
+| `options.minLevel`? | `LogEntryLevel` | Minimum log level to display (default: 'info') |
+
+#### Returns
+
+`Function`
+
+Logger function that accepts LogEntry instances
+
+### Parameters
+
+| Parameter | Type |
+| ------ | ------ |
+| `logEntry` | `LogEntry` |
+
+### Returns
+
+`void`
+
+#### Example
+
+```ts
+import { Template, defaultBuildLogger } from 'e2b'
+
+const template = Template().fromPythonImage()
+
+await Template.build(template, {
+  alias: 'my-template',
+  onBuildLogs: defaultBuildLogger({ minLevel: 'debug' })
+})
+```

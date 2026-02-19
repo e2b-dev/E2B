@@ -1,0 +1,36 @@
+from e2b import {{#if isAsync}}AsyncTemplate{{else}}Template{{/if}}
+
+template = (
+    {{#if isAsync}}AsyncTemplate{{else}}Template{{/if}}()
+{{#if fromImage}}
+    .from_image("{{{fromImage}}}")
+{{/if}}
+{{#each steps}}
+{{#eq type "WORKDIR"}}
+    .set_workdir("{{{args.[0]}}}")
+{{/eq}}
+{{#eq type "USER"}}
+    .set_user("{{{args.[0]}}}")
+{{/eq}}
+{{#eq type "ENV"}}
+    .set_envs({
+{{#each envVars}}
+        "{{{@key}}}": "{{{this}}}",
+{{/each}}
+    })
+{{/eq}}
+{{#eq type "RUN"}}
+    .run_cmd("{{{args.[0]}}}")
+{{/eq}}
+{{#eq type "COPY"}}
+    .copy("{{{src}}}", "{{{dest}}}")
+{{/eq}}
+{{/each}}
+{{#if startCmd}}
+{{#if readyCmd}}
+    .set_start_cmd("sudo {{{escapeDoubleQuotes startCmd}}}", "{{{escapeDoubleQuotes readyCmd}}}")
+{{/if}}
+{{else if readyCmd}}
+    .set_ready_cmd("sudo {{{escapeDoubleQuotes readyCmd}}}")
+{{/if}}
+)

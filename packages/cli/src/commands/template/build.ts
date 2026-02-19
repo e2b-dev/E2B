@@ -1,13 +1,27 @@
+import * as boxen from 'boxen'
+import * as child_process from 'child_process'
+import commandExists from 'command-exists'
 import * as commander from 'commander'
+import * as e2b from 'e2b'
 import * as fs from 'fs'
 import * as path from 'path'
-import * as e2b from 'e2b'
-import * as stripAnsi from 'strip-ansi'
-import * as boxen from 'boxen'
-import commandExists from 'command-exists'
-import { wait } from 'src/utils/wait'
-import { client, connectionConfig, ensureAccessToken } from 'src/api'
+import {
+  client,
+  connectionConfig,
+  ensureAccessToken,
+  resolveTeamId,
+} from 'src/api'
+import { configName, getConfigPath, loadConfig, saveConfig } from 'src/config'
+import {
+  defaultDockerfileName,
+  fallbackDockerfileName,
+} from 'src/docker/constants'
+import { configOption, pathOption, teamOption } from 'src/options'
+import { getUserConfig } from 'src/user'
 import { getRoot } from 'src/utils/filesystem'
+import { wait } from 'src/utils/wait'
+import * as stripAnsi from 'strip-ansi'
+import { handleE2BRequestError } from '../../utils/errors'
 import {
   asBold,
   asBuildLogs,
@@ -18,16 +32,7 @@ import {
   asPython,
   asTypescript,
   withDelimiter,
-} from 'src/utils/format'
-import { configOption, pathOption, teamOption } from 'src/options'
-import {
-  defaultDockerfileName,
-  fallbackDockerfileName,
-} from 'src/docker/constants'
-import { configName, getConfigPath, loadConfig, saveConfig } from 'src/config'
-import * as child_process from 'child_process'
-import { handleE2BRequestError } from '../../utils/errors'
-import { getUserConfig } from 'src/user'
+} from '../../utils/format'
 import { buildWithProxy } from './buildWithProxy'
 
 const templateCheckInterval = 500 // 0.5 sec
@@ -198,6 +203,33 @@ export const buildCommand = new commander.Command('build')
       }
     ) => {
       try {
+        // Display deprecation warning
+        const deprecationMessage = `${asBold('DEPRECATION WARNING')}
+
+This is the v1 build system which is now deprecated.
+Please migrate to the new build system v2.
+
+Migration guide: ${asPrimary('https://e2b.dev/docs/template/migration-v2')}`
+
+        const deprecationWarning = boxen.default(deprecationMessage, {
+          padding: {
+            bottom: 0,
+            top: 0,
+            left: 2,
+            right: 2,
+          },
+          margin: {
+            top: 1,
+            bottom: 1,
+            left: 0,
+            right: 0,
+          },
+          borderColor: 'yellow',
+          borderStyle: 'round',
+        })
+
+        console.log(deprecationWarning)
+
         const dockerInstalled = commandExists.sync('docker')
         if (!dockerInstalled) {
           console.error(
@@ -261,13 +293,9 @@ export const buildCommand = new commander.Command('build')
           readyCmd = opts.readyCmd || config.ready_cmd
           cpuCount = opts.cpuCount || config.cpu_count
           memoryMB = opts.memoryMb || config.memory_mb
-          teamID = opts.team || config.team_id
         }
 
-        const userConfig = getUserConfig()
-        if (userConfig) {
-          teamID = teamID || userConfig.teamId
-        }
+        teamID = resolveTeamId(opts.team, config?.team_id)
 
         if (config && templateID && config.template_id !== templateID) {
           // error: you can't specify different ID than the one in config
@@ -417,6 +445,7 @@ export const buildCommand = new commander.Command('build')
             cwd: root,
           })
         } catch (err: any) {
+          const userConfig = getUserConfig()
           await buildWithProxy(
             userConfig,
             connectionConfig,
@@ -480,7 +509,9 @@ async function waitForBuildFinish(
         const pythonExample = asPython(`from e2b import Sandbox, AsyncSandbox
 
 # Create sync sandbox
-sandbox = Sandbox("${aliases?.length ? aliases[0] : template.templateID}")
+sandbox = Sandbox.create("${
+          aliases?.length ? aliases[0] : template.templateID
+        }")
 
 # Create async sandbox
 sandbox = await AsyncSandbox.create("${
@@ -551,7 +582,7 @@ function loadFile(filePath: string) {
   return fs.readFileSync(filePath, 'utf-8')
 }
 
-function getDockerfile(root: string, file?: string) {
+export function getDockerfile(root: string, file?: string) {
   // Check if user specified custom Dockerfile exists
   if (file) {
     const dockerfilePath = path.join(root, file)

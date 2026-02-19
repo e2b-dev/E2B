@@ -10,7 +10,7 @@ COPY ./packages/connect-python /packages/connect-python
 RUN cd /packages/connect-python && make bin/protoc-gen-connect-python
 
 
-FROM python:3.9
+FROM python:3.10
 
 # Set working directory
 WORKDIR /workspace
@@ -34,19 +34,22 @@ ENV PATH="/go/bin:${PATH}"
 
 # Install Python deps (e2b-openapi-python-client is patched version to fix issue with explode)
 # https://github.com/openapi-generators/openapi-python-client/pull/1296
-RUN pip install black==23.7.0 pyyaml==6.0.2 e2b-openapi-python-client==0.26.2
+RUN pip install black==23.7.0 pyyaml==6.0.2 e2b-openapi-python-client==0.26.2 datamodel-code-generator==0.34.0
 
-# Install Node.js and npm
-RUN apt-get update && \
-    apt-get install -y curl && \
-    curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
-    apt-get install -y nodejs && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+# Install Node.js (pinned to match .tool-versions)
+ENV NODE_VERSION=20.19.5
+RUN ARCH=$(uname -m) && \
+    case "$ARCH" in \
+        x86_64) NODE_ARCH="x64" ;; \
+        arm64|aarch64) NODE_ARCH="arm64" ;; \
+        *) echo "Unsupported architecture: $ARCH" && exit 1 ;; \
+    esac && \
+    curl -fsSL https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-${NODE_ARCH}.tar.xz | tar -xJ -C /usr/local --strip-components=1
 
 # Install Node.js deps
+ENV PNPM_VERSION=9.15.5
 RUN npm install -g \
-    pnpm \
+    pnpm@${PNPM_VERSION} \
     @connectrpc/protoc-gen-connect-es@1.6.1 \
     @bufbuild/protoc-gen-es@2.6.2
 

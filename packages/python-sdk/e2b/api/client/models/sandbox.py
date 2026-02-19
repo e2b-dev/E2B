@@ -20,6 +20,7 @@ class Sandbox:
         alias (Union[Unset, str]): Alias of the template
         domain (Union[None, Unset, str]): Base domain where the sandbox traffic is accessible
         envd_access_token (Union[Unset, str]): Access token used for envd communication
+        traffic_access_token (Union[None, Unset, str]): Token required for accessing sandbox via proxy.
     """
 
     client_id: str
@@ -29,6 +30,7 @@ class Sandbox:
     alias: Union[Unset, str] = UNSET
     domain: Union[None, Unset, str] = UNSET
     envd_access_token: Union[Unset, str] = UNSET
+    traffic_access_token: Union[None, Unset, str] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -50,6 +52,12 @@ class Sandbox:
 
         envd_access_token = self.envd_access_token
 
+        traffic_access_token: Union[None, Unset, str]
+        if isinstance(self.traffic_access_token, Unset):
+            traffic_access_token = UNSET
+        else:
+            traffic_access_token = self.traffic_access_token
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
@@ -66,6 +74,8 @@ class Sandbox:
             field_dict["domain"] = domain
         if envd_access_token is not UNSET:
             field_dict["envdAccessToken"] = envd_access_token
+        if traffic_access_token is not UNSET:
+            field_dict["trafficAccessToken"] = traffic_access_token
 
         return field_dict
 
@@ -93,6 +103,17 @@ class Sandbox:
 
         envd_access_token = d.pop("envdAccessToken", UNSET)
 
+        def _parse_traffic_access_token(data: object) -> Union[None, Unset, str]:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(Union[None, Unset, str], data)
+
+        traffic_access_token = _parse_traffic_access_token(
+            d.pop("trafficAccessToken", UNSET)
+        )
+
         sandbox = cls(
             client_id=client_id,
             envd_version=envd_version,
@@ -101,6 +122,7 @@ class Sandbox:
             alias=alias,
             domain=domain,
             envd_access_token=envd_access_token,
+            traffic_access_token=traffic_access_token,
         )
 
         sandbox.additional_properties = d

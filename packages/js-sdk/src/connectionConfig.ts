@@ -30,6 +30,18 @@ export interface ConnectionOpts {
    */
   domain?: string
   /**
+   * API Url to use for the API.
+   * @internal
+   * @default E2B_API_URL // environment variable or `https://api.${domain}`
+   */
+  apiUrl?: string
+  /**
+   * Sandbox Url to use for the API.
+   * @internal
+   * @default E2B_SANDBOX_URL // environment variable or `https://${port}-${sandboxID}.${domain}`
+   */
+  sandboxUrl?: string
+  /**
    * If true the SDK starts in the debug mode and connects to the local envd API server.
    * @internal
    * @default E2B_DEBUG // environment variable or `false`
@@ -56,9 +68,12 @@ export interface ConnectionOpts {
  * Configuration for connecting to the API.
  */
 export class ConnectionConfig {
+  public static envdPort = 49983
+
   readonly debug: boolean
   readonly domain: string
   readonly apiUrl: string
+  readonly sandboxUrl?: string
   readonly logger?: Logger
 
   readonly requestTimeoutMs: number
@@ -78,13 +93,24 @@ export class ConnectionConfig {
     this.headers = opts?.headers || {}
     this.headers['User-Agent'] = `e2b-js-sdk/${version}`
 
-    this.apiUrl = this.debug
-      ? 'http://localhost:3000'
-      : `https://api.${this.domain}`
+    this.apiUrl =
+      opts?.apiUrl ||
+      ConnectionConfig.apiUrl ||
+      (this.debug ? 'http://localhost:3000' : `https://api.${this.domain}`)
+
+    this.sandboxUrl = opts?.sandboxUrl || ConnectionConfig.sandboxUrl
   }
 
   private static get domain() {
     return getEnvVar('E2B_DOMAIN') || 'e2b.app'
+  }
+
+  private static get apiUrl() {
+    return getEnvVar('E2B_API_URL')
+  }
+
+  private static get sandboxUrl() {
+    return getEnvVar('E2B_SANDBOX_URL')
   }
 
   private static get debug() {
@@ -104,11 +130,30 @@ export class ConnectionConfig {
 
     return timeout ? AbortSignal.timeout(timeout) : undefined
   }
+
+  getSandboxUrl(
+    sandboxId: string,
+    opts: { sandboxDomain: string; envdPort: number }
+  ) {
+    if (this.sandboxUrl) {
+      return this.sandboxUrl
+    }
+
+    return `${this.debug ? 'http' : 'https'}://${this.getHost(sandboxId, opts.envdPort, opts.sandboxDomain)}`
+  }
+
+  getHost(sandboxId: string, port: number, sandboxDomain: string) {
+    if (this.debug) {
+      return `localhost:${port}`
+    }
+
+    return `${port}-${sandboxId}.${sandboxDomain ?? this.domain}`
+  }
 }
 
 /**
  * User used for the operation in the sandbox.
  */
-export type Username = 'root' | 'user'
 
 export const defaultUsername: Username = 'user'
+export type Username = string

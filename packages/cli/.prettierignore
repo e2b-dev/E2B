@@ -1,0 +1,2 @@
+*.hbs
+tests/**/fixtures/**/*

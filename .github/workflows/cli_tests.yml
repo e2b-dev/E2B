@@ -2,9 +2,14 @@ name: Test CLI
 
 on:
   workflow_call:
-  pull_request:
-    branches:
-      - main
+    inputs:
+      E2B_DOMAIN:
+        required: false
+        type: string
+        default: ''
+    secrets:
+      E2B_API_KEY:
+        required: true
 
 permissions:
   contents: read
@@ -14,22 +19,32 @@ jobs:
     defaults:
       run:
         working-directory: ./packages/cli
-    name: CLI - Build
-    runs-on: ubuntu-22.04
+        shell: bash
+    name: CLI - Build (${{ matrix.os }})
+    strategy:
+      matrix:
+        os: [ubuntu-22.04, windows-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Parse .tool-versions
+        uses: wistia/parse-tool-versions@v2.1.1
+        with:
+          filename: '.tool-versions'
+          uppercase: 'true'
+          prefix: 'tool_version_'
+
       - name: Install pnpm
         uses: pnpm/action-setup@v4
-        id: pnpm-install
         with:
-          version: 9.15.5
+          version: '${{ env.TOOL_VERSION_PNPM }}'
 
       - name: Setup Node
         uses: actions/setup-node@v3
         with:
-          node-version: '20.x'
+          node-version: '${{ env.TOOL_VERSION_NODEJS }}'
           registry-url: 'https://registry.npmjs.org'
           cache: pnpm
           cache-dependency-path: pnpm-lock.yaml
@@ -37,10 +52,21 @@ jobs:
       - name: Configure pnpm
         run: |
           pnpm config set auto-install-peers true
-          pnpm config set exclude-links-from-lockfile true
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Test build
+      - name: Build the SDK (pre-requisite for the tests)
         run: pnpm build
+        working-directory: ./packages/js-sdk
+
+      - name: Build the CLI
+        run: pnpm build
+        working-directory: ./packages/cli
+
+      - name: Run tests
+        run: pnpm test
+        working-directory: ./packages/cli
+        env:
+          E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+          E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}

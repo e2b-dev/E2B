@@ -11,6 +11,7 @@ import { EnvdApiClient, handleEnvdApiError } from '../envd/api'
 import { createRpcLogger } from '../logs'
 import { Commands, Pty } from './commands'
 import { Filesystem } from './filesystem'
+import { Git } from './git'
 import {
   SandboxOpts,
   SandboxConnectOpts,
@@ -23,6 +24,7 @@ import {
 import { getSignature } from './signature'
 import { compareVersions } from 'compare-versions'
 import { SandboxError } from '../errors'
+import { ENVD_DEBUG_FALLBACK, ENVD_DEFAULT_USER } from '../envd/versions'
 
 /**
  * Options for sandbox upload/download URL generation.
@@ -47,6 +49,7 @@ export interface SandboxUrlOpts {
  * - Access Linux OS
  * - Create, list, and delete files and directories
  * - Run commands
+ * - Run git operations
  * - Run isolated code
  * - Access the internet
  *
@@ -63,6 +66,7 @@ export interface SandboxUrlOpts {
  */
 export class Sandbox extends SandboxApi {
   protected static readonly defaultTemplate: string = 'base'
+  protected static readonly defaultMcpTemplate: string = 'mcp-gateway'
   protected static readonly defaultSandboxTimeoutMs = DEFAULT_SANDBOX_TIMEOUT_MS
 
   /**
@@ -77,6 +81,10 @@ export class Sandbox extends SandboxApi {
    * Module for interacting with the sandbox pseudo-terminals
    */
   readonly pty: Pty
+  /**
+   * Module for running git operations in the sandbox
+   */
+  readonly git: Git
 
   /**
    * Unique identifier of the sandbox.
@@ -88,12 +96,19 @@ export class Sandbox extends SandboxApi {
    */
   readonly sandboxDomain: string
 
+  /**
+   * Traffic access token for accessing sandbox services with restricted public traffic.
+   */
+  readonly trafficAccessToken?: string
+
   protected readonly envdPort = 49983
+  protected readonly mcpPort = 50005
 
   protected readonly connectionConfig: ConnectionConfig
   protected readonly envdAccessToken?: string
   private readonly envdApiUrl: string
   private readonly envdApi: EnvdApiClient
+  private mcpToken?: string
 
   /**
    * Use {@link Sandbox.create} to create a new Sandbox instead.
@@ -107,8 +122,9 @@ export class Sandbox extends SandboxApi {
     opts: SandboxConnectOpts & {
       sandboxId: string
       sandboxDomain?: string
-      envdVersion?: string
+      envdVersion: string
       envdAccessToken?: string
+      trafficAccessToken?: string
     }
   ) {
     super()
@@ -119,9 +135,16 @@ export class Sandbox extends SandboxApi {
     this.sandboxDomain = opts.sandboxDomain ?? this.connectionConfig.domain
 
     this.envdAccessToken = opts.envdAccessToken
-    this.envdApiUrl = `${
-      this.connectionConfig.debug ? 'http' : 'https'
-    }://${this.getHost(this.envdPort)}`
+    this.trafficAccessToken = opts.trafficAccessToken
+    this.envdApiUrl = this.connectionConfig.getSandboxUrl(this.sandboxId, {
+      sandboxDomain: this.sandboxDomain,
+      envdPort: this.envdPort,
+    })
+
+    const sandboxHeaders = {
+      'E2b-Sandbox-Id': this.sandboxId,
+      'E2b-Sandbox-Port': this.envdPort.toString(),
+    }
 
     const rpcTransport = createConnectTransport({
       baseUrl: this.envdApiUrl,
@@ -135,6 +158,9 @@ export class Sandbox extends SandboxApi {
 
         const headers = new Headers(this.connectionConfig.headers)
         new Headers(options?.headers).forEach((value, key) =>
+          headers.append(key, value)
+        )
+        new Headers(sandboxHeaders).forEach((value, key) =>
           headers.append(key, value)
         )
 
@@ -157,12 +183,15 @@ export class Sandbox extends SandboxApi {
         apiUrl: this.envdApiUrl,
         logger: opts?.logger,
         accessToken: this.envdAccessToken,
-        headers: this.envdAccessToken
-          ? { 'X-Access-Token': this.envdAccessToken }
-          : {},
+        headers: {
+          'User-Agent': this.connectionConfig.headers?.['User-Agent'] ?? '',
+          ...(this.envdAccessToken
+            ? { 'X-Access-Token': this.envdAccessToken }
+            : {}),
+        },
       },
       {
-        version: opts?.envdVersion,
+        version: opts.envdVersion,
       }
     )
     this.files = new Filesystem(
@@ -170,8 +199,13 @@ export class Sandbox extends SandboxApi {
       this.envdApi,
       this.connectionConfig
     )
-    this.commands = new Commands(rpcTransport, this.connectionConfig)
-    this.pty = new Pty(rpcTransport, this.connectionConfig)
+    this.commands = new Commands(rpcTransport, this.connectionConfig, {
+      version: opts.envdVersion,
+    })
+    this.pty = new Pty(rpcTransport, this.connectionConfig, {
+      version: opts.envdVersion,
+    })
+    this.git = new Git(this.commands)
   }
 
   /**
@@ -229,24 +263,51 @@ export class Sandbox extends SandboxApi {
   ): Promise<InstanceType<S>> {
     const { template, sandboxOpts } =
       typeof templateOrOpts === 'string'
-        ? { template: templateOrOpts, sandboxOpts: opts }
-        : { template: this.defaultTemplate, sandboxOpts: templateOrOpts }
+        ? {
+            template: templateOrOpts,
+            sandboxOpts: opts,
+          }
+        : {
+            template: templateOrOpts?.mcp
+              ? this.defaultMcpTemplate
+              : this.defaultTemplate,
+            sandboxOpts: templateOrOpts,
+          }
 
     const config = new ConnectionConfig(sandboxOpts)
     if (config.debug) {
       return new this({
         sandboxId: 'debug_sandbox_id',
+        envdVersion: ENVD_DEBUG_FALLBACK,
         ...config,
       }) as InstanceType<S>
     }
 
-    const sandbox = await SandboxApi.createSandbox(
+    const sandboxInfo = await SandboxApi.createSandbox(
       template,
       sandboxOpts?.timeoutMs ?? this.defaultSandboxTimeoutMs,
       sandboxOpts
     )
 
-    return new this({ ...sandbox, ...config }) as InstanceType<S>
+    const sandbox = new this({ ...sandboxInfo, ...config }) as InstanceType<S>
+
+    if (sandboxOpts?.mcp) {
+      sandbox.mcpToken = crypto.randomUUID()
+      const res = await sandbox.commands.run(
+        `mcp-gateway --config '${JSON.stringify(sandboxOpts?.mcp)}'`,
+        {
+          user: 'root',
+          envs: {
+            GATEWAY_ACCESS_TOKEN: sandbox.mcpToken ?? '',
+          },
+        }
+      )
+      if (res.exitCode !== 0) {
+        throw new Error(`Failed to start MCP gateway: ${res.stderr}`)
+      }
+    }
+
+    return sandbox
   }
 
   /**
@@ -297,24 +358,51 @@ export class Sandbox extends SandboxApi {
   ): Promise<InstanceType<S>> {
     const { template, sandboxOpts } =
       typeof templateOrOpts === 'string'
-        ? { template: templateOrOpts, sandboxOpts: opts }
-        : { template: this.defaultTemplate, sandboxOpts: templateOrOpts }
+        ? {
+            template: templateOrOpts,
+            sandboxOpts: opts,
+          }
+        : {
+            template: templateOrOpts?.mcp
+              ? this.defaultMcpTemplate
+              : this.defaultTemplate,
+            sandboxOpts: templateOrOpts,
+          }
 
     const config = new ConnectionConfig(sandboxOpts)
     if (config.debug) {
       return new this({
         sandboxId: 'debug_sandbox_id',
+        envdVersion: ENVD_DEBUG_FALLBACK,
         ...config,
       }) as InstanceType<S>
     }
 
-    const sandbox = await SandboxApi.createSandbox(
+    const sandboxInfo = await SandboxApi.createSandbox(
       template,
       sandboxOpts?.timeoutMs ?? this.defaultSandboxTimeoutMs,
       sandboxOpts
     )
 
-    return new this({ ...sandbox, ...config }) as InstanceType<S>
+    const sandbox = new this({ ...sandboxInfo, ...config }) as InstanceType<S>
+
+    if (sandboxOpts?.mcp) {
+      sandbox.mcpToken = crypto.randomUUID()
+      const res = await sandbox.commands.run(
+        `mcp-gateway --config '${JSON.stringify(sandboxOpts?.mcp)}'`,
+        {
+          user: 'root',
+          envs: {
+            GATEWAY_ACCESS_TOKEN: sandbox.mcpToken ?? '',
+          },
+        }
+      )
+      if (res.exitCode !== 0) {
+        throw new Error(`Failed to start MCP gateway: ${res.stderr}`)
+      }
+    }
+
+    return sandbox
   }
 
   /**
@@ -342,29 +430,15 @@ export class Sandbox extends SandboxApi {
     sandboxId: string,
     opts?: SandboxConnectOpts
   ): Promise<InstanceType<S>> {
-    try {
-      await SandboxApi.setTimeout(
-        sandboxId,
-        opts?.timeoutMs || DEFAULT_SANDBOX_TIMEOUT_MS,
-        opts
-      )
-    } catch (e) {
-      if (e instanceof SandboxError) {
-        await SandboxApi.resumeSandbox(sandboxId, opts)
-      } else {
-        throw e
-      }
-    }
-
-    const info = await SandboxApi.getFullInfo(sandboxId, opts)
-
+    const sandbox = await SandboxApi.connectSandbox(sandboxId, opts)
     const config = new ConnectionConfig(opts)
 
     return new this({
       sandboxId,
-      sandboxDomain: info.sandboxDomain,
-      envdAccessToken: info.envdAccessToken,
-      envdVersion: info.envdVersion,
+      sandboxDomain: sandbox.sandboxDomain,
+      envdAccessToken: sandbox.envdAccessToken,
+      trafficAccessToken: sandbox.trafficAccessToken,
+      envdVersion: sandbox.envdVersion,
       ...config,
     }) as InstanceType<S>
   }
@@ -389,15 +463,7 @@ export class Sandbox extends SandboxApi {
    * ```
    */
   async connect(opts?: SandboxBetaCreateOpts): Promise<this> {
-    try {
-      await SandboxApi.setTimeout(
-        this.sandboxId,
-        opts?.timeoutMs || DEFAULT_SANDBOX_TIMEOUT_MS,
-        opts
-      )
-    } catch (e) {
-      await SandboxApi.resumeSandbox(this.sandboxId, opts)
-    }
+    await SandboxApi.connectSandbox(this.sandboxId, opts)
 
     return this
   }
@@ -420,11 +486,11 @@ export class Sandbox extends SandboxApi {
    * ```
    */
   getHost(port: number) {
-    if (this.connectionConfig.debug) {
-      return `localhost:${port}`
-    }
-
-    return `${port}-${this.sandboxId}.${this.sandboxDomain}`
+    return this.connectionConfig.getHost(
+      this.sandboxId,
+      port,
+      this.sandboxDomain
+    )
   }
 
   /**
@@ -464,7 +530,6 @@ export class Sandbox extends SandboxApi {
 
   /**
    * Set the timeout of the sandbox.
-   * After the timeout expires the sandbox will be automatically killed.
    *
    * This method can extend or reduce the sandbox timeout set when creating the sandbox or from the last call to `.setTimeout`.
    * Maximum time a sandbox can be kept alive is 24 hours (86_400_000 milliseconds) for Pro users and 1 hour (3_600_000 milliseconds) for Hobby users.
@@ -515,6 +580,31 @@ export class Sandbox extends SandboxApi {
   }
 
   /**
+   *
+   * Get the MCP URL for the sandbox.
+   *
+   * @returns MCP URL for the sandbox.
+   */
+  getMcpUrl(): string {
+    return `https://${this.getHost(this.mcpPort)}/mcp`
+  }
+
+  /**
+   * Get the MCP token for the sandbox.
+   *
+   * @returns MCP token for the sandbox, or undefined if MCP is not enabled.
+   */
+  async getMcpToken(): Promise<string | undefined> {
+    if (!this.mcpToken) {
+      this.mcpToken = await this.files.read('/etc/mcp-gateway/.token', {
+        user: 'root',
+      })
+    }
+
+    return this.mcpToken
+  }
+
+  /**
    * Get the URL to upload a file to the sandbox.
    *
    * You have to send a POST request to this URL with the file as multipart/form-data.
@@ -536,7 +626,14 @@ export class Sandbox extends SandboxApi {
       )
     }
 
-    const username = opts.user ?? defaultUsername
+    let username = opts.user
+    if (
+      username == undefined &&
+      compareVersions(this.envdApi.version, ENVD_DEFAULT_USER) < 0
+    ) {
+      username = defaultUsername
+    }
+
     const filePath = path ?? ''
     const fileUrl = this.fileUrl(filePath, username)
 
@@ -581,7 +678,14 @@ export class Sandbox extends SandboxApi {
       )
     }
 
-    const username = opts.user ?? defaultUsername
+    let username = opts.user
+    if (
+      username == undefined &&
+      compareVersions(this.envdApi.version, ENVD_DEFAULT_USER) < 0
+    ) {
+      username = defaultUsername
+    }
+
     const fileUrl = this.fileUrl(path, username)
 
     if (useSignature) {
@@ -648,10 +752,12 @@ export class Sandbox extends SandboxApi {
     })
   }
 
-  private fileUrl(path?: string, username?: string) {
+  private fileUrl(path: string | undefined, username: string | undefined) {
     const url = new URL('/files', this.envdApiUrl)
 
-    url.searchParams.set('username', username ?? defaultUsername)
+    if (username) {
+      url.searchParams.set('username', username)
+    }
     if (path) {
       url.searchParams.set('path', path)
     }

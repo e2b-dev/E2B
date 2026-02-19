@@ -16,7 +16,7 @@ function getConfigHeader(config: E2BConfig) {
 
 # Python SDK
 # from e2b import Sandbox, AsyncSandbox
-# sandbox = Sandbox("${
+# sandbox = Sandbox.create("${
     config.template_name || config.template_id
   }") # Sync sandbox
 # sandbox = await AsyncSandbox.create("${

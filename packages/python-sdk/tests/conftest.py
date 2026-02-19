@@ -1,19 +1,31 @@
 import asyncio
+import os
 import uuid
+from typing import Callable, Dict, Optional
+from uuid import uuid4
 
 import pytest
 import pytest_asyncio
-import os
-
-from logging import warning
 
 from e2b import (
-    Sandbox,
-    AsyncSandbox,
     AsyncCommandHandle,
+    AsyncSandbox,
+    AsyncTemplate,
     CommandExitException,
     CommandHandle,
+    LogEntry,
+    Sandbox,
+    Template,
+    TemplateClass,
 )
+
+
+@pytest.hookimpl(tryfirst=True, hookwrapper=True)
+def pytest_runtest_makereport(item, call):
+    outcome = yield
+    rep = outcome.get_result()
+    if rep.when == "call":
+        item._test_failed = rep.failed
 
 
 @pytest.fixture(scope="session")
@@ -27,37 +39,157 @@ def template():
 
 
 @pytest.fixture()
-def sandbox(template, debug, sandbox_test_id):
-    sandbox = Sandbox.create(template, metadata={"sandbox_test_id": sandbox_test_id})
+def sandbox_factory(request, template, sandbox_test_id):
+    def factory(*, template_name: str = template, **kwargs):
+        metadata = kwargs.setdefault("metadata", dict())
+        metadata.setdefault("sandbox_test_id", sandbox_test_id)
 
-    try:
-        yield sandbox
-    finally:
-        try:
+        sandbox = Sandbox.create(template_name, **kwargs)
+
+        def finalizer():
+            if getattr(request.node, "_test_failed", False):
+                print(f"\n[TEST FAILED] Sandbox ID: {sandbox.sandbox_id}")
             sandbox.kill()
-        except (Exception, RuntimeError):
-            if not debug:
-                warning(
-                    "Failed to kill sandbox — this is expected if the test runs with local envd."
+
+        request.addfinalizer(finalizer)
+
+        return sandbox
+
+    return factory
+
+
+@pytest.fixture()
+def sandbox(sandbox_factory):
+    return sandbox_factory()
+
+
+# override the event loop so it never closes
+# this helps us with the global-scoped async http transport
+@pytest.fixture(scope="session")
+def event_loop():
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+    yield loop
+    loop.close()
+
+
+@pytest.fixture
+def async_sandbox_factory(request, template, sandbox_test_id, event_loop):
+    async def factory(*, template_name: str = template, **kwargs):
+        metadata = kwargs.setdefault("metadata", dict())
+        metadata.setdefault("sandbox_test_id", sandbox_test_id)
+
+        sandbox = await AsyncSandbox.create(template_name, **kwargs)
+
+        def finalizer():
+            if getattr(request.node, "_test_failed", False):
+                print(f"\n[TEST FAILED] Sandbox ID: {sandbox.sandbox_id}")
+
+            async def _kill():
+                await sandbox.kill()
+
+            event_loop.run_until_complete(_kill())
+
+        request.addfinalizer(finalizer)
+
+        return sandbox
+
+    return factory
+
+
+@pytest.fixture
+async def async_sandbox(async_sandbox_factory):
+    return await async_sandbox_factory()
+
+
+@pytest.fixture
+def build():
+    def _build(
+        template: TemplateClass,
+        name: Optional[str] = None,
+        skip_cache: bool = False,
+        on_build_logs: Optional[Callable[[LogEntry], None]] = None,
+    ):
+        build_name = name or f"e2b-test-{uuid4()}"
+        build_info: Dict[str, Optional[str]] = {"template_id": None, "build_id": None}
+
+        def capture_logs(log: LogEntry):
+            import re
+
+            if "Template created with ID:" in log.message:
+                match = re.search(
+                    r"Template created with ID: ([^,]+), Build ID: (.+)", log.message
                 )
+                if match:
+                    build_info["template_id"] = match.group(1)
+                    build_info["build_id"] = match.group(2)
+            if on_build_logs:
+                on_build_logs(log)
+
+        try:
+            return Template.build(
+                template,
+                build_name,
+                cpu_count=1,
+                memory_mb=1024,
+                skip_cache=skip_cache,
+                on_build_logs=capture_logs,
+            )
+        except Exception as e:
+            print(
+                f"\n[BUILD FAILED] name={build_name}, "
+                f"template_id={build_info['template_id']}, "
+                f"build_id={build_info['build_id']}, error={e}"
+            )
+            raise
+
+    return _build
 
 
 @pytest_asyncio.fixture
-async def async_sandbox(template, debug, sandbox_test_id):
-    sandbox = await AsyncSandbox.create(
-        template, metadata={"sandbox_test_id": sandbox_test_id}
-    )
+def async_build():
+    async def _async_build(
+        template: TemplateClass,
+        name: Optional[str] = None,
+        skip_cache: bool = False,
+        on_build_logs: Optional[Callable[[LogEntry], None]] = None,
+    ):
+        build_name = name or f"e2b-test-{uuid4()}"
+        build_info: Dict[str, Optional[str]] = {"template_id": None, "build_id": None}
 
-    try:
-        yield sandbox
-    finally:
-        try:
-            await sandbox.kill()
-        except (Exception, RuntimeError):
-            if not debug:
-                warning(
-                    "Failed to kill sandbox — this is expected if the test runs with local envd."
+        def capture_logs(log: LogEntry):
+            import re
+
+            if "Template created with ID:" in log.message:
+                match = re.search(
+                    r"Template created with ID: ([^,]+), Build ID: (.+)", log.message
                 )
+                if match:
+                    build_info["template_id"] = match.group(1)
+                    build_info["build_id"] = match.group(2)
+            if on_build_logs:
+                on_build_logs(log)
+
+        try:
+            return await AsyncTemplate.build(
+                template,
+                build_name,
+                cpu_count=1,
+                memory_mb=1024,
+                skip_cache=skip_cache,
+                on_build_logs=capture_logs,
+            )
+        except Exception as e:
+            print(
+                f"\n[BUILD FAILED] name={build_name}, "
+                f"template_id={build_info['template_id']}, "
+                f"build_id={build_info['build_id']}, error={e}"
+            )
+            raise
+
+    return _async_build
 
 
 @pytest.fixture
@@ -69,7 +201,9 @@ def debug():
 def skip_by_debug(request, debug):
     if request.node.get_closest_marker("skip_debug"):
         if debug:
-            pytest.skip("skipped because E2B_DEBUG is set")
+            pytest.skip(
+                "skipped because E2B_DEBUG is set"  # ty: ignore[too-many-positional-arguments]
+            )  # ty: ignore[invalid-argument-type]
 
 
 class Helpers:

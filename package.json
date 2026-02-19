@@ -2,8 +2,8 @@
   "name": "e2b",
   "private": true,
   "scripts": {
-    "version": "changeset version && pnpm run -r postVersion",
-    "publish": "changeset publish && pnpm run -r postPublish",
+    "version": "pnpm changeset version && pnpm run -r postVersion",
+    "publish": "pnpm changeset publish && pnpm run -r postPublish",
     "test": "pnpm test --recursive --if-present",
     "dev:web": "pnpm --prefix apps/web run dev",
     "build:web": "pnpm --prefix apps/web run build",
@@ -12,11 +12,12 @@
     "pnpm-install-hack": "cd packages/js-sdk && sed -i '' 's/\"version\": \".*\"/\"version\": \"9.9.9\"/g' package.json && cd ../.. && pnpm i && git checkout -- packages/js-sdk/package.json",
     "generate-sdk-reference": "pnpm --if-present --recursive run generate-sdk-reference",
     "lint": "pnpm --if-present --recursive run lint",
-    "format": "pnpm --if-present --recursive run format"
+    "typecheck": "pnpm --if-present --recursive run typecheck",
+    "format": "pnpm --if-present --recursive run format",
+    "changeset": "pnpx @changesets/cli"
   },
   "packageManager": "pnpm@9.15.5",
   "dependencies": {
-    "@changesets/cli": "^2.27.12",
     "@changesets/read": "^0.6.2"
   },
   "devDependencies": {
@@ -28,5 +29,10 @@
   },
   "engines": {
     "pnpm": ">=9.0.0 <10"
+  },
+  "pnpm": {
+    "overrides": {
+      "@next/eslint-plugin-next>glob@*": "10.5.0"
+    }
   }
 }

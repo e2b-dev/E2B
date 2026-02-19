@@ -8,6 +8,7 @@ from ..models.node_status import NodeStatus
 
 if TYPE_CHECKING:
     from ..models.listed_sandbox import ListedSandbox
+    from ..models.machine_info import MachineInfo
     from ..models.node_metrics import NodeMetrics
 
 
@@ -23,9 +24,12 @@ class NodeDetail:
         commit (str): Commit of the orchestrator
         create_fails (int): Number of sandbox create fails
         create_successes (int): Number of sandbox create successes
+        id (str): Identifier of the node
+        machine_info (MachineInfo):
         metrics (NodeMetrics): Node metrics
-        node_id (str): Identifier of the node
+        node_id (str): Identifier of the nomad node
         sandboxes (list['ListedSandbox']): List of sandboxes running on the node
+        service_instance_id (str): Service instance identifier of the node
         status (NodeStatus): Status of the node
         version (str): Version of the orchestrator
     """
@@ -35,9 +39,12 @@ class NodeDetail:
     commit: str
     create_fails: int
     create_successes: int
+    id: str
+    machine_info: "MachineInfo"
     metrics: "NodeMetrics"
     node_id: str
     sandboxes: list["ListedSandbox"]
+    service_instance_id: str
     status: NodeStatus
     version: str
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
@@ -53,6 +60,10 @@ class NodeDetail:
 
         create_successes = self.create_successes
 
+        id = self.id
+
+        machine_info = self.machine_info.to_dict()
+
         metrics = self.metrics.to_dict()
 
         node_id = self.node_id
@@ -61,6 +72,8 @@ class NodeDetail:
         for sandboxes_item_data in self.sandboxes:
             sandboxes_item = sandboxes_item_data.to_dict()
             sandboxes.append(sandboxes_item)
+
+        service_instance_id = self.service_instance_id
 
         status = self.status.value
 
@@ -75,9 +88,12 @@ class NodeDetail:
                 "commit": commit,
                 "createFails": create_fails,
                 "createSuccesses": create_successes,
+                "id": id,
+                "machineInfo": machine_info,
                 "metrics": metrics,
                 "nodeID": node_id,
                 "sandboxes": sandboxes,
+                "serviceInstanceID": service_instance_id,
                 "status": status,
                 "version": version,
             }
@@ -88,6 +104,7 @@ class NodeDetail:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         from ..models.listed_sandbox import ListedSandbox
+        from ..models.machine_info import MachineInfo
         from ..models.node_metrics import NodeMetrics
 
         d = dict(src_dict)
@@ -101,6 +118,10 @@ class NodeDetail:
 
         create_successes = d.pop("createSuccesses")
 
+        id = d.pop("id")
+
+        machine_info = MachineInfo.from_dict(d.pop("machineInfo"))
+
         metrics = NodeMetrics.from_dict(d.pop("metrics"))
 
         node_id = d.pop("nodeID")
@@ -112,6 +133,8 @@ class NodeDetail:
 
             sandboxes.append(sandboxes_item)
 
+        service_instance_id = d.pop("serviceInstanceID")
+
         status = NodeStatus(d.pop("status"))
 
         version = d.pop("version")
@@ -122,9 +145,12 @@ class NodeDetail:
             commit=commit,
             create_fails=create_fails,
             create_successes=create_successes,
+            id=id,
+            machine_info=machine_info,
             metrics=metrics,
             node_id=node_id,
             sandboxes=sandboxes,
+            service_instance_id=service_instance_id,
             status=status,
             version=version,
         )

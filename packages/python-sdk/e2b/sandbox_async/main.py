@@ -1,41 +1,29 @@
 import datetime
+import json
 import logging
+import uuid
+from typing import Dict, List, Optional, overload
+
 import httpx
-
-from typing import Dict, Optional, overload, List
-
 from packaging.version import Version
-from typing_extensions import Unpack, Self
+from typing_extensions import Self, Unpack
 
 from e2b.api.client.types import Unset
-from e2b.connection_config import ConnectionConfig, ApiParams
+from e2b.api.client_async import get_transport
+from e2b.connection_config import ApiParams, ConnectionConfig
 from e2b.envd.api import ENVD_API_HEALTH_ROUTE, ahandle_envd_api_exception
-from e2b.exceptions import format_request_timeout_error, SandboxException
+from e2b.envd.versions import ENVD_DEBUG_FALLBACK
+from e2b.exceptions import SandboxException, format_request_timeout_error
 from e2b.sandbox.main import SandboxOpts
-from e2b.sandbox.sandbox_api import SandboxMetrics
+from e2b.sandbox.sandbox_api import McpServer, SandboxMetrics, SandboxNetworkOpts
 from e2b.sandbox.utils import class_method_variant
-from e2b.sandbox_async.filesystem.filesystem import Filesystem
 from e2b.sandbox_async.commands.command import Commands
 from e2b.sandbox_async.commands.pty import Pty
+from e2b.sandbox_async.filesystem.filesystem import Filesystem
+from e2b.sandbox_async.git import Git
 from e2b.sandbox_async.sandbox_api import SandboxApi, SandboxInfo
 
 logger = logging.getLogger(__name__)
-
-
-class AsyncTransportWithLogger(httpx.AsyncHTTPTransport):
-    async def handle_async_request(self, request):
-        url = f"{request.url.scheme}://{request.url.host}{request.url.path}"
-        logger.info(f"Request: {request.method} {url}")
-        response = await super().handle_async_request(request)
-
-        # data = connect.GzipCompressor.decompress(response.read()).decode()
-        logger.info(f"Response: {response.status_code} {url}")
-
-        return response
-
-    @property
-    def pool(self):
-        return self._pool
 
 
 class AsyncSandbox(SandboxApi):
@@ -82,17 +70,27 @@ class AsyncSandbox(SandboxApi):
         """
         return self._pty
 
-    def __init__(self, **opts: Unpack[SandboxOpts]):
+    @property
+    def git(self) -> Git:
+        """
+        Module for running git operations in the sandbox.
+        """
+        return self._git
+
+    def __init__(
+        self,
+        **opts: Unpack[SandboxOpts],
+    ):
         """
         Use `AsyncSandbox.create()` to create a new sandbox instead.
         """
         super().__init__(**opts)
 
-        self._transport = AsyncTransportWithLogger(
-            limits=self._limits, proxy=self.connection_config.proxy
-        )
+        self._transport = get_transport(self.connection_config)
         self._envd_api = httpx.AsyncClient(
-            base_url=self.envd_api_url,
+            base_url=self.connection_config.get_sandbox_url(
+                self.sandbox_id, self.sandbox_domain
+            ),
             transport=self._transport,
             headers=self.connection_config.sandbox_headers,
         )
@@ -107,12 +105,15 @@ class AsyncSandbox(SandboxApi):
             self.envd_api_url,
             self.connection_config,
             self._transport.pool,
+            self._envd_version,
         )
         self._pty = Pty(
             self.envd_api_url,
             self.connection_config,
             self._transport.pool,
+            self._envd_version,
         )
+        self._git = Git(self._commands)
 
     async def is_running(self, request_timeout: Optional[float] = None) -> bool:
         """
@@ -157,8 +158,10 @@ class AsyncSandbox(SandboxApi):
         timeout: Optional[int] = None,
         metadata: Optional[Dict[str, str]] = None,
         envs: Optional[Dict[str, str]] = None,
-        secure: Optional[bool] = True,
+        secure: bool = True,
         allow_internet_access: bool = True,
+        mcp: Optional[McpServer] = None,
+        network: Optional[SandboxNetworkOpts] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
         """
@@ -171,22 +174,45 @@ class AsyncSandbox(SandboxApi):
         :param metadata: Custom metadata for the sandbox
         :param envs: Custom environment variables for the sandbox
         :param secure: Envd is secured with access token and cannot be used without it, defaults to `True`.
-        :param allow_internet_access: Allow sandbox to access the internet, defaults to `True`.
+        :param allow_internet_access: Allow sandbox to access the internet, defaults to `True`. If set to `False`, it works the same as setting network `deny_out` to `[0.0.0.0/0]`.
+        :param mcp: MCP server to enable in the sandbox
+        :param network: Sandbox network configuration
 
         :return: A Sandbox instance for the new sandbox
 
         Use this method instead of using the constructor to create a new sandbox.
         """
-        return await cls._create(
+        if not template and mcp is not None:
+            template = cls.default_mcp_template
+        elif not template:
+            template = cls.default_template
+
+        sandbox = await cls._create(
             template=template,
             timeout=timeout,
+            auto_pause=False,
             metadata=metadata,
             envs=envs,
             secure=secure,
             allow_internet_access=allow_internet_access,
-            auto_pause=False,
+            mcp=mcp,
+            network=network,
             **opts,
         )
+
+        if mcp is not None:
+            token = str(uuid.uuid4())
+            sandbox._mcp_token = token
+
+            res = await sandbox.commands.run(
+                f"mcp-gateway --config '{json.dumps(mcp)}'",
+                user="root",
+                envs={"GATEWAY_ACCESS_TOKEN": token},
+            )
+            if res.exit_code != 0:
+                raise Exception(f"Failed to start MCP gateway: {res.stderr}")
+
+        return sandbox
 
     @overload
     async def connect(
@@ -201,6 +227,7 @@ class AsyncSandbox(SandboxApi):
         With sandbox ID you can connect to the same sandbox from different places or environments (serverless functions, etc).
 
         :param timeout: Timeout for the sandbox in **seconds**
+            For running sandboxes, the timeout will update only if the new timeout is longer than the existing one.
         :return: A running sandbox instance
 
         @example
@@ -215,13 +242,12 @@ class AsyncSandbox(SandboxApi):
         ...
 
     @overload
-    @classmethod
+    @staticmethod
     async def connect(
-        cls,
         sandbox_id: str,
         timeout: Optional[int] = None,
         **opts: Unpack[ApiParams],
-    ) -> Self:
+    ) -> "AsyncSandbox":
         """
         Connect to a sandbox. If the sandbox is paused, it will be automatically resumed.
         Sandbox must be either running or be paused.
@@ -230,6 +256,7 @@ class AsyncSandbox(SandboxApi):
 
         :param sandbox_id: Sandbox ID
         :param timeout: Timeout for the sandbox in **seconds**
+            For running sandboxes, the timeout will update only if the new timeout is longer than the existing one.
         :return: A running sandbox instance
 
         @example
@@ -243,7 +270,7 @@ class AsyncSandbox(SandboxApi):
         """
         ...
 
-    @class_method_variant("_cls_connect")
+    @class_method_variant("_cls_connect_sandbox")
     async def connect(
         self,
         timeout: Optional[int] = None,
@@ -256,6 +283,7 @@ class AsyncSandbox(SandboxApi):
         With sandbox ID you can connect to the same sandbox from different places or environments (serverless functions, etc).
 
         :param timeout: Timeout for the sandbox in **seconds**
+            For running sandboxes, the timeout will update only if the new timeout is longer than the existing one.
         :return: A running sandbox instance
 
         @example
@@ -267,7 +295,7 @@ class AsyncSandbox(SandboxApi):
         same_sandbox = await sandbox.connect()
         ```
         """
-        await SandboxApi._cls_resume(
+        await SandboxApi._cls_connect(
             sandbox_id=self.sandbox_id,
             timeout=timeout,
             **opts,
@@ -331,7 +359,6 @@ class AsyncSandbox(SandboxApi):
     ) -> None:
         """
         Set the timeout of the sandbox.
-        After the timeout expires, the sandbox will be automatically killed.
         This method can extend or reduce the sandbox timeout set when creating the sandbox or from the last call to `.set_timeout`.
 
         The maximum time a sandbox can be kept alive is 24 hours (86_400 seconds) for Pro users and 1 hour (3_600 seconds) for Hobby users.
@@ -349,7 +376,6 @@ class AsyncSandbox(SandboxApi):
     ) -> None:
         """
         Set the timeout of the specified sandbox.
-        After the timeout expires, the sandbox will be automatically killed.
         This method can extend or reduce the sandbox timeout set when creating the sandbox or from the last call to `.set_timeout`.
 
         The maximum time a sandbox can be kept alive is 24 hours (86_400 seconds) for Pro users and 1 hour (3_600 seconds) for Hobby users.
@@ -367,7 +393,6 @@ class AsyncSandbox(SandboxApi):
     ) -> None:
         """
         Set the timeout of the specified sandbox.
-        After the timeout expires, the sandbox will be automatically killed.
         This method can extend or reduce the sandbox timeout set when creating the sandbox or from the last call to `.set_timeout`.
 
         The maximum time a sandbox can be kept alive is 24 hours (86_400 seconds) for Pro users and 1 hour (3_600 seconds) for Hobby users.
@@ -473,16 +498,15 @@ class AsyncSandbox(SandboxApi):
 
         :return: List of sandbox metrics containing CPU, memory and disk usage information
         """
-        if self._envd_version:
-            if Version(self._envd_version) < Version("0.1.5"):
-                raise SandboxException(
-                    "Metrics are not supported in this version of the sandbox, please rebuild your template."
-                )
+        if self._envd_version < Version("0.1.5"):
+            raise SandboxException(
+                "Metrics are not supported in this version of the sandbox, please rebuild your template."
+            )
 
-            if Version(self._envd_version) < Version("0.2.4"):
-                logger.warning(
-                    "Disk metrics are not supported in this version of the sandbox, please rebuild the template to get disk metrics."
-                )
+        if self._envd_version < Version("0.2.4"):
+            logger.warning(
+                "Disk metrics are not supported in this version of the sandbox, please rebuild the template to get disk metrics."
+            )
 
         return await SandboxApi._cls_get_metrics(
             sandbox_id=self.sandbox_id,
@@ -501,6 +525,7 @@ class AsyncSandbox(SandboxApi):
         envs: Optional[Dict[str, str]] = None,
         secure: bool = True,
         allow_internet_access: bool = True,
+        mcp: Optional[McpServer] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
         """
@@ -517,13 +542,19 @@ class AsyncSandbox(SandboxApi):
         :param envs: Custom environment variables for the sandbox
         :param secure: Envd is secured with access token and cannot be used without it, defaults to `True`.
         :param allow_internet_access: Allow sandbox to access the internet, defaults to `True`.
+        :param mcp: MCP server to enable in the sandbox
 
         :return: A Sandbox instance for the new sandbox
 
         Use this method instead of using the constructor to create a new sandbox.
         """
 
-        return await cls._create(
+        if not template and mcp is not None:
+            template = cls.default_mcp_template
+        elif not template:
+            template = cls.default_template
+
+        sandbox = await cls._create(
             template=template,
             timeout=timeout,
             auto_pause=auto_pause,
@@ -531,8 +562,23 @@ class AsyncSandbox(SandboxApi):
             envs=envs,
             secure=secure,
             allow_internet_access=allow_internet_access,
+            mcp=mcp,
             **opts,
         )
+
+        if mcp is not None:
+            token = str(uuid.uuid4())
+            sandbox._mcp_token = token
+
+            res = await sandbox.commands.run(
+                f"mcp-gateway --config '{json.dumps(mcp)}'",
+                user="root",
+                envs={"GATEWAY_ACCESS_TOKEN": token},
+            )
+            if res.exit_code != 0:
+                raise Exception(f"Failed to start MCP gateway: {res.stderr}")
+
+        return sandbox
 
     @overload
     async def beta_pause(
@@ -583,23 +629,33 @@ class AsyncSandbox(SandboxApi):
             **opts,
         )
 
+    async def get_mcp_token(self) -> Optional[str]:
+        """
+        Get the MCP token for the sandbox.
+
+        :return: MCP token for the sandbox, or None if MCP is not enabled.
+        """
+        if not self._mcp_token:
+            self._mcp_token = await self.files.read(
+                "/etc/mcp-gateway/.token", user="root"
+            )
+        return self._mcp_token
+
     @classmethod
-    async def _cls_connect(
+    async def _cls_connect_sandbox(
         cls,
         sandbox_id: str,
         timeout: Optional[int] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
-        await SandboxApi._cls_resume(
+        sandbox = await SandboxApi._cls_connect(
             sandbox_id=sandbox_id,
             timeout=timeout,
             **opts,
         )
 
-        response = await SandboxApi._cls_get_info(sandbox_id, **opts)
-
         sandbox_headers = {}
-        envd_access_token = response._envd_access_token
+        envd_access_token = sandbox.envd_access_token
         if envd_access_token is not None and not isinstance(envd_access_token, Unset):
             sandbox_headers["X-Access-Token"] = envd_access_token
 
@@ -609,10 +665,11 @@ class AsyncSandbox(SandboxApi):
         )
 
         return cls(
-            sandbox_id=response.sandbox_id,
-            sandbox_domain=response.sandbox_domain,
-            envd_version=response.envd_version,
+            sandbox_id=sandbox.sandbox_id,
+            sandbox_domain=sandbox.domain,
+            envd_version=Version(sandbox.envd_version),
             envd_access_token=envd_access_token,
+            traffic_access_token=sandbox.traffic_access_token,
             connection_config=connection_config,
         )
 
@@ -626,6 +683,8 @@ class AsyncSandbox(SandboxApi):
         metadata: Optional[Dict[str, str]],
         envs: Optional[Dict[str, str]],
         secure: bool,
+        mcp: Optional[McpServer] = None,
+        network: Optional[SandboxNetworkOpts] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
         extra_sandbox_headers = {}
@@ -634,8 +693,9 @@ class AsyncSandbox(SandboxApi):
         if debug:
             sandbox_id = "debug_sandbox_id"
             sandbox_domain = None
-            envd_version = None
+            envd_version = ENVD_DEBUG_FALLBACK
             envd_access_token = None
+            traffic_access_token = None
         else:
             response = await SandboxApi._create_sandbox(
                 template=template or cls.default_template,
@@ -645,18 +705,24 @@ class AsyncSandbox(SandboxApi):
                 env_vars=envs,
                 secure=secure,
                 allow_internet_access=allow_internet_access,
+                mcp=mcp,
+                network=network,
                 **opts,
             )
 
             sandbox_id = response.sandbox_id
             sandbox_domain = response.sandbox_domain
-            envd_version = response.envd_version
+            envd_version = Version(response.envd_version)
             envd_access_token = response.envd_access_token
+            traffic_access_token = response.traffic_access_token
 
             if envd_access_token is not None and not isinstance(
                 envd_access_token, Unset
             ):
                 extra_sandbox_headers["X-Access-Token"] = envd_access_token
+
+        extra_sandbox_headers["E2b-Sandbox-Id"] = sandbox_id
+        extra_sandbox_headers["E2b-Sandbox-Port"] = str(ConnectionConfig.envd_port)
 
         connection_config = ConnectionConfig(
             extra_sandbox_headers=extra_sandbox_headers,
@@ -668,5 +734,6 @@ class AsyncSandbox(SandboxApi):
             sandbox_domain=sandbox_domain,
             envd_version=envd_version,
             envd_access_token=envd_access_token,
+            traffic_access_token=traffic_access_token,
             connection_config=connection_config,
         )

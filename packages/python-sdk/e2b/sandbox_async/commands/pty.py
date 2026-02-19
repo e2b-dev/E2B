@@ -3,7 +3,7 @@ from typing import Dict, Optional
 import e2b_connect
 import httpcore
 
-
+from packaging.version import Version
 from e2b.envd.process import process_connect, process_pb2
 from e2b.connection_config import (
     Username,
@@ -31,8 +31,10 @@ class Pty:
         envd_api_url: str,
         connection_config: ConnectionConfig,
         pool: httpcore.AsyncConnectionPool,
+        envd_version: Version,
     ) -> None:
         self._connection_config = connection_config
+        self._envd_version = envd_version
         self._rpc = process_connect.ProcessClient(
             envd_api_url,
             # TODO: Fix and enable compression again — the headers compression is not solved for streaming.
@@ -104,7 +106,7 @@ class Pty:
         self,
         size: PtySize,
         on_data: OutputHandler[PtyOutput],
-        user: Username = "user",
+        user: Optional[Username] = None,
         cwd: Optional[str] = None,
         envs: Optional[Dict[str, str]] = None,
         timeout: Optional[float] = 60,
@@ -124,7 +126,9 @@ class Pty:
         :return: Handle to interact with the PTY
         """
         envs = envs or {}
-        envs["TERM"] = "xterm-256color"
+        envs.setdefault("TERM", "xterm-256color")
+        envs.setdefault("LANG", "C.UTF-8")
+        envs.setdefault("LC_ALL", "C.UTF-8")
         events = self._rpc.astart(
             process_pb2.StartRequest(
                 process=process_pb2.ProcessConfig(
@@ -138,7 +142,7 @@ class Pty:
                 ),
             ),
             headers={
-                **authentication_header(user),
+                **authentication_header(self._envd_version, user),
                 KEEPALIVE_PING_HEADER: str(KEEPALIVE_PING_INTERVAL_SEC),
             },
             timeout=timeout,
@@ -153,6 +157,53 @@ class Pty:
             if not start_event.HasField("event"):
                 raise SandboxException(
                     f"Failed to start process: expected start event, got {start_event}"
+                )
+
+            return AsyncCommandHandle(
+                pid=start_event.event.start.pid,
+                handle_kill=lambda: self.kill(start_event.event.start.pid),
+                events=events,
+                on_pty=on_data,
+            )
+        except Exception as e:
+            raise handle_rpc_exception(e)
+
+    async def connect(
+        self,
+        pid: int,
+        on_data: OutputHandler[PtyOutput],
+        timeout: Optional[float] = 60,
+        request_timeout: Optional[float] = None,
+    ) -> AsyncCommandHandle:
+        """
+        Connect to a running PTY.
+
+        :param pid: Process ID of the PTY to connect to. You can get the list of running PTYs using `sandbox.pty.list()`.
+        :param on_data: Callback to handle PTY data
+        :param timeout: Timeout for the PTY connection in **seconds**. Using `0` will not limit the connection time
+        :param request_timeout: Timeout for the request in **seconds**
+
+        :return: Handle to interact with the PTY
+        """
+        events = self._rpc.aconnect(
+            process_pb2.ConnectRequest(
+                process=process_pb2.ProcessSelector(pid=pid),
+            ),
+            timeout=timeout,
+            request_timeout=self._connection_config.get_request_timeout(
+                request_timeout
+            ),
+            headers={
+                KEEPALIVE_PING_HEADER: str(KEEPALIVE_PING_INTERVAL_SEC),
+            },
+        )
+
+        try:
+            start_event = await events.__anext__()
+
+            if not start_event.HasField("event"):
+                raise SandboxException(
+                    f"Failed to connect to process: expected start event, got {start_event}"
                 )
 
             return AsyncCommandHandle(

@@ -19,4 +19,6 @@ export default defineConfig({
     options.legalComments = 'none'
     return options
   },
+  // Copy template files to dist
+  onSuccess: 'cp -r src/templates dist/',
 })

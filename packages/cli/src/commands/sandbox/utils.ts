@@ -1,6 +1,7 @@
 import { wait } from '../../utils/wait'
 import { asBold } from '../../utils/format'
 import { Sandbox } from 'e2b'
+import { ensureAPIKey } from 'src/api'
 
 export function formatEnum(e: { [key: string]: string }) {
   return Object.values(e)
@@ -45,15 +46,32 @@ export function waitForSandboxEnd(sandboxID: string) {
   return () => isRunning
 }
 
-export function getShortID(sandboxID: string) {
-  return sandboxID.split('-')[0]
-}
-
 export async function isRunning(sandboxID: string) {
   try {
-    const info = await Sandbox.getInfo(getShortID(sandboxID))
+    const apiKey = ensureAPIKey()
+    const info = await Sandbox.getInfo(sandboxID, {
+      apiKey,
+    })
     return info.state === 'running'
-  } catch {
+  } catch (err) {
+    console.error(`Failed to check sandbox status: ${err}`)
     return false
   }
+}
+
+export function parseMetadata(metadataRaw?: string) {
+  let metadata: Record<string, string> | undefined = undefined
+  if (metadataRaw && metadataRaw.length > 0) {
+    const parsedMetadata: Record<string, string> = {}
+    metadataRaw.split(',').map((pair: string) => {
+      const [key, value] = pair.split('=')
+      if (key && value) {
+        parsedMetadata[key.trim()] = value.trim()
+      }
+    })
+
+    metadata = parsedMetadata
+  }
+
+  return metadata
 }

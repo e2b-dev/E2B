@@ -14,6 +14,10 @@ service Process {
     rpc StreamInput(stream StreamInputRequest) returns (StreamInputResponse);
     rpc SendInput(SendInputRequest) returns (SendInputResponse);
     rpc SendSignal(SendSignalRequest) returns (SendSignalResponse);
+
+    // Close stdin to signal EOF to the process.
+    // Only works for non-PTY processes. For PTY, send Ctrl+D (0x04) instead.
+    rpc CloseStdin(CloseStdinRequest) returns (CloseStdinResponse);
 }
 
 message PTY {
@@ -49,6 +53,7 @@ message StartRequest {
     ProcessConfig process = 1;
     optional PTY pty = 2;
     optional string tag = 3;
+    optional bool stdin = 4;
 }
 
 message UpdateRequest {
@@ -145,6 +150,12 @@ message SendSignalRequest {
 }
 
 message SendSignalResponse {}
+
+message CloseStdinRequest {
+    ProcessSelector process = 1;
+}
+
+message CloseStdinResponse {}
 
 message ConnectRequest {
     ProcessSelector process = 1;

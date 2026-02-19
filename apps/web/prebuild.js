@@ -35,7 +35,7 @@ function buildDirectoryHierarchy(dirPath) {
 function formatModuleTitle(title) {
   // Replace underscore with space for _async and remove sync from name of python-sdk modules
   if (title.endsWith('_sync')) {
-    title = title.replace('_sync', '')
+    title = title.replace('_sync', ' sync')
   } else if (title.endsWith('_async')) {
     title = title.replace('_async', ' async')
   }
@@ -132,17 +132,46 @@ function buildRoutes(dirName, dir, basePath = '', depth = 1) {
             for (const version of versions) {
               const modules = Object.keys(hierarchy[entryName][version])
               versionedItems[version] = modules.map((module) => {
+                const moduleHierarchy = hierarchy[entryName][version][module]
+                const hasNestedModules =
+                  moduleHierarchy !== null &&
+                  Object.keys(moduleHierarchy).length > 0
+
+                // Get the main module's submodules (headings from the module's own page.mdx)
+                const mainModuleSubModules = getSubModules(
+                  entryName,
+                  `/docs/sdk-reference/${entryName}/${version}/${module}`,
+                  path.join(
+                    __dirname,
+                    `./src/app/(docs)/docs/sdk-reference/${entryName}/${version}/${module}`
+                  )
+                )
+
+                // If there are nested modules, add them after the main module's content
+                const moduleLinks = hasNestedModules
+                  ? [
+                      ...(mainModuleSubModules || []),
+                      ...Object.keys(moduleHierarchy).map((nestedModule) => {
+                        return {
+                          title: formatModuleTitle(nestedModule),
+                          href: `/docs/sdk-reference/${entryName}/${version}/${module}/${nestedModule}`,
+                          links: getSubModules(
+                            entryName,
+                            `/docs/sdk-reference/${entryName}/${version}/${module}/${nestedModule}`,
+                            path.join(
+                              __dirname,
+                              `./src/app/(docs)/docs/sdk-reference/${entryName}/${version}/${module}/${nestedModule}`
+                            )
+                          ),
+                        }
+                      }),
+                    ]
+                  : mainModuleSubModules
+
                 return {
                   title: formatModuleTitle(module),
                   href: `/docs/sdk-reference/${entryName}/${version}/${module}`,
-                  links: getSubModules(
-                    entryName,
-                    `/docs/sdk-reference/${entryName}/${version}/${module}`,
-                    path.join(
-                      __dirname,
-                      `./src/app/(docs)/docs/sdk-reference/${entryName}/${version}/${module}`
-                    )
-                  ),
+                  links: moduleLinks,
                 }
               })
             }

@@ -1,0 +1,3 @@
+template_id = "complex-python"
+dockerfile = "e2b.Dockerfile"
+template_name = "complex-python-app"

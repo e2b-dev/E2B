@@ -1,6 +1,6 @@
 import httpcore
 import httpx
-from io import IOBase
+from io import IOBase, TextIOBase
 from packaging.version import Version
 from typing import AsyncIterator, IO, List, Literal, Optional, overload, Union
 from e2b.sandbox.filesystem.filesystem import WriteEntry
@@ -8,13 +8,14 @@ import e2b_connect as connect
 from e2b.connection_config import (
     ConnectionConfig,
     Username,
+    default_username,
     KEEPALIVE_PING_HEADER,
     KEEPALIVE_PING_INTERVAL_SEC,
 )
 from e2b.envd.api import ENVD_API_FILES_ROUTE, ahandle_envd_api_exception
 from e2b.envd.filesystem import filesystem_connect, filesystem_pb2
 from e2b.envd.rpc import authentication_header, handle_rpc_exception
-from e2b.envd.versions import ENVD_VERSION_RECURSIVE_WATCH
+from e2b.envd.versions import ENVD_VERSION_RECURSIVE_WATCH, ENVD_DEFAULT_USER
 from e2b.exceptions import SandboxException, TemplateException, InvalidArgumentException
 from e2b.sandbox.filesystem.filesystem import (
     WriteInfo,
@@ -34,7 +35,7 @@ class Filesystem:
     def __init__(
         self,
         envd_api_url: str,
-        envd_version: Optional[str],
+        envd_version: Version,
         connection_config: ConnectionConfig,
         pool: httpcore.AsyncConnectionPool,
         envd_api: httpx.AsyncClient,
@@ -59,7 +60,7 @@ class Filesystem:
         self,
         path: str,
         format: Literal["text"] = "text",
-        user: Username = "user",
+        user: Optional[Username] = None,
         request_timeout: Optional[float] = None,
     ) -> str:
         """
@@ -79,7 +80,7 @@ class Filesystem:
         self,
         path: str,
         format: Literal["bytes"],
-        user: Username = "user",
+        user: Optional[Username] = None,
         request_timeout: Optional[float] = None,
     ) -> bytearray:
         """
@@ -99,7 +100,7 @@ class Filesystem:
         self,
         path: str,
         format: Literal["stream"],
-        user: Username = "user",
+        user: Optional[Username] = None,
         request_timeout: Optional[float] = None,
     ) -> AsyncIterator[bytes]:
         """
@@ -118,12 +119,20 @@ class Filesystem:
         self,
         path: str,
         format: Literal["text", "bytes", "stream"] = "text",
-        user: Username = "user",
+        user: Optional[Username] = None,
         request_timeout: Optional[float] = None,
     ):
+        username = user
+        if username is None and self._envd_version < ENVD_DEFAULT_USER:
+            username = default_username
+
+        params = {"path": path}
+        if username:
+            params["username"] = username
+
         r = await self._envd_api.get(
             ENVD_API_FILES_ROUTE,
-            params={"path": path, "username": user},
+            params=params,
             timeout=self._connection_config.get_request_timeout(request_timeout),
         )
 
@@ -142,7 +151,7 @@ class Filesystem:
         self,
         path: str,
         data: Union[str, bytes, IO],
-        user: Username = "user",
+        user: Optional[Username] = None,
         request_timeout: Optional[float] = None,
     ) -> WriteInfo:
         """
@@ -170,7 +179,7 @@ class Filesystem:
     async def write_files(
         self,
         files: List[WriteEntry],
-        user: Username = "user",
+        user: Optional[Username] = None,
         request_timeout: Optional[float] = None,
     ) -> List[WriteInfo]:
         """
@@ -186,7 +195,13 @@ class Filesystem:
         :param request_timeout: Timeout for the request
         :return: Information about the written files
         """
-        params = {"username": user}
+        username = user
+        if username is None and self._envd_version < ENVD_DEFAULT_USER:
+            username = default_username
+
+        params = {}
+        if username:
+            params["username"] = username
         if len(files) == 1:
             params["path"] = files[0]["path"]
 
@@ -194,10 +209,15 @@ class Filesystem:
         httpx_files = []
         for file in files:
             file_path, file_data = file["path"], file["data"]
-            if isinstance(file_data, str) or isinstance(file_data, bytes):
+            if isinstance(file_data, (str, bytes)):
+                # str and bytes can be passed directly
                 httpx_files.append(("file", (file_path, file_data)))
-            elif isinstance(file_data, IOBase):
+            elif isinstance(file_data, TextIOBase):
+                # Text streams must be read first
                 httpx_files.append(("file", (file_path, file_data.read())))
+            elif isinstance(file_data, IOBase):
+                # Binary streams can be passed directly
+                httpx_files.append(("file", (file_path, file_data)))
             else:
                 raise InvalidArgumentException(
                     f"Unsupported data type for file {file_path}"
@@ -229,7 +249,7 @@ class Filesystem:
         self,
         path: str,
         depth: Optional[int] = 1,
-        user: Username = "user",
+        user: Optional[Username] = None,
         request_timeout: Optional[float] = None,
     ) -> List[EntryInfo]:
         """
@@ -251,7 +271,7 @@ class Filesystem:
                 request_timeout=self._connection_config.get_request_timeout(
                     request_timeout
                 ),
-                headers=authentication_header(user),
+                headers=authentication_header(self._envd_version, user),
             )
 
             entries: List[EntryInfo] = []
@@ -286,7 +306,7 @@ class Filesystem:
     async def exists(
         self,
         path: str,
-        user: Username = "user",
+        user: Optional[Username] = None,
         request_timeout: Optional[float] = None,
     ) -> bool:
         """
@@ -304,7 +324,7 @@ class Filesystem:
                 request_timeout=self._connection_config.get_request_timeout(
                     request_timeout
                 ),
-                headers=authentication_header(user),
+                headers=authentication_header(self._envd_version, user),
             )
 
             return True
@@ -318,7 +338,7 @@ class Filesystem:
     async def get_info(
         self,
         path: str,
-        user: Username = "user",
+        user: Optional[Username] = None,
         request_timeout: Optional[float] = None,
     ) -> EntryInfo:
         """
@@ -336,7 +356,7 @@ class Filesystem:
                 request_timeout=self._connection_config.get_request_timeout(
                     request_timeout
                 ),
-                headers=authentication_header(user),
+                headers=authentication_header(self._envd_version, user),
             )
 
             return EntryInfo(
@@ -361,7 +381,7 @@ class Filesystem:
     async def remove(
         self,
         path: str,
-        user: Username = "user",
+        user: Optional[Username] = None,
         request_timeout: Optional[float] = None,
     ) -> None:
         """
@@ -377,7 +397,7 @@ class Filesystem:
                 request_timeout=self._connection_config.get_request_timeout(
                     request_timeout
                 ),
-                headers=authentication_header(user),
+                headers=authentication_header(self._envd_version, user),
             )
         except Exception as e:
             raise handle_rpc_exception(e)
@@ -386,7 +406,7 @@ class Filesystem:
         self,
         old_path: str,
         new_path: str,
-        user: Username = "user",
+        user: Optional[Username] = None,
         request_timeout: Optional[float] = None,
     ) -> EntryInfo:
         """
@@ -408,7 +428,7 @@ class Filesystem:
                 request_timeout=self._connection_config.get_request_timeout(
                     request_timeout
                 ),
-                headers=authentication_header(user),
+                headers=authentication_header(self._envd_version, user),
             )
 
             return EntryInfo(
@@ -434,7 +454,7 @@ class Filesystem:
     async def make_dir(
         self,
         path: str,
-        user: Username = "user",
+        user: Optional[Username] = None,
         request_timeout: Optional[float] = None,
     ) -> bool:
         """
@@ -452,7 +472,7 @@ class Filesystem:
                 request_timeout=self._connection_config.get_request_timeout(
                     request_timeout
                 ),
-                headers=authentication_header(user),
+                headers=authentication_header(self._envd_version, user),
             )
 
             return True
@@ -467,7 +487,7 @@ class Filesystem:
         path: str,
         on_event: OutputHandler[FilesystemEvent],
         on_exit: Optional[OutputHandler[Exception]] = None,
-        user: Username = "user",
+        user: Optional[Username] = None,
         request_timeout: Optional[float] = None,
         timeout: Optional[float] = 60,
         recursive: bool = False,
@@ -485,11 +505,7 @@ class Filesystem:
 
         :return: `AsyncWatchHandle` object for stopping watching directory
         """
-        if (
-            recursive
-            and self._envd_version is not None
-            and Version(self._envd_version) < ENVD_VERSION_RECURSIVE_WATCH
-        ):
+        if recursive and self._envd_version < ENVD_VERSION_RECURSIVE_WATCH:
             raise TemplateException(
                 "You need to update the template to use recursive watching. "
                 "You can do this by running `e2b template build` in the directory with the template."
@@ -502,7 +518,7 @@ class Filesystem:
             ),
             timeout=timeout,
             headers={
-                **authentication_header(user),
+                **authentication_header(self._envd_version, user),
                 KEEPALIVE_PING_HEADER: str(KEEPALIVE_PING_INTERVAL_SEC),
             },
         )

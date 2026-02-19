@@ -1,4 +1,4 @@
-import createClient, { FetchResponse } from 'openapi-fetch'
+import createClient from 'openapi-fetch'
 
 import type { components, paths } from './schema.gen'
 import { ConnectionConfig } from '../connectionConfig'
@@ -15,9 +15,12 @@ import { StartResponse, ConnectResponse } from './process/process_pb'
 import { Code, ConnectError } from '@connectrpc/connect'
 import { WatchDirResponse } from './filesystem/filesystem_pb'
 
-export async function handleEnvdApiError<A, B, C extends `${string}/${string}`>(
-  res: FetchResponse<A, B, C>
-) {
+type ApiError = { message?: string } | string
+
+export async function handleEnvdApiError(res: {
+  error?: ApiError
+  response: Response
+}) {
   if (!res.error) {
     return
   }
@@ -95,7 +98,7 @@ export async function handleWatchDirStartEvent(
 
 class EnvdApiClient {
   readonly api: ReturnType<typeof createClient<paths>>
-  readonly version: string | undefined
+  readonly version: string
 
   constructor(
     config: Pick<ConnectionConfig, 'apiUrl' | 'logger' | 'accessToken'> & {
@@ -103,7 +106,7 @@ class EnvdApiClient {
       headers?: Record<string, string>
     },
     metadata: {
-      version?: string
+      version: string
     }
   ) {
     this.api = createClient({

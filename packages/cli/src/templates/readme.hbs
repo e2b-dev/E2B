@@ -1,0 +1,99 @@
+# {{alias}} - E2B Sandbox Template
+
+This is an E2B sandbox template that allows you to run code in a controlled environment.
+
+## Prerequisites
+
+Before you begin, make sure you have:
+- An E2B account (sign up at [e2b.dev](https://e2b.dev))
+- Your E2B API key (get it from your [E2B dashboard](https://e2b.dev/dashboard))
+{{#if isTypeScript}}- Node.js and npm/yarn (or similar) installed{{else if isPython}}- Python installed{{/if}}
+
+## Configuration
+
+1. Create a `.env` file in your project root or set the environment variable:
+   ```
+   E2B_API_KEY=your_api_key_here
+   ```
+
+## Installing Dependencies
+
+```bash
+{{#if isTypeScript}}
+npm install e2b
+{{else if isPython}}
+pip install e2b
+{{/if}}
+```
+
+## Building the Template
+
+```bash
+{{#if isTypeScript}}
+# For development
+npm run e2b:build:dev
+
+# For production
+npm run e2b:build:prod
+{{else if isPython}}
+# For development
+make e2b:build:dev
+
+# For production
+make e2b:build:prod
+{{/if}}
+```
+
+## Using the Template in a Sandbox
+
+Once your template is built, you can use it in your E2B sandbox:
+
+{{#if isTypeScript}}
+```typescript
+import { Sandbox } from 'e2b'
+
+// Create a new sandbox instance
+const sandbox = await Sandbox.create('{{alias}}')
+
+// Your sandbox is ready to use!
+console.log('Sandbox created successfully')
+```
+{{else if isPythonSync}}
+```python
+from e2b import Sandbox
+
+# Create a new sandbox instance
+sandbox = Sandbox.create('{{alias}}')
+
+# Your sandbox is ready to use!
+print('Sandbox created successfully')
+```
+{{else if isPythonAsync}}
+```python
+from e2b import AsyncSandbox
+import asyncio
+
+async def main():
+    # Create a new sandbox instance
+    sandbox = await AsyncSandbox.create('{{alias}}')
+    
+    # Your sandbox is ready to use!
+    print('Sandbox created successfully')
+
+# Run the async function
+asyncio.run(main())
+```
+{{/if}}
+
+## Template Structure
+
+- `{{templateFile}}` - Defines the sandbox template configuration
+- `{{buildDevFile}}` - Builds the template for development
+- `{{buildProdFile}}` - Builds the template for production
+
+## Next Steps
+
+1. Customize the template in `{{templateFile}}` to fit your needs
+2. Build the template using one of the methods above
+3. Use the template in your E2B sandbox code
+4. Check out the [E2B documentation](https://e2b.dev/docs) for more advanced usage

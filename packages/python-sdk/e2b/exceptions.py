@@ -63,9 +63,25 @@ class NotFoundException(SandboxException):
     pass
 
 
-class AuthenticationException(SandboxException):
+class AuthenticationException(Exception):
     """
     Raised when authentication fails.
+    """
+
+    pass
+
+
+class GitAuthException(AuthenticationException):
+    """
+    Raised when git authentication fails.
+    """
+
+    pass
+
+
+class GitUpstreamException(SandboxException):
+    """
+    Raised when git upstream tracking is missing.
     """
 
     pass
@@ -80,4 +96,16 @@ class TemplateException(SandboxException):
 class RateLimitException(SandboxException):
     """
     Raised when the API rate limit is exceeded.
+    """
+
+
+class BuildException(Exception):
+    """
+    Raised when the build fails.
+    """
+
+
+class FileUploadException(BuildException):
+    """
+    Raised when the file upload fails.
     """

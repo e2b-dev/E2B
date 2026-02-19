@@ -1,4 +1,5 @@
 import uuid
+from typing import Any
 
 from e2b import AsyncSandbox, FileType
 
@@ -16,7 +17,7 @@ async def test_list_directory(async_sandbox: AsyncSandbox):
     await async_sandbox.files.make_dir(f"{parent_dir_name}/subdir2/subdir2_2")
     await async_sandbox.files.write(f"{parent_dir_name}/file1.txt", "Hello, world!")
 
-    test_cases = [
+    test_cases: list[dict[str, Any]] = [
         {
             "name": "default depth (1)",
             "depth": None,

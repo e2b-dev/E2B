@@ -1,0 +1,2 @@
+template_id = "multi-stage"
+dockerfile = "e2b.Dockerfile"

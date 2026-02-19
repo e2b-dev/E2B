@@ -1,25 +1,28 @@
 import {
+  Client,
   Code,
   ConnectError,
-  createClient,
-  Client,
   Transport,
+  createClient,
 } from '@connectrpc/connect'
 
-import {
-  Signal,
-  Process as ProcessService,
-} from '../../envd/process/process_pb'
+import { compareVersions } from 'compare-versions'
 import {
   ConnectionConfig,
-  Username,
   ConnectionOpts,
-  KEEPALIVE_PING_INTERVAL_SEC,
   KEEPALIVE_PING_HEADER,
+  KEEPALIVE_PING_INTERVAL_SEC,
+  Username,
 } from '../../connectionConfig'
-import { authenticationHeader, handleRpcError } from '../../envd/rpc'
-import { CommandResult, CommandHandle } from './commandHandle'
 import { handleProcessStartEvent } from '../../envd/api'
+import {
+  Process as ProcessService,
+  Signal,
+} from '../../envd/process/process_pb'
+import { authenticationHeader, handleRpcError } from '../../envd/rpc'
+import { ENVD_COMMANDS_STDIN, ENVD_ENVD_CLOSE } from '../../envd/versions'
+import { SandboxError } from '../../errors'
+import { CommandHandle, CommandResult } from './commandHandle'
 export { Pty } from './pty'
 
 /**
@@ -46,7 +49,7 @@ export interface CommandStartOpts extends CommandRequestOpts {
   /**
    * User to run the command as.
    *
-   * @default `user`
+   * @default `default Sandbox user (as specified in the template)`
    */
   user?: Username
   /**
@@ -65,6 +68,11 @@ export interface CommandStartOpts extends CommandRequestOpts {
    * Callback for command stderr output.
    */
   onStderr?: (data: string) => void | Promise<void>
+  /**
+   * If true, command stdin is kept open and you can send data to it using {@link Commands.sendStdin} or {@link CommandHandle.sendStdin}.
+   * @default false
+   */
+  stdin?: boolean
   /**
    * Timeout for the command in **milliseconds**.
    *
@@ -119,12 +127,25 @@ export class Commands {
   protected readonly rpc: Client<typeof ProcessService>
 
   private readonly defaultProcessConnectionTimeout = 60_000 // 60 seconds
+  private readonly envdVersion: string
 
   constructor(
     transport: Transport,
-    private readonly connectionConfig: ConnectionConfig
+    private readonly connectionConfig: ConnectionConfig,
+    metadata: {
+      version: string
+    }
   ) {
     this.rpc = createClient(ProcessService, transport)
+    this.envdVersion = metadata.version
+  }
+
+  /**
+   * @hidden
+   * @internal
+   */
+  get supportsStdinClose(): boolean {
+    return compareVersions(this.envdVersion, ENVD_ENVD_CLOSE) >= 0
   }
 
   /**
@@ -165,10 +186,13 @@ export class Commands {
    */
   async sendStdin(
     pid: number,
-    data: string,
+    data: string | Uint8Array,
     opts?: CommandRequestOpts
   ): Promise<void> {
     try {
+      const payload =
+        typeof data === 'string' ? new TextEncoder().encode(data) : data
+
       await this.rpc.sendInput(
         {
           process: {
@@ -180,7 +204,37 @@ export class Commands {
           input: {
             input: {
               case: 'stdin',
-              value: new TextEncoder().encode(data),
+              value: payload,
+            },
+          },
+        },
+        {
+          signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
+        }
+      )
+    } catch (err) {
+      throw handleRpcError(err)
+    }
+  }
+
+  /**
+   * @hidden
+   * @internal
+   */
+  async closeStdin(pid: number, opts?: CommandRequestOpts): Promise<void> {
+    if (!this.supportsStdinClose) {
+      throw new SandboxError(
+        `Sandbox envd version ${this.envdVersion} doesn't support closeStdin. Please rebuild your template to pick up the latest sandbox version.`
+      )
+    }
+
+    try {
+      await this.rpc.closeStdin(
+        {
+          process: {
+            selector: {
+              case: 'pid',
+              value: pid,
             },
           },
         },
@@ -359,6 +413,15 @@ export class Commands {
         }, requestTimeoutMs)
       : undefined
 
+    if (
+      opts?.stdin === false &&
+      compareVersions(this.envdVersion, ENVD_COMMANDS_STDIN) < 0
+    ) {
+      throw new SandboxError(
+        `Sandbox envd version ${this.envdVersion} can't specify stdin, it's always turned on. Please rebuild your template if you need this feature.`
+      )
+    }
+
     const events = this.rpc.start(
       {
         process: {
@@ -367,10 +430,11 @@ export class Commands {
           envs: opts?.envs,
           args: ['-l', '-c', cmd],
         },
+        stdin: opts?.stdin || false,
       },
       {
         headers: {
-          ...authenticationHeader(opts?.user),
+          ...authenticationHeader(this.envdVersion, opts?.user),
           [KEEPALIVE_PING_HEADER]: KEEPALIVE_PING_INTERVAL_SEC.toString(),
         },
         signal: controller.signal,

@@ -1,0 +1,44 @@
+import pytest
+
+
+@pytest.mark.skip_debug()
+def test_remote_get_returns_none_for_missing_remote(git_sandbox, git_repo):
+    repo_path = git_repo
+    missing_url = git_sandbox.git.remote_get(repo_path, "origin")
+    assert missing_url is None
+
+
+@pytest.mark.skip_debug()
+def test_remote_add_adds_remote(git_sandbox, git_repo, git_daemon):
+    repo_path = git_repo
+    remote_url = git_daemon["remote_url"]
+
+    git_sandbox.git.remote_add(repo_path, "origin", remote_url)
+    current_url = git_sandbox.git.remote_get(repo_path, "origin")
+    assert current_url == remote_url
+
+
+@pytest.mark.skip_debug()
+def test_remote_add_overwrites_existing_remote(git_sandbox, git_repo, git_daemon):
+    repo_path = git_repo
+    remote_url = git_daemon["remote_url"]
+
+    git_sandbox.git.remote_add(repo_path, "origin", remote_url)
+    current_url = git_sandbox.commands.run(
+        f'git -C "{repo_path}" remote get-url origin'
+    ).stdout.strip()
+    current_remote = git_sandbox.git.remote_get(repo_path, "origin")
+    assert current_url == remote_url
+    assert current_remote == remote_url
+
+    second_path = f"{git_daemon['base_dir']}/remote-2.git"
+    git_sandbox.commands.run(f'git init --bare --initial-branch=main "{second_path}"')
+    second_url = f"git://127.0.0.1:{git_daemon['port']}/remote-2.git"
+    git_sandbox.git.remote_add(repo_path, "origin", second_url, overwrite=True)
+
+    updated_url = git_sandbox.commands.run(
+        f'git -C "{repo_path}" remote get-url origin'
+    ).stdout.strip()
+    updated_remote = git_sandbox.git.remote_get(repo_path, "origin")
+    assert updated_url == second_url
+    assert updated_remote == second_url

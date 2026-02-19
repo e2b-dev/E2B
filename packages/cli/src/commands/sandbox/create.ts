@@ -67,10 +67,7 @@ export function createCommand(
           }
 
           if (!templateID) {
-            console.error(
-              'You need to specify sandbox template ID or path to sandbox template config'
-            )
-            process.exit(1)
+            templateID = 'base'
           }
 
           await connectSandbox({ apiKey, template: { templateID } })

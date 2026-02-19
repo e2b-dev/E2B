@@ -15,7 +15,7 @@ import { sha256 } from '../utils'
 interface SignatureOpts {
   path: string
   operation: 'read' | 'write'
-  user: string
+  user: string | undefined
   expirationInSeconds?: number
   envdAccessToken?: string
 }
@@ -38,6 +38,11 @@ export async function getSignature({
     ? Math.floor(Date.now() / 1000) + expirationInSeconds
     : null
   let signatureRaw: string
+
+  // if user is undefined, set it to empty string to handle default user
+  if (user == undefined) {
+    user = ''
+  }
 
   if (signatureExpiration === null) {
     signatureRaw = `${path}:${operation}:${user}:${envdAccessToken}`
