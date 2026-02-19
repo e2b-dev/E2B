@@ -547,13 +547,11 @@ class Volume:
         config = ConnectionConfig(**opts)
         api_client = get_api_client(config)
 
-        # Determine if it's a directory by checking entry info
         is_directory = False
         try:
             entry_info = self.get_info(path, **opts)
             is_directory = entry_info.type.value == "directory"
-        except Exception:
-            # If we can't get entry info, assume it's a file and try the file endpoint
+        except NotFoundException:
             pass
 
         if is_directory:
