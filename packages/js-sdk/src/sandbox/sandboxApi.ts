@@ -565,12 +565,12 @@ export class SandboxApi {
         secure: opts?.secure ?? true,
         allow_internet_access: opts?.allowInternetAccess ?? true,
         network: opts?.network,
-        volumeMounts: Object.entries(opts?.volumeMounts ?? {}).map(
-          ([mountPath, vol]) => ({
-            name: typeof vol === 'string' ? vol : vol.name,
-            path: mountPath,
-          })
-        ),
+        volumeMounts: opts?.volumeMounts
+          ? Object.entries(opts.volumeMounts).map(([mountPath, vol]) => ({
+              name: typeof vol === 'string' ? vol : vol.name,
+              path: mountPath,
+            }))
+          : undefined,
       },
       signal: config.getSignal(opts?.requestTimeoutMs),
     })

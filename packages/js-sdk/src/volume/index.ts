@@ -243,7 +243,7 @@ export class Volume {
       signal: config.getSignal(opts?.requestTimeoutMs),
     })
 
-    if (res.error?.code === 404) {
+    if (res.response.status === 404) {
       throw new NotFoundError(`Path ${path} not found`)
     }
 
@@ -288,7 +288,7 @@ export class Volume {
       signal: config.getSignal(opts?.requestTimeoutMs),
     })
 
-    if (res.error?.code === 404) {
+    if (res.response.status === 404) {
       throw new NotFoundError(`Path ${path} not found`)
     }
 
@@ -322,7 +322,7 @@ export class Volume {
       signal: config.getSignal(opts?.requestTimeoutMs),
     })
 
-    if (res.error?.code === 404) {
+    if (res.response.status === 404) {
       throw new NotFoundError(`Path ${path} not found`)
     }
 
@@ -498,7 +498,7 @@ export class Volume {
       signal: config.getSignal(opts?.requestTimeoutMs),
     })
 
-    if (res.error?.code === 404) {
+    if (res.response.status === 404) {
       throw new NotFoundError(`Path ${path} not found`)
     }
 
@@ -509,11 +509,6 @@ export class Volume {
 
     if (format === 'bytes') {
       return new Uint8Array(res.data as ArrayBuffer)
-    }
-
-    // When the file is empty, res.data is parsed as `{}`. This is a workaround to return an empty string.
-    if (res.response.headers.get('content-length') === '0') {
-      return ''
     }
 
     return res.data
@@ -567,7 +562,7 @@ export class Volume {
       signal: config.getSignal(opts?.requestTimeoutMs),
     })
 
-    if (res.error?.code === 404) {
+    if (res.response.status === 404) {
       throw new NotFoundError(`Path ${path} not found`)
     }
 
@@ -606,15 +601,6 @@ export class Volume {
       ? '/volumes/{volumeID}/dir'
       : '/volumes/{volumeID}/file'
 
-    // For directories, default recursive to true if not explicitly set.
-    // This ensures directories are actually removed, as the API may require
-    // recursive to be explicitly set to true for directory removal to work.
-    const recursive = isDirectory
-      ? options?.recursive !== undefined
-        ? options.recursive
-        : true
-      : undefined
-
     const res = await client.api.DELETE(endpoint, {
       params: {
         path: {
@@ -622,13 +608,13 @@ export class Volume {
         },
         query: {
           path,
-          recursive,
+          recursive: isDirectory ? options?.recursive : undefined,
         },
       },
       signal: config.getSignal(opts?.requestTimeoutMs),
     })
 
-    if (res.error?.code === 404) {
+    if (res.response.status === 404) {
       throw new NotFoundError(`Path ${path} not found`)
     }
 
