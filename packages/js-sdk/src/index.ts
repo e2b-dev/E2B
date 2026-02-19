@@ -96,7 +96,6 @@ export type {
   VolumeInfo,
   VolumeEntryStat,
   VolumeFileType,
-  VolumeWriteInfo,
   VolumeMetadataOptions,
   VolumeWriteOptions,
   VolumeRemoveOptions,
