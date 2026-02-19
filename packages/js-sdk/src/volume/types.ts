@@ -22,26 +22,6 @@ export type VolumeInfo = {
 export type VolumeFileType = components['schemas']['VolumeEntryStat']['type']
 
 /**
- * Information about a written file.
- */
-export type VolumeWriteInfo = {
-  /**
-   * Name of the filesystem object.
-   */
-  name: string
-
-  /**
-   * Type of the filesystem object.
-   */
-  type?: VolumeFileType
-
-  /**
-   * Path to the filesystem object.
-   */
-  path: string
-}
-
-/**
  * Volume entry stat with dates converted to Date objects.
  */
 export type VolumeEntryStat = Omit<

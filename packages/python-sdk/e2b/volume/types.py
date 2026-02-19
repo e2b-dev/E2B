@@ -44,17 +44,6 @@ class VolumeEntryStat:
     """Target path for symlinks."""
 
 
-class VolumeWriteInfo(TypedDict, total=False):
-    """Information about a written file."""
-
-    name: str
-    """Name of the filesystem object."""
-    type: Optional[VolumeFileType]
-    """Type of the filesystem object."""
-    path: str
-    """Path to the filesystem object."""
-
-
 class VolumeMetadataOptions(TypedDict, total=False):
     """Options for updating file metadata."""
 
@@ -82,7 +71,6 @@ class VolumeRemoveOptions(TypedDict, total=False):
 
 __all__ = [
     "VolumeInfo",
-    "VolumeWriteInfo",
     "VolumeEntryStat",
     "VolumeFileType",
     "VolumeMetadataOptions",

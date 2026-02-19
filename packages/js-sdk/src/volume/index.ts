@@ -47,9 +47,9 @@ export class Volume {
    *
    * @param volumeId volume ID.
    */
-  constructor(volumeId: string, name?: string) {
+  constructor(volumeId: string, name: string) {
     this.volumeId = volumeId
-    this.name = name ?? volumeId
+    this.name = name
   }
 
   /**
@@ -511,6 +511,10 @@ export class Volume {
       return new Uint8Array(res.data as ArrayBuffer)
     }
 
+    if (format === 'text') {
+      return res.data?.toString() ?? ''
+    }
+
     return res.data
   }
 
@@ -533,14 +537,12 @@ export class Volume {
     data: string | ArrayBuffer | Blob | ReadableStream<Uint8Array>,
     options?: VolumeWriteOptions,
     opts?: VolumeApiOpts
-  ): Promise<void> {
+  ): Promise<VolumeEntryStat> {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
 
-    // Convert data to Blob using the same utility as sandbox.files.write
     const blob = await toBlob(data)
 
-    // Use bodySerializer to send binary data with correct Content-Type header
     const res = await client.api.PUT('/volumes/{volumeID}/file', {
       params: {
         path: {
@@ -570,6 +572,14 @@ export class Volume {
     if (err) {
       throw err
     }
+
+    if (!res.data) {
+      throw new Error('Response data is missing')
+    }
+
+    return convertVolumeEntryStat(
+      res.data as components['schemas']['VolumeEntryStat']
+    )
   }
 
   /**
@@ -628,7 +638,6 @@ export class Volume {
 export type {
   VolumeInfo,
   VolumeFileType,
-  VolumeWriteInfo,
   VolumeEntryStat,
   VolumeMetadataOptions,
   VolumeWriteOptions,

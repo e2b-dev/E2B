@@ -8,9 +8,14 @@ describe('Volume File Operations', () => {
       const path = '/test.txt'
       const content = 'Hello, World!'
 
-      await volume.writeFile(path, content)
-      const readContent = await volume.readFile(path, { format: 'text' })
+      const stat = await volume.writeFile(path, content)
+      expect(stat.name).toBe('test.txt')
+      expect(stat.type).toBe('file')
+      expect(stat.path).toBe(path)
+      expect(stat.mtime).toBeInstanceOf(Date)
+      expect(stat.ctime).toBeInstanceOf(Date)
 
+      const readContent = await volume.readFile(path, { format: 'text' })
       expect(readContent).toBe(content)
     })
 
@@ -73,17 +78,16 @@ describe('Volume File Operations', () => {
         const path = '/metadata.txt'
         const content = 'File with metadata'
 
-        await volume.writeFile(path, content, {
+        const stat = await volume.writeFile(path, content, {
           uid: 1000,
           gid: 1000,
           mode: 0o644,
         })
 
-        const entryInfo = await volume.getInfo(path)
-        expect(entryInfo.type).toBe('file')
-        expect(entryInfo.uid).toBe(1000)
-        expect(entryInfo.gid).toBe(1000)
-        expect(entryInfo.mode).toBe(0o644)
+        expect(stat.type).toBe('file')
+        expect(stat.uid).toBe(1000)
+        expect(stat.gid).toBe(1000)
+        expect(stat.mode).toBe(0o644)
       }
     )
 
