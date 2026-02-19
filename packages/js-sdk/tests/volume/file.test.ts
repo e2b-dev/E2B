@@ -87,20 +87,17 @@ describe('Volume File Operations', () => {
       }
     )
 
-    volumeTest(
-      'should write file in nested directory',
-      async ({ volume }) => {
-        const dirPath = '/nested/deep/path'
-        const filePath = `${dirPath}/file.txt`
-        const content = 'Nested file content'
+    volumeTest('should write file in nested directory', async ({ volume }) => {
+      const dirPath = '/nested/deep/path'
+      const filePath = `${dirPath}/file.txt`
+      const content = 'Nested file content'
 
-        await volume.makeDir(dirPath, { force: true })
-        await volume.writeFile(filePath, content)
-        const readContent = await volume.readFile(filePath, { format: 'text' })
+      await volume.makeDir(dirPath, { force: true })
+      await volume.writeFile(filePath, content)
+      const readContent = await volume.readFile(filePath, { format: 'text' })
 
-        expect(readContent).toBe(content)
-      }
-    )
+      expect(readContent).toBe(content)
+    })
   })
 
   describe('getInfo', () => {
@@ -188,25 +185,22 @@ describe('Volume File Operations', () => {
       }
     )
 
-    volumeTest(
-      'should create directory with metadata',
-      async ({ volume }) => {
-        const path = '/dir-with-metadata'
+    volumeTest('should create directory with metadata', async ({ volume }) => {
+      const path = '/dir-with-metadata'
 
-        await volume.makeDir(path, {
-          uid: 1000,
-          gid: 1000,
-          mode: 0o755,
-        })
+      await volume.makeDir(path, {
+        uid: 1000,
+        gid: 1000,
+        mode: 0o755,
+      })
 
-        const info = await volume.getInfo(path)
-        console.log(info)
-        expect(info.type).toBe('directory')
-        expect(info.uid).toBe(1000)
-        expect(info.gid).toBe(1000)
-        expect(info.mode & 0o777).toBe(0o755)
-      }
-    )
+      const info = await volume.getInfo(path)
+      console.log(info)
+      expect(info.type).toBe('directory')
+      expect(info.uid).toBe(1000)
+      expect(info.gid).toBe(1000)
+      expect(info.mode & 0o777).toBe(0o755)
+    })
   })
 
   describe('list', () => {
@@ -224,18 +218,15 @@ describe('Volume File Operations', () => {
       expect(fileNames).toContain('dir1')
     })
 
-    volumeTest(
-      'should list nested directory contents',
-      async ({ volume }) => {
-        await volume.makeDir('/nested', { force: true })
-        await volume.writeFile('/nested/file.txt', 'Content')
+    volumeTest('should list nested directory contents', async ({ volume }) => {
+      await volume.makeDir('/nested', { force: true })
+      await volume.writeFile('/nested/file.txt', 'Content')
 
-        const entries = await volume.list('/nested')
+      const entries = await volume.list('/nested')
 
-        expect(entries.length).toBeGreaterThanOrEqual(1)
-        expect(entries.some((e) => e.name === 'file.txt')).toBe(true)
-      }
-    )
+      expect(entries.length).toBeGreaterThanOrEqual(1)
+      expect(entries.some((e) => e.name === 'file.txt')).toBe(true)
+    })
 
     volumeTest.skip('should list with depth option', async ({ volume }) => {
       await volume.makeDir('/deep/nested/structure', { force: true })
@@ -275,18 +266,15 @@ describe('Volume File Operations', () => {
       expect(await volume.exists(path)).toBe(false)
     })
 
-    volumeTest(
-      'should remove a directory recursively',
-      async ({ volume }) => {
-        const dirPath = '/recursive-dir'
-        await volume.makeDir(`${dirPath}/nested`, { force: true })
-        await volume.writeFile(`${dirPath}/nested/file.txt`, 'Content')
+    volumeTest('should remove a directory recursively', async ({ volume }) => {
+      const dirPath = '/recursive-dir'
+      await volume.makeDir(`${dirPath}/nested`, { force: true })
+      await volume.writeFile(`${dirPath}/nested/file.txt`, 'Content')
 
-        await volume.remove(dirPath, { recursive: true })
+      await volume.remove(dirPath, { recursive: true })
 
-        expect(await volume.exists(dirPath)).toBe(false)
-      }
-    )
+      expect(await volume.exists(dirPath)).toBe(false)
+    })
 
     volumeTest(
       'should throw NotFoundError when removing non-existent file',
