@@ -117,6 +117,7 @@ export const buildTemplateTest = base.extend<BuildTemplateFixture>({
 
 export const volumeTest = base.extend<VolumeFixture>({
   volume: [
+    // eslint-disable-next-line no-empty-pattern
     async ({ }, use) => {
       const volume = await Volume.create(`test-vol-${generateRandomString()}`)
       onTestFailed(() => {
