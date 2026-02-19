@@ -1,3 +1,30 @@
+from typing import Optional
+
+from e2b.api.client.models import VolumeEntryStat as VolumeEntryStatApi
+from e2b.api.client.types import UNSET
+from e2b.volume.types import VolumeEntryStat
+
+
+def convert_volume_entry_stat(api_stat: VolumeEntryStatApi) -> VolumeEntryStat:
+    """Convert API VolumeEntryStat to SDK VolumeEntryStat."""
+    target: Optional[str] = None
+    if api_stat.target is not UNSET and api_stat.target is not None:
+        target = str(api_stat.target)
+
+    return VolumeEntryStat(
+        name=api_stat.name,
+        type=api_stat.type_,
+        path=api_stat.path,
+        size=api_stat.size,
+        mode=api_stat.mode,
+        uid=api_stat.uid,
+        gid=api_stat.gid,
+        mtime=api_stat.mtime,
+        ctime=api_stat.ctime,
+        target=target,
+    )
+
+
 class DualMethod:
     """Descriptor enabling the same name for a static (class-level) and instance method.
 

@@ -28,29 +28,7 @@ from e2b.volume.types import (
     VolumeInfo,
     VolumeEntryStat,
 )
-from e2b.volume.utils import DualMethod
-
-
-def _convert_volume_entry_stat(api_stat: VolumeEntryStatApi) -> VolumeEntryStat:
-    """Convert API VolumeEntryStat to SDK VolumeEntryStat."""
-    from e2b.api.client.types import UNSET
-
-    target: Optional[str] = None
-    if api_stat.target is not UNSET and api_stat.target is not None:
-        target = str(api_stat.target)
-
-    return VolumeEntryStat(
-        name=api_stat.name,
-        type=api_stat.type_,
-        path=api_stat.path,
-        size=api_stat.size,
-        mode=api_stat.mode,
-        uid=api_stat.uid,
-        gid=api_stat.gid,
-        mtime=api_stat.mtime,
-        ctime=api_stat.ctime,
-        target=target,
-    )
+from e2b.volume.utils import DualMethod, convert_volume_entry_stat
 
 
 class AsyncVolume:
@@ -244,7 +222,7 @@ class AsyncVolume:
 
         # VolumeDirectoryListing is a list according to the spec
         if isinstance(res.parsed, list):
-            return [_convert_volume_entry_stat(entry) for entry in res.parsed]
+            return [convert_volume_entry_stat(entry) for entry in res.parsed]
         return []
 
     async def make_dir(
@@ -335,7 +313,7 @@ class AsyncVolume:
         if isinstance(res.parsed, Error):
             raise Exception(f"{res.parsed.message}: Request failed")
 
-        return _convert_volume_entry_stat(res.parsed)
+        return convert_volume_entry_stat(res.parsed)
 
     get_info = DualMethod(_class_get_info.__func__, _instance_get_info)
     list = DualMethod(_class_list.__func__, _instance_list)
@@ -384,7 +362,7 @@ class AsyncVolume:
         if res.parsed is None:
             raise Exception("Body of the request is None")
 
-        return _convert_volume_entry_stat(res.parsed)
+        return convert_volume_entry_stat(res.parsed)
 
     @overload
     async def read_file(
@@ -535,7 +513,7 @@ class AsyncVolume:
                 raise err
 
         parsed = VolumeEntryStatApi.from_dict(response.json())
-        return _convert_volume_entry_stat(parsed)
+        return convert_volume_entry_stat(parsed)
 
     async def remove(
         self,
