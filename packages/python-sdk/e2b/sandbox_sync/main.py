@@ -185,7 +185,7 @@ class Sandbox(SandboxApi):
         :param allow_internet_access: Allow sandbox to access the internet, defaults to `True`. If set to `False`, it works the same as setting network `deny_out` to `[0.0.0.0/0]`.
         :param mcp: MCP server to enable in the sandbox
         :param network: Sandbox network configuration
-        :param lifecycle: Sandbox lifecycle configuration
+        :param lifecycle: Sandbox lifecycle configuration — ``on_timeout``: ``"kill"`` (default) or ``"pause"``; ``resume_on``: ``"none"`` (default) or ``"any"`` (only when ``on_timeout="pause"``). Example: ``{"on_timeout": "pause", "resume_on": "any"}``
 
         :return: A Sandbox instance for the new sandbox
 
@@ -623,9 +623,7 @@ class Sandbox(SandboxApi):
             allow_internet_access=allow_internet_access,
             mcp=mcp,
             lifecycle=(
-                {"on_timeout": "pause", "resume_on": "none"}
-                if auto_pause
-                else None
+                {"on_timeout": "pause", "resume_on": "none"} if auto_pause else None
             ),
             **opts,
         )
@@ -687,16 +685,14 @@ class Sandbox(SandboxApi):
     def beta_pause(
         self,
         **opts: Unpack[ApiParams],
-    ) -> None:
-        ...
+    ) -> None: ...
 
     @overload
     @staticmethod
     def beta_pause(
         sandbox_id: str,
         **opts: Unpack[ApiParams],
-    ) -> None:
-        ...
+    ) -> None: ...
 
     @class_method_variant("_cls_pause")
     def beta_pause(
