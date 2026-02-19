@@ -18,6 +18,7 @@ export {
   RateLimitError,
   BuildError,
   FileUploadError,
+  VolumeError,
 } from './errors'
 export type { Logger } from './logs'
 
