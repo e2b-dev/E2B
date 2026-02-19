@@ -468,7 +468,7 @@ class AsyncVolume:
         mode: Optional[int] = None,
         force: Optional[bool] = None,
         **opts: Unpack[ApiParams],
-    ) -> None:
+    ) -> VolumeEntryStat:
         """
         Write content to a file.
 
@@ -482,11 +482,12 @@ class AsyncVolume:
         :param mode: Mode of the created file
         :param force: Force overwrite of an existing file
         :param opts: Connection options
+
+        :return: Information about the written file
         """
         config = ConnectionConfig(**opts)
         api_client = get_api_client(config)
 
-        # Convert data to bytes
         if isinstance(data, str):
             data_bytes = data.encode("utf-8")
         elif isinstance(data, bytes):
@@ -532,6 +533,9 @@ class AsyncVolume:
             err = handle_api_exception(api_response, VolumeException)
             if err:
                 raise err
+
+        parsed = VolumeEntryStatApi.from_dict(response.json())
+        return _convert_volume_entry_stat(parsed)
 
     async def remove(
         self,
