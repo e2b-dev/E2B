@@ -84,12 +84,12 @@ class SandboxLifecycle(TypedDict):
 
     on_timeout: Literal["pause", "kill"]
     """
-    Action to take when timeout is reached.
+    What should happen to the sandbox when timeout is reached. `"kill"` means the sandbox will be terminated, while `"pause"` means the sandbox will be paused and can be resumed later. Defaults to `"kill"`.
     """
 
     resume_on: NotRequired[Literal["any", "off"]]
     """
-    Auto-resume policy. Defaults to `"off"`.
+    Under what conditions will activity cause the sandbox to resume when paused. Defaults to `"off"`.
     Can be `any` only when `on_timeout` is `pause`.
     """
 
