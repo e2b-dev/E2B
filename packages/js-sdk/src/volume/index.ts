@@ -306,7 +306,7 @@ export class Volume {
    *
    * @returns information about the entry.
    */
-  async getEntryInfo(
+  async getInfo(
     path: string,
     opts?: VolumeApiOpts
   ): Promise<VolumeEntryStat> {
@@ -341,6 +341,29 @@ export class Volume {
     return convertVolumeEntryStat(
       res.data as components['schemas']['VolumeEntryStat']
     )
+  }
+
+  /**
+   * Check whether a file or directory exists.
+   *
+   * Uses {@link getInfo} under the hood. Returns `true` if the path exists,
+   * `false` if it does not (404). Other errors are rethrown.
+   *
+   * @param path path to the file or directory.
+   * @param opts connection options.
+   *
+   * @returns `true` if the path exists, `false` otherwise.
+   */
+  async exists(path: string, opts?: VolumeApiOpts): Promise<boolean> {
+    try {
+      await this.getInfo(path, opts)
+      return true
+    } catch (err) {
+      if (err instanceof NotFoundError) {
+        return false
+      }
+      throw err
+    }
   }
 
   /**
@@ -575,7 +598,7 @@ export class Volume {
     // Determine if it's a directory by checking entry info
     let isDirectory = false
     try {
-      const entryInfo = await this.getEntryInfo(path, opts)
+      const entryInfo = await this.getInfo(path, opts)
       isDirectory = entryInfo.type === 'directory'
     } catch (err) {
       // If we can't get entry info, assume it's a file and try the file endpoint
@@ -616,8 +639,6 @@ export class Volume {
     if (err) {
       throw err
     }
-
-    console.log('res', res)
   }
 }
 

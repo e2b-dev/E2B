@@ -11,6 +11,7 @@ from e2b.api.client.api.volumes import (
     delete_volumes_volume_id,
     get_volumes_volume_id_stat,
     get_volumes_volume_id_dir,
+    post_volumes_volume_id_dir,
     patch_volumes_volume_id_file,
 )
 from e2b.api.client.models import (
@@ -249,7 +250,7 @@ class Volume:
         uid: Optional[int] = None,
         gid: Optional[int] = None,
         mode: Optional[int] = None,
-        create_parents: Optional[bool] = None,
+        force: Optional[bool] = None,
         **opts: Unpack[ApiParams],
     ) -> None:
         """
@@ -259,42 +260,47 @@ class Volume:
         :param uid: User ID of the created directory
         :param gid: Group ID of the created directory
         :param mode: Mode of the created directory
-        :param create_parents: Create parent directories if they don't exist
+        :param force: Create parent directories if they don't exist
         :param opts: Connection options
         """
         config = ConnectionConfig(**opts)
         api_client = get_api_client(config)
 
-        params: dict[str, Union[str, int, bool, None]] = {
-            "path": path,
-            "uid": uid,
-            "gid": gid,
-            "mode": mode,
-            "createParents": create_parents,
-        }
-
-        response = api_client.get_httpx_client().request(
-            method="POST",
-            url=f"/volumes/{self._volume_id}/dir",
-            params=params,
-            timeout=config.get_request_timeout(opts.get("request_timeout")),
+        res = post_volumes_volume_id_dir.sync_detailed(
+            volume_id=self._volume_id,
+            path=path,
+            uid=uid if uid is not None else UNSET,
+            gid=gid if gid is not None else UNSET,
+            mode=mode if mode is not None else UNSET,
+            force=force if force is not None else UNSET,
+            client=api_client,
         )
 
-        if response.status_code == 404:
+        if res.status_code == 404:
             raise NotFoundException(f"Path {path} not found")
 
-        if response.status_code >= 300:
-            api_response = Response(
-                status_code=HTTPStatus(response.status_code),
-                content=response.content,
-                headers=response.headers,
-                parsed=None,
-            )
-            err = handle_api_exception(api_response, VolumeException)
-            if err:
-                raise err
+        if res.status_code >= 300:
+            raise handle_api_exception(res, VolumeException)
 
-    def get_entry_info(self, path: str, **opts: Unpack[ApiParams]) -> VolumeEntryStat:
+    def exists(self, path: str, **opts: Unpack[ApiParams]) -> bool:
+        """
+        Check whether a file or directory exists.
+
+        Uses get_info under the hood. Returns True if the path exists,
+        False if it does not (404). Other errors are re-raised.
+
+        :param path: Path to the file or directory
+        :param opts: Connection options
+
+        :return: True if the path exists, False otherwise
+        """
+        try:
+            self.get_info(path, **opts)
+            return True
+        except NotFoundException:
+            return False
+
+    def get_info(self, path: str, **opts: Unpack[ApiParams]) -> VolumeEntryStat:
         """
         Get information about a file or directory.
 
@@ -539,16 +545,20 @@ class Volume:
         # Determine if it's a directory by checking entry info
         is_directory = False
         try:
-            entry_info = self.get_entry_info(path, **opts)
+            entry_info = self.get_info(path, **opts)
             is_directory = entry_info.type.value == "directory"
         except Exception:
             # If we can't get entry info, assume it's a file and try the file endpoint
             pass
 
         if is_directory:
+            # Default recursive to True for directories so they are actually removed
+            recursive_val = (
+                recursive if recursive is not None else True
+            )
             params: dict[str, Union[str, bool, None]] = {
                 "path": path,
-                "recursive": recursive,
+                "recursive": recursive_val,
             }
             url = f"/volumes/{self._volume_id}/dir"
         else:
