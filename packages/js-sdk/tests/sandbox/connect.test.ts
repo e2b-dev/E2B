@@ -20,13 +20,16 @@ test.skipIf(isDebug)('connect', async () => {
   }
 })
 
-sandboxTest.skipIf(isDebug)('connect resumes paused sandbox', async ({ sandbox }) => {
-  await sandbox.pause()
-  assert.isFalse(await sandbox.isRunning())
+sandboxTest.skipIf(isDebug)(
+  'connect resumes paused sandbox',
+  async ({ sandbox }) => {
+    await sandbox.pause()
+    assert.isFalse(await sandbox.isRunning())
 
-  const resumed = await Sandbox.connect(sandbox.sandboxId)
-  assert.isTrue(await resumed.isRunning())
-})
+    const resumed = await Sandbox.connect(sandbox.sandboxId)
+    assert.isTrue(await resumed.isRunning())
+  }
+)
 
 sandboxTest.skipIf(isDebug)(
   'connect to non-running sandbox',
