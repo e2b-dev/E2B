@@ -60,8 +60,8 @@ async function buildTemplate(
   } catch (e) {
     console.error(
       `\n[BUILD FAILED] name=${buildName}, ` +
-      `template_id=${buildInfo.templateId}, ` +
-      `build_id=${buildInfo.buildId}, error=${e}`
+        `template_id=${buildInfo.templateId}, ` +
+        `build_id=${buildInfo.buildId}, error=${e}`
     )
     throw e
   }
@@ -71,7 +71,7 @@ export const sandboxTest = base.extend<SandboxFixture>({
   template,
   sandboxTestId: [
     // eslint-disable-next-line no-empty-pattern
-    async ({ }, use) => {
+    async ({}, use) => {
       const id = `test-${generateRandomString()}`
       await use(id)
     },
@@ -108,7 +108,7 @@ export const sandboxTest = base.extend<SandboxFixture>({
 export const buildTemplateTest = base.extend<BuildTemplateFixture>({
   buildTemplate: [
     // eslint-disable-next-line no-empty-pattern
-    async ({ }, use) => {
+    async ({}, use) => {
       await use(buildTemplate)
     },
     { auto: true },
@@ -118,7 +118,7 @@ export const buildTemplateTest = base.extend<BuildTemplateFixture>({
 export const volumeTest = base.extend<VolumeFixture>({
   volume: [
     // eslint-disable-next-line no-empty-pattern
-    async ({ }, use) => {
+    async ({}, use) => {
       const volume = await Volume.create(`test-vol-${generateRandomString()}`)
       onTestFailed(() => {
         console.error(`\n[TEST FAILED] Volume ID: ${volume.volumeId}`)
