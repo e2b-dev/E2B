@@ -306,10 +306,7 @@ export class Volume {
    *
    * @returns information about the entry.
    */
-  async getInfo(
-    path: string,
-    opts?: VolumeApiOpts
-  ): Promise<VolumeEntryStat> {
+  async getInfo(path: string, opts?: VolumeApiOpts): Promise<VolumeEntryStat> {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
 

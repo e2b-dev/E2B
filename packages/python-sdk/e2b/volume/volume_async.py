@@ -284,9 +284,7 @@ class AsyncVolume:
         if res.status_code >= 300:
             raise handle_api_exception(res, VolumeException)
 
-    async def exists(
-        self, path: str, **opts: Unpack[ApiParams]
-    ) -> bool:
+    async def exists(self, path: str, **opts: Unpack[ApiParams]) -> bool:
         """
         Check whether a file or directory exists.
 
@@ -304,9 +302,7 @@ class AsyncVolume:
         except NotFoundException:
             return False
 
-    async def get_info(
-        self, path: str, **opts: Unpack[ApiParams]
-    ) -> VolumeEntryStat:
+    async def get_info(self, path: str, **opts: Unpack[ApiParams]) -> VolumeEntryStat:
         """
         Get information about a file or directory.
 
@@ -559,9 +555,7 @@ class AsyncVolume:
 
         if is_directory:
             # Default recursive to True for directories so they are actually removed
-            recursive_val = (
-                recursive if recursive is not None else True
-            )
+            recursive_val = recursive if recursive is not None else True
             params: dict[str, Union[str, bool, None]] = {
                 "path": path,
                 "recursive": recursive_val,
