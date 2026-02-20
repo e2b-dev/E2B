@@ -6,6 +6,7 @@ from typing_extensions import NotRequired, Unpack
 
 from e2b import ConnectionConfig
 from e2b.api.client.models import ListedSandbox, SandboxDetail, SandboxState
+from e2b.api.client.types import Unset
 from e2b.connection_config import ApiParams
 from e2b.sandbox.mcp import McpServer as BaseMcpServer
 
@@ -131,7 +132,9 @@ class SandboxInfo:
             envd_version=sandbox.envd_version,
             volume_mounts=[
                 {"name": vm.name, "path": vm.path} for vm in sandbox.volume_mounts
-            ] if isinstance(sandbox.volume_mounts, list) else [],
+            ]
+            if not isinstance(sandbox.volume_mounts, Unset)
+            else [],
             _envd_access_token=envd_access_token,
         )
 
