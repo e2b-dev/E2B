@@ -26,8 +26,13 @@ export type VolumeFileType = components['schemas']['VolumeEntryStat']['type']
  */
 export type VolumeEntryStat = Omit<
   components['schemas']['VolumeEntryStat'],
-  'mtime' | 'ctime'
+  'atime' | 'mtime' | 'ctime'
 > & {
+  /**
+   * Access time as a Date object.
+   */
+  atime: Date
+
   /**
    * Modification time as a Date object.
    */
