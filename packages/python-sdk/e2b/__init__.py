@@ -120,9 +120,6 @@ from .volume.types import (
     VolumeInfo,
     VolumeEntryStat,
     VolumeFileType,
-    VolumeMetadataOptions,
-    VolumeWriteOptions,
-    VolumeRemoveOptions,
 )
 
 __all__ = [
@@ -221,7 +218,4 @@ __all__ = [
     "VolumeInfo",
     "VolumeEntryStat",
     "VolumeFileType",
-    "VolumeMetadataOptions",
-    "VolumeWriteOptions",
-    "VolumeRemoveOptions",
 ]

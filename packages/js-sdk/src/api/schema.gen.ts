@@ -2194,7 +2194,7 @@ export interface components {
             state: components["schemas"]["SandboxState"];
             /** @description Identifier of the template from which is the sandbox created */
             templateID: string;
-            volumeMounts: components["schemas"]["SandboxVolumeMount"][];
+            volumeMounts?: components["schemas"]["SandboxVolumeMount"][];
         };
         /**
          * @description State of the sandbox
@@ -2473,7 +2473,7 @@ export interface components {
             state: components["schemas"]["SandboxState"];
             /** @description Identifier of the template from which is the sandbox created */
             templateID: string;
-            volumeMounts: components["schemas"]["SandboxVolumeMount"][];
+            volumeMounts?: components["schemas"]["SandboxVolumeMount"][];
         };
         SandboxesWithMetrics: {
             sandboxes: {

@@ -267,8 +267,7 @@ export class Volume {
    */
   async makeDir(
     path: string,
-    options?: VolumeWriteOptions,
-    opts?: VolumeApiOpts
+    opts?: VolumeWriteOptions & VolumeApiOpts
   ): Promise<VolumeEntryStat> {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
@@ -280,10 +279,10 @@ export class Volume {
         },
         query: {
           path,
-          uid: options?.uid,
-          gid: options?.gid,
-          mode: options?.mode,
-          force: options?.force,
+          uid: opts?.uid,
+          gid: opts?.gid,
+          mode: opts?.mode,
+          force: opts?.force,
         },
       },
       signal: config.getSignal(opts?.requestTimeoutMs),
@@ -544,8 +543,7 @@ export class Volume {
   async writeFile(
     path: string,
     data: string | ArrayBuffer | Blob | ReadableStream<Uint8Array>,
-    options?: VolumeWriteOptions,
-    opts?: VolumeApiOpts
+    opts?: VolumeWriteOptions & VolumeApiOpts
   ): Promise<VolumeEntryStat> {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
@@ -559,10 +557,10 @@ export class Volume {
         },
         query: {
           path,
-          uid: options?.uid,
-          gid: options?.gid,
-          mode: options?.mode,
-          force: options?.force,
+          uid: opts?.uid,
+          gid: opts?.gid,
+          mode: opts?.mode,
+          force: opts?.force,
         },
       },
       bodySerializer: () => blob,
@@ -600,8 +598,7 @@ export class Volume {
    */
   async remove(
     path: string,
-    options?: VolumeRemoveOptions,
-    opts?: VolumeApiOpts
+    opts?: VolumeRemoveOptions & VolumeApiOpts
   ): Promise<void> {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
@@ -627,7 +624,7 @@ export class Volume {
         },
         query: {
           path,
-          recursive: isDirectory ? options?.recursive : undefined,
+          recursive: isDirectory ? opts?.recursive : undefined,
         },
       },
       signal: config.getSignal(opts?.requestTimeoutMs),
