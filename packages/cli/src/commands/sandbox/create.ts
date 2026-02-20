@@ -78,7 +78,9 @@ export function createCommand(
           if (!opts.detach) {
             await connectSandbox({ sandbox, template: { templateID } })
           } else {
-            console.log(`Sandbox created with ID ${sandbox.sandboxId} using template ${templateID}`)
+            console.log(
+              `Sandbox created with ID ${sandbox.sandboxId} using template ${templateID}`
+            )
           }
           process.exit(0)
         } catch (err: any) {
