@@ -520,7 +520,11 @@ export class Volume {
     }
 
     if (format === 'text') {
-      return res.data?.toString() ?? ''
+      // When the file is empty, res.data is parsed as `{}`. This is a workaround to return an empty string.
+      if (res.response.headers.get('content-length') === '0') {
+        return ''
+      }
+      return typeof res.data === 'string' ? res.data : ''
     }
 
     return res.data
