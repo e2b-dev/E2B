@@ -28,26 +28,36 @@ from .mcp_type_0 import McpType0
 from .new_access_token import NewAccessToken
 from .new_sandbox import NewSandbox
 from .new_team_api_key import NewTeamAPIKey
+from .new_volume import NewVolume
 from .node import Node
 from .node_detail import NodeDetail
 from .node_metrics import NodeMetrics
 from .node_status import NodeStatus
 from .node_status_change import NodeStatusChange
+from .patch_volumes_volume_id_file_body import PatchVolumesVolumeIDFileBody
 from .post_sandboxes_sandbox_id_refreshes_body import (
     PostSandboxesSandboxIDRefreshesBody,
+)
+from .post_sandboxes_sandbox_id_snapshots_body import (
+    PostSandboxesSandboxIDSnapshotsBody,
 )
 from .post_sandboxes_sandbox_id_timeout_body import PostSandboxesSandboxIDTimeoutBody
 from .resumed_sandbox import ResumedSandbox
 from .sandbox import Sandbox
+from .sandbox_auto_resume_config import SandboxAutoResumeConfig
+from .sandbox_auto_resume_policy import SandboxAutoResumePolicy
 from .sandbox_detail import SandboxDetail
 from .sandbox_log import SandboxLog
 from .sandbox_log_entry import SandboxLogEntry
 from .sandbox_log_entry_fields import SandboxLogEntryFields
 from .sandbox_logs import SandboxLogs
+from .sandbox_logs_v2_response import SandboxLogsV2Response
 from .sandbox_metric import SandboxMetric
 from .sandbox_network_config import SandboxNetworkConfig
 from .sandbox_state import SandboxState
+from .sandbox_volume_mount import SandboxVolumeMount
 from .sandboxes_with_metrics import SandboxesWithMetrics
+from .snapshot_info import SnapshotInfo
 from .team import Team
 from .team_api_key import TeamAPIKey
 from .team_metric import TeamMetric
@@ -66,10 +76,14 @@ from .template_build_status import TemplateBuildStatus
 from .template_legacy import TemplateLegacy
 from .template_request_response_v3 import TemplateRequestResponseV3
 from .template_step import TemplateStep
+from .template_tag import TemplateTag
 from .template_update_request import TemplateUpdateRequest
 from .template_update_response import TemplateUpdateResponse
 from .template_with_builds import TemplateWithBuilds
 from .update_team_api_key import UpdateTeamAPIKey
+from .volume import Volume
+from .volume_entry_stat import VolumeEntryStat
+from .volume_entry_stat_type import VolumeEntryStatType
 
 __all__ = (
     "AdminSandboxKillResult",
@@ -100,24 +114,32 @@ __all__ = (
     "NewAccessToken",
     "NewSandbox",
     "NewTeamAPIKey",
+    "NewVolume",
     "Node",
     "NodeDetail",
     "NodeMetrics",
     "NodeStatus",
     "NodeStatusChange",
+    "PatchVolumesVolumeIDFileBody",
     "PostSandboxesSandboxIDRefreshesBody",
+    "PostSandboxesSandboxIDSnapshotsBody",
     "PostSandboxesSandboxIDTimeoutBody",
     "ResumedSandbox",
     "Sandbox",
+    "SandboxAutoResumeConfig",
+    "SandboxAutoResumePolicy",
     "SandboxDetail",
     "SandboxesWithMetrics",
     "SandboxLog",
     "SandboxLogEntry",
     "SandboxLogEntryFields",
     "SandboxLogs",
+    "SandboxLogsV2Response",
     "SandboxMetric",
     "SandboxNetworkConfig",
     "SandboxState",
+    "SandboxVolumeMount",
+    "SnapshotInfo",
     "Team",
     "TeamAPIKey",
     "TeamMetric",
@@ -136,8 +158,12 @@ __all__ = (
     "TemplateLegacy",
     "TemplateRequestResponseV3",
     "TemplateStep",
+    "TemplateTag",
     "TemplateUpdateRequest",
     "TemplateUpdateResponse",
     "TemplateWithBuilds",
     "UpdateTeamAPIKey",
+    "Volume",
+    "VolumeEntryStat",
+    "VolumeEntryStatType",
 )

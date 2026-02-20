@@ -130,6 +130,17 @@ export interface SandboxOpts extends ConnectionOpts {
   network?: SandboxNetworkOpts
 
   /**
+   * Volume mounts for the sandbox.
+   *
+   * The keys are mount paths inside the sandbox and the values are either
+   * a Volume instance (or any object with `volumeId` and `name`) or a string
+   * representing the volume name.
+   *
+   * @default undefined
+   */
+  volumeMounts?: Record<string, { name: string } | string>
+
+  /**
    * Sandbox URL. Used for local development
    */
   sandboxUrl?: string
@@ -255,6 +266,11 @@ export interface SandboxInfo {
    * Envd version.
    */
   envdVersion: string
+
+  /**
+   * Volume mounts for the sandbox.
+   */
+  volumeMounts: Array<{ name: string; path: string }>
 }
 
 /**
@@ -485,6 +501,7 @@ export class SandboxApi {
       cpuCount: res.data.cpuCount,
       memoryMB: res.data.memoryMB,
       sandboxDomain: res.data.domain || undefined,
+      volumeMounts: res.data.volumeMounts ?? [],
     }
   }
 
@@ -548,6 +565,12 @@ export class SandboxApi {
         secure: opts?.secure ?? true,
         allow_internet_access: opts?.allowInternetAccess ?? true,
         network: opts?.network,
+        volumeMounts: opts?.volumeMounts
+          ? Object.entries(opts.volumeMounts).map(([mountPath, vol]) => ({
+              name: typeof vol === 'string' ? vol : vol.name,
+              path: mountPath,
+            }))
+          : undefined,
       },
       signal: config.getSignal(opts?.requestTimeoutMs),
     })
@@ -719,6 +742,7 @@ export class SandboxPaginator {
         cpuCount: sandbox.cpuCount,
         memoryMB: sandbox.memoryMB,
         envdVersion: sandbox.envdVersion,
+        volumeMounts: sandbox.volumeMounts ?? [],
       })
     )
   }

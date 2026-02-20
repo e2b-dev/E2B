@@ -1,7 +1,7 @@
 ROOT_DIR := $(abspath $(dir $(lastword $(MAKEFILE_LIST)))/../..)
 
 generate-api:
-	python $(ROOT_DIR)/spec/remove_extra_tags.py sandboxes templates tags
+	python $(ROOT_DIR)/spec/remove_extra_tags.py sandboxes templates tags volumes
 	openapi-python-client generate --output-path $(ROOT_DIR)/packages/python-sdk/e2b/api/api --overwrite --path $(ROOT_DIR)/spec/openapi_generated.yml
 	rm -rf e2b/api/client
 	mv e2b/api/api/e2b_api_client e2b/api/client

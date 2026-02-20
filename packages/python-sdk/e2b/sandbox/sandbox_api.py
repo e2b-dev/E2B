@@ -6,6 +6,7 @@ from typing_extensions import NotRequired, Unpack
 
 from e2b import ConnectionConfig
 from e2b.api.client.models import ListedSandbox, SandboxDetail, SandboxState
+from e2b.api.client.types import Unset
 from e2b.connection_config import ApiParams
 from e2b.sandbox.mcp import McpServer as BaseMcpServer
 
@@ -102,6 +103,8 @@ class SandboxInfo:
     """Sandbox Memory size in MiB."""
     envd_version: str
     """Envd version."""
+    volume_mounts: List[Dict[str, str]]
+    """Volume mounts for the sandbox."""
     _envd_access_token: Optional[str]
     """Envd access token."""
 
@@ -127,6 +130,11 @@ class SandboxInfo:
             cpu_count=sandbox.cpu_count,
             memory_mb=sandbox.memory_mb,
             envd_version=sandbox.envd_version,
+            volume_mounts=[
+                {"name": vm.name, "path": vm.path} for vm in sandbox.volume_mounts
+            ]
+            if not isinstance(sandbox.volume_mounts, Unset)
+            else [],
             _envd_access_token=envd_access_token,
         )
 
