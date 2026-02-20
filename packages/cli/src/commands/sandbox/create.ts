@@ -9,6 +9,7 @@ import { getRoot } from '../../utils/filesystem'
 import { getConfigPath, loadConfig } from '../../config'
 import fs from 'fs'
 import { configOption, pathOption } from '../../options'
+import { printDashboardSandboxInspectUrl } from 'src/utils/urls'
 
 export function createCommand(
   name: string,
@@ -87,6 +88,8 @@ export async function connectSandbox({
   template: Pick<e2b.components['schemas']['Template'], 'templateID'>
 }) {
   const sandbox = await e2b.Sandbox.create(template.templateID, { apiKey })
+
+  printDashboardSandboxInspectUrl(sandbox.sandboxId)
 
   // keep-alive loop
   const intervalId = setInterval(async () => {
