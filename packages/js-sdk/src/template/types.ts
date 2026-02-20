@@ -159,6 +159,24 @@ export type TemplateTagInfo = {
 }
 
 /**
+ * Detailed information about a single template tag.
+ */
+export type TemplateTag = {
+  /**
+   * Name of the tag.
+   */
+  tag: string
+  /**
+   * Build identifier associated with this tag.
+   */
+  buildId: string
+  /**
+   * When this tag was assigned.
+   */
+  createdAt: Date
+}
+
+/**
  * Types of instructions that can be used in a template.
  */
 export enum InstructionType {

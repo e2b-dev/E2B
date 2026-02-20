@@ -1,9 +1,10 @@
 import uuid
+from datetime import datetime, timezone
 from unittest.mock import Mock
 
 import pytest
 
-from e2b import TemplateTagInfo, Template
+from e2b import TemplateTag, TemplateTagInfo, Template
 from e2b.exceptions import TemplateException
 import e2b.template_sync.main as template_sync_main
 
@@ -104,6 +105,59 @@ class TestRemoveTags:
 
         with pytest.raises(TemplateException):
             Template.remove_tags("nonexistent", ["tag"])
+
+
+class TestGetTags:
+    """Tests for Template.get_tags method."""
+
+    def test_get_tags(self, monkeypatch):
+        """Test getting tags for a template."""
+        mock_get_template_tags = Mock(
+            return_value=[
+                TemplateTag(
+                    tag="v1.0",
+                    build_id="00000000-0000-0000-0000-000000000000",
+                    created_at=datetime(2024, 1, 15, 10, 30, 0, tzinfo=timezone.utc),
+                ),
+                TemplateTag(
+                    tag="latest",
+                    build_id="11111111-1111-1111-1111-111111111111",
+                    created_at=datetime(2024, 1, 16, 12, 0, 0, tzinfo=timezone.utc),
+                ),
+            ]
+        )
+
+        monkeypatch.setattr(
+            template_sync_main, "get_api_client", lambda *args, **kwargs: None
+        )
+        monkeypatch.setattr(
+            template_sync_main, "get_template_tags", mock_get_template_tags
+        )
+
+        result = Template.get_tags("my-template")
+
+        assert len(result) == 2
+        assert result[0].tag == "v1.0"
+        assert result[0].build_id == "00000000-0000-0000-0000-000000000000"
+        assert isinstance(result[0].created_at, datetime)
+        assert result[1].tag == "latest"
+        mock_get_template_tags.assert_called_once()
+
+    def test_get_tags_error(self, monkeypatch):
+        """Test that get_tags raises an error for nonexistent template."""
+        mock_get_template_tags = Mock(
+            side_effect=TemplateException("Template not found")
+        )
+
+        monkeypatch.setattr(
+            template_sync_main, "get_api_client", lambda *args, **kwargs: None
+        )
+        monkeypatch.setattr(
+            template_sync_main, "get_template_tags", mock_get_template_tags
+        )
+
+        with pytest.raises(TemplateException):
+            Template.get_tags("nonexistent")
 
 
 # Integration tests
