@@ -16,6 +16,7 @@ T = TypeVar("T", bound="VolumeEntryStat")
 class VolumeEntryStat:
     """
     Attributes:
+        atime (datetime.datetime):
         ctime (datetime.datetime):
         gid (int):
         mode (int):
@@ -28,6 +29,7 @@ class VolumeEntryStat:
         target (Union[Unset, str]):
     """
 
+    atime: datetime.datetime
     ctime: datetime.datetime
     gid: int
     mode: int
@@ -41,6 +43,8 @@ class VolumeEntryStat:
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
+        atime = self.atime.isoformat()
+
         ctime = self.ctime.isoformat()
 
         gid = self.gid
@@ -65,6 +69,7 @@ class VolumeEntryStat:
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
+                "atime": atime,
                 "ctime": ctime,
                 "gid": gid,
                 "mode": mode,
@@ -84,6 +89,8 @@ class VolumeEntryStat:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
+        atime = isoparse(d.pop("atime"))
+
         ctime = isoparse(d.pop("ctime"))
 
         gid = d.pop("gid")
@@ -105,6 +112,7 @@ class VolumeEntryStat:
         target = d.pop("target", UNSET)
 
         volume_entry_stat = cls(
+            atime=atime,
             ctime=ctime,
             gid=gid,
             mode=mode,
