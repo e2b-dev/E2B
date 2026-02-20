@@ -30,7 +30,6 @@ class SandboxDetail:
         started_at (datetime.datetime): Time when the sandbox was started
         state (SandboxState): State of the sandbox
         template_id (str): Identifier of the template from which is the sandbox created
-        volume_mounts (list['SandboxVolumeMount']):
         alias (Union[Unset, str]): Alias of the template
         domain (Union[None, Unset, str]): Base domain where the sandbox traffic is accessible
         envd_access_token (Union[Unset, str]): Access token used for envd communication
@@ -48,7 +47,6 @@ class SandboxDetail:
     started_at: datetime.datetime
     state: SandboxState
     template_id: str
-    volume_mounts: list["SandboxVolumeMount"]
     alias: Union[Unset, str] = UNSET
     domain: Union[None, Unset, str] = UNSET
     envd_access_token: Union[Unset, str] = UNSET
@@ -76,11 +74,6 @@ class SandboxDetail:
         state = self.state.value
 
         template_id = self.template_id
-
-        volume_mounts = []
-        for volume_mounts_item_data in self.volume_mounts:
-            volume_mounts_item = volume_mounts_item_data.to_dict()
-            volume_mounts.append(volume_mounts_item)
 
         alias = self.alias
 
@@ -115,7 +108,6 @@ class SandboxDetail:
                 "startedAt": started_at,
                 "state": state,
                 "templateID": template_id,
-                "volumeMounts": volume_mounts,
             }
         )
         if alias is not UNSET:
@@ -156,13 +148,6 @@ class SandboxDetail:
 
         template_id = d.pop("templateID")
 
-        volume_mounts = []
-        _volume_mounts = d.pop("volumeMounts")
-        for volume_mounts_item_data in _volume_mounts:
-            volume_mounts_item = SandboxVolumeMount.from_dict(volume_mounts_item_data)
-
-            volume_mounts.append(volume_mounts_item)
-
         alias = d.pop("alias", UNSET)
 
         def _parse_domain(data: object) -> Union[None, Unset, str]:
@@ -196,7 +181,6 @@ class SandboxDetail:
             started_at=started_at,
             state=state,
             template_id=template_id,
-            volume_mounts=volume_mounts,
             alias=alias,
             domain=domain,
             envd_access_token=envd_access_token,
