@@ -20,6 +20,7 @@ function convertVolumeEntryStat(
 ): VolumeEntryStat {
   return {
     ...entry,
+    atime: new Date(entry.atime),
     mtime: new Date(entry.mtime),
     ctime: new Date(entry.ctime),
   }
@@ -268,7 +269,7 @@ export class Volume {
     path: string,
     options?: VolumeWriteOptions,
     opts?: VolumeApiOpts
-  ): Promise<void> {
+  ): Promise<VolumeEntryStat> {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
 
@@ -296,6 +297,14 @@ export class Volume {
     if (err) {
       throw err
     }
+
+    if (!res.data) {
+      throw new Error('Response data is missing')
+    }
+
+    return convertVolumeEntryStat(
+      res.data as components['schemas']['VolumeEntryStat']
+    )
   }
 
   /**

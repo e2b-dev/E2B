@@ -36,6 +36,8 @@ class VolumeEntryStat:
     """User ID of the filesystem object."""
     gid: int
     """Group ID of the filesystem object."""
+    atime: datetime.datetime
+    """Access time."""
     mtime: datetime.datetime
     """Modification time."""
     ctime: datetime.datetime

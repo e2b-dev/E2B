@@ -233,7 +233,7 @@ class AsyncVolume:
         mode: Optional[int] = None,
         force: Optional[bool] = None,
         **opts: Unpack[ApiParams],
-    ) -> None:
+    ) -> VolumeEntryStat:
         """
         Create a directory.
 
@@ -243,6 +243,8 @@ class AsyncVolume:
         :param mode: Mode of the created directory
         :param force: Create parent directories if they don't exist
         :param opts: Connection options
+
+        :return: Information about the created directory
         """
         config = ConnectionConfig(**opts)
         api_client = get_api_client(config)
@@ -262,6 +264,14 @@ class AsyncVolume:
 
         if res.status_code >= 300:
             raise handle_api_exception(res, VolumeException)
+
+        if res.parsed is None:
+            raise Exception("Body of the request is None")
+
+        if isinstance(res.parsed, Error):
+            raise Exception(f"{res.parsed.message}: Request failed")
+
+        return convert_volume_entry_stat(res.parsed)
 
     async def exists(self, path: str, **opts: Unpack[ApiParams]) -> bool:
         """

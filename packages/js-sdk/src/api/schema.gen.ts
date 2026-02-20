@@ -2980,6 +2980,8 @@ export interface components {
         VolumeDirectoryListing: components["schemas"]["VolumeEntryStat"][];
         VolumeEntryStat: {
             /** Format: date-time */
+            atime: string;
+            /** Format: date-time */
             ctime: string;
             /** Format: uint32 */
             gid: number;

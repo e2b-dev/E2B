@@ -12,6 +12,7 @@ describe('Volume File Operations', () => {
       expect(stat.name).toBe('test.txt')
       expect(stat.type).toBe('file')
       expect(stat.path).toBe(path)
+      expect(stat.atime).toBeInstanceOf(Date)
       expect(stat.mtime).toBeInstanceOf(Date)
       expect(stat.ctime).toBeInstanceOf(Date)
 
@@ -115,6 +116,7 @@ describe('Volume File Operations', () => {
       expect(info.name).toBe('info-file.txt')
       expect(info.type).toBe('file')
       expect(info.path).toBe(path)
+      expect(info.atime).toBeInstanceOf(Date)
       expect(info.mtime).toBeInstanceOf(Date)
       expect(info.ctime).toBeInstanceOf(Date)
     })
@@ -170,11 +172,13 @@ describe('Volume File Operations', () => {
     volumeTest('should create a directory', async ({ volume }) => {
       const path = '/test-dir'
 
-      await volume.makeDir(path)
-      const info = await volume.getInfo(path)
+      const stat = await volume.makeDir(path)
 
-      expect(info.type).toBe('directory')
-      expect(info.path).toBe(path)
+      expect(stat.type).toBe('directory')
+      expect(stat.path).toBe(path)
+      expect(stat.atime).toBeInstanceOf(Date)
+      expect(stat.mtime).toBeInstanceOf(Date)
+      expect(stat.ctime).toBeInstanceOf(Date)
     })
 
     volumeTest(
@@ -182,27 +186,25 @@ describe('Volume File Operations', () => {
       async ({ volume }) => {
         const path = '/nested/deep/directory'
 
-        await volume.makeDir(path, { force: true })
-        const info = await volume.getInfo(path)
+        const stat = await volume.makeDir(path, { force: true })
 
-        expect(info.type).toBe('directory')
+        expect(stat.type).toBe('directory')
       }
     )
 
     volumeTest('should create directory with metadata', async ({ volume }) => {
       const path = '/dir-with-metadata'
 
-      await volume.makeDir(path, {
+      const stat = await volume.makeDir(path, {
         uid: 1000,
         gid: 1000,
         mode: 0o755,
       })
 
-      const info = await volume.getInfo(path)
-      expect(info.type).toBe('directory')
-      expect(info.uid).toBe(1000)
-      expect(info.gid).toBe(1000)
-      expect(info.mode & 0o777).toBe(0o755)
+      expect(stat.type).toBe('directory')
+      expect(stat.uid).toBe(1000)
+      expect(stat.gid).toBe(1000)
+      expect(stat.mode & 0o777).toBe(0o755)
     })
   })
 

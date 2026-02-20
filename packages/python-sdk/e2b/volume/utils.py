@@ -19,6 +19,7 @@ def convert_volume_entry_stat(api_stat: VolumeEntryStatApi) -> VolumeEntryStat:
         mode=api_stat.mode,
         uid=api_stat.uid,
         gid=api_stat.gid,
+        atime=api_stat.atime,
         mtime=api_stat.mtime,
         ctime=api_stat.ctime,
         target=target,
