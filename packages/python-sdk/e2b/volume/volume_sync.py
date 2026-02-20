@@ -1,3 +1,4 @@
+from io import BytesIO
 from typing import IO, Iterator, List, Literal, Optional, Union, overload
 from http import HTTPStatus
 
@@ -12,15 +13,17 @@ from e2b.api.client.api.volumes import (
     get_volumes_volume_id_stat,
     get_volumes_volume_id_dir,
     post_volumes_volume_id_dir,
+    delete_volumes_volume_id_dir,
+    delete_volumes_volume_id_file,
     patch_volumes_volume_id_file,
+    put_volumes_volume_id_file,
 )
 from e2b.api.client.models import (
     NewVolume as NewVolumeModel,
     Error,
     PatchVolumesVolumeIDFileBody,
-    VolumeEntryStat as VolumeEntryStatApi,
 )
-from e2b.api.client.types import Response, UNSET
+from e2b.api.client.types import File as FilePayload, Response, UNSET
 from e2b.api.client_sync import get_api_client
 from e2b.connection_config import ApiParams, ConnectionConfig
 from e2b.exceptions import NotFoundException, VolumeException
@@ -489,41 +492,30 @@ class Volume:
         else:
             raise ValueError(f"Unsupported data type: {type(data)}")
 
-        params: dict[str, Union[str, int, bool]] = {"path": path}
-        if uid is not None:
-            params["uid"] = uid
-        if gid is not None:
-            params["gid"] = gid
-        if mode is not None:
-            params["mode"] = mode
-        if force is not None:
-            params["force"] = force
-
-        response = api_client.get_httpx_client().request(
-            method="PUT",
-            url=f"/volumes/{self._volume_id}/file",
-            params=params,
-            content=data_bytes,
-            headers={"Content-Type": "application/octet-stream"},
-            timeout=config.get_request_timeout(opts.get("request_timeout")),
+        res = put_volumes_volume_id_file.sync_detailed(
+            volume_id=self._volume_id,
+            body=FilePayload(payload=BytesIO(data_bytes)),
+            path=path,
+            uid=uid if uid is not None else UNSET,
+            gid=gid if gid is not None else UNSET,
+            mode=mode if mode is not None else UNSET,
+            force=force if force is not None else UNSET,
+            client=api_client,
         )
 
-        if response.status_code == 404:
+        if res.status_code == 404:
             raise NotFoundException(f"Path {path} not found")
 
-        if response.status_code >= 300:
-            api_response = Response(
-                status_code=HTTPStatus(response.status_code),
-                content=response.content,
-                headers=response.headers,
-                parsed=None,
-            )
-            err = handle_api_exception(api_response, VolumeException)
-            if err:
-                raise err
+        if res.status_code >= 300:
+            raise handle_api_exception(res, VolumeException)
 
-        parsed = VolumeEntryStatApi.from_dict(response.json())
-        return convert_volume_entry_stat(parsed)
+        if res.parsed is None:
+            raise Exception("Body of the request is None")
+
+        if isinstance(res.parsed, Error):
+            raise Exception(f"{res.parsed.message}: Request failed")
+
+        return convert_volume_entry_stat(res.parsed)
 
     def remove(
         self,
@@ -549,31 +541,21 @@ class Volume:
             pass
 
         if is_directory:
-            params: dict[str, Union[str, bool]] = {"path": path}
-            if recursive is not None:
-                params["recursive"] = recursive
-            url = f"/volumes/{self._volume_id}/dir"
+            res = delete_volumes_volume_id_dir.sync_detailed(
+                volume_id=self._volume_id,
+                path=path,
+                recursive=recursive if recursive is not None else UNSET,
+                client=api_client,
+            )
         else:
-            params = {"path": path}
-            url = f"/volumes/{self._volume_id}/file"
+            res = delete_volumes_volume_id_file.sync_detailed(
+                volume_id=self._volume_id,
+                path=path,
+                client=api_client,
+            )
 
-        response = api_client.get_httpx_client().request(
-            method="DELETE",
-            url=url,
-            params=params,
-            timeout=config.get_request_timeout(opts.get("request_timeout")),
-        )
-
-        if response.status_code == 404:
+        if res.status_code == 404:
             raise NotFoundException(f"Path {path} not found")
 
-        if response.status_code >= 300:
-            api_response = Response(
-                status_code=HTTPStatus(response.status_code),
-                content=response.content,
-                headers=response.headers,
-                parsed=None,
-            )
-            err = handle_api_exception(api_response, VolumeException)
-            if err:
-                raise err
+        if res.status_code >= 300:
+            raise handle_api_exception(res, VolumeException)
