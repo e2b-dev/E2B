@@ -222,7 +222,9 @@ class SandboxInfo:
             envd_version=sandbox.envd_version,
             volume_mounts=[
                 {"name": vm.name, "path": vm.path} for vm in sandbox.volume_mounts
-            ] if isinstance(sandbox.volume_mounts, list) else [],
+            ]
+            if not isinstance(sandbox.volume_mounts, Unset)
+            else [],
             _envd_access_token=envd_access_token,
             allow_internet_access=allow_internet_access,
             network=network,
