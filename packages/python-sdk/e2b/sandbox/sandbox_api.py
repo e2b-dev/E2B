@@ -131,7 +131,7 @@ class SandboxInfo:
             envd_version=sandbox.envd_version,
             volume_mounts=[
                 {"name": vm.name, "path": vm.path} for vm in sandbox.volume_mounts
-            ],
+            ] if isinstance(sandbox.volume_mounts, list) else [],
             _envd_access_token=envd_access_token,
         )
 
