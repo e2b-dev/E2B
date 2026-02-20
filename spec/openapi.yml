@@ -470,7 +470,6 @@ components:
         - endAt
         - state
         - envdVersion
-        - volumeMounts
       properties:
         templateID:
           type: string
@@ -529,7 +528,6 @@ components:
         - endAt
         - state
         - envdVersion
-        - volumeMounts
       properties:
         templateID:
           type: string
