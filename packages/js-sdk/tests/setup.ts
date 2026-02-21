@@ -30,7 +30,7 @@ async function buildTemplate(
   options?: { name?: string; skipCache?: boolean },
   onBuildLogs?: (logEntry: LogEntry) => void
 ): Promise<BuildInfo> {
-  const buildName = options?.name || `e2b-test-${randomUUID()}`
+  const buildName = options?.name || `e2b-test:v1-${randomUUID()}`
   const buildInfo: { templateId?: string; buildId?: string } = {}
 
   const captureLogs = (log: LogEntry) => {
