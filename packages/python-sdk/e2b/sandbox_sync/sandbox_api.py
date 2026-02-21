@@ -17,6 +17,9 @@ from e2b.api.client.api.sandboxes import (
 from e2b.api.client.models import (
     ConnectSandbox,
     Error,
+    LifecycleConfig,
+    LifecycleConfigOnTimeout,
+    LifecycleConfigResumeOn,
     NewSandbox,
     PostSandboxesSandboxIDTimeoutBody,
     Sandbox,
@@ -24,9 +27,14 @@ from e2b.api.client.models import (
 )
 from e2b.api.client.types import UNSET
 from e2b.connection_config import ApiParams, ConnectionConfig
-from e2b.exceptions import NotFoundException, SandboxException, TemplateException
+from e2b.exceptions import (
+    NotFoundException,
+    SandboxException,
+    TemplateException,
+)
 from e2b.sandbox.main import SandboxBase
 from e2b.sandbox.sandbox_api import (
+    SandboxLifecycle,
     McpServer,
     SandboxInfo,
     SandboxMetrics,
@@ -34,6 +42,23 @@ from e2b.sandbox.sandbox_api import (
     SandboxQuery,
 )
 from e2b.sandbox_sync.paginator import SandboxPaginator, get_api_client
+
+
+def _serialize_lifecycle(
+    lifecycle: Optional[SandboxLifecycle],
+) -> Optional[LifecycleConfig]:
+    if lifecycle is None:
+        return None
+
+    on_timeout = LifecycleConfigOnTimeout(lifecycle["on_timeout"])
+    resume_on_val = lifecycle.get("resume_on")
+
+    return LifecycleConfig(
+        on_timeout=on_timeout,
+        resume_on=LifecycleConfigResumeOn(resume_on_val)
+        if resume_on_val is not None
+        else LifecycleConfigResumeOn.OFF,
+    )
 
 
 class SandboxApi(SandboxBase):
@@ -151,30 +176,42 @@ class SandboxApi(SandboxBase):
         cls,
         template: str,
         timeout: int,
-        auto_pause: bool,
+        auto_pause: Optional[bool],
         allow_internet_access: bool,
         metadata: Optional[Dict[str, str]],
         env_vars: Optional[Dict[str, str]],
         secure: bool,
         mcp: Optional[McpServer] = None,
         network: Optional[SandboxNetworkOpts] = None,
+        lifecycle: Optional[SandboxLifecycle] = None,
         **opts: Unpack[ApiParams],
     ) -> SandboxCreateResponse:
         config = ConnectionConfig(**opts)
 
+        lifecycle_payload = _serialize_lifecycle(lifecycle)
+        effective_auto_pause = (
+            lifecycle_payload.on_timeout == "pause"
+            if lifecycle_payload is not None
+            else auto_pause
+        )
+        body = NewSandbox(
+            template_id=template,
+            auto_pause=(
+                effective_auto_pause if effective_auto_pause is not None else UNSET
+            ),
+            metadata=metadata or {},
+            timeout=timeout,
+            env_vars=env_vars or {},
+            mcp=cast(Any, mcp) or UNSET,
+            secure=secure,
+            allow_internet_access=allow_internet_access,
+            network=SandboxNetworkConfig(**network) if network else UNSET,
+            lifecycle=lifecycle_payload if lifecycle_payload is not None else UNSET,
+        )
+
         api_client = get_api_client(config)
         res = post_sandboxes.sync_detailed(
-            body=NewSandbox(
-                template_id=template,
-                auto_pause=auto_pause,
-                metadata=metadata or {},
-                timeout=timeout,
-                env_vars=env_vars or {},
-                mcp=cast(Any, mcp) or UNSET,
-                secure=secure,
-                allow_internet_access=allow_internet_access,
-                network=SandboxNetworkConfig(**network) if network else UNSET,
-            ),
+            body=body,
             client=api_client,
         )
 

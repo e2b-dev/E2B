@@ -5,7 +5,7 @@ import {
   DEFAULT_SANDBOX_TIMEOUT_MS,
 } from '../connectionConfig'
 import { compareVersions } from 'compare-versions'
-import { NotFoundError, TemplateError } from '../errors'
+import { InvalidArgumentError, NotFoundError, TemplateError } from '../errors'
 import { timeoutToSeconds } from '../utils'
 import type { McpServer as BaseMcpServer } from './mcp'
 
@@ -62,6 +62,21 @@ export type SandboxNetworkOpts = {
    * @default ${PORT}-sandboxid.e2b.app
    */
   maskRequestHost?: string
+}
+
+export type SandboxLifecycle = {
+  /**
+   * Action to take when sandbox timeout is reached.
+   * @default "kill"
+   */
+  onTimeout: 'pause' | 'kill'
+
+  /**
+   * Auto-resume policy.
+   * @default "off"
+   * Can be `any` only when `onTimeout` is `pause`.
+   */
+  resumeOn?: 'any' | 'off'
 }
 
 /**
@@ -133,10 +148,17 @@ export interface SandboxOpts extends ConnectionOpts {
    * Sandbox URL. Used for local development
    */
   sandboxUrl?: string
+
+  /**
+   * Sandbox lifecycle policy.
+   */
+  lifecycle?: SandboxLifecycle
 }
 
 export type SandboxBetaCreateOpts = SandboxOpts & {
   /**
+   * @deprecated Use `lifecycle.onTimeout = "pause"` instead.
+   *
    * Automatically pause the sandbox after the timeout expires.
    * @default false
    */
@@ -295,6 +317,46 @@ export interface SandboxMetrics {
    * Total disk space available in bytes.
    */
   diskTotal: number
+}
+
+function validateLifecycle(lifecycle: SandboxLifecycle) {
+  if (!['kill', 'pause'].includes(lifecycle.onTimeout)) {
+    throw new InvalidArgumentError(
+      `\`lifecycle.onTimeout\` must be 'kill' or 'pause', got '${lifecycle.onTimeout}'`
+    )
+  }
+  if (
+    lifecycle.resumeOn != null &&
+    lifecycle.resumeOn !== 'off' &&
+    lifecycle.resumeOn !== 'any'
+  ) {
+    throw new InvalidArgumentError(
+      `\`lifecycle.resumeOn\` must be 'off' or 'any', got '${lifecycle.resumeOn}'`
+    )
+  }
+  if (lifecycle.resumeOn === 'any' && lifecycle.onTimeout !== 'pause') {
+    throw new InvalidArgumentError(
+      "`lifecycle.resumeOn` can be 'any' only when `lifecycle.onTimeout` is 'pause'"
+    )
+  }
+}
+
+function getLifecycle(
+  opts?: Pick<SandboxBetaCreateOpts, 'lifecycle' | 'autoPause'>
+): SandboxLifecycle | undefined {
+  if (opts?.lifecycle) {
+    validateLifecycle(opts.lifecycle)
+    return opts.lifecycle
+  }
+
+  if (opts?.autoPause) {
+    return {
+      onTimeout: 'pause',
+      resumeOn: 'off',
+    }
+  }
+
+  return undefined
 }
 
 export class SandboxApi {
@@ -496,7 +558,7 @@ export class SandboxApi {
    *
    * @returns `true` if the sandbox got paused, `false` if the sandbox was already paused.
    */
-  static async betaPause(
+  static async pause(
     sandboxId: string,
     opts?: SandboxApiOpts
   ): Promise<boolean> {
@@ -529,6 +591,22 @@ export class SandboxApi {
     return true
   }
 
+  /**
+   * @deprecated Use {@link SandboxApi.pause} instead.
+   */
+  static async betaPause(
+    sandboxId: string,
+    opts?: SandboxApiOpts
+  ): Promise<boolean> {
+    return this.pause(sandboxId, opts)
+  }
+
+  protected static validateCreateOptions(
+    opts?: Pick<SandboxBetaCreateOpts, 'lifecycle' | 'autoPause'>
+  ): void {
+    getLifecycle(opts)
+  }
+
   protected static async createSandbox(
     template: string,
     timeoutMs: number,
@@ -536,19 +614,39 @@ export class SandboxApi {
   ) {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
+    const lifecycle = getLifecycle(opts)
+    const autoPause =
+      lifecycle != undefined
+        ? lifecycle.onTimeout === 'pause'
+        : opts?.autoPause != undefined
+          ? opts.autoPause
+          : undefined
+    const autoResumePolicy =
+      lifecycle != undefined
+        ? lifecycle.resumeOn === 'any'
+          ? 'any'
+          : 'off'
+        : undefined
+
+    const body: components['schemas']['NewSandbox'] & {
+      autoResume?: {
+        policy: 'any' | 'off'
+      }
+    } = {
+      templateID: template,
+      metadata: opts?.metadata,
+      mcp: opts?.mcp as Record<string, unknown> | undefined,
+      envVars: opts?.envs,
+      timeout: timeoutToSeconds(timeoutMs),
+      secure: opts?.secure ?? true,
+      allow_internet_access: opts?.allowInternetAccess ?? true,
+      network: opts?.network,
+      ...(autoPause !== undefined ? { autoPause } : {}),
+      ...(autoResumePolicy ? { autoResume: { policy: autoResumePolicy } } : {}),
+    }
 
     const res = await client.api.POST('/sandboxes', {
-      body: {
-        autoPause: opts?.autoPause ?? false,
-        templateID: template,
-        metadata: opts?.metadata,
-        mcp: opts?.mcp as Record<string, unknown> | undefined,
-        envVars: opts?.envs,
-        timeout: timeoutToSeconds(timeoutMs),
-        secure: opts?.secure ?? true,
-        allow_internet_access: opts?.allowInternetAccess ?? true,
-        network: opts?.network,
-      },
+      body,
       signal: config.getSignal(opts?.requestTimeoutMs),
     })
 

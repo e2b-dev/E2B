@@ -1547,6 +1547,18 @@ export interface components {
             /** @description Length of the token or key */
             valueLength: number;
         };
+        LifecycleConfig: {
+            /**
+             * @description What should happen when timeout is reached. Allowed values are "kill" or "pause".
+             * @enum {string}
+             */
+            onTimeout: "kill" | "pause";
+            /**
+             * @description Under what condition the paused sandbox should resume. Allowed values are "off" or "any". Can be "any" only when onTimeout is "pause".
+             * @enum {string}
+             */
+            resumeOn?: "off" | "any";
+        };
         ListedSandbox: {
             /** @description Alias of the template */
             alias?: string;
@@ -1639,6 +1651,7 @@ export interface components {
              */
             autoPause?: boolean;
             envVars?: components["schemas"]["EnvVars"];
+            lifecycle?: components["schemas"]["LifecycleConfig"];
             mcp?: components["schemas"]["Mcp"];
             metadata?: components["schemas"]["SandboxMetadata"];
             network?: components["schemas"]["SandboxNetworkConfig"];

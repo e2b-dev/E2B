@@ -13,9 +13,18 @@ from e2b.api.client_sync import get_transport
 from e2b.connection_config import ApiParams, ConnectionConfig
 from e2b.envd.api import ENVD_API_HEALTH_ROUTE, handle_envd_api_exception
 from e2b.envd.versions import ENVD_DEBUG_FALLBACK
-from e2b.exceptions import SandboxException, format_request_timeout_error
+from e2b.exceptions import (
+    InvalidArgumentException,
+    SandboxException,
+    format_request_timeout_error,
+)
 from e2b.sandbox.main import SandboxOpts
-from e2b.sandbox.sandbox_api import McpServer, SandboxMetrics, SandboxNetworkOpts
+from e2b.sandbox.sandbox_api import (
+    McpServer,
+    SandboxLifecycle,
+    SandboxMetrics,
+    SandboxNetworkOpts,
+)
 from e2b.sandbox.utils import class_method_variant
 from e2b.sandbox_sync.commands.command import Commands
 from e2b.sandbox_sync.commands.pty import Pty
@@ -160,6 +169,7 @@ class Sandbox(SandboxApi):
         allow_internet_access: bool = True,
         mcp: Optional[McpServer] = None,
         network: Optional[SandboxNetworkOpts] = None,
+        lifecycle: Optional[SandboxLifecycle] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
         """
@@ -175,6 +185,7 @@ class Sandbox(SandboxApi):
         :param allow_internet_access: Allow sandbox to access the internet, defaults to `True`. If set to `False`, it works the same as setting network `deny_out` to `[0.0.0.0/0]`.
         :param mcp: MCP server to enable in the sandbox
         :param network: Sandbox network configuration
+        :param lifecycle: Sandbox lifecycle configuration — ``on_timeout``: ``"kill"`` (default) or ``"pause"``; ``resume_on``: ``"off"`` (default) or ``"any"`` (only when ``on_timeout="pause"``). Example: ``{"on_timeout": "pause", "resume_on": "any"}``
 
         :return: A Sandbox instance for the new sandbox
 
@@ -187,7 +198,7 @@ class Sandbox(SandboxApi):
 
         sandbox = cls._create(
             template=template,
-            auto_pause=False,
+            auto_pause=None,
             timeout=timeout,
             metadata=metadata,
             envs=envs,
@@ -195,6 +206,7 @@ class Sandbox(SandboxApi):
             allow_internet_access=allow_internet_access,
             mcp=mcp,
             network=network,
+            lifecycle=lifecycle,
             **opts,
         )
 
@@ -231,7 +243,7 @@ class Sandbox(SandboxApi):
         @example
         ```python
         sandbox = Sandbox.create()
-        sandbox.beta_pause()
+        sandbox.pause()
 
         # Another code block
         same_sandbox = sandbox.connect()
@@ -261,7 +273,7 @@ class Sandbox(SandboxApi):
         @example
         ```python
         sandbox = Sandbox.create()
-        Sandbox.beta_pause(sandbox.sandbox_id)
+        Sandbox.pause(sandbox.sandbox_id)
 
         # Another code block
         same_sandbox = Sandbox.connect(sandbox.sandbox_id)
@@ -288,7 +300,7 @@ class Sandbox(SandboxApi):
         @example
         ```python
         sandbox = Sandbox.create()
-        sandbox.beta_pause()
+        sandbox.pause()
 
         # Another code block
         same_sandbox = sandbox.connect()
@@ -564,6 +576,9 @@ class Sandbox(SandboxApi):
             secure=secure,
             allow_internet_access=allow_internet_access,
             mcp=mcp,
+            lifecycle=(
+                {"on_timeout": "pause", "resume_on": "off"} if auto_pause else None
+            ),
             **opts,
         )
 
@@ -582,26 +597,22 @@ class Sandbox(SandboxApi):
         return sandbox
 
     @overload
-    def beta_pause(
+    def pause(
         self,
         **opts: Unpack[ApiParams],
     ) -> None:
         """
-        [BETA] This feature is in beta and may change in the future.
-
         Pause the sandbox.
         """
         ...
 
     @overload
     @staticmethod
-    def beta_pause(
+    def pause(
         sandbox_id: str,
         **opts: Unpack[ApiParams],
     ) -> None:
         """
-        [BETA] This feature is in beta and may change in the future.
-
         Pause the sandbox specified by sandbox ID.
 
         :param sandbox_id: Sandbox ID
@@ -609,13 +620,11 @@ class Sandbox(SandboxApi):
         ...
 
     @class_method_variant("_cls_pause")
-    def beta_pause(
+    def pause(
         self,
         **opts: Unpack[ApiParams],
     ) -> None:
         """
-        [BETA] This feature is in beta and may change in the future.
-
         Pause the sandbox.
 
         :return: Sandbox ID that can be used to resume the sandbox
@@ -625,6 +634,29 @@ class Sandbox(SandboxApi):
             sandbox_id=self.sandbox_id,
             **opts,
         )
+
+    @overload
+    def beta_pause(
+        self,
+        **opts: Unpack[ApiParams],
+    ) -> None: ...
+
+    @overload
+    @staticmethod
+    def beta_pause(
+        sandbox_id: str,
+        **opts: Unpack[ApiParams],
+    ) -> None: ...
+
+    @class_method_variant("_cls_pause")
+    def beta_pause(
+        self,
+        **opts: Unpack[ApiParams],
+    ) -> None:
+        """
+        :deprecated: Use `pause()` instead.
+        """
+        self.pause(**opts)
 
     def get_mcp_token(self) -> Optional[str]:
         """
@@ -643,7 +675,11 @@ class Sandbox(SandboxApi):
         timeout: Optional[int] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
-        sandbox = SandboxApi._cls_connect(sandbox_id, timeout, **opts)
+        sandbox = SandboxApi._cls_connect(
+            sandbox_id=sandbox_id,
+            timeout=timeout,
+            **opts,
+        )
 
         sandbox_headers = {}
         envd_access_token = sandbox.envd_access_token
@@ -669,15 +705,33 @@ class Sandbox(SandboxApi):
         cls,
         template: Optional[str],
         timeout: Optional[int],
-        auto_pause: bool,
+        auto_pause: Optional[bool],
         metadata: Optional[Dict[str, str]],
         envs: Optional[Dict[str, str]],
         secure: bool,
         allow_internet_access: bool,
         mcp: Optional[McpServer] = None,
         network: Optional[SandboxNetworkOpts] = None,
+        lifecycle: Optional[SandboxLifecycle] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
+        if lifecycle is not None:
+            on_timeout = lifecycle.get("on_timeout")
+            resume_on = lifecycle.get("resume_on")
+
+            if on_timeout not in ("kill", "pause"):
+                raise InvalidArgumentException(
+                    f"`lifecycle.on_timeout` must be 'kill' or 'pause', got '{on_timeout}'"
+                )
+            if resume_on is not None and resume_on not in ("off", "any"):
+                raise InvalidArgumentException(
+                    f"`lifecycle.resume_on` must be 'off' or 'any', got '{resume_on}'"
+                )
+            if resume_on == "any" and on_timeout != "pause":
+                raise InvalidArgumentException(
+                    "`lifecycle.resume_on` can be 'any' only when `lifecycle.on_timeout` is 'pause'"
+                )
+
         extra_sandbox_headers = {}
 
         debug = opts.get("debug")
@@ -698,6 +752,7 @@ class Sandbox(SandboxApi):
                 allow_internet_access=allow_internet_access,
                 mcp=mcp,
                 network=network,
+                lifecycle=lifecycle,
                 **opts,
             )
 

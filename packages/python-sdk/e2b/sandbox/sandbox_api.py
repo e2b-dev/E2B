@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Dict, List, Optional, TypedDict, Union, cast
+from typing import Any, Dict, List, Literal, Optional, TypedDict, Union, cast
 
 from typing_extensions import NotRequired, Unpack
 
@@ -73,6 +73,24 @@ class SandboxNetworkOpts(TypedDict):
 
     Examples:
     - Custom subdomain: `"${PORT}-myapp.example.com"`
+    """
+
+
+class SandboxLifecycle(TypedDict):
+    """
+    Sandbox lifecycle configuration; defines post-timeout behavior and auto-resume policies.
+    Defaults to `on_timeout="kill"` and `resume_on="off"`.
+    """
+
+    on_timeout: Literal["pause", "kill"]
+    """
+    What should happen to the sandbox when timeout is reached. `"kill"` means the sandbox will be terminated, while `"pause"` means the sandbox will be paused and can be resumed later. Defaults to `"kill"`.
+    """
+
+    resume_on: NotRequired[Literal["any", "off"]]
+    """
+    Under what conditions will activity cause the sandbox to resume when paused. Defaults to `"off"`.
+    Can be `any` only when `on_timeout` is `pause`.
     """
 
 

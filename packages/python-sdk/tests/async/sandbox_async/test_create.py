@@ -1,6 +1,6 @@
 import pytest
 
-from e2b import AsyncSandbox, SandboxQuery
+from e2b import AsyncSandbox, InvalidArgumentException, SandboxQuery
 
 
 @pytest.mark.skip_debug()
@@ -25,3 +25,10 @@ async def test_metadata(async_sandbox_factory):
             break
     else:
         assert False, "Sandbox not found"
+
+
+async def test_invalid_lifecycle_raises():
+    with pytest.raises(InvalidArgumentException):
+        await AsyncSandbox.create(
+            lifecycle={"on_timeout": "kill", "resume_on": "any"},
+        )

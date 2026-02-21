@@ -7,6 +7,7 @@ from attrs import field as _attrs_field
 from ..types import UNSET, Unset
 
 if TYPE_CHECKING:
+    from ..models.lifecycle_config import LifecycleConfig
     from ..models.mcp_type_0 import McpType0
     from ..models.sandbox_network_config import SandboxNetworkConfig
 
@@ -23,6 +24,7 @@ class NewSandbox:
             the same as specifying denyOut to 0.0.0.0/0 in the network config.
         auto_pause (Union[Unset, bool]): Automatically pauses the sandbox after the timeout Default: False.
         env_vars (Union[Unset, Any]):
+        lifecycle (Union[Unset, LifecycleConfig]):
         mcp (Union['McpType0', None, Unset]): MCP configuration for the sandbox
         metadata (Union[Unset, Any]):
         network (Union[Unset, SandboxNetworkConfig]):
@@ -34,6 +36,7 @@ class NewSandbox:
     allow_internet_access: Union[Unset, bool] = UNSET
     auto_pause: Union[Unset, bool] = False
     env_vars: Union[Unset, Any] = UNSET
+    lifecycle: Union[Unset, "LifecycleConfig"] = UNSET
     mcp: Union["McpType0", None, Unset] = UNSET
     metadata: Union[Unset, Any] = UNSET
     network: Union[Unset, "SandboxNetworkConfig"] = UNSET
@@ -51,6 +54,10 @@ class NewSandbox:
         auto_pause = self.auto_pause
 
         env_vars = self.env_vars
+
+        lifecycle: Union[Unset, dict[str, Any]] = UNSET
+        if not isinstance(self.lifecycle, Unset):
+            lifecycle = self.lifecycle.to_dict()
 
         mcp: Union[None, Unset, dict[str, Any]]
         if isinstance(self.mcp, Unset):
@@ -83,6 +90,8 @@ class NewSandbox:
             field_dict["autoPause"] = auto_pause
         if env_vars is not UNSET:
             field_dict["envVars"] = env_vars
+        if lifecycle is not UNSET:
+            field_dict["lifecycle"] = lifecycle
         if mcp is not UNSET:
             field_dict["mcp"] = mcp
         if metadata is not UNSET:
@@ -98,6 +107,7 @@ class NewSandbox:
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
+        from ..models.lifecycle_config import LifecycleConfig
         from ..models.mcp_type_0 import McpType0
         from ..models.sandbox_network_config import SandboxNetworkConfig
 
@@ -109,6 +119,13 @@ class NewSandbox:
         auto_pause = d.pop("autoPause", UNSET)
 
         env_vars = d.pop("envVars", UNSET)
+
+        _lifecycle = d.pop("lifecycle", UNSET)
+        lifecycle: Union[Unset, LifecycleConfig]
+        if isinstance(_lifecycle, Unset):
+            lifecycle = UNSET
+        else:
+            lifecycle = LifecycleConfig.from_dict(_lifecycle)
 
         def _parse_mcp(data: object) -> Union["McpType0", None, Unset]:
             if data is None:
@@ -145,6 +162,7 @@ class NewSandbox:
             allow_internet_access=allow_internet_access,
             auto_pause=auto_pause,
             env_vars=env_vars,
+            lifecycle=lifecycle,
             mcp=mcp,
             metadata=metadata,
             network=network,
