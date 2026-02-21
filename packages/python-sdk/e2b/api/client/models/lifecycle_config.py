@@ -4,6 +4,8 @@ from typing import Any, TypeVar, Union
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
+from ..models.lifecycle_config_on_timeout import LifecycleConfigOnTimeout
+from ..models.lifecycle_config_resume_on import LifecycleConfigResumeOn
 from ..types import UNSET, Unset
 
 T = TypeVar("T", bound="LifecycleConfig")
@@ -13,19 +15,22 @@ T = TypeVar("T", bound="LifecycleConfig")
 class LifecycleConfig:
     """
     Attributes:
-        on_timeout (str): What should happen when timeout is reached. Allowed values: "kill" or "pause".
-        resume_on (Union[Unset, str]): Under what condition the paused sandbox should resume. Allowed values: "off" or
-            "any".
+        on_timeout (LifecycleConfigOnTimeout): What should happen when timeout is reached. Allowed values are "kill" or
+            "pause".
+        resume_on (Union[Unset, LifecycleConfigResumeOn]): Under what condition the paused sandbox should resume.
+            Allowed values are "off" or "any". Can be "any" only when onTimeout is "pause".
     """
 
-    on_timeout: str
-    resume_on: Union[Unset, str] = UNSET
+    on_timeout: LifecycleConfigOnTimeout
+    resume_on: Union[Unset, LifecycleConfigResumeOn] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        on_timeout = self.on_timeout
+        on_timeout = self.on_timeout.value
 
-        resume_on = self.resume_on
+        resume_on: Union[Unset, str] = UNSET
+        if not isinstance(self.resume_on, Unset):
+            resume_on = self.resume_on.value
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
@@ -42,9 +47,14 @@ class LifecycleConfig:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        on_timeout = d.pop("onTimeout")
+        on_timeout = LifecycleConfigOnTimeout(d.pop("onTimeout"))
 
-        resume_on = d.pop("resumeOn", UNSET)
+        _resume_on = d.pop("resumeOn", UNSET)
+        resume_on: Union[Unset, LifecycleConfigResumeOn]
+        if isinstance(_resume_on, Unset):
+            resume_on = UNSET
+        else:
+            resume_on = LifecycleConfigResumeOn(_resume_on)
 
         lifecycle_config = cls(
             on_timeout=on_timeout,

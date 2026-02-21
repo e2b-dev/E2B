@@ -234,6 +234,24 @@ components:
       additionalProperties: {}
       nullable: true
 
+    LifecycleConfig:
+      type: object
+      required:
+        - onTimeout
+      properties:
+        onTimeout:
+          type: string
+          description: What should happen when timeout is reached. Allowed values are "kill" or "pause".
+          enum:
+            - kill
+            - pause
+        resumeOn:
+          type: string
+          description: Under what condition the paused sandbox should resume. Allowed values are "off" or "any". Can be "any" only when onTimeout is "pause".
+          enum:
+            - "off"
+            - "any"
+
     SandboxNetworkConfig:
       type: object
       properties:
@@ -528,6 +546,8 @@ components:
           $ref: "#/components/schemas/EnvVars"
         mcp:
           $ref: "#/components/schemas/Mcp"
+        lifecycle:
+          $ref: "#/components/schemas/LifecycleConfig"
 
     ResumedSandbox:
       properties:

@@ -18,6 +18,8 @@ from e2b.api.client.models import (
     ConnectSandbox,
     Error,
     LifecycleConfig,
+    LifecycleConfigOnTimeout,
+    LifecycleConfigResumeOn,
     NewSandbox,
     PostSandboxesSandboxIDTimeoutBody,
     Sandbox,
@@ -49,12 +51,14 @@ def _serialize_lifecycle(
     if lifecycle is None:
         return None
 
-    on_timeout = lifecycle["on_timeout"]
-    resume_on = lifecycle.get("resume_on")
+    on_timeout = LifecycleConfigOnTimeout(lifecycle["on_timeout"])
+    resume_on_val = lifecycle.get("resume_on")
 
     return LifecycleConfig(
         on_timeout=on_timeout,
-        resume_on=resume_on if resume_on is not None else "off",
+        resume_on=LifecycleConfigResumeOn(resume_on_val)
+        if resume_on_val is not None
+        else LifecycleConfigResumeOn.OFF,
     )
 
 

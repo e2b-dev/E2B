@@ -19,6 +19,8 @@ from .general_registry import GeneralRegistry
 from .general_registry_type import GeneralRegistryType
 from .identifier_masking_details import IdentifierMaskingDetails
 from .lifecycle_config import LifecycleConfig
+from .lifecycle_config_on_timeout import LifecycleConfigOnTimeout
+from .lifecycle_config_resume_on import LifecycleConfigResumeOn
 from .listed_sandbox import ListedSandbox
 from .log_level import LogLevel
 from .logs_direction import LogsDirection
@@ -92,6 +94,8 @@ __all__ = (
     "GeneralRegistryType",
     "IdentifierMaskingDetails",
     "LifecycleConfig",
+    "LifecycleConfigOnTimeout",
+    "LifecycleConfigResumeOn",
     "ListedSandbox",
     "LogLevel",
     "LogsDirection",
