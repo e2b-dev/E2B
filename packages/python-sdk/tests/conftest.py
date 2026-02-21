@@ -28,7 +28,7 @@ def pytest_runtest_makereport(item, call):
         item._test_failed = rep.failed
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture()
 def sandbox_test_id():
     return f"test_{uuid.uuid4()}"
 
