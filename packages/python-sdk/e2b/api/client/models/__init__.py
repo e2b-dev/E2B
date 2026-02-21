@@ -18,6 +18,7 @@ from .gcp_registry_type import GCPRegistryType
 from .general_registry import GeneralRegistry
 from .general_registry_type import GeneralRegistryType
 from .identifier_masking_details import IdentifierMaskingDetails
+from .lifecycle_config import LifecycleConfig
 from .listed_sandbox import ListedSandbox
 from .log_level import LogLevel
 from .logs_direction import LogsDirection
@@ -90,6 +91,7 @@ __all__ = (
     "GeneralRegistry",
     "GeneralRegistryType",
     "IdentifierMaskingDetails",
+    "LifecycleConfig",
     "ListedSandbox",
     "LogLevel",
     "LogsDirection",

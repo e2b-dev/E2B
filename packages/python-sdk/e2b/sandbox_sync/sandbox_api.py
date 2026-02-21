@@ -17,6 +17,7 @@ from e2b.api.client.api.sandboxes import (
 from e2b.api.client.models import (
     ConnectSandbox,
     Error,
+    LifecycleConfig,
     NewSandbox,
     PostSandboxesSandboxIDTimeoutBody,
     Sandbox,
@@ -43,17 +44,17 @@ from e2b.sandbox_sync.paginator import SandboxPaginator, get_api_client
 
 def _serialize_lifecycle(
     lifecycle: Optional[SandboxLifecycle],
-) -> Optional[Dict[str, Any]]:
+) -> Optional[LifecycleConfig]:
     if lifecycle is None:
         return None
 
     on_timeout = lifecycle["on_timeout"]
     resume_on = lifecycle.get("resume_on")
 
-    return {
-        "auto_pause": on_timeout == "pause",
-        "auto_resume_policy": resume_on if resume_on is not None else "off",
-    }
+    return LifecycleConfig(
+        on_timeout=on_timeout,
+        resume_on=resume_on if resume_on is not None else "off",
+    )
 
 
 class SandboxApi(SandboxBase):
@@ -185,7 +186,7 @@ class SandboxApi(SandboxBase):
 
         lifecycle_payload = _serialize_lifecycle(lifecycle)
         effective_auto_pause = (
-            lifecycle_payload["auto_pause"]
+            lifecycle_payload.on_timeout == "pause"
             if lifecycle_payload is not None
             else auto_pause
         )
@@ -201,9 +202,8 @@ class SandboxApi(SandboxBase):
             secure=secure,
             allow_internet_access=allow_internet_access,
             network=SandboxNetworkConfig(**network) if network else UNSET,
+            lifecycle=lifecycle_payload if lifecycle_payload is not None else UNSET,
         )
-        if lifecycle_payload is not None:
-            body["autoResume"] = {"policy": lifecycle_payload["auto_resume_policy"]}
 
         api_client = get_api_client(config)
         res = post_sandboxes.sync_detailed(

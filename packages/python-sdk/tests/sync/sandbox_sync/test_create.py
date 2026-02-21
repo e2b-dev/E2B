@@ -1,6 +1,7 @@
 import pytest
 
 from e2b import InvalidArgumentException, Sandbox
+from e2b.api.client.models import LifecycleConfig, NewSandbox
 from e2b.sandbox.sandbox_api import SandboxQuery
 
 
@@ -33,3 +34,28 @@ def test_invalid_lifecycle_raises():
         Sandbox.create(
             lifecycle={"on_timeout": "kill", "resume_on": "any"},
         )
+
+
+def test_create_payload_serializes_lifecycle():
+    body = NewSandbox(
+        template_id="template-id",
+        auto_pause=True,
+        lifecycle=LifecycleConfig(on_timeout="kill", resume_on="any"),
+    )
+
+    assert body.to_dict()["autoPause"] is True
+    assert body.to_dict()["lifecycle"] == {"onTimeout": "kill", "resumeOn": "any"}
+
+
+def test_create_payload_deserializes_lifecycle():
+    body = NewSandbox.from_dict(
+        {
+            "templateID": "template-id",
+            "autoPause": False,
+            "lifecycle": {"onTimeout": "pause", "resumeOn": "off"},
+        }
+    )
+
+    assert isinstance(body.lifecycle, LifecycleConfig)
+    assert body.lifecycle.on_timeout == "pause"
+    assert body.lifecycle.resume_on == "off"
