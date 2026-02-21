@@ -362,6 +362,12 @@ function getLifecycle(
 export class SandboxApi {
   protected constructor() {}
 
+  protected static validateCreateOptions(
+    opts?: Pick<SandboxBetaCreateOpts, 'lifecycle' | 'autoPause'>
+  ): void {
+    getLifecycle(opts)
+  }
+
   /**
    * Kill the sandbox specified by sandbox ID.
    *

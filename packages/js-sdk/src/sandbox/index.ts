@@ -275,6 +275,7 @@ export class Sandbox extends SandboxApi {
           }
 
     const config = new ConnectionConfig(sandboxOpts)
+    this.validateCreateOptions(sandboxOpts)
     if (config.debug) {
       return new this({
         sandboxId: 'debug_sandbox_id',
@@ -370,6 +371,7 @@ export class Sandbox extends SandboxApi {
           }
 
     const config = new ConnectionConfig(sandboxOpts)
+    this.validateCreateOptions(sandboxOpts)
     if (config.debug) {
       return new this({
         sandboxId: 'debug_sandbox_id',

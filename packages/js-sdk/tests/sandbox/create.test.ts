@@ -47,3 +47,35 @@ test('invalid lifecycle throws', async () => {
     })
   )
 })
+
+test('invalid lifecycle throws in debug create', async () => {
+  await expect(
+    Sandbox.create(template, {
+      debug: true,
+      lifecycle: {
+        onTimeout: 'kill',
+        resumeOn: 'any',
+      },
+    })
+  ).rejects.toThrowError(
+    expect.objectContaining({
+      name: 'InvalidArgumentError',
+    })
+  )
+})
+
+test('invalid lifecycle throws in debug betaCreate', async () => {
+  await expect(
+    Sandbox.betaCreate(template, {
+      debug: true,
+      lifecycle: {
+        onTimeout: 'kill',
+        resumeOn: 'any',
+      },
+    })
+  ).rejects.toThrowError(
+    expect.objectContaining({
+      name: 'InvalidArgumentError',
+    })
+  )
+})
