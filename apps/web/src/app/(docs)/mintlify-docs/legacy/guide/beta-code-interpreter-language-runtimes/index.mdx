@@ -1,0 +1,59 @@
+---
+title: "Code Interpreter SDK Beta - Language Runtimes"
+---
+
+<Callout icon="circle-exclamation" color="#ff8800" iconType="regular">You are reading a legacy (pre v1.0) document.</Callout>
+
+
+This guide shows how to run AI-generated code in different language runtimes using the new Code Interpreter beta SDK.
+The following language runtimes are currently supported:
+- **Python**
+- **JavaScript**
+- **Java**
+- **Bash**
+- **R**
+
+<Note>
+Want more language runtimes? Reached out to us on [Discord](https://discord.gg/U7KEcGErtQ) or over [email](emailto:contact@e2b.dev).
+</Note>
+
+## 1. Install the Code Interpreter beta SDK
+The latest beta versions you should install can be found in NPM/PyPi release history:
+- **JavaScript & TypeScript**
+	- [Latest release](https://www.npmjs.com/package/@e2b/code-interpreter?activeTab=versions) with *rc* tag for `@e2b/code-interpreter`
+- **Python**
+	- [Latest release](https://pypi.org/project/e2b-code-interpreter/#history) with *PRE-RELEASE* for `e2b-code-interpreter`
+
+
+## 2. Active kernel for the desired language
+Each of the supported language runtimes has its own kernel.
+
+<CodeGroup>
+```python Python
+from e2b_code_interpreter import CodeInterpreter
+
+sandbox = CodeInterpreter()
+
+# 1. Set JS kernel - available kernel names: 'r', 'javascript', 'java', 'bash'
+js_id = sandbox.notebook.create_kernel(kernel_name="javascript")
+# 2. Run JS code inside code interpreter!
+execution = sandbox.notebook.exec_cell("console.log('Hello World!')", kernel_id=js_id)
+print(execution)
+# 3. Use Python again
+sandbox.notebook.exec_cell("print('Hello World!')")
+```
+
+```js JavaScript & TypeScript
+import { CodeInterpreter } from '@e2b/code-interpreter'
+
+const sandbox = await CodeInterpreter.create()
+
+// 1. Set JS kernel - available kernel names: 'r', 'javascript', 'java', 'bash'
+const jsID = await sandbox.notebook.createKernel({ kernelName: 'javascript' })
+// 2. Run JS code inside code interpreter!
+const execution = await sandbox.notebook.execCell("console.log('Hello World!')", { kernelID: jsID })
+console.log(execution)
+// 3. Use Python again
+await sandbox.notebook.execCell('print("Hello World!")')
+```
+</CodeGroup>

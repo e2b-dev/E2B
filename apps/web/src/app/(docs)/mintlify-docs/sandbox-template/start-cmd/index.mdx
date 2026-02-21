@@ -1,0 +1,47 @@
+---
+title: "Start Command"
+sidebarTitle: Start command
+---
+
+The start command allows you to specify a command that will be **already running** when you spawn your custom sandbox.
+This way, you can for example have running servers or seeded databases inside the sandbox that are already fully ready when you spawn the sandbox using the SDK and with zero waiting time for your users during the runtime.
+
+The idea behind the start command feature is to lower the wait times for your users and have everything ready for your users when you spawn your sandbox.
+
+You can see how it works [here](/sandbox-template#how-it-works).
+
+## How to add start command
+
+When you are building a sandbox template you can specify the start command by using the [`-c`](/sdk-reference/cli/v1.0.9/template#e2b-template-build) option:
+
+```bash
+e2b template build -c "<your-start-command>"
+```
+
+When you spawn the custom sandbox you built, the start command will be already running if there was no error when we tried to execute it.
+
+### Sandbox template config
+You can specify the start command also inside the `e2b.toml` in the same directory where you run `e2b template build`.
+<CodeGroup isFileName title="e2b.toml" isRunnable={false}>
+  ```toml e2b.toml highlight={5}
+  # This is a config for E2B sandbox template
+  template_id = "1wdqsf9le9gk21ztb4mo"
+  dockerfile = "e2b.Dockerfile"
+  template_name = "my-agent-sandbox"
+  start_cmd = "<your-start-command>"
+  ```
+</CodeGroup>
+
+
+## Logs
+You can retrieve the start command's logs using the CLI:
+
+<CodeGroup>
+```bash bash
+e2b sandbox logs <sandbox-id>
+```
+</CodeGroup>
+
+<Note>
+These logs include logs from the start command during the build phase.
+</Note>
