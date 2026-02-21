@@ -112,7 +112,7 @@ def build():
         skip_cache: bool = False,
         on_build_logs: Optional[Callable[[LogEntry], None]] = None,
     ):
-        build_name = name or f"e2b-test-{uuid4()}"
+        build_name = name or f"e2b-test:v1-{uuid4()}"
         build_info: Dict[str, Optional[str]] = {"template_id": None, "build_id": None}
 
         def capture_logs(log: LogEntry):
@@ -156,7 +156,7 @@ def async_build():
         skip_cache: bool = False,
         on_build_logs: Optional[Callable[[LogEntry], None]] = None,
     ):
-        build_name = name or f"e2b-test-{uuid4()}"
+        build_name = name or f"e2b-test:v1-{uuid4()}"
         build_info: Dict[str, Optional[str]] = {"template_id": None, "build_id": None}
 
         def capture_logs(log: LogEntry):
