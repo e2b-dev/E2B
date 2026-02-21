@@ -315,52 +315,6 @@ class AsyncSandbox(SandboxApi):
 
         return self
 
-    @overload
-    async def resume(
-        self,
-        timeout: Optional[int] = None,
-        **opts: Unpack[ApiParams],
-    ) -> Self:
-        """
-        Resume a paused sandbox.
-        Sandbox must be either running or be paused.
-
-        :param timeout: Timeout for the sandbox in **seconds**
-        :return: A running sandbox instance
-        """
-        ...
-
-    @overload
-    @staticmethod
-    async def resume(
-        sandbox_id: str,
-        timeout: Optional[int] = None,
-        **opts: Unpack[ApiParams],
-    ) -> "AsyncSandbox":
-        """
-        Resume a paused sandbox.
-        Sandbox must be either running or be paused.
-
-        :param sandbox_id: Sandbox ID
-        :param timeout: Timeout for the sandbox in **seconds**
-        :return: A running sandbox instance
-        """
-        ...
-
-    @class_method_variant("_cls_resume_sandbox")
-    async def resume(
-        self,
-        timeout: Optional[int] = None,
-        **opts: Unpack[ApiParams],
-    ) -> Self:
-        await SandboxApi._cls_resume(
-            sandbox_id=self.sandbox_id,
-            timeout=timeout,
-            **opts,
-        )
-
-        return self
-
     async def __aenter__(self):
         return self
 
@@ -744,38 +698,6 @@ class AsyncSandbox(SandboxApi):
 
         return cls(
             sandbox_id=sandbox_id,
-            sandbox_domain=sandbox.domain,
-            envd_version=Version(sandbox.envd_version),
-            envd_access_token=envd_access_token,
-            traffic_access_token=sandbox.traffic_access_token,
-            connection_config=connection_config,
-        )
-
-    @classmethod
-    async def _cls_resume_sandbox(
-        cls,
-        sandbox_id: str,
-        timeout: Optional[int] = None,
-        **opts: Unpack[ApiParams],
-    ) -> Self:
-        sandbox = await SandboxApi._cls_resume(
-            sandbox_id=sandbox_id,
-            timeout=timeout,
-            **opts,
-        )
-
-        sandbox_headers = {}
-        envd_access_token = sandbox.envd_access_token
-        if envd_access_token is not None and not isinstance(envd_access_token, Unset):
-            sandbox_headers["X-Access-Token"] = envd_access_token
-
-        connection_config = ConnectionConfig(
-            extra_sandbox_headers=sandbox_headers,
-            **opts,
-        )
-
-        return cls(
-            sandbox_id=sandbox.sandbox_id,
             sandbox_domain=sandbox.domain,
             envd_version=Version(sandbox.envd_version),
             envd_access_token=envd_access_token,

@@ -670,13 +670,6 @@ export class SandboxApi {
     sandboxId: string,
     opts?: SandboxConnectOpts
   ) {
-    return this.resumeSandbox(sandboxId, opts)
-  }
-
-  protected static async resumeSandbox(
-    sandboxId: string,
-    opts?: SandboxConnectOpts
-  ) {
     const timeoutMs = opts?.timeoutMs ?? DEFAULT_SANDBOX_TIMEOUT_MS
 
     const config = new ConnectionConfig(opts)
@@ -695,7 +688,7 @@ export class SandboxApi {
     })
 
     if (res.error?.code === 404) {
-      throw new NotFoundError(`Sandbox ${sandboxId} not found`)
+      throw new NotFoundError(`Paused sandbox ${sandboxId} not found`)
     }
 
     const err = handleApiError(res)

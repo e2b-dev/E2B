@@ -231,12 +231,12 @@ class Sandbox(SandboxApi):
         **opts: Unpack[ApiParams],
     ) -> Self:
         """
-        Connect to a sandbox. If the sandbox is paused, it will be resumed.
+        Connect to a sandbox. If the sandbox is paused, it will be automatically resumed.
         Sandbox must be either running or be paused.
 
         With sandbox ID you can connect to the same sandbox from different places or environments (serverless functions, etc).
 
-        :param timeout: Timeout for the sandbox in **seconds**.
+        :param timeout: Timeout for the sandbox in **seconds**
             For running sandboxes, the timeout will update only if the new timeout is longer than the existing one.
         :return: A running sandbox instance
 
@@ -260,7 +260,7 @@ class Sandbox(SandboxApi):
         **opts: Unpack[ApiParams],
     ) -> "Sandbox":
         """
-        Connect to a sandbox. If the sandbox is paused, it will be resumed.
+        Connect to a sandbox. If the sandbox is paused, it will be automatically resumed.
         Sandbox must be either running or be paused.
 
         With sandbox ID you can connect to the same sandbox from different places or environments (serverless functions, etc).
@@ -307,52 +307,6 @@ class Sandbox(SandboxApi):
         ```
         """
         SandboxApi._cls_connect(
-            sandbox_id=self.sandbox_id,
-            timeout=timeout,
-            **opts,
-        )
-
-        return self
-
-    @overload
-    def resume(
-        self,
-        timeout: Optional[int] = None,
-        **opts: Unpack[ApiParams],
-    ) -> Self:
-        """
-        Resume a paused sandbox.
-        Sandbox must be either running or be paused.
-
-        :param timeout: Timeout for the sandbox in **seconds**.
-        :return: A running sandbox instance
-        """
-        ...
-
-    @overload
-    @staticmethod
-    def resume(
-        sandbox_id: str,
-        timeout: Optional[int] = None,
-        **opts: Unpack[ApiParams],
-    ) -> "Sandbox":
-        """
-        Resume a paused sandbox.
-        Sandbox must be either running or be paused.
-
-        :param sandbox_id: Sandbox ID
-        :param timeout: Timeout for the sandbox in **seconds**.
-        :return: A running sandbox instance
-        """
-        ...
-
-    @class_method_variant("_cls_resume_sandbox")
-    def resume(
-        self,
-        timeout: Optional[int] = None,
-        **opts: Unpack[ApiParams],
-    ) -> Self:
-        SandboxApi._cls_resume(
             sandbox_id=self.sandbox_id,
             timeout=timeout,
             **opts,
@@ -726,34 +680,6 @@ class Sandbox(SandboxApi):
             timeout=timeout,
             **opts,
         )
-
-        sandbox_headers = {}
-        envd_access_token = sandbox.envd_access_token
-        if envd_access_token is not None and not isinstance(envd_access_token, Unset):
-            sandbox_headers["X-Access-Token"] = envd_access_token
-
-        connection_config = ConnectionConfig(
-            extra_sandbox_headers=sandbox_headers,
-            **opts,
-        )
-
-        return cls(
-            sandbox_id=sandbox_id,
-            sandbox_domain=sandbox.domain,
-            connection_config=connection_config,
-            envd_version=Version(sandbox.envd_version),
-            envd_access_token=envd_access_token,
-            traffic_access_token=sandbox.traffic_access_token,
-        )
-
-    @classmethod
-    def _cls_resume_sandbox(
-        cls,
-        sandbox_id: str,
-        timeout: Optional[int] = None,
-        **opts: Unpack[ApiParams],
-    ) -> Self:
-        sandbox = SandboxApi._cls_resume(sandbox_id, timeout, **opts)
 
         sandbox_headers = {}
         envd_access_token = sandbox.envd_access_token

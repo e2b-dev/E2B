@@ -49,8 +49,8 @@ async def test_resume_does_not_shorten_timeout_on_running_sandbox(
     # Get initial info to check end_at
     info_before = await AsyncSandbox.get_info(sbx.sandbox_id)
 
-    # Resume with a shorter timeout (10 seconds)
-    await AsyncSandbox.resume(sbx.sandbox_id, timeout=10)
+    # Connect with a shorter timeout (10 seconds)
+    await AsyncSandbox.connect(sbx.sandbox_id, timeout=10)
 
     # Get info after connection
     info_after = await AsyncSandbox.get_info(sbx.sandbox_id)
@@ -62,15 +62,15 @@ async def test_resume_does_not_shorten_timeout_on_running_sandbox(
 
 
 @pytest.mark.skip_debug()
-async def test_resume_extends_timeout_on_running_sandbox(async_sandbox):
+async def test_connect_extends_timeout_on_running_sandbox(async_sandbox):
     # Create sandbox with a short timeout
     assert await async_sandbox.is_running()
 
     # Get initial info to check end_at
     info_before = await async_sandbox.get_info()
 
-    # Resume with a longer timeout
-    await AsyncSandbox.resume(async_sandbox.sandbox_id, timeout=600)
+    # Connect with a longer timeout
+    await AsyncSandbox.connect(async_sandbox.sandbox_id, timeout=600)
 
     # Get info after connection
     info_after = await AsyncSandbox.get_info(async_sandbox.sandbox_id)

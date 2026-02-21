@@ -47,25 +47,25 @@ def test_resume_does_not_shorten_timeout_on_running_sandbox(sandbox_factory):
     # Get initial info to check end_at
     info_before = Sandbox.get_info(sbx.sandbox_id)
 
-    # Resume with a shorter timeout (10 seconds)
-    Sandbox.resume(sbx.sandbox_id, timeout=10)
+    # Connect with a shorter timeout (10 seconds)
+    Sandbox.connect(sbx.sandbox_id, timeout=10)
 
     # Get info after connection
     info_after = Sandbox.get_info(sbx.sandbox_id)
 
-    # The end_at time should not have been shortened
+    # The end_at time should not have been shortened. It should be the same
     assert info_after.end_at == info_before.end_at, (
         f"Timeout was shortened: before={info_before.end_at}, after={info_after.end_at}"
     )
 
 
 @pytest.mark.skip_debug()
-def test_resume_extends_timeout_on_running_sandbox(sandbox):
+def test_connect_extends_timeout_on_running_sandbox(sandbox):
     # Get initial info to check end_at
     info_before = sandbox.get_info()
 
-    # Resume with a longer timeout
-    Sandbox.resume(sandbox.sandbox_id, timeout=600)
+    # Connect with a longer timeout
+    Sandbox.connect(sandbox.sandbox_id, timeout=600)
 
     # Get info after connection
     info_after = sandbox.get_info()

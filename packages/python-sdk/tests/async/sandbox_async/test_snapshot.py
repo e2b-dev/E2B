@@ -9,7 +9,7 @@ async def test_snapshot(async_sandbox: AsyncSandbox):
     await async_sandbox.pause()
     assert not await async_sandbox.is_running()
 
-    resumed_sandbox = await async_sandbox.resume()
+    resumed_sandbox = await async_sandbox.connect()
     assert await async_sandbox.is_running()
     assert await resumed_sandbox.is_running()
     assert resumed_sandbox.sandbox_id == async_sandbox.sandbox_id

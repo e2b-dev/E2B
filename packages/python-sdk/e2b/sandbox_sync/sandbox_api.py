@@ -299,22 +299,10 @@ class SandboxApi(SandboxBase):
         timeout: Optional[int] = None,
         **opts: Unpack[ApiParams],
     ) -> Sandbox:
-        return cls._cls_resume(
-            sandbox_id=sandbox_id,
-            timeout=timeout,
-            **opts,
-        )
-
-    @classmethod
-    def _cls_resume(
-        cls,
-        sandbox_id: str,
-        timeout: Optional[int] = None,
-        **opts: Unpack[ApiParams],
-    ) -> Sandbox:
         timeout = timeout or SandboxBase.default_sandbox_timeout
 
         config = ConnectionConfig(**opts)
+
         api_client = get_api_client(
             config,
             headers={
@@ -329,7 +317,7 @@ class SandboxApi(SandboxBase):
         )
 
         if res.status_code == 404:
-            raise NotFoundException(f"Sandbox {sandbox_id} not found")
+            raise NotFoundException(f"Paused sandbox {sandbox_id} not found")
 
         if res.status_code >= 300:
             raise handle_api_exception(res)
