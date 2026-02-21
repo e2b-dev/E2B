@@ -288,7 +288,7 @@ class Sandbox(SandboxApi):
         **opts: Unpack[ApiParams],
     ) -> Self:
         """
-        Connect to a sandbox. If the sandbox is paused, it will be resumed.
+        Connect to a sandbox. If the sandbox is paused, it will be automatically resumed.
         Sandbox must be either running or be paused.
 
         With sandbox ID you can connect to the same sandbox from different places or environments (serverless functions, etc).
