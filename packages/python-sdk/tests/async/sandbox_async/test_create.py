@@ -30,5 +30,5 @@ async def test_metadata(async_sandbox_factory):
 async def test_invalid_lifecycle_raises():
     with pytest.raises(InvalidArgumentException):
         await AsyncSandbox.create(
-            lifecycle={"on_timeout": "kill", "resume_on": "any"},
+            lifecycle={"on_timeout": "kill", "auto_resume": True},
         )

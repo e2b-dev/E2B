@@ -185,7 +185,7 @@ class Sandbox(SandboxApi):
         :param allow_internet_access: Allow sandbox to access the internet, defaults to `True`. If set to `False`, it works the same as setting network `deny_out` to `[0.0.0.0/0]`.
         :param mcp: MCP server to enable in the sandbox
         :param network: Sandbox network configuration
-        :param lifecycle: Sandbox lifecycle configuration — ``on_timeout``: ``"kill"`` (default) or ``"pause"``; ``resume_on``: ``"off"`` (default) or ``"any"`` (only when ``on_timeout="pause"``). Example: ``{"on_timeout": "pause", "resume_on": "any"}``
+        :param lifecycle: Sandbox lifecycle configuration — ``on_timeout``: ``"kill"`` (default) or ``"pause"``; ``auto_resume``: ``False`` (default) or ``True`` (only when ``on_timeout="pause"``). Example: ``{"on_timeout": "pause", "auto_resume": True}``
 
         :return: A Sandbox instance for the new sandbox
 
@@ -577,7 +577,7 @@ class Sandbox(SandboxApi):
             allow_internet_access=allow_internet_access,
             mcp=mcp,
             lifecycle=(
-                {"on_timeout": "pause", "resume_on": "off"} if auto_pause else None
+                {"on_timeout": "pause", "auto_resume": False} if auto_pause else None
             ),
             **opts,
         )
@@ -717,19 +717,19 @@ class Sandbox(SandboxApi):
     ) -> Self:
         if lifecycle is not None:
             on_timeout = lifecycle.get("on_timeout")
-            resume_on = lifecycle.get("resume_on")
+            auto_resume = lifecycle.get("auto_resume")
 
             if on_timeout not in ("kill", "pause"):
                 raise InvalidArgumentException(
                     f"`lifecycle.on_timeout` must be 'kill' or 'pause', got '{on_timeout}'"
                 )
-            if resume_on is not None and resume_on not in ("off", "any"):
+            if auto_resume is not None and not isinstance(auto_resume, bool):
                 raise InvalidArgumentException(
-                    f"`lifecycle.resume_on` must be 'off' or 'any', got '{resume_on}'"
+                    f"`lifecycle.auto_resume` must be a boolean, got '{auto_resume}'"
                 )
-            if resume_on == "any" and on_timeout != "pause":
+            if auto_resume is True and on_timeout != "pause":
                 raise InvalidArgumentException(
-                    "`lifecycle.resume_on` can be 'any' only when `lifecycle.on_timeout` is 'pause'"
+                    "`lifecycle.auto_resume` can be true only when `lifecycle.on_timeout` is 'pause'"
                 )
 
         extra_sandbox_headers = {}

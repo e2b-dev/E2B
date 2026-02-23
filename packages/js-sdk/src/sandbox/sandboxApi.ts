@@ -73,10 +73,11 @@ export type SandboxLifecycle = {
 
   /**
    * Auto-resume policy.
-   * @default "off"
-   * Can be `any` only when `onTimeout` is `pause`.
+   * @default false
+   * `true` maps to `"any"` and `false` maps to `"off"`.
+   * Can be `true` only when `onTimeout` is `pause`.
    */
-  resumeOn?: 'any' | 'off'
+  autoResume?: boolean
 }
 
 /**
@@ -326,17 +327,16 @@ function validateLifecycle(lifecycle: SandboxLifecycle) {
     )
   }
   if (
-    lifecycle.resumeOn != null &&
-    lifecycle.resumeOn !== 'off' &&
-    lifecycle.resumeOn !== 'any'
+    lifecycle.autoResume != null &&
+    typeof lifecycle.autoResume !== 'boolean'
   ) {
     throw new InvalidArgumentError(
-      `\`lifecycle.resumeOn\` must be 'off' or 'any', got '${lifecycle.resumeOn}'`
+      `\`lifecycle.autoResume\` must be a boolean, got '${lifecycle.autoResume}'`
     )
   }
-  if (lifecycle.resumeOn === 'any' && lifecycle.onTimeout !== 'pause') {
+  if (lifecycle.autoResume === true && lifecycle.onTimeout !== 'pause') {
     throw new InvalidArgumentError(
-      "`lifecycle.resumeOn` can be 'any' only when `lifecycle.onTimeout` is 'pause'"
+      "`lifecycle.autoResume` can be true only when `lifecycle.onTimeout` is 'pause'"
     )
   }
 }
@@ -352,7 +352,7 @@ function getLifecycle(
   if (opts?.autoPause) {
     return {
       onTimeout: 'pause',
-      resumeOn: 'off',
+      autoResume: false,
     }
   }
 
@@ -623,7 +623,7 @@ export class SandboxApi {
           : undefined
     const autoResumePolicy =
       lifecycle != undefined
-        ? lifecycle.resumeOn === 'any'
+        ? lifecycle.autoResume
           ? 'any'
           : 'off'
         : undefined

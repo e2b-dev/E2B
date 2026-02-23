@@ -17,9 +17,6 @@ from e2b.api.client.api.sandboxes import (
 from e2b.api.client.models import (
     ConnectSandbox,
     Error,
-    LifecycleConfig,
-    LifecycleConfigOnTimeout,
-    LifecycleConfigResumeOn,
     NewSandbox,
     PostSandboxesSandboxIDTimeoutBody,
     Sandbox,
@@ -45,21 +42,12 @@ from e2b.sandbox.sandbox_api import (
 from e2b.sandbox_async.paginator import AsyncSandboxPaginator
 
 
-def _serialize_lifecycle(
-    lifecycle: Optional[SandboxLifecycle],
-) -> Optional[LifecycleConfig]:
+def _get_auto_resume_policy(lifecycle: Optional[SandboxLifecycle]) -> Optional[str]:
     if lifecycle is None:
         return None
 
-    on_timeout = LifecycleConfigOnTimeout(lifecycle["on_timeout"])
-    resume_on_val = lifecycle.get("resume_on")
-
-    return LifecycleConfig(
-        on_timeout=on_timeout,
-        resume_on=LifecycleConfigResumeOn(resume_on_val)
-        if resume_on_val is not None
-        else LifecycleConfigResumeOn.OFF,
-    )
+    auto_resume = lifecycle.get("auto_resume")
+    return "any" if auto_resume else "off"
 
 
 class SandboxApi(SandboxBase):
@@ -189,12 +177,10 @@ class SandboxApi(SandboxBase):
     ) -> SandboxCreateResponse:
         config = ConnectionConfig(**opts)
 
-        lifecycle_payload = _serialize_lifecycle(lifecycle)
         effective_auto_pause = (
-            lifecycle_payload.on_timeout == "pause"
-            if lifecycle_payload is not None
-            else auto_pause
+            lifecycle["on_timeout"] == "pause" if lifecycle is not None else auto_pause
         )
+        auto_resume_policy = _get_auto_resume_policy(lifecycle)
         body = NewSandbox(
             template_id=template,
             auto_pause=(
@@ -207,8 +193,9 @@ class SandboxApi(SandboxBase):
             secure=secure,
             allow_internet_access=allow_internet_access,
             network=SandboxNetworkConfig(**network) if network else UNSET,
-            lifecycle=lifecycle_payload if lifecycle_payload is not None else UNSET,
         )
+        if auto_resume_policy is not None:
+            body["autoResume"] = {"policy": auto_resume_policy}
 
         api_client = get_api_client(config)
         res = await post_sandboxes.asyncio_detailed(

@@ -79,7 +79,7 @@ class SandboxNetworkOpts(TypedDict):
 class SandboxLifecycle(TypedDict):
     """
     Sandbox lifecycle configuration; defines post-timeout behavior and auto-resume policies.
-    Defaults to `on_timeout="kill"` and `resume_on="off"`.
+    Defaults to `on_timeout="kill"` and `auto_resume=False`.
     """
 
     on_timeout: Literal["pause", "kill"]
@@ -87,10 +87,11 @@ class SandboxLifecycle(TypedDict):
     What should happen to the sandbox when timeout is reached. `"kill"` means the sandbox will be terminated, while `"pause"` means the sandbox will be paused and can be resumed later. Defaults to `"kill"`.
     """
 
-    resume_on: NotRequired[Literal["any", "off"]]
+    auto_resume: NotRequired[bool]
     """
-    Under what conditions will activity cause the sandbox to resume when paused. Defaults to `"off"`.
-    Can be `any` only when `on_timeout` is `pause`.
+    Whether activity should cause the sandbox to resume when paused. Defaults to `False`.
+    Maps to API policy: `True -> "any"`, `False -> "off"`.
+    Can be `True` only when `on_timeout` is `pause`.
     """
 
 

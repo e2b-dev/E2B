@@ -1,12 +1,7 @@
 import pytest
 
 from e2b import InvalidArgumentException, Sandbox
-from e2b.api.client.models import (
-    LifecycleConfig,
-    LifecycleConfigOnTimeout,
-    LifecycleConfigResumeOn,
-    NewSandbox,
-)
+from e2b.api.client.models import NewSandbox
 from e2b.sandbox.sandbox_api import SandboxQuery
 
 
@@ -37,33 +32,41 @@ def test_metadata(sandbox_factory):
 def test_invalid_lifecycle_raises():
     with pytest.raises(InvalidArgumentException):
         Sandbox.create(
-            lifecycle={"on_timeout": "kill", "resume_on": "any"},
+            lifecycle={"on_timeout": "kill", "auto_resume": True},
         )
 
 
-def test_create_payload_serializes_lifecycle():
+def test_lifecycle_auto_resume_policy_mapping():
+    from e2b.sandbox_sync.sandbox_api import _get_auto_resume_policy
+
+    assert (
+        _get_auto_resume_policy({"on_timeout": "pause", "auto_resume": True}) == "any"
+    )
+    assert (
+        _get_auto_resume_policy({"on_timeout": "pause", "auto_resume": False}) == "off"
+    )
+    assert _get_auto_resume_policy({"on_timeout": "pause"}) == "off"
+    assert _get_auto_resume_policy(None) is None
+
+
+def test_create_payload_serializes_auto_resume_policy():
     body = NewSandbox(
         template_id="template-id",
         auto_pause=True,
-        lifecycle=LifecycleConfig(
-            on_timeout=LifecycleConfigOnTimeout.KILL,
-            resume_on=LifecycleConfigResumeOn.ANY,
-        ),
     )
+    body["autoResume"] = {"policy": "any"}
 
     assert body.to_dict()["autoPause"] is True
-    assert body.to_dict()["lifecycle"] == {"onTimeout": "kill", "resumeOn": "any"}
+    assert body.to_dict()["autoResume"] == {"policy": "any"}
 
 
-def test_create_payload_deserializes_lifecycle():
+def test_create_payload_deserializes_auto_resume_policy():
     body = NewSandbox.from_dict(
         {
             "templateID": "template-id",
             "autoPause": False,
-            "lifecycle": {"onTimeout": "pause", "resumeOn": "off"},
+            "autoResume": {"policy": "off"},
         }
     )
 
-    assert isinstance(body.lifecycle, LifecycleConfig)
-    assert body.lifecycle.on_timeout == "pause"
-    assert body.lifecycle.resume_on == "off"
+    assert body["autoResume"] == {"policy": "off"}

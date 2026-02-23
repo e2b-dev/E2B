@@ -38,7 +38,7 @@ test('invalid lifecycle throws', async () => {
     Sandbox.create(template, {
       lifecycle: {
         onTimeout: 'kill',
-        resumeOn: 'any',
+        autoResume: true,
       },
     })
   ).rejects.toThrowError(
@@ -54,7 +54,7 @@ test('invalid lifecycle throws in debug create', async () => {
       debug: true,
       lifecycle: {
         onTimeout: 'kill',
-        resumeOn: 'any',
+        autoResume: true,
       },
     })
   ).rejects.toThrowError(
@@ -70,7 +70,7 @@ test('invalid lifecycle throws in debug betaCreate', async () => {
       debug: true,
       lifecycle: {
         onTimeout: 'kill',
-        resumeOn: 'any',
+        autoResume: true,
       },
     })
   ).rejects.toThrowError(
