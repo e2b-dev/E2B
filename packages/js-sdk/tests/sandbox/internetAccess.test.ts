@@ -15,10 +15,10 @@ describe('internet access enabled', () => {
     async ({ sandbox }) => {
       // Test internet connectivity by making a curl request to a reliable external site
       const result = await sandbox.commands.run(
-        "curl -s -o /dev/null -w '%{http_code}' https://e2b.dev"
+        "curl -s -o /dev/null -w '%{http_code}' https://connectivitycheck.gstatic.com/generate_204"
       )
       assert.equal(result.exitCode, 0)
-      assert.equal(result.stdout.trim(), '200')
+      assert.equal(result.stdout.trim(), '204')
     }
   )
 })
@@ -36,7 +36,7 @@ describe('internet access disabled', () => {
       // Test that internet connectivity is blocked by making a curl request
       try {
         await sandbox.commands.run(
-          'curl --connect-timeout 3 --max-time 5 -Is https://e2b.dev'
+          'curl --connect-timeout 3 --max-time 5 -Is https://connectivitycheck.gstatic.com/generate_204'
         )
         // If we reach here, the command succeeded, which means internet access is not properly disabled
         assert.fail('Expected command to fail when internet access is disabled')
@@ -55,10 +55,10 @@ describe('internet access default', () => {
     async ({ sandbox }) => {
       // Test internet connectivity by making a curl request to a reliable external site
       const result = await sandbox.commands.run(
-        "curl -s -o /dev/null -w '%{http_code}' https://e2b.dev"
+        "curl -s -o /dev/null -w '%{http_code}' https://connectivitycheck.gstatic.com/generate_204"
       )
       assert.equal(result.exitCode, 0)
-      assert.equal(result.stdout.trim(), '200')
+      assert.equal(result.stdout.trim(), '204')
     }
   )
 })

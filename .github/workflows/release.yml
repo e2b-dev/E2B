@@ -172,8 +172,9 @@ jobs:
     steps:
       - name: Sanitize tag
         id: tag
+        env:
+          RAW_TAG: ${{ github.event.inputs.tag }}
         run: |
-          RAW_TAG="${{ github.event.inputs.tag }}"
           SAFE_TAG="$(echo "$RAW_TAG" | sed 's/[^0-9A-Za-z-]/-/g')"
           echo "tag=$SAFE_TAG" >> "$GITHUB_OUTPUT"
 
@@ -186,8 +187,9 @@ jobs:
 
       - name: Sanitize preid
         id: preid
+        env:
+          RAW_PREID: ${{ github.event.inputs.preid || github.ref_name }}
         run: |
-          RAW_PREID="${{ github.event.inputs.preid || github.ref_name }}"
           echo "preid=$(echo "$RAW_PREID" | sed 's/[^0-9A-Za-z-]/-/g')" >> "$GITHUB_OUTPUT"
 
   rc-python-tests:

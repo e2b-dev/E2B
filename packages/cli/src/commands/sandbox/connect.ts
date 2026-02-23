@@ -4,6 +4,7 @@ import * as commander from 'commander'
 import { spawnConnectedTerminal } from 'src/terminal'
 import { asBold, asPrimary } from 'src/utils/format'
 import { ensureAPIKey } from '../../api'
+import { printDashboardSandboxInspectUrl } from 'src/utils/urls'
 
 export const connectCommand = new commander.Command('connect')
   .description('connect terminal to already running sandbox')
@@ -36,6 +37,8 @@ async function connectToSandbox({
   sandboxID: string
 }) {
   const sandbox = await e2b.Sandbox.connect(sandboxID, { apiKey })
+
+  printDashboardSandboxInspectUrl(sandbox.sandboxId)
 
   console.log(
     `Terminal connecting to sandbox ${asPrimary(`${sandbox.sandboxId}`)}`
