@@ -2,7 +2,7 @@ import asyncio
 
 import pytest
 
-from e2b_connect.client import _retry
+from e2b_connect.client import Client, _retry
 
 
 class GoodError(Exception):
@@ -132,9 +132,6 @@ async def test_async_with_multiple_await_calls():
     result = await f()
     assert result is True
     assert total == 2
-
-
-from e2b_connect.client import Client
 
 
 def test_server_stream_timeout_extensions_include_read_write():
