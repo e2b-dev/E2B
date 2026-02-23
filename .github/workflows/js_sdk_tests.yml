@@ -2,12 +2,14 @@ name: Test JS SDK
 
 on:
   workflow_call:
+    inputs:
+      E2B_DOMAIN:
+        required: false
+        type: string
+        default: ''
     secrets:
       E2B_API_KEY:
         required: true
-  pull_request:
-    branches:
-      - main
 
 permissions:
   contents: read
@@ -83,6 +85,7 @@ jobs:
         run: pnpm test
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+          E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
 
       - name: Install Bun
         uses: oven-sh/setup-bun@v2
@@ -91,6 +94,7 @@ jobs:
         run: pnpm test:bun
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+          E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
 
       - name: Install Deno
         uses: denoland/setup-deno@v1
@@ -101,3 +105,4 @@ jobs:
         run: pnpm test:deno
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+          E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
