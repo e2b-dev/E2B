@@ -69,4 +69,4 @@ def test_create_payload_deserializes_auto_resume_policy():
         }
     )
 
-    assert body["autoResume"] == {"policy": "off"}
+    assert body.auto_resume.to_dict() == {"policy": "off"}

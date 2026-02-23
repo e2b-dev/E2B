@@ -7,8 +7,8 @@ from attrs import field as _attrs_field
 from ..types import UNSET, Unset
 
 if TYPE_CHECKING:
-    from ..models.lifecycle_config import LifecycleConfig
     from ..models.mcp_type_0 import McpType0
+    from ..models.sandbox_auto_resume_config import SandboxAutoResumeConfig
     from ..models.sandbox_network_config import SandboxNetworkConfig
 
 
@@ -23,8 +23,9 @@ class NewSandbox:
         allow_internet_access (Union[Unset, bool]): Allow sandbox to access the internet. When set to false, it behaves
             the same as specifying denyOut to 0.0.0.0/0 in the network config.
         auto_pause (Union[Unset, bool]): Automatically pauses the sandbox after the timeout Default: False.
+        auto_resume (Union[Unset, SandboxAutoResumeConfig]): Auto-resume configuration for paused sandboxes. Default is
+            off.
         env_vars (Union[Unset, Any]):
-        lifecycle (Union[Unset, LifecycleConfig]):
         mcp (Union['McpType0', None, Unset]): MCP configuration for the sandbox
         metadata (Union[Unset, Any]):
         network (Union[Unset, SandboxNetworkConfig]):
@@ -35,8 +36,8 @@ class NewSandbox:
     template_id: str
     allow_internet_access: Union[Unset, bool] = UNSET
     auto_pause: Union[Unset, bool] = False
+    auto_resume: Union[Unset, "SandboxAutoResumeConfig"] = UNSET
     env_vars: Union[Unset, Any] = UNSET
-    lifecycle: Union[Unset, "LifecycleConfig"] = UNSET
     mcp: Union["McpType0", None, Unset] = UNSET
     metadata: Union[Unset, Any] = UNSET
     network: Union[Unset, "SandboxNetworkConfig"] = UNSET
@@ -53,11 +54,11 @@ class NewSandbox:
 
         auto_pause = self.auto_pause
 
-        env_vars = self.env_vars
+        auto_resume: Union[Unset, dict[str, Any]] = UNSET
+        if not isinstance(self.auto_resume, Unset):
+            auto_resume = self.auto_resume.to_dict()
 
-        lifecycle: Union[Unset, dict[str, Any]] = UNSET
-        if not isinstance(self.lifecycle, Unset):
-            lifecycle = self.lifecycle.to_dict()
+        env_vars = self.env_vars
 
         mcp: Union[None, Unset, dict[str, Any]]
         if isinstance(self.mcp, Unset):
@@ -88,10 +89,10 @@ class NewSandbox:
             field_dict["allow_internet_access"] = allow_internet_access
         if auto_pause is not UNSET:
             field_dict["autoPause"] = auto_pause
+        if auto_resume is not UNSET:
+            field_dict["autoResume"] = auto_resume
         if env_vars is not UNSET:
             field_dict["envVars"] = env_vars
-        if lifecycle is not UNSET:
-            field_dict["lifecycle"] = lifecycle
         if mcp is not UNSET:
             field_dict["mcp"] = mcp
         if metadata is not UNSET:
@@ -107,8 +108,8 @@ class NewSandbox:
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
-        from ..models.lifecycle_config import LifecycleConfig
         from ..models.mcp_type_0 import McpType0
+        from ..models.sandbox_auto_resume_config import SandboxAutoResumeConfig
         from ..models.sandbox_network_config import SandboxNetworkConfig
 
         d = dict(src_dict)
@@ -118,14 +119,14 @@ class NewSandbox:
 
         auto_pause = d.pop("autoPause", UNSET)
 
-        env_vars = d.pop("envVars", UNSET)
-
-        _lifecycle = d.pop("lifecycle", UNSET)
-        lifecycle: Union[Unset, LifecycleConfig]
-        if isinstance(_lifecycle, Unset):
-            lifecycle = UNSET
+        _auto_resume = d.pop("autoResume", UNSET)
+        auto_resume: Union[Unset, SandboxAutoResumeConfig]
+        if isinstance(_auto_resume, Unset):
+            auto_resume = UNSET
         else:
-            lifecycle = LifecycleConfig.from_dict(_lifecycle)
+            auto_resume = SandboxAutoResumeConfig.from_dict(_auto_resume)
+
+        env_vars = d.pop("envVars", UNSET)
 
         def _parse_mcp(data: object) -> Union["McpType0", None, Unset]:
             if data is None:
@@ -161,8 +162,8 @@ class NewSandbox:
             template_id=template_id,
             allow_internet_access=allow_internet_access,
             auto_pause=auto_pause,
+            auto_resume=auto_resume,
             env_vars=env_vars,
-            lifecycle=lifecycle,
             mcp=mcp,
             metadata=metadata,
             network=network,

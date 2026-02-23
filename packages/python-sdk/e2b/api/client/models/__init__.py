@@ -18,9 +18,6 @@ from .gcp_registry_type import GCPRegistryType
 from .general_registry import GeneralRegistry
 from .general_registry_type import GeneralRegistryType
 from .identifier_masking_details import IdentifierMaskingDetails
-from .lifecycle_config import LifecycleConfig
-from .lifecycle_config_on_timeout import LifecycleConfigOnTimeout
-from .lifecycle_config_resume_on import LifecycleConfigResumeOn
 from .listed_sandbox import ListedSandbox
 from .log_level import LogLevel
 from .logs_direction import LogsDirection
@@ -42,6 +39,8 @@ from .post_sandboxes_sandbox_id_refreshes_body import (
 from .post_sandboxes_sandbox_id_timeout_body import PostSandboxesSandboxIDTimeoutBody
 from .resumed_sandbox import ResumedSandbox
 from .sandbox import Sandbox
+from .sandbox_auto_resume_config import SandboxAutoResumeConfig
+from .sandbox_auto_resume_policy import SandboxAutoResumePolicy
 from .sandbox_detail import SandboxDetail
 from .sandbox_log import SandboxLog
 from .sandbox_log_entry import SandboxLogEntry
@@ -93,9 +92,6 @@ __all__ = (
     "GeneralRegistry",
     "GeneralRegistryType",
     "IdentifierMaskingDetails",
-    "LifecycleConfig",
-    "LifecycleConfigOnTimeout",
-    "LifecycleConfigResumeOn",
     "ListedSandbox",
     "LogLevel",
     "LogsDirection",
@@ -115,6 +111,8 @@ __all__ = (
     "PostSandboxesSandboxIDTimeoutBody",
     "ResumedSandbox",
     "Sandbox",
+    "SandboxAutoResumeConfig",
+    "SandboxAutoResumePolicy",
     "SandboxDetail",
     "SandboxesWithMetrics",
     "SandboxLog",
