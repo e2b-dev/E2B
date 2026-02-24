@@ -181,9 +181,7 @@ class SandboxApi(SandboxBase):
         auto_resume_policy = get_auto_resume_policy(lifecycle)
         body = NewSandbox(
             template_id=template,
-            auto_pause=(
-                should_auto_pause if should_auto_pause is not None else UNSET
-            ),
+            auto_pause=(should_auto_pause if should_auto_pause is not None else UNSET),
             metadata=metadata or {},
             timeout=timeout,
             env_vars=env_vars or {},
