@@ -1,69 +1,63 @@
-import { afterAll, afterEach, beforeAll, expect, test } from 'vitest'
-
-import { http, HttpResponse } from 'msw'
-import { setupServer } from 'msw/node'
+import { assert, test } from 'vitest'
 
 import { Sandbox } from '../../src'
-import { apiUrl } from '../setup'
+import { isDebug, template, wait } from '../setup.js'
 
-let requestBody: Record<string, unknown> | undefined
-
-const server = setupServer(
-  http.post(apiUrl('/sandboxes'), async ({ request }) => {
-    requestBody = (await request.clone().json()) as Record<string, unknown>
-
-    return HttpResponse.json({
-      sandboxID: 'sbx_mock',
-      domain: 'sandbox.e2b.app',
-      envdVersion: '0.2.0',
-      envdAccessToken: 'envd-access-token',
-      trafficAccessToken: 'traffic-access-token',
+test.skipIf(isDebug)(
+  'auto-pause without auto-resume requires connect to wake',
+  async () => {
+    const sandbox = await Sandbox.create(template, {
+      timeoutMs: 3_000,
+      lifecycle: {
+        onTimeout: 'pause',
+        autoResume: false,
+      },
     })
-  })
+
+    try {
+      await wait(5_000)
+
+      assert.equal((await sandbox.getInfo()).state, 'paused')
+      assert.isFalse(await sandbox.isRunning())
+
+      await sandbox.connect()
+
+      assert.equal((await sandbox.getInfo()).state, 'running')
+      assert.isTrue(await sandbox.isRunning())
+    } finally {
+      await sandbox.kill().catch(() => {})
+    }
+  },
+  60_000
 )
 
-beforeAll(() => server.listen({ onUnhandledRequest: 'error' }))
+test.skipIf(isDebug)(
+  'auto-resume wakes paused sandbox on http request',
+  async () => {
+    const sandbox = await Sandbox.create(template, {
+      timeoutMs: 3_000,
+      lifecycle: {
+        onTimeout: 'pause',
+        autoResume: true,
+      },
+    })
 
-afterEach(() => {
-  requestBody = undefined
-  server.resetHandlers()
-})
+    try {
+      await sandbox.commands.run('python3 -m http.server 8000', {
+        background: true,
+      })
 
-afterAll(() => server.close())
+      await wait(5_000)
 
-test('sends autoPause false by default and omits autoResume', async () => {
-  await Sandbox.create('base')
+      const url = `https://${sandbox.getHost(8000)}`
+      const res = await fetch(url, { signal: AbortSignal.timeout(15_000) })
 
-  expect(requestBody).toBeDefined()
-  expect(requestBody).toMatchObject({ autoPause: false })
-  expect(requestBody).not.toHaveProperty('autoResume')
-})
-
-test('omits autoResume when lifecycle.onTimeout is kill', async () => {
-  await Sandbox.create('base', {
-    lifecycle: {
-      onTimeout: 'kill',
-      autoResume: false,
-    },
-  })
-
-  expect(requestBody).toBeDefined()
-  expect(requestBody).toMatchObject({ autoPause: false })
-  expect(requestBody).not.toHaveProperty('autoResume')
-})
-
-test('includes autoResume off when lifecycle.onTimeout is pause', async () => {
-  await Sandbox.create('base', {
-    lifecycle: {
-      onTimeout: 'pause',
-    },
-  })
-
-  expect(requestBody).toBeDefined()
-  expect(requestBody).toMatchObject({
-    autoPause: true,
-    autoResume: {
-      policy: 'off',
-    },
-  })
-})
+      assert.equal(res.status, 200)
+      assert.equal((await sandbox.getInfo()).state, 'running')
+      assert.isTrue(await sandbox.isRunning())
+    } finally {
+      await sandbox.kill().catch(() => {})
+    }
+  },
+  60_000
+)
