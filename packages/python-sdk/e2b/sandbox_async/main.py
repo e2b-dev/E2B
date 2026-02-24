@@ -14,7 +14,6 @@ from e2b.connection_config import ApiParams, ConnectionConfig
 from e2b.envd.api import ENVD_API_HEALTH_ROUTE, ahandle_envd_api_exception
 from e2b.envd.versions import ENVD_DEBUG_FALLBACK
 from e2b.exceptions import (
-    InvalidArgumentException,
     SandboxException,
     format_request_timeout_error,
 )
@@ -24,6 +23,7 @@ from e2b.sandbox.sandbox_api import (
     SandboxLifecycle,
     SandboxMetrics,
     SandboxNetworkOpts,
+    validate_lifecycle,
 )
 from e2b.sandbox.utils import class_method_variant
 from e2b.sandbox_async.commands.command import Commands
@@ -721,21 +721,7 @@ class AsyncSandbox(SandboxApi):
         **opts: Unpack[ApiParams],
     ) -> Self:
         if lifecycle is not None:
-            on_timeout = lifecycle.get("on_timeout")
-            auto_resume = lifecycle.get("auto_resume")
-
-            if on_timeout not in ("kill", "pause"):
-                raise InvalidArgumentException(
-                    f"`lifecycle.on_timeout` must be 'kill' or 'pause', got '{on_timeout}'"
-                )
-            if auto_resume is not None and not isinstance(auto_resume, bool):
-                raise InvalidArgumentException(
-                    f"`lifecycle.auto_resume` must be a boolean, got '{auto_resume}'"
-                )
-            if auto_resume is True and on_timeout != "pause":
-                raise InvalidArgumentException(
-                    "`lifecycle.auto_resume` can be true only when `lifecycle.on_timeout` is 'pause'"
-                )
+            validate_lifecycle(lifecycle)
 
         extra_sandbox_headers = {}
 
