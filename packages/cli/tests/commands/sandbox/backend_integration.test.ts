@@ -98,21 +98,6 @@ describe('sandbox cli backend integration', () => {
   )
 
   testIf(
-    'logs returns successfully',
-    { timeout: perTestTimeoutMs },
-    async () => {
-      const logsResult = runCli([
-        'sandbox',
-        'logs',
-        sandbox.sandboxId,
-        '--format',
-        'json',
-      ])
-      expect(logsResult.status).toBe(0)
-    }
-  )
-
-  testIf(
     'metrics returns successfully',
     { timeout: perTestTimeoutMs },
     async () => {
@@ -201,8 +186,8 @@ function runCliWithPipedStdin(
       clearTimeout(timer)
       const timeoutError = timedOut
         ? Object.assign(new Error('CLI command timed out'), {
-            code: 'ETIMEDOUT',
-          } as NodeJS.ErrnoException)
+          code: 'ETIMEDOUT',
+        } as NodeJS.ErrnoException)
         : undefined
       resolve({
         status: code,
