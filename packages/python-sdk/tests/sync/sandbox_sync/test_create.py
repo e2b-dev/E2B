@@ -1,8 +1,9 @@
-from unittest.mock import patch
+from time import sleep
 
+import httpx
 import pytest
 
-from e2b import Sandbox
+from e2b import Sandbox, SandboxState
 from e2b.api.client.models import (
     NewSandbox,
     SandboxAutoResumeConfig,
@@ -33,15 +34,6 @@ def test_metadata(sandbox_factory):
             break
     else:
         assert False, "Sandbox not found"
-
-
-def test_create_defaults_auto_pause_false():
-    with patch("e2b.sandbox_sync.main.Sandbox._create") as mock_create:
-        mock_create.return_value = object()
-
-        Sandbox.create(template="template-id")
-
-        assert mock_create.call_args.kwargs["auto_pause"] is False
 
 
 def test_lifecycle_auto_resume_policy_mapping():
@@ -77,3 +69,45 @@ def test_create_payload_deserializes_auto_resume_policy():
 
     assert isinstance(body.auto_resume, SandboxAutoResumeConfig)
     assert body.auto_resume.to_dict() == {"policy": "off"}
+
+
+@pytest.mark.skip_debug()
+def test_auto_pause_without_auto_resume_requires_connect(sandbox_factory):
+    sandbox = sandbox_factory(
+        timeout=3,
+        lifecycle={"on_timeout": "pause", "auto_resume": False},
+    )
+
+    sleep(5)
+
+    assert sandbox.get_info().state == SandboxState.PAUSED
+    assert not sandbox.is_running()
+
+    sandbox.connect()
+
+    assert sandbox.get_info().state == SandboxState.RUNNING
+    assert sandbox.is_running()
+
+
+@pytest.mark.skip_debug()
+def test_auto_resume_wakes_on_http_request(sandbox_factory):
+    sandbox = sandbox_factory(
+        timeout=3,
+        lifecycle={"on_timeout": "pause", "auto_resume": True},
+    )
+
+    cmd = sandbox.commands.run("python3 -m http.server 8000", background=True)
+    try:
+        sleep(5)
+
+        url = f"https://{sandbox.get_host(8000)}"
+        res = httpx.get(url, timeout=15.0)
+
+        assert res.status_code == 200
+        assert sandbox.get_info().state == SandboxState.RUNNING
+        assert sandbox.is_running()
+    finally:
+        try:
+            cmd.kill()
+        except Exception:
+            pass
