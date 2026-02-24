@@ -692,7 +692,7 @@ class Sandbox(SandboxApi):
         )
 
         return cls(
-            sandbox_id=sandbox_id,
+            sandbox_id=sandbox.sandbox_id,
             sandbox_domain=sandbox.domain,
             connection_config=connection_config,
             envd_version=Version(sandbox.envd_version),
