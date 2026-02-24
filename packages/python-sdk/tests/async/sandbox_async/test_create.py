@@ -8,6 +8,7 @@ from e2b.api.client.models import (
     SandboxAutoResumeConfig,
     SandboxAutoResumePolicy,
 )
+from e2b.sandbox.sandbox_api import get_auto_resume_policy
 
 
 @pytest.mark.skip_debug()
@@ -49,22 +50,21 @@ async def test_create_defaults_auto_pause_false():
 
         await AsyncSandbox.create(template="template-id")
 
+        assert mock_create.await_args is not None
         assert mock_create.await_args.kwargs["auto_pause"] is False
 
 
 def test_lifecycle_auto_resume_policy_mapping():
-    from e2b.sandbox_async.sandbox_api import _get_auto_resume_policy
-
     assert (
-        _get_auto_resume_policy({"on_timeout": "pause", "auto_resume": True}) == "any"
+        get_auto_resume_policy({"on_timeout": "pause", "auto_resume": True}) == "any"
     )
     assert (
-        _get_auto_resume_policy({"on_timeout": "pause", "auto_resume": False}) == "off"
+        get_auto_resume_policy({"on_timeout": "pause", "auto_resume": False}) == "off"
     )
-    assert _get_auto_resume_policy({"on_timeout": "pause"}) == "off"
-    assert _get_auto_resume_policy({"on_timeout": "kill", "auto_resume": False}) is None
-    assert _get_auto_resume_policy({"on_timeout": "kill"}) is None
-    assert _get_auto_resume_policy(None) is None
+    assert get_auto_resume_policy({"on_timeout": "pause"}) == "off"
+    assert get_auto_resume_policy({"on_timeout": "kill", "auto_resume": False}) is None
+    assert get_auto_resume_policy({"on_timeout": "kill"}) is None
+    assert get_auto_resume_policy(None) is None
 
 
 def test_create_payload_serializes_auto_resume_policy():
@@ -87,4 +87,5 @@ def test_create_payload_deserializes_auto_resume_policy():
         }
     )
 
+    assert isinstance(body.auto_resume, SandboxAutoResumeConfig)
     assert body.auto_resume.to_dict() == {"policy": "off"}
