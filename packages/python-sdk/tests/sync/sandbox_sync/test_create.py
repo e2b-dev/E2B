@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 import pytest
 
 from e2b import InvalidArgumentException, Sandbox
@@ -38,6 +40,15 @@ def test_invalid_lifecycle_raises():
         Sandbox.create(
             lifecycle={"on_timeout": "kill", "auto_resume": True},
         )
+
+
+def test_create_defaults_auto_pause_false():
+    with patch("e2b.sandbox_sync.main.Sandbox._create") as mock_create:
+        mock_create.return_value = object()
+
+        Sandbox.create(template="template-id")
+
+        assert mock_create.call_args.kwargs["auto_pause"] is False
 
 
 def test_lifecycle_auto_resume_policy_mapping():

@@ -1,3 +1,5 @@
+from unittest.mock import AsyncMock, patch
+
 import pytest
 
 from e2b import AsyncSandbox, InvalidArgumentException, SandboxQuery
@@ -37,6 +39,17 @@ async def test_invalid_lifecycle_raises():
         await AsyncSandbox.create(
             lifecycle={"on_timeout": "kill", "auto_resume": True},
         )
+
+
+async def test_create_defaults_auto_pause_false():
+    with patch(
+        "e2b.sandbox_async.main.AsyncSandbox._create", new_callable=AsyncMock
+    ) as mock_create:
+        mock_create.return_value = object()
+
+        await AsyncSandbox.create(template="template-id")
+
+        assert mock_create.await_args.kwargs["auto_pause"] is False
 
 
 def test_lifecycle_auto_resume_policy_mapping():

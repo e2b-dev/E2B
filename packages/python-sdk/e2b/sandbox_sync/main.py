@@ -198,7 +198,7 @@ class Sandbox(SandboxApi):
 
         sandbox = cls._create(
             template=template,
-            auto_pause=None,
+            auto_pause=False,
             timeout=timeout,
             metadata=metadata,
             envs=envs,

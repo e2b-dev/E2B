@@ -201,7 +201,7 @@ class AsyncSandbox(SandboxApi):
         sandbox = await cls._create(
             template=template,
             timeout=timeout,
-            auto_pause=None,
+            auto_pause=False,
             metadata=metadata,
             envs=envs,
             secure=secure,

@@ -619,7 +619,7 @@ export class SandboxApi {
         ? lifecycle.onTimeout === 'pause'
         : opts?.autoPause != undefined
           ? opts.autoPause
-          : undefined
+          : false
     const autoResumePolicy =
       lifecycle != undefined && lifecycle.onTimeout === 'pause'
         ? lifecycle.autoResume
