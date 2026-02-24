@@ -176,14 +176,14 @@ class SandboxApi(SandboxBase):
     ) -> SandboxCreateResponse:
         config = ConnectionConfig(**opts)
 
-        effective_auto_pause = (
+        should_auto_pause = (
             lifecycle["on_timeout"] == "pause" if lifecycle is not None else auto_pause
         )
         auto_resume_policy = get_auto_resume_policy(lifecycle)
         body = NewSandbox(
             template_id=template,
             auto_pause=(
-                effective_auto_pause if effective_auto_pause is not None else UNSET
+                should_auto_pause if should_auto_pause is not None else UNSET
             ),
             metadata=metadata or {},
             timeout=timeout,
