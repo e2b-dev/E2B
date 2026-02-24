@@ -49,6 +49,8 @@ def test_lifecycle_auto_resume_policy_mapping():
         _get_auto_resume_policy({"on_timeout": "pause", "auto_resume": False}) == "off"
     )
     assert _get_auto_resume_policy({"on_timeout": "pause"}) == "off"
+    assert _get_auto_resume_policy({"on_timeout": "kill", "auto_resume": False}) is None
+    assert _get_auto_resume_policy({"on_timeout": "kill"}) is None
     assert _get_auto_resume_policy(None) is None
 
 

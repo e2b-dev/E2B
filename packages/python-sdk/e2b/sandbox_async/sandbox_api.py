@@ -45,7 +45,7 @@ from e2b.sandbox_async.paginator import AsyncSandboxPaginator
 
 
 def _get_auto_resume_policy(lifecycle: Optional[SandboxLifecycle]) -> Optional[str]:
-    if lifecycle is None:
+    if lifecycle is None or lifecycle.get("on_timeout") != "pause":
         return None
 
     auto_resume = lifecycle.get("auto_resume")
