@@ -38,6 +38,7 @@ from e2b.exceptions import (
 from e2b.sandbox.main import SandboxBase
 from e2b.sandbox.sandbox_api import (
     SandboxLifecycle,
+    get_auto_resume_policy,
     McpServer,
     SandboxInfo,
     SandboxMetrics,
@@ -46,14 +47,6 @@ from e2b.sandbox.sandbox_api import (
     SnapshotInfo,
 )
 from e2b.sandbox_async.paginator import AsyncSandboxPaginator
-
-
-def _get_auto_resume_policy(lifecycle: Optional[SandboxLifecycle]) -> Optional[str]:
-    if lifecycle is None or lifecycle.get("on_timeout") != "pause":
-        return None
-
-    auto_resume = lifecycle.get("auto_resume")
-    return "any" if auto_resume else "off"
 
 
 class SandboxApi(SandboxBase):
@@ -186,7 +179,7 @@ class SandboxApi(SandboxBase):
         effective_auto_pause = (
             lifecycle["on_timeout"] == "pause" if lifecycle is not None else auto_pause
         )
-        auto_resume_policy = _get_auto_resume_policy(lifecycle)
+        auto_resume_policy = get_auto_resume_policy(lifecycle)
         body = NewSandbox(
             template_id=template,
             auto_pause=(

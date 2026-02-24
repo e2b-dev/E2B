@@ -114,6 +114,14 @@ def validate_lifecycle(lifecycle: SandboxLifecycle) -> None:
         )
 
 
+def get_auto_resume_policy(lifecycle: Optional[SandboxLifecycle]) -> Optional[str]:
+    if lifecycle is None or lifecycle.get("on_timeout") != "pause":
+        return None
+
+    auto_resume = lifecycle.get("auto_resume")
+    return "any" if auto_resume else "off"
+
+
 @dataclass
 class SandboxInfo:
     """Information about a sandbox."""
