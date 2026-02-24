@@ -52,9 +52,7 @@ def test_create_defaults_auto_pause_false():
 
 
 def test_lifecycle_auto_resume_policy_mapping():
-    assert (
-        get_auto_resume_policy({"on_timeout": "pause", "auto_resume": True}) == "any"
-    )
+    assert get_auto_resume_policy({"on_timeout": "pause", "auto_resume": True}) == "any"
     assert (
         get_auto_resume_policy({"on_timeout": "pause", "auto_resume": False}) == "off"
     )
