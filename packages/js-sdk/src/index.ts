@@ -50,7 +50,6 @@ export type {
   SandboxPaginator,
   SandboxNetworkOpts,
   SnapshotInfo,
-  SnapshotOpts,
   SnapshotListOpts,
   SnapshotPaginator,
 } from './sandbox/sandboxApi'

@@ -20,7 +20,7 @@ import {
   SandboxListOpts,
   SandboxPaginator,
   SandboxBetaCreateOpts,
-  SnapshotOpts,
+  SandboxApiOpts,
   SnapshotListOpts,
   SnapshotInfo,
   SnapshotPaginator,
@@ -586,12 +586,13 @@ export class Sandbox extends SandboxApi {
   /**
    * Create a snapshot of the sandbox's current state.
    *
+   * The sandbox will be paused while the snapshot is being created.
    * The snapshot can be used to create new sandboxes with the same filesystem and state.
    * Snapshots are persistent and survive sandbox deletion.
    *
    * Use the returned `snapshotId` with `Sandbox.create(snapshotId)` to create a new sandbox from the snapshot.
    *
-   * @param opts snapshot options.
+   * @param opts connection options.
    *
    * @returns snapshot information including the snapshot ID.
    *
@@ -607,7 +608,7 @@ export class Sandbox extends SandboxApi {
    * const newSandbox = await Sandbox.create(snapshot.snapshotId)
    * ```
    */
-  async createSnapshot(opts?: SnapshotOpts): Promise<SnapshotInfo> {
+  async createSnapshot(opts?: SandboxApiOpts): Promise<SnapshotInfo> {
     return await SandboxApi.createSnapshot(this.sandboxId, {
       ...this.connectionConfig,
       ...opts,

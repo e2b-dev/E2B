@@ -109,9 +109,15 @@ async def test_delete_snapshot(async_sandbox: AsyncSandbox):
 
 @pytest.mark.skip_debug()
 async def test_snapshot_preserves_filesystem(async_sandbox: AsyncSandbox):
-    await async_sandbox.files.make_dir("/home/user/app")
-    await async_sandbox.files.write("/home/user/app/config.json", '{"env": "test"}')
-    await async_sandbox.files.write("/home/user/app/data.txt", "important data")
+    app_dir = "/home/user/app"
+    config_path = f"{app_dir}/config.json"
+    config_content = '{"env": "test"}'
+    data_path = f"{app_dir}/data.txt"
+    data_content = "important data"
+
+    await async_sandbox.files.make_dir(app_dir)
+    await async_sandbox.files.write(config_path, config_content)
+    await async_sandbox.files.write(data_path, data_content)
 
     snapshot = await async_sandbox.create_snapshot()
 
@@ -119,14 +125,14 @@ async def test_snapshot_preserves_filesystem(async_sandbox: AsyncSandbox):
         new_sandbox = await AsyncSandbox.create(snapshot.snapshot_id)
 
         try:
-            dir_exists = await new_sandbox.files.exists("/home/user/app")
+            dir_exists = await new_sandbox.files.exists(app_dir)
             assert dir_exists
 
-            config = await new_sandbox.files.read("/home/user/app/config.json")
-            data = await new_sandbox.files.read("/home/user/app/data.txt")
+            config = await new_sandbox.files.read(config_path)
+            data = await new_sandbox.files.read(data_path)
 
-            assert config == '{"env": "test"}'
-            assert data == "important data"
+            assert config == config_content
+            assert data == data_content
         finally:
             await new_sandbox.kill()
     finally:

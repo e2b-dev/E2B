@@ -5,7 +5,7 @@ import {
   DEFAULT_SANDBOX_TIMEOUT_MS,
 } from '../connectionConfig'
 import { compareVersions } from 'compare-versions'
-import { NotFoundError, SandboxError, TemplateError } from '../errors'
+import { NotFoundError, TemplateError } from '../errors'
 import { timeoutToSeconds } from '../utils'
 import type { McpServer as BaseMcpServer } from './mcp'
 
@@ -199,11 +199,6 @@ export interface SandboxMetricsOpts extends SandboxApiOpts {
    */
   end?: Date
 }
-
-/**
- * Options for creating a snapshot.
- */
-export interface SnapshotOpts extends SandboxApiOpts {}
 
 /**
  * Options for listing snapshots.
@@ -570,17 +565,18 @@ export class SandboxApi {
   /**
    * Create a snapshot from a sandbox.
    *
+   * The sandbox will be paused while the snapshot is being created.
    * The snapshot can be used to create new sandboxes with the same state.
    * The snapshot is a persistent image that survives sandbox deletion.
    *
    * @param sandboxId sandbox ID to create snapshot from.
-   * @param opts snapshot options.
+   * @param opts connection options.
    *
    * @returns snapshot information including the snapshot name that can be used with Sandbox.create().
    */
   static async createSnapshot(
     sandboxId: string,
-    opts?: SnapshotOpts
+    opts?: SandboxApiOpts
   ): Promise<SnapshotInfo> {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
@@ -595,7 +591,7 @@ export class SandboxApi {
       signal: config.getSignal(opts?.requestTimeoutMs),
     })
 
-    if (res.error?.code === 404 || res.response.status === 404) {
+    if (res.error?.code === 404) {
       throw new NotFoundError(`Sandbox ${sandboxId} not found`)
     }
 
@@ -604,14 +600,8 @@ export class SandboxApi {
       throw err
     }
 
-    // Additional check for non-success status codes that might not have error body
-    if (!res.data || res.response.status >= 400) {
-      const errorMessage = res.error?.message || `HTTP ${res.response.status}`
-      throw new SandboxError(`Failed to create snapshot: ${errorMessage}`)
-    }
-
     return {
-      snapshotId: res.data.snapshotID,
+      snapshotId: res.data!.snapshotID,
     }
   }
 
@@ -650,7 +640,7 @@ export class SandboxApi {
       signal: config.getSignal(opts?.requestTimeoutMs),
     })
 
-    if (res.error?.code === 404 || res.response.status === 404) {
+    if (res.error?.code === 404) {
       return false
     }
 
@@ -680,10 +670,7 @@ export class SandboxApi {
         timeout: timeoutToSeconds(timeoutMs),
         secure: opts?.secure ?? true,
         allow_internet_access: opts?.allowInternetAccess ?? true,
-        network: opts?.network && {
-          ...opts.network,
-          allowPublicTraffic: opts.network.allowPublicTraffic ?? true,
-        },
+        network: opts?.network,
       },
       signal: config.getSignal(opts?.requestTimeoutMs),
     })
@@ -750,46 +737,22 @@ export class SandboxApi {
   }
 }
 
-/**
- * Paginator for listing sandboxes.
- *
- * @example
- * ```ts
- * // Using async iterator
- * for await (const sandbox of Sandbox.list()) {
- *   console.log(sandbox.sandboxId)
- * }
- *
- * // Or collect all to array
- * const sandboxes = await Array.fromAsync(Sandbox.list())
- *
- * // Manual pagination
- * const paginator = Sandbox.list()
- * while (paginator.hasNext) {
- *   const sandboxes = await paginator.nextItems()
- *   console.log(sandboxes)
- * }
- * ```
- */
-export class SandboxPaginator {
+abstract class BasePaginator<T> {
+  protected readonly config: ConnectionConfig
+  protected client: ApiClient
+  protected readonly limit?: number
+
   private _hasNext: boolean
   private _nextToken?: string
 
-  private readonly config: ConnectionConfig
-  private client: ApiClient
-
-  private query: SandboxListOpts['query']
-  private readonly limit?: number
-
-  constructor(opts?: SandboxListOpts) {
-    this.config = new ConnectionConfig(opts)
+  constructor(config: ConnectionConfig, limit?: number, nextToken?: string) {
+    this.config = config
     this.client = new ApiClient(this.config)
 
     this._hasNext = true
-    this._nextToken = opts?.nextToken
+    this._nextToken = nextToken
 
-    this.query = opts?.query
-    this.limit = opts?.limit
+    this.limit = limit
   }
 
   /**
@@ -806,13 +769,42 @@ export class SandboxPaginator {
     return this._nextToken
   }
 
+  protected updatePagination(response: Response) {
+    this._nextToken = response.headers.get('x-next-token') || undefined
+    this._hasNext = !!this._nextToken
+  }
+
   /**
-   * Get the next page of sandboxes.
+   * Get the next page of items.
    *
    * @throws Error if there are no more items to fetch. Call this method only if `hasNext` is `true`.
    *
-   * @returns List of sandboxes
+   * @returns List of items
    */
+  abstract nextItems(): Promise<T[]>
+}
+
+/**
+ * Paginator for listing sandboxes.
+ *
+ * @example
+ * ```ts
+ * const paginator = Sandbox.list()
+ * while (paginator.hasNext) {
+ *   const sandboxes = await paginator.nextItems()
+ *   console.log(sandboxes)
+ * }
+ * ```
+ */
+export class SandboxPaginator extends BasePaginator<SandboxInfo> {
+  private query: SandboxListOpts['query']
+
+  constructor(opts?: SandboxListOpts) {
+    super(new ConnectionConfig(opts), opts?.limit, opts?.nextToken)
+
+    this.query = opts?.query
+  }
+
   async nextItems(): Promise<SandboxInfo[]> {
     if (!this.hasNext) {
       throw new Error('No more items to fetch')
@@ -848,8 +840,7 @@ export class SandboxPaginator {
       throw err
     }
 
-    this._nextToken = res.response.headers.get('x-next-token') || undefined
-    this._hasNext = !!this._nextToken
+    this.updatePagination(res.response)
 
     return (res.data ?? []).map(
       (sandbox: components['schemas']['ListedSandbox']) => ({
@@ -866,15 +857,6 @@ export class SandboxPaginator {
       })
     )
   }
-
-  async *[Symbol.asyncIterator](): AsyncIterableIterator<SandboxInfo> {
-    while (this.hasNext) {
-      const items = await this.nextItems()
-      for (const item of items) {
-        yield item
-      }
-    }
-  }
 }
 
 /**
@@ -882,15 +864,6 @@ export class SandboxPaginator {
  *
  * @example
  * ```ts
- * // Using async iterator
- * for await (const snapshot of Sandbox.listSnapshots()) {
- *   console.log(snapshot.snapshotId)
- * }
- *
- * // Or collect all to array
- * const snapshots = await Array.fromAsync(Sandbox.listSnapshots())
- *
- * // Manual pagination
  * const paginator = Sandbox.listSnapshots()
  * while (paginator.hasNext) {
  *   const snapshots = await paginator.nextItems()
@@ -898,48 +871,15 @@ export class SandboxPaginator {
  * }
  * ```
  */
-export class SnapshotPaginator {
-  private _hasNext: boolean
-  private _nextToken?: string
-
-  private readonly config: ConnectionConfig
-  private client: ApiClient
-
+export class SnapshotPaginator extends BasePaginator<SnapshotInfo> {
   private readonly sandboxId?: string
-  private readonly limit?: number
 
   constructor(opts?: SnapshotListOpts) {
-    this.config = new ConnectionConfig(opts)
-    this.client = new ApiClient(this.config)
-
-    this._hasNext = true
-    this._nextToken = opts?.nextToken
+    super(new ConnectionConfig(opts), opts?.limit, opts?.nextToken)
 
     this.sandboxId = opts?.sandboxId
-    this.limit = opts?.limit
   }
 
-  /**
-   * Returns true if there are more items to fetch.
-   */
-  get hasNext(): boolean {
-    return this._hasNext
-  }
-
-  /**
-   * Returns the next token to use for pagination.
-   */
-  get nextToken(): string | undefined {
-    return this._nextToken
-  }
-
-  /**
-   * Get the next page of snapshots.
-   *
-   * @throws Error if there are no more items to fetch. Call this method only if `hasNext` is `true`.
-   *
-   * @returns List of snapshots
-   */
   async nextItems(): Promise<SnapshotInfo[]> {
     if (!this.hasNext) {
       throw new Error('No more items to fetch')
@@ -961,22 +901,12 @@ export class SnapshotPaginator {
       throw err
     }
 
-    this._nextToken = res.response.headers.get('x-next-token') || undefined
-    this._hasNext = !!this._nextToken
+    this.updatePagination(res.response)
 
     return (res.data ?? []).map(
       (snapshot: components['schemas']['SnapshotInfo']) => ({
         snapshotId: snapshot.snapshotID,
       })
     )
-  }
-
-  async *[Symbol.asyncIterator](): AsyncIterableIterator<SnapshotInfo> {
-    while (this.hasNext) {
-      const items = await this.nextItems()
-      for (const item of items) {
-        yield item
-      }
-    }
   }
 }

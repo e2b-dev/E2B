@@ -107,9 +107,15 @@ def test_delete_snapshot(sandbox: Sandbox):
 
 @pytest.mark.skip_debug()
 def test_snapshot_preserves_filesystem(sandbox: Sandbox):
-    sandbox.files.make_dir("/home/user/app")
-    sandbox.files.write("/home/user/app/config.json", '{"env": "test"}')
-    sandbox.files.write("/home/user/app/data.txt", "important data")
+    app_dir = "/home/user/app"
+    config_path = f"{app_dir}/config.json"
+    config_content = '{"env": "test"}'
+    data_path = f"{app_dir}/data.txt"
+    data_content = "important data"
+
+    sandbox.files.make_dir(app_dir)
+    sandbox.files.write(config_path, config_content)
+    sandbox.files.write(data_path, data_content)
 
     snapshot = sandbox.create_snapshot()
 
@@ -117,14 +123,14 @@ def test_snapshot_preserves_filesystem(sandbox: Sandbox):
         new_sandbox = Sandbox.create(snapshot.snapshot_id)
 
         try:
-            dir_exists = new_sandbox.files.exists("/home/user/app")
+            dir_exists = new_sandbox.files.exists(app_dir)
             assert dir_exists
 
-            config = new_sandbox.files.read("/home/user/app/config.json")
-            data = new_sandbox.files.read("/home/user/app/data.txt")
+            config = new_sandbox.files.read(config_path)
+            data = new_sandbox.files.read(data_path)
 
-            assert config == '{"env": "test"}'
-            assert data == "important data"
+            assert config == config_content
+            assert data == data_content
         finally:
             new_sandbox.kill()
     finally:

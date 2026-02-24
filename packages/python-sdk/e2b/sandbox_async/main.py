@@ -643,6 +643,7 @@ class AsyncSandbox(SandboxApi):
         """
         Create a snapshot of the sandbox's current state.
 
+        The sandbox will be paused while the snapshot is being created.
         The snapshot can be used to create new sandboxes with the same filesystem and state.
         Snapshots are persistent and survive sandbox deletion.
 
@@ -661,6 +662,8 @@ class AsyncSandbox(SandboxApi):
         """
         Create a snapshot from the sandbox specified by sandbox ID.
 
+        The sandbox will be paused while the snapshot is being created.
+
         :param sandbox_id: Sandbox ID
 
         :return: Snapshot information including the snapshot ID
@@ -675,6 +678,7 @@ class AsyncSandbox(SandboxApi):
         """
         Create a snapshot of the sandbox's current state.
 
+        The sandbox will be paused while the snapshot is being created.
         The snapshot can be used to create new sandboxes with the same filesystem and state.
         Snapshots are persistent and survive sandbox deletion.
 
@@ -687,6 +691,24 @@ class AsyncSandbox(SandboxApi):
             **self.connection_config.get_api_params(**opts),
         )
 
+    @overload
+    def list_snapshots(
+        self,
+        limit: Optional[int] = None,
+        next_token: Optional[str] = None,
+        **opts: Unpack[ApiParams],
+    ) -> AsyncSnapshotPaginator:
+        """
+        List snapshots for this sandbox.
+
+        :param limit: Maximum number of snapshots to return per page
+        :param next_token: Token for pagination
+
+        :return: Paginator for listing snapshots
+        """
+        ...
+
+    @overload
     @staticmethod
     def list_snapshots(
         sandbox_id: Optional[str] = None,
@@ -703,6 +725,37 @@ class AsyncSandbox(SandboxApi):
 
         :return: Paginator for listing snapshots
         """
+        ...
+
+    @class_method_variant("_cls_list_snapshots")
+    def list_snapshots(
+        self,
+        limit: Optional[int] = None,
+        next_token: Optional[str] = None,
+        **opts: Unpack[ApiParams],
+    ) -> AsyncSnapshotPaginator:
+        """
+        List snapshots for this sandbox.
+
+        :param limit: Maximum number of snapshots to return per page
+        :param next_token: Token for pagination
+
+        :return: Paginator for listing snapshots
+        """
+        return AsyncSnapshotPaginator(
+            sandbox_id=self.sandbox_id,
+            limit=limit,
+            next_token=next_token,
+            **self.connection_config.get_api_params(**opts),
+        )
+
+    @staticmethod
+    def _cls_list_snapshots(
+        sandbox_id: Optional[str] = None,
+        limit: Optional[int] = None,
+        next_token: Optional[str] = None,
+        **opts: Unpack[ApiParams],
+    ) -> AsyncSnapshotPaginator:
         return AsyncSnapshotPaginator(
             sandbox_id=sandbox_id,
             limit=limit,

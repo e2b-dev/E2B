@@ -156,10 +156,15 @@ sandboxTest.skipIf(isDebug)('delete snapshot', async ({ sandbox }) => {
 sandboxTest.skipIf(isDebug)(
   'snapshot preserves file system state',
   async ({ sandbox, sandboxTestId }) => {
-    // Create directory structure
-    await sandbox.files.makeDir('/home/user/app')
-    await sandbox.files.write('/home/user/app/config.json', '{"env": "test"}')
-    await sandbox.files.write('/home/user/app/data.txt', 'important data')
+    const appDir = '/home/user/app'
+    const configPath = `${appDir}/config.json`
+    const configContent = '{"env": "test"}'
+    const dataPath = `${appDir}/data.txt`
+    const dataContent = 'important data'
+
+    await sandbox.files.makeDir(appDir)
+    await sandbox.files.write(configPath, configContent)
+    await sandbox.files.write(dataPath, dataContent)
 
     const snapshot = await sandbox.createSnapshot()
 
@@ -170,15 +175,15 @@ sandboxTest.skipIf(isDebug)(
 
       try {
         // Verify directory exists
-        const dirExists = await newSandbox.files.exists('/home/user/app')
+        const dirExists = await newSandbox.files.exists(appDir)
         assert.isTrue(dirExists)
 
         // Verify files exist with correct content
-        const config = await newSandbox.files.read('/home/user/app/config.json')
-        const data = await newSandbox.files.read('/home/user/app/data.txt')
+        const config = await newSandbox.files.read(configPath)
+        const data = await newSandbox.files.read(dataPath)
 
-        assert.equal(config, '{"env": "test"}')
-        assert.equal(data, 'important data')
+        assert.equal(config, configContent)
+        assert.equal(data, dataContent)
       } finally {
         await newSandbox.kill()
       }
