@@ -2,7 +2,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from e2b import AsyncSandbox, InvalidArgumentException, SandboxQuery
+from e2b import AsyncSandbox, SandboxQuery
 from e2b.api.client.models import (
     NewSandbox,
     SandboxAutoResumeConfig,
@@ -33,13 +33,6 @@ async def test_metadata(async_sandbox_factory):
             break
     else:
         assert False, "Sandbox not found"
-
-
-async def test_invalid_lifecycle_raises():
-    with pytest.raises(InvalidArgumentException):
-        await AsyncSandbox.create(
-            lifecycle={"on_timeout": "kill", "auto_resume": True},
-        )
 
 
 async def test_create_defaults_auto_pause_false():

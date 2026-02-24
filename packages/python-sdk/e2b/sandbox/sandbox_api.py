@@ -7,7 +7,6 @@ from typing_extensions import NotRequired, Unpack
 from e2b import ConnectionConfig
 from e2b.api.client.models import ListedSandbox, SandboxDetail, SandboxState
 from e2b.connection_config import ApiParams
-from e2b.exceptions import InvalidArgumentException
 from e2b.sandbox.mcp import McpServer as BaseMcpServer
 
 
@@ -94,24 +93,6 @@ class SandboxLifecycle(TypedDict):
     Maps to API policy: `True -> "any"`, `False -> "off"`.
     Can be `True` only when `on_timeout` is `pause`.
     """
-
-
-def validate_lifecycle(lifecycle: SandboxLifecycle) -> None:
-    on_timeout = lifecycle.get("on_timeout")
-    auto_resume = lifecycle.get("auto_resume")
-
-    if on_timeout not in ("kill", "pause"):
-        raise InvalidArgumentException(
-            f"`lifecycle.on_timeout` must be 'kill' or 'pause', got '{on_timeout}'"
-        )
-    if auto_resume is not None and not isinstance(auto_resume, bool):
-        raise InvalidArgumentException(
-            f"`lifecycle.auto_resume` must be a boolean, got '{auto_resume}'"
-        )
-    if auto_resume is True and on_timeout != "pause":
-        raise InvalidArgumentException(
-            "`lifecycle.auto_resume` can be true only when `lifecycle.on_timeout` is 'pause'"
-        )
 
 
 def get_auto_resume_policy(lifecycle: Optional[SandboxLifecycle]) -> Optional[str]:

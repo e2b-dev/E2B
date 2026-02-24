@@ -5,7 +5,7 @@ import {
   DEFAULT_SANDBOX_TIMEOUT_MS,
 } from '../connectionConfig'
 import { compareVersions } from 'compare-versions'
-import { InvalidArgumentError, NotFoundError, TemplateError } from '../errors'
+import { NotFoundError, TemplateError } from '../errors'
 import { timeoutToSeconds } from '../utils'
 import type { McpServer as BaseMcpServer } from './mcp'
 
@@ -352,32 +352,10 @@ export interface SandboxMetrics {
   diskTotal: number
 }
 
-function validateLifecycle(lifecycle: SandboxLifecycle) {
-  if (!['kill', 'pause'].includes(lifecycle.onTimeout)) {
-    throw new InvalidArgumentError(
-      `\`lifecycle.onTimeout\` must be 'kill' or 'pause', got '${lifecycle.onTimeout}'`
-    )
-  }
-  if (
-    lifecycle.autoResume != null &&
-    typeof lifecycle.autoResume !== 'boolean'
-  ) {
-    throw new InvalidArgumentError(
-      `\`lifecycle.autoResume\` must be a boolean, got '${lifecycle.autoResume}'`
-    )
-  }
-  if (lifecycle.autoResume === true && lifecycle.onTimeout !== 'pause') {
-    throw new InvalidArgumentError(
-      "`lifecycle.autoResume` can be true only when `lifecycle.onTimeout` is 'pause'"
-    )
-  }
-}
-
 function getLifecycle(
   opts?: Pick<SandboxBetaCreateOpts, 'lifecycle' | 'autoPause'>
-): SandboxLifecycle | undefined {
+): SandboxLifecycle {
   if (opts?.lifecycle) {
-    validateLifecycle(opts.lifecycle)
     return opts.lifecycle
   }
 
@@ -388,7 +366,10 @@ function getLifecycle(
     }
   }
 
-  return undefined
+  return {
+    onTimeout: 'kill',
+    autoResume: false,
+  }
 }
 
 export class SandboxApi {
@@ -723,12 +704,6 @@ export class SandboxApi {
     return true
   }
 
-  protected static validateCreateOptions(
-    opts?: Pick<SandboxBetaCreateOpts, 'lifecycle' | 'autoPause'>
-  ): void {
-    getLifecycle(opts)
-  }
-
   protected static async createSandbox(
     template: string,
     timeoutMs: number,
@@ -737,14 +712,9 @@ export class SandboxApi {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
     const lifecycle = getLifecycle(opts)
-    const autoPause =
-      lifecycle != undefined
-        ? lifecycle.onTimeout === 'pause'
-        : opts?.autoPause != undefined
-          ? opts.autoPause
-          : false
+    const autoPause = lifecycle.onTimeout === 'pause'
     const autoResumePolicy =
-      lifecycle != undefined && lifecycle.onTimeout === 'pause'
+      lifecycle.onTimeout === 'pause'
         ? lifecycle.autoResume
           ? 'any'
           : 'off'

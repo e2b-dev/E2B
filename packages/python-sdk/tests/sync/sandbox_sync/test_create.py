@@ -2,7 +2,7 @@ from unittest.mock import patch
 
 import pytest
 
-from e2b import InvalidArgumentException, Sandbox
+from e2b import Sandbox
 from e2b.api.client.models import (
     NewSandbox,
     SandboxAutoResumeConfig,
@@ -33,13 +33,6 @@ def test_metadata(sandbox_factory):
             break
     else:
         assert False, "Sandbox not found"
-
-
-def test_invalid_lifecycle_raises():
-    with pytest.raises(InvalidArgumentException):
-        Sandbox.create(
-            lifecycle={"on_timeout": "kill", "auto_resume": True},
-        )
 
 
 def test_create_defaults_auto_pause_false():

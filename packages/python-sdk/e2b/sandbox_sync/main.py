@@ -24,7 +24,6 @@ from e2b.sandbox.sandbox_api import (
     SandboxMetrics,
     SandboxNetworkOpts,
     SnapshotInfo,
-    validate_lifecycle,
 )
 from e2b.sandbox.utils import class_method_variant
 from e2b.sandbox_sync.commands.command import Commands
@@ -861,9 +860,6 @@ class Sandbox(SandboxApi):
         lifecycle: Optional[SandboxLifecycle] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
-        if lifecycle is not None:
-            validate_lifecycle(lifecycle)
-
         extra_sandbox_headers = {}
 
         debug = opts.get("debug")
