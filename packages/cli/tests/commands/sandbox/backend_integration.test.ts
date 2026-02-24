@@ -97,6 +97,22 @@ describe('sandbox cli backend integration', () => {
     }
   )
 
+  /** Note: removing this test for now because it can be slow to get the logs causing tests to time out */
+  // testIf(
+  //   'logs returns successfully',
+  //   { timeout: perTestTimeoutMs },
+  //   async () => {
+  //     const logsResult = runCli([
+  //       'sandbox',
+  //       'logs',
+  //       sandbox.sandboxId,
+  //       '--format',
+  //       'json',
+  //     ])
+  //     expect(logsResult.status).toBe(0)
+  //   }
+  // )
+
   testIf(
     'metrics returns successfully',
     { timeout: perTestTimeoutMs },
