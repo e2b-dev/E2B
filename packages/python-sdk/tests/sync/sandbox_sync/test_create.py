@@ -1,7 +1,11 @@
 import pytest
 
 from e2b import InvalidArgumentException, Sandbox
-from e2b.api.client.models import NewSandbox
+from e2b.api.client.models import (
+    NewSandbox,
+    SandboxAutoResumeConfig,
+    SandboxAutoResumePolicy,
+)
 from e2b.sandbox.sandbox_api import SandboxQuery
 
 
@@ -53,8 +57,8 @@ def test_create_payload_serializes_auto_resume_policy():
     body = NewSandbox(
         template_id="template-id",
         auto_pause=True,
+        auto_resume=SandboxAutoResumeConfig(policy=SandboxAutoResumePolicy.ANY),
     )
-    body["autoResume"] = {"policy": "any"}
 
     assert body.to_dict()["autoPause"] is True
     assert body.to_dict()["autoResume"] == {"policy": "any"}

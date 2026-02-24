@@ -20,6 +20,8 @@ from e2b.api.client.models import (
     NewSandbox,
     PostSandboxesSandboxIDTimeoutBody,
     Sandbox,
+    SandboxAutoResumeConfig,
+    SandboxAutoResumePolicy,
     SandboxNetworkConfig,
 )
 from e2b.api.client.types import UNSET
@@ -194,7 +196,9 @@ class SandboxApi(SandboxBase):
             network=SandboxNetworkConfig(**network) if network else UNSET,
         )
         if auto_resume_policy is not None:
-            body["autoResume"] = {"policy": auto_resume_policy}
+            body.auto_resume = SandboxAutoResumeConfig(
+                policy=SandboxAutoResumePolicy(auto_resume_policy)
+            )
 
         api_client = get_api_client(config)
         res = post_sandboxes.sync_detailed(
