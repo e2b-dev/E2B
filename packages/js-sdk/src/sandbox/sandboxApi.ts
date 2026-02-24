@@ -621,7 +621,7 @@ export class SandboxApi {
           ? opts.autoPause
           : undefined
     const autoResumePolicy =
-      lifecycle != undefined
+      lifecycle != undefined && lifecycle.onTimeout === 'pause'
         ? lifecycle.autoResume
           ? 'any'
           : 'off'
@@ -641,7 +641,9 @@ export class SandboxApi {
       allow_internet_access: opts?.allowInternetAccess ?? true,
       network: opts?.network,
       ...(autoPause !== undefined ? { autoPause } : {}),
-      ...(autoResumePolicy ? { autoResume: { policy: autoResumePolicy } } : {}),
+      ...(autoResumePolicy !== undefined
+        ? { autoResume: { policy: autoResumePolicy } }
+        : {}),
     }
 
     const res = await client.api.POST('/sandboxes', {
