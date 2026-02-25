@@ -156,7 +156,10 @@ export async function listSandboxes({
     query: { state, metadata },
   })
 
-  while (iterator.hasNext && (remainingLimit === undefined || remainingLimit > 0)) {
+  while (
+    iterator.hasNext &&
+    (remainingLimit === undefined || remainingLimit > 0)
+  ) {
     const batch = await iterator.nextItems()
     sandboxes.push(...batch)
 
