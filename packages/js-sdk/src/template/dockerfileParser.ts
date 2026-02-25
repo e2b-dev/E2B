@@ -265,29 +265,32 @@ function expandEnvVars(
     }
   )
   // Handle ${VAR}
-  result = result.replace(
-    /\$\{([a-zA-Z_][a-zA-Z0-9_]*)\}/g,
-    (_, name) => {
-      return envContext[name] !== undefined ? envContext[name] : ''
-    }
-  )
+  result = result.replace(/\$\{([a-zA-Z_][a-zA-Z0-9_]*)\}/g, (_, name) => {
+    return envContext[name] !== undefined ? envContext[name] : ''
+  })
   // Handle $VAR
-  result = result.replace(
-    /\$([a-zA-Z_][a-zA-Z0-9_]*)/g,
-    (_, name) => {
-      return envContext[name] !== undefined ? envContext[name] : ''
-    }
-  )
+  result = result.replace(/\$([a-zA-Z_][a-zA-Z0-9_]*)/g, (_, name) => {
+    return envContext[name] !== undefined ? envContext[name] : ''
+  })
   return result
 }
 
 /**
  * Process a raw ENV value by stripping quotes and expanding variable references.
+ * Single-quoted values are not expanded (Docker semantics).
  */
 function processEnvValue(
   value: string,
   envContext: Record<string, string>
 ): string {
+  // Single-quoted values should not have variable expansion (Docker semantics)
+  if (
+    value.length >= 2 &&
+    value[0] === "'" &&
+    value[value.length - 1] === "'"
+  ) {
+    return value.slice(1, -1)
+  }
   const unquoted = stripQuotes(value)
   return expandEnvVars(unquoted, envContext)
 }
@@ -302,6 +305,10 @@ function handleEnvInstruction(
 
   if (argumentsData && argumentsData.length >= 1) {
     const envVars: Record<string, string> = {}
+    // Snapshot the context before this instruction so all expansions in a
+    // single ENV instruction resolve against the pre-instruction state
+    // (Docker semantics: ENV A=new B=$A uses the value of A before this line).
+    const preInstructionContext = { ...envContext }
 
     if (argumentsData.length === 2) {
       // ENV key value format OR multiple key=value pairs (from line continuation)
@@ -317,16 +324,12 @@ function handleEnvInstruction(
           if (equalIndex > 0) {
             const key = envString.substring(0, equalIndex)
             const rawValue = envString.substring(equalIndex + 1)
-            const value = processEnvValue(rawValue, envContext)
-            envVars[key] = value
-            envContext[key] = value
+            envVars[key] = processEnvValue(rawValue, preInstructionContext)
           }
         }
       } else {
         // Traditional ENV key value format
-        const value = processEnvValue(secondArg, envContext)
-        envVars[firstArg] = value
-        envContext[firstArg] = value
+        envVars[firstArg] = processEnvValue(secondArg, preInstructionContext)
       }
     } else if (argumentsData.length === 1) {
       // ENV/ARG key=value format (single argument) or ARG key (without default)
@@ -337,14 +340,10 @@ function handleEnvInstruction(
       if (equalIndex > 0) {
         const key = envString.substring(0, equalIndex)
         const rawValue = envString.substring(equalIndex + 1)
-        const value = processEnvValue(rawValue, envContext)
-        envVars[key] = value
-        envContext[key] = value
+        envVars[key] = processEnvValue(rawValue, preInstructionContext)
       } else if (keyword === 'ARG' && envString.trim()) {
         // ARG without default value - set as empty ENV
-        const key = envString.trim()
-        envVars[key] = ''
-        envContext[key] = ''
+        envVars[envString.trim()] = ''
       }
     } else {
       // Multiple arguments (from line continuation with backslashes)
@@ -354,17 +353,16 @@ function handleEnvInstruction(
         if (equalIndex > 0) {
           const key = envString.substring(0, equalIndex)
           const rawValue = envString.substring(equalIndex + 1)
-          const value = processEnvValue(rawValue, envContext)
-          envVars[key] = value
-          envContext[key] = value
+          envVars[key] = processEnvValue(rawValue, preInstructionContext)
         } else if (keyword === 'ARG') {
           // ARG without default value
-          const key = envString
-          envVars[key] = ''
-          envContext[key] = ''
+          envVars[envString] = ''
         }
       }
     }
+
+    // Update the shared context after all pairs are resolved
+    Object.assign(envContext, envVars)
 
     // Call setEnvs once with all environment variables from this instruction
     if (Object.keys(envVars).length > 0) {
