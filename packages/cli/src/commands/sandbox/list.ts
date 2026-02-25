@@ -158,7 +158,6 @@ export async function listSandboxes({
     pageLimit = PAGE_LIMIT
   }
 
-  let remainingLimit = limit
   const sandboxes: SandboxInfo[] = []
   const iterator = Sandbox.list({
     apiKey: apiKey,
@@ -166,13 +165,9 @@ export async function listSandboxes({
     query: { state, metadata },
   })
 
-  while (iterator.hasNext && (!remainingLimit || remainingLimit > 0)) {
+  while (iterator.hasNext && (!limit || sandboxes.length < limit)) {
     const batch = await iterator.nextItems()
     sandboxes.push(...batch)
-
-    if (limit && remainingLimit) {
-      remainingLimit -= batch.length
-    }
   }
 
   return {
