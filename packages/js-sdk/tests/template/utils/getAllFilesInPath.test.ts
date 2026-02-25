@@ -208,6 +208,56 @@ describe('getAllFilesInPath', () => {
     expect(files).toHaveLength(0)
   })
 
+  test('should include dotfiles', async () => {
+    // Create regular and dotfiles
+    await writeFile(join(testDir, 'file.txt'), 'content')
+    await writeFile(join(testDir, '.env'), 'SECRET=123')
+    await writeFile(join(testDir, '.gitignore'), 'node_modules')
+
+    const files = await getAllFilesInPath('*', testDir, [])
+
+    expect(files).toHaveLength(3)
+    expect(files.some((f) => f.fullpath().endsWith('file.txt'))).toBe(true)
+    expect(files.some((f) => f.fullpath().endsWith('.env'))).toBe(true)
+    expect(files.some((f) => f.fullpath().endsWith('.gitignore'))).toBe(true)
+  })
+
+  test('should include dotfiles in subdirectories', async () => {
+    await mkdir(join(testDir, 'src'), { recursive: true })
+    await writeFile(join(testDir, 'src', 'index.ts'), 'content')
+    await writeFile(join(testDir, 'src', '.env.local'), 'SECRET=123')
+
+    const files = await getAllFilesInPath('src', testDir, [])
+
+    expect(files.some((f) => f.fullpath().endsWith('index.ts'))).toBe(true)
+    expect(files.some((f) => f.fullpath().endsWith('.env.local'))).toBe(true)
+  })
+
+  test('should include dotdirectories and their contents', async () => {
+    await mkdir(join(testDir, '.hidden'), { recursive: true })
+    await writeFile(join(testDir, '.hidden', 'config.json'), '{}')
+    await writeFile(join(testDir, 'visible.txt'), 'content')
+
+    const files = await getAllFilesInPath('*', testDir, [])
+
+    expect(files.some((f) => f.fullpath().endsWith('.hidden'))).toBe(true)
+    expect(files.some((f) => f.fullpath().endsWith('config.json'))).toBe(true)
+    expect(files.some((f) => f.fullpath().endsWith('visible.txt'))).toBe(true)
+  })
+
+  test('should respect ignore patterns for dotfiles', async () => {
+    await writeFile(join(testDir, '.env'), 'SECRET=123')
+    await writeFile(join(testDir, '.gitignore'), 'node_modules')
+    await writeFile(join(testDir, 'file.txt'), 'content')
+
+    const files = await getAllFilesInPath('*', testDir, ['.env'])
+
+    expect(files).toHaveLength(2)
+    expect(files.some((f) => f.fullpath().endsWith('.env'))).toBe(false)
+    expect(files.some((f) => f.fullpath().endsWith('.gitignore'))).toBe(true)
+    expect(files.some((f) => f.fullpath().endsWith('file.txt'))).toBe(true)
+  })
+
   test('should handle listing all files in current directory with dot pattern', async () => {
     // Create a small directory tree inside the test directory
     await writeFile(join(testDir, 'root.txt'), 'root')
