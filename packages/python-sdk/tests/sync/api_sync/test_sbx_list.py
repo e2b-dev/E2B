@@ -1,4 +1,4 @@
-import time
+import uuid
 
 import pytest
 
@@ -17,7 +17,7 @@ def test_list_sandboxes(sandbox: Sandbox, sandbox_test_id: str):
 
 @pytest.mark.skip_debug()
 def test_list_sandboxes_with_filter(sandbox_factory, sandbox_test_id: str):
-    unique_id = str(int(time.time()))
+    unique_id = str(uuid.uuid4())
     extra_sbx = sandbox_factory(metadata={"unique_id": unique_id})
 
     paginator = Sandbox.list(query=SandboxQuery(metadata={"unique_id": unique_id}))

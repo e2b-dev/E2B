@@ -71,16 +71,17 @@ from .sandbox.sandbox_api import (
     SandboxNetworkOpts,
     SandboxQuery,
     SandboxState,
+    SnapshotInfo,
 )
 from .sandbox_async.commands.command_handle import AsyncCommandHandle
 from .sandbox_async.filesystem.watch_handle import AsyncWatchHandle
 from .sandbox_async.main import AsyncSandbox
-from .sandbox_async.paginator import AsyncSandboxPaginator
+from .sandbox_async.paginator import AsyncSandboxPaginator, AsyncSnapshotPaginator
 from .sandbox_async.utils import OutputHandler
 from .sandbox_sync.commands.command_handle import CommandHandle
 from .sandbox_sync.filesystem.watch_handle import WatchHandle
 from .sandbox_sync.main import Sandbox
-from .sandbox_sync.paginator import SandboxPaginator
+from .sandbox_sync.paginator import SandboxPaginator, SnapshotPaginator
 from .template.logger import (
     LogEntry,
     LogEntryEnd,
@@ -153,6 +154,10 @@ __all__ = [
     # Network
     "SandboxNetworkOpts",
     "ALL_TRAFFIC",
+    # Snapshot
+    "SnapshotInfo",
+    "SnapshotPaginator",
+    "AsyncSnapshotPaginator",
     # Sync sandbox
     "Sandbox",
     "SandboxPaginator",
