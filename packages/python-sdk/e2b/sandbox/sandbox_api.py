@@ -182,19 +182,23 @@ class SandboxMetrics:
     """Timestamp of the metric entry."""
 
 
-class SandboxPaginatorBase:
+@dataclass
+class SnapshotInfo:
+    """Information about a snapshot."""
+
+    snapshot_id: str
+    """Snapshot identifier — template ID with tag, or namespaced name with tag (e.g. my-snapshot:latest). Can be used with Sandbox.create() to create a new sandbox from this snapshot."""
+
+
+class PaginatorBase:
     def __init__(
         self,
-        query: Optional[SandboxQuery] = None,
         limit: Optional[int] = None,
         next_token: Optional[str] = None,
         **opts: Unpack[ApiParams],
     ):
         self._config = ConnectionConfig(**opts)
-
-        self.query = query
         self.limit = limit
-
         self._has_next = True
         self._next_token = next_token
 
@@ -211,3 +215,27 @@ class SandboxPaginatorBase:
         Returns the next token to use for pagination.
         """
         return self._next_token
+
+
+class SnapshotPaginatorBase(PaginatorBase):
+    def __init__(
+        self,
+        sandbox_id: Optional[str] = None,
+        limit: Optional[int] = None,
+        next_token: Optional[str] = None,
+        **opts: Unpack[ApiParams],
+    ):
+        super().__init__(limit=limit, next_token=next_token, **opts)
+        self.sandbox_id = sandbox_id
+
+
+class SandboxPaginatorBase(PaginatorBase):
+    def __init__(
+        self,
+        query: Optional[SandboxQuery] = None,
+        limit: Optional[int] = None,
+        next_token: Optional[str] = None,
+        **opts: Unpack[ApiParams],
+    ):
+        super().__init__(limit=limit, next_token=next_token, **opts)
+        self.query = query

@@ -1,4 +1,5 @@
 import { assert } from 'vitest'
+import { randomUUID } from 'crypto'
 
 import { Sandbox, SandboxInfo } from '../../src'
 import { sandboxTest, isDebug } from '../setup.js'
@@ -19,7 +20,7 @@ sandboxTest.skipIf(isDebug)(
 )
 
 sandboxTest.skipIf(isDebug)('list sandboxes with filter', async () => {
-  const uniqueId = Date.now().toString()
+  const uniqueId = randomUUID()
   const extraSbx = await Sandbox.create({ metadata: { uniqueId } })
 
   try {
@@ -236,7 +237,7 @@ sandboxTest.skipIf(isDebug)(
 )
 
 sandboxTest.skipIf(isDebug)('list sandboxes with filter', async () => {
-  const uniqueId = Date.now().toString()
+  const uniqueId = randomUUID()
   const extraSbx = await Sandbox.create({ metadata: { uniqueId } })
 
   try {

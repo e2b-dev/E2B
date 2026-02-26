@@ -76,7 +76,7 @@ def sync_detailed(
     start: Union[Unset, int] = UNSET,
     limit: Union[Unset, int] = 1000,
 ) -> Response[Union[Error, SandboxLogs]]:
-    """Get sandbox logs
+    """Get sandbox logs. Use /v2/sandboxes/{sandboxID}/logs instead.
 
     Args:
         sandbox_id (str):
@@ -111,7 +111,7 @@ def sync(
     start: Union[Unset, int] = UNSET,
     limit: Union[Unset, int] = 1000,
 ) -> Optional[Union[Error, SandboxLogs]]:
-    """Get sandbox logs
+    """Get sandbox logs. Use /v2/sandboxes/{sandboxID}/logs instead.
 
     Args:
         sandbox_id (str):
@@ -141,7 +141,7 @@ async def asyncio_detailed(
     start: Union[Unset, int] = UNSET,
     limit: Union[Unset, int] = 1000,
 ) -> Response[Union[Error, SandboxLogs]]:
-    """Get sandbox logs
+    """Get sandbox logs. Use /v2/sandboxes/{sandboxID}/logs instead.
 
     Args:
         sandbox_id (str):
@@ -174,7 +174,7 @@ async def asyncio(
     start: Union[Unset, int] = UNSET,
     limit: Union[Unset, int] = 1000,
 ) -> Optional[Union[Error, SandboxLogs]]:
-    """Get sandbox logs
+    """Get sandbox logs. Use /v2/sandboxes/{sandboxID}/logs instead.
 
     Args:
         sandbox_id (str):

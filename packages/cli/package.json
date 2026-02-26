@@ -1,6 +1,6 @@
 {
   "name": "@e2b/cli",
-  "version": "2.7.0",
+  "version": "2.7.2",
   "description": "CLI for managing e2b sandbox templates",
   "homepage": "https://e2b.dev",
   "license": "MIT",
@@ -46,7 +46,6 @@
     "test:watch": "vitest watch",
     "test:coverage": "vitest run --coverage",
     "check-deps": "knip",
-    "update-deps": "ncu -u && pnpm i",
     "generate-ref": "./scripts/generate_sdk_ref.sh"
   },
   "devDependencies": {
@@ -61,7 +60,6 @@
     "@vitest/coverage-v8": "^3.2.4",
     "json2md": "^2.0.1",
     "knip": "^5.43.6",
-    "npm-check-updates": "^16.14.6",
     "tsup": "^8.4.0",
     "typescript": "^5.2.2",
     "vitest": "^3.2.4"
