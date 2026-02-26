@@ -17,5 +17,5 @@ sandboxTest.skipIf(isDebug)(
 )
 
 sandboxTest.skipIf(isDebug)('kill non-existing sandbox', async () => {
-  await expect(Sandbox.kill('non-existing-sandbox')).resolves.toBe(false)
+  await expect(Sandbox.kill('nonexistingsandbox')).resolves.toBe(false)
 })
