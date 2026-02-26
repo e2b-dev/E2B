@@ -40,7 +40,7 @@ export function handleE2BRequestError<T>(
       message = 'internal server error'
       break
     default:
-      message = status(code) || 'unknown error'
+      message = status.message[code] || 'unknown error'
       break
   }
 
