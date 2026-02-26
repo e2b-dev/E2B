@@ -22,4 +22,4 @@ test('build template in background', async () => {
   // Verify the build is actually running
   const status = await Template.getBuildStatus(buildInfo)
   expect(status.status).toEqual('building')
-}, 10_000)
+})
