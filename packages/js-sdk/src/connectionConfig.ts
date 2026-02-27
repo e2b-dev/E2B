@@ -1,5 +1,6 @@
 import { Logger } from './logs'
 import { getEnvVar, version } from './api/metadata'
+import { getCLIConfig } from './cliConfig'
 
 export const REQUEST_TIMEOUT_MS = 60_000 // 60 seconds
 export const DEFAULT_SANDBOX_TIMEOUT_MS = 300_000 // 300 seconds
@@ -14,13 +15,19 @@ export interface ConnectionOpts {
   /**
    * E2B API key to use for authentication.
    *
-   * @default E2B_API_KEY // environment variable
+   * The SDK looks for the API key in the following order:
+   * 1. This parameter (if provided)
+   * 2. `E2B_API_KEY` environment variable
+   * 3. CLI configuration file (`~/.e2b/config.json`) if authenticated via `e2b login`
    */
   apiKey?: string
   /**
    * E2B access token to use for authentication.
    *
-   * @default E2B_ACCESS_TOKEN // environment variable
+   * The SDK looks for the access token in the following order:
+   * 1. This parameter (if provided)
+   * 2. `E2B_ACCESS_TOKEN` environment variable
+   * 3. CLI configuration file (`~/.e2b/config.json`) if authenticated via `e2b login`
    */
   accessToken?: string
   /**
@@ -118,11 +125,21 @@ export class ConnectionConfig {
   }
 
   private static get apiKey() {
-    return getEnvVar('E2B_API_KEY')
+    const envKey = getEnvVar('E2B_API_KEY')
+    if (envKey) {
+      return envKey
+    }
+    const cliConfig = getCLIConfig()
+    return cliConfig?.teamApiKey
   }
 
   private static get accessToken() {
-    return getEnvVar('E2B_ACCESS_TOKEN')
+    const envToken = getEnvVar('E2B_ACCESS_TOKEN')
+    if (envToken) {
+      return envToken
+    }
+    const cliConfig = getCLIConfig()
+    return cliConfig?.accessToken
   }
 
   getSignal(requestTimeoutMs?: number) {
