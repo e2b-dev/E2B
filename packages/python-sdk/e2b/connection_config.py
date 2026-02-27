@@ -6,6 +6,7 @@ from httpx._types import ProxyTypes
 from typing_extensions import Unpack
 
 from e2b.api.metadata import package_version
+from e2b.cli_config import get_cli_config
 
 REQUEST_TIMEOUT: float = 60.0  # 60 seconds
 
@@ -27,7 +28,14 @@ class ApiParams(TypedDict, total=False):
     """Additional headers to send with the request."""
 
     api_key: Optional[str]
-    """E2B API Key to use for authentication, defaults to `E2B_API_KEY` environment variable."""
+    """
+    E2B API Key to use for authentication.
+
+    Resolution order (strongest to weakest):
+    1. This parameter (if provided)
+    2. `E2B_API_KEY` environment variable
+    3. CLI config file (`~/.e2b/config.json`) if authenticated via `e2b login`
+    """
 
     domain: Optional[str]
     """E2B domain to use for authentication, defaults to `E2B_DOMAIN` environment variable."""
@@ -62,7 +70,20 @@ class ConnectionConfig:
 
     @staticmethod
     def _api_key():
-        return os.getenv("E2B_API_KEY")
+        """
+        Get the API key from environment or CLI config.
+
+        Resolution order (strongest to weakest):
+        1. E2B_API_KEY environment variable
+        2. CLI config file (~/.e2b/config.json)
+        """
+        env_key = os.getenv("E2B_API_KEY")
+        if env_key:
+            return env_key
+        cli_config = get_cli_config()
+        if cli_config:
+            return cli_config.get("teamApiKey")
+        return None
 
     @staticmethod
     def _api_url():
@@ -74,7 +95,20 @@ class ConnectionConfig:
 
     @staticmethod
     def _access_token():
-        return os.getenv("E2B_ACCESS_TOKEN")
+        """
+        Get the access token from environment or CLI config.
+
+        Resolution order (strongest to weakest):
+        1. E2B_ACCESS_TOKEN environment variable
+        2. CLI config file (~/.e2b/config.json)
+        """
+        env_token = os.getenv("E2B_ACCESS_TOKEN")
+        if env_token:
+            return env_token
+        cli_config = get_cli_config()
+        if cli_config:
+            return cli_config.get("accessToken")
+        return None
 
     def __init__(
         self,
