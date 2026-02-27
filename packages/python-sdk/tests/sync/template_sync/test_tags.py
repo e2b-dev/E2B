@@ -113,8 +113,8 @@ class TestTagsIntegration:
     @pytest.mark.skip_debug()
     def test_build_template_with_tags_assign_and_delete(self, build):
         """Test building a template with tags, assigning new tags, and deleting."""
-        template_alias = f"e2b-sync-tags-test-{uuid.uuid4().hex}"
-        initial_tag = f"{template_alias}:v1.0"
+        template_name = "e2b-tags-test"
+        initial_tag = f"{template_name}:v1-{uuid.uuid4().hex}"
 
         # Build a template with initial tag
         template = Template().from_base_image()
@@ -134,8 +134,8 @@ class TestTagsIntegration:
     @pytest.mark.skip_debug()
     def test_assign_single_tag_to_existing_template(self, build):
         """Test assigning a single tag (not array) to an existing template."""
-        template_alias = f"e2b-sync-single-tag-{uuid.uuid4().hex}"
-        initial_tag = f"{template_alias}:v1.0"
+        template_name = "e2b-tags-test"
+        initial_tag = f"{template_name}:v1-{uuid.uuid4().hex}"
 
         template = Template().from_base_image()
         build(template, name=initial_tag)
@@ -150,8 +150,8 @@ class TestTagsIntegration:
     @pytest.mark.skip_debug()
     def test_rejects_invalid_tag_format_missing_alias(self, build):
         """Test that tag without alias (starts with colon) is rejected."""
-        template_alias = f"e2b-sync-invalid-tag-{uuid.uuid4().hex}"
-        initial_tag = f"{template_alias}:v1.0"
+        template_name = "e2b-tags-test"
+        initial_tag = f"{template_name}:v1-{uuid.uuid4().hex}"
 
         template = Template().from_base_image()
         build(template, name=initial_tag)
@@ -163,12 +163,12 @@ class TestTagsIntegration:
     @pytest.mark.skip_debug()
     def test_rejects_invalid_tag_format_missing_tag(self, build):
         """Test that tag without tag portion (ends with colon) is rejected."""
-        template_alias = f"e2b-sync-invalid-tag2-{uuid.uuid4().hex}"
-        initial_tag = f"{template_alias}:v1.0"
+        template_name = "e2b-tags-test"
+        initial_tag = f"{template_name}:v1-{uuid.uuid4().hex}"
 
         template = Template().from_base_image()
         build(template, name=initial_tag)
 
         # Tag without tag portion (ends with colon) should be rejected
         with pytest.raises(Exception):
-            Template.assign_tags(initial_tag, f"{template_alias}:")
+            Template.assign_tags(initial_tag, f"{template_name}:")
