@@ -74,7 +74,8 @@ class ApiClient {
 
     this.api = createClient<paths>({
       baseUrl: config.apiUrl,
-      // keepalive: true, // TODO: Return keepalive
+      // In HTTP 1.1, all connections are considered persistent unless declared otherwise
+      // keepalive: true,
       headers: {
         ...defaultHeaders,
         ...(config.apiKey && { 'X-API-KEY': config.apiKey }),
