@@ -149,36 +149,27 @@ def get_all_files_in_path(
     :param include_directories: Whether to include directories
     :return: Array of files
     """
-    files = set()
-
-    # Use glob to find all files/directories matching the pattern under context_path
     abs_context_path = os.path.abspath(context_path)
+    normalized_src = normalize_path(src)
+
+    # Match both the pattern and its recursive contents in one call
+    # This handles directories (src -> src + src/**/*) and file patterns (*.txt -> just files)
+    patterns = [normalized_src, f"{normalized_src}/**/*"]
+
     files_glob = glob.glob(
-        src,
+        patterns,
         flags=glob.GLOBSTAR,
         root_dir=abs_context_path,
         exclude=ignore_patterns,
     )
 
+    # Deduplicate and convert to absolute paths
+    files = set()
     for file in files_glob:
-        # Join it with abs_context_path to get the absolute path
         file_path = os.path.join(abs_context_path, file)
-
-        if os.path.isdir(file_path):
-            # If it's a directory, add the directory and all entries recursively
-            if include_directories:
-                files.add(file_path)
-            dir_files = glob.glob(
-                normalize_path(file) + "/**/*",
-                flags=glob.GLOBSTAR,
-                root_dir=abs_context_path,
-                exclude=ignore_patterns,
-            )
-            for dir_file in dir_files:
-                dir_file_path = os.path.join(abs_context_path, dir_file)
-                files.add(dir_file_path)
-        else:
-            files.add(file_path)
+        if not include_directories and os.path.isdir(file_path):
+            continue
+        files.add(file_path)
 
     return sorted(list(files))
 

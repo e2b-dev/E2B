@@ -140,37 +140,23 @@ export async function getAllFilesInPath(
   includeDirectories: boolean = true
 ) {
   const { glob } = await dynamicImport<typeof import('glob')>('glob')
-  const files = new Map<string, Path>()
 
-  const globFiles = await glob(src, {
+  // Match both the pattern and its recursive contents in one call
+  // This handles directories (src -> src + src/**/*) and file patterns (*.txt -> just files)
+  const normalizedSrc = normalizePath(src)
+  const patterns = [normalizedSrc, `${normalizedSrc}/**/*`]
+
+  const globFiles = await glob(patterns, {
     ignore: ignorePatterns,
     withFileTypes: true,
-    // this is required so that the ignore pattern is relative to the file path
+    nodir: !includeDirectories,
     cwd: contextPath,
   })
 
+  // Deduplicate by full path
+  const files = new Map<string, Path>()
   for (const file of globFiles) {
-    if (file.isDirectory()) {
-      // For directories, add the directory itself and all files inside it
-      if (includeDirectories) {
-        files.set(file.fullpath(), file)
-      }
-      const dirPattern = normalizePath(
-        // When the matched directory is '.', `file.relative()` can be an empty string.
-        // In that case, we want to match all files under the current directory instead of
-        // creating an absolute glob like '/**/*' which would traverse the entire filesystem.
-        path.join(file.relative() || '.', '**/*')
-      )
-      const dirFiles = await glob(dirPattern, {
-        ignore: ignorePatterns,
-        withFileTypes: true,
-        cwd: contextPath,
-      })
-      dirFiles.forEach((f) => files.set(f.fullpath(), f))
-    } else {
-      // For files, just add the file
-      files.set(file.fullpath(), file)
-    }
+    files.set(file.fullpath(), file)
   }
 
   return Array.from(files.values()).sort()
