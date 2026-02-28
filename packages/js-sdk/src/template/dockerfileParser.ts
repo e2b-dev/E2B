@@ -97,6 +97,9 @@ export function parseDockerfile(
   templateBuilder.setUser('root')
   templateBuilder.setWorkdir('/')
 
+  // Track resolved ENV values for variable expansion across instructions
+  const envContext: Record<string, string> = {}
+
   // Process all other instructions
   for (const instruction of instructions) {
     const keyword = instruction.getKeyword()
@@ -130,7 +133,7 @@ export function parseDockerfile(
 
       case 'ENV':
       case 'ARG':
-        handleEnvInstruction(instruction, templateBuilder)
+        handleEnvInstruction(instruction, templateBuilder, envContext)
         break
 
       case 'EXPOSE':
@@ -220,9 +223,79 @@ function handleUserInstruction(
   }
 }
 
+/**
+ * Strip surrounding double or single quotes from an ENV value.
+ * Docker's ENV instruction strips quotes from values like ENV KEY="value".
+ */
+function stripQuotes(value: string): string {
+  if (value.length >= 2) {
+    if (
+      (value[0] === '"' && value[value.length - 1] === '"') ||
+      (value[0] === "'" && value[value.length - 1] === "'")
+    ) {
+      return value.slice(1, -1)
+    }
+  }
+  return value
+}
+
+/**
+ * Expand Docker-style variable references in a value string.
+ * Supports ${VAR}, $VAR, ${VAR:-default}, and ${VAR:+replacement}.
+ */
+function expandEnvVars(
+  value: string,
+  envContext: Record<string, string>
+): string {
+  let result = value
+  // Handle ${VAR:-default} — use default if VAR is unset or empty
+  result = result.replace(
+    /\$\{([a-zA-Z_][a-zA-Z0-9_]*):-([^}]*)\}/g,
+    (_, name, defaultVal) => {
+      const val = envContext[name]
+      return val !== undefined && val !== '' ? val : defaultVal
+    }
+  )
+  // Handle ${VAR:+replacement} — use replacement if VAR is set and non-empty
+  result = result.replace(
+    /\$\{([a-zA-Z_][a-zA-Z0-9_]*):\+([^}]*)\}/g,
+    (_, name, replacement) => {
+      const val = envContext[name]
+      return val !== undefined && val !== '' ? replacement : ''
+    }
+  )
+  // Handle ${VAR}
+  result = result.replace(
+    /\$\{([a-zA-Z_][a-zA-Z0-9_]*)\}/g,
+    (_, name) => {
+      return envContext[name] !== undefined ? envContext[name] : ''
+    }
+  )
+  // Handle $VAR
+  result = result.replace(
+    /\$([a-zA-Z_][a-zA-Z0-9_]*)/g,
+    (_, name) => {
+      return envContext[name] !== undefined ? envContext[name] : ''
+    }
+  )
+  return result
+}
+
+/**
+ * Process a raw ENV value by stripping quotes and expanding variable references.
+ */
+function processEnvValue(
+  value: string,
+  envContext: Record<string, string>
+): string {
+  const unquoted = stripQuotes(value)
+  return expandEnvVars(unquoted, envContext)
+}
+
 function handleEnvInstruction(
   instruction: DockerfileInstruction,
-  templateBuilder: DockerfileParserInterface
+  templateBuilder: DockerfileParserInterface,
+  envContext: Record<string, string>
 ): void {
   const argumentsData = instruction.getArguments()
   const keyword = instruction.getKeyword()
@@ -243,13 +316,17 @@ function handleEnvInstruction(
           const equalIndex = envString.indexOf('=')
           if (equalIndex > 0) {
             const key = envString.substring(0, equalIndex)
-            const value = envString.substring(equalIndex + 1)
+            const rawValue = envString.substring(equalIndex + 1)
+            const value = processEnvValue(rawValue, envContext)
             envVars[key] = value
+            envContext[key] = value
           }
         }
       } else {
         // Traditional ENV key value format
-        envVars[firstArg] = secondArg
+        const value = processEnvValue(secondArg, envContext)
+        envVars[firstArg] = value
+        envContext[firstArg] = value
       }
     } else if (argumentsData.length === 1) {
       // ENV/ARG key=value format (single argument) or ARG key (without default)
@@ -259,12 +336,15 @@ function handleEnvInstruction(
       const equalIndex = envString.indexOf('=')
       if (equalIndex > 0) {
         const key = envString.substring(0, equalIndex)
-        const value = envString.substring(equalIndex + 1)
+        const rawValue = envString.substring(equalIndex + 1)
+        const value = processEnvValue(rawValue, envContext)
         envVars[key] = value
+        envContext[key] = value
       } else if (keyword === 'ARG' && envString.trim()) {
         // ARG without default value - set as empty ENV
         const key = envString.trim()
         envVars[key] = ''
+        envContext[key] = ''
       }
     } else {
       // Multiple arguments (from line continuation with backslashes)
@@ -273,12 +353,15 @@ function handleEnvInstruction(
         const equalIndex = envString.indexOf('=')
         if (equalIndex > 0) {
           const key = envString.substring(0, equalIndex)
-          const value = envString.substring(equalIndex + 1)
+          const rawValue = envString.substring(equalIndex + 1)
+          const value = processEnvValue(rawValue, envContext)
           envVars[key] = value
+          envContext[key] = value
         } else if (keyword === 'ARG') {
           // ARG without default value
           const key = envString
           envVars[key] = ''
+          envContext[key] = ''
         }
       }
     }
