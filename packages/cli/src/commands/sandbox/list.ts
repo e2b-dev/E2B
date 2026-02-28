@@ -5,6 +5,9 @@ import { components, Sandbox, SandboxInfo } from 'e2b'
 import { ensureAPIKey } from 'src/api'
 import { parseMetadata } from './utils'
 
+const DEFAULT_LIMIT = 1000
+const PAGE_LIMIT = 100
+
 function getStateTitle(state?: components['schemas']['SandboxState'][]) {
   if (state?.length === 1) {
     if (state?.includes('running')) return 'Running sandboxes'
@@ -24,7 +27,7 @@ export const listCommand = new commander.Command('list')
   .option('-m, --metadata <metadata>', 'filter by metadata, eg. key1=value1')
   .option(
     '-l, --limit <limit>',
-    'limit the number of sandboxes returned',
+    `limit the number of sandboxes returned (default: ${DEFAULT_LIMIT}, 0 for no limit)`,
     (value) => parseInt(value)
   )
   .option('-f, --format <format>', 'output format, eg. json, pretty')
@@ -32,14 +35,21 @@ export const listCommand = new commander.Command('list')
     try {
       const state = options.state || ['running']
       const format = options.format || 'pretty'
-      const sandboxes = await listSandboxes({
-        limit: options.limit,
+      const limit =
+        options.limit === 0 ? undefined : (options.limit ?? DEFAULT_LIMIT)
+      const { sandboxes, hasMore } = await listSandboxes({
+        limit,
         state,
         metadataRaw: options.metadata,
       })
 
       if (format === 'pretty') {
         renderTable(sandboxes, state)
+        if (hasMore) {
+          console.log(
+            `Showing first ${limit} sandboxes. Use --limit to change.`
+          )
+        }
       } else if (format === 'json') {
         console.log(JSON.stringify(sandboxes, null, 2))
       } else {
@@ -130,23 +140,22 @@ type ListSandboxesOptions = {
   metadataRaw?: string
 }
 
+type ListSandboxesResult = {
+  sandboxes: SandboxInfo[]
+  hasMore: boolean
+}
+
 export async function listSandboxes({
   limit,
   state,
   metadataRaw,
-}: ListSandboxesOptions = {}): Promise<SandboxInfo[]> {
+}: ListSandboxesOptions = {}): Promise<ListSandboxesResult> {
   const apiKey = ensureAPIKey()
   const metadata = parseMetadata(metadataRaw)
 
   let pageLimit = limit
-  if (!limit || limit > 100) {
-    pageLimit = 100
-  }
-
-  let remainingLimit = limit
-  //backwards compatibility
-  if (limit === 0) {
-    remainingLimit = undefined
+  if (!limit || limit > PAGE_LIMIT) {
+    pageLimit = PAGE_LIMIT
   }
 
   const sandboxes: SandboxInfo[] = []
@@ -156,17 +165,14 @@ export async function listSandboxes({
     query: { state, metadata },
   })
 
-  while (
-    iterator.hasNext &&
-    (remainingLimit === undefined || remainingLimit > 0)
-  ) {
+  while (iterator.hasNext && (!limit || sandboxes.length < limit)) {
     const batch = await iterator.nextItems()
     sandboxes.push(...batch)
-
-    if (limit && remainingLimit) {
-      remainingLimit -= batch.length
-    }
   }
 
-  return sandboxes
+  return {
+    sandboxes: limit ? sandboxes.slice(0, limit) : sandboxes,
+    // We can't change the page size during iteration, so we may have to check if we have more sandboxes than the limit
+    hasMore: iterator.hasNext || (limit ? sandboxes.length > limit : false),
+  }
 }
