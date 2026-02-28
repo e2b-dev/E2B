@@ -1,0 +1,100 @@
+---
+title: "Timeouts"
+---
+
+<Callout icon="circle-exclamation" color="#ff8800" iconType="regular">You are reading a legacy (pre v1.0) document.</Callout>
+
+
+The SDK has a number of timeouts that can be configured to control how long the SDK will wait for a response from the E2B servers. **The default is 60 seconds.**
+
+## Timeout creating sandbox
+<CodeGroup>
+```js JavaScript & TypeScript highlight={6}
+import { Sandbox } from 'e2b'
+
+// Timeout 3s for the sandbox to open
+const sandbox = await Sandbox.create({
+  template: 'base',
+  timeout: 3000,
+})
+
+await sandbox.close()
+```
+```python Python highlight={4}
+from e2b import Sandbox
+
+# Timeout 3s for the sandbox to open
+sandbox = Sandbox(template="base", timeout=3)
+
+sandbox.close()
+```
+</CodeGroup>
+
+## Timeout process
+<CodeGroup>
+```js JavaScript & TypeScript highlight={8}
+import { Sandbox } from 'e2b'
+
+const sandbox = await Sandbox.create({ template: 'base' })
+
+// Timeout 3s for the process to start
+const npmInit = await sandbox.process.start({
+  cmd: 'npm init -y',
+  timeout: 3000,
+})
+await npmInit.wait()
+
+await sandbox.close()
+```
+```python Python highlight={6}
+from e2b import Sandbox
+
+sandbox = Sandbox(template="base")
+
+# Timeout 3s for the process to start
+npm_init = sandbox.process.start("npm init -y", timeout=3)
+npm_init.wait()
+
+sandbox.close()
+```
+</CodeGroup>
+
+## Timeout filesystem operations
+<CodeGroup>
+```js JavaScript & TypeScript highlight={6,9,13}
+import { Sandbox } from 'e2b'
+
+const sandbox = await Sandbox.create({ template: 'base' })
+
+// Timeout 3s for the write operation
+await sandbox.filesystem.write('hello.txt', 'Hello World!', {timeout: 3000})
+
+// Timeout 3s for the list operation
+const files = await sandbox.filesystem.list('.', {timeout: 3000})
+console.log(files)
+
+// Timeout 3s for the read operation
+const content = await sandbox.filesystem.read('hello.txt', {timeout: 3000})
+console.log(content)
+
+await sandbox.close()
+```
+```python Python highlight={6,9,13}
+from e2b import Sandbox
+
+sandbox = Sandbox(template="base")
+
+# Timeout 3s for the write operation
+sandbox.filesystem.write("test.txt", "Hello World", timeout=3)
+
+# Timeout 3s for the list operation
+dir_content = sandbox.filesystem.list(".", timeout=3)
+print(dir_content)
+
+# Timeout 3s for the read operation
+file_content = sandbox.filesystem.read("test.txt", timeout=3)
+print(file_content)
+
+sandbox.close()
+```
+</CodeGroup>

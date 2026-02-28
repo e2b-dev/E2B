@@ -1,0 +1,88 @@
+---
+title: "Connect to running sandbox"
+---
+
+If you have a running sandbox, you can connect to it using the `Sandbox.connect()` method and then start controlling it with our SDK.
+
+This is useful if you want to, for example, reuse the same sandbox instance for the same user after a short period of inactivity.
+
+## 1. Get the sandbox ID
+To connect to a running sandbox, you first need to retrieve its ID. You can do this by calling the `Sandbox.list()` method.
+
+<CodeGroup>
+```js JavaScript & TypeScript highlight={6}
+import { Sandbox } from '@e2b/code-interpreter'
+const sbx = await Sandbox.create()
+
+// Get all running sandboxes
+const paginator = await Sandbox.list({
+  query: { state: ['running'] },
+})
+
+const runningSandboxes = await paginator.nextItems()
+if (runningSandboxes.length === 0) {
+  throw new Error('No running sandboxes found')
+}
+
+// Get the ID of the sandbox you want to connect to
+const sandboxId = runningSandboxes[0].sandboxId
+```
+
+```python Python highlight={4}
+from e2b_code_interpreter import Sandbox
+
+# Get all running sandboxes
+paginator = Sandbox.list()
+
+# Get the ID of the sandbox you want to connect to
+running_sandboxes = paginator.next_items()
+if len(running_sandboxes) == 0:
+    raise Exception("No running sandboxes found")
+
+# Get the ID of the sandbox you want to connect to
+sandbox_id = running_sandboxes[0].sandbox_id
+
+```
+</CodeGroup>
+
+## 2. Connect to the sandbox
+
+Now that you have the sandbox ID, you can connect to the sandbox using the `Sandbox.connect()` method.
+
+<CodeGroup>
+```js JavaScript & TypeScript highlight={14}
+import { Sandbox } from "@e2b/code-interpreter"
+
+// Get all running sandboxes
+const runningSandboxes = await Sandbox.list()
+
+if (runningSandboxes.length === 0) {
+  throw new Error("No running sandboxes found")
+}
+
+// Get the ID of the sandbox you want to connect to
+const sandboxId = runningSandboxes[0].sandboxId
+
+// Connect to the sandbox
+const sandbox = await Sandbox.connect(sandboxId)
+// Now you can use the sandbox as usual
+// ...
+```
+```python Python highlight={13}
+from e2b_code_interpreter import Sandbox
+
+# Get all running sandboxes
+running_sandboxes = Sandbox.list()
+
+# Get the ID of the sandbox you want to connect to
+if len(running_sandboxes) == 0:
+  raise Exception("No running sandboxes found")
+
+sandbox_id = running_sandboxes[0].sandbox_id
+
+# Connect to the sandbox
+sandbox = Sandbox.connect(sandbox_id)
+# Now you can use the sandbox as usual
+# ...
+```
+</CodeGroup>

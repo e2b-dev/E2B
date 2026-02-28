@@ -1,0 +1,160 @@
+---
+title: "Internet access"
+---
+
+Every sandbox has access to the internet and can be reached by a public URL.
+
+## Controlling internet access
+
+You can control whether a sandbox has access to the internet by using the `allowInternetAccess` parameter when creating a sandbox. By default, internet access is enabled (`true`), but you can disable it for security-sensitive workloads.
+
+<CodeGroup>
+```js JavaScript & TypeScript
+import { Sandbox } from '@e2b/code-interpreter'
+
+// Create sandbox with internet access enabled (default)
+const sandbox = await Sandbox.create({ allowInternetAccess: true })
+
+// Create sandbox without internet access
+const isolatedSandbox = await Sandbox.create({ allowInternetAccess: false })
+```
+```python Python
+from e2b_code_interpreter import Sandbox
+
+# Create sandbox with internet access enabled (default)
+sandbox = Sandbox.create(allow_internet_access=True)
+
+# Create sandbox without internet access
+isolated_sandbox = Sandbox.create(allow_internet_access=False)
+```
+</CodeGroup>
+
+When internet access is disabled, the sandbox cannot make outbound network connections, which provides an additional layer of security for sensitive code execution.
+
+## Sandbox public URL
+Every sandbox has a public URL that can be used to access running services inside the sandbox.
+
+<CodeGroup>
+```js JavaScript & TypeScript highlight={6}
+import { Sandbox } from '@e2b/code-interpreter'
+
+const sandbox = await Sandbox.create()
+
+// You need to always pass a port number to get the host
+const host = sandbox.getHost(3000) 
+console.log(`https://${host}`)
+```
+```python Python highlight={6}
+from e2b_code_interpreter import Sandbox
+
+sandbox = Sandbox.create()
+
+# You need to always pass a port number to get the host
+host = sandbox.get_host(3000) 
+print(f'https://{host}')
+```
+</CodeGroup>
+
+The code above will print something like this:
+
+<CodeGroup>
+```bash JavaScript & TypeScript
+https://3000-i62mff4ahtrdfdkyn2esc-b0b684e9.e2b.dev
+```
+```bash Python
+https://3000-i62mff4ahtrdfdkyn2esc-b0b684e9.e2b.dev
+```
+</CodeGroup>
+
+The first leftmost part of the host is the port number we passed to the method.
+
+## Connecting to a server running inside the sandbox
+You can start a server inside the sandbox and connect to it using the approach above.
+
+In this example we will start a simple HTTP server that listens on port 3000 and responds with the content of the directory where the server is started.
+
+<CodeGroup>
+```js JavaScript & TypeScript
+import { Sandbox } from '@e2b/code-interpreter'
+
+const sandbox = await Sandbox.create()
+
+// Start a simple HTTP server inside the sandbox.
+const process = await sandbox.commands.run('python -m http.server 3000', { background: true })
+const host = sandbox.getHost(3000)
+const url = `https://${host}`
+console.log('Server started at:', url)
+
+// Fetch data from the server inside the sandbox.
+const response = await fetch(url);
+const data = await response.text();
+console.log('Response from server inside sandbox:', data);
+
+// Kill the server process inside the sandbox.
+await process.kill()
+```
+```python Python
+from e2b_code_interpreter import Sandbox
+
+sandbox = Sandbox.create()
+
+# Start a simple HTTP server inside the sandbox.
+process = sandbox.commands.run("python -m http.server 3000", background=True)
+host = sandbox.get_host(3000)
+url = f"https://{host}"
+print('Server started at:', url)
+
+# Fetch data from the server inside the sandbox.
+response = sandbox.commands.run(f"curl {url}")
+data = response.stdout
+print("Response from server inside sandbox:", data)
+
+# Kill the server process inside the sandbox.
+process.kill()
+```
+</CodeGroup>
+
+
+This output will look like this:
+<CodeGroup>
+```bash JavaScript & TypeScript
+Server started at: https://3000-ip3nfrvajtqu5ktoxugc7-b0b684e9.e2b.dev
+Response from server inside sandbox: <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>Directory listing for /</title>
+</head>
+<body>
+<h1>Directory listing for /</h1>
+<hr>
+<ul>
+<li><a href=".bash_logout">.bash_logout</a></li>
+<li><a href=".bashrc">.bashrc</a></li>
+<li><a href=".profile">.profile</a></li>
+</ul>
+<hr>
+</body>
+</html>
+```
+```bash Python
+Server started at: https://3000-ip3nfrvajtqu5ktoxugc7-b0b684e9.e2b.dev
+Response from server inside sandbox: <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>Directory listing for /</title>
+</head>
+<body>
+<h1>Directory listing for /</h1>
+<hr>
+<ul>
+<li><a href=".bash_logout">.bash_logout</a></li>
+<li><a href=".bashrc">.bashrc</a></li>
+<li><a href=".profile">.profile</a></li>
+</ul>
+<hr>
+</body>
+</html>
+```
+</CodeGroup>

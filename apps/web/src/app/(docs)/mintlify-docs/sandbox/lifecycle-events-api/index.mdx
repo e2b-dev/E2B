@@ -1,0 +1,151 @@
+---
+title: "Monitor sandbox lifecycle Events"
+sidebarTitle: Lifecycle events API
+---
+
+The lifecycle API provides RESTful endpoints to request the latest sandbox lifecycle events. This allows you to track when sandboxes are created, paused, resumed, updated, or killed, along with metadata.
+All requests require authentication using your team [API key](/api-key#where-to-find-api-key).
+
+Query Parameters:
+- `offset` (optional): Number of events to skip (default: 0, min: 0)
+- `limit` (optional): Number of events to return (default: 10, min: 1, max: 100)
+- `orderAsc` (optional): Sort order - true for ascending, false for descending (default: false)
+
+
+<CodeGroup>
+```js JavaScript & TypeScript
+import { Sandbox } from '@e2b/code-interpreter'
+
+const sbx = await Sandbox.create()
+
+// Get the latest events for a specific sandbox
+const resp1 = await fetch(
+  `https://api.e2b.app/events/sandboxes/${sbx.id}`,
+  {
+    method: 'GET',
+    headers: {
+      'X-API-Key': E2B_API_KEY,
+    },
+  }
+)
+const sandboxEvents = await resp1.json()
+
+// Get the latest 10 events for all sandboxes associated with the team
+const resp2 = await fetch(
+  'https://api.e2b.app/events/sandboxes?limit=10',
+  {
+    method: 'GET',
+    headers: {
+      'X-API-Key': E2B_API_KEY,
+    },
+  }
+)
+const teamSandboxEvents = await resp2.json()
+
+console.log(teamSandboxEvents)
+
+// [
+//   {
+//     "eventCategory": "lifecycle",
+//     "eventData": null,
+//     "eventLabel": "kill",
+//     "sandboxBuildId": "a979a14b-bdcc-49e6-bc04-1189fc9fe7c2",
+//     "sandboxExecutionId": "1dae9e1c-9957-4ce7-a236-a99d5779aadf",
+//     "sandboxId": "${SANDBOX_ID}",
+//     "sandboxTeamId": "460355b3-4f64-48f9-9a16-4442817f79f5",
+//     "sandboxTemplateId": "rki5dems9wqfm4r03t7g",
+//     "timestamp": "2025-08-06T20:59:36Z"
+//   },
+//   {
+//     "eventCategory": "lifecycle",
+//     "eventData": {
+//       "set_timeout": "2025-08-06T20:59:59Z"
+//     },
+//     "eventLabel": "update",
+//     "sandboxBuildId": "a979a14b-bdcc-49e6-bc04-1189fc9fe7c2",
+//     "sandboxExecutionId": "1dae9e1c-9957-4ce7-a236-a99d5779aadf",
+//     "sandboxId": "${SANDBOX_ID}",
+//     "sandboxTeamId": "460355b3-4f64-48f9-9a16-4442817f79f5",
+//     "sandboxTemplateId": "rki5dems9wqfm4r03t7g",
+//     "timestamp": "2025-08-06T20:59:29Z"
+//   },
+//   [...]
+//   {
+//     "eventCategory": "lifecycle",
+//     "eventData": null,
+//     "eventLabel": "create",
+//     "sandboxBuildId": "a979a14b-bdcc-49e6-bc04-1189fc9fe7c2",
+//     "sandboxExecutionId": "1dae9e1c-9957-4ce7-a236-a99d5779aadf",
+//     "sandboxId": "${SANDBOX_ID}",
+//     "sandboxTeamId": "460355b3-4f64-48f9-9a16-4442817f79f5",
+//     "sandboxTemplateId": "rki5dems9wqfm4r03t7g",
+//     "timestamp": "2025-08-06T20:59:24Z"
+//   }
+// ]
+```
+```python Python
+import requests
+from e2b_code_interpreter import Sandbox
+
+sbx = Sandbox()
+
+# Get the latest events for a specific sandbox
+resp1 = requests.get(
+    f"https://api.e2b.app/events/sandboxes/{sbx.sandbox_id}",
+    headers={
+        "X-API-Key": E2B_API_KEY,
+    }
+)
+sandbox_events = resp1.json()
+
+# Get the latest 10 events for all sandboxes associated with the team
+resp2 = requests.get(
+    "https://api.e2b.app/events/sandboxes?limit=10",
+    headers={
+        "X-API-Key": E2B_API_KEY,
+    }
+)
+team_sandbox_events = resp2.json()
+
+print(team_sandbox_events)
+
+# [
+#   {
+#     "eventCategory": "lifecycle",
+#     "eventData": null,
+#     "eventLabel": "kill",
+#     "sandboxBuildId": "a979a14b-bdcc-49e6-bc04-1189fc9fe7c2",
+#     "sandboxExecutionId": "1dae9e1c-9957-4ce7-a236-a99d5779aadf",
+#     "sandboxId": "${SANDBOX_ID}",
+#     "sandboxTeamId": "460355b3-4f64-48f9-9a16-4442817f79f5",
+#     "sandboxTemplateId": "rki5dems9wqfm4r03t7g",
+#     "timestamp": "2025-08-06T20:59:36Z"
+#   },
+#   {
+#     "eventCategory": "lifecycle",
+#     "eventData": {
+#       "set_timeout": "2025-08-06T20:59:59Z"
+#     },
+#     "eventLabel": "update",
+#     "sandboxBuildId": "a979a14b-bdcc-49e6-bc04-1189fc9fe7c2",
+#     "sandboxExecutionId": "1dae9e1c-9957-4ce7-a236-a99d5779aadf",
+#     "sandboxId": "${SANDBOX_ID}",
+#     "sandboxTeamId": "460355b3-4f64-48f9-9a16-4442817f79f5",
+#     "sandboxTemplateId": "rki5dems9wqfm4r03t7g",
+#     "timestamp": "2025-08-06T20:59:29Z"
+#   },
+#   [...]
+#   {
+#     "eventCategory": "lifecycle",
+#     "eventData": null,
+#     "eventLabel": "create",
+#     "sandboxBuildId": "a979a14b-bdcc-49e6-bc04-1189fc9fe7c2",
+#     "sandboxExecutionId": "1dae9e1c-9957-4ce7-a236-a99d5779aadf",
+#     "sandboxId": "${SANDBOX_ID}",
+#     "sandboxTeamId": "460355b3-4f64-48f9-9a16-4442817f79f5",
+#     "sandboxTemplateId": "rki5dems9wqfm4r03t7g",
+#     "timestamp": "2025-08-06T20:59:24Z"
+#   }
+# ]
+```
+</CodeGroup>

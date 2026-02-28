@@ -1,0 +1,339 @@
+---
+title: "List sandboxes"
+---
+
+You can list sandboxes using the `Sandbox.list()` method.
+
+<Note>
+    Once you have information about running sandbox, you can [connect](/sandbox/connect) to it using the `Sandbox.connect()` method.
+</Note>
+
+### Listing sandboxes
+
+The `Sandbox.list()` method supports pagination. In the [advanced pagination](/sandbox/list#advanced-pagination) section, you can find more information about pagination techniques using the updated method.
+
+<CodeGroup>
+    ```js JavaScript & TypeScript highlight={6,11,14,24}
+    import { Sandbox, SandboxInfo } from '@e2b/code-interpreter'
+
+    const sandbox = await Sandbox.create(
+      {
+        metadata: {
+          name: 'My Sandbox',
+        },
+      },
+    )
+
+    const paginator = Sandbox.list()
+
+    // Get the first page of sandboxes (running and paused)
+    const firstPage = await paginator.nextItems()
+
+    const runningSandbox = firstPage[0]
+
+    console.log('Running sandbox metadata:', runningSandbox.metadata)
+    console.log('Running sandbox id:', runningSandbox.sandboxId)
+    console.log('Running sandbox started at:', runningSandbox.startedAt)
+    console.log('Running sandbox template id:', runningSandbox.templateId)
+
+    // Get the next page of sandboxes
+    const nextPage = await paginator.nextItems()
+    ```
+    ```python Python highlight={5,9,12,22}
+    from e2b_code_interpreter import Sandbox, SandboxInfo
+
+    sandbox = Sandbox.create(
+        metadata={
+            "name": "My Sandbox",
+        },
+    )
+
+    paginator = Sandbox.list()
+
+    # Get the first page of sandboxes (running and paused)
+    firstPage = paginator.next_items()
+
+    running_sandbox = firstPage[0]
+
+    print('Running sandbox metadata:', running_sandbox.metadata)
+    print('Running sandbox id:', running_sandbox.sandbox_id)
+    print('Running sandbox started at:', running_sandbox.started_at)
+    print('Running sandbox template id:', running_sandbox.template_id)
+
+    # Get the next page of sandboxes
+    nextPage = paginator.next_items()
+    ```
+</CodeGroup>
+The code above will output something like this:
+<CodeGroup>
+    ```bash JavaScript & TypeScript
+    Running sandbox metadata: {name: "My Sandbox"}
+    Running sandbox id: ixjj3iankaishgcge4jwn-b0b684e9
+    Running sandbox started at: 2024-10-15T21:13:07.311Z
+    Running sandbox template id: 3e4rngfa34txe0gxc1zf
+    ```
+    ```bash Python
+    Running sandbox metadata: {'name': 'My Sandbox'}
+    Running sandbox id: ixjj3iankaishgcge4jwn-b0b684e9
+    Running sandbox started at: 2024-10-15 21:13:07.311861+00:00
+    Running sandbox template id: 3e4rngfa34txe0gxc1zf
+    ```
+</CodeGroup>
+
+
+### Filtering sandboxes
+
+Filter sandboxes by their current state. The state parameter can contain either "**running**" for running sandboxes or "**paused**" for paused sandboxes, or both.
+
+<CodeGroup>
+    ```js JavaScript & TypeScript highlight={9,13}
+    import { Sandbox } from '@e2b/code-interpreter'
+
+    // Create a sandbox.
+    const sandbox = await Sandbox.create()
+
+    // List sandboxes that are running or paused.
+    const paginator = Sandbox.list({
+      query: {
+        state: ['running', 'paused'],
+      },
+    })
+
+    const sandboxes = await paginator.nextItems()
+    ```
+    ```python Python highlight={9,14}
+    from e2b_code_interpreter import Sandbox, SandboxQuery, SandboxState
+
+    # Create a sandbox with metadata.
+    sandbox = Sandbox.create()
+
+    # List sandboxes that are running or paused.
+    paginator = Sandbox.list(
+        query=SandboxQuery(
+            state=[SandboxState.RUNNING, SandboxState.PAUSED],
+        ),
+    )
+
+    # Get the first page of sandboxes (running and paused)
+    sandboxes = paginator.next_items()
+    ```
+</CodeGroup>
+
+Filter sandboxes by the metadata key value pairs specified during Sandbox creation.
+
+<CodeGroup>
+    ```js JavaScript & TypeScript highlight={6-8,15,18}
+    import { Sandbox } from '@e2b/code-interpreter'
+
+    // Create sandbox with metadata.
+    const sandbox = await Sandbox.create({
+      metadata: {
+        env: 'dev',
+        app: 'my-app',
+        userId: '123',
+      },
+    })
+
+    // List all sandboxes that has `userId` key with value `123` and `env` key with value `dev`.
+    const paginator = Sandbox.list({
+      query: {
+        metadata: { userId: '123', env: 'dev' },
+      },
+    })
+
+    const sandboxes = await paginator.nextItems()
+    ```
+    ```python Python highlight={6-8,16-17}
+    from e2b_code_interpreter import Sandbox, SandboxQuery, SandboxState
+
+    # Create sandbox with metadata.
+    sandbox = Sandbox.create(
+        metadata={
+            "env": "dev",
+            "app": "my-app",
+            "user_id": "123",
+        },
+    )
+
+    # List running sandboxes that has `userId` key with value `123` and `env` key with value `dev`.
+    paginator = Sandbox.list(
+        query=SandboxQuery(
+            metadata={
+                "userId": "123",
+                "env": "dev",
+            }
+        ),
+    )
+
+    # Get the first page of sandboxes (running and paused)
+    sandboxes = paginator.next_items()
+    ```
+</CodeGroup>
+
+### Advanced pagination
+
+For more granular pagination, you can set custom per-page item limit (default and maximum is **100**) and specify an offset parameter (`nextToken` or `next_token`) to start paginating from.
+
+<CodeGroup>
+    ```js JavaScript & TypeScript highlight={4-5,16}
+    import { Sandbox } from '@e2b/code-interpreter'
+
+    const paginator = Sandbox.list({
+      limit: 100,
+      nextToken: '<base64-encoded-token>',
+    })
+
+    // Additional paginator properties
+    // Whether there is a next page
+    paginator.hasNext
+
+    // Next page token
+    paginator.nextToken
+
+    // Fetch the next page
+    await paginator.nextItems()
+    ```
+    ```python Python  highlight={5-6,13}
+    from e2b_code_interpreter import Sandbox
+
+    # List running sandboxes that has `userId` key with value `123` and `env` key with value `dev`.
+    paginator = Sandbox.list(
+        limit=100,
+        next_token="<base64-encoded-token>",
+    )
+
+    paginator.has_next  # Whether there is a next page
+    paginator.next_token  # Next page token
+
+    # Fetch the next page
+    paginator.next_items()
+    ```
+</CodeGroup>
+
+You can fetch all pages by looping through the paginator while checking if there is a next page (using `hasNext` or `has_next` property) and fetching until there are no more pages left to fetch:
+
+<CodeGroup>
+    ```js JavaScript & TypeScript  highlight={7}
+    import { Sandbox } from '@e2b/code-interpreter'
+
+    const paginator = Sandbox.list()
+
+    // Loop through all pages
+    const sandboxes: SandboxInfo[] = []
+    while (paginator.hasNext) {
+      const items = await paginator.nextItems()
+      sandboxes.push(...items)
+    }
+    ```
+    ```python Python highlight={7}
+    from e2b_code_interpreter import Sandbox, SandboxQuery
+
+    paginator = Sandbox.list()
+
+    # Loop through all pages
+    sandboxes: list[SandboxInfo] = []
+    while paginator.has_next:
+        items = paginator.next_items()
+        sandboxes.extend(items)
+    ```
+</CodeGroup>
+
+## Old SDK (v1.x.y)
+
+<Note>
+    If you're using SDK with version lower than `2.0.0`, the `Sandbox.list()` method behaves differently.
+</Note>
+
+
+<CodeGroup>
+    ```js JavaScript & TypeScript highlight={11}
+    import { Sandbox } from '@e2b/code-interpreter'
+
+    // Create a sandbox.
+    const sandbox = await Sandbox.create({
+      metadata: {
+        name: 'My Sandbox',
+      },
+    })
+
+    // List all running sandboxes.
+    const runningSandboxes = await Sandbox.list()
+    const runningSandbox = runningSandboxes[0]
+
+    console.log('Running sandbox metadata:', runningSandbox.metadata)
+    console.log('Running sandbox id:', runningSandbox.sandboxId)
+    console.log('Running sandbox started at:', runningSandbox.startedAt)
+    console.log('Running sandbox template id:', runningSandbox.templateId)
+    ```
+    ```python Python highlight={11}
+    from e2b_code_interpreter import Sandbox
+
+    # Create a sandbox.
+    sandbox = Sandbox.create(
+      metadata: {
+        name: 'My Sandbox',
+      },
+    )
+
+    # List all running sandboxes.
+    running_sandboxes = Sandbox.list() 
+    running_sandbox = running_sandboxes[0]
+
+    print('Running sandbox metadata:', running_sandbox.metadata)
+    print('Running sandbox id:', running_sandbox.sandbox_id)
+    print('Running sandbox started at:', running_sandbox.started_at)
+    print('Running sandbox template id:', running_sandbox.template_id)
+    ```
+</CodeGroup>
+
+## Filtering sandboxes
+
+You can filter sandboxes by specifying [Metadata](/sandbox/metadata) key value pairs.
+Specifying multiple key value pairs will return sandboxes that match all of them.
+
+This can be useful when you have a large number of sandboxes and want to find only specific ones. The filtering is performed on the server.
+
+<CodeGroup>
+    ```js JavaScript & TypeScript highlight={6-8,15}
+    import { Sandbox } from '@e2b/code-interpreter'
+
+    // Create sandbox with metadata.
+    const sandbox = await Sandbox.create({
+      metadata: {
+        env: 'dev',
+        app: 'my-app',
+        userId: '123',
+      },
+    })
+
+    // List running sandboxes that has `userId` key with value `123` and `env` key with value `dev`.
+    const runningSandboxes = await Sandbox.list({
+      query: {
+        metadata: { userId: '123', env: 'dev' },
+      },
+    })
+    ```
+    ```python Python highlight={7-9,17-18}
+    from e2b_code_interpreter import Sandbox
+    from e2b.sandbox.sandbox_api import SandboxQuery
+
+    # Create sandbox with metadata.
+    sandbox = Sandbox.create(
+        metadata={
+            "env": "dev",
+            "app": "my-app",
+            "user_id": "123",
+        },
+    )
+
+    # List running sandboxes that has `userId` key with value `123` and `env` key with value `dev`.
+    running_sandboxes = Sandbox.list(
+        query=SandboxQuery(
+            metadata={
+                "userId": "123",
+                "env": "dev",
+            }
+        ),
+    )
+    ```
+</CodeGroup>

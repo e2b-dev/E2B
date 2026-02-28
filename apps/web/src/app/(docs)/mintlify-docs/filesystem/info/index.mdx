@@ -1,0 +1,116 @@
+---
+title: "Get information about a file or directory"
+sidebarTitle: File & directory metadata
+---
+
+You can get information about a file or directory using the `files.getInfo()` / `files.get_info()` methods. Information such as file name, type, and path is returned.
+
+### Getting information about a file
+
+<CodeGroup>
+```js JavaScript & TypeScript
+import { Sandbox } from '@e2b/code-interpreter'
+
+const sandbox = await Sandbox.create()
+
+// Create a new file
+await sandbox.files.write('test_file.txt', 'Hello, world!')
+
+// Get information about the file
+const info = await sandbox.files.getInfo('test_file.txt')
+
+console.log(info)
+// {
+//   name: 'test_file.txt',
+//   type: 'file',
+//   path: '/home/user/test_file.txt',
+//   size: 13,
+//   mode: 0o644, 
+//   permissions: '-rw-r--r--',
+//   owner: 'user',
+//   group: 'user',
+//   modifiedTime: '2025-05-26T12:00:00.000Z',
+//   symlinkTarget: null
+// }
+```
+```python Python
+from e2b_code_interpreter import Sandbox
+
+sandbox = Sandbox.create()
+
+# Create a new file
+sandbox.files.write('test_file', 'Hello, world!')
+
+# Get information about the file
+info = sandbox.files.get_info('test_file')
+
+print(info)
+# EntryInfo(
+#   name='test_file.txt',
+#   type=<FileType.FILE: 'file'>,
+#   path='/home/user/test_file.txt',
+#   size=13,
+#   mode=0o644,
+#   permissions='-rw-r--r--',
+#   owner='user',
+#   group='user',
+#   modified_time='2025-05-26T12:00:00.000Z',
+#   symlink_target=None
+# )
+```
+</CodeGroup>
+
+### Getting information about a directory
+
+<CodeGroup>
+```js JavaScript & TypeScript
+import { Sandbox } from '@e2b/code-interpreter'
+
+const sandbox = await Sandbox.create()
+
+// Create a new directory
+await sandbox.files.makeDir('test_dir')
+
+// Get information about the directory
+const info = await sandbox.files.getInfo('test_dir')
+
+console.log(info)
+// {
+//   name: 'test_dir',
+//   type: 'dir',
+//   path: '/home/user/test_dir',
+//   size: 0,
+//   mode: 0o755,
+//   permissions: 'drwxr-xr-x',
+//   owner: 'user',
+//   group: 'user',
+//   modifiedTime: '2025-05-26T12:00:00.000Z',
+//   symlinkTarget: null
+// }
+```
+```python Python
+from e2b_code_interpreter import Sandbox
+
+sandbox = Sandbox.create()
+
+# Create a new directory
+sandbox.files.make_dir('test_dir')
+
+# Get information about the directory
+info = sandbox.files.get_info('test_dir')
+
+print(info)
+# EntryInfo(
+#   name='test_dir',
+#   type=<FileType.DIR: 'dir'>,
+#   path='/home/user/test_dir',
+#   size=0,
+#   mode=0o755,
+#   permissions='drwxr-xr-x',
+#   owner='user',
+#   group='user',
+#   modified_time='2025-05-26T12:00:00.000Z',
+#   symlink_target=None
+# )
+```
+</CodeGroup>

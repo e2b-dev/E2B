@@ -1,0 +1,705 @@
+---
+title: "SDK Beta - Migration Guide"
+---
+
+<Callout icon="circle-exclamation" color="#ff8800" iconType="regular">You are reading a legacy (pre v1.0) document.</Callout>
+
+
+The following guide shows how to migrate your code from the current Core SDKs (`e2b`) and Code Interpreter SDKs (`@e2b/code-interpreter`/`e2b-code-interpreter`) to the beta versions.
+
+The latest beta versions you should install can be found in NPM/PyPi release history:
+- **JavaScript & TypeScript**
+	- [Latest release](https://www.npmjs.com/package/e2b?activeTab=versions) with *rc* tag for `e2b`
+	- [Latest release](https://www.npmjs.com/package/@e2b/code-interpreter?activeTab=versions) with *rc* tag for `@e2b/code-interpreter`
+- **Python**
+	- [Latest release](https://pypi.org/project/e2b/#history) with *PRE-RELEASE* for `e2b`
+	- [Latest release](https://pypi.org/project/e2b-code-interpreter/#history) with *PRE-RELEASE* for `e2b-code-interpreter`
+
+## Table of contents
+- [Core Sandbox SDK changes](#core-sandbox-sdk-changes)
+	- [Creating sandbox](#creating-sandbox)
+	- [Modifying sandbox timeout](#modifying-sandbox-timeout)
+	- [Reconnecting](#reconnecting)
+	- [Writing files to sandbox](#writing-files-to-sandbox)
+	- [Reading files from sandbox](#reading-files-from-sandbox)
+	- [Uploading data to sandbox](#uploading-data-to-sandbox)
+	- [Downloading files from sandbox](#downloading-files-from-sandbox)
+	- [Running processes](#running-processes)
+	- [Watching for files' changes](#watching-for-files-changes)
+	- [Accessing sandbox ID](#accessing-sandbox-id)
+	- [Getting sandbox upload URL](#getting-sandbox-upload-url)
+	- [Configuring sandbox `cwd`](#configuring-sandbox-cwd)
+	- [Timeouts](#timeouts)
+	- [Listing sandboxes](#listing-sandboxes)
+	- [Getting sandbox url](#getting-sandbox-url)
+	- [Code Interpreter SDK changes](#code-interpreter-sdk-changes)
+	- [Executing code](#executing-code)
+	- [Custom template](#custom-template)
+  - [Python Async](#python-async)
+	- [Watching for files' changes in async Python SDK](#watching-for-files-changes-in-async-python-sdk)
+	- [Running background commands in async Python SDK](#running-background-commands-in-async-python-sdk)
+
+
+## <h1>Core Sandbox SDK changes</h1>
+These changes affect both the `e2b` Core SDKs and Code Interpreter SDKs (`@e2b/code-interpreter`/`e2b-code-interpreter`) because the Code Interpreter uses the Core SDK.
+
+<Note>
+If you are using a custom template you need to rebuild it by calling `e2b template build` in the directory with the template.
+</Note>
+
+## Creating sandbox
+
+When creating a sandbox you now **specify the sandbox timeout — how long the sandbox will exist**. If you don't specify the timeout the sandbox will be closed after 5 minutes.
+
+You also no longer call the `.close()` method when you are done with the sandbox. Sandbox will be automatically closed and killed after the timeout.
+
+You can use `.kill()` to kill the sandbox immediately if you are sure you won't need it anymore.
+
+<CodeGroup isRunnable={false}>
+```js JavaScript & TypeScript
+import Sandbox from 'e2b'
+
+// Before
+// const sandbox = await Sandbox.create()
+// await sandbox.close()
+
+// Now
+const sandbox = await Sandbox.create({ timeoutMs: 300_000 })
+```
+```python Python
+from e2b import Sandbox
+
+# Before
+# sandbox = Sandbox.create()
+# sandbox.close()
+
+# Now
+sandbox = Sandbox.create(timeout=300)
+```
+</CodeGroup>
+
+If you need to use a [custom sandbox template](/legacy/guide/custom-sandbox) you pass the template as the first parameter:
+<CodeGroup isRunnable={false}>
+```js JavaScript & TypeScript
+import Sandbox from 'e2b'
+
+// Before
+// const sandbox = await Sandbox.create({ template: 'template-name-or-id' })
+// await sandbox.close()
+
+// Now
+const sandbox = await Sandbox.create('template-name-or-id', {
+	timeoutMs: 300_000,
+})
+```
+```python Python
+from e2b import Sandbox
+
+# Before
+# sandbox = Sandbox.create(template='template-name-or-id')
+# sandbox.close()
+
+# Now
+sandbox = Sandbox.create(template='template-name-or-id', timeout=300)
+```
+</CodeGroup>
+
+## Modifying sandbox timeout
+If you need to change how long the sandbox should stay alive after it was created, you can use `.setTimeout()`/`.set_timeout()` method.
+It will modify the timeout of the sandbox.
+
+<CodeGroup isRunnable={false}>
+```js JavaScript & TypeScript
+import Sandbox from 'e2b'
+
+// Before
+// const sandbox = await Sandbox.create()
+// await sandbox.keepAlive(600_000)
+
+// Now
+const sandbox = await Sandbox.create({ timeoutMs: 300_000 })
+await sandbox.setTimeout(600_000)
+```
+```python Python
+from e2b import Sandbox
+
+# Before
+# sandbox = Sandbox.create()
+# sandbox.keep_alive(600)
+
+# Now
+sandbox = Sandbox.create(timeout=300)
+sandbox.set_timeout(600)
+```
+</CodeGroup>
+
+## Reconnecting
+When connection to an existing sandbox use `.connect()`/`.connect()` method instead of `.reconnect()`/`.reconnect()`.
+
+Instead of using `.keepAlive()`/`.keep_alive()` method to prevent the sandbox from closing until you reconnect use `.setTimeout()`/`.set_timeout()` method.
+Because the timeout is set when the sandbox is created, you may not need to set the timeout when reconnecting at all now.
+
+<CodeGroup isRunnable={false}>
+```js JavaScript & TypeScript
+import Sandbox from 'e2b'
+
+// Before
+// const sandbox = await Sandbox.create()
+// await sandbox.keepAlive(600_000)
+// await sandbox.close()
+
+// const existingSandbox = await Sandbox.reconnect(sandbox.id)
+
+// Now
+const sandbox = await Sandbox.create({ timeoutMs: 600_000 })
+
+const existingSandbox = await Sandbox.connect(sandbox.sandboxId)
+```
+```python Python
+from e2b import Sandbox
+
+# Before
+# sandbox = Sandbox.create()
+# sandbox.keep_alive(600)
+# sandbox.close()
+
+# existing_sandbox = Sandbox.reconnect(sandbox.id)
+
+# Now
+sandbox = Sandbox.create(timeout=600)
+
+existing_sandbox = Sandbox.connect(sandbox.sandbox_id)
+```
+</CodeGroup>
+
+## Writing files to sandbox
+Use `.files.write()` method to write files to the sandbox.
+
+The method accepts `path` in the sandbox as the first argument and the `data` as the second argument.
+
+<CodeGroup isRunnable={false}>
+```js JavaScript & TypeScript
+import Sandbox from 'e2b'
+
+// Before
+// await sandbox.filesystem.write('/hello.txt', 'Hello World!')
+
+// Now
+await sandbox.files.write('/path/in/sandbox', 'Hello World!')
+```
+```python Python
+from e2b import Sandbox
+
+# Before
+# sandbox.filesystem.write("/hello.txt", "Hello World!")
+
+# Now
+sandbox.files.write("/path/in/sandbox", "Hello World!")
+```
+</CodeGroup>
+
+## Reading files from sandbox
+Use `.files.read()` method to read files from the sandbox.
+
+The method accepts `path` in the sandbox as the first argument and optional `format` as the second argument.
+
+<CodeGroup isRunnable={false}>
+```js JavaScript & TypeScript
+import Sandbox from 'e2b'
+
+// Before
+//const content = await sandbox.downloadFile('/path/in/sandbox')
+
+// Now
+const content = await sandbox.files.read('/path/in/sandbox')
+```
+```python Python
+from e2b import Sandbox
+
+# Before
+# content = sandbox.download_file("/path/in/sandbox")
+
+# Now
+content = sandbox.files.read("/path/in/sandbox")
+```
+</CodeGroup>
+
+## Uploading data to sandbox
+Use `.files.write()` method to upload files to the sandbox.
+
+The method accepts `path` in the sandbox as the first argument and the `data` as the second argument.
+
+<CodeGroup isRunnable={false}>
+```js JavaScript & TypeScript
+import Sandbox from 'e2b'
+
+// Before
+// const content = fs.readFileSync('/local/path')
+// await sandbox.uploadFile(content, '/path/in/sandbox')
+
+// Now
+const content = fs.readFileSync('/local/path')
+await sandbox.files.write('/path/in/sandbox', content)
+```
+```python Python
+from e2b import Sandbox
+
+# Before
+# with open("path/to/local/file", "rb") as file:
+#	sandbox.upload_file(file)
+
+# Now
+with open("path/to/local/file", "rb") as file:
+	sandbox.files.write("/path/in/sandbox", file)
+```
+</CodeGroup>
+
+## Downloading files from sandbox
+Use `.files.read()` method to download files from the sandbox.
+
+The method accepts `path` in the sandbox as the first argument and optional `format` as the second argument.
+
+<CodeGroup isRunnable={false}>
+```js JavaScript & TypeScript
+import Sandbox from 'e2b'
+
+// Before
+//const content = await sandbox.downloadFile('/path/in/sandbox')
+
+// Now
+const content = await sandbox.files.read('/path/in/sandbox')
+```
+```python Python
+from e2b import Sandbox
+
+# Before
+# content = sandbox.download_file("/path/in/sandbox")
+
+# Now
+content = sandbox.files.read("/path/in/sandbox")
+```
+</CodeGroup>
+
+
+## Running processes
+You execute processes by calling `.commands.run()` method. By default, the method waits for the command to finish.
+
+You can specify the timeout for the command execution by passing `timeoutMs`/`timeout` option. The default timeout is 60 seconds.
+
+If the command fails with a non-zero exit it will raise `CommandExitError` in Javascript, or `CommandExitException` in Python, and you can catch and inspect the error for more info.
+
+<CodeGroup isRunnable={false}>
+```js JavaScript & TypeScript
+import Sandbox from 'e2b'
+
+// Before
+// const sandbox = await Sandbox.create()
+// const result = await sandbox.process.startAndWait({
+// 	cmd: 'echo "Hello, world!"',
+// 	onStderr: (msg) => console.log(msg.line),
+// 	onStdout: (msg) => console.log(msg.line),
+// })
+
+// Now
+const result = await sandbox.commands.run('echo "Hello, World!"', {
+	onStderr(output) { console.log(output) },
+	onStdout(output) { console.log(output) },
+	timeoutMs: 60_000,
+})
+```
+```python Python
+from e2b import Sandbox
+
+# Before
+# sandbox = Sandbox.create()
+# result = sandbox.process.start_and_wait(
+# 	cmd='echo "Hello, world!"',
+# 	on_stderr=lambda msg: print(msg.line),
+# 	on_stdout=lambda msg: print(msg.line),
+# )
+
+# Now
+result = sandbox.commands.run(
+	cmd='echo "Hello, World!"',
+	timeout=60,
+	on_stdout=lambda output: print(output),
+	on_stderr=lambda output: print(output),
+)
+```
+</CodeGroup>
+If you want to run the command in the background use `background: true`/`background=True` option.
+You can then use `.wait()` method to wait for the command to finish.
+
+<CodeGroup isRunnable={false}>
+```js JavaScript & TypeScript
+import Sandbox from 'e2b'
+
+// Before
+// const sandbox = await Sandbox.create()
+// const process = await sandbox.process.start({
+// 	cmd: 'sleep 10; echo "Hello, world!"',
+// 	onStderr: (msg) => console.log(msg.line),
+// 	onStdout: (msg) => console.log(msg.line),
+// })
+
+// const result = await process.wait()
+
+// Now
+const command = await sandbox.commands.run('sleep 10; echo "Hello, world!"', {
+	onStderr(output) { console.log(output) },
+	onStdout(output) { console.log(output) },
+	background: true,
+})
+
+const result = await command.wait()
+```
+```python Python
+from e2b import Sandbox
+
+# Before
+# sandbox = Sandbox.create()
+# process = sandbox.process.start(
+# 	cmd='echo "Hello, world!"',
+# 	on_stderr=lambda msg: print(msg.line),
+# 	on_stdout=lambda msg: print(msg.line),
+# )
+
+# result = process.wait()
+
+# Now
+command = sandbox.commands.run(
+	cmd='echo "Hello, World!"',
+	background=True,
+)
+
+result = command.wait(
+	on_stderr=lambda output: print(output),
+	on_stdout=lambda output: print(output),
+)
+```
+</CodeGroup>
+
+
+## Watching for files' changes
+
+<CodeGroup isRunnable={false}>
+```js JavaScript & TypeScript
+import Sandbox from 'e2b'
+
+// Before
+// const sandbox = await Sandbox.create()
+// const watcher = sandbox.filesystem.watchDir('/path/in/sandbox')
+// watcher.addEventListener((event) => console.log(event))
+// await watcher.start()
+
+// Now
+const sandbox = await Sandbox.create()
+await sandbox.files.watchDir('/path/in/sandbox', (event) => console.log(event))
+```
+```python Python
+from e2b import Sandbox
+
+# Before
+# sandbox = Sandbox.create()
+
+# watcher = sandbox.filesystem.watch_dir("/path/in/sandbox")
+# watcher.add_event_listener(lambda event: print(event))
+# watcher.start()
+
+# Now
+sandbox = Sandbox.create()
+watcher = sandbox.files.watch_dir("/path/in/sandbox")
+
+for event in watcher:
+    print(event)
+```
+</CodeGroup>
+
+## Accessing sandbox ID
+The `id` property on the sandbox/code interpreter instance is now named `sandboxId`/`sandbox_id`.
+
+<CodeGroup isRunnable={false}>
+```js JavaScript & TypeScript
+import Sandbox from 'e2b'
+
+// Before
+// const sandboxId = await sandbox.id
+
+// Now
+const sandboxId = await sandbox.sandboxId
+```
+```python Python
+from e2b import Sandbox
+
+# Before
+# sandbox_id = sandbox.id
+
+# Now
+sandbox_id = sandbox.sandbox_id
+```
+</CodeGroup>
+
+## Getting sandbox upload URL
+The `.fileURL`/`.file_url()` is now `.uploadURL`/`.upload_url()` method that takes an optional argument that specifies the path in the sandbox where the file will be uploaded.
+
+If the path is not specified the file will be uploaded to the home dir — `/home/user`.
+
+<CodeGroup isRunnable={false}>
+```js JavaScript & TypeScript
+import Sandbox from 'e2b'
+
+// Before
+// const url = await sandbox.fileURL
+
+// Now
+const url = await sandbox.uploadUrl('/path/in/sandbox')
+```
+```python Python
+from e2b import Sandbox
+
+# Before
+# url = sandbox.file_url()
+
+# Now
+url = sandbox.upload_url('/path/in/sandbox')
+```
+</CodeGroup>
+
+## Configuring sandbox `cwd`
+Previously you could set the sandbox working directory by passing `cwd` option when creating the sandbox.
+Right now this is not supported because it leads to subtle bugs especially when reconnecting to an existing sandbox.
+
+If you need this feature please reach out to us on [Discord](https://discord.com/invite/U7KEcGErtQ) or [GitHub](https://github.com/e2b-dev/e2b) so we can prioritize it.
+
+## Timeouts
+There are now two types of timeouts that you can pass as parameters:
+1. `request_timeout`/`requestTimeoutMs` sets how long the operation should wait for connection/processing.
+This is useful for ensuring that none of the sandbox operations hang indefinitely.
+2. `timeout`/`timeoutMs` which is used for setting the maximum length of long-running operations like executing code, running processes, or the sandbox itself.
+
+## Listing sandboxes
+Some properties returned from the `Sandbox.list` method have been renamed.
+
+<CodeGroup isRunnable={false}>
+```js JavaScript & TypeScript
+import Sandbox from 'e2b'
+
+// Before
+// const sandboxes = await Sandbox.list()
+
+// `sandboxes` is an array of `RunningSandbox` objects:
+// {
+//   sandboxID: string
+//   templateID: string
+//   alias?: string
+//   metadata?: SandboxMetadata
+//   startedAt: Date
+// }
+
+// Now
+const sandboxes = await Sandbox.list()
+
+// `sandboxes` is an array of `SandboxInfo` objects:
+// {
+//   sandboxId: string
+//   templateId: string
+//   name?: string
+//   metadata: Record<string, string>
+//   startedAt: Date
+// }
+```
+```python Python
+from e2b import Sandbox
+
+# Before
+# sandboxes = Sandbox.list()
+
+# `sandboxes` is an array of `RunningSandbox` objects:
+# class RunningSandbox(BaseModel):
+#     sandbox_id: str
+#     template_id: str
+#     alias: Optional[str]
+#     metadata: Optional[Dict[str, str]]
+#     cpu_count: int
+#     memory_mb: int
+#     started_at: datetime
+
+# Now
+sandboxes = Sandbox.list()
+
+# `sandboxes` is an array of `SandboxInfo` objects:
+# @dataclass
+# class SandboxInfo:
+#     sandbox_id: str
+#     template_id: str
+#     name: Optional[str]
+#     metadata: Dict[str, str]
+#     started_at: datetime
+
+```
+</CodeGroup>
+
+
+## Getting sandbox url
+The method for getting the sandbox host has changed from `sandbox.getHostname/sandbox.get_hostname` to `sandbox.getHost/sandbox.get_host`.
+It now requires specifying the port.
+
+<CodeGroup isRunnable={false}>
+```js JavaScript & TypeScript
+import Sandbox from 'e2b'
+
+// Before
+// const host = await sandbox.getHostname(80)
+
+// Now
+const host = await sandbox.getHost(80)
+```
+```python Python
+from e2b import Sandbox
+
+# Before
+# host = sandbox.get_hostname(80)
+
+# Now
+host = sandbox.get_host(80)
+```
+</CodeGroup>
+
+
+## <h1>Code Interpreter SDK changes</h1>
+All the previously mentioned changes to the Core SDK also apply to the Code Interpreter SDK.
+Apart from them, the changes to the Code Interpreter SDK are very minimal:
+
+## Executing code
+When executing code via JS/TS Code Interpreter SDK you now pass the `timeoutMs` option to the `execCell` method instead of `timeout`.
+
+The default timeout for the code execution is now 300 seconds.
+
+<CodeGroup isRunnable={false}>
+```js JavaScript & TypeScript
+import CodeInterpreter from '@e2b/code-interpreter'
+
+// Before
+// const sandbox = await CodeInterpreter.create()
+// const execution = await sandbox.notebook.execCell('print("Hello, world!")', {
+//   timeout: 2000,
+// })
+// await sandbox.close()
+
+// Now
+const sandbox = await CodeInterpreter.create({ timeoutMs: 300_000 })
+const execution = await sandbox.notebook.execCell('print("Hello, world!")', {
+  timeoutMs: 2000,
+})
+```
+
+```python Python
+from e2b_code_interpreter import CodeInterpreter
+
+# Before
+# sandbox = CodeInterpreter()
+# execution = sandbox.notebook.exec_cell('print("Hello, world!")', timeout=2)
+# sandbox.close()
+
+# Now
+sandbox = CodeInterpreter(timeout=300)
+execution = sandbox.notebook.exec_cell('print("Hello, world!")', timeout=2)
+```
+</CodeGroup>
+
+## Custom template
+If you are using a custom template for the Code Interpreter you need to rebuild it.
+
+
+You can rebuild the template by either calling
+```sh
+e2b template build -c "/root/.jupyter/start-up.sh"
+```
+if you use the E2B Docker image as base in your `e2b.Dockerfile`
+```docker
+FROM e2bdev/code-interpreter:latest
+
+# You custom Dockerfile content here
+```
+
+Or if you are using custom base you need to copy all files excluding the `e2b.toml` from [beta template](https://github.com/e2b-dev/legacy/code-interpreter/tree/beta/template)
+to the directory with your template and then run `e2b template build -c "/root/.jupyter/start-up.sh"`.
+
+<Note>
+Check of the [Code Interpreter custom template](/legacy/code-interpreter/template) page for more info.
+</Note>
+
+## <h1>Python Async</h1>
+Python Core SDK and Code Interpter SDK now support async.
+
+If you need to use async import `AsyncSandbox`/`AsyncCodeInterpreter` instead of `Sandbox`/`CodeInterpreter`.
+
+<CodeGroup isRunnable={false}>
+```python Python
+# Sync
+# from e2b import Sandbox
+# sandbox = Sandbox.create()
+
+# from e2b_code_interpreter import CodeInterpreter
+# sandbox = CodeInterpreter()
+
+# Async
+from e2b import AsyncSandbox
+from e2b_code_interpreter import AsyncCodeInterpreter
+
+sandbox = await AsyncSandbox.create()
+sandbox = await AsyncCodeInterpreter.create()
+```
+</CodeGroup>
+
+The async versions of methods for watching for files' changes and running commands in the background are slightly different:
+
+## Watching for files' changes in async Python SDK
+
+<CodeGroup isRunnable={false}>
+```python Python
+from e2b import Sandbox
+
+# Sync
+# sandbox = Sandbox.create()
+# watcher = sandbox.files.watch_dir("/path/in/sandbox")
+
+# for event in watcher:
+#     print(event)
+
+# Async
+sandbox = await AsyncSandbox.create()
+
+await sandbox.files.watch_dir("/path/in/sandbox", lambda event: print(event))
+```
+</CodeGroup>
+
+## Running background commands in async Python SDK
+<CodeGroup isRunnable={false}>
+```python Python
+from e2b import Sandbox
+
+# Sync
+# sandbox = Sandbox.create()
+# command = sandbox.commands.run(
+# 	cmd='echo "Hello, World!"',
+# 	background=True,
+# )
+
+# result = command.wait(
+# 	on_stderr=lambda output: print(output),
+# 	on_stdout=lambda output: print(output),
+# )
+
+# Async
+sandbox = await AsyncSandbox.create()
+command = await sandbox.commands.run(
+	cmd='echo "Hello, World!"',
+	on_stderr=lambda output: print(output),
+	on_stdout=lambda output: print(output),
+	background=True,
+)
+
+result = await command.wait()
+```
+</CodeGroup>

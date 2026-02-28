@@ -1,0 +1,256 @@
+---
+title: "Hello World.py"
+---
+
+<Callout icon="circle-exclamation" color="#ff8800" iconType="regular">You are reading a legacy (pre v1.0) document.</Callout>
+
+
+This Python guide will show you the basics of E2B:
+- Connect the code interpreter to an LLM
+- Prompt the LLM to generate the Python code
+- Execute the AI-generated Python code in a secure E2B sandbox
+
+### Get full code
+Check out the [full code in our cookbook](https://github.com/e2b-dev/e2b-cookbook/tree/main/examples/hello-world-python).
+
+### Overview
+1. [Install Code Interpreter SDK](#1-install-code-interpreter-sdk)
+1. [Prepare prompt and tools for LLM](#2-prepare-prompt-and-tools-for-llm)
+1. [Prepare code interpreting](#3-prepare-code-interpreting)
+1. [Call LLM and parse response with tools](#4-call-llm-and-parse-response-with-tools)
+1. [Create code interpreter and run everything](##5-create-code-interpreter-and-run-everything)
+1. [Save generated chart](#6-save-generated-chart)
+
+
+## 1. Install Code Interpreter SDK
+
+The Code Interpreter SDK allows you to run AI-generated code in a secure small VM - **E2B sandbox** - made for AI code execution.
+Inside the sandbox is a Jupyter server running that you can control from our SDK through the `notebook.execCell()` method.
+
+Check out the [SDK's repository on GitHub](https://github.com/e2b-dev/code-interpreter).
+
+<CodeGroup isRunnable={false}>
+```bash Python
+pip install e2b_code_interpreter python-dotenv
+```
+</CodeGroup>
+
+Get your E2B API key [here](/legacy/getting-started/api-key) and save it to `.env` in your root directory.
+<CodeGroup isFileName title=".env" isRunnable={false}>
+```bash .env
+E2B_API_KEY="e2b-api-key"
+```
+</CodeGroup>
+
+
+## 2. Prepare prompt and tools for LLM
+We'll be using Anthropic's [Claude 3 Opus](https://www.anthropic.com/news/claude-3-family) model but E2B works with any LLM so feel free to pick any you want!
+
+<Note>
+Usually, all you need from the model is just support for tool use. If the LLM doesn't support tool use, you can ask the LLM to respond with Markdown or XML and parse the LLM's output on your own. Then just pass the parsed code from code blocks to the code interpreter.
+</Note>
+
+Create the `model.py` file and paste the following code.
+<CodeGroup isFileName title="model.py" isRunnable={false}>
+```python Python
+# model.py
+MODEL_NAME = "claude-3-opus-20240229"
+
+SYSTEM_PROMPT = """
+## your job & context
+you are a python data scientist. you are given tasks to complete and you run python code to solve them.
+- the python code runs in jupyter notebook.
+- every time you call `execute_python` tool, the python code is executed in a separate cell. it's okay to multiple calls to `execute_python`.
+- display visualizations using matplotlib or any other visualization library directly in the notebook. don't worry about saving the visualizations to a file.
+- you have access to the internet and can make api requests.
+- you also have access to the filesystem and can read/write files.
+- you can install any pip package (if it exists) if you need to but the usual packages for data analysis are already preinstalled.
+- you can run any python code you want, everything is running in a secure sandbox environment.
+"""
+
+tools = [
+    {
+        "name": "execute_python",
+        "description": "Execute python code in a Jupyter notebook cell and returns any result, stdout, stderr, display_data, and error.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "description": "The python code to execute in a single cell."
+                }
+            },
+            "required": ["code"]
+        }
+    }
+]
+```
+</CodeGroup>
+
+This defines our system prompt and the `tools` dictionary with available tools for the LLM - namely the `"execute_python"` tool.
+A little bit later, we'll connect `"execute_python"` to the E2B's code interpreter.
+
+
+## 3. Prepare code interpreting
+We'll create a new function called `code_interpret()` in a separate file `code_interpreter.py`.
+
+<CodeGroup isFileName title="code_interpreter.py" isRunnable={false}>
+```python Python 
+# code_interpreter.py
+from e2b_code_interpreter import CodeInterpreter
+
+def code_interpret(code_interpreter: CodeInterpreter, code: str):
+  print(f"\n{'='*50}\n> Running following AI-generated code:\n{code}\n{'='*50}")
+  exec = code_interpreter.notebook.exec_cell(
+    code,
+    # You can stream logs from the code interpreter
+    # on_stderr=lambda stderr: print("\n[Code Interpreter stdout]", stderr),
+    # on_stdout=lambda stdout: print("\n[Code Interpreter stderr]", stdout),
+    #
+    # You can also stream additional results like charts, images, etc.
+    # on_result=...
+  )
+
+  if exec.error:
+    print("[Code Interpreter error]", exec.error) # Runtime error
+  else:
+    return exec.results, exec.logs
+```
+</CodeGroup>
+
+This function takes the `CodeInterpreter` object from our SDK and `code` as paramaters.
+The `code` parameter is the code generated by the LLM.
+
+Inside the function, we call the `code_interpreter.notebook.exec_cell()` method. The `exec_cell()` takes the `code` argument and executes this `code` inside E2B sandbox.
+
+## 4. Call LLM and parse response with tools
+We're using Claude 3 Opus. Get your [Anthropic API key](https://console.anthropic.com/), save it to `.env` file, and install the [Anthropic SDK](https://docs.anthropic.com/claude/reference/client-sdks).
+
+<CodeGroup isFileName title=".env" isRunnable={false}>
+```bash .env
+ANTHROPIC_API_KEY="anthropic-api-key"
+```
+</CodeGroup>
+
+<CodeGroup isRunnable={false}>
+```bash bash
+pip install anthropic==0.35.0
+```
+</CodeGroup>
+
+Now we'll put everything together.
+Create the `main.py` file, import dependencies, and create the `chat()` function that will do the LLM calling and tool parsing.
+
+<CodeGroup isFileName title="main.py" isRunnable={false}>
+```python Python
+import base64
+from dotenv import load_dotenv
+from anthropic import Anthropic
+from typing import List, Tuple
+from e2b_code_interpreter import CodeInterpreter, Result
+from e2b_code_interpreter.models import Logs
+
+from e2b_hello_world.model import MODEL_NAME, SYSTEM_PROMPT, tools
+from e2b_hello_world.code_interpreter import code_interpret
+
+# Load the .env file
+load_dotenv()
+
+client = Anthropic()
+
+def chat(code_interpreter: CodeInterpreter, user_message: str) -> Tuple[List[Result], Logs]:
+    print(f"\n{'='*50}\nUser Message: {user_message}\n{'='*50}")
+
+    message = client.messages.create(
+        model=MODEL_NAME,
+        system=SYSTEM_PROMPT,
+        max_tokens=4096,
+        messages=[{"role": "user", "content": user_message}],
+        tools=tools,
+    )
+
+    print(f"\n{'='*50}\nModel response: {message.content}\n{'='*50}")
+
+    if message.stop_reason == "tool_use":
+        tool_use = next(block for block in message.content if block.type == "tool_use")
+        tool_name = tool_use.name
+        tool_input = tool_use.input
+
+        print(f"\n{'='*50}\nUsing tool: {tool_name}\n{'='*50}")
+
+        if tool_name == "execute_python":
+            return code_interpret(code_interpreter, tool_input["code"])
+        return []
+```
+</CodeGroup>
+
+
+## 5. Create code interpreter and run everything
+Now we are ready to run our program. At the end of `main.py` add the following code prompting the LLM to visualize a distribution of the height of men and print the median.
+
+<CodeGroup isFileName title="main.py" isRunnable={false}>
+```python Python 
+# main.py
+def main():
+  user_message = "Visualize a distribution of height of men based on the latest data you know. Also, print the median value."
+
+  # Create the CodeInterpreter object and save it as code_interpreter
+  with CodeInterpreter() as code_interpreter:
+    code_interpreter_results, code_interpreter_logs = chat(
+      code_interpreter,
+      user_message,
+    )
+
+    print(code_interpreter_logs)
+
+    first_result= code_interpreter_results[0]
+    print(first_result)
+```
+</CodeGroup>
+
+After running your code with the following command
+<CodeGroup isRunnable={false}>
+```bash bash
+$ python main.py
+```
+</CodeGroup>
+
+you should see results similar to this:
+
+```sh
+stdout=['The median male height is 175.5 cm\n'] stderr=[]
+<Figure size 800x400 with 1 Axes>
+```
+
+We got our median in the logs (`stdout`, and `stderr`) but we also something intering in `first_result`.
+```sh
+<Figure size 800x400 with 1 Axes>
+```
+
+## 6. Save generated chart
+
+This looks like a plot. Let's save it to a file. Add the following to the end of `main.py` and run the code again with `python main.py` in your terminal.
+<CodeGroup isFileName title="main.py" isRunnable={false}>
+```python Python
+# main.py
+    # If we received a chart in PNG form, we can visualize it
+    if first_result.png:
+      # Decode the base64 encoded PNG data
+      png_data = base64.b64decode(first_result.png)
+
+      # Generate a unique filename for the PNG
+      filename = f"chart.png"
+
+      # Save the decoded PNG data to a file
+      with open(filename, "wb") as f:
+          f.write(png_data)
+
+      print(f"Saved chart to {filename}")
+```
+</CodeGroup>
+
+The chart was saved in the `chart.png` file and it should look similar to this:
+
+<Frame>
+    <img src="/images/hello-world-chart.png" />
+</Frame>

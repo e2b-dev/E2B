@@ -1,0 +1,189 @@
+---
+title: "Install custom packages"
+---
+
+There are two ways to install custom packages in the E2B Sandbox.
+
+1. [Create custom sandbox with preinstalled packages](#create-a-custom-sandbox).
+2. [Install packages during the sandbox runtime](#install-packages-during-the-sandbox-runtime).
+
+---
+
+## Create a custom sandbox
+
+Use this option if you know beforehand what packages you need in the sandbox.
+
+Prerequisites:
+- E2B CLI
+- Docker running
+
+<Note>
+Custom sandbox template is a Docker image that we automatically convert to a sandbox that you can then start with our SDK.
+</Note>
+
+
+### 1. Install E2B CLI
+
+**Using Homebrew (on macOS)**
+
+<CodeGroup>
+```bash Terminal
+brew install e2b
+```
+</CodeGroup>
+
+**Using NPM**
+
+<CodeGroup>
+```bash Terminal
+npm i -g @e2b/cli
+```
+</CodeGroup>
+
+### 2. Login to E2B CLI
+Before you can create a custom sandbox, you need to login to E2B CLI.
+<CodeGroup>
+```bash Terminal
+e2b auth login
+```
+</CodeGroup>
+
+### 2. Initialize a sandbox template
+<CodeGroup>
+```bash Terminal
+e2b template init
+```
+</CodeGroup>
+
+### 3. Specify the packages you need in `e2b.Dockerfile`
+Edit the E2B Dockerfile to install the packages you need.
+
+<Note>
+You need to use the `e2bdev/code-interpreter:latest` base image.
+</Note>
+
+<CodeGroup>
+```bash e2b.Dockerfile
+FROM e2bdev/code-interpreter:latest
+
+RUN pip install cowsay
+RUN npm install cowsay
+```
+</CodeGroup>
+
+### 4. Build the sandbox template
+Run the following command to build the sandbox template.
+<CodeGroup>
+```bash Terminal
+e2b template build -c "/root/.jupyter/start-up.sh"
+```
+</CodeGroup>
+
+This will take a while, as it convert the Docker image to a sandbox which is a small VM.
+At the end of the process you will see the sandbox ID like this:
+```
+Running postprocessing. It can take up to few minutes.
+
+Postprocessing finished.
+
+✅ Building sandbox template YOUR_TEMPLATE_ID finished.
+```
+
+### 5. Start your custom sandbox
+Now you can pass the template ID to the SDK to start your custom sandbox.
+<CodeGroup>
+```js JavaScript & TypeScript
+import { Sandbox } from '@e2b/code-interpreter'
+
+const sbx = Sandbox.create({
+  template: 'YOUR_TEMPLATE_ID',
+})
+```
+```python Python
+from e2b_code_interpreter import Sandbox
+
+sbx = Sandbox.create(template='YOUR_TEMPLATE_ID')
+```
+</CodeGroup>
+
+---
+
+
+## Install packages during the sandbox runtime
+Use this option if don't know beforehand what packages you need in the sandbox. You can install packages with the package manager of your choice.
+
+<Note>
+The packages installed during the runtime are available only in the running sandbox instance.
+When you start a new sandbox instance, the packages are not be available.
+</Note>
+
+### 1. Install Python packages with PIP
+<CodeGroup>
+```js JavaScript & TypeScript
+import { Sandbox } from '@e2b/code-interpreter'
+
+const sbx = Sandbox.create()
+sbx.commands.run('pip install cowsay') // This will install the cowsay package
+sbx.runCode(`
+  import cowsay
+  cowsay.cow("Hello, world!")
+`)
+```
+```python Python
+from e2b_code_interpreter import Sandbox
+
+sbx = Sandbox.create()
+sbx.commands.run("pip install cowsay") # This will install the cowsay package
+sbx.run_code("""
+  import cowsay
+  cowsay.cow("Hello, world!")
+""")
+```
+</CodeGroup>
+
+
+### 2. Install Node.js packages with NPM
+<CodeGroup>
+```js JavaScript & TypeScript
+import { Sandbox } from '@e2b/code-interpreter'
+
+const sbx = Sandbox.create()
+sbx.commands.run('npm install cowsay') // This will install the cowsay package
+sbx.runCode(`
+  const cowsay = require('cowsay')
+  console.log(cowsay.say({ text: 'Hello, world!' }))
+`, { language: 'javascript' })
+```
+```python Python
+from e2b_code_interpreter import Sandbox
+
+sbx = Sandbox.create()
+sbx.commands.run("npm install cowsay") # This will install the cowsay package
+sbx.run_code("""
+  import { say } from 'cowsay'
+  console.log(say('Hello, world!'))
+""", language="javascript")
+```
+</CodeGroup>
+
+
+### 3. Install packages with package manager of your choice
+Since E2B Sandboxes are Debian based machines, you can use any package manager supported by Debian.
+You just need to make sure that the package manager is already installed in the sandbox.
+
+For example, to install `curl` and `git`, you can use the following commands:
+
+<CodeGroup>
+```js JavaScript & TypeScript
+import { Sandbox } from '@e2b/code-interpreter'
+
+const sbx = Sandbox.create()
+await sbx.commands.run('apt-get update && apt-get install -y curl git')
+```
+```python Python
+from e2b_code_interpreter import Sandbox
+
+sbx = Sandbox.create()
+sbx.commands.run("apt-get update && apt-get install -y curl git")
+```
+</CodeGroup>

@@ -1,0 +1,40 @@
+---
+title: "Download files from the sandbox"
+---
+
+<Callout icon="circle-exclamation" color="#ff8800" iconType="regular">You are reading a legacy (pre v1.0) document.</Callout>
+
+
+Any file inside the sandbox can be downloaded using the `downloadFile`/`download_file` method.
+
+## Use case for downloading files
+For example, the download file method is useful for downloading any files produced by LLM. You can let LLM generate and execute code inside the sandbox.
+This LLM-generated code might produce some files like charts, CSV files, or PDF files that you want to download to your machine.
+
+<CodeGroup>
+```js JavaScript & TypeScript highlight={6}
+import { Sandbox } from 'e2b'
+import fs from 'node:fs'
+
+const sandbox = await Sandbox.create({ template: 'base' })
+
+const buffer = await sandbox.downloadFile('path/to/remote/file/inside/sandbox', 'buffer')
+// Save file to local filesystem
+fs.writeFileSync('path/to/local/file', buffer)
+
+await sandbox.close()
+```
+```python Python highlight={5,7,8}
+from e2b import Sandbox
+
+sandbox = Sandbox(template="base")
+
+file_in_bytes = sandbox.download_file("path/to/remote/file/inside/sandbox") 
+# Save file to local filesystem
+with open("path/to/local/file", "wb") as f: 
+    f.write(file_in_bytes) 
+
+sandbox.close()
+```
+</CodeGroup>
+

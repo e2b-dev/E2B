@@ -1,0 +1,68 @@
+---
+title: "Custom Sandbox"
+---
+
+<Callout icon="circle-exclamation" color="#ff8800" iconType="regular">You are reading a legacy (pre v1.0) document.</Callout>
+
+
+Custom sandboxes allow you to spawn a sandbox with an environment predefined by you and then control it with our SDK.
+
+<Note>
+The E2B Sandbox is a secure way to run your AI app. It is a long-running cloud environment where you can let any LLM (GPTs, Claude, local LLMs, etc) use tools exactly like you would do locally.
+
+Read more about E2B Sandboxes [here](/legacy/sandbox/overview).
+</Note>
+
+
+## How Custom Sandboxes Work
+
+<Note>
+Follow our [guide](/legacy/guide/custom-sandbox) on how to create a custom sandbox.
+</Note>
+
+1. You build a custom sandbox by creating the [Sandbox Template](/legacy/sandbox/templates/template-file) which is a Dockerfile describing the environment of your sandbox.
+1. Build a sandbox template from it using our CLI
+1. Get a template ID from the CLI:
+    ```sh
+    # ... truncated CLI output
+    ✅ Building sandbox template 3y5bvra6kgq0kaumgztu finished.
+    ```
+1. Pass the template ID to our SDK like this:
+    <CodeGroup title="Using custom sandbox with SDK" isRunnable={false}>
+      ```js JavaScript & TypeScript highlight={6}
+      import { Sandbox } from 'e2b'
+
+      // Create new sandbox
+      const sandbox = await Sandbox.create({
+        // You get sandbox template from the CLI after you run `$ e2b template build`
+        template: '<sandbox-template>',
+      })
+
+      // Close sandbox once done
+      await sandbox.close()
+      ```
+
+      ```python Python highlight={6}
+      from e2b import Sandbox
+
+      # Create new sandbox
+      sandbox = Sandbox.create(
+        # You get sandbox template from the CLI after you run `$ e2b template build`
+        template="<sandbox-template>",
+      )
+
+      # Close sandbox once done
+      sandbox.close()
+      ```
+    </CodeGroup>
+1. Run the code and we spawn a sandbox based on the template you built in step 2
+
+Once you build your custom sandbox template, you can spawn multiple isolated sandboxes from it. You can repeat the steps 4, 5 multiple times using the same ID, always creating a separate sandbox instance.
+
+<Frame>
+    <img src="/images/custom-sandbox.png" />
+</Frame>
+
+<Note>
+Follow [our guide](/legacy/guide/custom-sandbox) on how to create a custom sandbox.
+</Note>

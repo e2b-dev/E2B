@@ -1,0 +1,199 @@
+---
+title: "Creating Custom Sandbox"
+---
+
+<Callout icon="circle-exclamation" color="#ff8800" iconType="regular">You are reading a legacy (pre v1.0) document.</Callout>
+
+
+In this guide, we'll create a custom E2B sandbox with preinstalled dependencies and files.
+Once the sandbox is built, we'll show how to create and control it with our SDK.
+
+## Prerequisites
+1. [Node.js](https://nodejs.org/) 18.0.0 or later
+1. [E2B CLI](/legacy/cli/installation)
+1. Running Docker instance
+
+## 1. Install E2B CLI
+
+<CodeGroup>
+```bash Install CLI
+npm install -g @e2b/cli@latest
+```
+</CodeGroup>
+
+<Note>
+You need Node.js 18.0.0 or later to install the CLI.
+</Note>
+
+## 2. Login to CLI
+Before you create your first custom sandbox, you will need to authenticate in the CLI with your E2B account.
+Run the following command in your terminal.
+<CodeGroup>
+```bash Login to CLI
+e2b auth login
+```
+</CodeGroup>
+
+<Note>
+You need to have an existing E2B account to login. Sign up [here](/legacy/getting-started/api-key).
+</Note>
+
+## 3. Create `e2b.Dockerfile`
+To describe how your custom sandbox will look like, create a new Dockerfile and name it `e2b.Dockerfile`.
+We use this Dockerfile as the [template file](/legacy/sandbox/templates/template-file).
+
+<Note>
+Run `e2b template init` to create `e2b.Dockerfile` in the current directory.
+</Note>
+
+We want our custom sandbox to have the [ffmpeg](https://www.ffmpeg.org/) isntalled - ffmpeg is a tool for editing video and audio files.
+
+<Note>
+We support only Debian based images at the moment.
+</Note>
+
+<CodeGroup>
+```Dockerfile e2b.Dockerfile
+# You can use most of the Debian based images
+FROM ubuntu:22.04
+
+# Install the ffmpeg tool/
+RUN apt update \
+    && apt install -y ffmpeg
+```
+</CodeGroup>
+
+## 4. Build custom sandbox
+Now it's time to create your custom sandbox based on the sandbox template file (the `e2b.Dockefile` file) you just created in the previous step.
+
+Run the following command inside the template file directory in your terminal.
+<Note>
+[Pro users](/legacy/pricing) can use the `--cpu-count=` ([docs](/legacy/cli/commands#template-build)) and `--memory-mb=` ([docs](/legacy/cli/commands#template-build)) flags to customize the sandbox compute.
+Read more about the compute [here](/legacy/sandbox/compute).
+</Note>
+
+<CodeGroup>
+```bash Build sandbox template
+e2b template build --name "my-agent-sandbox"
+```
+</CodeGroup>
+
+<Note>
+Use the `.dockerignore` file to exclude files from the sandbox template.
+</Note>
+
+The final output should look similar to this.
+
+<CodeGroup>
+```bash Build output
+Preparing sandbox template building (1 files in Docker build context).
+Found ./e2b.Dockerfile that will be used to build the sandbox template.
+Started building the sandbox template my-agent-sandbox
+
+# Truncated for visibility
+# ...
+# ...
+
+Running postprocessing. It can take up to few minutes.
+
+Postprocessing finished.
+
+✅ Building sandbox template my-agent-sandbox finished.
+
+┌ Usage examples ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                                                                                                                                                      │
+│  You can use E2B Python or JS SDK to spawn sandboxes now.                                                                                            │
+│  Find more here - https://e2b.dev/docs/legacy/guide/custom-sandbox in Spawn and control your sandbox section.                                               │
+│                                                                                                                                                      │
+│───────────────────────────────────────────────────────────────────── Python SDK ─────────────────────────────────────────────────────────────────────│
+│                                                                                                                                                      │
+│  from e2b import Sandbox                                                                                                                             │
+│                                                                                                                                                      │
+│  # Start sandbox                                                                                                                                     │
+│  sandbox = Sandbox.create("my-agent-sandbox")                                                                                                               │
+│                                                                                                                                                      │
+│  # Interact with sandbox. Learn more here:                                                                                                           │
+│  # https://e2b.dev/docs/sandbox/overview                                                                                                             │
+│                                                                                                                                                      │
+│  # Close sandbox once done                                                                                                                           │
+│  sandbox.close()                                                                                                                                     │
+│                                                                                                                                                      │
+│─────────────────────────────────────────────────────────────────────── JS SDK ───────────────────────────────────────────────────────────────────────│
+│                                                                                                                                                      │
+│  import { Sandbox } from 'e2b'                                                                                                                  │
+│                                                                                                                                                      │
+│  // Start sandbox                                                                                                                                    │
+│  const sandbox = await Sandbox.create('my-agent-sandbox')                                                                                            │
+│                                                                                                                                                      │
+│  // Interact with sandbox. Learn more here:                                                                                                          │
+│  // https://e2b.dev/docs/sandbox/overview                                                                                                            │
+│                                                                                                                                                      │
+│  // Close sandbox once done                                                                                                                          │
+│  await sandbox.close()                                                                                                                               │
+│                                                                                                                                                      │
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+Execution time: 42.55s
+```
+</CodeGroup>
+
+
+This will create the `e2b.toml` file storing the sandbox config.
+<CodeGroup>
+```toml e2b.toml
+# This is a config for E2B sandbox template
+template_id = "1wdqsf9le9gk21ztb4mo"
+dockerfile = "e2b.Dockerfile"
+template_name = "my-agent-sandbox"
+```
+</CodeGroup>
+
+| Sandbox template name | Sandbox template ID |
+---|---|
+|`my-agent-sandbox`|`1wdqsf9le9gk21ztb4mo`|
+
+### Updating your sandbox template
+If you want to update your sandbox template, you run the same command you did to build it.
+This will rebuild the template.
+
+<CodeGroup>
+```bash Update sandbox template
+e2b template build
+```
+</CodeGroup>
+
+## 5. Spawn and control your sandbox
+
+Now you can use the [E2B SDK](/legacy/getting-started/installation) to spawn & control your new custom sandbox.
+
+The sandbox template name is `my-agent-sandbox`. We'll use it as an unique identifier and pass it to the SDK as the `template` parameter.
+This way, we'll be able to spawn our custom sandbox and control it with the SDK.
+
+##### Spawn & control your custom sandbox
+<CodeGroup>
+```js JavaScript & TypeScript highlight={4}
+import { Sandbox } from 'e2b'
+
+// Spawn your custom sandbox
+const sandbox = await Sandbox.create({ template: 'my-agent-sandbox' })
+
+// Interact with sandbox. Learn more here:
+// https://e2b.dev/docs/sandbox/overview
+
+// Close sandbox once done
+await sandbox.close()
+```
+
+```python Python highlight={4}
+from e2b import Sandbox
+
+# Spawn your custom sandbox
+sandbox = Sandbox.create(template="my-agent-sandbox")
+
+# Interact with sandbox. Learn more here:
+# https://e2b.dev/docs/sandbox/overview
+
+# Close sandbox once done
+sandbox.close()
+```
+</CodeGroup>

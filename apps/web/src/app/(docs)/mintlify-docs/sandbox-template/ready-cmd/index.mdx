@@ -1,0 +1,51 @@
+---
+title: "Ready Command"
+sidebarTitle: Ready command
+---
+
+The ready command allows you to specify a command that will determine **template sandbox** readiness before a [snapshot](/sandbox-template#how-it-works) is created.
+It is executed in an infinite loop until it returns a successful **exit code&nbsp;0**.
+This way you can control how long should we wait for the [start command](/sandbox-template/start-cmd) or any system state.
+
+
+## How to add ready command
+
+When you are building a sandbox template you can specify the ready command by using the [`--ready-cmd`](/sdk-reference/cli/v1.5.0/template#e2b-template-build) option:
+
+```bash
+e2b template build --ready-cmd "<your-ready-command>"
+```
+
+### Sandbox template config
+You can specify the ready command inside the `e2b.toml` in the same directory where you run `e2b template build`.
+<CodeGroup isFileName title="e2b.toml" isRunnable={false}>
+  ```toml e2b.toml highlight={5}
+  # This is a config for E2B sandbox template
+  template_id = "1wdqsf9le9gk21ztb4mo"
+  dockerfile = "e2b.Dockerfile"
+  template_name = "my-agent-sandbox"
+  ready_cmd = "<your-ready-command>"
+  ```
+</CodeGroup>
+
+## Default values
+By default, the ready command is set to `sleep 0`, which means the sandbox template will be ready immediatelly.
+If the [start command](/sandbox-template/start-cmd) is defined, the default is set to `sleep 20`, which means that the template sandbox will wait for 20 seconds before taking the snapshot.
+
+## Examples
+Here are some examples of the ready command you can use.
+
+### Wait for URL to return 200 status code
+```bash
+ready_cmd = 'curl -s -o /dev/null -w "%{http_code}" http://localhost:3000 | grep -q "200"'
+```
+
+### Wait for a specific process to start
+```bash
+ready_cmd = 'pgrep my-process-name > /dev/null'
+```
+
+### Wait for a file to exist
+```bash
+ready_cmd = '[ -f /tmp/ready.flag ]'
+```

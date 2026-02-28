@@ -1,0 +1,177 @@
+---
+title: "Interactive charts"
+---
+
+E2B also allows you to create interactive charts with custom styling.
+
+E2B automatically detects charts when executing Python code with `runCode()` in JavaScript or `run_code()` in Python. The Python code must include Matplotlib charts.
+
+When a chart is detected, E2B sends the data of the chart back to the client. You can access the chart in the `execution.results` array where each item is a `Result` object with the `chart` property.
+
+<Note>
+Try out [AI Data Analyst](https://github.com/e2b-dev/ai-analyst/) - a Next.js app that uses E2B to create interactive charts.
+</Note>
+
+Here's a simple example of bar chart:
+<CodeGroup>
+```js JavaScript & TypeScript
+import { Sandbox, BarChart } from '@e2b/code-interpreter'
+
+const code = `
+import matplotlib.pyplot as plt
+
+# Prepare data
+authors = ['Author A', 'Author B', 'Author C', 'Author D']
+sales = [100, 200, 300, 400]
+
+# Create and customize the bar chart
+plt.figure(figsize=(10, 6))
+plt.bar(authors, sales, label='Books Sold', color='blue')
+plt.xlabel('Authors')
+plt.ylabel('Number of Books Sold')
+plt.title('Book Sales by Authors')
+
+# Display the chart
+plt.tight_layout()
+plt.show()
+`
+
+const sandbox = await Sandbox.create()
+const result = await sandbox.runCode(code)
+const chart = result.results[0].chart as BarChart
+
+console.log('Type:', chart.type)
+console.log('Title:', chart.title)
+console.log('X Label:', chart.x_label)
+console.log('Y Label:', chart.y_label)
+console.log('X Unit:', chart.x_unit)
+console.log('Y Unit:', chart.y_unit)
+console.log('Elements:', chart.elements)
+```
+```python Python
+from e2b_code_interpreter import Sandbox
+
+code = """
+import matplotlib.pyplot as plt
+
+# Prepare data
+authors = ['Author A', 'Author B', 'Author C', 'Author D']
+sales = [100, 200, 300, 400]
+
+# Create and customize the bar char
+plt.figure(figsize=(10, 6))
+plt.bar(authors, sales, label='Books Sold', color='blue')
+plt.xlabel('Authors')
+plt.ylabel('Number of Books Sold')
+plt.title('Book Sales by Authors')
+
+# Display the chart
+plt.tight_layout()
+plt.show()
+"""
+
+sandbox = Sandbox.create()
+execution = sandbox.run_code(code)
+chart = execution.results[0].chart
+
+print('Type:', chart.type)
+print('Title:', chart.title)
+print('X Label:', chart.x_label)
+print('Y Label:', chart.y_label)
+print('X Unit:', chart.x_unit)
+print('Y Unit:', chart.y_unit)
+print('Elements:')
+for element in chart.elements:
+    print('\n  Label:', element.label)
+    print('  Value:', element.value)
+    print('  Group:', element.group)
+```
+</CodeGroup>
+
+
+The code above will output the following:
+<CodeGroup>
+```bash JavaScript & TypeScript
+Type: bar
+Title: Book Sales by Authors
+X Label: Authors
+Y Label: Number of Books Sold
+X Unit: null
+Y Unit: null
+Elements: [
+  {
+    label: "Author A",
+    group: "Books Sold",
+    value: 100,
+  }, {
+    label: "Author B",
+    group: "Books Sold",
+    value: 200,
+  }, {
+    label: "Author C",
+    group: "Books Sold",
+    value: 300,
+  }, {
+    label: "Author D",
+    group: "Books Sold",
+    value: 400,
+  }
+]
+```
+```bash Python
+Type: ChartType.BAR
+Title: Book Sales by Authors
+X Label: Authors
+Y Label: Number of Books Sold
+X Unit: None
+Y Unit: None
+Elements:
+
+  Label: Author A
+  Value: 100.0
+  Group: Books Sold
+
+  Label: Author B
+  Value: 200.0
+  Group: Books Sold
+
+  Label: Author C
+  Value: 300.0
+  Group: Books Sold
+
+  Label: Author D
+  Value: 400.0
+  Group: Books Sold
+```
+</CodeGroup>
+
+You can send this data to your frontend to create an interactive chart with your favorite charting library.
+
+---
+
+## Supported intertactive charts
+The following charts are currently supported:
+- Line chart
+- Bar chart
+- Scatter plot
+- Pie chart
+- Box and whisker plot
+
+
+{/* The following charts are currently supported:
+- [Line chart](#line-chart)
+- [Bar chart](#bar-chart)
+- [Scatter plot](#scatter-plot)
+- [Pie chart](#pie-chart)
+- [Box and whisker plot](#box-and-whisker-plot)
+
+
+## Line chart
+
+## Bar chart
+
+## Scatter plot
+
+## Pie chart
+
+## Box and whisker plot */}

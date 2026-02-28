@@ -1,0 +1,269 @@
+---
+title: "Starting process inside a sandbox"
+---
+
+<Callout icon="circle-exclamation" color="#ff8800" iconType="regular">You are reading a legacy (pre v1.0) document.</Callout>
+
+
+Here are the basic operations you can do with the process inside the sandbox:
+
+- [Start process](#start-process)
+- [Stop process](#stop-process)
+- [Stdout](#stream-stdout)
+- [Stdin](#send-stdin)
+- [Stderr](#stream-stderr)
+- [On exit](#on-process-exit)
+
+## Start process
+
+<CodeGroup>
+```js JavaScript & TypeScript highlight={6}
+import { Sandbox } from 'e2b'
+
+const sandbox = await Sandbox.create({ template: 'base' })
+
+const npmInit = await sandbox.process.start({
+  cmd: 'npm init -y',
+})
+await npmInit.wait()
+
+console.log(npmInit.output.stdout)
+
+await sandbox.close()
+```
+```python Python highlight={5}
+from e2b import Sandbox
+
+sandbox = Sandbox(template="base")
+
+npm_init = sandbox.process.start("npm init -y")
+npm_init.wait()
+print(npm_init.stdout)
+
+sandbox.close()
+```
+</CodeGroup>
+
+## Stop process
+
+<CodeGroup>
+```js JavaScript & TypeScript highlight={10}
+import { Sandbox } from 'e2b'
+
+const sandbox = await Sandbox.create({
+  template: 'base',
+})
+
+const npmInit = await sandbox.process.start({
+  cmd: 'npm init -y',
+})
+await npmInit.kill()
+// There will be no output because we immediately kill the `npm_init` process
+console.log(npmInit.output.stdout)
+
+await sandbox.close()
+```
+```python Python highlight={6}
+from e2b import Sandbox
+
+sandbox = Sandbox(template="base")
+
+npm_init = sandbox.process.start("npm init -y")
+npm_init.kill()
+
+# There will be no output because we immediately kill the `npm_init` process
+print(npm_init.stdout)
+
+sandbox.close()
+```
+</CodeGroup>
+
+## Stream stdout
+
+Set either stdout handler for the whole sandbox level or per process.
+
+<CodeGroup>
+```js JavaScript & TypeScript highlight={5,16}
+import { Sandbox } from 'e2b'
+
+const sandbox = await Sandbox.create({
+  template: 'base',
+  onStdout: (output) => console.log('sandbox', output.line),
+})
+
+const proc = await sandbox.process.start({
+  cmd: 'echo "Hello World!"',
+})
+await proc.wait()
+// output: sandbox Hello World!
+
+const procWithCustomHandler = await sandbox.process.start({
+  cmd: 'echo "Hello World!"',
+  onStdout: (data) => console.log('process', data.line),
+})
+await procWithCustomHandler.wait()
+// output: process Hello World!
+
+await sandbox.close()
+```
+```python Python highlight={5,14}
+from e2b import Sandbox
+
+sandbox = Sandbox(
+    template="base",
+    on_stdout=lambda output: print("sandbox", output.line), 
+)
+
+proc = sandbox.process.start('echo "Hello World!"')
+proc.wait()
+# output: sandbox Hello World!
+
+proc_with_custom_handler = sandbox.process.start(
+    'echo "Hello World!"',
+    on_stdout=lambda output: print("process", output.line), 
+)
+proc_with_custom_handler.wait()
+# output: process Hello World!
+
+sandbox.close()
+```
+</CodeGroup>
+
+## Stream stderr
+
+Set either stderr handler for the whole sandbox level or per process.
+
+<CodeGroup>
+```js JavaScript & TypeScript highlight={10,17}
+import { Sandbox } from 'e2b'
+
+const sandbox = await Sandbox.create({
+  template: 'base',
+})
+
+// This command will fail and output to stderr because Golang isn't installed in the cloud playground
+const golangVersion = await sandbox.process.start({
+  cmd: 'go version',
+  onStderr: (output) => console.log('sandbox', output.line),
+})
+await golangVersion.wait()
+// output: [sandbox] /bin/bash: line 1: go: command not found
+
+const procWithCustomHandler = await sandbox.process.start({
+  cmd: 'go version',
+  onStderr: (data) => console.log('process', data.line),
+})
+await procWithCustomHandler.wait()
+// output: process /bin/bash: line 1: go: command not found
+
+await sandbox.close()
+```
+```python Python highlight={5,15}
+from e2b import Sandbox
+
+sandbox = Sandbox(
+    template="base",
+    on_stderr=lambda output: print("[sandbox]", output.line),
+)
+
+# This command will fail and output to stderr because Golang isn't installed in the cloud playground
+proc = sandbox.process.start("go version")
+proc.wait()
+# output: [sandbox] /bin/bash: line 1: go: command not found
+
+proc_with_custom_handler = sandbox.process.start(
+    "go version",
+    on_stderr=lambda output: print("[process]", output.line),
+)
+proc_with_custom_handler.wait()
+# output: [process] /bin/bash: line 1: go: command not found
+
+sandbox.close()
+```
+</CodeGroup>
+
+## On process exit
+
+Set either on exit handler for the whole sandbox level or per process.
+
+<CodeGroup>
+```js JavaScript & TypeScript highlight={5,14}
+import { Sandbox } from 'e2b'
+
+const sandbox = await Sandbox.create({
+  template: 'base',
+  onExit: () => console.log('[sandbox]', 'process ended'),
+})
+
+const proc = await sandbox.process.start({cmd: 'echo "Hello World!"'})
+await proc.wait()
+// output: [sandbox] process ended
+
+const procWithCustomHandler = await sandbox.process.start({
+  cmd: 'echo "Hello World!"',
+  onExit: () => console.log('[process]', 'process ended'),
+})
+await procWithCustomHandler.wait()
+// output: [process] process ended
+
+await sandbox.close()
+```
+```python Python highlight={5,14}
+from e2b import Sandbox
+
+sandbox = Sandbox(
+    template="base",
+    on_exit=lambda: print("[sandbox]", "process ended"), 
+)
+
+proc = sandbox.process.start('echo "Hello World!"')
+proc.wait()
+# output: [sandbox] process ended
+
+proc_with_custom_handler = sandbox.process.start(
+    'echo "Hello World!"',
+    on_exit=lambda: print("[process]", "process ended"), 
+)
+proc_with_custom_handler.wait()
+# output: [process] process ended
+
+sandbox.close()
+```
+</CodeGroup>
+
+## Send stdin
+
+<CodeGroup>
+```js JavaScript & TypeScript highlight={11}
+import { Sandbox } from 'e2b'
+
+const sandbox = await Sandbox.create({ template: 'base' })
+
+// This example will print back the string we send to the process using `sendStdin()`
+
+const proc = await sandbox.process.start({
+  cmd: 'while IFS= read -r line; do echo "$line"; sleep 1; done',
+  onStdout: (output) => console.log(output),
+})
+await proc.sendStdin('AI Playground\n')
+await proc.kill()
+
+await sandbox.close()
+```
+```python Python highlight={11}
+from e2b import Sandbox
+
+sandbox = Sandbox(template="base")
+
+# This example will print back the string we send to the process using `send_stdin()`
+
+proc = sandbox.process.start(
+    'while IFS= read -r line; do echo "$line"; sleep 1; done',
+    on_stdout=print,
+)
+proc.send_stdin("AI Playground\n")
+proc.kill()
+
+sandbox.close()
+```
+</CodeGroup>

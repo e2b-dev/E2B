@@ -1,0 +1,40 @@
+---
+title: "E2B Documentation"
+sidebarTitle: Home
+icon: house
+---
+
+import { Concepts } from '/snippets/Concepts.jsx';
+import { CodeInterpreting } from '/snippets/CodeInterpreting.jsx';
+import { Quickstart } from '/snippets/Quickstart.jsx';
+
+Here you'll find all the guides, concepts, and SDK references for developing with E2B.
+
+<CodeGroup>
+```bash JavaScript & TypeScript
+npm i @e2b/code-interpreter
+```
+```bash Python
+pip install e2b-code-interpreter
+```
+</CodeGroup>
+
+## What is E2B?
+E2B is an [open-source](https://github.com/e2b-dev) infrastructure that allows you to run AI-generated code in secure isolated sandboxes in the cloud.
+To start and control sandboxes, use our [Python SDK](https://pypi.org/project/e2b/) or [JavaScript SDK](https://www.npmjs.com/package/e2b).
+
+Some of the typical use cases for E2B are AI data analysis or visualization, running AI-generated code of various languages, playground for coding agents, environment for codegen evals, or running full AI-generated apps like in [Fragments](https://github.com/e2b-dev/fragments).
+
+### Under the hood
+The E2B Sandbox is a small isolated VM the can be started very quickly (~150ms). You can think of it as a small computer for the AI model. You can run many sandboxes at once. Typically, you run separate sandbox for each LLM, user, or AI agent session in your app.
+For example, if you were building an AI data analysis chatbot, you would start the sandbox for every user session.
+
+## Quickstart
+<Quickstart/>
+
+## Code interpreting with AI
+<CodeInterpreting/>
+
+## Learn the core concepts
+<Concepts/>
+
