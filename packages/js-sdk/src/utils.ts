@@ -108,6 +108,15 @@ export async function wait(ms: number) {
 }
 
 /**
+ * Compress a Blob using gzip via the Web Streams API CompressionStream.
+ */
+export async function gzipCompress(blob: Blob): Promise<Blob> {
+  const cs = new CompressionStream('gzip')
+  const stream = blob.stream().pipeThrough(cs)
+  return new Response(stream).blob()
+}
+
+/**
  * Convert data to a Blob, avoiding unnecessary conversions when possible.
  */
 export function toBlob(

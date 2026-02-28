@@ -22,7 +22,13 @@ export type { Logger } from './logs'
 export { getSignature } from './sandbox/signature'
 
 export { FileType } from './sandbox/filesystem'
-export type { WriteInfo, EntryInfo, Filesystem } from './sandbox/filesystem'
+export type {
+  WriteInfo,
+  EntryInfo,
+  Filesystem,
+  FilesystemEncodingOpts,
+  FilesystemFormatOpts,
+} from './sandbox/filesystem'
 export { FilesystemEventType } from './sandbox/filesystem/watchHandle'
 export type {
   FilesystemEvent,
