@@ -9,6 +9,39 @@ function getStdoutSize() {
   }
 }
 
+function isRetryableError(err: unknown): boolean {
+  // Retry on SDK TimeoutError
+  if (err instanceof (e2b as any).TimeoutError) return true
+
+  // Some environments throw AbortError for aborted/timeout fetches
+  if (err && typeof err === 'object' && (err as any).name === 'AbortError')
+    return true
+
+  // Network/system-level transient errors commonly exposed via code property
+  const code = (err as any)?.code ?? (err as any)?.cause?.code
+  const retryableCodes = new Set([
+    'ECONNRESET',
+    'ECONNREFUSED',
+    'ECONNABORTED',
+    'EPIPE',
+    'ETIMEDOUT',
+    'ENOTFOUND',
+    'EAI_AGAIN',
+    'EHOSTUNREACH',
+    'EADDRINUSE',
+  ])
+  if (typeof code === 'string' && retryableCodes.has(code)) return true
+
+  // Undici/Fetch may surface as TypeError: fetch failed with nested cause
+  if ((err as any) instanceof TypeError) {
+    const msg = String((err as any).message || '').toLowerCase()
+    if (msg.includes('fetch failed') || msg.includes('network error'))
+      return true
+  }
+
+  return false
+}
+
 export async function spawnConnectedTerminal(sandbox: e2b.Sandbox) {
   // Clear local terminal emulator before starting terminal
   // process.stdout.write('\x1b[2J\x1b[0f')
@@ -26,7 +59,17 @@ export async function spawnConnectedTerminal(sandbox: e2b.Sandbox) {
 
   const inputQueue = new BatchedQueue<Buffer>(async (batch) => {
     const combined = Buffer.concat(batch)
-    await sandbox.pty.sendInput(terminalSession.pid, combined)
+
+    const maxRetries = 3
+    for (let retry = 0; ; retry++) {
+      try {
+        await sandbox.pty.sendInput(terminalSession.pid, combined)
+        break
+      } catch (err) {
+        // Do not retry on errors that come with valid HTTP/gRPC responses
+        if (!isRetryableError(err) || retry >= maxRetries) throw err
+      }
+    }
   }, FLUSH_INPUT_INTERVAL_MS)
 
   const resizeListener = process.stdout.on('resize', () =>
