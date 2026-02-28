@@ -325,7 +325,14 @@ class Client:
         extensions = (
             None
             if request_timeout is None
-            else {"timeout": {"connect": request_timeout, "pool": request_timeout}}
+            else {
+                "timeout": {
+                    "connect": request_timeout,
+                    "pool": request_timeout,
+                    "read": request_timeout,
+                    "write": request_timeout,
+                }
+            }
         )
 
         if self._compressor is not None:
