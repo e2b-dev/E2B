@@ -720,11 +720,7 @@ export class SandboxApi {
           : 'off'
         : undefined
 
-    const body: components['schemas']['NewSandbox'] & {
-      autoResume?: {
-        policy: 'any' | 'off'
-      }
-    } = {
+    const body: components['schemas']['NewSandbox'] = {
       templateID: template,
       metadata: opts?.metadata,
       mcp: opts?.mcp as Record<string, unknown> | undefined,
