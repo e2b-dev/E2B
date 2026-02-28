@@ -30,7 +30,16 @@ async def test_connect_with_secure(async_sandbox_factory):
 
 
 @pytest.mark.skip_debug()
-async def test_connect_does_not_shorten_timeout_on_running_sandbox(
+async def test_connect_to_paused_sandbox_resumes(async_sandbox):
+    await async_sandbox.pause()
+    assert not await async_sandbox.is_running()
+
+    resumed = await AsyncSandbox.connect(async_sandbox.sandbox_id)
+    assert await resumed.is_running()
+
+
+@pytest.mark.skip_debug()
+async def test_resume_does_not_shorten_timeout_on_running_sandbox(
     async_sandbox_factory,
 ):
     # Create sandbox with a 300 second timeout

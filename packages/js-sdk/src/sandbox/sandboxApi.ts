@@ -64,6 +64,21 @@ export type SandboxNetworkOpts = {
   maskRequestHost?: string
 }
 
+export type SandboxLifecycle = {
+  /**
+   * Action to take when sandbox timeout is reached.
+   * @default "kill"
+   */
+  onTimeout: 'pause' | 'kill'
+
+  /**
+   * Auto-resume policy.
+   * @default false
+   * Can be `true` only when `onTimeout` is `pause`.
+   */
+  autoResume?: boolean
+}
+
 /**
  * Options for request to the Sandbox API.
  */
@@ -133,10 +148,17 @@ export interface SandboxOpts extends ConnectionOpts {
    * Sandbox URL. Used for local development
    */
   sandboxUrl?: string
+
+  /**
+   * Sandbox lifecycle policy.
+   */
+  lifecycle?: SandboxLifecycle
 }
 
 export type SandboxBetaCreateOpts = SandboxOpts & {
   /**
+   * @deprecated Use `lifecycle.onTimeout = "pause"` instead.
+   *
    * Automatically pause the sandbox after the timeout expires.
    * @default false
    */
@@ -328,6 +350,26 @@ export interface SandboxMetrics {
    * Total disk space available in bytes.
    */
   diskTotal: number
+}
+
+function getLifecycle(
+  opts?: Pick<SandboxBetaCreateOpts, 'lifecycle' | 'autoPause'>
+): SandboxLifecycle {
+  if (opts?.lifecycle) {
+    return opts.lifecycle
+  }
+
+  if (opts?.autoPause) {
+    return {
+      onTimeout: 'pause',
+      autoResume: false,
+    }
+  }
+
+  return {
+    onTimeout: 'kill',
+    autoResume: false,
+  }
 }
 
 export class SandboxApi {
@@ -529,7 +571,7 @@ export class SandboxApi {
    *
    * @returns `true` if the sandbox got paused, `false` if the sandbox was already paused.
    */
-  static async betaPause(
+  static async pause(
     sandboxId: string,
     opts?: SandboxApiOpts
   ): Promise<boolean> {
@@ -560,6 +602,16 @@ export class SandboxApi {
     }
 
     return true
+  }
+
+  /**
+   * @deprecated Use {@link SandboxApi.pause} instead.
+   */
+  static async betaPause(
+    sandboxId: string,
+    opts?: SandboxApiOpts
+  ): Promise<boolean> {
+    return this.pause(sandboxId, opts)
   }
 
   /**
@@ -659,19 +711,32 @@ export class SandboxApi {
   ) {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
+    const lifecycle = getLifecycle(opts)
+    const autoPause = lifecycle.onTimeout === 'pause'
+    const autoResumePolicy =
+      lifecycle.onTimeout === 'pause'
+        ? lifecycle.autoResume
+          ? 'any'
+          : 'off'
+        : undefined
+
+    const body: components['schemas']['NewSandbox'] = {
+      templateID: template,
+      metadata: opts?.metadata,
+      mcp: opts?.mcp as Record<string, unknown> | undefined,
+      envVars: opts?.envs,
+      timeout: timeoutToSeconds(timeoutMs),
+      secure: opts?.secure ?? true,
+      allow_internet_access: opts?.allowInternetAccess ?? true,
+      network: opts?.network,
+      ...(autoPause !== undefined ? { autoPause } : {}),
+      ...(autoResumePolicy !== undefined
+        ? { autoResume: { policy: autoResumePolicy } }
+        : {}),
+    }
 
     const res = await client.api.POST('/sandboxes', {
-      body: {
-        autoPause: opts?.autoPause ?? false,
-        templateID: template,
-        metadata: opts?.metadata,
-        mcp: opts?.mcp as Record<string, unknown> | undefined,
-        envVars: opts?.envs,
-        timeout: timeoutToSeconds(timeoutMs),
-        secure: opts?.secure ?? true,
-        allow_internet_access: opts?.allowInternetAccess ?? true,
-        network: opts?.network,
-      },
+      body,
       signal: config.getSignal(opts?.requestTimeoutMs),
     })
 

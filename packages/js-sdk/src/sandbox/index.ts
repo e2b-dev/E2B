@@ -466,7 +466,7 @@ export class Sandbox extends SandboxApi {
    * const sameSandbox = await sandbox.connect()
    * ```
    */
-  async connect(opts?: SandboxBetaCreateOpts): Promise<this> {
+  async connect(opts?: SandboxConnectOpts): Promise<this> {
     await SandboxApi.connectSandbox(this.sandboxId, opts)
 
     return this
@@ -571,13 +571,24 @@ export class Sandbox extends SandboxApi {
   }
 
   /**
-   * @beta This feature is in beta and may change in the future.
-   *
    * Pause a sandbox by its ID.
    *
    * @param opts connection options.
    *
    * @returns sandbox ID that can be used to resume the sandbox.
+   *
+   * @example
+   * ```ts
+   * const sandbox = await Sandbox.create()
+   * await sandbox.pause()
+   * ```
+   */
+  async pause(opts?: ConnectionOpts): Promise<boolean> {
+    return await SandboxApi.pause(this.sandboxId, opts)
+  }
+
+  /**
+   * @deprecated Use {@link Sandbox.pause} instead.
    */
   async betaPause(opts?: ConnectionOpts): Promise<boolean> {
     return await SandboxApi.betaPause(this.sandboxId, opts)

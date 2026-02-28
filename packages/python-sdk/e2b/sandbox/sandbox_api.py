@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Dict, List, Optional, TypedDict, Union, cast
+from typing import Any, Dict, List, Literal, Optional, TypedDict, Union, cast
 
 from typing_extensions import NotRequired, Unpack
 
@@ -74,6 +74,33 @@ class SandboxNetworkOpts(TypedDict):
     Examples:
     - Custom subdomain: `"${PORT}-myapp.example.com"`
     """
+
+
+class SandboxLifecycle(TypedDict):
+    """
+    Sandbox lifecycle configuration; defines post-timeout behavior and auto-resume policies.
+    Defaults to `on_timeout="kill"` and `auto_resume=False`.
+    """
+
+    on_timeout: Literal["pause", "kill"]
+    """
+    What should happen to the sandbox when timeout is reached. `"kill"` means the sandbox will be terminated, while `"pause"` means the sandbox will be paused and can be resumed later. Defaults to `"kill"`.
+    """
+
+    auto_resume: NotRequired[bool]
+    """
+    Whether activity should cause the sandbox to resume when paused. Defaults to `False`.
+    Maps to API policy: `True -> "any"`, `False -> "off"`.
+    Can be `True` only when `on_timeout` is `pause`.
+    """
+
+
+def get_auto_resume_policy(lifecycle: Optional[SandboxLifecycle]) -> Optional[str]:
+    if lifecycle is None or lifecycle.get("on_timeout") != "pause":
+        return None
+
+    auto_resume = lifecycle.get("auto_resume")
+    return "any" if auto_resume else "off"
 
 
 @dataclass

@@ -23,14 +23,22 @@ from e2b.api.client.models import (
     PostSandboxesSandboxIDSnapshotsBody,
     PostSandboxesSandboxIDTimeoutBody,
     Sandbox,
+    SandboxAutoResumeConfig,
+    SandboxAutoResumePolicy,
     SandboxNetworkConfig,
 )
 from e2b.api.client.types import UNSET
 from e2b.api.client_async import get_api_client
 from e2b.connection_config import ApiParams, ConnectionConfig
-from e2b.exceptions import NotFoundException, SandboxException, TemplateException
+from e2b.exceptions import (
+    NotFoundException,
+    SandboxException,
+    TemplateException,
+)
 from e2b.sandbox.main import SandboxBase
 from e2b.sandbox.sandbox_api import (
+    SandboxLifecycle,
+    get_auto_resume_policy,
     McpServer,
     SandboxInfo,
     SandboxMetrics,
@@ -156,30 +164,41 @@ class SandboxApi(SandboxBase):
         cls,
         template: str,
         timeout: int,
-        auto_pause: bool,
+        auto_pause: Optional[bool],
         allow_internet_access: bool,
         metadata: Optional[Dict[str, str]],
         env_vars: Optional[Dict[str, str]],
         secure: bool,
         mcp: Optional[McpServer] = None,
         network: Optional[SandboxNetworkOpts] = None,
+        lifecycle: Optional[SandboxLifecycle] = None,
         **opts: Unpack[ApiParams],
     ) -> SandboxCreateResponse:
         config = ConnectionConfig(**opts)
 
+        should_auto_pause = (
+            lifecycle["on_timeout"] == "pause" if lifecycle is not None else auto_pause
+        )
+        auto_resume_policy = get_auto_resume_policy(lifecycle)
+        body = NewSandbox(
+            template_id=template,
+            auto_pause=(should_auto_pause if should_auto_pause is not None else UNSET),
+            metadata=metadata or {},
+            timeout=timeout,
+            env_vars=env_vars or {},
+            mcp=cast(Any, mcp) or UNSET,
+            secure=secure,
+            allow_internet_access=allow_internet_access,
+            network=SandboxNetworkConfig(**network) if network else UNSET,
+        )
+        if auto_resume_policy is not None:
+            body.auto_resume = SandboxAutoResumeConfig(
+                policy=SandboxAutoResumePolicy(auto_resume_policy)
+            )
+
         api_client = get_api_client(config)
         res = await post_sandboxes.asyncio_detailed(
-            body=NewSandbox(
-                template_id=template,
-                auto_pause=auto_pause,
-                metadata=metadata or {},
-                timeout=timeout,
-                env_vars=env_vars or {},
-                mcp=cast(Any, mcp) or UNSET,
-                secure=secure,
-                allow_internet_access=allow_internet_access,
-                network=SandboxNetworkConfig(**network) if network else UNSET,
-            ),
+            body=body,
             client=api_client,
         )
 
