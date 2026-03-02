@@ -191,9 +191,7 @@ class SandboxApi(SandboxBase):
             network=SandboxNetworkConfig(**network) if network else UNSET,
         )
         if auto_resume_enabled is not None:
-            body.auto_resume = SandboxAutoResumeConfig(
-                enabled=auto_resume_enabled
-            )
+            body.auto_resume = SandboxAutoResumeConfig(enabled=auto_resume_enabled)
 
         api_client = get_api_client(config)
         res = await post_sandboxes.asyncio_detailed(
