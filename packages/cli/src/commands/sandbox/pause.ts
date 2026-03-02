@@ -16,9 +16,9 @@ async function pauseSandbox(sandboxID: string, apiKey: string) {
   } catch (err: unknown) {
     if (err instanceof NotFoundError) {
       console.error(`Sandbox ${asBold(sandboxID)} wasn't found`)
-    } else {
-      throw err
+      process.exit(1)
     }
+    throw err
   }
 }
 
