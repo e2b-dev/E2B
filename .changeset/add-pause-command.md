@@ -2,6 +2,7 @@
 "@e2b/cli": minor
 ---
 
-Add `pause` command to pause a running sandbox by ID.
+Add `pause` and `resume` commands to manage sandbox state.
 
-Usage: `e2b sandbox pause <sandboxID>`
+- `e2b sandbox pause <sandboxID>` - pause a running sandbox
+- `e2b sandbox resume <sandboxID>` - resume a paused sandbox
