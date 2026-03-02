@@ -24,7 +24,6 @@ from e2b.api.client.models import (
     PostSandboxesSandboxIDTimeoutBody,
     Sandbox,
     SandboxAutoResumeConfig,
-    SandboxAutoResumePolicy,
     SandboxNetworkConfig,
 )
 from e2b.api.client.types import UNSET
@@ -37,7 +36,7 @@ from e2b.exceptions import (
 from e2b.sandbox.main import SandboxBase
 from e2b.sandbox.sandbox_api import (
     SandboxLifecycle,
-    get_auto_resume_policy,
+    get_auto_resume_enabled,
     McpServer,
     SandboxInfo,
     SandboxMetrics,
@@ -178,7 +177,7 @@ class SandboxApi(SandboxBase):
         should_auto_pause = (
             lifecycle["on_timeout"] == "pause" if lifecycle is not None else auto_pause
         )
-        auto_resume_policy = get_auto_resume_policy(lifecycle)
+        auto_resume_enabled = get_auto_resume_enabled(lifecycle)
         body = NewSandbox(
             template_id=template,
             auto_pause=(should_auto_pause if should_auto_pause is not None else UNSET),
@@ -190,9 +189,9 @@ class SandboxApi(SandboxBase):
             allow_internet_access=allow_internet_access,
             network=SandboxNetworkConfig(**network) if network else UNSET,
         )
-        if auto_resume_policy is not None:
+        if auto_resume_enabled is not None:
             body.auto_resume = SandboxAutoResumeConfig(
-                policy=SandboxAutoResumePolicy(auto_resume_policy)
+                enabled=auto_resume_enabled
             )
 
         api_client = get_api_client(config)

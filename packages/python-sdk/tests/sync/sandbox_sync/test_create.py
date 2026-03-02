@@ -7,9 +7,8 @@ from e2b import Sandbox, SandboxState
 from e2b.api.client.models import (
     NewSandbox,
     SandboxAutoResumeConfig,
-    SandboxAutoResumePolicy,
 )
-from e2b.sandbox.sandbox_api import SandboxQuery, get_auto_resume_policy
+from e2b.sandbox.sandbox_api import SandboxQuery, get_auto_resume_enabled
 
 
 @pytest.mark.skip_debug()
@@ -36,39 +35,39 @@ def test_metadata(sandbox_factory):
         assert False, "Sandbox not found"
 
 
-def test_lifecycle_auto_resume_policy_mapping():
-    assert get_auto_resume_policy({"on_timeout": "pause", "auto_resume": True}) == "any"
+def test_lifecycle_auto_resume_enabled_mapping():
+    assert get_auto_resume_enabled({"on_timeout": "pause", "auto_resume": True}) is True
     assert (
-        get_auto_resume_policy({"on_timeout": "pause", "auto_resume": False}) == "off"
+        get_auto_resume_enabled({"on_timeout": "pause", "auto_resume": False}) is False
     )
-    assert get_auto_resume_policy({"on_timeout": "pause"}) == "off"
-    assert get_auto_resume_policy({"on_timeout": "kill", "auto_resume": False}) is None
-    assert get_auto_resume_policy({"on_timeout": "kill"}) is None
-    assert get_auto_resume_policy(None) is None
+    assert get_auto_resume_enabled({"on_timeout": "pause"}) is False
+    assert get_auto_resume_enabled({"on_timeout": "kill", "auto_resume": False}) is None
+    assert get_auto_resume_enabled({"on_timeout": "kill"}) is None
+    assert get_auto_resume_enabled(None) is None
 
 
-def test_create_payload_serializes_auto_resume_policy():
+def test_create_payload_serializes_auto_resume_enabled():
     body = NewSandbox(
         template_id="template-id",
         auto_pause=True,
-        auto_resume=SandboxAutoResumeConfig(policy=SandboxAutoResumePolicy.ANY),
+        auto_resume=SandboxAutoResumeConfig(enabled=True),
     )
 
     assert body.to_dict()["autoPause"] is True
-    assert body.to_dict()["autoResume"] == {"policy": "any"}
+    assert body.to_dict()["autoResume"] == {"enabled": True}
 
 
-def test_create_payload_deserializes_auto_resume_policy():
+def test_create_payload_deserializes_auto_resume_enabled():
     body = NewSandbox.from_dict(
         {
             "templateID": "template-id",
             "autoPause": False,
-            "autoResume": {"policy": "off"},
+            "autoResume": {"enabled": False},
         }
     )
 
     assert isinstance(body.auto_resume, SandboxAutoResumeConfig)
-    assert body.auto_resume.to_dict() == {"policy": "off"}
+    assert body.auto_resume.to_dict() == {"enabled": False}
 
 
 @pytest.mark.skip_debug()

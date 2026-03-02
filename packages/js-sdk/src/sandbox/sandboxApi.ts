@@ -72,7 +72,7 @@ export type SandboxLifecycle = {
   onTimeout: 'pause' | 'kill'
 
   /**
-   * Auto-resume policy.
+   * Auto-resume enabled flag.
    * @default false
    * Can be `true` only when `onTimeout` is `pause`.
    */
@@ -150,7 +150,7 @@ export interface SandboxOpts extends ConnectionOpts {
   sandboxUrl?: string
 
   /**
-   * Sandbox lifecycle policy.
+   * Sandbox lifecycle configuration.
    */
   lifecycle?: SandboxLifecycle
 }
@@ -713,11 +713,9 @@ export class SandboxApi {
     const client = new ApiClient(config)
     const lifecycle = getLifecycle(opts)
     const autoPause = lifecycle.onTimeout === 'pause'
-    const autoResumePolicy =
+    const autoResumeEnabled =
       lifecycle.onTimeout === 'pause'
-        ? lifecycle.autoResume
-          ? 'any'
-          : 'off'
+        ? (lifecycle.autoResume ?? false)
         : undefined
 
     const body: components['schemas']['NewSandbox'] = {
@@ -730,8 +728,8 @@ export class SandboxApi {
       allow_internet_access: opts?.allowInternetAccess ?? true,
       network: opts?.network,
       ...(autoPause !== undefined ? { autoPause } : {}),
-      ...(autoResumePolicy !== undefined
-        ? { autoResume: { policy: autoResumePolicy } }
+      ...(autoResumeEnabled !== undefined
+        ? { autoResume: { enabled: autoResumeEnabled } }
         : {}),
     }
 
