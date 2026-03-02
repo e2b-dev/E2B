@@ -24,8 +24,7 @@ class NewSandbox:
         allow_internet_access (Union[Unset, bool]): Allow sandbox to access the internet. When set to false, it behaves
             the same as specifying denyOut to 0.0.0.0/0 in the network config.
         auto_pause (Union[Unset, bool]): Automatically pauses the sandbox after the timeout Default: False.
-        auto_resume (Union[Unset, SandboxAutoResumeConfig]): Auto-resume configuration for paused sandboxes. Default is
-            disabled.
+        auto_resume (Union[Unset, SandboxAutoResumeConfig]): Auto-resume configuration for paused sandboxes.
         env_vars (Union[Unset, Any]):
         mcp (Union['McpType0', None, Unset]): MCP configuration for the sandbox
         metadata (Union[Unset, Any]):

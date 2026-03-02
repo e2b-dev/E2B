@@ -12,10 +12,10 @@ class SandboxAutoResumeConfig:
     """Auto-resume configuration for paused sandboxes.
 
     Attributes:
-        enabled (bool): Auto-resume enabled flag for paused sandboxes. Default is False.
+        enabled (bool): Auto-resume enabled flag for paused sandboxes. Default false.
     """
 
-    enabled: bool = False
+    enabled: bool
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -34,7 +34,7 @@ class SandboxAutoResumeConfig:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        enabled = d.pop("enabled", False)
+        enabled = d.pop("enabled")
 
         sandbox_auto_resume_config = cls(
             enabled=enabled,
