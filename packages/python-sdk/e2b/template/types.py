@@ -73,6 +73,22 @@ class TemplateTagInfo:
     """Assigned tags of the template."""
 
 
+@dataclass
+class TemplateTagDetail:
+    """
+    Detailed information about a single template tag.
+    """
+
+    tag: str
+    """The tag name."""
+
+    build_id: str
+    """Build identifier associated with this tag."""
+
+    created_at: str
+    """Time when the tag was assigned (ISO 8601 format)."""
+
+
 class InstructionType(str, Enum):
     """
     Types of instructions that can be used in a template.

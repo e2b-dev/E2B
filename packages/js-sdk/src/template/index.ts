@@ -6,6 +6,7 @@ import { runtime } from '../utils'
 import {
   assignTags,
   checkAliasExists,
+  listTags,
   removeTags,
   getBuildStatus,
   getFileUploadLink,
@@ -34,6 +35,7 @@ import {
   TemplateFinal,
   TemplateFromImage,
   TemplateOptions,
+  TemplateTagDetail,
   TemplateTagInfo,
 } from './types'
 import {
@@ -369,6 +371,30 @@ export class TemplateBase
     const client = new ApiClient(config)
     const normalizedTags = Array.isArray(tags) ? tags : [tags]
     return removeTags(client, { name, tags: normalizedTags })
+  }
+
+  /**
+   * List all tags for a template.
+   *
+   * @param name Template name or ID
+   * @param options Authentication options
+   * @returns Array of tag details including tag name, build ID, and creation time
+   *
+   * @example
+   * ```ts
+   * const tags = await Template.listTags('my-template')
+   * for (const tag of tags) {
+   *   console.log(`${tag.tag} -> build ${tag.buildId} (created ${tag.createdAt})`)
+   * }
+   * ```
+   */
+  static async listTags(
+    name: string,
+    options?: ConnectionOpts
+  ): Promise<TemplateTagDetail[]> {
+    const config = new ConnectionConfig(options)
+    const client = new ApiClient(config)
+    return listTags(client, { templateID: name })
   }
 
   fromDebianImage(variant: string = 'stable'): TemplateBuilder {
@@ -1265,6 +1291,7 @@ Template.exists = TemplateBase.exists
 Template.aliasExists = TemplateBase.aliasExists
 Template.assignTags = TemplateBase.assignTags
 Template.removeTags = TemplateBase.removeTags
+Template.listTags = TemplateBase.listTags
 Template.toJSON = TemplateBase.toJSON
 Template.toDockerfile = TemplateBase.toDockerfile
 
@@ -1279,5 +1306,6 @@ export type {
   TemplateBuildStatus,
   TemplateBuildStatusResponse,
   TemplateClass,
+  TemplateTagDetail,
   TemplateTagInfo,
 } from './types'

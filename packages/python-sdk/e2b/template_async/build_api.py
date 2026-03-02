@@ -15,6 +15,7 @@ from e2b.api.client.api.templates import (
 from e2b.api.client.api.tags import (
     post_templates_tags,
     delete_templates_tags,
+    get_templates_template_id_tags,
 )
 from e2b.api.client.client import AuthenticatedClient
 from e2b.api.client.models import (
@@ -33,6 +34,7 @@ from e2b.template.types import (
     BuildStatusReason,
     TemplateBuildStatus,
     TemplateBuildStatusResponse,
+    TemplateTagDetail,
     TemplateTagInfo,
 )
 from e2b.template.utils import get_build_step_index, tar_file_stream
@@ -336,3 +338,40 @@ async def remove_tags(client: AuthenticatedClient, name: str, tags: List[str]) -
 
     if res.status_code >= 300:
         raise handle_api_exception(res, TemplateException)
+
+
+async def list_tags(
+    client: AuthenticatedClient, template_id: str
+) -> List[TemplateTagDetail]:
+    """
+    List all tags for a template.
+
+    Args:
+        client: Authenticated API client
+        template_id: Template name or ID
+
+    Returns:
+        List of TemplateTagDetail with tag name, build_id, and created_at
+    """
+    res = await get_templates_template_id_tags.asyncio_detailed(
+        template_id=template_id,
+        client=client,
+    )
+
+    if res.status_code >= 300:
+        raise handle_api_exception(res, TemplateException)
+
+    if isinstance(res.parsed, Error):
+        raise TemplateException(f"API error: {res.parsed.message}")
+
+    if res.parsed is None:
+        raise TemplateException("Failed to list tags")
+
+    return [
+        TemplateTagDetail(
+            tag=t.tag,
+            build_id=str(t.build_id),
+            created_at=t.created_at.isoformat(),
+        )
+        for t in res.parsed
+    ]

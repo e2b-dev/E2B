@@ -7,6 +7,7 @@ import {
   BuildStatusReason,
   TemplateBuildStatus,
   TemplateBuildStatusResponse,
+  TemplateTagDetail,
   TemplateTagInfo,
 } from './types'
 
@@ -357,4 +358,32 @@ export async function removeTags(
   if (error) {
     throw error
   }
+}
+
+export async function listTags(
+  client: ApiClient,
+  { templateID }: { templateID: string }
+): Promise<TemplateTagDetail[]> {
+  const res = await client.api.GET('/templates/{templateID}/tags', {
+    params: {
+      path: {
+        templateID,
+      },
+    },
+  })
+
+  const error = handleApiError(res, TemplateError)
+  if (error) {
+    throw error
+  }
+
+  if (!res.data) {
+    throw new TemplateError('Failed to list tags')
+  }
+
+  return res.data.map((tag) => ({
+    tag: tag.tag,
+    buildId: tag.buildID,
+    createdAt: new Date(tag.createdAt),
+  }))
 }

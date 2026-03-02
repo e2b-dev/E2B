@@ -10,10 +10,16 @@ from e2b.api.client_sync import get_api_client
 from e2b.template.consts import RESOLVE_SYMLINKS
 from e2b.template.logger import LogEntry, LogEntryEnd, LogEntryStart
 from e2b.template.main import TemplateBase, TemplateClass
-from e2b.template.types import BuildInfo, InstructionType, TemplateTagInfo
+from e2b.template.types import (
+    BuildInfo,
+    InstructionType,
+    TemplateTagDetail,
+    TemplateTagInfo,
+)
 from e2b.template_sync.build_api import (
     assign_tags,
     check_alias_exists,
+    list_tags,
     remove_tags,
     get_build_status,
     get_file_upload_link,
@@ -497,3 +503,32 @@ class Template(TemplateBase):
 
         normalized_tags = [tags] if isinstance(tags, str) else tags
         remove_tags(api_client, name, normalized_tags)
+
+    @staticmethod
+    def list_tags(
+        name: str,
+        **opts: Unpack[ApiParams],
+    ) -> List["TemplateTagDetail"]:
+        """
+        List all tags for a template.
+
+        :param name: Template name or ID
+        :return: List of TemplateTagDetail with tag, build_id, and created_at
+
+        Example
+        ```python
+        from e2b import Template
+
+        tags = Template.list_tags('my-template')
+        for tag in tags:
+            print(f"{tag.tag} -> build {tag.build_id} (created {tag.created_at})")
+        ```
+        """
+        config = ConnectionConfig(**opts)
+        api_client = get_api_client(
+            config,
+            require_api_key=True,
+            require_access_token=False,
+        )
+
+        return list_tags(api_client, name)
