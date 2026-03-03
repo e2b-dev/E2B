@@ -1,9 +1,10 @@
 import uuid
+from datetime import datetime, timezone
 from unittest.mock import AsyncMock
 
 import pytest
 
-from e2b import AsyncTemplate, TemplateTagInfo, Template
+from e2b import AsyncTemplate, TemplateTag, TemplateTagInfo, Template
 from e2b.exceptions import TemplateException
 import e2b.template_async.main as template_async_main
 
@@ -113,6 +114,61 @@ class TestRemoveTags:
 
         with pytest.raises(TemplateException):
             await AsyncTemplate.remove_tags("nonexistent", ["tag"])
+
+
+class TestGetTags:
+    """Tests for AsyncTemplate.get_tags method."""
+
+    @pytest.mark.asyncio
+    async def test_get_tags(self, monkeypatch):
+        """Test getting tags for a template."""
+        mock_get_template_tags = AsyncMock(
+            return_value=[
+                TemplateTag(
+                    tag="v1.0",
+                    build_id="00000000-0000-0000-0000-000000000000",
+                    created_at=datetime(2024, 1, 15, 10, 30, 0, tzinfo=timezone.utc),
+                ),
+                TemplateTag(
+                    tag="latest",
+                    build_id="11111111-1111-1111-1111-111111111111",
+                    created_at=datetime(2024, 1, 16, 12, 0, 0, tzinfo=timezone.utc),
+                ),
+            ]
+        )
+
+        monkeypatch.setattr(
+            template_async_main, "get_api_client", lambda *args, **kwargs: None
+        )
+        monkeypatch.setattr(
+            template_async_main, "get_template_tags", mock_get_template_tags
+        )
+
+        result = await AsyncTemplate.get_tags("my-template")
+
+        assert len(result) == 2
+        assert result[0].tag == "v1.0"
+        assert result[0].build_id == "00000000-0000-0000-0000-000000000000"
+        assert isinstance(result[0].created_at, datetime)
+        assert result[1].tag == "latest"
+        mock_get_template_tags.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_get_tags_error(self, monkeypatch):
+        """Test that get_tags raises an error for nonexistent template."""
+        mock_get_template_tags = AsyncMock(
+            side_effect=TemplateException("Template not found")
+        )
+
+        monkeypatch.setattr(
+            template_async_main, "get_api_client", lambda *args, **kwargs: None
+        )
+        monkeypatch.setattr(
+            template_async_main, "get_template_tags", mock_get_template_tags
+        )
+
+        with pytest.raises(TemplateException):
+            await AsyncTemplate.get_tags("nonexistent")
 
 
 # Integration tests
