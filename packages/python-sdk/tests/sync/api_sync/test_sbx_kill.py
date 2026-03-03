@@ -18,4 +18,4 @@ def test_kill_existing_sandbox(sandbox: Sandbox, sandbox_test_id: str):
 
 @pytest.mark.skip_debug()
 def test_kill_non_existing_sandbox():
-    assert not Sandbox.kill("non-existing-sandbox")
+    assert not Sandbox.kill("nonexistingsandbox")

@@ -1,0 +1,297 @@
+
+
+
+## AsyncTemplate
+
+```python
+class AsyncTemplate(TemplateBase)
+```
+
+Asynchronous template builder for E2B sandboxes.
+
+
+### build
+
+```python
+@staticmethod
+async def build(template: TemplateClass,
+                name: Optional[str] = None,
+                *,
+                alias: Optional[str] = None,
+                tags: Optional[List[str]] = None,
+                cpu_count: int = 2,
+                memory_mb: int = 1024,
+                skip_cache: bool = False,
+                on_build_logs: Optional[Callable[[LogEntry], None]] = None,
+                **opts: Unpack[ApiParams]) -> BuildInfo
+```
+
+Build and deploy a template to E2B infrastructure.
+
+**Arguments**:
+
+- `template`: The template to build
+- `name`: Template name in 'name' or 'name:tag' format
+- `alias`: (Deprecated) Alias name for the template. Use name instead.
+- `tags`: Optional additional tags to assign to the template
+- `cpu_count`: Number of CPUs allocated to the sandbox
+- `memory_mb`: Amount of memory in MB allocated to the sandbox
+- `skip_cache`: If True, forces a complete rebuild ignoring cache
+- `on_build_logs`: Callback function to receive build logs during the build process
+Example
+```python
+from e2b import AsyncTemplate
+
+template = (
+    AsyncTemplate()
+    .from_python_image('3')
+    .copy('requirements.txt', '/home/user/')
+    .run_cmd('pip install -r /home/user/requirements.txt')
+)
+
+await AsyncTemplate.build(template, 'my-python-env:v1.0')
+
+await AsyncTemplate.build(template, 'my-python-env', tags=['v1.1.0', 'stable'])
+```
+
+
+### build\_in\_background
+
+```python
+@staticmethod
+async def build_in_background(template: TemplateClass,
+                              name: Optional[str] = None,
+                              *,
+                              alias: Optional[str] = None,
+                              tags: Optional[List[str]] = None,
+                              cpu_count: int = 2,
+                              memory_mb: int = 1024,
+                              skip_cache: bool = False,
+                              on_build_logs: Optional[Callable[[LogEntry],
+                                                               None]] = None,
+                              **opts: Unpack[ApiParams]) -> BuildInfo
+```
+
+Build and deploy a template to E2B infrastructure without waiting for completion.
+
+**Arguments**:
+
+- `template`: The template to build
+- `name`: Template name in 'name' or 'name:tag' format
+- `alias`: (Deprecated) Alias name for the template. Use name instead.
+- `tags`: Optional additional tags to assign to the template
+- `cpu_count`: Number of CPUs allocated to the sandbox
+- `memory_mb`: Amount of memory in MB allocated to the sandbox
+- `skip_cache`: If True, forces a complete rebuild ignoring cache
+
+**Returns**:
+
+BuildInfo containing the template ID and build ID
+Example
+```python
+from e2b import AsyncTemplate
+
+template = (
+    AsyncTemplate()
+    .from_python_image('3')
+    .run_cmd('echo "test"')
+    .set_start_cmd('echo "Hello"', 'sleep 1')
+)
+
+build_info = await AsyncTemplate.build_in_background(template, 'my-python-env:v1.0')
+
+build_info = await AsyncTemplate.build_in_background(template, 'my-python-env', tags=['v1.1.0', 'stable'])
+```
+
+
+### get\_build\_status
+
+```python
+@staticmethod
+async def get_build_status(build_info: BuildInfo,
+                           logs_offset: int = 0,
+                           **opts: Unpack[ApiParams])
+```
+
+Get the status of a build.
+
+**Arguments**:
+
+- `build_info`: Build identifiers returned from build_in_background
+- `logs_offset`: Offset for fetching logs
+
+**Returns**:
+
+TemplateBuild containing the build status and logs
+Example
+```python
+from e2b import AsyncTemplate
+
+build_info = await AsyncTemplate.build_in_background(template, alias='my-template')
+status = await AsyncTemplate.get_build_status(build_info, logs_offset=0)
+```
+
+
+### exists
+
+```python
+@staticmethod
+async def exists(name: str, **opts: Unpack[ApiParams]) -> bool
+```
+
+Check if a template with the given name exists.
+
+**Arguments**:
+
+- `name`: Template name to check
+
+**Returns**:
+
+True if the name exists, False otherwise
+Example
+```python
+from e2b import AsyncTemplate
+
+exists = await AsyncTemplate.exists('my-python-env')
+if exists:
+    print('Template exists!')
+```
+
+
+### alias\_exists
+
+```python
+@staticmethod
+async def alias_exists(alias: str, **opts: Unpack[ApiParams]) -> bool
+```
+
+Check if a template with the given alias exists.
+
+Deprecated Use `exists` instead.
+
+**Arguments**:
+
+- `alias`: Template alias to check
+
+**Returns**:
+
+True if the alias exists, False otherwise
+Example
+```python
+from e2b import AsyncTemplate
+
+exists = await AsyncTemplate.alias_exists('my-python-env')
+if exists:
+    print('Template exists!')
+```
+
+
+### assign\_tags
+
+```python
+@staticmethod
+async def assign_tags(target_name: str, tags: Union[str, List[str]],
+                      **opts: Unpack[ApiParams]) -> TemplateTagInfo
+```
+
+Assign tag(s) to an existing template build.
+
+**Arguments**:
+
+- `target_name`: Template name in 'name:tag' format (the source build to tag from)
+- `tags`: Tag or tags to assign
+
+**Returns**:
+
+TemplateTagInfo with build_id and assigned tags
+Example
+```python
+from e2b import AsyncTemplate
+
+result = await AsyncTemplate.assign_tags('my-template:v1.0', 'production')
+
+result = await AsyncTemplate.assign_tags('my-template:v1.0', ['production', 'stable'])
+```
+
+
+### remove\_tags
+
+```python
+@staticmethod
+async def remove_tags(name: str, tags: Union[str, List[str]],
+                      **opts: Unpack[ApiParams]) -> None
+```
+
+Remove tag(s) from a template.
+
+**Arguments**:
+
+- `name`: Template name
+- `tags`: Tag or tags to remove
+Example
+```python
+from e2b import AsyncTemplate
+
+await AsyncTemplate.remove_tags('my-template', 'production')
+
+await AsyncTemplate.remove_tags('my-template', ['production', 'stable'])
+```
+
+
+
+
+### check\_alias\_exists
+
+```python
+async def check_alias_exists(client: AuthenticatedClient, alias: str) -> bool
+```
+
+Check if a template with the given alias exists.
+
+**Arguments**:
+
+- `client` - Authenticated API client
+- `alias` - Template alias to check
+  
+
+**Returns**:
+
+  True if the alias exists, False otherwise
+
+
+### assign\_tags
+
+```python
+async def assign_tags(client: AuthenticatedClient, target_name: str,
+                      tags: List[str]) -> TemplateTagInfo
+```
+
+Assign tag(s) to an existing template build.
+
+**Arguments**:
+
+- `client` - Authenticated API client
+- `target_name` - Template name in 'name:tag' format (the source build to tag from)
+- `tags` - Tags to assign
+  
+
+**Returns**:
+
+  TemplateTagInfo with build_id and assigned tags
+
+
+### remove\_tags
+
+```python
+async def remove_tags(client: AuthenticatedClient, name: str,
+                      tags: List[str]) -> None
+```
+
+Remove tag(s) from a template.
+
+**Arguments**:
+
+- `client` - Authenticated API client
+- `name` - Template name
+- `tags` - List of tags to remove
+

@@ -201,6 +201,39 @@ export interface SandboxMetricsOpts extends SandboxApiOpts {
 }
 
 /**
+ * Options for listing snapshots.
+ */
+export interface SnapshotListOpts extends SandboxApiOpts {
+  /**
+   * Filter snapshots by source sandbox ID.
+   */
+  sandboxId?: string
+
+  /**
+   * Number of snapshots to return per page.
+   *
+   * @default 100
+   */
+  limit?: number
+
+  /**
+   * Token to the next page.
+   */
+  nextToken?: string
+}
+
+/**
+ * Information about a snapshot.
+ */
+export interface SnapshotInfo {
+  /**
+   * Snapshot identifier — template ID with tag, or namespaced name with tag (e.g. my-snapshot:latest).
+   * Can be used with Sandbox.create() to create a new sandbox from this snapshot.
+   */
+  snapshotId: string
+}
+
+/**
  * Information about a sandbox.
  */
 export interface SandboxInfo {
@@ -529,6 +562,96 @@ export class SandboxApi {
     return true
   }
 
+  /**
+   * Create a snapshot from a sandbox.
+   *
+   * The sandbox will be paused while the snapshot is being created.
+   * The snapshot can be used to create new sandboxes with the same state.
+   * The snapshot is a persistent image that survives sandbox deletion.
+   *
+   * @param sandboxId sandbox ID to create snapshot from.
+   * @param opts connection options.
+   *
+   * @returns snapshot information including the snapshot name that can be used with Sandbox.create().
+   */
+  static async createSnapshot(
+    sandboxId: string,
+    opts?: SandboxApiOpts
+  ): Promise<SnapshotInfo> {
+    const config = new ConnectionConfig(opts)
+    const client = new ApiClient(config)
+
+    const res = await client.api.POST('/sandboxes/{sandboxID}/snapshots', {
+      params: {
+        path: {
+          sandboxID: sandboxId,
+        },
+      },
+      body: {},
+      signal: config.getSignal(opts?.requestTimeoutMs),
+    })
+
+    if (res.error?.code === 404) {
+      throw new NotFoundError(`Sandbox ${sandboxId} not found`)
+    }
+
+    const err = handleApiError(res)
+    if (err) {
+      throw err
+    }
+
+    return {
+      snapshotId: res.data!.snapshotID,
+    }
+  }
+
+  /**
+   * List all snapshots.
+   *
+   * @param opts list options including filters and pagination.
+   *
+   * @returns paginator for listing snapshots.
+   */
+  static listSnapshots(opts?: SnapshotListOpts): SnapshotPaginator {
+    return new SnapshotPaginator(opts)
+  }
+
+  /**
+   * Delete a snapshot.
+   *
+   * @param snapshotId snapshot ID.
+   * @param opts connection options.
+   *
+   * @returns `true` if the snapshot was deleted, `false` if it was not found.
+   */
+  static async deleteSnapshot(
+    snapshotId: string,
+    opts?: SandboxApiOpts
+  ): Promise<boolean> {
+    const config = new ConnectionConfig(opts)
+    const client = new ApiClient(config)
+
+    const res = await client.api.DELETE('/templates/{templateID}', {
+      params: {
+        path: {
+          templateID: snapshotId,
+        },
+      },
+      signal: config.getSignal(opts?.requestTimeoutMs),
+    })
+
+    if (res.error?.code === 404) {
+      return false
+    }
+
+    const err = handleApiError(res)
+    if (err) {
+      throw err
+    }
+
+    return true
+  }
+
   protected static async createSandbox(
     template: string,
     timeoutMs: number,
@@ -614,42 +737,26 @@ export class SandboxApi {
   }
 }
 
-/**
- * Paginator for listing sandboxes.
- *
- * @example
- * ```ts
- * const paginator = Sandbox.list()
- *
- * while (paginator.hasNext) {
- *   const sandboxes = await paginator.nextItems()
- *   console.log(sandboxes)
- * }
- * ```
- */
-export class SandboxPaginator {
+abstract class BasePaginator<T> {
+  protected readonly config: ConnectionConfig
+  protected client: ApiClient
+  protected readonly limit?: number
+
   private _hasNext: boolean
   private _nextToken?: string
 
-  private readonly config: ConnectionConfig
-  private client: ApiClient
-
-  private query: SandboxListOpts['query']
-  private readonly limit?: number
-
-  constructor(opts?: SandboxListOpts) {
-    this.config = new ConnectionConfig(opts)
+  constructor(config: ConnectionConfig, limit?: number, nextToken?: string) {
+    this.config = config
     this.client = new ApiClient(this.config)
 
     this._hasNext = true
-    this._nextToken = opts?.nextToken
+    this._nextToken = nextToken
 
-    this.query = opts?.query
-    this.limit = opts?.limit
+    this.limit = limit
   }
 
   /**
-   * Returns True if there are more items to fetch.
+   * Returns true if there are more items to fetch.
    */
   get hasNext(): boolean {
     return this._hasNext
@@ -662,13 +769,42 @@ export class SandboxPaginator {
     return this._nextToken
   }
 
+  protected updatePagination(response: Response) {
+    this._nextToken = response.headers.get('x-next-token') || undefined
+    this._hasNext = !!this._nextToken
+  }
+
   /**
-   * Get the next page of sandboxes.
+   * Get the next page of items.
    *
    * @throws Error if there are no more items to fetch. Call this method only if `hasNext` is `true`.
    *
-   * @returns List of sandboxes
+   * @returns List of items
    */
+  abstract nextItems(): Promise<T[]>
+}
+
+/**
+ * Paginator for listing sandboxes.
+ *
+ * @example
+ * ```ts
+ * const paginator = Sandbox.list()
+ * while (paginator.hasNext) {
+ *   const sandboxes = await paginator.nextItems()
+ *   console.log(sandboxes)
+ * }
+ * ```
+ */
+export class SandboxPaginator extends BasePaginator<SandboxInfo> {
+  private query: SandboxListOpts['query']
+
+  constructor(opts?: SandboxListOpts) {
+    super(new ConnectionConfig(opts), opts?.limit, opts?.nextToken)
+
+    this.query = opts?.query
+  }
+
   async nextItems(): Promise<SandboxInfo[]> {
     if (!this.hasNext) {
       throw new Error('No more items to fetch')
@@ -704,8 +840,7 @@ export class SandboxPaginator {
       throw err
     }
 
-    this._nextToken = res.response.headers.get('x-next-token') || undefined
-    this._hasNext = !!this._nextToken
+    this.updatePagination(res.response)
 
     return (res.data ?? []).map(
       (sandbox: components['schemas']['ListedSandbox']) => ({
@@ -719,6 +854,58 @@ export class SandboxPaginator {
         cpuCount: sandbox.cpuCount,
         memoryMB: sandbox.memoryMB,
         envdVersion: sandbox.envdVersion,
+      })
+    )
+  }
+}
+
+/**
+ * Paginator for listing snapshots.
+ *
+ * @example
+ * ```ts
+ * const paginator = Sandbox.listSnapshots()
+ * while (paginator.hasNext) {
+ *   const snapshots = await paginator.nextItems()
+ *   console.log(snapshots)
+ * }
+ * ```
+ */
+export class SnapshotPaginator extends BasePaginator<SnapshotInfo> {
+  private readonly sandboxId?: string
+
+  constructor(opts?: SnapshotListOpts) {
+    super(new ConnectionConfig(opts), opts?.limit, opts?.nextToken)
+
+    this.sandboxId = opts?.sandboxId
+  }
+
+  async nextItems(): Promise<SnapshotInfo[]> {
+    if (!this.hasNext) {
+      throw new Error('No more items to fetch')
+    }
+
+    const res = await this.client.api.GET('/snapshots', {
+      params: {
+        query: {
+          sandboxID: this.sandboxId,
+          limit: this.limit,
+          nextToken: this.nextToken,
+        },
+      },
+      signal: this.config.getSignal(),
+    })
+
+    const err = handleApiError(res)
+    if (err) {
+      throw err
+    }
+
+    this.updatePagination(res.response)
+
+    return (res.data ?? []).map(
+      (snapshot: components['schemas']['SnapshotInfo']) => ({
+        snapshotId: snapshot.snapshotID,
       })
     )
   }
