@@ -1,7 +1,6 @@
-import { assert } from 'vitest'
+import { assert, describe } from 'vitest'
 
 import { sandboxTest, isDebug } from '../setup.js'
-import { Sandbox } from '../../src'
 
 sandboxTest.skipIf(isDebug)(
   'pause and resume a sandbox',
@@ -19,36 +18,39 @@ sandboxTest.skipIf(isDebug)(
   }
 )
 
-sandboxTest.skipIf(isDebug)(
-  'pause and resume a sandbox with env vars',
-  async ({ template, sandboxTestId }) => {
-    // Environment variables of a process exist at runtime, and are not stored in some file or so.
-    // They are stored in the process's own memory
-    const sandbox = await Sandbox.create(template, {
+describe('pause and resume with env vars', () => {
+  sandboxTest.scoped({
+    sandboxOpts: {
       envs: { TEST_VAR: 'sfisback' },
-      metadata: { sandboxTestId },
-    })
+    },
+  })
 
-    const cmd = await sandbox.commands.run('echo "$TEST_VAR"')
+  sandboxTest.skipIf(isDebug)(
+    'pause and resume a sandbox with env vars',
+    async ({ sandbox }) => {
+      // Environment variables of a process exist at runtime, and are not stored in some file or so.
+      // They are stored in the process's own memory
+      const cmd = await sandbox.commands.run('echo "$TEST_VAR"')
 
-    assert.equal(cmd.exitCode, 0)
-    assert.equal(cmd.stdout.trim(), 'sfisback')
+      assert.equal(cmd.exitCode, 0)
+      assert.equal(cmd.stdout.trim(), 'sfisback')
 
-    await sandbox.betaPause()
+      await sandbox.betaPause()
 
-    assert.isFalse(await sandbox.isRunning())
+      assert.isFalse(await sandbox.isRunning())
 
-    const resumedSandbox = await sandbox.connect()
-    assert.isTrue(await sandbox.isRunning())
-    assert.isTrue(await resumedSandbox.isRunning())
-    assert.equal(resumedSandbox.sandboxId, sandbox.sandboxId)
+      const resumedSandbox = await sandbox.connect()
+      assert.isTrue(await sandbox.isRunning())
+      assert.isTrue(await resumedSandbox.isRunning())
+      assert.equal(resumedSandbox.sandboxId, sandbox.sandboxId)
 
-    const cmd2 = await sandbox.commands.run('echo "$TEST_VAR"')
+      const cmd2 = await sandbox.commands.run('echo "$TEST_VAR"')
 
-    assert.equal(cmd2.exitCode, 0)
-    assert.equal(cmd2.stdout.trim(), 'sfisback')
-  }
-)
+      assert.equal(cmd2.exitCode, 0)
+      assert.equal(cmd2.stdout.trim(), 'sfisback')
+    }
+  )
+})
 
 sandboxTest.skipIf(isDebug)(
   'pause and resume a sandbox with file',

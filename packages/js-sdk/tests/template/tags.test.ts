@@ -126,8 +126,8 @@ describe('Template tags unit tests', () => {
 buildTemplateTest.skipIf(isDebug)(
   'build template with tags, assign and delete',
   async ({ buildTemplate }) => {
-    const templateAlias = `e2b-js-tags-test-${randomUUID()}`
-    const initialTag = `${templateAlias}:v1.0`
+    const templateName = 'e2b-tags-test'
+    const initialTag = `${templateName}:v1-${randomUUID()}`
 
     // Build a template with initial tag
     const template = Template().fromBaseImage()
@@ -152,8 +152,8 @@ buildTemplateTest.skipIf(isDebug)(
 buildTemplateTest.skipIf(isDebug)(
   'assign single tag to existing template',
   async ({ buildTemplate }) => {
-    const templateAlias = `e2b-js-single-tag-${randomUUID()}`
-    const initialTag = `${templateAlias}:v1.0`
+    const templateName = 'e2b-tags-test'
+    const initialTag = `${templateName}:v1-${randomUUID()}`
 
     const template = Template().fromBaseImage()
     await buildTemplate(template, { name: initialTag })
@@ -170,8 +170,8 @@ buildTemplateTest.skipIf(isDebug)(
 buildTemplateTest.skipIf(isDebug)(
   'rejects invalid tag format - missing alias',
   async ({ buildTemplate }) => {
-    const templateAlias = `e2b-js-invalid-tag-${randomUUID()}`
-    const initialTag = `${templateAlias}:v1.0`
+    const templateName = 'e2b-tags-test'
+    const initialTag = `${templateName}:v1-${randomUUID()}`
 
     const template = Template().fromBaseImage()
     await buildTemplate(template, { name: initialTag })
@@ -187,15 +187,15 @@ buildTemplateTest.skipIf(isDebug)(
 buildTemplateTest.skipIf(isDebug)(
   'rejects invalid tag format - missing tag',
   async ({ buildTemplate }) => {
-    const templateAlias = `e2b-js-invalid-tag2-${randomUUID()}`
-    const initialTag = `${templateAlias}:v1.0`
+    const templateName = 'e2b-tags-test'
+    const initialTag = `${templateName}:v1-${randomUUID()}`
 
     const template = Template().fromBaseImage()
     await buildTemplate(template, { name: initialTag })
 
     // Tag without tag portion (ends with colon) should be rejected
     await expect(
-      Template.assignTags(initialTag, `${templateAlias}:`)
+      Template.assignTags(initialTag, `${templateName}:`)
     ).rejects.toThrow()
   },
   { timeout: 300_000 }

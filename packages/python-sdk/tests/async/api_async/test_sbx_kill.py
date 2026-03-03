@@ -18,4 +18,4 @@ async def test_kill_existing_sandbox(async_sandbox: AsyncSandbox, sandbox_test_i
 
 @pytest.mark.skip_debug()
 async def test_kill_non_existing_sandbox():
-    assert not await AsyncSandbox.kill("non-existing-sandbox")
+    assert not await AsyncSandbox.kill("nonexistingsandbox")

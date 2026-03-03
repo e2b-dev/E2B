@@ -1,14 +1,23 @@
-import { assert } from 'vitest'
+import { assert, describe } from 'vitest'
 
-import { sandboxTest, isDebug, template } from '../../setup.js'
-import { Sandbox } from '../../../src'
+import { sandboxTest, isDebug } from '../../setup.js'
 
-sandboxTest.skipIf(isDebug)('sandbox global env vars', async () => {
-  const sandbox = await Sandbox.create(template, { envs: { FOO: 'bar' } })
-  const cmd = await sandbox.commands.run('echo $FOO')
+describe('sandbox global env vars', () => {
+  sandboxTest.scoped({
+    sandboxOpts: {
+      envs: { FOO: 'bar' },
+    },
+  })
 
-  assert.equal(cmd.exitCode, 0)
-  assert.equal(cmd.stdout.trim(), 'bar')
+  sandboxTest.skipIf(isDebug)(
+    'sandbox global env vars',
+    async ({ sandbox }) => {
+      const cmd = await sandbox.commands.run('echo $FOO')
+
+      assert.equal(cmd.exitCode, 0)
+      assert.equal(cmd.stdout.trim(), 'bar')
+    }
+  )
 })
 
 sandboxTest('bash command scoped env vars', async ({ sandbox }) => {

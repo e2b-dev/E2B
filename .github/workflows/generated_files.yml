@@ -3,6 +3,9 @@ name: Generated files
 on:
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   check-generated:
     name: Generated files

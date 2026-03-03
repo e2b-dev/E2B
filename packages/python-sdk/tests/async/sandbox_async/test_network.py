@@ -171,25 +171,27 @@ async def test_mask_request_host(async_sandbox_factory):
 
     import httpx
 
-    # Install netcat for testing
-    await async_sandbox.commands.run("apt-get update", user="root")
-    await async_sandbox.commands.run(
-        "apt-get install -y netcat-traditional", user="root"
-    )
-
     port = 8080
-    output_file = "/tmp/nc_output.txt"
+    output_file = "/tmp/headers.txt"
 
-    # Start netcat listener in background to capture request headers
+    # Start a Python HTTP server that captures request headers and writes them to a file
     await async_sandbox.commands.run(
-        f"nc -l -p {port} > {output_file}",
+        f"""python3 -c "
+import http.server, json
+class H(http.server.BaseHTTPRequestHandler):
+    def do_GET(self):
+        with open('{output_file}', 'w') as f:
+            for k, v in self.headers.items():
+                f.write(k + ': ' + v + chr(10))
+        self.send_response(200)
+        self.end_headers()
+    def log_message(self, *a): pass
+http.server.HTTPServer(('', {port}), H).handle_request()
+" """,
         background=True,
-        timeout=0,
-        user="root",
     )
 
-    # Wait for netcat to start
-    await asyncio.sleep(3)
+    await asyncio.sleep(2)
 
     # Get the public URL for the sandbox
     sandbox_url = f"https://{async_sandbox.get_host(port)}"
@@ -200,11 +202,12 @@ async def test_mask_request_host(async_sandbox_factory):
         try:
             await client.get(sandbox_url, timeout=5.0)
         except Exception:
-            # Request may fail since netcat doesn't respond properly, but headers are captured
             pass
 
-    # Read the captured output from inside the sandbox
-    result = await async_sandbox.commands.run(f"cat {output_file}", user="root")
+    await asyncio.sleep(1)
+
+    # Read the captured headers from inside the sandbox
+    result = await async_sandbox.commands.run(f"cat {output_file}")
 
     # Verify the Host header was modified according to mask_request_host
     assert "Host:" in result.stdout

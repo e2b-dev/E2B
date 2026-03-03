@@ -1,38 +1,39 @@
-import { assert, test } from 'vitest'
+import { assert, test, describe } from 'vitest'
 import { getSignature, Sandbox } from '../../src'
-import { isDebug, template } from '../setup'
+import { sandboxTest, isDebug } from '../setup'
 import { randomUUID, createHash } from 'node:crypto'
 
-const timeout = 20 * 1000
-
-test.skipIf(isDebug)('test access file with signing', async () => {
-  const sbx = await Sandbox.create(template, {
-    timeoutMs: timeout,
-    secure: true,
+describe('secure sandbox', () => {
+  sandboxTest.scoped({
+    sandboxOpts: {
+      secure: true,
+    },
   })
-  await sbx.files.write('hello.txt', 'hello world')
 
-  const fileUrlWithSigning = await sbx.downloadUrl('hello.txt')
+  sandboxTest.skipIf(isDebug)(
+    'test access file with signing',
+    async ({ sandbox }) => {
+      await sandbox.files.write('hello.txt', 'hello world')
 
-  const res = await fetch(fileUrlWithSigning)
-  const resBody = await res.text()
-  const resStatus = res.status
+      const fileUrlWithSigning = await sandbox.downloadUrl('hello.txt')
 
-  assert.equal(resStatus, 200)
-  assert.equal(resBody, 'hello world')
+      const res = await fetch(fileUrlWithSigning)
+      const resBody = await res.text()
+      const resStatus = res.status
 
-  await sbx.kill()
-})
+      assert.equal(resStatus, 200)
+      assert.equal(resBody, 'hello world')
+    }
+  )
 
-test.skipIf(isDebug)('try to re-connect to sandbox', async () => {
-  const sbx = await Sandbox.create(template, {
-    timeoutMs: timeout,
-    secure: true,
-  })
-  const sbxReconnect = await Sandbox.connect(sbx.sandboxId)
+  sandboxTest.skipIf(isDebug)(
+    'try to re-connect to sandbox',
+    async ({ sandbox }) => {
+      const sbxReconnect = await Sandbox.connect(sandbox.sandboxId)
 
-  await sbxReconnect.files.write('hello.txt', 'hello world')
-  await sbxReconnect.kill()
+      await sbxReconnect.files.write('hello.txt', 'hello world')
+    }
+  )
 })
 
 test.skipIf(isDebug)('signing generation', async () => {

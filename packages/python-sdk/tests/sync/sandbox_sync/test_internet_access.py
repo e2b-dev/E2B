@@ -9,9 +9,11 @@ def test_internet_access_enabled(sandbox_factory):
     sbx = sandbox_factory(allow_internet_access=True)
 
     # Test internet connectivity by making a curl request to a reliable external site
-    result = sbx.commands.run("curl -s -o /dev/null -w '%{http_code}' https://e2b.dev")
+    result = sbx.commands.run(
+        "curl -s -o /dev/null -w '%{http_code}' https://connectivitycheck.gstatic.com/generate_204"
+    )
     assert result.exit_code == 0
-    assert result.stdout.strip() == "200"
+    assert result.stdout.strip() == "204"
 
 
 @pytest.mark.skip_debug()
@@ -21,7 +23,9 @@ def test_internet_access_disabled(sandbox_factory):
 
     # Test that internet connectivity is blocked by making a curl request
     with pytest.raises(CommandExitException) as exc_info:
-        sbx.commands.run("curl --connect-timeout 3 --max-time 5 -Is https://e2b.dev")
+        sbx.commands.run(
+            "curl --connect-timeout 3 --max-time 5 -Is https://connectivitycheck.gstatic.com/generate_204"
+        )
         # The command should fail or timeout when internet access is disabled
     assert exc_info.value.exit_code != 0
 
@@ -32,7 +36,7 @@ def test_internet_access_default(sandbox):
 
     # Test internet connectivity by making a curl request to a reliable external site
     result = sandbox.commands.run(
-        "curl -s -o /dev/null -w '%{http_code}' https://e2b.dev"
+        "curl -s -o /dev/null -w '%{http_code}' https://connectivitycheck.gstatic.com/generate_204"
     )
     assert result.exit_code == 0
-    assert result.stdout.strip() == "200"
+    assert result.stdout.strip() == "204"

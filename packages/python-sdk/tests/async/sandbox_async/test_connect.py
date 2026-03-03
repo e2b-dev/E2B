@@ -30,27 +30,26 @@ async def test_connect_with_secure(async_sandbox_factory):
 
 
 @pytest.mark.skip_debug()
-async def test_connect_does_not_shorten_timeout_on_running_sandbox(template):
+async def test_connect_does_not_shorten_timeout_on_running_sandbox(
+    async_sandbox_factory,
+):
     # Create sandbox with a 300 second timeout
-    sbx = await AsyncSandbox.create(template, timeout=300)
-    try:
-        assert await sbx.is_running()
+    sbx = await async_sandbox_factory(timeout=300)
+    assert await sbx.is_running()
 
-        # Get initial info to check end_at
-        info_before = await AsyncSandbox.get_info(sbx.sandbox_id)
+    # Get initial info to check end_at
+    info_before = await AsyncSandbox.get_info(sbx.sandbox_id)
 
-        # Connect with a shorter timeout (10 seconds)
-        await AsyncSandbox.connect(sbx.sandbox_id, timeout=10)
+    # Connect with a shorter timeout (10 seconds)
+    await AsyncSandbox.connect(sbx.sandbox_id, timeout=10)
 
-        # Get info after connection
-        info_after = await AsyncSandbox.get_info(sbx.sandbox_id)
+    # Get info after connection
+    info_after = await AsyncSandbox.get_info(sbx.sandbox_id)
 
-        # The end_at time should not have been shortened. It should be the same
-        assert info_after.end_at == info_before.end_at, (
-            f"Timeout was changed: before={info_before.end_at}, after={info_after.end_at}"
-        )
-    finally:
-        await sbx.kill()
+    # The end_at time should not have been shortened. It should be the same
+    assert info_after.end_at == info_before.end_at, (
+        f"Timeout was changed: before={info_before.end_at}, after={info_after.end_at}"
+    )
 
 
 @pytest.mark.skip_debug()

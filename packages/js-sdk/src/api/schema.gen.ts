@@ -199,7 +199,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description Get sandbox logs */
+        /**
+         * @deprecated
+         * @description Get sandbox logs. Use /v2/sandboxes/{sandboxID}/logs instead.
+         */
         get: {
             parameters: {
                 query?: {
@@ -418,6 +421,55 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/sandboxes/{sandboxID}/snapshots": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Create a persistent snapshot from the sandbox's current state. Snapshots can be used to create new sandboxes and persist beyond the original sandbox's lifetime. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    sandboxID: components["parameters"]["sandboxID"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @description Optional name for the snapshot template. If a snapshot template with this name already exists, a new build will be assigned to the existing template instead of creating a new one. */
+                        name?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Snapshot created successfully */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SnapshotInfo"];
+                    };
+                };
+                400: components["responses"]["400"];
+                401: components["responses"]["401"];
+                404: components["responses"]["404"];
+                500: components["responses"]["500"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/sandboxes/{sandboxID}/timeout": {
         parameters: {
             query?: never;
@@ -497,6 +549,50 @@ export interface paths {
                     };
                 };
                 400: components["responses"]["400"];
+                401: components["responses"]["401"];
+                500: components["responses"]["500"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/snapshots": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description List all snapshots for the team */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Maximum number of items to return per page */
+                    limit?: components["parameters"]["paginationLimit"];
+                    /** @description Cursor to start the list from */
+                    nextToken?: components["parameters"]["paginationNextToken"];
+                    sandboxID?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Successfully returned snapshots */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SnapshotInfo"][];
+                    };
+                };
                 401: components["responses"]["401"];
                 500: components["responses"]["500"];
             };
@@ -1042,7 +1138,7 @@ export interface paths {
             };
             requestBody?: never;
             responses: {
-                /** @description Successfully listed template tags */
+                /** @description Successfully returned the template tags */
                 200: {
                     headers: {
                         [name: string]: unknown;
@@ -1052,6 +1148,7 @@ export interface paths {
                     };
                 };
                 401: components["responses"]["401"];
+                403: components["responses"]["403"];
                 404: components["responses"]["404"];
                 500: components["responses"]["500"];
             };
@@ -1213,6 +1310,54 @@ export interface paths {
                 };
                 400: components["responses"]["400"];
                 401: components["responses"]["401"];
+                500: components["responses"]["500"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/sandboxes/{sandboxID}/logs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Get sandbox logs */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Starting timestamp of the logs that should be returned in milliseconds */
+                    cursor?: number;
+                    /** @description Direction of the logs that should be returned */
+                    direction?: components["schemas"]["LogsDirection"];
+                    /** @description Maximum number of logs that should be returned */
+                    limit?: number;
+                };
+                header?: never;
+                path: {
+                    sandboxID: components["parameters"]["sandboxID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Successfully returned the sandbox logs */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SandboxLogsV2Response"];
+                    };
+                };
+                401: components["responses"]["401"];
+                404: components["responses"]["404"];
                 500: components["responses"]["500"];
             };
         };
@@ -1616,6 +1761,7 @@ export interface components {
             state: components["schemas"]["SandboxState"];
             /** @description Identifier of the template from which is the sandbox created */
             templateID: string;
+            volumeMounts?: components["schemas"]["SandboxVolumeMount"][];
         };
         /**
          * @description State of the sandbox
@@ -1679,6 +1825,7 @@ export interface components {
              * @default false
              */
             autoPause?: boolean;
+            autoResume?: components["schemas"]["SandboxAutoResumeConfig"];
             envVars?: components["schemas"]["EnvVars"];
             mcp?: components["schemas"]["Mcp"];
             metadata?: components["schemas"]["SandboxMetadata"];
@@ -1693,9 +1840,14 @@ export interface components {
              * @default 15
              */
             timeout?: number;
+            volumeMounts?: components["schemas"]["SandboxVolumeMount"][];
         };
         NewTeamAPIKey: {
             /** @description Name of the API key */
+            name: string;
+        };
+        NewVolume: {
+            /** @description Name of the volume */
             name: string;
         };
         Node: {
@@ -1853,6 +2005,16 @@ export interface components {
             /** @description Token required for accessing sandbox via proxy. */
             trafficAccessToken?: string | null;
         };
+        /** @description Auto-resume configuration for paused sandboxes. Default is off. */
+        SandboxAutoResumeConfig: {
+            policy: components["schemas"]["SandboxAutoResumePolicy"];
+        };
+        /**
+         * @description Auto-resume policy for paused sandboxes. Default is off.
+         * @default off
+         * @enum {string}
+         */
+        SandboxAutoResumePolicy: "any" | "off";
         SandboxDetail: {
             /** @description Alias of the template */
             alias?: string;
@@ -1885,6 +2047,7 @@ export interface components {
             state: components["schemas"]["SandboxState"];
             /** @description Identifier of the template from which is the sandbox created */
             templateID: string;
+            volumeMounts?: components["schemas"]["SandboxVolumeMount"][];
         };
         SandboxesWithMetrics: {
             sandboxes: {
@@ -1919,6 +2082,13 @@ export interface components {
             logEntries: components["schemas"]["SandboxLogEntry"][];
             /** @description Logs of the sandbox */
             logs: components["schemas"]["SandboxLog"][];
+        };
+        SandboxLogsV2Response: {
+            /**
+             * @description Sandbox logs structured
+             * @default []
+             */
+            logs: components["schemas"]["SandboxLogEntry"][];
         };
         SandboxMetadata: {
             [key: string]: string;
@@ -1985,6 +2155,18 @@ export interface components {
          * @enum {string}
          */
         SandboxState: "running" | "paused";
+        SandboxVolumeMount: {
+            /** @description Name of the volume */
+            name: string;
+            /** @description Path of the volume */
+            path: string;
+        };
+        SnapshotInfo: {
+            /** @description Full names of the snapshot template including team namespace and tag (e.g. team-slug/my-snapshot:v2) */
+            names: string[];
+            /** @description Identifier of the snapshot template */
+            snapshotID: string;
+        };
         Team: {
             /** @description API key for the team */
             apiKey: string;
@@ -2310,10 +2492,10 @@ export interface components {
             buildID: string;
             /**
              * Format: date-time
-             * @description When this tag was assigned
+             * @description Time when the tag was assigned
              */
             createdAt: string;
-            /** @description Name of the tag */
+            /** @description The tag name */
             tag: string;
         };
         TemplateUpdateRequest: {
@@ -2362,6 +2544,12 @@ export interface components {
         UpdateTeamAPIKey: {
             /** @description New name for the API key */
             name: string;
+        };
+        Volume: {
+            /** @description Name of the volume */
+            name: string;
+            /** @description ID of the volume */
+            volumeID: string;
         };
     };
     responses: {
@@ -2430,9 +2618,11 @@ export interface components {
         /** @description Cursor to start the list from */
         paginationNextToken: string;
         sandboxID: string;
+        snapshotID: string;
         tag: string;
         teamID: string;
         templateID: string;
+        volumeID: string;
     };
     requestBodies: never;
     headers: never;

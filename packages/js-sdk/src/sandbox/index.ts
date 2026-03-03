@@ -20,6 +20,10 @@ import {
   SandboxListOpts,
   SandboxPaginator,
   SandboxBetaCreateOpts,
+  SandboxApiOpts,
+  SnapshotListOpts,
+  SnapshotInfo,
+  SnapshotPaginator,
 } from './sandboxApi'
 import { getSignature } from './signature'
 import { compareVersions } from 'compare-versions'
@@ -577,6 +581,53 @@ export class Sandbox extends SandboxApi {
    */
   async betaPause(opts?: ConnectionOpts): Promise<boolean> {
     return await SandboxApi.betaPause(this.sandboxId, opts)
+  }
+
+  /**
+   * Create a snapshot of the sandbox's current state.
+   *
+   * The sandbox will be paused while the snapshot is being created.
+   * The snapshot can be used to create new sandboxes with the same filesystem and state.
+   * Snapshots are persistent and survive sandbox deletion.
+   *
+   * Use the returned `snapshotId` with `Sandbox.create(snapshotId)` to create a new sandbox from the snapshot.
+   *
+   * @param opts connection options.
+   *
+   * @returns snapshot information including the snapshot ID.
+   *
+   * @example
+   * ```ts
+   * const sandbox = await Sandbox.create()
+   * await sandbox.files.write('/app/state.json', '{"step": 1}')
+   *
+   * // Create a snapshot
+   * const snapshot = await sandbox.createSnapshot()
+   *
+   * // Create a new sandbox from the snapshot
+   * const newSandbox = await Sandbox.create(snapshot.snapshotId)
+   * ```
+   */
+  async createSnapshot(opts?: SandboxApiOpts): Promise<SnapshotInfo> {
+    return await SandboxApi.createSnapshot(this.sandboxId, {
+      ...this.connectionConfig,
+      ...opts,
+    })
+  }
+
+  /**
+   * List all snapshots created from this sandbox.
+   *
+   * @param opts list options.
+   *
+   * @returns paginator for listing snapshots from this sandbox.
+   */
+  listSnapshots(opts?: Omit<SnapshotListOpts, 'sandboxId'>): SnapshotPaginator {
+    return SandboxApi.listSnapshots({
+      ...this.connectionConfig,
+      ...opts,
+      sandboxId: this.sandboxId,
+    })
   }
 
   /**

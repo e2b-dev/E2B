@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { test as base } from 'vitest'
+import { test as base, onTestFailed } from 'vitest'
 import {
   BuildInfo,
   LogEntry,
@@ -30,7 +30,7 @@ async function buildTemplate(
   options?: { name?: string; skipCache?: boolean },
   onBuildLogs?: (logEntry: LogEntry) => void
 ): Promise<BuildInfo> {
-  const buildName = options?.name || `e2b-test-${randomUUID()}`
+  const buildName = options?.name || `e2b-test:v1-${randomUUID()}`
   const buildInfo: { templateId?: string; buildId?: string } = {}
 
   const captureLogs = (log: LogEntry) => {
@@ -79,6 +79,9 @@ export const sandboxTest = base.extend<SandboxFixture>({
       const sandbox = await Sandbox.create(template, {
         metadata: { sandboxTestId },
         ...sandboxOpts,
+      })
+      onTestFailed(() => {
+        console.error(`\n[TEST FAILED] Sandbox ID: ${sandbox.sandboxId}`)
       })
       try {
         await use(sandbox)

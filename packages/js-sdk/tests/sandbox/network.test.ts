@@ -205,23 +205,27 @@ describe('maskRequestHost option', () => {
   sandboxTest.skipIf(isDebug)(
     'verify maskRequestHost modifies Host header correctly',
     async ({ sandbox }) => {
-      // Install netcat for testing
-      await sandbox.commands.run('apt-get update', { user: 'root' })
-      await sandbox.commands.run('apt-get install -y netcat-traditional', {
-        user: 'root',
-      })
-
       const port = 8080
-      const outputFile = '/tmp/nc_output.txt'
+      const outputFile = '/tmp/headers.txt'
 
-      // Start netcat listener in background to capture request headers
-      sandbox.commands.run(`nc -l -p ${port} > ${outputFile}`, {
-        background: true,
-        user: 'root',
-      })
+      // Start a Python HTTP server that captures request headers and writes them to a file
+      sandbox.commands.run(
+        `python3 -c "
+import http.server
+class H(http.server.BaseHTTPRequestHandler):
+    def do_GET(self):
+        with open('${outputFile}', 'w') as f:
+            for k, v in self.headers.items():
+                f.write(k + ': ' + v + chr(10))
+        self.send_response(200)
+        self.end_headers()
+    def log_message(self, *a): pass
+http.server.HTTPServer(('', ${port}), H).handle_request()
+"`,
+        { background: true }
+      )
 
-      // Wait for netcat to start
-      await new Promise((resolve) => setTimeout(resolve, 3000))
+      await new Promise((resolve) => setTimeout(resolve, 2000))
 
       // Get the public URL for the sandbox
       const sandboxUrl = `https://${sandbox.getHost(port)}`
@@ -231,13 +235,13 @@ describe('maskRequestHost option', () => {
       try {
         await fetch(sandboxUrl, { signal: AbortSignal.timeout(5000) })
       } catch (error) {
-        // Request may fail since netcat doesn't respond properly, but headers are captured
+        // Request may timeout, but headers are captured by the server
       }
 
-      // Read the captured output from inside the sandbox
-      const result = await sandbox.commands.run(`cat ${outputFile}`, {
-        user: 'root',
-      })
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+
+      // Read the captured headers from inside the sandbox
+      const result = await sandbox.commands.run(`cat ${outputFile}`)
 
       // Verify the Host header was modified according to maskRequestHost
       assert.include(result.stdout, 'Host:')

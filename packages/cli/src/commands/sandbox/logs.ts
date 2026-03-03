@@ -121,6 +121,8 @@ export const logsCommand = new commander.Command('logs')
             )
           }
 
+          if (!opts?.follow) break
+
           const isSandboxRunning = await isRunning(sandboxID)
 
           if (!isSandboxRunning && logs.length === 0 && isFirstRun) {

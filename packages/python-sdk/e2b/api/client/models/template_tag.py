@@ -15,8 +15,8 @@ class TemplateTag:
     """
     Attributes:
         build_id (UUID): Identifier of the build associated with this tag
-        created_at (datetime.datetime): When this tag was assigned
-        tag (str): Name of the tag
+        created_at (datetime.datetime): Time when the tag was assigned
+        tag (str): The tag name
     """
 
     build_id: UUID

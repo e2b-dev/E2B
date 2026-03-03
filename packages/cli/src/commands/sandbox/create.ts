@@ -9,6 +9,7 @@ import { getRoot } from '../../utils/filesystem'
 import { getConfigPath, loadConfig } from '../../config'
 import fs from 'fs'
 import { configOption, pathOption } from '../../options'
+import { printDashboardSandboxInspectUrl } from 'src/utils/urls'
 
 export function createCommand(
   name: string,
@@ -23,6 +24,7 @@ export function createCommand(
     )
     .addOption(pathOption)
     .addOption(configOption)
+    .option('-d, --detach', 'create sandbox without connecting terminal to it')
     .alias(alias)
     .action(
       async (
@@ -31,6 +33,7 @@ export function createCommand(
           name?: string
           path?: string
           config?: string
+          detach?: boolean
         }
       ) => {
         if (deprecated) {
@@ -66,13 +69,19 @@ export function createCommand(
           }
 
           if (!templateID) {
-            console.error(
-              'You need to specify sandbox template ID or path to sandbox template config'
-            )
-            process.exit(1)
+            templateID = 'base'
           }
 
-          await connectSandbox({ apiKey, template: { templateID } })
+          const sandbox = await e2b.Sandbox.create(templateID, { apiKey })
+          printDashboardSandboxInspectUrl(sandbox.sandboxId)
+
+          if (!opts.detach) {
+            await connectSandbox({ sandbox, template: { templateID } })
+          } else {
+            console.log(
+              `Sandbox created with ID ${sandbox.sandboxId} using template ${templateID}`
+            )
+          }
           process.exit(0)
         } catch (err: any) {
           console.error(err)
@@ -83,14 +92,12 @@ export function createCommand(
 }
 
 export async function connectSandbox({
-  apiKey,
+  sandbox,
   template,
 }: {
-  apiKey: string
+  sandbox: e2b.Sandbox
   template: Pick<e2b.components['schemas']['Template'], 'templateID'>
 }) {
-  const sandbox = await e2b.Sandbox.create(template.templateID, { apiKey })
-
   // keep-alive loop
   const intervalId = setInterval(async () => {
     await sandbox.setTimeout(30_000)
