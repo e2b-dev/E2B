@@ -43,19 +43,19 @@ export class Volume {
   readonly name: string
 
   /**
-   * Volume API key.
+   * Volume auth token.
    */
-  readonly apiKey: string
+  readonly token: string
 
   /**
    * Create a local Volume instance with no API call.
    *
    * @param volumeId volume ID.
    */
-  constructor(volumeId: string, name: string, apiKey: string) {
+  constructor(volumeId: string, name: string, token: string) {
     this.volumeId = volumeId
     this.name = name
-    this.apiKey = apiKey
+    this.token = token
   }
 
   /**
