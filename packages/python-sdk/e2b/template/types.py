@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from datetime import datetime
 from enum import Enum
 from pathlib import Path
 from typing import List, Literal, Optional, TypedDict, Union
@@ -71,6 +72,22 @@ class TemplateTagInfo:
 
     tags: List[str]
     """Assigned tags of the template."""
+
+
+@dataclass
+class TemplateTag:
+    """
+    Detailed information about a single template tag.
+    """
+
+    tag: str
+    """Name of the tag."""
+
+    build_id: str
+    """Build identifier associated with this tag."""
+
+    created_at: datetime
+    """When this tag was assigned."""
 
 
 class InstructionType(str, Enum):
