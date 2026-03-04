@@ -7,24 +7,25 @@ import { Volume, NotFoundError } from '../../src'
 import { apiUrl } from '../setup'
 
 // In-memory store for mock volumes
-const volumes = new Map<string, { volumeID: string; name: string }>()
+const volumes = new Map<string, { volumeID: string; name: string; token: string }>()
 
 const restHandlers = [
-  // POST /volumes - create
+  // POST /volumes - create (returns Volume without token)
   http.post(apiUrl('/volumes'), async ({ request }) => {
     const { name } = (await request.clone().json()) as { name: string }
     const volumeID = randomUUID()
-    const vol = { volumeID, name }
-    volumes.set(volumeID, vol)
-    return HttpResponse.json(vol, { status: 201 })
+    const token = `vol-token-${randomUUID()}`
+    volumes.set(volumeID, { volumeID, name, token })
+    return HttpResponse.json({ volumeID, name }, { status: 201 })
   }),
 
-  // GET /volumes - list
+  // GET /volumes - list (returns Volume[] without tokens)
   http.get(apiUrl('/volumes'), () => {
-    return HttpResponse.json(Array.from(volumes.values()))
+    const list = Array.from(volumes.values()).map(({ volumeID, name }) => ({ volumeID, name }))
+    return HttpResponse.json(list)
   }),
 
-  // GET /volumes/:volumeID - get info
+  // GET /volumes/:volumeID - get info (returns VolumeAndToken with token)
   http.get<{ volumeID: string }>(apiUrl('/volumes/:volumeID'), ({ params }) => {
     const vol = volumes.get(params.volumeID)
     if (!vol) {
@@ -68,6 +69,8 @@ describe('Volume CRUD', () => {
     expect(vol).toBeDefined()
     expect(vol.volumeId).toBeDefined()
     expect(vol.name).toBe('test-volume')
+    expect(vol.token).toBeDefined()
+    expect(vol.token).not.toBe('undefined')
   })
 
   it('should get volume info', async () => {
