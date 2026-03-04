@@ -67,14 +67,12 @@ export class VolumeConnectionConfig {
 class VolumeApiClient {
   readonly api: ReturnType<typeof createClient<paths>>
 
-  constructor(
-    config: VolumeConnectionConfig,
-  ) {
+  constructor(config: VolumeConnectionConfig) {
     this.api = createClient<paths>({
       baseUrl: config.apiUrl,
       headers: {
         ...defaultHeaders,
-        ...(config.token && { 'Authorization': `Bearer ${config.token}` }),
+        ...(config.token && { Authorization: `Bearer ${config.token}` }),
         ...config.headers,
       },
     })
