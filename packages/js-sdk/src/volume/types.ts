@@ -1,5 +1,5 @@
-import type { components } from '../api/schema.gen'
 import type { ConnectionOpts } from '../connectionConfig'
+import { VolumeApiComponents } from './client'
 
 /**
  * Information about a volume.
@@ -14,18 +14,23 @@ export type VolumeInfo = {
    * Volume name.
    */
   name: string
+
+  /**
+   * Volume auth token.
+   */
+  token?: string
 }
 
 /**
  * File type enum.
  */
-export type VolumeFileType = components['schemas']['VolumeEntryStat']['type']
+export type VolumeFileType = VolumeApiComponents['schemas']['VolumeEntryStat']['type']
 
 /**
  * Volume entry stat with dates converted to Date objects.
  */
 export type VolumeEntryStat = Omit<
-  components['schemas']['VolumeEntryStat'],
+  VolumeApiComponents['schemas']['VolumeEntryStat'],
   'atime' | 'mtime' | 'ctime'
 > & {
   /**
@@ -84,13 +89,3 @@ export type VolumeRemoveOptions = {
    */
   recursive?: boolean
 }
-
-/**
- * Options for request to the Volume API.
- */
-export type VolumeApiOpts = Partial<
-  Pick<
-    ConnectionOpts,
-    'apiKey' | 'headers' | 'debug' | 'domain' | 'requestTimeoutMs'
-  >
->

@@ -96,7 +96,8 @@ export type {
   VolumeMetadataOptions,
   VolumeWriteOptions,
   VolumeRemoveOptions,
-  VolumeApiOpts,
+  VolumeConnectionOpts,
+  VolumeConnectionConfig,
 } from './volume'
 
 export { Sandbox }
