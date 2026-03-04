@@ -24,7 +24,8 @@ export type VolumeInfo = {
 /**
  * File type enum.
  */
-export type VolumeFileType = VolumeApiComponents['schemas']['VolumeEntryStat']['type']
+export type VolumeFileType =
+  VolumeApiComponents['schemas']['VolumeEntryStat']['type']
 
 /**
  * Volume entry stat with dates converted to Date objects.

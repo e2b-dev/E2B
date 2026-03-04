@@ -1,5 +1,10 @@
 import { ApiClient, handleApiError, components as ApiComponents } from '../api'
-import { VolumeApiClient, VolumeApiComponents, VolumeConnectionConfig, VolumeConnectionOpts } from './client'
+import {
+  VolumeApiClient,
+  VolumeApiComponents,
+  VolumeConnectionConfig,
+  VolumeConnectionOpts,
+} from './client'
 import { ConnectionConfig, ConnectionOpts } from '../connectionConfig'
 import { NotFoundError, VolumeError } from '../errors'
 import { toBlob } from '../utils'
@@ -299,7 +304,10 @@ export class Volume {
    *
    * @returns information about the entry.
    */
-  async getInfo(path: string, opts?: VolumeConnectionOpts): Promise<VolumeEntryStat> {
+  async getInfo(
+    path: string,
+    opts?: VolumeConnectionOpts
+  ): Promise<VolumeEntryStat> {
     const config = new VolumeConnectionConfig(this, opts)
     const client = new VolumeApiClient(config)
 
@@ -590,9 +598,7 @@ export class Volume {
       }
     }
 
-    const endpoint = isDirectory
-      ? '/dir'
-      : '/file'
+    const endpoint = isDirectory ? '/dir' : '/file'
 
     const res = await client.api.DELETE(endpoint, {
       params: {
@@ -624,7 +630,4 @@ export type {
   VolumeRemoveOptions,
 } from './types'
 
-export type {
-  VolumeConnectionOpts,
-  VolumeConnectionConfig,
-} from './client'
+export type { VolumeConnectionOpts, VolumeConnectionConfig } from './client'
