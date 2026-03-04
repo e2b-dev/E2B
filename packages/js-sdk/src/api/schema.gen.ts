@@ -2005,16 +2005,15 @@ export interface components {
             /** @description Token required for accessing sandbox via proxy. */
             trafficAccessToken?: string | null;
         };
-        /** @description Auto-resume configuration for paused sandboxes. Default is off. */
+        /** @description Auto-resume configuration for paused sandboxes. */
         SandboxAutoResumeConfig: {
-            policy: components["schemas"]["SandboxAutoResumePolicy"];
+            enabled: components["schemas"]["SandboxAutoResumeEnabled"];
         };
         /**
-         * @description Auto-resume policy for paused sandboxes. Default is off.
-         * @default off
-         * @enum {string}
+         * @description Auto-resume enabled flag for paused sandboxes. Default false.
+         * @default false
          */
-        SandboxAutoResumePolicy: "any" | "off";
+        SandboxAutoResumeEnabled: boolean;
         SandboxDetail: {
             /** @description Alias of the template */
             alias?: string;

@@ -44,7 +44,6 @@ from .post_sandboxes_sandbox_id_timeout_body import PostSandboxesSandboxIDTimeou
 from .resumed_sandbox import ResumedSandbox
 from .sandbox import Sandbox
 from .sandbox_auto_resume_config import SandboxAutoResumeConfig
-from .sandbox_auto_resume_policy import SandboxAutoResumePolicy
 from .sandbox_detail import SandboxDetail
 from .sandbox_log import SandboxLog
 from .sandbox_log_entry import SandboxLogEntry
@@ -123,7 +122,6 @@ __all__ = (
     "ResumedSandbox",
     "Sandbox",
     "SandboxAutoResumeConfig",
-    "SandboxAutoResumePolicy",
     "SandboxDetail",
     "SandboxesWithMetrics",
     "SandboxLog",
