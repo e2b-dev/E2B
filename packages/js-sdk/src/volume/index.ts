@@ -1,10 +1,9 @@
-import { ApiClient, handleApiError } from '../api'
-import { ConnectionConfig } from '../connectionConfig'
+import { ApiClient, handleApiError, components as ApiComponents } from '../api'
+import { VolumeApiClient, VolumeApiComponents, VolumeConnectionConfig, VolumeConnectionOpts } from './client'
+import { ConnectionConfig, ConnectionOpts } from '../connectionConfig'
 import { NotFoundError, VolumeError } from '../errors'
 import { toBlob } from '../utils'
-import type { components } from '../api/schema.gen'
 import type {
-  VolumeApiOpts,
   VolumeEntryStat,
   VolumeInfo,
   VolumeMetadataOptions,
@@ -16,7 +15,7 @@ import type {
  * Convert API VolumeEntryStat to SDK VolumeEntryStat.
  */
 function convertVolumeEntryStat(
-  entry: components['schemas']['VolumeEntryStat']
+  entry: VolumeApiComponents['schemas']['VolumeEntryStat']
 ): VolumeEntryStat {
   return {
     ...entry,
@@ -44,13 +43,19 @@ export class Volume {
   readonly name: string
 
   /**
+   * Volume API key.
+   */
+  readonly apiKey: string
+
+  /**
    * Create a local Volume instance with no API call.
    *
    * @param volumeId volume ID.
    */
-  constructor(volumeId: string, name: string) {
+  constructor(volumeId: string, name: string, apiKey: string) {
     this.volumeId = volumeId
     this.name = name
+    this.apiKey = apiKey
   }
 
   /**
@@ -61,7 +66,7 @@ export class Volume {
    *
    * @returns new Volume instance.
    */
-  static async create(name: string, opts?: VolumeApiOpts): Promise<Volume> {
+  static async create(name: string, opts?: ConnectionOpts): Promise<Volume> {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
 
@@ -77,7 +82,12 @@ export class Volume {
       throw err
     }
 
-    return new Volume(res.data!.volumeID, res.data!.name)
+    if (!res.data) {
+      throw new Error('Response data is missing')
+    }
+
+    const { token } = await Volume.getInfo(res.data.volumeID)
+    return new Volume(res.data.volumeID, res.data.name, token!)
   }
 
   /**
@@ -90,30 +100,10 @@ export class Volume {
    */
   static async connect(
     volumeId: string,
-    opts?: VolumeApiOpts
+    opts?: ConnectionOpts
   ): Promise<Volume> {
-    const config = new ConnectionConfig(opts)
-    const client = new ApiClient(config)
-
-    const res = await client.api.GET('/volumes/{volumeID}', {
-      params: {
-        path: {
-          volumeID: volumeId,
-        },
-      },
-      signal: config.getSignal(opts?.requestTimeoutMs),
-    })
-
-    if (res.response.status === 404) {
-      throw new NotFoundError(`Volume ${volumeId} not found`)
-    }
-
-    const err = handleApiError(res, VolumeError)
-    if (err) {
-      throw err
-    }
-
-    return new Volume(res.data!.volumeID, res.data!.name)
+    const { name, token } = await Volume.getInfo(volumeId, opts)
+    return new Volume(volumeId, name, token!)
   }
 
   /**
@@ -126,7 +116,7 @@ export class Volume {
    */
   static async getInfo(
     volumeId: string,
-    opts?: VolumeApiOpts
+    opts?: ConnectionOpts
   ): Promise<VolumeInfo> {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
@@ -152,6 +142,7 @@ export class Volume {
     return {
       volumeId: res.data!.volumeID,
       name: res.data!.name,
+      token: res.data!.token,
     }
   }
 
@@ -162,7 +153,7 @@ export class Volume {
    *
    * @returns list of volume information.
    */
-  static async list(opts?: VolumeApiOpts): Promise<VolumeInfo[]> {
+  static async list(opts?: ConnectionOpts): Promise<VolumeInfo[]> {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
 
@@ -175,7 +166,7 @@ export class Volume {
       throw err
     }
 
-    return (res.data ?? []).map((vol: components['schemas']['Volume']) => ({
+    return (res.data ?? []).map((vol: ApiComponents['schemas']['Volume']) => ({
       volumeId: vol.volumeID,
       name: vol.name,
     }))
@@ -189,7 +180,7 @@ export class Volume {
    */
   static async destroy(
     volumeId: string,
-    opts?: VolumeApiOpts
+    opts?: ConnectionOpts
   ): Promise<boolean> {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
@@ -226,16 +217,13 @@ export class Volume {
    */
   async list(
     path: string,
-    opts?: VolumeApiOpts & { depth?: number }
+    opts?: VolumeConnectionOpts & { depth?: number }
   ): Promise<VolumeEntryStat[]> {
-    const config = new ConnectionConfig(opts)
-    const client = new ApiClient(config)
+    const config = new VolumeConnectionConfig(this, opts)
+    const client = new VolumeApiClient(config)
 
-    const res = await client.api.GET('/volumes/{volumeID}/dir', {
+    const res = await client.api.GET('/stat', {
       params: {
-        path: {
-          volumeID: this.volumeId,
-        },
         query: {
           path,
           depth: opts?.depth,
@@ -267,16 +255,13 @@ export class Volume {
    */
   async makeDir(
     path: string,
-    opts?: VolumeWriteOptions & VolumeApiOpts
+    opts?: VolumeWriteOptions & VolumeConnectionOpts
   ): Promise<VolumeEntryStat> {
-    const config = new ConnectionConfig(opts)
-    const client = new ApiClient(config)
+    const config = new VolumeConnectionConfig(this, opts)
+    const client = new VolumeApiClient(config)
 
-    const res = await client.api.POST('/volumes/{volumeID}/dir', {
+    const res = await client.api.POST('/dir', {
       params: {
-        path: {
-          volumeID: this.volumeId,
-        },
         query: {
           path,
           uid: opts?.uid,
@@ -302,7 +287,7 @@ export class Volume {
     }
 
     return convertVolumeEntryStat(
-      res.data as components['schemas']['VolumeEntryStat']
+      res.data as VolumeApiComponents['schemas']['VolumeEntryStat']
     )
   }
 
@@ -314,15 +299,12 @@ export class Volume {
    *
    * @returns information about the entry.
    */
-  async getInfo(path: string, opts?: VolumeApiOpts): Promise<VolumeEntryStat> {
-    const config = new ConnectionConfig(opts)
-    const client = new ApiClient(config)
+  async getInfo(path: string, opts?: VolumeConnectionOpts): Promise<VolumeEntryStat> {
+    const config = new VolumeConnectionConfig(this, opts)
+    const client = new VolumeApiClient(config)
 
-    const res = await client.api.GET('/volumes/{volumeID}/stat', {
+    const res = await client.api.GET('/stat', {
       params: {
-        path: {
-          volumeID: this.volumeId,
-        },
         query: {
           path,
         },
@@ -344,7 +326,7 @@ export class Volume {
     }
 
     return convertVolumeEntryStat(
-      res.data as components['schemas']['VolumeEntryStat']
+      res.data as VolumeApiComponents['schemas']['VolumeEntryStat']
     )
   }
 
@@ -359,7 +341,7 @@ export class Volume {
    *
    * @returns `true` if the path exists, `false` otherwise.
    */
-  async exists(path: string, opts?: VolumeApiOpts): Promise<boolean> {
+  async exists(path: string, opts?: VolumeConnectionOpts): Promise<boolean> {
     try {
       await this.getInfo(path, opts)
       return true
@@ -383,16 +365,13 @@ export class Volume {
   async updateMetadata(
     path: string,
     metadata: VolumeMetadataOptions,
-    opts?: VolumeApiOpts
+    opts?: VolumeConnectionOpts
   ): Promise<VolumeEntryStat> {
-    const config = new ConnectionConfig(opts)
-    const client = new ApiClient(config)
+    const config = new VolumeConnectionConfig(this, opts)
+    const client = new VolumeApiClient(config)
 
-    const res = await client.api.PATCH('/volumes/{volumeID}/file', {
+    const res = await client.api.PATCH('/file', {
       params: {
-        path: {
-          volumeID: this.volumeId,
-        },
         query: {
           path,
         },
@@ -419,7 +398,7 @@ export class Volume {
     }
 
     return convertVolumeEntryStat(
-      res.data as components['schemas']['VolumeEntryStat']
+      res.data as VolumeApiComponents['schemas']['VolumeEntryStat']
     )
   }
 
@@ -436,7 +415,7 @@ export class Volume {
    */
   async readFile(
     path: string,
-    opts?: VolumeApiOpts & { format?: 'text' }
+    opts?: VolumeConnectionOpts & { format?: 'text' }
   ): Promise<string>
   /**
    * Read file content as a `Uint8Array`.
@@ -451,7 +430,7 @@ export class Volume {
    */
   async readFile(
     path: string,
-    opts?: VolumeApiOpts & { format: 'bytes' }
+    opts?: VolumeConnectionOpts & { format: 'bytes' }
   ): Promise<Uint8Array>
   /**
    * Read file content as a `Blob`.
@@ -466,7 +445,7 @@ export class Volume {
    */
   async readFile(
     path: string,
-    opts?: VolumeApiOpts & { format: 'blob' }
+    opts?: VolumeConnectionOpts & { format: 'blob' }
   ): Promise<Blob>
   /**
    * Read file content as a `ReadableStream`.
@@ -481,23 +460,20 @@ export class Volume {
    */
   async readFile(
     path: string,
-    opts?: VolumeApiOpts & { format: 'stream' }
+    opts?: VolumeConnectionOpts & { format: 'stream' }
   ): Promise<ReadableStream<Uint8Array>>
   async readFile(
     path: string,
-    opts?: VolumeApiOpts & {
+    opts?: VolumeConnectionOpts & {
       format?: 'text' | 'stream' | 'bytes' | 'blob'
     }
   ): Promise<unknown> {
     const format = opts?.format ?? 'text'
-    const config = new ConnectionConfig(opts)
-    const client = new ApiClient(config)
+    const config = new VolumeConnectionConfig(this, opts)
+    const client = new VolumeApiClient(config)
 
-    const res = await client.api.GET('/volumes/{volumeID}/file', {
+    const res = await client.api.GET('/file', {
       params: {
-        path: {
-          volumeID: this.volumeId,
-        },
         query: {
           path,
         },
@@ -547,18 +523,15 @@ export class Volume {
   async writeFile(
     path: string,
     data: string | ArrayBuffer | Blob | ReadableStream<Uint8Array>,
-    opts?: VolumeWriteOptions & VolumeApiOpts
+    opts?: VolumeWriteOptions & VolumeConnectionOpts
   ): Promise<VolumeEntryStat> {
-    const config = new ConnectionConfig(opts)
-    const client = new ApiClient(config)
+    const config = new VolumeConnectionConfig(this, opts)
+    const client = new VolumeApiClient(config)
 
     const blob = await toBlob(data)
 
-    const res = await client.api.PUT('/volumes/{volumeID}/file', {
+    const res = await client.api.PUT('/file', {
       params: {
-        path: {
-          volumeID: this.volumeId,
-        },
         query: {
           path,
           uid: opts?.uid,
@@ -589,7 +562,7 @@ export class Volume {
     }
 
     return convertVolumeEntryStat(
-      res.data as components['schemas']['VolumeEntryStat']
+      res.data as VolumeApiComponents['schemas']['VolumeEntryStat']
     )
   }
 
@@ -602,10 +575,10 @@ export class Volume {
    */
   async remove(
     path: string,
-    opts?: VolumeRemoveOptions & VolumeApiOpts
+    opts?: VolumeRemoveOptions & VolumeConnectionOpts
   ): Promise<void> {
-    const config = new ConnectionConfig(opts)
-    const client = new ApiClient(config)
+    const config = new VolumeConnectionConfig(this, opts)
+    const client = new VolumeApiClient(config)
 
     let isDirectory = false
     try {
@@ -618,14 +591,11 @@ export class Volume {
     }
 
     const endpoint = isDirectory
-      ? '/volumes/{volumeID}/dir'
-      : '/volumes/{volumeID}/file'
+      ? '/dir'
+      : '/file'
 
     const res = await client.api.DELETE(endpoint, {
       params: {
-        path: {
-          volumeID: this.volumeId,
-        },
         query: {
           path,
           recursive: isDirectory ? opts?.recursive : undefined,
@@ -652,5 +622,9 @@ export type {
   VolumeMetadataOptions,
   VolumeWriteOptions,
   VolumeRemoveOptions,
-  VolumeApiOpts,
 } from './types'
+
+export type {
+  VolumeConnectionOpts,
+  VolumeConnectionConfig,
+} from './client'
