@@ -4,28 +4,27 @@ from typing import Any, TypeVar
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
-T = TypeVar("T", bound="SandboxAutoResumeConfig")
+T = TypeVar("T", bound="VolumeToken")
 
 
 @_attrs_define
-class SandboxAutoResumeConfig:
-    """Auto-resume configuration for paused sandboxes.
-
+class VolumeToken:
+    """
     Attributes:
-        enabled (bool): Auto-resume enabled flag for paused sandboxes. Default false.
+        token (str):
     """
 
-    enabled: bool
+    token: str
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        enabled = self.enabled
+        token = self.token
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
-                "enabled": enabled,
+                "token": token,
             }
         )
 
@@ -34,14 +33,14 @@ class SandboxAutoResumeConfig:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        enabled = d.pop("enabled")
+        token = d.pop("token")
 
-        sandbox_auto_resume_config = cls(
-            enabled=enabled,
+        volume_token = cls(
+            token=token,
         )
 
-        sandbox_auto_resume_config.additional_properties = d
-        return sandbox_auto_resume_config
+        volume_token.additional_properties = d
+        return volume_token
 
     @property
     def additional_keys(self) -> list[str]:

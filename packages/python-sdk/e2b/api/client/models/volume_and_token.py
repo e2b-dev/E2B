@@ -1,64 +1,62 @@
 from collections.abc import Mapping
-from typing import Any, TypeVar, Union
+from typing import Any, TypeVar
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
-from ..types import UNSET, Unset
-
-T = TypeVar("T", bound="PatchVolumesVolumeIDFileBody")
+T = TypeVar("T", bound="VolumeAndToken")
 
 
 @_attrs_define
-class PatchVolumesVolumeIDFileBody:
+class VolumeAndToken:
     """
     Attributes:
-        gid (Union[Unset, int]):
-        mode (Union[Unset, int]):
-        uid (Union[Unset, int]):
+        name (str): Name of the volume
+        token (str): Auth token to use for interacting with volume content
+        volume_id (str): ID of the volume
     """
 
-    gid: Union[Unset, int] = UNSET
-    mode: Union[Unset, int] = UNSET
-    uid: Union[Unset, int] = UNSET
+    name: str
+    token: str
+    volume_id: str
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        gid = self.gid
+        name = self.name
 
-        mode = self.mode
+        token = self.token
 
-        uid = self.uid
+        volume_id = self.volume_id
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
-        field_dict.update({})
-        if gid is not UNSET:
-            field_dict["gid"] = gid
-        if mode is not UNSET:
-            field_dict["mode"] = mode
-        if uid is not UNSET:
-            field_dict["uid"] = uid
+        field_dict.update(
+            {
+                "name": name,
+                "token": token,
+                "volumeID": volume_id,
+            }
+        )
 
         return field_dict
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        gid = d.pop("gid", UNSET)
+        name = d.pop("name")
 
-        mode = d.pop("mode", UNSET)
+        token = d.pop("token")
 
-        uid = d.pop("uid", UNSET)
+        volume_id = d.pop("volumeID")
 
-        patch_volumes_volume_id_file_body = cls(
-            gid=gid,
-            mode=mode,
-            uid=uid,
+        volume_and_token = cls(
+            name=name,
+            token=token,
+            volume_id=volume_id,
         )
 
-        patch_volumes_volume_id_file_body.additional_properties = d
-        return patch_volumes_volume_id_file_body
+        volume_and_token.additional_properties = d
+        return volume_and_token
 
     @property
     def additional_keys(self) -> list[str]:

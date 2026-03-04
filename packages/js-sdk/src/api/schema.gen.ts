@@ -1292,8 +1292,12 @@ export interface paths {
                     cursor?: number;
                     /** @description Direction of the logs that should be returned */
                     direction?: components["schemas"]["LogsDirection"];
+                    /** @description Minimum log level to return. Logs below this level are excluded */
+                    level?: components["schemas"]["LogLevel"];
                     /** @description Maximum number of logs that should be returned */
                     limit?: number;
+                    /** @description Case-sensitive substring match on log message content */
+                    search?: string;
                 };
                 header?: never;
                 path: {
@@ -1592,7 +1596,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["Volume"];
+                        "application/json": components["schemas"]["VolumeAndToken"];
                     };
                 };
                 401: components["responses"]["401"];
@@ -1631,358 +1635,16 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/volumes/{volumeID}/dir": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** @description List directory contents */
-        get: {
-            parameters: {
-                query: {
-                    /** @description Number of layers deep to recurse into the directory */
-                    depth?: number;
-                    path: components["parameters"]["path"];
-                };
-                header?: never;
-                path: {
-                    volumeID: components["parameters"]["volumeID"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Successfully retrieved a directory listing */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["VolumeDirectoryListing"];
-                    };
-                };
-                /** @description Invalid path provided */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                /** @description path not found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                500: components["responses"]["500"];
-            };
-        };
-        put?: never;
-        /** @description Create a directory */
-        post: {
-            parameters: {
-                query: {
-                    /** @description Create the parents of a directory if they don't exist */
-                    force?: boolean;
-                    /** @description Group ID of the created directory */
-                    gid?: number;
-                    /** @description Mode of the created directory */
-                    mode?: number;
-                    path: components["parameters"]["path"];
-                    /** @description User ID of the created directory */
-                    uid?: number;
-                };
-                header?: never;
-                path: {
-                    volumeID: components["parameters"]["volumeID"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Successfully created a directory */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["VolumeEntryStat"];
-                    };
-                };
-                /** @description path not found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                500: components["responses"]["500"];
-            };
-        };
-        /** @description Delete a directory */
-        delete: {
-            parameters: {
-                query: {
-                    path: components["parameters"]["path"];
-                    /** @description Delete all files and directories recursively */
-                    recursive?: boolean;
-                };
-                header?: never;
-                path: {
-                    volumeID: components["parameters"]["volumeID"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Successfully deleted a directory */
-                204: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                /** @description path not found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                500: components["responses"]["500"];
-            };
-        };
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/volumes/{volumeID}/file": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** @description Download file */
-        get: {
-            parameters: {
-                query: {
-                    path: components["parameters"]["path"];
-                };
-                header?: never;
-                path: {
-                    volumeID: components["parameters"]["volumeID"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Successfully downloaded a file */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/octet-stream": string;
-                    };
-                };
-                /** @description path not found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                500: components["responses"]["500"];
-            };
-        };
-        /** @description Upload file */
-        put: {
-            parameters: {
-                query: {
-                    /** @description Force overwrite of an existing file */
-                    force?: boolean;
-                    /** @description Group ID of the uploaded file */
-                    gid?: number;
-                    /** @description Mode of the uploaded file */
-                    mode?: number;
-                    path: components["parameters"]["path"];
-                    /** @description User ID of the uploaded file */
-                    uid?: number;
-                };
-                header?: never;
-                path: {
-                    volumeID: components["parameters"]["volumeID"];
-                };
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "application/octet-stream": string;
-                };
-            };
-            responses: {
-                /** @description Successfully created a file */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["VolumeEntryStat"];
-                    };
-                };
-                /** @description path not found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                500: components["responses"]["500"];
-            };
-        };
-        post?: never;
-        /** @description Delete a file */
-        delete: {
-            parameters: {
-                query: {
-                    path: components["parameters"]["path"];
-                };
-                header?: never;
-                path: {
-                    volumeID: components["parameters"]["volumeID"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Successfully deleted a file */
-                204: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                /** @description path not found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                500: components["responses"]["500"];
-            };
-        };
-        options?: never;
-        head?: never;
-        /** @description Update file metadata */
-        patch: {
-            parameters: {
-                query: {
-                    path: components["parameters"]["path"];
-                };
-                header?: never;
-                path: {
-                    volumeID: components["parameters"]["volumeID"];
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": {
-                        /** Format: uint32 */
-                        gid?: number;
-                        /** Format: uint32 */
-                        mode?: number;
-                        /** Format: uint32 */
-                        uid?: number;
-                    };
-                };
-            };
-            responses: {
-                /** @description Successfully updated a file's metadata */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["VolumeEntryStat"];
-                    };
-                };
-                /** @description Invalid metadata provided */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                /** @description path not found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                /** @description Internal server error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
-        trace?: never;
-    };
-    "/volumes/{volumeID}/stat": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** @description Get path information */
-        get: {
-            parameters: {
-                query: {
-                    path: components["parameters"]["path"];
-                };
-                header?: never;
-                path: {
-                    volumeID: components["parameters"]["volumeID"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Successfully retrieved path information */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["VolumeEntryStat"];
-                    };
-                };
-                404: components["responses"]["404"];
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        AdminBuildCancelResult: {
+            /** @description Number of builds successfully cancelled */
+            cancelledCount: number;
+            /** @description Number of builds that failed to cancel */
+            failedCount: number;
+        };
         AdminSandboxKillResult: {
             /** @description Number of sandboxes that failed to kill */
             failedCount: number;
@@ -2431,16 +2093,15 @@ export interface components {
             /** @description Token required for accessing sandbox via proxy. */
             trafficAccessToken?: string | null;
         };
-        /** @description Auto-resume configuration for paused sandboxes. Default is off. */
+        /** @description Auto-resume configuration for paused sandboxes. */
         SandboxAutoResumeConfig: {
-            policy: components["schemas"]["SandboxAutoResumePolicy"];
+            enabled: components["schemas"]["SandboxAutoResumeEnabled"];
         };
         /**
-         * @description Auto-resume policy for paused sandboxes. Default is off.
-         * @default off
-         * @enum {string}
+         * @description Auto-resume enabled flag for paused sandboxes. Default false.
+         * @default false
          */
-        SandboxAutoResumePolicy: "any" | "off";
+        SandboxAutoResumeEnabled: boolean;
         SandboxDetail: {
             /** @description Alias of the template */
             alias?: string;
@@ -2977,27 +2638,16 @@ export interface components {
             /** @description ID of the volume */
             volumeID: string;
         };
-        VolumeDirectoryListing: components["schemas"]["VolumeEntryStat"][];
-        VolumeEntryStat: {
-            /** Format: date-time */
-            atime: string;
-            /** Format: date-time */
-            ctime: string;
-            /** Format: uint32 */
-            gid: number;
-            /** Format: uint32 */
-            mode: number;
-            /** Format: date-time */
-            mtime: string;
+        VolumeAndToken: {
+            /** @description Name of the volume */
             name: string;
-            path: string;
-            /** Format: int64 */
-            size: number;
-            target?: string;
-            /** @enum {string} */
-            type: "unknown" | "file" | "directory" | "symlink";
-            /** Format: uint32 */
-            uid: number;
+            /** @description Auth token to use for interacting with volume content */
+            token: string;
+            /** @description ID of the volume */
+            volumeID: string;
+        };
+        VolumeToken: {
+            token: string;
         };
     };
     responses: {
@@ -3065,7 +2715,6 @@ export interface components {
         paginationLimit: number;
         /** @description Cursor to start the list from */
         paginationNextToken: string;
-        path: string;
         sandboxID: string;
         snapshotID: string;
         tag: string;
