@@ -3,7 +3,7 @@ import createClient from 'openapi-fetch'
 import type { components, paths } from './schema.gen'
 import { defaultHeaders, getEnvVar } from '../api/metadata'
 import { createApiLogger, Logger } from '../logs'
-import { Volume } from '..'
+import type { Volume } from './index'
 
 export interface VolumeConnectionOpts {
   /**
