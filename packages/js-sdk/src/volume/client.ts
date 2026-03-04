@@ -11,11 +11,11 @@ export interface VolumeConnectionOpts {
    *
    * @default E2B_API_KEY // environment variable
    */
-  apiKey?: string
+  token?: string
   /**
    * API Url to use for the API.
    * @internal
-   * @default E2B_API_URL // environment variable or `https://api.${domain}`
+   * @default E2B_VOLUME_API_URL // environment variable or `https://volumecontent.e2b.app`
    */
   apiUrl?: string
   /**
@@ -37,14 +37,14 @@ export interface VolumeConnectionOpts {
 
 export class VolumeConnectionConfig {
   readonly apiUrl: string
-  readonly apiKey?: string
+  readonly token?: string
   readonly headers?: Record<string, string>
   readonly logger?: Logger
   readonly requestTimeoutMs?: number
 
   constructor(volume: Volume, opts?: VolumeConnectionOpts) {
     this.apiUrl = opts?.apiUrl || VolumeConnectionConfig.apiUrl
-    this.apiKey = opts?.apiKey || volume.apiKey
+    this.token = opts?.token || volume.token
     this.headers = opts?.headers
     this.logger = opts?.logger
     this.requestTimeoutMs = opts?.requestTimeoutMs
@@ -74,7 +74,7 @@ class VolumeApiClient {
       baseUrl: config.apiUrl,
       headers: {
         ...defaultHeaders,
-        ...(config.apiKey && { 'Authorization': `Bearer ${config.apiKey}` }),
+        ...(config.token && { 'Authorization': `Bearer ${config.token}` }),
         ...config.headers,
       },
     })
