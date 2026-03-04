@@ -107,12 +107,6 @@ components:
       required: false
       schema:
         type: string
-    path:
-      name: path
-      in: query
-      required: true
-      schema:
-        type: string
     volumeID:
       name: volumeID
       in: path
@@ -696,6 +690,26 @@ components:
         failedCount:
           type: integer
           description: Number of sandboxes that failed to kill
+
+    AdminBuildCancelResult:
+      required:
+        - cancelledCount
+        - failedCount
+      properties:
+        cancelledCount:
+          type: integer
+          description: Number of builds successfully cancelled
+        failedCount:
+          type: integer
+          description: Number of builds that failed to cancel
+
+    VolumeToken:
+      type: object
+      properties:
+        token:
+          type: string
+      required:
+        - token
 
     Template:
       required:
@@ -1716,6 +1730,23 @@ components:
         - volumeID
         - name
 
+    VolumeAndToken:
+      type: object
+      properties:
+        volumeID:
+          type: string
+          description: ID of the volume
+        name:
+          type: string
+          description: Name of the volume
+        token:
+          type: string
+          description: Auth token to use for interacting with volume content
+      required:
+        - volumeID
+        - name
+        - token
+
     NewVolume:
       type: object
       properties:
@@ -1725,56 +1756,6 @@ components:
           pattern: '^[a-zA-Z0-9_-]+$'
       required:
         - name
-
-    VolumeEntryStat:
-      type: object
-      properties:
-        name:
-          type: string
-        type:
-          type: string
-          enum: [unknown, file, directory, symlink]
-        path:
-          type: string
-        size:
-          type: integer
-          format: int64
-        mode:
-          type: integer
-          format: uint32
-        uid:
-          type: integer
-          format: uint32
-        gid:
-          type: integer
-          format: uint32
-        atime:
-          type: string
-          format: date-time
-        mtime:
-          type: string
-          format: date-time
-        ctime:
-          type: string
-          format: date-time
-        target:
-          type: string
-      required:
-        - name
-        - type
-        - path
-        - size
-        - mode
-        - uid
-        - gid
-        - atime
-        - mtime
-        - ctime
-
-    VolumeDirectoryListing:
-      type: array
-      items:
-        $ref: '#/components/schemas/VolumeEntryStat'
 
 tags:
   - name: templates
@@ -2113,6 +2094,17 @@ paths:
           schema:
             $ref: '#/components/schemas/LogsDirection'
           description: Direction of the logs that should be returned
+        - in: query
+          name: level
+          schema:
+            $ref: '#/components/schemas/LogLevel'
+          description: Minimum log level to return. Logs below this level are excluded
+        - in: query
+          name: search
+          schema:
+            type: string
+            maxLength: 256
+          description: Case-sensitive substring match on log message content
       responses:
         '200':
           description: Successfully returned the sandbox logs
@@ -3074,6 +3066,35 @@ paths:
         '500':
           $ref: '#/components/responses/500'
 
+  /admin/teams/{teamID}/builds/cancel:
+    post:
+      summary: Cancel all builds for a team
+      description: Cancels all in-progress and pending builds for the specified team
+      tags: [admin]
+      security:
+        - AdminTokenAuth: []
+      parameters:
+        - name: teamID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Team ID
+      responses:
+        '200':
+          description: Successfully cancelled builds
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminBuildCancelResult'
+        '401':
+          $ref: '#/components/responses/401'
+        '404':
+          $ref: '#/components/responses/404'
+        '500':
+          $ref: '#/components/responses/500'
+
   /access-tokens:
     post:
       description: Create a new access token
@@ -3207,7 +3228,6 @@ paths:
       description: List all team volumes
       tags: [volumes]
       security:
-        - AccessTokenAuth: []
         - ApiKeyAuth: []
         - Supabase1TokenAuth: []
           Supabase2TeamAuth: []
@@ -3229,7 +3249,6 @@ paths:
       description: Create a new team volume
       tags: [volumes]
       security:
-        - AccessTokenAuth: []
         - ApiKeyAuth: []
         - Supabase1TokenAuth: []
           Supabase2TeamAuth: []
@@ -3258,7 +3277,6 @@ paths:
       description: Get team volume info
       tags: [volumes]
       security:
-        - AccessTokenAuth: []
         - ApiKeyAuth: []
         - Supabase1TokenAuth: []
           Supabase2TeamAuth: []
@@ -3270,7 +3288,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Volume'
+                $ref: '#/components/schemas/VolumeAndToken'
         '401':
           $ref: '#/components/responses/401'
         '404':
@@ -3282,7 +3300,6 @@ paths:
       description: Delete a team volume
       tags: [volumes]
       security:
-        - AccessTokenAuth: []
         - ApiKeyAuth: []
         - Supabase1TokenAuth: []
           Supabase2TeamAuth: []
@@ -3295,262 +3312,5 @@ paths:
           $ref: '#/components/responses/401'
         '404':
           $ref: '#/components/responses/404'
-        '500':
-          $ref: '#/components/responses/500'
-
-  /volumes/{volumeID}/stat:
-    get:
-      description: Get path information
-      tags: [volumes]
-      security:
-        - AccessTokenAuth: []
-        - ApiKeyAuth: []
-        - Supabase1TokenAuth: []
-          Supabase2TeamAuth: []
-      parameters:
-        - $ref: '#/components/parameters/volumeID'
-        - $ref: '#/components/parameters/path'
-      responses:
-        '200':
-          description: Successfully retrieved path information
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/VolumeEntryStat'
-        '404':
-          $ref: '#/components/responses/404'
-
-  /volumes/{volumeID}/dir:
-    get:
-      description: List directory contents
-      tags: [volumes]
-      security:
-        - AccessTokenAuth: []
-        - ApiKeyAuth: []
-        - Supabase1TokenAuth: []
-          Supabase2TeamAuth: []
-      parameters:
-        - $ref: '#/components/parameters/volumeID'
-        - $ref: '#/components/parameters/path'
-        - name: depth
-          in: query
-          description: Number of layers deep to recurse into the directory
-          schema:
-            type: integer
-            format: uint32
-            default: 1
-      responses:
-        '200':
-          description: 'Successfully retrieved a directory listing'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/VolumeDirectoryListing'
-        '400':
-          description: 'Invalid path provided'
-        '404':
-          description: 'path not found'
-        '500':
-          $ref: '#/components/responses/500'
-    post:
-      description: 'Create a directory'
-      tags: [volumes]
-      security:
-        - AccessTokenAuth: []
-        - ApiKeyAuth: []
-        - Supabase1TokenAuth: []
-          Supabase2TeamAuth: []
-      parameters:
-        - $ref: '#/components/parameters/volumeID'
-        - $ref: '#/components/parameters/path'
-        - name: uid
-          in: query
-          description: User ID of the created directory
-          schema:
-            type: integer
-            format: uint32
-        - name: gid
-          in: query
-          description: Group ID of the created directory
-          schema:
-            type: integer
-            format: uint32
-        - name: mode
-          in: query
-          description: Mode of the created directory
-          schema:
-            type: integer
-            format: uint32
-        - name: force
-          in: query
-          description: Create the parents of a directory if they don't exist
-          schema:
-            type: boolean
-      responses:
-        '201':
-          description: 'Successfully created a directory'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/VolumeEntryStat'
-        '404':
-          description: 'path not found'
-        '500':
-          $ref: '#/components/responses/500'
-    delete:
-      description: Delete a directory
-      tags: [volumes]
-      security:
-        - AccessTokenAuth: []
-        - ApiKeyAuth: []
-        - Supabase1TokenAuth: []
-          Supabase2TeamAuth: []
-      parameters:
-        - $ref: '#/components/parameters/volumeID'
-        - $ref: '#/components/parameters/path'
-        - name: recursive
-          in: query
-          description: Delete all files and directories recursively
-          schema:
-            type: boolean
-      responses:
-        '204':
-          description: 'Successfully deleted a directory'
-        '404':
-          description: 'path not found'
-        '500':
-          $ref: '#/components/responses/500'
-
-  /volumes/{volumeID}/file:
-    get:
-      description: Download file
-      tags: [volumes]
-      security:
-        - AccessTokenAuth: []
-        - ApiKeyAuth: []
-        - Supabase1TokenAuth: []
-          Supabase2TeamAuth: []
-      parameters:
-        - $ref: '#/components/parameters/volumeID'
-        - $ref: '#/components/parameters/path'
-      responses:
-        '200':
-          description: 'Successfully downloaded a file'
-          content:
-            application/octet-stream:
-              schema:
-                type: string
-                format: binary
-        '404':
-          description: 'path not found'
-        '500':
-          $ref: '#/components/responses/500'
-    patch:
-      description: Update file metadata
-      tags: [volumes]
-      security:
-        - AccessTokenAuth: []
-        - ApiKeyAuth: []
-        - Supabase1TokenAuth: []
-          Supabase2TeamAuth: []
-      parameters:
-        - $ref: '#/components/parameters/volumeID'
-        - $ref: '#/components/parameters/path'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                uid:
-                  type: integer
-                  format: uint32
-                gid:
-                  type: integer
-                  format: uint32
-                mode:
-                  type: integer
-                  format: uint32
-      responses:
-        '200':
-          description: "Successfully updated a file's metadata"
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/VolumeEntryStat'
-        '400':
-          description: 'Invalid metadata provided'
-        '404':
-          description: 'path not found'
-        '500':
-          description: 'Internal server error'
-    put:
-      description: Upload file
-      tags: [volumes]
-      security:
-        - AccessTokenAuth: []
-        - ApiKeyAuth: []
-        - Supabase1TokenAuth: []
-          Supabase2TeamAuth: []
-      parameters:
-        - $ref: '#/components/parameters/volumeID'
-        - $ref: '#/components/parameters/path'
-        - name: uid
-          in: query
-          description: User ID of the uploaded file
-          schema:
-            type: integer
-            format: uint32
-        - name: gid
-          in: query
-          description: Group ID of the uploaded file
-          schema:
-            type: integer
-            format: uint32
-        - name: mode
-          in: query
-          description: Mode of the uploaded file
-          schema:
-            type: integer
-            format: uint32
-        - name: force
-          in: query
-          description: Force overwrite of an existing file
-          schema:
-            type: boolean
-      requestBody:
-        content:
-          application/octet-stream:
-            schema:
-              type: string
-              format: binary
-      responses:
-        '201':
-          description: 'Successfully created a file'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/VolumeEntryStat'
-        '404':
-          description: 'path not found'
-        '500':
-          $ref: '#/components/responses/500'
-    delete:
-      description: Delete a file
-      tags: [volumes]
-      security:
-        - AccessTokenAuth: []
-        - ApiKeyAuth: []
-        - Supabase1TokenAuth: []
-          Supabase2TeamAuth: []
-      parameters:
-        - $ref: '#/components/parameters/volumeID'
-        - $ref: '#/components/parameters/path'
-      responses:
-        '204':
-          description: 'Successfully deleted a file'
-        '404':
-          description: 'path not found'
         '500':
           $ref: '#/components/responses/500'

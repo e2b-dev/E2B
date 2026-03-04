@@ -1,5 +1,6 @@
 """Contains all the data models used in inputs/outputs"""
 
+from .admin_build_cancel_result import AdminBuildCancelResult
 from .admin_sandbox_kill_result import AdminSandboxKillResult
 from .assign_template_tags_request import AssignTemplateTagsRequest
 from .assigned_template_tags import AssignedTemplateTags
@@ -34,7 +35,6 @@ from .node_detail import NodeDetail
 from .node_metrics import NodeMetrics
 from .node_status import NodeStatus
 from .node_status_change import NodeStatusChange
-from .patch_volumes_volume_id_file_body import PatchVolumesVolumeIDFileBody
 from .post_sandboxes_sandbox_id_refreshes_body import (
     PostSandboxesSandboxIDRefreshesBody,
 )
@@ -81,10 +81,11 @@ from .template_update_response import TemplateUpdateResponse
 from .template_with_builds import TemplateWithBuilds
 from .update_team_api_key import UpdateTeamAPIKey
 from .volume import Volume
-from .volume_entry_stat import VolumeEntryStat
-from .volume_entry_stat_type import VolumeEntryStatType
+from .volume_and_token import VolumeAndToken
+from .volume_token import VolumeToken
 
 __all__ = (
+    "AdminBuildCancelResult",
     "AdminSandboxKillResult",
     "AssignedTemplateTags",
     "AssignTemplateTagsRequest",
@@ -119,7 +120,6 @@ __all__ = (
     "NodeMetrics",
     "NodeStatus",
     "NodeStatusChange",
-    "PatchVolumesVolumeIDFileBody",
     "PostSandboxesSandboxIDRefreshesBody",
     "PostSandboxesSandboxIDSnapshotsBody",
     "PostSandboxesSandboxIDTimeoutBody",
@@ -162,6 +162,6 @@ __all__ = (
     "TemplateWithBuilds",
     "UpdateTeamAPIKey",
     "Volume",
-    "VolumeEntryStat",
-    "VolumeEntryStatType",
+    "VolumeAndToken",
+    "VolumeToken",
 )
