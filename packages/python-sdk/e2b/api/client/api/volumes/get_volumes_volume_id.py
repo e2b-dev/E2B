@@ -6,7 +6,7 @@ import httpx
 from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.error import Error
-from ...models.volume import Volume
+from ...models.volume_and_token import VolumeAndToken
 from ...types import Response
 
 
@@ -23,9 +23,9 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Optional[Union[Error, Volume]]:
+) -> Optional[Union[Error, VolumeAndToken]]:
     if response.status_code == 200:
-        response_200 = Volume.from_dict(response.json())
+        response_200 = VolumeAndToken.from_dict(response.json())
 
         return response_200
     if response.status_code == 401:
@@ -48,7 +48,7 @@ def _parse_response(
 
 def _build_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Response[Union[Error, Volume]]:
+) -> Response[Union[Error, VolumeAndToken]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -61,7 +61,7 @@ def sync_detailed(
     volume_id: str,
     *,
     client: AuthenticatedClient,
-) -> Response[Union[Error, Volume]]:
+) -> Response[Union[Error, VolumeAndToken]]:
     """Get team volume info
 
     Args:
@@ -72,7 +72,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Error, Volume]]
+        Response[Union[Error, VolumeAndToken]]
     """
 
     kwargs = _get_kwargs(
@@ -90,7 +90,7 @@ def sync(
     volume_id: str,
     *,
     client: AuthenticatedClient,
-) -> Optional[Union[Error, Volume]]:
+) -> Optional[Union[Error, VolumeAndToken]]:
     """Get team volume info
 
     Args:
@@ -101,7 +101,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Error, Volume]
+        Union[Error, VolumeAndToken]
     """
 
     return sync_detailed(
@@ -114,7 +114,7 @@ async def asyncio_detailed(
     volume_id: str,
     *,
     client: AuthenticatedClient,
-) -> Response[Union[Error, Volume]]:
+) -> Response[Union[Error, VolumeAndToken]]:
     """Get team volume info
 
     Args:
@@ -125,7 +125,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Error, Volume]]
+        Response[Union[Error, VolumeAndToken]]
     """
 
     kwargs = _get_kwargs(
@@ -141,7 +141,7 @@ async def asyncio(
     volume_id: str,
     *,
     client: AuthenticatedClient,
-) -> Optional[Union[Error, Volume]]:
+) -> Optional[Union[Error, VolumeAndToken]]:
     """Get team volume info
 
     Args:
@@ -152,7 +152,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Error, Volume]
+        Union[Error, VolumeAndToken]
     """
 
     return (
