@@ -222,7 +222,7 @@ export class Volume {
     const config = new VolumeConnectionConfig(this, opts)
     const client = new VolumeApiClient(config)
 
-    const res = await client.api.GET('/stat', {
+    const res = await client.api.GET('/dir', {
       params: {
         query: {
           path,
