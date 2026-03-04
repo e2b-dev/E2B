@@ -50,14 +50,14 @@ export class VolumeConnectionConfig {
     this.requestTimeoutMs = opts?.requestTimeoutMs
   }
 
+  private static get apiUrl() {
+    return getEnvVar('E2B_VOLUME_API_URL') || 'https://volumecontent.e2b.app'
+  }
+
   getSignal(requestTimeoutMs?: number) {
     const timeout = requestTimeoutMs ?? this.requestTimeoutMs
 
     return timeout ? AbortSignal.timeout(timeout) : undefined
-  }
-
-  private static get apiUrl() {
-    return getEnvVar('E2B_VOLUME_API_URL') || 'https://volumecontent.e2b.app'
   }
 }
 
