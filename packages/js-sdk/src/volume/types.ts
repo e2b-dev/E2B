@@ -1,4 +1,3 @@
-import type { ConnectionOpts } from '../connectionConfig'
 import { VolumeApiComponents } from './client'
 
 /**
