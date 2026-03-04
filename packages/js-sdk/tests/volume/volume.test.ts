@@ -7,7 +7,10 @@ import { Volume, NotFoundError } from '../../src'
 import { apiUrl } from '../setup'
 
 // In-memory store for mock volumes
-const volumes = new Map<string, { volumeID: string; name: string; token: string }>()
+const volumes = new Map<
+  string,
+  { volumeID: string; name: string; token: string }
+>()
 
 const restHandlers = [
   // POST /volumes - create (returns Volume without token)
@@ -21,7 +24,10 @@ const restHandlers = [
 
   // GET /volumes - list (returns Volume[] without tokens)
   http.get(apiUrl('/volumes'), () => {
-    const list = Array.from(volumes.values()).map(({ volumeID, name }) => ({ volumeID, name }))
+    const list = Array.from(volumes.values()).map(({ volumeID, name }) => ({
+      volumeID,
+      name,
+    }))
     return HttpResponse.json(list)
   }),
 
