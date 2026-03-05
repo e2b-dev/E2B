@@ -261,4 +261,22 @@ describe('getAllFilesInPath', () => {
     expect(files.some((f) => f.fullpath().endsWith('helper.ts'))).toBe(true)
     expect(files.some((f) => f.fullpath().endsWith('test.spec.ts'))).toBe(false)
   })
+
+  test('should include dotfiles and dot-directories', async () => {
+    // Create structure with dotfiles
+    await mkdir(join(testDir, '.claude'), { recursive: true })
+    await writeFile(join(testDir, '.claude', 'settings.json'), 'settings')
+    await writeFile(join(testDir, '.env'), 'env config')
+    await writeFile(join(testDir, 'regular.txt'), 'regular text')
+
+    const files = await getAllFilesInPath('*', testDir, [])
+
+    // Depending on shell expansion `*` might not explicitly include dotfiles in bash, 
+    // but fast-glob/glob with `dot: true` will match them for `*` or `**/*`
+    expect(files.length).toBeGreaterThan(0)
+    expect(files.some((f) => f.fullpath().endsWith('.env'))).toBe(true)
+    expect(files.some((f) => f.fullpath().endsWith('.claude'))).toBe(true)
+    expect(files.some((f) => f.fullpath().endsWith('settings.json'))).toBe(true)
+    expect(files.some((f) => f.fullpath().endsWith('regular.txt'))).toBe(true)
+  })
 })
