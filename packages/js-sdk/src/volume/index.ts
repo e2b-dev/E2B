@@ -92,7 +92,10 @@ export class Volume {
     }
 
     const { token } = await Volume.getInfo(res.data.volumeID, opts)
-    return new Volume(res.data.volumeID, res.data.name, token!)
+    if (!token) {
+      throw new Error('Volume token is missing from API response')
+    }
+    return new Volume(res.data.volumeID, res.data.name, token)
   }
 
   /**
@@ -108,7 +111,10 @@ export class Volume {
     opts?: ConnectionOpts
   ): Promise<Volume> {
     const { name, token } = await Volume.getInfo(volumeId, opts)
-    return new Volume(volumeId, name, token!)
+    if (!token) {
+      throw new Error('Volume token is missing from API response')
+    }
+    return new Volume(volumeId, name, token)
   }
 
   /**
@@ -585,27 +591,28 @@ export class Volume {
     const config = new VolumeConnectionConfig(this, opts)
     const client = new VolumeApiClient(config)
 
-    let isDirectory = false
-    try {
-      const entryInfo = await this.getInfo(path, opts)
-      isDirectory = entryInfo.type === 'directory'
-    } catch (err) {
-      if (!(err instanceof NotFoundError)) {
-        throw err
-      }
-    }
-
-    const endpoint = isDirectory ? '/dir' : '/file'
-
-    const res = await client.api.DELETE(endpoint, {
+    // Try directory delete first, then fall back to file delete if it fails with 404
+    let res = await client.api.DELETE('/dir', {
       params: {
         query: {
           path,
-          recursive: isDirectory ? opts?.recursive : undefined,
+          recursive: opts?.recursive,
         },
       },
       signal: config.getSignal(opts?.requestTimeoutMs),
     })
+
+    // If directory delete returns 404, try file delete
+    if (res.response.status === 404) {
+      res = await client.api.DELETE('/file', {
+        params: {
+          query: {
+            path,
+          },
+        },
+        signal: config.getSignal(opts?.requestTimeoutMs),
+      })
+    }
 
     if (res.response.status === 404) {
       throw new NotFoundError(`Path ${path} not found`)
