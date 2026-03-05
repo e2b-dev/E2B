@@ -435,11 +435,40 @@ class AsyncVolume:
         api_client = get_volume_api_client(config)
 
         params = {"path": path}
+        timeout = config.get_request_timeout(opts.get("request_timeout"))
+
+        if format == "stream":
+            async def stream_file() -> AsyncIterator[bytes]:
+                async with api_client.get_async_httpx_client().stream(
+                    method="GET",
+                    url="/file",
+                    params=params,
+                    timeout=timeout,
+                ) as response:
+                    if response.status_code == 404:
+                        raise NotFoundException(f"Path {path} not found")
+
+                    if response.status_code >= 300:
+                        api_response = Response(
+                            status_code=HTTPStatus(response.status_code),
+                            content=await response.aread(),
+                            headers=response.headers,
+                            parsed=None,
+                        )
+                        err = handle_api_exception(api_response, VolumeException)
+                        if err:
+                            raise err
+
+                    async for chunk in response.aiter_bytes():
+                        yield chunk
+
+            return stream_file()
+
         response = await api_client.get_async_httpx_client().request(
             method="GET",
             url="/file",
             params=params,
-            timeout=config.get_request_timeout(opts.get("request_timeout")),
+            timeout=timeout,
         )
 
         if response.status_code == 404:
@@ -458,8 +487,6 @@ class AsyncVolume:
 
         if format == "bytes":
             return response.content
-        elif format == "stream":
-            return response.aiter_bytes()
         else:
             return response.text
 

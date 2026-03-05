@@ -433,11 +433,39 @@ class Volume:
         api_client = get_volume_api_client(config)
 
         params = {"path": path}
+        timeout = config.get_request_timeout(opts.get("request_timeout"))
+
+        if format == "stream":
+            def stream_file() -> Iterator[bytes]:
+                with api_client.get_httpx_client().stream(
+                    method="GET",
+                    url="/file",
+                    params=params,
+                    timeout=timeout,
+                ) as response:
+                    if response.status_code == 404:
+                        raise NotFoundException(f"Path {path} not found")
+
+                    if response.status_code >= 300:
+                        api_response = Response(
+                            status_code=HTTPStatus(response.status_code),
+                            content=response.read(),
+                            headers=response.headers,
+                            parsed=None,
+                        )
+                        err = handle_api_exception(api_response, VolumeException)
+                        if err:
+                            raise err
+
+                    yield from response.iter_bytes()
+
+            return stream_file()
+
         response = api_client.get_httpx_client().request(
             method="GET",
             url="/file",
             params=params,
-            timeout=config.get_request_timeout(opts.get("request_timeout")),
+            timeout=timeout,
         )
 
         if response.status_code == 404:
@@ -456,8 +484,6 @@ class Volume:
 
         if format == "bytes":
             return response.content
-        elif format == "stream":
-            return response.iter_bytes()
         else:
             return response.text
 
