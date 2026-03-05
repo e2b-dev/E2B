@@ -1601,7 +1601,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["Volume"];
+                        "application/json": components["schemas"]["VolumeAndToken"];
                     };
                 };
                 400: components["responses"]["400"];
