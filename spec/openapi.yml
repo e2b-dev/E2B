@@ -283,22 +283,19 @@ components:
           type: string
           description: Specify host mask which will be used for all sandbox requests
 
-    SandboxAutoResumePolicy:
-      type: string
-      description: Auto-resume policy for paused sandboxes. Default is off.
-      default: "off"
-      enum:
-        - any
-        - "off"
+    SandboxAutoResumeEnabled:
+      type: boolean
+      description: Auto-resume enabled flag for paused sandboxes. Default false.
+      default: false
 
     SandboxAutoResumeConfig:
       type: object
-      description: Auto-resume configuration for paused sandboxes. Default is off.
+      description: Auto-resume configuration for paused sandboxes.
       required:
-        - policy
+        - enabled
       properties:
-        policy:
-          $ref: "#/components/schemas/SandboxAutoResumePolicy"
+        enabled:
+          $ref: "#/components/schemas/SandboxAutoResumeEnabled"
 
     SandboxLog:
       description: Log entry with timestamp and line

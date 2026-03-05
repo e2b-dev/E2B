@@ -4,30 +4,28 @@ from typing import Any, TypeVar
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
-from ..models.sandbox_auto_resume_policy import SandboxAutoResumePolicy
-
 T = TypeVar("T", bound="SandboxAutoResumeConfig")
 
 
 @_attrs_define
 class SandboxAutoResumeConfig:
-    """Auto-resume configuration for paused sandboxes. Default is off.
+    """Auto-resume configuration for paused sandboxes.
 
     Attributes:
-        policy (SandboxAutoResumePolicy): Auto-resume policy for paused sandboxes. Default is off.
+        enabled (bool): Auto-resume enabled flag for paused sandboxes. Default false.
     """
 
-    policy: SandboxAutoResumePolicy
+    enabled: bool
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        policy = self.policy.value
+        enabled = self.enabled
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
-                "policy": policy,
+                "enabled": enabled,
             }
         )
 
@@ -36,10 +34,10 @@ class SandboxAutoResumeConfig:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        policy = SandboxAutoResumePolicy(d.pop("policy"))
+        enabled = d.pop("enabled")
 
         sandbox_auto_resume_config = cls(
-            policy=policy,
+            enabled=enabled,
         )
 
         sandbox_auto_resume_config.additional_properties = d

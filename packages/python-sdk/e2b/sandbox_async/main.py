@@ -13,10 +13,14 @@ from e2b.api.client_async import get_transport
 from e2b.connection_config import ApiParams, ConnectionConfig
 from e2b.envd.api import ENVD_API_HEALTH_ROUTE, ahandle_envd_api_exception
 from e2b.envd.versions import ENVD_DEBUG_FALLBACK
-from e2b.exceptions import SandboxException, format_request_timeout_error
+from e2b.exceptions import (
+    SandboxException,
+    format_request_timeout_error,
+)
 from e2b.sandbox.main import SandboxOpts
 from e2b.sandbox.sandbox_api import (
     McpServer,
+    SandboxLifecycle,
     SandboxMetrics,
     SandboxNetworkOpts,
     SnapshotInfo,
@@ -168,6 +172,7 @@ class AsyncSandbox(SandboxApi):
         allow_internet_access: bool = True,
         mcp: Optional[McpServer] = None,
         network: Optional[SandboxNetworkOpts] = None,
+        lifecycle: Optional[SandboxLifecycle] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
         """
@@ -183,6 +188,7 @@ class AsyncSandbox(SandboxApi):
         :param allow_internet_access: Allow sandbox to access the internet, defaults to `True`. If set to `False`, it works the same as setting network `deny_out` to `[0.0.0.0/0]`.
         :param mcp: MCP server to enable in the sandbox
         :param network: Sandbox network configuration
+        :param lifecycle: Sandbox lifecycle configuration — ``on_timeout``: ``"kill"`` (default) or ``"pause"``; ``auto_resume``: ``False`` (default) or ``True`` (only when ``on_timeout="pause"``). Example: ``{"on_timeout": "pause", "auto_resume": True}``
 
         :return: A Sandbox instance for the new sandbox
 
@@ -203,6 +209,7 @@ class AsyncSandbox(SandboxApi):
             allow_internet_access=allow_internet_access,
             mcp=mcp,
             network=network,
+            lifecycle=lifecycle,
             **opts,
         )
 
@@ -239,7 +246,7 @@ class AsyncSandbox(SandboxApi):
         @example
         ```python
         sandbox = await AsyncSandbox.create()
-        await sandbox.beta_pause()
+        await sandbox.pause()
 
         # Another code block
         same_sandbox = await sandbox.connect()
@@ -268,10 +275,10 @@ class AsyncSandbox(SandboxApi):
         @example
         ```python
         sandbox = await AsyncSandbox.create()
-        await AsyncSandbox.beta_pause(sandbox.sandbox_id)
+        await AsyncSandbox.pause(sandbox.sandbox_id)
 
         # Another code block
-        same_sandbox = await AsyncSandbox.connect(sandbox.sandbox_id))
+        same_sandbox = await AsyncSandbox.connect(sandbox.sandbox_id)
         ```
         """
         ...
@@ -295,7 +302,7 @@ class AsyncSandbox(SandboxApi):
         @example
         ```python
         sandbox = await AsyncSandbox.create()
-        await sandbox.beta_pause()
+        await sandbox.pause()
 
         # Another code block
         same_sandbox = await sandbox.connect()
@@ -569,6 +576,9 @@ class AsyncSandbox(SandboxApi):
             secure=secure,
             allow_internet_access=allow_internet_access,
             mcp=mcp,
+            lifecycle=(
+                {"on_timeout": "pause", "auto_resume": False} if auto_pause else None
+            ),
             **opts,
         )
 
@@ -587,13 +597,11 @@ class AsyncSandbox(SandboxApi):
         return sandbox
 
     @overload
-    async def beta_pause(
+    async def pause(
         self,
         **opts: Unpack[ApiParams],
     ) -> None:
         """
-        [BETA] This feature is in beta and may change in the future.
-
         Pause the sandbox.
 
         :return: Sandbox ID that can be used to resume the sandbox
@@ -602,13 +610,11 @@ class AsyncSandbox(SandboxApi):
 
     @overload
     @staticmethod
-    async def beta_pause(
+    async def pause(
         sandbox_id: str,
         **opts: Unpack[ApiParams],
     ) -> None:
         """
-        [BETA] This feature is in beta and may change in the future.
-
         Pause the sandbox specified by sandbox ID.
 
         :param sandbox_id: Sandbox ID
@@ -618,13 +624,11 @@ class AsyncSandbox(SandboxApi):
         ...
 
     @class_method_variant("_cls_pause")
-    async def beta_pause(
+    async def pause(
         self,
         **opts: Unpack[ApiParams],
     ) -> None:
         """
-        [BETA] This feature is in beta and may change in the future.
-
         Pause the sandbox.
 
         :return: Sandbox ID that can be used to resume the sandbox
@@ -634,6 +638,29 @@ class AsyncSandbox(SandboxApi):
             sandbox_id=self.sandbox_id,
             **opts,
         )
+
+    @overload
+    async def beta_pause(
+        self,
+        **opts: Unpack[ApiParams],
+    ) -> None: ...
+
+    @overload
+    @staticmethod
+    async def beta_pause(
+        sandbox_id: str,
+        **opts: Unpack[ApiParams],
+    ) -> None: ...
+
+    @class_method_variant("_cls_pause")
+    async def beta_pause(
+        self,
+        **opts: Unpack[ApiParams],
+    ) -> None:
+        """
+        :deprecated: Use `pause()` instead.
+        """
+        await self.pause(**opts)
 
     @overload
     async def create_snapshot(
@@ -828,13 +855,14 @@ class AsyncSandbox(SandboxApi):
         cls,
         template: Optional[str],
         timeout: Optional[int],
-        auto_pause: bool,
+        auto_pause: Optional[bool],
         allow_internet_access: bool,
         metadata: Optional[Dict[str, str]],
         envs: Optional[Dict[str, str]],
         secure: bool,
         mcp: Optional[McpServer] = None,
         network: Optional[SandboxNetworkOpts] = None,
+        lifecycle: Optional[SandboxLifecycle] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
         extra_sandbox_headers = {}
@@ -857,6 +885,7 @@ class AsyncSandbox(SandboxApi):
                 allow_internet_access=allow_internet_access,
                 mcp=mcp,
                 network=network,
+                lifecycle=lifecycle,
                 **opts,
             )
 
