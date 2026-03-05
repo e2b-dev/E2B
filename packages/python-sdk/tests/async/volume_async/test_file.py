@@ -33,7 +33,11 @@ class TestWriteFileAndReadFile:
         stream = BytesIO(content.encode("utf-8"))
 
         await async_volume.write_file(path, stream)
-        read_content = await async_volume.read_file(path, format="text")
+        read_stream = await async_volume.read_file(path, format="stream")
+        chunks = []
+        async for chunk in read_stream:
+            chunks.append(chunk)
+        read_content = b"".join(chunks).decode("utf-8")
 
         assert read_content == content
 
