@@ -2,7 +2,7 @@ import datetime
 from dataclasses import dataclass
 from typing import Optional
 
-from e2b.api.client.models.volume_entry_stat_type import VolumeEntryStatType
+from e2b.volume.client.models.volume_entry_stat_type import VolumeEntryStatType
 
 # Type alias for file type enum
 VolumeFileType = VolumeEntryStatType
