@@ -37,6 +37,7 @@ from e2b.volume.client.types import File as FilePayload, UNSET
 from e2b.volume.client_sync import get_api_client as get_volume_api_client
 from e2b.volume.connection_config import VolumeApiParams, VolumeConnectionConfig
 from e2b.volume.types import (
+    VolumeAndToken,
     VolumeInfo,
     VolumeEntryStat,
 )
@@ -120,7 +121,9 @@ class Volume:
         return cls(volume_id=volume_id, name=info.name, token=info.token)
 
     @staticmethod
-    def _class_get_info(volume_id: str, **opts: Unpack[ApiParams]) -> VolumeInfo:
+    def _class_get_info(
+        volume_id: str, **opts: Unpack[ApiParams]
+    ) -> VolumeAndToken:
         """
         Get information about a volume.
 
@@ -148,7 +151,7 @@ class Volume:
         if isinstance(res.parsed, Error):
             raise Exception(f"{res.parsed.message}: Request failed")
 
-        return VolumeInfo(
+        return VolumeAndToken(
             volume_id=res.parsed.volume_id,
             name=res.parsed.name,
             token=res.parsed.token,

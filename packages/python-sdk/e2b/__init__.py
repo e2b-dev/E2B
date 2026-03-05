@@ -125,6 +125,7 @@ from .volume.volume_sync import Volume
 from .volume.volume_async import AsyncVolume
 from .volume.types import (
     VolumeInfo,
+    VolumeAndToken,
     VolumeEntryStat,
     VolumeFileType,
 )
@@ -234,6 +235,7 @@ __all__ = [
     "Volume",
     "AsyncVolume",
     "VolumeInfo",
+    "VolumeAndToken",
     "VolumeEntryStat",
     "VolumeFileType",
 ]

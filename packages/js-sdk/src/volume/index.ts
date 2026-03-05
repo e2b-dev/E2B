@@ -9,6 +9,7 @@ import { ConnectionConfig, ConnectionOpts } from '../connectionConfig'
 import { NotFoundError, VolumeError } from '../errors'
 import { toBlob } from '../utils'
 import type {
+  VolumeAndToken,
   VolumeEntryStat,
   VolumeInfo,
   VolumeMetadataOptions,
@@ -107,7 +108,7 @@ export class Volume {
     opts?: ConnectionOpts
   ): Promise<Volume> {
     const { name, token } = await Volume.getInfo(volumeId, opts)
-    return new Volume(volumeId, name, token!)
+    return new Volume(volumeId, name, token)
   }
 
   /**
@@ -121,7 +122,7 @@ export class Volume {
   static async getInfo(
     volumeId: string,
     opts?: ConnectionOpts
-  ): Promise<VolumeInfo> {
+  ): Promise<VolumeAndToken> {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
 
@@ -619,6 +620,7 @@ export class Volume {
 
 export type {
   VolumeInfo,
+  VolumeAndToken,
   VolumeFileType,
   VolumeEntryStat,
   VolumeMetadataOptions,

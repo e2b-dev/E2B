@@ -13,11 +13,16 @@ export type VolumeInfo = {
    * Volume name.
    */
   name: string
+}
 
+/**
+ * Information about a volume and its auth token.
+ */
+export type VolumeAndToken = VolumeInfo & {
   /**
    * Volume auth token.
    */
-  token?: string
+  token: string
 }
 
 /**
