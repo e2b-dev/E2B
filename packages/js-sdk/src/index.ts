@@ -91,6 +91,7 @@ export type {
 export { Volume } from './volume'
 export type {
   VolumeInfo,
+  VolumeAndToken,
   VolumeEntryStat,
   VolumeFileType,
   VolumeMetadataOptions,

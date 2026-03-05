@@ -16,7 +16,13 @@ class VolumeInfo:
     """Volume ID."""
     name: str
     """Volume name."""
-    token: Optional[str] = None
+
+
+@dataclass
+class VolumeAndToken(VolumeInfo):
+    """Information about a volume and its auth token."""
+
+    token: str
     """Volume auth token."""
 
 
@@ -50,6 +56,7 @@ class VolumeEntryStat:
 
 __all__ = [
     "VolumeInfo",
+    "VolumeAndToken",
     "VolumeEntryStat",
     "VolumeFileType",
 ]
