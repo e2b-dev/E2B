@@ -100,11 +100,10 @@ class Volume:
         if isinstance(res.parsed, Error):
             raise Exception(f"{res.parsed.message}: Request failed")
 
-        info = cls.get_info(res.parsed.volume_id, **opts)
         vol = cls(
             volume_id=res.parsed.volume_id,
             name=res.parsed.name,
-            token=info.token,
+            token=res.parsed.token,
         )
         return vol
 
