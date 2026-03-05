@@ -33,7 +33,8 @@ class TestWriteFileAndReadFile:
         stream = BytesIO(content.encode("utf-8"))
 
         volume.write_file(path, stream)
-        read_content = volume.read_file(path, format="text")
+        read_stream = volume.read_file(path, format="stream")
+        read_content = b"".join(read_stream).decode("utf-8")
 
         assert read_content == content
 
