@@ -8,6 +8,13 @@ generate-api:
 	rm -rf e2b/api/api
 	ruff format .
 
+generate-volume-api:
+	openapi-python-client generate --output-path $(ROOT_DIR)/packages/python-sdk/e2b/volume/api --overwrite --path $(ROOT_DIR)/spec/openapi-volumecontent.yml
+	rm -rf e2b/volume/client
+	mv e2b/volume/api/e2b_api_client e2b/volume/client
+	rm -rf e2b/volume/api
+	ruff format .
+
 generate-envd:
 	if [ ! -f "/go/bin/protoc-gen-connect-python" ]; then \
 		$(MAKE) -C $(ROOT_DIR)/packages/connect-python build; \
@@ -18,7 +25,7 @@ generate-envd:
 
 	ruff format .
 
-generate: generate-api generate-envd generate-mcp
+generate: generate-api generate-envd generate-mcp generate-volume-api
 
 init:
 	pip install openapi-python-client datamodel-code-generator
