@@ -3,7 +3,7 @@ import {
   VolumeApiClient,
   VolumeApiComponents,
   VolumeConnectionConfig,
-  VolumeConnectionOpts,
+  VolumeApiOpts,
 } from './client'
 import { ConnectionConfig, ConnectionOpts } from '../connectionConfig'
 import { NotFoundError, VolumeError } from '../errors'
@@ -222,7 +222,7 @@ export class Volume {
    */
   async list(
     path: string,
-    opts?: VolumeConnectionOpts & { depth?: number }
+    opts?: VolumeApiOpts & { depth?: number }
   ): Promise<VolumeEntryStat[]> {
     const config = new VolumeConnectionConfig(this, opts)
     const client = new VolumeApiClient(config)
@@ -260,7 +260,7 @@ export class Volume {
    */
   async makeDir(
     path: string,
-    opts?: VolumeWriteOptions & VolumeConnectionOpts
+    opts?: VolumeWriteOptions & VolumeApiOpts
   ): Promise<VolumeEntryStat> {
     const config = new VolumeConnectionConfig(this, opts)
     const client = new VolumeApiClient(config)
@@ -306,7 +306,7 @@ export class Volume {
    */
   async getInfo(
     path: string,
-    opts?: VolumeConnectionOpts
+    opts?: VolumeApiOpts
   ): Promise<VolumeEntryStat> {
     const config = new VolumeConnectionConfig(this, opts)
     const client = new VolumeApiClient(config)
@@ -349,7 +349,7 @@ export class Volume {
    *
    * @returns `true` if the path exists, `false` otherwise.
    */
-  async exists(path: string, opts?: VolumeConnectionOpts): Promise<boolean> {
+  async exists(path: string, opts?: VolumeApiOpts): Promise<boolean> {
     try {
       await this.getInfo(path, opts)
       return true
@@ -373,7 +373,7 @@ export class Volume {
   async updateMetadata(
     path: string,
     metadata: VolumeMetadataOptions,
-    opts?: VolumeConnectionOpts
+    opts?: VolumeApiOpts
   ): Promise<VolumeEntryStat> {
     const config = new VolumeConnectionConfig(this, opts)
     const client = new VolumeApiClient(config)
@@ -423,7 +423,7 @@ export class Volume {
    */
   async readFile(
     path: string,
-    opts?: VolumeConnectionOpts & { format?: 'text' }
+    opts?: VolumeApiOpts & { format?: 'text' }
   ): Promise<string>
   /**
    * Read file content as a `Uint8Array`.
@@ -438,7 +438,7 @@ export class Volume {
    */
   async readFile(
     path: string,
-    opts?: VolumeConnectionOpts & { format: 'bytes' }
+    opts?: VolumeApiOpts & { format: 'bytes' }
   ): Promise<Uint8Array>
   /**
    * Read file content as a `Blob`.
@@ -453,7 +453,7 @@ export class Volume {
    */
   async readFile(
     path: string,
-    opts?: VolumeConnectionOpts & { format: 'blob' }
+    opts?: VolumeApiOpts & { format: 'blob' }
   ): Promise<Blob>
   /**
    * Read file content as a `ReadableStream`.
@@ -468,11 +468,11 @@ export class Volume {
    */
   async readFile(
     path: string,
-    opts?: VolumeConnectionOpts & { format: 'stream' }
+    opts?: VolumeApiOpts & { format: 'stream' }
   ): Promise<ReadableStream<Uint8Array>>
   async readFile(
     path: string,
-    opts?: VolumeConnectionOpts & {
+    opts?: VolumeApiOpts & {
       format?: 'text' | 'stream' | 'bytes' | 'blob'
     }
   ): Promise<unknown> {
@@ -531,7 +531,7 @@ export class Volume {
   async writeFile(
     path: string,
     data: string | ArrayBuffer | Blob | ReadableStream<Uint8Array>,
-    opts?: VolumeWriteOptions & VolumeConnectionOpts
+    opts?: VolumeWriteOptions & VolumeApiOpts
   ): Promise<VolumeEntryStat> {
     const config = new VolumeConnectionConfig(this, opts)
     const client = new VolumeApiClient(config)
@@ -583,7 +583,7 @@ export class Volume {
    */
   async remove(
     path: string,
-    opts?: VolumeRemoveOptions & VolumeConnectionOpts
+    opts?: VolumeRemoveOptions & VolumeApiOpts
   ): Promise<void> {
     const config = new VolumeConnectionConfig(this, opts)
     const client = new VolumeApiClient(config)
@@ -630,4 +630,4 @@ export type {
   VolumeRemoveOptions,
 } from './types'
 
-export type { VolumeConnectionOpts, VolumeConnectionConfig } from './client'
+export type { VolumeApiOpts, VolumeConnectionConfig } from './client'
