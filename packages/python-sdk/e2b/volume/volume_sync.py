@@ -121,9 +121,7 @@ class Volume:
         return cls(volume_id=volume_id, name=info.name, token=info.token)
 
     @staticmethod
-    def _class_get_info(
-        volume_id: str, **opts: Unpack[ApiParams]
-    ) -> VolumeAndToken:
+    def _class_get_info(volume_id: str, **opts: Unpack[ApiParams]) -> VolumeAndToken:
         """
         Get information about a volume.
 
