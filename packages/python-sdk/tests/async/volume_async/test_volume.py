@@ -6,6 +6,7 @@ import pytest
 from e2b import AsyncVolume
 from e2b.exceptions import NotFoundException
 from e2b.api.client.models.volume import Volume as VolumeModel
+from e2b.api.client.models.volume_and_token import VolumeAndToken
 from e2b.api.client.types import Response
 import e2b.api.client.api.volumes.post_volumes as post_volumes_mod
 import e2b.api.client.api.volumes.get_volumes as get_volumes_mod
@@ -13,7 +14,7 @@ import e2b.api.client.api.volumes.get_volumes_volume_id as get_volume_mod
 import e2b.api.client.api.volumes.delete_volumes_volume_id as delete_volume_mod
 
 # In-memory store for mock volumes
-_volumes: dict[str, VolumeModel] = {}
+_volumes: dict[str, VolumeAndToken] = {}
 
 
 @pytest.fixture(autouse=True)
@@ -23,13 +24,14 @@ def mock_volume_api(monkeypatch):
 
     async def mock_post_volumes(*, client, body):
         vol_id = str(uuid4())
-        vol = VolumeModel(volume_id=vol_id, name=body.name)
+        token = f"vol-token-{uuid4()}"
+        vol = VolumeAndToken(volume_id=vol_id, name=body.name, token=token)
         _volumes[vol_id] = vol
         return Response(
             status_code=HTTPStatus(201),
             content=b"",
             headers={},
-            parsed=vol,
+            parsed=VolumeModel(volume_id=vol_id, name=body.name),
         )
 
     async def mock_get_volumes(*, client):
@@ -84,6 +86,7 @@ async def test_create_volume():
     assert vol is not None
     assert vol.volume_id is not None
     assert vol.name == "test-volume"
+    assert vol.token is not None
 
 
 async def test_get_volume_info():
@@ -92,6 +95,7 @@ async def test_get_volume_info():
 
     assert info.volume_id == created.volume_id
     assert info.name == "info-volume"
+    assert info.token is not None
 
 
 async def test_list_volumes():

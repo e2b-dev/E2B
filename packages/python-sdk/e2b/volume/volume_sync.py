@@ -24,9 +24,11 @@ from e2b.api.client.models import (
     PatchVolumesVolumeIDFileBody,
 )
 from e2b.api.client.types import File as FilePayload, Response, UNSET
-from e2b.api.client_sync import get_api_client
+from e2b.api.client_sync import get_api_client as get_core_api_client
 from e2b.connection_config import ApiParams, ConnectionConfig
 from e2b.exceptions import NotFoundException, VolumeException
+from e2b.volume.client_sync import get_api_client as get_volume_api_client
+from e2b.volume.connection_config import VolumeApiParams, VolumeConnectionConfig
 from e2b.volume.types import (
     VolumeInfo,
     VolumeEntryStat,
@@ -37,9 +39,10 @@ from e2b.volume.utils import DualMethod, convert_volume_entry_stat
 class Volume:
     """E2B Volume for persistent storage that can be mounted to sandboxes."""
 
-    def __init__(self, volume_id: str, name: str):
+    def __init__(self, volume_id: str, name: str, token: Optional[str] = None):
         self._volume_id = volume_id
         self._name = name
+        self._token = token
 
     @property
     def volume_id(self) -> str:
@@ -48,6 +51,21 @@ class Volume:
     @property
     def name(self) -> str:
         return self._name
+
+    @property
+    def token(self) -> Optional[str]:
+        return self._token
+
+    def _get_volume_config(
+        self, **opts: Unpack[VolumeApiParams]
+    ) -> VolumeConnectionConfig:
+        return VolumeConnectionConfig(
+            token=opts.get("token") or self._token,
+            api_url=opts.get("api_url"),
+            request_timeout=opts.get("request_timeout"),
+            headers=opts.get("headers"),
+            proxy=opts.get("proxy"),
+        )
 
     @classmethod
     def create(cls, name: str, **opts: Unpack[ApiParams]) -> "Volume":
@@ -60,7 +78,7 @@ class Volume:
         """
         config = ConnectionConfig(**opts)
 
-        api_client = get_api_client(config)
+        api_client = get_core_api_client(config)
         res = post_volumes.sync_detailed(
             body=NewVolumeModel(name=name),
             client=api_client,
@@ -75,7 +93,12 @@ class Volume:
         if isinstance(res.parsed, Error):
             raise Exception(f"{res.parsed.message}: Request failed")
 
-        vol = cls(volume_id=res.parsed.volume_id, name=res.parsed.name)
+        info = cls.get_info(res.parsed.volume_id, **opts)
+        vol = cls(
+            volume_id=res.parsed.volume_id,
+            name=res.parsed.name,
+            token=info.token,
+        )
         return vol
 
     @classmethod
@@ -87,28 +110,8 @@ class Volume:
 
         :return: A Volume instance for the existing volume
         """
-        config = ConnectionConfig(**opts)
-
-        api_client = get_api_client(config)
-        res = get_volumes_volume_id.sync_detailed(
-            volume_id,
-            client=api_client,
-        )
-
-        if res.status_code == 404:
-            raise NotFoundException(f"Volume {volume_id} not found")
-
-        if res.status_code >= 300:
-            raise handle_api_exception(res, VolumeException)
-
-        if res.parsed is None:
-            raise Exception("Body of the request is None")
-
-        if isinstance(res.parsed, Error):
-            raise Exception(f"{res.parsed.message}: Request failed")
-
-        vol = cls(volume_id=res.parsed.volume_id, name=res.parsed.name)
-        return vol
+        info = cls.get_info(volume_id, **opts)
+        return cls(volume_id=volume_id, name=info.name, token=info.token)
 
     @staticmethod
     def _class_get_info(volume_id: str, **opts: Unpack[ApiParams]) -> VolumeInfo:
@@ -121,7 +124,7 @@ class Volume:
         """
         config = ConnectionConfig(**opts)
 
-        api_client = get_api_client(config)
+        api_client = get_core_api_client(config)
         res = get_volumes_volume_id.sync_detailed(
             volume_id,
             client=api_client,
@@ -139,7 +142,11 @@ class Volume:
         if isinstance(res.parsed, Error):
             raise Exception(f"{res.parsed.message}: Request failed")
 
-        return VolumeInfo(volume_id=res.parsed.volume_id, name=res.parsed.name)
+        return VolumeInfo(
+            volume_id=res.parsed.volume_id,
+            name=res.parsed.name,
+            token=res.parsed.token,
+        )
 
     @staticmethod
     def _class_list(**opts: Unpack[ApiParams]) -> List[VolumeInfo]:
@@ -150,7 +157,7 @@ class Volume:
         """
         config = ConnectionConfig(**opts)
 
-        api_client = get_api_client(config)
+        api_client = get_core_api_client(config)
         res = get_volumes.sync_detailed(
             client=api_client,
         )
@@ -175,7 +182,7 @@ class Volume:
         """
         config = ConnectionConfig(**opts)
 
-        api_client = get_api_client(config)
+        api_client = get_core_api_client(config)
         res = delete_volumes_volume_id.sync_detailed(
             volume_id,
             client=api_client,
@@ -190,7 +197,7 @@ class Volume:
         return True
 
     def _instance_list(
-        self, path: str, depth: Optional[int] = None, **opts: Unpack[ApiParams]
+        self, path: str, depth: Optional[int] = None, **opts: Unpack[VolumeApiParams]
     ) -> List[VolumeEntryStat]:
         """
         List directory contents.
@@ -201,8 +208,8 @@ class Volume:
 
         :return: List of items (files and directories) in the directory
         """
-        config = ConnectionConfig(**opts)
-        api_client = get_api_client(config)
+        config = self._get_volume_config(**opts)
+        api_client = get_volume_api_client(config)
 
         res = get_volumes_volume_id_dir.sync_detailed(
             volume_id=self._volume_id,
@@ -235,7 +242,7 @@ class Volume:
         gid: Optional[int] = None,
         mode: Optional[int] = None,
         force: Optional[bool] = None,
-        **opts: Unpack[ApiParams],
+        **opts: Unpack[VolumeApiParams],
     ) -> VolumeEntryStat:
         """
         Create a directory.
@@ -249,8 +256,8 @@ class Volume:
 
         :return: Information about the created directory
         """
-        config = ConnectionConfig(**opts)
-        api_client = get_api_client(config)
+        config = self._get_volume_config(**opts)
+        api_client = get_volume_api_client(config)
 
         res = post_volumes_volume_id_dir.sync_detailed(
             volume_id=self._volume_id,
@@ -276,7 +283,7 @@ class Volume:
 
         return convert_volume_entry_stat(res.parsed)
 
-    def exists(self, path: str, **opts: Unpack[ApiParams]) -> bool:
+    def exists(self, path: str, **opts: Unpack[VolumeApiParams]) -> bool:
         """
         Check whether a file or directory exists.
 
@@ -295,7 +302,7 @@ class Volume:
             return False
 
     def _instance_get_info(
-        self, path: str, **opts: Unpack[ApiParams]
+        self, path: str, **opts: Unpack[VolumeApiParams]
     ) -> VolumeEntryStat:
         """
         Get information about a file or directory.
@@ -305,8 +312,8 @@ class Volume:
 
         :return: Information about the entry
         """
-        config = ConnectionConfig(**opts)
-        api_client = get_api_client(config)
+        config = self._get_volume_config(**opts)
+        api_client = get_volume_api_client(config)
 
         res = get_volumes_volume_id_stat.sync_detailed(
             volume_id=self._volume_id,
@@ -337,7 +344,7 @@ class Volume:
         uid: Optional[int] = None,
         gid: Optional[int] = None,
         mode: Optional[int] = None,
-        **opts: Unpack[ApiParams],
+        **opts: Unpack[VolumeApiParams],
     ) -> VolumeEntryStat:
         """
         Update file or directory metadata.
@@ -350,8 +357,8 @@ class Volume:
 
         :return: Updated entry information
         """
-        config = ConnectionConfig(**opts)
-        api_client = get_api_client(config)
+        config = self._get_volume_config(**opts)
+        api_client = get_volume_api_client(config)
 
         body = PatchVolumesVolumeIDFileBody(
             uid=uid if uid is not None else UNSET,
@@ -382,7 +389,7 @@ class Volume:
         self,
         path: str,
         format: Literal["text"] = "text",
-        **opts: Unpack[ApiParams],
+        **opts: Unpack[VolumeApiParams],
     ) -> str: ...
 
     @overload
@@ -390,7 +397,7 @@ class Volume:
         self,
         path: str,
         format: Literal["bytes"],
-        **opts: Unpack[ApiParams],
+        **opts: Unpack[VolumeApiParams],
     ) -> bytes: ...
 
     @overload
@@ -398,14 +405,14 @@ class Volume:
         self,
         path: str,
         format: Literal["stream"],
-        **opts: Unpack[ApiParams],
+        **opts: Unpack[VolumeApiParams],
     ) -> Iterator[bytes]: ...
 
     def read_file(
         self,
         path: str,
         format: Literal["text", "bytes", "stream"] = "text",
-        **opts: Unpack[ApiParams],
+        **opts: Unpack[VolumeApiParams],
     ) -> Union[str, bytes, Iterator[bytes]]:
         """
         Read file content.
@@ -418,8 +425,8 @@ class Volume:
 
         :return: File content as string, bytes, or iterator of bytes
         """
-        config = ConnectionConfig(**opts)
-        api_client = get_api_client(config)
+        config = self._get_volume_config(**opts)
+        api_client = get_volume_api_client(config)
 
         params = {"path": path}
         response = api_client.get_httpx_client().request(
@@ -458,7 +465,7 @@ class Volume:
         gid: Optional[int] = None,
         mode: Optional[int] = None,
         force: Optional[bool] = None,
-        **opts: Unpack[ApiParams],
+        **opts: Unpack[VolumeApiParams],
     ) -> VolumeEntryStat:
         """
         Write content to a file.
@@ -476,8 +483,8 @@ class Volume:
 
         :return: Information about the written file
         """
-        config = ConnectionConfig(**opts)
-        api_client = get_api_client(config)
+        config = self._get_volume_config(**opts)
+        api_client = get_volume_api_client(config)
 
         if isinstance(data, str):
             data_bytes = data.encode("utf-8")
@@ -521,7 +528,7 @@ class Volume:
         self,
         path: str,
         recursive: Optional[bool] = None,
-        **opts: Unpack[ApiParams],
+        **opts: Unpack[VolumeApiParams],
     ) -> None:
         """
         Remove a file or directory.
@@ -530,8 +537,8 @@ class Volume:
         :param recursive: Delete all files and directories recursively (for directories only)
         :param opts: Connection options
         """
-        config = ConnectionConfig(**opts)
-        api_client = get_api_client(config)
+        config = self._get_volume_config(**opts)
+        api_client = get_volume_api_client(config)
 
         is_directory = False
         try:

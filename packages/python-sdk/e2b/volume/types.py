@@ -16,6 +16,8 @@ class VolumeInfo:
     """Volume ID."""
     name: str
     """Volume name."""
+    token: Optional[str] = None
+    """Volume auth token."""
 
 
 @dataclass

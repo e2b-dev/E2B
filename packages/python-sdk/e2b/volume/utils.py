@@ -1,7 +1,7 @@
 from typing import Optional
 
-from e2b.api.client.models import VolumeEntryStat as VolumeEntryStatApi
-from e2b.api.client.types import UNSET
+from e2b.volume.client.models import VolumeEntryStat as VolumeEntryStatApi
+from e2b.volume.client.types import UNSET
 from e2b.volume.types import VolumeEntryStat
 
 
