@@ -5,7 +5,7 @@ import { defaultHeaders, getEnvVar } from '../api/metadata'
 import { createApiLogger, Logger } from '../logs'
 import type { Volume } from './index'
 
-export interface VolumeConnectionOpts {
+export interface VolumeApiOpts {
   /**
    * E2B API key to use for authentication.
    *
@@ -42,7 +42,7 @@ export class VolumeConnectionConfig {
   readonly logger?: Logger
   readonly requestTimeoutMs?: number
 
-  constructor(volume: Volume, opts?: VolumeConnectionOpts) {
+  constructor(volume: Volume, opts?: VolumeApiOpts) {
     this.apiUrl = opts?.apiUrl || VolumeConnectionConfig.apiUrl
     this.token = opts?.token || volume.token
     this.headers = opts?.headers

@@ -99,7 +99,7 @@ export type {
   VolumeMetadataOptions,
   VolumeWriteOptions,
   VolumeRemoveOptions,
-  VolumeConnectionOpts,
+  VolumeApiOpts,
   VolumeConnectionConfig,
 } from './volume'
 
