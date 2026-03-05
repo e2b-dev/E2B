@@ -1,5 +1,5 @@
 from io import BytesIO
-from typing import IO, Iterator, List, Literal, Optional, Union, overload
+from typing import IO, Iterator, List, Literal, Optional, Union, cast, overload
 from http import HTTPStatus
 
 from typing_extensions import Unpack
@@ -10,23 +10,30 @@ from e2b.api.client.api.volumes import (
     get_volumes,
     get_volumes_volume_id,
     delete_volumes_volume_id,
-    get_volumes_volume_id_stat,
-    get_volumes_volume_id_dir,
-    post_volumes_volume_id_dir,
-    delete_volumes_volume_id_dir,
-    delete_volumes_volume_id_file,
-    patch_volumes_volume_id_file,
-    put_volumes_volume_id_file,
 )
 from e2b.api.client.models import (
     NewVolume as NewVolumeModel,
     Error,
-    PatchVolumesVolumeIDFileBody,
 )
-from e2b.api.client.types import File as FilePayload, Response, UNSET
+from e2b.api.client.types import Response
 from e2b.api.client_sync import get_api_client as get_core_api_client
 from e2b.connection_config import ApiParams, ConnectionConfig
 from e2b.exceptions import NotFoundException, VolumeException
+from e2b.volume.client.api.volumes import (
+    get_stat,
+    get_dir,
+    post_dir,
+    delete_dir,
+    delete_file,
+    patch_file,
+    put_file,
+)
+from e2b.volume.client.models import (
+    Error as VolumeError,
+    PatchFileBody,
+    VolumeEntryStat as VolumeEntryStatApi,
+)
+from e2b.volume.client.types import File as FilePayload, UNSET
 from e2b.volume.client_sync import get_api_client as get_volume_api_client
 from e2b.volume.connection_config import VolumeApiParams, VolumeConnectionConfig
 from e2b.volume.types import (
@@ -211,8 +218,7 @@ class Volume:
         config = self._get_volume_config(**opts)
         api_client = get_volume_api_client(config)
 
-        res = get_volumes_volume_id_dir.sync_detailed(
-            volume_id=self._volume_id,
+        res = get_dir.sync_detailed(
             path=path,
             depth=depth if depth is not None else UNSET,
             client=api_client,
@@ -227,12 +233,13 @@ class Volume:
         if res.parsed is None:
             return []
 
-        if isinstance(res.parsed, Error):
+        if isinstance(res.parsed, VolumeError):
             raise Exception(f"{res.parsed.message}: Request failed")
 
         # VolumeDirectoryListing is a list according to the spec
         if isinstance(res.parsed, list):
-            return [convert_volume_entry_stat(entry) for entry in res.parsed]
+            parsed_entries = cast(List[VolumeEntryStatApi], res.parsed)
+            return [convert_volume_entry_stat(entry) for entry in parsed_entries]
         return []
 
     def make_dir(
@@ -259,8 +266,7 @@ class Volume:
         config = self._get_volume_config(**opts)
         api_client = get_volume_api_client(config)
 
-        res = post_volumes_volume_id_dir.sync_detailed(
-            volume_id=self._volume_id,
+        res = post_dir.sync_detailed(
             path=path,
             uid=uid if uid is not None else UNSET,
             gid=gid if gid is not None else UNSET,
@@ -278,7 +284,7 @@ class Volume:
         if res.parsed is None:
             raise Exception("Body of the request is None")
 
-        if isinstance(res.parsed, Error):
+        if isinstance(res.parsed, VolumeError):
             raise Exception(f"{res.parsed.message}: Request failed")
 
         return convert_volume_entry_stat(res.parsed)
@@ -315,8 +321,7 @@ class Volume:
         config = self._get_volume_config(**opts)
         api_client = get_volume_api_client(config)
 
-        res = get_volumes_volume_id_stat.sync_detailed(
-            volume_id=self._volume_id,
+        res = get_stat.sync_detailed(
             path=path,
             client=api_client,
         )
@@ -330,10 +335,10 @@ class Volume:
         if res.parsed is None:
             raise Exception("Body of the request is None")
 
-        if isinstance(res.parsed, Error):
+        if isinstance(res.parsed, VolumeError):
             raise Exception(f"{res.parsed.message}: Request failed")
 
-        return convert_volume_entry_stat(res.parsed)
+        return convert_volume_entry_stat(cast(VolumeEntryStatApi, res.parsed))
 
     get_info = DualMethod(_class_get_info.__func__, _instance_get_info)
     list = DualMethod(_class_list.__func__, _instance_list)
@@ -360,14 +365,13 @@ class Volume:
         config = self._get_volume_config(**opts)
         api_client = get_volume_api_client(config)
 
-        body = PatchVolumesVolumeIDFileBody(
+        body = PatchFileBody(
             uid=uid if uid is not None else UNSET,
             gid=gid if gid is not None else UNSET,
             mode=mode if mode is not None else UNSET,
         )
 
-        res = patch_volumes_volume_id_file.sync_detailed(
-            volume_id=self._volume_id,
+        res = patch_file.sync_detailed(
             path=path,
             body=body,
             client=api_client,
@@ -382,7 +386,7 @@ class Volume:
         if res.parsed is None:
             raise Exception("Body of the request is None")
 
-        return convert_volume_entry_stat(res.parsed)
+        return convert_volume_entry_stat(cast(VolumeEntryStatApi, res.parsed))
 
     @overload
     def read_file(
@@ -499,8 +503,7 @@ class Volume:
         else:
             raise ValueError(f"Unsupported data type: {type(data)}")
 
-        res = put_volumes_volume_id_file.sync_detailed(
-            volume_id=self._volume_id,
+        res = put_file.sync_detailed(
             body=FilePayload(payload=BytesIO(data_bytes)),
             path=path,
             uid=uid if uid is not None else UNSET,
@@ -519,10 +522,10 @@ class Volume:
         if res.parsed is None:
             raise Exception("Body of the request is None")
 
-        if isinstance(res.parsed, Error):
+        if isinstance(res.parsed, VolumeError):
             raise Exception(f"{res.parsed.message}: Request failed")
 
-        return convert_volume_entry_stat(res.parsed)
+        return convert_volume_entry_stat(cast(VolumeEntryStatApi, res.parsed))
 
     def remove(
         self,
@@ -548,15 +551,13 @@ class Volume:
             pass
 
         if is_directory:
-            res = delete_volumes_volume_id_dir.sync_detailed(
-                volume_id=self._volume_id,
+            res = delete_dir.sync_detailed(
                 path=path,
                 recursive=recursive if recursive is not None else UNSET,
                 client=api_client,
             )
         else:
-            res = delete_volumes_volume_id_file.sync_detailed(
-                volume_id=self._volume_id,
+            res = delete_file.sync_detailed(
                 path=path,
                 client=api_client,
             )
