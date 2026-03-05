@@ -13,13 +13,13 @@ const volumes = new Map<
 >()
 
 const restHandlers = [
-  // POST /volumes - create (returns Volume without token)
+  // POST /volumes - create (returns VolumeAndToken)
   http.post(apiUrl('/volumes'), async ({ request }) => {
     const { name } = (await request.clone().json()) as { name: string }
     const volumeID = randomUUID()
     const token = `vol-token-${randomUUID()}`
     volumes.set(volumeID, { volumeID, name, token })
-    return HttpResponse.json({ volumeID, name }, { status: 201 })
+    return HttpResponse.json({ volumeID, name, token }, { status: 201 })
   }),
 
   // GET /volumes - list (returns Volume[] without tokens)

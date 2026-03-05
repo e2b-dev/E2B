@@ -5,7 +5,6 @@ import pytest
 
 from e2b import Volume
 from e2b.exceptions import NotFoundException
-from e2b.api.client.models.volume import Volume as VolumeModel
 from e2b.api.client.models.volume_and_token import VolumeAndToken
 from e2b.api.client.types import Response
 import e2b.api.client.api.volumes.post_volumes as post_volumes_mod
@@ -31,7 +30,7 @@ def mock_volume_api(monkeypatch):
             status_code=HTTPStatus(201),
             content=b"",
             headers={},
-            parsed=VolumeModel(volume_id=vol_id, name=body.name),
+            parsed=vol,
         )
 
     def mock_get_volumes(*, client):

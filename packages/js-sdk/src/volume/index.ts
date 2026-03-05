@@ -91,8 +91,7 @@ export class Volume {
       throw new Error('Response data is missing')
     }
 
-    const { token } = await Volume.getInfo(res.data.volumeID, opts)
-    return new Volume(res.data.volumeID, res.data.name, token!)
+    return new Volume(res.data.volumeID, res.data.name, res.data.token)
   }
 
   /**

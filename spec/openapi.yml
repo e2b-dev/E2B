@@ -3264,7 +3264,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Volume'
+                $ref: '#/components/schemas/VolumeAndToken'
         '400':
           $ref: '#/components/responses/400'
         '401':
