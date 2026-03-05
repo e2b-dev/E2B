@@ -434,7 +434,7 @@ class Volume:
         params = {"path": path}
         response = api_client.get_httpx_client().request(
             method="GET",
-            url=f"/volumes/{self._volume_id}/file",
+            url="/file",
             params=params,
             timeout=config.get_request_timeout(opts.get("request_timeout")),
         )

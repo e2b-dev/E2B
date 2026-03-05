@@ -434,7 +434,7 @@ class AsyncVolume:
         params = {"path": path}
         response = await api_client.get_async_httpx_client().request(
             method="GET",
-            url=f"/volumes/{self._volume_id}/file",
+            url="/file",
             params=params,
             timeout=config.get_request_timeout(opts.get("request_timeout")),
         )
