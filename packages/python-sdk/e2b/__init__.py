@@ -35,6 +35,7 @@ from .connection_config import (
     ProxyTypes,
     Username,
 )
+from .volume.connection_config import VolumeApiParams, VolumeConnectionConfig
 from .exceptions import (
     AuthenticationException,
     GitAuthException,
@@ -128,8 +129,10 @@ __all__ = [
     "client",
     # Connection config
     "ConnectionConfig",
+    "VolumeConnectionConfig",
     "ProxyTypes",
     "ApiParams",
+    "VolumeApiParams",
     "Username",
     # Exceptions
     "SandboxException",
