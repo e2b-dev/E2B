@@ -386,13 +386,6 @@ export class Filesystem {
 
     const useGzip = writeOpts?.encoding === 'gzip'
 
-    const formData = new FormData()
-    for (let i = 0; i < writeFiles.length; i++) {
-      const file = writeFiles[i]
-      const blob = await toBlob(file.data)
-      formData.append('file', blob, writeFiles[i].path)
-    }
-
     let user = writeOpts?.user
     if (
       user == undefined &&
@@ -401,42 +394,44 @@ export class Filesystem {
       user = defaultUsername
     }
 
-    const headers: Record<string, string> = {}
-    let body: BodyInit = formData
+    const results: WriteInfo[] = []
+    for (const file of writeFiles) {
+      const filePath = (file as WriteEntry).path ?? path
+      const blob = await toBlob(file.data)
 
-    if (useGzip) {
-      // Serialize the entire multipart form, then gzip the whole body.
-      // The backend decompresses the full request body before parsing multipart.
-      const raw = new Response(formData)
-      headers['Content-Type'] = raw.headers.get('Content-Type')!
-      headers['Content-Encoding'] = 'gzip'
-      body = await gzipCompress(await raw.blob())
-    }
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/octet-stream',
+      }
+      let body: BodyInit = blob
+      if (useGzip) {
+        headers['Content-Encoding'] = 'gzip'
+        body = await gzipCompress(blob)
+      }
 
-    const res = await this.envdApi.api.POST('/files', {
-      params: {
-        query: {
-          path,
-          username: user,
+      const res = await this.envdApi.api.POST('/files', {
+        params: {
+          query: {
+            path: filePath,
+            username: user,
+          },
         },
-      },
-      bodySerializer: () => body,
-      signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
-      body: {},
-      headers,
-    })
+        bodySerializer: () => body,
+        signal: this.connectionConfig.getSignal(writeOpts?.requestTimeoutMs),
+        body: {},
+        headers,
+      })
 
-    const err = await handleEnvdApiError(res)
-    if (err) {
-      throw err
+      const err = await handleEnvdApiError(res)
+      if (err) throw err
+
+      const fileInfos = res.data as WriteInfo[]
+      if (!fileInfos) {
+        throw new Error('Expected to receive information about written file')
+      }
+      results.push(...fileInfos)
     }
 
-    const files = res.data as WriteInfo[]
-    if (!files) {
-      throw new Error('Expected to receive information about written file')
-    }
-
-    return files.length === 1 && path ? files[0] : files
+    return results.length === 1 && path ? results[0] : results
   }
 
   /**

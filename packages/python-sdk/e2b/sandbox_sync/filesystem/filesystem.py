@@ -1,5 +1,4 @@
 import gzip
-
 from io import IOBase, TextIOBase
 from typing import IO, Iterator, List, Literal, Optional, overload, Union
 
@@ -222,64 +221,51 @@ class Filesystem:
         params = {}
         if username:
             params["username"] = username
-        if len(files) == 1:
-            params["path"] = files[0]["path"]
+
+        if len(files) == 0:
+            return []
 
         use_gzip = encoding == "gzip"
+        results = []
 
-        # Prepare the files for the multipart/form-data request
-        httpx_files = []
         for file in files:
             file_path, file_data = file["path"], file["data"]
-            if isinstance(file_data, (str, bytes)):
-                # str and bytes can be passed directly
-                httpx_files.append(("file", (file_path, file_data)))
+            if isinstance(file_data, str):
+                raw = file_data.encode("utf-8")
+            elif isinstance(file_data, bytes):
+                raw = file_data
             elif isinstance(file_data, TextIOBase):
-                # Text streams must be read first
-                httpx_files.append(("file", (file_path, file_data.read())))
+                raw = file_data.read().encode("utf-8")
             elif isinstance(file_data, IOBase):
-                # Binary streams can be passed directly
-                httpx_files.append(("file", (file_path, file_data)))
+                raw = file_data.read()
             else:
                 raise InvalidArgumentException(
                     f"Unsupported data type for file {file_path}"
                 )
 
-        # Allow passing empty list of files
-        if len(httpx_files) == 0:
-            return []
+            headers = {"Content-Type": "application/octet-stream"}
+            if use_gzip:
+                headers["Content-Encoding"] = "gzip"
+                raw = gzip.compress(raw)
 
-        headers = {}
-        post_kwargs: dict = {}
+            r = self._envd_api.post(
+                ENVD_API_FILES_ROUTE,
+                params={**params, "path": file_path},
+                headers=headers,
+                content=raw,
+                timeout=self._connection_config.get_request_timeout(request_timeout),
+            )
+            err = handle_envd_api_exception(r)
+            if err:
+                raise err
+            file_infos = r.json()
+            if not isinstance(file_infos, list) or len(file_infos) == 0:
+                raise SandboxException(
+                    "Expected to receive information about written file"
+                )
+            results.extend([WriteInfo(**f) for f in file_infos])
 
-        if use_gzip:
-            # Serialize the entire multipart form, then gzip the whole body.
-            # The backend decompresses the full request body before parsing multipart.
-            temp = httpx.Request("POST", "http://temp", files=httpx_files)
-            headers["Content-Type"] = temp.headers["content-type"]
-            headers["Content-Encoding"] = "gzip"
-            post_kwargs["content"] = gzip.compress(temp.content)
-        else:
-            post_kwargs["files"] = httpx_files
-
-        r = self._envd_api.post(
-            ENVD_API_FILES_ROUTE,
-            params=params,
-            headers=headers,
-            timeout=self._connection_config.get_request_timeout(request_timeout),
-            **post_kwargs,
-        )
-
-        err = handle_envd_api_exception(r)
-        if err:
-            raise err
-
-        write_files = r.json()
-
-        if not isinstance(write_files, list) or len(write_files) == 0:
-            raise SandboxException("Expected to receive information about written file")
-
-        return [WriteInfo(**file) for file in write_files]
+        return results
 
     def list(
         self,
