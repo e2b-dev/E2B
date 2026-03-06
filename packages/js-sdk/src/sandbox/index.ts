@@ -779,10 +779,7 @@ export class Sandbox extends SandboxApi {
    * @returns information about the sandbox
    */
   async getInfo(opts?: Pick<SandboxOpts, 'requestTimeoutMs'>) {
-    return await SandboxApi.getInfo(this.sandboxId, {
-      ...this.connectionConfig,
-      ...opts,
-    })
+    return await SandboxApi.getInfo(this.sandboxId, this.resolveApiOpts(opts))
   }
 
   /**
