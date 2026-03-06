@@ -1,7 +1,10 @@
+import gzip
+import zlib
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from typing import IO, Optional, Union, TypedDict
+from io import IOBase, TextIOBase
+from typing import IO, Iterator, Optional, Union, TypedDict
 
 from e2b.envd.filesystem import filesystem_pb2
 
@@ -92,3 +95,38 @@ class WriteEntry(TypedDict):
 
     path: str
     data: Union[str, bytes, IO]
+
+
+def to_upload_body(
+    data: Union[str, bytes, IO],
+    use_gzip: bool = False,
+) -> Union[bytes, IOBase, Iterator[bytes]]:
+    """Prepare file data for upload, optionally gzip-compressed.
+    Streams IOBase data directly without buffering into memory."""
+    if isinstance(data, str):
+        raw = data.encode("utf-8")
+        return gzip.compress(raw) if use_gzip else raw
+    elif isinstance(data, bytes):
+        return gzip.compress(data) if use_gzip else data
+    elif isinstance(data, TextIOBase):
+        raw = data.read().encode("utf-8")
+        return gzip.compress(raw) if use_gzip else raw
+    elif isinstance(data, IOBase):
+        if use_gzip:
+            return _gzip_stream(data)
+        return data
+    else:
+        raise TypeError(f"Unsupported data type: {type(data)}")
+
+
+def _gzip_stream(source: IOBase, chunk_size: int = 65536) -> Iterator[bytes]:
+    """Stream-compress an IOBase through gzip without buffering the whole file."""
+    compressor = zlib.compressobj(wbits=31)  # 31 = gzip format
+    while True:
+        chunk = source.read(chunk_size)
+        if not chunk:
+            break
+        compressed = compressor.compress(chunk)
+        if compressed:
+            yield compressed
+    yield compressor.flush()
