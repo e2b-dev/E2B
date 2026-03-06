@@ -43,7 +43,9 @@ describe('Sandbox instance config propagation', () => {
 
   it('forwards stored config for pause()', async () => {
     const sandbox = createSandbox()
-    const pauseSpy = vi.spyOn(SandboxApi as any, 'pause').mockResolvedValue(true)
+    const pauseSpy = vi
+      .spyOn(SandboxApi as any, 'pause')
+      .mockResolvedValue(true)
 
     await sandbox.pause()
 
@@ -95,7 +97,9 @@ describe('Sandbox instance config overrides', () => {
 
   it('applies override opts for pause()', async () => {
     const sandbox = createSandbox()
-    const pauseSpy = vi.spyOn(SandboxApi as any, 'pause').mockResolvedValue(true)
+    const pauseSpy = vi
+      .spyOn(SandboxApi as any, 'pause')
+      .mockResolvedValue(true)
     const override = {
       domain: 'override.e2b.dev',
       requestTimeoutMs: 9999,
