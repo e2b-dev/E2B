@@ -6,6 +6,7 @@ import httpx
 from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.error import Error
+from ...models.log_level import LogLevel
 from ...models.logs_direction import LogsDirection
 from ...models.sandbox_logs_v2_response import SandboxLogsV2Response
 from ...types import UNSET, Response, Unset
@@ -17,6 +18,8 @@ def _get_kwargs(
     cursor: Union[Unset, int] = UNSET,
     limit: Union[Unset, int] = 1000,
     direction: Union[Unset, LogsDirection] = UNSET,
+    level: Union[Unset, LogLevel] = UNSET,
+    search: Union[Unset, str] = UNSET,
 ) -> dict[str, Any]:
     params: dict[str, Any] = {}
 
@@ -29,6 +32,14 @@ def _get_kwargs(
         json_direction = direction.value
 
     params["direction"] = json_direction
+
+    json_level: Union[Unset, str] = UNSET
+    if not isinstance(level, Unset):
+        json_level = level.value
+
+    params["level"] = json_level
+
+    params["search"] = search
 
     params = {k: v for k, v in params.items() if v is not UNSET and v is not None}
 
@@ -84,6 +95,8 @@ def sync_detailed(
     cursor: Union[Unset, int] = UNSET,
     limit: Union[Unset, int] = 1000,
     direction: Union[Unset, LogsDirection] = UNSET,
+    level: Union[Unset, LogLevel] = UNSET,
+    search: Union[Unset, str] = UNSET,
 ) -> Response[Union[Error, SandboxLogsV2Response]]:
     """Get sandbox logs
 
@@ -92,6 +105,8 @@ def sync_detailed(
         cursor (Union[Unset, int]):
         limit (Union[Unset, int]):  Default: 1000.
         direction (Union[Unset, LogsDirection]): Direction of the logs that should be returned
+        level (Union[Unset, LogLevel]): State of the sandbox
+        search (Union[Unset, str]):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -106,6 +121,8 @@ def sync_detailed(
         cursor=cursor,
         limit=limit,
         direction=direction,
+        level=level,
+        search=search,
     )
 
     response = client.get_httpx_client().request(
@@ -122,6 +139,8 @@ def sync(
     cursor: Union[Unset, int] = UNSET,
     limit: Union[Unset, int] = 1000,
     direction: Union[Unset, LogsDirection] = UNSET,
+    level: Union[Unset, LogLevel] = UNSET,
+    search: Union[Unset, str] = UNSET,
 ) -> Optional[Union[Error, SandboxLogsV2Response]]:
     """Get sandbox logs
 
@@ -130,6 +149,8 @@ def sync(
         cursor (Union[Unset, int]):
         limit (Union[Unset, int]):  Default: 1000.
         direction (Union[Unset, LogsDirection]): Direction of the logs that should be returned
+        level (Union[Unset, LogLevel]): State of the sandbox
+        search (Union[Unset, str]):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -145,6 +166,8 @@ def sync(
         cursor=cursor,
         limit=limit,
         direction=direction,
+        level=level,
+        search=search,
     ).parsed
 
 
@@ -155,6 +178,8 @@ async def asyncio_detailed(
     cursor: Union[Unset, int] = UNSET,
     limit: Union[Unset, int] = 1000,
     direction: Union[Unset, LogsDirection] = UNSET,
+    level: Union[Unset, LogLevel] = UNSET,
+    search: Union[Unset, str] = UNSET,
 ) -> Response[Union[Error, SandboxLogsV2Response]]:
     """Get sandbox logs
 
@@ -163,6 +188,8 @@ async def asyncio_detailed(
         cursor (Union[Unset, int]):
         limit (Union[Unset, int]):  Default: 1000.
         direction (Union[Unset, LogsDirection]): Direction of the logs that should be returned
+        level (Union[Unset, LogLevel]): State of the sandbox
+        search (Union[Unset, str]):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -177,6 +204,8 @@ async def asyncio_detailed(
         cursor=cursor,
         limit=limit,
         direction=direction,
+        level=level,
+        search=search,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -191,6 +220,8 @@ async def asyncio(
     cursor: Union[Unset, int] = UNSET,
     limit: Union[Unset, int] = 1000,
     direction: Union[Unset, LogsDirection] = UNSET,
+    level: Union[Unset, LogLevel] = UNSET,
+    search: Union[Unset, str] = UNSET,
 ) -> Optional[Union[Error, SandboxLogsV2Response]]:
     """Get sandbox logs
 
@@ -199,6 +230,8 @@ async def asyncio(
         cursor (Union[Unset, int]):
         limit (Union[Unset, int]):  Default: 1000.
         direction (Union[Unset, LogsDirection]): Direction of the logs that should be returned
+        level (Union[Unset, LogLevel]): State of the sandbox
+        search (Union[Unset, str]):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -215,5 +248,7 @@ async def asyncio(
             cursor=cursor,
             limit=limit,
             direction=direction,
+            level=level,
+            search=search,
         )
     ).parsed

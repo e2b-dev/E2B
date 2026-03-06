@@ -16,6 +16,7 @@ export {
   RateLimitError,
   BuildError,
   FileUploadError,
+  VolumeError,
 } from './errors'
 export type { Logger } from './logs'
 
@@ -86,6 +87,19 @@ export type {
   GitFileStatus,
   GitStatus,
 } from './sandbox/git'
+
+export { Volume } from './volume'
+export type {
+  VolumeInfo,
+  VolumeAndToken,
+  VolumeEntryStat,
+  VolumeFileType,
+  VolumeMetadataOptions,
+  VolumeWriteOptions,
+  VolumeRemoveOptions,
+  VolumeApiOpts,
+  VolumeConnectionConfig,
+} from './volume'
 
 export { Sandbox }
 import { Sandbox } from './sandbox'
