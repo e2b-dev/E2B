@@ -438,6 +438,7 @@ class AsyncVolume:
         timeout = config.get_request_timeout(opts.get("request_timeout"))
 
         if format == "stream":
+
             async def stream_file() -> AsyncIterator[bytes]:
                 async with api_client.get_async_httpx_client().stream(
                     method="GET",
