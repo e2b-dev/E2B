@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Dict, List, Literal, Optional, TypedDict, Union, cast
 
@@ -128,10 +128,10 @@ class SandboxInfo:
     """Sandbox Memory size in MiB."""
     envd_version: str
     """Envd version."""
-    volume_mounts: List[Dict[str, str]]
-    """Volume mounts for the sandbox."""
     _envd_access_token: Optional[str]
     """Envd access token."""
+    volume_mounts: List[Dict[str, str]] = field(default_factory=list)
+    """Volume mounts for the sandbox."""
 
     @classmethod
     def _from_sandbox_data(
