@@ -231,32 +231,15 @@ class Filesystem:
         httpx_files = []
         for file in files:
             file_path, file_data = file["path"], file["data"]
-            if isinstance(file_data, str):
-                raw = file_data.encode("utf-8")
-                httpx_files.append(
-                    ("file", (file_path, gzip.compress(raw) if use_gzip else raw))
-                )
-            elif isinstance(file_data, bytes):
-                httpx_files.append(
-                    (
-                        "file",
-                        (
-                            file_path,
-                            gzip.compress(file_data) if use_gzip else file_data,
-                        ),
-                    )
-                )
+            if isinstance(file_data, (str, bytes)):
+                # str and bytes can be passed directly
+                httpx_files.append(("file", (file_path, file_data)))
+            elif isinstance(file_data, TextIOBase):
+                # Text streams must be read first
+                httpx_files.append(("file", (file_path, file_data.read())))
             elif isinstance(file_data, IOBase):
-                if use_gzip:
-                    raw = file_data.read()
-                    if isinstance(raw, str):
-                        raw = raw.encode("utf-8")
-                    httpx_files.append(("file", (file_path, gzip.compress(raw))))
-                elif isinstance(file_data, TextIOBase):
-                    # Text streams must be read first
-                    httpx_files.append(("file", (file_path, file_data.read())))
-                else:
-                    httpx_files.append(("file", (file_path, file_data)))
+                # Binary streams can be passed directly
+                httpx_files.append(("file", (file_path, file_data)))
             else:
                 raise InvalidArgumentException(
                     f"Unsupported data type for file {file_path}"
@@ -267,15 +250,24 @@ class Filesystem:
             return []
 
         headers = {}
+        post_kwargs: dict = {}
+
         if use_gzip:
+            # Serialize the entire multipart form, then gzip the whole body.
+            # The backend decompresses the full request body before parsing multipart.
+            temp = httpx.Request("POST", "http://temp", files=httpx_files)
+            headers["Content-Type"] = temp.headers["content-type"]
             headers["Content-Encoding"] = "gzip"
+            post_kwargs["content"] = gzip.compress(temp.content)
+        else:
+            post_kwargs["files"] = httpx_files
 
         r = await self._envd_api.post(
             ENVD_API_FILES_ROUTE,
-            files=httpx_files,
             params=params,
             headers=headers,
             timeout=self._connection_config.get_request_timeout(request_timeout),
+            **post_kwargs,
         )
 
         err = await ahandle_envd_api_exception(r)

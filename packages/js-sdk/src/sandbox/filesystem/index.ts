@@ -389,10 +389,7 @@ export class Filesystem {
     const formData = new FormData()
     for (let i = 0; i < writeFiles.length; i++) {
       const file = writeFiles[i]
-      let blob = await toBlob(file.data)
-      if (useGzip) {
-        blob = await gzipCompress(blob)
-      }
+      const blob = await toBlob(file.data)
       formData.append('file', blob, writeFiles[i].path)
     }
 
@@ -405,8 +402,15 @@ export class Filesystem {
     }
 
     const headers: Record<string, string> = {}
+    let body: BodyInit = formData
+
     if (useGzip) {
+      // Serialize the entire multipart form, then gzip the whole body.
+      // The backend decompresses the full request body before parsing multipart.
+      const raw = new Response(formData)
+      headers['Content-Type'] = raw.headers.get('Content-Type')!
       headers['Content-Encoding'] = 'gzip'
+      body = await gzipCompress(await raw.blob())
     }
 
     const res = await this.envdApi.api.POST('/files', {
@@ -416,7 +420,7 @@ export class Filesystem {
           username: user,
         },
       },
-      bodySerializer: () => formData,
+      bodySerializer: () => body,
       signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
       body: {},
       headers,
