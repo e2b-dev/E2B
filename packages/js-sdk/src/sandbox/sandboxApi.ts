@@ -7,6 +7,7 @@ import {
 import { compareVersions } from 'compare-versions'
 import { SandboxNotFoundError, TemplateError } from '../errors'
 import { timeoutToSeconds } from '../utils'
+import type { Volume } from '../volume'
 import type { McpServer as BaseMcpServer } from './mcp'
 
 /**
@@ -160,12 +161,11 @@ export interface SandboxOpts extends ConnectionOpts {
    * Volume mounts for the sandbox.
    *
    * The keys are mount paths inside the sandbox and the values are either
-   * a Volume instance (or any object with `volumeId` and `name`) or a string
-   * representing the volume name.
+   * a `Volume` instance or a string representing the volume name.
    *
    * @default undefined
    */
-  volumeMounts?: Record<string, { name: string } | string>
+  volumeMounts?: Record<string, Volume | string>
 
   /**
    * Sandbox URL. Used for local development
