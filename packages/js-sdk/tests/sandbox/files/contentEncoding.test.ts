@@ -10,14 +10,14 @@ sandboxTest(
     const content = 'This is a test file with gzip encoding.'
 
     const info = await sandbox.files.write(filename, content, {
-      encoding: 'gzip',
+      gzip: true,
     })
     assert.equal(info.name, filename)
     assert.equal(info.type, 'file')
     assert.equal(info.path, `/home/user/${filename}`)
 
     const readContent = await sandbox.files.read(filename, {
-      encoding: 'gzip',
+      gzip: true,
     })
     assert.equal(readContent, content)
 
@@ -34,7 +34,7 @@ sandboxTest(
     const content = 'Written with gzip, read without.'
 
     await sandbox.files.write(filename, content, {
-      encoding: 'gzip',
+      gzip: true,
     })
 
     const readContent = await sandbox.files.read(filename)
@@ -54,7 +54,7 @@ sandboxTest('writeFiles with gzip content encoding', async ({ sandbox }) => {
   ]
 
   const infos = await sandbox.files.writeFiles(files, {
-    encoding: 'gzip',
+    gzip: true,
   })
 
   assert.equal(infos.length, files.length)
@@ -81,7 +81,7 @@ sandboxTest(
 
     const readBytes = await sandbox.files.read(filename, {
       format: 'bytes',
-      encoding: 'gzip',
+      gzip: true,
     })
     assert.instanceOf(readBytes, Uint8Array)
     const decoded = new TextDecoder().decode(readBytes)
