@@ -12,27 +12,38 @@ from e2b.api.client.api.sandboxes import (
     post_sandboxes,
     post_sandboxes_sandbox_id_connect,
     post_sandboxes_sandbox_id_pause,
+    post_sandboxes_sandbox_id_snapshots,
     post_sandboxes_sandbox_id_timeout,
 )
+from e2b.api.client.api.templates import delete_templates_template_id
 from e2b.api.client.models import (
     ConnectSandbox,
     Error,
     NewSandbox,
+    PostSandboxesSandboxIDSnapshotsBody,
     PostSandboxesSandboxIDTimeoutBody,
     Sandbox,
+    SandboxAutoResumeConfig,
     SandboxNetworkConfig,
 )
 from e2b.api.client.types import UNSET
 from e2b.api.client_async import get_api_client
 from e2b.connection_config import ApiParams, ConnectionConfig
-from e2b.exceptions import NotFoundException, SandboxException, TemplateException
+from e2b.exceptions import (
+    NotFoundException,
+    SandboxException,
+    TemplateException,
+)
 from e2b.sandbox.main import SandboxBase
 from e2b.sandbox.sandbox_api import (
+    SandboxLifecycle,
+    get_auto_resume_enabled,
     McpServer,
     SandboxInfo,
     SandboxMetrics,
     SandboxNetworkOpts,
     SandboxQuery,
+    SnapshotInfo,
 )
 from e2b.sandbox_async.paginator import AsyncSandboxPaginator
 
@@ -142,7 +153,7 @@ class SandboxApi(SandboxBase):
         )
 
         if res.status_code == 404:
-            raise NotFoundException(f"Paused sandbox {sandbox_id} not found")
+            raise NotFoundException(f"Sandbox {sandbox_id} not found")
 
         if res.status_code >= 300:
             raise handle_api_exception(res)
@@ -152,30 +163,39 @@ class SandboxApi(SandboxBase):
         cls,
         template: str,
         timeout: int,
-        auto_pause: bool,
+        auto_pause: Optional[bool],
         allow_internet_access: bool,
         metadata: Optional[Dict[str, str]],
         env_vars: Optional[Dict[str, str]],
         secure: bool,
         mcp: Optional[McpServer] = None,
         network: Optional[SandboxNetworkOpts] = None,
+        lifecycle: Optional[SandboxLifecycle] = None,
         **opts: Unpack[ApiParams],
     ) -> SandboxCreateResponse:
         config = ConnectionConfig(**opts)
 
+        should_auto_pause = (
+            lifecycle["on_timeout"] == "pause" if lifecycle is not None else auto_pause
+        )
+        auto_resume_enabled = get_auto_resume_enabled(lifecycle)
+        body = NewSandbox(
+            template_id=template,
+            auto_pause=(should_auto_pause if should_auto_pause is not None else UNSET),
+            metadata=metadata or {},
+            timeout=timeout,
+            env_vars=env_vars or {},
+            mcp=cast(Any, mcp) or UNSET,
+            secure=secure,
+            allow_internet_access=allow_internet_access,
+            network=SandboxNetworkConfig(**network) if network else UNSET,
+        )
+        if auto_resume_enabled is not None:
+            body.auto_resume = SandboxAutoResumeConfig(enabled=auto_resume_enabled)
+
         api_client = get_api_client(config)
         res = await post_sandboxes.asyncio_detailed(
-            body=NewSandbox(
-                template_id=template,
-                auto_pause=auto_pause,
-                metadata=metadata or {},
-                timeout=timeout,
-                env_vars=env_vars or {},
-                mcp=cast(Any, mcp) or UNSET,
-                secure=secure,
-                allow_internet_access=allow_internet_access,
-                network=SandboxNetworkConfig(**network) if network else UNSET,
-            ),
+            body=body,
             client=api_client,
         )
 
@@ -269,6 +289,57 @@ class SandboxApi(SandboxBase):
             )
             for metric in res.parsed
         ]
+
+    @classmethod
+    async def _cls_create_snapshot(
+        cls,
+        sandbox_id: str,
+        **opts: Unpack[ApiParams],
+    ) -> SnapshotInfo:
+        config = ConnectionConfig(**opts)
+
+        api_client = get_api_client(config)
+        res = await post_sandboxes_sandbox_id_snapshots.asyncio_detailed(
+            sandbox_id,
+            client=api_client,
+            body=PostSandboxesSandboxIDSnapshotsBody(),
+        )
+
+        if res.status_code == 404:
+            raise NotFoundException(f"Sandbox {sandbox_id} not found")
+
+        if res.status_code >= 300:
+            raise handle_api_exception(res)
+
+        if res.parsed is None:
+            raise SandboxException("Body of the request is None")
+
+        if isinstance(res.parsed, Error):
+            raise SandboxException(f"{res.parsed.message}: Request failed")
+
+        return SnapshotInfo(snapshot_id=res.parsed.snapshot_id)
+
+    @classmethod
+    async def _cls_delete_snapshot(
+        cls,
+        snapshot_id: str,
+        **opts: Unpack[ApiParams],
+    ) -> bool:
+        config = ConnectionConfig(**opts)
+
+        api_client = get_api_client(config)
+        res = await delete_templates_template_id.asyncio_detailed(
+            snapshot_id,
+            client=api_client,
+        )
+
+        if res.status_code == 404:
+            return False
+
+        if res.status_code >= 300:
+            raise handle_api_exception(res)
+
+        return True
 
     @classmethod
     async def _cls_pause(

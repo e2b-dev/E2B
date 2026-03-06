@@ -1,4 +1,4 @@
-import { ApiClient, handleApiError, paths } from '../api'
+import { ApiClient, handleApiError, paths, components } from '../api'
 import { stripAnsi } from '../utils'
 import { BuildError, FileUploadError, TemplateError } from '../errors'
 import { LogEntry } from './logger'
@@ -7,6 +7,7 @@ import {
   BuildStatusReason,
   TemplateBuildStatus,
   TemplateBuildStatusResponse,
+  TemplateTag,
   TemplateTagInfo,
 } from './types'
 
@@ -357,4 +358,32 @@ export async function removeTags(
   if (error) {
     throw error
   }
+}
+
+export async function getTemplateTags(
+  client: ApiClient,
+  { templateID }: { templateID: string }
+): Promise<TemplateTag[]> {
+  const res = await client.api.GET('/templates/{templateID}/tags', {
+    params: {
+      path: {
+        templateID,
+      },
+    },
+  })
+
+  const error = handleApiError(res, TemplateError)
+  if (error) {
+    throw error
+  }
+
+  if (!res.data) {
+    throw new TemplateError('Failed to get template tags')
+  }
+
+  return res.data.map((item: components['schemas']['TemplateTag']) => ({
+    tag: item.tag,
+    buildId: item.buildID,
+    createdAt: new Date(item.createdAt),
+  }))
 }

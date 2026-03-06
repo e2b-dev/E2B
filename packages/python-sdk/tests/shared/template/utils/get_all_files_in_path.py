@@ -223,6 +223,65 @@ class TestGetAllFilesInPath:
         assert any("helper.ts" in f for f in files)
         assert not any("test.spec.ts" in f for f in files)
 
+    def test_should_include_dotfiles(self, test_dir):
+        """Test that function includes files starting with a dot."""
+        with open(os.path.join(test_dir, "file.txt"), "w") as f:
+            f.write("content")
+        with open(os.path.join(test_dir, ".env"), "w") as f:
+            f.write("SECRET=123")
+        with open(os.path.join(test_dir, ".gitignore"), "w") as f:
+            f.write("node_modules")
+
+        files = get_all_files_in_path("*", test_dir, [])
+
+        assert len(files) == 3
+        assert any(".env" in f for f in files)
+        assert any(".gitignore" in f for f in files)
+        assert any("file.txt" in f for f in files)
+
+    def test_should_include_dotfiles_in_subdirectories(self, test_dir):
+        """Test that function includes dotfiles inside subdirectories."""
+        os.makedirs(os.path.join(test_dir, "src"), exist_ok=True)
+        with open(os.path.join(test_dir, "src", "index.ts"), "w") as f:
+            f.write("content")
+        with open(os.path.join(test_dir, "src", ".env.local"), "w") as f:
+            f.write("SECRET=123")
+
+        files = get_all_files_in_path("src", test_dir, [])
+
+        assert any("index.ts" in f for f in files)
+        assert any(".env.local" in f for f in files)
+
+    def test_should_include_dotdirectories_and_their_contents(self, test_dir):
+        """Test that function includes dot-prefixed directories and their contents."""
+        os.makedirs(os.path.join(test_dir, ".hidden"), exist_ok=True)
+        with open(os.path.join(test_dir, ".hidden", "config.json"), "w") as f:
+            f.write("{}")
+        with open(os.path.join(test_dir, "visible.txt"), "w") as f:
+            f.write("content")
+
+        files = get_all_files_in_path("*", test_dir, [])
+
+        assert any(".hidden" in f for f in files)
+        assert any("config.json" in f for f in files)
+        assert any("visible.txt" in f for f in files)
+
+    def test_should_respect_ignore_patterns_for_dotfiles(self, test_dir):
+        """Test that dotfiles can be excluded via ignore patterns."""
+        with open(os.path.join(test_dir, ".env"), "w") as f:
+            f.write("SECRET=123")
+        with open(os.path.join(test_dir, ".gitignore"), "w") as f:
+            f.write("node_modules")
+        with open(os.path.join(test_dir, "file.txt"), "w") as f:
+            f.write("content")
+
+        files = get_all_files_in_path("*", test_dir, [".env"])
+
+        assert len(files) == 2
+        assert not any(f.endswith(".env") for f in files)
+        assert any(".gitignore" in f for f in files)
+        assert any("file.txt" in f for f in files)
+
     def test_should_handle_symlinks(self, test_dir):
         """Test that function handles symbolic links."""
         # Create a file and a symlink to it

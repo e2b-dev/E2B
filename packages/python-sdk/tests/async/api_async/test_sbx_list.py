@@ -1,4 +1,4 @@
-import time
+import uuid
 
 import pytest
 
@@ -17,7 +17,7 @@ async def test_list_sandboxes(async_sandbox: AsyncSandbox, sandbox_test_id: str)
 
 @pytest.mark.skip_debug()
 async def test_list_sandboxes_with_filter(sandbox_test_id: str, async_sandbox_factory):
-    unique_id = str(int(time.time()))
+    unique_id = str(uuid.uuid4())
     extra_sbx = await async_sandbox_factory(metadata={"unique_id": unique_id})
 
     paginator = AsyncSandbox.list(query=SandboxQuery(metadata={"unique_id": unique_id}))

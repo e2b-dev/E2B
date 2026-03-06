@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Dict, List, Optional, TypedDict, Union, cast
+from typing import Any, Dict, List, Literal, Optional, TypedDict, Union, cast
 
 from typing_extensions import NotRequired, Unpack
 
@@ -74,6 +74,31 @@ class SandboxNetworkOpts(TypedDict):
     Examples:
     - Custom subdomain: `"${PORT}-myapp.example.com"`
     """
+
+
+class SandboxLifecycle(TypedDict):
+    """
+    Sandbox lifecycle configuration; defines post-timeout behavior and auto-resume settings.
+    Defaults to `on_timeout="kill"` and `auto_resume=False`.
+    """
+
+    on_timeout: Literal["pause", "kill"]
+    """
+    What should happen to the sandbox when timeout is reached. `"kill"` means the sandbox will be terminated, while `"pause"` means the sandbox will be paused and can be resumed later. Defaults to `"kill"`.
+    """
+
+    auto_resume: NotRequired[bool]
+    """
+    Whether activity should cause the sandbox to resume when paused. Defaults to `False`.
+    Can be `True` only when `on_timeout` is `pause`.
+    """
+
+
+def get_auto_resume_enabled(lifecycle: Optional[SandboxLifecycle]) -> Optional[bool]:
+    if lifecycle is None or lifecycle.get("on_timeout") != "pause":
+        return None
+
+    return lifecycle.get("auto_resume", False)
 
 
 @dataclass
@@ -182,19 +207,23 @@ class SandboxMetrics:
     """Timestamp of the metric entry."""
 
 
-class SandboxPaginatorBase:
+@dataclass
+class SnapshotInfo:
+    """Information about a snapshot."""
+
+    snapshot_id: str
+    """Snapshot identifier — template ID with tag, or namespaced name with tag (e.g. my-snapshot:latest). Can be used with Sandbox.create() to create a new sandbox from this snapshot."""
+
+
+class PaginatorBase:
     def __init__(
         self,
-        query: Optional[SandboxQuery] = None,
         limit: Optional[int] = None,
         next_token: Optional[str] = None,
         **opts: Unpack[ApiParams],
     ):
         self._config = ConnectionConfig(**opts)
-
-        self.query = query
         self.limit = limit
-
         self._has_next = True
         self._next_token = next_token
 
@@ -211,3 +240,27 @@ class SandboxPaginatorBase:
         Returns the next token to use for pagination.
         """
         return self._next_token
+
+
+class SnapshotPaginatorBase(PaginatorBase):
+    def __init__(
+        self,
+        sandbox_id: Optional[str] = None,
+        limit: Optional[int] = None,
+        next_token: Optional[str] = None,
+        **opts: Unpack[ApiParams],
+    ):
+        super().__init__(limit=limit, next_token=next_token, **opts)
+        self.sandbox_id = sandbox_id
+
+
+class SandboxPaginatorBase(PaginatorBase):
+    def __init__(
+        self,
+        query: Optional[SandboxQuery] = None,
+        limit: Optional[int] = None,
+        next_token: Optional[str] = None,
+        **opts: Unpack[ApiParams],
+    ):
+        super().__init__(limit=limit, next_token=next_token, **opts)
+        self.query = query

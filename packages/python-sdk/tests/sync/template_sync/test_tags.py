@@ -1,9 +1,10 @@
 import uuid
+from datetime import datetime, timezone
 from unittest.mock import Mock
 
 import pytest
 
-from e2b import TemplateTagInfo, Template
+from e2b import TemplateTag, TemplateTagInfo, Template
 from e2b.exceptions import TemplateException
 import e2b.template_sync.main as template_sync_main
 
@@ -106,6 +107,59 @@ class TestRemoveTags:
             Template.remove_tags("nonexistent", ["tag"])
 
 
+class TestGetTags:
+    """Tests for Template.get_tags method."""
+
+    def test_get_tags(self, monkeypatch):
+        """Test getting tags for a template."""
+        mock_get_template_tags = Mock(
+            return_value=[
+                TemplateTag(
+                    tag="v1.0",
+                    build_id="00000000-0000-0000-0000-000000000000",
+                    created_at=datetime(2024, 1, 15, 10, 30, 0, tzinfo=timezone.utc),
+                ),
+                TemplateTag(
+                    tag="latest",
+                    build_id="11111111-1111-1111-1111-111111111111",
+                    created_at=datetime(2024, 1, 16, 12, 0, 0, tzinfo=timezone.utc),
+                ),
+            ]
+        )
+
+        monkeypatch.setattr(
+            template_sync_main, "get_api_client", lambda *args, **kwargs: None
+        )
+        monkeypatch.setattr(
+            template_sync_main, "get_template_tags", mock_get_template_tags
+        )
+
+        result = Template.get_tags("my-template")
+
+        assert len(result) == 2
+        assert result[0].tag == "v1.0"
+        assert result[0].build_id == "00000000-0000-0000-0000-000000000000"
+        assert isinstance(result[0].created_at, datetime)
+        assert result[1].tag == "latest"
+        mock_get_template_tags.assert_called_once()
+
+    def test_get_tags_error(self, monkeypatch):
+        """Test that get_tags raises an error for nonexistent template."""
+        mock_get_template_tags = Mock(
+            side_effect=TemplateException("Template not found")
+        )
+
+        monkeypatch.setattr(
+            template_sync_main, "get_api_client", lambda *args, **kwargs: None
+        )
+        monkeypatch.setattr(
+            template_sync_main, "get_template_tags", mock_get_template_tags
+        )
+
+        with pytest.raises(TemplateException):
+            Template.get_tags("nonexistent")
+
+
 # Integration tests
 class TestTagsIntegration:
     """Integration tests for Template tags functionality."""
@@ -113,8 +167,8 @@ class TestTagsIntegration:
     @pytest.mark.skip_debug()
     def test_build_template_with_tags_assign_and_delete(self, build):
         """Test building a template with tags, assigning new tags, and deleting."""
-        template_alias = f"e2b-sync-tags-test-{uuid.uuid4().hex}"
-        initial_tag = f"{template_alias}:v1.0"
+        template_name = "e2b-tags-test"
+        initial_tag = f"{template_name}:v1-{uuid.uuid4().hex}"
 
         # Build a template with initial tag
         template = Template().from_base_image()
@@ -134,8 +188,8 @@ class TestTagsIntegration:
     @pytest.mark.skip_debug()
     def test_assign_single_tag_to_existing_template(self, build):
         """Test assigning a single tag (not array) to an existing template."""
-        template_alias = f"e2b-sync-single-tag-{uuid.uuid4().hex}"
-        initial_tag = f"{template_alias}:v1.0"
+        template_name = "e2b-tags-test"
+        initial_tag = f"{template_name}:v1-{uuid.uuid4().hex}"
 
         template = Template().from_base_image()
         build(template, name=initial_tag)
@@ -150,8 +204,8 @@ class TestTagsIntegration:
     @pytest.mark.skip_debug()
     def test_rejects_invalid_tag_format_missing_alias(self, build):
         """Test that tag without alias (starts with colon) is rejected."""
-        template_alias = f"e2b-sync-invalid-tag-{uuid.uuid4().hex}"
-        initial_tag = f"{template_alias}:v1.0"
+        template_name = "e2b-tags-test"
+        initial_tag = f"{template_name}:v1-{uuid.uuid4().hex}"
 
         template = Template().from_base_image()
         build(template, name=initial_tag)
@@ -163,12 +217,12 @@ class TestTagsIntegration:
     @pytest.mark.skip_debug()
     def test_rejects_invalid_tag_format_missing_tag(self, build):
         """Test that tag without tag portion (ends with colon) is rejected."""
-        template_alias = f"e2b-sync-invalid-tag2-{uuid.uuid4().hex}"
-        initial_tag = f"{template_alias}:v1.0"
+        template_name = "e2b-tags-test"
+        initial_tag = f"{template_name}:v1-{uuid.uuid4().hex}"
 
         template = Template().from_base_image()
         build(template, name=initial_tag)
 
         # Tag without tag portion (ends with colon) should be rejected
         with pytest.raises(Exception):
-            Template.assign_tags(initial_tag, f"{template_alias}:")
+            Template.assign_tags(initial_tag, f"{template_name}:")

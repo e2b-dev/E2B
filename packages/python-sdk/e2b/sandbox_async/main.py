@@ -13,15 +13,25 @@ from e2b.api.client_async import get_transport
 from e2b.connection_config import ApiParams, ConnectionConfig
 from e2b.envd.api import ENVD_API_HEALTH_ROUTE, ahandle_envd_api_exception
 from e2b.envd.versions import ENVD_DEBUG_FALLBACK
-from e2b.exceptions import SandboxException, format_request_timeout_error
+from e2b.exceptions import (
+    SandboxException,
+    format_request_timeout_error,
+)
 from e2b.sandbox.main import SandboxOpts
-from e2b.sandbox.sandbox_api import McpServer, SandboxMetrics, SandboxNetworkOpts
+from e2b.sandbox.sandbox_api import (
+    McpServer,
+    SandboxLifecycle,
+    SandboxMetrics,
+    SandboxNetworkOpts,
+    SnapshotInfo,
+)
 from e2b.sandbox.utils import class_method_variant
 from e2b.sandbox_async.commands.command import Commands
 from e2b.sandbox_async.commands.pty import Pty
 from e2b.sandbox_async.filesystem.filesystem import Filesystem
 from e2b.sandbox_async.git import Git
 from e2b.sandbox_async.sandbox_api import SandboxApi, SandboxInfo
+from e2b.sandbox_async.paginator import AsyncSnapshotPaginator
 
 logger = logging.getLogger(__name__)
 
@@ -162,6 +172,7 @@ class AsyncSandbox(SandboxApi):
         allow_internet_access: bool = True,
         mcp: Optional[McpServer] = None,
         network: Optional[SandboxNetworkOpts] = None,
+        lifecycle: Optional[SandboxLifecycle] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
         """
@@ -177,6 +188,7 @@ class AsyncSandbox(SandboxApi):
         :param allow_internet_access: Allow sandbox to access the internet, defaults to `True`. If set to `False`, it works the same as setting network `deny_out` to `[0.0.0.0/0]`.
         :param mcp: MCP server to enable in the sandbox
         :param network: Sandbox network configuration
+        :param lifecycle: Sandbox lifecycle configuration — ``on_timeout``: ``"kill"`` (default) or ``"pause"``; ``auto_resume``: ``False`` (default) or ``True`` (only when ``on_timeout="pause"``). Example: ``{"on_timeout": "pause", "auto_resume": True}``
 
         :return: A Sandbox instance for the new sandbox
 
@@ -197,6 +209,7 @@ class AsyncSandbox(SandboxApi):
             allow_internet_access=allow_internet_access,
             mcp=mcp,
             network=network,
+            lifecycle=lifecycle,
             **opts,
         )
 
@@ -233,7 +246,7 @@ class AsyncSandbox(SandboxApi):
         @example
         ```python
         sandbox = await AsyncSandbox.create()
-        await sandbox.beta_pause()
+        await sandbox.pause()
 
         # Another code block
         same_sandbox = await sandbox.connect()
@@ -262,10 +275,10 @@ class AsyncSandbox(SandboxApi):
         @example
         ```python
         sandbox = await AsyncSandbox.create()
-        await AsyncSandbox.beta_pause(sandbox.sandbox_id)
+        await AsyncSandbox.pause(sandbox.sandbox_id)
 
         # Another code block
-        same_sandbox = await AsyncSandbox.connect(sandbox.sandbox_id))
+        same_sandbox = await AsyncSandbox.connect(sandbox.sandbox_id)
         ```
         """
         ...
@@ -289,7 +302,7 @@ class AsyncSandbox(SandboxApi):
         @example
         ```python
         sandbox = await AsyncSandbox.create()
-        await sandbox.beta_pause()
+        await sandbox.pause()
 
         # Another code block
         same_sandbox = await sandbox.connect()
@@ -563,6 +576,9 @@ class AsyncSandbox(SandboxApi):
             secure=secure,
             allow_internet_access=allow_internet_access,
             mcp=mcp,
+            lifecycle=(
+                {"on_timeout": "pause", "auto_resume": False} if auto_pause else None
+            ),
             **opts,
         )
 
@@ -581,13 +597,11 @@ class AsyncSandbox(SandboxApi):
         return sandbox
 
     @overload
-    async def beta_pause(
+    async def pause(
         self,
         **opts: Unpack[ApiParams],
     ) -> None:
         """
-        [BETA] This feature is in beta and may change in the future.
-
         Pause the sandbox.
 
         :return: Sandbox ID that can be used to resume the sandbox
@@ -596,13 +610,11 @@ class AsyncSandbox(SandboxApi):
 
     @overload
     @staticmethod
-    async def beta_pause(
+    async def pause(
         sandbox_id: str,
         **opts: Unpack[ApiParams],
     ) -> None:
         """
-        [BETA] This feature is in beta and may change in the future.
-
         Pause the sandbox specified by sandbox ID.
 
         :param sandbox_id: Sandbox ID
@@ -612,13 +624,11 @@ class AsyncSandbox(SandboxApi):
         ...
 
     @class_method_variant("_cls_pause")
-    async def beta_pause(
+    async def pause(
         self,
         **opts: Unpack[ApiParams],
     ) -> None:
         """
-        [BETA] This feature is in beta and may change in the future.
-
         Pause the sandbox.
 
         :return: Sandbox ID that can be used to resume the sandbox
@@ -626,6 +636,173 @@ class AsyncSandbox(SandboxApi):
 
         await SandboxApi._cls_pause(
             sandbox_id=self.sandbox_id,
+            **opts,
+        )
+
+    @overload
+    async def beta_pause(
+        self,
+        **opts: Unpack[ApiParams],
+    ) -> None: ...
+
+    @overload
+    @staticmethod
+    async def beta_pause(
+        sandbox_id: str,
+        **opts: Unpack[ApiParams],
+    ) -> None: ...
+
+    @class_method_variant("_cls_pause")
+    async def beta_pause(
+        self,
+        **opts: Unpack[ApiParams],
+    ) -> None:
+        """
+        :deprecated: Use `pause()` instead.
+        """
+        await self.pause(**opts)
+
+    @overload
+    async def create_snapshot(
+        self,
+        **opts: Unpack[ApiParams],
+    ) -> SnapshotInfo:
+        """
+        Create a snapshot of the sandbox's current state.
+
+        The sandbox will be paused while the snapshot is being created.
+        The snapshot can be used to create new sandboxes with the same filesystem and state.
+        Snapshots are persistent and survive sandbox deletion.
+
+        Use the returned `snapshot_id` with `AsyncSandbox.create(snapshot_id)` to create a new sandbox from the snapshot.
+
+        :return: Snapshot information including the snapshot ID
+        """
+        ...
+
+    @overload
+    @staticmethod
+    async def create_snapshot(
+        sandbox_id: str,
+        **opts: Unpack[ApiParams],
+    ) -> SnapshotInfo:
+        """
+        Create a snapshot from the sandbox specified by sandbox ID.
+
+        The sandbox will be paused while the snapshot is being created.
+
+        :param sandbox_id: Sandbox ID
+
+        :return: Snapshot information including the snapshot ID
+        """
+        ...
+
+    @class_method_variant("_cls_create_snapshot")
+    async def create_snapshot(
+        self,
+        **opts: Unpack[ApiParams],
+    ) -> SnapshotInfo:
+        """
+        Create a snapshot of the sandbox's current state.
+
+        The sandbox will be paused while the snapshot is being created.
+        The snapshot can be used to create new sandboxes with the same filesystem and state.
+        Snapshots are persistent and survive sandbox deletion.
+
+        Use the returned `snapshot_id` with `AsyncSandbox.create(snapshot_id)` to create a new sandbox from the snapshot.
+
+        :return: Snapshot information including the snapshot ID
+        """
+        return await SandboxApi._cls_create_snapshot(
+            sandbox_id=self.sandbox_id,
+            **self.connection_config.get_api_params(**opts),
+        )
+
+    @overload
+    def list_snapshots(
+        self,
+        limit: Optional[int] = None,
+        next_token: Optional[str] = None,
+        **opts: Unpack[ApiParams],
+    ) -> AsyncSnapshotPaginator:
+        """
+        List snapshots for this sandbox.
+
+        :param limit: Maximum number of snapshots to return per page
+        :param next_token: Token for pagination
+
+        :return: Paginator for listing snapshots
+        """
+        ...
+
+    @overload
+    @staticmethod
+    def list_snapshots(
+        sandbox_id: Optional[str] = None,
+        limit: Optional[int] = None,
+        next_token: Optional[str] = None,
+        **opts: Unpack[ApiParams],
+    ) -> AsyncSnapshotPaginator:
+        """
+        List all snapshots.
+
+        :param sandbox_id: Filter snapshots by source sandbox ID
+        :param limit: Maximum number of snapshots to return per page
+        :param next_token: Token for pagination
+
+        :return: Paginator for listing snapshots
+        """
+        ...
+
+    @class_method_variant("_cls_list_snapshots")
+    def list_snapshots(
+        self,
+        limit: Optional[int] = None,
+        next_token: Optional[str] = None,
+        **opts: Unpack[ApiParams],
+    ) -> AsyncSnapshotPaginator:
+        """
+        List snapshots for this sandbox.
+
+        :param limit: Maximum number of snapshots to return per page
+        :param next_token: Token for pagination
+
+        :return: Paginator for listing snapshots
+        """
+        return AsyncSnapshotPaginator(
+            sandbox_id=self.sandbox_id,
+            limit=limit,
+            next_token=next_token,
+            **self.connection_config.get_api_params(**opts),
+        )
+
+    @staticmethod
+    def _cls_list_snapshots(
+        sandbox_id: Optional[str] = None,
+        limit: Optional[int] = None,
+        next_token: Optional[str] = None,
+        **opts: Unpack[ApiParams],
+    ) -> AsyncSnapshotPaginator:
+        return AsyncSnapshotPaginator(
+            sandbox_id=sandbox_id,
+            limit=limit,
+            next_token=next_token,
+            **opts,
+        )
+
+    @staticmethod
+    async def delete_snapshot(
+        snapshot_id: str,
+        **opts: Unpack[ApiParams],
+    ) -> bool:
+        """
+        Delete a snapshot.
+
+        :param snapshot_id: Snapshot ID
+        :return: `True` if the snapshot was deleted, `False` if it was not found
+        """
+        return await SandboxApi._cls_delete_snapshot(
+            snapshot_id=snapshot_id,
             **opts,
         )
 
@@ -678,13 +855,14 @@ class AsyncSandbox(SandboxApi):
         cls,
         template: Optional[str],
         timeout: Optional[int],
-        auto_pause: bool,
+        auto_pause: Optional[bool],
         allow_internet_access: bool,
         metadata: Optional[Dict[str, str]],
         envs: Optional[Dict[str, str]],
         secure: bool,
         mcp: Optional[McpServer] = None,
         network: Optional[SandboxNetworkOpts] = None,
+        lifecycle: Optional[SandboxLifecycle] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
         extra_sandbox_headers = {}
@@ -707,6 +885,7 @@ class AsyncSandbox(SandboxApi):
                 allow_internet_access=allow_internet_access,
                 mcp=mcp,
                 network=network,
+                lifecycle=lifecycle,
                 **opts,
             )
 
