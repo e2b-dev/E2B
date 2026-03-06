@@ -32,6 +32,7 @@ import {
   ENVD_VERSION_RECURSIVE_WATCH,
 } from '../../envd/versions'
 import { InvalidArgumentError, TemplateError } from '../../errors'
+import { toUploadBody } from '../../utils'
 
 /**
  * Sandbox filesystem object information.
@@ -401,24 +402,10 @@ export class Filesystem {
         'Content-Type': 'application/octet-stream',
       }
 
-      let body: BodyInit
       if (useGzip) {
         headers['Content-Encoding'] = 'gzip'
-        const stream =
-          file.data instanceof ReadableStream
-            ? file.data
-            : file.data instanceof Blob
-              ? file.data.stream()
-              : new Blob([file.data]).stream()
-        body = stream.pipeThrough(new CompressionStream('gzip'))
-      } else if (
-        file.data instanceof ReadableStream ||
-        file.data instanceof Blob
-      ) {
-        body = file.data
-      } else {
-        body = new Blob([file.data])
       }
+      const body = toUploadBody(file.data, useGzip)
 
       const res = await this.envdApi.api.POST('/files', {
         params: {

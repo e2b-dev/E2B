@@ -108,28 +108,25 @@ export async function wait(ms: number) {
 }
 
 /**
- * Compress a Blob using gzip via the Web Streams API CompressionStream.
+ * Prepare data for upload as a BodyInit, optionally gzip-compressed.
+ * Streams data directly without buffering into memory.
  */
-export async function gzipCompress(blob: Blob): Promise<Blob> {
-  const cs = new CompressionStream('gzip')
-  const stream = blob.stream().pipeThrough(cs)
-  return new Response(stream).blob()
-}
+export function toUploadBody(
+  data: string | ArrayBuffer | Blob | ReadableStream,
+  gzip?: boolean
+): BodyInit {
+  if (gzip) {
+    const stream =
+      data instanceof ReadableStream
+        ? data
+        : data instanceof Blob
+          ? data.stream()
+          : new Blob([data]).stream()
+    return stream.pipeThrough(new CompressionStream('gzip'))
+  }
 
-/**
- * Convert data to a Blob, avoiding unnecessary conversions when possible.
- */
-export function toBlob(
-  data: string | ArrayBuffer | Blob | ReadableStream
-): Blob | Promise<Blob> {
-  // Already a Blob - use directly
-  if (data instanceof Blob) {
+  if (data instanceof ReadableStream || data instanceof Blob) {
     return data
   }
-  // String or ArrayBuffer - create Blob
-  if (typeof data === 'string' || data instanceof ArrayBuffer) {
-    return new Blob([data])
-  }
-  // ReadableStream - must consume to get Blob
-  return new Response(data).blob()
+  return new Blob([data])
 }

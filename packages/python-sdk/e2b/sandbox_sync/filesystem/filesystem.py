@@ -1,9 +1,6 @@
-import gzip
-import zlib
-from io import IOBase, TextIOBase
 from typing import IO, Iterator, List, Literal, Optional, overload, Union
 
-from e2b.sandbox.filesystem.filesystem import WriteEntry
+from e2b.sandbox.filesystem.filesystem import WriteEntry, to_upload_body
 
 import e2b_connect
 import httpcore
@@ -28,19 +25,6 @@ from e2b.sandbox.filesystem.filesystem import (
     map_file_type,
 )
 from e2b.sandbox_sync.filesystem.watch_handle import WatchHandle
-
-
-def _gzip_stream(source: IOBase, chunk_size: int = 65536):
-    """Stream-compress an IOBase through gzip without buffering the whole file."""
-    compressor = zlib.compressobj(wbits=31)  # 31 = gzip format
-    while True:
-        chunk = source.read(chunk_size)
-        if not chunk:
-            break
-        compressed = compressor.compress(chunk)
-        if compressed:
-            yield compressed
-    yield compressor.flush()
 
 
 class Filesystem:
@@ -249,20 +233,7 @@ class Filesystem:
             if use_gzip:
                 headers["Content-Encoding"] = "gzip"
 
-            if isinstance(file_data, str):
-                raw = file_data.encode("utf-8")
-                content = gzip.compress(raw) if use_gzip else raw
-            elif isinstance(file_data, bytes):
-                content = gzip.compress(file_data) if use_gzip else file_data
-            elif isinstance(file_data, TextIOBase):
-                raw = file_data.read().encode("utf-8")
-                content = gzip.compress(raw) if use_gzip else raw
-            elif isinstance(file_data, IOBase):
-                content = _gzip_stream(file_data) if use_gzip else file_data
-            else:
-                raise InvalidArgumentException(
-                    f"Unsupported data type for file {file_path}"
-                )
+            content = to_upload_body(file_data, use_gzip)
 
             r = self._envd_api.post(
                 ENVD_API_FILES_ROUTE,
