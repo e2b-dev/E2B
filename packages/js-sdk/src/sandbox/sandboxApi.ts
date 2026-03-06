@@ -352,7 +352,7 @@ export interface SandboxInfo {
   /**
    * Volume mounts for the sandbox.
    */
-  volumeMounts: Array<{ name: string; path: string }>
+  volumeMounts?: Array<{ name: string; path: string }>
 }
 
 /**
