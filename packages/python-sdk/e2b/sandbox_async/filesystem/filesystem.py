@@ -1,6 +1,7 @@
 import gzip
 import httpcore
 import httpx
+import zlib
 from io import IOBase, TextIOBase
 from packaging.version import Version
 from typing import AsyncIterator, IO, List, Literal, Optional, overload, Union
@@ -26,6 +27,19 @@ from e2b.sandbox.filesystem.filesystem import (
 from e2b.sandbox.filesystem.watch_handle import FilesystemEvent
 from e2b.sandbox_async.filesystem.watch_handle import AsyncWatchHandle
 from e2b.sandbox_async.utils import OutputHandler
+
+
+def _gzip_stream(source: IOBase, chunk_size: int = 65536):
+    """Stream-compress an IOBase through gzip without buffering the whole file."""
+    compressor = zlib.compressobj(wbits=31)  # 31 = gzip format
+    while True:
+        chunk = source.read(chunk_size)
+        if not chunk:
+            break
+        compressed = compressor.compress(chunk)
+        if compressed:
+            yield compressed
+    yield compressor.flush()
 
 
 class Filesystem:
@@ -231,29 +245,31 @@ class Filesystem:
 
         for file in files:
             file_path, file_data = file["path"], file["data"]
+
+            headers = {"Content-Type": "application/octet-stream"}
+            if use_gzip:
+                headers["Content-Encoding"] = "gzip"
+
             if isinstance(file_data, str):
                 raw = file_data.encode("utf-8")
+                content = gzip.compress(raw) if use_gzip else raw
             elif isinstance(file_data, bytes):
-                raw = file_data
+                content = gzip.compress(file_data) if use_gzip else file_data
             elif isinstance(file_data, TextIOBase):
                 raw = file_data.read().encode("utf-8")
+                content = gzip.compress(raw) if use_gzip else raw
             elif isinstance(file_data, IOBase):
-                raw = file_data.read()
+                content = _gzip_stream(file_data) if use_gzip else file_data
             else:
                 raise InvalidArgumentException(
                     f"Unsupported data type for file {file_path}"
                 )
 
-            headers = {"Content-Type": "application/octet-stream"}
-            if use_gzip:
-                headers["Content-Encoding"] = "gzip"
-                raw = gzip.compress(raw)
-
             r = await self._envd_api.post(
                 ENVD_API_FILES_ROUTE,
                 params={**params, "path": file_path},
                 headers=headers,
-                content=raw,
+                content=content,
                 timeout=self._connection_config.get_request_timeout(request_timeout),
             )
             err = await ahandle_envd_api_exception(r)

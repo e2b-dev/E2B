@@ -32,7 +32,6 @@ import {
   ENVD_VERSION_RECURSIVE_WATCH,
 } from '../../envd/versions'
 import { InvalidArgumentError, TemplateError } from '../../errors'
-import { gzipCompress, toBlob } from '../../utils'
 
 /**
  * Sandbox filesystem object information.
@@ -397,15 +396,28 @@ export class Filesystem {
     const results: WriteInfo[] = []
     for (const file of writeFiles) {
       const filePath = (file as WriteEntry).path ?? path
-      const blob = await toBlob(file.data)
 
       const headers: Record<string, string> = {
         'Content-Type': 'application/octet-stream',
       }
-      let body: BodyInit = blob
+
+      let body: BodyInit
       if (useGzip) {
         headers['Content-Encoding'] = 'gzip'
-        body = await gzipCompress(blob)
+        const stream =
+          file.data instanceof ReadableStream
+            ? file.data
+            : file.data instanceof Blob
+              ? file.data.stream()
+              : new Blob([file.data]).stream()
+        body = stream.pipeThrough(new CompressionStream('gzip'))
+      } else if (
+        file.data instanceof ReadableStream ||
+        file.data instanceof Blob
+      ) {
+        body = file.data
+      } else {
+        body = new Blob([file.data])
       }
 
       const res = await this.envdApi.api.POST('/files', {
