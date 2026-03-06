@@ -1,0 +1,79 @@
+---
+title: "Logging"
+---
+
+<Callout icon="circle-exclamation" color="#ff8800" iconType="regular">You are reading a legacy (pre v1.0) document.</Callout>
+
+
+export const sections = [
+  { title: 'Logging', id: 'logging' },
+]
+
+<CodeGroup>
+  ```text JavaScript & TypeScript
+  E2B package logs only warnings & errors to the console by default. Below is an example of how to fully customize the logging levels.\n\nFeel free to override the logger with your own implementation with debug, info, warn, and error methods.
+  ```
+  ```text Python
+  E2B package uses the standard Python logging module You can configure the logging level, handlers and format as you would with any other Python application. \n\nBelow is an example of how to configure the logging module to log to the console.
+  ```
+</CodeGroup>
+
+<CodeGroup>
+```js JavaScript & TypeScript highlight={14}
+import { Sandbox } from 'e2b'
+
+const logger = {
+  debug: console.debug, // log debug messages, in default logger this is noop
+  info: console.info, // log info messages, in default logger this is noop
+  // don't forget to also specify warn & error handlers, otherwise they won't be logged when overriding the logger
+  warn: console.warn,
+  error: console.error,
+}
+
+const sandbox = await Sandbox.create({
+  template: 'base',
+  apiKey: process.env.E2B_API_KEY,
+  logger,
+})
+```
+```python Python highlight={10,15,18,29}
+import logging
+from os import getenv
+
+from e2b import Sandbox
+
+E2B_API_KEY = getenv("E2B_API_KEY")
+
+# Global logging configuration
+logging.basicConfig(level=logging.INFO, format="GLOBAL - [%(asctime)s] - %(name)-32s - %(levelname)7s: %(message)s",
+                    datefmt="%Y-%m-%d %H:%M:%S")
+
+# Or configure only e2b logger
+
+# Get e2b logger
+e2b_logger = logging.getLogger("e2b")
+
+# Set e2b logger level to INFO
+e2b_logger.setLevel(logging.INFO)
+
+# Setup formatter
+formatter = logging.Formatter("E2B    - [%(asctime)s] - %(name)-32s - %(levelname)7s: %(message)s",
+                              datefmt="%Y-%m-%d %H:%M:%S")
+
+# Setup handler
+handler = logging.StreamHandler()
+handler.setFormatter(formatter)
+
+# Add handler to e2b logger
+e2b_logger.addHandler(handler)
+
+
+def main():
+    sandbox = Sandbox(template="base", api_key=E2B_API_KEY)
+    sandbox.filesystem.write("test.txt", "Hello World")
+    sandbox.close()
+
+
+main()
+```
+</CodeGroup>
