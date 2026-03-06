@@ -436,6 +436,7 @@ class Volume:
         timeout = config.get_request_timeout(opts.get("request_timeout"))
 
         if format == "stream":
+
             def stream_file() -> Iterator[bytes]:
                 with api_client.get_httpx_client().stream(
                     method="GET",
