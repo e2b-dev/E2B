@@ -68,6 +68,7 @@ from .sandbox.sandbox_api import (
     McpServer,
     SandboxInfo,
     SandboxMetrics,
+    SandboxLifecycle,
     SandboxNetworkOpts,
     SandboxQuery,
     SandboxState,
@@ -104,6 +105,7 @@ from .template.types import (
     CopyItem,
     TemplateBuildStatus,
     TemplateBuildStatusResponse,
+    TemplateTag,
     TemplateTagInfo,
 )
 from .template_async.main import AsyncTemplate
@@ -153,6 +155,7 @@ __all__ = [
     "FileType",
     # Network
     "SandboxNetworkOpts",
+    "SandboxLifecycle",
     "ALL_TRAFFIC",
     # Snapshot
     "SnapshotInfo",
@@ -179,6 +182,7 @@ __all__ = [
     "BuildStatusReason",
     "TemplateBuildStatus",
     "TemplateBuildStatusResponse",
+    "TemplateTag",
     "TemplateTagInfo",
     "ReadyCmd",
     "wait_for_file",
