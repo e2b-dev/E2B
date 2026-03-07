@@ -358,10 +358,12 @@ class Sandbox(SandboxApi):
 
         :return: `True` if the sandbox was killed, `False` if the sandbox was not found
         """
-        return SandboxApi._cls_kill(
+        result = SandboxApi._cls_kill(
             sandbox_id=self.sandbox_id,
             **self.connection_config.get_api_params(**opts),
         )
+        self._envd_api.close()
+        return result
 
     @overload
     def set_timeout(
