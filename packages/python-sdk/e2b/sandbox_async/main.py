@@ -359,10 +359,12 @@ class AsyncSandbox(SandboxApi):
 
         :return: `True` if the sandbox was killed, `False` if the sandbox was not found
         """
-        return await SandboxApi._cls_kill(
+        result = await SandboxApi._cls_kill(
             sandbox_id=self.sandbox_id,
             **self.connection_config.get_api_params(**opts),
         )
+        await self._envd_api.aclose()
+        return result
 
     @overload
     async def set_timeout(
