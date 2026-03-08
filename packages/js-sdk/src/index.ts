@@ -17,6 +17,7 @@ export {
   BuildError,
   FileUploadError,
 } from './errors'
+export type { TimeoutType } from './errors'
 export type { Logger } from './logs'
 
 export { getSignature } from './sandbox/signature'

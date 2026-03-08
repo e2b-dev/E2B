@@ -1,7 +1,21 @@
+/**
+ * The type of timeout that occurred.
+ *
+ * - `"sandbox_timeout"` – the sandbox itself timed out (idle / max lifetime).
+ * - `"request_timeout"` – a single HTTP / RPC request exceeded its deadline.
+ * - `"execution_timeout"` – a long-running operation (process, watch, etc.) exceeded its allowed duration.
+ */
+export type TimeoutType =
+  | 'sandbox_timeout'
+  | 'request_timeout'
+  | 'execution_timeout'
+
 // This is the message for the sandbox timeout error when the response code is 502/Unavailable
 export function formatSandboxTimeoutError(message: string) {
   return new TimeoutError(
-    `${message}: This error is likely due to sandbox timeout. You can modify the sandbox timeout by passing 'timeoutMs' when starting the sandbox or calling '.setTimeout' on the sandbox with the desired timeout.`
+    `${message}: This error is likely due to sandbox timeout. You can modify the sandbox timeout by passing 'timeoutMs' when starting the sandbox or calling '.setTimeout' on the sandbox with the desired timeout.`,
+    undefined,
+    'sandbox_timeout'
   )
 }
 
@@ -30,11 +44,29 @@ export class SandboxError extends Error {
  * The [deadline_exceeded] error type is caused by exceeding the timeout for command execution, watch, etc.
  *
  * The [unknown] error type is sometimes caused by the sandbox timeout when the request is not processed correctly.
+ *
+ * Use the {@link timeoutType} property to determine which kind of timeout occurred
+ * without having to parse the error message.
  */
 export class TimeoutError extends SandboxError {
-  constructor(message: string, stackTrace?: string) {
+  /**
+   * Indicates which kind of timeout occurred.
+   *
+   * - `"sandbox_timeout"` – the sandbox itself timed out (idle / max lifetime).
+   * - `"request_timeout"` – a single HTTP / RPC request exceeded its deadline.
+   * - `"execution_timeout"` – a long-running operation (process, watch, etc.) exceeded its allowed duration.
+   * - `undefined` – the timeout type could not be determined.
+   */
+  readonly timeoutType?: TimeoutType
+
+  constructor(
+    message: string,
+    stackTrace?: string,
+    timeoutType?: TimeoutType
+  ) {
     super(message, stackTrace)
     this.name = 'TimeoutError'
+    this.timeoutType = timeoutType
   }
 }
 

@@ -26,11 +26,15 @@ export function handleRpcError(err: unknown): Error {
         return formatSandboxTimeoutError(err.message)
       case Code.Canceled:
         return new TimeoutError(
-          `${err.message}: This error is likely due to exceeding 'requestTimeoutMs'. You can pass the request timeout value as an option when making the request.`
+          `${err.message}: This error is likely due to exceeding 'requestTimeoutMs'. You can pass the request timeout value as an option when making the request.`,
+          undefined,
+          'request_timeout'
         )
       case Code.DeadlineExceeded:
         return new TimeoutError(
-          `${err.message}: This error is likely due to exceeding 'timeoutMs' — the total time a long running request (like command execution or directory watch) can be active. It can be modified by passing 'timeoutMs' when making the request. Use '0' to disable the timeout.`
+          `${err.message}: This error is likely due to exceeding 'timeoutMs' — the total time a long running request (like command execution or directory watch) can be active. It can be modified by passing 'timeoutMs' when making the request. Use '0' to disable the timeout.`,
+          undefined,
+          'execution_timeout'
         )
       default:
         return new SandboxError(`${err.code}: ${err.message}`)
