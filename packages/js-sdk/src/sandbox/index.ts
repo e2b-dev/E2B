@@ -189,6 +189,7 @@ export class Sandbox extends SandboxApi {
         accessToken: this.envdAccessToken,
         headers: {
           'User-Agent': this.connectionConfig.headers?.['User-Agent'] ?? '',
+          ...sandboxHeaders,
           ...(this.envdAccessToken
             ? { 'X-Access-Token': this.envdAccessToken }
             : {}),

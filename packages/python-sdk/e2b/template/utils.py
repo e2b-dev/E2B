@@ -155,7 +155,7 @@ def get_all_files_in_path(
     abs_context_path = os.path.abspath(context_path)
     files_glob = glob.glob(
         src,
-        flags=glob.GLOBSTAR,
+        flags=glob.GLOBSTAR | glob.DOTMATCH,
         root_dir=abs_context_path,
         exclude=ignore_patterns,
     )
@@ -170,7 +170,7 @@ def get_all_files_in_path(
                 files.add(file_path)
             dir_files = glob.glob(
                 normalize_path(file) + "/**/*",
-                flags=glob.GLOBSTAR,
+                flags=glob.GLOBSTAR | glob.DOTMATCH,
                 root_dir=abs_context_path,
                 exclude=ignore_patterns,
             )
