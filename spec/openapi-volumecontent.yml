@@ -3,11 +3,8 @@ info:
   version: 0.1.0
   title: E2B API
 
-servers:
-  - url: https://volumecontent.e2b.app
-
 security:
-  - VolumeJWT: []
+  - VolumeJWT: [ ]
 
 components:
   securitySchemes:
@@ -17,6 +14,12 @@ components:
       bearerFormat: JWT
 
   parameters:
+    volumeID:
+      name: volumeID
+      in: path
+      required: true
+      schema:
+        type: string
     path:
       name: path
       in: query
@@ -25,42 +28,42 @@ components:
         type: string
 
   responses:
-    '400':
+    "400":
       description: Bad request
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/Error'
-    '401':
+            $ref: "#/components/schemas/Error"
+    "401":
       description: Authentication error
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/Error'
-    '403':
+            $ref: "#/components/schemas/Error"
+    "403":
       description: Forbidden
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/Error'
-    '404':
+            $ref: "#/components/schemas/Error"
+    "404":
       description: Not found
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/Error'
-    '409':
+            $ref: "#/components/schemas/Error"
+    "409":
       description: Conflict
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/Error'
-    '500':
+            $ref: "#/components/schemas/Error"
+    "500":
       description: Server error
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/Error'
+            $ref: "#/components/schemas/Error"
 
   schemas:
     Error:
@@ -82,7 +85,7 @@ components:
           type: string
         type:
           type: string
-          enum: [unknown, file, directory, symlink]
+          enum: [ unknown, file, directory, symlink ]
         path:
           type: string
         size:
@@ -123,31 +126,33 @@ components:
     VolumeDirectoryListing:
       type: array
       items:
-        $ref: '#/components/schemas/VolumeEntryStat'
+        $ref: "#/components/schemas/VolumeEntryStat"
 
 paths:
-  /stat:
+  /volumecontent/{volumeID}/stat:
     get:
       description: Get path information
-      tags: [volumes]
+      tags: [ volumes ]
       parameters:
-        - $ref: '#/components/parameters/path'
+        - $ref: "#/components/parameters/volumeID"
+        - $ref: "#/components/parameters/path"
       responses:
-        '200':
+        "200":
           description: Successfully retrieved path information
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/VolumeEntryStat'
-        '404':
-          $ref: '#/components/responses/404'
+                $ref: "#/components/schemas/VolumeEntryStat"
+        "404":
+          $ref: "#/components/responses/404"
 
-  /dir:
+  /volumecontent/{volumeID}/dir:
     get:
       description: List directory contents
-      tags: [volumes]
+      tags: [ volumes ]
       parameters:
-        - $ref: '#/components/parameters/path'
+        - $ref: "#/components/parameters/volumeID"
+        - $ref: "#/components/parameters/path"
         - name: depth
           in: query
           description: Number of layers deep to recurse into the directory
@@ -156,23 +161,24 @@ paths:
             format: uint32
             default: 1
       responses:
-        '200':
-          description: 'Successfully retrieved a directory listing'
+        "200":
+          description: "Successfully retrieved a directory listing"
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/VolumeDirectoryListing'
-        '400':
-          description: 'Invalid path provided'
-        '404':
-          description: 'path not found'
-        '500':
-          $ref: '#/components/responses/500'
+                $ref: "#/components/schemas/VolumeDirectoryListing"
+        "400":
+          description: "Invalid path provided"
+        "404":
+          description: "path not found"
+        "500":
+          $ref: "#/components/responses/500"
     post:
-      description: 'Create a directory'
-      tags: [volumes]
+      description: "Create a directory"
+      tags: [ volumes ]
       parameters:
-        - $ref: '#/components/parameters/path'
+        - $ref: "#/components/parameters/volumeID"
+        - $ref: "#/components/parameters/path"
         - name: uid
           in: query
           description: User ID of the created directory
@@ -197,57 +203,60 @@ paths:
           schema:
             type: boolean
       responses:
-        '201':
-          description: 'Successfully created a directory'
+        "201":
+          description: "Successfully created a directory"
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/VolumeEntryStat'
-        '404':
-          description: 'path not found'
-        '500':
-          $ref: '#/components/responses/500'
+                $ref: "#/components/schemas/VolumeEntryStat"
+        "404":
+          description: "path not found"
+        "500":
+          $ref: "#/components/responses/500"
     delete:
       description: Delete a directory
-      tags: [volumes]
+      tags: [ volumes ]
       parameters:
-        - $ref: '#/components/parameters/path'
+        - $ref: "#/components/parameters/volumeID"
+        - $ref: "#/components/parameters/path"
         - name: recursive
           in: query
           description: Delete all files and directories recursively
           schema:
             type: boolean
       responses:
-        '204':
-          description: 'Successfully deleted a directory'
-        '404':
-          description: 'path not found'
-        '500':
-          $ref: '#/components/responses/500'
+        "204":
+          description: "Successfully deleted a directory"
+        "404":
+          description: "path not found"
+        "500":
+          $ref: "#/components/responses/500"
 
-  /file:
+  /volumecontent/{volumeID}/file:
     get:
       description: Download file
-      tags: [volumes]
+      tags: [ volumes ]
       parameters:
-        - $ref: '#/components/parameters/path'
+        - $ref: "#/components/parameters/volumeID"
+        - $ref: "#/components/parameters/path"
       responses:
-        '200':
-          description: 'Successfully downloaded a file'
+        "200":
+          description: "Successfully downloaded a file"
           content:
             application/octet-stream:
               schema:
                 type: string
                 format: binary
-        '404':
-          description: 'path not found'
-        '500':
-          $ref: '#/components/responses/500'
+        "404":
+          description: "path not found"
+        "500":
+          $ref: "#/components/responses/500"
     patch:
       description: Update file metadata
-      tags: [volumes]
+      tags: [ volumes ]
       parameters:
-        - $ref: '#/components/parameters/path'
+        - $ref: "#/components/parameters/volumeID"
+        - $ref: "#/components/parameters/path"
       requestBody:
         required: true
         content:
@@ -265,23 +274,24 @@ paths:
                   type: integer
                   format: uint32
       responses:
-        '200':
+        "200":
           description: "Successfully updated a file's metadata"
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/VolumeEntryStat'
-        '400':
-          description: 'Invalid metadata provided'
-        '404':
-          description: 'path not found'
-        '500':
-          description: 'Internal server error'
+                $ref: "#/components/schemas/VolumeEntryStat"
+        "400":
+          description: "Invalid metadata provided"
+        "404":
+          description: "path not found"
+        "500":
+          description: "Internal server error"
     put:
       description: Upload file
-      tags: [volumes]
+      tags: [ volumes ]
       parameters:
-        - $ref: '#/components/parameters/path'
+        - $ref: "#/components/parameters/volumeID"
+        - $ref: "#/components/parameters/path"
         - name: uid
           in: query
           description: User ID of the uploaded file
@@ -312,25 +322,26 @@ paths:
               type: string
               format: binary
       responses:
-        '201':
-          description: 'Successfully created a file'
+        "201":
+          description: "Successfully created a file"
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/VolumeEntryStat'
-        '404':
-          description: 'path not found'
-        '500':
-          $ref: '#/components/responses/500'
+                $ref: "#/components/schemas/VolumeEntryStat"
+        "404":
+          description: "path not found"
+        "500":
+          $ref: "#/components/responses/500"
     delete:
       description: Delete a file
-      tags: [volumes]
+      tags: [ volumes ]
       parameters:
-        - $ref: '#/components/parameters/path'
+        - $ref: "#/components/parameters/volumeID"
+        - $ref: "#/components/parameters/path"
       responses:
-        '204':
-          description: 'Successfully deleted a file'
-        '404':
-          description: 'path not found'
-        '500':
-          $ref: '#/components/responses/500'
+        "204":
+          description: "Successfully deleted a file"
+        "404":
+          description: "path not found"
+        "500":
+          $ref: "#/components/responses/500"
