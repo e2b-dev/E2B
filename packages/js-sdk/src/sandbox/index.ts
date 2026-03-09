@@ -299,7 +299,7 @@ export class Sandbox extends SandboxApi {
     if (sandboxOpts?.mcp) {
       sandbox.mcpToken = crypto.randomUUID()
       const res = await sandbox.commands.run(
-        `mcp-gateway --config '${JSON.stringify(sandboxOpts?.mcp).replace(/'/g, "'\''")}' `,
+        `mcp-gateway --config '${JSON.stringify(sandboxOpts?.mcp).replace(/'/g, "'\\''")}' `,
         {
           user: 'root',
           envs: {
@@ -394,7 +394,7 @@ export class Sandbox extends SandboxApi {
     if (sandboxOpts?.mcp) {
       sandbox.mcpToken = crypto.randomUUID()
       const res = await sandbox.commands.run(
-        `mcp-gateway --config '${JSON.stringify(sandboxOpts?.mcp).replace(/'/g, "'\''")}' `,
+        `mcp-gateway --config '${JSON.stringify(sandboxOpts?.mcp).replace(/'/g, "'\\''")}' `,
         {
           user: 'root',
           envs: {
