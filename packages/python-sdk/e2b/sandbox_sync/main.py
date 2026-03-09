@@ -1,6 +1,7 @@
 import datetime
 import json
 import logging
+import time
 import uuid
 from typing import Dict, List, Optional, overload
 
@@ -320,6 +321,7 @@ class Sandbox(SandboxApi):
 
     def __exit__(self, exc_type, exc_value, traceback):
         self.kill()
+        self._envd_api.close()
 
     @overload
     def kill(
@@ -903,11 +905,43 @@ class Sandbox(SandboxApi):
             **opts,
         )
 
-        return cls(
+        instance = cls(
             sandbox_id=sandbox_id,
             sandbox_domain=sandbox_domain,
             envd_version=envd_version,
             envd_access_token=envd_access_token,
             traffic_access_token=traffic_access_token,
             connection_config=connection_config,
+        )
+
+        # Wait for the sandbox to be ready (fix for #1130)
+        if not debug:
+            cls._wait_for_sandbox_ready(instance)
+
+        return instance
+
+    @staticmethod
+    def _wait_for_sandbox_ready(
+        instance: "Sandbox",
+        max_attempts: int = 60,
+        delay: float = 1.0,
+    ) -> None:
+        """
+        Wait for the sandbox to be ready by polling the health endpoint.
+
+        :param instance: The sandbox instance to wait for
+        :param max_attempts: Maximum number of polling attempts
+        :param delay: Delay between polling attempts in seconds
+        """
+        for attempt in range(max_attempts):
+            try:
+                if instance.is_running(request_timeout=5.0):
+                    return
+            except Exception:
+                # Sandbox might not be reachable yet, continue polling
+                pass
+            time.sleep(delay)
+
+        raise SandboxException(
+            f"Sandbox {instance.sandbox_id} did not become ready within {max_attempts * delay} seconds"
         )
