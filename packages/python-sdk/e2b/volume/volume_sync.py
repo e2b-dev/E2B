@@ -20,17 +20,17 @@ from e2b.api.client_sync import get_api_client as get_core_api_client
 from e2b.connection_config import ApiParams, ConnectionConfig
 from e2b.exceptions import NotFoundException, VolumeException
 from e2b.volume.client.api.volumes import (
-    get_stat,
-    get_dir,
-    post_dir,
-    delete_dir,
-    delete_file,
-    patch_file,
-    put_file,
+    get_volumecontent_volume_id_stat as get_stat,
+    get_volumecontent_volume_id_dir as get_dir,
+    post_volumecontent_volume_id_dir as post_dir,
+    delete_volumecontent_volume_id_dir as delete_dir,
+    delete_volumecontent_volume_id_file as delete_file,
+    patch_volumecontent_volume_id_file as patch_file,
+    put_volumecontent_volume_id_file as put_file,
 )
 from e2b.volume.client.models import (
     Error as VolumeError,
-    PatchFileBody,
+    PatchVolumecontentVolumeIDFileBody as PatchFileBody,
     VolumeEntryStat as VolumeEntryStatApi,
 )
 from e2b.volume.client.types import File as FilePayload, UNSET
@@ -47,10 +47,19 @@ from e2b.volume.utils import DualMethod, convert_volume_entry_stat
 class Volume:
     """E2B Volume for persistent storage that can be mounted to sandboxes."""
 
-    def __init__(self, volume_id: str, name: str, token: Optional[str] = None):
+    def __init__(
+        self,
+        volume_id: str,
+        name: str,
+        token: Optional[str] = None,
+        domain: Optional[str] = None,
+        debug: Optional[bool] = None,
+    ):
         self._volume_id = volume_id
         self._name = name
         self._token = token
+        self._domain = domain
+        self._debug = debug
 
     @property
     def volume_id(self) -> str:
@@ -68,6 +77,8 @@ class Volume:
         self, **opts: Unpack[VolumeApiParams]
     ) -> VolumeConnectionConfig:
         return VolumeConnectionConfig(
+            domain=opts.get("domain") or self._domain,
+            debug=opts.get("debug") if opts.get("debug") is not None else self._debug,
             token=opts.get("token") or self._token,
             api_url=opts.get("api_url"),
             request_timeout=opts.get("request_timeout"),
@@ -105,6 +116,8 @@ class Volume:
             volume_id=res.parsed.volume_id,
             name=res.parsed.name,
             token=res.parsed.token,
+            domain=config.domain,
+            debug=config.debug,
         )
         return vol
 
@@ -118,7 +131,14 @@ class Volume:
         :return: A Volume instance for the existing volume
         """
         info = cls.get_info(volume_id, **opts)
-        return cls(volume_id=volume_id, name=info.name, token=info.token)
+        config = ConnectionConfig(**opts)
+        return cls(
+            volume_id=volume_id,
+            name=info.name,
+            token=info.token,
+            domain=config.domain,
+            debug=config.debug,
+        )
 
     @staticmethod
     def _class_get_info(volume_id: str, **opts: Unpack[ApiParams]) -> VolumeAndToken:
@@ -219,6 +239,7 @@ class Volume:
         api_client = get_volume_api_client(config)
 
         res = get_dir.sync_detailed(
+            self._volume_id,
             path=path,
             depth=depth if depth is not None else UNSET,
             client=api_client,
@@ -267,6 +288,7 @@ class Volume:
         api_client = get_volume_api_client(config)
 
         res = post_dir.sync_detailed(
+            self._volume_id,
             path=path,
             uid=uid if uid is not None else UNSET,
             gid=gid if gid is not None else UNSET,
@@ -322,6 +344,7 @@ class Volume:
         api_client = get_volume_api_client(config)
 
         res = get_stat.sync_detailed(
+            self._volume_id,
             path=path,
             client=api_client,
         )
@@ -372,6 +395,7 @@ class Volume:
         )
 
         res = patch_file.sync_detailed(
+            self._volume_id,
             path=path,
             body=body,
             client=api_client,
@@ -440,7 +464,7 @@ class Volume:
             def stream_file() -> Iterator[bytes]:
                 with api_client.get_httpx_client().stream(
                     method="GET",
-                    url="/file",
+                    url=f"/volumecontent/{self._volume_id}/file",
                     params=params,
                     timeout=timeout,
                 ) as response:
@@ -464,7 +488,7 @@ class Volume:
 
         response = api_client.get_httpx_client().request(
             method="GET",
-            url="/file",
+            url=f"/volumecontent/{self._volume_id}/file",
             params=params,
             timeout=timeout,
         )
@@ -531,6 +555,7 @@ class Volume:
             raise ValueError(f"Unsupported data type: {type(data)}")
 
         res = put_file.sync_detailed(
+            self._volume_id,
             body=FilePayload(payload=BytesIO(data_bytes)),
             path=path,
             uid=uid if uid is not None else UNSET,
@@ -579,12 +604,14 @@ class Volume:
 
         if is_directory:
             res = delete_dir.sync_detailed(
+                self._volume_id,
                 path=path,
                 recursive=recursive if recursive is not None else UNSET,
                 client=api_client,
             )
         else:
             res = delete_file.sync_detailed(
+                self._volume_id,
                 path=path,
                 client=api_client,
             )
