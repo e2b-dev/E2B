@@ -57,7 +57,7 @@ class TimeoutException(SandboxException):
     - :attr:`TimeoutType.EXECUTION` — a long-running operation exceeded its ``timeout``.
     """
 
-    def __init__(self, message: str, type: TimeoutType = TimeoutType.SANDBOX):
+    def __init__(self, message: str = "Timeout", type: TimeoutType = TimeoutType.SANDBOX):
         super().__init__(message)
         self.type = type
 
