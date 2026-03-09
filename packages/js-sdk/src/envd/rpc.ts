@@ -8,6 +8,7 @@ import {
   formatSandboxTimeoutError,
   InvalidArgumentError,
   NotFoundError,
+  RateLimitError,
   SandboxError,
   TimeoutError,
 } from '../errors'
@@ -24,6 +25,10 @@ export function handleRpcError(err: unknown): Error {
         return new NotFoundError(err.message)
       case Code.Unavailable:
         return formatSandboxTimeoutError(err.message)
+      case Code.ResourceExhausted:
+        return new RateLimitError(
+          `${err.message}: Rate limit exceeded, please try again later.`
+        )
       case Code.Canceled:
         return new TimeoutError(
           `${err.message}: This error is likely due to exceeding 'requestTimeoutMs'. You can pass the request timeout value as an option when making the request.`
