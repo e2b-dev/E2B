@@ -1,18 +1,38 @@
+from enum import Enum
+
+
+class TimeoutType(str, Enum):
+    """
+    The type of timeout that occurred.
+
+    - ``SANDBOX``: The sandbox itself timed out (e.g., idle timeout expired).
+    - ``REQUEST``: The HTTP request timed out (exceeded ``request_timeout``).
+    - ``EXECUTION``: A long-running operation timed out (exceeded ``timeout`` for command execution, watch, etc.).
+    """
+
+    SANDBOX = "sandbox"
+    REQUEST = "request"
+    EXECUTION = "execution"
+
+
 def format_sandbox_timeout_exception(message: str):
     return TimeoutException(
-        f"{message}: This error is likely due to sandbox timeout. You can modify the sandbox timeout by passing 'timeout' when starting the sandbox or calling '.set_timeout' on the sandbox with the desired timeout."
+        f"{message}: This error is likely due to sandbox timeout. You can modify the sandbox timeout by passing 'timeout' when starting the sandbox or calling '.set_timeout' on the sandbox with the desired timeout.",
+        type=TimeoutType.SANDBOX,
     )
 
 
 def format_request_timeout_error() -> Exception:
     return TimeoutException(
         "Request timed out — the 'request_timeout' option can be used to increase this timeout",
+        type=TimeoutType.REQUEST,
     )
 
 
 def format_execution_timeout_error() -> Exception:
     return TimeoutException(
         "Execution timed out — the 'timeout' option can be used to increase this timeout",
+        type=TimeoutType.EXECUTION,
     )
 
 
@@ -30,13 +50,16 @@ class TimeoutException(SandboxException):
     """
     Raised when a timeout occurs.
 
-    The `unavailable` exception type is caused by sandbox timeout.\n
-    The `canceled` exception type is caused by exceeding request timeout.\n
-    The `deadline_exceeded` exception type is caused by exceeding the timeout for process, watch, etc.\n
-    The `unknown` exception type is sometimes caused by the sandbox timeout when the request is not processed correctly.\n
+    The ``type`` attribute indicates the kind of timeout:
+
+    - :attr:`TimeoutType.SANDBOX` — the sandbox itself timed out (idle timeout, etc.).
+    - :attr:`TimeoutType.REQUEST` — the HTTP request exceeded ``request_timeout``.
+    - :attr:`TimeoutType.EXECUTION` — a long-running operation exceeded its ``timeout``.
     """
 
-    pass
+    def __init__(self, message: str, type: TimeoutType = TimeoutType.SANDBOX):
+        super().__init__(message)
+        self.type = type
 
 
 class InvalidArgumentException(SandboxException):
