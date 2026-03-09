@@ -4,7 +4,7 @@
  */
 
 export interface paths {
-    "/dir": {
+    "/volumecontent/{volumeID}/dir": {
         parameters: {
             query?: never;
             header?: never;
@@ -20,7 +20,9 @@ export interface paths {
                     path: components["parameters"]["path"];
                 };
                 header?: never;
-                path?: never;
+                path: {
+                    volumeID: components["parameters"]["volumeID"];
+                };
                 cookie?: never;
             };
             requestBody?: never;
@@ -67,7 +69,9 @@ export interface paths {
                     uid?: number;
                 };
                 header?: never;
-                path?: never;
+                path: {
+                    volumeID: components["parameters"]["volumeID"];
+                };
                 cookie?: never;
             };
             requestBody?: never;
@@ -100,7 +104,9 @@ export interface paths {
                     recursive?: boolean;
                 };
                 header?: never;
-                path?: never;
+                path: {
+                    volumeID: components["parameters"]["volumeID"];
+                };
                 cookie?: never;
             };
             requestBody?: never;
@@ -127,7 +133,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/file": {
+    "/volumecontent/{volumeID}/file": {
         parameters: {
             query?: never;
             header?: never;
@@ -141,7 +147,9 @@ export interface paths {
                     path: components["parameters"]["path"];
                 };
                 header?: never;
-                path?: never;
+                path: {
+                    volumeID: components["parameters"]["volumeID"];
+                };
                 cookie?: never;
             };
             requestBody?: never;
@@ -180,7 +188,9 @@ export interface paths {
                     uid?: number;
                 };
                 header?: never;
-                path?: never;
+                path: {
+                    volumeID: components["parameters"]["volumeID"];
+                };
                 cookie?: never;
             };
             requestBody?: {
@@ -216,7 +226,9 @@ export interface paths {
                     path: components["parameters"]["path"];
                 };
                 header?: never;
-                path?: never;
+                path: {
+                    volumeID: components["parameters"]["volumeID"];
+                };
                 cookie?: never;
             };
             requestBody?: never;
@@ -247,7 +259,9 @@ export interface paths {
                     path: components["parameters"]["path"];
                 };
                 header?: never;
-                path?: never;
+                path: {
+                    volumeID: components["parameters"]["volumeID"];
+                };
                 cookie?: never;
             };
             requestBody: {
@@ -297,7 +311,7 @@ export interface paths {
         };
         trace?: never;
     };
-    "/stat": {
+    "/volumecontent/{volumeID}/stat": {
         parameters: {
             query?: never;
             header?: never;
@@ -311,7 +325,9 @@ export interface paths {
                     path: components["parameters"]["path"];
                 };
                 header?: never;
-                path?: never;
+                path: {
+                    volumeID: components["parameters"]["volumeID"];
+                };
                 cookie?: never;
             };
             requestBody?: never;
@@ -427,6 +443,7 @@ export interface components {
     };
     parameters: {
         path: string;
+        volumeID: string;
     };
     requestBodies: never;
     headers: never;

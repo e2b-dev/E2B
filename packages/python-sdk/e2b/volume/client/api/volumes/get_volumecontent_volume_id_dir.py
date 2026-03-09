@@ -11,6 +11,7 @@ from ...types import UNSET, Response, Unset
 
 
 def _get_kwargs(
+    volume_id: str,
     *,
     path: str,
     depth: Union[Unset, int] = 1,
@@ -25,7 +26,7 @@ def _get_kwargs(
 
     _kwargs: dict[str, Any] = {
         "method": "get",
-        "url": "/dir",
+        "url": f"/volumecontent/{volume_id}/dir",
         "params": params,
     }
 
@@ -74,6 +75,7 @@ def _build_response(
 
 
 def sync_detailed(
+    volume_id: str,
     *,
     client: Union[AuthenticatedClient, Client],
     path: str,
@@ -82,6 +84,7 @@ def sync_detailed(
     """List directory contents
 
     Args:
+        volume_id (str):
         path (str):
         depth (Union[Unset, int]):  Default: 1.
 
@@ -94,6 +97,7 @@ def sync_detailed(
     """
 
     kwargs = _get_kwargs(
+        volume_id=volume_id,
         path=path,
         depth=depth,
     )
@@ -106,6 +110,7 @@ def sync_detailed(
 
 
 def sync(
+    volume_id: str,
     *,
     client: Union[AuthenticatedClient, Client],
     path: str,
@@ -114,6 +119,7 @@ def sync(
     """List directory contents
 
     Args:
+        volume_id (str):
         path (str):
         depth (Union[Unset, int]):  Default: 1.
 
@@ -126,6 +132,7 @@ def sync(
     """
 
     return sync_detailed(
+        volume_id=volume_id,
         client=client,
         path=path,
         depth=depth,
@@ -133,6 +140,7 @@ def sync(
 
 
 async def asyncio_detailed(
+    volume_id: str,
     *,
     client: Union[AuthenticatedClient, Client],
     path: str,
@@ -141,6 +149,7 @@ async def asyncio_detailed(
     """List directory contents
 
     Args:
+        volume_id (str):
         path (str):
         depth (Union[Unset, int]):  Default: 1.
 
@@ -153,6 +162,7 @@ async def asyncio_detailed(
     """
 
     kwargs = _get_kwargs(
+        volume_id=volume_id,
         path=path,
         depth=depth,
     )
@@ -163,6 +173,7 @@ async def asyncio_detailed(
 
 
 async def asyncio(
+    volume_id: str,
     *,
     client: Union[AuthenticatedClient, Client],
     path: str,
@@ -171,6 +182,7 @@ async def asyncio(
     """List directory contents
 
     Args:
+        volume_id (str):
         path (str):
         depth (Union[Unset, int]):  Default: 1.
 
@@ -184,6 +196,7 @@ async def asyncio(
 
     return (
         await asyncio_detailed(
+            volume_id=volume_id,
             client=client,
             path=path,
             depth=depth,
