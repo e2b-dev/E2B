@@ -1,0 +1,30 @@
+---
+title: "Kernels"
+---
+
+<Callout icon="circle-exclamation" color="#ff8800" iconType="regular">You are reading a legacy (pre v1.0) document.</Callout>
+
+
+In this section you can find information about kernels and how to use them in Code Interpreter SDK. Having multiple kernels allows you to run code in separate contexts and optionally also languages.
+
+By default the template starts with one default kernel. This kernel is used to execute code, if you don't specify `kernelID`. You can imagine kernel as a separate environment where code is executed. You can have multiple kernels running at the same time. Each kernel has its own state, so you can have multiple kernels running different code at the same time.
+
+Kernel will be kept alive with the sandbox even if you disconnect.
+
+## Creating a new kernel
+
+To create a new kernel there's a `create_kernel` in Python and `createKernel()` in JavaScript/TypeScript method in the `CodeInterpreter` class. This method takes two optional arguments:
+- `cwd` - working directory for the kernel, all system commands and file operations will be executed in this directory
+- `kernel name` - kernel spec name (defaults to default kernel spec for server). In our case it's `python3`. If you want to use another kernel, you have to install in the template first. In that case you probably want to use [Custom Template](/legacy/code-interpreter/template).
+
+## Restarting a kernel
+
+To restart a kernel you can use `restart` method. This method takes one argument - `kernelID`, if not specifed it will restart the default kernel. This method will restart the kernel and clear its state.
+
+## Listing kernels
+
+To list all kernels you can use `list` method. This method returns an array of all running kernels with their IDs and kernel spec names.
+
+## Shutting down a kernel
+
+To shutdown a kernel you can use `shutdown` method. This method takes one argument - `kernelID`, if not specifed it will delete the default kernel. This method will delete the kernel and all its state.

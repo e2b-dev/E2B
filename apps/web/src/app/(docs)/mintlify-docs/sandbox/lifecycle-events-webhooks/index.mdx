@@ -1,0 +1,270 @@
+---
+title: "Sandbox lifecycle webhooks"
+sidebarTitle: Lifecycle events webhooks
+---
+
+Webhooks provide a way for notifications to be delivered to an external web server whenever certain sandbox lifecycle events occur. 
+This allows you to receive real-time updates about sandbox creation, updates, and termination without having to poll the API.
+All webhook requests require authentication using your team [API key](/api-key#where-to-find-api-key).
+
+## Webhook management
+
+### Register webhook
+
+Register a new webhook to receive sandbox lifecycle events.
+The webhook will be registered for the team ID associated with your API key. You will receive webhook notifications for sandbox lifecycle events from sandboxes created by your team with the [following payload](#webhook-payload).
+
+
+<CodeGroup>
+```js JavaScript & TypeScript
+// Register a new webhook
+const resp = await fetch(
+  'https://api.e2b.app/events/webhooks/sandboxes',
+  {
+    method: 'POST',
+    headers: {
+      'X-API-Key': E2B_API_KEY,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      url: 'https://your-webhook-endpoint.com/webhook',
+      events: ['create', 'kill', 'update']
+    }),
+  }
+)
+
+if (resp.status === 201) {
+  console.log('Webhook registered successfully')
+}
+```
+```python Python
+import requests
+
+# Register a new webhook
+resp = requests.post(
+    "https://api.e2b.app/events/webhooks/sandboxes",
+    headers={
+        "X-API-Key": E2B_API_KEY,
+        "Content-Type": "application/json",
+    },
+    json={
+        "url": "https://your-webhook-endpoint.com/webhook",
+        "events": ["create", "kill", "update"]
+    }
+)
+
+if resp.status_code == 201:
+    print("Webhook registered successfully")
+```
+</CodeGroup>
+
+
+### Get webhook configuration
+
+Retrieve the current webhook configuration for your team.
+
+<CodeGroup>
+```js JavaScript & TypeScript
+// Get current webhook configuration
+const resp = await fetch(
+  'https://api.e2b.app/events/webhooks/sandboxes',
+  {
+    method: 'GET',
+    headers: {
+      'X-API-Key': E2B_API_KEY,
+    },
+  }
+)
+const webhookConfig = await resp.json()
+console.log(webhookConfig)
+// {
+//   "teamID": "<your-team-id>",
+//   "url": "https://your-webhook-endpoint.com/webhook",
+//   "events": ["create", "kill"]
+// }
+
+```
+```python Python
+import requests
+
+# Get current webhook configuration
+resp = requests.get(
+    "https://api.e2b.app/events/webhooks/sandboxes",
+    headers={
+        "X-API-Key": E2B_API_KEY,
+    }
+)
+
+webhook_config = resp.json()
+print(webhook_config)
+# {
+#   "teamID": "<your-team-id>",
+#   "events": ["create", "kill"]
+#   "url": "https://your-webhook-endpoint.com/webhook",
+# }
+```
+</CodeGroup>
+
+### Update webhook configuration
+
+Update an existing webhook configuration. The update will replace the previous configuration fields with provided fields.
+
+<CodeGroup>
+```js JavaScript & TypeScript
+// Update webhook configuration
+const resp = await fetch(
+  'https://api.e2b.app/events/webhooks/sandboxes',
+  {
+    method: 'PATCH',
+    headers: {
+      'X-API-Key': E2B_API_KEY,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      url: 'https://your-updated-webhook-endpoint.com/webhook',
+      events: ['create']
+    }),
+  }
+)
+
+const updatedWebhookConfig = await resp.json()
+console.log(updatedWebhookConfig)
+// {
+//     "teamID": "<your-team-id>",
+//     "events": ["create"],
+//     "url": "https://your-updated-webhook-endpoint.com/webhook"
+// }
+```
+```python Python
+import requests
+
+# Update webhook configuration
+resp = requests.patch(
+    "https://api.e2b.app/events/webhooks/sandboxes",
+    headers={
+        "X-API-Key": E2B_API_KEY,
+        "Content-Type": "application/json",
+    },
+    json={
+        "url": "https://your-updated-webhook-endpoint.com/webhook",
+        "events": ["create"]
+    }
+)
+
+updated_webhook_config = resp.json()
+print(updated_webhook_config)
+# {
+#   "teamID": "<your-team-id>",
+#   "events": ["create"],
+#   "url": "https://your-updated-webhook-endpoint.com/webhook"
+# }
+```
+</CodeGroup>
+
+### Delete webhook
+
+Unregister the webhook.
+
+<CodeGroup>
+```js JavaScript & TypeScript
+// Delete webhook configuration
+const resp = await fetch(
+  'https://api.e2b.app/events/webhooks/sandboxes',
+  {
+    method: 'DELETE',
+    headers: {
+      'X-API-Key': E2B_API_KEY,
+    },
+  }
+)
+
+if (resp.status === 200) {
+  console.log('Webhook deleted successfully')
+}
+```
+```python Python
+import requests
+
+# Delete webhook configuration
+resp = requests.delete(
+    "https://api.e2b.app/events/webhooks/sandboxes",
+    headers={
+        "X-API-Key": E2B_API_KEY,
+    }
+)
+
+if resp.status_code == 200:
+    print("Webhook deleted successfully")
+```
+</CodeGroup>
+
+### Test webhook
+
+Send a test webhook to verify your endpoint is working correctly.
+
+<CodeGroup>
+```js JavaScript & TypeScript
+// Test webhook endpoint
+const resp = await fetch(
+  'https://api.e2b.app/events/webhooks/sandboxes/test',
+  {
+    method: 'POST',
+    headers: {
+      'X-API-Key': E2B_API_KEY,
+    },
+  }
+)
+
+if (resp.status === 200) {
+  console.log('Test webhook sent successfully')
+}
+```
+```python Python
+import requests
+
+# Test webhook endpoint
+resp = requests.post(
+    "https://api.e2b.app/events/webhooks/sandboxes/test",
+    headers={
+        "X-API-Key": E2B_API_KEY,
+    }
+)
+
+if resp.status_code == 200:
+    print("Test webhook sent successfully")
+```
+</CodeGroup>
+
+## Webhook payload
+
+When a webhook is triggered, your endpoint will receive a POST request with a JSON payload containing the sandbox event data. The payload structure matches the event format from the API:
+
+```json
+{
+  "eventCategory": "lifecycle",
+  "eventData": {
+    "sandbox_metadata": {
+      "<custom-key>": "<custom-value>"
+    }
+  },
+  "eventLabel": "create",
+  "sandboxBuildId": "a979a14b-bdcc-49e6-bc04-1189fc9fe7c2",
+  "sandboxExecutionId": "1dae9a1c-9957-4ce7-a236-a99d5779aadf",
+  "sandboxId": "<your-sandbox-id>",
+  "sandboxTeamId": "<your-team-id>",
+  "sandboxTemplateId": "rki5dems9wqfm4r03t7g",
+  "timestamp": "2025-08-06T20:59:24Z"
+}
+```
+
+## Available event types
+
+The following event types can be subscribed to via webhooks, they are used as the `eventLabel` field in the [payload](#webhook-payload).
+
+- `create` - Sandbox creation
+- `kill` - Sandbox termination
+- `update` - Sandbox configuration updates
+- `pause` - Sandbox pausing
+- `resume` - Sandbox resuming
+
+
