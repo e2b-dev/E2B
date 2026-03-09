@@ -15,6 +15,12 @@ class VolumeApiParams(TypedDict, total=False):
     Parameters for requests made to the volume content API.
     """
 
+    domain: Optional[str]
+    """Domain to use for the volume API, defaults to `E2B_DOMAIN` or `e2b.app`."""
+
+    debug: Optional[bool]
+    """Whether to use debug mode, defaults to `E2B_DEBUG` environment variable."""
+
     request_timeout: Optional[float]
     """Timeout for the request in **seconds**, defaults to 60 seconds."""
 
@@ -25,7 +31,7 @@ class VolumeApiParams(TypedDict, total=False):
     """Volume auth token used for `Authorization: Bearer <token>`."""
 
     api_url: Optional[str]
-    """URL to use for the volume API, defaults to `E2B_VOLUME_API_URL` or `https://volumecontent.e2b.app`."""
+    """URL to use for the volume API, defaults to `E2B_VOLUME_API_URL` or `https://api.<domain>`."""
 
     proxy: Optional[ProxyTypes]
     """Proxy to use for the request."""
@@ -37,6 +43,14 @@ class VolumeConnectionConfig:
 
     Uses bearer token authentication and defaults to the volume content host.
     """
+
+    @staticmethod
+    def _domain():
+        return os.getenv("E2B_DOMAIN") or "e2b.app"
+
+    @staticmethod
+    def _debug():
+        return os.getenv("E2B_DEBUG", "false").lower() == "true"
 
     @staticmethod
     def _volume_api_url():
@@ -60,14 +74,25 @@ class VolumeConnectionConfig:
 
     def __init__(
         self,
+        domain: Optional[str] = None,
+        debug: Optional[bool] = None,
         token: Optional[str] = None,
         api_url: Optional[str] = None,
         request_timeout: Optional[float] = None,
         headers: Optional[Dict[str, str]] = None,
         proxy: Optional[ProxyTypes] = None,
     ):
+        self.domain = domain or self._domain()
+        self.debug = debug if debug is not None else self._debug()
+
         self.api_url = (
-            api_url or self._volume_api_url() or "https://volumecontent.e2b.app"
+            api_url
+            or self._volume_api_url()
+            or (
+                "http://localhost:8080"
+                if self.debug
+                else f"https://api.{self.domain}"
+            )
         )
         self.access_token = token or self._access_token()
         self.token = self.access_token
@@ -90,6 +115,8 @@ class VolumeConnectionConfig:
         """
         Get request parameters for the volume content API.
         """
+        domain = opts.get("domain")
+        debug = opts.get("debug")
         headers = opts.get("headers")
         request_timeout = opts.get("request_timeout")
         token = opts.get("token")
@@ -102,6 +129,8 @@ class VolumeConnectionConfig:
 
         return dict(
             VolumeApiParams(
+                domain=domain if domain is not None else self.domain,
+                debug=debug if debug is not None else self.debug,
                 token=token if token is not None else self.token,
                 api_url=api_url if api_url is not None else self.api_url,
                 request_timeout=self.get_request_timeout(request_timeout),
