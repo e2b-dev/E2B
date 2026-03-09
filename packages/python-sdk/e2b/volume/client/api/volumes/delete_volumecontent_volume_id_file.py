@@ -10,6 +10,7 @@ from ...types import UNSET, Response
 
 
 def _get_kwargs(
+    volume_id: str,
     *,
     path: str,
 ) -> dict[str, Any]:
@@ -21,7 +22,7 @@ def _get_kwargs(
 
     _kwargs: dict[str, Any] = {
         "method": "delete",
-        "url": "/file",
+        "url": f"/volumecontent/{volume_id}/file",
         "params": params,
     }
 
@@ -59,6 +60,7 @@ def _build_response(
 
 
 def sync_detailed(
+    volume_id: str,
     *,
     client: Union[AuthenticatedClient, Client],
     path: str,
@@ -66,6 +68,7 @@ def sync_detailed(
     """Delete a file
 
     Args:
+        volume_id (str):
         path (str):
 
     Raises:
@@ -77,6 +80,7 @@ def sync_detailed(
     """
 
     kwargs = _get_kwargs(
+        volume_id=volume_id,
         path=path,
     )
 
@@ -88,6 +92,7 @@ def sync_detailed(
 
 
 def sync(
+    volume_id: str,
     *,
     client: Union[AuthenticatedClient, Client],
     path: str,
@@ -95,6 +100,7 @@ def sync(
     """Delete a file
 
     Args:
+        volume_id (str):
         path (str):
 
     Raises:
@@ -106,12 +112,14 @@ def sync(
     """
 
     return sync_detailed(
+        volume_id=volume_id,
         client=client,
         path=path,
     ).parsed
 
 
 async def asyncio_detailed(
+    volume_id: str,
     *,
     client: Union[AuthenticatedClient, Client],
     path: str,
@@ -119,6 +127,7 @@ async def asyncio_detailed(
     """Delete a file
 
     Args:
+        volume_id (str):
         path (str):
 
     Raises:
@@ -130,6 +139,7 @@ async def asyncio_detailed(
     """
 
     kwargs = _get_kwargs(
+        volume_id=volume_id,
         path=path,
     )
 
@@ -139,6 +149,7 @@ async def asyncio_detailed(
 
 
 async def asyncio(
+    volume_id: str,
     *,
     client: Union[AuthenticatedClient, Client],
     path: str,
@@ -146,6 +157,7 @@ async def asyncio(
     """Delete a file
 
     Args:
+        volume_id (str):
         path (str):
 
     Raises:
@@ -158,6 +170,7 @@ async def asyncio(
 
     return (
         await asyncio_detailed(
+            volume_id=volume_id,
             client=client,
             path=path,
         )

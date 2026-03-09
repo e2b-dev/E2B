@@ -1,22 +1,20 @@
 from http import HTTPStatus
+from io import BytesIO
 from typing import Any, Optional, Union, cast
 
 import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
-from ...models.patch_file_body import PatchFileBody
-from ...models.volume_entry_stat import VolumeEntryStat
-from ...types import UNSET, Response
+from ...models.error import Error
+from ...types import UNSET, File, Response
 
 
 def _get_kwargs(
+    volume_id: str,
     *,
-    body: PatchFileBody,
     path: str,
 ) -> dict[str, Any]:
-    headers: dict[str, Any] = {}
-
     params: dict[str, Any] = {}
 
     params["path"] = path
@@ -24,34 +22,27 @@ def _get_kwargs(
     params = {k: v for k, v in params.items() if v is not UNSET and v is not None}
 
     _kwargs: dict[str, Any] = {
-        "method": "patch",
-        "url": "/file",
+        "method": "get",
+        "url": f"/volumecontent/{volume_id}/file",
         "params": params,
     }
 
-    _kwargs["json"] = body.to_dict()
-
-    headers["Content-Type"] = "application/json"
-
-    _kwargs["headers"] = headers
     return _kwargs
 
 
 def _parse_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Optional[Union[Any, VolumeEntryStat]]:
+) -> Optional[Union[Any, Error, File]]:
     if response.status_code == 200:
-        response_200 = VolumeEntryStat.from_dict(response.json())
+        response_200 = File(payload=BytesIO(response.content))
 
         return response_200
-    if response.status_code == 400:
-        response_400 = cast(Any, None)
-        return response_400
     if response.status_code == 404:
         response_404 = cast(Any, None)
         return response_404
     if response.status_code == 500:
-        response_500 = cast(Any, None)
+        response_500 = Error.from_dict(response.json())
+
         return response_500
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
@@ -61,7 +52,7 @@ def _parse_response(
 
 def _build_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Response[Union[Any, VolumeEntryStat]]:
+) -> Response[Union[Any, Error, File]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -71,27 +62,27 @@ def _build_response(
 
 
 def sync_detailed(
+    volume_id: str,
     *,
     client: Union[AuthenticatedClient, Client],
-    body: PatchFileBody,
     path: str,
-) -> Response[Union[Any, VolumeEntryStat]]:
-    """Update file metadata
+) -> Response[Union[Any, Error, File]]:
+    """Download file
 
     Args:
+        volume_id (str):
         path (str):
-        body (PatchFileBody):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Any, VolumeEntryStat]]
+        Response[Union[Any, Error, File]]
     """
 
     kwargs = _get_kwargs(
-        body=body,
+        volume_id=volume_id,
         path=path,
     )
 
@@ -103,54 +94,54 @@ def sync_detailed(
 
 
 def sync(
+    volume_id: str,
     *,
     client: Union[AuthenticatedClient, Client],
-    body: PatchFileBody,
     path: str,
-) -> Optional[Union[Any, VolumeEntryStat]]:
-    """Update file metadata
+) -> Optional[Union[Any, Error, File]]:
+    """Download file
 
     Args:
+        volume_id (str):
         path (str):
-        body (PatchFileBody):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Any, VolumeEntryStat]
+        Union[Any, Error, File]
     """
 
     return sync_detailed(
+        volume_id=volume_id,
         client=client,
-        body=body,
         path=path,
     ).parsed
 
 
 async def asyncio_detailed(
+    volume_id: str,
     *,
     client: Union[AuthenticatedClient, Client],
-    body: PatchFileBody,
     path: str,
-) -> Response[Union[Any, VolumeEntryStat]]:
-    """Update file metadata
+) -> Response[Union[Any, Error, File]]:
+    """Download file
 
     Args:
+        volume_id (str):
         path (str):
-        body (PatchFileBody):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Any, VolumeEntryStat]]
+        Response[Union[Any, Error, File]]
     """
 
     kwargs = _get_kwargs(
-        body=body,
+        volume_id=volume_id,
         path=path,
     )
 
@@ -160,29 +151,29 @@ async def asyncio_detailed(
 
 
 async def asyncio(
+    volume_id: str,
     *,
     client: Union[AuthenticatedClient, Client],
-    body: PatchFileBody,
     path: str,
-) -> Optional[Union[Any, VolumeEntryStat]]:
-    """Update file metadata
+) -> Optional[Union[Any, Error, File]]:
+    """Download file
 
     Args:
+        volume_id (str):
         path (str):
-        body (PatchFileBody):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Any, VolumeEntryStat]
+        Union[Any, Error, File]
     """
 
     return (
         await asyncio_detailed(
+            volume_id=volume_id,
             client=client,
-            body=body,
             path=path,
         )
     ).parsed
