@@ -10,6 +10,7 @@ import {
   NotFoundError,
   SandboxError,
   TimeoutError,
+  TimeoutType,
 } from '../errors'
 import { ENVD_DEFAULT_USER } from './versions'
 
@@ -26,11 +27,15 @@ export function handleRpcError(err: unknown): Error {
         return formatSandboxTimeoutError(err.message)
       case Code.Canceled:
         return new TimeoutError(
-          `${err.message}: This error is likely due to exceeding 'requestTimeoutMs'. You can pass the request timeout value as an option when making the request.`
+          `${err.message}: This error is likely due to exceeding 'requestTimeoutMs'. You can pass the request timeout value as an option when making the request.`,
+          undefined,
+          TimeoutType.REQUEST
         )
       case Code.DeadlineExceeded:
         return new TimeoutError(
-          `${err.message}: This error is likely due to exceeding 'timeoutMs' — the total time a long running request (like command execution or directory watch) can be active. It can be modified by passing 'timeoutMs' when making the request. Use '0' to disable the timeout.`
+          `${err.message}: This error is likely due to exceeding 'timeoutMs' — the total time a long running request (like command execution or directory watch) can be active. It can be modified by passing 'timeoutMs' when making the request. Use '0' to disable the timeout.`,
+          undefined,
+          TimeoutType.EXECUTION
         )
       default:
         return new SandboxError(`${err.code}: ${err.message}`)
