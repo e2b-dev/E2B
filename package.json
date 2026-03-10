@@ -14,7 +14,7 @@
     "lint": "pnpm --if-present --recursive run lint",
     "typecheck": "pnpm --if-present --recursive run typecheck",
     "format": "pnpm --if-present --recursive run format",
-    "changeset": "pnpx @changesets/cli"
+    "changeset": "pnpm dlx @changesets/cli"
   },
   "packageManager": "pnpm@9.15.5",
   "dependencies": {
