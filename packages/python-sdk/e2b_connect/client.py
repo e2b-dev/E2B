@@ -330,6 +330,7 @@ class Client:
         if timeout is not None:
             # This is not actually timeout for the whole stream read, but timeout from the last read chunk.
             # At worst then, the timeout of a hanging stream could be 2 * timeout (reading body until timeout-ϵ, then waiting for the read timeout).
+            # However, this is still better than no timeout at all and the full timeout in sync python might be way more complicated.
             timeout_ext["read"] = timeout
         extensions = {"timeout": timeout_ext} if timeout_ext else None
 
