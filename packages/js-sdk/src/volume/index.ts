@@ -227,8 +227,11 @@ export class Volume {
     const config = new VolumeConnectionConfig(this, opts)
     const client = new VolumeApiClient(config)
 
-    const res = await client.api.GET('/dir', {
+    const res = await client.api.GET('/volumecontent/{volumeID}/dir', {
       params: {
+        path: {
+          volumeID: this.volumeId,
+        },
         query: {
           path,
           depth: opts?.depth,
@@ -265,8 +268,11 @@ export class Volume {
     const config = new VolumeConnectionConfig(this, opts)
     const client = new VolumeApiClient(config)
 
-    const res = await client.api.POST('/dir', {
+    const res = await client.api.POST('/volumecontent/{volumeID}/dir', {
       params: {
+        path: {
+          volumeID: this.volumeId,
+        },
         query: {
           path,
           uid: opts?.uid,
@@ -308,8 +314,11 @@ export class Volume {
     const config = new VolumeConnectionConfig(this, opts)
     const client = new VolumeApiClient(config)
 
-    const res = await client.api.GET('/stat', {
+    const res = await client.api.GET('/volumecontent/{volumeID}/stat', {
       params: {
+        path: {
+          volumeID: this.volumeId,
+        },
         query: {
           path,
         },
@@ -375,8 +384,11 @@ export class Volume {
     const config = new VolumeConnectionConfig(this, opts)
     const client = new VolumeApiClient(config)
 
-    const res = await client.api.PATCH('/file', {
+    const res = await client.api.PATCH('/volumecontent/{volumeID}/file', {
       params: {
+        path: {
+          volumeID: this.volumeId,
+        },
         query: {
           path,
         },
@@ -477,8 +489,11 @@ export class Volume {
     const config = new VolumeConnectionConfig(this, opts)
     const client = new VolumeApiClient(config)
 
-    const res = await client.api.GET('/file', {
+    const res = await client.api.GET('/volumecontent/{volumeID}/file', {
       params: {
+        path: {
+          volumeID: this.volumeId,
+        },
         query: {
           path,
         },
@@ -535,8 +550,11 @@ export class Volume {
 
     const blob = await toBlob(data)
 
-    const res = await client.api.PUT('/file', {
+    const res = await client.api.PUT('/volumecontent/{volumeID}/file', {
       params: {
+        path: {
+          volumeID: this.volumeId,
+        },
         query: {
           path,
           uid: opts?.uid,
@@ -595,10 +613,15 @@ export class Volume {
       }
     }
 
-    const endpoint = isDirectory ? '/dir' : '/file'
+    const endpoint = isDirectory
+      ? '/volumecontent/{volumeID}/dir'
+      : '/volumecontent/{volumeID}/file'
 
-    const res = await client.api.DELETE(endpoint, {
+    const res = await client.api.DELETE(endpoint as any, {
       params: {
+        path: {
+          volumeID: this.volumeId,
+        },
         query: {
           path,
           recursive: isDirectory ? opts?.recursive : undefined,
