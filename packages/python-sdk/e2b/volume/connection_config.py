@@ -88,11 +88,7 @@ class VolumeConnectionConfig:
         self.api_url = (
             api_url
             or self._volume_api_url()
-            or (
-                "http://localhost:8080"
-                if self.debug
-                else f"https://api.{self.domain}"
-            )
+            or ("http://localhost:8080" if self.debug else f"https://api.{self.domain}")
         )
         self.access_token = token or self._access_token()
         self.token = self.access_token
