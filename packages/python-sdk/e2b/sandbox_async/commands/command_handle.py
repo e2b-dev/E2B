@@ -99,6 +99,14 @@ class AsyncCommandHandle:
 
         self._wait = asyncio.create_task(self._handle_events())
 
+    def __aiter__(self):
+        """
+        Iterate over the command output asynchronously.
+
+        :return: Async generator of command outputs
+        """
+        return self._iterate_events().__aiter__()
+
     async def _iterate_events(
         self,
     ) -> AsyncGenerator[
