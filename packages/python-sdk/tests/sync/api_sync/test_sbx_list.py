@@ -27,49 +27,42 @@ def test_list_sandboxes_with_filter(sandbox_factory, sandbox_test_id: str):
 
 
 @pytest.mark.skip_debug()
-def test_list_running_sandboxes(sandbox: Sandbox, sandbox_test_id: str):
-    paginator = Sandbox.list(
+def test_list_by_state(sandbox_factory, sandbox_test_id: str):
+    running_sbx = sandbox_factory()
+    paused_sbx = sandbox_factory()
+    paused_sbx.beta_pause()
+
+    running_paginator = Sandbox.list(
         query=SandboxQuery(
-            metadata={"sandbox_test_id": sandbox_test_id}, state=[SandboxState.RUNNING]
+            metadata={"sandbox_test_id": sandbox_test_id},
+            state=[SandboxState.RUNNING],
         )
     )
-    sandboxes = paginator.next_items()
-    assert len(sandboxes) >= 1
-
-    # Verify our running sandbox is in the list
+    running_sandboxes = running_paginator.next_items()
+    assert len(running_sandboxes) >= 1
     assert any(
-        s.sandbox_id == sandbox.sandbox_id and s.state == SandboxState.RUNNING
-        for s in sandboxes
+        s.sandbox_id == running_sbx.sandbox_id and s.state == SandboxState.RUNNING
+        for s in running_sandboxes
+    )
+
+    paused_paginator = Sandbox.list(
+        query=SandboxQuery(
+            metadata={"sandbox_test_id": sandbox_test_id},
+            state=[SandboxState.PAUSED],
+        )
+    )
+    paused_sandboxes = paused_paginator.next_items()
+    assert len(paused_sandboxes) >= 1
+    assert any(
+        s.sandbox_id == paused_sbx.sandbox_id and s.state == SandboxState.PAUSED
+        for s in paused_sandboxes
     )
 
 
 @pytest.mark.skip_debug()
-def test_list_paused_sandboxes(sandbox: Sandbox, sandbox_test_id: str):
-    sandbox.beta_pause()
-
-    paginator = Sandbox.list(
-        query=SandboxQuery(
-            metadata={"sandbox_test_id": sandbox_test_id}, state=[SandboxState.PAUSED]
-        )
-    )
-    sandboxes = paginator.next_items()
-    assert len(sandboxes) >= 1
-
-    # Verify our paused sandbox is in the list
-    assert any(
-        s.sandbox_id == sandbox.sandbox_id and s.state == SandboxState.PAUSED
-        for s in sandboxes
-    )
-
-
-@pytest.mark.skip_debug()
-def test_paginate_running_sandboxes(
-    sandbox: Sandbox, sandbox_factory, sandbox_test_id: str
-):
-    # Create two sandboxes
+def test_paginate_sandboxes(sandbox: Sandbox, sandbox_factory, sandbox_test_id: str):
     extra_sbx = sandbox_factory(metadata={"sandbox_test_id": sandbox_test_id})
 
-    # Test pagination with limit
     paginator = Sandbox.list(
         query=SandboxQuery(
             metadata={"sandbox_test_id": sandbox_test_id},
@@ -80,98 +73,19 @@ def test_paginate_running_sandboxes(
 
     sandboxes = paginator.next_items()
 
-    # Check first page
     assert len(sandboxes) == 1
     assert sandboxes[0].state == SandboxState.RUNNING
     assert paginator.has_next is True
     assert paginator.next_token is not None
     assert sandboxes[0].sandbox_id == extra_sbx.sandbox_id
 
-    # Get second page
-    sandboxes = paginator.next_items()
+    sandboxes2 = paginator.next_items()
 
-    # Check second page
-    assert len(sandboxes) == 1
-    assert sandboxes[0].state == SandboxState.RUNNING
+    assert len(sandboxes2) == 1
+    assert sandboxes2[0].state == SandboxState.RUNNING
     assert paginator.has_next is False
     assert paginator.next_token is None
-    assert sandboxes[0].sandbox_id == sandbox.sandbox_id
-
-
-@pytest.mark.skip_debug()
-def test_paginate_paused_sandboxes(
-    sandbox: Sandbox, sandbox_factory, sandbox_test_id: str
-):
-    sandbox.beta_pause()
-
-    # create another paused sandbox
-    extra_sbx = sandbox_factory(metadata={"sandbox_test_id": sandbox_test_id})
-    extra_sbx.beta_pause()
-
-    # Test pagination with limit
-    paginator = Sandbox.list(
-        query=SandboxQuery(
-            state=[SandboxState.PAUSED],
-            metadata={"sandbox_test_id": sandbox_test_id},
-        ),
-        limit=1,
-    )
-
-    sandboxes = paginator.next_items()
-
-    # Check first page
-    assert len(sandboxes) == 1
-    assert sandboxes[0].state == SandboxState.PAUSED
-    assert paginator.has_next is True
-    assert paginator.next_token is not None
-    assert sandboxes[0].sandbox_id == extra_sbx.sandbox_id
-
-    # Get second page
-    sandboxes = paginator.next_items()
-
-    # Check second page
-    assert len(sandboxes) == 1
-    assert sandboxes[0].state == SandboxState.PAUSED
-    assert paginator.has_next is False
-    assert paginator.next_token is None
-    assert sandboxes[0].sandbox_id == sandbox.sandbox_id
-
-
-@pytest.mark.skip_debug()
-def test_paginate_running_and_paused_sandboxes(
-    sandbox: Sandbox, sandbox_factory, sandbox_test_id: str
-):
-    # Create extra paused sandbox
-    extra_sbx = sandbox_factory(metadata={"sandbox_test_id": sandbox_test_id})
-    extra_sbx.beta_pause()
-
-    # Test pagination with limit
-    paginator = Sandbox.list(
-        query=SandboxQuery(
-            metadata={"sandbox_test_id": sandbox_test_id},
-            state=[SandboxState.RUNNING, SandboxState.PAUSED],
-        ),
-        limit=1,
-    )
-
-    sandboxes = paginator.next_items()
-
-    # Check first page
-    assert len(sandboxes) == 1
-    assert sandboxes[0].state == SandboxState.PAUSED
-    assert paginator.has_next is True
-    assert paginator.next_token is not None
-    assert sandboxes[0].sandbox_id == extra_sbx.sandbox_id
-
-    # Get second page
-    sandboxes = paginator.next_items()
-
-    # Check second page
-    assert len(sandboxes) == 1
-    assert sandboxes[0].state == SandboxState.RUNNING
-    assert paginator.has_next is False
-    assert paginator.next_token is None
-    assert sandboxes[0].sandbox_id == sandbox.sandbox_id
+    assert sandboxes2[0].sandbox_id == sandbox.sandbox_id
 
 
 @pytest.mark.skip_debug()
