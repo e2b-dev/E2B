@@ -3,7 +3,7 @@ import logging
 import os
 from dataclasses import dataclass
 from types import TracebackType
-from typing import Optional, Union
+from typing import Optional, Protocol, Union
 
 from httpx import AsyncBaseTransport, BaseTransport, Limits
 
@@ -36,7 +36,7 @@ class SandboxCreateResponse:
 
 
 def handle_api_exception(
-    e: Response,
+    e: "SupportsApiErrorResponse",
     default_exception_class: type[Exception] = SandboxException,
     stack_trace: Optional[TracebackType] = None,
 ):
@@ -64,6 +64,14 @@ def handle_api_exception(
     return default_exception_class(f"{e.status_code}: {e.content}").with_traceback(
         stack_trace
     )
+
+
+class SupportsApiErrorResponse(Protocol):
+    @property
+    def status_code(self) -> int: ...
+
+    @property
+    def content(self) -> Union[str, bytes]: ...
 
 
 class ApiClient(AuthenticatedClient):

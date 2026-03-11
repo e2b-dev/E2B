@@ -1336,8 +1336,12 @@ export interface paths {
                     cursor?: number;
                     /** @description Direction of the logs that should be returned */
                     direction?: components["schemas"]["LogsDirection"];
+                    /** @description Minimum log level to return. Logs below this level are excluded */
+                    level?: components["schemas"]["LogLevel"];
                     /** @description Maximum number of logs that should be returned */
                     limit?: number;
+                    /** @description Case-sensitive substring match on log message content */
+                    search?: string;
                 };
                 header?: never;
                 path: {
@@ -1546,10 +1550,145 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/volumes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description List all team volumes */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Successfully listed all team volumes */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Volume"][];
+                    };
+                };
+                401: components["responses"]["401"];
+                500: components["responses"]["500"];
+            };
+        };
+        put?: never;
+        /** @description Create a new team volume */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["NewVolume"];
+                };
+            };
+            responses: {
+                /** @description Successfully created a new team volume */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["VolumeAndToken"];
+                    };
+                };
+                400: components["responses"]["400"];
+                401: components["responses"]["401"];
+                500: components["responses"]["500"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/volumes/{volumeID}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Get team volume info */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    volumeID: components["parameters"]["volumeID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Successfully retrieved a team volume */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["VolumeAndToken"];
+                    };
+                };
+                401: components["responses"]["401"];
+                404: components["responses"]["404"];
+                500: components["responses"]["500"];
+            };
+        };
+        put?: never;
+        post?: never;
+        /** @description Delete a team volume */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    volumeID: components["parameters"]["volumeID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Successfully deleted a team volume */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                401: components["responses"]["401"];
+                404: components["responses"]["404"];
+                500: components["responses"]["500"];
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        AdminBuildCancelResult: {
+            /** @description Number of builds successfully cancelled */
+            cancelledCount: number;
+            /** @description Number of builds that failed to cancel */
+            failedCount: number;
+        };
         AdminSandboxKillResult: {
             /** @description Number of sandboxes that failed to kill */
             failedCount: number;
@@ -1870,11 +2009,6 @@ export interface components {
             machineInfo: components["schemas"]["MachineInfo"];
             metrics: components["schemas"]["NodeMetrics"];
             /**
-             * @deprecated
-             * @description Identifier of the nomad node
-             */
-            nodeID: string;
-            /**
              * Format: uint32
              * @description Number of sandboxes running on the node
              */
@@ -1912,12 +2046,10 @@ export interface components {
             machineInfo: components["schemas"]["MachineInfo"];
             metrics: components["schemas"]["NodeMetrics"];
             /**
-             * @deprecated
-             * @description Identifier of the nomad node
+             * Format: uint32
+             * @description Number of sandboxes running on the node
              */
-            nodeID: string;
-            /** @description List of sandboxes running on the node */
-            sandboxes: components["schemas"]["ListedSandbox"][];
+            sandboxCount: number;
             /** @description Service instance identifier of the node */
             serviceInstanceID: string;
             status: components["schemas"]["NodeStatus"];
@@ -2163,7 +2295,7 @@ export interface components {
         SnapshotInfo: {
             /** @description Full names of the snapshot template including team namespace and tag (e.g. team-slug/my-snapshot:v2) */
             names: string[];
-            /** @description Identifier of the snapshot template */
+            /** @description Identifier of the snapshot template including the tag. Uses namespace/alias when a name was provided (e.g. team-slug/my-snapshot:default), otherwise falls back to the raw template ID (e.g. abc123:default). */
             snapshotID: string;
         };
         Team: {
@@ -2549,6 +2681,17 @@ export interface components {
             name: string;
             /** @description ID of the volume */
             volumeID: string;
+        };
+        VolumeAndToken: {
+            /** @description Name of the volume */
+            name: string;
+            /** @description Auth token to use for interacting with volume content */
+            token: string;
+            /** @description ID of the volume */
+            volumeID: string;
+        };
+        VolumeToken: {
+            token: string;
         };
     };
     responses: {

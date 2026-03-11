@@ -1,5 +1,6 @@
 """Contains all the data models used in inputs/outputs"""
 
+from .admin_build_cancel_result import AdminBuildCancelResult
 from .admin_sandbox_kill_result import AdminSandboxKillResult
 from .assign_template_tags_request import AssignTemplateTagsRequest
 from .assigned_template_tags import AssignedTemplateTags
@@ -80,8 +81,11 @@ from .template_update_response import TemplateUpdateResponse
 from .template_with_builds import TemplateWithBuilds
 from .update_team_api_key import UpdateTeamAPIKey
 from .volume import Volume
+from .volume_and_token import VolumeAndToken
+from .volume_token import VolumeToken
 
 __all__ = (
+    "AdminBuildCancelResult",
     "AdminSandboxKillResult",
     "AssignedTemplateTags",
     "AssignTemplateTagsRequest",
@@ -158,4 +162,6 @@ __all__ = (
     "TemplateWithBuilds",
     "UpdateTeamAPIKey",
     "Volume",
+    "VolumeAndToken",
+    "VolumeToken",
 )
