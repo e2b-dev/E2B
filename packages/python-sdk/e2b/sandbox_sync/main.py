@@ -1,6 +1,7 @@
 import datetime
 import json
 import logging
+import time
 import uuid
 from typing import Dict, List, Optional, overload
 
@@ -320,6 +321,7 @@ class Sandbox(SandboxApi):
 
     def __exit__(self, exc_type, exc_value, traceback):
         self.kill()
+        self._envd_api.close()
 
     @overload
     def kill(
@@ -903,11 +905,47 @@ class Sandbox(SandboxApi):
             **opts,
         )
 
-        return cls(
+        instance = cls(
             sandbox_id=sandbox_id,
             sandbox_domain=sandbox_domain,
             envd_version=envd_version,
             envd_access_token=envd_access_token,
             traffic_access_token=traffic_access_token,
             connection_config=connection_config,
+        )
+
+        # Wait for the sandbox to be ready (fix for #1130)
+        if not debug:
+            cls._wait_for_sandbox_ready(instance)
+
+        return instance
+
+    @staticmethod
+    def _wait_for_sandbox_ready(
+        instance: "Sandbox",
+        timeout: float = 60.0,
+        delay: float = 1.0,
+    ) -> None:
+        """
+        Wait for the sandbox to be ready by polling the health endpoint.
+
+        :param instance: The sandbox instance to wait for
+        :param timeout: Maximum total time to wait in seconds
+        :param delay: Delay between polling attempts in seconds
+        """
+        import time as time_module
+        start_time = time_module.time()
+        while time_module.time() - start_time < timeout:
+            try:
+                # Use a shorter request timeout to allow for multiple attempts
+                remaining = timeout - (time_module.time() - start_time)
+                if instance.is_running(request_timeout=min(5.0, remaining)):
+                    return
+            except Exception:
+                # Sandbox might not be reachable yet, continue polling
+                pass
+            time_module.sleep(delay)
+
+        raise SandboxException(
+            f"Sandbox {instance.sandbox_id} did not become ready within {timeout} seconds"
         )

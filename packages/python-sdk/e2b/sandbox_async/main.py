@@ -1,3 +1,4 @@
+import asyncio
 import datetime
 import json
 import logging
@@ -321,6 +322,7 @@ class AsyncSandbox(SandboxApi):
 
     async def __aexit__(self, exc_type, exc_value, traceback):
         await self.kill()
+        await self._envd_api.aclose()
 
     @overload
     async def kill(
@@ -908,11 +910,47 @@ class AsyncSandbox(SandboxApi):
             **opts,
         )
 
-        return cls(
+        instance = cls(
             sandbox_id=sandbox_id,
             sandbox_domain=sandbox_domain,
             envd_version=envd_version,
             envd_access_token=envd_access_token,
             traffic_access_token=traffic_access_token,
             connection_config=connection_config,
+        )
+
+        # Wait for the sandbox to be ready (fix for #1130)
+        if not debug:
+            await cls._wait_for_sandbox_ready(instance)
+
+        return instance
+
+    @staticmethod
+    async def _wait_for_sandbox_ready(
+        instance: "AsyncSandbox",
+        timeout: float = 60.0,
+        delay: float = 1.0,
+    ) -> None:
+        """
+        Wait for the sandbox to be ready by polling the health endpoint.
+
+        :param instance: The sandbox instance to wait for
+        :param timeout: Maximum total time to wait in seconds
+        :param delay: Delay between polling attempts in seconds
+        """
+        import time
+        start_time = time.time()
+        while time.time() - start_time < timeout:
+            try:
+                # Use a shorter request timeout to allow for multiple attempts
+                remaining = timeout - (time.time() - start_time)
+                if await instance.is_running(request_timeout=min(5.0, remaining)):
+                    return
+            except Exception:
+                # Sandbox might not be reachable yet, continue polling
+                pass
+            await asyncio.sleep(delay)
+
+        raise SandboxException(
+            f"Sandbox {instance.sandbox_id} did not become ready within {timeout} seconds"
         )
