@@ -13,9 +13,21 @@ export interface VolumeApiOpts {
    */
   token?: string
   /**
+   * Domain to use for the volume API.
+   *
+   * @default E2B_DOMAIN // environment variable or `e2b.app`
+   */
+  domain?: string
+  /**
+   * If true the SDK starts in the debug mode and connects to the local volume API server.
+   * @internal
+   * @default E2B_DEBUG // environment variable or `false`
+   */
+  debug?: boolean
+  /**
    * API Url to use for the API.
    * @internal
-   * @default E2B_VOLUME_API_URL // environment variable or `https://volumecontent.e2b.app`
+   * @default E2B_VOLUME_API_URL // environment variable or `https://api.${domain}`
    */
   apiUrl?: string
   /**
@@ -36,6 +48,8 @@ export interface VolumeApiOpts {
 }
 
 export class VolumeConnectionConfig {
+  readonly domain: string
+  readonly debug: boolean
   readonly apiUrl: string
   readonly token?: string
   readonly headers?: Record<string, string>
@@ -43,15 +57,28 @@ export class VolumeConnectionConfig {
   readonly requestTimeoutMs?: number
 
   constructor(volume: Volume, opts?: VolumeApiOpts) {
-    this.apiUrl = opts?.apiUrl || VolumeConnectionConfig.apiUrl
+    this.domain = opts?.domain || volume.domain || VolumeConnectionConfig.domain
+    this.debug = opts?.debug ?? volume.debug ?? VolumeConnectionConfig.debug
+    this.apiUrl =
+      opts?.apiUrl ||
+      VolumeConnectionConfig.volumeApiUrl ||
+      (this.debug ? 'http://localhost:8080' : `https://api.${this.domain}`)
     this.token = opts?.token || volume.token
     this.headers = opts?.headers
     this.logger = opts?.logger
     this.requestTimeoutMs = opts?.requestTimeoutMs
   }
 
-  private static get apiUrl() {
-    return getEnvVar('E2B_VOLUME_API_URL') || 'https://volumecontent.e2b.app'
+  private static get domain() {
+    return getEnvVar('E2B_DOMAIN') || 'e2b.app'
+  }
+
+  private static get debug() {
+    return (getEnvVar('E2B_DEBUG') || 'false').toLowerCase() === 'true'
+  }
+
+  private static get volumeApiUrl() {
+    return getEnvVar('E2B_VOLUME_API_URL')
   }
 
   getSignal(requestTimeoutMs?: number) {

@@ -54,14 +54,36 @@ export class Volume {
   readonly token: string
 
   /**
+   * Domain used for constructing the volume API URL.
+   */
+  readonly domain?: string
+
+  /**
+   * Whether to use debug mode (connects to local volume API server).
+   */
+  readonly debug?: boolean
+
+  /**
    * Create a local Volume instance with no API call.
    *
    * @param volumeId volume ID.
+   * @param name volume name.
+   * @param token volume auth token.
+   * @param domain domain for the volume API.
+   * @param debug whether to use debug mode.
    */
-  constructor(volumeId: string, name: string, token: string) {
+  constructor(
+    volumeId: string,
+    name: string,
+    token: string,
+    domain?: string,
+    debug?: boolean
+  ) {
     this.volumeId = volumeId
     this.name = name
     this.token = token
+    this.domain = domain
+    this.debug = debug
   }
 
   /**
@@ -92,7 +114,13 @@ export class Volume {
       throw new Error('Response data is missing')
     }
 
-    return new Volume(res.data.volumeID, res.data.name, res.data.token)
+    return new Volume(
+      res.data.volumeID,
+      res.data.name,
+      res.data.token,
+      config.domain,
+      config.debug
+    )
   }
 
   /**
@@ -107,8 +135,9 @@ export class Volume {
     volumeId: string,
     opts?: ConnectionOpts
   ): Promise<Volume> {
+    const config = new ConnectionConfig(opts)
     const { name, token } = await Volume.getInfo(volumeId, opts)
-    return new Volume(volumeId, name, token)
+    return new Volume(volumeId, name, token, config.domain, config.debug)
   }
 
   /**
@@ -617,7 +646,7 @@ export class Volume {
       ? '/volumecontent/{volumeID}/dir'
       : '/volumecontent/{volumeID}/file'
 
-    const res = await client.api.DELETE(endpoint as any, {
+    const res = await client.api.DELETE(endpoint, {
       params: {
         path: {
           volumeID: this.volumeId,
