@@ -928,19 +928,23 @@ class AsyncSandbox(SandboxApi):
     @staticmethod
     async def _wait_for_sandbox_ready(
         instance: "AsyncSandbox",
-        max_attempts: int = 60,
+        timeout: float = 60.0,
         delay: float = 1.0,
     ) -> None:
         """
         Wait for the sandbox to be ready by polling the health endpoint.
 
         :param instance: The sandbox instance to wait for
-        :param max_attempts: Maximum number of polling attempts
+        :param timeout: Maximum total time to wait in seconds
         :param delay: Delay between polling attempts in seconds
         """
-        for attempt in range(max_attempts):
+        import time
+        start_time = time.time()
+        while time.time() - start_time < timeout:
             try:
-                if await instance.is_running(request_timeout=5.0):
+                # Use a shorter request timeout to allow for multiple attempts
+                remaining = timeout - (time.time() - start_time)
+                if await instance.is_running(request_timeout=min(5.0, remaining)):
                     return
             except Exception:
                 # Sandbox might not be reachable yet, continue polling
@@ -948,5 +952,5 @@ class AsyncSandbox(SandboxApi):
             await asyncio.sleep(delay)
 
         raise SandboxException(
-            f"Sandbox {instance.sandbox_id} did not become ready within {max_attempts * delay} seconds"
+            f"Sandbox {instance.sandbox_id} did not become ready within {timeout} seconds"
         )
