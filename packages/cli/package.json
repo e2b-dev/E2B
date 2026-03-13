@@ -45,8 +45,7 @@
     "test": "vitest run",
     "test:watch": "vitest watch",
     "test:coverage": "vitest run --coverage",
-    "check-deps": "knip",
-    "generate-ref": "./scripts/generate_sdk_ref.sh"
+    "check-deps": "knip"
   },
   "devDependencies": {
     "@types/command-exists": "^1.2.3",
