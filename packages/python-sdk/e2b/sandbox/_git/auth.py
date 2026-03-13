@@ -67,6 +67,7 @@ def is_auth_failure(err: Exception) -> bool:
         "terminal prompts disabled",
         "could not read username",
         "invalid username or password",
+        "permission denied (",
         "permission denied (publickey",
         "permission denied (keyboard-interactive",
         "permission to ",

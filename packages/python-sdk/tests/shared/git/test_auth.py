@@ -42,6 +42,12 @@ def test_is_auth_failure_detects_ssh_publickey_errors():
     assert is_auth_failure(err) is True
 
 
+def test_is_auth_failure_detects_ssh_password_errors():
+    err = _command_exit("git@github.com: Permission denied (password).")
+
+    assert is_auth_failure(err) is True
+
+
 class FailingCommands:
     def __init__(self, err: CommandExitException):
         self.err = err

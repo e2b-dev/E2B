@@ -516,6 +516,7 @@ export function isAuthFailure(err: unknown): boolean {
     'terminal prompts disabled',
     'could not read username',
     'invalid username or password',
+    'permission denied (',
     'permission denied (publickey',
     'permission denied (keyboard-interactive',
     'permission to ',

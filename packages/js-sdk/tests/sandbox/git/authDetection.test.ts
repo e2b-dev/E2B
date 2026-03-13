@@ -46,6 +46,17 @@ describe('Git auth detection', () => {
     expect(isAuthFailure(err)).toBe(true)
   })
 
+  test('classifies ssh password failures as auth failures', () => {
+    const err = new CommandExitError({
+      exitCode: 128,
+      error: 'git@github.com: Permission denied (password).',
+      stdout: '',
+      stderr: 'git@github.com: Permission denied (password).',
+    })
+
+    expect(isAuthFailure(err)).toBe(true)
+  })
+
   test('clone raises GitPermissionError for path permission failures', async () => {
     const err = createFilesystemPermissionError(
       "fatal: could not create work tree dir '/home/workspace': Permission denied"
