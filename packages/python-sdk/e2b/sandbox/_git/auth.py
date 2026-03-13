@@ -67,8 +67,11 @@ def is_auth_failure(err: Exception) -> bool:
         "terminal prompts disabled",
         "could not read username",
         "invalid username or password",
+        "permission denied (publickey",
+        "permission denied (keyboard-interactive",
+        "permission to ",
+        "requested url returned error: 403",
         "access denied",
-        "permission denied",
         "not authorized",
     ]
     return any(snippet in message for snippet in auth_snippets)
