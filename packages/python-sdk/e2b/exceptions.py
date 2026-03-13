@@ -79,6 +79,14 @@ class GitAuthException(AuthenticationException):
     pass
 
 
+class GitPermissionException(SandboxException):
+    """
+    Raised when git cannot write to the target path or repository.
+    """
+
+    pass
+
+
 class GitUpstreamException(SandboxException):
     """
     Raised when git upstream tracking is missing.

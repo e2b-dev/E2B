@@ -23,8 +23,10 @@ from e2b.sandbox._git.args import (
 )
 from e2b.sandbox._git.auth import (
     build_auth_error_message,
+    build_permission_error_message,
     build_upstream_error_message,
     is_auth_failure,
+    is_permission_failure,
     is_missing_upstream,
     strip_credentials,
     with_credentials,
@@ -41,6 +43,7 @@ from e2b.sandbox._git.types import ClonePlan, GitBranches, GitFileStatus, GitSta
 __all__ = [
     "build_add_args",
     "build_auth_error_message",
+    "build_permission_error_message",
     "build_branches_args",
     "build_checkout_branch_args",
     "build_clone_plan",
@@ -63,6 +66,7 @@ __all__ = [
     "build_upstream_error_message",
     "derive_repo_dir_from_url",
     "is_auth_failure",
+    "is_permission_failure",
     "is_missing_upstream",
     "parse_git_branches",
     "parse_git_status",
