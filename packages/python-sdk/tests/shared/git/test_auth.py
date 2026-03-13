@@ -1,3 +1,5 @@
+from typing import cast
+
 import pytest
 
 from e2b.exceptions import GitAuthException, GitPermissionException
@@ -7,6 +9,7 @@ from e2b.sandbox._git.auth import (
     is_permission_failure,
 )
 from e2b.sandbox.commands.command_handle import CommandExitException
+from e2b.sandbox_sync.commands.command import Commands
 from e2b.sandbox_sync.git import Git
 
 
@@ -51,7 +54,7 @@ def test_clone_raises_permission_exception_for_path_permission_failures():
     err = _command_exit(
         "fatal: could not create work tree dir '/home/workspace': Permission denied"
     )
-    git = Git(FailingCommands(err))
+    git = Git(cast(Commands, FailingCommands(err)))
 
     with pytest.raises(GitPermissionException) as exc:
         git.clone("https://github.com/e2b-dev/e2b.git", "/home/workspace")
@@ -62,7 +65,7 @@ def test_clone_raises_permission_exception_for_path_permission_failures():
 
 def test_push_raises_permission_exception_for_repository_write_failures():
     err = _command_exit("error: unable to create '.git/index.lock': Permission denied")
-    git = Git(FailingCommands(err))
+    git = Git(cast(Commands, FailingCommands(err)))
 
     with pytest.raises(GitPermissionException) as exc:
         git.push("/repo", remote="origin", branch="main")
@@ -72,7 +75,7 @@ def test_push_raises_permission_exception_for_repository_write_failures():
 
 def test_pull_raises_permission_exception_for_repository_write_failures():
     err = _command_exit("error: cannot open .git/FETCH_HEAD: Permission denied")
-    git = Git(FailingCommands(err))
+    git = Git(cast(Commands, FailingCommands(err)))
 
     with pytest.raises(GitPermissionException) as exc:
         git.pull("/repo", remote="origin", branch="main")
