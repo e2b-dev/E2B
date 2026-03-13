@@ -1,3 +1,0 @@
-Contact: mailto:security@e2b.dev
-Preferred-Languages: en
-Canonical: https://e2b.dev/.well-known/security.txt
