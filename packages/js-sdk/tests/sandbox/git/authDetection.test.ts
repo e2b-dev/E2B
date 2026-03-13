@@ -1,6 +1,6 @@
 import { describe, expect, test, vi } from 'vitest'
 
-import { GitAuthError, GitPermissionError } from '../../../src/errors'
+import { GitPermissionError } from '../../../src/errors'
 import { CommandExitError } from '../../../src/sandbox/commands/commandHandle'
 import { Git } from '../../../src/sandbox/git'
 import {
@@ -29,7 +29,7 @@ describe('Git auth detection', () => {
 
   test('classifies filesystem permission errors separately from auth failures', () => {
     const err = createFilesystemPermissionError(
-      "fatal: cannot open .git/FETCH_HEAD: Permission denied"
+      'fatal: cannot open .git/FETCH_HEAD: Permission denied'
     )
 
     expect(isPermissionFailure(err)).toBe(true)
@@ -88,7 +88,7 @@ describe('Git auth detection', () => {
 
   test('pull raises GitPermissionError for repository write failures', async () => {
     const err = createFilesystemPermissionError(
-      "error: cannot open .git/FETCH_HEAD: Permission denied"
+      'error: cannot open .git/FETCH_HEAD: Permission denied'
     )
     const git = new Git({
       run: vi.fn().mockRejectedValue(err),
