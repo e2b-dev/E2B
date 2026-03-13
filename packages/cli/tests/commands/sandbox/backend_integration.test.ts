@@ -113,7 +113,6 @@ describe('sandbox cli backend integration', () => {
     }
   )
 })
-
 async function assertSandboxNotListed(sandboxId: string): Promise<void> {
   const retries = 10
   const delayMs = 500

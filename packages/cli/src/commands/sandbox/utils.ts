@@ -43,7 +43,7 @@ export function waitForSandboxEnd(sandboxID: string) {
 
   monitor()
 
-  return () => isRunning
+  return () => running
 }
 
 export async function isRunning(sandboxID: string) {
