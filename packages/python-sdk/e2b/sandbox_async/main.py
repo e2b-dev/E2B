@@ -321,6 +321,7 @@ class AsyncSandbox(SandboxApi):
 
     async def __aexit__(self, exc_type, exc_value, traceback):
         await self.kill()
+        await self._envd_api.aclose()
 
     @overload
     async def kill(
