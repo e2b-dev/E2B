@@ -1,6 +1,6 @@
 # Fork Customizations
 
-> This repository is a fork of [unknown]().
+> This repository is a fork of [e2b-dev/E2B](https://github.com/e2b-dev/E2B).
 > Managed under the [iAiFy Enterprise](https://github.com/enterprises/iAiFy) governance model.
 
 ## Purpose
@@ -11,7 +11,7 @@ Open-source, secure environment with real-world tools for enterprise-grade agent
 
 | Property | Value |
 |----------|-------|
-| Upstream | [unknown]() |
+| Upstream | [e2b-dev/E2B](https://github.com/e2b-dev/E2B) |
 | Language | MDX |
 | Fork org | AiFeatures |
 
