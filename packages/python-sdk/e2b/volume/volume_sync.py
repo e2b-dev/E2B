@@ -599,7 +599,7 @@ class Volume:
             entry_info = self.get_info(path, **opts)
             is_directory = entry_info.type.value == "directory"
         except NotFoundException:
-            pass
+            raise
 
         if is_directory:
             res = delete_dir.sync_detailed(

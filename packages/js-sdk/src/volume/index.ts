@@ -637,9 +637,7 @@ export class Volume {
       const entryInfo = await this.getInfo(path, opts)
       isDirectory = entryInfo.type === 'directory'
     } catch (err) {
-      if (!(err instanceof NotFoundError)) {
-        throw err
-      }
+      throw err
     }
 
     const endpoint = isDirectory

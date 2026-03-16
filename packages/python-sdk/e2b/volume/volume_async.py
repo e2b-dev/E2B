@@ -602,7 +602,7 @@ class AsyncVolume:
             entry_info = await self.get_info(path, **opts)
             is_directory = entry_info.type.value == "directory"
         except NotFoundException:
-            pass
+            raise
 
         if is_directory:
             res = await delete_dir.asyncio_detailed(
