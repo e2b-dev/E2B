@@ -1,4 +1,3 @@
-from io import BytesIO
 from typing import IO, Iterator, List, Literal, Optional, Union, cast, overload
 from http import HTTPStatus
 
@@ -556,7 +555,7 @@ class Volume:
 
         res = put_file.sync_detailed(
             self._volume_id,
-            body=FilePayload(payload=BytesIO(data_bytes)),
+            body=FilePayload(payload=data_bytes),  # type: ignore[arg-type]  # Pass bytes directly for sync httpx compatibility
             path=path,
             uid=uid if uid is not None else UNSET,
             gid=gid if gid is not None else UNSET,

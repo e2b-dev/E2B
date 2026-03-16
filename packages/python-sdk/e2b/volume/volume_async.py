@@ -1,4 +1,3 @@
-from io import BytesIO
 from typing import AsyncIterator, IO, List, Literal, Optional, Union, cast, overload
 from http import HTTPStatus
 
@@ -559,7 +558,7 @@ class AsyncVolume:
 
         res = await put_file.asyncio_detailed(
             self._volume_id,
-            body=FilePayload(payload=BytesIO(data_bytes)),
+            body=FilePayload(payload=data_bytes),  # type: ignore[arg-type]  # Pass bytes directly for async httpx compatibility
             path=path,
             uid=uid if uid is not None else UNSET,
             gid=gid if gid is not None else UNSET,
