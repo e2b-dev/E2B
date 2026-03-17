@@ -35,6 +35,15 @@ export function waitForPort(port: number): ReadyCmd {
 }
 
 /**
+ * Escapes a shell argument to prevent command injection.
+ * @param arg The argument to escape
+ * @returns The escaped argument wrapped in single quotes
+ */
+function escapeShellArg(arg: string): string {
+  return "'" + arg.replace(/'/g, "'\"'\"'") + "'"
+}
+
+/**
  * Wait for a URL to return a specific HTTP status code.
  * Uses `curl` to make HTTP requests and check the response status.
  *
@@ -52,7 +61,7 @@ export function waitForPort(port: number): ReadyCmd {
  * ```
  */
 export function waitForURL(url: string, statusCode: number = 200): ReadyCmd {
-  const cmd = `curl -s -o /dev/null -w "%{http_code}" ${url} | grep -q "${statusCode}"`
+  const cmd = `curl -s -o /dev/null -w "%{http_code}" ${escapeShellArg(url)} | grep -q "${statusCode}"`
   return new ReadyCmd(cmd)
 }
 
@@ -73,7 +82,7 @@ export function waitForURL(url: string, statusCode: number = 200): ReadyCmd {
  * ```
  */
 export function waitForProcess(processName: string): ReadyCmd {
-  const cmd = `pgrep ${processName} > /dev/null`
+  const cmd = `pgrep -x ${escapeShellArg(processName)} > /dev/null`
   return new ReadyCmd(cmd)
 }
 
@@ -94,7 +103,7 @@ export function waitForProcess(processName: string): ReadyCmd {
  * ```
  */
 export function waitForFile(filename: string): ReadyCmd {
-  const cmd = `[ -f ${filename} ]`
+  const cmd = `[ -f ${escapeShellArg(filename)} ]`
   return new ReadyCmd(cmd)
 }
 

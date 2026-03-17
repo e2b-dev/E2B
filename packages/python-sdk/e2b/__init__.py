@@ -136,7 +136,6 @@ __all__ = [
     "ProcessInfo",
     "SandboxQuery",
     "SandboxState",
-    "SandboxMetrics",
     "GitStatus",
     "GitBranches",
     "GitFileStatus",

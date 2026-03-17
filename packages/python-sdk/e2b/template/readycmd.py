@@ -1,3 +1,6 @@
+import shlex
+
+
 class ReadyCmd:
     """
     Wrapper class for ready check commands.
@@ -57,7 +60,7 @@ def wait_for_url(url: str, status_code: int = 200):
     )
     ```
     """
-    cmd = f'curl -s -o /dev/null -w "%{{http_code}}" {url} | grep -q "{status_code}"'
+    cmd = f'curl -s -o /dev/null -w "%{{http_code}}" {shlex.quote(url)} | grep -q "{status_code}"'
     return ReadyCmd(cmd)
 
 
@@ -82,7 +85,7 @@ def wait_for_process(process_name: str):
     )
     ```
     """
-    cmd = f"pgrep {process_name} > /dev/null"
+    cmd = f"pgrep -x {shlex.quote(process_name)} > /dev/null"
     return ReadyCmd(cmd)
 
 
@@ -107,7 +110,7 @@ def wait_for_file(filename: str):
     )
     ```
     """
-    cmd = f"[ -f {filename} ]"
+    cmd = f"[ -f {shlex.quote(filename)} ]"
     return ReadyCmd(cmd)
 
 
