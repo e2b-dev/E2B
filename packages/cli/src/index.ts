@@ -8,7 +8,7 @@ import { commands2md } from './utils/commands2md'
 
 export const pkg = packageJSON
 
-simpleUpdateNotifier({
+const updateCheck = simpleUpdateNotifier({
   pkg,
   updateCheckInterval: 1000 * 60 * 60 * 8, // 8 hours
 })
@@ -28,4 +28,9 @@ if (process.env.NODE_ENV === 'development') {
     })
 }
 
-prog.parse()
+async function main() {
+  await prog.parseAsync()
+  await updateCheck
+}
+
+main()
