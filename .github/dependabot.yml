@@ -1,11 +1,18 @@
 version: 2
 updates:
-  - package-ecosystem: "npm"
+  - package-ecosystem: "n
+
+  - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
       day: "monday"
     labels:
       - "dependencies"
+      - "ci-cd"
     commit-message:
-      prefix: "chore(deps)"
+      prefix: "ci"
+    groups:
+      iaify-shared:
+        patterns:
+          - "Ai-road-4-You/*"
