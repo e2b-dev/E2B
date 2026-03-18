@@ -35,4 +35,4 @@ async function main() {
   await updateCheck
 }
 
-main().catch(() => process.exit(1))
+main()
