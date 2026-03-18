@@ -7,6 +7,7 @@ from e2b.exceptions import (
     AuthenticationException,
     InvalidArgumentException,
     NotEnoughSpaceException,
+    RateLimitException,
     format_sandbox_timeout_exception,
 )
 
@@ -50,7 +51,7 @@ def format_envd_api_exception(status_code: int, message: str):
     elif status_code == 404:
         return NotFoundException(message)
     elif status_code == 429:
-        return SandboxException(f"{message}: The requests are being rate limited.")
+        return RateLimitException(f"{message}: The requests are being rate limited.")
     elif status_code == 502:
         return format_sandbox_timeout_exception(message)
     elif status_code == 507:

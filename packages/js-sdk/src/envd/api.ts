@@ -8,6 +8,7 @@ import {
   InvalidArgumentError,
   NotFoundError,
   NotEnoughSpaceError,
+  RateLimitError,
   formatSandboxTimeoutError,
   AuthenticationError,
 } from '../errors'
@@ -38,7 +39,7 @@ export async function handleEnvdApiError(res: {
     case 404:
       return new NotFoundError(message)
     case 429:
-      return new SandboxError(
+      return new RateLimitError(
         `${res.response.status}: ${message}: The requests are being rate limited.`
       )
     case 502:
