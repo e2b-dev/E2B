@@ -11,6 +11,8 @@ export const pkg = packageJSON
 const updateCheck = simpleUpdateNotifier({
   pkg,
   updateCheckInterval: 1000 * 60 * 60 * 8, // 8 hours
+}).catch(() => {
+  // Silently ignore update check failures to avoid unhandled rejections
 })
 
 const prog = program.version(
@@ -33,4 +35,4 @@ async function main() {
   await updateCheck
 }
 
-main()
+main().catch(() => process.exit(1))
