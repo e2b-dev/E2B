@@ -11,8 +11,10 @@ export const pkg = packageJSON
 const updateCheck = simpleUpdateNotifier({
   pkg,
   updateCheckInterval: 1000 * 60 * 60 * 8, // 8 hours
-}).catch(() => {
-  // Silently ignore update check failures to avoid unhandled rejections
+}).catch((e) => {
+  if (process.env.DEBUG) {
+    console.error('Update check failed:', e)
+  }
 })
 
 const prog = program.version(
