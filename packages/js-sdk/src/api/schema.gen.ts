@@ -2014,9 +2014,19 @@ export interface components {
          * @default false
          */
         SandboxAutoResumeEnabled: boolean;
+        /**
+         * @description Sandbox lifecycle configuration.
+         */
+        SandboxLifecycle: {
+            /** @description Auto-resume enabled flag for paused sandboxes. */
+            autoResume?: boolean;
+            onTimeout: components["schemas"]["SandboxOnTimeout"];
+        };
         SandboxDetail: {
             /** @description Alias of the template */
             alias?: string;
+            /** @description Whether internet access was explicitly enabled or disabled for the sandbox. */
+            allowInternetAccess?: boolean | null;
             /**
              * @deprecated
              * @description Identifier of the client
@@ -2034,8 +2044,10 @@ export interface components {
             /** @description Access token used for envd communication */
             envdAccessToken?: string;
             envdVersion: components["schemas"]["EnvdVersion"];
+            lifecycle?: components["schemas"]["SandboxLifecycle"];
             memoryMB: components["schemas"]["MemoryMB"];
             metadata?: components["schemas"]["SandboxMetadata"];
+            network?: components["schemas"]["SandboxNetworkConfig"];
             /** @description Identifier of the sandbox */
             sandboxID: string;
             /**
@@ -2048,6 +2060,11 @@ export interface components {
             templateID: string;
             volumeMounts?: components["schemas"]["SandboxVolumeMount"][];
         };
+        /**
+         * @description Action to take when sandbox timeout is reached.
+         * @enum {string}
+         */
+        SandboxOnTimeout: "pause" | "kill";
         SandboxesWithMetrics: {
             sandboxes: {
                 [key: string]: components["schemas"]["SandboxMetric"];
