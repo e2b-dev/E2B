@@ -51,6 +51,7 @@ export const infoCommand = new commander.Command('info')
       const format = options.format || 'pretty'
       const apiKey = ensureAPIKey()
       const info = await Sandbox.getFullInfo(sandboxID, { apiKey })
+      delete info.envdAccessToken
 
       if (format === 'pretty') {
         renderPrettyInfo(info as unknown as Record<string, unknown>)
