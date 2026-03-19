@@ -585,7 +585,10 @@ export class Sandbox extends SandboxApi {
    * ```
    */
   async pause(opts?: ConnectionOpts): Promise<boolean> {
-    return await SandboxApi.pause(this.sandboxId, opts)
+    return await SandboxApi.pause(this.sandboxId, {
+      ...this.connectionConfig,
+      ...opts,
+    })
   }
 
   /**
