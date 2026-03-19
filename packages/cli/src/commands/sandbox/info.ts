@@ -67,7 +67,9 @@ export const infoCommand = new commander.Command('info')
   })
 
 function renderPrettyInfo(info: Record<string, unknown>) {
-  console.log(`\nSandbox info for ${asBold(String(info.sandboxId ?? 'unknown'))}:`)
+  console.log(
+    `\nSandbox info for ${asBold(String(info.sandboxId ?? 'unknown'))}:`
+  )
 
   const orderedKeys = [
     ...fieldOrder.filter((key) => key in info),
