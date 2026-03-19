@@ -53,6 +53,7 @@ from .sandbox_logs import SandboxLogs
 from .sandbox_logs_v2_response import SandboxLogsV2Response
 from .sandbox_metric import SandboxMetric
 from .sandbox_network_config import SandboxNetworkConfig
+from .sandbox_on_timeout import SandboxOnTimeout
 from .sandbox_state import SandboxState
 from .sandbox_volume_mount import SandboxVolumeMount
 from .sandboxes_with_metrics import SandboxesWithMetrics
@@ -124,8 +125,8 @@ __all__ = (
     "Sandbox",
     "SandboxAutoResumeConfig",
     "SandboxDetail",
-    "SandboxLifecycle",
     "SandboxesWithMetrics",
+    "SandboxLifecycle",
     "SandboxLog",
     "SandboxLogEntry",
     "SandboxLogEntryFields",
@@ -133,6 +134,7 @@ __all__ = (
     "SandboxLogsV2Response",
     "SandboxMetric",
     "SandboxNetworkConfig",
+    "SandboxOnTimeout",
     "SandboxState",
     "SandboxVolumeMount",
     "SnapshotInfo",

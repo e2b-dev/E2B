@@ -2014,14 +2014,6 @@ export interface components {
          * @default false
          */
         SandboxAutoResumeEnabled: boolean;
-        /**
-         * @description Sandbox lifecycle policy returned by sandbox info.
-         */
-        SandboxLifecycle: {
-            /** @description Whether the sandbox can auto-resume. */
-            autoResume: boolean;
-            onTimeout: components["schemas"]["SandboxOnTimeout"];
-        };
         SandboxDetail: {
             /** @description Alias of the template */
             alias?: string;
@@ -2060,15 +2052,16 @@ export interface components {
             templateID: string;
             volumeMounts?: components["schemas"]["SandboxVolumeMount"][];
         };
-        /**
-         * @description Action taken when the sandbox times out.
-         * @enum {string}
-         */
-        SandboxOnTimeout: "kill" | "pause";
         SandboxesWithMetrics: {
             sandboxes: {
                 [key: string]: components["schemas"]["SandboxMetric"];
             };
+        };
+        /** @description Sandbox lifecycle policy returned by sandbox info. */
+        SandboxLifecycle: {
+            /** @description Whether the sandbox can auto-resume. */
+            autoResume: boolean;
+            onTimeout: components["schemas"]["SandboxOnTimeout"];
         };
         /** @description Log entry with timestamp and line */
         SandboxLog: {
@@ -2166,6 +2159,11 @@ export interface components {
             /** @description Specify host mask which will be used for all sandbox requests */
             maskRequestHost?: string;
         };
+        /**
+         * @description Action taken when the sandbox times out.
+         * @enum {string}
+         */
+        SandboxOnTimeout: "kill" | "pause";
         /**
          * @description State of the sandbox
          * @enum {string}

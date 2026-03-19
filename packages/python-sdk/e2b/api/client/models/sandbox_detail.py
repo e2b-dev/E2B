@@ -33,11 +33,11 @@ class SandboxDetail:
         state (SandboxState): State of the sandbox
         template_id (str): Identifier of the template from which is the sandbox created
         alias (Union[Unset, str]): Alias of the template
-        allow_internet_access (Union[None, Unset, bool]): Whether internet access was explicitly enabled or disabled
-            for the sandbox.
+        allow_internet_access (Union[None, Unset, bool]): Whether internet access was explicitly enabled or disabled for
+            the sandbox. Null means it was not explicitly set.
         domain (Union[None, Unset, str]): Base domain where the sandbox traffic is accessible
         envd_access_token (Union[Unset, str]): Access token used for envd communication
-        lifecycle (Union[Unset, SandboxLifecycle]):
+        lifecycle (Union[Unset, SandboxLifecycle]): Sandbox lifecycle policy returned by sandbox info.
         metadata (Union[Unset, Any]):
         network (Union[Unset, SandboxNetworkConfig]):
         volume_mounts (Union[Unset, list['SandboxVolumeMount']]):
