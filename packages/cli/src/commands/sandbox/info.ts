@@ -18,7 +18,7 @@ const fieldLabels: Partial<Record<string, string>> = {
   lifecycle: 'Lifecycle',
   network: 'Network',
   sandboxDomain: 'Sandbox domain',
-  envdAccessToken: 'Envd access token',
+  metadata: 'Metadata',
 }
 
 const fieldOrder = [
