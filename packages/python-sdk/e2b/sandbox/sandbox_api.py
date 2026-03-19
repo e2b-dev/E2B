@@ -101,6 +101,22 @@ class SandboxLifecycle(TypedDict):
     """
 
 
+class SandboxInfoLifecycle(TypedDict):
+    """
+    Sandbox lifecycle configuration returned by sandbox info.
+    """
+
+    on_timeout: Literal["pause", "kill"]
+    """
+    What should happen to the sandbox when timeout is reached.
+    """
+
+    auto_resume: bool
+    """
+    Whether activity should cause the sandbox to resume when paused.
+    """
+
+
 def get_auto_resume_enabled(lifecycle: Optional[SandboxLifecycle]) -> Optional[bool]:
     if lifecycle is None or lifecycle.get("on_timeout") != "pause":
         return None
@@ -130,16 +146,14 @@ def from_client_network_config(
 
 def from_client_lifecycle(
     lifecycle: Union[Unset, ClientSandboxLifecycle],
-) -> Optional[SandboxLifecycle]:
+) -> Optional[SandboxInfoLifecycle]:
     if isinstance(lifecycle, Unset):
         return None
 
-    result: SandboxLifecycle = {
-        "on_timeout": cast(Literal["pause", "kill"], lifecycle.on_timeout)
+    result: SandboxInfoLifecycle = {
+        "on_timeout": cast(Literal["pause", "kill"], lifecycle.on_timeout),
+        "auto_resume": lifecycle.auto_resume,
     }
-
-    if not isinstance(lifecycle.auto_resume, Unset):
-        result["auto_resume"] = lifecycle.auto_resume
 
     return result
 
@@ -176,7 +190,7 @@ class SandboxInfo:
     """Whether internet access was explicitly enabled or disabled for the sandbox."""
     network: Optional[SandboxNetworkOpts] = None
     """Sandbox network configuration."""
-    lifecycle: Optional[SandboxLifecycle] = None
+    lifecycle: Optional[SandboxInfoLifecycle] = None
     """Sandbox lifecycle configuration."""
 
     @classmethod
@@ -187,7 +201,7 @@ class SandboxInfo:
         sandbox_domain: Optional[str] = None,
         allow_internet_access: Optional[bool] = None,
         network: Optional[SandboxNetworkOpts] = None,
-        lifecycle: Optional[SandboxLifecycle] = None,
+        lifecycle: Optional[SandboxInfoLifecycle] = None,
     ):
         return cls(
             sandbox_domain=sandbox_domain,

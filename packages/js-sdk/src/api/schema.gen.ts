@@ -2015,17 +2015,17 @@ export interface components {
          */
         SandboxAutoResumeEnabled: boolean;
         /**
-         * @description Sandbox lifecycle configuration.
+         * @description Sandbox lifecycle policy returned by sandbox info.
          */
         SandboxLifecycle: {
-            /** @description Auto-resume enabled flag for paused sandboxes. */
-            autoResume?: boolean;
+            /** @description Whether the sandbox can auto-resume. */
+            autoResume: boolean;
             onTimeout: components["schemas"]["SandboxOnTimeout"];
         };
         SandboxDetail: {
             /** @description Alias of the template */
             alias?: string;
-            /** @description Whether internet access was explicitly enabled or disabled for the sandbox. */
+            /** @description Whether internet access was explicitly enabled or disabled for the sandbox. Null means it was not explicitly set. */
             allowInternetAccess?: boolean | null;
             /**
              * @deprecated
@@ -2061,10 +2061,10 @@ export interface components {
             volumeMounts?: components["schemas"]["SandboxVolumeMount"][];
         };
         /**
-         * @description Action to take when sandbox timeout is reached.
+         * @description Action taken when the sandbox times out.
          * @enum {string}
          */
-        SandboxOnTimeout: "pause" | "kill";
+        SandboxOnTimeout: "kill" | "pause";
         SandboxesWithMetrics: {
             sandboxes: {
                 [key: string]: components["schemas"]["SandboxMetric"];

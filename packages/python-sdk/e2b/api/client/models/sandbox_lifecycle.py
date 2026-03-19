@@ -1,10 +1,8 @@
 from collections.abc import Mapping
-from typing import Any, TypeVar, Union
+from typing import Any, TypeVar
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
-
-from ..types import UNSET, Unset
 
 T = TypeVar("T", bound="SandboxLifecycle")
 
@@ -13,39 +11,38 @@ T = TypeVar("T", bound="SandboxLifecycle")
 class SandboxLifecycle:
     """
     Attributes:
-        on_timeout (str): Action to take when sandbox timeout is reached.
-        auto_resume (Union[Unset, bool]): Auto-resume enabled flag for paused sandboxes.
+        auto_resume (bool): Whether the sandbox can auto-resume.
+        on_timeout (str): Action taken when the sandbox times out.
     """
 
+    auto_resume: bool
     on_timeout: str
-    auto_resume: Union[Unset, bool] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        on_timeout = self.on_timeout
         auto_resume = self.auto_resume
+        on_timeout = self.on_timeout
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
+                "autoResume": auto_resume,
                 "onTimeout": on_timeout,
             }
         )
-        if auto_resume is not UNSET:
-            field_dict["autoResume"] = auto_resume
 
         return field_dict
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
+        auto_resume = d.pop("autoResume")
         on_timeout = d.pop("onTimeout")
-        auto_resume = d.pop("autoResume", UNSET)
 
         sandbox_lifecycle = cls(
-            on_timeout=on_timeout,
             auto_resume=auto_resume,
+            on_timeout=on_timeout,
         )
 
         sandbox_lifecycle.additional_properties = d

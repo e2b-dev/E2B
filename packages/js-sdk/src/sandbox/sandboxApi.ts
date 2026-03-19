@@ -79,6 +79,18 @@ export type SandboxLifecycle = {
   autoResume?: boolean
 }
 
+export type SandboxInfoLifecycle = {
+  /**
+   * Action to take when sandbox timeout is reached.
+   */
+  onTimeout: 'pause' | 'kill'
+
+  /**
+   * Whether the sandbox can auto-resume.
+   */
+  autoResume: boolean
+}
+
 /**
  * Options for request to the Sandbox API.
  */
@@ -152,7 +164,7 @@ export interface SandboxOpts extends ConnectionOpts {
   /**
    * Sandbox lifecycle configuration.
    */
-  lifecycle?: SandboxLifecycle
+  lifecycle?: SandboxInfoLifecycle
 }
 
 export type SandboxBetaCreateOpts = SandboxOpts & {
@@ -586,9 +598,7 @@ export class SandboxApi {
       lifecycle: res.data.lifecycle
         ? {
             onTimeout: res.data.lifecycle.onTimeout,
-            ...(res.data.lifecycle.autoResume !== undefined
-              ? { autoResume: res.data.lifecycle.autoResume }
-              : {}),
+            autoResume: res.data.lifecycle.autoResume,
           }
         : undefined,
       sandboxDomain: res.data.domain || undefined,

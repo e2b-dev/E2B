@@ -299,20 +299,21 @@ components:
 
     SandboxOnTimeout:
       type: string
-      description: Action to take when sandbox timeout is reached.
+      description: Action taken when the sandbox times out.
       enum:
-        - pause
         - kill
+        - pause
 
     SandboxLifecycle:
       type: object
-      description: Sandbox lifecycle configuration.
+      description: Sandbox lifecycle policy returned by sandbox info.
       required:
+        - autoResume
         - onTimeout
       properties:
         autoResume:
           type: boolean
-          description: Auto-resume enabled flag for paused sandboxes.
+          description: Whether the sandbox can auto-resume.
         onTimeout:
           $ref: "#/components/schemas/SandboxOnTimeout"
 
@@ -513,7 +514,7 @@ components:
         allowInternetAccess:
           type: boolean
           nullable: true
-          description: Whether internet access was explicitly enabled or disabled for the sandbox.
+          description: Whether internet access was explicitly enabled or disabled for the sandbox. Null means it was not explicitly set.
         domain:
           type: string
           nullable: true
