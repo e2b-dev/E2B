@@ -1,9 +1,8 @@
 import * as commander from 'commander'
 import { Sandbox } from 'e2b'
 
-import { ensureAPIKey } from '../../api'
-import { asBold } from '../../utils/format'
-import { formatEnum, Format } from './utils'
+import { ensureAPIKey } from 'src/api'
+import { asBold } from 'src/utils/format'
 
 const fieldLabels: Partial<Record<string, string>> = {
   sandboxId: 'Sandbox ID',
@@ -46,39 +45,26 @@ export const infoCommand = new commander.Command('info')
     `show information for sandbox specified by ${asBold('<sandboxID>')}`
   )
   .alias('in')
-  .option(
-    '-f, --format <format>',
-    `specify format for printing sandbox info (${formatEnum(Format)})`,
-    Format.PRETTY
-  )
-  .action(
-    async (
-      sandboxID: string,
-      opts?: {
-        format: Format
-      }
-    ) => {
-      try {
-        const format = opts?.format?.toLowerCase() as Format | undefined
-        if (format && !Object.values(Format).includes(format)) {
-          throw new Error(`Invalid info format: ${format}`)
-        }
+  .option('-f, --format <format>', 'output format, eg. json, pretty')
+  .action(async (sandboxID: string, options: { format?: string }) => {
+    try {
+      const format = options.format || 'pretty'
+      const apiKey = ensureAPIKey()
+      const info = await Sandbox.getInfo(sandboxID, { apiKey })
 
-        const apiKey = ensureAPIKey()
-        const info = await Sandbox.getInfo(sandboxID, { apiKey })
-
-        if (format === Format.JSON) {
-          console.log(JSON.stringify(info, null, 2))
-          return
-        }
-
+      if (format === 'pretty') {
         renderPrettyInfo(info as unknown as Record<string, unknown>)
-      } catch (err: any) {
-        console.error(err)
+      } else if (format === 'json') {
+        console.log(JSON.stringify(info, null, 2))
+      } else {
+        console.error(`Unsupported output format: ${format}`)
         process.exit(1)
       }
+    } catch (err: any) {
+      console.error(err)
+      process.exit(1)
     }
-  )
+  })
 
 function renderPrettyInfo(info: Record<string, unknown>) {
   console.log(`\nSandbox info for ${asBold(String(info.sandboxId ?? 'unknown'))}:`)
