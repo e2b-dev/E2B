@@ -326,7 +326,7 @@ export interface SandboxInfo {
   /**
    * Whether internet access was explicitly enabled or disabled for the sandbox.
    */
-  allowInternetAccess?: boolean | null
+  allowInternetAccess?: boolean | undefined
 
   /**
    * Sandbox network configuration.
