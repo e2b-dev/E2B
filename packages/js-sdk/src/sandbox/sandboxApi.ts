@@ -579,7 +579,7 @@ export class SandboxApi {
       templateId: res.data.templateID,
       ...(res.data.alias && { name: res.data.alias }),
       metadata: res.data.metadata ?? {},
-      allowInternetAccess: res.data.allowInternetAccess,
+      allowInternetAccess: res.data.allowInternetAccess ?? undefined,
       envdVersion: res.data.envdVersion,
       envdAccessToken: res.data.envdAccessToken,
       startedAt: new Date(res.data.startedAt),
