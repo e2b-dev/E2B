@@ -2,7 +2,7 @@ import * as commander from 'commander'
 import { Sandbox } from 'e2b'
 
 import { ensureAPIKey } from '../../api'
-import { asBold } from 'src/utils/format'
+import { asBold } from '../../utils/format'
 import { formatEnum, Format } from './utils'
 
 const fieldLabels: Partial<Record<string, string>> = {
