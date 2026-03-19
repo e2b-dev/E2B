@@ -164,7 +164,7 @@ export interface SandboxOpts extends ConnectionOpts {
   /**
    * Sandbox lifecycle configuration.
    */
-  lifecycle?: SandboxInfoLifecycle
+  lifecycle?: SandboxLifecycle
 }
 
 export type SandboxBetaCreateOpts = SandboxOpts & {
@@ -336,7 +336,7 @@ export interface SandboxInfo {
   /**
    * Sandbox lifecycle configuration.
    */
-  lifecycle?: SandboxLifecycle
+  lifecycle?: SandboxInfoLifecycle
 }
 
 /**
