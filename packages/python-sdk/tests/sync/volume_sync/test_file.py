@@ -4,7 +4,7 @@ from io import BytesIO
 import pytest
 
 from e2b import Volume
-from e2b.exceptions import NotFoundException
+from e2b.exceptions import NotFoundException, VolumeException
 
 
 class TestWriteFileAndReadFile:
@@ -57,6 +57,15 @@ class TestWriteFileAndReadFile:
         read_content = volume.read_file(path, format="text")
 
         assert read_content == new_content
+
+    def test_write_existing_file_without_force_raises(self, volume: Volume):
+        path = "/no-overwrite.txt"
+        initial_content = "Initial content"
+        new_content = "New content"
+
+        volume.write_file(path, initial_content)
+        with pytest.raises(VolumeException):
+            volume.write_file(path, new_content, force=False)
 
     def test_write_file_with_metadata(self, volume: Volume):
         path = "/metadata.txt"
@@ -146,6 +155,13 @@ class TestMakeDir:
 
         assert info.type.value == "directory"
 
+    def test_create_existing_directory_without_force_raises(self, volume: Volume):
+        path = "/existing-dir"
+
+        volume.make_dir(path)
+        with pytest.raises(VolumeException):
+            volume.make_dir(path, force=False)
+
     def test_create_directory_with_metadata(self, volume: Volume):
         path = "/dir-with-metadata"
 
@@ -217,7 +233,7 @@ class TestRemove:
         volume.make_dir(f"{dir_path}/nested", force=True)
         volume.write_file(f"{dir_path}/nested/file.txt", "Content")
 
-        volume.remove(dir_path, recursive=True)
+        volume.remove(dir_path)
 
         assert volume.exists(dir_path) is False
 
@@ -242,5 +258,5 @@ class TestFileOperationsLifecycle:
             content = volume.read_file(f"{dir_path}/{file_name}", format="text")
             assert content == f"Content of {file_name}"
 
-        volume.remove(dir_path, recursive=True)
+        volume.remove(dir_path)
         assert volume.exists(dir_path) is False

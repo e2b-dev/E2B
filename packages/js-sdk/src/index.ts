@@ -91,12 +91,11 @@ export type {
   GitStatus,
 } from './sandbox/git'
 
-export { Volume } from './volume'
+export { Volume, VolumeFileType } from './volume'
 export type {
   VolumeInfo,
   VolumeAndToken,
   VolumeEntryStat,
-  VolumeFileType,
   VolumeMetadataOptions,
   VolumeWriteOptions,
   VolumeApiOpts,

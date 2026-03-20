@@ -1,5 +1,5 @@
 import { describe, expect } from 'vitest'
-import { NotFoundError } from '../../src'
+import { NotFoundError, VolumeError, VolumeFileType } from '../../src'
 import { volumeTest } from '../setup'
 
 describe('Volume File Operations', () => {
@@ -10,7 +10,7 @@ describe('Volume File Operations', () => {
 
       const stat = await volume.writeFile(path, content)
       expect(stat.name).toBe('test.txt')
-      expect(stat.type).toBe('file')
+      expect(stat.type).toBe(VolumeFileType.FILE)
       expect(stat.path).toBe(path)
       expect(stat.atime).toBeInstanceOf(Date)
       expect(stat.mtime).toBeInstanceOf(Date)
@@ -74,6 +74,20 @@ describe('Volume File Operations', () => {
     )
 
     volumeTest(
+      'should throw VolumeError when writing to existing file with force: false',
+      async ({ volume }) => {
+        const path = '/no-overwrite.txt'
+        const initialContent = 'Initial content'
+        const newContent = 'New content'
+
+        await volume.writeFile(path, initialContent)
+        await expect(
+          volume.writeFile(path, newContent, { force: false })
+        ).rejects.toThrow(VolumeError)
+      }
+    )
+
+    volumeTest(
       'should write file with metadata (uid, gid, mode)',
       async ({ volume }) => {
         const path = '/metadata.txt'
@@ -85,7 +99,7 @@ describe('Volume File Operations', () => {
           mode: 0o644,
         })
 
-        expect(stat.type).toBe('file')
+        expect(stat.type).toBe(VolumeFileType.FILE)
         expect(stat.uid).toBe(1000)
         expect(stat.gid).toBe(1000)
         expect(stat.mode).toBe(0o644)
@@ -114,7 +128,7 @@ describe('Volume File Operations', () => {
       const info = await volume.getInfo(path)
 
       expect(info.name).toBe('info-file.txt')
-      expect(info.type).toBe('file')
+      expect(info.type).toBe(VolumeFileType.FILE)
       expect(info.path).toBe(path)
       expect(info.atime).toBeInstanceOf(Date)
       expect(info.mtime).toBeInstanceOf(Date)
@@ -128,7 +142,7 @@ describe('Volume File Operations', () => {
       const info = await volume.getInfo(path)
 
       expect(info.name).toBe('info-dir')
-      expect(info.type).toBe('directory')
+      expect(info.type).toBe(VolumeFileType.DIRECTORY)
       expect(info.path).toBe(path)
     })
 
@@ -152,7 +166,7 @@ describe('Volume File Operations', () => {
       })
 
       expect(updated.path).toBe(path)
-      expect(updated.type).toBe('file')
+      expect(updated.type).toBe(VolumeFileType.FILE)
       expect(updated.uid).toBe(1001)
       expect(updated.gid).toBe(1001)
       expect(updated.mode).toBe(0o755)
@@ -174,7 +188,7 @@ describe('Volume File Operations', () => {
 
       const stat = await volume.makeDir(path)
 
-      expect(stat.type).toBe('directory')
+      expect(stat.type).toBe(VolumeFileType.DIRECTORY)
       expect(stat.path).toBe(path)
       expect(stat.atime).toBeInstanceOf(Date)
       expect(stat.mtime).toBeInstanceOf(Date)
@@ -188,7 +202,19 @@ describe('Volume File Operations', () => {
 
         const stat = await volume.makeDir(path, { force: true })
 
-        expect(stat.type).toBe('directory')
+        expect(stat.type).toBe(VolumeFileType.DIRECTORY)
+      }
+    )
+
+    volumeTest(
+      'should throw VolumeError when creating existing directory with force: false',
+      async ({ volume }) => {
+        const path = '/existing-dir'
+
+        await volume.makeDir(path)
+        await expect(volume.makeDir(path, { force: false })).rejects.toThrow(
+          VolumeError
+        )
       }
     )
 
@@ -201,7 +227,7 @@ describe('Volume File Operations', () => {
         mode: 0o755,
       })
 
-      expect(stat.type).toBe('directory')
+      expect(stat.type).toBe(VolumeFileType.DIRECTORY)
       expect(stat.uid).toBe(1000)
       expect(stat.gid).toBe(1000)
       expect(stat.mode & 0o777).toBe(0o755)
@@ -276,7 +302,7 @@ describe('Volume File Operations', () => {
       await volume.makeDir(`${dirPath}/nested`, { force: true })
       await volume.writeFile(`${dirPath}/nested/file.txt`, 'Content')
 
-      await volume.remove(dirPath, { recursive: true })
+      await volume.remove(dirPath)
 
       expect(await volume.exists(dirPath)).toBe(false)
     })
@@ -316,7 +342,7 @@ describe('Volume File Operations', () => {
           expect(content).toBe(`Content of ${fileName}`)
         }
 
-        await volume.remove(dirPath, { recursive: true })
+        await volume.remove(dirPath)
         expect(await volume.exists(dirPath)).toBe(false)
       }
     )
