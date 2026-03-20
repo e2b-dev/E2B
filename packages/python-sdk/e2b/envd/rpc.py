@@ -9,6 +9,7 @@ from e2b.exceptions import (
     InvalidArgumentException,
     NotFoundException,
     TimeoutException,
+    TimeoutType,
     format_sandbox_timeout_exception,
     AuthenticationException,
     RateLimitException,
@@ -33,11 +34,13 @@ def handle_rpc_exception(e: Exception):
             )
         elif e.status == Code.canceled:
             return TimeoutException(
-                f"{e.message}: This error is likely due to exceeding 'request_timeout'. You can pass the request timeout value as an option when making the request."
+                f"{e.message}: This error is likely due to exceeding 'request_timeout'. You can pass the request timeout value as an option when making the request.",
+                type=TimeoutType.REQUEST,
             )
         elif e.status == Code.deadline_exceeded:
             return TimeoutException(
-                f"{e.message}: This error is likely due to exceeding 'timeout' — the total time a long running request (like process or directory watch) can be active. It can be modified by passing 'timeout' when making the request. Use '0' to disable the timeout."
+                f"{e.message}: This error is likely due to exceeding 'timeout' — the total time a long running request (like process or directory watch) can be active. It can be modified by passing 'timeout' when making the request. Use '0' to disable the timeout.",
+                type=TimeoutType.EXECUTION,
             )
         else:
             return SandboxException(f"{e.status}: {e.message}")
