@@ -22,7 +22,7 @@ def _get_kwargs(
 
     _kwargs: dict[str, Any] = {
         "method": "delete",
-        "url": f"/volumecontent/{volume_id}/file",
+        "url": f"/volumecontent/{volume_id}/path",
         "params": params,
     }
 
@@ -36,12 +36,9 @@ def _parse_response(
         response_204 = cast(Any, None)
         return response_204
     if response.status_code == 404:
-        response_404 = cast(Any, None)
-        return response_404
-    if response.status_code == 500:
-        response_500 = Error.from_dict(response.json())
+        response_404 = Error.from_dict(response.json())
 
-        return response_500
+        return response_404
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
     else:
@@ -65,7 +62,7 @@ def sync_detailed(
     client: Union[AuthenticatedClient, Client],
     path: str,
 ) -> Response[Union[Any, Error]]:
-    """Delete a file
+    """Delete a path
 
     Args:
         volume_id (str):
@@ -97,7 +94,7 @@ def sync(
     client: Union[AuthenticatedClient, Client],
     path: str,
 ) -> Optional[Union[Any, Error]]:
-    """Delete a file
+    """Delete a path
 
     Args:
         volume_id (str):
@@ -124,7 +121,7 @@ async def asyncio_detailed(
     client: Union[AuthenticatedClient, Client],
     path: str,
 ) -> Response[Union[Any, Error]]:
-    """Delete a file
+    """Delete a path
 
     Args:
         volume_id (str):
@@ -154,7 +151,7 @@ async def asyncio(
     client: Union[AuthenticatedClient, Client],
     path: str,
 ) -> Optional[Union[Any, Error]]:
-    """Delete a file
+    """Delete a path
 
     Args:
         volume_id (str):

@@ -85,12 +85,3 @@ export type VolumeWriteOptions = VolumeMetadataOptions & {
   force?: boolean
 }
 
-/**
- * Options for remove operation.
- */
-export type VolumeRemoveOptions = {
-  /**
-   * Delete all files and directories recursively (for directories only).
-   */
-  recursive?: boolean
-}

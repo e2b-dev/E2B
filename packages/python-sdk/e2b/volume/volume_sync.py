@@ -19,17 +19,16 @@ from e2b.api.client_sync import get_api_client as get_core_api_client
 from e2b.connection_config import ApiParams, ConnectionConfig
 from e2b.exceptions import NotFoundException, VolumeException
 from e2b.volume.client.api.volumes import (
-    get_volumecontent_volume_id_stat as get_stat,
+    get_volumecontent_volume_id_path as get_path,
     get_volumecontent_volume_id_dir as get_dir,
     post_volumecontent_volume_id_dir as post_dir,
-    delete_volumecontent_volume_id_dir as delete_dir,
-    delete_volumecontent_volume_id_file as delete_file,
-    patch_volumecontent_volume_id_file as patch_file,
+    delete_volumecontent_volume_id_path as delete_path,
+    patch_volumecontent_volume_id_path as patch_path,
     put_volumecontent_volume_id_file as put_file,
 )
 from e2b.volume.client.models import (
     Error as VolumeError,
-    PatchVolumecontentVolumeIDFileBody as PatchFileBody,
+    PatchVolumecontentVolumeIDPathBody as PatchPathBody,
     VolumeEntryStat as VolumeEntryStatApi,
 )
 from e2b.volume.client.types import File as FilePayload, UNSET
@@ -342,7 +341,7 @@ class Volume:
         config = self._get_volume_config(**opts)
         api_client = get_volume_api_client(config)
 
-        res = get_stat.sync_detailed(
+        res = get_path.sync_detailed(
             self._volume_id,
             path=path,
             client=api_client,
@@ -387,13 +386,13 @@ class Volume:
         config = self._get_volume_config(**opts)
         api_client = get_volume_api_client(config)
 
-        body = PatchFileBody(
+        body = PatchPathBody(
             uid=uid if uid is not None else UNSET,
             gid=gid if gid is not None else UNSET,
             mode=mode if mode is not None else UNSET,
         )
 
-        res = patch_file.sync_detailed(
+        res = patch_path.sync_detailed(
             self._volume_id,
             path=path,
             body=body,
@@ -581,39 +580,22 @@ class Volume:
     def remove(
         self,
         path: str,
-        recursive: Optional[bool] = None,
         **opts: Unpack[VolumeApiParams],
     ) -> None:
         """
         Remove a file or directory.
 
         :param path: Path to the file or directory to remove
-        :param recursive: Delete all files and directories recursively (for directories only)
         :param opts: Connection options
         """
         config = self._get_volume_config(**opts)
         api_client = get_volume_api_client(config)
 
-        is_directory = False
-        try:
-            entry_info = self.get_info(path, **opts)
-            is_directory = entry_info.type.value == "directory"
-        except NotFoundException:
-            pass
-
-        if is_directory:
-            res = delete_dir.sync_detailed(
-                self._volume_id,
-                path=path,
-                recursive=recursive if recursive is not None else UNSET,
-                client=api_client,
-            )
-        else:
-            res = delete_file.sync_detailed(
-                self._volume_id,
-                path=path,
-                client=api_client,
-            )
+        res = delete_path.sync_detailed(
+            self._volume_id,
+            path=path,
+            client=api_client,
+        )
 
         if res.status_code == 404:
             raise NotFoundException(f"Path {path} not found")

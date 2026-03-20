@@ -1,31 +1,29 @@
 from http import HTTPStatus
-from typing import Any, Optional, Union, cast
+from typing import Any, Optional, Union
 
 import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.error import Error
-from ...types import UNSET, Response, Unset
+from ...models.volume_entry_stat import VolumeEntryStat
+from ...types import UNSET, Response
 
 
 def _get_kwargs(
     volume_id: str,
     *,
     path: str,
-    recursive: Union[Unset, bool] = UNSET,
 ) -> dict[str, Any]:
     params: dict[str, Any] = {}
 
     params["path"] = path
 
-    params["recursive"] = recursive
-
     params = {k: v for k, v in params.items() if v is not UNSET and v is not None}
 
     _kwargs: dict[str, Any] = {
-        "method": "delete",
-        "url": f"/volumecontent/{volume_id}/dir",
+        "method": "get",
+        "url": f"/volumecontent/{volume_id}/path",
         "params": params,
     }
 
@@ -34,17 +32,15 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Optional[Union[Any, Error]]:
-    if response.status_code == 204:
-        response_204 = cast(Any, None)
-        return response_204
-    if response.status_code == 404:
-        response_404 = cast(Any, None)
-        return response_404
-    if response.status_code == 500:
-        response_500 = Error.from_dict(response.json())
+) -> Optional[Union[Error, VolumeEntryStat]]:
+    if response.status_code == 200:
+        response_200 = VolumeEntryStat.from_dict(response.json())
 
-        return response_500
+        return response_200
+    if response.status_code == 404:
+        response_404 = Error.from_dict(response.json())
+
+        return response_404
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
     else:
@@ -53,7 +49,7 @@ def _parse_response(
 
 def _build_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Response[Union[Any, Error]]:
+) -> Response[Union[Error, VolumeEntryStat]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -67,27 +63,24 @@ def sync_detailed(
     *,
     client: Union[AuthenticatedClient, Client],
     path: str,
-    recursive: Union[Unset, bool] = UNSET,
-) -> Response[Union[Any, Error]]:
-    """Delete a directory
+) -> Response[Union[Error, VolumeEntryStat]]:
+    """Get path information
 
     Args:
         volume_id (str):
         path (str):
-        recursive (Union[Unset, bool]):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Any, Error]]
+        Response[Union[Error, VolumeEntryStat]]
     """
 
     kwargs = _get_kwargs(
         volume_id=volume_id,
         path=path,
-        recursive=recursive,
     )
 
     response = client.get_httpx_client().request(
@@ -102,28 +95,25 @@ def sync(
     *,
     client: Union[AuthenticatedClient, Client],
     path: str,
-    recursive: Union[Unset, bool] = UNSET,
-) -> Optional[Union[Any, Error]]:
-    """Delete a directory
+) -> Optional[Union[Error, VolumeEntryStat]]:
+    """Get path information
 
     Args:
         volume_id (str):
         path (str):
-        recursive (Union[Unset, bool]):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Any, Error]
+        Union[Error, VolumeEntryStat]
     """
 
     return sync_detailed(
         volume_id=volume_id,
         client=client,
         path=path,
-        recursive=recursive,
     ).parsed
 
 
@@ -132,27 +122,24 @@ async def asyncio_detailed(
     *,
     client: Union[AuthenticatedClient, Client],
     path: str,
-    recursive: Union[Unset, bool] = UNSET,
-) -> Response[Union[Any, Error]]:
-    """Delete a directory
+) -> Response[Union[Error, VolumeEntryStat]]:
+    """Get path information
 
     Args:
         volume_id (str):
         path (str):
-        recursive (Union[Unset, bool]):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Any, Error]]
+        Response[Union[Error, VolumeEntryStat]]
     """
 
     kwargs = _get_kwargs(
         volume_id=volume_id,
         path=path,
-        recursive=recursive,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -165,21 +152,19 @@ async def asyncio(
     *,
     client: Union[AuthenticatedClient, Client],
     path: str,
-    recursive: Union[Unset, bool] = UNSET,
-) -> Optional[Union[Any, Error]]:
-    """Delete a directory
+) -> Optional[Union[Error, VolumeEntryStat]]:
+    """Get path information
 
     Args:
         volume_id (str):
         path (str):
-        recursive (Union[Unset, bool]):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Any, Error]
+        Union[Error, VolumeEntryStat]
     """
 
     return (
@@ -187,6 +172,5 @@ async def asyncio(
             volume_id=volume_id,
             client=client,
             path=path,
-            recursive=recursive,
         )
     ).parsed

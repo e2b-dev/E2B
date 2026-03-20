@@ -13,7 +13,6 @@ import type {
   VolumeEntryStat,
   VolumeInfo,
   VolumeMetadataOptions,
-  VolumeRemoveOptions,
   VolumeWriteOptions,
 } from './types'
 
@@ -343,7 +342,7 @@ export class Volume {
     const config = new VolumeConnectionConfig(this, opts)
     const client = new VolumeApiClient(config)
 
-    const res = await client.api.GET('/volumecontent/{volumeID}/stat', {
+    const res = await client.api.GET('/volumecontent/{volumeID}/path', {
       params: {
         path: {
           volumeID: this.volumeId,
@@ -413,7 +412,7 @@ export class Volume {
     const config = new VolumeConnectionConfig(this, opts)
     const client = new VolumeApiClient(config)
 
-    const res = await client.api.PATCH('/volumecontent/{volumeID}/file', {
+    const res = await client.api.PATCH('/volumecontent/{volumeID}/path', {
       params: {
         path: {
           volumeID: this.volumeId,
@@ -622,38 +621,19 @@ export class Volume {
    * Remove a file or directory.
    *
    * @param path path to the file or directory to remove.
-   * @param options removal options.
    * @param opts connection options.
    */
-  async remove(
-    path: string,
-    opts?: VolumeRemoveOptions & VolumeApiOpts
-  ): Promise<void> {
+  async remove(path: string, opts?: VolumeApiOpts): Promise<void> {
     const config = new VolumeConnectionConfig(this, opts)
     const client = new VolumeApiClient(config)
 
-    let isDirectory = false
-    try {
-      const entryInfo = await this.getInfo(path, opts)
-      isDirectory = entryInfo.type === 'directory'
-    } catch (err) {
-      if (!(err instanceof NotFoundError)) {
-        throw err
-      }
-    }
-
-    const endpoint = isDirectory
-      ? '/volumecontent/{volumeID}/dir'
-      : '/volumecontent/{volumeID}/file'
-
-    const res = await client.api.DELETE(endpoint, {
+    const res = await client.api.DELETE('/volumecontent/{volumeID}/path', {
       params: {
         path: {
           volumeID: this.volumeId,
         },
         query: {
           path,
-          recursive: isDirectory ? opts?.recursive : undefined,
         },
       },
       signal: config.getSignal(opts?.requestTimeoutMs),
@@ -677,7 +657,6 @@ export type {
   VolumeEntryStat,
   VolumeMetadataOptions,
   VolumeWriteOptions,
-  VolumeRemoveOptions,
 } from './types'
 
 export type { VolumeApiOpts, VolumeConnectionConfig } from './client'
