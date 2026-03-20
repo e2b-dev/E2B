@@ -96,7 +96,6 @@ export type {
   VolumeFileType,
   VolumeMetadataOptions,
   VolumeWriteOptions,
-  VolumeRemoveOptions,
   VolumeApiOpts,
   VolumeConnectionConfig,
 } from './volume'
