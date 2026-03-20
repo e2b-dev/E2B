@@ -6,11 +6,11 @@ from attrs import field as _attrs_field
 
 from ..types import UNSET, Unset
 
-T = TypeVar("T", bound="PatchVolumecontentVolumeIDFileBody")
+T = TypeVar("T", bound="PatchVolumecontentVolumeIDPathBody")
 
 
 @_attrs_define
-class PatchVolumecontentVolumeIDFileBody:
+class PatchVolumecontentVolumeIDPathBody:
     """
     Attributes:
         uid (Union[Unset, int]):
@@ -51,14 +51,14 @@ class PatchVolumecontentVolumeIDFileBody:
 
         mode = d.pop("mode", UNSET)
 
-        patch_volumecontent_volume_id_file_body = cls(
+        patch_volumecontent_volume_id_path_body = cls(
             uid=uid,
             gid=gid,
             mode=mode,
         )
 
-        patch_volumecontent_volume_id_file_body.additional_properties = d
-        return patch_volumecontent_volume_id_file_body
+        patch_volumecontent_volume_id_path_body.additional_properties = d
+        return patch_volumecontent_volume_id_path_body
 
     @property
     def additional_keys(self) -> list[str]:

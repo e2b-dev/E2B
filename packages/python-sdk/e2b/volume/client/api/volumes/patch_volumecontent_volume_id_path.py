@@ -1,11 +1,13 @@
 from http import HTTPStatus
-from typing import Any, Optional, Union
+from typing import Any, Optional, Union, cast
 
 import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
-from ...models.error import Error
+from ...models.patch_volumecontent_volume_id_path_body import (
+    PatchVolumecontentVolumeIDPathBody,
+)
 from ...models.volume_entry_stat import VolumeEntryStat
 from ...types import UNSET, Response
 
@@ -13,8 +15,11 @@ from ...types import UNSET, Response
 def _get_kwargs(
     volume_id: str,
     *,
+    body: PatchVolumecontentVolumeIDPathBody,
     path: str,
 ) -> dict[str, Any]:
+    headers: dict[str, Any] = {}
+
     params: dict[str, Any] = {}
 
     params["path"] = path
@@ -22,25 +27,35 @@ def _get_kwargs(
     params = {k: v for k, v in params.items() if v is not UNSET and v is not None}
 
     _kwargs: dict[str, Any] = {
-        "method": "get",
-        "url": f"/volumecontent/{volume_id}/stat",
+        "method": "patch",
+        "url": f"/volumecontent/{volume_id}/path",
         "params": params,
     }
 
+    _kwargs["json"] = body.to_dict()
+
+    headers["Content-Type"] = "application/json"
+
+    _kwargs["headers"] = headers
     return _kwargs
 
 
 def _parse_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Optional[Union[Error, VolumeEntryStat]]:
+) -> Optional[Union[Any, VolumeEntryStat]]:
     if response.status_code == 200:
         response_200 = VolumeEntryStat.from_dict(response.json())
 
         return response_200
+    if response.status_code == 400:
+        response_400 = cast(Any, None)
+        return response_400
     if response.status_code == 404:
-        response_404 = Error.from_dict(response.json())
-
+        response_404 = cast(Any, None)
         return response_404
+    if response.status_code == 500:
+        response_500 = cast(Any, None)
+        return response_500
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
     else:
@@ -49,7 +64,7 @@ def _parse_response(
 
 def _build_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Response[Union[Error, VolumeEntryStat]]:
+) -> Response[Union[Any, VolumeEntryStat]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -62,24 +77,27 @@ def sync_detailed(
     volume_id: str,
     *,
     client: Union[AuthenticatedClient, Client],
+    body: PatchVolumecontentVolumeIDPathBody,
     path: str,
-) -> Response[Union[Error, VolumeEntryStat]]:
-    """Get path information
+) -> Response[Union[Any, VolumeEntryStat]]:
+    """Update path metadata
 
     Args:
         volume_id (str):
         path (str):
+        body (PatchVolumecontentVolumeIDPathBody):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Error, VolumeEntryStat]]
+        Response[Union[Any, VolumeEntryStat]]
     """
 
     kwargs = _get_kwargs(
         volume_id=volume_id,
+        body=body,
         path=path,
     )
 
@@ -94,25 +112,28 @@ def sync(
     volume_id: str,
     *,
     client: Union[AuthenticatedClient, Client],
+    body: PatchVolumecontentVolumeIDPathBody,
     path: str,
-) -> Optional[Union[Error, VolumeEntryStat]]:
-    """Get path information
+) -> Optional[Union[Any, VolumeEntryStat]]:
+    """Update path metadata
 
     Args:
         volume_id (str):
         path (str):
+        body (PatchVolumecontentVolumeIDPathBody):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Error, VolumeEntryStat]
+        Union[Any, VolumeEntryStat]
     """
 
     return sync_detailed(
         volume_id=volume_id,
         client=client,
+        body=body,
         path=path,
     ).parsed
 
@@ -121,24 +142,27 @@ async def asyncio_detailed(
     volume_id: str,
     *,
     client: Union[AuthenticatedClient, Client],
+    body: PatchVolumecontentVolumeIDPathBody,
     path: str,
-) -> Response[Union[Error, VolumeEntryStat]]:
-    """Get path information
+) -> Response[Union[Any, VolumeEntryStat]]:
+    """Update path metadata
 
     Args:
         volume_id (str):
         path (str):
+        body (PatchVolumecontentVolumeIDPathBody):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Error, VolumeEntryStat]]
+        Response[Union[Any, VolumeEntryStat]]
     """
 
     kwargs = _get_kwargs(
         volume_id=volume_id,
+        body=body,
         path=path,
     )
 
@@ -151,26 +175,29 @@ async def asyncio(
     volume_id: str,
     *,
     client: Union[AuthenticatedClient, Client],
+    body: PatchVolumecontentVolumeIDPathBody,
     path: str,
-) -> Optional[Union[Error, VolumeEntryStat]]:
-    """Get path information
+) -> Optional[Union[Any, VolumeEntryStat]]:
+    """Update path metadata
 
     Args:
         volume_id (str):
         path (str):
+        body (PatchVolumecontentVolumeIDPathBody):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Error, VolumeEntryStat]
+        Union[Any, VolumeEntryStat]
     """
 
     return (
         await asyncio_detailed(
             volume_id=volume_id,
             client=client,
+            body=body,
             path=path,
         )
     ).parsed

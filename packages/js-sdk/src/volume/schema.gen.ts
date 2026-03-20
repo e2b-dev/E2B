@@ -95,39 +95,7 @@ export interface paths {
                 500: components["responses"]["500"];
             };
         };
-        /** @description Delete a directory */
-        delete: {
-            parameters: {
-                query: {
-                    path: components["parameters"]["path"];
-                    /** @description Delete all files and directories recursively */
-                    recursive?: boolean;
-                };
-                header?: never;
-                path: {
-                    volumeID: components["parameters"]["volumeID"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Successfully deleted a directory */
-                204: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                /** @description path not found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                500: components["responses"]["500"];
-            };
-        };
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -219,7 +187,48 @@ export interface paths {
             };
         };
         post?: never;
-        /** @description Delete a file */
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/volumecontent/{volumeID}/path": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Get path information */
+        get: {
+            parameters: {
+                query: {
+                    path: components["parameters"]["path"];
+                };
+                header?: never;
+                path: {
+                    volumeID: components["parameters"]["volumeID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Successfully retrieved path information */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["VolumeEntryStat"];
+                    };
+                };
+                404: components["responses"]["404"];
+            };
+        };
+        put?: never;
+        post?: never;
+        /** @description Delete a path */
         delete: {
             parameters: {
                 query: {
@@ -233,26 +242,19 @@ export interface paths {
             };
             requestBody?: never;
             responses: {
-                /** @description Successfully deleted a file */
+                /** @description Successfully deleted a path */
                 204: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content?: never;
                 };
-                /** @description path not found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                500: components["responses"]["500"];
+                404: components["responses"]["404"];
             };
         };
         options?: never;
         head?: never;
-        /** @description Update file metadata */
+        /** @description Update path metadata */
         patch: {
             parameters: {
                 query: {
@@ -309,47 +311,6 @@ export interface paths {
                 };
             };
         };
-        trace?: never;
-    };
-    "/volumecontent/{volumeID}/stat": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** @description Get path information */
-        get: {
-            parameters: {
-                query: {
-                    path: components["parameters"]["path"];
-                };
-                header?: never;
-                path: {
-                    volumeID: components["parameters"]["volumeID"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Successfully retrieved path information */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["VolumeEntryStat"];
-                    };
-                };
-                404: components["responses"]["404"];
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
         trace?: never;
     };
 }
