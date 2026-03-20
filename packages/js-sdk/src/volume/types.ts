@@ -84,4 +84,3 @@ export type VolumeWriteOptions = VolumeMetadataOptions & {
    */
   force?: boolean
 }
-
