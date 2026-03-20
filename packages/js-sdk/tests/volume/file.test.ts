@@ -35,6 +35,19 @@ describe('Volume File Operations', () => {
     )
 
     volumeTest(
+      'should write and read binary data',
+      async ({ volume }) => {
+        const path = '/binary.bin'
+        const binaryData = new Uint8Array([0, 1, 2, 3, 4])
+
+        await volume.writeFile(path, binaryData.buffer)
+        const readBytes = await volume.readFile(path, { format: 'bytes' })
+
+        expect(readBytes).toEqual(binaryData)
+      }
+    )
+
+    volumeTest(
       'should write and read a file with blob format',
       async ({ volume }) => {
         const path = '/test-blob.txt'
