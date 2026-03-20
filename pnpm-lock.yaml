@@ -161,8 +161,8 @@ importers:
         specifier: ^1.3.6
         version: 1.3.6
       tar:
-        specifier: ^7.5.9
-        version: 7.5.9
+        specifier: ^7.5.11
+        version: 7.5.11
     devDependencies:
       '@testing-library/react':
         specifier: ^16.2.0
@@ -1031,6 +1031,9 @@ packages:
   '@types/platform@1.3.6':
     resolution: {integrity: sha512-ZmSaqHuvzv+jC232cFoz2QqPUkaj6EvMmCrWcx3WRr7xTPVFCMUOTcOq8m2d+Zw1iKRc1kDiaA+jtNrV0hkVew==}
 
+  '@types/prop-types@15.7.15':
+    resolution: {integrity: sha512-F6bEyamV9jKGAFBEmlQnesRPGOQqS2+Uwi0Em15xenOxHaf2hv6L8YCVn3rPdPJOiJfPiCnLIRyvwVaqMY3MIw==}
+
   '@types/prop-types@15.7.6':
     resolution: {integrity: sha512-RK/kBbYOQQHLYj9Z95eh7S6t7gq4Ojt/NT8HTk8bWVhA5DaF+5SMnxHKkP4gPNN3wAZkKP+VjAf0ebtYzf+fxg==}
 
@@ -1039,6 +1042,9 @@ packages:
 
   '@types/react@18.3.11':
     resolution: {integrity: sha512-r6QZ069rFTjrEYgFdOck1gK7FLVsgJE7tTz0pQBczlBNUhBNk0MQH4UbnFSwjpQLMkLzgqvBBa+qGpLje16eTQ==}
+
+  '@types/react@18.3.28':
+    resolution: {integrity: sha512-z9VXpC7MWrhfWipitjNdgCauoMLRdIILQsAEV+ZesIzBq/oUlxk0m3ApZuMFCXdnS4U7KrI+l3WRUEGQ8K1QKw==}
 
   '@types/semver@7.5.2':
     resolution: {integrity: sha512-7aqorHYgdNO4DM36stTiGO3DvKoex9TQRwsJU6vMaFGyqpBA1MNZkz+PG3gaNUPpTAOYhT1WR7M1JyA3fbS9Cw==}
@@ -1240,8 +1246,8 @@ packages:
     engines: {node: '>=0.4.0'}
     hasBin: true
 
-  acorn@8.15.0:
-    resolution: {integrity: sha512-NZyJarBfL7nWwIq+FDL6Zp/yHEhePMNnnJ0y3qfieCrmNvYct8uvtiV41UvlSe6apAfk0fY1FbWx+NwfmpvtTg==}
+  acorn@8.16.0:
+    resolution: {integrity: sha512-UVJyE9MttOsBQIDKw1skb9nAwQuR5wuGD3+82K6JgJlm/Y+KI92oNsMNGZCYdDsVtRHSak0pcV5Dno5+4jh9sw==}
     engines: {node: '>=0.4.0'}
     hasBin: true
 
@@ -1532,6 +1538,9 @@ packages:
 
   csstype@3.1.2:
     resolution: {integrity: sha512-I7K1Uu0MBPzaFKg4nI5Q7Vs2t+3gWWW648spaF+Rg7pI9ds18Ugn+lvg4SHczUdKlHI5LWBXyqfS8+DufyBsgQ==}
+
+  csstype@3.2.3:
+    resolution: {integrity: sha512-z1HGKcYy2xA8AGQfwrn0PAy+PB7X/GSj3UVJW9qKyn43xWa+gl5nXmU4qqLMRzWVLFC8KusUX8T/0kCiOYpAIQ==}
 
   data-view-buffer@1.0.2:
     resolution: {integrity: sha512-EmKO5V3OLXh1rtK2wgXRansaK1/mtVdTUEiEI0W8RkvgT05kfxaH29PliLnpLP73yYO6142Q72QNa8Wx/A5CqQ==}
@@ -2484,6 +2493,10 @@ packages:
     resolution: {integrity: sha512-qOOzS1cBTWYF4BH8fVePDBOO9iptMnGUEZwNc/cMWnTV2nVLZ7VoNWEPHkYczZA0pdoA7dl6e7FL659nX9S2aw==}
     engines: {node: '>=16 || 14 >=14.17'}
 
+  minipass@7.1.3:
+    resolution: {integrity: sha512-tEBHqDnIoM/1rXME1zgka9g6Q2lcoCkxHLuc7ODJ5BxbP5d4c2Z5cGgtXAku59200Cx7diuHTOYfSBD8n6mm8A==}
+    engines: {node: '>=16 || 14 >=14.17'}
+
   minizlib@3.1.0:
     resolution: {integrity: sha512-KZxYo1BUkWD2TVFLr0MQoM8vUUigWD3LlD83a/75BqC+4qE0Hb1Vo5v1FgcfaNXvfXzr+5EhQ6ing/CaBijTlw==}
     engines: {node: '>= 18'}
@@ -2962,8 +2975,8 @@ packages:
   safer-buffer@2.1.2:
     resolution: {integrity: sha512-YZo3K82SD7Riyi0E1EQPojLz7kpepnSQI9IyPbHHg1XXXevb5dJI7tpyN2ADxGcQbHG7vcyRHk0cbwqcQriUtg==}
 
-  scheduler@0.23.0:
-    resolution: {integrity: sha512-CtuThmgHNg7zIZWAXi3AsyIzA3n4xx7aNyjwC2VJldO2LMVDhFK+63xGqq6CsJH4rTAt6/M+N4GhZiDYPx9eUw==}
+  scheduler@0.23.2:
+    resolution: {integrity: sha512-UOShsPwz7NrMUqhR6t0hWjFduvOzbtv7toDH1/hIrfRNIDBnnBWd0CwJTGvTpngVlmwGCdP9/Zl/tVrDqcuYzQ==}
 
   semver@5.7.2:
     resolution: {integrity: sha512-cBznnQ9KjJqU67B52RMC65CMarK2600WFnbkcaiwWq3xy/5haFJlshgnpjovMVJ+Hff49d8GEn0b87C5pDQ10g==}
@@ -3201,6 +3214,10 @@ packages:
   tapable@2.2.1:
     resolution: {integrity: sha512-GNzQvQTOIP6RyTfE2Qxb8ZVlNmw0n88vp1szwWRimP02mnTsx3Wtn5qRdqY9w2XduFNUgvOwhNnQsjwCp+kqaQ==}
     engines: {node: '>=6'}
+
+  tar@7.5.11:
+    resolution: {integrity: sha512-ChjMH33/KetonMTAtpYdgUFr0tbz69Fp2v7zWxQfYZX4g5ZN2nOBXm1R2xyA+lMIKrLKIoKAwFj93jE/avX9cQ==}
+    engines: {node: '>=18'}
 
   tar@7.5.9:
     resolution: {integrity: sha512-BTLcK0xsDh2+PUe9F6c2TlRp4zOOBMTkoQHQIWSIzI0R7KG46uEwq4OPk2W7bZcprBMsuaeFsqwYr7pjh6CuHg==}
@@ -4108,7 +4125,7 @@ snapshots:
 
   '@isaacs/fs-minipass@4.0.1':
     dependencies:
-      minipass: 7.1.2
+      minipass: 7.1.3
 
   '@istanbuljs/schema@0.1.3': {}
 
@@ -4424,17 +4441,26 @@ snapshots:
 
   '@types/platform@1.3.6': {}
 
+  '@types/prop-types@15.7.15':
+    optional: true
+
   '@types/prop-types@15.7.6': {}
 
   '@types/react-dom@18.3.1':
     dependencies:
-      '@types/react': 18.3.11
+      '@types/react': 18.3.28
     optional: true
 
   '@types/react@18.3.11':
     dependencies:
       '@types/prop-types': 15.7.6
       csstype: 3.1.2
+
+  '@types/react@18.3.28':
+    dependencies:
+      '@types/prop-types': 15.7.15
+      csstype: 3.2.3
+    optional: true
 
   '@types/semver@7.5.2': {}
 
@@ -4743,7 +4769,7 @@ snapshots:
 
   acorn@8.14.0: {}
 
-  acorn@8.15.0:
+  acorn@8.16.0:
     optional: true
 
   agent-base@7.1.3: {}
@@ -5034,6 +5060,9 @@ snapshots:
       which: 2.0.2
 
   csstype@3.1.2: {}
+
+  csstype@3.2.3:
+    optional: true
 
   data-view-buffer@1.0.2:
     dependencies:
@@ -6104,9 +6133,11 @@ snapshots:
 
   minipass@7.1.2: {}
 
+  minipass@7.1.3: {}
+
   minizlib@3.1.0:
     dependencies:
-      minipass: 7.1.2
+      minipass: 7.1.3
 
   mrmime@2.0.0: {}
 
@@ -6376,7 +6407,7 @@ snapshots:
   path-scurry@1.11.1:
     dependencies:
       lru-cache: 10.4.3
-      minipass: 7.1.2
+      minipass: 7.1.3
 
   path-scurry@2.0.0:
     dependencies:
@@ -6472,7 +6503,7 @@ snapshots:
     dependencies:
       loose-envify: 1.4.0
       react: 18.3.1
-      scheduler: 0.23.0
+      scheduler: 0.23.2
 
   react-is@17.0.2: {}
 
@@ -6606,7 +6637,7 @@ snapshots:
 
   safer-buffer@2.1.2: {}
 
-  scheduler@0.23.0:
+  scheduler@0.23.2:
     dependencies:
       loose-envify: 1.4.0
 
@@ -6846,6 +6877,14 @@ snapshots:
 
   tapable@2.2.1: {}
 
+  tar@7.5.11:
+    dependencies:
+      '@isaacs/fs-minipass': 4.0.1
+      chownr: 3.0.0
+      minipass: 7.1.3
+      minizlib: 3.1.0
+      yallist: 5.0.0
+
   tar@7.5.9:
     dependencies:
       '@isaacs/fs-minipass': 4.0.1
@@ -6857,7 +6896,7 @@ snapshots:
   terser@5.46.0:
     dependencies:
       '@jridgewell/source-map': 0.3.11
-      acorn: 8.15.0
+      acorn: 8.16.0
       commander: 2.20.3
       source-map-support: 0.5.21
     optional: true
