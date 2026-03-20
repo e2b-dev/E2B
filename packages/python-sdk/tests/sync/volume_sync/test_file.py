@@ -27,6 +27,15 @@ class TestWriteFileAndReadFile:
 
         assert read_bytes == content_bytes
 
+    def test_write_and_read_binary_data(self, volume: Volume):
+        path = "/binary.bin"
+        binary_data = bytes([0, 1, 2, 3, 4])
+
+        volume.write_file(path, binary_data)
+        read_bytes = volume.read_file(path, format="bytes")
+
+        assert read_bytes == binary_data
+
     def test_write_and_read_stream(self, volume: Volume):
         path = "/test-stream.txt"
         content = "Test stream content"
