@@ -576,7 +576,7 @@ export class Sandbox extends SandboxApi {
    *
    * @param opts connection options.
    *
-   * @returns sandbox ID that can be used to resume the sandbox.
+   * @returns true if the sandbox was paused successfully, false if it was already paused.
    *
    * @example
    * ```ts
