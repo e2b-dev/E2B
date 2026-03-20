@@ -478,9 +478,7 @@ class AsyncVolume:
                             headers=response.headers,
                             parsed=None,
                         )
-                        err = handle_api_exception(api_response, VolumeException)
-                        if err:
-                            raise err
+                        raise handle_api_exception(api_response, VolumeException)
 
                     async for chunk in response.aiter_bytes():
                         yield chunk
@@ -504,9 +502,7 @@ class AsyncVolume:
                 headers=response.headers,
                 parsed=None,
             )
-            err = handle_api_exception(api_response, VolumeException)
-            if err:
-                raise err
+            raise handle_api_exception(api_response, VolumeException)
 
         if format == "bytes":
             return response.content

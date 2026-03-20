@@ -476,9 +476,7 @@ class Volume:
                             headers=response.headers,
                             parsed=None,
                         )
-                        err = handle_api_exception(api_response, VolumeException)
-                        if err:
-                            raise err
+                        raise handle_api_exception(api_response, VolumeException)
 
                     yield from response.iter_bytes()
 
@@ -501,9 +499,7 @@ class Volume:
                 headers=response.headers,
                 parsed=None,
             )
-            err = handle_api_exception(api_response, VolumeException)
-            if err:
-                raise err
+            raise handle_api_exception(api_response, VolumeException)
 
         if format == "bytes":
             return response.content
