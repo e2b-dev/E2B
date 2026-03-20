@@ -1,6 +1,16 @@
 import { VolumeApiComponents } from './client'
 
 /**
+ * File type enum.
+ */
+export enum VolumeFileType {
+  UNKNOWN = 'unknown',
+  FILE = 'file',
+  DIRECTORY = 'directory',
+  SYMLINK = 'symlink',
+}
+
+/**
  * Information about a volume.
  */
 export type VolumeInfo = {
@@ -26,17 +36,11 @@ export type VolumeAndToken = VolumeInfo & {
 }
 
 /**
- * File type enum.
- */
-export type VolumeFileType =
-  VolumeApiComponents['schemas']['VolumeEntryStat']['type']
-
-/**
  * Volume entry stat with dates converted to Date objects.
  */
 export type VolumeEntryStat = Omit<
   VolumeApiComponents['schemas']['VolumeEntryStat'],
-  'atime' | 'mtime' | 'ctime'
+  'atime' | 'mtime' | 'ctime' | 'type'
 > & {
   /**
    * Access time as a Date object.
@@ -52,6 +56,11 @@ export type VolumeEntryStat = Omit<
    * Creation time as a Date object.
    */
   ctime: Date
+
+  /**
+   * File type.
+   */
+  type: VolumeFileType
 }
 
 /**

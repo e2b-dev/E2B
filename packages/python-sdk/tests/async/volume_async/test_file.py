@@ -4,7 +4,7 @@ from io import BytesIO
 import pytest
 
 from e2b import AsyncVolume
-from e2b.exceptions import NotFoundException
+from e2b.exceptions import NotFoundException, VolumeException
 
 
 class TestWriteFileAndReadFile:
@@ -60,6 +60,17 @@ class TestWriteFileAndReadFile:
         read_content = await async_volume.read_file(path, format="text")
 
         assert read_content == new_content
+
+    async def test_write_existing_file_without_force_raises(
+        self, async_volume: AsyncVolume
+    ):
+        path = "/no-overwrite.txt"
+        initial_content = "Initial content"
+        new_content = "New content"
+
+        await async_volume.write_file(path, initial_content)
+        with pytest.raises(VolumeException):
+            await async_volume.write_file(path, new_content, force=False)
 
     async def test_write_file_with_metadata(self, async_volume: AsyncVolume):
         path = "/metadata.txt"
@@ -155,6 +166,15 @@ class TestMakeDir:
 
         assert info.type.value == "directory"
 
+    async def test_create_existing_directory_without_force_raises(
+        self, async_volume: AsyncVolume
+    ):
+        path = "/existing-dir"
+
+        await async_volume.make_dir(path)
+        with pytest.raises(VolumeException):
+            await async_volume.make_dir(path, force=False)
+
     async def test_create_directory_with_metadata(self, async_volume: AsyncVolume):
         path = "/dir-with-metadata"
 
@@ -226,7 +246,7 @@ class TestRemove:
         await async_volume.make_dir(f"{dir_path}/nested", force=True)
         await async_volume.write_file(f"{dir_path}/nested/file.txt", "Content")
 
-        await async_volume.remove(dir_path, recursive=True)
+        await async_volume.remove(dir_path)
 
         assert await async_volume.exists(dir_path) is False
 
@@ -255,5 +275,5 @@ class TestFileOperationsLifecycle:
             )
             assert content == f"Content of {file_name}"
 
-        await async_volume.remove(dir_path, recursive=True)
+        await async_volume.remove(dir_path)
         assert await async_volume.exists(dir_path) is False

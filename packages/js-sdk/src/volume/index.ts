@@ -8,6 +8,7 @@ import {
 import { ConnectionConfig, ConnectionOpts } from '../connectionConfig'
 import { NotFoundError, VolumeError } from '../errors'
 import { toBlob } from '../utils'
+import { VolumeFileType } from './types'
 import type {
   VolumeAndToken,
   VolumeEntryStat,
@@ -24,6 +25,7 @@ function convertVolumeEntryStat(
 ): VolumeEntryStat {
   return {
     ...entry,
+    type: entry.type as VolumeFileType,
     atime: new Date(entry.atime),
     mtime: new Date(entry.mtime),
     ctime: new Date(entry.ctime),
@@ -653,10 +655,10 @@ export class Volume {
 export type {
   VolumeInfo,
   VolumeAndToken,
-  VolumeFileType,
   VolumeEntryStat,
   VolumeMetadataOptions,
   VolumeWriteOptions,
 } from './types'
 
 export type { VolumeApiOpts, VolumeConnectionConfig } from './client'
+export { VolumeFileType } from './types'
