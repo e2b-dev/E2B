@@ -17,8 +17,8 @@ sandboxTest.skipIf(isDebug)(
     delete process.env.E2B_API_KEY
 
     try {
-      // Get the apiKey that was used to create this sandbox
-      const apiKey = process.env.E2B_API_KEY || savedApiKey
+      // Get the apiKey that was used to create this sandbox (env was already deleted, use saved value)
+      const apiKey = savedApiKey
       if (apiKey === undefined) {
         throw new Error('apiKey must be defined at this point')
       }

@@ -572,7 +572,7 @@ export class Sandbox extends SandboxApi {
   }
 
   /**
-   * Pause a sandbox by its ID.
+   * Pause this sandbox instance.
    *
    * @param opts connection options.
    *
