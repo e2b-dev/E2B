@@ -97,3 +97,33 @@ sandboxTest.skipIf(isDebug)(
     )
   }
 )
+
+sandboxTest.skipIf(isDebug)(
+  'connect propagates apiKey to pause() when E2B_API_KEY is not set',
+  async ({ sandbox }) => {
+    // Save the original env var (may be undefined, empty string, or set)
+    const savedApiKey = process.env.E2B_API_KEY
+
+    try {
+      // Ensure E2B_API_KEY is not set for this test
+      delete process.env.E2B_API_KEY
+
+      // Connect with explicit apiKey (from the created sandbox's credentials)
+      const connected = await Sandbox.connect(sandbox.sandboxId, {
+        apiKey: savedApiKey,
+      })
+
+      // pause() should work on the connected sandbox without E2B_API_KEY env var
+      // It should propagate the apiKey from connectionConfig
+      const paused = await connected.pause()
+      expect(typeof paused).toBe('boolean')
+    } finally {
+      // Restore original env var
+      if (savedApiKey !== undefined) {
+        process.env.E2B_API_KEY = savedApiKey
+      } else {
+        delete process.env.E2B_API_KEY
+      }
+    }
+  }
+)
