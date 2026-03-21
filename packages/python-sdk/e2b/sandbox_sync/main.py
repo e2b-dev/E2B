@@ -319,7 +319,10 @@ class Sandbox(SandboxApi):
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        self.kill()
+        try:
+            self.kill()
+        finally:
+            self._envd_api.close()
 
     @overload
     def kill(
