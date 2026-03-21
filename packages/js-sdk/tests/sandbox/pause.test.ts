@@ -18,11 +18,10 @@ sandboxTest.skipIf(isDebug)(
 
     try {
       // Get the apiKey that was used to create this sandbox
-      const apiKey = process.env.E2B_API_KEY || savedApiKey
-      if (apiKey === undefined) {
+      const finalApiKey = savedApiKey
+      if (finalApiKey === undefined) {
         throw new Error('apiKey must be defined at this point')
       }
-      const finalApiKey = apiKey
 
       // Connect to the sandbox with an explicit apiKey (E2B_API_KEY is now unset)
       const connected = await Sandbox.connect(sandbox.sandboxId, { apiKey: finalApiKey })
