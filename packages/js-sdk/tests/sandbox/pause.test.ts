@@ -1,4 +1,4 @@
-import { assert, expect } from 'vitest'
+import { assert } from 'vitest'
 
 import { Sandbox } from '../../src'
 import { isDebug, sandboxTest } from '../setup'
@@ -19,8 +19,10 @@ sandboxTest.skipIf(isDebug)(
     try {
       // Get the apiKey that was used to create this sandbox
       const apiKey = process.env.E2B_API_KEY || savedApiKey
-      expect(apiKey).toBeDefined()
-      const finalApiKey = apiKey!
+      if (apiKey === undefined) {
+        throw new Error('apiKey must be defined at this point')
+      }
+      const finalApiKey = apiKey
 
       // Connect to the sandbox with an explicit apiKey (E2B_API_KEY is now unset)
       const connected = await Sandbox.connect(sandbox.sandboxId, { apiKey: finalApiKey })
@@ -60,8 +62,10 @@ sandboxTest.skipIf(isDebug)(
   'pause() works on connected sandbox with apiKey in connectionConfig',
   async ({ sandbox }) => {
     const apiKey = process.env.E2B_API_KEY
-    expect(apiKey).toBeDefined()
-    const finalApiKey = apiKey!
+    if (apiKey === undefined) {
+      throw new Error('E2B_API_KEY must be set in environment')
+    }
+    const finalApiKey = apiKey
 
     // Connect to the sandbox using apiKey from connectionConfig
     const connected = await Sandbox.connect(sandbox.sandboxId, { apiKey: finalApiKey })
