@@ -67,6 +67,7 @@ from .sandbox.sandbox_api import (
     GitHubMcpServerConfig,
     McpServer,
     SandboxInfo,
+    SandboxInfoLifecycle,
     SandboxMetrics,
     SandboxLifecycle,
     SandboxNetworkOpts,
@@ -132,6 +133,7 @@ __all__ = [
     "FileUploadException",
     # Sandbox API
     "SandboxInfo",
+    "SandboxInfoLifecycle",
     "SandboxMetrics",
     "ProcessInfo",
     "SandboxQuery",

@@ -79,6 +79,18 @@ export type SandboxLifecycle = {
   autoResume?: boolean
 }
 
+export type SandboxInfoLifecycle = {
+  /**
+   * Action to take when sandbox timeout is reached.
+   */
+  onTimeout: 'pause' | 'kill'
+
+  /**
+   * Whether the sandbox can auto-resume.
+   */
+  autoResume: boolean
+}
+
 /**
  * Options for request to the Sandbox API.
  */
@@ -310,6 +322,21 @@ export interface SandboxInfo {
    * Envd version.
    */
   envdVersion: string
+
+  /**
+   * Whether internet access was explicitly enabled or disabled for the sandbox.
+   */
+  allowInternetAccess?: boolean | undefined
+
+  /**
+   * Sandbox network configuration.
+   */
+  network?: SandboxNetworkOpts
+
+  /**
+   * Sandbox lifecycle configuration.
+   */
+  lifecycle?: SandboxInfoLifecycle
 }
 
 /**
@@ -552,6 +579,7 @@ export class SandboxApi {
       templateId: res.data.templateID,
       ...(res.data.alias && { name: res.data.alias }),
       metadata: res.data.metadata ?? {},
+      allowInternetAccess: res.data.allowInternetAccess ?? undefined,
       envdVersion: res.data.envdVersion,
       envdAccessToken: res.data.envdAccessToken,
       startedAt: new Date(res.data.startedAt),
@@ -559,6 +587,20 @@ export class SandboxApi {
       state: res.data.state,
       cpuCount: res.data.cpuCount,
       memoryMB: res.data.memoryMB,
+      network: res.data.network
+        ? {
+            allowOut: res.data.network.allowOut,
+            denyOut: res.data.network.denyOut,
+            allowPublicTraffic: res.data.network.allowPublicTraffic,
+            maskRequestHost: res.data.network.maskRequestHost,
+          }
+        : undefined,
+      lifecycle: res.data.lifecycle
+        ? {
+            onTimeout: res.data.lifecycle.onTimeout,
+            autoResume: res.data.lifecycle.autoResume,
+          }
+        : undefined,
       sandboxDomain: res.data.domain || undefined,
     }
   }

@@ -50,6 +50,7 @@ export type {
   SandboxPaginator,
   SandboxNetworkOpts,
   SandboxLifecycle,
+  SandboxInfoLifecycle,
   SnapshotInfo,
   SnapshotListOpts,
   SnapshotPaginator,
