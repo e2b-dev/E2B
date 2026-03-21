@@ -117,7 +117,9 @@ class TemplateBuildStartV2:
                 )
 
                 return componentsschemas_from_image_registry_type_0
-            except:  # noqa: E722
+            except:  
+               
+               # TODO: be more specific about exception type
                 pass
             try:
                 if not isinstance(data, dict):
@@ -127,7 +129,9 @@ class TemplateBuildStartV2:
                 )
 
                 return componentsschemas_from_image_registry_type_1
-            except:  # noqa: E722
+            except:  
+               
+               # TODO: be more specific about exception type
                 pass
             if not isinstance(data, dict):
                 raise TypeError()
