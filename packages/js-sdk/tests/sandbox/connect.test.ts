@@ -104,11 +104,16 @@ sandboxTest.skipIf(isDebug)(
     // Save the original env var (may be undefined, empty string, or set)
     const savedApiKey = process.env.E2B_API_KEY
 
+    // This test requires a valid apiKey to verify propagation, so skip if E2B_API_KEY is not set
+    if (!savedApiKey) {
+      return
+    }
+
     try {
       // Ensure E2B_API_KEY is not set for this test
       delete process.env.E2B_API_KEY
 
-      // Connect with explicit apiKey (from the created sandbox's credentials)
+      // Connect with explicit apiKey taken from the original E2B_API_KEY env var
       const connected = await Sandbox.connect(sandbox.sandboxId, {
         apiKey: savedApiKey,
       })
@@ -119,11 +124,7 @@ sandboxTest.skipIf(isDebug)(
       expect(typeof paused).toBe('boolean')
     } finally {
       // Restore original env var
-      if (savedApiKey !== undefined) {
-        process.env.E2B_API_KEY = savedApiKey
-      } else {
-        delete process.env.E2B_API_KEY
-      }
+      process.env.E2B_API_KEY = savedApiKey
     }
   }
 )
