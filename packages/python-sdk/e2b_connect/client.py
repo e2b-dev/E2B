@@ -327,6 +327,13 @@ class Client:
             timeout_ext["connect"] = request_timeout
             timeout_ext["pool"] = request_timeout
             timeout_ext["write"] = request_timeout
+        elif timeout is not None:
+            # Fall back to timeout for connect/pool/write when request_timeout is not set.
+            # This ensures streaming calls have a default timeout instead of hanging
+            # indefinitely when the sandbox is unreachable.
+            timeout_ext["connect"] = timeout
+            timeout_ext["pool"] = timeout
+            timeout_ext["write"] = timeout
         if timeout:
             # This is not actually timeout for the whole stream read, but timeout from the last read chunk.
             # At worst then, the timeout of a hanging stream could be 2 * timeout (reading body until timeout-ϵ, then waiting for the read timeout).

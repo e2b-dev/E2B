@@ -132,3 +132,45 @@ async def test_async_with_multiple_await_calls():
     result = await f()
     assert result is True
     assert total == 2
+
+
+def test_server_stream_request_timeout_fallback():
+    """Test that streaming requests get default timeouts when request_timeout is None.
+
+    Regression test for https://github.com/e2b-dev/E2B/issues/1128
+    When request_timeout is None (the default), streaming requests should fall
+    back to the timeout parameter for connect/pool/write to prevent indefinite hangs.
+    """
+    from e2b_connect.client import Client
+    from unittest.mock import MagicMock
+
+    # Use JSON codec to avoid protobuf dependency
+    client = Client(
+        url="http://localhost:8080",
+        response_type=MagicMock,
+        json=True,
+    )
+
+    # Create a minimal protobuf-like message
+    class FakeMsg:
+        def SerializeToString(self):
+            return b""
+
+    # Case 1: request_timeout=None, timeout=60 -> all four timeouts should be set
+    result = client._prepare_server_stream_request(
+        FakeMsg(), request_timeout=None, timeout=60
+    )
+    assert result["extensions"] is not None
+    assert result["extensions"]["timeout"]["connect"] == 60
+    assert result["extensions"]["timeout"]["pool"] == 60
+    assert result["extensions"]["timeout"]["write"] == 60
+    assert result["extensions"]["timeout"]["read"] == 60
+
+    # Case 2: request_timeout=30, timeout=60 -> request_timeout wins for connect/pool/write
+    result = client._prepare_server_stream_request(
+        FakeMsg(), request_timeout=30, timeout=60
+    )
+    assert result["extensions"]["timeout"]["connect"] == 30
+    assert result["extensions"]["timeout"]["pool"] == 30
+    assert result["extensions"]["timeout"]["write"] == 30
+    assert result["extensions"]["timeout"]["read"] == 60
