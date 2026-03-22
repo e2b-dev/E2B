@@ -118,7 +118,7 @@ class TemplateBuildStartV2:
 
                 return componentsschemas_from_image_registry_type_0
             except Exception:  # noqa: E722
-    pass
+                pass
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -128,7 +128,7 @@ class TemplateBuildStartV2:
 
                 return componentsschemas_from_image_registry_type_1
             except Exception:  # noqa: E722
-    pass
+                pass
             if not isinstance(data, dict):
                 raise TypeError()
             componentsschemas_from_image_registry_type_2 = GeneralRegistry.from_dict(
