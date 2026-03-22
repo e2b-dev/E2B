@@ -1,0 +1,329 @@
+openapi: 3.0.0
+info:
+  version: 0.1.0
+  title: E2B API
+
+security:
+  - VolumeJWT: []
+
+components:
+  securitySchemes:
+    VolumeJWT:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    volumeID:
+      name: volumeID
+      in: path
+      required: true
+      schema:
+        type: string
+    path:
+      name: path
+      in: query
+      required: true
+      schema:
+        type: string
+
+  responses:
+    '400':
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    '401':
+      description: Authentication error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    '403':
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    '404':
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    '409':
+      description: Conflict
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    '500':
+      description: Server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+  schemas:
+    Error:
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          description: Error code
+        message:
+          type: string
+          description: Error message
+
+    VolumeEntryStat:
+      type: object
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+          enum: [unknown, file, directory, symlink]
+        path:
+          type: string
+        size:
+          type: integer
+          format: int64
+        mode:
+          type: integer
+          format: uint32
+        uid:
+          type: integer
+          format: uint32
+        gid:
+          type: integer
+          format: uint32
+        atime:
+          type: string
+          format: date-time
+        mtime:
+          type: string
+          format: date-time
+        ctime:
+          type: string
+          format: date-time
+        target:
+          type: string
+      required:
+        - name
+        - type
+        - path
+        - size
+        - mode
+        - uid
+        - gid
+        - atime
+        - mtime
+        - ctime
+
+    VolumeDirectoryListing:
+      type: array
+      items:
+        $ref: '#/components/schemas/VolumeEntryStat'
+
+paths:
+  /volumecontent/{volumeID}/path:
+    get:
+      description: Get path information
+      tags: [volumes]
+      parameters:
+        - $ref: '#/components/parameters/volumeID'
+        - $ref: '#/components/parameters/path'
+      responses:
+        '200':
+          description: Successfully retrieved path information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VolumeEntryStat'
+        '404':
+          $ref: '#/components/responses/404'
+
+    patch:
+      description: Update path metadata
+      tags: [volumes]
+      parameters:
+        - $ref: '#/components/parameters/volumeID'
+        - $ref: '#/components/parameters/path'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                uid:
+                  type: integer
+                  format: uint32
+                gid:
+                  type: integer
+                  format: uint32
+                mode:
+                  type: integer
+                  format: uint32
+      responses:
+        '200':
+          description: "Successfully updated a file's metadata"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VolumeEntryStat'
+        '400':
+          description: 'Invalid metadata provided'
+        '404':
+          description: 'path not found'
+        '500':
+          description: 'Internal server error'
+
+    delete:
+      description: Delete a path
+      tags: [volumes]
+      parameters:
+        - $ref: '#/components/parameters/volumeID'
+        - $ref: '#/components/parameters/path'
+      responses:
+        '204':
+          description: Successfully deleted a path
+        '404':
+          $ref: '#/components/responses/404'
+
+  /volumecontent/{volumeID}/dir:
+    get:
+      description: List directory contents
+      tags: [volumes]
+      parameters:
+        - $ref: '#/components/parameters/volumeID'
+        - $ref: '#/components/parameters/path'
+        - name: depth
+          in: query
+          description: Number of layers deep to recurse into the directory
+          schema:
+            type: integer
+            format: uint32
+            default: 1
+      responses:
+        '200':
+          description: 'Successfully retrieved a directory listing'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VolumeDirectoryListing'
+        '400':
+          description: 'Invalid path provided'
+        '404':
+          description: 'path not found'
+        '500':
+          $ref: '#/components/responses/500'
+    post:
+      description: 'Create a directory'
+      tags: [volumes]
+      parameters:
+        - $ref: '#/components/parameters/volumeID'
+        - $ref: '#/components/parameters/path'
+        - name: uid
+          in: query
+          description: User ID of the created directory
+          schema:
+            type: integer
+            format: uint32
+        - name: gid
+          in: query
+          description: Group ID of the created directory
+          schema:
+            type: integer
+            format: uint32
+        - name: mode
+          in: query
+          description: Mode of the created directory
+          schema:
+            type: integer
+            format: uint32
+        - name: force
+          in: query
+          description: Create the parents of a directory if they don't exist
+          schema:
+            type: boolean
+      responses:
+        '201':
+          description: 'Successfully created a directory'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VolumeEntryStat'
+        '404':
+          description: 'path not found'
+        '500':
+          $ref: '#/components/responses/500'
+
+  /volumecontent/{volumeID}/file:
+    get:
+      description: Download file
+      tags: [volumes]
+      parameters:
+        - $ref: '#/components/parameters/volumeID'
+        - $ref: '#/components/parameters/path'
+      responses:
+        '200':
+          description: 'Successfully downloaded a file'
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: 'path not found'
+        '500':
+          $ref: '#/components/responses/500'
+    put:
+      description: Upload file
+      tags: [volumes]
+      parameters:
+        - $ref: '#/components/parameters/volumeID'
+        - $ref: '#/components/parameters/path'
+        - name: uid
+          in: query
+          description: User ID of the uploaded file
+          schema:
+            type: integer
+            format: uint32
+        - name: gid
+          in: query
+          description: Group ID of the uploaded file
+          schema:
+            type: integer
+            format: uint32
+        - name: mode
+          in: query
+          description: Mode of the uploaded file
+          schema:
+            type: integer
+            format: uint32
+        - name: force
+          in: query
+          description: Force overwrite of an existing file
+          schema:
+            type: boolean
+      requestBody:
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+      responses:
+        '201':
+          description: 'Successfully created a file'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VolumeEntryStat'
+        '404':
+          description: 'path not found'
+        '500':
+          $ref: '#/components/responses/500'
