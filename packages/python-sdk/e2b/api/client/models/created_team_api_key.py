@@ -114,7 +114,7 @@ class CreatedTeamAPIKey:
 
                 return created_by_type_1
             except Exception:  # noqa: E722
-    pass
+                pass
             return cast(Union["TeamUser", None, Unset], data)
 
         created_by = _parse_created_by(d.pop("createdBy", UNSET))
@@ -131,7 +131,7 @@ class CreatedTeamAPIKey:
 
                 return last_used_type_0
             except Exception:  # noqa: E722
-    pass
+                pass
             return cast(Union[None, Unset, datetime.datetime], data)
 
         last_used = _parse_last_used(d.pop("lastUsed", UNSET))
