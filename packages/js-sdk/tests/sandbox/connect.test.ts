@@ -98,16 +98,11 @@ sandboxTest.skipIf(isDebug)(
   }
 )
 
-sandboxTest.skipIf(isDebug)(
+sandboxTest.skipIf(isDebug || !process.env.E2B_API_KEY)(
   'connect propagates apiKey to pause() when E2B_API_KEY is not set',
   async ({ sandbox }) => {
     // Save the original env var (may be undefined, empty string, or set)
     const savedApiKey = process.env.E2B_API_KEY
-
-    // This test requires a valid apiKey to verify propagation, so skip if E2B_API_KEY is not set
-    if (!savedApiKey) {
-      return
-    }
 
     try {
       // Ensure E2B_API_KEY is not set for this test
