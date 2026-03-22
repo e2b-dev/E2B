@@ -152,7 +152,7 @@ class NewSandbox:
 
                 return componentsschemas_mcp_type_0
             except Exception:  # noqa: E722
-    pass
+                pass
             return cast(Union["McpType0", None, Unset], data)
 
         mcp = _parse_mcp(d.pop("mcp", UNSET))
