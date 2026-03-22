@@ -36,6 +36,7 @@ from .connection_config import (
 from .exceptions import (
     AuthenticationException,
     GitAuthException,
+    GitPermissionException,
     GitUpstreamException,
     BuildException,
     FileUploadException,
@@ -124,6 +125,7 @@ __all__ = [
     "NotFoundException",
     "AuthenticationException",
     "GitAuthException",
+    "GitPermissionException",
     "GitUpstreamException",
     "InvalidArgumentException",
     "NotEnoughSpaceException",
