@@ -135,10 +135,8 @@ class TemplateLegacy:
                 created_by_type_1 = TeamUser.from_dict(data)
 
                 return created_by_type_1
-            except:  
-               
-               # TODO: be more specific about exception type
-                pass
+            except Exception:  # noqa: E722
+    pass
             return cast(Union["TeamUser", None], data)
 
         created_by = _parse_created_by(d.pop("createdBy"))
@@ -156,10 +154,8 @@ class TemplateLegacy:
                 last_spawned_at_type_0 = isoparse(data)
 
                 return last_spawned_at_type_0
-            except:  
-               
-               # TODO: be more specific about exception type
-                pass
+            except Exception:  # noqa: E722
+    pass
             return cast(Union[None, datetime.datetime], data)
 
         last_spawned_at = _parse_last_spawned_at(d.pop("lastSpawnedAt"))

@@ -151,9 +151,8 @@ class NewSandbox:
                 componentsschemas_mcp_type_0 = McpType0.from_dict(data)
 
                 return componentsschemas_mcp_type_0
-            except:  
-               # TODO: be more specific about exception type
-                pass
+            except Exception:  # noqa: E722
+    pass
             return cast(Union["McpType0", None, Unset], data)
 
         mcp = _parse_mcp(d.pop("mcp", UNSET))
