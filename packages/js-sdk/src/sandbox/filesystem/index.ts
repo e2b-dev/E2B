@@ -14,7 +14,7 @@ import {
   Username,
 } from '../../connectionConfig'
 
-import { handleEnvdApiError, handleWatchDirStartEvent } from '../../envd/api'
+import { handleFilesystemApiError, handleWatchDirStartEvent } from '../../envd/api'
 import { authenticationHeader, handleRpcError } from '../../envd/rpc'
 
 import { EnvdApiClient } from '../../envd/api'
