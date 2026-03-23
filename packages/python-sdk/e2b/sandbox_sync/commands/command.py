@@ -143,7 +143,7 @@ class Commands:
         on_stdout: Optional[Callable[[str], None]] = None,
         on_stderr: Optional[Callable[[str], None]] = None,
         stdin: Optional[bool] = None,
-        timeout: Optional[float] = 60,
+        timeout: Optional[float] = None,
         request_timeout: Optional[float] = None,
     ) -> CommandResult:
         """
@@ -157,7 +157,7 @@ class Commands:
         :param on_stdout: Callback for command stdout output
         :param on_stderr: Callback for command stderr output
         :param stdin: If `True`, the command will have a stdin stream that you can send data to using `sandbox.commands.send_stdin()`
-        :param timeout: Timeout for the command connection in **seconds**. Using `0` will not limit the command connection time
+        :param timeout: Timeout for the command connection in **seconds**. Using `0` will not limit the command connection time. Default is `60` seconds for foreground commands, `0` (no limit) for background commands
         :param request_timeout: Timeout for the request in **seconds**
 
         :return: `CommandResult` result of the command execution
@@ -175,7 +175,7 @@ class Commands:
         on_stdout: None = None,
         on_stderr: None = None,
         stdin: Optional[bool] = None,
-        timeout: Optional[float] = 60,
+        timeout: Optional[float] = None,
         request_timeout: Optional[float] = None,
     ) -> CommandHandle:
         """
@@ -187,7 +187,7 @@ class Commands:
         :param user: User to run the command as
         :param cwd: Working directory to run the command
         :param stdin: If `True`, the command will have a stdin stream that you can send data to using `sandbox.commands.send_stdin()`
-        :param timeout: Timeout for the command connection in **seconds**. Using `0` will not limit the command connection time
+        :param timeout: Timeout for the command connection in **seconds**. Using `0` will not limit the command connection time. Default is `0` (no limit) for background commands
         :param request_timeout: Timeout for the request in **seconds**
 
         :return: `CommandHandle` handle to interact with the running command
@@ -204,7 +204,7 @@ class Commands:
         on_stdout: Optional[Callable[[str], None]] = None,
         on_stderr: Optional[Callable[[str], None]] = None,
         stdin: Optional[bool] = None,
-        timeout: Optional[float] = 60,
+        timeout: Optional[float] = None,
         request_timeout: Optional[float] = None,
     ):
         # Check version for stdin support
@@ -217,9 +217,13 @@ class Commands:
         # Default to `False`
         stdin = stdin or False
 
-        # For background commands, disable the stream timeout by default
-        # so the process remains reachable for connect(pid)
-        effective_timeout = 0 if background and timeout == 60 else timeout
+        # When timeout is not explicitly provided, default to 60s for foreground
+        # commands, or 0 (unlimited) for background commands so the process
+        # remains reachable for connect(pid)
+        if timeout is None:
+            effective_timeout = 0 if background else 60
+        else:
+            effective_timeout = timeout
 
         proc = self._start(
             cmd,
