@@ -67,7 +67,7 @@ importers:
         specifier: ^0.6.1
         version: 0.6.1
       e2b:
-        specifier: ^2.13.1
+        specifier: ^2.15.0
         version: 2.15.0
       handlebars:
         specifier: ^4.7.8
@@ -161,8 +161,8 @@ importers:
         specifier: ^1.3.6
         version: 1.3.6
       tar:
-        specifier: ^7.5.9
-        version: 7.5.9
+        specifier: ^7.5.11
+        version: 7.5.12
     devDependencies:
       '@testing-library/react':
         specifier: ^16.2.0
@@ -3815,10 +3815,6 @@ packages:
 
   tar@7.5.12:
     resolution: {integrity: sha512-9TsuLcdhOn4XztcQqhNyq1KOwOOED/3k58JAvtULiYqbO8B/0IBAAIE1hj0Svmm58k27TmcigyDI0deMlgG3uw==}
-    engines: {node: '>=18'}
-
-  tar@7.5.9:
-    resolution: {integrity: sha512-BTLcK0xsDh2+PUe9F6c2TlRp4zOOBMTkoQHQIWSIzI0R7KG46uEwq4OPk2W7bZcprBMsuaeFsqwYr7pjh6CuHg==}
     engines: {node: '>=18'}
 
   terser@5.46.0:
@@ -8278,14 +8274,6 @@ snapshots:
       yallist: 4.0.0
 
   tar@7.5.12:
-    dependencies:
-      '@isaacs/fs-minipass': 4.0.1
-      chownr: 3.0.0
-      minipass: 7.1.2
-      minizlib: 3.1.0
-      yallist: 5.0.0
-
-  tar@7.5.9:
     dependencies:
       '@isaacs/fs-minipass': 4.0.1
       chownr: 3.0.0
