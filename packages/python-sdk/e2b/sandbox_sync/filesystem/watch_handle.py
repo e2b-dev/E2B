@@ -6,7 +6,7 @@ from e2b.envd.filesystem.filesystem_pb2 import (
     GetWatcherEventsRequest,
     RemoveWatcherRequest,
 )
-from e2b.envd.rpc import handle_rpc_exception
+from e2b.envd.rpc import handle_filesystem_rpc_exception
 from e2b.sandbox.filesystem.watch_handle import FilesystemEvent, map_event_type
 
 
@@ -35,7 +35,7 @@ class WatchHandle:
         try:
             self._rpc.remove_watcher(RemoveWatcherRequest(watcher_id=self._watcher_id))
         except Exception as e:
-            raise handle_rpc_exception(e)
+            raise handle_filesystem_rpc_exception(e)
 
         self._closed = True
 
@@ -53,7 +53,7 @@ class WatchHandle:
                 GetWatcherEventsRequest(watcher_id=self._watcher_id)
             )
         except Exception as e:
-            raise handle_rpc_exception(e)
+            raise handle_filesystem_rpc_exception(e)
 
         events = []
         for event in r.events:

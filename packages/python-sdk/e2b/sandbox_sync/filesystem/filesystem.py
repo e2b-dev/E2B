@@ -9,7 +9,12 @@ import httpx
 from packaging.version import Version
 
 from e2b.envd.versions import ENVD_VERSION_RECURSIVE_WATCH, ENVD_DEFAULT_USER
-from e2b.exceptions import SandboxException, TemplateException, InvalidArgumentException
+from e2b.exceptions import (
+    FileNotFoundException,
+    SandboxException,
+    TemplateException,
+    InvalidArgumentException,
+)
 from e2b.connection_config import (
     ConnectionConfig,
     Username,
@@ -19,7 +24,7 @@ from e2b.connection_config import (
 )
 from e2b.envd.api import ENVD_API_FILES_ROUTE, handle_envd_api_exception
 from e2b.envd.filesystem import filesystem_connect, filesystem_pb2
-from e2b.envd.rpc import authentication_header, handle_rpc_exception
+from e2b.envd.rpc import authentication_header, handle_filesystem_rpc_exception
 from e2b.sandbox.filesystem.filesystem import (
     WriteInfo,
     EntryInfo,
@@ -137,7 +142,10 @@ class Filesystem:
             timeout=self._connection_config.get_request_timeout(request_timeout),
         )
 
-        err = handle_envd_api_exception(r)
+        err = handle_envd_api_exception(
+            r,
+            not_found_exception=FileNotFoundException,
+        )
         if err:
             raise err
 
@@ -235,7 +243,10 @@ class Filesystem:
             timeout=self._connection_config.get_request_timeout(request_timeout),
         )
 
-        err = handle_envd_api_exception(r)
+        err = handle_envd_api_exception(
+            r,
+            not_found_exception=FileNotFoundException,
+        )
         if err:
             raise err
 
@@ -302,7 +313,7 @@ class Filesystem:
 
             return entries
         except Exception as e:
-            raise handle_rpc_exception(e)
+            raise handle_filesystem_rpc_exception(e)
 
     def exists(
         self,
@@ -333,7 +344,7 @@ class Filesystem:
             if isinstance(e, e2b_connect.ConnectException):
                 if e.status == e2b_connect.Code.not_found:
                     return False
-            raise handle_rpc_exception(e)
+            raise handle_filesystem_rpc_exception(e)
 
     def get_info(
         self,
@@ -377,7 +388,7 @@ class Filesystem:
                 ),
             )
         except Exception as e:
-            raise handle_rpc_exception(e)
+            raise handle_filesystem_rpc_exception(e)
 
     def remove(
         self,
@@ -401,7 +412,7 @@ class Filesystem:
                 headers=authentication_header(self._envd_version, user),
             )
         except Exception as e:
-            raise handle_rpc_exception(e)
+            raise handle_filesystem_rpc_exception(e)
 
     def rename(
         self,
@@ -450,7 +461,7 @@ class Filesystem:
                 ),
             )
         except Exception as e:
-            raise handle_rpc_exception(e)
+            raise handle_filesystem_rpc_exception(e)
 
     def make_dir(
         self,
@@ -481,7 +492,7 @@ class Filesystem:
             if isinstance(e, e2b_connect.ConnectException):
                 if e.status == e2b_connect.Code.already_exists:
                     return False
-            raise handle_rpc_exception(e)
+            raise handle_filesystem_rpc_exception(e)
 
     def watch_dir(
         self,
@@ -518,6 +529,6 @@ class Filesystem:
                 },
             )
         except Exception as e:
-            raise handle_rpc_exception(e)
+            raise handle_filesystem_rpc_exception(e)
 
         return WatchHandle(self._rpc, r.watcher_id)

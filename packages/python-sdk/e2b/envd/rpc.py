@@ -5,6 +5,7 @@ from packaging.version import Version
 from e2b_connect.client import Code, ConnectException
 
 from e2b.exceptions import (
+    FileNotFoundException,
     SandboxException,
     InvalidArgumentException,
     NotFoundException,
@@ -17,14 +18,17 @@ from e2b.connection_config import Username, default_username
 from e2b.envd.versions import ENVD_DEFAULT_USER
 
 
-def handle_rpc_exception(e: Exception):
+def handle_rpc_exception(
+    e: Exception,
+    not_found_exception: type[NotFoundException] = NotFoundException,
+):
     if isinstance(e, ConnectException):
         if e.status == Code.invalid_argument:
             return InvalidArgumentException(e.message)
         elif e.status == Code.unauthenticated:
             return AuthenticationException(e.message)
         elif e.status == Code.not_found:
-            return NotFoundException(e.message)
+            return not_found_exception(e.message)
         elif e.status == Code.unavailable:
             return format_sandbox_timeout_exception(e.message)
         elif e.status == Code.resource_exhausted:
@@ -43,6 +47,10 @@ def handle_rpc_exception(e: Exception):
             return SandboxException(f"{e.status}: {e.message}")
     else:
         return e
+
+
+def handle_filesystem_rpc_exception(e: Exception):
+    return handle_rpc_exception(e, not_found_exception=FileNotFoundException)
 
 
 def authentication_header(

@@ -3,7 +3,7 @@ import inspect
 
 from typing import Any, AsyncGenerator, Optional
 
-from e2b.envd.rpc import handle_rpc_exception
+from e2b.envd.rpc import handle_filesystem_rpc_exception
 from e2b.envd.filesystem.filesystem_pb2 import WatchDirResponse
 from e2b.sandbox.filesystem.watch_handle import FilesystemEvent, map_event_type
 from e2b.sandbox_async.utils import OutputHandler
@@ -47,7 +47,7 @@ class AsyncWatchHandle:
                             type=event_type,
                         )
         except Exception as e:
-            raise handle_rpc_exception(e)
+            raise handle_filesystem_rpc_exception(e)
 
     async def _handle_events(self):
         try:

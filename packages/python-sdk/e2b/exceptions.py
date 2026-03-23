@@ -63,6 +63,14 @@ class NotFoundException(SandboxException):
     pass
 
 
+class FileNotFoundException(NotFoundException):
+    """
+    Raised when a file or directory is not found inside the sandbox.
+    """
+
+    pass
+
+
 class AuthenticationException(Exception):
     """
     Raised when authentication fails.

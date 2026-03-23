@@ -1,5 +1,5 @@
 import pytest
-from e2b import NotFoundException
+from e2b import FileNotFoundException
 
 
 def test_read_file(sandbox):
@@ -14,7 +14,7 @@ def test_read_file(sandbox):
 def test_read_non_existing_file(sandbox):
     filename = "non_existing_file.txt"
 
-    with pytest.raises(NotFoundException):
+    with pytest.raises(FileNotFoundException):
         sandbox.files.read(filename)
 
 

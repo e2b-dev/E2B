@@ -24,31 +24,49 @@ def get_message(e: httpx.Response) -> str:
     return message
 
 
-def handle_envd_api_exception(res: httpx.Response):
+def handle_envd_api_exception(
+    res: httpx.Response,
+    not_found_exception: type[NotFoundException] = NotFoundException,
+):
     if res.is_success:
         return
 
     res.read()
 
-    return format_envd_api_exception(res.status_code, get_message(res))
+    return format_envd_api_exception(
+        res.status_code,
+        get_message(res),
+        not_found_exception=not_found_exception,
+    )
 
 
-async def ahandle_envd_api_exception(res: httpx.Response):
+async def ahandle_envd_api_exception(
+    res: httpx.Response,
+    not_found_exception: type[NotFoundException] = NotFoundException,
+):
     if res.is_success:
         return
 
     await res.aread()
 
-    return format_envd_api_exception(res.status_code, get_message(res))
+    return format_envd_api_exception(
+        res.status_code,
+        get_message(res),
+        not_found_exception=not_found_exception,
+    )
 
 
-def format_envd_api_exception(status_code: int, message: str):
+def format_envd_api_exception(
+    status_code: int,
+    message: str,
+    not_found_exception: type[NotFoundException] = NotFoundException,
+):
     if status_code == 400:
         return InvalidArgumentException(message)
     elif status_code == 401:
         return AuthenticationException(message)
     elif status_code == 404:
-        return NotFoundException(message)
+        return not_found_exception(message)
     elif status_code == 429:
         return SandboxException(f"{message}: The requests are being rate limited.")
     elif status_code == 502:
