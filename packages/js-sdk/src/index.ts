@@ -10,6 +10,7 @@ export {
   InvalidArgumentError,
   NotEnoughSpaceError,
   NotFoundError,
+  FileNotFoundError,
   SandboxError,
   TemplateError,
   TimeoutError,

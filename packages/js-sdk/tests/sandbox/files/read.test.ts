@@ -1,6 +1,6 @@
 import { expect, assert } from 'vitest'
 
-import { NotFoundError } from '../../../src'
+import { FileNotFoundError } from '../../../src'
 import { sandboxTest } from '../../setup.js'
 
 sandboxTest('read file', async ({ sandbox }) => {
@@ -15,7 +15,7 @@ sandboxTest('read file', async ({ sandbox }) => {
 sandboxTest('read non-existing file', async ({ sandbox }) => {
   const filename = 'non_existing_file.txt'
 
-  await expect(sandbox.files.read(filename)).rejects.toThrowError(NotFoundError)
+  await expect(sandbox.files.read(filename)).rejects.toThrowError(FileNotFoundError)
 })
 
 sandboxTest('empty file', async ({ sandbox }) => {

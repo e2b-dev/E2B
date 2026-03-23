@@ -17,10 +17,13 @@ import { WatchDirResponse } from './filesystem/filesystem_pb'
 
 type ApiError = { message?: string } | string
 
-export async function handleEnvdApiError(res: {
-  error?: ApiError
-  response: Response
-}) {
+export async function handleEnvdApiError(
+  res: {
+    error?: ApiError
+    response: Response
+  },
+  notFoundError: new (message: string) => NotFoundError = NotFoundError
+) {
   if (!res.error) {
     return
   }
@@ -36,7 +39,7 @@ export async function handleEnvdApiError(res: {
     case 401:
       return new AuthenticationError(message)
     case 404:
-      return new NotFoundError(message)
+      return new notFoundError(message)
     case 429:
       return new SandboxError(
         `${res.response.status}: ${message}: The requests are being rate limited.`

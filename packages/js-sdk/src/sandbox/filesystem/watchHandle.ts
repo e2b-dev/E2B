@@ -1,4 +1,4 @@
-import { handleRpcError } from '../../envd/rpc'
+import { handleFilesystemRpcError } from '../../envd/rpc'
 import {
   EventType,
   WatchDirResponse,
@@ -91,7 +91,7 @@ export class WatchHandle {
         }
       }
     } catch (err) {
-      throw handleRpcError(err)
+      throw handleFilesystemRpcError(err)
     }
   }
 

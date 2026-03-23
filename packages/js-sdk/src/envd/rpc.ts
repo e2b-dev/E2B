@@ -5,6 +5,7 @@ import { compareVersions } from 'compare-versions'
 import { defaultUsername } from '../connectionConfig'
 import {
   AuthenticationError,
+  FileNotFoundError,
   formatSandboxTimeoutError,
   InvalidArgumentError,
   NotFoundError,
@@ -13,7 +14,10 @@ import {
 } from '../errors'
 import { ENVD_DEFAULT_USER } from './versions'
 
-export function handleRpcError(err: unknown): Error {
+export function handleRpcError(
+  err: unknown,
+  notFoundError: new (message: string) => NotFoundError = NotFoundError
+): Error {
   if (err instanceof ConnectError) {
     switch (err.code) {
       case Code.InvalidArgument:
@@ -21,7 +25,7 @@ export function handleRpcError(err: unknown): Error {
       case Code.Unauthenticated:
         return new AuthenticationError(err.message)
       case Code.NotFound:
-        return new NotFoundError(err.message)
+        return new notFoundError(err.message)
       case Code.Unavailable:
         return formatSandboxTimeoutError(err.message)
       case Code.Canceled:
@@ -38,6 +42,10 @@ export function handleRpcError(err: unknown): Error {
   }
 
   return err as Error
+}
+
+export function handleFilesystemRpcError(err: unknown): Error {
+  return handleRpcError(err, FileNotFoundError)
 }
 
 function encode64(value: string): string {
