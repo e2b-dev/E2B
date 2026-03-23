@@ -7,7 +7,6 @@ import {
   SandboxError,
   InvalidArgumentError,
   NotFoundError,
-  FileNotFoundError,
   NotEnoughSpaceError,
   SandboxNotFoundError,
   formatSandboxTimeoutError,
@@ -19,10 +18,30 @@ import { WatchDirResponse } from './filesystem/filesystem_pb'
 
 type ApiError = { message?: string } | string
 
-export async function handleEnvdApiError(res: {
-  error?: ApiError
-  response: Response
-}) {
+const DEFAULT_ERROR_MAP: Record<number, (message: string) => Error> = {
+  400: (message) => new InvalidArgumentError(message),
+  401: (message) => new AuthenticationError(message),
+  404: (message) => new NotFoundError(message),
+  429: (message) =>
+    new SandboxError(`${message}: The requests are being rate limited.`),
+  502: (message) => formatSandboxTimeoutError(message),
+  507: (message) => new NotEnoughSpaceError(message),
+}
+
+/**
+ * Handles errors from envd API responses by mapping HTTP status codes to specific error types.
+ *
+ * @param res - The API response object containing an optional error and the raw `Response`.
+ * @param errorMap - Optional map of HTTP status codes to error factory functions that override the defaults.
+ * @returns The corresponding `Error` instance if an error is present, or `undefined` if the response is successful.
+ */
+export async function handleEnvdApiError(
+  res: {
+    error?: ApiError
+    response: Response
+  },
+  errorMap?: Record<number, (message: string) => Error>
+) {
   if (!res.error) {
     return
   }
@@ -32,35 +51,15 @@ export async function handleEnvdApiError(res: {
       ? res.error
       : res.error?.message || (await res.response.text())
 
-  switch (res.response.status) {
-    case 400:
-      return new InvalidArgumentError(message)
-    case 401:
-      return new AuthenticationError(message)
-    case 404:
-      return new NotFoundError(message)
-    case 429:
-      return new SandboxError(
-        `${res.response.status}: ${message}: The requests are being rate limited.`
-      )
-    case 502:
-      return formatSandboxTimeoutError(message)
-    case 507:
-      return new NotEnoughSpaceError(message)
-    default:
-      return new SandboxError(`${res.response.status}: ${message}`)
+  if (errorMap && res.response.status in errorMap) {
+    return errorMap[res.response.status]?.(message)
   }
-}
 
-export async function handleFilesystemApiError(res: {
-  error?: ApiError
-  response: Response
-}) {
-  const err = await handleEnvdApiError(res)
-  if (err instanceof NotFoundError) {
-    return new FileNotFoundError(err.message, err.stack)
+  if (res.response.status in DEFAULT_ERROR_MAP) {
+    return DEFAULT_ERROR_MAP[res.response.status]?.(message)
   }
-  return err
+
+  return new SandboxError(`${res.response.status}: ${message}`)
 }
 
 export async function handleProcessStartEvent(

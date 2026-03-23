@@ -14,10 +14,7 @@ import {
   Username,
 } from '../../connectionConfig'
 
-import {
-  handleFilesystemApiError,
-  handleWatchDirStartEvent,
-} from '../../envd/api'
+import { handleEnvdApiError, handleWatchDirStartEvent } from '../../envd/api'
 import { authenticationHeader, handleRpcError } from '../../envd/rpc'
 
 import { EnvdApiClient } from '../../envd/api'
@@ -37,17 +34,29 @@ import {
 import {
   FileNotFoundError,
   InvalidArgumentError,
-  NotFoundError,
   TemplateError,
 } from '../../errors'
 import { toBlob } from '../../utils'
 
+const FILESYSTEM_HTTP_ERROR_MAP: Record<number, (message: string) => Error> = {
+  404: (message: string) => new FileNotFoundError(message),
+}
+
+const FILESYSTEM_RPC_ERROR_MAP: Partial<
+  Record<Code, (message: string) => Error>
+> = {
+  [Code.NotFound]: (message: string) => new FileNotFoundError(message),
+}
+
 function handleFilesystemRpcError(err: unknown): Error {
-  const mapped = handleRpcError(err)
-  if (mapped instanceof NotFoundError) {
-    return new FileNotFoundError(mapped.message, mapped.stack)
-  }
-  return mapped
+  return handleRpcError(err, FILESYSTEM_RPC_ERROR_MAP)
+}
+
+function handleFilesystemEnvdApiError(res: {
+  error?: { message?: string } | string
+  response: Response
+}) {
+  return handleEnvdApiError(res, FILESYSTEM_HTTP_ERROR_MAP)
 }
 
 /**
@@ -286,7 +295,7 @@ export class Filesystem {
       signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
     })
 
-    const err = await handleFilesystemApiError(res)
+    const err = await handleFilesystemEnvdApiError(res)
     if (err) {
       throw err
     }
@@ -397,7 +406,7 @@ export class Filesystem {
       body: {},
     })
 
-    const err = await handleFilesystemApiError(res)
+    const err = await handleFilesystemEnvdApiError(res)
     if (err) {
       throw err
     }
