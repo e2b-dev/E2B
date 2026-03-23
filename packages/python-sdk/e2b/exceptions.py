@@ -58,6 +58,10 @@ class NotEnoughSpaceException(SandboxException):
 class NotFoundException(SandboxException):
     """
     Raised when a resource is not found.
+
+    .. deprecated::
+        Use :class:`FileNotFoundException` or :class:`SandboxNotFoundException` instead.
+        This class will be removed in the next major version.
     """
 
     pass

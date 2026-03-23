@@ -60,6 +60,8 @@ export class NotEnoughSpaceError extends SandboxError {
 
 /**
  * Thrown when a resource is not found.
+ *
+ * @deprecated Use {@link FileNotFoundError} or {@link SandboxNotFoundError} instead. This class will be removed in the next major version.
  */
 export class NotFoundError extends SandboxError {
   constructor(message: string, stackTrace?: string) {
