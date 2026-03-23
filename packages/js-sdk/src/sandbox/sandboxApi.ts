@@ -5,7 +5,7 @@ import {
   DEFAULT_SANDBOX_TIMEOUT_MS,
 } from '../connectionConfig'
 import { compareVersions } from 'compare-versions'
-import { NotFoundError, TemplateError } from '../errors'
+import { SandboxNotFoundError, TemplateError } from '../errors'
 import { timeoutToSeconds } from '../utils'
 import type { McpServer as BaseMcpServer } from './mcp'
 
@@ -512,7 +512,7 @@ export class SandboxApi {
     })
 
     if (res.error?.code === 404) {
-      throw new NotFoundError(`Sandbox ${sandboxId} not found`)
+      throw new SandboxNotFoundError(`Sandbox ${sandboxId} not found`)
     }
 
     const err = handleApiError(res)
@@ -535,7 +535,7 @@ export class SandboxApi {
     })
 
     if (res.error?.code === 404) {
-      throw new NotFoundError(`Sandbox ${sandboxId} not found`)
+      throw new SandboxNotFoundError(`Sandbox ${sandboxId} not found`)
     }
 
     const err = handleApiError(res)
@@ -588,7 +588,7 @@ export class SandboxApi {
     })
 
     if (res.error?.code === 404) {
-      throw new NotFoundError(`Sandbox ${sandboxId} not found`)
+      throw new SandboxNotFoundError(`Sandbox ${sandboxId} not found`)
     }
 
     if (res.error?.code === 409) {
@@ -644,7 +644,7 @@ export class SandboxApi {
     })
 
     if (res.error?.code === 404) {
-      throw new NotFoundError(`Sandbox ${sandboxId} not found`)
+      throw new SandboxNotFoundError(`Sandbox ${sandboxId} not found`)
     }
 
     const err = handleApiError(res)
@@ -782,7 +782,7 @@ export class SandboxApi {
     })
 
     if (res.error?.code === 404) {
-      throw new NotFoundError(`Paused sandbox ${sandboxId} not found`)
+      throw new SandboxNotFoundError(`Paused sandbox ${sandboxId} not found`)
     }
 
     const err = handleApiError(res)

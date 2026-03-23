@@ -16,7 +16,7 @@ from e2b.envd.api import ENVD_API_FILES_ROUTE, ahandle_envd_api_exception
 from e2b.envd.filesystem import filesystem_connect, filesystem_pb2
 from e2b.envd.rpc import authentication_header, handle_rpc_exception
 from e2b.envd.versions import ENVD_VERSION_RECURSIVE_WATCH, ENVD_DEFAULT_USER
-from e2b.exceptions import SandboxException, TemplateException, InvalidArgumentException
+from e2b.exceptions import FileNotFoundException, NotFoundException, SandboxException, TemplateException, InvalidArgumentException
 from e2b.sandbox.filesystem.filesystem import (
     WriteInfo,
     EntryInfo,
@@ -25,6 +25,20 @@ from e2b.sandbox.filesystem.filesystem import (
 from e2b.sandbox.filesystem.watch_handle import FilesystemEvent
 from e2b.sandbox_async.filesystem.watch_handle import AsyncWatchHandle
 from e2b.sandbox_async.utils import OutputHandler
+
+
+def _handle_filesystem_rpc_exception(e: Exception) -> Exception:
+    mapped = handle_rpc_exception(e)
+    if isinstance(mapped, NotFoundException) and not isinstance(mapped, FileNotFoundException):
+        return FileNotFoundException(str(mapped))
+    return mapped
+
+
+async def _ahandle_filesystem_envd_api_exception(r):
+    err = await ahandle_envd_api_exception(r)
+    if isinstance(err, NotFoundException) and not isinstance(err, FileNotFoundException):
+        return FileNotFoundException(str(err))
+    return err
 
 
 class Filesystem:
@@ -136,7 +150,7 @@ class Filesystem:
             timeout=self._connection_config.get_request_timeout(request_timeout),
         )
 
-        err = await ahandle_envd_api_exception(r)
+        err = await _ahandle_filesystem_envd_api_exception(r)
         if err:
             raise err
 
@@ -234,7 +248,7 @@ class Filesystem:
             timeout=self._connection_config.get_request_timeout(request_timeout),
         )
 
-        err = await ahandle_envd_api_exception(r)
+        err = await _ahandle_filesystem_envd_api_exception(r)
         if err:
             raise err
 
@@ -301,7 +315,7 @@ class Filesystem:
 
             return entries
         except Exception as e:
-            raise handle_rpc_exception(e)
+            raise _handle_filesystem_rpc_exception(e)
 
     async def exists(
         self,
@@ -333,7 +347,7 @@ class Filesystem:
             if isinstance(e, connect.ConnectException):
                 if e.status == connect.Code.not_found:
                     return False
-            raise handle_rpc_exception(e)
+            raise _handle_filesystem_rpc_exception(e)
 
     async def get_info(
         self,
@@ -376,7 +390,7 @@ class Filesystem:
                 ),
             )
         except Exception as e:
-            raise handle_rpc_exception(e)
+            raise _handle_filesystem_rpc_exception(e)
 
     async def remove(
         self,
@@ -400,7 +414,7 @@ class Filesystem:
                 headers=authentication_header(self._envd_version, user),
             )
         except Exception as e:
-            raise handle_rpc_exception(e)
+            raise _handle_filesystem_rpc_exception(e)
 
     async def rename(
         self,
@@ -449,7 +463,7 @@ class Filesystem:
                 ),
             )
         except Exception as e:
-            raise handle_rpc_exception(e)
+            raise _handle_filesystem_rpc_exception(e)
 
     async def make_dir(
         self,
@@ -480,7 +494,7 @@ class Filesystem:
             if isinstance(e, connect.ConnectException):
                 if e.status == connect.Code.already_exists:
                     return False
-            raise handle_rpc_exception(e)
+            raise _handle_filesystem_rpc_exception(e)
 
     async def watch_dir(
         self,
@@ -533,4 +547,4 @@ class Filesystem:
 
             return AsyncWatchHandle(events=events, on_event=on_event, on_exit=on_exit)
         except Exception as e:
-            raise handle_rpc_exception(e)
+            raise _handle_filesystem_rpc_exception(e)

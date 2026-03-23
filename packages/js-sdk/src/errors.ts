@@ -69,6 +69,26 @@ export class NotFoundError extends SandboxError {
 }
 
 /**
+ * Thrown when a file or directory is not found inside a sandbox.
+ */
+export class FileNotFoundError extends NotFoundError {
+  constructor(message: string, stackTrace?: string) {
+    super(message, stackTrace)
+    this.name = 'FileNotFoundError'
+  }
+}
+
+/**
+ * Thrown when a sandbox is not found (e.g. it doesn't exist or is no longer running).
+ */
+export class SandboxNotFoundError extends NotFoundError {
+  constructor(message: string, stackTrace?: string) {
+    super(message, stackTrace)
+    this.name = 'SandboxNotFoundError'
+  }
+}
+
+/**
  * Thrown when authentication fails.
  */
 export class AuthenticationError extends Error {

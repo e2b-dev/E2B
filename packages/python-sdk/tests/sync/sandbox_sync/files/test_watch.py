@@ -1,6 +1,6 @@
 import pytest
 
-from e2b import NotFoundException, FilesystemEventType, Sandbox, SandboxException
+from e2b import FileNotFoundException, FilesystemEventType, Sandbox, SandboxException
 
 
 def test_watch_directory_changes(sandbox: Sandbox):
@@ -108,7 +108,7 @@ def test_watch_recursive_directory_after_nested_folder_addition(sandbox: Sandbox
 def test_watch_non_existing_directory(sandbox: Sandbox):
     dirname = "non_existing_watch_dir"
 
-    with pytest.raises(NotFoundException):
+    with pytest.raises(FileNotFoundException):
         sandbox.files.watch_dir(dirname)
 
 

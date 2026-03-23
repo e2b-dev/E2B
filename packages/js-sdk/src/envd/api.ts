@@ -8,6 +8,7 @@ import {
   InvalidArgumentError,
   NotFoundError,
   NotEnoughSpaceError,
+  SandboxNotFoundError,
   formatSandboxTimeoutError,
   AuthenticationError,
 } from '../errors'
@@ -60,7 +61,7 @@ export async function handleProcessStartEvent(
   } catch (err) {
     if (err instanceof ConnectError) {
       if (err.code === Code.Unavailable) {
-        throw new NotFoundError('Sandbox is probably not running anymore')
+        throw new SandboxNotFoundError('Sandbox is probably not running anymore')
       }
     }
 
@@ -83,7 +84,7 @@ export async function handleWatchDirStartEvent(
   } catch (err) {
     if (err instanceof ConnectError) {
       if (err.code === Code.Unavailable) {
-        throw new NotFoundError('Sandbox is probably not running anymore')
+        throw new SandboxNotFoundError('Sandbox is probably not running anymore')
       }
     }
 
