@@ -7,6 +7,7 @@ import {
   SandboxError,
   InvalidArgumentError,
   NotFoundError,
+  FileNotFoundError,
   NotEnoughSpaceError,
   SandboxNotFoundError,
   formatSandboxTimeoutError,
@@ -51,6 +52,17 @@ export async function handleEnvdApiError(res: {
   }
 }
 
+export async function handleFilesystemApiError(res: {
+  error?: ApiError
+  response: Response
+}) {
+  const err = await handleEnvdApiError(res)
+  if (err instanceof NotFoundError) {
+    return new FileNotFoundError(err.message, err.stack)
+  }
+  return err
+}
+
 export async function handleProcessStartEvent(
   events: AsyncIterable<StartResponse | ConnectResponse>
 ) {
@@ -61,7 +73,9 @@ export async function handleProcessStartEvent(
   } catch (err) {
     if (err instanceof ConnectError) {
       if (err.code === Code.Unavailable) {
-        throw new SandboxNotFoundError('Sandbox is probably not running anymore')
+        throw new SandboxNotFoundError(
+          'Sandbox is probably not running anymore'
+        )
       }
     }
 
@@ -84,7 +98,9 @@ export async function handleWatchDirStartEvent(
   } catch (err) {
     if (err instanceof ConnectError) {
       if (err.code === Code.Unavailable) {
-        throw new SandboxNotFoundError('Sandbox is probably not running anymore')
+        throw new SandboxNotFoundError(
+          'Sandbox is probably not running anymore'
+        )
       }
     }
 

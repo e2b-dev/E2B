@@ -1,7 +1,11 @@
 import { expect, onTestFinished } from 'vitest'
 
 import { isDebug, sandboxTest } from '../../setup.js'
-import { FileNotFoundError, FilesystemEventType, SandboxError } from '../../../src'
+import {
+  FileNotFoundError,
+  FilesystemEventType,
+  SandboxError,
+} from '../../../src'
 
 sandboxTest('watch directory changes', async ({ sandbox }) => {
   const dirname = 'test_watch_dir'

@@ -24,7 +24,9 @@ sandboxTest('get info of a file', async ({ sandbox }) => {
 
 sandboxTest('get info of a file that does not exist', async ({ sandbox }) => {
   const filename = 'test_does_not_exist.txt'
-  await expect(sandbox.files.getInfo(filename)).rejects.toThrow(FileNotFoundError)
+  await expect(sandbox.files.getInfo(filename)).rejects.toThrow(
+    FileNotFoundError
+  )
 })
 
 sandboxTest('get info of a directory', async ({ sandbox }) => {
@@ -50,7 +52,9 @@ sandboxTest(
   async ({ sandbox }) => {
     const dirname = 'test_does_not_exist_dir'
 
-    await expect(sandbox.files.getInfo(dirname)).rejects.toThrow(FileNotFoundError)
+    await expect(sandbox.files.getInfo(dirname)).rejects.toThrow(
+      FileNotFoundError
+    )
   }
 )
 

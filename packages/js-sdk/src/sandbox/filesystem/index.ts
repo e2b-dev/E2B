@@ -41,21 +41,10 @@ import { toBlob } from '../../utils'
 
 function handleFilesystemRpcError(err: unknown): Error {
   const mapped = handleRpcError(err)
-  if (mapped instanceof NotFoundError && !(mapped instanceof FileNotFoundError)) {
+  if (mapped instanceof NotFoundError) {
     return new FileNotFoundError(mapped.message, mapped.stack)
   }
   return mapped
-}
-
-async function handleFilesystemApiError(res: {
-  error?: unknown
-  response: Response
-}) {
-  const err = await handleEnvdApiError(res)
-  if (err instanceof NotFoundError && !(err instanceof FileNotFoundError)) {
-    return new FileNotFoundError(err.message, err.stack)
-  }
-  return err
 }
 
 /**

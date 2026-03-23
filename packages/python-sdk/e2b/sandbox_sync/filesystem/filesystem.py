@@ -1,28 +1,33 @@
 from io import IOBase, TextIOBase
-from typing import IO, Iterator, List, Literal, Optional, overload, Union
+from typing import IO, Iterator, List, Literal, Optional, Union, overload
 
-from e2b.sandbox.filesystem.filesystem import WriteEntry
-
-import e2b_connect
 import httpcore
 import httpx
 from packaging.version import Version
 
-from e2b.envd.versions import ENVD_VERSION_RECURSIVE_WATCH, ENVD_DEFAULT_USER
-from e2b.exceptions import FileNotFoundException, NotFoundException, SandboxException, TemplateException, InvalidArgumentException
+import e2b_connect
 from e2b.connection_config import (
+    KEEPALIVE_PING_HEADER,
+    KEEPALIVE_PING_INTERVAL_SEC,
     ConnectionConfig,
     Username,
     default_username,
-    KEEPALIVE_PING_HEADER,
-    KEEPALIVE_PING_INTERVAL_SEC,
 )
 from e2b.envd.api import ENVD_API_FILES_ROUTE, handle_envd_api_exception
 from e2b.envd.filesystem import filesystem_connect, filesystem_pb2
 from e2b.envd.rpc import authentication_header, handle_rpc_exception
+from e2b.envd.versions import ENVD_DEFAULT_USER, ENVD_VERSION_RECURSIVE_WATCH
+from e2b.exceptions import (
+    FileNotFoundException,
+    InvalidArgumentException,
+    NotFoundException,
+    SandboxException,
+    TemplateException,
+)
 from e2b.sandbox.filesystem.filesystem import (
-    WriteInfo,
     EntryInfo,
+    WriteEntry,
+    WriteInfo,
     map_file_type,
 )
 from e2b.sandbox_sync.filesystem.watch_handle import WatchHandle
@@ -30,14 +35,14 @@ from e2b.sandbox_sync.filesystem.watch_handle import WatchHandle
 
 def _handle_filesystem_rpc_exception(e: Exception) -> Exception:
     mapped = handle_rpc_exception(e)
-    if isinstance(mapped, NotFoundException) and not isinstance(mapped, FileNotFoundException):
+    if isinstance(mapped, NotFoundException):
         return FileNotFoundException(str(mapped))
     return mapped
 
 
 def _handle_filesystem_envd_api_exception(r):
     err = handle_envd_api_exception(r)
-    if isinstance(err, NotFoundException) and not isinstance(err, FileNotFoundException):
+    if isinstance(err, NotFoundException):
         return FileNotFoundException(str(err))
     return err
 

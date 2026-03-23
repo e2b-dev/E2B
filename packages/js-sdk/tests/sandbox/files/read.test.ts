@@ -15,7 +15,9 @@ sandboxTest('read file', async ({ sandbox }) => {
 sandboxTest('read non-existing file', async ({ sandbox }) => {
   const filename = 'non_existing_file.txt'
 
-  await expect(sandbox.files.read(filename)).rejects.toThrowError(FileNotFoundError)
+  await expect(sandbox.files.read(filename)).rejects.toThrowError(
+    FileNotFoundError
+  )
 })
 
 sandboxTest('empty file', async ({ sandbox }) => {
