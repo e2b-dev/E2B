@@ -35,6 +35,7 @@ from .connection_config import (
 )
 from .exceptions import (
     AuthenticationException,
+    FileNotFoundException,
     GitAuthException,
     GitUpstreamException,
     BuildException,
@@ -43,6 +44,7 @@ from .exceptions import (
     NotEnoughSpaceException,
     NotFoundException,
     SandboxException,
+    SandboxNotFoundException,
     TemplateException,
     TimeoutException,
 )
@@ -122,6 +124,8 @@ __all__ = [
     "SandboxException",
     "TimeoutException",
     "NotFoundException",
+    "FileNotFoundException",
+    "SandboxNotFoundException",
     "AuthenticationException",
     "GitAuthException",
     "GitUpstreamException",

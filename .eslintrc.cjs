@@ -11,7 +11,7 @@ module.exports = {
     sourceType: 'module',
   },
   ignorePatterns: ['dist/', 'node_modules/', '*.gen.ts'],
-  plugins: ['@typescript-eslint', 'unused-imports', '@stylistic/ts'],
+  plugins: ['@typescript-eslint', 'unused-imports'],
   rules: {
     '@typescript-eslint/member-ordering': 'error',
     '@typescript-eslint/ban-ts-comment': 'off', // "move fast" mode
@@ -21,6 +21,6 @@ module.exports = {
     // No double quotes
     quotes: ['error', 'single', { avoidEscape: true }],
     // No extra semicolon
-    '@stylistic/ts/semi': ['error', 'never'],
+    semi: ['error', 'never'],
   },
 }

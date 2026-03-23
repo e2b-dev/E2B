@@ -1,5 +1,5 @@
 import pytest
-from e2b.exceptions import NotFoundException
+from e2b.exceptions import FileNotFoundException
 from e2b import Sandbox, FileType
 
 
@@ -24,7 +24,7 @@ def test_get_info_of_file(sandbox: Sandbox):
 def test_get_info_of_nonexistent_file(sandbox: Sandbox):
     filename = "test_does_not_exist.txt"
 
-    with pytest.raises(NotFoundException):
+    with pytest.raises(FileNotFoundException):
         sandbox.files.get_info(filename)
 
 
@@ -49,7 +49,7 @@ def test_get_info_of_directory(sandbox: Sandbox):
 def test_get_info_of_nonexistent_directory(sandbox: Sandbox):
     dirname = "test_does_not_exist_dir"
 
-    with pytest.raises(NotFoundException):
+    with pytest.raises(FileNotFoundException):
         sandbox.files.get_info(dirname)
 
 
