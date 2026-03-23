@@ -17,10 +17,10 @@ from e2b.connection_config import Username, default_username
 from e2b.envd.versions import ENVD_DEFAULT_USER
 
 _DEFAULT_RPC_ERROR_MAP: dict[Code, Callable[[str], Exception]] = {
-    Code.invalid_argument: lambda message: InvalidArgumentException(message),
-    Code.unauthenticated: lambda message: AuthenticationException(message),
-    Code.not_found: lambda message: NotFoundException(message),
-    Code.unavailable: lambda message: format_sandbox_timeout_exception(message),
+    Code.invalid_argument: InvalidArgumentException,
+    Code.unauthenticated: AuthenticationException,
+    Code.not_found: NotFoundException,
+    Code.unavailable: format_sandbox_timeout_exception,
     Code.resource_exhausted: lambda message: RateLimitException(
         f"{message}: Rate limit exceeded, please try again later."
     ),

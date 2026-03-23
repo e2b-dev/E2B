@@ -24,7 +24,7 @@ const DEFAULT_ERROR_MAP: Record<number, (message: string) => Error> = {
   404: (message) => new NotFoundError(message),
   429: (message) =>
     new SandboxError(`${message}: The requests are being rate limited.`),
-  502: (message) => formatSandboxTimeoutError(message),
+  502: formatSandboxTimeoutError,
   507: (message) => new NotEnoughSpaceError(message),
 }
 

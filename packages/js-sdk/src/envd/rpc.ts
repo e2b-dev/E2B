@@ -17,7 +17,7 @@ const DEFAULT_ERROR_MAP: Partial<Record<Code, (message: string) => Error>> = {
   [Code.InvalidArgument]: (message) => new InvalidArgumentError(message),
   [Code.Unauthenticated]: (message) => new AuthenticationError(message),
   [Code.NotFound]: (message) => new NotFoundError(message),
-  [Code.Unavailable]: (message) => formatSandboxTimeoutError(message),
+  [Code.Unavailable]: formatSandboxTimeoutError,
   [Code.Canceled]: (message) =>
     new TimeoutError(
       `${message}: This error is likely due to exceeding 'requestTimeoutMs'. You can pass the request timeout value as an option when making the request.`

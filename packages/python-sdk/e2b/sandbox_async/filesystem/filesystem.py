@@ -35,11 +35,11 @@ from e2b.sandbox_async.utils import OutputHandler
 from e2b_connect.client import Code
 
 _FILESYSTEM_RPC_ERROR_MAP = {
-    Code.not_found: lambda message: FileNotFoundException(message),
+    Code.not_found: FileNotFoundException,
 }
 
 _FILESYSTEM_HTTP_ERROR_MAP = {
-    404: lambda message: FileNotFoundException(message),
+    404: FileNotFoundException,
 }
 
 

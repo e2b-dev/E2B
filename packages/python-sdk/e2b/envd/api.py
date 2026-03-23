@@ -17,14 +17,14 @@ ENVD_API_FILES_ROUTE = "/files"
 ENVD_API_HEALTH_ROUTE = "/health"
 
 _DEFAULT_API_ERROR_MAP: dict[int, Callable[[str], Exception]] = {
-    400: lambda message: InvalidArgumentException(message),
-    401: lambda message: AuthenticationException(message),
-    404: lambda message: NotFoundException(message),
+    400: InvalidArgumentException,
+    401: AuthenticationException,
+    404: NotFoundException,
     429: lambda message: SandboxException(
         f"{message}: The requests are being rate limited."
     ),
-    502: lambda message: format_sandbox_timeout_exception(message),
-    507: lambda message: NotEnoughSpaceException(message),
+    502: format_sandbox_timeout_exception,
+    507: NotEnoughSpaceException,
 }
 
 
