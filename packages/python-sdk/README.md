@@ -54,8 +54,8 @@ with Sandbox.create() as sandbox:
     print(execution.text)  # outputs 2
 ```
 
-### 4. Check docs
+### 5. Check docs
 Visit [E2B documentation](https://e2b.dev/docs).
 
-### 5. E2B cookbook
+### 6. E2B cookbook
 Visit our [Cookbook](https://github.com/e2b-dev/e2b-cookbook/tree/main) to get inspired by examples with different LLMs and AI frameworks.
