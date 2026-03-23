@@ -67,8 +67,8 @@ importers:
         specifier: ^0.6.1
         version: 0.6.1
       e2b:
-        specifier: ^2.13.1
-        version: 2.13.1
+        specifier: ^2.15.0
+        version: 2.15.0
       handlebars:
         specifier: ^4.7.8
         version: 4.7.8
@@ -1644,8 +1644,8 @@ packages:
     resolution: {integrity: sha512-KIN/nDJBQRcXw0MLVhZE9iQHmG68qAVIBg9CqmUYjmQIhgij9U5MFvrqkUL5FbtyyzZuOeOt0zdeRe4UY7ct+A==}
     engines: {node: '>= 0.4'}
 
-  e2b@2.13.1:
-    resolution: {integrity: sha512-KaWM/WbSNOiZrId2bvQ3z0QBS5triv0INTCX+IJwRS81nZvhR7cNh7Ej/QCoBfFvjcxkSPrVVur1MYl7DMsArQ==}
+  e2b@2.15.0:
+    resolution: {integrity: sha512-wjdrWBB/H9Lmo1vpJaCKlpcNjHKzztAL+/0q4gv8mpD96rrE4eh45kIxOMbGwb0vFXaDjjL2d93CYGAZDfKlPg==}
     engines: {node: '>=20'}
 
   eastasianwidth@0.2.0:
@@ -3217,10 +3217,6 @@ packages:
 
   tar@7.5.11:
     resolution: {integrity: sha512-ChjMH33/KetonMTAtpYdgUFr0tbz69Fp2v7zWxQfYZX4g5ZN2nOBXm1R2xyA+lMIKrLKIoKAwFj93jE/avX9cQ==}
-    engines: {node: '>=18'}
-
-  tar@7.5.9:
-    resolution: {integrity: sha512-BTLcK0xsDh2+PUe9F6c2TlRp4zOOBMTkoQHQIWSIzI0R7KG46uEwq4OPk2W7bZcprBMsuaeFsqwYr7pjh6CuHg==}
     engines: {node: '>=18'}
 
   terser@5.46.0:
@@ -5167,7 +5163,7 @@ snapshots:
       es-errors: 1.3.0
       gopd: 1.2.0
 
-  e2b@2.13.1:
+  e2b@2.15.0:
     dependencies:
       '@bufbuild/protobuf': 2.6.2
       '@connectrpc/connect': 2.0.0-rc.3(@bufbuild/protobuf@2.6.2)
@@ -5178,7 +5174,7 @@ snapshots:
       glob: 11.1.0
       openapi-fetch: 0.14.1
       platform: 1.3.6
-      tar: 7.5.9
+      tar: 7.5.11
 
   eastasianwidth@0.2.0: {}
 
@@ -6882,14 +6878,6 @@ snapshots:
       '@isaacs/fs-minipass': 4.0.1
       chownr: 3.0.0
       minipass: 7.1.3
-      minizlib: 3.1.0
-      yallist: 5.0.0
-
-  tar@7.5.9:
-    dependencies:
-      '@isaacs/fs-minipass': 4.0.1
-      chownr: 3.0.0
-      minipass: 7.1.2
       minizlib: 3.1.0
       yallist: 5.0.0
 
