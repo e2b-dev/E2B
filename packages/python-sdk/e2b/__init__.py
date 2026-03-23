@@ -45,6 +45,7 @@ from .exceptions import (
     SandboxException,
     TemplateException,
     TimeoutException,
+    TimeoutType,
 )
 from .sandbox.commands.command_handle import (
     CommandExitException,
@@ -121,6 +122,7 @@ __all__ = [
     # Exceptions
     "SandboxException",
     "TimeoutException",
+    "TimeoutType",
     "NotFoundException",
     "AuthenticationException",
     "GitAuthException",

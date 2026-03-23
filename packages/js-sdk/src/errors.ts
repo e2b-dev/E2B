@@ -1,7 +1,31 @@
+/**
+ * The type of timeout that occurred.
+ *
+ * - `sandbox` — the sandbox itself timed out (e.g., idle timeout expired).
+ * - `request` — the HTTP request timed out (exceeded `requestTimeoutMs`).
+ * - `execution` — a long-running operation timed out (exceeded `timeoutMs` for command execution, watch, etc.).
+ */
+export enum TimeoutType {
+  /**
+   * The sandbox itself timed out (e.g., idle timeout expired).
+   */
+  SANDBOX = 'sandbox',
+  /**
+   * The HTTP request timed out (exceeded `requestTimeoutMs`).
+   */
+  REQUEST = 'request',
+  /**
+   * A long-running operation timed out (exceeded `timeoutMs` for command execution, watch, etc.).
+   */
+  EXECUTION = 'execution',
+}
+
 // This is the message for the sandbox timeout error when the response code is 502/Unavailable
 export function formatSandboxTimeoutError(message: string) {
   return new TimeoutError(
-    `${message}: This error is likely due to sandbox timeout. You can modify the sandbox timeout by passing 'timeoutMs' when starting the sandbox or calling '.setTimeout' on the sandbox with the desired timeout.`
+    `${message}: This error is likely due to sandbox timeout. You can modify the sandbox timeout by passing 'timeoutMs' when starting the sandbox or calling '.setTimeout' on the sandbox with the desired timeout.`,
+    undefined,
+    TimeoutType.SANDBOX
   )
 }
 
@@ -23,18 +47,26 @@ export class SandboxError extends Error {
 /**
  * Thrown when a timeout error occurs.
  *
- * The [unavailable] error type is caused by sandbox timeout.
+ * The {@link type} property indicates the kind of timeout:
  *
- * The [canceled] error type is caused by exceeding request timeout.
- *
- * The [deadline_exceeded] error type is caused by exceeding the timeout for command execution, watch, etc.
- *
- * The [unknown] error type is sometimes caused by the sandbox timeout when the request is not processed correctly.
+ * - {@link TimeoutType.SANDBOX} — the sandbox itself timed out (idle timeout, etc.).
+ * - {@link TimeoutType.REQUEST} — the HTTP request exceeded `requestTimeoutMs`.
+ * - {@link TimeoutType.EXECUTION} — a long-running operation exceeded its `timeoutMs`.
  */
 export class TimeoutError extends SandboxError {
-  constructor(message: string, stackTrace?: string) {
+  /**
+   * The type of timeout that occurred.
+   */
+  readonly type: TimeoutType
+
+  constructor(
+    message: string,
+    stackTrace?: string,
+    type: TimeoutType = TimeoutType.SANDBOX
+  ) {
     super(message, stackTrace)
     this.name = 'TimeoutError'
+    this.type = type
   }
 }
 

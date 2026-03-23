@@ -13,6 +13,7 @@ export {
   SandboxError,
   TemplateError,
   TimeoutError,
+  TimeoutType,
   RateLimitError,
   BuildError,
   FileUploadError,
