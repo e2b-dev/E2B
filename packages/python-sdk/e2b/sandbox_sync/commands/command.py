@@ -217,13 +217,17 @@ class Commands:
         # Default to `False`
         stdin = stdin or False
 
+        # For background commands, disable the stream timeout by default
+        # so the process remains reachable for connect(pid)
+        effective_timeout = 0 if background and timeout == 60 else timeout
+
         proc = self._start(
             cmd,
             envs,
             user,
             cwd,
             stdin,
-            timeout,
+            effective_timeout,
             request_timeout,
         )
 
