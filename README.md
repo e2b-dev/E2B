@@ -19,10 +19,7 @@
 <img width="100%" src="/readme-assets/preview.png" alt="Cover image">
 --->
 ## What is E2B?
-[E2B](https://www.e2b.dev/) is an open-source infrastructure that allows you to run AI-generated code in secure isolated sandboxes in the cloud. To start and control sandboxes, use our [JavaScript SDK](https://www.npmjs.com/package/@e2b/code-interpreter) or [Python SDK](https://pypi.org/project/e2b_code_interpreter).
-
-> [!NOTE]
-> This repository contains the core E2B SDK that's used in our main [E2B Code Interpreter SDK](https://github.com/e2b-dev/code-interpreter).
+[E2B](https://www.e2b.dev/) is an open-source infrastructure that allows you to run AI-generated code in secure isolated sandboxes in the cloud. To start and control sandboxes, use our [JavaScript SDK](https://www.npmjs.com/package/e2b) or [Python SDK](https://pypi.org/project/e2b).
 
 ## Run your first Sandbox
 
@@ -30,12 +27,12 @@
 
 JavaScript / TypeScript
 ```
-npm i @e2b/code-interpreter
+npm i e2b
 ```
 
 Python
 ```
-pip install e2b-code-interpreter
+pip install e2b
 ```
 
 ### 2. Get your E2B API key
@@ -44,29 +41,43 @@ pip install e2b-code-interpreter
 3. Set environment variable with your API key
 ```
 E2B_API_KEY=e2b_***
-```     
+```
 
-### 3. Execute code with code interpreter inside Sandbox
+### 3. Start a sandbox and run commands
 
 JavaScript / TypeScript
 ```ts
-import { Sandbox } from '@e2b/code-interpreter'
+import Sandbox from 'e2b'
 
 const sandbox = await Sandbox.create()
-await sandbox.runCode('x = 1')
-
-const execution = await sandbox.runCode('x+=1; x')
-console.log(execution.text)  // outputs 2
+const result = await sandbox.commands.run('echo "Hello from E2B!"')
+console.log(result.stdout) // Hello from E2B!
 ```
 
 Python
 ```py
-from e2b_code_interpreter import Sandbox
+from e2b import Sandbox
 
 with Sandbox.create() as sandbox:
-    sandbox.run_code("x = 1")
-    execution = sandbox.run_code("x+=1; x")
-    print(execution.text)  # outputs 2
+    result = sandbox.commands.run('echo "Hello from E2B!"')
+    print(result.stdout)  # Hello from E2B!
+```
+
+### 4. Code execution with Code Interpreter
+
+If you need to execute code with `runCode()`/`run_code()`, install the [Code Interpreter SDK](https://github.com/e2b-dev/code-interpreter):
+
+```
+npm i @e2b/code-interpreter  # JavaScript/TypeScript
+pip install e2b-code-interpreter  # Python
+```
+
+```ts
+import { Sandbox } from '@e2b/code-interpreter'
+
+const sandbox = await Sandbox.create()
+const execution = await sandbox.runCode('x = 1; x += 1; x')
+console.log(execution.text)  // outputs 2
 ```
 
 ### 4. Check docs
