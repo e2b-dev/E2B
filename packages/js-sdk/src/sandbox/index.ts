@@ -572,11 +572,11 @@ export class Sandbox extends SandboxApi {
   }
 
   /**
-   * Pause a sandbox by its ID.
+   * Pause this sandbox.
    *
    * @param opts connection options.
    *
-   * @returns sandbox ID that can be used to resume the sandbox.
+   * @returns true if the sandbox was paused successfully, false if it was already paused.
    *
    * @example
    * ```ts
@@ -585,14 +585,14 @@ export class Sandbox extends SandboxApi {
    * ```
    */
   async pause(opts?: ConnectionOpts): Promise<boolean> {
-    return await SandboxApi.pause(this.sandboxId, opts)
+    return await SandboxApi.pause(this.sandboxId, { ...this.connectionConfig, ...opts })
   }
 
   /**
    * @deprecated Use {@link Sandbox.pause} instead.
    */
   async betaPause(opts?: ConnectionOpts): Promise<boolean> {
-    return await SandboxApi.betaPause(this.sandboxId, opts)
+    return await SandboxApi.betaPause(this.sandboxId, { ...this.connectionConfig, ...opts })
   }
 
   /**
