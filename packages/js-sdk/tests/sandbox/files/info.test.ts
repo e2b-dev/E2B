@@ -1,6 +1,6 @@
 import { assert } from 'vitest'
 import { expect } from 'vitest'
-import { FileFileNotFoundError } from '../../../src/errors.js'
+import { FileNotFoundError } from '../../../src/errors.js'
 
 import { sandboxTest } from '../../setup.js'
 
