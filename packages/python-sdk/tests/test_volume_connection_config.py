@@ -7,7 +7,7 @@ def test_volume_api_url_defaults_correctly(monkeypatch):
     monkeypatch.delenv("E2B_DEBUG", raising=False)
 
     config = VolumeConnectionConfig()
-    assert config.api_url == "https://volumecontent.e2b.app"
+    assert config.api_url == "https://api.e2b.app"
 
 
 def test_volume_api_url_in_args():
@@ -34,7 +34,7 @@ def test_volume_api_url_debug_mode(monkeypatch):
     monkeypatch.setenv("E2B_DEBUG", "true")
 
     config = VolumeConnectionConfig()
-    assert config.api_url == "http://localhost:3000"
+    assert config.api_url == "http://localhost:8080"
 
 
 def test_volume_api_url_custom_domain(monkeypatch):
@@ -42,9 +42,9 @@ def test_volume_api_url_custom_domain(monkeypatch):
     monkeypatch.setenv("E2B_DOMAIN", "custom.com")
 
     config = VolumeConnectionConfig()
-    assert config.api_url == "https://volumecontent.custom.com"
+    assert config.api_url == "https://api.custom.com"
 
 
 def test_volume_api_url_custom_domain_in_args():
     config = VolumeConnectionConfig(domain="custom.com")
-    assert config.api_url == "https://volumecontent.custom.com"
+    assert config.api_url == "https://api.custom.com"
