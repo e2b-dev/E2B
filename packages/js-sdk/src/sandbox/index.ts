@@ -811,7 +811,7 @@ export class Sandbox extends SandboxApi {
     )
   }
 
-  private resolveApiOpts<T extends object>(opts?: T): ConnectionOpts & T {
+  private resolveApiOpts<T extends ConnectionOpts>(opts?: T): ConnectionOpts & T {
     return {
       ...this.connectionConfig,
       ...(opts ?? {}),

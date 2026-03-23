@@ -9,13 +9,11 @@ from e2b.connection_config import ConnectionConfig
 import e2b.sandbox_sync.main as sandbox_sync_main
 
 
-BASE_CONFIG = {
-    "api_key": "base-api-key",
-    "domain": "base.e2b.dev",
-    "request_timeout": 11,
-    "debug": False,
-    "headers": {"X-Test": "base"},
-}
+BASE_API_KEY = "base-api-key"
+BASE_DOMAIN = "base.e2b.dev"
+BASE_REQUEST_TIMEOUT = 11
+BASE_DEBUG = False
+BASE_HEADERS = {"X-Test": "base"}
 
 
 def create_sandbox(monkeypatch) -> Sandbox:
@@ -40,7 +38,13 @@ def create_sandbox(monkeypatch) -> Sandbox:
         envd_version=Version("0.2.4"),
         envd_access_token="tok",
         traffic_access_token="tok",
-        connection_config=ConnectionConfig(**BASE_CONFIG),
+        connection_config=ConnectionConfig(
+            api_key=BASE_API_KEY,
+            domain=BASE_DOMAIN,
+            request_timeout=BASE_REQUEST_TIMEOUT,
+            debug=BASE_DEBUG,
+            headers=BASE_HEADERS,
+        ),
     )
 
 
@@ -54,16 +58,11 @@ def test_pause_passes_connection_config_without_overrides(monkeypatch):
 
     mock_pause.assert_called_once()
     assert mock_pause.call_args.kwargs["sandbox_id"] == "sbx-test"
-    assert mock_pause.call_args.kwargs["api_key"] == BASE_CONFIG["api_key"]
-    assert mock_pause.call_args.kwargs["domain"] == BASE_CONFIG["domain"]
-    assert (
-        mock_pause.call_args.kwargs["request_timeout"] == BASE_CONFIG["request_timeout"]
-    )
-    assert mock_pause.call_args.kwargs["debug"] == BASE_CONFIG["debug"]
-    assert (
-        mock_pause.call_args.kwargs["headers"]["X-Test"]
-        == BASE_CONFIG["headers"]["X-Test"]
-    )
+    assert mock_pause.call_args.kwargs["api_key"] == BASE_API_KEY
+    assert mock_pause.call_args.kwargs["domain"] == BASE_DOMAIN
+    assert mock_pause.call_args.kwargs["request_timeout"] == BASE_REQUEST_TIMEOUT
+    assert mock_pause.call_args.kwargs["debug"] == BASE_DEBUG
+    assert mock_pause.call_args.kwargs["headers"]["X-Test"] == BASE_HEADERS["X-Test"]
 
 
 @pytest.mark.skip_debug()
@@ -80,12 +79,9 @@ def test_pause_applies_overrides(monkeypatch):
 
     mock_pause.assert_called_once()
     assert mock_pause.call_args.kwargs["sandbox_id"] == "sbx-test"
-    assert mock_pause.call_args.kwargs["api_key"] == BASE_CONFIG["api_key"]
+    assert mock_pause.call_args.kwargs["api_key"] == BASE_API_KEY
     assert mock_pause.call_args.kwargs["domain"] == "override.e2b.dev"
     assert mock_pause.call_args.kwargs["request_timeout"] == 20
-    assert mock_pause.call_args.kwargs["debug"] == BASE_CONFIG["debug"]
-    assert (
-        mock_pause.call_args.kwargs["headers"]["X-Test"]
-        == BASE_CONFIG["headers"]["X-Test"]
-    )
+    assert mock_pause.call_args.kwargs["debug"] == BASE_DEBUG
+    assert mock_pause.call_args.kwargs["headers"]["X-Test"] == BASE_HEADERS["X-Test"]
     assert mock_pause.call_args.kwargs["headers"]["X-Extra"] == "1"
