@@ -51,14 +51,17 @@ export async function handleEnvdApiError(
       ? res.error
       : res.error?.message || (await res.response.text())
 
+  // Check if a custom error mapping is provided for this error code
   if (errorMap && res.response.status in errorMap) {
     return errorMap[res.response.status]?.(message)
   }
 
+  // Check if there is a default error mapping for this error code
   if (res.response.status in DEFAULT_ERROR_MAP) {
     return DEFAULT_ERROR_MAP[res.response.status]?.(message)
   }
 
+  // Fallback to a generic SandboxError if no specific mapping is found
   return new SandboxError(`${res.response.status}: ${message}`)
 }
 

@@ -40,14 +40,17 @@ export function handleRpcError(
   errorMap?: Partial<Record<Code, (message: string) => Error>>
 ): Error {
   if (err instanceof ConnectError) {
+    // Check if a custom error mapping is provided for this error code
     if (errorMap && err.code in errorMap) {
       return errorMap[err.code]!(err.message)
     }
 
+    // Check if there is a default error mapping for this error code
     if (err.code in DEFAULT_ERROR_MAP) {
       return DEFAULT_ERROR_MAP[err.code]!(err.message)
     }
 
+    // Fallback to a generic SandboxError if no specific mapping is found
     return new SandboxError(`${err.code}: ${err.message}`)
   }
 
