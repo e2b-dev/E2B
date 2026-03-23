@@ -67,8 +67,8 @@ importers:
         specifier: ^0.6.1
         version: 0.6.1
       e2b:
-        specifier: ^2.15.0
-        version: 2.15.0
+        specifier: ^2.16.0
+        version: 2.16.0
       handlebars:
         specifier: ^4.7.8
         version: 4.7.8
@@ -1644,8 +1644,8 @@ packages:
     resolution: {integrity: sha512-KIN/nDJBQRcXw0MLVhZE9iQHmG68qAVIBg9CqmUYjmQIhgij9U5MFvrqkUL5FbtyyzZuOeOt0zdeRe4UY7ct+A==}
     engines: {node: '>= 0.4'}
 
-  e2b@2.15.0:
-    resolution: {integrity: sha512-wjdrWBB/H9Lmo1vpJaCKlpcNjHKzztAL+/0q4gv8mpD96rrE4eh45kIxOMbGwb0vFXaDjjL2d93CYGAZDfKlPg==}
+  e2b@2.16.0:
+    resolution: {integrity: sha512-ZQ+3fcvlTfHQ/0Al+KC/IvrVEI8OktFbKgOkAOHoJmD2gKZ6/umuf5szCbYIla0gW/pkfrMDzebH/s4yyK6jBQ==}
     engines: {node: '>=20'}
 
   eastasianwidth@0.2.0:
@@ -5163,7 +5163,7 @@ snapshots:
       es-errors: 1.3.0
       gopd: 1.2.0
 
-  e2b@2.15.0:
+  e2b@2.16.0:
     dependencies:
       '@bufbuild/protobuf': 2.6.2
       '@connectrpc/connect': 2.0.0-rc.3(@bufbuild/protobuf@2.6.2)
