@@ -31,8 +31,33 @@ import {
   ENVD_DEFAULT_USER,
   ENVD_VERSION_RECURSIVE_WATCH,
 } from '../../envd/versions'
-import { InvalidArgumentError, TemplateError } from '../../errors'
+import {
+  FileNotFoundError,
+  InvalidArgumentError,
+  TemplateError,
+} from '../../errors'
 import { toBlob } from '../../utils'
+
+const FILESYSTEM_HTTP_ERROR_MAP: Record<number, (message: string) => Error> = {
+  404: (message: string) => new FileNotFoundError(message),
+}
+
+const FILESYSTEM_RPC_ERROR_MAP: Partial<
+  Record<Code, (message: string) => Error>
+> = {
+  [Code.NotFound]: (message: string) => new FileNotFoundError(message),
+}
+
+function handleFilesystemRpcError(err: unknown): Error {
+  return handleRpcError(err, FILESYSTEM_RPC_ERROR_MAP)
+}
+
+function handleFilesystemEnvdApiError(res: {
+  error?: { message?: string } | string
+  response: Response
+}) {
+  return handleEnvdApiError(res, FILESYSTEM_HTTP_ERROR_MAP)
+}
 
 /**
  * Sandbox filesystem object information.
@@ -270,7 +295,7 @@ export class Filesystem {
       signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
     })
 
-    const err = await handleEnvdApiError(res)
+    const err = await handleFilesystemEnvdApiError(res)
     if (err) {
       throw err
     }
@@ -381,7 +406,7 @@ export class Filesystem {
       body: {},
     })
 
-    const err = await handleEnvdApiError(res)
+    const err = await handleFilesystemEnvdApiError(res)
     if (err) {
       throw err
     }
@@ -464,7 +489,7 @@ export class Filesystem {
 
       return entries
     } catch (err) {
-      throw handleRpcError(err)
+      throw handleFilesystemRpcError(err)
     }
   }
 
@@ -494,7 +519,7 @@ export class Filesystem {
         }
       }
 
-      throw handleRpcError(err)
+      throw handleFilesystemRpcError(err)
     }
   }
 
@@ -542,7 +567,7 @@ export class Filesystem {
         symlinkTarget: entry.symlinkTarget,
       }
     } catch (err) {
-      throw handleRpcError(err)
+      throw handleFilesystemRpcError(err)
     }
   }
 
@@ -562,7 +587,7 @@ export class Filesystem {
         }
       )
     } catch (err) {
-      throw handleRpcError(err)
+      throw handleFilesystemRpcError(err)
     }
   }
 
@@ -592,7 +617,7 @@ export class Filesystem {
         }
       }
 
-      throw handleRpcError(err)
+      throw handleFilesystemRpcError(err)
     }
   }
 
@@ -636,7 +661,7 @@ export class Filesystem {
         symlinkTarget: res.entry.symlinkTarget,
       }
     } catch (err) {
-      throw handleRpcError(err)
+      throw handleFilesystemRpcError(err)
     }
   }
 
@@ -705,7 +730,7 @@ export class Filesystem {
         opts?.onExit
       )
     } catch (err) {
-      throw handleRpcError(err)
+      throw handleFilesystemRpcError(err)
     }
   }
 }

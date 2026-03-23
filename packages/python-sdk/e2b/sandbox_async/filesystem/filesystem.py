@@ -1,30 +1,54 @@
+from io import IOBase, TextIOBase
+from typing import IO, AsyncIterator, List, Literal, Optional, Union, overload
+
 import httpcore
 import httpx
-from io import IOBase, TextIOBase
 from packaging.version import Version
-from typing import AsyncIterator, IO, List, Literal, Optional, overload, Union
-from e2b.sandbox.filesystem.filesystem import WriteEntry
+
 import e2b_connect as connect
 from e2b.connection_config import (
+    KEEPALIVE_PING_HEADER,
+    KEEPALIVE_PING_INTERVAL_SEC,
     ConnectionConfig,
     Username,
     default_username,
-    KEEPALIVE_PING_HEADER,
-    KEEPALIVE_PING_INTERVAL_SEC,
 )
 from e2b.envd.api import ENVD_API_FILES_ROUTE, ahandle_envd_api_exception
 from e2b.envd.filesystem import filesystem_connect, filesystem_pb2
 from e2b.envd.rpc import authentication_header, handle_rpc_exception
-from e2b.envd.versions import ENVD_VERSION_RECURSIVE_WATCH, ENVD_DEFAULT_USER
-from e2b.exceptions import SandboxException, TemplateException, InvalidArgumentException
+from e2b.envd.versions import ENVD_DEFAULT_USER, ENVD_VERSION_RECURSIVE_WATCH
+from e2b.exceptions import (
+    FileNotFoundException,
+    InvalidArgumentException,
+    SandboxException,
+    TemplateException,
+)
 from e2b.sandbox.filesystem.filesystem import (
-    WriteInfo,
     EntryInfo,
+    WriteEntry,
+    WriteInfo,
     map_file_type,
 )
 from e2b.sandbox.filesystem.watch_handle import FilesystemEvent
 from e2b.sandbox_async.filesystem.watch_handle import AsyncWatchHandle
 from e2b.sandbox_async.utils import OutputHandler
+from e2b_connect.client import Code
+
+_FILESYSTEM_RPC_ERROR_MAP = {
+    Code.not_found: FileNotFoundException,
+}
+
+_FILESYSTEM_HTTP_ERROR_MAP = {
+    404: FileNotFoundException,
+}
+
+
+def _handle_filesystem_rpc_exception(e: Exception) -> Exception:
+    return handle_rpc_exception(e, _FILESYSTEM_RPC_ERROR_MAP)
+
+
+async def _ahandle_filesystem_envd_api_exception(r):
+    return await ahandle_envd_api_exception(r, _FILESYSTEM_HTTP_ERROR_MAP)
 
 
 class Filesystem:
@@ -136,7 +160,7 @@ class Filesystem:
             timeout=self._connection_config.get_request_timeout(request_timeout),
         )
 
-        err = await ahandle_envd_api_exception(r)
+        err = await _ahandle_filesystem_envd_api_exception(r)
         if err:
             raise err
 
@@ -234,7 +258,7 @@ class Filesystem:
             timeout=self._connection_config.get_request_timeout(request_timeout),
         )
 
-        err = await ahandle_envd_api_exception(r)
+        err = await _ahandle_filesystem_envd_api_exception(r)
         if err:
             raise err
 
@@ -301,7 +325,7 @@ class Filesystem:
 
             return entries
         except Exception as e:
-            raise handle_rpc_exception(e)
+            raise _handle_filesystem_rpc_exception(e)
 
     async def exists(
         self,
@@ -333,7 +357,7 @@ class Filesystem:
             if isinstance(e, connect.ConnectException):
                 if e.status == connect.Code.not_found:
                     return False
-            raise handle_rpc_exception(e)
+            raise _handle_filesystem_rpc_exception(e)
 
     async def get_info(
         self,
@@ -376,7 +400,7 @@ class Filesystem:
                 ),
             )
         except Exception as e:
-            raise handle_rpc_exception(e)
+            raise _handle_filesystem_rpc_exception(e)
 
     async def remove(
         self,
@@ -400,7 +424,7 @@ class Filesystem:
                 headers=authentication_header(self._envd_version, user),
             )
         except Exception as e:
-            raise handle_rpc_exception(e)
+            raise _handle_filesystem_rpc_exception(e)
 
     async def rename(
         self,
@@ -449,7 +473,7 @@ class Filesystem:
                 ),
             )
         except Exception as e:
-            raise handle_rpc_exception(e)
+            raise _handle_filesystem_rpc_exception(e)
 
     async def make_dir(
         self,
@@ -480,7 +504,7 @@ class Filesystem:
             if isinstance(e, connect.ConnectException):
                 if e.status == connect.Code.already_exists:
                     return False
-            raise handle_rpc_exception(e)
+            raise _handle_filesystem_rpc_exception(e)
 
     async def watch_dir(
         self,
@@ -533,4 +557,4 @@ class Filesystem:
 
             return AsyncWatchHandle(events=events, on_event=on_event, on_exit=on_exit)
         except Exception as e:
-            raise handle_rpc_exception(e)
+            raise _handle_filesystem_rpc_exception(e)

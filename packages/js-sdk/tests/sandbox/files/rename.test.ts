@@ -1,6 +1,6 @@
 import { assert, expect } from 'vitest'
 
-import { NotFoundError } from '../../../src'
+import { FileNotFoundError } from '../../../src'
 import { sandboxTest } from '../../setup.js'
 
 sandboxTest('rename file', async ({ sandbox }) => {
@@ -28,5 +28,5 @@ sandboxTest('rename non-existing file', async ({ sandbox }) => {
 
   await expect(
     sandbox.files.rename(oldFilename, newFilename)
-  ).rejects.toThrowError(NotFoundError)
+  ).rejects.toThrowError(FileNotFoundError)
 })
