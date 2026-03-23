@@ -20,7 +20,6 @@ from e2b.envd.versions import ENVD_DEFAULT_USER, ENVD_VERSION_RECURSIVE_WATCH
 from e2b.exceptions import (
     FileNotFoundException,
     InvalidArgumentException,
-    NotFoundException,
     SandboxException,
     TemplateException,
 )
@@ -33,20 +32,23 @@ from e2b.sandbox.filesystem.filesystem import (
 from e2b.sandbox.filesystem.watch_handle import FilesystemEvent
 from e2b.sandbox_async.filesystem.watch_handle import AsyncWatchHandle
 from e2b.sandbox_async.utils import OutputHandler
+from e2b_connect.client import Code
+
+_FILESYSTEM_RPC_ERROR_MAP = {
+    Code.not_found: lambda message: FileNotFoundException(message),
+}
+
+_FILESYSTEM_HTTP_ERROR_MAP = {
+    404: lambda message: FileNotFoundException(message),
+}
 
 
 def _handle_filesystem_rpc_exception(e: Exception) -> Exception:
-    mapped = handle_rpc_exception(e)
-    if isinstance(mapped, NotFoundException):
-        return FileNotFoundException(str(mapped))
-    return mapped
+    return handle_rpc_exception(e, _FILESYSTEM_RPC_ERROR_MAP)
 
 
 async def _ahandle_filesystem_envd_api_exception(r):
-    err = await ahandle_envd_api_exception(r)
-    if isinstance(err, NotFoundException):
-        return FileNotFoundException(str(err))
-    return err
+    return await ahandle_envd_api_exception(r, _FILESYSTEM_HTTP_ERROR_MAP)
 
 
 class Filesystem:

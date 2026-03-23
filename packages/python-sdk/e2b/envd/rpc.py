@@ -1,6 +1,6 @@
 import base64
 
-from typing import Optional
+from typing import Callable, Optional
 from packaging.version import Version
 from e2b_connect.client import Code, ConnectException
 
@@ -16,31 +16,41 @@ from e2b.exceptions import (
 from e2b.connection_config import Username, default_username
 from e2b.envd.versions import ENVD_DEFAULT_USER
 
+_DEFAULT_RPC_ERROR_MAP: dict[Code, Callable[[str], Exception]] = {
+    Code.invalid_argument: lambda message: InvalidArgumentException(message),
+    Code.unauthenticated: lambda message: AuthenticationException(message),
+    Code.not_found: lambda message: NotFoundException(message),
+    Code.unavailable: lambda message: format_sandbox_timeout_exception(message),
+    Code.resource_exhausted: lambda message: RateLimitException(
+        f"{message}: Rate limit exceeded, please try again later."
+    ),
+    Code.canceled: lambda message: TimeoutException(
+        f"{message}: This error is likely due to exceeding 'request_timeout'. You can pass the request timeout value as an option when making the request."
+    ),
+    Code.deadline_exceeded: lambda message: TimeoutException(
+        f"{message}: This error is likely due to exceeding 'timeout' — the total time a long running request (like process or directory watch) can be active. It can be modified by passing 'timeout' when making the request. Use '0' to disable the timeout."
+    ),
+}
 
-def handle_rpc_exception(e: Exception):
+
+def handle_rpc_exception(
+    e: Exception,
+    error_map: Optional[dict[Code, Callable[[str], Exception]]] = None,
+):
+    """Handle errors from envd RPC calls by mapping gRPC status codes to specific exception types.
+
+    :param e: The caught exception, expected to be a ``ConnectException``.
+    :param error_map: Optional map of gRPC codes to exception factories that override the defaults.
+    :return: The corresponding exception, or the original exception if not a ``ConnectException``.
+    """
     if isinstance(e, ConnectException):
-        if e.status == Code.invalid_argument:
-            return InvalidArgumentException(e.message)
-        elif e.status == Code.unauthenticated:
-            return AuthenticationException(e.message)
-        elif e.status == Code.not_found:
-            return NotFoundException(e.message)
-        elif e.status == Code.unavailable:
-            return format_sandbox_timeout_exception(e.message)
-        elif e.status == Code.resource_exhausted:
-            return RateLimitException(
-                f"{e.message}: Rate limit exceeded, please try again later."
-            )
-        elif e.status == Code.canceled:
-            return TimeoutException(
-                f"{e.message}: This error is likely due to exceeding 'request_timeout'. You can pass the request timeout value as an option when making the request."
-            )
-        elif e.status == Code.deadline_exceeded:
-            return TimeoutException(
-                f"{e.message}: This error is likely due to exceeding 'timeout' — the total time a long running request (like process or directory watch) can be active. It can be modified by passing 'timeout' when making the request. Use '0' to disable the timeout."
-            )
-        else:
-            return SandboxException(f"{e.status}: {e.message}")
+        if error_map and e.status in error_map:
+            return error_map[e.status](e.message)
+
+        if e.status in _DEFAULT_RPC_ERROR_MAP:
+            return _DEFAULT_RPC_ERROR_MAP[e.status](e.message)
+
+        return SandboxException(f"{e.status}: {e.message}")
     else:
         return e
 
