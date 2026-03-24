@@ -5,7 +5,7 @@ import {
   DEFAULT_SANDBOX_TIMEOUT_MS,
 } from '../connectionConfig'
 import { compareVersions } from 'compare-versions'
-import { NotFoundError, TemplateError } from '../errors'
+import { SandboxNotFoundError, TemplateError } from '../errors'
 import { timeoutToSeconds } from '../utils'
 import type { McpServer as BaseMcpServer } from './mcp'
 
@@ -77,6 +77,18 @@ export type SandboxLifecycle = {
    * Can be `true` only when `onTimeout` is `pause`.
    */
   autoResume?: boolean
+}
+
+export type SandboxInfoLifecycle = {
+  /**
+   * Action to take when sandbox timeout is reached.
+   */
+  onTimeout: 'pause' | 'kill'
+
+  /**
+   * Whether the sandbox can auto-resume.
+   */
+  autoResume: boolean
 }
 
 /**
@@ -310,6 +322,21 @@ export interface SandboxInfo {
    * Envd version.
    */
   envdVersion: string
+
+  /**
+   * Whether internet access was explicitly enabled or disabled for the sandbox.
+   */
+  allowInternetAccess?: boolean | undefined
+
+  /**
+   * Sandbox network configuration.
+   */
+  network?: SandboxNetworkOpts
+
+  /**
+   * Sandbox lifecycle configuration.
+   */
+  lifecycle?: SandboxInfoLifecycle
 }
 
 /**
@@ -512,7 +539,7 @@ export class SandboxApi {
     })
 
     if (res.error?.code === 404) {
-      throw new NotFoundError(`Sandbox ${sandboxId} not found`)
+      throw new SandboxNotFoundError(`Sandbox ${sandboxId} not found`)
     }
 
     const err = handleApiError(res)
@@ -535,7 +562,7 @@ export class SandboxApi {
     })
 
     if (res.error?.code === 404) {
-      throw new NotFoundError(`Sandbox ${sandboxId} not found`)
+      throw new SandboxNotFoundError(`Sandbox ${sandboxId} not found`)
     }
 
     const err = handleApiError(res)
@@ -552,6 +579,7 @@ export class SandboxApi {
       templateId: res.data.templateID,
       ...(res.data.alias && { name: res.data.alias }),
       metadata: res.data.metadata ?? {},
+      allowInternetAccess: res.data.allowInternetAccess ?? undefined,
       envdVersion: res.data.envdVersion,
       envdAccessToken: res.data.envdAccessToken,
       startedAt: new Date(res.data.startedAt),
@@ -559,6 +587,20 @@ export class SandboxApi {
       state: res.data.state,
       cpuCount: res.data.cpuCount,
       memoryMB: res.data.memoryMB,
+      network: res.data.network
+        ? {
+            allowOut: res.data.network.allowOut,
+            denyOut: res.data.network.denyOut,
+            allowPublicTraffic: res.data.network.allowPublicTraffic,
+            maskRequestHost: res.data.network.maskRequestHost,
+          }
+        : undefined,
+      lifecycle: res.data.lifecycle
+        ? {
+            onTimeout: res.data.lifecycle.onTimeout,
+            autoResume: res.data.lifecycle.autoResume,
+          }
+        : undefined,
       sandboxDomain: res.data.domain || undefined,
     }
   }
@@ -588,7 +630,7 @@ export class SandboxApi {
     })
 
     if (res.error?.code === 404) {
-      throw new NotFoundError(`Sandbox ${sandboxId} not found`)
+      throw new SandboxNotFoundError(`Sandbox ${sandboxId} not found`)
     }
 
     if (res.error?.code === 409) {
@@ -644,7 +686,7 @@ export class SandboxApi {
     })
 
     if (res.error?.code === 404) {
-      throw new NotFoundError(`Sandbox ${sandboxId} not found`)
+      throw new SandboxNotFoundError(`Sandbox ${sandboxId} not found`)
     }
 
     const err = handleApiError(res)
@@ -782,7 +824,7 @@ export class SandboxApi {
     })
 
     if (res.error?.code === 404) {
-      throw new NotFoundError(`Paused sandbox ${sandboxId} not found`)
+      throw new SandboxNotFoundError(`Paused sandbox ${sandboxId} not found`)
     }
 
     const err = handleApiError(res)

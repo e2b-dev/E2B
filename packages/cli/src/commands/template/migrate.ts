@@ -66,15 +66,15 @@ async function migrateToLanguage(
     parsedTemplate = baseTemplate.setReadyCmd(config.ready_cmd)
   }
 
-  const alias = config.template_name || config.template_id
-  if (!alias) {
+  const name = config.template_name || config.template_id
+  if (!name) {
     throw new Error('Template name or ID is required')
   }
 
   // Generate code for the target language using shared functionality
   await generateAndWriteTemplateFiles(
     root,
-    alias,
+    name,
     language,
     parsedTemplate,
     config.cpu_count,

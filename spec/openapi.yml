@@ -297,6 +297,26 @@ components:
         enabled:
           $ref: "#/components/schemas/SandboxAutoResumeEnabled"
 
+    SandboxOnTimeout:
+      type: string
+      description: Action taken when the sandbox times out.
+      enum:
+        - kill
+        - pause
+
+    SandboxLifecycle:
+      type: object
+      description: Sandbox lifecycle policy returned by sandbox info.
+      required:
+        - autoResume
+        - onTimeout
+      properties:
+        autoResume:
+          type: boolean
+          description: Whether the sandbox can auto-resume.
+        onTimeout:
+          $ref: "#/components/schemas/SandboxOnTimeout"
+
     SandboxLog:
       description: Log entry with timestamp and line
       required:
@@ -491,6 +511,10 @@ components:
         envdAccessToken:
           type: string
           description: Access token used for envd communication
+        allowInternetAccess:
+          type: boolean
+          nullable: true
+          description: Whether internet access was explicitly enabled or disabled for the sandbox. Null means it was not explicitly set.
         domain:
           type: string
           nullable: true
@@ -505,6 +529,10 @@ components:
           $ref: "#/components/schemas/SandboxMetadata"
         state:
           $ref: "#/components/schemas/SandboxState"
+        network:
+          $ref: "#/components/schemas/SandboxNetworkConfig"
+        lifecycle:
+          $ref: "#/components/schemas/SandboxLifecycle"
         volumeMounts:
           type: array
           items:
