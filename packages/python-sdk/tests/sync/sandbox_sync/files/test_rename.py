@@ -1,5 +1,5 @@
 import pytest
-from e2b import FileNotFoundException, Sandbox
+from e2b import NotFoundException, Sandbox
 
 
 def test_rename_file(sandbox: Sandbox):
@@ -24,5 +24,5 @@ def test_rename_non_existing_file(sandbox):
     old_filename = "non_existing_file.txt"
     new_filename = "new_non_existing_file.txt"
 
-    with pytest.raises(FileNotFoundException):
+    with pytest.raises(NotFoundException):
         sandbox.files.rename(old_filename, new_filename)

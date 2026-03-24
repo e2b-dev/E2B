@@ -1,8 +1,6 @@
 import httpx
 import json
 
-from typing import Callable, Optional
-
 from e2b.exceptions import (
     SandboxException,
     NotFoundException,
@@ -16,17 +14,6 @@ from e2b.exceptions import (
 ENVD_API_FILES_ROUTE = "/files"
 ENVD_API_HEALTH_ROUTE = "/health"
 
-_DEFAULT_API_ERROR_MAP: dict[int, Callable[[str], Exception]] = {
-    400: InvalidArgumentException,
-    401: AuthenticationException,
-    404: NotFoundException,
-    429: lambda message: SandboxException(
-        f"{message}: The requests are being rate limited."
-    ),
-    502: format_sandbox_timeout_exception,
-    507: NotEnoughSpaceException,
-}
-
 
 def get_message(e: httpx.Response) -> str:
     try:
@@ -37,53 +24,36 @@ def get_message(e: httpx.Response) -> str:
     return message
 
 
-def handle_envd_api_exception(
-    res: httpx.Response,
-    error_map: Optional[dict[int, Callable[[str], Exception]]] = None,
-):
-    """Handle errors from envd API responses by mapping HTTP status codes to specific exception types.
-
-    :param res: The HTTP response.
-    :param error_map: Optional map of HTTP status codes to exception factories that override the defaults.
-    :return: The corresponding exception, or ``None`` if the response is successful.
-    """
+def handle_envd_api_exception(res: httpx.Response):
     if res.is_success:
         return
 
     res.read()
 
-    return format_envd_api_exception(res.status_code, get_message(res), error_map)
+    return format_envd_api_exception(res.status_code, get_message(res))
 
 
-async def ahandle_envd_api_exception(
-    res: httpx.Response,
-    error_map: Optional[dict[int, Callable[[str], Exception]]] = None,
-):
-    """Async version of :func:`handle_envd_api_exception`."""
+async def ahandle_envd_api_exception(res: httpx.Response):
     if res.is_success:
         return
 
     await res.aread()
 
-    return format_envd_api_exception(res.status_code, get_message(res), error_map)
+    return format_envd_api_exception(res.status_code, get_message(res))
 
 
-def format_envd_api_exception(
-    status_code: int,
-    message: str,
-    error_map: Optional[dict[int, Callable[[str], Exception]]] = None,
-):
-    """Map an HTTP status code and message to the appropriate exception.
-
-    :param status_code: The HTTP status code.
-    :param message: The error message from the response body.
-    :param error_map: Optional map of HTTP status codes to exception factories that override the defaults.
-    :return: The corresponding exception.
-    """
-    if error_map and status_code in error_map:
-        return error_map[status_code](message)
-
-    if status_code in _DEFAULT_API_ERROR_MAP:
-        return _DEFAULT_API_ERROR_MAP[status_code](message)
-
-    return SandboxException(f"{status_code}: {message}")
+def format_envd_api_exception(status_code: int, message: str):
+    if status_code == 400:
+        return InvalidArgumentException(message)
+    elif status_code == 401:
+        return AuthenticationException(message)
+    elif status_code == 404:
+        return NotFoundException(message)
+    elif status_code == 429:
+        return SandboxException(f"{message}: The requests are being rate limited.")
+    elif status_code == 502:
+        return format_sandbox_timeout_exception(message)
+    elif status_code == 507:
+        return NotEnoughSpaceException(message)
+    else:
+        return SandboxException(f"{status_code}: {message}")

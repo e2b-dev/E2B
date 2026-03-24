@@ -1,0 +1,93 @@
+
+
+
+## LogEntry
+
+```python
+@dataclass
+class LogEntry()
+```
+
+Represents a single log entry from the template build process.
+
+
+## LogEntryStart
+
+```python
+@dataclass
+class LogEntryStart(LogEntry)
+```
+
+Special log entry indicating the start of a build process.
+
+
+## LogEntryEnd
+
+```python
+@dataclass
+class LogEntryEnd(LogEntry)
+```
+
+Special log entry indicating the end of a build process.
+
+
+### TIMER\_UPDATE\_INTERVAL\_MS
+
+Default minimum log level to display.
+
+
+### DEFAULT\_LEVEL
+
+Colored labels for each log level.
+
+
+### levels
+
+Numeric ordering of log levels for comparison (lower = less severe).
+
+
+### set\_interval
+
+```python
+def set_interval(func, interval)
+```
+
+Returns a stop function that can be called to cancel the interval.
+
+Similar to JavaScript's setInterval.
+
+**Arguments**:
+
+- `func`: Function to execute at each interval
+- `interval`: Interval duration in **seconds**
+
+**Returns**:
+
+Stop function that can be called to cancel the interval
+
+
+### default\_build\_logger
+
+```python
+def default_build_logger(
+        min_level: Optional[LogEntryLevel] = None
+) -> Callable[[LogEntry], None]
+```
+
+Create a default build logger with animated timer display.
+
+**Arguments**:
+
+- `min_level`: Minimum log level to display (default: 'info')
+
+**Returns**:
+
+Logger function that accepts LogEntry instances
+Example
+```python
+from e2b import Template, default_build_logger
+
+template = Template().from_python_image()
+
+```
+

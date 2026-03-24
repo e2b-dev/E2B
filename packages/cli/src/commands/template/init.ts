@@ -22,7 +22,7 @@ const DEFAULT_TEMPLATE_NAME = 'my-template'
  */
 async function generateTemplateFiles(
   root: string,
-  name: string,
+  alias: string,
   language: Language,
   cpuCount?: number,
   memoryMB?: number
@@ -31,7 +31,7 @@ async function generateTemplateFiles(
 
   return generateAndWriteTemplateFiles(
     root,
-    name,
+    alias,
     language,
     template,
     cpuCount,
@@ -158,7 +158,7 @@ function validateTemplateName(name: string) {
 export const initCommand = new commander.Command('init')
   .description('initialize a new sandbox template using the SDK')
   .addOption(pathOption)
-  .option('-n, --name <name>', 'template name', (value) => {
+  .option('-n, --name <name>', 'template name (alias)', (value) => {
     try {
       validateTemplateName(value)
     } catch (err) {
@@ -197,7 +197,7 @@ export const initCommand = new commander.Command('init')
         let templateName: string = opts.name ?? DEFAULT_TEMPLATE_NAME
         if (opts.name === undefined) {
           templateName = await input({
-            message: 'Enter template name:',
+            message: 'Enter template name (alias):',
             default: DEFAULT_TEMPLATE_NAME,
             validate: (input: string) => {
               try {

@@ -1,0 +1,581 @@
+# sandbox
+
+## Classes
+
+### Sandbox
+
+E2B cloud sandbox is a secure and isolated cloud environment.
+
+The sandbox allows you to:
+- Access Linux OS
+- Create, list, and delete files and directories
+- Run commands
+- Run isolated code
+- Access the internet
+
+Check docs here.
+
+Use Sandbox.create to create a new sandbox.
+
+#### Example
+
+```ts
+import { Sandbox } from 'e2b'
+
+const sandbox = await Sandbox.create()
+```
+
+#### Properties
+
+##### commands
+
+> `readonly` **commands**: `Commands`
+
+Module for running commands in the sandbox
+
+###### Defined in
+
+sandbox/index.ts:74
+
+##### files
+
+> `readonly` **files**: `Filesystem`
+
+Module for interacting with the sandbox filesystem
+
+###### Defined in
+
+sandbox/index.ts:70
+
+##### pty
+
+> `readonly` **pty**: `Pty`
+
+Module for interacting with the sandbox pseudo-terminals
+
+###### Defined in
+
+sandbox/index.ts:78
+
+##### sandboxId
+
+> `readonly` **sandboxId**: `string`
+
+Unique identifier of the sandbox.
+
+###### Defined in
+
+sandbox/index.ts:83
+
+#### Methods
+
+##### downloadUrl()
+
+> **downloadUrl**(`path`): `string`
+
+Get the URL to download a file from the sandbox.
+
+###### Parameters
+
+• **path**: `string`
+
+path to the file to download.
+
+###### Returns
+
+`string`
+
+URL for downloading file.
+
+###### Defined in
+
+sandbox/index.ts:339
+
+##### getHost()
+
+> **getHost**(`port`): `string`
+
+Get the host address for the specified sandbox port.
+You can then use this address to connect to the sandbox port from outside the sandbox via HTTP or WebSocket.
+
+###### Parameters
+
+• **port**: `number`
+
+number of the port in the sandbox.
+
+###### Returns
+
+`string`
+
+host address of the sandbox port.
+
+###### Example
+
+```ts
+const sandbox = await Sandbox.create()
+// Start an HTTP server
+await sandbox.commands.exec('python3 -m http.server 3000')
+// Get the hostname of the HTTP server
+const serverURL = sandbox.getHost(3000)
+``
+
+###### Defined in
+
+sandbox/index.ts:237
+
+##### isRunning()
+
+> **isRunning**(`opts`?): `Promise`\<`boolean`\>
+
+Check if the sandbox is running.
+
+###### Parameters
+
+• **opts?**: `Pick`\<`ConnectionOpts`, `"requestTimeoutMs"`\>
+
+###### Returns
+
+`Promise`\<`boolean`\>
+
+`true` if the sandbox is running, `false` otherwise.
+
+###### Example
+
+```ts
+const sandbox = await Sandbox.create()
+await sandbox.isRunning() // Returns true
+
+await sandbox.kill()
+await sandbox.isRunning() // Returns false
+```
+
+###### Defined in
+
+sandbox/index.ts:259
+
+##### kill()
+
+> **kill**(`opts`?): `Promise`\<`void`\>
+
+Kill the sandbox.
+
+###### Parameters
+
+• **opts?**: `Pick`\<`SandboxOpts`, `"requestTimeoutMs"`\>
+
+connection options.
+
+###### Returns
+
+`Promise`\<`void`\>
+
+###### Defined in
+
+sandbox/index.ts:310
+
+##### setTimeout()
+
+> **setTimeout**(`timeoutMs`, `opts`?): `Promise`\<`void`\>
+
+Set the timeout of the sandbox.
+After the timeout expires the sandbox will be automatically killed.
+
+This method can extend or reduce the sandbox timeout set when creating the sandbox or from the last call to `.setTimeout`.
+Maximum time a sandbox can be kept alive is 24 hours (86_400_000 milliseconds) for Pro users and 1 hour (3_600_000 milliseconds) for Hobby users.
+
+###### Parameters
+
+• **timeoutMs**: `number`
+
+timeout in **milliseconds**.
+
+• **opts?**: `Pick`\<`SandboxOpts`, `"requestTimeoutMs"`\>
+
+connection options.
+
+###### Returns
+
+`Promise`\<`void`\>
+
+###### Defined in
+
+sandbox/index.ts:290
+
+##### uploadUrl()
+
+> **uploadUrl**(`path`?): `string`
+
+Get the URL to upload a file to the sandbox.
+
+You have to send a POST request to this URL with the file as multipart/form-data.
+
+###### Parameters
+
+• **path?**: `string`
+
+the directory where to upload the file, defaults to user's home directory.
+
+###### Returns
+
+`string`
+
+URL for uploading file.
+
+###### Defined in
+
+sandbox/index.ts:328
+
+##### connect()
+
+> `static` **connect**\<`S`\>(`this`, `sandboxId`, `opts`?): `Promise`\<`InstanceType`\<`S`\>\>
+
+Connect to an existing sandbox.
+With sandbox ID you can connect to the same sandbox from different places or environments (serverless functions, etc).
+
+###### Type Parameters
+
+• **S** *extends* *typeof* `Sandbox`
+
+###### Parameters
+
+• **this**: `S`
+
+• **sandboxId**: `string`
+
+sandbox ID.
+
+• **opts?**: `Omit`\<`SandboxOpts`, `"timeoutMs"` \| `"metadata"` \| `"envs"`\>
+
+connection options.
+
+###### Returns
+
+`Promise`\<`InstanceType`\<`S`\>\>
+
+sandbox instance for the existing sandbox.
+
+###### Example
+
+```ts
+const sandbox = await Sandbox.create()
+const sandboxId = sandbox.sandboxId
+
+// Connect to the same sandbox.
+const sameSandbox = await Sandbox.connect(sandboxId)
+```
+
+###### Defined in
+
+sandbox/index.ts:209
+
+##### create()
+
+###### create(this, opts)
+
+> `static` **create**\<`S`\>(`this`, `opts`?): `Promise`\<`InstanceType`\<`S`\>\>
+
+Create a new sandbox from the default `base` sandbox template.
+
+###### Type Parameters
+
+• **S** *extends* *typeof* `Sandbox`
+
+###### Parameters
+
+• **this**: `S`
+
+• **opts?**: `SandboxOpts`
+
+connection options.
+
+###### Returns
+
+`Promise`\<`InstanceType`\<`S`\>\>
+
+sandbox instance for the new sandbox.
+
+###### Example
+
+```ts
+const sandbox = await Sandbox.create()
+```
+
+###### Constructs
+
+Sandbox
+
+###### Defined in
+
+sandbox/index.ts:143
+
+###### create(this, template, opts)
+
+> `static` **create**\<`S`\>(`this`, `template`, `opts`?): `Promise`\<`InstanceType`\<`S`\>\>
+
+Create a new sandbox from the specified sandbox template.
+
+###### Type Parameters
+
+• **S** *extends* *typeof* `Sandbox`
+
+###### Parameters
+
+• **this**: `S`
+
+• **template**: `string`
+
+sandbox template name or ID.
+
+• **opts?**: `SandboxOpts`
+
+connection options.
+
+###### Returns
+
+`Promise`\<`InstanceType`\<`S`\>\>
+
+sandbox instance for the new sandbox.
+
+###### Example
+
+```ts
+const sandbox = await Sandbox.create('<template-name-or-id>')
+```
+
+###### Constructs
+
+Sandbox
+
+###### Defined in
+
+sandbox/index.ts:162
+
+##### kill()
+
+> `static` **kill**(`sandboxId`, `opts`?): `Promise`\<`boolean`\>
+
+Kill the sandbox specified by sandbox ID.
+
+###### Parameters
+
+• **sandboxId**: `string`
+
+sandbox ID.
+
+• **opts?**: `SandboxApiOpts`
+
+connection options.
+
+###### Returns
+
+`Promise`\<`boolean`\>
+
+`true` if the sandbox was found and killed, `false` otherwise.
+
+###### Defined in
+
+sandbox/sandboxApi.ts:55
+
+##### list()
+
+> `static` **list**(`opts`?): `Promise`\<`SandboxInfo`[]\>
+
+List all running sandboxes.
+
+###### Parameters
+
+• **opts?**: `SandboxApiOpts`
+
+connection options.
+
+###### Returns
+
+`Promise`\<`SandboxInfo`[]\>
+
+list of running sandboxes.
+
+###### Defined in
+
+sandbox/sandboxApi.ts:90
+
+##### setTimeout()
+
+> `static` **setTimeout**(`sandboxId`, `timeoutMs`, `opts`?): `Promise`\<`void`\>
+
+Set the timeout of the specified sandbox.
+After the timeout expires the sandbox will be automatically killed.
+
+This method can extend or reduce the sandbox timeout set when creating the sandbox or from the last call to Sandbox.setTimeout.
+
+Maximum time a sandbox can be kept alive is 24 hours (86_400_000 milliseconds) for Pro users and 1 hour (3_600_000 milliseconds) for Hobby users.
+
+###### Parameters
+
+• **sandboxId**: `string`
+
+sandbox ID.
+
+• **timeoutMs**: `number`
+
+timeout in **milliseconds**.
+
+• **opts?**: `SandboxApiOpts`
+
+connection options.
+
+###### Returns
+
+`Promise`\<`void`\>
+
+###### Defined in
+
+sandbox/sandboxApi.ts:129
+
+## Interfaces
+
+### SandboxOpts
+
+Options for creating a new Sandbox.
+
+#### Properties
+
+##### accessToken?
+
+> `optional` **accessToken**: `string`
+
+E2B access token to use for authentication.
+
+###### Default
+
+```ts
+E2B_ACCESS_TOKEN // environment variable
+```
+
+###### Defined in
+
+connectionConfig.ts:24
+
+##### apiKey?
+
+> `optional` **apiKey**: `string`
+
+E2B API key to use for authentication.
+
+###### Default
+
+```ts
+E2B_API_KEY // environment variable
+```
+
+###### Defined in
+
+connectionConfig.ts:18
+
+##### debug?
+
+> `optional` **debug**: `boolean`
+
+**`Internal`**
+
+If true the SDK starts in the debug mode and connects to the local envd API server.
+
+###### Default
+
+E2B_DEBUG // environment variable or `false`
+
+###### Defined in
+
+connectionConfig.ts:36
+
+##### domain?
+
+> `optional` **domain**: `string`
+
+Domain to use for the API.
+
+###### Default
+
+E2B_DOMAIN // environment variable or `e2b.dev`
+
+###### Defined in
+
+connectionConfig.ts:30
+
+##### envs?
+
+> `optional` **envs**: `Record`\<`string`, `string`\>
+
+Custom environment variables for the sandbox.
+
+Used when executing commands and code in the sandbox.
+Can be overridden with the `envs` argument when executing commands or code.
+
+###### Default
+
+```ts
+{}
+```
+
+###### Defined in
+
+sandbox/index.ts:32
+
+##### logger?
+
+> `optional` **logger**: `Logger`
+
+Logger to use for logging messages. It can accept any object that implements `Logger` interface—for example, console.
+
+###### Defined in
+
+connectionConfig.ts:46
+
+##### metadata?
+
+> `optional` **metadata**: `Record`\<`string`, `string`\>
+
+Custom metadata for the sandbox.
+
+###### Default
+
+```ts
+{}
+```
+
+###### Defined in
+
+sandbox/index.ts:23
+
+##### requestTimeoutMs?
+
+> `optional` **requestTimeoutMs**: `number`
+
+Timeout for requests to the API in **milliseconds**.
+
+###### Default
+
+```ts
+30_000 // 30 seconds
+```
+
+###### Defined in
+
+connectionConfig.ts:42
+
+##### timeoutMs?
+
+> `optional` **timeoutMs**: `number`
+
+Timeout for the sandbox in **milliseconds**.
+Maximum time a sandbox can be kept alive is 24 hours (86_400_000 milliseconds) for Pro users and 1 hour (3_600_000 milliseconds) for Hobby users.
+
+###### Default
+
+```ts
+300_000 // 5 minutes
+```
+
+###### Defined in
+
+sandbox/index.ts:39

@@ -311,7 +311,7 @@ class AsyncSandbox(SandboxApi):
         await SandboxApi._cls_connect(
             sandbox_id=self.sandbox_id,
             timeout=timeout,
-            **self.connection_config.get_api_params(**opts),
+            **opts,
         )
 
         return self
@@ -636,7 +636,7 @@ class AsyncSandbox(SandboxApi):
 
         await SandboxApi._cls_pause(
             sandbox_id=self.sandbox_id,
-            **self.connection_config.get_api_params(**opts),
+            **opts,
         )
 
     @overload

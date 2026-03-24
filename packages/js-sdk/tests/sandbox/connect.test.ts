@@ -41,7 +41,7 @@ sandboxTest.skipIf(isDebug)(
     const connectPromise = Sandbox.connect(sandbox.sandboxId)
     await expect(connectPromise).rejects.toThrowError(
       expect.objectContaining({
-        name: 'SandboxNotFoundError',
+        name: 'NotFoundError',
       })
     )
   }

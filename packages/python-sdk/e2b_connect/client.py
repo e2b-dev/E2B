@@ -322,17 +322,11 @@ class Client:
         data = self._codec.encode(req)
         flags = EnvelopeFlags(0)
 
-        timeout_ext = {}
-        if request_timeout is not None:
-            timeout_ext["connect"] = request_timeout
-            timeout_ext["pool"] = request_timeout
-            timeout_ext["write"] = request_timeout
-        if timeout:
-            # This is not actually timeout for the whole stream read, but timeout from the last read chunk.
-            # At worst then, the timeout of a hanging stream could be 2 * timeout (reading body until timeout-ϵ, then waiting for the read timeout).
-            # However, this is still better than no timeout at all and the full timeout in sync python might be way more complicated.
-            timeout_ext["read"] = timeout
-        extensions = {"timeout": timeout_ext} if timeout_ext else None
+        extensions = (
+            None
+            if request_timeout is None
+            else {"timeout": {"connect": request_timeout, "pool": request_timeout}}
+        )
 
         if self._compressor is not None:
             data = self._compressor.compress(data)

@@ -1,0 +1,176 @@
+
+
+
+## Template
+
+```python
+class Template(TemplateBase)
+```
+
+Synchronous template builder for E2B sandboxes.
+
+
+### build
+
+```python
+@staticmethod
+def build(template: TemplateClass,
+          alias: str,
+          cpu_count: int = 2,
+          memory_mb: int = 1024,
+          skip_cache: bool = False,
+          on_build_logs: Optional[Callable[[LogEntry], None]] = None,
+          **opts: Unpack[ApiParams]) -> BuildInfo
+```
+
+Build and deploy a template to E2B infrastructure.
+
+**Arguments**:
+
+- `template`: The template to build
+- `alias`: Alias name for the template
+- `cpu_count`: Number of CPUs allocated to the sandbox
+- `memory_mb`: Amount of memory in MB allocated to the sandbox
+- `skip_cache`: If True, forces a complete rebuild ignoring cache
+- `on_build_logs`: Callback function to receive build logs during the build process
+Example
+```python
+from e2b import Template
+
+template = (
+    Template()
+    .from_python_image('3')
+    .copy('requirements.txt', '/home/user/')
+    .run_cmd('pip install -r /home/user/requirements.txt')
+)
+
+Template.build(
+    template,
+    alias='my-python-env',
+    cpu_count=2,
+    memory_mb=1024
+)
+```
+
+
+### build\_in\_background
+
+```python
+@staticmethod
+def build_in_background(template: TemplateClass,
+                        alias: str,
+                        cpu_count: int = 2,
+                        memory_mb: int = 1024,
+                        skip_cache: bool = False,
+                        on_build_logs: Optional[Callable[[LogEntry],
+                                                         None]] = None,
+                        **opts: Unpack[ApiParams]) -> BuildInfo
+```
+
+Build and deploy a template to E2B infrastructure without waiting for completion.
+
+**Arguments**:
+
+- `template`: The template to build
+- `alias`: Alias name for the template
+- `cpu_count`: Number of CPUs allocated to the sandbox
+- `memory_mb`: Amount of memory in MB allocated to the sandbox
+- `skip_cache`: If True, forces a complete rebuild ignoring cache
+
+**Returns**:
+
+BuildInfo containing the template ID and build ID
+Example
+```python
+from e2b import Template
+
+template = (
+    Template()
+    .from_python_image('3')
+    .run_cmd('echo "test"')
+    .set_start_cmd('echo "Hello"', 'sleep 1')
+)
+
+build_info = Template.build_in_background(
+    template,
+    alias='my-python-env',
+    cpu_count=2,
+    memory_mb=1024
+)
+```
+
+
+### get\_build\_status
+
+```python
+@staticmethod
+def get_build_status(build_info: BuildInfo,
+                     logs_offset: int = 0,
+                     **opts: Unpack[ApiParams])
+```
+
+Get the status of a build.
+
+**Arguments**:
+
+- `build_info`: Build identifiers returned from build_in_background
+- `logs_offset`: Offset for fetching logs
+
+**Returns**:
+
+TemplateBuild containing the build status and logs
+Example
+```python
+from e2b import Template
+
+build_info = Template.build_in_background(template, alias='my-template')
+status = Template.get_build_status(build_info, logs_offset=0)
+```
+
+
+### alias\_exists
+
+```python
+@staticmethod
+def alias_exists(alias: str, **opts: Unpack[ApiParams]) -> bool
+```
+
+Check if a template with the given alias exists.
+
+**Arguments**:
+
+- `alias`: Template alias to check
+
+**Returns**:
+
+True if the alias exists, False otherwise
+Example
+```python
+from e2b import Template
+
+exists = Template.alias_exists('base')
+if exists:
+    print('Template exists!')
+```
+
+
+
+
+### check\_alias\_exists
+
+```python
+def check_alias_exists(client: AuthenticatedClient, alias: str) -> bool
+```
+
+Check if a template with the given alias exists.
+
+**Arguments**:
+
+- `client` - Authenticated API client
+- `alias` - Template alias to check
+  
+
+**Returns**:
+
+  True if the alias exists, False otherwise
+

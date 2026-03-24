@@ -1,0 +1,13 @@
+{
+  "root": true,
+  "extends": ["../../.eslintrc.cjs", "next/core-web-vitals"],
+  "overrides": [
+    {
+      "files": ["src/code/**/*.js"],
+      "rules": {
+        "@typescript-eslint/no-unused-vars": "off",
+        "no-useless-escape": "off"
+      }
+    }
+  ]
+}

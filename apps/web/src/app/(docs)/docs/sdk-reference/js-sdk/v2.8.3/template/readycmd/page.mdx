@@ -1,0 +1,197 @@
+### ReadyCmd
+
+Class for ready check commands.
+
+#### Constructors
+
+```ts
+new ReadyCmd(cmd: string): ReadyCmd
+```
+
+###### Parameters
+
+| Parameter | Type |
+| ------ | ------ |
+| `cmd` | `string` |
+
+###### Returns
+
+`ReadyCmd`
+
+#### Methods
+
+### getCmd()
+
+```ts
+getCmd(): string
+```
+
+###### Returns
+
+`string`
+
+## Functions
+
+### waitForFile()
+
+```ts
+function waitForFile(filename: string): ReadyCmd
+```
+
+Wait for a file to exist.
+Uses shell test command to check file existence.
+
+#### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `filename` | `string` | Path to the file to wait for |
+
+#### Returns
+
+`ReadyCmd`
+
+ReadyCmd that checks for the file
+
+#### Example
+
+```ts
+import { Template, waitForFile } from 'e2b'
+
+const template = Template()
+  .fromBaseImage()
+  .setStartCmd('./init.sh', waitForFile('/tmp/ready'))
+```
+
+***
+
+### waitForPort()
+
+```ts
+function waitForPort(port: number): ReadyCmd
+```
+
+Wait for a port to be listening.
+Uses `ss` command to check if a port is open and listening.
+
+#### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `port` | `number` | Port number to wait for |
+
+#### Returns
+
+`ReadyCmd`
+
+ReadyCmd that checks for the port
+
+#### Example
+
+```ts
+import { Template, waitForPort } from 'e2b'
+
+const template = Template()
+  .fromPythonImage()
+  .setStartCmd('python -m http.server 8000', waitForPort(8000))
+```
+
+***
+
+### waitForProcess()
+
+```ts
+function waitForProcess(processName: string): ReadyCmd
+```
+
+Wait for a process with a specific name to be running.
+Uses `pgrep` to check if a process exists.
+
+#### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `processName` | `string` | Name of the process to wait for |
+
+#### Returns
+
+`ReadyCmd`
+
+ReadyCmd that checks for the process
+
+#### Example
+
+```ts
+import { Template, waitForProcess } from 'e2b'
+
+const template = Template()
+  .fromBaseImage()
+  .setStartCmd('./my-daemon', waitForProcess('my-daemon'))
+```
+
+***
+
+### waitForTimeout()
+
+```ts
+function waitForTimeout(timeout: number): ReadyCmd
+```
+
+Wait for a specified timeout before considering the sandbox ready.
+Uses `sleep` command to wait for a fixed duration.
+
+#### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `timeout` | `number` | Time to wait in milliseconds (minimum: 1000ms / 1 second) |
+
+#### Returns
+
+`ReadyCmd`
+
+ReadyCmd that waits for the specified duration
+
+#### Example
+
+```ts
+import { Template, waitForTimeout } from 'e2b'
+
+const template = Template()
+  .fromNodeImage()
+  .setStartCmd('npm start', waitForTimeout(5000)) // Wait 5 seconds
+```
+
+***
+
+### waitForURL()
+
+```ts
+function waitForURL(url: string, statusCode: number): ReadyCmd
+```
+
+Wait for a URL to return a specific HTTP status code.
+Uses `curl` to make HTTP requests and check the response status.
+
+#### Parameters
+
+| Parameter | Type | Default value | Description |
+| ------ | ------ | ------ | ------ |
+| `url` | `string` | `undefined` | URL to check (e.g., 'http://localhost:3000/health') |
+| `statusCode` | `number` | `200` | Expected HTTP status code (default: 200) |
+
+#### Returns
+
+`ReadyCmd`
+
+ReadyCmd that checks the URL
+
+#### Example
+
+```ts
+import { Template, waitForURL } from 'e2b'
+
+const template = Template()
+  .fromNodeImage()
+  .setStartCmd('npm start', waitForURL('http://localhost:3000/health'))
+```

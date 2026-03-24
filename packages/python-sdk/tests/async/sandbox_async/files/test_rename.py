@@ -1,6 +1,6 @@
 import pytest
 
-from e2b import FileNotFoundException, AsyncSandbox
+from e2b import NotFoundException, AsyncSandbox
 
 
 async def test_rename_file(async_sandbox: AsyncSandbox):
@@ -25,5 +25,5 @@ async def test_rename_non_existing_file(async_sandbox: AsyncSandbox):
     old_filename = "non_existing_file.txt"
     new_filename = "new_non_existing_file.txt"
 
-    with pytest.raises(FileNotFoundException):
+    with pytest.raises(NotFoundException):
         await async_sandbox.files.rename(old_filename, new_filename)

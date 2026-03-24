@@ -2017,8 +2017,6 @@ export interface components {
         SandboxDetail: {
             /** @description Alias of the template */
             alias?: string;
-            /** @description Whether internet access was explicitly enabled or disabled for the sandbox. Null means it was not explicitly set. */
-            allowInternetAccess?: boolean | null;
             /**
              * @deprecated
              * @description Identifier of the client
@@ -2036,10 +2034,8 @@ export interface components {
             /** @description Access token used for envd communication */
             envdAccessToken?: string;
             envdVersion: components["schemas"]["EnvdVersion"];
-            lifecycle?: components["schemas"]["SandboxLifecycle"];
             memoryMB: components["schemas"]["MemoryMB"];
             metadata?: components["schemas"]["SandboxMetadata"];
-            network?: components["schemas"]["SandboxNetworkConfig"];
             /** @description Identifier of the sandbox */
             sandboxID: string;
             /**
@@ -2056,12 +2052,6 @@ export interface components {
             sandboxes: {
                 [key: string]: components["schemas"]["SandboxMetric"];
             };
-        };
-        /** @description Sandbox lifecycle policy returned by sandbox info. */
-        SandboxLifecycle: {
-            /** @description Whether the sandbox can auto-resume. */
-            autoResume: boolean;
-            onTimeout: components["schemas"]["SandboxOnTimeout"];
         };
         /** @description Log entry with timestamp and line */
         SandboxLog: {
@@ -2159,11 +2149,6 @@ export interface components {
             /** @description Specify host mask which will be used for all sandbox requests */
             maskRequestHost?: string;
         };
-        /**
-         * @description Action taken when the sandbox times out.
-         * @enum {string}
-         */
-        SandboxOnTimeout: "kill" | "pause";
         /**
          * @description State of the sandbox
          * @enum {string}

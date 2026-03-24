@@ -1,0 +1,414 @@
+### Sandbox
+
+#### Methods
+
+### doubleClick()
+
+```ts
+doubleClick(): Promise<CommandResult>
+```
+
+Double left click on the current mouse position.
+
+###### Returns
+
+`Promise`\<`CommandResult`\>
+
+### getCursorPosition()
+
+```ts
+getCursorPosition(): Promise<object>
+```
+
+Get the current mouse position.
+
+###### Returns
+
+`Promise`\<`object`\>
+
+An object with `x` and `y` coordinates.
+
+| Name | Type |
+| ------ | ------ |
+| `x` | `number` |
+| `y` | `number` |
+
+### getScreenSize()
+
+```ts
+getScreenSize(): Promise<object>
+```
+
+Get the current screen size.
+
+###### Returns
+
+`Promise`\<`object`\>
+
+An object with `width` and `height` properties.
+
+| Name | Type |
+| ------ | ------ |
+| `height` | `number` |
+| `width` | `number` |
+
+### getVideoStreamUrl()
+
+```ts
+getVideoStreamUrl(): Promise<string>
+```
+
+###### Returns
+
+`Promise`\<`string`\>
+
+### hotkey()
+
+```ts
+hotkey(...keys: string[]): Promise<CommandResult>
+```
+
+Press a hotkey.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| ...`keys` | `string`[] | The keys to press (e.g. `hotkey("ctrl", "c")` will press Ctrl+C). |
+
+###### Returns
+
+`Promise`\<`CommandResult`\>
+
+### leftClick()
+
+```ts
+leftClick(): Promise<CommandResult>
+```
+
+Left click on the current mouse position.
+
+###### Returns
+
+`Promise`\<`CommandResult`\>
+
+### middleClick()
+
+```ts
+middleClick(): Promise<CommandResult>
+```
+
+Middle click on the current mouse position.
+
+###### Returns
+
+`Promise`\<`CommandResult`\>
+
+### moveMouse()
+
+```ts
+moveMouse(x: number, y: number): Promise<CommandResult>
+```
+
+Move the mouse to the given coordinates.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `x` | `number` | The x coordinate. |
+| `y` | `number` | The y coordinate. |
+
+###### Returns
+
+`Promise`\<`CommandResult`\>
+
+### open()
+
+```ts
+open(fileOrUrl: string): Promise<CommandHandle>
+```
+
+Open a file or a URL in the default application.
+Note that you'll need to wait for the application to be opened.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `fileOrUrl` | `string` | The file or URL to open. |
+
+###### Returns
+
+`Promise`\<`CommandHandle`\>
+
+### press()
+
+```ts
+press(key: string): Promise<CommandResult>
+```
+
+Press a key.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `key` | `string` | The key to press (e.g. "enter", "space", "backspace", etc.). |
+
+###### Returns
+
+`Promise`\<`CommandResult`\>
+
+### rightClick()
+
+```ts
+rightClick(): Promise<CommandResult>
+```
+
+Right click on the current mouse position.
+
+###### Returns
+
+`Promise`\<`CommandResult`\>
+
+### runPyautoguiCode()
+
+```ts
+runPyautoguiCode(code: string, opts: object): Promise<CommandResult>
+```
+
+Run the given Python code that uses pyautogui.
+
+###### Parameters
+
+| Parameter | Type |
+| ------ | ------ |
+| `code` | `string` |
+| `opts` | `object` |
+| `opts.onStderr`? | (`data`: `string`) => `void` |
+| `opts.onStdout`? | (`data`: `string`) => `void` |
+
+###### Returns
+
+`Promise`\<`CommandResult`\>
+
+### scroll()
+
+```ts
+scroll(amount: number): Promise<CommandResult>
+```
+
+Scroll the mouse wheel by the given amount.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `amount` | `number` | The amount to scroll. |
+
+###### Returns
+
+`Promise`\<`CommandResult`\>
+
+### takeScreenshot()
+
+###### takeScreenshot()
+
+```ts
+takeScreenshot(): Promise<Uint8Array>
+```
+
+Take a screenshot and save it to the given name.
+
+###### Returns
+
+`Promise`\<`Uint8Array`\>
+
+A Uint8Array bytes representation of the screenshot.
+
+###### takeScreenshot(format)
+
+```ts
+takeScreenshot(format: "bytes"): Promise<Uint8Array>
+```
+
+Take a screenshot and save it to the given name.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `format` | `"bytes"` | The format of the screenshot. |
+
+###### Returns
+
+`Promise`\<`Uint8Array`\>
+
+A Uint8Array bytes representation of the screenshot.
+
+###### takeScreenshot(format)
+
+```ts
+takeScreenshot(format: "blob"): Promise<Blob>
+```
+
+Take a screenshot and save it to the given name.
+
+###### Parameters
+
+| Parameter | Type |
+| ------ | ------ |
+| `format` | `"blob"` |
+
+###### Returns
+
+`Promise`\<`Blob`\>
+
+A Blob representation of the screenshot.
+
+###### takeScreenshot(format)
+
+```ts
+takeScreenshot(format: "stream"): Promise<ReadableStream<Uint8Array>>
+```
+
+Take a screenshot and save it to the given name.
+
+###### Parameters
+
+| Parameter | Type |
+| ------ | ------ |
+| `format` | `"stream"` |
+
+###### Returns
+
+`Promise`\<`ReadableStream`\<`Uint8Array`\>\>
+
+A ReadableStream of bytes representation of the screenshot.
+
+### write()
+
+```ts
+write(text: string): Promise<CommandResult>
+```
+
+Write the given text at the current cursor position.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `text` | `string` | The text to write. |
+
+###### Returns
+
+`Promise`\<`CommandResult`\>
+
+### create()
+
+###### create(this, opts)
+
+```ts
+static create<S>(this: S, opts?: SandboxOpts): Promise<InstanceType<S>>
+```
+
+Create a new sandbox from the default `desktop` sandbox template.
+
+###### Type Parameters
+
+| Type Parameter |
+| ------ |
+| `S` *extends* *typeof* `Sandbox` |
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `this` | `S` | - |
+| `opts`? | `SandboxOpts` | connection options. |
+
+###### Returns
+
+`Promise`\<`InstanceType`\<`S`\>\>
+
+sandbox instance for the new sandbox.
+
+###### Example
+
+```ts
+const sandbox = await Sandbox.create()
+```
+
+###### Constructs
+
+Sandbox
+
+###### create(this, template, opts)
+
+```ts
+static create<S>(
+   this: S, 
+   template: string, 
+opts?: SandboxOpts): Promise<InstanceType<S>>
+```
+
+Create a new sandbox from the specified sandbox template.
+
+###### Type Parameters
+
+| Type Parameter |
+| ------ |
+| `S` *extends* *typeof* `Sandbox` |
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `this` | `S` | - |
+| `template` | `string` | sandbox template name or ID. |
+| `opts`? | `SandboxOpts` | connection options. |
+
+###### Returns
+
+`Promise`\<`InstanceType`\<`S`\>\>
+
+sandbox instance for the new sandbox.
+
+###### Example
+
+```ts
+const sandbox = await Sandbox.create('<template-name-or-id>')
+```
+
+###### Constructs
+
+Sandbox
+
+## Interfaces
+
+### SandboxOpts
+
+#### Properties
+
+### onVideoStreamStart()?
+
+```ts
+optional onVideoStreamStart: (url: string) => void;
+```
+
+###### Parameters
+
+| Parameter | Type |
+| ------ | ------ |
+| `url` | `string` |
+
+###### Returns
+
+`void`
+
+### videoStream?
+
+```ts
+optional videoStream: boolean;
+```

@@ -108,7 +108,7 @@ export async function transformTemplateData(
  */
 export async function generateTypeScriptCode(
   template: TemplateClass,
-  name: string,
+  alias: string,
   cpuCount?: number,
   memoryMB?: number
 ): Promise<{ templateContent: string; buildContent: string }> {
@@ -138,7 +138,7 @@ export async function generateTypeScriptCode(
   const templateContent = generateTemplateSource(templateData)
 
   const buildContent = generateBuildSource({
-    name,
+    alias,
     cpuCount,
     memoryMB,
   })
@@ -154,7 +154,7 @@ export async function generateTypeScriptCode(
  */
 export async function generatePythonCode(
   template: TemplateClass,
-  name: string,
+  alias: string,
   cpuCount?: number,
   memoryMB?: number,
   isAsync: boolean = false
@@ -184,7 +184,7 @@ export async function generatePythonCode(
   })
 
   const buildContent = generateBuildSource({
-    name,
+    alias,
     cpuCount,
     memoryMB,
   })
@@ -199,7 +199,7 @@ export async function generatePythonCode(
  * Generate README.md content using Handlebars
  */
 export async function generateReadmeContent(
-  name: string,
+  alias: string,
   templateDir: string,
   generatedFiles: GeneratedFiles
 ): Promise<string> {
@@ -216,7 +216,7 @@ export async function generateReadmeContent(
 
   // Prepare template data
   const templateData = {
-    name,
+    alias,
     templateDir,
     templateFile: generatedFiles.templateFile,
     buildDevFile: generatedFiles.buildDevFile,

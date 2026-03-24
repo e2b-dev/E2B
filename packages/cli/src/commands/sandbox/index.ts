@@ -1,7 +1,6 @@
 import * as commander from 'commander'
 
 import { connectCommand } from './connect'
-import { infoCommand } from './info'
 import { listCommand } from './list'
 import { killCommand } from './kill'
 import { pauseCommand } from './pause'
@@ -15,7 +14,6 @@ export const sandboxCommand = new commander.Command('sandbox')
   .description('work with sandboxes')
   .alias('sbx')
   .addCommand(connectCommand)
-  .addCommand(infoCommand)
   .addCommand(listCommand)
   .addCommand(killCommand)
   .addCommand(pauseCommand)

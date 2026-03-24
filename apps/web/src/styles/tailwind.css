@@ -1,0 +1,185 @@
+@layer base {
+  :root {
+    --shiki-color-text: theme('colors.white');
+    --shiki-token-constant: theme('colors.brand.300');
+    --shiki-token-string: theme('colors.brand.300');
+    --shiki-token-comment: theme('colors.zinc.500');
+    --shiki-token-keyword: theme('colors.sky.300');
+    --shiki-token-parameter: theme('colors.pink.300');
+    --shiki-token-function: theme('colors.violet.300');
+    --shiki-token-string-expression: theme('colors.brand.300');
+    --shiki-token-punctuation: theme('colors.zinc.200');
+  }
+
+  code[class*='language-'] .Code-line_highlighted {
+    position: relative;
+    /* holds highlight element */
+    z-index: 1;
+    /* force above the highlight defined below */
+  }
+
+  code[class*='language-'] .Code-line_highlighted:before {
+    content: '';
+    position: absolute;
+    left: -16px;
+    /* align nicely with code border */
+    top: -5px;
+    bottom: -5px;
+    /* breathing space */
+    border-left: 3px solid theme('colors.brand.500');
+    width: 300px;
+    /* arbitrary value, looks nice */
+    /* TODO: Theme colors */
+    background: linear-gradient(to right, hsl(240, 3%, 21%), #1d1d20);
+    pointer-events: none;
+    z-index: -1;
+    /* force below code */
+  }
+
+  [inert] ::-webkit-scrollbar {
+    display: none;
+  }
+
+  #sidebar::-webkit-scrollbar-track {
+    border-radius: 10px;
+  }
+
+  #sidebar::-webkit-scrollbar-thumb {
+    border-radius: 10px;
+  }
+
+  .supabase-auth-ui_ui-button {
+    @apply rounded-lg;
+  }
+
+  div button.supabase-auth-ui_ui-button.auth-button {
+    @apply rounded-full bg-zinc-800 border-zinc-700 hover:border-zinc-500 transition hover:bg-zinc-800 text-sm text-zinc-100;
+  }
+
+  .supabase-auth-ui_ui-message.auth-message {
+    @apply text-sm rounded-2xl;
+  }
+
+  .supabase-auth-ui_ui-divider.auth-divider {
+    @apply border-zinc-900/5;
+  }
+
+  #auth-sign-up button,
+  #auth-forgot-password button,
+  #auth-update-password button,
+  #auth-sign-in button {
+    border: none;
+    @apply text-base font-medium transition;
+    @apply bg-zinc-900 py-1 px-3 rounded-full text-white hover:bg-zinc-700 dark:bg-brand-400/10 dark:text-brand-400 dark:ring-1 dark:ring-inset dark:ring-brand-400/20 dark:hover:bg-brand-400/10 dark:hover:text-brand-300 dark:hover:ring-brand-300;
+  }
+
+  #auth-forgot-password label,
+  #auth-update-password label,
+  #auth-sign-up label,
+  #auth-sign-in label {
+    @apply text-sm font-medium text-zinc-500 transition;
+  }
+
+  #auth-update-password input,
+  #auth-forgot-password input,
+  #auth-sign-up input,
+  #auth-sign-in input {
+    @apply rounded-full bg-zinc-900 text-zinc-200 border-zinc-700 hover:border-zinc-500 transition text-sm;
+  }
+}
+
+/* Shadcn */
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 222.2 84% 4.9%;
+
+    --radius: 0.5rem;
+
+    --sidebar-nav-width: 275px;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+  }
+}
+
+/* Shadcn */
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  .animation-delay-200 {
+    animation-delay: 0.2s;
+  }
+
+  .animation-delay-400 {
+    animation-delay: 0.4s;
+  }
+}
+
+.circle {
+  @apply relative top-[-1px] mx-[2px] h-[5px] w-[5px] rounded-full bg-gray-500;
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;

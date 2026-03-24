@@ -1,54 +1,31 @@
 from io import IOBase, TextIOBase
-from typing import IO, Iterator, List, Literal, Optional, Union, overload
+from typing import IO, Iterator, List, Literal, Optional, overload, Union
 
+from e2b.sandbox.filesystem.filesystem import WriteEntry
+
+import e2b_connect
 import httpcore
 import httpx
 from packaging.version import Version
 
-import e2b_connect
+from e2b.envd.versions import ENVD_VERSION_RECURSIVE_WATCH, ENVD_DEFAULT_USER
+from e2b.exceptions import SandboxException, TemplateException, InvalidArgumentException
 from e2b.connection_config import (
-    KEEPALIVE_PING_HEADER,
-    KEEPALIVE_PING_INTERVAL_SEC,
     ConnectionConfig,
     Username,
     default_username,
+    KEEPALIVE_PING_HEADER,
+    KEEPALIVE_PING_INTERVAL_SEC,
 )
-from e2b_connect.client import Code
-
 from e2b.envd.api import ENVD_API_FILES_ROUTE, handle_envd_api_exception
 from e2b.envd.filesystem import filesystem_connect, filesystem_pb2
 from e2b.envd.rpc import authentication_header, handle_rpc_exception
-from e2b.envd.versions import ENVD_DEFAULT_USER, ENVD_VERSION_RECURSIVE_WATCH
-from e2b.exceptions import (
-    FileNotFoundException,
-    InvalidArgumentException,
-    SandboxException,
-    TemplateException,
-)
 from e2b.sandbox.filesystem.filesystem import (
-    EntryInfo,
-    WriteEntry,
     WriteInfo,
+    EntryInfo,
     map_file_type,
 )
 from e2b.sandbox_sync.filesystem.watch_handle import WatchHandle
-
-
-_FILESYSTEM_RPC_ERROR_MAP = {
-    Code.not_found: FileNotFoundException,
-}
-
-_FILESYSTEM_HTTP_ERROR_MAP = {
-    404: FileNotFoundException,
-}
-
-
-def _handle_filesystem_rpc_exception(e: Exception) -> Exception:
-    return handle_rpc_exception(e, _FILESYSTEM_RPC_ERROR_MAP)
-
-
-def _handle_filesystem_envd_api_exception(r):
-    return handle_envd_api_exception(r, _FILESYSTEM_HTTP_ERROR_MAP)
 
 
 class Filesystem:
@@ -160,7 +137,7 @@ class Filesystem:
             timeout=self._connection_config.get_request_timeout(request_timeout),
         )
 
-        err = _handle_filesystem_envd_api_exception(r)
+        err = handle_envd_api_exception(r)
         if err:
             raise err
 
@@ -258,7 +235,7 @@ class Filesystem:
             timeout=self._connection_config.get_request_timeout(request_timeout),
         )
 
-        err = _handle_filesystem_envd_api_exception(r)
+        err = handle_envd_api_exception(r)
         if err:
             raise err
 
@@ -325,7 +302,7 @@ class Filesystem:
 
             return entries
         except Exception as e:
-            raise _handle_filesystem_rpc_exception(e)
+            raise handle_rpc_exception(e)
 
     def exists(
         self,
@@ -356,7 +333,7 @@ class Filesystem:
             if isinstance(e, e2b_connect.ConnectException):
                 if e.status == e2b_connect.Code.not_found:
                     return False
-            raise _handle_filesystem_rpc_exception(e)
+            raise handle_rpc_exception(e)
 
     def get_info(
         self,
@@ -400,7 +377,7 @@ class Filesystem:
                 ),
             )
         except Exception as e:
-            raise _handle_filesystem_rpc_exception(e)
+            raise handle_rpc_exception(e)
 
     def remove(
         self,
@@ -424,7 +401,7 @@ class Filesystem:
                 headers=authentication_header(self._envd_version, user),
             )
         except Exception as e:
-            raise _handle_filesystem_rpc_exception(e)
+            raise handle_rpc_exception(e)
 
     def rename(
         self,
@@ -473,7 +450,7 @@ class Filesystem:
                 ),
             )
         except Exception as e:
-            raise _handle_filesystem_rpc_exception(e)
+            raise handle_rpc_exception(e)
 
     def make_dir(
         self,
@@ -504,7 +481,7 @@ class Filesystem:
             if isinstance(e, e2b_connect.ConnectException):
                 if e.status == e2b_connect.Code.already_exists:
                     return False
-            raise _handle_filesystem_rpc_exception(e)
+            raise handle_rpc_exception(e)
 
     def watch_dir(
         self,
@@ -541,6 +518,6 @@ class Filesystem:
                 },
             )
         except Exception as e:
-            raise _handle_filesystem_rpc_exception(e)
+            raise handle_rpc_exception(e)
 
         return WatchHandle(self._rpc, r.watcher_id)

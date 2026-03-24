@@ -5,14 +5,7 @@ from typing import Any, Dict, List, Literal, Optional, TypedDict, Union, cast
 from typing_extensions import NotRequired, Unpack
 
 from e2b import ConnectionConfig
-from e2b.api.client.models import (
-    ListedSandbox,
-    SandboxDetail,
-    SandboxLifecycle as ClientSandboxLifecycle,
-    SandboxNetworkConfig as ClientSandboxNetworkConfig,
-    SandboxState,
-)
-from e2b.api.client.types import Unset
+from e2b.api.client.models import ListedSandbox, SandboxDetail, SandboxState
 from e2b.connection_config import ApiParams
 from e2b.sandbox.mcp import McpServer as BaseMcpServer
 
@@ -101,61 +94,11 @@ class SandboxLifecycle(TypedDict):
     """
 
 
-class SandboxInfoLifecycle(TypedDict):
-    """
-    Sandbox lifecycle configuration returned by sandbox info.
-    """
-
-    on_timeout: Literal["pause", "kill"]
-    """
-    What should happen to the sandbox when timeout is reached.
-    """
-
-    auto_resume: bool
-    """
-    Whether activity should cause the sandbox to resume when paused.
-    """
-
-
 def get_auto_resume_enabled(lifecycle: Optional[SandboxLifecycle]) -> Optional[bool]:
     if lifecycle is None or lifecycle.get("on_timeout") != "pause":
         return None
 
     return lifecycle.get("auto_resume", False)
-
-
-def from_client_network_config(
-    network: Union[Unset, ClientSandboxNetworkConfig],
-) -> Optional[SandboxNetworkOpts]:
-    if isinstance(network, Unset):
-        return None
-
-    result: SandboxNetworkOpts = {}
-
-    if not isinstance(network.allow_out, Unset):
-        result["allow_out"] = list(network.allow_out)
-    if not isinstance(network.deny_out, Unset):
-        result["deny_out"] = list(network.deny_out)
-    if not isinstance(network.allow_public_traffic, Unset):
-        result["allow_public_traffic"] = network.allow_public_traffic
-    if not isinstance(network.mask_request_host, Unset):
-        result["mask_request_host"] = network.mask_request_host
-
-    return result
-
-
-def from_client_lifecycle(
-    lifecycle: Union[Unset, ClientSandboxLifecycle],
-) -> Optional[SandboxInfoLifecycle]:
-    if isinstance(lifecycle, Unset):
-        return None
-
-    result: SandboxInfoLifecycle = {
-        "on_timeout": cast(Literal["pause", "kill"], lifecycle.on_timeout),
-        "auto_resume": lifecycle.auto_resume,
-    }
-
-    return result
 
 
 @dataclass
@@ -186,12 +129,6 @@ class SandboxInfo:
     """Envd version."""
     _envd_access_token: Optional[str]
     """Envd access token."""
-    allow_internet_access: Optional[bool] = None
-    """Whether internet access was explicitly enabled or disabled for the sandbox."""
-    network: Optional[SandboxNetworkOpts] = None
-    """Sandbox network configuration."""
-    lifecycle: Optional[SandboxInfoLifecycle] = None
-    """Sandbox lifecycle configuration."""
 
     @classmethod
     def _from_sandbox_data(
@@ -199,9 +136,6 @@ class SandboxInfo:
         sandbox: Union[ListedSandbox, SandboxDetail],
         envd_access_token: Optional[str] = None,
         sandbox_domain: Optional[str] = None,
-        allow_internet_access: Optional[bool] = None,
-        network: Optional[SandboxNetworkOpts] = None,
-        lifecycle: Optional[SandboxInfoLifecycle] = None,
     ):
         return cls(
             sandbox_domain=sandbox_domain,
@@ -219,9 +153,6 @@ class SandboxInfo:
             memory_mb=sandbox.memory_mb,
             envd_version=sandbox.envd_version,
             _envd_access_token=envd_access_token,
-            allow_internet_access=allow_internet_access,
-            network=network,
-            lifecycle=lifecycle,
         )
 
     @classmethod
@@ -242,13 +173,6 @@ class SandboxInfo:
                 if isinstance(sandbox_detail.domain, str)
                 else None
             ),
-            allow_internet_access=(
-                sandbox_detail.allow_internet_access
-                if isinstance(sandbox_detail.allow_internet_access, bool)
-                else None
-            ),
-            network=from_client_network_config(sandbox_detail.network),
-            lifecycle=from_client_lifecycle(sandbox_detail.lifecycle),
         )
 
 

@@ -1,0 +1,1845 @@
+### TemplateBase
+
+Base class for building E2B sandbox templates.
+
+#### Implements
+
+- `TemplateFromImage`
+- `TemplateBuilder`
+- `TemplateFinal`
+
+#### Constructors
+
+```ts
+new TemplateBase(options?: TemplateOptions): TemplateBase
+```
+
+###### Parameters
+
+| Parameter | Type |
+| ------ | ------ |
+| `options`? | `TemplateOptions` |
+
+###### Returns
+
+`TemplateBase`
+
+#### Methods
+
+### addMcpServer()
+
+```ts
+addMcpServer(servers: keyof McpServer | keyof McpServer[]): TemplateBuilder
+```
+
+Install MCP servers using mcp-gateway.
+Note: Requires a base image with mcp-gateway pre-installed (e.g., mcp-gateway).
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `servers` | keyof McpServer \| keyof McpServer[] | MCP server name(s) |
+
+###### Returns
+
+`TemplateBuilder`
+
+###### Throws
+
+If the base template is not mcp-gateway
+
+###### Example
+
+```ts
+template.addMcpServer('exa')
+template.addMcpServer(['brave', 'firecrawl', 'duckduckgo'])
+```
+
+###### Implementation of
+
+`TemplateBuilder`.`addMcpServer`
+
+### aptInstall()
+
+```ts
+aptInstall(packages: string | string[], options?: object): TemplateBuilder
+```
+
+Install Debian/Ubuntu packages using apt-get.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `packages` | `string` \| `string`[] | Package name(s) |
+| `options`? | `object` | - |
+| `options.noInstallRecommends`? | `boolean` | - |
+
+###### Returns
+
+`TemplateBuilder`
+
+###### Example
+
+```ts
+template.aptInstall('vim')
+template.aptInstall(['git', 'curl', 'wget'])
+template.aptInstall(['vim'], { noInstallRecommends: true })
+```
+
+###### Implementation of
+
+`TemplateBuilder`.`aptInstall`
+
+### betaDevContainerPrebuild()
+
+```ts
+betaDevContainerPrebuild(devcontainerDirectory: string): TemplateBuilder
+```
+
+Prebuild a devcontainer from the specified directory.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `devcontainerDirectory` | `string` | Path to the devcontainer directory |
+
+###### Returns
+
+`TemplateBuilder`
+
+###### Example
+
+```ts
+template
+ .gitClone('https://myrepo.com/project.git', '/my-devcontainer')
+ .betaDevContainerPrebuild('/my-devcontainer')
+```
+
+###### Implementation of
+
+`TemplateBuilder`.`betaDevContainerPrebuild`
+
+### betaSetDevContainerStart()
+
+```ts
+betaSetDevContainerStart(devcontainerDirectory: string): TemplateFinal
+```
+
+Start a devcontainer from the specified directory.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `devcontainerDirectory` | `string` | Path to the devcontainer directory |
+
+###### Returns
+
+`TemplateFinal`
+
+###### Example
+
+```ts
+template
+ .gitClone('https://myrepo.com/project.git', '/my-devcontainer')
+ .startDevcontainer('/my-devcontainer')
+
+// Prebuild and start
+template
+ .gitClone('https://myrepo.com/project.git', '/my-devcontainer')
+ .betaDevContainerPrebuild('/my-devcontainer')
+ // Other instructions...
+ .betaSetDevContainerStart('/my-devcontainer')
+```
+
+###### Implementation of
+
+`TemplateBuilder`.`betaSetDevContainerStart`
+
+### copy()
+
+```ts
+copy(
+   src: PathLike | PathLike[], 
+   dest: PathLike, 
+   options?: object): TemplateBuilder
+```
+
+Copy files or directories into the template.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `src` | `PathLike` \| `PathLike`[] | Source path(s) |
+| `dest` | `PathLike` | Destination path |
+| `options`? | `object` | Copy options |
+| `options.forceUpload`? | `true` | - |
+| `options.mode`? | `number` | - |
+| `options.resolveSymlinks`? | `boolean` | - |
+| `options.user`? | `string` | - |
+
+###### Returns
+
+`TemplateBuilder`
+
+###### Example
+
+```ts
+template.copy('requirements.txt', '/home/user/')
+template.copy(['app.ts', 'config.ts'], '/app/', { mode: 0o755 })
+```
+
+###### Implementation of
+
+`TemplateBuilder`.`copy`
+
+### copyItems()
+
+```ts
+copyItems(items: CopyItem[]): TemplateBuilder
+```
+
+Copy multiple items with individual options.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `items` | `CopyItem`[] | Array of copy items |
+
+###### Returns
+
+`TemplateBuilder`
+
+###### Example
+
+```ts
+template.copyItems([
+  { src: 'app.ts', dest: '/app/' },
+  { src: 'config.ts', dest: '/app/', mode: 0o644 }
+])
+```
+
+###### Implementation of
+
+`TemplateBuilder`.`copyItems`
+
+### fromAWSRegistry()
+
+```ts
+fromAWSRegistry(image: string, credentials: object): TemplateBuilder
+```
+
+Start from a Docker image in AWS ECR.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `image` | `string` | Full ECR image path |
+| `credentials` | `object` | AWS credentials |
+| `credentials.accessKeyId` | `string` | - |
+| `credentials.region` | `string` | - |
+| `credentials.secretAccessKey` | `string` | - |
+
+###### Returns
+
+`TemplateBuilder`
+
+###### Example
+
+```ts
+Template().fromAWSRegistry(
+  '123456789.dkr.ecr.us-west-2.amazonaws.com/myimage:latest',
+  {
+    accessKeyId: 'AKIA...',
+    secretAccessKey: '...',
+    region: 'us-west-2'
+  }
+)
+```
+
+###### Implementation of
+
+`TemplateFromImage.fromAWSRegistry`
+
+### fromBaseImage()
+
+```ts
+fromBaseImage(): TemplateBuilder
+```
+
+Start from E2B's default base image (e2bdev/base:latest).
+
+###### Returns
+
+`TemplateBuilder`
+
+###### Example
+
+```ts
+Template().fromBaseImage()
+```
+
+###### Implementation of
+
+`TemplateFromImage.fromBaseImage`
+
+### fromDebianImage()
+
+```ts
+fromDebianImage(variant: string): TemplateBuilder
+```
+
+Start from a Debian-based Docker image.
+
+###### Parameters
+
+| Parameter | Type | Default value | Description |
+| ------ | ------ | ------ | ------ |
+| `variant` | `string` | `'stable'` | Debian variant (default: 'stable') |
+
+###### Returns
+
+`TemplateBuilder`
+
+###### Example
+
+```ts
+Template().fromDebianImage('bookworm')
+```
+
+###### Implementation of
+
+`TemplateFromImage.fromDebianImage`
+
+### fromDockerfile()
+
+```ts
+fromDockerfile(dockerfileContentOrPath: string): TemplateBuilder
+```
+
+Parse a Dockerfile and convert it to Template SDK format.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `dockerfileContentOrPath` | `string` | Dockerfile content or path |
+
+###### Returns
+
+`TemplateBuilder`
+
+###### Example
+
+```ts
+Template().fromDockerfile('Dockerfile')
+Template().fromDockerfile('FROM python:3\nRUN pip install numpy')
+```
+
+###### Implementation of
+
+`TemplateFromImage.fromDockerfile`
+
+### fromGCPRegistry()
+
+```ts
+fromGCPRegistry(image: string, credentials: object): TemplateBuilder
+```
+
+Start from a Docker image in Google Container Registry.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `image` | `string` | Full GCR/GAR image path |
+| `credentials` | `object` | GCP service account credentials |
+| `credentials.serviceAccountJSON` | `string` \| `object` | - |
+
+###### Returns
+
+`TemplateBuilder`
+
+###### Example
+
+```ts
+Template().fromGCPRegistry(
+  'gcr.io/myproject/myimage:latest',
+  { serviceAccountJSON: 'path/to/service-account.json' }
+)
+```
+
+###### Implementation of
+
+`TemplateFromImage.fromGCPRegistry`
+
+### fromImage()
+
+```ts
+fromImage(baseImage: string, credentials?: object): TemplateBuilder
+```
+
+Start from a custom Docker image.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `baseImage` | `string` | Docker image name |
+| `credentials`? | `object` | Optional credentials for private registries |
+| `credentials.password`? | `string` | - |
+| `credentials.username`? | `string` | - |
+
+###### Returns
+
+`TemplateBuilder`
+
+###### Example
+
+```ts
+Template().fromImage('python:3')
+
+// With credentials (optional)
+Template().fromImage('myregistry.com/myimage:latest', {
+  username: 'user',
+  password: 'pass'
+})
+```
+
+###### Implementation of
+
+`TemplateFromImage.fromImage`
+
+### fromNodeImage()
+
+```ts
+fromNodeImage(variant: string): TemplateBuilder
+```
+
+Start from a Node.js-based Docker image.
+
+###### Parameters
+
+| Parameter | Type | Default value | Description |
+| ------ | ------ | ------ | ------ |
+| `variant` | `string` | `'lts'` | Node.js variant (default: 'lts') |
+
+###### Returns
+
+`TemplateBuilder`
+
+###### Example
+
+```ts
+Template().fromNodeImage('24')
+```
+
+###### Implementation of
+
+`TemplateFromImage.fromNodeImage`
+
+### fromPythonImage()
+
+```ts
+fromPythonImage(version: string): TemplateBuilder
+```
+
+Start from a Python-based Docker image.
+
+###### Parameters
+
+| Parameter | Type | Default value | Description |
+| ------ | ------ | ------ | ------ |
+| `version` | `string` | `'3'` | Python version (default: '3') |
+
+###### Returns
+
+`TemplateBuilder`
+
+###### Example
+
+```ts
+Template().fromPythonImage('3')
+```
+
+###### Implementation of
+
+`TemplateFromImage.fromPythonImage`
+
+### fromTemplate()
+
+```ts
+fromTemplate(template: string): TemplateBuilder
+```
+
+Start from an existing E2B template.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `template` | `string` | E2B template ID or alias |
+
+###### Returns
+
+`TemplateBuilder`
+
+###### Example
+
+```ts
+Template().fromTemplate('my-base-template')
+```
+
+###### Implementation of
+
+`TemplateFromImage.fromTemplate`
+
+### fromUbuntuImage()
+
+```ts
+fromUbuntuImage(variant: string): TemplateBuilder
+```
+
+Start from an Ubuntu-based Docker image.
+
+###### Parameters
+
+| Parameter | Type | Default value | Description |
+| ------ | ------ | ------ | ------ |
+| `variant` | `string` | `'latest'` | Ubuntu variant (default: 'latest') |
+
+###### Returns
+
+`TemplateBuilder`
+
+###### Example
+
+```ts
+Template().fromUbuntuImage('24.04')
+```
+
+###### Implementation of
+
+`TemplateFromImage.fromUbuntuImage`
+
+### gitClone()
+
+```ts
+gitClone(
+   url: string, 
+   path?: PathLike, 
+   options?: object): TemplateBuilder
+```
+
+Clone a Git repository.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `url` | `string` | Repository URL |
+| `path`? | `PathLike` | Optional destination path |
+| `options`? | `object` | Clone options |
+| `options.branch`? | `string` | - |
+| `options.depth`? | `number` | - |
+| `options.user`? | `string` | - |
+
+###### Returns
+
+`TemplateBuilder`
+
+###### Example
+
+```ts
+template.gitClone('https://github.com/user/repo.git', '/app/repo')
+template.gitClone('https://github.com/user/repo.git', undefined, {
+  branch: 'main',
+  depth: 1
+})
+template.gitClone('https://github.com/user/repo.git', '/app/repo', {
+  user: 'root'
+})
+```
+
+###### Implementation of
+
+`TemplateBuilder`.`gitClone`
+
+### makeDir()
+
+```ts
+makeDir(path: PathLike | PathLike[], options?: object): TemplateBuilder
+```
+
+Create directories.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `path` | `PathLike` \| `PathLike`[] | Directory path(s) |
+| `options`? | `object` | Directory options |
+| `options.mode`? | `number` | - |
+| `options.user`? | `string` | - |
+
+###### Returns
+
+`TemplateBuilder`
+
+###### Example
+
+```ts
+template.makeDir('/app/data', { mode: 0o755 })
+template.makeDir(['/app/logs', '/app/cache'])
+template.makeDir('/app/data', { mode: 0o755, user: 'root' })
+```
+
+###### Implementation of
+
+`TemplateBuilder`.`makeDir`
+
+### makeSymlink()
+
+```ts
+makeSymlink(
+   src: PathLike, 
+   dest: PathLike, 
+   options?: object): TemplateBuilder
+```
+
+Create a symbolic link.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `src` | `PathLike` | Source path (target) |
+| `dest` | `PathLike` | Destination path (symlink location) |
+| `options`? | `object` | Symlink options |
+| `options.force`? | `boolean` | - |
+| `options.user`? | `string` | - |
+
+###### Returns
+
+`TemplateBuilder`
+
+###### Example
+
+```ts
+template.makeSymlink('/usr/bin/python3', '/usr/bin/python')
+template.makeSymlink('/usr/bin/python3', '/usr/bin/python', { user: 'root' })
+template.makeSymlink('/usr/bin/python3', '/usr/bin/python', { force: true })
+```
+
+###### Implementation of
+
+`TemplateBuilder`.`makeSymlink`
+
+### npmInstall()
+
+```ts
+npmInstall(packages?: string | string[], options?: object): TemplateBuilder
+```
+
+Install Node.js packages using npm.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `packages`? | `string` \| `string`[] | Package name(s) or undefined for package.json |
+| `options`? | `object` | Install options |
+| `options.g`? | `boolean` | - |
+
+###### Returns
+
+`TemplateBuilder`
+
+###### Example
+
+```ts
+template.npmInstall('express')
+template.npmInstall(['lodash', 'axios'])
+template.npmInstall('typescript', { g: true })
+template.npmInstall()  // Installs from package.json
+```
+
+###### Implementation of
+
+`TemplateBuilder`.`npmInstall`
+
+### pipInstall()
+
+```ts
+pipInstall(packages?: string | string[], options?: object): TemplateBuilder
+```
+
+Install Python packages using pip.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `packages`? | `string` \| `string`[] | Package name(s) or undefined for current directory |
+| `options`? | `object` | Install options |
+| `options.g`? | `boolean` | Install globally as root (default: true). Set to false for user-only installation with --user flag |
+
+###### Returns
+
+`TemplateBuilder`
+
+###### Example
+
+```ts
+template.pipInstall('numpy')  // Installs globally (default)
+template.pipInstall(['pandas', 'scikit-learn'])
+template.pipInstall('numpy', { g: false })  // Install for user only
+template.pipInstall()  // Installs from current directory
+```
+
+###### Implementation of
+
+`TemplateBuilder`.`pipInstall`
+
+### remove()
+
+```ts
+remove(path: PathLike | PathLike[], options?: object): TemplateBuilder
+```
+
+Remove files or directories.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `path` | `PathLike` \| `PathLike`[] | Path(s) to remove |
+| `options`? | `object` | Remove options |
+| `options.force`? | `boolean` | - |
+| `options.recursive`? | `boolean` | - |
+| `options.user`? | `string` | - |
+
+###### Returns
+
+`TemplateBuilder`
+
+###### Example
+
+```ts
+template.remove('/tmp/cache', { recursive: true, force: true })
+template.remove('/tmp/cache', { recursive: true, force: true, user: 'root' })
+```
+
+###### Implementation of
+
+`TemplateBuilder`.`remove`
+
+### rename()
+
+```ts
+rename(
+   src: PathLike, 
+   dest: PathLike, 
+   options?: object): TemplateBuilder
+```
+
+Rename or move a file or directory.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `src` | `PathLike` | Source path |
+| `dest` | `PathLike` | Destination path |
+| `options`? | `object` | Rename options |
+| `options.force`? | `boolean` | - |
+| `options.user`? | `string` | - |
+
+###### Returns
+
+`TemplateBuilder`
+
+###### Example
+
+```ts
+template.rename('/tmp/old.txt', '/tmp/new.txt')
+template.rename('/tmp/old.txt', '/tmp/new.txt', { user: 'root' })
+```
+
+###### Implementation of
+
+`TemplateBuilder`.`rename`
+
+### runCmd()
+
+###### runCmd(command, options)
+
+```ts
+runCmd(command: string, options?: object): TemplateBuilder
+```
+
+Run a shell command.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `command` | `string` | Command string |
+| `options`? | `object` | Command options |
+| `options.user`? | `string` | - |
+
+###### Returns
+
+`TemplateBuilder`
+
+###### Example
+
+```ts
+template.runCmd('apt-get update')
+template.runCmd(['pip install numpy', 'pip install pandas'])
+template.runCmd('apt-get install vim', { user: 'root' })
+```
+
+###### Implementation of
+
+`TemplateBuilder`.`runCmd`
+
+###### runCmd(commands, options)
+
+```ts
+runCmd(commands: string[], options?: object): TemplateBuilder
+```
+
+Run a shell command.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `commands` | `string`[] | - |
+| `options`? | `object` | Command options |
+| `options.user`? | `string` | - |
+
+###### Returns
+
+`TemplateBuilder`
+
+###### Example
+
+```ts
+template.runCmd('apt-get update')
+template.runCmd(['pip install numpy', 'pip install pandas'])
+template.runCmd('apt-get install vim', { user: 'root' })
+```
+
+###### Implementation of
+
+`TemplateBuilder`.`runCmd`
+
+### setEnvs()
+
+```ts
+setEnvs(envs: Record<string, string>): TemplateBuilder
+```
+
+Set environment variables.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `envs` | `Record`\<`string`, `string`\> | Environment variables |
+
+###### Returns
+
+`TemplateBuilder`
+
+###### Example
+
+```ts
+template.setEnvs({ NODE_ENV: 'production', PORT: '8080' })
+```
+
+###### Implementation of
+
+`TemplateBuilder`.`setEnvs`
+
+### setReadyCmd()
+
+```ts
+setReadyCmd(readyCommand: string | ReadyCmd): TemplateFinal
+```
+
+Set or update the ready check command.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `readyCommand` | `string` \| `ReadyCmd` | Command to check readiness |
+
+###### Returns
+
+`TemplateFinal`
+
+###### Example
+
+```ts
+// Using a string command
+template.setReadyCmd('curl http://localhost:8000/health')
+
+// Using ReadyCmd helpers
+import { waitForPort, waitForFile, waitForProcess } from 'e2b'
+
+template.setReadyCmd(waitForPort(3000))
+
+template.setReadyCmd(waitForFile('/tmp/ready'))
+
+template.setReadyCmd(waitForProcess('nginx'))
+```
+
+###### Implementation of
+
+`TemplateBuilder`.`setReadyCmd`
+
+### setStartCmd()
+
+```ts
+setStartCmd(startCommand: string, readyCommand: string | ReadyCmd): TemplateFinal
+```
+
+Set the start command and ready check.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `startCommand` | `string` | Command to run on startup |
+| `readyCommand` | `string` \| `ReadyCmd` | Command to check readiness |
+
+###### Returns
+
+`TemplateFinal`
+
+###### Example
+
+```ts
+// Using a string command
+template.setStartCmd(
+  'node app.js',
+  'curl http://localhost:8000/health'
+)
+
+// Using ReadyCmd helpers
+import { waitForPort, waitForURL } from 'e2b'
+
+template.setStartCmd(
+  'python -m http.server 8000',
+  waitForPort(8000)
+)
+
+template.setStartCmd(
+  'npm start',
+  waitForURL('http://localhost:3000/health', 200)
+)
+```
+
+###### Implementation of
+
+`TemplateBuilder`.`setStartCmd`
+
+### setUser()
+
+```ts
+setUser(user: string): TemplateBuilder
+```
+
+Set the user for subsequent commands.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `user` | `string` | Username |
+
+###### Returns
+
+`TemplateBuilder`
+
+###### Example
+
+```ts
+template.setUser('root')
+```
+
+###### Implementation of
+
+`TemplateBuilder`.`setUser`
+
+### setWorkdir()
+
+```ts
+setWorkdir(workdir: PathLike): TemplateBuilder
+```
+
+Set the working directory.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `workdir` | `PathLike` | Working directory path |
+
+###### Returns
+
+`TemplateBuilder`
+
+###### Example
+
+```ts
+template.setWorkdir('/app')
+```
+
+###### Implementation of
+
+`TemplateBuilder`.`setWorkdir`
+
+### skipCache()
+
+```ts
+skipCache(): this
+```
+
+Skip cache for all subsequent build instructions from this point.
+
+###### Returns
+
+`this`
+
+###### Example
+
+```ts
+Template().skipCache().fromPythonImage('3')
+```
+
+###### Implementation of
+
+`TemplateBuilder`.`skipCache`
+
+### build()
+
+```ts
+static build(template: TemplateClass, options: BuildOptions): Promise<void>
+```
+
+Build and deploy a template to E2B infrastructure.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `template` | `TemplateClass` | The template to build |
+| `options` | `BuildOptions` | Build configuration options |
+
+###### Returns
+
+`Promise`\<`void`\>
+
+###### Example
+
+```ts
+const template = Template().fromPythonImage('3')
+await Template.build(template, {
+  alias: 'my-python-env',
+  cpuCount: 2,
+  memoryMB: 1024
+})
+```
+
+### toDockerfile()
+
+```ts
+static toDockerfile(template: TemplateClass): string
+```
+
+Convert a template to Dockerfile format.
+Note: Templates based on other E2B templates cannot be converted to Dockerfile.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `template` | `TemplateClass` | The template to convert |
+
+###### Returns
+
+`string`
+
+Dockerfile string representation
+
+###### Throws
+
+Error if the template is based on another E2B template
+
+### toJSON()
+
+```ts
+static toJSON(template: TemplateClass, computeHashes: boolean): Promise<string>
+```
+
+Convert a template to JSON representation.
+
+###### Parameters
+
+| Parameter | Type | Default value | Description |
+| ------ | ------ | ------ | ------ |
+| `template` | `TemplateClass` | `undefined` | The template to convert |
+| `computeHashes` | `boolean` | `true` | Whether to compute file hashes for cache invalidation |
+
+###### Returns
+
+`Promise`\<`string`\>
+
+JSON string representation of the template
+
+## Interfaces
+
+### TemplateBuilder
+
+Main builder state for constructing templates.
+Provides methods for customizing the template environment.
+
+#### Methods
+
+### addMcpServer()
+
+```ts
+addMcpServer(servers: keyof McpServer | keyof McpServer[]): TemplateBuilder
+```
+
+Install MCP servers using mcp-gateway.
+Note: Requires a base image with mcp-gateway pre-installed (e.g., mcp-gateway).
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `servers` | keyof McpServer \| keyof McpServer[] | MCP server name(s) |
+
+###### Returns
+
+`TemplateBuilder`
+
+###### Throws
+
+If the base template is not mcp-gateway
+
+###### Example
+
+```ts
+template.addMcpServer('exa')
+template.addMcpServer(['brave', 'firecrawl', 'duckduckgo'])
+```
+
+### aptInstall()
+
+```ts
+aptInstall(packages: string | string[], options?: object): TemplateBuilder
+```
+
+Install Debian/Ubuntu packages using apt-get.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `packages` | `string` \| `string`[] | Package name(s) |
+| `options`? | `object` | - |
+| `options.noInstallRecommends`? | `boolean` | - |
+
+###### Returns
+
+`TemplateBuilder`
+
+###### Example
+
+```ts
+template.aptInstall('vim')
+template.aptInstall(['git', 'curl', 'wget'])
+template.aptInstall(['vim'], { noInstallRecommends: true })
+```
+
+### betaDevContainerPrebuild()
+
+```ts
+betaDevContainerPrebuild(devcontainerDirectory: string): TemplateBuilder
+```
+
+Prebuild a devcontainer from the specified directory.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `devcontainerDirectory` | `string` | Path to the devcontainer directory |
+
+###### Returns
+
+`TemplateBuilder`
+
+###### Example
+
+```ts
+template
+ .gitClone('https://myrepo.com/project.git', '/my-devcontainer')
+ .betaDevContainerPrebuild('/my-devcontainer')
+```
+
+### betaSetDevContainerStart()
+
+```ts
+betaSetDevContainerStart(devcontainerDirectory: string): TemplateFinal
+```
+
+Start a devcontainer from the specified directory.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `devcontainerDirectory` | `string` | Path to the devcontainer directory |
+
+###### Returns
+
+`TemplateFinal`
+
+###### Example
+
+```ts
+template
+ .gitClone('https://myrepo.com/project.git', '/my-devcontainer')
+ .startDevcontainer('/my-devcontainer')
+
+// Prebuild and start
+template
+ .gitClone('https://myrepo.com/project.git', '/my-devcontainer')
+ .betaDevContainerPrebuild('/my-devcontainer')
+ // Other instructions...
+ .betaSetDevContainerStart('/my-devcontainer')
+```
+
+### copy()
+
+```ts
+copy(
+   src: PathLike | PathLike[], 
+   dest: PathLike, 
+   options?: object): TemplateBuilder
+```
+
+Copy files or directories into the template.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `src` | `PathLike` \| `PathLike`[] | Source path(s) |
+| `dest` | `PathLike` | Destination path |
+| `options`? | `object` | Copy options |
+| `options.forceUpload`? | `true` | - |
+| `options.mode`? | `number` | - |
+| `options.resolveSymlinks`? | `boolean` | - |
+| `options.user`? | `string` | - |
+
+###### Returns
+
+`TemplateBuilder`
+
+###### Example
+
+```ts
+template.copy('requirements.txt', '/home/user/')
+template.copy(['app.ts', 'config.ts'], '/app/', { mode: 0o755 })
+```
+
+### copyItems()
+
+```ts
+copyItems(items: CopyItem[]): TemplateBuilder
+```
+
+Copy multiple items with individual options.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `items` | `CopyItem`[] | Array of copy items |
+
+###### Returns
+
+`TemplateBuilder`
+
+###### Example
+
+```ts
+template.copyItems([
+  { src: 'app.ts', dest: '/app/' },
+  { src: 'config.ts', dest: '/app/', mode: 0o644 }
+])
+```
+
+### gitClone()
+
+```ts
+gitClone(
+   url: string, 
+   path?: PathLike, 
+   options?: object): TemplateBuilder
+```
+
+Clone a Git repository.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `url` | `string` | Repository URL |
+| `path`? | `PathLike` | Optional destination path |
+| `options`? | `object` | Clone options |
+| `options.branch`? | `string` | - |
+| `options.depth`? | `number` | - |
+| `options.user`? | `string` | - |
+
+###### Returns
+
+`TemplateBuilder`
+
+###### Example
+
+```ts
+template.gitClone('https://github.com/user/repo.git', '/app/repo')
+template.gitClone('https://github.com/user/repo.git', undefined, {
+  branch: 'main',
+  depth: 1
+})
+template.gitClone('https://github.com/user/repo.git', '/app/repo', {
+  user: 'root'
+})
+```
+
+### makeDir()
+
+```ts
+makeDir(path: PathLike | PathLike[], options?: object): TemplateBuilder
+```
+
+Create directories.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `path` | `PathLike` \| `PathLike`[] | Directory path(s) |
+| `options`? | `object` | Directory options |
+| `options.mode`? | `number` | - |
+| `options.user`? | `string` | - |
+
+###### Returns
+
+`TemplateBuilder`
+
+###### Example
+
+```ts
+template.makeDir('/app/data', { mode: 0o755 })
+template.makeDir(['/app/logs', '/app/cache'])
+template.makeDir('/app/data', { mode: 0o755, user: 'root' })
+```
+
+### makeSymlink()
+
+```ts
+makeSymlink(
+   src: PathLike, 
+   dest: PathLike, 
+   options?: object): TemplateBuilder
+```
+
+Create a symbolic link.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `src` | `PathLike` | Source path (target) |
+| `dest` | `PathLike` | Destination path (symlink location) |
+| `options`? | `object` | Symlink options |
+| `options.force`? | `boolean` | - |
+| `options.user`? | `string` | - |
+
+###### Returns
+
+`TemplateBuilder`
+
+###### Example
+
+```ts
+template.makeSymlink('/usr/bin/python3', '/usr/bin/python')
+template.makeSymlink('/usr/bin/python3', '/usr/bin/python', { user: 'root' })
+template.makeSymlink('/usr/bin/python3', '/usr/bin/python', { force: true })
+```
+
+### npmInstall()
+
+```ts
+npmInstall(packages?: string | string[], options?: object): TemplateBuilder
+```
+
+Install Node.js packages using npm.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `packages`? | `string` \| `string`[] | Package name(s) or undefined for package.json |
+| `options`? | `object` | Install options |
+| `options.g`? | `boolean` | - |
+
+###### Returns
+
+`TemplateBuilder`
+
+###### Example
+
+```ts
+template.npmInstall('express')
+template.npmInstall(['lodash', 'axios'])
+template.npmInstall('typescript', { g: true })
+template.npmInstall()  // Installs from package.json
+```
+
+### pipInstall()
+
+```ts
+pipInstall(packages?: string | string[], options?: object): TemplateBuilder
+```
+
+Install Python packages using pip.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `packages`? | `string` \| `string`[] | Package name(s) or undefined for current directory |
+| `options`? | `object` | Install options |
+| `options.g`? | `boolean` | Install globally as root (default: true). Set to false for user-only installation with --user flag |
+
+###### Returns
+
+`TemplateBuilder`
+
+###### Example
+
+```ts
+template.pipInstall('numpy')  // Installs globally (default)
+template.pipInstall(['pandas', 'scikit-learn'])
+template.pipInstall('numpy', { g: false })  // Install for user only
+template.pipInstall()  // Installs from current directory
+```
+
+### remove()
+
+```ts
+remove(path: PathLike | PathLike[], options?: object): TemplateBuilder
+```
+
+Remove files or directories.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `path` | `PathLike` \| `PathLike`[] | Path(s) to remove |
+| `options`? | `object` | Remove options |
+| `options.force`? | `boolean` | - |
+| `options.recursive`? | `boolean` | - |
+| `options.user`? | `string` | - |
+
+###### Returns
+
+`TemplateBuilder`
+
+###### Example
+
+```ts
+template.remove('/tmp/cache', { recursive: true, force: true })
+template.remove('/tmp/cache', { recursive: true, force: true, user: 'root' })
+```
+
+### rename()
+
+```ts
+rename(
+   src: PathLike, 
+   dest: PathLike, 
+   options?: object): TemplateBuilder
+```
+
+Rename or move a file or directory.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `src` | `PathLike` | Source path |
+| `dest` | `PathLike` | Destination path |
+| `options`? | `object` | Rename options |
+| `options.force`? | `boolean` | - |
+| `options.user`? | `string` | - |
+
+###### Returns
+
+`TemplateBuilder`
+
+###### Example
+
+```ts
+template.rename('/tmp/old.txt', '/tmp/new.txt')
+template.rename('/tmp/old.txt', '/tmp/new.txt', { user: 'root' })
+```
+
+### runCmd()
+
+###### runCmd(command, options)
+
+```ts
+runCmd(command: string, options?: object): TemplateBuilder
+```
+
+Run a shell command.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `command` | `string` | Command string |
+| `options`? | `object` | Command options |
+| `options.user`? | `string` | - |
+
+###### Returns
+
+`TemplateBuilder`
+
+###### Example
+
+```ts
+template.runCmd('apt-get update')
+template.runCmd(['pip install numpy', 'pip install pandas'])
+template.runCmd('apt-get install vim', { user: 'root' })
+```
+
+###### runCmd(commands, options)
+
+```ts
+runCmd(commands: string[], options?: object): TemplateBuilder
+```
+
+Run multiple shell commands.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `commands` | `string`[] | Array of command strings |
+| `options`? | `object` | Command options |
+| `options.user`? | `string` | - |
+
+###### Returns
+
+`TemplateBuilder`
+
+###### runCmd(commandOrCommands, options)
+
+```ts
+runCmd(commandOrCommands: string | string[], options?: object): TemplateBuilder
+```
+
+Run command(s).
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `commandOrCommands` | `string` \| `string`[] | Command or commands |
+| `options`? | `object` | Command options |
+| `options.user`? | `string` | - |
+
+###### Returns
+
+`TemplateBuilder`
+
+### setEnvs()
+
+```ts
+setEnvs(envs: Record<string, string>): TemplateBuilder
+```
+
+Set environment variables.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `envs` | `Record`\<`string`, `string`\> | Environment variables |
+
+###### Returns
+
+`TemplateBuilder`
+
+###### Example
+
+```ts
+template.setEnvs({ NODE_ENV: 'production', PORT: '8080' })
+```
+
+### setReadyCmd()
+
+```ts
+setReadyCmd(readyCommand: string | ReadyCmd): TemplateFinal
+```
+
+Set or update the ready check command.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `readyCommand` | `string` \| `ReadyCmd` | Command to check readiness |
+
+###### Returns
+
+`TemplateFinal`
+
+###### Example
+
+```ts
+// Using a string command
+template.setReadyCmd('curl http://localhost:8000/health')
+
+// Using ReadyCmd helpers
+import { waitForPort, waitForFile, waitForProcess } from 'e2b'
+
+template.setReadyCmd(waitForPort(3000))
+
+template.setReadyCmd(waitForFile('/tmp/ready'))
+
+template.setReadyCmd(waitForProcess('nginx'))
+```
+
+### setStartCmd()
+
+```ts
+setStartCmd(startCommand: string, readyCommand: string | ReadyCmd): TemplateFinal
+```
+
+Set the start command and ready check.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `startCommand` | `string` | Command to run on startup |
+| `readyCommand` | `string` \| `ReadyCmd` | Command to check readiness |
+
+###### Returns
+
+`TemplateFinal`
+
+###### Example
+
+```ts
+// Using a string command
+template.setStartCmd(
+  'node app.js',
+  'curl http://localhost:8000/health'
+)
+
+// Using ReadyCmd helpers
+import { waitForPort, waitForURL } from 'e2b'
+
+template.setStartCmd(
+  'python -m http.server 8000',
+  waitForPort(8000)
+)
+
+template.setStartCmd(
+  'npm start',
+  waitForURL('http://localhost:3000/health', 200)
+)
+```
+
+### setUser()
+
+```ts
+setUser(user: string): TemplateBuilder
+```
+
+Set the user for subsequent commands.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `user` | `string` | Username |
+
+###### Returns
+
+`TemplateBuilder`
+
+###### Example
+
+```ts
+template.setUser('root')
+```
+
+### setWorkdir()
+
+```ts
+setWorkdir(workdir: PathLike): TemplateBuilder
+```
+
+Set the working directory.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `workdir` | `PathLike` | Working directory path |
+
+###### Returns
+
+`TemplateBuilder`
+
+###### Example
+
+```ts
+template.setWorkdir('/app')
+```
+
+### skipCache()
+
+```ts
+skipCache(): this
+```
+
+Skip cache for all subsequent build instructions from this point.
+
+###### Returns
+
+`this`
+
+###### Example
+
+```ts
+template.skipCache().runCmd('apt-get update')
+```
+
+## Type Aliases
+
+### BuildOptions
+
+```ts
+type BuildOptions: BasicBuildOptions & object;
+```
+
+Options for building a template with authentication.
+
+#### Type declaration
+
+| Name | Type | Description |
+| ------ | ------ | ------ |
+| `apiKey`? | `string` | E2B API key for authentication. |
+| `domain`? | `string` | Domain of the E2B API. |
+
+***
+
+### CopyItem
+
+```ts
+type CopyItem: object;
+```
+
+Configuration for a single file/directory copy operation.
+
+#### Type declaration
+
+| Name | Type |
+| ------ | ------ |
+| `dest` | `PathLike` |
+| `forceUpload`? | `true` |
+| `mode`? | `number` |
+| `resolveSymlinks`? | `boolean` |
+| `src` | `PathLike` \| `PathLike`[] |
+| `user`? | `string` |
+
+***
+
+### McpServerName
+
+```ts
+type McpServerName: keyof McpServer;
+```
+
+MCP server names that can be installed.
+
+***
+
+### TemplateClass
+
+```ts
+type TemplateClass: TemplateBuilder | TemplateFinal;
+```
+
+Type representing a template in any state (builder or final).
+
+## Functions
+
+### Template()
+
+```ts
+function Template(options?: TemplateOptions): TemplateFromImage
+```
+
+Create a new E2B template builder instance.
+
+#### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `options`? | `TemplateOptions` | Optional configuration for the template builder |
+
+#### Returns
+
+`TemplateFromImage`
+
+A new template builder instance
+
+#### Example
+
+```ts
+import { Template } from 'e2b'
+
+const template = Template()
+  .fromPythonImage('3')
+  .copy('requirements.txt', '/app/')
+  .pipInstall()
+
+await Template.build(template, { alias: 'my-python-app' })
+```

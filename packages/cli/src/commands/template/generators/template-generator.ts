@@ -10,7 +10,7 @@ import { TemplateClass } from 'e2b'
  */
 export async function generateAndWriteTemplateFiles(
   root: string,
-  name: string,
+  alias: string,
   language: Language,
   template: TemplateClass,
   cpuCount?: number,
@@ -21,13 +21,13 @@ export async function generateAndWriteTemplateFiles(
       const { templateContent, buildContent: buildDevContent } =
         await generateTypeScriptCode(
           template,
-          `${name}-dev`,
+          `${alias}-dev`,
           cpuCount,
           memoryMB
         )
       const { buildContent: buildProdContent } = await generateTypeScriptCode(
         template,
-        name,
+        alias,
         cpuCount,
         memoryMB
       )
@@ -57,14 +57,14 @@ export async function generateAndWriteTemplateFiles(
       const { templateContent, buildContent: buildDevContent } =
         await generatePythonCode(
           template,
-          `${name}-dev`,
+          `${alias}-dev`,
           cpuCount,
           memoryMB,
           isAsync
         )
       const { buildContent: buildProdContent } = await generatePythonCode(
         template,
-        name,
+        alias,
         cpuCount,
         memoryMB,
         isAsync

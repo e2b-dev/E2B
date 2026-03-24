@@ -1,6 +1,6 @@
 import pytest
 
-from e2b import FileNotFoundException, NotFoundException, AsyncSandbox
+from e2b import NotFoundException, AsyncSandbox
 
 
 async def test_read_file(async_sandbox: AsyncSandbox):
@@ -13,15 +13,6 @@ async def test_read_file(async_sandbox: AsyncSandbox):
 
 
 async def test_read_non_existing_file(async_sandbox: AsyncSandbox):
-    filename = "non_existing_file.txt"
-
-    with pytest.raises(FileNotFoundException):
-        await async_sandbox.files.read(filename)
-
-
-async def test_read_non_existing_file_catches_with_deprecated_not_found_exception(
-    async_sandbox: AsyncSandbox,
-):
     filename = "non_existing_file.txt"
 
     with pytest.raises(NotFoundException):

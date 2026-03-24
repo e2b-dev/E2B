@@ -1,0 +1,206 @@
+# errors
+
+## Classes
+
+### AuthenticationError
+
+Thrown when authentication fails.
+
+#### Constructors
+
+##### new AuthenticationError()
+
+> **new AuthenticationError**(`message`): `AuthenticationError`
+
+###### Parameters
+
+• **message**: `any`
+
+###### Returns
+
+`AuthenticationError`
+
+###### Defined in
+
+errors.ts:72
+
+***
+
+### InvalidArgumentError
+
+Thrown when an invalid argument is provided.
+
+#### Constructors
+
+##### new InvalidArgumentError()
+
+> **new InvalidArgumentError**(`message`): `InvalidArgumentError`
+
+###### Parameters
+
+• **message**: `string`
+
+###### Returns
+
+`InvalidArgumentError`
+
+###### Defined in
+
+errors.ts:42
+
+***
+
+### NotEnoughSpaceError
+
+Thrown when there is not enough disk space.
+
+#### Constructors
+
+##### new NotEnoughSpaceError()
+
+> **new NotEnoughSpaceError**(`message`): `NotEnoughSpaceError`
+
+###### Parameters
+
+• **message**: `string`
+
+###### Returns
+
+`NotEnoughSpaceError`
+
+###### Defined in
+
+errors.ts:52
+
+***
+
+### NotFoundError
+
+Thrown when a resource is not found.
+
+#### Constructors
+
+##### new NotFoundError()
+
+> **new NotFoundError**(`message`): `NotFoundError`
+
+###### Parameters
+
+• **message**: `string`
+
+###### Returns
+
+`NotFoundError`
+
+###### Defined in
+
+errors.ts:62
+
+***
+
+### SandboxError
+
+Base class for all sandbox errors.
+
+Thrown when general sandbox errors occur.
+
+#### Extended by
+
+- `TimeoutError`
+- `InvalidArgumentError`
+- `NotEnoughSpaceError`
+- `NotFoundError`
+- `AuthenticationError`
+- `TemplateError`
+
+#### Constructors
+
+##### new SandboxError()
+
+> **new SandboxError**(`message`): `SandboxError`
+
+###### Parameters
+
+• **message**: `any`
+
+###### Returns
+
+`SandboxError`
+
+###### Defined in
+
+errors.ts:14
+
+***
+
+### TemplateError
+
+Thrown when the template uses old envd version. It isn't compatible with the new SDK.
+
+#### Constructors
+
+##### new TemplateError()
+
+> **new TemplateError**(`message`): `TemplateError`
+
+###### Parameters
+
+• **message**: `string`
+
+###### Returns
+
+`TemplateError`
+
+###### Defined in
+
+errors.ts:82
+
+***
+
+### TimeoutError
+
+Thrown when a timeout error occurs.
+
+The [unavailable] error type is caused by sandbox timeout.
+
+The [canceled] error type is caused by exceeding request timeout.
+
+The [deadline_exceeded] error type is caused by exceeding the timeout for command execution, watch, etc.
+
+The [unknown] error type is sometimes caused by the sandbox timeout when the request is not processed correctly.
+
+#### Constructors
+
+##### new TimeoutError()
+
+> **new TimeoutError**(`message`): `TimeoutError`
+
+###### Parameters
+
+• **message**: `string`
+
+###### Returns
+
+`TimeoutError`
+
+###### Defined in
+
+errors.ts:32
+
+## Functions
+
+### formatSandboxTimeoutError()
+
+> **formatSandboxTimeoutError**(`message`): `TimeoutError`
+
+#### Parameters
+
+• **message**: `string`
+
+#### Returns
+
+`TimeoutError`
+
+#### Defined in
+
+errors.ts:2

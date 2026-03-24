@@ -87,6 +87,36 @@ jobs:
           NPM_TOKEN: "" # See https://github.com/changesets/changesets/issues/1152#issuecomment-3190884868
           PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
 
+      - name: Generate SDK reference
+        id: sdk-ref
+        run: pnpm run --recursive generate-ref
+
+      - name: Clone Remote Code Interpreter SDK reference
+        run: |
+          git clone --depth 1 --filter=blob:none --sparse https://github.com/e2b-dev/code-interpreter
+          cd code-interpreter
+          git sparse-checkout set sdk-reference
+          cp -r sdk-reference/* ../apps/web/src/app/\(docs\)/docs/sdk-reference/
+          cd ..
+          rm -rf code-interpreter
+
+      - name: Clone Remote Desktop SDK reference
+        run: |
+          git clone --depth 1 --filter=blob:none --sparse https://github.com/e2b-dev/desktop
+          cd desktop
+          git sparse-checkout set sdk-reference
+          cp -r sdk-reference/* ../apps/web/src/app/\(docs\)/docs/sdk-reference/
+          cd ..
+          rm -rf desktop
+
+      - name: Show docs file structure
+        run: |
+          if [ -d "./sdk-reference" ]; then
+            tree ./sdk-reference
+          else
+            echo "sdk-reference directory does not exist"
+          fi
+
       - name: Update lock file
         run: pnpm i --no-link --no-frozen-lockfile
 
@@ -94,6 +124,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add apps/web/src/app/\(docs\)/docs/sdk-reference 
           git commit -am "[skip ci] Release new versions" || exit 0
           git push
         env:

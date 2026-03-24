@@ -58,29 +58,6 @@ describe('sandbox cli backend integration', () => {
   )
 
   integrationTest(
-    'info shows the sandbox details',
-    { timeout: perTestTimeoutMs },
-    async () => {
-      const infoResult = runCliInSandbox([
-        'sandbox',
-        'info',
-        sandbox.sandboxId,
-        '--format',
-        'json',
-      ])
-      expect(infoResult.status).toBe(0)
-
-      const info = JSON.parse(bufferToText(infoResult.stdout)) as {
-        sandboxId?: string
-        state?: string
-      }
-
-      expect(info.sandboxId).toBe(sandbox.sandboxId)
-      expect(info.state).toBe('running')
-    }
-  )
-
-  integrationTest(
     'exec runs a command without piped stdin',
     { timeout: perTestTimeoutMs },
     async () => {

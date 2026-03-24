@@ -3,7 +3,9 @@
   "changelog": "@changesets/cli/changelog",
   "commit": false,
   "fixed": [],
-  "ignore": [],
+  "ignore": [
+    "e2b-docs"
+  ],
   "linked": [],
   "access": "public",
   "baseBranch": "main",

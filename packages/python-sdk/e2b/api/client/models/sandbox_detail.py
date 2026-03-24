@@ -10,8 +10,6 @@ from ..models.sandbox_state import SandboxState
 from ..types import UNSET, Unset
 
 if TYPE_CHECKING:
-    from ..models.sandbox_lifecycle import SandboxLifecycle
-    from ..models.sandbox_network_config import SandboxNetworkConfig
     from ..models.sandbox_volume_mount import SandboxVolumeMount
 
 
@@ -33,13 +31,9 @@ class SandboxDetail:
         state (SandboxState): State of the sandbox
         template_id (str): Identifier of the template from which is the sandbox created
         alias (Union[Unset, str]): Alias of the template
-        allow_internet_access (Union[None, Unset, bool]): Whether internet access was explicitly enabled or disabled for
-            the sandbox. Null means it was not explicitly set.
         domain (Union[None, Unset, str]): Base domain where the sandbox traffic is accessible
         envd_access_token (Union[Unset, str]): Access token used for envd communication
-        lifecycle (Union[Unset, SandboxLifecycle]): Sandbox lifecycle policy returned by sandbox info.
         metadata (Union[Unset, Any]):
-        network (Union[Unset, SandboxNetworkConfig]):
         volume_mounts (Union[Unset, list['SandboxVolumeMount']]):
     """
 
@@ -54,12 +48,9 @@ class SandboxDetail:
     state: SandboxState
     template_id: str
     alias: Union[Unset, str] = UNSET
-    allow_internet_access: Union[None, Unset, bool] = UNSET
     domain: Union[None, Unset, str] = UNSET
     envd_access_token: Union[Unset, str] = UNSET
-    lifecycle: Union[Unset, "SandboxLifecycle"] = UNSET
     metadata: Union[Unset, Any] = UNSET
-    network: Union[Unset, "SandboxNetworkConfig"] = UNSET
     volume_mounts: Union[Unset, list["SandboxVolumeMount"]] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
@@ -86,12 +77,6 @@ class SandboxDetail:
 
         alias = self.alias
 
-        allow_internet_access: Union[None, Unset, bool]
-        if isinstance(self.allow_internet_access, Unset):
-            allow_internet_access = UNSET
-        else:
-            allow_internet_access = self.allow_internet_access
-
         domain: Union[None, Unset, str]
         if isinstance(self.domain, Unset):
             domain = UNSET
@@ -100,15 +85,7 @@ class SandboxDetail:
 
         envd_access_token = self.envd_access_token
 
-        lifecycle: Union[Unset, dict[str, Any]] = UNSET
-        if not isinstance(self.lifecycle, Unset):
-            lifecycle = self.lifecycle.to_dict()
-
         metadata = self.metadata
-
-        network: Union[Unset, dict[str, Any]] = UNSET
-        if not isinstance(self.network, Unset):
-            network = self.network.to_dict()
 
         volume_mounts: Union[Unset, list[dict[str, Any]]] = UNSET
         if not isinstance(self.volume_mounts, Unset):
@@ -135,18 +112,12 @@ class SandboxDetail:
         )
         if alias is not UNSET:
             field_dict["alias"] = alias
-        if allow_internet_access is not UNSET:
-            field_dict["allowInternetAccess"] = allow_internet_access
         if domain is not UNSET:
             field_dict["domain"] = domain
         if envd_access_token is not UNSET:
             field_dict["envdAccessToken"] = envd_access_token
-        if lifecycle is not UNSET:
-            field_dict["lifecycle"] = lifecycle
         if metadata is not UNSET:
             field_dict["metadata"] = metadata
-        if network is not UNSET:
-            field_dict["network"] = network
         if volume_mounts is not UNSET:
             field_dict["volumeMounts"] = volume_mounts
 
@@ -154,8 +125,6 @@ class SandboxDetail:
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
-        from ..models.sandbox_lifecycle import SandboxLifecycle
-        from ..models.sandbox_network_config import SandboxNetworkConfig
         from ..models.sandbox_volume_mount import SandboxVolumeMount
 
         d = dict(src_dict)
@@ -181,17 +150,6 @@ class SandboxDetail:
 
         alias = d.pop("alias", UNSET)
 
-        def _parse_allow_internet_access(data: object) -> Union[None, Unset, bool]:
-            if data is None:
-                return data
-            if isinstance(data, Unset):
-                return data
-            return cast(Union[None, Unset, bool], data)
-
-        allow_internet_access = _parse_allow_internet_access(
-            d.pop("allowInternetAccess", UNSET)
-        )
-
         def _parse_domain(data: object) -> Union[None, Unset, str]:
             if data is None:
                 return data
@@ -203,21 +161,7 @@ class SandboxDetail:
 
         envd_access_token = d.pop("envdAccessToken", UNSET)
 
-        _lifecycle = d.pop("lifecycle", UNSET)
-        lifecycle: Union[Unset, SandboxLifecycle]
-        if isinstance(_lifecycle, Unset):
-            lifecycle = UNSET
-        else:
-            lifecycle = SandboxLifecycle.from_dict(_lifecycle)
-
         metadata = d.pop("metadata", UNSET)
-
-        _network = d.pop("network", UNSET)
-        network: Union[Unset, SandboxNetworkConfig]
-        if isinstance(_network, Unset):
-            network = UNSET
-        else:
-            network = SandboxNetworkConfig.from_dict(_network)
 
         volume_mounts = []
         _volume_mounts = d.pop("volumeMounts", UNSET)
@@ -238,12 +182,9 @@ class SandboxDetail:
             state=state,
             template_id=template_id,
             alias=alias,
-            allow_internet_access=allow_internet_access,
             domain=domain,
             envd_access_token=envd_access_token,
-            lifecycle=lifecycle,
             metadata=metadata,
-            network=network,
             volume_mounts=volume_mounts,
         )
 

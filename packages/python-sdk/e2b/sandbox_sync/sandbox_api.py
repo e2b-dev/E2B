@@ -29,8 +29,8 @@ from e2b.api.client.models import (
 from e2b.api.client.types import UNSET
 from e2b.connection_config import ApiParams, ConnectionConfig
 from e2b.exceptions import (
+    NotFoundException,
     SandboxException,
-    SandboxNotFoundException,
     TemplateException,
 )
 from e2b.sandbox.main import SandboxBase
@@ -92,7 +92,7 @@ class SandboxApi(SandboxBase):
         )
 
         if res.status_code == 404:
-            raise SandboxNotFoundException(f"Sandbox {sandbox_id} not found")
+            raise NotFoundException(f"Sandbox {sandbox_id} not found")
 
         if res.status_code >= 300:
             raise handle_api_exception(res)
@@ -152,7 +152,7 @@ class SandboxApi(SandboxBase):
         )
 
         if res.status_code == 404:
-            raise SandboxNotFoundException(f"Sandbox {sandbox_id} not found")
+            raise NotFoundException(f"Sandbox {sandbox_id} not found")
 
         if res.status_code >= 300:
             raise handle_api_exception(res)
@@ -304,7 +304,7 @@ class SandboxApi(SandboxBase):
         )
 
         if res.status_code == 404:
-            raise SandboxNotFoundException(f"Paused sandbox {sandbox_id} not found")
+            raise NotFoundException(f"Paused sandbox {sandbox_id} not found")
 
         if res.status_code >= 300:
             raise handle_api_exception(res)
@@ -333,7 +333,7 @@ class SandboxApi(SandboxBase):
         )
 
         if res.status_code == 404:
-            raise SandboxNotFoundException(f"Sandbox {sandbox_id} not found")
+            raise NotFoundException(f"Sandbox {sandbox_id} not found")
 
         if res.status_code >= 300:
             raise handle_api_exception(res)
@@ -383,7 +383,7 @@ class SandboxApi(SandboxBase):
         )
 
         if res.status_code == 404:
-            raise SandboxNotFoundException(f"Sandbox {sandbox_id} not found")
+            raise NotFoundException(f"Sandbox {sandbox_id} not found")
 
         if res.status_code == 409:
             return sandbox_id

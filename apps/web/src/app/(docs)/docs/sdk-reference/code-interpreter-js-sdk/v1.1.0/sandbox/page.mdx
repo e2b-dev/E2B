@@ -1,0 +1,312 @@
+### Sandbox
+
+E2B cloud sandbox is a secure and isolated cloud environment.
+
+The sandbox allows you to:
+- Access Linux OS
+- Create, list, and delete files and directories
+- Run commands
+- Run isolated code
+- Access the internet
+
+Check docs here.
+
+Use Sandbox.create to create a new sandbox.
+
+#### Example
+
+```ts
+import { Sandbox } from '@e2b/code-interpreter'
+
+const sandbox = await Sandbox.create()
+```
+
+#### Methods
+
+### createCodeContext()
+
+```ts
+createCodeContext(opts?: CreateCodeContextOpts): Promise<Context>
+```
+
+Creates a new context to run code in.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `opts`? | `CreateCodeContextOpts` | options for creating the context. |
+
+###### Returns
+
+`Promise`\<`Context`\>
+
+context object.
+
+### runCode()
+
+###### runCode(code, opts)
+
+```ts
+runCode(code: string, opts?: RunCodeOpts & object): Promise<Execution>
+```
+
+Run the code as Python.
+
+Specify the `language` or `context` option to run the code as a different language or in a different `Context`.
+
+You can reference previously defined variables, imports, and functions in the code.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `code` | `string` | code to execute. |
+| `opts`? | `RunCodeOpts` & `object` | options for executing the code. |
+
+###### Returns
+
+`Promise`\<`Execution`\>
+
+`Execution` result object.
+
+###### runCode(code, opts)
+
+```ts
+runCode(code: string, opts?: RunCodeOpts & object): Promise<Execution>
+```
+
+Run the code for the specified language.
+
+Specify the `language` or `context` option to run the code as a different language or in a different `Context`.
+If no language is specified, Python is used.
+
+You can reference previously defined variables, imports, and functions in the code.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `code` | `string` | code to execute. |
+| `opts`? | `RunCodeOpts` & `object` | options for executing the code. |
+
+###### Returns
+
+`Promise`\<`Execution`\>
+
+`Execution` result object.
+
+###### runCode(code, opts)
+
+```ts
+runCode(code: string, opts?: RunCodeOpts & object): Promise<Execution>
+```
+
+Runs the code in the specified context, if not specified, the default context is used.
+
+Specify the `language` or `context` option to run the code as a different language or in a different `Context`.
+
+You can reference previously defined variables, imports, and functions in the code.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `code` | `string` | code to execute. |
+| `opts`? | `RunCodeOpts` & `object` | options for executing the code |
+
+###### Returns
+
+`Promise`\<`Execution`\>
+
+`Execution` result object
+
+## Interfaces
+
+### CreateCodeContextOpts
+
+Options for creating a code context.
+
+#### Properties
+
+### cwd?
+
+```ts
+optional cwd: string;
+```
+
+Working directory for the context.
+
+###### Default
+
+```ts
+/home/user
+```
+
+### language?
+
+```ts
+optional language: string;
+```
+
+Language for the context.
+
+###### Default
+
+```ts
+python
+```
+
+### requestTimeoutMs?
+
+```ts
+optional requestTimeoutMs: number;
+```
+
+Timeout for the request in **milliseconds**.
+
+###### Default
+
+```ts
+30_000 // 30 seconds
+```
+
+***
+
+### RunCodeOpts
+
+Options for running code.
+
+#### Properties
+
+### envs?
+
+```ts
+optional envs: Record<string, string>;
+```
+
+Custom environment variables for code execution.
+
+###### Default
+
+```ts
+{}
+```
+
+### onError()?
+
+```ts
+optional onError: (error: ExecutionError) => any;
+```
+
+Callback for handling the `ExecutionError` object.
+
+###### Parameters
+
+| Parameter | Type |
+| ------ | ------ |
+| `error` | `ExecutionError` |
+
+###### Returns
+
+`any`
+
+### onResult()?
+
+```ts
+optional onResult: (data: Result) => any;
+```
+
+Callback for handling the final execution result.
+
+###### Parameters
+
+| Parameter | Type |
+| ------ | ------ |
+| `data` | `Result` |
+
+###### Returns
+
+`any`
+
+### onStderr()?
+
+```ts
+optional onStderr: (output: OutputMessage) => any;
+```
+
+Callback for handling stderr messages.
+
+###### Parameters
+
+| Parameter | Type |
+| ------ | ------ |
+| `output` | `OutputMessage` |
+
+###### Returns
+
+`any`
+
+### onStdout()?
+
+```ts
+optional onStdout: (output: OutputMessage) => any;
+```
+
+Callback for handling stdout messages.
+
+###### Parameters
+
+| Parameter | Type |
+| ------ | ------ |
+| `output` | `OutputMessage` |
+
+###### Returns
+
+`any`
+
+### requestTimeoutMs?
+
+```ts
+optional requestTimeoutMs: number;
+```
+
+Timeout for the request in **milliseconds**.
+
+###### Default
+
+```ts
+30_000 // 30 seconds
+```
+
+### timeoutMs?
+
+```ts
+optional timeoutMs: number;
+```
+
+Timeout for the code execution in **milliseconds**.
+
+###### Default
+
+```ts
+60_000 // 60 seconds
+```
+
+## Type Aliases
+
+### Context
+
+```ts
+type Context: object;
+```
+
+Represents a context for code execution.
+
+#### Type declaration
+
+| Name | Type | Description |
+| ------ | ------ | ------ |
+| `cwd` | `string` | The working directory of the context. |
+| `id` | `string` | The ID of the context. |
+| `language` | `string` | The language of the context. |

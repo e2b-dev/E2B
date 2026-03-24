@@ -1,0 +1,427 @@
+### FileType
+
+Sandbox filesystem object type.
+
+#### Enumeration Members
+
+| Enumeration Member | Value | Description |
+| ------ | ------ | ------ |
+| `DIR` | `"dir"` | Filesystem object is a directory. |
+| `FILE` | `"file"` | Filesystem object is a file. |
+
+## Classes
+
+### Filesystem
+
+Module for interacting with the sandbox filesystem.
+
+#### Constructors
+
+```ts
+new Filesystem(
+   transport: Transport, 
+   envdApi: EnvdApiClient, 
+   connectionConfig: ConnectionConfig): Filesystem
+```
+
+###### Parameters
+
+| Parameter | Type |
+| ------ | ------ |
+| `transport` | `Transport` |
+| `envdApi` | `EnvdApiClient` |
+| `connectionConfig` | `ConnectionConfig` |
+
+###### Returns
+
+`Filesystem`
+
+#### Methods
+
+### exists()
+
+```ts
+exists(path: string, opts?: FilesystemRequestOpts): Promise<boolean>
+```
+
+Check if a file or a directory exists.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `path` | `string` | path to a file or a directory |
+| `opts`? | `FilesystemRequestOpts` | connection options. |
+
+###### Returns
+
+`Promise`\<`boolean`\>
+
+`true` if the file or directory exists, `false` otherwise
+
+### list()
+
+```ts
+list(path: string, opts?: FilesystemRequestOpts): Promise<EntryInfo[]>
+```
+
+List entries in a directory.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `path` | `string` | path to the directory. |
+| `opts`? | `FilesystemRequestOpts` | connection options. |
+
+###### Returns
+
+`Promise`\<`EntryInfo`[]\>
+
+list of entries in the sandbox filesystem directory.
+
+### makeDir()
+
+```ts
+makeDir(path: string, opts?: FilesystemRequestOpts): Promise<boolean>
+```
+
+Create a new directory and all directories along the way if needed on the specified path.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `path` | `string` | path to a new directory. For example '/dirA/dirB' when creating 'dirB'. |
+| `opts`? | `FilesystemRequestOpts` | connection options. |
+
+###### Returns
+
+`Promise`\<`boolean`\>
+
+`true` if the directory was created, `false` if it already exists.
+
+### read()
+
+###### read(path, opts)
+
+```ts
+read(path: string, opts?: FilesystemRequestOpts & object): Promise<string>
+```
+
+Read file content as a `string`.
+
+You can pass `text`, `bytes`, `blob`, or `stream` to `opts.format` to change the return type.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `path` | `string` | path to the file. |
+| `opts`? | `FilesystemRequestOpts` & `object` | connection options. |
+
+###### Returns
+
+`Promise`\<`string`\>
+
+file content as string
+
+###### read(path, opts)
+
+```ts
+read(path: string, opts?: FilesystemRequestOpts & object): Promise<Uint8Array>
+```
+
+Read file content as a `Uint8Array`.
+
+You can pass `text`, `bytes`, `blob`, or `stream` to `opts.format` to change the return type.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `path` | `string` | path to the file. |
+| `opts`? | `FilesystemRequestOpts` & `object` | connection options. |
+
+###### Returns
+
+`Promise`\<`Uint8Array`\>
+
+file content as `Uint8Array`
+
+###### read(path, opts)
+
+```ts
+read(path: string, opts?: FilesystemRequestOpts & object): Promise<Blob>
+```
+
+Read file content as a `Blob`.
+
+You can pass `text`, `bytes`, `blob`, or `stream` to `opts.format` to change the return type.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `path` | `string` | path to the file. |
+| `opts`? | `FilesystemRequestOpts` & `object` | connection options. |
+
+###### Returns
+
+`Promise`\<`Blob`\>
+
+file content as `Blob`
+
+###### read(path, opts)
+
+```ts
+read(path: string, opts?: FilesystemRequestOpts & object): Promise<ReadableStream<Uint8Array>>
+```
+
+Read file content as a `ReadableStream`.
+
+You can pass `text`, `bytes`, `blob`, or `stream` to `opts.format` to change the return type.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `path` | `string` | path to the file. |
+| `opts`? | `FilesystemRequestOpts` & `object` | connection options. |
+
+###### Returns
+
+`Promise`\<`ReadableStream`\<`Uint8Array`\>\>
+
+file content as `ReadableStream`
+
+### remove()
+
+```ts
+remove(path: string, opts?: FilesystemRequestOpts): Promise<void>
+```
+
+Remove a file or directory.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `path` | `string` | path to a file or directory. |
+| `opts`? | `FilesystemRequestOpts` | connection options. |
+
+###### Returns
+
+`Promise`\<`void`\>
+
+### rename()
+
+```ts
+rename(
+   oldPath: string, 
+   newPath: string, 
+opts?: FilesystemRequestOpts): Promise<EntryInfo>
+```
+
+Rename a file or directory.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `oldPath` | `string` | path to the file or directory to rename. |
+| `newPath` | `string` | new path for the file or directory. |
+| `opts`? | `FilesystemRequestOpts` | connection options. |
+
+###### Returns
+
+`Promise`\<`EntryInfo`\>
+
+information about renamed file or directory.
+
+### watchDir()
+
+```ts
+watchDir(
+   path: string, 
+   onEvent: (event: FilesystemEvent) => void | Promise<void>, 
+opts?: WatchOpts): Promise<WatchHandle>
+```
+
+Start watching a directory for filesystem events.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `path` | `string` | path to directory to watch. |
+| `onEvent` | (`event`: `FilesystemEvent`) => `void` \| `Promise`\<`void`\> | callback to call when an event in the directory occurs. |
+| `opts`? | `WatchOpts` | connection options. |
+
+###### Returns
+
+`Promise`\<`WatchHandle`\>
+
+`WatchHandle` object for stopping watching directory.
+
+### write()
+
+```ts
+write(
+   path: string, 
+   data: string | ArrayBuffer | Blob | ReadableStream<any>, 
+opts?: FilesystemRequestOpts): Promise<EntryInfo>
+```
+
+Write content to a file.
+
+Writing to a file that doesn't exist creates the file.
+
+Writing to a file that already exists overwrites the file.
+
+Writing to a file at path that doesn't exist creates the necessary directories.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `path` | `string` | path to file. |
+| `data` | `string` \| `ArrayBuffer` \| `Blob` \| `ReadableStream`\<`any`\> | data to write to the file. Data can be a string, `ArrayBuffer`, `Blob`, or `ReadableStream`. |
+| `opts`? | `FilesystemRequestOpts` | connection options. |
+
+###### Returns
+
+`Promise`\<`EntryInfo`\>
+
+information about the written file
+
+## Interfaces
+
+### EntryInfo
+
+Sandbox filesystem object information.
+
+#### Properties
+
+### name
+
+```ts
+name: string;
+```
+
+Name of the filesystem object.
+
+### path
+
+```ts
+path: string;
+```
+
+Path to the filesystem object.
+
+### type?
+
+```ts
+optional type: FileType;
+```
+
+Type of the filesystem object.
+
+***
+
+### FilesystemRequestOpts
+
+Options for the sandbox filesystem operations.
+
+#### Extended by
+
+- `WatchOpts`
+
+#### Properties
+
+### requestTimeoutMs?
+
+```ts
+optional requestTimeoutMs: number;
+```
+
+Timeout for requests to the API in **milliseconds**.
+
+###### Default
+
+```ts
+30_000 // 30 seconds
+```
+
+### user?
+
+```ts
+optional user: Username;
+```
+
+User to use for the operation in the sandbox.
+This affects the resolution of relative paths and ownership of the created filesystem objects.
+
+***
+
+### WatchOpts
+
+Options for watching a directory.
+
+#### Properties
+
+### onExit()?
+
+```ts
+optional onExit: (err?: Error) => void | Promise<void>;
+```
+
+Callback to call when the watch operation stops.
+
+###### Parameters
+
+| Parameter | Type |
+| ------ | ------ |
+| `err`? | `Error` |
+
+###### Returns
+
+`void` \| `Promise`\<`void`\>
+
+### requestTimeoutMs?
+
+```ts
+optional requestTimeoutMs: number;
+```
+
+Timeout for requests to the API in **milliseconds**.
+
+###### Default
+
+```ts
+30_000 // 30 seconds
+```
+
+### timeoutMs?
+
+```ts
+optional timeoutMs: number;
+```
+
+Timeout for the watch operation in **milliseconds**.
+You can pass `0` to disable the timeout.
+
+###### Default
+
+```ts
+60_000 // 60 seconds
+```
+
+### user?
+
+```ts
+optional user: Username;
+```
+
+User to use for the operation in the sandbox.
+This affects the resolution of relative paths and ownership of the created filesystem objects.

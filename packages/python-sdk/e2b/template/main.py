@@ -458,17 +458,13 @@ class TemplateBuilder:
         )
 
     def apt_install(
-        self,
-        packages: Union[str, List[str]],
-        no_install_recommends: bool = False,
-        fix_missing: bool = False,
+        self, packages: Union[str, List[str]], no_install_recommends: bool = False
     ) -> "TemplateBuilder":
         """
         Install system packages using apt-get.
 
         :param packages: Package name(s) to install
         :param no_install_recommends: Whether to install recommended packages
-        :param fix_missing: Whether to fix missing packages
 
         :return: `TemplateBuilder` class
 
@@ -476,7 +472,6 @@ class TemplateBuilder:
         ```python
         template.apt_install('vim')
         template.apt_install(['git', 'curl', 'wget'])
-        template.apt_install('vim', fix_missing=True)
         ```
         """
         if isinstance(packages, str):
@@ -486,7 +481,7 @@ class TemplateBuilder:
             lambda: self.run_cmd(
                 [
                     "apt-get update",
-                    f"DEBIAN_FRONTEND=noninteractive DEBCONF_NOWARNINGS=yes apt-get install -y {'--no-install-recommends ' if no_install_recommends else ''}{'--fix-missing ' if fix_missing else ''}{' '.join(packages)}",
+                    f"DEBIAN_FRONTEND=noninteractive DEBCONF_NOWARNINGS=yes apt-get install -y {'--no-install-recommends ' if no_install_recommends else ''}{' '.join(packages)}",
                 ],
                 user="root",
             )

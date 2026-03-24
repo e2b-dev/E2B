@@ -1,6 +1,6 @@
 import { expect, assert } from 'vitest'
 
-import { FileNotFoundError, NotFoundError } from '../../../src'
+import { NotFoundError } from '../../../src'
 import { sandboxTest } from '../../setup.js'
 
 sandboxTest('read file', async ({ sandbox }) => {
@@ -15,21 +15,8 @@ sandboxTest('read file', async ({ sandbox }) => {
 sandboxTest('read non-existing file', async ({ sandbox }) => {
   const filename = 'non_existing_file.txt'
 
-  await expect(sandbox.files.read(filename)).rejects.toThrowError(
-    FileNotFoundError
-  )
+  await expect(sandbox.files.read(filename)).rejects.toThrowError(NotFoundError)
 })
-
-sandboxTest(
-  'read non-existing file catches with deprecated NotFoundError',
-  async ({ sandbox }) => {
-    const filename = 'non_existing_file.txt'
-
-    await expect(sandbox.files.read(filename)).rejects.toThrowError(
-      NotFoundError
-    )
-  }
-)
 
 sandboxTest('empty file', async ({ sandbox }) => {
   const filename = 'empty-file.txt'

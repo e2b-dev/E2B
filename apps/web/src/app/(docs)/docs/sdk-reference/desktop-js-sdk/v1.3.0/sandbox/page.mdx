@@ -1,0 +1,409 @@
+### Sandbox
+
+#### Properties
+
+| Property | Modifier | Type |
+| ------ | ------ | ------ |
+| <a id="display"></a> `display` | `readonly` | `string` |
+| <a id="stream"></a> `stream` | `readonly` | `VNCServer` |
+
+#### Methods
+
+### doubleClick()
+
+```ts
+doubleClick(): Promise<void>
+```
+
+Double left click on the current mouse position.
+
+###### Returns
+
+`Promise`\<`void`\>
+
+### getCursorPosition()
+
+```ts
+getCursorPosition(): Promise<CursorPosition>
+```
+
+Get the current cursor position.
+
+###### Returns
+
+`Promise`\<`CursorPosition`\>
+
+A object with the x and y coordinates
+
+###### Throws
+
+Error if cursor position cannot be determined
+
+### getScreenSize()
+
+```ts
+getScreenSize(): Promise<ScreenSize>
+```
+
+Get the current screen size.
+
+###### Returns
+
+`Promise`\<`ScreenSize`\>
+
+An ScreenSize object
+
+###### Throws
+
+Error if screen size cannot be determined
+
+### leftClick()
+
+```ts
+leftClick(): Promise<void>
+```
+
+Left click on the current mouse position.
+
+###### Returns
+
+`Promise`\<`void`\>
+
+### middleClick()
+
+```ts
+middleClick(): Promise<void>
+```
+
+Middle click on the current mouse position.
+
+###### Returns
+
+`Promise`\<`void`\>
+
+### moveMouse()
+
+```ts
+moveMouse(x: number, y: number): Promise<void>
+```
+
+Move the mouse to the given coordinates.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `x` | `number` | The x coordinate. |
+| `y` | `number` | The y coordinate. |
+
+###### Returns
+
+`Promise`\<`void`\>
+
+### open()
+
+```ts
+open(fileOrUrl: string): Promise<void>
+```
+
+Open a file or a URL in the default application.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `fileOrUrl` | `string` | The file or URL to open. |
+
+###### Returns
+
+`Promise`\<`void`\>
+
+### press()
+
+```ts
+press(key: string): Promise<void>
+```
+
+Press a key.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `key` | `string` | The key to press (e.g. "enter", "space", "backspace", etc.). |
+
+###### Returns
+
+`Promise`\<`void`\>
+
+### rightClick()
+
+```ts
+rightClick(): Promise<void>
+```
+
+Right click on the current mouse position.
+
+###### Returns
+
+`Promise`\<`void`\>
+
+### screenshot()
+
+###### Call Signature
+
+```ts
+screenshot(): Promise<Uint8Array<ArrayBufferLike>>
+```
+
+Take a screenshot and save it to the given name.
+
+###### Returns
+
+`Promise`\<`Uint8Array`\<`ArrayBufferLike`\>\>
+
+A Uint8Array bytes representation of the screenshot.
+
+###### Call Signature
+
+```ts
+screenshot(format: "bytes"): Promise<Uint8Array<ArrayBufferLike>>
+```
+
+Take a screenshot and save it to the given name.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `format` | `"bytes"` | The format of the screenshot. |
+
+###### Returns
+
+`Promise`\<`Uint8Array`\<`ArrayBufferLike`\>\>
+
+A Uint8Array bytes representation of the screenshot.
+
+###### Call Signature
+
+```ts
+screenshot(format: "blob"): Promise<Blob>
+```
+
+Take a screenshot and save it to the given name.
+
+###### Parameters
+
+| Parameter | Type |
+| ------ | ------ |
+| `format` | `"blob"` |
+
+###### Returns
+
+`Promise`\<`Blob`\>
+
+A Blob representation of the screenshot.
+
+###### Call Signature
+
+```ts
+screenshot(format: "stream"): Promise<ReadableStream<Uint8Array<ArrayBufferLike>>>
+```
+
+Take a screenshot and save it to the given name.
+
+###### Parameters
+
+| Parameter | Type |
+| ------ | ------ |
+| `format` | `"stream"` |
+
+###### Returns
+
+`Promise`\<`ReadableStream`\<`Uint8Array`\<`ArrayBufferLike`\>\>\>
+
+A ReadableStream of bytes representation of the screenshot.
+
+### scroll()
+
+```ts
+scroll(direction: "up" | "down", amount: number): Promise<void>
+```
+
+Scroll the mouse wheel by the given amount.
+
+###### Parameters
+
+| Parameter | Type | Default value | Description |
+| ------ | ------ | ------ | ------ |
+| `direction` | `"up"` \| `"down"` | `'down'` | The direction to scroll. Can be "up" or "down". |
+| `amount` | `number` | `1` | The amount to scroll. |
+
+###### Returns
+
+`Promise`\<`void`\>
+
+### waitAndVerify()
+
+```ts
+waitAndVerify(
+   cmd: string, 
+   onResult: (result: CommandResult) => boolean, 
+   timeout: number, 
+interval: number): Promise<boolean>
+```
+
+Wait for a command to return a specific result.
+
+###### Parameters
+
+| Parameter | Type | Default value | Description |
+| ------ | ------ | ------ | ------ |
+| `cmd` | `string` | `undefined` | The command to run. |
+| `onResult` | (`result`: `CommandResult`) => `boolean` | `undefined` | The function to check the result of the command. |
+| `timeout` | `number` | `10` | The maximum time to wait for the command to return the result. |
+| `interval` | `number` | `0.5` | The interval to wait between checks. |
+
+###### Returns
+
+`Promise`\<`boolean`\>
+
+`true` if the command returned the result within the timeout, otherwise `false`.
+
+### write()
+
+```ts
+write(text: string, options: object): Promise<void>
+```
+
+Write the given text at the current cursor position.
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `text` | `string` | The text to write. |
+| `options` | \{ `chunkSize`: `number`; `delayInMs`: `number`; \} | An object containing the chunk size and delay between each chunk of text. |
+| `options.chunkSize` | `number` | The size of each chunk of text to write. Default is 25 characters. |
+| `options.delayInMs` | `number` | The delay between each chunk of text. Default is 75 ms. |
+
+###### Returns
+
+`Promise`\<`void`\>
+
+### create()
+
+###### Call Signature
+
+```ts
+static create<S>(this: S, opts?: SandboxOpts): Promise<InstanceType<S>>
+```
+
+Create a new sandbox from the default `desktop` sandbox template.
+
+###### Type Parameters
+
+| Type Parameter |
+| ------ |
+| `S` *extends* *typeof* `Sandbox` |
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `this` | `S` | - |
+| `opts`? | `SandboxOpts` | connection options. |
+
+###### Returns
+
+`Promise`\<`InstanceType`\<`S`\>\>
+
+sandbox instance for the new sandbox.
+
+###### Example
+
+```ts
+const sandbox = await Sandbox.create()
+```
+
+###### Constructs
+
+Sandbox
+
+```
+
+###### Call Signature
+
+```ts
+static create<S>(
+   this: S, 
+   template: string, 
+opts?: SandboxOpts): Promise<InstanceType<S>>
+```
+
+Create a new sandbox from the specified sandbox template.
+
+###### Type Parameters
+
+| Type Parameter |
+| ------ |
+| `S` *extends* *typeof* `Sandbox` |
+
+###### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `this` | `S` | - |
+| `template` | `string` | sandbox template name or ID. |
+| `opts`? | `SandboxOpts` | connection options. |
+
+###### Returns
+
+`Promise`\<`InstanceType`\<`S`\>\>
+
+sandbox instance for the new sandbox.
+
+###### Example
+
+```ts
+const sandbox = await Sandbox.create('<template-name-or-id>')
+```
+
+###### Constructs
+
+Sandbox
+
+```
+
+## Interfaces
+
+### SandboxOpts
+
+Configuration options for the Sandbox environment.
+ SandboxOpts
+
+#### Properties
+
+### display?
+
+```ts
+optional display: string;
+```
+
+Display identifier.
+
+### dpi?
+
+```ts
+optional dpi: number;
+```
+
+Dots per inch (DPI) setting for the display.
+
+### resolution?
+
+```ts
+optional resolution: [number, number];
+```
+
+The screen resolution in pixels, specified as [width, height].

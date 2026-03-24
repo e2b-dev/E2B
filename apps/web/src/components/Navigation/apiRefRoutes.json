@@ -1,0 +1,19 @@
+[
+  {
+    "title": "References",
+    "links": [
+      {
+        "title": "CLI",
+        "href": "/docs/api-reference/cli"
+      },
+      {
+        "title": "JS-SDK",
+        "href": "/docs/api-reference/js-sdk"
+      },
+      {
+        "title": "PYTHON-SDK",
+        "href": "/docs/api-reference/python-sdk"
+      }
+    ]
+  }
+]

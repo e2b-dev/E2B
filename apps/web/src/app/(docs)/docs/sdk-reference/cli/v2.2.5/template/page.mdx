@@ -1,0 +1,174 @@
+## e2b template
+
+
+manage sandbox templates
+
+### Usage
+
+```bash
+e2b template [options] [command]
+```
+## e2b template build
+
+
+build sandbox template defined by ./e2b.Dockerfile or ./Dockerfile in root directory. By default the root directory is the current working directory. This command also creates e2b.toml config.
+
+### Usage
+
+```bash
+e2b template build [options] [template]
+```
+
+### Options
+
+
+ - `-p, --path <path>: change root directory where command is executed to <path> directory `
+ - `-d, --dockerfile <file>: specify path to Dockerfile. By default E2B tries to find e2b.Dockerfile or Dockerfile in root directory. `
+ - `-n, --name <template-name>: specify sandbox template name. You can use the template name to start the sandbox with SDK. The template name must be lowercase and contain only letters, numbers, dashes and underscores. `
+ - `-c, --cmd <start-command>: specify command that will be executed when the sandbox is started. `
+ - `--ready-cmd <ready-command>: specify command that will need to exit 0 for the template to be ready. `
+ - `-t, --team <team-id>: specify the team ID that the operation will be associated with. You can find team ID in the team settings in the E2B dashboard (https://e2b.dev/dashboard?tab=team). `
+ - `--config <e2b-toml>: specify path to the E2B config toml. By default E2B tries to find ./e2b.toml in root directory. `
+ - `--cpu-count <cpu-count>: specify the number of CPUs that will be used to run the sandbox. The default value is 2. `
+ - `--memory-mb <memory-mb>: specify the amount of memory in megabytes that will be used to run the sandbox. Must be an even number. The default value is 512. `
+ - `--build-arg <args...>: specify additional build arguments for the build command. The format should be <varname>=<value>. `
+ - `--no-cache: skip cache when building the template. `
+
+
+## e2b template list
+
+
+list sandbox templates
+
+### Usage
+
+```bash
+e2b template list [options]
+```
+
+### Options
+
+
+ - `-t, --team <team-id>: specify the team ID that the operation will be associated with. You can find team ID in the team settings in the E2B dashboard (https://e2b.dev/dashboard?tab=team). `
+ - `-f, --format <format>: output format, eg. json, pretty `
+
+
+## e2b template init
+
+
+create basic E2B Dockerfile (./e2b.Dockerfile) in root directory. You can then run e2b template build to build sandbox template from this Dockerfile
+
+### Usage
+
+```bash
+e2b template init [options]
+```
+
+### Options
+
+
+ - `-p, --path <path>: change root directory where command is executed to <path> directory `
+
+
+## e2b template init-v2
+
+
+initialize a new sandbox template using the SDK
+
+### Usage
+
+```bash
+e2b template init-v2 [options]
+```
+
+### Options
+
+
+ - `-p, --path <path>: change root directory where command is executed to <path> directory `
+ - `-n, --name <name>: template name (alias) `
+ - `-l, --language <language>: target language: typescript, python-sync, python-async `
+
+
+## e2b template delete
+
+
+delete sandbox template and e2b.toml config
+
+### Usage
+
+```bash
+e2b template delete [options] [template]
+```
+
+### Options
+
+
+ - `-p, --path <path>: change root directory where command is executed to <path> directory `
+ - `--config <e2b-toml>: specify path to the E2B config toml. By default E2B tries to find ./e2b.toml in root directory. `
+ - `-s, --select: select sandbox template from interactive list `
+ - `-t, --team <team-id>: specify the team ID that the operation will be associated with. You can find team ID in the team settings in the E2B dashboard (https://e2b.dev/dashboard?tab=team). `
+ - `-y, --yes: skip manual delete confirmation `
+
+
+## e2b template publish
+
+
+publish sandbox template
+
+### Usage
+
+```bash
+e2b template publish [options] [template]
+```
+
+### Options
+
+
+ - `-p, --path <path>: change root directory where command is executed to <path> directory `
+ - `--config <e2b-toml>: specify path to the E2B config toml. By default E2B tries to find ./e2b.toml in root directory. `
+ - `-s, --select: select sandbox template from interactive list `
+ - `-t, --team <team-id>: specify the team ID that the operation will be associated with. You can find team ID in the team settings in the E2B dashboard (https://e2b.dev/dashboard?tab=team). `
+ - `-y, --yes: skip manual publish confirmation `
+
+
+## e2b template unpublish
+
+
+unpublish sandbox template
+
+### Usage
+
+```bash
+e2b template unpublish [options] [template]
+```
+
+### Options
+
+
+ - `-p, --path <path>: change root directory where command is executed to <path> directory `
+ - `--config <e2b-toml>: specify path to the E2B config toml. By default E2B tries to find ./e2b.toml in root directory. `
+ - `-s, --select: select sandbox template from interactive list `
+ - `-t, --team <team-id>: specify the team ID that the operation will be associated with. You can find team ID in the team settings in the E2B dashboard (https://e2b.dev/dashboard?tab=team). `
+ - `-y, --yes: skip manual unpublish confirmation `
+
+
+## e2b template migrate
+
+
+migrate e2b.Dockerfile and e2b.toml to new Template SDK format
+
+### Usage
+
+```bash
+e2b template migrate [options]
+```
+
+### Options
+
+
+ - `-d, --dockerfile <file>: specify path to Dockerfile. Defaults to e2b.Dockerfile `
+ - `--config <e2b-toml>: specify path to the E2B config toml. By default E2B tries to find ./e2b.toml in root directory. `
+ - `-l, --language <language>: specify target language: typescript, python-sync, python-async `
+ - `-p, --path <path>: change root directory where command is executed to <path> directory `
+
+

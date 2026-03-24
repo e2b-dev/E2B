@@ -1,6 +1,6 @@
 #!/usr/bin/env -S node --enable-source-maps
 
-import simpleUpdateNotifier from 'simple-update-notifier'
+import updateNotifier from 'update-notifier'
 import * as commander from 'commander'
 import * as packageJSON from '../package.json'
 import { program } from './commands'
@@ -8,14 +8,10 @@ import { commands2md } from './utils/commands2md'
 
 export const pkg = packageJSON
 
-const updateCheck = simpleUpdateNotifier({
+updateNotifier({
   pkg,
   updateCheckInterval: 1000 * 60 * 60 * 8, // 8 hours
-}).catch((e) => {
-  if (process.env.DEBUG) {
-    console.error('Update check failed:', e)
-  }
-})
+}).notify()
 
 const prog = program.version(
   packageJSON.version,
@@ -32,9 +28,4 @@ if (process.env.NODE_ENV === 'development') {
     })
 }
 
-async function main() {
-  await prog.parseAsync()
-  await updateCheck
-}
-
-main()
+prog.parse()

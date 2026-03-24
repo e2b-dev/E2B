@@ -617,12 +617,11 @@ export interface TemplateBuilder {
    * template.aptInstall('vim')
    * template.aptInstall(['git', 'curl', 'wget'])
    * template.aptInstall(['vim'], { noInstallRecommends: true })
-   * template.aptInstall(['vim'], { fixMissing: true })
    * ```
    */
   aptInstall(
     packages: string | string[],
-    options?: { noInstallRecommends?: boolean; fixMissing?: boolean }
+    options?: { noInstallRecommends?: boolean }
   ): TemplateBuilder
 
   /**
