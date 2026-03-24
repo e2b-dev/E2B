@@ -2,10 +2,6 @@
 # the repo. Unless a later match takes precedence.
 * @jakubno @ValentaTomas
 
-# Web
-apps/web @jakubno @ben-fornefeld
-apps/web/src/app/(docs)/docs @mlejva
-
 # SDKs
 packages @jakubno @ValentaTomas @mishushakov
 packages/connect-python @ValentaTomas

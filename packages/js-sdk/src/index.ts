@@ -5,12 +5,14 @@ export { ConnectionConfig } from './connectionConfig'
 export type { ConnectionOpts, Username } from './connectionConfig'
 export {
   AuthenticationError,
+  FileNotFoundError,
   GitAuthError,
   GitUpstreamError,
   InvalidArgumentError,
   NotEnoughSpaceError,
   NotFoundError,
   SandboxError,
+  SandboxNotFoundError,
   TemplateError,
   TimeoutError,
   RateLimitError,
@@ -50,6 +52,7 @@ export type {
   SandboxPaginator,
   SandboxNetworkOpts,
   SandboxLifecycle,
+  SandboxInfoLifecycle,
   SnapshotInfo,
   SnapshotListOpts,
   SnapshotPaginator,

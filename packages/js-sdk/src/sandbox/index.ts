@@ -468,7 +468,7 @@ export class Sandbox extends SandboxApi {
    * ```
    */
   async connect(opts?: SandboxConnectOpts): Promise<this> {
-    await SandboxApi.connectSandbox(this.sandboxId, opts)
+    await SandboxApi.connectSandbox(this.sandboxId, this.resolveApiOpts(opts))
 
     return this
   }
@@ -551,10 +551,11 @@ export class Sandbox extends SandboxApi {
       return
     }
 
-    await SandboxApi.setTimeout(this.sandboxId, timeoutMs, {
-      ...this.connectionConfig,
-      ...opts,
-    })
+    await SandboxApi.setTimeout(
+      this.sandboxId,
+      timeoutMs,
+      this.resolveApiOpts(opts)
+    )
   }
 
   /**
@@ -568,7 +569,7 @@ export class Sandbox extends SandboxApi {
       return
     }
 
-    await SandboxApi.kill(this.sandboxId, { ...this.connectionConfig, ...opts })
+    await SandboxApi.kill(this.sandboxId, this.resolveApiOpts(opts))
   }
 
   /**
@@ -585,14 +586,14 @@ export class Sandbox extends SandboxApi {
    * ```
    */
   async pause(opts?: ConnectionOpts): Promise<boolean> {
-    return await SandboxApi.pause(this.sandboxId, opts)
+    return await SandboxApi.pause(this.sandboxId, this.resolveApiOpts(opts))
   }
 
   /**
    * @deprecated Use {@link Sandbox.pause} instead.
    */
   async betaPause(opts?: ConnectionOpts): Promise<boolean> {
-    return await SandboxApi.betaPause(this.sandboxId, opts)
+    return await SandboxApi.betaPause(this.sandboxId, this.resolveApiOpts(opts))
   }
 
   /**
@@ -621,10 +622,10 @@ export class Sandbox extends SandboxApi {
    * ```
    */
   async createSnapshot(opts?: SandboxApiOpts): Promise<SnapshotInfo> {
-    return await SandboxApi.createSnapshot(this.sandboxId, {
-      ...this.connectionConfig,
-      ...opts,
-    })
+    return await SandboxApi.createSnapshot(
+      this.sandboxId,
+      this.resolveApiOpts(opts)
+    )
   }
 
   /**
@@ -636,8 +637,7 @@ export class Sandbox extends SandboxApi {
    */
   listSnapshots(opts?: Omit<SnapshotListOpts, 'sandboxId'>): SnapshotPaginator {
     return SandboxApi.listSnapshots({
-      ...this.connectionConfig,
-      ...opts,
+      ...this.resolveApiOpts(opts),
       sandboxId: this.sandboxId,
     })
   }
@@ -780,10 +780,7 @@ export class Sandbox extends SandboxApi {
    * @returns information about the sandbox
    */
   async getInfo(opts?: Pick<SandboxOpts, 'requestTimeoutMs'>) {
-    return await SandboxApi.getInfo(this.sandboxId, {
-      ...this.connectionConfig,
-      ...opts,
-    })
+    return await SandboxApi.getInfo(this.sandboxId, this.resolveApiOpts(opts))
   }
 
   /**
@@ -809,10 +806,19 @@ export class Sandbox extends SandboxApi {
       }
     }
 
-    return await SandboxApi.getMetrics(this.sandboxId, {
+    return await SandboxApi.getMetrics(
+      this.sandboxId,
+      this.resolveApiOpts(opts)
+    )
+  }
+
+  private resolveApiOpts<T extends ConnectionOpts>(
+    opts?: T
+  ): ConnectionOpts & T {
+    return {
       ...this.connectionConfig,
-      ...opts,
-    })
+      ...(opts ?? {}),
+    } as ConnectionOpts & T
   }
 
   private fileUrl(path: string | undefined, username: string | undefined) {

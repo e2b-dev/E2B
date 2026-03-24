@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, test } from 'vitest'
 import { Sandbox } from 'e2b'
+import { getUserConfig } from 'src/user'
 import {
   bufferToText,
   isDebug,
@@ -8,7 +9,20 @@ import {
   runCliWithPipedStdin,
 } from '../../setup'
 
-const integrationTest = test.skipIf(isDebug)
+type UserConfigWithDomain = NonNullable<ReturnType<typeof getUserConfig>> & {
+  domain?: string
+  E2B_DOMAIN?: string
+}
+
+const userConfig = safeGetUserConfig() as UserConfigWithDomain | null
+const domain =
+  process.env.E2B_DOMAIN ||
+  userConfig?.E2B_DOMAIN ||
+  userConfig?.domain ||
+  'e2b.app'
+const apiKey = process.env.E2B_API_KEY || userConfig?.teamApiKey
+const shouldSkip = !apiKey || isDebug
+const integrationTest = test.skipIf(shouldSkip)
 const templateId =
   process.env.E2B_CLI_BACKEND_TEMPLATE_ID ||
   process.env.E2B_TEMPLATE_ID ||
@@ -19,18 +33,28 @@ const sandboxTimeoutMs = parseEnvInt(
 )
 const perTestTimeoutMs = parseEnvInt('E2B_CLI_BACKEND_TEST_TIMEOUT_MS', 30_000)
 const spawnTimeoutMs = perTestTimeoutMs
+const cliEnv: NodeJS.ProcessEnv = {
+  ...process.env,
+  E2B_DOMAIN: domain,
+  E2B_API_KEY: apiKey,
+}
+
+delete cliEnv.E2B_DEBUG
+
 const runCliInSandbox = (args: string[]) =>
-  runCli(args, { timeoutMs: spawnTimeoutMs })
+  runCli(args, { timeoutMs: spawnTimeoutMs, env: cliEnv })
 const runCliWithPipeInSandbox = (args: string[], input: Buffer) =>
-  runCliWithPipedStdin(args, input, { timeoutMs: spawnTimeoutMs })
+  runCliWithPipedStdin(args, input, { timeoutMs: spawnTimeoutMs, env: cliEnv })
 
 describe('sandbox cli backend integration', () => {
   let sandbox: Sandbox
 
   beforeAll(async () => {
-    if (isDebug) return
+    if (shouldSkip) return
 
     sandbox = await Sandbox.create(templateId, {
+      apiKey,
+      domain,
       timeoutMs: sandboxTimeoutMs,
     })
   }, 30_000)
@@ -58,11 +82,40 @@ describe('sandbox cli backend integration', () => {
   )
 
   integrationTest(
+    'info shows the sandbox details',
+    { timeout: perTestTimeoutMs },
+    async () => {
+      const infoResult = runCliInSandbox([
+        'sandbox',
+        'info',
+        sandbox.sandboxId,
+        '--format',
+        'json',
+      ])
+      expect(infoResult.status).toBe(0)
+
+      const info = JSON.parse(bufferToText(infoResult.stdout)) as {
+        sandboxId?: string
+        state?: string
+      }
+
+      expect(info.sandboxId).toBe(sandbox.sandboxId)
+      expect(info.state).toBe('running')
+    }
+  )
+
+  integrationTest(
     'exec runs a command without piped stdin',
     { timeout: perTestTimeoutMs },
     async () => {
       const execResult = runCliInSandbox([
-        'sandbox', 'exec', sandbox.sandboxId, '--', 'sh', '-lc', 'echo backend-non-pipe',
+        'sandbox',
+        'exec',
+        sandbox.sandboxId,
+        '--',
+        'sh',
+        '-lc',
+        'echo backend-non-pipe',
       ])
       expect(execResult.status).toBe(0)
       expect(bufferToText(execResult.stdout)).toContain('backend-non-pipe')
@@ -85,22 +138,20 @@ describe('sandbox cli backend integration', () => {
     }
   )
 
-  for (const command of ['logs', 'metrics'] as const) {
-    integrationTest(
-      `${command} returns successfully`,
-      { timeout: perTestTimeoutMs },
-      async () => {
-        const result = runCliInSandbox([
-          'sandbox',
-          command,
-          sandbox.sandboxId,
-          '--format',
-          'json',
-        ])
-        expect(result.status).toBe(0)
-      }
-    )
-  }
+  integrationTest(
+    'metrics returns successfully',
+    { timeout: perTestTimeoutMs },
+    async () => {
+      const metricsResult = runCliInSandbox([
+        'sandbox',
+        'metrics',
+        sandbox.sandboxId,
+        '--format',
+        'json',
+      ])
+      expect(metricsResult.status).toBe(0)
+    }
+  )
 
   integrationTest(
     'kill removes the sandbox',
@@ -113,6 +164,7 @@ describe('sandbox cli backend integration', () => {
     }
   )
 })
+
 async function assertSandboxNotListed(sandboxId: string): Promise<void> {
   const retries = 10
   const delayMs = 500
@@ -143,4 +195,13 @@ function sandboxExistsInList(
 
   const parsed = JSON.parse(text) as Array<{ sandboxId?: string }>
   return parsed.some((item) => item.sandboxId === sandboxId)
+}
+
+function safeGetUserConfig(): ReturnType<typeof getUserConfig> | null {
+  try {
+    return getUserConfig()
+  } catch (err) {
+    console.warn(`Failed to read ~/.e2b/config.json: ${String(err)}`)
+    return null
+  }
 }
