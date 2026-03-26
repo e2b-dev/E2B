@@ -40,7 +40,7 @@ with Sandbox.create() as sandbox:
 
 ### 4. Code execution with Code Interpreter
 
-If you need `run_code()`, install the [Code Interpreter SDK](https://github.com/e2b-dev/code-interpreter):
+If you need [`run_code()`](https://e2b.dev/docs/code-interpreting), install the [Code Interpreter SDK](https://github.com/e2b-dev/code-interpreter):
 
 ```
 pip install e2b-code-interpreter
