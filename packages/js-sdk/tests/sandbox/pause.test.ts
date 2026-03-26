@@ -59,6 +59,12 @@ sandboxTest.skipIf(isDebug)(
     const firstPause = await sandbox.pause()
     assert.isTrue(firstPause, 'first pause() should return true')
 
+    // Verify the sandbox is actually paused before the second attempt
+    assert.isFalse(
+      await sandbox.isRunning(),
+      'sandbox should be paused after first pause()'
+    )
+
     // Try to pause again - should return false since already paused
     const secondPause = await sandbox.pause()
     assert.isFalse(
