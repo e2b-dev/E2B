@@ -2,7 +2,7 @@ import datetime
 import json
 import logging
 import uuid
-from typing import Dict, List, Optional, overload
+from typing import Dict, List, Optional, Union, overload
 
 import httpx
 from packaging.version import Version
@@ -32,8 +32,12 @@ from e2b.sandbox_async.filesystem.filesystem import Filesystem
 from e2b.sandbox_async.git import Git
 from e2b.sandbox_async.sandbox_api import SandboxApi, SandboxInfo
 from e2b.sandbox_async.paginator import AsyncSnapshotPaginator
+from e2b.volume.volume_async import AsyncVolume
+from e2b.api.client.models import SandboxVolumeMount as SandboxVolumeMountAPI
 
 logger = logging.getLogger(__name__)
+
+SandboxAsyncVolumeMount = Dict[str, Union[AsyncVolume, str]]
 
 
 class AsyncSandbox(SandboxApi):
@@ -173,6 +177,7 @@ class AsyncSandbox(SandboxApi):
         mcp: Optional[McpServer] = None,
         network: Optional[SandboxNetworkOpts] = None,
         lifecycle: Optional[SandboxLifecycle] = None,
+        volume_mounts: Optional[SandboxAsyncVolumeMount] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
         """
@@ -189,6 +194,7 @@ class AsyncSandbox(SandboxApi):
         :param mcp: MCP server to enable in the sandbox
         :param network: Sandbox network configuration
         :param lifecycle: Sandbox lifecycle configuration — ``on_timeout``: ``"kill"`` (default) or ``"pause"``; ``auto_resume``: ``False`` (default) or ``True`` (only when ``on_timeout="pause"``). Example: ``{"on_timeout": "pause", "auto_resume": True}``
+        :param volume_mounts: Dictionary mapping mount paths to AsyncVolume instances or volume names
 
         :return: A Sandbox instance for the new sandbox
 
@@ -198,6 +204,16 @@ class AsyncSandbox(SandboxApi):
             template = cls.default_mcp_template
         elif not template:
             template = cls.default_template
+
+        transformed_mounts: Optional[List[SandboxVolumeMountAPI]] = None
+        if volume_mounts:
+            transformed_mounts = [
+                SandboxVolumeMountAPI(
+                    name=vol.name if isinstance(vol, AsyncVolume) else vol,
+                    path=path,
+                )
+                for path, vol in volume_mounts.items()
+            ]
 
         sandbox = await cls._create(
             template=template,
@@ -210,6 +226,7 @@ class AsyncSandbox(SandboxApi):
             mcp=mcp,
             network=network,
             lifecycle=lifecycle,
+            volume_mounts=transformed_mounts,
             **opts,
         )
 
@@ -539,6 +556,7 @@ class AsyncSandbox(SandboxApi):
         secure: bool = True,
         allow_internet_access: bool = True,
         mcp: Optional[McpServer] = None,
+        volume_mounts: Optional[SandboxAsyncVolumeMount] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
         """
@@ -556,16 +574,26 @@ class AsyncSandbox(SandboxApi):
         :param secure: Envd is secured with access token and cannot be used without it, defaults to `True`.
         :param allow_internet_access: Allow sandbox to access the internet, defaults to `True`.
         :param mcp: MCP server to enable in the sandbox
+        :param volume_mounts: Dictionary mapping mount paths to AsyncVolume instances or volume names
 
         :return: A Sandbox instance for the new sandbox
 
         Use this method instead of using the constructor to create a new sandbox.
         """
-
         if not template and mcp is not None:
             template = cls.default_mcp_template
         elif not template:
             template = cls.default_template
+
+        transformed_mounts: Optional[List[SandboxVolumeMountAPI]] = None
+        if volume_mounts:
+            transformed_mounts = [
+                SandboxVolumeMountAPI(
+                    name=vol.name if isinstance(vol, AsyncVolume) else vol,
+                    path=path,
+                )
+                for path, vol in volume_mounts.items()
+            ]
 
         sandbox = await cls._create(
             template=template,
@@ -579,6 +607,7 @@ class AsyncSandbox(SandboxApi):
             lifecycle=(
                 {"on_timeout": "pause", "auto_resume": False} if auto_pause else None
             ),
+            volume_mounts=transformed_mounts,
             **opts,
         )
 
@@ -863,6 +892,7 @@ class AsyncSandbox(SandboxApi):
         mcp: Optional[McpServer] = None,
         network: Optional[SandboxNetworkOpts] = None,
         lifecycle: Optional[SandboxLifecycle] = None,
+        volume_mounts: Optional[list] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
         extra_sandbox_headers = {}
@@ -886,6 +916,7 @@ class AsyncSandbox(SandboxApi):
                 mcp=mcp,
                 network=network,
                 lifecycle=lifecycle,
+                volume_mounts=volume_mounts,
                 **opts,
             )
 

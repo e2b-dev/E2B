@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Dict, List, Literal, Optional, TypedDict, Union, cast
 
@@ -192,6 +192,8 @@ class SandboxInfo:
     """Sandbox network configuration."""
     lifecycle: Optional[SandboxInfoLifecycle] = None
     """Sandbox lifecycle configuration."""
+    volume_mounts: List[Dict[str, str]] = field(default_factory=list)
+    """Volume mounts for the sandbox."""
 
     @classmethod
     def _from_sandbox_data(
@@ -218,6 +220,11 @@ class SandboxInfo:
             cpu_count=sandbox.cpu_count,
             memory_mb=sandbox.memory_mb,
             envd_version=sandbox.envd_version,
+            volume_mounts=[
+                {"name": vm.name, "path": vm.path} for vm in sandbox.volume_mounts
+            ]
+            if not isinstance(sandbox.volume_mounts, Unset)
+            else [],
             _envd_access_token=envd_access_token,
             allow_internet_access=allow_internet_access,
             network=network,

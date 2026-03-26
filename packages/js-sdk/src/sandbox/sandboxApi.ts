@@ -7,6 +7,7 @@ import {
 import { compareVersions } from 'compare-versions'
 import { SandboxNotFoundError, TemplateError } from '../errors'
 import { timeoutToSeconds } from '../utils'
+import type { Volume } from '../volume'
 import type { McpServer as BaseMcpServer } from './mcp'
 
 /**
@@ -155,6 +156,16 @@ export interface SandboxOpts extends ConnectionOpts {
    * Sandbox network configuration
    */
   network?: SandboxNetworkOpts
+
+  /**
+   * Volume mounts for the sandbox.
+   *
+   * The keys are mount paths inside the sandbox and the values are either
+   * a `Volume` instance or a string representing the volume name.
+   *
+   * @default undefined
+   */
+  volumeMounts?: Record<string, Volume | string>
 
   /**
    * Sandbox URL. Used for local development
@@ -337,6 +348,11 @@ export interface SandboxInfo {
    * Sandbox lifecycle configuration.
    */
   lifecycle?: SandboxInfoLifecycle
+
+  /**
+   * Volume mounts for the sandbox.
+   */
+  volumeMounts?: Array<{ name: string; path: string }>
 }
 
 /**
@@ -602,6 +618,7 @@ export class SandboxApi {
           }
         : undefined,
       sandboxDomain: res.data.domain || undefined,
+      volumeMounts: res.data.volumeMounts ?? [],
     }
   }
 
@@ -773,6 +790,15 @@ export class SandboxApi {
       ...(autoResumeEnabled !== undefined
         ? { autoResume: { enabled: autoResumeEnabled } }
         : {}),
+    }
+
+    if (opts?.volumeMounts) {
+      body.volumeMounts = Object.entries(opts.volumeMounts).map(
+        ([mountPath, vol]) => ({
+          name: typeof vol === 'string' ? vol : vol.name,
+          path: mountPath,
+        })
+      )
     }
 
     const res = await client.api.POST('/sandboxes', {
@@ -959,6 +985,7 @@ export class SandboxPaginator extends BasePaginator<SandboxInfo> {
         cpuCount: sandbox.cpuCount,
         memoryMB: sandbox.memoryMB,
         envdVersion: sandbox.envdVersion,
+        volumeMounts: sandbox.volumeMounts ?? [],
       })
     )
   }
