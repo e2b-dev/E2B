@@ -72,4 +72,4 @@ redirect_uri = ""
 url = ""
 
 [functions.new_user]
-verify_jwt = false
+verify_jwt = true

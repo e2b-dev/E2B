@@ -9,8 +9,17 @@ if (!SLACK_WEBHOOK_URL) {
 }
 const SLACK_CHANNEL = 'user-signups'
 
+// Simple email validation to reject obviously malformed input
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+function sanitizeForSlack(text: string): string {
+  // Escape Slack mrkdwn special characters to prevent injection
+  return text.replace(/[&<>*_~`|]/g, (ch) => `&#${ch.charCodeAt(0)};`)
+}
+
 function sendSlackMessage(email: string) {
-  const message = `:fire: *New User Signed Up *\n*User*\n${email}\n`
+  const safeEmail = sanitizeForSlack(email)
+  const message = `:fire: *New User Signed Up *\n*User*\n${safeEmail}\n`
 
   return fetch(SLACK_WEBHOOK_URL, {
     method: 'POST',
@@ -42,7 +51,15 @@ serve(async (req) => {
    */
   const data = await req.json()
   const userRecord = data.record
-  const userEmail = userRecord.email
+
+  if (!userRecord || typeof userRecord.email !== 'string' || !EMAIL_RE.test(userRecord.email)) {
+    return new Response(JSON.stringify({ error: 'Invalid or missing email' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+
+  const userEmail: string = userRecord.email
 
   console.log(`New user with email: ${userEmail} created`)
 
