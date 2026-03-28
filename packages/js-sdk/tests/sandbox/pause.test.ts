@@ -28,6 +28,12 @@ sandboxTest.skipIf(isDebug)(
         apiKey: finalApiKey,
       })
 
+      // Guard: ensure the sandbox is running before we try to pause it
+      assert.isTrue(
+        await sandbox.isRunning(),
+        'sandbox must be running before pause() is called'
+      )
+
       // pause() should succeed using the apiKey from connectionConfig
       // rather than requiring E2B_API_KEY to be set
       const paused = await connected.pause()
