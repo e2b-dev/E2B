@@ -84,10 +84,10 @@ export class ConnectionConfig {
   readonly headers?: Record<string, string>
 
   constructor(opts?: ConnectionOpts) {
-    this.apiKey = opts?.apiKey || ConnectionConfig.apiKey
+    this.apiKey = opts?.apiKey ?? ConnectionConfig.apiKey
     this.debug = opts?.debug || ConnectionConfig.debug
     this.domain = opts?.domain || ConnectionConfig.domain
-    this.accessToken = opts?.accessToken || ConnectionConfig.accessToken
+    this.accessToken = opts?.accessToken ?? ConnectionConfig.accessToken
     this.requestTimeoutMs = opts?.requestTimeoutMs ?? REQUEST_TIMEOUT_MS
     this.logger = opts?.logger
     this.headers = opts?.headers || {}

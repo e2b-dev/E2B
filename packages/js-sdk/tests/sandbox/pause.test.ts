@@ -42,12 +42,8 @@ sandboxTest.skipIf(isDebug)(
         'sandbox should be paused after pause()'
       )
     } finally {
-      // Restore the environment API key
-      if (savedApiKey !== undefined) {
-        process.env.E2B_API_KEY = savedApiKey
-      } else {
-        delete process.env.E2B_API_KEY
-      }
+      // Restore the environment API key, including empty strings
+      process.env.E2B_API_KEY = savedApiKey ?? undefined
     }
   }
 )
