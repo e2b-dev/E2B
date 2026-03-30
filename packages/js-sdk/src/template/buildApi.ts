@@ -122,11 +122,14 @@ export async function uploadFile(
     // Buffer the gzipped tar to determine Content-Length.
     // S3 presigned PUT URLs do not support Transfer-Encoding: chunked,
     // and the compressed size is unknowable without actually compressing.
-    const chunks: Buffer[] = []
-    for await (const chunk of uploadStream as unknown as AsyncIterable<Buffer>) {
-      chunks.push(chunk)
+    let body: Buffer
+    {
+      const chunks: Buffer[] = []
+      for await (const chunk of uploadStream as unknown as AsyncIterable<Buffer>) {
+        chunks.push(chunk)
+      }
+      body = Buffer.concat(chunks)
     }
-    const body = Buffer.concat(chunks)
 
     const res = await fetch(url, {
       method: 'PUT',
