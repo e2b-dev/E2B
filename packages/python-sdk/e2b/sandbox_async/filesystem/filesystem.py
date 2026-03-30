@@ -247,7 +247,7 @@ class Filesystem:
                 elif isinstance(file_data, TextIOBase):
                     content = file_data.read().encode("utf-8")
                 elif isinstance(file_data, IOBase):
-                    content = file_data
+                    content = file_data.read()
                 else:
                     raise InvalidArgumentException(
                         f"Unsupported data type for file {file_path}"
