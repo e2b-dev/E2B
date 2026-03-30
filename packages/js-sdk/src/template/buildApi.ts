@@ -119,9 +119,9 @@ export async function uploadFile(
       resolveSymlinks
     )
 
-    // Buffer the gzipped tar to determine Content-Length.
-    // S3 presigned PUT URLs do not support Transfer-Encoding: chunked,
-    // and the compressed size is unknowable without actually compressing.
+    // Buffer the gzipped tar so fetch sends it with Content-Length.
+    // S3 presigned PUT URLs reject Transfer-Encoding: chunked (501).
+    // Node.js fetch (undici) auto-sets Content-Length for Buffer bodies.
     let body: Buffer
     {
       const chunks: Buffer[] = []
@@ -134,9 +134,6 @@ export async function uploadFile(
     const res = await fetch(url, {
       method: 'PUT',
       body,
-      headers: {
-        'Content-Length': String(body.length),
-      },
     })
 
     if (!res.ok) {
