@@ -231,13 +231,13 @@ class Filesystem:
             file_path, file_data = file["path"], file["data"]
 
             if isinstance(file_data, str):
-                data_bytes = file_data.encode("utf-8")
+                content = file_data.encode("utf-8")
             elif isinstance(file_data, bytes):
-                data_bytes = file_data
+                content = file_data
             elif isinstance(file_data, TextIOBase):
-                data_bytes = file_data.read().encode("utf-8")
+                content = file_data.read().encode("utf-8")
             elif isinstance(file_data, IOBase):
-                data_bytes = file_data.read()
+                content = file_data
             else:
                 raise InvalidArgumentException(
                     f"Unsupported data type for file {file_path}"
@@ -249,7 +249,7 @@ class Filesystem:
 
             r = await self._envd_api.post(
                 ENVD_API_FILES_ROUTE,
-                content=data_bytes,
+                content=content,
                 headers={"Content-Type": "application/octet-stream"},
                 params=params,
                 timeout=self._connection_config.get_request_timeout(request_timeout),

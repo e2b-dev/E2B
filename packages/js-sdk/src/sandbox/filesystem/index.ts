@@ -404,7 +404,7 @@ export class Filesystem {
         headers: {
           'Content-Type': 'application/octet-stream',
         },
-        signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
+        signal: this.connectionConfig.getSignal(writeOpts?.requestTimeoutMs),
         body: {},
       })
 
@@ -414,7 +414,7 @@ export class Filesystem {
       }
 
       const files = res.data as WriteInfo[]
-      if (!files) {
+      if (!files || files.length === 0) {
         throw new Error('Expected to receive information about written file')
       }
 
