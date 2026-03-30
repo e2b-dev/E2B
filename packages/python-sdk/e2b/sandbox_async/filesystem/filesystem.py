@@ -16,7 +16,11 @@ from e2b.connection_config import (
 from e2b.envd.api import ENVD_API_FILES_ROUTE, ahandle_envd_api_exception
 from e2b.envd.filesystem import filesystem_connect, filesystem_pb2
 from e2b.envd.rpc import authentication_header, handle_rpc_exception
-from e2b.envd.versions import ENVD_DEFAULT_USER, ENVD_VERSION_RECURSIVE_WATCH
+from e2b.envd.versions import (
+    ENVD_DEFAULT_USER,
+    ENVD_OCTET_STREAM_UPLOAD,
+    ENVD_VERSION_RECURSIVE_WATCH,
+)
 from e2b.exceptions import (
     FileNotFoundException,
     InvalidArgumentException,
@@ -226,31 +230,80 @@ class Filesystem:
         if len(files) == 0:
             return []
 
-        results: List[WriteInfo] = []
-        for file in files:
-            file_path, file_data = file["path"], file["data"]
+        use_octet_stream = self._envd_version >= ENVD_OCTET_STREAM_UPLOAD
 
-            if isinstance(file_data, str):
-                content = file_data.encode("utf-8")
-            elif isinstance(file_data, bytes):
-                content = file_data
-            elif isinstance(file_data, TextIOBase):
-                content = file_data.read().encode("utf-8")
-            elif isinstance(file_data, IOBase):
-                content = file_data
-            else:
-                raise InvalidArgumentException(
-                    f"Unsupported data type for file {file_path}"
+        results: List[WriteInfo] = []
+
+        if use_octet_stream:
+            for file in files:
+                file_path, file_data = file["path"], file["data"]
+
+                if isinstance(file_data, str):
+                    content = file_data.encode("utf-8")
+                elif isinstance(file_data, bytes):
+                    content = file_data
+                elif isinstance(file_data, TextIOBase):
+                    content = file_data.read().encode("utf-8")
+                elif isinstance(file_data, IOBase):
+                    content = file_data
+                else:
+                    raise InvalidArgumentException(
+                        f"Unsupported data type for file {file_path}"
+                    )
+
+                params = {"path": file_path}
+                if username:
+                    params["username"] = username
+
+                r = await self._envd_api.post(
+                    ENVD_API_FILES_ROUTE,
+                    content=content,
+                    headers={"Content-Type": "application/octet-stream"},
+                    params=params,
+                    timeout=self._connection_config.get_request_timeout(
+                        request_timeout
+                    ),
                 )
 
-            params = {"path": file_path}
+                err = await _ahandle_filesystem_envd_api_exception(r)
+                if err:
+                    raise err
+
+                write_result = r.json()
+
+                if not isinstance(write_result, list) or len(write_result) == 0:
+                    raise SandboxException(
+                        "Expected to receive information about written file"
+                    )
+
+                results.extend([WriteInfo(**f) for f in write_result])
+        else:
+            params = {}
             if username:
                 params["username"] = username
+            if len(files) == 1:
+                params["path"] = files[0]["path"]
+
+            httpx_files = []
+            for file in files:
+                file_path, file_data = file["path"], file["data"]
+                if isinstance(file_data, (str, bytes)):
+                    httpx_files.append(("file", (file_path, file_data)))
+                elif isinstance(file_data, TextIOBase):
+                    httpx_files.append(("file", (file_path, file_data.read())))
+                elif isinstance(file_data, IOBase):
+                    httpx_files.append(("file", (file_path, file_data)))
+                else:
+                    raise InvalidArgumentException(
+                        f"Unsupported data type for file {file_path}"
+                    )
+
+            if len(httpx_files) == 0:
+                return []
 
             r = await self._envd_api.post(
                 ENVD_API_FILES_ROUTE,
-                content=content,
-                headers={"Content-Type": "application/octet-stream"},
+                files=httpx_files,
                 params=params,
                 timeout=self._connection_config.get_request_timeout(request_timeout),
             )

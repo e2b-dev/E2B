@@ -29,6 +29,7 @@ import type { Timestamp } from '@bufbuild/protobuf/wkt'
 import { compareVersions } from 'compare-versions'
 import {
   ENVD_DEFAULT_USER,
+  ENVD_OCTET_STREAM_UPLOAD,
   ENVD_VERSION_RECURSIVE_WATCH,
 } from '../../envd/versions'
 import {
@@ -388,22 +389,61 @@ export class Filesystem {
       user = defaultUsername
     }
 
+    const useOctetStream =
+      compareVersions(this.envdApi.version, ENVD_OCTET_STREAM_UPLOAD) >= 0
+
     const results: WriteInfo[] = []
-    for (const file of writeFiles) {
-      const filePath = path ?? (file as WriteEntry).path
-      const blob = await toBlob(file.data)
+
+    if (useOctetStream) {
+      for (const file of writeFiles) {
+        const filePath = path ?? (file as WriteEntry).path
+        const blob = await toBlob(file.data)
+
+        const res = await this.envdApi.api.POST('/files', {
+          params: {
+            query: {
+              path: filePath,
+              username: user,
+            },
+          },
+          bodySerializer: () => blob,
+          headers: {
+            'Content-Type': 'application/octet-stream',
+          },
+          signal: this.connectionConfig.getSignal(writeOpts?.requestTimeoutMs),
+          body: {},
+        })
+
+        const err = await handleFilesystemEnvdApiError(res)
+        if (err) {
+          throw err
+        }
+
+        const files = res.data as WriteInfo[]
+        if (!files || files.length === 0) {
+          throw new Error('Expected to receive information about written file')
+        }
+
+        results.push(...files)
+      }
+    } else {
+      const formData = new FormData()
+      for (const file of writeFiles) {
+        formData.append(
+          'file',
+          await toBlob(file.data),
+          (file as WriteEntry).path ?? path!
+        )
+      }
 
       const res = await this.envdApi.api.POST('/files', {
         params: {
           query: {
-            path: filePath,
+            path,
             username: user,
           },
         },
-        bodySerializer: () => blob,
-        headers: {
-          'Content-Type': 'application/octet-stream',
-        },
+        bodySerializer: () => formData,
         signal: this.connectionConfig.getSignal(writeOpts?.requestTimeoutMs),
         body: {},
       })
