@@ -119,12 +119,21 @@ export async function uploadFile(
       resolveSymlinks
     )
 
-    // The compiler assumes this is Web fetch API, but it's actually Node.js fetch API
+    // Buffer the gzipped tar to determine Content-Length.
+    // S3 presigned PUT URLs do not support Transfer-Encoding: chunked,
+    // and the compressed size is unknowable without actually compressing.
+    const chunks: Buffer[] = []
+    for await (const chunk of uploadStream) {
+      chunks.push(Buffer.from(chunk))
+    }
+    const body = Buffer.concat(chunks)
+
     const res = await fetch(url, {
       method: 'PUT',
-      // @ts-expect-error
-      body: uploadStream,
-      duplex: 'half',
+      body,
+      headers: {
+        'Content-Length': String(body.length),
+      },
     })
 
     if (!res.ok) {
