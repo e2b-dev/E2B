@@ -235,8 +235,6 @@ class Filesystem:
         results: List[WriteInfo] = []
 
         if use_octet_stream:
-            # Read all file data into memory before starting uploads
-            prepared = []
             for file in files:
                 file_path, file_data = file["path"], file["data"]
 
@@ -253,9 +251,6 @@ class Filesystem:
                         f"Unsupported data type for file {file_path}"
                     )
 
-                prepared.append((file_path, content))
-
-            for file_path, content in prepared:
                 params = {"path": file_path}
                 if username:
                     params["username"] = username
