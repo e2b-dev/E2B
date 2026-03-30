@@ -380,12 +380,6 @@ export class Filesystem {
 
     if (writeFiles.length === 0) return [] as WriteInfo[]
 
-    const formData = new FormData()
-    for (let i = 0; i < writeFiles.length; i++) {
-      const file = writeFiles[i]
-      formData.append('file', await toBlob(file.data), writeFiles[i].path)
-    }
-
     let user = writeOpts?.user
     if (
       user == undefined &&
@@ -394,29 +388,40 @@ export class Filesystem {
       user = defaultUsername
     }
 
-    const res = await this.envdApi.api.POST('/files', {
-      params: {
-        query: {
-          path,
-          username: user,
+    const results: WriteInfo[] = []
+    for (const file of writeFiles) {
+      const filePath = path ?? (file as WriteEntry).path
+      const blob = await toBlob(file.data)
+
+      const res = await this.envdApi.api.POST('/files', {
+        params: {
+          query: {
+            path: filePath,
+            username: user,
+          },
         },
-      },
-      bodySerializer: () => formData,
-      signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
-      body: {},
-    })
+        bodySerializer: () => blob,
+        headers: {
+          'Content-Type': 'application/octet-stream',
+        },
+        signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
+        body: {},
+      })
 
-    const err = await handleFilesystemEnvdApiError(res)
-    if (err) {
-      throw err
+      const err = await handleFilesystemEnvdApiError(res)
+      if (err) {
+        throw err
+      }
+
+      const files = res.data as WriteInfo[]
+      if (!files) {
+        throw new Error('Expected to receive information about written file')
+      }
+
+      results.push(...files)
     }
 
-    const files = res.data as WriteInfo[]
-    if (!files) {
-      throw new Error('Expected to receive information about written file')
-    }
-
-    return files.length === 1 && path ? files[0] : files
+    return results.length === 1 && path ? results[0] : results
   }
 
   /**

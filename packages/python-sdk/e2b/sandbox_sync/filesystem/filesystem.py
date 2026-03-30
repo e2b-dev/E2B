@@ -223,51 +223,52 @@ class Filesystem:
         if username is None and self._envd_version < ENVD_DEFAULT_USER:
             username = default_username
 
-        params = {}
-        if username:
-            params["username"] = username
-        if len(files) == 1:
-            params["path"] = files[0]["path"]
+        if len(files) == 0:
+            return []
 
-        # Prepare the files for the multipart/form-data request
-        httpx_files = []
+        results: List[WriteInfo] = []
         for file in files:
             file_path, file_data = file["path"], file["data"]
-            if isinstance(file_data, (str, bytes)):
-                # str and bytes can be passed directly
-                httpx_files.append(("file", (file_path, file_data)))
+
+            if isinstance(file_data, str):
+                data_bytes = file_data.encode("utf-8")
+            elif isinstance(file_data, bytes):
+                data_bytes = file_data
             elif isinstance(file_data, TextIOBase):
-                # Text streams must be read first
-                httpx_files.append(("file", (file_path, file_data.read())))
+                data_bytes = file_data.read().encode("utf-8")
             elif isinstance(file_data, IOBase):
-                # Binary streams can be passed directly
-                httpx_files.append(("file", (file_path, file_data)))
+                data_bytes = file_data.read()
             else:
                 raise InvalidArgumentException(
                     f"Unsupported data type for file {file_path}"
                 )
 
-        # Allow passing empty list of files
-        if len(httpx_files) == 0:
-            return []
+            params = {"path": file_path}
+            if username:
+                params["username"] = username
 
-        r = self._envd_api.post(
-            ENVD_API_FILES_ROUTE,
-            files=httpx_files,
-            params=params,
-            timeout=self._connection_config.get_request_timeout(request_timeout),
-        )
+            r = self._envd_api.post(
+                ENVD_API_FILES_ROUTE,
+                content=data_bytes,
+                headers={"Content-Type": "application/octet-stream"},
+                params=params,
+                timeout=self._connection_config.get_request_timeout(request_timeout),
+            )
 
-        err = _handle_filesystem_envd_api_exception(r)
-        if err:
-            raise err
+            err = _handle_filesystem_envd_api_exception(r)
+            if err:
+                raise err
 
-        write_files = r.json()
+            write_result = r.json()
 
-        if not isinstance(write_files, list) or len(write_files) == 0:
-            raise SandboxException("Expected to receive information about written file")
+            if not isinstance(write_result, list) or len(write_result) == 0:
+                raise SandboxException(
+                    "Expected to receive information about written file"
+                )
 
-        return [WriteInfo(**file) for file in write_files]
+            results.extend([WriteInfo(**f) for f in write_result])
+
+        return results
 
     def list(
         self,
