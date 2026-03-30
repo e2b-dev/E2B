@@ -123,8 +123,8 @@ export async function uploadFile(
     // S3 presigned PUT URLs do not support Transfer-Encoding: chunked,
     // and the compressed size is unknowable without actually compressing.
     const chunks: Buffer[] = []
-    for await (const chunk of uploadStream) {
-      chunks.push(Buffer.from(chunk))
+    for await (const chunk of uploadStream as unknown as AsyncIterable<Buffer>) {
+      chunks.push(chunk)
     }
     const body = Buffer.concat(chunks)
 
