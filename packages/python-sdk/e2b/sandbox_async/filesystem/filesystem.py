@@ -1,3 +1,4 @@
+import asyncio
 from io import IOBase, TextIOBase
 from typing import IO, AsyncIterator, List, Literal, Optional, Union, overload
 
@@ -235,7 +236,8 @@ class Filesystem:
         results: List[WriteInfo] = []
 
         if use_octet_stream:
-            for file in files:
+
+            async def _upload_file(file):
                 file_path, file_data = file["path"], file["data"]
 
                 if isinstance(file_data, str):
@@ -276,7 +278,13 @@ class Filesystem:
                         "Expected to receive information about written file"
                     )
 
-                results.extend([WriteInfo(**f) for f in write_result])
+                return [WriteInfo(**f) for f in write_result]
+
+            upload_results = await asyncio.gather(
+                *[_upload_file(file) for file in files]
+            )
+            for file_results in upload_results:
+                results.extend(file_results)
         else:
             params = {}
             if username:

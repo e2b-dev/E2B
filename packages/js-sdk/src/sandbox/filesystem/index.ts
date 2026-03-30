@@ -395,35 +395,43 @@ export class Filesystem {
     const results: WriteInfo[] = []
 
     if (useOctetStream) {
-      for (const file of writeFiles) {
-        const filePath = path ?? (file as WriteEntry).path
-        const blob = await toBlob(file.data)
+      const uploadResults = await Promise.all(
+        writeFiles.map(async (file) => {
+          const filePath = path ?? (file as WriteEntry).path
+          const blob = await toBlob(file.data)
 
-        const res = await this.envdApi.api.POST('/files', {
-          params: {
-            query: {
-              path: filePath,
-              username: user,
+          const res = await this.envdApi.api.POST('/files', {
+            params: {
+              query: {
+                path: filePath,
+                username: user,
+              },
             },
-          },
-          bodySerializer: () => blob,
-          headers: {
-            'Content-Type': 'application/octet-stream',
-          },
-          signal: this.connectionConfig.getSignal(writeOpts?.requestTimeoutMs),
-          body: {},
+            bodySerializer: () => blob,
+            headers: {
+              'Content-Type': 'application/octet-stream',
+            },
+            signal: this.connectionConfig.getSignal(writeOpts?.requestTimeoutMs),
+            body: {},
+          })
+
+          const err = await handleFilesystemEnvdApiError(res)
+          if (err) {
+            throw err
+          }
+
+          const files = res.data as WriteInfo[]
+          if (!files || files.length === 0) {
+            throw new Error(
+              'Expected to receive information about written file'
+            )
+          }
+
+          return files
         })
+      )
 
-        const err = await handleFilesystemEnvdApiError(res)
-        if (err) {
-          throw err
-        }
-
-        const files = res.data as WriteInfo[]
-        if (!files || files.length === 0) {
-          throw new Error('Expected to receive information about written file')
-        }
-
+      for (const files of uploadResults) {
         results.push(...files)
       }
     } else {
