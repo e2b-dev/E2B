@@ -236,8 +236,9 @@ class Filesystem:
         results: List[WriteInfo] = []
 
         if use_octet_stream:
-
-            async def _upload_file(file):
+            # Read all file data into memory before starting concurrent uploads
+            prepared = []
+            for file in files:
                 file_path, file_data = file["path"], file["data"]
 
                 if isinstance(file_data, str):
@@ -253,6 +254,9 @@ class Filesystem:
                         f"Unsupported data type for file {file_path}"
                     )
 
+                prepared.append((file_path, content))
+
+            async def _upload_file(file_path: str, content: bytes):
                 params = {"path": file_path}
                 if username:
                     params["username"] = username
@@ -281,7 +285,7 @@ class Filesystem:
                 return [WriteInfo(**f) for f in write_result]
 
             upload_results = await asyncio.gather(
-                *[_upload_file(file) for file in files]
+                *[_upload_file(fp, data) for fp, data in prepared]
             )
             for file_results in upload_results:
                 results.extend(file_results)

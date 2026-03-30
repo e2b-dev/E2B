@@ -395,11 +395,16 @@ export class Filesystem {
     const results: WriteInfo[] = []
 
     if (useOctetStream) {
-      const uploadResults = await Promise.all(
-        writeFiles.map(async (file) => {
-          const filePath = path ?? (file as WriteEntry).path
-          const blob = await toBlob(file.data)
+      // Read all file data into memory before starting concurrent uploads
+      const prepared = await Promise.all(
+        writeFiles.map(async (file) => ({
+          path: path ?? (file as WriteEntry).path,
+          blob: await toBlob(file.data),
+        }))
+      )
 
+      const uploadResults = await Promise.all(
+        prepared.map(async ({ path: filePath, blob }) => {
           const res = await this.envdApi.api.POST('/files', {
             params: {
               query: {
