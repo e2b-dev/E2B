@@ -8,6 +8,7 @@ from e2b.sandbox.commands.command_handle import (
     Stderr,
     Stdout,
     PtyOutput,
+    _parse_usage,
 )
 
 
@@ -81,6 +82,7 @@ class CommandHandle:
                         stderr=self._stderr,
                         exit_code=event.event.end.exit_code,
                         error=event.event.end.error,
+                        usage=_parse_usage(event.event.end),
                     )
         except Exception as e:
             raise handle_rpc_exception(e)
@@ -135,6 +137,7 @@ class CommandHandle:
                 stderr=self._stderr,
                 exit_code=self._result.exit_code,
                 error=self._result.error,
+                usage=self._result.usage,
             )
 
         return self._result

@@ -104,13 +104,6 @@ class ConnectionConfig:
             request_timeout,
         )
 
-        if request_timeout == 0:
-            self.request_timeout = None
-        elif request_timeout is not None:
-            self.request_timeout = request_timeout
-        else:
-            self.request_timeout = REQUEST_TIMEOUT
-
         self.api_url = (
             api_url
             or ConnectionConfig._api_url()

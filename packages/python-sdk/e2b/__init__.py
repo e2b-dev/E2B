@@ -56,6 +56,7 @@ from .exceptions import (
 from .sandbox.commands.command_handle import (
     CommandExitException,
     CommandResult,
+    CommandUsage,
     PtyOutput,
     PtySize,
     Stderr,
@@ -164,12 +165,12 @@ __all__ = [
     "ProcessInfo",
     "SandboxQuery",
     "SandboxState",
-    "SandboxMetrics",
     "GitStatus",
     "GitBranches",
     "GitFileStatus",
     # Command handle
     "CommandResult",
+    "CommandUsage",
     "Stderr",
     "Stdout",
     "CommandExitException",

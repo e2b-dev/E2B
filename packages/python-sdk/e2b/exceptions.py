@@ -1,16 +1,16 @@
-def format_sandbox_timeout_exception(message: str):
+def format_sandbox_timeout_exception(message: str) -> "TimeoutException":
     return TimeoutException(
         f"{message}: This error is likely due to sandbox timeout. You can modify the sandbox timeout by passing 'timeout' when starting the sandbox or calling '.set_timeout' on the sandbox with the desired timeout."
     )
 
 
-def format_request_timeout_error() -> Exception:
+def format_request_timeout_error() -> "TimeoutException":
     return TimeoutException(
         "Request timed out — the 'request_timeout' option can be used to increase this timeout",
     )
 
 
-def format_execution_timeout_error() -> Exception:
+def format_execution_timeout_error() -> "TimeoutException":
     return TimeoutException(
         "Execution timed out — the 'timeout' option can be used to increase this timeout",
     )
