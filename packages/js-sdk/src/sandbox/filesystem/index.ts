@@ -411,7 +411,9 @@ export class Filesystem {
             headers: {
               'Content-Type': 'application/octet-stream',
             },
-            signal: this.connectionConfig.getSignal(writeOpts?.requestTimeoutMs),
+            signal: this.connectionConfig.getSignal(
+              writeOpts?.requestTimeoutMs
+            ),
             body: {},
           })
 
