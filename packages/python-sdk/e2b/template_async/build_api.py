@@ -107,8 +107,9 @@ async def upload_file(
     stack_trace: Optional[TracebackType],
 ):
     try:
-        tar_buffer = tar_file_stream(
-            file_name, context_path, ignore_patterns, resolve_symlinks
+        loop = asyncio.get_event_loop()
+        tar_buffer = await loop.run_in_executor(
+            None, tar_file_stream, file_name, context_path, ignore_patterns, resolve_symlinks
         )
 
         # Use bytes with explicit Content-Length.
