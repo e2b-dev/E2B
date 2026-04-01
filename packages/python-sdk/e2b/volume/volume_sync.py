@@ -35,7 +35,11 @@ from e2b.volume.client.models import (
 )
 from e2b.volume.client.types import File as FilePayload, UNSET
 from e2b.volume.client_sync import get_api_client as get_volume_api_client
-from e2b.volume.connection_config import VolumeApiParams, VolumeConnectionConfig, WRITE_FILE_TIMEOUT
+from e2b.volume.connection_config import (
+    VolumeApiParams,
+    VolumeConnectionConfig,
+    WRITE_FILE_TIMEOUT,
+)
 from e2b.volume.types import (
     VolumeAndToken,
     VolumeInfo,
