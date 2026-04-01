@@ -5,7 +5,7 @@ import { defaultHeaders, getEnvVar } from '../api/metadata'
 import { createApiLogger, Logger } from '../logs'
 import type { Volume } from './index'
 
-const WRITE_FILE_TIMEOUT_MS = 3_600_000 // 1 hour
+const FILE_TIMEOUT_MS = 3_600_000 // 1 hour
 
 export interface VolumeApiOpts {
   /**
@@ -113,4 +113,4 @@ class VolumeApiClient {
 }
 
 export type { components as VolumeApiComponents, paths as VolumeApiPaths }
-export { VolumeApiClient, WRITE_FILE_TIMEOUT_MS }
+export { VolumeApiClient, FILE_TIMEOUT_MS }

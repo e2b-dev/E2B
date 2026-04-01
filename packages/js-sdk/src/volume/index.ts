@@ -4,7 +4,7 @@ import {
   VolumeApiComponents,
   VolumeConnectionConfig,
   VolumeApiOpts,
-  WRITE_FILE_TIMEOUT_MS,
+  FILE_TIMEOUT_MS,
 } from './client'
 import { ConnectionConfig, ConnectionOpts } from '../connectionConfig'
 import { NotFoundError, VolumeError } from '../errors'
@@ -530,7 +530,7 @@ export class Volume {
         },
       },
       parseAs: format === 'bytes' ? 'arrayBuffer' : format,
-      signal: config.getSignal(opts?.requestTimeoutMs),
+      signal: config.getSignal(opts?.requestTimeoutMs ?? FILE_TIMEOUT_MS),
     })
 
     if (res.response.status === 404) {
@@ -599,7 +599,7 @@ export class Volume {
       headers: {
         'Content-Type': 'application/octet-stream',
       },
-      signal: config.getSignal(opts?.requestTimeoutMs ?? WRITE_FILE_TIMEOUT_MS),
+      signal: config.getSignal(opts?.requestTimeoutMs ?? FILE_TIMEOUT_MS),
     })
 
     if (res.response.status === 404) {

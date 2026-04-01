@@ -38,7 +38,7 @@ from e2b.volume.client_sync import get_api_client as get_volume_api_client
 from e2b.volume.connection_config import (
     VolumeApiParams,
     VolumeConnectionConfig,
-    WRITE_FILE_TIMEOUT,
+    FILE_TIMEOUT,
 )
 from e2b.volume.types import (
     VolumeAndToken,
@@ -461,7 +461,9 @@ class Volume:
         api_client = get_volume_api_client(config)
 
         params = {"path": path}
-        timeout = config.get_request_timeout(opts.get("request_timeout"))
+        timeout = VolumeConnectionConfig._get_request_timeout(
+            FILE_TIMEOUT, opts.get("request_timeout")
+        )
 
         if format == "stream":
 
@@ -540,7 +542,7 @@ class Volume:
         """
         config = self._get_volume_config(**opts)
         upload_timeout = VolumeConnectionConfig._get_request_timeout(
-            WRITE_FILE_TIMEOUT, opts.get("request_timeout")
+            FILE_TIMEOUT, opts.get("request_timeout")
         )
         api_client = get_volume_api_client(config)
         if upload_timeout is not None:
