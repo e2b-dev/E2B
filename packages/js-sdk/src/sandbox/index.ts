@@ -21,6 +21,7 @@ import {
   SandboxPaginator,
   SandboxBetaCreateOpts,
   SandboxApiOpts,
+  SnapshotCreateOpts,
   SnapshotListOpts,
   SnapshotInfo,
   SnapshotPaginator,
@@ -604,24 +605,27 @@ export class Sandbox extends SandboxApi {
    * Snapshots are persistent and survive sandbox deletion.
    *
    * Use the returned `snapshotId` with `Sandbox.create(snapshotId)` to create a new sandbox from the snapshot.
+   * When a `name` is provided, the snapshot is also addressable as `team-slug/name`.
    *
-   * @param opts connection options.
+   * @param opts snapshot options including an optional `name` for the snapshot template.
    *
-   * @returns snapshot information including the snapshot ID.
+   * @returns snapshot information including the snapshot ID and optional names.
    *
    * @example
    * ```ts
    * const sandbox = await Sandbox.create()
    * await sandbox.files.write('/app/state.json', '{"step": 1}')
    *
-   * // Create a snapshot
-   * const snapshot = await sandbox.createSnapshot()
+   * // Create a named snapshot
+   * const snapshot = await sandbox.createSnapshot({ name: 'my-snapshot' })
+   * console.log(snapshot.snapshotId)  // 'team-slug/my-snapshot:default'
+   * console.log(snapshot.names)       // ['team-slug/my-snapshot:default']
    *
-   * // Create a new sandbox from the snapshot
-   * const newSandbox = await Sandbox.create(snapshot.snapshotId)
+   * // Create a new sandbox from the named snapshot
+   * const newSandbox = await Sandbox.create('team-slug/my-snapshot')
    * ```
    */
-  async createSnapshot(opts?: SandboxApiOpts): Promise<SnapshotInfo> {
+  async createSnapshot(opts?: SnapshotCreateOpts): Promise<SnapshotInfo> {
     return await SandboxApi.createSnapshot(
       this.sandboxId,
       this.resolveApiOpts(opts)
