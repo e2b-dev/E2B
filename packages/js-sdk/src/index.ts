@@ -54,6 +54,7 @@ export type {
   SandboxNetworkOpts,
   SandboxLifecycle,
   SandboxInfoLifecycle,
+  SnapshotCreateOpts,
   SnapshotInfo,
   SnapshotListOpts,
   SnapshotPaginator,

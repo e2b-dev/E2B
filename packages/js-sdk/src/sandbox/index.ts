@@ -21,6 +21,7 @@ import {
   SandboxPaginator,
   SandboxBetaCreateOpts,
   SandboxApiOpts,
+  SnapshotCreateOpts,
   SnapshotListOpts,
   SnapshotInfo,
   SnapshotPaginator,
@@ -621,11 +622,11 @@ export class Sandbox extends SandboxApi {
    * const newSandbox = await Sandbox.create(snapshot.snapshotId)
    * ```
    */
-  async createSnapshot(opts?: SandboxApiOpts): Promise<SnapshotInfo> {
-    return await SandboxApi.createSnapshot(
-      this.sandboxId,
-      this.resolveApiOpts(opts)
-    )
+  async createSnapshot(opts?: SnapshotCreateOpts): Promise<SnapshotInfo> {
+    return await SandboxApi.createSnapshot(this.sandboxId, {
+      ...this.resolveApiOpts(opts),
+      ...(opts?.name ? { name: opts.name } : {}),
+    })
   }
 
   /**
