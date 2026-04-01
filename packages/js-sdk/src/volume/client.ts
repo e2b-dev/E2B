@@ -5,6 +5,8 @@ import { defaultHeaders, getEnvVar } from '../api/metadata'
 import { createApiLogger, Logger } from '../logs'
 import type { Volume } from './index'
 
+const FILE_TIMEOUT_MS = 3_600_000 // 1 hour
+
 export interface VolumeApiOpts {
   /**
    * E2B API key to use for authentication.
@@ -111,4 +113,4 @@ class VolumeApiClient {
 }
 
 export type { components as VolumeApiComponents, paths as VolumeApiPaths }
-export { VolumeApiClient }
+export { VolumeApiClient, FILE_TIMEOUT_MS }

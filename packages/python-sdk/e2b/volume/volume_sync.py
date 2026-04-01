@@ -1,6 +1,8 @@
 from typing import IO, Iterator, List, Literal, Optional, Union, cast, overload
 from http import HTTPStatus
 
+import httpx
+
 from typing_extensions import Unpack
 
 from e2b.api import handle_api_exception
@@ -33,7 +35,11 @@ from e2b.volume.client.models import (
 )
 from e2b.volume.client.types import File as FilePayload, UNSET
 from e2b.volume.client_sync import get_api_client as get_volume_api_client
-from e2b.volume.connection_config import VolumeApiParams, VolumeConnectionConfig
+from e2b.volume.connection_config import (
+    VolumeApiParams,
+    VolumeConnectionConfig,
+    FILE_TIMEOUT,
+)
 from e2b.volume.types import (
     VolumeAndToken,
     VolumeInfo,
@@ -455,7 +461,9 @@ class Volume:
         api_client = get_volume_api_client(config)
 
         params = {"path": path}
-        timeout = config.get_request_timeout(opts.get("request_timeout"))
+        timeout = VolumeConnectionConfig._get_request_timeout(
+            FILE_TIMEOUT, opts.get("request_timeout")
+        )
 
         if format == "stream":
 
@@ -533,7 +541,12 @@ class Volume:
         :return: Information about the written file
         """
         config = self._get_volume_config(**opts)
+        upload_timeout = VolumeConnectionConfig._get_request_timeout(
+            FILE_TIMEOUT, opts.get("request_timeout")
+        )
         api_client = get_volume_api_client(config)
+        if upload_timeout is not None:
+            api_client = api_client.with_timeout(httpx.Timeout(upload_timeout))
 
         if isinstance(data, str):
             data_bytes = data.encode("utf-8")
