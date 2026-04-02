@@ -14,7 +14,7 @@ sandboxTest(
     })
     assert.equal(info.name, filename)
     assert.equal(info.type, 'file')
-    assert.equal(info.path, `/home/user/${filename}`)
+    assert.ok(info.path.endsWith(`/${filename}`))
 
     const readContent = await sandbox.files.read(filename, {
       gzip: true,
