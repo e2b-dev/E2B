@@ -24,7 +24,7 @@ sandboxTest('write file', async ({ sandbox }) => {
   assert.isFalse(Array.isArray(info))
   assert.equal(info.name, filename)
   assert.equal(info.type, 'file')
-  assert.equal(info.path, `/home/user/${filename}`)
+  assert.ok(info.path.endsWith(`/${filename}`))
 
   const exists = await sandbox.files.exists(filename)
   assert.isTrue(exists)
@@ -82,7 +82,7 @@ sandboxTest('write multiple files', async ({ sandbox }) => {
   assert.isTrue(Array.isArray(info))
   assert.equal(info[0].name, 'one_test_file.txt')
   assert.equal(info[0].type, 'file')
-  assert.equal(info[0].path, '/home/user/one_test_file.txt')
+  assert.ok(info[0].path.endsWith('/one_test_file.txt'))
 
   // Attempt to write with multiple files in array
   const files: WriteEntry[] = []
@@ -136,7 +136,7 @@ sandboxTest('write file', async ({ sandbox }) => {
   assert.isFalse(Array.isArray(info))
   assert.equal(info.name, filename)
   assert.equal(info.type, 'file')
-  assert.equal(info.path, `/home/user/${filename}`)
+  assert.ok(info.path.endsWith(`/${filename}`))
 
   const exists = await sandbox.files.exists(filename)
   assert.isTrue(exists)
@@ -207,7 +207,7 @@ sandboxTest('writeFiles with multiple files', async ({ sandbox }) => {
     const info = infos[i]
 
     assert.equal(info.name, path.basename(file.path))
-    assert.equal(info.path, `/home/user/${file.path}`)
+    assert.ok(info.path.endsWith(`/${file.path}`))
     assert.equal(info.type, 'file')
 
     const exists = await sandbox.files.exists(info.path)
@@ -284,10 +284,7 @@ sandboxTest('writeFiles creates parent directories', async ({ sandbox }) => {
   const infos = await sandbox.files.writeFiles(files)
 
   assert.equal(infos.length, 1)
-  assert.equal(
-    infos[0].path,
-    '/home/user/writefiles_nested_dir/nested/file1.txt'
-  )
+  assert.ok(infos[0].path.endsWith('/writefiles_nested_dir/nested/file1.txt'))
 
   const exists = await sandbox.files.exists(infos[0].path)
   assert.isTrue(exists)

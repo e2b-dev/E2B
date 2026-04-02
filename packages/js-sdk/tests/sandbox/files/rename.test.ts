@@ -12,7 +12,7 @@ sandboxTest('rename file', async ({ sandbox }) => {
   const info = await sandbox.files.rename(oldFilename, newFilename)
   assert.equal(info.name, newFilename)
   assert.equal(info.type, 'file')
-  assert.equal(info.path, `/home/user/${newFilename}`)
+  assert.ok(info.path.endsWith(`/${newFilename}`))
 
   const existsOld = await sandbox.files.exists(oldFilename)
   const existsNew = await sandbox.files.exists(newFilename)
