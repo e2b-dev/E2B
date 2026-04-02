@@ -426,7 +426,7 @@ export class Filesystem {
       const uploadResults = await Promise.all(
         writeFiles.map(async (file) => {
           const filePath = path ?? (file as WriteEntry).path
-          const body = toUploadBody(file.data, useGzip)
+          const body = await toUploadBody(file.data, useGzip)
 
           const headers: Record<string, string> = {
             'Content-Type': 'application/octet-stream',
