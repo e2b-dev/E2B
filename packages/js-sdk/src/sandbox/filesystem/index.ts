@@ -423,17 +423,17 @@ export class Filesystem {
     const useGzip = writeOpts?.gzip === true
 
     if (useOctetStream) {
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/octet-stream',
+      }
+      if (useGzip) {
+        headers['Content-Encoding'] = 'gzip'
+      }
+
       const uploadResults = await Promise.all(
         writeFiles.map(async (file) => {
           const filePath = path ?? (file as WriteEntry).path
           const body = await toUploadBody(file.data, useGzip)
-
-          const headers: Record<string, string> = {
-            'Content-Type': 'application/octet-stream',
-          }
-          if (useGzip) {
-            headers['Content-Encoding'] = 'gzip'
-          }
 
           const res = await this.envdApi.api.POST('/files', {
             params: {

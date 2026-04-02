@@ -256,21 +256,19 @@ class Filesystem:
 
         results: List[WriteInfo] = []
 
-        use_gzip = gzip
-
         if use_octet_stream:
 
             async def _upload_file(file):
                 file_path, file_data = file["path"], file["data"]
 
-                content = to_upload_body(file_data, use_gzip)
+                content = to_upload_body(file_data, gzip)
 
                 params = {"path": file_path}
                 if username:
                     params["username"] = username
 
                 headers = {"Content-Type": "application/octet-stream"}
-                if use_gzip:
+                if gzip:
                     headers["Content-Encoding"] = "gzip"
 
                 r = await self._envd_api.post(

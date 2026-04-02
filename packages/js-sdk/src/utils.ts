@@ -144,11 +144,5 @@ export async function toUploadBody(
     return new Response(compressed).blob()
   }
 
-  if (data instanceof Blob) {
-    return data
-  }
-  if (data instanceof ReadableStream) {
-    return new Response(data).blob()
-  }
-  return new Blob([data])
+  return toBlob(data)
 }

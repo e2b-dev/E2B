@@ -6,6 +6,8 @@ from io import IOBase, TextIOBase
 from typing import IO, Optional, Union, TypedDict
 
 from e2b.envd.filesystem import filesystem_pb2
+from e2b.exceptions import InvalidArgumentException
+from e2b_connect.client import Code
 
 
 class FileType(Enum):
@@ -110,6 +112,6 @@ def to_upload_body(
     elif isinstance(data, IOBase):
         raw = data.read()
     else:
-        raise TypeError(f"Unsupported data type: {type(data)}")
+        raise InvalidArgumentException(f"Unsupported data type: {type(data)}")
 
     return gzip.compress(raw) if use_gzip else raw
