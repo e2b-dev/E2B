@@ -165,26 +165,23 @@ export interface FilesystemRequestOpts
 }
 
 /**
- * Options for gzip compression of the request/response body.
+ * Options for writing files to the sandbox filesystem.
  */
-export interface FilesystemEncodingOpts {
+export interface FilesystemWriteOpts extends FilesystemRequestOpts {
   /**
-   * When true, uploads will be gzip-compressed and downloads
-   * will request gzip-encoded responses.
+   * When true, the upload will be gzip-compressed.
    */
   gzip?: boolean
 }
 
 /**
- * Options for the format of the file content returned by read operations.
+ * Options for reading files from the sandbox filesystem.
  */
-export interface FilesystemFormatOpts {
+export interface FilesystemReadOpts extends FilesystemRequestOpts {
   /**
-   * Format of the file content.
-   *
-   * @default 'text'
+   * When true, the download will request gzip-encoded responses.
    */
-  format?: 'text' | 'bytes' | 'blob' | 'stream'
+  gzip?: boolean
 }
 
 export interface FilesystemListOpts extends FilesystemRequestOpts {
@@ -245,7 +242,7 @@ export class Filesystem {
    */
   async read(
     path: string,
-    opts?: FilesystemRequestOpts & FilesystemEncodingOpts & { format?: 'text' }
+    opts?: FilesystemReadOpts & { format?: 'text' }
   ): Promise<string>
   /**
    * Read file content as a `Uint8Array`.
@@ -260,7 +257,7 @@ export class Filesystem {
    */
   async read(
     path: string,
-    opts?: FilesystemRequestOpts & FilesystemEncodingOpts & { format: 'bytes' }
+    opts?: FilesystemReadOpts & { format: 'bytes' }
   ): Promise<Uint8Array>
   /**
    * Read file content as a `Blob`.
@@ -275,7 +272,7 @@ export class Filesystem {
    */
   async read(
     path: string,
-    opts?: FilesystemRequestOpts & FilesystemEncodingOpts & { format: 'blob' }
+    opts?: FilesystemReadOpts & { format: 'blob' }
   ): Promise<Blob>
   /**
    * Read file content as a `ReadableStream`.
@@ -290,11 +287,13 @@ export class Filesystem {
    */
   async read(
     path: string,
-    opts?: FilesystemRequestOpts & FilesystemEncodingOpts & { format: 'stream' }
+    opts?: FilesystemReadOpts & { format: 'stream' }
   ): Promise<ReadableStream<Uint8Array>>
   async read(
     path: string,
-    opts?: FilesystemRequestOpts & FilesystemEncodingOpts & FilesystemFormatOpts
+    opts?: FilesystemReadOpts & {
+      format?: 'text' | 'bytes' | 'blob' | 'stream'
+    }
   ): Promise<unknown> {
     const format = opts?.format ?? 'text'
 
@@ -359,11 +358,11 @@ export class Filesystem {
   async write(
     path: string,
     data: string | ArrayBuffer | Blob | ReadableStream,
-    opts?: FilesystemRequestOpts & FilesystemEncodingOpts
+    opts?: FilesystemWriteOpts
   ): Promise<WriteInfo>
   async write(
     files: WriteEntry[],
-    opts?: FilesystemRequestOpts & FilesystemEncodingOpts
+    opts?: FilesystemWriteOpts
   ): Promise<WriteInfo[]>
   async write(
     pathOrFiles: string | WriteEntry[],
@@ -372,8 +371,8 @@ export class Filesystem {
       | ArrayBuffer
       | Blob
       | ReadableStream
-      | (FilesystemRequestOpts & FilesystemEncodingOpts),
-    opts?: FilesystemRequestOpts & FilesystemEncodingOpts
+      | FilesystemWriteOpts,
+    opts?: FilesystemWriteOpts
   ): Promise<WriteInfo | WriteInfo[]> {
     if (typeof pathOrFiles !== 'string' && !Array.isArray(pathOrFiles)) {
       throw new Error('Path or files are required')
@@ -389,7 +388,7 @@ export class Filesystem {
       typeof pathOrFiles === 'string'
         ? {
             path: pathOrFiles,
-            writeOpts: opts as FilesystemRequestOpts & FilesystemEncodingOpts,
+            writeOpts: opts as FilesystemWriteOpts,
             writeFiles: [
               {
                 data: dataOrOpts as
@@ -402,8 +401,7 @@ export class Filesystem {
           }
         : {
             path: undefined,
-            writeOpts: dataOrOpts as FilesystemRequestOpts &
-              FilesystemEncodingOpts,
+            writeOpts: dataOrOpts as FilesystemWriteOpts,
             writeFiles: pathOrFiles as WriteEntry[],
           }
 
@@ -526,7 +524,7 @@ export class Filesystem {
    */
   async writeFiles(
     files: WriteEntry[],
-    opts?: FilesystemRequestOpts & FilesystemEncodingOpts
+    opts?: FilesystemWriteOpts
   ): Promise<WriteInfo[]> {
     return this.write(files, opts) as Promise<WriteInfo[]>
   }

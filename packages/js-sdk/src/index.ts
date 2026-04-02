@@ -29,8 +29,8 @@ export type {
   WriteInfo,
   EntryInfo,
   Filesystem,
-  FilesystemEncodingOpts,
-  FilesystemFormatOpts,
+  FilesystemWriteOpts,
+  FilesystemReadOpts,
 } from './sandbox/filesystem'
 export { FilesystemEventType } from './sandbox/filesystem/watchHandle'
 export type {
