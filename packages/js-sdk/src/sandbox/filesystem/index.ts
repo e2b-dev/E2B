@@ -29,6 +29,7 @@ import type { Timestamp } from '@bufbuild/protobuf/wkt'
 import { compareVersions } from 'compare-versions'
 import {
   ENVD_DEFAULT_USER,
+  ENVD_OCTET_STREAM_UPLOAD,
   ENVD_VERSION_RECURSIVE_WATCH,
 } from '../../envd/versions'
 import {
@@ -380,12 +381,6 @@ export class Filesystem {
 
     if (writeFiles.length === 0) return [] as WriteInfo[]
 
-    const formData = new FormData()
-    for (let i = 0; i < writeFiles.length; i++) {
-      const file = writeFiles[i]
-      formData.append('file', await toBlob(file.data), writeFiles[i].path)
-    }
-
     let user = writeOpts?.user
     if (
       user == undefined &&
@@ -394,29 +389,89 @@ export class Filesystem {
       user = defaultUsername
     }
 
-    const res = await this.envdApi.api.POST('/files', {
-      params: {
-        query: {
-          path,
-          username: user,
+    const useOctetStream =
+      compareVersions(this.envdApi.version, ENVD_OCTET_STREAM_UPLOAD) >= 0
+
+    const results: WriteInfo[] = []
+
+    if (useOctetStream) {
+      const uploadResults = await Promise.all(
+        writeFiles.map(async (file) => {
+          const filePath = path ?? (file as WriteEntry).path
+          const blob = await toBlob(file.data)
+
+          const res = await this.envdApi.api.POST('/files', {
+            params: {
+              query: {
+                path: filePath,
+                username: user,
+              },
+            },
+            bodySerializer: () => blob,
+            headers: {
+              'Content-Type': 'application/octet-stream',
+            },
+            signal: this.connectionConfig.getSignal(
+              writeOpts?.requestTimeoutMs
+            ),
+            body: {},
+          })
+
+          const err = await handleFilesystemEnvdApiError(res)
+          if (err) {
+            throw err
+          }
+
+          const files = res.data as WriteInfo[]
+          if (!files || files.length === 0) {
+            throw new Error(
+              'Expected to receive information about written file'
+            )
+          }
+
+          return files
+        })
+      )
+
+      for (const files of uploadResults) {
+        results.push(...files)
+      }
+    } else {
+      const formData = new FormData()
+      for (const file of writeFiles) {
+        formData.append(
+          'file',
+          await toBlob(file.data),
+          (file as WriteEntry).path ?? path!
+        )
+      }
+
+      const res = await this.envdApi.api.POST('/files', {
+        params: {
+          query: {
+            path,
+            username: user,
+          },
         },
-      },
-      bodySerializer: () => formData,
-      signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
-      body: {},
-    })
+        bodySerializer: () => formData,
+        signal: this.connectionConfig.getSignal(writeOpts?.requestTimeoutMs),
+        body: {},
+      })
 
-    const err = await handleFilesystemEnvdApiError(res)
-    if (err) {
-      throw err
+      const err = await handleFilesystemEnvdApiError(res)
+      if (err) {
+        throw err
+      }
+
+      const files = res.data as WriteInfo[]
+      if (!files || files.length === 0) {
+        throw new Error('Expected to receive information about written file')
+      }
+
+      results.push(...files)
     }
 
-    const files = res.data as WriteInfo[]
-    if (!files) {
-      throw new Error('Expected to receive information about written file')
-    }
-
-    return files.length === 1 && path ? files[0] : files
+    return results.length === 1 && path ? results[0] : results
   }
 
   /**
