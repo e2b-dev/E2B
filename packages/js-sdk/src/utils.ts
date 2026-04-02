@@ -124,3 +124,27 @@ export function toBlob(
   // ReadableStream - must consume to get Blob
   return new Response(data).blob()
 }
+
+/**
+ * Prepare data for upload as a BodyInit, optionally gzip-compressed.
+ * Streams data directly without buffering into memory.
+ */
+export function toUploadBody(
+  data: string | ArrayBuffer | Blob | ReadableStream,
+  gzip?: boolean
+): BodyInit {
+  if (gzip) {
+    const stream =
+      data instanceof ReadableStream
+        ? data
+        : data instanceof Blob
+          ? data.stream()
+          : new Blob([data]).stream()
+    return stream.pipeThrough(new CompressionStream('gzip'))
+  }
+
+  if (data instanceof ReadableStream || data instanceof Blob) {
+    return data
+  }
+  return new Blob([data])
+}

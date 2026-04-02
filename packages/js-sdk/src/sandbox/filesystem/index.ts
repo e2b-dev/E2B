@@ -37,7 +37,7 @@ import {
   InvalidArgumentError,
   TemplateError,
 } from '../../errors'
-import { toBlob } from '../../utils'
+import { toBlob, toUploadBody } from '../../utils'
 
 const FILESYSTEM_HTTP_ERROR_MAP: Record<number, (message: string) => Error> = {
   404: (message: string) => new FileNotFoundError(message),
@@ -164,6 +164,29 @@ export interface FilesystemRequestOpts
   user?: Username
 }
 
+/**
+ * Options for gzip compression of the request/response body.
+ */
+export interface FilesystemEncodingOpts {
+  /**
+   * When true, uploads will be gzip-compressed and downloads
+   * will request gzip-encoded responses.
+   */
+  gzip?: boolean
+}
+
+/**
+ * Options for the format of the file content returned by read operations.
+ */
+export interface FilesystemFormatOpts {
+  /**
+   * Format of the file content.
+   *
+   * @default 'text'
+   */
+  format?: 'text' | 'bytes' | 'blob' | 'stream'
+}
+
 export interface FilesystemListOpts extends FilesystemRequestOpts {
   /**
    * Depth of the directory to list.
@@ -222,7 +245,7 @@ export class Filesystem {
    */
   async read(
     path: string,
-    opts?: FilesystemRequestOpts & { format?: 'text' }
+    opts?: FilesystemRequestOpts & FilesystemEncodingOpts & { format?: 'text' }
   ): Promise<string>
   /**
    * Read file content as a `Uint8Array`.
@@ -237,7 +260,7 @@ export class Filesystem {
    */
   async read(
     path: string,
-    opts?: FilesystemRequestOpts & { format: 'bytes' }
+    opts?: FilesystemRequestOpts & FilesystemEncodingOpts & { format: 'bytes' }
   ): Promise<Uint8Array>
   /**
    * Read file content as a `Blob`.
@@ -252,7 +275,7 @@ export class Filesystem {
    */
   async read(
     path: string,
-    opts?: FilesystemRequestOpts & { format: 'blob' }
+    opts?: FilesystemRequestOpts & FilesystemEncodingOpts & { format: 'blob' }
   ): Promise<Blob>
   /**
    * Read file content as a `ReadableStream`.
@@ -267,13 +290,11 @@ export class Filesystem {
    */
   async read(
     path: string,
-    opts?: FilesystemRequestOpts & { format: 'stream' }
+    opts?: FilesystemRequestOpts & FilesystemEncodingOpts & { format: 'stream' }
   ): Promise<ReadableStream<Uint8Array>>
   async read(
     path: string,
-    opts?: FilesystemRequestOpts & {
-      format?: 'text' | 'stream' | 'bytes' | 'blob'
-    }
+    opts?: FilesystemRequestOpts & FilesystemEncodingOpts & FilesystemFormatOpts
   ): Promise<unknown> {
     const format = opts?.format ?? 'text'
 
@@ -285,6 +306,11 @@ export class Filesystem {
       user = defaultUsername
     }
 
+    const headers: Record<string, string> = {}
+    if (opts?.gzip) {
+      headers['Accept-Encoding'] = 'gzip'
+    }
+
     const res = await this.envdApi.api.GET('/files', {
       params: {
         query: {
@@ -294,6 +320,7 @@ export class Filesystem {
       },
       parseAs: format === 'bytes' ? 'arrayBuffer' : format,
       signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
+      headers,
     })
 
     const err = await handleFilesystemEnvdApiError(res)
@@ -332,11 +359,11 @@ export class Filesystem {
   async write(
     path: string,
     data: string | ArrayBuffer | Blob | ReadableStream,
-    opts?: FilesystemRequestOpts
+    opts?: FilesystemRequestOpts & FilesystemEncodingOpts
   ): Promise<WriteInfo>
   async write(
     files: WriteEntry[],
-    opts?: FilesystemRequestOpts
+    opts?: FilesystemRequestOpts & FilesystemEncodingOpts
   ): Promise<WriteInfo[]>
   async write(
     pathOrFiles: string | WriteEntry[],
@@ -345,8 +372,8 @@ export class Filesystem {
       | ArrayBuffer
       | Blob
       | ReadableStream
-      | FilesystemRequestOpts,
-    opts?: FilesystemRequestOpts
+      | (FilesystemRequestOpts & FilesystemEncodingOpts),
+    opts?: FilesystemRequestOpts & FilesystemEncodingOpts
   ): Promise<WriteInfo | WriteInfo[]> {
     if (typeof pathOrFiles !== 'string' && !Array.isArray(pathOrFiles)) {
       throw new Error('Path or files are required')
@@ -362,7 +389,7 @@ export class Filesystem {
       typeof pathOrFiles === 'string'
         ? {
             path: pathOrFiles,
-            writeOpts: opts as FilesystemRequestOpts,
+            writeOpts: opts as FilesystemRequestOpts & FilesystemEncodingOpts,
             writeFiles: [
               {
                 data: dataOrOpts as
@@ -375,7 +402,8 @@ export class Filesystem {
           }
         : {
             path: undefined,
-            writeOpts: dataOrOpts as FilesystemRequestOpts,
+            writeOpts: dataOrOpts as FilesystemRequestOpts &
+              FilesystemEncodingOpts,
             writeFiles: pathOrFiles as WriteEntry[],
           }
 
@@ -394,11 +422,20 @@ export class Filesystem {
 
     const results: WriteInfo[] = []
 
+    const useGzip = writeOpts?.gzip === true
+
     if (useOctetStream) {
       const uploadResults = await Promise.all(
         writeFiles.map(async (file) => {
           const filePath = path ?? (file as WriteEntry).path
-          const blob = await toBlob(file.data)
+          const body = toUploadBody(file.data, useGzip)
+
+          const headers: Record<string, string> = {
+            'Content-Type': 'application/octet-stream',
+          }
+          if (useGzip) {
+            headers['Content-Encoding'] = 'gzip'
+          }
 
           const res = await this.envdApi.api.POST('/files', {
             params: {
@@ -407,10 +444,8 @@ export class Filesystem {
                 username: user,
               },
             },
-            bodySerializer: () => blob,
-            headers: {
-              'Content-Type': 'application/octet-stream',
-            },
+            bodySerializer: () => body,
+            headers,
             signal: this.connectionConfig.getSignal(
               writeOpts?.requestTimeoutMs
             ),
@@ -491,7 +526,7 @@ export class Filesystem {
    */
   async writeFiles(
     files: WriteEntry[],
-    opts?: FilesystemRequestOpts
+    opts?: FilesystemRequestOpts & FilesystemEncodingOpts
   ): Promise<WriteInfo[]> {
     return this.write(files, opts) as Promise<WriteInfo[]>
   }
