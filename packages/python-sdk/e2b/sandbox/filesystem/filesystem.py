@@ -7,7 +7,6 @@ from typing import IO, Optional, Union, TypedDict
 
 from e2b.envd.filesystem import filesystem_pb2
 from e2b.exceptions import InvalidArgumentException
-from e2b_connect.client import Code
 
 
 class FileType(Enum):
