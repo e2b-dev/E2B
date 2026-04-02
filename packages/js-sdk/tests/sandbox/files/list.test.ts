@@ -5,8 +5,7 @@ import { sandboxTest } from '../../setup.js'
 const parentDirName = 'test_directory'
 
 sandboxTest('list directory', async ({ sandbox }) => {
-  const { stdout } = await sandbox.commands.run('pwd')
-  const homeDirName = stdout.trim()
+  const homeDirName = '/home/user'
   await sandbox.files.makeDir(parentDirName)
   await sandbox.files.makeDir(`${parentDirName}/subdir1`)
   await sandbox.files.makeDir(`${parentDirName}/subdir2`)
@@ -134,10 +133,12 @@ sandboxTest('file entry details', async ({ sandbox }) => {
 
   const fileEntry = files[0]
   assert.equal(fileEntry.name, 'test.txt')
-  assert.ok(fileEntry.path.endsWith(`/${filePath}`))
+  assert.equal(fileEntry.path, `/home/user/${filePath}`)
   assert.equal(fileEntry.type, 'file')
   assert.equal(fileEntry.mode, 0o644)
   assert.equal(fileEntry.permissions, '-rw-r--r--')
+  assert.equal(fileEntry.owner, 'user')
+  assert.equal(fileEntry.group, 'user')
   assert.equal(fileEntry.size, content.length)
   assert.ok(fileEntry.modifiedTime)
   assert.isUndefined(fileEntry.symlinkTarget)
@@ -155,10 +156,12 @@ sandboxTest('directory entry details', async ({ sandbox }) => {
 
   const dirEntry = files[0]
   assert.equal(dirEntry.name, 'subdir')
-  assert.ok(dirEntry.path.endsWith(`/${subDir}`))
+  assert.equal(dirEntry.path, `/home/user/${subDir}`)
   assert.equal(dirEntry.type, 'dir')
   assert.equal(dirEntry.mode, 0o755)
   assert.equal(dirEntry.permissions, 'drwxr-xr-x')
+  assert.equal(dirEntry.owner, 'user')
+  assert.equal(dirEntry.group, 'user')
   assert.ok(dirEntry.modifiedTime)
 })
 
@@ -181,19 +184,23 @@ sandboxTest('mixed entries (files and directories)', async ({ sandbox }) => {
   // Verify directory entry
   const dirEntry = entries.get('subdir')
   assert.ok(dirEntry)
-  assert.ok(dirEntry!.path.endsWith(`/${subDir}`))
+  assert.equal(dirEntry!.path, `/home/user/${subDir}`)
   assert.equal(dirEntry!.type, 'dir')
   assert.equal(dirEntry!.mode, 0o755)
   assert.equal(dirEntry!.permissions, 'drwxr-xr-x')
+  assert.equal(dirEntry!.owner, 'user')
+  assert.equal(dirEntry!.group, 'user')
   assert.ok(dirEntry!.modifiedTime)
 
   // Verify file entry
   const fileEntry = entries.get('test.txt')
   assert.ok(fileEntry)
-  assert.ok(fileEntry!.path.endsWith(`/${filePath}`))
+  assert.equal(fileEntry!.path, `/home/user/${filePath}`)
   assert.equal(fileEntry!.type, 'file')
   assert.equal(fileEntry!.mode, 0o644)
   assert.equal(fileEntry!.permissions, '-rw-r--r--')
+  assert.equal(fileEntry!.owner, 'user')
+  assert.equal(fileEntry!.group, 'user')
   assert.equal(fileEntry!.size, content.length)
   assert.ok(fileEntry!.modifiedTime)
 })
