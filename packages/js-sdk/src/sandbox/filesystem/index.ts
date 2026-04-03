@@ -856,7 +856,7 @@ export class Filesystem {
 
     // If the data fits in a single chunk, no need for composite upload
     if (totalSize <= chunkSize) {
-      const body = await toUploadBody(data, useGzip)
+      const body = await toUploadBody(blob, useGzip)
 
       const res = await this.envdApi.api.POST('/files', {
         params: {

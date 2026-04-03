@@ -387,7 +387,7 @@ class Filesystem:
             if username:
                 params["username"] = username
 
-            upload_content = to_upload_body(data, use_gzip)
+            upload_content = to_upload_body(content, use_gzip)
 
             r = await self._envd_api.post(
                 ENVD_API_FILES_ROUTE,
