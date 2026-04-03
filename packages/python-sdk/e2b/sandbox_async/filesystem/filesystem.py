@@ -414,9 +414,7 @@ class Filesystem:
             if err:
                 raise err
 
-        async with asyncio.TaskGroup() as tg:
-            for i in range(chunk_count):
-                tg.create_task(_upload_chunk(i))
+        await asyncio.gather(*[_upload_chunk(i) for i in range(chunk_count)])
 
         # Compose chunks into the final file
         body = {
