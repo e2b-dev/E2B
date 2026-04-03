@@ -1,4 +1,5 @@
 import asyncio
+import gzip
 import uuid
 
 from io import IOBase, TextIOBase
@@ -396,7 +397,10 @@ class Filesystem:
             if username:
                 params["username"] = username
 
-            upload_content = to_upload_body(chunk_data, use_gzip)
+            if use_gzip:
+                upload_content = await asyncio.to_thread(gzip.compress, chunk_data)
+            else:
+                upload_content = chunk_data
 
             r = await self._envd_api.post(
                 ENVD_API_FILES_ROUTE,
@@ -410,7 +414,9 @@ class Filesystem:
             if err:
                 raise err
 
-        await asyncio.gather(*[_upload_chunk(i) for i in range(chunk_count)])
+        async with asyncio.TaskGroup() as tg:
+            for i in range(chunk_count):
+                tg.create_task(_upload_chunk(i))
 
         # Compose chunks into the final file
         body = {
