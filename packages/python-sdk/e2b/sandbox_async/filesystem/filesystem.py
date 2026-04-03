@@ -416,17 +416,14 @@ class Filesystem:
         # Split into chunks and upload in parallel
         upload_id = str(uuid.uuid4())
         chunk_count = (total_size + chunk_size - 1) // chunk_size
-        chunk_paths: List[str] = []
+        chunk_paths = [f"/tmp/.e2b-upload-{upload_id}-{i}" for i in range(chunk_count)]
 
         async def _upload_chunk(i: int) -> None:
-            chunk_path = f"/tmp/.e2b-upload-{upload_id}-{i}"
-            chunk_paths.append(chunk_path)
-
             start = i * chunk_size
             end = min(start + chunk_size, total_size)
             chunk_data = content[start:end]
 
-            params = {"path": chunk_path}
+            params = {"path": chunk_paths[i]}
             if username:
                 params["username"] = username
 
@@ -443,9 +440,6 @@ class Filesystem:
                 raise err
 
         await asyncio.gather(*[_upload_chunk(i) for i in range(chunk_count)])
-
-        # Sort chunk_paths by index to ensure correct order
-        chunk_paths.sort(key=lambda p: int(p.rsplit("-", 1)[1]))
 
         # Compose chunks into the final file
         body = {

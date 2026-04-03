@@ -844,7 +844,7 @@ export class Filesystem {
   private async compositeWrite(
     destination: string,
     data: string | ArrayBuffer | Blob | ReadableStream,
-    user: string | undefined,
+    user: Username | undefined,
     opts?: WriteOpts
   ): Promise<WriteInfo> {
     const blob = await toBlob(data)
