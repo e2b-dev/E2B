@@ -27,7 +27,6 @@ export { getSignature } from './sandbox/signature'
 export { FileType } from './sandbox/filesystem'
 export type {
   WriteInfo,
-  WriteOpts,
   EntryInfo,
   Filesystem,
   FilesystemWriteOpts,

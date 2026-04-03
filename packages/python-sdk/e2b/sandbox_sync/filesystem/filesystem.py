@@ -204,7 +204,6 @@ class Filesystem:
         user: Optional[Username] = None,
         request_timeout: Optional[float] = None,
         gzip: bool = False,
-        composite: bool = False,
     ) -> WriteInfo:
         """
         Write content to a file on the path.
@@ -217,13 +216,10 @@ class Filesystem:
         :param user: Run the operation as this user
         :param request_timeout: Timeout for the request in **seconds**
         :param gzip: Use gzip compression for the request
-        :param composite: When `True`, the file data is split into chunks and uploaded
-            in parallel, then composed into the final file on the server using
-            zero-copy concatenation. This is useful for uploading large files.
 
         :return: Information about the written file
         """
-        if composite and self._envd_version >= ENVD_OCTET_STREAM_UPLOAD:
+        if self._envd_version >= ENVD_OCTET_STREAM_UPLOAD:
             content = to_upload_body(data, False)
             if len(content) > _DEFAULT_CHUNK_SIZE:
                 return self._composite_write(path, content, user, request_timeout, gzip)

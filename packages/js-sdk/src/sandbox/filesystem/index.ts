@@ -184,18 +184,6 @@ export interface FilesystemReadOpts extends FilesystemRequestOpts {
   gzip?: boolean
 }
 
-/**
- * Options for the write operation.
- */
-export interface WriteOpts extends FilesystemWriteOpts {
-  /**
-   * When `true`, the file data is split into chunks and uploaded in parallel,
-   * then composed into the final file on the server using zero-copy concatenation.
-   * This is useful for uploading large files.
-   */
-  composite?: boolean
-}
-
 const DEFAULT_CHUNK_SIZE = 64 * 1024 * 1024 // 64 MB
 
 export interface FilesystemListOpts extends FilesystemRequestOpts {
@@ -372,7 +360,7 @@ export class Filesystem {
   async write(
     path: string,
     data: string | ArrayBuffer | Blob | ReadableStream,
-    opts?: WriteOpts
+    opts?: FilesystemWriteOpts
   ): Promise<WriteInfo>
   async write(
     files: WriteEntry[],
@@ -380,8 +368,13 @@ export class Filesystem {
   ): Promise<WriteInfo[]>
   async write(
     pathOrFiles: string | WriteEntry[],
-    dataOrOpts?: string | ArrayBuffer | Blob | ReadableStream | WriteOpts,
-    opts?: WriteOpts
+    dataOrOpts?:
+      | string
+      | ArrayBuffer
+      | Blob
+      | ReadableStream
+      | FilesystemWriteOpts,
+    opts?: FilesystemWriteOpts
   ): Promise<WriteInfo | WriteInfo[]> {
     if (typeof pathOrFiles !== 'string' && !Array.isArray(pathOrFiles)) {
       throw new Error('Path or files are required')
@@ -397,7 +390,7 @@ export class Filesystem {
       typeof pathOrFiles === 'string'
         ? {
             path: pathOrFiles,
-            writeOpts: opts as WriteOpts | undefined,
+            writeOpts: opts as FilesystemWriteOpts | undefined,
             writeFiles: [
               {
                 data: dataOrOpts as
@@ -410,7 +403,7 @@ export class Filesystem {
           }
         : {
             path: undefined,
-            writeOpts: dataOrOpts as WriteOpts | undefined,
+            writeOpts: dataOrOpts as FilesystemWriteOpts | undefined,
             writeFiles: pathOrFiles as WriteEntry[],
           }
 
@@ -427,8 +420,8 @@ export class Filesystem {
     const useOctetStream =
       compareVersions(this.envdApi.version, ENVD_OCTET_STREAM_UPLOAD) >= 0
 
-    // Composite upload: chunk the data, upload parts in parallel, then compose
-    if (writeOpts?.composite && path && useOctetStream) {
+    // Composite upload: automatically chunk large files, upload parts in parallel, then compose
+    if (path && useOctetStream) {
       const blob = await toBlob(writeFiles[0].data)
       if (blob.size > DEFAULT_CHUNK_SIZE) {
         return this.compositeWrite(path, blob, user, writeOpts)
@@ -845,7 +838,7 @@ export class Filesystem {
     destination: string,
     blob: Blob,
     user: Username | undefined,
-    opts?: WriteOpts
+    opts?: FilesystemWriteOpts
   ): Promise<WriteInfo> {
     const totalSize = blob.size
     const chunkSize = DEFAULT_CHUNK_SIZE
