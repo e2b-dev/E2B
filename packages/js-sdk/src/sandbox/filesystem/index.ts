@@ -429,7 +429,12 @@ export class Filesystem {
 
     // Composite upload: chunk the data, upload parts in parallel, then compose
     if (writeOpts?.composite && path && useOctetStream) {
-      return this.compositeWrite(path, writeFiles[0].data, user, writeOpts)
+      const blob = await toBlob(writeFiles[0].data)
+      if (blob.size > DEFAULT_CHUNK_SIZE) {
+        return this.compositeWrite(path, blob, user, writeOpts)
+      }
+      // Data fits in a single chunk — fall through to normal write path
+      writeFiles[0] = { data: blob }
     }
 
     const results: WriteInfo[] = []
@@ -838,11 +843,10 @@ export class Filesystem {
 
   private async compositeWrite(
     destination: string,
-    data: string | ArrayBuffer | Blob | ReadableStream,
+    blob: Blob,
     user: Username | undefined,
     opts?: WriteOpts
   ): Promise<WriteInfo> {
-    const blob = await toBlob(data)
     const totalSize = blob.size
     const chunkSize = DEFAULT_CHUNK_SIZE
     const useGzip = opts?.gzip === true
@@ -852,36 +856,6 @@ export class Filesystem {
     }
     if (useGzip) {
       headers['Content-Encoding'] = 'gzip'
-    }
-
-    // If the data fits in a single chunk, no need for composite upload
-    if (totalSize <= chunkSize) {
-      const body = await toUploadBody(blob, useGzip)
-
-      const res = await this.envdApi.api.POST('/files', {
-        params: {
-          query: {
-            path: destination,
-            username: user,
-          },
-        },
-        bodySerializer: () => body,
-        headers,
-        signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
-        body: {},
-      })
-
-      const err = await handleFilesystemEnvdApiError(res)
-      if (err) {
-        throw err
-      }
-
-      const files = res.data as WriteInfo[]
-      if (!files || files.length === 0) {
-        throw new Error('Expected to receive information about written file')
-      }
-
-      return files[0]
     }
 
     // Split into chunks and upload in parallel

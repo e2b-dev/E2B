@@ -224,7 +224,9 @@ class Filesystem:
         :return: Information about the written file
         """
         if composite and self._envd_version >= ENVD_OCTET_STREAM_UPLOAD:
-            return self._composite_write(path, data, user, request_timeout, gzip)
+            content = to_upload_body(data, False)
+            if len(content) > _DEFAULT_CHUNK_SIZE:
+                return self._composite_write(path, content, user, request_timeout, gzip)
 
         result = self.write_files(
             [WriteEntry(path=path, data=data)],
@@ -241,7 +243,7 @@ class Filesystem:
     def _composite_write(
         self,
         destination: str,
-        data: Union[str, bytes, IO],
+        content: bytes,
         user: Optional[Username] = None,
         request_timeout: Optional[float] = None,
         use_gzip: bool = False,
@@ -250,40 +252,12 @@ class Filesystem:
         if username is None and self._envd_version < ENVD_DEFAULT_USER:
             username = default_username
 
-        content = to_upload_body(data, False)
         total_size = len(content)
         chunk_size = _DEFAULT_CHUNK_SIZE
 
         headers = {"Content-Type": "application/octet-stream"}
         if use_gzip:
             headers["Content-Encoding"] = "gzip"
-
-        # If the data fits in a single chunk, upload directly
-        if total_size <= chunk_size:
-            params = {"path": destination}
-            if username:
-                params["username"] = username
-
-            upload_content = to_upload_body(content, use_gzip)
-
-            r = self._envd_api.post(
-                ENVD_API_FILES_ROUTE,
-                content=upload_content,
-                headers=headers,
-                params=params,
-                timeout=self._connection_config.get_request_timeout(request_timeout),
-            )
-
-            err = _handle_filesystem_envd_api_exception(r)
-            if err:
-                raise err
-
-            write_result = r.json()
-            if not isinstance(write_result, list) or len(write_result) == 0:
-                raise SandboxException(
-                    "Expected to receive information about written file"
-                )
-            return WriteInfo(**write_result[0])
 
         # Split into chunks and upload
         upload_id = str(uuid.uuid4())
