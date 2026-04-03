@@ -98,9 +98,10 @@ export async function connectSandbox({
   sandbox: e2b.Sandbox
   template: Pick<e2b.components['schemas']['Template'], 'templateID'>
 }) {
-  // keep-alive loop
-  const intervalId = setInterval(async () => {
-    await sandbox.setTimeout(30_000)
+  // keep-alive loop — track the in-flight promise so we can await it on shutdown
+  let pendingKeepAlive: Promise<void> = Promise.resolve()
+  const intervalId = setInterval(() => {
+    pendingKeepAlive = sandbox.setTimeout(30_000)
   }, 5_000)
 
   console.log(
@@ -112,7 +113,8 @@ export async function connectSandbox({
     await spawnConnectedTerminal(sandbox)
   } finally {
     clearInterval(intervalId)
-    await sandbox.kill()
+    await pendingKeepAlive.catch(() => {})
+    await sandbox.setTimeout(1_000)
     console.log(
       `Closing terminal connection to template ${asFormattedSandboxTemplate(
         template
