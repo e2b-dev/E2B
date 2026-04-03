@@ -34,6 +34,7 @@ from e2b.sandbox.filesystem.filesystem import (
     WriteEntry,
     WriteInfo,
     map_file_type,
+    to_upload_body,
 )
 from e2b.sandbox_sync.filesystem.watch_handle import WatchHandle
 
@@ -90,6 +91,7 @@ class Filesystem:
         format: Literal["text"] = "text",
         user: Optional[Username] = None,
         request_timeout: Optional[float] = None,
+        gzip: bool = False,
     ) -> str:
         """
         Read file content as a `str`.
@@ -98,6 +100,7 @@ class Filesystem:
         :param user: Run the operation as this user
         :param format: Format of the file content—`text` by default
         :param request_timeout: Timeout for the request in **seconds**
+        :param gzip: Use gzip compression for the request
 
         :return: File content as a `str`
         """
@@ -110,6 +113,7 @@ class Filesystem:
         format: Literal["bytes"],
         user: Optional[Username] = None,
         request_timeout: Optional[float] = None,
+        gzip: bool = False,
     ) -> bytearray:
         """
         Read file content as a `bytearray`.
@@ -118,6 +122,7 @@ class Filesystem:
         :param user: Run the operation as this user
         :param format: Format of the file content—`bytes`
         :param request_timeout: Timeout for the request in **seconds**
+        :param gzip: Use gzip compression for the request
 
         :return: File content as a `bytearray`
         """
@@ -130,6 +135,7 @@ class Filesystem:
         format: Literal["stream"],
         user: Optional[Username] = None,
         request_timeout: Optional[float] = None,
+        gzip: bool = False,
     ) -> Iterator[bytes]:
         """
         Read file content as a `Iterator[bytes]`.
@@ -138,6 +144,7 @@ class Filesystem:
         :param user: Run the operation as this user
         :param format: Format of the file content—`stream`
         :param request_timeout: Timeout for the request in **seconds**
+        :param gzip: Use gzip compression for the request
 
         :return: File content as an `Iterator[bytes]`
         """
@@ -149,6 +156,7 @@ class Filesystem:
         format: Literal["text", "bytes", "stream"] = "text",
         user: Optional[Username] = None,
         request_timeout: Optional[float] = None,
+        gzip: bool = False,
     ):
         username = user
         if username is None and self._envd_version < ENVD_DEFAULT_USER:
@@ -158,9 +166,14 @@ class Filesystem:
         if username:
             params["username"] = username
 
+        headers = {}
+        if gzip:
+            headers["Accept-Encoding"] = "gzip"
+
         r = self._envd_api.get(
             ENVD_API_FILES_ROUTE,
             params=params,
+            headers=headers,
             timeout=self._connection_config.get_request_timeout(request_timeout),
         )
 
@@ -181,6 +194,7 @@ class Filesystem:
         data: Union[str, bytes, IO],
         user: Optional[Username] = None,
         request_timeout: Optional[float] = None,
+        gzip: bool = False,
     ) -> WriteInfo:
         """
         Write content to a file on the path.
@@ -192,6 +206,7 @@ class Filesystem:
         :param data: Data to write to the file, can be a `str`, `bytes`, or `IO`.
         :param user: Run the operation as this user
         :param request_timeout: Timeout for the request in **seconds**
+        :param gzip: Use gzip compression for the request
 
         :return: Information about the written file
         """
@@ -199,6 +214,7 @@ class Filesystem:
             [WriteEntry(path=path, data=data)],
             user=user,
             request_timeout=request_timeout,
+            gzip=gzip,
         )
 
         if len(result) != 1:
@@ -211,6 +227,7 @@ class Filesystem:
         files: List[WriteEntry],
         user: Optional[Username] = None,
         request_timeout: Optional[float] = None,
+        gzip: bool = False,
     ) -> List[WriteInfo]:
         """
         Writes a list of files to the filesystem.
@@ -221,6 +238,7 @@ class Filesystem:
         :param files: list of files to write as `WriteEntry` objects, each containing `path` and `data`
         :param user: Run the operation as this user
         :param request_timeout: Timeout for the request
+        :param gzip: Use gzip compression for the request
         :return: Information about the written files
         """
         username = user
@@ -238,27 +256,20 @@ class Filesystem:
             for file in files:
                 file_path, file_data = file["path"], file["data"]
 
-                if isinstance(file_data, str):
-                    content = file_data.encode("utf-8")
-                elif isinstance(file_data, bytes):
-                    content = file_data
-                elif isinstance(file_data, TextIOBase):
-                    content = file_data.read().encode("utf-8")
-                elif isinstance(file_data, IOBase):
-                    content = file_data.read()
-                else:
-                    raise InvalidArgumentException(
-                        f"Unsupported data type for file {file_path}"
-                    )
+                content = to_upload_body(file_data, gzip)
 
                 params = {"path": file_path}
                 if username:
                     params["username"] = username
 
+                headers = {"Content-Type": "application/octet-stream"}
+                if gzip:
+                    headers["Content-Encoding"] = "gzip"
+
                 r = self._envd_api.post(
                     ENVD_API_FILES_ROUTE,
                     content=content,
-                    headers={"Content-Type": "application/octet-stream"},
+                    headers=headers,
                     params=params,
                     timeout=self._connection_config.get_request_timeout(
                         request_timeout
