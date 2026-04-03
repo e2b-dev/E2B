@@ -1,0 +1,150 @@
+---
+title: "Upload & downloads files"
+---
+
+E2B Sandbox allows you to upload and downloads file to and from the Sandbox.
+
+An alternative way to get your data to the sandbox is to create a [custom sandbox template](/sandbox-template).
+
+
+## Upload file
+<CodeGroup>
+```ts JavaScript & TypeScript
+import { Sandbox } from '@e2b/code-interpreter'
+
+// Read local file relative to the current working directory
+const content = fs.readFileSync('local/file')
+
+const sbx = await Sandbox.create()
+// Upload file to the sandbox to absolute path '/home/user/my-file'
+await sbx.files.write('/home/user/my-file', content)
+```
+
+```python Python
+from e2b_code_interpreter import Sandbox
+
+sbx = Sandbox.create()
+
+# Read local file relative to the current working directory
+with open("local/file", "rb") as file:
+   # Upload file to the sandbox to absolute path '/home/user/my-file'
+	sbx.files.write("/home/user/my-file", file)
+```
+</CodeGroup>
+
+
+## Upload multiple files
+Currently, if you want to upload multiple files, you need to upload each one of the separately.
+We're working on a better solution.
+
+<CodeGroup>
+```ts JavaScript & TypeScript
+import { Sandbox } from '@e2b/code-interpreter'
+
+// Read local file relative to the current working directory
+const fileA = fs.readFileSync('local/file/a')
+const fileB = fs.readFileSync('local/file/b')
+
+const sbx = await Sandbox.create()
+// Upload file A to the sandbox to absolute path '/home/user/my-file-a'
+await sbx.files.write('/home/user/my-file-a', fileA)
+// Upload file B to the sandbox to absolute path '/home/user/my-file-b'
+await sbx.files.write('/home/user/my-file-b', fileB)
+```
+
+```python Python
+from e2b_code_interpreter import Sandbox
+
+sbx = Sandbox.create()
+
+# Read local file relative to the current working directory
+with open("local/file/a", "rb") as file:
+   # Upload file to the sandbox to absolute path '/home/user/my-file-a'
+	sbx.files.write("/home/user/my-file-a", file)
+
+with open("local/file/b", "rb") as file:
+   # Upload file to the sandbox to absolute path '/home/user/my-file-b'
+	sbx.files.write("/home/user/my-file-b", file)
+```
+</CodeGroup>
+
+
+## Upload directory
+We currently don't support an easy way to upload a whole directory.
+You need to upload each file separately.
+
+We're working on a better solution.
+
+---
+
+## Download file
+To download a file, you need to first get the file's content and then write it to a local file.
+
+<CodeGroup>
+```ts JavaScript & TypeScript
+import { Sandbox } from '@e2b/code-interpreter'
+
+const sbx = await Sandbox.create()
+// Download file from the sandbox to absolute path '/home/user/my-file'
+const content = await sbx.files.read('/home/user/my-file')
+// Write file to local path relative to the current working directory
+fs.writeFileSync('local/file', content)
+```
+
+```python Python
+from e2b_code_interpreter import Sandbox
+
+sbx = Sandbox.create()
+# Download file from the sandbox to absolute path '/home/user/my-file'
+content = sbx.files.read('/home/user/my-file')
+# Write file to local path relative to the current working directory
+with open('local/file', 'w') as file:
+    file.write(content)
+```
+</CodeGroup>
+
+## Download multiple files
+To download multiple files, you need to download each one of them separately from the sandbox.
+
+We're working on a better solution.
+
+
+<CodeGroup>
+```ts JavaScript & TypeScript
+import { Sandbox } from '@e2b/code-interpreter'
+
+const sbx = await Sandbox.create()
+// Download file A from the sandbox by absolute path '/home/user/my-file-a'
+const contentA = await sbx.files.read('/home/user/my-file-a')
+// Write file A to local path relative to the current working directory
+fs.writeFileSync('local/file/a', contentA)
+
+// Download file B from the sandbox by absolute path '/home/user/my-file-b'
+const contentB = await sbx.files.read('/home/user/my-file-b')
+// Write file B to local path relative to the current working directory
+fs.writeFileSync('local/file/b', contentB)
+```
+
+```python Python
+from e2b_code_interpreter import Sandbox
+
+sbx = Sandbox.create()
+# Download file A from the sandbox by absolute path '/home/user/my-file-a'
+contentA = sbx.files.read('/home/user/my-file-a')
+# Write file A to local path relative to the current working directory
+with open('local/file/a', 'w') as file:
+    file.write(contentA)
+
+# Download file B from the sandbox by absolute path '/home/user/my-file-b'
+contentB = sbx.files.read('/home/user/my-file-b')
+# Write file B to local path relative to the current working directory
+with open('local/file/b', 'w') as file:
+    file.write(contentB)
+```
+</CodeGroup>
+
+## Download directory
+We currently don't support an easy way to download a whole directory.
+You need to download each file separately.
+
+We're working on a better solution.

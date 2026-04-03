@@ -1,0 +1,2398 @@
+[
+  {
+    "dropdown": "CLI",
+    "icon": "terminal",
+    "versions": [
+      {
+        "version": "v2.2.0@latest",
+        "groups": [
+          {
+            "group": "CLI v2.2.0",
+            "pages": [
+              "sdk-reference/cli/v2.2.0/auth/index",
+              "sdk-reference/cli/v2.2.0/sandbox/index",
+              "sdk-reference/cli/v2.2.0/template/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v2.1.0",
+        "groups": [
+          {
+            "group": "CLI v2.1.0",
+            "pages": [
+              "sdk-reference/cli/v2.1.0/auth/index",
+              "sdk-reference/cli/v2.1.0/sandbox/index",
+              "sdk-reference/cli/v2.1.0/template/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v2.0.3",
+        "groups": [
+          {
+            "group": "CLI v2.0.3",
+            "pages": [
+              "sdk-reference/cli/v2.0.3/auth/index",
+              "sdk-reference/cli/v2.0.3/sandbox/index",
+              "sdk-reference/cli/v2.0.3/template/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v2.0.2",
+        "groups": [
+          {
+            "group": "CLI v2.0.2",
+            "pages": [
+              "sdk-reference/cli/v2.0.2/auth/index",
+              "sdk-reference/cli/v2.0.2/sandbox/index",
+              "sdk-reference/cli/v2.0.2/template/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v2.0.1",
+        "groups": [
+          {
+            "group": "CLI v2.0.1",
+            "pages": [
+              "sdk-reference/cli/v2.0.1/auth/index",
+              "sdk-reference/cli/v2.0.1/sandbox/index",
+              "sdk-reference/cli/v2.0.1/template/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v2.0.0",
+        "groups": [
+          {
+            "group": "CLI v2.0.0",
+            "pages": [
+              "sdk-reference/cli/v2.0.0/auth/index",
+              "sdk-reference/cli/v2.0.0/sandbox/index",
+              "sdk-reference/cli/v2.0.0/template/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.9.2",
+        "groups": [
+          {
+            "group": "CLI v1.9.2",
+            "pages": [
+              "sdk-reference/cli/v1.9.2/auth/index",
+              "sdk-reference/cli/v1.9.2/sandbox/index",
+              "sdk-reference/cli/v1.9.2/template/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.9.1",
+        "groups": [
+          {
+            "group": "CLI v1.9.1",
+            "pages": [
+              "sdk-reference/cli/v1.9.1/auth/index",
+              "sdk-reference/cli/v1.9.1/sandbox/index",
+              "sdk-reference/cli/v1.9.1/template/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.9.0",
+        "groups": [
+          {
+            "group": "CLI v1.9.0",
+            "pages": [
+              "sdk-reference/cli/v1.9.0/auth/index",
+              "sdk-reference/cli/v1.9.0/sandbox/index",
+              "sdk-reference/cli/v1.9.0/template/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.8.0",
+        "groups": [
+          {
+            "group": "CLI v1.8.0",
+            "pages": [
+              "sdk-reference/cli/v1.8.0/auth/index",
+              "sdk-reference/cli/v1.8.0/sandbox/index",
+              "sdk-reference/cli/v1.8.0/template/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.7.0",
+        "groups": [
+          {
+            "group": "CLI v1.7.0",
+            "pages": [
+              "sdk-reference/cli/v1.7.0/auth/index",
+              "sdk-reference/cli/v1.7.0/sandbox/index",
+              "sdk-reference/cli/v1.7.0/template/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.6.0",
+        "groups": [
+          {
+            "group": "CLI v1.6.0",
+            "pages": [
+              "sdk-reference/cli/v1.6.0/auth/index",
+              "sdk-reference/cli/v1.6.0/sandbox/index",
+              "sdk-reference/cli/v1.6.0/template/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.5.2",
+        "groups": [
+          {
+            "group": "CLI v1.5.2",
+            "pages": [
+              "sdk-reference/cli/v1.5.2/auth/index",
+              "sdk-reference/cli/v1.5.2/sandbox/index",
+              "sdk-reference/cli/v1.5.2/template/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.5.1",
+        "groups": [
+          {
+            "group": "CLI v1.5.1",
+            "pages": [
+              "sdk-reference/cli/v1.5.1/auth/index",
+              "sdk-reference/cli/v1.5.1/sandbox/index",
+              "sdk-reference/cli/v1.5.1/template/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.5.0",
+        "groups": [
+          {
+            "group": "CLI v1.5.0",
+            "pages": [
+              "sdk-reference/cli/v1.5.0/auth/index",
+              "sdk-reference/cli/v1.5.0/sandbox/index",
+              "sdk-reference/cli/v1.5.0/template/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.4.3",
+        "groups": [
+          {
+            "group": "CLI v1.4.3",
+            "pages": [
+              "sdk-reference/cli/v1.4.3/auth/index",
+              "sdk-reference/cli/v1.4.3/sandbox/index",
+              "sdk-reference/cli/v1.4.3/template/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.4.2",
+        "groups": [
+          {
+            "group": "CLI v1.4.2",
+            "pages": [
+              "sdk-reference/cli/v1.4.2/auth/index",
+              "sdk-reference/cli/v1.4.2/sandbox/index",
+              "sdk-reference/cli/v1.4.2/template/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.4.1",
+        "groups": [
+          {
+            "group": "CLI v1.4.1",
+            "pages": [
+              "sdk-reference/cli/v1.4.1/auth/index",
+              "sdk-reference/cli/v1.4.1/sandbox/index",
+              "sdk-reference/cli/v1.4.1/template/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.4.0",
+        "groups": [
+          {
+            "group": "CLI v1.4.0",
+            "pages": [
+              "sdk-reference/cli/v1.4.0/auth/index",
+              "sdk-reference/cli/v1.4.0/sandbox/index",
+              "sdk-reference/cli/v1.4.0/template/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.3.4",
+        "groups": [
+          {
+            "group": "CLI v1.3.4",
+            "pages": [
+              "sdk-reference/cli/v1.3.4/auth/index",
+              "sdk-reference/cli/v1.3.4/sandbox/index",
+              "sdk-reference/cli/v1.3.4/template/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.3.3",
+        "groups": [
+          {
+            "group": "CLI v1.3.3",
+            "pages": [
+              "sdk-reference/cli/v1.3.3/auth/index",
+              "sdk-reference/cli/v1.3.3/sandbox/index",
+              "sdk-reference/cli/v1.3.3/template/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.3.2",
+        "groups": [
+          {
+            "group": "CLI v1.3.2",
+            "pages": [
+              "sdk-reference/cli/v1.3.2/auth/index",
+              "sdk-reference/cli/v1.3.2/sandbox/index",
+              "sdk-reference/cli/v1.3.2/template/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.3.1",
+        "groups": [
+          {
+            "group": "CLI v1.3.1",
+            "pages": [
+              "sdk-reference/cli/v1.3.1/auth/index",
+              "sdk-reference/cli/v1.3.1/sandbox/index",
+              "sdk-reference/cli/v1.3.1/template/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.3.0",
+        "groups": [
+          {
+            "group": "CLI v1.3.0",
+            "pages": [
+              "sdk-reference/cli/v1.3.0/auth/index",
+              "sdk-reference/cli/v1.3.0/sandbox/index",
+              "sdk-reference/cli/v1.3.0/template/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.2.3",
+        "groups": [
+          {
+            "group": "CLI v1.2.3",
+            "pages": [
+              "sdk-reference/cli/v1.2.3/auth/index",
+              "sdk-reference/cli/v1.2.3/sandbox/index",
+              "sdk-reference/cli/v1.2.3/template/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.2.2",
+        "groups": [
+          {
+            "group": "CLI v1.2.2",
+            "pages": [
+              "sdk-reference/cli/v1.2.2/auth/index",
+              "sdk-reference/cli/v1.2.2/sandbox/index",
+              "sdk-reference/cli/v1.2.2/template/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.2.1",
+        "groups": [
+          {
+            "group": "CLI v1.2.1",
+            "pages": [
+              "sdk-reference/cli/v1.2.1/auth/index",
+              "sdk-reference/cli/v1.2.1/sandbox/index",
+              "sdk-reference/cli/v1.2.1/template/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.2.0",
+        "groups": [
+          {
+            "group": "CLI v1.2.0",
+            "pages": [
+              "sdk-reference/cli/v1.2.0/auth/index",
+              "sdk-reference/cli/v1.2.0/sandbox/index",
+              "sdk-reference/cli/v1.2.0/template/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.0.10",
+        "groups": [
+          {
+            "group": "CLI v1.0.10",
+            "pages": [
+              "sdk-reference/cli/v1.0.10/auth/index",
+              "sdk-reference/cli/v1.0.10/sandbox/index",
+              "sdk-reference/cli/v1.0.10/template/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.0.9",
+        "groups": [
+          {
+            "group": "CLI v1.0.9",
+            "pages": [
+              "sdk-reference/cli/v1.0.9/auth/index",
+              "sdk-reference/cli/v1.0.9/sandbox/index",
+              "sdk-reference/cli/v1.0.9/template/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.0.8",
+        "groups": [
+          {
+            "group": "CLI v1.0.8",
+            "pages": [
+              "sdk-reference/cli/v1.0.8/auth/index",
+              "sdk-reference/cli/v1.0.8/sandbox/index",
+              "sdk-reference/cli/v1.0.8/template/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.0.7",
+        "groups": [
+          {
+            "group": "CLI v1.0.7",
+            "pages": [
+              "sdk-reference/cli/v1.0.7/auth/index",
+              "sdk-reference/cli/v1.0.7/sandbox/index",
+              "sdk-reference/cli/v1.0.7/template/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.0.6",
+        "groups": [
+          {
+            "group": "CLI v1.0.6",
+            "pages": [
+              "sdk-reference/cli/v1.0.6/auth/index",
+              "sdk-reference/cli/v1.0.6/sandbox/index",
+              "sdk-reference/cli/v1.0.6/template/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.0.5",
+        "groups": [
+          {
+            "group": "CLI v1.0.5",
+            "pages": [
+              "sdk-reference/cli/v1.0.5/auth/index",
+              "sdk-reference/cli/v1.0.5/sandbox/index",
+              "sdk-reference/cli/v1.0.5/template/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.0.4",
+        "groups": [
+          {
+            "group": "CLI v1.0.4",
+            "pages": [
+              "sdk-reference/cli/v1.0.4/auth/index",
+              "sdk-reference/cli/v1.0.4/sandbox/index",
+              "sdk-reference/cli/v1.0.4/template/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.0.3",
+        "groups": [
+          {
+            "group": "CLI v1.0.3",
+            "pages": [
+              "sdk-reference/cli/v1.0.3/auth/index",
+              "sdk-reference/cli/v1.0.3/sandbox/index",
+              "sdk-reference/cli/v1.0.3/template/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.0.2",
+        "groups": [
+          {
+            "group": "CLI v1.0.2",
+            "pages": [
+              "sdk-reference/cli/v1.0.2/auth/index",
+              "sdk-reference/cli/v1.0.2/sandbox/index",
+              "sdk-reference/cli/v1.0.2/template/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.0.1",
+        "groups": [
+          {
+            "group": "CLI v1.0.1",
+            "pages": [
+              "sdk-reference/cli/v1.0.1/auth/index",
+              "sdk-reference/cli/v1.0.1/sandbox/index",
+              "sdk-reference/cli/v1.0.1/template/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.0.0",
+        "groups": [
+          {
+            "group": "CLI v1.0.0",
+            "pages": [
+              "sdk-reference/cli/v1.0.0/auth/index",
+              "sdk-reference/cli/v1.0.0/sandbox/index",
+              "sdk-reference/cli/v1.0.0/template/index"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "dropdown": "JavaScript SDK",
+    "icon": "square-js",
+    "versions": [
+      {
+        "version": "v2.1.4@latest",
+        "groups": [
+          {
+            "group": "JavaScript SDK v2.1.4",
+            "pages": [
+              "sdk-reference/js-sdk/v2.1.4/commands/index",
+              "sdk-reference/js-sdk/v2.1.4/errors/index",
+              "sdk-reference/js-sdk/v2.1.4/filesystem/index",
+              "sdk-reference/js-sdk/v2.1.4/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v2.1.3",
+        "groups": [
+          {
+            "group": "JavaScript SDK v2.1.3",
+            "pages": [
+              "sdk-reference/js-sdk/v2.1.3/commands/index",
+              "sdk-reference/js-sdk/v2.1.3/errors/index",
+              "sdk-reference/js-sdk/v2.1.3/filesystem/index",
+              "sdk-reference/js-sdk/v2.1.3/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v2.1.2",
+        "groups": [
+          {
+            "group": "JavaScript SDK v2.1.2",
+            "pages": [
+              "sdk-reference/js-sdk/v2.1.2/commands/index",
+              "sdk-reference/js-sdk/v2.1.2/errors/index",
+              "sdk-reference/js-sdk/v2.1.2/filesystem/index",
+              "sdk-reference/js-sdk/v2.1.2/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v2.1.1",
+        "groups": [
+          {
+            "group": "JavaScript SDK v2.1.1",
+            "pages": [
+              "sdk-reference/js-sdk/v2.1.1/commands/index",
+              "sdk-reference/js-sdk/v2.1.1/errors/index",
+              "sdk-reference/js-sdk/v2.1.1/filesystem/index",
+              "sdk-reference/js-sdk/v2.1.1/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v2.1.0",
+        "groups": [
+          {
+            "group": "JavaScript SDK v2.1.0",
+            "pages": [
+              "sdk-reference/js-sdk/v2.1.0/commands/index",
+              "sdk-reference/js-sdk/v2.1.0/errors/index",
+              "sdk-reference/js-sdk/v2.1.0/filesystem/index",
+              "sdk-reference/js-sdk/v2.1.0/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v2.0.3",
+        "groups": [
+          {
+            "group": "JavaScript SDK v2.0.3",
+            "pages": [
+              "sdk-reference/js-sdk/v2.0.3/commands/index",
+              "sdk-reference/js-sdk/v2.0.3/errors/index",
+              "sdk-reference/js-sdk/v2.0.3/filesystem/index",
+              "sdk-reference/js-sdk/v2.0.3/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v2.0.2",
+        "groups": [
+          {
+            "group": "JavaScript SDK v2.0.2",
+            "pages": [
+              "sdk-reference/js-sdk/v2.0.2/commands/index",
+              "sdk-reference/js-sdk/v2.0.2/errors/index",
+              "sdk-reference/js-sdk/v2.0.2/filesystem/index",
+              "sdk-reference/js-sdk/v2.0.2/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v2.0.1",
+        "groups": [
+          {
+            "group": "JavaScript SDK v2.0.1",
+            "pages": [
+              "sdk-reference/js-sdk/v2.0.1/commands/index",
+              "sdk-reference/js-sdk/v2.0.1/errors/index",
+              "sdk-reference/js-sdk/v2.0.1/filesystem/index",
+              "sdk-reference/js-sdk/v2.0.1/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v2.0.0",
+        "groups": [
+          {
+            "group": "JavaScript SDK v2.0.0",
+            "pages": [
+              "sdk-reference/js-sdk/v2.0.0/commands/index",
+              "sdk-reference/js-sdk/v2.0.0/errors/index",
+              "sdk-reference/js-sdk/v2.0.0/filesystem/index",
+              "sdk-reference/js-sdk/v2.0.0/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.13.2",
+        "groups": [
+          {
+            "group": "JavaScript SDK v1.13.2",
+            "pages": [
+              "sdk-reference/js-sdk/v1.13.2/commands/index",
+              "sdk-reference/js-sdk/v1.13.2/errors/index",
+              "sdk-reference/js-sdk/v1.13.2/filesystem/index",
+              "sdk-reference/js-sdk/v1.13.2/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.13.1",
+        "groups": [
+          {
+            "group": "JavaScript SDK v1.13.1",
+            "pages": [
+              "sdk-reference/js-sdk/v1.13.1/commands/index",
+              "sdk-reference/js-sdk/v1.13.1/errors/index",
+              "sdk-reference/js-sdk/v1.13.1/filesystem/index",
+              "sdk-reference/js-sdk/v1.13.1/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.13.0",
+        "groups": [
+          {
+            "group": "JavaScript SDK v1.13.0",
+            "pages": [
+              "sdk-reference/js-sdk/v1.13.0/commands/index",
+              "sdk-reference/js-sdk/v1.13.0/errors/index",
+              "sdk-reference/js-sdk/v1.13.0/filesystem/index",
+              "sdk-reference/js-sdk/v1.13.0/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.12.0",
+        "groups": [
+          {
+            "group": "JavaScript SDK v1.12.0",
+            "pages": [
+              "sdk-reference/js-sdk/v1.12.0/commands/index",
+              "sdk-reference/js-sdk/v1.12.0/errors/index",
+              "sdk-reference/js-sdk/v1.12.0/filesystem/index",
+              "sdk-reference/js-sdk/v1.12.0/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.11.0",
+        "groups": [
+          {
+            "group": "JavaScript SDK v1.11.0",
+            "pages": [
+              "sdk-reference/js-sdk/v1.11.0/commands/index",
+              "sdk-reference/js-sdk/v1.11.0/errors/index",
+              "sdk-reference/js-sdk/v1.11.0/filesystem/index",
+              "sdk-reference/js-sdk/v1.11.0/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.10.0",
+        "groups": [
+          {
+            "group": "JavaScript SDK v1.10.0",
+            "pages": [
+              "sdk-reference/js-sdk/v1.10.0/commands/index",
+              "sdk-reference/js-sdk/v1.10.0/errors/index",
+              "sdk-reference/js-sdk/v1.10.0/filesystem/index",
+              "sdk-reference/js-sdk/v1.10.0/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.9.1",
+        "groups": [
+          {
+            "group": "JavaScript SDK v1.9.1",
+            "pages": [
+              "sdk-reference/js-sdk/v1.9.1/commands/index",
+              "sdk-reference/js-sdk/v1.9.1/errors/index",
+              "sdk-reference/js-sdk/v1.9.1/filesystem/index",
+              "sdk-reference/js-sdk/v1.9.1/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.9.0",
+        "groups": [
+          {
+            "group": "JavaScript SDK v1.9.0",
+            "pages": [
+              "sdk-reference/js-sdk/v1.9.0/commands/index",
+              "sdk-reference/js-sdk/v1.9.0/errors/index",
+              "sdk-reference/js-sdk/v1.9.0/filesystem/index",
+              "sdk-reference/js-sdk/v1.9.0/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.8.0",
+        "groups": [
+          {
+            "group": "JavaScript SDK v1.8.0",
+            "pages": [
+              "sdk-reference/js-sdk/v1.8.0/commands/index",
+              "sdk-reference/js-sdk/v1.8.0/errors/index",
+              "sdk-reference/js-sdk/v1.8.0/filesystem/index",
+              "sdk-reference/js-sdk/v1.8.0/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.7.1",
+        "groups": [
+          {
+            "group": "JavaScript SDK v1.7.1",
+            "pages": [
+              "sdk-reference/js-sdk/v1.7.1/commands/index",
+              "sdk-reference/js-sdk/v1.7.1/errors/index",
+              "sdk-reference/js-sdk/v1.7.1/filesystem/index",
+              "sdk-reference/js-sdk/v1.7.1/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.7.0",
+        "groups": [
+          {
+            "group": "JavaScript SDK v1.7.0",
+            "pages": [
+              "sdk-reference/js-sdk/v1.7.0/commands/index",
+              "sdk-reference/js-sdk/v1.7.0/errors/index",
+              "sdk-reference/js-sdk/v1.7.0/filesystem/index",
+              "sdk-reference/js-sdk/v1.7.0/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.6.0",
+        "groups": [
+          {
+            "group": "JavaScript SDK v1.6.0",
+            "pages": [
+              "sdk-reference/js-sdk/v1.6.0/commands/index",
+              "sdk-reference/js-sdk/v1.6.0/errors/index",
+              "sdk-reference/js-sdk/v1.6.0/filesystem/index",
+              "sdk-reference/js-sdk/v1.6.0/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.5.3",
+        "groups": [
+          {
+            "group": "JavaScript SDK v1.5.3",
+            "pages": [
+              "sdk-reference/js-sdk/v1.5.3/commands/index",
+              "sdk-reference/js-sdk/v1.5.3/errors/index",
+              "sdk-reference/js-sdk/v1.5.3/filesystem/index",
+              "sdk-reference/js-sdk/v1.5.3/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.5.2",
+        "groups": [
+          {
+            "group": "JavaScript SDK v1.5.2",
+            "pages": [
+              "sdk-reference/js-sdk/v1.5.2/commands/index",
+              "sdk-reference/js-sdk/v1.5.2/errors/index",
+              "sdk-reference/js-sdk/v1.5.2/filesystem/index",
+              "sdk-reference/js-sdk/v1.5.2/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.5.1",
+        "groups": [
+          {
+            "group": "JavaScript SDK v1.5.1",
+            "pages": [
+              "sdk-reference/js-sdk/v1.5.1/commands/index",
+              "sdk-reference/js-sdk/v1.5.1/errors/index",
+              "sdk-reference/js-sdk/v1.5.1/filesystem/index",
+              "sdk-reference/js-sdk/v1.5.1/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.5.0",
+        "groups": [
+          {
+            "group": "JavaScript SDK v1.5.0",
+            "pages": [
+              "sdk-reference/js-sdk/v1.5.0/commands/index",
+              "sdk-reference/js-sdk/v1.5.0/errors/index",
+              "sdk-reference/js-sdk/v1.5.0/filesystem/index",
+              "sdk-reference/js-sdk/v1.5.0/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.4.0",
+        "groups": [
+          {
+            "group": "JavaScript SDK v1.4.0",
+            "pages": [
+              "sdk-reference/js-sdk/v1.4.0/commands/index",
+              "sdk-reference/js-sdk/v1.4.0/errors/index",
+              "sdk-reference/js-sdk/v1.4.0/filesystem/index",
+              "sdk-reference/js-sdk/v1.4.0/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.3.0",
+        "groups": [
+          {
+            "group": "JavaScript SDK v1.3.0",
+            "pages": [
+              "sdk-reference/js-sdk/v1.3.0/commands/index",
+              "sdk-reference/js-sdk/v1.3.0/errors/index",
+              "sdk-reference/js-sdk/v1.3.0/filesystem/index",
+              "sdk-reference/js-sdk/v1.3.0/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.2.5",
+        "groups": [
+          {
+            "group": "JavaScript SDK v1.2.5",
+            "pages": [
+              "sdk-reference/js-sdk/v1.2.5/commands/index",
+              "sdk-reference/js-sdk/v1.2.5/errors/index",
+              "sdk-reference/js-sdk/v1.2.5/filesystem/index",
+              "sdk-reference/js-sdk/v1.2.5/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.2.4",
+        "groups": [
+          {
+            "group": "JavaScript SDK v1.2.4",
+            "pages": [
+              "sdk-reference/js-sdk/v1.2.4/commands/index",
+              "sdk-reference/js-sdk/v1.2.4/errors/index",
+              "sdk-reference/js-sdk/v1.2.4/filesystem/index",
+              "sdk-reference/js-sdk/v1.2.4/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.2.3",
+        "groups": [
+          {
+            "group": "JavaScript SDK v1.2.3",
+            "pages": [
+              "sdk-reference/js-sdk/v1.2.3/commands/index",
+              "sdk-reference/js-sdk/v1.2.3/errors/index",
+              "sdk-reference/js-sdk/v1.2.3/filesystem/index",
+              "sdk-reference/js-sdk/v1.2.3/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.2.2",
+        "groups": [
+          {
+            "group": "JavaScript SDK v1.2.2",
+            "pages": [
+              "sdk-reference/js-sdk/v1.2.2/commands/index",
+              "sdk-reference/js-sdk/v1.2.2/errors/index",
+              "sdk-reference/js-sdk/v1.2.2/filesystem/index",
+              "sdk-reference/js-sdk/v1.2.2/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.2.1",
+        "groups": [
+          {
+            "group": "JavaScript SDK v1.2.1",
+            "pages": [
+              "sdk-reference/js-sdk/v1.2.1/commands/index",
+              "sdk-reference/js-sdk/v1.2.1/errors/index",
+              "sdk-reference/js-sdk/v1.2.1/filesystem/index",
+              "sdk-reference/js-sdk/v1.2.1/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.2.0",
+        "groups": [
+          {
+            "group": "JavaScript SDK v1.2.0",
+            "pages": [
+              "sdk-reference/js-sdk/v1.2.0/commands/index",
+              "sdk-reference/js-sdk/v1.2.0/errors/index",
+              "sdk-reference/js-sdk/v1.2.0/filesystem/index",
+              "sdk-reference/js-sdk/v1.2.0/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.1.1",
+        "groups": [
+          {
+            "group": "JavaScript SDK v1.1.1",
+            "pages": [
+              "sdk-reference/js-sdk/v1.1.1/commands/index",
+              "sdk-reference/js-sdk/v1.1.1/errors/index",
+              "sdk-reference/js-sdk/v1.1.1/filesystem/index",
+              "sdk-reference/js-sdk/v1.1.1/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.1.0",
+        "groups": [
+          {
+            "group": "JavaScript SDK v1.1.0",
+            "pages": [
+              "sdk-reference/js-sdk/v1.1.0/commands/index",
+              "sdk-reference/js-sdk/v1.1.0/errors/index",
+              "sdk-reference/js-sdk/v1.1.0/filesystem/index",
+              "sdk-reference/js-sdk/v1.1.0/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.0.7",
+        "groups": [
+          {
+            "group": "JavaScript SDK v1.0.7",
+            "pages": [
+              "sdk-reference/js-sdk/v1.0.7/commands/index",
+              "sdk-reference/js-sdk/v1.0.7/errors/index",
+              "sdk-reference/js-sdk/v1.0.7/filesystem/index",
+              "sdk-reference/js-sdk/v1.0.7/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.0.6",
+        "groups": [
+          {
+            "group": "JavaScript SDK v1.0.6",
+            "pages": [
+              "sdk-reference/js-sdk/v1.0.6/commands/index",
+              "sdk-reference/js-sdk/v1.0.6/errors/index",
+              "sdk-reference/js-sdk/v1.0.6/filesystem/index",
+              "sdk-reference/js-sdk/v1.0.6/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.0.5",
+        "groups": [
+          {
+            "group": "JavaScript SDK v1.0.5",
+            "pages": [
+              "sdk-reference/js-sdk/v1.0.5/commands/index",
+              "sdk-reference/js-sdk/v1.0.5/errors/index",
+              "sdk-reference/js-sdk/v1.0.5/filesystem/index",
+              "sdk-reference/js-sdk/v1.0.5/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.0.4",
+        "groups": [
+          {
+            "group": "JavaScript SDK v1.0.4",
+            "pages": [
+              "sdk-reference/js-sdk/v1.0.4/errors/index",
+              "sdk-reference/js-sdk/v1.0.4/filesystem/index",
+              "sdk-reference/js-sdk/v1.0.4/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.0.3",
+        "groups": [
+          {
+            "group": "JavaScript SDK v1.0.3",
+            "pages": [
+              "sdk-reference/js-sdk/v1.0.3/errors/index",
+              "sdk-reference/js-sdk/v1.0.3/filesystem/index",
+              "sdk-reference/js-sdk/v1.0.3/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.0.2",
+        "groups": [
+          {
+            "group": "JavaScript SDK v1.0.2",
+            "pages": [
+              "sdk-reference/js-sdk/v1.0.2/errors/index",
+              "sdk-reference/js-sdk/v1.0.2/filesystem/index",
+              "sdk-reference/js-sdk/v1.0.2/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.0.1",
+        "groups": [
+          {
+            "group": "JavaScript SDK v1.0.1",
+            "pages": [
+              "sdk-reference/js-sdk/v1.0.1/errors/index",
+              "sdk-reference/js-sdk/v1.0.1/filesystem/index",
+              "sdk-reference/js-sdk/v1.0.1/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.0.0",
+        "groups": [
+          {
+            "group": "JavaScript SDK v1.0.0",
+            "pages": [
+              "sdk-reference/js-sdk/v1.0.0/errors/index",
+              "sdk-reference/js-sdk/v1.0.0/filesystem/index",
+              "sdk-reference/js-sdk/v1.0.0/sandbox/index"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "dropdown": "Python SDK",
+    "icon": "python",
+    "versions": [
+      {
+        "version": "v2.1.3@latest",
+        "groups": [
+          {
+            "group": "Python SDK v2.1.3",
+            "pages": [
+              "sdk-reference/python-sdk/v2.1.3/exceptions/index",
+              "sdk-reference/python-sdk/v2.1.3/sandbox_async/index",
+              "sdk-reference/python-sdk/v2.1.3/sandbox_sync/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v2.1.2",
+        "groups": [
+          {
+            "group": "Python SDK v2.1.2",
+            "pages": [
+              "sdk-reference/python-sdk/v2.1.2/exceptions/index",
+              "sdk-reference/python-sdk/v2.1.2/sandbox_async/index",
+              "sdk-reference/python-sdk/v2.1.2/sandbox_sync/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v2.1.1",
+        "groups": [
+          {
+            "group": "Python SDK v2.1.1",
+            "pages": [
+              "sdk-reference/python-sdk/v2.1.1/exceptions/index",
+              "sdk-reference/python-sdk/v2.1.1/sandbox_async/index",
+              "sdk-reference/python-sdk/v2.1.1/sandbox_sync/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v2.1.0",
+        "groups": [
+          {
+            "group": "Python SDK v2.1.0",
+            "pages": [
+              "sdk-reference/python-sdk/v2.1.0/exceptions/index",
+              "sdk-reference/python-sdk/v2.1.0/sandbox_async/index",
+              "sdk-reference/python-sdk/v2.1.0/sandbox_sync/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v2.0.2",
+        "groups": [
+          {
+            "group": "Python SDK v2.0.2",
+            "pages": [
+              "sdk-reference/python-sdk/v2.0.2/exceptions/index",
+              "sdk-reference/python-sdk/v2.0.2/sandbox_async/index",
+              "sdk-reference/python-sdk/v2.0.2/sandbox_sync/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v2.0.1",
+        "groups": [
+          {
+            "group": "Python SDK v2.0.1",
+            "pages": [
+              "sdk-reference/python-sdk/v2.0.1/exceptions/index",
+              "sdk-reference/python-sdk/v2.0.1/sandbox_async/index",
+              "sdk-reference/python-sdk/v2.0.1/sandbox_sync/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v2.0.0",
+        "groups": [
+          {
+            "group": "Python SDK v2.0.0",
+            "pages": [
+              "sdk-reference/python-sdk/v2.0.0/exceptions/index",
+              "sdk-reference/python-sdk/v2.0.0/sandbox_async/index",
+              "sdk-reference/python-sdk/v2.0.0/sandbox_sync/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.11.1",
+        "groups": [
+          {
+            "group": "Python SDK v1.11.1",
+            "pages": [
+              "sdk-reference/python-sdk/v1.11.1/exceptions/index",
+              "sdk-reference/python-sdk/v1.11.1/sandbox_async/index",
+              "sdk-reference/python-sdk/v1.11.1/sandbox_sync/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.11.0",
+        "groups": [
+          {
+            "group": "Python SDK v1.11.0",
+            "pages": [
+              "sdk-reference/python-sdk/v1.11.0/exceptions/index",
+              "sdk-reference/python-sdk/v1.11.0/sandbox_async/index",
+              "sdk-reference/python-sdk/v1.11.0/sandbox_sync/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.10.0",
+        "groups": [
+          {
+            "group": "Python SDK v1.10.0",
+            "pages": [
+              "sdk-reference/python-sdk/v1.10.0/exceptions/index",
+              "sdk-reference/python-sdk/v1.10.0/sandbox_async/index",
+              "sdk-reference/python-sdk/v1.10.0/sandbox_sync/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.9.0",
+        "groups": [
+          {
+            "group": "Python SDK v1.9.0",
+            "pages": [
+              "sdk-reference/python-sdk/v1.9.0/exceptions/index",
+              "sdk-reference/python-sdk/v1.9.0/sandbox_async/index",
+              "sdk-reference/python-sdk/v1.9.0/sandbox_sync/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.8.0",
+        "groups": [
+          {
+            "group": "Python SDK v1.8.0",
+            "pages": [
+              "sdk-reference/python-sdk/v1.8.0/exceptions/index",
+              "sdk-reference/python-sdk/v1.8.0/sandbox_async/index",
+              "sdk-reference/python-sdk/v1.8.0/sandbox_sync/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.7.1",
+        "groups": [
+          {
+            "group": "Python SDK v1.7.1",
+            "pages": [
+              "sdk-reference/python-sdk/v1.7.1/exceptions/index",
+              "sdk-reference/python-sdk/v1.7.1/sandbox_async/index",
+              "sdk-reference/python-sdk/v1.7.1/sandbox_sync/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.7.0",
+        "groups": [
+          {
+            "group": "Python SDK v1.7.0",
+            "pages": [
+              "sdk-reference/python-sdk/v1.7.0/exceptions/index",
+              "sdk-reference/python-sdk/v1.7.0/sandbox_async/index",
+              "sdk-reference/python-sdk/v1.7.0/sandbox_sync/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.6.0",
+        "groups": [
+          {
+            "group": "Python SDK v1.6.0",
+            "pages": [
+              "sdk-reference/python-sdk/v1.6.0/exceptions/index",
+              "sdk-reference/python-sdk/v1.6.0/sandbox_async/index",
+              "sdk-reference/python-sdk/v1.6.0/sandbox_sync/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.5.6",
+        "groups": [
+          {
+            "group": "Python SDK v1.5.6",
+            "pages": [
+              "sdk-reference/python-sdk/v1.5.6/exceptions/index",
+              "sdk-reference/python-sdk/v1.5.6/sandbox_async/index",
+              "sdk-reference/python-sdk/v1.5.6/sandbox_sync/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.5.5",
+        "groups": [
+          {
+            "group": "Python SDK v1.5.5",
+            "pages": [
+              "sdk-reference/python-sdk/v1.5.5/exceptions/index",
+              "sdk-reference/python-sdk/v1.5.5/sandbox_async/index",
+              "sdk-reference/python-sdk/v1.5.5/sandbox_sync/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.5.4",
+        "groups": [
+          {
+            "group": "Python SDK v1.5.4",
+            "pages": [
+              "sdk-reference/python-sdk/v1.5.4/exceptions/index",
+              "sdk-reference/python-sdk/v1.5.4/sandbox_async/index",
+              "sdk-reference/python-sdk/v1.5.4/sandbox_sync/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.5.3",
+        "groups": [
+          {
+            "group": "Python SDK v1.5.3",
+            "pages": [
+              "sdk-reference/python-sdk/v1.5.3/exceptions/index",
+              "sdk-reference/python-sdk/v1.5.3/sandbox_async/index",
+              "sdk-reference/python-sdk/v1.5.3/sandbox_sync/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.5.2",
+        "groups": [
+          {
+            "group": "Python SDK v1.5.2",
+            "pages": [
+              "sdk-reference/python-sdk/v1.5.2/exceptions/index",
+              "sdk-reference/python-sdk/v1.5.2/sandbox_async/index",
+              "sdk-reference/python-sdk/v1.5.2/sandbox_sync/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.5.1",
+        "groups": [
+          {
+            "group": "Python SDK v1.5.1",
+            "pages": [
+              "sdk-reference/python-sdk/v1.5.1/exceptions/index",
+              "sdk-reference/python-sdk/v1.5.1/sandbox_async/index",
+              "sdk-reference/python-sdk/v1.5.1/sandbox_sync/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.5.0",
+        "groups": [
+          {
+            "group": "Python SDK v1.5.0",
+            "pages": [
+              "sdk-reference/python-sdk/v1.5.0/exceptions/index",
+              "sdk-reference/python-sdk/v1.5.0/sandbox_async/index",
+              "sdk-reference/python-sdk/v1.5.0/sandbox_sync/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.4.0",
+        "groups": [
+          {
+            "group": "Python SDK v1.4.0",
+            "pages": [
+              "sdk-reference/python-sdk/v1.4.0/exceptions/index",
+              "sdk-reference/python-sdk/v1.4.0/sandbox_async/index",
+              "sdk-reference/python-sdk/v1.4.0/sandbox_sync/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.3.5",
+        "groups": [
+          {
+            "group": "Python SDK v1.3.5",
+            "pages": [
+              "sdk-reference/python-sdk/v1.3.5/exceptions/index",
+              "sdk-reference/python-sdk/v1.3.5/sandbox_async/index",
+              "sdk-reference/python-sdk/v1.3.5/sandbox_sync/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.3.4",
+        "groups": [
+          {
+            "group": "Python SDK v1.3.4",
+            "pages": [
+              "sdk-reference/python-sdk/v1.3.4/exceptions/index",
+              "sdk-reference/python-sdk/v1.3.4/sandbox_async/index",
+              "sdk-reference/python-sdk/v1.3.4/sandbox_sync/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.3.3",
+        "groups": [
+          {
+            "group": "Python SDK v1.3.3",
+            "pages": [
+              "sdk-reference/python-sdk/v1.3.3/exceptions/index",
+              "sdk-reference/python-sdk/v1.3.3/sandbox_async/index",
+              "sdk-reference/python-sdk/v1.3.3/sandbox_sync/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.3.2",
+        "groups": [
+          {
+            "group": "Python SDK v1.3.2",
+            "pages": [
+              "sdk-reference/python-sdk/v1.3.2/exceptions/index",
+              "sdk-reference/python-sdk/v1.3.2/sandbox_async/index",
+              "sdk-reference/python-sdk/v1.3.2/sandbox_sync/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.3.1",
+        "groups": [
+          {
+            "group": "Python SDK v1.3.1",
+            "pages": [
+              "sdk-reference/python-sdk/v1.3.1/exceptions/index",
+              "sdk-reference/python-sdk/v1.3.1/sandbox_async/index",
+              "sdk-reference/python-sdk/v1.3.1/sandbox_sync/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.3.0",
+        "groups": [
+          {
+            "group": "Python SDK v1.3.0",
+            "pages": [
+              "sdk-reference/python-sdk/v1.3.0/exceptions/index",
+              "sdk-reference/python-sdk/v1.3.0/sandbox_async/index",
+              "sdk-reference/python-sdk/v1.3.0/sandbox_sync/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.2.1",
+        "groups": [
+          {
+            "group": "Python SDK v1.2.1",
+            "pages": [
+              "sdk-reference/python-sdk/v1.2.1/exceptions/index",
+              "sdk-reference/python-sdk/v1.2.1/sandbox_async/index",
+              "sdk-reference/python-sdk/v1.2.1/sandbox_sync/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.2.0",
+        "groups": [
+          {
+            "group": "Python SDK v1.2.0",
+            "pages": [
+              "sdk-reference/python-sdk/v1.2.0/exceptions/index",
+              "sdk-reference/python-sdk/v1.2.0/sandbox_async/index",
+              "sdk-reference/python-sdk/v1.2.0/sandbox_sync/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.1.0",
+        "groups": [
+          {
+            "group": "Python SDK v1.1.0",
+            "pages": [
+              "sdk-reference/python-sdk/v1.1.0/exceptions/index",
+              "sdk-reference/python-sdk/v1.1.0/sandbox_async/index",
+              "sdk-reference/python-sdk/v1.1.0/sandbox_sync/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.0.6",
+        "groups": [
+          {
+            "group": "Python SDK v1.0.6",
+            "pages": [
+              "sdk-reference/python-sdk/v1.0.6/exceptions/index",
+              "sdk-reference/python-sdk/v1.0.6/sandbox_async/index",
+              "sdk-reference/python-sdk/v1.0.6/sandbox_sync/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.0.5",
+        "groups": [
+          {
+            "group": "Python SDK v1.0.5",
+            "pages": [
+              "sdk-reference/python-sdk/v1.0.5/exceptions/index",
+              "sdk-reference/python-sdk/v1.0.5/sandbox_async/index",
+              "sdk-reference/python-sdk/v1.0.5/sandbox_sync/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.0.4",
+        "groups": [
+          {
+            "group": "Python SDK v1.0.4",
+            "pages": [
+              "sdk-reference/python-sdk/v1.0.4/exceptions/index",
+              "sdk-reference/python-sdk/v1.0.4/sandbox_async/index",
+              "sdk-reference/python-sdk/v1.0.4/sandbox_sync/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.0.3",
+        "groups": [
+          {
+            "group": "Python SDK v1.0.3",
+            "pages": [
+              "sdk-reference/python-sdk/v1.0.3/exceptions/index",
+              "sdk-reference/python-sdk/v1.0.3/sandbox_async/index",
+              "sdk-reference/python-sdk/v1.0.3/sandbox_sync/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.0.2",
+        "groups": [
+          {
+            "group": "Python SDK v1.0.2",
+            "pages": [
+              "sdk-reference/python-sdk/v1.0.2/exceptions/index",
+              "sdk-reference/python-sdk/v1.0.2/sandbox_async/index",
+              "sdk-reference/python-sdk/v1.0.2/sandbox_sync/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.0.1",
+        "groups": [
+          {
+            "group": "Python SDK v1.0.1",
+            "pages": [
+              "sdk-reference/python-sdk/v1.0.1/exceptions/index",
+              "sdk-reference/python-sdk/v1.0.1/sandbox_async/index",
+              "sdk-reference/python-sdk/v1.0.1/sandbox_sync/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.0.0",
+        "groups": [
+          {
+            "group": "Python SDK v1.0.0",
+            "pages": [
+              "sdk-reference/python-sdk/v1.0.0/exceptions/index",
+              "sdk-reference/python-sdk/v1.0.0/sandbox_async/index",
+              "sdk-reference/python-sdk/v1.0.0/sandbox_sync/index"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "dropdown": "Code Interpreter JavaScript SDK",
+    "icon": "square-js",
+    "versions": [
+      {
+        "version": "v2.0.0@latest",
+        "groups": [
+          {
+            "group": "Code Interpreter JavaScript SDK v2.0.0",
+            "pages": [
+              "sdk-reference/code-interpreter-js-sdk/v2.0.0/charts/index",
+              "sdk-reference/code-interpreter-js-sdk/v2.0.0/consts/index",
+              "sdk-reference/code-interpreter-js-sdk/v2.0.0/index/index",
+              "sdk-reference/code-interpreter-js-sdk/v2.0.0/messaging/index",
+              "sdk-reference/code-interpreter-js-sdk/v2.0.0/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.5.1",
+        "groups": [
+          {
+            "group": "Code Interpreter JavaScript SDK v1.5.1",
+            "pages": [
+              "sdk-reference/code-interpreter-js-sdk/v1.5.1/charts/index",
+              "sdk-reference/code-interpreter-js-sdk/v1.5.1/consts/index",
+              "sdk-reference/code-interpreter-js-sdk/v1.5.1/index/index",
+              "sdk-reference/code-interpreter-js-sdk/v1.5.1/messaging/index",
+              "sdk-reference/code-interpreter-js-sdk/v1.5.1/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.5.0",
+        "groups": [
+          {
+            "group": "Code Interpreter JavaScript SDK v1.5.0",
+            "pages": [
+              "sdk-reference/code-interpreter-js-sdk/v1.5.0/charts/index",
+              "sdk-reference/code-interpreter-js-sdk/v1.5.0/consts/index",
+              "sdk-reference/code-interpreter-js-sdk/v1.5.0/index/index",
+              "sdk-reference/code-interpreter-js-sdk/v1.5.0/messaging/index",
+              "sdk-reference/code-interpreter-js-sdk/v1.5.0/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.2.0",
+        "groups": [
+          {
+            "group": "Code Interpreter JavaScript SDK v1.2.0",
+            "pages": [
+              "sdk-reference/code-interpreter-js-sdk/v1.2.0/charts/index",
+              "sdk-reference/code-interpreter-js-sdk/v1.2.0/consts/index",
+              "sdk-reference/code-interpreter-js-sdk/v1.2.0/index/index",
+              "sdk-reference/code-interpreter-js-sdk/v1.2.0/messaging/index",
+              "sdk-reference/code-interpreter-js-sdk/v1.2.0/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.1.1",
+        "groups": [
+          {
+            "group": "Code Interpreter JavaScript SDK v1.1.1",
+            "pages": [
+              "sdk-reference/code-interpreter-js-sdk/v1.1.1/charts/index",
+              "sdk-reference/code-interpreter-js-sdk/v1.1.1/consts/index",
+              "sdk-reference/code-interpreter-js-sdk/v1.1.1/index/index",
+              "sdk-reference/code-interpreter-js-sdk/v1.1.1/messaging/index",
+              "sdk-reference/code-interpreter-js-sdk/v1.1.1/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.1.0",
+        "groups": [
+          {
+            "group": "Code Interpreter JavaScript SDK v1.1.0",
+            "pages": [
+              "sdk-reference/code-interpreter-js-sdk/v1.1.0/charts/index",
+              "sdk-reference/code-interpreter-js-sdk/v1.1.0/consts/index",
+              "sdk-reference/code-interpreter-js-sdk/v1.1.0/index/index",
+              "sdk-reference/code-interpreter-js-sdk/v1.1.0/messaging/index",
+              "sdk-reference/code-interpreter-js-sdk/v1.1.0/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.0.4",
+        "groups": [
+          {
+            "group": "Code Interpreter JavaScript SDK v1.0.4",
+            "pages": [
+              "sdk-reference/code-interpreter-js-sdk/v1.0.4/charts/index",
+              "sdk-reference/code-interpreter-js-sdk/v1.0.4/consts/index",
+              "sdk-reference/code-interpreter-js-sdk/v1.0.4/index/index",
+              "sdk-reference/code-interpreter-js-sdk/v1.0.4/messaging/index",
+              "sdk-reference/code-interpreter-js-sdk/v1.0.4/sandbox/index"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "dropdown": "Code Interpreter Python SDK",
+    "icon": "python",
+    "versions": [
+      {
+        "version": "v2.0.0@latest",
+        "groups": [
+          {
+            "group": "Code Interpreter Python SDK v2.0.0",
+            "pages": [
+              "sdk-reference/code-interpreter-python-sdk/v2.0.0/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.5.2",
+        "groups": [
+          {
+            "group": "Code Interpreter Python SDK v1.5.2",
+            "pages": [
+              "sdk-reference/code-interpreter-python-sdk/v1.5.2/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.5.1",
+        "groups": [
+          {
+            "group": "Code Interpreter Python SDK v1.5.1",
+            "pages": [
+              "sdk-reference/code-interpreter-python-sdk/v1.5.1/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.5.0",
+        "groups": [
+          {
+            "group": "Code Interpreter Python SDK v1.5.0",
+            "pages": [
+              "sdk-reference/code-interpreter-python-sdk/v1.5.0/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.2.1",
+        "groups": [
+          {
+            "group": "Code Interpreter Python SDK v1.2.1",
+            "pages": [
+              "sdk-reference/code-interpreter-python-sdk/v1.2.1/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.2.0",
+        "groups": [
+          {
+            "group": "Code Interpreter Python SDK v1.2.0",
+            "pages": [
+              "sdk-reference/code-interpreter-python-sdk/v1.2.0/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.1.1",
+        "groups": [
+          {
+            "group": "Code Interpreter Python SDK v1.1.1",
+            "pages": [
+              "sdk-reference/code-interpreter-python-sdk/v1.1.1/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.1.0",
+        "groups": [
+          {
+            "group": "Code Interpreter Python SDK v1.1.0",
+            "pages": [
+              "sdk-reference/code-interpreter-python-sdk/v1.1.0/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.0.5",
+        "groups": [
+          {
+            "group": "Code Interpreter Python SDK v1.0.5",
+            "pages": [
+              "sdk-reference/code-interpreter-python-sdk/v1.0.5/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.0.4",
+        "groups": [
+          {
+            "group": "Code Interpreter Python SDK v1.0.4",
+            "pages": [
+              "sdk-reference/code-interpreter-python-sdk/v1.0.4/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.0.3",
+        "groups": [
+          {
+            "group": "Code Interpreter Python SDK v1.0.3",
+            "pages": [
+              "sdk-reference/code-interpreter-python-sdk/v1.0.3/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.0.2",
+        "groups": [
+          {
+            "group": "Code Interpreter Python SDK v1.0.2",
+            "pages": [
+              "sdk-reference/code-interpreter-python-sdk/v1.0.2/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.0.1",
+        "groups": [
+          {
+            "group": "Code Interpreter Python SDK v1.0.1",
+            "pages": [
+              "sdk-reference/code-interpreter-python-sdk/v1.0.1/sandbox/index"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "dropdown": "Desktop JavaScript SDK",
+    "icon": "square-js",
+    "versions": [
+      {
+        "version": "v2.0.1@latest",
+        "groups": [
+          {
+            "group": "Desktop JavaScript SDK v2.0.1",
+            "pages": [
+              "sdk-reference/desktop-js-sdk/v2.0.1/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v2.0.0",
+        "groups": [
+          {
+            "group": "Desktop JavaScript SDK v2.0.0",
+            "pages": [
+              "sdk-reference/desktop-js-sdk/v2.0.0/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.9.2",
+        "groups": [
+          {
+            "group": "Desktop JavaScript SDK v1.9.2",
+            "pages": [
+              "sdk-reference/desktop-js-sdk/v1.9.2/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.9.1",
+        "groups": [
+          {
+            "group": "Desktop JavaScript SDK v1.9.1",
+            "pages": [
+              "sdk-reference/desktop-js-sdk/v1.9.1/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.9.0",
+        "groups": [
+          {
+            "group": "Desktop JavaScript SDK v1.9.0",
+            "pages": [
+              "sdk-reference/desktop-js-sdk/v1.9.0/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.8.1",
+        "groups": [
+          {
+            "group": "Desktop JavaScript SDK v1.8.1",
+            "pages": [
+              "sdk-reference/desktop-js-sdk/v1.8.1/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.8.0",
+        "groups": [
+          {
+            "group": "Desktop JavaScript SDK v1.8.0",
+            "pages": [
+              "sdk-reference/desktop-js-sdk/v1.8.0/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.7.3",
+        "groups": [
+          {
+            "group": "Desktop JavaScript SDK v1.7.3",
+            "pages": [
+              "sdk-reference/desktop-js-sdk/v1.7.3/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.7.2",
+        "groups": [
+          {
+            "group": "Desktop JavaScript SDK v1.7.2",
+            "pages": [
+              "sdk-reference/desktop-js-sdk/v1.7.2/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.7.1",
+        "groups": [
+          {
+            "group": "Desktop JavaScript SDK v1.7.1",
+            "pages": [
+              "sdk-reference/desktop-js-sdk/v1.7.1/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.7.0",
+        "groups": [
+          {
+            "group": "Desktop JavaScript SDK v1.7.0",
+            "pages": [
+              "sdk-reference/desktop-js-sdk/v1.7.0/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.6.2",
+        "groups": [
+          {
+            "group": "Desktop JavaScript SDK v1.6.2",
+            "pages": [
+              "sdk-reference/desktop-js-sdk/v1.6.2/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.6.1",
+        "groups": [
+          {
+            "group": "Desktop JavaScript SDK v1.6.1",
+            "pages": [
+              "sdk-reference/desktop-js-sdk/v1.6.1/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.6.0",
+        "groups": [
+          {
+            "group": "Desktop JavaScript SDK v1.6.0",
+            "pages": [
+              "sdk-reference/desktop-js-sdk/v1.6.0/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.5.0",
+        "groups": [
+          {
+            "group": "Desktop JavaScript SDK v1.5.0",
+            "pages": [
+              "sdk-reference/desktop-js-sdk/v1.5.0/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.4.0",
+        "groups": [
+          {
+            "group": "Desktop JavaScript SDK v1.4.0",
+            "pages": [
+              "sdk-reference/desktop-js-sdk/v1.4.0/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.3.0",
+        "groups": [
+          {
+            "group": "Desktop JavaScript SDK v1.3.0",
+            "pages": [
+              "sdk-reference/desktop-js-sdk/v1.3.0/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.2.0",
+        "groups": [
+          {
+            "group": "Desktop JavaScript SDK v1.2.0",
+            "pages": [
+              "sdk-reference/desktop-js-sdk/v1.2.0/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.1.1",
+        "groups": [
+          {
+            "group": "Desktop JavaScript SDK v1.1.1",
+            "pages": [
+              "sdk-reference/desktop-js-sdk/v1.1.1/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.0.3",
+        "groups": [
+          {
+            "group": "Desktop JavaScript SDK v1.0.3",
+            "pages": [
+              "sdk-reference/desktop-js-sdk/v1.0.3/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.0.2",
+        "groups": [
+          {
+            "group": "Desktop JavaScript SDK v1.0.2",
+            "pages": [
+              "sdk-reference/desktop-js-sdk/v1.0.2/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.0.1",
+        "groups": [
+          {
+            "group": "Desktop JavaScript SDK v1.0.1",
+            "pages": [
+              "sdk-reference/desktop-js-sdk/v1.0.1/sandbox/index"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "dropdown": "Desktop Python SDK",
+    "icon": "python",
+    "versions": [
+      {
+        "version": "v2.0.1@latest",
+        "groups": [
+          {
+            "group": "Desktop Python SDK v2.0.1",
+            "pages": [
+              "sdk-reference/desktop-python-sdk/v2.0.1/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v2.0.0",
+        "groups": [
+          {
+            "group": "Desktop Python SDK v2.0.0",
+            "pages": [
+              "sdk-reference/desktop-python-sdk/v2.0.0/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.7.4",
+        "groups": [
+          {
+            "group": "Desktop Python SDK v1.7.4",
+            "pages": [
+              "sdk-reference/desktop-python-sdk/v1.7.4/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.7.3",
+        "groups": [
+          {
+            "group": "Desktop Python SDK v1.7.3",
+            "pages": [
+              "sdk-reference/desktop-python-sdk/v1.7.3/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.7.2",
+        "groups": [
+          {
+            "group": "Desktop Python SDK v1.7.2",
+            "pages": [
+              "sdk-reference/desktop-python-sdk/v1.7.2/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.7.1",
+        "groups": [
+          {
+            "group": "Desktop Python SDK v1.7.1",
+            "pages": [
+              "sdk-reference/desktop-python-sdk/v1.7.1/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.7.0",
+        "groups": [
+          {
+            "group": "Desktop Python SDK v1.7.0",
+            "pages": [
+              "sdk-reference/desktop-python-sdk/v1.7.0/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.6.5",
+        "groups": [
+          {
+            "group": "Desktop Python SDK v1.6.5",
+            "pages": [
+              "sdk-reference/desktop-python-sdk/v1.6.5/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.6.4",
+        "groups": [
+          {
+            "group": "Desktop Python SDK v1.6.4",
+            "pages": [
+              "sdk-reference/desktop-python-sdk/v1.6.4/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.6.3",
+        "groups": [
+          {
+            "group": "Desktop Python SDK v1.6.3",
+            "pages": [
+              "sdk-reference/desktop-python-sdk/v1.6.3/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.6.2",
+        "groups": [
+          {
+            "group": "Desktop Python SDK v1.6.2",
+            "pages": [
+              "sdk-reference/desktop-python-sdk/v1.6.2/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.6.1",
+        "groups": [
+          {
+            "group": "Desktop Python SDK v1.6.1",
+            "pages": [
+              "sdk-reference/desktop-python-sdk/v1.6.1/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.6.0",
+        "groups": [
+          {
+            "group": "Desktop Python SDK v1.6.0",
+            "pages": [
+              "sdk-reference/desktop-python-sdk/v1.6.0/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.5.2",
+        "groups": [
+          {
+            "group": "Desktop Python SDK v1.5.2",
+            "pages": [
+              "sdk-reference/desktop-python-sdk/v1.5.2/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.5.1",
+        "groups": [
+          {
+            "group": "Desktop Python SDK v1.5.1",
+            "pages": [
+              "sdk-reference/desktop-python-sdk/v1.5.1/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.5.0",
+        "groups": [
+          {
+            "group": "Desktop Python SDK v1.5.0",
+            "pages": [
+              "sdk-reference/desktop-python-sdk/v1.5.0/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.4.0",
+        "groups": [
+          {
+            "group": "Desktop Python SDK v1.4.0",
+            "pages": [
+              "sdk-reference/desktop-python-sdk/v1.4.0/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.3.0",
+        "groups": [
+          {
+            "group": "Desktop Python SDK v1.3.0",
+            "pages": [
+              "sdk-reference/desktop-python-sdk/v1.3.0/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.2.0",
+        "groups": [
+          {
+            "group": "Desktop Python SDK v1.2.0",
+            "pages": [
+              "sdk-reference/desktop-python-sdk/v1.2.0/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.1.1",
+        "groups": [
+          {
+            "group": "Desktop Python SDK v1.1.1",
+            "pages": [
+              "sdk-reference/desktop-python-sdk/v1.1.1/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.0.3",
+        "groups": [
+          {
+            "group": "Desktop Python SDK v1.0.3",
+            "pages": [
+              "sdk-reference/desktop-python-sdk/v1.0.3/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.0.2",
+        "groups": [
+          {
+            "group": "Desktop Python SDK v1.0.2",
+            "pages": [
+              "sdk-reference/desktop-python-sdk/v1.0.2/sandbox/index"
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v1.0.1",
+        "groups": [
+          {
+            "group": "Desktop Python SDK v1.0.1",
+            "pages": [
+              "sdk-reference/desktop-python-sdk/v1.0.1/sandbox/index"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]
