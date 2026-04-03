@@ -62,7 +62,7 @@ def _handle_filesystem_envd_api_exception(r):
     return handle_envd_api_exception(r, _FILESYSTEM_HTTP_ERROR_MAP)
 
 
-_DEFAULT_CHUNK_SIZE = 5 * 1024 * 1024  # 5 MB
+_DEFAULT_CHUNK_SIZE = 64 * 1024 * 1024  # 64 MB
 
 
 class Filesystem:
@@ -224,7 +224,7 @@ class Filesystem:
         :return: Information about the written file
         """
         if composite and self._envd_version >= ENVD_OCTET_STREAM_UPLOAD:
-            return self._composite_write(path, data, user, request_timeout)
+            return self._composite_write(path, data, user, request_timeout, gzip)
 
         result = self.write_files(
             [WriteEntry(path=path, data=data)],
@@ -244,26 +244,19 @@ class Filesystem:
         data: Union[str, bytes, IO],
         user: Optional[Username] = None,
         request_timeout: Optional[float] = None,
+        use_gzip: bool = False,
     ) -> WriteInfo:
         username = user
         if username is None and self._envd_version < ENVD_DEFAULT_USER:
             username = default_username
 
-        if isinstance(data, str):
-            content = data.encode("utf-8")
-        elif isinstance(data, bytes):
-            content = data
-        elif isinstance(data, TextIOBase):
-            content = data.read().encode("utf-8")
-        elif isinstance(data, IOBase):
-            content = data.read()
-        else:
-            raise InvalidArgumentException(
-                f"Unsupported data type for file {destination}"
-            )
-
+        content = to_upload_body(data, False)
         total_size = len(content)
         chunk_size = _DEFAULT_CHUNK_SIZE
+
+        headers = {"Content-Type": "application/octet-stream"}
+        if use_gzip:
+            headers["Content-Encoding"] = "gzip"
 
         # If the data fits in a single chunk, upload directly
         if total_size <= chunk_size:
@@ -271,10 +264,12 @@ class Filesystem:
             if username:
                 params["username"] = username
 
+            upload_content = to_upload_body(data, use_gzip)
+
             r = self._envd_api.post(
                 ENVD_API_FILES_ROUTE,
-                content=content,
-                headers={"Content-Type": "application/octet-stream"},
+                content=upload_content,
+                headers=headers,
                 params=params,
                 timeout=self._connection_config.get_request_timeout(request_timeout),
             )
@@ -307,10 +302,12 @@ class Filesystem:
             if username:
                 params["username"] = username
 
+            upload_content = to_upload_body(chunk_data, use_gzip)
+
             r = self._envd_api.post(
                 ENVD_API_FILES_ROUTE,
-                content=chunk_data,
-                headers={"Content-Type": "application/octet-stream"},
+                content=upload_content,
+                headers=headers,
                 params=params,
                 timeout=self._connection_config.get_request_timeout(request_timeout),
             )

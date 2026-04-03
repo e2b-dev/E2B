@@ -196,7 +196,7 @@ export interface WriteOpts extends FilesystemWriteOpts {
   composite?: boolean
 }
 
-const DEFAULT_CHUNK_SIZE = 5 * 1024 * 1024 // 5 MB
+const DEFAULT_CHUNK_SIZE = 64 * 1024 * 1024 // 64 MB
 
 export interface FilesystemListOpts extends FilesystemRequestOpts {
   /**
@@ -380,12 +380,7 @@ export class Filesystem {
   ): Promise<WriteInfo[]>
   async write(
     pathOrFiles: string | WriteEntry[],
-    dataOrOpts?:
-      | string
-      | ArrayBuffer
-      | Blob
-      | ReadableStream
-      | WriteOpts,
+    dataOrOpts?: string | ArrayBuffer | Blob | ReadableStream | WriteOpts,
     opts?: WriteOpts
   ): Promise<WriteInfo | WriteInfo[]> {
     if (typeof pathOrFiles !== 'string' && !Array.isArray(pathOrFiles)) {
@@ -850,9 +845,19 @@ export class Filesystem {
     const blob = await toBlob(data)
     const totalSize = blob.size
     const chunkSize = DEFAULT_CHUNK_SIZE
+    const useGzip = opts?.gzip === true
+
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/octet-stream',
+    }
+    if (useGzip) {
+      headers['Content-Encoding'] = 'gzip'
+    }
 
     // If the data fits in a single chunk, no need for composite upload
     if (totalSize <= chunkSize) {
+      const body = await toUploadBody(data, useGzip)
+
       const res = await this.envdApi.api.POST('/files', {
         params: {
           query: {
@@ -860,10 +865,8 @@ export class Filesystem {
             username: user,
           },
         },
-        bodySerializer: () => blob,
-        headers: {
-          'Content-Type': 'application/octet-stream',
-        },
+        bodySerializer: () => body,
+        headers,
         signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
         body: {},
       })
@@ -895,6 +898,7 @@ export class Filesystem {
         const start = i * chunkSize
         const end = Math.min(start + chunkSize, totalSize)
         const chunk = blob.slice(start, end)
+        const body = await toUploadBody(chunk, useGzip)
 
         const res = await this.envdApi.api.POST('/files', {
           params: {
@@ -903,10 +907,8 @@ export class Filesystem {
               username: user,
             },
           },
-          bodySerializer: () => chunk,
-          headers: {
-            'Content-Type': 'application/octet-stream',
-          },
+          bodySerializer: () => body,
+          headers,
           signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
           body: {},
         })
