@@ -184,6 +184,20 @@ export interface FilesystemReadOpts extends FilesystemRequestOpts {
   gzip?: boolean
 }
 
+/**
+ * Options for the write operation.
+ */
+export interface WriteOpts extends FilesystemWriteOpts {
+  /**
+   * When `true`, the file data is split into chunks and uploaded in parallel,
+   * then composed into the final file on the server using zero-copy concatenation.
+   * This is useful for uploading large files.
+   */
+  composite?: boolean
+}
+
+const DEFAULT_CHUNK_SIZE = 5 * 1024 * 1024 // 5 MB
+
 export interface FilesystemListOpts extends FilesystemRequestOpts {
   /**
    * Depth of the directory to list.
@@ -358,7 +372,7 @@ export class Filesystem {
   async write(
     path: string,
     data: string | ArrayBuffer | Blob | ReadableStream,
-    opts?: FilesystemWriteOpts
+    opts?: WriteOpts
   ): Promise<WriteInfo>
   async write(
     files: WriteEntry[],
@@ -371,8 +385,8 @@ export class Filesystem {
       | ArrayBuffer
       | Blob
       | ReadableStream
-      | FilesystemWriteOpts,
-    opts?: FilesystemWriteOpts
+      | WriteOpts,
+    opts?: WriteOpts
   ): Promise<WriteInfo | WriteInfo[]> {
     if (typeof pathOrFiles !== 'string' && !Array.isArray(pathOrFiles)) {
       throw new Error('Path or files are required')
@@ -388,7 +402,7 @@ export class Filesystem {
       typeof pathOrFiles === 'string'
         ? {
             path: pathOrFiles,
-            writeOpts: opts as FilesystemWriteOpts,
+            writeOpts: opts as WriteOpts | undefined,
             writeFiles: [
               {
                 data: dataOrOpts as
@@ -401,7 +415,7 @@ export class Filesystem {
           }
         : {
             path: undefined,
-            writeOpts: dataOrOpts as FilesystemWriteOpts,
+            writeOpts: dataOrOpts as WriteOpts | undefined,
             writeFiles: pathOrFiles as WriteEntry[],
           }
 
@@ -417,6 +431,11 @@ export class Filesystem {
 
     const useOctetStream =
       compareVersions(this.envdApi.version, ENVD_OCTET_STREAM_UPLOAD) >= 0
+
+    // Composite upload: chunk the data, upload parts in parallel, then compose
+    if (writeOpts?.composite && path && useOctetStream) {
+      return this.compositeWrite(path, writeFiles[0].data, user, writeOpts)
+    }
 
     const results: WriteInfo[] = []
 
@@ -820,5 +839,100 @@ export class Filesystem {
     } catch (err) {
       throw handleFilesystemRpcError(err)
     }
+  }
+
+  private async compositeWrite(
+    destination: string,
+    data: string | ArrayBuffer | Blob | ReadableStream,
+    user: string | undefined,
+    opts?: WriteOpts
+  ): Promise<WriteInfo> {
+    const blob = await toBlob(data)
+    const totalSize = blob.size
+    const chunkSize = DEFAULT_CHUNK_SIZE
+
+    // If the data fits in a single chunk, no need for composite upload
+    if (totalSize <= chunkSize) {
+      const res = await this.envdApi.api.POST('/files', {
+        params: {
+          query: {
+            path: destination,
+            username: user,
+          },
+        },
+        bodySerializer: () => blob,
+        headers: {
+          'Content-Type': 'application/octet-stream',
+        },
+        signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
+        body: {},
+      })
+
+      const err = await handleFilesystemEnvdApiError(res)
+      if (err) {
+        throw err
+      }
+
+      const files = res.data as WriteInfo[]
+      if (!files || files.length === 0) {
+        throw new Error('Expected to receive information about written file')
+      }
+
+      return files[0]
+    }
+
+    // Split into chunks and upload in parallel
+    const chunkCount = Math.ceil(totalSize / chunkSize)
+    const uploadId = crypto.randomUUID()
+    const chunkPaths: string[] = []
+
+    for (let i = 0; i < chunkCount; i++) {
+      chunkPaths.push(`/tmp/.e2b-upload-${uploadId}-${i}`)
+    }
+
+    await Promise.all(
+      chunkPaths.map(async (chunkPath, i) => {
+        const start = i * chunkSize
+        const end = Math.min(start + chunkSize, totalSize)
+        const chunk = blob.slice(start, end)
+
+        const res = await this.envdApi.api.POST('/files', {
+          params: {
+            query: {
+              path: chunkPath,
+              username: user,
+            },
+          },
+          bodySerializer: () => chunk,
+          headers: {
+            'Content-Type': 'application/octet-stream',
+          },
+          signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
+          body: {},
+        })
+
+        const err = await handleFilesystemEnvdApiError(res)
+        if (err) {
+          throw err
+        }
+      })
+    )
+
+    // Compose chunks into the final file
+    const composeRes = await this.envdApi.api.POST('/files/compose', {
+      body: {
+        source_paths: chunkPaths,
+        destination,
+        username: user,
+      },
+      signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
+    })
+
+    const composeErr = await handleFilesystemEnvdApiError(composeRes)
+    if (composeErr) {
+      throw composeErr
+    }
+
+    return composeRes.data as WriteInfo
   }
 }

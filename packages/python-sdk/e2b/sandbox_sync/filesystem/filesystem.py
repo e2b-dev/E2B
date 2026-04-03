@@ -1,3 +1,5 @@
+import uuid
+
 from io import IOBase, TextIOBase
 from typing import IO, Iterator, List, Literal, Optional, Union, overload
 
@@ -15,7 +17,11 @@ from e2b.connection_config import (
 )
 from e2b_connect.client import Code
 
-from e2b.envd.api import ENVD_API_FILES_ROUTE, handle_envd_api_exception
+from e2b.envd.api import (
+    ENVD_API_FILES_COMPOSE_ROUTE,
+    ENVD_API_FILES_ROUTE,
+    handle_envd_api_exception,
+)
 from e2b.envd.filesystem import filesystem_connect, filesystem_pb2
 from e2b.envd.rpc import authentication_header, handle_rpc_exception
 from e2b.envd.versions import (
@@ -54,6 +60,9 @@ def _handle_filesystem_rpc_exception(e: Exception) -> Exception:
 
 def _handle_filesystem_envd_api_exception(r):
     return handle_envd_api_exception(r, _FILESYSTEM_HTTP_ERROR_MAP)
+
+
+_DEFAULT_CHUNK_SIZE = 5 * 1024 * 1024  # 5 MB
 
 
 class Filesystem:
@@ -195,6 +204,7 @@ class Filesystem:
         user: Optional[Username] = None,
         request_timeout: Optional[float] = None,
         gzip: bool = False,
+        composite: bool = False,
     ) -> WriteInfo:
         """
         Write content to a file on the path.
@@ -207,9 +217,15 @@ class Filesystem:
         :param user: Run the operation as this user
         :param request_timeout: Timeout for the request in **seconds**
         :param gzip: Use gzip compression for the request
+        :param composite: When `True`, the file data is split into chunks and uploaded
+            in parallel, then composed into the final file on the server using
+            zero-copy concatenation. This is useful for uploading large files.
 
         :return: Information about the written file
         """
+        if composite and self._envd_version >= ENVD_OCTET_STREAM_UPLOAD:
+            return self._composite_write(path, data, user, request_timeout)
+
         result = self.write_files(
             [WriteEntry(path=path, data=data)],
             user=user,
@@ -221,6 +237,107 @@ class Filesystem:
             raise SandboxException("Received unexpected response from write operation")
 
         return result[0]
+
+    def _composite_write(
+        self,
+        destination: str,
+        data: Union[str, bytes, IO],
+        user: Optional[Username] = None,
+        request_timeout: Optional[float] = None,
+    ) -> WriteInfo:
+        username = user
+        if username is None and self._envd_version < ENVD_DEFAULT_USER:
+            username = default_username
+
+        if isinstance(data, str):
+            content = data.encode("utf-8")
+        elif isinstance(data, bytes):
+            content = data
+        elif isinstance(data, TextIOBase):
+            content = data.read().encode("utf-8")
+        elif isinstance(data, IOBase):
+            content = data.read()
+        else:
+            raise InvalidArgumentException(
+                f"Unsupported data type for file {destination}"
+            )
+
+        total_size = len(content)
+        chunk_size = _DEFAULT_CHUNK_SIZE
+
+        # If the data fits in a single chunk, upload directly
+        if total_size <= chunk_size:
+            params = {"path": destination}
+            if username:
+                params["username"] = username
+
+            r = self._envd_api.post(
+                ENVD_API_FILES_ROUTE,
+                content=content,
+                headers={"Content-Type": "application/octet-stream"},
+                params=params,
+                timeout=self._connection_config.get_request_timeout(request_timeout),
+            )
+
+            err = _handle_filesystem_envd_api_exception(r)
+            if err:
+                raise err
+
+            write_result = r.json()
+            if not isinstance(write_result, list) or len(write_result) == 0:
+                raise SandboxException(
+                    "Expected to receive information about written file"
+                )
+            return WriteInfo(**write_result[0])
+
+        # Split into chunks and upload
+        upload_id = str(uuid.uuid4())
+        chunk_count = (total_size + chunk_size - 1) // chunk_size
+        chunk_paths: List[str] = []
+
+        for i in range(chunk_count):
+            chunk_path = f"/tmp/.e2b-upload-{upload_id}-{i}"
+            chunk_paths.append(chunk_path)
+
+            start = i * chunk_size
+            end = min(start + chunk_size, total_size)
+            chunk_data = content[start:end]
+
+            params = {"path": chunk_path}
+            if username:
+                params["username"] = username
+
+            r = self._envd_api.post(
+                ENVD_API_FILES_ROUTE,
+                content=chunk_data,
+                headers={"Content-Type": "application/octet-stream"},
+                params=params,
+                timeout=self._connection_config.get_request_timeout(request_timeout),
+            )
+
+            err = _handle_filesystem_envd_api_exception(r)
+            if err:
+                raise err
+
+        # Compose chunks into the final file
+        body = {
+            "source_paths": chunk_paths,
+            "destination": destination,
+        }
+        if username:
+            body["username"] = username
+
+        r = self._envd_api.post(
+            ENVD_API_FILES_COMPOSE_ROUTE,
+            json=body,
+            timeout=self._connection_config.get_request_timeout(request_timeout),
+        )
+
+        err = _handle_filesystem_envd_api_exception(r)
+        if err:
+            raise err
+
+        return WriteInfo(**r.json())
 
     def write_files(
         self,

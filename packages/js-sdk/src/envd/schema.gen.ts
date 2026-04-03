@@ -106,6 +106,51 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/files/compose": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Compose multiple files into a single file using zero-copy concatenation. Source files are deleted after successful composition. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ComposeRequest"];
+                };
+            };
+            responses: {
+                /** @description Files composed successfully */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["EntryInfo"];
+                    };
+                };
+                400: components["responses"]["InvalidPath"];
+                401: components["responses"]["InvalidUser"];
+                404: components["responses"]["FileNotFound"];
+                500: components["responses"]["InternalServerError"];
+                507: components["responses"]["NotEnoughDiskSpace"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -233,6 +278,14 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        ComposeRequest: {
+            /** @description Destination file path for the composed file */
+            destination: string;
+            /** @description Ordered list of source file paths to concatenate */
+            source_paths: string[];
+            /** @description User for setting ownership and resolving relative paths */
+            username?: string;
+        };
         EntryInfo: {
             /** @description Name of the file */
             name: string;

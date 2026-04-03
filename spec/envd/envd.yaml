@@ -125,6 +125,37 @@ paths:
         '507':
           $ref: '#/components/responses/NotEnoughDiskSpace'
 
+  /files/compose:
+    post:
+      summary: Compose multiple files into a single file using zero-copy concatenation. Source files are deleted after successful composition.
+      tags: [files]
+      security:
+        - AccessTokenAuth: []
+        - {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ComposeRequest'
+      responses:
+        '200':
+          description: Files composed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntryInfo'
+        '400':
+          $ref: '#/components/responses/InvalidPath'
+        '401':
+          $ref: '#/components/responses/InvalidUser'
+        '404':
+          $ref: '#/components/responses/FileNotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '507':
+          $ref: '#/components/responses/NotEnoughDiskSpace'
+
 components:
   securitySchemes:
     AccessTokenAuth:
@@ -252,6 +283,23 @@ components:
           description: Type of the file
           enum:
             - file
+    ComposeRequest:
+      type: object
+      required:
+        - source_paths
+        - destination
+      properties:
+        source_paths:
+          type: array
+          items:
+            type: string
+          description: Ordered list of source file paths to concatenate
+        destination:
+          type: string
+          description: Destination file path for the composed file
+        username:
+          type: string
+          description: User for setting ownership and resolving relative paths
     EnvVars:
       type: object
       description: Environment variables to set
