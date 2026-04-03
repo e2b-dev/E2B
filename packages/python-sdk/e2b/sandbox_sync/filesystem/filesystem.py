@@ -223,6 +223,8 @@ class Filesystem:
             content = to_upload_body(data, False)
             if len(content) > _DEFAULT_CHUNK_SIZE:
                 return self._composite_write(path, content, user, request_timeout, gzip)
+            # Use materialized bytes to avoid consuming IO streams twice
+            data = content
 
         result = self.write_files(
             [WriteEntry(path=path, data=data)],

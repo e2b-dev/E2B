@@ -227,6 +227,8 @@ class Filesystem:
                 return await self._composite_write(
                     path, content, user, request_timeout, gzip
                 )
+            # Use materialized bytes to avoid consuming IO streams twice
+            data = content
 
         result = await self.write_files(
             [WriteEntry(path=path, data=data)],
