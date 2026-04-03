@@ -213,10 +213,6 @@ class Filesystem:
 
         :return: Information about the written file
         """
-        if self._envd_version >= ENVD_OCTET_STREAM_UPLOAD:
-            # Materialize IO streams to bytes to avoid consuming them twice
-            data = to_upload_body(data, False)
-
         result = self.write_files(
             [WriteEntry(path=path, data=data)],
             user=user,
