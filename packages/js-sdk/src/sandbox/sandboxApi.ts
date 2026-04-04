@@ -270,12 +270,33 @@ export interface SnapshotListOpts extends SandboxApiOpts {
 /**
  * Information about a snapshot.
  */
+/**
+ * Options for creating a snapshot.
+ */
+export interface SnapshotCreateOpts extends SandboxApiOpts {
+  /**
+   * Optional name for the snapshot template.
+   * If a snapshot template with this name already exists, a new build will
+   * be assigned to the existing template instead of creating a new one.
+   *
+   * When a name is provided, the returned `snapshotId` will use the
+   * namespaced format (e.g. `team-slug/my-snapshot:default`) which can be
+   * passed directly to `Sandbox.create()`.
+   */
+  name?: string
+}
+
 export interface SnapshotInfo {
   /**
    * Snapshot identifier — template ID with tag, or namespaced name with tag (e.g. my-snapshot:latest).
    * Can be used with Sandbox.create() to create a new sandbox from this snapshot.
    */
   snapshotId: string
+  /**
+   * Full names of the snapshot template including team namespace and tag
+   * (e.g. `team-slug/my-snapshot:v2`).
+   */
+  names: string[]
 }
 
 /**
@@ -687,7 +708,7 @@ export class SandboxApi {
    */
   static async createSnapshot(
     sandboxId: string,
-    opts?: SandboxApiOpts
+    opts?: SnapshotCreateOpts
   ): Promise<SnapshotInfo> {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
@@ -698,7 +719,9 @@ export class SandboxApi {
           sandboxID: sandboxId,
         },
       },
-      body: {},
+      body: {
+        ...(opts?.name ? { name: opts.name } : {}),
+      },
       signal: config.getSignal(opts?.requestTimeoutMs),
     })
 
@@ -713,6 +736,7 @@ export class SandboxApi {
 
     return {
       snapshotId: res.data!.snapshotID,
+      names: res.data!.names,
     }
   }
 
@@ -1038,6 +1062,7 @@ export class SnapshotPaginator extends BasePaginator<SnapshotInfo> {
     return (res.data ?? []).map(
       (snapshot: components['schemas']['SnapshotInfo']) => ({
         snapshotId: snapshot.snapshotID,
+        names: snapshot.names,
       })
     )
   }
