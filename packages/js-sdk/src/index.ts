@@ -7,6 +7,7 @@ export {
   AuthenticationError,
   FileNotFoundError,
   GitAuthError,
+  GitPermissionError,
   GitUpstreamError,
   InvalidArgumentError,
   NotEnoughSpaceError,

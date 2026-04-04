@@ -1,5 +1,6 @@
 import {
   GitAuthError,
+  GitPermissionError,
   GitUpstreamError,
   InvalidArgumentError,
 } from '../../errors'
@@ -9,6 +10,7 @@ import { Commands } from '../commands'
 import {
   buildAuthErrorMessage,
   buildGitCommand,
+  buildPermissionErrorMessage,
   buildPushArgs,
   buildUpstreamErrorMessage,
   GitBranches,
@@ -17,6 +19,7 @@ import {
   getRepoPathForScope,
   getScopeFlag,
   isAuthFailure,
+  isPermissionFailure,
   isMissingUpstream,
   parseGitBranches,
   parseGitStatus,
@@ -359,6 +362,9 @@ export class Git {
         throw new GitAuthError(
           buildAuthErrorMessage('clone', Boolean(username) && !password)
         )
+      }
+      if (isPermissionFailure(err)) {
+        throw new GitPermissionError(buildPermissionErrorMessage('clone'))
       }
       throw err
     }
@@ -723,6 +729,9 @@ export class Git {
           buildAuthErrorMessage('push', Boolean(username) && !password)
         )
       }
+      if (isPermissionFailure(err)) {
+        throw new GitPermissionError(buildPermissionErrorMessage('push'))
+      }
       if (isMissingUpstream(err)) {
         throw new GitUpstreamError(buildUpstreamErrorMessage('push'))
       }
@@ -783,6 +792,9 @@ export class Git {
         throw new GitAuthError(
           buildAuthErrorMessage('pull', Boolean(username) && !password)
         )
+      }
+      if (isPermissionFailure(err)) {
+        throw new GitPermissionError(buildPermissionErrorMessage('pull'))
       }
       if (isMissingUpstream(err)) {
         throw new GitUpstreamError(buildUpstreamErrorMessage('pull'))

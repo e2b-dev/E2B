@@ -516,12 +516,62 @@ export function isAuthFailure(err: unknown): boolean {
     'terminal prompts disabled',
     'could not read username',
     'invalid username or password',
+    'permission denied (',
+    'permission denied (publickey',
+    'permission denied (keyboard-interactive',
+    'permission to ',
+    'requested url returned error: 403',
     'access denied',
-    'permission denied',
     'not authorized',
   ]
 
   return authSnippets.some((snippet) => message.includes(snippet))
+}
+
+export function isPermissionFailure(err: unknown): boolean {
+  if (!(err instanceof CommandExitError)) {
+    return false
+  }
+
+  const message = `${err.stderr}\n${err.stdout}`.toLowerCase()
+  const permissionSignals = [
+    'permission denied',
+    'operation not permitted',
+    'read-only file system',
+  ]
+  const filesystemContexts = [
+    'could not create work tree dir',
+    'repository database',
+    '.git/index.lock',
+    '.git/config.lock',
+    '.git/fetch_head',
+    '.git/head.lock',
+  ]
+  const directSnippets = [
+    'insufficient permission for adding an object to repository database',
+  ]
+
+  return (
+    directSnippets.some((snippet) => message.includes(snippet)) ||
+    (permissionSignals.some((signal) => message.includes(signal)) &&
+      filesystemContexts.some((context) => message.includes(context)))
+  )
+}
+
+export function buildPermissionErrorMessage(
+  action: 'clone' | 'push' | 'pull'
+): string {
+  if (action === 'clone') {
+    return (
+      'Git clone failed because the target path is not writable by the current user. ' +
+      'Try using a writable path or running the command as the user that owns that path.'
+    )
+  }
+
+  return (
+    `Git ${action} failed because the repository path is not writable by the current user. ` +
+    'Try using a writable path or running the command as the user that owns the repository files.'
+  )
 }
 
 export function getScopeFlag(scope: GitConfigScope): `--${GitConfigScope}` {
