@@ -110,8 +110,16 @@ def upload_file(
         tar_buffer = tar_file_stream(
             file_name, context_path, ignore_patterns, resolve_symlinks
         )
+
+        # Use bytes with explicit Content-Length.
+        # S3 presigned PUT URLs do not support Transfer-Encoding: chunked.
+        body = tar_buffer.getvalue()
         client = api_client.get_httpx_client()
-        response = client.put(url, content=tar_buffer.getvalue())
+        response = client.put(
+            url,
+            content=body,
+            headers={"Content-Length": str(len(body))},
+        )
         response.raise_for_status()
     except httpx.HTTPStatusError as e:
         raise FileUploadException(f"Failed to upload file: {e}").with_traceback(
