@@ -216,7 +216,8 @@ export class CommandHandle
             stdout: this.stdout,
             stderr: this.stderr,
           }
-          break
+          this.handleDisconnect()
+          return
       }
       // TODO: Handle empty events like in python SDK
     }
@@ -234,7 +235,19 @@ export class CommandHandle
         }
       }
     } catch (e) {
-      this.iterationError = handleRpcError(e)
+      if (!this.result) {
+        this.iterationError = handleRpcError(e)
+      }
+    }
+    // Trigger connectrpc's deadline timer cleanup by forcing one more
+    // .next() call on the events stream. On platforms where abort propagates
+    // to the body reader (Deno), this rejects and clears the timer via
+    // connectrpc's abort() callback. On platforms where it doesn't (Node.js
+    // per nodejs/undici#1940), this settles when the server closes the stream.
+    if (this.result) {
+      this.events[Symbol.asyncIterator]()
+        .next()
+        .catch(() => {})
     }
   }
 }
