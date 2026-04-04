@@ -1,5 +1,5 @@
 import * as commander from 'commander'
-import { Sandbox } from 'e2b'
+import { NotFoundError, Sandbox } from 'e2b'
 
 import { ensureAPIKey } from 'src/api'
 import { asBold } from 'src/utils/format'
@@ -62,6 +62,11 @@ export const infoCommand = new commander.Command('info')
         process.exit(1)
       }
     } catch (err: any) {
+      if (err instanceof NotFoundError) {
+        console.error(`Sandbox ${asBold(sandboxID)} wasn't found`)
+        process.exit(1)
+        return
+      }
       console.error(err)
       process.exit(1)
     }
