@@ -268,6 +268,20 @@ export interface SnapshotListOpts extends SandboxApiOpts {
 }
 
 /**
+ * Options for creating a snapshot.
+ */
+export interface SnapshotCreateOpts extends SandboxApiOpts {
+  /**
+   * Optional name for the snapshot template.
+   *
+   * If a snapshot template with this name already exists, a new build will be
+   * assigned to the existing template instead of creating a new one.
+   * The snapshot can then be referenced as `team-slug/name` when creating sandboxes.
+   */
+  name?: string
+}
+
+/**
  * Information about a snapshot.
  */
 export interface SnapshotInfo {
@@ -276,6 +290,13 @@ export interface SnapshotInfo {
    * Can be used with Sandbox.create() to create a new sandbox from this snapshot.
    */
   snapshotId: string
+
+  /**
+   * Full names of the snapshot template including team namespace and tag
+   * (e.g. team-slug/my-snapshot:v2).
+   * Present when the snapshot was created with a name.
+   */
+  names?: string[]
 }
 
 /**
@@ -687,7 +708,7 @@ export class SandboxApi {
    */
   static async createSnapshot(
     sandboxId: string,
-    opts?: SandboxApiOpts
+    opts?: SnapshotCreateOpts
   ): Promise<SnapshotInfo> {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
@@ -698,7 +719,9 @@ export class SandboxApi {
           sandboxID: sandboxId,
         },
       },
-      body: {},
+      body: {
+        ...(opts?.name !== undefined && { name: opts.name }),
+      },
       signal: config.getSignal(opts?.requestTimeoutMs),
     })
 
@@ -713,6 +736,7 @@ export class SandboxApi {
 
     return {
       snapshotId: res.data!.snapshotID,
+      ...(res.data!.names?.length && { names: res.data!.names }),
     }
   }
 
