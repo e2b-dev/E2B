@@ -393,7 +393,11 @@ export class Commands {
     cmd: string,
     opts?: CommandStartOpts & { background?: boolean }
   ): Promise<CommandHandle | CommandResult> {
-    const proc = await this.start(cmd, opts)
+    const startOpts =
+      opts?.background && opts?.timeoutMs === undefined
+        ? { ...opts, timeoutMs: 0 }
+        : opts
+    const proc = await this.start(cmd, startOpts)
 
     return opts?.background ? proc : proc.wait()
   }
