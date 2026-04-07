@@ -30,9 +30,12 @@ from .api import (
     client,
 )
 from .connection_config import (
+    ApiParams,
     ConnectionConfig,
     ProxyTypes,
+    Username,
 )
+from .volume.connection_config import VolumeApiParams, VolumeConnectionConfig
 from .exceptions import (
     AuthenticationException,
     FileNotFoundException,
@@ -43,10 +46,12 @@ from .exceptions import (
     InvalidArgumentException,
     NotEnoughSpaceException,
     NotFoundException,
+    RateLimitException,
     SandboxException,
     SandboxNotFoundException,
     TemplateException,
     TimeoutException,
+    VolumeException,
 )
 from .sandbox.commands.command_handle import (
     CommandExitException,
@@ -63,7 +68,9 @@ from .sandbox.filesystem.watch_handle import (
     FilesystemEventType,
 )
 from .sandbox._git import GitBranches, GitFileStatus, GitStatus
+from .sandbox_sync.git import Git
 from .sandbox.network import ALL_TRAFFIC
+from .sandbox.signature import get_signature
 from .sandbox.sandbox_api import (
     GitHubMcpServer,
     GitHubMcpServerConfig,
@@ -114,13 +121,26 @@ from .template.types import (
 from .template_async.main import AsyncTemplate
 from .template_sync.main import Template
 
+from .volume.volume_sync import Volume
+from .volume.volume_async import AsyncVolume
+from .volume.types import (
+    VolumeInfo,
+    VolumeAndToken,
+    VolumeEntryStat,
+    VolumeFileType,
+)
+
 __all__ = [
     # API
     "ApiClient",
     "client",
     # Connection config
     "ConnectionConfig",
+    "VolumeConnectionConfig",
     "ProxyTypes",
+    "ApiParams",
+    "VolumeApiParams",
+    "Username",
     # Exceptions
     "SandboxException",
     "TimeoutException",
@@ -135,6 +155,8 @@ __all__ = [
     "TemplateException",
     "BuildException",
     "FileUploadException",
+    "RateLimitException",
+    "VolumeException",
     # Sandbox API
     "SandboxInfo",
     "SandboxInfoLifecycle",
@@ -167,6 +189,8 @@ __all__ = [
     "SnapshotInfo",
     "SnapshotPaginator",
     "AsyncSnapshotPaginator",
+    # Signature
+    "get_signature",
     # Sync sandbox
     "Sandbox",
     "SandboxPaginator",
@@ -205,4 +229,13 @@ __all__ = [
     "McpServer",
     "GitHubMcpServer",
     "GitHubMcpServerConfig",
+    # Git
+    "Git",
+    # Volume
+    "Volume",
+    "AsyncVolume",
+    "VolumeInfo",
+    "VolumeAndToken",
+    "VolumeEntryStat",
+    "VolumeFileType",
 ]

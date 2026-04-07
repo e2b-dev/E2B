@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "e2b"
-version = "2.17.0"
+version = "2.20.0"
 description = "E2B SDK that give agents cloud environments"
 authors = ["e2b <hello@e2b.dev>"]
 license = "MIT"
@@ -55,6 +55,10 @@ rules = { invalid-argument-type = "ignore" }
 [[tool.ty.overrides]]
 include = ["e2b/envd/**/*.pyi"]
 rules = { conflicting-metaclass = "ignore", unresolved-attribute = "ignore" }
+
+[[tool.ty.overrides]]
+include = ["e2b/volume/**"]
+rules = { unresolved-attribute = "ignore" }
 
 [tool.ruff]
 exclude = [

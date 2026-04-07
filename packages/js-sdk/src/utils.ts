@@ -124,3 +124,25 @@ export function toBlob(
   // ReadableStream - must consume to get Blob
   return new Response(data).blob()
 }
+
+/**
+ * Prepare data for upload as a BodyInit, optionally gzip-compressed.
+ * When gzip is enabled, compresses the data and returns a Blob.
+ */
+export async function toUploadBody(
+  data: string | ArrayBuffer | Blob | ReadableStream,
+  gzip?: boolean
+): Promise<BodyInit> {
+  if (gzip) {
+    const stream =
+      data instanceof ReadableStream
+        ? data
+        : data instanceof Blob
+          ? data.stream()
+          : new Blob([data]).stream()
+    const compressed = stream.pipeThrough(new CompressionStream('gzip'))
+    return new Response(compressed).blob()
+  }
+
+  return toBlob(data)
+}

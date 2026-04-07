@@ -65,7 +65,7 @@ with Sandbox.create() as sandbox:
 
 ### 4. Code execution with Code Interpreter
 
-If you need to execute code with `runCode()`/`run_code()`, install the [Code Interpreter SDK](https://github.com/e2b-dev/code-interpreter):
+If you need to execute code with [`runCode()`](https://e2b.dev/docs/code-interpreting)/[`run_code()`](https://e2b.dev/docs/code-interpreting), install the [Code Interpreter SDK](https://github.com/e2b-dev/code-interpreter):
 
 ```
 npm i @e2b/code-interpreter  # JavaScript/TypeScript

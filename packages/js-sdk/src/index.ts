@@ -18,13 +18,20 @@ export {
   RateLimitError,
   BuildError,
   FileUploadError,
+  VolumeError,
 } from './errors'
 export type { Logger } from './logs'
 
 export { getSignature } from './sandbox/signature'
 
 export { FileType } from './sandbox/filesystem'
-export type { WriteInfo, EntryInfo, Filesystem } from './sandbox/filesystem'
+export type {
+  WriteInfo,
+  EntryInfo,
+  Filesystem,
+  FilesystemWriteOpts,
+  FilesystemReadOpts,
+} from './sandbox/filesystem'
 export { FilesystemEventType } from './sandbox/filesystem/watchHandle'
 export type {
   FilesystemEvent,
@@ -89,6 +96,17 @@ export type {
   GitFileStatus,
   GitStatus,
 } from './sandbox/git'
+
+export { Volume, VolumeFileType } from './volume'
+export type {
+  VolumeInfo,
+  VolumeAndToken,
+  VolumeEntryStat,
+  VolumeMetadataOptions,
+  VolumeWriteOptions,
+  VolumeApiOpts,
+  VolumeConnectionConfig,
+} from './volume'
 
 export { Sandbox }
 import { Sandbox } from './sandbox'

@@ -43,7 +43,7 @@ console.log(result.stdout) // Hello from E2B!
 
 ### 4. Code execution with Code Interpreter
 
-If you need `runCode()`, install the [Code Interpreter SDK](https://github.com/e2b-dev/code-interpreter):
+If you need [`runCode()`](https://e2b.dev/docs/code-interpreting), install the [Code Interpreter SDK](https://github.com/e2b-dev/code-interpreter):
 
 ```bash
 npm i @e2b/code-interpreter
