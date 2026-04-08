@@ -1,0 +1,36 @@
+#
+# CI entrypoint — delegates to enterprise-ci-cd reusable workflows.
+# Wave 2 hardening: BACKLOG.md P0 — ci-adoption theme.
+#
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: read
+  security-events: write
+
+jobs:
+  node:
+    uses: Ai-road-4-You/enterprise-ci-cd/.github/workflows/ci-node.yml@v1
+    with:
+      package-manager: pnpm
+      lint-command: lint
+      test-command: test
+      build-command: build
+      coverage-threshold: 0
+      run-dependency-review: true
+
+  security:
+    uses: Ai-road-4-You/enterprise-ci-cd/.github/workflows/security-scan.yml@v1
+    with:
+      language: javascript
+      run-sast: true
+      run-dependency-audit: true
+      run-secret-scan: true
+      fail-on-high: true
