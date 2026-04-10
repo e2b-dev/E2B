@@ -233,7 +233,7 @@ class Filesystem:
         Writes a list of files to the filesystem.
         When writing to a file that doesn't exist, the file will get created.
         When writing to a file that already exists, the file will get overwritten.
-        When writing to a file that's in a directory that doesn't exist, you'll get an error.
+        When writing to a file at path that doesn't exist, the necessary directories will be created.
 
         :param files: list of files to write as `WriteEntry` objects, each containing `path` and `data`
         :param user: Run the operation as this user
