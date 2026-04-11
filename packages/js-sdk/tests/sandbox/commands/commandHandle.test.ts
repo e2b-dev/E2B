@@ -55,11 +55,11 @@ function createEvents(kind: EventKind): AsyncIterable<any> {
 describe('CommandHandle', () => {
   it.each<EventKind>(['stdout', 'stderr', 'pty'])(
     'wait awaits async %s callbacks',
-    async kind => {
+    async (kind) => {
       let callbackStarted = false
       let releaseCallback: (() => void) | undefined
 
-      const callbackBlocked = new Promise<void>(resolve => {
+      const callbackBlocked = new Promise<void>((resolve) => {
         releaseCallback = resolve
       })
 
