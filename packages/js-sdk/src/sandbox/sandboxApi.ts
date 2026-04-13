@@ -110,7 +110,7 @@ export interface SandboxOpts extends ConnectionOpts {
   /**
    * Sandbox template name or ID.
    *
-   * @default 'base'
+   * @default 'base' (or 'mcp-gateway' when `mcp` option is set)
    */
   template?: string
 
