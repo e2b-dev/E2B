@@ -37,8 +37,8 @@ class CommandHandle:
         self._handle_kill = handle_kill
         self._events = events
 
-        self._stdout: str = ""
-        self._stderr: str = ""
+        self._stdout_chunks: list[str] = []
+        self._stderr_chunks: list[str] = []
 
         self._result: Optional[CommandResult] = None
         self._iteration_exception: Optional[Exception] = None
@@ -67,18 +67,18 @@ class CommandHandle:
                 if event.event.HasField("data"):
                     if event.event.data.stdout:
                         out = event.event.data.stdout.decode("utf-8", "replace")
-                        self._stdout += out
+                        self._stdout_chunks.append(out)
                         yield out, None, None
                     if event.event.data.stderr:
                         out = event.event.data.stderr.decode("utf-8", "replace")
-                        self._stderr += out
+                        self._stderr_chunks.append(out)
                         yield None, out, None
                     if event.event.data.pty:
                         yield None, None, event.event.data.pty
                 if event.event.HasField("end"):
                     self._result = CommandResult(
-                        stdout=self._stdout,
-                        stderr=self._stderr,
+                        stdout="".join(self._stdout_chunks),
+                        stderr="".join(self._stderr_chunks),
                         exit_code=event.event.end.exit_code,
                         error=event.event.end.error,
                     )
@@ -131,8 +131,8 @@ class CommandHandle:
 
         if self._result.exit_code != 0:
             raise CommandExitException(
-                stdout=self._stdout,
-                stderr=self._stderr,
+                stdout=self._result.stdout,
+                stderr=self._result.stderr,
                 exit_code=self._result.exit_code,
                 error=self._result.error,
             )

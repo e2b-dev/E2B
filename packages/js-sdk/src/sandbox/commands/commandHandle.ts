@@ -84,8 +84,10 @@ export class CommandHandle
     Omit<CommandResult, 'exitCode' | 'error'>,
     Partial<Pick<CommandResult, 'exitCode' | 'error'>>
 {
-  private _stdout = ''
-  private _stderr = ''
+  private _stdoutChunks: string[] = []
+  private _stderrChunks: string[] = []
+  private _stdoutCached?: string
+  private _stderrCached?: string
 
   private result?: CommandResult
   private iterationError?: Error
@@ -130,14 +132,20 @@ export class CommandHandle
    * Command execution stderr output.
    */
   get stderr() {
-    return this._stderr
+    if (this._stderrCached === undefined) {
+      this._stderrCached = this._stderrChunks.join('')
+    }
+    return this._stderrCached
   }
 
   /**
    * Command execution stdout output.
    */
   get stdout() {
-    return this._stdout
+    if (this._stdoutCached === undefined) {
+      this._stdoutCached = this._stdoutChunks.join('')
+    }
+    return this._stdoutCached
   }
 
   /**
@@ -196,12 +204,14 @@ export class CommandHandle
           switch (e.value.output.case) {
             case 'stdout':
               out = new TextDecoder().decode(e.value.output.value)
-              this._stdout += out
+              this._stdoutChunks.push(out)
+              this._stdoutCached = undefined
               yield [out as Stdout, null, null]
               break
             case 'stderr':
               out = new TextDecoder().decode(e.value.output.value)
-              this._stderr += out
+              this._stderrChunks.push(out)
+              this._stderrCached = undefined
               yield [null, out as Stderr, null]
               break
             case 'pty':
