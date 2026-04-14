@@ -4,7 +4,7 @@ import httpx
 import logging
 
 from e2b.api import ApiClient, limits
-from e2b.connection_config import ConnectionConfig
+from e2b.connection_config import ConnectionConfig, _resolve_proxy
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +44,7 @@ def get_transport(config: ConnectionConfig) -> TransportWithLogger:
 
     transport = TransportWithLogger(
         limits=limits,
-        proxy=config.proxy,
+        proxy=_resolve_proxy(config.proxy),
     )
     TransportWithLogger.singleton = transport
     return transport
