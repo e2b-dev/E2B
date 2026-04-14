@@ -860,6 +860,9 @@ class Sandbox(SandboxApi):
         if envd_access_token is not None and not isinstance(envd_access_token, Unset):
             sandbox_headers["X-Access-Token"] = envd_access_token
 
+        sandbox_headers["E2b-Sandbox-Id"] = sandbox.sandbox_id
+        sandbox_headers["E2b-Sandbox-Port"] = str(ConnectionConfig.envd_port)
+
         connection_config = ConnectionConfig(
             extra_sandbox_headers=sandbox_headers,
             **opts,

@@ -385,13 +385,7 @@ class SandboxApi(SandboxBase):
         # Sandbox is not running, resume it
         config = ConnectionConfig(**opts)
 
-        api_client = get_api_client(
-            config,
-            headers={
-                "E2b-Sandbox-Id": sandbox_id,
-                "E2b-Sandbox-Port": str(config.envd_port),
-            },
-        )
+        api_client = get_api_client(config)
         res = await post_sandboxes_sandbox_id_connect.asyncio_detailed(
             sandbox_id,
             client=api_client,
