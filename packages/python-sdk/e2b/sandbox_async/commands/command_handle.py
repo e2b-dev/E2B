@@ -41,14 +41,18 @@ class AsyncCommandHandle:
         """
         Command stdout output.
         """
-        return "".join(self._stdout_chunks)
+        if self._stdout_cached is None:
+            self._stdout_cached = "".join(self._stdout_chunks)
+        return self._stdout_cached
 
     @property
     def stderr(self):
         """
         Command stderr output.
         """
-        return "".join(self._stderr_chunks)
+        if self._stderr_cached is None:
+            self._stderr_cached = "".join(self._stderr_chunks)
+        return self._stderr_cached
 
     @property
     def error(self):
@@ -89,6 +93,8 @@ class AsyncCommandHandle:
 
         self._stdout_chunks: list[str] = []
         self._stderr_chunks: list[str] = []
+        self._stdout_cached: Optional[str] = None
+        self._stderr_cached: Optional[str] = None
 
         self._on_stdout = on_stdout
         self._on_stderr = on_stderr
@@ -114,10 +120,12 @@ class AsyncCommandHandle:
                 if event.event.data.stdout:
                     out = event.event.data.stdout.decode("utf-8", "replace")
                     self._stdout_chunks.append(out)
+                    self._stdout_cached = None
                     yield out, None, None
                 if event.event.data.stderr:
                     out = event.event.data.stderr.decode("utf-8", "replace")
                     self._stderr_chunks.append(out)
+                    self._stderr_cached = None
                     yield None, out, None
                 if event.event.data.pty:
                     yield None, None, event.event.data.pty
