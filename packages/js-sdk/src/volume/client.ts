@@ -3,6 +3,7 @@ import createClient from 'openapi-fetch'
 import type { components, paths } from './schema.gen'
 import { defaultHeaders, getEnvVar } from '../api/metadata'
 import { createApiLogger, Logger } from '../logs'
+import { getProxyFetch } from '../proxy'
 import type { Volume } from './index'
 
 const FILE_TIMEOUT_MS = 3_600_000 // 1 hour
@@ -99,6 +100,7 @@ class VolumeApiClient {
   constructor(config: VolumeConnectionConfig) {
     this.api = createClient<paths>({
       baseUrl: config.apiUrl,
+      fetch: getProxyFetch(),
       headers: {
         ...defaultHeaders,
         ...(config.token && { Authorization: `Bearer ${config.token}` }),
