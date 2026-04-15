@@ -99,6 +99,14 @@
     "platform": "^1.3.6",
     "tar": "^7.5.11"
   },
+  "peerDependencies": {
+    "mppx": ">=0.0.1"
+  },
+  "peerDependenciesMeta": {
+    "mppx": {
+      "optional": true
+    }
+  },
   "engines": {
     "node": ">=20"
   },

@@ -30,6 +30,17 @@ export function handleApiError(
     return new AuthenticationError(message)
   }
 
+  if (response.response.status === 402) {
+    const message =
+      'Payment required. Configure payment in SDK options or provide an API key.'
+    const content = response.error?.message ?? response.error
+
+    if (content) {
+      return new AuthenticationError(`${message} - ${content}`)
+    }
+    return new AuthenticationError(message)
+  }
+
   if (response.response.status === 429) {
     const message = 'Rate limit exceeded, please try again later'
     const content = response.error?.message ?? response.error
@@ -57,11 +68,12 @@ class ApiClient {
       requireApiKey?: boolean
     } = { requireAccessToken: false, requireApiKey: false }
   ) {
-    if (opts?.requireApiKey && !config.apiKey) {
+    if (opts?.requireApiKey && !config.apiKey && !config.payment) {
       throw new AuthenticationError(
         'API key is required, please visit the Team tab at https://e2b.dev/dashboard to get your API key. ' +
           'You can either set the environment variable `E2B_API_KEY` ' +
-          "or you can pass it directly to the sandbox like Sandbox.create({ apiKey: 'e2b_...' })"
+          "or you can pass it directly to the sandbox like Sandbox.create({ apiKey: 'e2b_...' })" +
+          " or configure payment: { client: mppx } for pay-per-use access."
       )
     }
 
@@ -90,6 +102,11 @@ class ApiClient {
           explode: false,
         },
       },
+      // Use mppx fetch when payment is configured — it handles the
+      // HTTP 402 challenge/credential flow automatically.
+      ...(config.payment && {
+        fetch: config.payment.client.fetch,
+      }),
     })
 
     if (config.logger) {

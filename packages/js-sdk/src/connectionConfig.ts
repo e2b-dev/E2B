@@ -62,6 +62,30 @@ export interface ConnectionOpts {
    * Additional headers to send with the request.
    */
   headers?: Record<string, string>
+
+  /**
+   * MPP payment configuration for pay-per-use sandbox access.
+   * When provided, the SDK uses the Machine Payments Protocol (HTTP 402)
+   * instead of API key authentication. Requires the `mppx` package.
+   *
+   * @example
+   * ```ts
+   * import { Sandbox } from 'e2b'
+   * import { Mppx, tempo } from 'mppx/client'
+   * import { privateKeyToAccount } from 'viem/accounts'
+   *
+   * const mppx = Mppx.create({
+   *   methods: [tempo({ account: privateKeyToAccount('0x...') })],
+   * })
+   *
+   * const sandbox = await Sandbox.create({
+   *   payment: { client: mppx },
+   * })
+   * ```
+   */
+  payment?: {
+    client: { fetch: typeof fetch }
+  }
 }
 
 /**
@@ -82,6 +106,7 @@ export class ConnectionConfig {
   readonly accessToken?: string
 
   readonly headers?: Record<string, string>
+  readonly payment?: ConnectionOpts['payment']
 
   constructor(opts?: ConnectionOpts) {
     this.apiKey = opts?.apiKey || ConnectionConfig.apiKey
@@ -90,6 +115,7 @@ export class ConnectionConfig {
     this.accessToken = opts?.accessToken || ConnectionConfig.accessToken
     this.requestTimeoutMs = opts?.requestTimeoutMs ?? REQUEST_TIMEOUT_MS
     this.logger = opts?.logger
+    this.payment = opts?.payment
     this.headers = opts?.headers || {}
     this.headers['User-Agent'] = `e2b-js-sdk/${version}`
 
