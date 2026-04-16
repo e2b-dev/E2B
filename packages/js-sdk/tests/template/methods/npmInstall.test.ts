@@ -1,5 +1,5 @@
-import { Template } from '../../../src'
-import { buildTemplateTest } from '../../setup'
+// import { Template } from '../../../src'
+// import { buildTemplateTest } from '../../setup'
 
 // buildTemplateTest('npm install', async ({ buildTemplate }) => {
 //   const template = Template()
