@@ -35,12 +35,185 @@ import {
 import {
   FileNotFoundError,
   InvalidArgumentError,
+  RateLimitError,
   TemplateError,
 } from '../../errors'
 import { toBlob, toUploadBody } from '../../utils'
 
 const FILESYSTEM_HTTP_ERROR_MAP: Record<number, (message: string) => Error> = {
   404: (message: string) => new FileNotFoundError(message),
+  429: (message: string) =>
+    new RateLimitError(`${message}: The requests are being rate limited.`),
+}
+
+const MAX_CONCURRENT_FILE_UPLOADS_ENV = 'E2B_MAX_CONCURRENT_FILE_UPLOADS'
+const DEFAULT_MAX_CONCURRENT_FILE_UPLOADS = 8
+const MAX_GLOBAL_CONCURRENT_FILE_UPLOADS_ENV =
+  'E2B_MAX_GLOBAL_CONCURRENT_FILE_UPLOADS'
+const DEFAULT_MAX_GLOBAL_CONCURRENT_FILE_UPLOADS = 128
+const FILE_UPLOAD_RETRY_ATTEMPTS_ENV = 'E2B_FILE_UPLOAD_RETRY_ATTEMPTS'
+const DEFAULT_FILE_UPLOAD_RETRY_ATTEMPTS = 4
+const FILE_UPLOAD_RETRY_BASE_DELAY_MS = 250
+const FILE_UPLOAD_RETRY_MAX_DELAY_MS = 4_000
+const FILE_UPLOAD_RETRY_JITTER_MS = 250
+
+class Semaphore {
+  private active = 0
+  private readonly waiting: (() => void)[] = []
+
+  constructor(private readonly limit: number) {}
+
+  async run<T>(fn: () => Promise<T>): Promise<T> {
+    await this.acquire()
+    try {
+      return await fn()
+    } finally {
+      this.release()
+    }
+  }
+
+  private async acquire() {
+    if (this.active < this.limit) {
+      this.active += 1
+      return
+    }
+
+    await new Promise<void>((resolve) => {
+      this.waiting.push(resolve)
+    })
+  }
+
+  private release() {
+    const next = this.waiting.shift()
+    if (next) {
+      next()
+      return
+    }
+    this.active -= 1
+  }
+}
+
+const globalFileUploadSemaphores = new Map<number, Semaphore>()
+
+function getEnvNumber(name: string, defaultValue: number) {
+  const value = typeof process !== 'undefined' ? process.env?.[name] : undefined
+  if (value == undefined || value === '') return defaultValue
+
+  const parsed = Number.parseInt(value, 10)
+  if (!Number.isInteger(parsed) || parsed < 1) {
+    throw new InvalidArgumentError(`${name} must be a positive integer`)
+  }
+
+  return parsed
+}
+
+function getMaxConcurrentFileUploads() {
+  return getEnvNumber(
+    MAX_CONCURRENT_FILE_UPLOADS_ENV,
+    DEFAULT_MAX_CONCURRENT_FILE_UPLOADS
+  )
+}
+
+function getFileUploadRetryAttempts() {
+  return getEnvNumber(
+    FILE_UPLOAD_RETRY_ATTEMPTS_ENV,
+    DEFAULT_FILE_UPLOAD_RETRY_ATTEMPTS
+  )
+}
+
+function getGlobalFileUploadSemaphore() {
+  const maxUploads = getEnvNumber(
+    MAX_GLOBAL_CONCURRENT_FILE_UPLOADS_ENV,
+    DEFAULT_MAX_GLOBAL_CONCURRENT_FILE_UPLOADS
+  )
+
+  let semaphore = globalFileUploadSemaphores.get(maxUploads)
+  if (!semaphore) {
+    semaphore = new Semaphore(maxUploads)
+    globalFileUploadSemaphores.set(maxUploads, semaphore)
+  }
+
+  return semaphore
+}
+
+function fileUploadRetryDelayMs(attempt: number) {
+  return (
+    Math.min(
+      FILE_UPLOAD_RETRY_MAX_DELAY_MS,
+      FILE_UPLOAD_RETRY_BASE_DELAY_MS * 2 ** (attempt - 1)
+    ) +
+    Math.random() * FILE_UPLOAD_RETRY_JITTER_MS
+  )
+}
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+function isRetryableFileUploadError(err: unknown) {
+  if (err instanceof RateLimitError) return true
+  if (!(err instanceof Error)) return false
+  if (err.name === 'AbortError') return false
+
+  return (
+    err instanceof TypeError ||
+    err.name === 'FetchError' ||
+    err.name === 'ConnectError' ||
+    err.name === 'NetworkError' ||
+    /fetch|network|socket|connection|terminated|closed/i.test(err.message)
+  )
+}
+
+async function retryFileUpload<T>(fn: () => Promise<T>) {
+  const attempts = getFileUploadRetryAttempts()
+  const globalUploads = getGlobalFileUploadSemaphore()
+
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      return await globalUploads.run(fn)
+    } catch (err) {
+      if (attempt >= attempts || !isRetryableFileUploadError(err)) {
+        throw err
+      }
+
+      await sleep(fileUploadRetryDelayMs(attempt))
+    }
+  }
+
+  throw new Error('Unexpected file upload retry state')
+}
+
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  limit: number,
+  fn: (item: T, index: number) => Promise<R>
+): Promise<R[]> {
+  const results = new Array<R | undefined>(items.length)
+  const errors: unknown[] = []
+  let nextIndex = 0
+
+  async function worker() {
+    while (nextIndex < items.length) {
+      const index = nextIndex
+      nextIndex += 1
+
+      try {
+        results[index] = await fn(items[index]!, index)
+      } catch (err) {
+        errors.push(err)
+      }
+    }
+  }
+
+  await Promise.all(
+    Array.from({ length: Math.min(limit, items.length) }, () => worker())
+  )
+
+  if (errors.length > 0) {
+    throw errors[0]
+  }
+
+  return results as R[]
 }
 
 const FILESYSTEM_RPC_ERROR_MAP: Partial<
@@ -430,11 +603,14 @@ export class Filesystem {
         headers['Content-Encoding'] = 'gzip'
       }
 
-      const uploadResults = await Promise.all(
-        writeFiles.map(async (file) => {
-          const filePath = path ?? (file as WriteEntry).path
-          const body = await toUploadBody(file.data, useGzip)
+      const uploadResults = await mapWithConcurrency<
+        WriteEntry | { data: WriteEntry['data'] },
+        WriteInfo[]
+      >(writeFiles, getMaxConcurrentFileUploads(), async (file) => {
+        const filePath = path ?? (file as WriteEntry).path
+        const body = await toUploadBody(file.data, useGzip)
 
+        return retryFileUpload(async () => {
           const res = await this.envdApi.api.POST('/files', {
             params: {
               query: {
@@ -464,7 +640,7 @@ export class Filesystem {
 
           return files
         })
-      )
+      })
 
       for (const files of uploadResults) {
         results.push(...files)

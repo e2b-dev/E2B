@@ -1,4 +1,6 @@
 import asyncio
+import os
+import random
 from io import IOBase, TextIOBase
 from typing import IO, AsyncIterator, List, Literal, Optional, Union, overload
 
@@ -26,6 +28,7 @@ from e2b.envd.versions import (
 from e2b.exceptions import (
     FileNotFoundException,
     InvalidArgumentException,
+    RateLimitException,
     SandboxException,
     TemplateException,
 )
@@ -47,7 +50,34 @@ _FILESYSTEM_RPC_ERROR_MAP = {
 
 _FILESYSTEM_HTTP_ERROR_MAP = {
     404: FileNotFoundException,
+    429: lambda message: RateLimitException(
+        f"{message}: The requests are being rate limited."
+    ),
 }
+
+_MAX_CONCURRENT_FILE_UPLOADS_ENV = "E2B_MAX_CONCURRENT_FILE_UPLOADS"
+_DEFAULT_MAX_CONCURRENT_FILE_UPLOADS = 8
+_MAX_GLOBAL_CONCURRENT_FILE_UPLOADS_ENV = "E2B_MAX_GLOBAL_CONCURRENT_FILE_UPLOADS"
+_DEFAULT_MAX_GLOBAL_CONCURRENT_FILE_UPLOADS = 128
+_FILE_UPLOAD_RETRY_ATTEMPTS_ENV = "E2B_FILE_UPLOAD_RETRY_ATTEMPTS"
+_DEFAULT_FILE_UPLOAD_RETRY_ATTEMPTS = 4
+_FILE_UPLOAD_RETRY_BASE_DELAY = 0.25
+_FILE_UPLOAD_RETRY_MAX_DELAY = 4.0
+_FILE_UPLOAD_RETRY_JITTER = 0.25
+
+_TRANSIENT_FILE_UPLOAD_ERRORS = (
+    httpx.ConnectError,
+    httpx.ConnectTimeout,
+    httpx.PoolTimeout,
+    httpx.ReadError,
+    httpx.ReadTimeout,
+    httpx.RemoteProtocolError,
+    httpx.WriteError,
+    httpx.WriteTimeout,
+    RateLimitException,
+)
+
+_GLOBAL_FILE_UPLOAD_SEMAPHORES: dict[tuple[int, int], asyncio.Semaphore] = {}
 
 
 def _handle_filesystem_rpc_exception(e: Exception) -> Exception:
@@ -56,6 +86,86 @@ def _handle_filesystem_rpc_exception(e: Exception) -> Exception:
 
 async def _ahandle_filesystem_envd_api_exception(r):
     return await ahandle_envd_api_exception(r, _FILESYSTEM_HTTP_ERROR_MAP)
+
+
+def _get_max_concurrent_file_uploads() -> int:
+    value = os.getenv(
+        _MAX_CONCURRENT_FILE_UPLOADS_ENV,
+        str(_DEFAULT_MAX_CONCURRENT_FILE_UPLOADS),
+    )
+    try:
+        max_uploads = int(value)
+    except ValueError:
+        raise InvalidArgumentException(
+            f"{_MAX_CONCURRENT_FILE_UPLOADS_ENV} must be an integer"
+        )
+
+    if max_uploads < 1:
+        raise InvalidArgumentException(
+            f"{_MAX_CONCURRENT_FILE_UPLOADS_ENV} must be greater than 0"
+        )
+
+    return max_uploads
+
+
+def _get_file_upload_retry_attempts() -> int:
+    value = os.getenv(
+        _FILE_UPLOAD_RETRY_ATTEMPTS_ENV,
+        str(_DEFAULT_FILE_UPLOAD_RETRY_ATTEMPTS),
+    )
+    try:
+        attempts = int(value)
+    except ValueError:
+        raise InvalidArgumentException(
+            f"{_FILE_UPLOAD_RETRY_ATTEMPTS_ENV} must be an integer"
+        )
+
+    if attempts < 1:
+        raise InvalidArgumentException(
+            f"{_FILE_UPLOAD_RETRY_ATTEMPTS_ENV} must be greater than 0"
+        )
+
+    return attempts
+
+
+def _get_max_global_concurrent_file_uploads() -> int:
+    value = os.getenv(
+        _MAX_GLOBAL_CONCURRENT_FILE_UPLOADS_ENV,
+        str(_DEFAULT_MAX_GLOBAL_CONCURRENT_FILE_UPLOADS),
+    )
+    try:
+        max_uploads = int(value)
+    except ValueError:
+        raise InvalidArgumentException(
+            f"{_MAX_GLOBAL_CONCURRENT_FILE_UPLOADS_ENV} must be an integer"
+        )
+
+    if max_uploads < 1:
+        raise InvalidArgumentException(
+            f"{_MAX_GLOBAL_CONCURRENT_FILE_UPLOADS_ENV} must be greater than 0"
+        )
+
+    return max_uploads
+
+
+def _get_global_file_upload_semaphore() -> asyncio.Semaphore:
+    max_uploads = _get_max_global_concurrent_file_uploads()
+    key = (id(asyncio.get_running_loop()), max_uploads)
+
+    semaphore = _GLOBAL_FILE_UPLOAD_SEMAPHORES.get(key)
+    if semaphore is None:
+        semaphore = asyncio.Semaphore(max_uploads)
+        _GLOBAL_FILE_UPLOAD_SEMAPHORES[key] = semaphore
+
+    return semaphore
+
+
+def _file_upload_retry_delay(attempt: int) -> float:
+    delay = min(
+        _FILE_UPLOAD_RETRY_MAX_DELAY,
+        _FILE_UPLOAD_RETRY_BASE_DELAY * (2 ** (attempt - 1)),
+    )
+    return delay + random.random() * _FILE_UPLOAD_RETRY_JITTER
 
 
 class Filesystem:
@@ -294,10 +404,58 @@ class Filesystem:
 
                 return [WriteInfo(**f) for f in write_result]
 
-            upload_results = await asyncio.gather(
-                *[_upload_file(file) for file in files]
+            async def _upload_file_with_retries(file):
+                attempts = _get_file_upload_retry_attempts()
+                global_uploads = _get_global_file_upload_semaphore()
+                for attempt in range(1, attempts + 1):
+                    try:
+                        async with global_uploads:
+                            return await _upload_file(file)
+                    except _TRANSIENT_FILE_UPLOAD_ERRORS:
+                        if attempt >= attempts:
+                            raise
+                        await asyncio.sleep(_file_upload_retry_delay(attempt))
+
+                raise SandboxException("Unexpected file upload retry state")
+
+            max_concurrent_uploads = min(
+                _get_max_concurrent_file_uploads(),
+                len(files),
             )
+            upload_queue: asyncio.Queue = asyncio.Queue()
+            upload_results: List[Optional[List[WriteInfo]]] = [None] * len(files)
+            errors: List[Exception] = []
+
+            for index, file in enumerate(files):
+                upload_queue.put_nowait((index, file))
+
+            async def _upload_worker():
+                while True:
+                    try:
+                        index, file = upload_queue.get_nowait()
+                    except asyncio.QueueEmpty:
+                        return
+
+                    try:
+                        upload_results[index] = await _upload_file_with_retries(file)
+                    except Exception as e:
+                        errors.append(e)
+                    finally:
+                        upload_queue.task_done()
+
+            await asyncio.gather(
+                *[
+                    asyncio.create_task(_upload_worker())
+                    for _ in range(max_concurrent_uploads)
+                ]
+            )
+
+            if errors:
+                raise errors[0]
+
             for file_results in upload_results:
+                if file_results is None:
+                    continue
                 results.extend(file_results)
         else:
             params = {}
