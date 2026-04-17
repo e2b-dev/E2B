@@ -147,6 +147,37 @@ function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
+function combineAbortSignals(signals: AbortSignal[]) {
+  if (signals.length === 1) return { signal: signals[0]!, cleanup: () => {} }
+
+  const controller = new AbortController()
+  const cleanups: (() => void)[] = []
+
+  const cleanup = () => {
+    while (cleanups.length > 0) {
+      cleanups.pop()?.()
+    }
+  }
+
+  const abortFrom = (signal: AbortSignal) => {
+    cleanup()
+    controller.abort(signal.reason)
+  }
+
+  for (const signal of signals) {
+    if (signal.aborted) {
+      abortFrom(signal)
+      return { signal: controller.signal, cleanup }
+    }
+
+    const onAbort = () => abortFrom(signal)
+    signal.addEventListener('abort', onAbort, { once: true })
+    cleanups.push(() => signal.removeEventListener('abort', onAbort))
+  }
+
+  return { signal: controller.signal, cleanup }
+}
+
 // Error codes that indicate client-side connection saturation or
 // transient transport failure — retrying under bounded concurrency is safe.
 const RETRYABLE_NETWORK_CODES = new Set([
@@ -651,36 +682,40 @@ export class Filesystem {
             const timeoutSignal = this.connectionConfig.getSignal(
               writeOpts?.requestTimeoutMs
             )
-            const signal = timeoutSignal
-              ? AbortSignal.any([abortSignal, timeoutSignal])
-              : abortSignal
+            const { signal, cleanup } = timeoutSignal
+              ? combineAbortSignals([abortSignal, timeoutSignal])
+              : { signal: abortSignal, cleanup: () => {} }
 
-            const res = await this.envdApi.api.POST('/files', {
-              params: {
-                query: {
-                  path: filePath,
-                  username: user,
+            try {
+              const res = await this.envdApi.api.POST('/files', {
+                params: {
+                  query: {
+                    path: filePath,
+                    username: user,
+                  },
                 },
-              },
-              bodySerializer: () => body,
-              headers,
-              signal,
-              body: {},
-            })
+                bodySerializer: () => body,
+                headers,
+                signal,
+                body: {},
+              })
 
-            const err = await handleFilesystemEnvdApiError(res)
-            if (err) {
-              throw err
+              const err = await handleFilesystemEnvdApiError(res)
+              if (err) {
+                throw err
+              }
+
+              const files = res.data as WriteInfo[]
+              if (!files || files.length === 0) {
+                throw new Error(
+                  'Expected to receive information about written file'
+                )
+              }
+
+              return files
+            } finally {
+              cleanup()
             }
-
-            const files = res.data as WriteInfo[]
-            if (!files || files.length === 0) {
-              throw new Error(
-                'Expected to receive information about written file'
-              )
-            }
-
-            return files
           })
         }
       )
