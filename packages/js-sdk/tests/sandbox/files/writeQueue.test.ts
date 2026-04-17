@@ -34,6 +34,7 @@ function fetchFailed(code: string): TypeError {
 class FakeEnvdApi {
   version = '0.5.11'
   calls = 0
+  bodies: Uint8Array[] = []
   api: { POST: (...args: unknown[]) => Promise<unknown> }
 
   constructor(
@@ -44,6 +45,8 @@ class FakeEnvdApi {
     this.api = {
       POST: async (_path, opts) => {
         this.calls += 1
+        const body = await (opts as any).bodySerializer()
+        this.bodies.push(await bodyToBytes(body))
         await this.counter.track(this.delayMs)
 
         const outcome = this.outcomes.shift()
@@ -59,6 +62,22 @@ class FakeEnvdApi {
       },
     }
   }
+}
+
+async function bodyToBytes(body: BodyInit): Promise<Uint8Array> {
+  if (body instanceof Blob) {
+    return new Uint8Array(await body.arrayBuffer())
+  }
+  if (typeof body === 'string') {
+    return new TextEncoder().encode(body)
+  }
+  if (body instanceof ArrayBuffer) {
+    return new Uint8Array(body)
+  }
+  if (body instanceof ReadableStream) {
+    return new Uint8Array(await new Response(body).arrayBuffer())
+  }
+  throw new Error(`Unsupported test body type: ${typeof body}`)
 }
 
 function createFilesystem(envdApi: FakeEnvdApi) {
@@ -131,6 +150,27 @@ test('writeFiles retries fetch-failed errors with a known network cause', async 
 
   assert.equal((infos as unknown[]).length, 1)
   assert.equal(envdApi.calls, 3)
+})
+
+test('writeFiles retries gzip upload bodies without consuming the retry body', async () => {
+  vi.spyOn(Math, 'random').mockReturnValue(0)
+  process.env.E2B_MAX_CONCURRENT_FILE_UPLOADS = '1'
+  process.env.E2B_FILE_UPLOAD_RETRY_ATTEMPTS = '2'
+  const envdApi = new FakeEnvdApi(
+    new UploadCounter(),
+    [fetchFailed('ECONNRESET'), undefined],
+    0
+  )
+
+  const infos = await createFilesystem(envdApi).writeFiles(
+    [{ path: '/tmp/retry-gzip.txt', data: new Blob(['retry gzip']) }],
+    { gzip: true }
+  )
+
+  assert.equal((infos as unknown[]).length, 1)
+  assert.equal(envdApi.calls, 2)
+  assert.isAbove(envdApi.bodies[0]!.byteLength, 0)
+  assert.deepEqual(Array.from(envdApi.bodies[0]!), Array.from(envdApi.bodies[1]!))
 })
 
 test('writeFiles does not retry fetch-failed without a known network cause', async () => {
