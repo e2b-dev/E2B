@@ -363,7 +363,7 @@ class Filesystem:
 
         if use_octet_stream:
 
-            async def _upload_file(file):
+            def _prepare_upload_file(file):
                 file_path, file_data = file["path"], file["data"]
 
                 content = to_upload_body(file_data, gzip)
@@ -376,6 +376,9 @@ class Filesystem:
                 if gzip:
                     headers["Content-Encoding"] = "gzip"
 
+                return content, params, headers
+
+            async def _upload_prepared_file(content, params, headers):
                 r = await self._envd_api.post(
                     ENVD_API_FILES_ROUTE,
                     content=content,
@@ -402,10 +405,15 @@ class Filesystem:
             async def _upload_file_with_retries(file):
                 attempts = _get_file_upload_retry_attempts()
                 global_uploads = _get_global_file_upload_semaphore()
+                prepared_upload = None
+
                 for attempt in range(1, attempts + 1):
                     try:
                         async with global_uploads:
-                            return await _upload_file(file)
+                            if prepared_upload is None:
+                                prepared_upload = _prepare_upload_file(file)
+                            content, params, headers = prepared_upload
+                            return await _upload_prepared_file(content, params, headers)
                     except _TRANSIENT_FILE_UPLOAD_ERRORS:
                         if attempt >= attempts:
                             raise
