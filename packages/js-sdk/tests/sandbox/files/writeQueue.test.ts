@@ -1,4 +1,4 @@
-import { afterEach, assert, test, vi } from 'vitest'
+import { afterEach, assert, expect, test, vi } from 'vitest'
 import { Filesystem, WriteEntry } from '../../../src/sandbox/filesystem'
 
 const ENV_KEYS = [
@@ -25,7 +25,11 @@ class UploadCounter {
   }
 }
 
-type UploadOutcome = Error | number | undefined
+type UploadOutcome = Error | undefined
+
+function fetchFailed(code: string): TypeError {
+  return new TypeError('fetch failed', { cause: { code } })
+}
 
 class FakeEnvdApi {
   version = '0.5.11'
@@ -48,18 +52,6 @@ class FakeEnvdApi {
         }
 
         const path = (opts as any).params.query.path
-        if (typeof outcome === 'number') {
-          return {
-            response: new Response(
-              JSON.stringify({ message: 'rate limited' }),
-              {
-                status: outcome,
-              }
-            ),
-            error: { message: 'rate limited' },
-          }
-        }
-
         return {
           response: new Response('{}', { status: 200 }),
           data: [{ name: path.split('/').pop(), type: 'file', path }],
@@ -120,14 +112,14 @@ test('writeFiles applies global upload concurrency', async () => {
   assert.equal(counter.maxActive, 2)
 })
 
-test('writeFiles retries transient and rate-limit upload errors', async () => {
+test('writeFiles retries fetch-failed errors with a known network cause', async () => {
   vi.useFakeTimers()
   vi.spyOn(Math, 'random').mockReturnValue(0)
   process.env.E2B_MAX_CONCURRENT_FILE_UPLOADS = '1'
   process.env.E2B_FILE_UPLOAD_RETRY_ATTEMPTS = '3'
   const envdApi = new FakeEnvdApi(
     new UploadCounter(),
-    [new TypeError('fetch failed'), 429, undefined],
+    [fetchFailed('ECONNRESET'), fetchFailed('EMFILE'), undefined],
     0
   )
 
@@ -139,4 +131,33 @@ test('writeFiles retries transient and rate-limit upload errors', async () => {
 
   assert.equal((infos as unknown[]).length, 1)
   assert.equal(envdApi.calls, 3)
+})
+
+test('writeFiles does not retry fetch-failed without a known network cause', async () => {
+  process.env.E2B_MAX_CONCURRENT_FILE_UPLOADS = '1'
+  process.env.E2B_FILE_UPLOAD_RETRY_ATTEMPTS = '3'
+  const envdApi = new FakeEnvdApi(
+    new UploadCounter(),
+    [new TypeError('fetch failed')],
+    0
+  )
+
+  await expect(
+    createFilesystem(envdApi).writeFiles([
+      { path: '/tmp/noretry.txt', data: 'noretry' },
+    ])
+  ).rejects.toThrow(/fetch failed/)
+  assert.equal(envdApi.calls, 1)
+})
+
+test('writeFiles stops issuing uploads after a non-retryable error', async () => {
+  process.env.E2B_MAX_CONCURRENT_FILE_UPLOADS = '2'
+  process.env.E2B_FILE_UPLOAD_RETRY_ATTEMPTS = '1'
+  // First upload fails non-retryably; remaining files should not be posted.
+  const envdApi = new FakeEnvdApi(new UploadCounter(), [new Error('nope')], 0)
+
+  await expect(
+    createFilesystem(envdApi).writeFiles(files('abort', 10))
+  ).rejects.toThrow(/nope/)
+  assert.isBelow(envdApi.calls, 10)
 })

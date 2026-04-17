@@ -28,7 +28,6 @@ from e2b.envd.versions import (
 from e2b.exceptions import (
     FileNotFoundException,
     InvalidArgumentException,
-    RateLimitException,
     SandboxException,
     TemplateException,
 )
@@ -50,9 +49,6 @@ _FILESYSTEM_RPC_ERROR_MAP = {
 
 _FILESYSTEM_HTTP_ERROR_MAP = {
     404: FileNotFoundException,
-    429: lambda message: RateLimitException(
-        f"{message}: The requests are being rate limited."
-    ),
 }
 
 _MAX_CONCURRENT_FILE_UPLOADS_ENV = "E2B_MAX_CONCURRENT_FILE_UPLOADS"
@@ -74,7 +70,6 @@ _TRANSIENT_FILE_UPLOAD_ERRORS = (
     httpx.RemoteProtocolError,
     httpx.WriteError,
     httpx.WriteTimeout,
-    RateLimitException,
 )
 
 _GLOBAL_FILE_UPLOAD_SEMAPHORES: dict[tuple[int, int], asyncio.Semaphore] = {}
@@ -416,6 +411,7 @@ class Filesystem:
                             raise
                         await asyncio.sleep(_file_upload_retry_delay(attempt))
 
+                # Unreachable: the loop either returns or raises.
                 raise SandboxException("Unexpected file upload retry state")
 
             max_concurrent_uploads = min(
@@ -424,13 +420,14 @@ class Filesystem:
             )
             upload_queue: asyncio.Queue = asyncio.Queue()
             upload_results: List[Optional[List[WriteInfo]]] = [None] * len(files)
-            errors: List[Exception] = []
+            first_error: List[Exception] = []
+            stop_event = asyncio.Event()
 
             for index, file in enumerate(files):
                 upload_queue.put_nowait((index, file))
 
             async def _upload_worker():
-                while True:
+                while not stop_event.is_set():
                     try:
                         index, file = upload_queue.get_nowait()
                     except asyncio.QueueEmpty:
@@ -439,7 +436,10 @@ class Filesystem:
                     try:
                         upload_results[index] = await _upload_file_with_retries(file)
                     except Exception as e:
-                        errors.append(e)
+                        if not first_error:
+                            first_error.append(e)
+                            stop_event.set()
+                        return
                     finally:
                         upload_queue.task_done()
 
@@ -450,8 +450,8 @@ class Filesystem:
                 ]
             )
 
-            if errors:
-                raise errors[0]
+            if first_error:
+                raise first_error[0]
 
             for file_results in upload_results:
                 if file_results is None:

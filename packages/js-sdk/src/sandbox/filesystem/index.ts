@@ -35,15 +35,12 @@ import {
 import {
   FileNotFoundError,
   InvalidArgumentError,
-  RateLimitError,
   TemplateError,
 } from '../../errors'
 import { toBlob, toUploadBody } from '../../utils'
 
 const FILESYSTEM_HTTP_ERROR_MAP: Record<number, (message: string) => Error> = {
   404: (message: string) => new FileNotFoundError(message),
-  429: (message: string) =>
-    new RateLimitError(`${message}: The requests are being rate limited.`),
 }
 
 const MAX_CONCURRENT_FILE_UPLOADS_ENV = 'E2B_MAX_CONCURRENT_FILE_UPLOADS'
@@ -150,17 +147,46 @@ function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
+// Error codes that indicate client-side connection saturation or
+// transient transport failure — retrying under bounded concurrency is safe.
+const RETRYABLE_NETWORK_CODES = new Set([
+  'EMFILE',
+  'ENFILE',
+  'ECONNRESET',
+  'ECONNREFUSED',
+  'ECONNABORTED',
+  'ETIMEDOUT',
+  'EPIPE',
+  'EAI_AGAIN',
+  'ENETUNREACH',
+  'UND_ERR_SOCKET',
+  'UND_ERR_CONNECT_TIMEOUT',
+  'UND_ERR_HEADERS_TIMEOUT',
+  'UND_ERR_BODY_TIMEOUT',
+])
+
 function isRetryableFileUploadError(err: unknown) {
-  if (err instanceof RateLimitError) return true
   if (!(err instanceof Error)) return false
   if (err.name === 'AbortError') return false
 
+  // undici (Node fetch) surfaces network failures as `TypeError: fetch failed`
+  // with the underlying network error on `err.cause`. Require a known network
+  // code so programmer errors (e.g. `undefined.foo`) aren't retried.
+  const cause = (err as Error & { cause?: { code?: string } }).cause
+  if (cause?.code && RETRYABLE_NETWORK_CODES.has(cause.code)) {
+    return true
+  }
+
+  // Some runtimes / libraries surface the code directly on the error.
+  const code = (err as Error & { code?: string }).code
+  if (code && RETRYABLE_NETWORK_CODES.has(code)) {
+    return true
+  }
+
   return (
-    err instanceof TypeError ||
     err.name === 'FetchError' ||
     err.name === 'ConnectError' ||
-    err.name === 'NetworkError' ||
-    /fetch|network|socket|connection|terminated|closed/i.test(err.message)
+    err.name === 'NetworkError'
   )
 }
 
@@ -180,27 +206,35 @@ async function retryFileUpload<T>(fn: () => Promise<T>) {
     }
   }
 
+  // Unreachable: the loop either returns or throws.
   throw new Error('Unexpected file upload retry state')
 }
 
 async function mapWithConcurrency<T, R>(
   items: T[],
   limit: number,
-  fn: (item: T, index: number) => Promise<R>
+  fn: (item: T, index: number, signal: AbortSignal) => Promise<R>
 ): Promise<R[]> {
+  if (items.length === 0) return []
+
   const results = new Array<R | undefined>(items.length)
-  const errors: unknown[] = []
+  const controller = new AbortController()
   let nextIndex = 0
+  let firstError: unknown
 
   async function worker() {
-    while (nextIndex < items.length) {
+    while (nextIndex < items.length && !controller.signal.aborted) {
       const index = nextIndex
       nextIndex += 1
 
       try {
-        results[index] = await fn(items[index]!, index)
+        results[index] = await fn(items[index]!, index, controller.signal)
       } catch (err) {
-        errors.push(err)
+        if (firstError === undefined) {
+          firstError = err
+          controller.abort()
+        }
+        return
       }
     }
   }
@@ -209,8 +243,8 @@ async function mapWithConcurrency<T, R>(
     Array.from({ length: Math.min(limit, items.length) }, () => worker())
   )
 
-  if (errors.length > 0) {
-    throw errors[0]
+  if (firstError !== undefined) {
+    throw firstError
   }
 
   return results as R[]
@@ -606,41 +640,50 @@ export class Filesystem {
       const uploadResults = await mapWithConcurrency<
         WriteEntry | { data: WriteEntry['data'] },
         WriteInfo[]
-      >(writeFiles, getMaxConcurrentFileUploads(), async (file) => {
-        const filePath = path ?? (file as WriteEntry).path
-        const body = await toUploadBody(file.data, useGzip)
+      >(
+        writeFiles,
+        getMaxConcurrentFileUploads(),
+        async (file, _index, abortSignal) => {
+          const filePath = path ?? (file as WriteEntry).path
+          const body = await toUploadBody(file.data, useGzip)
 
-        return retryFileUpload(async () => {
-          const res = await this.envdApi.api.POST('/files', {
-            params: {
-              query: {
-                path: filePath,
-                username: user,
-              },
-            },
-            bodySerializer: () => body,
-            headers,
-            signal: this.connectionConfig.getSignal(
+          return retryFileUpload(async () => {
+            const timeoutSignal = this.connectionConfig.getSignal(
               writeOpts?.requestTimeoutMs
-            ),
-            body: {},
-          })
-
-          const err = await handleFilesystemEnvdApiError(res)
-          if (err) {
-            throw err
-          }
-
-          const files = res.data as WriteInfo[]
-          if (!files || files.length === 0) {
-            throw new Error(
-              'Expected to receive information about written file'
             )
-          }
+            const signal = timeoutSignal
+              ? AbortSignal.any([abortSignal, timeoutSignal])
+              : abortSignal
 
-          return files
-        })
-      })
+            const res = await this.envdApi.api.POST('/files', {
+              params: {
+                query: {
+                  path: filePath,
+                  username: user,
+                },
+              },
+              bodySerializer: () => body,
+              headers,
+              signal,
+              body: {},
+            })
+
+            const err = await handleFilesystemEnvdApiError(res)
+            if (err) {
+              throw err
+            }
+
+            const files = res.data as WriteInfo[]
+            if (!files || files.length === 0) {
+              throw new Error(
+                'Expected to receive information about written file'
+              )
+            }
+
+            return files
+          })
+        }
+      )
 
       for (const files of uploadResults) {
         results.push(...files)

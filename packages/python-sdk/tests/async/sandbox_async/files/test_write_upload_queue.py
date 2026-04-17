@@ -49,7 +49,7 @@ class FakeEnvdApi:
     def __init__(
         self,
         counter: UploadCounter | None = None,
-        outcomes: list[Exception | int | None] | None = None,
+        outcomes: list[Exception | None] | None = None,
     ):
         self.counter = counter or UploadCounter()
         self.outcomes = list(outcomes or [])
@@ -62,8 +62,6 @@ class FakeEnvdApi:
         outcome = self.outcomes.pop(0) if self.outcomes else None
         if isinstance(outcome, Exception):
             raise outcome
-        if isinstance(outcome, int):
-            return FakeResponse(params["path"], outcome, "rate limited")
         return FakeResponse(params["path"])
 
 
@@ -89,13 +87,13 @@ async def test_async_write_files_limits_octet_stream_upload_concurrency(monkeypa
     assert envd_api.counter.max_active == 2
 
 
-async def test_async_write_files_retries_transient_and_rate_limit_errors(
-    monkeypatch,
-):
+async def test_async_write_files_retries_transient_upload_errors(monkeypatch):
     monkeypatch.setenv("E2B_MAX_CONCURRENT_FILE_UPLOADS", "1")
     monkeypatch.setenv("E2B_FILE_UPLOAD_RETRY_ATTEMPTS", "3")
     monkeypatch.setattr(filesystem_module, "_file_upload_retry_delay", lambda _: 0)
-    envd_api = FakeEnvdApi(outcomes=[httpx.ReadError("broken"), 429, None])
+    envd_api = FakeEnvdApi(
+        outcomes=[httpx.ReadError("broken"), httpx.ConnectError("no socket"), None]
+    )
     filesystem = Filesystem(
         "https://sandbox.test",
         Version("0.5.11"),
@@ -110,6 +108,34 @@ async def test_async_write_files_retries_transient_and_rate_limit_errors(
 
     assert len(infos) == 1
     assert envd_api.calls == 3
+
+
+async def test_async_write_files_stops_uploads_after_non_retryable_error(
+    monkeypatch,
+):
+    monkeypatch.setenv("E2B_MAX_CONCURRENT_FILE_UPLOADS", "2")
+    monkeypatch.setenv("E2B_FILE_UPLOAD_RETRY_ATTEMPTS", "1")
+    # First upload raises a non-retryable error; remaining files should be skipped.
+    envd_api = FakeEnvdApi(outcomes=[RuntimeError("nope")])
+    filesystem = Filesystem(
+        "https://sandbox.test",
+        Version("0.5.11"),
+        ConnectionConfig(api_key="test"),
+        pool=object(),
+        envd_api=envd_api,
+    )
+
+    import pytest
+
+    with pytest.raises(RuntimeError, match="nope"):
+        await filesystem.write_files(
+            [
+                WriteEntry(path=f"/tmp/abort-{i}.txt", data=f"abort {i}")
+                for i in range(10)
+            ]
+        )
+
+    assert envd_api.calls < 10
 
 
 async def test_async_write_files_applies_global_upload_concurrency(monkeypatch):
