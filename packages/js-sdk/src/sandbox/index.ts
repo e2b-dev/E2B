@@ -31,6 +31,14 @@ import { SandboxError } from '../errors'
 import { ENVD_DEBUG_FALLBACK, ENVD_DEFAULT_USER } from '../envd/versions'
 
 /**
+ * Escape a string for safe inclusion in a single-quoted shell argument.
+ * Equivalent to Python's shlex.quote().
+ */
+function shellQuote(s: string): string {
+  return "'" + s.replace(/'/g, "'\\''") + "'"
+}
+
+/**
  * Options for sandbox upload/download URL generation.
  */
 export interface SandboxUrlOpts {
@@ -299,7 +307,7 @@ export class Sandbox extends SandboxApi {
     if (sandboxOpts?.mcp) {
       sandbox.mcpToken = crypto.randomUUID()
       const res = await sandbox.commands.run(
-        `mcp-gateway --config '${JSON.stringify(sandboxOpts?.mcp)}'`,
+        `mcp-gateway --config ${shellQuote(JSON.stringify(sandboxOpts.mcp))}`,
         {
           user: 'root',
           envs: {
@@ -394,7 +402,7 @@ export class Sandbox extends SandboxApi {
     if (sandboxOpts?.mcp) {
       sandbox.mcpToken = crypto.randomUUID()
       const res = await sandbox.commands.run(
-        `mcp-gateway --config '${JSON.stringify(sandboxOpts?.mcp)}'`,
+        `mcp-gateway --config ${shellQuote(JSON.stringify(sandboxOpts.mcp))}`,
         {
           user: 'root',
           envs: {
