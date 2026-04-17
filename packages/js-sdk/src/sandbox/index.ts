@@ -273,9 +273,11 @@ export class Sandbox extends SandboxApi {
             sandboxOpts: opts,
           }
         : {
-            template: templateOrOpts?.mcp
-              ? this.defaultMcpTemplate
-              : this.defaultTemplate,
+            template:
+              templateOrOpts?.template ??
+              (templateOrOpts?.mcp
+                ? this.defaultMcpTemplate
+                : this.defaultTemplate),
             sandboxOpts: templateOrOpts,
           }
 
@@ -368,9 +370,11 @@ export class Sandbox extends SandboxApi {
             sandboxOpts: opts,
           }
         : {
-            template: templateOrOpts?.mcp
-              ? this.defaultMcpTemplate
-              : this.defaultTemplate,
+            template:
+              templateOrOpts?.template ??
+              (templateOrOpts?.mcp
+                ? this.defaultMcpTemplate
+                : this.defaultTemplate),
             sandboxOpts: templateOrOpts,
           }
 
