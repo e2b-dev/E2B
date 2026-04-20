@@ -37,7 +37,7 @@ import {
   InvalidArgumentError,
   TemplateError,
 } from '../../errors'
-import { toBlob, toUploadBody } from '../../utils'
+import { toBlob, toUploadBody, wait } from '../../utils'
 
 const FILESYSTEM_HTTP_ERROR_MAP: Record<number, (message: string) => Error> = {
   404: (message: string) => new FileNotFoundError(message),
@@ -143,10 +143,6 @@ function fileUploadRetryDelayMs(attempt: number) {
   )
 }
 
-function sleep(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms))
-}
-
 function combineAbortSignals(signals: AbortSignal[]) {
   if (signals.length === 1) return { signal: signals[0]!, cleanup: () => {} }
 
@@ -233,7 +229,7 @@ async function retryFileUpload<T>(fn: () => Promise<T>) {
         throw err
       }
 
-      await sleep(fileUploadRetryDelayMs(attempt))
+      await wait(fileUploadRetryDelayMs(attempt))
     }
   }
 
