@@ -1,6 +1,4 @@
 import asyncio
-import random
-import weakref
 from io import IOBase, TextIOBase
 from typing import IO, AsyncIterator, List, Literal, Optional, Union, overload
 
@@ -39,6 +37,10 @@ from e2b.sandbox.filesystem.filesystem import (
     to_upload_body,
 )
 from e2b.sandbox.filesystem.watch_handle import FilesystemEvent
+from e2b.sandbox_async.filesystem.upload_queue import (
+    retry_file_upload,
+    run_upload_batch,
+)
 from e2b.sandbox_async.filesystem.watch_handle import AsyncWatchHandle
 from e2b.sandbox_async.utils import OutputHandler
 from e2b_connect.client import Code
@@ -51,25 +53,6 @@ _FILESYSTEM_HTTP_ERROR_MAP = {
     404: FileNotFoundException,
 }
 
-_FILE_UPLOAD_RETRY_BASE_DELAY = 0.25
-_FILE_UPLOAD_RETRY_MAX_DELAY = 4.0
-_FILE_UPLOAD_RETRY_JITTER = 0.25
-
-_TRANSIENT_FILE_UPLOAD_ERRORS = (
-    httpx.ConnectError,
-    httpx.ConnectTimeout,
-    httpx.PoolTimeout,
-    httpx.ReadError,
-    httpx.ReadTimeout,
-    httpx.RemoteProtocolError,
-    httpx.WriteError,
-    httpx.WriteTimeout,
-)
-
-_GLOBAL_FILE_UPLOAD_SEMAPHORES: weakref.WeakKeyDictionary[
-    asyncio.AbstractEventLoop, dict[int, asyncio.Semaphore]
-] = weakref.WeakKeyDictionary()
-
 
 def _handle_filesystem_rpc_exception(e: Exception) -> Exception:
     return handle_rpc_exception(e, _FILESYSTEM_RPC_ERROR_MAP)
@@ -77,29 +60,6 @@ def _handle_filesystem_rpc_exception(e: Exception) -> Exception:
 
 async def _ahandle_filesystem_envd_api_exception(r):
     return await ahandle_envd_api_exception(r, _FILESYSTEM_HTTP_ERROR_MAP)
-
-
-def _get_global_file_upload_semaphore(max_uploads: int) -> asyncio.Semaphore:
-    loop = asyncio.get_running_loop()
-    semaphores = _GLOBAL_FILE_UPLOAD_SEMAPHORES.get(loop)
-    if semaphores is None:
-        semaphores = {}
-        _GLOBAL_FILE_UPLOAD_SEMAPHORES[loop] = semaphores
-
-    semaphore = semaphores.get(max_uploads)
-    if semaphore is None:
-        semaphore = asyncio.Semaphore(max_uploads)
-        semaphores[max_uploads] = semaphore
-
-    return semaphore
-
-
-def _file_upload_retry_delay(attempt: int) -> float:
-    delay = min(
-        _FILE_UPLOAD_RETRY_MAX_DELAY,
-        _FILE_UPLOAD_RETRY_BASE_DELAY * (2 ** (attempt - 1)),
-    )
-    return delay + random.random() * _FILE_UPLOAD_RETRY_JITTER
 
 
 class Filesystem:
@@ -341,90 +301,33 @@ class Filesystem:
 
                 return [WriteInfo(**f) for f in write_result]
 
-            stop_event = asyncio.Event()
+            async def _upload_file_with_retries(file, _index, stop_event):
+                prepared_upload = _prepare_upload_file(file)
 
-            async def _upload_file_with_retries(file):
-                attempts = self._connection_config.file_upload_retry_attempts
-                global_uploads = _get_global_file_upload_semaphore(
-                    self._connection_config.max_global_concurrent_file_uploads
+                async def _upload_once():
+                    content, params, headers = prepared_upload
+                    return await _upload_prepared_file(content, params, headers)
+
+                upload_task = retry_file_upload(
+                    _upload_once,
+                    attempts=self._connection_config.file_upload_retry_attempts,
+                    max_global_uploads=(
+                        self._connection_config.max_global_concurrent_file_uploads
+                    ),
+                    stop_event=stop_event,
                 )
-                prepared_upload = None
+                timeout = self._connection_config.get_request_timeout(request_timeout)
+                if timeout is None:
+                    return await upload_task
 
-                for attempt in range(1, attempts + 1):
-                    try:
-                        async with global_uploads:
-                            if prepared_upload is None:
-                                prepared_upload = _prepare_upload_file(file)
-                            content, params, headers = prepared_upload
-                            return await _upload_prepared_file(content, params, headers)
-                    except _TRANSIENT_FILE_UPLOAD_ERRORS:
-                        if attempt >= attempts:
-                            raise
-                        try:
-                            await asyncio.wait_for(
-                                stop_event.wait(),
-                                timeout=_file_upload_retry_delay(attempt),
-                            )
-                        except asyncio.TimeoutError:
-                            pass
-                        else:
-                            raise asyncio.CancelledError()
+                return await asyncio.wait_for(upload_task, timeout=timeout)
 
-                # Unreachable: the loop either returns or raises.
-                raise SandboxException("Unexpected file upload retry state")
-
-            max_concurrent_uploads = min(
+            upload_results = await run_upload_batch(
+                files,
                 self._connection_config.max_concurrent_file_uploads,
-                len(files),
+                _upload_file_with_retries,
             )
-            upload_queue: asyncio.Queue = asyncio.Queue()
-            upload_results: List[Optional[List[WriteInfo]]] = [None] * len(files)
-            first_error: List[Exception] = []
-            upload_tasks: List[asyncio.Task] = []
-
-            for index, file in enumerate(files):
-                upload_queue.put_nowait((index, file))
-
-            def _cancel_upload_workers(current_task: Optional[asyncio.Task]):
-                for task in upload_tasks:
-                    if task is not current_task and not task.done():
-                        task.cancel()
-
-            async def _upload_worker():
-                while not stop_event.is_set():
-                    try:
-                        index, file = upload_queue.get_nowait()
-                    except asyncio.QueueEmpty:
-                        return
-
-                    try:
-                        upload_results[index] = await _upload_file_with_retries(file)
-                    except Exception as e:
-                        if not first_error:
-                            first_error.append(e)
-                            stop_event.set()
-                            _cancel_upload_workers(asyncio.current_task())
-                        return
-                    finally:
-                        upload_queue.task_done()
-
-            upload_tasks = [
-                asyncio.create_task(_upload_worker())
-                for _ in range(max_concurrent_uploads)
-            ]
-
-            try:
-                await asyncio.gather(*upload_tasks, return_exceptions=True)
-            except BaseException:
-                _cancel_upload_workers(None)
-                raise
-
-            if first_error:
-                raise first_error[0]
-
             for file_results in upload_results:
-                if file_results is None:
-                    continue
                 results.extend(file_results)
         else:
             params = {}

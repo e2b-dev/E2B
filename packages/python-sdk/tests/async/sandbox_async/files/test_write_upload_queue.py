@@ -13,7 +13,7 @@ from e2b.connection_config import (
     ConnectionConfig,
 )
 from e2b.sandbox.filesystem.filesystem import WriteEntry
-import e2b.sandbox_async.filesystem.filesystem as filesystem_module
+import e2b.sandbox_async.filesystem.upload_queue as upload_queue_module
 from e2b.sandbox_async.filesystem.filesystem import Filesystem
 
 
@@ -157,7 +157,7 @@ def test_connection_config_upload_options_override_env_vars(monkeypatch):
 
 
 async def test_async_write_files_retries_transient_upload_errors(monkeypatch):
-    monkeypatch.setattr(filesystem_module, "_file_upload_retry_delay", lambda _: 0)
+    monkeypatch.setattr(upload_queue_module, "_file_upload_retry_delay", lambda _: 0)
     envd_api = FakeEnvdApi(
         outcomes=[httpx.ReadError("broken"), httpx.ConnectError("no socket"), None]
     )
@@ -176,7 +176,7 @@ async def test_async_write_files_retries_transient_upload_errors(monkeypatch):
 
 
 async def test_async_write_files_retries_io_upload_with_original_content(monkeypatch):
-    monkeypatch.setattr(filesystem_module, "_file_upload_retry_delay", lambda _: 0)
+    monkeypatch.setattr(upload_queue_module, "_file_upload_retry_delay", lambda _: 0)
     envd_api = FakeEnvdApi(outcomes=[httpx.ReadError("broken"), None])
     filesystem = create_filesystem(
         envd_api,
@@ -191,6 +191,23 @@ async def test_async_write_files_retries_io_upload_with_original_content(monkeyp
     assert len(infos) == 1
     assert envd_api.calls == 2
     assert envd_api.contents == [b"retry body", b"retry body"]
+
+
+async def test_async_write_files_applies_request_timeout_across_upload_retries():
+    envd_api = FakeEnvdApi(outcomes=[httpx.ReadError("broken"), None])
+    filesystem = create_filesystem(
+        envd_api,
+        max_concurrent_file_uploads=1,
+        file_upload_retry_attempts=2,
+    )
+
+    with pytest.raises(TimeoutError):
+        await filesystem.write_files(
+            [WriteEntry(path="/tmp/timeout.txt", data="timeout")],
+            request_timeout=0.02,
+        )
+
+    assert envd_api.calls == 1
 
 
 async def test_async_write_files_stops_uploads_after_non_retryable_error():
