@@ -63,10 +63,12 @@ class FakeEnvdApi:
         self.outcomes = list(outcomes or [])
         self.calls = 0
         self.contents: list[bytes] = []
+        self.timeouts: list[float | None] = []
 
     async def post(self, route, content, headers, params, timeout):
         self.calls += 1
         self.contents.append(content)
+        self.timeouts.append(timeout)
         await self.counter.track()
 
         outcome = self.outcomes.pop(0) if self.outcomes else None
@@ -208,6 +210,27 @@ async def test_async_write_files_applies_request_timeout_across_upload_retries()
         )
 
     assert envd_api.calls == 1
+
+
+async def test_async_write_files_shrinks_request_timeout_across_retries(monkeypatch):
+    monkeypatch.setattr(upload_queue_module, "_file_upload_retry_delay", lambda _: 0)
+    envd_api = FakeEnvdApi(outcomes=[httpx.ReadError("broken"), None])
+    filesystem = create_filesystem(
+        envd_api,
+        max_concurrent_file_uploads=1,
+        file_upload_retry_attempts=2,
+    )
+
+    infos = await filesystem.write_files(
+        [WriteEntry(path="/tmp/timeout-retry.txt", data="timeout")],
+        request_timeout=1,
+    )
+
+    assert len(infos) == 1
+    assert envd_api.calls == 2
+    assert envd_api.timeouts[0] is not None
+    assert envd_api.timeouts[1] is not None
+    assert envd_api.timeouts[1] < envd_api.timeouts[0]
 
 
 async def test_async_write_files_stops_uploads_after_non_retryable_error():

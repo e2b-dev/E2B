@@ -277,15 +277,13 @@ class Filesystem:
 
                 return content, params, headers
 
-            async def _upload_prepared_file(content, params, headers):
+            async def _upload_prepared_file(content, params, headers, timeout):
                 r = await self._envd_api.post(
                     ENVD_API_FILES_ROUTE,
                     content=content,
                     headers=headers,
                     params=params,
-                    timeout=self._connection_config.get_request_timeout(
-                        request_timeout
-                    ),
+                    timeout=timeout,
                 )
 
                 err = await _ahandle_filesystem_envd_api_exception(r)
@@ -303,10 +301,28 @@ class Filesystem:
 
             async def _upload_file_with_retries(file, _index, stop_event):
                 prepared_upload = _prepare_upload_file(file)
+                timeout = self._connection_config.get_request_timeout(request_timeout)
+                loop = asyncio.get_running_loop()
+                deadline = None if timeout is None else loop.time() + timeout
+
+                def _remaining_timeout():
+                    if deadline is None:
+                        return None
+
+                    remaining = deadline - loop.time()
+                    if remaining <= 0:
+                        raise TimeoutError("File upload timed out")
+
+                    return remaining
 
                 async def _upload_once():
                     content, params, headers = prepared_upload
-                    return await _upload_prepared_file(content, params, headers)
+                    return await _upload_prepared_file(
+                        content,
+                        params,
+                        headers,
+                        _remaining_timeout(),
+                    )
 
                 upload_task = retry_file_upload(
                     _upload_once,
@@ -316,7 +332,6 @@ class Filesystem:
                     ),
                     stop_event=stop_event,
                 )
-                timeout = self._connection_config.get_request_timeout(request_timeout)
                 if timeout is None:
                     return await upload_task
 
