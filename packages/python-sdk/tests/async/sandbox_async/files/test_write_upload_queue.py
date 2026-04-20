@@ -204,7 +204,7 @@ async def test_async_write_files_applies_request_timeout_across_upload_retries()
     with pytest.raises((TimeoutError, asyncio.TimeoutError)):
         await filesystem.write_files(
             [WriteEntry(path="/tmp/timeout.txt", data="timeout")],
-            request_timeout=0.02,
+            request_timeout=0.001,
         )
 
     assert envd_api.calls == 1
