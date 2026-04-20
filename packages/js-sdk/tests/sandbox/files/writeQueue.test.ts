@@ -170,7 +170,10 @@ test('writeFiles retries gzip upload bodies without consuming the retry body', a
   assert.equal((infos as unknown[]).length, 1)
   assert.equal(envdApi.calls, 2)
   assert.isAbove(envdApi.bodies[0]!.byteLength, 0)
-  assert.deepEqual(Array.from(envdApi.bodies[0]!), Array.from(envdApi.bodies[1]!))
+  assert.deepEqual(
+    Array.from(envdApi.bodies[0]!),
+    Array.from(envdApi.bodies[1]!)
+  )
 })
 
 test('writeFiles does not retry fetch-failed without a known network cause', async () => {
