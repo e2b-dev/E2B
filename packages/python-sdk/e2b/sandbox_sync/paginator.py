@@ -121,5 +121,9 @@ class SnapshotPaginator(SnapshotPaginatorBase):
             raise SandboxException(f"{res.parsed.message}: Request failed")
 
         return [
-            SnapshotInfo(snapshot_id=snapshot.snapshot_id) for snapshot in res.parsed
+            SnapshotInfo(
+                snapshot_id=snapshot.snapshot_id,
+                names=list(snapshot.names) if snapshot.names else [],
+            )
+            for snapshot in res.parsed
         ]

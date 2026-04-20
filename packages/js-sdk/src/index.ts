@@ -63,6 +63,7 @@ export type {
   SnapshotInfo,
   SnapshotListOpts,
   SnapshotPaginator,
+  CreateSnapshotOpts,
 } from './sandbox/sandboxApi'
 
 export type { McpServer } from './sandbox/mcp'

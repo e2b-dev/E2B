@@ -694,6 +694,7 @@ class AsyncSandbox(SandboxApi):
     @overload
     async def create_snapshot(
         self,
+        name: Optional[str] = None,
         **opts: Unpack[ApiParams],
     ) -> SnapshotInfo:
         """
@@ -705,7 +706,9 @@ class AsyncSandbox(SandboxApi):
 
         Use the returned `snapshot_id` with `AsyncSandbox.create(snapshot_id)` to create a new sandbox from the snapshot.
 
-        :return: Snapshot information including the snapshot ID
+        :param name: Optional name for the snapshot template. If a snapshot template with this name already exists, a new build will be assigned to the existing template instead of creating a new one.
+
+        :return: Snapshot information including the snapshot ID and names
         """
         ...
 
@@ -713,6 +716,7 @@ class AsyncSandbox(SandboxApi):
     @staticmethod
     async def create_snapshot(
         sandbox_id: str,
+        name: Optional[str] = None,
         **opts: Unpack[ApiParams],
     ) -> SnapshotInfo:
         """
@@ -721,14 +725,16 @@ class AsyncSandbox(SandboxApi):
         The sandbox will be paused while the snapshot is being created.
 
         :param sandbox_id: Sandbox ID
+        :param name: Optional name for the snapshot template. If a snapshot template with this name already exists, a new build will be assigned to the existing template instead of creating a new one.
 
-        :return: Snapshot information including the snapshot ID
+        :return: Snapshot information including the snapshot ID and names
         """
         ...
 
     @class_method_variant("_cls_create_snapshot")
     async def create_snapshot(
         self,
+        name: Optional[str] = None,
         **opts: Unpack[ApiParams],
     ) -> SnapshotInfo:
         """
@@ -740,10 +746,13 @@ class AsyncSandbox(SandboxApi):
 
         Use the returned `snapshot_id` with `AsyncSandbox.create(snapshot_id)` to create a new sandbox from the snapshot.
 
-        :return: Snapshot information including the snapshot ID
+        :param name: Optional name for the snapshot template. If a snapshot template with this name already exists, a new build will be assigned to the existing template instead of creating a new one.
+
+        :return: Snapshot information including the snapshot ID and names
         """
         return await SandboxApi._cls_create_snapshot(
             sandbox_id=self.sandbox_id,
+            name=name,
             **self.connection_config.get_api_params(**opts),
         )
 
