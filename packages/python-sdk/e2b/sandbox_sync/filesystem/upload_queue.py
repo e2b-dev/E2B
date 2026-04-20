@@ -119,14 +119,15 @@ def retry_file_upload(
         except _TRANSIENT_FILE_UPLOAD_ERRORS:
             if attempt >= attempts:
                 raise
-            _wait_for_file_upload_retry(
-                _file_upload_retry_delay(attempt),
-                stop_event,
-                deadline,
-            )
         finally:
             if acquired:
                 global_uploads.release()
+
+        _wait_for_file_upload_retry(
+            _file_upload_retry_delay(attempt),
+            stop_event,
+            deadline,
+        )
 
     # Unreachable: the loop either returns or raises.
     raise SandboxException("Unexpected file upload retry state")

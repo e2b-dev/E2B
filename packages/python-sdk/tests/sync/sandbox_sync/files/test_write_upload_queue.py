@@ -142,6 +142,58 @@ def test_sync_write_files_retries_io_upload_with_original_content(monkeypatch):
     assert envd_api.contents == [b"retry body", b"retry body"]
 
 
+def test_sync_upload_retry_releases_global_slot_during_backoff(monkeypatch):
+    backoff_started = threading.Event()
+    release_backoff = threading.Event()
+
+    def retry_delay(_attempt):
+        return 60
+
+    def wait_for_retry(delay, stop_event, deadline):
+        backoff_started.set()
+        if release_backoff.wait(timeout=1):
+            return
+        raise AssertionError("retry backoff did not release")
+
+    monkeypatch.setattr(upload_queue_module, "_file_upload_retry_delay", retry_delay)
+    monkeypatch.setattr(
+        upload_queue_module,
+        "_wait_for_file_upload_retry",
+        wait_for_retry,
+    )
+
+    first_attempts = 0
+
+    def retrying_upload():
+        nonlocal first_attempts
+        first_attempts += 1
+        if first_attempts == 1:
+            raise httpx.ReadError("broken")
+        return "retried"
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+        retrying_future = executor.submit(
+            upload_queue_module.retry_file_upload,
+            retrying_upload,
+            attempts=2,
+            max_global_uploads=1,
+            stop_event=threading.Event(),
+        )
+        assert backoff_started.wait(timeout=1)
+
+        waiting_future = executor.submit(
+            upload_queue_module.retry_file_upload,
+            lambda: "waiter",
+            attempts=1,
+            max_global_uploads=1,
+            stop_event=threading.Event(),
+        )
+
+        assert waiting_future.result(timeout=1) == "waiter"
+        release_backoff.set()
+        assert retrying_future.result(timeout=1) == "retried"
+
+
 def test_sync_write_files_applies_request_timeout_across_upload_retries():
     envd_api = FakeEnvdApi(outcomes=[httpx.ReadError("broken"), None])
     filesystem = create_filesystem(
