@@ -29,14 +29,7 @@ import { getSignature } from './signature'
 import { compareVersions } from 'compare-versions'
 import { SandboxError } from '../errors'
 import { ENVD_DEBUG_FALLBACK, ENVD_DEFAULT_USER } from '../envd/versions'
-
-/**
- * Escape a string for safe inclusion in a single-quoted shell argument.
- * Equivalent to Python's shlex.quote().
- */
-function shellQuote(s: string): string {
-  return "'" + s.replace(/'/g, "'\\''") + "'"
-}
+import { shellQuote } from '../utils'
 
 /**
  * Options for sandbox upload/download URL generation.

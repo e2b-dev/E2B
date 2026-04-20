@@ -129,6 +129,14 @@ export function toBlob(
  * Prepare data for upload as a BodyInit, optionally gzip-compressed.
  * When gzip is enabled, compresses the data and returns a Blob.
  */
+/**
+ * Escape a string for safe inclusion in a single-quoted shell argument.
+ * Equivalent to Python's shlex.quote().
+ */
+export function shellQuote(s: string): string {
+  return "'" + s.replace(/'/g, "'\\''") + "'"
+}
+
 export async function toUploadBody(
   data: string | ArrayBuffer | Blob | ReadableStream,
   gzip?: boolean
