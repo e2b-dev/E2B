@@ -83,64 +83,38 @@ async def _ahandle_filesystem_envd_api_exception(r):
     return await ahandle_envd_api_exception(r, _FILESYSTEM_HTTP_ERROR_MAP)
 
 
-def _get_max_concurrent_file_uploads() -> int:
-    value = os.getenv(
-        _MAX_CONCURRENT_FILE_UPLOADS_ENV,
-        str(_DEFAULT_MAX_CONCURRENT_FILE_UPLOADS),
-    )
+def _get_env_positive_int(name: str, default: int) -> int:
+    value = os.getenv(name) or str(default)
     try:
-        max_uploads = int(value)
+        parsed = int(value)
     except ValueError:
-        raise InvalidArgumentException(
-            f"{_MAX_CONCURRENT_FILE_UPLOADS_ENV} must be an integer"
-        )
+        raise InvalidArgumentException(f"{name} must be an integer")
 
-    if max_uploads < 1:
-        raise InvalidArgumentException(
-            f"{_MAX_CONCURRENT_FILE_UPLOADS_ENV} must be greater than 0"
-        )
+    if parsed < 1:
+        raise InvalidArgumentException(f"{name} must be greater than 0")
 
-    return max_uploads
+    return parsed
+
+
+def _get_max_concurrent_file_uploads() -> int:
+    return _get_env_positive_int(
+        _MAX_CONCURRENT_FILE_UPLOADS_ENV,
+        _DEFAULT_MAX_CONCURRENT_FILE_UPLOADS,
+    )
 
 
 def _get_file_upload_retry_attempts() -> int:
-    value = os.getenv(
+    return _get_env_positive_int(
         _FILE_UPLOAD_RETRY_ATTEMPTS_ENV,
-        str(_DEFAULT_FILE_UPLOAD_RETRY_ATTEMPTS),
+        _DEFAULT_FILE_UPLOAD_RETRY_ATTEMPTS,
     )
-    try:
-        attempts = int(value)
-    except ValueError:
-        raise InvalidArgumentException(
-            f"{_FILE_UPLOAD_RETRY_ATTEMPTS_ENV} must be an integer"
-        )
-
-    if attempts < 1:
-        raise InvalidArgumentException(
-            f"{_FILE_UPLOAD_RETRY_ATTEMPTS_ENV} must be greater than 0"
-        )
-
-    return attempts
 
 
 def _get_max_global_concurrent_file_uploads() -> int:
-    value = os.getenv(
+    return _get_env_positive_int(
         _MAX_GLOBAL_CONCURRENT_FILE_UPLOADS_ENV,
-        str(_DEFAULT_MAX_GLOBAL_CONCURRENT_FILE_UPLOADS),
+        _DEFAULT_MAX_GLOBAL_CONCURRENT_FILE_UPLOADS,
     )
-    try:
-        max_uploads = int(value)
-    except ValueError:
-        raise InvalidArgumentException(
-            f"{_MAX_GLOBAL_CONCURRENT_FILE_UPLOADS_ENV} must be an integer"
-        )
-
-    if max_uploads < 1:
-        raise InvalidArgumentException(
-            f"{_MAX_GLOBAL_CONCURRENT_FILE_UPLOADS_ENV} must be greater than 0"
-        )
-
-    return max_uploads
 
 
 def _get_global_file_upload_semaphore() -> asyncio.Semaphore:
