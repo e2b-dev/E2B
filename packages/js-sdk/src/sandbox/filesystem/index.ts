@@ -37,7 +37,7 @@ import {
   InvalidArgumentError,
   TemplateError,
 } from '../../errors'
-import { toBlob, toUploadBody, wait } from '../../utils'
+import { toBlob, toUploadBody } from '../../utils'
 
 const FILESYSTEM_HTTP_ERROR_MAP: Record<number, (message: string) => Error> = {
   404: (message: string) => new FileNotFoundError(message),
@@ -47,14 +47,35 @@ const FILE_UPLOAD_RETRY_BASE_DELAY_MS = 250
 const FILE_UPLOAD_RETRY_MAX_DELAY_MS = 4_000
 const FILE_UPLOAD_RETRY_JITTER_MS = 250
 
+type SemaphoreWaiter = {
+  resolve: () => void
+  reject: (err: unknown) => void
+  signal?: AbortSignal
+  onAbort?: () => void
+}
+
+function getAbortError(signal: AbortSignal) {
+  if (signal.reason !== undefined) return signal.reason
+
+  const err = new Error('The operation was aborted')
+  err.name = 'AbortError'
+  return err
+}
+
+function throwIfAborted(signal: AbortSignal) {
+  if (signal.aborted) {
+    throw getAbortError(signal)
+  }
+}
+
 class Semaphore {
   private active = 0
-  private readonly waiting: (() => void)[] = []
+  private readonly waiting: SemaphoreWaiter[] = []
 
   constructor(private readonly limit: number) {}
 
-  async run<T>(fn: () => Promise<T>): Promise<T> {
-    await this.acquire()
+  async run<T>(fn: () => Promise<T>, signal?: AbortSignal): Promise<T> {
+    await this.acquire(signal)
     try {
       return await fn()
     } finally {
@@ -62,21 +83,43 @@ class Semaphore {
     }
   }
 
-  private async acquire() {
+  private async acquire(signal?: AbortSignal) {
+    if (signal) throwIfAborted(signal)
+
     if (this.active < this.limit) {
       this.active += 1
       return
     }
 
-    await new Promise<void>((resolve) => {
-      this.waiting.push(resolve)
+    await new Promise<void>((resolve, reject) => {
+      const waiter: SemaphoreWaiter = {
+        resolve,
+        reject,
+      }
+
+      if (signal) {
+        waiter.signal = signal
+        waiter.onAbort = () => {
+          const index = this.waiting.indexOf(waiter)
+          if (index !== -1) {
+            this.waiting.splice(index, 1)
+          }
+          waiter.reject(getAbortError(signal))
+        }
+        signal.addEventListener('abort', waiter.onAbort, { once: true })
+      }
+
+      this.waiting.push(waiter)
     })
   }
 
   private release() {
     const next = this.waiting.shift()
     if (next) {
-      next()
+      if (next.signal && next.onAbort) {
+        next.signal.removeEventListener('abort', next.onAbort)
+      }
+      next.resolve()
       return
     }
     this.active -= 1
@@ -103,6 +146,26 @@ function fileUploadRetryDelayMs(attempt: number) {
     ) +
     Math.random() * FILE_UPLOAD_RETRY_JITTER_MS
   )
+}
+
+function waitForFileUploadRetry(ms: number, signal: AbortSignal) {
+  return new Promise<void>((resolve, reject) => {
+    if (signal.aborted) {
+      reject(getAbortError(signal))
+      return
+    }
+
+    const onAbort = () => {
+      clearTimeout(timeout)
+      reject(getAbortError(signal))
+    }
+    const timeout = setTimeout(() => {
+      signal.removeEventListener('abort', onAbort)
+      resolve()
+    }, ms)
+
+    signal.addEventListener('abort', onAbort, { once: true })
+  })
 }
 
 function combineAbortSignals(signals: AbortSignal[]) {
@@ -184,7 +247,8 @@ async function retryFileUpload<T>(
   config: Pick<
     ConnectionConfig,
     'fileUploadRetryAttempts' | 'maxGlobalConcurrentFileUploads'
-  >
+  >,
+  signal: AbortSignal
 ) {
   const attempts = config.fileUploadRetryAttempts
   const globalUploads = getGlobalFileUploadSemaphore(
@@ -193,13 +257,14 @@ async function retryFileUpload<T>(
 
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
     try {
-      return await globalUploads.run(fn)
+      throwIfAborted(signal)
+      return await globalUploads.run(fn, signal)
     } catch (err) {
       if (attempt >= attempts || !isRetryableFileUploadError(err)) {
         throw err
       }
 
-      await wait(fileUploadRetryDelayMs(attempt))
+      await waitForFileUploadRetry(fileUploadRetryDelayMs(attempt), signal)
     }
   }
 
@@ -643,46 +708,49 @@ export class Filesystem {
         async (file, _index, abortSignal) => {
           const filePath = path ?? (file as WriteEntry).path
           const body = await toUploadBody(file.data, useGzip)
+          const timeoutSignal = this.connectionConfig.getSignal(
+            writeOpts?.requestTimeoutMs
+          )
+          const { signal, cleanup } = timeoutSignal
+            ? combineAbortSignals([abortSignal, timeoutSignal])
+            : { signal: abortSignal, cleanup: () => {} }
 
-          return retryFileUpload(async () => {
-            const timeoutSignal = this.connectionConfig.getSignal(
-              writeOpts?.requestTimeoutMs
-            )
-            const { signal, cleanup } = timeoutSignal
-              ? combineAbortSignals([abortSignal, timeoutSignal])
-              : { signal: abortSignal, cleanup: () => {} }
-
-            try {
-              const res = await this.envdApi.api.POST('/files', {
-                params: {
-                  query: {
-                    path: filePath,
-                    username: user,
+          try {
+            return await retryFileUpload(
+              async () => {
+                const res = await this.envdApi.api.POST('/files', {
+                  params: {
+                    query: {
+                      path: filePath,
+                      username: user,
+                    },
                   },
-                },
-                bodySerializer: () => body,
-                headers,
-                signal,
-                body: {},
-              })
+                  bodySerializer: () => body,
+                  headers,
+                  signal,
+                  body: {},
+                })
 
-              const err = await handleFilesystemEnvdApiError(res)
-              if (err) {
-                throw err
-              }
+                const err = await handleFilesystemEnvdApiError(res)
+                if (err) {
+                  throw err
+                }
 
-              const files = res.data as WriteInfo[]
-              if (!files || files.length === 0) {
-                throw new Error(
-                  'Expected to receive information about written file'
-                )
-              }
+                const files = res.data as WriteInfo[]
+                if (!files || files.length === 0) {
+                  throw new Error(
+                    'Expected to receive information about written file'
+                  )
+                }
 
-              return files
-            } finally {
-              cleanup()
-            }
-          }, this.connectionConfig)
+                return files
+              },
+              this.connectionConfig,
+              signal
+            )
+          } finally {
+            cleanup()
+          }
         }
       )
 

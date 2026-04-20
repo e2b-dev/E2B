@@ -71,6 +71,58 @@ class FakeEnvdApi {
   }
 }
 
+class CancelAwareEnvdApi {
+  version = '0.5.11'
+  calls = 0
+  cancelledSlowUpload = false
+  api: { POST: (...args: unknown[]) => Promise<unknown> }
+  private slowStartedResolve!: () => void
+  private readonly slowStarted = new Promise<void>((resolve) => {
+    this.slowStartedResolve = resolve
+  })
+
+  constructor() {
+    this.api = {
+      POST: async (_path, opts) => {
+        this.calls += 1
+        const uploadOpts = opts as any
+        const path = uploadOpts.params.query.path
+
+        if (path.endsWith('slow.txt')) {
+          this.slowStartedResolve()
+          const signal = uploadOpts.signal as AbortSignal
+          await new Promise<never>((_resolve, reject) => {
+            if (signal.aborted) {
+              this.cancelledSlowUpload = true
+              reject(signal.reason ?? new Error('aborted'))
+              return
+            }
+
+            signal.addEventListener(
+              'abort',
+              () => {
+                this.cancelledSlowUpload = true
+                reject(signal.reason ?? new Error('aborted'))
+              },
+              { once: true }
+            )
+          })
+        }
+
+        if (path.endsWith('fail.txt')) {
+          await this.slowStarted
+          throw new Error('nope')
+        }
+
+        return {
+          response: new Response('{}', { status: 200 }),
+          data: [{ name: path.split('/').pop(), type: 'file', path }],
+        }
+      },
+    }
+  }
+}
+
 async function bodyToBytes(body: BodyInit): Promise<Uint8Array> {
   if (body instanceof Blob) {
     return new Uint8Array(await body.arrayBuffer())
@@ -87,7 +139,10 @@ async function bodyToBytes(body: BodyInit): Promise<Uint8Array> {
   throw new Error(`Unsupported test body type: ${typeof body}`)
 }
 
-function createFilesystem(envdApi: FakeEnvdApi, opts?: ConnectionOpts) {
+function createFilesystem(
+  envdApi: FakeEnvdApi | CancelAwareEnvdApi,
+  opts?: ConnectionOpts
+) {
   const filesystem = Object.create(Filesystem.prototype) as Filesystem
   ;(filesystem as any).envdApi = envdApi
   ;(filesystem as any).connectionConfig = new ConnectionConfig(opts)
@@ -192,6 +247,30 @@ test('writeFiles retries fetch-failed errors with a known network cause', async 
   assert.equal(envdApi.calls, 3)
 })
 
+test('writeFiles applies request timeout across upload retries', async () => {
+  vi.spyOn(Math, 'random').mockReturnValue(0)
+  const envdApi = new FakeEnvdApi(
+    new UploadCounter(),
+    [fetchFailed('ECONNRESET'), undefined],
+    0
+  )
+
+  let err: unknown
+  try {
+    await createFilesystem(envdApi, {
+      maxConcurrentFileUploads: 1,
+      fileUploadRetryAttempts: 2,
+    }).writeFiles([{ path: '/tmp/timeout.txt', data: 'timeout' }], {
+      requestTimeoutMs: 20,
+    })
+  } catch (caught) {
+    err = caught
+  }
+
+  assert.match((err as { name?: string }).name ?? '', /AbortError|TimeoutError/)
+  assert.equal(envdApi.calls, 1)
+})
+
 test('writeFiles retries gzip upload bodies without consuming the retry body', async () => {
   vi.spyOn(Math, 'random').mockReturnValue(0)
   const envdApi = new FakeEnvdApi(
@@ -246,4 +325,34 @@ test('writeFiles stops issuing uploads after a non-retryable error', async () =>
     }).writeFiles(files('abort', 10))
   ).rejects.toThrow(/nope/)
   assert.isBelow(envdApi.calls, 10)
+})
+
+test('writeFiles aborts in-flight uploads after an error', async () => {
+  const envdApi = new CancelAwareEnvdApi()
+  let timeout: ReturnType<typeof setTimeout> | undefined
+
+  const writePromise = createFilesystem(envdApi, {
+    maxConcurrentFileUploads: 2,
+    fileUploadRetryAttempts: 1,
+  }).writeFiles([
+    { path: '/tmp/fail.txt', data: 'fail' },
+    { path: '/tmp/slow.txt', data: 'slow' },
+  ])
+
+  const timeoutPromise = new Promise<never>((_resolve, reject) => {
+    timeout = setTimeout(() => reject(new Error('timed out')), 1_000)
+  })
+
+  try {
+    await expect(Promise.race([writePromise, timeoutPromise])).rejects.toThrow(
+      /nope/
+    )
+  } finally {
+    if (timeout) {
+      clearTimeout(timeout)
+    }
+  }
+
+  assert.equal(envdApi.calls, 2)
+  assert.isTrue(envdApi.cancelledSlowUpload)
 })

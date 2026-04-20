@@ -1,5 +1,6 @@
 import asyncio
 import random
+import weakref
 from io import IOBase, TextIOBase
 from typing import IO, AsyncIterator, List, Literal, Optional, Union, overload
 
@@ -65,7 +66,9 @@ _TRANSIENT_FILE_UPLOAD_ERRORS = (
     httpx.WriteTimeout,
 )
 
-_GLOBAL_FILE_UPLOAD_SEMAPHORES: dict[tuple[int, int], asyncio.Semaphore] = {}
+_GLOBAL_FILE_UPLOAD_SEMAPHORES: weakref.WeakKeyDictionary[
+    asyncio.AbstractEventLoop, dict[int, asyncio.Semaphore]
+] = weakref.WeakKeyDictionary()
 
 
 def _handle_filesystem_rpc_exception(e: Exception) -> Exception:
@@ -77,12 +80,16 @@ async def _ahandle_filesystem_envd_api_exception(r):
 
 
 def _get_global_file_upload_semaphore(max_uploads: int) -> asyncio.Semaphore:
-    key = (id(asyncio.get_running_loop()), max_uploads)
+    loop = asyncio.get_running_loop()
+    semaphores = _GLOBAL_FILE_UPLOAD_SEMAPHORES.get(loop)
+    if semaphores is None:
+        semaphores = {}
+        _GLOBAL_FILE_UPLOAD_SEMAPHORES[loop] = semaphores
 
-    semaphore = _GLOBAL_FILE_UPLOAD_SEMAPHORES.get(key)
+    semaphore = semaphores.get(max_uploads)
     if semaphore is None:
         semaphore = asyncio.Semaphore(max_uploads)
-        _GLOBAL_FILE_UPLOAD_SEMAPHORES[key] = semaphore
+        semaphores[max_uploads] = semaphore
 
     return semaphore
 
@@ -334,6 +341,8 @@ class Filesystem:
 
                 return [WriteInfo(**f) for f in write_result]
 
+            stop_event = asyncio.Event()
+
             async def _upload_file_with_retries(file):
                 attempts = self._connection_config.file_upload_retry_attempts
                 global_uploads = _get_global_file_upload_semaphore(
@@ -351,7 +360,15 @@ class Filesystem:
                     except _TRANSIENT_FILE_UPLOAD_ERRORS:
                         if attempt >= attempts:
                             raise
-                        await asyncio.sleep(_file_upload_retry_delay(attempt))
+                        try:
+                            await asyncio.wait_for(
+                                stop_event.wait(),
+                                timeout=_file_upload_retry_delay(attempt),
+                            )
+                        except asyncio.TimeoutError:
+                            pass
+                        else:
+                            raise asyncio.CancelledError()
 
                 # Unreachable: the loop either returns or raises.
                 raise SandboxException("Unexpected file upload retry state")
@@ -363,10 +380,15 @@ class Filesystem:
             upload_queue: asyncio.Queue = asyncio.Queue()
             upload_results: List[Optional[List[WriteInfo]]] = [None] * len(files)
             first_error: List[Exception] = []
-            stop_event = asyncio.Event()
+            upload_tasks: List[asyncio.Task] = []
 
             for index, file in enumerate(files):
                 upload_queue.put_nowait((index, file))
+
+            def _cancel_upload_workers(current_task: Optional[asyncio.Task]):
+                for task in upload_tasks:
+                    if task is not current_task and not task.done():
+                        task.cancel()
 
             async def _upload_worker():
                 while not stop_event.is_set():
@@ -381,16 +403,21 @@ class Filesystem:
                         if not first_error:
                             first_error.append(e)
                             stop_event.set()
+                            _cancel_upload_workers(asyncio.current_task())
                         return
                     finally:
                         upload_queue.task_done()
 
-            await asyncio.gather(
-                *[
-                    asyncio.create_task(_upload_worker())
-                    for _ in range(max_concurrent_uploads)
-                ]
-            )
+            upload_tasks = [
+                asyncio.create_task(_upload_worker())
+                for _ in range(max_concurrent_uploads)
+            ]
+
+            try:
+                await asyncio.gather(*upload_tasks, return_exceptions=True)
+            except BaseException:
+                _cancel_upload_workers(None)
+                raise
 
             if first_error:
                 raise first_error[0]

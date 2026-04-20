@@ -75,13 +75,38 @@ class FakeEnvdApi:
         return FakeResponse(params["path"])
 
 
-def create_filesystem(envd_api: FakeEnvdApi, **config_opts) -> Filesystem:
+class CancelAwareEnvdApi:
+    def __init__(self):
+        self.calls = 0
+        self.slow_started = asyncio.Event()
+        self.cancelled_slow_upload = False
+
+    async def post(self, route, content, headers, params, timeout):
+        self.calls += 1
+        path = params["path"]
+
+        if path.endswith("slow.txt"):
+            self.slow_started.set()
+            try:
+                await asyncio.sleep(60)
+            except asyncio.CancelledError:
+                self.cancelled_slow_upload = True
+                raise
+
+        if path.endswith("fail.txt"):
+            await self.slow_started.wait()
+            raise RuntimeError("nope")
+
+        return FakeResponse(path)
+
+
+def create_filesystem(envd_api: Any, **config_opts) -> Filesystem:
     return Filesystem(
         "https://sandbox.test",
         Version("0.5.11"),
         ConnectionConfig(api_key="test", **config_opts),
         pool=cast(Any, object()),
-        envd_api=cast(Any, envd_api),
+        envd_api=envd_api,
     )
 
 
@@ -186,6 +211,29 @@ async def test_async_write_files_stops_uploads_after_non_retryable_error():
         )
 
     assert envd_api.calls < 10
+
+
+async def test_async_write_files_cancels_in_flight_uploads_after_error():
+    envd_api = CancelAwareEnvdApi()
+    filesystem = create_filesystem(
+        envd_api,
+        max_concurrent_file_uploads=2,
+        file_upload_retry_attempts=1,
+    )
+
+    with pytest.raises(RuntimeError, match="nope"):
+        await asyncio.wait_for(
+            filesystem.write_files(
+                [
+                    WriteEntry(path="/tmp/fail.txt", data="fail"),
+                    WriteEntry(path="/tmp/slow.txt", data="slow"),
+                ]
+            ),
+            timeout=1,
+        )
+
+    assert envd_api.calls == 2
+    assert envd_api.cancelled_slow_upload
 
 
 async def test_async_write_files_applies_global_upload_concurrency():
