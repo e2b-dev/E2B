@@ -171,6 +171,9 @@ export interface FilesystemRequestOpts
 
 /**
  * Options for writing files to the sandbox filesystem.
+ *
+ * For uploads, `requestTimeoutMs` is a per-file budget shared by global limiter
+ * waiting, all retry attempts, and retry backoff.
  */
 export interface FilesystemWriteOpts extends FilesystemRequestOpts {
   /**

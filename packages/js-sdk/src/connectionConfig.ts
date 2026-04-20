@@ -78,6 +78,8 @@ export interface ConnectionOpts {
   debug?: boolean
   /**
    * Timeout for requests to the API in **milliseconds**.
+   * For file uploads, each file uses one timeout budget across global limiter
+   * waiting, all retry attempts, and retry backoff.
    *
    * @default 60_000 // 60 seconds
    */
@@ -89,7 +91,8 @@ export interface ConnectionOpts {
    */
   maxConcurrentFileUploads?: number
   /**
-   * Maximum number of file uploads to run concurrently across all sandboxes in the current process.
+   * Maximum number of file uploads to run concurrently across all sandboxes in the current process
+   * that use the same configured limit. Sandboxes using different values use separate limiters.
    *
    * @default E2B_MAX_GLOBAL_CONCURRENT_FILE_UPLOADS // environment variable or `128`
    */

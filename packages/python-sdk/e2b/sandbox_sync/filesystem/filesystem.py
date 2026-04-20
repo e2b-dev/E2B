@@ -242,7 +242,7 @@ class Filesystem:
 
         :param files: list of files to write as `WriteEntry` objects, each containing `path` and `data`
         :param user: Run the operation as this user
-        :param request_timeout: Timeout for the request
+        :param request_timeout: Timeout for the request. For file uploads, each file uses one timeout budget across global limiter wait, all retry attempts, and retry backoff.
         :param gzip: Use gzip compression for the request
         :return: Information about the written files
         """

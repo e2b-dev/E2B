@@ -25,13 +25,21 @@ class ApiParams(TypedDict, total=False):
     """
 
     request_timeout: Optional[float]
-    """Timeout for the request in **seconds**, defaults to 60 seconds."""
+    """
+    Timeout for the request in **seconds**, defaults to 60 seconds.
+    For file uploads, each file uses one timeout budget across global limiter
+    waiting, all retry attempts, and retry backoff.
+    """
 
     max_concurrent_file_uploads: Optional[int]
     """Maximum number of file uploads to run concurrently for a single write operation, defaults to `E2B_MAX_CONCURRENT_FILE_UPLOADS` or 8."""
 
     max_global_concurrent_file_uploads: Optional[int]
-    """Maximum number of file uploads to run concurrently across all sandboxes in the current process, defaults to `E2B_MAX_GLOBAL_CONCURRENT_FILE_UPLOADS` or 128."""
+    """
+    Maximum number of file uploads to run concurrently across all sandboxes in the current process
+    that use the same configured limit, defaults to `E2B_MAX_GLOBAL_CONCURRENT_FILE_UPLOADS` or 128.
+    Sandboxes using different values use separate limiters.
+    """
 
     file_upload_retry_attempts: Optional[int]
     """Number of attempts for retryable file upload transport failures, defaults to `E2B_FILE_UPLOAD_RETRY_ATTEMPTS` or 4."""
