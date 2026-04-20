@@ -20,7 +20,6 @@ import {
   SandboxListOpts,
   SandboxPaginator,
   SandboxBetaCreateOpts,
-  SandboxApiOpts,
   SnapshotListOpts,
   SnapshotInfo,
   SnapshotPaginator,
