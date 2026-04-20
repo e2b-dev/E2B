@@ -15,6 +15,7 @@ const MAX_CONCURRENT_FILE_UPLOADS_ENV = 'E2B_MAX_CONCURRENT_FILE_UPLOADS'
 const MAX_GLOBAL_CONCURRENT_FILE_UPLOADS_ENV =
   'E2B_MAX_GLOBAL_CONCURRENT_FILE_UPLOADS'
 const FILE_UPLOAD_RETRY_ATTEMPTS_ENV = 'E2B_FILE_UPLOAD_RETRY_ATTEMPTS'
+const INTEGER_STRING_PATTERN = /^[+-]?\d+$/
 
 function getPositiveInteger(
   name: string,
@@ -23,7 +24,11 @@ function getPositiveInteger(
 ) {
   if (value == undefined || value === '') return defaultValue
 
-  const parsed = typeof value === 'number' ? value : Number.parseInt(value, 10)
+  if (typeof value === 'string' && !INTEGER_STRING_PATTERN.test(value)) {
+    throw new InvalidArgumentError(`${name} must be a positive integer`)
+  }
+
+  const parsed = typeof value === 'number' ? value : Number(value)
   if (!Number.isInteger(parsed) || parsed < 1) {
     throw new InvalidArgumentError(`${name} must be a positive integer`)
   }

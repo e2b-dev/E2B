@@ -6,6 +6,7 @@ import {
   MAX_CONCURRENT_FILE_UPLOADS,
   MAX_GLOBAL_CONCURRENT_FILE_UPLOADS,
 } from '../../../src/connectionConfig'
+import { InvalidArgumentError } from '../../../src/errors'
 import { Filesystem, WriteEntry } from '../../../src/sandbox/filesystem'
 
 const ENV_KEYS = [
@@ -225,6 +226,45 @@ test('ConnectionConfig upload options override env vars', () => {
   assert.equal(config.maxConcurrentFileUploads, 2)
   assert.equal(config.maxGlobalConcurrentFileUploads, 3)
   assert.equal(config.fileUploadRetryAttempts, 4)
+})
+
+test('ConnectionConfig rejects malformed upload env vars', () => {
+  const cases = [
+    ['E2B_MAX_CONCURRENT_FILE_UPLOADS', '2abc'],
+    ['E2B_MAX_GLOBAL_CONCURRENT_FILE_UPLOADS', '1.5'],
+    ['E2B_FILE_UPLOAD_RETRY_ATTEMPTS', '1e2'],
+  ] as const
+
+  for (const [key, value] of cases) {
+    for (const envKey of ENV_KEYS) {
+      delete process.env[envKey]
+    }
+
+    process.env[key] = value
+
+    expect(() => new ConnectionConfig()).toThrow(InvalidArgumentError)
+  }
+})
+
+test('ConnectionConfig rejects malformed upload options', () => {
+  expect(
+    () =>
+      new ConnectionConfig({
+        maxConcurrentFileUploads: '2abc' as unknown as number,
+      })
+  ).toThrow(InvalidArgumentError)
+  expect(
+    () =>
+      new ConnectionConfig({
+        maxGlobalConcurrentFileUploads: 1.5,
+      })
+  ).toThrow(InvalidArgumentError)
+  expect(
+    () =>
+      new ConnectionConfig({
+        fileUploadRetryAttempts: '1e2' as unknown as number,
+      })
+  ).toThrow(InvalidArgumentError)
 })
 
 test('writeFiles retries fetch-failed errors with a known network cause', async () => {
