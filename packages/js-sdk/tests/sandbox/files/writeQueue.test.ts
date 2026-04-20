@@ -1,4 +1,11 @@
 import { afterEach, assert, expect, test, vi } from 'vitest'
+import {
+  ConnectionConfig,
+  ConnectionOpts,
+  FILE_UPLOAD_RETRY_ATTEMPTS,
+  MAX_CONCURRENT_FILE_UPLOADS,
+  MAX_GLOBAL_CONCURRENT_FILE_UPLOADS,
+} from '../../../src/connectionConfig'
 import { Filesystem, WriteEntry } from '../../../src/sandbox/filesystem'
 
 const ENV_KEYS = [
@@ -80,10 +87,10 @@ async function bodyToBytes(body: BodyInit): Promise<Uint8Array> {
   throw new Error(`Unsupported test body type: ${typeof body}`)
 }
 
-function createFilesystem(envdApi: FakeEnvdApi) {
+function createFilesystem(envdApi: FakeEnvdApi, opts?: ConnectionOpts) {
   const filesystem = Object.create(Filesystem.prototype) as Filesystem
   ;(filesystem as any).envdApi = envdApi
-  ;(filesystem as any).connectionConfig = { getSignal: () => undefined }
+  ;(filesystem as any).connectionConfig = new ConnectionConfig(opts)
   return filesystem
 }
 
@@ -108,43 +115,76 @@ afterEach(() => {
 })
 
 test('writeFiles limits octet-stream upload concurrency', async () => {
-  process.env.E2B_MAX_CONCURRENT_FILE_UPLOADS = '2'
   const counter = new UploadCounter()
   const envdApi = new FakeEnvdApi(counter)
 
-  const infos = await createFilesystem(envdApi).writeFiles(files('file', 5))
+  const infos = await createFilesystem(envdApi, {
+    maxConcurrentFileUploads: 2,
+  }).writeFiles(files('file', 5))
 
   assert.equal((infos as unknown[]).length, 5)
   assert.equal(counter.maxActive, 2)
 })
 
 test('writeFiles applies global upload concurrency', async () => {
-  process.env.E2B_MAX_CONCURRENT_FILE_UPLOADS = '5'
-  process.env.E2B_MAX_GLOBAL_CONCURRENT_FILE_UPLOADS = '2'
   const counter = new UploadCounter()
+  const opts = {
+    maxConcurrentFileUploads: 5,
+    maxGlobalConcurrentFileUploads: 2,
+  }
 
   await Promise.all([
-    createFilesystem(new FakeEnvdApi(counter)).writeFiles(files('a', 3)),
-    createFilesystem(new FakeEnvdApi(counter)).writeFiles(files('b', 3)),
+    createFilesystem(new FakeEnvdApi(counter), opts).writeFiles(files('a', 3)),
+    createFilesystem(new FakeEnvdApi(counter), opts).writeFiles(files('b', 3)),
   ])
 
   assert.equal(counter.maxActive, 2)
 })
 
+test('ConnectionConfig treats empty upload env vars as unset', () => {
+  process.env.E2B_MAX_CONCURRENT_FILE_UPLOADS = ''
+  process.env.E2B_MAX_GLOBAL_CONCURRENT_FILE_UPLOADS = ''
+  process.env.E2B_FILE_UPLOAD_RETRY_ATTEMPTS = ''
+
+  const config = new ConnectionConfig()
+
+  assert.equal(config.maxConcurrentFileUploads, MAX_CONCURRENT_FILE_UPLOADS)
+  assert.equal(
+    config.maxGlobalConcurrentFileUploads,
+    MAX_GLOBAL_CONCURRENT_FILE_UPLOADS
+  )
+  assert.equal(config.fileUploadRetryAttempts, FILE_UPLOAD_RETRY_ATTEMPTS)
+})
+
+test('ConnectionConfig upload options override env vars', () => {
+  process.env.E2B_MAX_CONCURRENT_FILE_UPLOADS = '0'
+  process.env.E2B_MAX_GLOBAL_CONCURRENT_FILE_UPLOADS = '0'
+  process.env.E2B_FILE_UPLOAD_RETRY_ATTEMPTS = '0'
+
+  const config = new ConnectionConfig({
+    maxConcurrentFileUploads: 2,
+    maxGlobalConcurrentFileUploads: 3,
+    fileUploadRetryAttempts: 4,
+  })
+
+  assert.equal(config.maxConcurrentFileUploads, 2)
+  assert.equal(config.maxGlobalConcurrentFileUploads, 3)
+  assert.equal(config.fileUploadRetryAttempts, 4)
+})
+
 test('writeFiles retries fetch-failed errors with a known network cause', async () => {
   vi.useFakeTimers()
   vi.spyOn(Math, 'random').mockReturnValue(0)
-  process.env.E2B_MAX_CONCURRENT_FILE_UPLOADS = '1'
-  process.env.E2B_FILE_UPLOAD_RETRY_ATTEMPTS = '3'
   const envdApi = new FakeEnvdApi(
     new UploadCounter(),
     [fetchFailed('ECONNRESET'), fetchFailed('EMFILE'), undefined],
     0
   )
 
-  const promise = createFilesystem(envdApi).writeFiles([
-    { path: '/tmp/retry.txt', data: 'retry' },
-  ])
+  const promise = createFilesystem(envdApi, {
+    maxConcurrentFileUploads: 1,
+    fileUploadRetryAttempts: 3,
+  }).writeFiles([{ path: '/tmp/retry.txt', data: 'retry' }])
   await vi.advanceTimersByTimeAsync(1_000)
   const infos = await promise
 
@@ -154,17 +194,20 @@ test('writeFiles retries fetch-failed errors with a known network cause', async 
 
 test('writeFiles retries gzip upload bodies without consuming the retry body', async () => {
   vi.spyOn(Math, 'random').mockReturnValue(0)
-  process.env.E2B_MAX_CONCURRENT_FILE_UPLOADS = '1'
-  process.env.E2B_FILE_UPLOAD_RETRY_ATTEMPTS = '2'
   const envdApi = new FakeEnvdApi(
     new UploadCounter(),
     [fetchFailed('ECONNRESET'), undefined],
     0
   )
 
-  const infos = await createFilesystem(envdApi).writeFiles(
+  const infos = await createFilesystem(envdApi, {
+    maxConcurrentFileUploads: 1,
+    fileUploadRetryAttempts: 2,
+  }).writeFiles(
     [{ path: '/tmp/retry-gzip.txt', data: new Blob(['retry gzip']) }],
-    { gzip: true }
+    {
+      gzip: true,
+    }
   )
 
   assert.equal((infos as unknown[]).length, 1)
@@ -177,8 +220,6 @@ test('writeFiles retries gzip upload bodies without consuming the retry body', a
 })
 
 test('writeFiles does not retry fetch-failed without a known network cause', async () => {
-  process.env.E2B_MAX_CONCURRENT_FILE_UPLOADS = '1'
-  process.env.E2B_FILE_UPLOAD_RETRY_ATTEMPTS = '3'
   const envdApi = new FakeEnvdApi(
     new UploadCounter(),
     [new TypeError('fetch failed')],
@@ -186,21 +227,23 @@ test('writeFiles does not retry fetch-failed without a known network cause', asy
   )
 
   await expect(
-    createFilesystem(envdApi).writeFiles([
-      { path: '/tmp/noretry.txt', data: 'noretry' },
-    ])
+    createFilesystem(envdApi, {
+      maxConcurrentFileUploads: 1,
+      fileUploadRetryAttempts: 3,
+    }).writeFiles([{ path: '/tmp/noretry.txt', data: 'noretry' }])
   ).rejects.toThrow(/fetch failed/)
   assert.equal(envdApi.calls, 1)
 })
 
 test('writeFiles stops issuing uploads after a non-retryable error', async () => {
-  process.env.E2B_MAX_CONCURRENT_FILE_UPLOADS = '2'
-  process.env.E2B_FILE_UPLOAD_RETRY_ATTEMPTS = '1'
   // First upload fails non-retryably; remaining files should not be posted.
   const envdApi = new FakeEnvdApi(new UploadCounter(), [new Error('nope')], 0)
 
   await expect(
-    createFilesystem(envdApi).writeFiles(files('abort', 10))
+    createFilesystem(envdApi, {
+      maxConcurrentFileUploads: 2,
+      fileUploadRetryAttempts: 1,
+    }).writeFiles(files('abort', 10))
   ).rejects.toThrow(/nope/)
   assert.isBelow(envdApi.calls, 10)
 })

@@ -43,13 +43,6 @@ const FILESYSTEM_HTTP_ERROR_MAP: Record<number, (message: string) => Error> = {
   404: (message: string) => new FileNotFoundError(message),
 }
 
-const MAX_CONCURRENT_FILE_UPLOADS_ENV = 'E2B_MAX_CONCURRENT_FILE_UPLOADS'
-const DEFAULT_MAX_CONCURRENT_FILE_UPLOADS = 8
-const MAX_GLOBAL_CONCURRENT_FILE_UPLOADS_ENV =
-  'E2B_MAX_GLOBAL_CONCURRENT_FILE_UPLOADS'
-const DEFAULT_MAX_GLOBAL_CONCURRENT_FILE_UPLOADS = 128
-const FILE_UPLOAD_RETRY_ATTEMPTS_ENV = 'E2B_FILE_UPLOAD_RETRY_ATTEMPTS'
-const DEFAULT_FILE_UPLOAD_RETRY_ATTEMPTS = 4
 const FILE_UPLOAD_RETRY_BASE_DELAY_MS = 250
 const FILE_UPLOAD_RETRY_MAX_DELAY_MS = 4_000
 const FILE_UPLOAD_RETRY_JITTER_MS = 250
@@ -92,38 +85,7 @@ class Semaphore {
 
 const globalFileUploadSemaphores = new Map<number, Semaphore>()
 
-function getEnvNumber(name: string, defaultValue: number) {
-  const value = typeof process !== 'undefined' ? process.env?.[name] : undefined
-  if (value == undefined || value === '') return defaultValue
-
-  const parsed = Number.parseInt(value, 10)
-  if (!Number.isInteger(parsed) || parsed < 1) {
-    throw new InvalidArgumentError(`${name} must be a positive integer`)
-  }
-
-  return parsed
-}
-
-function getMaxConcurrentFileUploads() {
-  return getEnvNumber(
-    MAX_CONCURRENT_FILE_UPLOADS_ENV,
-    DEFAULT_MAX_CONCURRENT_FILE_UPLOADS
-  )
-}
-
-function getFileUploadRetryAttempts() {
-  return getEnvNumber(
-    FILE_UPLOAD_RETRY_ATTEMPTS_ENV,
-    DEFAULT_FILE_UPLOAD_RETRY_ATTEMPTS
-  )
-}
-
-function getGlobalFileUploadSemaphore() {
-  const maxUploads = getEnvNumber(
-    MAX_GLOBAL_CONCURRENT_FILE_UPLOADS_ENV,
-    DEFAULT_MAX_GLOBAL_CONCURRENT_FILE_UPLOADS
-  )
-
+function getGlobalFileUploadSemaphore(maxUploads: number) {
   let semaphore = globalFileUploadSemaphores.get(maxUploads)
   if (!semaphore) {
     semaphore = new Semaphore(maxUploads)
@@ -217,9 +179,17 @@ function isRetryableFileUploadError(err: unknown) {
   )
 }
 
-async function retryFileUpload<T>(fn: () => Promise<T>) {
-  const attempts = getFileUploadRetryAttempts()
-  const globalUploads = getGlobalFileUploadSemaphore()
+async function retryFileUpload<T>(
+  fn: () => Promise<T>,
+  config: Pick<
+    ConnectionConfig,
+    'fileUploadRetryAttempts' | 'maxGlobalConcurrentFileUploads'
+  >
+) {
+  const attempts = config.fileUploadRetryAttempts
+  const globalUploads = getGlobalFileUploadSemaphore(
+    config.maxGlobalConcurrentFileUploads
+  )
 
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
     try {
@@ -669,7 +639,7 @@ export class Filesystem {
         WriteInfo[]
       >(
         writeFiles,
-        getMaxConcurrentFileUploads(),
+        this.connectionConfig.maxConcurrentFileUploads,
         async (file, _index, abortSignal) => {
           const filePath = path ?? (file as WriteEntry).path
           const body = await toUploadBody(file.data, useGzip)
@@ -712,7 +682,7 @@ export class Filesystem {
             } finally {
               cleanup()
             }
-          })
+          }, this.connectionConfig)
         }
       )
 

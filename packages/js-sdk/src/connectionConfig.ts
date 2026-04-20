@@ -1,11 +1,35 @@
 import { Logger } from './logs'
 import { getEnvVar, version } from './api/metadata'
+import { InvalidArgumentError } from './errors'
 
 export const REQUEST_TIMEOUT_MS = 60_000 // 60 seconds
 export const DEFAULT_SANDBOX_TIMEOUT_MS = 300_000 // 300 seconds
+export const MAX_CONCURRENT_FILE_UPLOADS = 8
+export const MAX_GLOBAL_CONCURRENT_FILE_UPLOADS = 128
+export const FILE_UPLOAD_RETRY_ATTEMPTS = 4
 export const KEEPALIVE_PING_INTERVAL_SEC = 50 // 50 seconds
 
 export const KEEPALIVE_PING_HEADER = 'Keepalive-Ping-Interval'
+
+const MAX_CONCURRENT_FILE_UPLOADS_ENV = 'E2B_MAX_CONCURRENT_FILE_UPLOADS'
+const MAX_GLOBAL_CONCURRENT_FILE_UPLOADS_ENV =
+  'E2B_MAX_GLOBAL_CONCURRENT_FILE_UPLOADS'
+const FILE_UPLOAD_RETRY_ATTEMPTS_ENV = 'E2B_FILE_UPLOAD_RETRY_ATTEMPTS'
+
+function getPositiveInteger(
+  name: string,
+  value: number | string | undefined,
+  defaultValue: number
+) {
+  if (value == undefined || value === '') return defaultValue
+
+  const parsed = typeof value === 'number' ? value : Number.parseInt(value, 10)
+  if (!Number.isInteger(parsed) || parsed < 1) {
+    throw new InvalidArgumentError(`${name} must be a positive integer`)
+  }
+
+  return parsed
+}
 
 /**
  * Connection options for requests to the API.
@@ -54,6 +78,24 @@ export interface ConnectionOpts {
    */
   requestTimeoutMs?: number
   /**
+   * Maximum number of file uploads to run concurrently for a single write operation.
+   *
+   * @default E2B_MAX_CONCURRENT_FILE_UPLOADS // environment variable or `8`
+   */
+  maxConcurrentFileUploads?: number
+  /**
+   * Maximum number of file uploads to run concurrently across all sandboxes in the current process.
+   *
+   * @default E2B_MAX_GLOBAL_CONCURRENT_FILE_UPLOADS // environment variable or `128`
+   */
+  maxGlobalConcurrentFileUploads?: number
+  /**
+   * Number of attempts for retryable file upload transport failures.
+   *
+   * @default E2B_FILE_UPLOAD_RETRY_ATTEMPTS // environment variable or `4`
+   */
+  fileUploadRetryAttempts?: number
+  /**
    * Logger to use for logging messages. It can accept any object that implements `Logger` interface—for example, {@link console}.
    */
   logger?: Logger
@@ -77,6 +119,9 @@ export class ConnectionConfig {
   readonly logger?: Logger
 
   readonly requestTimeoutMs: number
+  readonly maxConcurrentFileUploads: number
+  readonly maxGlobalConcurrentFileUploads: number
+  readonly fileUploadRetryAttempts: number
 
   readonly apiKey?: string
   readonly accessToken?: string
@@ -89,6 +134,30 @@ export class ConnectionConfig {
     this.domain = opts?.domain || ConnectionConfig.domain
     this.accessToken = opts?.accessToken || ConnectionConfig.accessToken
     this.requestTimeoutMs = opts?.requestTimeoutMs ?? REQUEST_TIMEOUT_MS
+    this.maxConcurrentFileUploads =
+      opts?.maxConcurrentFileUploads !== undefined
+        ? getPositiveInteger(
+            'maxConcurrentFileUploads',
+            opts.maxConcurrentFileUploads,
+            MAX_CONCURRENT_FILE_UPLOADS
+          )
+        : ConnectionConfig.maxConcurrentFileUploads
+    this.maxGlobalConcurrentFileUploads =
+      opts?.maxGlobalConcurrentFileUploads !== undefined
+        ? getPositiveInteger(
+            'maxGlobalConcurrentFileUploads',
+            opts.maxGlobalConcurrentFileUploads,
+            MAX_GLOBAL_CONCURRENT_FILE_UPLOADS
+          )
+        : ConnectionConfig.maxGlobalConcurrentFileUploads
+    this.fileUploadRetryAttempts =
+      opts?.fileUploadRetryAttempts !== undefined
+        ? getPositiveInteger(
+            'fileUploadRetryAttempts',
+            opts.fileUploadRetryAttempts,
+            FILE_UPLOAD_RETRY_ATTEMPTS
+          )
+        : ConnectionConfig.fileUploadRetryAttempts
     this.logger = opts?.logger
     this.headers = opts?.headers || {}
     this.headers['User-Agent'] = `e2b-js-sdk/${version}`
@@ -123,6 +192,30 @@ export class ConnectionConfig {
 
   private static get accessToken() {
     return getEnvVar('E2B_ACCESS_TOKEN')
+  }
+
+  private static get maxConcurrentFileUploads() {
+    return getPositiveInteger(
+      MAX_CONCURRENT_FILE_UPLOADS_ENV,
+      getEnvVar(MAX_CONCURRENT_FILE_UPLOADS_ENV),
+      MAX_CONCURRENT_FILE_UPLOADS
+    )
+  }
+
+  private static get maxGlobalConcurrentFileUploads() {
+    return getPositiveInteger(
+      MAX_GLOBAL_CONCURRENT_FILE_UPLOADS_ENV,
+      getEnvVar(MAX_GLOBAL_CONCURRENT_FILE_UPLOADS_ENV),
+      MAX_GLOBAL_CONCURRENT_FILE_UPLOADS
+    )
+  }
+
+  private static get fileUploadRetryAttempts() {
+    return getPositiveInteger(
+      FILE_UPLOAD_RETRY_ATTEMPTS_ENV,
+      getEnvVar(FILE_UPLOAD_RETRY_ATTEMPTS_ENV),
+      FILE_UPLOAD_RETRY_ATTEMPTS
+    )
   }
 
   getSignal(requestTimeoutMs?: number) {

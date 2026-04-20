@@ -1,5 +1,4 @@
 import asyncio
-import os
 import random
 from io import IOBase, TextIOBase
 from typing import IO, AsyncIterator, List, Literal, Optional, Union, overload
@@ -51,12 +50,6 @@ _FILESYSTEM_HTTP_ERROR_MAP = {
     404: FileNotFoundException,
 }
 
-_MAX_CONCURRENT_FILE_UPLOADS_ENV = "E2B_MAX_CONCURRENT_FILE_UPLOADS"
-_DEFAULT_MAX_CONCURRENT_FILE_UPLOADS = 8
-_MAX_GLOBAL_CONCURRENT_FILE_UPLOADS_ENV = "E2B_MAX_GLOBAL_CONCURRENT_FILE_UPLOADS"
-_DEFAULT_MAX_GLOBAL_CONCURRENT_FILE_UPLOADS = 128
-_FILE_UPLOAD_RETRY_ATTEMPTS_ENV = "E2B_FILE_UPLOAD_RETRY_ATTEMPTS"
-_DEFAULT_FILE_UPLOAD_RETRY_ATTEMPTS = 4
 _FILE_UPLOAD_RETRY_BASE_DELAY = 0.25
 _FILE_UPLOAD_RETRY_MAX_DELAY = 4.0
 _FILE_UPLOAD_RETRY_JITTER = 0.25
@@ -83,42 +76,7 @@ async def _ahandle_filesystem_envd_api_exception(r):
     return await ahandle_envd_api_exception(r, _FILESYSTEM_HTTP_ERROR_MAP)
 
 
-def _get_env_positive_int(name: str, default: int) -> int:
-    value = os.getenv(name) or str(default)
-    try:
-        parsed = int(value)
-    except ValueError:
-        raise InvalidArgumentException(f"{name} must be an integer")
-
-    if parsed < 1:
-        raise InvalidArgumentException(f"{name} must be greater than 0")
-
-    return parsed
-
-
-def _get_max_concurrent_file_uploads() -> int:
-    return _get_env_positive_int(
-        _MAX_CONCURRENT_FILE_UPLOADS_ENV,
-        _DEFAULT_MAX_CONCURRENT_FILE_UPLOADS,
-    )
-
-
-def _get_file_upload_retry_attempts() -> int:
-    return _get_env_positive_int(
-        _FILE_UPLOAD_RETRY_ATTEMPTS_ENV,
-        _DEFAULT_FILE_UPLOAD_RETRY_ATTEMPTS,
-    )
-
-
-def _get_max_global_concurrent_file_uploads() -> int:
-    return _get_env_positive_int(
-        _MAX_GLOBAL_CONCURRENT_FILE_UPLOADS_ENV,
-        _DEFAULT_MAX_GLOBAL_CONCURRENT_FILE_UPLOADS,
-    )
-
-
-def _get_global_file_upload_semaphore() -> asyncio.Semaphore:
-    max_uploads = _get_max_global_concurrent_file_uploads()
+def _get_global_file_upload_semaphore(max_uploads: int) -> asyncio.Semaphore:
     key = (id(asyncio.get_running_loop()), max_uploads)
 
     semaphore = _GLOBAL_FILE_UPLOAD_SEMAPHORES.get(key)
@@ -377,8 +335,10 @@ class Filesystem:
                 return [WriteInfo(**f) for f in write_result]
 
             async def _upload_file_with_retries(file):
-                attempts = _get_file_upload_retry_attempts()
-                global_uploads = _get_global_file_upload_semaphore()
+                attempts = self._connection_config.file_upload_retry_attempts
+                global_uploads = _get_global_file_upload_semaphore(
+                    self._connection_config.max_global_concurrent_file_uploads
+                )
                 prepared_upload = None
 
                 for attempt in range(1, attempts + 1):
@@ -397,7 +357,7 @@ class Filesystem:
                 raise SandboxException("Unexpected file upload retry state")
 
             max_concurrent_uploads = min(
-                _get_max_concurrent_file_uploads(),
+                self._connection_config.max_concurrent_file_uploads,
                 len(files),
             )
             upload_queue: asyncio.Queue = asyncio.Queue()
