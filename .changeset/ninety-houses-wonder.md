@@ -3,4 +3,4 @@
 'e2b': minor
 ---
 
-adds retries and concurrency limits to file uploads
+adds configurable retries and concurrency limits to file uploads
