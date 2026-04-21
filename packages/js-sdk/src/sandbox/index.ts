@@ -20,8 +20,8 @@ import {
   SandboxListOpts,
   SandboxPaginator,
   SandboxBetaCreateOpts,
-  SandboxApiOpts,
   SnapshotListOpts,
+  SnapshotCreateOpts,
   SnapshotInfo,
   SnapshotPaginator,
 } from './sandboxApi'
@@ -621,7 +621,7 @@ export class Sandbox extends SandboxApi {
    * const newSandbox = await Sandbox.create(snapshot.snapshotId)
    * ```
    */
-  async createSnapshot(opts?: SandboxApiOpts): Promise<SnapshotInfo> {
+  async createSnapshot(opts?: SnapshotCreateOpts): Promise<SnapshotInfo> {
     return await SandboxApi.createSnapshot(
       this.sandboxId,
       this.resolveApiOpts(opts)
