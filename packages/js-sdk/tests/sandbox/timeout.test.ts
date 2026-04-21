@@ -11,7 +11,7 @@ sandboxTest.skipIf(isDebug)('shorten timeout', async ({ sandbox }) => {
 })
 
 sandboxTest.skipIf(isDebug)(
-  'shorten then lenghten timeout',
+  'shorten then lengthen timeout',
   async ({ sandbox }) => {
     await sandbox.setTimeout(5000)
 

@@ -8,7 +8,7 @@ export async function getPromptTemplates(
   text: string
 ) {
   const inquirer = await import('inquirer')
-  const templatesAnwsers = await inquirer.default.prompt([
+  const templatesAnswers = await inquirer.default.prompt([
     {
       name: 'templates',
       message: chalk.default.underline(text),
@@ -21,7 +21,7 @@ export async function getPromptTemplates(
     },
   ])
 
-  return templatesAnwsers[
+  return templatesAnswers[
     'templates'
   ] as e2b.components['schemas']['Template'][]
 }
