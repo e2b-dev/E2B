@@ -4,7 +4,7 @@ import logging
 
 from typing import Dict
 
-from e2b.connection_config import ConnectionConfig
+from e2b.connection_config import ConnectionConfig, _resolve_proxy
 from e2b.api import limits, AsyncApiClient
 
 
@@ -45,7 +45,7 @@ def get_transport(config: ConnectionConfig) -> AsyncTransportWithLogger:
 
     transport = AsyncTransportWithLogger(
         limits=limits,
-        proxy=config.proxy,
+        proxy=_resolve_proxy(config.proxy),
     )
     AsyncTransportWithLogger._instances[loop_id] = transport
     return transport

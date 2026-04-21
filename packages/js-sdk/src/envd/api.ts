@@ -3,6 +3,7 @@ import createClient from 'openapi-fetch'
 import type { components, paths } from './schema.gen'
 import { ConnectionConfig } from '../connectionConfig'
 import { createApiLogger } from '../logs'
+import { getProxyFetch } from '../proxy'
 import {
   SandboxError,
   InvalidArgumentError,
@@ -130,7 +131,7 @@ class EnvdApiClient {
   ) {
     this.api = createClient({
       baseUrl: config.apiUrl,
-      fetch: config?.fetch,
+      fetch: config?.fetch ?? getProxyFetch(),
       headers: config?.headers,
       // In HTTP 1.1, all connections are considered persistent unless declared otherwise
       // keepalive: true,
