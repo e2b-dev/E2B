@@ -193,6 +193,54 @@ describe('allowPublicTraffic=true', () => {
   )
 })
 
+describe('allowOut transform injects headers', () => {
+  const injectedHeader = 'X-E2B-Test-Token'
+  const injectedValue = 'e2b-transform-value-123'
+
+  sandboxTest.scoped({
+    sandboxOpts: {
+      network: {
+        denyOut: [ALL_TRAFFIC],
+        allowOut: [
+          {
+            host: 'httpbin.org',
+          },
+          {
+            host: 'httpbin.org',
+            transform: [
+              {
+                headers: {
+                  [injectedHeader]: injectedValue,
+                },
+              },
+            ],
+          },
+        ],
+      },
+    },
+  })
+
+  sandboxTest.skipIf(isDebug)(
+    'injected header is reflected by httpbin.org/headers',
+    async ({ sandbox }) => {
+      const result = await sandbox.commands.run(
+        'curl -sS --max-time 10 https://httpbin.org/headers'
+      )
+      assert.equal(result.exitCode, 0)
+
+      const parsed = JSON.parse(result.stdout) as {
+        headers: Record<string, string>
+      }
+      const reflected = parsed.headers[injectedHeader]
+      assert.equal(
+        reflected,
+        injectedValue,
+        `expected httpbin to reflect ${injectedHeader}=${injectedValue}, got headers: ${JSON.stringify(parsed.headers)}`
+      )
+    }
+  )
+})
+
 describe('maskRequestHost option', () => {
   sandboxTest.scoped({
     sandboxOpts: {

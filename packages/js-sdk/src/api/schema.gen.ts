@@ -2279,17 +2279,31 @@ export interface components {
             timestampUnix: number;
         };
         SandboxNetworkConfig: {
-            /** @description List of allowed CIDR blocks or IP addresses for egress traffic. Allowed addresses always take precedence over blocked addresses. */
-            allowOut?: string[];
+            /** @description List of allowed egress entries. Each entry is either a CIDR block/IP/host string, or a structured rule with optional per-host transforms. Allowed entries always take precedence over denied ones. */
+            allowOut?: (string | components["schemas"]["SandboxNetworkRule"])[];
             /**
              * @description Specify if the sandbox URLs should be accessible only with authentication.
              * @default true
              */
             allowPublicTraffic?: boolean;
-            /** @description List of denied CIDR blocks or IP addresses for egress traffic */
-            denyOut?: string[];
+            /** @description List of denied egress entries. Each entry is either a CIDR block/IP/host string, or a structured rule. */
+            denyOut?: (string | components["schemas"]["SandboxNetworkRule"])[];
             /** @description Specify host mask which will be used for all sandbox requests */
             maskRequestHost?: string;
+        };
+        /** @description Structured egress rule matching a host, optionally transforming the request before it leaves the sandbox. */
+        SandboxNetworkRule: {
+            /** @description Host, CIDR block, or IP address the rule applies to. */
+            host: string;
+            /** @description Ordered list of transforms to apply to requests matching this rule. */
+            transform?: components["schemas"]["SandboxNetworkRuleTransform"][];
+        };
+        /** @description Transform applied to egress requests matching a network rule. */
+        SandboxNetworkRuleTransform: {
+            /** @description Headers to inject into the outbound request. Values override any headers already present. */
+            headers?: {
+                [key: string]: string;
+            };
         };
         /**
          * @description Action taken when the sandbox times out.

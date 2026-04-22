@@ -33,23 +33,56 @@ export type GitHubMcpServer = {
   }
 }
 
+/**
+ * Transform applied to outbound requests matching a {@link SandboxNetworkRule}.
+ */
+export type SandboxNetworkRuleTransform = {
+  /**
+   * Headers to inject into the outbound request. Values override any headers
+   * already present on the request.
+   */
+  headers?: Record<string, string>
+}
+
+/**
+ * Structured egress rule for {@link SandboxNetworkOpts.allowOut} or
+ * {@link SandboxNetworkOpts.denyOut}.
+ */
+export type SandboxNetworkRule = {
+  /** Host, CIDR block, or IP address the rule applies to. */
+  host: string
+  /** Ordered list of transforms to apply to requests matching this rule. */
+  transform?: SandboxNetworkRuleTransform[]
+}
+
+export type SandboxNetworkEntry = string | SandboxNetworkRule
+
 export type SandboxNetworkOpts = {
   /**
    * Allow outbound traffic from the sandbox to the specified addresses.
    * If `allowOut` is not specified, all outbound traffic is allowed.
    *
+   * Each entry is either a string (CIDR block, IP address, or host) or a
+   * structured {@link SandboxNetworkRule} that can additionally describe
+   * per-host request transforms (for example, header injection).
+   *
    * Examples:
-   * - To allow traffic to a specific addresses: `["1.1.1.1", "8.8.8.0/24"]`
+   * - Allow traffic to specific addresses: `["1.1.1.1", "8.8.8.0/24"]`
+   * - Allow a host and inject a header on matching requests:
+   *   `[{ host: "api.openai.com", transform: [{ headers: { Authorization: "Bearer ..." } }] }]`
    */
-  allowOut?: string[]
+  allowOut?: SandboxNetworkEntry[]
 
   /**
    * Deny outbound traffic from the sandbox to the specified addresses.
    *
+   * Each entry is either a string (CIDR block, IP address, or host) or a
+   * structured {@link SandboxNetworkRule}.
+   *
    * Examples:
-   * - To deny traffic to a specific addresses: `["1.1.1.1", "8.8.8.0/24"]`
+   * - Deny traffic to specific addresses: `["1.1.1.1", "8.8.8.0/24"]`
    */
-  denyOut?: string[]
+  denyOut?: SandboxNetworkEntry[]
 
   /**
    * Specify if the sandbox URLs should be accessible only with authentication.

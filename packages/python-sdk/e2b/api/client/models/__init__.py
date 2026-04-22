@@ -54,6 +54,9 @@ from .sandbox_logs import SandboxLogs
 from .sandbox_logs_v2_response import SandboxLogsV2Response
 from .sandbox_metric import SandboxMetric
 from .sandbox_network_config import SandboxNetworkConfig
+from .sandbox_network_rule import SandboxNetworkRule
+from .sandbox_network_rule_transform import SandboxNetworkRuleTransform
+from .sandbox_network_rule_transform_headers import SandboxNetworkRuleTransformHeaders
 from .sandbox_on_timeout import SandboxOnTimeout
 from .sandbox_state import SandboxState
 from .sandbox_volume_mount import SandboxVolumeMount
@@ -138,6 +141,9 @@ __all__ = (
     "SandboxLogsV2Response",
     "SandboxMetric",
     "SandboxNetworkConfig",
+    "SandboxNetworkRule",
+    "SandboxNetworkRuleTransform",
+    "SandboxNetworkRuleTransformHeaders",
     "SandboxOnTimeout",
     "SandboxState",
     "SandboxVolumeMount",
