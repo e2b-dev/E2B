@@ -62,6 +62,7 @@ export type {
   SandboxInfoLifecycle,
   SnapshotInfo,
   SnapshotListOpts,
+  SnapshotCreateOpts,
   SnapshotPaginator,
 } from './sandbox/sandboxApi'
 

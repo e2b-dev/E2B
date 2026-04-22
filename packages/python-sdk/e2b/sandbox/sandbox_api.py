@@ -297,6 +297,9 @@ class SnapshotInfo:
     snapshot_id: str
     """Snapshot identifier — template ID with tag, or namespaced name with tag (e.g. my-snapshot:latest). Can be used with Sandbox.create() to create a new sandbox from this snapshot."""
 
+    names: List[str] = field(default_factory=list)
+    """Full namespaced names assigned to this snapshot (e.g. ["team-slug/my-snapshot:default"]). Present when the snapshot was created with a name. Use any entry with Sandbox.create() to start a sandbox from this snapshot by name."""
+
 
 class PaginatorBase:
     def __init__(
