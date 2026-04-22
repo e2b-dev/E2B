@@ -1,3 +1,4 @@
+import { buffer } from 'node:stream/consumers'
 import { ApiClient, handleApiError, paths, components } from '../api'
 import { stripAnsi } from '../utils'
 import { BuildError, FileUploadError, TemplateError } from '../errors'
@@ -119,12 +120,16 @@ export async function uploadFile(
       resolveSymlinks
     )
 
-    // The compiler assumes this is Web fetch API, but it's actually Node.js fetch API
+    // Buffer the archive before uploading so fetch sets Content-Length.
+    // S3 presigned PUT URLs reject Transfer-Encoding: chunked with 501
+    // NotImplemented, which is what Node's fetch falls back to when the
+    // body is a Readable without a known length. See e2b-dev/e2b#1243.
+    // The Python SDK takes the same approach (build_api.py:upload_file).
+    const uploadBody = await buffer(uploadStream)
+
     const res = await fetch(url, {
       method: 'PUT',
-      // @ts-expect-error
-      body: uploadStream,
-      duplex: 'half',
+      body: uploadBody,
     })
 
     if (!res.ok) {
