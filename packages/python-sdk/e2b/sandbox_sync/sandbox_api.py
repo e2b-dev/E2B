@@ -333,9 +333,7 @@ class SandboxApi(SandboxBase):
         res = post_sandboxes_sandbox_id_snapshots.sync_detailed(
             sandbox_id,
             client=api_client,
-            body=PostSandboxesSandboxIDSnapshotsBody(
-                name=name if name is not None else UNSET
-            ),
+            body=PostSandboxesSandboxIDSnapshotsBody(name=name if name else UNSET),
         )
 
         if res.status_code == 404:
