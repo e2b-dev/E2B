@@ -45,6 +45,75 @@ function cleanLogger(logger?: string) {
   return logger.replaceAll('Svc', '')
 }
 
+const dataLevelAliases: Record<string, LogLevel> = {
+  trace: LogLevel.DEBUG,
+  debug: LogLevel.DEBUG,
+  info: LogLevel.INFO,
+  warning: LogLevel.WARN,
+  warn: LogLevel.WARN,
+  error: LogLevel.ERROR,
+  fatal: LogLevel.ERROR,
+  panic: LogLevel.ERROR,
+}
+
+const promotedDataKeys = new Set([
+  'level',
+  'severity',
+  'logger',
+  'name',
+  'message',
+  'msg',
+])
+
+function getStringField(value: unknown) {
+  return typeof value === 'string' && value.trim() !== ''
+    ? value.trim()
+    : undefined
+}
+
+function normalizeLevel(value?: string) {
+  if (!value) {
+    return undefined
+  }
+
+  return dataLevelAliases[value.toLowerCase()]
+}
+
+function parseDataField(value: unknown): Record<string, unknown> | undefined {
+  if (value && typeof value === 'object' && !Array.isArray(value)) {
+    return value as Record<string, unknown>
+  }
+
+  if (typeof value !== 'string' || value.trim() === '') {
+    return undefined
+  }
+
+  try {
+    const parsed = JSON.parse(value.trim())
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return undefined
+    }
+
+    return parsed as Record<string, unknown>
+  } catch {
+    return undefined
+  }
+}
+
+function getDisplayData(
+  data: Record<string, unknown>
+): Record<string, unknown> | undefined {
+  const visibleEntries = Object.entries(data).filter(
+    ([key]) => !promotedDataKeys.has(key)
+  )
+
+  if (visibleEntries.length === 0) {
+    return undefined
+  }
+
+  return Object.fromEntries(visibleEntries)
+}
+
 export const logsCommand = new commander.Command('logs')
   .description('show logs for sandbox')
   .argument(
@@ -171,9 +240,34 @@ function printLog(
   allowedLoggers?: string[] | undefined
 ) {
   const log = JSON.parse(line)
-  let level = log['level'].toUpperCase()
+  const data = parseDataField(log.data)
 
-  log.logger = cleanLogger(log.logger)
+  const level =
+    normalizeLevel(
+      getStringField(data?.level) ?? getStringField(data?.severity)
+    ) ??
+    normalizeLevel(getStringField(log.level)) ??
+    LogLevel.INFO
+
+  const logger =
+    getStringField(data?.logger) ??
+    getStringField(data?.name) ??
+    getStringField(log.logger)
+  log.logger = cleanLogger(logger)
+
+  const message = getStringField(data?.message) ?? getStringField(data?.msg)
+  if (message) {
+    log.message = message
+  }
+
+  if (data) {
+    const displayData = getDisplayData(data)
+    if (displayData) {
+      log.data = displayData
+    } else {
+      delete log.data
+    }
+  }
 
   // Check if the current logger startsWith any of the allowed loggers. If there are no specified loggers, print logs from all loggers.
   if (
@@ -190,21 +284,23 @@ function printLog(
     return
   }
 
+  let formattedLevel: string = level
   switch (level) {
     case LogLevel.DEBUG:
-      level = chalk.default.black(chalk.default.bgWhite(level))
+      formattedLevel = chalk.default.black(chalk.default.bgWhite(level))
       break
     case LogLevel.INFO:
-      level = chalk.default.black(chalk.default.bgGreen(level) + ' ')
+      formattedLevel = chalk.default.black(chalk.default.bgGreen(level) + ' ')
       break
     case LogLevel.WARN:
-      level = chalk.default.black(chalk.default.bgYellow(level) + ' ')
+      formattedLevel = chalk.default.black(chalk.default.bgYellow(level) + ' ')
       break
     case LogLevel.ERROR:
-      level = chalk.default.white(chalk.default.bgRed(level))
+      formattedLevel = chalk.default.white(chalk.default.bgRed(level))
       break
   }
 
+  log.level = level
   delete log['traceID']
   delete log['instanceID']
   delete log['source_type']
@@ -218,7 +314,6 @@ function printLog(
     console.log(
       JSON.stringify({
         timestamp: new Date(timestamp).toISOString(),
-        level,
         ...log,
       })
     )
@@ -226,7 +321,7 @@ function printLog(
     const time = `[${new Date(timestamp).toISOString().replace(/T/, ' ')}]`
     delete log['level']
     console.log(
-      `${asTimestamp(time)} ${level} ` +
+      `${asTimestamp(time)} ${formattedLevel} ` +
         util.inspect(log, {
           colors: true,
           depth: null,
