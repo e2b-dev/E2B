@@ -722,7 +722,7 @@ export class SandboxApi {
         },
       },
       body: {
-        ...(opts?.name && { name: opts.name }),
+        ...(opts?.name !== undefined && { name: opts.name }),
       },
       signal: config.getSignal(opts?.requestTimeoutMs),
     })
