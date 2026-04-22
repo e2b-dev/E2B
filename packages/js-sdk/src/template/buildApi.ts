@@ -125,7 +125,12 @@ export async function uploadFile(
     // NotImplemented, which is what Node's fetch falls back to when the
     // body is a Readable without a known length. See e2b-dev/e2b#1243.
     // The Python SDK takes the same approach (build_api.py:upload_file).
-    const uploadBody = await buffer(uploadStream)
+    // tar's Pack extends Minipass and is iterable as AsyncIterable<Buffer> at
+    // runtime, but the cli's tsconfig (preserveSymlinks) doesn't surface that
+    // through the type chain — cast via unknown.
+    const uploadBody = await buffer(
+      uploadStream as unknown as AsyncIterable<Buffer>
+    )
 
     const res = await fetch(url, {
       method: 'PUT',
