@@ -141,6 +141,24 @@ sandboxTest.skipIf(isDebug)(
   }
 )
 
+sandboxTest.skipIf(isDebug)(
+  'create a named snapshot',
+  async ({ sandbox, sandboxTestId }) => {
+    const snapshotName = `snap-${sandboxTestId}`
+
+    const snapshot = await sandbox.createSnapshot({ name: snapshotName })
+
+    try {
+      assert.isString(snapshot.snapshotId)
+      assert.isArray(snapshot.names)
+      assert.isTrue(snapshot.names.length > 0)
+      assert.isTrue(snapshot.names.some((n) => n.includes(snapshotName)))
+    } finally {
+      await Sandbox.deleteSnapshot(snapshot.snapshotId)
+    }
+  }
+)
+
 sandboxTest.skipIf(isDebug)('delete snapshot', async ({ sandbox }) => {
   const snapshot = await sandbox.createSnapshot()
 

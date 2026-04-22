@@ -97,6 +97,21 @@ async def test_list_snapshots_for_sandbox(async_sandbox: AsyncSandbox):
 
 
 @pytest.mark.skip_debug()
+async def test_create_named_snapshot(async_sandbox: AsyncSandbox, sandbox_test_id: str):
+    snapshot_name = f"snap-{sandbox_test_id}"
+
+    snapshot = await async_sandbox.create_snapshot(name=snapshot_name)
+
+    try:
+        assert snapshot.snapshot_id
+        assert isinstance(snapshot.names, list)
+        assert len(snapshot.names) > 0
+        assert any(snapshot_name in n for n in snapshot.names)
+    finally:
+        await AsyncSandbox.delete_snapshot(snapshot.snapshot_id)
+
+
+@pytest.mark.skip_debug()
 async def test_delete_snapshot(async_sandbox: AsyncSandbox):
     snapshot = await async_sandbox.create_snapshot()
 
