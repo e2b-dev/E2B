@@ -1,6 +1,13 @@
+import json
+
 import pytest
 
-from e2b import ALL_TRAFFIC, SandboxNetworkOpts
+from e2b import (
+    ALL_TRAFFIC,
+    SandboxNetworkOpts,
+    SandboxNetworkRule,
+    SandboxNetworkRuleTransform,
+)
 from e2b.sandbox.commands.command_handle import CommandExitException
 
 
@@ -155,6 +162,40 @@ def test_allow_public_traffic_true(sandbox_factory):
         # Request without traffic access token should succeed (public access enabled)
         response = client.get(sandbox_url, follow_redirects=True)
         assert response.status_code == 200
+
+
+@pytest.mark.skip_debug()
+def test_allow_out_transform_injects_headers(sandbox_factory):
+    """Test that an allow_out rule with a transform injects headers into outbound requests."""
+    injected_header = "X-E2B-Test-Token"
+    injected_value = "e2b-transform-value-123"
+
+    sandbox = sandbox_factory(
+        network=SandboxNetworkOpts(
+            deny_out=[ALL_TRAFFIC],
+            allow_out=[
+                SandboxNetworkRule(host="httpbin.org"),
+                SandboxNetworkRule(
+                    host="httpbin.org",
+                    transform=[
+                        SandboxNetworkRuleTransform(
+                            headers={injected_header: injected_value}
+                        )
+                    ],
+                ),
+            ],
+        ),
+    )
+
+    result = sandbox.commands.run("curl -sS --max-time 10 https://httpbin.org/headers")
+    assert result.exit_code == 0
+
+    parsed = json.loads(result.stdout)
+    reflected = parsed["headers"].get(injected_header)
+    assert reflected == injected_value, (
+        f"expected httpbin to reflect {injected_header}={injected_value}, "
+        f"got headers: {parsed['headers']}"
+    )
 
 
 @pytest.mark.skip_debug()

@@ -2286,8 +2286,8 @@ export interface components {
              * @default true
              */
             allowPublicTraffic?: boolean;
-            /** @description List of denied egress entries. Each entry is either a CIDR block/IP/host string, or a structured rule. */
-            denyOut?: (string | components["schemas"]["SandboxNetworkRule"])[];
+            /** @description List of denied CIDR blocks or IP addresses for egress traffic */
+            denyOut?: string[];
             /** @description Specify host mask which will be used for all sandbox requests */
             maskRequestHost?: string;
         };

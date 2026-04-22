@@ -79,7 +79,10 @@ from .sandbox.sandbox_api import (
     SandboxInfoLifecycle,
     SandboxMetrics,
     SandboxLifecycle,
+    SandboxNetworkEntry,
     SandboxNetworkOpts,
+    SandboxNetworkRule,
+    SandboxNetworkRuleTransform,
     SandboxQuery,
     SandboxState,
     SnapshotInfo,
@@ -183,6 +186,9 @@ __all__ = [
     "FileType",
     # Network
     "SandboxNetworkOpts",
+    "SandboxNetworkRule",
+    "SandboxNetworkRuleTransform",
+    "SandboxNetworkEntry",
     "SandboxLifecycle",
     "ALL_TRAFFIC",
     # Snapshot

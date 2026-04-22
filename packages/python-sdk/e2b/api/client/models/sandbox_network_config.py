@@ -22,14 +22,13 @@ class SandboxNetworkConfig:
             always take precedence over denied ones.
         allow_public_traffic (Union[Unset, bool]): Specify if the sandbox URLs should be accessible only with
             authentication. Default: True.
-        deny_out (Union[Unset, list[Union['SandboxNetworkRule', str]]]): List of denied egress entries. Each entry is
-            either a CIDR block/IP/host string, or a structured rule.
+        deny_out (Union[Unset, list[str]]): List of denied CIDR blocks or IP addresses for egress traffic
         mask_request_host (Union[Unset, str]): Specify host mask which will be used for all sandbox requests
     """
 
     allow_out: Union[Unset, list[Union["SandboxNetworkRule", str]]] = UNSET
     allow_public_traffic: Union[Unset, bool] = True
-    deny_out: Union[Unset, list[Union["SandboxNetworkRule", str]]] = UNSET
+    deny_out: Union[Unset, list[str]] = UNSET
     mask_request_host: Union[Unset, str] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
@@ -49,16 +48,9 @@ class SandboxNetworkConfig:
 
         allow_public_traffic = self.allow_public_traffic
 
-        deny_out: Union[Unset, list[Union[dict[str, Any], str]]] = UNSET
+        deny_out: Union[Unset, list[str]] = UNSET
         if not isinstance(self.deny_out, Unset):
-            deny_out = []
-            for deny_out_item_data in self.deny_out:
-                deny_out_item: Union[dict[str, Any], str]
-                if isinstance(deny_out_item_data, SandboxNetworkRule):
-                    deny_out_item = deny_out_item_data.to_dict()
-                else:
-                    deny_out_item = deny_out_item_data
-                deny_out.append(deny_out_item)
+            deny_out = self.deny_out
 
         mask_request_host = self.mask_request_host
 
@@ -102,24 +94,7 @@ class SandboxNetworkConfig:
 
         allow_public_traffic = d.pop("allowPublicTraffic", UNSET)
 
-        deny_out = []
-        _deny_out = d.pop("denyOut", UNSET)
-        for deny_out_item_data in _deny_out or []:
-
-            def _parse_deny_out_item(data: object) -> Union["SandboxNetworkRule", str]:
-                try:
-                    if not isinstance(data, dict):
-                        raise TypeError()
-                    deny_out_item_type_1 = SandboxNetworkRule.from_dict(data)
-
-                    return deny_out_item_type_1
-                except:  # noqa: E722
-                    pass
-                return cast(Union["SandboxNetworkRule", str], data)
-
-            deny_out_item = _parse_deny_out_item(deny_out_item_data)
-
-            deny_out.append(deny_out_item)
+        deny_out = cast(list[str], d.pop("denyOut", UNSET))
 
         mask_request_host = d.pop("maskRequestHost", UNSET)
 

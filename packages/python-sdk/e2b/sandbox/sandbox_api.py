@@ -10,6 +10,7 @@ from e2b.api.client.models import (
     SandboxDetail,
     SandboxLifecycle as ClientSandboxLifecycle,
     SandboxNetworkConfig as ClientSandboxNetworkConfig,
+    SandboxNetworkRule as ClientSandboxNetworkRule,
     SandboxState,
 )
 from e2b.api.client.types import Unset
@@ -45,18 +46,51 @@ GitHubMcpServer = Dict[str, Union[GitHubMcpServerConfig, Any]]
 McpServer = Union[BaseMcpServer, GitHubMcpServer]
 
 
+class SandboxNetworkRuleTransform(TypedDict):
+    """
+    Transform applied to outbound requests matching a `SandboxNetworkRule`.
+    """
+
+    headers: NotRequired[Dict[str, str]]
+    """
+    Headers to inject into the outbound request. Values override any headers
+    already present on the request.
+    """
+
+
+class SandboxNetworkRule(TypedDict):
+    """
+    Structured egress rule for `SandboxNetworkOpts.allow_out`.
+    """
+
+    host: str
+    """Host, CIDR block, or IP address the rule applies to."""
+
+    transform: NotRequired[List[SandboxNetworkRuleTransform]]
+    """Ordered list of transforms to apply to requests matching this rule."""
+
+
+SandboxNetworkEntry = Union[str, SandboxNetworkRule]
+
+
 class SandboxNetworkOpts(TypedDict):
     """
     Sandbox network configuration options.
     """
 
-    allow_out: NotRequired[List[str]]
+    allow_out: NotRequired[List[SandboxNetworkEntry]]
     """
     Allow outbound traffic from the sandbox to the specified addresses.
     If `allow_out` is not specified, all outbound traffic is allowed.
 
+    Each entry is either a string (CIDR block, IP address, or host) or a
+    structured `SandboxNetworkRule` that can additionally describe per-host
+    request transforms (for example, header injection).
+
     Examples:
-    - To allow traffic to specific addresses: `["1.1.1.1", "8.8.8.0/24"]`
+    - Allow traffic to specific addresses: `["1.1.1.1", "8.8.8.0/24"]`
+    - Allow a host and inject a header on matching requests:
+      `[{"host": "api.openai.com", "transform": [{"headers": {"Authorization": "Bearer ..."}}]}]`
     """
 
     deny_out: NotRequired[List[str]]
@@ -133,7 +167,22 @@ def from_client_network_config(
     result: SandboxNetworkOpts = {}
 
     if not isinstance(network.allow_out, Unset):
-        result["allow_out"] = list(network.allow_out)
+        result["allow_out"] = [
+            cast(
+                SandboxNetworkRule,
+                {
+                    "host": item.host,
+                    **(
+                        {"transform": [t.to_dict() for t in (item.transform or [])]}
+                        if not isinstance(item.transform, Unset)
+                        else {}
+                    ),
+                },
+            )
+            if isinstance(item, ClientSandboxNetworkRule)
+            else item
+            for item in network.allow_out
+        ]
     if not isinstance(network.deny_out, Unset):
         result["deny_out"] = list(network.deny_out)
     if not isinstance(network.allow_public_traffic, Unset):

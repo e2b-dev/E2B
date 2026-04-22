@@ -45,8 +45,7 @@ export type SandboxNetworkRuleTransform = {
 }
 
 /**
- * Structured egress rule for {@link SandboxNetworkOpts.allowOut} or
- * {@link SandboxNetworkOpts.denyOut}.
+ * Structured egress rule for {@link SandboxNetworkOpts.allowOut}.
  */
 export type SandboxNetworkRule = {
   /** Host, CIDR block, or IP address the rule applies to. */
@@ -76,13 +75,10 @@ export type SandboxNetworkOpts = {
   /**
    * Deny outbound traffic from the sandbox to the specified addresses.
    *
-   * Each entry is either a string (CIDR block, IP address, or host) or a
-   * structured {@link SandboxNetworkRule}.
-   *
    * Examples:
-   * - Deny traffic to specific addresses: `["1.1.1.1", "8.8.8.0/24"]`
+   * - To deny traffic to a specific addresses: `["1.1.1.1", "8.8.8.0/24"]`
    */
-  denyOut?: SandboxNetworkEntry[]
+  denyOut?: string[]
 
   /**
    * Specify if the sandbox URLs should be accessible only with authentication.

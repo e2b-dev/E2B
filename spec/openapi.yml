@@ -303,11 +303,9 @@ components:
               - $ref: '#/components/schemas/SandboxNetworkRule'
         denyOut:
           type: array
-          description: List of denied egress entries. Each entry is either a CIDR block/IP/host string, or a structured rule.
+          description: List of denied CIDR blocks or IP addresses for egress traffic
           items:
-            oneOf:
-              - type: string
-              - $ref: '#/components/schemas/SandboxNetworkRule'
+            type: string
         maskRequestHost:
           type: string
           description: Specify host mask which will be used for all sandbox requests
