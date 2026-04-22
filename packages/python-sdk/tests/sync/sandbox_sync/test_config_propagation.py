@@ -66,6 +66,30 @@ def test_pause_passes_connection_config_without_overrides(monkeypatch):
 
 
 @pytest.mark.skip_debug()
+def test_connect_forwards_envs(monkeypatch):
+    mock_connect = Mock(return_value=None)
+    monkeypatch.setattr(sandbox_sync_main.SandboxApi, "_cls_connect", mock_connect)
+
+    sandbox = create_sandbox(monkeypatch)
+    sandbox.connect(envs={"MY_KEY": "my_value"})
+
+    mock_connect.assert_called_once()
+    assert mock_connect.call_args.kwargs["envs"] == {"MY_KEY": "my_value"}
+
+
+@pytest.mark.skip_debug()
+def test_connect_envs_is_none_when_not_provided(monkeypatch):
+    mock_connect = Mock(return_value=None)
+    monkeypatch.setattr(sandbox_sync_main.SandboxApi, "_cls_connect", mock_connect)
+
+    sandbox = create_sandbox(monkeypatch)
+    sandbox.connect()
+
+    mock_connect.assert_called_once()
+    assert mock_connect.call_args.kwargs.get("envs") is None
+
+
+@pytest.mark.skip_debug()
 def test_pause_applies_overrides(monkeypatch):
     mock_pause = Mock(return_value="sbx-test")
     monkeypatch.setattr(sandbox_sync_main.SandboxApi, "_cls_pause", mock_pause)
