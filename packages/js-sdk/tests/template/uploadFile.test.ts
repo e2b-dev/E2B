@@ -1,5 +1,5 @@
-import { describe, test, expect, beforeEach, afterEach } from 'vitest'
-import { writeFile, mkdir, rm } from 'fs/promises'
+import { describe, test, expect, beforeAll, afterAll } from 'vitest'
+import { writeFile, mkdtemp, rm } from 'fs/promises'
 import { join } from 'path'
 import { tmpdir } from 'os'
 import { createServer, type IncomingMessage, type Server } from 'http'
@@ -14,16 +14,12 @@ describe('uploadFile transfer encoding', () => {
   let testDir: string
   let server: Server
   let baseUrl: string
-  let capturedHeaders: IncomingMessage['headers']
-  let capturedBodyLength: number
+  let capturedHeaders: IncomingMessage['headers'] = {}
+  let capturedBodyLength = 0
 
-  beforeEach(async () => {
-    testDir = join(tmpdir(), `uploadFile-test-${Date.now()}`)
-    await mkdir(testDir, { recursive: true })
+  beforeAll(async () => {
+    testDir = await mkdtemp(join(tmpdir(), 'uploadFile-test-'))
     await writeFile(join(testDir, 'hello.txt'), 'hello world')
-
-    capturedHeaders = {}
-    capturedBodyLength = 0
 
     server = createServer((req, res) => {
       capturedHeaders = req.headers
@@ -42,7 +38,7 @@ describe('uploadFile transfer encoding', () => {
     baseUrl = `http://127.0.0.1:${port}/upload`
   })
 
-  afterEach(async () => {
+  afterAll(async () => {
     await new Promise<void>((resolve) => server.close(() => resolve()))
     await rm(testDir, { recursive: true, force: true })
   })
