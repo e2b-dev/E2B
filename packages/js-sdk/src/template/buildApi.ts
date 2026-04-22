@@ -128,9 +128,9 @@ export async function uploadFile(
     // tar's Pack extends Minipass and is iterable as AsyncIterable<Buffer> at
     // runtime, but the cli's tsconfig (preserveSymlinks) doesn't surface that
     // through the type chain — cast via unknown.
-    const { buffer } = await dynamicImport<typeof import('node:stream/consumers')>(
-      'node:stream/consumers'
-    )
+    const { buffer } = await dynamicImport<
+      typeof import('node:stream/consumers')
+    >('node:stream/consumers')
     const uploadBody = await buffer(
       uploadStream as unknown as AsyncIterable<Buffer>
     )
