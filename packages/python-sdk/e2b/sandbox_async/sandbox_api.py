@@ -324,7 +324,7 @@ class SandboxApi(SandboxBase):
             raise SandboxException(f"{res.parsed.message}: Request failed")
 
         return SnapshotInfo(
-            snapshot_id=res.parsed.snapshot_id, names=list(res.parsed.names)
+            snapshot_id=res.parsed.snapshot_id, names=res.parsed.names or []
         )
 
     @classmethod
