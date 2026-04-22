@@ -1,6 +1,5 @@
-import { buffer } from 'node:stream/consumers'
 import { ApiClient, handleApiError, paths, components } from '../api'
-import { stripAnsi } from '../utils'
+import { dynamicImport, stripAnsi } from '../utils'
 import { BuildError, FileUploadError, TemplateError } from '../errors'
 import { LogEntry } from './logger'
 import { getBuildStepIndex, tarFileStreamUpload } from './utils'
@@ -125,9 +124,13 @@ export async function uploadFile(
     // NotImplemented, which is what Node's fetch falls back to when the
     // body is a Readable without a known length. See e2b-dev/e2b#1243.
     // The Python SDK takes the same approach (build_api.py:upload_file).
+    // Dynamically import so the browser bundle doesn't pull in node:stream.
     // tar's Pack extends Minipass and is iterable as AsyncIterable<Buffer> at
     // runtime, but the cli's tsconfig (preserveSymlinks) doesn't surface that
     // through the type chain — cast via unknown.
+    const { buffer } = await dynamicImport<typeof import('node:stream/consumers')>(
+      'node:stream/consumers'
+    )
     const uploadBody = await buffer(
       uploadStream as unknown as AsyncIterable<Buffer>
     )
