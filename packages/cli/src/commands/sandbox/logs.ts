@@ -9,11 +9,17 @@ import { wait } from 'src/utils/wait'
 import { handleE2BRequestError } from '../../utils/errors'
 import { waitForSandboxEnd, formatEnum, Format, isRunning } from './utils'
 
-enum LogLevel {
+export enum LogLevel {
   DEBUG = 'DEBUG',
   INFO = 'INFO',
   WARN = 'WARN',
   ERROR = 'ERROR',
+}
+
+export interface PrintableSandboxLog {
+  timestamp: string
+  level: LogLevel
+  log: Record<string, unknown>
 }
 
 function isLevelIncluded(level: LogLevel, allowedLevel?: LogLevel) {
@@ -79,17 +85,9 @@ function normalizeLevel(value?: string) {
   return dataLevelAliases[value.toLowerCase()]
 }
 
-function parseDataField(value: unknown): Record<string, unknown> | undefined {
-  if (value && typeof value === 'object' && !Array.isArray(value)) {
-    return value as Record<string, unknown>
-  }
-
-  if (typeof value !== 'string' || value.trim() === '') {
-    return undefined
-  }
-
+function parseJsonObject(value: string): Record<string, unknown> | undefined {
   try {
-    const parsed = JSON.parse(value.trim())
+    const parsed = JSON.parse(value)
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
       return undefined
     }
@@ -98,6 +96,51 @@ function parseDataField(value: unknown): Record<string, unknown> | undefined {
   } catch {
     return undefined
   }
+}
+
+function parseJsonLineObjects(
+  value: string
+): Record<string, unknown>[] | undefined {
+  const lines = value
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+
+  if (lines.length <= 1) {
+    return undefined
+  }
+
+  const entries: Record<string, unknown>[] = []
+  for (const line of lines) {
+    const parsed = parseJsonObject(line)
+    if (!parsed) {
+      return undefined
+    }
+
+    entries.push(parsed)
+  }
+
+  return entries
+}
+
+function parseDataEntries(
+  value: unknown
+): Record<string, unknown>[] | undefined {
+  if (value && typeof value === 'object' && !Array.isArray(value)) {
+    return [value as Record<string, unknown>]
+  }
+
+  if (typeof value !== 'string' || value.trim() === '') {
+    return undefined
+  }
+
+  const trimmed = value.trim()
+  const parsedObject = parseJsonObject(trimmed)
+  if (parsedObject) {
+    return [parsedObject]
+  }
+
+  return parseJsonLineObjects(trimmed)
 }
 
 function getDisplayData(
@@ -112,6 +155,69 @@ function getDisplayData(
   }
 
   return Object.fromEntries(visibleEntries)
+}
+
+export function normalizeSandboxLogLineForOutput(
+  timestamp: string,
+  line: string
+): PrintableSandboxLog[] {
+  const log = JSON.parse(line)
+  const dataEntries = parseDataEntries(log.data)
+
+  if (!dataEntries) {
+    return [normalizeSandboxLogForOutput(timestamp, log)]
+  }
+
+  return dataEntries.map((data) =>
+    normalizeSandboxLogForOutput(timestamp, log, data)
+  )
+}
+
+function normalizeSandboxLogForOutput(
+  timestamp: string,
+  sourceLog: Record<string, unknown>,
+  data?: Record<string, unknown>
+): PrintableSandboxLog {
+  const log = { ...sourceLog }
+
+  const level =
+    normalizeLevel(
+      getStringField(data?.level) ?? getStringField(data?.severity)
+    ) ??
+    normalizeLevel(getStringField(log.level)) ??
+    LogLevel.INFO
+
+  const logger =
+    getStringField(data?.logger) ??
+    getStringField(data?.name) ??
+    getStringField(log.logger)
+  log.logger = cleanLogger(logger)
+
+  const message = getStringField(data?.message) ?? getStringField(data?.msg)
+  if (message) {
+    log.message = message
+  }
+
+  if (data) {
+    const displayData = getDisplayData(data)
+    if (displayData) {
+      log.data = displayData
+    } else {
+      delete log.data
+    }
+  }
+
+  log.level = level
+  delete log['traceID']
+  delete log['instanceID']
+  delete log['source_type']
+  delete log['teamID']
+  delete log['source']
+  delete log['service']
+  delete log['envID']
+  delete log['sandboxID']
+
+  return { timestamp, level, log }
 }
 
 export const logsCommand = new commander.Command('logs')
@@ -239,42 +345,31 @@ function printLog(
   format: Format | undefined,
   allowedLoggers?: string[] | undefined
 ) {
-  const log = JSON.parse(line)
-  const data = parseDataField(log.data)
+  const printableLogs = normalizeSandboxLogLineForOutput(timestamp, line)
 
-  const level =
-    normalizeLevel(
-      getStringField(data?.level) ?? getStringField(data?.severity)
-    ) ??
-    normalizeLevel(getStringField(log.level)) ??
-    LogLevel.INFO
-
-  const logger =
-    getStringField(data?.logger) ??
-    getStringField(data?.name) ??
-    getStringField(log.logger)
-  log.logger = cleanLogger(logger)
-
-  const message = getStringField(data?.message) ?? getStringField(data?.msg)
-  if (message) {
-    log.message = message
+  for (const printableLog of printableLogs) {
+    printNormalizedLog(printableLog, allowedLevel, format, allowedLoggers)
   }
+}
 
-  if (data) {
-    const displayData = getDisplayData(data)
-    if (displayData) {
-      log.data = displayData
-    } else {
-      delete log.data
-    }
-  }
+function printNormalizedLog(
+  printableLog: PrintableSandboxLog,
+  allowedLevel: LogLevel | undefined,
+  format: Format | undefined,
+  allowedLoggers?: string[] | undefined
+) {
+  const { timestamp, level } = printableLog
+  const log = { ...printableLog.log }
+  const logger = getStringField(log.logger) ?? ''
+  const allowedLoggerPrefixes = allowedLoggers
+    ?.map((allowedLogger) => allowedLogger.trim())
+    .filter(Boolean)
 
-  // Check if the current logger startsWith any of the allowed loggers. If there are no specified loggers, print logs from all loggers.
   if (
-    allowedLoggers !== undefined &&
-    Array.isArray(allowedLoggers) &&
-    !allowedLoggers.some((allowedLogger) =>
-      log.logger.startsWith(allowedLogger)
+    allowedLoggerPrefixes !== undefined &&
+    allowedLoggerPrefixes.length > 0 &&
+    !allowedLoggerPrefixes.some((allowedLogger) =>
+      logger.startsWith(allowedLogger)
     )
   ) {
     return
@@ -299,16 +394,6 @@ function printLog(
       formattedLevel = chalk.default.white(chalk.default.bgRed(level))
       break
   }
-
-  log.level = level
-  delete log['traceID']
-  delete log['instanceID']
-  delete log['source_type']
-  delete log['teamID']
-  delete log['source']
-  delete log['service']
-  delete log['envID']
-  delete log['sandboxID']
 
   if (format === Format.JSON) {
     console.log(
