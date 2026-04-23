@@ -9,7 +9,7 @@ from e2b.api.client.models import (
     ListedSandbox,
     SandboxDetail,
     SandboxLifecycle as ClientSandboxLifecycle,
-    SandboxNetworkConfig as ClientSandboxNetworkConfig,
+    SandboxNetworkConfig,
     SandboxNetworkRule as ClientSandboxNetworkRule,
     SandboxState,
 )
@@ -159,7 +159,7 @@ def get_auto_resume_enabled(lifecycle: Optional[SandboxLifecycle]) -> Optional[b
 
 
 def from_client_network_config(
-    network: Union[Unset, ClientSandboxNetworkConfig],
+    network: Union[Unset, SandboxNetworkConfig],
 ) -> Optional[SandboxNetworkOpts]:
     if isinstance(network, Unset):
         return None
