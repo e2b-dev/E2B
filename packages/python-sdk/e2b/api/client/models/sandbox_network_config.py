@@ -1,14 +1,11 @@
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, TypeVar, Union, cast
+from typing import Any, TypeVar, Union, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
+from ..models.sandbox_network_rule import SandboxNetworkRule
 from ..types import UNSET, Unset
-
-if TYPE_CHECKING:
-    from ..models.sandbox_network_rule import SandboxNetworkRule
-
 
 T = TypeVar("T", bound="SandboxNetworkConfig")
 
@@ -33,8 +30,6 @@ class SandboxNetworkConfig:
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        from ..models.sandbox_network_rule import SandboxNetworkRule
-
         allow_out: Union[Unset, list[Union[dict[str, Any], str]]] = UNSET
         if not isinstance(self.allow_out, Unset):
             allow_out = []
@@ -70,8 +65,6 @@ class SandboxNetworkConfig:
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
-        from ..models.sandbox_network_rule import SandboxNetworkRule
-
         d = dict(src_dict)
         allow_out = []
         _allow_out = d.pop("allowOut", UNSET)
