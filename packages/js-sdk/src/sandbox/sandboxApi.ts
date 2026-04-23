@@ -108,6 +108,13 @@ export interface SandboxApiOpts
  */
 export interface SandboxOpts extends ConnectionOpts {
   /**
+   * Sandbox template name or ID.
+   *
+   * @default 'base' (or 'mcp-gateway' when `mcp` option is set)
+   */
+  template?: string
+
+  /**
    * Custom metadata for the sandbox.
    *
    * @default {}
