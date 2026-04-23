@@ -1,11 +1,14 @@
 from collections.abc import Mapping
-from typing import Any, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, TypeVar, Union, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
-from ..models.sandbox_network_rule import SandboxNetworkRule
 from ..types import UNSET, Unset
+
+if TYPE_CHECKING:
+    from ..models.sandbox_network_rule import SandboxNetworkRule
+
 
 T = TypeVar("T", bound="SandboxNetworkConfig")
 
@@ -30,6 +33,8 @@ class SandboxNetworkConfig:
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
+        from ..models.sandbox_network_rule import SandboxNetworkRule
+
         allow_out: Union[Unset, list[Union[dict[str, Any], str]]] = UNSET
         if not isinstance(self.allow_out, Unset):
             allow_out = []
@@ -65,29 +70,27 @@ class SandboxNetworkConfig:
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
+        from ..models.sandbox_network_rule import SandboxNetworkRule
+
         d = dict(src_dict)
+        allow_out = []
         _allow_out = d.pop("allowOut", UNSET)
-        allow_out: Union[Unset, list[Union["SandboxNetworkRule", str]]] = UNSET
-        if not isinstance(_allow_out, Unset):
-            allow_out = []
-            for allow_out_item_data in _allow_out:
+        for allow_out_item_data in _allow_out or []:
 
-                def _parse_allow_out_item(
-                    data: object,
-                ) -> Union["SandboxNetworkRule", str]:
-                    try:
-                        if not isinstance(data, dict):
-                            raise TypeError()
-                        allow_out_item_type_1 = SandboxNetworkRule.from_dict(data)
+            def _parse_allow_out_item(data: object) -> Union["SandboxNetworkRule", str]:
+                try:
+                    if not isinstance(data, dict):
+                        raise TypeError()
+                    allow_out_item_type_1 = SandboxNetworkRule.from_dict(data)
 
-                        return allow_out_item_type_1
-                    except:  # noqa: E722
-                        pass
-                    return cast(Union["SandboxNetworkRule", str], data)
+                    return allow_out_item_type_1
+                except:  # noqa: E722
+                    pass
+                return cast(Union["SandboxNetworkRule", str], data)
 
-                allow_out_item = _parse_allow_out_item(allow_out_item_data)
+            allow_out_item = _parse_allow_out_item(allow_out_item_data)
 
-                allow_out.append(allow_out_item)
+            allow_out.append(allow_out_item)
 
         allow_public_traffic = d.pop("allowPublicTraffic", UNSET)
 
