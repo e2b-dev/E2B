@@ -166,11 +166,7 @@ def from_client_network_config(
 
     result: SandboxNetworkOpts = {}
 
-    # Truthy check (rather than isinstance(..., Unset)) because the generated
-    # from_dict pre-initializes allow_out to [] and uses `_allow_out or []`,
-    # which collapses an absent field into an empty list. Treat both as "no
-    # allow_out provided" so we don't surface a misleading [] to the caller.
-    if not isinstance(network.allow_out, Unset) and network.allow_out:
+    if not isinstance(network.allow_out, Unset):
         result["allow_out"] = [
             cast(
                 SandboxNetworkRule,
