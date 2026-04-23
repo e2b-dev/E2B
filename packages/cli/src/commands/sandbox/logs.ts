@@ -157,6 +157,20 @@ function getDisplayData(
   return Object.fromEntries(visibleEntries)
 }
 
+function getCapturedBy(
+  sourceLog: Record<string, unknown>
+): Record<string, string> | undefined {
+  const capturedBy = Object.fromEntries(
+    [
+      ['logger', getStringField(sourceLog.logger)],
+      ['message', getStringField(sourceLog.message)],
+      ['event_type', getStringField(sourceLog.event_type)],
+    ].filter((entry): entry is [string, string] => Boolean(entry[1]))
+  )
+
+  return Object.keys(capturedBy).length > 0 ? capturedBy : undefined
+}
+
 export function normalizeSandboxLogLineForOutput(
   timestamp: string,
   line: string
@@ -187,11 +201,14 @@ function normalizeSandboxLogForOutput(
     normalizeLevel(getStringField(log.level)) ??
     LogLevel.INFO
 
-  const logger =
-    getStringField(data?.logger) ??
-    getStringField(data?.name) ??
-    getStringField(log.logger)
-  log.logger = cleanLogger(logger)
+  const logger = data
+    ? (getStringField(data.logger) ?? getStringField(data.name))
+    : getStringField(log.logger)
+  if (logger) {
+    log.logger = cleanLogger(logger)
+  } else {
+    delete log.logger
+  }
 
   const message = getStringField(data?.message) ?? getStringField(data?.msg)
   if (message) {
@@ -205,6 +222,13 @@ function normalizeSandboxLogForOutput(
     } else {
       delete log.data
     }
+
+    log.origin = 'user'
+    const capturedBy = getCapturedBy(sourceLog)
+    if (capturedBy) {
+      log.captured_by = capturedBy
+    }
+    delete log.event_type
   }
 
   log.level = level

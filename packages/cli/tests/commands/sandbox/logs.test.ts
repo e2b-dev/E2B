@@ -29,8 +29,13 @@ describe('normalizeSandboxLogLineForOutput', () => {
       level: LogLevel.ERROR,
       log: {
         level: LogLevel.ERROR,
+        origin: 'user',
         logger: 'operator.HTTP.SetupCommand',
         message: 'setup failed',
+        captured_by: {
+          logger: 'process',
+          message: 'Streaming process event',
+        },
         data: {
           request_id: 'req_123',
         },
@@ -69,9 +74,14 @@ describe('normalizeSandboxLogLineForOutput', () => {
         level: LogLevel.INFO,
         log: {
           level: LogLevel.INFO,
+          origin: 'user',
           logger: 'operator.HTTP.SetupCommand',
           message: 'all checks passed',
-          event_type: 'stdout',
+          captured_by: {
+            logger: 'process',
+            message: 'Streaming process event',
+            event_type: 'stdout',
+          },
           data: {
             request_id: 'req_1',
           },
@@ -82,15 +92,55 @@ describe('normalizeSandboxLogLineForOutput', () => {
         level: LogLevel.WARN,
         log: {
           level: LogLevel.WARN,
+          origin: 'user',
           logger: 'operator.HTTP.LocatorPlugin',
           message: 'falling back to cached locator',
-          event_type: 'stdout',
+          captured_by: {
+            logger: 'process',
+            message: 'Streaming process event',
+            event_type: 'stdout',
+          },
           data: {
             request_id: 'req_2',
           },
         },
       },
     ])
+  })
+
+  test('does not use the wrapper logger when structured data has no logger', () => {
+    const [entry] = normalizeSandboxLogLineForOutput(
+      timestamp,
+      JSON.stringify({
+        level: 'info',
+        logger: 'process',
+        message: 'Streaming process event',
+        event_type: 'stderr',
+        data: JSON.stringify({
+          severity: 'WARN',
+          message: 'cache warmup skipped',
+          request_id: 'req_3',
+        }),
+      })
+    )
+
+    expect(entry).toEqual({
+      timestamp,
+      level: LogLevel.WARN,
+      log: {
+        level: LogLevel.WARN,
+        origin: 'user',
+        message: 'cache warmup skipped',
+        captured_by: {
+          logger: 'process',
+          message: 'Streaming process event',
+          event_type: 'stderr',
+        },
+        data: {
+          request_id: 'req_3',
+        },
+      },
+    })
   })
 
   test('keeps the outer log when data is not clean structured JSON', () => {
