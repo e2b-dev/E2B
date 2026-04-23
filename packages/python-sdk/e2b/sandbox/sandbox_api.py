@@ -168,17 +168,7 @@ def from_client_network_config(
 
     if not isinstance(network.allow_out, Unset):
         result["allow_out"] = [
-            cast(
-                SandboxNetworkRule,
-                {
-                    "host": item.host,
-                    **(
-                        {"transform": [t.to_dict() for t in (item.transform or [])]}
-                        if not isinstance(item.transform, Unset)
-                        else {}
-                    ),
-                },
-            )
+            cast(SandboxNetworkRule, item.to_dict())
             if isinstance(item, ClientSandboxNetworkRule)
             else item
             for item in network.allow_out
