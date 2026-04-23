@@ -66,24 +66,28 @@ class SandboxNetworkConfig:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        allow_out = []
         _allow_out = d.pop("allowOut", UNSET)
-        for allow_out_item_data in _allow_out or []:
+        allow_out: Union[Unset, list[Union["SandboxNetworkRule", str]]] = UNSET
+        if not isinstance(_allow_out, Unset):
+            allow_out = []
+            for allow_out_item_data in _allow_out:
 
-            def _parse_allow_out_item(data: object) -> Union["SandboxNetworkRule", str]:
-                try:
-                    if not isinstance(data, dict):
-                        raise TypeError()
-                    allow_out_item_type_1 = SandboxNetworkRule.from_dict(data)
+                def _parse_allow_out_item(
+                    data: object,
+                ) -> Union["SandboxNetworkRule", str]:
+                    try:
+                        if not isinstance(data, dict):
+                            raise TypeError()
+                        allow_out_item_type_1 = SandboxNetworkRule.from_dict(data)
 
-                    return allow_out_item_type_1
-                except:  # noqa: E722
-                    pass
-                return cast(Union["SandboxNetworkRule", str], data)
+                        return allow_out_item_type_1
+                    except:  # noqa: E722
+                        pass
+                    return cast(Union["SandboxNetworkRule", str], data)
 
-            allow_out_item = _parse_allow_out_item(allow_out_item_data)
+                allow_out_item = _parse_allow_out_item(allow_out_item_data)
 
-            allow_out.append(allow_out_item)
+                allow_out.append(allow_out_item)
 
         allow_public_traffic = d.pop("allowPublicTraffic", UNSET)
 
