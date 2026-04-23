@@ -200,11 +200,7 @@ describe('allowOut transform injects headers', () => {
   sandboxTest.scoped({
     sandboxOpts: {
       network: {
-        denyOut: [ALL_TRAFFIC],
         allowOut: [
-          {
-            host: 'httpbin.org',
-          },
           {
             host: 'httpbin.org',
             transform: [

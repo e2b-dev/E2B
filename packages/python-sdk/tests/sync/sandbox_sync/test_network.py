@@ -2,12 +2,7 @@ import json
 
 import pytest
 
-from e2b import (
-    ALL_TRAFFIC,
-    SandboxNetworkOpts,
-    SandboxNetworkRule,
-    SandboxNetworkRuleTransform,
-)
+from e2b import ALL_TRAFFIC, SandboxNetworkOpts
 from e2b.sandbox.commands.command_handle import CommandExitException
 
 
@@ -170,22 +165,15 @@ def test_allow_out_transform_injects_headers(sandbox_factory):
     injected_header = "X-E2B-Test-Token"
     injected_value = "e2b-transform-value-123"
 
-    sandbox = sandbox_factory(
-        network=SandboxNetworkOpts(
-            deny_out=[ALL_TRAFFIC],
-            allow_out=[
-                SandboxNetworkRule(host="httpbin.org"),
-                SandboxNetworkRule(
-                    host="httpbin.org",
-                    transform=[
-                        SandboxNetworkRuleTransform(
-                            headers={injected_header: injected_value}
-                        )
-                    ],
-                ),
-            ],
-        ),
-    )
+    network: SandboxNetworkOpts = {
+        "allow_out": [
+            {
+                "host": "httpbin.org",
+                "transform": [{"headers": {injected_header: injected_value}}],
+            },
+        ],
+    }
+    sandbox = sandbox_factory(network=network)
 
     result = sandbox.commands.run("curl -sS --max-time 10 https://httpbin.org/headers")
     assert result.exit_code == 0
