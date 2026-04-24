@@ -283,6 +283,23 @@ export interface SnapshotInfo {
    * Can be used with Sandbox.create() to create a new sandbox from this snapshot.
    */
   snapshotId: string
+
+  /**
+   * Full names of the snapshot template including team namespace and tag (e.g. team-slug/my-snapshot:v2).
+   */
+  names: string[]
+}
+
+/**
+ * Options for creating a snapshot.
+ */
+export interface CreateSnapshotOpts extends SandboxApiOpts {
+  /**
+   * Optional name for the snapshot template.
+   * If a snapshot template with this name already exists, a new build will be assigned
+   * to the existing template instead of creating a new one.
+   */
+  name?: string
 }
 
 /**
@@ -688,13 +705,13 @@ export class SandboxApi {
    * The snapshot is a persistent image that survives sandbox deletion.
    *
    * @param sandboxId sandbox ID to create snapshot from.
-   * @param opts connection options.
+   * @param opts snapshot creation options including optional name and connection options.
    *
    * @returns snapshot information including the snapshot name that can be used with Sandbox.create().
    */
   static async createSnapshot(
     sandboxId: string,
-    opts?: SandboxApiOpts
+    opts?: CreateSnapshotOpts
   ): Promise<SnapshotInfo> {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
@@ -705,7 +722,7 @@ export class SandboxApi {
           sandboxID: sandboxId,
         },
       },
-      body: {},
+      body: opts?.name ? { name: opts.name } : {},
       signal: config.getSignal(opts?.requestTimeoutMs),
     })
 
@@ -720,6 +737,7 @@ export class SandboxApi {
 
     return {
       snapshotId: res.data!.snapshotID,
+      names: res.data!.names ?? [],
     }
   }
 
@@ -1045,6 +1063,7 @@ export class SnapshotPaginator extends BasePaginator<SnapshotInfo> {
     return (res.data ?? []).map(
       (snapshot: components['schemas']['SnapshotInfo']) => ({
         snapshotId: snapshot.snapshotID,
+        names: snapshot.names ?? [],
       })
     )
   }
