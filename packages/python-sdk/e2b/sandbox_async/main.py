@@ -862,9 +862,26 @@ class AsyncSandbox(SandboxApi):
         )
 
         sandbox_headers = {}
-        envd_access_token = sandbox.envd_access_token
-        if envd_access_token is not None and not isinstance(envd_access_token, Unset):
+        domain = (
+            sandbox.domain
+            if isinstance(sandbox.domain, str)
+            else None
+        )
+        envd_access_token = (
+            sandbox.envd_access_token
+            if isinstance(sandbox.envd_access_token, str)
+            else None
+        )
+        traffic_access_token = (
+            sandbox.traffic_access_token
+            if isinstance(sandbox.traffic_access_token, str)
+            else None
+        )
+        if envd_access_token is not None:
             sandbox_headers["X-Access-Token"] = envd_access_token
+
+        sandbox_headers["E2b-Sandbox-Id"] = sandbox.sandbox_id
+        sandbox_headers["E2b-Sandbox-Port"] = str(ConnectionConfig.envd_port)
 
         connection_config = ConnectionConfig(
             extra_sandbox_headers=sandbox_headers,
@@ -873,10 +890,10 @@ class AsyncSandbox(SandboxApi):
 
         return cls(
             sandbox_id=sandbox.sandbox_id,
-            sandbox_domain=sandbox.domain,
+            sandbox_domain=domain,
             envd_version=Version(sandbox.envd_version),
             envd_access_token=envd_access_token,
-            traffic_access_token=sandbox.traffic_access_token,
+            traffic_access_token=traffic_access_token,
             connection_config=connection_config,
         )
 
