@@ -11,11 +11,11 @@ def test_sbx_metrics(sandbox_factory) -> None:
     sbx = sandbox_factory(timeout=60)
     # Wait for the sandbox to have some metrics
     metrics = []
-    for _ in range(30):
+    for _ in range(60):
         metrics = sbx.get_metrics()
         if len(metrics) > 0:
             break
-        time.sleep(1)
+        time.sleep(0.5)
 
     assert len(metrics) > 0
 

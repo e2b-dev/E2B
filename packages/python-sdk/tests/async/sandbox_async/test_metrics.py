@@ -12,11 +12,11 @@ async def test_sbx_metrics(async_sandbox_factory):
 
     # Wait for the sandbox to have some metrics
     metrics = []
-    for _ in range(30):
+    for _ in range(60):
         metrics = await sbx.get_metrics()
         if len(metrics) > 0:
             break
-        await asyncio.sleep(1)
+        await asyncio.sleep(0.5)
 
     assert len(metrics) > 0
 

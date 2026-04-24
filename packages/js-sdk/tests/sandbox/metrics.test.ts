@@ -9,12 +9,12 @@ sandboxTest.skipIf(isDebug)(
   async ({ sandbox }) => {
     const now = new Date()
     let metrics: SandboxMetrics[]
-    for (let i = 0; i < 30; i++) {
+    for (let i = 0; i < 60; i++) {
       metrics = await sandbox.getMetrics()
       if (metrics.length > 0) {
         break
       }
-      await wait(1_000)
+      await wait(500)
     }
 
     expect(metrics.length).toBeGreaterThan(0)
