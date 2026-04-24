@@ -1,4 +1,7 @@
 import asyncio
+import gzip
+import uuid
+
 from io import IOBase, TextIOBase
 from typing import IO, AsyncIterator, List, Literal, Optional, Union, overload
 
@@ -15,7 +18,11 @@ from e2b.connection_config import (
     Username,
     default_username,
 )
-from e2b.envd.api import ENVD_API_FILES_ROUTE, ahandle_envd_api_exception
+from e2b.envd.api import (
+    ENVD_API_FILES_COMPOSE_ROUTE,
+    ENVD_API_FILES_ROUTE,
+    ahandle_envd_api_exception,
+)
 from e2b.envd.filesystem import filesystem_connect, filesystem_pb2
 from e2b.envd.rpc import authentication_header, handle_rpc_exception
 from e2b.envd.versions import (
@@ -56,6 +63,9 @@ def _handle_filesystem_rpc_exception(e: Exception) -> Exception:
 
 async def _ahandle_filesystem_envd_api_exception(r):
     return await ahandle_envd_api_exception(r, _FILESYSTEM_HTTP_ERROR_MAP)
+
+
+_DEFAULT_CHUNK_SIZE = 64 * 1024 * 1024  # 64 MB
 
 
 class Filesystem:
@@ -212,6 +222,15 @@ class Filesystem:
 
         :return: Information about the written file
         """
+        if self._envd_version >= ENVD_OCTET_STREAM_UPLOAD:
+            content = to_upload_body(data, False)
+            if len(content) > _DEFAULT_CHUNK_SIZE:
+                return await self._composite_write(
+                    path, content, user, request_timeout, gzip
+                )
+            # Use materialized bytes to avoid consuming IO streams twice
+            data = content
+
         result = await self.write_files(
             [WriteEntry(path=path, data=data)],
             user,
@@ -344,6 +363,78 @@ class Filesystem:
             results.extend([WriteInfo(**f) for f in write_result])
 
         return results
+
+    async def _composite_write(
+        self,
+        destination: str,
+        content: bytes,
+        user: Optional[Username] = None,
+        request_timeout: Optional[float] = None,
+        use_gzip: bool = False,
+    ) -> WriteInfo:
+        username = user
+        if username is None and self._envd_version < ENVD_DEFAULT_USER:
+            username = default_username
+
+        total_size = len(content)
+        chunk_size = _DEFAULT_CHUNK_SIZE
+
+        headers = {"Content-Type": "application/octet-stream"}
+        if use_gzip:
+            headers["Content-Encoding"] = "gzip"
+
+        # Split into chunks and upload in parallel
+        upload_id = str(uuid.uuid4())
+        chunk_count = (total_size + chunk_size - 1) // chunk_size
+        chunk_paths = [f"/tmp/.e2b-upload-{upload_id}-{i}" for i in range(chunk_count)]
+
+        async def _upload_chunk(i: int) -> None:
+            start = i * chunk_size
+            end = min(start + chunk_size, total_size)
+            chunk_data = content[start:end]
+
+            params = {"path": chunk_paths[i]}
+            if username:
+                params["username"] = username
+
+            if use_gzip:
+                upload_content = await asyncio.to_thread(gzip.compress, chunk_data)
+            else:
+                upload_content = chunk_data
+
+            r = await self._envd_api.post(
+                ENVD_API_FILES_ROUTE,
+                content=upload_content,
+                headers=headers,
+                params=params,
+                timeout=self._connection_config.get_request_timeout(request_timeout),
+            )
+
+            err = await _ahandle_filesystem_envd_api_exception(r)
+            if err:
+                raise err
+
+        await asyncio.gather(*[_upload_chunk(i) for i in range(chunk_count)])
+
+        # Compose chunks into the final file
+        body = {
+            "source_paths": chunk_paths,
+            "destination": destination,
+        }
+        if username:
+            body["username"] = username
+
+        r = await self._envd_api.post(
+            ENVD_API_FILES_COMPOSE_ROUTE,
+            json=body,
+            timeout=self._connection_config.get_request_timeout(request_timeout),
+        )
+
+        err = await _ahandle_filesystem_envd_api_exception(r)
+        if err:
+            raise err
+
+        return WriteInfo(**r.json())
 
     async def list(
         self,
