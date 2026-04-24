@@ -1,10 +1,10 @@
-export async function confirm(text: string, defaultAnwser = false) {
+export async function confirm(text: string, defaultAnswer = false) {
   const inquirer = await import('inquirer')
   const confirmAnswers = await inquirer.default.prompt([
     {
       name: 'confirm',
       type: 'confirm',
-      default: defaultAnwser,
+      default: defaultAnswer,
       message: text,
     },
   ])

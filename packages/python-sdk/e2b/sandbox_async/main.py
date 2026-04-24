@@ -1,6 +1,7 @@
 import datetime
 import json
 import logging
+import shlex
 import uuid
 from typing import Dict, List, Optional, Union, overload
 
@@ -235,7 +236,7 @@ class AsyncSandbox(SandboxApi):
             sandbox._mcp_token = token
 
             res = await sandbox.commands.run(
-                f"mcp-gateway --config '{json.dumps(mcp)}'",
+                f"mcp-gateway --config {shlex.quote(json.dumps(mcp))}",
                 user="root",
                 envs={"GATEWAY_ACCESS_TOKEN": token},
             )
@@ -616,7 +617,7 @@ class AsyncSandbox(SandboxApi):
             sandbox._mcp_token = token
 
             res = await sandbox.commands.run(
-                f"mcp-gateway --config '{json.dumps(mcp)}'",
+                f"mcp-gateway --config {shlex.quote(json.dumps(mcp))}",
                 user="root",
                 envs={"GATEWAY_ACCESS_TOKEN": token},
             )

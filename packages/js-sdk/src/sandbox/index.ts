@@ -29,6 +29,7 @@ import { getSignature } from './signature'
 import { compareVersions } from 'compare-versions'
 import { SandboxError } from '../errors'
 import { ENVD_DEBUG_FALLBACK, ENVD_DEFAULT_USER } from '../envd/versions'
+import { shellQuote } from '../utils'
 
 /**
  * Options for sandbox upload/download URL generation.
@@ -301,7 +302,7 @@ export class Sandbox extends SandboxApi {
     if (sandboxOpts?.mcp) {
       sandbox.mcpToken = crypto.randomUUID()
       const res = await sandbox.commands.run(
-        `mcp-gateway --config '${JSON.stringify(sandboxOpts?.mcp)}'`,
+        `mcp-gateway --config ${shellQuote(JSON.stringify(sandboxOpts.mcp))}`,
         {
           user: 'root',
           envs: {
@@ -398,7 +399,7 @@ export class Sandbox extends SandboxApi {
     if (sandboxOpts?.mcp) {
       sandbox.mcpToken = crypto.randomUUID()
       const res = await sandbox.commands.run(
-        `mcp-gateway --config '${JSON.stringify(sandboxOpts?.mcp)}'`,
+        `mcp-gateway --config ${shellQuote(JSON.stringify(sandboxOpts.mcp))}`,
         {
           user: 'root',
           envs: {
