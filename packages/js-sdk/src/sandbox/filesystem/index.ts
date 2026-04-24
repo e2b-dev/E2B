@@ -38,6 +38,11 @@ import {
   TemplateError,
 } from '../../errors'
 import { toBlob, toUploadBody } from '../../utils'
+import {
+  combineAbortSignals,
+  retryFileUpload,
+  runUploadBatch,
+} from './uploadQueue'
 
 const FILESYSTEM_HTTP_ERROR_MAP: Record<number, (message: string) => Error> = {
   404: (message: string) => new FileNotFoundError(message),
@@ -166,6 +171,9 @@ export interface FilesystemRequestOpts
 
 /**
  * Options for writing files to the sandbox filesystem.
+ *
+ * For uploads, `requestTimeoutMs` is a per-file budget shared by global limiter
+ * waiting, all retry attempts, and retry backoff.
  */
 export interface FilesystemWriteOpts extends FilesystemRequestOpts {
   /**
@@ -430,40 +438,59 @@ export class Filesystem {
         headers['Content-Encoding'] = 'gzip'
       }
 
-      const uploadResults = await Promise.all(
-        writeFiles.map(async (file) => {
+      const uploadResults = await runUploadBatch<
+        WriteEntry | { data: WriteEntry['data'] },
+        WriteInfo[]
+      >(
+        writeFiles,
+        this.connectionConfig.maxConcurrentFileUploads,
+        async (file, _index, abortSignal) => {
           const filePath = path ?? (file as WriteEntry).path
           const body = await toUploadBody(file.data, useGzip)
+          const timeoutSignal = this.connectionConfig.getSignal(
+            writeOpts?.requestTimeoutMs
+          )
+          const { signal, cleanup } = timeoutSignal
+            ? combineAbortSignals([abortSignal, timeoutSignal])
+            : { signal: abortSignal, cleanup: () => {} }
 
-          const res = await this.envdApi.api.POST('/files', {
-            params: {
-              query: {
-                path: filePath,
-                username: user,
+          try {
+            return await retryFileUpload(
+              async () => {
+                const res = await this.envdApi.api.POST('/files', {
+                  params: {
+                    query: {
+                      path: filePath,
+                      username: user,
+                    },
+                  },
+                  bodySerializer: () => body,
+                  headers,
+                  signal,
+                  body: {},
+                })
+
+                const err = await handleFilesystemEnvdApiError(res)
+                if (err) {
+                  throw err
+                }
+
+                const files = res.data as WriteInfo[]
+                if (!files || files.length === 0) {
+                  throw new Error(
+                    'Expected to receive information about written file'
+                  )
+                }
+
+                return files
               },
-            },
-            bodySerializer: () => body,
-            headers,
-            signal: this.connectionConfig.getSignal(
-              writeOpts?.requestTimeoutMs
-            ),
-            body: {},
-          })
-
-          const err = await handleFilesystemEnvdApiError(res)
-          if (err) {
-            throw err
-          }
-
-          const files = res.data as WriteInfo[]
-          if (!files || files.length === 0) {
-            throw new Error(
-              'Expected to receive information about written file'
+              this.connectionConfig,
+              signal
             )
+          } finally {
+            cleanup()
           }
-
-          return files
-        })
+        }
       )
 
       for (const files of uploadResults) {

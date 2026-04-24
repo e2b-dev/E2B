@@ -1,3 +1,4 @@
+import time
 from io import IOBase, TextIOBase
 from typing import IO, Iterator, List, Literal, Optional, Union, overload
 
@@ -35,6 +36,10 @@ from e2b.sandbox.filesystem.filesystem import (
     WriteInfo,
     map_file_type,
     to_upload_body,
+)
+from e2b.sandbox_sync.filesystem.upload_queue import (
+    retry_file_upload,
+    run_upload_batch,
 )
 from e2b.sandbox_sync.filesystem.watch_handle import WatchHandle
 
@@ -237,7 +242,7 @@ class Filesystem:
 
         :param files: list of files to write as `WriteEntry` objects, each containing `path` and `data`
         :param user: Run the operation as this user
-        :param request_timeout: Timeout for the request
+        :param request_timeout: Timeout for the request. For file uploads, each file uses one timeout budget across global limiter wait, all retry attempts, and retry backoff.
         :param gzip: Use gzip compression for the request
         :return: Information about the written files
         """
@@ -253,7 +258,8 @@ class Filesystem:
         results: List[WriteInfo] = []
 
         if use_octet_stream:
-            for file in files:
+
+            def _prepare_upload_file(file):
                 file_path, file_data = file["path"], file["data"]
 
                 content = to_upload_body(file_data, gzip)
@@ -266,14 +272,15 @@ class Filesystem:
                 if gzip:
                     headers["Content-Encoding"] = "gzip"
 
+                return content, params, headers
+
+            def _upload_prepared_file(content, params, headers, timeout):
                 r = self._envd_api.post(
                     ENVD_API_FILES_ROUTE,
                     content=content,
                     headers=headers,
                     params=params,
-                    timeout=self._connection_config.get_request_timeout(
-                        request_timeout
-                    ),
+                    timeout=timeout,
                 )
 
                 err = _handle_filesystem_envd_api_exception(r)
@@ -287,7 +294,49 @@ class Filesystem:
                         "Expected to receive information about written file"
                     )
 
-                results.extend([WriteInfo(**f) for f in write_result])
+                return [WriteInfo(**f) for f in write_result]
+
+            def _upload_file_with_retries(file, _index, stop_event):
+                prepared_upload = _prepare_upload_file(file)
+                timeout = self._connection_config.get_request_timeout(request_timeout)
+                deadline = None if timeout is None else time.monotonic() + timeout
+
+                def _remaining_timeout():
+                    if deadline is None:
+                        return None
+
+                    remaining = deadline - time.monotonic()
+                    if remaining <= 0:
+                        raise TimeoutError("File upload timed out")
+
+                    return remaining
+
+                def _upload_once():
+                    content, params, headers = prepared_upload
+                    return _upload_prepared_file(
+                        content,
+                        params,
+                        headers,
+                        _remaining_timeout(),
+                    )
+
+                return retry_file_upload(
+                    _upload_once,
+                    attempts=self._connection_config.file_upload_retry_attempts,
+                    max_global_uploads=(
+                        self._connection_config.max_global_concurrent_file_uploads
+                    ),
+                    stop_event=stop_event,
+                    deadline=deadline,
+                )
+
+            upload_results = run_upload_batch(
+                files,
+                self._connection_config.max_concurrent_file_uploads,
+                _upload_file_with_retries,
+            )
+            for file_results in upload_results:
+                results.extend(file_results)
         else:
             params = {}
             if username:

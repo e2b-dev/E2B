@@ -6,8 +6,12 @@ from httpx._types import ProxyTypes
 from typing_extensions import Unpack
 
 from e2b.api.metadata import package_version
+from e2b.exceptions import InvalidArgumentException
 
 REQUEST_TIMEOUT: float = 60.0  # 60 seconds
+MAX_CONCURRENT_FILE_UPLOADS = 8
+MAX_GLOBAL_CONCURRENT_FILE_UPLOADS = 128
+FILE_UPLOAD_RETRY_ATTEMPTS = 4
 
 KEEPALIVE_PING_INTERVAL_SEC = 50  # 50 seconds
 KEEPALIVE_PING_HEADER = "Keepalive-Ping-Interval"
@@ -21,7 +25,24 @@ class ApiParams(TypedDict, total=False):
     """
 
     request_timeout: Optional[float]
-    """Timeout for the request in **seconds**, defaults to 60 seconds."""
+    """
+    Timeout for the request in **seconds**, defaults to 60 seconds.
+    For file uploads, each file uses one timeout budget across global limiter
+    waiting, all retry attempts, and retry backoff.
+    """
+
+    max_concurrent_file_uploads: Optional[int]
+    """Maximum number of file uploads to run concurrently for a single write operation, defaults to `E2B_MAX_CONCURRENT_FILE_UPLOADS` or 8."""
+
+    max_global_concurrent_file_uploads: Optional[int]
+    """
+    Maximum number of file uploads to run concurrently across all sandboxes in the current process
+    that use the same configured limit, defaults to `E2B_MAX_GLOBAL_CONCURRENT_FILE_UPLOADS` or 128.
+    Sandboxes using different values use separate limiters.
+    """
+
+    file_upload_retry_attempts: Optional[int]
+    """Number of attempts for retryable file upload transport failures, defaults to `E2B_FILE_UPLOAD_RETRY_ATTEMPTS` or 4."""
 
     headers: Optional[Dict[str, str]]
     """Additional headers to send with the request."""
@@ -76,6 +97,43 @@ class ConnectionConfig:
     def _access_token():
         return os.getenv("E2B_ACCESS_TOKEN")
 
+    @staticmethod
+    def _get_positive_int(name: str, value: int | str) -> int:
+        try:
+            parsed = int(value)
+        except ValueError:
+            raise InvalidArgumentException(f"{name} must be an integer")
+
+        if parsed < 1:
+            raise InvalidArgumentException(f"{name} must be greater than 0")
+
+        return parsed
+
+    @staticmethod
+    def _get_env_positive_int(name: str, default: int) -> int:
+        return ConnectionConfig._get_positive_int(name, os.getenv(name) or str(default))
+
+    @staticmethod
+    def _max_concurrent_file_uploads():
+        return ConnectionConfig._get_env_positive_int(
+            "E2B_MAX_CONCURRENT_FILE_UPLOADS",
+            MAX_CONCURRENT_FILE_UPLOADS,
+        )
+
+    @staticmethod
+    def _max_global_concurrent_file_uploads():
+        return ConnectionConfig._get_env_positive_int(
+            "E2B_MAX_GLOBAL_CONCURRENT_FILE_UPLOADS",
+            MAX_GLOBAL_CONCURRENT_FILE_UPLOADS,
+        )
+
+    @staticmethod
+    def _file_upload_retry_attempts():
+        return ConnectionConfig._get_env_positive_int(
+            "E2B_FILE_UPLOAD_RETRY_ATTEMPTS",
+            FILE_UPLOAD_RETRY_ATTEMPTS,
+        )
+
     def __init__(
         self,
         domain: Optional[str] = None,
@@ -85,6 +143,9 @@ class ConnectionConfig:
         sandbox_url: Optional[str] = None,
         access_token: Optional[str] = None,
         request_timeout: Optional[float] = None,
+        max_concurrent_file_uploads: Optional[int] = None,
+        max_global_concurrent_file_uploads: Optional[int] = None,
+        file_upload_retry_attempts: Optional[int] = None,
         headers: Optional[Dict[str, str]] = None,
         extra_sandbox_headers: Optional[Dict[str, str]] = None,
         proxy: Optional[ProxyTypes] = None,
@@ -110,6 +171,29 @@ class ConnectionConfig:
             self.request_timeout = request_timeout
         else:
             self.request_timeout = REQUEST_TIMEOUT
+
+        self.max_concurrent_file_uploads = (
+            ConnectionConfig._get_positive_int(
+                "max_concurrent_file_uploads", max_concurrent_file_uploads
+            )
+            if max_concurrent_file_uploads is not None
+            else ConnectionConfig._max_concurrent_file_uploads()
+        )
+        self.max_global_concurrent_file_uploads = (
+            ConnectionConfig._get_positive_int(
+                "max_global_concurrent_file_uploads",
+                max_global_concurrent_file_uploads,
+            )
+            if max_global_concurrent_file_uploads is not None
+            else ConnectionConfig._max_global_concurrent_file_uploads()
+        )
+        self.file_upload_retry_attempts = (
+            ConnectionConfig._get_positive_int(
+                "file_upload_retry_attempts", file_upload_retry_attempts
+            )
+            if file_upload_retry_attempts is not None
+            else ConnectionConfig._file_upload_retry_attempts()
+        )
 
         self.api_url = (
             api_url

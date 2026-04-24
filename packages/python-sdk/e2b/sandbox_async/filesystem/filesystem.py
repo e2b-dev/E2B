@@ -37,6 +37,10 @@ from e2b.sandbox.filesystem.filesystem import (
     to_upload_body,
 )
 from e2b.sandbox.filesystem.watch_handle import FilesystemEvent
+from e2b.sandbox_async.filesystem.upload_queue import (
+    retry_file_upload,
+    run_upload_batch,
+)
 from e2b.sandbox_async.filesystem.watch_handle import AsyncWatchHandle
 from e2b.sandbox_async.utils import OutputHandler
 from e2b_connect.client import Code
@@ -241,7 +245,7 @@ class Filesystem:
 
         :param files: list of files to write as `WriteEntry` objects, each containing `path` and `data`
         :param user: Run the operation as this user
-        :param request_timeout: Timeout for the request
+        :param request_timeout: Timeout for the request. For file uploads, each file uses one timeout budget across global limiter wait, all retry attempts, and retry backoff.
         :param gzip: Use gzip compression for the request
         :return: Information about the written files
         """
@@ -258,7 +262,7 @@ class Filesystem:
 
         if use_octet_stream:
 
-            async def _upload_file(file):
+            def _prepare_upload_file(file):
                 file_path, file_data = file["path"], file["data"]
 
                 content = to_upload_body(file_data, gzip)
@@ -271,14 +275,15 @@ class Filesystem:
                 if gzip:
                     headers["Content-Encoding"] = "gzip"
 
+                return content, params, headers
+
+            async def _upload_prepared_file(content, params, headers, timeout):
                 r = await self._envd_api.post(
                     ENVD_API_FILES_ROUTE,
                     content=content,
                     headers=headers,
                     params=params,
-                    timeout=self._connection_config.get_request_timeout(
-                        request_timeout
-                    ),
+                    timeout=timeout,
                 )
 
                 err = await _ahandle_filesystem_envd_api_exception(r)
@@ -294,8 +299,48 @@ class Filesystem:
 
                 return [WriteInfo(**f) for f in write_result]
 
-            upload_results = await asyncio.gather(
-                *[_upload_file(file) for file in files]
+            async def _upload_file_with_retries(file, _index, stop_event):
+                prepared_upload = _prepare_upload_file(file)
+                timeout = self._connection_config.get_request_timeout(request_timeout)
+                loop = asyncio.get_running_loop()
+                deadline = None if timeout is None else loop.time() + timeout
+
+                def _remaining_timeout():
+                    if deadline is None:
+                        return None
+
+                    remaining = deadline - loop.time()
+                    if remaining <= 0:
+                        raise TimeoutError("File upload timed out")
+
+                    return remaining
+
+                async def _upload_once():
+                    content, params, headers = prepared_upload
+                    return await _upload_prepared_file(
+                        content,
+                        params,
+                        headers,
+                        _remaining_timeout(),
+                    )
+
+                upload_task = retry_file_upload(
+                    _upload_once,
+                    attempts=self._connection_config.file_upload_retry_attempts,
+                    max_global_uploads=(
+                        self._connection_config.max_global_concurrent_file_uploads
+                    ),
+                    stop_event=stop_event,
+                )
+                if timeout is None:
+                    return await upload_task
+
+                return await asyncio.wait_for(upload_task, timeout=timeout)
+
+            upload_results = await run_upload_batch(
+                files,
+                self._connection_config.max_concurrent_file_uploads,
+                _upload_file_with_retries,
             )
             for file_results in upload_results:
                 results.extend(file_results)
