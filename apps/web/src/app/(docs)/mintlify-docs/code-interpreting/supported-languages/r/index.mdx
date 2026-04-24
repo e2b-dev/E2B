@@ -1,0 +1,24 @@
+---
+title: Run R code
+sidebarTitle: R
+---
+
+
+Use the `runCode`/`run_code` method to run R code inside the sandbox.
+You'll need to pass the `language` parameter with value `r`.
+<CodeGroup>
+```js JavaScript & TypeScript
+import { Sandbox } from '@e2b/code-interpreter'
+
+const sbx = await Sandbox.create()
+const execution = await sbx.runCode('print("Hello, world!")', { language: 'r' })
+console.log(execution)
+```
+```python Python
+from e2b_code_interpreter import Sandbox
+
+sbx = Sandbox.create()
+execution = sbx.run_code('print("Hello, world!")', language="r")
+print(execution)
+```
+</CodeGroup>
