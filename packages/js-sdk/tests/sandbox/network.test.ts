@@ -1,13 +1,13 @@
 import { assert, expect, describe } from 'vitest'
 
-import { CommandExitError, ALL_TRAFFIC } from '../../src'
+import { CommandExitError } from '../../src'
 import { sandboxTest, isDebug } from '../setup.js'
 
 describe('allow only 1.1.1.1', () => {
   sandboxTest.scoped({
     sandboxOpts: {
       network: {
-        denyOut: [ALL_TRAFFIC],
+        denyOut: ({ allHosts }) => allHosts,
         allowOut: ['1.1.1.1'],
       },
     },
@@ -62,17 +62,17 @@ describe('deny specific IP address', () => {
   )
 })
 
-describe('deny all traffic using allTraffic helper', () => {
+describe('deny all traffic using allHosts selector', () => {
   sandboxTest.scoped({
     sandboxOpts: {
       network: {
-        denyOut: [ALL_TRAFFIC],
+        denyOut: ({ allHosts }) => allHosts,
       },
     },
   })
 
   sandboxTest.skipIf(isDebug)(
-    'deny all traffic using allTraffic helper',
+    'deny all traffic using allHosts selector',
     async ({ sandbox }) => {
       // Test that all traffic is denied
       await expect(
@@ -94,7 +94,7 @@ describe('allow takes precedence over deny', () => {
   sandboxTest.scoped({
     sandboxOpts: {
       network: {
-        denyOut: [ALL_TRAFFIC],
+        denyOut: ({ allHosts }) => allHosts,
         allowOut: ['1.1.1.1', '8.8.8.8'],
       },
     },
@@ -193,23 +193,23 @@ describe('allowPublicTraffic=true', () => {
   )
 })
 
-describe('allowOut transform injects headers', () => {
+describe('firewall transform injects headers', () => {
   const injectedHeader = 'X-E2B-Test-Token'
   const injectedValue = 'e2b-transform-value-123'
 
   sandboxTest.scoped({
     sandboxOpts: {
       network: {
-        allowOut: [
+        allowOut: ({ firewallHosts }) => firewallHosts,
+      },
+      firewall: {
+        'httpbin.org': [
           {
-            host: 'httpbin.org',
-            transform: [
-              {
-                headers: {
-                  [injectedHeader]: injectedValue,
-                },
+            transform: {
+              headers: {
+                [injectedHeader]: injectedValue,
               },
-            ],
+            },
           },
         ],
       },

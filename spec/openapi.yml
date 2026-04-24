@@ -262,9 +262,9 @@ components:
       additionalProperties: {}
       nullable: true
 
-    SandboxNetworkRuleTransform:
+    SandboxFirewallRuleTransform:
       type: object
-      description: Transform applied to egress requests matching a network rule.
+      description: Transform applied to egress requests matching a firewall rule.
       properties:
         headers:
           type: object
@@ -272,20 +272,20 @@ components:
           additionalProperties:
             type: string
 
-    SandboxNetworkRule:
+    SandboxFirewallRule:
       type: object
-      description: Structured egress rule matching a host, optionally transforming the request before it leaves the sandbox.
-      required:
-        - host
+      description: Firewall rule applied to outbound requests matching the host it is registered under.
       properties:
-        host:
-          type: string
-          description: Host, CIDR block, or IP address the rule applies to.
         transform:
-          type: array
-          description: Ordered list of transforms to apply to requests matching this rule.
-          items:
-            $ref: '#/components/schemas/SandboxNetworkRuleTransform'
+          $ref: '#/components/schemas/SandboxFirewallRuleTransform'
+
+    SandboxFirewall:
+      type: object
+      description: Map of host to ordered list of firewall rules applied to outbound requests for that host. Registering a host here does not allow egress on its own; the host must also appear in network.allowOut.
+      additionalProperties:
+        type: array
+        items:
+          $ref: '#/components/schemas/SandboxFirewallRule'
 
     SandboxNetworkConfig:
       type: object
@@ -296,14 +296,12 @@ components:
           description: Specify if the sandbox URLs should be accessible only with authentication.
         allowOut:
           type: array
-          description: List of allowed egress entries. Each entry is either a CIDR block/IP/host string, or a structured rule with optional per-host transforms. Allowed entries always take precedence over denied ones.
+          description: List of allowed CIDR blocks, IP addresses, or hostnames for egress traffic. Allowed entries always take precedence over denied ones.
           items:
-            oneOf:
-              - type: string
-              - $ref: '#/components/schemas/SandboxNetworkRule'
+            type: string
         denyOut:
           type: array
-          description: List of denied CIDR blocks or IP addresses for egress traffic
+          description: List of denied CIDR blocks, IP addresses, or hostnames for egress traffic.
           items:
             type: string
         maskRequestHost:
@@ -558,6 +556,8 @@ components:
           $ref: '#/components/schemas/SandboxState'
         network:
           $ref: '#/components/schemas/SandboxNetworkConfig'
+        firewall:
+          $ref: '#/components/schemas/SandboxFirewall'
         lifecycle:
           $ref: '#/components/schemas/SandboxLifecycle'
         volumeMounts:
@@ -653,6 +653,8 @@ components:
             to 0.0.0.0/0 in the network config.
         network:
           $ref: '#/components/schemas/SandboxNetworkConfig'
+        firewall:
+          $ref: '#/components/schemas/SandboxFirewall'
         metadata:
           $ref: '#/components/schemas/SandboxMetadata'
         envVars:

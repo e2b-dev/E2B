@@ -5,6 +5,7 @@ import {
   DEFAULT_SANDBOX_TIMEOUT_MS,
 } from '../connectionConfig'
 import { compareVersions } from 'compare-versions'
+import { ALL_TRAFFIC } from './network'
 import { SandboxNotFoundError, TemplateError } from '../errors'
 import { timeoutToSeconds } from '../utils'
 import type { Volume } from '../volume'
@@ -34,9 +35,9 @@ export type GitHubMcpServer = {
 }
 
 /**
- * Transform applied to outbound requests matching a {@link SandboxNetworkRule}.
+ * Transform applied to outbound requests matching a {@link SandboxFirewallRule}.
  */
-export type SandboxNetworkRuleTransform = {
+export type SandboxFirewallRuleTransform = {
   /**
    * Headers to inject into the outbound request. Values override any headers
    * already present on the request.
@@ -45,40 +46,69 @@ export type SandboxNetworkRuleTransform = {
 }
 
 /**
- * Structured egress rule for {@link SandboxNetworkOpts.allowOut}.
+ * Firewall rule applied to outbound requests matching the host it is
+ * registered under in {@link SandboxOpts.firewall}.
  */
-export type SandboxNetworkRule = {
-  /** Host, CIDR block, or IP address the rule applies to. */
-  host: string
-  /** Ordered list of transforms to apply to requests matching this rule. */
-  transform?: SandboxNetworkRuleTransform[]
+export type SandboxFirewallRule = {
+  /** Transform applied to requests matching this rule. */
+  transform?: SandboxFirewallRuleTransform
 }
 
-export type SandboxNetworkEntry = string | SandboxNetworkRule
+/**
+ * Map of host (or CIDR / IP) to ordered list of firewall rules applied to
+ * outbound requests for that host. Registering a host here does not allow
+ * egress on its own — the host must also appear in
+ * {@link SandboxNetworkOpts.allowOut}.
+ */
+export type SandboxFirewall = Record<string, SandboxFirewallRule[]>
+
+/**
+ * Context passed to {@link SandboxNetworkOpts.allowOut} and
+ * {@link SandboxNetworkOpts.denyOut} when they are defined as functions.
+ */
+export type SandboxNetworkSelectorContext = {
+  /** Hosts registered in {@link SandboxOpts.firewall}. */
+  firewallHosts: string[]
+  /** All traffic — equivalent to `['0.0.0.0/0']`. */
+  allHosts: string[]
+}
+
+/**
+ * Egress rule list, either a static array of CIDR blocks / IP addresses /
+ * hostnames, or a callback that receives the resolved firewall hosts and
+ * returns the same.
+ */
+export type SandboxNetworkSelector =
+  | string[]
+  | ((ctx: SandboxNetworkSelectorContext) => string[])
 
 export type SandboxNetworkOpts = {
   /**
    * Allow outbound traffic from the sandbox to the specified addresses.
    * If `allowOut` is not specified, all outbound traffic is allowed.
    *
-   * Each entry is either a string (CIDR block, IP address, or host) or a
-   * structured {@link SandboxNetworkRule} that can additionally describe
-   * per-host request transforms (for example, header injection).
+   * Accepts either a static array of CIDR blocks, IP addresses, or hostnames,
+   * or a callback that receives `{ firewallHosts, allHosts }` and returns the
+   * same. `firewallHosts` is the list of hosts registered in
+   * {@link SandboxOpts.firewall}; `allHosts` is `['0.0.0.0/0']`.
    *
    * Examples:
-   * - Allow traffic to specific addresses: `["1.1.1.1", "8.8.8.0/24"]`
-   * - Allow a host and inject a header on matching requests:
-   *   `[{ host: "api.openai.com", transform: [{ headers: { Authorization: "Bearer ..." } }] }]`
+   * - Static list: `["1.1.1.1", "8.8.8.0/24"]`
+   * - Allow only firewall-registered hosts:
+   *   `({ firewallHosts }) => firewallHosts`
    */
-  allowOut?: SandboxNetworkEntry[]
+  allowOut?: SandboxNetworkSelector
 
   /**
    * Deny outbound traffic from the sandbox to the specified addresses.
    *
+   * Accepts the same shapes as {@link allowOut}.
+   *
    * Examples:
-   * - To deny traffic to a specific addresses: `["1.1.1.1", "8.8.8.0/24"]`
+   * - Static list: `["1.1.1.1", "8.8.8.0/24"]`
+   * - Block all egress: `({ allHosts }) => allHosts`
    */
-  denyOut?: string[]
+  denyOut?: SandboxNetworkSelector
 
   /**
    * Specify if the sandbox URLs should be accessible only with authentication.
@@ -91,6 +121,18 @@ export type SandboxNetworkOpts = {
    *
    * @default ${PORT}-sandboxid.e2b.app
    */
+  maskRequestHost?: string
+}
+
+/**
+ * Network configuration as returned by the sandbox info endpoint. Mirrors
+ * {@link SandboxNetworkOpts} but with `allowOut`/`denyOut` always materialized
+ * to plain string arrays.
+ */
+export type SandboxNetworkInfo = {
+  allowOut?: string[]
+  denyOut?: string[]
+  allowPublicTraffic?: boolean
   maskRequestHost?: string
 }
 
@@ -192,6 +234,29 @@ export interface SandboxOpts extends ConnectionOpts {
    * Sandbox network configuration
    */
   network?: SandboxNetworkOpts
+
+  /**
+   * Per-host firewall rules applied to outbound requests. The keys are hosts
+   * (or CIDR blocks / IP addresses); the values are ordered lists of rules
+   * (currently a `transform` describing request modifications).
+   *
+   * Registering a host here does not allow egress on its own — the host must
+   * also appear in {@link SandboxNetworkOpts.allowOut}. Hosts registered here
+   * are exposed to the `allowOut`/`denyOut` callbacks via `firewallHosts`.
+   *
+   * @example
+   * ```ts
+   * await Sandbox.create({
+   *   network: { allowOut: ({ firewallHosts }) => firewallHosts },
+   *   firewall: {
+   *     'api.openai.com': [
+   *       { transform: { headers: { Authorization: `Bearer ${token}` } } },
+   *     ],
+   *   },
+   * })
+   * ```
+   */
+  firewall?: SandboxFirewall
 
   /**
    * Volume mounts for the sandbox.
@@ -378,7 +443,12 @@ export interface SandboxInfo {
   /**
    * Sandbox network configuration.
    */
-  network?: SandboxNetworkOpts
+  network?: SandboxNetworkInfo
+
+  /**
+   * Per-host firewall rules registered for the sandbox.
+   */
+  firewall?: SandboxFirewall
 
   /**
    * Sandbox lifecycle configuration.
@@ -429,6 +499,47 @@ export interface SandboxMetrics {
    * Total disk space available in bytes.
    */
   diskTotal: number
+}
+
+const ALL_TRAFFIC_HOSTS: readonly string[] = [ALL_TRAFFIC]
+
+function resolveNetworkSelector(
+  selector: SandboxNetworkSelector | undefined,
+  firewallHosts: string[]
+): string[] | undefined {
+  if (selector === undefined) {
+    return undefined
+  }
+
+  if (typeof selector === 'function') {
+    return selector({ firewallHosts, allHosts: [...ALL_TRAFFIC_HOSTS] })
+  }
+
+  return selector
+}
+
+function buildNetworkBody(
+  network: SandboxNetworkOpts | undefined,
+  firewall: SandboxFirewall | undefined
+): components['schemas']['SandboxNetworkConfig'] | undefined {
+  if (!network) {
+    return undefined
+  }
+
+  const firewallHosts = firewall ? Object.keys(firewall) : []
+  const allowOut = resolveNetworkSelector(network.allowOut, firewallHosts)
+  const denyOut = resolveNetworkSelector(network.denyOut, firewallHosts)
+
+  return {
+    ...(allowOut !== undefined ? { allowOut } : {}),
+    ...(denyOut !== undefined ? { denyOut } : {}),
+    ...(network.allowPublicTraffic !== undefined
+      ? { allowPublicTraffic: network.allowPublicTraffic }
+      : {}),
+    ...(network.maskRequestHost !== undefined
+      ? { maskRequestHost: network.maskRequestHost }
+      : {}),
+  }
 }
 
 function getLifecycle(
@@ -647,6 +758,7 @@ export class SandboxApi {
             maskRequestHost: res.data.network.maskRequestHost,
           }
         : undefined,
+      firewall: res.data.firewall ?? undefined,
       lifecycle: res.data.lifecycle
         ? {
             onTimeout: res.data.lifecycle.onTimeout,
@@ -821,7 +933,8 @@ export class SandboxApi {
       timeout: timeoutToSeconds(timeoutMs),
       secure: opts?.secure ?? true,
       allow_internet_access: opts?.allowInternetAccess ?? true,
-      network: opts?.network,
+      network: buildNetworkBody(opts?.network, opts?.firewall),
+      ...(opts?.firewall ? { firewall: opts.firewall } : {}),
       ...(autoPause !== undefined ? { autoPause } : {}),
       ...(autoResumeEnabled !== undefined
         ? { autoResume: { enabled: autoResumeEnabled } }

@@ -1966,6 +1966,7 @@ export interface components {
             autoPause?: boolean;
             autoResume?: components["schemas"]["SandboxAutoResumeConfig"];
             envVars?: components["schemas"]["EnvVars"];
+            firewall?: components["schemas"]["SandboxFirewall"];
             mcp?: components["schemas"]["Mcp"];
             metadata?: components["schemas"]["SandboxMetadata"];
             network?: components["schemas"]["SandboxNetworkConfig"];
@@ -2168,6 +2169,7 @@ export interface components {
             /** @description Access token used for envd communication */
             envdAccessToken?: string;
             envdVersion: components["schemas"]["EnvdVersion"];
+            firewall?: components["schemas"]["SandboxFirewall"];
             lifecycle?: components["schemas"]["SandboxLifecycle"];
             memoryMB: components["schemas"]["MemoryMB"];
             metadata?: components["schemas"]["SandboxMetadata"];
@@ -2187,6 +2189,21 @@ export interface components {
         SandboxesWithMetrics: {
             sandboxes: {
                 [key: string]: components["schemas"]["SandboxMetric"];
+            };
+        };
+        /** @description Map of host to ordered list of firewall rules applied to outbound requests for that host. Registering a host here does not allow egress on its own; the host must also appear in network.allowOut. */
+        SandboxFirewall: {
+            [key: string]: components["schemas"]["SandboxFirewallRule"][];
+        };
+        /** @description Firewall rule applied to outbound requests matching the host it is registered under. */
+        SandboxFirewallRule: {
+            transform?: components["schemas"]["SandboxFirewallRuleTransform"];
+        };
+        /** @description Transform applied to egress requests matching a firewall rule. */
+        SandboxFirewallRuleTransform: {
+            /** @description Headers to inject into the outbound request. Values override any headers already present. */
+            headers?: {
+                [key: string]: string;
             };
         };
         /** @description Sandbox lifecycle policy returned by sandbox info. */
@@ -2279,31 +2296,17 @@ export interface components {
             timestampUnix: number;
         };
         SandboxNetworkConfig: {
-            /** @description List of allowed egress entries. Each entry is either a CIDR block/IP/host string, or a structured rule with optional per-host transforms. Allowed entries always take precedence over denied ones. */
-            allowOut?: (string | components["schemas"]["SandboxNetworkRule"])[];
+            /** @description List of allowed CIDR blocks, IP addresses, or hostnames for egress traffic. Allowed entries always take precedence over denied ones. */
+            allowOut?: string[];
             /**
              * @description Specify if the sandbox URLs should be accessible only with authentication.
              * @default true
              */
             allowPublicTraffic?: boolean;
-            /** @description List of denied CIDR blocks or IP addresses for egress traffic */
+            /** @description List of denied CIDR blocks, IP addresses, or hostnames for egress traffic. */
             denyOut?: string[];
             /** @description Specify host mask which will be used for all sandbox requests */
             maskRequestHost?: string;
-        };
-        /** @description Structured egress rule matching a host, optionally transforming the request before it leaves the sandbox. */
-        SandboxNetworkRule: {
-            /** @description Host, CIDR block, or IP address the rule applies to. */
-            host: string;
-            /** @description Ordered list of transforms to apply to requests matching this rule. */
-            transform?: components["schemas"]["SandboxNetworkRuleTransform"][];
-        };
-        /** @description Transform applied to egress requests matching a network rule. */
-        SandboxNetworkRuleTransform: {
-            /** @description Headers to inject into the outbound request. Values override any headers already present. */
-            headers?: {
-                [key: string]: string;
-            };
         };
         /**
          * @description Action taken when the sandbox times out.

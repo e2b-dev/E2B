@@ -46,6 +46,10 @@ from .resumed_sandbox import ResumedSandbox
 from .sandbox import Sandbox
 from .sandbox_auto_resume_config import SandboxAutoResumeConfig
 from .sandbox_detail import SandboxDetail
+from .sandbox_firewall import SandboxFirewall
+from .sandbox_firewall_rule import SandboxFirewallRule
+from .sandbox_firewall_rule_transform import SandboxFirewallRuleTransform
+from .sandbox_firewall_rule_transform_headers import SandboxFirewallRuleTransformHeaders
 from .sandbox_lifecycle import SandboxLifecycle
 from .sandbox_log import SandboxLog
 from .sandbox_log_entry import SandboxLogEntry
@@ -54,9 +58,6 @@ from .sandbox_logs import SandboxLogs
 from .sandbox_logs_v2_response import SandboxLogsV2Response
 from .sandbox_metric import SandboxMetric
 from .sandbox_network_config import SandboxNetworkConfig
-from .sandbox_network_rule import SandboxNetworkRule
-from .sandbox_network_rule_transform import SandboxNetworkRuleTransform
-from .sandbox_network_rule_transform_headers import SandboxNetworkRuleTransformHeaders
 from .sandbox_on_timeout import SandboxOnTimeout
 from .sandbox_state import SandboxState
 from .sandbox_volume_mount import SandboxVolumeMount
@@ -133,6 +134,10 @@ __all__ = (
     "SandboxAutoResumeConfig",
     "SandboxDetail",
     "SandboxesWithMetrics",
+    "SandboxFirewall",
+    "SandboxFirewallRule",
+    "SandboxFirewallRuleTransform",
+    "SandboxFirewallRuleTransformHeaders",
     "SandboxLifecycle",
     "SandboxLog",
     "SandboxLogEntry",
@@ -141,9 +146,6 @@ __all__ = (
     "SandboxLogsV2Response",
     "SandboxMetric",
     "SandboxNetworkConfig",
-    "SandboxNetworkRule",
-    "SandboxNetworkRuleTransform",
-    "SandboxNetworkRuleTransformHeaders",
     "SandboxOnTimeout",
     "SandboxState",
     "SandboxVolumeMount",

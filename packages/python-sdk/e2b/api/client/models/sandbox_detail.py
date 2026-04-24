@@ -10,6 +10,7 @@ from ..models.sandbox_state import SandboxState
 from ..types import UNSET, Unset
 
 if TYPE_CHECKING:
+    from ..models.sandbox_firewall import SandboxFirewall
     from ..models.sandbox_lifecycle import SandboxLifecycle
     from ..models.sandbox_network_config import SandboxNetworkConfig
     from ..models.sandbox_volume_mount import SandboxVolumeMount
@@ -37,6 +38,9 @@ class SandboxDetail:
             the sandbox. Null means it was not explicitly set.
         domain (Union[None, Unset, str]): Base domain where the sandbox traffic is accessible
         envd_access_token (Union[Unset, str]): Access token used for envd communication
+        firewall (Union[Unset, SandboxFirewall]): Map of host to ordered list of firewall rules applied to outbound
+            requests for that host. Registering a host here does not allow egress on its own; the host must also appear in
+            network.allowOut.
         lifecycle (Union[Unset, SandboxLifecycle]): Sandbox lifecycle policy returned by sandbox info.
         metadata (Union[Unset, Any]):
         network (Union[Unset, SandboxNetworkConfig]):
@@ -57,6 +61,7 @@ class SandboxDetail:
     allow_internet_access: Union[None, Unset, bool] = UNSET
     domain: Union[None, Unset, str] = UNSET
     envd_access_token: Union[Unset, str] = UNSET
+    firewall: Union[Unset, "SandboxFirewall"] = UNSET
     lifecycle: Union[Unset, "SandboxLifecycle"] = UNSET
     metadata: Union[Unset, Any] = UNSET
     network: Union[Unset, "SandboxNetworkConfig"] = UNSET
@@ -100,6 +105,10 @@ class SandboxDetail:
 
         envd_access_token = self.envd_access_token
 
+        firewall: Union[Unset, dict[str, Any]] = UNSET
+        if not isinstance(self.firewall, Unset):
+            firewall = self.firewall.to_dict()
+
         lifecycle: Union[Unset, dict[str, Any]] = UNSET
         if not isinstance(self.lifecycle, Unset):
             lifecycle = self.lifecycle.to_dict()
@@ -141,6 +150,8 @@ class SandboxDetail:
             field_dict["domain"] = domain
         if envd_access_token is not UNSET:
             field_dict["envdAccessToken"] = envd_access_token
+        if firewall is not UNSET:
+            field_dict["firewall"] = firewall
         if lifecycle is not UNSET:
             field_dict["lifecycle"] = lifecycle
         if metadata is not UNSET:
@@ -154,6 +165,7 @@ class SandboxDetail:
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
+        from ..models.sandbox_firewall import SandboxFirewall
         from ..models.sandbox_lifecycle import SandboxLifecycle
         from ..models.sandbox_network_config import SandboxNetworkConfig
         from ..models.sandbox_volume_mount import SandboxVolumeMount
@@ -203,6 +215,13 @@ class SandboxDetail:
 
         envd_access_token = d.pop("envdAccessToken", UNSET)
 
+        _firewall = d.pop("firewall", UNSET)
+        firewall: Union[Unset, SandboxFirewall]
+        if isinstance(_firewall, Unset):
+            firewall = UNSET
+        else:
+            firewall = SandboxFirewall.from_dict(_firewall)
+
         _lifecycle = d.pop("lifecycle", UNSET)
         lifecycle: Union[Unset, SandboxLifecycle]
         if isinstance(_lifecycle, Unset):
@@ -241,6 +260,7 @@ class SandboxDetail:
             allow_internet_access=allow_internet_access,
             domain=domain,
             envd_access_token=envd_access_token,
+            firewall=firewall,
             lifecycle=lifecycle,
             metadata=metadata,
             network=network,
