@@ -9,6 +9,7 @@ from ..types import UNSET, Unset
 if TYPE_CHECKING:
     from ..models.mcp_type_0 import McpType0
     from ..models.sandbox_auto_resume_config import SandboxAutoResumeConfig
+    from ..models.sandbox_firewall import SandboxFirewall
     from ..models.sandbox_network_config import SandboxNetworkConfig
     from ..models.sandbox_volume_mount import SandboxVolumeMount
 
@@ -26,6 +27,9 @@ class NewSandbox:
         auto_pause (Union[Unset, bool]): Automatically pauses the sandbox after the timeout Default: False.
         auto_resume (Union[Unset, SandboxAutoResumeConfig]): Auto-resume configuration for paused sandboxes.
         env_vars (Union[Unset, Any]):
+        firewall (Union[Unset, SandboxFirewall]): Map of host to ordered list of firewall rules applied to outbound
+            requests for that host. Registering a host here does not allow egress on its own; the host must also appear in
+            network.allowOut.
         mcp (Union['McpType0', None, Unset]): MCP configuration for the sandbox
         metadata (Union[Unset, Any]):
         network (Union[Unset, SandboxNetworkConfig]):
@@ -39,6 +43,7 @@ class NewSandbox:
     auto_pause: Union[Unset, bool] = False
     auto_resume: Union[Unset, "SandboxAutoResumeConfig"] = UNSET
     env_vars: Union[Unset, Any] = UNSET
+    firewall: Union[Unset, "SandboxFirewall"] = UNSET
     mcp: Union["McpType0", None, Unset] = UNSET
     metadata: Union[Unset, Any] = UNSET
     network: Union[Unset, "SandboxNetworkConfig"] = UNSET
@@ -61,6 +66,10 @@ class NewSandbox:
             auto_resume = self.auto_resume.to_dict()
 
         env_vars = self.env_vars
+
+        firewall: Union[Unset, dict[str, Any]] = UNSET
+        if not isinstance(self.firewall, Unset):
+            firewall = self.firewall.to_dict()
 
         mcp: Union[None, Unset, dict[str, Any]]
         if isinstance(self.mcp, Unset):
@@ -102,6 +111,8 @@ class NewSandbox:
             field_dict["autoResume"] = auto_resume
         if env_vars is not UNSET:
             field_dict["envVars"] = env_vars
+        if firewall is not UNSET:
+            field_dict["firewall"] = firewall
         if mcp is not UNSET:
             field_dict["mcp"] = mcp
         if metadata is not UNSET:
@@ -121,6 +132,7 @@ class NewSandbox:
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         from ..models.mcp_type_0 import McpType0
         from ..models.sandbox_auto_resume_config import SandboxAutoResumeConfig
+        from ..models.sandbox_firewall import SandboxFirewall
         from ..models.sandbox_network_config import SandboxNetworkConfig
         from ..models.sandbox_volume_mount import SandboxVolumeMount
 
@@ -139,6 +151,13 @@ class NewSandbox:
             auto_resume = SandboxAutoResumeConfig.from_dict(_auto_resume)
 
         env_vars = d.pop("envVars", UNSET)
+
+        _firewall = d.pop("firewall", UNSET)
+        firewall: Union[Unset, SandboxFirewall]
+        if isinstance(_firewall, Unset):
+            firewall = UNSET
+        else:
+            firewall = SandboxFirewall.from_dict(_firewall)
 
         def _parse_mcp(data: object) -> Union["McpType0", None, Unset]:
             if data is None:
@@ -183,6 +202,7 @@ class NewSandbox:
             auto_pause=auto_pause,
             auto_resume=auto_resume,
             env_vars=env_vars,
+            firewall=firewall,
             mcp=mcp,
             metadata=metadata,
             network=network,

@@ -1,13 +1,13 @@
 import { assert, expect, describe } from 'vitest'
 
-import { CommandExitError, ALL_TRAFFIC } from '../../src'
+import { CommandExitError } from '../../src'
 import { sandboxTest, isDebug } from '../setup.js'
 
 describe('allow only 1.1.1.1', () => {
   sandboxTest.scoped({
     sandboxOpts: {
       network: {
-        denyOut: [ALL_TRAFFIC],
+        denyOut: ({ allHosts }) => allHosts,
         allowOut: ['1.1.1.1'],
       },
     },
@@ -62,17 +62,17 @@ describe('deny specific IP address', () => {
   )
 })
 
-describe('deny all traffic using allTraffic helper', () => {
+describe('deny all traffic using allHosts selector', () => {
   sandboxTest.scoped({
     sandboxOpts: {
       network: {
-        denyOut: [ALL_TRAFFIC],
+        denyOut: ({ allHosts }) => allHosts,
       },
     },
   })
 
   sandboxTest.skipIf(isDebug)(
-    'deny all traffic using allTraffic helper',
+    'deny all traffic using allHosts selector',
     async ({ sandbox }) => {
       // Test that all traffic is denied
       await expect(
@@ -94,7 +94,7 @@ describe('allow takes precedence over deny', () => {
   sandboxTest.scoped({
     sandboxOpts: {
       network: {
-        denyOut: [ALL_TRAFFIC],
+        denyOut: ({ allHosts }) => allHosts,
         allowOut: ['1.1.1.1', '8.8.8.8'],
       },
     },
@@ -189,6 +189,50 @@ describe('allowPublicTraffic=true', () => {
       // Request without traffic access token should succeed (public access enabled)
       const response = await fetch(sandboxUrl)
       assert.equal(response.status, 200)
+    }
+  )
+})
+
+describe('firewall transform injects headers', () => {
+  const injectedHeader = 'X-E2B-Test-Token'
+  const injectedValue = 'e2b-transform-value-123'
+
+  sandboxTest.scoped({
+    sandboxOpts: {
+      network: {
+        allowOut: ({ firewallHosts }) => firewallHosts,
+      },
+      firewall: {
+        'httpbin.org': [
+          {
+            transform: {
+              headers: {
+                [injectedHeader]: injectedValue,
+              },
+            },
+          },
+        ],
+      },
+    },
+  })
+
+  sandboxTest.skipIf(isDebug)(
+    'injected header is reflected by httpbin.org/headers',
+    async ({ sandbox }) => {
+      const result = await sandbox.commands.run(
+        'curl -sS --max-time 10 https://httpbin.org/headers'
+      )
+      assert.equal(result.exitCode, 0)
+
+      const parsed = JSON.parse(result.stdout) as {
+        headers: Record<string, string>
+      }
+      const reflected = parsed.headers[injectedHeader]
+      assert.equal(
+        reflected,
+        injectedValue,
+        `expected httpbin to reflect ${injectedHeader}=${injectedValue}, got headers: ${JSON.stringify(parsed.headers)}`
+      )
     }
   )
 })

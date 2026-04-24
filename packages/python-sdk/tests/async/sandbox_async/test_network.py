@@ -1,6 +1,8 @@
+import json
+
 import pytest
 
-from e2b import ALL_TRAFFIC, SandboxNetworkOpts
+from e2b import SandboxNetworkOpts
 from e2b.sandbox.commands.command_handle import CommandExitException
 
 
@@ -8,7 +10,9 @@ from e2b.sandbox.commands.command_handle import CommandExitException
 async def test_allow_specific_ip_with_deny_all(async_sandbox_factory):
     """Test that sandbox with denyOut all and allowOut creates a whitelist."""
     async_sandbox = await async_sandbox_factory(
-        network=SandboxNetworkOpts(deny_out=[ALL_TRAFFIC], allow_out=["1.1.1.1"])
+        network=SandboxNetworkOpts(
+            deny_out=lambda ctx: ctx.all_hosts, allow_out=["1.1.1.1"]
+        )
     )
 
     # Test that allowed IP works
@@ -50,9 +54,9 @@ async def test_deny_specific_ip(async_sandbox_factory):
 
 @pytest.mark.skip_debug()
 async def test_deny_all_traffic(async_sandbox_factory):
-    """Test that sandbox can deny all traffic using all_traffic helper."""
+    """Test that sandbox can deny all traffic using the all_hosts selector."""
     async_sandbox = await async_sandbox_factory(
-        network=SandboxNetworkOpts(deny_out=[ALL_TRAFFIC]), timeout=30
+        network=SandboxNetworkOpts(deny_out=lambda ctx: ctx.all_hosts), timeout=30
     )
 
     # Test that all traffic is denied
@@ -74,7 +78,7 @@ async def test_allow_takes_precedence_over_deny(async_sandbox_factory):
     """Test that allowOut takes precedence over denyOut."""
     async_sandbox = await async_sandbox_factory(
         network=SandboxNetworkOpts(
-            deny_out=[ALL_TRAFFIC], allow_out=["1.1.1.1", "8.8.8.8"]
+            deny_out=lambda ctx: ctx.all_hosts, allow_out=["1.1.1.1", "8.8.8.8"]
         )
     )
 
@@ -157,6 +161,35 @@ async def test_allow_public_traffic_true(async_sandbox_factory):
         # Request without traffic access token should succeed (public access enabled)
         response = await client.get(sandbox_url, follow_redirects=True)
         assert response.status_code == 200
+
+
+@pytest.mark.skip_debug()
+async def test_firewall_transform_injects_headers(async_sandbox_factory):
+    """Test that a firewall rule with a transform injects headers into outbound requests."""
+    injected_header = "X-E2B-Test-Token"
+    injected_value = "e2b-transform-value-123"
+
+    network: SandboxNetworkOpts = {
+        "allow_out": lambda ctx: ctx.firewall_hosts,
+    }
+    firewall = {
+        "httpbin.org": [
+            {"transform": {"headers": {injected_header: injected_value}}},
+        ],
+    }
+    async_sandbox = await async_sandbox_factory(network=network, firewall=firewall)
+
+    result = await async_sandbox.commands.run(
+        "curl -sS --max-time 10 https://httpbin.org/headers"
+    )
+    assert result.exit_code == 0
+
+    parsed = json.loads(result.stdout)
+    reflected = parsed["headers"].get(injected_header)
+    assert reflected == injected_value, (
+        f"expected httpbin to reflect {injected_header}={injected_value}, "
+        f"got headers: {parsed['headers']}"
+    )
 
 
 @pytest.mark.skip_debug()

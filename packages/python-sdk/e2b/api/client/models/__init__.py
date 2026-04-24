@@ -46,6 +46,10 @@ from .resumed_sandbox import ResumedSandbox
 from .sandbox import Sandbox
 from .sandbox_auto_resume_config import SandboxAutoResumeConfig
 from .sandbox_detail import SandboxDetail
+from .sandbox_firewall import SandboxFirewall
+from .sandbox_firewall_rule import SandboxFirewallRule
+from .sandbox_firewall_rule_transform import SandboxFirewallRuleTransform
+from .sandbox_firewall_rule_transform_headers import SandboxFirewallRuleTransformHeaders
 from .sandbox_lifecycle import SandboxLifecycle
 from .sandbox_log import SandboxLog
 from .sandbox_log_entry import SandboxLogEntry
@@ -130,6 +134,10 @@ __all__ = (
     "SandboxAutoResumeConfig",
     "SandboxDetail",
     "SandboxesWithMetrics",
+    "SandboxFirewall",
+    "SandboxFirewallRule",
+    "SandboxFirewallRuleTransform",
+    "SandboxFirewallRuleTransformHeaders",
     "SandboxLifecycle",
     "SandboxLog",
     "SandboxLogEntry",

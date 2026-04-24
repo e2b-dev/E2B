@@ -262,6 +262,31 @@ components:
       additionalProperties: {}
       nullable: true
 
+    SandboxFirewallRuleTransform:
+      type: object
+      description: Transform applied to egress requests matching a firewall rule.
+      properties:
+        headers:
+          type: object
+          description: Headers to inject into the outbound request. Values override any headers already present.
+          additionalProperties:
+            type: string
+
+    SandboxFirewallRule:
+      type: object
+      description: Firewall rule applied to outbound requests matching the host it is registered under.
+      properties:
+        transform:
+          $ref: '#/components/schemas/SandboxFirewallRuleTransform'
+
+    SandboxFirewall:
+      type: object
+      description: Map of host to ordered list of firewall rules applied to outbound requests for that host. Registering a host here does not allow egress on its own; the host must also appear in network.allowOut.
+      additionalProperties:
+        type: array
+        items:
+          $ref: '#/components/schemas/SandboxFirewallRule'
+
     SandboxNetworkConfig:
       type: object
       properties:
@@ -271,12 +296,12 @@ components:
           description: Specify if the sandbox URLs should be accessible only with authentication.
         allowOut:
           type: array
-          description: List of allowed CIDR blocks or IP addresses for egress traffic. Allowed addresses always take precedence over blocked addresses.
+          description: List of allowed CIDR blocks, IP addresses, or hostnames for egress traffic. Allowed entries always take precedence over denied ones.
           items:
             type: string
         denyOut:
           type: array
-          description: List of denied CIDR blocks or IP addresses for egress traffic
+          description: List of denied CIDR blocks, IP addresses, or hostnames for egress traffic.
           items:
             type: string
         maskRequestHost:
@@ -531,6 +556,8 @@ components:
           $ref: '#/components/schemas/SandboxState'
         network:
           $ref: '#/components/schemas/SandboxNetworkConfig'
+        firewall:
+          $ref: '#/components/schemas/SandboxFirewall'
         lifecycle:
           $ref: '#/components/schemas/SandboxLifecycle'
         volumeMounts:
@@ -626,6 +653,8 @@ components:
             to 0.0.0.0/0 in the network config.
         network:
           $ref: '#/components/schemas/SandboxNetworkConfig'
+        firewall:
+          $ref: '#/components/schemas/SandboxFirewall'
         metadata:
           $ref: '#/components/schemas/SandboxMetadata'
         envVars:

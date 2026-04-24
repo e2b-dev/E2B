@@ -21,6 +21,7 @@ from e2b.exceptions import (
 from e2b.sandbox.main import SandboxOpts
 from e2b.sandbox.sandbox_api import (
     McpServer,
+    SandboxFirewall,
     SandboxLifecycle,
     SandboxMetrics,
     SandboxNetworkOpts,
@@ -177,6 +178,7 @@ class AsyncSandbox(SandboxApi):
         allow_internet_access: bool = True,
         mcp: Optional[McpServer] = None,
         network: Optional[SandboxNetworkOpts] = None,
+        firewall: Optional[SandboxFirewall] = None,
         lifecycle: Optional[SandboxLifecycle] = None,
         volume_mounts: Optional[SandboxAsyncVolumeMount] = None,
         **opts: Unpack[ApiParams],
@@ -193,7 +195,8 @@ class AsyncSandbox(SandboxApi):
         :param secure: Envd is secured with access token and cannot be used without it, defaults to `True`.
         :param allow_internet_access: Allow sandbox to access the internet, defaults to `True`. If set to `False`, it works the same as setting network `deny_out` to `[0.0.0.0/0]`.
         :param mcp: MCP server to enable in the sandbox
-        :param network: Sandbox network configuration
+        :param network: Sandbox network configuration. ``allow_out``/``deny_out`` may also be a callable receiving a :class:`SandboxNetworkSelectorContext` (``ctx.firewall_hosts``, ``ctx.all_hosts``) and returning a list of strings.
+        :param firewall: Per-host firewall rules applied to outbound requests. Hosts registered here are exposed to the network ``allow_out``/``deny_out`` callables via ``firewall_hosts`` but are not allowed by default — they must also appear in ``network.allow_out``.
         :param lifecycle: Sandbox lifecycle configuration — ``on_timeout``: ``"kill"`` (default) or ``"pause"``; ``auto_resume``: ``False`` (default) or ``True`` (only when ``on_timeout="pause"``). Example: ``{"on_timeout": "pause", "auto_resume": True}``
         :param volume_mounts: Dictionary mapping mount paths to AsyncVolume instances or volume names
 
@@ -226,6 +229,7 @@ class AsyncSandbox(SandboxApi):
             allow_internet_access=allow_internet_access,
             mcp=mcp,
             network=network,
+            firewall=firewall,
             lifecycle=lifecycle,
             volume_mounts=transformed_mounts,
             **opts,
@@ -892,6 +896,7 @@ class AsyncSandbox(SandboxApi):
         secure: bool,
         mcp: Optional[McpServer] = None,
         network: Optional[SandboxNetworkOpts] = None,
+        firewall: Optional[SandboxFirewall] = None,
         lifecycle: Optional[SandboxLifecycle] = None,
         volume_mounts: Optional[list] = None,
         **opts: Unpack[ApiParams],
@@ -916,6 +921,7 @@ class AsyncSandbox(SandboxApi):
                 allow_internet_access=allow_internet_access,
                 mcp=mcp,
                 network=network,
+                firewall=firewall,
                 lifecycle=lifecycle,
                 volume_mounts=volume_mounts,
                 **opts,

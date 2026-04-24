@@ -13,11 +13,11 @@ T = TypeVar("T", bound="SandboxNetworkConfig")
 class SandboxNetworkConfig:
     """
     Attributes:
-        allow_out (Union[Unset, list[str]]): List of allowed CIDR blocks or IP addresses for egress traffic. Allowed
-            addresses always take precedence over blocked addresses.
+        allow_out (Union[Unset, list[str]]): List of allowed CIDR blocks, IP addresses, or hostnames for egress traffic.
+            Allowed entries always take precedence over denied ones.
         allow_public_traffic (Union[Unset, bool]): Specify if the sandbox URLs should be accessible only with
             authentication. Default: True.
-        deny_out (Union[Unset, list[str]]): List of denied CIDR blocks or IP addresses for egress traffic
+        deny_out (Union[Unset, list[str]]): List of denied CIDR blocks, IP addresses, or hostnames for egress traffic.
         mask_request_host (Union[Unset, str]): Specify host mask which will be used for all sandbox requests
     """
 
