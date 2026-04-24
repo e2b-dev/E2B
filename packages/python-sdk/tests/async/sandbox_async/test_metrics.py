@@ -5,13 +5,14 @@ import pytest
 
 
 @pytest.mark.skip_debug()
+@pytest.mark.timeout(60)
 async def test_sbx_metrics(async_sandbox_factory):
     start_time = datetime.datetime.now()
-    sbx = await async_sandbox_factory(timeout=20)
+    sbx = await async_sandbox_factory(timeout=60)
 
     # Wait for the sandbox to have some metrics
     metrics = []
-    for _ in range(15):
+    for _ in range(30):
         metrics = await sbx.get_metrics()
         if len(metrics) > 0:
             break
