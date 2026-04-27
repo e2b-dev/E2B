@@ -20,6 +20,7 @@ from e2b.envd.filesystem import filesystem_connect, filesystem_pb2
 from e2b.envd.rpc import authentication_header, handle_rpc_exception
 from e2b.envd.versions import (
     ENVD_DEFAULT_USER,
+    ENVD_OCTET_STREAM_UPLOAD,
     ENVD_VERSION_RECURSIVE_WATCH,
 )
 from e2b.exceptions import (
@@ -209,7 +210,7 @@ class Filesystem:
         :param user: Run the operation as this user
         :param request_timeout: Timeout for the request in **seconds**
         :param gzip: Use gzip compression for the request
-        :param use_octet_stream: Upload using `application/octet-stream` instead of `multipart/form-data`. Defaults to `False`. Requires envd 0.5.7 or later.
+        :param use_octet_stream: Upload using `application/octet-stream` instead of `multipart/form-data`. Defaults to `False`. Requires envd 0.5.7 or later — when not supported, the upload falls back to `multipart/form-data`.
 
         :return: Information about the written file
         """
@@ -246,7 +247,7 @@ class Filesystem:
         :param user: Run the operation as this user
         :param request_timeout: Timeout for the request
         :param gzip: Use gzip compression for the request
-        :param use_octet_stream: Upload using `application/octet-stream` instead of `multipart/form-data`. Defaults to `False`. Requires envd 0.5.7 or later.
+        :param use_octet_stream: Upload using `application/octet-stream` instead of `multipart/form-data`. Defaults to `False`. Requires envd 0.5.7 or later — when not supported, the upload falls back to `multipart/form-data`.
         :return: Information about the written files
         """
         username = user
@@ -255,6 +256,9 @@ class Filesystem:
 
         if len(files) == 0:
             return []
+
+        supports_octet_stream = self._envd_version >= ENVD_OCTET_STREAM_UPLOAD
+        use_octet_stream = use_octet_stream and supports_octet_stream
 
         results: List[WriteInfo] = []
 
