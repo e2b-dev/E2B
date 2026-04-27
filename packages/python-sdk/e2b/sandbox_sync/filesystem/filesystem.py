@@ -20,7 +20,6 @@ from e2b.envd.filesystem import filesystem_connect, filesystem_pb2
 from e2b.envd.rpc import authentication_header, handle_rpc_exception
 from e2b.envd.versions import (
     ENVD_DEFAULT_USER,
-    ENVD_OCTET_STREAM_UPLOAD,
     ENVD_VERSION_RECURSIVE_WATCH,
 )
 from e2b.exceptions import (
@@ -195,7 +194,7 @@ class Filesystem:
         user: Optional[Username] = None,
         request_timeout: Optional[float] = None,
         gzip: bool = False,
-        use_octet_stream: Optional[bool] = None,
+        use_octet_stream: bool = False,
     ) -> WriteInfo:
         """
         Write content to a file on the path.
@@ -208,7 +207,7 @@ class Filesystem:
         :param user: Run the operation as this user
         :param request_timeout: Timeout for the request in **seconds**
         :param gzip: Use gzip compression for the request
-        :param use_octet_stream: Upload using `application/octet-stream` instead of `multipart/form-data`. Defaults to `True` when the sandbox's envd version supports it, `False` otherwise. Set explicitly to override the version-based default.
+        :param use_octet_stream: Upload using `application/octet-stream` instead of `multipart/form-data`. Defaults to `False`. Requires envd 0.5.7 or later.
 
         :return: Information about the written file
         """
@@ -231,7 +230,7 @@ class Filesystem:
         user: Optional[Username] = None,
         request_timeout: Optional[float] = None,
         gzip: bool = False,
-        use_octet_stream: Optional[bool] = None,
+        use_octet_stream: bool = False,
     ) -> List[WriteInfo]:
         """
         Writes a list of files to the filesystem.
@@ -243,7 +242,7 @@ class Filesystem:
         :param user: Run the operation as this user
         :param request_timeout: Timeout for the request
         :param gzip: Use gzip compression for the request
-        :param use_octet_stream: Upload using `application/octet-stream` instead of `multipart/form-data`. Defaults to `True` when the sandbox's envd version supports it, `False` otherwise. Set explicitly to override the version-based default.
+        :param use_octet_stream: Upload using `application/octet-stream` instead of `multipart/form-data`. Defaults to `False`. Requires envd 0.5.7 or later.
         :return: Information about the written files
         """
         username = user
@@ -252,9 +251,6 @@ class Filesystem:
 
         if len(files) == 0:
             return []
-
-        if use_octet_stream is None:
-            use_octet_stream = self._envd_version >= ENVD_OCTET_STREAM_UPLOAD
 
         results: List[WriteInfo] = []
 

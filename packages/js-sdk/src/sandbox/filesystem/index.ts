@@ -29,7 +29,6 @@ import type { Timestamp } from '@bufbuild/protobuf/wkt'
 import { compareVersions } from 'compare-versions'
 import {
   ENVD_DEFAULT_USER,
-  ENVD_OCTET_STREAM_UPLOAD,
   ENVD_VERSION_RECURSIVE_WATCH,
 } from '../../envd/versions'
 import {
@@ -175,8 +174,7 @@ export interface FilesystemWriteOpts extends FilesystemRequestOpts {
   /**
    * When true, the upload uses `application/octet-stream` instead of `multipart/form-data`.
    *
-   * Defaults to `true` when the sandbox's envd version supports octet-stream uploads,
-   * and `false` otherwise. Set explicitly to override the version-based default.
+   * Defaults to `false`. Requires envd 0.5.7 or later.
    */
   useOctetStream?: boolean
 }
@@ -422,9 +420,7 @@ export class Filesystem {
       user = defaultUsername
     }
 
-    const useOctetStream =
-      writeOpts?.useOctetStream ??
-      compareVersions(this.envdApi.version, ENVD_OCTET_STREAM_UPLOAD) >= 0
+    const useOctetStream = writeOpts?.useOctetStream ?? false
 
     const results: WriteInfo[] = []
 

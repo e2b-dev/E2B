@@ -3,4 +3,4 @@
 'e2b': patch
 ---
 
-added option to sandbox file write to override the envd version-based default for octet-stream uploads
+added opt-in `useOctetStream` / `use_octet_stream` option to sandbox file write; default is now `multipart/form-data` regardless of envd version
