@@ -172,6 +172,13 @@ export interface FilesystemWriteOpts extends FilesystemRequestOpts {
    * When true, the upload will be gzip-compressed.
    */
   gzip?: boolean
+  /**
+   * When true, the upload uses `application/octet-stream` instead of `multipart/form-data`.
+   *
+   * Defaults to `true` when the sandbox's envd version supports octet-stream uploads,
+   * and `false` otherwise. Set explicitly to override the version-based default.
+   */
+  useOctetStream?: boolean
 }
 
 /**
@@ -416,6 +423,7 @@ export class Filesystem {
     }
 
     const useOctetStream =
+      writeOpts?.useOctetStream ??
       compareVersions(this.envdApi.version, ENVD_OCTET_STREAM_UPLOAD) >= 0
 
     const results: WriteInfo[] = []
