@@ -55,10 +55,13 @@ export type SandboxNetworkRule = {
 
 /**
  * Map of host (or CIDR / IP) to ordered list of rules applied to outbound
- * requests for that host. Registering a host here does not allow egress on
- * its own — the host must also appear in {@link SandboxNetworkOpts.allowOut}.
+ * requests for that host. Accepts either a plain object or a `Map`.
+ * Registering a host here does not allow egress on its own — the host must
+ * also appear in {@link SandboxNetworkOpts.allowOut}.
  */
-export type SandboxNetworkRules = Record<string, SandboxNetworkRule[]>
+export type SandboxNetworkRules =
+  | Record<string, SandboxNetworkRule[]>
+  | Map<string, SandboxNetworkRule[]>
 
 /**
  * Context passed to {@link SandboxNetworkOpts.allowOut} and
@@ -519,14 +522,19 @@ function buildNetworkBody(
     return undefined
   }
 
-  const rules = new Map(Object.entries(network.rules ?? {}))
+  const rules =
+    network.rules instanceof Map
+      ? network.rules
+      : new Map(Object.entries(network.rules ?? {}))
   const allowOut = resolveNetworkSelector(network.allowOut, rules)
   const denyOut = resolveNetworkSelector(network.denyOut, rules)
 
   return {
     ...(allowOut !== undefined ? { allowOut } : {}),
     ...(denyOut !== undefined ? { denyOut } : {}),
-    ...(network.rules !== undefined ? { rules: network.rules } : {}),
+    ...(network.rules !== undefined
+      ? { rules: Object.fromEntries(rules) }
+      : {}),
     ...(network.allowPublicTraffic !== undefined
       ? { allowPublicTraffic: network.allowPublicTraffic }
       : {}),
