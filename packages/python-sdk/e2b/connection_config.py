@@ -208,6 +208,25 @@ class ConnectionConfig:
         }
 
 
+def _resolve_proxy(proxy: Optional[ProxyTypes]) -> Optional[ProxyTypes]:
+    """
+    Resolve the proxy to use for a request.
+    If an explicit proxy is provided, use it. Otherwise, fall back to
+    standard environment variables (HTTPS_PROXY, HTTP_PROXY, ALL_PROXY).
+    """
+    if proxy is not None:
+        return proxy
+
+    return (
+        os.environ.get("https_proxy")
+        or os.environ.get("HTTPS_PROXY")
+        or os.environ.get("http_proxy")
+        or os.environ.get("HTTP_PROXY")
+        or os.environ.get("all_proxy")
+        or os.environ.get("ALL_PROXY")
+    )
+
+
 Username = str
 """
 User used for the operation in the sandbox.

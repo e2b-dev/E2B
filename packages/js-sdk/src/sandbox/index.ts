@@ -9,6 +9,7 @@ import {
 } from '../connectionConfig'
 import { EnvdApiClient, handleEnvdApiError } from '../envd/api'
 import { createRpcLogger } from '../logs'
+import { getProxyFetch } from '../proxy'
 import { Commands, Pty } from './commands'
 import { Filesystem } from './filesystem'
 import { Git } from './git'
@@ -151,6 +152,7 @@ export class Sandbox extends SandboxApi {
       'E2b-Sandbox-Port': this.envdPort.toString(),
     }
 
+    const proxyFetch = getProxyFetch() ?? fetch
     const rpcTransport = createConnectTransport({
       baseUrl: this.envdApiUrl,
       useBinaryFormat: false,
@@ -179,7 +181,7 @@ export class Sandbox extends SandboxApi {
           redirect: 'follow',
         }
 
-        return fetch(url, options)
+        return proxyFetch(url, options)
       },
     })
 

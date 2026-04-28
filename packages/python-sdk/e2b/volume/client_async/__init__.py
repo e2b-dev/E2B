@@ -8,6 +8,7 @@ from httpx import Limits
 from e2b.api.metadata import default_headers
 from e2b.exceptions import AuthenticationException
 from e2b.volume.client.client import AuthenticatedClient as AsyncVolumeApiClient
+from e2b.connection_config import _resolve_proxy
 from e2b.volume.connection_config import VolumeConnectionConfig
 
 logger = logging.getLogger(__name__)
@@ -63,7 +64,7 @@ def get_transport(config: VolumeConnectionConfig) -> AsyncTransportWithLogger:
 
     transport = AsyncTransportWithLogger(
         limits=limits,
-        proxy=config.proxy,
+        proxy=_resolve_proxy(config.proxy),
     )
     AsyncTransportWithLogger.singleton = transport
     return transport

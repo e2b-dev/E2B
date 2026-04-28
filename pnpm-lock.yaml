@@ -164,6 +164,9 @@ importers:
       tar:
         specifier: ^7.5.11
         version: 7.5.12
+      undici:
+        specifier: ^7.0.0
+        version: 7.25.0
     devDependencies:
       '@testing-library/react':
         specifier: ^16.2.0
@@ -4048,6 +4051,10 @@ packages:
 
   undici-types@6.21.0:
     resolution: {integrity: sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ==}
+
+  undici@7.25.0:
+    resolution: {integrity: sha512-xXnp4kTyor2Zq+J1FfPI6Eq3ew5h6Vl0F/8d9XU5zZQf1tX9s2Su1/3PiMmUANFULpmksxkClamIZcaUqryHsQ==}
+    engines: {node: '>=20.18.1'}
 
   unique-filename@2.0.1:
     resolution: {integrity: sha512-ODWHtkkdx3IAR+veKxFV+VBkUMcN+FaqzUUd7IZzt+0zhDZFPFxhlqwPF3YQvMHx1TD0tdgYl+kuPnJ8E6ql7A==}
@@ -8568,6 +8575,8 @@ snapshots:
   underscore@1.13.6: {}
 
   undici-types@6.21.0: {}
+
+  undici@7.25.0: {}
 
   unique-filename@2.0.1:
     dependencies:
