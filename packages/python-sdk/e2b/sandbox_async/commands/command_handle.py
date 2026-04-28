@@ -128,6 +128,7 @@ class AsyncCommandHandle:
                     exit_code=event.event.end.exit_code,
                     error=event.event.end.error,
                 )
+                return
 
     async def disconnect(self) -> None:
         """
