@@ -160,6 +160,8 @@ class AsyncCommandHandle:
             pass
         except Exception as e:
             self._iteration_exception = handle_rpc_exception(e)
+        finally:
+            await self._events.aclose()
 
     async def wait(self) -> CommandResult:
         """
