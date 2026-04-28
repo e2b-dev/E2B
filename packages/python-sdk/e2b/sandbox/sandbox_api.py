@@ -73,13 +73,54 @@ class SandboxNetworkTransform(TypedDict):
     """
 
 
+@dataclass(frozen=True)
+class _SandboxNetworkTransformIdentity:
+    """Identity-related placeholders."""
+
+    jwt: str
+    """Placeholder ``"${e2b.identity.jwt}"``."""
+
+
+@dataclass(frozen=True)
+class SandboxNetworkTransformContext:
+    """
+    Context passed to a :class:`SandboxNetworkRule` ``transform`` callable.
+    Each field is a literal placeholder string (e.g. ``"${e2b.sandbox_id}"``)
+    that the proxy resolves per request at egress time.
+    """
+
+    sandbox_id: str
+    """Placeholder ``"${e2b.sandboxId}"``."""
+
+    team_id: str
+    """Placeholder ``"${e2b.teamId}"``."""
+
+    execution_id: str
+    """Placeholder ``"${e2b.executionId}"``."""
+
+    identity: _SandboxNetworkTransformIdentity
+    """Identity-related placeholders."""
+
+
+SandboxNetworkTransformResolver = Callable[
+    [SandboxNetworkTransformContext], SandboxNetworkTransform
+]
+
+
 class SandboxNetworkRule(TypedDict):
     """
     Per-domain rule applied to egress requests.
     """
 
-    transform: NotRequired[SandboxNetworkTransform]
-    """Transform applied to requests matching this rule."""
+    transform: NotRequired[
+        Union[SandboxNetworkTransform, SandboxNetworkTransformResolver]
+    ]
+    """
+    Transform applied to requests matching this rule. Accepts either a static
+    :class:`SandboxNetworkTransform` or a callable that receives a
+    :class:`SandboxNetworkTransformContext` of placeholder strings; the
+    resolved object is sent to the API as-is.
+    """
 
 
 SandboxNetworkRules = Dict[str, List[SandboxNetworkRule]]
@@ -235,6 +276,14 @@ def _resolve_network_selector(
     return list(selector)
 
 
+_TRANSFORM_CONTEXT = SandboxNetworkTransformContext(
+    sandbox_id="${e2b.sandboxId}",
+    team_id="${e2b.teamId}",
+    execution_id="${e2b.executionId}",
+    identity=_SandboxNetworkTransformIdentity(jwt="${e2b.identity.jwt}"),
+)
+
+
 def _build_client_rules(rules: SandboxNetworkRules) -> SandboxNetworkConfigRules:
     client_rules = SandboxNetworkConfigRules()
     for host, host_rules in rules.items():
@@ -244,6 +293,8 @@ def _build_client_rules(rules: SandboxNetworkRules) -> SandboxNetworkConfigRules
             if transform is None:
                 converted.append(ClientSandboxNetworkRule())
                 continue
+            if callable(transform):
+                transform = transform(_TRANSFORM_CONTEXT)
 
             client_transform = ClientSandboxNetworkTransform()
             headers = transform.get("headers")
