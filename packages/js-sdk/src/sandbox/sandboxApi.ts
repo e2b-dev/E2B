@@ -857,7 +857,7 @@ export class SandboxApi {
       },
       body: {
         timeout: timeoutToSeconds(timeoutMs),
-        ...(opts?.envs !== undefined ? { envVars: opts.envs } : {}),
+        envVars: opts?.envs,
       },
       signal: config.getSignal(opts?.requestTimeoutMs),
     })
