@@ -376,13 +376,20 @@ Migration guide: ${asPrimary('https://e2b.dev/docs/template/migration-v2')}`
 
         if (imageUriMask == undefined) {
           try {
-            child_process.execSync(
-              `echo "${accessToken}" | docker login docker.${connectionConfig.domain} -u _e2b_access_token --password-stdin`,
+            const loginResult = child_process.spawnSync(
+              'docker',
+              ['login', `docker.${connectionConfig.domain}`, '-u', '_e2b_access_token', '--password-stdin'],
               {
-                stdio: 'inherit',
+                input: accessToken,
+                stdio: ['pipe', 'inherit', 'inherit'],
                 cwd: root,
               }
             )
+            if (loginResult.status !== 0) {
+              const err = new Error('Docker login failed') as any
+              err.status = loginResult.status
+              throw err
+            }
           } catch (err: any) {
             console.error(
               'Docker login failed. Please try to log in with `e2b auth login` and try again.'
@@ -393,11 +400,10 @@ Migration guide: ${asPrimary('https://e2b.dev/docs/template/migration-v2')}`
 
         process.stdout.write('\n')
 
-        const buildArgs = Object.entries(dockerBuildArgs)
-          .map(([key, value]) => `--build-arg "${key}=${value}"`)
-          .join(' ')
-
-        const noCache = opts.noCache ? '--no-cache' : ''
+        const buildArgList: string[] = []
+        for (const [key, value] of Object.entries(dockerBuildArgs)) {
+          buildArgList.push('--build-arg', `${key}=${value}`)
+        }
 
         const imageUrl = dockerImageUrl(
           templateID,
@@ -409,21 +415,24 @@ Migration guide: ${asPrimary('https://e2b.dev/docs/template/migration-v2')}`
           console.log('Using custom docker image URI:', imageUrl)
         }
 
-        const cmd = [
-          'docker build',
-          `-f ${dockerfileRelativePath}`,
-          '--pull --platform linux/amd64',
-          `-t ${imageUrl}`,
-          buildArgs,
-          noCache,
+        const args = [
+          'build',
+          '-f', dockerfileRelativePath,
+          '--pull',
+          '--platform', 'linux/amd64',
+          '-t', imageUrl,
+          ...buildArgList,
+          ...(opts.noCache ? ['--no-cache'] : []),
           '.',
-        ].join(' ')
+        ]
+
+        const cmd = ['docker', ...args].join(' ')
 
         console.log(
           `Building docker image with the following command:\n${asBold(cmd)}\n`
         )
 
-        child_process.execSync(cmd, {
+        const buildResult = child_process.spawnSync('docker', args, {
           stdio: 'inherit',
           cwd: root,
           env: {
@@ -431,19 +440,30 @@ Migration guide: ${asPrimary('https://e2b.dev/docs/template/migration-v2')}`
             DOCKER_CLI_HINTS: 'false',
           },
         })
+        if (buildResult.status !== 0) {
+          const err = new Error(`Command failed: ${cmd}`) as any
+          err.status = buildResult.status
+          throw err
+        }
         console.log('> Docker image built.\n')
 
-        const pushCmd = `docker push ${imageUrl}`
+        const pushArgs = ['push', imageUrl]
+        const pushCmd = `docker ${pushArgs.join(' ')}`
         console.log(
           `Pushing docker image with the following command:\n${asBold(
             pushCmd
           )}\n`
         )
         try {
-          child_process.execSync(pushCmd, {
+          const pushResult = child_process.spawnSync('docker', pushArgs, {
             stdio: 'inherit',
             cwd: root,
           })
+          if (pushResult.status !== 0) {
+            const err = new Error(`Command failed: ${pushCmd}`) as any
+            err.status = pushResult.status
+            throw err
+          }
         } catch (err: any) {
           const userConfig = getUserConfig()
           await buildWithProxy(
