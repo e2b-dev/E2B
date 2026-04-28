@@ -36,9 +36,7 @@ from e2b.exceptions import (
 )
 from e2b.sandbox.main import SandboxBase
 from e2b.sandbox.sandbox_api import (
-    SandboxFirewall,
     SandboxLifecycle,
-    build_firewall_config,
     build_network_config,
     get_auto_resume_enabled,
     McpServer,
@@ -173,7 +171,6 @@ class SandboxApi(SandboxBase):
         secure: bool,
         mcp: Optional[McpServer] = None,
         network: Optional[SandboxNetworkOpts] = None,
-        firewall: Optional[SandboxFirewall] = None,
         lifecycle: Optional[SandboxLifecycle] = None,
         volume_mounts: Optional[List[SandboxVolumeMountAPI]] = None,
         **opts: Unpack[ApiParams],
@@ -184,8 +181,7 @@ class SandboxApi(SandboxBase):
             lifecycle["on_timeout"] == "pause" if lifecycle is not None else auto_pause
         )
         auto_resume_enabled = get_auto_resume_enabled(lifecycle)
-        network_body = build_network_config(network, firewall)
-        firewall_body = build_firewall_config(firewall)
+        network_body = build_network_config(network)
         body = NewSandbox(
             template_id=template,
             auto_pause=(should_auto_pause if should_auto_pause is not None else UNSET),
@@ -196,7 +192,6 @@ class SandboxApi(SandboxBase):
             secure=secure,
             allow_internet_access=allow_internet_access,
             network=SandboxNetworkConfig(**network_body) if network_body else UNSET,
-            firewall=firewall_body if firewall_body is not None else UNSET,
             volume_mounts=volume_mounts if volume_mounts else UNSET,
         )
         if auto_resume_enabled is not None:

@@ -11,7 +11,7 @@ def test_allow_specific_ip_with_deny_all(sandbox_factory):
     """Test that sandbox with denyOut all and allowOut creates a whitelist."""
     sandbox = sandbox_factory(
         network=SandboxNetworkOpts(
-            deny_out=lambda ctx: ctx.all_hosts, allow_out=["1.1.1.1"]
+            deny_out=lambda ctx: [ctx.all_traffic], allow_out=["1.1.1.1"]
         )
     )
 
@@ -52,9 +52,9 @@ def test_deny_specific_ip(sandbox_factory):
 
 @pytest.mark.skip_debug()
 def test_deny_all_traffic(sandbox_factory):
-    """Test that sandbox can deny all traffic using the all_hosts selector."""
+    """Test that sandbox can deny all traffic using the all_traffic selector."""
     sandbox = sandbox_factory(
-        network=SandboxNetworkOpts(deny_out=lambda ctx: ctx.all_hosts), timeout=30
+        network=SandboxNetworkOpts(deny_out=lambda ctx: [ctx.all_traffic]), timeout=30
     )
 
     # Test that all traffic is denied
@@ -76,7 +76,7 @@ def test_allow_takes_precedence_over_deny(sandbox_factory):
     """Test that allowOut takes precedence over denyOut."""
     sandbox = sandbox_factory(
         network=SandboxNetworkOpts(
-            deny_out=lambda ctx: ctx.all_hosts, allow_out=["1.1.1.1", "8.8.8.8"]
+            deny_out=lambda ctx: [ctx.all_traffic], allow_out=["1.1.1.1", "8.8.8.8"]
         )
     )
 
@@ -168,14 +168,14 @@ def test_firewall_transform_injects_headers(sandbox_factory):
     injected_value = "e2b-transform-value-123"
 
     network: SandboxNetworkOpts = {
-        "allow_out": lambda ctx: ctx.firewall_hosts,
+        "allow_out": lambda ctx: list(ctx.rules.keys()),
+        "rules": {
+            "httpbin.org": [
+                {"transform": {"headers": {injected_header: injected_value}}},
+            ],
+        },
     }
-    firewall = {
-        "httpbin.org": [
-            {"transform": {"headers": {injected_header: injected_value}}},
-        ],
-    }
-    sandbox = sandbox_factory(network=network, firewall=firewall)
+    sandbox = sandbox_factory(network=network)
 
     result = sandbox.commands.run("curl -sS --max-time 10 https://httpbin.org/headers")
     assert result.exit_code == 0

@@ -5,20 +5,17 @@ from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
 if TYPE_CHECKING:
-    from ..models.sandbox_firewall_rule import SandboxFirewallRule
+    from ..models.sandbox_network_rule import SandboxNetworkRule
 
 
-T = TypeVar("T", bound="SandboxFirewall")
+T = TypeVar("T", bound="PutSandboxesSandboxIDNetworkBodyRules")
 
 
 @_attrs_define
-class SandboxFirewall:
-    """Map of host to ordered list of firewall rules applied to outbound requests for that host. Registering a host here
-    does not allow egress on its own; the host must also appear in network.allowOut.
+class PutSandboxesSandboxIDNetworkBodyRules:
+    """Per-domain transform rules. Replaces all existing rules when provided."""
 
-    """
-
-    additional_properties: dict[str, list["SandboxFirewallRule"]] = _attrs_field(
+    additional_properties: dict[str, list["SandboxNetworkRule"]] = _attrs_field(
         init=False, factory=dict
     )
 
@@ -34,17 +31,17 @@ class SandboxFirewall:
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
-        from ..models.sandbox_firewall_rule import SandboxFirewallRule
+        from ..models.sandbox_network_rule import SandboxNetworkRule
 
         d = dict(src_dict)
-        sandbox_firewall = cls()
+        put_sandboxes_sandbox_id_network_body_rules = cls()
 
         additional_properties = {}
         for prop_name, prop_dict in d.items():
             additional_property = []
             _additional_property = prop_dict
             for additional_property_item_data in _additional_property:
-                additional_property_item = SandboxFirewallRule.from_dict(
+                additional_property_item = SandboxNetworkRule.from_dict(
                     additional_property_item_data
                 )
 
@@ -52,17 +49,19 @@ class SandboxFirewall:
 
             additional_properties[prop_name] = additional_property
 
-        sandbox_firewall.additional_properties = additional_properties
-        return sandbox_firewall
+        put_sandboxes_sandbox_id_network_body_rules.additional_properties = (
+            additional_properties
+        )
+        return put_sandboxes_sandbox_id_network_body_rules
 
     @property
     def additional_keys(self) -> list[str]:
         return list(self.additional_properties.keys())
 
-    def __getitem__(self, key: str) -> list["SandboxFirewallRule"]:
+    def __getitem__(self, key: str) -> list["SandboxNetworkRule"]:
         return self.additional_properties[key]
 
-    def __setitem__(self, key: str, value: list["SandboxFirewallRule"]) -> None:
+    def __setitem__(self, key: str, value: list["SandboxNetworkRule"]) -> None:
         self.additional_properties[key] = value
 
     def __delitem__(self, key: str) -> None:

@@ -287,6 +287,61 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/sandboxes/{sandboxID}/network": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** @description Update the network configuration for a running sandbox. Replaces the current egress rules with the provided configuration. Omitting both fields clears all egress rules. */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    sandboxID: components["parameters"]["sandboxID"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @description Allow sandbox to access the internet. When set to false, it behaves the same as specifying denyOut to 0.0.0.0/0 in the network config. */
+                        allow_internet_access?: boolean;
+                        /** @description List of allowed destinations for egress traffic. Each entry can be a CIDR block (e.g. "8.8.8.8/32"), a bare IP address (e.g. "8.8.8.8"), or a domain name (e.g. "example.com", "*.example.com"). Allowed entries always take precedence over denied entries. */
+                        allowOut?: string[];
+                        /** @description List of denied CIDR blocks or IP addresses for egress traffic. Domain names are not supported for deny rules. */
+                        denyOut?: string[];
+                        /** @description Per-domain transform rules. Replaces all existing rules when provided. */
+                        rules?: {
+                            [key: string]: components["schemas"]["SandboxNetworkRule"][];
+                        };
+                    };
+                };
+            };
+            responses: {
+                /** @description Successfully updated the sandbox network configuration */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                401: components["responses"]["401"];
+                404: components["responses"]["404"];
+                409: components["responses"]["409"];
+                500: components["responses"]["500"];
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/sandboxes/{sandboxID}/pause": {
         parameters: {
             query?: never;
@@ -1966,7 +2021,6 @@ export interface components {
             autoPause?: boolean;
             autoResume?: components["schemas"]["SandboxAutoResumeConfig"];
             envVars?: components["schemas"]["EnvVars"];
-            firewall?: components["schemas"]["SandboxFirewall"];
             mcp?: components["schemas"]["Mcp"];
             metadata?: components["schemas"]["SandboxMetadata"];
             network?: components["schemas"]["SandboxNetworkConfig"];
@@ -2093,10 +2147,13 @@ export interface components {
             memoryUsedBytes: number;
         };
         /**
-         * @description Status of the node
+         * @description Status of the node.
+         *     - draining: the node is bound to be shut down. It will not accept new sandboxes and will stop once all existing sandboxes are done.
+         *     - standby: the node is not actively used, but it can return to ready and continue serving traffic.
+         *
          * @enum {string}
          */
-        NodeStatus: "ready" | "draining" | "connecting" | "unhealthy";
+        NodeStatus: "ready" | "draining" | "connecting" | "unhealthy" | "standby";
         NodeStatusChange: {
             /**
              * Format: uuid
@@ -2169,7 +2226,6 @@ export interface components {
             /** @description Access token used for envd communication */
             envdAccessToken?: string;
             envdVersion: components["schemas"]["EnvdVersion"];
-            firewall?: components["schemas"]["SandboxFirewall"];
             lifecycle?: components["schemas"]["SandboxLifecycle"];
             memoryMB: components["schemas"]["MemoryMB"];
             metadata?: components["schemas"]["SandboxMetadata"];
@@ -2189,21 +2245,6 @@ export interface components {
         SandboxesWithMetrics: {
             sandboxes: {
                 [key: string]: components["schemas"]["SandboxMetric"];
-            };
-        };
-        /** @description Map of host to ordered list of firewall rules applied to outbound requests for that host. Registering a host here does not allow egress on its own; the host must also appear in network.allowOut. */
-        SandboxFirewall: {
-            [key: string]: components["schemas"]["SandboxFirewallRule"][];
-        };
-        /** @description Firewall rule applied to outbound requests matching the host it is registered under. */
-        SandboxFirewallRule: {
-            transform?: components["schemas"]["SandboxFirewallRuleTransform"];
-        };
-        /** @description Transform applied to egress requests matching a firewall rule. */
-        SandboxFirewallRuleTransform: {
-            /** @description Headers to inject into the outbound request. Values override any headers already present. */
-            headers?: {
-                [key: string]: string;
             };
         };
         /** @description Sandbox lifecycle policy returned by sandbox info. */
@@ -2275,6 +2316,11 @@ export interface components {
             diskUsed: number;
             /**
              * Format: int64
+             * @description Cached memory (page cache) in bytes
+             */
+            memCache: number;
+            /**
+             * Format: int64
              * @description Total memory in bytes
              */
             memTotal: number;
@@ -2296,17 +2342,34 @@ export interface components {
             timestampUnix: number;
         };
         SandboxNetworkConfig: {
-            /** @description List of allowed CIDR blocks, IP addresses, or hostnames for egress traffic. Allowed entries always take precedence over denied ones. */
+            /** @description List of allowed destinations for egress traffic. Each entry can be a CIDR block (e.g. "8.8.8.8/32"), a bare IP address (e.g. "8.8.8.8"), or a domain name (e.g. "example.com", "*.example.com"). Allowed entries always take precedence over denied entries. */
             allowOut?: string[];
             /**
              * @description Specify if the sandbox URLs should be accessible only with authentication.
              * @default true
              */
             allowPublicTraffic?: boolean;
-            /** @description List of denied CIDR blocks, IP addresses, or hostnames for egress traffic. */
+            /** @description List of denied CIDR blocks or IP addresses for egress traffic. Domain names are not supported for deny rules. */
             denyOut?: string[];
             /** @description Specify host mask which will be used for all sandbox requests */
             maskRequestHost?: string;
+            /** @description Per-domain transform rules applied to matching egress HTTP/HTTPS requests. Keys are domains (e.g. "api.example.com", "example.com"). A domain listed here is not automatically allowed - use allowOut to permit the traffic.
+             *      */
+            rules?: {
+                [key: string]: components["schemas"]["SandboxNetworkRule"][];
+            };
+        };
+        /** @description Transform rule applied to egress requests matching a domain pattern. */
+        SandboxNetworkRule: {
+            transform?: components["schemas"]["SandboxNetworkTransform"];
+        };
+        /** @description Transformations applied to matching egress requests before forwarding. */
+        SandboxNetworkTransform: {
+            /** @description HTTP headers to inject or override in matching requests. An existing header with the same name is replaced. Values are plain strings; secret resolution happens client-side before sending to the API.
+             *      */
+            headers?: {
+                [key: string]: string;
+            };
         };
         /**
          * @description Action taken when the sandbox times out.

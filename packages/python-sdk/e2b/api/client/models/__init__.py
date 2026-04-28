@@ -42,14 +42,14 @@ from .post_sandboxes_sandbox_id_snapshots_body import (
     PostSandboxesSandboxIDSnapshotsBody,
 )
 from .post_sandboxes_sandbox_id_timeout_body import PostSandboxesSandboxIDTimeoutBody
+from .put_sandboxes_sandbox_id_network_body import PutSandboxesSandboxIDNetworkBody
+from .put_sandboxes_sandbox_id_network_body_rules import (
+    PutSandboxesSandboxIDNetworkBodyRules,
+)
 from .resumed_sandbox import ResumedSandbox
 from .sandbox import Sandbox
 from .sandbox_auto_resume_config import SandboxAutoResumeConfig
 from .sandbox_detail import SandboxDetail
-from .sandbox_firewall import SandboxFirewall
-from .sandbox_firewall_rule import SandboxFirewallRule
-from .sandbox_firewall_rule_transform import SandboxFirewallRuleTransform
-from .sandbox_firewall_rule_transform_headers import SandboxFirewallRuleTransformHeaders
 from .sandbox_lifecycle import SandboxLifecycle
 from .sandbox_log import SandboxLog
 from .sandbox_log_entry import SandboxLogEntry
@@ -58,6 +58,10 @@ from .sandbox_logs import SandboxLogs
 from .sandbox_logs_v2_response import SandboxLogsV2Response
 from .sandbox_metric import SandboxMetric
 from .sandbox_network_config import SandboxNetworkConfig
+from .sandbox_network_config_rules import SandboxNetworkConfigRules
+from .sandbox_network_rule import SandboxNetworkRule
+from .sandbox_network_transform import SandboxNetworkTransform
+from .sandbox_network_transform_headers import SandboxNetworkTransformHeaders
 from .sandbox_on_timeout import SandboxOnTimeout
 from .sandbox_state import SandboxState
 from .sandbox_volume_mount import SandboxVolumeMount
@@ -129,15 +133,13 @@ __all__ = (
     "PostSandboxesSandboxIDRefreshesBody",
     "PostSandboxesSandboxIDSnapshotsBody",
     "PostSandboxesSandboxIDTimeoutBody",
+    "PutSandboxesSandboxIDNetworkBody",
+    "PutSandboxesSandboxIDNetworkBodyRules",
     "ResumedSandbox",
     "Sandbox",
     "SandboxAutoResumeConfig",
     "SandboxDetail",
     "SandboxesWithMetrics",
-    "SandboxFirewall",
-    "SandboxFirewallRule",
-    "SandboxFirewallRuleTransform",
-    "SandboxFirewallRuleTransformHeaders",
     "SandboxLifecycle",
     "SandboxLog",
     "SandboxLogEntry",
@@ -146,6 +148,10 @@ __all__ = (
     "SandboxLogsV2Response",
     "SandboxMetric",
     "SandboxNetworkConfig",
+    "SandboxNetworkConfigRules",
+    "SandboxNetworkRule",
+    "SandboxNetworkTransform",
+    "SandboxNetworkTransformHeaders",
     "SandboxOnTimeout",
     "SandboxState",
     "SandboxVolumeMount",

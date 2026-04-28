@@ -7,22 +7,22 @@ from attrs import field as _attrs_field
 from ..types import UNSET, Unset
 
 if TYPE_CHECKING:
-    from ..models.sandbox_firewall_rule_transform import SandboxFirewallRuleTransform
+    from ..models.sandbox_network_transform import SandboxNetworkTransform
 
 
-T = TypeVar("T", bound="SandboxFirewallRule")
+T = TypeVar("T", bound="SandboxNetworkRule")
 
 
 @_attrs_define
-class SandboxFirewallRule:
-    """Firewall rule applied to outbound requests matching the host it is registered under.
+class SandboxNetworkRule:
+    """Transform rule applied to egress requests matching a domain pattern.
 
     Attributes:
-        transform (Union[Unset, SandboxFirewallRuleTransform]): Transform applied to egress requests matching a firewall
-            rule.
+        transform (Union[Unset, SandboxNetworkTransform]): Transformations applied to matching egress requests before
+            forwarding.
     """
 
-    transform: Union[Unset, "SandboxFirewallRuleTransform"] = UNSET
+    transform: Union[Unset, "SandboxNetworkTransform"] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -40,24 +40,22 @@ class SandboxFirewallRule:
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
-        from ..models.sandbox_firewall_rule_transform import (
-            SandboxFirewallRuleTransform,
-        )
+        from ..models.sandbox_network_transform import SandboxNetworkTransform
 
         d = dict(src_dict)
         _transform = d.pop("transform", UNSET)
-        transform: Union[Unset, SandboxFirewallRuleTransform]
+        transform: Union[Unset, SandboxNetworkTransform]
         if isinstance(_transform, Unset):
             transform = UNSET
         else:
-            transform = SandboxFirewallRuleTransform.from_dict(_transform)
+            transform = SandboxNetworkTransform.from_dict(_transform)
 
-        sandbox_firewall_rule = cls(
+        sandbox_network_rule = cls(
             transform=transform,
         )
 
-        sandbox_firewall_rule.additional_properties = d
-        return sandbox_firewall_rule
+        sandbox_network_rule.additional_properties = d
+        return sandbox_network_rule
 
     @property
     def additional_keys(self) -> list[str]:

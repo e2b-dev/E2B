@@ -7,24 +7,25 @@ from attrs import field as _attrs_field
 from ..types import UNSET, Unset
 
 if TYPE_CHECKING:
-    from ..models.sandbox_firewall_rule_transform_headers import (
-        SandboxFirewallRuleTransformHeaders,
+    from ..models.sandbox_network_transform_headers import (
+        SandboxNetworkTransformHeaders,
     )
 
 
-T = TypeVar("T", bound="SandboxFirewallRuleTransform")
+T = TypeVar("T", bound="SandboxNetworkTransform")
 
 
 @_attrs_define
-class SandboxFirewallRuleTransform:
-    """Transform applied to egress requests matching a firewall rule.
+class SandboxNetworkTransform:
+    """Transformations applied to matching egress requests before forwarding.
 
     Attributes:
-        headers (Union[Unset, SandboxFirewallRuleTransformHeaders]): Headers to inject into the outbound request. Values
-            override any headers already present.
+        headers (Union[Unset, SandboxNetworkTransformHeaders]): HTTP headers to inject or override in matching requests.
+            An existing header with the same name is replaced. Values are plain strings; secret resolution happens client-
+            side before sending to the API.
     """
 
-    headers: Union[Unset, "SandboxFirewallRuleTransformHeaders"] = UNSET
+    headers: Union[Unset, "SandboxNetworkTransformHeaders"] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -42,24 +43,24 @@ class SandboxFirewallRuleTransform:
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
-        from ..models.sandbox_firewall_rule_transform_headers import (
-            SandboxFirewallRuleTransformHeaders,
+        from ..models.sandbox_network_transform_headers import (
+            SandboxNetworkTransformHeaders,
         )
 
         d = dict(src_dict)
         _headers = d.pop("headers", UNSET)
-        headers: Union[Unset, SandboxFirewallRuleTransformHeaders]
+        headers: Union[Unset, SandboxNetworkTransformHeaders]
         if isinstance(_headers, Unset):
             headers = UNSET
         else:
-            headers = SandboxFirewallRuleTransformHeaders.from_dict(_headers)
+            headers = SandboxNetworkTransformHeaders.from_dict(_headers)
 
-        sandbox_firewall_rule_transform = cls(
+        sandbox_network_transform = cls(
             headers=headers,
         )
 
-        sandbox_firewall_rule_transform.additional_properties = d
-        return sandbox_firewall_rule_transform
+        sandbox_network_transform.additional_properties = d
+        return sandbox_network_transform
 
     @property
     def additional_keys(self) -> list[str]:

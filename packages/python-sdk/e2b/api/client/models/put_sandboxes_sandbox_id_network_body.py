@@ -7,34 +7,33 @@ from attrs import field as _attrs_field
 from ..types import UNSET, Unset
 
 if TYPE_CHECKING:
-    from ..models.sandbox_network_config_rules import SandboxNetworkConfigRules
+    from ..models.put_sandboxes_sandbox_id_network_body_rules import (
+        PutSandboxesSandboxIDNetworkBodyRules,
+    )
 
 
-T = TypeVar("T", bound="SandboxNetworkConfig")
+T = TypeVar("T", bound="PutSandboxesSandboxIDNetworkBody")
 
 
 @_attrs_define
-class SandboxNetworkConfig:
+class PutSandboxesSandboxIDNetworkBody:
     """
     Attributes:
         allow_out (Union[Unset, list[str]]): List of allowed destinations for egress traffic. Each entry can be a CIDR
             block (e.g. "8.8.8.8/32"), a bare IP address (e.g. "8.8.8.8"), or a domain name (e.g. "example.com",
             "*.example.com"). Allowed entries always take precedence over denied entries.
-        allow_public_traffic (Union[Unset, bool]): Specify if the sandbox URLs should be accessible only with
-            authentication. Default: True.
+        allow_internet_access (Union[Unset, bool]): Allow sandbox to access the internet. When set to false, it behaves
+            the same as specifying denyOut to 0.0.0.0/0 in the network config.
         deny_out (Union[Unset, list[str]]): List of denied CIDR blocks or IP addresses for egress traffic. Domain names
             are not supported for deny rules.
-        mask_request_host (Union[Unset, str]): Specify host mask which will be used for all sandbox requests
-        rules (Union[Unset, SandboxNetworkConfigRules]): Per-domain transform rules applied to matching egress
-            HTTP/HTTPS requests. Keys are domains (e.g. "api.example.com", "example.com"). A domain listed here is not
-            automatically allowed - use allowOut to permit the traffic.
+        rules (Union[Unset, PutSandboxesSandboxIDNetworkBodyRules]): Per-domain transform rules. Replaces all existing
+            rules when provided.
     """
 
     allow_out: Union[Unset, list[str]] = UNSET
-    allow_public_traffic: Union[Unset, bool] = True
+    allow_internet_access: Union[Unset, bool] = UNSET
     deny_out: Union[Unset, list[str]] = UNSET
-    mask_request_host: Union[Unset, str] = UNSET
-    rules: Union[Unset, "SandboxNetworkConfigRules"] = UNSET
+    rules: Union[Unset, "PutSandboxesSandboxIDNetworkBodyRules"] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -42,13 +41,11 @@ class SandboxNetworkConfig:
         if not isinstance(self.allow_out, Unset):
             allow_out = self.allow_out
 
-        allow_public_traffic = self.allow_public_traffic
+        allow_internet_access = self.allow_internet_access
 
         deny_out: Union[Unset, list[str]] = UNSET
         if not isinstance(self.deny_out, Unset):
             deny_out = self.deny_out
-
-        mask_request_host = self.mask_request_host
 
         rules: Union[Unset, dict[str, Any]] = UNSET
         if not isinstance(self.rules, Unset):
@@ -59,12 +56,10 @@ class SandboxNetworkConfig:
         field_dict.update({})
         if allow_out is not UNSET:
             field_dict["allowOut"] = allow_out
-        if allow_public_traffic is not UNSET:
-            field_dict["allowPublicTraffic"] = allow_public_traffic
+        if allow_internet_access is not UNSET:
+            field_dict["allow_internet_access"] = allow_internet_access
         if deny_out is not UNSET:
             field_dict["denyOut"] = deny_out
-        if mask_request_host is not UNSET:
-            field_dict["maskRequestHost"] = mask_request_host
         if rules is not UNSET:
             field_dict["rules"] = rules
 
@@ -72,34 +67,33 @@ class SandboxNetworkConfig:
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
-        from ..models.sandbox_network_config_rules import SandboxNetworkConfigRules
+        from ..models.put_sandboxes_sandbox_id_network_body_rules import (
+            PutSandboxesSandboxIDNetworkBodyRules,
+        )
 
         d = dict(src_dict)
         allow_out = cast(list[str], d.pop("allowOut", UNSET))
 
-        allow_public_traffic = d.pop("allowPublicTraffic", UNSET)
+        allow_internet_access = d.pop("allow_internet_access", UNSET)
 
         deny_out = cast(list[str], d.pop("denyOut", UNSET))
 
-        mask_request_host = d.pop("maskRequestHost", UNSET)
-
         _rules = d.pop("rules", UNSET)
-        rules: Union[Unset, SandboxNetworkConfigRules]
+        rules: Union[Unset, PutSandboxesSandboxIDNetworkBodyRules]
         if isinstance(_rules, Unset):
             rules = UNSET
         else:
-            rules = SandboxNetworkConfigRules.from_dict(_rules)
+            rules = PutSandboxesSandboxIDNetworkBodyRules.from_dict(_rules)
 
-        sandbox_network_config = cls(
+        put_sandboxes_sandbox_id_network_body = cls(
             allow_out=allow_out,
-            allow_public_traffic=allow_public_traffic,
+            allow_internet_access=allow_internet_access,
             deny_out=deny_out,
-            mask_request_host=mask_request_host,
             rules=rules,
         )
 
-        sandbox_network_config.additional_properties = d
-        return sandbox_network_config
+        put_sandboxes_sandbox_id_network_body.additional_properties = d
+        return put_sandboxes_sandbox_id_network_body
 
     @property
     def additional_keys(self) -> list[str]:

@@ -7,7 +7,7 @@ describe('allow only 1.1.1.1', () => {
   sandboxTest.scoped({
     sandboxOpts: {
       network: {
-        denyOut: ({ allHosts }) => allHosts,
+        denyOut: ({ allTraffic }) => [allTraffic],
         allowOut: ['1.1.1.1'],
       },
     },
@@ -62,17 +62,17 @@ describe('deny specific IP address', () => {
   )
 })
 
-describe('deny all traffic using allHosts selector', () => {
+describe('deny all traffic using allTraffic selector', () => {
   sandboxTest.scoped({
     sandboxOpts: {
       network: {
-        denyOut: ({ allHosts }) => allHosts,
+        denyOut: ({ allTraffic }) => [allTraffic],
       },
     },
   })
 
   sandboxTest.skipIf(isDebug)(
-    'deny all traffic using allHosts selector',
+    'deny all traffic using allTraffic selector',
     async ({ sandbox }) => {
       // Test that all traffic is denied
       await expect(
@@ -94,7 +94,7 @@ describe('allow takes precedence over deny', () => {
   sandboxTest.scoped({
     sandboxOpts: {
       network: {
-        denyOut: ({ allHosts }) => allHosts,
+        denyOut: ({ allTraffic }) => [allTraffic],
         allowOut: ['1.1.1.1', '8.8.8.8'],
       },
     },
@@ -200,18 +200,18 @@ describe('firewall transform injects headers', () => {
   sandboxTest.scoped({
     sandboxOpts: {
       network: {
-        allowOut: ({ firewallHosts }) => firewallHosts,
-      },
-      firewall: {
-        'httpbin.org': [
-          {
-            transform: {
-              headers: {
-                [injectedHeader]: injectedValue,
+        allowOut: ({ rules }) => [...rules.keys()],
+        rules: {
+          'httpbin.org': [
+            {
+              transform: {
+                headers: {
+                  [injectedHeader]: injectedValue,
+                },
               },
             },
-          },
-        ],
+          ],
+        },
       },
     },
   })

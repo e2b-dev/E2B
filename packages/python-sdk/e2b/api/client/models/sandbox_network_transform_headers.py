@@ -4,12 +4,15 @@ from typing import Any, TypeVar
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
-T = TypeVar("T", bound="SandboxFirewallRuleTransformHeaders")
+T = TypeVar("T", bound="SandboxNetworkTransformHeaders")
 
 
 @_attrs_define
-class SandboxFirewallRuleTransformHeaders:
-    """Headers to inject into the outbound request. Values override any headers already present."""
+class SandboxNetworkTransformHeaders:
+    """HTTP headers to inject or override in matching requests. An existing header with the same name is replaced. Values
+    are plain strings; secret resolution happens client-side before sending to the API.
+
+    """
 
     additional_properties: dict[str, str] = _attrs_field(init=False, factory=dict)
 
@@ -22,10 +25,10 @@ class SandboxFirewallRuleTransformHeaders:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        sandbox_firewall_rule_transform_headers = cls()
+        sandbox_network_transform_headers = cls()
 
-        sandbox_firewall_rule_transform_headers.additional_properties = d
-        return sandbox_firewall_rule_transform_headers
+        sandbox_network_transform_headers.additional_properties = d
+        return sandbox_network_transform_headers
 
     @property
     def additional_keys(self) -> list[str]:

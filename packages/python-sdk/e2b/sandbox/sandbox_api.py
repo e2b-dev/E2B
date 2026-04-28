@@ -1,6 +1,17 @@
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Callable, Dict, List, Literal, Optional, TypedDict, Union, cast
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Literal,
+    Mapping,
+    Optional,
+    TypedDict,
+    Union,
+    cast,
+)
 
 from typing_extensions import NotRequired, Unpack
 
@@ -8,9 +19,12 @@ from e2b import ConnectionConfig
 from e2b.api.client.models import (
     ListedSandbox,
     SandboxDetail,
-    SandboxFirewall as ClientSandboxFirewall,
     SandboxLifecycle as ClientSandboxLifecycle,
     SandboxNetworkConfig,
+    SandboxNetworkConfigRules,
+    SandboxNetworkRule as ClientSandboxNetworkRule,
+    SandboxNetworkTransform as ClientSandboxNetworkTransform,
+    SandboxNetworkTransformHeaders as ClientSandboxNetworkTransformHeaders,
     SandboxState,
 )
 from e2b.api.client.types import Unset
@@ -47,9 +61,9 @@ GitHubMcpServer = Dict[str, Union[GitHubMcpServerConfig, Any]]
 McpServer = Union[BaseMcpServer, GitHubMcpServer]
 
 
-class SandboxFirewallRuleTransform(TypedDict):
+class SandboxNetworkTransform(TypedDict):
     """
-    Transform applied to outbound requests matching a `SandboxFirewallRule`.
+    Transform applied to egress requests matching a :class:`SandboxNetworkRule`.
     """
 
     headers: NotRequired[Dict[str, str]]
@@ -59,21 +73,20 @@ class SandboxFirewallRuleTransform(TypedDict):
     """
 
 
-class SandboxFirewallRule(TypedDict):
+class SandboxNetworkRule(TypedDict):
     """
-    Firewall rule applied to outbound requests matching the host it is
-    registered under in `firewall`.
+    Per-domain rule applied to egress requests.
     """
 
-    transform: NotRequired[SandboxFirewallRuleTransform]
+    transform: NotRequired[SandboxNetworkTransform]
     """Transform applied to requests matching this rule."""
 
 
-SandboxFirewall = Dict[str, List[SandboxFirewallRule]]
+SandboxNetworkRules = Dict[str, List[SandboxNetworkRule]]
 """
-Map of host (or CIDR / IP) to ordered list of firewall rules applied to
-outbound requests for that host. Registering a host here does not allow egress
-on its own — the host must also appear in ``SandboxNetworkOpts.allow_out``.
+Map of host (or CIDR / IP) to ordered list of rules applied to outbound
+requests for that host. Registering a host here does not allow egress on its
+own — the host must also appear in ``SandboxNetworkOpts.allow_out``.
 """
 
 
@@ -83,11 +96,11 @@ class SandboxNetworkSelectorContext:
     Context passed to ``allow_out``/``deny_out`` callables.
     """
 
-    firewall_hosts: List[str]
-    """Hosts registered in the top-level ``firewall`` argument."""
+    all_traffic: str
+    """All traffic sentinel — equivalent to ``"0.0.0.0/0"``."""
 
-    all_hosts: List[str]
-    """All traffic — equivalent to ``["0.0.0.0/0"]``."""
+    rules: Mapping[str, List[SandboxNetworkRule]]
+    """Rules registered in :attr:`SandboxNetworkOpts.rules`."""
 
 
 SandboxNetworkSelector = Union[
@@ -113,14 +126,13 @@ class SandboxNetworkOpts(TypedDict):
 
     Accepts either a static list of CIDR blocks / IP addresses / hostnames, or
     a callable that receives a :class:`SandboxNetworkSelectorContext` and
-    returns the same. ``ctx.firewall_hosts`` is the list of hosts registered
-    in the top-level ``firewall`` argument; ``ctx.all_hosts`` is
-    ``["0.0.0.0/0"]``.
+    returns the same. ``ctx.all_traffic`` is ``"0.0.0.0/0"``; ``ctx.rules`` is
+    a read-only view of :attr:`rules`.
 
     Examples:
     - Static list: ``["1.1.1.1", "8.8.8.0/24"]``
-    - Allow only firewall-registered hosts:
-      ``lambda ctx: ctx.firewall_hosts``
+    - Allow only rule-registered hosts:
+      ``lambda ctx: list(ctx.rules.keys())``
     """
 
     deny_out: NotRequired[SandboxNetworkSelector]
@@ -131,7 +143,18 @@ class SandboxNetworkOpts(TypedDict):
 
     Examples:
     - Static list: ``["1.1.1.1", "8.8.8.0/24"]``
-    - Block all egress: ``lambda ctx: ctx.all_hosts``
+    - Block all egress: ``lambda ctx: [ctx.all_traffic]``
+    """
+
+    rules: NotRequired[SandboxNetworkRules]
+    """
+    Per-domain transform rules applied to matching egress HTTP/HTTPS
+    requests. Keys are domains (e.g. ``"api.example.com"``); values are
+    ordered lists of :class:`SandboxNetworkRule`.
+
+    Registering a host here does not allow egress on its own — the host must
+    also appear in ``allow_out``. Hosts registered here are exposed to the
+    ``allow_out``/``deny_out`` callables via ``ctx.rules``.
     """
 
     allow_public_traffic: NotRequired[bool]
@@ -159,6 +182,7 @@ class SandboxNetworkInfo(TypedDict, total=False):
 
     allow_out: List[str]
     deny_out: List[str]
+    rules: SandboxNetworkRules
     allow_public_traffic: bool
     mask_request_host: str
 
@@ -197,84 +221,67 @@ class SandboxInfoLifecycle(TypedDict):
     """
 
 
-_ALL_TRAFFIC_HOSTS: List[str] = [ALL_TRAFFIC]
-
-
 def _resolve_network_selector(
     selector: Optional[SandboxNetworkSelector],
-    firewall_hosts: List[str],
+    rules: Mapping[str, List[SandboxNetworkRule]],
 ) -> Optional[List[str]]:
     if selector is None:
         return None
 
     if callable(selector):
-        ctx = SandboxNetworkSelectorContext(
-            firewall_hosts=firewall_hosts,
-            all_hosts=list(_ALL_TRAFFIC_HOSTS),
-        )
+        ctx = SandboxNetworkSelectorContext(all_traffic=ALL_TRAFFIC, rules=rules)
         return list(selector(ctx))
 
     return list(selector)
 
 
+def _build_client_rules(rules: SandboxNetworkRules) -> SandboxNetworkConfigRules:
+    client_rules = SandboxNetworkConfigRules()
+    for host, host_rules in rules.items():
+        converted: List[ClientSandboxNetworkRule] = []
+        for rule in host_rules:
+            transform = rule.get("transform")
+            if transform is None:
+                converted.append(ClientSandboxNetworkRule())
+                continue
+
+            client_transform = ClientSandboxNetworkTransform()
+            headers = transform.get("headers")
+            if headers:
+                client_headers = ClientSandboxNetworkTransformHeaders()
+                client_headers.additional_properties = dict(headers)
+                client_transform.headers = client_headers
+
+            converted.append(ClientSandboxNetworkRule(transform=client_transform))
+        client_rules.additional_properties[host] = converted
+
+    return client_rules
+
+
 def build_network_config(
     network: Optional[SandboxNetworkOpts],
-    firewall: Optional[SandboxFirewall],
 ) -> Optional[Dict[str, Any]]:
     """Resolve a :class:`SandboxNetworkOpts` into the dict the API expects."""
     if network is None:
         return None
 
-    firewall_hosts = list(firewall.keys()) if firewall else []
-    allow_out = _resolve_network_selector(network.get("allow_out"), firewall_hosts)
-    deny_out = _resolve_network_selector(network.get("deny_out"), firewall_hosts)
+    rules = network.get("rules") or {}
+    allow_out = _resolve_network_selector(network.get("allow_out"), rules)
+    deny_out = _resolve_network_selector(network.get("deny_out"), rules)
 
     body: Dict[str, Any] = {}
     if allow_out is not None:
         body["allow_out"] = allow_out
     if deny_out is not None:
         body["deny_out"] = deny_out
+    if "rules" in network and network["rules"] is not None:
+        body["rules"] = _build_client_rules(network["rules"])
     if "allow_public_traffic" in network:
         body["allow_public_traffic"] = network["allow_public_traffic"]
     if "mask_request_host" in network:
         body["mask_request_host"] = network["mask_request_host"]
 
     return body
-
-
-def build_firewall_config(
-    firewall: Optional[SandboxFirewall],
-) -> Optional[ClientSandboxFirewall]:
-    """Convert a :class:`SandboxFirewall` into the generated client model."""
-    if firewall is None:
-        return None
-
-    from e2b.api.client.models import (
-        SandboxFirewallRule as ClientSandboxFirewallRule,
-        SandboxFirewallRuleTransform as ClientSandboxFirewallRuleTransform,
-        SandboxFirewallRuleTransformHeaders as ClientSandboxFirewallRuleTransformHeaders,
-    )
-
-    client_firewall = ClientSandboxFirewall()
-    for host, rules in firewall.items():
-        client_rules: List[ClientSandboxFirewallRule] = []
-        for rule in rules:
-            transform = rule.get("transform")
-            if transform is None:
-                client_rules.append(ClientSandboxFirewallRule())
-                continue
-
-            client_transform = ClientSandboxFirewallRuleTransform()
-            headers = transform.get("headers")
-            if headers:
-                client_headers = ClientSandboxFirewallRuleTransformHeaders()
-                client_headers.additional_properties = dict(headers)
-                client_transform.headers = client_headers
-
-            client_rules.append(ClientSandboxFirewallRule(transform=client_transform))
-        client_firewall.additional_properties[host] = client_rules
-
-    return client_firewall
 
 
 def get_auto_resume_enabled(lifecycle: Optional[SandboxLifecycle]) -> Optional[bool]:
@@ -296,21 +303,14 @@ def from_client_network_config(
         result["allow_out"] = list(network.allow_out)
     if not isinstance(network.deny_out, Unset):
         result["deny_out"] = list(network.deny_out)
+    if not isinstance(network.rules, Unset):
+        result["rules"] = cast(SandboxNetworkRules, network.rules.to_dict())
     if not isinstance(network.allow_public_traffic, Unset):
         result["allow_public_traffic"] = network.allow_public_traffic
     if not isinstance(network.mask_request_host, Unset):
         result["mask_request_host"] = network.mask_request_host
 
     return result
-
-
-def from_client_firewall(
-    firewall: Union[Unset, ClientSandboxFirewall],
-) -> Optional[SandboxFirewall]:
-    if isinstance(firewall, Unset):
-        return None
-
-    return cast(SandboxFirewall, firewall.to_dict())
 
 
 def from_client_lifecycle(
@@ -359,8 +359,6 @@ class SandboxInfo:
     """Whether internet access was explicitly enabled or disabled for the sandbox."""
     network: Optional[SandboxNetworkInfo] = None
     """Sandbox network configuration."""
-    firewall: Optional[SandboxFirewall] = None
-    """Per-host firewall rules registered for the sandbox."""
     lifecycle: Optional[SandboxInfoLifecycle] = None
     """Sandbox lifecycle configuration."""
     volume_mounts: List[Dict[str, str]] = field(default_factory=list)
@@ -374,7 +372,6 @@ class SandboxInfo:
         sandbox_domain: Optional[str] = None,
         allow_internet_access: Optional[bool] = None,
         network: Optional[SandboxNetworkInfo] = None,
-        firewall: Optional[SandboxFirewall] = None,
         lifecycle: Optional[SandboxInfoLifecycle] = None,
     ):
         return cls(
@@ -400,7 +397,6 @@ class SandboxInfo:
             _envd_access_token=envd_access_token,
             allow_internet_access=allow_internet_access,
             network=network,
-            firewall=firewall,
             lifecycle=lifecycle,
         )
 
@@ -428,7 +424,6 @@ class SandboxInfo:
                 else None
             ),
             network=from_client_network_config(sandbox_detail.network),
-            firewall=from_client_firewall(sandbox_detail.firewall),
             lifecycle=from_client_lifecycle(sandbox_detail.lifecycle),
         )
 
