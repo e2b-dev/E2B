@@ -90,6 +90,34 @@ def test_connect_envs_is_none_when_not_provided(monkeypatch):
 
 
 @pytest.mark.skip_debug()
+def test_classmethod_connect_forwards_envs_without_polluting_opts(monkeypatch):
+    # Regression: Sandbox.connect(id, envs=...) previously passed envs into
+    # **opts, which then reached ConnectionConfig(**opts) and raised TypeError.
+    mock_cls_connect = Mock(return_value=SimpleNamespace(
+        sandbox_id="sbx-test",
+        domain="sandbox.e2b.dev",
+        envd_version="0.2.4",
+        envd_access_token="tok",
+        traffic_access_token="tok",
+    ))
+    monkeypatch.setattr(sandbox_sync_main.SandboxApi, "_cls_connect", mock_cls_connect)
+    monkeypatch.setattr(
+        sandbox_sync_main, "get_transport", lambda *_args, **_kwargs: SimpleNamespace(pool=object())
+    )
+    monkeypatch.setattr(sandbox_sync_main.httpx, "Client", lambda *args, **kwargs: object())
+    monkeypatch.setattr(sandbox_sync_main, "Filesystem", lambda *args, **kwargs: object())
+    monkeypatch.setattr(sandbox_sync_main, "Commands", lambda *args, **kwargs: object())
+    monkeypatch.setattr(sandbox_sync_main, "Pty", lambda *args, **kwargs: object())
+    monkeypatch.setattr(sandbox_sync_main, "Git", lambda *args, **kwargs: object())
+
+    # This must not raise TypeError: ConnectionConfig() got unexpected keyword 'envs'
+    sandbox_sync_main.Sandbox.connect("sbx-test", envs={"MY_KEY": "my_value"}, api_key="test-key")
+
+    mock_cls_connect.assert_called_once()
+    assert mock_cls_connect.call_args.kwargs["envs"] == {"MY_KEY": "my_value"}
+
+
+@pytest.mark.skip_debug()
 def test_pause_applies_overrides(monkeypatch):
     mock_pause = Mock(return_value="sbx-test")
     monkeypatch.setattr(sandbox_sync_main.SandboxApi, "_cls_pause", mock_pause)

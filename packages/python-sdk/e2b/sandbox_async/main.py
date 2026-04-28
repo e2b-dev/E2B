@@ -863,11 +863,13 @@ class AsyncSandbox(SandboxApi):
         cls,
         sandbox_id: str,
         timeout: Optional[int] = None,
+        envs: Optional[Dict[str, str]] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
         sandbox = await SandboxApi._cls_connect(
             sandbox_id=sandbox_id,
             timeout=timeout,
+            envs=envs,
             **opts,
         )
 

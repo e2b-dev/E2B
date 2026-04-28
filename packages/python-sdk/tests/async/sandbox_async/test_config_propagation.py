@@ -92,6 +92,34 @@ async def test_connect_envs_is_none_when_not_provided(monkeypatch):
 
 
 @pytest.mark.skip_debug()
+async def test_classmethod_connect_forwards_envs_without_polluting_opts(monkeypatch):
+    # Regression: AsyncSandbox.connect(id, envs=...) previously passed envs into
+    # **opts, which then reached ConnectionConfig(**opts) and raised TypeError.
+    mock_cls_connect = AsyncMock(return_value=SimpleNamespace(
+        sandbox_id="sbx-test",
+        domain="sandbox.e2b.dev",
+        envd_version="0.2.4",
+        envd_access_token="tok",
+        traffic_access_token="tok",
+    ))
+    monkeypatch.setattr(sandbox_async_main.SandboxApi, "_cls_connect", mock_cls_connect)
+    monkeypatch.setattr(
+        sandbox_async_main, "get_transport", lambda *_args, **_kwargs: SimpleNamespace(pool=object())
+    )
+    monkeypatch.setattr(sandbox_async_main.httpx, "AsyncClient", lambda *args, **kwargs: object())
+    monkeypatch.setattr(sandbox_async_main, "Filesystem", lambda *args, **kwargs: object())
+    monkeypatch.setattr(sandbox_async_main, "Commands", lambda *args, **kwargs: object())
+    monkeypatch.setattr(sandbox_async_main, "Pty", lambda *args, **kwargs: object())
+    monkeypatch.setattr(sandbox_async_main, "Git", lambda *args, **kwargs: object())
+
+    # This must not raise TypeError: ConnectionConfig() got unexpected keyword 'envs'
+    await sandbox_async_main.AsyncSandbox.connect("sbx-test", envs={"MY_KEY": "my_value"}, api_key="test-key")
+
+    mock_cls_connect.assert_awaited_once()
+    assert mock_cls_connect.call_args.kwargs["envs"] == {"MY_KEY": "my_value"}
+
+
+@pytest.mark.skip_debug()
 async def test_pause_applies_overrides(monkeypatch):
     mock_pause = AsyncMock(return_value="sbx-test")
     monkeypatch.setattr(sandbox_async_main.SandboxApi, "_cls_pause", mock_pause)
