@@ -65,43 +65,30 @@ def sandbox(sandbox_factory):
     return sandbox_factory()
 
 
-# override the event loop so it never closes
-# this helps us with the global-scoped async http transport
-@pytest.fixture(scope="session")
-def event_loop():
-    try:
-        loop = asyncio.get_running_loop()
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-    yield loop
-    loop.close()
+@pytest_asyncio.fixture
+async def async_sandbox_factory(request, template, sandbox_test_id):
+    sandboxes: list = []
 
-
-@pytest.fixture
-def async_sandbox_factory(request, template, sandbox_test_id, event_loop):
     async def factory(*, template_name: str = template, **kwargs):
         metadata = kwargs.setdefault("metadata", dict())
         metadata.setdefault("sandbox_test_id", sandbox_test_id)
 
         sandbox = await AsyncSandbox.create(template_name, **kwargs)
-
-        def finalizer():
-            if getattr(request.node, "_test_failed", False):
-                print(f"\n[TEST FAILED] Sandbox ID: {sandbox.sandbox_id}")
-
-            async def _kill():
-                await sandbox.kill()
-
-            event_loop.run_until_complete(_kill())
-
-        request.addfinalizer(finalizer)
-
+        sandboxes.append(sandbox)
         return sandbox
 
-    return factory
+    yield factory
+
+    for sandbox in sandboxes:
+        if getattr(request.node, "_test_failed", False):
+            print(f"\n[TEST FAILED] Sandbox ID: {sandbox.sandbox_id}")
+        try:
+            await sandbox.kill()
+        except Exception:
+            pass
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def async_sandbox(async_sandbox_factory):
     return await async_sandbox_factory()
 
@@ -263,21 +250,15 @@ def volume(request):
     return vol
 
 
-@pytest.fixture
-async def async_volume(request, event_loop):
+@pytest_asyncio.fixture
+async def async_volume(request):
     vol = await AsyncVolume.create(f"test-vol-{_generate_random_string()}")
-
-    def finalizer():
+    try:
+        yield vol
+    finally:
         if getattr(request.node, "_test_failed", False):
             print(f"\n[TEST FAILED] Volume ID: {vol.volume_id}")
-
-        async def _destroy():
-            try:
-                await AsyncVolume.destroy(vol.volume_id)
-            except Exception:
-                pass
-
-        event_loop.run_until_complete(_destroy())
-
-    request.addfinalizer(finalizer)
-    return vol
+        try:
+            await AsyncVolume.destroy(vol.volume_id)
+        except Exception:
+            pass
