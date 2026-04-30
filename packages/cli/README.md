@@ -4,7 +4,7 @@
 
 # E2B CLI
 
-This CLI tool allows you to build manager your running E2B sandbox and sandbox templates. Learn more in [our documentation](https://e2b.dev/docs).
+This CLI tool allows you to build and manage your running E2B sandbox and sandbox templates. Learn more in [our documentation](https://e2b.dev/docs).
 
 ### 1. Install the CLI
 
