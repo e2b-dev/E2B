@@ -218,9 +218,6 @@ importers:
       msw:
         specifier: ^2.12.10
         version: 2.12.14(@types/node@20.19.19)(typescript@5.5.3)
-      npm-check-updates:
-        specifier: ^20.0.2
-        version: 20.0.2
       npm-run-all:
         specifier: ^4.1.5
         version: 4.1.5
@@ -2594,11 +2591,6 @@ packages:
   normalize-package-data@6.0.2:
     resolution: {integrity: sha512-V6gygoYb/5EmNI+MEGrWkC+e6+Rr7mTmfHrxDbLzxQogBkgzo76rkok0Am6thgSF7Mv2nLOajAJj5vDJZEFn7g==}
     engines: {node: ^16.14.0 || >=18.0.0}
-
-  npm-check-updates@20.0.2:
-    resolution: {integrity: sha512-nvbcXiprjMOoSX0FCHC41kjpZhNFURV53KMU0MMa0U10RPHeoHpiilMg2P8g9NLSQoo0umSH77tUqHWTOH3w7A==}
-    engines: {node: '>=20.0.0', npm: '>=8.12.1'}
-    hasBin: true
 
   npm-install-checks@6.3.0:
     resolution: {integrity: sha512-W29RiK/xtpCGqn6f3ixfRYGk+zRyr+Ew9F2E20BfXxT5/euLdA/Nm7fO7OeTGuAmTs30cpgInyJ0cYe708YTZw==}
@@ -6273,8 +6265,6 @@ snapshots:
       hosted-git-info: 7.0.2
       semver: 7.7.2
       validate-npm-package-license: 3.0.4
-
-  npm-check-updates@20.0.2: {}
 
   npm-install-checks@6.3.0:
     dependencies:
