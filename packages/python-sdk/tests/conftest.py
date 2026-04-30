@@ -79,13 +79,13 @@ async def async_sandbox_factory(request, template, sandbox_test_id):
 
     yield factory
 
-    for sandbox in sandboxes:
-        if getattr(request.node, "_test_failed", False):
+    if getattr(request.node, "_test_failed", False):
+        for sandbox in sandboxes:
             print(f"\n[TEST FAILED] Sandbox ID: {sandbox.sandbox_id}")
-        try:
-            await sandbox.kill()
-        except Exception:
-            pass
+
+    await asyncio.gather(
+        *(sandbox.kill() for sandbox in sandboxes), return_exceptions=True
+    )
 
 
 @pytest_asyncio.fixture
