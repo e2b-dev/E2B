@@ -1,6 +1,5 @@
 ---
 'e2b': minor
-'@e2b/cli': minor
 ---
 
-js http2 support
+Use HTTP/2 for JS SDK envd/api requests.
