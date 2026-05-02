@@ -7,12 +7,14 @@ type ClientHttp2Session = import('node:http2').ClientHttp2Session
 
 class NodeHttp2Fetch {
   private readonly http2: Http2
+  private readonly idleSessionTimeoutMs: number
   private readonly sessions = new Map<string, ClientHttp2Session>()
   private readonly activeStreams = new Map<string, number>()
   private readonly idleTimers = new Map<string, ReturnType<typeof setTimeout>>()
 
-  constructor(http2: Http2) {
+  constructor(http2: Http2, idleSessionTimeoutMs = IDLE_SESSION_TIMEOUT_MS) {
     this.http2 = http2
+    this.idleSessionTimeoutMs = idleSessionTimeoutMs
   }
 
   fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -60,9 +62,13 @@ class NodeHttp2Fetch {
     const stream = session.request(headers)
 
     return new Promise((resolve, reject) => {
+      const cancelCode = this.http2.constants.NGHTTP2_CANCEL
       let settled = false
       let streamReleased = false
       let bodyClosed = false
+      let bodyController:
+        | ReadableStreamDefaultController<Uint8Array>
+        | undefined
 
       const releaseStream = () => {
         if (streamReleased) {
@@ -77,6 +83,7 @@ class NodeHttp2Fetch {
           return
         }
         bodyClosed = true
+        request.signal.removeEventListener('abort', abort)
         releaseStream()
         handle()
       }
@@ -90,9 +97,16 @@ class NodeHttp2Fetch {
         reject(error)
       }
 
+      const abortError = () =>
+        new DOMException('The operation was aborted.', 'AbortError')
+
       const abort = () => {
-        stream.close(this.http2.constants.NGHTTP2_CANCEL)
-        fail(new DOMException('The operation was aborted.', 'AbortError'))
+        stream.close(cancelCode)
+        const controller = bodyController
+        if (controller) {
+          closeBody(() => controller.error(abortError()))
+        }
+        fail(abortError())
       }
 
       if (request.signal.aborted) {
@@ -117,18 +131,18 @@ class NodeHttp2Fetch {
         }
 
         settled = true
-        request.signal.removeEventListener('abort', abort)
 
         if (request.method === 'HEAD' || status === 204 || status === 205) {
           stream.resume()
+          request.signal.removeEventListener('abort', abort)
           releaseStream()
           resolve(new Response(null, { status, headers: responseHeaders }))
           return
         }
 
-        const cancelCode = this.http2.constants.NGHTTP2_CANCEL
         const body = new ReadableStream<Uint8Array>({
           start(controller) {
+            bodyController = controller
             stream.on('data', (chunk: Buffer) => {
               if (bodyClosed) {
                 return
@@ -146,7 +160,6 @@ class NodeHttp2Fetch {
           },
         })
 
-        releaseStream()
         resolve(new Response(body, { status, headers: responseHeaders }))
       })
 
@@ -201,7 +214,7 @@ class NodeHttp2Fetch {
         session.close()
       }
       this.idleTimers.delete(origin)
-    }, IDLE_SESSION_TIMEOUT_MS)
+    }, this.idleSessionTimeoutMs)
     ;(timer as ReturnType<typeof setTimeout> & { unref?: () => void }).unref?.()
     this.idleTimers.set(origin, timer)
   }
@@ -209,21 +222,30 @@ class NodeHttp2Fetch {
 
 let envdFetch: typeof fetch | undefined
 
-export function createEnvdFetch(currentRuntime = runtime): typeof fetch {
-  if (currentRuntime === runtime && envdFetch) {
-    return envdFetch
-  }
+type EnvdFetchOptions = {
+  idleSessionTimeoutMs?: number
+}
 
+export function createEnvdFetchForRuntime(
+  currentRuntime = runtime,
+  options: EnvdFetchOptions = {}
+): typeof fetch {
   if (currentRuntime !== 'node') {
     return fetch
   }
 
   const http2 = dynamicRequire<Http2>('node:http2')
-  const client = new NodeHttp2Fetch(http2)
-  const fetcher = client.fetch
-  if (currentRuntime === runtime) {
-    envdFetch = fetcher
+  const client = new NodeHttp2Fetch(http2, options.idleSessionTimeoutMs)
+
+  return client.fetch
+}
+
+export function createEnvdFetch(): typeof fetch {
+  if (envdFetch) {
+    return envdFetch
   }
 
-  return fetcher
+  envdFetch = createEnvdFetchForRuntime(runtime)
+
+  return envdFetch
 }

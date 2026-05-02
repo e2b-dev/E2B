@@ -2,7 +2,7 @@ import http2 from 'node:http2'
 import { AddressInfo } from 'node:net'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 
-import { createEnvdFetch } from '../../src/envd/http2'
+import { createEnvdFetchForRuntime } from '../../src/envd/http2'
 
 let server: http2.Http2Server | undefined
 let serverSessions: Set<http2.ServerHttp2Session>
@@ -55,7 +55,7 @@ test('uses HTTP/2 in Node', async () => {
     stream.end(JSON.stringify({ protocol: 'h2' }))
   })
 
-  const res = await createEnvdFetch('node')(`${origin}/status`)
+  const res = await createEnvdFetchForRuntime('node')(`${origin}/status`)
 
   expect(res.status).toBe(200)
   await expect(res.json()).resolves.toEqual({ protocol: 'h2' })
@@ -66,8 +66,8 @@ test('uses global fetch outside Node', () => {
   const fallbackFetch = vi.fn() as unknown as typeof fetch
   globalThis.fetch = fallbackFetch
 
-  expect(createEnvdFetch('browser')).toBe(fallbackFetch)
-  expect(createEnvdFetch('vercel-edge')).toBe(fallbackFetch)
+  expect(createEnvdFetchForRuntime('browser')).toBe(fallbackFetch)
+  expect(createEnvdFetchForRuntime('vercel-edge')).toBe(fallbackFetch)
 
   globalThis.fetch = originalFetch
 })
@@ -75,7 +75,7 @@ test('uses global fetch outside Node', () => {
 test('rejects aborted requests', async () => {
   const origin = await startServer(() => undefined)
   const controller = new AbortController()
-  const promise = createEnvdFetch('node')(`${origin}/wait`, {
+  const promise = createEnvdFetchForRuntime('node')(`${origin}/wait`, {
     signal: controller.signal,
   })
 
@@ -84,13 +84,45 @@ test('rejects aborted requests', async () => {
   await expect(promise).rejects.toMatchObject({ name: 'AbortError' })
 })
 
+test('aborts streaming response bodies', async () => {
+  const origin = await startServer((stream) => {
+    stream.respond({ ':status': 200 })
+    stream.write('chunk')
+  })
+  const controller = new AbortController()
+  const res = await createEnvdFetchForRuntime('node')(`${origin}/stream`, {
+    signal: controller.signal,
+  })
+
+  controller.abort()
+
+  await expect(res.text()).rejects.toMatchObject({ name: 'AbortError' })
+})
+
 test('body cancel is safe', async () => {
   const origin = await startServer((stream) => {
     stream.respond({ ':status': 200 })
     stream.write('chunk')
   })
 
-  const res = await createEnvdFetch('node')(`${origin}/stream`)
+  const res = await createEnvdFetchForRuntime('node')(`${origin}/stream`)
 
   await expect(res.body!.cancel()).resolves.toBeUndefined()
+})
+
+test('keeps session open while response body is streaming', async () => {
+  const origin = await startServer((stream) => {
+    stream.respond({ ':status': 200 })
+    stream.write('start')
+    setTimeout(() => {
+      stream.end('end')
+    }, 50)
+  })
+
+  const envdFetch = createEnvdFetchForRuntime('node', {
+    idleSessionTimeoutMs: 10,
+  })
+  const res = await envdFetch(`${origin}/stream`)
+
+  await expect(res.text()).resolves.toBe('startend')
 })
