@@ -93,6 +93,7 @@ class NodeHttp2Fetch {
           return
         }
         settled = true
+        request.signal.removeEventListener('abort', abort)
         releaseStream()
         reject(error)
       }
