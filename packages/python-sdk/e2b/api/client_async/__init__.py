@@ -46,6 +46,7 @@ def get_transport(config: ConnectionConfig) -> AsyncTransportWithLogger:
     transport = AsyncTransportWithLogger(
         limits=limits,
         proxy=config.proxy,
+        http2=True,
     )
     AsyncTransportWithLogger._instances[loop_id] = transport
     return transport
