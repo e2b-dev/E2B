@@ -132,16 +132,19 @@ class ApiClient(AuthenticatedClient):
         kwargs.pop("auth_header_name", None)
         kwargs.pop("prefix", None)
 
+        httpx_args = {
+            "event_hooks": {
+                "request": [self._log_request],
+                "response": [self._log_response],
+            },
+            "transport": transport,
+        }
+        if transport is None:
+            httpx_args["proxy"] = config.proxy
+
         super().__init__(
             base_url=config.api_url,
-            httpx_args={
-                "event_hooks": {
-                    "request": [self._log_request],
-                    "response": [self._log_response],
-                },
-                "proxy": config.proxy,
-                "transport": transport,
-            },
+            httpx_args=httpx_args,
             headers=headers,
             token=token or "",
             auth_header_name=auth_header_name,
