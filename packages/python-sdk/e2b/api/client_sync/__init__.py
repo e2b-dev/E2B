@@ -45,6 +45,7 @@ def get_transport(config: ConnectionConfig) -> TransportWithLogger:
     transport = TransportWithLogger(
         limits=limits,
         proxy=config.proxy,
+        http2=True,
     )
     TransportWithLogger.singleton = transport
     return transport
