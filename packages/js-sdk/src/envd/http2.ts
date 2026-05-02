@@ -1,6 +1,6 @@
 import { dynamicRequire, runtime } from '../utils'
 
-const MAX_CONCURRENT_STREAMS = 80
+const IDLE_SESSION_TIMEOUT_MS = 30_000
 
 type Http2 = typeof import('node:http2')
 type ClientHttp2Session = import('node:http2').ClientHttp2Session
@@ -9,7 +9,7 @@ class NodeHttp2Fetch {
   private readonly http2: Http2
   private readonly sessions = new Map<string, ClientHttp2Session>()
   private readonly activeStreams = new Map<string, number>()
-  private readonly streamWaiters = new Map<string, Array<() => void>>()
+  private readonly idleTimers = new Map<string, ReturnType<typeof setTimeout>>()
 
   constructor(http2: Http2) {
     this.http2 = http2
@@ -20,16 +20,19 @@ class NodeHttp2Fetch {
     const url = new URL(request.url)
     const origin = `${url.protocol}//${url.host}`
 
-    return this.withStreamSlot(origin, () =>
-      this.fetchWithSlot(origin, request, url)
-    )
+    return this.fetchWithSession(origin, request, url)
   }
 
-  private async fetchWithSlot(
+  private async fetchWithSession(
     origin: string,
     request: Request,
     url: URL
   ): Promise<Response> {
+    const body =
+      request.method === 'GET' || request.method === 'HEAD'
+        ? undefined
+        : Buffer.from(await request.arrayBuffer())
+    this.addStream(origin)
     const session = this.getSession(origin)
     const headers: import('node:http2').OutgoingHttpHeaders = {
       ':method': request.method,
@@ -55,19 +58,35 @@ class NodeHttp2Fetch {
     })
 
     const stream = session.request(headers)
-    const body =
-      request.method === 'GET' || request.method === 'HEAD'
-        ? undefined
-        : Buffer.from(await request.arrayBuffer())
 
     return new Promise((resolve, reject) => {
       let settled = false
+      let streamReleased = false
+      let bodyClosed = false
+
+      const releaseStream = () => {
+        if (streamReleased) {
+          return
+        }
+        streamReleased = true
+        this.removeStream(origin)
+      }
+
+      const closeBody = (handle: () => void) => {
+        if (bodyClosed) {
+          return
+        }
+        bodyClosed = true
+        releaseStream()
+        handle()
+      }
 
       const fail = (error: Error) => {
         if (settled) {
           return
         }
         settled = true
+        releaseStream()
         reject(error)
       }
 
@@ -102,6 +121,7 @@ class NodeHttp2Fetch {
 
         if (request.method === 'HEAD' || status === 204 || status === 205) {
           stream.resume()
+          releaseStream()
           resolve(new Response(null, { status, headers: responseHeaders }))
           return
         }
@@ -110,16 +130,23 @@ class NodeHttp2Fetch {
         const body = new ReadableStream<Uint8Array>({
           start(controller) {
             stream.on('data', (chunk: Buffer) => {
+              if (bodyClosed) {
+                return
+              }
               controller.enqueue(new Uint8Array(chunk))
             })
-            stream.once('end', () => controller.close())
-            stream.once('error', (error) => controller.error(error))
+            stream.once('end', () => closeBody(() => controller.close()))
+            stream.once('error', (error) =>
+              closeBody(() => controller.error(error))
+            )
           },
           cancel() {
+            closeBody(() => undefined)
             stream.close(cancelCode)
           },
         })
 
+        releaseStream()
         resolve(new Response(body, { status, headers: responseHeaders }))
       })
 
@@ -130,10 +157,12 @@ class NodeHttp2Fetch {
   private getSession(origin: string) {
     const current = this.sessions.get(origin)
     if (current && !current.closed && !current.destroyed) {
+      current.ref()
       return current
     }
 
     const session = this.http2.connect(origin)
+    session.ref()
     session.once('close', () => {
       if (this.sessions.get(origin) === session) {
         this.sessions.delete(origin)
@@ -147,40 +176,54 @@ class NodeHttp2Fetch {
     return session
   }
 
-  private async withStreamSlot<T>(origin: string, fn: () => Promise<T>) {
-    while ((this.activeStreams.get(origin) ?? 0) >= MAX_CONCURRENT_STREAMS) {
-      await new Promise<void>((resolve) => {
-        const waiters = this.streamWaiters.get(origin) ?? []
-        waiters.push(resolve)
-        this.streamWaiters.set(origin, waiters)
-      })
+  private addStream(origin: string) {
+    const timer = this.idleTimers.get(origin)
+    if (timer) {
+      clearTimeout(timer)
+      this.idleTimers.delete(origin)
     }
 
     this.activeStreams.set(origin, (this.activeStreams.get(origin) ?? 0) + 1)
-    try {
-      return await fn()
-    } finally {
-      this.activeStreams.set(origin, (this.activeStreams.get(origin) ?? 1) - 1)
-      this.streamWaiters.get(origin)?.shift()?.()
+  }
+
+  private removeStream(origin: string) {
+    const active = Math.max((this.activeStreams.get(origin) ?? 1) - 1, 0)
+    if (active > 0) {
+      this.activeStreams.set(origin, active)
+      return
     }
+
+    this.activeStreams.delete(origin)
+    const session = this.sessions.get(origin)
+    session?.unref()
+    const timer = setTimeout(() => {
+      if (session && !session.closed && !session.destroyed) {
+        session.close()
+      }
+      this.idleTimers.delete(origin)
+    }, IDLE_SESSION_TIMEOUT_MS)
+    ;(timer as ReturnType<typeof setTimeout> & { unref?: () => void }).unref?.()
+    this.idleTimers.set(origin, timer)
   }
 }
 
 let envdFetch: typeof fetch | undefined
 
-export function createEnvdFetch(): typeof fetch {
-  if (envdFetch) {
+export function createEnvdFetch(currentRuntime = runtime): typeof fetch {
+  if (currentRuntime === runtime && envdFetch) {
     return envdFetch
   }
 
-  if (runtime !== 'node') {
-    envdFetch = fetch
-    return envdFetch
+  if (currentRuntime !== 'node') {
+    return fetch
   }
 
   const http2 = dynamicRequire<Http2>('node:http2')
   const client = new NodeHttp2Fetch(http2)
-  envdFetch = client.fetch
+  const fetcher = client.fetch
+  if (currentRuntime === runtime) {
+    envdFetch = fetcher
+  }
 
-  return envdFetch
+  return fetcher
 }
