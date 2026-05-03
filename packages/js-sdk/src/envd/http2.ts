@@ -183,7 +183,7 @@ class NodeHttp2Fetch {
           return
         }
 
-        const responseBody = new ReadableStream<Uint8Array>({
+        let responseBody = new ReadableStream<Uint8Array>({
           start(controller) {
             bodyController = controller
             stream.on('data', (chunk: Buffer) => {
@@ -208,6 +208,7 @@ class NodeHttp2Fetch {
             stream.close(cancelCode)
           },
         })
+        responseBody = decodeResponseBody(responseBody, responseHeaders)
 
         resolve(
           new Response(responseBody, { status, headers: responseHeaders })
@@ -269,6 +270,21 @@ class NodeHttp2Fetch {
     ;(timer as ReturnType<typeof setTimeout> & { unref?: () => void }).unref?.()
     this.idleTimers.set(origin, timer)
   }
+}
+
+function decodeResponseBody(
+  body: ReadableStream<Uint8Array>,
+  headers: Headers
+) {
+  const encoding = headers.get('content-encoding')?.toLowerCase()
+  if (encoding !== 'gzip' && encoding !== 'deflate') {
+    return body
+  }
+
+  headers.delete('content-encoding')
+  headers.delete('content-length')
+
+  return body.pipeThrough(new DecompressionStream(encoding))
 }
 
 function isRedirect(status: number) {

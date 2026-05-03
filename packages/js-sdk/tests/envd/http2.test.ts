@@ -1,5 +1,6 @@
 import http2 from 'node:http2'
 import { AddressInfo } from 'node:net'
+import { gzipSync } from 'node:zlib'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 
 import { createEnvdFetchForRuntime } from '../../src/envd/http2'
@@ -139,6 +140,18 @@ test('body cancel is safe', async () => {
   const res = await createEnvdFetchForRuntime('node')(`${origin}/stream`)
 
   await expect(res.body!.cancel()).resolves.toBeUndefined()
+})
+
+test('decodes gzip responses', async () => {
+  const origin = await startServer((stream) => {
+    stream.respond({ ':status': 200, 'content-encoding': 'gzip' })
+    stream.end(gzipSync('compressed'))
+  })
+
+  const res = await createEnvdFetchForRuntime('node')(`${origin}/gzip`)
+
+  expect(res.headers.has('content-encoding')).toBe(false)
+  await expect(res.text()).resolves.toBe('compressed')
 })
 
 test('pauses streaming response bodies when the reader is behind', async () => {
