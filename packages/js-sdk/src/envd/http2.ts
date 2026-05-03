@@ -193,11 +193,17 @@ class NodeHttp2Fetch {
                 return
               }
               controller.enqueue(new Uint8Array(chunk))
+              if ((controller.desiredSize ?? 1) <= 0) {
+                stream.pause()
+              }
             })
             stream.once('end', () => closeBody(() => controller.close()))
             stream.once('error', (error) =>
               closeBody(() => controller.error(error))
             )
+          },
+          pull() {
+            stream.resume()
           },
           cancel() {
             closeBody(() => undefined)

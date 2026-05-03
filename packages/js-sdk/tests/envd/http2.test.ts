@@ -141,6 +141,45 @@ test('body cancel is safe', async () => {
   await expect(res.body!.cancel()).resolves.toBeUndefined()
 })
 
+test('pauses streaming response bodies when the reader is behind', async () => {
+  const calls = { pause: 0, resume: 0 }
+  const connect = http2.connect
+  vi.spyOn(http2, 'connect').mockImplementation((...args) => {
+    const session = connect(...args)
+    const request = session.request.bind(session)
+    vi.spyOn(session, 'request').mockImplementation((...requestArgs) => {
+      const stream = request(...requestArgs)
+      const pause = stream.pause.bind(stream)
+      const resume = stream.resume.bind(stream)
+      vi.spyOn(stream, 'pause').mockImplementation(() => {
+        calls.pause += 1
+        return pause()
+      })
+      vi.spyOn(stream, 'resume').mockImplementation(() => {
+        calls.resume += 1
+        return resume()
+      })
+
+      return stream
+    })
+
+    return session
+  })
+  const origin = await startServer((stream) => {
+    stream.respond({ ':status': 200 })
+    stream.write('first')
+    stream.write('second')
+    setTimeout(() => stream.end(), 20)
+  })
+
+  const res = await createEnvdFetchForRuntime('node')(`${origin}/stream`)
+  await new Promise((resolve) => setTimeout(resolve, 10))
+
+  expect(calls.pause).toBeGreaterThan(0)
+  await expect(res.text()).resolves.toBe('firstsecond')
+  expect(calls.resume).toBeGreaterThan(0)
+})
+
 test('keeps session open while response body is streaming', async () => {
   const origin = await startServer((stream) => {
     stream.respond({ ':status': 200 })
