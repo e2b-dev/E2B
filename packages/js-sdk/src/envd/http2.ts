@@ -34,7 +34,6 @@ class NodeHttp2Fetch {
       request.method === 'GET' || request.method === 'HEAD'
         ? undefined
         : Buffer.from(await request.arrayBuffer())
-    this.addStream(origin)
     const session = this.getSession(origin)
     const headers: import('node:http2').OutgoingHttpHeaders = {
       ':method': request.method,
@@ -60,6 +59,7 @@ class NodeHttp2Fetch {
     })
 
     const stream = session.request(headers)
+    this.addStream(origin)
 
     return new Promise((resolve, reject) => {
       const cancelCode = this.http2.constants.NGHTTP2_CANCEL
