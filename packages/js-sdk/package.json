@@ -96,10 +96,11 @@
     "glob": "^11.1.0",
     "openapi-fetch": "^0.14.1",
     "platform": "^1.3.6",
-    "tar": "^7.5.11"
+    "tar": "^7.5.11",
+    "undici": "^7.25.0"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=20.18.1"
   },
   "browserslist": [
     "defaults"
