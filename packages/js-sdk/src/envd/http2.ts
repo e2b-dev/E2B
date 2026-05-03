@@ -21,17 +21,16 @@ class NodeHttp2Fetch {
   fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
     const request = new Request(input, init)
     const url = new URL(request.url)
-    const origin = `${url.protocol}//${url.host}`
 
-    return this.fetchWithSession(origin, request, url, 0)
+    return this.fetchWithSession(request, url, 0)
   }
 
   private async fetchWithSession(
-    origin: string,
     request: Request,
     url: URL,
     redirectCount: number
   ): Promise<Response> {
+    const origin = `${url.protocol}//${url.host}`
     const requestBody =
       request.method === 'GET' || request.method === 'HEAD'
         ? undefined
@@ -167,7 +166,6 @@ class NodeHttp2Fetch {
 
             resolve(
               this.fetchWithSession(
-                `${redirectUrl.protocol}//${redirectUrl.host}`,
                 redirectRequest,
                 redirectUrl,
                 redirectCount + 1
