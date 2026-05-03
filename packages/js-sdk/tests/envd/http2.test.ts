@@ -84,6 +84,37 @@ test('rejects aborted requests', async () => {
   await expect(promise).rejects.toMatchObject({ name: 'AbortError' })
 })
 
+test('follows redirects', async () => {
+  const origin = await startServer((stream, headers) => {
+    if (headers[':path'] === '/redirect') {
+      stream.respond({ ':status': 302, location: '/done' })
+      stream.end()
+      return
+    }
+
+    stream.respond({ ':status': 200 })
+    stream.end('ok')
+  })
+
+  const res = await createEnvdFetchForRuntime('node')(`${origin}/redirect`)
+
+  expect(res.status).toBe(200)
+  await expect(res.text()).resolves.toBe('ok')
+})
+
+test('rejects redirects when redirect mode is error', async () => {
+  const origin = await startServer((stream) => {
+    stream.respond({ ':status': 302, location: '/done' })
+    stream.end()
+  })
+
+  const res = createEnvdFetchForRuntime('node')(`${origin}/redirect`, {
+    redirect: 'error',
+  })
+
+  await expect(res).rejects.toThrow(TypeError)
+})
+
 test('aborts streaming response bodies', async () => {
   const origin = await startServer((stream) => {
     stream.respond({ ':status': 200 })

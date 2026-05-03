@@ -1,6 +1,7 @@
 import { dynamicRequire, runtime } from '../utils'
 
 const IDLE_SESSION_TIMEOUT_MS = 30_000
+const MAX_REDIRECTS = 20
 
 type Http2 = typeof import('node:http2')
 type ClientHttp2Session = import('node:http2').ClientHttp2Session
@@ -22,15 +23,16 @@ class NodeHttp2Fetch {
     const url = new URL(request.url)
     const origin = `${url.protocol}//${url.host}`
 
-    return this.fetchWithSession(origin, request, url)
+    return this.fetchWithSession(origin, request, url, 0)
   }
 
   private async fetchWithSession(
     origin: string,
     request: Request,
-    url: URL
+    url: URL,
+    redirectCount: number
   ): Promise<Response> {
-    const body =
+    const requestBody =
       request.method === 'GET' || request.method === 'HEAD'
         ? undefined
         : Buffer.from(await request.arrayBuffer())
@@ -133,6 +135,48 @@ class NodeHttp2Fetch {
 
         settled = true
 
+        if (isRedirect(status) && responseHeaders.has('location')) {
+          if (request.redirect === 'error') {
+            stream.resume()
+            request.signal.removeEventListener('abort', abort)
+            releaseStream()
+            reject(new TypeError('fetch failed'))
+            return
+          }
+
+          if (request.redirect === 'follow') {
+            if (redirectCount >= MAX_REDIRECTS) {
+              stream.resume()
+              request.signal.removeEventListener('abort', abort)
+              releaseStream()
+              reject(new TypeError('fetch failed'))
+              return
+            }
+
+            stream.resume()
+            request.signal.removeEventListener('abort', abort)
+            releaseStream()
+
+            const redirectUrl = new URL(responseHeaders.get('location')!, url)
+            const redirectRequest = createRedirectRequest(
+              request,
+              redirectUrl,
+              status,
+              requestBody
+            )
+
+            resolve(
+              this.fetchWithSession(
+                `${redirectUrl.protocol}//${redirectUrl.host}`,
+                redirectRequest,
+                redirectUrl,
+                redirectCount + 1
+              )
+            )
+            return
+          }
+        }
+
         if (request.method === 'HEAD' || status === 204 || status === 205) {
           stream.resume()
           request.signal.removeEventListener('abort', abort)
@@ -141,7 +185,7 @@ class NodeHttp2Fetch {
           return
         }
 
-        const body = new ReadableStream<Uint8Array>({
+        const responseBody = new ReadableStream<Uint8Array>({
           start(controller) {
             bodyController = controller
             stream.on('data', (chunk: Buffer) => {
@@ -161,10 +205,10 @@ class NodeHttp2Fetch {
           },
         })
 
-        resolve(new Response(body, { status, headers: responseHeaders }))
+        resolve(new Response(responseBody, { status, headers: responseHeaders }))
       })
 
-      stream.end(body)
+      stream.end(requestBody)
     })
   }
 
@@ -219,6 +263,45 @@ class NodeHttp2Fetch {
     ;(timer as ReturnType<typeof setTimeout> & { unref?: () => void }).unref?.()
     this.idleTimers.set(origin, timer)
   }
+}
+
+function isRedirect(status: number) {
+  return (
+    status === 301 ||
+    status === 302 ||
+    status === 303 ||
+    status === 307 ||
+    status === 308
+  )
+}
+
+function createRedirectRequest(
+  request: Request,
+  url: URL,
+  status: number,
+  body: Buffer | undefined
+) {
+  const headers = new Headers(request.headers)
+  let method = request.method
+  let redirectBody: Buffer | undefined = body
+
+  if (
+    status === 303 ||
+    ((status === 301 || status === 302) && request.method === 'POST')
+  ) {
+    method = 'GET'
+    redirectBody = undefined
+    headers.delete('content-length')
+    headers.delete('content-type')
+  }
+
+  return new Request(url, {
+    body: redirectBody,
+    headers,
+    method,
+    redirect: request.redirect,
+    signal: request.signal,
+  })
 }
 
 let envdFetch: typeof fetch | undefined
