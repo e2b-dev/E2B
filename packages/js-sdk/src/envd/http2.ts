@@ -209,7 +209,9 @@ class NodeHttp2Fetch {
           },
         })
 
-        resolve(new Response(responseBody, { status, headers: responseHeaders }))
+        resolve(
+          new Response(responseBody, { status, headers: responseHeaders })
+        )
       })
 
       stream.end(requestBody)
