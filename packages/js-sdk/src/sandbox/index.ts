@@ -8,7 +8,7 @@ import {
   Username,
 } from '../connectionConfig'
 import { EnvdApiClient, handleEnvdApiError } from '../envd/api'
-import { createEnvdFetch } from '../envd/http2'
+import { createEnvdFetch, createEnvdRpcFetch } from '../envd/http2'
 import { createRpcLogger } from '../logs'
 import { Commands, Pty } from './commands'
 import { Filesystem } from './filesystem'
@@ -152,6 +152,7 @@ export class Sandbox extends SandboxApi {
       'E2b-Sandbox-Port': this.envdPort.toString(),
     }
     const envdFetch = createEnvdFetch()
+    const envdRpcFetch = createEnvdRpcFetch()
 
     const rpcTransport = createConnectTransport({
       baseUrl: this.envdApiUrl,
@@ -181,7 +182,7 @@ export class Sandbox extends SandboxApi {
           redirect: 'follow',
         }
 
-        return fetch(url, options)
+        return envdRpcFetch(url, options)
       },
     })
 

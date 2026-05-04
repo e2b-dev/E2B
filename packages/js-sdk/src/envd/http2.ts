@@ -6,23 +6,29 @@ type UndiciRequestInit = RequestInit & {
   dispatcher: UndiciDispatcher
   duplex?: 'half'
 }
+type EnvdFetchOptions = {
+  connectionLimit?: number
+}
 
 let envdFetch: typeof fetch | undefined
+let envdRpcFetch: typeof fetch | undefined
 
 export function createEnvdFetchForRuntime(
-  currentRuntime = runtime
+  currentRuntime = runtime,
+  options: EnvdFetchOptions = { connectionLimit: 1 }
 ): typeof fetch {
   if (currentRuntime !== 'node') {
     return fetch
   }
 
   const { Agent, fetch: undiciFetch } = dynamicRequire<Undici>('undici')
-  const dispatcher = new Agent({
+  const dispatcherOptions: { allowH2: true; connections?: number } = {
     allowH2: true,
-    // Keep one origin connection for h2 multiplexing. If ALPN falls back to h1,
-    // this favors connection pressure over per-sandbox throughput.
-    connections: 1,
-  })
+  }
+  if (options.connectionLimit !== undefined) {
+    dispatcherOptions.connections = options.connectionLimit
+  }
+  const dispatcher = new Agent(dispatcherOptions)
   const fetchWithDispatcher = undiciFetch as unknown as (
     input: RequestInfo | URL,
     init?: UndiciRequestInit
@@ -43,9 +49,23 @@ export function createEnvdFetch(): typeof fetch {
     return envdFetch
   }
 
+  // Keep one origin connection for short envd REST calls. If ALPN falls back
+  // to h1, this favors connection pressure over per-sandbox throughput.
   envdFetch = createEnvdFetchForRuntime(runtime)
 
   return envdFetch
+}
+
+export function createEnvdRpcFetch(): typeof fetch {
+  if (envdRpcFetch) {
+    return envdRpcFetch
+  }
+
+  // RPC streams can stay open while follow-up RPCs run against the same
+  // sandbox, so they cannot share the REST client's single-connection cap.
+  envdRpcFetch = createEnvdFetchForRuntime(runtime, {})
+
+  return envdRpcFetch
 }
 
 function toRequestInput(

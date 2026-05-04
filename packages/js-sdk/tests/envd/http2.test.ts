@@ -67,6 +67,29 @@ test('passes Request objects to undici as URL plus init', async () => {
   expect(requests[0].init?.body).toBeInstanceOf(ReadableStream)
 })
 
+test('can create an uncapped dispatcher for RPC streams', async () => {
+  const agents: Array<{ allowH2?: boolean; connections?: number }> = []
+
+  class Agent {
+    constructor(options: { allowH2?: boolean; connections?: number }) {
+      agents.push(options)
+    }
+  }
+
+  const undiciFetch = vi.fn(() => Promise.resolve(new Response('ok')))
+
+  vi.doMock('../../src/utils', () => ({
+    dynamicRequire: () => ({ Agent, fetch: undiciFetch }),
+    runtime: 'node',
+  }))
+  const { createEnvdFetchForRuntime } = await import('../../src/envd/http2')
+
+  const fetcher = createEnvdFetchForRuntime('node', {})
+  await fetcher('https://example.com/rpc')
+
+  expect(agents).toEqual([{ allowH2: true }])
+})
+
 test('uses global fetch outside Node', async () => {
   const fallbackFetch = vi.fn() as unknown as typeof fetch
   vi.stubGlobal('fetch', fallbackFetch)
