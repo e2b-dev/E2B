@@ -181,7 +181,7 @@ export class Sandbox extends SandboxApi {
           redirect: 'follow',
         }
 
-        return envdFetch(url, options)
+        return fetch(url, options)
       },
     })
 
