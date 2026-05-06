@@ -1,0 +1,35 @@
+[project]
+name = "connect-python"
+version = "0.1.0.dev2"
+authors = [{ email = "matt@ydekproductions.com" }]
+description = "Client implementation for the Connect RPC protocol"
+readme = "README.md"
+requires-python = ">=3.12"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+  "protobuf",
+  "httpcore",
+]
+
+[tool.hatch.build]
+include = [
+  "/src",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/connect"]
+
+[project.urls]
+"Homepage" = "https://github.com/mattrobenolt/connect-python"
+"Bug Tracker" = "https://github.com/mattrobenolt/connect-python/issues"
+
+[project.optional-dependencies]
+http2 = ["h2"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
