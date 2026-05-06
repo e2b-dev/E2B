@@ -5,10 +5,6 @@ RUN go install github.com/bufbuild/buf/cmd/buf@v1.50.1 && \
     go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.28.1 && \
     go install connectrpc.com/connect/cmd/protoc-gen-connect-go@v1.18.1
 
-# Install our custom protoc plugin, connect-python
-COPY ./packages/connect-python /packages/connect-python
-RUN cd /packages/connect-python && make bin/protoc-gen-connect-python
-
 
 FROM python:3.10
 
