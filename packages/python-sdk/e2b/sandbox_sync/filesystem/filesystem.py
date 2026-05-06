@@ -52,12 +52,15 @@ _FILESYSTEM_HTTP_ERROR_MAP = {
     404: FileNotFoundException,
 }
 
+_ENOENT_MESSAGE = "no such file or directory"
+
 
 def _handle_filesystem_rpc_exception(e: Exception) -> Exception:
     if (
         isinstance(e, ConnectError)
         and e.code == Code.UNKNOWN
-        and "no such file or directory" in e.message
+        # TODO: Drop this once envd maps filesystem ENOENT to NOT_FOUND.
+        and _ENOENT_MESSAGE in e.message.lower()
     ):
         return FileNotFoundException(e.message)
 
