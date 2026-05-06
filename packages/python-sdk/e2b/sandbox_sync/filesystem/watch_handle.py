@@ -20,7 +20,7 @@ class WatchHandle:
 
     def __init__(
         self,
-        rpc: filesystem_connect.FilesystemClient,
+        rpc: filesystem_connect.FilesystemClientSync,
         watcher_id: str,
     ):
         self._rpc = rpc

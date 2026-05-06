@@ -7,6 +7,7 @@ from typing import Dict, List, Optional, Union, overload
 
 import httpx
 from packaging.version import Version
+from pyqwest import HTTPVersion, SyncClient, SyncHTTPTransport
 from typing_extensions import Self, Unpack
 
 from e2b.api.client.types import Unset
@@ -101,6 +102,7 @@ class Sandbox(SandboxApi):
         super().__init__(**opts)
 
         self._transport = get_transport(self.connection_config)
+        self._rpc_client = SyncClient(SyncHTTPTransport(http_version=HTTPVersion.HTTP2))
 
         self._envd_api = httpx.Client(
             base_url=self.envd_api_url,
@@ -111,19 +113,19 @@ class Sandbox(SandboxApi):
             self.envd_api_url,
             self._envd_version,
             self.connection_config,
-            self._transport.pool,
+            self._rpc_client,
             self._envd_api,
         )
         self._commands = Commands(
             self.envd_api_url,
             self.connection_config,
-            self._transport.pool,
+            self._rpc_client,
             self._envd_version,
         )
         self._pty = Pty(
             self.envd_api_url,
             self.connection_config,
-            self._transport.pool,
+            self._rpc_client,
             self._envd_version,
         )
         self._git = Git(self._commands)

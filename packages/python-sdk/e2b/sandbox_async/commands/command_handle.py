@@ -5,6 +5,7 @@ from typing import (
     Callable,
     Any,
     AsyncGenerator,
+    AsyncIterator,
     Union,
     Tuple,
     Coroutine,
@@ -76,8 +77,8 @@ class AsyncCommandHandle:
         self,
         pid: int,
         handle_kill: Callable[[], Coroutine[Any, Any, bool]],
-        events: AsyncGenerator[
-            Union[process_pb2.StartResponse, process_pb2.ConnectResponse], Any
+        events: AsyncIterator[
+            Union[process_pb2.StartResponse, process_pb2.ConnectResponse]
         ],
         on_stdout: Optional[OutputHandler[Stdout]] = None,
         on_stderr: Optional[OutputHandler[Stderr]] = None,

@@ -7,6 +7,7 @@ from typing import Dict, List, Optional, Union, overload
 
 import httpx
 from packaging.version import Version
+from pyqwest import Client, HTTPTransport, HTTPVersion
 from typing_extensions import Self, Unpack
 
 from e2b.api.client.types import Unset
@@ -102,6 +103,7 @@ class AsyncSandbox(SandboxApi):
         super().__init__(**opts)
 
         self._transport = get_transport(self.connection_config)
+        self._rpc_client = Client(HTTPTransport(http_version=HTTPVersion.HTTP2))
         self._envd_api = httpx.AsyncClient(
             base_url=self.connection_config.get_sandbox_url(
                 self.sandbox_id, self.sandbox_domain
@@ -113,19 +115,19 @@ class AsyncSandbox(SandboxApi):
             self.envd_api_url,
             self._envd_version,
             self.connection_config,
-            self._transport.pool,
+            self._rpc_client,
             self._envd_api,
         )
         self._commands = Commands(
             self.envd_api_url,
             self.connection_config,
-            self._transport.pool,
+            self._rpc_client,
             self._envd_version,
         )
         self._pty = Pty(
             self.envd_api_url,
             self.connection_config,
-            self._transport.pool,
+            self._rpc_client,
             self._envd_version,
         )
         self._git = Git(self._commands)
