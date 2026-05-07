@@ -6,8 +6,14 @@ import httpx
 import pytest
 from pyqwest import Headers
 
-from e2b.envd.rpc import STREAM_REQUEST_TIMEOUT_HEADER
 from e2b.envd.httpx_connect import HTTPXConnectClient, HTTPXConnectClientSync
+from e2b.envd.process import process_connect, process_pb2
+from e2b.envd.rpc import (
+    STREAM_REQUEST_TIMEOUT_HEADER,
+    connect_client_kwargs,
+    stream_request_headers,
+    stream_timeout_ms,
+)
 
 
 class AsyncBytes(httpx.AsyncByteStream):
@@ -186,6 +192,37 @@ def test_sync_httpx_connect_client_applies_stream_request_timeout():
     }
 
 
+def test_sync_httpx_connect_client_ignores_unlimited_stream_request_timeout():
+    requests: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        return httpx.Response(
+            200,
+            headers={"content-type": "application/connect+json"},
+            content=[b"one"],
+        )
+
+    client = HTTPXConnectClientSync(httpx.MockTransport(handler))
+
+    with client.stream(
+        "POST",
+        "https://sandbox.test/process.Process/Start",
+        headers=Headers({STREAM_REQUEST_TIMEOUT_HEADER: "0"}),
+        content=[b"payload"],
+        timeout=60,
+    ) as response:
+        assert list(response.content) == [b"one"]
+
+    assert STREAM_REQUEST_TIMEOUT_HEADER not in requests[0].headers
+    assert requests[0].extensions["timeout"] == {
+        "connect": 60,
+        "read": 60,
+        "write": 60,
+        "pool": 60,
+    }
+
+
 def test_sync_httpx_connect_client_uses_configured_proxy():
     with RecordingProxy() as proxy:
         transport = httpx.HTTPTransport(proxy=proxy.url)
@@ -206,6 +243,49 @@ def test_sync_httpx_connect_client_uses_configured_proxy():
             body=b"payload",
         )
     ]
+
+
+def test_sync_generated_stream_request_shape():
+    requests: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        return httpx.Response(
+            200,
+            headers={"content-type": "application/connect+json"},
+            content=b"{}",
+        )
+
+    client = process_connect.ProcessClientSync(
+        "https://sandbox.test",
+        **connect_client_kwargs(
+            {"x-sandbox": "1"},
+            HTTPXConnectClientSync(httpx.MockTransport(handler)),
+        ),
+    )
+    events = client.start(
+        process_pb2.StartRequest(
+            process=process_pb2.ProcessConfig(cmd="/bin/bash"),
+        ),
+        headers=stream_request_headers({"E2B-Keepalive-Ping": "15"}, 5),
+        timeout_ms=stream_timeout_ms(60),
+    )
+
+    with pytest.raises(StopIteration):
+        next(events)
+
+    request = requests[0]
+    assert request.method == "POST"
+    assert str(request.url) == "https://sandbox.test/process.Process/Start"
+    assert request.headers["x-sandbox"] == "1"
+    assert request.headers["e2b-keepalive-ping"] == "15"
+    assert request.headers["connect-timeout-ms"] == "60000"
+    assert STREAM_REQUEST_TIMEOUT_HEADER not in request.headers
+    assert request.extensions["timeout"]["connect"] == 5.0
+    assert 0 < request.extensions["timeout"]["read"] <= 60
+    assert request.extensions["timeout"]["write"] == 5.0
+    assert request.extensions["timeout"]["pool"] == 5.0
+    assert b'"cmd": "/bin/bash"' in request.content
 
 
 @pytest.mark.asyncio
@@ -325,3 +405,49 @@ async def test_async_httpx_connect_client_uses_configured_proxy():
             body=b"payload",
         )
     ]
+
+
+@pytest.mark.asyncio
+async def test_async_generated_unlimited_stream_request_shape():
+    requests: list[httpx.Request] = []
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        return httpx.Response(
+            200,
+            headers={"content-type": "application/connect+json"},
+            content=b"{}",
+        )
+
+    client = process_connect.ProcessClient(
+        "https://sandbox.test",
+        **connect_client_kwargs(
+            {"x-sandbox": "1"},
+            HTTPXConnectClient(httpx.MockTransport(handler)),
+        ),
+    )
+    events = client.start(
+        process_pb2.StartRequest(
+            process=process_pb2.ProcessConfig(cmd="/bin/bash"),
+        ),
+        headers=stream_request_headers({"E2B-Keepalive-Ping": "15"}, 5),
+        timeout_ms=stream_timeout_ms(0),
+    )
+
+    with pytest.raises(StopAsyncIteration):
+        await events.__anext__()
+
+    request = requests[0]
+    assert request.method == "POST"
+    assert str(request.url) == "https://sandbox.test/process.Process/Start"
+    assert request.headers["x-sandbox"] == "1"
+    assert request.headers["e2b-keepalive-ping"] == "15"
+    assert "connect-timeout-ms" not in request.headers
+    assert STREAM_REQUEST_TIMEOUT_HEADER not in request.headers
+    assert request.extensions["timeout"] == {
+        "connect": 5.0,
+        "read": None,
+        "write": 5.0,
+        "pool": 5.0,
+    }
+    assert b'"cmd": "/bin/bash"' in await request.aread()

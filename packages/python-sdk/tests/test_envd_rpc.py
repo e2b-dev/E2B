@@ -32,6 +32,7 @@ def test_stream_request_headers_ignores_unlimited_timeout():
     headers = {"x-test": "1"}
 
     assert stream_request_headers(headers, None) is headers
+    assert stream_request_headers(headers, 0) is headers
 
 
 def test_proto_json_codec_ignores_unknown_fields():

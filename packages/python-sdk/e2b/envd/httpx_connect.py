@@ -36,7 +36,7 @@ def _prepare_headers(headers) -> tuple[Any, float | None]:
 
 
 def _timeout(timeout: float | None, request_timeout: float | None) -> Any:
-    if request_timeout is None:
+    if request_timeout is None or request_timeout == 0:
         return timeout
 
     return httpx.Timeout(

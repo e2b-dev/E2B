@@ -93,7 +93,7 @@ def stream_request_headers(
     headers: dict[str, str],
     request_timeout: Optional[float],
 ) -> dict[str, str]:
-    if request_timeout is None:
+    if request_timeout is None or request_timeout == 0:
         return headers
 
     return {

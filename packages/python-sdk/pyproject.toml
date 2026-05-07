@@ -13,7 +13,7 @@ packages = [{ include = "e2b" }]
 python = "^3.10"
 python-dateutil = ">=2.8.2"
 wcmatch = "^10.1"
-protobuf = ">=5.28"
+protobuf = ">=6.33.1"
 connectrpc = "^0.10.0"
 pyqwest = ">=0.5.1"
 httpcore = "^1.0.5"
