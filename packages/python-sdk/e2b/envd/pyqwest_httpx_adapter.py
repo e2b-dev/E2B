@@ -152,7 +152,7 @@ async def _aopen_stream_with_retries(open_stream):
         await stream.__aexit__(None, None, None)
 
 
-class HTTPXConnectClientSync:
+class PyqwestHTTPXAdapter:
     def __init__(self, transport: httpx.BaseTransport) -> None:
         self._client = httpx.Client(transport=transport)
 
@@ -235,7 +235,7 @@ class HTTPXConnectClientSync:
             yield _SyncStreamResponse(response)
 
 
-class HTTPXConnectClient:
+class AsyncPyqwestHTTPXAdapter:
     def __init__(self, transport: httpx.AsyncBaseTransport) -> None:
         self._client = httpx.AsyncClient(transport=transport)
 

@@ -11,7 +11,7 @@ from e2b.connection_config import (
     KEEPALIVE_PING_INTERVAL_SEC,
 )
 from e2b.exceptions import SandboxException
-from e2b.envd.httpx_connect import HTTPXConnectClient
+from e2b.envd.pyqwest_httpx_adapter import AsyncPyqwestHTTPXAdapter
 from e2b.envd.rpc import (
     authentication_header,
     connect_client_kwargs,
@@ -37,7 +37,7 @@ class Pty:
         self,
         envd_api_url: str,
         connection_config: ConnectionConfig,
-        rpc_client: HTTPXConnectClient,
+        rpc_client: AsyncPyqwestHTTPXAdapter,
         envd_version: Version,
     ) -> None:
         self._connection_config = connection_config

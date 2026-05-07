@@ -17,7 +17,7 @@ from e2b.connection_config import (
 )
 from e2b.envd.api import ENVD_API_FILES_ROUTE, ahandle_envd_api_exception
 from e2b.envd.filesystem import filesystem_connect, filesystem_pb2
-from e2b.envd.httpx_connect import HTTPXConnectClient
+from e2b.envd.pyqwest_httpx_adapter import AsyncPyqwestHTTPXAdapter
 from e2b.envd.rpc import (
     authentication_header,
     connect_client_kwargs,
@@ -88,7 +88,7 @@ class Filesystem:
         envd_api_url: str,
         envd_version: Version,
         connection_config: ConnectionConfig,
-        rpc_client: HTTPXConnectClient,
+        rpc_client: AsyncPyqwestHTTPXAdapter,
         envd_api: httpx.AsyncClient,
     ) -> None:
         self._envd_api_url = envd_api_url

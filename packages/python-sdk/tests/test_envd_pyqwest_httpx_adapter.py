@@ -6,7 +6,7 @@ import httpx
 import pytest
 from pyqwest import Headers
 
-from e2b.envd.httpx_connect import HTTPXConnectClient, HTTPXConnectClientSync
+from e2b.envd.pyqwest_httpx_adapter import AsyncPyqwestHTTPXAdapter, PyqwestHTTPXAdapter
 from e2b.envd.process import process_connect, process_pb2
 from e2b.envd.rpc import (
     STREAM_REQUEST_TIMEOUT_HEADER,
@@ -109,7 +109,7 @@ class RecordingProxy:
         return 0
 
 
-def test_sync_httpx_connect_client_uses_httpx_transport():
+def test_sync_pyqwest_httpx_adapter_uses_httpx_transport():
     requests: list[httpx.Request] = []
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -120,7 +120,7 @@ def test_sync_httpx_connect_client_uses_httpx_transport():
             content=b'{"ok":true}',
         )
 
-    client = HTTPXConnectClientSync(httpx.MockTransport(handler))
+    client = PyqwestHTTPXAdapter(httpx.MockTransport(handler))
 
     response = client.post(
         "https://sandbox.test/process.Process/List",
@@ -135,7 +135,7 @@ def test_sync_httpx_connect_client_uses_httpx_transport():
     assert requests[0].content == b"payload"
 
 
-def test_sync_httpx_connect_client_retries_remote_protocol_errors():
+def test_sync_pyqwest_httpx_adapter_retries_remote_protocol_errors():
     attempts: list[bytes] = []
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -149,7 +149,7 @@ def test_sync_httpx_connect_client_retries_remote_protocol_errors():
             content=b'{"ok":true}',
         )
 
-    client = HTTPXConnectClientSync(httpx.MockTransport(handler))
+    client = PyqwestHTTPXAdapter(httpx.MockTransport(handler))
 
     response = client.post(
         "https://sandbox.test/process.Process/List",
@@ -160,7 +160,7 @@ def test_sync_httpx_connect_client_retries_remote_protocol_errors():
     assert attempts == [b"payload", b"payload", b"payload", b"payload"]
 
 
-def test_sync_httpx_connect_client_streams_response():
+def test_sync_pyqwest_httpx_adapter_streams_response():
     def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(
             200,
@@ -168,7 +168,7 @@ def test_sync_httpx_connect_client_streams_response():
             content=[b"one", b"two"],
         )
 
-    client = HTTPXConnectClientSync(httpx.MockTransport(handler))
+    client = PyqwestHTTPXAdapter(httpx.MockTransport(handler))
 
     with client.stream(
         "POST",
@@ -181,7 +181,7 @@ def test_sync_httpx_connect_client_streams_response():
         assert list(response.content) == [b"one", b"two"]
 
 
-def test_sync_httpx_connect_client_retries_remote_protocol_stream_open():
+def test_sync_pyqwest_httpx_adapter_retries_remote_protocol_stream_open():
     attempts: list[bytes] = []
 
     def content():
@@ -198,7 +198,7 @@ def test_sync_httpx_connect_client_retries_remote_protocol_stream_open():
             content=[b"one"],
         )
 
-    client = HTTPXConnectClientSync(httpx.MockTransport(handler))
+    client = PyqwestHTTPXAdapter(httpx.MockTransport(handler))
 
     with client.stream(
         "POST",
@@ -210,7 +210,7 @@ def test_sync_httpx_connect_client_retries_remote_protocol_stream_open():
     assert attempts == [b"payload", b"payload", b"payload", b"payload"]
 
 
-def test_sync_httpx_connect_client_applies_stream_request_timeout():
+def test_sync_pyqwest_httpx_adapter_applies_stream_request_timeout():
     requests: list[httpx.Request] = []
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -221,7 +221,7 @@ def test_sync_httpx_connect_client_applies_stream_request_timeout():
             content=[b"one"],
         )
 
-    client = HTTPXConnectClientSync(httpx.MockTransport(handler))
+    client = PyqwestHTTPXAdapter(httpx.MockTransport(handler))
 
     with client.stream(
         "POST",
@@ -246,7 +246,7 @@ def test_sync_httpx_connect_client_applies_stream_request_timeout():
     }
 
 
-def test_sync_httpx_connect_client_ignores_unlimited_stream_request_timeout():
+def test_sync_pyqwest_httpx_adapter_ignores_unlimited_stream_request_timeout():
     requests: list[httpx.Request] = []
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -257,7 +257,7 @@ def test_sync_httpx_connect_client_ignores_unlimited_stream_request_timeout():
             content=[b"one"],
         )
 
-    client = HTTPXConnectClientSync(httpx.MockTransport(handler))
+    client = PyqwestHTTPXAdapter(httpx.MockTransport(handler))
 
     with client.stream(
         "POST",
@@ -277,10 +277,10 @@ def test_sync_httpx_connect_client_ignores_unlimited_stream_request_timeout():
     }
 
 
-def test_sync_httpx_connect_client_uses_configured_proxy():
+def test_sync_pyqwest_httpx_adapter_uses_configured_proxy():
     with RecordingProxy() as proxy:
         transport = httpx.HTTPTransport(proxy=proxy.url)
-        client = HTTPXConnectClientSync(transport)
+        client = PyqwestHTTPXAdapter(transport)
 
         response = client.post(
             "http://sandbox.test/process.Process/List",
@@ -314,7 +314,7 @@ def test_sync_generated_stream_request_shape():
         "https://sandbox.test",
         **connect_client_kwargs(
             {"x-sandbox": "1"},
-            HTTPXConnectClientSync(httpx.MockTransport(handler)),
+            PyqwestHTTPXAdapter(httpx.MockTransport(handler)),
         ),
     )
     events = client.start(
@@ -343,7 +343,7 @@ def test_sync_generated_stream_request_shape():
 
 
 @pytest.mark.asyncio
-async def test_async_httpx_connect_client_uses_httpx_transport():
+async def test_async_pyqwest_httpx_adapter_uses_httpx_transport():
     requests: list[httpx.Request] = []
 
     async def handler(request: httpx.Request) -> httpx.Response:
@@ -354,7 +354,7 @@ async def test_async_httpx_connect_client_uses_httpx_transport():
             stream=AsyncBytes([b'{"ok":true}']),
         )
 
-    client = HTTPXConnectClient(httpx.MockTransport(handler))
+    client = AsyncPyqwestHTTPXAdapter(httpx.MockTransport(handler))
 
     response = await client.post(
         "https://sandbox.test/process.Process/List",
@@ -369,7 +369,7 @@ async def test_async_httpx_connect_client_uses_httpx_transport():
 
 
 @pytest.mark.asyncio
-async def test_async_httpx_connect_client_retries_remote_protocol_errors():
+async def test_async_pyqwest_httpx_adapter_retries_remote_protocol_errors():
     attempts: list[bytes] = []
 
     async def handler(request: httpx.Request) -> httpx.Response:
@@ -383,7 +383,7 @@ async def test_async_httpx_connect_client_retries_remote_protocol_errors():
             stream=AsyncBytes([b'{"ok":true}']),
         )
 
-    client = HTTPXConnectClient(httpx.MockTransport(handler))
+    client = AsyncPyqwestHTTPXAdapter(httpx.MockTransport(handler))
 
     response = await client.post(
         "https://sandbox.test/process.Process/List",
@@ -395,7 +395,7 @@ async def test_async_httpx_connect_client_retries_remote_protocol_errors():
 
 
 @pytest.mark.asyncio
-async def test_async_httpx_connect_client_streams_response():
+async def test_async_pyqwest_httpx_adapter_streams_response():
     async def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(
             200,
@@ -406,7 +406,7 @@ async def test_async_httpx_connect_client_streams_response():
     async def content():
         yield b"payload"
 
-    client = HTTPXConnectClient(httpx.MockTransport(handler))
+    client = AsyncPyqwestHTTPXAdapter(httpx.MockTransport(handler))
 
     async with client.stream(
         "POST",
@@ -423,7 +423,7 @@ async def test_async_httpx_connect_client_streams_response():
 
 
 @pytest.mark.asyncio
-async def test_async_httpx_connect_client_retries_remote_protocol_stream_open():
+async def test_async_pyqwest_httpx_adapter_retries_remote_protocol_stream_open():
     attempts: list[bytes] = []
 
     async def content():
@@ -440,7 +440,7 @@ async def test_async_httpx_connect_client_retries_remote_protocol_stream_open():
             stream=AsyncBytes([b"one"]),
         )
 
-    client = HTTPXConnectClient(httpx.MockTransport(handler))
+    client = AsyncPyqwestHTTPXAdapter(httpx.MockTransport(handler))
 
     async with client.stream(
         "POST",
@@ -456,7 +456,7 @@ async def test_async_httpx_connect_client_retries_remote_protocol_stream_open():
 
 
 @pytest.mark.asyncio
-async def test_async_httpx_connect_client_applies_stream_request_timeout():
+async def test_async_pyqwest_httpx_adapter_applies_stream_request_timeout():
     requests: list[httpx.Request] = []
 
     async def handler(request: httpx.Request) -> httpx.Response:
@@ -470,7 +470,7 @@ async def test_async_httpx_connect_client_applies_stream_request_timeout():
     async def content():
         yield b"payload"
 
-    client = HTTPXConnectClient(httpx.MockTransport(handler))
+    client = AsyncPyqwestHTTPXAdapter(httpx.MockTransport(handler))
 
     async with client.stream(
         "POST",
@@ -499,10 +499,10 @@ async def test_async_httpx_connect_client_applies_stream_request_timeout():
 
 
 @pytest.mark.asyncio
-async def test_async_httpx_connect_client_uses_configured_proxy():
+async def test_async_pyqwest_httpx_adapter_uses_configured_proxy():
     with RecordingProxy() as proxy:
         transport = httpx.AsyncHTTPTransport(proxy=proxy.url)
-        client = HTTPXConnectClient(transport)
+        client = AsyncPyqwestHTTPXAdapter(transport)
 
         response = await client.post(
             "http://sandbox.test/process.Process/List",
@@ -536,7 +536,7 @@ async def test_async_generated_unlimited_stream_request_shape():
         "https://sandbox.test",
         **connect_client_kwargs(
             {"x-sandbox": "1"},
-            HTTPXConnectClient(httpx.MockTransport(handler)),
+            AsyncPyqwestHTTPXAdapter(httpx.MockTransport(handler)),
         ),
     )
     events = client.start(

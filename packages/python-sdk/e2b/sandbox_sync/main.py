@@ -13,7 +13,7 @@ from e2b.api.client.types import Unset
 from e2b.api.client_sync import get_transport
 from e2b.connection_config import ApiParams, ConnectionConfig
 from e2b.envd.api import ENVD_API_HEALTH_ROUTE, handle_envd_api_exception
-from e2b.envd.httpx_connect import HTTPXConnectClientSync
+from e2b.envd.pyqwest_httpx_adapter import PyqwestHTTPXAdapter
 from e2b.envd.versions import ENVD_DEBUG_FALLBACK
 from e2b.exceptions import (
     SandboxException,
@@ -102,7 +102,7 @@ class Sandbox(SandboxApi):
         super().__init__(**opts)
 
         self._transport = get_transport(self.connection_config)
-        self._rpc_client = HTTPXConnectClientSync(self._transport)
+        self._rpc_client = PyqwestHTTPXAdapter(self._transport)
 
         self._envd_api = httpx.Client(
             base_url=self.envd_api_url,

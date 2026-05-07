@@ -9,7 +9,7 @@ from e2b.connection_config import (
     KEEPALIVE_PING_HEADER,
     KEEPALIVE_PING_INTERVAL_SEC,
 )
-from e2b.envd.httpx_connect import HTTPXConnectClientSync
+from e2b.envd.pyqwest_httpx_adapter import PyqwestHTTPXAdapter
 from e2b.envd.process import process_connect, process_pb2
 from e2b.envd.rpc import (
     authentication_header,
@@ -35,7 +35,7 @@ class Commands:
         self,
         envd_api_url: str,
         connection_config: ConnectionConfig,
-        rpc_client: HTTPXConnectClientSync,
+        rpc_client: PyqwestHTTPXAdapter,
         envd_version: Version,
     ) -> None:
         self._connection_config = connection_config
