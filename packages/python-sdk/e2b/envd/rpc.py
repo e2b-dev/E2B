@@ -85,13 +85,7 @@ def stream_timeout_ms(
     if timeout == 0:
         return None
 
-    if request_timeout is None or request_timeout == 0:
-        return request_timeout_ms(timeout)
-
-    if timeout is None:
-        return request_timeout_ms(request_timeout)
-
-    return request_timeout_ms(min(timeout, request_timeout))
+    return request_timeout_ms(timeout)
 
 
 class SandboxHeadersInterceptor:

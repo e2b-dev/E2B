@@ -9,9 +9,10 @@ def test_request_timeout_ms_preserves_zero():
     assert request_timeout_ms(1.25) == 1250
 
 
-def test_stream_timeout_ms_honors_request_timeout_bound():
-    assert stream_timeout_ms(60, 5) == 5000
-    assert stream_timeout_ms(None, 5) == 5000
+def test_stream_timeout_ms_uses_stream_timeout():
+    assert stream_timeout_ms(60, 5) == 60000
+    assert stream_timeout_ms(300, 5) == 300000
+    assert stream_timeout_ms(None, 5) is None
     assert stream_timeout_ms(0, 5) is None
     assert stream_timeout_ms(0, None) is None
     assert stream_timeout_ms(60, None) == 60000

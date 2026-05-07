@@ -115,11 +115,13 @@ class HTTPXConnectClient:
         url: str,
         headers: Any = None,
         *,
+        timeout: float | None = None,
         params: Mapping[str, str] | None = None,
     ) -> FullResponse:
         response = await self._client.get(
             url,
             headers=_request_headers(headers),
+            timeout=timeout,
             params=params,
         )
         return FullResponse(
@@ -135,12 +137,14 @@ class HTTPXConnectClient:
         headers: Any = None,
         content=None,
         *,
+        timeout: float | None = None,
         params: Mapping[str, str] | None = None,
     ) -> FullResponse:
         response = await self._client.post(
             url,
             headers=_request_headers(headers),
             content=content,
+            timeout=timeout,
             params=params,
         )
         return FullResponse(
@@ -158,6 +162,7 @@ class HTTPXConnectClient:
         headers: Any = None,
         content=None,
         *,
+        timeout: float | None = None,
         params: Mapping[str, str] | None = None,
     ) -> AsyncIterator[_AsyncStreamResponse]:
         async with self._client.stream(
@@ -165,6 +170,7 @@ class HTTPXConnectClient:
             url,
             headers=_request_headers(headers),
             content=content,
+            timeout=timeout,
             params=params,
         ) as response:
             yield _AsyncStreamResponse(response)
