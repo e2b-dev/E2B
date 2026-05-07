@@ -6,6 +6,7 @@ import httpx
 import pytest
 from pyqwest import Headers
 
+from e2b.envd.rpc import STREAM_REQUEST_TIMEOUT_HEADER
 from e2b.envd.httpx_connect import HTTPXConnectClient, HTTPXConnectClientSync
 
 
@@ -149,6 +150,42 @@ def test_sync_httpx_connect_client_streams_response():
         assert list(response.content) == [b"one", b"two"]
 
 
+def test_sync_httpx_connect_client_applies_stream_request_timeout():
+    requests: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        return httpx.Response(
+            200,
+            headers={"content-type": "application/connect+json"},
+            content=[b"one"],
+        )
+
+    client = HTTPXConnectClientSync(httpx.MockTransport(handler))
+
+    with client.stream(
+        "POST",
+        "https://sandbox.test/process.Process/Start",
+        headers=Headers(
+            {
+                "x-test": "1",
+                STREAM_REQUEST_TIMEOUT_HEADER: "5",
+            }
+        ),
+        content=[b"payload"],
+        timeout=60,
+    ) as response:
+        assert list(response.content) == [b"one"]
+
+    assert STREAM_REQUEST_TIMEOUT_HEADER not in requests[0].headers
+    assert requests[0].extensions["timeout"] == {
+        "connect": 5.0,
+        "read": 60,
+        "write": 5.0,
+        "pool": 5.0,
+    }
+
+
 def test_sync_httpx_connect_client_uses_configured_proxy():
     with RecordingProxy() as proxy:
         transport = httpx.HTTPTransport(proxy=proxy.url)
@@ -223,6 +260,49 @@ async def test_async_httpx_connect_client_streams_response():
 
         assert response.status == 200
         assert chunks == [b"one", b"two"]
+
+
+@pytest.mark.asyncio
+async def test_async_httpx_connect_client_applies_stream_request_timeout():
+    requests: list[httpx.Request] = []
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        return httpx.Response(
+            200,
+            headers={"content-type": "application/connect+json"},
+            stream=AsyncBytes([b"one"]),
+        )
+
+    async def content():
+        yield b"payload"
+
+    client = HTTPXConnectClient(httpx.MockTransport(handler))
+
+    async with client.stream(
+        "POST",
+        "https://sandbox.test/process.Process/Start",
+        headers=Headers(
+            {
+                "x-test": "1",
+                STREAM_REQUEST_TIMEOUT_HEADER: "5",
+            }
+        ),
+        content=content(),
+        timeout=60,
+    ) as response:
+        chunks = []
+        async for chunk in response.content:
+            chunks.append(chunk)
+
+    assert chunks == [b"one"]
+    assert STREAM_REQUEST_TIMEOUT_HEADER not in requests[0].headers
+    assert requests[0].extensions["timeout"] == {
+        "connect": 5.0,
+        "read": 60,
+        "write": 5.0,
+        "pool": 5.0,
+    }
 
 
 @pytest.mark.asyncio

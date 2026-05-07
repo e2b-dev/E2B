@@ -20,6 +20,8 @@ from e2b.exceptions import (
 from e2b.connection_config import Username, default_username
 from e2b.envd.versions import ENVD_DEFAULT_USER
 
+STREAM_REQUEST_TIMEOUT_HEADER = "E2B-Stream-Request-Timeout"
+
 _DEFAULT_RPC_ERROR_MAP: dict[Code, Callable[[str], Exception]] = {
     Code.INVALID_ARGUMENT: InvalidArgumentException,
     Code.UNAUTHENTICATED: AuthenticationException,
@@ -80,12 +82,24 @@ def request_timeout_ms(timeout: Optional[float]) -> Optional[int]:
 
 def stream_timeout_ms(
     timeout: Optional[float],
-    request_timeout: Optional[float],
 ) -> Optional[int]:
     if timeout == 0:
         return None
 
     return request_timeout_ms(timeout)
+
+
+def stream_request_headers(
+    headers: dict[str, str],
+    request_timeout: Optional[float],
+) -> dict[str, str]:
+    if request_timeout is None:
+        return headers
+
+    return {
+        **headers,
+        STREAM_REQUEST_TIMEOUT_HEADER: str(request_timeout),
+    }
 
 
 class SandboxHeadersInterceptor:

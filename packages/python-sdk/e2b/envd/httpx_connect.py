@@ -5,19 +5,47 @@ import httpx
 from pyqwest import FullResponse
 from pyqwest import Headers as HTTPHeaders
 
+from e2b.envd.rpc import STREAM_REQUEST_TIMEOUT_HEADER
+
+_STREAM_REQUEST_TIMEOUT_HEADER = STREAM_REQUEST_TIMEOUT_HEADER.lower()
+
 
 def _headers(headers: httpx.Headers) -> HTTPHeaders:
     return HTTPHeaders(headers.multi_items())
 
 
-def _request_headers(headers) -> Any:
+def _prepare_headers(headers) -> tuple[Any, float | None]:
     if headers is None:
-        return None
+        return None, None
 
     if hasattr(headers, "items"):
-        return headers.items()
+        items = list(headers.items())
+    else:
+        items = list(headers)
 
-    return headers
+    request_timeout = None
+    filtered_headers = []
+    for name, value in items:
+        if name.lower() == _STREAM_REQUEST_TIMEOUT_HEADER:
+            request_timeout = float(value)
+            continue
+
+        filtered_headers.append((name, value))
+
+    return filtered_headers, request_timeout
+
+
+def _timeout(timeout: float | None, request_timeout: float | None) -> Any:
+    if request_timeout is None:
+        return timeout
+
+    return httpx.Timeout(
+        timeout=None,
+        connect=request_timeout,
+        read=timeout,
+        write=request_timeout,
+        pool=request_timeout,
+    )
 
 
 class _SyncStreamResponse:
@@ -48,10 +76,11 @@ class HTTPXConnectClientSync:
         timeout: float | None = None,
         params: Mapping[str, str] | None = None,
     ) -> FullResponse:
+        headers, request_timeout = _prepare_headers(headers)
         response = self._client.get(
             url,
-            headers=_request_headers(headers),
-            timeout=timeout,
+            headers=headers,
+            timeout=_timeout(timeout, request_timeout),
             params=params,
         )
         return FullResponse(
@@ -70,11 +99,12 @@ class HTTPXConnectClientSync:
         timeout: float | None = None,
         params: Mapping[str, str] | None = None,
     ) -> FullResponse:
+        headers, request_timeout = _prepare_headers(headers)
         response = self._client.post(
             url,
-            headers=_request_headers(headers),
+            headers=headers,
             content=content,
-            timeout=timeout,
+            timeout=_timeout(timeout, request_timeout),
             params=params,
         )
         return FullResponse(
@@ -95,12 +125,13 @@ class HTTPXConnectClientSync:
         timeout: float | None = None,
         params: Mapping[str, str] | None = None,
     ) -> Iterator[_SyncStreamResponse]:
+        headers, request_timeout = _prepare_headers(headers)
         with self._client.stream(
             method,
             url,
-            headers=_request_headers(headers),
+            headers=headers,
             content=content,
-            timeout=timeout,
+            timeout=_timeout(timeout, request_timeout),
             params=params,
         ) as response:
             yield _SyncStreamResponse(response)
@@ -118,10 +149,11 @@ class HTTPXConnectClient:
         timeout: float | None = None,
         params: Mapping[str, str] | None = None,
     ) -> FullResponse:
+        headers, request_timeout = _prepare_headers(headers)
         response = await self._client.get(
             url,
-            headers=_request_headers(headers),
-            timeout=timeout,
+            headers=headers,
+            timeout=_timeout(timeout, request_timeout),
             params=params,
         )
         return FullResponse(
@@ -140,11 +172,12 @@ class HTTPXConnectClient:
         timeout: float | None = None,
         params: Mapping[str, str] | None = None,
     ) -> FullResponse:
+        headers, request_timeout = _prepare_headers(headers)
         response = await self._client.post(
             url,
-            headers=_request_headers(headers),
+            headers=headers,
             content=content,
-            timeout=timeout,
+            timeout=_timeout(timeout, request_timeout),
             params=params,
         )
         return FullResponse(
@@ -165,12 +198,13 @@ class HTTPXConnectClient:
         timeout: float | None = None,
         params: Mapping[str, str] | None = None,
     ) -> AsyncIterator[_AsyncStreamResponse]:
+        headers, request_timeout = _prepare_headers(headers)
         async with self._client.stream(
             method,
             url,
-            headers=_request_headers(headers),
+            headers=headers,
             content=content,
-            timeout=timeout,
+            timeout=_timeout(timeout, request_timeout),
             params=params,
         ) as response:
             yield _AsyncStreamResponse(response)

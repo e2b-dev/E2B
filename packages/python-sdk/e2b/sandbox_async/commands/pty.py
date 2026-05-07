@@ -17,6 +17,7 @@ from e2b.envd.rpc import (
     connect_client_kwargs,
     handle_rpc_exception,
     request_timeout_ms,
+    stream_request_headers,
     stream_timeout_ms,
 )
 from e2b.sandbox.commands.command_handle import PtySize
@@ -143,14 +144,14 @@ class Pty:
                     size=process_pb2.PTY.Size(rows=size.rows, cols=size.cols)
                 ),
             ),
-            headers={
-                **authentication_header(self._envd_version, user),
-                KEEPALIVE_PING_HEADER: str(KEEPALIVE_PING_INTERVAL_SEC),
-            },
-            timeout_ms=stream_timeout_ms(
-                timeout,
+            headers=stream_request_headers(
+                {
+                    **authentication_header(self._envd_version, user),
+                    KEEPALIVE_PING_HEADER: str(KEEPALIVE_PING_INTERVAL_SEC),
+                },
                 self._connection_config.get_request_timeout(request_timeout),
             ),
+            timeout_ms=stream_timeout_ms(timeout),
         )
 
         try:
@@ -191,13 +192,13 @@ class Pty:
             process_pb2.ConnectRequest(
                 process=process_pb2.ProcessSelector(pid=pid),
             ),
-            timeout_ms=stream_timeout_ms(
-                timeout,
+            timeout_ms=stream_timeout_ms(timeout),
+            headers=stream_request_headers(
+                {
+                    KEEPALIVE_PING_HEADER: str(KEEPALIVE_PING_INTERVAL_SEC),
+                },
                 self._connection_config.get_request_timeout(request_timeout),
             ),
-            headers={
-                KEEPALIVE_PING_HEADER: str(KEEPALIVE_PING_INTERVAL_SEC),
-            },
         )
 
         try:
