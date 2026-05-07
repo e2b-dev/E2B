@@ -83,7 +83,7 @@ def stream_timeout_ms(
     request_timeout: Optional[float],
 ) -> Optional[int]:
     if timeout == 0:
-        return request_timeout_ms(timeout)
+        return None
 
     if request_timeout is None or request_timeout == 0:
         return request_timeout_ms(timeout)
