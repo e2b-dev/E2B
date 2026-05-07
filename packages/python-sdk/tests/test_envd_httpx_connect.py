@@ -1,0 +1,247 @@
+import socket
+import threading
+from dataclasses import dataclass
+
+import httpx
+import pytest
+from pyqwest import Headers
+
+from e2b.envd.httpx_connect import HTTPXConnectClient, HTTPXConnectClientSync
+
+
+class AsyncBytes(httpx.AsyncByteStream):
+    def __init__(self, chunks: list[bytes]) -> None:
+        self._chunks = chunks
+
+    async def __aiter__(self):
+        for chunk in self._chunks:
+            yield chunk
+
+
+@dataclass
+class ProxyRequest:
+    method: str
+    target: str
+    body: bytes
+
+
+class RecordingProxy:
+    def __init__(self) -> None:
+        self.requests: list[ProxyRequest] = []
+        self._ready = threading.Event()
+        self._closed = threading.Event()
+        self._thread = threading.Thread(target=self._serve, daemon=True)
+
+    @property
+    def url(self) -> str:
+        self._ready.wait(timeout=5)
+        return f"http://{self.host}:{self.port}"
+
+    def __enter__(self):
+        self._thread.start()
+        self._ready.wait(timeout=5)
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        self._closed.set()
+        try:
+            with socket.create_connection((self.host, self.port), timeout=1):
+                pass
+        except OSError:
+            pass
+        self._thread.join(timeout=5)
+
+    def _serve(self) -> None:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server:
+            server.bind(("127.0.0.1", 0))
+            server.listen()
+            self.host, self.port = server.getsockname()
+            self._ready.set()
+
+            while not self._closed.is_set():
+                conn, _ = server.accept()
+                with conn:
+                    data = self._read_request(conn)
+                    if not data:
+                        continue
+
+                    request_head, body = data.split(b"\r\n\r\n", 1)
+                    lines = request_head.decode().splitlines()
+                    method, target, _ = lines[0].split(" ", 2)
+                    content_length = self._content_length(lines[1:])
+
+                    while len(body) < content_length:
+                        body += conn.recv(65536)
+
+                    self.requests.append(
+                        ProxyRequest(method=method, target=target, body=body)
+                    )
+                    response = b'{"ok":true}'
+                    conn.sendall(
+                        b"HTTP/1.1 200 OK\r\n"
+                        b"Content-Type: application/json\r\n"
+                        + f"Content-Length: {len(response)}\r\n".encode()
+                        + b"Connection: close\r\n\r\n"
+                        + response
+                    )
+
+    def _read_request(self, conn: socket.socket) -> bytes:
+        data = b""
+        while b"\r\n\r\n" not in data:
+            chunk = conn.recv(65536)
+            if not chunk:
+                return data
+            data += chunk
+        return data
+
+    def _content_length(self, header_lines: list[str]) -> int:
+        for line in header_lines:
+            name, _, value = line.partition(":")
+            if name.lower() == "content-length":
+                return int(value.strip())
+        return 0
+
+
+def test_sync_httpx_connect_client_uses_httpx_transport():
+    requests: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        return httpx.Response(
+            200,
+            headers={"content-type": "application/json"},
+            content=b'{"ok":true}',
+        )
+
+    client = HTTPXConnectClientSync(httpx.MockTransport(handler))
+
+    response = client.post(
+        "https://sandbox.test/process.Process/List",
+        headers=Headers({"x-test": "1"}),
+        content=b"payload",
+        timeout=1,
+    )
+
+    assert response.status == 200
+    assert response.content == b'{"ok":true}'
+    assert requests[0].headers["x-test"] == "1"
+    assert requests[0].content == b"payload"
+
+
+def test_sync_httpx_connect_client_streams_response():
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            headers={"content-type": "application/connect+json"},
+            content=[b"one", b"two"],
+        )
+
+    client = HTTPXConnectClientSync(httpx.MockTransport(handler))
+
+    with client.stream(
+        "POST",
+        "https://sandbox.test/process.Process/Start",
+        headers=Headers({"x-test": "1"}),
+        content=[b"payload"],
+        timeout=1,
+    ) as response:
+        assert response.status == 200
+        assert list(response.content) == [b"one", b"two"]
+
+
+def test_sync_httpx_connect_client_uses_configured_proxy():
+    with RecordingProxy() as proxy:
+        transport = httpx.HTTPTransport(proxy=proxy.url)
+        client = HTTPXConnectClientSync(transport)
+
+        response = client.post(
+            "http://sandbox.test/process.Process/List",
+            headers=Headers({"x-test": "1"}),
+            content=b"payload",
+            timeout=1,
+        )
+
+    assert response.status == 200
+    assert proxy.requests == [
+        ProxyRequest(
+            method="POST",
+            target="http://sandbox.test/process.Process/List",
+            body=b"payload",
+        )
+    ]
+
+
+@pytest.mark.asyncio
+async def test_async_httpx_connect_client_uses_httpx_transport():
+    requests: list[httpx.Request] = []
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        return httpx.Response(
+            200,
+            headers={"content-type": "application/json"},
+            stream=AsyncBytes([b'{"ok":true}']),
+        )
+
+    client = HTTPXConnectClient(httpx.MockTransport(handler))
+
+    response = await client.post(
+        "https://sandbox.test/process.Process/List",
+        headers=Headers({"x-test": "1"}),
+        content=b"payload",
+    )
+
+    assert response.status == 200
+    assert response.content == b'{"ok":true}'
+    assert requests[0].headers["x-test"] == "1"
+    assert await requests[0].aread() == b"payload"
+
+
+@pytest.mark.asyncio
+async def test_async_httpx_connect_client_streams_response():
+    async def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            headers={"content-type": "application/connect+json"},
+            stream=AsyncBytes([b"one", b"two"]),
+        )
+
+    async def content():
+        yield b"payload"
+
+    client = HTTPXConnectClient(httpx.MockTransport(handler))
+
+    async with client.stream(
+        "POST",
+        "https://sandbox.test/process.Process/Start",
+        headers=Headers({"x-test": "1"}),
+        content=content(),
+    ) as response:
+        chunks = []
+        async for chunk in response.content:
+            chunks.append(chunk)
+
+        assert response.status == 200
+        assert chunks == [b"one", b"two"]
+
+
+@pytest.mark.asyncio
+async def test_async_httpx_connect_client_uses_configured_proxy():
+    with RecordingProxy() as proxy:
+        transport = httpx.AsyncHTTPTransport(proxy=proxy.url)
+        client = HTTPXConnectClient(transport)
+
+        response = await client.post(
+            "http://sandbox.test/process.Process/List",
+            headers=Headers({"x-test": "1"}),
+            content=b"payload",
+        )
+
+    assert response.status == 200
+    assert proxy.requests == [
+        ProxyRequest(
+            method="POST",
+            target="http://sandbox.test/process.Process/List",
+            body=b"payload",
+        )
+    ]

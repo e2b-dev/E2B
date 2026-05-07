@@ -5,7 +5,6 @@ import httpx
 from connectrpc.code import Code
 from connectrpc.errors import ConnectError
 from packaging.version import Version
-from pyqwest import SyncClient
 
 from e2b.connection_config import (
     KEEPALIVE_PING_HEADER,
@@ -17,6 +16,7 @@ from e2b.connection_config import (
 
 from e2b.envd.api import ENVD_API_FILES_ROUTE, handle_envd_api_exception
 from e2b.envd.filesystem import filesystem_connect, filesystem_pb2
+from e2b.envd.httpx_connect import HTTPXConnectClientSync
 from e2b.envd.rpc import (
     authentication_header,
     connect_client_kwargs,
@@ -81,7 +81,7 @@ class Filesystem:
         envd_api_url: str,
         envd_version: Version,
         connection_config: ConnectionConfig,
-        rpc_client: SyncClient,
+        rpc_client: HTTPXConnectClientSync,
         envd_api: httpx.Client,
     ) -> None:
         self._envd_api_url = envd_api_url

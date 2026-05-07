@@ -3,13 +3,13 @@ from typing import Callable, Dict, List, Literal, Optional, Union, overload
 from connectrpc.code import Code
 from connectrpc.errors import ConnectError
 from packaging.version import Version
-from pyqwest import SyncClient
 from e2b.connection_config import (
     ConnectionConfig,
     Username,
     KEEPALIVE_PING_HEADER,
     KEEPALIVE_PING_INTERVAL_SEC,
 )
+from e2b.envd.httpx_connect import HTTPXConnectClientSync
 from e2b.envd.process import process_connect, process_pb2
 from e2b.envd.rpc import (
     authentication_header,
@@ -34,7 +34,7 @@ class Commands:
         self,
         envd_api_url: str,
         connection_config: ConnectionConfig,
-        rpc_client: SyncClient,
+        rpc_client: HTTPXConnectClientSync,
         envd_version: Version,
     ) -> None:
         self._connection_config = connection_config

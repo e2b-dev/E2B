@@ -7,13 +7,13 @@ from typing import Dict, List, Optional, Union, overload
 
 import httpx
 from packaging.version import Version
-from pyqwest import Client, HTTPTransport, HTTPVersion
 from typing_extensions import Self, Unpack
 
 from e2b.api.client.types import Unset
 from e2b.api.client_async import get_transport
 from e2b.connection_config import ApiParams, ConnectionConfig
 from e2b.envd.api import ENVD_API_HEALTH_ROUTE, ahandle_envd_api_exception
+from e2b.envd.httpx_connect import HTTPXConnectClient
 from e2b.envd.versions import ENVD_DEBUG_FALLBACK
 from e2b.exceptions import (
     SandboxException,
@@ -103,7 +103,7 @@ class AsyncSandbox(SandboxApi):
         super().__init__(**opts)
 
         self._transport = get_transport(self.connection_config)
-        self._rpc_client = Client(HTTPTransport(http_version=HTTPVersion.HTTP2))
+        self._rpc_client = HTTPXConnectClient(self._transport)
         self._envd_api = httpx.AsyncClient(
             base_url=self.connection_config.get_sandbox_url(
                 self.sandbox_id, self.sandbox_domain
