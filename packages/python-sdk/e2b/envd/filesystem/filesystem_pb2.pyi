@@ -1,12 +1,15 @@
-import datetime
-
 from google.protobuf import timestamp_pb2 as _timestamp_pb2
 from google.protobuf.internal import containers as _containers
 from google.protobuf.internal import enum_type_wrapper as _enum_type_wrapper
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
-from collections.abc import Iterable as _Iterable, Mapping as _Mapping
-from typing import ClassVar as _ClassVar, Optional as _Optional, Union as _Union
+from typing import (
+    ClassVar as _ClassVar,
+    Iterable as _Iterable,
+    Mapping as _Mapping,
+    Optional as _Optional,
+    Union as _Union,
+)
 
 DESCRIPTOR: _descriptor.FileDescriptor
 
@@ -36,7 +39,7 @@ EVENT_TYPE_RENAME: EventType
 EVENT_TYPE_CHMOD: EventType
 
 class MoveRequest(_message.Message):
-    __slots__ = ()
+    __slots__ = ("source", "destination")
     SOURCE_FIELD_NUMBER: _ClassVar[int]
     DESTINATION_FIELD_NUMBER: _ClassVar[int]
     source: str
@@ -46,25 +49,25 @@ class MoveRequest(_message.Message):
     ) -> None: ...
 
 class MoveResponse(_message.Message):
-    __slots__ = ()
+    __slots__ = ("entry",)
     ENTRY_FIELD_NUMBER: _ClassVar[int]
     entry: EntryInfo
     def __init__(self, entry: _Optional[_Union[EntryInfo, _Mapping]] = ...) -> None: ...
 
 class MakeDirRequest(_message.Message):
-    __slots__ = ()
+    __slots__ = ("path",)
     PATH_FIELD_NUMBER: _ClassVar[int]
     path: str
     def __init__(self, path: _Optional[str] = ...) -> None: ...
 
 class MakeDirResponse(_message.Message):
-    __slots__ = ()
+    __slots__ = ("entry",)
     ENTRY_FIELD_NUMBER: _ClassVar[int]
     entry: EntryInfo
     def __init__(self, entry: _Optional[_Union[EntryInfo, _Mapping]] = ...) -> None: ...
 
 class RemoveRequest(_message.Message):
-    __slots__ = ()
+    __slots__ = ("path",)
     PATH_FIELD_NUMBER: _ClassVar[int]
     path: str
     def __init__(self, path: _Optional[str] = ...) -> None: ...
@@ -74,19 +77,30 @@ class RemoveResponse(_message.Message):
     def __init__(self) -> None: ...
 
 class StatRequest(_message.Message):
-    __slots__ = ()
+    __slots__ = ("path",)
     PATH_FIELD_NUMBER: _ClassVar[int]
     path: str
     def __init__(self, path: _Optional[str] = ...) -> None: ...
 
 class StatResponse(_message.Message):
-    __slots__ = ()
+    __slots__ = ("entry",)
     ENTRY_FIELD_NUMBER: _ClassVar[int]
     entry: EntryInfo
     def __init__(self, entry: _Optional[_Union[EntryInfo, _Mapping]] = ...) -> None: ...
 
 class EntryInfo(_message.Message):
-    __slots__ = ()
+    __slots__ = (
+        "name",
+        "type",
+        "path",
+        "size",
+        "mode",
+        "permissions",
+        "owner",
+        "group",
+        "modified_time",
+        "symlink_target",
+    )
     NAME_FIELD_NUMBER: _ClassVar[int]
     TYPE_FIELD_NUMBER: _ClassVar[int]
     PATH_FIELD_NUMBER: _ClassVar[int]
@@ -117,14 +131,12 @@ class EntryInfo(_message.Message):
         permissions: _Optional[str] = ...,
         owner: _Optional[str] = ...,
         group: _Optional[str] = ...,
-        modified_time: _Optional[
-            _Union[datetime.datetime, _timestamp_pb2.Timestamp, _Mapping]
-        ] = ...,
+        modified_time: _Optional[_Union[_timestamp_pb2.Timestamp, _Mapping]] = ...,
         symlink_target: _Optional[str] = ...,
     ) -> None: ...
 
 class ListDirRequest(_message.Message):
-    __slots__ = ()
+    __slots__ = ("path", "depth")
     PATH_FIELD_NUMBER: _ClassVar[int]
     DEPTH_FIELD_NUMBER: _ClassVar[int]
     path: str
@@ -134,7 +146,7 @@ class ListDirRequest(_message.Message):
     ) -> None: ...
 
 class ListDirResponse(_message.Message):
-    __slots__ = ()
+    __slots__ = ("entries",)
     ENTRIES_FIELD_NUMBER: _ClassVar[int]
     entries: _containers.RepeatedCompositeFieldContainer[EntryInfo]
     def __init__(
@@ -142,17 +154,15 @@ class ListDirResponse(_message.Message):
     ) -> None: ...
 
 class WatchDirRequest(_message.Message):
-    __slots__ = ()
+    __slots__ = ("path", "recursive")
     PATH_FIELD_NUMBER: _ClassVar[int]
     RECURSIVE_FIELD_NUMBER: _ClassVar[int]
     path: str
     recursive: bool
-    def __init__(
-        self, path: _Optional[str] = ..., recursive: _Optional[bool] = ...
-    ) -> None: ...
+    def __init__(self, path: _Optional[str] = ..., recursive: bool = ...) -> None: ...
 
 class FilesystemEvent(_message.Message):
-    __slots__ = ()
+    __slots__ = ("name", "type")
     NAME_FIELD_NUMBER: _ClassVar[int]
     TYPE_FIELD_NUMBER: _ClassVar[int]
     name: str
@@ -162,7 +172,7 @@ class FilesystemEvent(_message.Message):
     ) -> None: ...
 
 class WatchDirResponse(_message.Message):
-    __slots__ = ()
+    __slots__ = ("start", "filesystem", "keepalive")
     class StartEvent(_message.Message):
         __slots__ = ()
         def __init__(self) -> None: ...
@@ -185,29 +195,27 @@ class WatchDirResponse(_message.Message):
     ) -> None: ...
 
 class CreateWatcherRequest(_message.Message):
-    __slots__ = ()
+    __slots__ = ("path", "recursive")
     PATH_FIELD_NUMBER: _ClassVar[int]
     RECURSIVE_FIELD_NUMBER: _ClassVar[int]
     path: str
     recursive: bool
-    def __init__(
-        self, path: _Optional[str] = ..., recursive: _Optional[bool] = ...
-    ) -> None: ...
+    def __init__(self, path: _Optional[str] = ..., recursive: bool = ...) -> None: ...
 
 class CreateWatcherResponse(_message.Message):
-    __slots__ = ()
+    __slots__ = ("watcher_id",)
     WATCHER_ID_FIELD_NUMBER: _ClassVar[int]
     watcher_id: str
     def __init__(self, watcher_id: _Optional[str] = ...) -> None: ...
 
 class GetWatcherEventsRequest(_message.Message):
-    __slots__ = ()
+    __slots__ = ("watcher_id",)
     WATCHER_ID_FIELD_NUMBER: _ClassVar[int]
     watcher_id: str
     def __init__(self, watcher_id: _Optional[str] = ...) -> None: ...
 
 class GetWatcherEventsResponse(_message.Message):
-    __slots__ = ()
+    __slots__ = ("events",)
     EVENTS_FIELD_NUMBER: _ClassVar[int]
     events: _containers.RepeatedCompositeFieldContainer[FilesystemEvent]
     def __init__(
@@ -215,7 +223,7 @@ class GetWatcherEventsResponse(_message.Message):
     ) -> None: ...
 
 class RemoveWatcherRequest(_message.Message):
-    __slots__ = ()
+    __slots__ = ("watcher_id",)
     WATCHER_ID_FIELD_NUMBER: _ClassVar[int]
     watcher_id: str
     def __init__(self, watcher_id: _Optional[str] = ...) -> None: ...

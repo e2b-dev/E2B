@@ -2,9 +2,9 @@
 # For details, see https://buf.build/docs/configuration/v1/buf-gen-yaml
 version: v2
 plugins:
-  - remote: buf.build/protocolbuffers/python:v33.1
+  - remote: buf.build/protocolbuffers/python:v26.1
     out: ../../packages/python-sdk/e2b/envd
-  - remote: buf.build/protocolbuffers/pyi:v33.1
+  - remote: buf.build/protocolbuffers/pyi:v26.1
     out: ../../packages/python-sdk/e2b/envd
   - remote: buf.build/connectrpc/python:v0.10.0
     out: ../../packages/python-sdk/e2b/envd

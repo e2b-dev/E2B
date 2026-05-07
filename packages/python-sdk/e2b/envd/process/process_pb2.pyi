@@ -2,8 +2,13 @@ from google.protobuf.internal import containers as _containers
 from google.protobuf.internal import enum_type_wrapper as _enum_type_wrapper
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
-from collections.abc import Iterable as _Iterable, Mapping as _Mapping
-from typing import ClassVar as _ClassVar, Optional as _Optional, Union as _Union
+from typing import (
+    ClassVar as _ClassVar,
+    Iterable as _Iterable,
+    Mapping as _Mapping,
+    Optional as _Optional,
+    Union as _Union,
+)
 
 DESCRIPTOR: _descriptor.FileDescriptor
 
@@ -18,9 +23,9 @@ SIGNAL_SIGTERM: Signal
 SIGNAL_SIGKILL: Signal
 
 class PTY(_message.Message):
-    __slots__ = ()
+    __slots__ = ("size",)
     class Size(_message.Message):
-        __slots__ = ()
+        __slots__ = ("cols", "rows")
         COLS_FIELD_NUMBER: _ClassVar[int]
         ROWS_FIELD_NUMBER: _ClassVar[int]
         cols: int
@@ -34,9 +39,9 @@ class PTY(_message.Message):
     def __init__(self, size: _Optional[_Union[PTY.Size, _Mapping]] = ...) -> None: ...
 
 class ProcessConfig(_message.Message):
-    __slots__ = ()
+    __slots__ = ("cmd", "args", "envs", "cwd")
     class EnvsEntry(_message.Message):
-        __slots__ = ()
+        __slots__ = ("key", "value")
         KEY_FIELD_NUMBER: _ClassVar[int]
         VALUE_FIELD_NUMBER: _ClassVar[int]
         key: str
@@ -66,7 +71,7 @@ class ListRequest(_message.Message):
     def __init__(self) -> None: ...
 
 class ProcessInfo(_message.Message):
-    __slots__ = ()
+    __slots__ = ("config", "pid", "tag")
     CONFIG_FIELD_NUMBER: _ClassVar[int]
     PID_FIELD_NUMBER: _ClassVar[int]
     TAG_FIELD_NUMBER: _ClassVar[int]
@@ -81,7 +86,7 @@ class ProcessInfo(_message.Message):
     ) -> None: ...
 
 class ListResponse(_message.Message):
-    __slots__ = ()
+    __slots__ = ("processes",)
     PROCESSES_FIELD_NUMBER: _ClassVar[int]
     processes: _containers.RepeatedCompositeFieldContainer[ProcessInfo]
     def __init__(
@@ -89,7 +94,7 @@ class ListResponse(_message.Message):
     ) -> None: ...
 
 class StartRequest(_message.Message):
-    __slots__ = ()
+    __slots__ = ("process", "pty", "tag", "stdin")
     PROCESS_FIELD_NUMBER: _ClassVar[int]
     PTY_FIELD_NUMBER: _ClassVar[int]
     TAG_FIELD_NUMBER: _ClassVar[int]
@@ -103,11 +108,11 @@ class StartRequest(_message.Message):
         process: _Optional[_Union[ProcessConfig, _Mapping]] = ...,
         pty: _Optional[_Union[PTY, _Mapping]] = ...,
         tag: _Optional[str] = ...,
-        stdin: _Optional[bool] = ...,
+        stdin: bool = ...,
     ) -> None: ...
 
 class UpdateRequest(_message.Message):
-    __slots__ = ()
+    __slots__ = ("process", "pty")
     PROCESS_FIELD_NUMBER: _ClassVar[int]
     PTY_FIELD_NUMBER: _ClassVar[int]
     process: ProcessSelector
@@ -123,15 +128,15 @@ class UpdateResponse(_message.Message):
     def __init__(self) -> None: ...
 
 class ProcessEvent(_message.Message):
-    __slots__ = ()
+    __slots__ = ("start", "data", "end", "keepalive")
     class StartEvent(_message.Message):
-        __slots__ = ()
+        __slots__ = ("pid",)
         PID_FIELD_NUMBER: _ClassVar[int]
         pid: int
         def __init__(self, pid: _Optional[int] = ...) -> None: ...
 
     class DataEvent(_message.Message):
-        __slots__ = ()
+        __slots__ = ("stdout", "stderr", "pty")
         STDOUT_FIELD_NUMBER: _ClassVar[int]
         STDERR_FIELD_NUMBER: _ClassVar[int]
         PTY_FIELD_NUMBER: _ClassVar[int]
@@ -146,7 +151,7 @@ class ProcessEvent(_message.Message):
         ) -> None: ...
 
     class EndEvent(_message.Message):
-        __slots__ = ()
+        __slots__ = ("exit_code", "exited", "status", "error")
         EXIT_CODE_FIELD_NUMBER: _ClassVar[int]
         EXITED_FIELD_NUMBER: _ClassVar[int]
         STATUS_FIELD_NUMBER: _ClassVar[int]
@@ -158,7 +163,7 @@ class ProcessEvent(_message.Message):
         def __init__(
             self,
             exit_code: _Optional[int] = ...,
-            exited: _Optional[bool] = ...,
+            exited: bool = ...,
             status: _Optional[str] = ...,
             error: _Optional[str] = ...,
         ) -> None: ...
@@ -184,7 +189,7 @@ class ProcessEvent(_message.Message):
     ) -> None: ...
 
 class StartResponse(_message.Message):
-    __slots__ = ()
+    __slots__ = ("event",)
     EVENT_FIELD_NUMBER: _ClassVar[int]
     event: ProcessEvent
     def __init__(
@@ -192,7 +197,7 @@ class StartResponse(_message.Message):
     ) -> None: ...
 
 class ConnectResponse(_message.Message):
-    __slots__ = ()
+    __slots__ = ("event",)
     EVENT_FIELD_NUMBER: _ClassVar[int]
     event: ProcessEvent
     def __init__(
@@ -200,7 +205,7 @@ class ConnectResponse(_message.Message):
     ) -> None: ...
 
 class SendInputRequest(_message.Message):
-    __slots__ = ()
+    __slots__ = ("process", "input")
     PROCESS_FIELD_NUMBER: _ClassVar[int]
     INPUT_FIELD_NUMBER: _ClassVar[int]
     process: ProcessSelector
@@ -216,7 +221,7 @@ class SendInputResponse(_message.Message):
     def __init__(self) -> None: ...
 
 class ProcessInput(_message.Message):
-    __slots__ = ()
+    __slots__ = ("stdin", "pty")
     STDIN_FIELD_NUMBER: _ClassVar[int]
     PTY_FIELD_NUMBER: _ClassVar[int]
     stdin: bytes
@@ -226,9 +231,9 @@ class ProcessInput(_message.Message):
     ) -> None: ...
 
 class StreamInputRequest(_message.Message):
-    __slots__ = ()
+    __slots__ = ("start", "data", "keepalive")
     class StartEvent(_message.Message):
-        __slots__ = ()
+        __slots__ = ("process",)
         PROCESS_FIELD_NUMBER: _ClassVar[int]
         process: ProcessSelector
         def __init__(
@@ -236,7 +241,7 @@ class StreamInputRequest(_message.Message):
         ) -> None: ...
 
     class DataEvent(_message.Message):
-        __slots__ = ()
+        __slots__ = ("input",)
         INPUT_FIELD_NUMBER: _ClassVar[int]
         input: ProcessInput
         def __init__(
@@ -265,7 +270,7 @@ class StreamInputResponse(_message.Message):
     def __init__(self) -> None: ...
 
 class SendSignalRequest(_message.Message):
-    __slots__ = ()
+    __slots__ = ("process", "signal")
     PROCESS_FIELD_NUMBER: _ClassVar[int]
     SIGNAL_FIELD_NUMBER: _ClassVar[int]
     process: ProcessSelector
@@ -281,7 +286,7 @@ class SendSignalResponse(_message.Message):
     def __init__(self) -> None: ...
 
 class CloseStdinRequest(_message.Message):
-    __slots__ = ()
+    __slots__ = ("process",)
     PROCESS_FIELD_NUMBER: _ClassVar[int]
     process: ProcessSelector
     def __init__(
@@ -293,7 +298,7 @@ class CloseStdinResponse(_message.Message):
     def __init__(self) -> None: ...
 
 class ConnectRequest(_message.Message):
-    __slots__ = ()
+    __slots__ = ("process",)
     PROCESS_FIELD_NUMBER: _ClassVar[int]
     process: ProcessSelector
     def __init__(
@@ -301,7 +306,7 @@ class ConnectRequest(_message.Message):
     ) -> None: ...
 
 class ProcessSelector(_message.Message):
-    __slots__ = ()
+    __slots__ = ("pid", "tag")
     PID_FIELD_NUMBER: _ClassVar[int]
     TAG_FIELD_NUMBER: _ClassVar[int]
     pid: int
