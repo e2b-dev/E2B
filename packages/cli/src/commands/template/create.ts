@@ -1,7 +1,7 @@
 import * as boxen from 'boxen'
 import * as commander from 'commander'
 import { defaultBuildLogger, Template, TemplateClass } from 'e2b'
-import { connectionConfig, ensureAccessToken, ensureAPIKey } from 'src/api'
+import { connectionConfig, ensureAPIKeyOrAccessToken } from 'src/api'
 import {
   defaultDockerfileName,
   fallbackDockerfileName,
@@ -68,8 +68,7 @@ export const createCommand = new commander.Command('create')
       }
     ) => {
       try {
-        // Ensure we have access token
-        ensureAccessToken()
+        const credentials = ensureAPIKeyOrAccessToken()
         process.stdout.write('\n')
 
         // Validate template name
@@ -131,8 +130,6 @@ export const createCommand = new commander.Command('create')
 
         console.log('\nBuilding sandbox template...\n')
 
-        // Prepare API credentials for SDK
-        const apiKey = ensureAPIKey()
         const domain = connectionConfig.domain
 
         // Build the template using SDK
@@ -142,7 +139,8 @@ export const createCommand = new commander.Command('create')
             cpuCount: cpuCount,
             memoryMB: memoryMB,
             skipCache: opts.noCache,
-            apiKey: apiKey,
+            apiKey: credentials.apiKey,
+            accessToken: credentials.accessToken,
             domain: domain,
             onBuildLogs: defaultBuildLogger(),
           })

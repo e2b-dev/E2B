@@ -8,7 +8,7 @@ import * as path from 'path'
 import {
   client,
   connectionConfig,
-  ensureAccessToken,
+  ensureAPIKeyOrAccessToken,
   resolveTeamId,
 } from 'src/api'
 import { configName, getConfigPath, loadConfig, saveConfig } from 'src/config'
@@ -246,7 +246,8 @@ Migration guide: ${asPrimary('https://e2b.dev/docs/template/migration-v2')}`
           })
         }
 
-        const accessToken = ensureAccessToken()
+        const credentials = ensureAPIKeyOrAccessToken()
+        const dockerAuthToken = credentials.accessToken ?? credentials.apiKey!
         process.stdout.write('\n')
 
         const newName = opts.name?.trim()
@@ -377,7 +378,7 @@ Migration guide: ${asPrimary('https://e2b.dev/docs/template/migration-v2')}`
         if (imageUriMask == undefined) {
           try {
             child_process.execSync(
-              `echo "${accessToken}" | docker login docker.${connectionConfig.domain} -u _e2b_access_token --password-stdin`,
+              `echo "${dockerAuthToken}" | docker login docker.${connectionConfig.domain} -u _e2b_access_token --password-stdin`,
               {
                 stdio: 'inherit',
                 cwd: root,
@@ -449,7 +450,7 @@ Migration guide: ${asPrimary('https://e2b.dev/docs/template/migration-v2')}`
           await buildWithProxy(
             userConfig,
             connectionConfig,
-            accessToken,
+            dockerAuthToken,
             template,
             root
           )

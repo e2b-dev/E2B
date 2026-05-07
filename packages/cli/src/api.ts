@@ -8,6 +8,26 @@ export let apiKey = process.env.E2B_API_KEY
 export let accessToken = process.env.E2B_ACCESS_TOKEN
 export const teamId = process.env.E2B_TEAM_ID
 
+function resolveAPIKey() {
+  // If apiKey is not already set (either from env var or from user config), try to get it from config file
+  if (!apiKey) {
+    const userConfig = getUserConfig()
+    apiKey = userConfig?.teamApiKey
+  }
+
+  return apiKey
+}
+
+function resolveAccessToken() {
+  // If accessToken is not already set (either from env var or from user config), try to get it from config file
+  if (!accessToken) {
+    const userConfig = getUserConfig()
+    accessToken = userConfig?.accessToken
+  }
+
+  return accessToken
+}
+
 const authErrorBox = (keyName: string) => {
   let link
   let msg
@@ -45,17 +65,13 @@ Visit ${asPrimary(link)} to get the ${msg}.`,
 }
 
 export function ensureAPIKey() {
-  // If apiKey is not already set (either from env var or from user config), try to get it from config file
-  if (!apiKey) {
-    const userConfig = getUserConfig()
-    apiKey = userConfig?.teamApiKey
-  }
+  const resolvedApiKey = resolveAPIKey()
 
-  if (!apiKey) {
+  if (!resolvedApiKey) {
     console.error(authErrorBox('E2B_API_KEY'))
     process.exit(1)
   } else {
-    return apiKey
+    return resolvedApiKey
   }
 }
 
@@ -69,18 +85,26 @@ export function ensureUserConfig(): UserConfig {
 }
 
 export function ensureAccessToken() {
-  // If accessToken is not already set (either from env var or from user config), try to get it from config file
-  if (!accessToken) {
-    const userConfig = getUserConfig()
-    accessToken = userConfig?.accessToken
-  }
+  const resolvedAccessToken = resolveAccessToken()
 
-  if (!accessToken) {
+  if (!resolvedAccessToken) {
     console.error(authErrorBox('E2B_ACCESS_TOKEN'))
     process.exit(1)
   } else {
-    return accessToken
+    return resolvedAccessToken
   }
+}
+
+export function ensureAPIKeyOrAccessToken() {
+  const resolvedApiKey = resolveAPIKey()
+  const resolvedAccessToken = resolveAccessToken()
+
+  if (resolvedApiKey || resolvedAccessToken) {
+    return { apiKey: resolvedApiKey, accessToken: resolvedAccessToken }
+  }
+
+  console.error(authErrorBox('E2B_API_KEY'))
+  process.exit(1)
 }
 
 /**

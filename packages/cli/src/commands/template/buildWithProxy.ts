@@ -12,7 +12,7 @@ const PORT = 49984
 export async function buildWithProxy(
   userConfig: UserConfig | null,
   connectionConfig: e2b.ConnectionConfig,
-  accessToken: string,
+  dockerAuthToken: string,
   template: { templateID: string; buildID: string },
   root: string
 ) {
@@ -39,7 +39,7 @@ export async function buildWithProxy(
   })
 
   const accessTokenBase64Encoded = Buffer.from(
-    `_e2b_access_token:${accessToken}`
+    `_e2b_access_token:${dockerAuthToken}`
   ).toString('base64')
 
   const proxyServer = await proxy(
