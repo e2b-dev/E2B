@@ -22,3 +22,11 @@ def test_unknown_enoent_maps_to_file_not_found():
     mapped = _handle_filesystem_rpc_exception(err)
 
     assert isinstance(mapped, FileNotFoundException)
+
+
+def test_not_found_maps_to_file_not_found():
+    err = ConnectError(Code.NOT_FOUND, "file not found")
+
+    mapped = _handle_filesystem_rpc_exception(err)
+
+    assert isinstance(mapped, FileNotFoundException)

@@ -59,13 +59,16 @@ _ENOENT_MESSAGE = "no such file or directory"
 
 
 def _handle_filesystem_rpc_exception(e: Exception) -> Exception:
-    if (
-        isinstance(e, ConnectError)
-        and e.code == Code.UNKNOWN
-        # TODO: Drop this once envd maps filesystem ENOENT to NOT_FOUND.
-        and _ENOENT_MESSAGE in e.message.lower()
-    ):
-        return FileNotFoundException(e.message)
+    if isinstance(e, ConnectError):
+        if e.code == Code.NOT_FOUND:
+            return FileNotFoundException(e.message)
+
+        if (
+            e.code == Code.UNKNOWN
+            # Older envd versions returned ENOENT as UNKNOWN instead of NOT_FOUND.
+            and _ENOENT_MESSAGE in e.message.lower()
+        ):
+            return FileNotFoundException(e.message)
 
     return handle_rpc_exception(e, _FILESYSTEM_RPC_ERROR_MAP)
 
