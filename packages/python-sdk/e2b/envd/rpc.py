@@ -3,7 +3,8 @@ import base64
 from typing import Callable, Optional
 from packaging.version import Version
 from connectrpc.code import Code
-from connectrpc.codec import proto_json_codec
+from google.protobuf.json_format import MessageToJson, Parse
+from google.protobuf.message import Message
 from connectrpc.errors import ConnectError
 from connectrpc.request import RequestContext
 
@@ -58,11 +59,39 @@ def handle_rpc_exception(
         return e
 
 
+class ProtoJSONCodec:
+    def name(self) -> str:
+        return "json"
+
+    def encode(self, message: Message) -> bytes:
+        return MessageToJson(message).encode()
+
+    def decode(self, data: bytes | bytearray, message: Message):
+        Parse(data.decode(), message, ignore_unknown_fields=True)
+        return message
+
+
 def request_timeout_ms(timeout: Optional[float]) -> Optional[int]:
-    if not timeout:
+    if timeout is None:
         return None
 
     return int(timeout * 1000)
+
+
+def stream_timeout_ms(
+    timeout: Optional[float],
+    request_timeout: Optional[float],
+) -> Optional[int]:
+    if timeout == 0:
+        return request_timeout_ms(timeout)
+
+    if request_timeout is None or request_timeout == 0:
+        return request_timeout_ms(timeout)
+
+    if timeout is None:
+        return request_timeout_ms(request_timeout)
+
+    return request_timeout_ms(min(timeout, request_timeout))
 
 
 class SandboxHeadersInterceptor:
@@ -94,7 +123,7 @@ class SandboxHeadersInterceptor:
 
 def connect_client_kwargs(headers: dict[str, str], http_client):
     return {
-        "codec": proto_json_codec(),
+        "codec": ProtoJSONCodec(),
         "accept_compression": (),
         "send_compression": None,
         "interceptors": (SandboxHeadersInterceptor(headers),),

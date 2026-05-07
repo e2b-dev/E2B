@@ -23,6 +23,7 @@ from e2b.envd.rpc import (
     connect_client_kwargs,
     handle_rpc_exception,
     request_timeout_ms,
+    stream_timeout_ms,
 )
 from e2b.envd.versions import (
     ENVD_DEFAULT_USER,
@@ -629,7 +630,10 @@ class Filesystem:
 
         events = self._rpc.watch_dir(
             filesystem_pb2.WatchDirRequest(path=path, recursive=recursive),
-            timeout_ms=request_timeout_ms(timeout),
+            timeout_ms=stream_timeout_ms(
+                timeout,
+                self._connection_config.get_request_timeout(request_timeout),
+            ),
             headers={
                 **authentication_header(self._envd_version, user),
                 KEEPALIVE_PING_HEADER: str(KEEPALIVE_PING_INTERVAL_SEC),

@@ -17,6 +17,7 @@ from e2b.envd.rpc import (
     connect_client_kwargs,
     handle_rpc_exception,
     request_timeout_ms,
+    stream_timeout_ms,
 )
 from e2b.sandbox.commands.command_handle import PtySize
 from e2b.sandbox_sync.commands.command_handle import CommandHandle
@@ -140,7 +141,10 @@ class Pty:
                 **authentication_header(self._envd_version, user),
                 KEEPALIVE_PING_HEADER: str(KEEPALIVE_PING_INTERVAL_SEC),
             },
-            timeout_ms=request_timeout_ms(timeout),
+            timeout_ms=stream_timeout_ms(
+                timeout,
+                self._connection_config.get_request_timeout(request_timeout),
+            ),
         )
 
         try:
@@ -181,7 +185,10 @@ class Pty:
             headers={
                 KEEPALIVE_PING_HEADER: str(KEEPALIVE_PING_INTERVAL_SEC),
             },
-            timeout_ms=request_timeout_ms(timeout),
+            timeout_ms=stream_timeout_ms(
+                timeout,
+                self._connection_config.get_request_timeout(request_timeout),
+            ),
         )
 
         try:
