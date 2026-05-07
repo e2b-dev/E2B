@@ -135,6 +135,31 @@ def test_sync_httpx_connect_client_uses_httpx_transport():
     assert requests[0].content == b"payload"
 
 
+def test_sync_httpx_connect_client_retries_remote_protocol_errors():
+    attempts: list[bytes] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        attempts.append(request.content)
+        if len(attempts) <= 3:
+            raise httpx.RemoteProtocolError("connection reset")
+
+        return httpx.Response(
+            200,
+            headers={"content-type": "application/json"},
+            content=b'{"ok":true}',
+        )
+
+    client = HTTPXConnectClientSync(httpx.MockTransport(handler))
+
+    response = client.post(
+        "https://sandbox.test/process.Process/List",
+        content=b"payload",
+    )
+
+    assert response.status == 200
+    assert attempts == [b"payload", b"payload", b"payload", b"payload"]
+
+
 def test_sync_httpx_connect_client_streams_response():
     def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(
@@ -154,6 +179,35 @@ def test_sync_httpx_connect_client_streams_response():
     ) as response:
         assert response.status == 200
         assert list(response.content) == [b"one", b"two"]
+
+
+def test_sync_httpx_connect_client_retries_remote_protocol_stream_open():
+    attempts: list[bytes] = []
+
+    def content():
+        yield b"payload"
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        attempts.append(request.content)
+        if len(attempts) <= 3:
+            raise httpx.RemoteProtocolError("connection reset")
+
+        return httpx.Response(
+            200,
+            headers={"content-type": "application/connect+json"},
+            content=[b"one"],
+        )
+
+    client = HTTPXConnectClientSync(httpx.MockTransport(handler))
+
+    with client.stream(
+        "POST",
+        "https://sandbox.test/process.Process/Start",
+        content=content(),
+    ) as response:
+        assert list(response.content) == [b"one"]
+
+    assert attempts == [b"payload", b"payload", b"payload", b"payload"]
 
 
 def test_sync_httpx_connect_client_applies_stream_request_timeout():
@@ -315,6 +369,32 @@ async def test_async_httpx_connect_client_uses_httpx_transport():
 
 
 @pytest.mark.asyncio
+async def test_async_httpx_connect_client_retries_remote_protocol_errors():
+    attempts: list[bytes] = []
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        attempts.append(await request.aread())
+        if len(attempts) <= 3:
+            raise httpx.RemoteProtocolError("connection reset")
+
+        return httpx.Response(
+            200,
+            headers={"content-type": "application/json"},
+            stream=AsyncBytes([b'{"ok":true}']),
+        )
+
+    client = HTTPXConnectClient(httpx.MockTransport(handler))
+
+    response = await client.post(
+        "https://sandbox.test/process.Process/List",
+        content=b"payload",
+    )
+
+    assert response.status == 200
+    assert attempts == [b"payload", b"payload", b"payload", b"payload"]
+
+
+@pytest.mark.asyncio
 async def test_async_httpx_connect_client_streams_response():
     async def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(
@@ -340,6 +420,39 @@ async def test_async_httpx_connect_client_streams_response():
 
         assert response.status == 200
         assert chunks == [b"one", b"two"]
+
+
+@pytest.mark.asyncio
+async def test_async_httpx_connect_client_retries_remote_protocol_stream_open():
+    attempts: list[bytes] = []
+
+    async def content():
+        yield b"payload"
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        attempts.append(await request.aread())
+        if len(attempts) <= 3:
+            raise httpx.RemoteProtocolError("connection reset")
+
+        return httpx.Response(
+            200,
+            headers={"content-type": "application/connect+json"},
+            stream=AsyncBytes([b"one"]),
+        )
+
+    client = HTTPXConnectClient(httpx.MockTransport(handler))
+
+    async with client.stream(
+        "POST",
+        "https://sandbox.test/process.Process/Start",
+        content=content(),
+    ) as response:
+        chunks = []
+        async for chunk in response.content:
+            chunks.append(chunk)
+
+    assert chunks == [b"one"]
+    assert attempts == [b"payload", b"payload", b"payload", b"payload"]
 
 
 @pytest.mark.asyncio
