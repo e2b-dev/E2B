@@ -4,6 +4,8 @@ from dataclasses import dataclass
 
 import httpx
 import pytest
+from connectrpc.code import Code
+from connectrpc.errors import ConnectError
 from pyqwest import Headers
 
 from e2b.envd.pyqwest_httpx_adapter import AsyncPyqwestHTTPXAdapter, PyqwestHTTPXAdapter
@@ -23,6 +25,20 @@ class AsyncBytes(httpx.AsyncByteStream):
     async def __aiter__(self):
         for chunk in self._chunks:
             yield chunk
+
+
+class SyncTimeoutBytes(httpx.SyncByteStream):
+    def __iter__(self):
+        raise httpx.ReadTimeout("read timed out")
+
+
+class AsyncTimeoutBytes(httpx.AsyncByteStream):
+    def __aiter__(self):
+        async def iterator():
+            raise httpx.ReadTimeout("read timed out")
+            yield b""
+
+        return iterator()
 
 
 @dataclass
@@ -135,6 +151,29 @@ def test_sync_pyqwest_httpx_adapter_uses_httpx_transport():
     assert requests[0].content == b"payload"
 
 
+def test_sync_pyqwest_httpx_adapter_disables_httpx_default_timeout():
+    requests: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        return httpx.Response(
+            200,
+            headers={"content-type": "application/json"},
+            content=b'{"ok":true}',
+        )
+
+    client = PyqwestHTTPXAdapter(httpx.MockTransport(handler))
+
+    client.post("https://sandbox.test/process.Process/List", content=b"payload")
+
+    assert requests[0].extensions["timeout"] == {
+        "connect": None,
+        "read": None,
+        "write": None,
+        "pool": None,
+    }
+
+
 def test_sync_pyqwest_httpx_adapter_retries_remote_protocol_errors():
     attempts: list[bytes] = []
 
@@ -160,6 +199,18 @@ def test_sync_pyqwest_httpx_adapter_retries_remote_protocol_errors():
     assert attempts == [b"payload", b"payload", b"payload", b"payload"]
 
 
+def test_sync_pyqwest_httpx_adapter_maps_request_timeout_errors():
+    def handler(request: httpx.Request) -> httpx.Response:
+        raise httpx.ConnectTimeout("connect timed out")
+
+    client = PyqwestHTTPXAdapter(httpx.MockTransport(handler))
+
+    with pytest.raises(ConnectError) as exc_info:
+        client.post("https://sandbox.test/process.Process/List", content=b"payload")
+
+    assert exc_info.value.code == Code.CANCELED
+
+
 def test_sync_pyqwest_httpx_adapter_streams_response():
     def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(
@@ -181,7 +232,7 @@ def test_sync_pyqwest_httpx_adapter_streams_response():
         assert list(response.content) == [b"one", b"two"]
 
 
-def test_sync_pyqwest_httpx_adapter_retries_remote_protocol_stream_open():
+def test_sync_pyqwest_httpx_adapter_does_not_retry_stream_open_errors():
     attempts: list[bytes] = []
 
     def content():
@@ -189,13 +240,27 @@ def test_sync_pyqwest_httpx_adapter_retries_remote_protocol_stream_open():
 
     def handler(request: httpx.Request) -> httpx.Response:
         attempts.append(request.content)
-        if len(attempts) <= 3:
-            raise httpx.RemoteProtocolError("connection reset")
+        raise httpx.RemoteProtocolError("connection reset")
 
+    client = PyqwestHTTPXAdapter(httpx.MockTransport(handler))
+
+    with pytest.raises(httpx.RemoteProtocolError):
+        with client.stream(
+            "POST",
+            "https://sandbox.test/process.Process/Start",
+            content=content(),
+        ) as response:
+            list(response.content)
+
+    assert attempts == [b"payload"]
+
+
+def test_sync_pyqwest_httpx_adapter_maps_stream_read_timeout_errors():
+    def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(
             200,
             headers={"content-type": "application/connect+json"},
-            content=[b"one"],
+            stream=SyncTimeoutBytes(),
         )
 
     client = PyqwestHTTPXAdapter(httpx.MockTransport(handler))
@@ -203,11 +268,13 @@ def test_sync_pyqwest_httpx_adapter_retries_remote_protocol_stream_open():
     with client.stream(
         "POST",
         "https://sandbox.test/process.Process/Start",
-        content=content(),
+        content=[b"payload"],
+        timeout=60,
     ) as response:
-        assert list(response.content) == [b"one"]
+        with pytest.raises(ConnectError) as exc_info:
+            list(response.content)
 
-    assert attempts == [b"payload", b"payload", b"payload", b"payload"]
+    assert exc_info.value.code == Code.DEADLINE_EXCEEDED
 
 
 def test_sync_pyqwest_httpx_adapter_applies_stream_request_timeout():
@@ -270,10 +337,10 @@ def test_sync_pyqwest_httpx_adapter_ignores_unlimited_stream_request_timeout():
 
     assert STREAM_REQUEST_TIMEOUT_HEADER not in requests[0].headers
     assert requests[0].extensions["timeout"] == {
-        "connect": 60,
+        "connect": None,
         "read": 60,
-        "write": 60,
-        "pool": 60,
+        "write": None,
+        "pool": None,
     }
 
 
@@ -342,6 +409,44 @@ def test_sync_generated_stream_request_shape():
     assert b'"cmd": "/bin/bash"' in request.content
 
 
+def test_sync_generated_stream_with_unlimited_request_timeout_shape():
+    requests: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        return httpx.Response(
+            200,
+            headers={"content-type": "application/connect+json"},
+            content=b"{}",
+        )
+
+    client = process_connect.ProcessClientSync(
+        "https://sandbox.test",
+        **connect_client_kwargs(
+            {"x-sandbox": "1"},
+            PyqwestHTTPXAdapter(httpx.MockTransport(handler)),
+        ),
+    )
+    events = client.start(
+        process_pb2.StartRequest(
+            process=process_pb2.ProcessConfig(cmd="/bin/bash"),
+        ),
+        headers=stream_request_headers({"E2B-Keepalive-Ping": "15"}, None),
+        timeout_ms=stream_timeout_ms(60),
+    )
+
+    with pytest.raises(StopIteration):
+        next(events)
+
+    request = requests[0]
+    assert request.headers["connect-timeout-ms"] == "60000"
+    assert STREAM_REQUEST_TIMEOUT_HEADER not in request.headers
+    assert request.extensions["timeout"]["connect"] is None
+    assert 0 < request.extensions["timeout"]["read"] <= 60
+    assert request.extensions["timeout"]["write"] is None
+    assert request.extensions["timeout"]["pool"] is None
+
+
 @pytest.mark.asyncio
 async def test_async_pyqwest_httpx_adapter_uses_httpx_transport():
     requests: list[httpx.Request] = []
@@ -369,6 +474,30 @@ async def test_async_pyqwest_httpx_adapter_uses_httpx_transport():
 
 
 @pytest.mark.asyncio
+async def test_async_pyqwest_httpx_adapter_disables_httpx_default_timeout():
+    requests: list[httpx.Request] = []
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        return httpx.Response(
+            200,
+            headers={"content-type": "application/json"},
+            stream=AsyncBytes([b'{"ok":true}']),
+        )
+
+    client = AsyncPyqwestHTTPXAdapter(httpx.MockTransport(handler))
+
+    await client.post("https://sandbox.test/process.Process/List", content=b"payload")
+
+    assert requests[0].extensions["timeout"] == {
+        "connect": None,
+        "read": None,
+        "write": None,
+        "pool": None,
+    }
+
+
+@pytest.mark.asyncio
 async def test_async_pyqwest_httpx_adapter_retries_remote_protocol_errors():
     attempts: list[bytes] = []
 
@@ -392,6 +521,21 @@ async def test_async_pyqwest_httpx_adapter_retries_remote_protocol_errors():
 
     assert response.status == 200
     assert attempts == [b"payload", b"payload", b"payload", b"payload"]
+
+
+@pytest.mark.asyncio
+async def test_async_pyqwest_httpx_adapter_maps_request_timeout_errors():
+    async def handler(request: httpx.Request) -> httpx.Response:
+        raise httpx.ConnectTimeout("connect timed out")
+
+    client = AsyncPyqwestHTTPXAdapter(httpx.MockTransport(handler))
+
+    with pytest.raises(ConnectError) as exc_info:
+        await client.post(
+            "https://sandbox.test/process.Process/List", content=b"payload"
+        )
+
+    assert exc_info.value.code == Code.CANCELED
 
 
 @pytest.mark.asyncio
@@ -423,7 +567,7 @@ async def test_async_pyqwest_httpx_adapter_streams_response():
 
 
 @pytest.mark.asyncio
-async def test_async_pyqwest_httpx_adapter_retries_remote_protocol_stream_open():
+async def test_async_pyqwest_httpx_adapter_does_not_retry_stream_open_errors():
     attempts: list[bytes] = []
 
     async def content():
@@ -431,14 +575,33 @@ async def test_async_pyqwest_httpx_adapter_retries_remote_protocol_stream_open()
 
     async def handler(request: httpx.Request) -> httpx.Response:
         attempts.append(await request.aread())
-        if len(attempts) <= 3:
-            raise httpx.RemoteProtocolError("connection reset")
+        raise httpx.RemoteProtocolError("connection reset")
 
+    client = AsyncPyqwestHTTPXAdapter(httpx.MockTransport(handler))
+
+    with pytest.raises(httpx.RemoteProtocolError):
+        async with client.stream(
+            "POST",
+            "https://sandbox.test/process.Process/Start",
+            content=content(),
+        ) as response:
+            async for _ in response.content:
+                pass
+
+    assert attempts == [b"payload"]
+
+
+@pytest.mark.asyncio
+async def test_async_pyqwest_httpx_adapter_maps_stream_read_timeout_errors():
+    async def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(
             200,
             headers={"content-type": "application/connect+json"},
-            stream=AsyncBytes([b"one"]),
+            stream=AsyncTimeoutBytes(),
         )
+
+    async def content():
+        yield b"payload"
 
     client = AsyncPyqwestHTTPXAdapter(httpx.MockTransport(handler))
 
@@ -446,13 +609,13 @@ async def test_async_pyqwest_httpx_adapter_retries_remote_protocol_stream_open()
         "POST",
         "https://sandbox.test/process.Process/Start",
         content=content(),
+        timeout=60,
     ) as response:
-        chunks = []
-        async for chunk in response.content:
-            chunks.append(chunk)
+        with pytest.raises(ConnectError) as exc_info:
+            async for _ in response.content:
+                pass
 
-    assert chunks == [b"one"]
-    assert attempts == [b"payload", b"payload", b"payload", b"payload"]
+    assert exc_info.value.code == Code.DEADLINE_EXCEEDED
 
 
 @pytest.mark.asyncio

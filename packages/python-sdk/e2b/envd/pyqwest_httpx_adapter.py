@@ -2,6 +2,8 @@ from contextlib import asynccontextmanager, contextmanager
 from typing import Any, AsyncIterable, AsyncIterator, Iterable, Iterator, Mapping
 
 import httpx
+from connectrpc.code import Code
+from connectrpc.errors import ConnectError
 from pyqwest import FullResponse
 from pyqwest import Headers as HTTPHeaders
 
@@ -47,6 +49,30 @@ def _timeout(timeout: float | None, request_timeout: float | None) -> Any:
         write=request_timeout,
         pool=request_timeout,
     )
+
+
+def _stream_timeout(timeout: float | None, request_timeout: float | None) -> Any:
+    if request_timeout is None or request_timeout == 0:
+        return httpx.Timeout(
+            timeout=None,
+            connect=None,
+            read=timeout,
+            write=None,
+            pool=None,
+        )
+
+    return _timeout(timeout, request_timeout)
+
+
+def _request_timeout_error(e: httpx.TimeoutException) -> ConnectError:
+    return ConnectError(Code.CANCELED, str(e) or "Request timed out")
+
+
+def _stream_timeout_error(e: httpx.TimeoutException) -> ConnectError:
+    if isinstance(e, httpx.ReadTimeout):
+        return ConnectError(Code.DEADLINE_EXCEEDED, str(e) or "Stream timed out")
+
+    return _request_timeout_error(e)
 
 
 def _retry_remote_protocol(call):
@@ -95,7 +121,7 @@ class _SyncStreamResponse:
         self.status = response.status_code
         self.headers = _headers(response.headers)
         self.trailers = HTTPHeaders()
-        self.content = response.iter_bytes()
+        self.content = _iter_stream_bytes(response)
 
 
 class _AsyncStreamResponse:
@@ -103,58 +129,45 @@ class _AsyncStreamResponse:
         self.status = response.status_code
         self.headers = _headers(response.headers)
         self.trailers = HTTPHeaders()
-        self.content = response.aiter_bytes()
+        self.content = _aiter_stream_bytes(response)
+
+
+def _iter_stream_bytes(response: httpx.Response):
+    try:
+        yield from response.iter_bytes()
+    except httpx.TimeoutException as e:
+        raise _stream_timeout_error(e) from e
+
+
+async def _aiter_stream_bytes(response: httpx.Response):
+    try:
+        async for chunk in response.aiter_bytes():
+            yield chunk
+    except httpx.TimeoutException as e:
+        raise _stream_timeout_error(e) from e
 
 
 @contextmanager
-def _open_stream_with_retries(open_stream):
-    stream = None
-    response = None
-    last_error = None
-    for _ in range(_REMOTE_PROTOCOL_RETRIES + 1):
-        stream = open_stream()
-        try:
-            response = stream.__enter__()
-            break
-        except httpx.RemoteProtocolError as e:
-            last_error = e
-            stream = None
-    else:
-        assert last_error is not None
-        raise last_error
-
+def _open_stream(open_stream):
     try:
-        yield response
-    finally:
-        stream.__exit__(None, None, None)
+        with open_stream() as response:
+            yield response
+    except httpx.TimeoutException as e:
+        raise _request_timeout_error(e) from e
 
 
 @asynccontextmanager
-async def _aopen_stream_with_retries(open_stream):
-    stream = None
-    response = None
-    last_error = None
-    for _ in range(_REMOTE_PROTOCOL_RETRIES + 1):
-        stream = open_stream()
-        try:
-            response = await stream.__aenter__()
-            break
-        except httpx.RemoteProtocolError as e:
-            last_error = e
-            stream = None
-    else:
-        assert last_error is not None
-        raise last_error
-
+async def _aopen_stream(open_stream):
     try:
-        yield response
-    finally:
-        await stream.__aexit__(None, None, None)
+        async with open_stream() as response:
+            yield response
+    except httpx.TimeoutException as e:
+        raise _request_timeout_error(e) from e
 
 
 class PyqwestHTTPXAdapter:
     def __init__(self, transport: httpx.BaseTransport) -> None:
-        self._client = httpx.Client(transport=transport)
+        self._client = httpx.Client(transport=transport, timeout=None)
 
     def get(
         self,
@@ -165,14 +178,18 @@ class PyqwestHTTPXAdapter:
         params: Mapping[str, str] | None = None,
     ) -> FullResponse:
         headers, request_timeout = _prepare_headers(headers)
-        response = _retry_remote_protocol(
-            lambda: self._client.get(
-                url,
-                headers=headers,
-                timeout=_timeout(timeout, request_timeout),
-                params=params,
+        try:
+            response = _retry_remote_protocol(
+                lambda: self._client.get(
+                    url,
+                    headers=headers,
+                    timeout=_timeout(timeout, request_timeout),
+                    params=params,
+                )
             )
-        )
+        except httpx.TimeoutException as e:
+            raise _request_timeout_error(e) from e
+
         return FullResponse(
             response.status_code,
             _headers(response.headers),
@@ -191,15 +208,19 @@ class PyqwestHTTPXAdapter:
     ) -> FullResponse:
         headers, request_timeout = _prepare_headers(headers)
         content = _sync_content(content)
-        response = _retry_remote_protocol(
-            lambda: self._client.post(
-                url,
-                headers=headers,
-                content=content,
-                timeout=_timeout(timeout, request_timeout),
-                params=params,
+        try:
+            response = _retry_remote_protocol(
+                lambda: self._client.post(
+                    url,
+                    headers=headers,
+                    content=content,
+                    timeout=_timeout(timeout, request_timeout),
+                    params=params,
+                )
             )
-        )
+        except httpx.TimeoutException as e:
+            raise _request_timeout_error(e) from e
+
         return FullResponse(
             response.status_code,
             _headers(response.headers),
@@ -227,17 +248,17 @@ class PyqwestHTTPXAdapter:
                 url,
                 headers=headers,
                 content=content,
-                timeout=_timeout(timeout, request_timeout),
+                timeout=_stream_timeout(timeout, request_timeout),
                 params=params,
             )
 
-        with _open_stream_with_retries(open_stream) as response:
+        with _open_stream(open_stream) as response:
             yield _SyncStreamResponse(response)
 
 
 class AsyncPyqwestHTTPXAdapter:
     def __init__(self, transport: httpx.AsyncBaseTransport) -> None:
-        self._client = httpx.AsyncClient(transport=transport)
+        self._client = httpx.AsyncClient(transport=transport, timeout=None)
 
     async def get(
         self,
@@ -248,14 +269,18 @@ class AsyncPyqwestHTTPXAdapter:
         params: Mapping[str, str] | None = None,
     ) -> FullResponse:
         headers, request_timeout = _prepare_headers(headers)
-        response = await _aretry_remote_protocol(
-            lambda: self._client.get(
-                url,
-                headers=headers,
-                timeout=_timeout(timeout, request_timeout),
-                params=params,
+        try:
+            response = await _aretry_remote_protocol(
+                lambda: self._client.get(
+                    url,
+                    headers=headers,
+                    timeout=_timeout(timeout, request_timeout),
+                    params=params,
+                )
             )
-        )
+        except httpx.TimeoutException as e:
+            raise _request_timeout_error(e) from e
+
         return FullResponse(
             response.status_code,
             _headers(response.headers),
@@ -274,15 +299,19 @@ class AsyncPyqwestHTTPXAdapter:
     ) -> FullResponse:
         headers, request_timeout = _prepare_headers(headers)
         content = await _async_content(content)
-        response = await _aretry_remote_protocol(
-            lambda: self._client.post(
-                url,
-                headers=headers,
-                content=content,
-                timeout=_timeout(timeout, request_timeout),
-                params=params,
+        try:
+            response = await _aretry_remote_protocol(
+                lambda: self._client.post(
+                    url,
+                    headers=headers,
+                    content=content,
+                    timeout=_timeout(timeout, request_timeout),
+                    params=params,
+                )
             )
-        )
+        except httpx.TimeoutException as e:
+            raise _request_timeout_error(e) from e
+
         return FullResponse(
             response.status_code,
             _headers(response.headers),
@@ -310,9 +339,9 @@ class AsyncPyqwestHTTPXAdapter:
                 url,
                 headers=headers,
                 content=content,
-                timeout=_timeout(timeout, request_timeout),
+                timeout=_stream_timeout(timeout, request_timeout),
                 params=params,
             )
 
-        async with _aopen_stream_with_retries(open_stream) as response:
+        async with _aopen_stream(open_stream) as response:
             yield _AsyncStreamResponse(response)
