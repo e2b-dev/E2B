@@ -9,8 +9,33 @@ if (!SLACK_WEBHOOK_URL) {
 }
 const SLACK_CHANNEL = 'user-signups'
 
+// Shared secret used to authenticate the Supabase database webhook caller.
+// `verify_jwt = true` alone is insufficient — the public anon JWT shipped
+// with clients is enough to pass the edge gateway. We additionally require
+// a server-only secret header so that only the database webhook (or another
+// privileged caller configured with this secret) can trigger side effects.
+const WEBHOOK_SECRET = Deno.env.get('NEW_USER_WEBHOOK_SECRET')
+if (!WEBHOOK_SECRET) {
+  throw new Error('Missing NEW_USER_WEBHOOK_SECRET environment variable')
+}
+
 // Simple email validation to reject obviously malformed input
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+// Constant-time string comparison to avoid timing side channels when
+// validating the shared secret header.
+function timingSafeEqual(a: string, b: string): boolean {
+  const aBytes = new TextEncoder().encode(a)
+  const bBytes = new TextEncoder().encode(b)
+  if (aBytes.length !== bBytes.length) {
+    return false
+  }
+  let diff = 0
+  for (let i = 0; i < aBytes.length; i++) {
+    diff |= aBytes[i] ^ bBytes[i]
+  }
+  return diff === 0
+}
 
 function sanitizeForSlack(text: string): string {
   // Escape Slack mrkdwn special characters to prevent injection
@@ -49,6 +74,18 @@ serve(async (req) => {
   /**
    * Creates a new contact in Loops.so on a new created user in users table.
    */
+
+  // Authenticate the caller with a shared secret before doing anything else.
+  // Configure the matching value as the `Webhook Secret` (custom header) on
+  // the Supabase database webhook that invokes this function.
+  const provided = req.headers.get('x-webhook-secret') ?? ''
+  if (!timingSafeEqual(provided, WEBHOOK_SECRET)) {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+
   const data = await req.json()
   const userRecord = data.record
 
