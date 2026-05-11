@@ -48,7 +48,11 @@ export function createEnvdFetchForRuntime(
 async function createUndiciClient(
   options: EnvdFetchOptions
 ): Promise<EnvdFetchClient> {
-  const { Agent, fetch: undiciFetch } = (await import('undici')) as UndiciModule
+  const { Agent, fetch: undiciFetch } = (await import(
+    /* webpackIgnore: true */
+    /* @vite-ignore */
+    'undici'
+  )) as UndiciModule
   const dispatcherOptions: { allowH2: true; connections?: number } = {
     allowH2: true,
   }
