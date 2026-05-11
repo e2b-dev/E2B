@@ -1,13 +1,23 @@
-import { dynamicRequire, runtime } from '../utils'
+import { dynamicImport, runtime } from '../utils'
 
-type Undici = typeof import('undici')
-type UndiciDispatcher = InstanceType<Undici['Agent']>
+type UndiciDispatcher = unknown
 type UndiciRequestInit = RequestInit & {
   dispatcher: UndiciDispatcher
   duplex?: 'half'
 }
+type UndiciModule = {
+  Agent: new (options: { allowH2: true; connections?: number }) => unknown
+  fetch: unknown
+}
 type EnvdFetchOptions = {
   connectionLimit?: number
+}
+type EnvdFetchClient = {
+  dispatcher: UndiciDispatcher
+  fetchWithDispatcher: (
+    input: RequestInfo | URL,
+    init?: UndiciRequestInit
+  ) => Promise<Response>
 }
 
 let envdFetch: typeof fetch | undefined
@@ -21,20 +31,11 @@ export function createEnvdFetchForRuntime(
     return fetch
   }
 
-  const { Agent, fetch: undiciFetch } = dynamicRequire<Undici>('undici')
-  const dispatcherOptions: { allowH2: true; connections?: number } = {
-    allowH2: true,
-  }
-  if (options.connectionLimit !== undefined) {
-    dispatcherOptions.connections = options.connectionLimit
-  }
-  const dispatcher = new Agent(dispatcherOptions)
-  const fetchWithDispatcher = undiciFetch as unknown as (
-    input: RequestInfo | URL,
-    init?: UndiciRequestInit
-  ) => Promise<Response>
+  let clientPromise: Promise<EnvdFetchClient> | undefined
 
-  return ((input, init) => {
+  return (async (input, init) => {
+    clientPromise ??= createUndiciClient(options)
+    const { dispatcher, fetchWithDispatcher } = await clientPromise
     const request = toRequestInput(input, init)
 
     return fetchWithDispatcher(request.input, {
@@ -42,6 +43,27 @@ export function createEnvdFetchForRuntime(
       dispatcher,
     })
   }) as typeof fetch
+}
+
+async function createUndiciClient(
+  options: EnvdFetchOptions
+): Promise<EnvdFetchClient> {
+  const { Agent, fetch: undiciFetch } =
+    await dynamicImport<UndiciModule>('undici')
+  const dispatcherOptions: { allowH2: true; connections?: number } = {
+    allowH2: true,
+  }
+  if (options.connectionLimit !== undefined) {
+    dispatcherOptions.connections = options.connectionLimit
+  }
+
+  return {
+    dispatcher: new Agent(dispatcherOptions),
+    fetchWithDispatcher: undiciFetch as unknown as (
+      input: RequestInfo | URL,
+      init?: UndiciRequestInit
+    ) => Promise<Response>,
+  }
 }
 
 export function createEnvdFetch(): typeof fetch {

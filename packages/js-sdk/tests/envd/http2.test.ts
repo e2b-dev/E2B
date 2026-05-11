@@ -22,7 +22,7 @@ test('uses undici with HTTP/2 enabled in Node', async () => {
   })
 
   vi.doMock('../../src/utils', () => ({
-    dynamicRequire: () => ({ Agent, fetch: undiciFetch }),
+    dynamicImport: () => Promise.resolve({ Agent, fetch: undiciFetch }),
     runtime: 'node',
   }))
   const { createEnvdFetchForRuntime } = await import('../../src/envd/http2')
@@ -46,7 +46,7 @@ test('passes Request objects to undici as URL plus init', async () => {
   })
 
   vi.doMock('../../src/utils', () => ({
-    dynamicRequire: () => ({ Agent, fetch: undiciFetch }),
+    dynamicImport: () => Promise.resolve({ Agent, fetch: undiciFetch }),
     runtime: 'node',
   }))
   const { createEnvdFetchForRuntime } = await import('../../src/envd/http2')
@@ -79,7 +79,7 @@ test('can create an uncapped dispatcher for RPC streams', async () => {
   const undiciFetch = vi.fn(() => Promise.resolve(new Response('ok')))
 
   vi.doMock('../../src/utils', () => ({
-    dynamicRequire: () => ({ Agent, fetch: undiciFetch }),
+    dynamicImport: () => Promise.resolve({ Agent, fetch: undiciFetch }),
     runtime: 'node',
   }))
   const { createEnvdFetchForRuntime } = await import('../../src/envd/http2')
@@ -88,6 +88,27 @@ test('can create an uncapped dispatcher for RPC streams', async () => {
   await fetcher('https://example.com/rpc')
 
   expect(agents).toEqual([{ allowH2: true }])
+})
+
+test('defers loading undici until the first Node request', async () => {
+  const Agent = vi.fn()
+  const undiciFetch = vi.fn(() => Promise.resolve(new Response('ok')))
+
+  vi.doMock('../../src/utils', () => ({
+    dynamicImport: () => Promise.resolve({ Agent, fetch: undiciFetch }),
+    runtime: 'node',
+  }))
+  const { createEnvdFetchForRuntime } = await import('../../src/envd/http2')
+
+  const fetcher = createEnvdFetchForRuntime('node')
+
+  expect(Agent).not.toHaveBeenCalled()
+  expect(undiciFetch).not.toHaveBeenCalled()
+
+  await fetcher('https://example.com/status')
+
+  expect(Agent).toHaveBeenCalledOnce()
+  expect(undiciFetch).toHaveBeenCalledOnce()
 })
 
 test('uses global fetch outside Node', async () => {
