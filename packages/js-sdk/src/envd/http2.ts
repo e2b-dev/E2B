@@ -1,8 +1,7 @@
 import { runtime } from '../utils'
 
-type UndiciDispatcher = unknown
 type UndiciRequestInit = RequestInit & {
-  dispatcher?: UndiciDispatcher
+  dispatcher?: unknown
   duplex?: 'half'
 }
 type UndiciModule = {
@@ -12,13 +11,6 @@ type UndiciModule = {
 type EnvdFetchOptions = {
   connectionLimit?: number
   loadUndici?: () => Promise<UndiciModule | undefined>
-}
-type EnvdFetchClient = {
-  dispatcher?: UndiciDispatcher
-  fetchWithDispatcher: (
-    input: RequestInfo | URL,
-    init?: RequestInit | UndiciRequestInit
-  ) => Promise<Response>
 }
 
 let envdFetch: typeof fetch | undefined
@@ -33,38 +25,25 @@ export function createEnvdFetchForRuntime(
     return fetch
   }
 
-  let clientPromise: Promise<EnvdFetchClient> | undefined
+  let fetcherPromise: Promise<typeof fetch> | undefined
 
   return (async (input, init) => {
-    clientPromise ??= createUndiciClient(options)
-    const { dispatcher, fetchWithDispatcher } = await clientPromise
-    const request = toRequestInput(input, init)
+    fetcherPromise ??= buildEnvdFetcher(options)
+    const fetcher = await fetcherPromise
 
-    if (!dispatcher) {
-      return fetchWithDispatcher(request.input, request.init)
-    }
-
-    return fetchWithDispatcher(request.input, {
-      ...request.init,
-      dispatcher,
-    })
+    return fetcher(input, init)
   }) as typeof fetch
 }
 
-async function createUndiciClient(
+async function buildEnvdFetcher(
   options: EnvdFetchOptions
-): Promise<EnvdFetchClient> {
+): Promise<typeof fetch> {
   const undici = await (options.loadUndici ?? loadUndici)()
 
   if (!undici) {
     warnUndiciFallback()
 
-    return {
-      fetchWithDispatcher: fetch as (
-        input: RequestInfo | URL,
-        init?: RequestInit
-      ) => Promise<Response>,
-    }
+    return fetch
   }
 
   const { Agent, fetch: undiciFetch } = undici
@@ -75,13 +54,20 @@ async function createUndiciClient(
     dispatcherOptions.connections = options.connectionLimit
   }
 
-  return {
-    dispatcher: new Agent(dispatcherOptions),
-    fetchWithDispatcher: undiciFetch as unknown as (
-      input: RequestInfo | URL,
-      init?: UndiciRequestInit
-    ) => Promise<Response>,
-  }
+  const dispatcher = new Agent(dispatcherOptions)
+  const fetchWithDispatcher = undiciFetch as unknown as (
+    input: RequestInfo | URL,
+    init?: UndiciRequestInit
+  ) => Promise<Response>
+
+  return ((input, init) => {
+    const request = toRequestInput(input, init)
+
+    return fetchWithDispatcher(request.input, {
+      ...request.init,
+      dispatcher,
+    })
+  }) as typeof fetch
 }
 
 async function loadUndici(): Promise<UndiciModule | undefined> {
