@@ -3,6 +3,7 @@ import { afterEach, expect, test, vi } from 'vitest'
 afterEach(() => {
   vi.restoreAllMocks()
   vi.resetModules()
+  vi.doUnmock('undici')
   vi.doUnmock('../../src/utils')
 })
 
@@ -21,10 +22,7 @@ test('uses undici with HTTP/2 enabled in Node', async () => {
     return Promise.resolve(new Response('ok'))
   })
 
-  vi.doMock('../../src/utils', () => ({
-    dynamicImport: () => Promise.resolve({ Agent, fetch: undiciFetch }),
-    runtime: 'node',
-  }))
+  vi.doMock('undici', () => ({ Agent, fetch: undiciFetch }))
   const { createEnvdFetchForRuntime } = await import('../../src/envd/http2')
 
   const fetcher = createEnvdFetchForRuntime('node')
@@ -45,10 +43,7 @@ test('passes Request objects to undici as URL plus init', async () => {
     return Promise.resolve(new Response('ok'))
   })
 
-  vi.doMock('../../src/utils', () => ({
-    dynamicImport: () => Promise.resolve({ Agent, fetch: undiciFetch }),
-    runtime: 'node',
-  }))
+  vi.doMock('undici', () => ({ Agent, fetch: undiciFetch }))
   const { createEnvdFetchForRuntime } = await import('../../src/envd/http2')
 
   const fetcher = createEnvdFetchForRuntime('node')
@@ -78,10 +73,7 @@ test('can create an uncapped dispatcher for RPC streams', async () => {
 
   const undiciFetch = vi.fn(() => Promise.resolve(new Response('ok')))
 
-  vi.doMock('../../src/utils', () => ({
-    dynamicImport: () => Promise.resolve({ Agent, fetch: undiciFetch }),
-    runtime: 'node',
-  }))
+  vi.doMock('undici', () => ({ Agent, fetch: undiciFetch }))
   const { createEnvdFetchForRuntime } = await import('../../src/envd/http2')
 
   const fetcher = createEnvdFetchForRuntime('node', {})
@@ -94,10 +86,7 @@ test('defers loading undici until the first Node request', async () => {
   const Agent = vi.fn()
   const undiciFetch = vi.fn(() => Promise.resolve(new Response('ok')))
 
-  vi.doMock('../../src/utils', () => ({
-    dynamicImport: () => Promise.resolve({ Agent, fetch: undiciFetch }),
-    runtime: 'node',
-  }))
+  vi.doMock('undici', () => ({ Agent, fetch: undiciFetch }))
   const { createEnvdFetchForRuntime } = await import('../../src/envd/http2')
 
   const fetcher = createEnvdFetchForRuntime('node')

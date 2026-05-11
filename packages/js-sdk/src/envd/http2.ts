@@ -1,4 +1,4 @@
-import { dynamicImport, runtime } from '../utils'
+import { runtime } from '../utils'
 
 type UndiciDispatcher = unknown
 type UndiciRequestInit = RequestInit & {
@@ -48,8 +48,7 @@ export function createEnvdFetchForRuntime(
 async function createUndiciClient(
   options: EnvdFetchOptions
 ): Promise<EnvdFetchClient> {
-  const { Agent, fetch: undiciFetch } =
-    await dynamicImport<UndiciModule>('undici')
+  const { Agent, fetch: undiciFetch } = (await import('undici')) as UndiciModule
   const dispatcherOptions: { allowH2: true; connections?: number } = {
     allowH2: true,
   }
