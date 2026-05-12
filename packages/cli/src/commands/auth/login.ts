@@ -1,9 +1,7 @@
 import * as listen from 'async-listen'
 import * as commander from 'commander'
-import * as fs from 'fs'
 import * as http from 'http'
 import * as open from 'open'
-import * as path from 'path'
 import * as e2b from 'e2b'
 
 import { pkg } from 'src'
@@ -12,6 +10,7 @@ import {
   getUserConfig,
   USER_CONFIG_PATH,
   UserConfig,
+  writeUserConfig,
 } from 'src/user'
 import { asBold, asFormattedConfig, asFormattedError } from 'src/utils/format'
 import { connectionConfig } from 'src/api'
@@ -72,8 +71,7 @@ export const loginCommand = new commander.Command('login')
         teamApiKey: defaultTeam.apiKey,
       }
 
-      fs.mkdirSync(path.dirname(USER_CONFIG_PATH), { recursive: true })
-      fs.writeFileSync(USER_CONFIG_PATH, JSON.stringify(userConfig, null, 2))
+      writeUserConfig(USER_CONFIG_PATH, userConfig)
     }
 
     console.log(

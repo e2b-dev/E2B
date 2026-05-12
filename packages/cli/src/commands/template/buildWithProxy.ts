@@ -4,8 +4,7 @@ import * as http from 'http'
 import * as url from 'url'
 import * as https from 'node:https'
 import { confirm } from '../../utils/confirm'
-import { USER_CONFIG_PATH, UserConfig } from 'src/user'
-import * as fs from 'fs'
+import { USER_CONFIG_PATH, UserConfig, writeUserConfig } from 'src/user'
 
 const PORT = 49984
 
@@ -59,7 +58,7 @@ export async function buildWithProxy(
 
   if (userConfig && !userConfig.dockerProxySet) {
     userConfig.dockerProxySet = true
-    fs.writeFileSync(USER_CONFIG_PATH, JSON.stringify(userConfig, null, 2))
+    writeUserConfig(USER_CONFIG_PATH, userConfig)
   }
 
   proxyServer.close()
