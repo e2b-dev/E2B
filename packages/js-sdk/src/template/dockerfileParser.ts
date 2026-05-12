@@ -220,6 +220,22 @@ function handleUserInstruction(
   }
 }
 
+/**
+ * Strip surrounding double or single quotes from an ENV value.
+ * Docker's ENV instruction strips quotes from values like ENV KEY="value".
+ */
+function stripQuotes(value: string): string {
+  if (value.length >= 2) {
+    if (
+      (value[0] === '"' && value[value.length - 1] === '"') ||
+      (value[0] === "'" && value[value.length - 1] === "'")
+    ) {
+      return value.slice(1, -1)
+    }
+  }
+  return value
+}
+
 function handleEnvInstruction(
   instruction: DockerfileInstruction,
   templateBuilder: DockerfileParserInterface
@@ -243,13 +259,13 @@ function handleEnvInstruction(
           const equalIndex = envString.indexOf('=')
           if (equalIndex > 0) {
             const key = envString.substring(0, equalIndex)
-            const value = envString.substring(equalIndex + 1)
+            const value = stripQuotes(envString.substring(equalIndex + 1))
             envVars[key] = value
           }
         }
       } else {
         // Traditional ENV key value format
-        envVars[firstArg] = secondArg
+        envVars[firstArg] = stripQuotes(secondArg)
       }
     } else if (argumentsData.length === 1) {
       // ENV/ARG key=value format (single argument) or ARG key (without default)
@@ -259,7 +275,7 @@ function handleEnvInstruction(
       const equalIndex = envString.indexOf('=')
       if (equalIndex > 0) {
         const key = envString.substring(0, equalIndex)
-        const value = envString.substring(equalIndex + 1)
+        const value = stripQuotes(envString.substring(equalIndex + 1))
         envVars[key] = value
       } else if (keyword === 'ARG' && envString.trim()) {
         // ARG without default value - set as empty ENV
@@ -273,7 +289,7 @@ function handleEnvInstruction(
         const equalIndex = envString.indexOf('=')
         if (equalIndex > 0) {
           const key = envString.substring(0, equalIndex)
-          const value = envString.substring(equalIndex + 1)
+          const value = stripQuotes(envString.substring(equalIndex + 1))
           envVars[key] = value
         } else if (keyword === 'ARG') {
           // ARG without default value
