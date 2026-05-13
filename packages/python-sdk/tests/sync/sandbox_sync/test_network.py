@@ -168,7 +168,6 @@ def test_firewall_transform_injects_headers(sandbox_factory):
     injected_value = "e2b-transform-value-123"
 
     network: SandboxNetworkOpts = {
-        "allow_out": lambda ctx: list(ctx.rules.keys()),
         "rules": {
             "httpbin.org": [
                 {"transform": {"headers": {injected_header: injected_value}}},

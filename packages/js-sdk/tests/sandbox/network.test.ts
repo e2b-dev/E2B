@@ -200,7 +200,6 @@ describe('firewall transform injects headers', () => {
   sandboxTest.scoped({
     sandboxOpts: {
       network: {
-        allowOut: ({ rules }) => [...rules.keys()],
         rules: {
           'httpbin.org': [
             {
