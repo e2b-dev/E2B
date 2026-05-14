@@ -23,6 +23,14 @@ const restHandlers = [
     })
     return HttpResponse.json({})
   }),
+  http.get(apiUrl('/v2/sandboxes'), async ({ request }) => {
+    await new Promise<void>((_, reject) => {
+      request.signal.addEventListener('abort', () =>
+        reject(new DOMException('aborted', 'AbortError'))
+      )
+    })
+    return HttpResponse.json([])
+  }),
 ]
 
 const server = setupServer(...restHandlers)
@@ -71,6 +79,20 @@ test('Sandbox.kill rejects when AbortSignal is aborted', async () => {
     signal: controller.signal,
   })
 
+  setTimeout(() => controller.abort(), 25)
+
+  await expect(promise).rejects.toThrow()
+})
+
+test('SandboxPaginator.nextItems rejects when AbortSignal is aborted', async () => {
+  const controller = new AbortController()
+
+  const paginator = Sandbox.list({
+    apiKey: 'test-key',
+    signal: controller.signal,
+  })
+
+  const promise = paginator.nextItems()
   setTimeout(() => controller.abort(), 25)
 
   await expect(promise).rejects.toThrow()

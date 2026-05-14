@@ -11,6 +11,7 @@ import {
   defaultUsername,
   KEEPALIVE_PING_HEADER,
   KEEPALIVE_PING_INTERVAL_SEC,
+  setupRequestController,
   Username,
 } from '../../connectionConfig'
 
@@ -817,22 +818,10 @@ export class Filesystem {
     const requestTimeoutMs =
       opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
 
-    const controller = new AbortController()
-
-    const onUserAbort = () => controller.abort(opts?.signal?.reason)
-    if (opts?.signal) {
-      if (opts.signal.aborted) {
-        controller.abort(opts.signal.reason)
-      } else {
-        opts.signal.addEventListener('abort', onUserAbort, { once: true })
-      }
-    }
-
-    const reqTimeout = requestTimeoutMs
-      ? setTimeout(() => {
-          controller.abort()
-        }, requestTimeoutMs)
-      : undefined
+    const { controller, cleanup } = setupRequestController(
+      requestTimeoutMs,
+      opts?.signal
+    )
 
     const events = this.rpc.watchDir(
       {
@@ -852,19 +841,9 @@ export class Filesystem {
     try {
       await handleWatchDirStartEvent(events)
 
-      clearTimeout(reqTimeout)
-
-      return new WatchHandle(
-        () => {
-          opts?.signal?.removeEventListener('abort', onUserAbort)
-          controller.abort()
-        },
-        events,
-        onEvent,
-        opts?.onExit
-      )
+      return new WatchHandle(cleanup, events, onEvent, opts?.onExit)
     } catch (err) {
-      opts?.signal?.removeEventListener('abort', onUserAbort)
+      cleanup()
       throw handleFilesystemRpcError(err)
     }
   }

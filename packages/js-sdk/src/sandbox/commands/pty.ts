@@ -16,6 +16,7 @@ import {
   Username,
   KEEPALIVE_PING_HEADER,
   KEEPALIVE_PING_INTERVAL_SEC,
+  setupRequestController,
 } from '../../connectionConfig'
 import { CommandHandle } from './commandHandle'
 import { authenticationHeader, handleRpcError } from '../../envd/rpc'
@@ -101,20 +102,11 @@ export class Pty {
     envs.TERM = envs.TERM ?? 'xterm-256color'
     envs.LANG = envs.LANG ?? 'C.UTF-8'
     envs.LC_ALL = envs.LC_ALL ?? 'C.UTF-8'
-    const controller = new AbortController()
 
-    const onUserAbort = () => controller.abort(opts?.signal?.reason)
-    if (opts?.signal) {
-      if (opts.signal.aborted) {
-        controller.abort(opts.signal.reason)
-      } else {
-        opts.signal.addEventListener('abort', onUserAbort, { once: true })
-      }
-    }
-
-    const reqTimeout = setTimeout(() => {
-      controller.abort()
-    }, requestTimeoutMs)
+    const { controller, cleanup } = setupRequestController(
+      requestTimeoutMs,
+      opts?.signal
+    )
 
     const events = this.rpc.start(
       {
@@ -144,14 +136,9 @@ export class Pty {
     try {
       const pid = await handleProcessStartEvent(events)
 
-      clearTimeout(reqTimeout)
-
       return new CommandHandle(
         pid,
-        () => {
-          opts?.signal?.removeEventListener('abort', onUserAbort)
-          controller.abort()
-        },
+        cleanup,
         () => this.kill(pid),
         events,
         undefined,
@@ -159,7 +146,7 @@ export class Pty {
         opts.onData
       )
     } catch (err) {
-      opts?.signal?.removeEventListener('abort', onUserAbort)
+      cleanup()
       throw handleRpcError(err)
     }
   }
@@ -176,22 +163,10 @@ export class Pty {
     const requestTimeoutMs =
       opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
 
-    const controller = new AbortController()
-
-    const onUserAbort = () => controller.abort(opts?.signal?.reason)
-    if (opts?.signal) {
-      if (opts.signal.aborted) {
-        controller.abort(opts.signal.reason)
-      } else {
-        opts.signal.addEventListener('abort', onUserAbort, { once: true })
-      }
-    }
-
-    const reqTimeout = requestTimeoutMs
-      ? setTimeout(() => {
-          controller.abort()
-        }, requestTimeoutMs)
-      : undefined
+    const { controller, cleanup } = setupRequestController(
+      requestTimeoutMs,
+      opts?.signal
+    )
 
     const events = this.rpc.connect(
       {
@@ -214,14 +189,9 @@ export class Pty {
     try {
       const pid = await handleProcessStartEvent(events)
 
-      clearTimeout(reqTimeout)
-
       return new CommandHandle(
         pid,
-        () => {
-          opts?.signal?.removeEventListener('abort', onUserAbort)
-          controller.abort()
-        },
+        cleanup,
         () => this.kill(pid),
         events,
         undefined,
@@ -229,7 +199,7 @@ export class Pty {
         opts?.onData
       )
     } catch (err) {
-      opts?.signal?.removeEventListener('abort', onUserAbort)
+      cleanup()
       throw handleRpcError(err)
     }
   }

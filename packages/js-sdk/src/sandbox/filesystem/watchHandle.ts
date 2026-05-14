@@ -111,6 +111,12 @@ export class WatchHandle {
       this.onExit?.()
     } catch (err) {
       this.onExit?.(err as Error)
+    } finally {
+      try {
+        this.handleStop()
+      } catch {
+        // handleStop runs cleanup (idempotent); ignore any errors.
+      }
     }
   }
 }

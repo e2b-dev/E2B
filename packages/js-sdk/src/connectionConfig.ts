@@ -72,6 +72,49 @@ export interface ConnectionOpts {
 }
 
 /**
+ * Set up an internal `AbortController` for a streaming request that:
+ *  - aborts when the optional user signal aborts
+ *  - aborts when the optional request timeout elapses
+ *
+ * Returns the controller plus an idempotent `cleanup` function that detaches
+ * the user-signal listener, clears the timeout, and aborts the controller.
+ *
+ * @internal
+ */
+export function setupRequestController(
+  requestTimeoutMs: number | undefined,
+  userSignal: AbortSignal | undefined
+): { controller: AbortController; cleanup: () => void } {
+  const controller = new AbortController()
+
+  const onUserAbort = () => controller.abort(userSignal?.reason)
+  if (userSignal) {
+    if (userSignal.aborted) {
+      controller.abort(userSignal.reason)
+    } else {
+      userSignal.addEventListener('abort', onUserAbort, { once: true })
+    }
+  }
+
+  const reqTimeout = requestTimeoutMs
+    ? setTimeout(() => controller.abort(), requestTimeoutMs)
+    : undefined
+
+  let cleaned = false
+  const cleanup = () => {
+    if (cleaned) return
+    cleaned = true
+    userSignal?.removeEventListener('abort', onUserAbort)
+    if (reqTimeout) {
+      clearTimeout(reqTimeout)
+    }
+    controller.abort()
+  }
+
+  return { controller, cleanup }
+}
+
+/**
  * Configuration for connecting to the API.
  */
 export class ConnectionConfig {

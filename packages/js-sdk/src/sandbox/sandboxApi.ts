@@ -897,11 +897,17 @@ abstract class BasePaginator<T> {
   protected readonly config: ConnectionConfig
   protected client: ApiClient
   protected readonly limit?: number
+  protected readonly signal?: AbortSignal
 
   private _hasNext: boolean
   private _nextToken?: string
 
-  constructor(config: ConnectionConfig, limit?: number, nextToken?: string) {
+  constructor(
+    config: ConnectionConfig,
+    limit?: number,
+    nextToken?: string,
+    signal?: AbortSignal
+  ) {
     this.config = config
     this.client = new ApiClient(this.config)
 
@@ -909,6 +915,7 @@ abstract class BasePaginator<T> {
     this._nextToken = nextToken
 
     this.limit = limit
+    this.signal = signal
   }
 
   /**
@@ -956,7 +963,12 @@ export class SandboxPaginator extends BasePaginator<SandboxInfo> {
   private query: SandboxListOpts['query']
 
   constructor(opts?: SandboxListOpts) {
-    super(new ConnectionConfig(opts), opts?.limit, opts?.nextToken)
+    super(
+      new ConnectionConfig(opts),
+      opts?.limit,
+      opts?.nextToken,
+      opts?.signal
+    )
 
     this.query = opts?.query
   }
@@ -988,7 +1000,7 @@ export class SandboxPaginator extends BasePaginator<SandboxInfo> {
         },
       },
       // requestTimeoutMs is already passed here via the connectionConfig.
-      signal: this.config.getSignal(),
+      signal: this.config.getSignal(undefined, this.signal),
     })
 
     const err = handleApiError(res)
@@ -1032,7 +1044,12 @@ export class SnapshotPaginator extends BasePaginator<SnapshotInfo> {
   private readonly sandboxId?: string
 
   constructor(opts?: SnapshotListOpts) {
-    super(new ConnectionConfig(opts), opts?.limit, opts?.nextToken)
+    super(
+      new ConnectionConfig(opts),
+      opts?.limit,
+      opts?.nextToken,
+      opts?.signal
+    )
 
     this.sandboxId = opts?.sandboxId
   }
@@ -1050,7 +1067,7 @@ export class SnapshotPaginator extends BasePaginator<SnapshotInfo> {
           nextToken: this.nextToken,
         },
       },
-      signal: this.config.getSignal(),
+      signal: this.config.getSignal(undefined, this.signal),
     })
 
     const err = handleApiError(res)
