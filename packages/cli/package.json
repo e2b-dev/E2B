@@ -59,7 +59,7 @@
     "json2md": "^2.0.1",
     "knip": "^5.43.6",
     "tsup": "^8.4.0",
-    "typescript": "^5.2.2",
+    "typescript": "^5.4.5",
     "vitest": "^3.2.4"
   },
   "files": [
