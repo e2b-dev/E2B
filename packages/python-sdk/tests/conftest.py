@@ -83,9 +83,12 @@ async def async_sandbox_factory(request, template, sandbox_test_id):
         for sandbox in sandboxes:
             print(f"\n[TEST FAILED] Sandbox ID: {sandbox.sandbox_id}")
 
-    await asyncio.gather(
+    results = await asyncio.gather(
         *(sandbox.kill() for sandbox in sandboxes), return_exceptions=True
     )
+    for sandbox, result in zip(sandboxes, results):
+        if isinstance(result, BaseException):
+            print(f"\n[TEARDOWN FAILED] Sandbox ID: {sandbox.sandbox_id}: {result!r}")
 
 
 @pytest_asyncio.fixture
