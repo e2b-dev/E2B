@@ -113,8 +113,7 @@ export async function connectSandbox({
     await spawnConnectedTerminal(sandbox)
   } finally {
     clearInterval(intervalId)
-    await pendingKeepAlive.catch(() => {})
-    await sandbox.setTimeout(1_000)
+    await pendingKeepAlive.catch(() => { })
     console.log(
       `Closing terminal connection to template ${asFormattedSandboxTemplate(
         template
