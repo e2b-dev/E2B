@@ -89,6 +89,15 @@ export type SandboxNetworkRules =
   | Map<string, SandboxNetworkRule[]>
 
 /**
+ * Per-domain rule as returned by the sandbox info endpoint. Mirrors
+ * {@link SandboxNetworkRule} but with `transform` always materialized to the
+ * static {@link SandboxNetworkTransform} shape — no callback variant.
+ */
+export type SandboxNetworkRuleInfo = {
+  transform?: SandboxNetworkTransform
+}
+
+/**
  * Context passed to {@link SandboxNetworkOpts.allowOut} and
  * {@link SandboxNetworkOpts.denyOut} when they are defined as functions.
  */
@@ -183,7 +192,7 @@ export type SandboxNetworkOpts = {
 export type SandboxNetworkInfo = {
   allowOut?: string[]
   denyOut?: string[]
-  rules?: SandboxNetworkRules
+  rules?: Record<string, SandboxNetworkRuleInfo[]>
   allowPublicTraffic?: boolean
   maskRequestHost?: string
 }

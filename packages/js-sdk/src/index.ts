@@ -62,6 +62,7 @@ export type {
   SandboxNetworkSelector,
   SandboxNetworkSelectorContext,
   SandboxNetworkRule,
+  SandboxNetworkRuleInfo,
   SandboxNetworkRules,
   SandboxNetworkTransform,
   SandboxNetworkTransformContext,

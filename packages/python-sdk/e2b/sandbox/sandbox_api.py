@@ -131,6 +131,16 @@ own — the host must also appear in ``SandboxNetworkOpts.allow_out``.
 """
 
 
+class SandboxNetworkRuleInfo(TypedDict):
+    """
+    Per-domain rule as returned by the sandbox info endpoint. Mirrors
+    :class:`SandboxNetworkRule` but with ``transform`` always materialized to
+    the static :class:`SandboxNetworkTransform` shape — no callable variant.
+    """
+
+    transform: NotRequired[SandboxNetworkTransform]
+
+
 @dataclass(frozen=True)
 class SandboxNetworkSelectorContext:
     """
@@ -223,7 +233,7 @@ class SandboxNetworkInfo(TypedDict, total=False):
 
     allow_out: List[str]
     deny_out: List[str]
-    rules: SandboxNetworkRules
+    rules: Dict[str, List[SandboxNetworkRuleInfo]]
     allow_public_traffic: bool
     mask_request_host: str
 
@@ -355,7 +365,9 @@ def from_client_network_config(
     if not isinstance(network.deny_out, Unset):
         result["deny_out"] = list(network.deny_out)
     if not isinstance(network.rules, Unset):
-        result["rules"] = cast(SandboxNetworkRules, network.rules.to_dict())
+        result["rules"] = cast(
+            Dict[str, List[SandboxNetworkRuleInfo]], network.rules.to_dict()
+        )
     if not isinstance(network.allow_public_traffic, Unset):
         result["allow_public_traffic"] = network.allow_public_traffic
     if not isinstance(network.mask_request_host, Unset):
