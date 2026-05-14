@@ -522,9 +522,12 @@ export class Sandbox extends SandboxApi {
    * ```
    */
   async isRunning(
-    opts?: Pick<ConnectionOpts, 'requestTimeoutMs'>
+    opts?: Pick<ConnectionOpts, 'requestTimeoutMs' | 'signal'>
   ): Promise<boolean> {
-    const signal = this.connectionConfig.getSignal(opts?.requestTimeoutMs)
+    const signal = this.connectionConfig.getSignal(
+      opts?.requestTimeoutMs,
+      opts?.signal
+    )
 
     const res = await this.envdApi.api.GET('/health', {
       signal,
@@ -553,7 +556,7 @@ export class Sandbox extends SandboxApi {
    */
   async setTimeout(
     timeoutMs: number,
-    opts?: Pick<SandboxOpts, 'requestTimeoutMs'>
+    opts?: Pick<SandboxOpts, 'requestTimeoutMs' | 'signal'>
   ) {
     if (this.connectionConfig.debug) {
       // Skip timeout in debug mode
@@ -572,7 +575,7 @@ export class Sandbox extends SandboxApi {
    *
    * @param opts connection options.
    */
-  async kill(opts?: Pick<SandboxOpts, 'requestTimeoutMs'>) {
+  async kill(opts?: Pick<SandboxOpts, 'requestTimeoutMs' | 'signal'>) {
     if (this.connectionConfig.debug) {
       // Skip killing in debug mode
       return
@@ -788,7 +791,7 @@ export class Sandbox extends SandboxApi {
    *
    * @returns information about the sandbox
    */
-  async getInfo(opts?: Pick<SandboxOpts, 'requestTimeoutMs'>) {
+  async getInfo(opts?: Pick<SandboxOpts, 'requestTimeoutMs' | 'signal'>) {
     return await SandboxApi.getInfo(this.sandboxId, this.resolveApiOpts(opts))
   }
 

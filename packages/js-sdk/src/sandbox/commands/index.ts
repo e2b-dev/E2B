@@ -29,7 +29,7 @@ export { Pty } from './pty'
  * Options for sending a command request.
  */
 export interface CommandRequestOpts
-  extends Partial<Pick<ConnectionOpts, 'requestTimeoutMs'>> {}
+  extends Partial<Pick<ConnectionOpts, 'requestTimeoutMs' | 'signal'>> {}
 
 /**
  * Options for starting a new command.
@@ -160,7 +160,10 @@ export class Commands {
       const res = await this.rpc.list(
         {},
         {
-          signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
+          signal: this.connectionConfig.getSignal(
+            opts?.requestTimeoutMs,
+            opts?.signal
+          ),
         }
       )
 
@@ -209,7 +212,10 @@ export class Commands {
           },
         },
         {
-          signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
+          signal: this.connectionConfig.getSignal(
+            opts?.requestTimeoutMs,
+            opts?.signal
+          ),
         }
       )
     } catch (err) {
@@ -239,7 +245,10 @@ export class Commands {
           },
         },
         {
-          signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
+          signal: this.connectionConfig.getSignal(
+            opts?.requestTimeoutMs,
+            opts?.signal
+          ),
         }
       )
     } catch (err) {
@@ -269,7 +278,10 @@ export class Commands {
           signal: Signal.SIGKILL,
         },
         {
-          signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
+          signal: this.connectionConfig.getSignal(
+            opts?.requestTimeoutMs,
+            opts?.signal
+          ),
         }
       )
 
@@ -303,6 +315,15 @@ export class Commands {
 
     const controller = new AbortController()
 
+    const onUserAbort = () => controller.abort(opts?.signal?.reason)
+    if (opts?.signal) {
+      if (opts.signal.aborted) {
+        controller.abort(opts.signal.reason)
+      } else {
+        opts.signal.addEventListener('abort', onUserAbort, { once: true })
+      }
+    }
+
     const reqTimeout = requestTimeoutMs
       ? setTimeout(() => {
           controller.abort()
@@ -334,7 +355,10 @@ export class Commands {
 
       return new CommandHandle(
         pid,
-        () => controller.abort(),
+        () => {
+          opts?.signal?.removeEventListener('abort', onUserAbort)
+          controller.abort()
+        },
         () => this.kill(pid),
         events,
         opts?.onStdout,
@@ -342,6 +366,7 @@ export class Commands {
         undefined
       )
     } catch (err) {
+      opts?.signal?.removeEventListener('abort', onUserAbort)
       throw handleRpcError(err)
     }
   }
@@ -407,6 +432,15 @@ export class Commands {
 
     const controller = new AbortController()
 
+    const onUserAbort = () => controller.abort(opts?.signal?.reason)
+    if (opts?.signal) {
+      if (opts.signal.aborted) {
+        controller.abort(opts.signal.reason)
+      } else {
+        opts.signal.addEventListener('abort', onUserAbort, { once: true })
+      }
+    }
+
     const reqTimeout = requestTimeoutMs
       ? setTimeout(() => {
           controller.abort()
@@ -449,7 +483,10 @@ export class Commands {
 
       return new CommandHandle(
         pid,
-        () => controller.abort(),
+        () => {
+          opts?.signal?.removeEventListener('abort', onUserAbort)
+          controller.abort()
+        },
         () => this.kill(pid),
         events,
         opts?.onStdout,
@@ -457,6 +494,7 @@ export class Commands {
         undefined
       )
     } catch (err) {
+      opts?.signal?.removeEventListener('abort', onUserAbort)
       throw handleRpcError(err)
     }
   }

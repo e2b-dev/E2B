@@ -51,3 +51,33 @@ test('api_url has correct priority', () => {
   const config = new ConnectionConfig({ apiUrl: 'http://localhost:8080' })
   assert.equal(config.apiUrl, 'http://localhost:8080')
 })
+
+test('getSignal returns user signal when no timeout is set', () => {
+  const config = new ConnectionConfig({ requestTimeoutMs: 0 })
+  const controller = new AbortController()
+  const signal = config.getSignal(0, controller.signal)
+  assert.strictEqual(signal, controller.signal)
+})
+
+test('getSignal aborts when user signal is aborted', () => {
+  const config = new ConnectionConfig({ requestTimeoutMs: 60_000 })
+  const controller = new AbortController()
+  const signal = config.getSignal(undefined, controller.signal)
+  assert.ok(signal)
+  assert.equal(signal!.aborted, false)
+  controller.abort()
+  assert.equal(signal!.aborted, true)
+})
+
+test('getSignal returns timeout signal when no user signal is provided', () => {
+  const config = new ConnectionConfig({ requestTimeoutMs: 60_000 })
+  const signal = config.getSignal()
+  assert.ok(signal)
+  assert.equal(signal!.aborted, false)
+})
+
+test('getSignal returns undefined when no timeout and no signal', () => {
+  const config = new ConnectionConfig({ requestTimeoutMs: 0 })
+  const signal = config.getSignal(0)
+  assert.equal(signal, undefined)
+})

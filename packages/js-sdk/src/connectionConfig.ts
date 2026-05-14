@@ -62,6 +62,13 @@ export interface ConnectionOpts {
    * Additional headers to send with the request.
    */
   headers?: Record<string, string>
+
+  /**
+   * An optional `AbortSignal` that can be used to cancel the in-flight request.
+   * When the signal is aborted, the underlying `fetch` is aborted and the
+   * returned promise rejects with an `AbortError`.
+   */
+  signal?: AbortSignal
 }
 
 /**
@@ -125,10 +132,15 @@ export class ConnectionConfig {
     return getEnvVar('E2B_ACCESS_TOKEN')
   }
 
-  getSignal(requestTimeoutMs?: number) {
+  getSignal(requestTimeoutMs?: number, signal?: AbortSignal) {
     const timeout = requestTimeoutMs ?? this.requestTimeoutMs
+    const timeoutSignal = timeout ? AbortSignal.timeout(timeout) : undefined
 
-    return timeout ? AbortSignal.timeout(timeout) : undefined
+    if (timeoutSignal && signal) {
+      return AbortSignal.any([timeoutSignal, signal])
+    }
+
+    return timeoutSignal ?? signal
   }
 
   getSandboxUrl(

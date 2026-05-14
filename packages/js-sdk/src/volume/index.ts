@@ -104,7 +104,7 @@ export class Volume {
       body: {
         name,
       },
-      signal: config.getSignal(opts?.requestTimeoutMs),
+      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
     })
 
     const err = handleApiError(res, VolumeError)
@@ -163,7 +163,7 @@ export class Volume {
           volumeID: volumeId,
         },
       },
-      signal: config.getSignal(opts?.requestTimeoutMs),
+      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
     })
 
     if (res.response.status === 404) {
@@ -194,7 +194,7 @@ export class Volume {
     const client = new ApiClient(config)
 
     const res = await client.api.GET('/volumes', {
-      signal: config.getSignal(opts?.requestTimeoutMs),
+      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
     })
 
     const err = handleApiError(res, VolumeError)
@@ -227,7 +227,7 @@ export class Volume {
           volumeID: volumeId,
         },
       },
-      signal: config.getSignal(opts?.requestTimeoutMs),
+      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
     })
 
     if (res.response.status === 404) {
@@ -268,7 +268,7 @@ export class Volume {
           depth: opts?.depth,
         },
       },
-      signal: config.getSignal(opts?.requestTimeoutMs),
+      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
     })
 
     if (res.response.status === 404) {
@@ -312,7 +312,7 @@ export class Volume {
           force: opts?.force,
         },
       },
-      signal: config.getSignal(opts?.requestTimeoutMs),
+      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
     })
 
     if (res.response.status === 404) {
@@ -354,7 +354,7 @@ export class Volume {
           path,
         },
       },
-      signal: config.getSignal(opts?.requestTimeoutMs),
+      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
     })
 
     if (res.response.status === 404) {
@@ -429,7 +429,7 @@ export class Volume {
         gid: metadata.gid,
         mode: metadata.mode,
       },
-      signal: config.getSignal(opts?.requestTimeoutMs),
+      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
     })
 
     if (res.response.status === 404) {
@@ -530,7 +530,10 @@ export class Volume {
         },
       },
       parseAs: format === 'bytes' ? 'arrayBuffer' : format,
-      signal: config.getSignal(opts?.requestTimeoutMs ?? FILE_TIMEOUT_MS),
+      signal: config.getSignal(
+        opts?.requestTimeoutMs ?? FILE_TIMEOUT_MS,
+        opts?.signal
+      ),
     })
 
     if (res.response.status === 404) {
@@ -599,7 +602,10 @@ export class Volume {
       headers: {
         'Content-Type': 'application/octet-stream',
       },
-      signal: config.getSignal(opts?.requestTimeoutMs ?? FILE_TIMEOUT_MS),
+      signal: config.getSignal(
+        opts?.requestTimeoutMs ?? FILE_TIMEOUT_MS,
+        opts?.signal
+      ),
     })
 
     if (res.response.status === 404) {
@@ -639,7 +645,7 @@ export class Volume {
           path,
         },
       },
-      signal: config.getSignal(opts?.requestTimeoutMs),
+      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
     })
 
     if (res.response.status === 404) {

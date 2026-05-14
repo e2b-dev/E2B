@@ -22,7 +22,7 @@ import { authenticationHeader, handleRpcError } from '../../envd/rpc'
 import { handleProcessStartEvent } from '../../envd/api'
 
 export interface PtyCreateOpts
-  extends Pick<ConnectionOpts, 'requestTimeoutMs'> {
+  extends Pick<ConnectionOpts, 'requestTimeoutMs' | 'signal'> {
   /**
    * Number of columns for the PTY.
    */
@@ -65,7 +65,7 @@ export interface PtyCreateOpts
  * Options for connecting to a command.
  */
 export type PtyConnectOpts = Pick<PtyCreateOpts, 'onData' | 'timeoutMs'> &
-  Pick<ConnectionOpts, 'requestTimeoutMs'>
+  Pick<ConnectionOpts, 'requestTimeoutMs' | 'signal'>
 
 /**
  * Module for interacting with PTYs (pseudo-terminals) in the sandbox.
@@ -103,6 +103,15 @@ export class Pty {
     envs.LC_ALL = envs.LC_ALL ?? 'C.UTF-8'
     const controller = new AbortController()
 
+    const onUserAbort = () => controller.abort(opts?.signal?.reason)
+    if (opts?.signal) {
+      if (opts.signal.aborted) {
+        controller.abort(opts.signal.reason)
+      } else {
+        opts.signal.addEventListener('abort', onUserAbort, { once: true })
+      }
+    }
+
     const reqTimeout = setTimeout(() => {
       controller.abort()
     }, requestTimeoutMs)
@@ -139,7 +148,10 @@ export class Pty {
 
       return new CommandHandle(
         pid,
-        () => controller.abort(),
+        () => {
+          opts?.signal?.removeEventListener('abort', onUserAbort)
+          controller.abort()
+        },
         () => this.kill(pid),
         events,
         undefined,
@@ -147,6 +159,7 @@ export class Pty {
         opts.onData
       )
     } catch (err) {
+      opts?.signal?.removeEventListener('abort', onUserAbort)
       throw handleRpcError(err)
     }
   }
@@ -164,6 +177,15 @@ export class Pty {
       opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
 
     const controller = new AbortController()
+
+    const onUserAbort = () => controller.abort(opts?.signal?.reason)
+    if (opts?.signal) {
+      if (opts.signal.aborted) {
+        controller.abort(opts.signal.reason)
+      } else {
+        opts.signal.addEventListener('abort', onUserAbort, { once: true })
+      }
+    }
 
     const reqTimeout = requestTimeoutMs
       ? setTimeout(() => {
@@ -196,7 +218,10 @@ export class Pty {
 
       return new CommandHandle(
         pid,
-        () => controller.abort(),
+        () => {
+          opts?.signal?.removeEventListener('abort', onUserAbort)
+          controller.abort()
+        },
         () => this.kill(pid),
         events,
         undefined,
@@ -204,6 +229,7 @@ export class Pty {
         opts?.onData
       )
     } catch (err) {
+      opts?.signal?.removeEventListener('abort', onUserAbort)
       throw handleRpcError(err)
     }
   }
@@ -218,7 +244,7 @@ export class Pty {
   async sendInput(
     pid: number,
     data: Uint8Array,
-    opts?: Pick<ConnectionOpts, 'requestTimeoutMs'>
+    opts?: Pick<ConnectionOpts, 'requestTimeoutMs' | 'signal'>
   ): Promise<void> {
     try {
       await this.rpc.sendInput(
@@ -237,7 +263,10 @@ export class Pty {
           },
         },
         {
-          signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
+          signal: this.connectionConfig.getSignal(
+            opts?.requestTimeoutMs,
+            opts?.signal
+          ),
         }
       )
     } catch (err) {
@@ -259,7 +288,7 @@ export class Pty {
       cols: number
       rows: number
     },
-    opts?: Pick<ConnectionOpts, 'requestTimeoutMs'>
+    opts?: Pick<ConnectionOpts, 'requestTimeoutMs' | 'signal'>
   ): Promise<void> {
     try {
       await this.rpc.update(
@@ -275,7 +304,10 @@ export class Pty {
           },
         },
         {
-          signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
+          signal: this.connectionConfig.getSignal(
+            opts?.requestTimeoutMs,
+            opts?.signal
+          ),
         }
       )
     } catch (err) {
@@ -294,7 +326,7 @@ export class Pty {
    */
   async kill(
     pid: number,
-    opts?: Pick<ConnectionOpts, 'requestTimeoutMs'>
+    opts?: Pick<ConnectionOpts, 'requestTimeoutMs' | 'signal'>
   ): Promise<boolean> {
     try {
       await this.rpc.sendSignal(
@@ -308,7 +340,10 @@ export class Pty {
           signal: Signal.SIGKILL,
         },
         {
-          signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
+          signal: this.connectionConfig.getSignal(
+            opts?.requestTimeoutMs,
+            opts?.signal
+          ),
         }
       )
 
