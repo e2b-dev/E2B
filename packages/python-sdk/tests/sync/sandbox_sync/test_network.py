@@ -188,6 +188,33 @@ def test_firewall_transform_injects_headers(sandbox_factory):
 
 
 @pytest.mark.skip_debug()
+def test_transform_callback_resolves_sandbox_id(sandbox_factory):
+    """The transform callback's sandbox_id placeholder is resolved by the proxy."""
+    header_name = "X-E2B-Sandbox-Id"
+
+    network: SandboxNetworkOpts = {
+        "rules": {
+            "httpbin.org": [
+                {
+                    "transform": lambda ctx: {"headers": {header_name: ctx.sandbox_id}},
+                },
+            ],
+        },
+    }
+    sandbox = sandbox_factory(network=network)
+
+    result = sandbox.commands.run("curl -sS --max-time 10 https://httpbin.org/headers")
+    assert result.exit_code == 0
+
+    parsed = json.loads(result.stdout)
+    reflected = parsed["headers"].get(header_name)
+    assert reflected == sandbox.sandbox_id, (
+        f"expected httpbin to reflect {header_name}={sandbox.sandbox_id}, "
+        f"got headers: {parsed['headers']}"
+    )
+
+
+@pytest.mark.skip_debug()
 def test_mask_request_host(sandbox_factory):
     """Test that mask_request_host modifies the Host header correctly."""
     sandbox = sandbox_factory(
