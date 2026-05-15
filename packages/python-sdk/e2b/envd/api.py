@@ -14,6 +14,7 @@ from e2b.exceptions import (
 
 
 ENVD_API_FILES_ROUTE = "/files"
+ENVD_API_FILES_COMPOSE_ROUTE = "/files/compose"
 ENVD_API_HEALTH_ROUTE = "/health"
 
 _DEFAULT_API_ERROR_MAP: dict[int, Callable[[str], Exception]] = {
