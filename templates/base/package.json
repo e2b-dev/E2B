@@ -1,0 +1,9 @@
+{
+  "name": "e2bdev/base",
+  "version": "1.0.0",
+  "description": "E2B Base Template",
+  "scripts": {
+    "build:dev": "tsx build.dev.ts",
+    "build:prod": "tsx build.prod.ts"
+  }
+}
