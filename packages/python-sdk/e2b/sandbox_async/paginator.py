@@ -57,7 +57,7 @@ class AsyncSandboxPaginator(SandboxPaginatorBase):
             }
             metadata = urllib.parse.urlencode(quoted_metadata)
 
-        config = ConnectionConfig(**(opts if opts else self._opts))
+        config = ConnectionConfig(**opts) if opts else self._config
         api_client = get_api_client(config)
         res = await get_v2_sandboxes.asyncio_detailed(
             client=api_client,
@@ -112,7 +112,7 @@ class AsyncSnapshotPaginator(SnapshotPaginatorBase):
         if not self.has_next:
             raise Exception("No more items to fetch")
 
-        config = ConnectionConfig(**(opts if opts else self._opts))
+        config = ConnectionConfig(**opts) if opts else self._config
         api_client = get_api_client(config)
         res = await get_snapshots.asyncio_detailed(
             client=api_client,

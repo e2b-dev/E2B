@@ -894,14 +894,14 @@ export class SandboxApi {
 }
 
 abstract class BasePaginator<T> {
-  protected readonly opts?: SandboxApiOpts
+  protected readonly config: ConnectionConfig
   protected readonly limit?: number
 
   private _hasNext: boolean
   private _nextToken?: string
 
-  constructor(opts?: SandboxApiOpts, limit?: number, nextToken?: string) {
-    this.opts = opts
+  constructor(config: ConnectionConfig, limit?: number, nextToken?: string) {
+    this.config = config
     this.limit = limit
 
     this._hasNext = true
@@ -959,7 +959,7 @@ export class SandboxPaginator extends BasePaginator<SandboxInfo> {
   private query: SandboxListOpts['query']
 
   constructor(opts?: SandboxListOpts) {
-    super(opts, opts?.limit, opts?.nextToken)
+    super(new ConnectionConfig(opts), opts?.limit, opts?.nextToken)
 
     this.query = opts?.query
   }
@@ -981,7 +981,7 @@ export class SandboxPaginator extends BasePaginator<SandboxInfo> {
       metadata = new URLSearchParams(encodedPairs).toString()
     }
 
-    const config = new ConnectionConfig(opts ?? this.opts)
+    const config = opts ? new ConnectionConfig(opts) : this.config
     const client = new ApiClient(config)
 
     const res = await client.api.GET('/v2/sandboxes', {
@@ -1037,7 +1037,7 @@ export class SnapshotPaginator extends BasePaginator<SnapshotInfo> {
   private readonly sandboxId?: string
 
   constructor(opts?: SnapshotListOpts) {
-    super(opts, opts?.limit, opts?.nextToken)
+    super(new ConnectionConfig(opts), opts?.limit, opts?.nextToken)
 
     this.sandboxId = opts?.sandboxId
   }
@@ -1047,7 +1047,7 @@ export class SnapshotPaginator extends BasePaginator<SnapshotInfo> {
       throw new Error('No more items to fetch')
     }
 
-    const config = new ConnectionConfig(opts ?? this.opts)
+    const config = opts ? new ConnectionConfig(opts) : this.config
     const client = new ApiClient(config)
 
     const res = await client.api.GET('/snapshots', {
