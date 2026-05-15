@@ -4,7 +4,6 @@ from typing import Any, Dict, List, Literal, Optional, TypedDict, Union, cast
 
 from typing_extensions import NotRequired, Unpack
 
-from e2b import ConnectionConfig
 from e2b.api.client.models import (
     ListedSandbox,
     SandboxDetail,
@@ -307,7 +306,7 @@ class PaginatorBase:
         next_token: Optional[str] = None,
         **opts: Unpack[ApiParams],
     ):
-        self._config = ConnectionConfig(**opts)
+        self._opts: ApiParams = opts
         self.limit = limit
         self._has_next = True
         self._next_token = next_token
