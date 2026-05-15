@@ -893,34 +893,19 @@ export class SandboxApi {
   }
 }
 
-/**
- * Per-call options accepted by {@link BasePaginator.nextItems}.
- */
-export interface PaginatorNextOpts {
-  /**
-   * An optional `AbortSignal` that cancels this in-flight page request.
-   * Aborting one page does not affect subsequent {@link BasePaginator.nextItems}
-   * calls — pass a fresh signal each call you want to be cancellable.
-   */
-  signal?: AbortSignal
-}
-
 abstract class BasePaginator<T> {
-  protected readonly config: ConnectionConfig
-  protected client: ApiClient
+  protected readonly opts?: SandboxApiOpts
   protected readonly limit?: number
 
   private _hasNext: boolean
   private _nextToken?: string
 
-  constructor(config: ConnectionConfig, limit?: number, nextToken?: string) {
-    this.config = config
-    this.client = new ApiClient(this.config)
+  constructor(opts?: SandboxApiOpts, limit?: number, nextToken?: string) {
+    this.opts = opts
+    this.limit = limit
 
     this._hasNext = true
     this._nextToken = nextToken
-
-    this.limit = limit
   }
 
   /**
@@ -945,13 +930,17 @@ abstract class BasePaginator<T> {
   /**
    * Get the next page of items.
    *
-   * @param opts per-call options (e.g. an `AbortSignal` to cancel this page request).
+   * @param opts per-call connection options. When provided, this call uses
+   * these options (e.g. `apiKey`, `domain`, `headers`, `requestTimeoutMs`,
+   * `signal`) instead of the ones the paginator was constructed with.
+   * Aborting a page via `signal` does not affect subsequent {@link BasePaginator.nextItems}
+   * calls — pass a fresh signal each call you want to be cancellable.
    *
    * @throws Error if there are no more items to fetch. Call this method only if `hasNext` is `true`.
    *
    * @returns List of items
    */
-  abstract nextItems(opts?: PaginatorNextOpts): Promise<T[]>
+  abstract nextItems(opts?: SandboxApiOpts): Promise<T[]>
 }
 
 /**
@@ -970,12 +959,12 @@ export class SandboxPaginator extends BasePaginator<SandboxInfo> {
   private query: SandboxListOpts['query']
 
   constructor(opts?: SandboxListOpts) {
-    super(new ConnectionConfig(opts), opts?.limit, opts?.nextToken)
+    super(opts, opts?.limit, opts?.nextToken)
 
     this.query = opts?.query
   }
 
-  async nextItems(opts?: PaginatorNextOpts): Promise<SandboxInfo[]> {
+  async nextItems(opts?: SandboxApiOpts): Promise<SandboxInfo[]> {
     if (!this.hasNext) {
       throw new Error('No more items to fetch')
     }
@@ -992,7 +981,10 @@ export class SandboxPaginator extends BasePaginator<SandboxInfo> {
       metadata = new URLSearchParams(encodedPairs).toString()
     }
 
-    const res = await this.client.api.GET('/v2/sandboxes', {
+    const config = new ConnectionConfig(opts ?? this.opts)
+    const client = new ApiClient(config)
+
+    const res = await client.api.GET('/v2/sandboxes', {
       params: {
         query: {
           metadata,
@@ -1001,8 +993,7 @@ export class SandboxPaginator extends BasePaginator<SandboxInfo> {
           nextToken: this.nextToken,
         },
       },
-      // requestTimeoutMs is already passed here via the connectionConfig.
-      signal: this.config.getSignal(undefined, opts?.signal),
+      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
     })
 
     const err = handleApiError(res)
@@ -1046,17 +1037,20 @@ export class SnapshotPaginator extends BasePaginator<SnapshotInfo> {
   private readonly sandboxId?: string
 
   constructor(opts?: SnapshotListOpts) {
-    super(new ConnectionConfig(opts), opts?.limit, opts?.nextToken)
+    super(opts, opts?.limit, opts?.nextToken)
 
     this.sandboxId = opts?.sandboxId
   }
 
-  async nextItems(opts?: PaginatorNextOpts): Promise<SnapshotInfo[]> {
+  async nextItems(opts?: SandboxApiOpts): Promise<SnapshotInfo[]> {
     if (!this.hasNext) {
       throw new Error('No more items to fetch')
     }
 
-    const res = await this.client.api.GET('/snapshots', {
+    const config = new ConnectionConfig(opts ?? this.opts)
+    const client = new ApiClient(config)
+
+    const res = await client.api.GET('/snapshots', {
       params: {
         query: {
           sandboxID: this.sandboxId,
@@ -1064,7 +1058,7 @@ export class SnapshotPaginator extends BasePaginator<SnapshotInfo> {
           nextToken: this.nextToken,
         },
       },
-      signal: this.config.getSignal(undefined, opts?.signal),
+      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
     })
 
     const err = handleApiError(res)
