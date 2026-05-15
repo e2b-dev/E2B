@@ -21,10 +21,10 @@ import {
   SandboxListOpts,
   SandboxPaginator,
   SandboxBetaCreateOpts,
-  SandboxApiOpts,
   SnapshotListOpts,
   SnapshotInfo,
   SnapshotPaginator,
+  CreateSnapshotOpts,
 } from './sandboxApi'
 import { getSignature } from './signature'
 import { compareVersions } from 'compare-versions'
@@ -614,7 +614,7 @@ export class Sandbox extends SandboxApi {
    *
    * Use the returned `snapshotId` with `Sandbox.create(snapshotId)` to create a new sandbox from the snapshot.
    *
-   * @param opts connection options.
+   * @param opts snapshot creation options including optional name and connection options.
    *
    * @returns snapshot information including the snapshot ID.
    *
@@ -624,17 +624,17 @@ export class Sandbox extends SandboxApi {
    * await sandbox.files.write('/app/state.json', '{"step": 1}')
    *
    * // Create a snapshot
-   * const snapshot = await sandbox.createSnapshot()
+   * const snapshot = await sandbox.createSnapshot({ name: 'my-snapshot' })
    *
    * // Create a new sandbox from the snapshot
    * const newSandbox = await Sandbox.create(snapshot.snapshotId)
    * ```
    */
-  async createSnapshot(opts?: SandboxApiOpts): Promise<SnapshotInfo> {
-    return await SandboxApi.createSnapshot(
-      this.sandboxId,
-      this.resolveApiOpts(opts)
-    )
+  async createSnapshot(opts?: CreateSnapshotOpts): Promise<SnapshotInfo> {
+    return await SandboxApi.createSnapshot(this.sandboxId, {
+      ...this.resolveApiOpts(opts),
+      name: opts?.name,
+    })
   }
 
   /**

@@ -1,17 +1,21 @@
-import { dynamicRequire, runtime } from '../utils'
+import { runtime } from '../utils'
 
-type Undici = typeof import('undici')
-type UndiciDispatcher = InstanceType<Undici['Agent']>
 type UndiciRequestInit = RequestInit & {
-  dispatcher: UndiciDispatcher
+  dispatcher?: unknown
   duplex?: 'half'
+}
+type UndiciModule = {
+  Agent: new (options: { allowH2: true; connections?: number }) => unknown
+  fetch: unknown
 }
 type EnvdFetchOptions = {
   connectionLimit?: number
+  loadUndici?: () => Promise<UndiciModule | undefined>
 }
 
 let envdFetch: typeof fetch | undefined
 let envdRpcFetch: typeof fetch | undefined
+let hasWarnedUndiciFallback = false
 
 export function createEnvdFetchForRuntime(
   currentRuntime = runtime,
@@ -21,13 +25,35 @@ export function createEnvdFetchForRuntime(
     return fetch
   }
 
-  const { Agent, fetch: undiciFetch } = dynamicRequire<Undici>('undici')
+  let fetcherPromise: Promise<typeof fetch> | undefined
+
+  return (async (input, init) => {
+    fetcherPromise ??= buildEnvdFetcher(options)
+    const fetcher = await fetcherPromise
+
+    return fetcher(input, init)
+  }) as typeof fetch
+}
+
+async function buildEnvdFetcher(
+  options: EnvdFetchOptions
+): Promise<typeof fetch> {
+  const undici = await (options.loadUndici ?? loadUndici)()
+
+  if (!undici) {
+    warnUndiciFallback()
+
+    return fetch
+  }
+
+  const { Agent, fetch: undiciFetch } = undici
   const dispatcherOptions: { allowH2: true; connections?: number } = {
     allowH2: true,
   }
   if (options.connectionLimit !== undefined) {
     dispatcherOptions.connections = options.connectionLimit
   }
+
   const dispatcher = new Agent(dispatcherOptions)
   const fetchWithDispatcher = undiciFetch as unknown as (
     input: RequestInfo | URL,
@@ -42,6 +68,33 @@ export function createEnvdFetchForRuntime(
       dispatcher,
     })
   }) as typeof fetch
+}
+
+async function loadUndici(): Promise<UndiciModule | undefined> {
+  try {
+    // Keep this import opaque to bundlers. It must resolve as a package name
+    // from the runtime environment, not as a path relative to this file.
+    // eslint-disable-next-line no-new-func
+    const importModule = new Function(
+      'moduleName',
+      'return import(moduleName)'
+    ) as (moduleName: string) => Promise<UndiciModule>
+
+    return await importModule('undici')
+  } catch {
+    return undefined
+  }
+}
+
+function warnUndiciFallback() {
+  if (hasWarnedUndiciFallback) {
+    return
+  }
+
+  hasWarnedUndiciFallback = true
+  console.warn(
+    'Failed to load undici for envd HTTP/2 transport; falling back to global fetch.'
+  )
 }
 
 export function createEnvdFetch(): typeof fetch {

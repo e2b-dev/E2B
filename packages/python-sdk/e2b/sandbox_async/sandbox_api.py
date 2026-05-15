@@ -297,6 +297,7 @@ class SandboxApi(SandboxBase):
     async def _cls_create_snapshot(
         cls,
         sandbox_id: str,
+        name: Optional[str] = None,
         **opts: Unpack[ApiParams],
     ) -> SnapshotInfo:
         config = ConnectionConfig(**opts)
@@ -305,7 +306,7 @@ class SandboxApi(SandboxBase):
         res = await post_sandboxes_sandbox_id_snapshots.asyncio_detailed(
             sandbox_id,
             client=api_client,
-            body=PostSandboxesSandboxIDSnapshotsBody(),
+            body=PostSandboxesSandboxIDSnapshotsBody(name=name if name else UNSET),
         )
 
         if res.status_code == 404:
@@ -320,7 +321,10 @@ class SandboxApi(SandboxBase):
         if isinstance(res.parsed, Error):
             raise SandboxException(f"{res.parsed.message}: Request failed")
 
-        return SnapshotInfo(snapshot_id=res.parsed.snapshot_id)
+        return SnapshotInfo(
+            snapshot_id=res.parsed.snapshot_id,
+            names=list(res.parsed.names) if res.parsed.names else [],
+        )
 
     @classmethod
     async def _cls_delete_snapshot(
