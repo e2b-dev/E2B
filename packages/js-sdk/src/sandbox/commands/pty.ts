@@ -103,7 +103,7 @@ export class Pty {
     envs.LANG = envs.LANG ?? 'C.UTF-8'
     envs.LC_ALL = envs.LC_ALL ?? 'C.UTF-8'
 
-    const { controller, cleanup } = setupRequestController(
+    const { controller, clearStartTimeout, cleanup } = setupRequestController(
       requestTimeoutMs,
       opts?.signal
     )
@@ -135,6 +135,7 @@ export class Pty {
 
     try {
       const pid = await handleProcessStartEvent(events)
+      clearStartTimeout()
 
       return new CommandHandle(
         pid,
@@ -163,7 +164,7 @@ export class Pty {
     const requestTimeoutMs =
       opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
 
-    const { controller, cleanup } = setupRequestController(
+    const { controller, clearStartTimeout, cleanup } = setupRequestController(
       requestTimeoutMs,
       opts?.signal
     )
@@ -188,6 +189,7 @@ export class Pty {
 
     try {
       const pid = await handleProcessStartEvent(events)
+      clearStartTimeout()
 
       return new CommandHandle(
         pid,

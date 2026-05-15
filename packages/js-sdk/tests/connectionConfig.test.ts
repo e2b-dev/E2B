@@ -119,3 +119,31 @@ test('setupRequestController cleanup removes the user-signal listener', () => {
   userController.abort()
   cleanup()
 })
+
+test('setupRequestController clearStartTimeout stops the handshake timer', async () => {
+  const { controller, clearStartTimeout } = setupRequestController(
+    20,
+    undefined
+  )
+  clearStartTimeout()
+  await new Promise((resolve) => setTimeout(resolve, 40))
+  assert.equal(controller.signal.aborted, false)
+})
+
+test('setupRequestController handshake timer aborts when not cleared', async () => {
+  const { controller } = setupRequestController(20, undefined)
+  await new Promise((resolve) => setTimeout(resolve, 40))
+  assert.equal(controller.signal.aborted, true)
+})
+
+test('setupRequestController user signal still cancels after clearStartTimeout', () => {
+  const userController = new AbortController()
+  const { controller, clearStartTimeout } = setupRequestController(
+    60_000,
+    userController.signal
+  )
+  clearStartTimeout()
+  assert.equal(controller.signal.aborted, false)
+  userController.abort()
+  assert.equal(controller.signal.aborted, true)
+})

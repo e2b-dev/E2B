@@ -314,7 +314,7 @@ export class Commands {
     const requestTimeoutMs =
       opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
 
-    const { controller, cleanup } = setupRequestController(
+    const { controller, clearStartTimeout, cleanup } = setupRequestController(
       requestTimeoutMs,
       opts?.signal
     )
@@ -339,6 +339,7 @@ export class Commands {
 
     try {
       const pid = await handleProcessStartEvent(events)
+      clearStartTimeout()
 
       return new CommandHandle(
         pid,
@@ -423,7 +424,7 @@ export class Commands {
     const requestTimeoutMs =
       opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
 
-    const { controller, cleanup } = setupRequestController(
+    const { controller, clearStartTimeout, cleanup } = setupRequestController(
       requestTimeoutMs,
       opts?.signal
     )
@@ -450,6 +451,7 @@ export class Commands {
 
     try {
       const pid = await handleProcessStartEvent(events)
+      clearStartTimeout()
 
       return new CommandHandle(
         pid,

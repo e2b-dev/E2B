@@ -72,19 +72,31 @@ export interface ConnectionOpts {
 }
 
 /**
- * Set up an internal `AbortController` for a streaming request that:
- *  - aborts when the optional user signal aborts
- *  - aborts when the optional request timeout elapses
+ * Set up an internal `AbortController` for a streaming request.
  *
- * Returns the controller plus an idempotent `cleanup` function that detaches
- * the user-signal listener, clears the timeout, and aborts the controller.
+ * Until `clearStartTimeout` is called, the controller aborts when either
+ *  - the optional user signal aborts, or
+ *  - the optional request timeout elapses (used to bound the initial
+ *    handshake; long-lived streams should call `clearStartTimeout` once
+ *    the handshake succeeds).
+ *
+ * The user-signal listener stays attached for the full stream lifetime
+ * so the caller can cancel a long-running stream by aborting the signal.
+ *
+ * `cleanup` is idempotent and detaches the listener, clears the handshake
+ * timer (if still pending), and aborts the controller. Call it when the
+ * stream finishes or when startup fails.
  *
  * @internal
  */
 export function setupRequestController(
   requestTimeoutMs: number | undefined,
   userSignal: AbortSignal | undefined
-): { controller: AbortController; cleanup: () => void } {
+): {
+  controller: AbortController
+  clearStartTimeout: () => void
+  cleanup: () => void
+} {
   const controller = new AbortController()
 
   const onUserAbort = () => controller.abort(userSignal?.reason)
@@ -96,22 +108,27 @@ export function setupRequestController(
     }
   }
 
-  const reqTimeout = requestTimeoutMs
+  let reqTimeout: ReturnType<typeof setTimeout> | undefined = requestTimeoutMs
     ? setTimeout(() => controller.abort(), requestTimeoutMs)
     : undefined
+
+  const clearStartTimeout = () => {
+    if (reqTimeout) {
+      clearTimeout(reqTimeout)
+      reqTimeout = undefined
+    }
+  }
 
   let cleaned = false
   const cleanup = () => {
     if (cleaned) return
     cleaned = true
     userSignal?.removeEventListener('abort', onUserAbort)
-    if (reqTimeout) {
-      clearTimeout(reqTimeout)
-    }
+    clearStartTimeout()
     controller.abort()
   }
 
-  return { controller, cleanup }
+  return { controller, clearStartTimeout, cleanup }
 }
 
 /**

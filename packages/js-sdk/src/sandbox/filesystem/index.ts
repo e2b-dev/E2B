@@ -818,7 +818,7 @@ export class Filesystem {
     const requestTimeoutMs =
       opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
 
-    const { controller, cleanup } = setupRequestController(
+    const { controller, clearStartTimeout, cleanup } = setupRequestController(
       requestTimeoutMs,
       opts?.signal
     )
@@ -840,6 +840,7 @@ export class Filesystem {
 
     try {
       await handleWatchDirStartEvent(events)
+      clearStartTimeout()
 
       return new WatchHandle(cleanup, events, onEvent, opts?.onExit)
     } catch (err) {
