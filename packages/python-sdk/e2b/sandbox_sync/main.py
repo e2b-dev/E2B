@@ -191,7 +191,7 @@ class Sandbox(SandboxApi):
         :param secure: Envd is secured with access token and cannot be used without it, defaults to `True`.
         :param allow_internet_access: Allow sandbox to access the internet, defaults to `True`. If set to `False`, it works the same as setting network `deny_out` to `[0.0.0.0/0]`.
         :param mcp: MCP server to enable in the sandbox
-        :param network: Sandbox network configuration
+        :param network: Sandbox network configuration. ``allow_out``/``deny_out`` may also be a callable receiving a :class:`SandboxNetworkSelectorContext` (``ctx.all_traffic``, ``ctx.rules``) and returning a list of strings. Per-host transform rules are nested under ``network.rules``.
         :param lifecycle: Sandbox lifecycle configuration — ``on_timeout``: ``"kill"`` (default) or ``"pause"``; ``auto_resume``: ``False`` (default) or ``True`` (only when ``on_timeout="pause"``). Example: ``{"on_timeout": "pause", "auto_resume": True}``
         :param volume_mounts: Dictionary mapping mount paths to Volume instances or volume names
 

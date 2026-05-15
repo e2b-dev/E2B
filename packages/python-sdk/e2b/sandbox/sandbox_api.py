@@ -1,6 +1,17 @@
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, List, Literal, Optional, TypedDict, Union, cast
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Literal,
+    Mapping,
+    Optional,
+    TypedDict,
+    Union,
+    cast,
+)
 
 from typing_extensions import NotRequired, Unpack
 
@@ -9,12 +20,17 @@ from e2b.api.client.models import (
     ListedSandbox,
     SandboxDetail,
     SandboxLifecycle as ClientSandboxLifecycle,
-    SandboxNetworkConfig as ClientSandboxNetworkConfig,
+    SandboxNetworkConfig,
+    SandboxNetworkConfigRules,
+    SandboxNetworkRule as ClientSandboxNetworkRule,
+    SandboxNetworkTransform as ClientSandboxNetworkTransform,
+    SandboxNetworkTransformHeaders as ClientSandboxNetworkTransformHeaders,
     SandboxState,
 )
 from e2b.api.client.types import Unset
 from e2b.connection_config import ApiParams
 from e2b.sandbox.mcp import McpServer as BaseMcpServer
+from e2b.sandbox.network import ALL_TRAFFIC
 
 
 class GitHubMcpServerConfig(TypedDict):
@@ -45,26 +61,151 @@ GitHubMcpServer = Dict[str, Union[GitHubMcpServerConfig, Any]]
 McpServer = Union[BaseMcpServer, GitHubMcpServer]
 
 
+class SandboxNetworkTransform(TypedDict):
+    """
+    Transform applied to egress requests matching a :class:`SandboxNetworkRule`.
+    """
+
+    headers: NotRequired[Dict[str, str]]
+    """
+    Headers to inject into the outbound request. Values override any headers
+    already present on the request.
+    """
+
+
+@dataclass(frozen=True)
+class _SandboxNetworkTransformIdentity:
+    """Identity-related placeholders."""
+
+    jwt: str
+    """Placeholder ``"${e2b.identity.jwt}"``."""
+
+
+@dataclass(frozen=True)
+class SandboxNetworkTransformContext:
+    """
+    Context passed to a :class:`SandboxNetworkRule` ``transform`` callable.
+    Each field is a literal placeholder string (e.g. ``"${e2b.sandbox_id}"``)
+    that the proxy resolves per request at egress time.
+    """
+
+    sandbox_id: str
+    """Placeholder ``"${e2b.sandboxId}"``."""
+
+    team_id: str
+    """Placeholder ``"${e2b.teamId}"``."""
+
+    execution_id: str
+    """Placeholder ``"${e2b.executionId}"``."""
+
+    identity: _SandboxNetworkTransformIdentity
+    """Identity-related placeholders."""
+
+
+SandboxNetworkTransformResolver = Callable[
+    [SandboxNetworkTransformContext], SandboxNetworkTransform
+]
+
+
+class SandboxNetworkRule(TypedDict):
+    """
+    Per-domain rule applied to egress requests.
+    """
+
+    transform: NotRequired[
+        Union[SandboxNetworkTransform, SandboxNetworkTransformResolver]
+    ]
+    """
+    Transform applied to requests matching this rule. Accepts either a static
+    :class:`SandboxNetworkTransform` or a callable that receives a
+    :class:`SandboxNetworkTransformContext` of placeholder strings; the
+    resolved object is sent to the API as-is.
+    """
+
+
+SandboxNetworkRules = Dict[str, List[SandboxNetworkRule]]
+"""
+Map of host (or CIDR / IP) to ordered list of rules applied to outbound
+requests for that host. Registering a host here does not allow egress on its
+own — the host must also appear in ``SandboxNetworkOpts.allow_out``.
+"""
+
+
+class SandboxNetworkRuleInfo(TypedDict):
+    """
+    Per-domain rule as returned by the sandbox info endpoint. Mirrors
+    :class:`SandboxNetworkRule` but with ``transform`` always materialized to
+    the static :class:`SandboxNetworkTransform` shape — no callable variant.
+    """
+
+    transform: NotRequired[SandboxNetworkTransform]
+
+
+@dataclass(frozen=True)
+class SandboxNetworkSelectorContext:
+    """
+    Context passed to ``allow_out``/``deny_out`` callables.
+    """
+
+    all_traffic: str
+    """All traffic sentinel — equivalent to ``"0.0.0.0/0"``."""
+
+    rules: Mapping[str, List[SandboxNetworkRule]]
+    """Rules registered in :attr:`SandboxNetworkOpts.rules`."""
+
+
+SandboxNetworkSelector = Union[
+    List[str],
+    Callable[[SandboxNetworkSelectorContext], List[str]],
+]
+"""
+Egress rule list, either a static list of CIDR blocks / IP addresses /
+hostnames, or a callable that receives a :class:`SandboxNetworkSelectorContext`
+and returns the same.
+"""
+
+
 class SandboxNetworkOpts(TypedDict):
     """
     Sandbox network configuration options.
     """
 
-    allow_out: NotRequired[List[str]]
+    allow_out: NotRequired[SandboxNetworkSelector]
     """
     Allow outbound traffic from the sandbox to the specified addresses.
-    If `allow_out` is not specified, all outbound traffic is allowed.
+    If ``allow_out`` is not specified, all outbound traffic is allowed.
+
+    Accepts either a static list of CIDR blocks / IP addresses / hostnames, or
+    a callable that receives a :class:`SandboxNetworkSelectorContext` and
+    returns the same. ``ctx.all_traffic`` is ``"0.0.0.0/0"``; ``ctx.rules`` is
+    a read-only view of :attr:`rules`.
 
     Examples:
-    - To allow traffic to specific addresses: `["1.1.1.1", "8.8.8.0/24"]`
+    - Static list: ``["1.1.1.1", "8.8.8.0/24"]``
+    - Allow only rule-registered hosts:
+      ``lambda ctx: list(ctx.rules.keys())``
     """
 
-    deny_out: NotRequired[List[str]]
+    deny_out: NotRequired[SandboxNetworkSelector]
     """
     Deny outbound traffic from the sandbox to the specified addresses.
 
+    Accepts the same shapes as ``allow_out``.
+
     Examples:
-    - To deny traffic to specific addresses: `["1.1.1.1", "8.8.8.0/24"]`
+    - Static list: ``["1.1.1.1", "8.8.8.0/24"]``
+    - Block all egress: ``lambda ctx: [ctx.all_traffic]``
+    """
+
+    rules: NotRequired[SandboxNetworkRules]
+    """
+    Per-domain transform rules applied to matching egress HTTP/HTTPS
+    requests. Keys are domains (e.g. ``"api.example.com"``); values are
+    ordered lists of :class:`SandboxNetworkRule`.
+
+    Registering a host here does not allow egress on its own — the host must
+    also appear in ``allow_out``. Hosts registered here are exposed to the
+    ``allow_out``/``deny_out`` callables via ``ctx.rules``.
     """
 
     allow_public_traffic: NotRequired[bool]
@@ -81,6 +222,20 @@ class SandboxNetworkOpts(TypedDict):
     Examples:
     - Custom subdomain: `"${PORT}-myapp.example.com"`
     """
+
+
+class SandboxNetworkInfo(TypedDict, total=False):
+    """
+    Network configuration as returned by the sandbox info endpoint.
+    Mirrors :class:`SandboxNetworkOpts` but with ``allow_out``/``deny_out``
+    always materialized to plain string lists.
+    """
+
+    allow_out: List[str]
+    deny_out: List[str]
+    rules: Dict[str, List[SandboxNetworkRuleInfo]]
+    allow_public_traffic: bool
+    mask_request_host: str
 
 
 class SandboxLifecycle(TypedDict):
@@ -117,6 +272,79 @@ class SandboxInfoLifecycle(TypedDict):
     """
 
 
+def _resolve_network_selector(
+    selector: Optional[SandboxNetworkSelector],
+    rules: Mapping[str, List[SandboxNetworkRule]],
+) -> Optional[List[str]]:
+    if selector is None:
+        return None
+
+    if callable(selector):
+        ctx = SandboxNetworkSelectorContext(all_traffic=ALL_TRAFFIC, rules=rules)
+        return list(selector(ctx))
+
+    return list(selector)
+
+
+_TRANSFORM_CONTEXT = SandboxNetworkTransformContext(
+    sandbox_id="${e2b.sandboxId}",
+    team_id="${e2b.teamId}",
+    execution_id="${e2b.executionId}",
+    identity=_SandboxNetworkTransformIdentity(jwt="${e2b.identity.jwt}"),
+)
+
+
+def _build_client_rules(rules: SandboxNetworkRules) -> SandboxNetworkConfigRules:
+    client_rules = SandboxNetworkConfigRules()
+    for host, host_rules in rules.items():
+        converted: List[ClientSandboxNetworkRule] = []
+        for rule in host_rules:
+            transform = rule.get("transform")
+            if transform is None:
+                converted.append(ClientSandboxNetworkRule())
+                continue
+            if callable(transform):
+                transform = transform(_TRANSFORM_CONTEXT)
+
+            client_transform = ClientSandboxNetworkTransform()
+            headers = transform.get("headers")
+            if headers:
+                client_headers = ClientSandboxNetworkTransformHeaders()
+                client_headers.additional_properties = dict(headers)
+                client_transform.headers = client_headers
+
+            converted.append(ClientSandboxNetworkRule(transform=client_transform))
+        client_rules.additional_properties[host] = converted
+
+    return client_rules
+
+
+def build_network_config(
+    network: Optional[SandboxNetworkOpts],
+) -> Optional[Dict[str, Any]]:
+    """Resolve a :class:`SandboxNetworkOpts` into the dict the API expects."""
+    if network is None:
+        return None
+
+    rules = network.get("rules") or {}
+    allow_out = _resolve_network_selector(network.get("allow_out"), rules)
+    deny_out = _resolve_network_selector(network.get("deny_out"), rules)
+
+    body: Dict[str, Any] = {}
+    if allow_out is not None:
+        body["allow_out"] = allow_out
+    if deny_out is not None:
+        body["deny_out"] = deny_out
+    if "rules" in network and network["rules"] is not None:
+        body["rules"] = _build_client_rules(network["rules"])
+    if "allow_public_traffic" in network:
+        body["allow_public_traffic"] = network["allow_public_traffic"]
+    if "mask_request_host" in network:
+        body["mask_request_host"] = network["mask_request_host"]
+
+    return body
+
+
 def get_auto_resume_enabled(lifecycle: Optional[SandboxLifecycle]) -> Optional[bool]:
     if lifecycle is None or lifecycle.get("on_timeout") != "pause":
         return None
@@ -125,17 +353,21 @@ def get_auto_resume_enabled(lifecycle: Optional[SandboxLifecycle]) -> Optional[b
 
 
 def from_client_network_config(
-    network: Union[Unset, ClientSandboxNetworkConfig],
-) -> Optional[SandboxNetworkOpts]:
+    network: Union[Unset, SandboxNetworkConfig],
+) -> Optional[SandboxNetworkInfo]:
     if isinstance(network, Unset):
         return None
 
-    result: SandboxNetworkOpts = {}
+    result: SandboxNetworkInfo = {}
 
     if not isinstance(network.allow_out, Unset):
         result["allow_out"] = list(network.allow_out)
     if not isinstance(network.deny_out, Unset):
         result["deny_out"] = list(network.deny_out)
+    if not isinstance(network.rules, Unset):
+        result["rules"] = cast(
+            Dict[str, List[SandboxNetworkRuleInfo]], network.rules.to_dict()
+        )
     if not isinstance(network.allow_public_traffic, Unset):
         result["allow_public_traffic"] = network.allow_public_traffic
     if not isinstance(network.mask_request_host, Unset):
@@ -188,7 +420,7 @@ class SandboxInfo:
     """Envd access token."""
     allow_internet_access: Optional[bool] = None
     """Whether internet access was explicitly enabled or disabled for the sandbox."""
-    network: Optional[SandboxNetworkOpts] = None
+    network: Optional[SandboxNetworkInfo] = None
     """Sandbox network configuration."""
     lifecycle: Optional[SandboxInfoLifecycle] = None
     """Sandbox lifecycle configuration."""
@@ -202,7 +434,7 @@ class SandboxInfo:
         envd_access_token: Optional[str] = None,
         sandbox_domain: Optional[str] = None,
         allow_internet_access: Optional[bool] = None,
-        network: Optional[SandboxNetworkOpts] = None,
+        network: Optional[SandboxNetworkInfo] = None,
         lifecycle: Optional[SandboxInfoLifecycle] = None,
     ):
         return cls(
