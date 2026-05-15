@@ -176,7 +176,9 @@ def test_firewall_transform_injects_headers(sandbox_factory):
     }
     sandbox = sandbox_factory(network=network)
 
-    result = sandbox.commands.run("curl -sS --max-time 10 https://httpbin.e2b.team/headers")
+    result = sandbox.commands.run(
+        "curl -sS --max-time 10 https://httpbin.e2b.team/headers"
+    )
     assert result.exit_code == 0
 
     parsed = json.loads(result.stdout)
@@ -203,7 +205,9 @@ def test_transform_callback_resolves_sandbox_id(sandbox_factory):
     }
     sandbox = sandbox_factory(network=network)
 
-    result = sandbox.commands.run("curl -sS --max-time 10 https://httpbin.e2b.team/headers")
+    result = sandbox.commands.run(
+        "curl -sS --max-time 10 https://httpbin.e2b.team/headers"
+    )
     assert result.exit_code == 0
 
     parsed = json.loads(result.stdout)
