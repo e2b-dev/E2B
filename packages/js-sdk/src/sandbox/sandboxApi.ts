@@ -214,7 +214,7 @@ export type SandboxConnectOpts = ConnectionOpts & {
  */
 export type SandboxState = 'running' | 'paused'
 
-export interface SandboxListOpts extends SandboxApiOpts {
+export interface SandboxListOpts extends Omit<SandboxApiOpts, 'signal'> {
   /**
    * Filter the list of sandboxes, e.g. by metadata `metadata:{"key": "value"}`, if there are multiple filters they are combined with AND.
    *
@@ -239,15 +239,6 @@ export interface SandboxListOpts extends SandboxApiOpts {
    * Token to the next page.
    */
   nextToken?: string
-
-  /**
-   * An optional `AbortSignal` that cancels in-flight page requests.
-   * The signal is stored on the returned paginator and applies to every
-   * subsequent {@link SandboxPaginator.nextItems} call — once aborted,
-   * all further pages reject. Construct a new paginator if you need a
-   * fresh signal.
-   */
-  signal?: AbortSignal
 }
 
 export interface SandboxMetricsOpts extends SandboxApiOpts {
@@ -264,7 +255,7 @@ export interface SandboxMetricsOpts extends SandboxApiOpts {
 /**
  * Options for listing snapshots.
  */
-export interface SnapshotListOpts extends SandboxApiOpts {
+export interface SnapshotListOpts extends Omit<SandboxApiOpts, 'signal'> {
   /**
    * Filter snapshots by source sandbox ID.
    */
@@ -281,15 +272,6 @@ export interface SnapshotListOpts extends SandboxApiOpts {
    * Token to the next page.
    */
   nextToken?: string
-
-  /**
-   * An optional `AbortSignal` that cancels in-flight page requests.
-   * The signal is stored on the returned paginator and applies to every
-   * subsequent {@link SnapshotPaginator.nextItems} call — once aborted,
-   * all further pages reject. Construct a new paginator if you need a
-   * fresh signal.
-   */
-  signal?: AbortSignal
 }
 
 /**
@@ -911,21 +893,27 @@ export class SandboxApi {
   }
 }
 
+/**
+ * Per-call options accepted by {@link BasePaginator.nextItems}.
+ */
+export interface PaginatorNextOpts {
+  /**
+   * An optional `AbortSignal` that cancels this in-flight page request.
+   * Aborting one page does not affect subsequent {@link BasePaginator.nextItems}
+   * calls — pass a fresh signal each call you want to be cancellable.
+   */
+  signal?: AbortSignal
+}
+
 abstract class BasePaginator<T> {
   protected readonly config: ConnectionConfig
   protected client: ApiClient
   protected readonly limit?: number
-  protected readonly signal?: AbortSignal
 
   private _hasNext: boolean
   private _nextToken?: string
 
-  constructor(
-    config: ConnectionConfig,
-    limit?: number,
-    nextToken?: string,
-    signal?: AbortSignal
-  ) {
+  constructor(config: ConnectionConfig, limit?: number, nextToken?: string) {
     this.config = config
     this.client = new ApiClient(this.config)
 
@@ -933,7 +921,6 @@ abstract class BasePaginator<T> {
     this._nextToken = nextToken
 
     this.limit = limit
-    this.signal = signal
   }
 
   /**
@@ -958,11 +945,13 @@ abstract class BasePaginator<T> {
   /**
    * Get the next page of items.
    *
+   * @param opts per-call options (e.g. an `AbortSignal` to cancel this page request).
+   *
    * @throws Error if there are no more items to fetch. Call this method only if `hasNext` is `true`.
    *
    * @returns List of items
    */
-  abstract nextItems(): Promise<T[]>
+  abstract nextItems(opts?: PaginatorNextOpts): Promise<T[]>
 }
 
 /**
@@ -981,17 +970,12 @@ export class SandboxPaginator extends BasePaginator<SandboxInfo> {
   private query: SandboxListOpts['query']
 
   constructor(opts?: SandboxListOpts) {
-    super(
-      new ConnectionConfig(opts),
-      opts?.limit,
-      opts?.nextToken,
-      opts?.signal
-    )
+    super(new ConnectionConfig(opts), opts?.limit, opts?.nextToken)
 
     this.query = opts?.query
   }
 
-  async nextItems(): Promise<SandboxInfo[]> {
+  async nextItems(opts?: PaginatorNextOpts): Promise<SandboxInfo[]> {
     if (!this.hasNext) {
       throw new Error('No more items to fetch')
     }
@@ -1018,7 +1002,7 @@ export class SandboxPaginator extends BasePaginator<SandboxInfo> {
         },
       },
       // requestTimeoutMs is already passed here via the connectionConfig.
-      signal: this.config.getSignal(undefined, this.signal),
+      signal: this.config.getSignal(undefined, opts?.signal),
     })
 
     const err = handleApiError(res)
@@ -1062,17 +1046,12 @@ export class SnapshotPaginator extends BasePaginator<SnapshotInfo> {
   private readonly sandboxId?: string
 
   constructor(opts?: SnapshotListOpts) {
-    super(
-      new ConnectionConfig(opts),
-      opts?.limit,
-      opts?.nextToken,
-      opts?.signal
-    )
+    super(new ConnectionConfig(opts), opts?.limit, opts?.nextToken)
 
     this.sandboxId = opts?.sandboxId
   }
 
-  async nextItems(): Promise<SnapshotInfo[]> {
+  async nextItems(opts?: PaginatorNextOpts): Promise<SnapshotInfo[]> {
     if (!this.hasNext) {
       throw new Error('No more items to fetch')
     }
@@ -1085,7 +1064,7 @@ export class SnapshotPaginator extends BasePaginator<SnapshotInfo> {
           nextToken: this.nextToken,
         },
       },
-      signal: this.config.getSignal(undefined, this.signal),
+      signal: this.config.getSignal(undefined, opts?.signal),
     })
 
     const err = handleApiError(res)

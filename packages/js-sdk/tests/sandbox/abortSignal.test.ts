@@ -84,15 +84,12 @@ test('Sandbox.kill rejects when AbortSignal is aborted', async () => {
   await expect(promise).rejects.toThrow()
 })
 
-test('SandboxPaginator.nextItems rejects when AbortSignal is aborted', async () => {
+test('SandboxPaginator.nextItems rejects when per-call AbortSignal is aborted', async () => {
   const controller = new AbortController()
 
-  const paginator = Sandbox.list({
-    apiKey: 'test-key',
-    signal: controller.signal,
-  })
+  const paginator = Sandbox.list({ apiKey: 'test-key' })
 
-  const promise = paginator.nextItems()
+  const promise = paginator.nextItems({ signal: controller.signal })
   setTimeout(() => controller.abort(), 25)
 
   await expect(promise).rejects.toThrow()
