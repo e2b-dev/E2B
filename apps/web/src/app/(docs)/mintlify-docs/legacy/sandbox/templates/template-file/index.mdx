@@ -1,0 +1,49 @@
+---
+title: "Template File"
+---
+
+<Callout icon="circle-exclamation" color="#ff8800" iconType="regular">You are reading a legacy (pre v1.0) document.</Callout>
+
+
+The template file is a Dockerfile named `e2b.Dockerfile`. The template file is used to define an environment for your custom sandbox.
+
+<Note>
+Follow our [guide](/legacy/guide/custom-sandbox) on how to create a custom sandbox.
+</Note>
+
+<Frame>
+    <img src="/images/custom-sandbox.png" />
+</Frame>
+
+## `e2b.Dockerfile`
+The Dockerfile must be Debian based (e.g. Ubuntu). Only the following [Dockerfile commands](https://docs.docker.com/engine/reference/builder/) are supported:
+  - `FROM`
+  - `ADD`
+  - `COPY`
+  - `RUN`
+  - `WORKDIR`
+  - `ARG`
+
+## Example
+
+The following example template file defines a Ubuntu-based sandbox with installed GitHub CLI.
+
+
+<CodeGroup isFileName title="e2b.Dockerfile" isRunnable={false}>
+```sh
+# You can use most of the Debian-based base images
+FROM ubuntu:22.04
+
+# Install dependencies and customize sandbox
+RUN apt update \
+	&& apt install sudo
+
+# Install GitHub CLI
+RUN type -p curl >/dev/null || (sudo apt update && sudo apt install curl -y)
+RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
+	&& sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
+	&& echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
+	&& sudo apt update \
+	&& sudo apt install gh -y
+```
+</CodeGroup>

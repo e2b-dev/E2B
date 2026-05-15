@@ -1,0 +1,23 @@
+---
+title: "Run Java code"
+sidebarTitle: Java
+---
+
+Use the `runCode`/`run_code` method to run Java code inside the sandbox.
+You'll need to pass the `language` parameter with value `java`.
+<CodeGroup>
+```js JavaScript & TypeScript
+import { Sandbox } from '@e2b/code-interpreter'
+
+const sbx = await Sandbox.create()
+const execution = await sbx.runCode('System.out.println("Hello, world!");', { language: 'java' })
+console.log(execution)
+```
+```python Python
+from e2b_code_interpreter import Sandbox
+
+sbx = Sandbox.create()
+execution = sbx.run_code('System.out.println("Hello, world!");', language="java")
+print(execution)
+```
+</CodeGroup>

@@ -1,0 +1,32 @@
+---
+title: "Streaming command output"
+sidebarTitle: Streaming
+---
+
+To stream command output as it is being executed, pass the `onStdout`, `onStderr` callbacks to the `commands.run()` method in JavaScript
+or the `on_stdout`, `on_stderr` callbacks to the `commands.run()` method in Python.
+
+<CodeGroup>
+```js JavaScript & TypeScript
+import { Sandbox } from '@e2b/code-interpreter'
+
+const sandbox = await Sandbox.create()
+const result = await sandbox.commands.run('echo hello; sleep 1; echo world', {
+  onStdout: (data) => {
+    console.log(data)
+  },
+  onStderr: (data) => {
+    console.log(data)
+  },
+})
+console.log(result)
+```
+```python Python
+from e2b_code_interpreter import Sandbox
+
+sandbox = Sandbox.create()
+
+result = sandbox.commands.run('echo hello; sleep 1; echo world', on_stdout=lambda data: print(data), on_stderr=lambda data: print(data))
+print(result)
+```
+</CodeGroup>

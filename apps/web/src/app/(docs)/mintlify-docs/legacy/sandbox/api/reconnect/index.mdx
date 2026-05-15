@@ -1,0 +1,110 @@
+---
+title: "Connect to running sandbox"
+---
+
+<Callout icon="circle-exclamation" color="#ff8800" iconType="regular">You are reading a legacy (pre v1.0) document.</Callout>
+
+
+Disconnect and reconnect later to the same sandbox while keeping it alive
+
+## Description
+
+The sandboxes are by default kept alive only when connected to them. When you disconnect from a sandbox, it will be destroyed.
+
+If you want to keep the sandbox alive even after disconnecting from it, you can explicitly say for how long you want to keep it alive. You can then disconnect from the sandbox and reconnect to it later. This can be useful for example in a **serverless environment** or **chatbot application**.
+
+The duration limit to keep the sandbox alive is 1 hour. If you need more, feel free to [reach out to us](/legacy/getting-help) with your use.
+
+## Keep sandbox alive
+
+The example below shows how to disconnect from a running sandbox and reconnect to it again while keeping the sandbox alive.
+
+<CodeGroup>
+```js JavaScript & TypeScript
+import { Sandbox } from 'e2b'
+
+async function wait(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}
+
+const sandbox = await Sandbox.create({ template: 'base' })
+```
+```python Python
+import time
+from e2b import Sandbox
+
+
+sandbox = Sandbox('base')
+```
+</CodeGroup>
+
+Call the `keep_alive`/`keepAlive` method on the sandbox instance to keep it alive. You can specify the preferred duration, as a multiple of a default time unit, which is
+- 1ms in JS
+- 1s in Python.
+
+You then disconnect from the sandbox.
+
+<CodeGroup>
+```js JavaScript & TypeScript highlight={8}
+// Do something in the sandbox
+await sandbox.filesystem.write('hello.txt', 'Hello World!')
+
+// Get the sandbox ID, we'll need it later
+const sandboxID = sandbox.id
+
+// Keep alive the sandbox for 2 minutes
+await sandbox.keepAlive(2 * 60 * 1000) // 2 minutes
+
+// Close the sandbox. Even if we close the sandbox, it will stay alive, because we explicitly called keepAlive().
+await sandbox.close()
+
+// Do something else...
+await wait(60 * 1000)
+```
+```python Python highlight={8}
+# Do something in the sandbox
+sandbox.filesystem.write('hello.txt', 'Hello World!')
+
+# Get the sandbox ID, we'll need it later
+sandboxID = sandbox.id
+
+# Keep the sandbox alive for 2 minutes
+sandbox.keep_alive(60 * 2) 
+
+# Close the sandbox. Even if we close the sandbox, it will stay alive, because we explicitly called keep_alive().
+sandbox.close()
+
+# Do something else...
+time.sleep(60)
+```
+</CodeGroup>
+
+You can then reconnect to the sandbox from anywhere.
+
+<CodeGroup>
+```js JavaScript & TypeScript highlight={2}
+// Reconnect to the sandbox
+const sandbox2 = await Sandbox.reconnect(sandboxID)
+
+// Continue in using the sandbox
+const content = await sandbox2.filesystem.read('hello.txt')
+console.log(content)
+
+// Close the sandbox
+await sandbox2.close()
+```
+```python Python highlight={2}
+# Reconnect to the sandbox
+sandbox2 = Sandbox.reconnect(sandboxID)
+
+# Continue in using the sandbox
+content = sandbox2.filesystem.read('hello.txt')
+print(content)
+
+# Close the sandbox
+sandbox2.close()
+```
+</CodeGroup>
+
+## Use sandbox metadata
+Sandbox metadata can be very useful to store information about the sandbox. You can use it to store the user ID or any other information you need to keep track of and then use this info for reconnecting to the sandbox. You can read more about sandbox metadata [here](/legacy/sandbox/api/metadata).

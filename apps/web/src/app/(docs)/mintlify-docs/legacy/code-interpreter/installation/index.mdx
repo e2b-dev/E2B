@@ -1,0 +1,61 @@
+---
+title: "Code Interpreter SDK"
+---
+
+<Callout icon="circle-exclamation" color="#ff8800" iconType="regular">You are reading a legacy (pre v1.0) document.</Callout>
+
+
+E2B's [Code Interpreter SDK](https://github.com/e2b-dev/code-interpreter) allows you to add code interpreting capabilities to your AI apps.
+
+The code interpreter runs inside the [E2B Sandbox](https://github.com/e2b-dev/e2b) - an open-source secure sandbox made for running untrusted AI-generated code and AI agents.
+- ✅ Works with any LLM and AI framework
+- ✅ Supports streaming content like charts and stdout, stderr
+- ✅ Python & JS SDK
+- ✅ Runs on serverless and edge functions
+- ✅ Runs AI-generated code in secure sandboxed environments
+- ✅ 100% open source (including [infrastructure](https://github.com/e2b-dev/infra))
+
+## Quickstart
+
+### 1. Install SDK
+
+<CodeGroup>
+```bash JavaScript/TypeScript
+npm i @e2b/code-interpreter
+```
+
+```bash Python
+pip install e2b_code_interpreter
+```
+</CodeGroup>
+
+### 2. Execute code with code interpreter inside sandbox
+
+<CodeGroup>
+
+```ts JavaScript
+import { CodeInterpreter } from '@e2b/code-interpreter'
+
+const sandbox = await CodeInterpreter.create()
+await sandbox.notebook.execCell('x = 1')
+
+const execution = await sandbox.notebook.execCell('x+=1; x')
+console.log(execution.text)  // outputs 2
+
+await sandbox.close()
+```
+
+```py Python
+from e2b_code_interpreter import CodeInterpreter
+
+with CodeInterpreter() as sandbox:
+    sandbox.notebook.exec_cell("x = 1")
+
+    execution = sandbox.notebook.exec_cell("x+=1; x")
+    print(execution.text)  # outputs 2
+```
+</CodeGroup>
+
+### 3. Hello World guide
+Dive depeer and check out the [JavaScript](/legacy/hello-world/js) and [Python](/legacy/hello-world/py) the Hello World guides to learn how o connect code interpreter LLMs.
+

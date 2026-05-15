@@ -1,0 +1,136 @@
+---
+title: "Current Working Directory"
+---
+
+<Callout icon="circle-exclamation" color="#ff8800" iconType="regular">You are reading a legacy (pre v1.0) document.</Callout>
+
+
+You can set a working directory either for the whole sandbox, a filesystem operation, or a new process.
+
+## Sandbox
+
+If the current working directory for the sandbox is not set, it will default to the home directory - `/home/user`.
+
+<CodeGroup>
+```js JavaScript & TypeScript highlight={5-9}
+import { Sandbox } from 'e2b'
+
+const sandbox = await Sandbox.create({
+  template: 'base',
+  cwd: '/code',
+})
+
+// You can also change the cwd of an existing sandbox
+sandbox.cwd = '/home'
+
+await sandbox.close()
+```
+```python Python highlight={5-9}
+from e2b import Sandbox
+
+sandbox = Sandbox(
+    template="base",
+    cwd="/code",
+)
+
+# You can also change the cwd of an existing sandbox
+sandbox.cwd = "/home"
+
+sandbox.close()
+```
+</CodeGroup>
+
+## Filesystem
+
+All filesystem operations with relative paths are relative to the current working directory.
+
+<CodeGroup>
+```js JavaScript & TypeScript highlight={5,8,16}
+import { Sandbox } from 'e2b'
+
+const sandbox = await Sandbox.create({
+  template: 'base',
+  cwd: '/home/user/code',
+})
+
+await sandbox.filesystem.write('hello.txt', 'Welcome to E2B!')
+const proc = await sandbox.process.start({
+  cmd: 'cat /home/user/code/hello.txt',
+})
+await proc.wait()
+console.log(proc.output.stdout)
+// output: "Welcome to E2B!"
+
+await sandbox.filesystem.write('../hello.txt', 'We hope you have a great day!')
+const proc2 = await sandbox.process.start({cmd: 'cat /home/user/hello.txt'})
+await proc2.wait()
+console.log(proc2.output.stdout)
+// output: "We hope you have a great day!"
+
+await sandbox.close()
+```
+```python Python highlight={5,7,13}
+from e2b import Sandbox
+
+sandbox = Sandbox(
+    template="base",
+    cwd="/home/user/code"
+)
+sandbox.filesystem.write("hello.txt", "Welcome to E2B!")
+proc = sandbox.process.start("cat /home/user/code/hello.txt")
+proc.wait()
+print(proc.output.stdout)
+# output: "Welcome to E2B!"
+
+sandbox.filesystem.write("../hello.txt", "We hope you have a great day!")
+proc2 = sandbox.process.start("cat /home/user/hello.txt")
+proc2.wait()
+print(proc2.output.stdout)
+# output: "We hope you have a great day!"
+
+sandbox.close()
+```
+</CodeGroup>
+
+## Process
+
+If you set a working directory for the sandbox, all processes will inherit it. You can override it for each process.
+
+<CodeGroup>
+```js JavaScript & TypeScript highlight={5,8,13}
+import { Sandbox } from 'e2b'
+
+const sandbox = await Sandbox.create({
+  template: 'base',
+  cwd: '/code',
+})
+
+const sandboxCwd = await sandbox.process.start({cmd: 'pwd'})
+await sandboxCwd.wait()
+console.log(sandboxCwd.output.stdout)
+// output: /code
+
+const processCwd = await sandbox.process.start({cmd: 'pwd', cwd: '/home'})
+await processCwd.wait()
+console.log(processCwd.output.stdout)
+// output: /home
+
+await sandbox.close()
+```
+```python Python highlight={3,4,9}
+from e2b import Sandbox
+
+sandbox = Sandbox(template="base", cwd="/code")
+sandbox_cwd = sandbox.process.start("pwd")
+sandbox_cwd.wait()
+print(sandbox_cwd.output.stdout)
+# output: "/code"
+
+process_cwd = sandbox.process.start("pwd", cwd="/home")
+process_cwd.wait()
+print(process_cwd.output.stdout)
+# output: "/home"
+
+sandbox.close()
+```
+</CodeGroup>

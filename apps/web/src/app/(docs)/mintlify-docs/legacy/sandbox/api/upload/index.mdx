@@ -1,0 +1,56 @@
+---
+title: "Upload files to sandbox"
+---
+
+<Callout icon="circle-exclamation" color="#ff8800" iconType="regular">You are reading a legacy (pre v1.0) document.</Callout>
+
+
+You can upload any file to the sandbox. This is useful if you want to let the LLM work with your files or files of your users. The file will be uploaded to the user's home directory with the same name. If a file with the same name already exists, it will be overwritten.
+
+## Use case for uploading files
+A popular workflow is for example to upload a CSV data file and then let the LLM generate and execute Python code that operates with the uploaded CSV file inside the sandbox. This way, you can essentially create your own AI data analyst or code interpreter.
+
+<Note>
+We support uploading files up to 100MB at the moment. If you need to upload larger files, please [reach out to us](/legacy/getting-help).
+</Note>
+
+<CodeGroup>
+```js JavaScript & TypeScript highlight={7-9}
+import { Sandbox } from 'e2b'
+import fs from 'node:fs'
+
+const sandbox = await Sandbox.create({ template: 'base' })
+
+// If you're in the server environment
+const filename = 'data.csv'
+const fileBuffer = fs.readFileSync('path/to/local/file')
+const remotePath = await sandbox.uploadFile(fileBuffer, filename)
+
+// If you're in the browser environment, you can use the Blob API
+// const filename = 'data.csv'
+// const CSV = [
+//   '"1","val1","val2","val3","val4"',
+//   '"2","val1","val2","val3","val4"',
+//   '"3","val1","val2","val3","val4"'
+// ].join('\n');
+// const fileBlob = new Blob([csv], { type: 'text/csv' })
+// const remotePath = await sandbox.uploadFile(fileBlob, 'data.csv')
+
+console.log(
+  `The file was uploaded to '${remotePath}' path inside the sandbox `,
+)
+
+await sandbox.close()
+```
+```python Python highlight={6}
+from e2b import Sandbox
+
+sandbox = Sandbox(template="base")
+
+with open("path/to/local/file", "rb") as f:
+    remote_path = sandbox.upload_file(f)
+
+sandbox.close()
+```
+</CodeGroup>
+

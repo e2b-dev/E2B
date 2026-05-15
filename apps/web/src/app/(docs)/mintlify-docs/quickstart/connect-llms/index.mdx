@@ -1,0 +1,807 @@
+---
+title: "Connect LLMs to E2B"
+---
+
+E2B can work with any LLM and AI framework. The easiest way to connect an LLM to E2B is to use the tool use capabilities of the LLM (sometimes known as function calling).
+
+If the LLM doesn't support tool use, you can, for example, prompt the LLM to output code snippets and then manually extract the code snippets with [RegEx](https://en.wikipedia.org/wiki/Regular_expression).
+
+## Contents
+- [OpenAI](#openai)
+- [Anthropic](#anthropic)
+- [Mistral](#mistral)
+- [Groq](#groq)
+- [Vercel AI SDK](#vercel-ai-sdk)
+- [CrewAI](#crewai)
+- [LangChain](#langchain)
+- [LlamaIndex](#llamaindex)
+- [Ollama](#ollama)
+- [Hugging Face](#hugging-face)
+
+---
+
+## OpenAI
+
+### Simple
+
+<CodeGroup>
+```python Python
+# pip install openai e2b-code-interpreter
+from openai import OpenAI
+from e2b_code_interpreter import Sandbox
+
+# Create OpenAI client
+client = OpenAI()
+system = "You are a helpful assistant that can execute python code in a Jupyter notebook. Only respond with the code to be executed and nothing else. Strip backticks in code blocks."
+prompt = "Calculate how many r's are in the word 'strawberry'"
+
+# Send messages to OpenAI API
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[
+        {"role": "system", "content": system},
+        {"role": "user", "content": prompt}
+    ]
+)
+
+# Extract the code from the response
+code = response.choices[0].message.content
+
+# Execute code in E2B Sandbox
+if code:
+    with Sandbox.create() as sandbox:
+        execution = sandbox.run_code(code)
+        result = execution.text
+
+    print(result)
+```
+</CodeGroup>
+
+### Function calling
+
+<CodeGroup>
+```python Python
+# pip install openai e2b-code-interpreter
+import json
+from openai import OpenAI
+from e2b_code_interpreter import Sandbox
+
+# Create OpenAI client
+client = OpenAI()
+model = "gpt-4o"
+
+# Define the messages
+messages = [
+    {
+        "role": "user",
+        "content": "Calculate how many r's are in the word 'strawberry'"
+    }
+]
+
+# Define the tools
+tools = [{
+    "type": "function",
+    "function": {
+        "name": "execute_python",
+        "description": "Execute python code in a Jupyter notebook cell and return result",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "description": "The python code to execute in a single cell"
+                }
+            },
+            "required": ["code"]
+        }
+    }
+}]
+
+# Generate text with OpenAI
+response = client.chat.completions.create(
+    model=model,
+    messages=messages,
+    tools=tools,
+)
+
+# Append the response message to the messages list
+response_message = response.choices[0].message
+messages.append(response_message)
+
+# Execute the tool if it's called by the model
+if response_message.tool_calls:
+    for tool_call in response_message.tool_calls:
+        if tool_call.function.name == "execute_python":
+            # Create a sandbox and execute the code
+            with Sandbox.create() as sandbox:
+                code = json.loads(tool_call.function.arguments)['code']
+                execution = sandbox.run_code(code)
+                result = execution.text
+
+            # Send the result back to the model
+            messages.append({
+                "role": "tool",
+                "name": "execute_python",
+                "content": result,
+                "tool_call_id": tool_call.id,
+            })
+
+# Generate the final response
+final_response = client.chat.completions.create(
+    model=model,
+    messages=messages
+)
+
+print(final_response.choices[0].message.content)
+```
+</CodeGroup>
+
+---
+
+## Anthropic
+
+### Simple
+
+<CodeGroup>
+```python Python
+# pip install anthropic e2b-code-interpreter
+from anthropic import Anthropic
+from e2b_code_interpreter import Sandbox
+
+# Create Anthropic client
+anthropic = Anthropic()
+system_prompt = "You are a helpful assistant that can execute python code in a Jupyter notebook. Only respond with the code to be executed and nothing else. Strip backticks in code blocks."
+prompt = "Calculate how many r's are in the word 'strawberry'"
+
+# Send messages to Anthropic API
+response = anthropic.messages.create(
+    model="claude-3-5-sonnet-20240620",
+    max_tokens=1024,
+    messages=[
+        {"role": "assistant", "content": system_prompt},
+        {"role": "user", "content": prompt}
+    ]
+)
+
+# Extract code from response
+code = response.content[0].text
+
+# Execute code in E2B Sandbox
+with Sandbox.create() as sandbox:
+    execution = sandbox.run_code(code)
+    result = execution.logs.stdout
+
+print(result)
+```
+</CodeGroup>
+
+### Function calling
+
+<CodeGroup>
+```python Python
+# pip install anthropic e2b-code-interpreter
+from anthropic import Anthropic
+from e2b_code_interpreter import Sandbox
+
+# Create Anthropic client
+client = Anthropic()
+model = "claude-3-5-sonnet-20240620"
+
+# Define the messages
+messages = [
+    {
+        "role": "user",
+        "content": "Calculate how many r's are in the word 'strawberry'"
+    }
+]
+
+# Define the tools
+tools = [{
+    "name": "execute_python",
+    "description": "Execute python code in a Jupyter notebook cell and return (not print) the result",
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "code": {
+                "type": "string",
+                "description": "The python code to execute in a single cell"
+            }
+        },
+        "required": ["code"]
+    }
+}]
+
+# Generate text with Anthropic
+message = client.messages.create(
+    model=model,
+    max_tokens=1024,
+    messages=messages,
+    tools=tools
+)
+
+# Append the response message to the messages list
+messages.append({
+    "role": "assistant",
+    "content": message.content
+})
+
+# Execute the tool if it's called by the model
+if message.stop_reason == "tool_use":
+    tool_use = next(block for block in message.content if block.type == "tool_use")
+    tool_name = tool_use.name
+    tool_input = tool_use.input
+
+    if tool_name == "execute_python":
+        with Sandbox.create() as sandbox:
+            code = tool_input['code']
+            execution = sandbox.run_code(code)
+            result = execution.text
+
+        # Append the tool result to the messages list
+        messages.append({
+            "role": "user",
+            "content": [
+                {
+                    "type": "tool_result",
+                    "tool_use_id": tool_use.id,
+                    "content": result,
+                }
+            ],
+        })
+
+# Generate the final response
+final_response = client.messages.create(
+    model=model,
+    max_tokens=1024,
+    messages=messages,
+    tools=tools
+)
+
+print(final_response.content[0].text)
+```
+</CodeGroup>
+
+---
+
+## Mistral
+
+### Simple
+
+<CodeGroup>
+```python Python
+# pip install mistralai e2b-code-interpreter
+import os
+from mistralai import Mistral
+from e2b_code_interpreter import Sandbox
+
+# Create Mistral client
+client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+system_prompt = "You are a helpful assistant that can execute python code in a Jupyter notebook. Only respond with the code to be executed and nothing else. Strip backticks in code blocks."
+prompt = "Calculate how many r's are in the word 'strawberry'"
+
+# Send the prompt to the model
+response = client.chat.complete(
+    model="codestral-latest",
+    messages=[
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": prompt}
+    ]
+)
+
+# Extract the code from the response
+code = response.choices[0].message.content
+
+# Execute code in E2B Sandbox
+with Sandbox.create() as sandbox:
+    execution = sandbox.run_code(code)
+    result = execution.text
+
+print(result)
+```
+</CodeGroup>
+
+### Function calling
+
+<CodeGroup>
+```python Python
+# pip install mistralai e2b-code-interpreter
+import os
+import json
+from mistralai import Mistral
+from e2b_code_interpreter import Sandbox
+
+# Create Mistral client
+client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+model = "mistral-large-latest"
+messages = [
+    {
+        "role": "user",
+        "content": "Calculate how many r's are in the word 'strawberry'"
+    }
+]
+
+# Define the tools
+tools = [{
+    "type": "function",
+    "function": {
+        "name": "execute_python",
+        "description": "Execute python code in a Jupyter notebook cell and return result",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "description": "The python code to execute in a single cell"
+                }
+            },
+            "required": ["code"]
+        }
+    }
+}]
+
+# Send the prompt to the model
+response = client.chat.complete(
+    model=model,
+    messages=messages,
+    tools=tools
+)
+
+# Append the response message to the messages list
+response_message = response.choices[0].message
+messages.append(response_message)
+
+# Execute the tool if it's called by the model
+if response_message.tool_calls:
+    for tool_call in response_message.tool_calls:
+        if tool_call.function.name == "execute_python":
+            # Create a sandbox and execute the code
+            with Sandbox.create() as sandbox:
+                code = json.loads(tool_call.function.arguments)['code']
+                execution = sandbox.run_code(code)
+                result = execution.text
+
+            # Send the result back to the model
+            messages.append({
+                "role": "tool",
+                "name": "execute_python",
+                "content": result,
+                "tool_call_id": tool_call.id,
+            })
+
+# Generate the final response
+final_response = client.chat.complete(
+    model=model,
+    messages=messages,
+)
+
+print(final_response.choices[0].message.content)
+```
+</CodeGroup>
+
+---
+
+## Groq
+<CodeGroup>
+```python Python
+
+# pip install groq e2b-code-interpreter
+import os
+from groq import Groq
+from e2b_code_interpreter import Sandbox
+
+api_key = os.environ["GROQ_API_KEY"]
+
+# Create Groq client
+client = Groq(api_key=api_key)
+system_prompt = "You are a helpful assistant that can execute python code in a Jupyter notebook. Only respond with the code to be executed and nothing else. Strip backticks in code blocks."
+prompt = "Calculate how many r's are in the word 'strawberry.'"
+
+# Send the prompt to the model
+response = client.chat.completions.create(
+    model="llama3-70b-8192",
+    messages=[
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": prompt},
+    ]
+)
+
+# Extract the code from the response
+code = response.choices[0].message.content
+
+# Execute code in E2B Sandbox
+with Sandbox.create() as sandbox:
+    execution = sandbox.run_code(code)
+    result = execution.text
+
+print(result)
+
+```
+</CodeGroup>
+
+---
+
+## Vercel AI SDK
+Vercel's [AI SDK](https://sdk.vercel.ai) offers support for multiple different LLM providers through a unified JavaScript interface that's easy to use.
+
+### Simple
+
+<CodeGroup>
+```js JavaScript & TypeScript
+// npm install ai @ai-sdk/openai @e2b/code-interpreter
+import { openai } from '@ai-sdk/openai'
+import { generateText } from 'ai'
+import { Sandbox } from '@e2b/code-interpreter'
+
+// Create OpenAI client
+const model = openai('gpt-4o')
+const system = "You are a helpful assistant that can execute python code in a Jupyter notebook. Only respond with the code to be executed and nothing else. Strip backticks in code blocks."
+const prompt = "Calculate how many r's are in the word 'strawberry'"
+
+// Generate code with OpenAI
+const { text: code } = await generateText({
+  model,
+  system,
+  prompt
+})
+
+// Run the code in E2B Sandbox
+const sandbox = await Sandbox.create()
+const { text, results, logs, error } = await sandbox.runCode(code)
+
+console.log(text)
+```
+</CodeGroup>
+
+### Function calling
+
+<CodeGroup>
+```js JavaScript & TypeScript
+// npm install ai @ai-sdk/openai zod @e2b/code-interpreter
+import { openai } from '@ai-sdk/openai'
+import { generateText } from 'ai'
+import z from 'zod'
+import { Sandbox } from '@e2b/code-interpreter'
+
+// Create OpenAI client
+const model = openai('gpt-4o')
+
+const prompt = "Calculate how many r's are in the word 'strawberry'"
+
+// Generate text with OpenAI
+const { text } = await generateText({
+  model,
+  prompt,
+  tools: {
+    // Define a tool that runs code in a sandbox
+    execute_python: {
+      description: 'Execute python code in a Jupyter notebook cell and return result',
+      parameters: z.object({
+        code: z.string().describe('The python code to execute in a single cell'),
+      }),
+      execute: async ({ code }) => {
+        // Create a sandbox, execute LLM-generated code, and return the result
+        const sandbox = await Sandbox.create()
+        const { text, results, logs, error } = await sandbox.runCode(code)
+        return results
+      },
+    },
+  },
+  // This is required to feed the tool call result back to the LLM
+  maxSteps: 2
+})
+
+console.log(text)
+```
+</CodeGroup>
+
+---
+
+## CrewAI
+[CrewAI](https://crewai.com/) is a platform for building AI agents.
+
+<CodeGroup>
+```python Python
+# pip install crewai e2b-code-interpreter
+from crewai.tools import tool
+from crewai import Agent, Task, Crew, LLM
+from e2b_code_interpreter import Sandbox
+
+# Update tool definition using the decorator
+@tool("Python Interpreter")
+def execute_python(code: str) -> str:
+    """
+    Execute Python code and return the results.
+    """
+    with Sandbox.create() as sandbox:
+        execution = sandbox.run_code(code)
+        return execution.text
+
+# Define the agent
+python_executor = Agent(
+    role='Python Executor',
+    goal='Execute Python code and return the results',
+    backstory='You are an expert Python programmer capable of executing code and returning results.',
+    tools=[execute_python],
+    llm=LLM(model="gpt-4o")
+)
+
+# Define the task
+execute_task = Task(
+    description="Calculate how many r's are in the word 'strawberry'",
+    agent=python_executor,
+    expected_output="The number of r's in the word 'strawberry'"
+)
+
+# Create the crew
+code_execution_crew = Crew(
+    agents=[python_executor],
+    tasks=[execute_task],
+    verbose=True,
+)
+
+# Run the crew
+result = code_execution_crew.kickoff()
+print(result)
+```
+</CodeGroup>
+
+---
+
+## LangChain
+[LangChain](https://langchain.com/) offers support multiple different LLM providers.
+
+### Simple
+
+<CodeGroup>
+```python Python
+# pip install langchain langchain-openai e2b-code-interpreter
+from langchain_openai import ChatOpenAI
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import StrOutputParser
+from e2b_code_interpreter import Sandbox
+
+system_prompt = "You are a helpful assistant that can execute python code in a Jupyter notebook. Only respond with the code to be executed and nothing else. Strip backticks in code blocks."
+prompt = "Calculate how many r's are in the word 'strawberry'"
+
+# Create LangChain components
+llm = ChatOpenAI(model="gpt-4o")
+prompt_template = ChatPromptTemplate.from_messages([
+    ("system", system_prompt),
+    ("human", "{input}")
+])
+
+output_parser = StrOutputParser()
+
+# Create the chain
+chain = prompt_template | llm | output_parser
+
+# Run the chain
+code = chain.invoke({"input": prompt})
+
+# Execute code in E2B Sandbox
+with Sandbox.create() as sandbox:
+    execution = sandbox.run_code(code)
+    result = execution.text
+
+print(result)
+```
+</CodeGroup>
+
+### Agent
+
+<CodeGroup>
+```python Python
+# pip install langchain langchain-openai e2b-code-interpreter
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.tools import tool
+from langchain.agents import create_tool_calling_agent, AgentExecutor
+from langchain_openai import ChatOpenAI
+from e2b_code_interpreter import Sandbox
+
+system_prompt = "You are a helpful assistant that can execute python code in a Jupyter notebook. Only respond with the code to be executed and nothing else. Strip backticks in code blocks."
+prompt = "Calculate how many r's are in the word 'strawberry'"
+
+# Define the tool
+@tool
+def execute_python(code: str):
+    """
+    Execute python code in a Jupyter notebook.
+    """
+    with Sandbox.create() as sandbox:
+        execution = sandbox.run_code(code)
+        return execution.text
+
+# Define LangChain components
+prompt_template = ChatPromptTemplate.from_messages([
+    ("system", system_prompt),
+    ("human", "{input}"),
+    ("placeholder", "{agent_scratchpad}"),
+])
+
+tools = [execute_python]
+llm = ChatOpenAI(model="gpt-4o", temperature=0)
+
+agent = create_tool_calling_agent(llm, tools, prompt_template)
+agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
+
+# Run the agent
+agent_executor.invoke({"input": prompt})
+```
+</CodeGroup>
+
+### Function calling
+
+<CodeGroup>
+```python Python
+# pip install langchain langchain-openai e2b-code-interpreter
+from langchain_openai import ChatOpenAI
+from langchain.tools import Tool
+from langchain.schema import HumanMessage, AIMessage, FunctionMessage
+from e2b_code_interpreter import Sandbox
+
+def execute_python(code: str):
+    with Sandbox.create() as sandbox:
+        execution = sandbox.run_code(code)
+        return execution.text
+
+# Define a tool that uses the E2B Sandbox
+e2b_sandbox_tool = Tool(
+    name="execute_python",
+    func=execute_python,
+    description="Execute python code in a Jupyter notebook cell and return result"
+)
+
+# Initialize the language model and bind the tool
+llm = ChatOpenAI(model="gpt-4o").bind_tools([e2b_sandbox_tool])
+
+# Define the messages
+messages = [
+    HumanMessage(content="Calculate how many 'r's are in the word 'strawberry'.")
+]
+
+# Run the model with a prompt
+result = llm.invoke(messages)
+messages.append(AIMessage(content=result.content))
+
+# Check if the model called the tool
+if result.additional_kwargs.get('tool_calls'):
+    tool_call = result.additional_kwargs['tool_calls'][0]
+    if tool_call['function']['name'] == "execute_python":
+        code = tool_call['function']['arguments']
+        execution_result = execute_python(code)
+
+        # Send the result back to the model
+        messages.append(
+            FunctionMessage(name="execute_python", content=execution_result)
+        )
+
+final_result = llm.invoke(messages)
+print(final_result.content)
+```
+</CodeGroup>
+
+---
+
+## LlamaIndex
+[LlamaIndex](https://www.llamaindex.ai/) offers support multiple different LLM providers.
+<CodeGroup>
+```python Python
+# pip install llama-index e2b-code-interpreter
+from llama_index.core.tools import FunctionTool
+from llama_index.llms.openai import OpenAI
+from llama_index.core.agent import ReActAgent
+from e2b_code_interpreter import Sandbox
+
+# Define the tool
+def execute_python(code: str):
+    with Sandbox.create() as sandbox:
+        execution = sandbox.run_code(code)
+        return execution.text
+
+e2b_sandbox_tool = FunctionTool.from_defaults(
+    name="execute_python",
+    description="Execute python code in a Jupyter notebook cell and return result",
+    fn=execute_python
+)
+
+# Initialize LLM
+llm = OpenAI(model="gpt-4o")
+
+# Initialize ReAct agent
+agent = ReActAgent.from_tools([e2b_sandbox_tool], llm=llm, verbose=True)
+agent.chat("Calculate how many r's are in the word 'strawberry'")
+```
+</CodeGroup>
+
+## Ollama
+
+<CodeGroup>
+```python Python
+# pip install ollama
+import ollama
+from e2b_code_interpreter import Sandbox
+
+# Send the prompt to the model
+response = ollama.chat(
+    model="llama3.2",
+    messages=[{
+        "role": "system",
+        "content": "You are a helpful assistant that can execute python code in a Jupyter notebook. Only respond with the code to be executed and nothing else. Strip backticks in code blocks."
+    },
+    {
+        "role": "user",
+        "content": "Calculate how many r's are in the word 'strawberry'"
+    }
+])
+
+# Extract the code from the response
+code = response['message']['content']
+
+# Execute code in E2B Sandbox
+with Sandbox.create() as sandbox:
+    execution = sandbox.run_code(code)
+    result = execution.logs.stdout
+
+print(result)
+```
+</CodeGroup>
+
+---
+
+## Hugging Face
+
+Hugging Face offers support for serverless inference for models on their model hub with [Hugging Face's Inference API](https://huggingface.co/docs/inference-providers/en/index).
+
+<Note>
+Note that not every model on Hugging Face has native support for tool use and function calling.
+</Note>
+
+<CodeGroup>
+```python Python
+from huggingface_hub import InferenceClient
+from e2b_code_interpreter import Sandbox
+import re
+
+# Not all models are capable of direct tools use - we need to extract the code block manually and prompting the LLM to generate the code.
+def match_code_block(llm_response):
+  pattern = re.compile(r'```python Python\n(.*?)\n```', re.DOTALL) # Match everything in between ```python and ```
+  match = pattern.search(llm_response)
+  if match:
+    code = match.group(1)
+    print(code)
+    return code
+  return ""
+
+
+system_prompt = """You are a helpful coding assistant that can execute python code in a Jupyter notebook. You are given tasks to complete and you run Python code to solve them.
+Generally, you follow these rules:
+- ALWAYS FORMAT YOUR RESPONSE IN MARKDOWN
+- ALWAYS RESPOND ONLY WITH CODE IN CODE BLOCK LIKE THIS:
+\`\`\`python
+{code}
+\`\`\`
+"""
+prompt = "Calculate how many r's are in the word 'strawberry.'"
+
+# Initialize the client
+client = InferenceClient(
+    provider="hf-inference",
+    api_key="HF_INFERENCE_API_KEY"
+)
+
+completion = client.chat.completions.create(
+    model="Qwen/Qwen3-235B-A22B", # Or use any other model from Hugging Face
+    messages=[
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": prompt},
+    ]
+)
+
+content = completion.choices[0].message.content
+code = match_code_block(content)
+
+with Sandbox.create() as sandbox:
+    execution = sandbox.run_code(code)
+    print(execution)
+```
+</CodeGroup>

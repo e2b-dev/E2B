@@ -1,0 +1,59 @@
+---
+title: "Sandbox metadata"
+sidebarTitle: Metadata
+---
+
+Metadata is a way to attach arbitrary key-value pairs for a sandbox.
+
+This is useful in various scenarios, for example:
+- Associate a sandbox with a user session.
+- Store custom user data for a sandbox like API keys.
+- Associate a sandbox with a user ID and [connect to it later](/sandbox/connect).
+
+You specify metadata when creating a sandbox and can access it later through listing running sandboxes with `Sandbox.list()` method.
+
+<Note>
+If you're using the [beta version of the SDK](/sandbox/installing-beta-sdks), the `Sandbox.list()` method was updated. See [List Sandboxes](/sandbox/list#changes-in-the-beta-sdks) for more information.
+</Note>
+
+<CodeGroup>
+```js JavaScript & TypeScript highlight={6}
+import { Sandbox } from '@e2b/code-interpreter'
+
+// Create sandbox with metadata.
+const sandbox = await Sandbox.create({
+  metadata: {
+    userId: '123',
+  },
+})
+
+// List running sandboxes and access metadata.
+const runningSandboxes = await Sandbox.list()
+// Will print:
+// {
+//   'userId': '123',
+// }
+console.log(runningSandboxes[0].metadata)
+```
+```python Python highlight={6}
+from e2b_code_interpreter import Sandbox
+
+# Create sandbox with metadata.
+sandbox = Sandbox.create(
+  metadata={
+    'userId': '123',
+  },
+)
+
+# List running sandboxes and access metadata.
+running_sandboxes = Sandbox.list()
+# Will print:
+# {
+#   'userId': '123',
+# }
+print(running_sandboxes[0].metadata)
+```
+</CodeGroup>
+
+## Filtering sandboxes by metadata
+You can also filter sandboxes by metadata, you can find more about it [here](/sandbox/list#filtering-sandboxes).

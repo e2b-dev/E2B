@@ -1,0 +1,275 @@
+---
+title: List directory
+---
+
+<Callout icon="circle-exclamation" color="#ff8800" iconType="regular">You are reading a legacy (pre v1.0) document.</Callout>
+
+
+<CodeGroup>
+```js JavaScript & TypeScript highlight={7}
+import { Sandbox } from 'e2b'
+
+const sandbox = await Sandbox.create({
+  template: 'base',
+})
+
+const dirContent = await sandbox.filesystem.list('/')
+dirContent.forEach((item) => {
+  console.log(item.name)
+})
+
+await sandbox.close()
+```
+```python Python highlight={6}
+from e2b import Sandbox
+
+sandbox = Sandbox(template="base")
+
+# List the root directory
+content = sandbox.filesystem.list("/") 
+for item in content:
+    print(f"Is '{item.name}' directory?", item.is_dir)
+
+sandbox.close()
+```
+</CodeGroup>
+
+## Create directory
+
+Create directory and all parent directories.
+
+<CodeGroup>
+```js JavaScript & TypeScript highlight={6}
+import { Sandbox } from 'e2b'
+
+const sandbox = await Sandbox.create({ template: 'base' })
+
+// Create a new directory '/dir'
+await sandbox.filesystem.makeDir('/dir')
+
+await sandbox.close()
+```
+```python Python highlight={6}
+from e2b import Sandbox
+
+sandbox = Sandbox(template="base")
+
+# Create a new directory '/dir'
+sandbox.filesystem.make_dir("/dir")
+
+sandbox.close()
+```
+</CodeGroup>
+
+## Write to file
+
+When writing to a file that doesn't exist, the file will get created.
+
+When writing to a file that already exists, the file will get overwritten.
+
+When writing to a file that's in a directory that doesn't exist, you'll get an error.
+
+<CodeGroup>
+```js JavaScript & TypeScript highlight={11}
+import { Sandbox } from 'e2b'
+
+const sandbox = await Sandbox.create({ template: 'base' })
+
+// `filesystem.write()` will:
+// - create the file if it doesn't exist
+// - fail if any directory in the path doesn't exist
+// - overwrite the file if it exists
+
+// Write the content of the file '/hello.txt'
+await sandbox.filesystem.write('/hello.txt', 'Hello World!')
+
+// The following would fail because '/dir' doesn't exist
+// await sandbox.filesystem.write("/dir/hello.txt", "Hello World!")
+
+await sandbox.close()
+```
+```python Python highlight={11}
+from e2b import Sandbox
+
+sandbox = Sandbox(template="base")
+
+# `filesystem.write()` will:
+# - create the file if it doesn't exist
+# - fail if any directory in the path doesn't exist
+# - overwrite the file if it exists
+
+# Write the content of the file '/hello.txt'
+sandbox.filesystem.write("/hello.txt", "Hello World!")
+
+# The following would fail because '/dir' doesn't exist
+# sandbox.filesystem.write("/dir/hello.txt", "Hello World!")
+
+sandbox.close()
+```
+</CodeGroup>
+
+## Read from file
+
+<CodeGroup>
+```js JavaScript & TypeScript highlight={5}
+import { Sandbox } from 'e2b'
+
+const sandbox = await Sandbox.create({ template: 'base' })
+
+const fileContent = await sandbox.filesystem.read('/etc/hosts')
+console.log(fileContent)
+
+await sandbox.close()
+```
+```python Python highlight={6}
+from e2b import Sandbox
+
+sandbox = Sandbox(template="base")
+
+# Read the '/etc/hosts' file
+file_content = sandbox.filesystem.read("/etc/hosts")
+
+# Prints something like:
+# 127.0.0.1       localhost
+print(file_content)
+
+sandbox.close()
+```
+</CodeGroup>
+
+## Write bytes
+
+<CodeGroup>
+```js JavaScript & TypeScript highlight={10}
+import { Sandbox } from 'e2b'
+
+const sandbox = await Sandbox.create({ template: 'base' })
+
+// Let's convert string to bytes for testing purposes
+const encoder = new TextEncoder('utf-8')
+const contentInBytes = encoder.encode('Hello World!')
+
+// `writeBytes` accepts a Uint8Array and saves it to a file inside the playground
+await sandbox.filesystem.writeBytes('/file', contentInBytes)
+
+// We can read the file back to verify the content
+const fileContent = await sandbox.filesystem.read('/file')
+
+// This will print 'Hello World!'
+console.log(fileContent)
+
+await sandbox.close()
+```
+```python Python highlight={8}
+from e2b import Sandbox
+
+sandbox = Sandbox(template="base")
+
+content_in_bytes = bytearray(b"Hello world")
+
+# `write_bytes` will write bytearray to a file inside the playground.
+sandbox.filesystem.write_bytes("/file", content_in_bytes)
+
+# We can read the file back to verify the content
+file_content = sandbox.filesystem.read("/file")
+print(file_content)
+
+sandbox.close()
+```
+</CodeGroup>
+
+## Read bytes
+
+<CodeGroup>
+```js JavaScript & TypeScript highlight={8}
+import fs from 'fs'
+import { Sandbox } from 'e2b'
+
+const sandbox = await Sandbox.create({ template: 'base' })
+
+// File bytes will read file's content as bytes
+// `fileBytes` as a Uint8Array
+const fileBytes = await sandbox.filesystem.readBytes('/etc/hosts')
+
+// The output will look similar to this:
+// <Buffer 31 32 37 2e 30 2e 30 2e 31 09 6c 6f 63 61 6c 68 6f 73  ...
+console.log(fileBytes)
+
+// We can save those bytes to a file locally like this:
+fs.writeFileSync('hosts', fileBytes)
+
+await sandbox.close()
+```
+```python Python highlight={7}
+from e2b import Sandbox
+
+sandbox = Sandbox(template="base")
+
+# File bytes will read file's content as bytes
+# `file_bytes` as a bytearray
+file_bytes = sandbox.filesystem.read_bytes("/etc/hosts")
+
+# The output will look similar to this:
+# b'127.0.0.1\tlocalhost\n::1\tlocalhost ip6-localhost ip6-loopback\nfe00::0\tip6-localnet\nff00::0\tip6-mcastprefix\nff02::1\tip6-allnodes\nff02::2\tip6-allrouters\n172.17.0.17\t77c7a543226b\n'
+print(file_bytes)
+
+# We can save those bytes to a file locally like this:
+with open("./hosts.txt", "wb") as f:
+    f.write(file_bytes)
+
+sandbox.close()
+```
+</CodeGroup>
+
+## Watch directory for changes
+
+<CodeGroup>
+```js JavaScript & TypeScript highlight={6-10}
+import { Sandbox } from 'e2b'
+
+const sandbox = await Sandbox.create({ template: 'base' })
+
+// Start filesystem watcher for the /home directory
+const watcher = sandbox.filesystem.watchDir('/home') 
+watcher.addEventListener((event) => { 
+  console.log('Filesystem event', event) 
+}) 
+await watcher.start() 
+
+// Create files in the /home directory inside the playground
+// We'll receive notifications for these events through the watcher we created above.
+for (let i = 0; i < 10; i++) {
+  console.log('Creating file', i)
+  // `filesystem.write()` will trigger two events:
+  // 1. 'Create' when the file is created
+  // 2. 'Write' when the file is written to
+  await sandbox.filesystem.write(`/home/${i}.txt`, `Hello World ${i}!`)
+}
+
+await sandbox.close()
+```
+```python Python highlight={7,19}
+import time
+
+from e2b import Sandbox
+
+sandbox = Sandbox.create()
+
+watcher = sandbox.files.watch_dir("/home") 
+
+# Create files in the /home directory inside the playground
+# We'll receive notifications for these events through the watcher we created above.
+for i in range(10):
+    # `filesystem.write()` will trigger two events:
+    # 1. 'Create' when the file is created
+    # 2. 'Write' when the file is written to
+    sandbox.files.write(f"/home/file{i}.txt", f"Hello World {i}!")
+    time.sleep(1)
+
+for event in watcher.get():
+    print(f"Event: {event.type} {event.name}") 
+
+watcher.stop()
+sandbox.kill()
+```
+</CodeGroup>

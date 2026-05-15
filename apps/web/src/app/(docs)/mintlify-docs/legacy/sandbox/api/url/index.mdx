@@ -1,0 +1,60 @@
+---
+title: "Sandbox URL"
+---
+
+<Callout icon="circle-exclamation" color="#ff8800" iconType="regular">You are reading a legacy (pre v1.0) document.</Callout>
+
+
+Each sandbox has its own URL that you can use to connect to any service running inside the sandbox.
+
+For example, you can start a server inside the sandbox and connect to it from your browser.
+
+<CodeGroup>
+```js JavaScript & TypeScript highlight={5}
+import { Sandbox } from 'e2b'
+
+const sandbox = await Sandbox.create({ template: 'base' })
+
+const url = sandbox.getHostname()
+console.log('https://' + url)
+
+await sandbox.close()
+```
+```python Python highlight={5}
+from e2b import Sandbox
+
+sandbox = Sandbox(template="base")
+
+url = sandbox.get_host()
+print("https://" + url)
+
+sandbox.close()
+```
+</CodeGroup>
+
+
+If you want to get an URL for a specific port inside the sandbox, pass the port number to the `getHostname()`/`get_hostname()` method.
+<CodeGroup>
+```js JavaScript & TypeScript highlight={6}
+import { Sandbox } from 'e2b'
+
+const sandbox = await Sandbox.create({ template: 'base' })
+
+const openPort = 3000
+const url = sandbox.getHostname(openPort)
+console.log('https://' + url)
+
+await sandbox.close()
+```
+```python Python highlight={6}
+from e2b import Sandbox
+
+sandbox = Sandbox(template="base")
+
+open_port = 3000
+url = sandbox.get_host(open_port)
+print("https://" + url)
+
+sandbox.close()
+```
+</CodeGroup>

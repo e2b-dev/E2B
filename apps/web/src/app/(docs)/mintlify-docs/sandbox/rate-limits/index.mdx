@@ -1,0 +1,128 @@
+---
+title: "Rate Limits"
+sidebarTitle: "Rate limits"
+---
+
+This page describes API and sandbox rate limits of the E2B platform.
+
+## Table of Contents
+
+- [Sandbox lifecycle & management API](##sandbox-lifecycle-%26-management-api)
+- [Sandbox operations & requests to sandboxes](#sandbox-operations-%26-requests-to-sandboxes)
+- [Concurrent Sandboxes](#concurrent-sandboxes)
+- [Sandbox creation rate](#sandbox-creation-rate)
+- [Reaching limits](#reaching-limits)
+- [Increasing and avoiding rate limits](#increasing-and-avoiding-rate-limits)
+
+Here's a limits breakdown table based on the plan:
+
+<table style={{ border: '2px solid #FFB766', borderCollapse: 'collapse' }}>
+  <thead>
+    <tr style={{ background: '#000', color: 'white' }}>
+      <th style={{ textAlign: 'left', padding: '8px', borderRight: '2px solid #FFB766', border: '2px solid #FFB766', color: 'white' }}>Plan</th>
+      <th style={{ textAlign: 'center', padding: '8px', borderRight: '2px solid #FFB766', border: '2px solid #FFB766', color: 'white' }}>Hobby</th>
+      <th style={{ textAlign: 'center', padding: '8px', borderRight: '2px solid #FFB766', border: '2px solid #FFB766', color: 'white' }}>Pro</th>
+      <th style={{ textAlign: 'center', padding: '8px', border: '2px solid #FFB766', color: 'white' }}>Enterprise</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style={{ fontWeight: 'bold', padding: '8px', borderRight: '2px solid #FFB766', border: '2px solid #FFB766' }}>Sandbox lifecycle &amp; management API</td>
+      <td style={{ textAlign: 'center', padding: '8px', borderRight: '2px solid #FFB766', border: '2px solid #FFB766' }}>20,000 / 30s</td>
+      <td style={{ textAlign: 'center', padding: '8px', borderRight: '2px solid #FFB766', border: '2px solid #FFB766' }}>20,000 / 30s</td>
+      <td style={{ textAlign: 'center', padding: '8px', border: '2px solid #FFB766' }}>Custom</td>
+    </tr>
+    <tr>
+      <td style={{ fontWeight: 'bold', padding: '8px', borderRight: '2px solid #FFB766', border: '2px solid #FFB766' }}>Sandbox operations</td>
+      <td style={{ textAlign: 'center', padding: '8px', borderRight: '2px solid #FFB766', border: '2px solid #FFB766' }}>40,000 / 60s per IP</td>
+      <td style={{ textAlign: 'center', padding: '8px', borderRight: '2px solid #FFB766', border: '2px solid #FFB766' }}>40,000 / 60s per IP</td>
+      <td style={{ textAlign: 'center', padding: '8px', border: '2px solid #FFB766' }}>Custom</td>
+    </tr>
+    <tr>
+      <td style={{ fontWeight: 'bold', padding: '8px', borderRight: '2px solid #FFB766', border: '2px solid #FFB766' }}>Concurrent sandboxes</td>
+      <td style={{ textAlign: 'center', padding: '8px', borderRight: '2px solid #FFB766', border: '2px solid #FFB766' }}>20</td>
+      <td style={{ textAlign: 'center', padding: '8px', borderRight: '2px solid #FFB766', border: '2px solid #FFB766' }}>100 - 1,100<b><sup>*</sup></b></td>
+      <td style={{ textAlign: 'center', padding: '8px', border: '2px solid #FFB766' }}>Custom</td>
+    </tr>
+    <tr>
+      <td style={{ fontWeight: 'bold', padding: '8px', borderRight: '2px solid #FFB766', border: '2px solid #FFB766' }}>Sandbox creation rate</td>
+      <td style={{ textAlign: 'center', padding: '8px', borderRight: '2px solid #FFB766', border: '2px solid #FFB766' }}>1 / sec</td>
+      <td style={{ textAlign: 'center', padding: '8px', borderRight: '2px solid #FFB766', border: '2px solid #FFB766' }}>5 / sec</td>
+      <td style={{ textAlign: 'center', padding: '8px', border: '2px solid #FFB766' }}>Custom</td>
+    </tr>
+  </tbody>
+</table>
+
+<Note>
+  <b><sup>*</sup></b> Pro plan default is 100 concurrent sandboxes. Higher concurrency up to 1,100 is available as a separate addon that can be purchased.
+</Note>
+
+---
+
+## Sandbox lifecycle & management API
+
+**20,000 requests per 30 seconds**
+
+This rate limit applies to lifecycle and management operations such as sandbox create, kill, update, list, and other.
+
+---
+
+## Sandbox operations & requests to sandboxes
+
+**40,000 requests per 60 seconds**
+
+This rate limits applies to operations to/within running sandboxes such as running code, listing files, running commands, etc.
+This also includes requests made to custom ports in the sandbox.
+
+<br/> This limit is enforced globally across all sandbox operations from a single IP address.
+
+---
+
+## Concurrent sandboxes
+
+Number of concurrent sandboxes differs based on the pricing tier.
+
+### Hobby tier
+**Up to 20 concurrent sandboxes**
+
+### Pro tier
+**Starts at 100 concurrent sandboxes**
+
+<Note>
+Can go up to 1,100 with a separate addon available for purchase.
+</Note>
+
+
+### Enterprise tier
+**Custom limit - 1,100+ concurrent sandboxes**
+
+---
+
+## Sandbox creation rate
+
+This limit controls how quickly you can create new sandboxes.
+
+### Hobby tier
+**1 sandbox per second**
+
+
+### Pro tier
+**5 sandboxes per second**
+
+### Enterprise tier
+**Custom limit - 5+ sandboxes per second**
+
+## Reaching limits
+
+When you reach the limits of your plan, subsequent requests/function calls will be effectively dropped and return the following:
+-  the `429 Too Many Requests` HTTP status code (when calling API/sandbox ports directly)
+- `RateLimitError` in the JS/TS SDK
+- `RateLimitException` in the Python SDK
+
+For example, if you're on the Pro tier (without any concurrency addons) you can create up to 100 sandboxes running concurrently.
+If the 100 sandboxes are still running, requests for creating new sandboxes from the SDKs (`Sandbox.create()` in JS/TS or `Sandbox.create()` in Python) will fail and return `RateLimitError` or `RateLimitException` respectively.
+After the number of running sandboxes drops below 100 or you purchase the concurrency addon, you'll be able to create new sandboxes again.
+
+## Increasing and avoiding rate limits
+
+You can avoid rate limits by either increasing your plan or contacting our sales team to discuss your specific requirements and we can provide tailored limits to meet your needs at [enterprise@e2b.dev](mailto:enterprise@e2b.dev).

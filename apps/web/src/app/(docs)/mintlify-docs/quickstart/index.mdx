@@ -1,0 +1,71 @@
+---
+title: Running your first Sandbox
+description: This guide will show you how to start your first E2B Sandbox.
+---
+
+<Steps>
+<Step title="Create E2B account">
+Every new E2B account get $100 in credits. You can sign up [here](https://e2b.dev/auth/sign-up).
+</Step>
+<Step title="Set your environment variables">
+1. Navigate to the E2B Dashboard.
+2. Copy your API key.
+3. Paste your E2B API key into your .env file.
+
+```bash .env
+E2B_API_KEY=e2b_***
+```
+</Step>
+<Step title="Install E2B SDK">
+Install the E2B SDK to your project by running the following command in your terminal.
+<CodeGroup>
+```javascript JavaScript & TypeScript
+npm i @e2b/code-interpreter dotenv
+```
+```python Python
+pip install e2b-code-interpreter python-dotenv
+```
+</CodeGroup>
+</Step>
+<Step title="Write code for starting Sandbox">
+We'll write the minimal code for starting Sandbox, executing Python inside it and listing all files inside the root directory.
+<CodeGroup>
+```javascript JavaScript & TypeScript
+// index.ts
+import 'dotenv/config'
+import { Sandbox } from '@e2b/code-interpreter'
+
+const sbx = await Sandbox.create() // By default the sandbox is alive for 5 minutes
+const execution = await sbx.runCode('print("hello world")') // Execute Python inside the sandbox
+console.log(execution.logs)
+
+const files = await sbx.files.list('/')
+console.log(files)
+```
+```python Python
+# main.py
+from dotenv import load_dotenv
+load_dotenv()
+from e2b_code_interpreter import Sandbox
+
+sbx = Sandbox() # By default the sandbox is alive for 5 minutes
+execution = sbx.run_code("print('hello world')") # Execute Python inside the sandbox
+print(execution.logs)
+
+files = sbx.files.list("/")
+print(files)
+```
+</CodeGroup>
+</Step>
+<Step title="Start your first E2B Sandbox">
+Run the code with the following command:
+<CodeGroup>
+```bash JavaScript & TypeScript
+npx tsx ./index.ts
+```
+```bash Python
+python main.py
+```
+</CodeGroup>
+</Step>
+</Steps>
