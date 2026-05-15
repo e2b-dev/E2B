@@ -6,7 +6,7 @@
     "allowJs": true,
     "declaration": true,
     "declarationMap": true,
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "sourceMap": true,
     "strict": true,
     "strictNullChecks": true,
@@ -17,7 +17,6 @@
     "alwaysStrict": true,
     "esModuleInterop": true,
     "preserveSymlinks": true,
-    "downlevelIteration": true,
     "resolveJsonModule": true,
     "forceConsistentCasingInFileNames": true,
     "allowSyntheticDefaultImports": true,
@@ -26,6 +25,7 @@
     "rootDirs": ["src"],
     "paths": {
       "e2b": ["../js-sdk/src"]
-    }
+    },
+    "types": ["node"]
   }
 }

@@ -17,6 +17,7 @@
     "@changesets/read": "^0.6.2"
   },
   "devDependencies": {
+    "@types/node": "^20.19.19",
     "@typescript-eslint/eslint-plugin": "^6.7.2",
     "@typescript-eslint/parser": "^6.7.2",
     "changeset": "^0.2.6",
