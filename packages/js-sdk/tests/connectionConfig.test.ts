@@ -136,6 +136,14 @@ test('setupRequestController handshake timer aborts when not cleared', async () 
   assert.equal(controller.signal.aborted, true)
 })
 
+test('setupRequestController handshake timeout aborts with TimeoutError reason', async () => {
+  const { controller } = setupRequestController(20, undefined)
+  await new Promise((resolve) => setTimeout(resolve, 40))
+  assert.equal(controller.signal.aborted, true)
+  assert.ok(controller.signal.reason instanceof DOMException)
+  assert.equal((controller.signal.reason as DOMException).name, 'TimeoutError')
+})
+
 test('setupRequestController user signal still cancels after clearStartTimeout', () => {
   const userController = new AbortController()
   const { controller, clearStartTimeout } = setupRequestController(

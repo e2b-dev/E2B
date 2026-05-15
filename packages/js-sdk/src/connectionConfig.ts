@@ -72,6 +72,29 @@ export interface ConnectionOpts {
 }
 
 /**
+ * Build an `AbortSignal` that combines an optional request-timeout signal
+ * (via `AbortSignal.timeout`) with an optional user-provided signal.
+ *
+ * Returns `undefined` when neither input would produce a signal.
+ *
+ * @internal
+ */
+export function buildRequestSignal(
+  requestTimeoutMs: number | undefined,
+  userSignal: AbortSignal | undefined
+): AbortSignal | undefined {
+  const timeoutSignal = requestTimeoutMs
+    ? AbortSignal.timeout(requestTimeoutMs)
+    : undefined
+
+  if (timeoutSignal && userSignal) {
+    return AbortSignal.any([timeoutSignal, userSignal])
+  }
+
+  return timeoutSignal ?? userSignal
+}
+
+/**
  * Set up an internal `AbortController` for a streaming request.
  *
  * Until `clearStartTimeout` is called, the controller aborts when either
@@ -109,7 +132,16 @@ export function setupRequestController(
   }
 
   let reqTimeout: ReturnType<typeof setTimeout> | undefined = requestTimeoutMs
-    ? setTimeout(() => controller.abort(), requestTimeoutMs)
+    ? setTimeout(
+        () =>
+          controller.abort(
+            new DOMException(
+              `Request handshake timed out after ${requestTimeoutMs}ms`,
+              'TimeoutError'
+            )
+          ),
+        requestTimeoutMs
+      )
     : undefined
 
   const clearStartTimeout = () => {
@@ -193,14 +225,7 @@ export class ConnectionConfig {
   }
 
   getSignal(requestTimeoutMs?: number, signal?: AbortSignal) {
-    const timeout = requestTimeoutMs ?? this.requestTimeoutMs
-    const timeoutSignal = timeout ? AbortSignal.timeout(timeout) : undefined
-
-    if (timeoutSignal && signal) {
-      return AbortSignal.any([timeoutSignal, signal])
-    }
-
-    return timeoutSignal ?? signal
+    return buildRequestSignal(requestTimeoutMs ?? this.requestTimeoutMs, signal)
   }
 
   getSandboxUrl(

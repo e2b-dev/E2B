@@ -236,11 +236,7 @@ export class CommandHandle
     } catch (e) {
       this.iterationError = handleRpcError(e)
     } finally {
-      try {
-        this.handleDisconnect()
-      } catch {
-        // handleDisconnect runs cleanup (idempotent); ignore any errors.
-      }
+      this.handleDisconnect()
     }
   }
 }

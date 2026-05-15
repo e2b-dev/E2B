@@ -2,6 +2,7 @@ import createClient from 'openapi-fetch'
 
 import type { components, paths } from './schema.gen'
 import { defaultHeaders, getEnvVar } from '../api/metadata'
+import { buildRequestSignal } from '../connectionConfig'
 import { createApiLogger, Logger } from '../logs'
 import type { Volume } from './index'
 
@@ -91,14 +92,7 @@ export class VolumeConnectionConfig {
   }
 
   getSignal(requestTimeoutMs?: number, signal?: AbortSignal) {
-    const timeout = requestTimeoutMs ?? this.requestTimeoutMs
-    const timeoutSignal = timeout ? AbortSignal.timeout(timeout) : undefined
-
-    if (timeoutSignal && signal) {
-      return AbortSignal.any([timeoutSignal, signal])
-    }
-
-    return timeoutSignal ?? signal
+    return buildRequestSignal(requestTimeoutMs ?? this.requestTimeoutMs, signal)
   }
 }
 

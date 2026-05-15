@@ -239,6 +239,15 @@ export interface SandboxListOpts extends SandboxApiOpts {
    * Token to the next page.
    */
   nextToken?: string
+
+  /**
+   * An optional `AbortSignal` that cancels in-flight page requests.
+   * The signal is stored on the returned paginator and applies to every
+   * subsequent {@link SandboxPaginator.nextItems} call — once aborted,
+   * all further pages reject. Construct a new paginator if you need a
+   * fresh signal.
+   */
+  signal?: AbortSignal
 }
 
 export interface SandboxMetricsOpts extends SandboxApiOpts {
@@ -272,6 +281,15 @@ export interface SnapshotListOpts extends SandboxApiOpts {
    * Token to the next page.
    */
   nextToken?: string
+
+  /**
+   * An optional `AbortSignal` that cancels in-flight page requests.
+   * The signal is stored on the returned paginator and applies to every
+   * subsequent {@link SnapshotPaginator.nextItems} call — once aborted,
+   * all further pages reject. Construct a new paginator if you need a
+   * fresh signal.
+   */
+  signal?: AbortSignal
 }
 
 /**
