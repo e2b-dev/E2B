@@ -201,7 +201,7 @@ describe('firewall transform injects headers', () => {
     sandboxOpts: {
       network: {
         rules: {
-          'httpbin.org': [
+          'httpbin.e2b.team': [
             {
               transform: {
                 headers: {
@@ -216,10 +216,10 @@ describe('firewall transform injects headers', () => {
   })
 
   sandboxTest.skipIf(isDebug)(
-    'injected header is reflected by httpbin.org/headers',
+    'injected header is reflected by httpbin.e2b.team/headers',
     async ({ sandbox }) => {
       const result = await sandbox.commands.run(
-        'curl -sS --max-time 10 https://httpbin.org/headers'
+        'curl -sS --max-time 10 https://httpbin.e2b.team/headers'
       )
       assert.equal(result.exitCode, 0)
 
@@ -243,7 +243,7 @@ describe('transform callback resolves sandboxId placeholder', () => {
     sandboxOpts: {
       network: {
         rules: {
-          'httpbin.org': [
+          'httpbin.e2b.team': [
             {
               transform: ({ sandboxId }) => ({
                 headers: { [headerName]: sandboxId },
@@ -259,7 +259,7 @@ describe('transform callback resolves sandboxId placeholder', () => {
     'placeholder is replaced with the actual sandbox id',
     async ({ sandbox }) => {
       const result = await sandbox.commands.run(
-        'curl -sS --max-time 10 https://httpbin.org/headers'
+        'curl -sS --max-time 10 https://httpbin.e2b.team/headers'
       )
       assert.equal(result.exitCode, 0)
 
