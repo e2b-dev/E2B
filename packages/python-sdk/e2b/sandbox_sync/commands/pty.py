@@ -1,8 +1,7 @@
-import e2b_connect
-import httpcore
-
 from typing import Dict, Optional
 
+from connectrpc.code import Code
+from connectrpc.errors import ConnectError
 from packaging.version import Version
 from e2b.envd.process import process_connect, process_pb2
 from e2b.connection_config import (
@@ -12,7 +11,15 @@ from e2b.connection_config import (
     KEEPALIVE_PING_INTERVAL_SEC,
 )
 from e2b.exceptions import SandboxException
-from e2b.envd.rpc import authentication_header, handle_rpc_exception
+from e2b.envd.pyqwest_httpx_adapter import PyqwestHTTPXAdapter
+from e2b.envd.rpc import (
+    authentication_header,
+    connect_client_kwargs,
+    handle_rpc_exception,
+    request_timeout_ms,
+    stream_request_headers,
+    stream_timeout_ms,
+)
 from e2b.sandbox.commands.command_handle import PtySize
 from e2b.sandbox_sync.commands.command_handle import CommandHandle
 
@@ -26,18 +33,14 @@ class Pty:
         self,
         envd_api_url: str,
         connection_config: ConnectionConfig,
-        pool: httpcore.ConnectionPool,
+        rpc_client: PyqwestHTTPXAdapter,
         envd_version: Version,
     ) -> None:
         self._connection_config = connection_config
         self._envd_version = envd_version
-        self._rpc = process_connect.ProcessClient(
+        self._rpc = process_connect.ProcessClientSync(
             envd_api_url,
-            # TODO: Fix and enable compression again — the headers compression is not solved for streaming.
-            # compressor=e2b_connect.GzipCompressor,
-            pool=pool,
-            json=True,
-            headers=connection_config.sandbox_headers,
+            **connect_client_kwargs(connection_config.sandbox_headers, rpc_client),
         )
 
     def kill(
@@ -59,14 +62,14 @@ class Pty:
                     process=process_pb2.ProcessSelector(pid=pid),
                     signal=process_pb2.Signal.SIGNAL_SIGKILL,
                 ),
-                request_timeout=self._connection_config.get_request_timeout(
-                    request_timeout
+                timeout_ms=request_timeout_ms(
+                    self._connection_config.get_request_timeout(request_timeout)
                 ),
             )
             return True
         except Exception as e:
-            if isinstance(e, e2b_connect.ConnectException):
-                if e.status == e2b_connect.Code.not_found:
+            if isinstance(e, ConnectError):
+                if e.code == Code.NOT_FOUND:
                     return False
             raise handle_rpc_exception(e)
 
@@ -91,8 +94,8 @@ class Pty:
                         pty=data,
                     ),
                 ),
-                request_timeout=self._connection_config.get_request_timeout(
-                    request_timeout
+                timeout_ms=request_timeout_ms(
+                    self._connection_config.get_request_timeout(request_timeout)
                 ),
             )
         except Exception as e:
@@ -135,14 +138,14 @@ class Pty:
                     size=process_pb2.PTY.Size(rows=size.rows, cols=size.cols)
                 ),
             ),
-            headers={
-                **authentication_header(self._envd_version, user),
-                KEEPALIVE_PING_HEADER: str(KEEPALIVE_PING_INTERVAL_SEC),
-            },
-            timeout=timeout,
-            request_timeout=self._connection_config.get_request_timeout(
-                request_timeout
+            headers=stream_request_headers(
+                {
+                    **authentication_header(self._envd_version, user),
+                    KEEPALIVE_PING_HEADER: str(KEEPALIVE_PING_INTERVAL_SEC),
+                },
+                self._connection_config.get_request_timeout(request_timeout),
             ),
+            timeout_ms=stream_timeout_ms(timeout),
         )
 
         try:
@@ -180,13 +183,13 @@ class Pty:
             process_pb2.ConnectRequest(
                 process=process_pb2.ProcessSelector(pid=pid),
             ),
-            headers={
-                KEEPALIVE_PING_HEADER: str(KEEPALIVE_PING_INTERVAL_SEC),
-            },
-            timeout=timeout,
-            request_timeout=self._connection_config.get_request_timeout(
-                request_timeout
+            headers=stream_request_headers(
+                {
+                    KEEPALIVE_PING_HEADER: str(KEEPALIVE_PING_INTERVAL_SEC),
+                },
+                self._connection_config.get_request_timeout(request_timeout),
             ),
+            timeout_ms=stream_timeout_ms(timeout),
         )
 
         try:
@@ -226,7 +229,7 @@ class Pty:
                     size=process_pb2.PTY.Size(rows=size.rows, cols=size.cols),
                 ),
             ),
-            request_timeout=self._connection_config.get_request_timeout(
-                request_timeout
+            timeout_ms=request_timeout_ms(
+                self._connection_config.get_request_timeout(request_timeout)
             ),
         )

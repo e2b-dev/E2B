@@ -1,15 +1,16 @@
 # buf.gen.yaml defines a local generation template.
 # For details, see https://buf.build/docs/configuration/v1/buf-gen-yaml
-version: v1
+version: v2
 plugins:
-  - plugin: python
+  - remote: buf.build/protocolbuffers/python:v26.1
     out: ../../packages/python-sdk/e2b/envd
-    opt:
-      - pyi_out=../../packages/python-sdk/e2b/envd
-  - name: connect-python
+  - remote: buf.build/protocolbuffers/pyi:v26.1
     out: ../../packages/python-sdk/e2b/envd
-    path: protoc-gen-connect-python
+  - remote: buf.build/connectrpc/python:v0.10.0
+    out: ../../packages/python-sdk/e2b/envd
 
 managed:
   enabled: true
-  optimize_for: SPEED
+  override:
+    - file_option: optimize_for
+      value: SPEED

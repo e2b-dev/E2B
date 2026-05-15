@@ -302,6 +302,22 @@ files = [
 ]
 
 [[package]]
+name = "connectrpc"
+version = "0.10.0"
+description = "Server and client runtime library for Connect RPC"
+optional = false
+python-versions = ">=3.10"
+groups = ["main"]
+files = [
+    {file = "connectrpc-0.10.0-py3-none-any.whl", hash = "sha256:fedaf5abb8c90ab69662958b88f23f4cc18b7a0b0359401d8e5776ccfceefc38"},
+    {file = "connectrpc-0.10.0.tar.gz", hash = "sha256:44f89b70abae9f8192883e79e8a3317bdca555036ed3bd4a20f398c0bac7162f"},
+]
+
+[package.dependencies]
+protobuf = ">=5.28"
+pyqwest = ">=0.5.1"
+
+[[package]]
 name = "databind"
 version = "4.5.2"
 description = "Databind is a library inspired by jackson-databind to de-/serialize Python dataclasses. The `databind` package will install the full suite of databind packages. Compatible with Python 3.8 and newer."
@@ -621,6 +637,30 @@ files = [
 all = ["flake8 (>=7.1.1)", "mypy (>=1.11.2)", "pytest (>=8.3.2)", "ruff (>=0.6.2)"]
 
 [[package]]
+name = "importlib-metadata"
+version = "8.7.1"
+description = "Read metadata from Python packages"
+optional = false
+python-versions = ">=3.9"
+groups = ["main"]
+files = [
+    {file = "importlib_metadata-8.7.1-py3-none-any.whl", hash = "sha256:5a1f80bf1daa489495071efbb095d75a634cf28a8bc299581244063b53176151"},
+    {file = "importlib_metadata-8.7.1.tar.gz", hash = "sha256:49fef1ae6440c182052f407c8d34a68f72efc36db9ca90dc0113398f2fdde8bb"},
+]
+
+[package.dependencies]
+zipp = ">=3.20"
+
+[package.extras]
+check = ["pytest-checkdocs (>=2.4)", "pytest-ruff (>=0.2.1) ; sys_platform != \"cygwin\""]
+cover = ["pytest-cov"]
+doc = ["furo", "jaraco.packaging (>=9.3)", "jaraco.tidelift (>=1.4)", "rst.linker (>=1.9)", "sphinx (>=3.5)", "sphinx-lint"]
+enabler = ["pytest-enabler (>=3.4)"]
+perf = ["ipython"]
+test = ["flufl.flake8", "jaraco.test (>=5.4)", "packaging", "pyfakefs", "pytest (>=6,!=8.1.*)", "pytest-perf (>=0.9.2)"]
+type = ["mypy (<1.19) ; platform_python_implementation == \"PyPy\"", "pytest-mypy (>=1.0.1)"]
+
+[[package]]
 name = "inflect"
 version = "7.5.0"
 description = "Correctly generate plurals, singular nouns, ordinals, indefinite articles"
@@ -889,6 +929,22 @@ files = [
 [package.dependencies]
 deprecated = ">=1.2.0,<2.0.0"
 typing-extensions = ">=3.0.0"
+
+[[package]]
+name = "opentelemetry-api"
+version = "1.41.1"
+description = "OpenTelemetry Python API"
+optional = false
+python-versions = ">=3.9"
+groups = ["main"]
+files = [
+    {file = "opentelemetry_api-1.41.1-py3-none-any.whl", hash = "sha256:a22df900e75c76dc08440710e51f52f1aa6b451b429298896023e60db5b3139f"},
+    {file = "opentelemetry_api-1.41.1.tar.gz", hash = "sha256:0ad1814d73b875f84494387dae86ce0b12c68556331ce6ce8fe789197c949621"},
+]
+
+[package.dependencies]
+importlib-metadata = ">=6.0,<8.8.0"
+typing-extensions = ">=4.5.0"
 
 [[package]]
 name = "packaging"
@@ -1166,6 +1222,56 @@ files = [
 
 [package.extras]
 windows-terminal = ["colorama (>=0.4.6)"]
+
+[[package]]
+name = "pyqwest"
+version = "0.5.1"
+description = ""
+optional = false
+python-versions = ">=3.10"
+groups = ["main"]
+files = [
+    {file = "pyqwest-0.5.1-cp310-abi3-macosx_11_0_arm64.whl", hash = "sha256:047078c4c3f7c93d8a1df07138c471cfdb234577f60563afe090b160ada1a132"},
+    {file = "pyqwest-0.5.1-cp310-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:3f732aed3498abf5742f0c952f24fc21625d62fe0a701ec8e472257709540d61"},
+    {file = "pyqwest-0.5.1-cp310-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:77565ad8e551a101eddbf08328b0e3d54a179efec97a3da195ce831f0474ef92"},
+    {file = "pyqwest-0.5.1-cp310-abi3-musllinux_1_2_aarch64.whl", hash = "sha256:57ea14094f841d735fcf401a6428e94a39aabf22d15762a979cf8d6096fea90b"},
+    {file = "pyqwest-0.5.1-cp310-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:e6716309fc179b0714978d1f8c32a70724b3b9f43acc9aea3cf9507872e631d6"},
+    {file = "pyqwest-0.5.1-cp310-abi3-win_amd64.whl", hash = "sha256:736b560fd2256a41264f554243edf3ff872ead4da347392531576203cf97a4ce"},
+    {file = "pyqwest-0.5.1-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:c30bb16da6580d085d86a46e28c3b59813c634c5dd7363faa980c6e53d42ea21"},
+    {file = "pyqwest-0.5.1-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:4540be138c7e4ee498c084fa9f19f34dd135f263653619ec91ccebecefd32a3a"},
+    {file = "pyqwest-0.5.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:ae56109419b37be3e90a134f827fda26c6338c432bae5ecef561e93c3df275ab"},
+    {file = "pyqwest-0.5.1-cp312-cp312-musllinux_1_2_aarch64.whl", hash = "sha256:82fbf17cf45b5a67c95734934f584045f114a1aa59d179fb79d80e56e653e052"},
+    {file = "pyqwest-0.5.1-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:717b65ee898bc3e4f29a74e068bb753bbb8a338456f1fb65edc2edabc3f3eaa5"},
+    {file = "pyqwest-0.5.1-cp312-cp312-win_amd64.whl", hash = "sha256:26498ead2aaf491430980c06cbee3bd72a26a8f33a025e9a19ddcd7e781a069a"},
+    {file = "pyqwest-0.5.1-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:81bf0feb6d07fc25ffbe96be09ef64ff732d444e26c80db1b1de999d74a7a7ed"},
+    {file = "pyqwest-0.5.1-cp313-cp313-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:3a7d2c4a162e72b57dfd175f53882558702c3ddd5704f536599f463e46081bd9"},
+    {file = "pyqwest-0.5.1-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:b33bcba509e07ee79e61f9311880a22e8c11a562382648166f624f0b480266c1"},
+    {file = "pyqwest-0.5.1-cp313-cp313-musllinux_1_2_aarch64.whl", hash = "sha256:3a7a7b56e0f9099b50dae2e5907f05fc5e61252cd48cc1561f156765b233dd7b"},
+    {file = "pyqwest-0.5.1-cp313-cp313-musllinux_1_2_x86_64.whl", hash = "sha256:a3cd54af62f01fd0daf694218074325ccbbea6527f27738a85fc1e38880119f0"},
+    {file = "pyqwest-0.5.1-cp313-cp313-win_amd64.whl", hash = "sha256:938ac244f96730a8c1addb260cbec93e44ef63d73358285bafb00f18526c106b"},
+    {file = "pyqwest-0.5.1-cp314-cp314-macosx_11_0_arm64.whl", hash = "sha256:7755dd658c612016c38f0e26938b80dafd37d80ee074c5cc4301f54f385b1e52"},
+    {file = "pyqwest-0.5.1-cp314-cp314-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:29015b12242f2feeb24cbad7d1025a78b3239872efcbfa975ce23527e8c05ec7"},
+    {file = "pyqwest-0.5.1-cp314-cp314-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:1271fb28a78484e93d09b7c78df5213900538af8cf5a53ce377ed2cbb82e72b2"},
+    {file = "pyqwest-0.5.1-cp314-cp314-musllinux_1_2_aarch64.whl", hash = "sha256:eaf970412356f9d6482045a8e7b7c9d36c07b6a7352c96c90a811e730eba906f"},
+    {file = "pyqwest-0.5.1-cp314-cp314-musllinux_1_2_x86_64.whl", hash = "sha256:986b787138893459e02485e89a7d4a383ec2864194a5ab7e0650dce9635f5215"},
+    {file = "pyqwest-0.5.1-cp314-cp314-win_amd64.whl", hash = "sha256:4d9fb2bcbea6adc365ea3c69727b34dd21dee29edb1551b64531b25babb68f91"},
+    {file = "pyqwest-0.5.1-cp314-cp314t-macosx_11_0_arm64.whl", hash = "sha256:dc7a7c65e839057bcc3a5d4f48c6c2202f89fc13ddb12bd8e2f20d95378a95d8"},
+    {file = "pyqwest-0.5.1-cp314-cp314t-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:e30c2268e9f7ec5509874047ebf83ecde1cab29d0bd7dc352fa2a782da2b2abf"},
+    {file = "pyqwest-0.5.1-cp314-cp314t-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:0f632070abff4d0bfd0f6deada3beaaaa42a042809e50c7f2e2b25014687e070"},
+    {file = "pyqwest-0.5.1-cp314-cp314t-musllinux_1_2_aarch64.whl", hash = "sha256:78f8b6b41c0206e9605d75b9fc3f20db97c266829f5a0bee8eff7d524de2bf20"},
+    {file = "pyqwest-0.5.1-cp314-cp314t-musllinux_1_2_x86_64.whl", hash = "sha256:a1d95a8a7e4246ba37dc3115b10b72c5dcdf4b226447d1a7a51973d686460fa4"},
+    {file = "pyqwest-0.5.1-cp314-cp314t-win_amd64.whl", hash = "sha256:fbd3232cca327bc591d47b0368ba712d929f66658d4822ac5129f5ede1a581df"},
+    {file = "pyqwest-0.5.1-pp311-pypy311_pp73-macosx_11_0_arm64.whl", hash = "sha256:45f9d448fedd6d85c4c9a5cb8e743b83fdd798c335936588f5d90628c6163f73"},
+    {file = "pyqwest-0.5.1-pp311-pypy311_pp73-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:144c22aa18de37f5b6f877939c50fb2aafb94a6433ac47ddab3850793402e46b"},
+    {file = "pyqwest-0.5.1-pp311-pypy311_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:850c58da7df5c0a4c6351ffe66f99768cb5d92e882b55daf9984a96a5c46e11e"},
+    {file = "pyqwest-0.5.1-pp311-pypy311_pp73-musllinux_1_2_aarch64.whl", hash = "sha256:03e57c1d58d7f236a08dfe5b27493ee56ae2d5e4b40e5c4bd9e6309000b4b86f"},
+    {file = "pyqwest-0.5.1-pp311-pypy311_pp73-musllinux_1_2_x86_64.whl", hash = "sha256:958540d4861b9e7a228a775ea8b937c019bdc769d52b6e2e872b5bdc1ebf6870"},
+    {file = "pyqwest-0.5.1-pp311-pypy311_pp73-win_amd64.whl", hash = "sha256:469dfd7baaac6fd6565d396c8d05f19cb5ba279856af38b5f69ff8278e991c49"},
+    {file = "pyqwest-0.5.1.tar.gz", hash = "sha256:49535565a55a23830d376c6c0b8ca1276f19bb871e39330e1fbb3df69d9f02df"},
+]
+
+[package.dependencies]
+opentelemetry-api = ">=1.39.1"
 
 [[package]]
 name = "pytest"
@@ -1856,7 +1962,27 @@ files = [
 platformdirs = ">=3.5.1"
 tomli = {version = ">=2.0.1", markers = "python_version < \"3.11\""}
 
+[[package]]
+name = "zipp"
+version = "3.23.1"
+description = "Backport of pathlib-compatible object wrapper for zip files"
+optional = false
+python-versions = ">=3.9"
+groups = ["main"]
+files = [
+    {file = "zipp-3.23.1-py3-none-any.whl", hash = "sha256:0b3596c50a5c700c9cb40ba8d86d9f2cc4807e9bedb06bcdf7fac85633e444dc"},
+    {file = "zipp-3.23.1.tar.gz", hash = "sha256:32120e378d32cd9714ad503c1d024619063ec28aad2248dc6672ad13edfa5110"},
+]
+
+[package.extras]
+check = ["pytest-checkdocs (>=2.4)", "pytest-ruff (>=0.2.1) ; sys_platform != \"cygwin\""]
+cover = ["pytest-cov"]
+doc = ["furo", "jaraco.packaging (>=9.3)", "jaraco.tidelift (>=1.4)", "rst.linker (>=1.9)", "sphinx (>=3.5)", "sphinx-lint"]
+enabler = ["pytest-enabler (>=2.2)"]
+test = ["big-O", "jaraco.functools", "jaraco.itertools", "jaraco.test", "more_itertools", "pytest (>=6,!=8.1.*)", "pytest-ignore-flaky"]
+type = ["pytest-mypy"]
+
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.10"
-content-hash = "10b34c02d9b97fb1fd229107629913601c669a7d81fc558d11dce61a92812743"
+content-hash = "7e4cb41b37f445098bcdf477491dd49c032a77021e3970a7e9b8f84dca6133f9"

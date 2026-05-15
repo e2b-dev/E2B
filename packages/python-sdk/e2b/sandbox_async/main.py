@@ -13,6 +13,7 @@ from e2b.api.client.types import Unset
 from e2b.api.client_async import get_transport
 from e2b.connection_config import ApiParams, ConnectionConfig
 from e2b.envd.api import ENVD_API_HEALTH_ROUTE, ahandle_envd_api_exception
+from e2b.envd.pyqwest_httpx_adapter import AsyncPyqwestHTTPXAdapter
 from e2b.envd.versions import ENVD_DEBUG_FALLBACK
 from e2b.exceptions import (
     SandboxException,
@@ -102,6 +103,7 @@ class AsyncSandbox(SandboxApi):
         super().__init__(**opts)
 
         self._transport = get_transport(self.connection_config)
+        self._rpc_client = AsyncPyqwestHTTPXAdapter(self._transport)
         self._envd_api = httpx.AsyncClient(
             base_url=self.connection_config.get_sandbox_url(
                 self.sandbox_id, self.sandbox_domain
@@ -113,19 +115,19 @@ class AsyncSandbox(SandboxApi):
             self.envd_api_url,
             self._envd_version,
             self.connection_config,
-            self._transport.pool,
+            self._rpc_client,
             self._envd_api,
         )
         self._commands = Commands(
             self.envd_api_url,
             self.connection_config,
-            self._transport.pool,
+            self._rpc_client,
             self._envd_version,
         )
         self._pty = Pty(
             self.envd_api_url,
             self.connection_config,
-            self._transport.pool,
+            self._rpc_client,
             self._envd_version,
         )
         self._git = Git(self._commands)

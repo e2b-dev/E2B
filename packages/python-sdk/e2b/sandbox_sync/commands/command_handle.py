@@ -1,4 +1,4 @@
-from typing import Optional, Callable, Any, Generator, Union, Tuple
+from typing import Optional, Callable, Generator, Iterator, Union, Tuple
 
 from e2b.envd.rpc import handle_rpc_exception
 from e2b.envd.process import process_pb2
@@ -29,9 +29,7 @@ class CommandHandle:
         self,
         pid: int,
         handle_kill: Callable[[], bool],
-        events: Generator[
-            Union[process_pb2.StartResponse, process_pb2.ConnectResponse], Any, None
-        ],
+        events: Iterator[Union[process_pb2.StartResponse, process_pb2.ConnectResponse]],
     ):
         self._pid = pid
         self._handle_kill = handle_kill
@@ -92,7 +90,9 @@ class CommandHandle:
         The command is not killed, but SDK stops receiving events from the command.
         You can reconnect to the command using `sandbox.commands.connect` method.
         """
-        self._events.close()
+        close = getattr(self._events, "close", None)
+        if close:
+            close()
 
     def wait(
         self,

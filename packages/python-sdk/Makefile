@@ -16,10 +16,6 @@ generate-volume-api:
 	ruff format .
 
 generate-envd:
-	if [ ! -f "/go/bin/protoc-gen-connect-python" ]; then \
-		$(MAKE) -C $(ROOT_DIR)/packages/connect-python build; \
-	fi
-
 	cd $(ROOT_DIR)/spec/envd && pwd && buf generate --template buf-python.gen.yaml
 	./scripts/fix-python-pb.sh
 

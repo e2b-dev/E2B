@@ -1,7 +1,7 @@
 import asyncio
 import inspect
 
-from typing import Any, AsyncGenerator, Optional
+from typing import AsyncIterator, Optional
 
 from e2b.envd.rpc import handle_rpc_exception
 from e2b.envd.filesystem.filesystem_pb2 import WatchDirResponse
@@ -18,7 +18,7 @@ class AsyncWatchHandle:
 
     def __init__(
         self,
-        events: AsyncGenerator[WatchDirResponse, Any],
+        events: AsyncIterator[WatchDirResponse],
         on_event: OutputHandler[FilesystemEvent],
         on_exit: Optional[OutputHandler[Exception]] = None,
     ):

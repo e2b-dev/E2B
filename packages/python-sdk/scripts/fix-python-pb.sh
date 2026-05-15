@@ -6,6 +6,8 @@ rm -rf e2b/envd/process/__pycache__
 
 sed -i.bak 's/from\ process\ import/from e2b.envd.process import/g' e2b/envd/process/* e2b/envd/filesystem/*
 sed -i.bak 's/from\ filesystem\ import/from e2b.envd.filesystem import/g' e2b/envd/process/* e2b/envd/filesystem/*
+sed -i.bak 's/import\ process\.process_pb2\ as/from e2b.envd.process import process_pb2 as/g' e2b/envd/process/* e2b/envd/filesystem/*
+sed -i.bak 's/import\ filesystem\.filesystem_pb2\ as/from e2b.envd.filesystem import filesystem_pb2 as/g' e2b/envd/process/* e2b/envd/filesystem/*
 
 rm -f e2b/envd/process/*.bak
 rm -f e2b/envd/filesystem/*.bak

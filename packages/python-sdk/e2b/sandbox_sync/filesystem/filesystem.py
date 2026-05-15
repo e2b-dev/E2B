@@ -1,11 +1,11 @@
 from io import IOBase, TextIOBase
 from typing import IO, Iterator, List, Literal, Optional, Union, overload
 
-import httpcore
 import httpx
+from connectrpc.code import Code
+from connectrpc.errors import ConnectError
 from packaging.version import Version
 
-import e2b_connect
 from e2b.connection_config import (
     KEEPALIVE_PING_HEADER,
     KEEPALIVE_PING_INTERVAL_SEC,
@@ -13,11 +13,16 @@ from e2b.connection_config import (
     Username,
     default_username,
 )
-from e2b_connect.client import Code
 
 from e2b.envd.api import ENVD_API_FILES_ROUTE, handle_envd_api_exception
 from e2b.envd.filesystem import filesystem_connect, filesystem_pb2
-from e2b.envd.rpc import authentication_header, handle_rpc_exception
+from e2b.envd.pyqwest_httpx_adapter import PyqwestHTTPXAdapter
+from e2b.envd.rpc import (
+    authentication_header,
+    connect_client_kwargs,
+    handle_rpc_exception,
+    request_timeout_ms,
+)
 from e2b.envd.versions import (
     ENVD_DEFAULT_USER,
     ENVD_OCTET_STREAM_UPLOAD,
@@ -40,15 +45,28 @@ from e2b.sandbox_sync.filesystem.watch_handle import WatchHandle
 
 
 _FILESYSTEM_RPC_ERROR_MAP = {
-    Code.not_found: FileNotFoundException,
+    Code.NOT_FOUND: FileNotFoundException,
 }
 
 _FILESYSTEM_HTTP_ERROR_MAP = {
     404: FileNotFoundException,
 }
 
+_ENOENT_MESSAGE = "no such file or directory"
+
 
 def _handle_filesystem_rpc_exception(e: Exception) -> Exception:
+    if isinstance(e, ConnectError):
+        if e.code == Code.NOT_FOUND:
+            return FileNotFoundException(e.message)
+
+        if (
+            e.code == Code.UNKNOWN
+            # Older envd versions returned ENOENT as UNKNOWN instead of NOT_FOUND.
+            and _ENOENT_MESSAGE in e.message.lower()
+        ):
+            return FileNotFoundException(e.message)
+
     return handle_rpc_exception(e, _FILESYSTEM_RPC_ERROR_MAP)
 
 
@@ -66,22 +84,17 @@ class Filesystem:
         envd_api_url: str,
         envd_version: Version,
         connection_config: ConnectionConfig,
-        pool: httpcore.ConnectionPool,
+        rpc_client: PyqwestHTTPXAdapter,
         envd_api: httpx.Client,
     ) -> None:
         self._envd_api_url = envd_api_url
         self._envd_version = envd_version
         self._connection_config = connection_config
-        self._pool = pool
         self._envd_api = envd_api
 
-        self._rpc = filesystem_connect.FilesystemClient(
+        self._rpc = filesystem_connect.FilesystemClientSync(
             envd_api_url,
-            # TODO: Fix and enable compression again — the headers compression is not solved for streaming.
-            # compressor=e2b_connect.GzipCompressor,
-            pool=pool,
-            json=True,
-            headers=connection_config.sandbox_headers,
+            **connect_client_kwargs(connection_config.sandbox_headers, rpc_client),
         )
 
     @overload
@@ -363,8 +376,8 @@ class Filesystem:
         try:
             res = self._rpc.list_dir(
                 filesystem_pb2.ListDirRequest(path=path, depth=depth),
-                request_timeout=self._connection_config.get_request_timeout(
-                    request_timeout
+                timeout_ms=request_timeout_ms(
+                    self._connection_config.get_request_timeout(request_timeout)
                 ),
                 headers=authentication_header(self._envd_version, user),
             )
@@ -416,18 +429,18 @@ class Filesystem:
         try:
             self._rpc.stat(
                 filesystem_pb2.StatRequest(path=path),
-                request_timeout=self._connection_config.get_request_timeout(
-                    request_timeout
+                timeout_ms=request_timeout_ms(
+                    self._connection_config.get_request_timeout(request_timeout)
                 ),
                 headers=authentication_header(self._envd_version, user),
             )
             return True
 
         except Exception as e:
-            if isinstance(e, e2b_connect.ConnectException):
-                if e.status == e2b_connect.Code.not_found:
-                    return False
-            raise _handle_filesystem_rpc_exception(e)
+            err = _handle_filesystem_rpc_exception(e)
+            if isinstance(err, FileNotFoundException):
+                return False
+            raise err
 
     def get_info(
         self,
@@ -447,8 +460,8 @@ class Filesystem:
         try:
             r = self._rpc.stat(
                 filesystem_pb2.StatRequest(path=path),
-                request_timeout=self._connection_config.get_request_timeout(
-                    request_timeout
+                timeout_ms=request_timeout_ms(
+                    self._connection_config.get_request_timeout(request_timeout)
                 ),
                 headers=authentication_header(self._envd_version, user),
             )
@@ -489,8 +502,8 @@ class Filesystem:
         try:
             self._rpc.remove(
                 filesystem_pb2.RemoveRequest(path=path),
-                request_timeout=self._connection_config.get_request_timeout(
-                    request_timeout
+                timeout_ms=request_timeout_ms(
+                    self._connection_config.get_request_timeout(request_timeout)
                 ),
                 headers=authentication_header(self._envd_version, user),
             )
@@ -520,8 +533,8 @@ class Filesystem:
                     source=old_path,
                     destination=new_path,
                 ),
-                request_timeout=self._connection_config.get_request_timeout(
-                    request_timeout
+                timeout_ms=request_timeout_ms(
+                    self._connection_config.get_request_timeout(request_timeout)
                 ),
                 headers=authentication_header(self._envd_version, user),
             )
@@ -564,16 +577,16 @@ class Filesystem:
         try:
             self._rpc.make_dir(
                 filesystem_pb2.MakeDirRequest(path=path),
-                request_timeout=self._connection_config.get_request_timeout(
-                    request_timeout
+                timeout_ms=request_timeout_ms(
+                    self._connection_config.get_request_timeout(request_timeout)
                 ),
                 headers=authentication_header(self._envd_version, user),
             )
 
             return True
         except Exception as e:
-            if isinstance(e, e2b_connect.ConnectException):
-                if e.status == e2b_connect.Code.already_exists:
+            if isinstance(e, ConnectError):
+                if e.code == Code.ALREADY_EXISTS:
                     return False
             raise _handle_filesystem_rpc_exception(e)
 
@@ -603,8 +616,8 @@ class Filesystem:
         try:
             r = self._rpc.create_watcher(
                 filesystem_pb2.CreateWatcherRequest(path=path, recursive=recursive),
-                request_timeout=self._connection_config.get_request_timeout(
-                    request_timeout
+                timeout_ms=request_timeout_ms(
+                    self._connection_config.get_request_timeout(request_timeout)
                 ),
                 headers={
                     **authentication_header(self._envd_version, user),
