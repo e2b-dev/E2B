@@ -207,6 +207,11 @@ export type SandboxConnectOpts = ConnectionOpts & {
    * @default 300_000 // 5 minutes
    */
   timeoutMs?: number
+  /**
+   * Custom environment variables to set in the sandbox on reconnect.
+   * These are merged into the sandbox environment and applied to processes started after resume.
+   */
+  envs?: Record<string, string>
 }
 
 /**
@@ -870,6 +875,7 @@ export class SandboxApi {
       },
       body: {
         timeout: timeoutToSeconds(timeoutMs),
+        envVars: opts?.envs,
       },
       signal: config.getSignal(opts?.requestTimeoutMs),
     })

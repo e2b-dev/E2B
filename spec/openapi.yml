@@ -660,6 +660,9 @@ components:
           type: integer
           format: int32
           minimum: 0
+        envVars:
+          $ref: '#/components/schemas/EnvVars'
+          description: Environment variables to set in the sandbox on reconnect. Merged into the sandbox environment and applied to processes started after resume.
 
     TeamMetric:
       description: Team metric with timestamp

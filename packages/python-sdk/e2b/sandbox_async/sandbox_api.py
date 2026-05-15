@@ -382,6 +382,7 @@ class SandboxApi(SandboxBase):
         cls,
         sandbox_id: str,
         timeout: Optional[int] = None,
+        envs: Optional[Dict[str, str]] = None,
         **opts: Unpack[ApiParams],
     ) -> Sandbox:
         timeout = timeout or SandboxBase.default_sandbox_timeout
@@ -399,7 +400,10 @@ class SandboxApi(SandboxBase):
         res = await post_sandboxes_sandbox_id_connect.asyncio_detailed(
             sandbox_id,
             client=api_client,
-            body=ConnectSandbox(timeout=timeout),
+            body=ConnectSandbox(
+                timeout=timeout,
+                env_vars=envs if envs is not None else UNSET,
+            ),
         )
 
         if res.status_code == 404:

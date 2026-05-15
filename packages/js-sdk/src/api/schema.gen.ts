@@ -1747,6 +1747,8 @@ export interface components {
             step?: string;
         };
         ConnectSandbox: {
+            /** @description Environment variables to set in the sandbox on reconnect. Merged into the sandbox environment and applied to processes started after resume. */
+            envVars?: components["schemas"]["EnvVars"];
             /**
              * Format: int32
              * @description Timeout in seconds from the current time after which the sandbox should expire

@@ -57,3 +57,43 @@ describe('Sandbox API config propagation', () => {
     assert.equal(opts?.debug, baseConfig.debug)
   })
 })
+
+describe('Sandbox connect envs propagation', () => {
+  const mockConnectResult = {
+    sandboxId: 'sbx-test',
+    sandboxDomain: 'sandbox.e2b.dev',
+    envdVersion: '0.2.4',
+    envdAccessToken: 'tok',
+    trafficAccessToken: 'tok',
+  }
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  test('forwards envs to connectSandbox when provided', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const connectSpy = vi
+      .spyOn(SandboxApi as any, 'connectSandbox')
+      .mockResolvedValue(mockConnectResult)
+    const sandbox = createSandbox()
+
+    await sandbox.connect({ envs: { MY_KEY: 'my_value' } })
+
+    const opts = connectSpy.mock.calls[0][1]
+    assert.deepEqual(opts?.envs, { MY_KEY: 'my_value' })
+  })
+
+  test('does not include envs in opts when not provided', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const connectSpy = vi
+      .spyOn(SandboxApi as any, 'connectSandbox')
+      .mockResolvedValue(mockConnectResult)
+    const sandbox = createSandbox()
+
+    await sandbox.connect()
+
+    const opts = connectSpy.mock.calls[0][1]
+    assert.isUndefined(opts?.envs)
+  })
+})
