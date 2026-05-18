@@ -52,15 +52,15 @@ export type SandboxNetworkTransform = {
  */
 export type SandboxNetworkTransformContext = {
   /** Placeholder `'${e2b.sandboxId}'`. */
-  sandboxId: string
+  readonly sandboxId: string
   /** Placeholder `'${e2b.teamId}'`. */
-  teamId: string
+  readonly teamId: string
   /** Placeholder `'${e2b.executionId}'`. */
-  executionId: string
+  readonly executionId: string
   /** Identity-related placeholders. */
-  identity: {
+  readonly identity: {
     /** Placeholder `'${e2b.identity.jwt}'`. */
-    jwt: string
+    readonly jwt: string
   }
 }
 
@@ -549,14 +549,14 @@ function resolveNetworkSelector(
   return selector
 }
 
-const TRANSFORM_CONTEXT: SandboxNetworkTransformContext = {
+const TRANSFORM_CONTEXT: SandboxNetworkTransformContext = Object.freeze({
   sandboxId: '${e2b.sandboxId}',
   teamId: '${e2b.teamId}',
   executionId: '${e2b.executionId}',
-  identity: {
+  identity: Object.freeze({
     jwt: '${e2b.identity.jwt}',
-  },
-}
+  }),
+})
 
 function resolveRulesForBody(
   rules: Map<string, SandboxNetworkRule[]>
