@@ -191,6 +191,35 @@ async def test_firewall_transform_injects_headers(async_sandbox_factory):
     )
 
 
+# @pytest.mark.skip_debug()
+# async def test_transform_callback_resolves_sandbox_id(async_sandbox_factory):
+#     """The transform callback's sandbox_id placeholder is resolved by the proxy."""
+#     header_name = "X-E2B-Sandbox-Id"
+#
+#     network: SandboxNetworkOpts = {
+#         "rules": {
+#             "httpbin.e2b.team": [
+#                 {
+#                     "transform": lambda ctx: {"headers": {header_name: ctx.sandbox_id}},
+#                 },
+#             ],
+#         },
+#     }
+#     async_sandbox = await async_sandbox_factory(network=network)
+#
+#     result = await async_sandbox.commands.run(
+#         "curl -sS --max-time 10 https://httpbin.e2b.team/headers"
+#     )
+#     assert result.exit_code == 0
+#
+#     parsed = json.loads(result.stdout)
+#     reflected = parsed["headers"].get(header_name)
+#     assert reflected == async_sandbox.sandbox_id, (
+#         f"expected httpbin to reflect {header_name}={async_sandbox.sandbox_id}, "
+#         f"got headers: {parsed['headers']}"
+#     )
+
+
 @pytest.mark.skip_debug()
 async def test_mask_request_host(async_sandbox_factory):
     """Test that mask_request_host modifies the Host header correctly."""
