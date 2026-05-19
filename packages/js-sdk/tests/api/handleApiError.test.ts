@@ -9,14 +9,15 @@ import {
 function createMockResponse(
   status: number,
   error: unknown,
-  data?: unknown
+  data?: unknown,
+  headers?: Headers
 ): {
-  response: { status: number; ok: boolean }
+  response: { status: number; ok: boolean; headers?: Headers }
   error: unknown
   data: unknown
 } {
   return {
-    response: { status, ok: status >= 200 && status < 300 },
+    response: { status, ok: status >= 200 && status < 300, headers },
     error,
     data,
   }
@@ -89,6 +90,30 @@ describe('handleApiError', () => {
       const err = handleApiError(res as any)
       assert.instanceOf(err, RateLimitError)
       assert.include(err?.message, 'Rate limit')
+    })
+
+    test('preserves Retry-After for 429 rate limits', () => {
+      const res = createMockResponse(
+        429,
+        { message: 'Too many requests' },
+        undefined,
+        new Headers({ 'Retry-After': ' 60 ' })
+      )
+      const err = handleApiError(res as any)
+      assert.instanceOf(err, RateLimitError)
+      assert.equal((err as any).retryAfter, 60)
+    })
+
+    test('ignores invalid Retry-After values for 429 rate limits', () => {
+      const res = createMockResponse(
+        429,
+        { message: 'Too many requests' },
+        undefined,
+        new Headers({ 'Retry-After': '-1' })
+      )
+      const err = handleApiError(res as any)
+      assert.instanceOf(err, RateLimitError)
+      assert.isUndefined((err as any).retryAfter)
     })
   })
 

@@ -134,9 +134,15 @@ export class TemplateError extends SandboxError {
  * Thrown when the API rate limit is exceeded.
  */
 export class RateLimitError extends SandboxError {
-  constructor(message: string) {
+  /**
+   * Number of seconds the caller should wait before retrying, if provided by the server.
+   */
+  readonly retryAfter?: number
+
+  constructor(message: string, retryAfter?: number) {
     super(message)
     this.name = 'RateLimitError'
+    this.retryAfter = retryAfter
   }
 }
 

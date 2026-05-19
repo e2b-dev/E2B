@@ -5,6 +5,7 @@ import { defaultHeaders } from './metadata'
 import { ConnectionConfig } from '../connectionConfig'
 import { AuthenticationError, RateLimitError, SandboxError } from '../errors'
 import { createApiLogger } from '../logs'
+import { parseRetryAfter } from '../utils'
 
 export function handleApiError(
   response: FetchResponse<any, any, any>,
@@ -33,11 +34,14 @@ export function handleApiError(
   if (response.response.status === 429) {
     const message = 'Rate limit exceeded, please try again later'
     const content = response.error?.message ?? response.error
+    const retryAfter = parseRetryAfter(
+      response.response.headers?.get('Retry-After')
+    )
 
     if (content) {
-      return new RateLimitError(`${message} - ${content}`)
+      return new RateLimitError(`${message} - ${content}`, retryAfter)
     }
-    return new RateLimitError(message)
+    return new RateLimitError(message, retryAfter)
   }
 
   const message = response.error?.message ?? response.error
