@@ -236,45 +236,6 @@ describe('firewall transform injects headers', () => {
   )
 })
 
-// describe('transform callback resolves sandboxId placeholder', () => {
-//   const headerName = 'X-E2B-Sandbox-Id'
-//
-//   sandboxTest.scoped({
-//     sandboxOpts: {
-//       network: {
-//         rules: {
-//           'httpbin.e2b.team': [
-//             {
-//               transform: ({ sandboxId }) => ({
-//                 headers: { [headerName]: sandboxId },
-//               }),
-//             },
-//           ],
-//         },
-//       },
-//     },
-//   })
-//
-//   sandboxTest.skipIf(isDebug)(
-//     'placeholder is replaced with the actual sandbox id',
-//     async ({ sandbox }) => {
-//       const result = await sandbox.commands.run(
-//         'curl -sS --max-time 10 https://httpbin.e2b.team/headers'
-//       )
-//       assert.equal(result.exitCode, 0)
-//
-//       const parsed = JSON.parse(result.stdout) as {
-//         headers: Record<string, string>
-//       }
-//       assert.equal(
-//         parsed.headers[headerName],
-//         sandbox.sandboxId,
-//         `expected httpbin to reflect ${headerName}=${sandbox.sandboxId}, got headers: ${JSON.stringify(parsed.headers)}`
-//       )
-//     }
-//   )
-// })
-
 describe('maskRequestHost option', () => {
   sandboxTest.scoped({
     sandboxOpts: {

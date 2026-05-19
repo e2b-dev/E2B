@@ -87,7 +87,6 @@ from .sandbox.sandbox_api import (
     SandboxNetworkSelector,
     SandboxNetworkSelectorContext,
     SandboxNetworkTransform,
-    SandboxNetworkTransformContext,
     SandboxQuery,
     SandboxState,
     SnapshotInfo,
@@ -198,7 +197,6 @@ __all__ = [
     "SandboxNetworkRuleInfo",
     "SandboxNetworkRules",
     "SandboxNetworkTransform",
-    "SandboxNetworkTransformContext",
     "SandboxLifecycle",
     "ALL_TRAFFIC",
     # Snapshot
