@@ -65,6 +65,7 @@ export type {
   SandboxNetworkRuleInfo,
   SandboxNetworkRules,
   SandboxNetworkTransform,
+  SandboxNetworkTransformContext,
   SandboxLifecycle,
   SandboxInfoLifecycle,
   SnapshotInfo,

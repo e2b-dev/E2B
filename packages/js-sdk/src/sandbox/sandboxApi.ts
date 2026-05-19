@@ -46,13 +46,36 @@ export type SandboxNetworkTransform = {
 }
 
 /**
+ * Context passed to a {@link SandboxNetworkRule} `transform` callback. Each
+ * field is a literal placeholder string (e.g. `'${e2b.sandboxId}'`) that the
+ * proxy resolves per request at egress time.
+ */
+export type SandboxNetworkTransformContext = {
+  /** Placeholder `'${e2b.sandboxId}'`. */
+  readonly sandboxId: string
+  /** Placeholder `'${e2b.teamId}'`. */
+  readonly teamId: string
+  /** Placeholder `'${e2b.executionId}'`. */
+  readonly executionId: string
+  /** Identity-related placeholders. */
+  readonly identity: {
+    /** Placeholder `'${e2b.identity.jwt}'`. */
+    readonly jwt: string
+  }
+}
+
+/**
  * Per-domain rule applied to egress requests.
  */
 export type SandboxNetworkRule = {
   /**
-   * Transform applied to requests matching this rule.
+   * Transform applied to requests matching this rule. Accepts either a static
+   * object or a callback that receives a {@link SandboxNetworkTransformContext}
+   * of placeholder strings; the resolved object is sent to the API as-is.
    */
-  transform?: SandboxNetworkTransform
+  transform?:
+    | SandboxNetworkTransform
+    | ((ctx: SandboxNetworkTransformContext) => SandboxNetworkTransform)
 }
 
 /**
@@ -526,14 +549,28 @@ function resolveNetworkSelector(
   return selector
 }
 
+const TRANSFORM_CONTEXT: SandboxNetworkTransformContext = Object.freeze({
+  sandboxId: '${e2b.sandboxId}',
+  teamId: '${e2b.teamId}',
+  executionId: '${e2b.executionId}',
+  identity: Object.freeze({
+    jwt: '${e2b.identity.jwt}',
+  }),
+})
+
 function resolveRulesForBody(
   rules: Map<string, SandboxNetworkRule[]>
 ): Record<string, { transform?: SandboxNetworkTransform }[]> {
   const out: Record<string, { transform?: SandboxNetworkTransform }[]> = {}
   for (const [host, hostRules] of rules) {
-    out[host] = hostRules.map((rule) =>
-      rule.transform === undefined ? {} : { transform: rule.transform }
-    )
+    out[host] = hostRules.map((rule) => {
+      if (rule.transform === undefined) return {}
+      const transform =
+        typeof rule.transform === 'function'
+          ? rule.transform(TRANSFORM_CONTEXT)
+          : rule.transform
+      return { transform }
+    })
   }
   return out
 }
