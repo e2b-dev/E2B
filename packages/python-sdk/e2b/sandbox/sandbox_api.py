@@ -18,8 +18,6 @@ from typing_extensions import NotRequired, Unpack
 from e2b import ConnectionConfig
 from e2b.api.client.models import (
     ListedSandbox,
-    PutSandboxesSandboxIDNetworkBody,
-    PutSandboxesSandboxIDNetworkBodyRules,
     SandboxDetail,
     SandboxLifecycle as ClientSandboxLifecycle,
     SandboxNetworkConfig,
@@ -27,6 +25,8 @@ from e2b.api.client.models import (
     SandboxNetworkRule as ClientSandboxNetworkRule,
     SandboxNetworkTransform as ClientSandboxNetworkTransform,
     SandboxNetworkTransformHeaders as ClientSandboxNetworkTransformHeaders,
+    SandboxNetworkUpdateConfig,
+    SandboxNetworkUpdateConfigRules,
     SandboxState,
 )
 from e2b.api.client.types import Unset
@@ -341,17 +341,17 @@ def build_network_config(
 
 def build_network_update_body(
     network: SandboxNetworkUpdate,
-) -> PutSandboxesSandboxIDNetworkBody:
+) -> SandboxNetworkUpdateConfig:
     """Resolve a :class:`SandboxNetworkUpdate` into the API client body."""
     egress = _build_network_egress(network)
 
-    body = PutSandboxesSandboxIDNetworkBody()
+    body = SandboxNetworkUpdateConfig()
     if "allow_out" in egress:
         body.allow_out = egress["allow_out"]
     if "deny_out" in egress:
         body.deny_out = egress["deny_out"]
     if "rules" in egress:
-        rules = PutSandboxesSandboxIDNetworkBodyRules()
+        rules = SandboxNetworkUpdateConfigRules()
         rules.additional_properties = egress["rules"]
         body.rules = rules
     if "allow_internet_access" in network:

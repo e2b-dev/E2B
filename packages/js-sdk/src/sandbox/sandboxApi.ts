@@ -1,4 +1,4 @@
-import { ApiClient, components, handleApiError, paths } from '../api'
+import { ApiClient, components, handleApiError } from '../api'
 import {
   ConnectionConfig,
   ConnectionOpts,
@@ -602,13 +602,9 @@ function buildNetworkBody(
   }
 }
 
-type NetworkUpdateBody = NonNullable<
-  paths['/sandboxes/{sandboxID}/network']['put']['requestBody']
->['content']['application/json']
-
 function buildNetworkUpdateBody(
   network: SandboxNetworkUpdate
-): NetworkUpdateBody {
+): components['schemas']['SandboxNetworkUpdateConfig'] {
   return {
     ...buildNetworkEgress(network),
     ...(network.allowInternetAccess !== undefined
