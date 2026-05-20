@@ -1,12 +1,14 @@
 import * as boxen from 'boxen'
 import * as e2b from 'e2b'
 
-import { getUserConfig, UserConfig } from './user'
+import { getUserConfig, saveUserConfig, UserConfig } from './user'
 import { asBold, asPrimary } from './utils/format'
 
 export let apiKey = process.env.E2B_API_KEY
 export let accessToken = process.env.E2B_ACCESS_TOKEN
+export let domain: string | undefined = process.env.E2B_DOMAIN
 export const teamId = process.env.E2B_TEAM_ID
+export let currentProfileName: string = 'default'
 
 const authErrorBox = (keyName: string) => {
   let link
@@ -44,11 +46,41 @@ Visit ${asPrimary(link)} to get the ${msg}.`,
   )
 }
 
+function buildConnectionConfig() {
+  return new e2b.ConnectionConfig({
+    accessToken,
+    apiKey,
+    domain,
+  })
+}
+
+// Initialize from the default profile at startup
+const _defaultConfig = getUserConfig('default')
+if (!process.env.E2B_API_KEY) apiKey = _defaultConfig?.teamApiKey
+if (!process.env.E2B_ACCESS_TOKEN) accessToken = _defaultConfig?.accessToken
+if (!process.env.E2B_DOMAIN) domain = _defaultConfig?.domain
+
+export let connectionConfig = buildConnectionConfig()
+export let client = new e2b.ApiClient(connectionConfig)
+
+export function setProfile(profileName: string) {
+  currentProfileName = profileName
+  const config = getUserConfig(profileName)
+  if (!config) {
+    console.error(`Profile '${profileName}' not found in ~/.e2b/config`)
+    process.exit(1)
+  }
+  if (!process.env.E2B_API_KEY) apiKey = config.teamApiKey
+  if (!process.env.E2B_ACCESS_TOKEN) accessToken = config.accessToken
+  if (!process.env.E2B_DOMAIN) domain = config.domain
+  connectionConfig = buildConnectionConfig()
+  client = new e2b.ApiClient(connectionConfig)
+}
+
 export function ensureAPIKey() {
-  // If apiKey is not already set (either from env var or from user config), try to get it from config file
   if (!apiKey) {
-    const userConfig = getUserConfig()
-    apiKey = userConfig?.teamApiKey
+    const config = getUserConfig(currentProfileName)
+    apiKey = config?.teamApiKey
   }
 
   if (!apiKey) {
@@ -60,7 +92,7 @@ export function ensureAPIKey() {
 }
 
 export function ensureUserConfig(): UserConfig {
-  const userConfig = getUserConfig()
+  const userConfig = getUserConfig(currentProfileName)
   if (!userConfig) {
     console.error('No user config found, run `e2b auth login` to log in first.')
     process.exit(1)
@@ -69,10 +101,9 @@ export function ensureUserConfig(): UserConfig {
 }
 
 export function ensureAccessToken() {
-  // If accessToken is not already set (either from env var or from user config), try to get it from config file
   if (!accessToken) {
-    const userConfig = getUserConfig()
-    accessToken = userConfig?.accessToken
+    const config = getUserConfig(currentProfileName)
+    accessToken = config?.accessToken
   }
 
   if (!accessToken) {
@@ -88,7 +119,7 @@ export function ensureAccessToken() {
  * 1. CLI --team flag
  * 2. E2B_TEAM_ID env var
  * 3. Local e2b.toml team_id (if provided)
- * 4. ~/.e2b/config.json teamId (only if E2B_API_KEY env var is NOT set,
+ * 4. Profile config teamId (only if E2B_API_KEY env var is NOT set,
  *    to avoid mismatch between env var API key and config file team ID)
  */
 export function resolveTeamId(
@@ -99,16 +130,10 @@ export function resolveTeamId(
   if (teamId) return teamId
   if (localConfigTeamId) return localConfigTeamId
   if (!process.env.E2B_API_KEY) {
-    const config = getUserConfig()
+    const config = getUserConfig(currentProfileName)
     return config?.teamId
   }
   return undefined
 }
 
-const userConfig = getUserConfig()
-
-export const connectionConfig = new e2b.ConnectionConfig({
-  accessToken: process.env.E2B_ACCESS_TOKEN || userConfig?.accessToken,
-  apiKey: process.env.E2B_API_KEY || userConfig?.teamApiKey,
-})
-export const client = new e2b.ApiClient(connectionConfig)
+export { saveUserConfig }

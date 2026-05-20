@@ -1,20 +1,13 @@
 import * as listen from 'async-listen'
 import * as commander from 'commander'
-import * as fs from 'fs'
 import * as http from 'http'
 import * as open from 'open'
-import * as path from 'path'
 import * as e2b from 'e2b'
 
 import { pkg } from 'src'
-import {
-  DOCS_BASE,
-  getUserConfig,
-  USER_CONFIG_PATH,
-  UserConfig,
-} from 'src/user'
+import { DOCS_BASE, getUserConfig, saveUserConfig, UserConfig } from 'src/user'
 import { asBold, asFormattedConfig, asFormattedError } from 'src/utils/format'
-import { connectionConfig } from 'src/api'
+import { connectionConfig, currentProfileName } from 'src/api'
 import { handleE2BRequestError } from '../../utils/errors'
 
 export const loginCommand = new commander.Command('login')
@@ -23,7 +16,7 @@ export const loginCommand = new commander.Command('login')
     let userConfig: UserConfig | null = null
 
     try {
-      userConfig = getUserConfig()
+      userConfig = getUserConfig(currentProfileName)
     } catch (err) {
       console.error(asFormattedError('Failed to read user config', err))
     }
@@ -72,13 +65,12 @@ export const loginCommand = new commander.Command('login')
         teamApiKey: defaultTeam.apiKey,
       }
 
-      fs.mkdirSync(path.dirname(USER_CONFIG_PATH), { recursive: true })
-      fs.writeFileSync(USER_CONFIG_PATH, JSON.stringify(userConfig, null, 2))
+      saveUserConfig(userConfig, currentProfileName)
     }
 
     console.log(
-      `Logged in as ${asBold(userConfig.email)} with selected team ${asBold(
-        userConfig.teamName
+      `Logged in as ${asBold(userConfig.email!)} with selected team ${asBold(
+        userConfig.teamName!
       )}`
     )
     process.exit(0)
