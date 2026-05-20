@@ -190,6 +190,59 @@ def test_firewall_transform_injects_headers(sandbox_factory):
 
 
 @pytest.mark.skip_debug()
+def test_update_network_applies_restrictions(sandbox_factory):
+    """update_network can add egress restrictions to a running sandbox."""
+    sandbox = sandbox_factory()
+
+    # Baseline: 8.8.8.8 reachable.
+    before = sandbox.commands.run(
+        "curl -s -o /dev/null -w '%{http_code}' https://8.8.8.8"
+    )
+    assert before.exit_code == 0
+
+    sandbox.update_network({"deny_out": ["8.8.8.8"]})
+
+    # 8.8.8.8 is now denied.
+    with pytest.raises(CommandExitException) as exc_info:
+        sandbox.commands.run(
+            "curl --connect-timeout 3 --max-time 5 -Is https://8.8.8.8"
+        )
+    assert exc_info.value.exit_code != 0
+
+    # Other destinations stay reachable.
+    result = sandbox.commands.run(
+        "curl -s -o /dev/null -w '%{http_code}' https://1.1.1.1"
+    )
+    assert result.exit_code == 0
+
+
+@pytest.mark.skip_debug()
+def test_update_network_clears_existing_rules(sandbox_factory):
+    """update_network replaces all egress rules; omitted fields are cleared."""
+    sandbox = sandbox_factory(
+        network=SandboxNetworkOpts(
+            deny_out=lambda ctx: [ctx.all_traffic],
+            allow_out=["1.1.1.1"],
+        )
+    )
+
+    # Baseline from create-time config: 8.8.8.8 denied.
+    with pytest.raises(CommandExitException):
+        sandbox.commands.run(
+            "curl --connect-timeout 3 --max-time 5 -Is https://8.8.8.8"
+        )
+
+    # Empty update clears allow_out / deny_out entirely.
+    sandbox.update_network({})
+
+    r1 = sandbox.commands.run("curl -s -o /dev/null -w '%{http_code}' https://1.1.1.1")
+    assert r1.exit_code == 0
+
+    r2 = sandbox.commands.run("curl -s -o /dev/null -w '%{http_code}' https://8.8.8.8")
+    assert r2.exit_code == 0
+
+
+@pytest.mark.skip_debug()
 def test_mask_request_host(sandbox_factory):
     """Test that mask_request_host modifies the Host header correctly."""
     sandbox = sandbox_factory(
