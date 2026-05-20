@@ -14,6 +14,7 @@ from e2b.api.client.api.sandboxes import (
     post_sandboxes_sandbox_id_pause,
     post_sandboxes_sandbox_id_snapshots,
     post_sandboxes_sandbox_id_timeout,
+    put_sandboxes_sandbox_id_network,
 )
 from e2b.api.client.api.templates import delete_templates_template_id
 from e2b.api.client.models import (
@@ -39,11 +40,13 @@ from e2b.sandbox.main import SandboxBase
 from e2b.sandbox.sandbox_api import (
     SandboxLifecycle,
     build_network_config,
+    build_network_update_body,
     get_auto_resume_enabled,
     McpServer,
     SandboxInfo,
     SandboxMetrics,
     SandboxNetworkOpts,
+    SandboxNetworkUpdate,
     SandboxQuery,
     SnapshotInfo,
 )
@@ -152,6 +155,28 @@ class SandboxApi(SandboxBase):
             sandbox_id,
             client=api_client,
             body=PostSandboxesSandboxIDTimeoutBody(timeout=timeout),
+        )
+
+        if res.status_code == 404:
+            raise SandboxNotFoundException(f"Sandbox {sandbox_id} not found")
+
+        if res.status_code >= 300:
+            raise handle_api_exception(res)
+
+    @classmethod
+    async def _cls_update_network(
+        cls,
+        sandbox_id: str,
+        network: SandboxNetworkUpdate,
+        **opts: Unpack[ApiParams],
+    ) -> None:
+        config = ConnectionConfig(**opts)
+
+        api_client = get_api_client(config)
+        res = await put_sandboxes_sandbox_id_network.asyncio_detailed(
+            sandbox_id,
+            client=api_client,
+            body=build_network_update_body(network),
         )
 
         if res.status_code == 404:

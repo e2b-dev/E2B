@@ -18,6 +18,8 @@ from typing_extensions import NotRequired, Unpack
 from e2b import ConnectionConfig
 from e2b.api.client.models import (
     ListedSandbox,
+    PutSandboxesSandboxIDNetworkBody,
+    PutSandboxesSandboxIDNetworkBodyRules,
     SandboxDetail,
     SandboxLifecycle as ClientSandboxLifecycle,
     SandboxNetworkConfig,
@@ -185,6 +187,29 @@ class SandboxNetworkOpts(TypedDict):
     """
 
 
+class SandboxNetworkUpdate(TypedDict, total=False):
+    """
+    Subset of :class:`SandboxNetworkOpts` accepted by ``Sandbox.update_network``.
+    The update endpoint replaces all egress rules atomically — fields that are
+    omitted are cleared on the server.
+    """
+
+    allow_out: SandboxNetworkSelector
+    """See :attr:`SandboxNetworkOpts.allow_out`."""
+
+    deny_out: SandboxNetworkSelector
+    """See :attr:`SandboxNetworkOpts.deny_out`."""
+
+    rules: SandboxNetworkRules
+    """See :attr:`SandboxNetworkOpts.rules`."""
+
+    allow_internet_access: bool
+    """
+    Allow sandbox to access the internet. When set to ``False``, it behaves the
+    same as specifying ``deny_out=["0.0.0.0/0"]`` in the network config.
+    """
+
+
 class SandboxNetworkInfo(TypedDict, total=False):
     """
     Network configuration as returned by the sandbox info endpoint.
@@ -270,13 +295,15 @@ def _build_client_rules(rules: SandboxNetworkRules) -> SandboxNetworkConfigRules
     return client_rules
 
 
-def build_network_config(
-    network: Optional[SandboxNetworkOpts],
-) -> Optional[Dict[str, Any]]:
-    """Resolve a :class:`SandboxNetworkOpts` into the dict the API expects."""
-    if network is None:
-        return None
-
+def _build_network_egress(
+    network: Mapping[str, Any],
+) -> Dict[str, Any]:
+    """
+    Resolve the shared egress fields (``allow_out`` / ``deny_out`` / per-host
+    ``rules``) used by both the create and update endpoints. ``rules`` in the
+    returned dict is the inner ``Dict[host, List[ClientSandboxNetworkRule]]``
+    — callers wrap it in their endpoint-specific rules attrs class.
+    """
     rules = network.get("rules") or {}
     allow_out = _resolve_network_selector(network.get("allow_out"), rules)
     deny_out = _resolve_network_selector(network.get("deny_out"), rules)
@@ -287,11 +314,48 @@ def build_network_config(
     if deny_out is not None:
         body["deny_out"] = deny_out
     if "rules" in network and network["rules"] is not None:
-        body["rules"] = _build_client_rules(network["rules"])
+        body["rules"] = _build_client_rules(network["rules"]).additional_properties
+
+    return body
+
+
+def build_network_config(
+    network: Optional[SandboxNetworkOpts],
+) -> Optional[Dict[str, Any]]:
+    """Resolve a :class:`SandboxNetworkOpts` into the dict the API expects."""
+    if network is None:
+        return None
+
+    body = _build_network_egress(network)
+    if "rules" in body:
+        client_rules = SandboxNetworkConfigRules()
+        client_rules.additional_properties = body["rules"]
+        body["rules"] = client_rules
     if "allow_public_traffic" in network:
         body["allow_public_traffic"] = network["allow_public_traffic"]
     if "mask_request_host" in network:
         body["mask_request_host"] = network["mask_request_host"]
+
+    return body
+
+
+def build_network_update_body(
+    network: SandboxNetworkUpdate,
+) -> PutSandboxesSandboxIDNetworkBody:
+    """Resolve a :class:`SandboxNetworkUpdate` into the API client body."""
+    egress = _build_network_egress(network)
+
+    body = PutSandboxesSandboxIDNetworkBody()
+    if "allow_out" in egress:
+        body.allow_out = egress["allow_out"]
+    if "deny_out" in egress:
+        body.deny_out = egress["deny_out"]
+    if "rules" in egress:
+        rules = PutSandboxesSandboxIDNetworkBodyRules()
+        rules.additional_properties = egress["rules"]
+        body.rules = rules
+    if "allow_internet_access" in network:
+        body.allow_internet_access = network["allow_internet_access"]
 
     return body
 
