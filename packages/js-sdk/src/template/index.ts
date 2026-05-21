@@ -178,6 +178,7 @@ export class TemplateBase
         onBuildLogs: buildOptions.onBuildLogs,
         logsRefreshFrequency: baseTemplate.logsRefreshFrequency,
         stackTraces: baseTemplate.stackTraces,
+        signal: config.signal,
       })
 
       return data
@@ -1146,7 +1147,8 @@ export class TemplateBase
               ],
               resolveSymlinks: instruction.resolveSymlinks ?? RESOLVE_SYMLINKS,
             },
-            stackTrace
+            stackTrace,
+            { signal: options.signal }
           )
           options.onBuildLogs?.(
             new LogEntry(new Date(), 'info', `Uploaded '${src}'`)

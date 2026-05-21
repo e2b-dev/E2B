@@ -1,4 +1,5 @@
 import { ApiClient, handleApiError, paths, components } from '../api'
+import { buildRequestSignal } from '../connectionConfig'
 import { dynamicImport, stripAnsi } from '../utils'
 import { BuildError, FileUploadError, TemplateError } from '../errors'
 import { LogEntry } from './logger'
@@ -107,7 +108,12 @@ export async function uploadFile(
     ignorePatterns: string[]
     resolveSymlinks: boolean
   },
-  stackTrace: string | undefined
+  stackTrace: string | undefined,
+  // No default timeout. Uploads (PUT to S3 presigned URL) can take a long
+  // time for large archives — applying the 60s API default here would break
+  // them. Opt in by passing `requestTimeoutMs` or an `AbortSignal.timeout(ms)`
+  // via `signal`.
+  abortOpts?: { signal?: AbortSignal; requestTimeoutMs?: number }
 ) {
   const { fileName, url, fileContextPath, ignorePatterns, resolveSymlinks } =
     options
@@ -138,6 +144,10 @@ export async function uploadFile(
     const res = await fetch(url, {
       method: 'PUT',
       body: uploadBody,
+      signal: buildRequestSignal(
+        abortOpts?.requestTimeoutMs,
+        abortOpts?.signal
+      ),
     })
 
     if (!res.ok) {
@@ -274,18 +284,22 @@ export async function waitForBuildFinish(
     onBuildLogs,
     logsRefreshFrequency,
     stackTraces,
+    signal,
   }: {
     templateID: string
     buildID: string
     onBuildLogs?: (logEntry: LogEntry) => void
     logsRefreshFrequency: number
     stackTraces: (string | undefined)[]
+    signal?: AbortSignal
   }
 ): Promise<void> {
   let logsOffset = 0
   let status: TemplateBuildStatus = 'building'
 
   while (status === 'building' || status === 'waiting') {
+    signal?.throwIfAborted()
+
     const buildStatus = await getBuildStatus(client, {
       templateID,
       buildID,
@@ -329,7 +343,8 @@ export async function waitForBuildFinish(
       }
     }
 
-    // Wait for a short period before checking the status again
+    // Wait for a short period before checking the status again. Abort is
+    // observed on the next iteration via `signal?.throwIfAborted()`.
     await new Promise((resolve) => setTimeout(resolve, logsRefreshFrequency))
   }
 

@@ -2,7 +2,7 @@ import createClient, { FetchResponse } from 'openapi-fetch'
 
 import type { components, paths } from './schema.gen'
 import { defaultHeaders } from './metadata'
-import { ConnectionConfig } from '../connectionConfig'
+import { applyConfigSignal, ConnectionConfig } from '../connectionConfig'
 import { AuthenticationError, RateLimitError, SandboxError } from '../errors'
 import { createApiLogger } from '../logs'
 
@@ -90,6 +90,7 @@ class ApiClient {
           explode: false,
         },
       },
+      fetch: (input) => applyConfigSignal(input, config),
     })
 
     if (config.logger) {
