@@ -1,18 +1,13 @@
 import { runtime } from '../utils'
+import {
+  loadUndici,
+  type UndiciModule,
+  type UndiciRequestInit,
+} from '../undici'
 
 const API_CONNECTION_LIMIT = 100
 const API_UNDICI_FALLBACK_WARNING =
   'Failed to load undici for API HTTP/2 transport; falling back to global fetch.'
-
-type UndiciRequestInit = RequestInit & {
-  dispatcher?: unknown
-  duplex?: 'half'
-}
-
-type UndiciModule = {
-  Agent: new (options: { allowH2: true; connections?: number }) => unknown
-  fetch: unknown
-}
 
 let apiFetch: typeof fetch | undefined
 let hasWarnedUndiciFallback = false
@@ -78,22 +73,6 @@ async function buildApiFetcher(options: {
       dispatcher,
     })
   }) as typeof fetch
-}
-
-async function loadUndici(): Promise<UndiciModule | undefined> {
-  try {
-    // Keep this import opaque to bundlers. It must resolve as a package name
-    // from the runtime environment, not as a path relative to this file.
-    // eslint-disable-next-line no-new-func
-    const importModule = new Function(
-      'moduleName',
-      'return import(moduleName)'
-    ) as (moduleName: string) => Promise<UndiciModule>
-
-    return await importModule('undici')
-  } catch {
-    return undefined
-  }
 }
 
 function warnUndiciFallback() {
