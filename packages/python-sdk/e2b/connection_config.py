@@ -140,7 +140,13 @@ class ConnectionConfig:
         if self._sandbox_url:
             return self._sandbox_url  # type: ignore[return-value]
 
-        return f"{'http' if self.debug else 'https'}://{self.get_host(sandbox_id, sandbox_domain, self.envd_port)}"
+        if self.debug:
+            return f"http://{self.get_host(sandbox_id, sandbox_domain, self.envd_port)}"
+
+        if sandbox_domain == "e2b.app":
+            return "https://sandbox.e2b.app"
+
+        return f"https://{self.get_host(sandbox_id, sandbox_domain, self.envd_port)}"
 
     def get_host(self, sandbox_id: str, sandbox_domain: str, port: int) -> str:
         """
