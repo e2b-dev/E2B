@@ -1148,7 +1148,14 @@ export class TemplateBase
               resolveSymlinks: instruction.resolveSymlinks ?? RESOLVE_SYMLINKS,
             },
             stackTrace,
-            { signal: options.signal }
+            // Forward `requestTimeoutMs` only when the caller set it — we
+            // never want to slap the 60s default on a multi-hundred-MB S3
+            // upload, but a user-set per-build timeout should govern the
+            // whole operation, including uploads.
+            {
+              signal: options.signal,
+              requestTimeoutMs: options.requestTimeoutMs,
+            }
           )
           options.onBuildLogs?.(
             new LogEntry(new Date(), 'info', `Uploaded '${src}'`)
