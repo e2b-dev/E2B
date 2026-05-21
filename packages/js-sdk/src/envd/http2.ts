@@ -1,6 +1,7 @@
 import { runtime } from '../utils'
 import {
   loadUndici,
+  toUndiciRequestInput,
   type UndiciModule,
   type UndiciRequestInit,
 } from '../undici'
@@ -58,7 +59,7 @@ async function buildEnvdFetcher(
   ) => Promise<Response>
 
   return ((input, init) => {
-    const request = toRequestInput(input, init)
+    const request = toUndiciRequestInput(input, init)
 
     return fetchWithDispatcher(request.input, {
       ...request.init,
@@ -100,38 +101,4 @@ export function createEnvdRpcFetch(): typeof fetch {
   envdRpcFetch = createEnvdFetchForRuntime(runtime, {})
 
   return envdRpcFetch
-}
-
-function toRequestInput(
-  input: RequestInfo | URL,
-  init?: RequestInit
-): { input: RequestInfo | URL; init?: RequestInit & { duplex?: 'half' } } {
-  if (!(input instanceof Request)) {
-    return { input, init }
-  }
-
-  const requestInit: RequestInit & { duplex?: 'half' } = {
-    body: input.body,
-    cache: input.cache,
-    credentials: input.credentials,
-    headers: input.headers,
-    integrity: input.integrity,
-    keepalive: input.keepalive,
-    method: input.method,
-    mode: input.mode,
-    redirect: input.redirect,
-    referrer: input.referrer,
-    referrerPolicy: input.referrerPolicy,
-    signal: input.signal,
-    ...init,
-  }
-
-  if (requestInit.body) {
-    requestInit.duplex = 'half'
-  }
-
-  return {
-    input: input.url,
-    init: requestInit,
-  }
 }

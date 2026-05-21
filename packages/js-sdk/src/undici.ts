@@ -23,3 +23,37 @@ export async function loadUndici(): Promise<UndiciModule | undefined> {
     return undefined
   }
 }
+
+export function toUndiciRequestInput(
+  input: RequestInfo | URL,
+  init?: RequestInit
+): { input: RequestInfo | URL; init?: RequestInit & { duplex?: 'half' } } {
+  if (!(input instanceof Request)) {
+    return { input, init }
+  }
+
+  const requestInit: RequestInit & { duplex?: 'half' } = {
+    body: input.body,
+    cache: input.cache,
+    credentials: input.credentials,
+    headers: input.headers,
+    integrity: input.integrity,
+    keepalive: input.keepalive,
+    method: input.method,
+    mode: input.mode,
+    redirect: input.redirect,
+    referrer: input.referrer,
+    referrerPolicy: input.referrerPolicy,
+    signal: input.signal,
+    ...init,
+  }
+
+  if (requestInit.body) {
+    requestInit.duplex = 'half'
+  }
+
+  return {
+    input: input.url,
+    init: requestInit,
+  }
+}
