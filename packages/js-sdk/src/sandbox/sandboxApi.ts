@@ -787,7 +787,7 @@ export class SandboxApi {
     const client = new ApiClient(config)
     const lifecycle = getLifecycle(opts)
     const autoPause = lifecycle.onTimeout === 'pause'
-    const autoResumeEnabled = lifecycle.autoResume
+    const autoResumeEnabled = opts?.lifecycle ? lifecycle.autoResume : undefined
 
     const body: components['schemas']['NewSandbox'] = {
       templateID: template,
