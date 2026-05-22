@@ -108,7 +108,8 @@ export function applyConfigSignal(
   config: {
     signal?: AbortSignal
     requestTimeoutMs?: number
-  }
+  },
+  fetchImpl: typeof fetch = fetch
 ): Promise<Response> {
   const request = input instanceof Request ? input : new Request(input)
   const signals: AbortSignal[] = [request.signal]
@@ -118,7 +119,7 @@ export function applyConfigSignal(
   if (config.requestTimeoutMs) {
     signals.push(AbortSignal.timeout(config.requestTimeoutMs))
   }
-  return fetch(new Request(request, { signal: AbortSignal.any(signals) }))
+  return fetchImpl(new Request(request, { signal: AbortSignal.any(signals) }))
 }
 
 /**

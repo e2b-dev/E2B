@@ -2,6 +2,7 @@ import createClient, { FetchResponse } from 'openapi-fetch'
 
 import type { components, paths } from './schema.gen'
 import { defaultHeaders } from './metadata'
+import { createApiFetch } from './http2'
 import { applyConfigSignal, ConnectionConfig } from '../connectionConfig'
 import { AuthenticationError, RateLimitError, SandboxError } from '../errors'
 import { createApiLogger } from '../logs'
@@ -72,6 +73,7 @@ class ApiClient {
       )
     }
 
+    const apiFetch = createApiFetch()
     this.api = createClient<paths>({
       baseUrl: config.apiUrl,
       // In HTTP 1.1, all connections are considered persistent unless declared otherwise
@@ -90,7 +92,7 @@ class ApiClient {
           explode: false,
         },
       },
-      fetch: (input) => applyConfigSignal(input, config),
+      fetch: (input) => applyConfigSignal(input, config, apiFetch),
     })
 
     if (config.logger) {
