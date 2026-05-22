@@ -189,16 +189,6 @@ export interface SandboxOpts extends ConnectionOpts {
   lifecycle?: SandboxLifecycle
 }
 
-export type SandboxBetaCreateOpts = SandboxOpts & {
-  /**
-   * @deprecated Use `lifecycle.onTimeout = "pause"` instead.
-   *
-   * Automatically pause the sandbox after the timeout expires.
-   * @default false
-   */
-  autoPause?: boolean
-}
-
 /**
  * Options for connecting to a Sandbox.
  */
@@ -421,30 +411,6 @@ export interface SandboxMetrics {
    * Total disk space available in bytes.
    */
   diskTotal: number
-}
-
-export function getLifecycle(
-  opts?: Pick<SandboxBetaCreateOpts, 'lifecycle' | 'autoPause'>
-): SandboxLifecycle {
-  if (opts?.autoPause !== undefined) {
-    console.warn(
-      "`autoPause` is deprecated; use `lifecycle: { onTimeout: 'pause' }` instead."
-    )
-  }
-
-  const onTimeout =
-    opts?.lifecycle?.onTimeout ?? (opts?.autoPause ? 'pause' : 'kill')
-
-  if (opts?.lifecycle?.autoResume === true && onTimeout !== 'pause') {
-    throw new InvalidArgumentError(
-      "autoResume can only be true when the resolved onTimeout is 'pause'."
-    )
-  }
-
-  return {
-    onTimeout,
-    autoResume: opts?.lifecycle?.autoResume,
-  }
 }
 
 export class SandboxApi {
@@ -799,12 +765,18 @@ export class SandboxApi {
   protected static async createSandbox(
     template: string,
     timeoutMs: number,
-    opts?: SandboxBetaCreateOpts
+    opts?: SandboxOpts
   ) {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
-    const { onTimeout, autoResume } = getLifecycle(opts)
-    const autoPause = onTimeout === 'pause'
+    const onTimeout = opts?.lifecycle?.onTimeout ?? 'kill'
+    const autoResume = opts?.lifecycle?.autoResume ?? false
+
+    if (autoResume && onTimeout !== 'pause') {
+      throw new InvalidArgumentError(
+        "autoResume can only be true when the resolved onTimeout is 'pause'."
+      )
+    }
 
     const body: components['schemas']['NewSandbox'] = {
       templateID: template,
@@ -815,10 +787,8 @@ export class SandboxApi {
       secure: opts?.secure ?? true,
       allow_internet_access: opts?.allowInternetAccess ?? true,
       network: opts?.network,
-      autoPause,
-      ...(autoResume !== undefined
-        ? { autoResume: { enabled: autoResume } }
-        : {}),
+      autoPause: onTimeout === 'pause',
+      autoResume: { enabled: autoResume },
     }
 
     if (opts?.volumeMounts) {

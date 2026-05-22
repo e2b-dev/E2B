@@ -20,7 +20,6 @@ import {
   SandboxApi,
   SandboxListOpts,
   SandboxPaginator,
-  SandboxBetaCreateOpts,
   SnapshotListOpts,
   SnapshotInfo,
   SnapshotPaginator,
@@ -270,103 +269,6 @@ export class Sandbox extends SandboxApi {
     this: S,
     templateOrOpts?: SandboxOpts | string,
     opts?: SandboxOpts
-  ): Promise<InstanceType<S>> {
-    const { template, sandboxOpts } =
-      typeof templateOrOpts === 'string'
-        ? {
-            template: templateOrOpts,
-            sandboxOpts: opts,
-          }
-        : {
-            template:
-              templateOrOpts?.template ??
-              (templateOrOpts?.mcp
-                ? this.defaultMcpTemplate
-                : this.defaultTemplate),
-            sandboxOpts: templateOrOpts,
-          }
-
-    const config = new ConnectionConfig(sandboxOpts)
-    if (config.debug) {
-      return new this({
-        sandboxId: 'debug_sandbox_id',
-        envdVersion: ENVD_DEBUG_FALLBACK,
-        ...config,
-      }) as InstanceType<S>
-    }
-
-    const sandboxInfo = await SandboxApi.createSandbox(
-      template,
-      sandboxOpts?.timeoutMs ?? this.defaultSandboxTimeoutMs,
-      sandboxOpts
-    )
-
-    const sandbox = new this({ ...sandboxInfo, ...config }) as InstanceType<S>
-
-    if (sandboxOpts?.mcp) {
-      sandbox.mcpToken = crypto.randomUUID()
-      const res = await sandbox.commands.run(
-        `mcp-gateway --config ${shellQuote(JSON.stringify(sandboxOpts.mcp))}`,
-        {
-          user: 'root',
-          envs: {
-            GATEWAY_ACCESS_TOKEN: sandbox.mcpToken ?? '',
-          },
-        }
-      )
-      if (res.exitCode !== 0) {
-        throw new Error(`Failed to start MCP gateway: ${res.stderr}`)
-      }
-    }
-
-    return sandbox
-  }
-
-  /**
-   * @beta This feature is in beta and may change in the future.
-   *
-   * Create a new sandbox from the default `base` sandbox template.
-   *
-   * @param opts connection options.
-   *
-   * @returns sandbox instance for the new sandbox.
-   *
-   * @example
-   * ```ts
-   * const sandbox = await Sandbox.betaCreate()
-   * ```
-   * @constructs {@link Sandbox}
-   */
-  static async betaCreate<S extends typeof Sandbox>(
-    this: S,
-    opts?: SandboxBetaCreateOpts
-  ): Promise<InstanceType<S>>
-
-  /**
-   * @beta This feature is in beta and may change in the future.
-   *
-   * Create a new sandbox from the specified sandbox template.
-   *
-   * @param template sandbox template name or ID.
-   * @param opts connection options.
-   *
-   * @returns sandbox instance for the new sandbox.
-   *
-   * @example
-   * ```ts
-   * const sandbox = await Sandbox.betaCreate('<template-name-or-id>')
-   * ```
-   * @constructs {@link Sandbox}
-   */
-  static async betaCreate<S extends typeof Sandbox>(
-    this: S,
-    template: string,
-    opts?: SandboxBetaCreateOpts
-  ): Promise<InstanceType<S>>
-  static async betaCreate<S extends typeof Sandbox>(
-    this: S,
-    templateOrOpts?: SandboxBetaCreateOpts | string,
-    opts?: SandboxBetaCreateOpts
   ): Promise<InstanceType<S>> {
     const { template, sandboxOpts } =
       typeof templateOrOpts === 'string'
