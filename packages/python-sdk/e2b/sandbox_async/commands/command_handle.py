@@ -137,10 +137,7 @@ class AsyncCommandHandle:
         You can reconnect to the command using `sandbox.commands.connect` method.
         """
         self._wait.cancel()
-        try:
-            await self._wait
-        except BaseException:
-            pass
+        await asyncio.wait([self._wait])
         try:
             await self._events.aclose()
         except Exception:
