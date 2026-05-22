@@ -14,6 +14,7 @@ type EnvdFetchOptions = {
 let envdFetch: typeof fetch | undefined
 let envdRpcFetch: typeof fetch | undefined
 let hasWarnedUndiciFallback = false
+const ENVD_RPC_CONNECTION_LIMIT = 100
 
 export function createEnvdFetchForRuntime(
   currentRuntime = runtime,
@@ -96,9 +97,9 @@ export function createEnvdRpcFetch(): typeof fetch {
     return envdRpcFetch
   }
 
-  // RPC streams can stay open while follow-up RPCs run against the same
-  // sandbox, so they cannot share the REST client's single-connection cap.
-  envdRpcFetch = createEnvdFetchForRuntime(runtime, {})
+  envdRpcFetch = createEnvdFetchForRuntime(runtime, {
+    connectionLimit: ENVD_RPC_CONNECTION_LIMIT,
+  })
 
   return envdRpcFetch
 }
