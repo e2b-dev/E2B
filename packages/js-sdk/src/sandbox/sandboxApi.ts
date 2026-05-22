@@ -419,7 +419,7 @@ export interface SandboxMetrics {
   diskTotal: number
 }
 
-function getLifecycle(
+export function getLifecycle(
   opts?: Pick<SandboxBetaCreateOpts, 'lifecycle' | 'autoPause'>
 ): SandboxLifecycle {
   return {
