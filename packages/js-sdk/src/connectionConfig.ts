@@ -39,7 +39,7 @@ export interface ConnectionOpts {
   /**
    * Sandbox Url to use for the API.
    * @internal
-   * @default E2B_SANDBOX_URL // environment variable, `https://sandbox.e2b.app` in production, or `https://${port}-${sandboxID}.${domain}`
+   * @default E2B_SANDBOX_URL // environment variable, `https://sandbox.${domain}`
    */
   sandboxUrl?: string
   /**
