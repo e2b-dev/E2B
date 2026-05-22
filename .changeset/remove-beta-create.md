@@ -19,4 +19,3 @@ Sandbox.beta_create(auto_pause=True)
 Sandbox.create(lifecycle={"on_timeout": "pause"})
 ```
 
-The `SandboxBetaCreateOpts` type export (JS) and the `autoPause` / `auto_pause` input on the create path have been removed as part of this change. The wire-level `autoPause` field on `NewSandbox` is unchanged — only the SDK-level surface is affected.
