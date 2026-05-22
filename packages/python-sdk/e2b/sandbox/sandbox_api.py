@@ -13,6 +13,7 @@ from e2b.api.client.models import (
 )
 from e2b.api.client.types import Unset
 from e2b.connection_config import ApiParams
+from e2b.exceptions import InvalidArgumentException
 from e2b.sandbox.mcp import McpServer as BaseMcpServer
 
 
@@ -121,6 +122,33 @@ def get_auto_resume_enabled(lifecycle: Optional[SandboxLifecycle]) -> Optional[b
         return None
 
     return lifecycle.get("auto_resume", False)
+
+
+def validate_lifecycle(
+    lifecycle: Optional[SandboxLifecycle],
+    auto_pause: Optional[bool],
+) -> None:
+    """
+    Validate that auto_resume is only enabled when the effective on_timeout
+    resolves to "pause" (either via lifecycle.on_timeout or auto_pause=True).
+    """
+    if lifecycle is None:
+        return
+
+    auto_resume = lifecycle.get("auto_resume", False)
+    if not auto_resume:
+        return
+
+    on_timeout = lifecycle.get("on_timeout")
+    effective_on_timeout = (
+        on_timeout if on_timeout is not None else ("pause" if auto_pause else "kill")
+    )
+
+    if effective_on_timeout != "pause":
+        raise InvalidArgumentException(
+            "auto_resume can only be True when on_timeout is 'pause' "
+            "(or auto_pause is True)."
+        )
 
 
 def from_client_network_config(

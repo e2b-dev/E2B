@@ -5,7 +5,11 @@ import {
   DEFAULT_SANDBOX_TIMEOUT_MS,
 } from '../connectionConfig'
 import { compareVersions } from 'compare-versions'
-import { SandboxNotFoundError, TemplateError } from '../errors'
+import {
+  InvalidArgumentError,
+  SandboxNotFoundError,
+  TemplateError,
+} from '../errors'
 import { timeoutToSeconds } from '../utils'
 import type { Volume } from '../volume'
 import type { McpServer as BaseMcpServer } from './mcp'
@@ -419,13 +423,35 @@ export interface SandboxMetrics {
   diskTotal: number
 }
 
+export type ResolvedLifecycle = {
+  /** Effective `onTimeout` after merging `lifecycle` and `autoPause`. */
+  onTimeout: 'pause' | 'kill'
+  /**
+   * Auto-resume value to send to the API, or `undefined` when neither
+   * `lifecycle` nor `autoPause` was provided (omits the field from the body).
+   */
+  autoResumeEnabled: boolean | undefined
+}
+
 export function getLifecycle(
   opts?: Pick<SandboxBetaCreateOpts, 'lifecycle' | 'autoPause'>
-): SandboxLifecycle {
+): ResolvedLifecycle {
+  const autoResume = opts?.lifecycle?.autoResume ?? false
+  const onTimeout =
+    opts?.lifecycle?.onTimeout ?? (opts?.autoPause ? 'pause' : 'kill')
+
+  if (autoResume && onTimeout !== 'pause') {
+    throw new InvalidArgumentError(
+      "autoResume can only be true when onTimeout is 'pause' (or autoPause is true)."
+    )
+  }
+
+  const lifecycleProvided =
+    opts?.lifecycle !== undefined || opts?.autoPause !== undefined
+
   return {
-    autoResume: opts?.lifecycle?.autoResume ?? false,
-    onTimeout:
-      opts?.lifecycle?.onTimeout ?? (opts?.autoPause ? 'pause' : 'kill'),
+    onTimeout,
+    autoResumeEnabled: lifecycleProvided ? autoResume : undefined,
   }
 }
 
@@ -785,12 +811,7 @@ export class SandboxApi {
   ) {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
-    const lifecycle = getLifecycle(opts)
-    const autoPause = lifecycle.onTimeout === 'pause'
-    const autoResumeEnabled =
-      opts?.lifecycle !== undefined || opts?.autoPause
-        ? lifecycle.autoResume
-        : undefined
+    const { autoResumeEnabled } = getLifecycle(opts)
 
     const body: components['schemas']['NewSandbox'] = {
       templateID: template,
@@ -801,7 +822,6 @@ export class SandboxApi {
       secure: opts?.secure ?? true,
       allow_internet_access: opts?.allowInternetAccess ?? true,
       network: opts?.network,
-      ...(autoPause !== undefined ? { autoPause } : {}),
       ...(autoResumeEnabled !== undefined
         ? { autoResume: { enabled: autoResumeEnabled } }
         : {}),

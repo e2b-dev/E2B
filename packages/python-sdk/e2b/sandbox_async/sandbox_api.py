@@ -45,6 +45,7 @@ from e2b.sandbox.sandbox_api import (
     SandboxNetworkOpts,
     SandboxQuery,
     SnapshotInfo,
+    validate_lifecycle,
 )
 from e2b.sandbox_async.paginator import AsyncSandboxPaginator
 
@@ -177,14 +178,11 @@ class SandboxApi(SandboxBase):
     ) -> SandboxCreateResponse:
         config = ConnectionConfig(**opts)
 
-        on_timeout = lifecycle.get("on_timeout") if lifecycle is not None else None
-        should_auto_pause = (
-            on_timeout == "pause" if on_timeout is not None else auto_pause
-        )
+        validate_lifecycle(lifecycle, auto_pause)
+
         auto_resume_enabled = get_auto_resume_enabled(lifecycle)
         body = NewSandbox(
             template_id=template,
-            auto_pause=(should_auto_pause if should_auto_pause is not None else UNSET),
             metadata=metadata or {},
             timeout=timeout,
             env_vars=env_vars or {},

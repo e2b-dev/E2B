@@ -8,7 +8,12 @@ from e2b.api.client.models import (
     NewSandbox,
     SandboxAutoResumeConfig,
 )
-from e2b.sandbox.sandbox_api import SandboxQuery, get_auto_resume_enabled
+from e2b.exceptions import InvalidArgumentException
+from e2b.sandbox.sandbox_api import (
+    SandboxQuery,
+    get_auto_resume_enabled,
+    validate_lifecycle,
+)
 
 
 @pytest.mark.skip_debug()
@@ -58,6 +63,41 @@ def test_get_auto_resume_enabled_decoupled_from_on_timeout():
     assert (
         get_auto_resume_enabled({"on_timeout": "kill", "auto_resume": False}) is False
     )
+
+
+def test_validate_lifecycle_allows_none_lifecycle():
+    validate_lifecycle(None, None)
+    validate_lifecycle(None, True)
+    validate_lifecycle(None, False)
+
+
+def test_validate_lifecycle_allows_auto_resume_with_pause():
+    validate_lifecycle({"on_timeout": "pause", "auto_resume": True}, None)
+    validate_lifecycle({"on_timeout": "pause", "auto_resume": True}, False)
+    validate_lifecycle({"on_timeout": "pause", "auto_resume": True}, True)
+
+
+def test_validate_lifecycle_allows_auto_resume_with_auto_pause_fallback():
+    # No on_timeout but auto_pause=True -> effective pause -> OK.
+    validate_lifecycle({"auto_resume": True}, True)  # type: ignore[typeddict-item]
+
+
+def test_validate_lifecycle_allows_auto_resume_false_with_kill():
+    validate_lifecycle({"on_timeout": "kill", "auto_resume": False}, None)
+    validate_lifecycle({"on_timeout": "kill"}, None)
+
+
+def test_validate_lifecycle_raises_when_auto_resume_true_with_kill():
+    with pytest.raises(InvalidArgumentException):
+        validate_lifecycle({"on_timeout": "kill", "auto_resume": True}, None)
+
+
+def test_validate_lifecycle_raises_when_auto_resume_true_and_effective_is_kill():
+    # No on_timeout, auto_pause falsy -> effective kill -> error.
+    with pytest.raises(InvalidArgumentException):
+        validate_lifecycle({"auto_resume": True}, None)  # type: ignore[typeddict-item]
+    with pytest.raises(InvalidArgumentException):
+        validate_lifecycle({"auto_resume": True}, False)  # type: ignore[typeddict-item]
 
 
 def test_create_payload_serializes_auto_resume_enabled():
