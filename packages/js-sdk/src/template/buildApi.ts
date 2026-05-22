@@ -2,6 +2,7 @@ import { ApiClient, handleApiError, paths, components } from '../api'
 import { buildRequestSignal } from '../connectionConfig'
 import { dynamicImport, stripAnsi } from '../utils'
 import { BuildError, FileUploadError, TemplateError } from '../errors'
+import { FILE_UPLOAD_TIMEOUT_MS } from './consts'
 import { LogEntry } from './logger'
 import { getBuildStepIndex, tarFileStreamUpload } from './utils'
 import {
@@ -109,10 +110,11 @@ export async function uploadFile(
     resolveSymlinks: boolean
   },
   stackTrace: string | undefined,
-  // No default timeout. Uploads (PUT to S3 presigned URL) can take a long
-  // time for large archives — applying the 60s API default here would break
-  // them. Opt in by passing `requestTimeoutMs` or an `AbortSignal.timeout(ms)`
-  // via `signal`.
+  // Uploads (PUT to S3 presigned URL) can take a long time for large
+  // archives — the 60s API default would break them, so we use a 1-hour
+  // upload default (`FILE_UPLOAD_TIMEOUT_MS`) when `requestTimeoutMs` is
+  // not supplied. Pass `requestTimeoutMs` (or an `AbortSignal.timeout(ms)`
+  // via `signal`) to override.
   abortOpts?: { signal?: AbortSignal; requestTimeoutMs?: number }
 ) {
   const { fileName, url, fileContextPath, ignorePatterns, resolveSymlinks } =
@@ -145,7 +147,7 @@ export async function uploadFile(
       method: 'PUT',
       body: uploadBody,
       signal: buildRequestSignal(
-        abortOpts?.requestTimeoutMs,
+        abortOpts?.requestTimeoutMs ?? FILE_UPLOAD_TIMEOUT_MS,
         abortOpts?.signal
       ),
     })
