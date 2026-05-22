@@ -413,24 +413,6 @@ export interface SandboxMetrics {
   diskTotal: number
 }
 
-export function getLifecycle(
-  opts?: Pick<SandboxOpts, 'lifecycle'>
-): Required<SandboxLifecycle> {
-  const onTimeout = opts?.lifecycle?.onTimeout ?? 'kill'
-  const autoResume = opts?.lifecycle?.autoResume ?? false
-
-  if (autoResume && onTimeout !== 'pause') {
-    throw new InvalidArgumentError(
-      "autoResume can only be true when the resolved onTimeout is 'pause'."
-    )
-  }
-
-  return {
-    onTimeout,
-    autoResume,
-  }
-}
-
 export class SandboxApi {
   protected constructor() {}
 
@@ -787,7 +769,14 @@ export class SandboxApi {
   ) {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
-    const { onTimeout, autoResume } = getLifecycle(opts)
+    const onTimeout = opts?.lifecycle?.onTimeout ?? 'kill'
+    const autoResume = opts?.lifecycle?.autoResume ?? false
+
+    if (autoResume && onTimeout !== 'pause') {
+      throw new InvalidArgumentError(
+        "autoResume can only be true when the resolved onTimeout is 'pause'."
+      )
+    }
 
     const body: components['schemas']['NewSandbox'] = {
       templateID: template,

@@ -30,6 +30,7 @@ from e2b.api.client.models import (
 from e2b.api.client.types import UNSET
 from e2b.connection_config import ApiParams, ConnectionConfig
 from e2b.exceptions import (
+    InvalidArgumentException,
     SandboxException,
     SandboxNotFoundException,
     TemplateException,
@@ -37,7 +38,6 @@ from e2b.exceptions import (
 from e2b.sandbox.main import SandboxBase
 from e2b.sandbox.sandbox_api import (
     SandboxLifecycle,
-    get_lifecycle,
     McpServer,
     SandboxInfo,
     SandboxMetrics,
@@ -175,11 +175,18 @@ class SandboxApi(SandboxBase):
     ) -> SandboxCreateResponse:
         config = ConnectionConfig(**opts)
 
-        lifecycle = get_lifecycle(lifecycle)
+        on_timeout = lifecycle.get("on_timeout", "kill") if lifecycle else "kill"
+        auto_resume = lifecycle.get("auto_resume", False) if lifecycle else False
+
+        if auto_resume and on_timeout != "pause":
+            raise InvalidArgumentException(
+                "auto_resume can only be True when the resolved on_timeout is 'pause'."
+            )
+
         body = NewSandbox(
             template_id=template,
-            auto_pause=lifecycle["on_timeout"] == "pause",
-            auto_resume=SandboxAutoResumeConfig(enabled=lifecycle["auto_resume"]),
+            auto_pause=on_timeout == "pause",
+            auto_resume=SandboxAutoResumeConfig(enabled=auto_resume),
             metadata=metadata or {},
             timeout=timeout,
             env_vars=env_vars or {},

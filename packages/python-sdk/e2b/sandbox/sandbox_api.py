@@ -17,7 +17,6 @@ from e2b.api.client.models import (
 )
 from e2b.api.client.types import Unset
 from e2b.connection_config import ApiParams
-from e2b.exceptions import InvalidArgumentException
 from e2b.sandbox.mcp import McpServer as BaseMcpServer
 
 
@@ -119,25 +118,6 @@ class SandboxInfoLifecycle(TypedDict):
     """
     Whether activity should cause the sandbox to resume when paused.
     """
-
-
-def get_lifecycle(
-    lifecycle: Optional[SandboxLifecycle],
-) -> SandboxLifecycle:
-    auto_resume = (
-        lifecycle.get("auto_resume", False) if lifecycle is not None else False
-    )
-
-    on_timeout: Literal["pause", "kill"] = (
-        lifecycle.get("on_timeout", "kill") if lifecycle is not None else "kill"
-    )
-
-    if auto_resume and on_timeout != "pause":
-        raise InvalidArgumentException(
-            "auto_resume can only be True when the resolved on_timeout is 'pause'."
-        )
-
-    return SandboxLifecycle(on_timeout=on_timeout, auto_resume=auto_resume)
 
 
 def from_client_network_config(
