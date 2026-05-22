@@ -2,7 +2,7 @@ import asyncio
 import httpx
 import logging
 
-from typing import Dict
+from typing import Dict, Tuple
 
 from e2b.connection_config import ConnectionConfig
 from e2b.api import limits, AsyncApiClient
@@ -20,7 +20,7 @@ def get_api_client(config: ConnectionConfig, **kwargs) -> AsyncApiClient:
 
 
 class AsyncTransportWithLogger(httpx.AsyncHTTPTransport):
-    _instances: Dict[int, "AsyncTransportWithLogger"] = {}
+    _instances: Dict[Tuple[int, bool], "AsyncTransportWithLogger"] = {}
 
     async def handle_async_request(self, request):
         url = f"{request.url.scheme}://{request.url.host}{request.url.path}"
@@ -37,16 +37,18 @@ class AsyncTransportWithLogger(httpx.AsyncHTTPTransport):
         return self._pool
 
 
-def get_transport(config: ConnectionConfig) -> AsyncTransportWithLogger:
-    loop_id = id(asyncio.get_running_loop())
+def get_transport(
+    config: ConnectionConfig, http2: bool = True
+) -> AsyncTransportWithLogger:
+    key = (id(asyncio.get_running_loop()), http2)
 
-    if loop_id in AsyncTransportWithLogger._instances:
-        return AsyncTransportWithLogger._instances[loop_id]
+    if key in AsyncTransportWithLogger._instances:
+        return AsyncTransportWithLogger._instances[key]
 
     transport = AsyncTransportWithLogger(
         limits=limits,
         proxy=config.proxy,
-        http2=True,
+        http2=http2,
     )
-    AsyncTransportWithLogger._instances[loop_id] = transport
+    AsyncTransportWithLogger._instances[key] = transport
     return transport
