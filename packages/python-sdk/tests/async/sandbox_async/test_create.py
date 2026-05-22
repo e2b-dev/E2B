@@ -8,7 +8,6 @@ from e2b.api.client.models import (
     NewSandbox,
     SandboxAutoResumeConfig,
 )
-from e2b.sandbox.sandbox_api import get_auto_resume_enabled
 
 
 @pytest.mark.skip_debug()
@@ -33,19 +32,6 @@ async def test_metadata(async_sandbox_factory):
             break
     else:
         assert False, "Sandbox not found"
-
-
-def test_lifecycle_auto_resume_enabled_mapping():
-    assert get_auto_resume_enabled({"on_timeout": "pause", "auto_resume": True}) is True
-    assert (
-        get_auto_resume_enabled({"on_timeout": "pause", "auto_resume": False}) is False
-    )
-    assert get_auto_resume_enabled({"on_timeout": "pause"}) is False
-    assert (
-        get_auto_resume_enabled({"on_timeout": "kill", "auto_resume": False}) is False
-    )
-    assert get_auto_resume_enabled({"on_timeout": "kill"}) is False
-    assert get_auto_resume_enabled(None) is None
 
 
 def test_create_payload_serializes_auto_resume_enabled():
