@@ -163,7 +163,6 @@ class SandboxApi(SandboxBase):
         cls,
         template: str,
         timeout: int,
-        auto_pause: Optional[bool],
         allow_internet_access: bool,
         metadata: Optional[Dict[str, str]],
         env_vars: Optional[Dict[str, str]],
@@ -176,7 +175,7 @@ class SandboxApi(SandboxBase):
     ) -> SandboxCreateResponse:
         config = ConnectionConfig(**opts)
 
-        lifecycle = get_lifecycle(lifecycle, auto_pause)
+        lifecycle = get_lifecycle(lifecycle)
         body = NewSandbox(
             template_id=template,
             auto_pause=lifecycle["on_timeout"] == "pause",

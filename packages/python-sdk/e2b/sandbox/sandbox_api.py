@@ -123,15 +123,10 @@ class SandboxInfoLifecycle(TypedDict):
 
 def get_lifecycle(
     lifecycle: Optional[SandboxLifecycle],
-    auto_pause: Optional[bool],
 ) -> SandboxLifecycle:
     auto_resume = lifecycle.get("auto_resume") if lifecycle is not None else None
-
-    explicit_on_timeout = lifecycle.get("on_timeout") if lifecycle is not None else None
     on_timeout: Literal["pause", "kill"] = (
-        explicit_on_timeout
-        if explicit_on_timeout is not None
-        else ("pause" if auto_pause else "kill")
+        lifecycle.get("on_timeout", "kill") if lifecycle is not None else "kill"
     )
 
     if auto_resume and on_timeout != "pause":

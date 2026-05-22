@@ -189,16 +189,6 @@ export interface SandboxOpts extends ConnectionOpts {
   lifecycle?: SandboxLifecycle
 }
 
-export type SandboxBetaCreateOpts = SandboxOpts & {
-  /**
-   * @deprecated Use `lifecycle.onTimeout = "pause"` instead.
-   *
-   * Automatically pause the sandbox after the timeout expires.
-   * @default false
-   */
-  autoPause?: boolean
-}
-
 /**
  * Options for connecting to a Sandbox.
  */
@@ -424,16 +414,9 @@ export interface SandboxMetrics {
 }
 
 export function getLifecycle(
-  opts?: Pick<SandboxBetaCreateOpts, 'lifecycle' | 'autoPause'>
+  opts?: Pick<SandboxOpts, 'lifecycle'>
 ): SandboxLifecycle {
-  if (opts?.autoPause !== undefined) {
-    console.warn(
-      "`autoPause` is deprecated; use `lifecycle: { onTimeout: 'pause' }` instead."
-    )
-  }
-
-  const onTimeout =
-    opts?.lifecycle?.onTimeout ?? (opts?.autoPause ? 'pause' : 'kill')
+  const onTimeout = opts?.lifecycle?.onTimeout ?? 'kill'
 
   if (opts?.lifecycle?.autoResume === true && onTimeout !== 'pause') {
     throw new InvalidArgumentError(
@@ -799,7 +782,7 @@ export class SandboxApi {
   protected static async createSandbox(
     template: string,
     timeoutMs: number,
-    opts?: SandboxBetaCreateOpts
+    opts?: SandboxOpts
   ) {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
