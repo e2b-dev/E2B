@@ -1,12 +1,11 @@
 import asyncio
-import httpx
 import logging
-
 from typing import Dict, Tuple
 
-from e2b.connection_config import ConnectionConfig
-from e2b.api import limits, AsyncApiClient
+import httpx
 
+from e2b.api import AsyncApiClient, limits
+from e2b.connection_config import ConnectionConfig
 
 logger = logging.getLogger(__name__)
 
@@ -37,18 +36,17 @@ class AsyncTransportWithLogger(httpx.AsyncHTTPTransport):
         return self._pool
 
 
-def get_transport(
-    config: ConnectionConfig, http2: bool = True
-) -> AsyncTransportWithLogger:
-    key = (id(asyncio.get_running_loop()), http2)
+def get_transport(config: ConnectionConfig, http2: bool = True) -> AsyncTransportWithLogger:
+    loop_id = (id(asyncio.get_running_loop()), http2)
 
-    if key in AsyncTransportWithLogger._instances:
-        return AsyncTransportWithLogger._instances[key]
+    if loop_id in AsyncTransportWithLogger._instances:
+        return AsyncTransportWithLogger._instances[loop_id]
 
     transport = AsyncTransportWithLogger(
         limits=limits,
         proxy=config.proxy,
         http2=http2,
     )
-    AsyncTransportWithLogger._instances[key] = transport
+
+    AsyncTransportWithLogger._instances[loop_id] = transport
     return transport
