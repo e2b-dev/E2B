@@ -140,7 +140,7 @@ def get_lifecycle(
             "(or auto_pause is True)."
         )
 
-    resolved = SandboxLifecycle(on_timeout= on_timeout)
+    resolved = SandboxLifecycle(on_timeout=on_timeout)
     if auto_resume is not None:
         resolved["auto_resume"] = auto_resume
 
