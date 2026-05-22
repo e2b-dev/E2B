@@ -116,13 +116,6 @@ class SandboxInfoLifecycle(TypedDict):
     """
 
 
-def get_auto_resume_enabled(lifecycle: Optional[SandboxLifecycle]) -> Optional[bool]:
-    if lifecycle is None or lifecycle.get("on_timeout") != "pause":
-        return None
-
-    return lifecycle.get("auto_resume", False)
-
-
 def from_client_network_config(
     network: Union[Unset, ClientSandboxNetworkConfig],
 ) -> Optional[SandboxNetworkOpts]:

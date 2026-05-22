@@ -421,7 +421,10 @@ export interface SandboxMetrics {
 
 function getLifecycle(
   opts?: Pick<SandboxBetaCreateOpts, 'lifecycle' | 'autoPause'>
-): SandboxLifecycle {
+): SandboxLifecycle | undefined {
+  if (opts?.lifecycle === undefined && opts?.autoPause === undefined) {
+    return undefined
+  }
   return {
     onTimeout:
       opts?.lifecycle?.onTimeout ?? (opts?.autoPause ? 'pause' : 'kill'),
@@ -786,11 +789,9 @@ export class SandboxApi {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
     const lifecycle = getLifecycle(opts)
-    const autoPause = lifecycle.onTimeout === 'pause'
+    const autoPause = lifecycle ? lifecycle.onTimeout === 'pause' : undefined
     const autoResumeEnabled =
-      lifecycle.onTimeout === 'pause'
-        ? (lifecycle.autoResume ?? false)
-        : undefined
+      lifecycle?.onTimeout === 'pause' ? lifecycle.autoResume : undefined
 
     const body: components['schemas']['NewSandbox'] = {
       templateID: template,
