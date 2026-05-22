@@ -86,7 +86,6 @@
     "e2b": "^2.19.3",
     "handlebars": "^4.7.9",
     "inquirer": "^12.10.0",
-    "open": "^9.1.0",
     "simple-update-notifier": "^2.0.0",
     "statuses": "^2.0.1",
     "strip-ansi": "^7.1.0",
