@@ -7,9 +7,13 @@ from typing_extensions import NotRequired, Unpack
 from e2b.api.client.models import (
     ListedSandbox,
     SandboxDetail,
-    SandboxLifecycle as ClientSandboxLifecycle,
-    SandboxNetworkConfig as ClientSandboxNetworkConfig,
     SandboxState,
+)
+from e2b.api.client.models import (
+    SandboxLifecycle as ClientSandboxLifecycle,
+)
+from e2b.api.client.models import (
+    SandboxNetworkConfig as ClientSandboxNetworkConfig,
 )
 from e2b.api.client.types import Unset
 from e2b.connection_config import ApiParams
@@ -117,38 +121,37 @@ class SandboxInfoLifecycle(TypedDict):
     """
 
 
-def get_auto_resume_enabled(lifecycle: Optional[SandboxLifecycle]) -> Optional[bool]:
-    if lifecycle is None:
-        return None
-
-    return lifecycle.get("auto_resume", False)
-
-
-def validate_lifecycle(
+def get_lifecycle(
     lifecycle: Optional[SandboxLifecycle],
     auto_pause: Optional[bool],
-) -> None:
+) -> SandboxLifecycle:
     """
-    Validate that auto_resume is only enabled when the effective on_timeout
-    resolves to "pause" (either via lifecycle.on_timeout or auto_pause=True).
+    Resolve the effective sandbox lifecycle from `lifecycle` and the deprecated
+    `auto_pause` flag, and validate that `auto_resume=True` is only used when
+    the effective `on_timeout` is `"pause"`.
+
+    Mirrors the JS SDK `getLifecycle` helper: `auto_resume` is preserved
+    verbatim from the input lifecycle (omitted when the caller did not set it).
     """
-    if lifecycle is None:
-        return
+    auto_resume = lifecycle.get("auto_resume") if lifecycle is not None else None
 
-    auto_resume = lifecycle.get("auto_resume", False)
-    if not auto_resume:
-        return
-
-    on_timeout = lifecycle.get("on_timeout")
-    effective_on_timeout = (
-        on_timeout if on_timeout is not None else ("pause" if auto_pause else "kill")
+    explicit_on_timeout = lifecycle.get("on_timeout") if lifecycle is not None else None
+    on_timeout: Literal["pause", "kill"] = (
+        explicit_on_timeout
+        if explicit_on_timeout is not None
+        else ("pause" if auto_pause else "kill")
     )
 
-    if effective_on_timeout != "pause":
+    if auto_resume and on_timeout != "pause":
         raise InvalidArgumentException(
             "auto_resume can only be True when on_timeout is 'pause' "
             "(or auto_pause is True)."
         )
+
+    resolved: SandboxLifecycle = {"on_timeout": on_timeout}
+    if auto_resume is not None:
+        resolved["auto_resume"] = auto_resume
+    return resolved
 
 
 def from_client_network_config(

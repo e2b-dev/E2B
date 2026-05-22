@@ -7,14 +7,14 @@ describe('getLifecycle', () => {
   test('returns defaults when no opts are provided', () => {
     assert.deepEqual(getLifecycle(), {
       onTimeout: 'kill',
-      autoResumeEnabled: undefined,
+      autoResume: undefined,
     })
   })
 
   test('returns defaults when opts is empty', () => {
     assert.deepEqual(getLifecycle({}), {
       onTimeout: 'kill',
-      autoResumeEnabled: undefined,
+      autoResume: undefined,
     })
   })
 
@@ -23,7 +23,7 @@ describe('getLifecycle', () => {
       getLifecycle({ lifecycle: { onTimeout: 'kill' }, autoPause: true }),
       {
         onTimeout: 'kill',
-        autoResumeEnabled: false,
+        autoResume: undefined,
       }
     )
   })
@@ -33,7 +33,7 @@ describe('getLifecycle', () => {
       getLifecycle({ lifecycle: { onTimeout: 'pause' }, autoPause: false }),
       {
         onTimeout: 'pause',
-        autoResumeEnabled: false,
+        autoResume: undefined,
       }
     )
   })
@@ -46,21 +46,21 @@ describe('getLifecycle', () => {
     }
     assert.deepEqual(getLifecycle({ lifecycle, autoPause: true }), {
       onTimeout: 'pause',
-      autoResumeEnabled: true,
+      autoResume: true,
     })
   })
 
   test('autoPause=true with no lifecycle maps to onTimeout=pause', () => {
     assert.deepEqual(getLifecycle({ autoPause: true }), {
       onTimeout: 'pause',
-      autoResumeEnabled: false,
+      autoResume: undefined,
     })
   })
 
   test('autoPause=false with no lifecycle maps to onTimeout=kill', () => {
     assert.deepEqual(getLifecycle({ autoPause: false }), {
       onTimeout: 'kill',
-      autoResumeEnabled: false,
+      autoResume: undefined,
     })
   })
 
@@ -69,33 +69,28 @@ describe('getLifecycle', () => {
       getLifecycle({ lifecycle: { onTimeout: 'pause', autoResume: true } }),
       {
         onTimeout: 'pause',
-        autoResumeEnabled: true,
+        autoResume: true,
       }
     )
     assert.deepEqual(
       getLifecycle({ lifecycle: { onTimeout: 'pause', autoResume: false } }),
       {
         onTimeout: 'pause',
-        autoResumeEnabled: false,
+        autoResume: false,
       }
     )
   })
 
-  test('autoResume defaults to false when omitted from lifecycle', () => {
+  test('autoResume is undefined when omitted from lifecycle', () => {
     assert.deepEqual(getLifecycle({ lifecycle: { onTimeout: 'pause' } }), {
       onTimeout: 'pause',
-      autoResumeEnabled: false,
+      autoResume: undefined,
     })
   })
 
-  test('autoResumeEnabled is undefined when neither lifecycle nor autoPause provided', () => {
-    assert.equal(getLifecycle().autoResumeEnabled, undefined)
-    assert.equal(getLifecycle({}).autoResumeEnabled, undefined)
-  })
-
-  test('autoResumeEnabled is set (false) when only autoPause is provided', () => {
-    assert.equal(getLifecycle({ autoPause: true }).autoResumeEnabled, false)
-    assert.equal(getLifecycle({ autoPause: false }).autoResumeEnabled, false)
+  test('autoResume is undefined when only autoPause is provided', () => {
+    assert.equal(getLifecycle({ autoPause: true }).autoResume, undefined)
+    assert.equal(getLifecycle({ autoPause: false }).autoResume, undefined)
   })
 
   test('throws when autoResume=true and onTimeout=kill', () => {

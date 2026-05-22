@@ -11,8 +11,7 @@ from e2b.api.client.models import (
 from e2b.exceptions import InvalidArgumentException
 from e2b.sandbox.sandbox_api import (
     SandboxQuery,
-    get_auto_resume_enabled,
-    validate_lifecycle,
+    get_lifecycle,
 )
 
 
@@ -40,64 +39,70 @@ def test_metadata(sandbox_factory):
         assert False, "Sandbox not found"
 
 
-def test_get_auto_resume_enabled_returns_none_when_lifecycle_missing():
-    assert get_auto_resume_enabled(None) is None
+def test_get_lifecycle_returns_defaults_when_nothing_provided():
+    assert get_lifecycle(None, None) == {"on_timeout": "kill"}
 
 
-def test_get_auto_resume_enabled_uses_auto_resume_from_lifecycle():
-    assert get_auto_resume_enabled({"on_timeout": "pause", "auto_resume": True}) is True
-    assert (
-        get_auto_resume_enabled({"on_timeout": "pause", "auto_resume": False}) is False
-    )
+def test_get_lifecycle_on_timeout_takes_precedence_over_auto_pause():
+    assert get_lifecycle({"on_timeout": "kill"}, True) == {"on_timeout": "kill"}
+    assert get_lifecycle({"on_timeout": "pause"}, False) == {"on_timeout": "pause"}
 
 
-def test_get_auto_resume_enabled_defaults_to_false_when_missing_in_lifecycle():
-    # Lifecycle present but no auto_resume key -> defaults to False.
-    assert get_auto_resume_enabled({"on_timeout": "pause"}) is False
-    assert get_auto_resume_enabled({"on_timeout": "kill"}) is False
+def test_get_lifecycle_falls_back_to_auto_pause_when_on_timeout_missing():
+    # partial lifecycle without on_timeout (possible at runtime despite typing).
+    assert get_lifecycle({"auto_resume": True}, True) == {  # type: ignore[typeddict-item]
+        "on_timeout": "pause",
+        "auto_resume": True,
+    }
 
 
-def test_get_auto_resume_enabled_decoupled_from_on_timeout():
-    # auto_resume is independent of on_timeout (per design).
-    assert get_auto_resume_enabled({"on_timeout": "kill", "auto_resume": True}) is True
-    assert (
-        get_auto_resume_enabled({"on_timeout": "kill", "auto_resume": False}) is False
-    )
+def test_get_lifecycle_auto_pause_only_maps_to_on_timeout():
+    assert get_lifecycle(None, True) == {"on_timeout": "pause"}
+    assert get_lifecycle(None, False) == {"on_timeout": "kill"}
 
 
-def test_validate_lifecycle_allows_none_lifecycle():
-    validate_lifecycle(None, None)
-    validate_lifecycle(None, True)
-    validate_lifecycle(None, False)
+def test_get_lifecycle_preserves_auto_resume_from_lifecycle():
+    assert get_lifecycle({"on_timeout": "pause", "auto_resume": True}, None) == {
+        "on_timeout": "pause",
+        "auto_resume": True,
+    }
+    assert get_lifecycle({"on_timeout": "pause", "auto_resume": False}, None) == {
+        "on_timeout": "pause",
+        "auto_resume": False,
+    }
 
 
-def test_validate_lifecycle_allows_auto_resume_with_pause():
-    validate_lifecycle({"on_timeout": "pause", "auto_resume": True}, None)
-    validate_lifecycle({"on_timeout": "pause", "auto_resume": True}, False)
-    validate_lifecycle({"on_timeout": "pause", "auto_resume": True}, True)
+def test_get_lifecycle_omits_auto_resume_when_not_set_in_lifecycle():
+    # Lifecycle present but auto_resume not specified -> key omitted in result.
+    assert "auto_resume" not in get_lifecycle({"on_timeout": "pause"}, None)
 
 
-def test_validate_lifecycle_allows_auto_resume_with_auto_pause_fallback():
-    # No on_timeout but auto_pause=True -> effective pause -> OK.
-    validate_lifecycle({"auto_resume": True}, True)  # type: ignore[typeddict-item]
+def test_get_lifecycle_omits_auto_resume_when_only_auto_pause_provided():
+    # auto_resume is preserved verbatim from lifecycle input; bare auto_pause
+    # does not introduce one.
+    assert "auto_resume" not in get_lifecycle(None, True)
+    assert "auto_resume" not in get_lifecycle(None, False)
 
 
-def test_validate_lifecycle_allows_auto_resume_false_with_kill():
-    validate_lifecycle({"on_timeout": "kill", "auto_resume": False}, None)
-    validate_lifecycle({"on_timeout": "kill"}, None)
-
-
-def test_validate_lifecycle_raises_when_auto_resume_true_with_kill():
+def test_get_lifecycle_raises_when_auto_resume_true_with_kill():
     with pytest.raises(InvalidArgumentException):
-        validate_lifecycle({"on_timeout": "kill", "auto_resume": True}, None)
+        get_lifecycle({"on_timeout": "kill", "auto_resume": True}, None)
 
 
-def test_validate_lifecycle_raises_when_auto_resume_true_and_effective_is_kill():
+def test_get_lifecycle_raises_when_auto_resume_true_and_effective_is_kill():
     # No on_timeout, auto_pause falsy -> effective kill -> error.
     with pytest.raises(InvalidArgumentException):
-        validate_lifecycle({"auto_resume": True}, None)  # type: ignore[typeddict-item]
+        get_lifecycle({"auto_resume": True}, None)  # type: ignore[typeddict-item]
     with pytest.raises(InvalidArgumentException):
-        validate_lifecycle({"auto_resume": True}, False)  # type: ignore[typeddict-item]
+        get_lifecycle({"auto_resume": True}, False)  # type: ignore[typeddict-item]
+
+
+def test_get_lifecycle_does_not_raise_when_auto_resume_true_with_auto_pause():
+    # Partial lifecycle with auto_resume=True and auto_pause=True is valid.
+    assert get_lifecycle(
+        {"auto_resume": True},  # type: ignore[typeddict-item]
+        True,
+    ) == {"on_timeout": "pause", "auto_resume": True}
 
 
 def test_create_payload_serializes_auto_resume_enabled():

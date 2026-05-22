@@ -423,19 +423,9 @@ export interface SandboxMetrics {
   diskTotal: number
 }
 
-export type ResolvedLifecycle = {
-  /** Effective `onTimeout` after merging `lifecycle` and `autoPause`. */
-  onTimeout: 'pause' | 'kill'
-  /**
-   * Auto-resume value to send to the API, or `undefined` when neither
-   * `lifecycle` nor `autoPause` was provided (omits the field from the body).
-   */
-  autoResumeEnabled: boolean | undefined
-}
-
 export function getLifecycle(
   opts?: Pick<SandboxBetaCreateOpts, 'lifecycle' | 'autoPause'>
-): ResolvedLifecycle {
+): SandboxLifecycle {
   const autoResume = opts?.lifecycle?.autoResume ?? false
   const onTimeout =
     opts?.lifecycle?.onTimeout ?? (opts?.autoPause ? 'pause' : 'kill')
@@ -446,12 +436,9 @@ export function getLifecycle(
     )
   }
 
-  const lifecycleProvided =
-    opts?.lifecycle !== undefined || opts?.autoPause !== undefined
-
   return {
     onTimeout,
-    autoResumeEnabled: lifecycleProvided ? autoResume : undefined,
+    autoResume: opts?.lifecycle?.autoResume,
   }
 }
 
@@ -811,7 +798,8 @@ export class SandboxApi {
   ) {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
-    const { autoResumeEnabled } = getLifecycle(opts)
+    const { onTimeout, autoResume } = getLifecycle(opts)
+    const autoPause = onTimeout === 'pause'
 
     const body: components['schemas']['NewSandbox'] = {
       templateID: template,
@@ -822,8 +810,9 @@ export class SandboxApi {
       secure: opts?.secure ?? true,
       allow_internet_access: opts?.allowInternetAccess ?? true,
       network: opts?.network,
-      ...(autoResumeEnabled !== undefined
-        ? { autoResume: { enabled: autoResumeEnabled } }
+      autoPause,
+      ...(autoResume !== undefined
+        ? { autoResume: { enabled: autoResume } }
         : {}),
     }
 
