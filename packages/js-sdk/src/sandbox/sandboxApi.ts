@@ -5,7 +5,11 @@ import {
   DEFAULT_SANDBOX_TIMEOUT_MS,
 } from '../connectionConfig'
 import { compareVersions } from 'compare-versions'
-import { SandboxNotFoundError, TemplateError } from '../errors'
+import {
+  InvalidArgumentError,
+  SandboxNotFoundError,
+  TemplateError,
+} from '../errors'
 import { timeoutToSeconds } from '../utils'
 import type { Volume } from '../volume'
 import type { McpServer as BaseMcpServer } from './mcp'
@@ -419,23 +423,27 @@ export interface SandboxMetrics {
   diskTotal: number
 }
 
-function getLifecycle(
+export function getLifecycle(
   opts?: Pick<SandboxBetaCreateOpts, 'lifecycle' | 'autoPause'>
 ): SandboxLifecycle {
-  if (opts?.lifecycle) {
-    return opts.lifecycle
+  if (opts?.autoPause !== undefined) {
+    console.warn(
+      "`autoPause` is deprecated; use `lifecycle: { onTimeout: 'pause' }` instead."
+    )
   }
 
-  if (opts?.autoPause) {
-    return {
-      onTimeout: 'pause',
-      autoResume: false,
-    }
+  const onTimeout =
+    opts?.lifecycle?.onTimeout ?? (opts?.autoPause ? 'pause' : 'kill')
+
+  if (opts?.lifecycle?.autoResume === true && onTimeout !== 'pause') {
+    throw new InvalidArgumentError(
+      "autoResume can only be true when the resolved onTimeout is 'pause'."
+    )
   }
 
   return {
-    onTimeout: 'kill',
-    autoResume: false,
+    onTimeout,
+    autoResume: opts?.lifecycle?.autoResume,
   }
 }
 
@@ -795,12 +803,8 @@ export class SandboxApi {
   ) {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
-    const lifecycle = getLifecycle(opts)
-    const autoPause = lifecycle.onTimeout === 'pause'
-    const autoResumeEnabled =
-      lifecycle.onTimeout === 'pause'
-        ? (lifecycle.autoResume ?? false)
-        : undefined
+    const { onTimeout, autoResume } = getLifecycle(opts)
+    const autoPause = onTimeout === 'pause'
 
     const body: components['schemas']['NewSandbox'] = {
       templateID: template,
@@ -811,9 +815,9 @@ export class SandboxApi {
       secure: opts?.secure ?? true,
       allow_internet_access: opts?.allowInternetAccess ?? true,
       network: opts?.network,
-      ...(autoPause !== undefined ? { autoPause } : {}),
-      ...(autoResumeEnabled !== undefined
-        ? { autoResume: { enabled: autoResumeEnabled } }
+      autoPause,
+      ...(autoResume !== undefined
+        ? { autoResume: { enabled: autoResume } }
         : {}),
     }
 
