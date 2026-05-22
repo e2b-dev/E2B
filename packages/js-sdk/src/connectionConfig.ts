@@ -1,5 +1,6 @@
 import { Logger } from './logs'
 import { getEnvVar, version } from './api/metadata'
+import { runtime } from './utils'
 
 export const REQUEST_TIMEOUT_MS = 60_000 // 60 seconds
 export const DEFAULT_SANDBOX_TIMEOUT_MS = 300_000 // 300 seconds
@@ -241,7 +242,7 @@ export class ConnectionConfig {
     }
 
     const sandboxDomain = opts.sandboxDomain ?? this.domain
-    if (sandboxDomain === 'e2b.app') {
+    if (sandboxDomain === 'e2b.app' && runtime !== 'browser') {
       return 'https://sandbox.e2b.app'
     }
 
