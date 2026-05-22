@@ -1,15 +1,13 @@
 import * as commander from 'commander'
-import * as fs from 'fs'
 import * as chalk from 'chalk'
 import * as e2b from 'e2b'
-import * as path from 'path'
 
-import { USER_CONFIG_PATH } from 'src/user'
+import { getUserConfig, saveUserConfig } from 'src/user'
 import {
   client,
   connectionConfig,
+  currentProfileName,
   ensureAccessToken,
-  ensureUserConfig,
 } from 'src/api'
 import { asBold, asFormattedTeam } from '../../utils/format'
 import { handleE2BRequestError } from '../../utils/errors'
@@ -21,12 +19,14 @@ export const configureCommand = new commander.Command('configure')
 
     console.log('Configuring user...\n')
 
-    if (!fs.existsSync(USER_CONFIG_PATH)) {
-      console.log('No user config found, run `e2b auth login` to log in first.')
+    const userConfig = getUserConfig(currentProfileName)
+    if (!userConfig) {
+      console.log(
+        `No config found for profile '${currentProfileName}', run 'e2b auth login' to log in first.`
+      )
       return
     }
 
-    const userConfig = ensureUserConfig()
     ensureAccessToken()
     const signal = connectionConfig.getSignal()
 
@@ -42,7 +42,7 @@ export const configureCommand = new commander.Command('configure')
           type: 'list',
           pageSize: 50,
           choices: res.data.map((team: e2b.components['schemas']['Team']) => ({
-            name: asFormattedTeam(team, userConfig.teamId),
+            name: asFormattedTeam(team, userConfig.teamId ?? ''),
             value: team,
           })),
         },
@@ -52,8 +52,7 @@ export const configureCommand = new commander.Command('configure')
     userConfig.teamName = team.name
     userConfig.teamId = team.teamID
     userConfig.teamApiKey = team.apiKey
-    fs.mkdirSync(path.dirname(USER_CONFIG_PATH), { recursive: true })
-    fs.writeFileSync(USER_CONFIG_PATH, JSON.stringify(userConfig, null, 2))
+    saveUserConfig(userConfig, currentProfileName)
 
     console.log(`Team ${asBold(team.name)} (${team.teamID}) selected.\n`)
   })

@@ -9,11 +9,11 @@ import { UserConfig } from '../user'
 export const primaryColor = '#FFB766'
 
 export function asFormattedConfig(config: UserConfig) {
-  const email = asBold(config.email)
+  const email = config.email ? asBold(config.email) : asRed('(not set)')
   const team = config.teamName
     ? asBold(config.teamName)
     : asRed('Log out and log in to get team name')
-  const teamId = asBold(config.teamId)
+  const teamId = config.teamId ? asBold(config.teamId) : asRed('(not set)')
   return `You are logged in as ${email},\nSelected team: ${team} (${teamId})`
 }
 

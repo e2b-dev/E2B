@@ -1,15 +1,23 @@
 import * as commander from 'commander'
-import * as fs from 'fs'
 
-import { USER_CONFIG_PATH } from 'src/user'
+import { getUserConfig, deleteUserProfile } from 'src/user'
+import { currentProfileName } from 'src/api'
 
 export const logoutCommand = new commander.Command('logout')
   .description('log out of CLI')
   .action(() => {
-    if (fs.existsSync(USER_CONFIG_PATH)) {
-      fs.unlinkSync(USER_CONFIG_PATH) // Delete user config
-      console.log('Logged out.')
+    if (getUserConfig(currentProfileName)) {
+      deleteUserProfile(currentProfileName)
+      console.log(
+        currentProfileName === 'default'
+          ? 'Logged out.'
+          : `Profile '${currentProfileName}' removed.`
+      )
     } else {
-      console.log('Not logged in, nothing to do')
+      console.log(
+        currentProfileName === 'default'
+          ? 'Not logged in, nothing to do'
+          : `Profile '${currentProfileName}' not found, nothing to do`
+      )
     }
   })

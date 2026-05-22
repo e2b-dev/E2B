@@ -30,3 +30,8 @@ export const teamOption = new commander.Option(
   '-t, --team <team-id>',
   'specify the team ID that the operation will be associated with. You can find team ID in the team settings in the E2B dashboard (https://e2b.dev/dashboard?tab=team).'
 )
+
+export const profileOption = new commander.Option(
+  '--profile <profile>',
+  `use a named profile from ${asBold('~/.e2b/config')}. Defaults to ${asBold('default')}.`
+)
