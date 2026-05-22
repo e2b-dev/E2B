@@ -1,4 +1,5 @@
 import { runtime } from '../utils'
+import { getEnvVar } from '../api/metadata'
 import {
   loadUndici,
   toUndiciRequestInput,
@@ -14,7 +15,7 @@ type EnvdFetchOptions = {
 let envdFetch: typeof fetch | undefined
 let envdRpcFetch: typeof fetch | undefined
 let hasWarnedUndiciFallback = false
-const ENVD_RPC_CONNECTION_LIMIT = 100
+const DEFAULT_ENVD_RPC_CONNECTION_LIMIT = 100
 
 export function createEnvdFetchForRuntime(
   currentRuntime = runtime,
@@ -98,8 +99,22 @@ export function createEnvdRpcFetch(): typeof fetch {
   }
 
   envdRpcFetch = createEnvdFetchForRuntime(runtime, {
-    connectionLimit: ENVD_RPC_CONNECTION_LIMIT,
+    connectionLimit: getEnvdRpcConnectionLimit(),
   })
 
   return envdRpcFetch
+}
+
+export function getEnvdRpcConnectionLimit() {
+  const raw = getEnvVar('E2B_ENVD_RPC_CONNECTIONS')
+  if (!raw) {
+    return DEFAULT_ENVD_RPC_CONNECTION_LIMIT
+  }
+
+  const parsed = Number.parseInt(raw, 10)
+  if (!Number.isFinite(parsed) || parsed < 1) {
+    return DEFAULT_ENVD_RPC_CONNECTION_LIMIT
+  }
+
+  return parsed
 }

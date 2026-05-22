@@ -5,6 +5,7 @@ afterEach(() => {
   vi.resetModules()
   vi.doUnmock('undici')
   vi.doUnmock('../../src/utils')
+  delete process.env.E2B_ENVD_RPC_CONNECTIONS
 })
 
 test('uses undici with HTTP/2 enabled in Node', async () => {
@@ -86,6 +87,14 @@ test('can create a bounded dispatcher for RPC streams', async () => {
   await fetcher('https://example.com/rpc')
 
   expect(agents).toEqual([{ allowH2: true, connections: 100 }])
+})
+
+test('reads RPC stream dispatcher connection limit from env', async () => {
+  process.env.E2B_ENVD_RPC_CONNECTIONS = '200'
+
+  const { getEnvdRpcConnectionLimit } = await import('../../src/envd/http2')
+
+  expect(getEnvdRpcConnectionLimit()).toBe(200)
 })
 
 test('defers loading undici until the first Node request', async () => {
