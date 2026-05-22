@@ -25,8 +25,6 @@ from e2b.api.client.models import (
     Sandbox,
     SandboxAutoResumeConfig,
     SandboxNetworkConfig,
-)
-from e2b.api.client.models import (
     SandboxVolumeMount as SandboxVolumeMountAPI,
 )
 from e2b.api.client.types import UNSET
