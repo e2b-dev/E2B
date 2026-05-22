@@ -130,7 +130,9 @@ async function signInWithBrowser(): Promise<SignInWithBrowserResponse> {
       if (manualUrlPrinted) return
       manualUrlPrinted = true
       console.log(
-        `\nCould not open a browser automatically. Please open the following URL manually to continue:\n\n${loginUrl.toString()}\n`
+        `\nCould not open a browser automatically. Please open the following URL manually to continue:\n\n${loginUrl.toString()}\n\nIf interactive login is unavailable, you can also authenticate by setting the ${asBold(
+          'E2B_API_KEY'
+        )} environment variable instead.\n`
       )
     }
 
