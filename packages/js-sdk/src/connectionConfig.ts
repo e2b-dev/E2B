@@ -38,7 +38,7 @@ export interface ConnectionOpts {
   /**
    * Sandbox Url to use for the API.
    * @internal
-   * @default E2B_SANDBOX_URL // environment variable or `https://${port}-${sandboxID}.${domain}`
+   * @default E2B_SANDBOX_URL // environment variable, `https://sandbox.e2b.app` in production, or `https://${port}-${sandboxID}.${domain}`
    */
   sandboxUrl?: string
   /**
@@ -236,7 +236,31 @@ export class ConnectionConfig {
       return this.sandboxUrl
     }
 
-    return `${this.debug ? 'http' : 'https'}://${this.getHost(sandboxId, opts.envdPort, opts.sandboxDomain)}`
+    if (this.debug) {
+      return `http://${this.getHost(sandboxId, opts.envdPort, opts.sandboxDomain)}`
+    }
+
+    const sandboxDomain = opts.sandboxDomain ?? this.domain
+    if (sandboxDomain === 'e2b.app') {
+      return 'https://sandbox.e2b.app'
+    }
+
+    return `https://${this.getHost(sandboxId, opts.envdPort, sandboxDomain)}`
+  }
+
+  getSandboxDirectUrl(
+    sandboxId: string,
+    opts: { sandboxDomain: string; envdPort: number }
+  ) {
+    if (this.sandboxUrl) {
+      return this.sandboxUrl
+    }
+
+    if (this.debug) {
+      return `http://${this.getHost(sandboxId, opts.envdPort, opts.sandboxDomain)}`
+    }
+
+    return `https://${this.getHost(sandboxId, opts.envdPort, opts.sandboxDomain ?? this.domain)}`
   }
 
   getHost(sandboxId: string, port: number, sandboxDomain: string) {

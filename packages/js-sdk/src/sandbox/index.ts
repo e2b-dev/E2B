@@ -113,6 +113,7 @@ export class Sandbox extends SandboxApi {
   protected readonly connectionConfig: ConnectionConfig
   protected readonly envdAccessToken?: string
   private readonly envdApiUrl: string
+  private readonly envdDirectUrl: string
   private readonly envdApi: EnvdApiClient
   private mcpToken?: string
 
@@ -146,6 +147,13 @@ export class Sandbox extends SandboxApi {
       sandboxDomain: this.sandboxDomain,
       envdPort: this.envdPort,
     })
+    this.envdDirectUrl = this.connectionConfig.getSandboxDirectUrl(
+      this.sandboxId,
+      {
+        sandboxDomain: this.sandboxDomain,
+        envdPort: this.envdPort,
+      }
+    )
 
     const sandboxHeaders = {
       'E2b-Sandbox-Id': this.sandboxId,
@@ -834,7 +842,7 @@ export class Sandbox extends SandboxApi {
   }
 
   private fileUrl(path: string | undefined, username: string | undefined) {
-    const url = new URL('/files', this.envdApiUrl)
+    const url = new URL('/files', this.envdDirectUrl)
 
     if (username) {
       url.searchParams.set('username', username)
