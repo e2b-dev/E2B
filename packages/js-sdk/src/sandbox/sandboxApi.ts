@@ -422,20 +422,16 @@ export interface SandboxMetrics {
 function getLifecycle(
   opts?: Pick<SandboxBetaCreateOpts, 'lifecycle' | 'autoPause'>
 ): SandboxLifecycle {
-  if (opts?.lifecycle?.onTimeout) {
-    return opts.lifecycle
-  }
-
-  if (opts?.autoPause) {
+  if (opts?.lifecycle) {
     return {
-      onTimeout: 'pause',
-      autoResume: opts.lifecycle?.autoResume ?? false,
+      onTimeout: opts.lifecycle.onTimeout ?? 'kill',
+      autoResume: opts.lifecycle.autoResume ?? false,
     }
   }
 
   return {
-    onTimeout: 'kill',
-    autoResume: opts?.lifecycle?.autoResume ?? false,
+    onTimeout: opts?.autoPause ? 'pause' : 'kill',
+    autoResume: false,
   }
 }
 

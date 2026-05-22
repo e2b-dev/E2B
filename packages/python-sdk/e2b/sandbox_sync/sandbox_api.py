@@ -176,9 +176,10 @@ class SandboxApi(SandboxBase):
     ) -> SandboxCreateResponse:
         config = ConnectionConfig(**opts)
 
-        on_timeout = lifecycle.get("on_timeout") if lifecycle is not None else None
         should_auto_pause = (
-            on_timeout == "pause" if on_timeout is not None else auto_pause
+            lifecycle.get("on_timeout") == "pause"
+            if lifecycle is not None
+            else auto_pause
         )
         auto_resume_enabled = get_auto_resume_enabled(lifecycle)
         body = NewSandbox(
