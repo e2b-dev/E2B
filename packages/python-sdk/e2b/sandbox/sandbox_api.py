@@ -124,7 +124,10 @@ class SandboxInfoLifecycle(TypedDict):
 def get_lifecycle(
     lifecycle: Optional[SandboxLifecycle],
 ) -> SandboxLifecycle:
-    auto_resume = lifecycle.get("auto_resume") if lifecycle is not None else None
+    auto_resume = (
+        lifecycle.get("auto_resume", False) if lifecycle is not None else False
+    )
+
     on_timeout: Literal["pause", "kill"] = (
         lifecycle.get("on_timeout", "kill") if lifecycle is not None else "kill"
     )
@@ -134,11 +137,7 @@ def get_lifecycle(
             "auto_resume can only be True when the resolved on_timeout is 'pause'."
         )
 
-    resolved = SandboxLifecycle(on_timeout=on_timeout)
-    if auto_resume is not None:
-        resolved["auto_resume"] = auto_resume
-
-    return resolved
+    return SandboxLifecycle(on_timeout=on_timeout, auto_resume=auto_resume)
 
 
 def from_client_network_config(

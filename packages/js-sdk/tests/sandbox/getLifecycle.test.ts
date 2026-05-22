@@ -7,28 +7,28 @@ describe('getLifecycle', () => {
   test('returns defaults when no opts are provided', () => {
     assert.deepEqual(getLifecycle(), {
       onTimeout: 'kill',
-      autoResume: undefined,
+      autoResume: false,
     })
   })
 
   test('returns defaults when opts is empty', () => {
     assert.deepEqual(getLifecycle({}), {
       onTimeout: 'kill',
-      autoResume: undefined,
+      autoResume: false,
     })
   })
 
-  test('passes through lifecycle.onTimeout=kill', () => {
+  test('defaults autoResume to false when onTimeout=kill is given', () => {
     assert.deepEqual(getLifecycle({ lifecycle: { onTimeout: 'kill' } }), {
       onTimeout: 'kill',
-      autoResume: undefined,
+      autoResume: false,
     })
   })
 
-  test('passes through lifecycle.onTimeout=pause', () => {
+  test('defaults autoResume to false when onTimeout=pause is given', () => {
     assert.deepEqual(getLifecycle({ lifecycle: { onTimeout: 'pause' } }), {
       onTimeout: 'pause',
-      autoResume: undefined,
+      autoResume: false,
     })
   })
 
@@ -47,13 +47,6 @@ describe('getLifecycle', () => {
         autoResume: false,
       }
     )
-  })
-
-  test('autoResume is undefined when omitted from lifecycle', () => {
-    assert.deepEqual(getLifecycle({ lifecycle: { onTimeout: 'pause' } }), {
-      onTimeout: 'pause',
-      autoResume: undefined,
-    })
   })
 
   test('throws when autoResume=true and onTimeout=kill', () => {

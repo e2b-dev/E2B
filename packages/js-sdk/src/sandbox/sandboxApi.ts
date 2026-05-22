@@ -415,10 +415,11 @@ export interface SandboxMetrics {
 
 export function getLifecycle(
   opts?: Pick<SandboxOpts, 'lifecycle'>
-): SandboxLifecycle {
+): Required<SandboxLifecycle> {
   const onTimeout = opts?.lifecycle?.onTimeout ?? 'kill'
+  const autoResume = opts?.lifecycle?.autoResume ?? false
 
-  if (opts?.lifecycle?.autoResume === true && onTimeout !== 'pause') {
+  if (autoResume && onTimeout !== 'pause') {
     throw new InvalidArgumentError(
       "autoResume can only be true when the resolved onTimeout is 'pause'."
     )
@@ -426,7 +427,7 @@ export function getLifecycle(
 
   return {
     onTimeout,
-    autoResume: opts?.lifecycle?.autoResume,
+    autoResume,
   }
 }
 
@@ -787,7 +788,6 @@ export class SandboxApi {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
     const { onTimeout, autoResume } = getLifecycle(opts)
-    const autoPause = onTimeout === 'pause'
 
     const body: components['schemas']['NewSandbox'] = {
       templateID: template,
@@ -798,10 +798,8 @@ export class SandboxApi {
       secure: opts?.secure ?? true,
       allow_internet_access: opts?.allowInternetAccess ?? true,
       network: opts?.network,
-      autoPause,
-      ...(autoResume !== undefined
-        ? { autoResume: { enabled: autoResume } }
-        : {}),
+      autoPause: onTimeout === 'pause',
+      autoResume: { enabled: autoResume },
     }
 
     if (opts?.volumeMounts) {

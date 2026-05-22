@@ -179,6 +179,7 @@ class SandboxApi(SandboxBase):
         body = NewSandbox(
             template_id=template,
             auto_pause=lifecycle["on_timeout"] == "pause",
+            auto_resume=SandboxAutoResumeConfig(enabled=lifecycle["auto_resume"]),
             metadata=metadata or {},
             timeout=timeout,
             env_vars=env_vars or {},
@@ -188,8 +189,6 @@ class SandboxApi(SandboxBase):
             network=SandboxNetworkConfig(**network) if network else UNSET,
             volume_mounts=volume_mounts if volume_mounts else UNSET,
         )
-        if "auto_resume" in lifecycle:
-            body.auto_resume = SandboxAutoResumeConfig(enabled=lifecycle["auto_resume"])
 
         api_client = get_api_client(config)
         res = post_sandboxes.sync_detailed(
