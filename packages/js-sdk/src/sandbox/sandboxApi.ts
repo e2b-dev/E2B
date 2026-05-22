@@ -426,13 +426,18 @@ export interface SandboxMetrics {
 export function getLifecycle(
   opts?: Pick<SandboxBetaCreateOpts, 'lifecycle' | 'autoPause'>
 ): SandboxLifecycle {
-  const autoResume = opts?.lifecycle?.autoResume ?? false
+  if (opts?.autoPause !== undefined) {
+    console.warn(
+      "`autoPause` is deprecated; use `lifecycle: { onTimeout: 'pause' }` instead."
+    )
+  }
+
   const onTimeout =
     opts?.lifecycle?.onTimeout ?? (opts?.autoPause ? 'pause' : 'kill')
 
-  if (autoResume && onTimeout !== 'pause') {
+  if (opts?.lifecycle?.autoResume === true && onTimeout !== 'pause') {
     throw new InvalidArgumentError(
-      "autoResume can only be true when onTimeout is 'pause' (or autoPause is true)."
+      "autoResume can only be true when the resolved onTimeout is 'pause'."
     )
   }
 

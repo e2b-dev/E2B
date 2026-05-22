@@ -136,8 +136,7 @@ def get_lifecycle(
 
     if auto_resume and on_timeout != "pause":
         raise InvalidArgumentException(
-            "auto_resume can only be True when on_timeout is 'pause' "
-            "(or auto_pause is True)."
+            "auto_resume can only be True when the resolved on_timeout is 'pause'."
         )
 
     resolved = SandboxLifecycle(on_timeout=on_timeout)
