@@ -125,14 +125,6 @@ def get_lifecycle(
     lifecycle: Optional[SandboxLifecycle],
     auto_pause: Optional[bool],
 ) -> SandboxLifecycle:
-    """
-    Resolve the effective sandbox lifecycle from `lifecycle` and the deprecated
-    `auto_pause` flag, and validate that `auto_resume=True` is only used when
-    the effective `on_timeout` is `"pause"`.
-
-    Mirrors the JS SDK `getLifecycle` helper: `auto_resume` is preserved
-    verbatim from the input lifecycle (omitted when the caller did not set it).
-    """
     auto_resume = lifecycle.get("auto_resume") if lifecycle is not None else None
 
     explicit_on_timeout = lifecycle.get("on_timeout") if lifecycle is not None else None
@@ -148,9 +140,10 @@ def get_lifecycle(
             "(or auto_pause is True)."
         )
 
-    resolved: SandboxLifecycle = {"on_timeout": on_timeout}
+    resolved = SandboxLifecycle(on_timeout= on_timeout)
     if auto_resume is not None:
         resolved["auto_resume"] = auto_resume
+
     return resolved
 
 
