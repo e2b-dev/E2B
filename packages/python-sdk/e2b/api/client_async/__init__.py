@@ -36,7 +36,9 @@ class AsyncTransportWithLogger(httpx.AsyncHTTPTransport):
         return self._pool
 
 
-def get_transport(config: ConnectionConfig, http2: bool = True) -> AsyncTransportWithLogger:
+def get_transport(
+    config: ConnectionConfig, http2: bool = True
+) -> AsyncTransportWithLogger:
     loop_id = (id(asyncio.get_running_loop()), http2)
 
     if loop_id in AsyncTransportWithLogger._instances:
