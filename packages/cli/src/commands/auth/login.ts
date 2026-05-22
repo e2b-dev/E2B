@@ -125,6 +125,20 @@ async function signInWithBrowser(): Promise<SignInWithBrowserResponse> {
       res.end()
     })
 
-    return open.default(loginUrl.toString())
+    let manualUrlPrinted = false
+    const printManualUrl = () => {
+      if (manualUrlPrinted) return
+      manualUrlPrinted = true
+      console.log(
+        `\nCould not open a browser automatically. Please open the following URL manually to continue:\n\n${loginUrl.toString()}\n`
+      )
+    }
+
+    open
+      .default(loginUrl.toString())
+      .then((subprocess) => {
+        subprocess.once('error', printManualUrl)
+      })
+      .catch(printManualUrl)
   })
 }
