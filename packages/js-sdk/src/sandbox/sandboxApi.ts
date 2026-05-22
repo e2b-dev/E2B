@@ -425,10 +425,13 @@ function getLifecycle(
   if (opts?.lifecycle === undefined && opts?.autoPause === undefined) {
     return undefined
   }
+  // Spread `opts.lifecycle` so new fields flow through automatically;
+  // `onTimeout` falls back to the legacy `autoPause` flag if missing.
   return {
+    autoResume: false,
+    ...opts?.lifecycle,
     onTimeout:
       opts?.lifecycle?.onTimeout ?? (opts?.autoPause ? 'pause' : 'kill'),
-    autoResume: opts?.lifecycle?.autoResume ?? false,
   }
 }
 
