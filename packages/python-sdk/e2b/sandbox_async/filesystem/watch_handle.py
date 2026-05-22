@@ -33,8 +33,14 @@ class AsyncWatchHandle:
         Stop watching the directory.
         """
         self._wait.cancel()
-        # BUG: In Python 3.8 closing async generator can throw RuntimeError.
-        # await self._events.aclose()
+        try:
+            await self._wait
+        except BaseException:
+            pass
+        try:
+            await self._events.aclose()
+        except Exception:
+            pass
 
     async def _iterate_events(self):
         try:
