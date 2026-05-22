@@ -261,7 +261,7 @@ export class ConnectionConfig {
       return `http://${this.getHost(sandboxId, opts.envdPort, opts.sandboxDomain)}`
     }
 
-    return `https://${this.getHost(sandboxId, opts.envdPort, opts.sandboxDomain ?? this.domain)}`
+    return `https://${this.getHost(sandboxId, opts.envdPort, opts.sandboxDomain)}`
   }
 
   getHost(sandboxId: string, port: number, sandboxDomain: string) {
