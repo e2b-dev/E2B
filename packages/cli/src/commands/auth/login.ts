@@ -1,8 +1,8 @@
 import * as listen from 'async-listen'
 import * as commander from 'commander'
+import { spawn } from 'child_process'
 import * as fs from 'fs'
 import * as http from 'http'
-import * as open from 'open'
 import * as path from 'path'
 import * as e2b from 'e2b'
 
@@ -136,11 +136,33 @@ async function signInWithBrowser(): Promise<SignInWithBrowserResponse> {
       )
     }
 
-    open
-      .default(loginUrl.toString())
-      .then((subprocess) => {
-        subprocess.once('error', printManualUrl)
-      })
-      .catch(printManualUrl)
+    openUrlInBrowser(loginUrl.toString(), printManualUrl)
   })
+}
+
+// Spawn the platform's URL opener ourselves so the 'error' listener is attached
+// synchronously. The `open` package (v9.x) only attaches its listener after a
+// microtask, by which point a `spawn` ENOENT error has already been emitted and
+// crashes the process — see sindresorhus/open#144.
+function openUrlInBrowser(url: string, onError: () => void): void {
+  let command: string
+  let args: string[]
+  if (process.platform === 'darwin') {
+    command = 'open'
+    args = [url]
+  } else if (process.platform === 'win32') {
+    command = 'cmd'
+    args = ['/c', 'start', '""', url.replace(/&/g, '^&')]
+  } else {
+    command = 'xdg-open'
+    args = [url]
+  }
+
+  try {
+    const child = spawn(command, args, { stdio: 'ignore', detached: true })
+    child.once('error', onError)
+    child.unref()
+  } catch {
+    onError()
+  }
 }
