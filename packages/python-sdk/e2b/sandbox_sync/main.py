@@ -571,6 +571,7 @@ class Sandbox(SandboxApi):
         :param template: Sandbox template name or ID
         :param timeout: Timeout for the sandbox in **seconds**, default to 300 seconds. The maximum time a sandbox can be kept alive is 24 hours (86_400 seconds) for Pro users and 1 hour (3_600 seconds) for Hobby users.
         :param auto_pause: Automatically pause the sandbox after the timeout expires. Defaults to `False`.
+            :deprecated: Use `lifecycle={"on_timeout": "pause"}` instead.
         :param metadata: Custom metadata for the sandbox
         :param envs: Custom environment variables for the sandbox
         :param secure: Envd is secured with access token and cannot be used without it, defaults to `True`.
