@@ -116,26 +116,11 @@ class SandboxInfoLifecycle(TypedDict):
     """
 
 
-def get_effective_lifecycle(
-    lifecycle: Optional[SandboxLifecycle], auto_pause: Optional[bool]
-) -> Optional[SandboxLifecycle]:
-    """
-    Merge `lifecycle` with the legacy `auto_pause` flag. Returns `None`
-    when neither is set. Fields from `lifecycle` always win; `auto_pause`
-    only fills in a missing `on_timeout`. Unknown fields on `lifecycle`
-    are passed through, so adding new lifecycle fields does not require
-    updating this helper.
-    """
-    if lifecycle is None and auto_pause is None:
+def get_auto_resume_enabled(lifecycle: Optional[SandboxLifecycle]) -> Optional[bool]:
+    if lifecycle is None:
         return None
 
-    on_timeout = (lifecycle or {}).get("on_timeout") or (
-        "pause" if auto_pause else "kill"
-    )
-    return cast(
-        SandboxLifecycle,
-        {"auto_resume": False, **(lifecycle or {}), "on_timeout": on_timeout},
-    )
+    return lifecycle.get("auto_resume", False)
 
 
 def from_client_network_config(

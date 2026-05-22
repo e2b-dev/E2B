@@ -421,15 +421,9 @@ export interface SandboxMetrics {
 
 function getLifecycle(
   opts?: Pick<SandboxBetaCreateOpts, 'lifecycle' | 'autoPause'>
-): SandboxLifecycle | undefined {
-  if (opts?.lifecycle === undefined && opts?.autoPause === undefined) {
-    return undefined
-  }
-  // Spread `opts.lifecycle` so new fields flow through automatically;
-  // `onTimeout` falls back to the legacy `autoPause` flag if missing.
+): SandboxLifecycle {
   return {
-    autoResume: false,
-    ...opts?.lifecycle,
+    autoResume: opts?.lifecycle?.autoResume ?? false,
     onTimeout:
       opts?.lifecycle?.onTimeout ?? (opts?.autoPause ? 'pause' : 'kill'),
   }
@@ -792,9 +786,8 @@ export class SandboxApi {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
     const lifecycle = getLifecycle(opts)
-    const autoPause = lifecycle ? lifecycle.onTimeout === 'pause' : undefined
-    const autoResumeEnabled =
-      lifecycle?.onTimeout === 'pause' ? lifecycle.autoResume : undefined
+    const autoPause = lifecycle.onTimeout === 'pause'
+    const autoResumeEnabled = lifecycle.autoResume
 
     const body: components['schemas']['NewSandbox'] = {
       templateID: template,

@@ -38,7 +38,7 @@ from e2b.exceptions import (
 from e2b.sandbox.main import SandboxBase
 from e2b.sandbox.sandbox_api import (
     SandboxLifecycle,
-    get_effective_lifecycle,
+    get_auto_resume_enabled,
     McpServer,
     SandboxInfo,
     SandboxMetrics,
@@ -177,17 +177,11 @@ class SandboxApi(SandboxBase):
     ) -> SandboxCreateResponse:
         config = ConnectionConfig(**opts)
 
-        effective_lifecycle = get_effective_lifecycle(lifecycle, auto_pause)
+        on_timeout = lifecycle.get("on_timeout") if lifecycle is not None else None
         should_auto_pause = (
-            effective_lifecycle["on_timeout"] == "pause"
-            if effective_lifecycle is not None
-            else None
+            on_timeout == "pause" if on_timeout is not None else auto_pause
         )
-        auto_resume_enabled = (
-            effective_lifecycle.get("auto_resume", False)
-            if effective_lifecycle is not None and should_auto_pause
-            else None
-        )
+        auto_resume_enabled = get_auto_resume_enabled(lifecycle)
         body = NewSandbox(
             template_id=template,
             auto_pause=(should_auto_pause if should_auto_pause is not None else UNSET),
