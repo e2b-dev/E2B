@@ -37,7 +37,6 @@ from e2b.exceptions import (
 from e2b.sandbox.main import SandboxBase
 from e2b.sandbox.sandbox_api import (
     SandboxLifecycle,
-    get_auto_resume_enabled,
     McpServer,
     SandboxInfo,
     SandboxMetrics,
@@ -180,7 +179,11 @@ class SandboxApi(SandboxBase):
         should_auto_pause = (
             on_timeout == "pause" if on_timeout is not None else auto_pause
         )
-        auto_resume_enabled = get_auto_resume_enabled(lifecycle)
+        auto_resume_enabled = (
+            (lifecycle.get("auto_resume", False) if lifecycle is not None else False)
+            if should_auto_pause
+            else None
+        )
         body = NewSandbox(
             template_id=template,
             auto_pause=(should_auto_pause if should_auto_pause is not None else UNSET),
