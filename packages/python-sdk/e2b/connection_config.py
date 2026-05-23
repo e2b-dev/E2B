@@ -1,4 +1,5 @@
 import os
+import re
 
 from typing import Optional, Dict, TypedDict
 
@@ -6,6 +7,13 @@ from httpx._types import ProxyTypes
 from typing_extensions import Unpack
 
 from e2b.api.metadata import package_version
+from e2b.exceptions import AuthenticationException
+
+E2B_API_KEY_PREFIX = "e2b_"
+_UUID_REGEX = re.compile(
+    r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+    re.IGNORECASE,
+)
 
 REQUEST_TIMEOUT: float = 60.0  # 60 seconds
 
@@ -93,6 +101,20 @@ class ConnectionConfig:
         self.debug = debug or ConnectionConfig._debug()
         self.api_key = api_key or ConnectionConfig._api_key()
         self.access_token = access_token or ConnectionConfig._access_token()
+
+        if self.api_key:
+            if _UUID_REGEX.match(self.api_key):
+                raise AuthenticationException(
+                    "The value you provided as the API key appears to be a key ID (UUID), not the key itself. "
+                    f"The actual API key starts with '{E2B_API_KEY_PREFIX}'. "
+                    "Find your API key at https://e2b.dev/dashboard?tab=keys"
+                )
+            if not self.api_key.startswith(E2B_API_KEY_PREFIX):
+                raise AuthenticationException(
+                    f"Invalid API key format — the key must start with '{E2B_API_KEY_PREFIX}'. "
+                    "Find your API key at https://e2b.dev/dashboard?tab=keys"
+                )
+
         self.headers = headers or {}
         self.headers["User-Agent"] = f"e2b-python-sdk/{package_version}"
         self.__extra_sandbox_headers = extra_sandbox_headers or {}

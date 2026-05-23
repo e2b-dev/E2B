@@ -1,5 +1,10 @@
 import { Logger } from './logs'
 import { getEnvVar, version } from './api/metadata'
+import { AuthenticationError } from './errors'
+
+const E2B_API_KEY_PREFIX = 'e2b_'
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 export const REQUEST_TIMEOUT_MS = 60_000 // 60 seconds
 export const DEFAULT_SANDBOX_TIMEOUT_MS = 300_000 // 300 seconds
@@ -191,6 +196,22 @@ export class ConnectionConfig {
     this.logger = opts?.logger
     this.headers = opts?.headers || {}
     this.headers['User-Agent'] = `e2b-js-sdk/${version}`
+
+    if (this.apiKey) {
+      if (UUID_REGEX.test(this.apiKey)) {
+        throw new AuthenticationError(
+          'The value you provided as the API key appears to be a key ID (UUID), not the key itself. ' +
+            `The actual API key starts with '${E2B_API_KEY_PREFIX}'. ` +
+            'Find your API key at https://e2b.dev/dashboard?tab=keys'
+        )
+      }
+      if (!this.apiKey.startsWith(E2B_API_KEY_PREFIX)) {
+        throw new AuthenticationError(
+          `Invalid API key format — the key must start with '${E2B_API_KEY_PREFIX}'. ` +
+            'Find your API key at https://e2b.dev/dashboard?tab=keys'
+        )
+      }
+    }
 
     this.apiUrl =
       opts?.apiUrl ||
