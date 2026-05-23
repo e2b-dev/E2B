@@ -102,18 +102,12 @@ class ConnectionConfig:
         self.api_key = api_key or ConnectionConfig._api_key()
         self.access_token = access_token or ConnectionConfig._access_token()
 
-        if self.api_key:
-            if _UUID_REGEX.match(self.api_key):
-                raise AuthenticationException(
-                    "The value you provided as the API key appears to be a key ID (UUID), not the key itself. "
-                    f"The actual API key starts with '{E2B_API_KEY_PREFIX}'. "
-                    "Find your API key at https://e2b.dev/dashboard?tab=keys"
-                )
-            if not self.api_key.startswith(E2B_API_KEY_PREFIX):
-                raise AuthenticationException(
-                    f"Invalid API key format — the key must start with '{E2B_API_KEY_PREFIX}'. "
-                    "Find your API key at https://e2b.dev/dashboard?tab=keys"
-                )
+        if self.api_key and _UUID_REGEX.match(self.api_key):
+            raise AuthenticationException(
+                "The value you provided as the API key appears to be a key ID (UUID), not the key itself. "
+                f"The actual API key starts with '{E2B_API_KEY_PREFIX}'. "
+                "Find your API key at https://e2b.dev/dashboard?tab=keys"
+            )
 
         self.headers = headers or {}
         self.headers["User-Agent"] = f"e2b-python-sdk/{package_version}"

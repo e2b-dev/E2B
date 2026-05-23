@@ -197,20 +197,12 @@ export class ConnectionConfig {
     this.headers = opts?.headers || {}
     this.headers['User-Agent'] = `e2b-js-sdk/${version}`
 
-    if (this.apiKey) {
-      if (UUID_REGEX.test(this.apiKey)) {
-        throw new AuthenticationError(
-          'The value you provided as the API key appears to be a key ID (UUID), not the key itself. ' +
-            `The actual API key starts with '${E2B_API_KEY_PREFIX}'. ` +
-            'Find your API key at https://e2b.dev/dashboard?tab=keys'
-        )
-      }
-      if (!this.apiKey.startsWith(E2B_API_KEY_PREFIX)) {
-        throw new AuthenticationError(
-          `Invalid API key format — the key must start with '${E2B_API_KEY_PREFIX}'. ` +
-            'Find your API key at https://e2b.dev/dashboard?tab=keys'
-        )
-      }
+    if (this.apiKey && UUID_REGEX.test(this.apiKey)) {
+      throw new AuthenticationError(
+        'The value you provided as the API key appears to be a key ID (UUID), not the key itself. ' +
+          `The actual API key starts with '${E2B_API_KEY_PREFIX}'. ` +
+          'Find your API key at https://e2b.dev/dashboard?tab=keys'
+      )
     }
 
     this.apiUrl =
