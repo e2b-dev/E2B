@@ -134,15 +134,15 @@ export function setupRequestController(
 
   let reqTimeout: ReturnType<typeof setTimeout> | undefined = requestTimeoutMs
     ? setTimeout(
-        () =>
-          controller.abort(
-            new DOMException(
-              `Request handshake timed out after ${requestTimeoutMs}ms`,
-              'TimeoutError'
-            )
-          ),
-        requestTimeoutMs
-      )
+      () =>
+        controller.abort(
+          new DOMException(
+            `Request handshake timed out after ${requestTimeoutMs}ms`,
+            'TimeoutError'
+          )
+        ),
+      requestTimeoutMs
+    )
     : undefined
 
   const clearStartTimeout = () => {
@@ -242,6 +242,8 @@ export class ConnectionConfig {
     }
 
     const sandboxDomain = opts.sandboxDomain ?? this.domain
+    // The stable sandbox host is only guaranteed for E2B prod; the various other hosted domains may not serve sandbox.<domain> yet and will follow up once those are updated.
+    // Issue with cors from browser so holding off on using in browser as well.
     if (sandboxDomain === 'e2b.app' && runtime !== 'browser') {
       return 'https://sandbox.e2b.app'
     }
