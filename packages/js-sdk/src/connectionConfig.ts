@@ -1,5 +1,9 @@
 import { Logger } from './logs'
 import { getEnvVar, version } from './api/metadata'
+import { runtime } from './utils'
+
+// Remove once all deployments support sandbox subdomains
+const supportedDomains = ['e2b.app', 'e2b.dev', 'e2b.pro', 'e2b-staging.dev']
 
 export const REQUEST_TIMEOUT_MS = 60_000 // 60 seconds
 export const DEFAULT_SANDBOX_TIMEOUT_MS = 300_000 // 300 seconds
@@ -38,7 +42,7 @@ export interface ConnectionOpts {
   /**
    * Sandbox Url to use for the API.
    * @internal
-   * @default E2B_SANDBOX_URL // environment variable or `https://${port}-${sandboxID}.${domain}`
+   * @default E2B_SANDBOX_URL // environment variable, `https://sandbox.${domain}`
    */
   sandboxUrl?: string
   /**
@@ -236,7 +240,33 @@ export class ConnectionConfig {
       return this.sandboxUrl
     }
 
-    return `${this.debug ? 'http' : 'https'}://${this.getHost(sandboxId, opts.envdPort, opts.sandboxDomain)}`
+    if (this.debug) {
+      return `http://${this.getHost(sandboxId, opts.envdPort, opts.sandboxDomain)}`
+    }
+
+    const sandboxDomain = opts.sandboxDomain ?? this.domain
+    // The stable sandbox host is only guaranteed for E2B prod; the various other hosted domains may not serve sandbox.<domain> yet and will follow up once those are updated.
+    // Issue with cors from browser so holding off on using in browser as well.
+    if (runtime !== 'browser' && supportedDomains.includes(sandboxDomain)) {
+      return `https://sandbox.${sandboxDomain}`
+    }
+
+    return `https://${this.getHost(sandboxId, opts.envdPort, sandboxDomain)}`
+  }
+
+  getSandboxDirectUrl(
+    sandboxId: string,
+    opts: { sandboxDomain: string; envdPort: number }
+  ) {
+    if (this.sandboxUrl) {
+      return this.sandboxUrl
+    }
+
+    if (this.debug) {
+      return `http://${this.getHost(sandboxId, opts.envdPort, opts.sandboxDomain)}`
+    }
+
+    return `https://${this.getHost(sandboxId, opts.envdPort, opts.sandboxDomain)}`
   }
 
   getHost(sandboxId: string, port: number, sandboxDomain: string) {
