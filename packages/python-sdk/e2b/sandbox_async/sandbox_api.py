@@ -45,6 +45,7 @@ from e2b.sandbox.sandbox_api import (
     SandboxNetworkOpts,
     SandboxQuery,
     SnapshotInfo,
+    build_network_config,
 )
 from e2b.sandbox_async.paginator import AsyncSandboxPaginator
 
@@ -184,6 +185,7 @@ class SandboxApi(SandboxBase):
                 "auto_resume can only be True when the resolved on_timeout is 'pause'."
             )
 
+        network_body = build_network_config(network)
         body = NewSandbox(
             template_id=template,
             auto_pause=on_timeout == "pause",
@@ -194,7 +196,7 @@ class SandboxApi(SandboxBase):
             mcp=cast(Any, mcp) or UNSET,
             secure=secure,
             allow_internet_access=allow_internet_access,
-            network=SandboxNetworkConfig(**network) if network else UNSET,
+            network=SandboxNetworkConfig(**network_body) if network_body else UNSET,
             volume_mounts=volume_mounts if volume_mounts else UNSET,
         )
 
