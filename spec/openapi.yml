@@ -284,10 +284,7 @@ components:
           description: Specify host mask which will be used for all sandbox requests
         rules:
           type: object
-          description: >
-            Per-domain transform rules applied to matching egress HTTP/HTTPS requests.
-            Keys are domains (e.g. "api.example.com", "example.com").
-            A domain listed here is not automatically allowed - use allowOut to permit the traffic.
+          description: Per-domain transform rules applied to matching egress HTTP/HTTPS requests. Keys are domains (e.g. "api.example.com", "example.com"). A domain listed here is not automatically allowed - use allowOut to permit the traffic.
           additionalProperties:
             type: array
             items:
@@ -306,10 +303,7 @@ components:
       properties:
         headers:
           type: object
-          description: >
-            HTTP headers to inject or override in matching requests.
-            An existing header with the same name is replaced. Values are plain strings;
-            secret resolution happens client-side before sending to the API.
+          description: HTTP headers to inject or override in matching requests. An existing header with the same name is replaced. Values are plain strings; secret resolution happens client-side before sending to the API.
           additionalProperties:
             type: string
 
@@ -325,7 +319,7 @@ components:
         - enabled
       properties:
         enabled:
-          $ref: '#/components/schemas/SandboxAutoResumeEnabled'
+          $ref: "#/components/schemas/SandboxAutoResumeEnabled"
 
     SandboxOnTimeout:
       type: string
@@ -345,7 +339,7 @@ components:
           type: boolean
           description: Whether the sandbox can auto-resume.
         onTimeout:
-          $ref: '#/components/schemas/SandboxOnTimeout'
+          $ref: "#/components/schemas/SandboxOnTimeout"
 
     SandboxLog:
       description: Log entry with timestamp and line
