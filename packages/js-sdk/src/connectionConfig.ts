@@ -134,15 +134,15 @@ export function setupRequestController(
 
   let reqTimeout: ReturnType<typeof setTimeout> | undefined = requestTimeoutMs
     ? setTimeout(
-      () =>
-        controller.abort(
-          new DOMException(
-            `Request handshake timed out after ${requestTimeoutMs}ms`,
-            'TimeoutError'
-          )
-        ),
-      requestTimeoutMs
-    )
+        () =>
+          controller.abort(
+            new DOMException(
+              `Request handshake timed out after ${requestTimeoutMs}ms`,
+              'TimeoutError'
+            )
+          ),
+        requestTimeoutMs
+      )
     : undefined
 
   const clearStartTimeout = () => {
