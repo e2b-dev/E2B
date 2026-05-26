@@ -492,7 +492,7 @@ export class Sandbox extends SandboxApi {
    */
   async updateNetwork(
     network: SandboxNetworkUpdate,
-    opts?: Pick<SandboxOpts, 'requestTimeoutMs'>
+    opts?: Pick<SandboxOpts, 'requestTimeoutMs' | 'signal'>
   ) {
     await SandboxApi.updateNetwork(
       this.sandboxId,
