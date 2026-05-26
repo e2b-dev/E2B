@@ -1,4 +1,5 @@
 import { runtime } from '../utils'
+import { getEnvVar } from '../api/metadata'
 import {
   loadUndici,
   toUndiciRequestInput,
@@ -14,10 +15,12 @@ type EnvdFetchOptions = {
 let envdFetch: typeof fetch | undefined
 let envdRpcFetch: typeof fetch | undefined
 let hasWarnedUndiciFallback = false
+const DEFAULT_ENVD_CONNECTION_LIMIT = 10
+const DEFAULT_ENVD_RPC_CONNECTION_LIMIT = 200
 
 export function createEnvdFetchForRuntime(
   currentRuntime = runtime,
-  options: EnvdFetchOptions = { connectionLimit: 1 }
+  options: EnvdFetchOptions = {}
 ): typeof fetch {
   if (currentRuntime !== 'node') {
     return fetch
@@ -47,9 +50,7 @@ async function buildEnvdFetcher(
   const { Agent, fetch: undiciFetch } = undici
   const dispatcherOptions: { allowH2: true; connections?: number } = {
     allowH2: true,
-  }
-  if (options.connectionLimit !== undefined) {
-    dispatcherOptions.connections = options.connectionLimit
+    connections: options.connectionLimit ?? DEFAULT_ENVD_CONNECTION_LIMIT,
   }
 
   const dispatcher = new Agent(dispatcherOptions)
@@ -96,9 +97,23 @@ export function createEnvdRpcFetch(): typeof fetch {
     return envdRpcFetch
   }
 
-  // RPC streams can stay open while follow-up RPCs run against the same
-  // sandbox, so they cannot share the REST client's single-connection cap.
-  envdRpcFetch = createEnvdFetchForRuntime(runtime, {})
+  envdRpcFetch = createEnvdFetchForRuntime(runtime, {
+    connectionLimit: getEnvdRpcConnectionLimit(),
+  })
 
   return envdRpcFetch
+}
+
+export function getEnvdRpcConnectionLimit() {
+  const raw = getEnvVar('E2B_ENVD_RPC_CONNECTIONS')
+  if (!raw) {
+    return DEFAULT_ENVD_RPC_CONNECTION_LIMIT
+  }
+
+  const parsed = Number.parseInt(raw, 10)
+  if (!Number.isFinite(parsed) || parsed < 1) {
+    return DEFAULT_ENVD_RPC_CONNECTION_LIMIT
+  }
+
+  return parsed
 }
