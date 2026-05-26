@@ -217,7 +217,6 @@ class Sandbox(SandboxApi):
 
         sandbox = cls._create(
             template=template,
-            auto_pause=False,
             timeout=timeout,
             metadata=metadata,
             envs=envs,
@@ -603,86 +602,6 @@ class Sandbox(SandboxApi):
             **self.connection_config.get_api_params(**opts),
         )
 
-    @classmethod
-    def beta_create(
-        cls,
-        template: Optional[str] = None,
-        timeout: Optional[int] = None,
-        auto_pause: bool = False,
-        metadata: Optional[Dict[str, str]] = None,
-        envs: Optional[Dict[str, str]] = None,
-        secure: bool = True,
-        allow_internet_access: bool = True,
-        mcp: Optional[McpServer] = None,
-        volume_mounts: Optional[SandboxVolumeMount] = None,
-        **opts: Unpack[ApiParams],
-    ) -> Self:
-        """
-        [BETA] This feature is in beta and may change in the future.
-
-        Create a new sandbox.
-
-        By default, the sandbox is created from the default `base` sandbox template.
-
-        :param template: Sandbox template name or ID
-        :param timeout: Timeout for the sandbox in **seconds**, default to 300 seconds. The maximum time a sandbox can be kept alive is 24 hours (86_400 seconds) for Pro users and 1 hour (3_600 seconds) for Hobby users.
-        :param auto_pause: Automatically pause the sandbox after the timeout expires. Defaults to `False`.
-        :param metadata: Custom metadata for the sandbox
-        :param envs: Custom environment variables for the sandbox
-        :param secure: Envd is secured with access token and cannot be used without it, defaults to `True`.
-        :param allow_internet_access: Allow sandbox to access the internet, defaults to `True`.
-        :param mcp: MCP server to enable in the sandbox
-        :param volume_mounts: Dictionary mapping mount paths to Volume instances or volume names
-
-        :return: A Sandbox instance for the new sandbox
-
-        Use this method instead of using the constructor to create a new sandbox.
-        """
-        if not template and mcp is not None:
-            template = cls.default_mcp_template
-        elif not template:
-            template = cls.default_template
-
-        transformed_mounts = None
-        if volume_mounts:
-            transformed_mounts = [
-                SandboxVolumeMountAPI(
-                    name=vol.name if isinstance(vol, Volume) else vol,
-                    path=path,
-                )
-                for path, vol in volume_mounts.items()
-            ]
-
-        sandbox = cls._create(
-            template=template,
-            auto_pause=auto_pause,
-            timeout=timeout,
-            metadata=metadata,
-            envs=envs,
-            secure=secure,
-            allow_internet_access=allow_internet_access,
-            mcp=mcp,
-            lifecycle=(
-                {"on_timeout": "pause", "auto_resume": False} if auto_pause else None
-            ),
-            volume_mounts=transformed_mounts,
-            **opts,
-        )
-
-        if mcp is not None:
-            token = str(uuid.uuid4())
-            sandbox._mcp_token = token
-
-            res = sandbox.commands.run(
-                f"mcp-gateway --config {shlex.quote(json.dumps(mcp))}",
-                user="root",
-                envs={"GATEWAY_ACCESS_TOKEN": token},
-            )
-            if res.exit_code != 0:
-                raise Exception(f"Failed to start MCP gateway: {res.stderr}")
-
-        return sandbox
-
     @overload
     def pause(
         self,
@@ -748,6 +667,7 @@ class Sandbox(SandboxApi):
     @overload
     def create_snapshot(
         self,
+        name: Optional[str] = None,
         **opts: Unpack[ApiParams],
     ) -> SnapshotInfo:
         """
@@ -759,7 +679,9 @@ class Sandbox(SandboxApi):
 
         Use the returned `snapshot_id` with `Sandbox.create(snapshot_id)` to create a new sandbox from the snapshot.
 
-        :return: Snapshot information including the snapshot ID
+        :param name: Optional name for the snapshot template. If a snapshot template with this name already exists, a new build will be assigned to the existing template instead of creating a new one.
+
+        :return: Snapshot information including the snapshot ID and names
         """
         ...
 
@@ -767,6 +689,7 @@ class Sandbox(SandboxApi):
     @staticmethod
     def create_snapshot(
         sandbox_id: str,
+        name: Optional[str] = None,
         **opts: Unpack[ApiParams],
     ) -> SnapshotInfo:
         """
@@ -775,14 +698,16 @@ class Sandbox(SandboxApi):
         The sandbox will be paused while the snapshot is being created.
 
         :param sandbox_id: Sandbox ID
+        :param name: Optional name for the snapshot template. If a snapshot template with this name already exists, a new build will be assigned to the existing template instead of creating a new one.
 
-        :return: Snapshot information including the snapshot ID
+        :return: Snapshot information including the snapshot ID and names
         """
         ...
 
     @class_method_variant("_cls_create_snapshot")
     def create_snapshot(
         self,
+        name: Optional[str] = None,
         **opts: Unpack[ApiParams],
     ) -> SnapshotInfo:
         """
@@ -794,10 +719,13 @@ class Sandbox(SandboxApi):
 
         Use the returned `snapshot_id` with `Sandbox.create(snapshot_id)` to create a new sandbox from the snapshot.
 
-        :return: Snapshot information including the snapshot ID
+        :param name: Optional name for the snapshot template. If a snapshot template with this name already exists, a new build will be assigned to the existing template instead of creating a new one.
+
+        :return: Snapshot information including the snapshot ID and names
         """
         return SandboxApi._cls_create_snapshot(
             sandbox_id=self.sandbox_id,
+            name=name,
             **self.connection_config.get_api_params(**opts),
         )
 
@@ -936,7 +864,6 @@ class Sandbox(SandboxApi):
         cls,
         template: Optional[str],
         timeout: Optional[int],
-        auto_pause: Optional[bool],
         metadata: Optional[Dict[str, str]],
         envs: Optional[Dict[str, str]],
         secure: bool,
@@ -960,7 +887,6 @@ class Sandbox(SandboxApi):
             response = SandboxApi._create_sandbox(
                 template=template or cls.default_template,
                 timeout=timeout or cls.default_sandbox_timeout,
-                auto_pause=auto_pause,
                 metadata=metadata,
                 env_vars=envs,
                 secure=secure,

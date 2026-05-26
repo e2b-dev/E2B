@@ -15,19 +15,34 @@ from typing import (
 
 from typing_extensions import NotRequired, Unpack
 
-from e2b import ConnectionConfig
 from e2b.api.client.models import (
     ListedSandbox,
     SandboxDetail,
-    SandboxLifecycle as ClientSandboxLifecycle,
-    SandboxNetworkConfig,
-    SandboxNetworkConfigRules,
-    SandboxNetworkRule as ClientSandboxNetworkRule,
-    SandboxNetworkTransform as ClientSandboxNetworkTransform,
-    SandboxNetworkTransformHeaders as ClientSandboxNetworkTransformHeaders,
-    SandboxNetworkUpdateConfig,
-    SandboxNetworkUpdateConfigRules,
     SandboxState,
+)
+from e2b.api.client.models import (
+    SandboxLifecycle as ClientSandboxLifecycle,
+)
+from e2b.api.client.models import (
+    SandboxNetworkConfig as ClientSandboxNetworkConfig,
+)
+from e2b.api.client.models import (
+    SandboxNetworkConfigRules,
+)
+from e2b.api.client.models import (
+    SandboxNetworkRule as ClientSandboxNetworkRule,
+)
+from e2b.api.client.models import (
+    SandboxNetworkTransform as ClientSandboxNetworkTransform,
+)
+from e2b.api.client.models import (
+    SandboxNetworkTransformHeaders as ClientSandboxNetworkTransformHeaders,
+)
+from e2b.api.client.models import (
+    SandboxNetworkUpdateConfig,
+)
+from e2b.api.client.models import (
+    SandboxNetworkUpdateConfigRules,
 )
 from e2b.api.client.types import Unset
 from e2b.connection_config import ApiParams
@@ -360,15 +375,8 @@ def build_network_update_body(
     return body
 
 
-def get_auto_resume_enabled(lifecycle: Optional[SandboxLifecycle]) -> Optional[bool]:
-    if lifecycle is None or lifecycle.get("on_timeout") != "pause":
-        return None
-
-    return lifecycle.get("auto_resume", False)
-
-
 def from_client_network_config(
-    network: Union[Unset, SandboxNetworkConfig],
+    network: Union[Unset, ClientSandboxNetworkConfig],
 ) -> Optional[SandboxNetworkInfo]:
     if isinstance(network, Unset):
         return None
@@ -543,6 +551,8 @@ class SnapshotInfo:
 
     snapshot_id: str
     """Snapshot identifier — template ID with tag, or namespaced name with tag (e.g. my-snapshot:latest). Can be used with Sandbox.create() to create a new sandbox from this snapshot."""
+    names: List[str] = field(default_factory=list)
+    """Full names of the snapshot template including team namespace and tag (e.g. team-slug/my-snapshot:v2)."""
 
 
 class PaginatorBase:
@@ -552,7 +562,7 @@ class PaginatorBase:
         next_token: Optional[str] = None,
         **opts: Unpack[ApiParams],
     ):
-        self._config = ConnectionConfig(**opts)
+        self._opts: ApiParams = opts
         self.limit = limit
         self._has_next = True
         self._next_token = next_token

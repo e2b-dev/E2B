@@ -1,5 +1,9 @@
 import { Logger } from './logs'
 import { getEnvVar, version } from './api/metadata'
+import { runtime } from './utils'
+
+// Remove once all deployments support sandbox subdomains
+const supportedDomains = ['e2b.app', 'e2b.dev', 'e2b.pro', 'e2b-staging.dev']
 
 export const REQUEST_TIMEOUT_MS = 60_000 // 60 seconds
 export const DEFAULT_SANDBOX_TIMEOUT_MS = 300_000 // 300 seconds
@@ -38,7 +42,7 @@ export interface ConnectionOpts {
   /**
    * Sandbox Url to use for the API.
    * @internal
-   * @default E2B_SANDBOX_URL // environment variable or `https://${port}-${sandboxID}.${domain}`
+   * @default E2B_SANDBOX_URL // environment variable, `https://sandbox.${domain}`
    */
   sandboxUrl?: string
   /**
@@ -62,6 +66,105 @@ export interface ConnectionOpts {
    * Additional headers to send with the request.
    */
   headers?: Record<string, string>
+
+  /**
+   * An optional `AbortSignal` that can be used to cancel the in-flight request.
+   * When the signal is aborted, the underlying `fetch` is aborted and the
+   * returned promise rejects with an `AbortError`.
+   */
+  signal?: AbortSignal
+}
+
+/**
+ * Build an `AbortSignal` that combines an optional request-timeout signal
+ * (via `AbortSignal.timeout`) with an optional user-provided signal.
+ *
+ * Returns `undefined` when neither input would produce a signal.
+ *
+ * @internal
+ */
+export function buildRequestSignal(
+  requestTimeoutMs: number | undefined,
+  userSignal: AbortSignal | undefined
+): AbortSignal | undefined {
+  const timeoutSignal = requestTimeoutMs
+    ? AbortSignal.timeout(requestTimeoutMs)
+    : undefined
+
+  if (timeoutSignal && userSignal) {
+    return AbortSignal.any([timeoutSignal, userSignal])
+  }
+
+  return timeoutSignal ?? userSignal
+}
+
+/**
+ * Set up an internal `AbortController` for a streaming request.
+ *
+ * Until `clearStartTimeout` is called, the controller aborts when either
+ *  - the optional user signal aborts, or
+ *  - the optional request timeout elapses (used to bound the initial
+ *    handshake; long-lived streams should call `clearStartTimeout` once
+ *    the handshake succeeds).
+ *
+ * The user-signal listener stays attached for the full stream lifetime
+ * so the caller can cancel a long-running stream by aborting the signal.
+ *
+ * `cleanup` is idempotent and detaches the listener, clears the handshake
+ * timer (if still pending), and aborts the controller. Call it when the
+ * stream finishes or when startup fails.
+ *
+ * @internal
+ */
+export function setupRequestController(
+  requestTimeoutMs: number | undefined,
+  userSignal: AbortSignal | undefined
+): {
+  controller: AbortController
+  clearStartTimeout: () => void
+  cleanup: () => void
+} {
+  const controller = new AbortController()
+
+  const onUserAbort = () => controller.abort(userSignal?.reason)
+  if (userSignal) {
+    if (userSignal.aborted) {
+      controller.abort(userSignal.reason)
+    } else {
+      userSignal.addEventListener('abort', onUserAbort, { once: true })
+    }
+  }
+
+  let reqTimeout: ReturnType<typeof setTimeout> | undefined = requestTimeoutMs
+    ? setTimeout(
+        () =>
+          controller.abort(
+            new DOMException(
+              `Request handshake timed out after ${requestTimeoutMs}ms`,
+              'TimeoutError'
+            )
+          ),
+        requestTimeoutMs
+      )
+    : undefined
+
+  const clearStartTimeout = () => {
+    if (reqTimeout) {
+      clearTimeout(reqTimeout)
+      reqTimeout = undefined
+    }
+  }
+
+  let cleaned = false
+  const cleanup = () => {
+    if (cleaned) return
+    cleaned = true
+    userSignal?.removeEventListener('abort', onUserAbort)
+    clearStartTimeout()
+    controller.abort()
+  }
+
+  return { controller, clearStartTimeout, cleanup }
 }
 
 /**
@@ -125,10 +228,8 @@ export class ConnectionConfig {
     return getEnvVar('E2B_ACCESS_TOKEN')
   }
 
-  getSignal(requestTimeoutMs?: number) {
-    const timeout = requestTimeoutMs ?? this.requestTimeoutMs
-
-    return timeout ? AbortSignal.timeout(timeout) : undefined
+  getSignal(requestTimeoutMs?: number, signal?: AbortSignal) {
+    return buildRequestSignal(requestTimeoutMs ?? this.requestTimeoutMs, signal)
   }
 
   getSandboxUrl(
@@ -139,7 +240,33 @@ export class ConnectionConfig {
       return this.sandboxUrl
     }
 
-    return `${this.debug ? 'http' : 'https'}://${this.getHost(sandboxId, opts.envdPort, opts.sandboxDomain)}`
+    if (this.debug) {
+      return `http://${this.getHost(sandboxId, opts.envdPort, opts.sandboxDomain)}`
+    }
+
+    const sandboxDomain = opts.sandboxDomain ?? this.domain
+    // The stable sandbox host is only guaranteed for E2B prod; the various other hosted domains may not serve sandbox.<domain> yet and will follow up once those are updated.
+    // Issue with cors from browser so holding off on using in browser as well.
+    if (runtime !== 'browser' && supportedDomains.includes(sandboxDomain)) {
+      return `https://sandbox.${sandboxDomain}`
+    }
+
+    return `https://${this.getHost(sandboxId, opts.envdPort, sandboxDomain)}`
+  }
+
+  getSandboxDirectUrl(
+    sandboxId: string,
+    opts: { sandboxDomain: string; envdPort: number }
+  ) {
+    if (this.sandboxUrl) {
+      return this.sandboxUrl
+    }
+
+    if (this.debug) {
+      return `http://${this.getHost(sandboxId, opts.envdPort, opts.sandboxDomain)}`
+    }
+
+    return `https://${this.getHost(sandboxId, opts.envdPort, opts.sandboxDomain)}`
   }
 
   getHost(sandboxId: string, port: number, sandboxDomain: string) {

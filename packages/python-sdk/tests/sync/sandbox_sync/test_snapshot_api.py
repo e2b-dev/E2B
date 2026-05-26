@@ -95,6 +95,21 @@ def test_list_snapshots_for_sandbox(sandbox: Sandbox):
 
 
 @pytest.mark.skip_debug()
+def test_create_named_snapshot(sandbox: Sandbox, sandbox_test_id: str):
+    snapshot_name = f"snap-{sandbox_test_id}"
+
+    snapshot = sandbox.create_snapshot(name=snapshot_name)
+
+    try:
+        assert snapshot.snapshot_id
+        assert isinstance(snapshot.names, list)
+        assert len(snapshot.names) > 0
+        assert any(snapshot_name in n for n in snapshot.names)
+    finally:
+        Sandbox.delete_snapshot(snapshot.snapshot_id)
+
+
+@pytest.mark.skip_debug()
 def test_delete_snapshot(sandbox: Sandbox):
     snapshot = sandbox.create_snapshot()
 

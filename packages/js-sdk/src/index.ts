@@ -52,7 +52,6 @@ export type {
   SandboxOpts,
   SandboxApiOpts,
   SandboxConnectOpts,
-  SandboxBetaCreateOpts,
   SandboxMetricsOpts,
   SandboxState,
   SandboxListOpts,
@@ -71,6 +70,7 @@ export type {
   SnapshotInfo,
   SnapshotListOpts,
   SnapshotPaginator,
+  CreateSnapshotOpts,
 } from './sandbox/sandboxApi'
 
 export type { McpServer } from './sandbox/mcp'

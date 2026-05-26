@@ -28,10 +28,7 @@ class Node:
         sandbox_count (int): Number of sandboxes running on the node
         sandbox_starting_count (int): Number of starting Sandboxes
         service_instance_id (str): Service instance identifier of the node
-        status (NodeStatus): Status of the node.
-            - draining: the node is bound to be shut down. It will not accept new sandboxes and will stop once all existing
-            sandboxes are done.
-            - standby: the node is not actively used, but it can return to ready and continue serving traffic.
+        status (NodeStatus): Status of the node
         version (str): Version of the orchestrator
     """
 
