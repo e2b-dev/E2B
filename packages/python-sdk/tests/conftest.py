@@ -65,43 +65,33 @@ def sandbox(sandbox_factory):
     return sandbox_factory()
 
 
-# override the event loop so it never closes
-# this helps us with the global-scoped async http transport
-@pytest.fixture(scope="session")
-def event_loop():
-    try:
-        loop = asyncio.get_running_loop()
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-    yield loop
-    loop.close()
+@pytest_asyncio.fixture
+async def async_sandbox_factory(request, template, sandbox_test_id):
+    sandboxes: list = []
 
-
-@pytest.fixture
-def async_sandbox_factory(request, template, sandbox_test_id, event_loop):
     async def factory(*, template_name: str = template, **kwargs):
         metadata = kwargs.setdefault("metadata", dict())
         metadata.setdefault("sandbox_test_id", sandbox_test_id)
 
         sandbox = await AsyncSandbox.create(template_name, **kwargs)
-
-        def finalizer():
-            if getattr(request.node, "_test_failed", False):
-                print(f"\n[TEST FAILED] Sandbox ID: {sandbox.sandbox_id}")
-
-            async def _kill():
-                await sandbox.kill()
-
-            event_loop.run_until_complete(_kill())
-
-        request.addfinalizer(finalizer)
-
+        sandboxes.append(sandbox)
         return sandbox
 
-    return factory
+    yield factory
+
+    if getattr(request.node, "_test_failed", False):
+        for sandbox in sandboxes:
+            print(f"\n[TEST FAILED] Sandbox ID: {sandbox.sandbox_id}")
+
+    results = await asyncio.gather(
+        *(sandbox.kill() for sandbox in sandboxes), return_exceptions=True
+    )
+    for sandbox, result in zip(sandboxes, results):
+        if isinstance(result, BaseException):
+            print(f"\n[TEARDOWN FAILED] Sandbox ID: {sandbox.sandbox_id}: {result!r}")
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def async_sandbox(async_sandbox_factory):
     return await async_sandbox_factory()
 
@@ -203,9 +193,7 @@ def debug():
 def skip_by_debug(request, debug):
     if request.node.get_closest_marker("skip_debug"):
         if debug:
-            pytest.skip(
-                "skipped because E2B_DEBUG is set"  # ty: ignore[too-many-positional-arguments]
-            )  # ty: ignore[invalid-argument-type]
+            pytest.skip("skipped because E2B_DEBUG is set")
 
 
 class Helpers:
@@ -265,21 +253,15 @@ def volume(request):
     return vol
 
 
-@pytest.fixture
-async def async_volume(request, event_loop):
+@pytest_asyncio.fixture
+async def async_volume(request):
     vol = await AsyncVolume.create(f"test-vol-{_generate_random_string()}")
-
-    def finalizer():
+    try:
+        yield vol
+    finally:
         if getattr(request.node, "_test_failed", False):
             print(f"\n[TEST FAILED] Volume ID: {vol.volume_id}")
-
-        async def _destroy():
-            try:
-                await AsyncVolume.destroy(vol.volume_id)
-            except Exception:
-                pass
-
-        event_loop.run_until_complete(_destroy())
-
-    request.addfinalizer(finalizer)
-    return vol
+        try:
+            await AsyncVolume.destroy(vol.volume_id)
+        except Exception:
+            pass

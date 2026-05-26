@@ -6,7 +6,11 @@ import {
 } from '../connectionConfig'
 import { compareVersions } from 'compare-versions'
 import { ALL_TRAFFIC } from './network'
-import { SandboxNotFoundError, TemplateError } from '../errors'
+import {
+  InvalidArgumentError,
+  SandboxNotFoundError,
+  TemplateError,
+} from '../errors'
 import { timeoutToSeconds } from '../utils'
 import type { Volume } from '../volume'
 import type { McpServer as BaseMcpServer } from './mcp'
@@ -208,7 +212,7 @@ export interface SandboxApiOpts
   extends Partial<
     Pick<
       ConnectionOpts,
-      'apiKey' | 'headers' | 'debug' | 'domain' | 'requestTimeoutMs'
+      'apiKey' | 'headers' | 'debug' | 'domain' | 'requestTimeoutMs' | 'signal'
     >
   > {}
 
@@ -294,16 +298,6 @@ export interface SandboxOpts extends ConnectionOpts {
   lifecycle?: SandboxLifecycle
 }
 
-export type SandboxBetaCreateOpts = SandboxOpts & {
-  /**
-   * @deprecated Use `lifecycle.onTimeout = "pause"` instead.
-   *
-   * Automatically pause the sandbox after the timeout expires.
-   * @default false
-   */
-  autoPause?: boolean
-}
-
 /**
  * Options for connecting to a Sandbox.
  */
@@ -323,7 +317,7 @@ export type SandboxConnectOpts = ConnectionOpts & {
  */
 export type SandboxState = 'running' | 'paused'
 
-export interface SandboxListOpts extends SandboxApiOpts {
+export interface SandboxListOpts extends Omit<SandboxApiOpts, 'signal'> {
   /**
    * Filter the list of sandboxes, e.g. by metadata `metadata:{"key": "value"}`, if there are multiple filters they are combined with AND.
    *
@@ -364,7 +358,7 @@ export interface SandboxMetricsOpts extends SandboxApiOpts {
 /**
  * Options for listing snapshots.
  */
-export interface SnapshotListOpts extends SandboxApiOpts {
+export interface SnapshotListOpts extends Omit<SandboxApiOpts, 'signal'> {
   /**
    * Filter snapshots by source sandbox ID.
    */
@@ -392,6 +386,23 @@ export interface SnapshotInfo {
    * Can be used with Sandbox.create() to create a new sandbox from this snapshot.
    */
   snapshotId: string
+
+  /**
+   * Full names of the snapshot template including team namespace and tag (e.g. team-slug/my-snapshot:v2).
+   */
+  names: string[]
+}
+
+/**
+ * Options for creating a snapshot.
+ */
+export interface CreateSnapshotOpts extends SandboxApiOpts {
+  /**
+   * Optional name for the snapshot template.
+   * If a snapshot template with this name already exists, a new build will be assigned
+   * to the existing template instead of creating a new one.
+   */
+  name?: string
 }
 
 /**
@@ -567,26 +578,6 @@ function buildNetworkBody(
   }
 }
 
-function getLifecycle(
-  opts?: Pick<SandboxBetaCreateOpts, 'lifecycle' | 'autoPause'>
-): SandboxLifecycle {
-  if (opts?.lifecycle) {
-    return opts.lifecycle
-  }
-
-  if (opts?.autoPause) {
-    return {
-      onTimeout: 'pause',
-      autoResume: false,
-    }
-  }
-
-  return {
-    onTimeout: 'kill',
-    autoResume: false,
-  }
-}
-
 export class SandboxApi {
   protected constructor() {}
 
@@ -611,7 +602,7 @@ export class SandboxApi {
           sandboxID: sandboxId,
         },
       },
-      signal: config.getSignal(opts?.requestTimeoutMs),
+      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
     })
 
     if (res.error?.code === 404) {
@@ -673,7 +664,7 @@ export class SandboxApi {
           end,
         },
       },
-      signal: config.getSignal(opts?.requestTimeoutMs),
+      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
     })
 
     const err = handleApiError(res)
@@ -723,7 +714,7 @@ export class SandboxApi {
       body: {
         timeout: timeoutToSeconds(timeoutMs),
       },
-      signal: config.getSignal(opts?.requestTimeoutMs),
+      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
     })
 
     if (res.error?.code === 404) {
@@ -746,7 +737,7 @@ export class SandboxApi {
           sandboxID: sandboxId,
         },
       },
-      signal: config.getSignal(opts?.requestTimeoutMs),
+      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
     })
 
     if (res.error?.code === 404) {
@@ -816,7 +807,7 @@ export class SandboxApi {
           sandboxID: sandboxId,
         },
       },
-      signal: config.getSignal(opts?.requestTimeoutMs),
+      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
     })
 
     if (res.error?.code === 404) {
@@ -854,13 +845,13 @@ export class SandboxApi {
    * The snapshot is a persistent image that survives sandbox deletion.
    *
    * @param sandboxId sandbox ID to create snapshot from.
-   * @param opts connection options.
+   * @param opts snapshot creation options including optional name and connection options.
    *
    * @returns snapshot information including the snapshot name that can be used with Sandbox.create().
    */
   static async createSnapshot(
     sandboxId: string,
-    opts?: SandboxApiOpts
+    opts?: CreateSnapshotOpts
   ): Promise<SnapshotInfo> {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
@@ -871,8 +862,8 @@ export class SandboxApi {
           sandboxID: sandboxId,
         },
       },
-      body: {},
-      signal: config.getSignal(opts?.requestTimeoutMs),
+      body: opts?.name ? { name: opts.name } : {},
+      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
     })
 
     if (res.error?.code === 404) {
@@ -886,6 +877,7 @@ export class SandboxApi {
 
     return {
       snapshotId: res.data!.snapshotID,
+      names: res.data!.names ?? [],
     }
   }
 
@@ -921,7 +913,7 @@ export class SandboxApi {
           templateID: snapshotId,
         },
       },
-      signal: config.getSignal(opts?.requestTimeoutMs),
+      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
     })
 
     if (res.error?.code === 404) {
@@ -939,16 +931,18 @@ export class SandboxApi {
   protected static async createSandbox(
     template: string,
     timeoutMs: number,
-    opts?: SandboxBetaCreateOpts
+    opts?: SandboxOpts
   ) {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
-    const lifecycle = getLifecycle(opts)
-    const autoPause = lifecycle.onTimeout === 'pause'
-    const autoResumeEnabled =
-      lifecycle.onTimeout === 'pause'
-        ? (lifecycle.autoResume ?? false)
-        : undefined
+    const onTimeout = opts?.lifecycle?.onTimeout ?? 'kill'
+    const autoResume = opts?.lifecycle?.autoResume ?? false
+
+    if (autoResume && onTimeout !== 'pause') {
+      throw new InvalidArgumentError(
+        "autoResume can only be true when the resolved onTimeout is 'pause'."
+      )
+    }
 
     const body: components['schemas']['NewSandbox'] = {
       templateID: template,
@@ -959,10 +953,8 @@ export class SandboxApi {
       secure: opts?.secure ?? true,
       allow_internet_access: opts?.allowInternetAccess ?? true,
       network: buildNetworkBody(opts?.network),
-      ...(autoPause !== undefined ? { autoPause } : {}),
-      ...(autoResumeEnabled !== undefined
-        ? { autoResume: { enabled: autoResumeEnabled } }
-        : {}),
+      autoPause: onTimeout === 'pause',
+      autoResume: { enabled: autoResume },
     }
 
     if (opts?.volumeMounts) {
@@ -976,7 +968,7 @@ export class SandboxApi {
 
     const res = await client.api.POST('/sandboxes', {
       body,
-      signal: config.getSignal(opts?.requestTimeoutMs),
+      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
     })
 
     const err = handleApiError(res)
@@ -1019,7 +1011,7 @@ export class SandboxApi {
       body: {
         timeout: timeoutToSeconds(timeoutMs),
       },
-      signal: config.getSignal(opts?.requestTimeoutMs),
+      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
     })
 
     if (res.error?.code === 404) {
@@ -1042,21 +1034,18 @@ export class SandboxApi {
 }
 
 abstract class BasePaginator<T> {
-  protected readonly config: ConnectionConfig
-  protected client: ApiClient
+  protected readonly opts?: SandboxApiOpts
   protected readonly limit?: number
 
   private _hasNext: boolean
   private _nextToken?: string
 
-  constructor(config: ConnectionConfig, limit?: number, nextToken?: string) {
-    this.config = config
-    this.client = new ApiClient(this.config)
+  constructor(opts?: SandboxApiOpts, limit?: number, nextToken?: string) {
+    this.opts = opts
+    this.limit = limit
 
     this._hasNext = true
     this._nextToken = nextToken
-
-    this.limit = limit
   }
 
   /**
@@ -1081,11 +1070,17 @@ abstract class BasePaginator<T> {
   /**
    * Get the next page of items.
    *
+   * @param opts per-call connection options. When provided, this call uses
+   * these options (e.g. `apiKey`, `domain`, `headers`, `requestTimeoutMs`,
+   * `signal`) instead of the ones the paginator was constructed with.
+   * Aborting a page via `signal` does not affect subsequent {@link BasePaginator.nextItems}
+   * calls — pass a fresh signal each call you want to be cancellable.
+   *
    * @throws Error if there are no more items to fetch. Call this method only if `hasNext` is `true`.
    *
    * @returns List of items
    */
-  abstract nextItems(): Promise<T[]>
+  abstract nextItems(opts?: SandboxApiOpts): Promise<T[]>
 }
 
 /**
@@ -1104,12 +1099,12 @@ export class SandboxPaginator extends BasePaginator<SandboxInfo> {
   private query: SandboxListOpts['query']
 
   constructor(opts?: SandboxListOpts) {
-    super(new ConnectionConfig(opts), opts?.limit, opts?.nextToken)
+    super(opts, opts?.limit, opts?.nextToken)
 
     this.query = opts?.query
   }
 
-  async nextItems(): Promise<SandboxInfo[]> {
+  async nextItems(opts?: SandboxApiOpts): Promise<SandboxInfo[]> {
     if (!this.hasNext) {
       throw new Error('No more items to fetch')
     }
@@ -1126,7 +1121,10 @@ export class SandboxPaginator extends BasePaginator<SandboxInfo> {
       metadata = new URLSearchParams(encodedPairs).toString()
     }
 
-    const res = await this.client.api.GET('/v2/sandboxes', {
+    const config = new ConnectionConfig({ ...this.opts, ...opts })
+    const client = new ApiClient(config)
+
+    const res = await client.api.GET('/v2/sandboxes', {
       params: {
         query: {
           metadata,
@@ -1135,8 +1133,7 @@ export class SandboxPaginator extends BasePaginator<SandboxInfo> {
           nextToken: this.nextToken,
         },
       },
-      // requestTimeoutMs is already passed here via the connectionConfig.
-      signal: this.config.getSignal(),
+      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
     })
 
     const err = handleApiError(res)
@@ -1180,17 +1177,20 @@ export class SnapshotPaginator extends BasePaginator<SnapshotInfo> {
   private readonly sandboxId?: string
 
   constructor(opts?: SnapshotListOpts) {
-    super(new ConnectionConfig(opts), opts?.limit, opts?.nextToken)
+    super(opts, opts?.limit, opts?.nextToken)
 
     this.sandboxId = opts?.sandboxId
   }
 
-  async nextItems(): Promise<SnapshotInfo[]> {
+  async nextItems(opts?: SandboxApiOpts): Promise<SnapshotInfo[]> {
     if (!this.hasNext) {
       throw new Error('No more items to fetch')
     }
 
-    const res = await this.client.api.GET('/snapshots', {
+    const config = new ConnectionConfig({ ...this.opts, ...opts })
+    const client = new ApiClient(config)
+
+    const res = await client.api.GET('/snapshots', {
       params: {
         query: {
           sandboxID: this.sandboxId,
@@ -1198,7 +1198,7 @@ export class SnapshotPaginator extends BasePaginator<SnapshotInfo> {
           nextToken: this.nextToken,
         },
       },
-      signal: this.config.getSignal(),
+      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
     })
 
     const err = handleApiError(res)
@@ -1211,6 +1211,7 @@ export class SnapshotPaginator extends BasePaginator<SnapshotInfo> {
     return (res.data ?? []).map(
       (snapshot: components['schemas']['SnapshotInfo']) => ({
         snapshotId: snapshot.snapshotID,
+        names: snapshot.names ?? [],
       })
     )
   }

@@ -166,7 +166,7 @@ export class TemplateBase
       const config = new ConnectionConfig(buildOptions)
       const client = new ApiClient(config)
 
-      const data = await baseTemplate.build(client, name, buildOptions)
+      const data = await baseTemplate.build(client, config, name, buildOptions)
 
       buildOptions.onBuildLogs?.(
         new LogEntry(new Date(), 'info', 'Waiting for logs...')
@@ -178,6 +178,8 @@ export class TemplateBase
         onBuildLogs: buildOptions.onBuildLogs,
         logsRefreshFrequency: baseTemplate.logsRefreshFrequency,
         stackTraces: baseTemplate.stackTraces,
+        signal: buildOptions.signal,
+        requestTimeoutMs: config.requestTimeoutMs,
       })
 
       return data
@@ -242,7 +244,7 @@ export class TemplateBase
     const config = new ConnectionConfig(buildOptions)
     const client = new ApiClient(config)
 
-    return (template as TemplateBase).build(client, name, buildOptions)
+    return (template as TemplateBase).build(client, config, name, buildOptions)
   }
 
   /**
@@ -263,11 +265,15 @@ export class TemplateBase
     const config = new ConnectionConfig(options)
     const client = new ApiClient(config)
 
-    return await getBuildStatus(client, {
-      templateID: data.templateId,
-      buildID: data.buildId,
-      logsOffset: options?.logsOffset,
-    })
+    return await getBuildStatus(
+      client,
+      {
+        templateID: data.templateId,
+        buildID: data.buildId,
+        logsOffset: options?.logsOffset,
+      },
+      config.getSignal(undefined, options?.signal)
+    )
   }
 
   /**
@@ -315,7 +321,11 @@ export class TemplateBase
     const config = new ConnectionConfig(options)
     const client = new ApiClient(config)
 
-    return checkAliasExists(client, { alias })
+    return checkAliasExists(
+      client,
+      { alias },
+      config.getSignal(undefined, options?.signal)
+    )
   }
 
   /**
@@ -343,7 +353,11 @@ export class TemplateBase
     const config = new ConnectionConfig(options)
     const client = new ApiClient(config)
     const normalizedTags = Array.isArray(tags) ? tags : [tags]
-    return assignTags(client, { targetName, tags: normalizedTags })
+    return assignTags(
+      client,
+      { targetName, tags: normalizedTags },
+      config.getSignal(undefined, options?.signal)
+    )
   }
 
   /**
@@ -370,7 +384,11 @@ export class TemplateBase
     const config = new ConnectionConfig(options)
     const client = new ApiClient(config)
     const normalizedTags = Array.isArray(tags) ? tags : [tags]
-    return removeTags(client, { name, tags: normalizedTags })
+    return removeTags(
+      client,
+      { name, tags: normalizedTags },
+      config.getSignal(undefined, options?.signal)
+    )
   }
 
   /**
@@ -394,7 +412,11 @@ export class TemplateBase
   ): Promise<TemplateTag[]> {
     const config = new ConnectionConfig(options)
     const client = new ApiClient(config)
-    return getTemplateTags(client, { templateID: templateId })
+    return getTemplateTags(
+      client,
+      { templateID: templateId },
+      config.getSignal(undefined, options?.signal)
+    )
   }
 
   fromDebianImage(variant: string = 'stable'): TemplateBuilder {
@@ -1066,6 +1088,7 @@ export class TemplateBase
    */
   private async build(
     client: ApiClient,
+    config: ConnectionConfig,
     name: string,
     options: Omit<BuildOptions, 'alias'>
   ): Promise<BuildInfo> {
@@ -1086,12 +1109,16 @@ export class TemplateBase
       templateID,
       buildID,
       tags: responseTags,
-    } = await requestBuild(client, {
-      name,
-      tags: options.tags,
-      cpuCount: options.cpuCount ?? 2,
-      memoryMB: options.memoryMB ?? 1024,
-    })
+    } = await requestBuild(
+      client,
+      {
+        name,
+        tags: options.tags,
+        cpuCount: options.cpuCount ?? 2,
+        memoryMB: options.memoryMB ?? 1024,
+      },
+      config.getSignal(undefined, options.signal)
+    )
 
     options.onBuildLogs?.(
       new LogEntry(
@@ -1128,7 +1155,8 @@ export class TemplateBase
             templateID,
             filesHash,
           },
-          stackTrace
+          stackTrace,
+          config.getSignal(undefined, options.signal)
         )
 
         if (
@@ -1146,7 +1174,15 @@ export class TemplateBase
               ],
               resolveSymlinks: instruction.resolveSymlinks ?? RESOLVE_SYMLINKS,
             },
-            stackTrace
+            stackTrace,
+            // Forward `requestTimeoutMs` only when the caller set it — we
+            // never want to slap the 60s default on a multi-hundred-MB S3
+            // upload, but a user-set per-build timeout should govern the
+            // whole operation, including uploads.
+            {
+              signal: options.signal,
+              requestTimeoutMs: options.requestTimeoutMs,
+            }
           )
           options.onBuildLogs?.(
             new LogEntry(new Date(), 'info', `Uploaded '${src}'`)
@@ -1174,11 +1210,15 @@ export class TemplateBase
       new LogEntry(new Date(), 'info', 'Starting building...')
     )
 
-    await triggerBuild(client, {
-      templateID,
-      buildID,
-      template: this.serialize(instructionsWithHashes),
-    })
+    await triggerBuild(
+      client,
+      {
+        templateID,
+        buildID,
+        template: this.serialize(instructionsWithHashes),
+      },
+      config.getSignal(undefined, options.signal)
+    )
 
     return {
       alias: name,

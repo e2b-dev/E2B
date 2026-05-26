@@ -197,6 +197,7 @@ class Filesystem:
         user: Optional[Username] = None,
         request_timeout: Optional[float] = None,
         gzip: bool = False,
+        use_octet_stream: bool = False,
     ) -> WriteInfo:
         """
         Write content to a file on the path.
@@ -209,6 +210,7 @@ class Filesystem:
         :param user: Run the operation as this user
         :param request_timeout: Timeout for the request in **seconds**
         :param gzip: Use gzip compression for the request
+        :param use_octet_stream: Upload using `application/octet-stream` instead of `multipart/form-data`. Defaults to `False`. Requires envd 0.5.7 or later — when not supported, the upload falls back to `multipart/form-data`.
 
         :return: Information about the written file
         """
@@ -217,6 +219,7 @@ class Filesystem:
             user,
             request_timeout,
             gzip,
+            use_octet_stream,
         )
 
         if len(result) != 1:
@@ -230,6 +233,7 @@ class Filesystem:
         user: Optional[Username] = None,
         request_timeout: Optional[float] = None,
         gzip: bool = False,
+        use_octet_stream: bool = False,
     ) -> List[WriteInfo]:
         """
         Writes multiple files.
@@ -243,6 +247,7 @@ class Filesystem:
         :param user: Run the operation as this user
         :param request_timeout: Timeout for the request
         :param gzip: Use gzip compression for the request
+        :param use_octet_stream: Upload using `application/octet-stream` instead of `multipart/form-data`. Defaults to `False`. Requires envd 0.5.7 or later — when not supported, the upload falls back to `multipart/form-data`.
         :return: Information about the written files
         """
         username = user
@@ -252,7 +257,8 @@ class Filesystem:
         if len(files) == 0:
             return []
 
-        use_octet_stream = self._envd_version >= ENVD_OCTET_STREAM_UPLOAD
+        supports_octet_stream = self._envd_version >= ENVD_OCTET_STREAM_UPLOAD
+        use_octet_stream = use_octet_stream and supports_octet_stream
 
         results: List[WriteInfo] = []
 

@@ -30,21 +30,21 @@ from e2b.api.client.models import (
 from e2b.api.client.types import UNSET
 from e2b.connection_config import ApiParams, ConnectionConfig
 from e2b.exceptions import (
+    InvalidArgumentException,
     SandboxException,
     SandboxNotFoundException,
     TemplateException,
 )
 from e2b.sandbox.main import SandboxBase
 from e2b.sandbox.sandbox_api import (
-    SandboxLifecycle,
-    build_network_config,
-    get_auto_resume_enabled,
     McpServer,
     SandboxInfo,
+    SandboxLifecycle,
     SandboxMetrics,
     SandboxNetworkOpts,
     SandboxQuery,
     SnapshotInfo,
+    build_network_config,
 )
 from e2b.sandbox_sync.paginator import SandboxPaginator, get_api_client
 
@@ -164,7 +164,6 @@ class SandboxApi(SandboxBase):
         cls,
         template: str,
         timeout: int,
-        auto_pause: Optional[bool],
         allow_internet_access: bool,
         metadata: Optional[Dict[str, str]],
         env_vars: Optional[Dict[str, str]],
@@ -177,14 +176,19 @@ class SandboxApi(SandboxBase):
     ) -> SandboxCreateResponse:
         config = ConnectionConfig(**opts)
 
-        should_auto_pause = (
-            lifecycle["on_timeout"] == "pause" if lifecycle is not None else auto_pause
-        )
-        auto_resume_enabled = get_auto_resume_enabled(lifecycle)
+        on_timeout = lifecycle.get("on_timeout", "kill") if lifecycle else "kill"
+        auto_resume = lifecycle.get("auto_resume", False) if lifecycle else False
+
+        if auto_resume and on_timeout != "pause":
+            raise InvalidArgumentException(
+                "auto_resume can only be True when the resolved on_timeout is 'pause'."
+            )
+
         network_body = build_network_config(network)
         body = NewSandbox(
             template_id=template,
-            auto_pause=(should_auto_pause if should_auto_pause is not None else UNSET),
+            auto_pause=on_timeout == "pause",
+            auto_resume=SandboxAutoResumeConfig(enabled=auto_resume),
             metadata=metadata or {},
             timeout=timeout,
             env_vars=env_vars or {},
@@ -194,8 +198,6 @@ class SandboxApi(SandboxBase):
             network=SandboxNetworkConfig(**network_body) if network_body else UNSET,
             volume_mounts=volume_mounts if volume_mounts else UNSET,
         )
-        if auto_resume_enabled is not None:
-            body.auto_resume = SandboxAutoResumeConfig(enabled=auto_resume_enabled)
 
         api_client = get_api_client(config)
         res = post_sandboxes.sync_detailed(
@@ -326,6 +328,7 @@ class SandboxApi(SandboxBase):
     def _cls_create_snapshot(
         cls,
         sandbox_id: str,
+        name: Optional[str] = None,
         **opts: Unpack[ApiParams],
     ) -> SnapshotInfo:
         config = ConnectionConfig(**opts)
@@ -334,7 +337,7 @@ class SandboxApi(SandboxBase):
         res = post_sandboxes_sandbox_id_snapshots.sync_detailed(
             sandbox_id,
             client=api_client,
-            body=PostSandboxesSandboxIDSnapshotsBody(),
+            body=PostSandboxesSandboxIDSnapshotsBody(name=name if name else UNSET),
         )
 
         if res.status_code == 404:
@@ -349,7 +352,10 @@ class SandboxApi(SandboxBase):
         if isinstance(res.parsed, Error):
             raise SandboxException(f"{res.parsed.message}: Request failed")
 
-        return SnapshotInfo(snapshot_id=res.parsed.snapshot_id)
+        return SnapshotInfo(
+            snapshot_id=res.parsed.snapshot_id,
+            names=list(res.parsed.names) if res.parsed.names else [],
+        )
 
     @classmethod
     def _cls_delete_snapshot(
