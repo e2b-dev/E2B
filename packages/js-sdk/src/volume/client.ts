@@ -2,7 +2,7 @@ import createClient from 'openapi-fetch'
 
 import type { components, paths } from './schema.gen'
 import { defaultHeaders, getEnvVar } from '../api/metadata'
-import { applyConfigSignal } from '../connectionConfig'
+import { buildRequestSignal } from '../connectionConfig'
 import { createApiLogger, Logger } from '../logs'
 import type { Volume } from './index'
 
@@ -92,6 +92,13 @@ export class VolumeConnectionConfig {
   private static get volumeApiUrl() {
     return getEnvVar('E2B_VOLUME_API_URL')
   }
+
+  getSignal(requestTimeoutMs?: number, signal?: AbortSignal) {
+    return buildRequestSignal(
+      requestTimeoutMs ?? this.requestTimeoutMs,
+      signal ?? this.signal
+    )
+  }
 }
 
 /**
@@ -108,7 +115,6 @@ class VolumeApiClient {
         ...(config.token && { Authorization: `Bearer ${config.token}` }),
         ...config.headers,
       },
-      fetch: (input) => applyConfigSignal(input, config),
     })
 
     if (config.logger) {

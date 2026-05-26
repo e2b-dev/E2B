@@ -95,34 +95,6 @@ export function buildRequestSignal(
 }
 
 /**
- * `fetch` wrapper that combines the per-request signal with the
- * `signal` and `requestTimeoutMs` stored on the supplied config.
- *
- * Used by `ApiClient` and `VolumeApiClient` so call sites don't need to
- * thread `signal: config.getSignal()` into every request.
- *
- * @internal
- */
-export function applyConfigSignal(
-  input: RequestInfo | URL,
-  config: {
-    signal?: AbortSignal
-    requestTimeoutMs?: number
-  },
-  fetchImpl: typeof fetch = fetch
-): Promise<Response> {
-  const request = input instanceof Request ? input : new Request(input)
-  const signals: AbortSignal[] = [request.signal]
-  if (config.signal) {
-    signals.push(config.signal)
-  }
-  if (config.requestTimeoutMs) {
-    signals.push(AbortSignal.timeout(config.requestTimeoutMs))
-  }
-  return fetchImpl(new Request(request, { signal: AbortSignal.any(signals) }))
-}
-
-/**
  * Set up an internal `AbortController` for a streaming request.
  *
  * Until `clearStartTimeout` is called, the controller aborts when either
@@ -210,8 +182,6 @@ export class ConnectionConfig {
 
   readonly headers?: Record<string, string>
 
-  readonly signal?: AbortSignal
-
   constructor(opts?: ConnectionOpts) {
     this.apiKey = opts?.apiKey || ConnectionConfig.apiKey
     this.debug = opts?.debug || ConnectionConfig.debug
@@ -221,7 +191,6 @@ export class ConnectionConfig {
     this.logger = opts?.logger
     this.headers = opts?.headers || {}
     this.headers['User-Agent'] = `e2b-js-sdk/${version}`
-    this.signal = opts?.signal
 
     this.apiUrl =
       opts?.apiUrl ||
@@ -256,10 +225,7 @@ export class ConnectionConfig {
   }
 
   getSignal(requestTimeoutMs?: number, signal?: AbortSignal) {
-    return buildRequestSignal(
-      requestTimeoutMs ?? this.requestTimeoutMs,
-      signal ?? this.signal
-    )
+    return buildRequestSignal(requestTimeoutMs ?? this.requestTimeoutMs, signal)
   }
 
   getSandboxUrl(

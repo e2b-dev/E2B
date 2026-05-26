@@ -49,7 +49,8 @@ export type TriggerBuildTemplate =
 
 export async function requestBuild(
   client: ApiClient,
-  { name, tags, cpuCount, memoryMB }: RequestBuildInput
+  { name, tags, cpuCount, memoryMB }: RequestBuildInput,
+  signal?: AbortSignal
 ) {
   const requestBuildRes = await client.api.POST('/v3/templates', {
     body: {
@@ -58,6 +59,7 @@ export async function requestBuild(
       cpuCount,
       memoryMB,
     },
+    signal,
   })
 
   const error = handleApiError(requestBuildRes, BuildError)
@@ -75,7 +77,8 @@ export async function requestBuild(
 export async function getFileUploadLink(
   client: ApiClient,
   { templateID, filesHash }: GetFileUploadLinkInput,
-  stackTrace?: string
+  stackTrace?: string,
+  signal?: AbortSignal
 ) {
   const fileUploadLinkRes = await client.api.GET(
     '/templates/{templateID}/files/{hash}',
@@ -86,6 +89,7 @@ export async function getFileUploadLink(
           hash: filesHash,
         },
       },
+      signal,
     }
   )
 
@@ -168,7 +172,8 @@ export async function uploadFile(
 
 export async function triggerBuild(
   client: ApiClient,
-  { templateID, buildID, template }: TriggerBuildInput
+  { templateID, buildID, template }: TriggerBuildInput,
+  signal?: AbortSignal
 ) {
   const triggerBuildRes = await client.api.POST(
     '/v2/templates/{templateID}/builds/{buildID}',
@@ -180,6 +185,7 @@ export async function triggerBuild(
         },
       },
       body: template,
+      signal,
     }
   )
 
@@ -210,7 +216,8 @@ function mapBuildStatusReason(
 
 export async function getBuildStatus(
   client: ApiClient,
-  { templateID, buildID, logsOffset }: GetBuildStatusInput
+  { templateID, buildID, logsOffset }: GetBuildStatusInput,
+  signal?: AbortSignal
 ): Promise<TemplateBuildStatusResponse> {
   const buildStatusRes = await client.api.GET(
     '/templates/{templateID}/builds/{buildID}/status',
@@ -224,6 +231,7 @@ export async function getBuildStatus(
           logsOffset,
         },
       },
+      signal,
     }
   )
 
@@ -248,7 +256,8 @@ export async function getBuildStatus(
 
 export async function checkAliasExists(
   client: ApiClient,
-  { alias }: CheckAliasExistsInput
+  { alias }: CheckAliasExistsInput,
+  signal?: AbortSignal
 ): Promise<boolean> {
   const aliasRes = await client.api.GET('/templates/aliases/{alias}', {
     params: {
@@ -256,6 +265,7 @@ export async function checkAliasExists(
         alias,
       },
     },
+    signal,
   })
 
   // If we get a NotFound, the alias doesn't exist
@@ -287,6 +297,7 @@ export async function waitForBuildFinish(
     logsRefreshFrequency,
     stackTraces,
     signal,
+    requestTimeoutMs,
   }: {
     templateID: string
     buildID: string
@@ -294,6 +305,7 @@ export async function waitForBuildFinish(
     logsRefreshFrequency: number
     stackTraces: (string | undefined)[]
     signal?: AbortSignal
+    requestTimeoutMs?: number
   }
 ): Promise<void> {
   let logsOffset = 0
@@ -302,11 +314,15 @@ export async function waitForBuildFinish(
   while (status === 'building' || status === 'waiting') {
     signal?.throwIfAborted()
 
-    const buildStatus = await getBuildStatus(client, {
-      templateID,
-      buildID,
-      logsOffset,
-    })
+    const buildStatus = await getBuildStatus(
+      client,
+      {
+        templateID,
+        buildID,
+        logsOffset,
+      },
+      buildRequestSignal(requestTimeoutMs, signal)
+    )
 
     logsOffset += buildStatus.logEntries.length
 
@@ -355,10 +371,12 @@ export async function waitForBuildFinish(
 
 export async function assignTags(
   client: ApiClient,
-  { targetName, tags }: { targetName: string; tags: string[] }
+  { targetName, tags }: { targetName: string; tags: string[] },
+  signal?: AbortSignal
 ): Promise<TemplateTagInfo> {
   const res = await client.api.POST('/templates/tags', {
     body: { target: targetName, tags },
+    signal,
   })
 
   const error = handleApiError(res, TemplateError)
@@ -378,10 +396,12 @@ export async function assignTags(
 
 export async function removeTags(
   client: ApiClient,
-  { name, tags }: { name: string; tags: string[] }
+  { name, tags }: { name: string; tags: string[] },
+  signal?: AbortSignal
 ): Promise<void> {
   const res = await client.api.DELETE('/templates/tags', {
     body: { name, tags },
+    signal,
   })
 
   const error = handleApiError(res, TemplateError)
@@ -392,7 +412,8 @@ export async function removeTags(
 
 export async function getTemplateTags(
   client: ApiClient,
-  { templateID }: { templateID: string }
+  { templateID }: { templateID: string },
+  signal?: AbortSignal
 ): Promise<TemplateTag[]> {
   const res = await client.api.GET('/templates/{templateID}/tags', {
     params: {
@@ -400,6 +421,7 @@ export async function getTemplateTags(
         templateID,
       },
     },
+    signal,
   })
 
   const error = handleApiError(res, TemplateError)

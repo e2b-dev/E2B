@@ -471,6 +471,7 @@ export class SandboxApi {
           sandboxID: sandboxId,
         },
       },
+      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
     })
 
     if (res.error?.code === 404) {
@@ -532,6 +533,7 @@ export class SandboxApi {
           end,
         },
       },
+      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
     })
 
     const err = handleApiError(res)
@@ -581,6 +583,7 @@ export class SandboxApi {
       body: {
         timeout: timeoutToSeconds(timeoutMs),
       },
+      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
     })
 
     if (res.error?.code === 404) {
@@ -603,6 +606,7 @@ export class SandboxApi {
           sandboxID: sandboxId,
         },
       },
+      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
     })
 
     if (res.error?.code === 404) {
@@ -671,6 +675,7 @@ export class SandboxApi {
           sandboxID: sandboxId,
         },
       },
+      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
     })
 
     if (res.error?.code === 404) {
@@ -726,6 +731,7 @@ export class SandboxApi {
         },
       },
       body: opts?.name ? { name: opts.name } : {},
+      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
     })
 
     if (res.error?.code === 404) {
@@ -775,6 +781,7 @@ export class SandboxApi {
           templateID: snapshotId,
         },
       },
+      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
     })
 
     if (res.error?.code === 404) {
@@ -825,6 +832,7 @@ export class SandboxApi {
 
     const res = await client.api.POST('/sandboxes', {
       body,
+      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
     })
 
     const err = handleApiError(res)
@@ -867,6 +875,7 @@ export class SandboxApi {
       body: {
         timeout: timeoutToSeconds(timeoutMs),
       },
+      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
     })
 
     if (res.error?.code === 404) {
@@ -988,6 +997,7 @@ export class SandboxPaginator extends BasePaginator<SandboxInfo> {
           nextToken: this.nextToken,
         },
       },
+      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
     })
 
     const err = handleApiError(res)
@@ -1052,6 +1062,7 @@ export class SnapshotPaginator extends BasePaginator<SnapshotInfo> {
           nextToken: this.nextToken,
         },
       },
+      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
     })
 
     const err = handleApiError(res)
