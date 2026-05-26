@@ -412,7 +412,6 @@ components:
         - cpuUsedPct
         - memUsed
         - memTotal
-        - memCache
         - diskUsed
         - diskTotal
       properties:
@@ -441,10 +440,6 @@ components:
           type: integer
           format: int64
           description: Total memory in bytes
-        memCache:
-          type: integer
-          format: int64
-          description: Cached memory (page cache) in bytes
         diskUsed:
           type: integer
           format: int64
@@ -1351,22 +1346,17 @@ components:
 
     NodeStatus:
       type: string
-      description: |
-        Status of the node.
-        - draining: the node is bound to be shut down. It will not accept new sandboxes and will stop once all existing sandboxes are done.
-        - standby: the node is not actively used, but it can return to ready and continue serving traffic.
+      description: Status of the node
       enum:
         - ready
         - draining
         - connecting
         - unhealthy
-        - standby
       x-enum-varnames:
         - NodeStatusReady
         - NodeStatusDraining
         - NodeStatusConnecting
         - NodeStatusUnhealthy
-        - NodeStatusStandby
 
     NodeStatusChange:
       required:

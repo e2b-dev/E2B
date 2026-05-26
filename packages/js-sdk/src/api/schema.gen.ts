@@ -2147,13 +2147,10 @@ export interface components {
             memoryUsedBytes: number;
         };
         /**
-         * @description Status of the node.
-         *     - draining: the node is bound to be shut down. It will not accept new sandboxes and will stop once all existing sandboxes are done.
-         *     - standby: the node is not actively used, but it can return to ready and continue serving traffic.
-         *
+         * @description Status of the node
          * @enum {string}
          */
-        NodeStatus: "ready" | "draining" | "connecting" | "unhealthy" | "standby";
+        NodeStatus: "ready" | "draining" | "connecting" | "unhealthy";
         NodeStatusChange: {
             /**
              * Format: uuid
@@ -2314,11 +2311,6 @@ export interface components {
              * @description Disk used in bytes
              */
             diskUsed: number;
-            /**
-             * Format: int64
-             * @description Cached memory (page cache) in bytes
-             */
-            memCache: number;
             /**
              * Format: int64
              * @description Total memory in bytes
