@@ -2,6 +2,9 @@ import { Logger } from './logs'
 import { getEnvVar, version } from './api/metadata'
 import { runtime } from './utils'
 
+// Remove once all deployments support sandbox subdomains
+const supportedDomains = ['e2b.app', 'e2b.dev', 'e2b.pro', 'e2b-staging.dev']
+
 export const REQUEST_TIMEOUT_MS = 60_000 // 60 seconds
 export const DEFAULT_SANDBOX_TIMEOUT_MS = 300_000 // 300 seconds
 export const KEEPALIVE_PING_INTERVAL_SEC = 50 // 50 seconds
@@ -244,8 +247,8 @@ export class ConnectionConfig {
     const sandboxDomain = opts.sandboxDomain ?? this.domain
     // The stable sandbox host is only guaranteed for E2B prod; the various other hosted domains may not serve sandbox.<domain> yet and will follow up once those are updated.
     // Issue with cors from browser so holding off on using in browser as well.
-    if (sandboxDomain === 'e2b.app' && runtime !== 'browser') {
-      return 'https://sandbox.e2b.app'
+    if (runtime !== 'browser' && supportedDomains.includes(sandboxDomain)) {
+      return `https://sandbox.${sandboxDomain}`
     }
 
     return `https://${this.getHost(sandboxId, opts.envdPort, sandboxDomain)}`
