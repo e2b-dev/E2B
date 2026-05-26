@@ -17,6 +17,7 @@ type EnvdFetchOptions = {
 let envdFetch: typeof fetch | undefined
 let envdRpcFetch: typeof fetch | undefined
 let hasWarnedUndiciFallback = false
+const DEFAULT_ENVD_CONNECTION_LIMIT = 10
 const DEFAULT_ENVD_RPC_CONNECTION_LIMIT = 200
 const DEFAULT_ENVD_INFLIGHT_LIMIT = 2000
 const DEFAULT_ENVD_RPC_INFLIGHT_LIMIT = 2000
