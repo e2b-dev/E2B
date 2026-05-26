@@ -56,6 +56,22 @@ test('api_url has correct priority', () => {
   assert.equal(config.apiUrl, 'http://localhost:8080')
 })
 
+test('sandbox_url defaults to stable sandbox host in production', () => {
+  delete process.env.E2B_SANDBOX_URL
+  delete process.env.E2B_DOMAIN
+  delete process.env.E2B_DEBUG
+
+  const config = new ConnectionConfig()
+
+  assert.equal(
+    config.getSandboxUrl('sbx-test', {
+      sandboxDomain: 'e2b.app',
+      envdPort: 49983,
+    }),
+    'https://sandbox.e2b.app'
+  )
+})
+
 test('sandbox_direct_url keeps per-sandbox host in production', () => {
   delete process.env.E2B_SANDBOX_URL
   delete process.env.E2B_DOMAIN
@@ -69,6 +85,21 @@ test('sandbox_direct_url keeps per-sandbox host in production', () => {
       envdPort: 49983,
     }),
     'https://49983-sbx-test.e2b.app'
+  )
+})
+
+test('sandbox_url keeps per-sandbox host outside production', () => {
+  delete process.env.E2B_SANDBOX_URL
+  delete process.env.E2B_DEBUG
+
+  const config = new ConnectionConfig({ domain: 'e2b.dev' })
+
+  assert.equal(
+    config.getSandboxUrl('sbx-test', {
+      sandboxDomain: 'sandbox.e2b.dev',
+      envdPort: 49983,
+    }),
+    'https://49983-sbx-test.sandbox.e2b.dev'
   )
 })
 
