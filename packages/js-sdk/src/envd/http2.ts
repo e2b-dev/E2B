@@ -15,11 +15,12 @@ type EnvdFetchOptions = {
 let envdFetch: typeof fetch | undefined
 let envdRpcFetch: typeof fetch | undefined
 let hasWarnedUndiciFallback = false
-const DEFAULT_ENVD_RPC_CONNECTION_LIMIT = 100
+const DEFAULT_ENVD_CONNECTION_LIMIT = 10
+const DEFAULT_ENVD_RPC_CONNECTION_LIMIT = 200
 
 export function createEnvdFetchForRuntime(
   currentRuntime = runtime,
-  options: EnvdFetchOptions = { connectionLimit: 1 }
+  options: EnvdFetchOptions = {}
 ): typeof fetch {
   if (currentRuntime !== 'node') {
     return fetch
@@ -49,9 +50,7 @@ async function buildEnvdFetcher(
   const { Agent, fetch: undiciFetch } = undici
   const dispatcherOptions: { allowH2: true; connections?: number } = {
     allowH2: true,
-  }
-  if (options.connectionLimit !== undefined) {
-    dispatcherOptions.connections = options.connectionLimit
+    connections: options.connectionLimit ?? DEFAULT_ENVD_CONNECTION_LIMIT,
   }
 
   const dispatcher = new Agent(dispatcherOptions)
