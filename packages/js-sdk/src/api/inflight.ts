@@ -3,82 +3,48 @@
  * through a fetch dispatcher. Once `max` requests are outstanding, additional
  * acquires park until an in-flight release.
  *
- * `acquire(signal?)` can be cancelled while queued: if `signal` aborts before
- * a slot is granted, the call rejects with the abort reason and the waiter
- * is skipped when the next slot is released. This keeps `requestTimeoutMs`
- * and user-driven cancellation effective even when many requests are queued
- * behind the limiter.
+ * `acquire(signal?)` rejects if `signal` is or becomes aborted, so queued
+ * requests can be cancelled by `requestTimeoutMs` or user code without
+ * waiting for an earlier in-flight request to finish.
  */
 class Semaphore {
   private active = 0
-  private readonly queue: Array<QueuedWaiter> = []
+  private readonly queue: Array<() => void> = []
 
   constructor(private readonly max: number) {}
 
   async acquire(signal?: AbortSignal): Promise<() => void> {
-    if (signal?.aborted) {
-      throw abortReason(signal)
-    }
-
+    if (signal?.aborted) throw abortReason(signal)
     if (this.active < this.max) {
       this.active++
       return () => this.release()
     }
 
     return new Promise<() => void>((resolve, reject) => {
-      const waiter: QueuedWaiter = {
-        aborted: false,
-        resolve: () => {
-          if (signal) signal.removeEventListener('abort', onAbort)
-          resolve(() => this.release())
-        },
+      const onAcquire = () => {
+        signal?.removeEventListener('abort', onAbort)
+        this.active++
+        resolve(() => this.release())
       }
-
       const onAbort = () => {
-        if (waiter.aborted) return
-        waiter.aborted = true
-        // Leave the entry in the queue; `release()` will skip aborted
-        // waiters so we don't pay an O(n) splice on every cancellation.
+        const i = this.queue.indexOf(onAcquire)
+        if (i >= 0) this.queue.splice(i, 1)
         reject(abortReason(signal))
       }
-
-      this.queue.push(waiter)
-      if (signal) signal.addEventListener('abort', onAbort, { once: true })
+      this.queue.push(onAcquire)
+      signal?.addEventListener('abort', onAbort, { once: true })
     })
   }
 
   private release() {
-    // Hand the slot off to the next non-aborted waiter without bouncing
-    // `active` below `max`. If every queued waiter has been cancelled, the
-    // slot is returned to the pool.
-    while (this.queue.length > 0) {
-      const next = this.queue.shift()!
-      if (next.aborted) continue
-      next.resolve()
-      return
-    }
     this.active--
+    const next = this.queue.shift()
+    if (next) next()
   }
 }
 
-type QueuedWaiter = {
-  aborted: boolean
-  resolve: () => void
-}
-
 function abortReason(signal: AbortSignal | undefined): unknown {
-  const reason = signal?.reason
-  if (reason !== undefined) return reason
-  return new DOMException('Aborted', 'AbortError')
-}
-
-function extractSignal(
-  input: RequestInfo | URL,
-  init?: RequestInit
-): AbortSignal | undefined {
-  if (init?.signal) return init.signal
-  if (input instanceof Request) return input.signal
-  return undefined
+  return signal?.reason ?? new DOMException('Aborted', 'AbortError')
 }
 
 /**
@@ -105,7 +71,8 @@ export function limitConcurrency(
   const sem = new Semaphore(max)
 
   return (async (input, init) => {
-    const signal = extractSignal(input, init)
+    const signal =
+      init?.signal ?? (input instanceof Request ? input.signal : undefined)
     const release = await sem.acquire(signal)
     try {
       return await fetcher(input, init)
