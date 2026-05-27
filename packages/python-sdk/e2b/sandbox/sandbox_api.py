@@ -541,6 +541,8 @@ class SandboxMetrics:
     """Total memory in bytes."""
     mem_used: int
     """Memory used in bytes."""
+    mem_cache: int
+    """Cached memory (page cache) in bytes."""
     timestamp: datetime
     """Timestamp of the metric entry."""
 

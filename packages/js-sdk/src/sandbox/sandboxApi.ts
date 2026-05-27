@@ -531,6 +531,11 @@ export interface SandboxMetrics {
   memTotal: number
 
   /**
+   * Cached memory (page cache) in bytes.
+   */
+  memCache: number
+
+  /**
    * Used disk space in bytes.
    */
   diskUsed: number
@@ -724,6 +729,7 @@ export class SandboxApi {
         cpuCount: metric.cpuCount,
         memUsed: metric.memUsed,
         memTotal: metric.memTotal,
+        memCache: metric.memCache,
         diskUsed: metric.diskUsed,
         diskTotal: metric.diskTotal,
       })) ?? []

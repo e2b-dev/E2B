@@ -306,6 +306,7 @@ class SandboxApi(SandboxBase):
                 disk_used=metric.disk_used,
                 mem_total=metric.mem_total,
                 mem_used=metric.mem_used,
+                mem_cache=metric.mem_cache,
                 timestamp=metric.timestamp,
             )
             for metric in res.parsed
