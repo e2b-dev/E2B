@@ -7,17 +7,17 @@ import { ConnectionConfig } from '../connectionConfig'
 import { AuthenticationError, RateLimitError, SandboxError } from '../errors'
 import { createApiLogger } from '../logs'
 
-const API_KEY_PATTERN = /^e2b_[0-9a-f]{40}$/
+const API_KEY_PATTERN = /^e2b_[0-9a-f]+$/
 const API_KEY_EXAMPLE = `e2b_${'0'.repeat(40)}`
 
 /**
  * Validates that an E2B API key has the expected `e2b_` prefix followed by
- * 40 hex characters. Throws `AuthenticationError` otherwise.
+ * hex characters. Throws `AuthenticationError` otherwise.
  */
 export function validateApiKey(apiKey: string): void {
   if (!API_KEY_PATTERN.test(apiKey)) {
     throw new AuthenticationError(
-      `Invalid API key format: expected "e2b_" followed by 40 hex characters (e.g. "${API_KEY_EXAMPLE}"). ` +
+      `Invalid API key format: expected "e2b_" followed by hex characters (e.g. "${API_KEY_EXAMPLE}"). ` +
         'Visit the API Keys tab at https://e2b.dev/dashboard?tab=keys to get your API key.'
     )
   }

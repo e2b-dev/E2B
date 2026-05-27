@@ -17,9 +17,13 @@ describe('validateApiKey', () => {
     )
   })
 
-  test('rejects a key with the wrong body length', () => {
+  test('accepts a key with a non-default body length', () => {
+    assert.doesNotThrow(() => validateApiKey('e2b_' + '0'.repeat(20)))
+  })
+
+  test('rejects an empty body after the prefix', () => {
     assert.throws(
-      () => validateApiKey('e2b_' + '0'.repeat(20)),
+      () => validateApiKey('e2b_'),
       AuthenticationError,
       /Invalid API key format/
     )

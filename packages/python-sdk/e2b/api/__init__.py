@@ -75,17 +75,17 @@ class SupportsApiErrorResponse(Protocol):
     def content(self) -> Union[str, bytes]: ...
 
 
-_API_KEY_PATTERN = re.compile(r"^e2b_[0-9a-f]{40}$")
+_API_KEY_PATTERN = re.compile(r"^e2b_[0-9a-f]+$")
 _API_KEY_EXAMPLE = "e2b_" + "0" * 40
 
 
 def validate_api_key(api_key: str) -> None:
     """Validate that an E2B API key has the expected ``e2b_`` prefix
-    followed by 40 hex characters. Raises ``AuthenticationException`` otherwise.
+    followed by hex characters. Raises ``AuthenticationException`` otherwise.
     """
     if not _API_KEY_PATTERN.match(api_key):
         raise AuthenticationException(
-            'Invalid API key format: expected "e2b_" followed by 40 hex '
+            'Invalid API key format: expected "e2b_" followed by hex '
             f'characters (e.g. "{_API_KEY_EXAMPLE}"). '
             "Visit the API Keys tab at https://e2b.dev/dashboard?tab=keys to get your API key."
         )

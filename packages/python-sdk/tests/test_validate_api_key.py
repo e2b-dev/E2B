@@ -16,9 +16,13 @@ def test_rejects_missing_prefix():
         validate_api_key("sk_" + "0" * 40)
 
 
-def test_rejects_wrong_body_length():
+def test_accepts_non_default_body_length():
+    validate_api_key("e2b_" + "0" * 20)
+
+
+def test_rejects_empty_body():
     with pytest.raises(AuthenticationException, match=r"Invalid API key format"):
-        validate_api_key("e2b_" + "0" * 20)
+        validate_api_key("e2b_")
 
 
 def test_rejects_non_hex_body():
