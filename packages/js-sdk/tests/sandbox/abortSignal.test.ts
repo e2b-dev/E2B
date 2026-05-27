@@ -63,7 +63,7 @@ test('Sandbox.create rejects when AbortSignal is aborted', async () => {
   const requestStarted = nextRequestStart()
 
   const promise = Sandbox.create('base', {
-    apiKey: 'test-key',
+    apiKey: 'e2b_0000000000000000000000000000000000000000',
     signal: controller.signal,
   })
 
@@ -79,7 +79,7 @@ test('Sandbox.create rejects immediately when signal is already aborted', async 
 
   await expect(
     Sandbox.create('base', {
-      apiKey: 'test-key',
+      apiKey: 'e2b_0000000000000000000000000000000000000000',
       signal: controller.signal,
     })
   ).rejects.toThrow()
@@ -90,7 +90,7 @@ test('Sandbox.kill rejects when AbortSignal is aborted', async () => {
   const requestStarted = nextRequestStart()
 
   const promise = Sandbox.kill('some-sandbox', {
-    apiKey: 'test-key',
+    apiKey: 'e2b_0000000000000000000000000000000000000000',
     signal: controller.signal,
   })
 
@@ -104,7 +104,9 @@ test('SandboxPaginator.nextItems rejects when per-call AbortSignal is aborted', 
   const controller = new AbortController()
   const requestStarted = nextRequestStart()
 
-  const paginator = Sandbox.list({ apiKey: 'test-key' })
+  const paginator = Sandbox.list({
+    apiKey: 'e2b_0000000000000000000000000000000000000000',
+  })
   const promise = paginator.nextItems({ signal: controller.signal })
 
   await requestStarted

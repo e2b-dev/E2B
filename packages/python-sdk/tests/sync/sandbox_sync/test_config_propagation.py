@@ -9,7 +9,7 @@ from e2b.connection_config import ConnectionConfig
 import e2b.sandbox_sync.main as sandbox_sync_main
 
 
-BASE_API_KEY = "base-api-key"
+BASE_API_KEY = "e2b_" + "0" * 40
 BASE_DOMAIN = "base.e2b.dev"
 BASE_REQUEST_TIMEOUT = 11
 BASE_DEBUG = False

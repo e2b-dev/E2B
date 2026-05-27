@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import re
 from dataclasses import dataclass
 from types import TracebackType
 from typing import Optional, Protocol, Union
@@ -74,6 +75,22 @@ class SupportsApiErrorResponse(Protocol):
     def content(self) -> Union[str, bytes]: ...
 
 
+_API_KEY_PATTERN = re.compile(r"^e2b_[0-9a-f]{40}$")
+_API_KEY_EXAMPLE = "e2b_" + "0" * 40
+
+
+def validate_api_key(api_key: str) -> None:
+    """Validate that an E2B API key has the expected ``e2b_`` prefix
+    followed by 40 hex characters. Raises ``AuthenticationException`` otherwise.
+    """
+    if not _API_KEY_PATTERN.match(api_key):
+        raise AuthenticationException(
+            'Invalid API key format: expected "e2b_" followed by 40 hex '
+            f'characters (e.g. "{_API_KEY_EXAMPLE}"). '
+            "Visit the API Keys tab at https://e2b.dev/dashboard?tab=keys to get your API key."
+        )
+
+
 class ApiClient(AuthenticatedClient):
     """
     The client for interacting with the E2B API.
@@ -107,6 +124,9 @@ class ApiClient(AuthenticatedClient):
                     'or you can pass it directly to the method like api_key="e2b_..."',
                 )
             token = config.api_key
+
+        if config.api_key is not None:
+            validate_api_key(config.api_key)
 
         if require_access_token:
             if config.access_token is None:

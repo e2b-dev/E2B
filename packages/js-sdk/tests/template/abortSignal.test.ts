@@ -79,7 +79,7 @@ test('Template.build rejects when AbortSignal is aborted', async () => {
 
   const template = Template().fromBaseImage()
   const promise = Template.build(template, 'test-template', {
-    apiKey: 'test-key',
+    apiKey: 'e2b_0000000000000000000000000000000000000000',
     signal: controller.signal,
   })
 
@@ -96,7 +96,7 @@ test('Template.build rejects immediately when signal is already aborted', async 
   const template = Template().fromBaseImage()
   await expect(
     Template.build(template, 'test-template', {
-      apiKey: 'test-key',
+      apiKey: 'e2b_0000000000000000000000000000000000000000',
       signal: controller.signal,
     })
   ).rejects.toThrow()
@@ -108,7 +108,7 @@ test('Template.buildInBackground rejects when AbortSignal is aborted', async () 
 
   const template = Template().fromBaseImage()
   const promise = Template.buildInBackground(template, 'test-template', {
-    apiKey: 'test-key',
+    apiKey: 'e2b_0000000000000000000000000000000000000000',
     signal: controller.signal,
   })
 
@@ -123,7 +123,7 @@ test('Template.exists rejects when AbortSignal is aborted', async () => {
   const requestStarted = nextRequestStart()
 
   const promise = Template.exists('some-template', {
-    apiKey: 'test-key',
+    apiKey: 'e2b_0000000000000000000000000000000000000000',
     signal: controller.signal,
   })
 
@@ -140,7 +140,7 @@ test('Template.getBuildStatus rejects when AbortSignal is aborted', async () => 
   const promise = Template.getBuildStatus(
     { templateId: 'tpl-1', buildId: 'build-1' },
     {
-      apiKey: 'test-key',
+      apiKey: 'e2b_0000000000000000000000000000000000000000',
       signal: controller.signal,
     }
   )
@@ -156,7 +156,7 @@ test('Template.assignTags rejects when AbortSignal is aborted', async () => {
   const requestStarted = nextRequestStart()
 
   const promise = Template.assignTags('some-template:v1', 'stable', {
-    apiKey: 'test-key',
+    apiKey: 'e2b_0000000000000000000000000000000000000000',
     signal: controller.signal,
   })
 
@@ -171,7 +171,7 @@ test('Template.removeTags rejects when AbortSignal is aborted', async () => {
   const requestStarted = nextRequestStart()
 
   const promise = Template.removeTags('some-template', 'stable', {
-    apiKey: 'test-key',
+    apiKey: 'e2b_0000000000000000000000000000000000000000',
     signal: controller.signal,
   })
 
@@ -186,7 +186,7 @@ test('Template.getTags rejects when AbortSignal is aborted', async () => {
   const requestStarted = nextRequestStart()
 
   const promise = Template.getTags('some-template', {
-    apiKey: 'test-key',
+    apiKey: 'e2b_0000000000000000000000000000000000000000',
     signal: controller.signal,
   })
 
