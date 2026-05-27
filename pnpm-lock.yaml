@@ -245,6 +245,12 @@ importers:
 
   packages/python-sdk: {}
 
+  spec:
+    devDependencies:
+      prettier:
+        specifier: ^3.3.3
+        version: 3.6.2
+
 packages:
 
   '@ampproject/remapping@2.3.0':
