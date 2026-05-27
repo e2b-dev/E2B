@@ -154,3 +154,24 @@ COPY --chown=anotheruser config.json /config/`
   assert.equal(copyInstruction2.args[1], '/config/')
   assert.equal(copyInstruction2.args[2], 'anotheruser') // user from --chown (without group)
 })
+
+buildTemplateTest('fromDockerfile with multi-source COPY', () => {
+  const dockerfile = `FROM node:24
+COPY package.json package-lock.json /app/`
+
+  const template = Template().fromDockerfile(dockerfile)
+
+  // First COPY instruction (after initial USER root and WORKDIR /)
+  // @ts-expect-error - instructions is not a property of TemplateBuilder
+  const copyInstruction1 = template.instructions[2]
+  assert.equal(copyInstruction1.type, InstructionType.COPY)
+  assert.equal(copyInstruction1.args[0], 'package.json')
+  assert.equal(copyInstruction1.args[1], '/app/')
+
+  // Second source from the same Dockerfile COPY instruction
+  // @ts-expect-error - instructions is not a property of TemplateBuilder
+  const copyInstruction2 = template.instructions[3]
+  assert.equal(copyInstruction2.type, InstructionType.COPY)
+  assert.equal(copyInstruction2.args[0], 'package-lock.json')
+  assert.equal(copyInstruction2.args[1], '/app/')
+})

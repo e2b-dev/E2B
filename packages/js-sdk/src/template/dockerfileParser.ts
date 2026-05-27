@@ -184,8 +184,8 @@ function handleCopyInstruction(
 ): void {
   const argumentsData = instruction.getArguments()
   if (argumentsData && argumentsData.length >= 2) {
-    const src = argumentsData[0].getValue()
     const dest = argumentsData[argumentsData.length - 1].getValue()
+    const sources = argumentsData.slice(0, -1).map((arg) => arg.getValue())
 
     let user: string | undefined
     const flags = instruction.getFlags()
@@ -194,7 +194,9 @@ function handleCopyInstruction(
       user = chownFlag.getValue() ?? undefined
     }
 
-    templateBuilder.copy(src, dest, { user })
+    for (const src of sources) {
+      templateBuilder.copy(src, dest, { user })
+    }
   }
 }
 
