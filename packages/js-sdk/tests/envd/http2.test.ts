@@ -129,8 +129,9 @@ test('inflight limit env vars return 0 when explicitly disabled', async () => {
   process.env.E2B_ENVD_INFLIGHT_REQUESTS = '0'
   process.env.E2B_ENVD_RPC_INFLIGHT_REQUESTS = '0'
 
-  const { getEnvdInflightLimit, getEnvdRpcInflightLimit } =
-    await import('../../src/envd/http2')
+  const { getEnvdInflightLimit, getEnvdRpcInflightLimit } = await import(
+    '../../src/envd/http2'
+  )
 
   expect(getEnvdInflightLimit()).toBe(0)
   expect(getEnvdRpcInflightLimit()).toBe(0)
