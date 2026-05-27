@@ -1,6 +1,6 @@
 ---
-'e2b': patch
-'@e2b/python-sdk': patch
+'e2b': minor
+'@e2b/python-sdk': minor
 ---
 
-Sync OpenAPI spec from e2b-dev/infra: adds `standby` value to `NodeStatus`, marks `TeamUser.email` as nullable and deprecated, and adds a `403` response to template creation.
+Sync OpenAPI spec from `e2b-dev/infra`. Notable changes: `SandboxMetrics` gains `memCache` / `mem_cache` (cached memory in bytes), `NodeStatus` gains `standby`, `TeamUser.email` is now nullable and deprecated, and `POST /v3/templates` can now return `403`.
