@@ -75,6 +75,7 @@ export class VolumeConnectionConfig {
       VolumeConnectionConfig.volumeApiUrl ||
       (this.debug ? 'http://localhost:8080' : `https://api.${this.domain}`)
     this.token = opts?.token || volume.token
+
     this.headers = opts?.headers
     this.logger = opts?.logger
     this.requestTimeoutMs = opts?.requestTimeoutMs

@@ -6,7 +6,7 @@ import { SandboxApi } from '../../src/sandbox/sandboxApi'
 let originalSandboxUrl: string | undefined
 
 const baseConfig = {
-  apiKey: 'base-api-key',
+  apiKey: 'e2b_baseapikey',
   domain: 'base.e2b.dev',
   requestTimeoutMs: 1111,
   debug: false,

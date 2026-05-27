@@ -93,6 +93,7 @@ class VolumeConnectionConfig:
         )
         self.access_token = token or self._access_token()
         self.token = self.access_token
+
         self.proxy = proxy
 
         self.headers = headers or {}
