@@ -11,10 +11,10 @@ from e2b.api.client_sync import get_transport as get_sync_transport
 from e2b.connection_config import ConnectionConfig
 
 
-def test_sync_api_client_proxy_uses_explicit_transport():
+def test_sync_api_client_proxy_uses_explicit_transport(test_api_key):
     TransportWithLogger._instances.clear()
     config = ConnectionConfig(
-        api_key="e2b_" + "0" * 40,
+        api_key=test_api_key,
         proxy="http://127.0.0.1:9999",
     )
 
@@ -30,9 +30,9 @@ def test_sync_api_client_proxy_uses_explicit_transport():
         TransportWithLogger._instances.clear()
 
 
-def test_sync_get_transport_http2_opt_out_returns_distinct_instance():
+def test_sync_get_transport_http2_opt_out_returns_distinct_instance(test_api_key):
     TransportWithLogger._instances.clear()
-    config = ConnectionConfig(api_key="e2b_" + "0" * 40)
+    config = ConnectionConfig(api_key=test_api_key)
 
     try:
         http2_transport = get_sync_transport(config)
@@ -50,10 +50,10 @@ def test_sync_get_transport_http2_opt_out_returns_distinct_instance():
 
 
 @pytest.mark.asyncio
-async def test_async_api_client_proxy_uses_explicit_transport():
+async def test_async_api_client_proxy_uses_explicit_transport(test_api_key):
     AsyncTransportWithLogger._instances.clear()
     config = ConnectionConfig(
-        api_key="e2b_" + "0" * 40,
+        api_key=test_api_key,
         proxy="http://127.0.0.1:9999",
     )
 
@@ -73,9 +73,11 @@ async def test_async_api_client_proxy_uses_explicit_transport():
 
 
 @pytest.mark.asyncio
-async def test_async_get_transport_http2_opt_out_returns_distinct_instance():
+async def test_async_get_transport_http2_opt_out_returns_distinct_instance(
+    test_api_key,
+):
     AsyncTransportWithLogger._instances.clear()
-    config = ConnectionConfig(api_key="e2b_" + "0" * 40)
+    config = ConnectionConfig(api_key=test_api_key)
 
     try:
         http2_transport = get_async_transport(config)

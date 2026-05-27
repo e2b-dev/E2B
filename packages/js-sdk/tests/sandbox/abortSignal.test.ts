@@ -3,7 +3,7 @@ import { http, HttpResponse } from 'msw'
 import { setupServer } from 'msw/node'
 
 import { Sandbox } from '../../src'
-import { apiUrl } from '../setup'
+import { TEST_API_KEY, apiUrl } from '../setup'
 
 // Hold the request open until the caller aborts. If the signal is already
 // aborted by the time the handler runs, `addEventListener('abort', …)` would
@@ -63,7 +63,7 @@ test('Sandbox.create rejects when AbortSignal is aborted', async () => {
   const requestStarted = nextRequestStart()
 
   const promise = Sandbox.create('base', {
-    apiKey: 'e2b_0000000000000000000000000000000000000000',
+    apiKey: TEST_API_KEY,
     signal: controller.signal,
   })
 
@@ -79,7 +79,7 @@ test('Sandbox.create rejects immediately when signal is already aborted', async 
 
   await expect(
     Sandbox.create('base', {
-      apiKey: 'e2b_0000000000000000000000000000000000000000',
+      apiKey: TEST_API_KEY,
       signal: controller.signal,
     })
   ).rejects.toThrow()
@@ -90,7 +90,7 @@ test('Sandbox.kill rejects when AbortSignal is aborted', async () => {
   const requestStarted = nextRequestStart()
 
   const promise = Sandbox.kill('some-sandbox', {
-    apiKey: 'e2b_0000000000000000000000000000000000000000',
+    apiKey: TEST_API_KEY,
     signal: controller.signal,
   })
 
@@ -105,7 +105,7 @@ test('SandboxPaginator.nextItems rejects when per-call AbortSignal is aborted', 
   const requestStarted = nextRequestStart()
 
   const paginator = Sandbox.list({
-    apiKey: 'e2b_0000000000000000000000000000000000000000',
+    apiKey: TEST_API_KEY,
   })
   const promise = paginator.nextItems({ signal: controller.signal })
 

@@ -2,11 +2,12 @@ import { afterEach, assert, beforeEach, describe, test, vi } from 'vitest'
 
 import { Sandbox } from '../../src'
 import { SandboxApi } from '../../src/sandbox/sandboxApi'
+import { TEST_API_KEY } from '../setup'
 
 let originalSandboxUrl: string | undefined
 
 const baseConfig = {
-  apiKey: 'e2b_0000000000000000000000000000000000000000',
+  apiKey: TEST_API_KEY,
   domain: 'base.e2b.dev',
   requestTimeoutMs: 1111,
   debug: false,

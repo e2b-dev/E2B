@@ -22,6 +22,12 @@ from e2b import (
 )
 
 
+@pytest.fixture
+def test_api_key() -> str:
+    """Placeholder API key with a valid format for tests that don't hit the API."""
+    return "e2b_" + "0" * 40
+
+
 @pytest.hookimpl(tryfirst=True, hookwrapper=True)
 def pytest_runtest_makereport(item, call):
     outcome = yield

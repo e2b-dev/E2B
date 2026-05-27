@@ -140,6 +140,9 @@ export const volumeTest = base.extend<VolumeFixture>({
 export const isDebug = process.env.E2B_DEBUG !== undefined
 export const isIntegrationTest = process.env.E2B_INTEGRATION_TEST !== undefined
 
+/** Placeholder API key with a valid format for tests that don't hit the API. */
+export const TEST_API_KEY = `e2b_${'0'.repeat(40)}`
+
 function generateRandomString(length: number = 8): string {
   return Math.random()
     .toString(36)
