@@ -1,4 +1,5 @@
 import os
+import re
 
 from typing import Dict, Optional, TypedDict
 
@@ -6,6 +7,12 @@ from httpx._types import ProxyTypes
 from typing_extensions import Unpack
 
 from e2b.api.metadata import package_version
+from e2b.exceptions import AuthenticationException
+
+_UUID_REGEX = re.compile(
+    r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+    re.IGNORECASE,
+)
 
 REQUEST_TIMEOUT: float = 60.0  # 60 seconds
 FILE_TIMEOUT: float = 3600.0  # 1 hour
@@ -93,6 +100,13 @@ class VolumeConnectionConfig:
         )
         self.access_token = token or self._access_token()
         self.token = self.access_token
+
+        if self.access_token and _UUID_REGEX.match(self.access_token):
+            raise AuthenticationException(
+                "The value you provided as the access token appears to be a key ID (UUID), not the token itself. "
+                "Find your API key at https://e2b.dev/dashboard?tab=keys"
+            )
+
         self.proxy = proxy
 
         self.headers = headers or {}

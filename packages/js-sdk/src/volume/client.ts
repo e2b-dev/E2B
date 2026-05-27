@@ -3,10 +3,13 @@ import createClient from 'openapi-fetch'
 import type { components, paths } from './schema.gen'
 import { defaultHeaders, getEnvVar } from '../api/metadata'
 import { buildRequestSignal } from '../connectionConfig'
+import { AuthenticationError } from '../errors'
 import { createApiLogger, Logger } from '../logs'
 import type { Volume } from './index'
 
 const FILE_TIMEOUT_MS = 3_600_000 // 1 hour
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 export interface VolumeApiOpts {
   /**
@@ -75,6 +78,14 @@ export class VolumeConnectionConfig {
       VolumeConnectionConfig.volumeApiUrl ||
       (this.debug ? 'http://localhost:8080' : `https://api.${this.domain}`)
     this.token = opts?.token || volume.token
+
+    if (this.token && UUID_REGEX.test(this.token)) {
+      throw new AuthenticationError(
+        'The value you provided as the access token appears to be a key ID (UUID), not the token itself. ' +
+          'Find your API key at https://e2b.dev/dashboard?tab=keys'
+      )
+    }
+
     this.headers = opts?.headers
     this.logger = opts?.logger
     this.requestTimeoutMs = opts?.requestTimeoutMs
