@@ -30,6 +30,11 @@ def test_rejects_non_hex_body():
         validate_api_key("e2b_" + "z" * 40)
 
 
+def test_rejects_trailing_newline():
+    with pytest.raises(AuthenticationException, match=r"Invalid API key format"):
+        validate_api_key(VALID_KEY + "\n")
+
+
 def test_error_message_includes_example_token():
     with pytest.raises(AuthenticationException) as exc_info:
         validate_api_key("nope")

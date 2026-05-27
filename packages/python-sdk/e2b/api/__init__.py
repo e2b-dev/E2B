@@ -75,7 +75,7 @@ class SupportsApiErrorResponse(Protocol):
     def content(self) -> Union[str, bytes]: ...
 
 
-_API_KEY_PATTERN = re.compile(r"^e2b_[0-9a-f]+$")
+_API_KEY_PATTERN = re.compile(r"\Ae2b_[0-9a-f]+\Z")
 _API_KEY_EXAMPLE = "e2b_" + "0" * 40
 
 
