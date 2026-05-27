@@ -271,17 +271,68 @@ components:
           description: Specify if the sandbox URLs should be accessible only with authentication.
         allowOut:
           type: array
-          description: List of allowed CIDR blocks or IP addresses for egress traffic. Allowed addresses always take precedence over blocked addresses.
+          description: List of allowed destinations for egress traffic. Each entry can be a CIDR block (e.g. "8.8.8.8/32"), a bare IP address (e.g. "8.8.8.8"), or a domain name (e.g. "example.com", "*.example.com"). Allowed entries always take precedence over denied entries.
           items:
             type: string
         denyOut:
           type: array
-          description: List of denied CIDR blocks or IP addresses for egress traffic
+          description: List of denied CIDR blocks or IP addresses for egress traffic. Domain names are not supported for deny rules.
           items:
             type: string
         maskRequestHost:
           type: string
           description: Specify host mask which will be used for all sandbox requests
+        rules:
+          type: object
+          description: Per-domain transform rules applied to matching egress HTTP/HTTPS requests. Keys are domains (e.g. "api.example.com", "example.com"). A domain listed here is not automatically allowed - use allowOut to permit the traffic.
+          additionalProperties:
+            type: array
+            items:
+              $ref: '#/components/schemas/SandboxNetworkRule'
+
+    SandboxNetworkUpdateConfig:
+      type: object
+      description: Network configuration update for a running sandbox. Replaces the current egress rules with the provided configuration. Omitting a field clears it.
+      properties:
+        allowOut:
+          type: array
+          description: List of allowed destinations for egress traffic. Each entry can be a CIDR block (e.g. "8.8.8.8/32"), a bare IP address (e.g. "8.8.8.8"), or a domain name (e.g. "example.com", "*.example.com"). Allowed entries always take precedence over denied entries.
+          items:
+            type: string
+        denyOut:
+          type: array
+          description: List of denied CIDR blocks or IP addresses for egress traffic. Domain names are not supported for deny rules.
+          items:
+            type: string
+        rules:
+          type: object
+          description: Per-domain transform rules. Replaces all existing rules when provided.
+          additionalProperties:
+            type: array
+            items:
+              $ref: '#/components/schemas/SandboxNetworkRule'
+        allow_internet_access:
+          type: boolean
+          description:
+            Allow sandbox to access the internet. When set to false, it behaves the same as specifying denyOut
+            to 0.0.0.0/0 in the network config.
+
+    SandboxNetworkRule:
+      type: object
+      description: Transform rule applied to egress requests matching a domain pattern.
+      properties:
+        transform:
+          $ref: '#/components/schemas/SandboxNetworkTransform'
+
+    SandboxNetworkTransform:
+      type: object
+      description: Transformations applied to matching egress requests before forwarding.
+      properties:
+        headers:
+          type: object
+          description: HTTP headers to inject or override in matching requests. An existing header with the same name is replaced. Values are plain strings; secret resolution happens client-side before sending to the API.
+          additionalProperties:
+            type: string
 
     SandboxAutoResumeEnabled:
       type: boolean
@@ -1799,8 +1850,8 @@ paths:
     get:
       description: Health check
       responses:
-        '200':
-          description: Request was successful
+        '204':
+          description: The service is healthy
         '401':
           $ref: '#/components/responses/401'
 
@@ -2357,6 +2408,34 @@ paths:
           $ref: '#/components/responses/401'
         '404':
           $ref: '#/components/responses/404'
+        '500':
+          $ref: '#/components/responses/500'
+
+  /sandboxes/{sandboxID}/network:
+    put:
+      description: Update the network configuration for a running sandbox. Replaces the current egress rules with the provided configuration. Omitting a field clears it.
+      security:
+        - ApiKeyAuth: []
+        - Supabase1TokenAuth: []
+          Supabase2TeamAuth: []
+      tags: [sandboxes]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SandboxNetworkUpdateConfig'
+      parameters:
+        - $ref: '#/components/parameters/sandboxID'
+      responses:
+        '204':
+          description: Successfully updated the sandbox network configuration
+        '401':
+          $ref: '#/components/responses/401'
+        '404':
+          $ref: '#/components/responses/404'
+        '409':
+          $ref: '#/components/responses/409'
         '500':
           $ref: '#/components/responses/500'
 

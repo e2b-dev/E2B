@@ -65,6 +65,7 @@ export class VolumeConnectionConfig {
   readonly headers?: Record<string, string>
   readonly logger?: Logger
   readonly requestTimeoutMs?: number
+  readonly signal?: AbortSignal
 
   constructor(volume: Volume, opts?: VolumeApiOpts) {
     this.domain = opts?.domain || volume.domain || VolumeConnectionConfig.domain
@@ -77,6 +78,7 @@ export class VolumeConnectionConfig {
     this.headers = opts?.headers
     this.logger = opts?.logger
     this.requestTimeoutMs = opts?.requestTimeoutMs
+    this.signal = opts?.signal
   }
 
   private static get domain() {
@@ -92,7 +94,10 @@ export class VolumeConnectionConfig {
   }
 
   getSignal(requestTimeoutMs?: number, signal?: AbortSignal) {
-    return buildRequestSignal(requestTimeoutMs ?? this.requestTimeoutMs, signal)
+    return buildRequestSignal(
+      requestTimeoutMs ?? this.requestTimeoutMs,
+      signal ?? this.signal
+    )
   }
 }
 

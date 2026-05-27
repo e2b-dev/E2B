@@ -268,7 +268,7 @@ export class Volume {
           depth: opts?.depth,
         },
       },
-      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
+      signal: config.getSignal(),
     })
 
     if (res.response.status === 404) {
@@ -312,7 +312,7 @@ export class Volume {
           force: opts?.force,
         },
       },
-      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
+      signal: config.getSignal(),
     })
 
     if (res.response.status === 404) {
@@ -354,7 +354,7 @@ export class Volume {
           path,
         },
       },
-      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
+      signal: config.getSignal(),
     })
 
     if (res.response.status === 404) {
@@ -429,7 +429,7 @@ export class Volume {
         gid: metadata.gid,
         mode: metadata.mode,
       },
-      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
+      signal: config.getSignal(),
     })
 
     if (res.response.status === 404) {
@@ -517,7 +517,10 @@ export class Volume {
     }
   ): Promise<unknown> {
     const format = opts?.format ?? 'text'
-    const config = new VolumeConnectionConfig(this, opts)
+    const config = new VolumeConnectionConfig(this, {
+      ...opts,
+      requestTimeoutMs: opts?.requestTimeoutMs ?? FILE_TIMEOUT_MS,
+    })
     const client = new VolumeApiClient(config)
 
     const res = await client.api.GET('/volumecontent/{volumeID}/file', {
@@ -530,10 +533,7 @@ export class Volume {
         },
       },
       parseAs: format === 'bytes' ? 'arrayBuffer' : format,
-      signal: config.getSignal(
-        opts?.requestTimeoutMs ?? FILE_TIMEOUT_MS,
-        opts?.signal
-      ),
+      signal: config.getSignal(),
     })
 
     if (res.response.status === 404) {
@@ -579,7 +579,10 @@ export class Volume {
     data: string | ArrayBuffer | Blob | ReadableStream<Uint8Array>,
     opts?: VolumeWriteOptions & VolumeApiOpts
   ): Promise<VolumeEntryStat> {
-    const config = new VolumeConnectionConfig(this, opts)
+    const config = new VolumeConnectionConfig(this, {
+      ...opts,
+      requestTimeoutMs: opts?.requestTimeoutMs ?? FILE_TIMEOUT_MS,
+    })
     const client = new VolumeApiClient(config)
 
     const blob = await toBlob(data)
@@ -602,10 +605,7 @@ export class Volume {
       headers: {
         'Content-Type': 'application/octet-stream',
       },
-      signal: config.getSignal(
-        opts?.requestTimeoutMs ?? FILE_TIMEOUT_MS,
-        opts?.signal
-      ),
+      signal: config.getSignal(),
     })
 
     if (res.response.status === 404) {
@@ -645,7 +645,7 @@ export class Volume {
           path,
         },
       },
-      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
+      signal: config.getSignal(),
     })
 
     if (res.response.status === 404) {
