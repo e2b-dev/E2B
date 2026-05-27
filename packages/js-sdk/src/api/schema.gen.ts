@@ -295,7 +295,7 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** @description Update the network configuration for a running sandbox. Replaces the current egress rules with the provided configuration. Omitting a field clears it. */
+        /** @description Update the network configuration for a running sandbox. Replaces the current egress rules with the provided configuration. Omitting field clears it. */
         put: {
             parameters: {
                 query?: never;
@@ -1585,6 +1585,7 @@ export interface paths {
                 };
                 400: components["responses"]["400"];
                 401: components["responses"]["401"];
+                403: components["responses"]["403"];
                 500: components["responses"]["500"];
             };
         };
@@ -2136,10 +2137,13 @@ export interface components {
             memoryUsedBytes: number;
         };
         /**
-         * @description Status of the node
+         * @description Status of the node.
+         *     - draining: the node is bound to be shut down. It will not accept new sandboxes and will stop once all existing sandboxes are done.
+         *     - standby: the node is not actively used, but it can return to ready and continue serving traffic.
+         *
          * @enum {string}
          */
-        NodeStatus: "ready" | "draining" | "connecting" | "unhealthy";
+        NodeStatus: "ready" | "draining" | "connecting" | "unhealthy" | "standby";
         NodeStatusChange: {
             /**
              * Format: uuid
@@ -2302,6 +2306,11 @@ export interface components {
             diskUsed: number;
             /**
              * Format: int64
+             * @description Cached memory (page cache) in bytes
+             */
+            memCache: number;
+            /**
+             * Format: int64
              * @description Total memory in bytes
              */
             memTotal: number;
@@ -2334,7 +2343,8 @@ export interface components {
             denyOut?: string[];
             /** @description Specify host mask which will be used for all sandbox requests */
             maskRequestHost?: string;
-            /** @description Per-domain transform rules applied to matching egress HTTP/HTTPS requests. Keys are domains (e.g. "api.example.com", "example.com"). A domain listed here is not automatically allowed - use allowOut to permit the traffic. */
+            /** @description Per-domain transform rules applied to matching egress HTTP/HTTPS requests. Keys are domains (e.g. "api.example.com", "example.com"). A domain listed here is not automatically allowed - use allowOut to permit the traffic.
+             *      */
             rules?: {
                 [key: string]: components["schemas"]["SandboxNetworkRule"][];
             };
@@ -2345,7 +2355,8 @@ export interface components {
         };
         /** @description Transformations applied to matching egress requests before forwarding. */
         SandboxNetworkTransform: {
-            /** @description HTTP headers to inject or override in matching requests. An existing header with the same name is replaced. Values are plain strings; secret resolution happens client-side before sending to the API. */
+            /** @description HTTP headers to inject or override in matching requests. An existing header with the same name is replaced. Values are plain strings; secret resolution happens client-side before sending to the API.
+             *      */
             headers?: {
                 [key: string]: string;
             };
@@ -2441,8 +2452,12 @@ export interface components {
             timestampUnix: number;
         };
         TeamUser: {
-            /** @description Email of the user */
-            email: string;
+            /**
+             * @deprecated
+             * @description Email of the user
+             * @default null
+             */
+            email: string | null;
             /**
              * Format: uuid
              * @description Identifier of the user
