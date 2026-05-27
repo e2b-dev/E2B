@@ -1,13 +1,12 @@
 import { runtime } from '../utils'
+import { getEnvVar } from '../api/metadata'
+import {
+  loadUndici,
+  toUndiciRequestInput,
+  type UndiciModule,
+  type UndiciRequestInit,
+} from '../undici'
 
-type UndiciRequestInit = RequestInit & {
-  dispatcher?: unknown
-  duplex?: 'half'
-}
-type UndiciModule = {
-  Agent: new (options: { allowH2: true; connections?: number }) => unknown
-  fetch: unknown
-}
 type EnvdFetchOptions = {
   connectionLimit?: number
   loadUndici?: () => Promise<UndiciModule | undefined>
@@ -16,10 +15,12 @@ type EnvdFetchOptions = {
 let envdFetch: typeof fetch | undefined
 let envdRpcFetch: typeof fetch | undefined
 let hasWarnedUndiciFallback = false
+const DEFAULT_ENVD_CONNECTION_LIMIT = 10
+const DEFAULT_ENVD_RPC_CONNECTION_LIMIT = 200
 
 export function createEnvdFetchForRuntime(
   currentRuntime = runtime,
-  options: EnvdFetchOptions = { connectionLimit: 1 }
+  options: EnvdFetchOptions = {}
 ): typeof fetch {
   if (currentRuntime !== 'node') {
     return fetch
@@ -49,9 +50,7 @@ async function buildEnvdFetcher(
   const { Agent, fetch: undiciFetch } = undici
   const dispatcherOptions: { allowH2: true; connections?: number } = {
     allowH2: true,
-  }
-  if (options.connectionLimit !== undefined) {
-    dispatcherOptions.connections = options.connectionLimit
+    connections: options.connectionLimit ?? DEFAULT_ENVD_CONNECTION_LIMIT,
   }
 
   const dispatcher = new Agent(dispatcherOptions)
@@ -61,29 +60,13 @@ async function buildEnvdFetcher(
   ) => Promise<Response>
 
   return ((input, init) => {
-    const request = toRequestInput(input, init)
+    const request = toUndiciRequestInput(input, init)
 
     return fetchWithDispatcher(request.input, {
       ...request.init,
       dispatcher,
     })
   }) as typeof fetch
-}
-
-async function loadUndici(): Promise<UndiciModule | undefined> {
-  try {
-    // Keep this import opaque to bundlers. It must resolve as a package name
-    // from the runtime environment, not as a path relative to this file.
-    // eslint-disable-next-line no-new-func
-    const importModule = new Function(
-      'moduleName',
-      'return import(moduleName)'
-    ) as (moduleName: string) => Promise<UndiciModule>
-
-    return await importModule('undici')
-  } catch {
-    return undefined
-  }
 }
 
 function warnUndiciFallback() {
@@ -114,43 +97,23 @@ export function createEnvdRpcFetch(): typeof fetch {
     return envdRpcFetch
   }
 
-  // RPC streams can stay open while follow-up RPCs run against the same
-  // sandbox, so they cannot share the REST client's single-connection cap.
-  envdRpcFetch = createEnvdFetchForRuntime(runtime, {})
+  envdRpcFetch = createEnvdFetchForRuntime(runtime, {
+    connectionLimit: getEnvdRpcConnectionLimit(),
+  })
 
   return envdRpcFetch
 }
 
-function toRequestInput(
-  input: RequestInfo | URL,
-  init?: RequestInit
-): { input: RequestInfo | URL; init?: RequestInit & { duplex?: 'half' } } {
-  if (!(input instanceof Request)) {
-    return { input, init }
+export function getEnvdRpcConnectionLimit() {
+  const raw = getEnvVar('E2B_ENVD_RPC_CONNECTIONS')
+  if (!raw) {
+    return DEFAULT_ENVD_RPC_CONNECTION_LIMIT
   }
 
-  const requestInit: RequestInit & { duplex?: 'half' } = {
-    body: input.body,
-    cache: input.cache,
-    credentials: input.credentials,
-    headers: input.headers,
-    integrity: input.integrity,
-    keepalive: input.keepalive,
-    method: input.method,
-    mode: input.mode,
-    redirect: input.redirect,
-    referrer: input.referrer,
-    referrerPolicy: input.referrerPolicy,
-    signal: input.signal,
-    ...init,
+  const parsed = Number.parseInt(raw, 10)
+  if (!Number.isFinite(parsed) || parsed < 1) {
+    return DEFAULT_ENVD_RPC_CONNECTION_LIMIT
   }
 
-  if (requestInit.body) {
-    requestInit.duplex = 'half'
-  }
-
-  return {
-    input: input.url,
-    init: requestInit,
-  }
+  return parsed
 }

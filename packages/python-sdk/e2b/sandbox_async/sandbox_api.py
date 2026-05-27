@@ -14,6 +14,7 @@ from e2b.api.client.api.sandboxes import (
     post_sandboxes_sandbox_id_pause,
     post_sandboxes_sandbox_id_snapshots,
     post_sandboxes_sandbox_id_timeout,
+    put_sandboxes_sandbox_id_network,
 )
 from e2b.api.client.api.templates import delete_templates_template_id
 from e2b.api.client.models import (
@@ -31,20 +32,23 @@ from e2b.api.client.types import UNSET
 from e2b.api.client_async import get_api_client
 from e2b.connection_config import ApiParams, ConnectionConfig
 from e2b.exceptions import (
+    InvalidArgumentException,
     SandboxException,
     SandboxNotFoundException,
     TemplateException,
 )
 from e2b.sandbox.main import SandboxBase
 from e2b.sandbox.sandbox_api import (
-    SandboxLifecycle,
-    get_auto_resume_enabled,
+    build_network_update_body,
     McpServer,
     SandboxInfo,
+    SandboxLifecycle,
     SandboxMetrics,
     SandboxNetworkOpts,
+    SandboxNetworkUpdate,
     SandboxQuery,
     SnapshotInfo,
+    build_network_config,
 )
 from e2b.sandbox_async.paginator import AsyncSandboxPaginator
 
@@ -160,11 +164,32 @@ class SandboxApi(SandboxBase):
             raise handle_api_exception(res)
 
     @classmethod
+    async def _cls_update_network(
+        cls,
+        sandbox_id: str,
+        network: SandboxNetworkUpdate,
+        **opts: Unpack[ApiParams],
+    ) -> None:
+        config = ConnectionConfig(**opts)
+
+        api_client = get_api_client(config)
+        res = await put_sandboxes_sandbox_id_network.asyncio_detailed(
+            sandbox_id,
+            client=api_client,
+            body=build_network_update_body(network),
+        )
+
+        if res.status_code == 404:
+            raise SandboxNotFoundException(f"Sandbox {sandbox_id} not found")
+
+        if res.status_code >= 300:
+            raise handle_api_exception(res)
+
+    @classmethod
     async def _create_sandbox(
         cls,
         template: str,
         timeout: int,
-        auto_pause: Optional[bool],
         allow_internet_access: bool,
         metadata: Optional[Dict[str, str]],
         env_vars: Optional[Dict[str, str]],
@@ -177,24 +202,28 @@ class SandboxApi(SandboxBase):
     ) -> SandboxCreateResponse:
         config = ConnectionConfig(**opts)
 
-        should_auto_pause = (
-            lifecycle["on_timeout"] == "pause" if lifecycle is not None else auto_pause
-        )
-        auto_resume_enabled = get_auto_resume_enabled(lifecycle)
+        on_timeout = lifecycle.get("on_timeout", "kill") if lifecycle else "kill"
+        auto_resume = lifecycle.get("auto_resume", False) if lifecycle else False
+
+        if auto_resume and on_timeout != "pause":
+            raise InvalidArgumentException(
+                "auto_resume can only be True when the resolved on_timeout is 'pause'."
+            )
+
+        network_body = build_network_config(network)
         body = NewSandbox(
             template_id=template,
-            auto_pause=(should_auto_pause if should_auto_pause is not None else UNSET),
+            auto_pause=on_timeout == "pause",
+            auto_resume=SandboxAutoResumeConfig(enabled=auto_resume),
             metadata=metadata or {},
             timeout=timeout,
             env_vars=env_vars or {},
             mcp=cast(Any, mcp) or UNSET,
             secure=secure,
             allow_internet_access=allow_internet_access,
-            network=SandboxNetworkConfig(**network) if network else UNSET,
+            network=SandboxNetworkConfig(**network_body) if network_body else UNSET,
             volume_mounts=volume_mounts if volume_mounts else UNSET,
         )
-        if auto_resume_enabled is not None:
-            body.auto_resume = SandboxAutoResumeConfig(enabled=auto_resume_enabled)
 
         api_client = get_api_client(config)
         res = await post_sandboxes.asyncio_detailed(

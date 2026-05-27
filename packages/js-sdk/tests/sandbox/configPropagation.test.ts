@@ -1,7 +1,9 @@
-import { afterEach, assert, describe, test, vi } from 'vitest'
+import { afterEach, assert, beforeEach, describe, test, vi } from 'vitest'
 
 import { Sandbox } from '../../src'
 import { SandboxApi } from '../../src/sandbox/sandboxApi'
+
+let originalSandboxUrl: string | undefined
 
 const baseConfig = {
   apiKey: 'base-api-key',
@@ -23,8 +25,17 @@ function createSandbox() {
 }
 
 describe('Sandbox API config propagation', () => {
+  beforeEach(() => {
+    originalSandboxUrl = process.env.E2B_SANDBOX_URL
+  })
+
   afterEach(() => {
     vi.restoreAllMocks()
+    if (originalSandboxUrl === undefined) {
+      delete process.env.E2B_SANDBOX_URL
+    } else {
+      process.env.E2B_SANDBOX_URL = originalSandboxUrl
+    }
   })
 
   test('passes connectionConfig to public API methods when called without overrides', async () => {
@@ -55,5 +66,35 @@ describe('Sandbox API config propagation', () => {
     assert.equal(opts?.domain, 'override.e2b.dev')
     assert.equal(opts?.requestTimeoutMs, 9999)
     assert.equal(opts?.debug, baseConfig.debug)
+  })
+
+  test('updateNetwork forwards per-call signal', async () => {
+    const updateNetworkSpy = vi
+      .spyOn(SandboxApi, 'updateNetwork')
+      .mockResolvedValue()
+    const sandbox = createSandbox()
+    const controller = new AbortController()
+
+    await sandbox.updateNetwork({}, { signal: controller.signal })
+
+    const opts = updateNetworkSpy.mock.calls[0][2]
+    assert.equal(opts?.signal, controller.signal)
+  })
+
+  test('downloadUrl keeps sandbox identity in production direct URLs', async () => {
+    delete process.env.E2B_SANDBOX_URL
+
+    const sandbox = new Sandbox({
+      sandboxId: 'sbx-test',
+      sandboxDomain: 'e2b.app',
+      envdVersion: '0.2.4',
+      domain: 'e2b.app',
+      debug: false,
+    })
+
+    assert.equal(
+      await sandbox.downloadUrl('/hello.txt'),
+      'https://49983-sbx-test.e2b.app/files?username=user&path=%2Fhello.txt'
+    )
   })
 })

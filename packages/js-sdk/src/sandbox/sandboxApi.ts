@@ -5,7 +5,12 @@ import {
   DEFAULT_SANDBOX_TIMEOUT_MS,
 } from '../connectionConfig'
 import { compareVersions } from 'compare-versions'
-import { SandboxNotFoundError, TemplateError } from '../errors'
+import { ALL_TRAFFIC } from './network'
+import {
+  InvalidArgumentError,
+  SandboxNotFoundError,
+  TemplateError,
+} from '../errors'
 import { timeoutToSeconds } from '../utils'
 import type { Volume } from '../volume'
 import type { McpServer as BaseMcpServer } from './mcp'
@@ -33,23 +38,118 @@ export type GitHubMcpServer = {
   }
 }
 
+/**
+ * Transform applied to egress requests matching a {@link SandboxNetworkRule}.
+ */
+export type SandboxNetworkTransform = {
+  /**
+   * Headers to inject into the outbound request. Values override any headers
+   * already present on the request.
+   */
+  headers?: Record<string, string>
+}
+
+/**
+ * Per-domain rule applied to egress requests.
+ */
+export type SandboxNetworkRule = {
+  /**
+   * Transform applied to requests matching this rule.
+   */
+  transform?: SandboxNetworkTransform
+}
+
+/**
+ * Map of host (or CIDR / IP) to ordered list of rules applied to outbound
+ * requests for that host. Accepts either a plain object or a `Map`.
+ * Registering a host here does not allow egress on its own — the host must
+ * also appear in {@link SandboxNetworkOpts.allowOut}.
+ */
+export type SandboxNetworkRules =
+  | Record<string, SandboxNetworkRule[]>
+  | Map<string, SandboxNetworkRule[]>
+
+/**
+ * Per-domain rule as returned by the sandbox info endpoint. Mirrors
+ * {@link SandboxNetworkRule} but with `transform` always materialized to the
+ * static {@link SandboxNetworkTransform} shape — no callback variant.
+ */
+export type SandboxNetworkRuleInfo = {
+  transform?: SandboxNetworkTransform
+}
+
+/**
+ * Context passed to {@link SandboxNetworkOpts.allowOut} and
+ * {@link SandboxNetworkOpts.denyOut} when they are defined as functions.
+ */
+export type SandboxNetworkSelectorContext = {
+  /** All traffic sentinel — equivalent to `'0.0.0.0/0'`. */
+  allTraffic: string
+  /** Rules registered in {@link SandboxNetworkOpts.rules}. */
+  rules: Map<string, SandboxNetworkRule[]>
+}
+
+/**
+ * Egress rule list, either a static array of CIDR blocks / IP addresses /
+ * hostnames, or a callback that receives `{ allTraffic, rules }` and returns
+ * the same.
+ */
+export type SandboxNetworkSelector =
+  | string[]
+  | ((ctx: SandboxNetworkSelectorContext) => string[])
+
 export type SandboxNetworkOpts = {
   /**
    * Allow outbound traffic from the sandbox to the specified addresses.
    * If `allowOut` is not specified, all outbound traffic is allowed.
    *
+   * Accepts either a static array of CIDR blocks, IP addresses, or hostnames,
+   * or a callback that receives `{ allTraffic, rules }` and returns the same.
+   * `allTraffic` is `'0.0.0.0/0'`; `rules` is a `Map` view of
+   * {@link SandboxNetworkOpts.rules}.
+   *
    * Examples:
-   * - To allow traffic to a specific addresses: `["1.1.1.1", "8.8.8.0/24"]`
+   * - Static list: `["1.1.1.1", "8.8.8.0/24"]`
+   * - Allow only rule-registered hosts:
+   *   `({ rules }) => [...rules.keys()]`
    */
-  allowOut?: string[]
+  allowOut?: SandboxNetworkSelector
 
   /**
    * Deny outbound traffic from the sandbox to the specified addresses.
    *
+   * Accepts the same shapes as {@link allowOut}.
+   *
    * Examples:
-   * - To deny traffic to a specific addresses: `["1.1.1.1", "8.8.8.0/24"]`
+   * - Static list: `["1.1.1.1", "8.8.8.0/24"]`
+   * - Block all egress: `({ allTraffic }) => [allTraffic]`
    */
-  denyOut?: string[]
+  denyOut?: SandboxNetworkSelector
+
+  /**
+   * Per-domain transform rules applied to matching egress HTTP/HTTPS
+   * requests. Keys are domains (e.g. `"api.example.com"`); values are
+   * ordered lists of rules.
+   *
+   * Registering a host here does not allow egress on its own — the host must
+   * also appear in {@link allowOut}. Hosts registered here are exposed to the
+   * `allowOut`/`denyOut` callbacks via `rules`.
+   *
+   * @example
+   * ```ts
+   * await Sandbox.create({
+   *   network: {
+   *     allowOut: ({ rules }) => [...rules.keys()],
+   *     rules: {
+   *       'api.openai.com': [
+   *         { transform: { headers: { Authorization: `Bearer ${token}` } } },
+   *       ],
+   *     },
+   *   },
+   * })
+   * ```
+   */
+  rules?: SandboxNetworkRules
 
   /**
    * Specify if the sandbox URLs should be accessible only with authentication.
@@ -63,6 +163,38 @@ export type SandboxNetworkOpts = {
    * @default ${PORT}-sandboxid.e2b.app
    */
   maskRequestHost?: string
+}
+
+/**
+ * Network configuration as returned by the sandbox info endpoint. Mirrors
+ * {@link SandboxNetworkOpts} but with `allowOut`/`denyOut` always materialized
+ * to plain string arrays.
+ */
+export type SandboxNetworkInfo = {
+  allowOut?: string[]
+  denyOut?: string[]
+  rules?: Record<string, SandboxNetworkRuleInfo[]>
+  allowPublicTraffic?: boolean
+  maskRequestHost?: string
+}
+
+/**
+ * Subset of {@link SandboxNetworkOpts} accepted by {@link SandboxApi.updateNetwork}.
+ * The update endpoint replaces all egress rules atomically — fields that are
+ * omitted are cleared on the server.
+ */
+export type SandboxNetworkUpdate = {
+  /** See {@link SandboxNetworkOpts.allowOut}. */
+  allowOut?: SandboxNetworkSelector
+  /** See {@link SandboxNetworkOpts.denyOut}. */
+  denyOut?: SandboxNetworkSelector
+  /** See {@link SandboxNetworkOpts.rules}. */
+  rules?: SandboxNetworkRules
+  /**
+   * Allow sandbox to access the internet. When set to `false`, it behaves the
+   * same as specifying `denyOut: ['0.0.0.0/0']` in the network config.
+   */
+  allowInternetAccess?: boolean
 }
 
 export type SandboxLifecycle = {
@@ -99,7 +231,7 @@ export interface SandboxApiOpts
   extends Partial<
     Pick<
       ConnectionOpts,
-      'apiKey' | 'headers' | 'debug' | 'domain' | 'requestTimeoutMs'
+      'apiKey' | 'headers' | 'debug' | 'domain' | 'requestTimeoutMs' | 'signal'
     >
   > {}
 
@@ -185,16 +317,6 @@ export interface SandboxOpts extends ConnectionOpts {
   lifecycle?: SandboxLifecycle
 }
 
-export type SandboxBetaCreateOpts = SandboxOpts & {
-  /**
-   * @deprecated Use `lifecycle.onTimeout = "pause"` instead.
-   *
-   * Automatically pause the sandbox after the timeout expires.
-   * @default false
-   */
-  autoPause?: boolean
-}
-
 /**
  * Options for connecting to a Sandbox.
  */
@@ -214,7 +336,7 @@ export type SandboxConnectOpts = ConnectionOpts & {
  */
 export type SandboxState = 'running' | 'paused'
 
-export interface SandboxListOpts extends SandboxApiOpts {
+export interface SandboxListOpts extends Omit<SandboxApiOpts, 'signal'> {
   /**
    * Filter the list of sandboxes, e.g. by metadata `metadata:{"key": "value"}`, if there are multiple filters they are combined with AND.
    *
@@ -255,7 +377,7 @@ export interface SandboxMetricsOpts extends SandboxApiOpts {
 /**
  * Options for listing snapshots.
  */
-export interface SnapshotListOpts extends SandboxApiOpts {
+export interface SnapshotListOpts extends Omit<SandboxApiOpts, 'signal'> {
   /**
    * Filter snapshots by source sandbox ID.
    */
@@ -366,7 +488,7 @@ export interface SandboxInfo {
   /**
    * Sandbox network configuration.
    */
-  network?: SandboxNetworkOpts
+  network?: SandboxNetworkInfo
 
   /**
    * Sandbox lifecycle configuration.
@@ -419,26 +541,88 @@ export interface SandboxMetrics {
   diskTotal: number
 }
 
-function getLifecycle(
-  opts?: Pick<SandboxBetaCreateOpts, 'lifecycle' | 'autoPause'>
-): SandboxLifecycle {
-  if (opts?.lifecycle) {
-    return opts.lifecycle
+function resolveNetworkSelector(
+  selector: SandboxNetworkSelector | undefined,
+  rules: Map<string, SandboxNetworkRule[]>
+): string[] | undefined {
+  if (selector === undefined) {
+    return undefined
   }
 
-  if (opts?.autoPause) {
-    return {
-      onTimeout: 'pause',
-      autoResume: false,
-    }
+  if (typeof selector === 'function') {
+    return selector({ allTraffic: ALL_TRAFFIC, rules })
   }
+
+  return selector
+}
+
+function resolveRulesForBody(
+  rules: Map<string, SandboxNetworkRule[]>
+): Record<string, { transform?: SandboxNetworkTransform }[]> {
+  const out: Record<string, { transform?: SandboxNetworkTransform }[]> = {}
+  for (const [host, hostRules] of rules) {
+    out[host] = hostRules.map((rule) =>
+      rule.transform === undefined ? {} : { transform: rule.transform }
+    )
+  }
+  return out
+}
+
+type NetworkEgressBody = {
+  allowOut?: string[]
+  denyOut?: string[]
+  rules?: Record<string, { transform?: SandboxNetworkTransform }[]>
+}
+
+function buildNetworkEgress(network: {
+  allowOut?: SandboxNetworkSelector
+  denyOut?: SandboxNetworkSelector
+  rules?: SandboxNetworkRules
+}): NetworkEgressBody {
+  const rules =
+    network.rules instanceof Map
+      ? network.rules
+      : new Map(Object.entries(network.rules ?? {}))
+  const allowOut = resolveNetworkSelector(network.allowOut, rules)
+  const denyOut = resolveNetworkSelector(network.denyOut, rules)
 
   return {
-    onTimeout: 'kill',
-    autoResume: false,
+    ...(allowOut !== undefined ? { allowOut } : {}),
+    ...(denyOut !== undefined ? { denyOut } : {}),
+    ...(network.rules !== undefined
+      ? { rules: resolveRulesForBody(rules) }
+      : {}),
   }
 }
 
+function buildNetworkBody(
+  network: SandboxNetworkOpts | undefined
+): components['schemas']['SandboxNetworkConfig'] | undefined {
+  if (!network) {
+    return undefined
+  }
+
+  return {
+    ...buildNetworkEgress(network),
+    ...(network.allowPublicTraffic !== undefined
+      ? { allowPublicTraffic: network.allowPublicTraffic }
+      : {}),
+    ...(network.maskRequestHost !== undefined
+      ? { maskRequestHost: network.maskRequestHost }
+      : {}),
+  }
+}
+
+function buildNetworkUpdateBody(
+  network: SandboxNetworkUpdate
+): components['schemas']['SandboxNetworkUpdateConfig'] {
+  return {
+    ...buildNetworkEgress(network),
+    ...(network.allowInternetAccess !== undefined
+      ? { allow_internet_access: network.allowInternetAccess }
+      : {}),
+  }
+}
 export class SandboxApi {
   protected constructor() {}
 
@@ -463,7 +647,7 @@ export class SandboxApi {
           sandboxID: sandboxId,
         },
       },
-      signal: config.getSignal(opts?.requestTimeoutMs),
+      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
     })
 
     if (res.error?.code === 404) {
@@ -525,7 +709,7 @@ export class SandboxApi {
           end,
         },
       },
-      signal: config.getSignal(opts?.requestTimeoutMs),
+      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
     })
 
     const err = handleApiError(res)
@@ -575,7 +759,45 @@ export class SandboxApi {
       body: {
         timeout: timeoutToSeconds(timeoutMs),
       },
-      signal: config.getSignal(opts?.requestTimeoutMs),
+      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
+    })
+
+    if (res.error?.code === 404) {
+      throw new SandboxNotFoundError(`Sandbox ${sandboxId} not found`)
+    }
+
+    const err = handleApiError(res)
+    if (err) {
+      throw err
+    }
+  }
+
+  /**
+   * Update the network configuration of a running sandbox.
+   *
+   * Replaces the current egress configuration atomically — fields that are
+   * omitted are cleared on the server.
+   *
+   * @param sandboxId sandbox ID.
+   * @param network new network configuration.
+   * @param opts connection options.
+   */
+  static async updateNetwork(
+    sandboxId: string,
+    network: SandboxNetworkUpdate,
+    opts?: SandboxApiOpts
+  ): Promise<void> {
+    const config = new ConnectionConfig(opts)
+    const client = new ApiClient(config)
+
+    const res = await client.api.PUT('/sandboxes/{sandboxID}/network', {
+      params: {
+        path: {
+          sandboxID: sandboxId,
+        },
+      },
+      body: buildNetworkUpdateBody(network),
+      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
     })
 
     if (res.error?.code === 404) {
@@ -598,7 +820,7 @@ export class SandboxApi {
           sandboxID: sandboxId,
         },
       },
-      signal: config.getSignal(opts?.requestTimeoutMs),
+      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
     })
 
     if (res.error?.code === 404) {
@@ -631,6 +853,7 @@ export class SandboxApi {
         ? {
             allowOut: res.data.network.allowOut,
             denyOut: res.data.network.denyOut,
+            rules: res.data.network.rules ?? undefined,
             allowPublicTraffic: res.data.network.allowPublicTraffic,
             maskRequestHost: res.data.network.maskRequestHost,
           }
@@ -667,7 +890,7 @@ export class SandboxApi {
           sandboxID: sandboxId,
         },
       },
-      signal: config.getSignal(opts?.requestTimeoutMs),
+      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
     })
 
     if (res.error?.code === 404) {
@@ -723,7 +946,7 @@ export class SandboxApi {
         },
       },
       body: opts?.name ? { name: opts.name } : {},
-      signal: config.getSignal(opts?.requestTimeoutMs),
+      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
     })
 
     if (res.error?.code === 404) {
@@ -773,7 +996,7 @@ export class SandboxApi {
           templateID: snapshotId,
         },
       },
-      signal: config.getSignal(opts?.requestTimeoutMs),
+      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
     })
 
     if (res.error?.code === 404) {
@@ -791,16 +1014,18 @@ export class SandboxApi {
   protected static async createSandbox(
     template: string,
     timeoutMs: number,
-    opts?: SandboxBetaCreateOpts
+    opts?: SandboxOpts
   ) {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
-    const lifecycle = getLifecycle(opts)
-    const autoPause = lifecycle.onTimeout === 'pause'
-    const autoResumeEnabled =
-      lifecycle.onTimeout === 'pause'
-        ? (lifecycle.autoResume ?? false)
-        : undefined
+    const onTimeout = opts?.lifecycle?.onTimeout ?? 'kill'
+    const autoResume = opts?.lifecycle?.autoResume ?? false
+
+    if (autoResume && onTimeout !== 'pause') {
+      throw new InvalidArgumentError(
+        "autoResume can only be true when the resolved onTimeout is 'pause'."
+      )
+    }
 
     const body: components['schemas']['NewSandbox'] = {
       templateID: template,
@@ -810,11 +1035,9 @@ export class SandboxApi {
       timeout: timeoutToSeconds(timeoutMs),
       secure: opts?.secure ?? true,
       allow_internet_access: opts?.allowInternetAccess ?? true,
-      network: opts?.network,
-      ...(autoPause !== undefined ? { autoPause } : {}),
-      ...(autoResumeEnabled !== undefined
-        ? { autoResume: { enabled: autoResumeEnabled } }
-        : {}),
+      network: buildNetworkBody(opts?.network),
+      autoPause: onTimeout === 'pause',
+      autoResume: { enabled: autoResume },
     }
 
     if (opts?.volumeMounts) {
@@ -828,7 +1051,7 @@ export class SandboxApi {
 
     const res = await client.api.POST('/sandboxes', {
       body,
-      signal: config.getSignal(opts?.requestTimeoutMs),
+      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
     })
 
     const err = handleApiError(res)
@@ -871,7 +1094,7 @@ export class SandboxApi {
       body: {
         timeout: timeoutToSeconds(timeoutMs),
       },
-      signal: config.getSignal(opts?.requestTimeoutMs),
+      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
     })
 
     if (res.error?.code === 404) {
@@ -894,21 +1117,18 @@ export class SandboxApi {
 }
 
 abstract class BasePaginator<T> {
-  protected readonly config: ConnectionConfig
-  protected client: ApiClient
+  protected readonly opts?: SandboxApiOpts
   protected readonly limit?: number
 
   private _hasNext: boolean
   private _nextToken?: string
 
-  constructor(config: ConnectionConfig, limit?: number, nextToken?: string) {
-    this.config = config
-    this.client = new ApiClient(this.config)
+  constructor(opts?: SandboxApiOpts, limit?: number, nextToken?: string) {
+    this.opts = opts
+    this.limit = limit
 
     this._hasNext = true
     this._nextToken = nextToken
-
-    this.limit = limit
   }
 
   /**
@@ -933,11 +1153,17 @@ abstract class BasePaginator<T> {
   /**
    * Get the next page of items.
    *
+   * @param opts per-call connection options. When provided, this call uses
+   * these options (e.g. `apiKey`, `domain`, `headers`, `requestTimeoutMs`,
+   * `signal`) instead of the ones the paginator was constructed with.
+   * Aborting a page via `signal` does not affect subsequent {@link BasePaginator.nextItems}
+   * calls — pass a fresh signal each call you want to be cancellable.
+   *
    * @throws Error if there are no more items to fetch. Call this method only if `hasNext` is `true`.
    *
    * @returns List of items
    */
-  abstract nextItems(): Promise<T[]>
+  abstract nextItems(opts?: SandboxApiOpts): Promise<T[]>
 }
 
 /**
@@ -956,12 +1182,12 @@ export class SandboxPaginator extends BasePaginator<SandboxInfo> {
   private query: SandboxListOpts['query']
 
   constructor(opts?: SandboxListOpts) {
-    super(new ConnectionConfig(opts), opts?.limit, opts?.nextToken)
+    super(opts, opts?.limit, opts?.nextToken)
 
     this.query = opts?.query
   }
 
-  async nextItems(): Promise<SandboxInfo[]> {
+  async nextItems(opts?: SandboxApiOpts): Promise<SandboxInfo[]> {
     if (!this.hasNext) {
       throw new Error('No more items to fetch')
     }
@@ -978,7 +1204,10 @@ export class SandboxPaginator extends BasePaginator<SandboxInfo> {
       metadata = new URLSearchParams(encodedPairs).toString()
     }
 
-    const res = await this.client.api.GET('/v2/sandboxes', {
+    const config = new ConnectionConfig({ ...this.opts, ...opts })
+    const client = new ApiClient(config)
+
+    const res = await client.api.GET('/v2/sandboxes', {
       params: {
         query: {
           metadata,
@@ -987,8 +1216,7 @@ export class SandboxPaginator extends BasePaginator<SandboxInfo> {
           nextToken: this.nextToken,
         },
       },
-      // requestTimeoutMs is already passed here via the connectionConfig.
-      signal: this.config.getSignal(),
+      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
     })
 
     const err = handleApiError(res)
@@ -1032,17 +1260,20 @@ export class SnapshotPaginator extends BasePaginator<SnapshotInfo> {
   private readonly sandboxId?: string
 
   constructor(opts?: SnapshotListOpts) {
-    super(new ConnectionConfig(opts), opts?.limit, opts?.nextToken)
+    super(opts, opts?.limit, opts?.nextToken)
 
     this.sandboxId = opts?.sandboxId
   }
 
-  async nextItems(): Promise<SnapshotInfo[]> {
+  async nextItems(opts?: SandboxApiOpts): Promise<SnapshotInfo[]> {
     if (!this.hasNext) {
       throw new Error('No more items to fetch')
     }
 
-    const res = await this.client.api.GET('/snapshots', {
+    const config = new ConnectionConfig({ ...this.opts, ...opts })
+    const client = new ApiClient(config)
+
+    const res = await client.api.GET('/snapshots', {
       params: {
         query: {
           sandboxID: this.sandboxId,
@@ -1050,7 +1281,7 @@ export class SnapshotPaginator extends BasePaginator<SnapshotInfo> {
           nextToken: this.nextToken,
         },
       },
-      signal: this.config.getSignal(),
+      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
     })
 
     const err = handleApiError(res)

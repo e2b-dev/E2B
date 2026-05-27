@@ -11,7 +11,7 @@
   </a>
   <a href="https://www.npmjs.com/package/e2b">
     <img alt="Last 1 month downloads for the JavaScript SDK" loading="lazy" width="200" height="30" decoding="async" data-nimg="1"
-    style="color:transparent;width:auto;height:100%" src="https://img.shields.io/npm/dm/e2b?label=NPM%20Monthly%20Downloads">
+    style="color:transparent;width:170px;height:18px" src="https://img.shields.io/npm/dm/e2b?label=NPM%20Monthly%20Downloads">
   </a>
 </h4>
 

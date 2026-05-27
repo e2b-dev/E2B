@@ -19,8 +19,8 @@ import {
   SandboxMetricsOpts,
   SandboxApi,
   SandboxListOpts,
+  SandboxNetworkUpdate,
   SandboxPaginator,
-  SandboxBetaCreateOpts,
   SnapshotListOpts,
   SnapshotInfo,
   SnapshotPaginator,
@@ -113,6 +113,7 @@ export class Sandbox extends SandboxApi {
   protected readonly connectionConfig: ConnectionConfig
   protected readonly envdAccessToken?: string
   private readonly envdApiUrl: string
+  private readonly envdDirectUrl: string
   private readonly envdApi: EnvdApiClient
   private mcpToken?: string
 
@@ -146,6 +147,13 @@ export class Sandbox extends SandboxApi {
       sandboxDomain: this.sandboxDomain,
       envdPort: this.envdPort,
     })
+    this.envdDirectUrl = this.connectionConfig.getSandboxDirectUrl(
+      this.sandboxId,
+      {
+        sandboxDomain: this.sandboxDomain,
+        envdPort: this.envdPort,
+      }
+    )
 
     const sandboxHeaders = {
       'E2b-Sandbox-Id': this.sandboxId,
@@ -323,103 +331,6 @@ export class Sandbox extends SandboxApi {
   }
 
   /**
-   * @beta This feature is in beta and may change in the future.
-   *
-   * Create a new sandbox from the default `base` sandbox template.
-   *
-   * @param opts connection options.
-   *
-   * @returns sandbox instance for the new sandbox.
-   *
-   * @example
-   * ```ts
-   * const sandbox = await Sandbox.betaCreate()
-   * ```
-   * @constructs {@link Sandbox}
-   */
-  static async betaCreate<S extends typeof Sandbox>(
-    this: S,
-    opts?: SandboxBetaCreateOpts
-  ): Promise<InstanceType<S>>
-
-  /**
-   * @beta This feature is in beta and may change in the future.
-   *
-   * Create a new sandbox from the specified sandbox template.
-   *
-   * @param template sandbox template name or ID.
-   * @param opts connection options.
-   *
-   * @returns sandbox instance for the new sandbox.
-   *
-   * @example
-   * ```ts
-   * const sandbox = await Sandbox.betaCreate('<template-name-or-id>')
-   * ```
-   * @constructs {@link Sandbox}
-   */
-  static async betaCreate<S extends typeof Sandbox>(
-    this: S,
-    template: string,
-    opts?: SandboxBetaCreateOpts
-  ): Promise<InstanceType<S>>
-  static async betaCreate<S extends typeof Sandbox>(
-    this: S,
-    templateOrOpts?: SandboxBetaCreateOpts | string,
-    opts?: SandboxBetaCreateOpts
-  ): Promise<InstanceType<S>> {
-    const { template, sandboxOpts } =
-      typeof templateOrOpts === 'string'
-        ? {
-            template: templateOrOpts,
-            sandboxOpts: opts,
-          }
-        : {
-            template:
-              templateOrOpts?.template ??
-              (templateOrOpts?.mcp
-                ? this.defaultMcpTemplate
-                : this.defaultTemplate),
-            sandboxOpts: templateOrOpts,
-          }
-
-    const config = new ConnectionConfig(sandboxOpts)
-    if (config.debug) {
-      return new this({
-        sandboxId: 'debug_sandbox_id',
-        envdVersion: ENVD_DEBUG_FALLBACK,
-        ...config,
-      }) as InstanceType<S>
-    }
-
-    const sandboxInfo = await SandboxApi.createSandbox(
-      template,
-      sandboxOpts?.timeoutMs ?? this.defaultSandboxTimeoutMs,
-      sandboxOpts
-    )
-
-    const sandbox = new this({ ...sandboxInfo, ...config }) as InstanceType<S>
-
-    if (sandboxOpts?.mcp) {
-      sandbox.mcpToken = crypto.randomUUID()
-      const res = await sandbox.commands.run(
-        `mcp-gateway --config ${shellQuote(JSON.stringify(sandboxOpts.mcp))}`,
-        {
-          user: 'root',
-          envs: {
-            GATEWAY_ACCESS_TOKEN: sandbox.mcpToken ?? '',
-          },
-        }
-      )
-      if (res.exitCode !== 0) {
-        throw new Error(`Failed to start MCP gateway: ${res.stderr}`)
-      }
-    }
-
-    return sandbox
-  }
-
-  /**
    * Connect to a sandbox. If the sandbox is paused, it will be automatically resumed.
    * Sandbox must be either running or be paused.
    *
@@ -522,9 +433,12 @@ export class Sandbox extends SandboxApi {
    * ```
    */
   async isRunning(
-    opts?: Pick<ConnectionOpts, 'requestTimeoutMs'>
+    opts?: Pick<ConnectionOpts, 'requestTimeoutMs' | 'signal'>
   ): Promise<boolean> {
-    const signal = this.connectionConfig.getSignal(opts?.requestTimeoutMs)
+    const signal = this.connectionConfig.getSignal(
+      opts?.requestTimeoutMs,
+      opts?.signal
+    )
 
     const res = await this.envdApi.api.GET('/health', {
       signal,
@@ -553,7 +467,7 @@ export class Sandbox extends SandboxApi {
    */
   async setTimeout(
     timeoutMs: number,
-    opts?: Pick<SandboxOpts, 'requestTimeoutMs'>
+    opts?: Pick<SandboxOpts, 'requestTimeoutMs' | 'signal'>
   ) {
     if (this.connectionConfig.debug) {
       // Skip timeout in debug mode
@@ -568,11 +482,31 @@ export class Sandbox extends SandboxApi {
   }
 
   /**
+   * Update the network configuration of the sandbox.
+   *
+   * Replaces the current egress configuration atomically — fields that are
+   * omitted are cleared on the server.
+   *
+   * @param network new network configuration.
+   * @param opts connection options.
+   */
+  async updateNetwork(
+    network: SandboxNetworkUpdate,
+    opts?: Pick<SandboxOpts, 'requestTimeoutMs' | 'signal'>
+  ) {
+    await SandboxApi.updateNetwork(
+      this.sandboxId,
+      network,
+      this.resolveApiOpts(opts)
+    )
+  }
+
+  /**
    * Kill the sandbox.
    *
    * @param opts connection options.
    */
-  async kill(opts?: Pick<SandboxOpts, 'requestTimeoutMs'>) {
+  async kill(opts?: Pick<SandboxOpts, 'requestTimeoutMs' | 'signal'>) {
     if (this.connectionConfig.debug) {
       // Skip killing in debug mode
       return
@@ -788,7 +722,7 @@ export class Sandbox extends SandboxApi {
    *
    * @returns information about the sandbox
    */
-  async getInfo(opts?: Pick<SandboxOpts, 'requestTimeoutMs'>) {
+  async getInfo(opts?: Pick<SandboxOpts, 'requestTimeoutMs' | 'signal'>) {
     return await SandboxApi.getInfo(this.sandboxId, this.resolveApiOpts(opts))
   }
 
@@ -831,7 +765,7 @@ export class Sandbox extends SandboxApi {
   }
 
   private fileUrl(path: string | undefined, username: string | undefined) {
-    const url = new URL('/files', this.envdApiUrl)
+    const url = new URL('/files', this.envdDirectUrl)
 
     if (username) {
       url.searchParams.set('username', username)

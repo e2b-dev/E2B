@@ -1,9 +1,12 @@
 import urllib.parse
 from typing import Optional, List
 
+from typing_extensions import Unpack
+
 from e2b.api.client.api.sandboxes import get_v2_sandboxes
 from e2b.api.client.api.snapshots import get_snapshots
 from e2b.api.client.types import UNSET
+from e2b.connection_config import ApiParams, ConnectionConfig
 from e2b.exceptions import SandboxException
 from e2b.sandbox.sandbox_api import (
     SandboxPaginatorBase,
@@ -30,11 +33,15 @@ class AsyncSandboxPaginator(SandboxPaginatorBase):
     ```
     """
 
-    async def next_items(self) -> List[SandboxInfo]:
+    async def next_items(self, **opts: Unpack[ApiParams]) -> List[SandboxInfo]:
         """
         Returns the next page of sandboxes.
 
         Call this method only if `has_next` is `True`, otherwise it will raise an exception.
+
+        :param opts: Per-call connection options (e.g. `api_key`, `domain`,
+            `headers`, `request_timeout`). When provided, this call uses these
+            options instead of the ones the paginator was constructed with.
 
         :returns: List of sandboxes
         """
@@ -50,7 +57,8 @@ class AsyncSandboxPaginator(SandboxPaginatorBase):
             }
             metadata = urllib.parse.urlencode(quoted_metadata)
 
-        api_client = get_api_client(self._config)
+        config = ConnectionConfig(**{**self._opts, **opts})
+        api_client = get_api_client(config)
         res = await get_v2_sandboxes.asyncio_detailed(
             client=api_client,
             metadata=metadata if metadata else UNSET,
@@ -89,18 +97,23 @@ class AsyncSnapshotPaginator(SnapshotPaginatorBase):
     ```
     """
 
-    async def next_items(self) -> List[SnapshotInfo]:
+    async def next_items(self, **opts: Unpack[ApiParams]) -> List[SnapshotInfo]:
         """
         Returns the next page of snapshots.
 
         Call this method only if `has_next` is `True`, otherwise it will raise an exception.
+
+        :param opts: Per-call connection options (e.g. `api_key`, `domain`,
+            `headers`, `request_timeout`). When provided, this call uses these
+            options instead of the ones the paginator was constructed with.
 
         :returns: List of snapshots
         """
         if not self.has_next:
             raise Exception("No more items to fetch")
 
-        api_client = get_api_client(self._config)
+        config = ConnectionConfig(**{**self._opts, **opts})
+        api_client = get_api_client(config)
         res = await get_snapshots.asyncio_detailed(
             client=api_client,
             sandbox_id=self.sandbox_id if self.sandbox_id else UNSET,
