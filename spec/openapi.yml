@@ -346,7 +346,7 @@ components:
         - enabled
       properties:
         enabled:
-          $ref: "#/components/schemas/SandboxAutoResumeEnabled"
+          $ref: '#/components/schemas/SandboxAutoResumeEnabled'
 
     SandboxOnTimeout:
       type: string
@@ -366,7 +366,7 @@ components:
           type: boolean
           description: Whether the sandbox can auto-resume.
         onTimeout:
-          $ref: "#/components/schemas/SandboxOnTimeout"
+          $ref: '#/components/schemas/SandboxOnTimeout'
 
     SandboxLog:
       description: Log entry with timestamp and line
