@@ -8,8 +8,7 @@ import { createApiLogger, Logger } from '../logs'
 import type { Volume } from './index'
 
 const FILE_TIMEOUT_MS = 3_600_000 // 1 hour
-const UUID_REGEX =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+const E2B_API_KEY_REGEX = /^e2b_[0-9a-f]+$/i
 
 export interface VolumeApiOpts {
   /**
@@ -79,9 +78,10 @@ export class VolumeConnectionConfig {
       (this.debug ? 'http://localhost:8080' : `https://api.${this.domain}`)
     this.token = opts?.token || volume.token
 
-    if (this.token && UUID_REGEX.test(this.token)) {
+    if (this.token && !E2B_API_KEY_REGEX.test(this.token)) {
       throw new AuthenticationError(
-        'The value you provided as the access token appears to be a key ID (UUID), not the token itself. ' +
+        "Invalid access token format. Expected format: 'e2b_' followed by a hex string " +
+          "(e.g., 'e2b_985895e32046e1404d05adfb33614a3026de2cb6'). " +
           'Find your API key at https://e2b.dev/dashboard?tab=keys'
       )
     }
