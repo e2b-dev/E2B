@@ -200,10 +200,11 @@ def _handle_copy_instruction(
             non_flag_parts.append(part)
 
     if len(non_flag_parts) >= 2:
-        src = non_flag_parts[0]
         dest = non_flag_parts[-1]  # Last part is destination
+        sources = non_flag_parts[:-1]
 
-        template_builder.copy(src, dest, user=user)
+        for src in sources:
+            template_builder.copy(src, dest, user=user)
 
 
 def _handle_workdir_instruction(
