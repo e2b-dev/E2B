@@ -9,7 +9,11 @@ from typing_extensions import Unpack
 from e2b.api.metadata import package_version
 from e2b.exceptions import AuthenticationException
 
-_E2B_API_KEY_REGEX = re.compile(r"^e2b_[0-9a-f]+$", re.IGNORECASE)
+E2B_API_KEY_PREFIX = "e2b_"
+_UUID_REGEX = re.compile(
+    r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+    re.IGNORECASE,
+)
 
 REQUEST_TIMEOUT: float = 60.0  # 60 seconds
 
@@ -98,10 +102,10 @@ class ConnectionConfig:
         self.api_key = api_key or ConnectionConfig._api_key()
         self.access_token = access_token or ConnectionConfig._access_token()
 
-        if self.api_key and not _E2B_API_KEY_REGEX.match(self.api_key):
+        if self.api_key and _UUID_REGEX.match(self.api_key):
             raise AuthenticationException(
-                "Invalid API key format. Expected format: 'e2b_' followed by a hex string "
-                "(e.g., 'e2b_985895e32046e1404d05adfb33614a3026de2cb6'). "
+                "The value you provided as the API key appears to be a key ID (UUID), not the key itself. "
+                f"The actual API key starts with '{E2B_API_KEY_PREFIX}'. "
                 "Find your API key at https://e2b.dev/dashboard?tab=keys"
             )
 
