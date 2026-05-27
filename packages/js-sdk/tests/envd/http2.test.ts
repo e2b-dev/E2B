@@ -125,16 +125,33 @@ test('getEnvdRpcInflightLimit throws on malformed env value', async () => {
   )
 })
 
-test('inflight limit env vars return 0 for non-positive values (disable)', async () => {
+test('inflight limit env vars return 0 when explicitly disabled', async () => {
   process.env.E2B_ENVD_INFLIGHT_REQUESTS = '0'
-  process.env.E2B_ENVD_RPC_INFLIGHT_REQUESTS = '-1'
+  process.env.E2B_ENVD_RPC_INFLIGHT_REQUESTS = '0'
 
-  const { getEnvdInflightLimit, getEnvdRpcInflightLimit } = await import(
-    '../../src/envd/http2'
-  )
+  const { getEnvdInflightLimit, getEnvdRpcInflightLimit } =
+    await import('../../src/envd/http2')
 
   expect(getEnvdInflightLimit()).toBe(0)
   expect(getEnvdRpcInflightLimit()).toBe(0)
+})
+
+test('getEnvdInflightLimit throws on negative env value', async () => {
+  process.env.E2B_ENVD_INFLIGHT_REQUESTS = '-1'
+
+  const { getEnvdInflightLimit } = await import('../../src/envd/http2')
+
+  expect(() => getEnvdInflightLimit()).toThrow(/E2B_ENVD_INFLIGHT_REQUESTS=-1/)
+})
+
+test('getEnvdRpcInflightLimit throws on negative env value', async () => {
+  process.env.E2B_ENVD_RPC_INFLIGHT_REQUESTS = '-5'
+
+  const { getEnvdRpcInflightLimit } = await import('../../src/envd/http2')
+
+  expect(() => getEnvdRpcInflightLimit()).toThrow(
+    /E2B_ENVD_RPC_INFLIGHT_REQUESTS=-5/
+  )
 })
 
 test('defers loading undici until the first Node request', async () => {

@@ -54,10 +54,18 @@ test('getApiInflightLimit throws on a malformed env value', async () => {
   expect(() => getApiInflightLimit()).toThrow(/E2B_API_INFLIGHT_REQUESTS/)
 })
 
-test('getApiInflightLimit returns 0 for non-positive values (disable)', async () => {
+test('getApiInflightLimit returns 0 when explicitly disabled', async () => {
   process.env.E2B_API_INFLIGHT_REQUESTS = '0'
 
   const { getApiInflightLimit } = await import('../../src/api/http2')
 
   expect(getApiInflightLimit()).toBe(0)
+})
+
+test('getApiInflightLimit throws on negative env value', async () => {
+  process.env.E2B_API_INFLIGHT_REQUESTS = '-5'
+
+  const { getApiInflightLimit } = await import('../../src/api/http2')
+
+  expect(() => getApiInflightLimit()).toThrow(/E2B_API_INFLIGHT_REQUESTS=-5/)
 })
