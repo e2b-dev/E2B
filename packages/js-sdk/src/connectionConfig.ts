@@ -3,7 +3,9 @@ import { getEnvVar, version } from './api/metadata'
 import { AuthenticationError } from './errors'
 import { runtime } from './utils'
 
-const E2B_API_KEY_REGEX = /^e2b_[0-9a-f]+$/i
+const E2B_API_KEY_PREFIX = 'e2b_'
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 // Remove once all deployments support sandbox subdomains
 const supportedDomains = ['e2b.app', 'e2b.dev', 'e2b.pro', 'e2b-staging.dev']
@@ -199,10 +201,10 @@ export class ConnectionConfig {
     this.headers = opts?.headers || {}
     this.headers['User-Agent'] = `e2b-js-sdk/${version}`
 
-    if (this.apiKey && !E2B_API_KEY_REGEX.test(this.apiKey)) {
+    if (this.apiKey && UUID_REGEX.test(this.apiKey)) {
       throw new AuthenticationError(
-        "Invalid API key format. Expected format: 'e2b_' followed by a hex string " +
-          "(e.g., 'e2b_985895e32046e1404d05adfb33614a3026de2cb6'). " +
+        'The value you provided as the API key appears to be a key ID (UUID), not the key itself. ' +
+          `The actual API key starts with '${E2B_API_KEY_PREFIX}'. ` +
           'Find your API key at https://e2b.dev/dashboard?tab=keys'
       )
     }

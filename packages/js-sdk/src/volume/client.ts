@@ -3,12 +3,10 @@ import createClient from 'openapi-fetch'
 import type { components, paths } from './schema.gen'
 import { defaultHeaders, getEnvVar } from '../api/metadata'
 import { buildRequestSignal } from '../connectionConfig'
-import { AuthenticationError } from '../errors'
 import { createApiLogger, Logger } from '../logs'
 import type { Volume } from './index'
 
 const FILE_TIMEOUT_MS = 3_600_000 // 1 hour
-const E2B_API_KEY_REGEX = /^e2b_[0-9a-f]+$/i
 
 export interface VolumeApiOpts {
   /**
@@ -77,15 +75,6 @@ export class VolumeConnectionConfig {
       VolumeConnectionConfig.volumeApiUrl ||
       (this.debug ? 'http://localhost:8080' : `https://api.${this.domain}`)
     this.token = opts?.token || volume.token
-
-    if (this.token && !E2B_API_KEY_REGEX.test(this.token)) {
-      throw new AuthenticationError(
-        "Invalid access token format. Expected format: 'e2b_' followed by a hex string " +
-          "(e.g., 'e2b_985895e32046e1404d05adfb33614a3026de2cb6'). " +
-          'Find your API key at https://e2b.dev/dashboard?tab=keys'
-      )
-    }
-
     this.headers = opts?.headers
     this.logger = opts?.logger
     this.requestTimeoutMs = opts?.requestTimeoutMs
