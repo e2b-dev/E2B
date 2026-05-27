@@ -9,14 +9,13 @@ from e2b.connection_config import ConnectionConfig
 import e2b.sandbox_async.main as sandbox_async_main
 
 
-BASE_API_KEY = "base-api-key"
 BASE_DOMAIN = "base.e2b.dev"
 BASE_REQUEST_TIMEOUT = 11
 BASE_DEBUG = False
 BASE_HEADERS = {"X-Test": "base"}
 
 
-def create_sandbox(monkeypatch) -> AsyncSandbox:
+def create_sandbox(monkeypatch, api_key: str) -> AsyncSandbox:
     dummy_transport = SimpleNamespace(pool=object())
 
     monkeypatch.setattr(
@@ -41,7 +40,7 @@ def create_sandbox(monkeypatch) -> AsyncSandbox:
         envd_access_token="tok",
         traffic_access_token="tok",
         connection_config=ConnectionConfig(
-            api_key=BASE_API_KEY,
+            api_key=api_key,
             domain=BASE_DOMAIN,
             request_timeout=BASE_REQUEST_TIMEOUT,
             debug=BASE_DEBUG,
@@ -51,16 +50,18 @@ def create_sandbox(monkeypatch) -> AsyncSandbox:
 
 
 @pytest.mark.skip_debug()
-async def test_pause_passes_connection_config_without_overrides(monkeypatch):
+async def test_pause_passes_connection_config_without_overrides(
+    monkeypatch, test_api_key
+):
     mock_pause = AsyncMock(return_value="sbx-test")
     monkeypatch.setattr(sandbox_async_main.SandboxApi, "_cls_pause", mock_pause)
 
-    sandbox = create_sandbox(monkeypatch)
+    sandbox = create_sandbox(monkeypatch, test_api_key)
     await sandbox.pause()
 
     mock_pause.assert_awaited_once()
     assert mock_pause.call_args.kwargs["sandbox_id"] == "sbx-test"
-    assert mock_pause.call_args.kwargs["api_key"] == BASE_API_KEY
+    assert mock_pause.call_args.kwargs["api_key"] == test_api_key
     assert mock_pause.call_args.kwargs["domain"] == BASE_DOMAIN
     assert mock_pause.call_args.kwargs["request_timeout"] == BASE_REQUEST_TIMEOUT
     assert mock_pause.call_args.kwargs["debug"] == BASE_DEBUG
@@ -68,11 +69,11 @@ async def test_pause_passes_connection_config_without_overrides(monkeypatch):
 
 
 @pytest.mark.skip_debug()
-async def test_pause_applies_overrides(monkeypatch):
+async def test_pause_applies_overrides(monkeypatch, test_api_key):
     mock_pause = AsyncMock(return_value="sbx-test")
     monkeypatch.setattr(sandbox_async_main.SandboxApi, "_cls_pause", mock_pause)
 
-    sandbox = create_sandbox(monkeypatch)
+    sandbox = create_sandbox(monkeypatch, test_api_key)
     await sandbox.pause(
         domain="override.e2b.dev",
         request_timeout=20,
@@ -81,7 +82,7 @@ async def test_pause_applies_overrides(monkeypatch):
 
     mock_pause.assert_awaited_once()
     assert mock_pause.call_args.kwargs["sandbox_id"] == "sbx-test"
-    assert mock_pause.call_args.kwargs["api_key"] == BASE_API_KEY
+    assert mock_pause.call_args.kwargs["api_key"] == test_api_key
     assert mock_pause.call_args.kwargs["domain"] == "override.e2b.dev"
     assert mock_pause.call_args.kwargs["request_timeout"] == 20
     assert mock_pause.call_args.kwargs["debug"] == BASE_DEBUG
