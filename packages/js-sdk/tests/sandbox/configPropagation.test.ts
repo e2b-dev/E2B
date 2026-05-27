@@ -68,6 +68,19 @@ describe('Sandbox API config propagation', () => {
     assert.equal(opts?.debug, baseConfig.debug)
   })
 
+  test('updateNetwork forwards per-call signal', async () => {
+    const updateNetworkSpy = vi
+      .spyOn(SandboxApi, 'updateNetwork')
+      .mockResolvedValue()
+    const sandbox = createSandbox()
+    const controller = new AbortController()
+
+    await sandbox.updateNetwork({}, { signal: controller.signal })
+
+    const opts = updateNetworkSpy.mock.calls[0][2]
+    assert.equal(opts?.signal, controller.signal)
+  })
+
   test('downloadUrl keeps sandbox identity in production direct URLs', async () => {
     delete process.env.E2B_SANDBOX_URL
 

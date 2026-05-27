@@ -295,7 +295,7 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** @description Update the network configuration for a running sandbox. Replaces the current egress rules with the provided configuration. Omitting both fields clears all egress rules. */
+        /** @description Update the network configuration for a running sandbox. Replaces the current egress rules with the provided configuration. Omitting a field clears it. */
         put: {
             parameters: {
                 query?: never;
@@ -307,18 +307,7 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "application/json": {
-                        /** @description Allow sandbox to access the internet. When set to false, it behaves the same as specifying denyOut to 0.0.0.0/0 in the network config. */
-                        allow_internet_access?: boolean;
-                        /** @description List of allowed destinations for egress traffic. Each entry can be a CIDR block (e.g. "8.8.8.8/32"), a bare IP address (e.g. "8.8.8.8"), or a domain name (e.g. "example.com", "*.example.com"). Allowed entries always take precedence over denied entries. */
-                        allowOut?: string[];
-                        /** @description List of denied CIDR blocks or IP addresses for egress traffic. Domain names are not supported for deny rules. */
-                        denyOut?: string[];
-                        /** @description Per-domain transform rules. Replaces all existing rules when provided. */
-                        rules?: {
-                            [key: string]: components["schemas"]["SandboxNetworkRule"][];
-                        };
-                    };
+                    "application/json": components["schemas"]["SandboxNetworkUpdateConfig"];
                 };
             };
             responses: {
@@ -2359,6 +2348,19 @@ export interface components {
             /** @description HTTP headers to inject or override in matching requests. An existing header with the same name is replaced. Values are plain strings; secret resolution happens client-side before sending to the API. */
             headers?: {
                 [key: string]: string;
+            };
+        };
+        /** @description Network configuration update for a running sandbox. Replaces the current egress rules with the provided configuration. Omitting a field clears it. */
+        SandboxNetworkUpdateConfig: {
+            /** @description Allow sandbox to access the internet. When set to false, it behaves the same as specifying denyOut to 0.0.0.0/0 in the network config. */
+            allow_internet_access?: boolean;
+            /** @description List of allowed destinations for egress traffic. Each entry can be a CIDR block (e.g. "8.8.8.8/32"), a bare IP address (e.g. "8.8.8.8"), or a domain name (e.g. "example.com", "*.example.com"). Allowed entries always take precedence over denied entries. */
+            allowOut?: string[];
+            /** @description List of denied CIDR blocks or IP addresses for egress traffic. Domain names are not supported for deny rules. */
+            denyOut?: string[];
+            /** @description Per-domain transform rules. Replaces all existing rules when provided. */
+            rules?: {
+                [key: string]: components["schemas"]["SandboxNetworkRule"][];
             };
         };
         /**

@@ -19,6 +19,7 @@ import {
   SandboxMetricsOpts,
   SandboxApi,
   SandboxListOpts,
+  SandboxNetworkUpdate,
   SandboxPaginator,
   SnapshotListOpts,
   SnapshotInfo,
@@ -476,6 +477,26 @@ export class Sandbox extends SandboxApi {
     await SandboxApi.setTimeout(
       this.sandboxId,
       timeoutMs,
+      this.resolveApiOpts(opts)
+    )
+  }
+
+  /**
+   * Update the network configuration of the sandbox.
+   *
+   * Replaces the current egress configuration atomically — fields that are
+   * omitted are cleared on the server.
+   *
+   * @param network new network configuration.
+   * @param opts connection options.
+   */
+  async updateNetwork(
+    network: SandboxNetworkUpdate,
+    opts?: Pick<SandboxOpts, 'requestTimeoutMs' | 'signal'>
+  ) {
+    await SandboxApi.updateNetwork(
+      this.sandboxId,
+      network,
       this.resolveApiOpts(opts)
     )
   }

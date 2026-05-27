@@ -178,6 +178,25 @@ export type SandboxNetworkInfo = {
   maskRequestHost?: string
 }
 
+/**
+ * Subset of {@link SandboxNetworkOpts} accepted by {@link SandboxApi.updateNetwork}.
+ * The update endpoint replaces all egress rules atomically — fields that are
+ * omitted are cleared on the server.
+ */
+export type SandboxNetworkUpdate = {
+  /** See {@link SandboxNetworkOpts.allowOut}. */
+  allowOut?: SandboxNetworkSelector
+  /** See {@link SandboxNetworkOpts.denyOut}. */
+  denyOut?: SandboxNetworkSelector
+  /** See {@link SandboxNetworkOpts.rules}. */
+  rules?: SandboxNetworkRules
+  /**
+   * Allow sandbox to access the internet. When set to `false`, it behaves the
+   * same as specifying `denyOut: ['0.0.0.0/0']` in the network config.
+   */
+  allowInternetAccess?: boolean
+}
+
 export type SandboxLifecycle = {
   /**
    * Action to take when sandbox timeout is reached.
@@ -549,13 +568,17 @@ function resolveRulesForBody(
   return out
 }
 
-function buildNetworkBody(
-  network: SandboxNetworkOpts | undefined
-): components['schemas']['SandboxNetworkConfig'] | undefined {
-  if (!network) {
-    return undefined
-  }
+type NetworkEgressBody = {
+  allowOut?: string[]
+  denyOut?: string[]
+  rules?: Record<string, { transform?: SandboxNetworkTransform }[]>
+}
 
+function buildNetworkEgress(network: {
+  allowOut?: SandboxNetworkSelector
+  denyOut?: SandboxNetworkSelector
+  rules?: SandboxNetworkRules
+}): NetworkEgressBody {
   const rules =
     network.rules instanceof Map
       ? network.rules
@@ -569,6 +592,18 @@ function buildNetworkBody(
     ...(network.rules !== undefined
       ? { rules: resolveRulesForBody(rules) }
       : {}),
+  }
+}
+
+function buildNetworkBody(
+  network: SandboxNetworkOpts | undefined
+): components['schemas']['SandboxNetworkConfig'] | undefined {
+  if (!network) {
+    return undefined
+  }
+
+  return {
+    ...buildNetworkEgress(network),
     ...(network.allowPublicTraffic !== undefined
       ? { allowPublicTraffic: network.allowPublicTraffic }
       : {}),
@@ -578,6 +613,16 @@ function buildNetworkBody(
   }
 }
 
+function buildNetworkUpdateBody(
+  network: SandboxNetworkUpdate
+): components['schemas']['SandboxNetworkUpdateConfig'] {
+  return {
+    ...buildNetworkEgress(network),
+    ...(network.allowInternetAccess !== undefined
+      ? { allow_internet_access: network.allowInternetAccess }
+      : {}),
+  }
+}
 export class SandboxApi {
   protected constructor() {}
 
@@ -714,6 +759,44 @@ export class SandboxApi {
       body: {
         timeout: timeoutToSeconds(timeoutMs),
       },
+      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
+    })
+
+    if (res.error?.code === 404) {
+      throw new SandboxNotFoundError(`Sandbox ${sandboxId} not found`)
+    }
+
+    const err = handleApiError(res)
+    if (err) {
+      throw err
+    }
+  }
+
+  /**
+   * Update the network configuration of a running sandbox.
+   *
+   * Replaces the current egress configuration atomically — fields that are
+   * omitted are cleared on the server.
+   *
+   * @param sandboxId sandbox ID.
+   * @param network new network configuration.
+   * @param opts connection options.
+   */
+  static async updateNetwork(
+    sandboxId: string,
+    network: SandboxNetworkUpdate,
+    opts?: SandboxApiOpts
+  ): Promise<void> {
+    const config = new ConnectionConfig(opts)
+    const client = new ApiClient(config)
+
+    const res = await client.api.PUT('/sandboxes/{sandboxID}/network', {
+      params: {
+        path: {
+          sandboxID: sandboxId,
+        },
+      },
+      body: buildNetworkUpdateBody(network),
       signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
     })
 

@@ -24,6 +24,7 @@ from e2b.sandbox.sandbox_api import (
     SandboxLifecycle,
     SandboxMetrics,
     SandboxNetworkOpts,
+    SandboxNetworkUpdate,
     SnapshotInfo,
 )
 from e2b.sandbox.utils import class_method_variant
@@ -433,6 +434,61 @@ class Sandbox(SandboxApi):
         SandboxApi._cls_set_timeout(
             sandbox_id=self.sandbox_id,
             timeout=timeout,
+            **self.connection_config.get_api_params(**opts),
+        )
+
+    @overload
+    def update_network(
+        self,
+        network: SandboxNetworkUpdate,
+        **opts: Unpack[ApiParams],
+    ) -> None:
+        """
+        Update the network configuration of the sandbox.
+
+        Replaces the current egress configuration atomically — fields that are
+        omitted are cleared on the server.
+
+        :param network: New network configuration.
+        """
+        ...
+
+    @overload
+    @staticmethod
+    def update_network(
+        sandbox_id: str,
+        network: SandboxNetworkUpdate,
+        **opts: Unpack[ApiParams],
+    ) -> None:
+        """
+        Update the network configuration of the sandbox specified by sandbox ID.
+
+        Replaces the current egress configuration atomically — fields that are
+        omitted are cleared on the server.
+
+        :param sandbox_id: Sandbox ID.
+        :param network: New network configuration.
+        """
+        ...
+
+    @class_method_variant("_cls_update_network")
+    def update_network(
+        self,
+        network: SandboxNetworkUpdate,
+        **opts: Unpack[ApiParams],
+    ) -> None:
+        """
+        Update the network configuration of the sandbox.
+
+        Replaces the current egress configuration atomically — fields that are
+        omitted are cleared on the server.
+
+        :param network: New network configuration.
+        """
+
+        SandboxApi._cls_update_network(
+            sandbox_id=self.sandbox_id,
+            network=network,
             **self.connection_config.get_api_params(**opts),
         )
 

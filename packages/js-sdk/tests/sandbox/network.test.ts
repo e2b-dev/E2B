@@ -236,6 +236,70 @@ describe('firewall transform injects headers', () => {
   )
 })
 
+describe('updateNetwork applies new egress rules', () => {
+  sandboxTest.skipIf(isDebug)(
+    'denies a previously reachable IP after update',
+    async ({ sandbox }) => {
+      // Baseline: 8.8.8.8 is reachable.
+      const before = await sandbox.commands.run(
+        "curl -s -o /dev/null -w '%{http_code}' https://8.8.8.8"
+      )
+      assert.equal(before.exitCode, 0)
+
+      await sandbox.updateNetwork({ denyOut: ['8.8.8.8'] })
+
+      // 8.8.8.8 should now be denied.
+      await expect(
+        sandbox.commands.run(
+          'curl --connect-timeout 3 --max-time 5 -Is https://8.8.8.8'
+        )
+      ).rejects.toBeInstanceOf(CommandExitError)
+
+      // Other destinations stay reachable.
+      const after = await sandbox.commands.run(
+        "curl -s -o /dev/null -w '%{http_code}' https://1.1.1.1"
+      )
+      assert.equal(after.exitCode, 0)
+    }
+  )
+})
+
+describe('updateNetwork clears existing rules when fields are omitted', () => {
+  sandboxTest.scoped({
+    sandboxOpts: {
+      network: {
+        denyOut: ({ allTraffic }) => [allTraffic],
+        allowOut: ['1.1.1.1'],
+      },
+    },
+  })
+
+  sandboxTest.skipIf(isDebug)(
+    'omitting fields replaces all egress rules',
+    async ({ sandbox }) => {
+      // Baseline from create-time config: 8.8.8.8 denied.
+      await expect(
+        sandbox.commands.run(
+          'curl --connect-timeout 3 --max-time 5 -Is https://8.8.8.8'
+        )
+      ).rejects.toBeInstanceOf(CommandExitError)
+
+      // Empty update clears allow_out / deny_out entirely.
+      await sandbox.updateNetwork({})
+
+      const r1 = await sandbox.commands.run(
+        "curl -s -o /dev/null -w '%{http_code}' https://1.1.1.1"
+      )
+      assert.equal(r1.exitCode, 0)
+
+      const r2 = await sandbox.commands.run(
+        "curl -s -o /dev/null -w '%{http_code}' https://8.8.8.8"
+      )
+      assert.equal(r2.exitCode, 0)
+    }
+  )
+})
+
 describe('maskRequestHost option', () => {
   sandboxTest.scoped({
     sandboxOpts: {

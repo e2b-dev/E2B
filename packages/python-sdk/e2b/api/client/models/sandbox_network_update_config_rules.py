@@ -8,11 +8,11 @@ if TYPE_CHECKING:
     from ..models.sandbox_network_rule import SandboxNetworkRule
 
 
-T = TypeVar("T", bound="PutSandboxesSandboxIDNetworkBodyRules")
+T = TypeVar("T", bound="SandboxNetworkUpdateConfigRules")
 
 
 @_attrs_define
-class PutSandboxesSandboxIDNetworkBodyRules:
+class SandboxNetworkUpdateConfigRules:
     """Per-domain transform rules. Replaces all existing rules when provided."""
 
     additional_properties: dict[str, list["SandboxNetworkRule"]] = _attrs_field(
@@ -34,7 +34,7 @@ class PutSandboxesSandboxIDNetworkBodyRules:
         from ..models.sandbox_network_rule import SandboxNetworkRule
 
         d = dict(src_dict)
-        put_sandboxes_sandbox_id_network_body_rules = cls()
+        sandbox_network_update_config_rules = cls()
 
         additional_properties = {}
         for prop_name, prop_dict in d.items():
@@ -49,10 +49,10 @@ class PutSandboxesSandboxIDNetworkBodyRules:
 
             additional_properties[prop_name] = additional_property
 
-        put_sandboxes_sandbox_id_network_body_rules.additional_properties = (
+        sandbox_network_update_config_rules.additional_properties = (
             additional_properties
         )
-        return put_sandboxes_sandbox_id_network_body_rules
+        return sandbox_network_update_config_rules
 
     @property
     def additional_keys(self) -> list[str]:

@@ -42,10 +42,6 @@ from .post_sandboxes_sandbox_id_snapshots_body import (
     PostSandboxesSandboxIDSnapshotsBody,
 )
 from .post_sandboxes_sandbox_id_timeout_body import PostSandboxesSandboxIDTimeoutBody
-from .put_sandboxes_sandbox_id_network_body import PutSandboxesSandboxIDNetworkBody
-from .put_sandboxes_sandbox_id_network_body_rules import (
-    PutSandboxesSandboxIDNetworkBodyRules,
-)
 from .resumed_sandbox import ResumedSandbox
 from .sandbox import Sandbox
 from .sandbox_auto_resume_config import SandboxAutoResumeConfig
@@ -62,6 +58,8 @@ from .sandbox_network_config_rules import SandboxNetworkConfigRules
 from .sandbox_network_rule import SandboxNetworkRule
 from .sandbox_network_transform import SandboxNetworkTransform
 from .sandbox_network_transform_headers import SandboxNetworkTransformHeaders
+from .sandbox_network_update_config import SandboxNetworkUpdateConfig
+from .sandbox_network_update_config_rules import SandboxNetworkUpdateConfigRules
 from .sandbox_on_timeout import SandboxOnTimeout
 from .sandbox_state import SandboxState
 from .sandbox_volume_mount import SandboxVolumeMount
@@ -133,8 +131,6 @@ __all__ = (
     "PostSandboxesSandboxIDRefreshesBody",
     "PostSandboxesSandboxIDSnapshotsBody",
     "PostSandboxesSandboxIDTimeoutBody",
-    "PutSandboxesSandboxIDNetworkBody",
-    "PutSandboxesSandboxIDNetworkBodyRules",
     "ResumedSandbox",
     "Sandbox",
     "SandboxAutoResumeConfig",
@@ -152,6 +148,8 @@ __all__ = (
     "SandboxNetworkRule",
     "SandboxNetworkTransform",
     "SandboxNetworkTransformHeaders",
+    "SandboxNetworkUpdateConfig",
+    "SandboxNetworkUpdateConfigRules",
     "SandboxOnTimeout",
     "SandboxState",
     "SandboxVolumeMount",

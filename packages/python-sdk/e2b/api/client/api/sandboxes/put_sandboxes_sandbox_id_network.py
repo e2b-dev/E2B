@@ -6,16 +6,14 @@ import httpx
 from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.error import Error
-from ...models.put_sandboxes_sandbox_id_network_body import (
-    PutSandboxesSandboxIDNetworkBody,
-)
+from ...models.sandbox_network_update_config import SandboxNetworkUpdateConfig
 from ...types import Response
 
 
 def _get_kwargs(
     sandbox_id: str,
     *,
-    body: PutSandboxesSandboxIDNetworkBody,
+    body: SandboxNetworkUpdateConfig,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
 
@@ -75,14 +73,16 @@ def sync_detailed(
     sandbox_id: str,
     *,
     client: AuthenticatedClient,
-    body: PutSandboxesSandboxIDNetworkBody,
+    body: SandboxNetworkUpdateConfig,
 ) -> Response[Union[Any, Error]]:
     """Update the network configuration for a running sandbox. Replaces the current egress rules with the
-    provided configuration. Omitting both fields clears all egress rules.
+    provided configuration. Omitting a field clears it.
 
     Args:
         sandbox_id (str):
-        body (PutSandboxesSandboxIDNetworkBody):
+        body (SandboxNetworkUpdateConfig): Network configuration update for a running sandbox.
+            Replaces the current egress rules with the provided configuration. Omitting a field clears
+            it.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -108,14 +108,16 @@ def sync(
     sandbox_id: str,
     *,
     client: AuthenticatedClient,
-    body: PutSandboxesSandboxIDNetworkBody,
+    body: SandboxNetworkUpdateConfig,
 ) -> Optional[Union[Any, Error]]:
     """Update the network configuration for a running sandbox. Replaces the current egress rules with the
-    provided configuration. Omitting both fields clears all egress rules.
+    provided configuration. Omitting a field clears it.
 
     Args:
         sandbox_id (str):
-        body (PutSandboxesSandboxIDNetworkBody):
+        body (SandboxNetworkUpdateConfig): Network configuration update for a running sandbox.
+            Replaces the current egress rules with the provided configuration. Omitting a field clears
+            it.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -136,14 +138,16 @@ async def asyncio_detailed(
     sandbox_id: str,
     *,
     client: AuthenticatedClient,
-    body: PutSandboxesSandboxIDNetworkBody,
+    body: SandboxNetworkUpdateConfig,
 ) -> Response[Union[Any, Error]]:
     """Update the network configuration for a running sandbox. Replaces the current egress rules with the
-    provided configuration. Omitting both fields clears all egress rules.
+    provided configuration. Omitting a field clears it.
 
     Args:
         sandbox_id (str):
-        body (PutSandboxesSandboxIDNetworkBody):
+        body (SandboxNetworkUpdateConfig): Network configuration update for a running sandbox.
+            Replaces the current egress rules with the provided configuration. Omitting a field clears
+            it.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -167,14 +171,16 @@ async def asyncio(
     sandbox_id: str,
     *,
     client: AuthenticatedClient,
-    body: PutSandboxesSandboxIDNetworkBody,
+    body: SandboxNetworkUpdateConfig,
 ) -> Optional[Union[Any, Error]]:
     """Update the network configuration for a running sandbox. Replaces the current egress rules with the
-    provided configuration. Omitting both fields clears all egress rules.
+    provided configuration. Omitting a field clears it.
 
     Args:
         sandbox_id (str):
-        body (PutSandboxesSandboxIDNetworkBody):
+        body (SandboxNetworkUpdateConfig): Network configuration update for a running sandbox.
+            Replaces the current egress rules with the provided configuration. Omitting a field clears
+            it.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
