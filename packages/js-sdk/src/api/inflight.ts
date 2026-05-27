@@ -46,6 +46,14 @@ function abortReason(signal: AbortSignal | undefined): unknown {
  * Wrap `fetcher` so at most `max` requests are in-flight at any time.
  * Subsequent requests are FIFO-queued inside the SDK process and dispatched
  * as earlier requests settle.
+ *
+ * NOTE: the slot is released as soon as `fetcher` resolves with the response
+ * headers, not when the response body is fully consumed. This means the
+ * effective concurrency can be higher than `max` while bodies are
+ * still streaming.
+ *
+ * TODO: release on body end (consume/cancel/error) so the
+ * SDK-level cap aligns with the dispatcher's connection accounting
  */
 export function limitConcurrency(
   fetcher: typeof fetch,
