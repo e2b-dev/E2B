@@ -18,7 +18,7 @@ _volumes: dict[str, VolumeAndToken] = {}
 
 @pytest.fixture(autouse=True)
 def mock_volume_api(monkeypatch):
-    monkeypatch.setenv("E2B_API_KEY", "test-api-key")
+    monkeypatch.setenv("E2B_API_KEY", "e2b_" + "0" * 40)
     _volumes.clear()
 
     async def mock_post_volumes(*, client, body):
