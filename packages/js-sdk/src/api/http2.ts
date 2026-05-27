@@ -1,5 +1,5 @@
 import { runtime } from '../utils'
-import { getEnvVar } from './metadata'
+import { parseInflightLimitEnv, parsePositiveIntEnv } from './metadata'
 import { limitConcurrency } from './inflight'
 import {
   loadUndici,
@@ -56,11 +56,12 @@ async function buildApiFetcher(options: {
   loadUndici?: () => Promise<UndiciModule | undefined>
 }): Promise<typeof fetch> {
   const undici = await (options.loadUndici ?? loadUndici)()
+  const inflightLimit = options.inflightLimit ?? getApiInflightLimit()
 
   if (!undici) {
     warnUndiciFallback()
 
-    return applyInflightLimit(fetch, options.inflightLimit)
+    return limitConcurrency(fetch, inflightLimit)
   }
 
   const { Agent, fetch: undiciFetch } = undici
@@ -82,45 +83,28 @@ async function buildApiFetcher(options: {
     })
   }) as typeof fetch
 
-  return applyInflightLimit(wrapped, options.inflightLimit)
-}
-
-function applyInflightLimit(
-  fetcher: typeof fetch,
-  override: number | undefined
-): typeof fetch {
-  const limit = override ?? getApiInflightLimit()
-  if (limit == null) return fetcher
-  return limitConcurrency(fetcher, limit)
+  return limitConcurrency(wrapped, inflightLimit)
 }
 
 export function getApiConnectionLimit(): number {
-  const raw = getEnvVar('E2B_API_CONNECTIONS')
-  if (!raw) return DEFAULT_API_CONNECTION_LIMIT
-
-  const parsed = Number.parseInt(raw, 10)
-  if (!Number.isFinite(parsed) || parsed < 1)
-    return DEFAULT_API_CONNECTION_LIMIT
-
-  return parsed
+  return parsePositiveIntEnv(
+    'E2B_API_CONNECTIONS',
+    DEFAULT_API_CONNECTION_LIMIT
+  )
 }
 
 /**
  * Returns the configured max number of API requests that can be in flight at
- * once, or `null` to disable the cap.
+ * once, or `0` to disable the cap.
  *
  * Defaults to {@link DEFAULT_API_INFLIGHT_LIMIT} ({@link 1000}). Override via
- * `E2B_API_INFLIGHT_REQUESTS` env var; set to `0` (or any non-positive value)
- * to disable the cap entirely.
+ * `E2B_API_INFLIGHT_REQUESTS` env var; set to `0` to disable the cap entirely.
  */
-export function getApiInflightLimit(): number | null {
-  const raw = getEnvVar('E2B_API_INFLIGHT_REQUESTS')
-  if (!raw) return DEFAULT_API_INFLIGHT_LIMIT
-
-  const parsed = Number.parseInt(raw, 10)
-  if (!Number.isFinite(parsed) || parsed < 1) return null
-
-  return parsed
+export function getApiInflightLimit(): number {
+  return parseInflightLimitEnv(
+    'E2B_API_INFLIGHT_REQUESTS',
+    DEFAULT_API_INFLIGHT_LIMIT
+  )
 }
 
 function warnUndiciFallback() {

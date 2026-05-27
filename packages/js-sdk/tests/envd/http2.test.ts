@@ -6,6 +6,8 @@ afterEach(() => {
   vi.doUnmock('undici')
   vi.doUnmock('../../src/utils')
   delete process.env.E2B_ENVD_RPC_CONNECTIONS
+  delete process.env.E2B_ENVD_INFLIGHT_REQUESTS
+  delete process.env.E2B_ENVD_RPC_INFLIGHT_REQUESTS
 })
 
 test('uses undici with HTTP/2 enabled in Node', async () => {
@@ -95,6 +97,44 @@ test('reads RPC stream dispatcher connection limit from env', async () => {
   const { getEnvdRpcConnectionLimit } = await import('../../src/envd/http2')
 
   expect(getEnvdRpcConnectionLimit()).toBe(200)
+})
+
+test('getEnvdRpcConnectionLimit throws on malformed env value', async () => {
+  process.env.E2B_ENVD_RPC_CONNECTIONS = 'bogus'
+
+  const { getEnvdRpcConnectionLimit } = await import('../../src/envd/http2')
+
+  expect(() => getEnvdRpcConnectionLimit()).toThrow(/E2B_ENVD_RPC_CONNECTIONS/)
+})
+
+test('getEnvdInflightLimit throws on malformed env value', async () => {
+  process.env.E2B_ENVD_INFLIGHT_REQUESTS = 'bogus'
+
+  const { getEnvdInflightLimit } = await import('../../src/envd/http2')
+
+  expect(() => getEnvdInflightLimit()).toThrow(/E2B_ENVD_INFLIGHT_REQUESTS/)
+})
+
+test('getEnvdRpcInflightLimit throws on malformed env value', async () => {
+  process.env.E2B_ENVD_RPC_INFLIGHT_REQUESTS = 'bogus'
+
+  const { getEnvdRpcInflightLimit } = await import('../../src/envd/http2')
+
+  expect(() => getEnvdRpcInflightLimit()).toThrow(
+    /E2B_ENVD_RPC_INFLIGHT_REQUESTS/
+  )
+})
+
+test('inflight limit env vars return 0 for non-positive values (disable)', async () => {
+  process.env.E2B_ENVD_INFLIGHT_REQUESTS = '0'
+  process.env.E2B_ENVD_RPC_INFLIGHT_REQUESTS = '-1'
+
+  const { getEnvdInflightLimit, getEnvdRpcInflightLimit } = await import(
+    '../../src/envd/http2'
+  )
+
+  expect(getEnvdInflightLimit()).toBe(0)
+  expect(getEnvdRpcInflightLimit()).toBe(0)
 })
 
 test('defers loading undici until the first Node request', async () => {
