@@ -8,40 +8,44 @@ export let apiKey = process.env.E2B_API_KEY
 export let accessToken = process.env.E2B_ACCESS_TOKEN
 export const teamId = process.env.E2B_TEAM_ID
 
-const authErrorBox = (keyName: string) => {
-  let link
-  let msg
-  switch (keyName) {
-    case 'E2B_API_KEY':
-      link = 'https://e2b.dev/dashboard?tab=keys'
-      msg = 'API key'
-      break
-    case 'E2B_ACCESS_TOKEN':
-      link = 'https://e2b.dev/dashboard?tab=personal'
-      msg = 'access token'
-      break
-  }
-  // throwing error in default in switch statement results in unreachable code,
-  // so we need to check if link and msg are defined here instead
-  if (!link || !msg) {
-    throw new Error(`Unknown key name: ${keyName}`)
-  }
-  return boxen.default(
-    `You must be logged in to use this command. Run ${asBold('e2b auth login')}.
+const authErrorBox = (keyName: 'E2B_API_KEY' | 'E2B_ACCESS_TOKEN' | 'BOTH') => {
+  let body: string
+  if (keyName === 'BOTH') {
+    body = `You must be logged in to use this command. Run ${asBold(
+      'e2b auth login'
+    )}.
+
+If you are seeing this message in CI/CD you may need to set either the ${asBold(
+      'E2B_API_KEY'
+    )} or ${asBold('E2B_ACCESS_TOKEN')} environment variable.
+Visit ${asPrimary(
+      'https://e2b.dev/dashboard?tab=keys'
+    )} to get an API key or ${asPrimary(
+      'https://e2b.dev/dashboard?tab=personal'
+    )} to get an access token.`
+  } else {
+    const link =
+      keyName === 'E2B_API_KEY'
+        ? 'https://e2b.dev/dashboard?tab=keys'
+        : 'https://e2b.dev/dashboard?tab=personal'
+    const msg = keyName === 'E2B_API_KEY' ? 'API key' : 'access token'
+    body = `You must be logged in to use this command. Run ${asBold(
+      'e2b auth login'
+    )}.
 
 If you are seeing this message in CI/CD you may need to set the ${asBold(
-      `${keyName}`
+      keyName
     )} environment variable.
-Visit ${asPrimary(link)} to get the ${msg}.`,
-    {
-      width: 70,
-      float: 'center',
-      padding: 0.5,
-      margin: 1,
-      borderStyle: 'round',
-      borderColor: 'redBright',
-    }
-  )
+Visit ${asPrimary(link)} to get the ${msg}.`
+  }
+  return boxen.default(body, {
+    width: 70,
+    float: 'center',
+    padding: 0.5,
+    margin: 1,
+    borderStyle: 'round',
+    borderColor: 'redBright',
+  })
 }
 
 export function ensureAPIKey() {
@@ -81,6 +85,33 @@ export function ensureAccessToken() {
   } else {
     return accessToken
   }
+}
+
+/**
+ * Ensures either E2B_ACCESS_TOKEN or E2B_API_KEY is available. Use this for
+ * endpoints that accept either credential at the API level. Returns whichever
+ * is available, preferring access token.
+ */
+export function ensureAccessTokenOrAPIKey():
+  | { accessToken: string; apiKey?: undefined }
+  | { apiKey: string; accessToken?: undefined } {
+  const userConfig = getUserConfig()
+  if (!accessToken) {
+    accessToken = userConfig?.accessToken
+  }
+  if (!apiKey) {
+    apiKey = userConfig?.teamApiKey
+  }
+
+  if (accessToken) {
+    return { accessToken }
+  }
+  if (apiKey) {
+    return { apiKey }
+  }
+
+  console.error(authErrorBox('BOTH'))
+  process.exit(1)
 }
 
 /**
