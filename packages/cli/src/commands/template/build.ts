@@ -67,11 +67,11 @@ async function getTemplateBuildLogs({
   )
 
   handleE2BRequestError(res, 'Error getting template build status')
-  return res.data as e2b.paths['/templates/{templateID}/builds/{buildID}/status']['get']['responses']['200']['content']['application/json']
+  return res.data as e2b.components['schemas']['TemplateBuildInfo']
 }
 
 async function requestTemplateBuild(
-  args: e2b.paths['/templates']['post']['requestBody']['content']['application/json']
+  args: e2b.components['schemas']['TemplateBuildRequest']
 ) {
   return await client.api.POST('/templates', {
     body: args,
@@ -80,7 +80,7 @@ async function requestTemplateBuild(
 
 async function requestTemplateRebuild(
   templateID: string,
-  args: e2b.paths['/templates/{templateID}']['post']['requestBody']['content']['application/json']
+  args: e2b.components['schemas']['TemplateBuildRequest']
 ) {
   return await client.api.POST('/templates/{templateID}', {
     body: args,
@@ -642,14 +642,9 @@ export function getDockerfile(root: string, file?: string) {
 }
 
 async function requestBuildTemplate(
-  args: e2b.paths['/templates']['post']['requestBody']['content']['application/json'],
+  args: e2b.components['schemas']['TemplateBuildRequest'],
   templateID?: string
-): Promise<
-  Omit<
-    e2b.paths['/templates']['post']['responses']['202']['content']['application/json'],
-    'logs'
-  >
-> {
+): Promise<Omit<e2b.components['schemas']['TemplateLegacy'], 'logs'>> {
   let res
   if (templateID) {
     res = await requestTemplateRebuild(templateID, args)
