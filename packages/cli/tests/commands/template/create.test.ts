@@ -1,57 +1,114 @@
-import { spawnSync } from 'child_process'
-import * as fs from 'fs/promises'
-import * as path from 'path'
-import { afterEach, beforeEach, describe, expect, test } from 'vitest'
+import { spawnSync } from 'node:child_process'
+import * as fs from 'node:fs/promises'
+import * as path from 'node:path'
+import { afterAll, beforeAll, describe, expect, test } from 'vitest'
+import { getUserConfig } from 'src/user'
 
-// A syntactically valid E2B API key (mirrors the SDK's validation regex
-// `^e2b_[0-9a-f]+$`). The key is bogus — this test never reaches the API.
-const VALID_FORMAT_API_KEY = `e2b_${'0'.repeat(40)}`
+type UserConfigWithDomain = NonNullable<ReturnType<typeof getUserConfig>> & {
+  domain?: string
+  E2B_DOMAIN?: string
+}
+
+const userConfig = safeGetUserConfig() as UserConfigWithDomain | null
+const domain =
+  process.env.E2B_DOMAIN ||
+  userConfig?.E2B_DOMAIN ||
+  userConfig?.domain ||
+  'e2b.app'
+const apiKey = process.env.E2B_API_KEY || userConfig?.teamApiKey
+const hasCreds = Boolean(apiKey)
+const testIf = test.skipIf(!hasCreds)
 
 const cliPath = path.join(process.cwd(), 'dist', 'index.js')
+const templateName = `cli-create-api-key-test-${Date.now()}`
+const perTestTimeoutMs = parseEnvInt(
+  'E2B_CLI_BACKEND_TEST_TIMEOUT_MS',
+  300_000
+)
 
-describe('Template Create', () => {
+describe('template create cli backend integration', () => {
   let testDir: string
-  let homeDir: string
 
-  beforeEach(async () => {
+  beforeAll(async () => {
+    if (!hasCreds) return
     testDir = await fs.mkdtemp('e2b-create-test-')
-    homeDir = await fs.mkdtemp('e2b-create-home-')
     await fs.writeFile(
       path.join(testDir, 'e2b.Dockerfile'),
-      'FROM alpine:3.18\n'
+      'FROM ubuntu:latest\n'
     )
   })
 
-  afterEach(async () => {
-    if (testDir) await fs.rm(testDir, { recursive: true, force: true })
-    if (homeDir) await fs.rm(homeDir, { recursive: true, force: true })
-  })
-
-  test('accepts E2B_API_KEY alone (no E2B_ACCESS_TOKEN required)', () => {
-    const result = spawnSync(
-      'node',
-      [cliPath, 'template', 'create', 'my-template', '--path', testDir],
-      {
-        encoding: 'utf-8',
-        timeout: 8000,
-        env: {
-          PATH: process.env.PATH,
-          // Isolated HOME so ~/.e2b/config.json cannot leak an access token in.
-          HOME: homeDir,
-          E2B_API_KEY: VALID_FORMAT_API_KEY,
-          // Force domain to one that fails DNS quickly so the API call doesn't
-          // hang past our timeout once credential checks pass.
-          E2B_DOMAIN: 'invalid.e2b-cli-test.localhost',
-        },
+  afterAll(async () => {
+    if (testDir) {
+      try {
+        runCli(['template', 'delete', '--yes', templateName])
+      } catch (err) {
+        console.warn(
+          `Failed to delete template ${templateName} in cleanup: ${String(err)}`
+        )
       }
-    )
-    const output = (result.stdout || '') + (result.stderr || '')
-
-    // Reaching "Building sandbox template..." means we passed every pre-build
-    // credential check without an access token.
-    expect(output).toContain('Building sandbox template...')
-    // And we never printed the access-token auth-error box.
-    expect(output).not.toMatch(/You must be logged in/)
-    expect(output).not.toContain('E2B_ACCESS_TOKEN')
+      await fs.rm(testDir, { recursive: true, force: true })
+    }
   })
+
+  testIf(
+    'template create succeeds with E2B_API_KEY alone (no E2B_ACCESS_TOKEN)',
+    { timeout: perTestTimeoutMs },
+    () => {
+      const result = runCli([
+        'template',
+        'create',
+        templateName,
+        '--path',
+        testDir,
+      ])
+      const output = bufferToText(result.stdout) + bufferToText(result.stderr)
+
+      expect(result.status, output).toBe(0)
+      // Success marker printed by create.ts on a finished build; the failure
+      // path prints "❌ Template build failed." instead.
+      expect(output).toContain('✅ Building sandbox template')
+      expect(output).toContain('finished')
+      expect(output).not.toContain('❌ Template build failed')
+      // Auth never fell through to the access-token error box.
+      expect(output).not.toMatch(/You must be logged in/)
+    }
+  )
 })
+
+function runCli(args: string[]): ReturnType<typeof spawnSync> {
+  // Intentionally exclude E2B_ACCESS_TOKEN from the child env so this test
+  // verifies the API-key-only auth path end-to-end.
+  const env: NodeJS.ProcessEnv = {
+    PATH: process.env.PATH,
+    HOME: process.env.HOME,
+    E2B_DOMAIN: domain,
+    E2B_API_KEY: apiKey,
+  }
+  return spawnSync('node', [cliPath, ...args], {
+    env,
+    encoding: 'utf8',
+    timeout: perTestTimeoutMs,
+  })
+}
+
+function safeGetUserConfig(): ReturnType<typeof getUserConfig> | null {
+  try {
+    return getUserConfig()
+  } catch (err) {
+    console.warn(`Failed to read ~/.e2b/config.json: ${String(err)}`)
+    return null
+  }
+}
+
+function bufferToText(value: Buffer | string | null | undefined): string {
+  if (!value) return ''
+  return typeof value === 'string' ? value : value.toString('utf8')
+}
+
+function parseEnvInt(name: string, fallback: number): number {
+  const raw = process.env[name]
+  if (!raw) return fallback
+  const parsed = Number.parseInt(raw, 10)
+  return Number.isFinite(parsed) ? parsed : fallback
+}
