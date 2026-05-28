@@ -190,6 +190,41 @@ export interface FilesystemReadOpts extends FilesystemRequestOpts {
    * When true, the download will request gzip-encoded responses.
    */
   gzip?: boolean
+  /**
+   * First byte to read (inclusive, zero-based). When set without `end`,
+   * the read continues to the end of the file.
+   *
+   * Sent as an HTTP `Range` header — ranges operate on bytes, so when reading
+   * with `format: 'text'` a range that splits a multi-byte UTF-8 codepoint
+   * will produce a malformed string. Read as `bytes` and decode yourself if
+   * you need precise text slicing.
+   */
+  start?: number
+  /**
+   * Last byte to read (inclusive, zero-based, matching HTTP `Range` semantics
+   * — `start: 0, end: 9` returns 10 bytes). When set without `start`, the
+   * read starts at byte 0.
+   */
+  end?: number
+}
+
+function buildRangeHeader(
+  start: number | undefined,
+  end: number | undefined
+): string | undefined {
+  if (start === undefined && end === undefined) return undefined
+
+  if (start !== undefined && (!Number.isInteger(start) || start < 0)) {
+    throw new InvalidArgumentError('start must be a non-negative integer')
+  }
+  if (end !== undefined && (!Number.isInteger(end) || end < 0)) {
+    throw new InvalidArgumentError('end must be a non-negative integer')
+  }
+  if (start !== undefined && end !== undefined && start > end) {
+    throw new InvalidArgumentError('start must be less than or equal to end')
+  }
+
+  return `bytes=${start ?? 0}-${end ?? ''}`
 }
 
 export interface FilesystemListOpts extends FilesystemRequestOpts {
@@ -316,6 +351,11 @@ export class Filesystem {
     const headers: Record<string, string> = {}
     if (opts?.gzip) {
       headers['Accept-Encoding'] = 'gzip'
+    }
+
+    const range = buildRangeHeader(opts?.start, opts?.end)
+    if (range) {
+      headers['Range'] = range
     }
 
     const res = await this.envdApi.api.GET('/files', {

@@ -33,6 +33,7 @@ from e2b.sandbox.filesystem.filesystem import (
     EntryInfo,
     WriteEntry,
     WriteInfo,
+    build_range_header,
     map_file_type,
     to_upload_body,
 )
@@ -92,6 +93,8 @@ class Filesystem:
         user: Optional[Username] = None,
         request_timeout: Optional[float] = None,
         gzip: bool = False,
+        start: Optional[int] = None,
+        end: Optional[int] = None,
     ) -> str:
         """
         Read file content as a `str`.
@@ -101,6 +104,15 @@ class Filesystem:
         :param format: Format of the file content—`text` by default
         :param request_timeout: Timeout for the request in **seconds**
         :param gzip: Use gzip compression for the request
+        :param start: First byte to read (inclusive, zero-based). When set
+            without ``end``, the read continues to the end of the file.
+            Sent as an HTTP ``Range`` header — ranges operate on bytes, so
+            with ``format="text"`` a range that splits a multi-byte UTF-8
+            codepoint will produce a malformed string. Read as ``bytes`` and
+            decode yourself if you need precise text slicing.
+        :param end: Last byte to read (inclusive, zero-based, matching HTTP
+            ``Range`` semantics — ``start=0, end=9`` returns 10 bytes). When
+            set without ``start``, the read starts at byte 0.
 
         :return: File content as a `str`
         """
@@ -114,6 +126,8 @@ class Filesystem:
         user: Optional[Username] = None,
         request_timeout: Optional[float] = None,
         gzip: bool = False,
+        start: Optional[int] = None,
+        end: Optional[int] = None,
     ) -> bytearray:
         """
         Read file content as a `bytearray`.
@@ -123,6 +137,8 @@ class Filesystem:
         :param format: Format of the file content—`bytes`
         :param request_timeout: Timeout for the request in **seconds**
         :param gzip: Use gzip compression for the request
+        :param start: First byte to read (inclusive). See the ``text`` overload for details.
+        :param end: Last byte to read (inclusive). See the ``text`` overload for details.
 
         :return: File content as a `bytearray`
         """
@@ -136,6 +152,8 @@ class Filesystem:
         user: Optional[Username] = None,
         request_timeout: Optional[float] = None,
         gzip: bool = False,
+        start: Optional[int] = None,
+        end: Optional[int] = None,
     ) -> Iterator[bytes]:
         """
         Read file content as a `Iterator[bytes]`.
@@ -145,6 +163,8 @@ class Filesystem:
         :param format: Format of the file content—`stream`
         :param request_timeout: Timeout for the request in **seconds**
         :param gzip: Use gzip compression for the request
+        :param start: First byte to read (inclusive). See the ``text`` overload for details.
+        :param end: Last byte to read (inclusive). See the ``text`` overload for details.
 
         :return: File content as an `Iterator[bytes]`
         """
@@ -157,6 +177,8 @@ class Filesystem:
         user: Optional[Username] = None,
         request_timeout: Optional[float] = None,
         gzip: bool = False,
+        start: Optional[int] = None,
+        end: Optional[int] = None,
     ):
         username = user
         if username is None and self._envd_version < ENVD_DEFAULT_USER:
@@ -169,6 +191,10 @@ class Filesystem:
         headers = {}
         if gzip:
             headers["Accept-Encoding"] = "gzip"
+
+        range_header = build_range_header(start, end)
+        if range_header:
+            headers["Range"] = range_header
 
         r = self._envd_api.get(
             ENVD_API_FILES_ROUTE,

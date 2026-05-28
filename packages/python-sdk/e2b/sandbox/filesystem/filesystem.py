@@ -114,3 +114,21 @@ def to_upload_body(
         raise InvalidArgumentException(f"Unsupported data type: {type(data)}")
 
     return gzip.compress(raw) if use_gzip else raw
+
+
+def build_range_header(
+    start: Optional[int],
+    end: Optional[int],
+) -> Optional[str]:
+    """Build an HTTP Range header value (`bytes=start-end`, inclusive) or return None."""
+    if start is None and end is None:
+        return None
+
+    if start is not None and (not isinstance(start, int) or start < 0):
+        raise InvalidArgumentException("start must be a non-negative integer")
+    if end is not None and (not isinstance(end, int) or end < 0):
+        raise InvalidArgumentException("end must be a non-negative integer")
+    if start is not None and end is not None and start > end:
+        raise InvalidArgumentException("start must be less than or equal to end")
+
+    return f"bytes={start if start is not None else 0}-{end if end is not None else ''}"

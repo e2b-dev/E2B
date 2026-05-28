@@ -1,5 +1,5 @@
 import pytest
-from e2b import FileNotFoundException, NotFoundException
+from e2b import FileNotFoundException, InvalidArgumentException, NotFoundException
 
 
 def test_read_file(sandbox):
@@ -32,3 +32,38 @@ def test_read_empty_file(sandbox):
     sandbox.commands.run(f"touch {filename}")
     read_content = sandbox.files.read(filename)
     assert read_content == content
+
+
+def test_read_with_start_and_end(sandbox):
+    filename = "test_read_range.txt"
+    sandbox.files.write(filename, "Hello, world!")
+    assert sandbox.files.read(filename, start=7, end=11) == "world"
+
+
+def test_read_with_start_only(sandbox):
+    filename = "test_read_start.txt"
+    sandbox.files.write(filename, "Hello, world!")
+    assert sandbox.files.read(filename, start=7) == "world!"
+
+
+def test_read_with_end_only(sandbox):
+    filename = "test_read_end.txt"
+    sandbox.files.write(filename, "Hello, world!")
+    assert sandbox.files.read(filename, end=4) == "Hello"
+
+
+def test_read_range_as_bytes(sandbox):
+    filename = "test_read_range_bytes.txt"
+    sandbox.files.write(filename, "Hello, world!")
+    sliced = sandbox.files.read(filename, format="bytes", start=7, end=11)
+    assert bytes(sliced).decode("utf-8") == "world"
+
+
+def test_read_with_invalid_range_rejects(sandbox):
+    filename = "test_read_invalid_range.txt"
+    sandbox.files.write(filename, "data")
+
+    with pytest.raises(InvalidArgumentException):
+        sandbox.files.read(filename, start=-1)
+    with pytest.raises(InvalidArgumentException):
+        sandbox.files.read(filename, start=5, end=2)
