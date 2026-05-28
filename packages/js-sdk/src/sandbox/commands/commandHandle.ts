@@ -216,7 +216,7 @@ export class CommandHandle
             stdout: this.stdout,
             stderr: this.stderr,
           }
-          break
+          return
       }
       // TODO: Handle empty events like in python SDK
     }
