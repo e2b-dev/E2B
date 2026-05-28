@@ -134,6 +134,14 @@ export function shellQuote(s: string): string {
 }
 
 /**
+ * Escape regex metacharacters in a string so it can be safely interpolated
+ * into a `RegExp` as a literal.
+ */
+export function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+/**
  * Prepare data for upload as a BodyInit, optionally gzip-compressed.
  * When gzip is enabled, compresses the data and returns a Blob.
  */

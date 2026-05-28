@@ -50,4 +50,39 @@ describe('validateApiKey', () => {
       )
     }
   })
+
+  test('accepts a key with a custom prefix', () => {
+    assert.doesNotThrow(() =>
+      validateApiKey('myorg_' + '0'.repeat(40), 'myorg_')
+    )
+  })
+
+  test('rejects a key whose prefix does not match the custom prefix', () => {
+    assert.throws(
+      () => validateApiKey('e2b_' + '0'.repeat(40), 'myorg_'),
+      AuthenticationError,
+      /Invalid API key format/
+    )
+  })
+
+  test('custom prefix appears in the error message and example', () => {
+    try {
+      validateApiKey('nope', 'myorg_')
+      assert.fail('expected validateApiKey to throw')
+    } catch (err) {
+      assert.instanceOf(err, AuthenticationError)
+      assert.match((err as Error).message, /myorg_/)
+      assert.match((err as Error).message, /myorg_0{40}/)
+    }
+  })
+
+  test('escapes regex metacharacters in the prefix', () => {
+    assert.doesNotThrow(() =>
+      validateApiKey('my.org+' + '0'.repeat(40), 'my.org+')
+    )
+    assert.throws(
+      () => validateApiKey('myXorgY' + '0'.repeat(40), 'my.org+'),
+      AuthenticationError
+    )
+  })
 })

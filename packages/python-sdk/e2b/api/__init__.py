@@ -75,18 +75,21 @@ class SupportsApiErrorResponse(Protocol):
     def content(self) -> Union[str, bytes]: ...
 
 
-_API_KEY_PATTERN = re.compile(r"\Ae2b_[0-9a-f]+\Z")
-_API_KEY_EXAMPLE = "e2b_" + "0" * 40
+DEFAULT_API_KEY_PREFIX = "e2b_"
 
 
-def validate_api_key(api_key: str) -> None:
-    """Validate that an E2B API key has the expected ``e2b_`` prefix
-    followed by hex characters. Raises ``AuthenticationException`` otherwise.
+def validate_api_key(api_key: str, prefix: str = DEFAULT_API_KEY_PREFIX) -> None:
+    """Validate that an E2B API key has the expected prefix followed by hex
+    characters. Raises ``AuthenticationException`` otherwise. The prefix
+    defaults to ``e2b_`` and can be overridden via the ``E2B_API_KEY_PREFIX``
+    env var or the ``api_key_prefix`` connection option.
     """
-    if not _API_KEY_PATTERN.match(api_key):
+    pattern = re.compile(rf"\A{re.escape(prefix)}[0-9a-f]+\Z")
+    if not pattern.match(api_key):
+        example = f"{prefix}{'0' * 40}"
         raise AuthenticationException(
-            'Invalid API key format: expected "e2b_" followed by hex '
-            f'characters (e.g. "{_API_KEY_EXAMPLE}"). '
+            f'Invalid API key format: expected "{prefix}" followed by hex '
+            f'characters (e.g. "{example}"). '
             "Visit the API Keys tab at https://e2b.dev/dashboard?tab=keys to get your API key."
         )
 
@@ -126,7 +129,7 @@ class ApiClient(AuthenticatedClient):
             token = config.api_key
 
         if config.api_key is not None:
-            validate_api_key(config.api_key)
+            validate_api_key(config.api_key, config.api_key_prefix)
 
         if require_access_token:
             if config.access_token is None:

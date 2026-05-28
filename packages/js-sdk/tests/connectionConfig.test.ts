@@ -13,6 +13,7 @@ beforeEach(() => {
     E2B_DOMAIN: process.env.E2B_DOMAIN,
     E2B_SANDBOX_URL: process.env.E2B_SANDBOX_URL,
     E2B_DEBUG: process.env.E2B_DEBUG,
+    E2B_API_KEY_PREFIX: process.env.E2B_API_KEY_PREFIX,
   }
 })
 
@@ -144,6 +145,27 @@ test('sandbox_url stays localhost in debug mode', () => {
     }),
     'http://localhost:49983'
   )
+})
+
+test('apiKeyPrefix defaults to e2b_', () => {
+  delete process.env.E2B_API_KEY_PREFIX
+
+  const config = new ConnectionConfig()
+  assert.equal(config.apiKeyPrefix, 'e2b_')
+})
+
+test('apiKeyPrefix from env var', () => {
+  process.env.E2B_API_KEY_PREFIX = 'myorg_'
+
+  const config = new ConnectionConfig()
+  assert.equal(config.apiKeyPrefix, 'myorg_')
+})
+
+test('apiKeyPrefix in args has priority over env var', () => {
+  process.env.E2B_API_KEY_PREFIX = 'fromenv_'
+
+  const config = new ConnectionConfig({ apiKeyPrefix: 'fromargs_' })
+  assert.equal(config.apiKeyPrefix, 'fromargs_')
 })
 
 test('getSignal returns user signal when no timeout is set', () => {

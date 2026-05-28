@@ -22,6 +22,13 @@ export interface ConnectionOpts {
    */
   apiKey?: string
   /**
+   * Prefix expected on the E2B API key, used by client-side format validation.
+   * Override this when your deployment issues API keys with a non-default prefix.
+   *
+   * @default E2B_API_KEY_PREFIX // environment variable or `e2b_`
+   */
+  apiKeyPrefix?: string
+  /**
    * E2B access token to use for authentication.
    *
    * @default E2B_ACCESS_TOKEN // environment variable
@@ -182,12 +189,14 @@ export class ConnectionConfig {
   readonly requestTimeoutMs: number
 
   readonly apiKey?: string
+  readonly apiKeyPrefix: string
   readonly accessToken?: string
 
   readonly headers?: Record<string, string>
 
   constructor(opts?: ConnectionOpts) {
     this.apiKey = opts?.apiKey || ConnectionConfig.apiKey
+    this.apiKeyPrefix = opts?.apiKeyPrefix || ConnectionConfig.apiKeyPrefix
     this.debug = opts?.debug || ConnectionConfig.debug
     this.domain = opts?.domain || ConnectionConfig.domain
     this.accessToken = opts?.accessToken || ConnectionConfig.accessToken
@@ -222,6 +231,10 @@ export class ConnectionConfig {
 
   private static get apiKey() {
     return getEnvVar('E2B_API_KEY')
+  }
+
+  private static get apiKeyPrefix() {
+    return getEnvVar('E2B_API_KEY_PREFIX') || 'e2b_'
   }
 
   private static get accessToken() {

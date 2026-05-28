@@ -29,6 +29,10 @@ class ApiParams(TypedDict, total=False):
     api_key: Optional[str]
     """E2B API Key to use for authentication, defaults to `E2B_API_KEY` environment variable."""
 
+    api_key_prefix: Optional[str]
+    """Prefix expected on the E2B API key for client-side format validation,
+    defaults to `E2B_API_KEY_PREFIX` environment variable or `e2b_`."""
+
     domain: Optional[str]
     """E2B domain to use for authentication, defaults to `E2B_DOMAIN` environment variable."""
 
@@ -65,6 +69,10 @@ class ConnectionConfig:
         return os.getenv("E2B_API_KEY")
 
     @staticmethod
+    def _api_key_prefix():
+        return os.getenv("E2B_API_KEY_PREFIX") or "e2b_"
+
+    @staticmethod
     def _api_url():
         return os.getenv("E2B_API_URL")
 
@@ -81,6 +89,7 @@ class ConnectionConfig:
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
         api_key: Optional[str] = None,
+        api_key_prefix: Optional[str] = None,
         api_url: Optional[str] = None,
         sandbox_url: Optional[str] = None,
         access_token: Optional[str] = None,
@@ -92,6 +101,7 @@ class ConnectionConfig:
         self.domain = domain or ConnectionConfig._domain()
         self.debug = debug or ConnectionConfig._debug()
         self.api_key = api_key or ConnectionConfig._api_key()
+        self.api_key_prefix = api_key_prefix or ConnectionConfig._api_key_prefix()
         self.access_token = access_token or ConnectionConfig._access_token()
         self.headers = headers or {}
         self.headers["User-Agent"] = f"e2b-python-sdk/{package_version}"
@@ -176,6 +186,7 @@ class ConnectionConfig:
         headers = opts.get("headers")
         request_timeout = opts.get("request_timeout")
         api_key = opts.get("api_key")
+        api_key_prefix = opts.get("api_key_prefix")
         api_url = opts.get("api_url")
         domain = opts.get("domain")
         debug = opts.get("debug")
@@ -188,6 +199,9 @@ class ConnectionConfig:
         return dict(
             ApiParams(
                 api_key=api_key if api_key is not None else self.api_key,
+                api_key_prefix=api_key_prefix
+                if api_key_prefix is not None
+                else self.api_key_prefix,
                 api_url=api_url if api_url is not None else self.api_url,
                 domain=domain if domain is not None else self.domain,
                 debug=debug if debug is not None else self.debug,
