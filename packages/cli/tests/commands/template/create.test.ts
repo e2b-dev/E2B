@@ -5,7 +5,6 @@ import { afterAll, beforeAll, describe, expect, test } from 'vitest'
 
 const apiKey = process.env.E2B_API_KEY
 const domain = process.env.E2B_DOMAIN || 'e2b.app'
-const testIf = test.skipIf(!apiKey)
 
 const cliPath = path.join(process.cwd(), 'dist', 'index.js')
 const templateName = `cli-create-api-key-test-${Date.now()}`
@@ -14,7 +13,11 @@ describe('template create cli backend integration', () => {
   let testDir: string
 
   beforeAll(async () => {
-    if (!apiKey) return
+    if (!apiKey) {
+      throw new Error(
+        'E2B_API_KEY must be set to run template create backend tests'
+      )
+    }
     testDir = await fs.mkdtemp('e2b-create-test-')
     await fs.writeFile(
       path.join(testDir, 'e2b.Dockerfile'),
@@ -28,7 +31,7 @@ describe('template create cli backend integration', () => {
     await fs.rm(testDir, { recursive: true, force: true })
   })
 
-  testIf(
+  test(
     'template create succeeds with E2B_API_KEY alone (no E2B_ACCESS_TOKEN)',
     { timeout: 300_000 },
     () => {
