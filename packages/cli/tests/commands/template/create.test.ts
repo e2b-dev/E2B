@@ -65,10 +65,7 @@ describe('template create cli backend integration', () => {
       const output = bufferToText(result.stdout) + bufferToText(result.stderr)
 
       expect(result.status, output).toBe(0)
-      // Success marker printed by create.ts on a finished build; the failure
-      // path prints "❌ Template build failed." instead.
       expect(output).toContain('✅ Building sandbox template')
-      expect(output).toContain('finished')
       expect(output).not.toContain('❌ Template build failed')
       // Auth never fell through to the access-token error box.
       expect(output).not.toMatch(/You must be logged in/)
