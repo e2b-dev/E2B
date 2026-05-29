@@ -76,3 +76,21 @@ def test_get_host_keeps_per_sandbox_host_for_supported_domain():
     config = ConnectionConfig(domain="e2b.app")
 
     assert config.get_host("sandbox-id", "e2b.app", 8888) == "8888-sandbox-id.e2b.app"
+
+
+def test_sandbox_direct_url_keeps_per_sandbox_host_for_supported_domain():
+    config = ConnectionConfig(domain="e2b.app")
+
+    assert (
+        config.get_sandbox_direct_url("sandbox-id", "e2b.app")
+        == "https://49983-sandbox-id.e2b.app"
+    )
+
+
+def test_sandbox_direct_url_uses_explicit_url_first():
+    config = ConnectionConfig(sandbox_url="https://sandbox.example.com")
+
+    assert (
+        config.get_sandbox_direct_url("sandbox-id", "e2b.app")
+        == "https://sandbox.example.com"
+    )

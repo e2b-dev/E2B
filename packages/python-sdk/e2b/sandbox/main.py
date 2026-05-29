@@ -45,6 +45,9 @@ class SandboxBase:
         self.__envd_api_url = self.connection_config.get_sandbox_url(
             self.sandbox_id, self.sandbox_domain
         )
+        self.__envd_direct_url = self.connection_config.get_sandbox_direct_url(
+            self.sandbox_id, self.sandbox_domain
+        )
         self.__mcp_token: Optional[str] = None
 
     @property
@@ -81,6 +84,10 @@ class SandboxBase:
         return self.__envd_api_url
 
     @property
+    def envd_direct_url(self) -> str:
+        return self.__envd_direct_url
+
+    @property
     def sandbox_id(self) -> str:
         """
         Unique identifier of the sandbox.
@@ -94,7 +101,7 @@ class SandboxBase:
         signature: Optional[str] = None,
         signature_expiration: Optional[int] = None,
     ) -> str:
-        url = urllib.parse.urljoin(self.envd_api_url, ENVD_API_FILES_ROUTE)
+        url = urllib.parse.urljoin(self.envd_direct_url, ENVD_API_FILES_ROUTE)
         query = {"path": path} if path else {}
 
         if user:
