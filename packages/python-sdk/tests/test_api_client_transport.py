@@ -2,11 +2,13 @@ import asyncio
 
 import pytest
 
-from e2b.api.client_async import AsyncTransportWithLogger
+from e2b.api.client_async import AsyncEnvdTransportWithLogger, AsyncTransportWithLogger
 from e2b.api.client_async import get_api_client as get_async_api_client
+from e2b.api.client_async import get_envd_transport as get_async_envd_transport
 from e2b.api.client_async import get_transport as get_async_transport
-from e2b.api.client_sync import TransportWithLogger
+from e2b.api.client_sync import EnvdTransportWithLogger, TransportWithLogger
 from e2b.api.client_sync import get_api_client as get_sync_api_client
+from e2b.api.client_sync import get_envd_transport as get_sync_envd_transport
 from e2b.api.client_sync import get_transport as get_sync_transport
 from e2b.connection_config import ConnectionConfig
 
@@ -47,6 +49,24 @@ def test_sync_get_transport_http2_opt_out_returns_distinct_instance(test_api_key
         assert get_sync_transport(config, http2=False) is http1_transport
     finally:
         TransportWithLogger._instances.clear()
+
+
+def test_sync_envd_transport_uses_separate_cache(test_api_key):
+    TransportWithLogger._instances.clear()
+    EnvdTransportWithLogger._instances.clear()
+    config = ConnectionConfig(api_key=test_api_key)
+
+    try:
+        api_transport = get_sync_transport(config)
+        envd_transport = get_sync_envd_transport(config)
+
+        assert api_transport is not envd_transport
+        assert get_sync_transport(config) is api_transport
+        assert get_sync_envd_transport(config) is envd_transport
+        assert envd_transport._pool._http2 is True
+    finally:
+        TransportWithLogger._instances.clear()
+        EnvdTransportWithLogger._instances.clear()
 
 
 @pytest.mark.asyncio
@@ -92,3 +112,22 @@ async def test_async_get_transport_http2_opt_out_returns_distinct_instance(
         assert get_async_transport(config, http2=False) is http1_transport
     finally:
         AsyncTransportWithLogger._instances.clear()
+
+
+@pytest.mark.asyncio
+async def test_async_envd_transport_uses_separate_cache(test_api_key):
+    AsyncTransportWithLogger._instances.clear()
+    AsyncEnvdTransportWithLogger._instances.clear()
+    config = ConnectionConfig(api_key=test_api_key)
+
+    try:
+        api_transport = get_async_transport(config)
+        envd_transport = get_async_envd_transport(config)
+
+        assert api_transport is not envd_transport
+        assert get_async_transport(config) is api_transport
+        assert get_async_envd_transport(config) is envd_transport
+        assert envd_transport._pool._http2 is True
+    finally:
+        AsyncTransportWithLogger._instances.clear()
+        AsyncEnvdTransportWithLogger._instances.clear()

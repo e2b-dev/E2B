@@ -47,3 +47,23 @@ def get_transport(config: ConnectionConfig, http2: bool = True) -> TransportWith
     )
     TransportWithLogger._instances[http2] = transport
     return transport
+
+
+class EnvdTransportWithLogger(TransportWithLogger):
+    _instances: Dict[bool, "EnvdTransportWithLogger"] = {}
+
+
+def get_envd_transport(
+    config: ConnectionConfig, http2: bool = True
+) -> EnvdTransportWithLogger:
+    cached = EnvdTransportWithLogger._instances.get(http2)
+    if cached is not None:
+        return cached
+
+    transport = EnvdTransportWithLogger(
+        limits=limits,
+        proxy=config.proxy,
+        http2=http2,
+    )
+    EnvdTransportWithLogger._instances[http2] = transport
+    return transport

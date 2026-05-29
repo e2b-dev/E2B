@@ -10,7 +10,7 @@ from packaging.version import Version
 from typing_extensions import Self, Unpack
 
 from e2b.api.client.types import Unset
-from e2b.api.client_async import get_transport
+from e2b.api.client_async import get_envd_transport as get_transport
 from e2b.connection_config import ApiParams, ConnectionConfig
 from e2b.envd.api import ENVD_API_HEALTH_ROUTE, ahandle_envd_api_exception
 from e2b.envd.versions import ENVD_DEBUG_FALLBACK
