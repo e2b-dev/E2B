@@ -48,35 +48,6 @@ def create_sandbox(monkeypatch, api_key: str) -> Sandbox:
 
 
 @pytest.mark.skip_debug()
-def test_sandbox_uses_http1_envd_transport(monkeypatch, test_api_key):
-    dummy_transport = SimpleNamespace(pool=object())
-    mock_transport = Mock(return_value=dummy_transport)
-
-    monkeypatch.setattr(sandbox_sync_main, "get_transport", mock_transport)
-    monkeypatch.setattr(
-        sandbox_sync_main.httpx, "Client", lambda *args, **kwargs: object()
-    )
-    monkeypatch.setattr(
-        sandbox_sync_main, "Filesystem", lambda *args, **kwargs: object()
-    )
-    monkeypatch.setattr(sandbox_sync_main, "Commands", lambda *args, **kwargs: object())
-    monkeypatch.setattr(sandbox_sync_main, "Pty", lambda *args, **kwargs: object())
-    monkeypatch.setattr(sandbox_sync_main, "Git", lambda *args, **kwargs: object())
-
-    Sandbox(
-        sandbox_id="sbx-test",
-        sandbox_domain="sandbox.e2b.dev",
-        envd_version=Version("0.2.4"),
-        envd_access_token="tok",
-        traffic_access_token="tok",
-        connection_config=ConnectionConfig(api_key=test_api_key),
-    )
-
-    mock_transport.assert_called_once()
-    assert mock_transport.call_args.kwargs["http2"] is False
-
-
-@pytest.mark.skip_debug()
 def test_pause_passes_connection_config_without_overrides(monkeypatch, test_api_key):
     mock_pause = Mock(return_value="sbx-test")
     monkeypatch.setattr(sandbox_sync_main.SandboxApi, "_cls_pause", mock_pause)

@@ -1,4 +1,5 @@
 import asyncio
+from concurrent.futures import ThreadPoolExecutor
 
 import pytest
 
@@ -53,7 +54,7 @@ def test_sync_get_transport_http2_opt_out_returns_distinct_instance(test_api_key
 
 def test_sync_envd_transport_uses_separate_cache(test_api_key):
     TransportWithLogger._instances.clear()
-    EnvdTransportWithLogger._instances.clear()
+    EnvdTransportWithLogger._thread_local.instances = {}
     config = ConnectionConfig(api_key=test_api_key)
 
     try:
@@ -66,7 +67,27 @@ def test_sync_envd_transport_uses_separate_cache(test_api_key):
         assert envd_transport._pool._http2 is True
     finally:
         TransportWithLogger._instances.clear()
-        EnvdTransportWithLogger._instances.clear()
+        EnvdTransportWithLogger._thread_local.instances = {}
+
+
+def test_sync_envd_transport_cache_is_thread_local(test_api_key):
+    EnvdTransportWithLogger._thread_local.instances = {}
+    config = ConnectionConfig(api_key=test_api_key)
+
+    def get_thread_transport():
+        return get_sync_envd_transport(config)
+
+    try:
+        main_transport = get_sync_envd_transport(config)
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            thread_transport = executor.submit(get_thread_transport).result()
+
+        assert main_transport is get_sync_envd_transport(config)
+        assert thread_transport is not main_transport
+        assert main_transport._pool._http2 is True
+        assert thread_transport._pool._http2 is True
+    finally:
+        EnvdTransportWithLogger._thread_local.instances = {}
 
 
 @pytest.mark.asyncio

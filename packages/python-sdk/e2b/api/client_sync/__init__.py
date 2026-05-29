@@ -2,6 +2,7 @@ from typing import Dict
 
 import httpx
 import logging
+import threading
 
 from e2b.api import ApiClient, limits
 from e2b.connection_config import ConnectionConfig
@@ -50,13 +51,16 @@ def get_transport(config: ConnectionConfig, http2: bool = True) -> TransportWith
 
 
 class EnvdTransportWithLogger(TransportWithLogger):
-    _instances: Dict[bool, "EnvdTransportWithLogger"] = {}
+    _thread_local = threading.local()
 
 
 def get_envd_transport(
     config: ConnectionConfig, http2: bool = True
 ) -> EnvdTransportWithLogger:
-    cached = EnvdTransportWithLogger._instances.get(http2)
+    instances: Dict[bool, EnvdTransportWithLogger] = getattr(
+        EnvdTransportWithLogger._thread_local, "instances", {}
+    )
+    cached = instances.get(http2)
     if cached is not None:
         return cached
 
@@ -65,5 +69,6 @@ def get_envd_transport(
         proxy=config.proxy,
         http2=http2,
     )
-    EnvdTransportWithLogger._instances[http2] = transport
+    instances[http2] = transport
+    EnvdTransportWithLogger._thread_local.instances = instances
     return transport
