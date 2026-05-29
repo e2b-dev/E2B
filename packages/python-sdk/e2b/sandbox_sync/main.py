@@ -840,7 +840,10 @@ class Sandbox(SandboxApi):
             **opts,
         )
 
-        sandbox_headers = {}
+        sandbox_headers = {
+            "E2b-Sandbox-Id": sandbox.sandbox_id,
+            "E2b-Sandbox-Port": str(ConnectionConfig.envd_port),
+        }
         envd_access_token = sandbox.envd_access_token
         if envd_access_token is not None and not isinstance(envd_access_token, Unset):
             sandbox_headers["X-Access-Token"] = envd_access_token

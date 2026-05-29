@@ -88,3 +88,26 @@ async def test_pause_applies_overrides(monkeypatch, test_api_key):
     assert mock_pause.call_args.kwargs["debug"] == BASE_DEBUG
     assert mock_pause.call_args.kwargs["headers"]["X-Test"] == BASE_HEADERS["X-Test"]
     assert mock_pause.call_args.kwargs["headers"]["X-Extra"] == "1"
+
+
+@pytest.mark.skip_debug()
+async def test_connect_sets_stable_host_routing_headers(monkeypatch, test_api_key):
+    mock_connect = AsyncMock(
+        return_value=SimpleNamespace(
+            sandbox_id="sbx-test",
+            domain="e2b.app",
+            envd_version="0.4.0",
+            envd_access_token="tok",
+            traffic_access_token="traffic",
+        )
+    )
+    monkeypatch.setattr(sandbox_async_main.SandboxApi, "_cls_connect", mock_connect)
+
+    sandbox = await AsyncSandbox.connect("sbx-test", api_key=test_api_key)
+
+    assert sandbox.envd_api_url == "https://sandbox.e2b.app"
+    assert sandbox.connection_config.sandbox_headers["E2b-Sandbox-Id"] == "sbx-test"
+    assert sandbox.connection_config.sandbox_headers["E2b-Sandbox-Port"] == str(
+        ConnectionConfig.envd_port
+    )
+    assert sandbox.connection_config.sandbox_headers["X-Access-Token"] == "tok"
