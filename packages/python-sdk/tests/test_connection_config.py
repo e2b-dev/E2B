@@ -31,27 +31,20 @@ def test_api_url_has_correct_priority(monkeypatch):
 def test_sandbox_url_uses_stable_host_for_supported_domain():
     config = ConnectionConfig(domain="e2b.app")
 
-    assert (
-        config.get_sandbox_url("sandbox-id", "e2b.app")
-        == "https://sandbox.e2b.app"
-    )
+    assert config.get_sandbox_url("sandbox-id", "e2b.app") == "https://sandbox.e2b.app"
 
 
 def test_sandbox_url_uses_stable_host_for_supported_non_prod_domain():
     config = ConnectionConfig(domain="e2b.dev")
 
-    assert (
-        config.get_sandbox_url("sandbox-id", "e2b.dev")
-        == "https://sandbox.e2b.dev"
-    )
+    assert config.get_sandbox_url("sandbox-id", "e2b.dev") == "https://sandbox.e2b.dev"
 
 
 def test_sandbox_url_uses_explicit_url_first():
     config = ConnectionConfig(sandbox_url="https://sandbox.example.com")
 
     assert (
-        config.get_sandbox_url("sandbox-id", "e2b.app")
-        == "https://sandbox.example.com"
+        config.get_sandbox_url("sandbox-id", "e2b.app") == "https://sandbox.example.com"
     )
 
 
@@ -82,7 +75,4 @@ def test_sandbox_url_debug_uses_localhost():
 def test_get_host_keeps_per_sandbox_host_for_supported_domain():
     config = ConnectionConfig(domain="e2b.app")
 
-    assert (
-        config.get_host("sandbox-id", "e2b.app", 8888)
-        == "8888-sandbox-id.e2b.app"
-    )
+    assert config.get_host("sandbox-id", "e2b.app", 8888) == "8888-sandbox-id.e2b.app"
