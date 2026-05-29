@@ -6,6 +6,7 @@ from httpx._types import ProxyTypes
 from typing_extensions import Unpack
 
 from e2b.api.metadata import package_version
+from e2b.sandbox_domains import is_supported_sandbox_domain
 
 REQUEST_TIMEOUT: float = 60.0  # 60 seconds
 
@@ -140,7 +141,14 @@ class ConnectionConfig:
         if self._sandbox_url:
             return self._sandbox_url  # type: ignore[return-value]
 
-        return f"{'http' if self.debug else 'https'}://{self.get_host(sandbox_id, sandbox_domain, self.envd_port)}"
+        if self.debug:
+            return f"http://{self.get_host(sandbox_id, sandbox_domain, self.envd_port)}"
+
+        sandbox_domain = sandbox_domain or self.domain
+        if is_supported_sandbox_domain(sandbox_domain):
+            return f"https://sandbox.{sandbox_domain}"
+
+        return f"https://{self.get_host(sandbox_id, sandbox_domain, self.envd_port)}"
 
     def get_host(self, sandbox_id: str, sandbox_domain: str, port: int) -> str:
         """
