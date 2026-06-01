@@ -12,11 +12,8 @@ const DEFAULT_API_CONNECTION_LIMIT = 100
 // 1000 = ~10 streams per connection (with the 100-conn default).
 // Override via env if your workload needs different.
 const DEFAULT_API_INFLIGHT_LIMIT = 1000
-const API_UNDICI_FALLBACK_WARNING =
-  'Failed to load undici for API HTTP/2 transport; falling back to global fetch.'
 
 let apiFetch: typeof fetch | undefined
-let hasWarnedUndiciFallback = false
 
 export function createApiFetch(): typeof fetch {
   if (apiFetch) {
@@ -59,8 +56,6 @@ async function buildApiFetcher(options: {
   const inflightLimit = options.inflightLimit ?? getApiInflightLimit()
 
   if (!undici) {
-    warnUndiciFallback()
-
     return limitConcurrency(fetch, inflightLimit)
   }
 
@@ -105,13 +100,4 @@ export function getApiInflightLimit(): number {
     'E2B_API_INFLIGHT_REQUESTS',
     DEFAULT_API_INFLIGHT_LIMIT
   )
-}
-
-function warnUndiciFallback() {
-  if (hasWarnedUndiciFallback) {
-    return
-  }
-
-  hasWarnedUndiciFallback = true
-  console.warn(API_UNDICI_FALLBACK_WARNING)
 }

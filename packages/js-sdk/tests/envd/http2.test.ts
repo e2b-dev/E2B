@@ -182,7 +182,6 @@ test('falls back to global fetch when undici cannot be loaded', async () => {
   const fallbackFetch = vi.fn(() =>
     Promise.resolve(new Response('fallback ok'))
   ) as unknown as typeof fetch
-  const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
   vi.stubGlobal('fetch', fallbackFetch)
 
   const { createEnvdFetchForRuntime } = await import('../../src/envd/http2')
@@ -197,7 +196,6 @@ test('falls back to global fetch when undici cannot be loaded', async () => {
     'https://example.com/status',
     undefined
   )
-  expect(warn).toHaveBeenCalledOnce()
 })
 
 test('uses global fetch outside Node', async () => {

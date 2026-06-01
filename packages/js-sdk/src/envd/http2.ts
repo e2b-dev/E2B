@@ -16,7 +16,6 @@ type EnvdFetchOptions = {
 
 let envdFetch: typeof fetch | undefined
 let envdRpcFetch: typeof fetch | undefined
-let hasWarnedUndiciFallback = false
 const DEFAULT_ENVD_CONNECTION_LIMIT = 10
 const DEFAULT_ENVD_RPC_CONNECTION_LIMIT = 200
 const DEFAULT_ENVD_INFLIGHT_LIMIT = 2000
@@ -47,8 +46,6 @@ async function buildEnvdFetcher(
   const inflightLimit = options.inflightLimit ?? 0
 
   if (!undici) {
-    warnUndiciFallback()
-
     return limitConcurrency(fetch, inflightLimit)
   }
 
@@ -74,17 +71,6 @@ async function buildEnvdFetcher(
   }) as typeof fetch
 
   return limitConcurrency(wrapped, inflightLimit)
-}
-
-function warnUndiciFallback() {
-  if (hasWarnedUndiciFallback) {
-    return
-  }
-
-  hasWarnedUndiciFallback = true
-  console.warn(
-    'Failed to load undici for envd HTTP/2 transport; falling back to global fetch.'
-  )
 }
 
 export function createEnvdFetch(): typeof fetch {
