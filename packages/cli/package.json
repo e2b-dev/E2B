@@ -60,7 +60,7 @@
     "knip": "^5.43.6",
     "tsup": "^8.4.0",
     "typescript": "^5.4.5",
-    "vitest": "^3.2.4"
+    "vitest": "^4.1.0"
   },
   "files": [
     "dist",
