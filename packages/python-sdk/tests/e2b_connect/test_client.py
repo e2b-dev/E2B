@@ -1,8 +1,10 @@
 import asyncio
+from typing import cast
 
 import pytest
+from httpcore import ConnectionPool, RemoteProtocolError
 
-from e2b_connect.client import _retry
+from e2b_connect.client import Client, _retry
 
 
 class GoodError(Exception):
@@ -132,3 +134,51 @@ async def test_async_with_multiple_await_calls():
     result = await f()
     assert result is True
     assert total == 2
+
+
+class _FakeMsg:
+    def SerializeToString(self):
+        return b""
+
+
+class _FakePool:
+    def __init__(self):
+        self.calls = 0
+
+    def request(self, **kwargs):
+        self.calls += 1
+        raise RemoteProtocolError("boom")
+
+
+def test_client_honors_configured_retries(monkeypatch):
+    monkeypatch.setattr("e2b_connect.client.time.sleep", lambda _: None)
+
+    pool = _FakePool()
+    client = Client(
+        pool=cast(ConnectionPool, pool),
+        url="http://api.test",
+        response_type=object,
+        retries=2,
+    )
+
+    with pytest.raises(RemoteProtocolError):
+        client.call_unary(_FakeMsg())
+
+    assert pool.calls == 3
+
+
+def test_client_retries_zero_disables_retries(monkeypatch):
+    monkeypatch.setattr("e2b_connect.client.time.sleep", lambda _: None)
+
+    pool = _FakePool()
+    client = Client(
+        pool=cast(ConnectionPool, pool),
+        url="http://api.test",
+        response_type=object,
+        retries=0,
+    )
+
+    with pytest.raises(RemoteProtocolError):
+        client.call_unary(_FakeMsg())
+
+    assert pool.calls == 1

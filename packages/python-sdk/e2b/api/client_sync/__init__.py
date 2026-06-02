@@ -67,10 +67,11 @@ class EnvdTransportWithLogger(TransportWithLogger):
 def get_envd_transport(
     config: ConnectionConfig, http2: bool = True
 ) -> EnvdTransportWithLogger:
-    instances: Dict[bool, EnvdTransportWithLogger] = getattr(
+    instances: Dict[Tuple[bool, int], EnvdTransportWithLogger] = getattr(
         EnvdTransportWithLogger._thread_local, "instances", {}
     )
-    cached = instances.get(http2)
+    key = (http2, config.retries)
+    cached = instances.get(key)
     if cached is not None:
         return cached
 
@@ -78,7 +79,8 @@ def get_envd_transport(
         limits=limits,
         proxy=config.proxy,
         http2=http2,
+        retries=config.retries,
     )
-    instances[http2] = transport
+    instances[key] = transport
     EnvdTransportWithLogger._thread_local.instances = instances
     return transport

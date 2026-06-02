@@ -213,6 +213,17 @@ describe('withRetry', () => {
     assert.equal(calls.length, 2)
   })
 
+  test('POST: 503 (ambiguous) is NOT retried', async () => {
+    const { fetch, calls } = fakeFetch([new Response(null, { status: 503 })])
+    const wrapped = withRetry(fetch, 3)
+    const res = await wrapped('https://api.test/rpc', {
+      method: 'POST',
+      body: 'x',
+    })
+    assert.equal(res.status, 503)
+    assert.equal(calls.length, 1)
+  })
+
   test('retries on a transient connection error then succeeds', async () => {
     const { fetch, calls } = fakeFetch([
       err('ECONNRESET'),

@@ -120,9 +120,17 @@ def _backoff_delay(attempt: int) -> float:
     return random.uniform(0, exp)
 
 
+def _resolve_retries(retries: Optional[int], args: tuple) -> int:
+    # When ``retries`` is None, read the count from ``self`` (the first arg).
+    if retries is not None:
+        return retries
+    return args[0]._connection_retries
+
+
 def _sync_retry(func, exc, retries):
     def retry(*args, **kwargs):
-        for attempt in range(retries):
+        count = _resolve_retries(retries, args)
+        for attempt in range(count):
             try:
                 return func(*args, **kwargs)
             except exc:
@@ -136,7 +144,8 @@ def _sync_retry(func, exc, retries):
 
 def _async_retry(func, exc, retries):
     async def retry(*args, **kwargs):
-        for attempt in range(retries):
+        count = _resolve_retries(retries, args)
+        for attempt in range(count):
             try:
                 return await func(*args, **kwargs)
             except exc:
@@ -148,7 +157,11 @@ def _async_retry(func, exc, retries):
     return retry
 
 
-def _retry(exc: typing.Type[Exception], retries: int):
+def _retry(exc: typing.Type[Exception], retries: Optional[int] = None):
+    """Retry ``func`` on ``exc`` with exponential backoff. When ``retries`` is
+    None, the count is read from the instance's ``_connection_retries``.
+    """
+
     def decorator(func):
         if inspect.iscoroutinefunction(func):
             return _async_retry(func, exc, retries)
@@ -203,6 +216,7 @@ class Client:
         compressor=None,
         json: Optional[bool] = False,
         headers: Optional[Dict[str, str]] = None,
+        retries: int = 3,
     ):
         if headers is None:
             headers = {}
@@ -214,7 +228,7 @@ class Client:
         self._response_type = response_type
         self._compressor = compressor
         self._headers = headers
-        self._connection_retries = 3
+        self._connection_retries = retries
 
     def _prepare_unary_request(
         self,
@@ -278,7 +292,7 @@ class Client:
             msg_type=self._response_type,
         )
 
-    @_retry(RemoteProtocolError, 3)
+    @_retry(RemoteProtocolError)
     async def acall_unary(
         self,
         req,
@@ -299,7 +313,7 @@ class Client:
         res = await self.async_pool.request(**req_data)
         return self._process_unary_response(res)
 
-    @_retry(RemoteProtocolError, 3)
+    @_retry(RemoteProtocolError)
     def call_unary(
         self,
         req,
@@ -376,7 +390,7 @@ class Client:
             },
         }
 
-    @_retry(RemoteProtocolError, 3)
+    @_retry(RemoteProtocolError)
     async def acall_server_stream(
         self,
         req,
@@ -410,7 +424,7 @@ class Client:
                 for parsed in parser.parse(chunk):
                     yield parsed
 
-    @_retry(RemoteProtocolError, 3)
+    @_retry(RemoteProtocolError)
     def call_server_stream(
         self,
         req,

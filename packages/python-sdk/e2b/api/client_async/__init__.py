@@ -64,13 +64,13 @@ def get_transport(
 
 
 class AsyncEnvdTransportWithLogger(AsyncTransportWithLogger):
-    _instances: Dict[Tuple[int, bool], "AsyncEnvdTransportWithLogger"] = {}
+    _instances: Dict[Tuple[int, bool, int], "AsyncEnvdTransportWithLogger"] = {}
 
 
 def get_envd_transport(
     config: ConnectionConfig, http2: bool = True
 ) -> AsyncEnvdTransportWithLogger:
-    loop_id = (id(asyncio.get_running_loop()), http2)
+    loop_id = (id(asyncio.get_running_loop()), http2, config.retries)
 
     if loop_id in AsyncEnvdTransportWithLogger._instances:
         return AsyncEnvdTransportWithLogger._instances[loop_id]
@@ -79,6 +79,7 @@ def get_envd_transport(
         limits=limits,
         proxy=config.proxy,
         http2=http2,
+        retries=config.retries,
     )
 
     AsyncEnvdTransportWithLogger._instances[loop_id] = transport

@@ -159,6 +159,14 @@ def test_sync_post_retries_rejected():
     assert len(sender.calls) == 2
 
 
+def test_sync_post_does_not_retry_503_ambiguous():
+    sender = _Sender([_response(503)])
+    req = httpx.Request("POST", "http://api.test/rpc", content=b"x")
+    res = retry_request_sync(req, sender, retries=3, sleep=_no_sleep)
+    assert res.status_code == 503
+    assert len(sender.calls) == 1
+
+
 def test_sync_retries_on_connection_error():
     sender = _Sender([httpx.ConnectError("boom"), _response(200)])
     req = httpx.Request("GET", "http://api.test/sandboxes")

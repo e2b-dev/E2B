@@ -43,7 +43,7 @@ const RETRYABLE_STATUS: Map<number, FailureKind> = new Map([
   [408, 'ambiguous'], // request timeout
   [429, 'rejected'], // throttled — not processed
   [502, 'ambiguous'], // bad gateway
-  [503, 'rejected'], // service unavailable — not processed
+  [503, 'ambiguous'], // service unavailable — may be returned after processing
   [504, 'ambiguous'], // gateway timeout
 ])
 

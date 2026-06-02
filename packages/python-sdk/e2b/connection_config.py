@@ -47,7 +47,7 @@ class ApiParams(TypedDict, total=False):
     """URL to connect to sandbox, defaults to `E2B_SANDBOX_URL` environment variable."""
 
     retries: Optional[int]
-    """Number of times to retry a request after a transient failure (e.g. a network error, a `429` rate-limit, or a `502`/`503`/`504`). Retries use exponential backoff with jitter and honor a server-provided `Retry-After` header. Non-idempotent requests (e.g. creating a sandbox) are retried safely using an idempotency key so the server can deduplicate replays. Set to `0` to disable retries. Defaults to `E2B_MAX_RETRIES` environment variable or `3`."""
+    """Number of times to retry a request after a transient failure (e.g. a network error, a `429` rate-limit, or a `502`/`503`/`504`). Retries use exponential backoff with jitter and honor a server-provided `Retry-After` header. Non-idempotent requests (e.g. creating a sandbox) are only retried when the server provably did not process the request (e.g. throttling, a refused connection, or a DNS failure), avoiding duplicate side effects. Set to `0` to disable retries. Defaults to `E2B_MAX_RETRIES` environment variable or `3`."""
 
 
 class ConnectionConfig:

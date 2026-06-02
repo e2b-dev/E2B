@@ -1,8 +1,8 @@
 """Shared retry primitives for the E2B SDK.
 
 Provides transient-failure classification, ``Retry-After`` parsing, exponential
-backoff with jitter, idempotency-key helpers, and retry drivers used by the
-httpx transports (control-plane and volume REST).
+backoff with jitter, and retry drivers used by the httpx transports
+(control-plane and volume REST).
 """
 
 import asyncio
@@ -37,7 +37,7 @@ _RETRYABLE_STATUS = {
     408: _AMBIGUOUS,  # request timeout
     429: _REJECTED,  # throttled — not processed
     502: _AMBIGUOUS,  # bad gateway
-    503: _REJECTED,  # service unavailable — not processed
+    503: _AMBIGUOUS,  # service unavailable — may be returned after processing
     504: _AMBIGUOUS,  # gateway timeout
 }
 

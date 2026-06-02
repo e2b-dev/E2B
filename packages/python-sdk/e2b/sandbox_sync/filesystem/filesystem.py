@@ -82,6 +82,7 @@ class Filesystem:
             pool=pool,
             json=True,
             headers=connection_config.sandbox_headers,
+            retries=connection_config.retries,
         )
 
     @overload
