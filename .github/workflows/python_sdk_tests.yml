@@ -7,6 +7,11 @@ on:
         required: false
         type: string
         default: ''
+      run:
+        description: 'Whether to actually run the build and tests. When false the matrix jobs are skipped (reported as success to required checks).'
+        required: false
+        type: boolean
+        default: true
     secrets:
       E2B_API_KEY:
         required: true
@@ -16,6 +21,7 @@ permissions:
 
 jobs:
   test:
+    if: ${{ inputs.run }}
     defaults:
       run:
         working-directory: ./packages/python-sdk

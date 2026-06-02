@@ -10,44 +10,97 @@ permissions:
   contents: read
 
 jobs:
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      js: ${{ steps.filter.outputs.js }}
+      python: ${{ steps.filter.outputs.python }}
+      cli: ${{ steps.filter.outputs.cli }}
+    steps:
+      - name: Filter changed paths
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            shared: &shared
+              - '.github/workflows/sdk_tests.yml'
+              - 'spec/**'
+              - 'pnpm-lock.yaml'
+              - 'pnpm-workspace.yaml'
+              - 'package.json'
+              - '.tool-versions'
+            js:
+              - *shared
+              - '.github/workflows/js_sdk_tests.yml'
+              - 'packages/js-sdk/**'
+            python:
+              - *shared
+              - '.github/workflows/python_sdk_tests.yml'
+              - 'packages/python-sdk/**'
+              - 'packages/connect-python/**'
+            cli:
+              - *shared
+              - '.github/workflows/cli_tests.yml'
+              - 'packages/cli/**'
+              - 'packages/js-sdk/**'
+
   js-tests:
     name: Production / JS SDK Tests
+    needs: changes
     uses: ./.github/workflows/js_sdk_tests.yml
+    with:
+      run: ${{ needs.changes.outputs.js == 'true' || github.event_name == 'workflow_dispatch' }}
     secrets:
       E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
 
   python-tests:
     name: Production / Python SDK Tests
+    needs: changes
     uses: ./.github/workflows/python_sdk_tests.yml
+    with:
+      run: ${{ needs.changes.outputs.python == 'true' || github.event_name == 'workflow_dispatch' }}
     secrets:
       E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
 
   cli-tests:
     name: Production / CLI Tests
+    needs: changes
     uses: ./.github/workflows/cli_tests.yml
+    with:
+      run: ${{ needs.changes.outputs.cli == 'true' || github.event_name == 'workflow_dispatch' }}
     secrets:
       E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
 
   js-tests-staging:
     name: Staging / JS SDK Tests
+    needs: changes
     uses: ./.github/workflows/js_sdk_tests.yml
     with:
       E2B_DOMAIN: ${{ vars.E2B_DOMAIN_STAGING }}
+      run: ${{ needs.changes.outputs.js == 'true' || github.event_name == 'workflow_dispatch' }}
     secrets:
       E2B_API_KEY: ${{ secrets.E2B_API_KEY_STAGING }}
 
   python-tests-staging:
     name: Staging / Python SDK Tests
+    needs: changes
     uses: ./.github/workflows/python_sdk_tests.yml
     with:
       E2B_DOMAIN: ${{ vars.E2B_DOMAIN_STAGING }}
+      run: ${{ needs.changes.outputs.python == 'true' || github.event_name == 'workflow_dispatch' }}
     secrets:
       E2B_API_KEY: ${{ secrets.E2B_API_KEY_STAGING }}
 
   cli-tests-staging:
     name: Staging / CLI Tests
+    needs: changes
     uses: ./.github/workflows/cli_tests.yml
     with:
       E2B_DOMAIN: ${{ vars.E2B_DOMAIN_STAGING }}
+      run: ${{ needs.changes.outputs.cli == 'true' || github.event_name == 'workflow_dispatch' }}
     secrets:
       E2B_API_KEY: ${{ secrets.E2B_API_KEY_STAGING }}

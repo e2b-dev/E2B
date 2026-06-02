@@ -7,8 +7,40 @@ permissions:
   contents: read
 
 jobs:
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      generated: ${{ steps.filter.outputs.generated }}
+    steps:
+      - name: Filter changed paths
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            generated:
+              - 'spec/**'
+              - 'codegen.Dockerfile'
+              - 'Makefile'
+              - 'packages/python-sdk/Makefile'
+              - 'packages/connect-python/**'
+              - 'packages/js-sdk/package.json'
+              - 'packages/js-sdk/src/api/schema.gen.ts'
+              - 'packages/js-sdk/src/envd/**'
+              - 'packages/js-sdk/src/volume/schema.gen.ts'
+              - 'packages/js-sdk/src/sandbox/mcp.d.ts'
+              - 'packages/python-sdk/e2b/api/**'
+              - 'packages/python-sdk/e2b/envd/**'
+              - 'packages/python-sdk/e2b_connect/**'
+              - '.github/workflows/generated_files.yml'
+
   check-generated:
     name: Generated files
+    needs: changes
+    if: ${{ needs.changes.outputs.generated == 'true' }}
     runs-on: ubuntu-latest
 
     steps:
