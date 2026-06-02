@@ -111,7 +111,7 @@ def make_error(error):
 
 
 # Exponential backoff with full jitter, in seconds.
-_BACKOFF_BASE_SEC = 0.5
+_BACKOFF_BASE_SEC = 0.1
 _BACKOFF_CAP_SEC = 8.0
 
 

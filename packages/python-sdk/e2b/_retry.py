@@ -18,7 +18,7 @@ import httpx
 #: Default number of *retries* (i.e. attempts after the first).
 DEFAULT_MAX_RETRIES = 3
 
-_BACKOFF_BASE_SEC = 0.5
+_BACKOFF_BASE_SEC = 0.1
 _BACKOFF_CAP_SEC = 8.0
 
 #: HTTP methods that are idempotent per the HTTP spec and can be retried on any

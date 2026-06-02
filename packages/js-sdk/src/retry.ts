@@ -4,7 +4,7 @@ import { parseIntEnv } from './api/metadata'
 export const DEFAULT_MAX_RETRIES = 3
 
 /** Base for the exponential backoff, in milliseconds. */
-const DEFAULT_BACKOFF_BASE_MS = 500
+const DEFAULT_BACKOFF_BASE_MS = 100
 /** Upper bound for a single backoff delay, in milliseconds. */
 const DEFAULT_BACKOFF_CAP_MS = 8_000
 /**
