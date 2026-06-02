@@ -8,36 +8,20 @@ export let apiKey = process.env.E2B_API_KEY
 export let accessToken = process.env.E2B_ACCESS_TOKEN
 export const teamId = process.env.E2B_TEAM_ID
 
-const authErrorBox = (keyName: 'E2B_API_KEY' | 'E2B_ACCESS_TOKEN' | 'BOTH') => {
-  let body: string
-  if (keyName === 'BOTH') {
-    body = `You must be logged in to use this command. Run ${asBold(
-      'e2b auth login'
-    )}.
-
-If you are seeing this message in CI/CD you may need to set either the ${asBold(
-      'E2B_API_KEY'
-    )} or ${asBold('E2B_ACCESS_TOKEN')} environment variable.
-Visit ${asPrimary(
-      'https://e2b.dev/dashboard?tab=keys'
-    )} to get an API key or ${asPrimary(
-      'https://e2b.dev/dashboard?tab=personal'
-    )} to get an access token.`
-  } else {
-    const link =
-      keyName === 'E2B_API_KEY'
-        ? 'https://e2b.dev/dashboard?tab=keys'
-        : 'https://e2b.dev/dashboard?tab=personal'
-    const msg = keyName === 'E2B_API_KEY' ? 'API key' : 'access token'
-    body = `You must be logged in to use this command. Run ${asBold(
-      'e2b auth login'
-    )}.
+const authErrorBox = (keyName: 'E2B_API_KEY' | 'E2B_ACCESS_TOKEN') => {
+  const link =
+    keyName === 'E2B_API_KEY'
+      ? 'https://e2b.dev/dashboard?tab=keys'
+      : 'https://e2b.dev/dashboard?tab=personal'
+  const msg = keyName === 'E2B_API_KEY' ? 'API key' : 'access token'
+  const body = `You must be logged in to use this command. Run ${asBold(
+    'e2b auth login'
+  )}.
 
 If you are seeing this message in CI/CD you may need to set the ${asBold(
-      keyName
-    )} environment variable.
+    keyName
+  )} environment variable.
 Visit ${asPrimary(link)} to get the ${msg}.`
-  }
   return boxen.default(body, {
     width: 70,
     float: 'center',
@@ -85,33 +69,6 @@ export function ensureAccessToken() {
   } else {
     return accessToken
   }
-}
-
-/**
- * Ensures either E2B_ACCESS_TOKEN or E2B_API_KEY is available. Use this for
- * endpoints that accept either credential at the API level. Returns whichever
- * is available, preferring access token.
- */
-export function ensureAccessTokenOrAPIKey():
-  | { accessToken: string; apiKey?: undefined }
-  | { apiKey: string; accessToken?: undefined } {
-  const userConfig = getUserConfig()
-  if (!accessToken) {
-    accessToken = userConfig?.accessToken
-  }
-  if (!apiKey) {
-    apiKey = userConfig?.teamApiKey
-  }
-
-  if (accessToken) {
-    return { accessToken }
-  }
-  if (apiKey) {
-    return { apiKey }
-  }
-
-  console.error(authErrorBox('BOTH'))
-  process.exit(1)
 }
 
 /**

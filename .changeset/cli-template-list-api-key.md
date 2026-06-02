@@ -2,4 +2,4 @@
 '@e2b/cli': patch
 ---
 
-`e2b template list` now accepts `E2B_API_KEY` as well as `E2B_ACCESS_TOKEN` — the underlying `GET /templates` endpoint supports either credential. `e2b template create` no longer requires `E2B_ACCESS_TOKEN`; the command only calls API-key-authenticated endpoints, so the access-token check was spurious and prevented API-key-only environments from creating templates.
+`e2b template list` and `e2b template create` now authenticate with `E2B_API_KEY` instead of requiring `E2B_ACCESS_TOKEN`. `E2B_ACCESS_TOKEN` is deprecated, so commands whose endpoints accept either credential now use the API key. This also unblocks API-key-only environments (e.g. CI/CD) that previously could not create or list templates.
