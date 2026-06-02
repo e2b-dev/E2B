@@ -7,6 +7,7 @@ from typing_extensions import Unpack
 
 from e2b.api.metadata import package_version
 from e2b.sandbox_domains import is_supported_sandbox_domain
+from e2b._retry import resolve_max_retries
 
 REQUEST_TIMEOUT: float = 60.0  # 60 seconds
 
@@ -44,6 +45,9 @@ class ApiParams(TypedDict, total=False):
 
     sandbox_url: Optional[str]
     """URL to connect to sandbox, defaults to `E2B_SANDBOX_URL` environment variable."""
+
+    retries: Optional[int]
+    """Number of times to retry a request after a transient failure (e.g. a network error, a `429` rate-limit, or a `502`/`503`/`504`). Retries use exponential backoff with jitter and honor a server-provided `Retry-After` header. Non-idempotent requests (e.g. creating a sandbox) are retried safely using an idempotency key so the server can deduplicate replays. Set to `0` to disable retries. Defaults to `E2B_MAX_RETRIES` environment variable or `3`."""
 
 
 class ConnectionConfig:
@@ -89,6 +93,7 @@ class ConnectionConfig:
         headers: Optional[Dict[str, str]] = None,
         extra_sandbox_headers: Optional[Dict[str, str]] = None,
         proxy: Optional[ProxyTypes] = None,
+        retries: Optional[int] = None,
     ):
         self.domain = domain or ConnectionConfig._domain()
         self.debug = debug or ConnectionConfig._debug()
@@ -99,6 +104,8 @@ class ConnectionConfig:
         self.__extra_sandbox_headers = extra_sandbox_headers or {}
 
         self.proxy = proxy
+
+        self.retries = resolve_max_retries(retries)
 
         self.request_timeout = ConnectionConfig._get_request_timeout(
             REQUEST_TIMEOUT,

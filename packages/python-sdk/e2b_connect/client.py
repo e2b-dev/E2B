@@ -1,7 +1,10 @@
+import asyncio
 import gzip
 import inspect
 import json
+import random
 import struct
+import time
 import typing
 
 from httpcore import (
@@ -107,12 +110,23 @@ def make_error(error):
     return ConnectException(status, error.get("message", ""))
 
 
+# Exponential backoff with full jitter, in seconds.
+_BACKOFF_BASE_SEC = 0.5
+_BACKOFF_CAP_SEC = 8.0
+
+
+def _backoff_delay(attempt: int) -> float:
+    exp = min(_BACKOFF_CAP_SEC, _BACKOFF_BASE_SEC * (2**attempt))
+    return random.uniform(0, exp)
+
+
 def _sync_retry(func, exc, retries):
     def retry(*args, **kwargs):
-        for _ in range(retries):
+        for attempt in range(retries):
             try:
                 return func(*args, **kwargs)
             except exc:
+                time.sleep(_backoff_delay(attempt))
                 continue
 
         return func(*args, **kwargs)
@@ -122,10 +136,11 @@ def _sync_retry(func, exc, retries):
 
 def _async_retry(func, exc, retries):
     async def retry(*args, **kwargs):
-        for _ in range(retries):
+        for attempt in range(retries):
             try:
                 return await func(*args, **kwargs)
             except exc:
+                await asyncio.sleep(_backoff_delay(attempt))
                 continue
 
         return await func(*args, **kwargs)

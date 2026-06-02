@@ -9,6 +9,7 @@ from e2b.api.metadata import default_headers
 from e2b.exceptions import AuthenticationException
 from e2b.volume.client.client import AuthenticatedClient as VolumeApiClient
 from e2b.volume.connection_config import VolumeConnectionConfig
+from e2b._retry import retry_request_sync
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +46,14 @@ def get_api_client(config: VolumeConnectionConfig, **kwargs) -> VolumeApiClient:
 class TransportWithLogger(httpx.HTTPTransport):
     singleton: Optional["TransportWithLogger"] = None
 
+    def __init__(self, *args, retries: int = 0, **kwargs):
+        self._retries = retries
+        super().__init__(*args, **kwargs)
+
     def handle_request(self, request):
+        return retry_request_sync(request, self._send, self._retries)
+
+    def _send(self, request):
         url = f"{request.url.scheme}://{request.url.host}{request.url.path}"
         logger.info(f"Request: {request.method} {url}")
         response = super().handle_request(request)
@@ -58,12 +66,16 @@ class TransportWithLogger(httpx.HTTPTransport):
 
 
 def get_transport(config: VolumeConnectionConfig) -> TransportWithLogger:
-    if TransportWithLogger.singleton is not None:
+    if (
+        TransportWithLogger.singleton is not None
+        and TransportWithLogger.singleton._retries == config.retries
+    ):
         return TransportWithLogger.singleton
 
     transport = TransportWithLogger(
         limits=limits,
         proxy=config.proxy,
+        retries=config.retries,
     )
     TransportWithLogger.singleton = transport
     return transport

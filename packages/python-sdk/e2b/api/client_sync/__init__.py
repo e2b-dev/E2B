@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, Tuple
 
 import httpx
 import logging
@@ -6,6 +6,7 @@ import threading
 
 from e2b.api import ApiClient, limits
 from e2b.connection_config import ConnectionConfig
+from e2b._retry import retry_request_sync
 
 logger = logging.getLogger(__name__)
 
@@ -19,9 +20,16 @@ def get_api_client(config: ConnectionConfig, **kwargs) -> ApiClient:
 
 
 class TransportWithLogger(httpx.HTTPTransport):
-    _instances: Dict[bool, "TransportWithLogger"] = {}
+    _instances: Dict[Tuple[bool, int], "TransportWithLogger"] = {}
+
+    def __init__(self, *args, retries: int = 0, **kwargs):
+        self._retries = retries
+        super().__init__(*args, **kwargs)
 
     def handle_request(self, request):
+        return retry_request_sync(request, self._send, self._retries)
+
+    def _send(self, request):
         url = f"{request.url.scheme}://{request.url.host}{request.url.path}"
         logger.info(f"Request: {request.method} {url}")
         response = super().handle_request(request)
@@ -37,7 +45,8 @@ class TransportWithLogger(httpx.HTTPTransport):
 
 
 def get_transport(config: ConnectionConfig, http2: bool = True) -> TransportWithLogger:
-    cached = TransportWithLogger._instances.get(http2)
+    key = (http2, config.retries)
+    cached = TransportWithLogger._instances.get(key)
     if cached is not None:
         return cached
 
@@ -45,8 +54,9 @@ def get_transport(config: ConnectionConfig, http2: bool = True) -> TransportWith
         limits=limits,
         proxy=config.proxy,
         http2=http2,
+        retries=config.retries,
     )
-    TransportWithLogger._instances[http2] = transport
+    TransportWithLogger._instances[key] = transport
     return transport
 
 
