@@ -22,18 +22,18 @@ jobs:
         with:
           filters: |
             generated:
+              # Codegen inputs and tooling
               - 'spec/**'
               - 'codegen.Dockerfile'
               - 'Makefile'
               - 'packages/python-sdk/Makefile'
               - 'packages/connect-python/**'
               - 'packages/js-sdk/package.json'
-              - 'packages/js-sdk/src/api/schema.gen.ts'
-              - 'packages/js-sdk/src/envd/**'
-              - 'packages/js-sdk/src/volume/schema.gen.ts'
-              - 'packages/js-sdk/src/sandbox/mcp.d.ts'
-              - 'packages/python-sdk/e2b/api/**'
-              - 'packages/python-sdk/e2b/envd/**'
+              # Generated outputs are interleaved with hand-written code inside
+              # the SDK source trees, so watch the whole trees rather than an
+              # easily-stale list of individual generated files.
+              - 'packages/js-sdk/src/**'
+              - 'packages/python-sdk/e2b/**'
               - 'packages/python-sdk/e2b_connect/**'
               - '.github/workflows/generated_files.yml'
 
