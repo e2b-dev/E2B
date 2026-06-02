@@ -22,6 +22,10 @@ jobs:
       cli: ${{ steps.filter.outputs.cli }}
     steps:
       - name: Filter changed paths
+        # On workflow_dispatch there is no PR diff and paths-filter would fall
+        # back to git (failing without a checkout); the run inputs below force a
+        # full run for that event instead, so we only filter on pull_request.
+        if: github.event_name == 'pull_request'
         uses: dorny/paths-filter@v3
         id: filter
         with:
