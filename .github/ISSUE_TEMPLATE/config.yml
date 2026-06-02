@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: E2B Docs
+    url: https://e2b.dev/docs
+    about: Read the E2B documentation.
+  - name: E2B Discord
+    url: https://discord.gg/dSBY3ms2Qr
+    about: Ask questions and get help from the E2B community.
