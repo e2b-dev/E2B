@@ -16,7 +16,12 @@ export default defineConfig({
             'tests/template/**',
             'tests/connectionConfig.test.ts',
           ],
-          isolate: false, // for projects that don't rely on side effects, disabling isolation will improve the speed of the tests
+          // Isolation is required: several suites patch global fetch via msw
+          // and rely on module mocks (vi.doMock / vi.resetModules). Under
+          // vitest 4 a shared (non-isolated) context leaks this state across
+          // files — e.g. aborted-request rejections and the cached undici
+          // apiFetch singleton — causing cross-file failures.
+          isolate: true,
           globals: false,
           testTimeout: 30_000,
           environment: 'node',
