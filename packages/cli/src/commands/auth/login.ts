@@ -1,7 +1,6 @@
 import * as listen from 'async-listen'
 import * as commander from 'commander'
 import * as http from 'http'
-import * as path from 'path'
 import * as e2b from 'e2b'
 
 import { pkg } from 'src'
