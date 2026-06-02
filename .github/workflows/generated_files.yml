@@ -22,19 +22,10 @@ jobs:
         with:
           filters: |
             generated:
-              # Codegen inputs and tooling
               - 'spec/**'
               - 'codegen.Dockerfile'
               - 'Makefile'
-              - 'packages/python-sdk/Makefile'
-              - 'packages/connect-python/**'
-              - 'packages/js-sdk/package.json'
-              # Generated outputs are interleaved with hand-written code inside
-              # the SDK source trees, so watch the whole trees rather than an
-              # easily-stale list of individual generated files.
-              - 'packages/js-sdk/src/**'
-              - 'packages/python-sdk/e2b/**'
-              - 'packages/python-sdk/e2b_connect/**'
+              - 'packages/**'
               - '.github/workflows/generated_files.yml'
 
   check-generated:
