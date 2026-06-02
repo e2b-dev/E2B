@@ -1,6 +1,7 @@
 import { randomBytes } from 'node:crypto'
 import { describe, expect, test } from 'vitest'
 import { Sandbox } from 'e2b'
+import { getUserConfig } from 'src/user'
 import {
   type CliRunResult,
   bufferToText,
@@ -16,7 +17,20 @@ type PipeCase = {
   timeoutMs?: number
 }
 
-const integrationTest = test.skipIf(isDebug)
+type UserConfigWithDomain = NonNullable<ReturnType<typeof getUserConfig>> & {
+  domain?: string
+  E2B_DOMAIN?: string
+}
+
+const userConfig = safeGetUserConfig() as UserConfigWithDomain | null
+const domain =
+  process.env.E2B_DOMAIN ||
+  userConfig?.E2B_DOMAIN ||
+  userConfig?.domain ||
+  'e2b.app'
+const apiKey = process.env.E2B_API_KEY || userConfig?.teamApiKey
+const shouldSkip = !apiKey || isDebug
+const integrationTest = test.skipIf(shouldSkip)
 const templateId =
   process.env.E2B_PIPE_TEMPLATE_ID ||
   process.env.E2B_TEMPLATE_ID ||
@@ -31,6 +45,13 @@ const defaultCmdTimeoutMs = parseEnvInt(
   'E2B_PIPE_CMD_TIMEOUT_MS',
   Math.min(8_000, testTimeoutMs)
 )
+const cliEnv: NodeJS.ProcessEnv = {
+  ...process.env,
+  E2B_DOMAIN: domain,
+  E2B_API_KEY: apiKey,
+}
+
+delete cliEnv.E2B_DEBUG
 
 const defaultCases: PipeCase[] = [
   {
@@ -84,6 +105,8 @@ describe('sandbox exec stdin piping (integration)', () => {
     { timeout: testTimeoutMs },
     async () => {
       const sandbox = await Sandbox.create(templateId, {
+        apiKey,
+        domain,
         timeoutMs: sandboxTimeoutMs,
       })
 
@@ -132,6 +155,7 @@ function runExecPipe(
     ['sandbox', 'exec', sandboxId, '--', 'sh', '-lc', 'wc -c'],
     testCase.data,
     {
+      env: cliEnv,
       timeoutMs: testCase.timeoutMs ?? defaultCmdTimeoutMs,
     }
   )
@@ -151,5 +175,14 @@ function assertExecSucceeded(
   const stderr = bufferToText(result.stderr).trim()
   if (result.status !== 0) {
     throw new Error(`${name} failed with rc=${result.status} stderr=${stderr}`)
+  }
+}
+
+function safeGetUserConfig(): ReturnType<typeof getUserConfig> | null {
+  try {
+    return getUserConfig()
+  } catch (err) {
+    console.warn(`Failed to read ~/.e2b/config.json: ${String(err)}`)
+    return null
   }
 }
