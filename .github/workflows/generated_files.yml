@@ -26,6 +26,10 @@ jobs:
               - 'codegen.Dockerfile'
               - 'Makefile'
               - 'packages/**'
+              - 'pnpm-lock.yaml'
+              - 'pnpm-workspace.yaml'
+              - 'package.json'
+              - '.tool-versions'
               - '.github/workflows/generated_files.yml'
 
   check-generated:
