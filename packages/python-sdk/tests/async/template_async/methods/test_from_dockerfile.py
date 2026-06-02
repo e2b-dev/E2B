@@ -67,6 +67,46 @@ async def test_from_dockerfile_with_custom_user_and_workdir():
 
 
 @pytest.mark.skip_debug()
+async def test_from_dockerfile_with_multi_source_copy():
+    dockerfile = """FROM node:24
+COPY file1.txt file2.txt file3.txt /dest/"""
+
+    template = AsyncTemplate().from_dockerfile(dockerfile)
+
+    instructions = template._template._instructions
+
+    copy_instructions = [i for i in instructions if i["type"] == InstructionType.COPY]
+
+    assert len(copy_instructions) == 3
+    assert copy_instructions[0]["args"][0] == "file1.txt"
+    assert copy_instructions[0]["args"][1] == "/dest/"
+    assert copy_instructions[1]["args"][0] == "file2.txt"
+    assert copy_instructions[1]["args"][1] == "/dest/"
+    assert copy_instructions[2]["args"][0] == "file3.txt"
+    assert copy_instructions[2]["args"][1] == "/dest/"
+
+
+@pytest.mark.skip_debug()
+async def test_from_dockerfile_with_multi_source_copy_chown():
+    dockerfile = """FROM node:24
+COPY --chown=myuser:mygroup pkg.json pkg-lock.json /app/"""
+
+    template = AsyncTemplate().from_dockerfile(dockerfile)
+
+    instructions = template._template._instructions
+
+    copy_instructions = [i for i in instructions if i["type"] == InstructionType.COPY]
+
+    assert len(copy_instructions) == 2
+    assert copy_instructions[0]["args"][0] == "pkg.json"
+    assert copy_instructions[0]["args"][1] == "/app/"
+    assert copy_instructions[0]["args"][2] == "myuser:mygroup"
+    assert copy_instructions[1]["args"][0] == "pkg-lock.json"
+    assert copy_instructions[1]["args"][1] == "/app/"
+    assert copy_instructions[1]["args"][2] == "myuser:mygroup"
+
+
+@pytest.mark.skip_debug()
 async def test_from_dockerfile_with_copy_chown():
     dockerfile = """FROM node:24
 COPY --chown=myuser:mygroup app.js /app/

@@ -1,6 +1,8 @@
 import { ApiClient, handleApiError, paths, components } from '../api'
-import { stripAnsi } from '../utils'
+import { buildRequestSignal } from '../connectionConfig'
+import { dynamicImport, stripAnsi } from '../utils'
 import { BuildError, FileUploadError, TemplateError } from '../errors'
+import { FILE_UPLOAD_TIMEOUT_MS } from './consts'
 import { LogEntry } from './logger'
 import { getBuildStepIndex, tarFileStreamUpload } from './utils'
 import {
@@ -47,7 +49,8 @@ export type TriggerBuildTemplate =
 
 export async function requestBuild(
   client: ApiClient,
-  { name, tags, cpuCount, memoryMB }: RequestBuildInput
+  { name, tags, cpuCount, memoryMB }: RequestBuildInput,
+  signal?: AbortSignal
 ) {
   const requestBuildRes = await client.api.POST('/v3/templates', {
     body: {
@@ -56,6 +59,7 @@ export async function requestBuild(
       cpuCount,
       memoryMB,
     },
+    signal,
   })
 
   const error = handleApiError(requestBuildRes, BuildError)
@@ -73,7 +77,8 @@ export async function requestBuild(
 export async function getFileUploadLink(
   client: ApiClient,
   { templateID, filesHash }: GetFileUploadLinkInput,
-  stackTrace?: string
+  stackTrace?: string,
+  signal?: AbortSignal
 ) {
   const fileUploadLinkRes = await client.api.GET(
     '/templates/{templateID}/files/{hash}',
@@ -84,6 +89,7 @@ export async function getFileUploadLink(
           hash: filesHash,
         },
       },
+      signal,
     }
   )
 
@@ -107,7 +113,13 @@ export async function uploadFile(
     ignorePatterns: string[]
     resolveSymlinks: boolean
   },
-  stackTrace: string | undefined
+  stackTrace: string | undefined,
+  // Uploads (PUT to S3 presigned URL) can take a long time for large
+  // archives — the 60s API default would break them, so we use a 1-hour
+  // upload default (`FILE_UPLOAD_TIMEOUT_MS`) when `requestTimeoutMs` is
+  // not supplied. Pass `requestTimeoutMs` (or an `AbortSignal.timeout(ms)`
+  // via `signal`) to override.
+  abortOpts?: { signal?: AbortSignal; requestTimeoutMs?: number }
 ) {
   const { fileName, url, fileContextPath, ignorePatterns, resolveSymlinks } =
     options
@@ -119,12 +131,29 @@ export async function uploadFile(
       resolveSymlinks
     )
 
-    // The compiler assumes this is Web fetch API, but it's actually Node.js fetch API
+    // Buffer the archive before uploading so fetch sets Content-Length.
+    // S3 presigned PUT URLs reject Transfer-Encoding: chunked with 501
+    // NotImplemented, which is what Node's fetch falls back to when the
+    // body is a Readable without a known length. See e2b-dev/e2b#1243.
+    // The Python SDK takes the same approach (build_api.py:upload_file).
+    // Dynamically import so the browser bundle doesn't pull in node:stream.
+    // tar's Pack extends Minipass and is iterable as AsyncIterable<Buffer> at
+    // runtime, but the cli's tsconfig (preserveSymlinks) doesn't surface that
+    // through the type chain — cast via unknown.
+    const { buffer } = await dynamicImport<
+      typeof import('node:stream/consumers')
+    >('node:stream/consumers')
+    const uploadBody = await buffer(
+      uploadStream as unknown as AsyncIterable<Buffer>
+    )
+
     const res = await fetch(url, {
       method: 'PUT',
-      // @ts-expect-error
-      body: uploadStream,
-      duplex: 'half',
+      body: uploadBody,
+      signal: buildRequestSignal(
+        abortOpts?.requestTimeoutMs ?? FILE_UPLOAD_TIMEOUT_MS,
+        abortOpts?.signal
+      ),
     })
 
     if (!res.ok) {
@@ -143,7 +172,8 @@ export async function uploadFile(
 
 export async function triggerBuild(
   client: ApiClient,
-  { templateID, buildID, template }: TriggerBuildInput
+  { templateID, buildID, template }: TriggerBuildInput,
+  signal?: AbortSignal
 ) {
   const triggerBuildRes = await client.api.POST(
     '/v2/templates/{templateID}/builds/{buildID}',
@@ -155,6 +185,7 @@ export async function triggerBuild(
         },
       },
       body: template,
+      signal,
     }
   )
 
@@ -185,7 +216,8 @@ function mapBuildStatusReason(
 
 export async function getBuildStatus(
   client: ApiClient,
-  { templateID, buildID, logsOffset }: GetBuildStatusInput
+  { templateID, buildID, logsOffset }: GetBuildStatusInput,
+  signal?: AbortSignal
 ): Promise<TemplateBuildStatusResponse> {
   const buildStatusRes = await client.api.GET(
     '/templates/{templateID}/builds/{buildID}/status',
@@ -199,6 +231,7 @@ export async function getBuildStatus(
           logsOffset,
         },
       },
+      signal,
     }
   )
 
@@ -223,7 +256,8 @@ export async function getBuildStatus(
 
 export async function checkAliasExists(
   client: ApiClient,
-  { alias }: CheckAliasExistsInput
+  { alias }: CheckAliasExistsInput,
+  signal?: AbortSignal
 ): Promise<boolean> {
   const aliasRes = await client.api.GET('/templates/aliases/{alias}', {
     params: {
@@ -231,6 +265,7 @@ export async function checkAliasExists(
         alias,
       },
     },
+    signal,
   })
 
   // If we get a NotFound, the alias doesn't exist
@@ -261,23 +296,33 @@ export async function waitForBuildFinish(
     onBuildLogs,
     logsRefreshFrequency,
     stackTraces,
+    signal,
+    requestTimeoutMs,
   }: {
     templateID: string
     buildID: string
     onBuildLogs?: (logEntry: LogEntry) => void
     logsRefreshFrequency: number
     stackTraces: (string | undefined)[]
+    signal?: AbortSignal
+    requestTimeoutMs?: number
   }
 ): Promise<void> {
   let logsOffset = 0
   let status: TemplateBuildStatus = 'building'
 
   while (status === 'building' || status === 'waiting') {
-    const buildStatus = await getBuildStatus(client, {
-      templateID,
-      buildID,
-      logsOffset,
-    })
+    signal?.throwIfAborted()
+
+    const buildStatus = await getBuildStatus(
+      client,
+      {
+        templateID,
+        buildID,
+        logsOffset,
+      },
+      buildRequestSignal(requestTimeoutMs, signal)
+    )
 
     logsOffset += buildStatus.logEntries.length
 
@@ -316,7 +361,8 @@ export async function waitForBuildFinish(
       }
     }
 
-    // Wait for a short period before checking the status again
+    // Wait for a short period before checking the status again. Abort is
+    // observed on the next iteration via `signal?.throwIfAborted()`.
     await new Promise((resolve) => setTimeout(resolve, logsRefreshFrequency))
   }
 
@@ -325,10 +371,12 @@ export async function waitForBuildFinish(
 
 export async function assignTags(
   client: ApiClient,
-  { targetName, tags }: { targetName: string; tags: string[] }
+  { targetName, tags }: { targetName: string; tags: string[] },
+  signal?: AbortSignal
 ): Promise<TemplateTagInfo> {
   const res = await client.api.POST('/templates/tags', {
     body: { target: targetName, tags },
+    signal,
   })
 
   const error = handleApiError(res, TemplateError)
@@ -348,10 +396,12 @@ export async function assignTags(
 
 export async function removeTags(
   client: ApiClient,
-  { name, tags }: { name: string; tags: string[] }
+  { name, tags }: { name: string; tags: string[] },
+  signal?: AbortSignal
 ): Promise<void> {
   const res = await client.api.DELETE('/templates/tags', {
     body: { name, tags },
+    signal,
   })
 
   const error = handleApiError(res, TemplateError)
@@ -362,7 +412,8 @@ export async function removeTags(
 
 export async function getTemplateTags(
   client: ApiClient,
-  { templateID }: { templateID: string }
+  { templateID }: { templateID: string },
+  signal?: AbortSignal
 ): Promise<TemplateTag[]> {
   const res = await client.api.GET('/templates/{templateID}/tags', {
     params: {
@@ -370,6 +421,7 @@ export async function getTemplateTags(
         templateID,
       },
     },
+    signal,
   })
 
   const error = handleApiError(res, TemplateError)

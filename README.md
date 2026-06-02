@@ -11,7 +11,7 @@
   </a>
   <a href="https://www.npmjs.com/package/e2b">
     <img alt="Last 1 month downloads for the JavaScript SDK" loading="lazy" width="200" height="30" decoding="async" data-nimg="1"
-    style="color:transparent;width:auto;height:100%" src="https://img.shields.io/npm/dm/e2b?label=NPM%20Monthly%20Downloads">
+    style="color:transparent;width:170px;height:18px" src="https://img.shields.io/npm/dm/e2b?label=NPM%20Monthly%20Downloads">
   </a>
 </h4>
 
@@ -19,10 +19,7 @@
 <img width="100%" src="/readme-assets/preview.png" alt="Cover image">
 --->
 ## What is E2B?
-[E2B](https://www.e2b.dev/) is an open-source infrastructure that allows you to run AI-generated code in secure isolated sandboxes in the cloud. To start and control sandboxes, use our [JavaScript SDK](https://www.npmjs.com/package/@e2b/code-interpreter) or [Python SDK](https://pypi.org/project/e2b_code_interpreter).
-
-> [!NOTE]
-> This repository contains the core E2B SDK that's used in our main [E2B Code Interpreter SDK](https://github.com/e2b-dev/code-interpreter).
+[E2B](https://www.e2b.dev/) is an open-source infrastructure that allows you to run AI-generated code in secure isolated sandboxes in the cloud. To start and control sandboxes, use our [JavaScript SDK](https://www.npmjs.com/package/e2b) or [Python SDK](https://pypi.org/project/e2b).
 
 ## Run your first Sandbox
 
@@ -30,12 +27,12 @@
 
 JavaScript / TypeScript
 ```
-npm i @e2b/code-interpreter
+npm i e2b
 ```
 
 Python
 ```
-pip install e2b-code-interpreter
+pip install e2b
 ```
 
 ### 2. Get your E2B API key
@@ -44,35 +41,49 @@ pip install e2b-code-interpreter
 3. Set environment variable with your API key
 ```
 E2B_API_KEY=e2b_***
-```     
+```
 
-### 3. Execute code with code interpreter inside Sandbox
+### 3. Start a sandbox and run commands
 
 JavaScript / TypeScript
 ```ts
-import { Sandbox } from '@e2b/code-interpreter'
+import Sandbox from 'e2b'
 
 const sandbox = await Sandbox.create()
-await sandbox.runCode('x = 1')
-
-const execution = await sandbox.runCode('x+=1; x')
-console.log(execution.text)  // outputs 2
+const result = await sandbox.commands.run('echo "Hello from E2B!"')
+console.log(result.stdout) // Hello from E2B!
 ```
 
 Python
 ```py
-from e2b_code_interpreter import Sandbox
+from e2b import Sandbox
 
 with Sandbox.create() as sandbox:
-    sandbox.run_code("x = 1")
-    execution = sandbox.run_code("x+=1; x")
-    print(execution.text)  # outputs 2
+    result = sandbox.commands.run('echo "Hello from E2B!"')
+    print(result.stdout)  # Hello from E2B!
 ```
 
-### 4. Check docs
+### 4. Code execution with Code Interpreter
+
+If you need to execute code with [`runCode()`](https://e2b.dev/docs/code-interpreting)/[`run_code()`](https://e2b.dev/docs/code-interpreting), install the [Code Interpreter SDK](https://github.com/e2b-dev/code-interpreter):
+
+```
+npm i @e2b/code-interpreter  # JavaScript/TypeScript
+pip install e2b-code-interpreter  # Python
+```
+
+```ts
+import { Sandbox } from '@e2b/code-interpreter'
+
+const sandbox = await Sandbox.create()
+const execution = await sandbox.runCode('x = 1; x += 1; x')
+console.log(execution.text)  // outputs 2
+```
+
+### 5. Check docs
 Visit [E2B documentation](https://e2b.dev/docs).
 
-### 5. E2B cookbook
+### 6. E2B cookbook
 Visit our [Cookbook](https://github.com/e2b-dev/e2b-cookbook/tree/main) to get inspired by examples with different LLMs and AI frameworks.
 
 ## Self-hosting

@@ -1,9 +1,10 @@
 import json
 import logging
 import os
+import re
 from dataclasses import dataclass
 from types import TracebackType
-from typing import Optional, Union
+from typing import Optional, Protocol, Union
 
 from httpx import AsyncBaseTransport, BaseTransport, Limits
 
@@ -36,7 +37,7 @@ class SandboxCreateResponse:
 
 
 def handle_api_exception(
-    e: Response,
+    e: "SupportsApiErrorResponse",
     default_exception_class: type[Exception] = SandboxException,
     stack_trace: Optional[TracebackType] = None,
 ):
@@ -64,6 +65,30 @@ def handle_api_exception(
     return default_exception_class(f"{e.status_code}: {e.content}").with_traceback(
         stack_trace
     )
+
+
+class SupportsApiErrorResponse(Protocol):
+    @property
+    def status_code(self) -> int: ...
+
+    @property
+    def content(self) -> Union[str, bytes]: ...
+
+
+_API_KEY_PATTERN = re.compile(r"\Ae2b_[0-9a-f]+\Z")
+_API_KEY_EXAMPLE = "e2b_" + "0" * 40
+
+
+def validate_api_key(api_key: str) -> None:
+    """Validate that an E2B API key has the expected ``e2b_`` prefix
+    followed by hex characters. Raises ``AuthenticationException`` otherwise.
+    """
+    if not _API_KEY_PATTERN.match(api_key):
+        raise AuthenticationException(
+            'Invalid API key format: expected "e2b_" followed by hex '
+            f'characters (e.g. "{_API_KEY_EXAMPLE}"). '
+            "Visit the API Keys tab at https://e2b.dev/dashboard?tab=keys to get your API key."
+        )
 
 
 class ApiClient(AuthenticatedClient):
@@ -100,6 +125,9 @@ class ApiClient(AuthenticatedClient):
                 )
             token = config.api_key
 
+        if config.api_key is not None:
+            validate_api_key(config.api_key)
+
         if require_access_token:
             if config.access_token is None:
                 raise AuthenticationException(
@@ -124,16 +152,19 @@ class ApiClient(AuthenticatedClient):
         kwargs.pop("auth_header_name", None)
         kwargs.pop("prefix", None)
 
+        httpx_args = {
+            "event_hooks": {
+                "request": [self._log_request],
+                "response": [self._log_response],
+            },
+            "transport": transport,
+        }
+        if transport is None:
+            httpx_args["proxy"] = config.proxy
+
         super().__init__(
             base_url=config.api_url,
-            httpx_args={
-                "event_hooks": {
-                    "request": [self._log_request],
-                    "response": [self._log_response],
-                },
-                "proxy": config.proxy,
-                "transport": transport,
-            },
+            httpx_args=httpx_args,
             headers=headers,
             token=token or "",
             auth_header_name=auth_header_name,

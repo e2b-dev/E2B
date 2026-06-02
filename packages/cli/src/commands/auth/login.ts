@@ -2,7 +2,6 @@ import * as listen from 'async-listen'
 import * as commander from 'commander'
 import * as fs from 'fs'
 import * as http from 'http'
-import * as open from 'open'
 import * as path from 'path'
 import * as e2b from 'e2b'
 
@@ -14,6 +13,7 @@ import {
   UserConfig,
 } from 'src/user'
 import { asBold, asFormattedConfig, asFormattedError } from 'src/utils/format'
+import { openUrlInBrowser } from 'src/utils/openBrowser'
 import { connectionConfig } from 'src/api'
 import { handleE2BRequestError } from '../../utils/errors'
 
@@ -125,6 +125,17 @@ async function signInWithBrowser(): Promise<SignInWithBrowserResponse> {
       res.end()
     })
 
-    return open.default(loginUrl.toString())
+    let manualUrlPrinted = false
+    const printManualUrl = () => {
+      if (manualUrlPrinted) return
+      manualUrlPrinted = true
+      console.log(
+        `\nCould not open a browser automatically. Please open the following URL manually to continue:\n\n${loginUrl.toString()}\n\nIf interactive login is unavailable, you can also authenticate by setting the ${asBold(
+          'E2B_API_KEY'
+        )} environment variable instead.\n`
+      )
+    }
+
+    openUrlInBrowser(loginUrl.toString(), printManualUrl)
   })
 }

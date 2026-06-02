@@ -13,7 +13,9 @@ class SnapshotInfo:
     Attributes:
         names (list[str]): Full names of the snapshot template including team namespace and tag (e.g. team-slug/my-
             snapshot:v2)
-        snapshot_id (str): Identifier of the snapshot template
+        snapshot_id (str): Identifier of the snapshot template including the tag. Uses namespace/alias when a name was
+            provided (e.g. team-slug/my-snapshot:default), otherwise falls back to the raw template ID (e.g.
+            abc123:default).
     """
 
     names: list[str]

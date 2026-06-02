@@ -937,7 +937,7 @@ export class Git {
   /**
    * Execute a raw shell command while applying default git environment variables.
    * 
-   Note: We can liekly just modify runGit later to allow appending commands to the git but for now it's separate.
+   Note: We can likely just modify runGit later to allow appending commands to the git but for now it's separate.
    */
   private async runShell(
     cmd: string,

@@ -1,8 +1,8 @@
 import asyncio
 import os
-import uuid
+import random
+import string
 from typing import Callable, Dict, Optional
-from uuid import uuid4
 
 import pytest
 import pytest_asyncio
@@ -11,13 +11,21 @@ from e2b import (
     AsyncCommandHandle,
     AsyncSandbox,
     AsyncTemplate,
+    AsyncVolume,
     CommandExitException,
     CommandHandle,
     LogEntry,
     Sandbox,
     Template,
     TemplateClass,
+    Volume,
 )
+
+
+@pytest.fixture
+def test_api_key() -> str:
+    """Placeholder API key with a valid format for tests that don't hit the API."""
+    return "e2b_" + "0" * 40
 
 
 @pytest.hookimpl(tryfirst=True, hookwrapper=True)
@@ -30,7 +38,7 @@ def pytest_runtest_makereport(item, call):
 
 @pytest.fixture()
 def sandbox_test_id():
-    return f"test_{uuid.uuid4()}"
+    return f"test_{_generate_random_string()}"
 
 
 @pytest.fixture()
@@ -63,43 +71,33 @@ def sandbox(sandbox_factory):
     return sandbox_factory()
 
 
-# override the event loop so it never closes
-# this helps us with the global-scoped async http transport
-@pytest.fixture(scope="session")
-def event_loop():
-    try:
-        loop = asyncio.get_running_loop()
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-    yield loop
-    loop.close()
+@pytest_asyncio.fixture
+async def async_sandbox_factory(request, template, sandbox_test_id):
+    sandboxes: list = []
 
-
-@pytest.fixture
-def async_sandbox_factory(request, template, sandbox_test_id, event_loop):
     async def factory(*, template_name: str = template, **kwargs):
         metadata = kwargs.setdefault("metadata", dict())
         metadata.setdefault("sandbox_test_id", sandbox_test_id)
 
         sandbox = await AsyncSandbox.create(template_name, **kwargs)
-
-        def finalizer():
-            if getattr(request.node, "_test_failed", False):
-                print(f"\n[TEST FAILED] Sandbox ID: {sandbox.sandbox_id}")
-
-            async def _kill():
-                await sandbox.kill()
-
-            event_loop.run_until_complete(_kill())
-
-        request.addfinalizer(finalizer)
-
+        sandboxes.append(sandbox)
         return sandbox
 
-    return factory
+    yield factory
+
+    if getattr(request.node, "_test_failed", False):
+        for sandbox in sandboxes:
+            print(f"\n[TEST FAILED] Sandbox ID: {sandbox.sandbox_id}")
+
+    results = await asyncio.gather(
+        *(sandbox.kill() for sandbox in sandboxes), return_exceptions=True
+    )
+    for sandbox, result in zip(sandboxes, results):
+        if isinstance(result, BaseException):
+            print(f"\n[TEARDOWN FAILED] Sandbox ID: {sandbox.sandbox_id}: {result!r}")
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def async_sandbox(async_sandbox_factory):
     return await async_sandbox_factory()
 
@@ -112,7 +110,7 @@ def build():
         skip_cache: bool = False,
         on_build_logs: Optional[Callable[[LogEntry], None]] = None,
     ):
-        build_name = name or f"e2b-test:v1-{uuid4()}"
+        build_name = name or f"e2b-test-{_generate_random_string()}"
         build_info: Dict[str, Optional[str]] = {"template_id": None, "build_id": None}
 
         def capture_logs(log: LogEntry):
@@ -156,7 +154,7 @@ def async_build():
         skip_cache: bool = False,
         on_build_logs: Optional[Callable[[LogEntry], None]] = None,
     ):
-        build_name = name or f"e2b-test:v1-{uuid4()}"
+        build_name = name or f"e2b-test-{_generate_random_string()}"
         build_info: Dict[str, Optional[str]] = {"template_id": None, "build_id": None}
 
         def capture_logs(log: LogEntry):
@@ -201,9 +199,7 @@ def debug():
 def skip_by_debug(request, debug):
     if request.node.get_closest_marker("skip_debug"):
         if debug:
-            pytest.skip(
-                "skipped because E2B_DEBUG is set"  # ty: ignore[too-many-positional-arguments]
-            )  # ty: ignore[invalid-argument-type]
+            pytest.skip("skipped because E2B_DEBUG is set")
 
 
 class Helpers:
@@ -241,3 +237,37 @@ class Helpers:
 @pytest.fixture
 def helpers():
     return Helpers
+
+
+def _generate_random_string(length: int = 8) -> str:
+    return "".join(random.choices(string.ascii_lowercase + string.digits, k=length))
+
+
+@pytest.fixture
+def volume(request):
+    vol = Volume.create(f"test-vol-{_generate_random_string()}")
+
+    def finalizer():
+        if getattr(request.node, "_test_failed", False):
+            print(f"\n[TEST FAILED] Volume ID: {vol.volume_id}")
+        try:
+            Volume.destroy(vol.volume_id)
+        except Exception:
+            pass
+
+    request.addfinalizer(finalizer)
+    return vol
+
+
+@pytest_asyncio.fixture
+async def async_volume(request):
+    vol = await AsyncVolume.create(f"test-vol-{_generate_random_string()}")
+    try:
+        yield vol
+    finally:
+        if getattr(request.node, "_test_failed", False):
+            print(f"\n[TEST FAILED] Volume ID: {vol.volume_id}")
+        try:
+            await AsyncVolume.destroy(vol.volume_id)
+        except Exception:
+            pass

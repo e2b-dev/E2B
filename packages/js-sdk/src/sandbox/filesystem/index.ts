@@ -11,6 +11,7 @@ import {
   defaultUsername,
   KEEPALIVE_PING_HEADER,
   KEEPALIVE_PING_INTERVAL_SEC,
+  setupRequestController,
   Username,
 } from '../../connectionConfig'
 
@@ -29,6 +30,7 @@ import type { Timestamp } from '@bufbuild/protobuf/wkt'
 import { compareVersions } from 'compare-versions'
 import {
   ENVD_DEFAULT_USER,
+  ENVD_OCTET_STREAM_UPLOAD,
   ENVD_VERSION_RECURSIVE_WATCH,
 } from '../../envd/versions'
 import {
@@ -36,7 +38,7 @@ import {
   InvalidArgumentError,
   TemplateError,
 } from '../../errors'
-import { toBlob } from '../../utils'
+import { toBlob, toUploadBody } from '../../utils'
 
 const FILESYSTEM_HTTP_ERROR_MAP: Record<number, (message: string) => Error> = {
   404: (message: string) => new FileNotFoundError(message),
@@ -155,12 +157,39 @@ function mapModifiedTime(modifiedTime: Timestamp | undefined) {
  * Options for the sandbox filesystem operations.
  */
 export interface FilesystemRequestOpts
-  extends Partial<Pick<ConnectionOpts, 'requestTimeoutMs'>> {
+  extends Partial<Pick<ConnectionOpts, 'requestTimeoutMs' | 'signal'>> {
   /**
    * User to use for the operation in the sandbox.
    * This affects the resolution of relative paths and ownership of the created filesystem objects.
    */
   user?: Username
+}
+
+/**
+ * Options for writing files to the sandbox filesystem.
+ */
+export interface FilesystemWriteOpts extends FilesystemRequestOpts {
+  /**
+   * When true, the upload will be gzip-compressed.
+   */
+  gzip?: boolean
+  /**
+   * When true, the upload uses `application/octet-stream` instead of `multipart/form-data`.
+   *
+   * Defaults to `false`. Requires envd 0.5.7 or later — when not supported by
+   * the sandbox's envd version, the upload falls back to `multipart/form-data`.
+   */
+  useOctetStream?: boolean
+}
+
+/**
+ * Options for reading files from the sandbox filesystem.
+ */
+export interface FilesystemReadOpts extends FilesystemRequestOpts {
+  /**
+   * When true, the download will request gzip-encoded responses.
+   */
+  gzip?: boolean
 }
 
 export interface FilesystemListOpts extends FilesystemRequestOpts {
@@ -221,7 +250,7 @@ export class Filesystem {
    */
   async read(
     path: string,
-    opts?: FilesystemRequestOpts & { format?: 'text' }
+    opts?: FilesystemReadOpts & { format?: 'text' }
   ): Promise<string>
   /**
    * Read file content as a `Uint8Array`.
@@ -236,7 +265,7 @@ export class Filesystem {
    */
   async read(
     path: string,
-    opts?: FilesystemRequestOpts & { format: 'bytes' }
+    opts?: FilesystemReadOpts & { format: 'bytes' }
   ): Promise<Uint8Array>
   /**
    * Read file content as a `Blob`.
@@ -251,7 +280,7 @@ export class Filesystem {
    */
   async read(
     path: string,
-    opts?: FilesystemRequestOpts & { format: 'blob' }
+    opts?: FilesystemReadOpts & { format: 'blob' }
   ): Promise<Blob>
   /**
    * Read file content as a `ReadableStream`.
@@ -266,12 +295,12 @@ export class Filesystem {
    */
   async read(
     path: string,
-    opts?: FilesystemRequestOpts & { format: 'stream' }
+    opts?: FilesystemReadOpts & { format: 'stream' }
   ): Promise<ReadableStream<Uint8Array>>
   async read(
     path: string,
-    opts?: FilesystemRequestOpts & {
-      format?: 'text' | 'stream' | 'bytes' | 'blob'
+    opts?: FilesystemReadOpts & {
+      format?: 'text' | 'bytes' | 'blob' | 'stream'
     }
   ): Promise<unknown> {
     const format = opts?.format ?? 'text'
@@ -284,6 +313,11 @@ export class Filesystem {
       user = defaultUsername
     }
 
+    const headers: Record<string, string> = {}
+    if (opts?.gzip) {
+      headers['Accept-Encoding'] = 'gzip'
+    }
+
     const res = await this.envdApi.api.GET('/files', {
       params: {
         query: {
@@ -292,7 +326,11 @@ export class Filesystem {
         },
       },
       parseAs: format === 'bytes' ? 'arrayBuffer' : format,
-      signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
+      signal: this.connectionConfig.getSignal(
+        opts?.requestTimeoutMs,
+        opts?.signal
+      ),
+      headers,
     })
 
     const err = await handleFilesystemEnvdApiError(res)
@@ -331,11 +369,11 @@ export class Filesystem {
   async write(
     path: string,
     data: string | ArrayBuffer | Blob | ReadableStream,
-    opts?: FilesystemRequestOpts
+    opts?: FilesystemWriteOpts
   ): Promise<WriteInfo>
   async write(
     files: WriteEntry[],
-    opts?: FilesystemRequestOpts
+    opts?: FilesystemWriteOpts
   ): Promise<WriteInfo[]>
   async write(
     pathOrFiles: string | WriteEntry[],
@@ -344,8 +382,8 @@ export class Filesystem {
       | ArrayBuffer
       | Blob
       | ReadableStream
-      | FilesystemRequestOpts,
-    opts?: FilesystemRequestOpts
+      | FilesystemWriteOpts,
+    opts?: FilesystemWriteOpts
   ): Promise<WriteInfo | WriteInfo[]> {
     if (typeof pathOrFiles !== 'string' && !Array.isArray(pathOrFiles)) {
       throw new Error('Path or files are required')
@@ -361,7 +399,7 @@ export class Filesystem {
       typeof pathOrFiles === 'string'
         ? {
             path: pathOrFiles,
-            writeOpts: opts as FilesystemRequestOpts,
+            writeOpts: opts as FilesystemWriteOpts,
             writeFiles: [
               {
                 data: dataOrOpts as
@@ -374,17 +412,11 @@ export class Filesystem {
           }
         : {
             path: undefined,
-            writeOpts: dataOrOpts as FilesystemRequestOpts,
+            writeOpts: dataOrOpts as FilesystemWriteOpts,
             writeFiles: pathOrFiles as WriteEntry[],
           }
 
     if (writeFiles.length === 0) return [] as WriteInfo[]
-
-    const formData = new FormData()
-    for (let i = 0; i < writeFiles.length; i++) {
-      const file = writeFiles[i]
-      formData.append('file', await toBlob(file.data), writeFiles[i].path)
-    }
 
     let user = writeOpts?.user
     if (
@@ -394,29 +426,102 @@ export class Filesystem {
       user = defaultUsername
     }
 
-    const res = await this.envdApi.api.POST('/files', {
-      params: {
-        query: {
-          path,
-          username: user,
+    const supportsOctetStream =
+      compareVersions(this.envdApi.version, ENVD_OCTET_STREAM_UPLOAD) >= 0
+    const useOctetStream =
+      (writeOpts?.useOctetStream ?? false) && supportsOctetStream
+
+    const results: WriteInfo[] = []
+
+    const useGzip = writeOpts?.gzip === true
+
+    if (useOctetStream) {
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/octet-stream',
+      }
+      if (useGzip) {
+        headers['Content-Encoding'] = 'gzip'
+      }
+
+      const uploadResults = await Promise.all(
+        writeFiles.map(async (file) => {
+          const filePath = path ?? (file as WriteEntry).path
+          const body = await toUploadBody(file.data, useGzip)
+
+          const res = await this.envdApi.api.POST('/files', {
+            params: {
+              query: {
+                path: filePath,
+                username: user,
+              },
+            },
+            bodySerializer: () => body,
+            headers,
+            signal: this.connectionConfig.getSignal(
+              writeOpts?.requestTimeoutMs,
+              writeOpts?.signal
+            ),
+            body: {},
+          })
+
+          const err = await handleFilesystemEnvdApiError(res)
+          if (err) {
+            throw err
+          }
+
+          const files = res.data as WriteInfo[]
+          if (!files || files.length === 0) {
+            throw new Error(
+              'Expected to receive information about written file'
+            )
+          }
+
+          return files
+        })
+      )
+
+      for (const files of uploadResults) {
+        results.push(...files)
+      }
+    } else {
+      const formData = new FormData()
+      for (const file of writeFiles) {
+        formData.append(
+          'file',
+          await toBlob(file.data),
+          (file as WriteEntry).path ?? path!
+        )
+      }
+
+      const res = await this.envdApi.api.POST('/files', {
+        params: {
+          query: {
+            path,
+            username: user,
+          },
         },
-      },
-      bodySerializer: () => formData,
-      signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
-      body: {},
-    })
+        bodySerializer: () => formData,
+        signal: this.connectionConfig.getSignal(
+          writeOpts?.requestTimeoutMs,
+          writeOpts?.signal
+        ),
+        body: {},
+      })
 
-    const err = await handleFilesystemEnvdApiError(res)
-    if (err) {
-      throw err
+      const err = await handleFilesystemEnvdApiError(res)
+      if (err) {
+        throw err
+      }
+
+      const files = res.data as WriteInfo[]
+      if (!files || files.length === 0) {
+        throw new Error('Expected to receive information about written file')
+      }
+
+      results.push(...files)
     }
 
-    const files = res.data as WriteInfo[]
-    if (!files) {
-      throw new Error('Expected to receive information about written file')
-    }
-
-    return files.length === 1 && path ? files[0] : files
+    return results.length === 1 && path ? results[0] : results
   }
 
   /**
@@ -436,7 +541,7 @@ export class Filesystem {
    */
   async writeFiles(
     files: WriteEntry[],
-    opts?: FilesystemRequestOpts
+    opts?: FilesystemWriteOpts
   ): Promise<WriteInfo[]> {
     return this.write(files, opts) as Promise<WriteInfo[]>
   }
@@ -462,7 +567,10 @@ export class Filesystem {
         },
         {
           headers: authenticationHeader(this.envdApi.version, opts?.user),
-          signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
+          signal: this.connectionConfig.getSignal(
+            opts?.requestTimeoutMs,
+            opts?.signal
+          ),
         }
       )
 
@@ -507,7 +615,10 @@ export class Filesystem {
         { path },
         {
           headers: authenticationHeader(this.envdApi.version, opts?.user),
-          signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
+          signal: this.connectionConfig.getSignal(
+            opts?.requestTimeoutMs,
+            opts?.signal
+          ),
         }
       )
 
@@ -545,7 +656,10 @@ export class Filesystem {
         },
         {
           headers: authenticationHeader(this.envdApi.version, opts?.user),
-          signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
+          signal: this.connectionConfig.getSignal(
+            opts?.requestTimeoutMs,
+            opts?.signal
+          ),
         }
       )
 
@@ -583,7 +697,10 @@ export class Filesystem {
         { path },
         {
           headers: authenticationHeader(this.envdApi.version, opts?.user),
-          signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
+          signal: this.connectionConfig.getSignal(
+            opts?.requestTimeoutMs,
+            opts?.signal
+          ),
         }
       )
     } catch (err) {
@@ -605,7 +722,10 @@ export class Filesystem {
         { path },
         {
           headers: authenticationHeader(this.envdApi.version, opts?.user),
-          signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
+          signal: this.connectionConfig.getSignal(
+            opts?.requestTimeoutMs,
+            opts?.signal
+          ),
         }
       )
 
@@ -638,7 +758,10 @@ export class Filesystem {
         { path },
         {
           headers: authenticationHeader(this.envdApi.version, opts?.user),
-          signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
+          signal: this.connectionConfig.getSignal(
+            opts?.requestTimeoutMs,
+            opts?.signal
+          ),
         }
       )
 
@@ -695,13 +818,10 @@ export class Filesystem {
     const requestTimeoutMs =
       opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
 
-    const controller = new AbortController()
-
-    const reqTimeout = requestTimeoutMs
-      ? setTimeout(() => {
-          controller.abort()
-        }, requestTimeoutMs)
-      : undefined
+    const { controller, clearStartTimeout, cleanup } = setupRequestController(
+      requestTimeoutMs,
+      opts?.signal
+    )
 
     const events = this.rpc.watchDir(
       {
@@ -720,16 +840,11 @@ export class Filesystem {
 
     try {
       await handleWatchDirStartEvent(events)
+      clearStartTimeout()
 
-      clearTimeout(reqTimeout)
-
-      return new WatchHandle(
-        () => controller.abort(),
-        events,
-        onEvent,
-        opts?.onExit
-      )
+      return new WatchHandle(cleanup, events, onEvent, opts?.onExit)
     } catch (err) {
+      cleanup()
       throw handleFilesystemRpcError(err)
     }
   }

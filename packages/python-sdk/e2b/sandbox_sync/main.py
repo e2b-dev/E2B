@@ -1,15 +1,16 @@
 import datetime
 import json
 import logging
+import shlex
 import uuid
-from typing import Dict, List, Optional, overload
+from typing import Dict, List, Optional, Union, overload
 
 import httpx
 from packaging.version import Version
 from typing_extensions import Self, Unpack
 
 from e2b.api.client.types import Unset
-from e2b.api.client_sync import get_transport
+from e2b.api.client_sync import get_envd_transport as get_transport
 from e2b.connection_config import ApiParams, ConnectionConfig
 from e2b.envd.api import ENVD_API_HEALTH_ROUTE, handle_envd_api_exception
 from e2b.envd.versions import ENVD_DEBUG_FALLBACK
@@ -23,6 +24,7 @@ from e2b.sandbox.sandbox_api import (
     SandboxLifecycle,
     SandboxMetrics,
     SandboxNetworkOpts,
+    SandboxNetworkUpdate,
     SnapshotInfo,
 )
 from e2b.sandbox.utils import class_method_variant
@@ -32,8 +34,12 @@ from e2b.sandbox_sync.filesystem.filesystem import Filesystem
 from e2b.sandbox_sync.git import Git
 from e2b.sandbox_sync.sandbox_api import SandboxApi, SandboxInfo
 from e2b.sandbox_sync.paginator import SnapshotPaginator
+from e2b.api.client.models import SandboxVolumeMount as SandboxVolumeMountAPI
+from e2b.volume.volume_sync import Volume
 
 logger = logging.getLogger(__name__)
+
+SandboxVolumeMount = Dict[str, Union[Volume, str]]
 
 
 class Sandbox(SandboxApi):
@@ -171,6 +177,7 @@ class Sandbox(SandboxApi):
         mcp: Optional[McpServer] = None,
         network: Optional[SandboxNetworkOpts] = None,
         lifecycle: Optional[SandboxLifecycle] = None,
+        volume_mounts: Optional[SandboxVolumeMount] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
         """
@@ -185,8 +192,9 @@ class Sandbox(SandboxApi):
         :param secure: Envd is secured with access token and cannot be used without it, defaults to `True`.
         :param allow_internet_access: Allow sandbox to access the internet, defaults to `True`. If set to `False`, it works the same as setting network `deny_out` to `[0.0.0.0/0]`.
         :param mcp: MCP server to enable in the sandbox
-        :param network: Sandbox network configuration
+        :param network: Sandbox network configuration. ``allow_out``/``deny_out`` may also be a callable receiving a :class:`SandboxNetworkSelectorContext` (``ctx.all_traffic``, ``ctx.rules``) and returning a list of strings. Per-host transform rules are nested under ``network.rules``.
         :param lifecycle: Sandbox lifecycle configuration — ``on_timeout``: ``"kill"`` (default) or ``"pause"``; ``auto_resume``: ``False`` (default) or ``True`` (only when ``on_timeout="pause"``). Example: ``{"on_timeout": "pause", "auto_resume": True}``
+        :param volume_mounts: Dictionary mapping mount paths to Volume instances or volume names
 
         :return: A Sandbox instance for the new sandbox
 
@@ -197,9 +205,18 @@ class Sandbox(SandboxApi):
         elif not template:
             template = cls.default_template
 
+        transformed_mounts = None
+        if volume_mounts:
+            transformed_mounts = [
+                SandboxVolumeMountAPI(
+                    name=vol.name if isinstance(vol, Volume) else vol,
+                    path=path,
+                )
+                for path, vol in volume_mounts.items()
+            ]
+
         sandbox = cls._create(
             template=template,
-            auto_pause=False,
             timeout=timeout,
             metadata=metadata,
             envs=envs,
@@ -208,6 +225,7 @@ class Sandbox(SandboxApi):
             mcp=mcp,
             network=network,
             lifecycle=lifecycle,
+            volume_mounts=transformed_mounts,
             **opts,
         )
 
@@ -216,7 +234,7 @@ class Sandbox(SandboxApi):
             sandbox._mcp_token = token
 
             res = sandbox.commands.run(
-                f"mcp-gateway --config '{json.dumps(mcp)}'",
+                f"mcp-gateway --config {shlex.quote(json.dumps(mcp))}",
                 user="root",
                 envs={"GATEWAY_ACCESS_TOKEN": token},
             )
@@ -420,6 +438,61 @@ class Sandbox(SandboxApi):
         )
 
     @overload
+    def update_network(
+        self,
+        network: SandboxNetworkUpdate,
+        **opts: Unpack[ApiParams],
+    ) -> None:
+        """
+        Update the network configuration of the sandbox.
+
+        Replaces the current egress configuration atomically — fields that are
+        omitted are cleared on the server.
+
+        :param network: New network configuration.
+        """
+        ...
+
+    @overload
+    @staticmethod
+    def update_network(
+        sandbox_id: str,
+        network: SandboxNetworkUpdate,
+        **opts: Unpack[ApiParams],
+    ) -> None:
+        """
+        Update the network configuration of the sandbox specified by sandbox ID.
+
+        Replaces the current egress configuration atomically — fields that are
+        omitted are cleared on the server.
+
+        :param sandbox_id: Sandbox ID.
+        :param network: New network configuration.
+        """
+        ...
+
+    @class_method_variant("_cls_update_network")
+    def update_network(
+        self,
+        network: SandboxNetworkUpdate,
+        **opts: Unpack[ApiParams],
+    ) -> None:
+        """
+        Update the network configuration of the sandbox.
+
+        Replaces the current egress configuration atomically — fields that are
+        omitted are cleared on the server.
+
+        :param network: New network configuration.
+        """
+
+        SandboxApi._cls_update_network(
+            sandbox_id=self.sandbox_id,
+            network=network,
+            **self.connection_config.get_api_params(**opts),
+        )
+
+    @overload
     def get_info(
         self,
         **opts: Unpack[ApiParams],
@@ -529,74 +602,6 @@ class Sandbox(SandboxApi):
             **self.connection_config.get_api_params(**opts),
         )
 
-    @classmethod
-    def beta_create(
-        cls,
-        template: Optional[str] = None,
-        timeout: Optional[int] = None,
-        auto_pause: bool = False,
-        metadata: Optional[Dict[str, str]] = None,
-        envs: Optional[Dict[str, str]] = None,
-        secure: bool = True,
-        allow_internet_access: bool = True,
-        mcp: Optional[McpServer] = None,
-        **opts: Unpack[ApiParams],
-    ) -> Self:
-        """
-        [BETA] This feature is in beta and may change in the future.
-
-        Create a new sandbox.
-
-        By default, the sandbox is created from the default `base` sandbox template.
-
-        :param template: Sandbox template name or ID
-        :param timeout: Timeout for the sandbox in **seconds**, default to 300 seconds. The maximum time a sandbox can be kept alive is 24 hours (86_400 seconds) for Pro users and 1 hour (3_600 seconds) for Hobby users.
-        :param auto_pause: Automatically pause the sandbox after the timeout expires. Defaults to `False`.
-        :param metadata: Custom metadata for the sandbox
-        :param envs: Custom environment variables for the sandbox
-        :param secure: Envd is secured with access token and cannot be used without it, defaults to `True`.
-        :param allow_internet_access: Allow sandbox to access the internet, defaults to `True`.
-        :param mcp: MCP server to enable in the sandbox
-
-        :return: A Sandbox instance for the new sandbox
-
-        Use this method instead of using the constructor to create a new sandbox.
-        """
-
-        if not template and mcp is not None:
-            template = cls.default_mcp_template
-        elif not template:
-            template = cls.default_template
-
-        sandbox = cls._create(
-            template=template,
-            auto_pause=auto_pause,
-            timeout=timeout,
-            metadata=metadata,
-            envs=envs,
-            secure=secure,
-            allow_internet_access=allow_internet_access,
-            mcp=mcp,
-            lifecycle=(
-                {"on_timeout": "pause", "auto_resume": False} if auto_pause else None
-            ),
-            **opts,
-        )
-
-        if mcp is not None:
-            token = str(uuid.uuid4())
-            sandbox._mcp_token = token
-
-            res = sandbox.commands.run(
-                f"mcp-gateway --config '{json.dumps(mcp)}'",
-                user="root",
-                envs={"GATEWAY_ACCESS_TOKEN": token},
-            )
-            if res.exit_code != 0:
-                raise Exception(f"Failed to start MCP gateway: {res.stderr}")
-
-        return sandbox
-
     @overload
     def pause(
         self,
@@ -662,6 +667,7 @@ class Sandbox(SandboxApi):
     @overload
     def create_snapshot(
         self,
+        name: Optional[str] = None,
         **opts: Unpack[ApiParams],
     ) -> SnapshotInfo:
         """
@@ -673,7 +679,9 @@ class Sandbox(SandboxApi):
 
         Use the returned `snapshot_id` with `Sandbox.create(snapshot_id)` to create a new sandbox from the snapshot.
 
-        :return: Snapshot information including the snapshot ID
+        :param name: Optional name for the snapshot template. If a snapshot template with this name already exists, a new build will be assigned to the existing template instead of creating a new one.
+
+        :return: Snapshot information including the snapshot ID and names
         """
         ...
 
@@ -681,6 +689,7 @@ class Sandbox(SandboxApi):
     @staticmethod
     def create_snapshot(
         sandbox_id: str,
+        name: Optional[str] = None,
         **opts: Unpack[ApiParams],
     ) -> SnapshotInfo:
         """
@@ -689,14 +698,16 @@ class Sandbox(SandboxApi):
         The sandbox will be paused while the snapshot is being created.
 
         :param sandbox_id: Sandbox ID
+        :param name: Optional name for the snapshot template. If a snapshot template with this name already exists, a new build will be assigned to the existing template instead of creating a new one.
 
-        :return: Snapshot information including the snapshot ID
+        :return: Snapshot information including the snapshot ID and names
         """
         ...
 
     @class_method_variant("_cls_create_snapshot")
     def create_snapshot(
         self,
+        name: Optional[str] = None,
         **opts: Unpack[ApiParams],
     ) -> SnapshotInfo:
         """
@@ -708,10 +719,13 @@ class Sandbox(SandboxApi):
 
         Use the returned `snapshot_id` with `Sandbox.create(snapshot_id)` to create a new sandbox from the snapshot.
 
-        :return: Snapshot information including the snapshot ID
+        :param name: Optional name for the snapshot template. If a snapshot template with this name already exists, a new build will be assigned to the existing template instead of creating a new one.
+
+        :return: Snapshot information including the snapshot ID and names
         """
         return SandboxApi._cls_create_snapshot(
             sandbox_id=self.sandbox_id,
+            name=name,
             **self.connection_config.get_api_params(**opts),
         )
 
@@ -826,7 +840,10 @@ class Sandbox(SandboxApi):
             **opts,
         )
 
-        sandbox_headers = {}
+        sandbox_headers = {
+            "E2b-Sandbox-Id": sandbox.sandbox_id,
+            "E2b-Sandbox-Port": str(ConnectionConfig.envd_port),
+        }
         envd_access_token = sandbox.envd_access_token
         if envd_access_token is not None and not isinstance(envd_access_token, Unset):
             sandbox_headers["X-Access-Token"] = envd_access_token
@@ -850,7 +867,6 @@ class Sandbox(SandboxApi):
         cls,
         template: Optional[str],
         timeout: Optional[int],
-        auto_pause: Optional[bool],
         metadata: Optional[Dict[str, str]],
         envs: Optional[Dict[str, str]],
         secure: bool,
@@ -858,6 +874,7 @@ class Sandbox(SandboxApi):
         mcp: Optional[McpServer] = None,
         network: Optional[SandboxNetworkOpts] = None,
         lifecycle: Optional[SandboxLifecycle] = None,
+        volume_mounts: Optional[list] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
         extra_sandbox_headers = {}
@@ -873,7 +890,6 @@ class Sandbox(SandboxApi):
             response = SandboxApi._create_sandbox(
                 template=template or cls.default_template,
                 timeout=timeout or cls.default_sandbox_timeout,
-                auto_pause=auto_pause,
                 metadata=metadata,
                 env_vars=envs,
                 secure=secure,
@@ -881,6 +897,7 @@ class Sandbox(SandboxApi):
                 mcp=mcp,
                 network=network,
                 lifecycle=lifecycle,
+                volume_mounts=volume_mounts,
                 **opts,
             )
 

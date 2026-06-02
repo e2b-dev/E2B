@@ -10,13 +10,13 @@ for (let i = 0; i < view.length; i++) {
 }
 
 const integrationTestTemplate = 'integration-test-v1'
-const sanboxCount = 10
+const sandboxCount = 10
 
 test.skipIf(!isIntegrationTest)(
   'stress test heavy file writes and reads',
   async () => {
     const promises: Array<Promise<string | void>> = []
-    for (let i = 0; i < sanboxCount; i++) {
+    for (let i = 0; i < sandboxCount; i++) {
       promises.push(
         Sandbox.create(integrationTestTemplate, { timeoutMs: 60 })
           .then((sbx) => {
@@ -36,7 +36,7 @@ test.skipIf(!isIntegrationTest)(
 test.skipIf(!isIntegrationTest)('stress requests to nextjs app', async () => {
   const hostPromises: Array<Promise<string | void>> = []
 
-  for (let i = 0; i < sanboxCount; i++) {
+  for (let i = 0; i < sandboxCount; i++) {
     hostPromises.push(
       Sandbox.create(integrationTestTemplate, { timeoutMs: 60_000 }).then(
         (sbx) => {

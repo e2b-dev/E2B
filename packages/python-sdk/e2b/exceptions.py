@@ -129,3 +129,11 @@ class FileUploadException(BuildException):
     """
     Raised when the file upload fails.
     """
+
+
+class VolumeException(Exception):
+    """
+    Base class for all volume errors.
+
+    Raised when general volume errors occur.
+    """

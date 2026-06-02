@@ -15,7 +15,10 @@ T = TypeVar("T", bound="NodeStatusChange")
 class NodeStatusChange:
     """
     Attributes:
-        status (NodeStatus): Status of the node
+        status (NodeStatus): Status of the node.
+            - draining: the node is bound to be shut down. It will not accept new sandboxes and will stop once all existing
+            sandboxes are done.
+            - standby: the node is not actively used, but it can return to ready and continue serving traffic.
         cluster_id (Union[Unset, UUID]): Identifier of the cluster
     """
 

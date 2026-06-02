@@ -1,0 +1,95 @@
+import { VolumeApiComponents } from './client'
+
+/**
+ * File type enum.
+ */
+export enum VolumeFileType {
+  UNKNOWN = 'unknown',
+  FILE = 'file',
+  DIRECTORY = 'directory',
+  SYMLINK = 'symlink',
+}
+
+/**
+ * Information about a volume.
+ */
+export type VolumeInfo = {
+  /**
+   * Volume ID.
+   */
+  volumeId: string
+
+  /**
+   * Volume name.
+   */
+  name: string
+}
+
+/**
+ * Information about a volume and its auth token.
+ */
+export type VolumeAndToken = VolumeInfo & {
+  /**
+   * Volume auth token.
+   */
+  token: string
+}
+
+/**
+ * Volume entry stat with dates converted to Date objects.
+ */
+export type VolumeEntryStat = Omit<
+  VolumeApiComponents['schemas']['VolumeEntryStat'],
+  'atime' | 'mtime' | 'ctime' | 'type'
+> & {
+  /**
+   * Access time as a Date object.
+   */
+  atime: Date
+
+  /**
+   * Modification time as a Date object.
+   */
+  mtime: Date
+
+  /**
+   * Creation time as a Date object.
+   */
+  ctime: Date
+
+  /**
+   * File type.
+   */
+  type: VolumeFileType
+}
+
+/**
+ * Options for updating file metadata.
+ */
+export type VolumeMetadataOptions = {
+  /**
+   * User ID of the file or directory.
+   */
+  uid?: number
+
+  /**
+   * Group ID of the file or directory.
+   */
+  gid?: number
+
+  /**
+   * Mode of the file or directory.
+   */
+  mode?: number
+}
+
+/**
+ * Options for file and directory operations.
+ */
+export type VolumeWriteOptions = VolumeMetadataOptions & {
+  /**
+   * For makeDir: Create parent directories if they don't exist.
+   * For writeFile: Force overwrite of an existing file.
+   */
+  force?: boolean
+}
