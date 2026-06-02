@@ -38,6 +38,9 @@ class VolumeApiParams(TypedDict, total=False):
     proxy: Optional[ProxyTypes]
     """Proxy to use for the request."""
 
+    retries: Optional[int]
+    """Number of times to retry a request after a transient failure (e.g. a network error, a `429` rate-limit, or a `502`/`503`/`504`). Retries use exponential backoff with jitter and honor a server-provided `Retry-After` header. Set to `0` to disable retries. Defaults to `E2B_MAX_RETRIES` environment variable or `3`."""
+
 
 class VolumeConnectionConfig:
     """
@@ -122,6 +125,7 @@ class VolumeConnectionConfig:
         token = opts.get("token")
         api_url = opts.get("api_url")
         proxy = opts.get("proxy")
+        retries = opts.get("retries")
 
         req_headers = self.headers.copy()
         if headers is not None:
@@ -136,5 +140,6 @@ class VolumeConnectionConfig:
                 request_timeout=self.get_request_timeout(request_timeout),
                 headers=req_headers,
                 proxy=proxy if proxy is not None else self.proxy,
+                retries=retries if retries is not None else self.retries,
             )
         )

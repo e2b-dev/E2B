@@ -48,3 +48,21 @@ def test_volume_api_url_custom_domain(monkeypatch):
 def test_volume_api_url_custom_domain_in_args():
     config = VolumeConnectionConfig(domain="custom.com")
     assert config.api_url == "https://api.custom.com"
+
+
+def test_volume_get_api_params_propagates_retries(monkeypatch):
+    monkeypatch.delenv("E2B_MAX_RETRIES", raising=False)
+
+    config = VolumeConnectionConfig(retries=0)
+    params = config.get_api_params()
+
+    assert params["retries"] == 0
+
+
+def test_volume_get_api_params_retries_override(monkeypatch):
+    monkeypatch.delenv("E2B_MAX_RETRIES", raising=False)
+
+    config = VolumeConnectionConfig(retries=3)
+    params = config.get_api_params(retries=1)
+
+    assert params["retries"] == 1

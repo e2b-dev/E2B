@@ -204,6 +204,7 @@ class ConnectionConfig:
         domain = opts.get("domain")
         debug = opts.get("debug")
         proxy = opts.get("proxy")
+        retries = opts.get("retries")
 
         req_headers = self.headers.copy()
         if headers is not None:
@@ -218,6 +219,7 @@ class ConnectionConfig:
                 request_timeout=self.get_request_timeout(request_timeout),
                 headers=req_headers,
                 proxy=proxy if proxy is not None else self.proxy,
+                retries=retries if retries is not None else self.retries,
             )
         )
 

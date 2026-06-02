@@ -94,3 +94,21 @@ def test_sandbox_direct_url_uses_explicit_url_first():
         config.get_sandbox_direct_url("sandbox-id", "e2b.app")
         == "https://sandbox.example.com"
     )
+
+
+def test_get_api_params_propagates_retries(monkeypatch):
+    monkeypatch.delenv("E2B_MAX_RETRIES", raising=False)
+
+    config = ConnectionConfig(retries=0)
+    params = config.get_api_params()
+
+    assert params["retries"] == 0
+
+
+def test_get_api_params_retries_override(monkeypatch):
+    monkeypatch.delenv("E2B_MAX_RETRIES", raising=False)
+
+    config = ConnectionConfig(retries=3)
+    params = config.get_api_params(retries=1)
+
+    assert params["retries"] == 1
