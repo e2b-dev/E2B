@@ -6,8 +6,12 @@ import { getCallerDirectory } from '../../../src/template/utils'
 
 test('getCallerDirectory', () => {
   // getCallerDirectory(1) should return the directory of the current file
-  // __dirname is the directory of the current file
-  expect(getCallerDirectory(1)).toBe(__dirname)
+  // __dirname is the directory of the current file.
+  // Normalize before comparing: on Windows the stack-trace file name reported
+  // by vite/vitest uses forward slashes (e.g. "D:/a/...") whereas __dirname
+  // uses native backslashes — the directory is the same, only the separators
+  // differ.
+  expect(path.normalize(getCallerDirectory(1)!)).toBe(path.normalize(__dirname))
 })
 
 test('getCallerDirectory handles file:// URLs from ESM modules', () => {
