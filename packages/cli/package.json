@@ -1,6 +1,6 @@
 {
   "name": "@e2b/cli",
-  "version": "2.10.0",
+  "version": "2.10.2",
   "description": "CLI for managing e2b sandbox templates",
   "homepage": "https://e2b.dev",
   "license": "MIT",
@@ -55,12 +55,12 @@
     "@types/node": "^20.19.19",
     "@types/npmcli__package-json": "^4.0.4",
     "@types/statuses": "^2.0.5",
-    "@vitest/coverage-v8": "^3.2.4",
+    "@vitest/coverage-v8": "^4.1.0",
     "json2md": "^2.0.1",
     "knip": "^5.43.6",
     "tsup": "^8.4.0",
-    "typescript": "^5.2.2",
-    "vitest": "^3.2.4"
+    "typescript": "^5.4.5",
+    "vitest": "^4.1.8"
   },
   "files": [
     "dist",
@@ -83,10 +83,9 @@
     "commander": "^11.1.0",
     "console-table-printer": "^2.11.2",
     "dockerfile-ast": "^0.6.1",
-    "e2b": "^2.19.1",
+    "e2b": "^2.19.3",
     "handlebars": "^4.7.9",
     "inquirer": "^12.10.0",
-    "open": "^9.1.0",
     "simple-update-notifier": "^2.0.0",
     "statuses": "^2.0.1",
     "strip-ansi": "^7.1.0",

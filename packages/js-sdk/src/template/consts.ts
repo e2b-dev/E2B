@@ -32,3 +32,12 @@ export const STACK_TRACE_DEPTH = 3
  * @internal
  */
 export const RESOLVE_SYMLINKS = false
+
+/**
+ * Default per-request timeout (in milliseconds) for the file-upload phase
+ * (PUT to S3 presigned URL) when the caller hasn't supplied
+ * `requestTimeoutMs`. Large archives can take well over the 60s API
+ * default, so we use a generous 1-hour bound here.
+ * @internal
+ */
+export const FILE_UPLOAD_TIMEOUT_MS = 3_600_000

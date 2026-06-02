@@ -12,6 +12,7 @@ import {
   ConnectionOpts,
   KEEPALIVE_PING_HEADER,
   KEEPALIVE_PING_INTERVAL_SEC,
+  setupRequestController,
   Username,
 } from '../../connectionConfig'
 import { handleProcessStartEvent } from '../../envd/api'
@@ -29,7 +30,7 @@ export { Pty } from './pty'
  * Options for sending a command request.
  */
 export interface CommandRequestOpts
-  extends Partial<Pick<ConnectionOpts, 'requestTimeoutMs'>> {}
+  extends Partial<Pick<ConnectionOpts, 'requestTimeoutMs' | 'signal'>> {}
 
 /**
  * Options for starting a new command.
@@ -160,7 +161,10 @@ export class Commands {
       const res = await this.rpc.list(
         {},
         {
-          signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
+          signal: this.connectionConfig.getSignal(
+            opts?.requestTimeoutMs,
+            opts?.signal
+          ),
         }
       )
 
@@ -209,7 +213,10 @@ export class Commands {
           },
         },
         {
-          signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
+          signal: this.connectionConfig.getSignal(
+            opts?.requestTimeoutMs,
+            opts?.signal
+          ),
         }
       )
     } catch (err) {
@@ -239,7 +246,10 @@ export class Commands {
           },
         },
         {
-          signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
+          signal: this.connectionConfig.getSignal(
+            opts?.requestTimeoutMs,
+            opts?.signal
+          ),
         }
       )
     } catch (err) {
@@ -269,7 +279,10 @@ export class Commands {
           signal: Signal.SIGKILL,
         },
         {
-          signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
+          signal: this.connectionConfig.getSignal(
+            opts?.requestTimeoutMs,
+            opts?.signal
+          ),
         }
       )
 
@@ -301,13 +314,10 @@ export class Commands {
     const requestTimeoutMs =
       opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
 
-    const controller = new AbortController()
-
-    const reqTimeout = requestTimeoutMs
-      ? setTimeout(() => {
-          controller.abort()
-        }, requestTimeoutMs)
-      : undefined
+    const { controller, clearStartTimeout, cleanup } = setupRequestController(
+      requestTimeoutMs,
+      opts?.signal
+    )
 
     const events = this.rpc.connect(
       {
@@ -329,12 +339,11 @@ export class Commands {
 
     try {
       const pid = await handleProcessStartEvent(events)
-
-      clearTimeout(reqTimeout)
+      clearStartTimeout()
 
       return new CommandHandle(
         pid,
-        () => controller.abort(),
+        cleanup,
         () => this.kill(pid),
         events,
         opts?.onStdout,
@@ -342,6 +351,7 @@ export class Commands {
         undefined
       )
     } catch (err) {
+      cleanup()
       throw handleRpcError(err)
     }
   }
@@ -402,17 +412,6 @@ export class Commands {
     cmd: string,
     opts?: CommandStartOpts
   ): Promise<CommandHandle> {
-    const requestTimeoutMs =
-      opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
-
-    const controller = new AbortController()
-
-    const reqTimeout = requestTimeoutMs
-      ? setTimeout(() => {
-          controller.abort()
-        }, requestTimeoutMs)
-      : undefined
-
     if (
       opts?.stdin === false &&
       compareVersions(this.envdVersion, ENVD_COMMANDS_STDIN) < 0
@@ -421,6 +420,14 @@ export class Commands {
         `Sandbox envd version ${this.envdVersion} can't specify stdin, it's always turned on. Please rebuild your template if you need this feature.`
       )
     }
+
+    const requestTimeoutMs =
+      opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
+
+    const { controller, clearStartTimeout, cleanup } = setupRequestController(
+      requestTimeoutMs,
+      opts?.signal
+    )
 
     const events = this.rpc.start(
       {
@@ -444,12 +451,11 @@ export class Commands {
 
     try {
       const pid = await handleProcessStartEvent(events)
-
-      clearTimeout(reqTimeout)
+      clearStartTimeout()
 
       return new CommandHandle(
         pid,
-        () => controller.abort(),
+        cleanup,
         () => this.kill(pid),
         events,
         opts?.onStdout,
@@ -457,6 +463,7 @@ export class Commands {
         undefined
       )
     } catch (err) {
+      cleanup()
       throw handleRpcError(err)
     }
   }

@@ -11,6 +11,7 @@ import {
   defaultUsername,
   KEEPALIVE_PING_HEADER,
   KEEPALIVE_PING_INTERVAL_SEC,
+  setupRequestController,
   Username,
 } from '../../connectionConfig'
 
@@ -156,7 +157,7 @@ function mapModifiedTime(modifiedTime: Timestamp | undefined) {
  * Options for the sandbox filesystem operations.
  */
 export interface FilesystemRequestOpts
-  extends Partial<Pick<ConnectionOpts, 'requestTimeoutMs'>> {
+  extends Partial<Pick<ConnectionOpts, 'requestTimeoutMs' | 'signal'>> {
   /**
    * User to use for the operation in the sandbox.
    * This affects the resolution of relative paths and ownership of the created filesystem objects.
@@ -325,7 +326,10 @@ export class Filesystem {
         },
       },
       parseAs: format === 'bytes' ? 'arrayBuffer' : format,
-      signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
+      signal: this.connectionConfig.getSignal(
+        opts?.requestTimeoutMs,
+        opts?.signal
+      ),
       headers,
     })
 
@@ -454,7 +458,8 @@ export class Filesystem {
             bodySerializer: () => body,
             headers,
             signal: this.connectionConfig.getSignal(
-              writeOpts?.requestTimeoutMs
+              writeOpts?.requestTimeoutMs,
+              writeOpts?.signal
             ),
             body: {},
           })
@@ -496,7 +501,10 @@ export class Filesystem {
           },
         },
         bodySerializer: () => formData,
-        signal: this.connectionConfig.getSignal(writeOpts?.requestTimeoutMs),
+        signal: this.connectionConfig.getSignal(
+          writeOpts?.requestTimeoutMs,
+          writeOpts?.signal
+        ),
         body: {},
       })
 
@@ -559,7 +567,10 @@ export class Filesystem {
         },
         {
           headers: authenticationHeader(this.envdApi.version, opts?.user),
-          signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
+          signal: this.connectionConfig.getSignal(
+            opts?.requestTimeoutMs,
+            opts?.signal
+          ),
         }
       )
 
@@ -604,7 +615,10 @@ export class Filesystem {
         { path },
         {
           headers: authenticationHeader(this.envdApi.version, opts?.user),
-          signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
+          signal: this.connectionConfig.getSignal(
+            opts?.requestTimeoutMs,
+            opts?.signal
+          ),
         }
       )
 
@@ -642,7 +656,10 @@ export class Filesystem {
         },
         {
           headers: authenticationHeader(this.envdApi.version, opts?.user),
-          signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
+          signal: this.connectionConfig.getSignal(
+            opts?.requestTimeoutMs,
+            opts?.signal
+          ),
         }
       )
 
@@ -680,7 +697,10 @@ export class Filesystem {
         { path },
         {
           headers: authenticationHeader(this.envdApi.version, opts?.user),
-          signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
+          signal: this.connectionConfig.getSignal(
+            opts?.requestTimeoutMs,
+            opts?.signal
+          ),
         }
       )
     } catch (err) {
@@ -702,7 +722,10 @@ export class Filesystem {
         { path },
         {
           headers: authenticationHeader(this.envdApi.version, opts?.user),
-          signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
+          signal: this.connectionConfig.getSignal(
+            opts?.requestTimeoutMs,
+            opts?.signal
+          ),
         }
       )
 
@@ -735,7 +758,10 @@ export class Filesystem {
         { path },
         {
           headers: authenticationHeader(this.envdApi.version, opts?.user),
-          signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
+          signal: this.connectionConfig.getSignal(
+            opts?.requestTimeoutMs,
+            opts?.signal
+          ),
         }
       )
 
@@ -792,13 +818,10 @@ export class Filesystem {
     const requestTimeoutMs =
       opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
 
-    const controller = new AbortController()
-
-    const reqTimeout = requestTimeoutMs
-      ? setTimeout(() => {
-          controller.abort()
-        }, requestTimeoutMs)
-      : undefined
+    const { controller, clearStartTimeout, cleanup } = setupRequestController(
+      requestTimeoutMs,
+      opts?.signal
+    )
 
     const events = this.rpc.watchDir(
       {
@@ -817,16 +840,11 @@ export class Filesystem {
 
     try {
       await handleWatchDirStartEvent(events)
+      clearStartTimeout()
 
-      clearTimeout(reqTimeout)
-
-      return new WatchHandle(
-        () => controller.abort(),
-        events,
-        onEvent,
-        opts?.onExit
-      )
+      return new WatchHandle(cleanup, events, onEvent, opts?.onExit)
     } catch (err) {
+      cleanup()
       throw handleFilesystemRpcError(err)
     }
   }

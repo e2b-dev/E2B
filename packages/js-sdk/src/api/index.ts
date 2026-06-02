@@ -2,9 +2,26 @@ import createClient, { FetchResponse } from 'openapi-fetch'
 
 import type { components, paths } from './schema.gen'
 import { defaultHeaders } from './metadata'
+import { createApiFetch } from './http2'
 import { ConnectionConfig } from '../connectionConfig'
 import { AuthenticationError, RateLimitError, SandboxError } from '../errors'
 import { createApiLogger } from '../logs'
+
+const API_KEY_PATTERN = /^e2b_[0-9a-f]+$/
+const API_KEY_EXAMPLE = `e2b_${'0'.repeat(40)}`
+
+/**
+ * Validates that an E2B API key has the expected `e2b_` prefix followed by
+ * hex characters. Throws `AuthenticationError` otherwise.
+ */
+export function validateApiKey(apiKey: string): void {
+  if (!API_KEY_PATTERN.test(apiKey)) {
+    throw new AuthenticationError(
+      `Invalid API key format: expected "e2b_" followed by hex characters (e.g. "${API_KEY_EXAMPLE}"). ` +
+        'Visit the API Keys tab at https://e2b.dev/dashboard?tab=keys to get your API key.'
+    )
+  }
+}
 
 export function handleApiError(
   response: FetchResponse<any, any, any>,
@@ -65,6 +82,10 @@ class ApiClient {
       )
     }
 
+    if (config.apiKey) {
+      validateApiKey(config.apiKey)
+    }
+
     if (opts?.requireAccessToken && !config.accessToken) {
       throw new AuthenticationError(
         'Access token is required, please visit the Personal tab at https://e2b.dev/dashboard to get your access token. ' +
@@ -74,6 +95,7 @@ class ApiClient {
 
     this.api = createClient<paths>({
       baseUrl: config.apiUrl,
+      fetch: createApiFetch(),
       // In HTTP 1.1, all connections are considered persistent unless declared otherwise
       // keepalive: true,
       headers: {

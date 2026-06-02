@@ -18,6 +18,7 @@ class SandboxMetric:
         cpu_used_pct (float): CPU usage percentage
         disk_total (int): Total disk space in bytes
         disk_used (int): Disk used in bytes
+        mem_cache (int): Cached memory (page cache) in bytes
         mem_total (int): Total memory in bytes
         mem_used (int): Memory used in bytes
         timestamp (datetime.datetime): Timestamp of the metric entry
@@ -28,6 +29,7 @@ class SandboxMetric:
     cpu_used_pct: float
     disk_total: int
     disk_used: int
+    mem_cache: int
     mem_total: int
     mem_used: int
     timestamp: datetime.datetime
@@ -42,6 +44,8 @@ class SandboxMetric:
         disk_total = self.disk_total
 
         disk_used = self.disk_used
+
+        mem_cache = self.mem_cache
 
         mem_total = self.mem_total
 
@@ -59,6 +63,7 @@ class SandboxMetric:
                 "cpuUsedPct": cpu_used_pct,
                 "diskTotal": disk_total,
                 "diskUsed": disk_used,
+                "memCache": mem_cache,
                 "memTotal": mem_total,
                 "memUsed": mem_used,
                 "timestamp": timestamp,
@@ -79,6 +84,8 @@ class SandboxMetric:
 
         disk_used = d.pop("diskUsed")
 
+        mem_cache = d.pop("memCache")
+
         mem_total = d.pop("memTotal")
 
         mem_used = d.pop("memUsed")
@@ -92,6 +99,7 @@ class SandboxMetric:
             cpu_used_pct=cpu_used_pct,
             disk_total=disk_total,
             disk_used=disk_used,
+            mem_cache=mem_cache,
             mem_total=mem_total,
             mem_used=mem_used,
             timestamp=timestamp,

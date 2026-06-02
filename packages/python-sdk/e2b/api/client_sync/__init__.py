@@ -1,7 +1,8 @@
-from typing import Optional
+from typing import Dict
 
 import httpx
 import logging
+import threading
 
 from e2b.api import ApiClient, limits
 from e2b.connection_config import ConnectionConfig
@@ -18,7 +19,7 @@ def get_api_client(config: ConnectionConfig, **kwargs) -> ApiClient:
 
 
 class TransportWithLogger(httpx.HTTPTransport):
-    singleton: Optional["TransportWithLogger"] = None
+    _instances: Dict[bool, "TransportWithLogger"] = {}
 
     def handle_request(self, request):
         url = f"{request.url.scheme}://{request.url.host}{request.url.path}"
@@ -35,16 +36,39 @@ class TransportWithLogger(httpx.HTTPTransport):
         return self._pool
 
 
-_transport: Optional[TransportWithLogger] = None
-
-
-def get_transport(config: ConnectionConfig) -> TransportWithLogger:
-    if TransportWithLogger.singleton is not None:
-        return TransportWithLogger.singleton
+def get_transport(config: ConnectionConfig, http2: bool = True) -> TransportWithLogger:
+    cached = TransportWithLogger._instances.get(http2)
+    if cached is not None:
+        return cached
 
     transport = TransportWithLogger(
         limits=limits,
         proxy=config.proxy,
+        http2=http2,
     )
-    TransportWithLogger.singleton = transport
+    TransportWithLogger._instances[http2] = transport
+    return transport
+
+
+class EnvdTransportWithLogger(TransportWithLogger):
+    _thread_local = threading.local()
+
+
+def get_envd_transport(
+    config: ConnectionConfig, http2: bool = True
+) -> EnvdTransportWithLogger:
+    instances: Dict[bool, EnvdTransportWithLogger] = getattr(
+        EnvdTransportWithLogger._thread_local, "instances", {}
+    )
+    cached = instances.get(http2)
+    if cached is not None:
+        return cached
+
+    transport = EnvdTransportWithLogger(
+        limits=limits,
+        proxy=config.proxy,
+        http2=http2,
+    )
+    instances[http2] = transport
+    EnvdTransportWithLogger._thread_local.instances = instances
     return transport

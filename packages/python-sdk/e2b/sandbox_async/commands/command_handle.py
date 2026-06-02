@@ -137,8 +137,11 @@ class AsyncCommandHandle:
         You can reconnect to the command using `sandbox.commands.connect` method.
         """
         self._wait.cancel()
-        # BUG: In Python 3.8 closing async generator can throw RuntimeError.
-        # await self._events.aclose()
+        await asyncio.wait([self._wait])
+        try:
+            await self._events.aclose()
+        except Exception:
+            pass
 
     async def _handle_events(self):
         try:
