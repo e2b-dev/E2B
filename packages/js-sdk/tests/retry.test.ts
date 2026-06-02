@@ -5,6 +5,8 @@ import {
   resolveMaxRetries,
   retryableErrorKind,
   withRetry,
+  RETRYABLE_STATUS,
+  RETRYABLE_ERROR_CODES,
 } from '../src/retry'
 
 const policy = { retries: 3, backoffBaseMs: 500, backoffCapMs: 8_000 }
@@ -267,5 +269,70 @@ describe('withRetry', () => {
     })
     assert.equal(res.status, 503)
     assert.equal(calls.length, 1)
+  })
+
+  test('large body exceeding the buffer cap is sent once without retry', async () => {
+    const { fetch, calls } = fakeFetch([
+      new Response(null, { status: 429 }),
+      new Response('ok', { status: 200 }),
+    ])
+    const wrapped = withRetry(fetch, 3)
+    // 2 MiB > MAX_REPLAYABLE_BODY_BYTES (1 MiB): not buffered, so not replayed
+    // even though 429 on a POST would normally be retried.
+    const body = new Uint8Array(2 * 1024 * 1024)
+    const res = await wrapped('https://api.test/rpc', { method: 'POST', body })
+    assert.equal(res.status, 429)
+    assert.equal(calls.length, 1)
+  })
+
+  test('does not retry once the signal aborts between attempts', async () => {
+    const controller = new AbortController()
+    const { fetch, calls } = fakeFetch([
+      // First attempt fails transiently, then we abort during the backoff.
+      () => {
+        controller.abort()
+        return new Response(null, { status: 429 })
+      },
+      new Response('ok', { status: 200 }),
+    ])
+    const wrapped = withRetry(fetch, 3)
+    let threw = false
+    try {
+      await wrapped('https://api.test/sandboxes', { signal: controller.signal })
+    } catch {
+      threw = true
+    }
+    assert.ok(threw)
+    assert.equal(calls.length, 1)
+  })
+})
+
+describe('classification tables (parity with Python e2b/_retry.py)', () => {
+  test('RETRYABLE_STATUS matches the agreed policy', () => {
+    assert.deepEqual(
+      [...RETRYABLE_STATUS.entries()].sort((a, b) => a[0] - b[0]),
+      [
+        [408, 'ambiguous'],
+        [429, 'rejected'],
+        [502, 'ambiguous'],
+        [503, 'ambiguous'],
+        [504, 'ambiguous'],
+      ]
+    )
+    // 500 is intentionally not retryable.
+    assert.equal(RETRYABLE_STATUS.has(500), false)
+  })
+
+  test('RETRYABLE_ERROR_CODES matches the agreed policy', () => {
+    assert.deepEqual([...RETRYABLE_ERROR_CODES.entries()].sort(), [
+      ['eai_again', 'rejected'],
+      ['econnrefused', 'rejected'],
+      ['econnreset', 'ambiguous'],
+      ['ehostunreach', 'rejected'],
+      ['enetunreach', 'rejected'],
+      ['enotfound', 'rejected'],
+      ['epipe', 'ambiguous'],
+      ['etimedout', 'ambiguous'],
+    ])
   })
 })

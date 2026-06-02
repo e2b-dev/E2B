@@ -38,8 +38,10 @@ type FailureKind = 'rejected' | 'ambiguous'
  *
  * `500` is intentionally excluded because it is frequently a deterministic
  * server-side error rather than a transient one.
+ *
+ * Keep in sync with `_RETRYABLE_STATUS` in the Python SDK (`e2b/_retry.py`).
  */
-const RETRYABLE_STATUS: Map<number, FailureKind> = new Map([
+export const RETRYABLE_STATUS: ReadonlyMap<number, FailureKind> = new Map([
   [408, 'ambiguous'], // request timeout
   [429, 'rejected'], // throttled — not processed
   [502, 'ambiguous'], // bad gateway
@@ -52,7 +54,7 @@ const RETRYABLE_STATUS: Map<number, FailureKind> = new Map([
  * indicate a transient, connection-level failure that is safe to retry, mapped
  * to whether the request could have reached the server.
  */
-const RETRYABLE_ERROR_CODES: Map<string, FailureKind> = new Map([
+export const RETRYABLE_ERROR_CODES: ReadonlyMap<string, FailureKind> = new Map([
   ['econnrefused', 'rejected'], // never accepted the connection
   ['enotfound', 'rejected'], // DNS failure — never reached server
   ['eai_again', 'rejected'], // DNS failure — never reached server
@@ -184,13 +186,19 @@ export function retryableErrorKind(err: unknown): FailureKind | undefined {
 }
 
 /**
- * Decide whether a failure of the given kind may be retried for this request.
- * `rejected` failures are always safe; `ambiguous` failures are only safe for
- * idempotent requests.
+ * Single decision point for both the response and error paths: retry only when
+ * attempts remain, the failure is transient, and the failure is safe to replay
+ * for this request. `rejected` failures are always safe; `ambiguous` failures
+ * are only safe for idempotent requests.
  */
-function mayRetry(kind: FailureKind, idempotent: boolean): boolean {
-  if (kind === 'rejected') return true
-  return idempotent
+function shouldRetry(
+  kind: FailureKind | undefined,
+  attempt: number,
+  policy: RetryPolicy,
+  idempotent: boolean
+): boolean {
+  if (kind === undefined || attempt >= policy.retries) return false
+  return kind === 'rejected' || idempotent
 }
 
 function isAbortError(err: unknown): boolean {
@@ -253,7 +261,10 @@ async function bufferBody(
       if (done) break
       total += value.byteLength
       if (total > MAX_REPLAYABLE_BODY_BYTES) {
-        await reader.cancel().catch(() => {})
+        // Too large to buffer for replay — the caller sends the pristine
+        // original once. We must NOT call `reader.cancel()` here: cancelling
+        // one branch of a teed body (`request.clone()`) never resolves while
+        // the other branch is unread, which would hang the request forever.
         return { replayable: false }
       }
       chunks.push(value)
@@ -333,11 +344,7 @@ export function withRetry(
         const response = await innerFetch(buildAttempt())
 
         const kind = retryableStatusKind(response.status)
-        if (
-          attempt >= policy.retries ||
-          kind === undefined ||
-          !mayRetry(kind, idempotent)
-        ) {
+        if (!shouldRetry(kind, attempt, policy, idempotent)) {
           return response
         }
 
@@ -349,11 +356,7 @@ export function withRetry(
         attempt++
       } catch (err) {
         const kind = retryableErrorKind(err)
-        if (
-          attempt >= policy.retries ||
-          kind === undefined ||
-          !mayRetry(kind, idempotent)
-        ) {
+        if (!shouldRetry(kind, attempt, policy, idempotent)) {
           throw err
         }
 

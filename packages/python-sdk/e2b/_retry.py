@@ -33,6 +33,7 @@ _REJECTED = "rejected"
 _AMBIGUOUS = "ambiguous"
 
 # ``500`` is intentionally excluded as it is frequently a deterministic error.
+# Keep in sync with ``RETRYABLE_STATUS`` in the JS SDK (``src/retry.ts``).
 _RETRYABLE_STATUS = {
     408: _AMBIGUOUS,  # request timeout
     429: _REJECTED,  # throttled — not processed
@@ -136,10 +137,17 @@ def classify_exception(exc: BaseException) -> Optional[str]:
     return None
 
 
-def _may_retry(kind: str, idempotent: bool) -> bool:
-    if kind == _REJECTED:
-        return True
-    return idempotent
+def _should_retry(
+    kind: Optional[str], attempt: int, retries: int, idempotent: bool
+) -> bool:
+    """Single decision point for both the response and error paths: retry only
+    when attempts remain, the failure is transient, and the failure is safe to
+    replay for this request. ``rejected`` failures are always safe; ``ambiguous``
+    failures are only safe for idempotent requests.
+    """
+    if kind is None or attempt >= retries:
+        return False
+    return kind == _REJECTED or idempotent
 
 
 def _is_replayable(request: httpx.Request) -> bool:
@@ -171,14 +179,14 @@ def retry_request_sync(
             response = send(request)
         except Exception as exc:
             kind = classify_exception(exc)
-            if attempt >= retries or kind is None or not _may_retry(kind, idempotent):
+            if not _should_retry(kind, attempt, retries, idempotent):
                 raise
             sleep(compute_delay(attempt))
             attempt += 1
             continue
 
         kind = _status_kind(response.status_code)
-        if attempt >= retries or kind is None or not _may_retry(kind, idempotent):
+        if not _should_retry(kind, attempt, retries, idempotent):
             return response
 
         retry_after = parse_retry_after(response.headers.get("retry-after"))
@@ -204,14 +212,14 @@ async def retry_request_async(
             response = await send(request)
         except Exception as exc:
             kind = classify_exception(exc)
-            if attempt >= retries or kind is None or not _may_retry(kind, idempotent):
+            if not _should_retry(kind, attempt, retries, idempotent):
                 raise
             await sleep(compute_delay(attempt))
             attempt += 1
             continue
 
         kind = _status_kind(response.status_code)
-        if attempt >= retries or kind is None or not _may_retry(kind, idempotent):
+        if not _should_retry(kind, attempt, retries, idempotent):
             return response
 
         retry_after = parse_retry_after(response.headers.get("retry-after"))

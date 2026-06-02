@@ -2,6 +2,7 @@ import httpx
 import pytest
 
 from e2b._retry import (
+    _RETRYABLE_STATUS,
     classify_exception,
     compute_delay,
     parse_retry_after,
@@ -240,3 +241,20 @@ async def test_async_post_not_retried_ambiguous():
     res = await retry_request_async(req, sender, retries=3, sleep=_async_no_sleep)
     assert res.status_code == 502
     assert len(sender.calls) == 1
+
+
+# ---------------------------------------------------------------------------
+# classification table (parity with JS src/retry.ts)
+# ---------------------------------------------------------------------------
+
+
+def test_retryable_status_table_matches_agreed_policy():
+    assert _RETRYABLE_STATUS == {
+        408: "ambiguous",
+        429: "rejected",
+        502: "ambiguous",
+        503: "ambiguous",
+        504: "ambiguous",
+    }
+    # 500 is intentionally not retryable.
+    assert 500 not in _RETRYABLE_STATUS
