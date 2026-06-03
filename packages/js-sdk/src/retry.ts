@@ -1,4 +1,5 @@
 import { parseIntEnv } from './api/metadata'
+import { wait } from './utils'
 
 /** Default number of *retries* (i.e. attempts after the first). */
 export const DEFAULT_MAX_RETRIES = 3
@@ -206,24 +207,6 @@ function isAbortError(err: unknown): boolean {
   return name === 'AbortError' || name === 'TimeoutError'
 }
 
-function sleep(ms: number, signal?: AbortSignal | null): Promise<void> {
-  return new Promise((resolve, reject) => {
-    if (signal?.aborted) {
-      reject(signal.reason ?? new DOMException('Aborted', 'AbortError'))
-      return
-    }
-    const timer = setTimeout(() => {
-      signal?.removeEventListener('abort', onAbort)
-      resolve()
-    }, ms)
-    const onAbort = () => {
-      clearTimeout(timer)
-      reject(signal?.reason ?? new DOMException('Aborted', 'AbortError'))
-    }
-    signal?.addEventListener('abort', onAbort, { once: true })
-  })
-}
-
 function isStreamLike(body: unknown): boolean {
   return (
     typeof body === 'object' &&
@@ -352,7 +335,7 @@ export function withRetry(
         await response.body?.cancel().catch(() => {})
 
         const delay = computeDelayMs(attempt, policy, response)
-        await sleep(delay, request.signal)
+        await wait(delay, request.signal)
         attempt++
       } catch (err) {
         const kind = retryableErrorKind(err)
@@ -361,7 +344,7 @@ export function withRetry(
         }
 
         const delay = computeDelayMs(attempt, policy)
-        await sleep(delay, request.signal)
+        await wait(delay, request.signal)
         attempt++
       }
     }
