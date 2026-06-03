@@ -226,6 +226,25 @@ def test_client_retries_429(monkeypatch):
     assert pool.calls == 3
 
 
+def test_client_caps_retry_after(monkeypatch):
+    slept: list = []
+    monkeypatch.setattr("e2b_connect.client.time.sleep", slept.append)
+
+    pool = _StatusPool(429, headers=[(b"retry-after", b"3600")])
+    client = Client(
+        pool=cast(ConnectionPool, pool),
+        url="http://api.test",
+        response_type=object,
+        retries=1,
+    )
+
+    with pytest.raises(ConnectException):
+        client.call_unary(_FakeMsg())
+
+    # A huge Retry-After is capped (matches e2b._retry.compute_delay: cap * 4).
+    assert slept == [32.0]
+
+
 def test_client_does_not_retry_ambiguous_502(monkeypatch):
     monkeypatch.setattr("e2b_connect.client.time.sleep", lambda _: None)
 

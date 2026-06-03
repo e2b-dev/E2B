@@ -115,11 +115,24 @@ def make_error(error):
 # Exponential backoff with full jitter, in seconds.
 _BACKOFF_BASE_SEC = 0.1
 _BACKOFF_CAP_SEC = 8.0
+# Upper bound for a server-provided ``Retry-After``, matching
+# ``e2b._retry.compute_delay`` (``cap * 4``), so a large header cannot block a
+# call far beyond what callers expect.
+_RETRY_AFTER_CAP_SEC = _BACKOFF_CAP_SEC * 4
 
 
 def _backoff_delay(attempt: int) -> float:
     exp = min(_BACKOFF_CAP_SEC, _BACKOFF_BASE_SEC * (2**attempt))
     return random.uniform(0, exp)
+
+
+def _retry_delay(retry_after: Optional[float], attempt: int) -> float:
+    """Delay before the next retry: a (capped) server ``Retry-After`` takes
+    precedence, otherwise exponential backoff with full jitter.
+    """
+    if retry_after is not None:
+        return min(retry_after, _RETRY_AFTER_CAP_SEC)
+    return _backoff_delay(attempt)
 
 
 # Connection-level failures the server provably did not process, so replaying a
@@ -347,10 +360,7 @@ class Client:
                 continue
 
             if res.status == _REJECTED_STATUS and attempt < retries:
-                retry_after = _retry_after_seconds(res.headers)
-                delay = (
-                    retry_after if retry_after is not None else _backoff_delay(attempt)
-                )
+                delay = _retry_delay(_retry_after_seconds(res.headers), attempt)
                 await asyncio.sleep(delay)
                 attempt += 1
                 continue
@@ -387,10 +397,7 @@ class Client:
                 continue
 
             if res.status == _REJECTED_STATUS and attempt < retries:
-                retry_after = _retry_after_seconds(res.headers)
-                delay = (
-                    retry_after if retry_after is not None else _backoff_delay(attempt)
-                )
+                delay = _retry_delay(_retry_after_seconds(res.headers), attempt)
                 time.sleep(delay)
                 attempt += 1
                 continue
