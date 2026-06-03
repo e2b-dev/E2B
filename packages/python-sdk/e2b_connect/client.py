@@ -10,6 +10,8 @@ import typing
 from httpcore import (
     ConnectionPool,
     AsyncConnectionPool,
+    ConnectError,
+    ConnectTimeout,
     RemoteProtocolError,
     Response,
 )
@@ -118,6 +120,29 @@ _BACKOFF_CAP_SEC = 8.0
 def _backoff_delay(attempt: int) -> float:
     exp = min(_BACKOFF_CAP_SEC, _BACKOFF_BASE_SEC * (2**attempt))
     return random.uniform(0, exp)
+
+
+# Connection-level failures the server provably did not process, so replaying a
+# (non-idempotent) RPC is safe. Mirrors the ``rejected`` class in ``e2b._retry``.
+# ``RemoteProtocolError`` is also retried for envd HTTP/2 idle-connection resets.
+_REJECTED_EXCEPTIONS = (RemoteProtocolError, ConnectError, ConnectTimeout)
+
+# Transient HTTP status that is rejected before processing (safe to replay).
+# ``502``/``503``/``504`` are ambiguous for a non-idempotent RPC and are not
+# retried, matching the POST policy in ``e2b._retry``.
+_REJECTED_STATUS = 429
+
+
+def _retry_after_seconds(headers) -> Optional[float]:
+    """Parse a ``Retry-After`` delta-seconds header (the form envd/edge emit)
+    from httpcore's ``(name, value)`` byte-tuple headers. Returns ``None`` when
+    absent or not a plain integer.
+    """
+    for name, value in headers:
+        if name.lower() == b"retry-after":
+            text = value.decode("ascii", "ignore").strip()
+            return float(int(text)) if text.isdigit() else None
+    return None
 
 
 def _resolve_retries(retries: Optional[int], args: tuple) -> int:
@@ -292,7 +317,6 @@ class Client:
             msg_type=self._response_type,
         )
 
-    @_retry(RemoteProtocolError)
     async def acall_unary(
         self,
         req,
@@ -310,10 +334,29 @@ class Client:
             **opts,
         )
 
-        res = await self.async_pool.request(**req_data)
-        return self._process_unary_response(res)
+        retries = self._connection_retries
+        attempt = 0
+        while True:
+            try:
+                res = await self.async_pool.request(**req_data)
+            except _REJECTED_EXCEPTIONS:
+                if attempt >= retries:
+                    raise
+                await asyncio.sleep(_backoff_delay(attempt))
+                attempt += 1
+                continue
 
-    @_retry(RemoteProtocolError)
+            if res.status == _REJECTED_STATUS and attempt < retries:
+                retry_after = _retry_after_seconds(res.headers)
+                delay = (
+                    retry_after if retry_after is not None else _backoff_delay(attempt)
+                )
+                await asyncio.sleep(delay)
+                attempt += 1
+                continue
+
+            return self._process_unary_response(res)
+
     def call_unary(
         self,
         req,
@@ -331,8 +374,28 @@ class Client:
             **opts,
         )
 
-        res = self.pool.request(**req_data)
-        return self._process_unary_response(res)
+        retries = self._connection_retries
+        attempt = 0
+        while True:
+            try:
+                res = self.pool.request(**req_data)
+            except _REJECTED_EXCEPTIONS:
+                if attempt >= retries:
+                    raise
+                time.sleep(_backoff_delay(attempt))
+                attempt += 1
+                continue
+
+            if res.status == _REJECTED_STATUS and attempt < retries:
+                retry_after = _retry_after_seconds(res.headers)
+                delay = (
+                    retry_after if retry_after is not None else _backoff_delay(attempt)
+                )
+                time.sleep(delay)
+                attempt += 1
+                continue
+
+            return self._process_unary_response(res)
 
     def _create_stream_timeout(self, timeout: Optional[float]):
         if timeout:
