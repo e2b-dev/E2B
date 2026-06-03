@@ -50,15 +50,20 @@ vi.mock('src/utils/signal', () => ({
   setupSignalHandlers: mocks.setupSignalHandlers,
 }))
 
-vi.mock('../../../src/commands/sandbox/exec_helpers', async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import('../../../src/commands/sandbox/exec_helpers')>()
-  return {
-    ...actual,
-    isPipedStdin: mocks.isPipedStdin,
-    streamStdinChunks: mocks.streamStdinChunks,
+vi.mock(
+  '../../../src/commands/sandbox/exec_helpers',
+  async (importOriginal: <T>() => Promise<T>) => {
+    const actual =
+      await importOriginal<
+        typeof import('../../../src/commands/sandbox/exec_helpers')
+      >()
+    return {
+      ...actual,
+      isPipedStdin: mocks.isPipedStdin,
+      streamStdinChunks: mocks.streamStdinChunks,
+    }
   }
-})
+)
 
 describe('sandbox exec stdin run flag', () => {
   beforeEach(() => {
