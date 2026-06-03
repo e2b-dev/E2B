@@ -195,6 +195,86 @@ def test_sync_streaming_body_not_retried():
     assert len(sender.calls) == 1
 
 
+def test_sync_delete_with_streaming_body_not_retried():
+    def gen():
+        yield b"chunk"
+
+    # DELETE may carry a one-shot streaming body; it must not be replayed.
+    sender = _Sender([_response(503), _response(200)])
+    req = httpx.Request("DELETE", "http://api.test/x", content=gen())
+    res = retry_request_sync(req, sender, retries=3, sleep=_no_sleep)
+    assert res.status_code == 503
+    assert len(sender.calls) == 1
+
+
+def test_sync_delete_without_body_is_retried():
+    sender = _Sender([_response(503), _response(200)])
+    req = httpx.Request("DELETE", "http://api.test/x")
+    res = retry_request_sync(req, sender, retries=3, sleep=_no_sleep)
+    assert res.status_code == 200
+    assert len(sender.calls) == 2
+
+
+def test_sync_first_attempt_exhausting_timeout_stops_retries(monkeypatch):
+    clock = {"t": 0.0}
+    monkeypatch.setattr("e2b._retry.time.monotonic", lambda: clock["t"])
+
+    class _TimingSender:
+        def __init__(self):
+            self.calls = []
+
+        def __call__(self, request):
+            self.calls.append(request)
+            clock["t"] += 0.3  # each attempt consumes the whole timeout budget
+            raise httpx.ReadTimeout("timeout", request=request)
+
+    sender = _TimingSender()
+    req = httpx.Request(
+        "GET",
+        "http://api.test/x",
+        extensions={
+            "timeout": {"connect": 0.3, "read": 0.3, "write": 0.3, "pool": 0.3}
+        },
+    )
+    with pytest.raises(httpx.ReadTimeout):
+        retry_request_sync(
+            req,
+            sender,
+            retries=5,
+            sleep=lambda d: clock.__setitem__("t", clock["t"] + d),
+        )
+    # The first attempt exhausts the 0.3s budget, so no retries are attempted.
+    assert len(sender.calls) == 1
+
+
+def test_sync_retries_within_timeout_budget(monkeypatch):
+    clock = {"t": 0.0}
+    monkeypatch.setattr("e2b._retry.time.monotonic", lambda: clock["t"])
+
+    sender = _Sender([_response(503), _response(503), _response(200)])
+    req = httpx.Request(
+        "GET",
+        "http://api.test/x",
+        extensions={
+            "timeout": {
+                "connect": 100.0,
+                "read": 100.0,
+                "write": 100.0,
+                "pool": 100.0,
+            }
+        },
+    )
+    res = retry_request_sync(
+        req,
+        sender,
+        retries=5,
+        sleep=lambda d: clock.__setitem__("t", clock["t"] + d),
+    )
+    # Plenty of budget: retries proceed normally.
+    assert res.status_code == 200
+    assert len(sender.calls) == 3
+
+
 def test_sync_retries_zero_single_attempt():
     sender = _Sender([_response(503)])
     req = httpx.Request("GET", "http://api.test/sandboxes")
@@ -240,6 +320,46 @@ async def test_async_post_not_retried_ambiguous():
     req = httpx.Request("POST", "http://api.test/rpc", content=b"x")
     res = await retry_request_async(req, sender, retries=3, sleep=_async_no_sleep)
     assert res.status_code == 502
+    assert len(sender.calls) == 1
+
+
+async def test_async_delete_with_streaming_body_not_retried():
+    def gen():
+        yield b"chunk"
+
+    sender = _AsyncSender([_response(503), _response(200)])
+    req = httpx.Request("DELETE", "http://api.test/x", content=gen())
+    res = await retry_request_async(req, sender, retries=3, sleep=_async_no_sleep)
+    assert res.status_code == 503
+    assert len(sender.calls) == 1
+
+
+async def test_async_first_attempt_exhausting_timeout_stops_retries(monkeypatch):
+    clock = {"t": 0.0}
+    monkeypatch.setattr("e2b._retry.time.monotonic", lambda: clock["t"])
+
+    class _AsyncTimingSender:
+        def __init__(self):
+            self.calls = []
+
+        async def __call__(self, request):
+            self.calls.append(request)
+            clock["t"] += 0.3
+            raise httpx.ReadTimeout("timeout", request=request)
+
+    async def _advance(d):
+        clock["t"] += d
+
+    sender = _AsyncTimingSender()
+    req = httpx.Request(
+        "GET",
+        "http://api.test/x",
+        extensions={
+            "timeout": {"connect": 0.3, "read": 0.3, "write": 0.3, "pool": 0.3}
+        },
+    )
+    with pytest.raises(httpx.ReadTimeout):
+        await retry_request_async(req, sender, retries=5, sleep=_advance)
     assert len(sender.calls) == 1
 
 

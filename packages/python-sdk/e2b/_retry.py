@@ -151,15 +151,57 @@ def _should_retry(
 
 
 def _is_replayable(request: httpx.Request) -> bool:
-    # A request whose body has been buffered into bytes (``_content`` set) can be
-    # safely re-sent. Streaming bodies are one-shot and must not be retried.
-    if request.method.upper() in ("GET", "HEAD", "OPTIONS", "DELETE"):
-        return True
+    # A bodyless request (``_content == b""``) or one whose body has been
+    # buffered into bytes can be safely re-sent. A streaming (one-shot) body
+    # has ``_content is None`` and must not be retried — regardless of method,
+    # since DELETE/OPTIONS may also carry a streaming body.
     return getattr(request, "_content", None) is not None
 
 
 def _is_idempotent(request: httpx.Request) -> bool:
     return request.method.upper() in _IDEMPOTENT_METHODS
+
+
+def _operation_deadline(request: httpx.Request) -> Optional[float]:
+    """Absolute :func:`time.monotonic` deadline bounding the whole operation
+    (all attempts + backoff), derived from the per-request timeout httpx
+    attached to the request. Returns ``None`` when no timeout applies.
+
+    This mirrors the JS SDK, where a single ``AbortSignal`` bounds the entire
+    retried operation rather than each individual attempt.
+    """
+    ext = request.extensions.get("timeout") if request.extensions else None
+    if not ext:
+        return None
+    values = [v for v in ext.values() if v is not None]
+    if not values:
+        return None
+    return time.monotonic() + max(values)
+
+
+def _clamp_timeout(request: httpx.Request, deadline: Optional[float]) -> None:
+    """Shrink the request's per-attempt timeout to the time remaining before
+    ``deadline`` so a single attempt cannot overrun the whole-operation budget.
+    """
+    if deadline is None:
+        return
+    ext = request.extensions.get("timeout")
+    if not ext:
+        return
+    remaining = max(0.0, deadline - time.monotonic())
+    request.extensions = {
+        **request.extensions,
+        "timeout": {
+            k: (min(v, remaining) if v is not None else v) for k, v in ext.items()
+        },
+    }
+
+
+def _can_retry_before_deadline(deadline: Optional[float], delay: float) -> bool:
+    """Whether a backoff of ``delay`` still leaves time for another attempt."""
+    if deadline is None:
+        return True
+    return time.monotonic() + delay < deadline
 
 
 def retry_request_sync(
@@ -173,25 +215,34 @@ def retry_request_sync(
         return send(request)
 
     idempotent = _is_idempotent(request)
+    deadline = _operation_deadline(request)
     attempt = 0
     while True:
         try:
             response = send(request)
         except Exception as exc:
             kind = classify_exception(exc)
-            if not _should_retry(kind, attempt, retries, idempotent):
+            delay = compute_delay(attempt)
+            if not _should_retry(
+                kind, attempt, retries, idempotent
+            ) or not _can_retry_before_deadline(deadline, delay):
                 raise
-            sleep(compute_delay(attempt))
+            sleep(delay)
+            _clamp_timeout(request, deadline)
             attempt += 1
             continue
 
         kind = _status_kind(response.status_code)
-        if not _should_retry(kind, attempt, retries, idempotent):
+        retry_after = parse_retry_after(response.headers.get("retry-after"))
+        delay = compute_delay(attempt, retry_after)
+        if not _should_retry(
+            kind, attempt, retries, idempotent
+        ) or not _can_retry_before_deadline(deadline, delay):
             return response
 
-        retry_after = parse_retry_after(response.headers.get("retry-after"))
         response.close()
-        sleep(compute_delay(attempt, retry_after))
+        sleep(delay)
+        _clamp_timeout(request, deadline)
         attempt += 1
 
 
@@ -206,23 +257,32 @@ async def retry_request_async(
         return await send(request)
 
     idempotent = _is_idempotent(request)
+    deadline = _operation_deadline(request)
     attempt = 0
     while True:
         try:
             response = await send(request)
         except Exception as exc:
             kind = classify_exception(exc)
-            if not _should_retry(kind, attempt, retries, idempotent):
+            delay = compute_delay(attempt)
+            if not _should_retry(
+                kind, attempt, retries, idempotent
+            ) or not _can_retry_before_deadline(deadline, delay):
                 raise
-            await sleep(compute_delay(attempt))
+            await sleep(delay)
+            _clamp_timeout(request, deadline)
             attempt += 1
             continue
 
         kind = _status_kind(response.status_code)
-        if not _should_retry(kind, attempt, retries, idempotent):
+        retry_after = parse_retry_after(response.headers.get("retry-after"))
+        delay = compute_delay(attempt, retry_after)
+        if not _should_retry(
+            kind, attempt, retries, idempotent
+        ) or not _can_retry_before_deadline(deadline, delay):
             return response
 
-        retry_after = parse_retry_after(response.headers.get("retry-after"))
         await response.aclose()
-        await sleep(compute_delay(attempt, retry_after))
+        await sleep(delay)
+        _clamp_timeout(request, deadline)
         attempt += 1
