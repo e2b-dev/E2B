@@ -49,9 +49,10 @@ def resolve_max_retries(retries: Optional[int]) -> int:
     :data:`DEFAULT_MAX_RETRIES`.
     """
     if retries is not None:
-        if retries < 0:
+        # ``bool`` is a subclass of ``int`` but is not a valid retry count.
+        if isinstance(retries, bool) or not isinstance(retries, int) or retries < 0:
             raise ValueError(
-                f"Invalid retries={retries}: expected a non-negative integer."
+                f"Invalid retries={retries!r}: expected a non-negative integer."
             )
         return retries
 

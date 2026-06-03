@@ -55,6 +55,13 @@ def test_resolve_max_retries_negative_raises():
         resolve_max_retries(-1)
 
 
+def test_resolve_max_retries_non_integer_raises():
+    with pytest.raises(ValueError):
+        resolve_max_retries(2.5)  # type: ignore[arg-type]
+    with pytest.raises(ValueError):
+        resolve_max_retries(True)
+
+
 # ---------------------------------------------------------------------------
 # parse_retry_after / compute_delay
 # ---------------------------------------------------------------------------
