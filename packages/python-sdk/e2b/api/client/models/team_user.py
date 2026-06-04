@@ -1,5 +1,5 @@
 from collections.abc import Mapping
-from typing import Any, TypeVar
+from typing import Any, TypeVar, Union, cast
 from uuid import UUID
 
 from attrs import define as _attrs_define
@@ -12,15 +12,16 @@ T = TypeVar("T", bound="TeamUser")
 class TeamUser:
     """
     Attributes:
-        email (str): Email of the user
+        email (Union[None, str]): Email of the user
         id (UUID): Identifier of the user
     """
 
-    email: str
+    email: Union[None, str]
     id: UUID
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
+        email: Union[None, str]
         email = self.email
 
         id = str(self.id)
@@ -39,7 +40,13 @@ class TeamUser:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        email = d.pop("email")
+
+        def _parse_email(data: object) -> Union[None, str]:
+            if data is None:
+                return data
+            return cast(Union[None, str], data)
+
+        email = _parse_email(d.pop("email"))
 
         id = UUID(d.pop("id"))
 

@@ -131,6 +131,48 @@ buildTemplateTest('fromDockerfile with custom user and workdir', () => {
   )
 })
 
+buildTemplateTest('fromDockerfile with multi-source COPY', () => {
+  const dockerfile = `FROM node:24
+COPY file1.txt file2.txt file3.txt /dest/`
+
+  const template = Template().fromDockerfile(dockerfile)
+
+  // After initial USER root and WORKDIR /, the multi-source COPY should
+  // expand into one COPY instruction per source.
+  // @ts-expect-error - instructions is not a property of TemplateBuilder
+  const copyInstructions = template.instructions.filter(
+    (i: { type: InstructionType }) => i.type === InstructionType.COPY
+  )
+
+  assert.equal(copyInstructions.length, 3)
+  assert.equal(copyInstructions[0].args[0], 'file1.txt')
+  assert.equal(copyInstructions[0].args[1], '/dest/')
+  assert.equal(copyInstructions[1].args[0], 'file2.txt')
+  assert.equal(copyInstructions[1].args[1], '/dest/')
+  assert.equal(copyInstructions[2].args[0], 'file3.txt')
+  assert.equal(copyInstructions[2].args[1], '/dest/')
+})
+
+buildTemplateTest('fromDockerfile with multi-source COPY --chown', () => {
+  const dockerfile = `FROM node:24
+COPY --chown=myuser:mygroup pkg.json pkg-lock.json /app/`
+
+  const template = Template().fromDockerfile(dockerfile)
+
+  // @ts-expect-error - instructions is not a property of TemplateBuilder
+  const copyInstructions = template.instructions.filter(
+    (i: { type: InstructionType }) => i.type === InstructionType.COPY
+  )
+
+  assert.equal(copyInstructions.length, 2)
+  assert.equal(copyInstructions[0].args[0], 'pkg.json')
+  assert.equal(copyInstructions[0].args[1], '/app/')
+  assert.equal(copyInstructions[0].args[2], 'myuser:mygroup')
+  assert.equal(copyInstructions[1].args[0], 'pkg-lock.json')
+  assert.equal(copyInstructions[1].args[1], '/app/')
+  assert.equal(copyInstructions[1].args[2], 'myuser:mygroup')
+})
+
 buildTemplateTest('fromDockerfile with COPY --chown', () => {
   const dockerfile = `FROM node:24
 COPY --chown=myuser:mygroup app.js /app/

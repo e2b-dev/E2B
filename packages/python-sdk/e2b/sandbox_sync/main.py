@@ -10,7 +10,7 @@ from packaging.version import Version
 from typing_extensions import Self, Unpack
 
 from e2b.api.client.types import Unset
-from e2b.api.client_sync import get_transport
+from e2b.api.client_sync import get_envd_transport as get_transport
 from e2b.connection_config import ApiParams, ConnectionConfig
 from e2b.envd.api import ENVD_API_HEALTH_ROUTE, handle_envd_api_exception
 from e2b.envd.versions import ENVD_DEBUG_FALLBACK
@@ -24,6 +24,7 @@ from e2b.sandbox.sandbox_api import (
     SandboxLifecycle,
     SandboxMetrics,
     SandboxNetworkOpts,
+    SandboxNetworkUpdate,
     SnapshotInfo,
 )
 from e2b.sandbox.utils import class_method_variant
@@ -191,7 +192,7 @@ class Sandbox(SandboxApi):
         :param secure: Envd is secured with access token and cannot be used without it, defaults to `True`.
         :param allow_internet_access: Allow sandbox to access the internet, defaults to `True`. If set to `False`, it works the same as setting network `deny_out` to `[0.0.0.0/0]`.
         :param mcp: MCP server to enable in the sandbox
-        :param network: Sandbox network configuration
+        :param network: Sandbox network configuration. ``allow_out``/``deny_out`` may also be a callable receiving a :class:`SandboxNetworkSelectorContext` (``ctx.all_traffic``, ``ctx.rules``) and returning a list of strings. Per-host transform rules are nested under ``network.rules``.
         :param lifecycle: Sandbox lifecycle configuration — ``on_timeout``: ``"kill"`` (default) or ``"pause"``; ``auto_resume``: ``False`` (default) or ``True`` (only when ``on_timeout="pause"``). Example: ``{"on_timeout": "pause", "auto_resume": True}``
         :param volume_mounts: Dictionary mapping mount paths to Volume instances or volume names
 
@@ -433,6 +434,61 @@ class Sandbox(SandboxApi):
         SandboxApi._cls_set_timeout(
             sandbox_id=self.sandbox_id,
             timeout=timeout,
+            **self.connection_config.get_api_params(**opts),
+        )
+
+    @overload
+    def update_network(
+        self,
+        network: SandboxNetworkUpdate,
+        **opts: Unpack[ApiParams],
+    ) -> None:
+        """
+        Update the network configuration of the sandbox.
+
+        Replaces the current egress configuration atomically — fields that are
+        omitted are cleared on the server.
+
+        :param network: New network configuration.
+        """
+        ...
+
+    @overload
+    @staticmethod
+    def update_network(
+        sandbox_id: str,
+        network: SandboxNetworkUpdate,
+        **opts: Unpack[ApiParams],
+    ) -> None:
+        """
+        Update the network configuration of the sandbox specified by sandbox ID.
+
+        Replaces the current egress configuration atomically — fields that are
+        omitted are cleared on the server.
+
+        :param sandbox_id: Sandbox ID.
+        :param network: New network configuration.
+        """
+        ...
+
+    @class_method_variant("_cls_update_network")
+    def update_network(
+        self,
+        network: SandboxNetworkUpdate,
+        **opts: Unpack[ApiParams],
+    ) -> None:
+        """
+        Update the network configuration of the sandbox.
+
+        Replaces the current egress configuration atomically — fields that are
+        omitted are cleared on the server.
+
+        :param network: New network configuration.
+        """
+
+        SandboxApi._cls_update_network(
+            sandbox_id=self.sandbox_id,
+            network=network,
             **self.connection_config.get_api_params(**opts),
         )
 
@@ -784,7 +840,10 @@ class Sandbox(SandboxApi):
             **opts,
         )
 
-        sandbox_headers = {}
+        sandbox_headers = {
+            "E2b-Sandbox-Id": sandbox.sandbox_id,
+            "E2b-Sandbox-Port": str(ConnectionConfig.envd_port),
+        }
         envd_access_token = sandbox.envd_access_token
         if envd_access_token is not None and not isinstance(envd_access_token, Unset):
             sandbox_headers["X-Access-Token"] = envd_access_token

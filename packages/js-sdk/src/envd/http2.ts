@@ -1,4 +1,6 @@
 import { runtime } from '../utils'
+import { parseInflightLimitEnv, parsePositiveIntEnv } from '../api/metadata'
+import { limitConcurrency } from '../api/inflight'
 import {
   loadUndici,
   toUndiciRequestInput,
@@ -8,16 +10,20 @@ import {
 
 type EnvdFetchOptions = {
   connectionLimit?: number
+  inflightLimit?: number
   loadUndici?: () => Promise<UndiciModule | undefined>
 }
 
 let envdFetch: typeof fetch | undefined
 let envdRpcFetch: typeof fetch | undefined
-let hasWarnedUndiciFallback = false
+const DEFAULT_ENVD_CONNECTION_LIMIT = 10
+const DEFAULT_ENVD_RPC_CONNECTION_LIMIT = 200
+const DEFAULT_ENVD_INFLIGHT_LIMIT = 2000
+const DEFAULT_ENVD_RPC_INFLIGHT_LIMIT = 2000
 
 export function createEnvdFetchForRuntime(
   currentRuntime = runtime,
-  options: EnvdFetchOptions = { connectionLimit: 1 }
+  options: EnvdFetchOptions = {}
 ): typeof fetch {
   if (currentRuntime !== 'node') {
     return fetch
@@ -37,19 +43,16 @@ async function buildEnvdFetcher(
   options: EnvdFetchOptions
 ): Promise<typeof fetch> {
   const undici = await (options.loadUndici ?? loadUndici)()
+  const inflightLimit = options.inflightLimit ?? 0
 
   if (!undici) {
-    warnUndiciFallback()
-
-    return fetch
+    return limitConcurrency(fetch, inflightLimit)
   }
 
   const { Agent, fetch: undiciFetch } = undici
   const dispatcherOptions: { allowH2: true; connections?: number } = {
     allowH2: true,
-  }
-  if (options.connectionLimit !== undefined) {
-    dispatcherOptions.connections = options.connectionLimit
+    connections: options.connectionLimit ?? DEFAULT_ENVD_CONNECTION_LIMIT,
   }
 
   const dispatcher = new Agent(dispatcherOptions)
@@ -58,7 +61,7 @@ async function buildEnvdFetcher(
     init?: UndiciRequestInit
   ) => Promise<Response>
 
-  return ((input, init) => {
+  const wrapped: typeof fetch = ((input, init) => {
     const request = toUndiciRequestInput(input, init)
 
     return fetchWithDispatcher(request.input, {
@@ -66,17 +69,8 @@ async function buildEnvdFetcher(
       dispatcher,
     })
   }) as typeof fetch
-}
 
-function warnUndiciFallback() {
-  if (hasWarnedUndiciFallback) {
-    return
-  }
-
-  hasWarnedUndiciFallback = true
-  console.warn(
-    'Failed to load undici for envd HTTP/2 transport; falling back to global fetch.'
-  )
+  return limitConcurrency(wrapped, inflightLimit)
 }
 
 export function createEnvdFetch(): typeof fetch {
@@ -86,7 +80,9 @@ export function createEnvdFetch(): typeof fetch {
 
   // Keep one origin connection for short envd REST calls. If ALPN falls back
   // to h1, this favors connection pressure over per-sandbox throughput.
-  envdFetch = createEnvdFetchForRuntime(runtime)
+  envdFetch = createEnvdFetchForRuntime(runtime, {
+    inflightLimit: getEnvdInflightLimit(),
+  })
 
   return envdFetch
 }
@@ -96,9 +92,49 @@ export function createEnvdRpcFetch(): typeof fetch {
     return envdRpcFetch
   }
 
-  // RPC streams can stay open while follow-up RPCs run against the same
-  // sandbox, so they cannot share the REST client's single-connection cap.
-  envdRpcFetch = createEnvdFetchForRuntime(runtime, {})
+  envdRpcFetch = createEnvdFetchForRuntime(runtime, {
+    connectionLimit: getEnvdRpcConnectionLimit(),
+    inflightLimit: getEnvdRpcInflightLimit(),
+  })
 
   return envdRpcFetch
+}
+
+export function getEnvdRpcConnectionLimit(): number {
+  return parsePositiveIntEnv(
+    'E2B_ENVD_RPC_CONNECTIONS',
+    DEFAULT_ENVD_RPC_CONNECTION_LIMIT
+  )
+}
+
+/**
+ * Returns the configured max number of envd REST requests (e.g.
+ * `files.read`/`files.write`) that can be in flight at once across all
+ * sandboxes in this SDK process, or `0` to disable the cap.
+ *
+ * Defaults to {@link DEFAULT_ENVD_INFLIGHT_LIMIT} ({@link 2000}). Override
+ * via `E2B_ENVD_INFLIGHT_REQUESTS` env var; set to `0` to disable the cap
+ * entirely.
+ */
+export function getEnvdInflightLimit(): number {
+  return parseInflightLimitEnv(
+    'E2B_ENVD_INFLIGHT_REQUESTS',
+    DEFAULT_ENVD_INFLIGHT_LIMIT
+  )
+}
+
+/**
+ * Returns the configured max number of envd RPC requests that
+ * can be in flight at once across all sandboxes in this SDK process,
+ * or `0` to disable the cap.
+ *
+ * Defaults to {@link DEFAULT_ENVD_RPC_INFLIGHT_LIMIT} ({@link 2000}). Override
+ * via `E2B_ENVD_RPC_INFLIGHT_REQUESTS` env var; set to `0` to disable the cap
+ * entirely.
+ */
+export function getEnvdRpcInflightLimit(): number {
+  return parseInflightLimitEnv(
+    'E2B_ENVD_RPC_INFLIGHT_REQUESTS',
+    DEFAULT_ENVD_RPC_INFLIGHT_LIMIT
+  )
 }

@@ -14,6 +14,7 @@ from e2b.api.client.api.sandboxes import (
     post_sandboxes_sandbox_id_pause,
     post_sandboxes_sandbox_id_snapshots,
     post_sandboxes_sandbox_id_timeout,
+    put_sandboxes_sandbox_id_network,
 )
 from e2b.api.client.api.templates import delete_templates_template_id
 from e2b.api.client.models import (
@@ -37,13 +38,16 @@ from e2b.exceptions import (
 )
 from e2b.sandbox.main import SandboxBase
 from e2b.sandbox.sandbox_api import (
-    SandboxLifecycle,
+    build_network_update_body,
     McpServer,
     SandboxInfo,
+    SandboxLifecycle,
     SandboxMetrics,
     SandboxNetworkOpts,
+    SandboxNetworkUpdate,
     SandboxQuery,
     SnapshotInfo,
+    build_network_config,
 )
 from e2b.sandbox_sync.paginator import SandboxPaginator, get_api_client
 
@@ -159,6 +163,28 @@ class SandboxApi(SandboxBase):
             raise handle_api_exception(res)
 
     @classmethod
+    def _cls_update_network(
+        cls,
+        sandbox_id: str,
+        network: SandboxNetworkUpdate,
+        **opts: Unpack[ApiParams],
+    ) -> None:
+        config = ConnectionConfig(**opts)
+
+        api_client = get_api_client(config)
+        res = put_sandboxes_sandbox_id_network.sync_detailed(
+            sandbox_id,
+            client=api_client,
+            body=build_network_update_body(network),
+        )
+
+        if res.status_code == 404:
+            raise SandboxNotFoundException(f"Sandbox {sandbox_id} not found")
+
+        if res.status_code >= 300:
+            raise handle_api_exception(res)
+
+    @classmethod
     def _create_sandbox(
         cls,
         template: str,
@@ -183,6 +209,7 @@ class SandboxApi(SandboxBase):
                 "auto_resume can only be True when the resolved on_timeout is 'pause'."
             )
 
+        network_body = build_network_config(network)
         body = NewSandbox(
             template_id=template,
             auto_pause=on_timeout == "pause",
@@ -193,7 +220,7 @@ class SandboxApi(SandboxBase):
             mcp=cast(Any, mcp) or UNSET,
             secure=secure,
             allow_internet_access=allow_internet_access,
-            network=SandboxNetworkConfig(**network) if network else UNSET,
+            network=SandboxNetworkConfig(**network_body) if network_body else UNSET,
             volume_mounts=volume_mounts if volume_mounts else UNSET,
         )
 
@@ -279,6 +306,7 @@ class SandboxApi(SandboxBase):
                 disk_used=metric.disk_used,
                 mem_total=metric.mem_total,
                 mem_used=metric.mem_used,
+                mem_cache=metric.mem_cache,
                 timestamp=metric.timestamp,
             )
             for metric in res.parsed
