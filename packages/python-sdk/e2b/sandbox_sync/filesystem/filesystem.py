@@ -33,6 +33,7 @@ from e2b.sandbox.filesystem.filesystem import (
     EntryInfo,
     WriteEntry,
     WriteInfo,
+    map_entry_info,
     map_file_type,
     to_upload_body,
 )
@@ -371,28 +372,9 @@ class Filesystem:
 
             entries: List[EntryInfo] = []
             for entry in res.entries:
-                event_type = map_file_type(entry.type)
-
-                if event_type:
-                    entries.append(
-                        EntryInfo(
-                            name=entry.name,
-                            type=event_type,
-                            path=entry.path,
-                            size=entry.size,
-                            mode=entry.mode,
-                            permissions=entry.permissions,
-                            owner=entry.owner,
-                            group=entry.group,
-                            modified_time=entry.modified_time.ToDatetime(),
-                            # Optional, we can't directly access symlink_target otherwise if will be "" instead of None
-                            symlink_target=(
-                                entry.symlink_target
-                                if entry.HasField("symlink_target")
-                                else None
-                            ),
-                        )
-                    )
+                # Skip entries with an unknown file type.
+                if map_file_type(entry.type):
+                    entries.append(map_entry_info(entry))
 
             return entries
         except Exception as e:
@@ -453,23 +435,7 @@ class Filesystem:
                 headers=authentication_header(self._envd_version, user),
             )
 
-            return EntryInfo(
-                name=r.entry.name,
-                type=map_file_type(r.entry.type),
-                path=r.entry.path,
-                size=r.entry.size,
-                mode=r.entry.mode,
-                permissions=r.entry.permissions,
-                owner=r.entry.owner,
-                group=r.entry.group,
-                modified_time=r.entry.modified_time.ToDatetime(),
-                # Optional, we can't directly access symlink_target otherwise if will be "" instead of None
-                symlink_target=(
-                    r.entry.symlink_target
-                    if r.entry.HasField("symlink_target")
-                    else None
-                ),
-            )
+            return map_entry_info(r.entry)
         except Exception as e:
             raise _handle_filesystem_rpc_exception(e)
 
@@ -526,23 +492,7 @@ class Filesystem:
                 headers=authentication_header(self._envd_version, user),
             )
 
-            return EntryInfo(
-                name=r.entry.name,
-                type=map_file_type(r.entry.type),
-                path=r.entry.path,
-                size=r.entry.size,
-                mode=r.entry.mode,
-                permissions=r.entry.permissions,
-                owner=r.entry.owner,
-                group=r.entry.group,
-                modified_time=r.entry.modified_time.ToDatetime(),
-                # Optional, we can't directly access symlink_target otherwise if will be "" instead of None
-                symlink_target=(
-                    r.entry.symlink_target
-                    if r.entry.HasField("symlink_target")
-                    else None
-                ),
-            )
+            return map_entry_info(r.entry)
         except Exception as e:
             raise _handle_filesystem_rpc_exception(e)
 
@@ -583,6 +533,7 @@ class Filesystem:
         user: Optional[Username] = None,
         request_timeout: Optional[float] = None,
         recursive: bool = False,
+        include_entry: bool = False,
     ) -> WatchHandle:
         """
         Watch directory for filesystem events.
@@ -591,6 +542,7 @@ class Filesystem:
         :param user: Run the operation as this user
         :param request_timeout: Timeout for the request in **seconds**
         :param recursive: Watch directory recursively
+        :param include_entry: Include the `EntryInfo` of the affected entry in each event, when available. Requires envd 0.6.2 or later; ignored by older sandboxes
 
         :return: `WatchHandle` object for stopping watching directory
         """
@@ -602,7 +554,9 @@ class Filesystem:
 
         try:
             r = self._rpc.create_watcher(
-                filesystem_pb2.CreateWatcherRequest(path=path, recursive=recursive),
+                filesystem_pb2.CreateWatcherRequest(
+                    path=path, recursive=recursive, include_entry=include_entry
+                ),
                 request_timeout=self._connection_config.get_request_timeout(
                     request_timeout
                 ),

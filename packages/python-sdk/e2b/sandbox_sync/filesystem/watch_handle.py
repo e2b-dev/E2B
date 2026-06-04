@@ -7,6 +7,7 @@ from e2b.envd.filesystem.filesystem_pb2 import (
     RemoveWatcherRequest,
 )
 from e2b.envd.rpc import handle_rpc_exception
+from e2b.sandbox.filesystem.filesystem import map_entry_info
 from e2b.sandbox.filesystem.watch_handle import FilesystemEvent, map_event_type
 
 
@@ -63,6 +64,11 @@ class WatchHandle:
                     FilesystemEvent(
                         name=event.name,
                         type=event_type,
+                        entry=(
+                            map_entry_info(event.entry)
+                            if event.HasField("entry")
+                            else None
+                        ),
                     )
                 )
 

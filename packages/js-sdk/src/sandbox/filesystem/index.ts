@@ -20,6 +20,7 @@ import { authenticationHeader, handleRpcError } from '../../envd/rpc'
 
 import { EnvdApiClient } from '../../envd/api'
 import {
+  EntryInfo as FsEntryInfo,
   Filesystem as FilesystemService,
   FileType as FsFileType,
 } from '../../envd/filesystem/filesystem_pb'
@@ -154,6 +155,24 @@ function mapModifiedTime(modifiedTime: Timestamp | undefined) {
 }
 
 /**
+ * Map a protobuf `EntryInfo` to the SDK `EntryInfo`.
+ */
+export function mapEntryInfo(entry: FsEntryInfo): EntryInfo {
+  return {
+    name: entry.name,
+    type: mapFileType(entry.type),
+    path: entry.path,
+    size: Number(entry.size),
+    mode: entry.mode,
+    permissions: entry.permissions,
+    owner: entry.owner,
+    group: entry.group,
+    modifiedTime: mapModifiedTime(entry.modifiedTime),
+    symlinkTarget: entry.symlinkTarget,
+  }
+}
+
+/**
  * Options for the sandbox filesystem operations.
  */
 export interface FilesystemRequestOpts
@@ -218,6 +237,16 @@ export interface WatchOpts extends FilesystemRequestOpts {
    * Watch the directory recursively
    */
   recursive?: boolean
+  /**
+   * Include the {@link EntryInfo} of the affected entry in each {@link FilesystemEvent}.
+   *
+   * The entry is populated best-effort and may be `undefined` for events where the
+   * entry no longer exists at the path (e.g. remove or rename-away events).
+   *
+   * Requires envd 0.6.2 or later. When the sandbox's envd version doesn't support it,
+   * the option is ignored and `event.entry` stays `undefined`.
+   */
+  includeEntry?: boolean
 }
 
 /**
@@ -577,22 +606,12 @@ export class Filesystem {
       const entries: EntryInfo[] = []
 
       for (const e of res.entries) {
-        const type = mapFileType(e.type)
-
-        if (type) {
-          entries.push({
-            name: e.name,
-            type,
-            path: e.path,
-            size: Number(e.size),
-            mode: e.mode,
-            permissions: e.permissions,
-            owner: e.owner,
-            group: e.group,
-            modifiedTime: mapModifiedTime(e.modifiedTime),
-            symlinkTarget: e.symlinkTarget,
-          })
+        // Skip entries with an unknown file type.
+        if (!mapFileType(e.type)) {
+          continue
         }
+
+        entries.push(mapEntryInfo(e))
       }
 
       return entries
@@ -668,18 +687,7 @@ export class Filesystem {
         throw new Error('Expected to receive information about moved object')
       }
 
-      return {
-        name: entry.name,
-        type: mapFileType(entry.type),
-        path: entry.path,
-        size: Number(entry.size),
-        mode: entry.mode,
-        permissions: entry.permissions,
-        owner: entry.owner,
-        group: entry.group,
-        modifiedTime: mapModifiedTime(entry.modifiedTime),
-        symlinkTarget: entry.symlinkTarget,
-      }
+      return mapEntryInfo(entry)
     } catch (err) {
       throw handleFilesystemRpcError(err)
     }
@@ -771,18 +779,7 @@ export class Filesystem {
         )
       }
 
-      return {
-        name: res.entry.name,
-        type: mapFileType(res.entry.type),
-        path: res.entry.path,
-        size: Number(res.entry.size),
-        mode: res.entry.mode,
-        permissions: res.entry.permissions,
-        owner: res.entry.owner,
-        group: res.entry.group,
-        modifiedTime: mapModifiedTime(res.entry.modifiedTime),
-        symlinkTarget: res.entry.symlinkTarget,
-      }
+      return mapEntryInfo(res.entry)
     } catch (err) {
       throw handleFilesystemRpcError(err)
     }
@@ -827,6 +824,7 @@ export class Filesystem {
       {
         path,
         recursive: opts?.recursive ?? this.defaultWatchRecursive,
+        includeEntry: opts?.includeEntry ?? false,
       },
       {
         headers: {
