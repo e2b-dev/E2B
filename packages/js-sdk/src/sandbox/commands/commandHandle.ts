@@ -226,11 +226,11 @@ export class CommandHandle
     try {
       for await (const [stdout, stderr, pty] of this.iterateEvents()) {
         if (stdout !== null) {
-          this.onStdout?.(stdout)
+          await this.onStdout?.(stdout)
         } else if (stderr !== null) {
-          this.onStderr?.(stderr)
+          await this.onStderr?.(stderr)
         } else if (pty) {
-          this.onPty?.(pty)
+          await this.onPty?.(pty)
         }
       }
     } catch (e) {

@@ -1,6 +1,5 @@
 import { expect, inject, test } from 'vitest'
 import { render } from 'vitest-browser-react'
-import { waitFor } from '@testing-library/react'
 import React from 'react'
 import { useEffect, useState } from 'react'
 
@@ -32,11 +31,8 @@ function E2BTest() {
   return <div>{text}</div>
 }
 test('browser test', async () => {
-  const { getByText } = render(<E2BTest />)
-  await waitFor(
-    () => expect.element(getByText('Hello World')).toBeInTheDocument(),
-    {
-      timeout: 30_000,
-    }
-  )
+  const screen = await render(<E2BTest />)
+  await expect
+    .element(screen.getByText('Hello World'), { timeout: 30_000 })
+    .toBeInTheDocument()
 }, 40_000)
