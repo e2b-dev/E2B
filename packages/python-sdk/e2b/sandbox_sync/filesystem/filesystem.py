@@ -218,11 +218,12 @@ class Filesystem:
         :return: Information about the written file
         """
         result = self.write_files(
-            [WriteEntry(path=path, data=data, metadata=metadata)],
+            [WriteEntry(path=path, data=data)],
             user=user,
             request_timeout=request_timeout,
             gzip=gzip,
             use_octet_stream=use_octet_stream,
+            metadata=metadata,
         )
 
         if len(result) != 1:
@@ -237,6 +238,7 @@ class Filesystem:
         request_timeout: Optional[float] = None,
         gzip: bool = False,
         use_octet_stream: bool = False,
+        metadata: Optional[Dict[str, str]] = None,
     ) -> List[WriteInfo]:
         """
         Writes a list of files to the filesystem.
@@ -244,11 +246,12 @@ class Filesystem:
         When writing to a file that already exists, the file will get overwritten.
         When writing to a file at path that doesn't exist, the necessary directories will be created.
 
-        :param files: list of files to write as `WriteEntry` objects, each containing `path`, `data` and optional `metadata`
+        :param files: list of files to write as `WriteEntry` objects, each containing `path` and `data`
         :param user: Run the operation as this user
         :param request_timeout: Timeout for the request
         :param gzip: Use gzip compression for the request
         :param use_octet_stream: Upload using `application/octet-stream` instead of `multipart/form-data`. Defaults to `False`. Requires envd 0.5.7 or later — when not supported, the upload falls back to `multipart/form-data`.
+        :param metadata: User-defined metadata to persist on each uploaded file as extended attributes. The same map is applied to every file. Keys must be US-ASCII. Requires envd 0.6.2 or later.
         :return: Information about the written files
         """
         username = user
@@ -258,55 +261,39 @@ class Filesystem:
         if len(files) == 0:
             return []
 
-        has_metadata = any(file.get("metadata") for file in files)
-        if has_metadata and self._envd_version < ENVD_FILE_METADATA:
+        if metadata and self._envd_version < ENVD_FILE_METADATA:
             raise TemplateException("File metadata requires envd 0.6.2 or later.")
 
         supports_octet_stream = self._envd_version >= ENVD_OCTET_STREAM_UPLOAD
         use_octet_stream = use_octet_stream and supports_octet_stream
 
+        # Metadata is sent as request-scoped X-Metadata-* headers, so the same
+        # metadata is applied to every file in a multi-file upload.
+        extra_headers = metadata_to_headers(metadata)
+
         results: List[WriteInfo] = []
 
-        # Metadata is sent as request-scoped X-Metadata-* headers, so files that
-        # carry metadata must be uploaded one request at a time. octet-stream
-        # already uploads per file; multipart batches files into one request, so
-        # fall back to per-file uploads only when metadata is involved.
-        per_file_upload = use_octet_stream or has_metadata
-
-        if per_file_upload:
+        if use_octet_stream:
             for file in files:
                 file_path, file_data = file["path"], file["data"]
-                headers = metadata_to_headers(file.get("metadata"))
 
-                params = {}
+                params = {"path": file_path}
                 if username:
                     params["username"] = username
 
-                if use_octet_stream:
-                    params["path"] = file_path
-                    headers["Content-Type"] = "application/octet-stream"
-                    if gzip:
-                        headers["Content-Encoding"] = "gzip"
+                headers = {"Content-Type": "application/octet-stream", **extra_headers}
+                if gzip:
+                    headers["Content-Encoding"] = "gzip"
 
-                    r = self._envd_api.post(
-                        ENVD_API_FILES_ROUTE,
-                        content=to_upload_body(file_data, gzip),
-                        headers=headers,
-                        params=params,
-                        timeout=self._connection_config.get_request_timeout(
-                            request_timeout
-                        ),
-                    )
-                else:
-                    r = self._envd_api.post(
-                        ENVD_API_FILES_ROUTE,
-                        files=[_to_httpx_file(file_path, file_data)],
-                        headers=headers,
-                        params=params,
-                        timeout=self._connection_config.get_request_timeout(
-                            request_timeout
-                        ),
-                    )
+                r = self._envd_api.post(
+                    ENVD_API_FILES_ROUTE,
+                    content=to_upload_body(file_data, gzip),
+                    headers=headers,
+                    params=params,
+                    timeout=self._connection_config.get_request_timeout(
+                        request_timeout
+                    ),
+                )
 
                 err = _handle_filesystem_envd_api_exception(r)
                 if err:
@@ -336,6 +323,7 @@ class Filesystem:
                 ENVD_API_FILES_ROUTE,
                 files=httpx_files,
                 params=params,
+                headers=extra_headers,
                 timeout=self._connection_config.get_request_timeout(request_timeout),
             )
 

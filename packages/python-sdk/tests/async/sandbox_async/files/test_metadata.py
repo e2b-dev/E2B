@@ -53,28 +53,20 @@ async def test_write_file_without_metadata(async_sandbox: AsyncSandbox, debug):
 async def test_write_files_applies_metadata_to_every_file(
     async_sandbox: AsyncSandbox, debug
 ):
-    # Metadata is set per WriteEntry, so each file can carry its own.
+    # The same metadata is applied to every file in the upload.
+    metadata = {"source": "test-suite"}
     files = [
-        WriteEntry(
-            path="metadata_multi_1.txt",
-            data="File 1",
-            metadata={"source": "test-suite", "index": "1"},
-        ),
-        WriteEntry(
-            path="metadata_multi_2.txt",
-            data="File 2",
-            metadata={"source": "test-suite", "index": "2"},
-        ),
+        WriteEntry(path="metadata_multi_1.txt", data="File 1"),
+        WriteEntry(path="metadata_multi_2.txt", data="File 2"),
     ]
 
-    infos = await async_sandbox.files.write_files(files)
+    infos = await async_sandbox.files.write_files(files, metadata=metadata)
     assert len(infos) == len(files)
 
-    for file in files:
-        info = next(i for i in infos if i.path.endswith(file["path"]))
-        assert info.metadata == file["metadata"]
+    for info in infos:
+        assert info.metadata == metadata
         stat = await async_sandbox.files.get_info(info.path)
-        assert stat.metadata == file["metadata"]
+        assert stat.metadata == metadata
 
     if debug:
         for file in files:

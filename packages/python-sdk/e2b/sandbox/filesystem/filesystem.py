@@ -104,21 +104,13 @@ class EntryInfo(WriteInfo):
     """
 
 
-class _WriteEntryRequired(TypedDict):
-    path: str
-    data: Union[str, bytes, IO]
-
-
-class WriteEntry(_WriteEntryRequired, total=False):
+class WriteEntry(TypedDict):
     """
     Contains path and data of the file to be written to the filesystem.
-
-    Optionally carries user-defined `metadata` to persist on the file as
-    extended attributes. Keys and values must be printable US-ASCII and keys
-    are lowercased by the sandbox. Requires envd 0.6.2 or later.
     """
 
-    metadata: Optional[Dict[str, str]]
+    path: str
+    data: Union[str, bytes, IO]
 
 
 def _to_httpx_file(file_path: str, file_data: Union[str, bytes, IO]):

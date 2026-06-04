@@ -60,30 +60,21 @@ sandboxTest('write file without metadata', async ({ sandbox }) => {
 sandboxTest(
   'writeFiles applies metadata to every file',
   async ({ sandbox }) => {
-    // Metadata is set per WriteEntry, so each file can carry its own.
+    // The same metadata is applied to every file in the upload.
+    const metadata = { source: 'test-suite' }
     const files: WriteEntry[] = [
-      {
-        path: 'metadata_multi_1.txt',
-        data: 'File 1',
-        metadata: { source: 'test-suite', index: '1' },
-      },
-      {
-        path: 'metadata_multi_2.txt',
-        data: 'File 2',
-        metadata: { source: 'test-suite', index: '2' },
-      },
+      { path: 'metadata_multi_1.txt', data: 'File 1' },
+      { path: 'metadata_multi_2.txt', data: 'File 2' },
     ]
 
-    const infos = await sandbox.files.writeFiles(files)
+    const infos = await sandbox.files.writeFiles(files, { metadata })
     assert.equal(infos.length, files.length)
 
-    for (let i = 0; i < files.length; i++) {
-      const info = infos.find((e) => e.path.endsWith(files[i].path))
-      assert.isDefined(info)
-      assert.deepEqual(info?.metadata, files[i].metadata)
+    for (const info of infos) {
+      assert.deepEqual(info.metadata, metadata)
 
-      const stat = await sandbox.files.getInfo(info!.path)
-      assert.deepEqual(stat.metadata, files[i].metadata)
+      const stat = await sandbox.files.getInfo(info.path)
+      assert.deepEqual(stat.metadata, metadata)
     }
 
     if (isDebug) {
