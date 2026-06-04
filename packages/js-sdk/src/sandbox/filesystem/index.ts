@@ -30,6 +30,7 @@ import type { Timestamp } from '@bufbuild/protobuf/wkt'
 import { compareVersions } from 'compare-versions'
 import {
   ENVD_DEFAULT_USER,
+  ENVD_FILE_METADATA,
   ENVD_OCTET_STREAM_UPLOAD,
   ENVD_VERSION_RECURSIVE_WATCH,
 } from '../../envd/versions'
@@ -77,6 +78,12 @@ export interface WriteInfo {
    * Path to the filesystem object.
    */
   path: string
+  /**
+   * User-defined metadata persisted on the file as extended attributes.
+   * Only populated when metadata was supplied on upload and the sandbox's
+   * envd supports it. `undefined` when no metadata is set.
+   */
+  metadata?: Record<string, string>
 }
 
 export interface EntryInfo extends WriteInfo {
@@ -153,6 +160,26 @@ function mapModifiedTime(modifiedTime: Timestamp | undefined) {
   )
 }
 
+function mapMetadata(
+  metadata: Record<string, string> | undefined
+): Record<string, string> | undefined {
+  if (!metadata) return undefined
+  return Object.keys(metadata).length === 0 ? undefined : metadata
+}
+
+const METADATA_HEADER_PREFIX = 'X-Metadata-'
+
+function metadataHeaders(
+  metadata: Record<string, string> | undefined
+): Record<string, string> {
+  if (!metadata) return {}
+  const headers: Record<string, string> = {}
+  for (const [key, value] of Object.entries(metadata)) {
+    headers[`${METADATA_HEADER_PREFIX}${key}`] = value
+  }
+  return headers
+}
+
 /**
  * Options for the sandbox filesystem operations.
  */
@@ -180,6 +207,14 @@ export interface FilesystemWriteOpts extends FilesystemRequestOpts {
    * the sandbox's envd version, the upload falls back to `multipart/form-data`.
    */
   useOctetStream?: boolean
+  /**
+   * User-defined metadata to persist on the uploaded file(s) as extended
+   * attributes. Keys and values must be printable US-ASCII and keys are
+   * lowercased by the sandbox, so they may differ in case when read back.
+   * The same metadata is applied to every file in a multi-file upload.
+   * Requires envd 0.5.26 or later.
+   */
+  metadata?: Record<string, string>
 }
 
 /**
@@ -431,6 +466,19 @@ export class Filesystem {
     const useOctetStream =
       (writeOpts?.useOctetStream ?? false) && supportsOctetStream
 
+    const metadata = writeOpts?.metadata
+    if (
+      metadata &&
+      Object.keys(metadata).length > 0 &&
+      compareVersions(this.envdApi.version, ENVD_FILE_METADATA) < 0
+    ) {
+      throw new TemplateError(
+        'File metadata requires envd 0.5.26 or later. ' +
+          'You can update the template by running `e2b template build` in the directory with the template.'
+      )
+    }
+    const extraHeaders = metadataHeaders(metadata)
+
     const results: WriteInfo[] = []
 
     const useGzip = writeOpts?.gzip === true
@@ -438,6 +486,7 @@ export class Filesystem {
     if (useOctetStream) {
       const headers: Record<string, string> = {
         'Content-Type': 'application/octet-stream',
+        ...extraHeaders,
       }
       if (useGzip) {
         headers['Content-Encoding'] = 'gzip'
@@ -476,6 +525,10 @@ export class Filesystem {
             )
           }
 
+          for (const f of files) {
+            f.metadata = mapMetadata(f.metadata)
+          }
+
           return files
         })
       )
@@ -501,6 +554,7 @@ export class Filesystem {
           },
         },
         bodySerializer: () => formData,
+        headers: extraHeaders,
         signal: this.connectionConfig.getSignal(
           writeOpts?.requestTimeoutMs,
           writeOpts?.signal
@@ -516,6 +570,10 @@ export class Filesystem {
       const files = res.data as WriteInfo[]
       if (!files || files.length === 0) {
         throw new Error('Expected to receive information about written file')
+      }
+
+      for (const f of files) {
+        f.metadata = mapMetadata(f.metadata)
       }
 
       results.push(...files)
@@ -591,6 +649,7 @@ export class Filesystem {
             group: e.group,
             modifiedTime: mapModifiedTime(e.modifiedTime),
             symlinkTarget: e.symlinkTarget,
+            metadata: mapMetadata(e.metadata),
           })
         }
       }
@@ -679,6 +738,7 @@ export class Filesystem {
         group: entry.group,
         modifiedTime: mapModifiedTime(entry.modifiedTime),
         symlinkTarget: entry.symlinkTarget,
+        metadata: mapMetadata(entry.metadata),
       }
     } catch (err) {
       throw handleFilesystemRpcError(err)
@@ -782,6 +842,7 @@ export class Filesystem {
         group: res.entry.group,
         modifiedTime: mapModifiedTime(res.entry.modifiedTime),
         symlinkTarget: res.entry.symlinkTarget,
+        metadata: mapMetadata(res.entry.metadata),
       }
     } catch (err) {
       throw handleFilesystemRpcError(err)

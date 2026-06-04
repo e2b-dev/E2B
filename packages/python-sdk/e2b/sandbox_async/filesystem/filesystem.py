@@ -1,6 +1,6 @@
 import asyncio
 from io import IOBase, TextIOBase
-from typing import IO, AsyncIterator, List, Literal, Optional, Union, overload
+from typing import IO, AsyncIterator, Dict, List, Literal, Optional, Union, overload
 
 
 import httpcore
@@ -20,6 +20,7 @@ from e2b.envd.filesystem import filesystem_connect, filesystem_pb2
 from e2b.envd.rpc import authentication_header, handle_rpc_exception
 from e2b.envd.versions import (
     ENVD_DEFAULT_USER,
+    ENVD_FILE_METADATA,
     ENVD_OCTET_STREAM_UPLOAD,
     ENVD_VERSION_RECURSIVE_WATCH,
 )
@@ -34,6 +35,8 @@ from e2b.sandbox.filesystem.filesystem import (
     WriteEntry,
     WriteInfo,
     map_file_type,
+    map_metadata,
+    metadata_to_headers,
     to_upload_body,
 )
 from e2b.sandbox.filesystem.watch_handle import FilesystemEvent
@@ -56,6 +59,15 @@ def _handle_filesystem_rpc_exception(e: Exception) -> Exception:
 
 async def _ahandle_filesystem_envd_api_exception(r):
     return await ahandle_envd_api_exception(r, _FILESYSTEM_HTTP_ERROR_MAP)
+
+
+def _write_info_from_dict(payload: Dict) -> WriteInfo:
+    return WriteInfo(
+        name=payload["name"],
+        type=payload.get("type"),
+        path=payload["path"],
+        metadata=map_metadata(payload.get("metadata")),
+    )
 
 
 class Filesystem:
@@ -198,6 +210,7 @@ class Filesystem:
         request_timeout: Optional[float] = None,
         gzip: bool = False,
         use_octet_stream: bool = False,
+        metadata: Optional[Dict[str, str]] = None,
     ) -> WriteInfo:
         """
         Write content to a file on the path.
@@ -211,6 +224,7 @@ class Filesystem:
         :param request_timeout: Timeout for the request in **seconds**
         :param gzip: Use gzip compression for the request
         :param use_octet_stream: Upload using `application/octet-stream` instead of `multipart/form-data`. Defaults to `False`. Requires envd 0.5.7 or later — when not supported, the upload falls back to `multipart/form-data`.
+        :param metadata: User-defined metadata to persist on the uploaded file as extended attributes. Keys must be US-ASCII. Requires envd 0.5.26 or later.
 
         :return: Information about the written file
         """
@@ -220,6 +234,7 @@ class Filesystem:
             request_timeout,
             gzip,
             use_octet_stream,
+            metadata,
         )
 
         if len(result) != 1:
@@ -234,6 +249,7 @@ class Filesystem:
         request_timeout: Optional[float] = None,
         gzip: bool = False,
         use_octet_stream: bool = False,
+        metadata: Optional[Dict[str, str]] = None,
     ) -> List[WriteInfo]:
         """
         Writes multiple files.
@@ -248,6 +264,7 @@ class Filesystem:
         :param request_timeout: Timeout for the request
         :param gzip: Use gzip compression for the request
         :param use_octet_stream: Upload using `application/octet-stream` instead of `multipart/form-data`. Defaults to `False`. Requires envd 0.5.7 or later — when not supported, the upload falls back to `multipart/form-data`.
+        :param metadata: User-defined metadata to persist on each uploaded file as extended attributes. The same map is applied to every file. Requires envd 0.5.26 or later.
         :return: Information about the written files
         """
         username = user
@@ -257,8 +274,16 @@ class Filesystem:
         if len(files) == 0:
             return []
 
+        if metadata and self._envd_version < ENVD_FILE_METADATA:
+            raise TemplateException(
+                "File metadata requires envd 0.5.26 or later. "
+                "You can update the template by running `e2b template build` in the directory with the template."
+            )
+
         supports_octet_stream = self._envd_version >= ENVD_OCTET_STREAM_UPLOAD
         use_octet_stream = use_octet_stream and supports_octet_stream
+
+        extra_headers = metadata_to_headers(metadata)
 
         results: List[WriteInfo] = []
 
@@ -273,7 +298,7 @@ class Filesystem:
                 if username:
                     params["username"] = username
 
-                headers = {"Content-Type": "application/octet-stream"}
+                headers = {"Content-Type": "application/octet-stream", **extra_headers}
                 if gzip:
                     headers["Content-Encoding"] = "gzip"
 
@@ -298,7 +323,7 @@ class Filesystem:
                         "Expected to receive information about written file"
                     )
 
-                return [WriteInfo(**f) for f in write_result]
+                return [_write_info_from_dict(f) for f in write_result]
 
             upload_results = await asyncio.gather(
                 *[_upload_file(file) for file in files]
@@ -333,6 +358,7 @@ class Filesystem:
                 ENVD_API_FILES_ROUTE,
                 files=httpx_files,
                 params=params,
+                headers=extra_headers,
                 timeout=self._connection_config.get_request_timeout(request_timeout),
             )
 
@@ -347,7 +373,7 @@ class Filesystem:
                     "Expected to receive information about written file"
                 )
 
-            results.extend([WriteInfo(**f) for f in write_result])
+            results.extend([_write_info_from_dict(f) for f in write_result])
 
         return results
 
@@ -402,6 +428,7 @@ class Filesystem:
                                 if entry.HasField("symlink_target")
                                 else None
                             ),
+                            metadata=map_metadata(entry.metadata),
                         )
                     )
 
@@ -480,6 +507,7 @@ class Filesystem:
                     if r.entry.HasField("symlink_target")
                     else None
                 ),
+                metadata=map_metadata(r.entry.metadata),
             )
         except Exception as e:
             raise _handle_filesystem_rpc_exception(e)
@@ -553,6 +581,7 @@ class Filesystem:
                     if r.entry.HasField("symlink_target")
                     else None
                 ),
+                metadata=map_metadata(r.entry.metadata),
             )
         except Exception as e:
             raise _handle_filesystem_rpc_exception(e)

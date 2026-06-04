@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: envd
-  version: 0.1.1
+  version: 0.1.3
   description: API for managing files' content and controlling envd
 
 tags:
@@ -102,6 +102,13 @@ paths:
           $ref: '#/components/responses/InternalServerError'
     post:
       summary: Upload a file and ensure the parent directories exist. If the file exists, it will be overwritten.
+      description: |
+        Any request header of the form `X-Metadata-<key>: <value>` is persisted
+        as a user-defined extended attribute on the uploaded file. Keys are
+        lowercased and the `X-Metadata-` prefix is stripped; the resulting
+        metadata is returned on `EntryInfo` lookups (e.g. `Stat`, `ListDir`).
+        Header values must be US-ASCII. Multiple files in a single multipart
+        upload receive the same metadata.
       tags: [files]
       security:
         - AccessTokenAuth: []
@@ -252,6 +259,11 @@ components:
           description: Type of the file
           enum:
             - file
+        metadata:
+          type: object
+          description: User-defined metadata stored as extended attributes on the file.
+          additionalProperties:
+            type: string
     EnvVars:
       type: object
       description: Environment variables to set

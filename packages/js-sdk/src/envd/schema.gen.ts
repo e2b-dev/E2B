@@ -74,7 +74,16 @@ export interface paths {
             };
         };
         put?: never;
-        /** Upload a file and ensure the parent directories exist. If the file exists, it will be overwritten. */
+        /**
+         * Upload a file and ensure the parent directories exist. If the file exists, it will be overwritten.
+         * @description Any request header of the form `X-Metadata-<key>: <value>` is persisted
+         *     as a user-defined extended attribute on the uploaded file. Keys are
+         *     lowercased and the `X-Metadata-` prefix is stripped; the resulting
+         *     metadata is returned on `EntryInfo` lookups (e.g. `Stat`, `ListDir`).
+         *     Header values must be US-ASCII. Multiple files in a single multipart
+         *     upload receive the same metadata.
+         *
+         */
         post: {
             parameters: {
                 query?: {
@@ -234,6 +243,10 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         EntryInfo: {
+            /** @description User-defined metadata stored as extended attributes on the file. */
+            metadata?: {
+                [key: string]: string;
+            };
             /** @description Name of the file */
             name: string;
             /** @description Path to the file */

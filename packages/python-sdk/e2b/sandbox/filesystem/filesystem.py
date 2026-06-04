@@ -1,9 +1,9 @@
 import gzip
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from io import IOBase, TextIOBase
-from typing import IO, Optional, Union, TypedDict
+from typing import IO, Dict, Optional, Union, TypedDict
 
 from e2b.envd.filesystem import filesystem_pb2
 from e2b.exceptions import InvalidArgumentException
@@ -48,6 +48,12 @@ class WriteInfo:
     path: str
     """
     Path to the filesystem object.
+    """
+    metadata: Optional[Dict[str, str]] = field(default=None, kw_only=True)
+    """
+    User-defined metadata persisted on the file as extended attributes.
+    Only populated when metadata was supplied on upload and the sandbox's
+    envd supports it. `None` when no metadata is set.
     """
 
 
@@ -114,3 +120,22 @@ def to_upload_body(
         raise InvalidArgumentException(f"Unsupported data type: {type(data)}")
 
     return gzip.compress(raw) if use_gzip else raw
+
+
+METADATA_HEADER_PREFIX = "X-Metadata-"
+
+
+def metadata_to_headers(
+    metadata: Optional[Dict[str, str]],
+) -> Dict[str, str]:
+    """Translate user metadata into the `X-Metadata-*` upload headers envd reads."""
+    if not metadata:
+        return {}
+    return {f"{METADATA_HEADER_PREFIX}{key}": value for key, value in metadata.items()}
+
+
+def map_metadata(metadata) -> Optional[Dict[str, str]]:
+    """Normalize a proto/HTTP metadata map: drop empties and return a plain dict or None."""
+    if not metadata:
+        return None
+    return dict(metadata)

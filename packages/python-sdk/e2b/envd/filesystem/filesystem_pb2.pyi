@@ -100,7 +100,18 @@ class EntryInfo(_message.Message):
         "group",
         "modified_time",
         "symlink_target",
+        "metadata",
     )
+    class MetadataEntry(_message.Message):
+        __slots__ = ("key", "value")
+        KEY_FIELD_NUMBER: _ClassVar[int]
+        VALUE_FIELD_NUMBER: _ClassVar[int]
+        key: str
+        value: str
+        def __init__(
+            self, key: _Optional[str] = ..., value: _Optional[str] = ...
+        ) -> None: ...
+
     NAME_FIELD_NUMBER: _ClassVar[int]
     TYPE_FIELD_NUMBER: _ClassVar[int]
     PATH_FIELD_NUMBER: _ClassVar[int]
@@ -111,6 +122,7 @@ class EntryInfo(_message.Message):
     GROUP_FIELD_NUMBER: _ClassVar[int]
     MODIFIED_TIME_FIELD_NUMBER: _ClassVar[int]
     SYMLINK_TARGET_FIELD_NUMBER: _ClassVar[int]
+    METADATA_FIELD_NUMBER: _ClassVar[int]
     name: str
     type: FileType
     path: str
@@ -121,6 +133,7 @@ class EntryInfo(_message.Message):
     group: str
     modified_time: _timestamp_pb2.Timestamp
     symlink_target: str
+    metadata: _containers.ScalarMap[str, str]
     def __init__(
         self,
         name: _Optional[str] = ...,
@@ -133,6 +146,7 @@ class EntryInfo(_message.Message):
         group: _Optional[str] = ...,
         modified_time: _Optional[_Union[_timestamp_pb2.Timestamp, _Mapping]] = ...,
         symlink_target: _Optional[str] = ...,
+        metadata: _Optional[_Mapping[str, str]] = ...,
     ) -> None: ...
 
 class ListDirRequest(_message.Message):
