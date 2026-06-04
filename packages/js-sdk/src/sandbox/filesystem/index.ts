@@ -212,7 +212,7 @@ export interface FilesystemWriteOpts extends FilesystemRequestOpts {
    * attributes. Keys and values must be printable US-ASCII and keys are
    * lowercased by the sandbox, so they may differ in case when read back.
    * The same metadata is applied to every file in a multi-file upload.
-   * Requires envd 0.5.26 or later.
+   * Requires envd 0.6.2 or later.
    */
   metadata?: Record<string, string>
 }
@@ -473,7 +473,7 @@ export class Filesystem {
       compareVersions(this.envdApi.version, ENVD_FILE_METADATA) < 0
     ) {
       throw new TemplateError(
-        'File metadata requires envd 0.5.26 or later. ' +
+        'File metadata requires envd 0.6.2 or later. ' +
           'You can update the template by running `e2b template build` in the directory with the template.'
       )
     }

@@ -230,7 +230,8 @@ export type EntryInfo = Message<'filesystem.EntryInfo'> & {
 
   /**
    * User-defined metadata stored as extended attributes (xattrs) on the file.
-   * Keys live in the `user.` xattr namespace; the prefix is stripped here.
+   * Keys live under the `user.e2b.` xattr namespace; the prefix is stripped here.
+   * Plain `user.*` xattrs written by other tooling are not reflected.
    *
    * @generated from field: map<string, string> metadata = 11;
    */

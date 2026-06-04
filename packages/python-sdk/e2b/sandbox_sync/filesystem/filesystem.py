@@ -222,7 +222,7 @@ class Filesystem:
         :param request_timeout: Timeout for the request in **seconds**
         :param gzip: Use gzip compression for the request
         :param use_octet_stream: Upload using `application/octet-stream` instead of `multipart/form-data`. Defaults to `False`. Requires envd 0.5.7 or later — when not supported, the upload falls back to `multipart/form-data`.
-        :param metadata: User-defined metadata to persist on the uploaded file as extended attributes. Keys must be US-ASCII. Requires envd 0.5.26 or later.
+        :param metadata: User-defined metadata to persist on the uploaded file as extended attributes. Keys must be US-ASCII. Requires envd 0.6.2 or later.
 
         :return: Information about the written file
         """
@@ -260,7 +260,7 @@ class Filesystem:
         :param request_timeout: Timeout for the request
         :param gzip: Use gzip compression for the request
         :param use_octet_stream: Upload using `application/octet-stream` instead of `multipart/form-data`. Defaults to `False`. Requires envd 0.5.7 or later — when not supported, the upload falls back to `multipart/form-data`.
-        :param metadata: User-defined metadata to persist on each uploaded file as extended attributes. The same map is applied to every file. Requires envd 0.5.26 or later.
+        :param metadata: User-defined metadata to persist on each uploaded file as extended attributes. The same map is applied to every file. Requires envd 0.6.2 or later.
         :return: Information about the written files
         """
         username = user
@@ -272,7 +272,7 @@ class Filesystem:
 
         if metadata and self._envd_version < ENVD_FILE_METADATA:
             raise TemplateException(
-                "File metadata requires envd 0.5.26 or later. "
+                "File metadata requires envd 0.6.2 or later. "
                 "You can update the template by running `e2b template build` in the directory with the template."
             )
 
