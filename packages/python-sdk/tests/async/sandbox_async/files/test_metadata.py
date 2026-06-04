@@ -53,19 +53,28 @@ async def test_write_file_without_metadata(async_sandbox: AsyncSandbox, debug):
 async def test_write_files_applies_metadata_to_every_file(
     async_sandbox: AsyncSandbox, debug
 ):
-    metadata = {"source": "test-suite"}
+    # Metadata is set per WriteEntry, so each file can carry its own.
     files = [
-        WriteEntry(path="metadata_multi_1.txt", data="File 1"),
-        WriteEntry(path="metadata_multi_2.txt", data="File 2"),
+        WriteEntry(
+            path="metadata_multi_1.txt",
+            data="File 1",
+            metadata={"source": "test-suite", "index": "1"},
+        ),
+        WriteEntry(
+            path="metadata_multi_2.txt",
+            data="File 2",
+            metadata={"source": "test-suite", "index": "2"},
+        ),
     ]
 
-    infos = await async_sandbox.files.write_files(files, metadata=metadata)
+    infos = await async_sandbox.files.write_files(files)
     assert len(infos) == len(files)
 
-    for info in infos:
-        assert info.metadata == metadata
+    for file in files:
+        info = next(i for i in infos if i.path.endswith(file["path"]))
+        assert info.metadata == file["metadata"]
         stat = await async_sandbox.files.get_info(info.path)
-        assert stat.metadata == metadata
+        assert stat.metadata == file["metadata"]
 
     if debug:
         for file in files:
@@ -115,6 +124,26 @@ async def test_overwriting_clears_stale_metadata(async_sandbox: AsyncSandbox, de
 
     stat = await async_sandbox.files.get_info(filename)
     assert stat.metadata is None
+
+    if debug:
+        await async_sandbox.files.remove(filename)
+
+
+async def test_metadata_set_via_xattrs_surfaced_in_get_info(
+    async_sandbox: AsyncSandbox, debug
+):
+    filename = "metadata_xattr.txt"
+    await async_sandbox.files.write(filename, "content")
+
+    cmd = await async_sandbox.commands.run(f"realpath {filename}")
+    file_path = cmd.stdout.strip()
+
+    # Set an xattr directly in the `user.e2b.` namespace; it should surface as
+    # metadata (with the namespace prefix stripped) when reading the file info.
+    await async_sandbox.commands.run(f"setfattr -n user.e2b.author -v mish {file_path}")
+
+    info = await async_sandbox.files.get_info(filename)
+    assert info.metadata == {"author": "mish"}
 
     if debug:
         await async_sandbox.files.remove(filename)

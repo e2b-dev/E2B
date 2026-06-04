@@ -140,6 +140,13 @@ export enum FileType {
 export type WriteEntry = {
   path: string
   data: string | ArrayBuffer | Blob | ReadableStream
+  /**
+   * User-defined metadata to persist on the file as extended attributes.
+   * Keys and values must be printable US-ASCII and keys are lowercased by the
+   * sandbox, so they may differ in case when read back. Requires envd 0.6.2 or
+   * later.
+   */
+  metadata?: Record<string, string>
 }
 
 function mapFileType(fileType: FsFileType) {
@@ -208,11 +215,12 @@ export interface FilesystemWriteOpts extends FilesystemRequestOpts {
    */
   useOctetStream?: boolean
   /**
-   * User-defined metadata to persist on the uploaded file(s) as extended
+   * User-defined metadata to persist on the uploaded file as extended
    * attributes. Keys and values must be printable US-ASCII and keys are
    * lowercased by the sandbox, so they may differ in case when read back.
-   * The same metadata is applied to every file in a multi-file upload.
-   * Requires envd 0.6.2 or later.
+   * Applies when writing a single file; when writing multiple files set
+   * metadata per file via {@link WriteEntry.metadata}. Requires envd 0.6.2 or
+   * later.
    */
   metadata?: Record<string, string>
 }
@@ -442,6 +450,7 @@ export class Filesystem {
                   | ArrayBuffer
                   | Blob
                   | ReadableStream,
+                metadata: (opts as FilesystemWriteOpts)?.metadata,
               },
             ],
           }
@@ -466,45 +475,64 @@ export class Filesystem {
     const useOctetStream =
       (writeOpts?.useOctetStream ?? false) && supportsOctetStream
 
-    const metadata = writeOpts?.metadata
+    const hasMetadata = writeFiles.some(
+      (file) => file.metadata && Object.keys(file.metadata as object).length > 0
+    )
     if (
-      metadata &&
-      Object.keys(metadata).length > 0 &&
+      hasMetadata &&
       compareVersions(this.envdApi.version, ENVD_FILE_METADATA) < 0
     ) {
-      throw new TemplateError(
-        'File metadata requires envd 0.6.2 or later. ' +
-          'You can update the template by running `e2b template build` in the directory with the template.'
-      )
+      throw new TemplateError('File metadata requires envd 0.6.2 or later.')
     }
-    const extraHeaders = metadataHeaders(metadata)
 
     const results: WriteInfo[] = []
 
     const useGzip = writeOpts?.gzip === true
 
-    if (useOctetStream) {
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/octet-stream',
-        ...extraHeaders,
-      }
-      if (useGzip) {
-        headers['Content-Encoding'] = 'gzip'
-      }
+    // Metadata is sent as request-scoped `X-Metadata-*` headers, so a file with
+    // its own metadata must be uploaded in its own request. octet-stream
+    // already uploads one file per request; multipart batches files into a
+    // single request, so fall back to per-file uploads only when metadata is set.
+    const perFileUpload = useOctetStream || hasMetadata
 
+    if (perFileUpload) {
       const uploadResults = await Promise.all(
         writeFiles.map(async (file) => {
           const filePath = path ?? (file as WriteEntry).path
-          const body = await toUploadBody(file.data, useGzip)
+
+          const headers: Record<string, string> = {
+            ...metadataHeaders(file.metadata),
+          }
+          if (useOctetStream) {
+            headers['Content-Type'] = 'application/octet-stream'
+          }
+          if (useGzip) {
+            headers['Content-Encoding'] = 'gzip'
+          }
+
+          // octet-stream carries the path in the query (the raw body has no
+          // filename); multipart carries it via the form-data filename.
+          let bodySerializer: () => BodyInit
+          let queryPath: string | undefined
+          if (useOctetStream) {
+            const body = await toUploadBody(file.data, useGzip)
+            bodySerializer = () => body
+            queryPath = filePath
+          } else {
+            const formData = new FormData()
+            formData.append('file', await toBlob(file.data), filePath)
+            bodySerializer = () => formData
+            queryPath = path
+          }
 
           const res = await this.envdApi.api.POST('/files', {
             params: {
               query: {
-                path: filePath,
+                path: queryPath,
                 username: user,
               },
             },
-            bodySerializer: () => body,
+            bodySerializer,
             headers,
             signal: this.connectionConfig.getSignal(
               writeOpts?.requestTimeoutMs,
@@ -554,7 +582,6 @@ export class Filesystem {
           },
         },
         bodySerializer: () => formData,
-        headers: extraHeaders,
         signal: this.connectionConfig.getSignal(
           writeOpts?.requestTimeoutMs,
           writeOpts?.signal

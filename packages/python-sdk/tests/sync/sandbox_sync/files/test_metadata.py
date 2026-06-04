@@ -47,19 +47,28 @@ def test_write_file_without_metadata(sandbox, debug):
 def test_write_files_applies_metadata_to_every_file(sandbox, debug):
     from e2b.sandbox.filesystem.filesystem import WriteEntry
 
-    metadata = {"source": "test-suite"}
+    # Metadata is set per WriteEntry, so each file can carry its own.
     files = [
-        WriteEntry(path="metadata_multi_1.txt", data="File 1"),
-        WriteEntry(path="metadata_multi_2.txt", data="File 2"),
+        WriteEntry(
+            path="metadata_multi_1.txt",
+            data="File 1",
+            metadata={"source": "test-suite", "index": "1"},
+        ),
+        WriteEntry(
+            path="metadata_multi_2.txt",
+            data="File 2",
+            metadata={"source": "test-suite", "index": "2"},
+        ),
     ]
 
-    infos = sandbox.files.write_files(files, metadata=metadata)
+    infos = sandbox.files.write_files(files)
     assert len(infos) == len(files)
 
-    for info in infos:
-        assert info.metadata == metadata
+    for file in files:
+        info = next(i for i in infos if i.path.endswith(file["path"]))
+        assert info.metadata == file["metadata"]
         stat = sandbox.files.get_info(info.path)
-        assert stat.metadata == metadata
+        assert stat.metadata == file["metadata"]
 
     if debug:
         for file in files:
@@ -107,6 +116,23 @@ def test_overwriting_clears_stale_metadata(sandbox, debug):
 
     stat = sandbox.files.get_info(filename)
     assert stat.metadata is None
+
+    if debug:
+        sandbox.files.remove(filename)
+
+
+def test_metadata_set_via_xattrs_surfaced_in_get_info(sandbox, debug):
+    filename = "metadata_xattr.txt"
+    sandbox.files.write(filename, "content")
+
+    file_path = sandbox.commands.run(f"realpath {filename}").stdout.strip()
+
+    # Set an xattr directly in the `user.e2b.` namespace; it should surface as
+    # metadata (with the namespace prefix stripped) when reading the file info.
+    sandbox.commands.run(f"setfattr -n user.e2b.author -v mish {file_path}")
+
+    info = sandbox.files.get_info(filename)
+    assert info.metadata == {"author": "mish"}
 
     if debug:
         sandbox.files.remove(filename)

@@ -1,4 +1,3 @@
-from io import IOBase, TextIOBase
 from typing import IO, Dict, Iterator, List, Literal, Optional, Union, overload
 
 import httpcore
@@ -34,6 +33,7 @@ from e2b.sandbox.filesystem.filesystem import (
     EntryInfo,
     WriteEntry,
     WriteInfo,
+    _to_httpx_file,
     map_file_type,
     map_metadata,
     metadata_to_headers,
@@ -57,15 +57,6 @@ def _handle_filesystem_rpc_exception(e: Exception) -> Exception:
 
 def _handle_filesystem_envd_api_exception(r):
     return handle_envd_api_exception(r, _FILESYSTEM_HTTP_ERROR_MAP)
-
-
-def _write_info_from_dict(payload: Dict) -> WriteInfo:
-    return WriteInfo(
-        name=payload["name"],
-        type=payload.get("type"),
-        path=payload["path"],
-        metadata=map_metadata(payload.get("metadata")),
-    )
 
 
 class Filesystem:
@@ -227,12 +218,11 @@ class Filesystem:
         :return: Information about the written file
         """
         result = self.write_files(
-            [WriteEntry(path=path, data=data)],
+            [WriteEntry(path=path, data=data, metadata=metadata)],
             user=user,
             request_timeout=request_timeout,
             gzip=gzip,
             use_octet_stream=use_octet_stream,
-            metadata=metadata,
         )
 
         if len(result) != 1:
@@ -247,7 +237,6 @@ class Filesystem:
         request_timeout: Optional[float] = None,
         gzip: bool = False,
         use_octet_stream: bool = False,
-        metadata: Optional[Dict[str, str]] = None,
     ) -> List[WriteInfo]:
         """
         Writes a list of files to the filesystem.
@@ -255,12 +244,11 @@ class Filesystem:
         When writing to a file that already exists, the file will get overwritten.
         When writing to a file at path that doesn't exist, the necessary directories will be created.
 
-        :param files: list of files to write as `WriteEntry` objects, each containing `path` and `data`
+        :param files: list of files to write as `WriteEntry` objects, each containing `path`, `data` and optional `metadata`
         :param user: Run the operation as this user
         :param request_timeout: Timeout for the request
         :param gzip: Use gzip compression for the request
         :param use_octet_stream: Upload using `application/octet-stream` instead of `multipart/form-data`. Defaults to `False`. Requires envd 0.5.7 or later — when not supported, the upload falls back to `multipart/form-data`.
-        :param metadata: User-defined metadata to persist on each uploaded file as extended attributes. The same map is applied to every file. Requires envd 0.6.2 or later.
         :return: Information about the written files
         """
         username = user
@@ -270,42 +258,55 @@ class Filesystem:
         if len(files) == 0:
             return []
 
-        if metadata and self._envd_version < ENVD_FILE_METADATA:
-            raise TemplateException(
-                "File metadata requires envd 0.6.2 or later. "
-                "You can update the template by running `e2b template build` in the directory with the template."
-            )
+        has_metadata = any(file.get("metadata") for file in files)
+        if has_metadata and self._envd_version < ENVD_FILE_METADATA:
+            raise TemplateException("File metadata requires envd 0.6.2 or later.")
 
         supports_octet_stream = self._envd_version >= ENVD_OCTET_STREAM_UPLOAD
         use_octet_stream = use_octet_stream and supports_octet_stream
 
-        extra_headers = metadata_to_headers(metadata)
-
         results: List[WriteInfo] = []
 
-        if use_octet_stream:
+        # Metadata is sent as request-scoped X-Metadata-* headers, so files that
+        # carry metadata must be uploaded one request at a time. octet-stream
+        # already uploads per file; multipart batches files into one request, so
+        # fall back to per-file uploads only when metadata is involved.
+        per_file_upload = use_octet_stream or has_metadata
+
+        if per_file_upload:
             for file in files:
                 file_path, file_data = file["path"], file["data"]
+                headers = metadata_to_headers(file.get("metadata"))
 
-                content = to_upload_body(file_data, gzip)
-
-                params = {"path": file_path}
+                params = {}
                 if username:
                     params["username"] = username
 
-                headers = {"Content-Type": "application/octet-stream", **extra_headers}
-                if gzip:
-                    headers["Content-Encoding"] = "gzip"
+                if use_octet_stream:
+                    params["path"] = file_path
+                    headers["Content-Type"] = "application/octet-stream"
+                    if gzip:
+                        headers["Content-Encoding"] = "gzip"
 
-                r = self._envd_api.post(
-                    ENVD_API_FILES_ROUTE,
-                    content=content,
-                    headers=headers,
-                    params=params,
-                    timeout=self._connection_config.get_request_timeout(
-                        request_timeout
-                    ),
-                )
+                    r = self._envd_api.post(
+                        ENVD_API_FILES_ROUTE,
+                        content=to_upload_body(file_data, gzip),
+                        headers=headers,
+                        params=params,
+                        timeout=self._connection_config.get_request_timeout(
+                            request_timeout
+                        ),
+                    )
+                else:
+                    r = self._envd_api.post(
+                        ENVD_API_FILES_ROUTE,
+                        files=[_to_httpx_file(file_path, file_data)],
+                        headers=headers,
+                        params=params,
+                        timeout=self._connection_config.get_request_timeout(
+                            request_timeout
+                        ),
+                    )
 
                 err = _handle_filesystem_envd_api_exception(r)
                 if err:
@@ -318,7 +319,7 @@ class Filesystem:
                         "Expected to receive information about written file"
                     )
 
-                results.extend([_write_info_from_dict(f) for f in write_result])
+                results.extend([WriteInfo.from_dict(f) for f in write_result])
         else:
             params = {}
             if username:
@@ -326,19 +327,7 @@ class Filesystem:
             if len(files) == 1:
                 params["path"] = files[0]["path"]
 
-            httpx_files = []
-            for file in files:
-                file_path, file_data = file["path"], file["data"]
-                if isinstance(file_data, (str, bytes)):
-                    httpx_files.append(("file", (file_path, file_data)))
-                elif isinstance(file_data, TextIOBase):
-                    httpx_files.append(("file", (file_path, file_data.read())))
-                elif isinstance(file_data, IOBase):
-                    httpx_files.append(("file", (file_path, file_data)))
-                else:
-                    raise InvalidArgumentException(
-                        f"Unsupported data type for file {file_path}"
-                    )
+            httpx_files = [_to_httpx_file(file["path"], file["data"]) for file in files]
 
             if len(httpx_files) == 0:
                 return []
@@ -347,7 +336,6 @@ class Filesystem:
                 ENVD_API_FILES_ROUTE,
                 files=httpx_files,
                 params=params,
-                headers=extra_headers,
                 timeout=self._connection_config.get_request_timeout(request_timeout),
             )
 
@@ -362,7 +350,7 @@ class Filesystem:
                     "Expected to receive information about written file"
                 )
 
-            results.extend([_write_info_from_dict(f) for f in write_result])
+            results.extend([WriteInfo.from_dict(f) for f in write_result])
 
         return results
 

@@ -60,20 +60,30 @@ sandboxTest('write file without metadata', async ({ sandbox }) => {
 sandboxTest(
   'writeFiles applies metadata to every file',
   async ({ sandbox }) => {
-    const metadata = { source: 'test-suite' }
+    // Metadata is set per WriteEntry, so each file can carry its own.
     const files: WriteEntry[] = [
-      { path: 'metadata_multi_1.txt', data: 'File 1' },
-      { path: 'metadata_multi_2.txt', data: 'File 2' },
+      {
+        path: 'metadata_multi_1.txt',
+        data: 'File 1',
+        metadata: { source: 'test-suite', index: '1' },
+      },
+      {
+        path: 'metadata_multi_2.txt',
+        data: 'File 2',
+        metadata: { source: 'test-suite', index: '2' },
+      },
     ]
 
-    const infos = await sandbox.files.writeFiles(files, { metadata })
+    const infos = await sandbox.files.writeFiles(files)
     assert.equal(infos.length, files.length)
 
-    for (const info of infos) {
-      assert.deepEqual(info.metadata, metadata)
+    for (let i = 0; i < files.length; i++) {
+      const info = infos.find((e) => e.path.endsWith(files[i].path))
+      assert.isDefined(info)
+      assert.deepEqual(info?.metadata, files[i].metadata)
 
-      const stat = await sandbox.files.getInfo(info.path)
-      assert.deepEqual(stat.metadata, metadata)
+      const stat = await sandbox.files.getInfo(info!.path)
+      assert.deepEqual(stat.metadata, files[i].metadata)
     }
 
     if (isDebug) {
@@ -134,3 +144,28 @@ sandboxTest('overwriting a file clears stale metadata', async ({ sandbox }) => {
     await sandbox.files.remove(filename)
   }
 })
+
+sandboxTest(
+  'metadata set via xattrs is surfaced in getInfo',
+  async ({ sandbox }) => {
+    const filename = 'metadata_xattr.txt'
+    await sandbox.files.write(filename, 'content')
+
+    const { stdout: filePath } = await sandbox.commands.run(
+      `realpath ${filename}`
+    )
+
+    // Set an xattr directly in the `user.e2b.` namespace; it should surface as
+    // metadata (with the namespace prefix stripped) when reading the file info.
+    await sandbox.commands.run(
+      `setfattr -n user.e2b.author -v mish ${filePath.trim()}`
+    )
+
+    const info = await sandbox.files.getInfo(filename)
+    assert.deepEqual(info.metadata, { author: 'mish' })
+
+    if (isDebug) {
+      await sandbox.files.remove(filename)
+    }
+  }
+)

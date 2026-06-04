@@ -56,6 +56,16 @@ class WriteInfo:
     envd supports it. `None` when no metadata is set.
     """
 
+    @classmethod
+    def from_dict(cls, payload: Dict) -> "WriteInfo":
+        """Build a `WriteInfo` from a `/files` upload response entry."""
+        return cls(
+            name=payload["name"],
+            type=payload.get("type"),
+            path=payload["path"],
+            metadata=map_metadata(payload.get("metadata")),
+        )
+
 
 @dataclass
 class EntryInfo(WriteInfo):
@@ -94,13 +104,33 @@ class EntryInfo(WriteInfo):
     """
 
 
-class WriteEntry(TypedDict):
-    """
-    Contains path and data of the file to be written to the filesystem.
-    """
-
+class _WriteEntryRequired(TypedDict):
     path: str
     data: Union[str, bytes, IO]
+
+
+class WriteEntry(_WriteEntryRequired, total=False):
+    """
+    Contains path and data of the file to be written to the filesystem.
+
+    Optionally carries user-defined `metadata` to persist on the file as
+    extended attributes. Keys and values must be printable US-ASCII and keys
+    are lowercased by the sandbox. Requires envd 0.6.2 or later.
+    """
+
+    metadata: Optional[Dict[str, str]]
+
+
+def _to_httpx_file(file_path: str, file_data: Union[str, bytes, IO]):
+    """Build an httpx multipart `("file", (name, data))` tuple for the upload."""
+    if isinstance(file_data, (str, bytes)):
+        return ("file", (file_path, file_data))
+    elif isinstance(file_data, TextIOBase):
+        return ("file", (file_path, file_data.read()))
+    elif isinstance(file_data, IOBase):
+        return ("file", (file_path, file_data))
+    else:
+        raise InvalidArgumentException(f"Unsupported data type for file {file_path}")
 
 
 def to_upload_body(
