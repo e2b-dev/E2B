@@ -77,9 +77,6 @@ export interface CommandStartOpts extends CommandRequestOpts {
   /**
    * Timeout for the command in **milliseconds**.
    *
-   * Foreground commands default to 60 seconds; background commands (`background: true`)
-   * default to no timeout. See the `run` overloads for details.
-   *
    * @default 60_000 // 60 seconds
    */
   timeoutMs?: number
@@ -90,16 +87,9 @@ export interface CommandStartOpts extends CommandRequestOpts {
  */
 export type CommandConnectOpts = Pick<
   CommandStartOpts,
-  'onStderr' | 'onStdout'
+  'onStderr' | 'onStdout' | 'timeoutMs'
 > &
-  CommandRequestOpts & {
-    /**
-     * Timeout for the command in **milliseconds**.
-     *
-     * @default 60_000 // 60 seconds
-     */
-    timeoutMs?: number
-  }
+  CommandRequestOpts
 
 /**
  * Information about a command, PTY session or start command running in the sandbox as process.
