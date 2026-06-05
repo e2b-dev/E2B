@@ -118,6 +118,16 @@ class RateLimitException(SandboxException):
     Raised when the API rate limit is exceeded.
     """
 
+    def __init__(
+        self,
+        message: str,
+        retry_after: int | None = None,
+        retry_after_header: str | None = None,
+    ):
+        super().__init__(message)
+        self.retry_after = retry_after
+        self.retry_after_header = retry_after_header
+
 
 class BuildException(Exception):
     """

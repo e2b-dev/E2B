@@ -134,10 +134,44 @@ export class TemplateError extends SandboxError {
  * Thrown when the API rate limit is exceeded.
  */
 export class RateLimitError extends SandboxError {
-  constructor(message: string) {
-    super(message)
+  readonly retryAfter?: number
+  readonly retryAfterHeader?: string
+
+  constructor(
+    message: string,
+    opts: { retryAfter?: number; retryAfterHeader?: string | null } = {}
+  ) {
+    super(appendRetryAfter(message, opts.retryAfter))
     this.name = 'RateLimitError'
+    this.retryAfter = opts.retryAfter
+    this.retryAfterHeader = opts.retryAfterHeader ?? undefined
   }
+}
+
+export function parseRetryAfter(retryAfterHeader?: string | null) {
+  if (!retryAfterHeader) {
+    return undefined
+  }
+
+  const trimmedRetryAfter = retryAfterHeader.trim()
+  if (/^-?\d+$/.test(trimmedRetryAfter)) {
+    const retryAfter = Number.parseInt(trimmedRetryAfter, 10)
+    return Math.max(retryAfter, 0)
+  }
+
+  const retryAt = Date.parse(trimmedRetryAfter)
+  if (Number.isNaN(retryAt)) {
+    return undefined
+  }
+
+  return Math.max(Math.floor((retryAt - Date.now()) / 1000), 0)
+}
+
+function appendRetryAfter(message: string, retryAfter?: number) {
+  if (retryAfter === undefined) {
+    return message
+  }
+  return `${message} Retry after ${retryAfter} seconds.`
 }
 
 /**

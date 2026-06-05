@@ -9,14 +9,19 @@ import {
 function createMockResponse(
   status: number,
   error: unknown,
-  data?: unknown
+  data?: unknown,
+  headers: Record<string, string> = {}
 ): {
-  response: { status: number; ok: boolean }
+  response: { status: number; ok: boolean; headers: Headers }
   error: unknown
   data: unknown
 } {
   return {
-    response: { status, ok: status >= 200 && status < 300 },
+    response: {
+      status,
+      ok: status >= 200 && status < 300,
+      headers: new Headers(headers),
+    },
     error,
     data,
   }
@@ -89,6 +94,20 @@ describe('handleApiError', () => {
       const err = handleApiError(res as any)
       assert.instanceOf(err, RateLimitError)
       assert.include(err?.message, 'Rate limit')
+    })
+
+    test('preserves Retry-After on 429', () => {
+      const res = createMockResponse(
+        429,
+        { message: 'Too many requests' },
+        undefined,
+        { 'Retry-After': '60' }
+      )
+      const err = handleApiError(res as any)
+      assert.instanceOf(err, RateLimitError)
+      assert.equal((err as RateLimitError).retryAfter, 60)
+      assert.equal((err as RateLimitError).retryAfterHeader, '60')
+      assert.include(err?.message, 'Retry after 60 seconds')
     })
   })
 
