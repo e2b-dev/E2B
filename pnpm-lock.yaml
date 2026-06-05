@@ -21,6 +21,7 @@ overrides:
   minimatch@>=5.0.0 <5.1.8: ^5.1.8
   minimatch@>=9.0.0 <9.0.7: ^9.0.7
   minimatch@>=10.0.0 <10.2.3: ^10.2.3
+  ws@>=8.0.0 <8.20.1: ^8.20.1
 
 importers:
 
@@ -3809,8 +3810,8 @@ packages:
   wrappy@1.0.2:
     resolution: {integrity: sha512-l4Sp/DRseor9wL6EvV2+TuQn63dMkPjZ/sp9XkghTEbV9KlPS1xUsZ3u7/IQO4wxtcFB4bgpQPRcR3QCvezPcQ==}
 
-  ws@8.19.0:
-    resolution: {integrity: sha512-blAT2mjOEIi0ZzruJfIhb3nps74PRWTCz1IjglWEEpQl5XS/UNama6u2/rjFkDDouqr4L67ry+1aGIALViWjDg==}
+  ws@8.21.0:
+    resolution: {integrity: sha512-Vsp28b7DRcimFQvrqu2Wek3z1iYxDCWqHYB8Qsnk/S4RfaCQzPGPyBNuVjJV3cd6UiKtUtp6sNM77gWvzcCH+g==}
     engines: {node: '>=10.0.0'}
     peerDependencies:
       bufferutil: ^4.0.1
@@ -5049,7 +5050,7 @@ snapshots:
       sirv: 3.0.2
       tinyrainbow: 3.1.0
       vitest: 4.1.8(@types/node@20.19.19)(@vitest/browser-playwright@4.1.8)(@vitest/coverage-v8@4.1.8)(msw@2.12.14(@types/node@20.19.19)(typescript@5.5.3))(vite@6.4.2(@types/node@20.19.19)(jiti@2.4.2)(terser@5.46.0))
-      ws: 8.19.0(bufferutil@4.0.8)(utf-8-validate@6.0.3)
+      ws: 8.21.0(bufferutil@4.0.8)(utf-8-validate@6.0.3)
     transitivePeerDependencies:
       - bufferutil
       - msw
@@ -7482,7 +7483,7 @@ snapshots:
 
   wrappy@1.0.2: {}
 
-  ws@8.19.0(bufferutil@4.0.8)(utf-8-validate@6.0.3):
+  ws@8.21.0(bufferutil@4.0.8)(utf-8-validate@6.0.3):
     optionalDependencies:
       bufferutil: 4.0.8
       utf-8-validate: 6.0.3
