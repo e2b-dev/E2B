@@ -216,12 +216,16 @@ export class CommandHandle
             stdout: this.stdout,
             stderr: this.stderr,
           }
-          // Stop as soon as the terminal end event is received. The result is
-          // known, so there is no reason to keep awaiting the next stream event
-          // (which only arrives when envd closes the HTTP stream). Returning
-          // here also triggers the underlying iterator's `return()`, releasing
-          // the stream/connection deterministically.
-          return
+          // The end event is terminal and carries the result. Cancel the
+          // request so the stream settles immediately, regardless of when envd
+          // closes the HTTP connection. This unblocks `wait()` and lets the
+          // transport release the connection and clear its per-call deadline
+          // timer — the transport only cleans up on a settled read, never on an
+          // abandoned iterator, so simply returning here would leak both. The
+          // next read therefore rejects with a cancellation, which
+          // `handleEvents` ignores because the result is already known.
+          this.handleDisconnect()
+          break
       }
       // TODO: Handle empty events like in python SDK
     }
@@ -239,7 +243,12 @@ export class CommandHandle
         }
       }
     } catch (e) {
-      this.iterationError = handleRpcError(e)
+      // Once the result is known the command has finished; any error here is a
+      // consequence of us cancelling the stream after the end event, so it can
+      // be safely ignored.
+      if (!this.result) {
+        this.iterationError = handleRpcError(e)
+      }
     } finally {
       this.handleDisconnect()
     }

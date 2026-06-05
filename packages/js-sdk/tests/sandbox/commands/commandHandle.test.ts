@@ -95,57 +95,91 @@ describe('CommandHandle', () => {
     }
   )
 
-  it('wait resolves at the end event even if the stream stays open', async () => {
-    let released = false
+  it('wait resolves at the terminal end event without waiting for stream close', async () => {
+    // Faithfully model the connect-es response stream: its iterator exposes
+    // only `next()` (no `return`/`throw`), and a read issued after the terminal
+    // end event stays open until the request is cancelled — mirroring envd
+    // delaying the HTTP stream close. The transport only releases its resources
+    // (connection + per-call deadline timer) when that read settles, so the
+    // handle must cancel the request and pump one more read rather than just
+    // abandoning the iterator.
+    const requestAbort = new AbortController()
+    let postEndReadSettled = false
 
-    // Simulate envd sending the terminal `end` event but delaying the HTTP
-    // stream close indefinitely.
-    async function* events(): AsyncGenerator<any> {
-      try {
-        yield {
-          event: {
-            event: {
-              case: 'data',
-              value: {
-                output: {
-                  case: 'stdout',
-                  value: new TextEncoder().encode('hello'),
+    const events: AsyncIterable<any> = {
+      [Symbol.asyncIterator]() {
+        let stage = 0
+        return {
+          next() {
+            stage += 1
+            if (stage === 1) {
+              return Promise.resolve({
+                done: false,
+                value: {
+                  event: {
+                    event: {
+                      case: 'data',
+                      value: {
+                        output: {
+                          case: 'stdout',
+                          value: new TextEncoder().encode('hello'),
+                        },
+                      },
+                    },
+                  },
                 },
-              },
-            },
+              })
+            }
+            if (stage === 2) {
+              return Promise.resolve({
+                done: false,
+                value: {
+                  event: {
+                    event: {
+                      case: 'end',
+                      value: { exitCode: 0, error: undefined },
+                    },
+                  },
+                },
+              })
+            }
+            // Post-end read: only settles once the request is cancelled.
+            return new Promise((_resolve, reject) => {
+              const onAbort = () => {
+                postEndReadSettled = true
+                reject(new Error('canceled'))
+              }
+              if (requestAbort.signal.aborted) {
+                onAbort()
+              } else {
+                requestAbort.signal.addEventListener('abort', onAbort, {
+                  once: true,
+                })
+              }
+            })
           },
         }
-        yield {
-          event: {
-            event: {
-              case: 'end',
-              value: { exitCode: 0, error: undefined },
-            },
-          },
-        }
-        // Never resolves — the stream stays open after the end event.
-        await new Promise<void>(() => {})
-      } finally {
-        released = true
-      }
+      },
     }
 
-    const handleDisconnect = vi.fn()
+    const handleDisconnect = vi.fn(() => requestAbort.abort())
 
     const handle = new CommandHandle(
       1,
       handleDisconnect,
       async () => true,
-      events()
+      events
     )
 
     const result = await handle.wait()
 
     expect(result.exitCode).toBe(0)
     expect(result.stdout).toBe('hello')
-    // The underlying stream iterator must be released (its `finally` runs) and
-    // the connection cleanup must be invoked deterministically.
-    expect(released).toBe(true)
+    // The request must be cancelled to release the connection...
     expect(handleDisconnect).toHaveBeenCalled()
+    // ...and a read must be pumped after the cancellation so the transport can
+    // clean up. Simply returning from the iterator (the previous behaviour)
+    // would leave this read — and the deadline timer — dangling.
+    expect(postEndReadSettled).toBe(true)
   })
 })
