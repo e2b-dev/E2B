@@ -1,6 +1,5 @@
 from typing import Callable, Dict, List, Literal, Optional, Union, overload
 
-import e2b_connect
 import httpcore
 from packaging.version import Version
 from e2b.connection_config import (
@@ -13,7 +12,7 @@ from e2b.envd.process import process_connect, process_pb2
 from e2b.envd.rpc import authentication_header, handle_rpc_exception
 from e2b.envd.versions import ENVD_COMMANDS_STDIN
 from e2b.exceptions import SandboxException
-from e2b.sandbox.commands.main import ProcessInfo
+from e2b.sandbox.commands.main import ProcessInfo, kill_process_tree_command
 from e2b.sandbox.commands.command_handle import CommandResult
 from e2b.sandbox_sync.commands.command_handle import CommandHandle
 
@@ -80,29 +79,21 @@ class Commands:
     ) -> bool:
         """
         Kills a running command specified by its process ID.
-        It uses `SIGKILL` signal to kill the command.
+        It uses `SIGKILL` signal to kill the command and all of its child processes.
 
         :param pid: Process ID of the command. You can get the list of processes using `sandbox.commands.list()`
         :param request_timeout: Timeout for the request in **seconds**
 
         :return: `True` if the command was killed, `False` if the command was not found
         """
-        try:
-            self._rpc.send_signal(
-                process_pb2.SendSignalRequest(
-                    process=process_pb2.ProcessSelector(pid=pid),
-                    signal=process_pb2.Signal.SIGNAL_SIGKILL,
-                ),
-                request_timeout=self._connection_config.get_request_timeout(
-                    request_timeout
-                ),
-            )
-            return True
-        except Exception as e:
-            if isinstance(e, e2b_connect.ConnectException):
-                if e.status == e2b_connect.Code.not_found:
-                    return False
-            raise handle_rpc_exception(e)
+        # envd's SendSignal RPC only signals the single process it manages, so any
+        # child processes the command spawned would keep running. Kill the whole
+        # process tree from inside the sandbox instead (see issue #1034).
+        result = self.run(
+            kill_process_tree_command(pid),
+            request_timeout=request_timeout,
+        )
+        return result.stdout.strip() == "1"
 
     def send_stdin(
         self,

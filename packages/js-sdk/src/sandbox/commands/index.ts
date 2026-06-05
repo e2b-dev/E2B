@@ -1,10 +1,4 @@
-import {
-  Client,
-  Code,
-  ConnectError,
-  Transport,
-  createClient,
-} from '@connectrpc/connect'
+import { Client, Transport, createClient } from '@connectrpc/connect'
 
 import { compareVersions } from 'compare-versions'
 import {
@@ -16,15 +10,39 @@ import {
   Username,
 } from '../../connectionConfig'
 import { handleProcessStartEvent } from '../../envd/api'
-import {
-  Process as ProcessService,
-  Signal,
-} from '../../envd/process/process_pb'
+import { Process as ProcessService } from '../../envd/process/process_pb'
 import { authenticationHeader, handleRpcError } from '../../envd/rpc'
 import { ENVD_COMMANDS_STDIN, ENVD_ENVD_CLOSE } from '../../envd/versions'
 import { SandboxError } from '../../errors'
 import { CommandHandle, CommandResult } from './commandHandle'
 export { Pty } from './pty'
+
+/**
+ * Build a shell command that terminates `pid` together with all of its
+ * descendant processes.
+ *
+ * envd's `SendSignal` RPC only delivers a signal to the single process it
+ * manages, so any child processes the command spawned keep running after a
+ * plain kill (see https://github.com/e2b-dev/E2B/issues/1034). This walks the
+ * process tree with `pgrep` and sends `SIGKILL` from the leaves up so the whole
+ * tree is reliably stopped.
+ *
+ * The command prints `1` if `pid` existed (so the caller can report whether a
+ * process was found) or `0` otherwise. It degrades gracefully to killing just
+ * `pid` if `pgrep` is unavailable in the sandbox.
+ */
+function killProcessTreeCommand(pid: number): string {
+  return (
+    '__e2b_kill_tree() { ' +
+    'local child; ' +
+    'for child in $(pgrep -P "$1" 2>/dev/null); do __e2b_kill_tree "$child"; done; ' +
+    'kill -KILL "$1" 2>/dev/null || true; ' +
+    '}; ' +
+    `if kill -0 ${pid} 2>/dev/null; then __e2b_found=1; else __e2b_found=0; fi; ` +
+    `__e2b_kill_tree ${pid}; ` +
+    'echo "$__e2b_found"'
+  )
+}
 
 /**
  * Options for sending a command request.
@@ -259,7 +277,7 @@ export class Commands {
 
   /**
    * Kill a running command specified by its process ID.
-   * It uses `SIGKILL` signal to kill the command.
+   * It uses `SIGKILL` signal to kill the command and all of its child processes.
    *
    * @param pid process ID of the command. You can get the list of running commands using {@link Commands.list}.
    * @param opts connection options.
@@ -267,35 +285,15 @@ export class Commands {
    * @returns `true` if the command was killed, `false` if the command was not found.
    */
   async kill(pid: number, opts?: CommandRequestOpts): Promise<boolean> {
-    try {
-      await this.rpc.sendSignal(
-        {
-          process: {
-            selector: {
-              case: 'pid',
-              value: pid,
-            },
-          },
-          signal: Signal.SIGKILL,
-        },
-        {
-          signal: this.connectionConfig.getSignal(
-            opts?.requestTimeoutMs,
-            opts?.signal
-          ),
-        }
-      )
+    // envd's SendSignal RPC only signals the single process it manages, so any
+    // child processes the command spawned would keep running. Kill the whole
+    // process tree from inside the sandbox instead (see issue #1034).
+    const result = await this.run(killProcessTreeCommand(pid), {
+      requestTimeoutMs: opts?.requestTimeoutMs,
+      signal: opts?.signal,
+    })
 
-      return true
-    } catch (err) {
-      if (err instanceof ConnectError) {
-        if (err.code === Code.NotFound) {
-          return false
-        }
-      }
-
-      throw handleRpcError(err)
-    }
+    return result.stdout.trim() === '1'
   }
 
   /**
