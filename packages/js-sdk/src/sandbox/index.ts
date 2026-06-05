@@ -10,6 +10,7 @@ import {
 import { EnvdApiClient, handleEnvdApiError } from '../envd/api'
 import { createEnvdFetch, createEnvdRpcFetch } from '../envd/http2'
 import { createRpcLogger } from '../logs'
+import { withRetry } from '../retry'
 import { Commands, Pty } from './commands'
 import { Filesystem } from './filesystem'
 import { Git } from './git'
@@ -159,8 +160,17 @@ export class Sandbox extends SandboxApi {
       'E2b-Sandbox-Id': this.sandboxId,
       'E2b-Sandbox-Port': this.envdPort.toString(),
     }
-    const envdFetch = createEnvdFetch()
-    const envdRpcFetch = createEnvdRpcFetch()
+    // Retries are conservative: idempotent requests retry on any transient
+    // failure, while non-idempotent ones (all RPCs are POST) only retry on
+    // `rejected` failures where the request was provably not processed.
+    const envdFetch = withRetry(
+      createEnvdFetch(),
+      this.connectionConfig.retries
+    )
+    const envdRpcFetch = withRetry(
+      createEnvdRpcFetch(),
+      this.connectionConfig.retries
+    )
 
     const rpcTransport = createConnectTransport({
       baseUrl: this.envdApiUrl,

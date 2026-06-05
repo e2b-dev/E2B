@@ -6,6 +6,7 @@ import { createApiFetch } from './http2'
 import { ConnectionConfig } from '../connectionConfig'
 import { AuthenticationError, RateLimitError, SandboxError } from '../errors'
 import { createApiLogger } from '../logs'
+import { withRetry } from '../retry'
 
 const API_KEY_PATTERN = /^e2b_[0-9a-f]+$/
 const API_KEY_EXAMPLE = `e2b_${'0'.repeat(40)}`
@@ -95,7 +96,7 @@ class ApiClient {
 
     this.api = createClient<paths>({
       baseUrl: config.apiUrl,
-      fetch: createApiFetch(),
+      fetch: withRetry(createApiFetch(), config.retries),
       // In HTTP 1.1, all connections are considered persistent unless declared otherwise
       // keepalive: true,
       headers: {

@@ -103,8 +103,27 @@ export function stripAnsi(text: string): string {
   return text.replace(ansiRegex(), '')
 }
 
-export async function wait(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms))
+/**
+ * Resolve after `ms` milliseconds. When an `AbortSignal` is provided, reject
+ * immediately if it is already aborted and reject (clearing the timer) if it
+ * aborts while waiting, using the signal's `reason`.
+ */
+export function wait(ms: number, signal?: AbortSignal | null): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (signal?.aborted) {
+      reject(signal.reason ?? new DOMException('Aborted', 'AbortError'))
+      return
+    }
+    const timer = setTimeout(() => {
+      signal?.removeEventListener('abort', onAbort)
+      resolve()
+    }, ms)
+    const onAbort = () => {
+      clearTimeout(timer)
+      reject(signal?.reason ?? new DOMException('Aborted', 'AbortError'))
+    }
+    signal?.addEventListener('abort', onAbort, { once: true })
+  })
 }
 
 /**

@@ -6,6 +6,7 @@ from httpx._types import ProxyTypes
 from typing_extensions import Unpack
 
 from e2b.api.metadata import package_version
+from e2b._retry import resolve_max_retries
 
 REQUEST_TIMEOUT: float = 60.0  # 60 seconds
 FILE_TIMEOUT: float = 3600.0  # 1 hour
@@ -36,6 +37,9 @@ class VolumeApiParams(TypedDict, total=False):
 
     proxy: Optional[ProxyTypes]
     """Proxy to use for the request."""
+
+    retries: Optional[int]
+    """Number of times to retry a request after a transient failure (e.g. a network error, a `429` rate-limit, or a `502`/`503`/`504`). Retries use exponential backoff with jitter and honor a server-provided `Retry-After` header. Set to `0` to disable retries. Defaults to `E2B_MAX_RETRIES` environment variable or `3`."""
 
 
 class VolumeConnectionConfig:
@@ -82,6 +86,7 @@ class VolumeConnectionConfig:
         request_timeout: Optional[float] = None,
         headers: Optional[Dict[str, str]] = None,
         proxy: Optional[ProxyTypes] = None,
+        retries: Optional[int] = None,
     ):
         self.domain = domain or self._domain()
         self.debug = debug if debug is not None else self._debug()
@@ -94,6 +99,7 @@ class VolumeConnectionConfig:
         self.access_token = token or self._access_token()
         self.token = self.access_token
         self.proxy = proxy
+        self.retries = resolve_max_retries(retries)
 
         self.headers = headers or {}
         self.headers["User-Agent"] = f"e2b-python-sdk/{package_version}"
@@ -119,6 +125,7 @@ class VolumeConnectionConfig:
         token = opts.get("token")
         api_url = opts.get("api_url")
         proxy = opts.get("proxy")
+        retries = opts.get("retries")
 
         req_headers = self.headers.copy()
         if headers is not None:
@@ -133,5 +140,6 @@ class VolumeConnectionConfig:
                 request_timeout=self.get_request_timeout(request_timeout),
                 headers=req_headers,
                 proxy=proxy if proxy is not None else self.proxy,
+                retries=retries if retries is not None else self.retries,
             )
         )

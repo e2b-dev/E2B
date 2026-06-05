@@ -1,6 +1,7 @@
 import { Logger } from './logs'
 import { getEnvVar, version } from './api/metadata'
 import { runtime } from './utils'
+import { resolveMaxRetries } from './retry'
 
 // Remove once all deployments support sandbox subdomains
 const supportedDomains = ['e2b.app', 'e2b.dev', 'e2b.pro', 'e2b-staging.dev']
@@ -57,6 +58,19 @@ export interface ConnectionOpts {
    * @default 60_000 // 60 seconds
    */
   requestTimeoutMs?: number
+  /**
+   * Number of times to retry a request after a transient failure (e.g. a
+   * network error, a `429` rate-limit, or a `502`/`503`/`504`). Retries use
+   * exponential backoff with jitter and honor a server-provided `Retry-After`
+   * header. Non-idempotent requests (e.g. creating a sandbox) are only retried
+   * when the server provably did not process the request (e.g. throttling, a
+   * refused connection, or a DNS failure), avoiding duplicate side effects.
+   *
+   * Set to `0` to disable retries.
+   *
+   * @default E2B_MAX_RETRIES // environment variable or `3`
+   */
+  retries?: number
   /**
    * Logger to use for logging messages. It can accept any object that implements `Logger` interface—for example, {@link console}.
    */
@@ -180,6 +194,7 @@ export class ConnectionConfig {
   readonly logger?: Logger
 
   readonly requestTimeoutMs: number
+  readonly retries: number
 
   readonly apiKey?: string
   readonly accessToken?: string
@@ -192,6 +207,7 @@ export class ConnectionConfig {
     this.domain = opts?.domain || ConnectionConfig.domain
     this.accessToken = opts?.accessToken || ConnectionConfig.accessToken
     this.requestTimeoutMs = opts?.requestTimeoutMs ?? REQUEST_TIMEOUT_MS
+    this.retries = resolveMaxRetries(opts?.retries)
     this.logger = opts?.logger
     this.headers = opts?.headers || {}
     this.headers['User-Agent'] = `e2b-js-sdk/${version}`

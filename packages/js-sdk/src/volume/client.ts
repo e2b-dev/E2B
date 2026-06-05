@@ -4,6 +4,7 @@ import type { components, paths } from './schema.gen'
 import { defaultHeaders, getEnvVar } from '../api/metadata'
 import { buildRequestSignal } from '../connectionConfig'
 import { createApiLogger, Logger } from '../logs'
+import { resolveMaxRetries, withRetry } from '../retry'
 import type { Volume } from './index'
 
 const FILE_TIMEOUT_MS = 3_600_000 // 1 hour
@@ -50,6 +51,17 @@ export interface VolumeApiOpts {
   headers?: Record<string, string>
 
   /**
+   * Number of times to retry a request after a transient failure (e.g. a
+   * network error or a `429`/`502`/`503`/`504`). Retries use exponential
+   * backoff with jitter and honor a server-provided `Retry-After` header.
+   *
+   * Set to `0` to disable retries.
+   *
+   * @default E2B_MAX_RETRIES // environment variable or `3`
+   */
+  retries?: number
+
+  /**
    * An optional `AbortSignal` that can be used to cancel the in-flight request.
    * When the signal is aborted, the underlying `fetch` is aborted and the
    * returned promise rejects with an `AbortError`.
@@ -65,6 +77,7 @@ export class VolumeConnectionConfig {
   readonly headers?: Record<string, string>
   readonly logger?: Logger
   readonly requestTimeoutMs?: number
+  readonly retries: number
   readonly signal?: AbortSignal
 
   constructor(volume: Volume, opts?: VolumeApiOpts) {
@@ -78,6 +91,7 @@ export class VolumeConnectionConfig {
     this.headers = opts?.headers
     this.logger = opts?.logger
     this.requestTimeoutMs = opts?.requestTimeoutMs
+    this.retries = resolveMaxRetries(opts?.retries)
     this.signal = opts?.signal
   }
 
@@ -110,6 +124,9 @@ class VolumeApiClient {
   constructor(config: VolumeConnectionConfig) {
     this.api = createClient<paths>({
       baseUrl: config.apiUrl,
+      // Volume content uploads/downloads can be large; withRetry only retries
+      // small, replayable bodies.
+      fetch: withRetry(fetch, config.retries),
       headers: {
         ...defaultHeaders,
         ...(config.token && { Authorization: `Bearer ${config.token}` }),

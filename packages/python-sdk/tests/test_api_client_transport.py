@@ -26,7 +26,10 @@ def test_sync_api_client_proxy_uses_explicit_transport(test_api_key):
 
     try:
         assert "proxy" not in api_client._httpx_args
-        assert httpx_client._transport is TransportWithLogger._instances[True]
+        assert (
+            httpx_client._transport
+            is TransportWithLogger._instances[(True, config.retries)]
+        )
         assert httpx_client._mounts == {}
     finally:
         httpx_client.close()
@@ -101,7 +104,7 @@ async def test_async_api_client_proxy_uses_explicit_transport(test_api_key):
     api_client = get_async_api_client(config)
     httpx_client = api_client.get_async_httpx_client()
     transport = AsyncTransportWithLogger._instances[
-        (id(asyncio.get_running_loop()), True)
+        (id(asyncio.get_running_loop()), True, config.retries)
     ]
 
     try:
