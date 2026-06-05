@@ -65,9 +65,10 @@ async def test_background_run_is_capped_by_timeout(async_sandbox: AsyncSandbox):
     assert time.time() - start < 20
 
 
-@pytest.mark.timeout(60)
+@pytest.mark.timeout(120)
 async def test_background_run_without_timeout_completes(async_sandbox: AsyncSandbox):
-    # Background commands default to no timeout, so a long command completes.
-    cmd = await async_sandbox.commands.run("sleep 20", background=True)
+    # Sleep longer than the previous 60s default so this actually exercises the
+    # no-timeout default for background commands rather than the old 60s cap.
+    cmd = await async_sandbox.commands.run("sleep 70", background=True)
     result = await cmd.wait()
     assert result.exit_code == 0

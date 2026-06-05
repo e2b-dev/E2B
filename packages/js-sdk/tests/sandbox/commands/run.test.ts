@@ -61,10 +61,11 @@ sandboxTest(
 sandboxTest(
   'background run without timeout completes',
   async ({ sandbox }) => {
-    // Background commands default to no timeout, so a long command completes.
-    const cmd = await sandbox.commands.run('sleep 20', { background: true })
+    // Sleep longer than the previous 60s default so this actually exercises the
+    // no-timeout default for background commands rather than the old 60s cap.
+    const cmd = await sandbox.commands.run('sleep 70', { background: true })
     const result = await cmd.wait()
     assert.equal(result.exitCode, 0)
   },
-  60_000
+  120_000
 )
