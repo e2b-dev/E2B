@@ -68,6 +68,14 @@ export interface ConnectionOpts {
   headers?: Record<string, string>
 
   /**
+   * Proxy URL to use for requests. In case of a sandbox it applies to all
+   * requests made to the returned sandbox.
+   *
+   * @example 'http://user:pass@127.0.0.1:8080'
+   */
+  proxy?: string
+
+  /**
    * An optional `AbortSignal` that can be used to cancel the in-flight request.
    * When the signal is aborted, the underlying `fetch` is aborted and the
    * returned promise rejects with an `AbortError`.
@@ -186,6 +194,8 @@ export class ConnectionConfig {
 
   readonly headers?: Record<string, string>
 
+  readonly proxy?: string
+
   constructor(opts?: ConnectionOpts) {
     this.apiKey = opts?.apiKey || ConnectionConfig.apiKey
     this.debug = opts?.debug || ConnectionConfig.debug
@@ -195,6 +205,7 @@ export class ConnectionConfig {
     this.logger = opts?.logger
     this.headers = opts?.headers || {}
     this.headers['User-Agent'] = `e2b-js-sdk/${version}`
+    this.proxy = opts?.proxy
 
     this.apiUrl =
       opts?.apiUrl ||
