@@ -11,6 +11,7 @@ import {
   SandboxNotFoundError,
   formatSandboxTimeoutError,
   AuthenticationError,
+  RateLimitError,
 } from '../errors'
 import { StartResponse, ConnectResponse } from './process/process_pb'
 import { Code, ConnectError } from '@connectrpc/connect'
@@ -23,7 +24,7 @@ const DEFAULT_ERROR_MAP: Record<number, (message: string) => Error> = {
   401: (message) => new AuthenticationError(message),
   404: (message) => new NotFoundError(message),
   429: (message) =>
-    new SandboxError(`${message}: The requests are being rate limited.`),
+    new RateLimitError(`${message}: The requests are being rate limited.`),
   502: formatSandboxTimeoutError,
   507: (message) => new NotEnoughSpaceError(message),
 }
