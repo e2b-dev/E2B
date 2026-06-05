@@ -216,14 +216,10 @@ export class CommandHandle
             stdout: this.stdout,
             stderr: this.stderr,
           }
-          // The end event is terminal and carries the result. Cancel the
-          // request so the stream settles immediately, regardless of when envd
-          // closes the HTTP connection. This unblocks `wait()` and lets the
-          // transport release the connection and clear its per-call deadline
-          // timer — the transport only cleans up on a settled read, never on an
-          // abandoned iterator, so simply returning here would leak both. The
-          // next read therefore rejects with a cancellation, which
-          // `handleEvents` ignores because the result is already known.
+          // Cancel the request at the terminal end event. connect-es only
+          // releases the connection and clears its deadline timer on a settled
+          // read, not on an abandoned iterator, so we let the next read reject
+          // (ignored below, since the result is known) rather than returning.
           this.handleDisconnect()
           break
       }
@@ -243,9 +239,8 @@ export class CommandHandle
         }
       }
     } catch (e) {
-      // Once the result is known the command has finished; any error here is a
-      // consequence of us cancelling the stream after the end event, so it can
-      // be safely ignored.
+      // Ignore errors once the result is known: they come from our own
+      // cancellation of the stream after the end event.
       if (!this.result) {
         this.iterationError = handleRpcError(e)
       }
