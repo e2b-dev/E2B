@@ -447,22 +447,7 @@ class Filesystem:
                 headers=authentication_header(self._envd_version, user),
             )
 
-            return EntryInfo(
-                name=r.entry.name,
-                type=map_file_type(r.entry.type),
-                path=r.entry.path,
-                size=r.entry.size,
-                mode=r.entry.mode,
-                permissions=r.entry.permissions,
-                owner=r.entry.owner,
-                group=r.entry.group,
-                modified_time=r.entry.modified_time.ToDatetime(),
-                symlink_target=(
-                    r.entry.symlink_target
-                    if r.entry.HasField("symlink_target")
-                    else None
-                ),
-            )
+            return map_entry_info(r.entry)
         except Exception as e:
             raise _handle_filesystem_rpc_exception(e)
 
