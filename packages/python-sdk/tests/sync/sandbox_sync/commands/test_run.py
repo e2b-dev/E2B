@@ -1,3 +1,5 @@
+import time
+
 import pytest
 
 from e2b import Sandbox, TimeoutException
@@ -56,3 +58,21 @@ def test_run_with_too_short_timeout_iterating(sandbox):
     with pytest.raises(TimeoutException):
         for _ in cmd:
             pass
+
+
+@pytest.mark.timeout(60)
+def test_background_run_is_capped_by_timeout(sandbox):
+    start = time.time()
+    cmd = sandbox.commands.run("sleep 20", background=True, timeout=10)
+    with pytest.raises(TimeoutException):
+        cmd.wait()
+    # The command is capped by the timeout instead of running for the full 20s.
+    assert time.time() - start < 20
+
+
+@pytest.mark.timeout(60)
+def test_background_run_without_timeout_completes(sandbox):
+    # Background commands default to no timeout, so a long command completes.
+    cmd = sandbox.commands.run("sleep 20", background=True)
+    result = cmd.wait()
+    assert result.exit_code == 0

@@ -1,3 +1,5 @@
+import time
+
 import pytest
 
 from e2b import AsyncSandbox, TimeoutException
@@ -51,3 +53,21 @@ async def test_run_with_timeout(async_sandbox: AsyncSandbox):
 async def test_run_with_too_short_timeout(async_sandbox: AsyncSandbox):
     with pytest.raises(TimeoutException):
         await async_sandbox.commands.run("sleep 10", timeout=2)
+
+
+@pytest.mark.timeout(60)
+async def test_background_run_is_capped_by_timeout(async_sandbox: AsyncSandbox):
+    start = time.time()
+    cmd = await async_sandbox.commands.run("sleep 20", background=True, timeout=10)
+    with pytest.raises(TimeoutException):
+        await cmd.wait()
+    # The command is capped by the timeout instead of running for the full 20s.
+    assert time.time() - start < 20
+
+
+@pytest.mark.timeout(60)
+async def test_background_run_without_timeout_completes(async_sandbox: AsyncSandbox):
+    # Background commands default to no timeout, so a long command completes.
+    cmd = await async_sandbox.commands.run("sleep 20", background=True)
+    result = await cmd.wait()
+    assert result.exit_code == 0

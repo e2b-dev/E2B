@@ -77,7 +77,9 @@ export interface CommandStartOpts extends CommandRequestOpts {
   /**
    * Timeout for the command in **milliseconds**.
    *
-   * @default 60_000 // 60 seconds
+   * Background commands (`background: true`) default to no timeout.
+   *
+   * @default 60_000 // 60 seconds for foreground commands, no timeout for background commands
    */
   timeoutMs?: number
 }
@@ -373,6 +375,9 @@ export class Commands {
    * Start a new command in the background.
    * You can use {@link CommandHandle.wait} to wait for the command to finish and get its result.
    *
+   * Background commands default to no timeout, so they are not killed after the
+   * default command timeout. Pass `opts.timeoutMs` to set one explicitly.
+   *
    * @param cmd command to execute.
    * @param opts options for starting the command
    *
@@ -445,7 +450,12 @@ export class Commands {
           [KEEPALIVE_PING_HEADER]: KEEPALIVE_PING_INTERVAL_SEC.toString(),
         },
         signal: controller.signal,
-        timeoutMs: opts?.timeoutMs ?? this.defaultProcessConnectionTimeout,
+        // Background commands default to no timeout so they aren't killed after
+        // the default command timeout. An explicit `timeoutMs` still takes
+        // precedence.
+        timeoutMs: opts?.background
+          ? opts?.timeoutMs
+          : (opts?.timeoutMs ?? this.defaultProcessConnectionTimeout),
       }
     )
 

@@ -158,7 +158,7 @@ class Commands:
         :param on_stdout: Callback for command stdout output
         :param on_stderr: Callback for command stderr output
         :param stdin: If `True`, the command will have a stdin stream that you can send data to using `sandbox.commands.send_stdin()`
-        :param timeout: Timeout for the command connection in **seconds**. Using `0` will not limit the command connection time
+        :param timeout: Timeout for the command in **seconds**. Using `0` will not limit the command run time
         :param request_timeout: Timeout for the request in **seconds**
 
         :return: `CommandResult` result of the command execution
@@ -176,7 +176,7 @@ class Commands:
         on_stdout: Optional[OutputHandler[Stdout]] = None,
         on_stderr: Optional[OutputHandler[Stderr]] = None,
         stdin: Optional[bool] = None,
-        timeout: Optional[float] = 60,
+        timeout: Optional[float] = 0,
         request_timeout: Optional[float] = None,
     ) -> AsyncCommandHandle:
         """
@@ -190,7 +190,7 @@ class Commands:
         :param on_stdout: Callback for command stdout output
         :param on_stderr: Callback for command stderr output
         :param stdin: If `True`, the command will have a stdin stream that you can send data to using `sandbox.commands.send_stdin()`
-        :param timeout: Timeout for the command connection in **seconds**. Using `0` will not limit the command connection time
+        :param timeout: Timeout for the command in **seconds**. Background commands default to `0`, which does not limit the command run time
         :param request_timeout: Timeout for the request in **seconds**
 
         :return: `AsyncCommandHandle` handle to interact with the running command
@@ -207,7 +207,7 @@ class Commands:
         on_stdout: Optional[OutputHandler[Stdout]] = None,
         on_stderr: Optional[OutputHandler[Stderr]] = None,
         stdin: Optional[bool] = None,
-        timeout: Optional[float] = 60,
+        timeout: Optional[float] = None,
         request_timeout: Optional[float] = None,
     ):
         # Check version for stdin support
@@ -219,6 +219,11 @@ class Commands:
 
         # Default to `False`
         stdin = stdin or False
+
+        # When the timeout is not set, background commands default to no timeout
+        # (`0`) while foreground commands keep the default 60s timeout.
+        if timeout is None:
+            timeout = 0 if background else 60
 
         proc = await self._start(
             cmd,
