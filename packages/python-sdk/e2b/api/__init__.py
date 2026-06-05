@@ -16,6 +16,7 @@ from e2b.exceptions import (
     AuthenticationException,
     RateLimitException,
     SandboxException,
+    parse_retry_after,
 )
 
 logger = logging.getLogger(__name__)
@@ -56,7 +57,11 @@ def handle_api_exception(
         message = f"{e.status_code}: Rate limit exceeded, please try again later."
         if body.get("message"):
             message += f" - {body['message']}"
-        return RateLimitException(message)
+        headers = getattr(e, "headers", {})
+        return RateLimitException(
+            message,
+            retry_after=parse_retry_after(headers.get("Retry-After")),
+        )
 
     if "message" in body:
         return default_exception_class(

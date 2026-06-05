@@ -67,6 +67,26 @@ export function timeoutToSeconds(timeout: number): number {
   return Math.ceil(timeout / 1000)
 }
 
+export function parseRetryAfter(retryAfter: string | null | undefined) {
+  if (!retryAfter) {
+    return
+  }
+
+  const trimmed = retryAfter.trim()
+  if (/^\d+$/.test(trimmed)) {
+    return Number(trimmed)
+  }
+
+  if (/^[+-]?\d/.test(trimmed)) {
+    return
+  }
+
+  const retryAt = Date.parse(trimmed)
+  if (!Number.isNaN(retryAt)) {
+    return Math.max(0, Math.ceil((retryAt - Date.now()) / 1000))
+  }
+}
+
 export function dynamicRequire<T>(module: string): T {
   if (runtime === 'browser') {
     throw new Error('Browser runtime is not supported for require')

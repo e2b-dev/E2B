@@ -6,6 +6,7 @@ import { createApiFetch } from './http2'
 import { ConnectionConfig } from '../connectionConfig'
 import { AuthenticationError, RateLimitError, SandboxError } from '../errors'
 import { createApiLogger } from '../logs'
+import { parseRetryAfter } from '../utils'
 
 const API_KEY_PATTERN = /^e2b_[0-9a-f]+$/
 const API_KEY_EXAMPLE = `e2b_${'0'.repeat(40)}`
@@ -50,11 +51,14 @@ export function handleApiError(
   if (response.response.status === 429) {
     const message = 'Rate limit exceeded, please try again later'
     const content = response.error?.message ?? response.error
+    const retryAfter = parseRetryAfter(
+      response.response.headers?.get('Retry-After')
+    )
 
     if (content) {
-      return new RateLimitError(`${message} - ${content}`)
+      return new RateLimitError(`${message} - ${content}`, retryAfter)
     }
-    return new RateLimitError(message)
+    return new RateLimitError(message, retryAfter)
   }
 
   const message = response.error?.message ?? response.error

@@ -1,3 +1,32 @@
+from datetime import datetime, timezone
+from email.utils import parsedate_to_datetime
+from math import ceil
+from typing import Optional
+
+
+def parse_retry_after(retry_after: Optional[str]) -> Optional[int]:
+    if not retry_after:
+        return None
+
+    retry_after = retry_after.strip()
+
+    if retry_after.isdecimal():
+        return int(retry_after)
+
+    if retry_after[:1] in ("+", "-") or retry_after[:1].isdigit():
+        return None
+
+    try:
+        retry_at = parsedate_to_datetime(retry_after)
+    except (TypeError, ValueError):
+        return None
+
+    if retry_at.tzinfo is None:
+        retry_at = retry_at.replace(tzinfo=timezone.utc)
+
+    return max(0, ceil((retry_at - datetime.now(timezone.utc)).total_seconds()))
+
+
 def format_sandbox_timeout_exception(message: str):
     return TimeoutException(
         f"{message}: This error is likely due to sandbox timeout. You can modify the sandbox timeout by passing 'timeout' when starting the sandbox or calling '.set_timeout' on the sandbox with the desired timeout."
@@ -117,6 +146,12 @@ class RateLimitException(SandboxException):
     """
     Raised when the API rate limit is exceeded.
     """
+
+    retry_after: Optional[int]
+
+    def __init__(self, *args, retry_after: Optional[int] = None):
+        super().__init__(*args)
+        self.retry_after = retry_after
 
 
 class BuildException(Exception):
