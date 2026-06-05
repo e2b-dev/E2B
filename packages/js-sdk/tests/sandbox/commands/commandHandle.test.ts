@@ -94,4 +94,58 @@ describe('CommandHandle', () => {
       expect(waitResolved).toBe(true)
     }
   )
+
+  it('wait resolves at the end event even if the stream stays open', async () => {
+    let released = false
+
+    // Simulate envd sending the terminal `end` event but delaying the HTTP
+    // stream close indefinitely.
+    async function* events(): AsyncGenerator<any> {
+      try {
+        yield {
+          event: {
+            event: {
+              case: 'data',
+              value: {
+                output: {
+                  case: 'stdout',
+                  value: new TextEncoder().encode('hello'),
+                },
+              },
+            },
+          },
+        }
+        yield {
+          event: {
+            event: {
+              case: 'end',
+              value: { exitCode: 0, error: undefined },
+            },
+          },
+        }
+        // Never resolves — the stream stays open after the end event.
+        await new Promise<void>(() => {})
+      } finally {
+        released = true
+      }
+    }
+
+    const handleDisconnect = vi.fn()
+
+    const handle = new CommandHandle(
+      1,
+      handleDisconnect,
+      async () => true,
+      events()
+    )
+
+    const result = await handle.wait()
+
+    expect(result.exitCode).toBe(0)
+    expect(result.stdout).toBe('hello')
+    // The underlying stream iterator must be released (its `finally` runs) and
+    // the connection cleanup must be invoked deterministically.
+    expect(released).toBe(true)
+    expect(handleDisconnect).toHaveBeenCalled()
+  })
 })

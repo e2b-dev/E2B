@@ -128,6 +128,10 @@ class AsyncCommandHandle:
                     exit_code=event.event.end.exit_code,
                     error=event.event.end.error,
                 )
+                # Stop as soon as the terminal end event is received. The result
+                # is known, so there is no reason to keep awaiting the next stream
+                # event (which only arrives when envd closes the HTTP stream).
+                return
 
     async def disconnect(self) -> None:
         """
@@ -137,11 +141,12 @@ class AsyncCommandHandle:
         You can reconnect to the command using `sandbox.commands.connect` method.
         """
         self._wait.cancel()
+        # Wait for the event-handling task to finish unwinding. Its `finally`
+        # block closes the underlying event stream, releasing the HTTP connection.
+        # We must not close the stream here ourselves while the task may still be
+        # iterating it, otherwise the async generator raises a concurrent-access
+        # RuntimeError.
         await asyncio.wait([self._wait])
-        try:
-            await self._events.aclose()
-        except Exception:
-            pass
 
     async def _handle_events(self):
         try:
@@ -162,6 +167,16 @@ class AsyncCommandHandle:
             pass
         except Exception as e:
             self._iteration_exception = handle_rpc_exception(e)
+        finally:
+            # Deterministically release the underlying HTTP stream/connection in
+            # all paths (normal completion, exception, cancellation). Without this
+            # the `acall_server_stream` async generator keeps its `async with
+            # http_resp` block — and the TCP connection — open until it is garbage
+            # collected, which can exhaust the connection pool.
+            try:
+                await self._events.aclose()
+            except Exception:
+                pass
 
     async def wait(self) -> CommandResult:
         """

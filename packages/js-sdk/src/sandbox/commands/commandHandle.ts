@@ -216,7 +216,12 @@ export class CommandHandle
             stdout: this.stdout,
             stderr: this.stderr,
           }
-          break
+          // Stop as soon as the terminal end event is received. The result is
+          // known, so there is no reason to keep awaiting the next stream event
+          // (which only arrives when envd closes the HTTP stream). Returning
+          // here also triggers the underlying iterator's `return()`, releasing
+          // the stream/connection deterministically.
+          return
       }
       // TODO: Handle empty events like in python SDK
     }

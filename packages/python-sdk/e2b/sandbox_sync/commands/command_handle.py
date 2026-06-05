@@ -82,8 +82,23 @@ class CommandHandle:
                         exit_code=event.event.end.exit_code,
                         error=event.event.end.error,
                     )
+                    # Stop as soon as the terminal end event is received. The
+                    # result is known, so there is no reason to keep awaiting the
+                    # next stream event (which only arrives when envd closes the
+                    # HTTP stream).
+                    return
         except Exception as e:
             raise handle_rpc_exception(e)
+        finally:
+            # Deterministically release the underlying HTTP stream/connection in
+            # all paths (normal completion, exception, early break). Without this
+            # the `call_server_stream` generator keeps its `with http_resp` block
+            # — and the TCP connection — open until it is garbage collected, which
+            # can exhaust the connection pool.
+            try:
+                self._events.close()
+            except Exception:
+                pass
 
     def disconnect(self) -> None:
         """
