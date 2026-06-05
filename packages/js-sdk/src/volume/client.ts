@@ -120,9 +120,7 @@ class VolumeApiClient {
   constructor(config: VolumeConnectionConfig) {
     this.api = createClient<paths>({
       baseUrl: config.apiUrl,
-      // Only route through the proxy-aware fetch when a proxy is set, so the
-      // default fetch behavior is preserved otherwise.
-      ...(config.proxy && { fetch: createApiFetch(config.proxy) }),
+      fetch: createApiFetch(config.proxy),
       headers: {
         ...defaultHeaders,
         ...(config.token && { Authorization: `Bearer ${config.token}` }),
