@@ -77,3 +77,11 @@ def test_background_run_without_timeout_completes(sandbox):
     cmd = sandbox.commands.run("sleep 70", background=True)
     result = cmd.wait()
     assert result.exit_code == 0
+
+
+@pytest.mark.timeout(120)
+def test_run_with_none_timeout_completes(sandbox):
+    # `timeout=None` means no timeout, so a command longer than the 60s default
+    # completes instead of being capped.
+    cmd = sandbox.commands.run("sleep 70", timeout=None)
+    assert cmd.exit_code == 0

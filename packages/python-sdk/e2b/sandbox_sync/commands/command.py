@@ -18,6 +18,13 @@ from e2b.sandbox.commands.command_handle import CommandResult
 from e2b.sandbox_sync.commands.command_handle import CommandHandle
 
 
+class _Unset:
+    """Sentinel for an omitted ``timeout`` argument (distinct from ``None``)."""
+
+
+_UNSET = _Unset()
+
+
 class Commands:
     """
     Module for executing commands in the sandbox.
@@ -157,7 +164,7 @@ class Commands:
         :param on_stdout: Callback for command stdout output
         :param on_stderr: Callback for command stderr output
         :param stdin: If `True`, the command will have a stdin stream that you can send data to using `sandbox.commands.send_stdin()`
-        :param timeout: Timeout for the command in **seconds**. Using `0` will not limit the command run time
+        :param timeout: Timeout for the command in **seconds**. Using `0` or `None` will not limit the command run time
         :param request_timeout: Timeout for the request in **seconds**
 
         :return: `CommandResult` result of the command execution
@@ -187,7 +194,7 @@ class Commands:
         :param user: User to run the command as
         :param cwd: Working directory to run the command
         :param stdin: If `True`, the command will have a stdin stream that you can send data to using `sandbox.commands.send_stdin()`
-        :param timeout: Timeout for the command in **seconds**. Background commands default to `0`, which does not limit the command run time
+        :param timeout: Timeout for the command in **seconds**. Background commands default to `0`; using `0` or `None` will not limit the command run time
         :param request_timeout: Timeout for the request in **seconds**
 
         :return: `CommandHandle` handle to interact with the running command
@@ -204,7 +211,7 @@ class Commands:
         on_stdout: Optional[Callable[[str], None]] = None,
         on_stderr: Optional[Callable[[str], None]] = None,
         stdin: Optional[bool] = None,
-        timeout: Optional[float] = None,
+        timeout: Union[float, None, _Unset] = _UNSET,
         request_timeout: Optional[float] = None,
     ):
         # Check version for stdin support
@@ -217,10 +224,12 @@ class Commands:
         # Default to `False`
         stdin = stdin or False
 
-        # When the timeout is not set, background commands default to no timeout
-        # (`0`) while foreground commands keep the default 60s timeout.
-        if timeout is None:
+        # Resolve the default timeout: foreground commands default to 60s and
+        # background commands to no timeout. An explicit `None` means no timeout.
+        if isinstance(timeout, _Unset):
             timeout = 0 if background else 60
+        elif timeout is None:
+            timeout = 0
 
         proc = self._start(
             cmd,
