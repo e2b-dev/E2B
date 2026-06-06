@@ -1,10 +1,7 @@
 import { assert, test, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
-  rpcFetch: vi.fn(
-    async (_input: RequestInfo | URL, _init?: RequestInit) =>
-      new Response(null, { status: 204 })
-  ),
+  rpcFetch: vi.fn(async () => new Response(null, { status: 204 })),
   transportFetch: undefined as typeof fetch | undefined,
 }))
 
