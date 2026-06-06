@@ -11,7 +11,7 @@ const baseConfig = {
   domain: 'base.e2b.dev',
   requestTimeoutMs: 1111,
   debug: false,
-  headers: { 'X-Test': 'base' },
+  apiHeaders: { 'X-Test': 'base' },
 }
 
 function createSandbox() {
@@ -50,7 +50,7 @@ describe('Sandbox API config propagation', () => {
     assert.equal(opts?.domain, baseConfig.domain)
     assert.equal(opts?.requestTimeoutMs, baseConfig.requestTimeoutMs)
     assert.equal(opts?.debug, baseConfig.debug)
-    assert.equal(opts?.headers?.['X-Test'], baseConfig.headers['X-Test'])
+    assert.equal(opts?.headers?.['X-Test'], baseConfig.apiHeaders['X-Test'])
   })
 
   test('lets public method call overrides win over connectionConfig', async () => {

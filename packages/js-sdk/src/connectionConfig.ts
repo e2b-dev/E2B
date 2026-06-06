@@ -64,8 +64,15 @@ export interface ConnectionOpts {
 
   /**
    * Additional headers to send with the request.
+   *
+   * @deprecated Use `apiHeaders` instead.
    */
   headers?: Record<string, string>
+
+  /**
+   * Additional headers to send with E2B API requests.
+   */
+  apiHeaders?: Record<string, string>
 
   /**
    * An optional `AbortSignal` that can be used to cancel the in-flight request.
@@ -193,7 +200,7 @@ export class ConnectionConfig {
     this.accessToken = opts?.accessToken || ConnectionConfig.accessToken
     this.requestTimeoutMs = opts?.requestTimeoutMs ?? REQUEST_TIMEOUT_MS
     this.logger = opts?.logger
-    this.headers = opts?.headers || {}
+    this.headers = { ...(opts?.headers ?? {}), ...(opts?.apiHeaders ?? {}) }
     this.headers['User-Agent'] = `e2b-js-sdk/${version}`
 
     this.apiUrl =
