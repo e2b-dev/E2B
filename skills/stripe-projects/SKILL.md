@@ -100,7 +100,7 @@ a more specific SDK feature:
 1. Pull credentials, create a detached sandbox, and keep the sandbox ID.
 2. Use `sandbox exec -- bash -lc '...'` to install files, run scripts, and inspect state.
 3. For persistent processes inside the running sandbox, use `nohup ... &` and write a PID file.
-4. For HTTP services, listen on a known port, build the public URL as `https://<port>-<sandbox_id>.<E2B_DOMAIN>`, and probe it before returning it.
+4. For HTTP services, listen on a known port, build the public URL with `E2B_DOMAIN` or the default `e2b.app`, and probe it before returning it. The SDK exposes `sandbox.getHost(port)`, but the CLI fast path does not currently print the sandbox domain.
 5. Stay on default timeout/lifecycle settings for ordinary tasks. Use the SDK only when the user explicitly needs longer persistence, auto-resume, metadata, or another option the CLI does not expose.
 
 Copyable command pattern:
@@ -109,6 +109,7 @@ Copyable command pattern:
 stripe projects env --pull --yes
 export E2B_API_KEY="$(awk -F= '$1=="E2B_API_KEY"{print substr($0, index($0,"=")+1)}' .env)"
 export E2B_DOMAIN="$(awk -F= '$1=="E2B_DOMAIN"{print substr($0, index($0,"=")+1)}' .env)"
+: "${E2B_DOMAIN:=e2b.app}"
 
 SANDBOX_ID="$(e2b sandbox create --detach | awk '/Sandbox created with ID/{print $5}')"
 
