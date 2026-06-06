@@ -53,6 +53,14 @@ describe('Sandbox API config propagation', () => {
     assert.equal(opts?.headers?.['X-Test'], baseConfig.apiHeaders['X-Test'])
   })
 
+  test('accepts apiHeaders in static Sandbox API options', () => {
+    const opts = { apiHeaders: baseConfig.apiHeaders } satisfies Parameters<
+      typeof Sandbox.kill
+    >[1]
+
+    assert.equal(opts.apiHeaders['X-Test'], baseConfig.apiHeaders['X-Test'])
+  })
+
   test('lets public method call overrides win over connectionConfig', async () => {
     const pauseSpy = vi.spyOn(SandboxApi, 'pause').mockResolvedValue(true)
     const sandbox = createSandbox()
