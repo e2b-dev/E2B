@@ -312,17 +312,27 @@ class Commands:
         )
 
         try:
+            pre_start_events: list[process_pb2.ConnectResponse] = []
             start_event = events.__next__()
+            while not start_event.event.HasField("start"):
+                if not start_event.HasField("event"):
+                    raise SandboxException(
+                        f"Failed to connect to process: expected start event, got {start_event}"
+                    )
+                pre_start_events.append(start_event)
+                start_event = events.__next__()
 
-            if not start_event.HasField("event"):
-                raise SandboxException(
-                    f"Failed to connect to process: expected start event, got {start_event}"
-                )
+            def iter_replayed_events():
+                for pre_start_event in pre_start_events:
+                    yield pre_start_event
+                yield from events
+
+            event_source = iter_replayed_events() if pre_start_events else events
 
             return CommandHandle(
                 pid=start_event.event.start.pid,
                 handle_kill=lambda: self.kill(start_event.event.start.pid),
-                events=events,
+                events=event_source,
             )
         except Exception as e:
             raise handle_rpc_exception(e)
