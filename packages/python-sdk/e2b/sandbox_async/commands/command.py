@@ -318,17 +318,28 @@ class Commands:
         )
 
         try:
+            pre_start_events: list[process_pb2.ConnectResponse] = []
             start_event = await events.__anext__()
+            while not start_event.event.HasField("start"):
+                if not start_event.HasField("event"):
+                    raise SandboxException(
+                        f"Failed to connect to process: expected start event, got {start_event}"
+                    )
+                pre_start_events.append(start_event)
+                start_event = await events.__anext__()
 
-            if not start_event.HasField("event"):
-                raise SandboxException(
-                    f"Failed to connect to process: expected start event, got {start_event}"
-                )
+            async def iter_replayed_events():
+                for pre_start_event in pre_start_events:
+                    yield pre_start_event
+                async for event in events:
+                    yield event
+
+            event_source = iter_replayed_events() if pre_start_events else events
 
             return AsyncCommandHandle(
                 pid=start_event.event.start.pid,
                 handle_kill=lambda: self.kill(start_event.event.start.pid),
-                events=events,
+                events=event_source,
                 on_stdout=on_stdout,
                 on_stderr=on_stderr,
             )
