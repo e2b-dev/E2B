@@ -13,6 +13,14 @@ Use these patterns after E2B sandbox/API access has been provisioned through Str
 - Use that key as `E2B_API_KEY` for sandbox creation, sandbox control, and SDK clients.
 - Prefer setting `E2B_API_KEY` explicitly in runtime environments so commands and SDK calls use the intended E2B team.
 - Local defaults can also come from `.env.local` or `~/.e2b/config.json`.
+- In Stripe Projects checkouts, the E2B CLI may not be globally logged in. Before using `e2b sandbox ...`, prefer a Stripe Projects env pull plus per-command export instead of trying `e2b auth login`.
+- Do not print secret values. If the managed `.env` has already been pulled by Stripe Projects, read only the needed variables into the command environment without echoing them.
+
+```bash
+stripe projects env --pull --yes
+E2B_API_KEY="$(awk -F= '$1=="E2B_API_KEY"{print substr($0, index($0,"=")+1)}' .env)" \
+  e2b sandbox create --detach
+```
 
 ## Stripe Projects CLI
 
@@ -40,6 +48,17 @@ export E2B_API_KEY="<api_key from the E2B access_configuration>"
 In raw resource output, map `access_configuration.api_key` to `E2B_API_KEY`. If credentials were already pulled into a local `.env`, copy only the `E2B_API_KEY` value into the environment explicitly. Do not source `.env` as shell code.
 
 ## E2B CLI
+
+The E2B CLI is intentionally small. Use it for the common operational loop:
+create a sandbox, run commands inside it, inspect/list/pause/resume/kill sandboxes,
+and leave long-running processes in the background. Do not spend time looking for
+CLI flags for every SDK option; if a task needs lifecycle controls, custom
+timeouts, metadata, or auto-resume, use the SDK.
+
+For normal agent tasks, start with the default CLI settings. A detached sandbox
+plus `sandbox exec` is usually enough, and you do not need to adjust timeout or
+lifecycle settings unless the user asks for persistence beyond the default
+session behavior.
 
 Prefer detached sandboxes for non-interactive work so the command returns a sandbox ID and does not attach an interactive terminal:
 
@@ -72,6 +91,50 @@ Use `sandbox exec` for operational commands against an existing sandbox:
 e2b sandbox exec <sandbox_id> -- bash -lc 'python --version'
 e2b sandbox exec <sandbox_id> -- bash -lc 'ls -la /tmp'
 ```
+
+## Fast path: general sandbox task
+
+When the user asks to do work in a sandbox, use this flow unless the task needs
+a more specific SDK feature:
+
+1. Pull credentials, create a detached sandbox, and keep the sandbox ID.
+2. Use `sandbox exec -- bash -lc '...'` to install files, run scripts, and inspect state.
+3. For persistent processes inside the running sandbox, use `nohup ... &` and write a PID file.
+4. For HTTP services, listen on a known port, build the public URL as `https://<port>-<sandbox_id>.<E2B_DOMAIN>`, and probe it before returning it.
+5. Stay on default timeout/lifecycle settings for ordinary tasks. Use the SDK only when the user explicitly needs longer persistence, auto-resume, metadata, or another option the CLI does not expose.
+
+Copyable command pattern:
+
+```bash
+stripe projects env --pull --yes
+export E2B_API_KEY="$(awk -F= '$1=="E2B_API_KEY"{print substr($0, index($0,"=")+1)}' .env)"
+export E2B_DOMAIN="$(awk -F= '$1=="E2B_DOMAIN"{print substr($0, index($0,"=")+1)}' .env)"
+
+SANDBOX_ID="$(e2b sandbox create --detach | awk '/Sandbox created with ID/{print $5}')"
+
+e2b sandbox exec "$SANDBOX_ID" -- bash -lc '
+  mkdir -p /home/user/work
+  cd /home/user/work
+  cat > index.html <<EOF
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Sandbox work</title></head>
+<body><h1>Sandbox work</h1></body></html>
+EOF
+  nohup python3 -m http.server 8080 >server.log 2>&1 &
+  echo $! >server.pid
+'
+
+URL="https://8080-${SANDBOX_ID}.${E2B_DOMAIN}"
+curl -I --max-time 12 "$URL"
+printf '%s\n' "$URL"
+```
+
+Notes:
+
+- The E2B CLI requires `--` before shell flags: `e2b sandbox exec <id> -- bash -lc '...'`.
+- The public port URL pattern works for an HTTP server listening on the matching port inside the sandbox.
+- The base template has Python available, so static HTTP pages and simple scripts do not need npm or a framework unless requested.
+- Use default timeout/lifecycle behavior for routine work. If the sandbox must live longer or resume later, call `Sandbox.connect(id).set_timeout(seconds)` or create it with lifecycle options from the SDK.
 
 ## JavaScript SDK
 
