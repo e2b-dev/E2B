@@ -22,7 +22,7 @@ vi.mock('../../src/envd/http2', () => ({
 
 test('does not pass custom connection headers to envd RPC requests', async () => {
   const { Sandbox } = await import('../../src')
-  new Sandbox({
+  const sandbox = new Sandbox({
     sandboxId: 'sbx-test',
     sandboxDomain: 'sandbox.e2b.dev',
     envdVersion: '0.2.4',
@@ -33,6 +33,7 @@ test('does not pass custom connection headers to envd RPC requests', async () =>
     },
   })
 
+  assert.equal(sandbox.sandboxId, 'sbx-test')
   assert.ok(mocks.transportFetch)
   await mocks.transportFetch('https://sandbox.e2b.dev/rpc', {
     headers: { 'Connect-Protocol-Version': '1' },
