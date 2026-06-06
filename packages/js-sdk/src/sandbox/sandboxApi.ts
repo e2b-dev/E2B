@@ -231,7 +231,13 @@ export interface SandboxApiOpts
   extends Partial<
     Pick<
       ConnectionOpts,
-      'apiKey' | 'headers' | 'debug' | 'domain' | 'requestTimeoutMs' | 'signal'
+      | 'apiKey'
+      | 'headers'
+      | 'apiHeaders'
+      | 'debug'
+      | 'domain'
+      | 'requestTimeoutMs'
+      | 'signal'
     >
   > {}
 

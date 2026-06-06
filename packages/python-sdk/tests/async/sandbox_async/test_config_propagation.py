@@ -44,7 +44,7 @@ def create_sandbox(monkeypatch, api_key: str) -> AsyncSandbox:
             domain=BASE_DOMAIN,
             request_timeout=BASE_REQUEST_TIMEOUT,
             debug=BASE_DEBUG,
-            headers=BASE_HEADERS,
+            api_headers=BASE_HEADERS,
         ),
     )
 
@@ -77,7 +77,7 @@ async def test_pause_applies_overrides(monkeypatch, test_api_key):
     await sandbox.pause(
         domain="override.e2b.dev",
         request_timeout=20,
-        headers={"X-Extra": "1"},
+        api_headers={"X-Extra": "1"},
     )
 
     mock_pause.assert_awaited_once()
@@ -103,9 +103,12 @@ async def test_connect_sets_stable_host_routing_headers(monkeypatch, test_api_ke
     )
     monkeypatch.setattr(sandbox_async_main.SandboxApi, "_cls_connect", mock_connect)
 
-    sandbox = await AsyncSandbox.connect("sbx-test", api_key=test_api_key)
+    sandbox = await AsyncSandbox.connect(
+        "sbx-test", api_key=test_api_key, headers=BASE_HEADERS
+    )
 
     assert sandbox.envd_api_url == "https://sandbox.e2b.app"
+    assert "X-Test" not in sandbox.connection_config.sandbox_headers
     assert sandbox.connection_config.sandbox_headers["E2b-Sandbox-Id"] == "sbx-test"
     assert sandbox.connection_config.sandbox_headers["E2b-Sandbox-Port"] == str(
         ConnectionConfig.envd_port
