@@ -1,3 +1,8 @@
+---
+name: stripe-projects
+description: "Use after E2B sandbox/API access has been provisioned through Stripe Projects and the user needs to use the resulting E2B API key with the E2B CLI, JavaScript SDK, Python SDK, or Code Interpreter SDK."
+---
+
 # E2B Stripe Projects
 
 Use these patterns after E2B sandbox/API access has been provisioned through Stripe Projects.
