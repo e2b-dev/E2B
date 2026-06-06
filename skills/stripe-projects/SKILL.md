@@ -34,10 +34,10 @@ Export the E2B API key before using the E2B CLI or SDK. Prefer reading credentia
 
 ```bash
 stripe projects env --json
-export E2B_API_KEY="<value from E2B_API_KEY>"
+export E2B_API_KEY="<api_key from the E2B access_configuration>"
 ```
 
-If credentials were already pulled into a local `.env`, copy the `E2B_API_KEY` value into the environment explicitly. Do not source `.env` as shell code.
+In raw resource output, map `access_configuration.api_key` to `E2B_API_KEY`. If credentials were already pulled into a local `.env`, copy only the `E2B_API_KEY` value into the environment explicitly. Do not source `.env` as shell code.
 
 ## E2B CLI
 
