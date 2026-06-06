@@ -30,13 +30,14 @@ stripe projects env --json
 stripe projects env --pull --yes
 ```
 
-Load pulled credentials before using the E2B CLI or SDK:
+Export the E2B API key before using the E2B CLI or SDK. Prefer reading credential output as data instead of sourcing a `.env` file:
 
 ```bash
-set -a
-. .env
-set +a
+stripe projects env --json
+export E2B_API_KEY="<value from E2B_API_KEY>"
 ```
+
+If credentials were already pulled into a local `.env`, copy the `E2B_API_KEY` value into the environment explicitly. Do not source `.env` as shell code.
 
 ## E2B CLI
 
