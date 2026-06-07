@@ -348,7 +348,9 @@ export class Commands {
         events,
         opts?.onStdout,
         opts?.onStderr,
-        undefined
+        undefined,
+        (data, stdinOpts) => this.sendStdin(pid, data, stdinOpts),
+        (stdinOpts) => this.closeStdin(pid, stdinOpts)
       )
     } catch (err) {
       cleanup()
@@ -460,7 +462,9 @@ export class Commands {
         events,
         opts?.onStdout,
         opts?.onStderr,
-        undefined
+        undefined,
+        (data, stdinOpts) => this.sendStdin(pid, data, stdinOpts),
+        (stdinOpts) => this.closeStdin(pid, stdinOpts)
       )
     } catch (err) {
       cleanup()
