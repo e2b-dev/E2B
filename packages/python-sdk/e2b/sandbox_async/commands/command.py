@@ -133,7 +133,7 @@ class Commands:
         except Exception as e:
             raise handle_rpc_exception(e)
 
-    async def _close_stdin(
+    async def close_stdin(
         self,
         pid: int,
         request_timeout: Optional[float] = None,
@@ -142,8 +142,6 @@ class Commands:
         Close the command stdin.
 
         This signals EOF to the command. The command must have been started with `stdin=True`.
-
-        :meta private:
 
         :param pid Process ID of the command. You can get the list of processes using `sandbox.commands.list()`.
         :param request_timeout: Timeout for the request in **seconds**
@@ -315,7 +313,7 @@ class Commands:
                 on_stdout=on_stdout,
                 on_stderr=on_stderr,
                 handle_send_stdin=lambda data: self.send_stdin(pid, data),
-                handle_close_stdin=lambda: self._close_stdin(pid),
+                handle_close_stdin=lambda: self.close_stdin(pid),
             )
         except Exception as e:
             raise handle_rpc_exception(e)
@@ -369,7 +367,7 @@ class Commands:
                 on_stdout=on_stdout,
                 on_stderr=on_stderr,
                 handle_send_stdin=lambda data: self.send_stdin(pid, data),
-                handle_close_stdin=lambda: self._close_stdin(pid),
+                handle_close_stdin=lambda: self.close_stdin(pid),
             )
         except Exception as e:
             raise handle_rpc_exception(e)
