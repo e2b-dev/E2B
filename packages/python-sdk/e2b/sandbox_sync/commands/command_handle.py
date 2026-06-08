@@ -2,6 +2,7 @@ from typing import Optional, Callable, Any, Generator, Union, Tuple
 
 from e2b.envd.rpc import handle_rpc_exception
 from e2b.envd.process import process_pb2
+from e2b.exceptions import SandboxException
 from e2b.sandbox.commands.command_handle import (
     CommandExitException,
     CommandResult,
@@ -32,9 +33,13 @@ class CommandHandle:
         events: Generator[
             Union[process_pb2.StartResponse, process_pb2.ConnectResponse], Any, None
         ],
+        handle_send_stdin: Optional[Callable[[str], None]] = None,
+        handle_close_stdin: Optional[Callable[[], None]] = None,
     ):
         self._pid = pid
         self._handle_kill = handle_kill
+        self._handle_send_stdin = handle_send_stdin
+        self._handle_close_stdin = handle_close_stdin
         self._events = events
 
         self._stdout: str = ""
@@ -156,3 +161,29 @@ class CommandHandle:
         :return: Whether the command was killed successfully
         """
         return self._handle_kill()
+
+    def send_stdin(self, data: str) -> None:
+        """
+        Send data to the command stdin.
+
+        The command must have been started with `stdin=True`.
+
+        :param data: Data to send to the command
+        """
+        if self._handle_send_stdin is None:
+            raise SandboxException(
+                "Sending stdin is not supported for this command handle."
+            )
+        self._handle_send_stdin(data)
+
+    def close_stdin(self) -> None:
+        """
+        Close the command stdin.
+
+        This signals EOF to the command. The command must have been started with `stdin=True`.
+        """
+        if self._handle_close_stdin is None:
+            raise SandboxException(
+                "Closing stdin is not supported for this command handle."
+            )
+        self._handle_close_stdin()
