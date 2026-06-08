@@ -52,36 +52,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Parse .tool-versions
-        uses: wistia/parse-tool-versions@v2.1.1
-        with:
-          filename: '.tool-versions'
-          uppercase: 'true'
-          prefix: 'tool_version_'
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: '${{ env.TOOL_VERSION_PNPM }}'
-
-      - name: Setup Node
-        uses: actions/setup-node@v3
-        with:
-          node-version: '${{ env.TOOL_VERSION_NODEJS }}'
-          cache: pnpm
-          cache-dependency-path: pnpm-lock.yaml
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Build the SDK (pre-requisite for the CLI)
-        run: pnpm build
-        working-directory: ./packages/js-sdk
-
-      - name: Build the CLI
-        run: pnpm build
-        working-directory: ./packages/cli
+      - name: Build and install E2B CLI
+        uses: ./.github/actions/build-cli
 
       - name: Build and publish base template
         working-directory: ./templates/base
-        run: node "$GITHUB_WORKSPACE/packages/cli/dist/index.js" template create base --memory-mb 512
+        run: e2b template create base --memory-mb 512

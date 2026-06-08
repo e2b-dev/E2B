@@ -1,0 +1,46 @@
+name: 'Build and install E2B CLI'
+description: >-
+  Builds the e2b CLI (and its js-sdk dependency) from source in this repo and
+  installs it globally so the `e2b` command is available on PATH. Assumes the
+  repository has already been checked out.
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Parse .tool-versions
+      uses: wistia/parse-tool-versions@v2.1.1
+      with:
+        filename: '.tool-versions'
+        uppercase: 'true'
+        prefix: 'tool_version_'
+
+    - name: Install pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: '${{ env.TOOL_VERSION_PNPM }}'
+
+    - name: Setup Node
+      uses: actions/setup-node@v3
+      with:
+        node-version: '${{ env.TOOL_VERSION_NODEJS }}'
+        cache: pnpm
+        cache-dependency-path: pnpm-lock.yaml
+
+    - name: Install dependencies
+      shell: bash
+      run: pnpm install --frozen-lockfile
+
+    - name: Build the SDK (pre-requisite for the CLI)
+      shell: bash
+      run: pnpm build
+      working-directory: ./packages/js-sdk
+
+    - name: Build the CLI
+      shell: bash
+      run: pnpm build
+      working-directory: ./packages/cli
+
+    - name: Install the CLI globally
+      shell: bash
+      run: npm install -g .
+      working-directory: ./packages/cli
