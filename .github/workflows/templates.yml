@@ -45,9 +45,6 @@ jobs:
     runs-on: ubuntu-22.04
     env:
       E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
-      # The CLI still requires an access token for `template create`.
-      # Remove this once a CLI version without that gate is released.
-      E2B_ACCESS_TOKEN: ${{ secrets.E2B_ACCESS_TOKEN }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
