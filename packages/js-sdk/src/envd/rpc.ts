@@ -8,6 +8,7 @@ import {
   formatSandboxTimeoutError,
   InvalidArgumentError,
   NotFoundError,
+  RateLimitError,
   SandboxError,
   TimeoutError,
 } from '../errors'
@@ -17,6 +18,10 @@ const DEFAULT_ERROR_MAP: Partial<Record<Code, (message: string) => Error>> = {
   [Code.InvalidArgument]: (message) => new InvalidArgumentError(message),
   [Code.Unauthenticated]: (message) => new AuthenticationError(message),
   [Code.NotFound]: (message) => new NotFoundError(message),
+  [Code.ResourceExhausted]: (message) =>
+    new RateLimitError(
+      `${message}: Rate limit exceeded, please try again later.`
+    ),
   [Code.Unavailable]: formatSandboxTimeoutError,
   [Code.Canceled]: (message) =>
     new TimeoutError(

@@ -225,8 +225,12 @@ export class Commands {
   }
 
   /**
-   * @hidden
-   * @internal
+   * Close command stdin.
+   *
+   * This signals EOF to the command. The command must have been started with `stdin: true`.
+   *
+   * @param pid process ID of the command. You can get the list of running commands using {@link Commands.list}.
+   * @param opts connection options.
    */
   async closeStdin(pid: number, opts?: CommandRequestOpts): Promise<void> {
     if (!this.supportsStdinClose) {
@@ -348,7 +352,9 @@ export class Commands {
         events,
         opts?.onStdout,
         opts?.onStderr,
-        undefined
+        undefined,
+        (data, stdinOpts) => this.sendStdin(pid, data, stdinOpts),
+        (stdinOpts) => this.closeStdin(pid, stdinOpts)
       )
     } catch (err) {
       cleanup()
@@ -460,7 +466,9 @@ export class Commands {
         events,
         opts?.onStdout,
         opts?.onStderr,
-        undefined
+        undefined,
+        (data, stdinOpts) => this.sendStdin(pid, data, stdinOpts),
+        (stdinOpts) => this.closeStdin(pid, stdinOpts)
       )
     } catch (err) {
       cleanup()
