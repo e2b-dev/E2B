@@ -604,9 +604,11 @@ class AsyncSandbox(SandboxApi):
     async def pause(
         self,
         **opts: Unpack[ApiParams],
-    ) -> None:
+    ) -> bool:
         """
         Pause the sandbox.
+
+        :return: `True` if the sandbox got paused, `False` if the sandbox was already paused
         """
         ...
 
@@ -615,11 +617,13 @@ class AsyncSandbox(SandboxApi):
     async def pause(
         sandbox_id: str,
         **opts: Unpack[ApiParams],
-    ) -> None:
+    ) -> bool:
         """
         Pause the sandbox specified by sandbox ID.
 
         :param sandbox_id: Sandbox ID
+
+        :return: `True` if the sandbox got paused, `False` if the sandbox was already paused
         """
         ...
 
@@ -627,12 +631,14 @@ class AsyncSandbox(SandboxApi):
     async def pause(
         self,
         **opts: Unpack[ApiParams],
-    ) -> None:
+    ) -> bool:
         """
         Pause the sandbox.
+
+        :return: `True` if the sandbox got paused, `False` if the sandbox was already paused
         """
 
-        await SandboxApi._cls_pause(
+        return await SandboxApi._cls_pause(
             sandbox_id=self.sandbox_id,
             **self.connection_config.get_api_params(**opts),
         )
@@ -641,24 +647,24 @@ class AsyncSandbox(SandboxApi):
     async def beta_pause(
         self,
         **opts: Unpack[ApiParams],
-    ) -> None: ...
+    ) -> bool: ...
 
     @overload
     @staticmethod
     async def beta_pause(
         sandbox_id: str,
         **opts: Unpack[ApiParams],
-    ) -> None: ...
+    ) -> bool: ...
 
     @class_method_variant("_cls_pause")
     async def beta_pause(
         self,
         **opts: Unpack[ApiParams],
-    ) -> None:
+    ) -> bool:
         """
         :deprecated: Use `pause()` instead.
         """
-        await self.pause(**opts)
+        return await self.pause(**opts)
 
     @overload
     async def create_snapshot(

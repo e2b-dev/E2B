@@ -383,7 +383,7 @@ class SandboxApi(SandboxBase):
         cls,
         sandbox_id: str,
         **opts: Unpack[ApiParams],
-    ) -> str:
+    ) -> bool:
         config = ConnectionConfig(**opts)
 
         api_client = get_api_client(config)
@@ -396,7 +396,8 @@ class SandboxApi(SandboxBase):
             raise SandboxNotFoundException(f"Sandbox {sandbox_id} not found")
 
         if res.status_code == 409:
-            return sandbox_id
+            # Sandbox is already paused
+            return False
 
         if res.status_code >= 300:
             raise handle_api_exception(res)
@@ -405,7 +406,7 @@ class SandboxApi(SandboxBase):
         if isinstance(res.parsed, Error):
             raise SandboxException(f"{res.parsed.message}: Request failed")
 
-        return sandbox_id
+        return True
 
     @classmethod
     async def _cls_connect(
