@@ -263,11 +263,6 @@ export class CommandHandle
             stdout: this.stdout,
             stderr: this.stderr,
           }
-          // Cancel the request at the terminal end event. connect-es only
-          // releases the connection and clears its deadline timer on a settled
-          // read, not on an abandoned iterator, so we let the next read reject
-          // (ignored below, since the result is known) rather than returning.
-          this.handleDisconnect()
           break
       }
       // TODO: Handle empty events like in python SDK
@@ -286,11 +281,7 @@ export class CommandHandle
         }
       }
     } catch (e) {
-      // Ignore errors once the result is known: they come from our own
-      // cancellation of the stream after the end event.
-      if (!this.result) {
-        this.iterationError = handleRpcError(e)
-      }
+      this.iterationError = handleRpcError(e)
     } finally {
       this.handleDisconnect()
     }
