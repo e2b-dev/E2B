@@ -88,7 +88,7 @@ export class VolumeConnectionConfig {
     this.logger = opts?.logger
     this.requestTimeoutMs = opts?.requestTimeoutMs
     this.signal = opts?.signal
-    this.proxy = opts?.proxy
+    this.proxy = opts?.proxy || volume.proxy
   }
 
   private static get domain() {
