@@ -41,6 +41,16 @@ In raw resource output, map `access_configuration.api_key` to `E2B_API_KEY`. If 
 
 ## E2B CLI
 
+If the E2B CLI is missing or a shell shim is broken, install it with Node instead of switching to SDK code:
+
+```bash
+if ! e2b --version >/dev/null 2>&1; then
+  npm install -g @e2b/cli
+fi
+```
+
+The CLI package requires Node 20 or newer.
+
 Prefer detached sandboxes for non-interactive work so the command returns a sandbox ID and does not attach an interactive terminal:
 
 ```bash
