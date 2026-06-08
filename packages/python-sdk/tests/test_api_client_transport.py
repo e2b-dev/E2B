@@ -14,8 +14,24 @@ from e2b.api.client_sync import get_transport as get_sync_transport
 from e2b.connection_config import ConnectionConfig
 
 
+def reset_sync_api_transports():
+    if hasattr(TransportWithLogger, "_thread_local"):
+        TransportWithLogger._thread_local.instances = {}
+    else:
+        TransportWithLogger._instances.clear()
+
+
+def reset_sync_envd_transports():
+    EnvdTransportWithLogger._thread_local.instances = {}
+
+
+def run_in_worker_thread(fn):
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        return executor.submit(fn).result()
+
+
 def test_sync_api_client_proxy_uses_explicit_transport(test_api_key):
-    TransportWithLogger._instances.clear()
+    reset_sync_api_transports()
     config = ConnectionConfig(
         api_key=test_api_key,
         proxy="http://127.0.0.1:9999",
@@ -26,15 +42,15 @@ def test_sync_api_client_proxy_uses_explicit_transport(test_api_key):
 
     try:
         assert "proxy" not in api_client._httpx_args
-        assert httpx_client._transport is TransportWithLogger._instances[True]
+        assert httpx_client._transport is get_sync_transport(config)
         assert httpx_client._mounts == {}
     finally:
         httpx_client.close()
-        TransportWithLogger._instances.clear()
+        reset_sync_api_transports()
 
 
 def test_sync_get_transport_http2_opt_out_returns_distinct_instance(test_api_key):
-    TransportWithLogger._instances.clear()
+    reset_sync_api_transports()
     config = ConnectionConfig(api_key=test_api_key)
 
     try:
@@ -49,12 +65,12 @@ def test_sync_get_transport_http2_opt_out_returns_distinct_instance(test_api_key
         assert get_sync_transport(config) is http2_transport
         assert get_sync_transport(config, http2=False) is http1_transport
     finally:
-        TransportWithLogger._instances.clear()
+        reset_sync_api_transports()
 
 
 def test_sync_envd_transport_uses_separate_cache(test_api_key):
-    TransportWithLogger._instances.clear()
-    EnvdTransportWithLogger._thread_local.instances = {}
+    reset_sync_api_transports()
+    reset_sync_envd_transports()
     config = ConnectionConfig(api_key=test_api_key)
 
     try:
@@ -66,28 +82,43 @@ def test_sync_envd_transport_uses_separate_cache(test_api_key):
         assert get_sync_envd_transport(config) is envd_transport
         assert envd_transport._pool._http2 is True
     finally:
-        TransportWithLogger._instances.clear()
-        EnvdTransportWithLogger._thread_local.instances = {}
+        reset_sync_api_transports()
+        reset_sync_envd_transports()
+
+
+def test_sync_api_transport_cache_reuses_within_thread_and_isolates_across_threads(
+    test_api_key,
+):
+    reset_sync_api_transports()
+    config = ConnectionConfig(api_key=test_api_key)
+
+    try:
+        main_transport = get_sync_transport(config)
+        same_thread_transport = get_sync_transport(config)
+        worker_thread_transport = run_in_worker_thread(
+            lambda: get_sync_transport(config)
+        )
+
+        assert same_thread_transport is main_transport
+        assert worker_thread_transport is not main_transport
+    finally:
+        reset_sync_api_transports()
 
 
 def test_sync_envd_transport_cache_is_thread_local(test_api_key):
-    EnvdTransportWithLogger._thread_local.instances = {}
+    reset_sync_envd_transports()
     config = ConnectionConfig(api_key=test_api_key)
-
-    def get_thread_transport():
-        return get_sync_envd_transport(config)
 
     try:
         main_transport = get_sync_envd_transport(config)
-        with ThreadPoolExecutor(max_workers=1) as executor:
-            thread_transport = executor.submit(get_thread_transport).result()
+        thread_transport = run_in_worker_thread(lambda: get_sync_envd_transport(config))
 
         assert main_transport is get_sync_envd_transport(config)
         assert thread_transport is not main_transport
         assert main_transport._pool._http2 is True
         assert thread_transport._pool._http2 is True
     finally:
-        EnvdTransportWithLogger._thread_local.instances = {}
+        reset_sync_envd_transports()
 
 
 @pytest.mark.asyncio
