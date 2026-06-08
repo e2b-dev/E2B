@@ -77,7 +77,7 @@ export interface ConnectionOpts {
    */
   proxy?: string
 
-  /** 
+  /**
    * Additional headers to send with E2B API requests.
    */
   apiHeaders?: Record<string, string>
