@@ -15,10 +15,7 @@ from e2b.connection_config import ConnectionConfig
 
 
 def reset_sync_api_transports():
-    if hasattr(TransportWithLogger, "_thread_local"):
-        TransportWithLogger._thread_local.instances = {}
-    else:
-        TransportWithLogger._instances.clear()
+    TransportWithLogger._thread_local.instances = {}
 
 
 def reset_sync_envd_transports():
