@@ -1,4 +1,5 @@
 from typing import List, Optional
+from urllib.parse import quote, urlunparse
 
 from e2b.exceptions import InvalidArgumentException
 from e2b.sandbox._git.auth import strip_credentials, with_credentials
@@ -179,6 +180,35 @@ def build_credential_approve_command(
     return (
         f"printf %s {shell_escape(credential_input)} | "
         f"{build_git_command(['credential', 'approve'])}"
+    )
+
+
+def build_credential_store_command(
+    username: str,
+    password: str,
+    host: str,
+    protocol: str,
+) -> str:
+    """
+    Build a shell command that writes credentials directly to the store helper.
+    """
+    target_host = host.strip() or "github.com"
+    target_protocol = protocol.strip() or "https"
+    netloc = f"{quote(username, safe='')}:{quote(password, safe='')}@{target_host}"
+    credential_line = urlunparse((target_protocol, netloc, "", "", "", ""))
+    credentials_path = "$HOME/.git-credentials"
+    return " && ".join(
+        [
+            "umask 077",
+            'mkdir -p "$HOME"',
+            f'touch "{credentials_path}"',
+            f'chmod 600 "{credentials_path}"',
+            'tmp_file="$(mktemp)"',
+            f'{{ grep -vxF {shell_escape(credential_line)} "{credentials_path}" > "$tmp_file" || true; }}',
+            f"printf '%s\\n' {shell_escape(credential_line)} >> \"$tmp_file\"",
+            f'mv "$tmp_file" "{credentials_path}"',
+            f'chmod 600 "{credentials_path}"',
+        ]
     )
 
 

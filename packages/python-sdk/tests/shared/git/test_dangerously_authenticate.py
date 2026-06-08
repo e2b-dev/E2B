@@ -18,3 +18,14 @@ def test_dangerously_authenticate_sets_helper(git_sandbox, git_credentials):
     configured_helper = git_sandbox.git.get_config("credential.helper", scope="global")
     assert helper == "store"
     assert configured_helper == "store"
+
+    credentials = git_sandbox.commands.run(
+        'cat "$HOME/.git-credentials"'
+    ).stdout.strip()
+    assert f"{protocol}://{username}:{password}@{host}" in credentials
+
+    filled = git_sandbox.commands.run(
+        f"printf '%s' 'protocol={protocol}\nhost={host}\n\n' | git credential fill"
+    ).stdout
+    assert f"username={username}" in filled
+    assert f"password={password}" in filled

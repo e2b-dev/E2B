@@ -30,6 +30,17 @@ const DEFAULT_GIT_ENV: Record<string, string> = {
   GIT_TERMINAL_PROMPT: '0',
 }
 
+function buildCredentialStoreLine(
+  protocol: string,
+  host: string,
+  username: string,
+  password: string
+) {
+  const encodedUsername = encodeURIComponent(username)
+  const encodedPassword = encodeURIComponent(password)
+  return `${protocol}://${encodedUsername}:${encodedPassword}@${host}`
+}
+
 /**
  * Options for git operations in the sandbox.
  */
@@ -863,28 +874,50 @@ export class Git {
       )
     }
 
-    const targetHost = (host ?? 'github.com').trim()
-    const targetProtocol = (protocol ?? 'https').trim()
-    const credentialInput = [
-      `protocol=${targetProtocol}`,
-      `host=${targetHost}`,
-      `username=${username}`,
-      `password=${password}`,
-      '',
-      '',
-    ].join('\n')
+    const targetHost = (host ?? 'github.com').trim() || 'github.com'
+    const targetProtocol = (protocol ?? 'https').trim() || 'https'
+    const credentialLine = buildCredentialStoreLine(
+      targetProtocol,
+      targetHost,
+      username,
+      password
+    )
 
-    await this.runGit(
-      ['config', '--global', 'credential.helper', 'store'],
-      undefined,
+    await this.runShell(
+      [
+        `${buildGitCommand(['config', '--global', '--unset-all', 'credential.helper'])} || true`,
+        buildGitCommand([
+          'config',
+          '--global',
+          '--add',
+          'credential.helper',
+          '',
+        ]),
+        buildGitCommand([
+          'config',
+          '--global',
+          '--add',
+          'credential.helper',
+          'store',
+        ]),
+      ].join(' && '),
       rest
     )
 
-    const approveCmd = `printf %s ${shellEscape(credentialInput)} | ${buildGitCommand(
-      ['credential', 'approve']
-    )}`
+    const credentialsPath = '$HOME/.git-credentials'
+    const writeCredentialsCmd = [
+      'umask 077',
+      'mkdir -p "$HOME"',
+      `touch "${credentialsPath}"`,
+      `chmod 600 "${credentialsPath}"`,
+      'tmp_file="$(mktemp)"',
+      `{ grep -vxF ${shellEscape(credentialLine)} "${credentialsPath}" > "$tmp_file" || true; }`,
+      `printf '%s\\n' ${shellEscape(credentialLine)} >> "$tmp_file"`,
+      `mv "$tmp_file" "${credentialsPath}"`,
+      `chmod 600 "${credentialsPath}"`,
+    ].join(' && ')
 
-    return this.runShell(approveCmd, rest)
+    return this.runShell(writeCredentialsCmd, rest)
   }
 
   /**

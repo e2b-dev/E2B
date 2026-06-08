@@ -9,7 +9,7 @@ from e2b.sandbox._git import (
     build_checkout_branch_args,
     build_clone_plan,
     build_commit_args,
-    build_credential_approve_command,
+    build_credential_store_command,
     build_create_branch_args,
     build_delete_branch_args,
     build_git_command,
@@ -998,24 +998,32 @@ class Git:
                 "Both username and password are required to authenticate git."
             )
 
-        self.set_config(
-            "credential.helper",
-            "store",
-            scope="global",
-            envs=envs,
-            user=user,
-            cwd=cwd,
-            timeout=timeout,
-            request_timeout=request_timeout,
+        self._run_shell(
+            " && ".join(
+                [
+                    f"{build_git_command(['config', '--global', '--unset-all', 'credential.helper'])} || true",
+                    build_git_command(
+                        ["config", "--global", "--add", "credential.helper", ""]
+                    ),
+                    build_git_command(
+                        ["config", "--global", "--add", "credential.helper", "store"]
+                    ),
+                ]
+            ),
+            envs,
+            user,
+            cwd,
+            timeout,
+            request_timeout,
         )
-        approve_cmd = build_credential_approve_command(
+        store_cmd = build_credential_store_command(
             username=username,
             password=password,
             host=host,
             protocol=protocol,
         )
         return self._run_shell(
-            approve_cmd,
+            store_cmd,
             envs,
             user,
             cwd,
