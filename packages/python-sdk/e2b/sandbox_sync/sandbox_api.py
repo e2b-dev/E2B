@@ -103,7 +103,7 @@ class SandboxApi(SandboxBase):
             raise handle_api_exception(res)
 
         if res.parsed is None:
-            raise SandboxException("Body of the request is None")
+            raise Exception("Body of the request is None")
 
         if isinstance(res.parsed, Error):
             raise SandboxException(f"{res.parsed.message}: Request failed")
@@ -346,7 +346,7 @@ class SandboxApi(SandboxBase):
             raise SandboxException(f"{res.parsed.message}: Request failed")
 
         if res.parsed is None:
-            raise SandboxException("Body of the request is None")
+            raise Exception("Body of the request is None")
 
         return res.parsed
 
@@ -373,7 +373,7 @@ class SandboxApi(SandboxBase):
             raise handle_api_exception(res)
 
         if res.parsed is None:
-            raise SandboxException("Body of the request is None")
+            raise Exception("Body of the request is None")
 
         if isinstance(res.parsed, Error):
             raise SandboxException(f"{res.parsed.message}: Request failed")

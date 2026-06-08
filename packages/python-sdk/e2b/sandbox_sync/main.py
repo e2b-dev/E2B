@@ -578,7 +578,7 @@ class Sandbox(SandboxApi):
         **opts: Unpack[ApiParams],
     ) -> List[SandboxMetrics]:
         """
-        Get the metrics of the sandbox specified by sandbox ID.
+        Get the metrics of the current sandbox.
 
         :param start: Start time for the metrics, defaults to the start of the sandbox
         :param end: End time for the metrics, defaults to the current time
@@ -632,8 +632,6 @@ class Sandbox(SandboxApi):
     ) -> None:
         """
         Pause the sandbox.
-
-        :return: Sandbox ID that can be used to resume the sandbox
         """
 
         SandboxApi._cls_pause(
@@ -856,10 +854,10 @@ class Sandbox(SandboxApi):
         return cls(
             sandbox_id=sandbox.sandbox_id,
             sandbox_domain=sandbox.domain,
-            connection_config=connection_config,
             envd_version=Version(sandbox.envd_version),
             envd_access_token=envd_access_token,
             traffic_access_token=sandbox.traffic_access_token,
+            connection_config=connection_config,
         )
 
     @classmethod
