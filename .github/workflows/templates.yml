@@ -45,21 +45,43 @@ jobs:
     runs-on: ubuntu-22.04
     env:
       E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
-      # The published @e2b/cli still requires an access token for `template create`.
+      # The CLI still requires an access token for `template create`.
       # Remove this once a CLI version without that gate is released.
       E2B_ACCESS_TOKEN: ${{ secrets.E2B_ACCESS_TOKEN }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Parse .tool-versions
+        uses: wistia/parse-tool-versions@v2.1.1
+        with:
+          filename: '.tool-versions'
+          uppercase: 'true'
+          prefix: 'tool_version_'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: '${{ env.TOOL_VERSION_PNPM }}'
+
       - name: Setup Node
         uses: actions/setup-node@v3
         with:
-          node-version: 20
+          node-version: '${{ env.TOOL_VERSION_NODEJS }}'
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
 
-      - name: Install E2B CLI
-        run: npm install -g @e2b/cli
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build the SDK (pre-requisite for the CLI)
+        run: pnpm build
+        working-directory: ./packages/js-sdk
+
+      - name: Build the CLI
+        run: pnpm build
+        working-directory: ./packages/cli
 
       - name: Build and publish base template
         working-directory: ./templates/base
-        run: e2b template create base --memory-mb 512
+        run: node "$GITHUB_WORKSPACE/packages/cli/dist/index.js" template create base --memory-mb 512
