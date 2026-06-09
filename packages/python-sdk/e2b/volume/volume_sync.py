@@ -88,6 +88,7 @@ class Volume:
             request_timeout=opts.get("request_timeout"),
             headers=opts.get("headers"),
             proxy=opts.get("proxy"),
+            logger=opts.get("logger"),
         )
 
     @classmethod

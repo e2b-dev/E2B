@@ -1,4 +1,5 @@
 import datetime
+import logging
 from typing import Any, Dict, List, Optional, cast
 
 from packaging.version import Version
@@ -198,9 +199,10 @@ class SandboxApi(SandboxBase):
         network: Optional[SandboxNetworkOpts] = None,
         lifecycle: Optional[SandboxLifecycle] = None,
         volume_mounts: Optional[List[SandboxVolumeMountAPI]] = None,
+        logger: Optional[logging.Logger] = None,
         **opts: Unpack[ApiParams],
     ) -> SandboxCreateResponse:
-        config = ConnectionConfig(**opts)
+        config = ConnectionConfig(logger=logger, **opts)
 
         on_timeout = lifecycle.get("on_timeout", "kill") if lifecycle else "kill"
         auto_resume = lifecycle.get("auto_resume", False) if lifecycle else False
@@ -412,12 +414,13 @@ class SandboxApi(SandboxBase):
         cls,
         sandbox_id: str,
         timeout: Optional[int] = None,
+        logger: Optional[logging.Logger] = None,
         **opts: Unpack[ApiParams],
     ) -> Sandbox:
         timeout = timeout or SandboxBase.default_sandbox_timeout
 
         # Sandbox is not running, resume it
-        config = ConnectionConfig(**opts)
+        config = ConnectionConfig(logger=logger, **opts)
 
         api_client = get_api_client(
             config,

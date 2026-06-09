@@ -1,16 +1,14 @@
-import logging
 import os
 from typing import Optional
 
 import httpx
 from httpx import Limits
 
+from e2b.api import make_async_logging_event_hooks
 from e2b.api.metadata import default_headers
 from e2b.exceptions import AuthenticationException
 from e2b.volume.client.client import AuthenticatedClient as AsyncVolumeApiClient
 from e2b.volume.connection_config import VolumeConnectionConfig
-
-logger = logging.getLogger(__name__)
 
 limits = Limits(
     max_keepalive_connections=int(os.getenv("E2B_MAX_KEEPALIVE_CONNECTIONS", "20")),
@@ -37,20 +35,17 @@ def get_api_client(config: VolumeConnectionConfig, **kwargs) -> AsyncVolumeApiCl
         auth_header_name="Authorization",
         prefix="Bearer",
         headers=headers,
-        httpx_args={"proxy": config.proxy, "transport": get_transport(config)},
+        httpx_args={
+            "proxy": config.proxy,
+            "transport": get_transport(config),
+            "event_hooks": make_async_logging_event_hooks(config.logger),
+        },
         **kwargs,
     )
 
 
 class AsyncTransportWithLogger(httpx.AsyncHTTPTransport):
     singleton: Optional["AsyncTransportWithLogger"] = None
-
-    async def handle_async_request(self, request):
-        url = f"{request.url.scheme}://{request.url.host}{request.url.path}"
-        logger.info(f"Request: {request.method} {url}")
-        response = await super().handle_async_request(request)
-        logger.info(f"Response: {response.status_code} {url}")
-        return response
 
     @property
     def pool(self):

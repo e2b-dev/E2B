@@ -1,3 +1,4 @@
+import logging
 import os
 
 from typing import Optional, Dict, TypedDict
@@ -93,7 +94,9 @@ class ConnectionConfig:
         api_headers: Optional[Dict[str, str]] = None,
         extra_sandbox_headers: Optional[Dict[str, str]] = None,
         proxy: Optional[ProxyTypes] = None,
+        logger: Optional[logging.Logger] = None,
     ):
+        self.logger = logger
         self.domain = domain or ConnectionConfig._domain()
         self.debug = debug or ConnectionConfig._debug()
         self.api_key = api_key or ConnectionConfig._api_key()

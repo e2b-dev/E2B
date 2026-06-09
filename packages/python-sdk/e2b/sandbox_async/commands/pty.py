@@ -42,6 +42,7 @@ class Pty:
             async_pool=pool,
             json=True,
             headers=connection_config.sandbox_headers,
+            logger=connection_config.logger,
         )
 
     async def kill(

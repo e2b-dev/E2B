@@ -84,6 +84,7 @@ class Filesystem:
             async_pool=pool,
             json=True,
             headers=connection_config.sandbox_headers,
+            logger=connection_config.logger,
         )
 
     @overload

@@ -9,6 +9,7 @@ import httpx
 from packaging.version import Version
 from typing_extensions import Self, Unpack
 
+from e2b.api import make_logging_event_hooks
 from e2b.api.client.types import Unset
 from e2b.api.client_sync import get_envd_transport as get_transport
 from e2b.connection_config import ApiParams, ConnectionConfig
@@ -107,6 +108,7 @@ class Sandbox(SandboxApi):
             base_url=self.envd_api_url,
             transport=self._transport,
             headers=self.connection_config.sandbox_headers,
+            event_hooks=make_logging_event_hooks(self.connection_config.logger),
         )
         self._filesystem = Filesystem(
             self.envd_api_url,
@@ -178,6 +180,7 @@ class Sandbox(SandboxApi):
         network: Optional[SandboxNetworkOpts] = None,
         lifecycle: Optional[SandboxLifecycle] = None,
         volume_mounts: Optional[SandboxVolumeMount] = None,
+        logger: Optional[logging.Logger] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
         """
@@ -195,6 +198,7 @@ class Sandbox(SandboxApi):
         :param network: Sandbox network configuration. ``allow_out``/``deny_out`` may also be a callable receiving a :class:`SandboxNetworkSelectorContext` (``ctx.all_traffic``, ``ctx.rules``) and returning a list of strings. Per-host transform rules are nested under ``network.rules``.
         :param lifecycle: Sandbox lifecycle configuration — ``on_timeout``: ``"kill"`` (default) or ``"pause"``; ``auto_resume``: ``False`` (default) or ``True`` (only when ``on_timeout="pause"``). Example: ``{"on_timeout": "pause", "auto_resume": True}``
         :param volume_mounts: Dictionary mapping mount paths to Volume instances or volume names
+        :param logger: Logger used for request and response logging for this sandbox. Accepts any standard library `logging.Logger`. When omitted, no request/response logging is emitted.
 
         :return: A Sandbox instance for the new sandbox
 
@@ -226,6 +230,7 @@ class Sandbox(SandboxApi):
             network=network,
             lifecycle=lifecycle,
             volume_mounts=transformed_mounts,
+            logger=logger,
             **opts,
         )
 
@@ -247,6 +252,7 @@ class Sandbox(SandboxApi):
     def connect(
         self,
         timeout: Optional[int] = None,
+        logger: Optional[logging.Logger] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
         """
@@ -257,6 +263,7 @@ class Sandbox(SandboxApi):
 
         :param timeout: Timeout for the sandbox in **seconds**
             For running sandboxes, the timeout will update only if the new timeout is longer than the existing one.
+        :param logger: Logger used for request and response logging for this sandbox. Accepts any standard library `logging.Logger`. When omitted, no request/response logging is emitted.
         :return: A running sandbox instance
 
         @example
@@ -276,6 +283,7 @@ class Sandbox(SandboxApi):
     def connect(
         sandbox_id: str,
         timeout: Optional[int] = None,
+        logger: Optional[logging.Logger] = None,
         **opts: Unpack[ApiParams],
     ) -> "Sandbox":
         """
@@ -287,6 +295,7 @@ class Sandbox(SandboxApi):
         :param sandbox_id: Sandbox ID
         :param timeout: Timeout for the sandbox in **seconds**.
             For running sandboxes, the timeout will update only if the new timeout is longer than the existing one.
+        :param logger: Logger used for request and response logging for this sandbox. Accepts any standard library `logging.Logger`. When omitted, no request/response logging is emitted.
         :return: A running sandbox instance
 
         @example
@@ -304,6 +313,7 @@ class Sandbox(SandboxApi):
     def connect(
         self,
         timeout: Optional[int] = None,
+        logger: Optional[logging.Logger] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
         """
@@ -314,6 +324,7 @@ class Sandbox(SandboxApi):
 
         :param timeout: Timeout for the sandbox in **seconds**.
             For running sandboxes, the timeout will update only if the new timeout is longer than the existing one.
+        :param logger: Logger used for request and response logging for this sandbox. Accepts any standard library `logging.Logger`. When omitted, no request/response logging is emitted.
         :return: A running sandbox instance
 
         @example
@@ -328,6 +339,7 @@ class Sandbox(SandboxApi):
         SandboxApi._cls_connect(
             sandbox_id=self.sandbox_id,
             timeout=timeout,
+            logger=logger if logger is not None else self.connection_config.logger,
             **self.connection_config.get_api_params(**opts),
         )
 
@@ -832,11 +844,13 @@ class Sandbox(SandboxApi):
         cls,
         sandbox_id: str,
         timeout: Optional[int] = None,
+        logger: Optional[logging.Logger] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
         sandbox = SandboxApi._cls_connect(
             sandbox_id=sandbox_id,
             timeout=timeout,
+            logger=logger,
             **opts,
         )
 
@@ -850,6 +864,7 @@ class Sandbox(SandboxApi):
 
         connection_config = ConnectionConfig(
             extra_sandbox_headers=sandbox_headers,
+            logger=logger,
             **opts,
         )
 
@@ -875,6 +890,7 @@ class Sandbox(SandboxApi):
         network: Optional[SandboxNetworkOpts] = None,
         lifecycle: Optional[SandboxLifecycle] = None,
         volume_mounts: Optional[list] = None,
+        logger: Optional[logging.Logger] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
         extra_sandbox_headers = {}
@@ -898,6 +914,7 @@ class Sandbox(SandboxApi):
                 network=network,
                 lifecycle=lifecycle,
                 volume_mounts=volume_mounts,
+                logger=logger,
                 **opts,
             )
 
@@ -917,6 +934,7 @@ class Sandbox(SandboxApi):
 
         connection_config = ConnectionConfig(
             extra_sandbox_headers=extra_sandbox_headers,
+            logger=logger,
             **opts,
         )
 
