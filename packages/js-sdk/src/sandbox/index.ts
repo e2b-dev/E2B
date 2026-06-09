@@ -383,7 +383,7 @@ export class Sandbox extends SandboxApi {
    * @example
    * ```ts
    * const sandbox = await Sandbox.create()
-   * await sandbox.betaPause()
+   * await sandbox.pause()
    *
    * // Connect to the same sandbox.
    * const sameSandbox = await sandbox.connect()
@@ -532,13 +532,6 @@ export class Sandbox extends SandboxApi {
    */
   async pause(opts?: ConnectionOpts): Promise<boolean> {
     return await SandboxApi.pause(this.sandboxId, this.resolveApiOpts(opts))
-  }
-
-  /**
-   * @deprecated Use {@link Sandbox.pause} instead.
-   */
-  async betaPause(opts?: ConnectionOpts): Promise<boolean> {
-    return await SandboxApi.betaPause(this.sandboxId, this.resolveApiOpts(opts))
   }
 
   /**

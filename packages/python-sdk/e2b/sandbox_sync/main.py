@@ -646,29 +646,6 @@ class Sandbox(SandboxApi):
         )
 
     @overload
-    def beta_pause(
-        self,
-        **opts: Unpack[ApiParams],
-    ) -> bool: ...
-
-    @overload
-    @staticmethod
-    def beta_pause(
-        sandbox_id: str,
-        **opts: Unpack[ApiParams],
-    ) -> bool: ...
-
-    @class_method_variant("_cls_pause")
-    def beta_pause(
-        self,
-        **opts: Unpack[ApiParams],
-    ) -> bool:
-        """
-        :deprecated: Use `pause()` instead.
-        """
-        return self.pause(**opts)
-
-    @overload
     def create_snapshot(
         self,
         name: Optional[str] = None,

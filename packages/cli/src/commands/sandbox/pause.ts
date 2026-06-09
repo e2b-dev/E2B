@@ -7,7 +7,7 @@ import { NotFoundError } from 'e2b'
 
 async function pauseSandbox(sandboxID: string, apiKey: string) {
   try {
-    const paused = await e2b.Sandbox.betaPause(sandboxID, { apiKey })
+    const paused = await e2b.Sandbox.pause(sandboxID, { apiKey })
     if (paused) {
       console.log(`Sandbox ${asBold(sandboxID)} has been paused`)
     } else {

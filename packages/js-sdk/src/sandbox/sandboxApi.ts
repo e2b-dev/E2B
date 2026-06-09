@@ -923,16 +923,6 @@ export class SandboxApi {
   }
 
   /**
-   * @deprecated Use {@link SandboxApi.pause} instead.
-   */
-  static async betaPause(
-    sandboxId: string,
-    opts?: SandboxApiOpts
-  ): Promise<boolean> {
-    return this.pause(sandboxId, opts)
-  }
-
-  /**
    * Create a snapshot from a sandbox.
    *
    * The sandbox will be paused while the snapshot is being created.
