@@ -42,7 +42,7 @@ class SandboxBase:
         self.__envd_version = envd_version
         self.__envd_access_token = envd_access_token
         self.__traffic_access_token = traffic_access_token
-        self.__envd_api_url = f"{'http' if (self.connection_config.debug or self.connection_config.force_http) else 'https'}://{self.get_host(self.envd_port)}"
+        self.__envd_api_url = f"{'http' if (self.connection_config.debug or self.connection_config.force_http) else 'https'}://{self.get_host(ConnectionConfig.envd_port)}"
         self.__envd_direct_url = self.connection_config.get_sandbox_direct_url(
             self.sandbox_id, self.sandbox_domain
         )
