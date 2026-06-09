@@ -254,7 +254,6 @@ class AsyncSandbox(SandboxApi):
     async def connect(
         self,
         timeout: Optional[int] = None,
-        logger: Optional[logging.Logger] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
         """
@@ -265,7 +264,6 @@ class AsyncSandbox(SandboxApi):
 
         :param timeout: Timeout for the sandbox in **seconds**
             For running sandboxes, the timeout will update only if the new timeout is longer than the existing one.
-        :param logger: Logger used for request and response logging for this sandbox. Accepts any standard library `logging.Logger`. When omitted, no request/response logging is emitted.
         :return: A running sandbox instance
 
         @example
@@ -314,7 +312,6 @@ class AsyncSandbox(SandboxApi):
     async def connect(
         self,
         timeout: Optional[int] = None,
-        logger: Optional[logging.Logger] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
         """
@@ -325,7 +322,6 @@ class AsyncSandbox(SandboxApi):
 
         :param timeout: Timeout for the sandbox in **seconds**
             For running sandboxes, the timeout will update only if the new timeout is longer than the existing one.
-        :param logger: Logger used for request and response logging for this sandbox. Accepts any standard library `logging.Logger`. When omitted, no request/response logging is emitted.
         :return: A running sandbox instance
 
         @example
@@ -340,7 +336,6 @@ class AsyncSandbox(SandboxApi):
         await SandboxApi._cls_connect(
             sandbox_id=self.sandbox_id,
             timeout=timeout,
-            logger=logger if logger is not None else self.connection_config.logger,
             **self.connection_config.get_api_params(**opts),
         )
 

@@ -205,7 +205,7 @@ class ConnectionConfig:
         if api_headers is not None:
             req_headers.update(api_headers)
 
-        return dict(
+        params = dict(
             ApiParams(
                 api_key=api_key if api_key is not None else self.api_key,
                 api_url=api_url if api_url is not None else self.api_url,
@@ -216,6 +216,14 @@ class ConnectionConfig:
                 proxy=proxy if proxy is not None else self.proxy,
             )
         )
+        # `logger` is a construction-time option rather than a per-request
+        # ApiParams field, but it must propagate to the throwaway
+        # ConnectionConfig that instance control-plane methods (kill, pause,
+        # set_timeout, get_info, connect, ...) rebuild from these params, so
+        # those requests keep logging with the logger the sandbox was created
+        # or connected with.
+        params["logger"] = self.logger
+        return params
 
     @property
     def sandbox_headers(self):

@@ -5,12 +5,14 @@
 feat(python-sdk): add a `logger` option for request/debug logging
 
 You can now pass a standard library `logging.Logger` to `Sandbox.create` /
-`AsyncSandbox.create` (and `connect`) to route that sandbox's request/response
-logs to your own logger. Matching the JavaScript SDK, `logger` is a
-construction-time option — it configures the sandbox and is **not** a
-per-request parameter on control-plane methods like `kill`/`list`/`get_info`.
-The stdlib `logging.Logger` is used directly as the adapter instead of a custom
-interface.
+`AsyncSandbox.create` (and the static `Sandbox.connect(sandbox_id, ...)`) to
+route that sandbox's request/response logs to your own logger. The logger is
+stored on the sandbox and propagates to all of its later operations —
+including control-plane calls such as `kill`, `pause`, `set_timeout`, and
+`get_info`. Matching the JavaScript SDK, `logger` is a construction-time option
+and is **not** a per-request parameter that those methods accept from the
+caller. The stdlib `logging.Logger` is used directly as the adapter instead of
+a custom interface.
 
 The logger is wired into the API client, the envd client, and the RPC
 (ConnectRPC) path. Mirroring the JS SDK: requests log at `INFO`, successful API

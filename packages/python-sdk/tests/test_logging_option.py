@@ -23,22 +23,35 @@ def test_connection_config_logger_defaults_to_none():
     assert config.logger is None
 
 
-def test_logger_is_not_a_per_request_api_param():
+def test_logger_is_not_a_public_per_request_api_param():
     # Matching the JS SDK, `logger` is a construction-time option (Sandbox.create
-    # / connect), not part of the per-request ApiParams used by control-plane
-    # methods like kill/list/get_info. It must therefore not round-trip through
-    # `get_api_params`.
+    # / connect), not a public per-request ApiParams field that control-plane
+    # methods like kill/list/get_info accept from the caller.
     assert "logger" not in ApiParams.__annotations__
 
-    custom = logging.getLogger("test.no-round-trip")
+
+def test_get_api_params_propagates_stored_logger():
+    # Instance control-plane methods (kill, pause, set_timeout, get_info,
+    # connect) rebuild a throwaway ConnectionConfig from these params, so the
+    # logger the sandbox was created/connected with must survive the round-trip.
+    custom = logging.getLogger("test.propagate")
     config = ConnectionConfig(api_key="e2b_" + "0" * 40, logger=custom)
-    assert "logger" not in config.get_api_params()
+    assert config.get_api_params()["logger"] is custom
+    assert ConnectionConfig(**config.get_api_params()).logger is custom
+
+    no_logger = ConnectionConfig(api_key="e2b_" + "0" * 40)
+    assert no_logger.get_api_params()["logger"] is None
 
 
 def test_logger_is_accepted_on_create_and_connect():
     for cls in (Sandbox, AsyncSandbox):
         assert "logger" in inspect.signature(cls.create).parameters
-        assert "logger" in inspect.signature(cls.connect).parameters
+    # `logger` is a construction option, so it is accepted by the static
+    # `Sandbox.connect(sandbox_id, ...)` form (which builds a fresh instance)
+    # but not by instance `sandbox.connect()`, where the already-built clients
+    # cannot adopt a new logger.
+    assert "logger" not in inspect.signature(Sandbox.connect).parameters
+    assert "logger" not in inspect.signature(AsyncSandbox.connect).parameters
 
 
 def test_volume_connection_config_stores_and_round_trips_logger():
