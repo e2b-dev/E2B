@@ -510,7 +510,7 @@ export class Sandbox extends SandboxApi {
    */
   async kill(opts?: Pick<SandboxOpts, 'requestTimeoutMs' | 'signal'>) {
     if (this.connectionConfig.debug) {
-      // Skip killing in debug mode
+      // Skip killing the sandbox in debug mode
       return
     }
 

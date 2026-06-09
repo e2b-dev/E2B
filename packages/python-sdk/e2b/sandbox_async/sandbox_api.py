@@ -119,6 +119,10 @@ class SandboxApi(SandboxBase):
     ) -> bool:
         config = ConnectionConfig(**opts)
 
+        if config.debug:
+            # Skip killing the sandbox in debug mode
+            return True
+
         api_client = get_api_client(config)
         res = await delete_sandboxes_sandbox_id.asyncio_detailed(
             sandbox_id,
@@ -281,6 +285,10 @@ class SandboxApi(SandboxBase):
         :return: List of sandbox metrics containing CPU, memory and disk usage information
         """
         config = ConnectionConfig(**opts)
+
+        if config.debug:
+            # Skip getting the metrics in debug mode
+            return []
 
         api_client = get_api_client(config)
         res = await get_sandboxes_sandbox_id_metrics.asyncio_detailed(

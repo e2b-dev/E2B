@@ -118,6 +118,10 @@ class SandboxApi(SandboxBase):
     ) -> bool:
         config = ConnectionConfig(**opts)
 
+        if config.debug:
+            # Skip killing the sandbox in debug mode
+            return True
+
         api_client = get_api_client(config)
         res = delete_sandboxes_sandbox_id.sync_detailed(
             sandbox_id,
@@ -271,6 +275,10 @@ class SandboxApi(SandboxBase):
         **opts: Unpack[ApiParams],
     ) -> List[SandboxMetrics]:
         config = ConnectionConfig(**opts)
+
+        if config.debug:
+            # Skip getting the metrics in debug mode
+            return []
 
         api_client = get_api_client(config)
         res = get_sandboxes_sandbox_id_metrics.sync_detailed(

@@ -655,6 +655,12 @@ export class SandboxApi {
     opts?: SandboxApiOpts
   ): Promise<boolean> {
     const config = new ConnectionConfig(opts)
+
+    if (config.debug) {
+      // Skip killing the sandbox in debug mode
+      return true
+    }
+
     const client = new ApiClient(config)
 
     const res = await client.api.DELETE('/sandboxes/{sandboxID}', {
@@ -760,6 +766,12 @@ export class SandboxApi {
     opts?: SandboxMetricsOpts
   ): Promise<SandboxMetrics[]> {
     const config = new ConnectionConfig(opts)
+
+    if (config.debug) {
+      // Skip getting the metrics in debug mode
+      return []
+    }
+
     const client = new ApiClient(config)
 
     // JS timestamp is in milliseconds, convert to unix (seconds)
