@@ -16,7 +16,7 @@ Python SDK:
 
 JS SDK:
 
-- `Sandbox.getInfo()` now includes `sandboxDomain`; `getFullInfo` is now internal.
+- `Sandbox.getInfo()` now includes `sandboxDomain`; the `getFullInfo` method was removed (use `getInfo`), matching the Python SDK's single `get_info`.
 - `Sandbox.getMetrics()` now returns `[]` in debug mode, matching the Python SDK.
 - `Template.fromImage()` now requires both `username` and `password` when registry credentials are provided.
 - `Template.getBuildStatus()` now defaults `logsOffset` to `0`.
