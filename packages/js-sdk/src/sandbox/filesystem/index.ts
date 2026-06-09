@@ -37,6 +37,7 @@ import {
 import {
   FileNotFoundError,
   InvalidArgumentError,
+  SandboxError,
   TemplateError,
 } from '../../errors'
 import { toBlob, toUploadBody } from '../../utils'
@@ -472,7 +473,7 @@ export class Filesystem {
       Object.keys(metadata).length > 0 &&
       compareVersions(this.envdApi.version, ENVD_FILE_METADATA) < 0
     ) {
-      throw new TemplateError('File metadata requires envd 0.6.2 or later.')
+      throw new SandboxError('File metadata requires envd 0.6.2 or later.')
     }
     // Metadata is sent as request-scoped `X-Metadata-*` headers, so the same
     // metadata is applied to every file in a multi-file upload.

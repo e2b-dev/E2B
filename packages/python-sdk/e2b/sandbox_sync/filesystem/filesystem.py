@@ -262,7 +262,7 @@ class Filesystem:
             return []
 
         if metadata and self._envd_version < ENVD_FILE_METADATA:
-            raise TemplateException("File metadata requires envd 0.6.2 or later.")
+            raise SandboxException("File metadata requires envd 0.6.2 or later.")
 
         supports_octet_stream = self._envd_version >= ENVD_OCTET_STREAM_UPLOAD
         use_octet_stream = use_octet_stream and supports_octet_stream
