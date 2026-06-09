@@ -102,7 +102,9 @@ class AsyncSandbox(SandboxApi):
         """
         super().__init__(**opts)
 
-        self._transport = get_transport(self.connection_config)
+        self._transport = get_transport(
+            self.connection_config, http2=self.connection_config.http2
+        )
         self._envd_api = httpx.AsyncClient(
             base_url=self.connection_config.get_sandbox_url(
                 self.sandbox_id, self.sandbox_domain

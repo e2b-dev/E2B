@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 def get_api_client(config: ConnectionConfig, **kwargs) -> ApiClient:
     return ApiClient(
         config,
-        transport=get_transport(config),
+        transport=get_transport(config, http2=config.http2),
         **kwargs,
     )
 

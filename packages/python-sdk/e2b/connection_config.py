@@ -48,6 +48,9 @@ class ApiParams(TypedDict, total=False):
     sandbox_url: Optional[str]
     """URL to connect to sandbox, defaults to `E2B_SANDBOX_URL` environment variable."""
 
+    http2: Optional[bool]
+    """Whether to use HTTP/2 for API and sandbox requests, defaults to `True`."""
+
 
 class ConnectionConfig:
     """
@@ -93,6 +96,7 @@ class ConnectionConfig:
         api_headers: Optional[Dict[str, str]] = None,
         extra_sandbox_headers: Optional[Dict[str, str]] = None,
         proxy: Optional[ProxyTypes] = None,
+        http2: Optional[bool] = None,
     ):
         self.domain = domain or ConnectionConfig._domain()
         self.debug = debug or ConnectionConfig._debug()
@@ -103,6 +107,7 @@ class ConnectionConfig:
         self.__extra_sandbox_headers = extra_sandbox_headers or {}
 
         self.proxy = proxy
+        self.http2 = True if http2 is None else http2
 
         self.request_timeout = ConnectionConfig._get_request_timeout(
             REQUEST_TIMEOUT,
@@ -195,6 +200,7 @@ class ConnectionConfig:
         domain = opts.get("domain")
         debug = opts.get("debug")
         proxy = opts.get("proxy")
+        http2 = opts.get("http2")
 
         req_headers = self.headers.copy()
         if headers is not None:
@@ -211,6 +217,7 @@ class ConnectionConfig:
                 request_timeout=self.get_request_timeout(request_timeout),
                 headers=req_headers,
                 proxy=proxy if proxy is not None else self.proxy,
+                http2=http2 if http2 is not None else self.http2,
             )
         )
 
