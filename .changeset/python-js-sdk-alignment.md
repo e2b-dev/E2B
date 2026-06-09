@@ -8,7 +8,6 @@ fix: align behavior between the JS and Python SDKs
 
 Python SDK:
 
-- `Sandbox.pause()` / `beta_pause()` now return a `bool` (`True` if the sandbox was paused, `False` if it was already paused), matching the JS SDK.
 - `get_metrics` no longer silently returns `[]` in debug mode, matching the JS SDK.
 - `Sandbox.kill()` debug-mode handling now matches the JS SDK: only the instance method short-circuits in debug, not the class method.
 - `commands.send_stdin` and `CommandHandle.send_stdin` now accept `bytes` in addition to `str`, and the handle's `send_stdin` / `close_stdin` now accept a `request_timeout`.
