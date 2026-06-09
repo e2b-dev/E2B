@@ -98,15 +98,15 @@ class AsyncSandbox(SandboxApi):
         **opts: Unpack[SandboxOpts],
     ):
         """
+        :deprecated: This constructor is deprecated
+
         Use `AsyncSandbox.create()` to create a new sandbox instead.
         """
         super().__init__(**opts)
 
         self._transport = get_transport(self.connection_config)
         self._envd_api = httpx.AsyncClient(
-            base_url=self.connection_config.get_sandbox_url(
-                self.sandbox_id, self.sandbox_domain
-            ),
+            base_url=self.envd_api_url,
             transport=self._transport,
             headers=self.connection_config.sandbox_headers,
         )
@@ -604,11 +604,11 @@ class AsyncSandbox(SandboxApi):
     async def pause(
         self,
         **opts: Unpack[ApiParams],
-    ) -> None:
+    ) -> bool:
         """
         Pause the sandbox.
 
-        :return: Sandbox ID that can be used to resume the sandbox
+        :return: `True` if the sandbox got paused, `False` if the sandbox was already paused
         """
         ...
 
@@ -617,13 +617,13 @@ class AsyncSandbox(SandboxApi):
     async def pause(
         sandbox_id: str,
         **opts: Unpack[ApiParams],
-    ) -> None:
+    ) -> bool:
         """
         Pause the sandbox specified by sandbox ID.
 
         :param sandbox_id: Sandbox ID
 
-        :return: Sandbox ID that can be used to resume the sandbox
+        :return: `True` if the sandbox got paused, `False` if the sandbox was already paused
         """
         ...
 
@@ -631,14 +631,14 @@ class AsyncSandbox(SandboxApi):
     async def pause(
         self,
         **opts: Unpack[ApiParams],
-    ) -> None:
+    ) -> bool:
         """
         Pause the sandbox.
 
-        :return: Sandbox ID that can be used to resume the sandbox
+        :return: `True` if the sandbox got paused, `False` if the sandbox was already paused
         """
 
-        await SandboxApi._cls_pause(
+        return await SandboxApi._cls_pause(
             sandbox_id=self.sandbox_id,
             **self.connection_config.get_api_params(**opts),
         )
@@ -647,24 +647,24 @@ class AsyncSandbox(SandboxApi):
     async def beta_pause(
         self,
         **opts: Unpack[ApiParams],
-    ) -> None: ...
+    ) -> bool: ...
 
     @overload
     @staticmethod
     async def beta_pause(
         sandbox_id: str,
         **opts: Unpack[ApiParams],
-    ) -> None: ...
+    ) -> bool: ...
 
     @class_method_variant("_cls_pause")
     async def beta_pause(
         self,
         **opts: Unpack[ApiParams],
-    ) -> None:
+    ) -> bool:
         """
         :deprecated: Use `pause()` instead.
         """
-        await self.pause(**opts)
+        return await self.pause(**opts)
 
     @overload
     async def create_snapshot(
@@ -871,10 +871,10 @@ class AsyncSandbox(SandboxApi):
         cls,
         template: Optional[str],
         timeout: Optional[int],
-        allow_internet_access: bool,
         metadata: Optional[Dict[str, str]],
         envs: Optional[Dict[str, str]],
         secure: bool,
+        allow_internet_access: bool,
         mcp: Optional[McpServer] = None,
         network: Optional[SandboxNetworkOpts] = None,
         lifecycle: Optional[SandboxLifecycle] = None,
