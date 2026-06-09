@@ -736,6 +736,11 @@ export class Sandbox extends SandboxApi {
    * @returns  List of sandbox metrics containing CPU, memory and disk usage information.
    */
   async getMetrics(opts?: SandboxMetricsOpts) {
+    if (this.connectionConfig.debug) {
+      // Skip getting the metrics in debug mode
+      return []
+    }
+
     if (this.envdApi.version) {
       if (compareVersions(this.envdApi.version, '0.1.5') < 0) {
         throw new SandboxError(

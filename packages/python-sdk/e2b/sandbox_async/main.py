@@ -587,6 +587,10 @@ class AsyncSandbox(SandboxApi):
 
         :return: List of sandbox metrics containing CPU, memory and disk usage information
         """
+        if self.connection_config.debug:
+            # Skip getting the metrics in debug mode
+            return []
+
         if self._envd_version < Version("0.1.5"):
             raise SandboxException(
                 "Metrics are not supported in this version of the sandbox, please rebuild your template."
