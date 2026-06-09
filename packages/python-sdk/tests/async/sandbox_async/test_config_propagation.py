@@ -114,3 +114,31 @@ async def test_connect_sets_stable_host_routing_headers(monkeypatch, test_api_ke
         ConnectionConfig.envd_port
     )
     assert sandbox.connection_config.sandbox_headers["X-Access-Token"] == "tok"
+
+
+@pytest.mark.skip_debug()
+async def test_create_passes_http2_to_envd_transport(monkeypatch, test_api_key):
+    dummy_transport = SimpleNamespace(pool=object())
+    captured = {}
+
+    def get_transport(config, **kwargs):
+        captured["config_http2"] = config.http2
+        captured["http2"] = kwargs["http2"]
+        return dummy_transport
+
+    monkeypatch.setattr(sandbox_async_main, "get_transport", get_transport)
+    monkeypatch.setattr(
+        sandbox_async_main.httpx, "AsyncClient", lambda *args, **kwargs: object()
+    )
+    monkeypatch.setattr(
+        sandbox_async_main, "Filesystem", lambda *args, **kwargs: object()
+    )
+    monkeypatch.setattr(
+        sandbox_async_main, "Commands", lambda *args, **kwargs: object()
+    )
+    monkeypatch.setattr(sandbox_async_main, "Pty", lambda *args, **kwargs: object())
+    monkeypatch.setattr(sandbox_async_main, "Git", lambda *args, **kwargs: object())
+
+    await AsyncSandbox.create(debug=True, api_key=test_api_key, http2=True)
+
+    assert captured == {"config_http2": True, "http2": True}

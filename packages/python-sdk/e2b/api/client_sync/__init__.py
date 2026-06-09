@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 def get_api_client(config: ConnectionConfig, **kwargs) -> ApiClient:
     return ApiClient(
         config,
-        transport=get_transport(config),
+        transport=get_transport(config, http2=config.http2),
         **kwargs,
     )
 
@@ -36,7 +36,7 @@ class TransportWithLogger(httpx.HTTPTransport):
         return self._pool
 
 
-def get_transport(config: ConnectionConfig, http2: bool = True) -> TransportWithLogger:
+def get_transport(config: ConnectionConfig, http2: bool = False) -> TransportWithLogger:
     instances: Dict[bool, TransportWithLogger] = getattr(
         TransportWithLogger._thread_local, "instances", {}
     )
@@ -59,7 +59,7 @@ class EnvdTransportWithLogger(TransportWithLogger):
 
 
 def get_envd_transport(
-    config: ConnectionConfig, http2: bool = True
+    config: ConnectionConfig, http2: bool = False
 ) -> EnvdTransportWithLogger:
     instances: Dict[bool, EnvdTransportWithLogger] = getattr(
         EnvdTransportWithLogger._thread_local, "instances", {}

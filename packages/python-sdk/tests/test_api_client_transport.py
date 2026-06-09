@@ -1,5 +1,6 @@
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
+from typing import Any
 
 import pytest
 
@@ -27,6 +28,10 @@ def run_in_worker_thread(fn):
         return executor.submit(fn).result()
 
 
+def transport_uses_http2(transport: Any) -> bool:
+    return bool(getattr(transport._pool, "_http2"))
+
+
 def test_sync_api_client_proxy_uses_explicit_transport(test_api_key):
     reset_sync_api_transports()
     config = ConnectionConfig(
@@ -39,29 +44,44 @@ def test_sync_api_client_proxy_uses_explicit_transport(test_api_key):
 
     try:
         assert "proxy" not in api_client._httpx_args
-        assert httpx_client._transport is get_sync_transport(config)
+        assert httpx_client._transport is get_sync_transport(config, http2=False)
         assert httpx_client._mounts == {}
     finally:
         httpx_client.close()
         reset_sync_api_transports()
 
 
-def test_sync_get_transport_http2_opt_out_returns_distinct_instance(test_api_key):
+def test_sync_get_transport_http2_opt_in_returns_distinct_instance(test_api_key):
     reset_sync_api_transports()
     config = ConnectionConfig(api_key=test_api_key)
 
     try:
-        http2_transport = get_sync_transport(config)
-        http1_transport = get_sync_transport(config, http2=False)
+        http1_transport = get_sync_transport(config)
+        http2_transport = get_sync_transport(config, http2=True)
 
-        assert http2_transport is not http1_transport
-        assert http2_transport._pool._http2 is True
-        assert http1_transport._pool._http2 is False
+        assert transport_uses_http2(http1_transport) is False
+        assert transport_uses_http2(http2_transport) is True
+        assert http1_transport is not http2_transport
         # Subsequent calls with the same http2 flag return the cached
         # instance.
-        assert get_sync_transport(config) is http2_transport
-        assert get_sync_transport(config, http2=False) is http1_transport
+        assert get_sync_transport(config) is http1_transport
+        assert get_sync_transport(config, http2=True) is http2_transport
     finally:
+        reset_sync_api_transports()
+
+
+def test_sync_api_client_respects_connection_config_http2(test_api_key):
+    reset_sync_api_transports()
+    config = ConnectionConfig(api_key=test_api_key, http2=True)
+
+    api_client = get_sync_api_client(config)
+    httpx_client = api_client.get_httpx_client()
+
+    try:
+        assert httpx_client._transport is get_sync_transport(config, http2=True)
+        assert transport_uses_http2(httpx_client._transport) is True
+    finally:
+        httpx_client.close()
         reset_sync_api_transports()
 
 
@@ -77,7 +97,7 @@ def test_sync_envd_transport_uses_separate_cache(test_api_key):
         assert api_transport is not envd_transport
         assert get_sync_transport(config) is api_transport
         assert get_sync_envd_transport(config) is envd_transport
-        assert envd_transport._pool._http2 is True
+        assert transport_uses_http2(envd_transport) is False
     finally:
         reset_sync_api_transports()
         reset_sync_envd_transports()
@@ -112,8 +132,8 @@ def test_sync_envd_transport_cache_is_thread_local(test_api_key):
 
         assert main_transport is get_sync_envd_transport(config)
         assert thread_transport is not main_transport
-        assert main_transport._pool._http2 is True
-        assert thread_transport._pool._http2 is True
+        assert transport_uses_http2(main_transport) is False
+        assert transport_uses_http2(thread_transport) is False
     finally:
         reset_sync_envd_transports()
 
@@ -129,7 +149,7 @@ async def test_async_api_client_proxy_uses_explicit_transport(test_api_key):
     api_client = get_async_api_client(config)
     httpx_client = api_client.get_async_httpx_client()
     transport = AsyncTransportWithLogger._instances[
-        (id(asyncio.get_running_loop()), True)
+        (id(asyncio.get_running_loop()), False)
     ]
 
     try:
@@ -142,24 +162,40 @@ async def test_async_api_client_proxy_uses_explicit_transport(test_api_key):
 
 
 @pytest.mark.asyncio
-async def test_async_get_transport_http2_opt_out_returns_distinct_instance(
+async def test_async_get_transport_http2_opt_in_returns_distinct_instance(
     test_api_key,
 ):
     AsyncTransportWithLogger._instances.clear()
     config = ConnectionConfig(api_key=test_api_key)
 
     try:
-        http2_transport = get_async_transport(config)
-        http1_transport = get_async_transport(config, http2=False)
+        http1_transport = get_async_transport(config)
+        http2_transport = get_async_transport(config, http2=True)
 
-        assert http2_transport is not http1_transport
-        assert http2_transport._pool._http2 is True
-        assert http1_transport._pool._http2 is False
+        assert transport_uses_http2(http1_transport) is False
+        assert transport_uses_http2(http2_transport) is True
+        assert http1_transport is not http2_transport
         # Subsequent calls with the same http2 flag return the cached
         # instance.
-        assert get_async_transport(config) is http2_transport
-        assert get_async_transport(config, http2=False) is http1_transport
+        assert get_async_transport(config) is http1_transport
+        assert get_async_transport(config, http2=True) is http2_transport
     finally:
+        AsyncTransportWithLogger._instances.clear()
+
+
+@pytest.mark.asyncio
+async def test_async_api_client_respects_connection_config_http2(test_api_key):
+    AsyncTransportWithLogger._instances.clear()
+    config = ConnectionConfig(api_key=test_api_key, http2=True)
+
+    api_client = get_async_api_client(config)
+    httpx_client = api_client.get_async_httpx_client()
+
+    try:
+        assert httpx_client._transport is get_async_transport(config, http2=True)
+        assert transport_uses_http2(httpx_client._transport) is True
+    finally:
+        await httpx_client.aclose()
         AsyncTransportWithLogger._instances.clear()
 
 
@@ -176,7 +212,7 @@ async def test_async_envd_transport_uses_separate_cache(test_api_key):
         assert api_transport is not envd_transport
         assert get_async_transport(config) is api_transport
         assert get_async_envd_transport(config) is envd_transport
-        assert envd_transport._pool._http2 is True
+        assert transport_uses_http2(envd_transport) is False
     finally:
         AsyncTransportWithLogger._instances.clear()
         AsyncEnvdTransportWithLogger._instances.clear()

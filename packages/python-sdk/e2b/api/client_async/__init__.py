@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 def get_api_client(config: ConnectionConfig, **kwargs) -> AsyncApiClient:
     return AsyncApiClient(
         config,
-        transport=get_transport(config),
+        transport=get_transport(config, http2=config.http2),
         **kwargs,
     )
 
@@ -37,7 +37,7 @@ class AsyncTransportWithLogger(httpx.AsyncHTTPTransport):
 
 
 def get_transport(
-    config: ConnectionConfig, http2: bool = True
+    config: ConnectionConfig, http2: bool = False
 ) -> AsyncTransportWithLogger:
     loop_id = (id(asyncio.get_running_loop()), http2)
 
@@ -59,7 +59,7 @@ class AsyncEnvdTransportWithLogger(AsyncTransportWithLogger):
 
 
 def get_envd_transport(
-    config: ConnectionConfig, http2: bool = True
+    config: ConnectionConfig, http2: bool = False
 ) -> AsyncEnvdTransportWithLogger:
     loop_id = (id(asyncio.get_running_loop()), http2)
 
