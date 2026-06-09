@@ -45,8 +45,8 @@ class ApiParams(TypedDict, total=False):
     proxy: Optional[ProxyTypes]
     """Proxy to use for the request. In case of a sandbox it applies to all **requests made to the returned sandbox**."""
 
-    sandbox_url: Optional[str]
-    """URL to connect to sandbox, defaults to `E2B_SANDBOX_URL` environment variable."""
+    force_http: Optional[bool]
+    """Whether to force HTTP protocol instead of HTTPS, defaults to `E2B_FORCE_HTTP` environment variable."""
 
 
 class ConnectionConfig:
@@ -80,6 +80,10 @@ class ConnectionConfig:
     def _access_token():
         return os.getenv("E2B_ACCESS_TOKEN")
 
+    @staticmethod
+    def _force_http():
+        return os.getenv("E2B_FORCE_HTTP", "false").lower() == "true"
+
     def __init__(
         self,
         domain: Optional[str] = None,
@@ -93,9 +97,11 @@ class ConnectionConfig:
         api_headers: Optional[Dict[str, str]] = None,
         extra_sandbox_headers: Optional[Dict[str, str]] = None,
         proxy: Optional[ProxyTypes] = None,
+        force_http: Optional[bool] = None,
     ):
         self.domain = domain or ConnectionConfig._domain()
         self.debug = debug or ConnectionConfig._debug()
+        self.force_http = force_http or ConnectionConfig._force_http()
         self.api_key = api_key or ConnectionConfig._api_key()
         self.access_token = access_token or ConnectionConfig._access_token()
         self.headers = {**(headers or {}), **(api_headers or {})}
@@ -109,11 +115,15 @@ class ConnectionConfig:
             request_timeout,
         )
 
-        self.api_url = (
-            api_url
-            or ConnectionConfig._api_url()
-            or ("http://localhost:3000" if self.debug else f"https://api.{self.domain}")
-        )
+        if api_url:
+            self.api_url = api_url
+        elif ConnectionConfig._api_url():
+            self.api_url = ConnectionConfig._api_url()
+        elif self.debug:
+            self.api_url = "http://localhost:3000"
+        else:
+            protocol = "http" if self.force_http else "https"
+            self.api_url = f"{protocol}://api.{self.domain}"
 
         self._sandbox_url: Optional[str] = (
             sandbox_url or ConnectionConfig._sandbox_url()
@@ -138,7 +148,7 @@ class ConnectionConfig:
         if self._sandbox_url:
             return self._sandbox_url  # type: ignore[return-value]
 
-        if self.debug:
+        if self.debug or self.force_http:
             return f"http://{self.get_host(sandbox_id, sandbox_domain, self.envd_port)}"
 
         sandbox_domain = sandbox_domain or self.domain
@@ -151,7 +161,7 @@ class ConnectionConfig:
         if self._sandbox_url:
             return self._sandbox_url  # type: ignore[return-value]
 
-        if self.debug:
+        if self.debug or self.force_http:
             return f"http://{self.get_host(sandbox_id, sandbox_domain, self.envd_port)}"
 
         return f"https://{self.get_host(sandbox_id, sandbox_domain, self.envd_port)}"
@@ -195,6 +205,7 @@ class ConnectionConfig:
         domain = opts.get("domain")
         debug = opts.get("debug")
         proxy = opts.get("proxy")
+        force_http = opts.get("force_http")
 
         req_headers = self.headers.copy()
         if headers is not None:
@@ -211,6 +222,7 @@ class ConnectionConfig:
                 request_timeout=self.get_request_timeout(request_timeout),
                 headers=req_headers,
                 proxy=proxy if proxy is not None else self.proxy,
+                force_http=force_http if force_http is not None else self.force_http,
             )
         )
 

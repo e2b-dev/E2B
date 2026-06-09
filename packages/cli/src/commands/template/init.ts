@@ -199,11 +199,11 @@ export const initCommand = new commander.Command('init')
           templateName = await input({
             message: 'Enter template name:',
             default: DEFAULT_TEMPLATE_NAME,
-            validate: (input: string) => {
+            validate: (input: string): string | boolean => {
               try {
                 validateTemplateName(input)
               } catch (err) {
-                return err instanceof Error ? err.message : err
+                return err instanceof Error ? err.message : String(err)
               }
 
               return true
