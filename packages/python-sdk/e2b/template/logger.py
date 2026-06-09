@@ -5,10 +5,6 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Optional, TypedDict, Callable, Dict, Literal
 
-from rich.console import Console
-from rich.style import Style
-from rich.text import Text
-
 from e2b.template.utils import strip_ansi_escape_codes
 
 """Log entry severity levels."""
@@ -61,13 +57,25 @@ Default minimum log level to display.
 DEFAULT_LEVEL: LogEntryLevel = "info"
 
 """
+ANSI color codes for each log level.
+"""
+ANSI_COLORS = {
+    "error": "\033[31m",      # Red
+    "warn": "\033[38;5;208m", # Orange
+    "info": "\033[38;5;214m", # Light orange
+    "debug": "\033[90m",      # Gray
+}
+ANSI_RESET = "\033[0m"
+ANSI_DIM = "\033[2m"
+
+"""
 Colored labels for each log level.
 """
-levels: Dict[LogEntryLevel, tuple[str, Style]] = {
-    "error": ("ERROR", Style(color="red")),
-    "warn": ("WARN ", Style(color="#FF4400")),
-    "info": ("INFO ", Style(color="#FF8800")),
-    "debug": ("DEBUG", Style(color="bright_black")),
+levels: Dict[LogEntryLevel, tuple[str, str]] = {
+    "error": ("ERROR", ANSI_COLORS["error"]),
+    "warn": ("WARN ", ANSI_COLORS["warn"]),
+    "info": ("INFO ", ANSI_COLORS["info"]),
+    "debug": ("DEBUG", ANSI_COLORS["debug"]),
 }
 
 """
@@ -112,8 +120,6 @@ class DefaultBuildLoggerInitialState(TypedDict):
 
 
 class DefaultBuildLogger:
-    __console = Console()
-
     __min_level: LogEntryLevel
     __state: DefaultBuildLoggerInitialState
 
@@ -136,7 +142,7 @@ class DefaultBuildLogger:
             return
 
         formatted_line = self.__format_log_line(log)
-        self.__console.print(formatted_line)
+        print(formatted_line, flush=True)
 
         # Redraw the timer line
         self.__update_timer()
@@ -157,23 +163,22 @@ class DefaultBuildLogger:
         idx = self.__state["animation_frame"] % len(frames)
         return frames[idx]
 
-    def __format_log_line(self, line: LogEntry) -> Text:
+    def __format_log_line(self, line: LogEntry) -> str:
         timer = self.__format_timer_line().ljust(5)
         timestamp = line.timestamp.strftime("%H:%M:%S")
-        level_text, level_style = levels.get(line.level, levels[DEFAULT_LEVEL])
+        level_text, level_color = levels.get(line.level, levels[DEFAULT_LEVEL])
 
-        # Build a rich Text object
-        text = Text.assemble(
+        # Build ANSI-formatted string
+        parts = [
             timer,
             " | ",
-            (timestamp, "dim"),
+            f"{ANSI_DIM}{timestamp}{ANSI_RESET}",
             " ",
-            (level_text, level_style),
+            f"{level_color}{level_text}{ANSI_RESET}",
             " ",
             line.message,
-        )
-
-        return text
+        ]
+        return "".join(parts)
 
     def __start_timer(self):
         if not sys.stdout.isatty():
@@ -196,12 +201,8 @@ class DefaultBuildLogger:
         self.__state["animation_frame"] += 1
         jumping_squares = self.__animate_status()
 
-        timer_text = Text.assemble(
-            jumping_squares, " Building ", self.__format_timer_line()
-        )
-
-        # Print with carriage return
-        self.__console.print(timer_text, end="\r")
+        timer_text = f"{jumping_squares} Building {self.__format_timer_line()}"
+        print(timer_text, end="\r", flush=True)
 
 
 def default_build_logger(
