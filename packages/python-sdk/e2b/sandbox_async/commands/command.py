@@ -256,9 +256,9 @@ class Commands:
             envs,
             user,
             cwd,
+            stdin,
             timeout,
             request_timeout,
-            stdin,
             on_stdout=on_stdout,
             on_stderr=on_stderr,
         )
@@ -271,9 +271,9 @@ class Commands:
         envs: Optional[Dict[str, str]],
         user: Optional[Username],
         cwd: Optional[str],
+        stdin: bool,
         timeout: Optional[float],
         request_timeout: Optional[float],
-        stdin: bool,
         on_stdout: Optional[OutputHandler[Stdout]],
         on_stderr: Optional[OutputHandler[Stderr]],
     ) -> AsyncCommandHandle:
@@ -346,13 +346,13 @@ class Commands:
             process_pb2.ConnectRequest(
                 process=process_pb2.ProcessSelector(pid=pid),
             ),
+            headers={
+                KEEPALIVE_PING_HEADER: str(KEEPALIVE_PING_INTERVAL_SEC),
+            },
             timeout=timeout,
             request_timeout=self._connection_config.get_request_timeout(
                 request_timeout
             ),
-            headers={
-                KEEPALIVE_PING_HEADER: str(KEEPALIVE_PING_INTERVAL_SEC),
-            },
         )
 
         try:

@@ -98,15 +98,15 @@ class AsyncSandbox(SandboxApi):
         **opts: Unpack[SandboxOpts],
     ):
         """
+        :deprecated: This constructor is deprecated
+
         Use `AsyncSandbox.create()` to create a new sandbox instead.
         """
         super().__init__(**opts)
 
         self._transport = get_transport(self.connection_config)
         self._envd_api = httpx.AsyncClient(
-            base_url=self.connection_config.get_sandbox_url(
-                self.sandbox_id, self.sandbox_domain
-            ),
+            base_url=self.envd_api_url,
             transport=self._transport,
             headers=self.connection_config.sandbox_headers,
         )
@@ -877,10 +877,10 @@ class AsyncSandbox(SandboxApi):
         cls,
         template: Optional[str],
         timeout: Optional[int],
-        allow_internet_access: bool,
         metadata: Optional[Dict[str, str]],
         envs: Optional[Dict[str, str]],
         secure: bool,
+        allow_internet_access: bool,
         mcp: Optional[McpServer] = None,
         network: Optional[SandboxNetworkOpts] = None,
         lifecycle: Optional[SandboxLifecycle] = None,

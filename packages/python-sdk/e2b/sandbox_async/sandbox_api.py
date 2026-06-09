@@ -338,7 +338,7 @@ class SandboxApi(SandboxBase):
             raise handle_api_exception(res)
 
         if res.parsed is None:
-            raise SandboxException("Body of the request is None")
+            raise Exception("Body of the request is None")
 
         if isinstance(res.parsed, Error):
             raise SandboxException(f"{res.parsed.message}: Request failed")
@@ -412,13 +412,7 @@ class SandboxApi(SandboxBase):
         # Sandbox is not running, resume it
         config = ConnectionConfig(**opts)
 
-        api_client = get_api_client(
-            config,
-            headers={
-                "E2b-Sandbox-Id": sandbox_id,
-                "E2b-Sandbox-Port": str(config.envd_port),
-            },
-        )
+        api_client = get_api_client(config)
         res = await post_sandboxes_sandbox_id_connect.asyncio_detailed(
             sandbox_id,
             client=api_client,
@@ -436,6 +430,6 @@ class SandboxApi(SandboxBase):
             raise SandboxException(f"{res.parsed.message}: Request failed")
 
         if res.parsed is None:
-            raise SandboxException("Body of the request is None")
+            raise Exception("Body of the request is None")
 
         return res.parsed

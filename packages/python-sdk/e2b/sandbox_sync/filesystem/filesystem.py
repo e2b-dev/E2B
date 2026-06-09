@@ -234,6 +234,8 @@ class Filesystem:
         use_octet_stream: bool = False,
     ) -> List[WriteInfo]:
         """
+        Writes multiple files.
+
         Writes a list of files to the filesystem.
         When writing to a file that doesn't exist, the file will get created.
         When writing to a file that already exists, the file will get overwritten.
