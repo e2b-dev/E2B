@@ -1,8 +1,8 @@
 name: 'Build and install E2B CLI'
 description: >-
-  Builds the e2b CLI (and its js-sdk dependency) from source in this repo and
-  installs it globally so the `e2b` command is available on PATH. Assumes the
-  repository has already been checked out.
+  Builds the e2b CLI from source in this repo and installs it globally so the
+  `e2b` command is available on PATH. Assumes the repository has already been
+  checked out.
 
 runs:
   using: 'composite'
@@ -29,11 +29,6 @@ runs:
     - name: Install dependencies
       shell: bash
       run: pnpm install --frozen-lockfile
-
-    - name: Build the SDK (pre-requisite for the CLI)
-      shell: bash
-      run: pnpm build
-      working-directory: ./packages/js-sdk
 
     - name: Build the CLI
       shell: bash
