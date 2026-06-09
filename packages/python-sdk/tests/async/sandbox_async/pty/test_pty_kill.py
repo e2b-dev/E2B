@@ -5,7 +5,7 @@ from e2b.sandbox.commands.command_handle import PtySize
 
 
 async def test_kill_pty(async_sandbox: AsyncSandbox):
-    terminal = await async_sandbox.pty.create(PtySize(80, 24))
+    terminal = await async_sandbox.pty.create(PtySize(80, 24), on_data=lambda _: None)
 
     assert await async_sandbox.pty.kill(terminal.pid)
 
