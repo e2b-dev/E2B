@@ -19,6 +19,22 @@ async def test_send_stdin_to_process(async_sandbox: AsyncSandbox):
     assert cmd.stdout == "Hello, World!"
 
 
+async def test_send_bytes_stdin_to_process(async_sandbox: AsyncSandbox):
+    ev = asyncio.Event()
+
+    def handle_event(stdout: str):
+        ev.set()
+
+    cmd = await async_sandbox.commands.run(
+        "cat", background=True, on_stdout=handle_event, stdin=True
+    )
+    await async_sandbox.commands.send_stdin(cmd.pid, b"Hello, World!")
+
+    await ev.wait()
+
+    assert cmd.stdout == "Hello, World!"
+
+
 async def test_send_stdin_via_command_handle(async_sandbox: AsyncSandbox):
     ev = asyncio.Event()
 
