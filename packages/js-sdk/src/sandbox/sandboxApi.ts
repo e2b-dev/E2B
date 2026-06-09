@@ -505,6 +505,11 @@ export interface SandboxInfo {
    * Volume mounts for the sandbox.
    */
   volumeMounts?: Array<{ name: string; path: string }>
+
+  /**
+   * Sandbox domain.
+   */
+  sandboxDomain?: string
 }
 
 /**
@@ -687,7 +692,6 @@ export class SandboxApi {
   ): Promise<SandboxInfo> {
     const fullInfo = await this.getFullInfo(sandboxId, opts)
     delete fullInfo.envdAccessToken
-    delete fullInfo.sandboxDomain
 
     return fullInfo
   }
@@ -819,65 +823,6 @@ export class SandboxApi {
     const err = handleApiError(res)
     if (err) {
       throw err
-    }
-  }
-
-  static async getFullInfo(sandboxId: string, opts?: SandboxApiOpts) {
-    const config = new ConnectionConfig(opts)
-    const client = new ApiClient(config)
-
-    const res = await client.api.GET('/sandboxes/{sandboxID}', {
-      params: {
-        path: {
-          sandboxID: sandboxId,
-        },
-      },
-      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
-    })
-
-    if (res.error?.code === 404) {
-      throw new SandboxNotFoundError(`Sandbox ${sandboxId} not found`)
-    }
-
-    const err = handleApiError(res)
-    if (err) {
-      throw err
-    }
-
-    if (!res.data) {
-      throw new Error('Sandbox not found')
-    }
-
-    return {
-      sandboxId: res.data.sandboxID,
-      templateId: res.data.templateID,
-      ...(res.data.alias && { name: res.data.alias }),
-      metadata: res.data.metadata ?? {},
-      allowInternetAccess: res.data.allowInternetAccess ?? undefined,
-      envdVersion: res.data.envdVersion,
-      envdAccessToken: res.data.envdAccessToken,
-      startedAt: new Date(res.data.startedAt),
-      endAt: new Date(res.data.endAt),
-      state: res.data.state,
-      cpuCount: res.data.cpuCount,
-      memoryMB: res.data.memoryMB,
-      network: res.data.network
-        ? {
-            allowOut: res.data.network.allowOut,
-            denyOut: res.data.network.denyOut,
-            rules: res.data.network.rules ?? undefined,
-            allowPublicTraffic: res.data.network.allowPublicTraffic,
-            maskRequestHost: res.data.network.maskRequestHost,
-          }
-        : undefined,
-      lifecycle: res.data.lifecycle
-        ? {
-            onTimeout: res.data.lifecycle.onTimeout,
-            autoResume: res.data.lifecycle.autoResume,
-          }
-        : undefined,
-      sandboxDomain: res.data.domain || undefined,
-      volumeMounts: res.data.volumeMounts ?? [],
     }
   }
 
@@ -1021,6 +966,69 @@ export class SandboxApi {
     }
 
     return true
+  }
+
+  /**
+   * @internal
+   * Get the full sandbox info, including the envd access token and sandbox domain.
+   */
+  protected static async getFullInfo(sandboxId: string, opts?: SandboxApiOpts) {
+    const config = new ConnectionConfig(opts)
+    const client = new ApiClient(config)
+
+    const res = await client.api.GET('/sandboxes/{sandboxID}', {
+      params: {
+        path: {
+          sandboxID: sandboxId,
+        },
+      },
+      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
+    })
+
+    if (res.error?.code === 404) {
+      throw new SandboxNotFoundError(`Sandbox ${sandboxId} not found`)
+    }
+
+    const err = handleApiError(res)
+    if (err) {
+      throw err
+    }
+
+    if (!res.data) {
+      throw new Error('Sandbox not found')
+    }
+
+    return {
+      sandboxId: res.data.sandboxID,
+      templateId: res.data.templateID,
+      ...(res.data.alias && { name: res.data.alias }),
+      metadata: res.data.metadata ?? {},
+      allowInternetAccess: res.data.allowInternetAccess ?? undefined,
+      envdVersion: res.data.envdVersion,
+      envdAccessToken: res.data.envdAccessToken,
+      startedAt: new Date(res.data.startedAt),
+      endAt: new Date(res.data.endAt),
+      state: res.data.state,
+      cpuCount: res.data.cpuCount,
+      memoryMB: res.data.memoryMB,
+      network: res.data.network
+        ? {
+            allowOut: res.data.network.allowOut,
+            denyOut: res.data.network.denyOut,
+            rules: res.data.network.rules ?? undefined,
+            allowPublicTraffic: res.data.network.allowPublicTraffic,
+            maskRequestHost: res.data.network.maskRequestHost,
+          }
+        : undefined,
+      lifecycle: res.data.lifecycle
+        ? {
+            onTimeout: res.data.lifecycle.onTimeout,
+            autoResume: res.data.lifecycle.autoResume,
+          }
+        : undefined,
+      sandboxDomain: res.data.domain || undefined,
+      volumeMounts: res.data.volumeMounts ?? [],
+    }
   }
 
   protected static async createSandbox(

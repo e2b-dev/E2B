@@ -36,7 +36,13 @@ from e2b.sandbox._git.parse import (
     parse_git_status,
     parse_remote_url,
 )
-from e2b.sandbox._git.types import ClonePlan, GitBranches, GitFileStatus, GitStatus
+from e2b.sandbox._git.types import (
+    ClonePlan,
+    GitBranches,
+    GitFileStatus,
+    GitResetMode,
+    GitStatus,
+)
 
 __all__ = [
     "build_add_args",
@@ -74,5 +80,6 @@ __all__ = [
     "ClonePlan",
     "GitBranches",
     "GitFileStatus",
+    "GitResetMode",
     "GitStatus",
 ]

@@ -54,6 +54,8 @@ export interface ConnectionOpts {
   /**
    * Timeout for requests to the API in **milliseconds**.
    *
+   * Set to `0` to disable the request timeout.
+   *
    * @default 60_000 // 60 seconds
    */
   requestTimeoutMs?: number
@@ -94,6 +96,7 @@ export function buildRequestSignal(
   requestTimeoutMs: number | undefined,
   userSignal: AbortSignal | undefined
 ): AbortSignal | undefined {
+  // `0` (and `undefined`) disable the request timeout.
   const timeoutSignal = requestTimeoutMs
     ? AbortSignal.timeout(requestTimeoutMs)
     : undefined

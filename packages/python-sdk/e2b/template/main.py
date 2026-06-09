@@ -3,7 +3,7 @@ from typing import Dict, List, Optional, Union, Literal
 from pathlib import Path
 
 
-from e2b.exceptions import BuildException
+from e2b.exceptions import BuildException, InvalidArgumentException
 from e2b.template.consts import STACK_TRACE_DEPTH, RESOLVE_SYMLINKS
 from e2b.template.dockerfile_parser import parse_dockerfile
 from e2b.template.readycmd import ReadyCmd, wait_for_file
@@ -1008,7 +1008,14 @@ class TemplateBase:
         self._base_template = None
 
         # Set the registry config if provided
-        if username and password:
+        if username or password:
+            if not username or not password:
+                caller_frame = get_caller_frame(STACK_TRACE_DEPTH - 1)
+                stack_trace = make_traceback(caller_frame)
+                raise InvalidArgumentException(
+                    "Both username and password are required when providing registry credentials"
+                ).with_traceback(stack_trace)
+
             self._registry_config = {
                 "type": "registry",
                 "username": username,
