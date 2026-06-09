@@ -19,7 +19,7 @@ def get_api_client(config: ConnectionConfig, **kwargs) -> ApiClient:
 
 
 class TransportWithLogger(httpx.HTTPTransport):
-    _instances: Dict[bool, "TransportWithLogger"] = {}
+    _thread_local = threading.local()
 
     def handle_request(self, request):
         url = f"{request.url.scheme}://{request.url.host}{request.url.path}"
@@ -37,7 +37,10 @@ class TransportWithLogger(httpx.HTTPTransport):
 
 
 def get_transport(config: ConnectionConfig, http2: bool = True) -> TransportWithLogger:
-    cached = TransportWithLogger._instances.get(http2)
+    instances: Dict[bool, TransportWithLogger] = getattr(
+        TransportWithLogger._thread_local, "instances", {}
+    )
+    cached = instances.get(http2)
     if cached is not None:
         return cached
 
@@ -46,7 +49,8 @@ def get_transport(config: ConnectionConfig, http2: bool = True) -> TransportWith
         proxy=config.proxy,
         http2=http2,
     )
-    TransportWithLogger._instances[http2] = transport
+    instances[http2] = transport
+    TransportWithLogger._thread_local.instances = instances
     return transport
 
 

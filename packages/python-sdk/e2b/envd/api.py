@@ -9,6 +9,7 @@ from e2b.exceptions import (
     AuthenticationException,
     InvalidArgumentException,
     NotEnoughSpaceException,
+    RateLimitException,
     format_sandbox_timeout_exception,
 )
 
@@ -20,7 +21,7 @@ _DEFAULT_API_ERROR_MAP: dict[int, Callable[[str], Exception]] = {
     400: InvalidArgumentException,
     401: AuthenticationException,
     404: NotFoundException,
-    429: lambda message: SandboxException(
+    429: lambda message: RateLimitException(
         f"{message}: The requests are being rate limited."
     ),
     502: format_sandbox_timeout_exception,

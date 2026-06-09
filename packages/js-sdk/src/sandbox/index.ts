@@ -159,8 +159,8 @@ export class Sandbox extends SandboxApi {
       'E2b-Sandbox-Id': this.sandboxId,
       'E2b-Sandbox-Port': this.envdPort.toString(),
     }
-    const envdFetch = createEnvdFetch()
-    const envdRpcFetch = createEnvdRpcFetch()
+    const envdFetch = createEnvdFetch(this.connectionConfig.proxy)
+    const envdRpcFetch = createEnvdRpcFetch(this.connectionConfig.proxy)
 
     const rpcTransport = createConnectTransport({
       baseUrl: this.envdApiUrl,
@@ -172,7 +172,9 @@ export class Sandbox extends SandboxApi {
         // connect-web package uses redirect: "error" which is not supported in edge runtimes
         // E2B endpoints should be safe to use with redirect: "follow" https://github.com/e2b-dev/E2B/issues/531#issuecomment-2779492867
 
-        const headers = new Headers(this.connectionConfig.headers)
+        const headers = new Headers({
+          'User-Agent': this.connectionConfig.headers?.['User-Agent'] ?? '',
+        })
         new Headers(options?.headers).forEach((value, key) =>
           headers.append(key, value)
         )

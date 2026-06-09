@@ -3,6 +3,7 @@ from http import HTTPStatus
 
 import httpx
 
+from httpx._types import ProxyTypes
 from typing_extensions import Unpack
 
 from e2b.api import handle_api_exception
@@ -58,12 +59,14 @@ class AsyncVolume:
         token: Optional[str] = None,
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
+        proxy: Optional[ProxyTypes] = None,
     ):
         self._volume_id = volume_id
         self._name = name
         self._token = token
         self._domain = domain
         self._debug = debug
+        self._proxy = proxy
 
     @property
     def volume_id(self) -> str:
@@ -87,7 +90,7 @@ class AsyncVolume:
             api_url=opts.get("api_url"),
             request_timeout=opts.get("request_timeout"),
             headers=opts.get("headers"),
-            proxy=opts.get("proxy"),
+            proxy=opts.get("proxy") if opts.get("proxy") is not None else self._proxy,
         )
 
     @classmethod
@@ -122,6 +125,7 @@ class AsyncVolume:
             token=res.parsed.token,
             domain=config.domain,
             debug=config.debug,
+            proxy=config.proxy,
         )
         return vol
 
@@ -142,6 +146,7 @@ class AsyncVolume:
             token=info.token,
             domain=config.domain,
             debug=config.debug,
+            proxy=config.proxy,
         )
 
     @staticmethod

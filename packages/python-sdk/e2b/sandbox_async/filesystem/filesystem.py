@@ -221,11 +221,11 @@ class Filesystem:
         """
         result = await self.write_files(
             [WriteEntry(path=path, data=data)],
-            user,
-            request_timeout,
-            gzip,
-            use_octet_stream,
-            metadata,
+            user=user,
+            request_timeout=request_timeout,
+            gzip=gzip,
+            use_octet_stream=use_octet_stream,
+            metadata=metadata,
         )
 
         if len(result) != 1:
