@@ -50,6 +50,18 @@ class ApiParams(TypedDict, total=False):
     """URL to connect to sandbox, defaults to `E2B_SANDBOX_URL` environment variable."""
 
 
+class ApiParamsWithLogger(ApiParams, total=False):
+    """:class:`ApiParams` plus the construction-time ``logger``.
+
+    Internal type returned by :meth:`ConnectionConfig.get_api_params` so that the
+    logger a sandbox was created/connected with keeps propagating to the
+    throwaway ``ConnectionConfig`` that instance control-plane methods rebuild.
+    Unlike :class:`ApiParams`, ``logger`` is not a public per-request option.
+    """
+
+    logger: Optional[logging.Logger]
+
+
 class ConnectionConfig:
     """
     Configuration for the connection to the API.
@@ -205,8 +217,14 @@ class ConnectionConfig:
         if api_headers is not None:
             req_headers.update(api_headers)
 
-        params = dict(
-            ApiParams(
+        # `logger` is a construction-time option rather than a per-request
+        # ApiParams field, but it must propagate to the throwaway
+        # ConnectionConfig that instance control-plane methods (kill, pause,
+        # set_timeout, get_info, connect, ...) rebuild from these params, so
+        # those requests keep logging with the logger the sandbox was created
+        # or connected with.
+        return dict(
+            ApiParamsWithLogger(
                 api_key=api_key if api_key is not None else self.api_key,
                 api_url=api_url if api_url is not None else self.api_url,
                 domain=domain if domain is not None else self.domain,
@@ -214,16 +232,9 @@ class ConnectionConfig:
                 request_timeout=self.get_request_timeout(request_timeout),
                 headers=req_headers,
                 proxy=proxy if proxy is not None else self.proxy,
+                logger=self.logger,
             )
         )
-        # `logger` is a construction-time option rather than a per-request
-        # ApiParams field, but it must propagate to the throwaway
-        # ConnectionConfig that instance control-plane methods (kill, pause,
-        # set_timeout, get_info, connect, ...) rebuild from these params, so
-        # those requests keep logging with the logger the sandbox was created
-        # or connected with.
-        params["logger"] = self.logger
-        return params
 
     @property
     def sandbox_headers(self):
