@@ -1,6 +1,7 @@
 import { handleRpcError } from '../../envd/rpc'
 import { SandboxError } from '../../errors'
 import { ConnectResponse, StartResponse } from '../../envd/process/process_pb'
+import type { CommandRequestOpts } from '.'
 
 declare const __brand: unique symbol
 type Brand<B> = { [__brand]: B }
@@ -104,7 +105,14 @@ export class CommandHandle
     private readonly events: AsyncIterable<ConnectResponse | StartResponse>,
     private readonly onStdout?: (stdout: string) => void | Promise<void>,
     private readonly onStderr?: (stderr: string) => void | Promise<void>,
-    private readonly onPty?: (pty: Uint8Array) => void | Promise<void>
+    private readonly onPty?: (pty: Uint8Array) => void | Promise<void>,
+    private readonly handleSendStdin?: (
+      data: string | Uint8Array,
+      opts?: CommandRequestOpts
+    ) => Promise<void>,
+    private readonly handleCloseStdin?: (
+      opts?: CommandRequestOpts
+    ) => Promise<void>
   ) {
     this._wait = this.handleEvents()
   }
@@ -184,6 +192,45 @@ export class CommandHandle
     return await this.handleKill()
   }
 
+  /**
+   * Send data to the command stdin.
+   *
+   * The command must have been started with `stdin: true`.
+   *
+   * @param data data to send to the command.
+   * @param opts connection options.
+   */
+  async sendStdin(
+    data: string | Uint8Array,
+    opts?: CommandRequestOpts
+  ): Promise<void> {
+    if (!this.handleSendStdin) {
+      throw new SandboxError(
+        'Sending stdin is not supported for this command handle.'
+      )
+    }
+
+    await this.handleSendStdin(data, opts)
+  }
+
+  /**
+   * Close the command stdin.
+   *
+   * This signals EOF to the command. The command must have been started with
+   * `stdin: true`.
+   *
+   * @param opts connection options.
+   */
+  async closeStdin(opts?: CommandRequestOpts): Promise<void> {
+    if (!this.handleCloseStdin) {
+      throw new SandboxError(
+        'Closing stdin is not supported for this command handle.'
+      )
+    }
+
+    await this.handleCloseStdin(opts)
+  }
+
   private async *iterateEvents(): AsyncGenerator<
     [Stdout, null, null] | [null, Stderr, null] | [null, null, PtyOutput]
   > {
@@ -226,11 +273,11 @@ export class CommandHandle
     try {
       for await (const [stdout, stderr, pty] of this.iterateEvents()) {
         if (stdout !== null) {
-          this.onStdout?.(stdout)
+          await this.onStdout?.(stdout)
         } else if (stderr !== null) {
-          this.onStderr?.(stderr)
+          await this.onStderr?.(stderr)
         } else if (pty) {
-          this.onPty?.(pty)
+          await this.onPty?.(pty)
         }
       }
     } catch (e) {

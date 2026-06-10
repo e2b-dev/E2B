@@ -125,6 +125,7 @@ describe('Template tags unit tests', () => {
 // Integration tests
 buildTemplateTest.skipIf(isDebug)(
   'build template with tags, assign and delete',
+  { timeout: 300_000 },
   async ({ buildTemplate }) => {
     const templateName = 'e2b-tags-test'
     const initialTag = `${templateName}:v1-${randomUUID()}`
@@ -145,12 +146,12 @@ buildTemplateTest.skipIf(isDebug)(
     expect(tagInfo.buildId).toBeTruthy()
     expect(tagInfo.tags).toContain('production')
     expect(tagInfo.tags).toContain('latest')
-  },
-  { timeout: 300_000 }
+  }
 )
 
 buildTemplateTest.skipIf(isDebug)(
   'assign single tag to existing template',
+  { timeout: 300_000 },
   async ({ buildTemplate }) => {
     const templateName = 'e2b-tags-test'
     const initialTag = `${templateName}:v1-${randomUUID()}`
@@ -163,12 +164,12 @@ buildTemplateTest.skipIf(isDebug)(
 
     expect(tagInfo.buildId).toBeTruthy()
     expect(tagInfo.tags).toContain('stable')
-  },
-  { timeout: 300_000 }
+  }
 )
 
 buildTemplateTest.skipIf(isDebug)(
   'rejects invalid tag format - missing alias',
+  { timeout: 300_000 },
   async ({ buildTemplate }) => {
     const templateName = 'e2b-tags-test'
     const initialTag = `${templateName}:v1-${randomUUID()}`
@@ -180,12 +181,12 @@ buildTemplateTest.skipIf(isDebug)(
     await expect(
       Template.assignTags(initialTag, ':invalid-tag')
     ).rejects.toThrow()
-  },
-  { timeout: 300_000 }
+  }
 )
 
 buildTemplateTest.skipIf(isDebug)(
   'rejects invalid tag format - missing tag',
+  { timeout: 300_000 },
   async ({ buildTemplate }) => {
     const templateName = 'e2b-tags-test'
     const initialTag = `${templateName}:v1-${randomUUID()}`
@@ -197,6 +198,5 @@ buildTemplateTest.skipIf(isDebug)(
     await expect(
       Template.assignTags(initialTag, `${templateName}:`)
     ).rejects.toThrow()
-  },
-  { timeout: 300_000 }
+  }
 )

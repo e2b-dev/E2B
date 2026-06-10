@@ -194,6 +194,13 @@ buildTemplateTest('traces on fromGCPRegistry', async ({ buildTemplate }) => {
   }, 'fromGCPRegistry')
 })
 
+buildTemplateTest('traces on fromImage credentials', async () => {
+  await expectToThrowAndCheckTrace(async () => {
+    // @ts-expect-error - testing runtime validation with partial credentials
+    Template().fromImage('ubuntu:22.04', { username: 'user' })
+  }, 'fromImage')
+})
+
 buildTemplateTest('traces on copy', async ({ buildTemplate }) => {
   let template = Template().fromBaseImage()
   template = template.skipCache().copy(nonExistentPath, nonExistentPath)

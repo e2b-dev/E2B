@@ -439,8 +439,6 @@ class SandboxInfo:
     """Sandbox Memory size in MiB."""
     envd_version: str
     """Envd version."""
-    _envd_access_token: Optional[str]
-    """Envd access token."""
     allow_internet_access: Optional[bool] = None
     """Whether internet access was explicitly enabled or disabled for the sandbox."""
     network: Optional[SandboxNetworkInfo] = None
@@ -454,7 +452,6 @@ class SandboxInfo:
     def _from_sandbox_data(
         cls,
         sandbox: Union[ListedSandbox, SandboxDetail],
-        envd_access_token: Optional[str] = None,
         sandbox_domain: Optional[str] = None,
         allow_internet_access: Optional[bool] = None,
         network: Optional[SandboxNetworkInfo] = None,
@@ -480,7 +477,6 @@ class SandboxInfo:
             ]
             if not isinstance(sandbox.volume_mounts, Unset)
             else [],
-            _envd_access_token=envd_access_token,
             allow_internet_access=allow_internet_access,
             network=network,
             lifecycle=lifecycle,
@@ -494,11 +490,6 @@ class SandboxInfo:
     def _from_sandbox_detail(cls, sandbox_detail: SandboxDetail):
         return cls._from_sandbox_data(
             sandbox_detail,
-            (
-                sandbox_detail.envd_access_token
-                if isinstance(sandbox_detail.envd_access_token, str)
-                else None
-            ),
             sandbox_domain=(
                 sandbox_detail.domain
                 if isinstance(sandbox_detail.domain, str)

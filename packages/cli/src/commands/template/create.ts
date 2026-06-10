@@ -1,7 +1,7 @@
 import * as boxen from 'boxen'
 import * as commander from 'commander'
 import { defaultBuildLogger, Template, TemplateClass } from 'e2b'
-import { connectionConfig, ensureAccessToken, ensureAPIKey } from 'src/api'
+import { connectionConfig, ensureAPIKey } from 'src/api'
 import {
   defaultDockerfileName,
   fallbackDockerfileName,
@@ -17,7 +17,7 @@ import {
   asTypescript,
   withDelimiter,
 } from '../../utils/format'
-import { getDockerfile } from './build'
+import { getDockerfile } from './dockerfile'
 
 export const createCommand = new commander.Command('create')
   .description(
@@ -68,8 +68,6 @@ export const createCommand = new commander.Command('create')
       }
     ) => {
       try {
-        // Ensure we have access token
-        ensureAccessToken()
         process.stdout.write('\n')
 
         // Validate template name

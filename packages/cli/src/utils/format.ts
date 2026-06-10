@@ -72,10 +72,6 @@ export function asTimestamp(content: string) {
   return chalk.default.blue(content)
 }
 
-export function asSandboxTemplate(pathInTemplate?: string) {
-  return chalk.default.green(pathInTemplate)
-}
-
 export function asLocal(pathInLocal?: string) {
   return chalk.default.blue(pathInLocal)
 }
@@ -87,10 +83,6 @@ export function asLocalRelative(absolutePathInLocal?: string) {
 
 export function asBuildLogs(content: string) {
   return chalk.default.blueBright(content)
-}
-
-export function asHeadline(content: string) {
-  return chalk.default.underline(asPrimary(asBold(content)))
 }
 
 export function withUnderline(content: string) {

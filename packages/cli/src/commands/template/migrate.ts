@@ -8,7 +8,7 @@ import { defaultDockerfileName } from '../../docker/constants'
 import { configOption, pathOption } from '../../options'
 import { getRoot } from '../../utils/filesystem'
 import { asLocal, asLocalRelative, asPrimary } from '../../utils/format'
-import { getDockerfile } from './build'
+import { getDockerfile } from './dockerfile'
 import {
   generateAndWriteTemplateFiles,
   Language,

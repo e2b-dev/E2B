@@ -67,7 +67,7 @@ from .sandbox.filesystem.watch_handle import (
     FilesystemEvent,
     FilesystemEventType,
 )
-from .sandbox._git import GitBranches, GitFileStatus, GitStatus
+from .sandbox._git import GitBranches, GitFileStatus, GitResetMode, GitStatus
 from .sandbox_sync.git import Git
 from .sandbox.network import ALL_TRAFFIC
 from .sandbox.signature import get_signature
@@ -176,6 +176,7 @@ __all__ = [
     "GitStatus",
     "GitBranches",
     "GitFileStatus",
+    "GitResetMode",
     # Command handle
     "CommandResult",
     "Stderr",
