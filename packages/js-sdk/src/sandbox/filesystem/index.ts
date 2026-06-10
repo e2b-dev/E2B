@@ -297,10 +297,18 @@ function buildRangeHeader(
 ): string | undefined {
   if (start === undefined && end === undefined) return undefined
 
-  if (start !== undefined && (!Number.isInteger(start) || start < 0)) {
+  // `typeof === 'boolean'` is redundant with `Number.isInteger` (which already
+  // rejects non-numbers) but makes the intent explicit and matches the Python SDK.
+  if (
+    start !== undefined &&
+    (typeof start === 'boolean' || !Number.isInteger(start) || start < 0)
+  ) {
     throw new InvalidArgumentError('start must be a non-negative integer')
   }
-  if (end !== undefined && (!Number.isInteger(end) || end < 0)) {
+  if (
+    end !== undefined &&
+    (typeof end === 'boolean' || !Number.isInteger(end) || end < 0)
+  ) {
     throw new InvalidArgumentError('end must be a non-negative integer')
   }
   if (start !== undefined && end !== undefined && start > end) {

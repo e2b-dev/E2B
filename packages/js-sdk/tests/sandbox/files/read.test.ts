@@ -93,4 +93,13 @@ sandboxTest('read with invalid range rejects', async ({ sandbox }) => {
   await expect(
     sandbox.files.read(filename, { start: 5, end: 2 })
   ).rejects.toThrowError(InvalidArgumentError)
+  // Booleans must be rejected, not coerced into the Range header.
+  await expect(
+    // @ts-expect-error testing runtime guard against non-integer input
+    sandbox.files.read(filename, { start: true })
+  ).rejects.toThrowError(InvalidArgumentError)
+  await expect(
+    // @ts-expect-error testing runtime guard against non-integer input
+    sandbox.files.read(filename, { end: false })
+  ).rejects.toThrowError(InvalidArgumentError)
 })

@@ -173,9 +173,15 @@ def build_range_header(
     if start is None and end is None:
         return None
 
-    if start is not None and (not isinstance(start, int) or start < 0):
+    # `bool` is a subclass of `int`, so guard against it explicitly — otherwise
+    # `True`/`False` would pass the check and produce an invalid Range value.
+    if start is not None and (
+        isinstance(start, bool) or not isinstance(start, int) or start < 0
+    ):
         raise InvalidArgumentException("start must be a non-negative integer")
-    if end is not None and (not isinstance(end, int) or end < 0):
+    if end is not None and (
+        isinstance(end, bool) or not isinstance(end, int) or end < 0
+    ):
         raise InvalidArgumentException("end must be a non-negative integer")
     if start is not None and end is not None and start > end:
         raise InvalidArgumentException("start must be less than or equal to end")

@@ -75,3 +75,8 @@ async def test_read_with_invalid_range_rejects(async_sandbox: AsyncSandbox):
         await async_sandbox.files.read(filename, start=-1)
     with pytest.raises(InvalidArgumentException):
         await async_sandbox.files.read(filename, start=5, end=2)
+    # `bool` is a subclass of `int` but must not be coerced into the Range header.
+    with pytest.raises(InvalidArgumentException):
+        await async_sandbox.files.read(filename, start=True)
+    with pytest.raises(InvalidArgumentException):
+        await async_sandbox.files.read(filename, end=False)
