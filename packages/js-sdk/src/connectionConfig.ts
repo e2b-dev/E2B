@@ -54,8 +54,6 @@ export interface ConnectionOpts {
   /**
    * Timeout for requests to the API in **milliseconds**.
    *
-   * Set to `0` to disable the request timeout.
-   *
    * @default 60_000 // 60 seconds
    */
   requestTimeoutMs?: number

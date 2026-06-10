@@ -50,7 +50,7 @@ export const infoCommand = new commander.Command('info')
     try {
       const format = options.format || 'pretty'
       const apiKey = ensureAPIKey()
-      const info = await Sandbox.getInfo(sandboxID, { apiKey })
+      const info = await Sandbox.getFullInfo(sandboxID, { apiKey })
 
       if (format === 'pretty') {
         renderPrettyInfo(info as unknown as Record<string, unknown>)
