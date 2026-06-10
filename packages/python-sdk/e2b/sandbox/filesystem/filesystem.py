@@ -51,9 +51,10 @@ class WriteInfo:
     """
     metadata: Optional[Dict[str, str]] = field(default=None, kw_only=True)
     """
-    User-defined metadata persisted on the file as extended attributes.
-    Only populated when metadata was supplied on upload and the sandbox's
-    envd supports it. `None` when no metadata is set.
+    User-defined metadata stored on the file as `user.e2b.*` extended
+    attributes. On writes this reflects the metadata supplied on upload; on
+    reads (`get_info`, `list`, `rename`) it reflects any `user.e2b.*` xattr on
+    the file, including ones set out-of-band. `None` when none is set.
     """
 
     @classmethod

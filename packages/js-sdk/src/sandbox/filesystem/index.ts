@@ -79,9 +79,10 @@ export interface WriteInfo {
    */
   path: string
   /**
-   * User-defined metadata persisted on the file as extended attributes.
-   * Only populated when metadata was supplied on upload and the sandbox's
-   * envd supports it. `undefined` when no metadata is set.
+   * User-defined metadata stored on the file as `user.e2b.*` extended
+   * attributes. On writes this reflects the metadata supplied on upload; on
+   * reads (`getInfo`, `list`, `rename`) it reflects any `user.e2b.*` xattr on
+   * the file, including ones set out-of-band. `undefined` when none is set.
    */
   metadata?: Record<string, string>
 }
@@ -209,10 +210,11 @@ export interface FilesystemWriteOpts extends FilesystemRequestOpts {
   useOctetStream?: boolean
   /**
    * User-defined metadata to persist on the uploaded file(s) as extended
-   * attributes. Keys and values must be printable US-ASCII and keys are
-   * lowercased by the sandbox, so they may differ in case when read back.
-   * The same metadata is applied to every file in a multi-file upload.
-   * Requires envd 0.6.2 or later.
+   * attributes. Each entry is sent as an `X-Metadata-<key>` request header, so
+   * keys must be valid HTTP header tokens (letters, digits and ``!#$%&'*+-.^_`|~``)
+   * and are lowercased by the sandbox, so they may differ in case when read
+   * back; values must be printable US-ASCII. The same metadata is applied to
+   * every file in a multi-file upload. Requires envd 0.6.2 or later.
    */
   metadata?: Record<string, string>
 }
