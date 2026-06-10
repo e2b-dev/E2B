@@ -4,6 +4,7 @@ import { setupServer } from 'msw/node'
 import { randomUUID } from 'node:crypto'
 
 import { Volume, NotFoundError } from '../../src'
+import { VolumeConnectionConfig } from '../../src/volume/client'
 import { apiUrl } from '../setup'
 
 // In-memory store for mock volumes
@@ -122,6 +123,30 @@ describe('Volume CRUD', () => {
     await expect(Volume.getInfo('non-existent-id')).rejects.toThrow(
       NotFoundError
     )
+  })
+
+  it('should keep the proxy on the instance so content calls reuse it', async () => {
+    const proxy = 'http://user:pass@127.0.0.1:8080'
+    const vol = await Volume.create('proxy-volume', { proxy })
+
+    // The proxy is stored on the instance...
+    expect(vol.proxy).toBe(proxy)
+
+    // ...and instance methods (which build a VolumeConnectionConfig with no
+    // per-call proxy) pick it up rather than falling back to no proxy.
+    const config = new VolumeConnectionConfig(vol)
+    expect(config.proxy).toBe(proxy)
+  })
+
+  it('should let a per-call proxy override the instance proxy', async () => {
+    const vol = await Volume.create('proxy-volume', {
+      proxy: 'http://127.0.0.1:8080',
+    })
+
+    const config = new VolumeConnectionConfig(vol, {
+      proxy: 'http://127.0.0.1:9090',
+    })
+    expect(config.proxy).toBe('http://127.0.0.1:9090')
   })
 
   it('should handle full lifecycle: create, get, list, destroy', async () => {
