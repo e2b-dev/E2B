@@ -447,18 +447,19 @@ export class TemplateBase
     baseImage: string,
     credentials?: { username: string; password: string }
   ): TemplateBuilder {
+    // Validate before mutating the builder.
+    if (credentials && (!credentials.username || !credentials.password)) {
+      throw new InvalidArgumentError(
+        'Both username and password are required when providing registry credentials',
+        getCallerFrame(STACK_TRACE_DEPTH - 1)
+      )
+    }
+
     this.baseImage = baseImage
     this.baseTemplate = undefined
 
     // Set the registry config if provided
     if (credentials) {
-      if (!credentials.username || !credentials.password) {
-        throw new InvalidArgumentError(
-          'Both username and password are required when providing registry credentials',
-          getCallerFrame(STACK_TRACE_DEPTH - 1)
-        )
-      }
-
       this.registryConfig = {
         type: 'registry',
         username: credentials.username,

@@ -1004,11 +1004,8 @@ class TemplateBase:
         Template().from_image('myregistry.com/myimage:latest', username='user', password='pass')
         ```
         """
-        self._base_image = image
-        self._base_template = None
-
-        # Set the registry config if provided
-        if username or password:
+        # Validate (and resolve the registry config) before mutating the builder.
+        if username is not None or password is not None:
             if not username or not password:
                 caller_frame = get_caller_frame(STACK_TRACE_DEPTH - 1)
                 stack_trace = make_traceback(caller_frame)
@@ -1021,6 +1018,9 @@ class TemplateBase:
                 "username": username,
                 "password": password,
             }
+
+        self._base_image = image
+        self._base_template = None
 
         # If we should force the next layer and it's a FROM command, invalidate whole template
         if self._force_next_layer:
