@@ -2,4 +2,4 @@
 "@e2b/cli": patch
 ---
 
-Add `--lifecycle` JSON and `--timeout` support to `e2b sandbox create`.
+Add `--ontimeout`, `--autoresume`, and `--timeout` support to `e2b sandbox create`.

@@ -30,7 +30,7 @@ vi.mock('src/terminal', () => ({
   spawnConnectedTerminal: mocks.spawnConnectedTerminal,
 }))
 
-describe('sandbox create lifecycle option', () => {
+describe('sandbox create lifecycle options', () => {
   beforeEach(() => {
     vi.resetModules()
     vi.clearAllMocks()
@@ -47,7 +47,7 @@ describe('sandbox create lifecycle option', () => {
     vi.restoreAllMocks()
   })
 
-  test('passes lifecycle JSON to Sandbox.create', async () => {
+  test('passes ontimeout and autoresume to Sandbox.create', async () => {
     const exitSpy = vi
       .spyOn(process, 'exit')
       .mockImplementation((() => undefined) as never)
@@ -56,12 +56,7 @@ describe('sandbox create lifecycle option', () => {
       '../../../src/commands/sandbox/create'
     )
     await createCommand('create', 'cr', false).parseAsync(
-      [
-        'base',
-        '--detach',
-        '--lifecycle',
-        '{"onTimeout":"pause","autoResume":true}',
-      ],
+      ['base', '--detach', '--ontimeout', 'pause', '--autoresume'],
       { from: 'user' }
     )
 
@@ -70,6 +65,28 @@ describe('sandbox create lifecycle option', () => {
       lifecycle: {
         onTimeout: 'pause',
         autoResume: true,
+      },
+    })
+    expect(exitSpy).toHaveBeenCalledWith(0)
+  })
+
+  test('passes ontimeout without autoresume to Sandbox.create', async () => {
+    const exitSpy = vi
+      .spyOn(process, 'exit')
+      .mockImplementation((() => undefined) as never)
+
+    const { createCommand } = await import(
+      '../../../src/commands/sandbox/create'
+    )
+    await createCommand('create', 'cr', false).parseAsync(
+      ['base', '--detach', '--ontimeout', 'kill'],
+      { from: 'user' }
+    )
+
+    expect(mocks.create).toHaveBeenCalledWith('base', {
+      apiKey: 'test-api-key',
+      lifecycle: {
+        onTimeout: 'kill',
       },
     })
     expect(exitSpy).toHaveBeenCalledWith(0)
@@ -121,7 +138,30 @@ describe('sandbox create lifecycle option', () => {
     vi.useRealTimers()
   })
 
-  test('rejects autoResume without pause on timeout', async () => {
+  test('rejects autoresume without pause on timeout', async () => {
+    const exitSpy = vi
+      .spyOn(process, 'exit')
+      .mockImplementation((() => undefined) as never)
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+
+    const { createCommand } = await import(
+      '../../../src/commands/sandbox/create'
+    )
+    await createCommand('create', 'cr', false).parseAsync(
+      ['base', '--detach', '--ontimeout', 'kill', '--autoresume'],
+      { from: 'user' }
+    )
+
+    expect(mocks.create).not.toHaveBeenCalled()
+    expect(consoleSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: '--autoresume requires --ontimeout pause',
+      })
+    )
+    expect(exitSpy).toHaveBeenCalledWith(1)
+  })
+
+  test('rejects invalid ontimeout option', async () => {
     const exitSpy = vi
       .spyOn(process, 'exit')
       .mockImplementation((() => undefined) as never)
@@ -131,42 +171,16 @@ describe('sandbox create lifecycle option', () => {
     )
     await expect(
       createCommand('create', 'cr', false).parseAsync(
-        [
-          'base',
-          '--detach',
-          '--lifecycle',
-          '{"onTimeout":"kill","autoResume":true}',
-        ],
+        ['base', '--detach', '--ontimeout', 'hibernate'],
         { from: 'user' }
       )
-    ).rejects.toThrow('--lifecycle autoResume requires onTimeout="pause"')
+    ).rejects.toThrow('--ontimeout must be "pause" or "kill"')
 
     expect(mocks.create).not.toHaveBeenCalled()
     expect(exitSpy).toHaveBeenCalledWith(1)
   })
 
-  test('rejects invalid lifecycle JSON', async () => {
-    const exitSpy = vi
-      .spyOn(process, 'exit')
-      .mockImplementation((() => undefined) as never)
-
-    const { createCommand } = await import(
-      '../../../src/commands/sandbox/create'
-    )
-    await expect(
-      createCommand('create', 'cr', false).parseAsync(
-        ['base', '--detach', '--lifecycle', 'not-json'],
-        { from: 'user' }
-      )
-    ).rejects.toThrow(
-      '--lifecycle must be valid JSON, eg. {"onTimeout":"pause","autoResume":true}'
-    )
-
-    expect(mocks.create).not.toHaveBeenCalled()
-    expect(exitSpy).toHaveBeenCalledWith(1)
-  })
-
-  test('rejects invalid timeout before creating sandbox', async () => {
+  test('rejects zero timeout before creating sandbox', async () => {
     const exitSpy = vi
       .spyOn(process, 'exit')
       .mockImplementation((() => undefined) as never)
@@ -179,7 +193,26 @@ describe('sandbox create lifecycle option', () => {
         ['base', '--detach', '--timeout', '0'],
         { from: 'user' }
       )
-    ).rejects.toThrow('--timeout must be a positive number of seconds')
+    ).rejects.toThrow('--timeout must be at least 30 seconds')
+
+    expect(mocks.create).not.toHaveBeenCalled()
+    expect(exitSpy).toHaveBeenCalledWith(1)
+  })
+
+  test('rejects timeout values shorter than the keep-alive interval', async () => {
+    const exitSpy = vi
+      .spyOn(process, 'exit')
+      .mockImplementation((() => undefined) as never)
+
+    const { createCommand } = await import(
+      '../../../src/commands/sandbox/create'
+    )
+    await expect(
+      createCommand('create', 'cr', false).parseAsync(
+        ['base', '--detach', '--timeout', '29.999'],
+        { from: 'user' }
+      )
+    ).rejects.toThrow('--timeout must be at least 30 seconds')
 
     expect(mocks.create).not.toHaveBeenCalled()
     expect(exitSpy).toHaveBeenCalledWith(1)
@@ -199,8 +232,9 @@ describe('sandbox create lifecycle option', () => {
         '--detach',
         '--timeout',
         '120',
-        '--lifecycle',
-        '{"onTimeout":"pause","autoResume":true}',
+        '--ontimeout',
+        'pause',
+        '--autoresume',
       ],
       { from: 'user' }
     )

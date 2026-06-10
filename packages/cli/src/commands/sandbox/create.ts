@@ -16,6 +16,8 @@ type SandboxLifecycle = {
   autoResume?: boolean
 }
 
+const MIN_TIMEOUT_MS = 30_000
+
 export function createCommand(
   name: string,
   alias: string,
@@ -31,9 +33,13 @@ export function createCommand(
     .addOption(configOption)
     .option('-d, --detach', 'create sandbox without connecting terminal to it')
     .option(
-      '--lifecycle <json>',
-      'sandbox lifecycle JSON, eg. {"onTimeout":"pause","autoResume":true}',
-      parseLifecycle
+      '--ontimeout <action>',
+      'action when sandbox timeout is reached: pause or kill',
+      parseOnTimeout
+    )
+    .option(
+      '--autoresume',
+      'enable sandbox auto-resume, requires --ontimeout pause'
     )
     .option('--timeout <seconds>', 'sandbox timeout in seconds', parseTimeout)
     .alias(alias)
@@ -45,7 +51,8 @@ export function createCommand(
           path?: string
           config?: string
           detach?: boolean
-          lifecycle?: SandboxLifecycle
+          ontimeout?: SandboxLifecycle['onTimeout']
+          autoresume?: boolean
           timeout?: number
         }
       ) => {
@@ -85,9 +92,10 @@ export function createCommand(
             templateID = 'base'
           }
 
+          const lifecycle = buildLifecycle(opts.ontimeout, opts.autoresume)
           const sandboxOpts = {
             apiKey,
-            ...(opts.lifecycle ? { lifecycle: opts.lifecycle } : {}),
+            ...(lifecycle ? { lifecycle } : {}),
             ...(opts.timeout !== undefined ? { timeoutMs: opts.timeout } : {}),
           }
           const sandbox = await e2b.Sandbox.create(templateID, sandboxOpts)
@@ -115,59 +123,51 @@ export function createCommand(
 
 function parseTimeout(timeoutRaw: string): number {
   const timeoutSeconds = Number(timeoutRaw)
-  if (!Number.isFinite(timeoutSeconds) || timeoutSeconds <= 0) {
-    throw new commander.InvalidArgumentError(
-      '--timeout must be a positive number of seconds'
-    )
-  }
-
-  return Math.floor(timeoutSeconds * 1000)
-}
-
-function parseLifecycle(lifecycleRaw: string): SandboxLifecycle {
-  let lifecycle: unknown
-  try {
-    lifecycle = JSON.parse(lifecycleRaw)
-  } catch {
-    throw new commander.InvalidArgumentError(
-      '--lifecycle must be valid JSON, eg. {"onTimeout":"pause","autoResume":true}'
-    )
-  }
-
-  if (!lifecycle || typeof lifecycle !== 'object' || Array.isArray(lifecycle)) {
-    throw new commander.InvalidArgumentError(
-      '--lifecycle must be a JSON object'
-    )
-  }
-
-  const parsed = lifecycle as Record<string, unknown>
-  if (parsed.onTimeout !== 'pause' && parsed.onTimeout !== 'kill') {
-    throw new commander.InvalidArgumentError(
-      '--lifecycle onTimeout must be "pause" or "kill"'
-    )
-  }
-
+  const timeoutMs = Math.floor(timeoutSeconds * 1000)
   if (
-    parsed.autoResume !== undefined &&
-    typeof parsed.autoResume !== 'boolean'
+    !Number.isFinite(timeoutSeconds) ||
+    timeoutSeconds <= 0 ||
+    timeoutMs < MIN_TIMEOUT_MS
   ) {
     throw new commander.InvalidArgumentError(
-      '--lifecycle autoResume must be a boolean'
+      '--timeout must be at least 30 seconds'
     )
   }
 
-  if (parsed.autoResume === true && parsed.onTimeout !== 'pause') {
+  return timeoutMs
+}
+
+function parseOnTimeout(onTimeout: string): SandboxLifecycle['onTimeout'] {
+  if (onTimeout !== 'pause' && onTimeout !== 'kill') {
     throw new commander.InvalidArgumentError(
-      '--lifecycle autoResume requires onTimeout="pause"'
+      '--ontimeout must be "pause" or "kill"'
     )
   }
 
-  return {
-    onTimeout: parsed.onTimeout,
-    ...(parsed.autoResume !== undefined
-      ? { autoResume: parsed.autoResume }
-      : {}),
+  return onTimeout
+}
+
+function buildLifecycle(
+  onTimeout: SandboxLifecycle['onTimeout'] | undefined,
+  autoResume: boolean | undefined
+): SandboxLifecycle | undefined {
+  if (!onTimeout && !autoResume) {
+    return undefined
   }
+
+  if (autoResume && onTimeout !== 'pause') {
+    throw new commander.InvalidArgumentError(
+      '--autoresume requires --ontimeout pause'
+    )
+  }
+
+  if (!onTimeout) {
+    throw new commander.InvalidArgumentError(
+      '--ontimeout is required when using --autoresume'
+    )
+  }
+
+  return { onTimeout, ...(autoResume ? { autoResume: true } : {}) }
 }
 
 export async function connectSandbox({
