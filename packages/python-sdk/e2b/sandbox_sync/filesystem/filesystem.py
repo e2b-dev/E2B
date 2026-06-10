@@ -15,7 +15,10 @@ from e2b.connection_config import (
 )
 from e2b_connect.client import Code
 
-from e2b.envd.api import ENVD_API_FILES_ROUTE, handle_envd_api_exception
+from e2b.envd.api import (
+    ENVD_API_FILES_ROUTE,
+    handle_envd_api_exception,
+)
 from e2b.envd.filesystem import filesystem_connect, filesystem_pb2
 from e2b.envd.rpc import authentication_header, handle_rpc_exception
 from e2b.envd.versions import (
