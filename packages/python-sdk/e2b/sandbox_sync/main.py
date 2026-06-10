@@ -15,7 +15,7 @@ from e2b.connection_config import ApiParams, ConnectionConfig
 from e2b.envd.api import ENVD_API_HEALTH_ROUTE, handle_envd_api_exception
 from e2b.envd.versions import ENVD_DEBUG_FALLBACK
 from e2b.exceptions import (
-    SandboxException,
+    TemplateException,
     format_request_timeout_error,
 )
 from e2b.sandbox.main import SandboxOpts
@@ -594,8 +594,8 @@ class Sandbox(SandboxApi):
             return []
 
         if self._envd_version < Version("0.1.5"):
-            raise SandboxException(
-                "Metrics are not supported in this version of the sandbox, please rebuild your template."
+            raise TemplateException(
+                "You need to update the template to use the new SDK."
             )
 
         if self._envd_version < Version("0.2.4"):

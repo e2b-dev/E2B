@@ -28,7 +28,7 @@ import {
 } from './sandboxApi'
 import { getSignature } from './signature'
 import { compareVersions } from 'compare-versions'
-import { SandboxError } from '../errors'
+import { TemplateError } from '../errors'
 import { ENVD_DEBUG_FALLBACK, ENVD_DEFAULT_USER } from '../envd/versions'
 import { shellQuote } from '../utils'
 
@@ -743,7 +743,7 @@ export class Sandbox extends SandboxApi {
 
     if (this.envdApi.version) {
       if (compareVersions(this.envdApi.version, '0.1.5') < 0) {
-        throw new SandboxError(
+        throw new TemplateError(
           'You need to update the template to use the new SDK.'
         )
       }

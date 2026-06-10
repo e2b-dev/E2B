@@ -13,6 +13,7 @@ Python SDK:
 - `sandbox_url` is now propagated through `get_api_params`.
 - `Template.from_image()` now raises when only one of `username` / `password` is provided.
 - `get_info()` no longer carries the envd access token on the returned `SandboxInfo` (the `_envd_access_token` field was unused), matching the JS SDK which strips it from `getInfo`.
+- `get_metrics()` now raises `TemplateException` (was `SandboxException`) with the same message as the JS SDK when the sandbox is too old.
 
 JS SDK:
 
@@ -21,3 +22,4 @@ JS SDK:
 - `Template.fromImage()` now requires both `username` and `password` when registry credentials are provided.
 - `Template.getBuildStatus()` now defaults `logsOffset` to `0`.
 - `requestTimeoutMs: 0` now explicitly disables the request timeout.
+- `getMetrics()` now throws `TemplateError` (was `SandboxError`) when the sandbox is too old to support metrics.
