@@ -80,7 +80,7 @@ class Commands:
         request_timeout: Optional[float] = None,
     ) -> bool:
         """
-        Kills a running command specified by its process ID.
+        Kill a running command specified by its process ID.
         It uses `SIGKILL` signal to kill the command.
 
         :param pid: Process ID of the command. You can get the list of processes using `sandbox.commands.list()`

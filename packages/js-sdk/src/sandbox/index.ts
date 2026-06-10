@@ -159,8 +159,8 @@ export class Sandbox extends SandboxApi {
       'E2b-Sandbox-Id': this.sandboxId,
       'E2b-Sandbox-Port': this.envdPort.toString(),
     }
-    const envdFetch = createEnvdFetch()
-    const envdRpcFetch = createEnvdRpcFetch()
+    const envdFetch = createEnvdFetch(this.connectionConfig.proxy)
+    const envdRpcFetch = createEnvdRpcFetch(this.connectionConfig.proxy)
 
     const rpcTransport = createConnectTransport({
       baseUrl: this.envdApiUrl,

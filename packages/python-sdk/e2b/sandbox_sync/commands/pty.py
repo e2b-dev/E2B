@@ -218,7 +218,7 @@ class Pty:
 
         :param pid: Process ID of the PTY
         :param size: New size of the PTY
-        :param request_timeout: Timeout for the request in **seconds**s
+        :param request_timeout: Timeout for the request in **seconds**
         """
         self._rpc.update(
             process_pb2.UpdateRequest(

@@ -348,7 +348,7 @@ class SandboxApi(SandboxBase):
             raise handle_api_exception(res)
 
         if res.parsed is None:
-            raise SandboxException("Body of the request is None")
+            raise Exception("Body of the request is None")
 
         if isinstance(res.parsed, Error):
             raise SandboxException(f"{res.parsed.message}: Request failed")
@@ -385,7 +385,7 @@ class SandboxApi(SandboxBase):
         cls,
         sandbox_id: str,
         **opts: Unpack[ApiParams],
-    ) -> str:
+    ) -> bool:
         config = ConnectionConfig(**opts)
 
         api_client = get_api_client(config)
@@ -398,7 +398,8 @@ class SandboxApi(SandboxBase):
             raise SandboxNotFoundException(f"Sandbox {sandbox_id} not found")
 
         if res.status_code == 409:
-            return sandbox_id
+            # Sandbox is already paused
+            return False
 
         if res.status_code >= 300:
             raise handle_api_exception(res)
@@ -407,7 +408,7 @@ class SandboxApi(SandboxBase):
         if isinstance(res.parsed, Error):
             raise SandboxException(f"{res.parsed.message}: Request failed")
 
-        return sandbox_id
+        return True
 
     @classmethod
     async def _cls_connect(
@@ -422,13 +423,7 @@ class SandboxApi(SandboxBase):
         # Sandbox is not running, resume it
         config = ConnectionConfig(logger=logger, **opts)
 
-        api_client = get_api_client(
-            config,
-            headers={
-                "E2b-Sandbox-Id": sandbox_id,
-                "E2b-Sandbox-Port": str(config.envd_port),
-            },
-        )
+        api_client = get_api_client(config)
         res = await post_sandboxes_sandbox_id_connect.asyncio_detailed(
             sandbox_id,
             client=api_client,
@@ -446,6 +441,6 @@ class SandboxApi(SandboxBase):
             raise SandboxException(f"{res.parsed.message}: Request failed")
 
         if res.parsed is None:
-            raise SandboxException("Body of the request is None")
+            raise Exception("Body of the request is None")
 
         return res.parsed
