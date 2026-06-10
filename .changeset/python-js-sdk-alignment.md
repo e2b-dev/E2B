@@ -12,6 +12,7 @@ Python SDK:
 - `git.reset` now accepts a typed `GitResetMode` and its validation error matches the JS SDK wording/ordering. `GitResetMode` is now exported.
 - `sandbox_url` is now propagated through `get_api_params`.
 - `Template.from_image()` now raises when only one of `username` / `password` is provided.
+- `get_info()` no longer carries the envd access token on the returned `SandboxInfo` (the `_envd_access_token` field was unused), matching the JS SDK which strips it from `getInfo`.
 
 JS SDK:
 
