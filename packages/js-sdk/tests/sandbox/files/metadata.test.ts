@@ -147,10 +147,11 @@ sandboxTest(
       `realpath ${filename}`
     )
 
-    // Set an xattr directly in the `user.e2b.` namespace; it should surface as
-    // metadata (with the namespace prefix stripped) when reading the file info.
+    // Set an xattr directly in the `user.e2b.` namespace (out-of-band, not via
+    // the SDK upload); it should surface as metadata (with the namespace prefix
+    // stripped) when reading the file info.
     await sandbox.commands.run(
-      `setfattr -n user.e2b.author -v mish ${filePath.trim()}`
+      `python3 -c "import os; os.setxattr('${filePath.trim()}', 'user.e2b.author', b'mish')"`
     )
 
     const info = await sandbox.files.getInfo(filename)

@@ -124,9 +124,12 @@ def test_metadata_set_via_xattrs_surfaced_in_get_info(sandbox, debug):
 
     file_path = sandbox.commands.run(f"realpath {filename}").stdout.strip()
 
-    # Set an xattr directly in the `user.e2b.` namespace; it should surface as
-    # metadata (with the namespace prefix stripped) when reading the file info.
-    sandbox.commands.run(f"setfattr -n user.e2b.author -v mish {file_path}")
+    # Set an xattr directly in the `user.e2b.` namespace (out-of-band, not via
+    # the SDK upload); it should surface as metadata (with the namespace prefix
+    # stripped) when reading the file info.
+    sandbox.commands.run(
+        f"python3 -c \"import os; os.setxattr('{file_path}', 'user.e2b.author', b'mish')\""
+    )
 
     info = sandbox.files.get_info(filename)
     assert info.metadata == {"author": "mish"}
