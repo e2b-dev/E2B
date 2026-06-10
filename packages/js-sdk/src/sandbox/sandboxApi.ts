@@ -505,6 +505,11 @@ export interface SandboxInfo {
    * Volume mounts for the sandbox.
    */
   volumeMounts?: Array<{ name: string; path: string }>
+
+  /**
+   * Sandbox domain.
+   */
+  sandboxDomain?: string
 }
 
 /**
@@ -650,6 +655,12 @@ export class SandboxApi {
     opts?: SandboxApiOpts
   ): Promise<boolean> {
     const config = new ConnectionConfig(opts)
+
+    if (config.debug) {
+      // Skip killing the sandbox in debug mode
+      return true
+    }
+
     const client = new ApiClient(config)
 
     const res = await client.api.DELETE('/sandboxes/{sandboxID}', {
@@ -685,11 +696,76 @@ export class SandboxApi {
     sandboxId: string,
     opts?: SandboxApiOpts
   ): Promise<SandboxInfo> {
-    const fullInfo = await this.getFullInfo(sandboxId, opts)
-    delete fullInfo.envdAccessToken
-    delete fullInfo.sandboxDomain
+    const config = new ConnectionConfig(opts)
+    const client = new ApiClient(config)
 
-    return fullInfo
+    const res = await client.api.GET('/sandboxes/{sandboxID}', {
+      params: {
+        path: {
+          sandboxID: sandboxId,
+        },
+      },
+      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
+    })
+
+    if (res.error?.code === 404) {
+      throw new SandboxNotFoundError(`Sandbox ${sandboxId} not found`)
+    }
+
+    const err = handleApiError(res)
+    if (err) {
+      throw err
+    }
+
+    if (!res.data) {
+      throw new Error('Sandbox not found')
+    }
+
+    return {
+      sandboxId: res.data.sandboxID,
+      templateId: res.data.templateID,
+      ...(res.data.alias && { name: res.data.alias }),
+      metadata: res.data.metadata ?? {},
+      allowInternetAccess: res.data.allowInternetAccess ?? undefined,
+      envdVersion: res.data.envdVersion,
+      startedAt: new Date(res.data.startedAt),
+      endAt: new Date(res.data.endAt),
+      state: res.data.state,
+      cpuCount: res.data.cpuCount,
+      memoryMB: res.data.memoryMB,
+      network: res.data.network
+        ? {
+            allowOut: res.data.network.allowOut,
+            denyOut: res.data.network.denyOut,
+            rules: res.data.network.rules ?? undefined,
+            allowPublicTraffic: res.data.network.allowPublicTraffic,
+            maskRequestHost: res.data.network.maskRequestHost,
+          }
+        : undefined,
+      lifecycle: res.data.lifecycle
+        ? {
+            onTimeout: res.data.lifecycle.onTimeout,
+            autoResume: res.data.lifecycle.autoResume,
+          }
+        : undefined,
+      sandboxDomain: res.data.domain || undefined,
+      volumeMounts: res.data.volumeMounts ?? [],
+    }
+  }
+
+  /**
+   * @deprecated Use {@link Sandbox.getInfo} instead.
+   *
+   * @param sandboxId sandbox ID.
+   * @param opts connection options.
+   *
+   * @returns sandbox information.
+   */
+  static async getFullInfo(
+    sandboxId: string,
+    opts?: SandboxApiOpts
+  ): Promise<SandboxInfo> {
+    return await this.getInfo(sandboxId, opts)
   }
 
   /**
@@ -705,6 +781,12 @@ export class SandboxApi {
     opts?: SandboxMetricsOpts
   ): Promise<SandboxMetrics[]> {
     const config = new ConnectionConfig(opts)
+
+    if (config.debug) {
+      // Skip getting the metrics in debug mode
+      return []
+    }
+
     const client = new ApiClient(config)
 
     // JS timestamp is in milliseconds, convert to unix (seconds)
@@ -722,6 +804,10 @@ export class SandboxApi {
       },
       signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
     })
+
+    if (res.error?.code === 404) {
+      throw new SandboxNotFoundError(`Sandbox ${sandboxId} not found`)
+    }
 
     const err = handleApiError(res)
     if (err) {
@@ -819,65 +905,6 @@ export class SandboxApi {
     const err = handleApiError(res)
     if (err) {
       throw err
-    }
-  }
-
-  static async getFullInfo(sandboxId: string, opts?: SandboxApiOpts) {
-    const config = new ConnectionConfig(opts)
-    const client = new ApiClient(config)
-
-    const res = await client.api.GET('/sandboxes/{sandboxID}', {
-      params: {
-        path: {
-          sandboxID: sandboxId,
-        },
-      },
-      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
-    })
-
-    if (res.error?.code === 404) {
-      throw new SandboxNotFoundError(`Sandbox ${sandboxId} not found`)
-    }
-
-    const err = handleApiError(res)
-    if (err) {
-      throw err
-    }
-
-    if (!res.data) {
-      throw new Error('Sandbox not found')
-    }
-
-    return {
-      sandboxId: res.data.sandboxID,
-      templateId: res.data.templateID,
-      ...(res.data.alias && { name: res.data.alias }),
-      metadata: res.data.metadata ?? {},
-      allowInternetAccess: res.data.allowInternetAccess ?? undefined,
-      envdVersion: res.data.envdVersion,
-      envdAccessToken: res.data.envdAccessToken,
-      startedAt: new Date(res.data.startedAt),
-      endAt: new Date(res.data.endAt),
-      state: res.data.state,
-      cpuCount: res.data.cpuCount,
-      memoryMB: res.data.memoryMB,
-      network: res.data.network
-        ? {
-            allowOut: res.data.network.allowOut,
-            denyOut: res.data.network.denyOut,
-            rules: res.data.network.rules ?? undefined,
-            allowPublicTraffic: res.data.network.allowPublicTraffic,
-            maskRequestHost: res.data.network.maskRequestHost,
-          }
-        : undefined,
-      lifecycle: res.data.lifecycle
-        ? {
-            onTimeout: res.data.lifecycle.onTimeout,
-            autoResume: res.data.lifecycle.autoResume,
-          }
-        : undefined,
-      sandboxDomain: res.data.domain || undefined,
-      volumeMounts: res.data.volumeMounts ?? [],
     }
   }
 
@@ -1074,8 +1101,7 @@ export class SandboxApi {
     if (compareVersions(res.data!.envdVersion, '0.1.0') < 0) {
       await this.kill(res.data!.sandboxID, opts)
       throw new TemplateError(
-        'You need to update the template to use the new SDK. ' +
-          'You can do this by running `e2b template build` in the directory with the template.'
+        'You need to update the template to use the new SDK.'
       )
     }
 

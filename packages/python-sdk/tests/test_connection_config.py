@@ -94,3 +94,22 @@ def test_sandbox_direct_url_uses_explicit_url_first():
         config.get_sandbox_direct_url("sandbox-id", "e2b.app")
         == "https://sandbox.example.com"
     )
+
+
+def test_request_timeout_zero_means_no_timeout():
+    config = ConnectionConfig(request_timeout=0)
+    assert config.request_timeout is None
+    assert config.get_request_timeout() is None
+    # A per-call value of 0 also disables the timeout.
+    assert config.get_request_timeout(0) is None
+
+
+def test_get_api_params_includes_sandbox_url():
+    config = ConnectionConfig(sandbox_url="https://sandbox.example.com")
+
+    params = config.get_api_params()
+    assert params["sandbox_url"] == "https://sandbox.example.com"
+
+    # Per-call override takes priority.
+    overridden = config.get_api_params(sandbox_url="https://sandbox.override.com")
+    assert overridden["sandbox_url"] == "https://sandbox.override.com"
