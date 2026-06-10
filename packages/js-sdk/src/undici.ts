@@ -5,6 +5,11 @@ export type UndiciRequestInit = RequestInit & {
 
 export type UndiciModule = {
   Agent: new (options: { allowH2: true; connections?: number }) => unknown
+  ProxyAgent: new (options: {
+    uri: string
+    allowH2: true
+    connections?: number
+  }) => unknown
   fetch: unknown
 }
 

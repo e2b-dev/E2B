@@ -8,6 +8,7 @@ from e2b.exceptions import (
 from e2b.sandbox.commands.command_handle import CommandExitException
 from e2b.sandbox._git import (
     GitBranches,
+    GitResetMode,
     GitStatus,
     build_add_args,
     build_auth_error_message,
@@ -661,7 +662,7 @@ class Git:
     async def reset(
         self,
         path: str,
-        mode: Optional[str] = None,
+        mode: Optional[GitResetMode] = None,
         target: Optional[str] = None,
         paths: Optional[List[str]] = None,
         envs: Optional[Dict[str, str]] = None,

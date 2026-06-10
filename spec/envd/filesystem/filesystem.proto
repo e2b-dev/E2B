@@ -62,6 +62,10 @@ message EntryInfo {
     google.protobuf.Timestamp modified_time = 9;
     // If the entry is a symlink, this field contains the target of the symlink.
     optional string symlink_target = 10;
+    // User-defined metadata stored as extended attributes (xattrs) on the file.
+    // Keys live under the `user.e2b.` xattr namespace; the prefix is stripped here.
+    // Plain `user.*` xattrs written by other tooling are not reflected.
+    map<string, string> metadata = 11;
 }
 
 enum FileType {

@@ -267,10 +267,10 @@ def build_reset_args(
     """
     Build arguments for a git reset command.
     """
-    allowed_modes = {"soft", "mixed", "hard", "merge", "keep"}
+    allowed_modes = ["soft", "mixed", "hard", "merge", "keep"]
     if mode and mode not in allowed_modes:
         raise InvalidArgumentException(
-            f"Reset mode must be one of {', '.join(sorted(allowed_modes))}."
+            f"Reset mode must be one of {', '.join(allowed_modes)}."
         )
 
     args = ["reset"]

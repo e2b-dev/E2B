@@ -21,6 +21,7 @@ overrides:
   minimatch@>=5.0.0 <5.1.8: ^5.1.8
   minimatch@>=9.0.0 <9.0.7: ^9.0.7
   minimatch@>=10.0.0 <10.2.3: ^10.2.3
+  ws@>=8.0.0 <8.20.1: ^8.20.1
 
 importers:
 
@@ -69,9 +70,6 @@ importers:
       cli-highlight:
         specifier: ^2.1.11
         version: 2.1.11
-      command-exists:
-        specifier: ^1.2.9
-        version: 1.2.9
       commander:
         specifier: ^11.1.0
         version: 11.1.0
@@ -82,8 +80,8 @@ importers:
         specifier: ^0.6.1
         version: 0.6.1
       e2b:
-        specifier: ^2.19.3
-        version: 2.19.3
+        specifier: ^2.28.1
+        version: 2.28.1
       handlebars:
         specifier: ^4.7.9
         version: 4.7.9
@@ -96,16 +94,10 @@ importers:
       statuses:
         specifier: ^2.0.1
         version: 2.0.1
-      strip-ansi:
-        specifier: ^7.1.0
-        version: 7.1.0
       yup:
         specifier: ^1.3.2
         version: 1.3.2
     devDependencies:
-      '@types/command-exists':
-        specifier: ^1.2.3
-        version: 1.2.3
       '@types/handlebars':
         specifier: ^4.1.0
         version: 4.1.0
@@ -1332,9 +1324,6 @@ packages:
   '@types/chai@5.2.3':
     resolution: {integrity: sha512-Mw558oeA9fFbv65/y4mHtXDs9bPnFMZAL/jxdPFUpOHHIXX91mcgEHbS5Lahr+pwZFR8A7GQleRWeI6cGFC2UA==}
 
-  '@types/command-exists@1.2.3':
-    resolution: {integrity: sha512-PpbaE2XWLaWYboXD6k70TcXO/OdOyyRFq5TVpmlUELNxdkkmXU9fkImNosmXU1DtsNrqdUgWd/nJQYXgwmtdXQ==}
-
   '@types/deep-eql@4.0.2':
     resolution: {integrity: sha512-c9h9dVVMigMPc4bwTvC5dxqtqJZwQPePsWjPlpSOnojbor6pGqdk541lfA7AqFQr5pB1BRdq0juY9db81BwyFw==}
 
@@ -1824,9 +1813,6 @@ packages:
   colorette@1.4.0:
     resolution: {integrity: sha512-Y2oEozpomLn7Q3HFP7dpww7AtMJplbM9lGZP6RDfHqmbeRjiwRg4n6VM6j4KLmRke85uWEI7JqF17f3pqdRA0g==}
 
-  command-exists@1.2.9:
-    resolution: {integrity: sha512-LTQ/SGc+s0Xc0Fu5WaKnR0YiygZkm9eKFvyS+fRsU7/ZWFF8ykFM6Pc9aCVf1+xasOOZpO3BAVgVrKvsqKHV7w==}
-
   commander@11.1.0:
     resolution: {integrity: sha512-yPVavfyCcRhmorC7rWlkHn15b4wDVgVmBA7kV4QVBsF7kv/9TKJAbAXVTxvTnwP8HHKjRCJDClKbciiYS7p0DQ==}
     engines: {node: '>=16'}
@@ -1958,9 +1944,9 @@ packages:
     resolution: {integrity: sha512-KIN/nDJBQRcXw0MLVhZE9iQHmG68qAVIBg9CqmUYjmQIhgij9U5MFvrqkUL5FbtyyzZuOeOt0zdeRe4UY7ct+A==}
     engines: {node: '>= 0.4'}
 
-  e2b@2.19.3:
-    resolution: {integrity: sha512-QukrxH75TMTBkJQDavhaEZpypcKUoF2WKyKicRuPs4enjquAMSvjorNNnZVfxhxVuR/hosGOzEOzQtMZdRJP5Q==}
-    engines: {node: '>=20'}
+  e2b@2.28.1:
+    resolution: {integrity: sha512-JMkK6FDGgzDWv5FOfmE8xHm/8E8xUHAehNx5MIsOJlytCmUC5QbG5mzowExvTpANX0rMepyuXzSH3GwwDCaang==}
+    engines: {node: '>=20.18.1'}
 
   eastasianwidth@0.2.0:
     resolution: {integrity: sha512-I88TYZWc9XiYHRQ4/3c5rjjfgkjhLyW2luGIheGERbNQ6OY7yTybanSpDXZa8y7VUP9YmDcYa+eyq4ca7iLqWA==}
@@ -3809,8 +3795,8 @@ packages:
   wrappy@1.0.2:
     resolution: {integrity: sha512-l4Sp/DRseor9wL6EvV2+TuQn63dMkPjZ/sp9XkghTEbV9KlPS1xUsZ3u7/IQO4wxtcFB4bgpQPRcR3QCvezPcQ==}
 
-  ws@8.19.0:
-    resolution: {integrity: sha512-blAT2mjOEIi0ZzruJfIhb3nps74PRWTCz1IjglWEEpQl5XS/UNama6u2/rjFkDDouqr4L67ry+1aGIALViWjDg==}
+  ws@8.21.0:
+    resolution: {integrity: sha512-Vsp28b7DRcimFQvrqu2Wek3z1iYxDCWqHYB8Qsnk/S4RfaCQzPGPyBNuVjJV3cd6UiKtUtp6sNM77gWvzcCH+g==}
     engines: {node: '>=10.0.0'}
     peerDependencies:
       bufferutil: ^4.0.1
@@ -4421,7 +4407,7 @@ snapshots:
   '@jridgewell/gen-mapping@0.3.13':
     dependencies:
       '@jridgewell/sourcemap-codec': 1.5.5
-      '@jridgewell/trace-mapping': 0.3.30
+      '@jridgewell/trace-mapping': 0.3.31
 
   '@jridgewell/gen-mapping@0.3.8':
     dependencies:
@@ -4783,8 +4769,6 @@ snapshots:
       '@types/deep-eql': 4.0.2
       assertion-error: 2.0.1
 
-  '@types/command-exists@1.2.3': {}
-
   '@types/deep-eql@4.0.2': {}
 
   '@types/estree@1.0.8': {}
@@ -5049,7 +5033,7 @@ snapshots:
       sirv: 3.0.2
       tinyrainbow: 3.1.0
       vitest: 4.1.8(@types/node@20.19.19)(@vitest/browser-playwright@4.1.8)(@vitest/coverage-v8@4.1.8)(msw@2.12.14(@types/node@20.19.19)(typescript@5.5.3))(vite@6.4.2(@types/node@20.19.19)(jiti@2.4.2)(terser@5.46.0))
-      ws: 8.19.0(bufferutil@4.0.8)(utf-8-validate@6.0.3)
+      ws: 8.21.0(bufferutil@4.0.8)(utf-8-validate@6.0.3)
     transitivePeerDependencies:
       - bufferutil
       - msw
@@ -5361,8 +5345,6 @@ snapshots:
 
   colorette@1.4.0: {}
 
-  command-exists@1.2.9: {}
-
   commander@11.1.0: {}
 
   commander@2.20.3:
@@ -5490,7 +5472,7 @@ snapshots:
       es-errors: 1.3.0
       gopd: 1.2.0
 
-  e2b@2.19.3:
+  e2b@2.28.1:
     dependencies:
       '@bufbuild/protobuf': 2.6.2
       '@connectrpc/connect': 2.0.0-rc.3(@bufbuild/protobuf@2.6.2)
@@ -5502,6 +5484,7 @@ snapshots:
       openapi-fetch: 0.14.1
       platform: 1.3.6
       tar: 7.5.12
+      undici: 7.25.0
 
   eastasianwidth@0.2.0: {}
 
@@ -7482,7 +7465,7 @@ snapshots:
 
   wrappy@1.0.2: {}
 
-  ws@8.19.0(bufferutil@4.0.8)(utf-8-validate@6.0.3):
+  ws@8.21.0(bufferutil@4.0.8)(utf-8-validate@6.0.3):
     optionalDependencies:
       bufferutil: 4.0.8
       utf-8-validate: 6.0.3
