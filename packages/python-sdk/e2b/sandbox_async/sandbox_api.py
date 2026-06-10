@@ -243,8 +243,7 @@ class SandboxApi(SandboxBase):
         if Version(res.parsed.envd_version) < Version("0.1.0"):
             await SandboxApi._cls_kill(res.parsed.sandbox_id)
             raise TemplateException(
-                "You need to update the template to use the new SDK. "
-                "You can do this by running `e2b template build` in the directory with the template."
+                "You need to update the template to use the new SDK."
             )
 
         domain = res.parsed.domain if isinstance(res.parsed.domain, str) else None

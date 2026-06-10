@@ -1097,8 +1097,7 @@ export class SandboxApi {
     if (compareVersions(res.data!.envdVersion, '0.1.0') < 0) {
       await this.kill(res.data!.sandboxID, opts)
       throw new TemplateError(
-        'You need to update the template to use the new SDK. ' +
-          'You can do this by running `e2b template build` in the directory with the template.'
+        'You need to update the template to use the new SDK.'
       )
     }
 

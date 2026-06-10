@@ -744,8 +744,7 @@ export class Sandbox extends SandboxApi {
     if (this.envdApi.version) {
       if (compareVersions(this.envdApi.version, '0.1.5') < 0) {
         throw new SandboxError(
-          'You need to update the template to use the new SDK. ' +
-            'You can do this by running `e2b template build` in the directory with the template.'
+          'You need to update the template to use the new SDK.'
         )
       }
 

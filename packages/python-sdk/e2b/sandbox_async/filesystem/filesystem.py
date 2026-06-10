@@ -613,8 +613,7 @@ class Filesystem:
         """
         if recursive and self._envd_version < ENVD_VERSION_RECURSIVE_WATCH:
             raise TemplateException(
-                "You need to update the template to use recursive watching. "
-                "You can do this by running `e2b template build` in the directory with the template."
+                "You need to update the template to use recursive watching."
             )
 
         events = self._rpc.awatch_dir(
