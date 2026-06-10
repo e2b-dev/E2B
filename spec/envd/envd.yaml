@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: envd
-  version: 0.1.1
+  version: 0.1.3
   description: API for managing files' content and controlling envd
 
 tags:
@@ -102,6 +102,27 @@ paths:
           $ref: '#/components/responses/InternalServerError'
     post:
       summary: Upload a file and ensure the parent directories exist. If the file exists, it will be overwritten.
+      description: |
+        Any request header of the form `X-Metadata-<key>: <value>` is persisted
+        as a user-defined extended attribute on the uploaded file. The
+        `X-Metadata-` prefix is stripped and the remaining header name is
+        lowercased to form the metadata key; the resulting map is returned on
+        `EntryInfo` lookups (e.g. `Stat`, `ListDir`).
+
+        Each upload replaces the file's metadata with the keys provided in
+        that request: keys previously stored but absent from the new request
+        are removed, and an upload that sends no `X-Metadata-*` header clears
+        all existing metadata.
+
+        Both keys and values must be printable US-ASCII (bytes `0x20`-`0x7E`)
+        and are rejected with HTTP 400 otherwise. Each key is capped at 246
+        bytes (the Linux VFS xattr-name limit minus the namespace prefix), and
+        the combined size of all metadata on a file (keys plus values, with the
+        namespace prefix counted per key) is capped at 4096 bytes to stay within
+        the filesystem's per-inode xattr budget. Multiple files in a single
+        multipart upload receive the same metadata. If the same
+        `X-Metadata-<key>` header is sent more than once, only the first
+        value is used.
       tags: [files]
       security:
         - AccessTokenAuth: []
@@ -252,6 +273,11 @@ components:
           description: Type of the file
           enum:
             - file
+        metadata:
+          type: object
+          description: User-defined metadata stored as extended attributes on the file.
+          additionalProperties:
+            type: string
     EnvVars:
       type: object
       description: Environment variables to set
