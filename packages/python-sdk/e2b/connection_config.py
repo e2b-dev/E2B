@@ -1,6 +1,6 @@
 import os
 
-from typing import Optional, Dict, TypedDict
+from typing import cast, Optional, Dict, TypedDict
 
 from httpx._types import ProxyTypes
 from typing_extensions import Unpack
@@ -25,7 +25,10 @@ class ApiParams(TypedDict, total=False):
     """Timeout for the request in **seconds**, defaults to 60 seconds."""
 
     headers: Optional[Dict[str, str]]
-    """Additional headers to send with the request."""
+    """Additional headers to send with the request. Deprecated, use api_headers instead."""
+
+    api_headers: Optional[Dict[str, str]]
+    """Additional headers to send with E2B API requests."""
 
     api_key: Optional[str]
     """E2B API Key to use for authentication, defaults to `E2B_API_KEY` environment variable."""
@@ -87,6 +90,7 @@ class ConnectionConfig:
         access_token: Optional[str] = None,
         request_timeout: Optional[float] = None,
         headers: Optional[Dict[str, str]] = None,
+        api_headers: Optional[Dict[str, str]] = None,
         extra_sandbox_headers: Optional[Dict[str, str]] = None,
         proxy: Optional[ProxyTypes] = None,
     ):
@@ -94,7 +98,7 @@ class ConnectionConfig:
         self.debug = debug or ConnectionConfig._debug()
         self.api_key = api_key or ConnectionConfig._api_key()
         self.access_token = access_token or ConnectionConfig._access_token()
-        self.headers = headers or {}
+        self.headers = {**(headers or {}), **(api_headers or {})}
         self.headers["User-Agent"] = f"e2b-python-sdk/{package_version}"
         self.__extra_sandbox_headers = extra_sandbox_headers or {}
 
@@ -104,13 +108,6 @@ class ConnectionConfig:
             REQUEST_TIMEOUT,
             request_timeout,
         )
-
-        if request_timeout == 0:
-            self.request_timeout = None
-        elif request_timeout is not None:
-            self.request_timeout = request_timeout
-        else:
-            self.request_timeout = REQUEST_TIMEOUT
 
         self.api_url = (
             api_url
@@ -191,16 +188,20 @@ class ConnectionConfig:
         :return: Dictionary of parameters for the API call
         """
         headers = opts.get("headers")
+        api_headers = opts.get("api_headers")
         request_timeout = opts.get("request_timeout")
         api_key = opts.get("api_key")
         api_url = opts.get("api_url")
         domain = opts.get("domain")
         debug = opts.get("debug")
         proxy = opts.get("proxy")
+        sandbox_url = opts.get("sandbox_url")
 
         req_headers = self.headers.copy()
         if headers is not None:
             req_headers.update(headers)
+        if api_headers is not None:
+            req_headers.update(api_headers)
 
         return dict(
             ApiParams(
@@ -211,6 +212,9 @@ class ConnectionConfig:
                 request_timeout=self.get_request_timeout(request_timeout),
                 headers=req_headers,
                 proxy=proxy if proxy is not None else self.proxy,
+                sandbox_url=sandbox_url
+                if sandbox_url is not None
+                else cast(Optional[str], self._sandbox_url),
             )
         )
 
@@ -220,7 +224,7 @@ class ConnectionConfig:
         We need this separate as we use the same header for E2B access token to API and envd access token to sandbox.
         """
         return {
-            **self.headers,
+            "User-Agent": self.headers["User-Agent"],
             **self.__extra_sandbox_headers,
         }
 

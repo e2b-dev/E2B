@@ -808,8 +808,7 @@ export class Filesystem {
       compareVersions(this.envdApi.version, ENVD_VERSION_RECURSIVE_WATCH) < 0
     ) {
       throw new TemplateError(
-        'You need to update the template to use recursive watching. ' +
-          'You can do this by running `e2b template build` in the directory with the template.'
+        'You need to update the template to use recursive watching.'
       )
     }
 

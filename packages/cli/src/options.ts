@@ -16,11 +16,6 @@ export const configOption = new commander.Option(
   )} in root directory. We recommend using the new build system (https://e2b.dev/docs/template/defining-template) that does not use config files.`
 )
 
-export const selectOption = new commander.Option(
-  '-s, --select',
-  'select multiple sandbox templates from interactive list'
-)
-
 export const selectMultipleOption = new commander.Option(
   '-s, --select',
   'select sandbox template from interactive list'

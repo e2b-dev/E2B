@@ -134,6 +134,14 @@ def test_traces_on_from_image_registry(build):
 
 
 @pytest.mark.skip_debug()
+def test_traces_on_from_image_credentials():
+    _expect_to_throw_and_check_trace(
+        lambda: Template().from_image("ubuntu:22.04", username="user"),
+        "from_image",
+    )
+
+
+@pytest.mark.skip_debug()
 def test_traces_on_from_aws_registry(build):
     template = Template()
     template = template.from_aws_registry(

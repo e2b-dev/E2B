@@ -38,6 +38,73 @@ test('uses undici with HTTP/2 enabled in Node', async () => {
   expect(requests[0].init?.dispatcher).toBeInstanceOf(Agent)
 })
 
+test('uses a ProxyAgent dispatcher when a proxy is configured', async () => {
+  const proxyAgents: Array<{
+    uri?: string
+    allowH2?: boolean
+    connections?: number
+  }> = []
+  const agents: Array<unknown> = []
+  const requests: Array<{ init?: RequestInit & { dispatcher?: unknown } }> = []
+
+  class Agent {
+    constructor() {
+      agents.push(this)
+    }
+  }
+
+  class ProxyAgent {
+    constructor(options: {
+      uri?: string
+      allowH2?: boolean
+      connections?: number
+    }) {
+      proxyAgents.push(options)
+    }
+  }
+
+  const undiciFetch = vi.fn((input, init) => {
+    requests.push({ init })
+    return Promise.resolve(new Response('ok'))
+  })
+
+  const { createEnvdFetchForRuntime } = await import('../../src/envd/http2')
+
+  const fetcher = createEnvdFetchForRuntime('node', {
+    connectionLimit: 1,
+    proxy: 'http://127.0.0.1:8080',
+    loadUndici: () =>
+      Promise.resolve({ Agent, ProxyAgent, fetch: undiciFetch }),
+  })
+  await fetcher('https://example.com/status')
+
+  expect(agents).toHaveLength(0)
+  expect(proxyAgents).toEqual([
+    { uri: 'http://127.0.0.1:8080', allowH2: true, connections: 1 },
+  ])
+  expect(requests[0].init?.dispatcher).toBeInstanceOf(ProxyAgent)
+})
+
+test('caches envd fetchers per proxy', async () => {
+  const { createEnvdFetch, createEnvdRpcFetch } = await import(
+    '../../src/envd/http2'
+  )
+
+  const noProxy = createEnvdFetch()
+  const proxyA = createEnvdFetch('http://127.0.0.1:8080')
+
+  expect(createEnvdFetch()).toBe(noProxy)
+  expect(createEnvdFetch('http://127.0.0.1:8080')).toBe(proxyA)
+  expect(proxyA).not.toBe(noProxy)
+
+  const rpcNoProxy = createEnvdRpcFetch()
+  const rpcProxyA = createEnvdRpcFetch('http://127.0.0.1:8080')
+
+  expect(createEnvdRpcFetch()).toBe(rpcNoProxy)
+  expect(createEnvdRpcFetch('http://127.0.0.1:8080')).toBe(rpcProxyA)
+  expect(rpcProxyA).not.toBe(rpcNoProxy)
+})
+
 test('passes Request objects to undici as URL plus init', async () => {
   const requests: Array<{ input: RequestInfo | URL; init?: RequestInit }> = []
 

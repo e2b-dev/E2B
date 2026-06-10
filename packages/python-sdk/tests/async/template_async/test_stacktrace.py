@@ -132,6 +132,14 @@ async def test_traces_on_from_image_registry(async_build):
 
 
 @pytest.mark.skip_debug()
+async def test_traces_on_from_image_credentials():
+    await _expect_to_throw_and_check_trace(
+        lambda: AsyncTemplate().from_image("ubuntu:22.04", username="user"),
+        "from_image",
+    )
+
+
+@pytest.mark.skip_debug()
 async def test_traces_on_from_aws_registry(async_build):
     template = AsyncTemplate().from_aws_registry(
         "123456789.dkr.ecr.us-east-1.amazonaws.com/nonexistent:latest",

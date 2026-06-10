@@ -236,6 +236,8 @@ class Filesystem:
         use_octet_stream: bool = False,
     ) -> List[WriteInfo]:
         """
+        Writes multiple files.
+
         Writes a list of files to the filesystem.
         When writing to a file that doesn't exist, the file will get created.
         When writing to a file that already exists, the file will get overwritten.
@@ -549,8 +551,7 @@ class Filesystem:
         """
         if recursive and self._envd_version < ENVD_VERSION_RECURSIVE_WATCH:
             raise TemplateException(
-                "You need to update the template to use recursive watching. "
-                "You can do this by running `e2b template build` in the directory with the template."
+                "You need to update the template to use recursive watching."
             )
 
         if include_entry and self._envd_version < ENVD_VERSION_FS_EVENT_ENTRY_INFO:

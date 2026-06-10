@@ -1,4 +1,4 @@
-import { ApiClient, handleApiError, paths, components } from '../api'
+import { ApiClient, handleApiError, components } from '../api'
 import { buildRequestSignal } from '../connectionConfig'
 import { dynamicImport, stripAnsi } from '../utils'
 import { BuildError, FileUploadError, TemplateError } from '../errors'
@@ -41,11 +41,9 @@ type CheckAliasExistsInput = {
   alias: string
 }
 
-type ApiBuildStatusResponse =
-  paths['/templates/{templateID}/builds/{buildID}/status']['get']['responses']['200']['content']['application/json']
+type ApiBuildStatusResponse = components['schemas']['TemplateBuildInfo']
 
-export type TriggerBuildTemplate =
-  paths['/v2/templates/{templateID}/builds/{buildID}']['post']['requestBody']['content']['application/json']
+export type TriggerBuildTemplate = components['schemas']['TemplateBuildStartV2']
 
 export async function requestBuild(
   client: ApiClient,

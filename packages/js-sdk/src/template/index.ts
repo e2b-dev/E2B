@@ -1,7 +1,7 @@
 import type { PathLike } from 'node:fs'
 import { ApiClient } from '../api'
 import { ConnectionConfig, ConnectionOpts } from '../connectionConfig'
-import { BuildError } from '../errors'
+import { BuildError, InvalidArgumentError } from '../errors'
 import { runtime } from '../utils'
 import {
   assignTags,
@@ -270,7 +270,7 @@ export class TemplateBase
       {
         templateID: data.templateId,
         buildID: data.buildId,
-        logsOffset: options?.logsOffset,
+        logsOffset: options?.logsOffset ?? 0,
       },
       config.getSignal(undefined, options?.signal)
     )
@@ -447,6 +447,14 @@ export class TemplateBase
     baseImage: string,
     credentials?: { username: string; password: string }
   ): TemplateBuilder {
+    // Validate before mutating the builder.
+    if (credentials && (!credentials.username || !credentials.password)) {
+      throw new InvalidArgumentError(
+        'Both username and password are required when providing registry credentials',
+        getCallerFrame(STACK_TRACE_DEPTH - 1)
+      )
+    }
+
     this.baseImage = baseImage
     this.baseTemplate = undefined
 

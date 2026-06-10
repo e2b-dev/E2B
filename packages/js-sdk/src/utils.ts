@@ -103,10 +103,6 @@ export function stripAnsi(text: string): string {
   return text.replace(ansiRegex(), '')
 }
 
-export async function wait(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms))
-}
-
 /**
  * Convert data to a Blob, avoiding unnecessary conversions when possible.
  */

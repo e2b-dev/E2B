@@ -218,10 +218,10 @@ class Filesystem:
         """
         result = await self.write_files(
             [WriteEntry(path=path, data=data)],
-            user,
-            request_timeout,
-            gzip,
-            use_octet_stream,
+            user=user,
+            request_timeout=request_timeout,
+            gzip=gzip,
+            use_octet_stream=use_octet_stream,
         )
 
         if len(result) != 1:
@@ -567,8 +567,7 @@ class Filesystem:
         """
         if recursive and self._envd_version < ENVD_VERSION_RECURSIVE_WATCH:
             raise TemplateException(
-                "You need to update the template to use recursive watching. "
-                "You can do this by running `e2b template build` in the directory with the template."
+                "You need to update the template to use recursive watching."
             )
 
         if include_entry and self._envd_version < ENVD_VERSION_FS_EVENT_ENTRY_INFO:
