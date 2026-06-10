@@ -21,6 +21,7 @@ from e2b.envd.rpc import authentication_header, handle_rpc_exception
 from e2b.envd.versions import (
     ENVD_DEFAULT_USER,
     ENVD_OCTET_STREAM_UPLOAD,
+    ENVD_VERSION_FS_EVENT_ENTRY_INFO,
     ENVD_VERSION_RECURSIVE_WATCH,
 )
 from e2b.exceptions import (
@@ -560,7 +561,7 @@ class Filesystem:
         :param request_timeout: Timeout for the request in **seconds**
         :param timeout: Timeout for the watch operation in **seconds**. Using `0` will not limit the watch time
         :param recursive: Watch directory recursively
-        :param include_entry: Include the `EntryInfo` of the affected entry in each event, when available. Requires envd 0.6.2 or later; ignored by older sandboxes
+        :param include_entry: Include the `EntryInfo` of the affected entry in each event, when available. Requires envd 0.6.3 or later
 
         :return: `AsyncWatchHandle` object for stopping watching directory
         """
@@ -568,6 +569,11 @@ class Filesystem:
             raise TemplateException(
                 "You need to update the template to use recursive watching. "
                 "You can do this by running `e2b template build` in the directory with the template."
+            )
+
+        if include_entry and self._envd_version < ENVD_VERSION_FS_EVENT_ENTRY_INFO:
+            raise TemplateException(
+                "You need to update the template to include entry info in watch events."
             )
 
         events = self._rpc.awatch_dir(

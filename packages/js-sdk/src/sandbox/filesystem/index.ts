@@ -32,6 +32,7 @@ import { compareVersions } from 'compare-versions'
 import {
   ENVD_DEFAULT_USER,
   ENVD_OCTET_STREAM_UPLOAD,
+  ENVD_VERSION_FS_EVENT_ENTRY_INFO,
   ENVD_VERSION_RECURSIVE_WATCH,
 } from '../../envd/versions'
 import {
@@ -243,8 +244,8 @@ export interface WatchOpts extends FilesystemRequestOpts {
    * The entry is populated best-effort and may be `undefined` for events where the
    * entry no longer exists at the path (e.g. remove or rename-away events).
    *
-   * Requires envd 0.6.2 or later. When the sandbox's envd version doesn't support it,
-   * the option is ignored and `event.entry` stays `undefined`.
+   * Requires envd 0.6.3 or later. Watching with this option against an older sandbox
+   * throws a `TemplateError`.
    */
   includeEntry?: boolean
 }
@@ -809,6 +810,17 @@ export class Filesystem {
       throw new TemplateError(
         'You need to update the template to use recursive watching. ' +
           'You can do this by running `e2b template build` in the directory with the template.'
+      )
+    }
+
+    if (
+      opts?.includeEntry &&
+      this.envdApi.version &&
+      compareVersions(this.envdApi.version, ENVD_VERSION_FS_EVENT_ENTRY_INFO) <
+        0
+    ) {
+      throw new TemplateError(
+        'You need to update the template to include entry info in watch events.'
       )
     }
 
