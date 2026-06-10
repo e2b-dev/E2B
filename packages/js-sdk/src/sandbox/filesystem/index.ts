@@ -170,6 +170,32 @@ function mapMetadata(
 
 const METADATA_HEADER_PREFIX = 'X-Metadata-'
 
+// Metadata keys travel as `X-Metadata-<key>` HTTP header names, so they must be
+// valid header tokens (RFC 7230); values travel as header values, restricted to
+// printable US-ASCII.
+const METADATA_KEY_REGEX = /^[A-Za-z0-9!#$%&'*+\-.^_`|~]+$/
+const METADATA_VALUE_REGEX = /^[\x20-\x7e]*$/
+
+function validateMetadata(metadata: Record<string, string> | undefined): void {
+  if (!metadata) return
+  for (const [key, value] of Object.entries(metadata)) {
+    if (!METADATA_KEY_REGEX.test(key)) {
+      throw new InvalidArgumentError(
+        `Invalid metadata key ${JSON.stringify(
+          key
+        )}: keys must be non-empty and use only HTTP token characters (letters, digits and !#$%&'*+-.^_\`|~).`
+      )
+    }
+    if (!METADATA_VALUE_REGEX.test(value)) {
+      throw new InvalidArgumentError(
+        `Invalid metadata value for key ${JSON.stringify(
+          key
+        )}: values must be printable US-ASCII.`
+      )
+    }
+  }
+}
+
 function metadataHeaders(
   metadata: Record<string, string> | undefined
 ): Record<string, string> {
@@ -210,11 +236,10 @@ export interface FilesystemWriteOpts extends FilesystemRequestOpts {
   useOctetStream?: boolean
   /**
    * User-defined metadata to persist on the uploaded file(s) as extended
-   * attributes. Each entry is sent as an `X-Metadata-<key>` request header, so
-   * keys must be valid HTTP header tokens (letters, digits and ``!#$%&'*+-.^_`|~``)
-   * and are lowercased by the sandbox, so they may differ in case when read
-   * back; values must be printable US-ASCII. The same metadata is applied to
-   * every file in a multi-file upload. Requires envd 0.6.2 or later.
+   * attributes. Keys are lowercased by the sandbox, so they may differ in case
+   * when read back. Invalid keys or values throw an `InvalidArgumentError`.
+   * The same metadata is applied to every file in a multi-file upload.
+   * Requires envd 0.6.2 or later.
    */
   metadata?: Record<string, string>
 }
@@ -469,6 +494,7 @@ export class Filesystem {
       (writeOpts?.useOctetStream ?? false) && supportsOctetStream
 
     const metadata = writeOpts?.metadata
+    validateMetadata(metadata)
     if (
       metadata &&
       Object.keys(metadata).length > 0 &&

@@ -38,6 +38,7 @@ from e2b.sandbox.filesystem.filesystem import (
     map_metadata,
     metadata_to_headers,
     to_upload_body,
+    validate_metadata,
 )
 from e2b.sandbox_sync.filesystem.watch_handle import WatchHandle
 
@@ -213,7 +214,7 @@ class Filesystem:
         :param request_timeout: Timeout for the request in **seconds**
         :param gzip: Use gzip compression for the request
         :param use_octet_stream: Upload using `application/octet-stream` instead of `multipart/form-data`. Defaults to `False`. Requires envd 0.5.7 or later — when not supported, the upload falls back to `multipart/form-data`.
-        :param metadata: User-defined metadata to persist on the uploaded file as extended attributes. Each entry is sent as an `X-Metadata-<key>` request header, so keys must be valid HTTP header tokens and are lowercased by the sandbox; values must be printable US-ASCII. Requires envd 0.6.2 or later.
+        :param metadata: User-defined metadata to persist on the uploaded file as extended attributes. Keys are lowercased by the sandbox; invalid keys or values raise an `InvalidArgumentException`. Requires envd 0.6.2 or later.
 
         :return: Information about the written file
         """
@@ -253,7 +254,7 @@ class Filesystem:
         :param request_timeout: Timeout for the request
         :param gzip: Use gzip compression for the request
         :param use_octet_stream: Upload using `application/octet-stream` instead of `multipart/form-data`. Defaults to `False`. Requires envd 0.5.7 or later — when not supported, the upload falls back to `multipart/form-data`.
-        :param metadata: User-defined metadata to persist on each uploaded file as extended attributes; the same map is applied to every file. Each entry is sent as an `X-Metadata-<key>` request header, so keys must be valid HTTP header tokens and are lowercased by the sandbox; values must be printable US-ASCII. Requires envd 0.6.2 or later.
+        :param metadata: User-defined metadata to persist on each uploaded file as extended attributes; the same map is applied to every file. Keys are lowercased by the sandbox; invalid keys or values raise an `InvalidArgumentException`. Requires envd 0.6.2 or later.
         :return: Information about the written files
         """
         username = user
@@ -262,6 +263,8 @@ class Filesystem:
 
         if len(files) == 0:
             return []
+
+        validate_metadata(metadata)
 
         if metadata and self._envd_version < ENVD_FILE_METADATA:
             raise TemplateException("File metadata requires envd 0.6.2 or later.")

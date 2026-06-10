@@ -1,6 +1,7 @@
-import { assert } from 'vitest'
+import { assert, expect } from 'vitest'
 
 import { WriteEntry } from '../../../src/sandbox/filesystem'
+import { InvalidArgumentError } from '../../../src/errors.js'
 import { isDebug, sandboxTest } from '../../setup.js'
 
 sandboxTest('write file with metadata', async ({ sandbox }) => {
@@ -160,3 +161,25 @@ sandboxTest(
     }
   }
 )
+
+sandboxTest('rejects invalid metadata', async ({ sandbox }) => {
+  const filename = 'invalid_metadata.txt'
+
+  // Key with a space is not a valid HTTP header token.
+  await expect(
+    sandbox.files.write(filename, 'x', { metadata: { 'bad key': 'value' } })
+  ).rejects.toThrow(InvalidArgumentError)
+
+  // Empty key.
+  await expect(
+    sandbox.files.write(filename, 'x', { metadata: { '': 'value' } })
+  ).rejects.toThrow(InvalidArgumentError)
+
+  // Value with a non-printable / non-ASCII character.
+  await expect(
+    sandbox.files.write(filename, 'x', { metadata: { good: 'bad\nvalue' } })
+  ).rejects.toThrow(InvalidArgumentError)
+
+  // The file must not have been created by a rejected write.
+  assert.isFalse(await sandbox.files.exists(filename))
+})

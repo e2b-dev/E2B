@@ -1,4 +1,5 @@
 import gzip
+import re
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
@@ -146,6 +147,28 @@ def to_upload_body(
 
 
 METADATA_HEADER_PREFIX = "X-Metadata-"
+
+# Metadata keys travel as `X-Metadata-<key>` HTTP header names, so they must be
+# valid header tokens (RFC 7230); values travel as header values, restricted to
+# printable US-ASCII.
+_METADATA_KEY_REGEX = re.compile(r"^[A-Za-z0-9!#$%&'*+\-.^_`|~]+$")
+_METADATA_VALUE_REGEX = re.compile(r"^[\x20-\x7e]*$")
+
+
+def validate_metadata(metadata: Optional[Dict[str, str]]) -> None:
+    """Validate metadata keys/values before they are sent as upload headers."""
+    if not metadata:
+        return
+    for key, value in metadata.items():
+        if not _METADATA_KEY_REGEX.match(key):
+            raise InvalidArgumentException(
+                f"Invalid metadata key {key!r}: keys must be non-empty and use only "
+                "HTTP token characters (letters, digits and !#$%&'*+-.^_`|~)."
+            )
+        if not _METADATA_VALUE_REGEX.match(value):
+            raise InvalidArgumentException(
+                f"Invalid metadata value for key {key!r}: values must be printable US-ASCII."
+            )
 
 
 def metadata_to_headers(

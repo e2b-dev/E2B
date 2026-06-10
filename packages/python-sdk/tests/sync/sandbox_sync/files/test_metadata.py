@@ -1,3 +1,8 @@
+import pytest
+
+from e2b.exceptions import InvalidArgumentException
+
+
 def test_write_file_with_metadata(sandbox, debug):
     filename = "test_metadata.txt"
     content = "This is a test file with metadata."
@@ -128,3 +133,22 @@ def test_metadata_set_via_xattrs_surfaced_in_get_info(sandbox, debug):
 
     if debug:
         sandbox.files.remove(filename)
+
+
+def test_write_rejects_invalid_metadata(sandbox):
+    filename = "invalid_metadata.txt"
+
+    # Key with a space is not a valid HTTP header token.
+    with pytest.raises(InvalidArgumentException):
+        sandbox.files.write(filename, "x", metadata={"bad key": "value"})
+
+    # Empty key.
+    with pytest.raises(InvalidArgumentException):
+        sandbox.files.write(filename, "x", metadata={"": "value"})
+
+    # Value with a non-printable / non-ASCII character.
+    with pytest.raises(InvalidArgumentException):
+        sandbox.files.write(filename, "x", metadata={"good": "bad\nvalue"})
+
+    # The file must not have been created by a rejected write.
+    assert not sandbox.files.exists(filename)

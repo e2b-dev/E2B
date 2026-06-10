@@ -1,4 +1,7 @@
+import pytest
+
 from e2b import AsyncSandbox
+from e2b.exceptions import InvalidArgumentException
 from e2b.sandbox.filesystem.filesystem import WriteEntry
 
 
@@ -139,3 +142,22 @@ async def test_metadata_set_via_xattrs_surfaced_in_get_info(
 
     if debug:
         await async_sandbox.files.remove(filename)
+
+
+async def test_write_rejects_invalid_metadata(async_sandbox: AsyncSandbox):
+    filename = "invalid_metadata.txt"
+
+    # Key with a space is not a valid HTTP header token.
+    with pytest.raises(InvalidArgumentException):
+        await async_sandbox.files.write(filename, "x", metadata={"bad key": "value"})
+
+    # Empty key.
+    with pytest.raises(InvalidArgumentException):
+        await async_sandbox.files.write(filename, "x", metadata={"": "value"})
+
+    # Value with a non-printable / non-ASCII character.
+    with pytest.raises(InvalidArgumentException):
+        await async_sandbox.files.write(filename, "x", metadata={"good": "bad\nvalue"})
+
+    # The file must not have been created by a rejected write.
+    assert not await async_sandbox.files.exists(filename)
