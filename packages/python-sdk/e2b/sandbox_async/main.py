@@ -15,7 +15,7 @@ from e2b.connection_config import ApiParams, ConnectionConfig
 from e2b.envd.api import ENVD_API_HEALTH_ROUTE, ahandle_envd_api_exception
 from e2b.envd.versions import ENVD_DEBUG_FALLBACK
 from e2b.exceptions import (
-    SandboxException,
+    TemplateException,
     format_request_timeout_error,
 )
 from e2b.sandbox.main import SandboxOpts
@@ -377,6 +377,10 @@ class AsyncSandbox(SandboxApi):
 
         :return: `True` if the sandbox was killed, `False` if the sandbox was not found
         """
+        if self.connection_config.debug:
+            # Skip killing the sandbox in debug mode
+            return True
+
         return await SandboxApi._cls_kill(
             sandbox_id=self.sandbox_id,
             **self.connection_config.get_api_params(**opts),
@@ -583,9 +587,13 @@ class AsyncSandbox(SandboxApi):
 
         :return: List of sandbox metrics containing CPU, memory and disk usage information
         """
+        if self.connection_config.debug:
+            # Skip getting the metrics in debug mode
+            return []
+
         if self._envd_version < Version("0.1.5"):
-            raise SandboxException(
-                "Metrics are not supported in this version of the sandbox, please rebuild your template."
+            raise TemplateException(
+                "You need to update the template to use the new SDK."
             )
 
         if self._envd_version < Version("0.2.4"):
@@ -663,6 +671,8 @@ class AsyncSandbox(SandboxApi):
     ) -> bool:
         """
         :deprecated: Use `pause()` instead.
+
+        :return: `True` if the sandbox got paused, `False` if the sandbox was already paused
         """
         return await self.pause(**opts)
 

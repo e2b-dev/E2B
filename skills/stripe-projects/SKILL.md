@@ -13,6 +13,19 @@ Use these patterns after E2B sandbox/API access has been provisioned through Str
 - Use that key as `E2B_API_KEY` for sandbox creation, sandbox control, and SDK clients.
 - Prefer setting `E2B_API_KEY` explicitly in runtime environments so commands and SDK calls use the intended E2B team.
 - Local defaults can also come from `.env.local` or `~/.e2b/config.json`.
+- In Stripe Projects checkouts, the E2B CLI may not be globally logged in. Before using `e2b sandbox ...`, prefer a Stripe Projects env pull plus per-command export instead of trying `e2b auth login`.
+- Do not print secret values. `stripe projects env --json` can return redacted placeholders, so do not use it as the source for a runnable `E2B_API_KEY`. Pull the managed env file, then read only the needed E2B variables into the command environment without echoing them.
+
+```bash
+stripe projects env --pull --yes
+env_value() {
+  awk -F= -v key="$1" '$1 == key {sub(/^[^=]*=/, ""); gsub(/^"|"$/, ""); print; exit}' .env
+}
+export E2B_API_KEY="$(env_value E2B_API_KEY)"
+export E2B_API_URL="$(env_value E2B_API_URL)"
+export E2B_DOMAIN="$(env_value E2B_DOMAIN)"
+e2b sandbox create base --detach
+```
 
 ## Stripe Projects CLI
 
@@ -30,27 +43,31 @@ stripe projects env --json
 stripe projects env --pull --yes
 ```
 
-Export the E2B API key before using the E2B CLI or SDK. Prefer reading credential output as data instead of sourcing a `.env` file.
-
-When using `stripe projects env --json`, extract the first non-empty value at `data.resource_access_configurations[].access_configuration.E2B_API_KEY` and export it as `E2B_API_KEY`:
+Export the E2B API key before using the E2B CLI or SDK. Prefer `stripe projects env --pull --yes` for command execution because JSON output may redact secret values. Read only the variables you need from `.env`; do not source `.env` as shell code:
 
 ```bash
-export E2B_API_KEY="$(
-  stripe projects env --json \
-    | jq -r '.data.resource_access_configurations[].access_configuration.E2B_API_KEY? // empty' \
-    | head -n 1
-)"
+stripe projects env --pull --yes
+env_value() {
+  awk -F= -v key="$1" '$1 == key {sub(/^[^=]*=/, ""); gsub(/^"|"$/, ""); print; exit}' .env
+}
+export E2B_API_KEY="$(env_value E2B_API_KEY)"
+export E2B_API_URL="$(env_value E2B_API_URL)"
+export E2B_DOMAIN="$(env_value E2B_DOMAIN)"
 ```
 
-If credentials were already pulled into a local `.env`, copy only the `E2B_API_KEY` value into the environment explicitly. Do not source `.env` as shell code.
+Use `stripe projects env --json` for structure checks only. In current Stripe Projects output, the E2B variables are under `data.resource_access_configurations[].access_configuration`, including `E2B_API_KEY`, `E2B_API_URL`, and `E2B_DOMAIN`, but the values may be redacted and unusable for CLI/SDK calls.
 
 ## E2B CLI
 
-Install the E2B CLI with npm:
+If the E2B CLI is missing or a shell shim is broken, install it with Node instead of switching to SDK code:
 
 ```bash
-npm install -g @e2b/cli
+if ! e2b --version >/dev/null 2>&1; then
+  npm install -g @e2b/cli
+fi
 ```
+
+The CLI package requires Node 20 or newer.
 
 Prefer detached sandboxes for non-interactive work so the command returns a sandbox ID and does not attach an interactive terminal:
 

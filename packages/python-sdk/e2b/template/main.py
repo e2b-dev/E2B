@@ -3,7 +3,7 @@ from typing import Dict, List, Optional, Union, Literal
 from pathlib import Path
 
 
-from e2b.exceptions import BuildException
+from e2b.exceptions import BuildException, InvalidArgumentException
 from e2b.template.consts import STACK_TRACE_DEPTH, RESOLVE_SYMLINKS
 from e2b.template.dockerfile_parser import parse_dockerfile
 from e2b.template.readycmd import ReadyCmd, wait_for_file
@@ -1004,16 +1004,23 @@ class TemplateBase:
         Template().from_image('myregistry.com/myimage:latest', username='user', password='pass')
         ```
         """
-        self._base_image = image
-        self._base_template = None
+        # Validate (and resolve the registry config) before mutating the builder.
+        if username is not None or password is not None:
+            if not username or not password:
+                caller_frame = get_caller_frame(STACK_TRACE_DEPTH - 1)
+                stack_trace = make_traceback(caller_frame)
+                raise InvalidArgumentException(
+                    "Both username and password are required when providing registry credentials"
+                ).with_traceback(stack_trace)
 
-        # Set the registry config if provided
-        if username and password:
             self._registry_config = {
                 "type": "registry",
                 "username": username,
                 "password": password,
             }
+
+        self._base_image = image
+        self._base_template = None
 
         # If we should force the next layer and it's a FROM command, invalidate whole template
         if self._force_next_layer:

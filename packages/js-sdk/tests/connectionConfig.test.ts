@@ -176,6 +176,31 @@ test('getSignal returns undefined when no timeout and no signal', () => {
   assert.equal(signal, undefined)
 })
 
+test('requestTimeoutMs 0 from the config disables the timeout', () => {
+  const config = new ConnectionConfig({ requestTimeoutMs: 0 })
+  // The stored value is kept as 0 (not replaced by the default).
+  assert.equal(config.requestTimeoutMs, 0)
+  // getSignal() with no per-call arg falls back to the stored 0, which must
+  // NOT produce a timeout signal.
+  assert.equal(config.getSignal(), undefined)
+  // With only a user signal, no timeout signal is layered on top.
+  const controller = new AbortController()
+  assert.strictEqual(
+    config.getSignal(undefined, controller.signal),
+    controller.signal
+  )
+})
+
+test('setupRequestController with config timeout 0 never auto-aborts', async () => {
+  const config = new ConnectionConfig({ requestTimeoutMs: 0 })
+  const { controller } = setupRequestController(
+    config.requestTimeoutMs,
+    undefined
+  )
+  await new Promise((resolve) => setTimeout(resolve, 40))
+  assert.equal(controller.signal.aborted, false)
+})
+
 test('setupRequestController aborts when user signal aborts', () => {
   const userController = new AbortController()
   const { controller } = setupRequestController(0, userController.signal)

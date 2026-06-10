@@ -83,8 +83,12 @@ class AsyncCommandHandle:
         on_stdout: Optional[OutputHandler[Stdout]] = None,
         on_stderr: Optional[OutputHandler[Stderr]] = None,
         on_pty: Optional[OutputHandler[PtyOutput]] = None,
-        handle_send_stdin: Optional[Callable[[str], Coroutine[Any, Any, None]]] = None,
-        handle_close_stdin: Optional[Callable[[], Coroutine[Any, Any, None]]] = None,
+        handle_send_stdin: Optional[
+            Callable[[Union[str, bytes], Optional[float]], Coroutine[Any, Any, None]]
+        ] = None,
+        handle_close_stdin: Optional[
+            Callable[[Optional[float]], Coroutine[Any, Any, None]]
+        ] = None,
     ):
         self._pid = pid
         self._handle_kill = handle_kill
@@ -203,28 +207,35 @@ class AsyncCommandHandle:
         result = await self._handle_kill()
         return result
 
-    async def send_stdin(self, data: str) -> None:
+    async def send_stdin(
+        self,
+        data: Union[str, bytes],
+        request_timeout: Optional[float] = None,
+    ) -> None:
         """
         Send data to the command stdin.
 
         The command must have been started with `stdin=True`.
 
         :param data: Data to send to the command
+        :param request_timeout: Timeout for the request in **seconds**
         """
         if self._handle_send_stdin is None:
             raise SandboxException(
                 "Sending stdin is not supported for this command handle."
             )
-        await self._handle_send_stdin(data)
+        await self._handle_send_stdin(data, request_timeout)
 
-    async def close_stdin(self) -> None:
+    async def close_stdin(self, request_timeout: Optional[float] = None) -> None:
         """
         Close the command stdin.
 
         This signals EOF to the command. The command must have been started with `stdin=True`.
+
+        :param request_timeout: Timeout for the request in **seconds**
         """
         if self._handle_close_stdin is None:
             raise SandboxException(
                 "Closing stdin is not supported for this command handle."
             )
-        await self._handle_close_stdin()
+        await self._handle_close_stdin(request_timeout)
