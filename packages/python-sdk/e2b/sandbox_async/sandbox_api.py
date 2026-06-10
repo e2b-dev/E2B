@@ -297,6 +297,9 @@ class SandboxApi(SandboxBase):
             client=api_client,
         )
 
+        if res.status_code == 404:
+            raise SandboxNotFoundException(f"Sandbox {sandbox_id} not found")
+
         if res.status_code >= 300:
             raise handle_api_exception(res)
 

@@ -805,6 +805,10 @@ export class SandboxApi {
       signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
     })
 
+    if (res.error?.code === 404) {
+      throw new SandboxNotFoundError(`Sandbox ${sandboxId} not found`)
+    }
+
     const err = handleApiError(res)
     if (err) {
       throw err
