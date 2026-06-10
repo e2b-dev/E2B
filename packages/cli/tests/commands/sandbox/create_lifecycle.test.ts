@@ -56,7 +56,13 @@ describe('sandbox create lifecycle options', () => {
       '../../../src/commands/sandbox/create'
     )
     await createCommand('create', 'cr', false).parseAsync(
-      ['base', '--detach', '--ontimeout', 'pause', '--autoresume'],
+      [
+        'base',
+        '--detach',
+        '--lifecycle.ontimeout',
+        'pause',
+        '--lifecycle.autoresume',
+      ],
       { from: 'user' }
     )
 
@@ -79,7 +85,7 @@ describe('sandbox create lifecycle options', () => {
       '../../../src/commands/sandbox/create'
     )
     await createCommand('create', 'cr', false).parseAsync(
-      ['base', '--detach', '--ontimeout', 'kill'],
+      ['base', '--detach', '--lifecycle.ontimeout', 'kill'],
       { from: 'user' }
     )
 
@@ -148,14 +154,20 @@ describe('sandbox create lifecycle options', () => {
       '../../../src/commands/sandbox/create'
     )
     await createCommand('create', 'cr', false).parseAsync(
-      ['base', '--detach', '--ontimeout', 'kill', '--autoresume'],
+      [
+        'base',
+        '--detach',
+        '--lifecycle.ontimeout',
+        'kill',
+        '--lifecycle.autoresume',
+      ],
       { from: 'user' }
     )
 
     expect(mocks.create).not.toHaveBeenCalled()
     expect(consoleSpy).toHaveBeenCalledWith(
       expect.objectContaining({
-        message: '--autoresume requires --ontimeout pause',
+        message: '--lifecycle.autoresume requires --lifecycle.ontimeout pause',
       })
     )
     expect(exitSpy).toHaveBeenCalledWith(1)
@@ -171,10 +183,10 @@ describe('sandbox create lifecycle options', () => {
     )
     await expect(
       createCommand('create', 'cr', false).parseAsync(
-        ['base', '--detach', '--ontimeout', 'hibernate'],
+        ['base', '--detach', '--lifecycle.ontimeout', 'hibernate'],
         { from: 'user' }
       )
-    ).rejects.toThrow('--ontimeout must be "pause" or "kill"')
+    ).rejects.toThrow('--lifecycle.ontimeout must be "pause" or "kill"')
 
     expect(mocks.create).not.toHaveBeenCalled()
     expect(exitSpy).toHaveBeenCalledWith(1)
@@ -232,9 +244,9 @@ describe('sandbox create lifecycle options', () => {
         '--detach',
         '--timeout',
         '120',
-        '--ontimeout',
+        '--lifecycle.ontimeout',
         'pause',
-        '--autoresume',
+        '--lifecycle.autoresume',
       ],
       { from: 'user' }
     )

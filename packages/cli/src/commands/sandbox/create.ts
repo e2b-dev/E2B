@@ -33,13 +33,13 @@ export function createCommand(
     .addOption(configOption)
     .option('-d, --detach', 'create sandbox without connecting terminal to it')
     .option(
-      '--ontimeout <action>',
+      '--lifecycle.ontimeout <action>',
       'action when sandbox timeout is reached: pause or kill',
       parseOnTimeout
     )
     .option(
-      '--autoresume',
-      'enable sandbox auto-resume, requires --ontimeout pause'
+      '--lifecycle.autoresume',
+      'enable sandbox auto-resume, requires --lifecycle.ontimeout pause'
     )
     .option('--timeout <seconds>', 'sandbox timeout in seconds', parseTimeout)
     .alias(alias)
@@ -51,8 +51,8 @@ export function createCommand(
           path?: string
           config?: string
           detach?: boolean
-          ontimeout?: SandboxLifecycle['onTimeout']
-          autoresume?: boolean
+          'lifecycle.ontimeout'?: SandboxLifecycle['onTimeout']
+          'lifecycle.autoresume'?: boolean
           timeout?: number
         }
       ) => {
@@ -92,7 +92,10 @@ export function createCommand(
             templateID = 'base'
           }
 
-          const lifecycle = buildLifecycle(opts.ontimeout, opts.autoresume)
+          const lifecycle = buildLifecycle(
+            opts['lifecycle.ontimeout'],
+            opts['lifecycle.autoresume']
+          )
           const sandboxOpts = {
             apiKey,
             ...(lifecycle ? { lifecycle } : {}),
@@ -140,7 +143,7 @@ function parseTimeout(timeoutRaw: string): number {
 function parseOnTimeout(onTimeout: string): SandboxLifecycle['onTimeout'] {
   if (onTimeout !== 'pause' && onTimeout !== 'kill') {
     throw new commander.InvalidArgumentError(
-      '--ontimeout must be "pause" or "kill"'
+      '--lifecycle.ontimeout must be "pause" or "kill"'
     )
   }
 
@@ -157,13 +160,13 @@ function buildLifecycle(
 
   if (autoResume && onTimeout !== 'pause') {
     throw new commander.InvalidArgumentError(
-      '--autoresume requires --ontimeout pause'
+      '--lifecycle.autoresume requires --lifecycle.ontimeout pause'
     )
   }
 
   if (!onTimeout) {
     throw new commander.InvalidArgumentError(
-      '--ontimeout is required when using --autoresume'
+      '--lifecycle.ontimeout is required when using --lifecycle.autoresume'
     )
   }
 
