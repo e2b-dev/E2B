@@ -21,6 +21,7 @@ from e2b.envd.versions import (
     ENVD_DEFAULT_USER,
     ENVD_FILE_METADATA,
     ENVD_OCTET_STREAM_UPLOAD,
+    ENVD_VERSION_FS_EVENT_ENTRY_INFO,
     ENVD_VERSION_RECURSIVE_WATCH,
 )
 from e2b.exceptions import (
@@ -34,8 +35,8 @@ from e2b.sandbox.filesystem.filesystem import (
     WriteEntry,
     WriteInfo,
     _to_httpx_file,
+    map_entry_info,
     map_file_type,
-    map_metadata,
     metadata_to_headers,
     to_upload_body,
     validate_metadata,
@@ -387,29 +388,9 @@ class Filesystem:
 
             entries: List[EntryInfo] = []
             for entry in res.entries:
-                event_type = map_file_type(entry.type)
-
-                if event_type:
-                    entries.append(
-                        EntryInfo(
-                            name=entry.name,
-                            type=event_type,
-                            path=entry.path,
-                            size=entry.size,
-                            mode=entry.mode,
-                            permissions=entry.permissions,
-                            owner=entry.owner,
-                            group=entry.group,
-                            modified_time=entry.modified_time.ToDatetime(),
-                            # Optional, we can't directly access symlink_target otherwise if will be "" instead of None
-                            symlink_target=(
-                                entry.symlink_target
-                                if entry.HasField("symlink_target")
-                                else None
-                            ),
-                            metadata=map_metadata(entry.metadata),
-                        )
-                    )
+                # Skip entries with an unknown file type.
+                if map_file_type(entry.type):
+                    entries.append(map_entry_info(entry))
 
             return entries
         except Exception as e:
@@ -471,23 +452,7 @@ class Filesystem:
                 headers=authentication_header(self._envd_version, user),
             )
 
-            return EntryInfo(
-                name=r.entry.name,
-                type=map_file_type(r.entry.type),
-                path=r.entry.path,
-                size=r.entry.size,
-                mode=r.entry.mode,
-                permissions=r.entry.permissions,
-                owner=r.entry.owner,
-                group=r.entry.group,
-                modified_time=r.entry.modified_time.ToDatetime(),
-                symlink_target=(
-                    r.entry.symlink_target
-                    if r.entry.HasField("symlink_target")
-                    else None
-                ),
-                metadata=map_metadata(r.entry.metadata),
-            )
+            return map_entry_info(r.entry)
         except Exception as e:
             raise _handle_filesystem_rpc_exception(e)
 
@@ -544,24 +509,7 @@ class Filesystem:
                 headers=authentication_header(self._envd_version, user),
             )
 
-            return EntryInfo(
-                name=r.entry.name,
-                type=map_file_type(r.entry.type),
-                path=r.entry.path,
-                size=r.entry.size,
-                mode=r.entry.mode,
-                permissions=r.entry.permissions,
-                owner=r.entry.owner,
-                group=r.entry.group,
-                modified_time=r.entry.modified_time.ToDatetime(),
-                # Optional, we can't directly access symlink_target otherwise if will be "" instead of None
-                symlink_target=(
-                    r.entry.symlink_target
-                    if r.entry.HasField("symlink_target")
-                    else None
-                ),
-                metadata=map_metadata(r.entry.metadata),
-            )
+            return map_entry_info(r.entry)
         except Exception as e:
             raise _handle_filesystem_rpc_exception(e)
 
@@ -605,6 +553,7 @@ class Filesystem:
         request_timeout: Optional[float] = None,
         timeout: Optional[float] = 60,
         recursive: bool = False,
+        include_entry: bool = False,
     ) -> AsyncWatchHandle:
         """
         Watch directory for filesystem events.
@@ -616,6 +565,7 @@ class Filesystem:
         :param request_timeout: Timeout for the request in **seconds**
         :param timeout: Timeout for the watch operation in **seconds**. Using `0` will not limit the watch time
         :param recursive: Watch directory recursively
+        :param include_entry: Include the `EntryInfo` of the affected entry in each event, when available. Requires envd 0.6.3 or later
 
         :return: `AsyncWatchHandle` object for stopping watching directory
         """
@@ -624,8 +574,15 @@ class Filesystem:
                 "You need to update the template to use recursive watching."
             )
 
+        if include_entry and self._envd_version < ENVD_VERSION_FS_EVENT_ENTRY_INFO:
+            raise TemplateException(
+                "You need to update the template to include entry info in watch events."
+            )
+
         events = self._rpc.awatch_dir(
-            filesystem_pb2.WatchDirRequest(path=path, recursive=recursive),
+            filesystem_pb2.WatchDirRequest(
+                path=path, recursive=recursive, include_entry=include_entry
+            ),
             request_timeout=self._connection_config.get_request_timeout(
                 request_timeout
             ),

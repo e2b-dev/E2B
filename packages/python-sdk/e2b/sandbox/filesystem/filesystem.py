@@ -106,6 +106,25 @@ class EntryInfo(WriteInfo):
     """
 
 
+def map_entry_info(entry: filesystem_pb2.EntryInfo) -> EntryInfo:
+    return EntryInfo(
+        name=entry.name,
+        type=map_file_type(entry.type),
+        path=entry.path,
+        size=entry.size,
+        mode=entry.mode,
+        permissions=entry.permissions,
+        owner=entry.owner,
+        group=entry.group,
+        modified_time=entry.modified_time.ToDatetime(),
+        # Optional, we can't directly access symlink_target otherwise it will be "" instead of None
+        symlink_target=(
+            entry.symlink_target if entry.HasField("symlink_target") else None
+        ),
+        metadata=map_metadata(entry.metadata),
+    )
+
+
 class WriteEntry(TypedDict):
     """
     Contains path and data of the file to be written to the filesystem.

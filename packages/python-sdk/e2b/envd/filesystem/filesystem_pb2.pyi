@@ -168,21 +168,33 @@ class ListDirResponse(_message.Message):
     ) -> None: ...
 
 class WatchDirRequest(_message.Message):
-    __slots__ = ("path", "recursive")
+    __slots__ = ("path", "recursive", "include_entry")
     PATH_FIELD_NUMBER: _ClassVar[int]
     RECURSIVE_FIELD_NUMBER: _ClassVar[int]
+    INCLUDE_ENTRY_FIELD_NUMBER: _ClassVar[int]
     path: str
     recursive: bool
-    def __init__(self, path: _Optional[str] = ..., recursive: bool = ...) -> None: ...
+    include_entry: bool
+    def __init__(
+        self,
+        path: _Optional[str] = ...,
+        recursive: bool = ...,
+        include_entry: bool = ...,
+    ) -> None: ...
 
 class FilesystemEvent(_message.Message):
-    __slots__ = ("name", "type")
+    __slots__ = ("name", "type", "entry")
     NAME_FIELD_NUMBER: _ClassVar[int]
     TYPE_FIELD_NUMBER: _ClassVar[int]
+    ENTRY_FIELD_NUMBER: _ClassVar[int]
     name: str
     type: EventType
+    entry: EntryInfo
     def __init__(
-        self, name: _Optional[str] = ..., type: _Optional[_Union[EventType, str]] = ...
+        self,
+        name: _Optional[str] = ...,
+        type: _Optional[_Union[EventType, str]] = ...,
+        entry: _Optional[_Union[EntryInfo, _Mapping]] = ...,
     ) -> None: ...
 
 class WatchDirResponse(_message.Message):
@@ -209,12 +221,19 @@ class WatchDirResponse(_message.Message):
     ) -> None: ...
 
 class CreateWatcherRequest(_message.Message):
-    __slots__ = ("path", "recursive")
+    __slots__ = ("path", "recursive", "include_entry")
     PATH_FIELD_NUMBER: _ClassVar[int]
     RECURSIVE_FIELD_NUMBER: _ClassVar[int]
+    INCLUDE_ENTRY_FIELD_NUMBER: _ClassVar[int]
     path: str
     recursive: bool
-    def __init__(self, path: _Optional[str] = ..., recursive: bool = ...) -> None: ...
+    include_entry: bool
+    def __init__(
+        self,
+        path: _Optional[str] = ...,
+        recursive: bool = ...,
+        include_entry: bool = ...,
+    ) -> None: ...
 
 class CreateWatcherResponse(_message.Message):
     __slots__ = ("watcher_id",)

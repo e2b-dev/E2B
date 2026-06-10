@@ -20,6 +20,7 @@ import { authenticationHeader, handleRpcError } from '../../envd/rpc'
 
 import { EnvdApiClient } from '../../envd/api'
 import {
+  EntryInfo as FsEntryInfo,
   Filesystem as FilesystemService,
   FileType as FsFileType,
 } from '../../envd/filesystem/filesystem_pb'
@@ -32,6 +33,7 @@ import {
   ENVD_DEFAULT_USER,
   ENVD_FILE_METADATA,
   ENVD_OCTET_STREAM_UPLOAD,
+  ENVD_VERSION_FS_EVENT_ENTRY_INFO,
   ENVD_VERSION_RECURSIVE_WATCH,
 } from '../../envd/versions'
 import {
@@ -208,6 +210,25 @@ function metadataHeaders(
 }
 
 /**
+ * Map a protobuf `EntryInfo` to the SDK `EntryInfo`.
+ */
+export function mapEntryInfo(entry: FsEntryInfo): EntryInfo {
+  return {
+    name: entry.name,
+    type: mapFileType(entry.type),
+    path: entry.path,
+    size: Number(entry.size),
+    mode: entry.mode,
+    permissions: entry.permissions,
+    owner: entry.owner,
+    group: entry.group,
+    modifiedTime: mapModifiedTime(entry.modifiedTime),
+    symlinkTarget: entry.symlinkTarget,
+    metadata: mapMetadata(entry.metadata),
+  }
+}
+
+/**
  * Options for the sandbox filesystem operations.
  */
 export interface FilesystemRequestOpts
@@ -280,6 +301,16 @@ export interface WatchOpts extends FilesystemRequestOpts {
    * Watch the directory recursively
    */
   recursive?: boolean
+  /**
+   * Include the {@link EntryInfo} of the affected entry in each {@link FilesystemEvent}.
+   *
+   * The entry is populated best-effort and may be `undefined` for events where the
+   * entry no longer exists at the path (e.g. remove or rename-away events).
+   *
+   * Requires envd 0.6.3 or later. Watching with this option against an older sandbox
+   * throws a `TemplateError`.
+   */
+  includeEntry?: boolean
 }
 
 /**
@@ -662,23 +693,12 @@ export class Filesystem {
       const entries: EntryInfo[] = []
 
       for (const e of res.entries) {
-        const type = mapFileType(e.type)
-
-        if (type) {
-          entries.push({
-            name: e.name,
-            type,
-            path: e.path,
-            size: Number(e.size),
-            mode: e.mode,
-            permissions: e.permissions,
-            owner: e.owner,
-            group: e.group,
-            modifiedTime: mapModifiedTime(e.modifiedTime),
-            symlinkTarget: e.symlinkTarget,
-            metadata: mapMetadata(e.metadata),
-          })
+        // Skip entries with an unknown file type.
+        if (!mapFileType(e.type)) {
+          continue
         }
+
+        entries.push(mapEntryInfo(e))
       }
 
       return entries
@@ -754,19 +774,7 @@ export class Filesystem {
         throw new Error('Expected to receive information about moved object')
       }
 
-      return {
-        name: entry.name,
-        type: mapFileType(entry.type),
-        path: entry.path,
-        size: Number(entry.size),
-        mode: entry.mode,
-        permissions: entry.permissions,
-        owner: entry.owner,
-        group: entry.group,
-        modifiedTime: mapModifiedTime(entry.modifiedTime),
-        symlinkTarget: entry.symlinkTarget,
-        metadata: mapMetadata(entry.metadata),
-      }
+      return mapEntryInfo(entry)
     } catch (err) {
       throw handleFilesystemRpcError(err)
     }
@@ -858,19 +866,7 @@ export class Filesystem {
         )
       }
 
-      return {
-        name: res.entry.name,
-        type: mapFileType(res.entry.type),
-        path: res.entry.path,
-        size: Number(res.entry.size),
-        mode: res.entry.mode,
-        permissions: res.entry.permissions,
-        owner: res.entry.owner,
-        group: res.entry.group,
-        modifiedTime: mapModifiedTime(res.entry.modifiedTime),
-        symlinkTarget: res.entry.symlinkTarget,
-        metadata: mapMetadata(res.entry.metadata),
-      }
+      return mapEntryInfo(res.entry)
     } catch (err) {
       throw handleFilesystemRpcError(err)
     }
@@ -902,6 +898,17 @@ export class Filesystem {
       )
     }
 
+    if (
+      opts?.includeEntry &&
+      this.envdApi.version &&
+      compareVersions(this.envdApi.version, ENVD_VERSION_FS_EVENT_ENTRY_INFO) <
+        0
+    ) {
+      throw new TemplateError(
+        'You need to update the template to include entry info in watch events.'
+      )
+    }
+
     const requestTimeoutMs =
       opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
 
@@ -914,6 +921,7 @@ export class Filesystem {
       {
         path,
         recursive: opts?.recursive ?? this.defaultWatchRecursive,
+        includeEntry: opts?.includeEntry ?? false,
       },
       {
         headers: {
