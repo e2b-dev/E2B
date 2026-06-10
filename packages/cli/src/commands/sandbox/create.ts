@@ -13,6 +13,11 @@ import { printDashboardSandboxInspectUrl } from 'src/utils/urls'
 
 const MIN_TIMEOUT_MS = 30_000
 
+type SandboxLifecycle = {
+  onTimeout: 'pause' | 'kill'
+  autoResume?: boolean
+}
+
 export function createCommand(
   name: string,
   alias: string,
@@ -27,6 +32,15 @@ export function createCommand(
     .addOption(pathOption)
     .addOption(configOption)
     .option('-d, --detach', 'create sandbox without connecting terminal to it')
+    .option(
+      '--ontimeout <action>',
+      'action when sandbox timeout is reached: pause or kill',
+      parseOnTimeout
+    )
+    .option(
+      '--autoresume',
+      'enable sandbox auto-resume, requires --ontimeout pause'
+    )
     .option('--timeout <seconds>', 'sandbox timeout in seconds', parseTimeout)
     .alias(alias)
     .action(
@@ -37,6 +51,8 @@ export function createCommand(
           path?: string
           config?: string
           detach?: boolean
+          ontimeout?: SandboxLifecycle['onTimeout']
+          autoresume?: boolean
           timeout?: number
         }
       ) => {
@@ -76,8 +92,10 @@ export function createCommand(
             templateID = 'base'
           }
 
+          const lifecycle = buildLifecycle(opts.ontimeout, opts.autoresume)
           const sandboxOpts = {
             apiKey,
+            ...(lifecycle ? { lifecycle } : {}),
             ...(opts.timeout !== undefined ? { timeoutMs: opts.timeout } : {}),
           }
           const sandbox = await e2b.Sandbox.create(templateID, sandboxOpts)
@@ -117,6 +135,45 @@ function parseTimeout(timeoutRaw: string): number {
   }
 
   return timeoutMs
+}
+
+function parseOnTimeout(onTimeout: string): SandboxLifecycle['onTimeout'] {
+  if (onTimeout !== 'pause' && onTimeout !== 'kill') {
+    throw new commander.InvalidArgumentError(
+      '--ontimeout must be "pause" or "kill"'
+    )
+  }
+
+  return onTimeout
+}
+
+function buildLifecycle(
+  onTimeout: SandboxLifecycle['onTimeout'] | undefined,
+  autoResume: boolean | undefined
+): SandboxLifecycle | undefined {
+  if (!onTimeout && !autoResume) {
+    return undefined
+  }
+
+  if (autoResume && !onTimeout) {
+    throw new commander.InvalidArgumentError(
+      '--ontimeout is required when using --autoresume'
+    )
+  }
+
+  if (autoResume && onTimeout !== 'pause') {
+    throw new commander.InvalidArgumentError(
+      '--autoresume requires --ontimeout pause'
+    )
+  }
+
+  if (!onTimeout) {
+    throw new commander.InvalidArgumentError(
+      '--ontimeout is required when using --autoresume'
+    )
+  }
+
+  return { onTimeout, ...(autoResume ? { autoResume: true } : {}) }
 }
 
 export async function connectSandbox({
