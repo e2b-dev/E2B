@@ -22,6 +22,27 @@ sandboxTest('send stdin to process', async ({ sandbox }) => {
   assert.equal(cmd.stdout, text)
 })
 
+sandboxTest('send Uint8Array stdin to process', async ({ sandbox }) => {
+  const text = 'Hello, World!'
+  const cmd = await sandbox.commands.run('cat', {
+    background: true,
+    stdin: true,
+  })
+
+  await sandbox.commands.sendStdin(cmd.pid, new TextEncoder().encode(text))
+
+  for (let i = 0; i < 5; i++) {
+    if (cmd.stdout === text) {
+      break
+    }
+    await new Promise((r) => setTimeout(r, 500))
+  }
+
+  await cmd.kill()
+
+  assert.equal(cmd.stdout, text)
+})
+
 sandboxTest('send stdin via command handle', async ({ sandbox }) => {
   const text = 'Hello, World!'
   const cmd = await sandbox.commands.run('cat', {

@@ -2,6 +2,7 @@ from typing import Dict, List, Optional
 
 from e2b.sandbox._git import (
     GitBranches,
+    GitResetMode,
     GitStatus,
     build_add_args,
     build_auth_error_message,
@@ -647,7 +648,7 @@ class Git:
     def reset(
         self,
         path: str,
-        mode: Optional[str] = None,
+        mode: Optional[GitResetMode] = None,
         target: Optional[str] = None,
         paths: Optional[List[str]] = None,
         envs: Optional[Dict[str, str]] = None,

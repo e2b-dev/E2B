@@ -33,8 +33,10 @@ class CommandHandle:
         events: Generator[
             Union[process_pb2.StartResponse, process_pb2.ConnectResponse], Any, None
         ],
-        handle_send_stdin: Optional[Callable[[str], None]] = None,
-        handle_close_stdin: Optional[Callable[[], None]] = None,
+        handle_send_stdin: Optional[
+            Callable[[Union[str, bytes], Optional[float]], None]
+        ] = None,
+        handle_close_stdin: Optional[Callable[[Optional[float]], None]] = None,
     ):
         self._pid = pid
         self._handle_kill = handle_kill
@@ -154,28 +156,35 @@ class CommandHandle:
         """
         return self._handle_kill()
 
-    def send_stdin(self, data: str) -> None:
+    def send_stdin(
+        self,
+        data: Union[str, bytes],
+        request_timeout: Optional[float] = None,
+    ) -> None:
         """
         Send data to the command stdin.
 
         The command must have been started with `stdin=True`.
 
         :param data: Data to send to the command
+        :param request_timeout: Timeout for the request in **seconds**
         """
         if self._handle_send_stdin is None:
             raise SandboxException(
                 "Sending stdin is not supported for this command handle."
             )
-        self._handle_send_stdin(data)
+        self._handle_send_stdin(data, request_timeout)
 
-    def close_stdin(self) -> None:
+    def close_stdin(self, request_timeout: Optional[float] = None) -> None:
         """
         Close the command stdin.
 
         This signals EOF to the command. The command must have been started with `stdin=True`.
+
+        :param request_timeout: Timeout for the request in **seconds**
         """
         if self._handle_close_stdin is None:
             raise SandboxException(
                 "Closing stdin is not supported for this command handle."
             )
-        self._handle_close_stdin()
+        self._handle_close_stdin(request_timeout)

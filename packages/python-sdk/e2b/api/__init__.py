@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from types import TracebackType
 from typing import Optional, Protocol, Union
 
-from httpx import AsyncBaseTransport, BaseTransport, Limits
+from httpx import AsyncBaseTransport, BaseTransport, Limits, Timeout
 
 from e2b.api.client.client import AuthenticatedClient
 from e2b.api.client.types import Response
@@ -161,6 +161,10 @@ class ApiClient(AuthenticatedClient):
         }
         if transport is None:
             httpx_args["proxy"] = config.proxy
+
+        # config.request_timeout is None when the timeout is explicitly
+        # disabled (request_timeout=0), which httpx.Timeout(None) preserves.
+        kwargs.setdefault("timeout", Timeout(config.request_timeout))
 
         super().__init__(
             base_url=config.api_url,

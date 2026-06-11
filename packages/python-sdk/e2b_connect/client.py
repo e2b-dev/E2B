@@ -361,7 +361,6 @@ class Client:
             },
         }
 
-    @_retry(RemoteProtocolError, 3)
     async def acall_server_stream(
         self,
         req,
@@ -395,7 +394,6 @@ class Client:
                 for parsed in parser.parse(chunk):
                     yield parsed
 
-    @_retry(RemoteProtocolError, 3)
     def call_server_stream(
         self,
         req,
@@ -479,7 +477,10 @@ class ServerStreamParser:
     def parse(self, chunk: bytes) -> Generator[Any, None, None]:
         self.buffer += chunk
 
-        while len(self.buffer) >= envelope_header_length:
+        # Once the header is consumed, the remaining payload can be shorter
+        # than the header length, so only require a full header when we still
+        # need to read one.
+        while self._header is not None or len(self.buffer) >= envelope_header_length:
             flags, data_len = self.header
 
             if data_len > len(self.buffer):

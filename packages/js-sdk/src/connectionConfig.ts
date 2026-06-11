@@ -70,6 +70,14 @@ export interface ConnectionOpts {
   headers?: Record<string, string>
 
   /**
+   * Proxy URL to use for requests. In case of a sandbox it applies to all
+   * requests made to the returned sandbox.
+   *
+   * @example 'http://user:pass@127.0.0.1:8080'
+   */
+  proxy?: string
+
+  /**
    * Additional headers to send with E2B API requests.
    */
   apiHeaders?: Record<string, string>
@@ -94,6 +102,7 @@ export function buildRequestSignal(
   requestTimeoutMs: number | undefined,
   userSignal: AbortSignal | undefined
 ): AbortSignal | undefined {
+  // `0` (and `undefined`) disable the request timeout.
   const timeoutSignal = requestTimeoutMs
     ? AbortSignal.timeout(requestTimeoutMs)
     : undefined
@@ -193,15 +202,18 @@ export class ConnectionConfig {
 
   readonly headers?: Record<string, string>
 
+  readonly proxy?: string
+
   constructor(opts?: ConnectionOpts) {
     this.apiKey = opts?.apiKey || ConnectionConfig.apiKey
-    this.debug = opts?.debug || ConnectionConfig.debug
+    this.debug = opts?.debug ?? ConnectionConfig.debug
     this.domain = opts?.domain || ConnectionConfig.domain
     this.accessToken = opts?.accessToken || ConnectionConfig.accessToken
     this.requestTimeoutMs = opts?.requestTimeoutMs ?? REQUEST_TIMEOUT_MS
     this.logger = opts?.logger
     this.headers = { ...(opts?.headers ?? {}), ...(opts?.apiHeaders ?? {}) }
     this.headers['User-Agent'] = `e2b-js-sdk/${version}`
+    this.proxy = opts?.proxy
 
     this.apiUrl =
       opts?.apiUrl ||
