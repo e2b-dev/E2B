@@ -1,9 +1,11 @@
 import e2b_connect
 import httpcore
+import threading
 
 from typing import Dict, Optional
 
 from packaging.version import Version
+from e2b.api.client_sync import get_envd_transport
 from e2b.envd.process import process_connect, process_pb2
 from e2b.connection_config import (
     Username,
@@ -29,9 +31,11 @@ class Pty:
         pool: httpcore.ConnectionPool,
         envd_version: Version,
     ) -> None:
+        self._envd_api_url = envd_api_url
         self._connection_config = connection_config
         self._envd_version = envd_version
-        self._rpc = process_connect.ProcessClient(
+        self._thread_local = threading.local()
+        self._thread_local.rpc = process_connect.ProcessClient(
             envd_api_url,
             # TODO: Fix and enable compression again — the headers compression is not solved for streaming.
             # compressor=e2b_connect.GzipCompressor,
@@ -39,6 +43,22 @@ class Pty:
             json=True,
             headers=connection_config.sandbox_headers,
         )
+
+    @property
+    def _rpc(self) -> process_connect.ProcessClient:
+        rpc = getattr(self._thread_local, "rpc", None)
+        if rpc is None:
+            transport = get_envd_transport(self._connection_config)
+            rpc = process_connect.ProcessClient(
+                self._envd_api_url,
+                # TODO: Fix and enable compression again — the headers compression is not solved for streaming.
+                # compressor=e2b_connect.GzipCompressor,
+                pool=transport.pool,
+                json=True,
+                headers=self._connection_config.sandbox_headers,
+            )
+            self._thread_local.rpc = rpc
+        return rpc
 
     def kill(
         self,

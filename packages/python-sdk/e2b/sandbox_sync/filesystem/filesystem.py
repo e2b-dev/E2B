@@ -1,3 +1,4 @@
+import threading
 from typing import IO, Dict, Iterator, List, Literal, Optional, Union, overload
 
 import httpcore
@@ -5,6 +6,7 @@ import httpx
 from packaging.version import Version
 
 import e2b_connect
+from e2b.api.client_sync import get_envd_transport
 from e2b.connection_config import (
     KEEPALIVE_PING_HEADER,
     KEEPALIVE_PING_INTERVAL_SEC,
@@ -77,10 +79,10 @@ class Filesystem:
         self._envd_api_url = envd_api_url
         self._envd_version = envd_version
         self._connection_config = connection_config
-        self._pool = pool
-        self._envd_api = envd_api
+        self._thread_local = threading.local()
+        self._thread_local.envd_api = envd_api
 
-        self._rpc = filesystem_connect.FilesystemClient(
+        self._thread_local.rpc = filesystem_connect.FilesystemClient(
             envd_api_url,
             # TODO: Fix and enable compression again — the headers compression is not solved for streaming.
             # compressor=e2b_connect.GzipCompressor,
@@ -88,6 +90,35 @@ class Filesystem:
             json=True,
             headers=connection_config.sandbox_headers,
         )
+
+    @property
+    def _envd_api(self) -> httpx.Client:
+        envd_api = getattr(self._thread_local, "envd_api", None)
+        if envd_api is None:
+            transport = get_envd_transport(self._connection_config)
+            envd_api = httpx.Client(
+                base_url=self._envd_api_url,
+                transport=transport,
+                headers=self._connection_config.sandbox_headers,
+            )
+            self._thread_local.envd_api = envd_api
+        return envd_api
+
+    @property
+    def _rpc(self) -> filesystem_connect.FilesystemClient:
+        rpc = getattr(self._thread_local, "rpc", None)
+        if rpc is None:
+            transport = get_envd_transport(self._connection_config)
+            rpc = filesystem_connect.FilesystemClient(
+                self._envd_api_url,
+                # TODO: Fix and enable compression again — the headers compression is not solved for streaming.
+                # compressor=e2b_connect.GzipCompressor,
+                pool=transport.pool,
+                json=True,
+                headers=self._connection_config.sandbox_headers,
+            )
+            self._thread_local.rpc = rpc
+        return rpc
 
     @overload
     def read(
