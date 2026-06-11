@@ -47,17 +47,11 @@ describe('handleRpcError', () => {
     assert.instanceOf(err, SandboxError)
   })
 
-  test('returns actionable SandboxError for Unknown "terminated" (sandbox killed mid-request)', () => {
+  test('falls back to generic SandboxError for Unknown "terminated"', () => {
     const err = handleRpcError(new ConnectError('terminated', Code.Unknown))
     assert.instanceOf(err, SandboxError)
-    assert.include(err.message, 'sandbox was killed')
-    assert.include(err.message, 'isRunning')
-  })
-
-  test('keeps generic fallback for other Unknown errors', () => {
-    const err = handleRpcError(new ConnectError('something else', Code.Unknown))
-    assert.instanceOf(err, SandboxError)
-    assert.notInclude(err.message, 'isRunning')
+    assert.include(err.message, 'terminated')
+    assert.notInclude(err.message, 'most likely')
   })
 
   test('returns the original error when not a ConnectError', () => {
@@ -80,32 +74,33 @@ describe('handleRpcErrorWithHealthCheck', () => {
     assert.notInclude(err.message, 'transient')
   })
 
-  test('falls back to the hedged message when the health check says the sandbox is running', async () => {
+  test('falls back to a generic SandboxError when the health check says the sandbox is running', async () => {
     const err = await handleRpcErrorWithHealthCheck(
       terminated(),
       async () => true
     )
     assert.instanceOf(err, SandboxError)
-    assert.include(err.message, 'most likely because the sandbox was killed')
-    assert.include(err.message, 'isRunning')
+    assert.include(err.message, 'terminated')
+    assert.notInclude(err.message, 'killed')
   })
 
-  test('keeps the hedged message when the sandbox state is unknown', async () => {
+  test('falls back to a generic SandboxError when the sandbox state is unknown', async () => {
     const err = await handleRpcErrorWithHealthCheck(
       terminated(),
       async () => undefined
     )
     assert.instanceOf(err, SandboxError)
-    assert.include(err.message, 'most likely because the sandbox was killed')
-    assert.include(err.message, 'isRunning')
+    assert.include(err.message, 'terminated')
+    assert.notInclude(err.message, 'killed')
   })
 
-  test('keeps the hedged message when the health check itself fails', async () => {
+  test('falls back to a generic SandboxError when the health check itself fails', async () => {
     const err = await handleRpcErrorWithHealthCheck(terminated(), async () => {
       throw new Error('health check failed')
     })
     assert.instanceOf(err, SandboxError)
-    assert.include(err.message, 'most likely because the sandbox was killed')
+    assert.include(err.message, 'terminated')
+    assert.notInclude(err.message, 'killed')
   })
 
   test('does not run the health check for other errors', async () => {

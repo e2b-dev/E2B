@@ -91,9 +91,7 @@ export async function handleEnvdApiFetchError(
       )
     }
 
-    return new SandboxError(
-      `${err.message}: The connection to the sandbox was terminated. This is most likely because the sandbox was killed or reached its end of life while the request was in flight. You can check the sandbox status with 'sandbox.isRunning()'.`
-    )
+    return new SandboxError(err.message)
   }
 
   return err as Error

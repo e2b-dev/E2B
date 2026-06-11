@@ -52,13 +52,13 @@ def test_falls_back_to_sandbox_exception():
     assert "500" in str(err)
 
 
-def test_wraps_remote_protocol_error_with_terminated_message():
+def test_wraps_remote_protocol_error_in_sandbox_exception():
     err = handle_envd_api_transport_exception(
         httpx.RemoteProtocolError("peer closed connection")
     )
     assert isinstance(err, SandboxException)
-    assert "sandbox was killed" in str(err)
-    assert "is_running" in str(err)
+    assert "peer closed connection" in str(err)
+    assert "killed" not in str(err)
 
 
 def test_wraps_network_errors_in_sandbox_exception():
@@ -81,9 +81,10 @@ def test_health_result_confirms_sandbox_killed():
     assert "sandbox was killed or reached its end of life" in str(err)
 
 
-def test_health_result_running_falls_back_to_hedged_message():
+def test_health_result_running_falls_back_to_generic_exception():
     err = handle_envd_api_transport_exception(
         httpx.RemoteProtocolError("peer closed connection"), sandbox_running=True
     )
     assert isinstance(err, SandboxException)
-    assert "most likely because the sandbox was killed" in str(err)
+    assert "peer closed connection" in str(err)
+    assert "killed" not in str(err)
