@@ -1,4 +1,4 @@
-from typing import List
+from typing import Callable, List
 
 from e2b import SandboxException
 from e2b.envd.filesystem import filesystem_connect
@@ -21,10 +21,10 @@ class WatchHandle:
 
     def __init__(
         self,
-        rpc: filesystem_connect.FilesystemClient,
+        get_rpc: Callable[[], filesystem_connect.FilesystemClient],
         watcher_id: str,
     ):
-        self._rpc = rpc
+        self._get_rpc = get_rpc
         self._watcher_id = watcher_id
         self._closed = False
 
@@ -34,7 +34,9 @@ class WatchHandle:
         After you stop the watcher you won't be able to get the events anymore.
         """
         try:
-            self._rpc.remove_watcher(RemoveWatcherRequest(watcher_id=self._watcher_id))
+            self._get_rpc().remove_watcher(
+                RemoveWatcherRequest(watcher_id=self._watcher_id)
+            )
         except Exception as e:
             raise handle_rpc_exception(e)
 
@@ -50,7 +52,7 @@ class WatchHandle:
             raise SandboxException("The watcher is already stopped")
 
         try:
-            r = self._rpc.get_watcher_events(
+            r = self._get_rpc().get_watcher_events(
                 GetWatcherEventsRequest(watcher_id=self._watcher_id)
             )
         except Exception as e:

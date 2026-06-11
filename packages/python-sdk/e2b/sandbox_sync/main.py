@@ -2,6 +2,7 @@ import datetime
 import json
 import logging
 import shlex
+import threading
 import uuid
 from typing import Dict, List, Optional, Union, overload
 
@@ -101,33 +102,45 @@ class Sandbox(SandboxApi):
         """
         super().__init__(**opts)
 
-        self._transport = get_transport(self.connection_config)
+        transport = get_transport(self.connection_config)
+        self._envd_api_thread_local = threading.local()
 
-        self._envd_api = httpx.Client(
-            base_url=self.envd_api_url,
-            transport=self._transport,
-            headers=self.connection_config.sandbox_headers,
-        )
+        self._envd_api_thread_local.envd_api = self._create_envd_api(transport)
         self._filesystem = Filesystem(
             self.envd_api_url,
             self._envd_version,
             self.connection_config,
-            self._transport.pool,
+            transport.pool,
             self._envd_api,
         )
         self._commands = Commands(
             self.envd_api_url,
             self.connection_config,
-            self._transport.pool,
+            transport.pool,
             self._envd_version,
         )
         self._pty = Pty(
             self.envd_api_url,
             self.connection_config,
-            self._transport.pool,
+            transport.pool,
             self._envd_version,
         )
         self._git = Git(self._commands)
+
+    def _create_envd_api(self, transport) -> httpx.Client:
+        return httpx.Client(
+            base_url=self.envd_api_url,
+            transport=transport,
+            headers=self.connection_config.sandbox_headers,
+        )
+
+    @property
+    def _envd_api(self) -> httpx.Client:
+        envd_api = getattr(self._envd_api_thread_local, "envd_api", None)
+        if envd_api is None:
+            envd_api = self._create_envd_api(get_transport(self.connection_config))
+            self._envd_api_thread_local.envd_api = envd_api
+        return envd_api
 
     def is_running(self, request_timeout: Optional[float] = None) -> bool:
         """

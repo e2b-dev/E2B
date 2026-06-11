@@ -146,6 +146,20 @@ test('sandbox_url stays localhost in debug mode', () => {
   )
 })
 
+test('debug false in args overrides E2B_DEBUG env var', () => {
+  process.env.E2B_DEBUG = 'true'
+
+  const config = new ConnectionConfig({ debug: false })
+  assert.equal(config.debug, false)
+})
+
+test('debug defaults to E2B_DEBUG env var', () => {
+  process.env.E2B_DEBUG = 'true'
+
+  const config = new ConnectionConfig()
+  assert.equal(config.debug, true)
+})
+
 test('getSignal returns user signal when no timeout is set', () => {
   const config = new ConnectionConfig({ requestTimeoutMs: 0 })
   const controller = new AbortController()
