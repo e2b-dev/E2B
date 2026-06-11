@@ -8,6 +8,7 @@ from e2b.sandbox_sync.commands.command import Commands
 from e2b.sandbox_sync.commands.pty import Pty
 from e2b.sandbox_sync.filesystem import filesystem as filesystem_sync
 from e2b.sandbox_sync.filesystem.filesystem import Filesystem
+from e2b.sandbox_sync.filesystem.watch_handle import WatchHandle
 import e2b.sandbox_sync.commands.command as command_sync
 import e2b.sandbox_sync.commands.pty as pty_sync
 import e2b.sandbox_sync.main as sandbox_sync_main
@@ -61,6 +62,7 @@ def test_sync_sandbox_envd_api_is_bound_per_calling_thread(monkeypatch, test_api
     worker_api = run_in_worker_thread(lambda: sandbox._envd_api)
     assert worker_api.transport is worker_transport
     assert sandbox._envd_api.transport is main_transport
+    assert not hasattr(sandbox, "_transport")
 
 
 def test_sync_filesystem_envd_clients_are_bound_per_calling_thread(
@@ -160,3 +162,24 @@ def test_sync_pty_rpc_clients_are_bound_per_calling_thread(monkeypatch, test_api
     assert worker_rpc is not main_rpc
     assert worker_rpc.pool is worker_transport.pool
     assert pty._rpc is main_rpc
+
+
+def test_sync_watch_handle_uses_calling_thread_rpc():
+    class FakeRpc:
+        def __init__(self, name):
+            self.name = name
+            self.calls = []
+
+        def remove_watcher(self, request):
+            self.calls.append(("remove", request.watcher_id))
+
+    main_rpc = FakeRpc("main")
+    worker_rpc = FakeRpc("worker")
+    handle = WatchHandle(lambda: main_rpc, "watcher-id")
+
+    handle.stop()
+    assert main_rpc.calls == [("remove", "watcher-id")]
+
+    handle = WatchHandle(lambda: worker_rpc, "watcher-id")
+    run_in_worker_thread(handle.stop)
+    assert worker_rpc.calls == [("remove", "watcher-id")]

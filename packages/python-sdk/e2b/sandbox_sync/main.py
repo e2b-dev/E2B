@@ -102,31 +102,31 @@ class Sandbox(SandboxApi):
         """
         super().__init__(**opts)
 
-        self._transport = get_transport(self.connection_config)
+        transport = get_transport(self.connection_config)
         self._envd_api_thread_local = threading.local()
 
         self._envd_api_thread_local.envd_api = httpx.Client(
             base_url=self.envd_api_url,
-            transport=self._transport,
+            transport=transport,
             headers=self.connection_config.sandbox_headers,
         )
         self._filesystem = Filesystem(
             self.envd_api_url,
             self._envd_version,
             self.connection_config,
-            self._transport.pool,
+            transport.pool,
             self._envd_api,
         )
         self._commands = Commands(
             self.envd_api_url,
             self.connection_config,
-            self._transport.pool,
+            transport.pool,
             self._envd_version,
         )
         self._pty = Pty(
             self.envd_api_url,
             self.connection_config,
-            self._transport.pool,
+            transport.pool,
             self._envd_version,
         )
         self._git = Git(self._commands)
