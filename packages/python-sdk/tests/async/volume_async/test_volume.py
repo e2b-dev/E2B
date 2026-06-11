@@ -133,6 +133,27 @@ async def test_get_info_nonexistent_volume():
         await AsyncVolume.get_info("non-existent-id")
 
 
+async def test_create_volume_keeps_proxy_for_content_calls():
+    vol = await AsyncVolume.create(
+        "proxy-volume", proxy="http://user:pass@127.0.0.1:8080"
+    )
+
+    # The proxy is stored on the instance...
+    assert vol._proxy == "http://user:pass@127.0.0.1:8080"
+
+    # ...and instance methods (which build a VolumeConnectionConfig with no
+    # per-call proxy) pick it up rather than falling back to no proxy.
+    config = vol._get_volume_config()
+    assert config.proxy == "http://user:pass@127.0.0.1:8080"
+
+
+async def test_volume_per_call_proxy_overrides_instance():
+    vol = await AsyncVolume.create("proxy-volume", proxy="http://127.0.0.1:8080")
+
+    config = vol._get_volume_config(proxy="http://127.0.0.1:9090")
+    assert config.proxy == "http://127.0.0.1:9090"
+
+
 async def test_volume_full_lifecycle():
     # Create
     vol = await AsyncVolume.create("lifecycle-vol")

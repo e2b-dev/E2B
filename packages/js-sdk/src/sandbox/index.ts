@@ -28,7 +28,7 @@ import {
 } from './sandboxApi'
 import { getSignature } from './signature'
 import { compareVersions } from 'compare-versions'
-import { SandboxError } from '../errors'
+import { TemplateError } from '../errors'
 import { ENVD_DEBUG_FALLBACK, ENVD_DEFAULT_USER } from '../envd/versions'
 import { shellQuote } from '../utils'
 
@@ -159,8 +159,8 @@ export class Sandbox extends SandboxApi {
       'E2b-Sandbox-Id': this.sandboxId,
       'E2b-Sandbox-Port': this.envdPort.toString(),
     }
-    const envdFetch = createEnvdFetch()
-    const envdRpcFetch = createEnvdRpcFetch()
+    const envdFetch = createEnvdFetch(this.connectionConfig.proxy)
+    const envdRpcFetch = createEnvdRpcFetch(this.connectionConfig.proxy)
 
     const rpcTransport = createConnectTransport({
       baseUrl: this.envdApiUrl,
@@ -510,7 +510,7 @@ export class Sandbox extends SandboxApi {
    */
   async kill(opts?: Pick<SandboxOpts, 'requestTimeoutMs' | 'signal'>) {
     if (this.connectionConfig.debug) {
-      // Skip killing in debug mode
+      // Skip killing the sandbox in debug mode
       return
     }
 
@@ -736,11 +736,15 @@ export class Sandbox extends SandboxApi {
    * @returns  List of sandbox metrics containing CPU, memory and disk usage information.
    */
   async getMetrics(opts?: SandboxMetricsOpts) {
+    if (this.connectionConfig.debug) {
+      // Skip getting the metrics in debug mode
+      return []
+    }
+
     if (this.envdApi.version) {
       if (compareVersions(this.envdApi.version, '0.1.5') < 0) {
-        throw new SandboxError(
-          'You need to update the template to use the new SDK. ' +
-            'You can do this by running `e2b template build` in the directory with the template.'
+        throw new TemplateError(
+          'You need to update the template to use the new SDK.'
         )
       }
 

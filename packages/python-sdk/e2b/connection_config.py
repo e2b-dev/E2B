@@ -1,6 +1,6 @@
 import os
 
-from typing import Optional, Dict, TypedDict
+from typing import cast, Optional, Dict, TypedDict
 
 from httpx._types import ProxyTypes
 from typing_extensions import Unpack
@@ -104,7 +104,7 @@ class ConnectionConfig:
         proxy: Optional[ProxyTypes] = None,
     ):
         self.domain = domain or ConnectionConfig._domain()
-        self.debug = debug or ConnectionConfig._debug()
+        self.debug = debug if debug is not None else ConnectionConfig._debug()
         self.api_key = api_key or ConnectionConfig._api_key()
         self.api_key_prefix = api_key_prefix or ConnectionConfig._api_key_prefix()
         self.access_token = access_token or ConnectionConfig._access_token()
@@ -206,6 +206,7 @@ class ConnectionConfig:
         domain = opts.get("domain")
         debug = opts.get("debug")
         proxy = opts.get("proxy")
+        sandbox_url = opts.get("sandbox_url")
 
         req_headers = self.headers.copy()
         if headers is not None:
@@ -225,6 +226,9 @@ class ConnectionConfig:
                 request_timeout=self.get_request_timeout(request_timeout),
                 headers=req_headers,
                 proxy=proxy if proxy is not None else self.proxy,
+                sandbox_url=sandbox_url
+                if sandbox_url is not None
+                else cast(Optional[str], self._sandbox_url),
             )
         )
 
