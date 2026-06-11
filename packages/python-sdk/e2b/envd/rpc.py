@@ -44,7 +44,7 @@ def format_terminated_exception(
         return SandboxException(
             f"{e}: The sandbox was killed or reached its end of life while the request was in flight."
         )
-    return SandboxException(str(e))
+    return SandboxException(f"{e}: The connection to the sandbox was terminated.")
 
 
 def handle_rpc_exception(

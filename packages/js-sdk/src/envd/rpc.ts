@@ -74,6 +74,14 @@ export function handleRpcError(
       return DEFAULT_ERROR_MAP[err.code]!(err.message)
     }
 
+    // An HTTP/2 stream reset surfaces as Code.Unknown with the message 'terminated' —
+    // the signature of the connection to the sandbox being dropped mid-request
+    if (isConnectionTerminatedError(err)) {
+      return new SandboxError(
+        `${err.message}: The connection to the sandbox was terminated.`
+      )
+    }
+
     // Fallback to a generic SandboxError if no specific mapping is found
     return new SandboxError(`${err.code}: ${err.message}`)
   }

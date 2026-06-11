@@ -55,6 +55,7 @@ def test_wraps_remote_protocol_error_in_sandbox_exception():
     )
     assert isinstance(err, SandboxException)
     assert "StreamReset" in str(err)
+    assert "The connection to the sandbox was terminated" in str(err)
     assert "killed" not in str(err)
 
 
@@ -86,14 +87,14 @@ def test_health_check_confirms_sandbox_killed():
 def test_health_check_running_falls_back_to_generic_exception():
     err = handle_rpc_exception_with_health(_stream_reset(), lambda: True)
     assert isinstance(err, SandboxException)
-    assert "StreamReset" in str(err)
+    assert "The connection to the sandbox was terminated" in str(err)
     assert "killed" not in str(err)
 
 
 def test_health_check_unknown_falls_back_to_generic_exception():
     err = handle_rpc_exception_with_health(_stream_reset(), lambda: None)
     assert isinstance(err, SandboxException)
-    assert "StreamReset" in str(err)
+    assert "The connection to the sandbox was terminated" in str(err)
     assert "killed" not in str(err)
 
 

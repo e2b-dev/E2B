@@ -58,6 +58,7 @@ def test_wraps_remote_protocol_error_in_sandbox_exception():
     )
     assert isinstance(err, SandboxException)
     assert "peer closed connection" in str(err)
+    assert "The connection to the sandbox was terminated" in str(err)
     assert "killed" not in str(err)
 
 
@@ -86,5 +87,5 @@ def test_health_result_running_falls_back_to_generic_exception():
         httpx.RemoteProtocolError("peer closed connection"), sandbox_running=True
     )
     assert isinstance(err, SandboxException)
-    assert "peer closed connection" in str(err)
+    assert "The connection to the sandbox was terminated" in str(err)
     assert "killed" not in str(err)

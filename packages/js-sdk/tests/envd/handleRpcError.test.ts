@@ -50,8 +50,8 @@ describe('handleRpcError', () => {
   test('falls back to generic SandboxError for Unknown "terminated"', () => {
     const err = handleRpcError(new ConnectError('terminated', Code.Unknown))
     assert.instanceOf(err, SandboxError)
-    assert.include(err.message, 'terminated')
-    assert.notInclude(err.message, 'most likely')
+    assert.include(err.message, 'The connection to the sandbox was terminated')
+    assert.notInclude(err.message, 'killed')
   })
 
   test('returns the original error when not a ConnectError', () => {
@@ -80,7 +80,7 @@ describe('handleRpcErrorWithHealthCheck', () => {
       async () => true
     )
     assert.instanceOf(err, SandboxError)
-    assert.include(err.message, 'terminated')
+    assert.include(err.message, 'The connection to the sandbox was terminated')
     assert.notInclude(err.message, 'killed')
   })
 
@@ -90,7 +90,7 @@ describe('handleRpcErrorWithHealthCheck', () => {
       async () => undefined
     )
     assert.instanceOf(err, SandboxError)
-    assert.include(err.message, 'terminated')
+    assert.include(err.message, 'The connection to the sandbox was terminated')
     assert.notInclude(err.message, 'killed')
   })
 
@@ -99,7 +99,7 @@ describe('handleRpcErrorWithHealthCheck', () => {
       throw new Error('health check failed')
     })
     assert.instanceOf(err, SandboxError)
-    assert.include(err.message, 'terminated')
+    assert.include(err.message, 'The connection to the sandbox was terminated')
     assert.notInclude(err.message, 'killed')
   })
 

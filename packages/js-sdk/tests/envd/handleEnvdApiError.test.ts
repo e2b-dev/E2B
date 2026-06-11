@@ -83,7 +83,7 @@ describe('handleEnvdApiFetchError', () => {
   test('returns a generic SandboxError for terminated fetch without a health check', async () => {
     const err = await handleEnvdApiFetchError(new TypeError('terminated'))
     assert.instanceOf(err, SandboxError)
-    assert.include(err.message, 'terminated')
+    assert.include(err.message, 'The connection to the sandbox was terminated')
     assert.notInclude(err.message, 'killed')
   })
 
@@ -102,7 +102,7 @@ describe('handleEnvdApiFetchError', () => {
       async () => true
     )
     assert.instanceOf(err, SandboxError)
-    assert.include(err.message, 'terminated')
+    assert.include(err.message, 'The connection to the sandbox was terminated')
     assert.notInclude(err.message, 'killed')
   })
 

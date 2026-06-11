@@ -91,7 +91,9 @@ export async function handleEnvdApiFetchError(
       )
     }
 
-    return new SandboxError(err.message)
+    return new SandboxError(
+      `${err.message}: The connection to the sandbox was terminated.`
+    )
   }
 
   return err as Error
