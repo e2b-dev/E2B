@@ -17,7 +17,7 @@ TransportKey = Tuple[int, bool, Optional[ProxyTypes]]
 def get_api_client(config: ConnectionConfig, **kwargs) -> AsyncApiClient:
     return AsyncApiClient(
         config,
-        transport=get_transport(config),
+        async_transport_factory=lambda: get_transport(config),
         **kwargs,
     )
 
