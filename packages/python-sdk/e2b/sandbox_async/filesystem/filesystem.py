@@ -23,6 +23,7 @@ from e2b.envd.versions import (
     ENVD_OCTET_STREAM_UPLOAD,
     ENVD_VERSION_FS_EVENT_ENTRY_INFO,
     ENVD_VERSION_RECURSIVE_WATCH,
+    ENVD_VERSION_WATCH_NETWORK_MOUNTS,
 )
 from e2b.exceptions import (
     FileNotFoundException,
@@ -554,6 +555,7 @@ class Filesystem:
         timeout: Optional[float] = 60,
         recursive: bool = False,
         include_entry: bool = False,
+        allow_network_mounts: bool = False,
     ) -> AsyncWatchHandle:
         """
         Watch directory for filesystem events.
@@ -566,6 +568,7 @@ class Filesystem:
         :param timeout: Timeout for the watch operation in **seconds**. Using `0` will not limit the watch time
         :param recursive: Watch directory recursively
         :param include_entry: Include the `EntryInfo` of the affected entry in each event, when available. Requires envd 0.6.3 or later
+        :param allow_network_mounts: Allow watching paths on network filesystem mounts (NFS, CIFS, SMB, FUSE), which are rejected by default. Events on network mounts may be unreliable or not delivered at all. Requires envd 0.6.4 or later
 
         :return: `AsyncWatchHandle` object for stopping watching directory
         """
@@ -579,9 +582,20 @@ class Filesystem:
                 "You need to update the template to include entry info in watch events."
             )
 
+        if (
+            allow_network_mounts
+            and self._envd_version < ENVD_VERSION_WATCH_NETWORK_MOUNTS
+        ):
+            raise TemplateException(
+                "You need to update the template to watch directories on network mounts."
+            )
+
         events = self._rpc.awatch_dir(
             filesystem_pb2.WatchDirRequest(
-                path=path, recursive=recursive, include_entry=include_entry
+                path=path,
+                recursive=recursive,
+                include_entry=include_entry,
+                allow_network_mounts=allow_network_mounts,
             ),
             request_timeout=self._connection_config.get_request_timeout(
                 request_timeout
