@@ -1,8 +1,10 @@
+import threading
 from typing import Callable, Dict, List, Literal, Optional, Union, overload
 
 import e2b_connect
 import httpcore
 from packaging.version import Version
+from e2b.api.client_sync import get_envd_transport
 from e2b.connection_config import (
     ConnectionConfig,
     Username,
@@ -11,7 +13,7 @@ from e2b.connection_config import (
 )
 from e2b.envd.process import process_connect, process_pb2
 from e2b.envd.rpc import authentication_header, handle_rpc_exception
-from e2b.envd.versions import ENVD_COMMANDS_STDIN
+from e2b.envd.versions import ENVD_COMMANDS_STDIN, ENVD_ENVD_CLOSE
 from e2b.exceptions import SandboxException
 from e2b.sandbox.commands.main import ProcessInfo
 from e2b.sandbox.commands.command_handle import CommandResult
@@ -30,16 +32,32 @@ class Commands:
         pool: httpcore.ConnectionPool,
         envd_version: Version,
     ) -> None:
+        self._envd_api_url = envd_api_url
         self._connection_config = connection_config
         self._envd_version = envd_version
-        self._rpc = process_connect.ProcessClient(
-            envd_api_url,
+        self._thread_local = threading.local()
+        self._thread_local.rpc = self._create_rpc(pool)
+
+    def _create_rpc(
+        self, pool: httpcore.ConnectionPool
+    ) -> process_connect.ProcessClient:
+        return process_connect.ProcessClient(
+            self._envd_api_url,
             # TODO: Fix and enable compression again — the headers compression is not solved for streaming.
             # compressor=e2b_connect.GzipCompressor,
             pool=pool,
             json=True,
-            headers=connection_config.sandbox_headers,
+            headers=self._connection_config.sandbox_headers,
         )
+
+    @property
+    def _rpc(self) -> process_connect.ProcessClient:
+        rpc = getattr(self._thread_local, "rpc", None)
+        if rpc is None:
+            transport = get_envd_transport(self._connection_config)
+            rpc = self._create_rpc(transport.pool)
+            self._thread_local.rpc = rpc
+        return rpc
 
     def list(
         self,
@@ -79,7 +97,7 @@ class Commands:
         request_timeout: Optional[float] = None,
     ) -> bool:
         """
-        Kills a running command specified by its process ID.
+        Kill a running command specified by its process ID.
         It uses `SIGKILL` signal to kill the command.
 
         :param pid: Process ID of the command. You can get the list of processes using `sandbox.commands.list()`
@@ -107,7 +125,7 @@ class Commands:
     def send_stdin(
         self,
         pid: int,
-        data: str,
+        data: Union[str, bytes],
         request_timeout: Optional[float] = None,
     ):
         """
@@ -122,8 +140,39 @@ class Commands:
                 process_pb2.SendInputRequest(
                     process=process_pb2.ProcessSelector(pid=pid),
                     input=process_pb2.ProcessInput(
-                        stdin=data.encode(),
+                        stdin=data.encode() if isinstance(data, str) else data,
                     ),
+                ),
+                request_timeout=self._connection_config.get_request_timeout(
+                    request_timeout
+                ),
+            )
+        except Exception as e:
+            raise handle_rpc_exception(e)
+
+    def close_stdin(
+        self,
+        pid: int,
+        request_timeout: Optional[float] = None,
+    ) -> None:
+        """
+        Close the command stdin.
+
+        This signals EOF to the command. The command must have been started with `stdin=True`.
+
+        :param pid Process ID of the command. You can get the list of processes using `sandbox.commands.list()`.
+        :param request_timeout: Timeout for the request in **seconds**
+        """
+        if self._envd_version < ENVD_ENVD_CLOSE:
+            raise SandboxException(
+                f"Sandbox envd version {self._envd_version} doesn't support closing stdin. "
+                f"Please rebuild your template to pick up the latest sandbox version."
+            )
+
+        try:
+            self._rpc.close_stdin(
+                process_pb2.CloseStdinRequest(
+                    process=process_pb2.ProcessSelector(pid=pid),
                 ),
                 request_timeout=self._connection_config.get_request_timeout(
                     request_timeout
@@ -274,10 +323,17 @@ class Commands:
                     f"Failed to start process: expected start event, got {start_event}"
                 )
 
+            pid = start_event.event.start.pid
             return CommandHandle(
-                pid=start_event.event.start.pid,
-                handle_kill=lambda: self.kill(start_event.event.start.pid),
+                pid=pid,
+                handle_kill=lambda: self.kill(pid),
                 events=events,
+                handle_send_stdin=lambda data, request_timeout=None: self.send_stdin(
+                    pid, data, request_timeout
+                ),
+                handle_close_stdin=lambda request_timeout=None: self.close_stdin(
+                    pid, request_timeout
+                ),
             )
         except Exception as e:
             raise handle_rpc_exception(e)
@@ -319,10 +375,17 @@ class Commands:
                     f"Failed to connect to process: expected start event, got {start_event}"
                 )
 
+            pid = start_event.event.start.pid
             return CommandHandle(
-                pid=start_event.event.start.pid,
-                handle_kill=lambda: self.kill(start_event.event.start.pid),
+                pid=pid,
+                handle_kill=lambda: self.kill(pid),
                 events=events,
+                handle_send_stdin=lambda data, request_timeout=None: self.send_stdin(
+                    pid, data, request_timeout
+                ),
+                handle_close_stdin=lambda request_timeout=None: self.close_stdin(
+                    pid, request_timeout
+                ),
             )
         except Exception as e:
             raise handle_rpc_exception(e)

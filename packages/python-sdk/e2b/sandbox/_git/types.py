@@ -1,6 +1,11 @@
 from dataclasses import dataclass
 from typing import List, Optional
 
+from typing_extensions import Literal
+
+GitResetMode = Literal["soft", "mixed", "hard", "merge", "keep"]
+"""Mode for a git reset operation."""
+
 
 @dataclass
 class GitFileStatus:

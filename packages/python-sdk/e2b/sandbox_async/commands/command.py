@@ -11,7 +11,7 @@ from e2b.connection_config import (
 )
 from e2b.envd.process import process_connect, process_pb2
 from e2b.envd.rpc import authentication_header, handle_rpc_exception
-from e2b.envd.versions import ENVD_COMMANDS_STDIN
+from e2b.envd.versions import ENVD_COMMANDS_STDIN, ENVD_ENVD_CLOSE
 from e2b.exceptions import SandboxException
 from e2b.sandbox.commands.main import ProcessInfo
 from e2b.sandbox.commands.command_handle import CommandResult
@@ -108,7 +108,7 @@ class Commands:
     async def send_stdin(
         self,
         pid: int,
-        data: str,
+        data: Union[str, bytes],
         request_timeout: Optional[float] = None,
     ) -> None:
         """
@@ -123,8 +123,39 @@ class Commands:
                 process_pb2.SendInputRequest(
                     process=process_pb2.ProcessSelector(pid=pid),
                     input=process_pb2.ProcessInput(
-                        stdin=data.encode(),
+                        stdin=data.encode() if isinstance(data, str) else data,
                     ),
+                ),
+                request_timeout=self._connection_config.get_request_timeout(
+                    request_timeout
+                ),
+            )
+        except Exception as e:
+            raise handle_rpc_exception(e)
+
+    async def close_stdin(
+        self,
+        pid: int,
+        request_timeout: Optional[float] = None,
+    ) -> None:
+        """
+        Close the command stdin.
+
+        This signals EOF to the command. The command must have been started with `stdin=True`.
+
+        :param pid Process ID of the command. You can get the list of processes using `sandbox.commands.list()`.
+        :param request_timeout: Timeout for the request in **seconds**
+        """
+        if self._envd_version < ENVD_ENVD_CLOSE:
+            raise SandboxException(
+                f"Sandbox envd version {self._envd_version} doesn't support closing stdin. "
+                f"Please rebuild your template to pick up the latest sandbox version."
+            )
+
+        try:
+            await self._rpc.aclose_stdin(
+                process_pb2.CloseStdinRequest(
+                    process=process_pb2.ProcessSelector(pid=pid),
                 ),
                 request_timeout=self._connection_config.get_request_timeout(
                     request_timeout
@@ -225,9 +256,9 @@ class Commands:
             envs,
             user,
             cwd,
+            stdin,
             timeout,
             request_timeout,
-            stdin,
             on_stdout=on_stdout,
             on_stderr=on_stderr,
         )
@@ -240,9 +271,9 @@ class Commands:
         envs: Optional[Dict[str, str]],
         user: Optional[Username],
         cwd: Optional[str],
+        stdin: bool,
         timeout: Optional[float],
         request_timeout: Optional[float],
-        stdin: bool,
         on_stdout: Optional[OutputHandler[Stdout]],
         on_stderr: Optional[OutputHandler[Stderr]],
     ) -> AsyncCommandHandle:
@@ -274,12 +305,19 @@ class Commands:
                     f"Failed to start process: expected start event, got {start_event}"
                 )
 
+            pid = start_event.event.start.pid
             return AsyncCommandHandle(
-                pid=start_event.event.start.pid,
-                handle_kill=lambda: self.kill(start_event.event.start.pid),
+                pid=pid,
+                handle_kill=lambda: self.kill(pid),
                 events=events,
                 on_stdout=on_stdout,
                 on_stderr=on_stderr,
+                handle_send_stdin=lambda data, request_timeout=None: self.send_stdin(
+                    pid, data, request_timeout
+                ),
+                handle_close_stdin=lambda request_timeout=None: self.close_stdin(
+                    pid, request_timeout
+                ),
             )
         except Exception as e:
             raise handle_rpc_exception(e)
@@ -308,13 +346,13 @@ class Commands:
             process_pb2.ConnectRequest(
                 process=process_pb2.ProcessSelector(pid=pid),
             ),
+            headers={
+                KEEPALIVE_PING_HEADER: str(KEEPALIVE_PING_INTERVAL_SEC),
+            },
             timeout=timeout,
             request_timeout=self._connection_config.get_request_timeout(
                 request_timeout
             ),
-            headers={
-                KEEPALIVE_PING_HEADER: str(KEEPALIVE_PING_INTERVAL_SEC),
-            },
         )
 
         try:
@@ -325,12 +363,19 @@ class Commands:
                     f"Failed to connect to process: expected start event, got {start_event}"
                 )
 
+            pid = start_event.event.start.pid
             return AsyncCommandHandle(
-                pid=start_event.event.start.pid,
-                handle_kill=lambda: self.kill(start_event.event.start.pid),
+                pid=pid,
+                handle_kill=lambda: self.kill(pid),
                 events=events,
                 on_stdout=on_stdout,
                 on_stderr=on_stderr,
+                handle_send_stdin=lambda data, request_timeout=None: self.send_stdin(
+                    pid, data, request_timeout
+                ),
+                handle_close_stdin=lambda request_timeout=None: self.close_stdin(
+                    pid, request_timeout
+                ),
             )
         except Exception as e:
             raise handle_rpc_exception(e)

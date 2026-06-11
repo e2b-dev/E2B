@@ -12,18 +12,21 @@ const DEFAULT_API_CONNECTION_LIMIT = 100
 // 1000 = ~10 streams per connection (with the 100-conn default).
 // Override via env if your workload needs different.
 const DEFAULT_API_INFLIGHT_LIMIT = 1000
-const API_UNDICI_FALLBACK_WARNING =
-  'Failed to load undici for API HTTP/2 transport; falling back to global fetch.'
 
-let apiFetch: typeof fetch | undefined
-let hasWarnedUndiciFallback = false
+// Fetchers are cached per proxy so requests without a proxy keep sharing a
+// single dispatcher while each distinct proxy URL gets its own.
+const apiFetchers = new Map<string, typeof fetch>()
 
-export function createApiFetch(): typeof fetch {
-  if (apiFetch) {
-    return apiFetch
+export function createApiFetch(proxy?: string): typeof fetch {
+  const key = proxy ?? ''
+
+  const cached = apiFetchers.get(key)
+  if (cached) {
+    return cached
   }
 
-  apiFetch = createApiFetchForRuntime(runtime)
+  const apiFetch = createApiFetchForRuntime(runtime, { proxy })
+  apiFetchers.set(key, apiFetch)
 
   return apiFetch
 }
@@ -33,6 +36,7 @@ export function createApiFetchForRuntime(
   options: {
     connectionLimit?: number
     inflightLimit?: number
+    proxy?: string
     loadUndici?: () => Promise<UndiciModule | undefined>
   } = {}
 ): typeof fetch {
@@ -53,22 +57,28 @@ export function createApiFetchForRuntime(
 async function buildApiFetcher(options: {
   connectionLimit?: number
   inflightLimit?: number
+  proxy?: string
   loadUndici?: () => Promise<UndiciModule | undefined>
 }): Promise<typeof fetch> {
   const undici = await (options.loadUndici ?? loadUndici)()
   const inflightLimit = options.inflightLimit ?? getApiInflightLimit()
 
   if (!undici) {
-    warnUndiciFallback()
-
     return limitConcurrency(fetch, inflightLimit)
   }
 
-  const { Agent, fetch: undiciFetch } = undici
-  const dispatcher = new Agent({
-    allowH2: true,
-    connections: options.connectionLimit ?? getApiConnectionLimit(),
-  })
+  const { Agent, ProxyAgent, fetch: undiciFetch } = undici
+  const connections = options.connectionLimit ?? getApiConnectionLimit()
+  const dispatcher = options.proxy
+    ? new ProxyAgent({
+        uri: options.proxy,
+        allowH2: true,
+        connections,
+      })
+    : new Agent({
+        allowH2: true,
+        connections,
+      })
   const fetchWithDispatcher = undiciFetch as unknown as (
     input: RequestInfo | URL,
     init?: UndiciRequestInit
@@ -105,13 +115,4 @@ export function getApiInflightLimit(): number {
     'E2B_API_INFLIGHT_REQUESTS',
     DEFAULT_API_INFLIGHT_LIMIT
   )
-}
-
-function warnUndiciFallback() {
-  if (hasWarnedUndiciFallback) {
-    return
-  }
-
-  hasWarnedUndiciFallback = true
-  console.warn(API_UNDICI_FALLBACK_WARNING)
 }

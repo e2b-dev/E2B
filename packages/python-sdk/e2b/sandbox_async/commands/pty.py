@@ -220,7 +220,7 @@ class Pty:
         pid: int,
         size: PtySize,
         request_timeout: Optional[float] = None,
-    ):
+    ) -> None:
         """
         Resize PTY.
         Call this when the terminal window is resized and the number of columns and rows has changed.

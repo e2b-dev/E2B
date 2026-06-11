@@ -1,7 +1,9 @@
 from dataclasses import dataclass
 from enum import Enum
+from typing import Optional
 
 from e2b.envd.filesystem.filesystem_pb2 import EventType
+from e2b.sandbox.filesystem.filesystem import EntryInfo
 
 
 class FilesystemEventType(Enum):
@@ -57,4 +59,12 @@ class FilesystemEvent:
     type: FilesystemEventType
     """
     Filesystem operation event type.
+    """
+    entry: Optional[EntryInfo] = None
+    """
+    Information about the entry that triggered the event.
+
+    Only populated when the watch was started with `include_entry=True` and the
+    sandbox's envd version supports it. It may be `None` for events where the entry
+    no longer exists at the path (e.g. remove or rename-away events).
     """

@@ -3,6 +3,7 @@ import {
   EventType,
   WatchDirResponse,
 } from '../../envd/filesystem/filesystem_pb'
+import { EntryInfo, mapEntryInfo } from './index'
 
 /**
  * Sandbox filesystem event types.
@@ -57,6 +58,14 @@ export interface FilesystemEvent {
    * Filesystem operation event type.
    */
   type: FilesystemEventType
+  /**
+   * Information about the entry that triggered the event.
+   *
+   * Only populated when the watch was started with `includeEntry: true` and the
+   * sandbox's envd version supports it. It may be `undefined` for events where the
+   * entry no longer exists at the path (e.g. remove or rename-away events).
+   */
+  entry?: EntryInfo
 }
 
 /**
@@ -106,6 +115,9 @@ export class WatchHandle {
         this.onEvent?.({
           name: event.value.name,
           type: eventType,
+          entry: event.value.entry
+            ? mapEntryInfo(event.value.entry)
+            : undefined,
         })
       }
       this.onExit?.()

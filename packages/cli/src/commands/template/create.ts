@@ -17,7 +17,7 @@ import {
   asTypescript,
   withDelimiter,
 } from '../../utils/format'
-import { getDockerfile } from './build'
+import { getDockerfile } from './dockerfile'
 
 export const createCommand = new commander.Command('create')
   .description(

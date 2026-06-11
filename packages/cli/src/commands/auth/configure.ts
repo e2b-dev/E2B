@@ -2,9 +2,7 @@ import * as commander from 'commander'
 import * as fs from 'fs'
 import * as chalk from 'chalk'
 import * as e2b from 'e2b'
-import * as path from 'path'
-
-import { USER_CONFIG_PATH } from 'src/user'
+import { USER_CONFIG_PATH, writeUserConfig } from 'src/user'
 import {
   client,
   connectionConfig,
@@ -52,8 +50,7 @@ export const configureCommand = new commander.Command('configure')
     userConfig.teamName = team.name
     userConfig.teamId = team.teamID
     userConfig.teamApiKey = team.apiKey
-    fs.mkdirSync(path.dirname(USER_CONFIG_PATH), { recursive: true })
-    fs.writeFileSync(USER_CONFIG_PATH, JSON.stringify(userConfig, null, 2))
+    writeUserConfig(USER_CONFIG_PATH, userConfig)
 
     console.log(`Team ${asBold(team.name)} (${team.teamID}) selected.\n`)
   })
