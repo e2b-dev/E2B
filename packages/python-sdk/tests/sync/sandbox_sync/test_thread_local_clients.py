@@ -1,6 +1,8 @@
 from concurrent.futures import ThreadPoolExecutor
 from types import SimpleNamespace
+from unittest.mock import Mock
 
+import httpx
 from packaging.version import Version
 
 from e2b.connection_config import ConnectionConfig
@@ -29,16 +31,16 @@ def fake_transport():
 
 def test_sync_sandbox_envd_api_is_bound_per_calling_thread(monkeypatch, test_api_key):
     config = ConnectionConfig(api_key=test_api_key)
-    main_transport = fake_transport()
-    worker_transport = fake_transport()
+    main_api = Mock(spec=httpx.Client)
+    worker_api = Mock(spec=httpx.Client)
 
     monkeypatch.setattr(
-        sandbox_sync_main, "get_transport", lambda *_args, **_kwargs: worker_transport
+        sandbox_sync_main, "get_transport", lambda *_args, **_kwargs: fake_transport()
     )
     monkeypatch.setattr(
         sandbox_sync_main.httpx,
         "Client",
-        lambda *args, **kwargs: SimpleNamespace(transport=kwargs["transport"]),
+        lambda *args, **kwargs: worker_api,
     )
     monkeypatch.setattr(
         sandbox_sync_main, "Filesystem", lambda *args, **kwargs: object()
@@ -58,12 +60,11 @@ def test_sync_sandbox_envd_api_is_bound_per_calling_thread(monkeypatch, test_api
 
     # Replace the construction-thread client so the assertion does not depend
     # on how Sandbox.__init__ got its initial transport.
-    sandbox._envd_api_thread_local.envd_api = SimpleNamespace(transport=main_transport)
+    sandbox._envd_api_thread_local.envd_api = main_api
 
-    assert sandbox._envd_api.transport is main_transport
-    worker_api = run_in_worker_thread(lambda: sandbox._envd_api)
-    assert worker_api.transport is worker_transport
-    assert sandbox._envd_api.transport is main_transport
+    assert sandbox._envd_api is main_api
+    assert run_in_worker_thread(lambda: sandbox._envd_api) is worker_api
+    assert sandbox._envd_api is main_api
     assert not hasattr(sandbox, "_transport")
 
 
@@ -71,7 +72,7 @@ def test_sync_filesystem_envd_clients_are_bound_per_calling_thread(
     monkeypatch, test_api_key
 ):
     config = ConnectionConfig(api_key=test_api_key)
-    main_api = object()
+    main_api = Mock(spec=httpx.Client)
     main_rpc = object()
     worker_transport = fake_transport()
 
