@@ -20,6 +20,7 @@ import { authenticationHeader, handleRpcError } from '../../envd/rpc'
 
 import { EnvdApiClient } from '../../envd/api'
 import {
+  EntryInfo as FsEntryInfo,
   Filesystem as FilesystemService,
   FileType as FsFileType,
 } from '../../envd/filesystem/filesystem_pb'
@@ -30,7 +31,9 @@ import type { Timestamp } from '@bufbuild/protobuf/wkt'
 import { compareVersions } from 'compare-versions'
 import {
   ENVD_DEFAULT_USER,
+  ENVD_FILE_METADATA,
   ENVD_OCTET_STREAM_UPLOAD,
+  ENVD_VERSION_FS_EVENT_ENTRY_INFO,
   ENVD_VERSION_RECURSIVE_WATCH,
 } from '../../envd/versions'
 import {
@@ -77,6 +80,13 @@ export interface WriteInfo {
    * Path to the filesystem object.
    */
   path: string
+  /**
+   * User-defined metadata stored on the file as `user.e2b.*` extended
+   * attributes. On writes this reflects the metadata supplied on upload; on
+   * reads (`getInfo`, `list`, `rename`) it reflects any `user.e2b.*` xattr on
+   * the file, including ones set out-of-band. `undefined` when none is set.
+   */
+  metadata?: Record<string, string>
 }
 
 export interface EntryInfo extends WriteInfo {
@@ -153,6 +163,71 @@ function mapModifiedTime(modifiedTime: Timestamp | undefined) {
   )
 }
 
+function mapMetadata(
+  metadata: Record<string, string> | undefined
+): Record<string, string> | undefined {
+  if (!metadata) return undefined
+  return Object.keys(metadata).length === 0 ? undefined : metadata
+}
+
+const METADATA_HEADER_PREFIX = 'X-Metadata-'
+
+// Metadata keys travel as `X-Metadata-<key>` HTTP header names, so they must be
+// valid header tokens (RFC 7230); values travel as header values, restricted to
+// printable US-ASCII.
+const METADATA_KEY_REGEX = /^[A-Za-z0-9!#$%&'*+\-.^_`|~]+$/
+const METADATA_VALUE_REGEX = /^[\x20-\x7e]*$/
+
+function validateMetadata(metadata: Record<string, string> | undefined): void {
+  if (!metadata) return
+  for (const [key, value] of Object.entries(metadata)) {
+    if (!METADATA_KEY_REGEX.test(key)) {
+      throw new InvalidArgumentError(
+        `Invalid metadata key ${JSON.stringify(
+          key
+        )}: keys must be non-empty and use only HTTP token characters (letters, digits and !#$%&'*+-.^_\`|~).`
+      )
+    }
+    if (!METADATA_VALUE_REGEX.test(value)) {
+      throw new InvalidArgumentError(
+        `Invalid metadata value for key ${JSON.stringify(
+          key
+        )}: values must be printable US-ASCII.`
+      )
+    }
+  }
+}
+
+function metadataHeaders(
+  metadata: Record<string, string> | undefined
+): Record<string, string> {
+  if (!metadata) return {}
+  const headers: Record<string, string> = {}
+  for (const [key, value] of Object.entries(metadata)) {
+    headers[`${METADATA_HEADER_PREFIX}${key}`] = value
+  }
+  return headers
+}
+
+/**
+ * Map a protobuf `EntryInfo` to the SDK `EntryInfo`.
+ */
+export function mapEntryInfo(entry: FsEntryInfo): EntryInfo {
+  return {
+    name: entry.name,
+    type: mapFileType(entry.type),
+    path: entry.path,
+    size: Number(entry.size),
+    mode: entry.mode,
+    permissions: entry.permissions,
+    owner: entry.owner,
+    group: entry.group,
+    modifiedTime: mapModifiedTime(entry.modifiedTime),
+    symlinkTarget: entry.symlinkTarget,
+    metadata: mapMetadata(entry.metadata),
+  }
+}
+
 /**
  * Options for the sandbox filesystem operations.
  */
@@ -180,6 +255,14 @@ export interface FilesystemWriteOpts extends FilesystemRequestOpts {
    * the sandbox's envd version, the upload falls back to `multipart/form-data`.
    */
   useOctetStream?: boolean
+  /**
+   * User-defined metadata to persist on the uploaded file(s) as extended
+   * attributes. Keys are lowercased by the sandbox, so they may differ in case
+   * when read back. Invalid keys or values throw an `InvalidArgumentError`.
+   * The same metadata is applied to every file in a multi-file upload.
+   * Requires envd 0.6.2 or later.
+   */
+  metadata?: Record<string, string>
 }
 
 /**
@@ -218,6 +301,16 @@ export interface WatchOpts extends FilesystemRequestOpts {
    * Watch the directory recursively
    */
   recursive?: boolean
+  /**
+   * Include the {@link EntryInfo} of the affected entry in each {@link FilesystemEvent}.
+   *
+   * The entry is populated best-effort and may be `undefined` for events where the
+   * entry no longer exists at the path (e.g. remove or rename-away events).
+   *
+   * Requires envd 0.6.3 or later. Watching with this option against an older sandbox
+   * throws a `TemplateError`.
+   */
+  includeEntry?: boolean
 }
 
 /**
@@ -431,6 +524,19 @@ export class Filesystem {
     const useOctetStream =
       (writeOpts?.useOctetStream ?? false) && supportsOctetStream
 
+    const metadata = writeOpts?.metadata
+    validateMetadata(metadata)
+    if (
+      metadata &&
+      Object.keys(metadata).length > 0 &&
+      compareVersions(this.envdApi.version, ENVD_FILE_METADATA) < 0
+    ) {
+      throw new TemplateError('File metadata requires envd 0.6.2 or later.')
+    }
+    // Metadata is sent as request-scoped `X-Metadata-*` headers, so the same
+    // metadata is applied to every file in a multi-file upload.
+    const extraHeaders = metadataHeaders(metadata)
+
     const results: WriteInfo[] = []
 
     const useGzip = writeOpts?.gzip === true
@@ -438,6 +544,7 @@ export class Filesystem {
     if (useOctetStream) {
       const headers: Record<string, string> = {
         'Content-Type': 'application/octet-stream',
+        ...extraHeaders,
       }
       if (useGzip) {
         headers['Content-Encoding'] = 'gzip'
@@ -476,6 +583,10 @@ export class Filesystem {
             )
           }
 
+          for (const f of files) {
+            f.metadata = mapMetadata(f.metadata)
+          }
+
           return files
         })
       )
@@ -501,6 +612,7 @@ export class Filesystem {
           },
         },
         bodySerializer: () => formData,
+        headers: extraHeaders,
         signal: this.connectionConfig.getSignal(
           writeOpts?.requestTimeoutMs,
           writeOpts?.signal
@@ -516,6 +628,10 @@ export class Filesystem {
       const files = res.data as WriteInfo[]
       if (!files || files.length === 0) {
         throw new Error('Expected to receive information about written file')
+      }
+
+      for (const f of files) {
+        f.metadata = mapMetadata(f.metadata)
       }
 
       results.push(...files)
@@ -577,22 +693,12 @@ export class Filesystem {
       const entries: EntryInfo[] = []
 
       for (const e of res.entries) {
-        const type = mapFileType(e.type)
-
-        if (type) {
-          entries.push({
-            name: e.name,
-            type,
-            path: e.path,
-            size: Number(e.size),
-            mode: e.mode,
-            permissions: e.permissions,
-            owner: e.owner,
-            group: e.group,
-            modifiedTime: mapModifiedTime(e.modifiedTime),
-            symlinkTarget: e.symlinkTarget,
-          })
+        // Skip entries with an unknown file type.
+        if (!mapFileType(e.type)) {
+          continue
         }
+
+        entries.push(mapEntryInfo(e))
       }
 
       return entries
@@ -668,18 +774,7 @@ export class Filesystem {
         throw new Error('Expected to receive information about moved object')
       }
 
-      return {
-        name: entry.name,
-        type: mapFileType(entry.type),
-        path: entry.path,
-        size: Number(entry.size),
-        mode: entry.mode,
-        permissions: entry.permissions,
-        owner: entry.owner,
-        group: entry.group,
-        modifiedTime: mapModifiedTime(entry.modifiedTime),
-        symlinkTarget: entry.symlinkTarget,
-      }
+      return mapEntryInfo(entry)
     } catch (err) {
       throw handleFilesystemRpcError(err)
     }
@@ -771,18 +866,7 @@ export class Filesystem {
         )
       }
 
-      return {
-        name: res.entry.name,
-        type: mapFileType(res.entry.type),
-        path: res.entry.path,
-        size: Number(res.entry.size),
-        mode: res.entry.mode,
-        permissions: res.entry.permissions,
-        owner: res.entry.owner,
-        group: res.entry.group,
-        modifiedTime: mapModifiedTime(res.entry.modifiedTime),
-        symlinkTarget: res.entry.symlinkTarget,
-      }
+      return mapEntryInfo(res.entry)
     } catch (err) {
       throw handleFilesystemRpcError(err)
     }
@@ -810,8 +894,18 @@ export class Filesystem {
       compareVersions(this.envdApi.version, ENVD_VERSION_RECURSIVE_WATCH) < 0
     ) {
       throw new TemplateError(
-        'You need to update the template to use recursive watching. ' +
-          'You can do this by running `e2b template build` in the directory with the template.'
+        'You need to update the template to use recursive watching.'
+      )
+    }
+
+    if (
+      opts?.includeEntry &&
+      this.envdApi.version &&
+      compareVersions(this.envdApi.version, ENVD_VERSION_FS_EVENT_ENTRY_INFO) <
+        0
+    ) {
+      throw new TemplateError(
+        'You need to update the template to include entry info in watch events.'
       )
     }
 
@@ -827,6 +921,7 @@ export class Filesystem {
       {
         path,
         recursive: opts?.recursive ?? this.defaultWatchRecursive,
+        includeEntry: opts?.includeEntry ?? false,
       },
       {
         headers: {

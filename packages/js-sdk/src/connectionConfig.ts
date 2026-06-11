@@ -102,6 +102,7 @@ export function buildRequestSignal(
   requestTimeoutMs: number | undefined,
   userSignal: AbortSignal | undefined
 ): AbortSignal | undefined {
+  // `0` (and `undefined`) disable the request timeout.
   const timeoutSignal = requestTimeoutMs
     ? AbortSignal.timeout(requestTimeoutMs)
     : undefined
@@ -205,7 +206,7 @@ export class ConnectionConfig {
 
   constructor(opts?: ConnectionOpts) {
     this.apiKey = opts?.apiKey || ConnectionConfig.apiKey
-    this.debug = opts?.debug || ConnectionConfig.debug
+    this.debug = opts?.debug ?? ConnectionConfig.debug
     this.domain = opts?.domain || ConnectionConfig.domain
     this.accessToken = opts?.accessToken || ConnectionConfig.accessToken
     this.requestTimeoutMs = opts?.requestTimeoutMs ?? REQUEST_TIMEOUT_MS

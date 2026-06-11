@@ -2,6 +2,7 @@ import datetime
 import json
 import logging
 import shlex
+import threading
 import uuid
 from typing import Dict, List, Optional, Union, overload
 
@@ -16,7 +17,7 @@ from e2b.connection_config import ApiParams, ConnectionConfig
 from e2b.envd.api import ENVD_API_HEALTH_ROUTE, handle_envd_api_exception
 from e2b.envd.versions import ENVD_DEBUG_FALLBACK
 from e2b.exceptions import (
-    SandboxException,
+    TemplateException,
     format_request_timeout_error,
 )
 from e2b.sandbox.main import SandboxOpts
@@ -102,34 +103,46 @@ class Sandbox(SandboxApi):
         """
         super().__init__(**opts)
 
-        self._transport = get_transport(self.connection_config)
+        transport = get_transport(self.connection_config)
+        self._envd_api_thread_local = threading.local()
 
-        self._envd_api = httpx.Client(
-            base_url=self.envd_api_url,
-            transport=self._transport,
-            headers=self.connection_config.sandbox_headers,
-            event_hooks=make_logging_event_hooks(self.connection_config.logger),
-        )
+        self._envd_api_thread_local.envd_api = self._create_envd_api(transport)
         self._filesystem = Filesystem(
             self.envd_api_url,
             self._envd_version,
             self.connection_config,
-            self._transport.pool,
+            transport.pool,
             self._envd_api,
         )
         self._commands = Commands(
             self.envd_api_url,
             self.connection_config,
-            self._transport.pool,
+            transport.pool,
             self._envd_version,
         )
         self._pty = Pty(
             self.envd_api_url,
             self.connection_config,
-            self._transport.pool,
+            transport.pool,
             self._envd_version,
         )
         self._git = Git(self._commands)
+
+    def _create_envd_api(self, transport) -> httpx.Client:
+        return httpx.Client(
+            base_url=self.envd_api_url,
+            transport=transport,
+            headers=self.connection_config.sandbox_headers,
+            event_hooks=make_logging_event_hooks(self.connection_config.logger),
+        )
+
+    @property
+    def _envd_api(self) -> httpx.Client:
+        envd_api = getattr(self._envd_api_thread_local, "envd_api", None)
+        if envd_api is None:
+            envd_api = self._create_envd_api(get_transport(self.connection_config))
+            self._envd_api_thread_local.envd_api = envd_api
+        return envd_api
 
     def is_running(self, request_timeout: Optional[float] = None) -> bool:
         """
@@ -383,6 +396,10 @@ class Sandbox(SandboxApi):
 
         :return: `True` if the sandbox was killed, `False` if the sandbox was not found
         """
+        if self.connection_config.debug:
+            # Skip killing the sandbox in debug mode
+            return True
+
         return SandboxApi._cls_kill(
             sandbox_id=self.sandbox_id,
             **self.connection_config.get_api_params(**opts),
@@ -592,9 +609,13 @@ class Sandbox(SandboxApi):
 
         :return: List of sandbox metrics containing CPU, memory and disk usage information
         """
+        if self.connection_config.debug:
+            # Skip getting the metrics in debug mode
+            return []
+
         if self._envd_version < Version("0.1.5"):
-            raise SandboxException(
-                "Metrics are not supported in this version of the sandbox, please rebuild your template."
+            raise TemplateException(
+                "You need to update the template to use the new SDK."
             )
 
         if self._envd_version < Version("0.2.4"):
@@ -672,6 +693,8 @@ class Sandbox(SandboxApi):
     ) -> bool:
         """
         :deprecated: Use `pause()` instead.
+
+        :return: `True` if the sandbox got paused, `False` if the sandbox was already paused
         """
         return self.pause(**opts)
 

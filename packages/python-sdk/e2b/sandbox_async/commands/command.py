@@ -109,7 +109,7 @@ class Commands:
     async def send_stdin(
         self,
         pid: int,
-        data: str,
+        data: Union[str, bytes],
         request_timeout: Optional[float] = None,
     ) -> None:
         """
@@ -124,7 +124,7 @@ class Commands:
                 process_pb2.SendInputRequest(
                     process=process_pb2.ProcessSelector(pid=pid),
                     input=process_pb2.ProcessInput(
-                        stdin=data.encode(),
+                        stdin=data.encode() if isinstance(data, str) else data,
                     ),
                 ),
                 request_timeout=self._connection_config.get_request_timeout(
@@ -313,8 +313,12 @@ class Commands:
                 events=events,
                 on_stdout=on_stdout,
                 on_stderr=on_stderr,
-                handle_send_stdin=lambda data: self.send_stdin(pid, data),
-                handle_close_stdin=lambda: self.close_stdin(pid),
+                handle_send_stdin=lambda data, request_timeout=None: self.send_stdin(
+                    pid, data, request_timeout
+                ),
+                handle_close_stdin=lambda request_timeout=None: self.close_stdin(
+                    pid, request_timeout
+                ),
             )
         except Exception as e:
             raise handle_rpc_exception(e)
@@ -367,8 +371,12 @@ class Commands:
                 events=events,
                 on_stdout=on_stdout,
                 on_stderr=on_stderr,
-                handle_send_stdin=lambda data: self.send_stdin(pid, data),
-                handle_close_stdin=lambda: self.close_stdin(pid),
+                handle_send_stdin=lambda data, request_timeout=None: self.send_stdin(
+                    pid, data, request_timeout
+                ),
+                handle_close_stdin=lambda request_timeout=None: self.close_stdin(
+                    pid, request_timeout
+                ),
             )
         except Exception as e:
             raise handle_rpc_exception(e)

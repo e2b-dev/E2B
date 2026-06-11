@@ -146,6 +146,20 @@ test('sandbox_url stays localhost in debug mode', () => {
   )
 })
 
+test('debug false in args overrides E2B_DEBUG env var', () => {
+  process.env.E2B_DEBUG = 'true'
+
+  const config = new ConnectionConfig({ debug: false })
+  assert.equal(config.debug, false)
+})
+
+test('debug defaults to E2B_DEBUG env var', () => {
+  process.env.E2B_DEBUG = 'true'
+
+  const config = new ConnectionConfig()
+  assert.equal(config.debug, true)
+})
+
 test('getSignal returns user signal when no timeout is set', () => {
   const config = new ConnectionConfig({ requestTimeoutMs: 0 })
   const controller = new AbortController()
@@ -174,6 +188,31 @@ test('getSignal returns undefined when no timeout and no signal', () => {
   const config = new ConnectionConfig({ requestTimeoutMs: 0 })
   const signal = config.getSignal(0)
   assert.equal(signal, undefined)
+})
+
+test('requestTimeoutMs 0 from the config disables the timeout', () => {
+  const config = new ConnectionConfig({ requestTimeoutMs: 0 })
+  // The stored value is kept as 0 (not replaced by the default).
+  assert.equal(config.requestTimeoutMs, 0)
+  // getSignal() with no per-call arg falls back to the stored 0, which must
+  // NOT produce a timeout signal.
+  assert.equal(config.getSignal(), undefined)
+  // With only a user signal, no timeout signal is layered on top.
+  const controller = new AbortController()
+  assert.strictEqual(
+    config.getSignal(undefined, controller.signal),
+    controller.signal
+  )
+})
+
+test('setupRequestController with config timeout 0 never auto-aborts', async () => {
+  const config = new ConnectionConfig({ requestTimeoutMs: 0 })
+  const { controller } = setupRequestController(
+    config.requestTimeoutMs,
+    undefined
+  )
+  await new Promise((resolve) => setTimeout(resolve, 40))
+  assert.equal(controller.signal.aborted, false)
 })
 
 test('setupRequestController aborts when user signal aborts', () => {
