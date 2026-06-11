@@ -16,11 +16,12 @@ from e2b.connection_config import (
 )
 from e2b.envd.api import (
     ENVD_API_FILES_ROUTE,
+    acheck_sandbox_health,
     ahandle_envd_api_exception,
-    handle_envd_api_transport_exception,
+    ahandle_envd_api_transport_exception_with_health,
 )
 from e2b.envd.filesystem import filesystem_connect, filesystem_pb2
-from e2b.envd.rpc import authentication_header, handle_rpc_exception
+from e2b.envd.rpc import authentication_header, ahandle_rpc_exception_with_health
 from e2b.envd.versions import (
     ENVD_DEFAULT_USER,
     ENVD_FILE_METADATA,
@@ -59,8 +60,12 @@ _FILESYSTEM_HTTP_ERROR_MAP = {
 }
 
 
-def _handle_filesystem_rpc_exception(e: Exception) -> Exception:
-    return handle_rpc_exception(e, _FILESYSTEM_RPC_ERROR_MAP)
+async def _ahandle_filesystem_rpc_exception(
+    e: Exception, envd_api: httpx.AsyncClient
+) -> Exception:
+    return await ahandle_rpc_exception_with_health(
+        e, lambda: acheck_sandbox_health(envd_api), _FILESYSTEM_RPC_ERROR_MAP
+    )
 
 
 async def _ahandle_filesystem_envd_api_exception(r):
@@ -189,7 +194,9 @@ class Filesystem:
                 timeout=self._connection_config.get_request_timeout(request_timeout),
             )
         except httpx.TransportError as e:
-            raise handle_envd_api_transport_exception(e)
+            raise await ahandle_envd_api_transport_exception_with_health(
+                e, self._envd_api
+            )
 
         err = await _ahandle_filesystem_envd_api_exception(r)
         if err:
@@ -312,7 +319,9 @@ class Filesystem:
                         ),
                     )
                 except httpx.TransportError as e:
-                    raise handle_envd_api_transport_exception(e)
+                    raise await ahandle_envd_api_transport_exception_with_health(
+                        e, self._envd_api
+                    )
 
                 err = await _ahandle_filesystem_envd_api_exception(r)
                 if err:
@@ -355,7 +364,9 @@ class Filesystem:
                     ),
                 )
             except httpx.TransportError as e:
-                raise handle_envd_api_transport_exception(e)
+                raise await ahandle_envd_api_transport_exception_with_health(
+                    e, self._envd_api
+                )
 
             err = await _ahandle_filesystem_envd_api_exception(r)
             if err:
@@ -409,7 +420,7 @@ class Filesystem:
 
             return entries
         except Exception as e:
-            raise _handle_filesystem_rpc_exception(e)
+            raise await _ahandle_filesystem_rpc_exception(e, self._envd_api)
 
     async def exists(
         self,
@@ -441,7 +452,7 @@ class Filesystem:
             if isinstance(e, connect.ConnectException):
                 if e.status == connect.Code.not_found:
                     return False
-            raise _handle_filesystem_rpc_exception(e)
+            raise await _ahandle_filesystem_rpc_exception(e, self._envd_api)
 
     async def get_info(
         self,
@@ -469,7 +480,7 @@ class Filesystem:
 
             return map_entry_info(r.entry)
         except Exception as e:
-            raise _handle_filesystem_rpc_exception(e)
+            raise await _ahandle_filesystem_rpc_exception(e, self._envd_api)
 
     async def remove(
         self,
@@ -493,7 +504,7 @@ class Filesystem:
                 headers=authentication_header(self._envd_version, user),
             )
         except Exception as e:
-            raise _handle_filesystem_rpc_exception(e)
+            raise await _ahandle_filesystem_rpc_exception(e, self._envd_api)
 
     async def rename(
         self,
@@ -526,7 +537,7 @@ class Filesystem:
 
             return map_entry_info(r.entry)
         except Exception as e:
-            raise _handle_filesystem_rpc_exception(e)
+            raise await _ahandle_filesystem_rpc_exception(e, self._envd_api)
 
     async def make_dir(
         self,
@@ -557,7 +568,7 @@ class Filesystem:
             if isinstance(e, connect.ConnectException):
                 if e.status == connect.Code.already_exists:
                     return False
-            raise _handle_filesystem_rpc_exception(e)
+            raise await _ahandle_filesystem_rpc_exception(e, self._envd_api)
 
     async def watch_dir(
         self,
@@ -616,6 +627,11 @@ class Filesystem:
                     f"Failed to start watch: expected start event, got {start_event}",
                 )
 
-            return AsyncWatchHandle(events=events, on_event=on_event, on_exit=on_exit)
+            return AsyncWatchHandle(
+                events=events,
+                on_event=on_event,
+                on_exit=on_exit,
+                check_health=lambda: acheck_sandbox_health(self._envd_api),
+            )
         except Exception as e:
-            raise _handle_filesystem_rpc_exception(e)
+            raise await _ahandle_filesystem_rpc_exception(e, self._envd_api)

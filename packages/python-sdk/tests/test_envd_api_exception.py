@@ -71,3 +71,19 @@ def test_returns_original_when_not_transport_error():
     original = ValueError("not transport")
     err = handle_envd_api_transport_exception(original)
     assert err is original
+
+
+def test_health_result_confirms_sandbox_killed():
+    err = handle_envd_api_transport_exception(
+        httpx.RemoteProtocolError("peer closed connection"), sandbox_running=False
+    )
+    assert isinstance(err, SandboxException)
+    assert "sandbox was killed or reached its end of life" in str(err)
+
+
+def test_health_result_running_falls_back_to_hedged_message():
+    err = handle_envd_api_transport_exception(
+        httpx.RemoteProtocolError("peer closed connection"), sandbox_running=True
+    )
+    assert isinstance(err, SandboxException)
+    assert "most likely because the sandbox was killed" in str(err)

@@ -12,5 +12,5 @@ def test_kill_sandbox_while_command_is_running(sandbox: Sandbox):
     with pytest.raises(SandboxException) as exc_info:
         cmd.wait()
 
-    assert "sandbox was killed" in str(exc_info.value)
-    assert "is_running" in str(exc_info.value)
+    # The health check confirms the sandbox is gone, so the error states it outright
+    assert "sandbox was killed or reached its end of life" in str(exc_info.value)

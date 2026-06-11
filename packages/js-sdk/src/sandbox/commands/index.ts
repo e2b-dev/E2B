@@ -15,12 +15,20 @@ import {
   setupRequestController,
   Username,
 } from '../../connectionConfig'
-import { handleProcessStartEvent } from '../../envd/api'
+import {
+  checkSandboxHealth,
+  EnvdApiClient,
+  handleProcessStartEvent,
+} from '../../envd/api'
 import {
   Process as ProcessService,
   Signal,
 } from '../../envd/process/process_pb'
-import { authenticationHeader, handleRpcError } from '../../envd/rpc'
+import {
+  authenticationHeader,
+  handleRpcErrorWithHealthCheck,
+  SandboxHealthCheck,
+} from '../../envd/rpc'
 import { ENVD_COMMANDS_STDIN, ENVD_ENVD_CLOSE } from '../../envd/versions'
 import { SandboxError } from '../../errors'
 import { CommandHandle, CommandResult } from './commandHandle'
@@ -129,16 +137,16 @@ export class Commands {
 
   private readonly defaultProcessConnectionTimeout = 60_000 // 60 seconds
   private readonly envdVersion: string
+  private readonly checkHealth: SandboxHealthCheck
 
   constructor(
     transport: Transport,
-    private readonly connectionConfig: ConnectionConfig,
-    metadata: {
-      version: string
-    }
+    private readonly envdApi: EnvdApiClient,
+    private readonly connectionConfig: ConnectionConfig
   ) {
     this.rpc = createClient(ProcessService, transport)
-    this.envdVersion = metadata.version
+    this.envdVersion = envdApi.version
+    this.checkHealth = () => checkSandboxHealth(this.envdApi)
   }
 
   /**
@@ -177,7 +185,7 @@ export class Commands {
         ...(p.config!.cwd && { cwd: p.config!.cwd }),
       }))
     } catch (err) {
-      throw handleRpcError(err)
+      throw await handleRpcErrorWithHealthCheck(err, this.checkHealth)
     }
   }
 
@@ -220,7 +228,7 @@ export class Commands {
         }
       )
     } catch (err) {
-      throw handleRpcError(err)
+      throw await handleRpcErrorWithHealthCheck(err, this.checkHealth)
     }
   }
 
@@ -257,7 +265,7 @@ export class Commands {
         }
       )
     } catch (err) {
-      throw handleRpcError(err)
+      throw await handleRpcErrorWithHealthCheck(err, this.checkHealth)
     }
   }
 
@@ -298,7 +306,7 @@ export class Commands {
         }
       }
 
-      throw handleRpcError(err)
+      throw await handleRpcErrorWithHealthCheck(err, this.checkHealth)
     }
   }
 
@@ -354,11 +362,12 @@ export class Commands {
         opts?.onStderr,
         undefined,
         (data, stdinOpts) => this.sendStdin(pid, data, stdinOpts),
-        (stdinOpts) => this.closeStdin(pid, stdinOpts)
+        (stdinOpts) => this.closeStdin(pid, stdinOpts),
+        this.checkHealth
       )
     } catch (err) {
       cleanup()
-      throw handleRpcError(err)
+      throw await handleRpcErrorWithHealthCheck(err, this.checkHealth)
     }
   }
 
@@ -468,11 +477,12 @@ export class Commands {
         opts?.onStderr,
         undefined,
         (data, stdinOpts) => this.sendStdin(pid, data, stdinOpts),
-        (stdinOpts) => this.closeStdin(pid, stdinOpts)
+        (stdinOpts) => this.closeStdin(pid, stdinOpts),
+        this.checkHealth
       )
     } catch (err) {
       cleanup()
-      throw handleRpcError(err)
+      throw await handleRpcErrorWithHealthCheck(err, this.checkHealth)
     }
   }
 }

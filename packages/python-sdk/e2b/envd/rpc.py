@@ -1,12 +1,11 @@
 import base64
 
 import httpcore
-from typing import Callable, Optional
+from typing import Awaitable, Callable, Optional
 from packaging.version import Version
 from e2b_connect.client import Code, ConnectException
 
 from e2b.exceptions import (
-    SANDBOX_TERMINATED_MESSAGE,
     SandboxException,
     InvalidArgumentException,
     NotFoundException,
@@ -35,14 +34,33 @@ _DEFAULT_RPC_ERROR_MAP: dict[Code, Callable[[str], Exception]] = {
 }
 
 
+def format_terminated_exception(
+    e: Exception,
+    sandbox_running: Optional[bool],
+) -> SandboxException:
+    """Format an exception for a connection to the sandbox dropped mid-request,
+    based on the result of a sandbox health probe (``None`` when unknown)."""
+    if sandbox_running is False:
+        return SandboxException(
+            f"{e}: The sandbox was killed or reached its end of life while the request was in flight."
+        )
+    return SandboxException(
+        f"{e}: The connection to the sandbox was terminated. "
+        "This is most likely because the sandbox was killed or reached its end of life while the request was in flight. "
+        "You can check the sandbox status with 'sandbox.is_running()'."
+    )
+
+
 def handle_rpc_exception(
     e: Exception,
     error_map: Optional[dict[Code, Callable[[str], Exception]]] = None,
+    sandbox_running: Optional[bool] = None,
 ):
     """Handle errors from envd RPC calls by mapping gRPC status codes to specific exception types.
 
     :param e: The caught exception, expected to be a ``ConnectException`` or a transport-level ``httpcore`` error.
     :param error_map: Optional map of gRPC codes to exception factories that override the defaults.
+    :param sandbox_running: Result of a sandbox health probe (``None`` when unknown), used to disambiguate a connection dropped mid-request.
     :return: The corresponding exception. Transport-level errors are wrapped in ``SandboxException``; anything else is returned as-is.
     """
     if isinstance(e, ConnectException):
@@ -54,15 +72,42 @@ def handle_rpc_exception(
 
         return SandboxException(f"{e.status}: {e.message}")
 
-    # A remote protocol error (e.g. an HTTP/2 stream reset) means the peer dropped
-    # the connection mid-request — the signature of the sandbox being killed or expiring
+    # A remote protocol error (e.g. an HTTP/2 stream reset) means the connection to the
+    # sandbox was dropped mid-request — either the sandbox died or the network failed
     if isinstance(e, httpcore.RemoteProtocolError):
-        return SandboxException(f"{e}: {SANDBOX_TERMINATED_MESSAGE}")
+        return format_terminated_exception(e, sandbox_running)
 
     if isinstance(e, (httpcore.ProtocolError, httpcore.NetworkError)):
         return SandboxException(str(e))
 
     return e
+
+
+def handle_rpc_exception_with_health(
+    e: Exception,
+    check_health: Optional[Callable[[], Optional[bool]]] = None,
+    error_map: Optional[dict[Code, Callable[[str], Exception]]] = None,
+):
+    """Like :func:`handle_rpc_exception`, but when the connection to the sandbox was
+    dropped mid-request it probes the sandbox health to tell apart the sandbox being
+    killed from a transient network failure (e.g. a load balancer dropping the connection).
+    """
+    sandbox_running = None
+    if check_health is not None and isinstance(e, httpcore.RemoteProtocolError):
+        sandbox_running = check_health()
+    return handle_rpc_exception(e, error_map, sandbox_running)
+
+
+async def ahandle_rpc_exception_with_health(
+    e: Exception,
+    check_health: Optional[Callable[[], Awaitable[Optional[bool]]]] = None,
+    error_map: Optional[dict[Code, Callable[[str], Exception]]] = None,
+):
+    """Async version of :func:`handle_rpc_exception_with_health`."""
+    sandbox_running = None
+    if check_health is not None and isinstance(e, httpcore.RemoteProtocolError):
+        sandbox_running = await check_health()
+    return handle_rpc_exception(e, error_map, sandbox_running)
 
 
 def authentication_header(

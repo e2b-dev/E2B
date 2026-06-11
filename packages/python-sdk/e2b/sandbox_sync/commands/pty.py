@@ -1,5 +1,6 @@
 import e2b_connect
 import httpcore
+import httpx
 
 from typing import Dict, Optional
 
@@ -12,7 +13,8 @@ from e2b.connection_config import (
     KEEPALIVE_PING_INTERVAL_SEC,
 )
 from e2b.exceptions import SandboxException
-from e2b.envd.rpc import authentication_header, handle_rpc_exception
+from e2b.envd.api import check_sandbox_health
+from e2b.envd.rpc import authentication_header, handle_rpc_exception_with_health
 from e2b.sandbox.commands.command_handle import PtySize
 from e2b.sandbox_sync.commands.command_handle import CommandHandle
 
@@ -28,9 +30,11 @@ class Pty:
         connection_config: ConnectionConfig,
         pool: httpcore.ConnectionPool,
         envd_version: Version,
+        envd_api: httpx.Client,
     ) -> None:
         self._connection_config = connection_config
         self._envd_version = envd_version
+        self._check_health = lambda: check_sandbox_health(envd_api)
         self._rpc = process_connect.ProcessClient(
             envd_api_url,
             # TODO: Fix and enable compression again — the headers compression is not solved for streaming.
@@ -68,7 +72,7 @@ class Pty:
             if isinstance(e, e2b_connect.ConnectException):
                 if e.status == e2b_connect.Code.not_found:
                     return False
-            raise handle_rpc_exception(e)
+            raise handle_rpc_exception_with_health(e, self._check_health)
 
     def send_stdin(
         self,
@@ -96,7 +100,7 @@ class Pty:
                 ),
             )
         except Exception as e:
-            raise handle_rpc_exception(e)
+            raise handle_rpc_exception_with_health(e, self._check_health)
 
     def create(
         self,
@@ -157,9 +161,10 @@ class Pty:
                 pid=start_event.event.start.pid,
                 handle_kill=lambda: self.kill(start_event.event.start.pid),
                 events=events,
+                check_health=self._check_health,
             )
         except Exception as e:
-            raise handle_rpc_exception(e)
+            raise handle_rpc_exception_with_health(e, self._check_health)
 
     def connect(
         self,
@@ -201,9 +206,10 @@ class Pty:
                 pid=start_event.event.start.pid,
                 handle_kill=lambda: self.kill(start_event.event.start.pid),
                 events=events,
+                check_health=self._check_health,
             )
         except Exception as e:
-            raise handle_rpc_exception(e)
+            raise handle_rpc_exception_with_health(e, self._check_health)
 
     def resize(
         self,

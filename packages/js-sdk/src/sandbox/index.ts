@@ -219,12 +219,12 @@ export class Sandbox extends SandboxApi {
       this.envdApi,
       this.connectionConfig
     )
-    this.commands = new Commands(rpcTransport, this.connectionConfig, {
-      version: opts.envdVersion,
-    })
-    this.pty = new Pty(rpcTransport, this.connectionConfig, {
-      version: opts.envdVersion,
-    })
+    this.commands = new Commands(
+      rpcTransport,
+      this.envdApi,
+      this.connectionConfig
+    )
+    this.pty = new Pty(rpcTransport, this.envdApi, this.connectionConfig)
     this.git = new Git(this.commands)
   }
 

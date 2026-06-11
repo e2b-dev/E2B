@@ -1,6 +1,9 @@
 import { assert, test, describe } from 'vitest'
 import { Code, ConnectError } from '@connectrpc/connect'
-import { handleRpcError } from '../../src/envd/rpc'
+import {
+  handleRpcError,
+  handleRpcErrorWithHealthCheck,
+} from '../../src/envd/rpc'
 import {
   AuthenticationError,
   InvalidArgumentError,
@@ -61,5 +64,60 @@ describe('handleRpcError', () => {
     const original = new Error('not connect')
     const err = handleRpcError(original)
     assert.strictEqual(err, original)
+  })
+})
+
+describe('handleRpcErrorWithHealthCheck', () => {
+  const terminated = () => new ConnectError('terminated', Code.Unknown)
+
+  test('reports the sandbox as killed when the health check says it is not running', async () => {
+    const err = await handleRpcErrorWithHealthCheck(
+      terminated(),
+      async () => false
+    )
+    assert.instanceOf(err, SandboxError)
+    assert.include(err.message, 'sandbox was killed or reached its end of life')
+    assert.notInclude(err.message, 'transient')
+  })
+
+  test('falls back to the hedged message when the health check says the sandbox is running', async () => {
+    const err = await handleRpcErrorWithHealthCheck(
+      terminated(),
+      async () => true
+    )
+    assert.instanceOf(err, SandboxError)
+    assert.include(err.message, 'most likely because the sandbox was killed')
+    assert.include(err.message, 'isRunning')
+  })
+
+  test('keeps the hedged message when the sandbox state is unknown', async () => {
+    const err = await handleRpcErrorWithHealthCheck(
+      terminated(),
+      async () => undefined
+    )
+    assert.instanceOf(err, SandboxError)
+    assert.include(err.message, 'most likely because the sandbox was killed')
+    assert.include(err.message, 'isRunning')
+  })
+
+  test('keeps the hedged message when the health check itself fails', async () => {
+    const err = await handleRpcErrorWithHealthCheck(terminated(), async () => {
+      throw new Error('health check failed')
+    })
+    assert.instanceOf(err, SandboxError)
+    assert.include(err.message, 'most likely because the sandbox was killed')
+  })
+
+  test('does not run the health check for other errors', async () => {
+    let called = false
+    const err = await handleRpcErrorWithHealthCheck(
+      new ConnectError('missing', Code.NotFound),
+      async () => {
+        called = true
+        return false
+      }
+    )
+    assert.instanceOf(err, NotFoundError)
+    assert.isFalse(called)
   })
 })

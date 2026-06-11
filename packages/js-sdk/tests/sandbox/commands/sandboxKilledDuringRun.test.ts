@@ -12,7 +12,9 @@ sandboxTest.skipIf(isDebug)(
 
     const err = await cmd.wait().catch((e) => e)
     expect(err).toBeInstanceOf(SandboxError)
-    expect(err.message).toContain('sandbox was killed')
-    expect(err.message).toContain('isRunning')
+    // The health check confirms the sandbox is gone, so the error states it outright
+    expect(err.message).toContain(
+      'sandbox was killed or reached its end of life'
+    )
   }
 )

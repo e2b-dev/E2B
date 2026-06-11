@@ -2,6 +2,7 @@ from typing import Callable, Dict, List, Literal, Optional, Union, overload
 
 import e2b_connect
 import httpcore
+import httpx
 from packaging.version import Version
 from e2b.connection_config import (
     ConnectionConfig,
@@ -10,7 +11,8 @@ from e2b.connection_config import (
     KEEPALIVE_PING_INTERVAL_SEC,
 )
 from e2b.envd.process import process_connect, process_pb2
-from e2b.envd.rpc import authentication_header, handle_rpc_exception
+from e2b.envd.api import check_sandbox_health
+from e2b.envd.rpc import authentication_header, handle_rpc_exception_with_health
 from e2b.envd.versions import ENVD_COMMANDS_STDIN, ENVD_ENVD_CLOSE
 from e2b.exceptions import SandboxException
 from e2b.sandbox.commands.main import ProcessInfo
@@ -29,9 +31,11 @@ class Commands:
         connection_config: ConnectionConfig,
         pool: httpcore.ConnectionPool,
         envd_version: Version,
+        envd_api: httpx.Client,
     ) -> None:
         self._connection_config = connection_config
         self._envd_version = envd_version
+        self._check_health = lambda: check_sandbox_health(envd_api)
         self._rpc = process_connect.ProcessClient(
             envd_api_url,
             # TODO: Fix and enable compression again — the headers compression is not solved for streaming.
@@ -71,7 +75,7 @@ class Commands:
                 for p in res.processes
             ]
         except Exception as e:
-            raise handle_rpc_exception(e)
+            raise handle_rpc_exception_with_health(e, self._check_health)
 
     def kill(
         self,
@@ -102,7 +106,7 @@ class Commands:
             if isinstance(e, e2b_connect.ConnectException):
                 if e.status == e2b_connect.Code.not_found:
                     return False
-            raise handle_rpc_exception(e)
+            raise handle_rpc_exception_with_health(e, self._check_health)
 
     def send_stdin(
         self,
@@ -130,7 +134,7 @@ class Commands:
                 ),
             )
         except Exception as e:
-            raise handle_rpc_exception(e)
+            raise handle_rpc_exception_with_health(e, self._check_health)
 
     def close_stdin(
         self,
@@ -161,7 +165,7 @@ class Commands:
                 ),
             )
         except Exception as e:
-            raise handle_rpc_exception(e)
+            raise handle_rpc_exception_with_health(e, self._check_health)
 
     @overload
     def run(
@@ -316,9 +320,10 @@ class Commands:
                 handle_close_stdin=lambda request_timeout=None: self.close_stdin(
                     pid, request_timeout
                 ),
+                check_health=self._check_health,
             )
         except Exception as e:
-            raise handle_rpc_exception(e)
+            raise handle_rpc_exception_with_health(e, self._check_health)
 
     def connect(
         self,
@@ -368,6 +373,7 @@ class Commands:
                 handle_close_stdin=lambda request_timeout=None: self.close_stdin(
                     pid, request_timeout
                 ),
+                check_health=self._check_health,
             )
         except Exception as e:
-            raise handle_rpc_exception(e)
+            raise handle_rpc_exception_with_health(e, self._check_health)

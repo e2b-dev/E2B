@@ -16,7 +16,7 @@ import {
 import { StartResponse, ConnectResponse } from './process/process_pb'
 import { Code, ConnectError } from '@connectrpc/connect'
 import { WatchDirResponse } from './filesystem/filesystem_pb'
-import { SANDBOX_TERMINATED_MESSAGE } from './rpc'
+import { SandboxHealthCheck } from './rpc'
 
 type ApiError = { message?: string } | string
 
@@ -38,16 +38,62 @@ const DEFAULT_ERROR_MAP: Record<number, (message: string) => Error> = {
  * @returns The corresponding `Error` instance if an error is present, or `undefined` if the response is successful.
  */
 /**
- * Handles transport-level fetch failures from envd API calls.
+ * Probes the sandbox's envd health endpoint.
+ *
+ * @param envdApi - The envd API client of the sandbox.
+ * @returns `true` if the sandbox is running, `false` if it is not, `undefined` if its state could not be determined.
+ */
+export async function checkSandboxHealth(
+  envdApi: EnvdApiClient
+): Promise<boolean | undefined> {
+  try {
+    const res = await envdApi.api.GET('/health', {
+      signal: AbortSignal.timeout(HEALTH_CHECK_TIMEOUT_MS),
+    })
+
+    if (res.response.status === 502) {
+      return false
+    }
+    if (res.response.ok) {
+      return true
+    }
+
+    return undefined
+  } catch {
+    return undefined
+  }
+}
+
+const HEALTH_CHECK_TIMEOUT_MS = 5_000
+
+/**
+ * Handles transport-level fetch failures from envd API calls. When the connection was
+ * dropped mid-request, probes the sandbox health to tell apart the sandbox being killed
+ * from a transient network failure (e.g. a load balancer dropping the connection).
  *
  * @param err - The caught error, expected to be a fetch transport failure.
+ * @param checkHealth - Probe returning whether the sandbox is running, or `undefined` when unknown.
  * @returns A `SandboxError` if the failure indicates the connection was terminated mid-request, or the original error otherwise.
  */
-export function handleEnvdApiFetchError(err: unknown): Error {
-  // Undici surfaces a connection dropped mid-body as a TypeError with the message 'terminated' —
-  // the signature of the sandbox being killed or expiring while the request was in flight
+export async function handleEnvdApiFetchError(
+  err: unknown,
+  checkHealth?: SandboxHealthCheck
+): Promise<Error> {
+  // Undici surfaces a connection dropped mid-body as a TypeError with the message 'terminated'
   if (err instanceof TypeError && err.message === 'terminated') {
-    return new SandboxError(`${err.message}: ${SANDBOX_TERMINATED_MESSAGE}`)
+    const running = checkHealth
+      ? await checkHealth().catch(() => undefined)
+      : undefined
+
+    if (running === false) {
+      return new SandboxError(
+        `${err.message}: The sandbox was killed or reached its end of life while the request was in flight.`
+      )
+    }
+
+    return new SandboxError(
+      `${err.message}: The connection to the sandbox was terminated. This is most likely because the sandbox was killed or reached its end of life while the request was in flight. You can check the sandbox status with 'sandbox.isRunning()'.`
+    )
   }
 
   return err as Error

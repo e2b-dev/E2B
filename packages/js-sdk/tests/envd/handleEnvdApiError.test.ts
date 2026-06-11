@@ -80,16 +80,34 @@ describe('handleEnvdApiError', () => {
 })
 
 describe('handleEnvdApiFetchError', () => {
-  test('returns actionable SandboxError for terminated fetch (sandbox killed mid-request)', () => {
-    const err = handleEnvdApiFetchError(new TypeError('terminated'))
+  test('returns actionable SandboxError for terminated fetch (sandbox killed mid-request)', async () => {
+    const err = await handleEnvdApiFetchError(new TypeError('terminated'))
     assert.instanceOf(err, SandboxError)
     assert.include(err.message, 'sandbox was killed')
     assert.include(err.message, 'isRunning')
   })
 
-  test('returns the original error for other fetch failures', () => {
+  test('reports the sandbox as killed when the health check says it is not running', async () => {
+    const err = await handleEnvdApiFetchError(
+      new TypeError('terminated'),
+      async () => false
+    )
+    assert.instanceOf(err, SandboxError)
+    assert.include(err.message, 'sandbox was killed or reached its end of life')
+  })
+
+  test('falls back to the hedged message when the health check says the sandbox is running', async () => {
+    const err = await handleEnvdApiFetchError(
+      new TypeError('terminated'),
+      async () => true
+    )
+    assert.instanceOf(err, SandboxError)
+    assert.include(err.message, 'most likely because the sandbox was killed')
+  })
+
+  test('returns the original error for other fetch failures', async () => {
     const original = new TypeError('fetch failed')
-    const err = handleEnvdApiFetchError(original)
+    const err = await handleEnvdApiFetchError(original)
     assert.strictEqual(err, original)
   })
 })

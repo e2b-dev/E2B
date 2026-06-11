@@ -16,11 +16,16 @@ import {
 } from '../../connectionConfig'
 
 import {
+  checkSandboxHealth,
   handleEnvdApiError,
   handleEnvdApiFetchError,
   handleWatchDirStartEvent,
 } from '../../envd/api'
-import { authenticationHeader, handleRpcError } from '../../envd/rpc'
+import {
+  authenticationHeader,
+  handleRpcErrorWithHealthCheck,
+  SandboxHealthCheck,
+} from '../../envd/rpc'
 
 import { EnvdApiClient } from '../../envd/api'
 import {
@@ -57,8 +62,15 @@ const FILESYSTEM_RPC_ERROR_MAP: Partial<
   [Code.NotFound]: (message: string) => new FileNotFoundError(message),
 }
 
-function handleFilesystemRpcError(err: unknown): Error {
-  return handleRpcError(err, FILESYSTEM_RPC_ERROR_MAP)
+async function handleFilesystemRpcError(
+  err: unknown,
+  checkHealth?: SandboxHealthCheck
+): Promise<Error> {
+  return handleRpcErrorWithHealthCheck(
+    err,
+    checkHealth,
+    FILESYSTEM_RPC_ERROR_MAP
+  )
 }
 
 function handleFilesystemEnvdApiError(res: {
@@ -325,6 +337,7 @@ export class Filesystem {
 
   private readonly defaultWatchTimeout = 60_000 // 60 seconds
   private readonly defaultWatchRecursive = false
+  private readonly checkHealth: SandboxHealthCheck
 
   constructor(
     transport: Transport,
@@ -332,6 +345,7 @@ export class Filesystem {
     private readonly connectionConfig: ConnectionConfig
   ) {
     this.rpc = createClient(FilesystemService, transport)
+    this.checkHealth = () => checkSandboxHealth(this.envdApi)
   }
 
   /**
@@ -430,8 +444,8 @@ export class Filesystem {
         ),
         headers,
       })
-      .catch((err) => {
-        throw handleEnvdApiFetchError(err)
+      .catch(async (err) => {
+        throw await handleEnvdApiFetchError(err, this.checkHealth)
       })
 
     const err = await handleFilesystemEnvdApiError(res)
@@ -579,8 +593,8 @@ export class Filesystem {
               ),
               body: {},
             })
-            .catch((err) => {
-              throw handleEnvdApiFetchError(err)
+            .catch(async (err) => {
+              throw await handleEnvdApiFetchError(err, this.checkHealth)
             })
 
           const err = await handleFilesystemEnvdApiError(res)
@@ -632,8 +646,8 @@ export class Filesystem {
           ),
           body: {},
         })
-        .catch((err) => {
-          throw handleEnvdApiFetchError(err)
+        .catch(async (err) => {
+          throw await handleEnvdApiFetchError(err, this.checkHealth)
         })
 
       const err = await handleFilesystemEnvdApiError(res)
@@ -719,7 +733,7 @@ export class Filesystem {
 
       return entries
     } catch (err) {
-      throw handleFilesystemRpcError(err)
+      throw await handleFilesystemRpcError(err, this.checkHealth)
     }
   }
 
@@ -752,7 +766,7 @@ export class Filesystem {
         }
       }
 
-      throw handleFilesystemRpcError(err)
+      throw await handleFilesystemRpcError(err, this.checkHealth)
     }
   }
 
@@ -792,7 +806,7 @@ export class Filesystem {
 
       return mapEntryInfo(entry)
     } catch (err) {
-      throw handleFilesystemRpcError(err)
+      throw await handleFilesystemRpcError(err, this.checkHealth)
     }
   }
 
@@ -815,7 +829,7 @@ export class Filesystem {
         }
       )
     } catch (err) {
-      throw handleFilesystemRpcError(err)
+      throw await handleFilesystemRpcError(err, this.checkHealth)
     }
   }
 
@@ -848,7 +862,7 @@ export class Filesystem {
         }
       }
 
-      throw handleFilesystemRpcError(err)
+      throw await handleFilesystemRpcError(err, this.checkHealth)
     }
   }
 
@@ -884,7 +898,7 @@ export class Filesystem {
 
       return mapEntryInfo(res.entry)
     } catch (err) {
-      throw handleFilesystemRpcError(err)
+      throw await handleFilesystemRpcError(err, this.checkHealth)
     }
   }
 
@@ -953,10 +967,16 @@ export class Filesystem {
       await handleWatchDirStartEvent(events)
       clearStartTimeout()
 
-      return new WatchHandle(cleanup, events, onEvent, opts?.onExit)
+      return new WatchHandle(
+        cleanup,
+        events,
+        onEvent,
+        opts?.onExit,
+        this.checkHealth
+      )
     } catch (err) {
       cleanup()
-      throw handleFilesystemRpcError(err)
+      throw await handleFilesystemRpcError(err, this.checkHealth)
     }
   }
 }
