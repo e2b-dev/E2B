@@ -98,6 +98,16 @@ def test_health_check_unknown_falls_back_to_generic_exception():
     assert "killed" not in str(err)
 
 
+def test_health_check_failure_falls_back_to_generic_exception():
+    def check():
+        raise RuntimeError("health check failed")
+
+    err = handle_rpc_exception_with_health(_stream_reset(), check)
+    assert isinstance(err, SandboxException)
+    assert "The connection to the sandbox was terminated" in str(err)
+    assert "killed" not in str(err)
+
+
 def test_health_check_not_run_for_other_exceptions():
     def fail():
         raise AssertionError("health check should not run")
@@ -115,3 +125,13 @@ async def test_async_health_check_confirms_sandbox_killed():
     err = await ahandle_rpc_exception_with_health(_stream_reset(), check)
     assert isinstance(err, SandboxException)
     assert "sandbox was killed or reached its end of life" in str(err)
+
+
+async def test_async_health_check_failure_falls_back_to_generic_exception():
+    async def check():
+        raise RuntimeError("health check failed")
+
+    err = await ahandle_rpc_exception_with_health(_stream_reset(), check)
+    assert isinstance(err, SandboxException)
+    assert "The connection to the sandbox was terminated" in str(err)
+    assert "killed" not in str(err)

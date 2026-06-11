@@ -30,13 +30,8 @@ const DEFAULT_ERROR_MAP: Record<number, (message: string) => Error> = {
   507: (message) => new NotEnoughSpaceError(message),
 }
 
-/**
- * Handles errors from envd API responses by mapping HTTP status codes to specific error types.
- *
- * @param res - The API response object containing an optional error and the raw `Response`.
- * @param errorMap - Optional map of HTTP status codes to error factory functions that override the defaults.
- * @returns The corresponding `Error` instance if an error is present, or `undefined` if the response is successful.
- */
+const HEALTH_CHECK_TIMEOUT_MS = 5_000
+
 /**
  * Probes the sandbox's envd health endpoint.
  *
@@ -63,8 +58,6 @@ export async function checkSandboxHealth(
     return undefined
   }
 }
-
-const HEALTH_CHECK_TIMEOUT_MS = 5_000
 
 /**
  * Handles transport-level fetch failures from envd API calls. When the connection was
@@ -99,6 +92,13 @@ export async function handleEnvdApiFetchError(
   return err as Error
 }
 
+/**
+ * Handles errors from envd API responses by mapping HTTP status codes to specific error types.
+ *
+ * @param res - The API response object containing an optional error and the raw `Response`.
+ * @param errorMap - Optional map of HTTP status codes to error factory functions that override the defaults.
+ * @returns The corresponding `Error` instance if an error is present, or `undefined` if the response is successful.
+ */
 export async function handleEnvdApiError(
   res: {
     error?: ApiError

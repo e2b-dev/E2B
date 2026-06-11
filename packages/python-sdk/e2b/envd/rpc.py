@@ -90,7 +90,10 @@ def handle_rpc_exception_with_health(
     """
     sandbox_running = None
     if check_health is not None and isinstance(e, httpcore.RemoteProtocolError):
-        sandbox_running = check_health()
+        try:
+            sandbox_running = check_health()
+        except Exception:
+            sandbox_running = None
     return handle_rpc_exception(e, error_map, sandbox_running)
 
 
@@ -102,7 +105,10 @@ async def ahandle_rpc_exception_with_health(
     """Async version of :func:`handle_rpc_exception_with_health`."""
     sandbox_running = None
     if check_health is not None and isinstance(e, httpcore.RemoteProtocolError):
-        sandbox_running = await check_health()
+        try:
+            sandbox_running = await check_health()
+        except Exception:
+            sandbox_running = None
     return handle_rpc_exception(e, error_map, sandbox_running)
 
 

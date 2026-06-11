@@ -193,7 +193,7 @@ class Filesystem:
                 headers=headers,
                 timeout=self._connection_config.get_request_timeout(request_timeout),
             )
-        except httpx.TransportError as e:
+        except (httpx.ProtocolError, httpx.NetworkError) as e:
             raise await ahandle_envd_api_transport_exception_with_health(
                 e, self._envd_api
             )
@@ -318,7 +318,7 @@ class Filesystem:
                             request_timeout
                         ),
                     )
-                except httpx.TransportError as e:
+                except (httpx.ProtocolError, httpx.NetworkError) as e:
                     raise await ahandle_envd_api_transport_exception_with_health(
                         e, self._envd_api
                     )
@@ -363,7 +363,7 @@ class Filesystem:
                         request_timeout
                     ),
                 )
-            except httpx.TransportError as e:
+            except (httpx.ProtocolError, httpx.NetworkError) as e:
                 raise await ahandle_envd_api_transport_exception_with_health(
                     e, self._envd_api
                 )
