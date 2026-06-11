@@ -47,22 +47,18 @@ def test_falls_back_to_sandbox_exception():
     assert isinstance(err, SandboxException)
 
 
-def test_wraps_remote_protocol_error_in_sandbox_exception():
-    err = handle_rpc_exception(
-        httpcore.RemoteProtocolError(
-            "<StreamReset stream_id:1, error_code:2, remote_reset:True>"
-        )
+def test_returns_raw_remote_protocol_error_without_health_result():
+    original = httpcore.RemoteProtocolError(
+        "<StreamReset stream_id:1, error_code:2, remote_reset:True>"
     )
-    assert isinstance(err, SandboxException)
-    assert "StreamReset" in str(err)
-    assert "The connection to the sandbox was terminated" in str(err)
-    assert "killed" not in str(err)
+    err = handle_rpc_exception(original)
+    assert err is original
 
 
-def test_wraps_network_errors_in_sandbox_exception():
-    err = handle_rpc_exception(httpcore.ReadError("read failed"))
-    assert isinstance(err, SandboxException)
-    assert "read failed" in str(err)
+def test_returns_raw_network_errors():
+    original = httpcore.ReadError("read failed")
+    err = handle_rpc_exception(original)
+    assert err is original
 
 
 def test_returns_original_when_not_connect_exception():
@@ -79,33 +75,29 @@ def _stream_reset() -> httpcore.RemoteProtocolError:
 
 def test_health_check_confirms_sandbox_killed():
     err = handle_rpc_exception_with_health(_stream_reset(), lambda: False)
-    assert isinstance(err, SandboxException)
+    assert isinstance(err, TimeoutException)
     assert "sandbox was killed or reached its end of life" in str(err)
-    assert "transient" not in str(err)
 
 
-def test_health_check_running_falls_back_to_generic_exception():
-    err = handle_rpc_exception_with_health(_stream_reset(), lambda: True)
-    assert isinstance(err, SandboxException)
-    assert "The connection to the sandbox was terminated" in str(err)
-    assert "killed" not in str(err)
+def test_health_check_running_returns_raw_error():
+    original = _stream_reset()
+    err = handle_rpc_exception_with_health(original, lambda: True)
+    assert err is original
 
 
-def test_health_check_unknown_falls_back_to_generic_exception():
-    err = handle_rpc_exception_with_health(_stream_reset(), lambda: None)
-    assert isinstance(err, SandboxException)
-    assert "The connection to the sandbox was terminated" in str(err)
-    assert "killed" not in str(err)
+def test_health_check_unknown_returns_raw_error():
+    original = _stream_reset()
+    err = handle_rpc_exception_with_health(original, lambda: None)
+    assert err is original
 
 
-def test_health_check_failure_falls_back_to_generic_exception():
+def test_health_check_failure_returns_raw_error():
     def check():
         raise RuntimeError("health check failed")
 
-    err = handle_rpc_exception_with_health(_stream_reset(), check)
-    assert isinstance(err, SandboxException)
-    assert "The connection to the sandbox was terminated" in str(err)
-    assert "killed" not in str(err)
+    original = _stream_reset()
+    err = handle_rpc_exception_with_health(original, check)
+    assert err is original
 
 
 def test_health_check_not_run_for_other_exceptions():
@@ -123,15 +115,14 @@ async def test_async_health_check_confirms_sandbox_killed():
         return False
 
     err = await ahandle_rpc_exception_with_health(_stream_reset(), check)
-    assert isinstance(err, SandboxException)
+    assert isinstance(err, TimeoutException)
     assert "sandbox was killed or reached its end of life" in str(err)
 
 
-async def test_async_health_check_failure_falls_back_to_generic_exception():
+async def test_async_health_check_failure_returns_raw_error():
     async def check():
         raise RuntimeError("health check failed")
 
-    err = await ahandle_rpc_exception_with_health(_stream_reset(), check)
-    assert isinstance(err, SandboxException)
-    assert "The connection to the sandbox was terminated" in str(err)
-    assert "killed" not in str(err)
+    original = _stream_reset()
+    err = await ahandle_rpc_exception_with_health(original, check)
+    assert err is original

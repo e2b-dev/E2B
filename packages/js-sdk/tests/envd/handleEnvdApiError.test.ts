@@ -80,30 +80,25 @@ describe('handleEnvdApiError', () => {
 })
 
 describe('handleEnvdApiFetchError', () => {
-  test('returns a generic SandboxError for terminated fetch without a health check', async () => {
-    const err = await handleEnvdApiFetchError(new TypeError('terminated'))
-    assert.instanceOf(err, SandboxError)
-    assert.include(err.message, 'The connection to the sandbox was terminated')
-    assert.notInclude(err.message, 'killed')
+  test('returns the original error for terminated fetch without a health check', async () => {
+    const original = new TypeError('terminated')
+    const err = await handleEnvdApiFetchError(original)
+    assert.strictEqual(err, original)
   })
 
-  test('reports the sandbox as killed when the health check says it is not running', async () => {
+  test('returns a TimeoutError when the health check says the sandbox is not running', async () => {
     const err = await handleEnvdApiFetchError(
       new TypeError('terminated'),
       async () => false
     )
-    assert.instanceOf(err, SandboxError)
+    assert.instanceOf(err, TimeoutError)
     assert.include(err.message, 'sandbox was killed or reached its end of life')
   })
 
-  test('falls back to a generic SandboxError when the health check says the sandbox is running', async () => {
-    const err = await handleEnvdApiFetchError(
-      new TypeError('terminated'),
-      async () => true
-    )
-    assert.instanceOf(err, SandboxError)
-    assert.include(err.message, 'The connection to the sandbox was terminated')
-    assert.notInclude(err.message, 'killed')
+  test('returns the original error when the health check says the sandbox is running', async () => {
+    const original = new TypeError('terminated')
+    const err = await handleEnvdApiFetchError(original, async () => true)
+    assert.strictEqual(err, original)
   })
 
   test('returns the original error for other fetch failures', async () => {

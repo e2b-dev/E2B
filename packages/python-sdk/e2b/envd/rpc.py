@@ -37,14 +37,15 @@ _DEFAULT_RPC_ERROR_MAP: dict[Code, Callable[[str], Exception]] = {
 def format_terminated_exception(
     e: Exception,
     sandbox_running: Optional[bool],
-) -> SandboxException:
-    """Format an exception for a connection to the sandbox dropped mid-request,
-    based on the result of a sandbox health probe (``None`` when unknown)."""
+) -> Exception:
+    """Handle an exception for a connection to the sandbox dropped mid-request: when a
+    sandbox health probe confirmed the sandbox is gone (``sandbox_running is False``),
+    return a ``TimeoutException``; otherwise return the original error unchanged."""
     if sandbox_running is False:
-        return SandboxException(
+        return TimeoutException(
             f"{e}: The sandbox was killed or reached its end of life while the request was in flight."
         )
-    return SandboxException(f"{e}: The connection to the sandbox was terminated.")
+    return e
 
 
 def handle_rpc_exception(
@@ -57,7 +58,7 @@ def handle_rpc_exception(
     :param e: The caught exception, expected to be a ``ConnectException`` or a transport-level ``httpcore`` error.
     :param error_map: Optional map of gRPC codes to exception factories that override the defaults.
     :param sandbox_running: Result of a sandbox health probe (``None`` when unknown), used to disambiguate a connection dropped mid-request.
-    :return: The corresponding exception. Transport-level errors are wrapped in ``SandboxException``; anything else is returned as-is.
+    :return: The corresponding exception. A connection dropped mid-request with the sandbox confirmed gone becomes a ``TimeoutException``; non-``ConnectException`` errors are otherwise returned as-is.
     """
     if isinstance(e, ConnectException):
         if error_map and e.status in error_map:
@@ -72,9 +73,6 @@ def handle_rpc_exception(
     # sandbox was dropped mid-request — either the sandbox died or the network failed
     if isinstance(e, httpcore.RemoteProtocolError):
         return format_terminated_exception(e, sandbox_running)
-
-    if isinstance(e, (httpcore.ProtocolError, httpcore.NetworkError)):
-        return SandboxException(str(e))
 
     return e
 

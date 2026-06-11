@@ -66,19 +66,16 @@ def handle_envd_api_transport_exception(
     e: Exception,
     sandbox_running: Optional[bool] = None,
 ) -> Exception:
-    """Handle transport-level errors from envd API requests by wrapping them in sandbox exceptions.
+    """Handle transport-level errors from envd API requests.
 
     :param e: The caught exception, expected to be a transport-level ``httpx`` error.
     :param sandbox_running: Result of a sandbox health probe (``None`` when unknown), used to disambiguate a connection dropped mid-request.
-    :return: The corresponding ``SandboxException``, or the original exception if it is not a transport error.
+    :return: A ``TimeoutException`` when the connection dropped mid-request and the sandbox is confirmed gone, or the original exception unchanged otherwise.
     """
     # A remote protocol error (e.g. an HTTP/2 stream reset) means the connection to the
     # sandbox was dropped mid-request — either the sandbox died or the network failed
     if isinstance(e, httpx.RemoteProtocolError):
         return format_terminated_exception(e, sandbox_running)
-
-    if isinstance(e, (httpx.ProtocolError, httpx.NetworkError)):
-        return SandboxException(str(e))
 
     return e
 

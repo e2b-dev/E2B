@@ -52,20 +52,16 @@ def test_falls_back_to_sandbox_exception():
     assert "500" in str(err)
 
 
-def test_wraps_remote_protocol_error_in_sandbox_exception():
-    err = handle_envd_api_transport_exception(
-        httpx.RemoteProtocolError("peer closed connection")
-    )
-    assert isinstance(err, SandboxException)
-    assert "peer closed connection" in str(err)
-    assert "The connection to the sandbox was terminated" in str(err)
-    assert "killed" not in str(err)
+def test_returns_raw_remote_protocol_error_without_health_result():
+    original = httpx.RemoteProtocolError("peer closed connection")
+    err = handle_envd_api_transport_exception(original)
+    assert err is original
 
 
-def test_wraps_network_errors_in_sandbox_exception():
-    err = handle_envd_api_transport_exception(httpx.ReadError("read failed"))
-    assert isinstance(err, SandboxException)
-    assert "read failed" in str(err)
+def test_returns_raw_network_errors():
+    original = httpx.ReadError("read failed")
+    err = handle_envd_api_transport_exception(original)
+    assert err is original
 
 
 def test_returns_original_when_not_transport_error():
@@ -78,14 +74,11 @@ def test_health_result_confirms_sandbox_killed():
     err = handle_envd_api_transport_exception(
         httpx.RemoteProtocolError("peer closed connection"), sandbox_running=False
     )
-    assert isinstance(err, SandboxException)
+    assert isinstance(err, TimeoutException)
     assert "sandbox was killed or reached its end of life" in str(err)
 
 
-def test_health_result_running_falls_back_to_generic_exception():
-    err = handle_envd_api_transport_exception(
-        httpx.RemoteProtocolError("peer closed connection"), sandbox_running=True
-    )
-    assert isinstance(err, SandboxException)
-    assert "The connection to the sandbox was terminated" in str(err)
-    assert "killed" not in str(err)
+def test_health_result_running_returns_raw_error():
+    original = httpx.RemoteProtocolError("peer closed connection")
+    err = handle_envd_api_transport_exception(original, sandbox_running=True)
+    assert err is original

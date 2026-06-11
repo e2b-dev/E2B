@@ -12,6 +12,7 @@ import {
   formatSandboxTimeoutError,
   AuthenticationError,
   RateLimitError,
+  TimeoutError,
 } from '../errors'
 import { StartResponse, ConnectResponse } from './process/process_pb'
 import { Code, ConnectError } from '@connectrpc/connect'
@@ -66,7 +67,7 @@ export async function checkSandboxHealth(
  *
  * @param err - The caught error, expected to be a fetch transport failure.
  * @param checkHealth - Probe returning whether the sandbox is running, or `undefined` when unknown.
- * @returns A `SandboxError` if the failure indicates the connection was terminated mid-request, or the original error otherwise.
+ * @returns A `TimeoutError` when the connection was terminated mid-request and the sandbox is confirmed gone, or the original error otherwise.
  */
 export async function handleEnvdApiFetchError(
   err: unknown,
@@ -79,14 +80,10 @@ export async function handleEnvdApiFetchError(
       : undefined
 
     if (running === false) {
-      return new SandboxError(
+      return new TimeoutError(
         `${err.message}: The sandbox was killed or reached its end of life while the request was in flight.`
       )
     }
-
-    return new SandboxError(
-      `${err.message}: The connection to the sandbox was terminated.`
-    )
   }
 
   return err as Error

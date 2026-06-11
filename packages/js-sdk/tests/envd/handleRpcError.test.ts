@@ -50,7 +50,7 @@ describe('handleRpcError', () => {
   test('falls back to generic SandboxError for Unknown "terminated"', () => {
     const err = handleRpcError(new ConnectError('terminated', Code.Unknown))
     assert.instanceOf(err, SandboxError)
-    assert.include(err.message, 'The connection to the sandbox was terminated')
+    assert.include(err.message, 'terminated')
     assert.notInclude(err.message, 'killed')
   })
 
@@ -64,42 +64,41 @@ describe('handleRpcError', () => {
 describe('handleRpcErrorWithHealthCheck', () => {
   const terminated = () => new ConnectError('terminated', Code.Unknown)
 
-  test('reports the sandbox as killed when the health check says it is not running', async () => {
+  test('returns a TimeoutError when the health check says the sandbox is not running', async () => {
     const err = await handleRpcErrorWithHealthCheck(
       terminated(),
       async () => false
     )
-    assert.instanceOf(err, SandboxError)
+    assert.instanceOf(err, TimeoutError)
     assert.include(err.message, 'sandbox was killed or reached its end of life')
-    assert.notInclude(err.message, 'transient')
   })
 
-  test('falls back to a generic SandboxError when the health check says the sandbox is running', async () => {
+  test('falls back to the generic mapping when the health check says the sandbox is running', async () => {
     const err = await handleRpcErrorWithHealthCheck(
       terminated(),
       async () => true
     )
     assert.instanceOf(err, SandboxError)
-    assert.include(err.message, 'The connection to the sandbox was terminated')
+    assert.notInstanceOf(err, TimeoutError)
     assert.notInclude(err.message, 'killed')
   })
 
-  test('falls back to a generic SandboxError when the sandbox state is unknown', async () => {
+  test('falls back to the generic mapping when the sandbox state is unknown', async () => {
     const err = await handleRpcErrorWithHealthCheck(
       terminated(),
       async () => undefined
     )
     assert.instanceOf(err, SandboxError)
-    assert.include(err.message, 'The connection to the sandbox was terminated')
+    assert.notInstanceOf(err, TimeoutError)
     assert.notInclude(err.message, 'killed')
   })
 
-  test('falls back to a generic SandboxError when the health check itself fails', async () => {
+  test('falls back to the generic mapping when the health check itself fails', async () => {
     const err = await handleRpcErrorWithHealthCheck(terminated(), async () => {
       throw new Error('health check failed')
     })
     assert.instanceOf(err, SandboxError)
-    assert.include(err.message, 'The connection to the sandbox was terminated')
+    assert.notInstanceOf(err, TimeoutError)
     assert.notInclude(err.message, 'killed')
   })
 

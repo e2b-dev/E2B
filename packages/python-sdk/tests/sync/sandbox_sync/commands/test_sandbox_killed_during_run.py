@@ -1,6 +1,6 @@
 import pytest
 
-from e2b import Sandbox, SandboxException
+from e2b import Sandbox, TimeoutException
 
 
 @pytest.mark.skip_debug()
@@ -9,7 +9,7 @@ def test_kill_sandbox_while_command_is_running(sandbox: Sandbox):
 
     sandbox.kill()
 
-    with pytest.raises(SandboxException) as exc_info:
+    with pytest.raises(TimeoutException) as exc_info:
         cmd.wait()
 
     # The health check confirms the sandbox is gone, so the error states it outright

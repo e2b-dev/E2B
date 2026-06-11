@@ -74,14 +74,6 @@ export function handleRpcError(
       return DEFAULT_ERROR_MAP[err.code]!(err.message)
     }
 
-    // An HTTP/2 stream reset surfaces as Code.Unknown with the message 'terminated' —
-    // the signature of the connection to the sandbox being dropped mid-request
-    if (isConnectionTerminatedError(err)) {
-      return new SandboxError(
-        `${err.message}: The connection to the sandbox was terminated.`
-      )
-    }
-
     // Fallback to a generic SandboxError if no specific mapping is found
     return new SandboxError(`${err.code}: ${err.message}`)
   }
@@ -93,6 +85,8 @@ export function handleRpcError(
  * Like {@link handleRpcError}, but when the connection to the sandbox was dropped
  * mid-request it probes the sandbox health to tell apart the sandbox being killed
  * from a transient network failure (e.g. a load balancer dropping the connection).
+ * When the probe confirms the sandbox is gone, a `TimeoutError` is returned —
+ * consistent with how requests to an already-dead sandbox surface.
  *
  * @param err - The caught error, expected to be a `ConnectError` from the gRPC transport.
  * @param checkHealth - Probe returning whether the sandbox is running, or `undefined` when unknown.
@@ -108,7 +102,7 @@ export async function handleRpcErrorWithHealthCheck(
     const running = await checkHealth().catch(() => undefined)
 
     if (running === false) {
-      return new SandboxError(
+      return new TimeoutError(
         `${(err as ConnectError).message}: The sandbox was killed or reached its end of life while the request was in flight.`
       )
     }
