@@ -1,5 +1,5 @@
 import { assert, test, describe } from 'vitest'
-import { handleEnvdApiError } from '../../src/envd/api'
+import { handleEnvdApiError, handleEnvdApiFetchError } from '../../src/envd/api'
 import {
   AuthenticationError,
   InvalidArgumentError,
@@ -76,5 +76,20 @@ describe('handleEnvdApiError', () => {
     const err = await handleEnvdApiError(res)
     assert.instanceOf(err, SandboxError)
     assert.include(err?.message, '500')
+  })
+})
+
+describe('handleEnvdApiFetchError', () => {
+  test('returns actionable SandboxError for terminated fetch (sandbox killed mid-request)', () => {
+    const err = handleEnvdApiFetchError(new TypeError('terminated'))
+    assert.instanceOf(err, SandboxError)
+    assert.include(err.message, 'sandbox was killed')
+    assert.include(err.message, 'isRunning')
+  })
+
+  test('returns the original error for other fetch failures', () => {
+    const original = new TypeError('fetch failed')
+    const err = handleEnvdApiFetchError(original)
+    assert.strictEqual(err, original)
   })
 })

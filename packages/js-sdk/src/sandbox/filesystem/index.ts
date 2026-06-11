@@ -15,7 +15,11 @@ import {
   Username,
 } from '../../connectionConfig'
 
-import { handleEnvdApiError, handleWatchDirStartEvent } from '../../envd/api'
+import {
+  handleEnvdApiError,
+  handleEnvdApiFetchError,
+  handleWatchDirStartEvent,
+} from '../../envd/api'
 import { authenticationHeader, handleRpcError } from '../../envd/rpc'
 
 import { EnvdApiClient } from '../../envd/api'
@@ -411,20 +415,24 @@ export class Filesystem {
       headers['Accept-Encoding'] = 'gzip'
     }
 
-    const res = await this.envdApi.api.GET('/files', {
-      params: {
-        query: {
-          path,
-          username: user,
+    const res = await this.envdApi.api
+      .GET('/files', {
+        params: {
+          query: {
+            path,
+            username: user,
+          },
         },
-      },
-      parseAs: format === 'bytes' ? 'arrayBuffer' : format,
-      signal: this.connectionConfig.getSignal(
-        opts?.requestTimeoutMs,
-        opts?.signal
-      ),
-      headers,
-    })
+        parseAs: format === 'bytes' ? 'arrayBuffer' : format,
+        signal: this.connectionConfig.getSignal(
+          opts?.requestTimeoutMs,
+          opts?.signal
+        ),
+        headers,
+      })
+      .catch((err) => {
+        throw handleEnvdApiFetchError(err)
+      })
 
     const err = await handleFilesystemEnvdApiError(res)
     if (err) {
@@ -555,21 +563,25 @@ export class Filesystem {
           const filePath = path ?? (file as WriteEntry).path
           const body = await toUploadBody(file.data, useGzip)
 
-          const res = await this.envdApi.api.POST('/files', {
-            params: {
-              query: {
-                path: filePath,
-                username: user,
+          const res = await this.envdApi.api
+            .POST('/files', {
+              params: {
+                query: {
+                  path: filePath,
+                  username: user,
+                },
               },
-            },
-            bodySerializer: () => body,
-            headers,
-            signal: this.connectionConfig.getSignal(
-              writeOpts?.requestTimeoutMs,
-              writeOpts?.signal
-            ),
-            body: {},
-          })
+              bodySerializer: () => body,
+              headers,
+              signal: this.connectionConfig.getSignal(
+                writeOpts?.requestTimeoutMs,
+                writeOpts?.signal
+              ),
+              body: {},
+            })
+            .catch((err) => {
+              throw handleEnvdApiFetchError(err)
+            })
 
           const err = await handleFilesystemEnvdApiError(res)
           if (err) {
@@ -604,21 +616,25 @@ export class Filesystem {
         )
       }
 
-      const res = await this.envdApi.api.POST('/files', {
-        params: {
-          query: {
-            path,
-            username: user,
+      const res = await this.envdApi.api
+        .POST('/files', {
+          params: {
+            query: {
+              path,
+              username: user,
+            },
           },
-        },
-        bodySerializer: () => formData,
-        headers: extraHeaders,
-        signal: this.connectionConfig.getSignal(
-          writeOpts?.requestTimeoutMs,
-          writeOpts?.signal
-        ),
-        body: {},
-      })
+          bodySerializer: () => formData,
+          headers: extraHeaders,
+          signal: this.connectionConfig.getSignal(
+            writeOpts?.requestTimeoutMs,
+            writeOpts?.signal
+          ),
+          body: {},
+        })
+        .catch((err) => {
+          throw handleEnvdApiFetchError(err)
+        })
 
       const err = await handleFilesystemEnvdApiError(res)
       if (err) {

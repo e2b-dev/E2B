@@ -14,6 +14,11 @@ import {
 } from '../errors'
 import { ENVD_DEFAULT_USER } from './versions'
 
+export const SANDBOX_TERMINATED_MESSAGE =
+  'The connection to the sandbox was terminated. ' +
+  'This is most likely because the sandbox was killed or reached its end of life while the request was in flight. ' +
+  "You can check the sandbox status with 'sandbox.isRunning()'."
+
 const DEFAULT_ERROR_MAP: Partial<Record<Code, (message: string) => Error>> = {
   [Code.InvalidArgument]: (message) => new InvalidArgumentError(message),
   [Code.Unauthenticated]: (message) => new AuthenticationError(message),
@@ -53,6 +58,12 @@ export function handleRpcError(
     // Check if there is a default error mapping for this error code
     if (err.code in DEFAULT_ERROR_MAP) {
       return DEFAULT_ERROR_MAP[err.code]!(err.message)
+    }
+
+    // An HTTP/2 stream reset surfaces as Code.Unknown with the message 'terminated' —
+    // the signature of the sandbox being killed or expiring while the request was in flight
+    if (err.code === Code.Unknown && err.rawMessage === 'terminated') {
+      return new SandboxError(`${err.message}: ${SANDBOX_TERMINATED_MESSAGE}`)
     }
 
     // Fallback to a generic SandboxError if no specific mapping is found

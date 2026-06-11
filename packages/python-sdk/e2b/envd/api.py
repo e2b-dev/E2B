@@ -4,6 +4,7 @@ import json
 from typing import Callable, Optional
 
 from e2b.exceptions import (
+    SANDBOX_TERMINATED_MESSAGE,
     SandboxException,
     NotFoundException,
     AuthenticationException,
@@ -27,6 +28,23 @@ _DEFAULT_API_ERROR_MAP: dict[int, Callable[[str], Exception]] = {
     502: format_sandbox_timeout_exception,
     507: NotEnoughSpaceException,
 }
+
+
+def handle_envd_api_transport_exception(e: Exception) -> Exception:
+    """Handle transport-level errors from envd API requests by wrapping them in sandbox exceptions.
+
+    :param e: The caught exception, expected to be a transport-level ``httpx`` error.
+    :return: The corresponding ``SandboxException``, or the original exception if it is not a transport error.
+    """
+    # A remote protocol error (e.g. an HTTP/2 stream reset) means the peer dropped
+    # the connection mid-request — the signature of the sandbox being killed or expiring
+    if isinstance(e, httpx.RemoteProtocolError):
+        return SandboxException(f"{e}: {SANDBOX_TERMINATED_MESSAGE}")
+
+    if isinstance(e, (httpx.ProtocolError, httpx.NetworkError)):
+        return SandboxException(str(e))
+
+    return e
 
 
 def get_message(e: httpx.Response) -> str:

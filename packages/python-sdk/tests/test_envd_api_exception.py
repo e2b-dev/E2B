@@ -1,4 +1,9 @@
-from e2b.envd.api import format_envd_api_exception
+import httpx
+
+from e2b.envd.api import (
+    format_envd_api_exception,
+    handle_envd_api_transport_exception,
+)
 from e2b.exceptions import (
     AuthenticationException,
     InvalidArgumentException,
@@ -45,3 +50,24 @@ def test_falls_back_to_sandbox_exception():
     err = format_envd_api_exception(500, "Internal error")
     assert isinstance(err, SandboxException)
     assert "500" in str(err)
+
+
+def test_wraps_remote_protocol_error_with_terminated_message():
+    err = handle_envd_api_transport_exception(
+        httpx.RemoteProtocolError("peer closed connection")
+    )
+    assert isinstance(err, SandboxException)
+    assert "sandbox was killed" in str(err)
+    assert "is_running" in str(err)
+
+
+def test_wraps_network_errors_in_sandbox_exception():
+    err = handle_envd_api_transport_exception(httpx.ReadError("read failed"))
+    assert isinstance(err, SandboxException)
+    assert "read failed" in str(err)
+
+
+def test_returns_original_when_not_transport_error():
+    original = ValueError("not transport")
+    err = handle_envd_api_transport_exception(original)
+    assert err is original

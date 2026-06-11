@@ -1,3 +1,10 @@
+SANDBOX_TERMINATED_MESSAGE = (
+    "The connection to the sandbox was terminated. "
+    "This is most likely because the sandbox was killed or reached its end of life while the request was in flight. "
+    "You can check the sandbox status with 'sandbox.is_running()'."
+)
+
+
 def format_sandbox_timeout_exception(message: str):
     return TimeoutException(
         f"{message}: This error is likely due to sandbox timeout. You can modify the sandbox timeout by passing 'timeout' when starting the sandbox or calling '.set_timeout' on the sandbox with the desired timeout."

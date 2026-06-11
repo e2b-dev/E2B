@@ -44,6 +44,19 @@ describe('handleRpcError', () => {
     assert.instanceOf(err, SandboxError)
   })
 
+  test('returns actionable SandboxError for Unknown "terminated" (sandbox killed mid-request)', () => {
+    const err = handleRpcError(new ConnectError('terminated', Code.Unknown))
+    assert.instanceOf(err, SandboxError)
+    assert.include(err.message, 'sandbox was killed')
+    assert.include(err.message, 'isRunning')
+  })
+
+  test('keeps generic fallback for other Unknown errors', () => {
+    const err = handleRpcError(new ConnectError('something else', Code.Unknown))
+    assert.instanceOf(err, SandboxError)
+    assert.notInclude(err.message, 'isRunning')
+  })
+
   test('returns the original error when not a ConnectError', () => {
     const original = new Error('not connect')
     const err = handleRpcError(original)

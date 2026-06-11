@@ -1,10 +1,12 @@
 import base64
 
+import httpcore
 from typing import Callable, Optional
 from packaging.version import Version
 from e2b_connect.client import Code, ConnectException
 
 from e2b.exceptions import (
+    SANDBOX_TERMINATED_MESSAGE,
     SandboxException,
     InvalidArgumentException,
     NotFoundException,
@@ -39,9 +41,9 @@ def handle_rpc_exception(
 ):
     """Handle errors from envd RPC calls by mapping gRPC status codes to specific exception types.
 
-    :param e: The caught exception, expected to be a ``ConnectException``.
+    :param e: The caught exception, expected to be a ``ConnectException`` or a transport-level ``httpcore`` error.
     :param error_map: Optional map of gRPC codes to exception factories that override the defaults.
-    :return: The corresponding exception, or the original exception if not a ``ConnectException``.
+    :return: The corresponding exception. Transport-level errors are wrapped in ``SandboxException``; anything else is returned as-is.
     """
     if isinstance(e, ConnectException):
         if error_map and e.status in error_map:
@@ -51,8 +53,16 @@ def handle_rpc_exception(
             return _DEFAULT_RPC_ERROR_MAP[e.status](e.message)
 
         return SandboxException(f"{e.status}: {e.message}")
-    else:
-        return e
+
+    # A remote protocol error (e.g. an HTTP/2 stream reset) means the peer dropped
+    # the connection mid-request — the signature of the sandbox being killed or expiring
+    if isinstance(e, httpcore.RemoteProtocolError):
+        return SandboxException(f"{e}: {SANDBOX_TERMINATED_MESSAGE}")
+
+    if isinstance(e, (httpcore.ProtocolError, httpcore.NetworkError)):
+        return SandboxException(str(e))
+
+    return e
 
 
 def authentication_header(

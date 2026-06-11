@@ -361,7 +361,8 @@ class Client:
             },
         }
 
-    @_retry(RemoteProtocolError, 3)
+    # Note: no retry here — generator functions don't execute until iterated, so a
+    # call-level retry never fires, and retrying mid-stream would replay delivered events.
     async def acall_server_stream(
         self,
         req,
@@ -395,7 +396,6 @@ class Client:
                 for parsed in parser.parse(chunk):
                     yield parsed
 
-    @_retry(RemoteProtocolError, 3)
     def call_server_stream(
         self,
         req,

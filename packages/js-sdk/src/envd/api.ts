@@ -16,6 +16,7 @@ import {
 import { StartResponse, ConnectResponse } from './process/process_pb'
 import { Code, ConnectError } from '@connectrpc/connect'
 import { WatchDirResponse } from './filesystem/filesystem_pb'
+import { SANDBOX_TERMINATED_MESSAGE } from './rpc'
 
 type ApiError = { message?: string } | string
 
@@ -36,6 +37,22 @@ const DEFAULT_ERROR_MAP: Record<number, (message: string) => Error> = {
  * @param errorMap - Optional map of HTTP status codes to error factory functions that override the defaults.
  * @returns The corresponding `Error` instance if an error is present, or `undefined` if the response is successful.
  */
+/**
+ * Handles transport-level fetch failures from envd API calls.
+ *
+ * @param err - The caught error, expected to be a fetch transport failure.
+ * @returns A `SandboxError` if the failure indicates the connection was terminated mid-request, or the original error otherwise.
+ */
+export function handleEnvdApiFetchError(err: unknown): Error {
+  // Undici surfaces a connection dropped mid-body as a TypeError with the message 'terminated' —
+  // the signature of the sandbox being killed or expiring while the request was in flight
+  if (err instanceof TypeError && err.message === 'terminated') {
+    return new SandboxError(`${err.message}: ${SANDBOX_TERMINATED_MESSAGE}`)
+  }
+
+  return err as Error
+}
+
 export async function handleEnvdApiError(
   res: {
     error?: ApiError
