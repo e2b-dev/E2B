@@ -2,7 +2,12 @@ import asyncio
 
 import pytest
 
-from e2b_connect.client import _retry
+from e2b_connect.client import (
+    EnvelopeFlags,
+    ServerStreamParser,
+    _retry,
+    encode_envelope,
+)
 
 
 class GoodError(Exception):
@@ -132,3 +137,35 @@ async def test_async_with_multiple_await_calls():
     result = await f()
     assert result is True
     assert total == 2
+
+
+def make_parser():
+    return ServerStreamParser(
+        decode=lambda data, msg_type: data,
+        response_type=None,
+    )
+
+
+def test_parser_yields_messages_from_single_chunk():
+    parser = make_parser()
+    envelope = encode_envelope(flags=EnvelopeFlags(0), data=b"abc")
+
+    assert list(parser.parse(envelope)) == [b"abc"]
+
+
+def test_parser_handles_payload_split_after_header():
+    parser = make_parser()
+    envelope = encode_envelope(flags=EnvelopeFlags(0), data=b"abc")
+
+    # The header plus one payload byte arrive first; the remaining payload
+    # (shorter than a header) arrives in a later chunk.
+    assert list(parser.parse(envelope[:6])) == []
+    assert list(parser.parse(envelope[6:])) == [b"abc"]
+
+
+def test_parser_handles_end_stream_payload_shorter_than_header():
+    parser = make_parser()
+    envelope = encode_envelope(flags=EnvelopeFlags.end_stream, data=b"{}")
+
+    assert list(parser.parse(envelope[:5])) == []
+    assert list(parser.parse(envelope[5:])) == []
