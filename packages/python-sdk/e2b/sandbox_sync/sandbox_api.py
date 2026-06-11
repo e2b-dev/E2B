@@ -103,7 +103,7 @@ class SandboxApi(SandboxBase):
             raise handle_api_exception(res)
 
         if res.parsed is None:
-            raise SandboxException("Body of the request is None")
+            raise Exception("Body of the request is None")
 
         if isinstance(res.parsed, Error):
             raise SandboxException(f"{res.parsed.message}: Request failed")
@@ -242,8 +242,7 @@ class SandboxApi(SandboxBase):
         if Version(res.parsed.envd_version) < Version("0.1.0"):
             SandboxApi._cls_kill(res.parsed.sandbox_id)
             raise TemplateException(
-                "You need to update the template to use the new SDK. "
-                "You can do this by running `e2b template build` in the directory with the template."
+                "You need to update the template to use the new SDK."
             )
 
         domain = res.parsed.domain if isinstance(res.parsed.domain, str) else None
@@ -288,6 +287,9 @@ class SandboxApi(SandboxBase):
             client=api_client,
         )
 
+        if res.status_code == 404:
+            raise SandboxNotFoundException(f"Sandbox {sandbox_id} not found")
+
         if res.status_code >= 300:
             raise handle_api_exception(res)
 
@@ -323,13 +325,7 @@ class SandboxApi(SandboxBase):
 
         config = ConnectionConfig(**opts)
 
-        api_client = get_api_client(
-            config,
-            headers={
-                "E2b-Sandbox-Id": sandbox_id,
-                "E2b-Sandbox-Port": str(config.envd_port),
-            },
-        )
+        api_client = get_api_client(config)
         res = post_sandboxes_sandbox_id_connect.sync_detailed(
             sandbox_id,
             client=api_client,
@@ -346,7 +342,7 @@ class SandboxApi(SandboxBase):
             raise SandboxException(f"{res.parsed.message}: Request failed")
 
         if res.parsed is None:
-            raise SandboxException("Body of the request is None")
+            raise Exception("Body of the request is None")
 
         return res.parsed
 
@@ -373,7 +369,7 @@ class SandboxApi(SandboxBase):
             raise handle_api_exception(res)
 
         if res.parsed is None:
-            raise SandboxException("Body of the request is None")
+            raise Exception("Body of the request is None")
 
         if isinstance(res.parsed, Error):
             raise SandboxException(f"{res.parsed.message}: Request failed")
@@ -410,7 +406,7 @@ class SandboxApi(SandboxBase):
         cls,
         sandbox_id: str,
         **opts: Unpack[ApiParams],
-    ) -> str:
+    ) -> bool:
         config = ConnectionConfig(**opts)
 
         api_client = get_api_client(config)
@@ -423,9 +419,14 @@ class SandboxApi(SandboxBase):
             raise SandboxNotFoundException(f"Sandbox {sandbox_id} not found")
 
         if res.status_code == 409:
-            return sandbox_id
+            # Sandbox is already paused
+            return False
 
         if res.status_code >= 300:
             raise handle_api_exception(res)
 
-        return sandbox_id
+        # Check if res.parse is Error
+        if isinstance(res.parsed, Error):
+            raise SandboxException(f"{res.parsed.message}: Request failed")
+
+        return True

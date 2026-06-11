@@ -1,13 +1,17 @@
-from typing import Dict
+from typing import Dict, Optional, Tuple
 
 import httpx
 import logging
 import threading
 
+from httpx._types import ProxyTypes
+
 from e2b.api import ApiClient, limits
 from e2b.connection_config import ConnectionConfig
 
 logger = logging.getLogger(__name__)
+
+TransportKey = Tuple[bool, Optional[ProxyTypes]]
 
 
 def get_api_client(config: ConnectionConfig, **kwargs) -> ApiClient:
@@ -19,7 +23,7 @@ def get_api_client(config: ConnectionConfig, **kwargs) -> ApiClient:
 
 
 class TransportWithLogger(httpx.HTTPTransport):
-    _instances: Dict[bool, "TransportWithLogger"] = {}
+    _thread_local = threading.local()
 
     def handle_request(self, request):
         url = f"{request.url.scheme}://{request.url.host}{request.url.path}"
@@ -37,7 +41,11 @@ class TransportWithLogger(httpx.HTTPTransport):
 
 
 def get_transport(config: ConnectionConfig, http2: bool = True) -> TransportWithLogger:
-    cached = TransportWithLogger._instances.get(http2)
+    instances: Dict[TransportKey, TransportWithLogger] = getattr(
+        TransportWithLogger._thread_local, "instances", {}
+    )
+    key: TransportKey = (http2, config.proxy)
+    cached = instances.get(key)
     if cached is not None:
         return cached
 
@@ -46,7 +54,8 @@ def get_transport(config: ConnectionConfig, http2: bool = True) -> TransportWith
         proxy=config.proxy,
         http2=http2,
     )
-    TransportWithLogger._instances[http2] = transport
+    instances[key] = transport
+    TransportWithLogger._thread_local.instances = instances
     return transport
 
 
@@ -57,10 +66,11 @@ class EnvdTransportWithLogger(TransportWithLogger):
 def get_envd_transport(
     config: ConnectionConfig, http2: bool = True
 ) -> EnvdTransportWithLogger:
-    instances: Dict[bool, EnvdTransportWithLogger] = getattr(
+    instances: Dict[TransportKey, EnvdTransportWithLogger] = getattr(
         EnvdTransportWithLogger._thread_local, "instances", {}
     )
-    cached = instances.get(http2)
+    key: TransportKey = (http2, config.proxy)
+    cached = instances.get(key)
     if cached is not None:
         return cached
 
@@ -69,6 +79,6 @@ def get_envd_transport(
         proxy=config.proxy,
         http2=http2,
     )
-    instances[http2] = transport
+    instances[key] = transport
     EnvdTransportWithLogger._thread_local.instances = instances
     return transport

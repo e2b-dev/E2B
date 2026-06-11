@@ -7,8 +7,44 @@ from e2b import (
     AsyncSandbox,
     FilesystemEvent,
     FilesystemEventType,
+    FileType,
     SandboxException,
 )
+
+
+async def test_watch_directory_changes_with_entry_info(async_sandbox: AsyncSandbox):
+    dirname = "test_watch_dir_entry"
+    filename = "test_watch.txt"
+    content = "This file will be watched."
+    new_content = "This file has been modified."
+
+    await async_sandbox.files.make_dir(dirname)
+    await async_sandbox.files.write(f"{dirname}/{filename}", content)
+
+    event_triggered = Event()
+    received: list[FilesystemEvent] = []
+
+    def handle_event(e: FilesystemEvent):
+        if e.type == FilesystemEventType.WRITE and e.name == filename:
+            received.append(e)
+            event_triggered.set()
+
+    handle = await async_sandbox.files.watch_dir(
+        dirname, on_event=handle_event, include_entry=True
+    )
+
+    await async_sandbox.files.write(f"{dirname}/{filename}", new_content)
+
+    await event_triggered.wait()
+
+    write_event = received[0]
+    # The entry is populated best-effort for events where the path still exists.
+    assert write_event.entry is not None
+    assert write_event.entry.name == filename
+    assert write_event.entry.path == f"/home/user/{dirname}/{filename}"
+    assert write_event.entry.type == FileType.FILE
+
+    await handle.stop()
 
 
 async def test_watch_directory_changes(async_sandbox: AsyncSandbox):

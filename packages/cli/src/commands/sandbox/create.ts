@@ -11,6 +11,13 @@ import fs from 'fs'
 import { configOption, pathOption } from '../../options'
 import { printDashboardSandboxInspectUrl } from 'src/utils/urls'
 
+type SandboxLifecycle = {
+  onTimeout: 'pause' | 'kill'
+  autoResume?: boolean
+}
+
+const MIN_TIMEOUT_MS = 30_000
+
 export function createCommand(
   name: string,
   alias: string,
@@ -25,6 +32,16 @@ export function createCommand(
     .addOption(pathOption)
     .addOption(configOption)
     .option('-d, --detach', 'create sandbox without connecting terminal to it')
+    .option(
+      '--lifecycle.ontimeout <action>',
+      'action when sandbox timeout is reached: pause or kill',
+      parseOnTimeout
+    )
+    .option(
+      '--lifecycle.autoresume',
+      'enable sandbox auto-resume, requires --lifecycle.ontimeout pause'
+    )
+    .option('--timeout <seconds>', 'sandbox timeout in seconds', parseTimeout)
     .alias(alias)
     .action(
       async (
@@ -34,6 +51,9 @@ export function createCommand(
           path?: string
           config?: string
           detach?: boolean
+          'lifecycle.ontimeout'?: SandboxLifecycle['onTimeout']
+          'lifecycle.autoresume'?: boolean
+          timeout?: number
         }
       ) => {
         if (deprecated) {
@@ -72,11 +92,24 @@ export function createCommand(
             templateID = 'base'
           }
 
-          const sandbox = await e2b.Sandbox.create(templateID, { apiKey })
+          const lifecycle = buildLifecycle(
+            opts['lifecycle.ontimeout'],
+            opts['lifecycle.autoresume']
+          )
+          const sandboxOpts = {
+            apiKey,
+            ...(lifecycle ? { lifecycle } : {}),
+            ...(opts.timeout !== undefined ? { timeoutMs: opts.timeout } : {}),
+          }
+          const sandbox = await e2b.Sandbox.create(templateID, sandboxOpts)
           printDashboardSandboxInspectUrl(sandbox.sandboxId)
 
           if (!opts.detach) {
-            await connectSandbox({ sandbox, template: { templateID } })
+            await connectSandbox({
+              sandbox,
+              template: { templateID },
+              timeoutMs: opts.timeout,
+            })
           } else {
             console.log(
               `Sandbox created with ID ${sandbox.sandboxId} using template ${templateID}`
@@ -91,17 +124,69 @@ export function createCommand(
     )
 }
 
+function parseTimeout(timeoutRaw: string): number {
+  const timeoutSeconds = Number(timeoutRaw)
+  const timeoutMs = Math.floor(timeoutSeconds * 1000)
+  if (
+    !Number.isFinite(timeoutSeconds) ||
+    timeoutSeconds <= 0 ||
+    timeoutMs < MIN_TIMEOUT_MS
+  ) {
+    throw new commander.InvalidArgumentError(
+      '--timeout must be at least 30 seconds'
+    )
+  }
+
+  return timeoutMs
+}
+
+function parseOnTimeout(onTimeout: string): SandboxLifecycle['onTimeout'] {
+  if (onTimeout !== 'pause' && onTimeout !== 'kill') {
+    throw new commander.InvalidArgumentError(
+      '--lifecycle.ontimeout must be "pause" or "kill"'
+    )
+  }
+
+  return onTimeout
+}
+
+function buildLifecycle(
+  onTimeout: SandboxLifecycle['onTimeout'] | undefined,
+  autoResume: boolean | undefined
+): SandboxLifecycle | undefined {
+  if (!onTimeout && !autoResume) {
+    return undefined
+  }
+
+  if (autoResume && onTimeout !== 'pause') {
+    throw new commander.InvalidArgumentError(
+      '--lifecycle.autoresume requires --lifecycle.ontimeout pause'
+    )
+  }
+
+  if (!onTimeout) {
+    throw new commander.InvalidArgumentError(
+      '--lifecycle.ontimeout is required when using --lifecycle.autoresume'
+    )
+  }
+
+  return { onTimeout, ...(autoResume ? { autoResume: true } : {}) }
+}
+
 export async function connectSandbox({
   sandbox,
   template,
+  timeoutMs,
 }: {
   sandbox: e2b.Sandbox
   template: Pick<e2b.components['schemas']['Template'], 'templateID'>
+  timeoutMs?: number
 }) {
   // keep-alive loop — track the in-flight promise so we can await it on shutdown
   let pendingKeepAlive: Promise<void> = Promise.resolve()
+  const keepAliveTimeoutMs = timeoutMs ?? 30_000
   const intervalId = setInterval(() => {
-    pendingKeepAlive = sandbox.setTimeout(30_000)
+    pendingKeepAlive = sandbox.setTimeout(keepAliveTimeoutMs)
   }, 5_000)
 
   console.log(
@@ -114,7 +199,7 @@ export async function connectSandbox({
   } finally {
     clearInterval(intervalId)
     await pendingKeepAlive.catch(() => {})
-    await sandbox.setTimeout(1_000)
+    await sandbox.setTimeout(timeoutMs ?? 1_000)
     console.log(
       `Closing terminal connection to template ${asFormattedSandboxTemplate(
         template
