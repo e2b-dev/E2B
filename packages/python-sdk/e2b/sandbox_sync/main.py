@@ -105,11 +105,7 @@ class Sandbox(SandboxApi):
         transport = get_transport(self.connection_config)
         self._envd_api_thread_local = threading.local()
 
-        self._envd_api_thread_local.envd_api = httpx.Client(
-            base_url=self.envd_api_url,
-            transport=transport,
-            headers=self.connection_config.sandbox_headers,
-        )
+        self._envd_api_thread_local.envd_api = self._create_envd_api(transport)
         self._filesystem = Filesystem(
             self.envd_api_url,
             self._envd_version,
@@ -131,15 +127,18 @@ class Sandbox(SandboxApi):
         )
         self._git = Git(self._commands)
 
+    def _create_envd_api(self, transport) -> httpx.Client:
+        return httpx.Client(
+            base_url=self.envd_api_url,
+            transport=transport,
+            headers=self.connection_config.sandbox_headers,
+        )
+
     @property
     def _envd_api(self) -> httpx.Client:
         envd_api = getattr(self._envd_api_thread_local, "envd_api", None)
         if envd_api is None:
-            envd_api = httpx.Client(
-                base_url=self.envd_api_url,
-                transport=get_transport(self.connection_config),
-                headers=self.connection_config.sandbox_headers,
-            )
+            envd_api = self._create_envd_api(get_transport(self.connection_config))
             self._envd_api_thread_local.envd_api = envd_api
         return envd_api
 
