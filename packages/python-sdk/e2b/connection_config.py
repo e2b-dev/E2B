@@ -95,7 +95,7 @@ class ConnectionConfig:
         proxy: Optional[ProxyTypes] = None,
     ):
         self.domain = domain or ConnectionConfig._domain()
-        self.debug = debug or ConnectionConfig._debug()
+        self.debug = debug if debug is not None else ConnectionConfig._debug()
         self.api_key = api_key or ConnectionConfig._api_key()
         self.access_token = access_token or ConnectionConfig._access_token()
         self.headers = {**(headers or {}), **(api_headers or {})}

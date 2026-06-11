@@ -19,7 +19,11 @@ import {
   setupRequestController,
 } from '../../connectionConfig'
 import { CommandHandle } from './commandHandle'
-import { authenticationHeader, handleRpcError } from '../../envd/rpc'
+import {
+  authenticationHeader,
+  handleRpcError,
+  streamTimeoutMs,
+} from '../../envd/rpc'
 import { handleProcessStartEvent } from '../../envd/api'
 
 export interface PtyCreateOpts
@@ -129,7 +133,9 @@ export class Pty {
           [KEEPALIVE_PING_HEADER]: KEEPALIVE_PING_INTERVAL_SEC.toString(),
         },
         signal: controller.signal,
-        timeoutMs: opts?.timeoutMs ?? this.defaultPtyConnectionTimeout,
+        timeoutMs: streamTimeoutMs(
+          opts?.timeoutMs ?? this.defaultPtyConnectionTimeout
+        ),
       }
     )
 
@@ -183,7 +189,9 @@ export class Pty {
         headers: {
           [KEEPALIVE_PING_HEADER]: KEEPALIVE_PING_INTERVAL_SEC.toString(),
         },
-        timeoutMs: opts?.timeoutMs ?? this.defaultPtyConnectionTimeout,
+        timeoutMs: streamTimeoutMs(
+          opts?.timeoutMs ?? this.defaultPtyConnectionTimeout
+        ),
       }
     )
 

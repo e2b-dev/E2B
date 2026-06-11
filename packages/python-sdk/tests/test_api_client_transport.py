@@ -1,6 +1,7 @@
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
 
+import httpx
 import pytest
 
 from e2b.api.client_async import AsyncEnvdTransportWithLogger, AsyncTransportWithLogger
@@ -62,6 +63,61 @@ def test_sync_get_transport_http2_opt_out_returns_distinct_instance(test_api_key
         assert get_sync_transport(config) is http2_transport
         assert get_sync_transport(config, http2=False) is http1_transport
     finally:
+        reset_sync_api_transports()
+
+
+def test_sync_get_transport_keyed_by_proxy(test_api_key):
+    reset_sync_api_transports()
+    proxied_config = ConnectionConfig(
+        api_key=test_api_key,
+        proxy="http://127.0.0.1:9999",
+    )
+    direct_config = ConnectionConfig(api_key=test_api_key)
+    other_proxy_config = ConnectionConfig(
+        api_key=test_api_key,
+        proxy="http://127.0.0.1:8888",
+    )
+
+    try:
+        proxied_transport = get_sync_transport(proxied_config)
+        direct_transport = get_sync_transport(direct_config)
+        other_proxy_transport = get_sync_transport(other_proxy_config)
+
+        assert proxied_transport is not direct_transport
+        assert proxied_transport is not other_proxy_transport
+        assert direct_transport is not other_proxy_transport
+        # The same proxy still reuses the cached instance.
+        assert get_sync_transport(proxied_config) is proxied_transport
+        assert get_sync_transport(direct_config) is direct_transport
+    finally:
+        reset_sync_api_transports()
+
+
+def test_sync_api_client_applies_request_timeout(test_api_key):
+    reset_sync_api_transports()
+    config = ConnectionConfig(api_key=test_api_key, request_timeout=1.5)
+
+    api_client = get_sync_api_client(config)
+    httpx_client = api_client.get_httpx_client()
+
+    try:
+        assert httpx_client.timeout == httpx.Timeout(1.5)
+    finally:
+        httpx_client.close()
+        reset_sync_api_transports()
+
+
+def test_sync_api_client_request_timeout_zero_disables_timeout(test_api_key):
+    reset_sync_api_transports()
+    config = ConnectionConfig(api_key=test_api_key, request_timeout=0)
+
+    api_client = get_sync_api_client(config)
+    httpx_client = api_client.get_httpx_client()
+
+    try:
+        assert httpx_client.timeout == httpx.Timeout(None)
+    finally:
+        httpx_client.close()
         reset_sync_api_transports()
 
 
@@ -129,7 +185,7 @@ async def test_async_api_client_proxy_uses_explicit_transport(test_api_key):
     api_client = get_async_api_client(config)
     httpx_client = api_client.get_async_httpx_client()
     transport = AsyncTransportWithLogger._instances[
-        (id(asyncio.get_running_loop()), True)
+        (id(asyncio.get_running_loop()), True, "http://127.0.0.1:9999")
     ]
 
     try:
@@ -160,6 +216,42 @@ async def test_async_get_transport_http2_opt_out_returns_distinct_instance(
         assert get_async_transport(config) is http2_transport
         assert get_async_transport(config, http2=False) is http1_transport
     finally:
+        AsyncTransportWithLogger._instances.clear()
+
+
+@pytest.mark.asyncio
+async def test_async_get_transport_keyed_by_proxy(test_api_key):
+    AsyncTransportWithLogger._instances.clear()
+    proxied_config = ConnectionConfig(
+        api_key=test_api_key,
+        proxy="http://127.0.0.1:9999",
+    )
+    direct_config = ConnectionConfig(api_key=test_api_key)
+
+    try:
+        proxied_transport = get_async_transport(proxied_config)
+        direct_transport = get_async_transport(direct_config)
+
+        assert proxied_transport is not direct_transport
+        # The same proxy still reuses the cached instance.
+        assert get_async_transport(proxied_config) is proxied_transport
+        assert get_async_transport(direct_config) is direct_transport
+    finally:
+        AsyncTransportWithLogger._instances.clear()
+
+
+@pytest.mark.asyncio
+async def test_async_api_client_applies_request_timeout(test_api_key):
+    AsyncTransportWithLogger._instances.clear()
+    config = ConnectionConfig(api_key=test_api_key, request_timeout=1.5)
+
+    api_client = get_async_api_client(config)
+    httpx_client = api_client.get_async_httpx_client()
+
+    try:
+        assert httpx_client.timeout == httpx.Timeout(1.5)
+    finally:
+        await httpx_client.aclose()
         AsyncTransportWithLogger._instances.clear()
 
 

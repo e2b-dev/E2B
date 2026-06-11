@@ -20,7 +20,11 @@ import {
   Process as ProcessService,
   Signal,
 } from '../../envd/process/process_pb'
-import { authenticationHeader, handleRpcError } from '../../envd/rpc'
+import {
+  authenticationHeader,
+  handleRpcError,
+  streamTimeoutMs,
+} from '../../envd/rpc'
 import { ENVD_COMMANDS_STDIN, ENVD_ENVD_CLOSE } from '../../envd/versions'
 import { SandboxError } from '../../errors'
 import { CommandHandle, CommandResult } from './commandHandle'
@@ -337,7 +341,9 @@ export class Commands {
         headers: {
           [KEEPALIVE_PING_HEADER]: KEEPALIVE_PING_INTERVAL_SEC.toString(),
         },
-        timeoutMs: opts?.timeoutMs ?? this.defaultProcessConnectionTimeout,
+        timeoutMs: streamTimeoutMs(
+          opts?.timeoutMs ?? this.defaultProcessConnectionTimeout
+        ),
       }
     )
 
@@ -451,7 +457,9 @@ export class Commands {
           [KEEPALIVE_PING_HEADER]: KEEPALIVE_PING_INTERVAL_SEC.toString(),
         },
         signal: controller.signal,
-        timeoutMs: opts?.timeoutMs ?? this.defaultProcessConnectionTimeout,
+        timeoutMs: streamTimeoutMs(
+          opts?.timeoutMs ?? this.defaultProcessConnectionTimeout
+        ),
       }
     )
 

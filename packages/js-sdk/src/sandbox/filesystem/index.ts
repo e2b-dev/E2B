@@ -16,7 +16,11 @@ import {
 } from '../../connectionConfig'
 
 import { handleEnvdApiError, handleWatchDirStartEvent } from '../../envd/api'
-import { authenticationHeader, handleRpcError } from '../../envd/rpc'
+import {
+  authenticationHeader,
+  handleRpcError,
+  streamTimeoutMs,
+} from '../../envd/rpc'
 
 import { EnvdApiClient } from '../../envd/api'
 import {
@@ -929,7 +933,7 @@ export class Filesystem {
           [KEEPALIVE_PING_HEADER]: KEEPALIVE_PING_INTERVAL_SEC.toString(),
         },
         signal: controller.signal,
-        timeoutMs: opts?.timeoutMs ?? this.defaultWatchTimeout,
+        timeoutMs: streamTimeoutMs(opts?.timeoutMs ?? this.defaultWatchTimeout),
       }
     )
 

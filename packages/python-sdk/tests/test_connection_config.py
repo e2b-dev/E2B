@@ -96,6 +96,20 @@ def test_sandbox_direct_url_uses_explicit_url_first():
     )
 
 
+def test_debug_false_overrides_env_var(monkeypatch):
+    monkeypatch.setenv("E2B_DEBUG", "true")
+
+    config = ConnectionConfig(debug=False)
+    assert config.debug is False
+
+
+def test_debug_defaults_to_env_var(monkeypatch):
+    monkeypatch.setenv("E2B_DEBUG", "true")
+
+    config = ConnectionConfig()
+    assert config.debug is True
+
+
 def test_request_timeout_zero_means_no_timeout():
     config = ConnectionConfig(request_timeout=0)
     assert config.request_timeout is None

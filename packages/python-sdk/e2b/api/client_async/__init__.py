@@ -1,13 +1,17 @@
 import asyncio
 import logging
-from typing import Dict, Tuple
+from typing import Dict, Optional, Tuple
 
 import httpx
+
+from httpx._types import ProxyTypes
 
 from e2b.api import AsyncApiClient, limits
 from e2b.connection_config import ConnectionConfig
 
 logger = logging.getLogger(__name__)
+
+TransportKey = Tuple[int, bool, Optional[ProxyTypes]]
 
 
 def get_api_client(config: ConnectionConfig, **kwargs) -> AsyncApiClient:
@@ -19,7 +23,7 @@ def get_api_client(config: ConnectionConfig, **kwargs) -> AsyncApiClient:
 
 
 class AsyncTransportWithLogger(httpx.AsyncHTTPTransport):
-    _instances: Dict[Tuple[int, bool], "AsyncTransportWithLogger"] = {}
+    _instances: Dict[TransportKey, "AsyncTransportWithLogger"] = {}
 
     async def handle_async_request(self, request):
         url = f"{request.url.scheme}://{request.url.host}{request.url.path}"
@@ -39,10 +43,10 @@ class AsyncTransportWithLogger(httpx.AsyncHTTPTransport):
 def get_transport(
     config: ConnectionConfig, http2: bool = True
 ) -> AsyncTransportWithLogger:
-    loop_id = (id(asyncio.get_running_loop()), http2)
+    key: TransportKey = (id(asyncio.get_running_loop()), http2, config.proxy)
 
-    if loop_id in AsyncTransportWithLogger._instances:
-        return AsyncTransportWithLogger._instances[loop_id]
+    if key in AsyncTransportWithLogger._instances:
+        return AsyncTransportWithLogger._instances[key]
 
     transport = AsyncTransportWithLogger(
         limits=limits,
@@ -50,21 +54,21 @@ def get_transport(
         http2=http2,
     )
 
-    AsyncTransportWithLogger._instances[loop_id] = transport
+    AsyncTransportWithLogger._instances[key] = transport
     return transport
 
 
 class AsyncEnvdTransportWithLogger(AsyncTransportWithLogger):
-    _instances: Dict[Tuple[int, bool], "AsyncEnvdTransportWithLogger"] = {}
+    _instances: Dict[TransportKey, "AsyncEnvdTransportWithLogger"] = {}
 
 
 def get_envd_transport(
     config: ConnectionConfig, http2: bool = True
 ) -> AsyncEnvdTransportWithLogger:
-    loop_id = (id(asyncio.get_running_loop()), http2)
+    key: TransportKey = (id(asyncio.get_running_loop()), http2, config.proxy)
 
-    if loop_id in AsyncEnvdTransportWithLogger._instances:
-        return AsyncEnvdTransportWithLogger._instances[loop_id]
+    if key in AsyncEnvdTransportWithLogger._instances:
+        return AsyncEnvdTransportWithLogger._instances[key]
 
     transport = AsyncEnvdTransportWithLogger(
         limits=limits,
@@ -72,5 +76,5 @@ def get_envd_transport(
         http2=http2,
     )
 
-    AsyncEnvdTransportWithLogger._instances[loop_id] = transport
+    AsyncEnvdTransportWithLogger._instances[key] = transport
     return transport
