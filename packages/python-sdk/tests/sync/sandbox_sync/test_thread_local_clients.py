@@ -40,7 +40,9 @@ def test_sync_sandbox_envd_api_is_bound_per_calling_thread(monkeypatch, test_api
         "Client",
         lambda *args, **kwargs: SimpleNamespace(transport=kwargs["transport"]),
     )
-    monkeypatch.setattr(sandbox_sync_main, "Filesystem", lambda *args, **kwargs: object())
+    monkeypatch.setattr(
+        sandbox_sync_main, "Filesystem", lambda *args, **kwargs: object()
+    )
     monkeypatch.setattr(sandbox_sync_main, "Commands", lambda *args, **kwargs: object())
     monkeypatch.setattr(sandbox_sync_main, "Pty", lambda *args, **kwargs: object())
     monkeypatch.setattr(sandbox_sync_main, "Git", lambda *args, **kwargs: object())
