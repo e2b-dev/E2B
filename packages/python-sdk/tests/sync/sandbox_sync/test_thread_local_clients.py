@@ -1,6 +1,7 @@
 from concurrent.futures import ThreadPoolExecutor
+import threading
 from types import SimpleNamespace
-from unittest.mock import Mock
+from unittest.mock import Mock, sentinel
 
 import httpx
 from packaging.version import Version
@@ -32,18 +33,10 @@ def fake_transport():
 def test_sync_sandbox_envd_api_is_bound_per_calling_thread(monkeypatch, test_api_key):
     config = ConnectionConfig(api_key=test_api_key)
     main_api = Mock(spec=httpx.Client)
-    worker_api = Mock(spec=httpx.Client)
+    filesystem = SimpleNamespace(_envd_api=main_api)
 
     monkeypatch.setattr(
-        sandbox_sync_main, "get_transport", lambda *_args, **_kwargs: fake_transport()
-    )
-    monkeypatch.setattr(
-        sandbox_sync_main.httpx,
-        "Client",
-        lambda *args, **kwargs: worker_api,
-    )
-    monkeypatch.setattr(
-        sandbox_sync_main, "Filesystem", lambda *args, **kwargs: object()
+        sandbox_sync_main, "Filesystem", lambda *args, **kwargs: filesystem
     )
     monkeypatch.setattr(sandbox_sync_main, "Commands", lambda *args, **kwargs: object())
     monkeypatch.setattr(sandbox_sync_main, "Pty", lambda *args, **kwargs: object())
@@ -58,13 +51,8 @@ def test_sync_sandbox_envd_api_is_bound_per_calling_thread(monkeypatch, test_api
         connection_config=config,
     )
 
-    # Replace the construction-thread client so the assertion does not depend
-    # on how Sandbox.__init__ got its initial transport.
-    sandbox._envd_api_thread_local.envd_api = main_api
-
     assert sandbox._envd_api is main_api
-    assert run_in_worker_thread(lambda: sandbox._envd_api) is worker_api
-    assert sandbox._envd_api is main_api
+    assert sandbox._envd_api is sandbox.files._envd_api
     assert not hasattr(sandbox, "_transport")
 
 
@@ -72,43 +60,50 @@ def test_sync_filesystem_envd_clients_are_bound_per_calling_thread(
     monkeypatch, test_api_key
 ):
     config = ConnectionConfig(api_key=test_api_key)
-    main_api = Mock(spec=httpx.Client)
-    main_rpc = object()
+    main_thread_id = threading.get_ident()
+    main_transport = fake_transport()
     worker_transport = fake_transport()
+    main_api = Mock(spec=httpx.Client)
+    worker_api = Mock(spec=httpx.Client)
+    main_rpc = sentinel.main_filesystem_rpc
+    worker_rpc = sentinel.worker_filesystem_rpc
 
     monkeypatch.setattr(
         filesystem_sync,
         "get_envd_transport",
-        lambda *_args, **_kwargs: worker_transport,
+        lambda *_args, **_kwargs: main_transport
+        if threading.get_ident() == main_thread_id
+        else worker_transport,
     )
     monkeypatch.setattr(
         filesystem_sync.httpx,
         "Client",
-        lambda *args, **kwargs: SimpleNamespace(transport=kwargs["transport"]),
+        lambda *args, **kwargs: main_api
+        if kwargs["transport"] is main_transport
+        else worker_api,
     )
     monkeypatch.setattr(
         filesystem_sync.filesystem_connect,
         "FilesystemClient",
-        lambda *args, **kwargs: SimpleNamespace(pool=kwargs["pool"]),
+        lambda *args, **kwargs: main_rpc
+        if kwargs["pool"] is main_transport.pool
+        else worker_rpc,
     )
 
     fs = Filesystem(
         ENVD_API_URL,
         ENVD_VERSION,
         config,
-        fake_transport().pool,
-        main_api,
     )
-    fs._thread_local.rpc = main_rpc
 
     assert fs._envd_api is main_api
     assert fs._rpc is main_rpc
 
-    worker_api, worker_rpc = run_in_worker_thread(lambda: (fs._envd_api, fs._rpc))
-    assert worker_api is not main_api
-    assert worker_api.transport is worker_transport
-    assert worker_rpc is not main_rpc
-    assert worker_rpc.pool is worker_transport.pool
+    worker_api_result, worker_rpc_result = run_in_worker_thread(
+        lambda: (fs._envd_api, fs._rpc)
+    )
+    assert worker_api_result is worker_api
+    assert worker_rpc_result is worker_rpc
     assert fs._envd_api is main_api
     assert fs._rpc is main_rpc
 
@@ -117,53 +112,63 @@ def test_sync_command_rpc_clients_are_bound_per_calling_thread(
     monkeypatch, test_api_key
 ):
     config = ConnectionConfig(api_key=test_api_key)
-    main_rpc = object()
+    main_thread_id = threading.get_ident()
+    main_transport = fake_transport()
     worker_transport = fake_transport()
+    main_rpc = sentinel.main_command_rpc
+    worker_rpc = sentinel.worker_command_rpc
 
     monkeypatch.setattr(
         command_sync,
         "get_envd_transport",
-        lambda *_args, **_kwargs: worker_transport,
+        lambda *_args, **_kwargs: main_transport
+        if threading.get_ident() == main_thread_id
+        else worker_transport,
     )
     monkeypatch.setattr(
         command_sync.process_connect,
         "ProcessClient",
-        lambda *args, **kwargs: SimpleNamespace(pool=kwargs["pool"]),
+        lambda *args, **kwargs: main_rpc
+        if kwargs["pool"] is main_transport.pool
+        else worker_rpc,
     )
 
-    commands = Commands(ENVD_API_URL, config, fake_transport().pool, ENVD_VERSION)
-    commands._thread_local.rpc = main_rpc
+    commands = Commands(ENVD_API_URL, config, ENVD_VERSION)
 
     assert commands._rpc is main_rpc
-    worker_rpc = run_in_worker_thread(lambda: commands._rpc)
-    assert worker_rpc is not main_rpc
-    assert worker_rpc.pool is worker_transport.pool
+    worker_rpc_result = run_in_worker_thread(lambda: commands._rpc)
+    assert worker_rpc_result is worker_rpc
     assert commands._rpc is main_rpc
 
 
 def test_sync_pty_rpc_clients_are_bound_per_calling_thread(monkeypatch, test_api_key):
     config = ConnectionConfig(api_key=test_api_key)
-    main_rpc = object()
+    main_thread_id = threading.get_ident()
+    main_transport = fake_transport()
     worker_transport = fake_transport()
+    main_rpc = sentinel.main_pty_rpc
+    worker_rpc = sentinel.worker_pty_rpc
 
     monkeypatch.setattr(
         pty_sync,
         "get_envd_transport",
-        lambda *_args, **_kwargs: worker_transport,
+        lambda *_args, **_kwargs: main_transport
+        if threading.get_ident() == main_thread_id
+        else worker_transport,
     )
     monkeypatch.setattr(
         pty_sync.process_connect,
         "ProcessClient",
-        lambda *args, **kwargs: SimpleNamespace(pool=kwargs["pool"]),
+        lambda *args, **kwargs: main_rpc
+        if kwargs["pool"] is main_transport.pool
+        else worker_rpc,
     )
 
-    pty = Pty(ENVD_API_URL, config, fake_transport().pool, ENVD_VERSION)
-    pty._thread_local.rpc = main_rpc
+    pty = Pty(ENVD_API_URL, config, ENVD_VERSION)
 
     assert pty._rpc is main_rpc
-    worker_rpc = run_in_worker_thread(lambda: pty._rpc)
-    assert worker_rpc is not main_rpc
-    assert worker_rpc.pool is worker_transport.pool
+    worker_rpc_result = run_in_worker_thread(lambda: pty._rpc)
+    assert worker_rpc_result is worker_rpc
     assert pty._rpc is main_rpc
 
 
