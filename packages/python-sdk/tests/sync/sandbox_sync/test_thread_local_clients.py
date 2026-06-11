@@ -1,3 +1,4 @@
+from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 import threading
 from types import SimpleNamespace
@@ -54,6 +55,110 @@ def test_sync_sandbox_envd_api_is_bound_per_calling_thread(monkeypatch, test_api
     assert sandbox._envd_api is main_api
     assert sandbox._envd_api is sandbox.files._envd_api
     assert not hasattr(sandbox, "_transport")
+
+
+def test_sync_sandbox_clients_are_created_once_per_calling_thread(
+    monkeypatch, test_api_key
+):
+    config = ConnectionConfig(api_key=test_api_key)
+    created = []
+    transports = {}
+    lock = threading.Lock()
+
+    def get_transport(*_args, **_kwargs):
+        thread_id = threading.get_ident()
+        with lock:
+            transport = transports.get(thread_id)
+            if transport is None:
+                transport = fake_transport()
+                transports[thread_id] = transport
+            return transport
+
+    def record(kind):
+        with lock:
+            created.append((kind, threading.get_ident()))
+
+    class FakeHttpClient:
+        def __init__(self, *args, **kwargs):
+            self.transport = kwargs["transport"]
+            record("http")
+
+    class FakeFilesystemClient:
+        def __init__(self, *args, **kwargs):
+            self.pool = kwargs["pool"]
+            record("filesystem_rpc")
+
+    class FakeProcessClient:
+        def __init__(self, *args, **kwargs):
+            self.pool = kwargs["pool"]
+            record("process_rpc")
+
+    monkeypatch.setattr(filesystem_sync, "get_envd_transport", get_transport)
+    monkeypatch.setattr(command_sync, "get_envd_transport", get_transport)
+    monkeypatch.setattr(pty_sync, "get_envd_transport", get_transport)
+    monkeypatch.setattr(filesystem_sync.httpx, "Client", FakeHttpClient)
+    monkeypatch.setattr(
+        filesystem_sync.filesystem_connect, "FilesystemClient", FakeFilesystemClient
+    )
+    monkeypatch.setattr(
+        command_sync.process_connect, "ProcessClient", FakeProcessClient
+    )
+    monkeypatch.setattr(pty_sync.process_connect, "ProcessClient", FakeProcessClient)
+
+    main_thread_id = threading.get_ident()
+    sandbox = sandbox_sync_main.Sandbox(
+        sandbox_id="sbx-test",
+        sandbox_domain="e2b.app",
+        envd_version=ENVD_VERSION,
+        envd_access_token="tok",
+        traffic_access_token="tok",
+        connection_config=config,
+    )
+
+    assert Counter(kind for kind, thread in created if thread == main_thread_id) == {}
+
+    worker_count = 10
+    barrier = threading.Barrier(worker_count + 1)
+
+    def worker():
+        barrier.wait()
+        envd_api = sandbox._envd_api
+        files_envd_api = sandbox.files._envd_api
+        files_rpc = sandbox.files._rpc
+        commands_rpc = sandbox.commands._rpc
+        pty_rpc = sandbox.pty._rpc
+
+        return {
+            "thread": threading.get_ident(),
+            "same_envd_api": envd_api is files_envd_api,
+            "stable": (
+                envd_api is sandbox._envd_api
+                and files_envd_api is sandbox.files._envd_api
+                and files_rpc is sandbox.files._rpc
+                and commands_rpc is sandbox.commands._rpc
+                and pty_rpc is sandbox.pty._rpc
+            ),
+        }
+
+    with ThreadPoolExecutor(max_workers=worker_count) as executor:
+        futures = [executor.submit(worker) for _ in range(worker_count)]
+        barrier.wait()
+        results = [future.result() for future in futures]
+
+    worker_threads = {result["thread"] for result in results}
+    worker_created = [
+        (kind, thread) for kind, thread in created if thread in worker_threads
+    ]
+
+    assert Counter(result["same_envd_api"] for result in results) == {
+        True: worker_count
+    }
+    assert Counter(result["stable"] for result in results) == {True: worker_count}
+    assert Counter(kind for kind, _thread in worker_created) == {
+        "http": worker_count,
+        "filesystem_rpc": worker_count,
+        "process_rpc": worker_count * 2,
+    }
 
 
 def test_sync_filesystem_envd_clients_are_bound_per_calling_thread(
