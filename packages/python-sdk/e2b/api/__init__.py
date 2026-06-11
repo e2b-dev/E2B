@@ -119,6 +119,7 @@ class ApiClient(AuthenticatedClient):
         self._async_transport_factory = async_transport_factory
         self._thread_local = threading.local()
         self._async_clients: Dict[int, httpx.AsyncClient] = {}
+        self._proxy = config.proxy
 
         if require_api_key and require_access_token:
             raise AuthenticationException(
