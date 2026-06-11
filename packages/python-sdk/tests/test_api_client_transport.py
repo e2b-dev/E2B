@@ -158,6 +158,44 @@ def test_sync_api_transport_cache_reuses_within_thread_and_isolates_across_threa
         reset_sync_api_transports()
 
 
+def test_sync_api_client_cache_reuses_within_thread_and_isolates_across_threads(
+    test_api_key,
+):
+    reset_sync_api_transports()
+    config = ConnectionConfig(api_key=test_api_key)
+    api_client = get_sync_api_client(config)
+
+    def get_worker_client_ids():
+        httpx_client = api_client.get_httpx_client()
+        try:
+            return (
+                id(httpx_client),
+                id(api_client.get_httpx_client()),
+                id(httpx_client._transport),
+                id(get_sync_transport(config)),
+            )
+        finally:
+            httpx_client.close()
+
+    try:
+        main_client = api_client.get_httpx_client()
+        (
+            worker_client_id,
+            worker_cached_client_id,
+            worker_transport_id,
+            worker_cached_transport_id,
+        ) = run_in_worker_thread(get_worker_client_ids)
+
+        assert api_client.get_httpx_client() is main_client
+        assert worker_client_id == worker_cached_client_id
+        assert worker_transport_id == worker_cached_transport_id
+        assert worker_client_id != id(main_client)
+        assert worker_transport_id != id(main_client._transport)
+    finally:
+        main_client.close()
+        reset_sync_api_transports()
+
+
 def test_sync_envd_transport_cache_is_thread_local(test_api_key):
     reset_sync_envd_transports()
     config = ConnectionConfig(api_key=test_api_key)
@@ -252,6 +290,48 @@ async def test_async_api_client_applies_request_timeout(test_api_key):
         assert httpx_client.timeout == httpx.Timeout(1.5)
     finally:
         await httpx_client.aclose()
+        AsyncTransportWithLogger._instances.clear()
+
+
+@pytest.mark.asyncio
+async def test_async_api_client_cache_reuses_within_loop_and_isolates_across_loops(
+    test_api_key,
+):
+    AsyncTransportWithLogger._instances.clear()
+    config = ConnectionConfig(api_key=test_api_key)
+    api_client = get_async_api_client(config)
+
+    async def get_client_ids():
+        httpx_client = api_client.get_async_httpx_client()
+        try:
+            return (
+                id(httpx_client),
+                id(api_client.get_async_httpx_client()),
+                id(httpx_client._transport),
+                id(get_async_transport(config)),
+            )
+        finally:
+            await httpx_client.aclose()
+
+    try:
+        main_client = api_client.get_async_httpx_client()
+        (
+            worker_client_id,
+            worker_cached_client_id,
+            worker_transport_id,
+            worker_cached_transport_id,
+        ) = await asyncio.get_running_loop().run_in_executor(
+            None,
+            lambda: asyncio.run(get_client_ids()),
+        )
+
+        assert api_client.get_async_httpx_client() is main_client
+        assert worker_client_id == worker_cached_client_id
+        assert worker_transport_id == worker_cached_transport_id
+        assert worker_client_id != id(main_client)
+        assert worker_transport_id != id(main_client._transport)
+    finally:
+        await main_client.aclose()
         AsyncTransportWithLogger._instances.clear()
 
 

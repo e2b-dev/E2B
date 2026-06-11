@@ -2,4 +2,4 @@
 "@e2b/python-sdk": patch
 ---
 
-Deduplicate sync sandbox client initialization so envd HTTP and RPC clients are created from the calling thread's transport.
+Create Python SDK sync HTTP clients from the calling thread, including sandbox envd clients and API clients used by template uploads.
