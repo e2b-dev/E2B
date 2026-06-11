@@ -9,5 +9,4 @@ Fix a batch of connection-handling bugs in the JS and Python SDKs:
 - **Python**: `request_timeout` is now applied to control-plane (E2B API) requests; previously the underlying httpx client was built with no timeout at all.
 - **Python**: the server-stream parser no longer stalls (or drops the final envelope) when the remaining payload of an envelope is shorter than the 5-byte envelope header.
 - **JS + Python**: passing `debug: false` explicitly now overrides the `E2B_DEBUG=true` environment variable instead of being ignored.
-- **JS**: `timeoutMs: 0` on streaming calls (commands, PTY, watch) now disables the timeout as documented; previously connect-es treated it as an immediately exceeded deadline and aborted the stream right away.
 - **JS**: the RPC logger no longer crashes requests with a `TypeError` when a response contains protobuf int64 (`bigint`) fields; they are now logged as strings.

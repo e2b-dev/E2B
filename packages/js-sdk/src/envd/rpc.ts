@@ -75,18 +75,6 @@ function encode64(value: string): string {
   }
 }
 
-/**
- * Map the SDK's `timeoutMs` option to the connect-es `timeoutMs` call option.
- *
- * The SDK documents `0` as disabling the timeout, while connect-es treats
- * `timeoutMs: 0` as an immediately exceeded deadline.
- *
- * @internal
- */
-export function streamTimeoutMs(timeoutMs: number): number | undefined {
-  return timeoutMs === 0 ? undefined : timeoutMs
-}
-
 export function authenticationHeader(
   envdVersion: string,
   username: string | undefined
