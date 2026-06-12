@@ -5,7 +5,7 @@ import httpx
 
 from httpx._types import ProxyTypes
 
-from e2b.api import AsyncApiClient, limits
+from e2b.api import AsyncApiClient, connection_retries, limits
 from e2b.connection_config import ConnectionConfig
 
 TransportKey = Tuple[int, bool, Optional[ProxyTypes]]
@@ -14,7 +14,7 @@ TransportKey = Tuple[int, bool, Optional[ProxyTypes]]
 def get_api_client(config: ConnectionConfig, **kwargs) -> AsyncApiClient:
     return AsyncApiClient(
         config,
-        transport=get_transport(config),
+        async_transport_factory=lambda: get_transport(config),
         **kwargs,
     )
 
@@ -39,6 +39,7 @@ def get_transport(
         limits=limits,
         proxy=config.proxy,
         http2=http2,
+        retries=connection_retries,
     )
 
     AsyncTransportWithLogger._instances[key] = transport
@@ -61,6 +62,7 @@ def get_envd_transport(
         limits=limits,
         proxy=config.proxy,
         http2=http2,
+        retries=connection_retries,
     )
 
     AsyncEnvdTransportWithLogger._instances[key] = transport

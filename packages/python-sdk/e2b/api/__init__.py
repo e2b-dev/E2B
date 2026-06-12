@@ -1,11 +1,14 @@
+import asyncio
 import json
 import logging
 import os
 import re
+import threading
 from dataclasses import dataclass
 from types import TracebackType
-from typing import Optional, Protocol, Union
+from typing import Callable, Dict, Optional, Protocol, Union
 
+import httpx
 from httpx import AsyncBaseTransport, BaseTransport, Limits, Timeout
 
 from e2b.api.client.client import AuthenticatedClient
@@ -63,6 +66,8 @@ limits = Limits(
     max_connections=int(os.getenv("E2B_MAX_CONNECTIONS", "2000")),
     keepalive_expiry=int(os.getenv("E2B_KEEPALIVE_EXPIRY", "300")),
 )
+
+connection_retries = int(os.getenv("E2B_CONNECTION_RETRIES", "3"))
 
 
 @dataclass
@@ -140,9 +145,22 @@ class ApiClient(AuthenticatedClient):
         require_api_key: bool = True,
         require_access_token: bool = False,
         transport: Optional[Union[BaseTransport, AsyncBaseTransport]] = None,
+        transport_factory: Optional[Callable[[], BaseTransport]] = None,
+        async_transport_factory: Optional[Callable[[], AsyncBaseTransport]] = None,
         *args,
         **kwargs,
     ):
+        if transport is not None and (
+            transport_factory is not None or async_transport_factory is not None
+        ):
+            raise ValueError("Use either transport or transport_factory, not both")
+
+        self._transport_factory = transport_factory
+        self._async_transport_factory = async_transport_factory
+        self._thread_local = threading.local()
+        self._async_clients: Dict[int, httpx.AsyncClient] = {}
+        self._proxy = config.proxy
+
         if require_api_key and require_access_token:
             raise AuthenticationException(
                 "Only one of api_key or access_token can be required, not both",
@@ -194,9 +212,14 @@ class ApiClient(AuthenticatedClient):
 
         httpx_args = {
             "event_hooks": self._logging_event_hooks(),
-            "transport": transport,
         }
-        if transport is None:
+        if transport is not None:
+            httpx_args["transport"] = transport
+        if (
+            transport is None
+            and transport_factory is None
+            and async_transport_factory is None
+        ):
             httpx_args["proxy"] = config.proxy
 
         # config.request_timeout is None when the timeout is explicitly
@@ -216,6 +239,53 @@ class ApiClient(AuthenticatedClient):
 
     def _logging_event_hooks(self) -> dict:
         return make_logging_event_hooks(self._logger)
+
+    def _headers_with_auth(self) -> dict:
+        return {
+            **self._headers,
+            self.auth_header_name: (
+                f"{self.prefix} {self.token}" if self.prefix else self.token
+            ),
+        }
+
+    def get_httpx_client(self) -> httpx.Client:
+        if self._client is not None or self._transport_factory is None:
+            return super().get_httpx_client()
+
+        client = getattr(self._thread_local, "client", None)
+        if client is None:
+            client = httpx.Client(
+                base_url=self._base_url,
+                cookies=self._cookies,
+                headers=self._headers_with_auth(),
+                timeout=self._timeout,
+                verify=self._verify_ssl,
+                follow_redirects=self._follow_redirects,
+                event_hooks=self._httpx_args.get("event_hooks"),
+                transport=self._transport_factory(),
+            )
+            self._thread_local.client = client
+        return client
+
+    def get_async_httpx_client(self) -> httpx.AsyncClient:
+        if self._async_client is not None or self._async_transport_factory is None:
+            return super().get_async_httpx_client()
+
+        loop_id = id(asyncio.get_running_loop())
+        client = self._async_clients.get(loop_id)
+        if client is None:
+            client = httpx.AsyncClient(
+                base_url=self._base_url,
+                cookies=self._cookies,
+                headers=self._headers_with_auth(),
+                timeout=self._timeout,
+                verify=self._verify_ssl,
+                follow_redirects=self._follow_redirects,
+                event_hooks=self._httpx_args.get("event_hooks"),
+                transport=self._async_transport_factory(),
+            )
+            self._async_clients[loop_id] = client
+        return client
 
 
 # We need to override the logging hooks for the async usage

@@ -5,7 +5,7 @@ import threading
 
 from httpx._types import ProxyTypes
 
-from e2b.api import ApiClient, limits
+from e2b.api import ApiClient, connection_retries, limits
 from e2b.connection_config import ConnectionConfig
 
 TransportKey = Tuple[bool, Optional[ProxyTypes]]
@@ -14,7 +14,7 @@ TransportKey = Tuple[bool, Optional[ProxyTypes]]
 def get_api_client(config: ConnectionConfig, **kwargs) -> ApiClient:
     return ApiClient(
         config,
-        transport=get_transport(config),
+        transport_factory=lambda: get_transport(config),
         **kwargs,
     )
 
@@ -40,6 +40,7 @@ def get_transport(config: ConnectionConfig, http2: bool = True) -> TransportWith
         limits=limits,
         proxy=config.proxy,
         http2=http2,
+        retries=connection_retries,
     )
     instances[key] = transport
     TransportWithLogger._thread_local.instances = instances
@@ -65,6 +66,7 @@ def get_envd_transport(
         limits=limits,
         proxy=config.proxy,
         http2=http2,
+        retries=connection_retries,
     )
     instances[key] = transport
     EnvdTransportWithLogger._thread_local.instances = instances

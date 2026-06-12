@@ -41,7 +41,12 @@ def test_upload_file_sets_content_length_and_no_chunked_encoding(tmp_path):
     url = f"http://{host}:{port}/upload"
 
     try:
-        client = AuthenticatedClient(base_url="http://test", token="test")
+
+        class UploadClient(AuthenticatedClient):
+            def get_httpx_client(self):
+                raise AssertionError("signed uploads should not use the API client")
+
+        client = UploadClient(base_url="http://test", token="test")
         upload_file(
             api_client=client,
             file_name="*.txt",
@@ -65,3 +70,4 @@ def test_upload_file_sets_content_length_and_no_chunked_encoding(tmp_path):
     transfer_encoding = state["headers"].get("Transfer-Encoding")
     if transfer_encoding is not None:
         assert "chunked" not in transfer_encoding.lower()
+    assert "Authorization" not in state["headers"]
