@@ -172,3 +172,45 @@ def test_write_files_with_different_data_types(sandbox, debug):
     if debug:
         for file in files:
             sandbox.files.remove(file["path"])
+
+
+def test_write_io_with_octet_stream(sandbox, debug):
+    filename = "test_write_octet_io.bin"
+    text = "Streamed octet-stream upload. " * 10_000
+    content = io.BytesIO(text.encode("utf-8"))
+
+    info = sandbox.files.write(filename, content, use_octet_stream=True)
+    assert info.path == f"/home/user/{filename}"
+
+    read_content = sandbox.files.read(filename)
+    assert read_content == text
+
+    if debug:
+        sandbox.files.remove(filename)
+
+
+def test_write_text_io_with_octet_stream(sandbox, debug):
+    filename = "test_write_octet_text_io.txt"
+    text = "Streamed text octet-stream upload."
+
+    sandbox.files.write(filename, io.StringIO(text), use_octet_stream=True)
+
+    read_content = sandbox.files.read(filename)
+    assert read_content == text
+
+    if debug:
+        sandbox.files.remove(filename)
+
+
+def test_write_io_with_octet_stream_and_gzip(sandbox, debug):
+    filename = "test_write_octet_io_gzip.bin"
+    text = "Streamed gzipped octet-stream upload. " * 10_000
+    content = io.BytesIO(text.encode("utf-8"))
+
+    sandbox.files.write(filename, content, use_octet_stream=True, gzip=True)
+
+    read_content = sandbox.files.read(filename)
+    assert read_content == text
+
+    if debug:
+        sandbox.files.remove(filename)

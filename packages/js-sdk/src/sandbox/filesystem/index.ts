@@ -250,6 +250,8 @@ export interface FilesystemWriteOpts extends FilesystemRequestOpts {
   gzip?: boolean
   /**
    * When true, the upload uses `application/octet-stream` instead of `multipart/form-data`.
+   * Outside the browser, `ReadableStream` data is then streamed to the sandbox
+   * instead of being buffered in memory.
    *
    * Defaults to `false`. Requires envd 0.5.7 or later — when not supported by
    * the sandbox's envd version, the upload falls back to `multipart/form-data`.
@@ -380,6 +382,10 @@ export class Filesystem {
    *
    * You can pass `text`, `bytes`, `blob`, or `stream` to `opts.format` to change the return type.
    *
+   * The request timeout bounds only the initial handshake—the returned
+   * stream is not killed by it while being consumed. Use `opts.signal` to
+   * cancel an in-flight stream.
+   *
    * @param path path to the file.
    * @param opts connection options.
    * @param [opts.format] format of the file content—`stream`.
@@ -409,6 +415,71 @@ export class Filesystem {
     const headers: Record<string, string> = {}
     if (opts?.gzip) {
       headers['Accept-Encoding'] = 'gzip'
+    }
+
+    if (format === 'stream') {
+      // The request timeout bounds only the initial handshake; once the
+      // response arrives, the stream lives until it's consumed, cancelled,
+      // or the user signal aborts.
+      const { controller, clearStartTimeout, cleanup } = setupRequestController(
+        opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs,
+        opts?.signal
+      )
+
+      try {
+        const res = await this.envdApi.api.GET('/files', {
+          params: {
+            query: {
+              path,
+              username: user,
+            },
+          },
+          parseAs: 'stream',
+          signal: controller.signal,
+          headers,
+        })
+
+        const err = await handleFilesystemEnvdApiError(res)
+        if (err) {
+          throw err
+        }
+
+        clearStartTimeout()
+
+        const body = res.data as ReadableStream<Uint8Array> | null
+        if (!body) {
+          cleanup()
+          return new Blob([]).stream()
+        }
+
+        const reader = body.getReader()
+        return new ReadableStream<Uint8Array>({
+          async pull(streamController) {
+            try {
+              const { done, value } = await reader.read()
+              if (done) {
+                streamController.close()
+                cleanup()
+              } else {
+                streamController.enqueue(value)
+              }
+            } catch (err) {
+              cleanup()
+              streamController.error(err)
+            }
+          },
+          async cancel(reason) {
+            try {
+              await reader.cancel(reason)
+            } finally {
+              cleanup()
+            }
+          },
+        })
+      } catch (err) {
+        cleanup()
+        throw err
+      }
     }
 
     const res = await this.envdApi.api.GET('/files', {
@@ -569,6 +640,8 @@ export class Filesystem {
               writeOpts?.signal
             ),
             body: {},
+            // Streaming request bodies require half-duplex mode.
+            ...(body instanceof ReadableStream && { duplex: 'half' as const }),
           })
 
           const err = await handleFilesystemEnvdApiError(res)

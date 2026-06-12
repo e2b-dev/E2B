@@ -35,3 +35,36 @@ async def test_read_empty_file(async_sandbox: AsyncSandbox):
     await async_sandbox.commands.run(f"touch {filename}")
     read_content = await async_sandbox.files.read(filename)
     assert read_content == content
+
+
+async def test_read_file_as_stream(async_sandbox: AsyncSandbox):
+    filename = "test_read_stream.txt"
+    content = "Streamed read content. " * 10_000
+
+    await async_sandbox.files.write(filename, content)
+    stream = await async_sandbox.files.read(filename, format="stream")
+    chunks = []
+    async for chunk in stream:
+        chunks.append(chunk)
+    read_content = b"".join(chunks).decode("utf-8")
+    assert read_content == content
+
+
+async def test_read_file_as_stream_with_gzip(async_sandbox: AsyncSandbox):
+    filename = "test_read_stream_gzip.txt"
+    content = "Streamed gzipped read content. " * 10_000
+
+    await async_sandbox.files.write(filename, content)
+    stream = await async_sandbox.files.read(filename, format="stream", gzip=True)
+    chunks = []
+    async for chunk in stream:
+        chunks.append(chunk)
+    read_content = b"".join(chunks).decode("utf-8")
+    assert read_content == content
+
+
+async def test_read_non_existing_file_as_stream(async_sandbox: AsyncSandbox):
+    filename = "non_existing_file.txt"
+
+    with pytest.raises(FileNotFoundException):
+        await async_sandbox.files.read(filename, format="stream")

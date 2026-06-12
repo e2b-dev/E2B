@@ -46,6 +46,7 @@ from e2b.volume.types import (
     VolumeInfo,
     VolumeEntryStat,
 )
+from e2b.io_utils import aiter_io_chunks
 from e2b.volume.utils import DualMethod, convert_volume_entry_stat
 
 
@@ -525,7 +526,7 @@ class AsyncVolume:
     async def write_file(
         self,
         path: str,
-        data: Union[str, bytes, IO[bytes]],
+        data: Union[str, bytes, IO],
         uid: Optional[int] = None,
         gid: Optional[int] = None,
         mode: Optional[int] = None,
@@ -539,7 +540,7 @@ class AsyncVolume:
         Writing to a file that already exists overwrites the file.
 
         :param path: Path to the file
-        :param data: Data to write to the file. Data can be a string, bytes, or IO.
+        :param data: Data to write to the file. Data can be a string, bytes, or IO. File-like objects are streamed in chunks instead of being buffered in memory.
         :param uid: User ID of the created file
         :param gid: Group ID of the created file
         :param mode: Mode of the created file
@@ -556,22 +557,21 @@ class AsyncVolume:
         if upload_timeout is not None:
             api_client = api_client.with_timeout(httpx.Timeout(upload_timeout))
 
+        content: Union[bytes, AsyncIterator[bytes]]
         if isinstance(data, str):
-            data_bytes = data.encode("utf-8")
+            content = data.encode("utf-8")
         elif isinstance(data, bytes):
-            data_bytes = data
+            content = data
         elif hasattr(data, "read"):
-            content = data.read()
-            if isinstance(content, bytes):
-                data_bytes = content
-            else:
-                data_bytes = content.encode("utf-8")
+            # Stream file-like objects in chunks without buffering them in
+            # memory. Async httpx requires an async iterable request body.
+            content = aiter_io_chunks(data)
         else:
             raise ValueError(f"Unsupported data type: {type(data)}")
 
         res = await put_file.asyncio_detailed(
             self._volume_id,
-            body=FilePayload(payload=data_bytes),  # type: ignore[arg-type]  # Pass bytes directly for async httpx compatibility
+            body=FilePayload(payload=content),  # type: ignore[arg-type]  # httpx accepts bytes and streamable content directly
             path=path,
             uid=uid if uid is not None else UNSET,
             gid=gid if gid is not None else UNSET,

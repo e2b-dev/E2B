@@ -8,7 +8,7 @@ import {
 } from './client'
 import { ConnectionConfig, ConnectionOpts } from '../connectionConfig'
 import { NotFoundError, VolumeError } from '../errors'
-import { toBlob } from '../utils'
+import { runtime, toBlob } from '../utils'
 import { VolumeFileType } from './types'
 import type {
   VolumeAndToken,
@@ -587,7 +587,7 @@ export class Volume {
    * Writing to a file that already exists overwrites the file.
    *
    * @param path path to the file.
-   * @param data data to write to the file. Data can be a string, `ArrayBuffer`, `Blob`, or `ReadableStream`.
+   * @param data data to write to the file. Data can be a string, `ArrayBuffer`, `Blob`, or `ReadableStream`. Outside the browser, `ReadableStream` data is streamed to the API instead of being buffered in memory.
    * @param options file creation options.
    * @param opts connection options.
    *
@@ -604,7 +604,9 @@ export class Volume {
     })
     const client = new VolumeApiClient(config)
 
-    const blob = await toBlob(data)
+    // Browsers don't support streaming request bodies, so buffer there.
+    const isStream = data instanceof ReadableStream && runtime !== 'browser'
+    const body = isStream ? data : await toBlob(data)
 
     const res = await client.api.PUT('/volumecontent/{volumeID}/file', {
       params: {
@@ -619,12 +621,14 @@ export class Volume {
           force: opts?.force,
         },
       },
-      bodySerializer: () => blob,
+      bodySerializer: () => body,
       body: {} as any,
       headers: {
         'Content-Type': 'application/octet-stream',
       },
       signal: config.getSignal(),
+      // Streaming request bodies require half-duplex mode.
+      ...(isStream && { duplex: 'half' as const }),
     })
 
     if (res.response.status === 404) {

@@ -4,10 +4,11 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from io import IOBase, TextIOBase
-from typing import IO, Dict, Optional, Union, TypedDict
+from typing import IO, AsyncIterator, Dict, Iterator, Optional, Union, TypedDict
 
 from e2b.envd.filesystem import filesystem_pb2
 from e2b.exceptions import InvalidArgumentException
+from e2b.io_utils import agzip_iter, aiter_io_chunks, gzip_iter, iter_io_chunks
 
 
 class FileType(Enum):
@@ -149,20 +150,44 @@ def _to_httpx_file(file_path: str, file_data: Union[str, bytes, IO]):
 def to_upload_body(
     data: Union[str, bytes, IO],
     use_gzip: bool = False,
-) -> bytes:
-    """Prepare file data for upload, optionally gzip-compressed."""
-    if isinstance(data, str):
-        raw = data.encode("utf-8")
-    elif isinstance(data, bytes):
-        raw = data
-    elif isinstance(data, TextIOBase):
-        raw = data.read().encode("utf-8")
-    elif isinstance(data, IOBase):
-        raw = data.read()
+) -> Union[bytes, IO, Iterator[bytes]]:
+    """Prepare file data for upload, optionally gzip-compressed.
+
+    File-like objects are streamed in chunks instead of being buffered in
+    memory.
+    """
+    if isinstance(data, (str, bytes)):
+        raw = data.encode("utf-8") if isinstance(data, str) else data
+        return gzip.compress(raw) if use_gzip else raw
+    elif isinstance(data, (TextIOBase, IOBase)):
+        if use_gzip:
+            return gzip_iter(iter_io_chunks(data))
+        if isinstance(data, TextIOBase):
+            # Text-mode IO yields str chunks—encode them while streaming.
+            return iter_io_chunks(data)
+        # httpx streams binary file-like objects in chunks without buffering.
+        return data
     else:
         raise InvalidArgumentException(f"Unsupported data type: {type(data)}")
 
-    return gzip.compress(raw) if use_gzip else raw
+
+def to_upload_body_async(
+    data: Union[str, bytes, IO],
+    use_gzip: bool = False,
+) -> Union[bytes, AsyncIterator[bytes]]:
+    """Prepare file data for upload with async httpx, optionally gzip-compressed.
+
+    File-like objects are streamed in chunks instead of being buffered in
+    memory. Async httpx requires an async iterable for streamed request bodies.
+    """
+    if isinstance(data, (str, bytes)):
+        raw = data.encode("utf-8") if isinstance(data, str) else data
+        return gzip.compress(raw) if use_gzip else raw
+    elif isinstance(data, (TextIOBase, IOBase)):
+        chunks = aiter_io_chunks(data)
+        return agzip_iter(chunks) if use_gzip else chunks
+    else:
+        raise InvalidArgumentException(f"Unsupported data type: {type(data)}")
 
 
 METADATA_HEADER_PREFIX = "X-Metadata-"

@@ -58,6 +58,20 @@ describe('Volume File Operations', () => {
       }
     )
 
+    volumeTest(
+      'should write and read a file from a ReadableStream',
+      async ({ volume }) => {
+        const path = '/test-stream.txt'
+        const content = 'Test stream content'
+        const stream = new Blob([content]).stream()
+
+        await volume.writeFile(path, stream)
+        const readContent = await volume.readFile(path, { format: 'text' })
+
+        expect(readContent).toBe(content)
+      }
+    )
+
     volumeTest('should write and read an empty file', async ({ volume }) => {
       const path = '/empty.txt'
       const content = ''

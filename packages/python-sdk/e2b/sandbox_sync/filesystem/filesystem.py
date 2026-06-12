@@ -199,11 +199,37 @@ class Filesystem:
         if gzip:
             headers["Accept-Encoding"] = "gzip"
 
+        timeout = self._connection_config.get_request_timeout(request_timeout)
+
+        if format == "stream":
+            # Stream the response body instead of buffering it in memory.
+            request = self._envd_api.build_request(
+                "GET",
+                ENVD_API_FILES_ROUTE,
+                params=params,
+                headers=headers,
+                timeout=timeout,
+            )
+            r = self._envd_api.send(request, stream=True)
+
+            err = _handle_filesystem_envd_api_exception(r)
+            if err:
+                r.close()
+                raise err
+
+            def stream_file() -> Iterator[bytes]:
+                try:
+                    yield from r.iter_bytes()
+                finally:
+                    r.close()
+
+            return stream_file()
+
         r = self._envd_api.get(
             ENVD_API_FILES_ROUTE,
             params=params,
             headers=headers,
-            timeout=self._connection_config.get_request_timeout(request_timeout),
+            timeout=timeout,
         )
 
         err = _handle_filesystem_envd_api_exception(r)
@@ -214,8 +240,6 @@ class Filesystem:
             return r.text
         elif format == "bytes":
             return bytearray(r.content)
-        elif format == "stream":
-            return r.iter_bytes()
 
     def write(
         self,
@@ -234,7 +258,7 @@ class Filesystem:
         Writing to a file at path that doesn't exist creates the necessary directories.
 
         :param path: Path to the file
-        :param data: Data to write to the file, can be a `str`, `bytes`, or `IO`.
+        :param data: Data to write to the file, can be a `str`, `bytes`, or `IO`. File-like objects are streamed in chunks instead of being buffered in memory.
         :param user: Run the operation as this user
         :param request_timeout: Timeout for the request in **seconds**
         :param gzip: Use gzip compression for the request

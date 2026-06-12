@@ -38,7 +38,7 @@ from e2b.sandbox.filesystem.filesystem import (
     map_entry_info,
     map_file_type,
     metadata_to_headers,
-    to_upload_body,
+    to_upload_body_async,
     validate_metadata,
 )
 from e2b.sandbox.filesystem.watch_handle import FilesystemEvent
@@ -177,11 +177,38 @@ class Filesystem:
         if gzip:
             headers["Accept-Encoding"] = "gzip"
 
+        timeout = self._connection_config.get_request_timeout(request_timeout)
+
+        if format == "stream":
+            # Stream the response body instead of buffering it in memory.
+            request = self._envd_api.build_request(
+                "GET",
+                ENVD_API_FILES_ROUTE,
+                params=params,
+                headers=headers,
+                timeout=timeout,
+            )
+            r = await self._envd_api.send(request, stream=True)
+
+            err = await _ahandle_filesystem_envd_api_exception(r)
+            if err:
+                await r.aclose()
+                raise err
+
+            async def stream_file() -> AsyncIterator[bytes]:
+                try:
+                    async for chunk in r.aiter_bytes():
+                        yield chunk
+                finally:
+                    await r.aclose()
+
+            return stream_file()
+
         r = await self._envd_api.get(
             ENVD_API_FILES_ROUTE,
             params=params,
             headers=headers,
-            timeout=self._connection_config.get_request_timeout(request_timeout),
+            timeout=timeout,
         )
 
         err = await _ahandle_filesystem_envd_api_exception(r)
@@ -192,8 +219,6 @@ class Filesystem:
             return r.text
         elif format == "bytes":
             return bytearray(r.content)
-        elif format == "stream":
-            return r.aiter_bytes()
 
     async def write(
         self,
@@ -212,7 +237,7 @@ class Filesystem:
         Writing to a file at path that doesn't exist creates the necessary directories.
 
         :param path: Path to the file
-        :param data: Data to write to the file, can be a `str`, `bytes`, or `IO`.
+        :param data: Data to write to the file, can be a `str`, `bytes`, or `IO`. File-like objects are streamed in chunks instead of being buffered in memory.
         :param user: Run the operation as this user
         :param request_timeout: Timeout for the request in **seconds**
         :param gzip: Use gzip compression for the request
@@ -296,7 +321,7 @@ class Filesystem:
 
                 r = await self._envd_api.post(
                     ENVD_API_FILES_ROUTE,
-                    content=to_upload_body(file_data, gzip),
+                    content=to_upload_body_async(file_data, gzip),
                     headers=headers,
                     params=params,
                     timeout=self._connection_config.get_request_timeout(
