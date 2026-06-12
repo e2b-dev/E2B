@@ -473,38 +473,28 @@ class AsyncVolume:
         )
 
         if format == "stream":
-            httpx_client = api_client.get_async_httpx_client()
-            request = httpx_client.build_request(
-                method="GET",
-                url=f"/volumecontent/{self._volume_id}/file",
-                params=params,
-                timeout=timeout,
-            )
-            # Send the request eagerly so errors are raised here, not on first iteration
-            response = await httpx_client.send(request, stream=True)
-
-            try:
-                if response.status_code == 404:
-                    raise NotFoundException(f"Path {path} not found")
-
-                if response.status_code >= 300:
-                    api_response = Response(
-                        status_code=HTTPStatus(response.status_code),
-                        content=await response.aread(),
-                        headers=response.headers,
-                        parsed=None,
-                    )
-                    raise handle_api_exception(api_response, VolumeException)
-            except BaseException:
-                await response.aclose()
-                raise
 
             async def stream_file() -> AsyncIterator[bytes]:
-                try:
+                async with api_client.get_async_httpx_client().stream(
+                    method="GET",
+                    url=f"/volumecontent/{self._volume_id}/file",
+                    params=params,
+                    timeout=timeout,
+                ) as response:
+                    if response.status_code == 404:
+                        raise NotFoundException(f"Path {path} not found")
+
+                    if response.status_code >= 300:
+                        api_response = Response(
+                            status_code=HTTPStatus(response.status_code),
+                            content=await response.aread(),
+                            headers=response.headers,
+                            parsed=None,
+                        )
+                        raise handle_api_exception(api_response, VolumeException)
+
                     async for chunk in response.aiter_bytes():
                         yield chunk
-                finally:
-                    await response.aclose()
 
             return stream_file()
 

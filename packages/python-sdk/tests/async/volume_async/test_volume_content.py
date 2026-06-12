@@ -43,12 +43,10 @@ async def test_read_file_stream_yields_content(volume: AsyncVolume):
     assert b"".join(chunks) == b"hello world"
 
 
-async def test_read_file_stream_raises_at_call_time_for_missing_path(
-    volume: AsyncVolume,
-):
-    # The request is sent eagerly, so the error surfaces without iterating
+async def test_read_file_stream_raises_for_missing_path(volume: AsyncVolume):
     with pytest.raises(NotFoundException):
-        await volume.read_file("missing.txt", format="stream")
+        async for _ in await volume.read_file("missing.txt", format="stream"):
+            pass
 
 
 async def test_read_file_stream_of_empty_file(volume: AsyncVolume):

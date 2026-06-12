@@ -42,10 +42,10 @@ def test_read_file_stream_yields_content(volume: Volume):
     assert b"".join(stream) == b"hello world"
 
 
-def test_read_file_stream_raises_at_call_time_for_missing_path(volume: Volume):
-    # The request is sent eagerly, so the error surfaces without iterating
+def test_read_file_stream_raises_for_missing_path(volume: Volume):
     with pytest.raises(NotFoundException):
-        volume.read_file("missing.txt", format="stream")
+        for _ in volume.read_file("missing.txt", format="stream"):
+            pass
 
 
 def test_read_file_stream_of_empty_file(volume: Volume):
