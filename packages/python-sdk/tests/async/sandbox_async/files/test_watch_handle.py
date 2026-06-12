@@ -1,5 +1,7 @@
 import asyncio
 
+import pytest
+
 from e2b.envd.filesystem.filesystem_pb2 import (
     EventType,
     FilesystemEvent,
@@ -106,3 +108,18 @@ async def test_on_exit_called_without_error_on_stop():
     await asyncio.sleep(0.1)
     await handle.stop()
     assert exit_errors == [None]
+
+
+async def test_stop_raises_on_exit_errors():
+    async def events():
+        await asyncio.Event().wait()
+        yield
+
+    def on_exit(error):
+        raise RuntimeError("on_exit failed")
+
+    handle = AsyncWatchHandle(events(), on_event=lambda e: None, on_exit=on_exit)
+
+    await asyncio.sleep(0.1)
+    with pytest.raises(RuntimeError, match="on_exit failed"):
+        await handle.stop()

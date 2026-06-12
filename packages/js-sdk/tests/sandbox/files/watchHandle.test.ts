@@ -125,6 +125,34 @@ describe('WatchHandle', () => {
     expect(exitError?.message).toBe('stream failed')
   })
 
+  test('still reports onEvent errors when stop is requested concurrently', async () => {
+    const exited = deferred()
+    const eventStarted = deferred()
+    const release = deferred()
+    let exitError: Error | undefined
+
+    const handle = new WatchHandle(
+      () => {},
+      stream(filesystemEvent('a')),
+      async () => {
+        eventStarted.resolve()
+        await release.promise
+        throw new Error('callback failed')
+      },
+      (err?: Error) => {
+        exitError = err
+        exited.resolve()
+      }
+    )
+
+    await eventStarted.promise
+    await handle.stop()
+    release.resolve()
+
+    await exited.promise
+    expect(exitError?.message).toBe('callback failed')
+  })
+
   test('routes async onEvent rejections to onExit', async () => {
     const exited = deferred()
     let exitError: Error | undefined

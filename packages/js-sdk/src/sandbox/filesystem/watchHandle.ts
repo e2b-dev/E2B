@@ -108,6 +108,8 @@ export class WatchHandle {
   }
 
   private async handleEvents() {
+    let error: Error | undefined
+
     try {
       for await (const event of this.iterateEvents()) {
         const eventType = mapEventType(event.value.type)
@@ -115,19 +117,31 @@ export class WatchHandle {
           continue
         }
 
-        await this.onEvent?.({
-          name: event.value.name,
-          type: eventType,
-          entry: event.value.entry
-            ? mapEntryInfo(event.value.entry)
-            : undefined,
-        })
+        try {
+          await this.onEvent?.({
+            name: event.value.name,
+            type: eventType,
+            entry: event.value.entry
+              ? mapEntryInfo(event.value.entry)
+              : undefined,
+          })
+        } catch (err) {
+          // Errors thrown by the onEvent callback are always reported, even
+          // when a stop was requested while the callback was in flight.
+          error = err as Error
+          break
+        }
       }
-      await this.onExit?.()
     } catch (err) {
       // Stopping the watch aborts the event stream, which surfaces here as a
       // cancellation error — report a user-initiated stop as a clean exit.
-      await this.onExit?.(this.stopped ? undefined : (err as Error))
+      if (!this.stopped) {
+        error = err as Error
+      }
+    }
+
+    try {
+      await this.onExit?.(error)
     } finally {
       this.handleStop()
     }

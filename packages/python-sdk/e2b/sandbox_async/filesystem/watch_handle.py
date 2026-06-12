@@ -32,13 +32,19 @@ class AsyncWatchHandle:
     async def stop(self):
         """
         Stop watching the directory.
+
+        Re-raises exceptions raised by the `on_exit` callback, if any.
         """
         self._wait.cancel()
-        await asyncio.wait([self._wait])
         try:
-            await self._events.aclose()
-        except Exception:
+            await self._wait
+        except asyncio.CancelledError:
             pass
+        finally:
+            try:
+                await self._events.aclose()
+            except Exception:
+                pass
 
     async def _iterate_events(self):
         try:
