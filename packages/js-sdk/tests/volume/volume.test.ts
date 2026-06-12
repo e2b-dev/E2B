@@ -3,7 +3,7 @@ import { http, HttpResponse } from 'msw'
 import { setupServer } from 'msw/node'
 import { randomUUID } from 'node:crypto'
 
-import { Volume, NotFoundError } from '../../src'
+import { Volume, NotFoundError, VolumeError } from '../../src'
 import { VolumeConnectionConfig } from '../../src/volume/client'
 import { apiUrl } from '../setup'
 
@@ -123,6 +123,21 @@ describe('Volume CRUD', () => {
     await expect(Volume.getInfo('non-existent-id')).rejects.toThrow(
       NotFoundError
     )
+  })
+
+  it('should throw VolumeError for a non-2xx response without content', async () => {
+    server.use(
+      http.post(
+        apiUrl('/volumes'),
+        () =>
+          new HttpResponse(null, {
+            status: 500,
+            headers: { 'Content-Length': '0' },
+          })
+      )
+    )
+
+    await expect(Volume.create('error-volume')).rejects.toThrow(VolumeError)
   })
 
   it('should keep the proxy on the instance so content calls reuse it', async () => {
