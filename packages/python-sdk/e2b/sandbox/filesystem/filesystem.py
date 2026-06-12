@@ -1,7 +1,7 @@
 import gzip
 import re
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from io import IOBase, TextIOBase
 from typing import IO, Dict, Optional, Union, TypedDict
@@ -30,6 +30,15 @@ def map_file_type(ft: filesystem_pb2.FileType):
         return FileType.FILE
     elif ft == filesystem_pb2.FileType.FILE_TYPE_DIRECTORY:
         return FileType.DIR
+
+
+def map_file_type_str(value: Optional[str]) -> Optional[FileType]:
+    """Map a `/files` API type string to `FileType`, `None` when unknown."""
+    if value == FileType.FILE.value:
+        return FileType.FILE
+    elif value == FileType.DIR.value:
+        return FileType.DIR
+    return None
 
 
 @dataclass
@@ -63,7 +72,7 @@ class WriteInfo:
         """Build a `WriteInfo` from a `/files` upload response entry."""
         return cls(
             name=payload["name"],
-            type=payload.get("type"),
+            type=map_file_type_str(payload.get("type")),
             path=payload["path"],
             metadata=map_metadata(payload.get("metadata")),
         )
@@ -116,7 +125,7 @@ def map_entry_info(entry: filesystem_pb2.EntryInfo) -> EntryInfo:
         permissions=entry.permissions,
         owner=entry.owner,
         group=entry.group,
-        modified_time=entry.modified_time.ToDatetime(),
+        modified_time=entry.modified_time.ToDatetime(tzinfo=timezone.utc),
         # Optional, we can't directly access symlink_target otherwise it will be "" instead of None
         symlink_target=(
             entry.symlink_target if entry.HasField("symlink_target") else None

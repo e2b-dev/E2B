@@ -20,6 +20,7 @@ async def test_get_info_of_file(async_sandbox: AsyncSandbox):
     assert info.owner == "user"
     assert info.group == "user"
     assert info.modified_time is not None
+    assert info.modified_time.tzinfo is not None
 
 
 @pytest.mark.asyncio
@@ -47,6 +48,7 @@ async def test_get_info_of_directory(async_sandbox: AsyncSandbox):
     assert info.owner == "user"
     assert info.group == "user"
     assert info.modified_time is not None
+    assert info.modified_time.tzinfo is not None
 
 
 @pytest.mark.asyncio
