@@ -1,7 +1,6 @@
 import threading
 from typing import IO, Dict, Iterator, List, Literal, Optional, Union, overload
 
-import httpcore
 import httpx
 from packaging.version import Version
 
@@ -74,15 +73,11 @@ class Filesystem:
         envd_api_url: str,
         envd_version: Version,
         connection_config: ConnectionConfig,
-        pool: httpcore.ConnectionPool,
-        envd_api: httpx.Client,
     ) -> None:
         self._envd_api_url = envd_api_url
         self._envd_version = envd_version
         self._connection_config = connection_config
         self._thread_local = threading.local()
-        self._thread_local.envd_api = envd_api
-        self._thread_local.rpc = self._create_rpc(pool)
 
     def _create_envd_api(self) -> httpx.Client:
         transport = get_envd_transport(self._connection_config)
@@ -92,14 +87,13 @@ class Filesystem:
             headers=self._connection_config.sandbox_headers,
         )
 
-    def _create_rpc(
-        self, pool: httpcore.ConnectionPool
-    ) -> filesystem_connect.FilesystemClient:
+    def _create_rpc(self) -> filesystem_connect.FilesystemClient:
+        transport = get_envd_transport(self._connection_config)
         return filesystem_connect.FilesystemClient(
             self._envd_api_url,
             # TODO: Fix and enable compression again — the headers compression is not solved for streaming.
             # compressor=e2b_connect.GzipCompressor,
-            pool=pool,
+            pool=transport.pool,
             json=True,
             headers=self._connection_config.sandbox_headers,
         )
@@ -116,8 +110,7 @@ class Filesystem:
     def _rpc(self) -> filesystem_connect.FilesystemClient:
         rpc = getattr(self._thread_local, "rpc", None)
         if rpc is None:
-            transport = get_envd_transport(self._connection_config)
-            rpc = self._create_rpc(transport.pool)
+            rpc = self._create_rpc()
             self._thread_local.rpc = rpc
         return rpc
 
