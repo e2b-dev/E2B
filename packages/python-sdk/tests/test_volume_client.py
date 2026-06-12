@@ -1,4 +1,5 @@
 import asyncio
+import gc
 import threading
 
 import httpx
@@ -6,6 +7,7 @@ import pytest
 
 from e2b.exceptions import AuthenticationException
 from e2b.volume.client_async import (
+    AsyncTransportWithLogger as AsyncVolumeTransport,
     get_api_client as get_async_api_client,
     get_transport as get_async_transport,
 )
@@ -96,7 +98,6 @@ def test_async_transport_is_cached_per_event_loop():
     async def get_proxied_transport():
         return get_async_transport(proxied)
 
-    # Keep both loops alive at the same time so their ids cannot collide
     loop_a = asyncio.new_event_loop()
     loop_b = asyncio.new_event_loop()
     try:
@@ -113,3 +114,32 @@ def test_async_transport_is_cached_per_event_loop():
     finally:
         loop_a.close()
         loop_b.close()
+
+
+def test_async_transport_not_reused_across_sequential_loops():
+    AsyncVolumeTransport._instances.clear()
+    config = VolumeConnectionConfig(token="vol-token")
+
+    async def get_transport():
+        return get_async_transport(config)
+
+    loop_a = asyncio.new_event_loop()
+    try:
+        transport_a = loop_a.run_until_complete(get_transport())
+    finally:
+        loop_a.close()
+    del loop_a
+    gc.collect()
+
+    # The cache entry dies with the loop, so a later loop can never inherit
+    # a transport bound to a closed loop, even when CPython reuses the dead
+    # loop's object id.
+    assert len(AsyncVolumeTransport._instances) == 0
+
+    loop_b = asyncio.new_event_loop()
+    try:
+        transport_b = loop_b.run_until_complete(get_transport())
+    finally:
+        loop_b.close()
+
+    assert transport_b is not transport_a

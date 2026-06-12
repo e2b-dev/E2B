@@ -4,9 +4,10 @@ import logging
 import os
 import re
 import threading
+import weakref
 from dataclasses import dataclass
 from types import TracebackType
-from typing import Callable, Dict, Optional, Protocol, Union
+from typing import Callable, Optional, Protocol, Union
 
 import httpx
 from httpx import AsyncBaseTransport, BaseTransport, Limits, Timeout
@@ -120,7 +121,12 @@ class ApiClient(AuthenticatedClient):
         self._transport_factory = transport_factory
         self._async_transport_factory = async_transport_factory
         self._thread_local = threading.local()
-        self._async_clients: Dict[int, httpx.AsyncClient] = {}
+        # Keyed weakly by the event loop object itself, not id(loop) —
+        # CPython reuses object ids, so a new loop could otherwise inherit
+        # a client bound to a previous, closed loop.
+        self._async_clients: weakref.WeakKeyDictionary[
+            asyncio.AbstractEventLoop, httpx.AsyncClient
+        ] = weakref.WeakKeyDictionary()
         self._proxy = config.proxy
 
         if require_api_key and require_access_token:
@@ -231,8 +237,8 @@ class ApiClient(AuthenticatedClient):
         if self._async_client is not None or self._async_transport_factory is None:
             return super().get_async_httpx_client()
 
-        loop_id = id(asyncio.get_running_loop())
-        client = self._async_clients.get(loop_id)
+        loop = asyncio.get_running_loop()
+        client = self._async_clients.get(loop)
         if client is None:
             client = httpx.AsyncClient(
                 base_url=self._base_url,
@@ -244,7 +250,7 @@ class ApiClient(AuthenticatedClient):
                 event_hooks=self._httpx_args.get("event_hooks"),
                 transport=self._async_transport_factory(),
             )
-            self._async_clients[loop_id] = client
+            self._async_clients[loop] = client
         return client
 
     def _log_request(self, request):
