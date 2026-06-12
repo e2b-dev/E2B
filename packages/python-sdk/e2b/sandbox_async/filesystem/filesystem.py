@@ -147,6 +147,9 @@ class Filesystem:
         """
         Read file content as a `AsyncIterator[bytes]`.
 
+        The request timeout bounds only the initial handshake—the returned
+        iterator is not killed by it while being consumed.
+
         :param path: Path to the file
         :param user: Run the operation as this user
         :param format: Format of the file content—`stream`
@@ -194,6 +197,12 @@ class Filesystem:
             if err:
                 await r.aclose()
                 raise err
+
+            # The request timeout bounds only the initial handshake. Disable
+            # the read timeout for body reads so consuming the stream isn't
+            # killed by it. The timeout dict is shared by reference with the
+            # transport and read again when body iteration starts.
+            request.extensions.get("timeout", {})["read"] = None
 
             async def stream_file() -> AsyncIterator[bytes]:
                 try:

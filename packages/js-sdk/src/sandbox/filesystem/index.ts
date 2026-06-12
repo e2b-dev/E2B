@@ -502,14 +502,17 @@ export class Filesystem {
       throw err
     }
 
-    if (format === 'bytes') {
-      return new Uint8Array(res.data as ArrayBuffer)
-    }
-
     // When the file is empty, the response body is skipped and `res.data` is
     // `undefined`. Return the proper empty value for the requested format.
     if (res.response.headers.get('content-length') === '0') {
+      if (format === 'bytes') {
+        return new Uint8Array(0)
+      }
       return format === 'blob' ? new Blob([]) : ''
+    }
+
+    if (format === 'bytes') {
+      return new Uint8Array(res.data as ArrayBuffer)
     }
 
     return res.data
