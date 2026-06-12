@@ -561,19 +561,22 @@ export class Volume {
       throw err
     }
 
+    // When the file is empty, `res.data` is `undefined`, so empty values are synthesized below.
     if (format === 'bytes') {
-      return new Uint8Array(res.data as ArrayBuffer)
+      return res.data instanceof ArrayBuffer
+        ? new Uint8Array(res.data)
+        : new Uint8Array()
     }
 
     if (format === 'text') {
-      // When the file is empty, res.data is parsed as `{}`. This is a workaround to return an empty string.
-      if (res.response.headers.get('content-length') === '0') {
-        return ''
-      }
       return typeof res.data === 'string' ? res.data : ''
     }
 
-    return res.data
+    if (format === 'blob') {
+      return res.data instanceof Blob ? res.data : new Blob([])
+    }
+
+    return res.data instanceof ReadableStream ? res.data : new Blob([]).stream()
   }
 
   /**

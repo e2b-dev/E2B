@@ -471,27 +471,37 @@ class Volume:
         )
 
         if format == "stream":
+            httpx_client = api_client.get_httpx_client()
+            request = httpx_client.build_request(
+                method="GET",
+                url=f"/volumecontent/{self._volume_id}/file",
+                params=params,
+                timeout=timeout,
+            )
+            # Send the request eagerly so errors are raised here, not on first iteration
+            response = httpx_client.send(request, stream=True)
+
+            try:
+                if response.status_code == 404:
+                    raise NotFoundException(f"Path {path} not found")
+
+                if response.status_code >= 300:
+                    api_response = Response(
+                        status_code=HTTPStatus(response.status_code),
+                        content=response.read(),
+                        headers=response.headers,
+                        parsed=None,
+                    )
+                    raise handle_api_exception(api_response, VolumeException)
+            except BaseException:
+                response.close()
+                raise
 
             def stream_file() -> Iterator[bytes]:
-                with api_client.get_httpx_client().stream(
-                    method="GET",
-                    url=f"/volumecontent/{self._volume_id}/file",
-                    params=params,
-                    timeout=timeout,
-                ) as response:
-                    if response.status_code == 404:
-                        raise NotFoundException(f"Path {path} not found")
-
-                    if response.status_code >= 300:
-                        api_response = Response(
-                            status_code=HTTPStatus(response.status_code),
-                            content=response.read(),
-                            headers=response.headers,
-                            parsed=None,
-                        )
-                        raise handle_api_exception(api_response, VolumeException)
-
+                try:
                     yield from response.iter_bytes()
+                finally:
+                    response.close()
 
             return stream_file()
 
