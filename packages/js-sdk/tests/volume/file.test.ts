@@ -83,6 +83,30 @@ describe('Volume File Operations', () => {
     })
 
     volumeTest(
+      'should read an empty file in all formats',
+      async ({ volume }) => {
+        const path = '/empty-formats.txt'
+        await volume.writeFile(path, '')
+
+        const bytes = await volume.readFile(path, { format: 'bytes' })
+        expect(bytes).toBeInstanceOf(Uint8Array)
+        expect(bytes.length).toBe(0)
+
+        const blob = await volume.readFile(path, { format: 'blob' })
+        expect(blob).toBeInstanceOf(Blob)
+        expect(blob.size).toBe(0)
+
+        const stream = await volume.readFile(path, { format: 'stream' })
+        expect(stream).toBeInstanceOf(ReadableStream)
+        const chunks: Uint8Array[] = []
+        for await (const chunk of stream as unknown as AsyncIterable<Uint8Array>) {
+          chunks.push(chunk)
+        }
+        expect(chunks.reduce((n, c) => n + c.length, 0)).toBe(0)
+      }
+    )
+
+    volumeTest(
       'should overwrite an existing file with force option',
       async ({ volume }) => {
         const path = '/overwrite.txt'

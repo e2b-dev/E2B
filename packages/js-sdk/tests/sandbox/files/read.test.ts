@@ -61,3 +61,27 @@ sandboxTest('read non-existing file as stream', async ({ sandbox }) => {
     sandbox.files.read(filename, { format: 'stream' })
   ).rejects.toThrowError(FileNotFoundError)
 })
+
+sandboxTest('read empty file in all formats', async ({ sandbox }) => {
+  const filename = 'empty-file-formats.txt'
+  await sandbox.commands.run(`touch ${filename}`)
+
+  const text = await sandbox.files.read(filename, { format: 'text' })
+  expect(text).toBe('')
+
+  const bytes = await sandbox.files.read(filename, { format: 'bytes' })
+  expect(bytes).toBeInstanceOf(Uint8Array)
+  expect(bytes.length).toBe(0)
+
+  const blob = await sandbox.files.read(filename, { format: 'blob' })
+  expect(blob).toBeInstanceOf(Blob)
+  expect(blob.size).toBe(0)
+
+  const stream = await sandbox.files.read(filename, { format: 'stream' })
+  expect(stream).toBeInstanceOf(ReadableStream)
+  const chunks: Uint8Array[] = []
+  for await (const chunk of stream as unknown as AsyncIterable<Uint8Array>) {
+    chunks.push(chunk)
+  }
+  expect(Buffer.concat(chunks).length).toBe(0)
+})
