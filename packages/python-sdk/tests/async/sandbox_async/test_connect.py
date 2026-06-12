@@ -99,6 +99,17 @@ async def test_connect_in_debug_mode_does_not_call_api(monkeypatch, test_api_key
     assert sbx.traffic_access_token is None
 
 
+async def test_connect_in_env_debug_mode_does_not_call_api(monkeypatch, test_api_key):
+    monkeypatch.setenv("E2B_DEBUG", "true")
+    mock_connect = AsyncMock()
+    monkeypatch.setattr(sandbox_async_main.SandboxApi, "_cls_connect", mock_connect)
+
+    sbx = await AsyncSandbox.connect("sbx-debug", api_key=test_api_key)
+
+    mock_connect.assert_not_called()
+    assert sbx.sandbox_id == "sbx-debug"
+
+
 async def test_instance_connect_in_debug_mode_does_not_call_api(
     monkeypatch, test_api_key
 ):

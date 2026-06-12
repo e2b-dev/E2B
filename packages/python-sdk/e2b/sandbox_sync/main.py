@@ -843,7 +843,7 @@ class Sandbox(SandboxApi):
         timeout: Optional[int] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
-        debug = opts.get("debug")
+        debug = ConnectionConfig(**opts).debug
         if debug:
             sandbox_domain = None
             envd_version = ENVD_DEBUG_FALLBACK
@@ -900,7 +900,7 @@ class Sandbox(SandboxApi):
     ) -> Self:
         extra_sandbox_headers = {}
 
-        debug = opts.get("debug")
+        debug = ConnectionConfig(**opts).debug
         if debug:
             sandbox_id = "debug_sandbox_id"
             sandbox_domain = None
