@@ -28,7 +28,7 @@ import {
 } from './sandboxApi'
 import { getSignature } from './signature'
 import { compareVersions } from 'compare-versions'
-import { TemplateError } from '../errors'
+import { InvalidArgumentError, TemplateError } from '../errors'
 import { ENVD_DEBUG_FALLBACK, ENVD_DEFAULT_USER } from '../envd/versions'
 import { shellQuote } from '../utils'
 
@@ -633,7 +633,7 @@ export class Sandbox extends SandboxApi {
     const useSignature = !!this.envdAccessToken
 
     if (!useSignature && opts.useSignatureExpiration != undefined) {
-      throw new Error(
+      throw new InvalidArgumentError(
         'Signature expiration can be used only when sandbox is created as secured.'
       )
     }
@@ -685,7 +685,7 @@ export class Sandbox extends SandboxApi {
     const useSignature = !!this.envdAccessToken
 
     if (!useSignature && opts.useSignatureExpiration != undefined) {
-      throw new Error(
+      throw new InvalidArgumentError(
         'Signature expiration can be used only when sandbox is created as secured.'
       )
     }

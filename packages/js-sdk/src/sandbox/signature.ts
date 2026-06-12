@@ -34,9 +34,10 @@ export async function getSignature({
   }
 
   // expiration is unix timestamp
-  const signatureExpiration = expirationInSeconds
-    ? Math.floor(Date.now() / 1000) + expirationInSeconds
-    : null
+  const signatureExpiration =
+    expirationInSeconds != null
+      ? Math.floor(Date.now() / 1000) + expirationInSeconds
+      : null
   let signatureRaw: string
 
   // if user is undefined, set it to empty string to handle default user
