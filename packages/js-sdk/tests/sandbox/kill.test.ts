@@ -4,7 +4,8 @@ import { Sandbox } from '../../src'
 import { sandboxTest, isDebug } from '../setup.js'
 
 sandboxTest.skipIf(isDebug)('kill', async ({ sandbox, sandboxTestId }) => {
-  await sandbox.kill()
+  const killed = await sandbox.kill()
+  expect(killed).toBe(true)
 
   const paginator = Sandbox.list({
     query: { state: ['running'], metadata: { sandboxTestId } },
