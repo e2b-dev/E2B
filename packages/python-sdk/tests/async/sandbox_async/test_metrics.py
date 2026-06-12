@@ -7,13 +7,15 @@ import pytest
 @pytest.mark.skip_debug()
 @pytest.mark.timeout(60)
 async def test_sbx_metrics(async_sandbox_factory):
-    start_time = datetime.datetime.now()
+    start_time = datetime.datetime.now(datetime.timezone.utc)
     sbx = await async_sandbox_factory(timeout=60)
 
-    # Wait for the sandbox to have some metrics
+    # Wait for the sandbox to have some metrics within the test's time window
     metrics = []
+    end_time = start_time
     for _ in range(60):
-        metrics = await sbx.get_metrics()
+        end_time = datetime.datetime.now(datetime.timezone.utc)
+        metrics = await sbx.get_metrics(start=start_time, end=end_time)
         if len(metrics) > 0:
             break
         await asyncio.sleep(0.5)
@@ -28,5 +30,17 @@ async def test_sbx_metrics(async_sandbox_factory):
     assert metric.disk_used is not None
     assert metric.disk_total is not None
 
-    metrics = await sbx.get_metrics(start=start_time, end=datetime.datetime.now())
-    assert len(metrics) > 0
+    # All returned metrics must fall within the requested time range
+    # (10s slack - metric timestamps are aligned to collection buckets,
+    # currently 5s, and the query params are second-precision)
+    slack = 10
+    for metric in metrics:
+        assert metric.timestamp.timestamp() >= start_time.timestamp() - slack
+        assert metric.timestamp.timestamp() <= end_time.timestamp() + slack
+
+    # A time range from before the sandbox existed must return no metrics
+    metrics = await sbx.get_metrics(
+        start=start_time - datetime.timedelta(hours=1),
+        end=start_time - datetime.timedelta(minutes=30),
+    )
+    assert len(metrics) == 0
