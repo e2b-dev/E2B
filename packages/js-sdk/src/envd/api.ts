@@ -103,14 +103,27 @@ export async function handleEnvdApiError(
   },
   errorMap?: Record<number, (message: string) => Error>
 ) {
-  if (!res.error) {
+  // openapi-fetch leaves `error` empty for non-2xx responses without content
+  // (undefined for Content-Length: 0, '' for an empty body without the
+  // header), so check the status instead
+  if (res.response.ok) {
     return
   }
 
-  const message: string =
-    typeof res.error == 'string'
-      ? res.error
-      : res.error?.message || (await res.response.text())
+  let message =
+    (typeof res.error === 'string' ? res.error : res.error?.message) ?? ''
+
+  // openapi-fetch consumes the body when parsing the error, except for
+  // responses without content
+  if (!message && !res.response.bodyUsed) {
+    try {
+      message = await res.response.text()
+    } catch {
+      // ignore unreadable bodies
+    }
+  }
+
+  message = message || res.response.statusText
 
   // Check if a custom error mapping is provided for this error code
   if (errorMap && res.response.status in errorMap) {

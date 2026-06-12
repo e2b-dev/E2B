@@ -23,6 +23,31 @@ function createMockResponse(
 }
 
 describe('handleApiError', () => {
+  describe('without content', () => {
+    // openapi-fetch leaves `error` undefined for non-2xx responses with
+    // Content-Length: 0
+    test('catches 404 with undefined error', () => {
+      const res = createMockResponse(404, undefined)
+      const err = handleApiError(res as any)
+      assert.instanceOf(err, SandboxError)
+      assert.include(err?.message, '404')
+    })
+
+    test('catches 500 with undefined error', () => {
+      const res = createMockResponse(500, undefined)
+      const err = handleApiError(res as any)
+      assert.instanceOf(err, SandboxError)
+      assert.include(err?.message, '500')
+    })
+
+    test('returns AuthenticationError for 401 with undefined error', () => {
+      const res = createMockResponse(401, undefined)
+      const err = handleApiError(res as any)
+      assert.instanceOf(err, AuthenticationError)
+      assert.include(err?.message, 'Unauthorized')
+    })
+  })
+
   describe('with empty error body', () => {
     test('catches 404 with empty string error', () => {
       const res = createMockResponse(404, '')
