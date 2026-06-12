@@ -31,9 +31,9 @@ export function handleApiError(
   ) => Error = SandboxError,
   stackTrace?: string
 ): Error | undefined {
-  // openapi-fetch returns empty string for error when response body is empty,
-  // so we check !== undefined instead of truthiness
-  if (response.error === undefined) {
+  // openapi-fetch leaves `error` undefined for non-2xx responses with
+  // Content-Length: 0, so check the status instead
+  if (response.response.ok) {
     return
   }
 
@@ -57,7 +57,8 @@ export function handleApiError(
     return new RateLimitError(message)
   }
 
-  const message = response.error?.message ?? response.error
+  const message =
+    response.error?.message || response.error || response.response.statusText
   return new errorClass(`${response.response.status}: ${message}`, stackTrace)
 }
 
