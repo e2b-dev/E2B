@@ -10,7 +10,6 @@ from packaging.version import Version
 from typing_extensions import Self, Unpack
 
 from e2b.api.client.types import Unset
-from e2b.api.client_sync import get_envd_transport as get_transport
 from e2b.connection_config import ApiParams, ConnectionConfig
 from e2b.envd.api import ENVD_API_HEALTH_ROUTE, handle_envd_api_exception
 from e2b.envd.versions import ENVD_DEBUG_FALLBACK
@@ -101,35 +100,26 @@ class Sandbox(SandboxApi):
         """
         super().__init__(**opts)
 
-        self._transport = get_transport(self.connection_config)
-
-        self._envd_api = httpx.Client(
-            base_url=self.envd_api_url,
-            transport=self._transport,
-            headers=self.connection_config.sandbox_headers,
-        )
         self._filesystem = Filesystem(
             self.envd_api_url,
             self._envd_version,
             self.connection_config,
-            self._transport.pool,
-            self._envd_api,
         )
         self._commands = Commands(
             self.envd_api_url,
             self.connection_config,
-            self._transport.pool,
             self._envd_version,
-            self._envd_api,
         )
         self._pty = Pty(
             self.envd_api_url,
             self.connection_config,
-            self._transport.pool,
             self._envd_version,
-            self._envd_api,
         )
         self._git = Git(self._commands)
+
+    @property
+    def _envd_api(self) -> httpx.Client:
+        return self._filesystem._envd_api
 
     def is_running(self, request_timeout: Optional[float] = None) -> bool:
         """

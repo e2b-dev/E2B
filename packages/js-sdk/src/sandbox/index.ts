@@ -507,14 +507,18 @@ export class Sandbox extends SandboxApi {
    * Kill the sandbox.
    *
    * @param opts connection options.
+   *
+   * @returns `true` if the sandbox was killed, `false` if the sandbox was not found.
    */
-  async kill(opts?: Pick<SandboxOpts, 'requestTimeoutMs' | 'signal'>) {
+  async kill(
+    opts?: Pick<SandboxOpts, 'requestTimeoutMs' | 'signal'>
+  ): Promise<boolean> {
     if (this.connectionConfig.debug) {
       // Skip killing the sandbox in debug mode
-      return
+      return true
     }
 
-    await SandboxApi.kill(this.sandboxId, this.resolveApiOpts(opts))
+    return await SandboxApi.kill(this.sandboxId, this.resolveApiOpts(opts))
   }
 
   /**

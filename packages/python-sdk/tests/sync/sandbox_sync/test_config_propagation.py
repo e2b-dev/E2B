@@ -16,14 +16,6 @@ BASE_HEADERS = {"X-Test": "base"}
 
 
 def create_sandbox(monkeypatch, api_key: str) -> Sandbox:
-    dummy_transport = SimpleNamespace(pool=object())
-
-    monkeypatch.setattr(
-        sandbox_sync_main, "get_transport", lambda *_args, **_kwargs: dummy_transport
-    )
-    monkeypatch.setattr(
-        sandbox_sync_main.httpx, "Client", lambda *args, **kwargs: object()
-    )
     monkeypatch.setattr(
         sandbox_sync_main, "Filesystem", lambda *args, **kwargs: object()
     )

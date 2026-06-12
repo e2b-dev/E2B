@@ -1,10 +1,11 @@
 import e2b_connect
-import httpcore
 import httpx
+import threading
 
 from typing import Dict, Optional
 
 from packaging.version import Version
+from e2b.api.client_sync import get_envd_transport
 from e2b.envd.process import process_connect, process_pb2
 from e2b.connection_config import (
     Username,
@@ -28,21 +29,50 @@ class Pty:
         self,
         envd_api_url: str,
         connection_config: ConnectionConfig,
-        pool: httpcore.ConnectionPool,
         envd_version: Version,
-        envd_api: httpx.Client,
     ) -> None:
+        self._envd_api_url = envd_api_url
         self._connection_config = connection_config
         self._envd_version = envd_version
-        self._check_health = lambda: check_sandbox_health(envd_api)
-        self._rpc = process_connect.ProcessClient(
-            envd_api_url,
+        self._thread_local = threading.local()
+
+    def _create_envd_api(self) -> httpx.Client:
+        transport = get_envd_transport(self._connection_config)
+        return httpx.Client(
+            base_url=self._envd_api_url,
+            transport=transport,
+            headers=self._connection_config.sandbox_headers,
+        )
+
+    def _create_rpc(self) -> process_connect.ProcessClient:
+        transport = get_envd_transport(self._connection_config)
+        return process_connect.ProcessClient(
+            self._envd_api_url,
             # TODO: Fix and enable compression again — the headers compression is not solved for streaming.
             # compressor=e2b_connect.GzipCompressor,
-            pool=pool,
+            pool=transport.pool,
             json=True,
-            headers=connection_config.sandbox_headers,
+            headers=self._connection_config.sandbox_headers,
         )
+
+    @property
+    def _envd_api(self) -> httpx.Client:
+        envd_api = getattr(self._thread_local, "envd_api", None)
+        if envd_api is None:
+            envd_api = self._create_envd_api()
+            self._thread_local.envd_api = envd_api
+        return envd_api
+
+    @property
+    def _rpc(self) -> process_connect.ProcessClient:
+        rpc = getattr(self._thread_local, "rpc", None)
+        if rpc is None:
+            rpc = self._create_rpc()
+            self._thread_local.rpc = rpc
+        return rpc
+
+    def _check_health(self) -> Optional[bool]:
+        return check_sandbox_health(self._envd_api)
 
     def kill(
         self,

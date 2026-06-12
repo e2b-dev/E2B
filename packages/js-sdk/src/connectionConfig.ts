@@ -206,7 +206,7 @@ export class ConnectionConfig {
 
   constructor(opts?: ConnectionOpts) {
     this.apiKey = opts?.apiKey || ConnectionConfig.apiKey
-    this.debug = opts?.debug || ConnectionConfig.debug
+    this.debug = opts?.debug ?? ConnectionConfig.debug
     this.domain = opts?.domain || ConnectionConfig.domain
     this.accessToken = opts?.accessToken || ConnectionConfig.accessToken
     this.requestTimeoutMs = opts?.requestTimeoutMs ?? REQUEST_TIMEOUT_MS
