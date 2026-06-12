@@ -7,6 +7,30 @@ import pytest
 @pytest.mark.skip_debug()
 @pytest.mark.timeout(60)
 async def test_sbx_metrics(async_sandbox_factory):
+    sbx = await async_sandbox_factory(timeout=60)
+
+    # Wait for the sandbox to have some metrics
+    metrics = []
+    for _ in range(60):
+        metrics = await sbx.get_metrics()
+        if len(metrics) > 0:
+            break
+        await asyncio.sleep(0.5)
+
+    assert len(metrics) > 0
+
+    metric = metrics[0]
+    assert metric.cpu_count is not None
+    assert metric.cpu_used_pct is not None
+    assert metric.mem_used is not None
+    assert metric.mem_total is not None
+    assert metric.disk_used is not None
+    assert metric.disk_total is not None
+
+
+@pytest.mark.skip_debug()
+@pytest.mark.timeout(60)
+async def test_sbx_metrics_time_range(async_sandbox_factory):
     start_time = datetime.datetime.now(datetime.timezone.utc)
     sbx = await async_sandbox_factory(timeout=60)
 
@@ -21,14 +45,6 @@ async def test_sbx_metrics(async_sandbox_factory):
         await asyncio.sleep(0.5)
 
     assert len(metrics) > 0
-
-    metric = metrics[0]
-    assert metric.cpu_count is not None
-    assert metric.cpu_used_pct is not None
-    assert metric.mem_used is not None
-    assert metric.mem_total is not None
-    assert metric.disk_used is not None
-    assert metric.disk_total is not None
 
     # All returned metrics must fall within the requested time range
     # (10s slack - metric timestamps are aligned to collection buckets,

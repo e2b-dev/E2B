@@ -7,6 +7,31 @@ sandboxTest.skipIf(isDebug)(
   'sbx metrics',
   { timeout: 60_000 },
   async ({ sandbox }) => {
+    // Wait for the sandbox to have some metrics
+    let metrics: SandboxMetrics[] = []
+    for (let i = 0; i < 60; i++) {
+      metrics = await sandbox.getMetrics()
+      if (metrics.length > 0) {
+        break
+      }
+      await wait(500)
+    }
+
+    expect(metrics.length).toBeGreaterThan(0)
+    const metric = metrics[0]
+    expect(metric.diskTotal).toBeDefined()
+    expect(metric.diskUsed).toBeDefined()
+    expect(metric.memTotal).toBeDefined()
+    expect(metric.memUsed).toBeDefined()
+    expect(metric.cpuUsedPct).toBeDefined()
+    expect(metric.cpuCount).toBeDefined()
+  }
+)
+
+sandboxTest.skipIf(isDebug)(
+  'sbx metrics time range',
+  { timeout: 60_000 },
+  async ({ sandbox }) => {
     const start = new Date()
 
     // Wait for the sandbox to have some metrics within the test's time window
@@ -22,13 +47,6 @@ sandboxTest.skipIf(isDebug)(
     }
 
     expect(metrics.length).toBeGreaterThan(0)
-    const metric = metrics[0]
-    expect(metric.diskTotal).toBeDefined()
-    expect(metric.diskUsed).toBeDefined()
-    expect(metric.memTotal).toBeDefined()
-    expect(metric.memUsed).toBeDefined()
-    expect(metric.cpuUsedPct).toBeDefined()
-    expect(metric.cpuCount).toBeDefined()
 
     // All returned metrics must fall within the requested time range
     // (10s slack — metric timestamps are aligned to collection buckets,
