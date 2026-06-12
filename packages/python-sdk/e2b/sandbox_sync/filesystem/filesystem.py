@@ -603,4 +603,9 @@ class Filesystem:
         except Exception as e:
             raise _handle_filesystem_rpc_exception(e)
 
-        return WatchHandle(lambda: self._rpc, r.watcher_id)
+        return WatchHandle(
+            lambda: self._rpc,
+            r.watcher_id,
+            self._connection_config,
+            headers=authentication_header(self._envd_version, user),
+        )

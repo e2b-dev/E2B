@@ -1,6 +1,7 @@
-from typing import Callable, List
+from typing import Callable, Dict, List, Optional
 
 from e2b import SandboxException
+from e2b.connection_config import ConnectionConfig
 from e2b.envd.filesystem import filesystem_connect
 from e2b.envd.filesystem.filesystem_pb2 import (
     GetWatcherEventsRequest,
@@ -23,28 +24,43 @@ class WatchHandle:
         self,
         get_rpc: Callable[[], filesystem_connect.FilesystemClient],
         watcher_id: str,
+        connection_config: ConnectionConfig,
+        headers: Optional[Dict[str, str]] = None,
     ):
         self._get_rpc = get_rpc
         self._watcher_id = watcher_id
+        self._connection_config = connection_config
+        self._headers = headers or {}
         self._closed = False
 
-    def stop(self):
+    def stop(self, request_timeout: Optional[float] = None):
         """
         Stop watching the directory.
         After you stop the watcher you won't be able to get the events anymore.
+
+        :param request_timeout: Timeout for the request in **seconds**
         """
         try:
             self._get_rpc().remove_watcher(
-                RemoveWatcherRequest(watcher_id=self._watcher_id)
+                RemoveWatcherRequest(watcher_id=self._watcher_id),
+                request_timeout=self._connection_config.get_request_timeout(
+                    request_timeout
+                ),
+                headers=self._headers,
             )
         except Exception as e:
             raise handle_rpc_exception(e)
 
         self._closed = True
 
-    def get_new_events(self) -> List[FilesystemEvent]:
+    def get_new_events(
+        self,
+        request_timeout: Optional[float] = None,
+    ) -> List[FilesystemEvent]:
         """
         Get the latest events that have occurred in the watched directory since the last call, or from the beginning of the watching, up until now.
+
+        :param request_timeout: Timeout for the request in **seconds**
 
         :return: List of filesystem events
         """
@@ -53,7 +69,11 @@ class WatchHandle:
 
         try:
             r = self._get_rpc().get_watcher_events(
-                GetWatcherEventsRequest(watcher_id=self._watcher_id)
+                GetWatcherEventsRequest(watcher_id=self._watcher_id),
+                request_timeout=self._connection_config.get_request_timeout(
+                    request_timeout
+                ),
+                headers=self._headers,
             )
         except Exception as e:
             raise handle_rpc_exception(e)

@@ -160,5 +160,13 @@ def test_watch_file(sandbox: Sandbox):
 def test_watch_file_with_secured_envd(sandbox_factory):
     sbx = sandbox_factory(timeout=30, secure=True)
 
-    sbx.files.watch_dir("/home/user/")
+    handle = sbx.files.watch_dir("/home/user/")
     sbx.files.write("test_watch.txt", "This file will be watched.")
+
+    events = handle.get_new_events()
+    assert any(
+        event.type == FilesystemEventType.WRITE and event.name == "test_watch.txt"
+        for event in events
+    )
+
+    handle.stop()

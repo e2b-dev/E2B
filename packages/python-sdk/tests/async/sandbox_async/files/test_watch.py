@@ -1,6 +1,6 @@
 import pytest
 
-from asyncio import Event
+from asyncio import Event, wait_for
 
 from e2b import (
     FileNotFoundException,
@@ -150,6 +150,19 @@ async def test_watch_file(async_sandbox: AsyncSandbox):
         await async_sandbox.files.watch_dir(filename, on_event=lambda e: None)
 
 
-async def test_watch_file_with_secured_envd(async_sandbox):
-    await async_sandbox.files.watch_dir("/home/user/", on_event=lambda e: None)
-    await async_sandbox.files.write("test_watch.txt", "This file will be watched.")
+async def test_watch_file_with_secured_envd(async_sandbox_factory):
+    sbx = await async_sandbox_factory(timeout=30, secure=True)
+
+    filename = "test_watch.txt"
+    event_triggered = Event()
+
+    def handle_event(e: FilesystemEvent):
+        if e.type == FilesystemEventType.WRITE and e.name == filename:
+            event_triggered.set()
+
+    handle = await sbx.files.watch_dir("/home/user/", on_event=handle_event)
+    await sbx.files.write(filename, "This file will be watched.")
+
+    await wait_for(event_triggered.wait(), timeout=10)
+
+    await handle.stop()

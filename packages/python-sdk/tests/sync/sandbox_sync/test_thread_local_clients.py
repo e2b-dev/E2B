@@ -283,16 +283,16 @@ def test_sync_watch_handle_uses_calling_thread_rpc():
             self.name = name
             self.calls = []
 
-        def remove_watcher(self, request):
+        def remove_watcher(self, request, **opts):
             self.calls.append(("remove", request.watcher_id))
 
     main_rpc = FakeRpc("main")
     worker_rpc = FakeRpc("worker")
-    handle = WatchHandle(lambda: main_rpc, "watcher-id")
+    handle = WatchHandle(lambda: main_rpc, "watcher-id", ConnectionConfig())
 
     handle.stop()
     assert main_rpc.calls == [("remove", "watcher-id")]
 
-    handle = WatchHandle(lambda: worker_rpc, "watcher-id")
+    handle = WatchHandle(lambda: worker_rpc, "watcher-id", ConnectionConfig())
     run_in_worker_thread(handle.stop)
     assert worker_rpc.calls == [("remove", "watcher-id")]

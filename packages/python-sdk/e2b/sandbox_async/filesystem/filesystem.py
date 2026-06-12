@@ -548,7 +548,7 @@ class Filesystem:
         self,
         path: str,
         on_event: OutputHandler[FilesystemEvent],
-        on_exit: Optional[OutputHandler[Exception]] = None,
+        on_exit: Optional[OutputHandler[Optional[Exception]]] = None,
         user: Optional[Username] = None,
         request_timeout: Optional[float] = None,
         timeout: Optional[float] = 60,
@@ -560,7 +560,7 @@ class Filesystem:
 
         :param path: Path to a directory to watch
         :param on_event: Callback to call on each event in the directory
-        :param on_exit: Callback to call when the watching ends
+        :param on_exit: Callback to call when the watching ends. It receives the exception that ended the watching, or `None` when the event stream ends normally or the watching is stopped via `stop()`
         :param user: Run the operation as this user
         :param request_timeout: Timeout for the request in **seconds**
         :param timeout: Timeout for the watch operation in **seconds**. Using `0` will not limit the watch time

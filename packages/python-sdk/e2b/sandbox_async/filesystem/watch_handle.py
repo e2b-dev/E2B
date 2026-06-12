@@ -21,7 +21,7 @@ class AsyncWatchHandle:
         self,
         events: AsyncGenerator[WatchDirResponse, Any],
         on_event: OutputHandler[FilesystemEvent],
-        on_exit: Optional[OutputHandler[Exception]] = None,
+        on_exit: Optional[OutputHandler[Optional[Exception]]] = None,
     ):
         self._events = events
         self._on_event = on_event
@@ -59,13 +59,19 @@ class AsyncWatchHandle:
             raise handle_rpc_exception(e)
 
     async def _handle_events(self):
+        error: Optional[Exception] = None
         try:
             async for event in self._iterate_events():
                 cb = self._on_event(event)
                 if inspect.isawaitable(cb):
                     await cb
+        except asyncio.CancelledError:
+            # Stopping the watch cancels this task — report it as a clean exit.
+            pass
         except Exception as e:
-            if self._on_exit:
-                cb = self._on_exit(e)
-                if inspect.isawaitable(cb):
-                    await cb
+            error = e
+
+        if self._on_exit:
+            cb = self._on_exit(error)
+            if inspect.isawaitable(cb):
+                await cb

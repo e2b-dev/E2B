@@ -74,6 +74,8 @@ export interface FilesystemEvent {
  * Use {@link WatchHandle.stop} to stop watching the directory.
  */
 export class WatchHandle {
+  private stopped = false
+
   constructor(
     private readonly handleStop: () => void,
     private readonly events: AsyncIterable<WatchDirResponse>,
@@ -87,6 +89,7 @@ export class WatchHandle {
    * Stop watching the directory.
    */
   async stop() {
+    this.stopped = true
     this.handleStop()
   }
 
@@ -112,7 +115,7 @@ export class WatchHandle {
           continue
         }
 
-        this.onEvent?.({
+        await this.onEvent?.({
           name: event.value.name,
           type: eventType,
           entry: event.value.entry
@@ -120,9 +123,11 @@ export class WatchHandle {
             : undefined,
         })
       }
-      this.onExit?.()
+      await this.onExit?.()
     } catch (err) {
-      this.onExit?.(err as Error)
+      // Stopping the watch aborts the event stream, which surfaces here as a
+      // cancellation error — report a user-initiated stop as a clean exit.
+      await this.onExit?.(this.stopped ? undefined : (err as Error))
     } finally {
       this.handleStop()
     }

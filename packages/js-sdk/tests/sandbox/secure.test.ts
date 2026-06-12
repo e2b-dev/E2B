@@ -1,5 +1,5 @@
 import { assert, test, describe } from 'vitest'
-import { getSignature, Sandbox } from '../../src'
+import { FilesystemEventType, getSignature, Sandbox } from '../../src'
 import { sandboxTest, isDebug } from '../setup'
 import { randomUUID, createHash } from 'node:crypto'
 
@@ -32,6 +32,33 @@ describe('secure sandbox', () => {
       const sbxReconnect = await Sandbox.connect(sandbox.sandboxId)
 
       await sbxReconnect.files.write('hello.txt', 'hello world')
+    }
+  )
+
+  sandboxTest.skipIf(isDebug)(
+    'watch directory changes',
+    async ({ sandbox }) => {
+      const filename = 'test_watch.txt'
+
+      let trigger: () => void
+      const eventPromise = new Promise<void>((resolve) => {
+        trigger = resolve
+      })
+
+      const handle = await sandbox.files.watchDir('/home/user/', (event) => {
+        if (
+          event.type === FilesystemEventType.WRITE &&
+          event.name === filename
+        ) {
+          trigger()
+        }
+      })
+
+      await sandbox.files.write(filename, 'This file will be watched.')
+
+      await eventPromise
+
+      await handle.stop()
     }
   )
 })
