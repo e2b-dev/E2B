@@ -1,8 +1,11 @@
+import asyncio
 import os
-from typing import Optional
+import weakref
+from typing import Dict, Optional
 
 import httpx
 from httpx import Limits
+from httpx._types import ProxyTypes
 
 from e2b.api import make_async_logging_event_hooks
 from e2b.api.metadata import default_headers
@@ -16,12 +19,15 @@ limits = Limits(
     keepalive_expiry=int(os.getenv("E2B_KEEPALIVE_EXPIRY", "300")),
 )
 
+TransportKey = Optional[ProxyTypes]
+
 
 def get_api_client(config: VolumeConnectionConfig, **kwargs) -> AsyncVolumeApiClient:
     if config.access_token is None:
         raise AuthenticationException(
-            "Access token is required for volume operations. "
-            "Set `E2B_ACCESS_TOKEN` or pass `token` in options.",
+            "Volume token is required for volume content operations. "
+            "Use `AsyncVolume.create`/`AsyncVolume.connect` to obtain it "
+            "or pass `token` in options.",
         )
 
     headers = {
@@ -29,12 +35,17 @@ def get_api_client(config: VolumeConnectionConfig, **kwargs) -> AsyncVolumeApiCl
         **(config.headers or {}),
     }
 
+    request_timeout = config.request_timeout
+
     return AsyncVolumeApiClient(
         base_url=config.api_url,
         token=config.access_token,
         auth_header_name="Authorization",
         prefix="Bearer",
         headers=headers,
+        timeout=(
+            httpx.Timeout(request_timeout) if request_timeout is not None else None
+        ),
         httpx_args={
             "proxy": config.proxy,
             "transport": get_transport(config),
@@ -45,7 +56,13 @@ def get_api_client(config: VolumeConnectionConfig, **kwargs) -> AsyncVolumeApiCl
 
 
 class AsyncTransportWithLogger(httpx.AsyncHTTPTransport):
-    singleton: Optional["AsyncTransportWithLogger"] = None
+    # Keyed weakly by the event loop object itself, not id(loop) — CPython
+    # reuses object ids, so a new loop could otherwise inherit a transport
+    # bound to a previous, closed loop.
+    _instances: weakref.WeakKeyDictionary[
+        asyncio.AbstractEventLoop,
+        Dict[TransportKey, "AsyncTransportWithLogger"],
+    ] = weakref.WeakKeyDictionary()
 
     @property
     def pool(self):
@@ -53,12 +70,19 @@ class AsyncTransportWithLogger(httpx.AsyncHTTPTransport):
 
 
 def get_transport(config: VolumeConnectionConfig) -> AsyncTransportWithLogger:
-    if AsyncTransportWithLogger.singleton is not None:
-        return AsyncTransportWithLogger.singleton
+    loop = asyncio.get_running_loop()
+    loop_instances = AsyncTransportWithLogger._instances.get(loop)
+    if loop_instances is None:
+        loop_instances = {}
+        AsyncTransportWithLogger._instances[loop] = loop_instances
 
-    transport = AsyncTransportWithLogger(
-        limits=limits,
-        proxy=config.proxy,
-    )
-    AsyncTransportWithLogger.singleton = transport
+    key: TransportKey = config.proxy
+    transport = loop_instances.get(key)
+    if transport is None:
+        transport = AsyncTransportWithLogger(
+            limits=limits,
+            proxy=config.proxy,
+        )
+        loop_instances[key] = transport
+
     return transport

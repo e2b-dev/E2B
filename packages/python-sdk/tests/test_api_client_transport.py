@@ -1,4 +1,5 @@
 import asyncio
+import gc
 from concurrent.futures import ThreadPoolExecutor
 
 import httpx
@@ -222,8 +223,8 @@ async def test_async_api_client_proxy_uses_explicit_transport(test_api_key):
 
     api_client = get_async_api_client(config)
     httpx_client = api_client.get_async_httpx_client()
-    transport = AsyncTransportWithLogger._instances[
-        (id(asyncio.get_running_loop()), True, "http://127.0.0.1:9999")
+    transport = AsyncTransportWithLogger._instances[asyncio.get_running_loop()][
+        (True, "http://127.0.0.1:9999")
     ]
 
     try:
@@ -332,6 +333,72 @@ async def test_async_api_client_cache_reuses_within_loop_and_isolates_across_loo
         assert worker_transport_id != id(main_client._transport)
     finally:
         await main_client.aclose()
+        AsyncTransportWithLogger._instances.clear()
+
+
+def test_async_transport_not_reused_across_sequential_loops(test_api_key):
+    AsyncTransportWithLogger._instances.clear()
+    config = ConnectionConfig(api_key=test_api_key)
+
+    async def get_transport():
+        return get_async_transport(config)
+
+    try:
+        loop_a = asyncio.new_event_loop()
+        try:
+            transport_a = loop_a.run_until_complete(get_transport())
+        finally:
+            loop_a.close()
+        del loop_a
+        gc.collect()
+
+        # The cache entry dies with the loop, so a later loop can never
+        # inherit a transport bound to a closed loop, even when CPython
+        # reuses the dead loop's object id.
+        assert len(AsyncTransportWithLogger._instances) == 0
+
+        loop_b = asyncio.new_event_loop()
+        try:
+            transport_b = loop_b.run_until_complete(get_transport())
+        finally:
+            loop_b.close()
+
+        assert transport_b is not transport_a
+    finally:
+        AsyncTransportWithLogger._instances.clear()
+
+
+def test_async_api_client_not_reused_across_sequential_loops(test_api_key):
+    AsyncTransportWithLogger._instances.clear()
+    config = ConnectionConfig(api_key=test_api_key)
+    api_client = get_async_api_client(config)
+
+    async def get_client():
+        client = api_client.get_async_httpx_client()
+        assert api_client.get_async_httpx_client() is client
+        return client
+
+    try:
+        loop_a = asyncio.new_event_loop()
+        try:
+            client_a = loop_a.run_until_complete(get_client())
+            loop_a.run_until_complete(client_a.aclose())
+        finally:
+            loop_a.close()
+        del loop_a
+        gc.collect()
+
+        assert len(api_client._async_clients) == 0
+
+        loop_b = asyncio.new_event_loop()
+        try:
+            client_b = loop_b.run_until_complete(get_client())
+            loop_b.run_until_complete(client_b.aclose())
+        finally:
+            loop_b.close()
+
+        assert client_b is not client_a
+    finally:
         AsyncTransportWithLogger._instances.clear()
 
 
