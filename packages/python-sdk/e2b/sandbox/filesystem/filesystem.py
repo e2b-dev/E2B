@@ -170,8 +170,8 @@ METADATA_HEADER_PREFIX = "X-Metadata-"
 # Metadata keys travel as `X-Metadata-<key>` HTTP header names, so they must be
 # valid header tokens (RFC 7230); values travel as header values, restricted to
 # printable US-ASCII.
-_METADATA_KEY_REGEX = re.compile(r"^[A-Za-z0-9!#$%&'*+\-.^_`|~]+$")
-_METADATA_VALUE_REGEX = re.compile(r"^[\x20-\x7e]*$")
+_METADATA_KEY_REGEX = re.compile(r"\A[A-Za-z0-9!#$%&'*+\-.^_`|~]+\Z")
+_METADATA_VALUE_REGEX = re.compile(r"\A[\x20-\x7e]*\Z")
 
 
 def validate_metadata(metadata: Optional[Dict[str, str]]) -> None:
