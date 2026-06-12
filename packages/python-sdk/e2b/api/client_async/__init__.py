@@ -6,7 +6,7 @@ import httpx
 
 from httpx._types import ProxyTypes
 
-from e2b.api import AsyncApiClient, limits
+from e2b.api import AsyncApiClient, connection_retries, limits
 from e2b.connection_config import ConnectionConfig
 
 logger = logging.getLogger(__name__)
@@ -52,6 +52,7 @@ def get_transport(
         limits=limits,
         proxy=config.proxy,
         http2=http2,
+        retries=connection_retries,
     )
 
     AsyncTransportWithLogger._instances[key] = transport
@@ -74,6 +75,7 @@ def get_envd_transport(
         limits=limits,
         proxy=config.proxy,
         http2=http2,
+        retries=connection_retries,
     )
 
     AsyncEnvdTransportWithLogger._instances[key] = transport

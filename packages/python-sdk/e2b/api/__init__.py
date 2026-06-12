@@ -29,6 +29,8 @@ limits = Limits(
     keepalive_expiry=int(os.getenv("E2B_KEEPALIVE_EXPIRY", "300")),
 )
 
+connection_retries = int(os.getenv("E2B_CONNECTION_RETRIES", "3"))
+
 
 @dataclass
 class SandboxCreateResponse:
