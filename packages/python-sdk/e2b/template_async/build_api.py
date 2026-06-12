@@ -1,10 +1,12 @@
 import asyncio
+import os
 from types import TracebackType
 from typing import Callable, Optional, List, Union
 
 import httpx
 
 from e2b.api import handle_api_exception
+from e2b.io_utils import aiter_io_chunks
 from e2b.api.client.api.templates import (
     post_v3_templates,
     get_templates_template_id_files_hash,
@@ -107,19 +109,30 @@ async def upload_file(
     stack_trace: Optional[TracebackType],
 ):
     try:
-        tar_buffer = tar_file_stream(
+        tar_file = tar_file_stream(
             file_name, context_path, ignore_patterns, resolve_symlinks
         )
+        try:
+            size = os.fstat(tar_file.fileno()).st_size
 
-        async with httpx.AsyncClient(
-            timeout=api_client._timeout,
-            verify=api_client._verify_ssl,
-            follow_redirects=api_client._follow_redirects,
-            proxy=getattr(api_client, "_proxy", None),
-            http2=False,
-        ) as client:
-            response = await client.put(url, content=tar_buffer.getvalue())
-        response.raise_for_status()
+            async with httpx.AsyncClient(
+                timeout=api_client._timeout,
+                verify=api_client._verify_ssl,
+                follow_redirects=api_client._follow_redirects,
+                proxy=getattr(api_client, "_proxy", None),
+                http2=False,
+            ) as client:
+                # Stream the archive from disk via an async iterator. The
+                # explicit Content-Length suppresses chunked transfer
+                # encoding, which S3 presigned URLs reject.
+                response = await client.put(
+                    url,
+                    content=aiter_io_chunks(tar_file),
+                    headers={"Content-Length": str(size)},
+                )
+            response.raise_for_status()
+        finally:
+            tar_file.close()
     except httpx.HTTPStatusError as e:
         raise FileUploadException(f"Failed to upload file: {e}").with_traceback(
             stack_trace

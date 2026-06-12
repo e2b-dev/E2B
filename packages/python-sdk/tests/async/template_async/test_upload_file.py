@@ -7,9 +7,9 @@ from e2b.template_async.build_api import upload_file
 
 # Regression test for e2b-dev/e2b#1243 — upload_file must set Content-Length
 # and must not fall back to Transfer-Encoding: chunked. S3 presigned PUT URLs
-# reject chunked encoding with 501 NotImplemented. httpx sets Content-Length
-# automatically when we pass bytes (tar_buffer.getvalue()); this test guards
-# against someone swapping the bytes for a generator/stream later.
+# reject chunked encoding with 501 NotImplemented. The archive is streamed
+# from a temporary file on disk with a known Content-Length instead of being
+# buffered in memory; this test guards that contract.
 #
 # The mock server runs in a daemon thread and doesn't need to be async — the
 # httpx.AsyncClient connects to it via asyncio sockets without blocking the

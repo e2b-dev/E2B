@@ -1,5 +1,6 @@
 import crypto from 'node:crypto'
 import fs from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 import { dynamicImport, dynamicRequire } from '../utils'
 import { TemplateError } from '../errors'
@@ -347,20 +348,24 @@ export function padOctal(mode: number): string {
 }
 
 /**
- * Create a compressed tar stream of files matching a pattern.
+ * Create a gzipped tar archive of files matching a pattern in a temporary
+ * file.
+ *
+ * The archive is spooled to disk so it can be uploaded as a stream with a
+ * known `Content-Length` instead of being buffered in memory.
  *
  * @param fileName Glob pattern for files to include
  * @param fileContextPath Base directory for resolving file paths
  * @param ignorePatterns Ignore patterns to exclude from the archive
  * @param resolveSymlinks Whether to follow symbolic links
- * @returns A readable stream of the gzipped tar archive
+ * @returns The archive path, its size in bytes, and a `cleanup` callback that removes it
  */
-export async function tarFileStream(
+export async function tarFileToTempFile(
   fileName: string,
   fileContextPath: string,
   ignorePatterns: string[],
   resolveSymlinks: boolean
-) {
+): Promise<{ path: string; size: number; cleanup: () => Promise<void> }> {
   const { create } = await dynamicImport<typeof import('tar')>('tar')
 
   const allFiles = await getAllFilesInPath(
@@ -372,38 +377,31 @@ export async function tarFileStream(
 
   const filePaths = allFiles.map((file) => file.relativePosix())
 
-  // gzip.portable ensures deterministic gzip header without affecting file modes
-  return create(
-    {
-      gzip: true,
-      cwd: fileContextPath,
-      follow: resolveSymlinks,
-      noDirRecurse: true,
-    },
-    filePaths
+  const tmpDir = await fs.promises.mkdtemp(
+    path.join(os.tmpdir(), 'e2b-template-')
   )
-}
+  const tarPath = path.join(tmpDir, 'context.tar.gz')
+  const cleanup = () =>
+    fs.promises.rm(tmpDir, { recursive: true, force: true })
 
-/**
- * Create a tar stream for upload using chunked transfer encoding.
- *
- * @param fileName Glob pattern for files to include
- * @param fileContextPath Base directory for resolving file paths
- * @param resolveSymlinks Whether to follow symbolic links
- * @returns A readable stream of the gzipped tar archive
- */
-export async function tarFileStreamUpload(
-  fileName: string,
-  fileContextPath: string,
-  ignorePatterns: string[],
-  resolveSymlinks: boolean
-) {
-  return tarFileStream(
-    fileName,
-    fileContextPath,
-    ignorePatterns,
-    resolveSymlinks
-  )
+  try {
+    await create(
+      {
+        gzip: true,
+        cwd: fileContextPath,
+        follow: resolveSymlinks,
+        noDirRecurse: true,
+        file: tarPath,
+      },
+      filePaths
+    )
+
+    const { size } = await fs.promises.stat(tarPath)
+    return { path: tarPath, size, cleanup }
+  } catch (err) {
+    await cleanup()
+    throw err
+  }
 }
 
 /**

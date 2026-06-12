@@ -107,18 +107,24 @@ def upload_file(
     stack_trace: Optional[TracebackType],
 ):
     try:
-        tar_buffer = tar_file_stream(
+        tar_file = tar_file_stream(
             file_name, context_path, ignore_patterns, resolve_symlinks
         )
-        with httpx.Client(
-            timeout=api_client._timeout,
-            verify=api_client._verify_ssl,
-            follow_redirects=api_client._follow_redirects,
-            proxy=getattr(api_client, "_proxy", None),
-            http2=False,
-        ) as client:
-            response = client.put(url, content=tar_buffer.getvalue())
-        response.raise_for_status()
+        try:
+            with httpx.Client(
+                timeout=api_client._timeout,
+                verify=api_client._verify_ssl,
+                follow_redirects=api_client._follow_redirects,
+                proxy=getattr(api_client, "_proxy", None),
+                http2=False,
+            ) as client:
+                # httpx streams the archive from disk in chunks and sets
+                # Content-Length from the file size—S3 presigned URLs reject
+                # chunked transfer encoding.
+                response = client.put(url, content=tar_file)
+            response.raise_for_status()
+        finally:
+            tar_file.close()
     except httpx.HTTPStatusError as e:
         raise FileUploadException(f"Failed to upload file: {e}").with_traceback(
             stack_trace
