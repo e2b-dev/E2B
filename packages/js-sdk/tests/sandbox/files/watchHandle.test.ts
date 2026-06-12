@@ -125,19 +125,18 @@ describe('WatchHandle', () => {
     expect(exitError?.message).toBe('stream failed')
   })
 
-  test('still reports onEvent errors when stop is requested concurrently', async () => {
+  test('stop resolves while an onEvent callback is still in flight', async () => {
     const exited = deferred()
     const eventStarted = deferred()
-    const release = deferred()
-    let exitError: Error | undefined
+    let exitError: Error | undefined = new Error('sentinel')
 
     const handle = new WatchHandle(
       () => {},
       stream(filesystemEvent('a')),
       async () => {
         eventStarted.resolve()
-        await release.promise
-        throw new Error('callback failed')
+        // never settles — stop() must not wait for it
+        await new Promise(() => {})
       },
       (err?: Error) => {
         exitError = err
@@ -147,10 +146,54 @@ describe('WatchHandle', () => {
 
     await eventStarted.promise
     await handle.stop()
-    release.resolve()
 
     await exited.promise
-    expect(exitError?.message).toBe('callback failed')
+    expect(exitError).toBeUndefined()
+  })
+
+  test('stop can be awaited from inside onEvent without deadlocking', async () => {
+    const exited = deferred()
+    let exitError: Error | undefined = new Error('sentinel')
+
+    const handle = new WatchHandle(
+      () => {},
+      stream(filesystemEvent('a'), filesystemEvent('b')),
+      async (event: FilesystemEvent) => {
+        if (event.name === 'a') {
+          await handle.stop()
+        }
+      },
+      (err?: Error) => {
+        exitError = err
+        exited.resolve()
+      }
+    )
+
+    await exited.promise
+    expect(exitError).toBeUndefined()
+  })
+
+  test('stop rethrows errors raised by onExit', async () => {
+    let abort!: (err: Error) => void
+    const aborted = new Promise<never>((_, reject) => {
+      abort = reject
+    })
+
+    async function* hangingStream(): AsyncGenerator<WatchDirResponse> {
+      // `aborted` only ever rejects, so nothing is yielded.
+      yield await aborted
+    }
+
+    const handle = new WatchHandle(
+      () => abort(new Error('stream aborted')),
+      hangingStream(),
+      undefined,
+      () => {
+        throw new Error('onExit failed')
+      }
+    )
+
+    await expect(handle.stop()).rejects.toThrow('onExit failed')
   })
 
   test('routes async onEvent rejections to onExit', async () => {

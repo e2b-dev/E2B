@@ -75,6 +75,11 @@ export interface FilesystemEvent {
  */
 export class WatchHandle {
   private stopped = false
+  private notifyStopped!: () => void
+  private readonly stoppedPromise = new Promise<void>((resolve) => {
+    this.notifyStopped = resolve
+  })
+  private readonly handlingEvents: Promise<void>
 
   constructor(
     private readonly handleStop: () => void,
@@ -82,15 +87,25 @@ export class WatchHandle {
     private readonly onEvent?: (event: FilesystemEvent) => void | Promise<void>,
     private readonly onExit?: (err?: Error) => void | Promise<void>
   ) {
-    this.handleEvents()
+    this.handlingEvents = this.handleEvents()
+    // When the watch ends on its own and onExit throws, there is no caller to
+    // receive the error — mark the promise as handled so it doesn't crash the
+    // process. The error still surfaces if stop() is called later.
+    this.handlingEvents.catch(() => {})
   }
 
   /**
    * Stop watching the directory.
+   *
+   * Resolves after the watching has fully ended and the `onExit` callback (if
+   * any) has completed; errors thrown by `onExit` are re-thrown here. An
+   * in-flight `onEvent` callback is abandoned, its result ignored.
    */
   async stop() {
     this.stopped = true
+    this.notifyStopped()
     this.handleStop()
+    await this.handlingEvents
   }
 
   private async *iterateEvents() {
@@ -118,16 +133,30 @@ export class WatchHandle {
         }
 
         try {
-          await this.onEvent?.({
+          const callback = this.onEvent?.({
             name: event.value.name,
             type: eventType,
             entry: event.value.entry
               ? mapEntryInfo(event.value.entry)
               : undefined,
           })
+
+          if (callback) {
+            const callbackStopped = await Promise.race([
+              Promise.resolve(callback).then(() => false),
+              this.stoppedPromise.then(() => true),
+            ])
+            if (callbackStopped) {
+              // The watch was stopped while the callback was in flight —
+              // abandon it (the JS equivalent of the cancelled handler task
+              // in the Python SDK). Awaiting it here could deadlock when
+              // stop() is awaited from inside the callback itself.
+              Promise.resolve(callback).catch(() => {})
+              break
+            }
+          }
         } catch (err) {
-          // Errors thrown by the onEvent callback are always reported, even
-          // when a stop was requested while the callback was in flight.
+          // Errors thrown by the onEvent callback are reported via onExit.
           error = err as Error
           break
         }
