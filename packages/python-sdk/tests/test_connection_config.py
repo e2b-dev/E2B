@@ -127,3 +127,39 @@ def test_get_api_params_includes_sandbox_url():
     # Per-call override takes priority.
     overridden = config.get_api_params(sandbox_url="https://sandbox.override.com")
     assert overridden["sandbox_url"] == "https://sandbox.override.com"
+
+
+def test_skip_api_key_validation_defaults_to_false(monkeypatch):
+    monkeypatch.delenv("E2B_SKIP_API_KEY_VALIDATION", raising=False)
+    config = ConnectionConfig()
+    assert config.skip_api_key_validation is False
+
+
+def test_skip_api_key_validation_from_env_var(monkeypatch):
+    monkeypatch.setenv("E2B_SKIP_API_KEY_VALIDATION", "true")
+    config = ConnectionConfig()
+    assert config.skip_api_key_validation is True
+
+
+def test_skip_api_key_validation_env_var_is_case_insensitive(monkeypatch):
+    monkeypatch.setenv("E2B_SKIP_API_KEY_VALIDATION", "TRUE")
+    config = ConnectionConfig()
+    assert config.skip_api_key_validation is True
+
+
+def test_skip_api_key_validation_env_var_false_keeps_validation_enabled(monkeypatch):
+    monkeypatch.setenv("E2B_SKIP_API_KEY_VALIDATION", "false")
+    config = ConnectionConfig()
+    assert config.skip_api_key_validation is False
+
+
+def test_skip_api_key_validation_arg_has_priority_over_env_var(monkeypatch):
+    monkeypatch.setenv("E2B_SKIP_API_KEY_VALIDATION", "true")
+    config = ConnectionConfig(skip_api_key_validation=False)
+    assert config.skip_api_key_validation is False
+
+
+def test_get_api_params_propagates_skip_api_key_validation():
+    config = ConnectionConfig(skip_api_key_validation=True)
+    params = config.get_api_params()
+    assert params["skip_api_key_validation"] is True

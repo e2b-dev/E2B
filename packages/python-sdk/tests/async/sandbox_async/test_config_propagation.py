@@ -91,6 +91,43 @@ async def test_pause_applies_overrides(monkeypatch, test_api_key):
 
 
 @pytest.mark.skip_debug()
+async def test_pause_propagates_skip_api_key_validation(monkeypatch, test_api_key):
+    mock_pause = AsyncMock(return_value="sbx-test")
+    monkeypatch.setattr(sandbox_async_main.SandboxApi, "_cls_pause", mock_pause)
+
+    dummy_transport = SimpleNamespace(pool=object())
+    monkeypatch.setattr(
+        sandbox_async_main, "get_transport", lambda *_args, **_kwargs: dummy_transport
+    )
+    monkeypatch.setattr(
+        sandbox_async_main.httpx, "AsyncClient", lambda *args, **kwargs: object()
+    )
+    monkeypatch.setattr(
+        sandbox_async_main, "Filesystem", lambda *args, **kwargs: object()
+    )
+    monkeypatch.setattr(
+        sandbox_async_main, "Commands", lambda *args, **kwargs: object()
+    )
+    monkeypatch.setattr(sandbox_async_main, "Pty", lambda *args, **kwargs: object())
+    monkeypatch.setattr(sandbox_async_main, "Git", lambda *args, **kwargs: object())
+
+    sandbox = AsyncSandbox(
+        sandbox_id="sbx-test",
+        sandbox_domain="sandbox.e2b.dev",
+        envd_version=Version("0.2.4"),
+        envd_access_token="tok",
+        traffic_access_token="tok",
+        connection_config=ConnectionConfig(
+            api_key=test_api_key,
+            skip_api_key_validation=True,
+        ),
+    )
+    await sandbox.pause()
+
+    assert mock_pause.call_args.kwargs["skip_api_key_validation"] is True
+
+
+@pytest.mark.skip_debug()
 async def test_connect_sets_stable_host_routing_headers(monkeypatch, test_api_key):
     mock_connect = AsyncMock(
         return_value=SimpleNamespace(

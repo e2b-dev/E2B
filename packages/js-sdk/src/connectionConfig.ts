@@ -22,6 +22,17 @@ export interface ConnectionOpts {
    */
   apiKey?: string
   /**
+   * When true, skips client-side API key **format** validation.
+   * The key is still required — only the `e2b_<hex>` pattern check is bypassed.
+   *
+   * Use this when connecting to a self-hosted or E2B-compatible endpoint
+   * that issues credentials in a different format (e.g. `sk-...`, JWTs,
+   * opaque tokens). Has no effect on E2B Cloud where the default format applies.
+   *
+   * @default E2B_SKIP_API_KEY_VALIDATION // environment variable or `false`
+   */
+  skipApiKeyValidation?: boolean
+  /**
    * E2B access token to use for authentication.
    *
    * @default E2B_ACCESS_TOKEN // environment variable
@@ -198,6 +209,7 @@ export class ConnectionConfig {
   readonly requestTimeoutMs: number
 
   readonly apiKey?: string
+  readonly skipApiKeyValidation: boolean
   readonly accessToken?: string
 
   readonly headers?: Record<string, string>
@@ -206,6 +218,8 @@ export class ConnectionConfig {
 
   constructor(opts?: ConnectionOpts) {
     this.apiKey = opts?.apiKey || ConnectionConfig.apiKey
+    this.skipApiKeyValidation =
+      opts?.skipApiKeyValidation ?? ConnectionConfig.skipApiKeyValidation
     this.debug = opts?.debug ?? ConnectionConfig.debug
     this.domain = opts?.domain || ConnectionConfig.domain
     this.accessToken = opts?.accessToken || ConnectionConfig.accessToken
@@ -241,6 +255,13 @@ export class ConnectionConfig {
 
   private static get apiKey() {
     return getEnvVar('E2B_API_KEY')
+  }
+
+  private static get skipApiKeyValidation() {
+    return (
+      (getEnvVar('E2B_SKIP_API_KEY_VALIDATION') || 'false').toLowerCase() ===
+      'true'
+    )
   }
 
   private static get accessToken() {

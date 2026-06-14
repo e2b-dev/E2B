@@ -13,6 +13,7 @@ beforeEach(() => {
     E2B_DOMAIN: process.env.E2B_DOMAIN,
     E2B_SANDBOX_URL: process.env.E2B_SANDBOX_URL,
     E2B_DEBUG: process.env.E2B_DEBUG,
+    E2B_SKIP_API_KEY_VALIDATION: process.env.E2B_SKIP_API_KEY_VALIDATION,
   }
 })
 
@@ -144,6 +145,36 @@ test('sandbox_url stays localhost in debug mode', () => {
     }),
     'http://localhost:49983'
   )
+})
+
+test('skipApiKeyValidation defaults to false', () => {
+  delete process.env.E2B_SKIP_API_KEY_VALIDATION
+  const config = new ConnectionConfig()
+  assert.equal(config.skipApiKeyValidation, false)
+})
+
+test('skipApiKeyValidation reads from env var', () => {
+  process.env.E2B_SKIP_API_KEY_VALIDATION = 'true'
+  const config = new ConnectionConfig()
+  assert.equal(config.skipApiKeyValidation, true)
+})
+
+test('skipApiKeyValidation env var is case-insensitive', () => {
+  process.env.E2B_SKIP_API_KEY_VALIDATION = 'TRUE'
+  const config = new ConnectionConfig()
+  assert.equal(config.skipApiKeyValidation, true)
+})
+
+test('skipApiKeyValidation env var false keeps validation enabled', () => {
+  process.env.E2B_SKIP_API_KEY_VALIDATION = 'false'
+  const config = new ConnectionConfig()
+  assert.equal(config.skipApiKeyValidation, false)
+})
+
+test('skipApiKeyValidation in args takes priority over env var', () => {
+  process.env.E2B_SKIP_API_KEY_VALIDATION = 'true'
+  const config = new ConnectionConfig({ skipApiKeyValidation: false })
+  assert.equal(config.skipApiKeyValidation, false)
 })
 
 test('debug false in args overrides E2B_DEBUG env var', () => {

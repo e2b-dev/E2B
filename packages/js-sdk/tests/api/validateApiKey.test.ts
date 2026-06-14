@@ -1,6 +1,26 @@
 import { assert, test, describe } from 'vitest'
-import { validateApiKey } from '../../src/api'
+import { ApiClient, validateApiKey } from '../../src/api'
+import { ConnectionConfig } from '../../src/connectionConfig'
 import { AuthenticationError } from '../../src/errors'
+
+describe('ApiClient key validation', () => {
+  test('skips validation when skipApiKeyValidation is true', () => {
+    const config = new ConnectionConfig({
+      apiKey: 'sk-' + '0'.repeat(40),
+      skipApiKeyValidation: true,
+    })
+    assert.doesNotThrow(() => new ApiClient(config))
+  })
+
+  test('rejects non-standard key by default', () => {
+    const config = new ConnectionConfig({ apiKey: 'sk-' + '0'.repeat(40) })
+    assert.throws(
+      () => new ApiClient(config),
+      AuthenticationError,
+      /Invalid API key format/
+    )
+  })
+})
 
 describe('validateApiKey', () => {
   const validKey = 'e2b_' + '0123456789abcdef'.repeat(2) + '01234567'

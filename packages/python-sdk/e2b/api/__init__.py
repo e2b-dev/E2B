@@ -149,7 +149,7 @@ class ApiClient(AuthenticatedClient):
                 )
             token = config.api_key
 
-        if config.api_key is not None:
+        if config.api_key is not None and not config.skip_api_key_validation:
             validate_api_key(config.api_key)
 
         if require_access_token:

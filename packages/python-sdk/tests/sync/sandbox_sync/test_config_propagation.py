@@ -79,6 +79,33 @@ def test_pause_applies_overrides(monkeypatch, test_api_key):
 
 
 @pytest.mark.skip_debug()
+def test_pause_propagates_skip_api_key_validation(monkeypatch, test_api_key):
+    mock_pause = Mock(return_value="sbx-test")
+    monkeypatch.setattr(sandbox_sync_main.SandboxApi, "_cls_pause", mock_pause)
+    monkeypatch.setattr(
+        sandbox_sync_main, "Filesystem", lambda *args, **kwargs: object()
+    )
+    monkeypatch.setattr(sandbox_sync_main, "Commands", lambda *args, **kwargs: object())
+    monkeypatch.setattr(sandbox_sync_main, "Pty", lambda *args, **kwargs: object())
+    monkeypatch.setattr(sandbox_sync_main, "Git", lambda *args, **kwargs: object())
+
+    sandbox = Sandbox(
+        sandbox_id="sbx-test",
+        sandbox_domain="sandbox.e2b.dev",
+        envd_version=Version("0.2.4"),
+        envd_access_token="tok",
+        traffic_access_token="tok",
+        connection_config=ConnectionConfig(
+            api_key=test_api_key,
+            skip_api_key_validation=True,
+        ),
+    )
+    sandbox.pause()
+
+    assert mock_pause.call_args.kwargs["skip_api_key_validation"] is True
+
+
+@pytest.mark.skip_debug()
 def test_connect_sets_stable_host_routing_headers(monkeypatch, test_api_key):
     mock_connect = Mock(
         return_value=SimpleNamespace(

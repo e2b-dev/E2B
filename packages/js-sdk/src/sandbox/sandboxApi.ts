@@ -232,6 +232,7 @@ export interface SandboxApiOpts
     Pick<
       ConnectionOpts,
       | 'apiKey'
+      | 'skipApiKeyValidation'
       | 'headers'
       | 'apiHeaders'
       | 'debug'

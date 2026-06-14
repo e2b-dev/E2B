@@ -1,6 +1,7 @@
 import pytest
 
-from e2b.api import validate_api_key
+from e2b.api import ApiClient, validate_api_key
+from e2b.connection_config import ConnectionConfig
 from e2b.exceptions import AuthenticationException
 
 
@@ -36,3 +37,14 @@ def test_error_message_includes_example_token(test_api_key):
     with pytest.raises(AuthenticationException) as exc_info:
         validate_api_key("nope")
     assert test_api_key in str(exc_info.value)
+
+
+def test_api_client_accepts_non_standard_key_when_skip_enabled():
+    config = ConnectionConfig(api_key="sk-" + "0" * 40, skip_api_key_validation=True)
+    ApiClient(config)
+
+
+def test_api_client_rejects_non_standard_key_by_default():
+    config = ConnectionConfig(api_key="sk-" + "0" * 40)
+    with pytest.raises(AuthenticationException, match=r"Invalid API key format"):
+        ApiClient(config)

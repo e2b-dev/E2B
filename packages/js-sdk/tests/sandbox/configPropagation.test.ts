@@ -12,6 +12,7 @@ const baseConfig = {
   requestTimeoutMs: 1111,
   debug: false,
   apiHeaders: { 'X-Test': 'base' },
+  skipApiKeyValidation: true,
 }
 
 function createSandbox() {
@@ -51,6 +52,7 @@ describe('Sandbox API config propagation', () => {
     assert.equal(opts?.requestTimeoutMs, baseConfig.requestTimeoutMs)
     assert.equal(opts?.debug, baseConfig.debug)
     assert.equal(opts?.headers?.['X-Test'], baseConfig.apiHeaders['X-Test'])
+    assert.equal(opts?.skipApiKeyValidation, baseConfig.skipApiKeyValidation)
   })
 
   test('accepts apiHeaders in static Sandbox API options', () => {

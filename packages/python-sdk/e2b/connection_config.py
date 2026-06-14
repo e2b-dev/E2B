@@ -33,6 +33,15 @@ class ApiParams(TypedDict, total=False):
     api_key: Optional[str]
     """E2B API Key to use for authentication, defaults to `E2B_API_KEY` environment variable."""
 
+    skip_api_key_validation: Optional[bool]
+    """When True, skips client-side API key **format** validation.
+    The key is still required — only the ``e2b_<hex>`` pattern check is bypassed.
+
+    Use this when connecting to a self-hosted or E2B-compatible endpoint
+    that issues credentials in a different format (e.g. ``sk-...``, JWTs,
+    opaque tokens). Has no effect on E2B Cloud where the default format applies.
+    Defaults to ``E2B_SKIP_API_KEY_VALIDATION`` environment variable or ``False``."""
+
     domain: Optional[str]
     """E2B domain to use for authentication, defaults to `E2B_DOMAIN` environment variable."""
 
@@ -69,6 +78,10 @@ class ConnectionConfig:
         return os.getenv("E2B_API_KEY")
 
     @staticmethod
+    def _skip_api_key_validation():
+        return os.getenv("E2B_SKIP_API_KEY_VALIDATION", "false").lower() == "true"
+
+    @staticmethod
     def _api_url():
         return os.getenv("E2B_API_URL")
 
@@ -85,6 +98,7 @@ class ConnectionConfig:
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
         api_key: Optional[str] = None,
+        skip_api_key_validation: Optional[bool] = None,
         api_url: Optional[str] = None,
         sandbox_url: Optional[str] = None,
         access_token: Optional[str] = None,
@@ -97,6 +111,11 @@ class ConnectionConfig:
         self.domain = domain or ConnectionConfig._domain()
         self.debug = debug if debug is not None else ConnectionConfig._debug()
         self.api_key = api_key or ConnectionConfig._api_key()
+        self.skip_api_key_validation = (
+            skip_api_key_validation
+            if skip_api_key_validation is not None
+            else ConnectionConfig._skip_api_key_validation()
+        )
         self.access_token = access_token or ConnectionConfig._access_token()
         self.headers = {**(headers or {}), **(api_headers or {})}
         self.headers["User-Agent"] = f"e2b-python-sdk/{package_version}"
@@ -191,6 +210,7 @@ class ConnectionConfig:
         api_headers = opts.get("api_headers")
         request_timeout = opts.get("request_timeout")
         api_key = opts.get("api_key")
+        skip_api_key_validation = opts.get("skip_api_key_validation")
         api_url = opts.get("api_url")
         domain = opts.get("domain")
         debug = opts.get("debug")
@@ -206,6 +226,9 @@ class ConnectionConfig:
         return dict(
             ApiParams(
                 api_key=api_key if api_key is not None else self.api_key,
+                skip_api_key_validation=skip_api_key_validation
+                if skip_api_key_validation is not None
+                else self.skip_api_key_validation,
                 api_url=api_url if api_url is not None else self.api_url,
                 domain=domain if domain is not None else self.domain,
                 debug=debug if debug is not None else self.debug,

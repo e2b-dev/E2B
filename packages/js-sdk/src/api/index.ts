@@ -83,7 +83,7 @@ class ApiClient {
       )
     }
 
-    if (config.apiKey) {
+    if (config.apiKey && !config.skipApiKeyValidation) {
       validateApiKey(config.apiKey)
     }
 
