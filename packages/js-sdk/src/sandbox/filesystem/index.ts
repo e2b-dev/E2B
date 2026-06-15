@@ -35,6 +35,7 @@ import {
   ENVD_OCTET_STREAM_UPLOAD,
   ENVD_VERSION_FS_EVENT_ENTRY_INFO,
   ENVD_VERSION_RECURSIVE_WATCH,
+  ENVD_VERSION_WATCH_NETWORK_MOUNTS,
 } from '../../envd/versions'
 import {
   FileNotFoundError,
@@ -311,6 +312,15 @@ export interface WatchOpts extends FilesystemRequestOpts {
    * throws a `TemplateError`.
    */
   includeEntry?: boolean
+  /**
+   * Allow watching paths on network filesystem mounts (NFS, CIFS, SMB, FUSE),
+   * which are rejected by default. Events on network mounts may be unreliable
+   * or not delivered at all.
+   *
+   * Requires envd 0.6.4 or later. Watching with this option against an older sandbox
+   * throws a `TemplateError`.
+   */
+  allowNetworkMounts?: boolean
 }
 
 /**
@@ -909,6 +919,17 @@ export class Filesystem {
       )
     }
 
+    if (
+      opts?.allowNetworkMounts &&
+      this.envdApi.version &&
+      compareVersions(this.envdApi.version, ENVD_VERSION_WATCH_NETWORK_MOUNTS) <
+        0
+    ) {
+      throw new TemplateError(
+        'You need to update the template to watch directories on network mounts.'
+      )
+    }
+
     const requestTimeoutMs =
       opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
 
@@ -922,6 +943,7 @@ export class Filesystem {
         path,
         recursive: opts?.recursive ?? this.defaultWatchRecursive,
         includeEntry: opts?.includeEntry ?? false,
+        allowNetworkMounts: opts?.allowNetworkMounts ?? false,
       },
       {
         headers: {
