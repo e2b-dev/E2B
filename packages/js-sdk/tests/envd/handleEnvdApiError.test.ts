@@ -12,26 +12,50 @@ import {
 
 function createMockResponse(
   status: number,
-  error: { message?: string } | string
+  error?: { message?: string } | string
 ): {
-  error: { message?: string } | string
+  error?: { message?: string } | string
   response: Response
 } {
   return {
     error,
     response: {
       status,
+      ok: status >= 200 && status < 300,
+      statusText: '',
+      // openapi-fetch consumes the body whenever it produces an error value
+      bodyUsed: error !== undefined,
       text: async () => (typeof error === 'string' ? error : ''),
-    } as Response,
+    } as unknown as Response,
   }
 }
 
 describe('handleEnvdApiError', () => {
   test('returns undefined for a successful response', async () => {
-    const err = await handleEnvdApiError({
-      response: { status: 200 } as Response,
-    })
+    const err = await handleEnvdApiError(createMockResponse(200))
     assert.isUndefined(err)
+  })
+
+  test('returns an error for non-2xx response without content', async () => {
+    // openapi-fetch leaves `error` undefined for responses with
+    // Content-Length: 0
+    const res = createMockResponse(500)
+    const err = await handleEnvdApiError(res)
+    assert.instanceOf(err, SandboxError)
+    assert.include(err?.message, '500')
+  })
+
+  test('returns an error for non-2xx response with empty string error', async () => {
+    const res = createMockResponse(500, '')
+    const err = await handleEnvdApiError(res)
+    assert.instanceOf(err, SandboxError)
+    assert.include(err?.message, '500')
+  })
+
+  test('returns a mapped error for non-2xx response without content', async () => {
+    const res = createMockResponse(404)
+    const err = await handleEnvdApiError(res)
+    assert.instanceOf(err, NotFoundError)
   })
 
   test('returns InvalidArgumentError for 400', async () => {

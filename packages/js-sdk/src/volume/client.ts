@@ -7,6 +7,7 @@ import { buildRequestSignal } from '../connectionConfig'
 import { createApiLogger, Logger } from '../logs'
 import type { Volume } from './index'
 
+const REQUEST_TIMEOUT_MS = 60_000 // 60 seconds
 const FILE_TIMEOUT_MS = 3_600_000 // 1 hour
 
 export interface VolumeApiOpts {
@@ -72,7 +73,7 @@ export class VolumeConnectionConfig {
   readonly token?: string
   readonly headers?: Record<string, string>
   readonly logger?: Logger
-  readonly requestTimeoutMs?: number
+  readonly requestTimeoutMs: number
   readonly signal?: AbortSignal
   readonly proxy?: string
 
@@ -86,7 +87,7 @@ export class VolumeConnectionConfig {
     this.token = opts?.token || volume.token
     this.headers = opts?.headers
     this.logger = opts?.logger
-    this.requestTimeoutMs = opts?.requestTimeoutMs
+    this.requestTimeoutMs = opts?.requestTimeoutMs ?? REQUEST_TIMEOUT_MS
     this.signal = opts?.signal
     this.proxy = opts?.proxy || volume.proxy
   }
