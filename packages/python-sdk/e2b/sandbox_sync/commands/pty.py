@@ -132,7 +132,7 @@ class Pty:
 
         :return: Handle to interact with the PTY
         """
-        envs = envs or {}
+        envs = dict(envs) if envs else {}
         envs.setdefault("TERM", "xterm-256color")
         envs.setdefault("LANG", "C.UTF-8")
         envs.setdefault("LC_ALL", "C.UTF-8")
