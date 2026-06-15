@@ -132,33 +132,47 @@ export class WatchHandle {
           continue
         }
 
-        try {
-          const callback = this.onEvent?.({
-            name: event.value.name,
-            type: eventType,
-            entry: event.value.entry
-              ? mapEntryInfo(event.value.entry)
-              : undefined,
-          })
+        const callback = this.onEvent?.({
+          name: event.value.name,
+          type: eventType,
+          entry: event.value.entry
+            ? mapEntryInfo(event.value.entry)
+            : undefined,
+        })
 
-          if (callback) {
-            const callbackStopped = await Promise.race([
-              Promise.resolve(callback).then(() => false),
-              this.stoppedPromise.then(() => true),
-            ])
-            if (callbackStopped) {
-              // The watch was stopped while the callback was in flight —
-              // abandon it (the JS equivalent of the cancelled handler task
-              // in the Python SDK). Awaiting it here could deadlock when
-              // stop() is awaited from inside the callback itself.
-              Promise.resolve(callback).catch(() => {})
+        if (callback) {
+          // Track the callback's settlement so a callback that has already
+          // resolved or rejected always wins over a concurrent stop(); only a
+          // callback that is still pending when stop() wins is abandoned. The
+          // tracking promise never rejects (both outcomes are handled), so an
+          // abandoned callback's later rejection cannot crash the process.
+          let settled = false
+          let callbackError: Error | undefined
+          const tracked = Promise.resolve(callback).then(
+            () => {
+              settled = true
+            },
+            (err) => {
+              settled = true
+              callbackError = err as Error
+            }
+          )
+
+          await Promise.race([tracked, this.stoppedPromise])
+
+          if (settled) {
+            if (callbackError) {
+              // Errors thrown by the onEvent callback are reported via onExit.
+              error = callbackError
               break
             }
+          } else {
+            // The watch was stopped while the callback was still in flight —
+            // abandon it (the JS equivalent of the cancelled handler task in
+            // the Python SDK). Awaiting it here could deadlock when stop() is
+            // awaited from inside the callback itself.
+            break
           }
-        } catch (err) {
-          // Errors thrown by the onEvent callback are reported via onExit.
-          error = err as Error
-          break
         }
       }
     } catch (err) {

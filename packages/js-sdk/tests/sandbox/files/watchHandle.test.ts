@@ -196,6 +196,36 @@ describe('WatchHandle', () => {
     await expect(handle.stop()).rejects.toThrow('onExit failed')
   })
 
+  test('reports onEvent rejection to onExit even when stop is requested concurrently', async () => {
+    const exited = deferred()
+    const eventStarted = deferred()
+    const failCallback = deferred()
+    let exitError: Error | undefined
+
+    const handle = new WatchHandle(
+      () => {},
+      stream(filesystemEvent('a')),
+      async () => {
+        eventStarted.resolve()
+        await failCallback.promise
+        throw new Error('callback failed')
+      },
+      (err?: Error) => {
+        exitError = err
+        exited.resolve()
+      }
+    )
+
+    await eventStarted.promise
+    // Make the in-flight callback reject and request a stop in the same tick.
+    failCallback.resolve()
+    const stopping = handle.stop()
+
+    await exited.promise
+    await stopping
+    expect(exitError?.message).toBe('callback failed')
+  })
+
   test('routes async onEvent rejections to onExit', async () => {
     const exited = deferred()
     let exitError: Error | undefined
