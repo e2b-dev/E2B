@@ -555,14 +555,14 @@ class TemplateBuilder:
         template.git_clone('https://github.com/user/repo.git', '/app/repo', user='root')
         ```
         """
-        args = ["git", "clone", url]
+        args = ["git", "clone", shlex.quote(url)]
         if branch:
-            args.append(f"--branch {branch}")
+            args.append(f"--branch {shlex.quote(branch)}")
             args.append("--single-branch")
         if depth:
             args.append(f"--depth {depth}")
         if path:
-            args.append(str(path))
+            args.append(shlex.quote(str(path)))
         return self._template._run_in_new_stack_trace_context(
             lambda: self.run_cmd(" ".join(args), user=user)
         )
@@ -593,7 +593,7 @@ class TemplateBuilder:
 
         return self._template._run_in_new_stack_trace_context(
             lambda: self.run_cmd(
-                f"devcontainer build --workspace-folder {devcontainer_directory}",
+                f"devcontainer build --workspace-folder {shlex.quote(str(devcontainer_directory))}",
                 user="root",
             )
         )
@@ -631,11 +631,12 @@ class TemplateBuilder:
             ).with_traceback(stack_trace)
 
         def _set_start():
+            dir_ = shlex.quote(str(devcontainer_directory))
             return self.set_start_cmd(
                 "sudo devcontainer up --workspace-folder "
-                + str(devcontainer_directory)
+                + dir_
                 + " && sudo /prepare-exec.sh "
-                + str(devcontainer_directory)
+                + dir_
                 + " | sudo tee /devcontainer.sh > /dev/null && sudo chmod +x /devcontainer.sh && sudo touch /devcontainer.up",
                 wait_for_file("/devcontainer.up"),
             )

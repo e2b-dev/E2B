@@ -868,16 +868,16 @@ export class TemplateBase
     path?: PathLike,
     options?: { branch?: string; depth?: number; user?: string }
   ): TemplateBuilder {
-    const args = ['git', 'clone', url]
+    const args = ['git', 'clone', shellQuote(url)]
     if (options?.branch) {
-      args.push(`--branch ${options.branch}`)
+      args.push(`--branch ${shellQuote(options.branch)}`)
       args.push('--single-branch')
     }
     if (options?.depth) {
       args.push(`--depth ${options.depth}`)
     }
     if (path) {
-      args.push(path.toString())
+      args.push(shellQuote(path.toString()))
     }
 
     return this.runInNewStackTraceContext(() =>
@@ -941,7 +941,7 @@ export class TemplateBase
 
     return this.runInNewStackTraceContext(() => {
       return this.runCmd(
-        `devcontainer build --workspace-folder ${devcontainerDirectory}`,
+        `devcontainer build --workspace-folder ${shellQuote(devcontainerDirectory)}`,
         { user: 'root' }
       )
     })
@@ -956,8 +956,9 @@ export class TemplateBase
     }
 
     return this.runInNewStackTraceContext(() => {
+      const dir = shellQuote(devcontainerDirectory)
       return this.setStartCmd(
-        `sudo devcontainer up --workspace-folder ${devcontainerDirectory} && sudo /prepare-exec.sh ${devcontainerDirectory} | sudo tee /devcontainer.sh > /dev/null && sudo chmod +x /devcontainer.sh && sudo touch /devcontainer.up`,
+        `sudo devcontainer up --workspace-folder ${dir} && sudo /prepare-exec.sh ${dir} | sudo tee /devcontainer.sh > /dev/null && sudo chmod +x /devcontainer.sh && sudo touch /devcontainer.up`,
         waitForFile('/devcontainer.up')
       )
     })
