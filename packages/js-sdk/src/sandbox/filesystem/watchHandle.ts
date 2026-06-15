@@ -1,4 +1,7 @@
-import { handleRpcError } from '../../envd/rpc'
+import {
+  handleRpcErrorWithHealthCheck,
+  SandboxHealthCheck,
+} from '../../envd/rpc'
 import {
   EventType,
   WatchDirResponse,
@@ -85,7 +88,8 @@ export class WatchHandle {
     private readonly handleStop: () => void,
     private readonly events: AsyncIterable<WatchDirResponse>,
     private readonly onEvent?: (event: FilesystemEvent) => void | Promise<void>,
-    private readonly onExit?: (err?: Error) => void | Promise<void>
+    private readonly onExit?: (err?: Error) => void | Promise<void>,
+    private readonly checkHealth?: SandboxHealthCheck
   ) {
     this.handlingEvents = this.handleEvents()
     // When the watch ends on its own and onExit throws, there is no caller to
@@ -118,7 +122,7 @@ export class WatchHandle {
         }
       }
     } catch (err) {
-      throw handleRpcError(err)
+      throw await handleRpcErrorWithHealthCheck(err, this.checkHealth)
     }
   }
 

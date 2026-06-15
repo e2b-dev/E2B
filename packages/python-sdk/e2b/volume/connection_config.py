@@ -58,10 +58,6 @@ class VolumeConnectionConfig:
         return os.getenv("E2B_VOLUME_API_URL")
 
     @staticmethod
-    def _access_token():
-        return os.getenv("E2B_ACCESS_TOKEN")
-
-    @staticmethod
     def _get_request_timeout(
         default_timeout: Optional[float],
         request_timeout: Optional[float],
@@ -91,11 +87,11 @@ class VolumeConnectionConfig:
             or self._volume_api_url()
             or ("http://localhost:8080" if self.debug else f"https://api.{self.domain}")
         )
-        self.access_token = token or self._access_token()
+        self.access_token = token
         self.token = self.access_token
         self.proxy = proxy
 
-        self.headers = headers or {}
+        self.headers = dict(headers) if headers else {}
         self.headers["User-Agent"] = f"e2b-python-sdk/{package_version}"
 
         self.request_timeout = self._get_request_timeout(

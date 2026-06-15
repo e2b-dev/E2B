@@ -47,6 +47,36 @@ async def test_watch_directory_changes_with_entry_info(async_sandbox: AsyncSandb
     await handle.stop()
 
 
+async def test_watch_directory_changes_with_network_mounts_allowed(
+    async_sandbox: AsyncSandbox,
+):
+    dirname = "test_watch_dir_network_mounts"
+    filename = "test_watch.txt"
+    content = "This file will be watched."
+    new_content = "This file has been modified."
+
+    await async_sandbox.files.make_dir(dirname)
+    await async_sandbox.files.write(f"{dirname}/{filename}", content)
+
+    event_triggered = Event()
+
+    def handle_event(e: FilesystemEvent):
+        if e.type == FilesystemEventType.WRITE and e.name == filename:
+            event_triggered.set()
+
+    # The flag only lifts the network-mount restriction — watching a regular
+    # directory must work the same with it enabled.
+    handle = await async_sandbox.files.watch_dir(
+        dirname, on_event=handle_event, allow_network_mounts=True
+    )
+
+    await async_sandbox.files.write(f"{dirname}/{filename}", new_content)
+
+    await event_triggered.wait()
+
+    await handle.stop()
+
+
 async def test_watch_directory_changes(async_sandbox: AsyncSandbox):
     dirname = "test_watch_dir"
     filename = "test_watch.txt"

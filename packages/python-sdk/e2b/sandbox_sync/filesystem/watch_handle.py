@@ -7,7 +7,7 @@ from e2b.envd.filesystem.filesystem_pb2 import (
     GetWatcherEventsRequest,
     RemoveWatcherRequest,
 )
-from e2b.envd.rpc import handle_rpc_exception
+from e2b.envd.rpc import handle_rpc_exception_with_health
 from e2b.sandbox.filesystem.filesystem import map_entry_info
 from e2b.sandbox.filesystem.watch_handle import FilesystemEvent, map_event_type
 
@@ -26,11 +26,13 @@ class WatchHandle:
         watcher_id: str,
         connection_config: ConnectionConfig,
         headers: Optional[Dict[str, str]] = None,
+        check_health: Optional[Callable[[], Optional[bool]]] = None,
     ):
         self._get_rpc = get_rpc
         self._watcher_id = watcher_id
         self._connection_config = connection_config
         self._headers = headers or {}
+        self._check_health = check_health
         self._closed = False
 
     def stop(self, request_timeout: Optional[float] = None):
@@ -49,7 +51,7 @@ class WatchHandle:
                 headers=self._headers,
             )
         except Exception as e:
-            raise handle_rpc_exception(e)
+            raise handle_rpc_exception_with_health(e, self._check_health)
 
         self._closed = True
 
@@ -76,7 +78,7 @@ class WatchHandle:
                 headers=self._headers,
             )
         except Exception as e:
-            raise handle_rpc_exception(e)
+            raise handle_rpc_exception_with_health(e, self._check_health)
 
         events = []
         for event in r.events:

@@ -798,6 +798,8 @@ export class SandboxApi {
       params: {
         path: {
           sandboxID: sandboxId,
+        },
+        query: {
           start,
           end,
         },

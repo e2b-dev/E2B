@@ -40,6 +40,34 @@ def test_watch_directory_changes_with_entry_info(sandbox: Sandbox):
     handle.stop()
 
 
+def test_watch_directory_changes_with_network_mounts_allowed(sandbox: Sandbox):
+    dirname = "test_watch_dir_network_mounts"
+    filename = "test_watch.txt"
+    content = "This file will be watched."
+    new_content = "This file has been modified."
+
+    sandbox.files.make_dir(dirname)
+    sandbox.files.write(f"{dirname}/{filename}", content)
+
+    # The flag only lifts the network-mount restriction — watching a regular
+    # directory must work the same with it enabled.
+    handle = sandbox.files.watch_dir(dirname, allow_network_mounts=True)
+    sandbox.files.write(f"{dirname}/{filename}", new_content)
+
+    events = handle.get_new_events()
+    write_event = None
+    for event in events:
+        if event.type == FilesystemEventType.WRITE and event.name == filename:
+            write_event = event
+            break
+
+    assert write_event is not None, (
+        f"Expected WRITE event for {filename}, but got events: {events}"
+    )
+
+    handle.stop()
+
+
 def test_watch_directory_changes(sandbox: Sandbox):
     dirname = "test_watch_dir"
     filename = "test_watch.txt"
