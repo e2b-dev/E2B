@@ -1,7 +1,8 @@
 import asyncio
 import logging
 import os
-from typing import Dict, Optional, Tuple
+import weakref
+from typing import Dict, Optional
 
 import httpx
 from httpx import Limits
@@ -20,7 +21,7 @@ limits = Limits(
     keepalive_expiry=int(os.getenv("E2B_KEEPALIVE_EXPIRY", "300")),
 )
 
-TransportKey = Tuple[int, Optional[ProxyTypes]]
+TransportKey = Optional[ProxyTypes]
 
 
 def get_api_client(config: VolumeConnectionConfig, **kwargs) -> AsyncVolumeApiClient:
@@ -53,7 +54,13 @@ def get_api_client(config: VolumeConnectionConfig, **kwargs) -> AsyncVolumeApiCl
 
 
 class AsyncTransportWithLogger(httpx.AsyncHTTPTransport):
-    _instances: Dict[TransportKey, "AsyncTransportWithLogger"] = {}
+    # Keyed weakly by the event loop object itself, not id(loop) — CPython
+    # reuses object ids, so a new loop could otherwise inherit a transport
+    # bound to a previous, closed loop.
+    _instances: weakref.WeakKeyDictionary[
+        asyncio.AbstractEventLoop,
+        Dict[TransportKey, "AsyncTransportWithLogger"],
+    ] = weakref.WeakKeyDictionary()
 
     async def handle_async_request(self, request):
         url = f"{request.url.scheme}://{request.url.host}{request.url.path}"
@@ -68,14 +75,19 @@ class AsyncTransportWithLogger(httpx.AsyncHTTPTransport):
 
 
 def get_transport(config: VolumeConnectionConfig) -> AsyncTransportWithLogger:
-    key: TransportKey = (id(asyncio.get_running_loop()), config.proxy)
+    loop = asyncio.get_running_loop()
+    loop_instances = AsyncTransportWithLogger._instances.get(loop)
+    if loop_instances is None:
+        loop_instances = {}
+        AsyncTransportWithLogger._instances[loop] = loop_instances
 
-    if key in AsyncTransportWithLogger._instances:
-        return AsyncTransportWithLogger._instances[key]
+    key: TransportKey = config.proxy
+    transport = loop_instances.get(key)
+    if transport is None:
+        transport = AsyncTransportWithLogger(
+            limits=limits,
+            proxy=config.proxy,
+        )
+        loop_instances[key] = transport
 
-    transport = AsyncTransportWithLogger(
-        limits=limits,
-        proxy=config.proxy,
-    )
-    AsyncTransportWithLogger._instances[key] = transport
     return transport
