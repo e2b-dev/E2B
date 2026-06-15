@@ -234,6 +234,27 @@ export class CommandHandle
     await this.handleCloseStdin(opts)
   }
 
+  /**
+   * Flush any bytes still buffered in the stream decoders.
+   *
+   * Incomplete trailing UTF-8 sequences are emitted as replacement
+   * characters, matching the per-chunk decoding behavior.
+   */
+  private *flushDecoders(): Generator<
+    [Stdout, null, null] | [null, Stderr, null]
+  > {
+    const stdoutRest = this.stdoutDecoder.decode()
+    if (stdoutRest) {
+      this._stdout += stdoutRest
+      yield [stdoutRest as Stdout, null, null]
+    }
+    const stderrRest = this.stderrDecoder.decode()
+    if (stderrRest) {
+      this._stderr += stderrRest
+      yield [null, stderrRest as Stderr, null]
+    }
+  }
+
   private async *iterateEvents(): AsyncGenerator<
     [Stdout, null, null] | [null, Stderr, null] | [null, null, PtyOutput]
   > {
@@ -268,16 +289,7 @@ export class CommandHandle
           }
           break
         case 'end': {
-          const stdoutRest = this.stdoutDecoder.decode()
-          if (stdoutRest) {
-            this._stdout += stdoutRest
-            yield [stdoutRest as Stdout, null, null]
-          }
-          const stderrRest = this.stderrDecoder.decode()
-          if (stderrRest) {
-            this._stderr += stderrRest
-            yield [null, stderrRest as Stderr, null]
-          }
+          yield* this.flushDecoders()
           this.result = {
             exitCode: e.value.exitCode,
             error: e.value.error,
@@ -295,16 +307,7 @@ export class CommandHandle
     // incomplete trailing sequences surface as replacement characters instead
     // of being silently dropped.
     if (this.result === undefined) {
-      const stdoutRest = this.stdoutDecoder.decode()
-      if (stdoutRest) {
-        this._stdout += stdoutRest
-        yield [stdoutRest as Stdout, null, null]
-      }
-      const stderrRest = this.stderrDecoder.decode()
-      if (stderrRest) {
-        this._stderr += stderrRest
-        yield [null, stderrRest as Stderr, null]
-      }
+      yield* this.flushDecoders()
     }
   }
 

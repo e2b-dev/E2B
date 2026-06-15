@@ -6,6 +6,7 @@ from typing import (
     Callable,
     Any,
     AsyncGenerator,
+    List,
     Union,
     Tuple,
     Coroutine,
@@ -112,6 +113,26 @@ class AsyncCommandHandle:
 
         self._wait = asyncio.create_task(self._handle_events())
 
+    def _flush_decoders(
+        self,
+    ) -> List[Union[Tuple[Stdout, None, None], Tuple[None, Stderr, None]]]:
+        """
+        Flush any bytes still buffered in the stream decoders.
+
+        Incomplete trailing UTF-8 sequences are emitted as replacement
+        characters, matching the per-chunk decoding behavior.
+        """
+        events: List[Union[Tuple[Stdout, None, None], Tuple[None, Stderr, None]]] = []
+        out = self._stdout_decoder.decode(b"", final=True)
+        if out:
+            self._stdout += out
+            events.append((out, None, None))
+        err = self._stderr_decoder.decode(b"", final=True)
+        if err:
+            self._stderr += err
+            events.append((None, err, None))
+        return events
+
     async def _iterate_events(
         self,
     ) -> AsyncGenerator[
@@ -137,14 +158,8 @@ class AsyncCommandHandle:
                 if event.event.data.pty:
                     yield None, None, event.event.data.pty
             if event.event.HasField("end"):
-                out = self._stdout_decoder.decode(b"", final=True)
-                if out:
-                    self._stdout += out
-                    yield out, None, None
-                err = self._stderr_decoder.decode(b"", final=True)
-                if err:
-                    self._stderr += err
-                    yield None, err, None
+                for flushed in self._flush_decoders():
+                    yield flushed
                 self._result = CommandResult(
                     stdout=self._stdout,
                     stderr=self._stderr,
@@ -157,14 +172,8 @@ class AsyncCommandHandle:
         # so incomplete trailing sequences surface as replacement characters
         # instead of being silently dropped.
         if self._result is None:
-            out = self._stdout_decoder.decode(b"", final=True)
-            if out:
-                self._stdout += out
-                yield out, None, None
-            err = self._stderr_decoder.decode(b"", final=True)
-            if err:
-                self._stderr += err
-                yield None, err, None
+            for flushed in self._flush_decoders():
+                yield flushed
 
     async def disconnect(self) -> None:
         """
