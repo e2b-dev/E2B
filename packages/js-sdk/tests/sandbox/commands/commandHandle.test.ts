@@ -193,4 +193,35 @@ describe('CommandHandle', () => {
 
     expect(result.stdout).toBe('a�')
   })
+
+  it('flushes incomplete trailing utf-8 sequences when the stream closes without an end event', async () => {
+    const emojiBytes = new TextEncoder().encode('😀')
+
+    async function* events() {
+      yield dataEvent(
+        'stdout',
+        new Uint8Array([
+          ...new TextEncoder().encode('a'),
+          ...emojiBytes.slice(0, 2),
+        ])
+      )
+    }
+
+    const stdoutChunks: string[] = []
+    const handle = new CommandHandle(
+      1,
+      () => {},
+      async () => true,
+      events(),
+      (out) => {
+        stdoutChunks.push(out)
+      }
+    )
+
+    // No end event arrives, so wait() rejects, but the buffered bytes must
+    // still be flushed to the stdout callback as a replacement character.
+    await expect(handle.wait()).rejects.toThrow()
+
+    expect(stdoutChunks.join('')).toBe('a�')
+  })
 })

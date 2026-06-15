@@ -104,6 +104,20 @@ class CommandHandle:
                         exit_code=event.event.end.exit_code,
                         error=event.event.end.error,
                     )
+
+            # If the stream closed without an end event (e.g. disconnect or a
+            # dropped connection), flush any bytes still buffered in the
+            # decoders so incomplete trailing sequences surface as replacement
+            # characters instead of being silently dropped.
+            if self._result is None:
+                out = self._stdout_decoder.decode(b"", final=True)
+                if out:
+                    self._stdout += out
+                    yield out, None, None
+                err = self._stderr_decoder.decode(b"", final=True)
+                if err:
+                    self._stderr += err
+                    yield None, err, None
         except Exception as e:
             raise handle_rpc_exception(e)
 

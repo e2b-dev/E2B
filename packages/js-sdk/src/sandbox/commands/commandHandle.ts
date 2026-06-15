@@ -289,6 +289,23 @@ export class CommandHandle
       }
       // TODO: Handle empty events like in python SDK
     }
+
+    // If the stream closed without an `end` event (e.g. disconnect or a
+    // dropped connection), flush any bytes still buffered in the decoders so
+    // incomplete trailing sequences surface as replacement characters instead
+    // of being silently dropped.
+    if (this.result === undefined) {
+      const stdoutRest = this.stdoutDecoder.decode()
+      if (stdoutRest) {
+        this._stdout += stdoutRest
+        yield [stdoutRest as Stdout, null, null]
+      }
+      const stderrRest = this.stderrDecoder.decode()
+      if (stderrRest) {
+        this._stderr += stderrRest
+        yield [null, stderrRest as Stderr, null]
+      }
+    }
   }
 
   private async handleEvents() {

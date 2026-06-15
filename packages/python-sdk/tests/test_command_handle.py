@@ -99,3 +99,32 @@ async def test_async_replaces_incomplete_trailing_utf8():
     result = await handle.wait()
 
     assert result.stdout == "a�"
+
+
+def test_sync_flushes_incomplete_trailing_utf8_without_end_event():
+    def events():
+        yield _stdout_event(b"a" + EMOJI_BYTES[:2])
+
+    chunks = []
+    handle = CommandHandle(pid=1, handle_kill=lambda: True, events=events())
+    for stdout, _, _ in handle:
+        if stdout is not None:
+            chunks.append(stdout)
+
+    assert "".join(chunks) == "a�"
+
+
+async def test_async_flushes_incomplete_trailing_utf8_without_end_event():
+    async def events():
+        yield _stdout_event(b"a" + EMOJI_BYTES[:2])
+
+    chunks = []
+    handle = AsyncCommandHandle(
+        pid=1,
+        handle_kill=_kill,
+        events=events(),
+        on_stdout=chunks.append,
+    )
+    await handle._wait
+
+    assert "".join(chunks) == "a�"
