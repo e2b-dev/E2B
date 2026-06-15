@@ -1,4 +1,6 @@
-from typing import Optional, Callable, Any, Generator, Union, Tuple
+import codecs
+
+from typing import Optional, Callable, Any, Generator, List, Union, Tuple
 
 from e2b.envd.rpc import handle_rpc_exception_with_health
 from e2b.envd.process import process_pb2
@@ -49,6 +51,9 @@ class CommandHandle:
         self._stdout: str = ""
         self._stderr: str = ""
 
+        self._stdout_decoder = codecs.getincrementaldecoder("utf-8")(errors="replace")
+        self._stderr_decoder = codecs.getincrementaldecoder("utf-8")(errors="replace")
+
         self._result: Optional[CommandResult] = None
         self._iteration_exception: Optional[Exception] = None
 
@@ -59,6 +64,26 @@ class CommandHandle:
         :return: Generator of command outputs
         """
         return self._handle_events()
+
+    def _flush_decoders(
+        self,
+    ) -> List[Union[Tuple[Stdout, None, None], Tuple[None, Stderr, None]]]:
+        """
+        Flush any bytes still buffered in the stream decoders.
+
+        Incomplete trailing UTF-8 sequences are emitted as replacement
+        characters, matching the per-chunk decoding behavior.
+        """
+        events: List[Union[Tuple[Stdout, None, None], Tuple[None, Stderr, None]]] = []
+        out = self._stdout_decoder.decode(b"", final=True)
+        if out:
+            self._stdout += out
+            events.append((out, None, None))
+        err = self._stderr_decoder.decode(b"", final=True)
+        if err:
+            self._stderr += err
+            events.append((None, err, None))
+        return events
 
     def _handle_events(
         self,
@@ -75,23 +100,38 @@ class CommandHandle:
             for event in self._events:
                 if event.event.HasField("data"):
                     if event.event.data.stdout:
-                        out = event.event.data.stdout.decode("utf-8", "replace")
-                        self._stdout += out
-                        yield out, None, None
+                        out = self._stdout_decoder.decode(event.event.data.stdout)
+                        if out:
+                            self._stdout += out
+                            yield out, None, None
                     if event.event.data.stderr:
-                        out = event.event.data.stderr.decode("utf-8", "replace")
-                        self._stderr += out
-                        yield None, out, None
+                        out = self._stderr_decoder.decode(event.event.data.stderr)
+                        if out:
+                            self._stderr += out
+                            yield None, out, None
                     if event.event.data.pty:
                         yield None, None, event.event.data.pty
                 if event.event.HasField("end"):
+                    yield from self._flush_decoders()
                     self._result = CommandResult(
                         stdout=self._stdout,
                         stderr=self._stderr,
                         exit_code=event.event.end.exit_code,
                         error=event.event.end.error,
                     )
+
+            # If the stream closed without an end event (e.g. disconnect or a
+            # dropped connection), flush any bytes still buffered in the
+            # decoders so incomplete trailing sequences surface as replacement
+            # characters instead of being silently dropped.
+            if self._result is None:
+                yield from self._flush_decoders()
         except Exception as e:
+            # The stream raised before an end event (e.g. disconnect or RPC
+            # failure). Flush any bytes still buffered in the decoders so
+            # incomplete trailing sequences surface as replacement characters
+            # instead of being silently dropped, then surface the error.
+            yield from self._flush_decoders()
             raise handle_rpc_exception_with_health(e, self._check_health)
 
     def disconnect(self) -> None:
