@@ -224,4 +224,37 @@ describe('CommandHandle', () => {
 
     expect(stdoutChunks.join('')).toBe('a�')
   })
+
+  it('flushes incomplete trailing utf-8 sequences when the stream errors', async () => {
+    const emojiBytes = new TextEncoder().encode('😀')
+
+    async function* events() {
+      yield dataEvent(
+        'stdout',
+        new Uint8Array([
+          ...new TextEncoder().encode('a'),
+          ...emojiBytes.slice(0, 2),
+        ])
+      )
+      throw new Error('stream died')
+    }
+
+    const stdoutChunks: string[] = []
+    const handle = new CommandHandle(
+      1,
+      () => {},
+      async () => true,
+      events(),
+      (out) => {
+        stdoutChunks.push(out)
+      }
+    )
+
+    // The stream errors before an end event arrives, so wait() rejects, but the
+    // buffered bytes must still be flushed to the stdout callback as a
+    // replacement character.
+    await expect(handle.wait()).rejects.toThrow()
+
+    expect(stdoutChunks.join('')).toBe('a�')
+  })
 })

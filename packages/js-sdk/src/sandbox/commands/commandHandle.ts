@@ -262,48 +262,57 @@ export class CommandHandle
   private async *iterateEvents(): AsyncGenerator<
     [Stdout, null, null] | [null, Stderr, null] | [null, null, PtyOutput]
   > {
-    for await (const event of this.events) {
-      const e = event?.event?.event
-      let out: string | undefined
+    try {
+      for await (const event of this.events) {
+        const e = event?.event?.event
+        let out: string | undefined
 
-      switch (e?.case) {
-        case 'data':
-          switch (e.value.output.case) {
-            case 'stdout':
-              out = this.stdoutDecoder.decode(e.value.output.value, {
-                stream: true,
-              })
-              if (out) {
-                this._stdout += out
-                yield [out as Stdout, null, null]
-              }
-              break
-            case 'stderr':
-              out = this.stderrDecoder.decode(e.value.output.value, {
-                stream: true,
-              })
-              if (out) {
-                this._stderr += out
-                yield [null, out as Stderr, null]
-              }
-              break
-            case 'pty':
-              yield [null, null, e.value.output.value as PtyOutput]
-              break
+        switch (e?.case) {
+          case 'data':
+            switch (e.value.output.case) {
+              case 'stdout':
+                out = this.stdoutDecoder.decode(e.value.output.value, {
+                  stream: true,
+                })
+                if (out) {
+                  this._stdout += out
+                  yield [out as Stdout, null, null]
+                }
+                break
+              case 'stderr':
+                out = this.stderrDecoder.decode(e.value.output.value, {
+                  stream: true,
+                })
+                if (out) {
+                  this._stderr += out
+                  yield [null, out as Stderr, null]
+                }
+                break
+              case 'pty':
+                yield [null, null, e.value.output.value as PtyOutput]
+                break
+            }
+            break
+          case 'end': {
+            yield* this.flushDecoders()
+            this.result = {
+              exitCode: e.value.exitCode,
+              error: e.value.error,
+              stdout: this.stdout,
+              stderr: this.stderr,
+            }
+            break
           }
-          break
-        case 'end': {
-          yield* this.flushDecoders()
-          this.result = {
-            exitCode: e.value.exitCode,
-            error: e.value.error,
-            stdout: this.stdout,
-            stderr: this.stderr,
-          }
-          break
         }
+        // TODO: Handle empty events like in python SDK
       }
-      // TODO: Handle empty events like in python SDK
+    } catch (e) {
+      // The stream raised before an `end` event (e.g. disconnect or RPC
+      // failure). Flush any bytes still buffered in the decoders so incomplete
+      // trailing sequences surface as replacement characters instead of being
+      // silently dropped, then re-raise so the error is still surfaced.
+      yield* this.flushDecoders()
+      throw e
     }
 
     // If the stream closed without an `end` event (e.g. disconnect or a

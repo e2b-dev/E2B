@@ -1,3 +1,5 @@
+import pytest
+
 from e2b.envd.process import process_pb2
 from e2b.sandbox_async.commands.command_handle import AsyncCommandHandle
 from e2b.sandbox_sync.commands.command_handle import CommandHandle
@@ -128,3 +130,41 @@ async def test_async_flushes_incomplete_trailing_utf8_without_end_event():
     await handle._wait
 
     assert "".join(chunks) == "a�"
+
+
+def test_sync_flushes_incomplete_trailing_utf8_on_stream_error():
+    def events():
+        yield _stdout_event(b"a" + EMOJI_BYTES[:2])
+        raise RuntimeError("stream died")
+
+    chunks = []
+    handle = CommandHandle(pid=1, handle_kill=lambda: True, events=events())
+
+    # The stream raises before an end event, but the buffered bytes must still
+    # be flushed as a replacement character before the error is surfaced.
+    with pytest.raises(RuntimeError):
+        for stdout, _, _ in handle:
+            if stdout is not None:
+                chunks.append(stdout)
+
+    assert "".join(chunks) == "a�"
+
+
+async def test_async_flushes_incomplete_trailing_utf8_on_stream_error():
+    async def events():
+        yield _stdout_event(b"a" + EMOJI_BYTES[:2])
+        raise RuntimeError("stream died")
+
+    chunks = []
+    handle = AsyncCommandHandle(
+        pid=1,
+        handle_kill=_kill,
+        events=events(),
+        on_stdout=chunks.append,
+    )
+    await handle._wait
+
+    # The stream raised before an end event, but the buffered bytes must still
+    # be flushed to the stdout callback as a replacement character.
+    assert "".join(chunks) == "a�"
+    assert isinstance(handle._iteration_exception, RuntimeError)

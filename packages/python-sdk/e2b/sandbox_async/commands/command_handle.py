@@ -146,29 +146,39 @@ class AsyncCommandHandle:
         ],
         None,
     ]:
-        async for event in self._events:
-            if event.event.HasField("data"):
-                if event.event.data.stdout:
-                    out = self._stdout_decoder.decode(event.event.data.stdout)
-                    if out:
-                        self._stdout += out
-                        yield out, None, None
-                if event.event.data.stderr:
-                    out = self._stderr_decoder.decode(event.event.data.stderr)
-                    if out:
-                        self._stderr += out
-                        yield None, out, None
-                if event.event.data.pty:
-                    yield None, None, event.event.data.pty
-            if event.event.HasField("end"):
-                for flushed in self._flush_decoders():
-                    yield flushed
-                self._result = CommandResult(
-                    stdout=self._stdout,
-                    stderr=self._stderr,
-                    exit_code=event.event.end.exit_code,
-                    error=event.event.end.error,
-                )
+        try:
+            async for event in self._events:
+                if event.event.HasField("data"):
+                    if event.event.data.stdout:
+                        out = self._stdout_decoder.decode(event.event.data.stdout)
+                        if out:
+                            self._stdout += out
+                            yield out, None, None
+                    if event.event.data.stderr:
+                        out = self._stderr_decoder.decode(event.event.data.stderr)
+                        if out:
+                            self._stderr += out
+                            yield None, out, None
+                    if event.event.data.pty:
+                        yield None, None, event.event.data.pty
+                if event.event.HasField("end"):
+                    for flushed in self._flush_decoders():
+                        yield flushed
+                    self._result = CommandResult(
+                        stdout=self._stdout,
+                        stderr=self._stderr,
+                        exit_code=event.event.end.exit_code,
+                        error=event.event.end.error,
+                    )
+        except Exception:
+            # The stream raised before an end event (e.g. disconnect or RPC
+            # failure). Flush any bytes still buffered in the decoders so
+            # incomplete trailing sequences surface as replacement characters
+            # instead of being silently dropped, then re-raise so the error is
+            # still surfaced by the consumer.
+            for flushed in self._flush_decoders():
+                yield flushed
+            raise
 
         # If the stream closed without an end event (e.g. disconnect or a
         # dropped connection), flush any bytes still buffered in the decoders

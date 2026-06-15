@@ -127,6 +127,11 @@ class CommandHandle:
             if self._result is None:
                 yield from self._flush_decoders()
         except Exception as e:
+            # The stream raised before an end event (e.g. disconnect or RPC
+            # failure). Flush any bytes still buffered in the decoders so
+            # incomplete trailing sequences surface as replacement characters
+            # instead of being silently dropped, then surface the error.
+            yield from self._flush_decoders()
             raise handle_rpc_exception_with_health(e, self._check_health)
 
     def disconnect(self) -> None:
