@@ -6,25 +6,18 @@ import { createApiFetch } from './http2'
 import { ConnectionConfig } from '../connectionConfig'
 import { AuthenticationError, RateLimitError, SandboxError } from '../errors'
 import { createApiLogger } from '../logs'
-import { escapeRegExp } from '../utils'
 
-export const DEFAULT_API_KEY_PREFIX = 'e2b_'
+const API_KEY_PATTERN = /^e2b_[0-9a-f]+$/
+const API_KEY_EXAMPLE = `e2b_${'0'.repeat(40)}`
 
 /**
- * Validates that an E2B API key has the expected prefix followed by hex
- * characters. Throws `AuthenticationError` otherwise. The prefix defaults to
- * `e2b_` and can be overridden via the `E2B_API_KEY_PREFIX` env var or the
- * `apiKeyPrefix` connection option.
+ * Validates that an E2B API key has the expected `e2b_` prefix followed by
+ * hex characters. Throws `AuthenticationError` otherwise.
  */
-export function validateApiKey(
-  apiKey: string,
-  prefix: string = DEFAULT_API_KEY_PREFIX
-): void {
-  const pattern = new RegExp(`^${escapeRegExp(prefix)}[0-9a-f]+$`)
-  if (!pattern.test(apiKey)) {
-    const example = `${prefix}${'0'.repeat(40)}`
+export function validateApiKey(apiKey: string): void {
+  if (!API_KEY_PATTERN.test(apiKey)) {
     throw new AuthenticationError(
-      `Invalid API key format: expected "${prefix}" followed by hex characters (e.g. "${example}"). ` +
+      `Invalid API key format: expected "e2b_" followed by hex characters (e.g. "${API_KEY_EXAMPLE}"). ` +
         'Visit the API Keys tab at https://e2b.dev/dashboard?tab=keys to get your API key.'
     )
   }
@@ -89,8 +82,8 @@ class ApiClient {
       )
     }
 
-    if (config.apiKey) {
-      validateApiKey(config.apiKey, config.apiKeyPrefix)
+    if (config.apiKey && config.validateApiKey) {
+      validateApiKey(config.apiKey)
     }
 
     if (opts?.requireAccessToken && !config.accessToken) {

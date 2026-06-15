@@ -28,25 +28,25 @@ def test_api_url_has_correct_priority(monkeypatch):
     assert config.api_url == "http://localhost:8080"
 
 
-def test_api_key_prefix_defaults_to_e2b(monkeypatch):
-    monkeypatch.delenv("E2B_API_KEY_PREFIX", raising=False)
+def test_validate_api_key_defaults_to_true(monkeypatch):
+    monkeypatch.delenv("E2B_VALIDATE_API_KEY", raising=False)
 
     config = ConnectionConfig()
-    assert config.api_key_prefix == "e2b_"
+    assert config.validate_api_key is True
 
 
-def test_api_key_prefix_from_env_var(monkeypatch):
-    monkeypatch.setenv("E2B_API_KEY_PREFIX", "myorg_")
+def test_validate_api_key_disabled_via_env_var(monkeypatch):
+    monkeypatch.setenv("E2B_VALIDATE_API_KEY", "false")
 
     config = ConnectionConfig()
-    assert config.api_key_prefix == "myorg_"
+    assert config.validate_api_key is False
 
 
-def test_api_key_prefix_arg_has_priority_over_env_var(monkeypatch):
-    monkeypatch.setenv("E2B_API_KEY_PREFIX", "fromenv_")
+def test_validate_api_key_arg_has_priority_over_env_var(monkeypatch):
+    monkeypatch.setenv("E2B_VALIDATE_API_KEY", "true")
 
-    config = ConnectionConfig(api_key_prefix="fromargs_")
-    assert config.api_key_prefix == "fromargs_"
+    config = ConnectionConfig(validate_api_key=False)
+    assert config.validate_api_key is False
 
 
 def test_sandbox_url_uses_stable_host_for_supported_domain():

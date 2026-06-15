@@ -33,9 +33,11 @@ class ApiParams(TypedDict, total=False):
     api_key: Optional[str]
     """E2B API Key to use for authentication, defaults to `E2B_API_KEY` environment variable."""
 
-    api_key_prefix: Optional[str]
-    """Prefix expected on the E2B API key for client-side format validation,
-    defaults to `E2B_API_KEY_PREFIX` environment variable or `e2b_`."""
+    validate_api_key: Optional[bool]
+    """Whether to validate the format of the E2B API key on the client side.
+    Disable this when your deployment issues API keys that don't match the
+    default `e2b_` format. Defaults to `E2B_VALIDATE_API_KEY` environment
+    variable or `True`."""
 
     domain: Optional[str]
     """E2B domain to use for authentication, defaults to `E2B_DOMAIN` environment variable."""
@@ -73,8 +75,8 @@ class ConnectionConfig:
         return os.getenv("E2B_API_KEY")
 
     @staticmethod
-    def _api_key_prefix():
-        return os.getenv("E2B_API_KEY_PREFIX") or "e2b_"
+    def _validate_api_key():
+        return os.getenv("E2B_VALIDATE_API_KEY", "true").lower() != "false"
 
     @staticmethod
     def _api_url():
@@ -93,7 +95,7 @@ class ConnectionConfig:
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
         api_key: Optional[str] = None,
-        api_key_prefix: Optional[str] = None,
+        validate_api_key: Optional[bool] = None,
         api_url: Optional[str] = None,
         sandbox_url: Optional[str] = None,
         access_token: Optional[str] = None,
@@ -106,7 +108,11 @@ class ConnectionConfig:
         self.domain = domain or ConnectionConfig._domain()
         self.debug = debug if debug is not None else ConnectionConfig._debug()
         self.api_key = api_key or ConnectionConfig._api_key()
-        self.api_key_prefix = api_key_prefix or ConnectionConfig._api_key_prefix()
+        self.validate_api_key = (
+            validate_api_key
+            if validate_api_key is not None
+            else ConnectionConfig._validate_api_key()
+        )
         self.access_token = access_token or ConnectionConfig._access_token()
         self.headers = {**(headers or {}), **(api_headers or {})}
         self.headers["User-Agent"] = f"e2b-python-sdk/{package_version}"
@@ -201,7 +207,7 @@ class ConnectionConfig:
         api_headers = opts.get("api_headers")
         request_timeout = opts.get("request_timeout")
         api_key = opts.get("api_key")
-        api_key_prefix = opts.get("api_key_prefix")
+        validate_api_key = opts.get("validate_api_key")
         api_url = opts.get("api_url")
         domain = opts.get("domain")
         debug = opts.get("debug")
@@ -217,9 +223,9 @@ class ConnectionConfig:
         return dict(
             ApiParams(
                 api_key=api_key if api_key is not None else self.api_key,
-                api_key_prefix=api_key_prefix
-                if api_key_prefix is not None
-                else self.api_key_prefix,
+                validate_api_key=validate_api_key
+                if validate_api_key is not None
+                else self.validate_api_key,
                 api_url=api_url if api_url is not None else self.api_url,
                 domain=domain if domain is not None else self.domain,
                 debug=debug if debug is not None else self.debug,
