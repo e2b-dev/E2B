@@ -2,7 +2,7 @@ import codecs
 
 from typing import Optional, Callable, Any, Generator, List, Union, Tuple
 
-from e2b.envd.rpc import handle_rpc_exception
+from e2b.envd.rpc import handle_rpc_exception_with_health
 from e2b.envd.process import process_pb2
 from e2b.exceptions import SandboxException
 from e2b.sandbox.commands.command_handle import (
@@ -39,11 +39,13 @@ class CommandHandle:
             Callable[[Union[str, bytes], Optional[float]], None]
         ] = None,
         handle_close_stdin: Optional[Callable[[Optional[float]], None]] = None,
+        check_health: Optional[Callable[[], Optional[bool]]] = None,
     ):
         self._pid = pid
         self._handle_kill = handle_kill
         self._handle_send_stdin = handle_send_stdin
         self._handle_close_stdin = handle_close_stdin
+        self._check_health = check_health
         self._events = events
 
         self._stdout: str = ""
@@ -125,7 +127,7 @@ class CommandHandle:
             if self._result is None:
                 yield from self._flush_decoders()
         except Exception as e:
-            raise handle_rpc_exception(e)
+            raise handle_rpc_exception_with_health(e, self._check_health)
 
     def disconnect(self) -> None:
         """
@@ -163,7 +165,9 @@ class CommandHandle:
         except StopIteration:
             pass
         except Exception as e:
-            self._iteration_exception = handle_rpc_exception(e)
+            self._iteration_exception = handle_rpc_exception_with_health(
+                e, self._check_health
+            )
 
         if self._iteration_exception:
             raise self._iteration_exception

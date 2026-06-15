@@ -19,8 +19,16 @@ import {
   setupRequestController,
 } from '../../connectionConfig'
 import { CommandHandle } from './commandHandle'
-import { authenticationHeader, handleRpcError } from '../../envd/rpc'
-import { handleProcessStartEvent } from '../../envd/api'
+import {
+  authenticationHeader,
+  handleRpcErrorWithHealthCheck,
+  SandboxHealthCheck,
+} from '../../envd/rpc'
+import {
+  checkSandboxHealth,
+  EnvdApiClient,
+  handleProcessStartEvent,
+} from '../../envd/api'
 
 export interface PtyCreateOpts
   extends Pick<ConnectionOpts, 'requestTimeoutMs' | 'signal'> {
@@ -74,18 +82,18 @@ export type PtyConnectOpts = Pick<PtyCreateOpts, 'onData' | 'timeoutMs'> &
 export class Pty {
   private readonly rpc: Client<typeof ProcessService>
   private readonly envdVersion: string
+  private readonly checkHealth: SandboxHealthCheck
 
   private readonly defaultPtyConnectionTimeout = 60_000 // 60 seconds
 
   constructor(
     private readonly transport: Transport,
-    private readonly connectionConfig: ConnectionConfig,
-    metadata: {
-      version: string
-    }
+    private readonly envdApi: EnvdApiClient,
+    private readonly connectionConfig: ConnectionConfig
   ) {
     this.rpc = createClient(ProcessService, this.transport)
-    this.envdVersion = metadata.version
+    this.envdVersion = envdApi.version
+    this.checkHealth = () => checkSandboxHealth(this.envdApi)
   }
 
   /**
@@ -144,11 +152,14 @@ export class Pty {
         events,
         undefined,
         undefined,
-        opts.onData
+        opts.onData,
+        undefined,
+        undefined,
+        this.checkHealth
       )
     } catch (err) {
       cleanup()
-      throw handleRpcError(err)
+      throw await handleRpcErrorWithHealthCheck(err, this.checkHealth)
     }
   }
 
@@ -198,11 +209,14 @@ export class Pty {
         events,
         undefined,
         undefined,
-        opts?.onData
+        opts?.onData,
+        undefined,
+        undefined,
+        this.checkHealth
       )
     } catch (err) {
       cleanup()
-      throw handleRpcError(err)
+      throw await handleRpcErrorWithHealthCheck(err, this.checkHealth)
     }
   }
 
@@ -242,7 +256,7 @@ export class Pty {
         }
       )
     } catch (err) {
-      throw handleRpcError(err)
+      throw await handleRpcErrorWithHealthCheck(err, this.checkHealth)
     }
   }
 
@@ -283,7 +297,7 @@ export class Pty {
         }
       )
     } catch (err) {
-      throw handleRpcError(err)
+      throw await handleRpcErrorWithHealthCheck(err, this.checkHealth)
     }
   }
 
@@ -327,7 +341,7 @@ export class Pty {
         }
       }
 
-      throw handleRpcError(err)
+      throw await handleRpcErrorWithHealthCheck(err, this.checkHealth)
     }
   }
 }

@@ -88,6 +88,9 @@ message WatchDirRequest {
     bool recursive = 2;
     // If true, each FilesystemEvent includes the EntryInfo of the affected entry, when available.
     bool include_entry = 3;
+    // If true, allows watching paths on network filesystem mounts (NFS, CIFS, SMB, FUSE).
+    // Events on network mounts may be unreliable or not delivered at all.
+    bool allow_network_mounts = 4;
 }
 
 message FilesystemEvent {
@@ -116,6 +119,9 @@ message CreateWatcherRequest {
     bool recursive = 2;
     // If true, each FilesystemEvent includes the EntryInfo of the affected entry, when available.
     bool include_entry = 3;
+    // If true, allows watching paths on network filesystem mounts (NFS, CIFS, SMB, FUSE).
+    // Events on network mounts may be unreliable or not delivered at all.
+    bool allow_network_mounts = 4;
 }
 
 message CreateWatcherResponse {

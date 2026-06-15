@@ -1,4 +1,7 @@
-import { handleRpcError } from '../../envd/rpc'
+import {
+  handleRpcErrorWithHealthCheck,
+  SandboxHealthCheck,
+} from '../../envd/rpc'
 import { SandboxError } from '../../errors'
 import { ConnectResponse, StartResponse } from '../../envd/process/process_pb'
 import type { CommandRequestOpts } from '.'
@@ -115,7 +118,8 @@ export class CommandHandle
     ) => Promise<void>,
     private readonly handleCloseStdin?: (
       opts?: CommandRequestOpts
-    ) => Promise<void>
+    ) => Promise<void>,
+    private readonly checkHealth?: SandboxHealthCheck
   ) {
     this._wait = this.handleEvents()
   }
@@ -323,7 +327,10 @@ export class CommandHandle
         }
       }
     } catch (e) {
-      this.iterationError = handleRpcError(e)
+      this.iterationError = await handleRpcErrorWithHealthCheck(
+        e,
+        this.checkHealth
+      )
     } finally {
       this.handleDisconnect()
     }

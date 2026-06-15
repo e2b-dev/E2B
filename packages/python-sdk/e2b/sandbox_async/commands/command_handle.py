@@ -7,12 +7,13 @@ from typing import (
     Any,
     AsyncGenerator,
     List,
+    Awaitable,
     Union,
     Tuple,
     Coroutine,
 )
 
-from e2b.envd.rpc import handle_rpc_exception
+from e2b.envd.rpc import ahandle_rpc_exception_with_health
 from e2b.envd.process import process_pb2
 from e2b.exceptions import SandboxException
 from e2b.sandbox.commands.command_handle import (
@@ -91,11 +92,13 @@ class AsyncCommandHandle:
         handle_close_stdin: Optional[
             Callable[[Optional[float]], Coroutine[Any, Any, None]]
         ] = None,
+        check_health: Optional[Callable[[], Awaitable[Optional[bool]]]] = None,
     ):
         self._pid = pid
         self._handle_kill = handle_kill
         self._handle_send_stdin = handle_send_stdin
         self._handle_close_stdin = handle_close_stdin
+        self._check_health = check_health
         self._events = events
 
         self._stdout: str = ""
@@ -207,7 +210,9 @@ class AsyncCommandHandle:
         except StopAsyncIteration:
             pass
         except Exception as e:
-            self._iteration_exception = handle_rpc_exception(e)
+            self._iteration_exception = await ahandle_rpc_exception_with_health(
+                e, self._check_health
+            )
 
     async def wait(self) -> CommandResult:
         """

@@ -177,6 +177,46 @@ sandboxTest('watch directory changes with entry info', async ({ sandbox }) => {
   await handle.stop()
 })
 
+sandboxTest(
+  'watch directory changes with network mounts allowed',
+  async ({ sandbox }) => {
+    const dirname = 'test_watch_dir_network_mounts'
+    const filename = 'test_watch.txt'
+    const content = 'This file will be watched.'
+    const newContent = 'This file has been modified.'
+
+    await sandbox.files.makeDir(dirname)
+    await sandbox.files.write(`${dirname}/${filename}`, content)
+
+    let trigger: () => void
+
+    const eventPromise = new Promise<void>((resolve) => {
+      trigger = resolve
+    })
+
+    // The flag only lifts the network-mount restriction — watching a regular
+    // directory must work the same with it enabled.
+    const handle = await sandbox.files.watchDir(
+      dirname,
+      async (event) => {
+        if (
+          event.type === FilesystemEventType.WRITE &&
+          event.name === filename
+        ) {
+          trigger()
+        }
+      },
+      { allowNetworkMounts: true }
+    )
+
+    await sandbox.files.write(`${dirname}/${filename}`, newContent)
+
+    await eventPromise
+
+    await handle.stop()
+  }
+)
+
 sandboxTest('watch non-existing directory', async ({ sandbox }) => {
   const dirname = 'non_existing_watch_dir'
 
