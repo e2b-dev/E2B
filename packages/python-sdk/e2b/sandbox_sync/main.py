@@ -2,7 +2,6 @@ import datetime
 import json
 import logging
 import shlex
-import threading
 import uuid
 from typing import Dict, List, Optional, Union, overload
 
@@ -10,8 +9,6 @@ import httpx
 from packaging.version import Version
 from typing_extensions import Self, Unpack
 
-from e2b.api.client.types import Unset
-from e2b.api.client_sync import get_envd_transport as get_transport
 from e2b.connection_config import ApiParams, ConnectionConfig
 from e2b.envd.api import ENVD_API_HEALTH_ROUTE, handle_envd_api_exception
 from e2b.envd.versions import ENVD_DEBUG_FALLBACK
@@ -102,45 +99,26 @@ class Sandbox(SandboxApi):
         """
         super().__init__(**opts)
 
-        transport = get_transport(self.connection_config)
-        self._envd_api_thread_local = threading.local()
-
-        self._envd_api_thread_local.envd_api = self._create_envd_api(transport)
         self._filesystem = Filesystem(
             self.envd_api_url,
             self._envd_version,
             self.connection_config,
-            transport.pool,
-            self._envd_api,
         )
         self._commands = Commands(
             self.envd_api_url,
             self.connection_config,
-            transport.pool,
             self._envd_version,
         )
         self._pty = Pty(
             self.envd_api_url,
             self.connection_config,
-            transport.pool,
             self._envd_version,
         )
         self._git = Git(self._commands)
 
-    def _create_envd_api(self, transport) -> httpx.Client:
-        return httpx.Client(
-            base_url=self.envd_api_url,
-            transport=transport,
-            headers=self.connection_config.sandbox_headers,
-        )
-
     @property
     def _envd_api(self) -> httpx.Client:
-        envd_api = getattr(self._envd_api_thread_local, "envd_api", None)
-        if envd_api is None:
-            envd_api = self._create_envd_api(get_transport(self.connection_config))
-            self._envd_api_thread_local.envd_api = envd_api
-        return envd_api
+        return self._filesystem._envd_api
 
     def is_running(self, request_timeout: Optional[float] = None) -> bool:
         """
@@ -338,6 +316,10 @@ class Sandbox(SandboxApi):
         same_sandbox = sandbox.connect()
         ```
         """
+        if self.connection_config.debug:
+            # Skip connecting to the sandbox in debug mode
+            return self
+
         SandboxApi._cls_connect(
             sandbox_id=self.sandbox_id,
             timeout=timeout,
@@ -861,18 +843,30 @@ class Sandbox(SandboxApi):
         timeout: Optional[int] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
-        sandbox = SandboxApi._cls_connect(
-            sandbox_id=sandbox_id,
-            timeout=timeout,
-            **opts,
-        )
+        debug = ConnectionConfig(**opts).debug
+        if debug:
+            sandbox_domain = None
+            envd_version = ENVD_DEBUG_FALLBACK
+            envd_access_token = None
+            traffic_access_token = None
+        else:
+            sandbox = SandboxApi._cls_connect(
+                sandbox_id=sandbox_id,
+                timeout=timeout,
+                **opts,
+            )
+
+            sandbox_id = sandbox.sandbox_id
+            sandbox_domain = sandbox.sandbox_domain
+            envd_version = Version(sandbox.envd_version)
+            envd_access_token = sandbox.envd_access_token
+            traffic_access_token = sandbox.traffic_access_token
 
         sandbox_headers = {
-            "E2b-Sandbox-Id": sandbox.sandbox_id,
+            "E2b-Sandbox-Id": sandbox_id,
             "E2b-Sandbox-Port": str(ConnectionConfig.envd_port),
         }
-        envd_access_token = sandbox.envd_access_token
-        if envd_access_token is not None and not isinstance(envd_access_token, Unset):
+        if envd_access_token is not None:
             sandbox_headers["X-Access-Token"] = envd_access_token
 
         connection_config = ConnectionConfig(
@@ -881,11 +875,11 @@ class Sandbox(SandboxApi):
         )
 
         return cls(
-            sandbox_id=sandbox.sandbox_id,
-            sandbox_domain=sandbox.domain,
-            envd_version=Version(sandbox.envd_version),
+            sandbox_id=sandbox_id,
+            sandbox_domain=sandbox_domain,
+            envd_version=envd_version,
             envd_access_token=envd_access_token,
-            traffic_access_token=sandbox.traffic_access_token,
+            traffic_access_token=traffic_access_token,
             connection_config=connection_config,
         )
 
@@ -906,7 +900,7 @@ class Sandbox(SandboxApi):
     ) -> Self:
         extra_sandbox_headers = {}
 
-        debug = opts.get("debug")
+        debug = ConnectionConfig(**opts).debug
         if debug:
             sandbox_id = "debug_sandbox_id"
             sandbox_domain = None
@@ -934,9 +928,7 @@ class Sandbox(SandboxApi):
             envd_access_token = response.envd_access_token
             traffic_access_token = response.traffic_access_token
 
-            if envd_access_token is not None and not isinstance(
-                envd_access_token, Unset
-            ):
+            if envd_access_token is not None:
                 extra_sandbox_headers["X-Access-Token"] = envd_access_token
 
         extra_sandbox_headers["E2b-Sandbox-Id"] = sandbox_id

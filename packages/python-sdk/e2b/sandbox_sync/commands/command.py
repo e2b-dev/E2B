@@ -2,7 +2,7 @@ import threading
 from typing import Callable, Dict, List, Literal, Optional, Union, overload
 
 import e2b_connect
-import httpcore
+import httpx
 from packaging.version import Version
 from e2b.api.client_sync import get_envd_transport
 from e2b.connection_config import (
@@ -12,7 +12,8 @@ from e2b.connection_config import (
     KEEPALIVE_PING_INTERVAL_SEC,
 )
 from e2b.envd.process import process_connect, process_pb2
-from e2b.envd.rpc import authentication_header, handle_rpc_exception
+from e2b.envd.api import check_sandbox_health
+from e2b.envd.rpc import authentication_header, handle_rpc_exception_with_health
 from e2b.envd.versions import ENVD_COMMANDS_STDIN, ENVD_ENVD_CLOSE
 from e2b.exceptions import SandboxException
 from e2b.sandbox.commands.main import ProcessInfo
@@ -29,35 +30,50 @@ class Commands:
         self,
         envd_api_url: str,
         connection_config: ConnectionConfig,
-        pool: httpcore.ConnectionPool,
         envd_version: Version,
     ) -> None:
         self._envd_api_url = envd_api_url
         self._connection_config = connection_config
         self._envd_version = envd_version
         self._thread_local = threading.local()
-        self._thread_local.rpc = self._create_rpc(pool)
 
-    def _create_rpc(
-        self, pool: httpcore.ConnectionPool
-    ) -> process_connect.ProcessClient:
+    def _create_envd_api(self) -> httpx.Client:
+        transport = get_envd_transport(self._connection_config)
+        return httpx.Client(
+            base_url=self._envd_api_url,
+            transport=transport,
+            headers=self._connection_config.sandbox_headers,
+        )
+
+    def _create_rpc(self) -> process_connect.ProcessClient:
+        transport = get_envd_transport(self._connection_config)
         return process_connect.ProcessClient(
             self._envd_api_url,
             # TODO: Fix and enable compression again — the headers compression is not solved for streaming.
             # compressor=e2b_connect.GzipCompressor,
-            pool=pool,
+            pool=transport.pool,
             json=True,
             headers=self._connection_config.sandbox_headers,
         )
 
     @property
+    def _envd_api(self) -> httpx.Client:
+        envd_api = getattr(self._thread_local, "envd_api", None)
+        if envd_api is None:
+            envd_api = self._create_envd_api()
+            self._thread_local.envd_api = envd_api
+        return envd_api
+
+    @property
     def _rpc(self) -> process_connect.ProcessClient:
         rpc = getattr(self._thread_local, "rpc", None)
         if rpc is None:
-            transport = get_envd_transport(self._connection_config)
-            rpc = self._create_rpc(transport.pool)
+            rpc = self._create_rpc()
             self._thread_local.rpc = rpc
         return rpc
+
+    def _check_health(self) -> Optional[bool]:
+        return check_sandbox_health(self._envd_api)
 
     def list(
         self,
@@ -89,7 +105,7 @@ class Commands:
                 for p in res.processes
             ]
         except Exception as e:
-            raise handle_rpc_exception(e)
+            raise handle_rpc_exception_with_health(e, self._check_health)
 
     def kill(
         self,
@@ -120,7 +136,7 @@ class Commands:
             if isinstance(e, e2b_connect.ConnectException):
                 if e.status == e2b_connect.Code.not_found:
                     return False
-            raise handle_rpc_exception(e)
+            raise handle_rpc_exception_with_health(e, self._check_health)
 
     def send_stdin(
         self,
@@ -148,7 +164,7 @@ class Commands:
                 ),
             )
         except Exception as e:
-            raise handle_rpc_exception(e)
+            raise handle_rpc_exception_with_health(e, self._check_health)
 
     def close_stdin(
         self,
@@ -179,7 +195,7 @@ class Commands:
                 ),
             )
         except Exception as e:
-            raise handle_rpc_exception(e)
+            raise handle_rpc_exception_with_health(e, self._check_health)
 
     @overload
     def run(
@@ -334,9 +350,10 @@ class Commands:
                 handle_close_stdin=lambda request_timeout=None: self.close_stdin(
                     pid, request_timeout
                 ),
+                check_health=self._check_health,
             )
         except Exception as e:
-            raise handle_rpc_exception(e)
+            raise handle_rpc_exception_with_health(e, self._check_health)
 
     def connect(
         self,
@@ -386,6 +403,7 @@ class Commands:
                 handle_close_stdin=lambda request_timeout=None: self.close_stdin(
                     pid, request_timeout
                 ),
+                check_health=self._check_health,
             )
         except Exception as e:
-            raise handle_rpc_exception(e)
+            raise handle_rpc_exception_with_health(e, self._check_health)

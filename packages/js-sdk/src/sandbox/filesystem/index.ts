@@ -15,8 +15,17 @@ import {
   Username,
 } from '../../connectionConfig'
 
-import { handleEnvdApiError, handleWatchDirStartEvent } from '../../envd/api'
-import { authenticationHeader, handleRpcError } from '../../envd/rpc'
+import {
+  checkSandboxHealth,
+  handleEnvdApiError,
+  handleEnvdApiFetchError,
+  handleWatchDirStartEvent,
+} from '../../envd/api'
+import {
+  authenticationHeader,
+  handleRpcErrorWithHealthCheck,
+  SandboxHealthCheck,
+} from '../../envd/rpc'
 
 import { EnvdApiClient } from '../../envd/api'
 import {
@@ -35,6 +44,7 @@ import {
   ENVD_OCTET_STREAM_UPLOAD,
   ENVD_VERSION_FS_EVENT_ENTRY_INFO,
   ENVD_VERSION_RECURSIVE_WATCH,
+  ENVD_VERSION_WATCH_NETWORK_MOUNTS,
 } from '../../envd/versions'
 import {
   FileNotFoundError,
@@ -53,8 +63,15 @@ const FILESYSTEM_RPC_ERROR_MAP: Partial<
   [Code.NotFound]: (message: string) => new FileNotFoundError(message),
 }
 
-function handleFilesystemRpcError(err: unknown): Error {
-  return handleRpcError(err, FILESYSTEM_RPC_ERROR_MAP)
+async function handleFilesystemRpcError(
+  err: unknown,
+  checkHealth?: SandboxHealthCheck
+): Promise<Error> {
+  return handleRpcErrorWithHealthCheck(
+    err,
+    checkHealth,
+    FILESYSTEM_RPC_ERROR_MAP
+  )
 }
 
 function handleFilesystemEnvdApiError(res: {
@@ -311,6 +328,15 @@ export interface WatchOpts extends FilesystemRequestOpts {
    * throws a `TemplateError`.
    */
   includeEntry?: boolean
+  /**
+   * Allow watching paths on network filesystem mounts (NFS, CIFS, SMB, FUSE),
+   * which are rejected by default. Events on network mounts may be unreliable
+   * or not delivered at all.
+   *
+   * Requires envd 0.6.4 or later. Watching with this option against an older sandbox
+   * throws a `TemplateError`.
+   */
+  allowNetworkMounts?: boolean
 }
 
 /**
@@ -321,6 +347,7 @@ export class Filesystem {
 
   private readonly defaultWatchTimeout = 60_000 // 60 seconds
   private readonly defaultWatchRecursive = false
+  private readonly checkHealth: SandboxHealthCheck
 
   constructor(
     transport: Transport,
@@ -328,6 +355,7 @@ export class Filesystem {
     private readonly connectionConfig: ConnectionConfig
   ) {
     this.rpc = createClient(FilesystemService, transport)
+    this.checkHealth = () => checkSandboxHealth(this.envdApi)
   }
 
   /**
@@ -411,20 +439,24 @@ export class Filesystem {
       headers['Accept-Encoding'] = 'gzip'
     }
 
-    const res = await this.envdApi.api.GET('/files', {
-      params: {
-        query: {
-          path,
-          username: user,
+    const res = await this.envdApi.api
+      .GET('/files', {
+        params: {
+          query: {
+            path,
+            username: user,
+          },
         },
-      },
-      parseAs: format === 'bytes' ? 'arrayBuffer' : format,
-      signal: this.connectionConfig.getSignal(
-        opts?.requestTimeoutMs,
-        opts?.signal
-      ),
-      headers,
-    })
+        parseAs: format === 'bytes' ? 'arrayBuffer' : format,
+        signal: this.connectionConfig.getSignal(
+          opts?.requestTimeoutMs,
+          opts?.signal
+        ),
+        headers,
+      })
+      .catch(async (err) => {
+        throw await handleEnvdApiFetchError(err, this.checkHealth)
+      })
 
     const err = await handleFilesystemEnvdApiError(res)
     if (err) {
@@ -555,21 +587,25 @@ export class Filesystem {
           const filePath = path ?? (file as WriteEntry).path
           const body = await toUploadBody(file.data, useGzip)
 
-          const res = await this.envdApi.api.POST('/files', {
-            params: {
-              query: {
-                path: filePath,
-                username: user,
+          const res = await this.envdApi.api
+            .POST('/files', {
+              params: {
+                query: {
+                  path: filePath,
+                  username: user,
+                },
               },
-            },
-            bodySerializer: () => body,
-            headers,
-            signal: this.connectionConfig.getSignal(
-              writeOpts?.requestTimeoutMs,
-              writeOpts?.signal
-            ),
-            body: {},
-          })
+              bodySerializer: () => body,
+              headers,
+              signal: this.connectionConfig.getSignal(
+                writeOpts?.requestTimeoutMs,
+                writeOpts?.signal
+              ),
+              body: {},
+            })
+            .catch(async (err) => {
+              throw await handleEnvdApiFetchError(err, this.checkHealth)
+            })
 
           const err = await handleFilesystemEnvdApiError(res)
           if (err) {
@@ -604,21 +640,25 @@ export class Filesystem {
         )
       }
 
-      const res = await this.envdApi.api.POST('/files', {
-        params: {
-          query: {
-            path,
-            username: user,
+      const res = await this.envdApi.api
+        .POST('/files', {
+          params: {
+            query: {
+              path,
+              username: user,
+            },
           },
-        },
-        bodySerializer: () => formData,
-        headers: extraHeaders,
-        signal: this.connectionConfig.getSignal(
-          writeOpts?.requestTimeoutMs,
-          writeOpts?.signal
-        ),
-        body: {},
-      })
+          bodySerializer: () => formData,
+          headers: extraHeaders,
+          signal: this.connectionConfig.getSignal(
+            writeOpts?.requestTimeoutMs,
+            writeOpts?.signal
+          ),
+          body: {},
+        })
+        .catch(async (err) => {
+          throw await handleEnvdApiFetchError(err, this.checkHealth)
+        })
 
       const err = await handleFilesystemEnvdApiError(res)
       if (err) {
@@ -703,7 +743,7 @@ export class Filesystem {
 
       return entries
     } catch (err) {
-      throw handleFilesystemRpcError(err)
+      throw await handleFilesystemRpcError(err, this.checkHealth)
     }
   }
 
@@ -736,7 +776,7 @@ export class Filesystem {
         }
       }
 
-      throw handleFilesystemRpcError(err)
+      throw await handleFilesystemRpcError(err, this.checkHealth)
     }
   }
 
@@ -776,7 +816,7 @@ export class Filesystem {
 
       return mapEntryInfo(entry)
     } catch (err) {
-      throw handleFilesystemRpcError(err)
+      throw await handleFilesystemRpcError(err, this.checkHealth)
     }
   }
 
@@ -799,7 +839,7 @@ export class Filesystem {
         }
       )
     } catch (err) {
-      throw handleFilesystemRpcError(err)
+      throw await handleFilesystemRpcError(err, this.checkHealth)
     }
   }
 
@@ -832,7 +872,7 @@ export class Filesystem {
         }
       }
 
-      throw handleFilesystemRpcError(err)
+      throw await handleFilesystemRpcError(err, this.checkHealth)
     }
   }
 
@@ -868,7 +908,7 @@ export class Filesystem {
 
       return mapEntryInfo(res.entry)
     } catch (err) {
-      throw handleFilesystemRpcError(err)
+      throw await handleFilesystemRpcError(err, this.checkHealth)
     }
   }
 
@@ -909,6 +949,17 @@ export class Filesystem {
       )
     }
 
+    if (
+      opts?.allowNetworkMounts &&
+      this.envdApi.version &&
+      compareVersions(this.envdApi.version, ENVD_VERSION_WATCH_NETWORK_MOUNTS) <
+        0
+    ) {
+      throw new TemplateError(
+        'You need to update the template to watch directories on network mounts.'
+      )
+    }
+
     const requestTimeoutMs =
       opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
 
@@ -922,6 +973,7 @@ export class Filesystem {
         path,
         recursive: opts?.recursive ?? this.defaultWatchRecursive,
         includeEntry: opts?.includeEntry ?? false,
+        allowNetworkMounts: opts?.allowNetworkMounts ?? false,
       },
       {
         headers: {
@@ -937,10 +989,16 @@ export class Filesystem {
       await handleWatchDirStartEvent(events)
       clearStartTimeout()
 
-      return new WatchHandle(cleanup, events, onEvent, opts?.onExit)
+      return new WatchHandle(
+        cleanup,
+        events,
+        onEvent,
+        opts?.onExit,
+        this.checkHealth
+      )
     } catch (err) {
       cleanup()
-      throw handleFilesystemRpcError(err)
+      throw await handleFilesystemRpcError(err, this.checkHealth)
     }
   }
 }
