@@ -82,7 +82,7 @@ export async function handleEnvdApiError(
 export async function handleProcessStartEvent(
   events: AsyncIterable<StartResponse | ConnectResponse>
 ) {
-  let startEvent: StartResponse | ConnectResponse
+  let startEvent: StartResponse | ConnectResponse | undefined
 
   try {
     startEvent = (await events[Symbol.asyncIterator]().next()).value
@@ -97,7 +97,7 @@ export async function handleProcessStartEvent(
 
     throw err
   }
-  if (startEvent.event?.event.case !== 'start') {
+  if (startEvent?.event?.event.case !== 'start') {
     throw new Error('Expected start event')
   }
 
@@ -107,7 +107,7 @@ export async function handleProcessStartEvent(
 export async function handleWatchDirStartEvent(
   events: AsyncIterable<WatchDirResponse>
 ) {
-  let startEvent: WatchDirResponse
+  let startEvent: WatchDirResponse | undefined
 
   try {
     startEvent = (await events[Symbol.asyncIterator]().next()).value
@@ -122,7 +122,7 @@ export async function handleWatchDirStartEvent(
 
     throw err
   }
-  if (startEvent.event?.case !== 'start') {
+  if (startEvent?.event?.case !== 'start') {
     throw new Error('Expected start event')
   }
 
