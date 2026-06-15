@@ -2,7 +2,7 @@ import type { PathLike } from 'node:fs'
 import { ApiClient } from '../api'
 import { ConnectionConfig, ConnectionOpts } from '../connectionConfig'
 import { BuildError, InvalidArgumentError } from '../errors'
-import { runtime } from '../utils'
+import { runtime, shellQuote } from '../utils'
 import {
   assignTags,
   checkAliasExists,
@@ -599,9 +599,12 @@ export class TemplateBase
         forceUpload: options?.forceUpload,
         resolveSymlinks: options?.resolveSymlinks,
       })
+
+      // Collect one stack trace per pushed instruction so build steps stay
+      // aligned with their stack traces when copying multiple sources
+      this.collectStackTrace()
     }
 
-    this.collectStackTrace()
     return this
   }
 
@@ -613,7 +616,9 @@ export class TemplateBase
     // Stack trace that will be used to re-throw the error with
     const stackTrace = getCallerFrame(STACK_TRACE_DEPTH - 1)
 
-    this.runInNewStackTraceContext(() => {
+    // Use the override so each copied item collects this stack trace,
+    // keeping build steps aligned with their stack traces
+    this.runInStackTraceOverrideContext(() => {
       for (const item of items) {
         try {
           this.copy(item.src, item.dest, {
@@ -628,7 +633,7 @@ export class TemplateBase
           throw copyError
         }
       }
-    })
+    }, stackTrace)
 
     return this
   }
@@ -645,7 +650,7 @@ export class TemplateBase
     if (options?.force) {
       args.push('-f')
     }
-    args.push(...paths.map((p) => p.toString()))
+    args.push(...paths.map((p) => shellQuote(p.toString())))
     return this.runInNewStackTraceContext(() =>
       this.runCmd(args.join(' '), { user: options?.user })
     )
@@ -656,7 +661,7 @@ export class TemplateBase
     dest: PathLike,
     options?: { force?: boolean; user?: string }
   ): TemplateBuilder {
-    const args = ['mv', src.toString(), dest.toString()]
+    const args = ['mv', shellQuote(src.toString()), shellQuote(dest.toString())]
     if (options?.force) {
       args.push('-f')
     }
@@ -674,7 +679,7 @@ export class TemplateBase
     if (options?.mode) {
       args.push(`-m ${padOctal(options.mode)}`)
     }
-    args.push(...paths.map((p) => p.toString()))
+    args.push(...paths.map((p) => shellQuote(p.toString())))
     return this.runInNewStackTraceContext(() =>
       this.runCmd(args.join(' '), { user: options?.user })
     )
@@ -689,7 +694,7 @@ export class TemplateBase
     if (options?.force) {
       args.push('-f')
     }
-    args.push(src.toString(), dest.toString())
+    args.push(shellQuote(src.toString()), shellQuote(dest.toString()))
     return this.runInNewStackTraceContext(() =>
       this.runCmd(args.join(' '), { user: options?.user })
     )
@@ -1006,8 +1011,12 @@ export class TemplateBase
    */
   private runInNewStackTraceContext<T>(fn: () => T): T {
     this.disableStackTrace()
-    const result = fn()
-    this.enableStackTrace()
+    let result: T
+    try {
+      result = fn()
+    } finally {
+      this.enableStackTrace()
+    }
     this.collectStackTrace(STACK_TRACE_DEPTH + 1)
     return result
   }
@@ -1017,9 +1026,11 @@ export class TemplateBase
     stackTraceOverride: string | undefined
   ): T {
     this.stackTracesOverride = stackTraceOverride
-    const result = fn()
-    this.stackTracesOverride = undefined
-    return result
+    try {
+      return fn()
+    } finally {
+      this.stackTracesOverride = undefined
+    }
   }
 
   /**

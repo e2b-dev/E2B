@@ -1,3 +1,5 @@
+import { shellQuote } from '../utils'
+
 /**
  * Class for ready check commands.
  */
@@ -30,7 +32,9 @@ export class ReadyCmd {
  * ```
  */
 export function waitForPort(port: number): ReadyCmd {
-  const cmd = `ss -tuln | grep :${port}`
+  // Anchor the port at the end of the address column so e.g. port 80
+  // doesn't match 8080
+  const cmd = `ss -tuln | grep -E ':${port}([[:space:]]|$)'`
   return new ReadyCmd(cmd)
 }
 
@@ -52,7 +56,7 @@ export function waitForPort(port: number): ReadyCmd {
  * ```
  */
 export function waitForURL(url: string, statusCode: number = 200): ReadyCmd {
-  const cmd = `curl -s -o /dev/null -w "%{http_code}" ${url} | grep -q "${statusCode}"`
+  const cmd = `curl -s -o /dev/null -w "%{http_code}" ${shellQuote(url)} | grep -q "${statusCode}"`
   return new ReadyCmd(cmd)
 }
 
@@ -73,7 +77,7 @@ export function waitForURL(url: string, statusCode: number = 200): ReadyCmd {
  * ```
  */
 export function waitForProcess(processName: string): ReadyCmd {
-  const cmd = `pgrep ${processName} > /dev/null`
+  const cmd = `pgrep ${shellQuote(processName)} > /dev/null`
   return new ReadyCmd(cmd)
 }
 
@@ -94,7 +98,7 @@ export function waitForProcess(processName: string): ReadyCmd {
  * ```
  */
 export function waitForFile(filename: string): ReadyCmd {
-  const cmd = `[ -f ${filename} ]`
+  const cmd = `[ -f ${shellQuote(filename)} ]`
   return new ReadyCmd(cmd)
 }
 

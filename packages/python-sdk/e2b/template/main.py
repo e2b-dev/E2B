@@ -1,4 +1,5 @@
 import json
+import shlex
 from typing import Dict, List, Optional, Union, Literal
 from pathlib import Path
 
@@ -93,7 +94,11 @@ class TemplateBuilder:
 
             self._template._instructions.append(instruction)
 
-        self._template._collect_stack_trace()
+            # Collect one stack trace per pushed instruction so build steps
+            # stay aligned with their stack traces when copying multiple
+            # sources
+            self._template._collect_stack_trace()
+
         return self
 
     def copy_items(self, items: List[CopyItem]) -> "TemplateBuilder":
@@ -133,7 +138,9 @@ class TemplateBuilder:
                         raise error.with_traceback(stack_trace)
                     raise
 
-        self._template._run_in_new_stack_trace_context(_copy_items)
+        # Use the override so each copied item collects this stack trace,
+        # keeping build steps aligned with their stack traces
+        self._template._run_in_stack_trace_override_context(_copy_items, stack_trace)
         return self
 
     def remove(
@@ -165,7 +172,7 @@ class TemplateBuilder:
             args.append("-r")
         if force:
             args.append("-f")
-        args.extend([str(p) for p in paths])
+        args.extend([shlex.quote(str(p)) for p in paths])
 
         return self._template._run_in_new_stack_trace_context(
             lambda: self.run_cmd(" ".join(args), user=user)
@@ -194,7 +201,7 @@ class TemplateBuilder:
         template.rename('/tmp/old.txt', '/tmp/new.txt', user='root')
         ```
         """
-        args = ["mv", str(src), str(dest)]
+        args = ["mv", shlex.quote(str(src)), shlex.quote(str(dest))]
         if force:
             args.append("-f")
 
@@ -228,7 +235,7 @@ class TemplateBuilder:
         args = ["mkdir", "-p"]
         if mode:
             args.append(f"-m {pad_octal(mode)}")
-        args.extend([str(p) for p in path_list])
+        args.extend([shlex.quote(str(p)) for p in path_list])
 
         return self._template._run_in_new_stack_trace_context(
             lambda: self.run_cmd(" ".join(args), user=user)
@@ -261,7 +268,7 @@ class TemplateBuilder:
         args = ["ln", "-s"]
         if force:
             args.append("-f")
-        args.extend([str(src), str(dest)])
+        args.extend([shlex.quote(str(src)), shlex.quote(str(dest))])
         return self._template._run_in_new_stack_trace_context(
             lambda: self.run_cmd(" ".join(args), user=user)
         )
@@ -864,8 +871,10 @@ class TemplateBase:
         :return: The result of the function
         """
         self._disable_stack_trace()
-        result = fn()
-        self._enable_stack_trace()
+        try:
+            result = fn()
+        finally:
+            self._enable_stack_trace()
         self._collect_stack_trace(STACK_TRACE_DEPTH + 1)
         return result
 
@@ -881,9 +890,10 @@ class TemplateBase:
         :return: The result of the function
         """
         self._stack_traces_override = stack_trace_override
-        result = fn()
-        self._stack_traces_override = None
-        return result
+        try:
+            return fn()
+        finally:
+            self._stack_traces_override = None
 
     # Built-in image mixins
     def from_debian_image(self, variant: str = "stable") -> TemplateBuilder:
