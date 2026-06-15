@@ -162,5 +162,11 @@ async def test_write_rejects_invalid_metadata(async_sandbox: AsyncSandbox):
     with pytest.raises(InvalidArgumentException):
         await async_sandbox.files.write(filename, "x", metadata={"good": "bad\nvalue"})
 
+    # Trailing newline (Python's `$` would accept it; `\Z` must not).
+    with pytest.raises(InvalidArgumentException):
+        await async_sandbox.files.write(filename, "x", metadata={"good": "value\n"})
+    with pytest.raises(InvalidArgumentException):
+        await async_sandbox.files.write(filename, "x", metadata={"key\n": "value"})
+
     # The file must not have been created by a rejected write.
     assert not await async_sandbox.files.exists(filename)

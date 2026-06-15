@@ -14,15 +14,21 @@ from e2b.connection_config import (
     Username,
     default_username,
 )
-from e2b.envd.api import ENVD_API_FILES_ROUTE, ahandle_envd_api_exception
+from e2b.envd.api import (
+    ENVD_API_FILES_ROUTE,
+    acheck_sandbox_health,
+    ahandle_envd_api_exception,
+    ahandle_envd_api_transport_exception_with_health,
+)
 from e2b.envd.filesystem import filesystem_connect, filesystem_pb2
-from e2b.envd.rpc import authentication_header, handle_rpc_exception
+from e2b.envd.rpc import authentication_header, ahandle_rpc_exception_with_health
 from e2b.envd.versions import (
     ENVD_DEFAULT_USER,
     ENVD_FILE_METADATA,
     ENVD_OCTET_STREAM_UPLOAD,
     ENVD_VERSION_FS_EVENT_ENTRY_INFO,
     ENVD_VERSION_RECURSIVE_WATCH,
+    ENVD_VERSION_WATCH_NETWORK_MOUNTS,
 )
 from e2b.exceptions import (
     FileNotFoundException,
@@ -55,8 +61,12 @@ _FILESYSTEM_HTTP_ERROR_MAP = {
 }
 
 
-def _handle_filesystem_rpc_exception(e: Exception) -> Exception:
-    return handle_rpc_exception(e, _FILESYSTEM_RPC_ERROR_MAP)
+async def _ahandle_filesystem_rpc_exception(
+    e: Exception, envd_api: httpx.AsyncClient
+) -> Exception:
+    return await ahandle_rpc_exception_with_health(
+        e, lambda: acheck_sandbox_health(envd_api), _FILESYSTEM_RPC_ERROR_MAP
+    )
 
 
 async def _ahandle_filesystem_envd_api_exception(r):
@@ -178,12 +188,17 @@ class Filesystem:
         if gzip:
             headers["Accept-Encoding"] = "gzip"
 
-        r = await self._envd_api.get(
-            ENVD_API_FILES_ROUTE,
-            params=params,
-            headers=headers,
-            timeout=self._connection_config.get_request_timeout(request_timeout),
-        )
+        try:
+            r = await self._envd_api.get(
+                ENVD_API_FILES_ROUTE,
+                params=params,
+                headers=headers,
+                timeout=self._connection_config.get_request_timeout(request_timeout),
+            )
+        except httpx.RemoteProtocolError as e:
+            raise await ahandle_envd_api_transport_exception_with_health(
+                e, self._envd_api
+            )
 
         err = await _ahandle_filesystem_envd_api_exception(r)
         if err:
@@ -295,15 +310,20 @@ class Filesystem:
                 if gzip:
                     headers["Content-Encoding"] = "gzip"
 
-                r = await self._envd_api.post(
-                    ENVD_API_FILES_ROUTE,
-                    content=to_upload_body(file_data, gzip),
-                    headers=headers,
-                    params=params,
-                    timeout=self._connection_config.get_request_timeout(
-                        request_timeout
-                    ),
-                )
+                try:
+                    r = await self._envd_api.post(
+                        ENVD_API_FILES_ROUTE,
+                        content=to_upload_body(file_data, gzip),
+                        headers=headers,
+                        params=params,
+                        timeout=self._connection_config.get_request_timeout(
+                            request_timeout
+                        ),
+                    )
+                except httpx.RemoteProtocolError as e:
+                    raise await ahandle_envd_api_transport_exception_with_health(
+                        e, self._envd_api
+                    )
 
                 err = await _ahandle_filesystem_envd_api_exception(r)
                 if err:
@@ -335,13 +355,20 @@ class Filesystem:
             if len(httpx_files) == 0:
                 return []
 
-            r = await self._envd_api.post(
-                ENVD_API_FILES_ROUTE,
-                files=httpx_files,
-                params=params,
-                headers=extra_headers,
-                timeout=self._connection_config.get_request_timeout(request_timeout),
-            )
+            try:
+                r = await self._envd_api.post(
+                    ENVD_API_FILES_ROUTE,
+                    files=httpx_files,
+                    params=params,
+                    headers=extra_headers,
+                    timeout=self._connection_config.get_request_timeout(
+                        request_timeout
+                    ),
+                )
+            except httpx.RemoteProtocolError as e:
+                raise await ahandle_envd_api_transport_exception_with_health(
+                    e, self._envd_api
+                )
 
             err = await _ahandle_filesystem_envd_api_exception(r)
             if err:
@@ -395,7 +422,7 @@ class Filesystem:
 
             return entries
         except Exception as e:
-            raise _handle_filesystem_rpc_exception(e)
+            raise await _ahandle_filesystem_rpc_exception(e, self._envd_api)
 
     async def exists(
         self,
@@ -427,7 +454,7 @@ class Filesystem:
             if isinstance(e, connect.ConnectException):
                 if e.status == connect.Code.not_found:
                     return False
-            raise _handle_filesystem_rpc_exception(e)
+            raise await _ahandle_filesystem_rpc_exception(e, self._envd_api)
 
     async def get_info(
         self,
@@ -455,7 +482,7 @@ class Filesystem:
 
             return map_entry_info(r.entry)
         except Exception as e:
-            raise _handle_filesystem_rpc_exception(e)
+            raise await _ahandle_filesystem_rpc_exception(e, self._envd_api)
 
     async def remove(
         self,
@@ -479,7 +506,7 @@ class Filesystem:
                 headers=authentication_header(self._envd_version, user),
             )
         except Exception as e:
-            raise _handle_filesystem_rpc_exception(e)
+            raise await _ahandle_filesystem_rpc_exception(e, self._envd_api)
 
     async def rename(
         self,
@@ -512,7 +539,7 @@ class Filesystem:
 
             return map_entry_info(r.entry)
         except Exception as e:
-            raise _handle_filesystem_rpc_exception(e)
+            raise await _ahandle_filesystem_rpc_exception(e, self._envd_api)
 
     async def make_dir(
         self,
@@ -543,7 +570,7 @@ class Filesystem:
             if isinstance(e, connect.ConnectException):
                 if e.status == connect.Code.already_exists:
                     return False
-            raise _handle_filesystem_rpc_exception(e)
+            raise await _ahandle_filesystem_rpc_exception(e, self._envd_api)
 
     async def watch_dir(
         self,
@@ -555,6 +582,7 @@ class Filesystem:
         timeout: Optional[float] = 60,
         recursive: bool = False,
         include_entry: bool = False,
+        allow_network_mounts: bool = False,
     ) -> AsyncWatchHandle:
         """
         Watch directory for filesystem events.
@@ -567,6 +595,7 @@ class Filesystem:
         :param timeout: Timeout for the watch operation in **seconds**. Using `0` will not limit the watch time
         :param recursive: Watch directory recursively
         :param include_entry: Include the `EntryInfo` of the affected entry in each event, when available. Requires envd 0.6.3 or later
+        :param allow_network_mounts: Allow watching paths on network filesystem mounts (NFS, CIFS, SMB, FUSE), which are rejected by default. Events on network mounts may be unreliable or not delivered at all. Requires envd 0.6.4 or later
 
         :return: `AsyncWatchHandle` object for stopping watching directory
         """
@@ -580,9 +609,20 @@ class Filesystem:
                 "You need to update the template to include entry info in watch events."
             )
 
+        if (
+            allow_network_mounts
+            and self._envd_version < ENVD_VERSION_WATCH_NETWORK_MOUNTS
+        ):
+            raise TemplateException(
+                "You need to update the template to watch directories on network mounts."
+            )
+
         events = self._rpc.awatch_dir(
             filesystem_pb2.WatchDirRequest(
-                path=path, recursive=recursive, include_entry=include_entry
+                path=path,
+                recursive=recursive,
+                include_entry=include_entry,
+                allow_network_mounts=allow_network_mounts,
             ),
             request_timeout=self._connection_config.get_request_timeout(
                 request_timeout
@@ -602,6 +642,15 @@ class Filesystem:
                     f"Failed to start watch: expected start event, got {start_event}",
                 )
 
-            return AsyncWatchHandle(events=events, on_event=on_event, on_exit=on_exit)
+            return AsyncWatchHandle(
+                events=events,
+                on_event=on_event,
+                on_exit=on_exit,
+                check_health=lambda: acheck_sandbox_health(self._envd_api),
+            )
         except Exception as e:
-            raise _handle_filesystem_rpc_exception(e)
+            try:
+                await events.aclose()
+            except Exception:
+                pass
+            raise await _ahandle_filesystem_rpc_exception(e, self._envd_api)

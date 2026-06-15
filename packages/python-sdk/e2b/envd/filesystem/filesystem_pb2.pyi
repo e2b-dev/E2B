@@ -168,18 +168,21 @@ class ListDirResponse(_message.Message):
     ) -> None: ...
 
 class WatchDirRequest(_message.Message):
-    __slots__ = ("path", "recursive", "include_entry")
+    __slots__ = ("path", "recursive", "include_entry", "allow_network_mounts")
     PATH_FIELD_NUMBER: _ClassVar[int]
     RECURSIVE_FIELD_NUMBER: _ClassVar[int]
     INCLUDE_ENTRY_FIELD_NUMBER: _ClassVar[int]
+    ALLOW_NETWORK_MOUNTS_FIELD_NUMBER: _ClassVar[int]
     path: str
     recursive: bool
     include_entry: bool
+    allow_network_mounts: bool
     def __init__(
         self,
         path: _Optional[str] = ...,
         recursive: bool = ...,
         include_entry: bool = ...,
+        allow_network_mounts: bool = ...,
     ) -> None: ...
 
 class FilesystemEvent(_message.Message):
@@ -221,18 +224,21 @@ class WatchDirResponse(_message.Message):
     ) -> None: ...
 
 class CreateWatcherRequest(_message.Message):
-    __slots__ = ("path", "recursive", "include_entry")
+    __slots__ = ("path", "recursive", "include_entry", "allow_network_mounts")
     PATH_FIELD_NUMBER: _ClassVar[int]
     RECURSIVE_FIELD_NUMBER: _ClassVar[int]
     INCLUDE_ENTRY_FIELD_NUMBER: _ClassVar[int]
+    ALLOW_NETWORK_MOUNTS_FIELD_NUMBER: _ClassVar[int]
     path: str
     recursive: bool
     include_entry: bool
+    allow_network_mounts: bool
     def __init__(
         self,
         path: _Optional[str] = ...,
         recursive: bool = ...,
         include_entry: bool = ...,
+        allow_network_mounts: bool = ...,
     ) -> None: ...
 
 class CreateWatcherResponse(_message.Message):

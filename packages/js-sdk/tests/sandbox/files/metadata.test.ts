@@ -181,6 +181,14 @@ sandboxTest('rejects invalid metadata', async ({ sandbox }) => {
     sandbox.files.write(filename, 'x', { metadata: { good: 'bad\nvalue' } })
   ).rejects.toThrow(InvalidArgumentError)
 
+  // Trailing newline in value or key.
+  await expect(
+    sandbox.files.write(filename, 'x', { metadata: { good: 'value\n' } })
+  ).rejects.toThrow(InvalidArgumentError)
+  await expect(
+    sandbox.files.write(filename, 'x', { metadata: { 'key\n': 'value' } })
+  ).rejects.toThrow(InvalidArgumentError)
+
   // The file must not have been created by a rejected write.
   assert.isFalse(await sandbox.files.exists(filename))
 })

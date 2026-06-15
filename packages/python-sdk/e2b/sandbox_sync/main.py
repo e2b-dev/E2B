@@ -322,6 +322,10 @@ class Sandbox(SandboxApi):
         same_sandbox = sandbox.connect()
         ```
         """
+        if self.connection_config.debug:
+            # Skip connecting to the sandbox in debug mode
+            return self
+
         SandboxApi._cls_connect(
             sandbox_id=self.sandbox_id,
             timeout=timeout,
@@ -846,18 +850,30 @@ class Sandbox(SandboxApi):
         logger: Optional[logging.Logger] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
-        sandbox = SandboxApi._cls_connect(
-            sandbox_id=sandbox_id,
-            timeout=timeout,
-            logger=logger,
-            **opts,
-        )
+        debug = ConnectionConfig(**opts).debug
+        if debug:
+            sandbox_domain = None
+            envd_version = ENVD_DEBUG_FALLBACK
+            envd_access_token = None
+            traffic_access_token = None
+        else:
+            sandbox = SandboxApi._cls_connect(
+                sandbox_id=sandbox_id,
+                timeout=timeout,
+                logger=logger,
+                **opts,
+            )
+
+            sandbox_id = sandbox.sandbox_id
+            sandbox_domain = sandbox.sandbox_domain
+            envd_version = Version(sandbox.envd_version)
+            envd_access_token = sandbox.envd_access_token
+            traffic_access_token = sandbox.traffic_access_token
 
         sandbox_headers = {
-            "E2b-Sandbox-Id": sandbox.sandbox_id,
+            "E2b-Sandbox-Id": sandbox_id,
             "E2b-Sandbox-Port": str(ConnectionConfig.envd_port),
         }
-        envd_access_token = sandbox.envd_access_token
         if envd_access_token is not None and not isinstance(envd_access_token, Unset):
             sandbox_headers["X-Access-Token"] = envd_access_token
 
@@ -868,11 +884,11 @@ class Sandbox(SandboxApi):
         )
 
         return cls(
-            sandbox_id=sandbox.sandbox_id,
-            sandbox_domain=sandbox.domain,
-            envd_version=Version(sandbox.envd_version),
+            sandbox_id=sandbox_id,
+            sandbox_domain=sandbox_domain,
+            envd_version=envd_version,
             envd_access_token=envd_access_token,
-            traffic_access_token=sandbox.traffic_access_token,
+            traffic_access_token=traffic_access_token,
             connection_config=connection_config,
         )
 
@@ -894,7 +910,7 @@ class Sandbox(SandboxApi):
     ) -> Self:
         extra_sandbox_headers = {}
 
-        debug = opts.get("debug")
+        debug = ConnectionConfig(**opts).debug
         if debug:
             sandbox_id = "debug_sandbox_id"
             sandbox_domain = None

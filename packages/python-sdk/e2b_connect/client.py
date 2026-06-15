@@ -384,6 +384,8 @@ class Client:
             },
         }
 
+    # Note: no retry here — generator functions don't execute until iterated, so a
+    # call-level retry never fires, and retrying mid-stream would replay delivered events.
     async def acall_server_stream(
         self,
         req,
