@@ -59,3 +59,27 @@ def test_read_non_existing_file_as_stream(sandbox):
 
     with pytest.raises(FileNotFoundException):
         sandbox.files.read(filename, format="stream")
+
+
+def test_read_file_as_stream_context_manager(sandbox):
+    filename = "test_read_stream_ctx.txt"
+    content = "Streamed read content. " * 10_000
+
+    sandbox.files.write(filename, content)
+    with sandbox.files.read(filename, format="stream") as stream:
+        read_content = b"".join(stream).decode("utf-8")
+    assert read_content == content
+
+
+def test_read_file_as_stream_partial_then_close(sandbox):
+    filename = "test_read_stream_partial.txt"
+    content = "Streamed read content. " * 10_000
+
+    sandbox.files.write(filename, content)
+    # Reading only the first chunk and closing must not raise or leak.
+    stream = sandbox.files.read(filename, format="stream")
+    first = next(iter(stream))
+    assert len(first) > 0
+    stream.close()
+    # close is idempotent
+    stream.close()

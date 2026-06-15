@@ -1,5 +1,5 @@
 import asyncio
-from typing import IO, AsyncIterator, Dict, List, Literal, Optional, Union, overload
+from typing import IO, Dict, List, Literal, Optional, Union, overload
 
 
 import httpcore
@@ -37,6 +37,7 @@ from e2b.exceptions import (
     TemplateException,
 )
 from e2b.sandbox.filesystem.filesystem import (
+    AsyncFileStreamReader,
     EntryInfo,
     WriteEntry,
     WriteInfo,
@@ -153,12 +154,15 @@ class Filesystem:
         user: Optional[Username] = None,
         request_timeout: Optional[float] = None,
         gzip: bool = False,
-    ) -> AsyncIterator[bytes]:
+    ) -> AsyncFileStreamReader:
         """
-        Read file content as a `AsyncIterator[bytes]`.
+        Read file content as an `AsyncFileStreamReader` (an `AsyncIterator[bytes]`).
 
         The request timeout bounds only the initial handshake—the returned
-        iterator is not killed by it while being consumed.
+        iterator is not killed by it while being consumed. The reader releases
+        its connection once fully consumed; if you don't read it to the end,
+        use it as an async context manager or call `aclose()` for deterministic
+        cleanup.
 
         :param path: Path to the file
         :param user: Run the operation as this user
@@ -166,7 +170,7 @@ class Filesystem:
         :param request_timeout: Timeout for the request in **seconds**
         :param gzip: Use gzip compression for the request
 
-        :return: File content as an `AsyncIterator[bytes]`
+        :return: File content as an `AsyncFileStreamReader`
         """
         ...
 
@@ -214,14 +218,10 @@ class Filesystem:
             # transport and read again when body iteration starts.
             request.extensions.get("timeout", {})["read"] = None
 
-            async def stream_file() -> AsyncIterator[bytes]:
-                try:
-                    async for chunk in r.aiter_bytes():
-                        yield chunk
-                finally:
-                    await r.aclose()
-
-            return stream_file()
+            # AsyncFileStreamReader owns the response and releases the
+            # connection when the stream is consumed, closed, errors, or is
+            # GC'd while an event loop is running.
+            return AsyncFileStreamReader(r)
 
         try:
             r = await self._envd_api.get(

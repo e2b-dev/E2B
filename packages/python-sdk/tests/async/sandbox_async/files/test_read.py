@@ -68,3 +68,30 @@ async def test_read_non_existing_file_as_stream(async_sandbox: AsyncSandbox):
 
     with pytest.raises(FileNotFoundException):
         await async_sandbox.files.read(filename, format="stream")
+
+
+async def test_read_file_as_stream_context_manager(async_sandbox: AsyncSandbox):
+    filename = "test_read_stream_ctx.txt"
+    content = "Streamed read content. " * 10_000
+
+    await async_sandbox.files.write(filename, content)
+    chunks = []
+    async with await async_sandbox.files.read(filename, format="stream") as stream:
+        async for chunk in stream:
+            chunks.append(chunk)
+    read_content = b"".join(chunks).decode("utf-8")
+    assert read_content == content
+
+
+async def test_read_file_as_stream_partial_then_close(async_sandbox: AsyncSandbox):
+    filename = "test_read_stream_partial.txt"
+    content = "Streamed read content. " * 10_000
+
+    await async_sandbox.files.write(filename, content)
+    # Reading only the first chunk and closing must not raise or leak.
+    stream = await async_sandbox.files.read(filename, format="stream")
+    first = await stream.__anext__()
+    assert len(first) > 0
+    await stream.aclose()
+    # aclose is idempotent
+    await stream.aclose()

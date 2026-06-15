@@ -1,5 +1,5 @@
 import threading
-from typing import IO, Dict, Iterator, List, Literal, Optional, Union, overload
+from typing import IO, Dict, List, Literal, Optional, Union, overload
 
 import httpx
 from packaging.version import Version
@@ -39,6 +39,7 @@ from e2b.exceptions import (
 )
 from e2b.sandbox.filesystem.filesystem import (
     EntryInfo,
+    FileStreamReader,
     WriteEntry,
     WriteInfo,
     _to_httpx_file,
@@ -173,12 +174,15 @@ class Filesystem:
         user: Optional[Username] = None,
         request_timeout: Optional[float] = None,
         gzip: bool = False,
-    ) -> Iterator[bytes]:
+    ) -> FileStreamReader:
         """
-        Read file content as a `Iterator[bytes]`.
+        Read file content as a `FileStreamReader` (an `Iterator[bytes]`).
 
         The request timeout bounds only the initial handshake—the returned
-        iterator is not killed by it while being consumed.
+        iterator is not killed by it while being consumed. The reader releases
+        its connection once fully consumed; if you don't read it to the end,
+        use it as a context manager or call `close()` for deterministic
+        cleanup.
 
         :param path: Path to the file
         :param user: Run the operation as this user
@@ -186,7 +190,7 @@ class Filesystem:
         :param request_timeout: Timeout for the request in **seconds**
         :param gzip: Use gzip compression for the request
 
-        :return: File content as an `Iterator[bytes]`
+        :return: File content as a `FileStreamReader`
         """
         ...
 
@@ -234,13 +238,9 @@ class Filesystem:
             # transport and read again when body iteration starts.
             request.extensions.get("timeout", {})["read"] = None
 
-            def stream_file() -> Iterator[bytes]:
-                try:
-                    yield from r.iter_bytes()
-                finally:
-                    r.close()
-
-            return stream_file()
+            # FileStreamReader owns the response and releases the connection
+            # when the stream is consumed, closed, errors, or is GC'd.
+            return FileStreamReader(r)
 
         try:
             r = self._envd_api.get(

@@ -1,10 +1,14 @@
+import asyncio
 import gzip
 import re
+import weakref
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from io import IOBase, TextIOBase
 from typing import IO, AsyncIterator, Dict, Iterator, Optional, Union, TypedDict
+
+import httpx
 
 from e2b.envd.filesystem import filesystem_pb2
 from e2b.exceptions import InvalidArgumentException
@@ -133,6 +137,121 @@ class WriteEntry(TypedDict):
 
     path: str
     data: Union[str, bytes, IO]
+
+
+class FileStreamReader(Iterator[bytes]):
+    """Iterator over a streamed file download.
+
+    Returned by ``Sandbox.files.read(format="stream")``. It owns the underlying
+    HTTP response and releases its pooled connection as soon as the stream is
+    fully consumed, an error is raised while reading, or the reader is closed.
+
+    Iterate it directly (``for chunk in stream``) or, for deterministic
+    cleanup when you don't read it to the end, use it as a context manager or
+    call :meth:`close`::
+
+        with sandbox.files.read(path, format="stream") as stream:
+            for chunk in stream:
+                ...
+
+    As a safety net, the connection is also released when the reader is garbage
+    collected, so an abandoned stream does not leak a connection indefinitely.
+    """
+
+    def __init__(self, response: httpx.Response):
+        self._response = response
+        self._iterator = response.iter_bytes()
+        # Releases the connection on GC if the reader is abandoned without
+        # being consumed or closed. Calling it explicitly (via close) runs the
+        # callback once and is then a no-op, so close is idempotent.
+        self._finalizer = weakref.finalize(self, response.close)
+
+    def __iter__(self) -> Iterator[bytes]:
+        return self
+
+    def __next__(self) -> bytes:
+        try:
+            return next(self._iterator)
+        except BaseException:
+            # Covers normal end (StopIteration) and read errors alike.
+            self.close()
+            raise
+
+    def close(self) -> None:
+        """Release the underlying HTTP connection. Safe to call multiple times."""
+        self._finalizer()
+
+    def __enter__(self) -> "FileStreamReader":
+        return self
+
+    def __exit__(self, *exc_info) -> None:
+        self.close()
+
+
+def _schedule_response_aclose(response: httpx.Response) -> None:
+    """Best-effort cleanup for an abandoned async stream.
+
+    Closing an async response requires awaiting ``aclose()``, which a (sync)
+    garbage-collection finalizer cannot do. When the reader is dropped while an
+    event loop is running we schedule the close on it; otherwise there is
+    nothing safe to await and the connection is reclaimed when the client is
+    closed.
+    """
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        return
+    if loop.is_running():
+        loop.create_task(response.aclose())
+
+
+class AsyncFileStreamReader(AsyncIterator[bytes]):
+    """Async iterator over a streamed file download.
+
+    Returned by ``AsyncSandbox.files.read(format="stream")``. It owns the
+    underlying HTTP response and releases its pooled connection as soon as the
+    stream is fully consumed, an error is raised while reading, or the reader is
+    closed.
+
+    Iterate it directly (``async for chunk in stream``) or, for deterministic
+    cleanup when you don't read it to the end, use it as an async context
+    manager or call :meth:`aclose`::
+
+        async with await sandbox.files.read(path, format="stream") as stream:
+            async for chunk in stream:
+                ...
+
+    As a safety net, the connection is also released when the reader is garbage
+    collected while an event loop is running, so an abandoned stream does not
+    leak a connection indefinitely.
+    """
+
+    def __init__(self, response: httpx.Response):
+        self._response = response
+        self._iterator = response.aiter_bytes()
+        self._finalizer = weakref.finalize(self, _schedule_response_aclose, response)
+
+    def __aiter__(self) -> AsyncIterator[bytes]:
+        return self
+
+    async def __anext__(self) -> bytes:
+        try:
+            return await self._iterator.__anext__()
+        except BaseException:
+            # Covers normal end (StopAsyncIteration) and read errors alike.
+            await self.aclose()
+            raise
+
+    async def aclose(self) -> None:
+        """Release the underlying HTTP connection. Safe to call multiple times."""
+        self._finalizer.detach()
+        await self._response.aclose()
+
+    async def __aenter__(self) -> "AsyncFileStreamReader":
+        return self
+
+    async def __aexit__(self, *exc_info) -> None:
+        await self.aclose()
 
 
 def _to_httpx_file(file_path: str, file_data: Union[str, bytes, IO]):
