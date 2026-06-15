@@ -75,11 +75,11 @@ class Commands:
             return [
                 ProcessInfo(
                     pid=p.pid,
-                    tag=p.tag,
+                    tag=p.tag if p.HasField("tag") else None,
                     cmd=p.config.cmd,
                     args=list(p.config.args),
                     envs=dict(p.config.envs),
-                    cwd=p.config.cwd,
+                    cwd=p.config.cwd if p.config.HasField("cwd") else None,
                 )
                 for p in res.processes
             ]
@@ -331,6 +331,10 @@ class Commands:
                 ),
             )
         except Exception as e:
+            try:
+                events.close()
+            except Exception:
+                pass
             raise handle_rpc_exception(e)
 
     def connect(
@@ -383,4 +387,8 @@ class Commands:
                 ),
             )
         except Exception as e:
+            try:
+                events.close()
+            except Exception:
+                pass
             raise handle_rpc_exception(e)

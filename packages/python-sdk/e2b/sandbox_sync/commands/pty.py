@@ -172,6 +172,10 @@ class Pty:
                 events=events,
             )
         except Exception as e:
+            try:
+                events.close()
+            except Exception:
+                pass
             raise handle_rpc_exception(e)
 
     def connect(
@@ -216,6 +220,10 @@ class Pty:
                 events=events,
             )
         except Exception as e:
+            try:
+                events.close()
+            except Exception:
+                pass
             raise handle_rpc_exception(e)
 
     def resize(

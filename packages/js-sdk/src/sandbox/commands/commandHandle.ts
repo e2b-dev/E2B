@@ -88,6 +88,9 @@ export class CommandHandle
   private _stdout = ''
   private _stderr = ''
 
+  private readonly stdoutDecoder = new TextDecoder()
+  private readonly stderrDecoder = new TextDecoder()
+
   private result?: CommandResult
   private iterationError?: Error
 
@@ -242,21 +245,39 @@ export class CommandHandle
         case 'data':
           switch (e.value.output.case) {
             case 'stdout':
-              out = new TextDecoder().decode(e.value.output.value)
-              this._stdout += out
-              yield [out as Stdout, null, null]
+              out = this.stdoutDecoder.decode(e.value.output.value, {
+                stream: true,
+              })
+              if (out) {
+                this._stdout += out
+                yield [out as Stdout, null, null]
+              }
               break
             case 'stderr':
-              out = new TextDecoder().decode(e.value.output.value)
-              this._stderr += out
-              yield [null, out as Stderr, null]
+              out = this.stderrDecoder.decode(e.value.output.value, {
+                stream: true,
+              })
+              if (out) {
+                this._stderr += out
+                yield [null, out as Stderr, null]
+              }
               break
             case 'pty':
               yield [null, null, e.value.output.value as PtyOutput]
               break
           }
           break
-        case 'end':
+        case 'end': {
+          const stdoutRest = this.stdoutDecoder.decode()
+          if (stdoutRest) {
+            this._stdout += stdoutRest
+            yield [stdoutRest as Stdout, null, null]
+          }
+          const stderrRest = this.stderrDecoder.decode()
+          if (stderrRest) {
+            this._stderr += stderrRest
+            yield [null, stderrRest as Stderr, null]
+          }
           this.result = {
             exitCode: e.value.exitCode,
             error: e.value.error,
@@ -264,6 +285,7 @@ export class CommandHandle
             stderr: this.stderr,
           }
           break
+        }
       }
       // TODO: Handle empty events like in python SDK
     }

@@ -1,4 +1,5 @@
 import asyncio
+import codecs
 import inspect
 from typing import (
     Optional,
@@ -99,6 +100,9 @@ class AsyncCommandHandle:
         self._stdout: str = ""
         self._stderr: str = ""
 
+        self._stdout_decoder = codecs.getincrementaldecoder("utf-8")(errors="replace")
+        self._stderr_decoder = codecs.getincrementaldecoder("utf-8")(errors="replace")
+
         self._on_stdout = on_stdout
         self._on_stderr = on_stderr
         self._on_pty = on_pty
@@ -121,16 +125,26 @@ class AsyncCommandHandle:
         async for event in self._events:
             if event.event.HasField("data"):
                 if event.event.data.stdout:
-                    out = event.event.data.stdout.decode("utf-8", "replace")
-                    self._stdout += out
-                    yield out, None, None
+                    out = self._stdout_decoder.decode(event.event.data.stdout)
+                    if out:
+                        self._stdout += out
+                        yield out, None, None
                 if event.event.data.stderr:
-                    out = event.event.data.stderr.decode("utf-8", "replace")
-                    self._stderr += out
-                    yield None, out, None
+                    out = self._stderr_decoder.decode(event.event.data.stderr)
+                    if out:
+                        self._stderr += out
+                        yield None, out, None
                 if event.event.data.pty:
                     yield None, None, event.event.data.pty
             if event.event.HasField("end"):
+                out = self._stdout_decoder.decode(b"", final=True)
+                if out:
+                    self._stdout += out
+                    yield out, None, None
+                err = self._stderr_decoder.decode(b"", final=True)
+                if err:
+                    self._stderr += err
+                    yield None, err, None
                 self._result = CommandResult(
                     stdout=self._stdout,
                     stderr=self._stderr,

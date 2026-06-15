@@ -603,4 +603,8 @@ class Filesystem:
 
             return AsyncWatchHandle(events=events, on_event=on_event, on_exit=on_exit)
         except Exception as e:
+            try:
+                await events.aclose()
+            except Exception:
+                pass
             raise _handle_filesystem_rpc_exception(e)

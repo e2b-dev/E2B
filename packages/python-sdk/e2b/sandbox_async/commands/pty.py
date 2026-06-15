@@ -166,6 +166,10 @@ class Pty:
                 on_pty=on_data,
             )
         except Exception as e:
+            try:
+                await events.aclose()
+            except Exception:
+                pass
             raise handle_rpc_exception(e)
 
     async def connect(
@@ -213,6 +217,10 @@ class Pty:
                 on_pty=on_data,
             )
         except Exception as e:
+            try:
+                await events.aclose()
+            except Exception:
+                pass
             raise handle_rpc_exception(e)
 
     async def resize(
