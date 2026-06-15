@@ -8,7 +8,7 @@ runs:
   using: 'composite'
   steps:
     - name: Parse .tool-versions
-      uses: wistia/parse-tool-versions@v2.1.1
+      uses: wistia/parse-tool-versions@32f568a4ffd4bfa7720ebf93f171597d1ebc979a # v2.1.1
       with:
         filename: '.tool-versions'
         uppercase: 'true'

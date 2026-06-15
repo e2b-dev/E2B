@@ -43,8 +43,6 @@ jobs:
   buildTemplate:
     name: Build and Publish E2B Template
     runs-on: ubuntu-22.04
-    env:
-      E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -54,4 +52,6 @@ jobs:
 
       - name: Build and publish base template
         working-directory: ./templates/base
+        env:
+          E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
         run: e2b template create base --memory-mb 512
