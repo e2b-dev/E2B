@@ -8,9 +8,9 @@ import {
 } from '../../../src/template/readycmd'
 
 describe('readycmd', () => {
-  test('waitForPort anchors the port match', () => {
+  test('waitForPort matches the exact listening port', () => {
     const cmd = waitForPort(80).getCmd()
-    expect(cmd).toBe("ss -tuln | grep -E ':80([[:space:]]|$)'")
+    expect(cmd).toBe('[ -n "$(ss -Htuln sport = :80)" ]')
   })
 
   test('waitForURL quotes the url', () => {

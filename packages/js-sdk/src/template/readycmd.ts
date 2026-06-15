@@ -32,9 +32,10 @@ export class ReadyCmd {
  * ```
  */
 export function waitForPort(port: number): ReadyCmd {
-  // Anchor the port at the end of the address column so e.g. port 80
-  // doesn't match 8080
-  const cmd = `ss -tuln | grep -E ':${port}([[:space:]]|$)'`
+  // Match the exact listening port via ss's source-port filter (so e.g. port
+  // 80 doesn't match 8080). ss exits 0 regardless of matches, so test for
+  // non-empty output to signal readiness.
+  const cmd = `[ -n "$(ss -Htuln sport = :${port})" ]`
   return new ReadyCmd(cmd)
 }
 
