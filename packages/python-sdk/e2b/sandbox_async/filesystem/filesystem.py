@@ -648,4 +648,8 @@ class Filesystem:
                 check_health=lambda: acheck_sandbox_health(self._envd_api),
             )
         except Exception as e:
+            try:
+                await events.aclose()
+            except Exception:
+                pass
             raise await _ahandle_filesystem_rpc_exception(e, self._envd_api)
