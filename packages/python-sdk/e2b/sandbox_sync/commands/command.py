@@ -4,6 +4,7 @@ from typing import Callable, Dict, List, Literal, Optional, Union, overload
 import e2b_connect
 import httpx
 from packaging.version import Version
+from e2b.api import make_logging_event_hooks
 from e2b.api.client_sync import get_envd_transport
 from e2b.connection_config import (
     ConnectionConfig,
@@ -43,6 +44,7 @@ class Commands:
             base_url=self._envd_api_url,
             transport=transport,
             headers=self._connection_config.sandbox_headers,
+            event_hooks=make_logging_event_hooks(self._connection_config.logger),
         )
 
     def _create_rpc(self) -> process_connect.ProcessClient:
