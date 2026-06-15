@@ -1,5 +1,5 @@
 import { assert, test, describe } from 'vitest'
-import { handleEnvdApiError } from '../../src/envd/api'
+import { handleEnvdApiError, handleEnvdApiFetchError } from '../../src/envd/api'
 import {
   AuthenticationError,
   InvalidArgumentError,
@@ -100,5 +100,34 @@ describe('handleEnvdApiError', () => {
     const err = await handleEnvdApiError(res)
     assert.instanceOf(err, SandboxError)
     assert.include(err?.message, '500')
+  })
+})
+
+describe('handleEnvdApiFetchError', () => {
+  test('returns the original error for terminated fetch without a health check', async () => {
+    const original = new TypeError('terminated')
+    const err = await handleEnvdApiFetchError(original)
+    assert.strictEqual(err, original)
+  })
+
+  test('returns a TimeoutError when the health check says the sandbox is not running', async () => {
+    const err = await handleEnvdApiFetchError(
+      new TypeError('terminated'),
+      async () => false
+    )
+    assert.instanceOf(err, TimeoutError)
+    assert.include(err.message, 'sandbox was killed or reached its end of life')
+  })
+
+  test('returns the original error when the health check says the sandbox is running', async () => {
+    const original = new TypeError('terminated')
+    const err = await handleEnvdApiFetchError(original, async () => true)
+    assert.strictEqual(err, original)
+  })
+
+  test('returns the original error for other fetch failures', async () => {
+    const original = new TypeError('fetch failed')
+    const err = await handleEnvdApiFetchError(original)
+    assert.strictEqual(err, original)
   })
 })

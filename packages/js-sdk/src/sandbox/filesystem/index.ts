@@ -15,8 +15,17 @@ import {
   Username,
 } from '../../connectionConfig'
 
-import { handleEnvdApiError, handleWatchDirStartEvent } from '../../envd/api'
-import { authenticationHeader, handleRpcError } from '../../envd/rpc'
+import {
+  checkSandboxHealth,
+  handleEnvdApiError,
+  handleEnvdApiFetchError,
+  handleWatchDirStartEvent,
+} from '../../envd/api'
+import {
+  authenticationHeader,
+  handleRpcErrorWithHealthCheck,
+  SandboxHealthCheck,
+} from '../../envd/rpc'
 
 import { EnvdApiClient } from '../../envd/api'
 import {
@@ -54,8 +63,15 @@ const FILESYSTEM_RPC_ERROR_MAP: Partial<
   [Code.NotFound]: (message: string) => new FileNotFoundError(message),
 }
 
-function handleFilesystemRpcError(err: unknown): Error {
-  return handleRpcError(err, FILESYSTEM_RPC_ERROR_MAP)
+async function handleFilesystemRpcError(
+  err: unknown,
+  checkHealth?: SandboxHealthCheck
+): Promise<Error> {
+  return handleRpcErrorWithHealthCheck(
+    err,
+    checkHealth,
+    FILESYSTEM_RPC_ERROR_MAP
+  )
 }
 
 function handleFilesystemEnvdApiError(res: {
@@ -331,6 +347,7 @@ export class Filesystem {
 
   private readonly defaultWatchTimeout = 60_000 // 60 seconds
   private readonly defaultWatchRecursive = false
+  private readonly checkHealth: SandboxHealthCheck
 
   constructor(
     transport: Transport,
@@ -338,6 +355,7 @@ export class Filesystem {
     private readonly connectionConfig: ConnectionConfig
   ) {
     this.rpc = createClient(FilesystemService, transport)
+    this.checkHealth = () => checkSandboxHealth(this.envdApi)
   }
 
   /**
@@ -421,20 +439,24 @@ export class Filesystem {
       headers['Accept-Encoding'] = 'gzip'
     }
 
-    const res = await this.envdApi.api.GET('/files', {
-      params: {
-        query: {
-          path,
-          username: user,
+    const res = await this.envdApi.api
+      .GET('/files', {
+        params: {
+          query: {
+            path,
+            username: user,
+          },
         },
-      },
-      parseAs: format === 'bytes' ? 'arrayBuffer' : format,
-      signal: this.connectionConfig.getSignal(
-        opts?.requestTimeoutMs,
-        opts?.signal
-      ),
-      headers,
-    })
+        parseAs: format === 'bytes' ? 'arrayBuffer' : format,
+        signal: this.connectionConfig.getSignal(
+          opts?.requestTimeoutMs,
+          opts?.signal
+        ),
+        headers,
+      })
+      .catch(async (err) => {
+        throw await handleEnvdApiFetchError(err, this.checkHealth)
+      })
 
     const err = await handleFilesystemEnvdApiError(res)
     if (err) {
@@ -565,21 +587,25 @@ export class Filesystem {
           const filePath = path ?? (file as WriteEntry).path
           const body = await toUploadBody(file.data, useGzip)
 
-          const res = await this.envdApi.api.POST('/files', {
-            params: {
-              query: {
-                path: filePath,
-                username: user,
+          const res = await this.envdApi.api
+            .POST('/files', {
+              params: {
+                query: {
+                  path: filePath,
+                  username: user,
+                },
               },
-            },
-            bodySerializer: () => body,
-            headers,
-            signal: this.connectionConfig.getSignal(
-              writeOpts?.requestTimeoutMs,
-              writeOpts?.signal
-            ),
-            body: {},
-          })
+              bodySerializer: () => body,
+              headers,
+              signal: this.connectionConfig.getSignal(
+                writeOpts?.requestTimeoutMs,
+                writeOpts?.signal
+              ),
+              body: {},
+            })
+            .catch(async (err) => {
+              throw await handleEnvdApiFetchError(err, this.checkHealth)
+            })
 
           const err = await handleFilesystemEnvdApiError(res)
           if (err) {
@@ -614,21 +640,25 @@ export class Filesystem {
         )
       }
 
-      const res = await this.envdApi.api.POST('/files', {
-        params: {
-          query: {
-            path,
-            username: user,
+      const res = await this.envdApi.api
+        .POST('/files', {
+          params: {
+            query: {
+              path,
+              username: user,
+            },
           },
-        },
-        bodySerializer: () => formData,
-        headers: extraHeaders,
-        signal: this.connectionConfig.getSignal(
-          writeOpts?.requestTimeoutMs,
-          writeOpts?.signal
-        ),
-        body: {},
-      })
+          bodySerializer: () => formData,
+          headers: extraHeaders,
+          signal: this.connectionConfig.getSignal(
+            writeOpts?.requestTimeoutMs,
+            writeOpts?.signal
+          ),
+          body: {},
+        })
+        .catch(async (err) => {
+          throw await handleEnvdApiFetchError(err, this.checkHealth)
+        })
 
       const err = await handleFilesystemEnvdApiError(res)
       if (err) {
@@ -713,7 +743,7 @@ export class Filesystem {
 
       return entries
     } catch (err) {
-      throw handleFilesystemRpcError(err)
+      throw await handleFilesystemRpcError(err, this.checkHealth)
     }
   }
 
@@ -746,7 +776,7 @@ export class Filesystem {
         }
       }
 
-      throw handleFilesystemRpcError(err)
+      throw await handleFilesystemRpcError(err, this.checkHealth)
     }
   }
 
@@ -786,7 +816,7 @@ export class Filesystem {
 
       return mapEntryInfo(entry)
     } catch (err) {
-      throw handleFilesystemRpcError(err)
+      throw await handleFilesystemRpcError(err, this.checkHealth)
     }
   }
 
@@ -809,7 +839,7 @@ export class Filesystem {
         }
       )
     } catch (err) {
-      throw handleFilesystemRpcError(err)
+      throw await handleFilesystemRpcError(err, this.checkHealth)
     }
   }
 
@@ -842,7 +872,7 @@ export class Filesystem {
         }
       }
 
-      throw handleFilesystemRpcError(err)
+      throw await handleFilesystemRpcError(err, this.checkHealth)
     }
   }
 
@@ -878,7 +908,7 @@ export class Filesystem {
 
       return mapEntryInfo(res.entry)
     } catch (err) {
-      throw handleFilesystemRpcError(err)
+      throw await handleFilesystemRpcError(err, this.checkHealth)
     }
   }
 
@@ -959,10 +989,16 @@ export class Filesystem {
       await handleWatchDirStartEvent(events)
       clearStartTimeout()
 
-      return new WatchHandle(cleanup, events, onEvent, opts?.onExit)
+      return new WatchHandle(
+        cleanup,
+        events,
+        onEvent,
+        opts?.onExit,
+        this.checkHealth
+      )
     } catch (err) {
       cleanup()
-      throw handleFilesystemRpcError(err)
+      throw await handleFilesystemRpcError(err, this.checkHealth)
     }
   }
 }

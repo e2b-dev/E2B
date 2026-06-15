@@ -14,6 +14,25 @@ import {
 } from '../errors'
 import { ENVD_DEFAULT_USER } from './versions'
 
+/**
+ * Result of a sandbox health probe: `true` if the sandbox is running, `false` if it is not,
+ * `undefined` if its state could not be determined.
+ */
+export type SandboxHealthCheck = () => Promise<boolean | undefined>
+
+/**
+ * Checks whether the error is the signature of the connection to the sandbox being
+ * dropped mid-request — an HTTP/2 stream reset surfaced by connect as `Code.Unknown`
+ * with the message 'terminated'.
+ */
+export function isConnectionTerminatedError(err: unknown): boolean {
+  return (
+    err instanceof ConnectError &&
+    err.code === Code.Unknown &&
+    err.rawMessage === 'terminated'
+  )
+}
+
 const DEFAULT_ERROR_MAP: Partial<Record<Code, (message: string) => Error>> = {
   [Code.InvalidArgument]: (message) => new InvalidArgumentError(message),
   [Code.Unauthenticated]: (message) => new AuthenticationError(message),
@@ -60,6 +79,36 @@ export function handleRpcError(
   }
 
   return err as Error
+}
+
+/**
+ * Like {@link handleRpcError}, but when the connection to the sandbox was dropped
+ * mid-request it probes the sandbox health to tell apart the sandbox being killed
+ * from a transient network failure (e.g. a load balancer dropping the connection).
+ * When the probe confirms the sandbox is gone, a `TimeoutError` is returned —
+ * consistent with how requests to an already-dead sandbox surface.
+ *
+ * @param err - The caught error, expected to be a `ConnectError` from the gRPC transport.
+ * @param checkHealth - Probe returning whether the sandbox is running, or `undefined` when unknown.
+ * @param errorMap - Optional map of gRPC `Code` values to error factory functions that override the defaults.
+ * @returns The corresponding `Error` instance.
+ */
+export async function handleRpcErrorWithHealthCheck(
+  err: unknown,
+  checkHealth?: SandboxHealthCheck,
+  errorMap?: Partial<Record<Code, (message: string) => Error>>
+): Promise<Error> {
+  if (isConnectionTerminatedError(err) && checkHealth) {
+    const running = await checkHealth().catch(() => undefined)
+
+    if (running === false) {
+      return new TimeoutError(
+        `${(err as ConnectError).message}: The sandbox was killed or reached its end of life while the request was in flight.`
+      )
+    }
+  }
+
+  return handleRpcError(err, errorMap)
 }
 
 function encode64(value: string): string {
