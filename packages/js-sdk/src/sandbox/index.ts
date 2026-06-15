@@ -357,8 +357,16 @@ export class Sandbox extends SandboxApi {
     sandboxId: string,
     opts?: SandboxConnectOpts
   ): Promise<InstanceType<S>> {
-    const sandbox = await SandboxApi.connectSandbox(sandboxId, opts)
     const config = new ConnectionConfig(opts)
+    if (config.debug) {
+      return new this({
+        sandboxId,
+        envdVersion: ENVD_DEBUG_FALLBACK,
+        ...config,
+      }) as InstanceType<S>
+    }
+
+    const sandbox = await SandboxApi.connectSandbox(sandboxId, opts)
 
     return new this({
       sandboxId,
@@ -390,6 +398,11 @@ export class Sandbox extends SandboxApi {
    * ```
    */
   async connect(opts?: SandboxConnectOpts): Promise<this> {
+    if (this.connectionConfig.debug) {
+      // Skip connecting to the sandbox in debug mode
+      return this
+    }
+
     await SandboxApi.connectSandbox(this.sandboxId, this.resolveApiOpts(opts))
 
     return this

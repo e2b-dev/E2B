@@ -1,10 +1,10 @@
-from types import SimpleNamespace
 from unittest.mock import Mock
 
 import pytest
 from packaging.version import Version
 
 from e2b import Sandbox
+from e2b.api import SandboxCreateResponse
 from e2b.connection_config import ConnectionConfig
 import e2b.sandbox_sync.main as sandbox_sync_main
 
@@ -81,9 +81,9 @@ def test_pause_applies_overrides(monkeypatch, test_api_key):
 @pytest.mark.skip_debug()
 def test_connect_sets_stable_host_routing_headers(monkeypatch, test_api_key):
     mock_connect = Mock(
-        return_value=SimpleNamespace(
+        return_value=SandboxCreateResponse(
             sandbox_id="sbx-test",
-            domain="e2b.app",
+            sandbox_domain="e2b.app",
             envd_version="0.4.0",
             envd_access_token="tok",
             traffic_access_token="traffic",

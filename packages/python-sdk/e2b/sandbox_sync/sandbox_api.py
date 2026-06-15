@@ -23,7 +23,6 @@ from e2b.api.client.models import (
     NewSandbox,
     PostSandboxesSandboxIDSnapshotsBody,
     PostSandboxesSandboxIDTimeoutBody,
-    Sandbox,
     SandboxAutoResumeConfig,
     SandboxNetworkConfig,
     SandboxVolumeMount as SandboxVolumeMountAPI,
@@ -320,7 +319,7 @@ class SandboxApi(SandboxBase):
         sandbox_id: str,
         timeout: Optional[int] = None,
         **opts: Unpack[ApiParams],
-    ) -> Sandbox:
+    ) -> SandboxCreateResponse:
         timeout = timeout or SandboxBase.default_sandbox_timeout
 
         config = ConnectionConfig(**opts)
@@ -344,7 +343,25 @@ class SandboxApi(SandboxBase):
         if res.parsed is None:
             raise Exception("Body of the request is None")
 
-        return res.parsed
+        domain = res.parsed.domain if isinstance(res.parsed.domain, str) else None
+        envd_token = (
+            res.parsed.envd_access_token
+            if isinstance(res.parsed.envd_access_token, str)
+            else None
+        )
+        traffic_token = (
+            res.parsed.traffic_access_token
+            if isinstance(res.parsed.traffic_access_token, str)
+            else None
+        )
+
+        return SandboxCreateResponse(
+            sandbox_id=res.parsed.sandbox_id,
+            sandbox_domain=domain,
+            envd_version=res.parsed.envd_version,
+            envd_access_token=envd_token,
+            traffic_access_token=traffic_token,
+        )
 
     @classmethod
     def _cls_create_snapshot(
