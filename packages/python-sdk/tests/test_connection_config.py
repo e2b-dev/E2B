@@ -28,6 +28,27 @@ def test_api_url_has_correct_priority(monkeypatch):
     assert config.api_url == "http://localhost:8080"
 
 
+def test_validate_api_key_defaults_to_true(monkeypatch):
+    monkeypatch.delenv("E2B_VALIDATE_API_KEY", raising=False)
+
+    config = ConnectionConfig()
+    assert config.validate_api_key is True
+
+
+def test_validate_api_key_disabled_via_env_var(monkeypatch):
+    monkeypatch.setenv("E2B_VALIDATE_API_KEY", "false")
+
+    config = ConnectionConfig()
+    assert config.validate_api_key is False
+
+
+def test_validate_api_key_arg_has_priority_over_env_var(monkeypatch):
+    monkeypatch.setenv("E2B_VALIDATE_API_KEY", "true")
+
+    config = ConnectionConfig(validate_api_key=False)
+    assert config.validate_api_key is False
+
+
 def test_sandbox_url_uses_stable_host_for_supported_domain():
     config = ConnectionConfig(domain="e2b.app")
 
