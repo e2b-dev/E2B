@@ -202,6 +202,7 @@ class Commands:
         self,
         cmd: str,
         background: Union[Literal[False], None] = None,
+        tag: Optional[str] = None,
         envs: Optional[Dict[str, str]] = None,
         user: Optional[Username] = None,
         cwd: Optional[str] = None,
@@ -216,6 +217,7 @@ class Commands:
 
         :param cmd: Command to execute
         :param background: **`False` if the command should be executed in the foreground**, `True` if the command should be executed in the background
+        :param tag: Custom tag used for reconnecting to the command later
         :param envs: Environment variables used for the command
         :param user: User to run the command as
         :param cwd: Working directory to run the command
@@ -234,6 +236,7 @@ class Commands:
         self,
         cmd: str,
         background: Literal[True],
+        tag: Optional[str] = None,
         envs: Optional[Dict[str, str]] = None,
         user: Optional[Username] = None,
         cwd: Optional[str] = None,
@@ -248,6 +251,7 @@ class Commands:
 
         :param cmd: Command to execute
         :param background: `False` if the command should be executed in the foreground, **`True` if the command should be executed in the background**
+        :param tag: Custom tag used for reconnecting to the command later
         :param envs: Environment variables used for the command
         :param user: User to run the command as
         :param cwd: Working directory to run the command
@@ -263,6 +267,7 @@ class Commands:
         self,
         cmd: str,
         background: Union[bool, None] = None,
+        tag: Optional[str] = None,
         envs: Optional[Dict[str, str]] = None,
         user: Optional[Username] = None,
         cwd: Optional[str] = None,
@@ -284,6 +289,7 @@ class Commands:
 
         proc = self._start(
             cmd,
+            tag,
             envs,
             user,
             cwd,
@@ -304,6 +310,7 @@ class Commands:
     def _start(
         self,
         cmd: str,
+        tag: Optional[str],
         envs: Optional[Dict[str, str]],
         user: Optional[Username],
         cwd: Optional[str],
@@ -319,6 +326,7 @@ class Commands:
                     args=["-l", "-c", cmd],
                     cwd=cwd,
                 ),
+                tag=tag,
                 stdin=stdin,
             ),
             headers={
@@ -361,7 +369,8 @@ class Commands:
 
     def connect(
         self,
-        pid: int,
+        pid: Optional[int] = None,
+        tag: Optional[str] = None,
         timeout: Optional[float] = 60,
         request_timeout: Optional[float] = None,
     ):
@@ -370,14 +379,23 @@ class Commands:
         You can use `CommandHandle.wait()` to wait for the command to finish and get execution results.
 
         :param pid: Process ID of the command to connect to. You can get the list of processes using `sandbox.commands.list()`
+        :param tag: Custom tag of the command to connect to
         :param timeout: Timeout for the connection in **seconds**. Using `0` will not limit the connection time
         :param request_timeout: Timeout for the request in **seconds**
 
         :return: `CommandHandle` handle to interact with the running command
         """
+        if (pid is None) == (tag is None):
+            raise ValueError("Exactly one of pid or tag must be provided")
+
+        selector = (
+            process_pb2.ProcessSelector(pid=pid)
+            if pid is not None
+            else process_pb2.ProcessSelector(tag=tag)
+        )
         events = self._rpc.connect(
             process_pb2.ConnectRequest(
-                process=process_pb2.ProcessSelector(pid=pid),
+                process=selector,
             ),
             headers={
                 KEEPALIVE_PING_HEADER: str(KEEPALIVE_PING_INTERVAL_SEC),

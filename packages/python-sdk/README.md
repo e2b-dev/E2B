@@ -54,6 +54,28 @@ with Sandbox.create() as sandbox:
     print(execution.text)  # outputs 2
 ```
 
+### Reconnect to long-running commands
+
+For agent jobs that may outlive a single client connection, start the command in
+the background with a stable tag and reconnect later from another worker.
+
+```py
+from e2b import Sandbox
+
+with Sandbox.create() as sandbox:
+    handle = sandbox.commands.run(
+        "python train_or_simulate.py",
+        background=True,
+        tag="agent-job-42",
+        timeout=0,
+    )
+    handle.disconnect()
+
+    resumed = sandbox.commands.connect(tag="agent-job-42", timeout=0)
+    result = resumed.wait()
+    print(result.exit_code)
+```
+
 ### 5. Check docs
 Visit [E2B documentation](https://e2b.dev/docs).
 
