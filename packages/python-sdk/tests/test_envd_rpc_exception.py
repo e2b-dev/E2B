@@ -62,9 +62,8 @@ def test_returns_raw_network_errors():
 
 
 def test_maps_read_timeout_to_timeout():
-    # A stream read timeout fires when the command `timeout` is exceeded before the
-    # server's own `deadline_exceeded` response arrives — it must surface as a
-    # TimeoutException rather than leaking the raw httpcore error.
+    # A transport-level read timeout (e.g. a unary call exceeding `request_timeout`)
+    # must surface as a TimeoutException rather than leaking the raw httpcore error.
     err = handle_rpc_exception(httpcore.ReadTimeout("the read operation timed out"))
     assert isinstance(err, TimeoutException)
 

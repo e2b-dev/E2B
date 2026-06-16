@@ -2,4 +2,4 @@
 "@e2b/python-sdk": patch
 ---
 
-Map transport-level timeouts from `httpcore` (e.g. a stream read timeout) to `TimeoutException`. When iterating over a long-running command's output, the underlying HTTP read timeout (set to the command `timeout`) races with the server's own `deadline_exceeded` response; whichever fires first won, so the client could leak a raw `httpcore.ReadTimeout` instead of a `TimeoutException`. Both cases now surface a consistent, actionable `TimeoutException`.
+Fix flaky `TimeoutException` on streaming calls (commands, PTY, watch). The stream's HTTP read timeout was set to the command `timeout`, so it raced the server's own `deadline_exceeded` response and could leak a raw `httpcore.ReadTimeout`. The read timeout is now dropped on streams — the command `timeout` is enforced server-side via the `connect-timeout-ms` header (matching the JS SDK, which has no per-chunk read timeout). As a safety net, transport-level `httpcore` timeouts are also now mapped to `TimeoutException`.
