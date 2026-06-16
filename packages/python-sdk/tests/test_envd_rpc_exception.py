@@ -61,6 +61,19 @@ def test_returns_raw_network_errors():
     assert err is original
 
 
+def test_maps_read_timeout_to_timeout():
+    # A stream read timeout fires when the command `timeout` is exceeded before the
+    # server's own `deadline_exceeded` response arrives — it must surface as a
+    # TimeoutException rather than leaking the raw httpcore error.
+    err = handle_rpc_exception(httpcore.ReadTimeout("the read operation timed out"))
+    assert isinstance(err, TimeoutException)
+
+
+def test_maps_connect_timeout_to_timeout():
+    err = handle_rpc_exception(httpcore.ConnectTimeout("connect timed out"))
+    assert isinstance(err, TimeoutException)
+
+
 def test_returns_original_when_not_connect_exception():
     original = ValueError("not connect")
     err = handle_rpc_exception(original)
