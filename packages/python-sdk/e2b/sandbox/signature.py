@@ -26,7 +26,9 @@ def get_signature(
         raise ValueError("Access token is not set and signature cannot be generated!")
 
     expiration = (
-        int(time.time()) + expiration_in_seconds if expiration_in_seconds else None
+        int(time.time()) + expiration_in_seconds
+        if expiration_in_seconds is not None
+        else None
     )
 
     # if user is None, set it to empty string to handle default user
