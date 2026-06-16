@@ -1,8 +1,16 @@
+import datetime
 from typing import Optional
 
 from e2b.volume.client.models import VolumeEntryStat as VolumeEntryStatApi
 from e2b.volume.client.types import UNSET
 from e2b.volume.types import VolumeEntryStat
+
+
+def _ensure_utc(dt: datetime.datetime) -> datetime.datetime:
+    """Mark a timezone-naive datetime as UTC (API timestamps are UTC)."""
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=datetime.timezone.utc)
+    return dt
 
 
 def convert_volume_entry_stat(api_stat: VolumeEntryStatApi) -> VolumeEntryStat:
@@ -19,9 +27,9 @@ def convert_volume_entry_stat(api_stat: VolumeEntryStatApi) -> VolumeEntryStat:
         mode=api_stat.mode,
         uid=api_stat.uid,
         gid=api_stat.gid,
-        atime=api_stat.atime,
-        mtime=api_stat.mtime,
-        ctime=api_stat.ctime,
+        atime=_ensure_utc(api_stat.atime),
+        mtime=_ensure_utc(api_stat.mtime),
+        ctime=_ensure_utc(api_stat.ctime),
         target=target,
     )
 

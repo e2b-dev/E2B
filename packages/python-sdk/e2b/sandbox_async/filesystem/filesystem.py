@@ -230,7 +230,7 @@ class Filesystem:
         :param data: Data to write to the file, can be a `str`, `bytes`, or `IO`.
         :param user: Run the operation as this user
         :param request_timeout: Timeout for the request in **seconds**
-        :param gzip: Use gzip compression for the request
+        :param gzip: Use gzip compression for the upload. Implies the `application/octet-stream` upload. Requires envd 0.5.7 or later — when not supported, the upload falls back to uncompressed `multipart/form-data`.
         :param use_octet_stream: Upload using `application/octet-stream` instead of `multipart/form-data`. Defaults to `False`. Requires envd 0.5.7 or later — when not supported, the upload falls back to `multipart/form-data`.
         :param metadata: User-defined metadata to persist on the uploaded file as extended attributes. Keys are lowercased by the sandbox; invalid keys or values raise an `InvalidArgumentException`. Requires envd 0.6.2 or later.
 
@@ -270,7 +270,7 @@ class Filesystem:
         :param files: list of files to write as `WriteEntry` objects, each containing `path` and `data`
         :param user: Run the operation as this user
         :param request_timeout: Timeout for the request
-        :param gzip: Use gzip compression for the request
+        :param gzip: Use gzip compression for the upload. Implies the `application/octet-stream` upload. Requires envd 0.5.7 or later — when not supported, the upload falls back to uncompressed `multipart/form-data`.
         :param use_octet_stream: Upload using `application/octet-stream` instead of `multipart/form-data`. Defaults to `False`. Requires envd 0.5.7 or later — when not supported, the upload falls back to `multipart/form-data`.
         :param metadata: User-defined metadata to persist on each uploaded file as extended attributes; the same map is applied to every file. Keys are lowercased by the sandbox; invalid keys or values raise an `InvalidArgumentException`. Requires envd 0.6.2 or later.
         :return: Information about the written files
@@ -288,7 +288,10 @@ class Filesystem:
             raise TemplateException("File metadata requires envd 0.6.2 or later.")
 
         supports_octet_stream = self._envd_version >= ENVD_OCTET_STREAM_UPLOAD
-        use_octet_stream = use_octet_stream and supports_octet_stream
+        # Gzip compression only works with the octet-stream upload (the
+        # Content-Encoding header applies to the whole request body), so
+        # requesting gzip implies it when envd supports it.
+        use_octet_stream = (use_octet_stream or gzip) and supports_octet_stream
 
         # Metadata is sent as request-scoped X-Metadata-* headers, so the same
         # metadata is applied to every file in a multi-file upload.
