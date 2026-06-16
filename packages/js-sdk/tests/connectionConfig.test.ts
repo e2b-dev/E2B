@@ -13,6 +13,7 @@ beforeEach(() => {
     E2B_DOMAIN: process.env.E2B_DOMAIN,
     E2B_SANDBOX_URL: process.env.E2B_SANDBOX_URL,
     E2B_DEBUG: process.env.E2B_DEBUG,
+    E2B_VALIDATE_API_KEY: process.env.E2B_VALIDATE_API_KEY,
   }
 })
 
@@ -144,6 +145,27 @@ test('sandbox_url stays localhost in debug mode', () => {
     }),
     'http://localhost:49983'
   )
+})
+
+test('validateApiKey defaults to true', () => {
+  delete process.env.E2B_VALIDATE_API_KEY
+
+  const config = new ConnectionConfig()
+  assert.equal(config.validateApiKey, true)
+})
+
+test('validateApiKey disabled via env var', () => {
+  process.env.E2B_VALIDATE_API_KEY = 'false'
+
+  const config = new ConnectionConfig()
+  assert.equal(config.validateApiKey, false)
+})
+
+test('validateApiKey in args has priority over env var', () => {
+  process.env.E2B_VALIDATE_API_KEY = 'true'
+
+  const config = new ConnectionConfig({ validateApiKey: false })
+  assert.equal(config.validateApiKey, false)
 })
 
 test('debug false in args overrides E2B_DEBUG env var', () => {
