@@ -146,6 +146,11 @@ class ApiClient(AuthenticatedClient):
             **(config.headers or {}),
         }
 
+        # Deprecated: send the access token alongside the API key when one is
+        # available, mirroring the JS SDK. Prefer `api_headers` instead.
+        if config.access_token is not None:
+            headers["Authorization"] = f"Bearer {config.access_token}"
+
         # Prevent passing these parameters twice
         more_headers: Optional[dict] = kwargs.pop("headers", None)
         if more_headers:
