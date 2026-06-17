@@ -57,6 +57,17 @@ const FILESYSTEM_HTTP_ERROR_MAP: Record<number, (message: string) => Error> = {
   404: (message: string) => new FileNotFoundError(message),
 }
 
+// GC safety net for streamed reads: if the consumer drops the stream returned
+// by `read({ format: 'stream' })` without reading it to completion or
+// cancelling it, the registered cleanup releases the underlying connection when
+// the stream is garbage collected. This mirrors the Python SDK's
+// `weakref.finalize` on `FileStreamReader`. The held value is the cleanup
+// function, which must not reference the stream itself or it would never be
+// collected.
+const streamReadFinalizers = new FinalizationRegistry<() => void>((cleanup) =>
+  cleanup()
+)
+
 const FILESYSTEM_RPC_ERROR_MAP: Partial<
   Record<Code, (message: string) => Error>
 > = {
@@ -469,6 +480,14 @@ export class Filesystem {
 
         const err = await handleFilesystemEnvdApiError(res)
         if (err) {
+          // Cancel the unconsumed error body so the pooled connection is
+          // released before we propagate, matching the Python stream path's
+          // `r.close()`. `cleanup()`'s abort would also release it, but
+          // cancelling is explicit and independent of runtime abort semantics.
+          if (res.response.body && !res.response.bodyUsed) {
+            await res.response.body.cancel().catch(() => {})
+          }
+          cleanup()
           throw err
         }
 
@@ -481,18 +500,26 @@ export class Filesystem {
         }
 
         const reader = body.getReader()
-        return new ReadableStream<Uint8Array>({
+        // Detach the GC finalizer and release the connection. Idempotent via
+        // `cleanup`, so it's safe to call from multiple stream callbacks.
+        const release = () => {
+          streamReadFinalizers.unregister(unregisterToken)
+          cleanup()
+        }
+        const unregisterToken = {}
+
+        const stream = new ReadableStream<Uint8Array>({
           async pull(streamController) {
             try {
               const { done, value } = await reader.read()
               if (done) {
                 streamController.close()
-                cleanup()
+                release()
               } else {
                 streamController.enqueue(value)
               }
             } catch (err) {
-              cleanup()
+              release()
               streamController.error(err)
             }
           },
@@ -500,10 +527,16 @@ export class Filesystem {
             try {
               await reader.cancel(reason)
             } finally {
-              cleanup()
+              release()
             }
           },
         })
+
+        // Release the connection if the consumer abandons the stream without
+        // reading it to completion or cancelling it.
+        streamReadFinalizers.register(stream, cleanup, unregisterToken)
+
+        return stream
       } catch (err) {
         cleanup()
         throw err
