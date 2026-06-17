@@ -3,6 +3,8 @@ import pytest
 
 @pytest.mark.skip_debug()
 def test_commit_creates_commit(git_sandbox, git_repo, git_author):
+    git_sandbox.set_timeout(20)
+
     author_name, author_email = git_author
 
     git_sandbox.files.write(f"{git_repo}/README.md", "hello\n")
