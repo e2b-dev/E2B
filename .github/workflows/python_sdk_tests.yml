@@ -7,6 +7,11 @@ on:
         required: false
         type: string
         default: ''
+      run:
+        description: 'Whether to actually run the build and tests. When false the matrix jobs are skipped (reported as success to required checks).'
+        required: false
+        type: boolean
+        default: true
     secrets:
       E2B_API_KEY:
         required: true
@@ -16,6 +21,8 @@ permissions:
 
 jobs:
   test:
+    # Gate each step (not the job) on `inputs.run` so the matrix always expands
+    # and the per-OS required checks are created even when skipped.
     defaults:
       run:
         working-directory: ./packages/python-sdk
@@ -28,9 +35,11 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout repository
+        if: ${{ inputs.run }}
         uses: actions/checkout@v4
 
       - name: Parse .tool-versions
+        if: ${{ inputs.run }}
         uses: wistia/parse-tool-versions@v2.1.1
         with:
           filename: '.tool-versions'
@@ -38,11 +47,13 @@ jobs:
           prefix: 'tool_version_'
 
       - name: Set up Python
+        if: ${{ inputs.run }}
         uses: actions/setup-python@v4
         with:
           python-version: '${{ env.TOOL_VERSION_PYTHON }}'
 
       - name: Install and configure Poetry
+        if: ${{ inputs.run }}
         uses: snok/install-poetry@v1
         with:
           version: '${{ env.TOOL_VERSION_POETRY }}'
@@ -51,12 +62,15 @@ jobs:
           installer-parallel: true
 
       - name: Install dependencies
+        if: ${{ inputs.run }}
         run: poetry install
 
       - name: Test build
+        if: ${{ inputs.run }}
         run: poetry build
 
       - name: Run tests
+        if: ${{ inputs.run }}
         run: poetry run pytest --verbose --numprocesses=4
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}

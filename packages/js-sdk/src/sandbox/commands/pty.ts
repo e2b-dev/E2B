@@ -106,7 +106,7 @@ export class Pty {
   async create(opts: PtyCreateOpts) {
     const requestTimeoutMs =
       opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
-    const envs = opts?.envs ?? {}
+    const envs = { ...(opts?.envs ?? {}) }
     envs.TERM = envs.TERM ?? 'xterm-256color'
     envs.LANG = envs.LANG ?? 'C.UTF-8'
     envs.LC_ALL = envs.LC_ALL ?? 'C.UTF-8'

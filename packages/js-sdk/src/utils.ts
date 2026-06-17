@@ -121,12 +121,26 @@ export function toBlob(
   return new Response(data).blob()
 }
 
+// Characters that are safe to leave unquoted in a POSIX shell, matching the
+// set used by Python's shlex.quote (`[^\w@%+=:,./-]` is considered unsafe).
+const UNSAFE_SHELL_CHAR = /[^\w@%+=:,./-]/
+
 /**
- * Escape a string for safe inclusion in a single-quoted shell argument.
- * Equivalent to Python's shlex.quote().
+ * Quote a string for safe interpolation into a POSIX shell command.
+ *
+ * Faithful port of Python's `shlex.quote`: an empty string becomes `''`,
+ * values containing only safe characters are returned unchanged (keeping
+ * generated commands stable and cache-friendly), and anything else is wrapped
+ * in single quotes with embedded single quotes escaped as `'"'"'`.
  */
 export function shellQuote(s: string): string {
-  return "'" + s.replace(/'/g, "'\\''") + "'"
+  if (s === '') {
+    return "''"
+  }
+  if (!UNSAFE_SHELL_CHAR.test(s)) {
+    return s
+  }
+  return "'" + s.replace(/'/g, "'\"'\"'") + "'"
 }
 
 /**

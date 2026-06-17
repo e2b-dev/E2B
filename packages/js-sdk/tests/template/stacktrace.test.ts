@@ -21,6 +21,12 @@ const failureMap: Record<string, number | undefined> = {
   fromGCPRegistry: 0,
   copy: undefined,
   copyItems: undefined,
+  // multi-source copy produces two COPY instructions (steps 1 and 2),
+  // the runCmd after it is step 3
+  multiSourceCopySecondSource: 2,
+  multiSourceCopyNextStep: 3,
+  copyItemsSecondItem: 2,
+  copyItemsNextStep: 3,
   remove: 1,
   rename: 1,
   makeDir: 1,
@@ -49,6 +55,9 @@ export const restHandlers = [
   }),
   http.post(apiUrl('/v2/templates/:templateID/builds/:buildID'), () => {
     return HttpResponse.json({})
+  }),
+  http.get(apiUrl('/templates/:templateID/files/:hash'), () => {
+    return HttpResponse.json({ present: true })
   }),
   http.get<{ templateID: string; buildID: string }>(
     apiUrl('/templates/:templateID/builds/:buildID/status'),
@@ -218,6 +227,60 @@ buildTemplateTest('traces on copyItems', async ({ buildTemplate }) => {
     await buildTemplate(template, { name: 'copyItems' })
   }, 'copyItems')
 })
+
+buildTemplateTest(
+  'traces on second source of multi-source copy',
+  async ({ buildTemplate }) => {
+    let template = Template().fromBaseImage()
+    template = template.copy(['stacktrace.test.ts', 'tags.test.ts'], '.')
+    await expectToThrowAndCheckTrace(async () => {
+      await buildTemplate(template, { name: 'multiSourceCopySecondSource' })
+    }, 'copy')
+  }
+)
+
+buildTemplateTest(
+  'traces on step after multi-source copy',
+  async ({ buildTemplate }) => {
+    let template = Template().fromBaseImage()
+    template = template
+      .copy(['stacktrace.test.ts', 'tags.test.ts'], '.')
+      .runCmd(`./${nonExistentPath}`)
+    await expectToThrowAndCheckTrace(async () => {
+      await buildTemplate(template, { name: 'multiSourceCopyNextStep' })
+    }, 'runCmd')
+  }
+)
+
+buildTemplateTest(
+  'traces on second item of copyItems',
+  async ({ buildTemplate }) => {
+    let template = Template().fromBaseImage()
+    template = template.copyItems([
+      { src: 'stacktrace.test.ts', dest: '.' },
+      { src: 'tags.test.ts', dest: '.' },
+    ])
+    await expectToThrowAndCheckTrace(async () => {
+      await buildTemplate(template, { name: 'copyItemsSecondItem' })
+    }, 'copyItems')
+  }
+)
+
+buildTemplateTest(
+  'traces on step after copyItems',
+  async ({ buildTemplate }) => {
+    let template = Template().fromBaseImage()
+    template = template
+      .copyItems([
+        { src: 'stacktrace.test.ts', dest: '.' },
+        { src: 'tags.test.ts', dest: '.' },
+      ])
+      .runCmd(`./${nonExistentPath}`)
+    await expectToThrowAndCheckTrace(async () => {
+      await buildTemplate(template, { name: 'copyItemsNextStep' })
+    }, 'runCmd')
+  }
+)
 
 buildTemplateTest('traces on copy absolute path', async () => {
   await expectToThrowAndCheckTrace(async () => {

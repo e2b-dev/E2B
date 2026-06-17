@@ -1,7 +1,13 @@
 import uuid
+from types import SimpleNamespace
+from unittest.mock import AsyncMock
+
 import pytest
 
 from e2b import AsyncSandbox
+from e2b.api.client.api.sandboxes import post_sandboxes_sandbox_id_connect
+from e2b.api.client.models import Sandbox as SandboxModel
+import e2b.sandbox_async.main as sandbox_async_main
 
 
 @pytest.mark.skip_debug()
@@ -79,3 +85,61 @@ async def test_connect_extends_timeout_on_running_sandbox(async_sandbox):
     assert info_after.end_at > info_before.end_at, (
         f"Timeout was not extended: before={info_before.end_at}, after={info_after.end_at}"
     )
+
+
+async def test_connect_in_debug_mode_does_not_call_api(monkeypatch, test_api_key):
+    mock_connect = AsyncMock()
+    monkeypatch.setattr(sandbox_async_main.SandboxApi, "_cls_connect", mock_connect)
+
+    sbx = await AsyncSandbox.connect("sbx-debug", debug=True, api_key=test_api_key)
+
+    mock_connect.assert_not_called()
+    assert sbx.sandbox_id == "sbx-debug"
+    assert sbx._envd_access_token is None
+    assert sbx.traffic_access_token is None
+
+
+async def test_connect_in_env_debug_mode_does_not_call_api(monkeypatch, test_api_key):
+    monkeypatch.setenv("E2B_DEBUG", "true")
+    mock_connect = AsyncMock()
+    monkeypatch.setattr(sandbox_async_main.SandboxApi, "_cls_connect", mock_connect)
+
+    sbx = await AsyncSandbox.connect("sbx-debug", api_key=test_api_key)
+
+    mock_connect.assert_not_called()
+    assert sbx.sandbox_id == "sbx-debug"
+
+
+async def test_instance_connect_in_debug_mode_does_not_call_api(
+    monkeypatch, test_api_key
+):
+    mock_connect = AsyncMock()
+    monkeypatch.setattr(sandbox_async_main.SandboxApi, "_cls_connect", mock_connect)
+
+    sbx = await AsyncSandbox.connect("sbx-debug", debug=True, api_key=test_api_key)
+
+    assert await sbx.connect() is sbx
+    mock_connect.assert_not_called()
+
+
+async def test_connect_normalizes_unset_tokens(monkeypatch, test_api_key):
+    # Tokens and domain are absent in the API response for non-secure sandboxes
+    model = SandboxModel(
+        client_id="client-id",
+        envd_version="0.2.4",
+        sandbox_id="sbx-test",
+        template_id="template-id",
+    )
+    mock_request = AsyncMock(
+        return_value=SimpleNamespace(status_code=200, parsed=model)
+    )
+    monkeypatch.setattr(
+        post_sandboxes_sandbox_id_connect, "asyncio_detailed", mock_request
+    )
+
+    sbx = await AsyncSandbox.connect("sbx-test", debug=False, api_key=test_api_key)
+
+    mock_request.assert_called_once()
+    assert sbx._envd_access_token is None
+    assert sbx.traffic_access_token is None
+    assert "signature" not in sbx.download_url("test.txt")

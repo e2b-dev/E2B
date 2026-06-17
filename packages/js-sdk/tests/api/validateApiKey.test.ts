@@ -1,5 +1,6 @@
 import { assert, test, describe } from 'vitest'
-import { validateApiKey } from '../../src/api'
+import { ApiClient, validateApiKey } from '../../src/api'
+import { ConnectionConfig } from '../../src/connectionConfig'
 import { AuthenticationError } from '../../src/errors'
 
 describe('validateApiKey', () => {
@@ -49,5 +50,20 @@ describe('validateApiKey', () => {
         'expected example token in error message'
       )
     }
+  })
+})
+
+describe('ApiClient API key validation', () => {
+  test('throws on a malformed key by default', () => {
+    const config = new ConnectionConfig({ apiKey: 'not-a-valid-key' })
+    assert.throws(() => new ApiClient(config), AuthenticationError)
+  })
+
+  test('skips validation when validateApiKey is false', () => {
+    const config = new ConnectionConfig({
+      apiKey: 'not-a-valid-key',
+      validateApiKey: false,
+    })
+    assert.doesNotThrow(() => new ApiClient(config))
   })
 })

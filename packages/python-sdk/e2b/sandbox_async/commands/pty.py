@@ -129,7 +129,7 @@ class Pty:
 
         :return: Handle to interact with the PTY
         """
-        envs = envs or {}
+        envs = dict(envs) if envs else {}
         envs.setdefault("TERM", "xterm-256color")
         envs.setdefault("LANG", "C.UTF-8")
         envs.setdefault("LC_ALL", "C.UTF-8")
@@ -171,6 +171,10 @@ class Pty:
                 check_health=self._check_health,
             )
         except Exception as e:
+            try:
+                await events.aclose()
+            except Exception:
+                pass
             raise await ahandle_rpc_exception_with_health(e, self._check_health)
 
     async def connect(
@@ -219,6 +223,10 @@ class Pty:
                 check_health=self._check_health,
             )
         except Exception as e:
+            try:
+                await events.aclose()
+            except Exception:
+                pass
             raise await ahandle_rpc_exception_with_health(e, self._check_health)
 
     async def resize(

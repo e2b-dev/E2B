@@ -74,6 +74,19 @@ def handle_rpc_exception(
     if isinstance(e, httpcore.RemoteProtocolError):
         return format_terminated_exception(e, sandbox_running)
 
+    # A transport-level timeout from httpcore means a configured timeout was exceeded
+    # before the server responded: `request_timeout` on a unary call's read phase, or
+    # `connect`/`pool`/`write` on a stream's setup/send phase. Streams have no read
+    # timeout — the command `timeout` is enforced server-side and surfaces as a
+    # `deadline_exceeded` ConnectException instead. Unlike the JS SDK, where the
+    # request timeout is an `AbortSignal` that connect normalizes into a `Code.canceled`
+    # ConnectError, httpcore raises this raw transport error outside the ConnectException
+    # path, so we map it here to a `TimeoutException` for a consistent timeout error.
+    if isinstance(e, httpcore.TimeoutException):
+        return TimeoutException(
+            f"{e}: This error is likely due to exceeding 'timeout' — the total time a long running request (like process or directory watch) can be active — or 'request_timeout'. You can modify these by passing 'timeout' or 'request_timeout' when making the request. Use '0' to disable the timeout."
+        )
+
     return e
 
 

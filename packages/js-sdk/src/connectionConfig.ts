@@ -22,6 +22,14 @@ export interface ConnectionOpts {
    */
   apiKey?: string
   /**
+   * Whether to validate the format of the E2B API key on the client side.
+   * Disable this when your deployment issues API keys that don't match the
+   * default `e2b_` format.
+   *
+   * @default E2B_VALIDATE_API_KEY // environment variable or `true`
+   */
+  validateApiKey?: boolean
+  /**
    * E2B access token to use for authentication.
    *
    * @default E2B_ACCESS_TOKEN // environment variable
@@ -198,6 +206,7 @@ export class ConnectionConfig {
   readonly requestTimeoutMs: number
 
   readonly apiKey?: string
+  readonly validateApiKey: boolean
   readonly accessToken?: string
 
   readonly headers?: Record<string, string>
@@ -206,6 +215,8 @@ export class ConnectionConfig {
 
   constructor(opts?: ConnectionOpts) {
     this.apiKey = opts?.apiKey || ConnectionConfig.apiKey
+    this.validateApiKey =
+      opts?.validateApiKey ?? ConnectionConfig.validateApiKey
     this.debug = opts?.debug ?? ConnectionConfig.debug
     this.domain = opts?.domain || ConnectionConfig.domain
     this.accessToken = opts?.accessToken || ConnectionConfig.accessToken
@@ -241,6 +252,12 @@ export class ConnectionConfig {
 
   private static get apiKey() {
     return getEnvVar('E2B_API_KEY')
+  }
+
+  private static get validateApiKey() {
+    return (
+      (getEnvVar('E2B_VALIDATE_API_KEY') || 'true').toLowerCase() !== 'false'
+    )
   }
 
   private static get accessToken() {

@@ -6,6 +6,7 @@ from packaging.version import Version
 from e2b.connection_config import ConnectionConfig, default_username
 from e2b.envd.api import ENVD_API_FILES_ROUTE
 from e2b.envd.versions import ENVD_DEFAULT_USER
+from e2b.exceptions import InvalidArgumentException
 from e2b.sandbox.signature import get_signature
 
 
@@ -138,11 +139,16 @@ class SandboxBase:
         :return: URL for downloading file
         """
 
+        use_signature = self._envd_access_token is not None
+        if not use_signature and use_signature_expiration is not None:
+            raise InvalidArgumentException(
+                "Signature expiration can be used only when sandbox is created as secured."
+            )
+
         username = user
         if username is None and self._envd_version < ENVD_DEFAULT_USER:
             username = default_username
 
-        use_signature = self._envd_access_token is not None
         if use_signature:
             signature = get_signature(
                 path,
@@ -175,11 +181,16 @@ class SandboxBase:
         :return: URL for uploading file
         """
 
+        use_signature = self._envd_access_token is not None
+        if not use_signature and use_signature_expiration is not None:
+            raise InvalidArgumentException(
+                "Signature expiration can be used only when sandbox is created as secured."
+            )
+
         username = user
         if username is None and self._envd_version < ENVD_DEFAULT_USER:
             username = default_username
 
-        use_signature = self._envd_access_token is not None
         if use_signature:
             signature = get_signature(
                 path,
