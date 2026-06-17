@@ -473,13 +473,19 @@ class Volume:
         )
 
         if format == "stream":
+            # The request timeout bounds connection setup, not the stream read:
+            # consuming the body must not be killed by it. Mirrors the sandbox
+            # files stream path and the RPC streams, which carry no client-side
+            # read timeout (the server enforces deadlines, keepalive pings
+            # detect dropped connections).
+            stream_timeout = httpx.Timeout(timeout, read=None)
 
             def stream_file() -> Iterator[bytes]:
                 with api_client.get_httpx_client().stream(
                     method="GET",
                     url=f"/volumecontent/{self._volume_id}/file",
                     params=params,
-                    timeout=timeout,
+                    timeout=stream_timeout,
                 ) as response:
                     if response.status_code == 404:
                         raise NotFoundException(f"Path {path} not found")

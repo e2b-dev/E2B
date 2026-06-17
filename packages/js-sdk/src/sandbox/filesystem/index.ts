@@ -9,10 +9,12 @@ import {
   ConnectionConfig,
   ConnectionOpts,
   defaultUsername,
+  FILE_TIMEOUT_MS,
   KEEPALIVE_PING_HEADER,
   KEEPALIVE_PING_INTERVAL_SEC,
   setupRequestController,
   Username,
+  wrapStreamWithConnectionCleanup,
 } from '../../connectionConfig'
 
 import {
@@ -56,17 +58,6 @@ import { toBlob, toUploadBody } from '../../utils'
 const FILESYSTEM_HTTP_ERROR_MAP: Record<number, (message: string) => Error> = {
   404: (message: string) => new FileNotFoundError(message),
 }
-
-// GC safety net for streamed reads: if the consumer drops the stream returned
-// by `read({ format: 'stream' })` without reading it to completion or
-// cancelling it, the registered cleanup releases the underlying connection when
-// the stream is garbage collected. This mirrors the Python SDK's
-// `weakref.finalize` on `FileStreamReader`. The held value is the cleanup
-// function, which must not reference the stream itself or it would never be
-// collected.
-const streamReadFinalizers = new FinalizationRegistry<() => void>((cleanup) =>
-  cleanup()
-)
 
 const FILESYSTEM_RPC_ERROR_MAP: Partial<
   Record<Code, (message: string) => Error>
@@ -470,17 +461,24 @@ export class Filesystem {
       )
 
       try {
-        const res = await this.envdApi.api.GET('/files', {
-          params: {
-            query: {
-              path,
-              username: user,
+        const res = await this.envdApi.api
+          .GET('/files', {
+            params: {
+              query: {
+                path,
+                username: user,
+              },
             },
-          },
-          parseAs: 'stream',
-          signal: controller.signal,
-          headers,
-        })
+            parseAs: 'stream',
+            signal: controller.signal,
+            headers,
+          })
+          .catch(async (err) => {
+            // Map a dropped connection during the handshake (e.g. killed
+            // sandbox) to a typed error via the health check, matching the
+            // non-stream read path below.
+            throw await handleEnvdApiFetchError(err, this.checkHealth)
+          })
 
         const err = await handleFilesystemEnvdApiError(res)
         if (err) {
@@ -495,52 +493,10 @@ export class Filesystem {
           throw err
         }
 
-        clearStartTimeout()
-
-        const body = res.data as ReadableStream<Uint8Array> | null
-        if (!body) {
-          cleanup()
-          return new Blob([]).stream()
-        }
-
-        const reader = body.getReader()
-        // Detach the GC finalizer and release the connection. Idempotent via
-        // `cleanup`, so it's safe to call from multiple stream callbacks.
-        const release = () => {
-          streamReadFinalizers.unregister(unregisterToken)
-          cleanup()
-        }
-        const unregisterToken = {}
-
-        const stream = new ReadableStream<Uint8Array>({
-          async pull(streamController) {
-            try {
-              const { done, value } = await reader.read()
-              if (done) {
-                streamController.close()
-                release()
-              } else {
-                streamController.enqueue(value)
-              }
-            } catch (err) {
-              release()
-              streamController.error(err)
-            }
-          },
-          async cancel(reason) {
-            try {
-              await reader.cancel(reason)
-            } finally {
-              release()
-            }
-          },
-        })
-
-        // Release the connection if the consumer abandons the stream without
-        // reading it to completion or cancelling it.
-        streamReadFinalizers.register(stream, cleanup, unregisterToken)
-
-        return stream
+        return wrapStreamWithConnectionCleanup(
+          res.data as ReadableStream<Uint8Array> | null,
+          { clearStartTimeout, cleanup }
+        )
       } catch (err) {
         cleanup()
         throw err
@@ -701,6 +657,15 @@ export class Filesystem {
         writeFiles.map(async (file) => {
           const filePath = path ?? (file as WriteEntry).path
           const body = await toUploadBody(file.data, useGzip)
+          const isStream = body instanceof ReadableStream
+          // A streamed upload can take far longer than the 60s request default,
+          // so fall back to the file-transfer timeout (matching volume writes)
+          // unless the caller set one explicitly. The signal is a total
+          // deadline—unlike downloads there's no post-handshake point to clear
+          // it, since the response only arrives once the body has been sent.
+          const uploadTimeoutMs =
+            writeOpts?.requestTimeoutMs ??
+            (isStream ? FILE_TIMEOUT_MS : undefined)
 
           const res = await this.envdApi.api
             .POST('/files', {
@@ -713,12 +678,12 @@ export class Filesystem {
               bodySerializer: () => body,
               headers,
               signal: this.connectionConfig.getSignal(
-                writeOpts?.requestTimeoutMs,
+                uploadTimeoutMs,
                 writeOpts?.signal
               ),
               body: {},
               // Streaming request bodies require half-duplex mode.
-              ...(body instanceof ReadableStream && {
+              ...(isStream && {
                 duplex: 'half' as const,
               }),
             })

@@ -225,7 +225,10 @@ class Filesystem:
                 headers=headers,
                 timeout=timeout,
             )
-            r = self._envd_api.send(request, stream=True)
+            try:
+                r = self._envd_api.send(request, stream=True)
+            except httpx.RemoteProtocolError as e:
+                raise handle_envd_api_transport_exception_with_health(e, self._envd_api)
 
             err = _handle_filesystem_envd_api_exception(r)
             if err:

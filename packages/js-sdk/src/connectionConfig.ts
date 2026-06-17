@@ -7,6 +7,10 @@ const supportedDomains = ['e2b.app', 'e2b.dev', 'e2b.pro', 'e2b-staging.dev']
 
 export const REQUEST_TIMEOUT_MS = 60_000 // 60 seconds
 export const DEFAULT_SANDBOX_TIMEOUT_MS = 300_000 // 300 seconds
+// Default timeout for streaming file transfers (uploads/downloads). A streamed
+// body can take far longer than a regular request, so it must not inherit the
+// short `REQUEST_TIMEOUT_MS`.
+export const FILE_TIMEOUT_MS = 3_600_000 // 1 hour
 export const KEEPALIVE_PING_INTERVAL_SEC = 50 // 50 seconds
 
 export const KEEPALIVE_PING_HEADER = 'Keepalive-Ping-Interval'
@@ -189,6 +193,80 @@ export function setupRequestController(
   }
 
   return { controller, clearStartTimeout, cleanup }
+}
+
+// GC safety net for streamed reads: if the consumer drops a streamed response
+// body without reading it to completion or cancelling it, the registered
+// cleanup releases the underlying connection when the stream is garbage
+// collected. This mirrors the Python SDK's `weakref.finalize` on
+// `FileStreamReader`. The held value is the cleanup function, which must not
+// reference the stream itself or it would never be collected.
+const streamReadFinalizers = new FinalizationRegistry<() => void>((cleanup) =>
+  cleanup()
+)
+
+/**
+ * Wrap a streaming response body so its pooled connection is released when the
+ * stream is fully read, cancelled, errors, or (as a GC safety net) abandoned.
+ *
+ * The request timeout configured via {@link setupRequestController} bounds only
+ * the initial handshake; this clears that timeout so consuming the body is not
+ * killed by it. Call once the handshake has succeeded (after error handling).
+ *
+ * @internal
+ */
+export function wrapStreamWithConnectionCleanup(
+  body: ReadableStream<Uint8Array> | null,
+  {
+    clearStartTimeout,
+    cleanup,
+  }: { clearStartTimeout: () => void; cleanup: () => void }
+): ReadableStream<Uint8Array> {
+  clearStartTimeout()
+
+  if (!body) {
+    cleanup()
+    return new Blob([]).stream()
+  }
+
+  const reader = body.getReader()
+  const unregisterToken = {}
+  // Detach the GC finalizer and release the connection. Idempotent via
+  // `cleanup`, so it's safe to call from multiple stream callbacks.
+  const release = () => {
+    streamReadFinalizers.unregister(unregisterToken)
+    cleanup()
+  }
+
+  const stream = new ReadableStream<Uint8Array>({
+    async pull(streamController) {
+      try {
+        const { done, value } = await reader.read()
+        if (done) {
+          streamController.close()
+          release()
+        } else {
+          streamController.enqueue(value)
+        }
+      } catch (err) {
+        release()
+        streamController.error(err)
+      }
+    },
+    async cancel(reason) {
+      try {
+        await reader.cancel(reason)
+      } finally {
+        release()
+      }
+    },
+  })
+
+  // Release the connection if the consumer abandons the stream without
+  // reading it to completion or cancelling it.
+  streamReadFinalizers.register(stream, cleanup, unregisterToken)
+
+  return stream
 }
 
 /**

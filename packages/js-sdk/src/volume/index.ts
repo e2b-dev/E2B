@@ -6,7 +6,12 @@ import {
   VolumeApiOpts,
   FILE_TIMEOUT_MS,
 } from './client'
-import { ConnectionConfig, ConnectionOpts } from '../connectionConfig'
+import {
+  ConnectionConfig,
+  ConnectionOpts,
+  setupRequestController,
+  wrapStreamWithConnectionCleanup,
+} from '../connectionConfig'
 import { NotFoundError, VolumeError } from '../errors'
 import { runtime, toBlob } from '../utils'
 import { VolumeFileType } from './types'
@@ -539,6 +544,54 @@ export class Volume {
     })
     const client = new VolumeApiClient(config)
 
+    if (format === 'stream') {
+      // The request timeout bounds only the initial handshake; once the
+      // response arrives, the stream lives until it's consumed, cancelled, or
+      // the user signal aborts. Matches the sandbox `files.read` stream path.
+      const { controller, clearStartTimeout, cleanup } = setupRequestController(
+        config.requestTimeoutMs,
+        opts?.signal
+      )
+
+      try {
+        const res = await client.api.GET('/volumecontent/{volumeID}/file', {
+          params: {
+            path: { volumeID: this.volumeId },
+            query: { path },
+          },
+          parseAs: 'stream',
+          signal: controller.signal,
+        })
+
+        if (res.response.status === 404) {
+          // Cancel the unconsumed body so the pooled connection is released
+          // before we propagate.
+          if (res.response.body && !res.response.bodyUsed) {
+            await res.response.body.cancel().catch(() => {})
+          }
+          cleanup()
+          throw new NotFoundError(`Path ${path} not found`)
+        }
+
+        const err = handleApiError(res, VolumeError)
+        if (err) {
+          if (res.response.body && !res.response.bodyUsed) {
+            await res.response.body.cancel().catch(() => {})
+          }
+          cleanup()
+          throw err
+        }
+
+        return wrapStreamWithConnectionCleanup(
+          res.data as ReadableStream<Uint8Array> | null,
+          { clearStartTimeout, cleanup }
+        )
+      } catch (err) {
+        cleanup()
+        throw err
+      }
+    }
+
     const res = await client.api.GET('/volumecontent/{volumeID}/file', {
       params: {
         path: {
@@ -572,11 +625,8 @@ export class Volume {
       return typeof res.data === 'string' ? res.data : ''
     }
 
-    if (format === 'blob') {
-      return res.data instanceof Blob ? res.data : new Blob([])
-    }
-
-    return res.data instanceof ReadableStream ? res.data : new Blob([]).stream()
+    // format === 'blob'
+    return res.data instanceof Blob ? res.data : new Blob([])
   }
 
   /**
