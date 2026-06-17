@@ -129,19 +129,25 @@ async def test_async_aclose_is_idempotent():
         assert _active_connections(client) == 0
 
 
-async def test_async_abandoned_reader_does_not_leak():
+async def test_async_abandoned_reader_is_reclaimed_on_client_close():
     import asyncio
 
-    async with httpx.AsyncClient() as client:
-        port = _start_chunked_server()
-        request = client.build_request("GET", f"http://127.0.0.1:{port}/files")
-        reader = AsyncFileStreamReader(await client.send(request, stream=True))
-        assert _active_connections(client) == 1
-        del reader
-        gc.collect()
-        # The finalizer schedules aclose on the running loop; let it run.
-        await asyncio.sleep(0.05)
-        assert _active_connections(client) == 0
+    client = httpx.AsyncClient()
+    port = _start_chunked_server()
+    request = client.build_request("GET", f"http://127.0.0.1:{port}/files")
+    reader = AsyncFileStreamReader(await client.send(request, stream=True))
+    assert _active_connections(client) == 1
+
+    # The async reader has no GC safety net: dropping it without closing keeps
+    # the connection checked out (releasing one requires awaiting aclose()).
+    del reader
+    gc.collect()
+    await asyncio.sleep(0.05)
+    assert _active_connections(client) == 1
+
+    # Closing the client reclaims the abandoned connection.
+    await client.aclose()
+    assert _active_connections(client) == 0
 
 
 if __name__ == "__main__":

@@ -1,4 +1,3 @@
-import asyncio
 import gzip
 import re
 import weakref
@@ -188,23 +187,6 @@ class FileStreamReader(Iterator[bytes]):
         self.close()
 
 
-def _schedule_response_aclose(response: httpx.Response) -> None:
-    """Best-effort cleanup for an abandoned async stream.
-
-    Closing an async response requires awaiting ``aclose()``, which a (sync)
-    garbage-collection finalizer cannot do. When the reader is dropped while an
-    event loop is running we schedule the close on it; otherwise there is
-    nothing safe to await and the connection is reclaimed when the client is
-    closed.
-    """
-    try:
-        loop = asyncio.get_running_loop()
-    except RuntimeError:
-        return
-    if loop.is_running():
-        loop.create_task(response.aclose())
-
-
 class AsyncFileStreamReader(AsyncIterator[bytes]):
     """Async iterator over a streamed file download.
 
@@ -221,15 +203,17 @@ class AsyncFileStreamReader(AsyncIterator[bytes]):
             async for chunk in stream:
                 ...
 
-    As a safety net, the connection is also released when the reader is garbage
-    collected while an event loop is running, so an abandoned stream does not
-    leak a connection indefinitely.
+    Unlike the sync reader there is no garbage-collection safety net: releasing
+    an async connection requires awaiting ``aclose()``, which a finalizer cannot
+    do reliably. An abandoned stream holds its pooled connection until the
+    client is closed, so always consume it fully, use the context manager, or
+    call :meth:`aclose`.
     """
 
     def __init__(self, response: httpx.Response):
         self._response = response
         self._iterator = response.aiter_bytes()
-        self._finalizer = weakref.finalize(self, _schedule_response_aclose, response)
+        self._closed = False
 
     def __aiter__(self) -> AsyncIterator[bytes]:
         return self
@@ -244,7 +228,9 @@ class AsyncFileStreamReader(AsyncIterator[bytes]):
 
     async def aclose(self) -> None:
         """Release the underlying HTTP connection. Safe to call multiple times."""
-        self._finalizer.detach()
+        if self._closed:
+            return
+        self._closed = True
         await self._response.aclose()
 
     async def __aenter__(self) -> "AsyncFileStreamReader":

@@ -162,7 +162,8 @@ class Filesystem:
         iterator is not killed by it while being consumed. The reader releases
         its connection once fully consumed; if you don't read it to the end,
         use it as an async context manager or call `aclose()` for deterministic
-        cleanup.
+        cleanup. Unlike the sync reader there is no garbage-collection safety
+        net—an abandoned stream holds its connection until the client is closed.
 
         :param path: Path to the file
         :param user: Run the operation as this user
@@ -219,8 +220,9 @@ class Filesystem:
             request.extensions.get("timeout", {})["read"] = None
 
             # AsyncFileStreamReader owns the response and releases the
-            # connection when the stream is consumed, closed, errors, or is
-            # GC'd while an event loop is running.
+            # connection when the stream is consumed, closed, or errors. There
+            # is no GC safety net: an abandoned reader holds its connection
+            # until the client is closed.
             return AsyncFileStreamReader(r)
 
         try:
