@@ -194,7 +194,7 @@ class EnvdApiClient {
   readonly version: string
 
   constructor(
-    config: Pick<ConnectionConfig, 'apiUrl' | 'logger' | 'accessToken'> & {
+    config: Pick<ConnectionConfig, 'apiUrl' | 'logger'> & {
       fetch?: (request: Request) => ReturnType<typeof fetch>
       headers?: Record<string, string>
     },

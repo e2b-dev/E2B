@@ -200,7 +200,6 @@ export class Sandbox extends SandboxApi {
       {
         apiUrl: this.envdApiUrl,
         logger: opts?.logger,
-        accessToken: this.envdAccessToken,
         headers: {
           'User-Agent': this.connectionConfig.headers?.['User-Agent'] ?? '',
           ...sandboxHeaders,

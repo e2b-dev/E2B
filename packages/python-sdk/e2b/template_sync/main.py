@@ -237,8 +237,6 @@ class Template(TemplateBase):
             config = ConnectionConfig(**opts)
             api_client = get_api_client(
                 config,
-                require_api_key=True,
-                require_access_token=False,
             )
 
             data = Template._build(
@@ -328,8 +326,6 @@ class Template(TemplateBase):
         config = ConnectionConfig(**opts)
         api_client = get_api_client(
             config,
-            require_api_key=True,
-            require_access_token=False,
         )
 
         return Template._build(
@@ -367,8 +363,6 @@ class Template(TemplateBase):
         config = ConnectionConfig(**opts)
         api_client = get_api_client(
             config,
-            require_api_key=True,
-            require_access_token=False,
         )
 
         return get_build_status(
@@ -426,8 +420,6 @@ class Template(TemplateBase):
         config = ConnectionConfig(**opts)
         api_client = get_api_client(
             config,
-            require_api_key=True,
-            require_access_token=False,
         )
 
         return check_alias_exists(api_client, alias)
@@ -459,8 +451,6 @@ class Template(TemplateBase):
         config = ConnectionConfig(**opts)
         api_client = get_api_client(
             config,
-            require_api_key=True,
-            require_access_token=False,
         )
 
         normalized_tags = [tags] if isinstance(tags, str) else tags
@@ -492,8 +482,6 @@ class Template(TemplateBase):
         config = ConnectionConfig(**opts)
         api_client = get_api_client(
             config,
-            require_api_key=True,
-            require_access_token=False,
         )
 
         normalized_tags = [tags] if isinstance(tags, str) else tags
@@ -522,8 +510,6 @@ class Template(TemplateBase):
         config = ConnectionConfig(**opts)
         api_client = get_api_client(
             config,
-            require_api_key=True,
-            require_access_token=False,
         )
 
         return get_template_tags(api_client, template_id)

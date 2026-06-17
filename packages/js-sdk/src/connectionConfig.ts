@@ -30,12 +30,6 @@ export interface ConnectionOpts {
    */
   validateApiKey?: boolean
   /**
-   * E2B access token to use for authentication.
-   *
-   * @default E2B_ACCESS_TOKEN // environment variable
-   */
-  accessToken?: string
-  /**
    * Domain to use for the API.
    *
    * @default E2B_DOMAIN // environment variable or `e2b.app`
@@ -207,7 +201,6 @@ export class ConnectionConfig {
 
   readonly apiKey?: string
   readonly validateApiKey: boolean
-  readonly accessToken?: string
 
   readonly headers?: Record<string, string>
 
@@ -219,7 +212,6 @@ export class ConnectionConfig {
       opts?.validateApiKey ?? ConnectionConfig.validateApiKey
     this.debug = opts?.debug ?? ConnectionConfig.debug
     this.domain = opts?.domain || ConnectionConfig.domain
-    this.accessToken = opts?.accessToken || ConnectionConfig.accessToken
     this.requestTimeoutMs = opts?.requestTimeoutMs ?? REQUEST_TIMEOUT_MS
     this.logger = opts?.logger
     this.headers = { ...(opts?.headers ?? {}), ...(opts?.apiHeaders ?? {}) }
@@ -258,10 +250,6 @@ export class ConnectionConfig {
     return (
       (getEnvVar('E2B_VALIDATE_API_KEY') || 'true').toLowerCase() !== 'false'
     )
-  }
-
-  private static get accessToken() {
-    return getEnvVar('E2B_ACCESS_TOKEN')
   }
 
   getSignal(requestTimeoutMs?: number, signal?: AbortSignal) {
