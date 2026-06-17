@@ -91,6 +91,13 @@ export interface ConnectionOpts {
   apiHeaders?: Record<string, string>
 
   /**
+   * Integration wrapping the E2B SDK, appended to the `User-Agent`.
+   *
+   * @example 'e2b-code-interpreter/0.1.0'
+   */
+  integration?: string
+
+  /**
    * An optional `AbortSignal` that can be used to cancel the in-flight request.
    * When the signal is aborted, the underlying `fetch` is aborted and the
    * returned promise rejects with an `AbortError`.
@@ -191,6 +198,16 @@ export function setupRequestController(
   return { controller, clearStartTimeout, cleanup }
 }
 
+function buildUserAgent(integration?: string) {
+  const userAgentParts = [`e2b-js-sdk/${version}`]
+
+  if (integration) {
+    userAgentParts.push(integration)
+  }
+
+  return userAgentParts.join(' ')
+}
+
 /**
  * Configuration for connecting to the API.
  */
@@ -209,6 +226,8 @@ export class ConnectionConfig {
   readonly validateApiKey: boolean
   readonly accessToken?: string
 
+  readonly integration?: string
+
   readonly headers?: Record<string, string>
 
   readonly proxy?: string
@@ -222,8 +241,9 @@ export class ConnectionConfig {
     this.accessToken = opts?.accessToken || ConnectionConfig.accessToken
     this.requestTimeoutMs = opts?.requestTimeoutMs ?? REQUEST_TIMEOUT_MS
     this.logger = opts?.logger
+    this.integration = opts?.integration
     this.headers = { ...(opts?.headers ?? {}), ...(opts?.apiHeaders ?? {}) }
-    this.headers['User-Agent'] = `e2b-js-sdk/${version}`
+    this.headers['User-Agent'] = buildUserAgent(this.integration)
     this.proxy = opts?.proxy
 
     this.apiUrl =

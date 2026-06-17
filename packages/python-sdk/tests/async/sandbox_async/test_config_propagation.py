@@ -9,7 +9,6 @@ from e2b.api import SandboxCreateResponse
 from e2b.connection_config import ConnectionConfig
 import e2b.sandbox_async.main as sandbox_async_main
 
-
 BASE_DOMAIN = "base.e2b.dev"
 BASE_REQUEST_TIMEOUT = 11
 BASE_DEBUG = False
@@ -105,11 +104,20 @@ async def test_connect_sets_stable_host_routing_headers(monkeypatch, test_api_ke
     monkeypatch.setattr(sandbox_async_main.SandboxApi, "_cls_connect", mock_connect)
 
     sandbox = await AsyncSandbox.connect(
-        "sbx-test", api_key=test_api_key, headers=BASE_HEADERS
+        "sbx-test",
+        api_key=test_api_key,
+        headers=BASE_HEADERS,
+        integration="testing/version",
     )
 
     assert sandbox.envd_api_url == "https://sandbox.e2b.app"
     assert "X-Test" not in sandbox.connection_config.sandbox_headers
+    assert sandbox.connection_config.sandbox_headers["User-Agent"].startswith(
+        "e2b-python-sdk/"
+    )
+    assert sandbox.connection_config.sandbox_headers["User-Agent"].endswith(
+        " testing/version"
+    )
     assert sandbox.connection_config.sandbox_headers["E2b-Sandbox-Id"] == "sbx-test"
     assert sandbox.connection_config.sandbox_headers["E2b-Sandbox-Port"] == str(
         ConnectionConfig.envd_port
