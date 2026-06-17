@@ -10,6 +10,10 @@ from e2b.sandbox_domains import is_supported_sandbox_domain
 
 REQUEST_TIMEOUT: float = 60.0  # 60 seconds
 
+# Timeout for streaming file transfers. A streamed body can take far longer
+# than a regular request, so it must not inherit the short REQUEST_TIMEOUT.
+FILE_TIMEOUT: float = 3600.0  # 1 hour
+
 KEEPALIVE_PING_INTERVAL_SEC = 50  # 50 seconds
 KEEPALIVE_PING_HEADER = "Keepalive-Ping-Interval"
 

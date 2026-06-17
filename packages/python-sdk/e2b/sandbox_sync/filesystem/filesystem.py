@@ -7,6 +7,7 @@ from packaging.version import Version
 import e2b_connect
 from e2b.api.client_sync import get_envd_transport
 from e2b.connection_config import (
+    FILE_TIMEOUT,
     KEEPALIVE_PING_HEADER,
     KEEPALIVE_PING_INTERVAL_SEC,
     ConnectionConfig,
@@ -341,20 +342,37 @@ class Filesystem:
         if metadata and self._envd_version < ENVD_FILE_METADATA:
             raise TemplateException("File metadata requires envd 0.6.2 or later.")
 
+        # A file-like entry is streamed; str/bytes are sent from memory.
+        has_streamable_data = any(
+            not isinstance(file["data"], (str, bytes)) for file in files
+        )
+
         if use_octet_stream is None:
             # Streaming an upload only happens on the octet-stream path; the
             # multipart path buffers file-like data. Default to octet-stream
             # when any entry is a file-like object so a streamed upload isn't
             # silently buffered.
-            use_octet_stream = any(
-                not isinstance(file["data"], (str, bytes)) for file in files
-            )
+            use_octet_stream = has_streamable_data
 
         supports_octet_stream = self._envd_version >= ENVD_OCTET_STREAM_UPLOAD
         # Gzip compression only works with the octet-stream upload (the
         # Content-Encoding header applies to the whole request body), so
         # requesting gzip implies it when envd supports it.
         use_octet_stream = (use_octet_stream or gzip) and supports_octet_stream
+
+        request_timeout_value = self._connection_config.get_request_timeout(
+            request_timeout
+        )
+        # A streamed body send can take far longer than the default request
+        # timeout, so give the write phase the file-transfer budget while
+        # keeping connection setup and the response read bounded. Matches the
+        # JS SDK's 1h streamed-upload timeout (httpx applies `write` per chunk
+        # rather than as a total deadline).
+        upload_timeout = (
+            httpx.Timeout(request_timeout_value, write=FILE_TIMEOUT)
+            if has_streamable_data
+            else request_timeout_value
+        )
 
         # Metadata is sent as request-scoped X-Metadata-* headers, so the same
         # metadata is applied to every file in a multi-file upload.
@@ -380,9 +398,7 @@ class Filesystem:
                         content=to_upload_body(file_data, gzip),
                         headers=headers,
                         params=params,
-                        timeout=self._connection_config.get_request_timeout(
-                            request_timeout
-                        ),
+                        timeout=upload_timeout,
                     )
                 except httpx.RemoteProtocolError as e:
                     raise handle_envd_api_transport_exception_with_health(
@@ -419,9 +435,7 @@ class Filesystem:
                     files=httpx_files,
                     params=params,
                     headers=extra_headers,
-                    timeout=self._connection_config.get_request_timeout(
-                        request_timeout
-                    ),
+                    timeout=upload_timeout,
                 )
             except httpx.RemoteProtocolError as e:
                 raise handle_envd_api_transport_exception_with_health(e, self._envd_api)
