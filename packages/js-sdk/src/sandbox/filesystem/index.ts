@@ -53,7 +53,7 @@ import {
   InvalidArgumentError,
   TemplateError,
 } from '../../errors'
-import { toBlob, toUploadBody } from '../../utils'
+import { runtime, toBlob, toUploadBody } from '../../utils'
 
 const FILESYSTEM_HTTP_ERROR_MAP: Record<number, (message: string) => Error> = {
   404: (message: string) => new FileNotFoundError(message),
@@ -276,8 +276,12 @@ export interface FilesystemWriteOpts extends FilesystemRequestOpts {
    * Outside the browser, `ReadableStream` data is then streamed to the sandbox
    * instead of being buffered in memory.
    *
-   * Defaults to `false`. Requires envd 0.5.7 or later — when not supported by
-   * the sandbox's envd version, the upload falls back to `multipart/form-data`.
+   * Defaults to `undefined`, which uses octet-stream when any entry is a
+   * `ReadableStream` (so streamed uploads aren't buffered) and
+   * `multipart/form-data` otherwise; browsers always use `multipart/form-data`
+   * since they can't stream request bodies. Requires envd 0.5.7 or later — when
+   * not supported by the sandbox's envd version, the upload falls back to
+   * `multipart/form-data`.
    */
   useOctetStream?: boolean
   /**
@@ -623,11 +627,18 @@ export class Filesystem {
 
     const supportsOctetStream =
       compareVersions(this.envdApi.version, ENVD_OCTET_STREAM_UPLOAD) >= 0
-    // Gzip compression only works with the octet-stream upload (the
-    // Content-Encoding header applies to the whole request body), so
-    // requesting gzip implies it when envd supports it.
+    // Streaming a request body only happens on the octet-stream path; the
+    // multipart path buffers via `toBlob`. So default to octet-stream when any
+    // entry is a `ReadableStream`, otherwise a streamed upload would be
+    // silently buffered. Browsers can't stream request bodies, so they stay on
+    // multipart. Gzip also implies octet-stream (the Content-Encoding header
+    // applies to the whole request body). An explicit `useOctetStream` wins.
+    const hasStreamableData =
+      runtime !== 'browser' &&
+      writeFiles.some((file) => file.data instanceof ReadableStream)
     const useOctetStream =
-      ((writeOpts?.useOctetStream ?? false) || useGzip) && supportsOctetStream
+      ((writeOpts?.useOctetStream ?? hasStreamableData) || useGzip) &&
+      supportsOctetStream
 
     const metadata = writeOpts?.metadata
     validateMetadata(metadata)

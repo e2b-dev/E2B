@@ -258,7 +258,7 @@ class Filesystem:
         user: Optional[Username] = None,
         request_timeout: Optional[float] = None,
         gzip: bool = False,
-        use_octet_stream: bool = False,
+        use_octet_stream: Optional[bool] = None,
         metadata: Optional[Dict[str, str]] = None,
     ) -> WriteInfo:
         """
@@ -272,7 +272,7 @@ class Filesystem:
         :param user: Run the operation as this user
         :param request_timeout: Timeout for the request in **seconds**
         :param gzip: Use gzip compression for the upload. Implies the `application/octet-stream` upload. Requires envd 0.5.7 or later — when not supported, the upload falls back to uncompressed `multipart/form-data`.
-        :param use_octet_stream: Upload using `application/octet-stream` instead of `multipart/form-data`. Defaults to `False`. Requires envd 0.5.7 or later — when not supported, the upload falls back to `multipart/form-data`.
+        :param use_octet_stream: Upload using `application/octet-stream` instead of `multipart/form-data`. Defaults to `None`, which uses octet-stream when `data` is a file-like object (so streamed uploads aren't buffered) and `multipart/form-data` otherwise. Requires envd 0.5.7 or later — when not supported, the upload falls back to `multipart/form-data`.
         :param metadata: User-defined metadata to persist on the uploaded file as extended attributes. Keys are lowercased by the sandbox; invalid keys or values raise an `InvalidArgumentException`. Requires envd 0.6.2 or later.
 
         :return: Information about the written file
@@ -297,7 +297,7 @@ class Filesystem:
         user: Optional[Username] = None,
         request_timeout: Optional[float] = None,
         gzip: bool = False,
-        use_octet_stream: bool = False,
+        use_octet_stream: Optional[bool] = None,
         metadata: Optional[Dict[str, str]] = None,
     ) -> List[WriteInfo]:
         """
@@ -312,7 +312,7 @@ class Filesystem:
         :param user: Run the operation as this user
         :param request_timeout: Timeout for the request
         :param gzip: Use gzip compression for the upload. Implies the `application/octet-stream` upload. Requires envd 0.5.7 or later — when not supported, the upload falls back to uncompressed `multipart/form-data`.
-        :param use_octet_stream: Upload using `application/octet-stream` instead of `multipart/form-data`. Defaults to `False`. Requires envd 0.5.7 or later — when not supported, the upload falls back to `multipart/form-data`.
+        :param use_octet_stream: Upload using `application/octet-stream` instead of `multipart/form-data`. Defaults to `None`, which uses octet-stream when any entry is a file-like object (so streamed uploads aren't buffered) and `multipart/form-data` otherwise. Requires envd 0.5.7 or later — when not supported, the upload falls back to `multipart/form-data`.
         :param metadata: User-defined metadata to persist on each uploaded file as extended attributes; the same map is applied to every file. Keys are lowercased by the sandbox; invalid keys or values raise an `InvalidArgumentException`. Requires envd 0.6.2 or later.
         :return: Information about the written files
         """
@@ -327,6 +327,15 @@ class Filesystem:
 
         if metadata and self._envd_version < ENVD_FILE_METADATA:
             raise TemplateException("File metadata requires envd 0.6.2 or later.")
+
+        if use_octet_stream is None:
+            # Streaming an upload only happens on the octet-stream path; the
+            # multipart path buffers file-like data. Default to octet-stream
+            # when any entry is a file-like object so a streamed upload isn't
+            # silently buffered.
+            use_octet_stream = any(
+                not isinstance(file["data"], (str, bytes)) for file in files
+            )
 
         supports_octet_stream = self._envd_version >= ENVD_OCTET_STREAM_UPLOAD
         # Gzip compression only works with the octet-stream upload (the
