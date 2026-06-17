@@ -1,5 +1,5 @@
 import datetime
-from io import BytesIO, StringIO
+from io import BytesIO
 
 import pytest
 
@@ -44,16 +44,6 @@ class TestWriteFileAndReadFile:
         volume.write_file(path, stream)
         read_stream = volume.read_file(path, format="stream")
         read_content = b"".join(read_stream).decode("utf-8")
-
-        assert read_content == content
-
-    def test_write_and_read_text_stream(self, volume: Volume):
-        path = "/test-text-stream.txt"
-        content = "Test text stream content"
-        stream = StringIO(content)
-
-        volume.write_file(path, stream)
-        read_content = volume.read_file(path, format="text")
 
         assert read_content == content
 

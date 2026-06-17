@@ -46,7 +46,6 @@ from e2b.volume.types import (
     VolumeInfo,
     VolumeEntryStat,
 )
-from e2b.io_utils import aiter_io_chunks
 from e2b.volume.utils import DualMethod, convert_volume_entry_stat
 
 
@@ -474,19 +473,13 @@ class AsyncVolume:
         )
 
         if format == "stream":
-            # The request timeout bounds connection setup, not the stream read:
-            # consuming the body must not be killed by it. Mirrors the sandbox
-            # files stream path and the RPC streams, which carry no client-side
-            # read timeout (the server enforces deadlines, keepalive pings
-            # detect dropped connections).
-            stream_timeout = httpx.Timeout(timeout, read=None)
 
             async def stream_file() -> AsyncIterator[bytes]:
                 async with api_client.get_async_httpx_client().stream(
                     method="GET",
                     url=f"/volumecontent/{self._volume_id}/file",
                     params=params,
-                    timeout=stream_timeout,
+                    timeout=timeout,
                 ) as response:
                     if response.status_code == 404:
                         raise NotFoundException(f"Path {path} not found")
@@ -532,7 +525,7 @@ class AsyncVolume:
     async def write_file(
         self,
         path: str,
-        data: Union[str, bytes, IO],
+        data: Union[str, bytes, IO[bytes]],
         uid: Optional[int] = None,
         gid: Optional[int] = None,
         mode: Optional[int] = None,
@@ -546,7 +539,7 @@ class AsyncVolume:
         Writing to a file that already exists overwrites the file.
 
         :param path: Path to the file
-        :param data: Data to write to the file. Data can be a string, bytes, or IO. File-like objects are streamed in chunks instead of being buffered in memory.
+        :param data: Data to write to the file. Data can be a string, bytes, or IO.
         :param uid: User ID of the created file
         :param gid: Group ID of the created file
         :param mode: Mode of the created file
@@ -563,21 +556,22 @@ class AsyncVolume:
         if upload_timeout is not None:
             api_client = api_client.with_timeout(httpx.Timeout(upload_timeout))
 
-        content: Union[bytes, AsyncIterator[bytes]]
         if isinstance(data, str):
-            content = data.encode("utf-8")
+            data_bytes = data.encode("utf-8")
         elif isinstance(data, bytes):
-            content = data
+            data_bytes = data
         elif hasattr(data, "read"):
-            # Stream file-like objects in chunks without buffering them in
-            # memory. Async httpx requires an async iterable request body.
-            content = aiter_io_chunks(data)
+            content = data.read()
+            if isinstance(content, bytes):
+                data_bytes = content
+            else:
+                data_bytes = content.encode("utf-8")
         else:
             raise ValueError(f"Unsupported data type: {type(data)}")
 
         res = await put_file.asyncio_detailed(
             self._volume_id,
-            body=FilePayload(payload=content),  # type: ignore[arg-type]  # httpx accepts bytes and streamable content directly
+            body=FilePayload(payload=data_bytes),  # type: ignore[arg-type]  # Pass bytes directly for async httpx compatibility
             path=path,
             uid=uid if uid is not None else UNSET,
             gid=gid if gid is not None else UNSET,

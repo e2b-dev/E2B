@@ -58,20 +58,6 @@ describe('Volume File Operations', () => {
       }
     )
 
-    volumeTest(
-      'should write and read a file from a ReadableStream',
-      async ({ volume }) => {
-        const path = '/test-stream.txt'
-        const content = 'Test stream content'
-        const stream = new Blob([content]).stream()
-
-        await volume.writeFile(path, stream)
-        const readContent = await volume.readFile(path, { format: 'text' })
-
-        expect(readContent).toBe(content)
-      }
-    )
-
     volumeTest('should write and read an empty file', async ({ volume }) => {
       const path = '/empty.txt'
       const content = ''
@@ -81,30 +67,6 @@ describe('Volume File Operations', () => {
 
       expect(readContent).toBe(content)
     })
-
-    volumeTest(
-      'should read an empty file in all formats',
-      async ({ volume }) => {
-        const path = '/empty-formats.txt'
-        await volume.writeFile(path, '')
-
-        const bytes = await volume.readFile(path, { format: 'bytes' })
-        expect(bytes).toBeInstanceOf(Uint8Array)
-        expect(bytes.length).toBe(0)
-
-        const blob = await volume.readFile(path, { format: 'blob' })
-        expect(blob).toBeInstanceOf(Blob)
-        expect(blob.size).toBe(0)
-
-        const stream = await volume.readFile(path, { format: 'stream' })
-        expect(stream).toBeInstanceOf(ReadableStream)
-        const chunks: Uint8Array[] = []
-        for await (const chunk of stream as unknown as AsyncIterable<Uint8Array>) {
-          chunks.push(chunk)
-        }
-        expect(chunks.reduce((n, c) => n + c.length, 0)).toBe(0)
-      }
-    )
 
     volumeTest(
       'should overwrite an existing file with force option',
