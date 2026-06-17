@@ -1,3 +1,6 @@
+import shlex
+
+
 class ReadyCmd:
     """
     Wrapper class for ready check commands.
@@ -31,7 +34,10 @@ def wait_for_port(port: int):
     )
     ```
     """
-    cmd = f"ss -tuln | grep :{port}"
+    # Match the exact listening port via ss's source-port filter (so e.g. port
+    # 80 doesn't match 8080). ss exits 0 regardless of matches, so test for
+    # non-empty output to signal readiness.
+    cmd = f'[ -n "$(ss -Htuln sport = :{port})" ]'
     return ReadyCmd(cmd)
 
 
@@ -57,7 +63,7 @@ def wait_for_url(url: str, status_code: int = 200):
     )
     ```
     """
-    cmd = f'curl -s -o /dev/null -w "%{{http_code}}" {url} | grep -q "{status_code}"'
+    cmd = f'curl -s -o /dev/null -w "%{{http_code}}" {shlex.quote(url)} | grep -q "{status_code}"'
     return ReadyCmd(cmd)
 
 
@@ -82,7 +88,7 @@ def wait_for_process(process_name: str):
     )
     ```
     """
-    cmd = f"pgrep {process_name} > /dev/null"
+    cmd = f"pgrep {shlex.quote(process_name)} > /dev/null"
     return ReadyCmd(cmd)
 
 
@@ -107,7 +113,7 @@ def wait_for_file(filename: str):
     )
     ```
     """
-    cmd = f"[ -f {filename} ]"
+    cmd = f"[ -f {shlex.quote(filename)} ]"
     return ReadyCmd(cmd)
 
 
