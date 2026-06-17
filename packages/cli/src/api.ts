@@ -104,4 +104,8 @@ export const connectionConfig = new e2b.ConnectionConfig({
     ? { Authorization: `Bearer ${resolvedAccessToken}` }
     : undefined,
 })
-export const client = new e2b.ApiClient(connectionConfig)
+// The CLI authenticates team-scoped endpoints (e.g. `/teams`) with the access
+// token instead of an API key, so don't require an API key here.
+export const client = new e2b.ApiClient(connectionConfig, {
+  requireApiKey: false,
+})

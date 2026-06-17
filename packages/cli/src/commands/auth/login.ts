@@ -48,7 +48,7 @@ export const loginCommand = new commander.Command('login')
       const config = new e2b.ConnectionConfig({
         apiHeaders: { Authorization: `Bearer ${accessToken}` },
       })
-      const client = new e2b.ApiClient(config)
+      const client = new e2b.ApiClient(config, { requireApiKey: false })
       const res = await client.api.GET('/teams', { signal })
 
       handleE2BRequestError(res, 'Error getting teams')

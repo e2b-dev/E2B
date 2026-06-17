@@ -129,7 +129,7 @@ class ApiClient(AuthenticatedClient):
 
         if config.api_key is None:
             raise AuthenticationException(
-                "API key is required, please visit the Team tab at https://e2b.dev/dashboard to get your API key. "
+                "API key is required, please visit the API Keys tab at https://e2b.dev/dashboard?tab=keys to get your API key. "
                 "You can either set the environment variable `E2B_API_KEY` "
                 'or you can pass it directly to the method like api_key="e2b_..."',
             )

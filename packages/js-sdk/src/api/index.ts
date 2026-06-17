@@ -68,7 +68,20 @@ export function handleApiError(
 class ApiClient {
   readonly api: ReturnType<typeof createClient<paths>>
 
-  constructor(config: ConnectionConfig) {
+  constructor(
+    config: ConnectionConfig,
+    opts: {
+      requireApiKey?: boolean
+    } = {}
+  ) {
+    if ((opts.requireApiKey ?? true) && !config.apiKey) {
+      throw new AuthenticationError(
+        'API key is required, please visit the API Keys tab at https://e2b.dev/dashboard?tab=keys to get your API key. ' +
+          'You can either set the environment variable `E2B_API_KEY` ' +
+          "or you can pass it directly to the sandbox like Sandbox.create({ apiKey: 'e2b_...' })"
+      )
+    }
+
     if (config.apiKey && config.validateApiKey) {
       validateApiKey(config.apiKey)
     }
