@@ -1,9 +1,32 @@
 import json
+import time
+
+import httpx
 
 import pytest
 
 from e2b import SandboxNetworkOpts
 from e2b.sandbox.commands.command_handle import CommandExitException
+
+
+def wait_for_status(
+    client: httpx.Client,
+    url: str,
+    status_code: int,
+    headers: dict[str, str] | None = None,
+    timeout: float = 15,
+) -> httpx.Response:
+    deadline = time.monotonic() + timeout
+    response: httpx.Response | None = None
+
+    while time.monotonic() < deadline:
+        response = client.get(url, headers=headers, follow_redirects=True)
+        if response.status_code == status_code:
+            return response
+        time.sleep(1)
+
+    assert response is not None
+    return response
 
 
 @pytest.mark.skip_debug()
@@ -102,10 +125,6 @@ def test_allow_public_traffic_false(sandbox_factory):
         secure=True, network=SandboxNetworkOpts(allow_public_traffic=False)
     )
 
-    import time
-
-    import httpx
-
     # Verify the sandbox was created successfully and has a traffic access token
     assert sandbox.traffic_access_token is not None
 
@@ -129,7 +148,7 @@ def test_allow_public_traffic_false(sandbox_factory):
 
         # Test 2: Request with valid traffic access token should succeed
         headers = {"e2b-traffic-access-token": sandbox.traffic_access_token}
-        response = client.get(sandbox_url, headers=headers, follow_redirects=True)
+        response = wait_for_status(client, sandbox_url, 200, headers=headers)
         assert response.status_code == 200
 
 
@@ -137,10 +156,6 @@ def test_allow_public_traffic_false(sandbox_factory):
 def test_allow_public_traffic_true(sandbox_factory):
     """Test that sandbox with allow_public_traffic=True works without token."""
     sandbox = sandbox_factory(network=SandboxNetworkOpts(allow_public_traffic=True))
-
-    import time
-
-    import httpx
 
     # Start a simple HTTP server in the sandbox
     port = 8080
@@ -157,7 +172,7 @@ def test_allow_public_traffic_true(sandbox_factory):
 
     with httpx.Client() as client:
         # Request without traffic access token should succeed (public access enabled)
-        response = client.get(sandbox_url, follow_redirects=True)
+        response = wait_for_status(client, sandbox_url, 200)
         assert response.status_code == 200
 
 
