@@ -198,7 +198,7 @@ class EnvdApiClient {
       /**
        * Sandbox-scoped envd access token, sent as the `X-Access-Token` header.
        */
-      accessToken?: string
+      envdAccessToken?: string
       fetch?: (request: Request) => ReturnType<typeof fetch>
       headers?: Record<string, string>
     },
@@ -211,8 +211,8 @@ class EnvdApiClient {
       fetch: config?.fetch,
       headers: {
         ...config?.headers,
-        ...(config.accessToken && {
-          'X-Access-Token': config.accessToken,
+        ...(config.envdAccessToken && {
+          'X-Access-Token': config.envdAccessToken,
         }),
       },
       // In HTTP 1.1, all connections are considered persistent unless declared otherwise
