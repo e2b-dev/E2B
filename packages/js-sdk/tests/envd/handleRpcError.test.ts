@@ -64,6 +64,13 @@ describe('handleRpcError', () => {
 describe('handleRpcErrorWithHealthCheck', () => {
   const terminated = () => new ConnectError('terminated', Code.Unknown)
 
+  // Each JS runtime surfaces a dropped connection with different wording
+  const runtimeTerminatedMessages = {
+    Node: 'terminated',
+    Bun: 'The socket connection was closed unexpectedly',
+    Deno: 'error reading a body from connection',
+  }
+
   test('returns a TimeoutError when the health check says the sandbox is not running', async () => {
     const err = await handleRpcErrorWithHealthCheck(
       terminated(),
@@ -72,6 +79,20 @@ describe('handleRpcErrorWithHealthCheck', () => {
     assert.instanceOf(err, TimeoutError)
     assert.include(err.message, 'sandbox was killed or reached its end of life')
   })
+
+  for (const [runtime, message] of Object.entries(runtimeTerminatedMessages)) {
+    test(`treats the ${runtime} dropped-connection message as terminated`, async () => {
+      const err = await handleRpcErrorWithHealthCheck(
+        new ConnectError(message, Code.Unknown),
+        async () => false
+      )
+      assert.instanceOf(err, TimeoutError)
+      assert.include(
+        err.message,
+        'sandbox was killed or reached its end of life'
+      )
+    })
+  }
 
   test('falls back to the generic mapping when the health check says the sandbox is running', async () => {
     const err = await handleRpcErrorWithHealthCheck(
