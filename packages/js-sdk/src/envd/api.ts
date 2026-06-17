@@ -195,6 +195,10 @@ class EnvdApiClient {
 
   constructor(
     config: Pick<ConnectionConfig, 'apiUrl' | 'logger'> & {
+      /**
+       * Sandbox-scoped envd access token, sent as the `X-Access-Token` header.
+       */
+      accessToken?: string
       fetch?: (request: Request) => ReturnType<typeof fetch>
       headers?: Record<string, string>
     },
@@ -205,7 +209,12 @@ class EnvdApiClient {
     this.api = createClient({
       baseUrl: config.apiUrl,
       fetch: config?.fetch,
-      headers: config?.headers,
+      headers: {
+        ...config?.headers,
+        ...(config.accessToken && {
+          'X-Access-Token': config.accessToken,
+        }),
+      },
       // In HTTP 1.1, all connections are considered persistent unless declared otherwise
       // keepalive: true,
     })
