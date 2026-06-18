@@ -17,7 +17,7 @@ import {
 import { StartResponse, ConnectResponse } from './process/process_pb'
 import { Code, ConnectError } from '@connectrpc/connect'
 import { WatchDirResponse } from './filesystem/filesystem_pb'
-import { SandboxHealthCheck } from './rpc'
+import { isConnectionTerminatedMessage, SandboxHealthCheck } from './rpc'
 
 type ApiError = { message?: string } | string
 
@@ -73,8 +73,9 @@ export async function handleEnvdApiFetchError(
   err: unknown,
   checkHealth?: SandboxHealthCheck
 ): Promise<Error> {
-  // Undici surfaces a connection dropped mid-body as a TypeError with the message 'terminated'
-  if (err instanceof TypeError && err.message === 'terminated') {
+  // A connection dropped mid-body surfaces as a fetch failure whose message varies
+  // by runtime (e.g. undici's 'terminated'); match every known variant.
+  if (err instanceof Error && isConnectionTerminatedMessage(err.message)) {
     const running = checkHealth
       ? await checkHealth().catch(() => undefined)
       : undefined
@@ -194,7 +195,11 @@ class EnvdApiClient {
   readonly version: string
 
   constructor(
-    config: Pick<ConnectionConfig, 'apiUrl' | 'logger' | 'accessToken'> & {
+    config: Pick<ConnectionConfig, 'apiUrl' | 'logger'> & {
+      /**
+       * Sandbox-scoped envd access token, sent as the `X-Access-Token` header.
+       */
+      envdAccessToken?: string
       fetch?: (request: Request) => ReturnType<typeof fetch>
       headers?: Record<string, string>
     },
@@ -205,7 +210,12 @@ class EnvdApiClient {
     this.api = createClient({
       baseUrl: config.apiUrl,
       fetch: config?.fetch,
-      headers: config?.headers,
+      headers: {
+        ...config?.headers,
+        ...(config.envdAccessToken && {
+          'X-Access-Token': config.envdAccessToken,
+        }),
+      },
       // In HTTP 1.1, all connections are considered persistent unless declared otherwise
       // keepalive: true,
     })

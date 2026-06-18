@@ -119,6 +119,25 @@ describe('handleEnvdApiFetchError', () => {
     assert.include(err.message, 'sandbox was killed or reached its end of life')
   })
 
+  // Each JS runtime surfaces a dropped connection with different wording, and not
+  // always as a TypeError (Bun raises a plain Error), so match by message
+  const runtimeTerminatedErrors = {
+    Node: new TypeError('terminated'),
+    Bun: new Error('The socket connection was closed unexpectedly'),
+    Deno: new TypeError('error reading a body from connection'),
+  }
+
+  for (const [runtime, error] of Object.entries(runtimeTerminatedErrors)) {
+    test(`treats the ${runtime} dropped-connection error as terminated`, async () => {
+      const err = await handleEnvdApiFetchError(error, async () => false)
+      assert.instanceOf(err, TimeoutError)
+      assert.include(
+        err.message,
+        'sandbox was killed or reached its end of life'
+      )
+    })
+  }
+
   test('returns the original error when the health check says the sandbox is running', async () => {
     const original = new TypeError('terminated')
     const err = await handleEnvdApiFetchError(original, async () => true)

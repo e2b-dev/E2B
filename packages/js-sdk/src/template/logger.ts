@@ -10,16 +10,20 @@ export type LogEntryLevel = 'debug' | 'info' | 'warn' | 'error'
  * Represents a single log entry from the template build process.
  */
 export class LogEntry {
-  constructor(
-    public readonly timestamp: Date,
-    public readonly level: LogEntryLevel,
-    public readonly message: string
-  ) {}
+  public readonly timestamp: Date
+  public readonly level: LogEntryLevel
+  public readonly message: string
+
+  constructor(timestamp: Date, level: LogEntryLevel, message: string) {
+    this.timestamp = timestamp
+    this.level = level
+    // Strip ANSI escape codes on construction so messages are consistent
+    // everywhere (matches the Python SDK behavior)
+    this.message = stripAnsi(message)
+  }
 
   toString() {
-    return `[${this.timestamp.toISOString()}] [${this.level}] ${stripAnsi(
-      this.message
-    )}`
+    return `[${this.timestamp.toISOString()}] [${this.level}] ${this.message}`
   }
 }
 

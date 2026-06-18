@@ -23,6 +23,12 @@ failure_map: dict[str, Optional[int]] = {
     "from_gcp_registry": 0,
     "copy": None,
     "copy_items": None,
+    # multi-source copy produces two COPY instructions (steps 1 and 2),
+    # the run_cmd after it is step 3
+    "multi_source_copy_second_source": 2,
+    "multi_source_copy_next_step": 3,
+    "copy_items_second_item": 2,
+    "copy_items_next_step": 3,
     "remove": 1,
     "rename": 1,
     "make_dir": 1,
@@ -51,6 +57,11 @@ def mock_template_build(monkeypatch):
     def mock_trigger_build(client, template_id: str, build_id: str, template):
         return None
 
+    def mock_get_file_upload_link(
+        client, template_id: str, files_hash: str, stack_trace=None
+    ):
+        return SimpleNamespace(present=True, url=None)
+
     def mock_get_build_status(
         client, template_id: str, build_id: str, logs_offset: int
     ):
@@ -68,6 +79,9 @@ def mock_template_build(monkeypatch):
 
     monkeypatch.setattr(template_sync_main, "request_build", mock_request_build)
     monkeypatch.setattr(template_sync_main, "trigger_build", mock_trigger_build)
+    monkeypatch.setattr(
+        template_sync_main, "get_file_upload_link", mock_get_file_upload_link
+    )
     monkeypatch.setattr(build_api_mod, "get_build_status", mock_get_build_status)
 
 
@@ -186,6 +200,58 @@ def test_traces_on_copyItems(build):
     )
     _expect_to_throw_and_check_trace(
         lambda: build(template, name="copy_items"), "copy_items"
+    )
+
+
+@pytest.mark.skip_debug()
+def test_traces_on_second_source_of_multi_source_copy(build):
+    template = Template()
+    template = template.from_base_image()
+    template = template.copy(["test_stacktrace.py", "test_tags.py"], ".")
+    _expect_to_throw_and_check_trace(
+        lambda: build(template, name="multi_source_copy_second_source"), "copy"
+    )
+
+
+@pytest.mark.skip_debug()
+def test_traces_on_step_after_multi_source_copy(build):
+    template = Template()
+    template = template.from_base_image()
+    template = template.copy(["test_stacktrace.py", "test_tags.py"], ".")
+    template = template.run_cmd(f"cat {non_existent_path}")
+    _expect_to_throw_and_check_trace(
+        lambda: build(template, name="multi_source_copy_next_step"), "run_cmd"
+    )
+
+
+@pytest.mark.skip_debug()
+def test_traces_on_second_item_of_copy_items(build):
+    template = Template()
+    template = template.from_base_image()
+    template = template.copy_items(
+        [
+            CopyItem(src="test_stacktrace.py", dest="."),
+            CopyItem(src="test_tags.py", dest="."),
+        ]
+    )
+    _expect_to_throw_and_check_trace(
+        lambda: build(template, name="copy_items_second_item"), "copy_items"
+    )
+
+
+@pytest.mark.skip_debug()
+def test_traces_on_step_after_copy_items(build):
+    template = Template()
+    template = template.from_base_image()
+    template = template.copy_items(
+        [
+            CopyItem(src="test_stacktrace.py", dest="."),
+            CopyItem(src="test_tags.py", dest="."),
+        ]
+    )
+    template = template.run_cmd(f"cat {non_existent_path}")
+    _expect_to_throw_and_check_trace(
+        lambda: build(template, name="copy_items_next_step"), "run_cmd"
     )
 
 

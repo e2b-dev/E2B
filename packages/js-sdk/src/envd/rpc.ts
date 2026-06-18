@@ -21,15 +21,46 @@ import { ENVD_DEFAULT_USER } from './versions'
 export type SandboxHealthCheck = () => Promise<boolean | undefined>
 
 /**
+ * Message fragments different JS runtimes use when the connection to the sandbox
+ * is dropped mid-request. The transport surfaces a dropped connection (e.g. an
+ * HTTP/2 stream reset) with runtime- and version-specific wording, so we match
+ * every known variant:
+ *   - Node (undici): `terminated`
+ *   - Bun:           `The socket connection was closed unexpectedly`
+ *   - Deno:          `error reading a body from connection`
+ */
+const CONNECTION_TERMINATED_MESSAGES = [
+  'terminated',
+  'The socket connection was closed unexpectedly',
+  'error reading a body from connection',
+]
+
+/**
+ * Checks whether a message matches any known runtime variant of the connection to
+ * the sandbox being dropped mid-request (see {@link CONNECTION_TERMINATED_MESSAGES}).
+ */
+export function isConnectionTerminatedMessage(
+  message: string | undefined
+): boolean {
+  if (!message) {
+    return false
+  }
+
+  return CONNECTION_TERMINATED_MESSAGES.some((fragment) =>
+    message.includes(fragment)
+  )
+}
+
+/**
  * Checks whether the error is the signature of the connection to the sandbox being
  * dropped mid-request — an HTTP/2 stream reset surfaced by connect as `Code.Unknown`
- * with the message 'terminated'.
+ * with one of the runtime-specific connection-dropped messages.
  */
 export function isConnectionTerminatedError(err: unknown): boolean {
   return (
     err instanceof ConnectError &&
     err.code === Code.Unknown &&
-    err.rawMessage === 'terminated'
+    isConnectionTerminatedMessage(err.rawMessage)
   )
 }
 

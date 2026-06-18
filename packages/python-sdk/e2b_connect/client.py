@@ -345,16 +345,19 @@ class Client:
         data = self._codec.encode(req)
         flags = EnvelopeFlags(0)
 
+        # `request_timeout` bounds connection setup and request sending, but NOT the
+        # stream read: a stream can stay open for the whole command `timeout` (minutes
+        # or, when disabled, indefinitely), so we deliberately leave `read` unset.
+        # The command `timeout` is enforced server-side via the `connect-timeout-ms`
+        # header (see `_create_stream_timeout`), which returns a clean `deadline_exceeded`.
+        # This mirrors the JS SDK, which has no per-chunk read timeout either — setting
+        # `read` to the command `timeout` would race that server response and surface a
+        # raw transport `ReadTimeout` instead.
         timeout_ext = {}
         if request_timeout is not None:
             timeout_ext["connect"] = request_timeout
             timeout_ext["pool"] = request_timeout
             timeout_ext["write"] = request_timeout
-        if timeout:
-            # This is not actually timeout for the whole stream read, but timeout from the last read chunk.
-            # At worst then, the timeout of a hanging stream could be 2 * timeout (reading body until timeout-ϵ, then waiting for the read timeout).
-            # However, this is still better than no timeout at all and the full timeout in sync python might be way more complicated.
-            timeout_ext["read"] = timeout
         extensions = {"timeout": timeout_ext} if timeout_ext else None
 
         if self._compressor is not None:

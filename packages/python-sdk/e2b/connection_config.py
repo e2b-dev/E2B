@@ -31,6 +31,9 @@ class ApiParams(TypedDict, total=False):
     api_headers: Optional[Dict[str, str]]
     """Additional headers to send with E2B API requests."""
 
+    integration: Optional[str]
+    """Integration wrapping the E2B SDK, appended to the User-Agent."""
+
     api_key: Optional[str]
     """E2B API Key to use for authentication, defaults to `E2B_API_KEY` environment variable."""
 
@@ -103,6 +106,17 @@ class ConnectionConfig:
     def _access_token():
         return os.getenv("E2B_ACCESS_TOKEN")
 
+    @staticmethod
+    def _build_user_agent(
+        integration: Optional[str] = None,
+    ) -> str:
+        user_agent_parts = [f"e2b-python-sdk/{package_version}"]
+
+        if integration:
+            user_agent_parts.append(integration)
+
+        return " ".join(user_agent_parts)
+
     def __init__(
         self,
         domain: Optional[str] = None,
@@ -115,6 +129,7 @@ class ConnectionConfig:
         request_timeout: Optional[float] = None,
         headers: Optional[Dict[str, str]] = None,
         api_headers: Optional[Dict[str, str]] = None,
+        integration: Optional[str] = None,
         extra_sandbox_headers: Optional[Dict[str, str]] = None,
         proxy: Optional[ProxyTypes] = None,
         logger: Optional[logging.Logger] = None,
@@ -128,9 +143,14 @@ class ConnectionConfig:
             if validate_api_key is not None
             else ConnectionConfig._validate_api_key()
         )
+        # Deprecated: pass the token through `api_headers` instead, e.g.
+        # api_headers={"Authorization": f"Bearer {token}"}.
         self.access_token = access_token or ConnectionConfig._access_token()
+        self.integration = integration
         self.headers = {**(headers or {}), **(api_headers or {})}
-        self.headers["User-Agent"] = f"e2b-python-sdk/{package_version}"
+        self.headers["User-Agent"] = self._build_user_agent(
+            self.integration,
+        )
         self.__extra_sandbox_headers = extra_sandbox_headers or {}
 
         self.proxy = proxy
@@ -220,6 +240,7 @@ class ConnectionConfig:
         """
         headers = opts.get("headers")
         api_headers = opts.get("api_headers")
+        integration = opts.get("integration", self.integration)
         request_timeout = opts.get("request_timeout")
         api_key = opts.get("api_key")
         validate_api_key = opts.get("validate_api_key")
@@ -234,6 +255,10 @@ class ConnectionConfig:
             req_headers.update(headers)
         if api_headers is not None:
             req_headers.update(api_headers)
+        if integration is not None:
+            req_headers["User-Agent"] = self._build_user_agent(
+                integration,
+            )
 
         # `logger` is a construction-time option rather than a per-request
         # ApiParams field, but it must propagate to the throwaway
@@ -244,18 +269,23 @@ class ConnectionConfig:
         return dict(
             ApiParamsWithLogger(
                 api_key=api_key if api_key is not None else self.api_key,
-                validate_api_key=validate_api_key
-                if validate_api_key is not None
-                else self.validate_api_key,
+                validate_api_key=(
+                    validate_api_key
+                    if validate_api_key is not None
+                    else self.validate_api_key
+                ),
                 api_url=api_url if api_url is not None else self.api_url,
                 domain=domain if domain is not None else self.domain,
                 debug=debug if debug is not None else self.debug,
                 request_timeout=self.get_request_timeout(request_timeout),
                 headers=req_headers,
+                integration=integration,
                 proxy=proxy if proxy is not None else self.proxy,
-                sandbox_url=sandbox_url
-                if sandbox_url is not None
-                else cast(Optional[str], self._sandbox_url),
+                sandbox_url=(
+                    sandbox_url
+                    if sandbox_url is not None
+                    else cast(Optional[str], self._sandbox_url)
+                ),
                 logger=self.logger,
             )
         )

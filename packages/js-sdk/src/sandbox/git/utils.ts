@@ -1,4 +1,5 @@
 import { InvalidArgumentError } from '../../errors'
+import { shellQuote } from '../../utils'
 import { CommandExitError } from '../commands/commandHandle'
 
 /**
@@ -135,15 +136,6 @@ export interface GitBranches {
 }
 
 /**
- * Escape a string for safe use in a shell command.
- *
- * This uses single-quoted shell escaping and safely handles embedded single quotes.
- */
-export function shellEscape(value: string): string {
-  return `'${value.replace(/'/g, "'\"'\"'")}'`
-}
-
-/**
  * Add HTTP(S) credentials to a Git URL.
  *
  * @param url Git repository URL.
@@ -249,7 +241,7 @@ export function buildGitCommand(args: string[], repoPath?: string): string {
   }
   parts.push(...args)
 
-  return parts.map((part) => shellEscape(part)).join(' ')
+  return parts.map((part) => shellQuote(part)).join(' ')
 }
 
 type GitPushArgsOptions = {
