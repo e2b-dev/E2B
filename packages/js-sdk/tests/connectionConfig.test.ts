@@ -182,7 +182,7 @@ test('debug defaults to E2B_DEBUG env var', () => {
   assert.equal(config.debug, true)
 })
 
-test('integration options are appended to the user agent', () => {
+test('integration option is appended to the user agent', () => {
   const config = new ConnectionConfig({
     integration: 'testing/version',
   })
@@ -195,9 +195,7 @@ test('integration options are appended to the user agent', () => {
 })
 
 test('integration option survives config rebuilds', () => {
-  const config = new ConnectionConfig({
-    integration: 'testing/version',
-  })
+  const config = new ConnectionConfig().withIntegration('testing/version')
   const rebuiltConfig = new ConnectionConfig({ ...config })
 
   assert.equal(

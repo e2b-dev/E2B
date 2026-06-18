@@ -131,7 +131,7 @@ def test_debug_defaults_to_env_var(monkeypatch):
     assert config.debug is True
 
 
-def test_integration_options_are_appended_to_user_agent():
+def test_integration_option_is_appended_to_user_agent():
     config = ConnectionConfig(integration="testing/version")
 
     assert config.headers["User-Agent"].startswith("e2b-python-sdk/")
