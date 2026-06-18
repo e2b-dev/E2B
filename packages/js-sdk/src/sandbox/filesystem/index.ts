@@ -9,13 +9,12 @@ import {
   ConnectionConfig,
   ConnectionOpts,
   defaultUsername,
-  FILE_TIMEOUT_MS,
   KEEPALIVE_PING_HEADER,
   KEEPALIVE_PING_INTERVAL_SEC,
   setupRequestController,
-  STREAM_IDLE_TIMEOUT_MS,
   Username,
   wrapStreamWithConnectionCleanup,
+  wrapUploadStreamWithIdleTimeout,
 } from '../../connectionConfig'
 
 import {
@@ -293,6 +292,15 @@ export interface FilesystemWriteOpts extends FilesystemRequestOpts {
    * Requires envd 0.6.2 or later.
    */
   metadata?: Record<string, string>
+  /**
+   * Idle timeout for a streamed upload (`ReadableStream` data, outside the
+   * browser) in **milliseconds**: abort if no chunk is sent within this window.
+   * Resets on every chunk, so it bounds a stalled upload — a producer that
+   * stops yielding or a server that stops reading — without limiting an
+   * actively-flowing one. Defaults to the request timeout (60s); pass `0` to
+   * disable.
+   */
+  streamIdleTimeoutMs?: number
 }
 
 /**
@@ -306,10 +314,8 @@ export interface FilesystemReadOpts extends FilesystemRequestOpts {
   /**
    * Idle timeout for a streamed read (`format: 'stream'`) in **milliseconds**:
    * abort if no chunk arrives within this window. Resets on every chunk, so it
-   * bounds a stalled stream without limiting an actively-flowing one. Pass `0`
-   * to disable.
-   *
-   * @default 60_000 // 60 seconds
+   * bounds a stalled stream without limiting an actively-flowing one. Defaults
+   * to the request timeout (60s); pass `0` to disable.
    */
   streamIdleTimeoutMs?: number
 }
@@ -468,10 +474,12 @@ export class Filesystem {
 
     if (format === 'stream') {
       // The request timeout bounds only the initial handshake; once the
-      // response arrives, the stream lives until it's consumed, cancelled,
-      // or the user signal aborts.
+      // response arrives, the stream lives until it's consumed, cancelled, the
+      // user signal aborts, or the per-chunk idle timeout fires.
+      const requestTimeoutMs =
+        opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
       const { controller, clearStartTimeout, cleanup } = setupRequestController(
-        opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs,
+        requestTimeoutMs,
         opts?.signal
       )
 
@@ -514,7 +522,7 @@ export class Filesystem {
             clearStartTimeout,
             cleanup,
             controller,
-            idleTimeoutMs: opts?.streamIdleTimeoutMs ?? STREAM_IDLE_TIMEOUT_MS,
+            idleTimeoutMs: opts?.streamIdleTimeoutMs ?? requestTimeoutMs,
           }
         )
       } catch (err) {
@@ -685,56 +693,76 @@ export class Filesystem {
           const filePath = path ?? (file as WriteEntry).path
           const body = await toUploadBody(file.data, useGzip)
           const isStream = body instanceof ReadableStream
-          // A streamed upload can take far longer than the 60s request default,
-          // so fall back to the file-transfer timeout (matching volume writes)
-          // unless the caller set one explicitly. The signal is a total
-          // deadline—unlike downloads there's no post-handshake point to clear
-          // it, since the response only arrives once the body has been sent.
-          const uploadTimeoutMs =
-            writeOpts?.requestTimeoutMs ??
-            (isStream ? FILE_TIMEOUT_MS : undefined)
 
-          const res = await this.envdApi.api
-            .POST('/files', {
-              params: {
-                query: {
-                  path: filePath,
-                  username: user,
-                },
-              },
-              bodySerializer: () => body,
-              headers,
-              signal: this.connectionConfig.getSignal(
-                uploadTimeoutMs,
-                writeOpts?.signal
-              ),
-              body: {},
-              // Streaming request bodies require half-duplex mode.
-              ...(isStream && {
-                duplex: 'half' as const,
-              }),
-            })
-            .catch(async (err) => {
-              throw await handleEnvdApiFetchError(err, this.checkHealth)
-            })
-
-          const err = await handleFilesystemEnvdApiError(res)
-          if (err) {
-            throw err
-          }
-
-          const files = res.data as WriteInfo[]
-          if (!files || files.length === 0) {
-            throw new Error(
-              'Expected to receive information about written file'
+          let uploadBody: BodyInit = body
+          let signal: AbortSignal | undefined
+          let cleanup: (() => void) | undefined
+          if (body instanceof ReadableStream) {
+            // No handshake timeout—the response only arrives once the whole
+            // body has been sent. Each chunk is bounded by the per-chunk idle
+            // timeout (default: the request timeout); the overall upload is
+            // bounded server-side.
+            const idleTimeoutMs =
+              writeOpts?.streamIdleTimeoutMs ??
+              writeOpts?.requestTimeoutMs ??
+              this.connectionConfig.requestTimeoutMs
+            const ctrl = setupRequestController(undefined, writeOpts?.signal)
+            uploadBody = wrapUploadStreamWithIdleTimeout(
+              body,
+              ctrl.controller,
+              idleTimeoutMs
+            )
+            signal = ctrl.controller.signal
+            cleanup = ctrl.cleanup
+          } else {
+            signal = this.connectionConfig.getSignal(
+              writeOpts?.requestTimeoutMs,
+              writeOpts?.signal
             )
           }
 
-          for (const f of files) {
-            f.metadata = mapMetadata(f.metadata)
-          }
+          try {
+            const res = await this.envdApi.api
+              .POST('/files', {
+                params: {
+                  query: {
+                    path: filePath,
+                    username: user,
+                  },
+                },
+                bodySerializer: () => uploadBody,
+                headers,
+                signal,
+                body: {},
+                // Streaming request bodies require half-duplex mode.
+                ...(isStream && {
+                  duplex: 'half' as const,
+                }),
+              })
+              .catch(async (err) => {
+                throw await handleEnvdApiFetchError(err, this.checkHealth)
+              })
 
-          return files
+            const err = await handleFilesystemEnvdApiError(res)
+            if (err) {
+              throw err
+            }
+
+            const files = res.data as WriteInfo[]
+            if (!files || files.length === 0) {
+              throw new Error(
+                'Expected to receive information about written file'
+              )
+            }
+
+            for (const f of files) {
+              f.metadata = mapMetadata(f.metadata)
+            }
+
+            return files
+          } finally {
+            cleanup?.()
+          }
         })
       )
 

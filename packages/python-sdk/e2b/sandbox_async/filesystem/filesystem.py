@@ -8,10 +8,8 @@ from packaging.version import Version
 
 import e2b_connect as connect
 from e2b.connection_config import (
-    FILE_TIMEOUT,
     KEEPALIVE_PING_HEADER,
     KEEPALIVE_PING_INTERVAL_SEC,
-    STREAM_IDLE_TIMEOUT,
     ConnectionConfig,
     Username,
     default_username,
@@ -156,7 +154,7 @@ class Filesystem:
         user: Optional[Username] = None,
         request_timeout: Optional[float] = None,
         gzip: bool = False,
-        stream_idle_timeout: Optional[float] = STREAM_IDLE_TIMEOUT,
+        stream_idle_timeout: Optional[float] = None,
     ) -> AsyncFileStreamReader:
         """
         Read file content as an `AsyncFileStreamReader` (an `AsyncIterator[bytes]`).
@@ -178,7 +176,7 @@ class Filesystem:
         :param stream_idle_timeout: Idle timeout in **seconds** for the streamed
             body—abort if no chunk arrives within this window. Resets on every
             chunk, so it bounds a stalled stream without limiting total transfer
-            time. Pass `0`/`None` to disable.
+            time. Defaults to the request timeout; pass `0` to disable.
 
         :return: File content as an `AsyncFileStreamReader`
         """
@@ -191,7 +189,7 @@ class Filesystem:
         user: Optional[Username] = None,
         request_timeout: Optional[float] = None,
         gzip: bool = False,
-        stream_idle_timeout: Optional[float] = STREAM_IDLE_TIMEOUT,
+        stream_idle_timeout: Optional[float] = None,
     ):
         username = user
         if username is None and self._envd_version < ENVD_DEFAULT_USER:
@@ -229,10 +227,13 @@ class Filesystem:
                 raise err
 
             # The request timeout bounds only the initial handshake; httpx's
-            # per-chunk `read` timeout becomes the idle-read timeout for the
-            # body. The timeout dict is shared by reference with the transport
-            # and read again when body iteration starts.
-            request.extensions.get("timeout", {})["read"] = stream_idle_timeout or None
+            # per-chunk `read` timeout becomes the idle-read timeout for the body
+            # (defaults to the request timeout). The timeout dict is shared by
+            # reference with the transport and read again when iteration starts.
+            idle_timeout = (
+                timeout if stream_idle_timeout is None else stream_idle_timeout
+            )
+            request.extensions.get("timeout", {})["read"] = idle_timeout or None
 
             return AsyncFileStreamReader(r)
 
@@ -352,19 +353,9 @@ class Filesystem:
         # requesting gzip implies it when envd supports it.
         use_octet_stream = (use_octet_stream or gzip) and supports_octet_stream
 
-        request_timeout_value = self._connection_config.get_request_timeout(
-            request_timeout
-        )
-        # A streamed body send can take far longer than the default request
-        # timeout, so give the write phase the file-transfer budget while
-        # keeping connection setup and the response read bounded. Matches the
-        # JS SDK's 1h streamed-upload timeout (httpx applies `write` per chunk
-        # rather than as a total deadline).
-        upload_timeout = (
-            httpx.Timeout(request_timeout_value, write=FILE_TIMEOUT)
-            if has_streamable_data
-            else request_timeout_value
-        )
+        # Each chunk send is bounded by the request timeout (httpx applies it
+        # per write); the total streamed upload is bounded server-side.
+        upload_timeout = self._connection_config.get_request_timeout(request_timeout)
 
         # Metadata is sent as request-scoped X-Metadata-* headers, so the same
         # metadata is applied to every file in a multi-file upload.

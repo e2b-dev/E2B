@@ -7,14 +7,6 @@ const supportedDomains = ['e2b.app', 'e2b.dev', 'e2b.pro', 'e2b-staging.dev']
 
 export const REQUEST_TIMEOUT_MS = 60_000 // 60 seconds
 export const DEFAULT_SANDBOX_TIMEOUT_MS = 300_000 // 300 seconds
-// Default timeout for streaming file transfers (uploads/downloads). A streamed
-// body can take far longer than a regular request, so it must not inherit the
-// short `REQUEST_TIMEOUT_MS`.
-export const FILE_TIMEOUT_MS = 3_600_000 // 1 hour
-// Idle timeout for a streamed read: abort if no chunk arrives within this
-// window. Resets on every chunk, so it bounds a stalled stream without
-// limiting an actively-flowing one.
-export const STREAM_IDLE_TIMEOUT_MS = 60_000 // 60 seconds
 export const KEEPALIVE_PING_INTERVAL_SEC = 50 // 50 seconds
 
 export const KEEPALIVE_PING_HEADER = 'Keepalive-Ping-Interval'
@@ -210,6 +202,42 @@ export function setupRequestController(
 }
 
 /**
+ * Create a resettable idle-timeout that aborts `controller` when no progress is
+ * made within `idleTimeoutMs`. `arm` (re)starts the timer; call it on each
+ * chunk. `clear` stops it. `0`/`undefined` disables it (both are no-ops).
+ *
+ * @internal
+ */
+function createIdleAbort(
+  controller: AbortController,
+  idleTimeoutMs: number | undefined,
+  label: string
+): { arm: () => void; clear: () => void } {
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const clear = () => {
+    if (timer) {
+      clearTimeout(timer)
+      timer = undefined
+    }
+  }
+  const arm = () => {
+    if (!idleTimeoutMs) return
+    clear()
+    timer = setTimeout(
+      () =>
+        controller.abort(
+          new DOMException(
+            `${label} idle for ${idleTimeoutMs}ms`,
+            'TimeoutError'
+          )
+        ),
+      idleTimeoutMs
+    )
+  }
+  return { arm, clear }
+}
+
+/**
  * Wrap a streaming response body so its pooled connection is released when the
  * stream is fully read, cancelled, errors, or stays idle for too long.
  *
@@ -245,35 +273,17 @@ export function wrapStreamWithConnectionCleanup(
   }
 
   const reader = body.getReader()
-
-  let idleTimer: ReturnType<typeof setTimeout> | undefined
-  const clearIdleTimer = () => {
-    if (idleTimer) {
-      clearTimeout(idleTimer)
-      idleTimer = undefined
-    }
-  }
-  const armIdleTimer = () => {
-    if (!idleTimeoutMs) return
-    clearIdleTimer()
-    idleTimer = setTimeout(
-      () =>
-        controller.abort(
-          new DOMException(`Stream idle for ${idleTimeoutMs}ms`, 'TimeoutError')
-        ),
-      idleTimeoutMs
-    )
-  }
+  const idle = createIdleAbort(controller, idleTimeoutMs, 'Stream')
 
   // Idempotent: safe to call from multiple stream callbacks.
   const release = () => {
-    clearIdleTimer()
+    idle.clear()
     cleanup()
   }
 
   return new ReadableStream<Uint8Array>({
     start() {
-      armIdleTimer()
+      idle.arm()
     },
     async pull(streamController) {
       try {
@@ -282,7 +292,7 @@ export function wrapStreamWithConnectionCleanup(
           release()
           streamController.close()
         } else {
-          armIdleTimer()
+          idle.arm()
           streamController.enqueue(value)
         }
       } catch (err) {
@@ -296,6 +306,51 @@ export function wrapStreamWithConnectionCleanup(
       } finally {
         release()
       }
+    },
+  })
+}
+
+/**
+ * Wrap an outgoing (upload) request body so the request is aborted if no chunk
+ * is sent within `idleTimeoutMs`. The timer resets on every chunk, bounding a
+ * stalled upload — a producer that stops yielding or a server that stops
+ * reading — without limiting an actively-flowing one. Pass `0`/`undefined` to
+ * disable, returning the body unwrapped.
+ *
+ * @internal
+ */
+export function wrapUploadStreamWithIdleTimeout(
+  body: ReadableStream<Uint8Array>,
+  controller: AbortController,
+  idleTimeoutMs?: number
+): ReadableStream<Uint8Array> {
+  if (!idleTimeoutMs) return body
+
+  const reader = body.getReader()
+  const idle = createIdleAbort(controller, idleTimeoutMs, 'Upload')
+
+  return new ReadableStream<Uint8Array>({
+    start() {
+      idle.arm()
+    },
+    async pull(streamController) {
+      try {
+        const { done, value } = await reader.read()
+        if (done) {
+          idle.clear()
+          streamController.close()
+        } else {
+          idle.arm()
+          streamController.enqueue(value)
+        }
+      } catch (err) {
+        idle.clear()
+        streamController.error(err)
+      }
+    },
+    async cancel(reason) {
+      idle.clear()
+      await reader.cancel(reason)
     },
   })
 }
