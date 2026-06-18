@@ -38,3 +38,33 @@ e2b auth login
 ### 3. Check out docs
 
 Visit our [CLI documentation](https://e2b.dev/docs) to learn more.
+
+### Environment variables
+
+#### `E2B_ERROR_HANDLER`
+
+When set, the E2B CLI routes process-wide fatal errors to an external executable as a structured JSON payload. This is intended for CI/CD operators who run the E2B CLI as part of a build pipeline and want to forward failures to their own alerting (syslog, webhook, custom script) without parsing stderr.
+
+The handler receives a single JSON argv argument with the following schema:
+
+```ts
+{
+  schemaVersion: 1,
+  reason: 'cli_command_failure' | 'unhandled_rejection' | 'uncaught_exception',
+  timestamp: string,  // ISO 8601
+  pid: number,
+}
+```
+
+The `reason` value identifies which fatal path emitted the failure: `cli_command_failure` for command actions inside `main()`, `unhandled_rejection` for rejected promises with no `.catch()` handler, and `uncaught_exception` for synchronous throws outside any try/catch.
+
+The handler is spawned with `shell: false`, `detached: true`, `stdio: 'ignore'`, and only `PATH` is propagated to the child environment. The handler cannot read other E2B runtime secrets (auth tokens, sandbox credentials). The CLI does not wait for the handler to complete before exiting.
+
+Example:
+
+```bash
+E2B_ERROR_HANDLER=/usr/bin/logger e2b auth login
+# On any fatal failure, the JSON payload is written to syslog via /usr/bin/logger
+```
+
+The env var is unset by default, so no behavior change unless an operator opts in.
