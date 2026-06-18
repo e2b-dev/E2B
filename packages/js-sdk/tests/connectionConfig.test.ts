@@ -182,6 +182,30 @@ test('debug defaults to E2B_DEBUG env var', () => {
   assert.equal(config.debug, true)
 })
 
+test('integration options are appended to the user agent', () => {
+  const config = new ConnectionConfig({
+    integration: 'testing/version',
+  })
+
+  assert.equal(config.headers?.['User-Agent']?.startsWith('e2b-js-sdk/'), true)
+  assert.equal(
+    config.headers?.['User-Agent']?.endsWith(' testing/version'),
+    true
+  )
+})
+
+test('integration option survives config rebuilds', () => {
+  const config = new ConnectionConfig({
+    integration: 'testing/version',
+  })
+  const rebuiltConfig = new ConnectionConfig({ ...config })
+
+  assert.equal(
+    rebuiltConfig.headers?.['User-Agent']?.endsWith(' testing/version'),
+    true
+  )
+})
+
 test('getSignal returns user signal when no timeout is set', () => {
   const config = new ConnectionConfig({ requestTimeoutMs: 0 })
   const controller = new AbortController()
