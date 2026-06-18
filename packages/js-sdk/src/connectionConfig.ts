@@ -207,12 +207,12 @@ export function setupRequestController(
 
 // GC safety net for streamed reads: if the consumer drops a streamed response
 // body without reading it to completion or cancelling it, the registered
-// cleanup releases the underlying connection when the stream is garbage
+// callback releases the underlying connection when the stream is garbage
 // collected. This mirrors the Python SDK's `weakref.finalize` on
-// `FileStreamReader`. The held value is the cleanup function, which must not
+// `FileStreamReader`. The held value is a release callback, which must not
 // reference the stream itself or it would never be collected.
-const streamReadFinalizers = new FinalizationRegistry<() => void>((cleanup) =>
-  cleanup()
+const streamReadFinalizers = new FinalizationRegistry<() => void>((release) =>
+  release()
 )
 
 /**
@@ -242,9 +242,20 @@ export function wrapStreamWithConnectionCleanup(
   const reader = body.getReader()
   const unregisterToken = {}
   // Detach the GC finalizer and release the connection. Idempotent via
-  // `cleanup`, so it's safe to call from multiple stream callbacks.
+  // `cleanup`, so it's safe to call from multiple stream callbacks. The body
+  // reader is cancelled separately by the callbacks that have already drained
+  // or are cancelling it.
   const release = () => {
     streamReadFinalizers.unregister(unregisterToken)
+    cleanup()
+  }
+  // GC safety net: when the wrapped stream is abandoned without being read to
+  // completion or cancelled, cancel the underlying body reader so the pooled
+  // connection is released (matching the cancel/error paths) and then run
+  // cleanup. Must reference `reader`/`cleanup` only — never the wrapped
+  // `stream`, or it would never be garbage collected.
+  const releaseOnAbandon = () => {
+    reader.cancel().catch(() => {})
     cleanup()
   }
 
@@ -274,7 +285,7 @@ export function wrapStreamWithConnectionCleanup(
 
   // Release the connection if the consumer abandons the stream without
   // reading it to completion or cancelling it.
-  streamReadFinalizers.register(stream, cleanup, unregisterToken)
+  streamReadFinalizers.register(stream, releaseOnAbandon, unregisterToken)
 
   return stream
 }
