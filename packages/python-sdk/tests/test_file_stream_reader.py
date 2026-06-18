@@ -52,7 +52,13 @@ def _start_chunked_server() -> int:
 
 
 def _active_connections(client) -> int:
-    return len(client._transport._pool.connections)
+    # Count connections that are still checked out (a leaked/in-use stream),
+    # not the total pool size. A fully consumed stream returns its connection
+    # to the pool, where it may linger as an idle keep-alive entry until the
+    # server-side close is observed; that lingering idle connection is not a
+    # leak. Asserting on total pool size makes this racy under load (the basis
+    # of a CI flake); counting only non-idle connections is deterministic.
+    return sum(1 for conn in client._transport._pool.connections if not conn.is_idle())
 
 
 def _open_stream(client, port):
