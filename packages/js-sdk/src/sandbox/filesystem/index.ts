@@ -13,6 +13,7 @@ import {
   KEEPALIVE_PING_HEADER,
   KEEPALIVE_PING_INTERVAL_SEC,
   setupRequestController,
+  STREAM_IDLE_TIMEOUT_MS,
   Username,
   wrapStreamWithConnectionCleanup,
 } from '../../connectionConfig'
@@ -302,6 +303,15 @@ export interface FilesystemReadOpts extends FilesystemRequestOpts {
    * When true, the download will request gzip-encoded responses.
    */
   gzip?: boolean
+  /**
+   * Idle timeout for a streamed read (`format: 'stream'`) in **milliseconds**:
+   * abort if no chunk arrives within this window. Resets on every chunk, so it
+   * bounds a stalled stream without limiting an actively-flowing one. Pass `0`
+   * to disable.
+   *
+   * @default 60_000 // 60 seconds
+   */
+  streamIdleTimeoutMs?: number
 }
 
 export interface FilesystemListOpts extends FilesystemRequestOpts {
@@ -420,9 +430,10 @@ export class Filesystem {
    *
    * You can pass `text`, `bytes`, `blob`, or `stream` to `opts.format` to change the return type.
    *
-   * The request timeout bounds only the initial handshake—the returned
-   * stream is not killed by it while being consumed. Use `opts.signal` to
-   * cancel an in-flight stream.
+   * The request timeout bounds only the initial handshake. The returned stream
+   * holds a pooled connection until it is fully read, cancelled, errors, or the
+   * idle timeout (`opts.streamIdleTimeoutMs`) fires—so consume it to the end or
+   * cancel it (`opts.signal`).
    *
    * @param path path to the file.
    * @param opts connection options.
@@ -499,7 +510,12 @@ export class Filesystem {
 
         return wrapStreamWithConnectionCleanup(
           res.data as ReadableStream<Uint8Array> | null,
-          { clearStartTimeout, cleanup }
+          {
+            clearStartTimeout,
+            cleanup,
+            controller,
+            idleTimeoutMs: opts?.streamIdleTimeoutMs ?? STREAM_IDLE_TIMEOUT_MS,
+          }
         )
       } catch (err) {
         cleanup()

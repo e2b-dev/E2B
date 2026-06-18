@@ -86,10 +86,6 @@ export default defineConfig({
           isolate: true,
           testTimeout: 10_000,
           environment: 'node',
-          // Expose `global.gc` so the streamed-read GC safety-net test can
-          // force collection and observe the FinalizationRegistry callback.
-          pool: 'forks',
-          execArgv: ['--expose-gc'],
         },
       },
     ],

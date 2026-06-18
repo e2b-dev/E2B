@@ -10,6 +10,7 @@ from e2b.connection_config import (
     FILE_TIMEOUT,
     KEEPALIVE_PING_HEADER,
     KEEPALIVE_PING_INTERVAL_SEC,
+    STREAM_IDLE_TIMEOUT,
     ConnectionConfig,
     Username,
     default_username,
@@ -175,21 +176,27 @@ class Filesystem:
         user: Optional[Username] = None,
         request_timeout: Optional[float] = None,
         gzip: bool = False,
+        stream_idle_timeout: Optional[float] = STREAM_IDLE_TIMEOUT,
     ) -> FileStreamReader:
         """
         Read file content as a `FileStreamReader` (an `Iterator[bytes]`).
 
         The request timeout bounds only the initial handshake—the returned
-        iterator is not killed by it while being consumed. The reader releases
-        its connection once fully consumed; if you don't read it to the end,
-        use it as a context manager or call `close()` for deterministic
-        cleanup.
+        iterator is not killed by it while being consumed. A stalled stream is
+        reclaimed by `stream_idle_timeout` (raising `httpx.ReadTimeout`). The
+        reader releases its connection once fully consumed; if you don't read it
+        to the end, use it as a context manager or call `close()` for
+        deterministic cleanup.
 
         :param path: Path to the file
         :param user: Run the operation as this user
         :param format: Format of the file content—`stream`
         :param request_timeout: Timeout for the request in **seconds**
         :param gzip: Use gzip compression for the request
+        :param stream_idle_timeout: Idle timeout in **seconds** for the streamed
+            body—abort if no chunk arrives within this window. Resets on every
+            chunk, so it bounds a stalled stream without limiting total transfer
+            time. Pass `0`/`None` to disable.
 
         :return: File content as a `FileStreamReader`
         """
@@ -202,6 +209,7 @@ class Filesystem:
         user: Optional[Username] = None,
         request_timeout: Optional[float] = None,
         gzip: bool = False,
+        stream_idle_timeout: Optional[float] = STREAM_IDLE_TIMEOUT,
     ):
         username = user
         if username is None and self._envd_version < ENVD_DEFAULT_USER:
@@ -236,14 +244,12 @@ class Filesystem:
                 r.close()
                 raise err
 
-            # The request timeout bounds only the initial handshake. Disable
-            # the read timeout for body reads so consuming the stream isn't
-            # killed by it. The timeout dict is shared by reference with the
-            # transport and read again when body iteration starts.
-            request.extensions.get("timeout", {})["read"] = None
+            # The request timeout bounds only the initial handshake; httpx's
+            # per-chunk `read` timeout becomes the idle-read timeout for the
+            # body. The timeout dict is shared by reference with the transport
+            # and read again when body iteration starts.
+            request.extensions.get("timeout", {})["read"] = stream_idle_timeout or None
 
-            # FileStreamReader owns the response and releases the connection
-            # when the stream is consumed, closed, errors, or is GC'd.
             return FileStreamReader(r)
 
         try:

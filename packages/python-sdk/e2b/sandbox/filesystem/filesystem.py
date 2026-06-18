@@ -1,6 +1,5 @@
 import gzip
 import re
-import weakref
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
@@ -152,27 +151,21 @@ class FileStreamReader(Iterator[bytes]):
 
     Returned by ``Sandbox.files.read(format="stream")``. It owns the underlying
     HTTP response and releases its pooled connection as soon as the stream is
-    fully consumed, an error is raised while reading, or the reader is closed.
+    fully consumed, an error is raised while reading (including the idle-read
+    timeout, which raises ``httpx.ReadTimeout``), or the reader is closed.
 
-    Iterate it directly (``for chunk in stream``) or, for deterministic
-    cleanup when you don't read it to the end, use it as a context manager or
-    call :meth:`close`::
+    There is no garbage-collection safety net, so always consume it fully, use
+    it as a context manager, or call :meth:`close`::
 
         with sandbox.files.read(path, format="stream") as stream:
             for chunk in stream:
                 ...
-
-    As a safety net, the connection is also released when the reader is garbage
-    collected, so an abandoned stream does not leak a connection indefinitely.
     """
 
     def __init__(self, response: httpx.Response):
         self._response = response
         self._iterator = response.iter_bytes()
-        # Releases the connection on GC if the reader is abandoned without
-        # being consumed or closed. Calling it explicitly (via close) runs the
-        # callback once and is then a no-op, so close is idempotent.
-        self._finalizer = weakref.finalize(self, response.close)
+        self._closed = False
 
     def __iter__(self) -> Iterator[bytes]:
         return self
@@ -187,7 +180,10 @@ class FileStreamReader(Iterator[bytes]):
 
     def close(self) -> None:
         """Release the underlying HTTP connection. Safe to call multiple times."""
-        self._finalizer()
+        if self._closed:
+            return
+        self._closed = True
+        self._response.close()
 
     def __enter__(self) -> "FileStreamReader":
         return self
@@ -201,22 +197,18 @@ class AsyncFileStreamReader(AsyncIterator[bytes]):
 
     Returned by ``AsyncSandbox.files.read(format="stream")``. It owns the
     underlying HTTP response and releases its pooled connection as soon as the
-    stream is fully consumed, an error is raised while reading, or the reader is
+    stream is fully consumed, an error is raised while reading (including the
+    idle-read timeout, which raises ``httpx.ReadTimeout``), or the reader is
     closed.
 
-    Iterate it directly (``async for chunk in stream``) or, for deterministic
-    cleanup when you don't read it to the end, use it as an async context
-    manager or call :meth:`aclose`::
+    There is no garbage-collection safety net (releasing an async connection
+    requires awaiting ``aclose()``, which a finalizer cannot do reliably), so
+    always consume it fully, use it as an async context manager, or call
+    :meth:`aclose`::
 
         async with await sandbox.files.read(path, format="stream") as stream:
             async for chunk in stream:
                 ...
-
-    Unlike the sync reader there is no garbage-collection safety net: releasing
-    an async connection requires awaiting ``aclose()``, which a finalizer cannot
-    do reliably. An abandoned stream holds its pooled connection until the
-    client is closed, so always consume it fully, use the context manager, or
-    call :meth:`aclose`.
     """
 
     def __init__(self, response: httpx.Response):

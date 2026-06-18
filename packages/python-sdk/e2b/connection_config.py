@@ -14,6 +14,11 @@ REQUEST_TIMEOUT: float = 60.0  # 60 seconds
 # than a regular request, so it must not inherit the short REQUEST_TIMEOUT.
 FILE_TIMEOUT: float = 3600.0  # 1 hour
 
+# Idle timeout for a streamed read: abort if no chunk arrives within this
+# window. Maps to httpx's per-chunk `read` timeout, so it bounds a stalled
+# stream without limiting an actively-flowing one. `0`/`None` disables it.
+STREAM_IDLE_TIMEOUT: float = 60.0  # 60 seconds
+
 KEEPALIVE_PING_INTERVAL_SEC = 50  # 50 seconds
 KEEPALIVE_PING_HEADER = "Keepalive-Ping-Interval"
 

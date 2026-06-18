@@ -371,6 +371,24 @@ async function readAll(stream: ReadableStream<Uint8Array>): Promise<string> {
   return out
 }
 
+// Builds a source ReadableStream that never produces a chunk and errors its
+// pending read when `signal` aborts, standing in for a stalled fetch response
+// body whose connection is torn down by aborting the request controller.
+function stallingSource(signal: AbortSignal) {
+  const state: { cancelled: boolean } = { cancelled: false }
+  const body = new ReadableStream<Uint8Array>({
+    start(controller) {
+      signal.addEventListener('abort', () => controller.error(signal.reason), {
+        once: true,
+      })
+    },
+    cancel() {
+      state.cancelled = true
+    },
+  })
+  return { body, state }
+}
+
 test('wrapStreamWithConnectionCleanup releases once on full read', async () => {
   const { body } = trackedSource()
   let cleanups = 0
@@ -379,6 +397,7 @@ test('wrapStreamWithConnectionCleanup releases once on full read', async () => {
     cleanup: () => {
       cleanups++
     },
+    controller: new AbortController(),
   })
   assert.equal(await readAll(stream), 'ab')
   assert.equal(cleanups, 1)
@@ -392,6 +411,7 @@ test('wrapStreamWithConnectionCleanup cancel cancels the underlying reader', asy
     cleanup: () => {
       cleanups++
     },
+    controller: new AbortController(),
   })
   await stream.cancel('done')
   assert.equal(state.cancelled, true)
@@ -409,40 +429,50 @@ test('wrapStreamWithConnectionCleanup handles a null body', async () => {
     cleanup: () => {
       cleanups++
     },
+    controller: new AbortController(),
   })
   assert.equal(cleared, 1)
   assert.equal(cleanups, 1)
   assert.equal(await readAll(stream), '')
 })
 
-test('wrapStreamWithConnectionCleanup cancels the underlying reader when abandoned (GC)', async () => {
-  // Requires --expose-gc, which the connectionConfig vitest project enables.
-  assert.equal(
-    typeof global.gc,
-    'function',
-    'this test must run with --expose-gc'
-  )
-  const { body, state } = trackedSource()
+test('wrapStreamWithConnectionCleanup aborts and releases an idle stream', async () => {
+  const controller = new AbortController()
+  const { body } = stallingSource(controller.signal)
   let cleanups = 0
-  // Create and drop the wrapped stream without reading or cancelling it, so
-  // only the FinalizationRegistry safety net can release the connection. The
-  // wrapped stream must not escape this scope or it would never be collected.
-  ;(() => {
-    wrapStreamWithConnectionCleanup(body, {
-      clearStartTimeout: () => {},
-      cleanup: () => {
-        cleanups++
-      },
-    })
-  })()
+  const stream = wrapStreamWithConnectionCleanup(body, {
+    clearStartTimeout: () => {},
+    cleanup: () => {
+      cleanups++
+    },
+    controller,
+    idleTimeoutMs: 20,
+  })
 
-  for (let i = 0; i < 100 && !state.cancelled; i++) {
-    global.gc!()
-    await new Promise((resolve) => setTimeout(resolve, 10))
+  // No chunk ever arrives, so the idle timer fires, aborts the controller,
+  // and the read rejects with the TimeoutError reason.
+  let error: unknown
+  try {
+    await readAll(stream)
+  } catch (err) {
+    error = err
   }
+  assert.equal((error as DOMException)?.name, 'TimeoutError')
+  assert.equal(cleanups, 1)
+  assert.equal(controller.signal.aborted, true)
+})
 
-  // The finalizer must cancel the body reader (releasing the pooled
-  // connection), not merely abort the handshake controller.
-  assert.equal(state.cancelled, true)
+test('wrapStreamWithConnectionCleanup with idle timeout 0 never auto-aborts', async () => {
+  const { body } = trackedSource()
+  let cleanups = 0
+  const stream = wrapStreamWithConnectionCleanup(body, {
+    clearStartTimeout: () => {},
+    cleanup: () => {
+      cleanups++
+    },
+    controller: new AbortController(),
+    idleTimeoutMs: 0,
+  })
+  assert.equal(await readAll(stream), 'ab')
   assert.equal(cleanups, 1)
 })

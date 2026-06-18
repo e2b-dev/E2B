@@ -11,6 +11,7 @@ from e2b.connection_config import (
     FILE_TIMEOUT,
     KEEPALIVE_PING_HEADER,
     KEEPALIVE_PING_INTERVAL_SEC,
+    STREAM_IDLE_TIMEOUT,
     ConnectionConfig,
     Username,
     default_username,
@@ -155,22 +156,29 @@ class Filesystem:
         user: Optional[Username] = None,
         request_timeout: Optional[float] = None,
         gzip: bool = False,
+        stream_idle_timeout: Optional[float] = STREAM_IDLE_TIMEOUT,
     ) -> AsyncFileStreamReader:
         """
         Read file content as an `AsyncFileStreamReader` (an `AsyncIterator[bytes]`).
 
         The request timeout bounds only the initial handshake—the returned
-        iterator is not killed by it while being consumed. The reader releases
-        its connection once fully consumed; if you don't read it to the end,
-        use it as an async context manager or call `aclose()` for deterministic
-        cleanup. Unlike the sync reader there is no garbage-collection safety
-        net—an abandoned stream holds its connection until the client is closed.
+        iterator is not killed by it while being consumed. A stalled stream is
+        reclaimed by `stream_idle_timeout` (raising `httpx.ReadTimeout`). The
+        reader releases its connection once fully consumed; if you don't read it
+        to the end, use it as an async context manager or call `aclose()` for
+        deterministic cleanup. There is no garbage-collection safety net—an
+        abandoned stream holds its connection until the idle timeout fires or
+        the client is closed.
 
         :param path: Path to the file
         :param user: Run the operation as this user
         :param format: Format of the file content—`stream`
         :param request_timeout: Timeout for the request in **seconds**
         :param gzip: Use gzip compression for the request
+        :param stream_idle_timeout: Idle timeout in **seconds** for the streamed
+            body—abort if no chunk arrives within this window. Resets on every
+            chunk, so it bounds a stalled stream without limiting total transfer
+            time. Pass `0`/`None` to disable.
 
         :return: File content as an `AsyncFileStreamReader`
         """
@@ -183,6 +191,7 @@ class Filesystem:
         user: Optional[Username] = None,
         request_timeout: Optional[float] = None,
         gzip: bool = False,
+        stream_idle_timeout: Optional[float] = STREAM_IDLE_TIMEOUT,
     ):
         username = user
         if username is None and self._envd_version < ENVD_DEFAULT_USER:
@@ -219,16 +228,12 @@ class Filesystem:
                 await r.aclose()
                 raise err
 
-            # The request timeout bounds only the initial handshake. Disable
-            # the read timeout for body reads so consuming the stream isn't
-            # killed by it. The timeout dict is shared by reference with the
-            # transport and read again when body iteration starts.
-            request.extensions.get("timeout", {})["read"] = None
+            # The request timeout bounds only the initial handshake; httpx's
+            # per-chunk `read` timeout becomes the idle-read timeout for the
+            # body. The timeout dict is shared by reference with the transport
+            # and read again when body iteration starts.
+            request.extensions.get("timeout", {})["read"] = stream_idle_timeout or None
 
-            # AsyncFileStreamReader owns the response and releases the
-            # connection when the stream is consumed, closed, or errors. There
-            # is no GC safety net: an abandoned reader holds its connection
-            # until the client is closed.
             return AsyncFileStreamReader(r)
 
         try:
