@@ -36,6 +36,9 @@ export interface ConnectionOpts {
   /**
    * E2B access token to use for authentication.
    *
+   * @deprecated Pass the token through `apiHeaders` instead, e.g.
+   * `apiHeaders: { Authorization: \`Bearer ${token}\` }`.
+   *
    * @default E2B_ACCESS_TOKEN // environment variable
    */
   accessToken?: string
@@ -93,6 +96,13 @@ export interface ConnectionOpts {
    * Additional headers to send with E2B API requests.
    */
   apiHeaders?: Record<string, string>
+
+  /**
+   * Integration wrapping the E2B SDK, appended to the `User-Agent`.
+   *
+   * @example 'e2b-code-interpreter/0.1.0'
+   */
+  integration?: string
 
   /**
    * An optional `AbortSignal` that can be used to cancel the in-flight request.
@@ -269,6 +279,16 @@ export function wrapStreamWithConnectionCleanup(
   return stream
 }
 
+function buildUserAgent(integration?: string) {
+  const userAgentParts = [`e2b-js-sdk/${version}`]
+
+  if (integration) {
+    userAgentParts.push(integration)
+  }
+
+  return userAgentParts.join(' ')
+}
+
 /**
  * Configuration for connecting to the API.
  */
@@ -285,7 +305,12 @@ export class ConnectionConfig {
 
   readonly apiKey?: string
   readonly validateApiKey: boolean
+  /**
+   * @deprecated Pass the token through `apiHeaders` instead.
+   */
   readonly accessToken?: string
+
+  readonly integration?: string
 
   readonly headers?: Record<string, string>
 
@@ -300,8 +325,9 @@ export class ConnectionConfig {
     this.accessToken = opts?.accessToken || ConnectionConfig.accessToken
     this.requestTimeoutMs = opts?.requestTimeoutMs ?? REQUEST_TIMEOUT_MS
     this.logger = opts?.logger
+    this.integration = opts?.integration
     this.headers = { ...(opts?.headers ?? {}), ...(opts?.apiHeaders ?? {}) }
-    this.headers['User-Agent'] = `e2b-js-sdk/${version}`
+    this.headers['User-Agent'] = buildUserAgent(this.integration)
     this.proxy = opts?.proxy
 
     this.apiUrl =

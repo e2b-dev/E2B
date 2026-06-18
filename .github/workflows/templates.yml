@@ -1,12 +1,7 @@
 name: Build and push prepared templates
 
 on:
-  push:
-    paths:
-      - 'templates/**'
-      - '.github/workflows/templates.yml'
-    branches:
-      - main
+  workflow_dispatch:
 
 permissions:
   contents: read

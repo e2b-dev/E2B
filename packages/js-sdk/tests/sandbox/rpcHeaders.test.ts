@@ -24,6 +24,7 @@ test('does not pass custom connection headers to envd RPC requests', async () =>
     sandboxDomain: 'sandbox.e2b.dev',
     envdVersion: '0.2.4',
     envdAccessToken: 'tok',
+    integration: 'testing/version',
     headers: {
       Authorization: 'Bearer user-token',
       'X-Custom': 'secret',
@@ -41,6 +42,7 @@ test('does not pass custom connection headers to envd RPC requests', async () =>
   assert.equal(headers.get('Authorization'), null)
   assert.equal(headers.get('X-Custom'), null)
   assert.equal(headers.get('User-Agent')?.startsWith('e2b-js-sdk/'), true)
+  assert.equal(headers.get('User-Agent')?.endsWith(' testing/version'), true)
   assert.equal(headers.get('E2b-Sandbox-Id'), 'sbx-test')
   assert.equal(headers.get('X-Access-Token'), 'tok')
   assert.equal(headers.get('Connect-Protocol-Version'), '1')
