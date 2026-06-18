@@ -243,11 +243,11 @@ function createIdleAbort(
  *
  * Clears the handshake timeout from {@link setupRequestController} (so
  * consuming the body isn't killed by it) and replaces it with an idle-read
- * timeout: if no chunk arrives within `idleTimeoutMs` it aborts `controller`,
- * tearing down the fetch and releasing the connection. The timer resets on
- * every chunk, so it bounds a stalled stream without limiting an
- * actively-flowing one. Pass `0`/`undefined` to disable. Call once the
- * handshake has succeeded.
+ * timeout that bounds only the wire: it's armed while waiting on a network
+ * read and cleared the moment a chunk arrives, so a slow or paused consumer
+ * never trips it (only a server that stops sending mid-stream does). On expiry
+ * it aborts `controller`, tearing down the fetch and releasing the connection.
+ * Pass `0`/`undefined` to disable. Call once the handshake has succeeded.
  *
  * @internal
  */
@@ -282,17 +282,20 @@ export function wrapStreamWithConnectionCleanup(
   }
 
   return new ReadableStream<Uint8Array>({
-    start() {
-      idle.arm()
-    },
     async pull(streamController) {
+      // Bound only the wire: arm before reading from the network and clear the
+      // moment a chunk (or EOF) arrives, so a slow or paused consumer never
+      // counts against the idle timeout. A consumer that holds the stream but
+      // stops reading is never pulled here, so nothing arms—that case is
+      // reclaimed server-side, not by this timer.
+      idle.arm()
       try {
         const { done, value } = await reader.read()
+        idle.clear()
         if (done) {
           release()
           streamController.close()
         } else {
-          idle.arm()
           streamController.enqueue(value)
         }
       } catch (err) {
@@ -306,51 +309,6 @@ export function wrapStreamWithConnectionCleanup(
       } finally {
         release()
       }
-    },
-  })
-}
-
-/**
- * Wrap an outgoing (upload) request body so the request is aborted if no chunk
- * is sent within `idleTimeoutMs`. The timer resets on every chunk, bounding a
- * stalled upload — a producer that stops yielding or a server that stops
- * reading — without limiting an actively-flowing one. Pass `0`/`undefined` to
- * disable, returning the body unwrapped.
- *
- * @internal
- */
-export function wrapUploadStreamWithIdleTimeout(
-  body: ReadableStream<Uint8Array>,
-  controller: AbortController,
-  idleTimeoutMs?: number
-): ReadableStream<Uint8Array> {
-  if (!idleTimeoutMs) return body
-
-  const reader = body.getReader()
-  const idle = createIdleAbort(controller, idleTimeoutMs, 'Upload')
-
-  return new ReadableStream<Uint8Array>({
-    start() {
-      idle.arm()
-    },
-    async pull(streamController) {
-      try {
-        const { done, value } = await reader.read()
-        if (done) {
-          idle.clear()
-          streamController.close()
-        } else {
-          idle.arm()
-          streamController.enqueue(value)
-        }
-      } catch (err) {
-        idle.clear()
-        streamController.error(err)
-      }
-    },
-    async cancel(reason) {
-      idle.clear()
-      await reader.cancel(reason)
     },
   })
 }

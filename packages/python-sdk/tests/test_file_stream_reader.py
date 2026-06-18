@@ -125,6 +125,21 @@ def test_sync_idle_timeout_releases_connection():
         assert _active_connections(client) == 0
 
 
+def test_sync_slow_consumer_does_not_trip_idle_timeout():
+    # The server sends every chunk promptly; the consumer then pauses far
+    # longer than the read (idle) timeout between iterations. httpx's read
+    # timeout only counts while it's waiting on the wire, so a slow consumer
+    # must not trip it (parity with the JS wire-only idle timeout).
+    with httpx.Client() as client:
+        port = _start_chunked_server()
+        reader = FileStreamReader(_open_stream(client, port, read_timeout=0.05))
+        out = []
+        for chunk in reader:
+            out.append(chunk)
+            time.sleep(0.2)
+        assert b"".join(out) == EXPECTED
+
+
 def test_sync_abandoned_reader_is_reclaimed_on_client_close():
     client = httpx.Client()
     port = _start_chunked_server()

@@ -3,7 +3,6 @@ import {
   ConnectionConfig,
   setupRequestController,
   wrapStreamWithConnectionCleanup,
-  wrapUploadStreamWithIdleTimeout,
 } from '../src/connectionConfig'
 
 // Store original env vars to restore after tests
@@ -478,30 +477,26 @@ test('wrapStreamWithConnectionCleanup with idle timeout 0 never auto-aborts', as
   assert.equal(cleanups, 1)
 })
 
-test('wrapUploadStreamWithIdleTimeout aborts an idle upload', async () => {
+test('wrapStreamWithConnectionCleanup does not abort a slow consumer (wire-only)', async () => {
+  // Source has both chunks ready immediately; the consumer pauses far longer
+  // than the idle timeout between reads. Because the timer is armed only around
+  // the network read and cleared as soon as a chunk arrives, the consumer's
+  // pace must not trip it.
   const controller = new AbortController()
-  const { body } = stallingSource(controller.signal)
-  const stream = wrapUploadStreamWithIdleTimeout(body, controller, 20)
-  let error: unknown
-  try {
-    await readAll(stream)
-  } catch (err) {
-    error = err
-  }
-  assert.equal((error as DOMException)?.name, 'TimeoutError')
-  assert.equal(controller.signal.aborted, true)
-})
-
-test('wrapUploadStreamWithIdleTimeout passes chunks through and does not abort an active upload', async () => {
   const { body } = trackedSource()
-  const controller = new AbortController()
-  const stream = wrapUploadStreamWithIdleTimeout(body, controller, 1000)
-  assert.equal(await readAll(stream), 'ab')
+  const stream = wrapStreamWithConnectionCleanup(body, {
+    clearStartTimeout: () => {},
+    cleanup: () => {},
+    controller,
+    idleTimeoutMs: 20,
+  })
+  const reader = stream.getReader()
+  const decoder = new TextDecoder()
+
+  const first = await reader.read()
+  assert.equal(decoder.decode(first.value), 'a')
+  await new Promise((resolve) => setTimeout(resolve, 50))
+  const second = await reader.read()
+  assert.equal(decoder.decode(second.value), 'b')
   assert.equal(controller.signal.aborted, false)
-})
-
-test('wrapUploadStreamWithIdleTimeout with idle timeout 0 returns the body unwrapped', () => {
-  const { body } = trackedSource()
-  const controller = new AbortController()
-  assert.equal(wrapUploadStreamWithIdleTimeout(body, controller, 0), body)
 })
