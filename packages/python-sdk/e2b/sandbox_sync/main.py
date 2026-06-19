@@ -608,10 +608,13 @@ class Sandbox(SandboxApi):
     @overload
     def pause(
         self,
+        keep_memory: bool = True,
         **opts: Unpack[ApiParams],
     ) -> bool:
         """
         Pause the sandbox.
+
+        :param keep_memory: When `False`, the in-memory state is dropped and only the filesystem is persisted (no memory snapshot); resuming such a sandbox cold-boots (reboots) it from disk. Defaults to `True`.
 
         :return: `True` if the sandbox got paused, `False` if the sandbox was already paused
         """
@@ -621,12 +624,14 @@ class Sandbox(SandboxApi):
     @staticmethod
     def pause(
         sandbox_id: str,
+        keep_memory: bool = True,
         **opts: Unpack[ApiParams],
     ) -> bool:
         """
         Pause the sandbox specified by sandbox ID.
 
         :param sandbox_id: Sandbox ID
+        :param keep_memory: When `False`, the in-memory state is dropped and only the filesystem is persisted (no memory snapshot); resuming such a sandbox cold-boots (reboots) it from disk. Defaults to `True`.
 
         :return: `True` if the sandbox got paused, `False` if the sandbox was already paused
         """
@@ -635,22 +640,27 @@ class Sandbox(SandboxApi):
     @class_method_variant("_cls_pause")
     def pause(
         self,
+        keep_memory: bool = True,
         **opts: Unpack[ApiParams],
     ) -> bool:
         """
         Pause the sandbox.
+
+        :param keep_memory: When `False`, the in-memory state is dropped and only the filesystem is persisted (no memory snapshot); resuming such a sandbox cold-boots (reboots) it from disk, losing running processes and open connections. Defaults to `True` (full memory snapshot).
 
         :return: `True` if the sandbox got paused, `False` if the sandbox was already paused
         """
 
         return SandboxApi._cls_pause(
             sandbox_id=self.sandbox_id,
+            keep_memory=keep_memory,
             **self.connection_config.get_api_params(**opts),
         )
 
     @overload
     def beta_pause(
         self,
+        keep_memory: bool = True,
         **opts: Unpack[ApiParams],
     ) -> bool: ...
 
@@ -658,12 +668,14 @@ class Sandbox(SandboxApi):
     @staticmethod
     def beta_pause(
         sandbox_id: str,
+        keep_memory: bool = True,
         **opts: Unpack[ApiParams],
     ) -> bool: ...
 
     @class_method_variant("_cls_pause")
     def beta_pause(
         self,
+        keep_memory: bool = True,
         **opts: Unpack[ApiParams],
     ) -> bool:
         """
@@ -671,7 +683,7 @@ class Sandbox(SandboxApi):
 
         :return: `True` if the sandbox got paused, `False` if the sandbox was already paused
         """
-        return self.pause(**opts)
+        return self.pause(keep_memory=keep_memory, **opts)
 
     @overload
     def create_snapshot(

@@ -25,6 +25,7 @@ from e2b.api.client.models import (
     PostSandboxesSandboxIDTimeoutBody,
     SandboxAutoResumeConfig,
     SandboxNetworkConfig,
+    SandboxPauseRequest,
     SandboxVolumeMount as SandboxVolumeMountAPI,
 )
 from e2b.api.client.types import UNSET
@@ -422,6 +423,7 @@ class SandboxApi(SandboxBase):
     def _cls_pause(
         cls,
         sandbox_id: str,
+        keep_memory: bool = True,
         **opts: Unpack[ApiParams],
     ) -> bool:
         config = ConnectionConfig(**opts)
@@ -430,6 +432,7 @@ class SandboxApi(SandboxBase):
         res = post_sandboxes_sandbox_id_pause.sync_detailed(
             sandbox_id,
             client=api_client,
+            body=SandboxPauseRequest(memory=keep_memory),
         )
 
         if res.status_code == 404:

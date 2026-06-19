@@ -243,6 +243,22 @@ export interface SandboxApiOpts
   > {}
 
 /**
+ * Options for pausing a sandbox.
+ */
+export interface SandboxPauseOpts extends SandboxApiOpts {
+  /**
+   * Whether to keep a full memory snapshot.
+   *
+   * When `false`, the in-memory state is dropped and only the filesystem is
+   * persisted (a filesystem-only snapshot); resuming such a sandbox cold-boots
+   * (reboots) it from disk, losing running processes and open connections.
+   *
+   * @default true
+   */
+  keepMemory?: boolean
+}
+
+/**
  * Options for creating a new Sandbox.
  */
 export interface SandboxOpts extends ConnectionOpts {
@@ -915,13 +931,13 @@ export class SandboxApi {
    * Pause the sandbox specified by sandbox ID.
    *
    * @param sandboxId sandbox ID.
-   * @param opts connection options.
+   * @param opts pause options, including `keepMemory` and connection options.
    *
    * @returns `true` if the sandbox got paused, `false` if the sandbox was already paused.
    */
   static async pause(
     sandboxId: string,
-    opts?: SandboxApiOpts
+    opts?: SandboxPauseOpts
   ): Promise<boolean> {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
@@ -931,6 +947,9 @@ export class SandboxApi {
         path: {
           sandboxID: sandboxId,
         },
+      },
+      body: {
+        memory: opts?.keepMemory ?? true,
       },
       signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
     })
@@ -957,7 +976,7 @@ export class SandboxApi {
    */
   static async betaPause(
     sandboxId: string,
-    opts?: SandboxApiOpts
+    opts?: SandboxPauseOpts
   ): Promise<boolean> {
     return this.pause(sandboxId, opts)
   }
