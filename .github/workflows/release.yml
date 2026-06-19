@@ -161,6 +161,61 @@ jobs:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
           SLACK_CHANNEL: 'monitoring-releases'
 
+  report-success:
+    needs: [preflight, publish]
+    if: needs.publish.result == 'success'
+    name: Release Succeeded - Slack Notification
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout released versions
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.ref_name }}
+
+      - name: Build release itinerary
+        id: itinerary
+        env:
+          JS_RELEASED: ${{ needs.preflight.outputs.js-sdk }}
+          PYTHON_RELEASED: ${{ needs.preflight.outputs.python-sdk }}
+          CLI_RELEASED: ${{ needs.preflight.outputs.cli }}
+        run: |
+          version() {
+            node -p "require('./$1/package.json').version"
+          }
+
+          ITINERARY=""
+          if [ "$JS_RELEASED" = "true" ]; then
+            ITINERARY="${ITINERARY}• JS SDK (e2b) v$(version packages/js-sdk)"$'\n'
+          fi
+          if [ "$PYTHON_RELEASED" = "true" ]; then
+            ITINERARY="${ITINERARY}• Python SDK (e2b) v$(version packages/python-sdk)"$'\n'
+          fi
+          if [ "$CLI_RELEASED" = "true" ]; then
+            ITINERARY="${ITINERARY}• CLI (@e2b/cli) v$(version packages/cli)"$'\n'
+          fi
+          if [ -z "$ITINERARY" ]; then
+            ITINERARY="• No packages were published"$'\n'
+          fi
+
+          {
+            echo "itinerary<<EOF"
+            printf '%s' "$ITINERARY"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Release Succeeded - Slack Notification
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_COLOR: '#36a64f'
+          SLACK_MESSAGE: |
+            :rocket: :tada: A new version has been released successfully! :ship-it-parrot:
+
+            *Released:*
+            ${{ steps.itinerary.outputs.itinerary }}
+          SLACK_TITLE: Release Succeeded
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          SLACK_CHANNEL: 'monitoring-releases'
+
   # ── Release candidate ────────────────────────────────────
   rc-validate:
     name: Validate RC inputs
