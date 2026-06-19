@@ -212,7 +212,7 @@ jobs:
         env:
           SLACK_COLOR: '#36a64f'
           SLACK_MESSAGE: |
-            :rocket: :tada: A new version has been released successfully! :ship-it-parrot:
+            :tada: A new version has been released successfully! :ship-it-parrot:
 
             *Released:*
             ${{ needs.preflight.outputs.itinerary }}
