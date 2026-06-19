@@ -9,7 +9,6 @@ import {
   ConnectionConfig,
   ConnectionOpts,
   defaultUsername,
-  FILE_TIMEOUT_MS,
   KEEPALIVE_PING_HEADER,
   KEEPALIVE_PING_INTERVAL_SEC,
   setupRequestController,
@@ -302,6 +301,14 @@ export interface FilesystemReadOpts extends FilesystemRequestOpts {
    * When true, the download will request gzip-encoded responses.
    */
   gzip?: boolean
+  /**
+   * Idle timeout for a streamed read (`format: 'stream'`) in **milliseconds**:
+   * abort if no chunk arrives from the server within this window *while
+   * reading*. It bounds only the wire — a slow or paused consumer never trips
+   * it (a consumer that holds the stream but stops reading is reclaimed
+   * server-side). Defaults to the request timeout (60s); pass `0` to disable.
+   */
+  streamIdleTimeoutMs?: number
 }
 
 export interface FilesystemListOpts extends FilesystemRequestOpts {
@@ -420,9 +427,10 @@ export class Filesystem {
    *
    * You can pass `text`, `bytes`, `blob`, or `stream` to `opts.format` to change the return type.
    *
-   * The request timeout bounds only the initial handshake—the returned
-   * stream is not killed by it while being consumed. Use `opts.signal` to
-   * cancel an in-flight stream.
+   * The request timeout bounds only the initial handshake. The returned stream
+   * holds a pooled connection until it is fully read, cancelled, errors, or the
+   * idle timeout (`opts.streamIdleTimeoutMs`) fires—so consume it to the end or
+   * cancel it (`opts.signal`).
    *
    * @param path path to the file.
    * @param opts connection options.
@@ -457,10 +465,12 @@ export class Filesystem {
 
     if (format === 'stream') {
       // The request timeout bounds only the initial handshake; once the
-      // response arrives, the stream lives until it's consumed, cancelled,
-      // or the user signal aborts.
+      // response arrives, the stream lives until it's consumed, cancelled, the
+      // user signal aborts, or the per-chunk idle timeout fires.
+      const requestTimeoutMs =
+        opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
       const { controller, clearStartTimeout, cleanup } = setupRequestController(
-        opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs,
+        requestTimeoutMs,
         opts?.signal
       )
 
@@ -499,7 +509,12 @@ export class Filesystem {
 
         return wrapStreamWithConnectionCleanup(
           res.data as ReadableStream<Uint8Array> | null,
-          { clearStartTimeout, cleanup }
+          {
+            clearStartTimeout,
+            cleanup,
+            controller,
+            idleTimeoutMs: opts?.streamIdleTimeoutMs ?? requestTimeoutMs,
+          }
         )
       } catch (err) {
         cleanup()
@@ -669,14 +684,17 @@ export class Filesystem {
           const filePath = path ?? (file as WriteEntry).path
           const body = await toUploadBody(file.data, useGzip)
           const isStream = body instanceof ReadableStream
-          // A streamed upload can take far longer than the 60s request default,
-          // so fall back to the file-transfer timeout (matching volume writes)
-          // unless the caller set one explicitly. The signal is a total
-          // deadline—unlike downloads there's no post-handshake point to clear
-          // it, since the response only arrives once the body has been sent.
-          const uploadTimeoutMs =
-            writeOpts?.requestTimeoutMs ??
-            (isStream ? FILE_TIMEOUT_MS : undefined)
+          // A streamed upload carries no client-side timeout: the socket-write
+          // "wire" isn't observable through fetch, and a stalled producer is
+          // the caller's own code, so a stuck streamed upload is bounded
+          // server-side (or via `writeOpts.signal`). Buffered uploads keep the
+          // normal request timeout.
+          const signal = isStream
+            ? writeOpts?.signal
+            : this.connectionConfig.getSignal(
+                writeOpts?.requestTimeoutMs,
+                writeOpts?.signal
+              )
 
           const res = await this.envdApi.api
             .POST('/files', {
@@ -688,10 +706,7 @@ export class Filesystem {
               },
               bodySerializer: () => body,
               headers,
-              signal: this.connectionConfig.getSignal(
-                uploadTimeoutMs,
-                writeOpts?.signal
-              ),
+              signal,
               body: {},
               // Streaming request bodies require half-duplex mode.
               ...(isStream && {

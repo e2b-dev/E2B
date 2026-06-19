@@ -7,10 +7,6 @@ const supportedDomains = ['e2b.app', 'e2b.dev', 'e2b.pro', 'e2b-staging.dev']
 
 export const REQUEST_TIMEOUT_MS = 60_000 // 60 seconds
 export const DEFAULT_SANDBOX_TIMEOUT_MS = 300_000 // 300 seconds
-// Default timeout for streaming file transfers (uploads/downloads). A streamed
-// body can take far longer than a regular request, so it must not inherit the
-// short `REQUEST_TIMEOUT_MS`.
-export const FILE_TIMEOUT_MS = 3_600_000 // 1 hour
 export const KEEPALIVE_PING_INTERVAL_SEC = 50 // 50 seconds
 
 export const KEEPALIVE_PING_HEADER = 'Keepalive-Ping-Interval'
@@ -205,23 +201,53 @@ export function setupRequestController(
   return { controller, clearStartTimeout, cleanup }
 }
 
-// GC safety net for streamed reads: if the consumer drops a streamed response
-// body without reading it to completion or cancelling it, the registered
-// cleanup releases the underlying connection when the stream is garbage
-// collected. This mirrors the Python SDK's `weakref.finalize` on
-// `FileStreamReader`. The held value is the cleanup function, which must not
-// reference the stream itself or it would never be collected.
-const streamReadFinalizers = new FinalizationRegistry<() => void>((cleanup) =>
-  cleanup()
-)
+/**
+ * Create a resettable idle-timeout that aborts `controller` when no progress is
+ * made within `idleTimeoutMs`. `arm` (re)starts the timer; call it on each
+ * chunk. `clear` stops it. `0`/`undefined` disables it (both are no-ops).
+ *
+ * @internal
+ */
+function createIdleAbort(
+  controller: AbortController,
+  idleTimeoutMs: number | undefined,
+  label: string
+): { arm: () => void; clear: () => void } {
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const clear = () => {
+    if (timer) {
+      clearTimeout(timer)
+      timer = undefined
+    }
+  }
+  const arm = () => {
+    if (!idleTimeoutMs) return
+    clear()
+    timer = setTimeout(
+      () =>
+        controller.abort(
+          new DOMException(
+            `${label} idle for ${idleTimeoutMs}ms`,
+            'TimeoutError'
+          )
+        ),
+      idleTimeoutMs
+    )
+  }
+  return { arm, clear }
+}
 
 /**
  * Wrap a streaming response body so its pooled connection is released when the
- * stream is fully read, cancelled, errors, or (as a GC safety net) abandoned.
+ * stream is fully read, cancelled, errors, or stays idle for too long.
  *
- * The request timeout configured via {@link setupRequestController} bounds only
- * the initial handshake; this clears that timeout so consuming the body is not
- * killed by it. Call once the handshake has succeeded (after error handling).
+ * Clears the handshake timeout from {@link setupRequestController} (so
+ * consuming the body isn't killed by it) and replaces it with an idle-read
+ * timeout that bounds only the wire: it's armed while waiting on a network
+ * read and cleared the moment a chunk arrives, so a slow or paused consumer
+ * never trips it (only a server that stops sending mid-stream does). On expiry
+ * it aborts `controller`, tearing down the fetch and releasing the connection.
+ * Pass `0`/`undefined` to disable. Call once the handshake has succeeded.
  *
  * @internal
  */
@@ -230,7 +256,14 @@ export function wrapStreamWithConnectionCleanup(
   {
     clearStartTimeout,
     cleanup,
-  }: { clearStartTimeout: () => void; cleanup: () => void }
+    controller,
+    idleTimeoutMs,
+  }: {
+    clearStartTimeout: () => void
+    cleanup: () => void
+    controller: AbortController
+    idleTimeoutMs?: number
+  }
 ): ReadableStream<Uint8Array> {
   clearStartTimeout()
 
@@ -240,21 +273,28 @@ export function wrapStreamWithConnectionCleanup(
   }
 
   const reader = body.getReader()
-  const unregisterToken = {}
-  // Detach the GC finalizer and release the connection. Idempotent via
-  // `cleanup`, so it's safe to call from multiple stream callbacks.
+  const idle = createIdleAbort(controller, idleTimeoutMs, 'Stream')
+
+  // Idempotent: safe to call from multiple stream callbacks.
   const release = () => {
-    streamReadFinalizers.unregister(unregisterToken)
+    idle.clear()
     cleanup()
   }
 
-  const stream = new ReadableStream<Uint8Array>({
+  return new ReadableStream<Uint8Array>({
     async pull(streamController) {
+      // Bound only the wire: arm before reading from the network and clear the
+      // moment a chunk (or EOF) arrives, so a slow or paused consumer never
+      // counts against the idle timeout. A consumer that holds the stream but
+      // stops reading is never pulled here, so nothing arms—that case is
+      // reclaimed server-side, not by this timer.
+      idle.arm()
       try {
         const { done, value } = await reader.read()
+        idle.clear()
         if (done) {
-          streamController.close()
           release()
+          streamController.close()
         } else {
           streamController.enqueue(value)
         }
@@ -271,12 +311,6 @@ export function wrapStreamWithConnectionCleanup(
       }
     },
   })
-
-  // Release the connection if the consumer abandons the stream without
-  // reading it to completion or cancelling it.
-  streamReadFinalizers.register(stream, cleanup, unregisterToken)
-
-  return stream
 }
 
 function buildUserAgent(integration?: string) {

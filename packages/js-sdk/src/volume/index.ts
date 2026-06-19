@@ -529,12 +529,13 @@ export class Volume {
    */
   async readFile(
     path: string,
-    opts?: VolumeApiOpts & { format: 'stream' }
+    opts?: VolumeApiOpts & { format: 'stream'; streamIdleTimeoutMs?: number }
   ): Promise<ReadableStream<Uint8Array>>
   async readFile(
     path: string,
     opts?: VolumeApiOpts & {
       format?: 'text' | 'stream' | 'bytes' | 'blob'
+      streamIdleTimeoutMs?: number
     }
   ): Promise<unknown> {
     const format = opts?.format ?? 'text'
@@ -546,8 +547,9 @@ export class Volume {
 
     if (format === 'stream') {
       // The request timeout bounds only the initial handshake; once the
-      // response arrives, the stream lives until it's consumed, cancelled, or
-      // the user signal aborts. Matches the sandbox `files.read` stream path.
+      // response arrives, the stream lives until it's consumed, cancelled, the
+      // user signal aborts, or the per-chunk idle timeout fires. Matches the
+      // sandbox `files.read` stream path.
       const { controller, clearStartTimeout, cleanup } = setupRequestController(
         config.requestTimeoutMs,
         opts?.signal
@@ -584,7 +586,12 @@ export class Volume {
 
         return wrapStreamWithConnectionCleanup(
           res.data as ReadableStream<Uint8Array> | null,
-          { clearStartTimeout, cleanup }
+          {
+            clearStartTimeout,
+            cleanup,
+            controller,
+            idleTimeoutMs: opts?.streamIdleTimeoutMs ?? config.requestTimeoutMs,
+          }
         )
       } catch (err) {
         cleanup()
@@ -658,6 +665,12 @@ export class Volume {
     const isStream = data instanceof ReadableStream && runtime !== 'browser'
     const body = isStream ? data : await toBlob(data)
 
+    // A streamed upload carries no client-side timeout: the socket-write
+    // "wire" isn't observable through fetch, and a stalled producer is the
+    // caller's own code, so a stuck streamed upload is bounded server-side (or
+    // via `opts.signal`). Buffered uploads keep the normal request timeout.
+    const signal = isStream ? opts?.signal : config.getSignal()
+
     const res = await client.api.PUT('/volumecontent/{volumeID}/file', {
       params: {
         path: {
@@ -676,7 +689,7 @@ export class Volume {
       headers: {
         'Content-Type': 'application/octet-stream',
       },
-      signal: config.getSignal(),
+      signal,
       // Streaming request bodies require half-duplex mode.
       ...(isStream && { duplex: 'half' as const }),
     })

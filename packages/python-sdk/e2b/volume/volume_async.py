@@ -445,6 +445,7 @@ class AsyncVolume:
         self,
         path: str,
         format: Literal["stream"],
+        stream_idle_timeout: Optional[float] = None,
         **opts: Unpack[VolumeApiParams],
     ) -> AsyncIterator[bytes]: ...
 
@@ -452,6 +453,7 @@ class AsyncVolume:
         self,
         path: str,
         format: Literal["text", "bytes", "stream"] = "text",
+        stream_idle_timeout: Optional[float] = None,
         **opts: Unpack[VolumeApiParams],
     ) -> Union[str, bytes, AsyncIterator[bytes]]:
         """
@@ -461,6 +463,11 @@ class AsyncVolume:
 
         :param path: Path to the file
         :param format: Format of the file content—`text` by default
+        :param stream_idle_timeout: Idle timeout in **seconds** for a streamed
+            read (`format="stream"`)—abort if no chunk arrives within this
+            window while reading. Resets on every chunk, so it bounds a stalled
+            stream without limiting total transfer time. Defaults to the request
+            timeout; pass `0` to disable.
         :param opts: Connection options
 
         :return: File content as string, bytes, or async iterator of bytes
@@ -474,12 +481,16 @@ class AsyncVolume:
         )
 
         if format == "stream":
-            # The request timeout bounds connection setup, not the stream read:
-            # consuming the body must not be killed by it. Mirrors the sandbox
-            # files stream path and the RPC streams, which carry no client-side
-            # read timeout (the server enforces deadlines, keepalive pings
-            # detect dropped connections).
-            stream_timeout = httpx.Timeout(timeout, read=None)
+            # The request timeout bounds connection setup, not total transfer;
+            # consuming the body must not be killed by it. httpx's per-chunk
+            # `read` timeout becomes the idle-read timeout for the body
+            # (defaults to the request timeout), bounding a stalled stream
+            # without limiting total transfer time. Pass `0` to disable.
+            # Mirrors the sandbox files stream path.
+            idle_timeout = (
+                timeout if stream_idle_timeout is None else stream_idle_timeout
+            )
+            stream_timeout = httpx.Timeout(timeout, read=idle_timeout or None)
 
             async def stream_file() -> AsyncIterator[bytes]:
                 async with api_client.get_async_httpx_client().stream(
