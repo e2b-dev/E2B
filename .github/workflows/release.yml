@@ -58,6 +58,7 @@ jobs:
       js-sdk: ${{ steps.js.outputs.release }}
       python-sdk: ${{ steps.python.outputs.release }}
       cli: ${{ steps.cli.outputs.release }}
+      itinerary: ${{ steps.itinerary.outputs.itinerary }}
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v3
@@ -118,6 +119,26 @@ jobs:
           IS_RELEASE=$(./.github/scripts/is_release_for_package.sh "@e2b/cli")
           echo "release=$IS_RELEASE" >> "$GITHUB_OUTPUT"
 
+      - name: Build release itinerary
+        id: itinerary
+        if: steps.version.outputs.release == 'true'
+        run: |
+          pnpm changeset status --output=.cs-status.json
+          ITINERARY=$(node -e '
+            const data = require("./.cs-status.json");
+            const labels = { "e2b": "JS SDK (e2b)", "@e2b/python-sdk": "Python SDK (e2b)", "@e2b/cli": "CLI (@e2b/cli)" };
+            const order = ["e2b", "@e2b/python-sdk", "@e2b/cli"];
+            const byName = Object.fromEntries(data.releases.map(r => [r.name, r]));
+            const lines = order.filter(n => byName[n]).map(n => `• ${labels[n]} v${byName[n].newVersion}`);
+            process.stdout.write(lines.join("\n") || "• No packages were published");
+          ')
+          rm -f .cs-status.json
+          {
+            echo "itinerary<<EOF"
+            echo "$ITINERARY"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
   python-tests:
     name: Python SDK Tests
     needs: [preflight]
@@ -146,6 +167,25 @@ jobs:
     uses: ./.github/workflows/publish_packages.yml
     secrets: inherit
 
+  report-start:
+    needs: [preflight]
+    if: needs.preflight.outputs.release == 'true'
+    name: Release Started - Slack Notification
+    runs-on: ubuntu-latest
+    steps:
+      - name: Release Started - Slack Notification
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_COLOR: '#3aa3e3'
+          SLACK_MESSAGE: |
+            :rocket: A new release has been triggered :hourglass_flowing_sand:
+
+            *Releasing:*
+            ${{ needs.preflight.outputs.itinerary }}
+          SLACK_TITLE: Release Started
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          SLACK_CHANNEL: 'monitoring-releases'
+
   report-failure:
     needs: [python-tests, js-tests, cli-tests, publish]
     if: failure()
@@ -167,42 +207,6 @@ jobs:
     name: Release Succeeded - Slack Notification
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout released versions
-        uses: actions/checkout@v3
-        with:
-          ref: ${{ github.ref_name }}
-
-      - name: Build release itinerary
-        id: itinerary
-        env:
-          JS_RELEASED: ${{ needs.preflight.outputs.js-sdk }}
-          PYTHON_RELEASED: ${{ needs.preflight.outputs.python-sdk }}
-          CLI_RELEASED: ${{ needs.preflight.outputs.cli }}
-        run: |
-          version() {
-            node -p "require('./$1/package.json').version"
-          }
-
-          ITINERARY=""
-          if [ "$JS_RELEASED" = "true" ]; then
-            ITINERARY="${ITINERARY}• JS SDK (e2b) v$(version packages/js-sdk)"$'\n'
-          fi
-          if [ "$PYTHON_RELEASED" = "true" ]; then
-            ITINERARY="${ITINERARY}• Python SDK (e2b) v$(version packages/python-sdk)"$'\n'
-          fi
-          if [ "$CLI_RELEASED" = "true" ]; then
-            ITINERARY="${ITINERARY}• CLI (@e2b/cli) v$(version packages/cli)"$'\n'
-          fi
-          if [ -z "$ITINERARY" ]; then
-            ITINERARY="• No packages were published"$'\n'
-          fi
-
-          {
-            echo "itinerary<<EOF"
-            printf '%s' "$ITINERARY"
-            echo "EOF"
-          } >> "$GITHUB_OUTPUT"
-
       - name: Release Succeeded - Slack Notification
         uses: rtCamp/action-slack-notify@v2
         env:
@@ -211,7 +215,7 @@ jobs:
             :rocket: :tada: A new version has been released successfully! :ship-it-parrot:
 
             *Released:*
-            ${{ steps.itinerary.outputs.itinerary }}
+            ${{ needs.preflight.outputs.itinerary }}
           SLACK_TITLE: Release Succeeded
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
           SLACK_CHANNEL: 'monitoring-releases'
