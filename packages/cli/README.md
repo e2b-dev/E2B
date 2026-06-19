@@ -1,14 +1,9 @@
 <p align="center">
-  <img
-    src="https://raw.githubusercontent.com/e2b-dev/E2B/refs/heads/main/readme-assets/logo-black.png#gh-light-mode-only"
-    alt="E2B Logo"
-    width="200"
-  >
-  <img
-    src="https://raw.githubusercontent.com/e2b-dev/E2B/refs/heads/main/readme-assets/logo-white.png#gh-dark-mode-only"
-    alt="E2B Logo"
-    width="200"
-  >
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/e2b-dev/E2B/refs/heads/main/readme-assets/logo-white.png">
+    <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/e2b-dev/E2B/refs/heads/main/readme-assets/logo-black.png">
+    <img alt="E2B Logo" src="https://raw.githubusercontent.com/e2b-dev/E2B/refs/heads/main/readme-assets/logo-black.png" width="200">
+  </picture>
 </p>
 
 # E2B CLI
