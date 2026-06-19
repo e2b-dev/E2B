@@ -29,10 +29,11 @@ jobs:
         uses: dorny/paths-filter@v3
         id: filter
         with:
+          # `**/!(*.md)` excludes Markdown so docs-only changes don't trigger the suites.
           filters: |
             shared: &shared
               - '.github/workflows/sdk_tests.yml'
-              - 'spec/**'
+              - 'spec/**/!(*.md)'
               - 'pnpm-lock.yaml'
               - 'pnpm-workspace.yaml'
               - 'package.json'
@@ -40,17 +41,17 @@ jobs:
             js:
               - *shared
               - '.github/workflows/js_sdk_tests.yml'
-              - 'packages/js-sdk/**'
+              - 'packages/js-sdk/**/!(*.md)'
             python:
               - *shared
               - '.github/workflows/python_sdk_tests.yml'
-              - 'packages/python-sdk/**'
-              - 'packages/connect-python/**'
+              - 'packages/python-sdk/**/!(*.md)'
+              - 'packages/connect-python/**/!(*.md)'
             cli:
               - *shared
               - '.github/workflows/cli_tests.yml'
-              - 'packages/cli/**'
-              - 'packages/js-sdk/**'
+              - 'packages/cli/**/!(*.md)'
+              - 'packages/js-sdk/**/!(*.md)'
 
   js-tests:
     name: Production / JS SDK Tests
