@@ -96,13 +96,11 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git commit -am "[skip ci] Release new versions" || exit 0
 
-          # A PR can merge into the branch while this release is running, making
-          # the push a non-fast-forward. The artifacts were already published
-          # from the checked-out tree, so we can only safely rebase the version
-          # bump on top of incoming changes that are NOT part of any published
-          # package. Otherwise the source tree would claim the just-published
-          # version contains code that never made it into the published
-          # artifacts, so we fail loudly for manual reconciliation instead.
+          # A PR merging mid-release makes this push a non-fast-forward. The
+          # artifacts were already published from the checked-out tree, so we
+          # only rebase the version bump over incoming changes that don't touch
+          # packages/. Otherwise the source would claim the published version
+          # contains code that isn't in the artifacts, so we fail loudly.
           if git push; then
             exit 0
           fi
