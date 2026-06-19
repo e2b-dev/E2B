@@ -1,4 +1,4 @@
-import { VolumeApiComponents } from './client'
+import { VolumeApiComponents, VolumeApiOpts } from './client'
 
 /**
  * File type enum.
@@ -66,7 +66,7 @@ export type VolumeEntryStat = Omit<
 /**
  * Options for updating file metadata.
  */
-export type VolumeMetadataOptions = {
+export type VolumeMetadataOpts = {
   /**
    * User ID of the file or directory.
    */
@@ -84,12 +84,36 @@ export type VolumeMetadataOptions = {
 }
 
 /**
+ * Options for reading files from a volume.
+ */
+export type VolumeReadOpts = VolumeApiOpts & {
+  /**
+   * Idle timeout for a streamed read (`format: 'stream'`) in **milliseconds**:
+   * abort if no chunk arrives from the server within this window *while
+   * reading*. It bounds only the wire — a slow or paused consumer never trips
+   * it (a consumer that holds the stream but stops reading is reclaimed
+   * server-side). Defaults to the request timeout; pass `0` to disable.
+   */
+  streamIdleTimeoutMs?: number
+}
+
+/**
  * Options for file and directory operations.
  */
-export type VolumeWriteOptions = VolumeMetadataOptions & {
+export type VolumeWriteOpts = VolumeMetadataOpts & {
   /**
    * For makeDir: Create parent directories if they don't exist.
    * For writeFile: Force overwrite of an existing file.
    */
   force?: boolean
 }
+
+/**
+ * @deprecated Use {@link VolumeMetadataOpts} instead.
+ */
+export type VolumeMetadataOptions = VolumeMetadataOpts
+
+/**
+ * @deprecated Use {@link VolumeWriteOpts} instead.
+ */
+export type VolumeWriteOptions = VolumeWriteOpts

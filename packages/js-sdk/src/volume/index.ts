@@ -19,8 +19,9 @@ import type {
   VolumeAndToken,
   VolumeEntryStat,
   VolumeInfo,
-  VolumeMetadataOptions,
-  VolumeWriteOptions,
+  VolumeMetadataOpts,
+  VolumeReadOpts,
+  VolumeWriteOpts,
 } from './types'
 
 /**
@@ -315,7 +316,7 @@ export class Volume {
    */
   async makeDir(
     path: string,
-    opts?: VolumeWriteOptions & VolumeApiOpts
+    opts?: VolumeWriteOpts & VolumeApiOpts
   ): Promise<VolumeEntryStat> {
     const config = new VolumeConnectionConfig(this, opts)
     const client = new VolumeApiClient(config)
@@ -430,7 +431,7 @@ export class Volume {
    */
   async updateMetadata(
     path: string,
-    metadata: VolumeMetadataOptions,
+    metadata: VolumeMetadataOpts,
     opts?: VolumeApiOpts
   ): Promise<VolumeEntryStat> {
     const config = new VolumeConnectionConfig(this, opts)
@@ -484,7 +485,7 @@ export class Volume {
    */
   async readFile(
     path: string,
-    opts?: VolumeApiOpts & { format?: 'text' }
+    opts?: VolumeReadOpts & { format?: 'text' }
   ): Promise<string>
   /**
    * Read file content as a `Uint8Array`.
@@ -499,7 +500,7 @@ export class Volume {
    */
   async readFile(
     path: string,
-    opts?: VolumeApiOpts & { format: 'bytes' }
+    opts?: VolumeReadOpts & { format: 'bytes' }
   ): Promise<Uint8Array>
   /**
    * Read file content as a `Blob`.
@@ -514,7 +515,7 @@ export class Volume {
    */
   async readFile(
     path: string,
-    opts?: VolumeApiOpts & { format: 'blob' }
+    opts?: VolumeReadOpts & { format: 'blob' }
   ): Promise<Blob>
   /**
    * Read file content as a `ReadableStream`.
@@ -529,13 +530,12 @@ export class Volume {
    */
   async readFile(
     path: string,
-    opts?: VolumeApiOpts & { format: 'stream'; streamIdleTimeoutMs?: number }
+    opts?: VolumeReadOpts & { format: 'stream' }
   ): Promise<ReadableStream<Uint8Array>>
   async readFile(
     path: string,
-    opts?: VolumeApiOpts & {
+    opts?: VolumeReadOpts & {
       format?: 'text' | 'stream' | 'bytes' | 'blob'
-      streamIdleTimeoutMs?: number
     }
   ): Promise<unknown> {
     const format = opts?.format ?? 'text'
@@ -653,7 +653,7 @@ export class Volume {
   async writeFile(
     path: string,
     data: string | ArrayBuffer | Blob | ReadableStream<Uint8Array>,
-    opts?: VolumeWriteOptions & VolumeApiOpts
+    opts?: VolumeWriteOpts & VolumeApiOpts
   ): Promise<VolumeEntryStat> {
     const config = new VolumeConnectionConfig(this, {
       ...opts,
@@ -749,6 +749,10 @@ export type {
   VolumeInfo,
   VolumeAndToken,
   VolumeEntryStat,
+  VolumeMetadataOpts,
+  VolumeReadOpts,
+  VolumeWriteOpts,
+  // Deprecated aliases, kept for backwards compatibility.
   VolumeMetadataOptions,
   VolumeWriteOptions,
 } from './types'
