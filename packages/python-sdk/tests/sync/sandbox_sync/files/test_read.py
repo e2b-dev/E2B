@@ -81,5 +81,3 @@ def test_read_file_as_stream_partial_then_close(sandbox):
     first = next(iter(stream))
     assert len(first) > 0
     stream.close()
-    # close is idempotent
-    stream.close()

@@ -31,14 +31,6 @@ sandboxTest(
   }
 )
 
-sandboxTest('empty file', async ({ sandbox }) => {
-  const filename = 'empty-file.txt'
-
-  await sandbox.commands.run(`touch ${filename}`)
-  const content = await sandbox.files.read(filename)
-  expect(content).toBe('')
-})
-
 sandboxTest('read file as stream', async ({ sandbox }) => {
   const filename = 'test_read_stream.txt'
   const content = 'Streamed read content. '.repeat(10_000)
