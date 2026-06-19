@@ -354,7 +354,8 @@ class Filesystem:
         use_octet_stream = (use_octet_stream or gzip) and supports_octet_stream
 
         # Each chunk send is bounded by the request timeout (httpx applies it
-        # per write); the total streamed upload is bounded server-side.
+        # per write); a stalled upload the per-write timeout can't observe is
+        # bounded server-side (envd's per-read idle timeout, envd >= 0.6.7).
         upload_timeout = self._connection_config.get_request_timeout(request_timeout)
 
         # Metadata is sent as request-scoped X-Metadata-* headers, so the same
