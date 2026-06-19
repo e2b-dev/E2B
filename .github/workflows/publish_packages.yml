@@ -95,6 +95,11 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git commit -am "[skip ci] Release new versions" || exit 0
+
+          # A PR can merge into the target branch while this release is running,
+          # making the push a non-fast-forward. Rebase onto the latest remote
+          # state before pushing to avoid a failed release.
+          git pull --rebase origin "${GITHUB_REF_NAME}"
           git push
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
