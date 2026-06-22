@@ -8,6 +8,7 @@ from e2b.api.client.models import (
     NewSandbox,
     SandboxAutoResumeConfig,
 )
+from e2b.exceptions import InvalidArgumentException
 from e2b.sandbox.sandbox_api import SandboxQuery
 
 
@@ -57,6 +58,76 @@ def test_create_payload_deserializes_auto_resume_enabled():
 
     assert isinstance(body.auto_resume, SandboxAutoResumeConfig)
     assert body.auto_resume.to_dict() == {"enabled": False}
+
+
+def test_create_payload_serializes_auto_pause_memory():
+    body = NewSandbox(
+        template_id="template-id",
+        auto_pause=True,
+        auto_pause_memory=False,
+    )
+
+    assert body.to_dict()["autoPauseMemory"] is False
+
+
+def test_filesystem_only_auto_pause_rejects_auto_resume():
+    # A filesystem-only auto-pause snapshot can only be resumed explicitly, so
+    # combining keep_memory=False with auto_resume is rejected client-side.
+    with pytest.raises(InvalidArgumentException):
+        Sandbox.create(
+            timeout=3,
+            lifecycle={
+                "on_timeout": "pause",
+                "auto_resume": True,
+                "keep_memory": False,
+            },
+        )
+
+
+def test_filesystem_only_auto_pause_requires_pause():
+    # keep_memory only governs a timeout auto-pause, so keep_memory=False without
+    # on_timeout="pause" is rejected client-side.
+    with pytest.raises(InvalidArgumentException):
+        Sandbox.create(
+            timeout=3,
+            lifecycle={"on_timeout": "kill", "keep_memory": False},
+        )
+
+
+@pytest.mark.skip_debug()
+def test_auto_pause_filesystem_only_reboots(sandbox_factory):
+    # keep_memory=False makes the timeout auto-pause filesystem-only, so resuming
+    # cold-boots the sandbox from disk.
+    sandbox = sandbox_factory(
+        timeout=3,
+        lifecycle={"on_timeout": "pause", "keep_memory": False},
+    )
+
+    marker = "auto-pause-fs-only"
+    sandbox.commands.run(f"echo {marker} > /home/user/auto-pause-marker.txt")
+    boot_before = sandbox.commands.run(
+        "cat /proc/sys/kernel/random/boot_id"
+    ).stdout.strip()
+
+    sleep(5)
+
+    assert sandbox.get_info().state == SandboxState.PAUSED
+    assert not sandbox.is_running()
+
+    # A filesystem-only snapshot cannot auto-resume on traffic; connect resumes
+    # it by cold-booting.
+    resumed = sandbox.connect()
+    assert resumed.is_running()
+
+    persisted = resumed.commands.run(
+        "cat /home/user/auto-pause-marker.txt"
+    ).stdout.strip()
+    assert persisted == marker
+
+    boot_after = resumed.commands.run(
+        "cat /proc/sys/kernel/random/boot_id"
+    ).stdout.strip()
+    assert boot_after != boot_before
 
 
 @pytest.mark.skip_debug()

@@ -210,6 +210,19 @@ export type SandboxLifecycle = {
    * Can be `true` only when `onTimeout` is `pause`.
    */
   autoResume?: boolean
+
+  /**
+   * Whether a timeout auto-pause keeps a full memory snapshot.
+   *
+   * When `false`, the auto-pause drops the in-memory state and persists only the
+   * filesystem (a filesystem-only snapshot); resuming such a sandbox cold-boots
+   * (reboots) it from disk, losing running processes and open connections. Only
+   * relevant when `onTimeout` is `pause`, and cannot be combined with
+   * `autoResume` (a filesystem-only snapshot must be resumed explicitly).
+   *
+   * @default true
+   */
+  keepMemory?: boolean
 }
 
 export type SandboxInfoLifecycle = {
@@ -1081,10 +1094,23 @@ export class SandboxApi {
     const client = new ApiClient(config)
     const onTimeout = opts?.lifecycle?.onTimeout ?? 'kill'
     const autoResume = opts?.lifecycle?.autoResume ?? false
+    const keepMemory = opts?.lifecycle?.keepMemory ?? true
 
     if (autoResume && onTimeout !== 'pause') {
       throw new InvalidArgumentError(
         "autoResume can only be true when the resolved onTimeout is 'pause'."
+      )
+    }
+
+    if (!keepMemory && onTimeout !== 'pause') {
+      throw new InvalidArgumentError(
+        "lifecycle.keepMemory=false only applies when onTimeout is 'pause'."
+      )
+    }
+
+    if (!keepMemory && autoResume) {
+      throw new InvalidArgumentError(
+        'lifecycle.keepMemory=false (filesystem-only auto-pause) cannot be combined with autoResume: a filesystem-only snapshot cannot be auto-resumed by traffic and must be resumed explicitly.'
       )
     }
 
@@ -1098,6 +1124,9 @@ export class SandboxApi {
       allow_internet_access: opts?.allowInternetAccess ?? true,
       network: buildNetworkBody(opts?.network),
       autoPause: onTimeout === 'pause',
+      // Only relevant to a timeout auto-pause; omit it otherwise so the body
+      // matches the field's contract (keepMemory is forced true when not pause).
+      autoPauseMemory: onTimeout === 'pause' ? keepMemory : undefined,
       autoResume: { enabled: autoResume },
     }
 

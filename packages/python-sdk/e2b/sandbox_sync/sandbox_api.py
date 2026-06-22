@@ -203,16 +203,32 @@ class SandboxApi(SandboxBase):
 
         on_timeout = lifecycle.get("on_timeout", "kill") if lifecycle else "kill"
         auto_resume = lifecycle.get("auto_resume", False) if lifecycle else False
+        keep_memory = lifecycle.get("keep_memory", True) if lifecycle else True
 
         if auto_resume and on_timeout != "pause":
             raise InvalidArgumentException(
                 "auto_resume can only be True when the resolved on_timeout is 'pause'."
             )
 
+        if not keep_memory and on_timeout != "pause":
+            raise InvalidArgumentException(
+                "keep_memory=False only applies when on_timeout is 'pause'."
+            )
+
+        if not keep_memory and auto_resume:
+            raise InvalidArgumentException(
+                "keep_memory=False (filesystem-only auto-pause) cannot be combined with auto_resume: "
+                "a filesystem-only snapshot cannot be auto-resumed by traffic and must be resumed explicitly."
+            )
+
         network_body = build_network_config(network)
         body = NewSandbox(
             template_id=template,
             auto_pause=on_timeout == "pause",
+            # Only relevant to a timeout auto-pause; leave it unset otherwise so the
+            # body matches the field's contract (keep_memory is forced True when
+            # on_timeout is not "pause").
+            auto_pause_memory=keep_memory if on_timeout == "pause" else UNSET,
             auto_resume=SandboxAutoResumeConfig(enabled=auto_resume),
             metadata=metadata or {},
             timeout=timeout,

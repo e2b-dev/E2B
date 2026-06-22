@@ -256,6 +256,16 @@ class SandboxLifecycle(TypedDict):
     Can be `True` only when `on_timeout` is `pause`.
     """
 
+    keep_memory: NotRequired[bool]
+    """
+    Whether a timeout auto-pause keeps a full memory snapshot. Defaults to `True`.
+    When `False`, the auto-pause drops the in-memory state and persists only the
+    filesystem (a filesystem-only snapshot); resuming such a sandbox cold-boots
+    (reboots) it from disk, losing running processes and open connections. Only
+    relevant when `on_timeout` is `pause`, and cannot be combined with
+    `auto_resume` (a filesystem-only snapshot must be resumed explicitly).
+    """
+
 
 class SandboxInfoLifecycle(TypedDict):
     """
