@@ -128,6 +128,8 @@ class ConnectionConfig:
             if validate_api_key is not None
             else ConnectionConfig._validate_api_key()
         )
+        # Deprecated: pass the token through `api_headers` instead, e.g.
+        # api_headers={"Authorization": f"Bearer {token}"}.
         self.access_token = access_token or ConnectionConfig._access_token()
         self.integration = integration
         self.headers = {**(headers or {}), **(api_headers or {})}

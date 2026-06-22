@@ -32,6 +32,9 @@ export interface ConnectionOpts {
   /**
    * E2B access token to use for authentication.
    *
+   * @deprecated Pass the token through `apiHeaders` instead, e.g.
+   * `apiHeaders: { Authorization: \`Bearer ${token}\` }`.
+   *
    * @default E2B_ACCESS_TOKEN // environment variable
    */
   accessToken?: string
@@ -224,6 +227,9 @@ export class ConnectionConfig {
 
   readonly apiKey?: string
   readonly validateApiKey: boolean
+  /**
+   * @deprecated Pass the token through `apiHeaders` instead.
+   */
   readonly accessToken?: string
 
   readonly integration?: string

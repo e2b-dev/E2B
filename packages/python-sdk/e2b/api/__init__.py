@@ -105,8 +105,6 @@ class ApiClient(AuthenticatedClient):
     def __init__(
         self,
         config: ConnectionConfig,
-        require_api_key: bool = True,
-        require_access_token: bool = False,
         transport: Optional[Union[BaseTransport, AsyncBaseTransport]] = None,
         transport_factory: Optional[Callable[[], BaseTransport]] = None,
         async_transport_factory: Optional[Callable[[], AsyncBaseTransport]] = None,
@@ -129,42 +127,31 @@ class ApiClient(AuthenticatedClient):
         ] = weakref.WeakKeyDictionary()
         self._proxy = config.proxy
 
-        if require_api_key and require_access_token:
+        if config.api_key is None:
             raise AuthenticationException(
-                "Only one of api_key or access_token can be required, not both",
+                "API key is required, please visit the API Keys tab at https://e2b.dev/dashboard?tab=keys to get your API key. "
+                "You can either set the environment variable `E2B_API_KEY` "
+                'or you can pass it directly to the method like api_key="e2b_..."',
             )
-
-        if not require_api_key and not require_access_token:
-            raise AuthenticationException(
-                "Either api_key or access_token is required",
-            )
-
-        token = None
-        if require_api_key:
-            if config.api_key is None:
-                raise AuthenticationException(
-                    "API key is required, please visit the Team tab at https://e2b.dev/dashboard to get your API key. "
-                    "You can either set the environment variable `E2B_API_KEY` "
-                    'or you can pass it directly to the method like api_key="e2b_..."',
-                )
-            token = config.api_key
 
         if config.api_key is not None and config.validate_api_key:
             validate_api_key(config.api_key)
 
-        if require_access_token:
-            if config.access_token is None:
-                raise AuthenticationException(
-                    "Access token is required, please visit the Personal tab at https://e2b.dev/dashboard to get your access token. "
-                    "You can set the environment variable `E2B_ACCESS_TOKEN` or pass the `access_token` in options.",
-                )
-            token = config.access_token
-
-        auth_header_name = "X-API-KEY" if require_api_key else "Authorization"
-        prefix = "" if require_api_key else "Bearer"
+        token = config.api_key
+        auth_header_name = "X-API-KEY"
+        prefix = ""
 
         headers = {
             **default_headers,
+            # Deprecated: send the access token alongside the API key when one
+            # is available, mirroring the JS SDK. Prefer `api_headers` instead.
+            # Spread before `config.headers` so a custom `Authorization` in
+            # `api_headers` wins over the deprecated access token, matching JS.
+            **(
+                {"Authorization": f"Bearer {config.access_token}"}
+                if config.access_token is not None
+                else {}
+            ),
             **(config.headers or {}),
         }
 

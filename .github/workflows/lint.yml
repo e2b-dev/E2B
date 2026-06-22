@@ -19,10 +19,11 @@ jobs:
         uses: dorny/paths-filter@v3
         id: filter
         with:
+          # `**/!(*.md)` excludes Markdown so docs-only changes don't trigger linting.
           filters: |
             code:
-              - 'packages/**'
-              - 'spec/**'
+              - 'packages/**/!(*.md)'
+              - 'spec/**/!(*.md)'
               - '.eslintrc.cjs'
               - '.prettierrc'
               - '.prettierignore'

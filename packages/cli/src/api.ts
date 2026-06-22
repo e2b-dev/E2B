@@ -95,8 +95,17 @@ export function resolveTeamId(
 
 const userConfig = getUserConfig()
 
+const resolvedAccessToken =
+  process.env.E2B_ACCESS_TOKEN || userConfig?.accessToken
+
 export const connectionConfig = new e2b.ConnectionConfig({
-  accessToken: process.env.E2B_ACCESS_TOKEN || userConfig?.accessToken,
   apiKey: process.env.E2B_API_KEY || userConfig?.teamApiKey,
+  apiHeaders: resolvedAccessToken
+    ? { Authorization: `Bearer ${resolvedAccessToken}` }
+    : undefined,
 })
-export const client = new e2b.ApiClient(connectionConfig)
+// The CLI authenticates team-scoped endpoints (e.g. `/teams`) with the access
+// token instead of an API key, so don't require an API key here.
+export const client = new e2b.ApiClient(connectionConfig, {
+  requireApiKey: false,
+})

@@ -1,9 +1,7 @@
-<!-- <p align="center">
-  <img width="100" src="/readme-assets/logo-circle.png" alt="e2b logo">
-</p> -->
-
-![E2B SDK Preview](/readme-assets/e2b-sdk-light.png#gh-light-mode-only)
-![E2B SDK Preview](/readme-assets/e2b-sdk-dark.png#gh-dark-mode-only)
+<p align="center">
+  <img src="/readme-assets/logo-black.png#gh-light-mode-only" alt="E2B Logo" width="200">
+  <img src="/readme-assets/logo-white.png#gh-dark-mode-only" alt="E2B Logo" width="200">
+</p>
 
 <h4 align="center">
   <a href="https://pypi.org/project/e2b/">
