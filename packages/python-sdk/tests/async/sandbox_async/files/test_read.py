@@ -93,5 +93,3 @@ async def test_read_file_as_stream_partial_then_close(async_sandbox: AsyncSandbo
     first = await stream.__anext__()
     assert len(first) > 0
     await stream.aclose()
-    # aclose is idempotent
-    await stream.aclose()

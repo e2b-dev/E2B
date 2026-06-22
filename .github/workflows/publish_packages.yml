@@ -95,6 +95,23 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git commit -am "[skip ci] Release new versions" || exit 0
+
+          # A PR merging mid-release makes this push a non-fast-forward. The
+          # artifacts were already published from the checked-out tree, so we
+          # only rebase the version bump over incoming changes that don't touch
+          # packages/. Otherwise the source would claim the published version
+          # contains code that isn't in the artifacts, so we fail loudly.
+          if git push; then
+            exit 0
+          fi
+
+          git fetch origin "${GITHUB_REF_NAME}"
+          if git diff --name-only "HEAD~1" FETCH_HEAD -- packages/ | grep -q .; then
+            echo "::error::'${GITHUB_REF_NAME}' advanced with changes under packages/ during the release. Refusing to rebase the version bump onto unpublished package code (the source would diverge from the published artifacts). Reconcile manually."
+            exit 1
+          fi
+
+          git pull --rebase origin "${GITHUB_REF_NAME}"
           git push
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

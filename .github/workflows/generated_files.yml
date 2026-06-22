@@ -20,12 +20,13 @@ jobs:
         uses: dorny/paths-filter@v3
         id: filter
         with:
+          # `**/!(*.md)` excludes Markdown so docs-only changes don't trigger codegen checks.
           filters: |
             generated:
-              - 'spec/**'
+              - 'spec/**/!(*.md)'
               - 'codegen.Dockerfile'
               - 'Makefile'
-              - 'packages/**'
+              - 'packages/**/!(*.md)'
               - 'pnpm-lock.yaml'
               - 'pnpm-workspace.yaml'
               - 'package.json'

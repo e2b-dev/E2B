@@ -17,10 +17,11 @@ jobs:
         uses: dorny/paths-filter@v3
         id: filter
         with:
+          # `**/!(*.md)` excludes Markdown so docs-only changes don't trigger typecheck.
           filters: |
             code:
-              - 'packages/**'
-              - 'spec/**'
+              - 'packages/**/!(*.md)'
+              - 'spec/**/!(*.md)'
               - 'pnpm-lock.yaml'
               - 'pnpm-workspace.yaml'
               - 'package.json'
