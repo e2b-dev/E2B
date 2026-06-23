@@ -39,9 +39,19 @@ class AsyncWatchHandle:
         """
         self._wait.cancel()
         try:
-            await self._wait
+            # `shield` keeps a cancellation of our own caller (e.g.
+            # asyncio.wait_for around stop() timing out) from propagating into
+            # the watcher task, so it isn't confused with the cancellation we
+            # triggered above and doesn't interrupt an in-flight on_exit.
+            await asyncio.shield(self._wait)
         except asyncio.CancelledError:
-            pass
+            # The watcher task handles its own cancellation internally and
+            # finishes normally, so this only fires when our caller was
+            # cancelled (`self._wait` still running) — propagate that instead of
+            # reporting a successful stop. If the task did end cancelled, that
+            # is the stop we initiated and is a clean exit.
+            if not self._wait.cancelled():
+                raise
         finally:
             try:
                 await self._events.aclose()

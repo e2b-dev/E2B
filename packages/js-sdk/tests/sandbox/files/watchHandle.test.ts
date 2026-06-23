@@ -173,6 +173,29 @@ describe('WatchHandle', () => {
     expect(exitError).toBeUndefined()
   })
 
+  test('routes a synchronous onEvent error to onExit even when it calls stop first', async () => {
+    const exited = deferred()
+    let exitError: Error | undefined
+
+    const handle = new WatchHandle(
+      () => {},
+      stream(filesystemEvent('a')),
+      () => {
+        // Request a stop and then fail synchronously — the failure must still
+        // reach onExit rather than being converted into a clean exit.
+        void handle.stop()
+        throw new Error('callback failed')
+      },
+      (err?: Error) => {
+        exitError = err
+        exited.resolve()
+      }
+    )
+
+    await exited.promise
+    expect(exitError?.message).toBe('callback failed')
+  })
+
   test('stop can be awaited from inside onExit without deadlocking', async () => {
     const finished = deferred()
     let reentrantStopResolved = false

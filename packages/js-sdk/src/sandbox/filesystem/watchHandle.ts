@@ -151,13 +151,24 @@ export class WatchHandle {
           continue
         }
 
-        const callback = this.onEvent?.({
-          name: event.value.name,
-          type: eventType,
-          entry: event.value.entry
-            ? mapEntryInfo(event.value.entry)
-            : undefined,
-        })
+        let callback: void | Promise<void>
+        try {
+          callback = this.onEvent?.({
+            name: event.value.name,
+            type: eventType,
+            entry: event.value.entry
+              ? mapEntryInfo(event.value.entry)
+              : undefined,
+          })
+        } catch (err) {
+          // A synchronous onEvent callback threw. Report it via onExit instead
+          // of letting it reach the outer catch, which suppresses errors once
+          // stop() has run — a callback that calls stop() before throwing would
+          // otherwise have its failure silently dropped. (Async rejections are
+          // captured below via the tracked promise.)
+          error = err as Error
+          break
+        }
 
         if (callback) {
           // Track the callback's settlement so a callback that has already

@@ -110,6 +110,30 @@ async def test_on_exit_called_without_error_on_stop():
     assert exit_errors == [None]
 
 
+async def test_stop_propagates_caller_cancellation():
+    async def events():
+        await asyncio.Event().wait()
+        yield
+
+    exit_started = asyncio.Event()
+
+    async def on_exit(error):
+        exit_started.set()
+        # Hang so stop() stays blocked awaiting the watcher task.
+        await asyncio.Event().wait()
+
+    handle = AsyncWatchHandle(events(), on_event=lambda e: None, on_exit=on_exit)
+
+    await asyncio.sleep(0.1)
+
+    # Cancelling the stop() caller (here via wait_for timing out) must surface
+    # as a timeout, not be swallowed and reported as a successful stop.
+    with pytest.raises(asyncio.TimeoutError):
+        await asyncio.wait_for(handle.stop(), timeout=0.2)
+
+    assert exit_started.is_set()
+
+
 async def test_stop_raises_on_exit_errors():
     async def events():
         await asyncio.Event().wait()
