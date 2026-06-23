@@ -321,3 +321,46 @@ sandboxTest('writeFiles overwrites existing files', async ({ sandbox }) => {
     await sandbox.files.remove(filename)
   }
 })
+
+sandboxTest(
+  'write ReadableStream with octet stream upload',
+  async ({ sandbox }) => {
+    const filename = 'test_write_octet_stream.bin'
+    const content = 'Streamed octet-stream upload. '.repeat(10_000)
+    const stream = new Blob([content]).stream()
+
+    const info = await sandbox.files.write(filename, stream, {
+      useOctetStream: true,
+    })
+    assert.equal(info.path, `/home/user/${filename}`)
+
+    const readContent = await sandbox.files.read(filename)
+    assert.equal(readContent, content)
+
+    if (isDebug) {
+      await sandbox.files.remove(filename)
+    }
+  }
+)
+
+sandboxTest(
+  'write ReadableStream with octet stream upload and gzip',
+  async ({ sandbox }) => {
+    const filename = 'test_write_octet_stream_gzip.bin'
+    const content = 'Streamed gzipped octet-stream upload. '.repeat(10_000)
+    const stream = new Blob([content]).stream()
+
+    const info = await sandbox.files.write(filename, stream, {
+      useOctetStream: true,
+      gzip: true,
+    })
+    assert.equal(info.path, `/home/user/${filename}`)
+
+    const readContent = await sandbox.files.read(filename)
+    assert.equal(readContent, content)
+
+    if (isDebug) {
+      await sandbox.files.remove(filename)
+    }
+  }
+)

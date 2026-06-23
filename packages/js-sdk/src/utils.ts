@@ -145,7 +145,11 @@ export function shellQuote(s: string): string {
 
 /**
  * Prepare data for upload as a BodyInit, optionally gzip-compressed.
- * When gzip is enabled, compresses the data and returns a Blob.
+ *
+ * Outside the browser, streams (and gzip-compressed data) are returned as
+ * `ReadableStream` so they can be uploaded without buffering in memory.
+ * Browsers don't support streaming request bodies, so data is buffered into
+ * a Blob there.
  */
 export async function toUploadBody(
   data: string | ArrayBuffer | Blob | ReadableStream,
@@ -159,7 +163,11 @@ export async function toUploadBody(
           ? data.stream()
           : new Blob([data]).stream()
     const compressed = stream.pipeThrough(new CompressionStream('gzip'))
-    return new Response(compressed).blob()
+    return runtime === 'browser' ? new Response(compressed).blob() : compressed
+  }
+
+  if (data instanceof ReadableStream && runtime !== 'browser') {
+    return data
   }
 
   return toBlob(data)

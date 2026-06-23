@@ -201,6 +201,118 @@ export function setupRequestController(
   return { controller, clearStartTimeout, cleanup }
 }
 
+/**
+ * Create a resettable idle-timeout that aborts `controller` when no progress is
+ * made within `idleTimeoutMs`. `arm` (re)starts the timer; call it on each
+ * chunk. `clear` stops it. `0`/`undefined` disables it (both are no-ops).
+ *
+ * @internal
+ */
+function createIdleAbort(
+  controller: AbortController,
+  idleTimeoutMs: number | undefined,
+  label: string
+): { arm: () => void; clear: () => void } {
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const clear = () => {
+    if (timer) {
+      clearTimeout(timer)
+      timer = undefined
+    }
+  }
+  const arm = () => {
+    if (!idleTimeoutMs) return
+    clear()
+    timer = setTimeout(
+      () =>
+        controller.abort(
+          new DOMException(
+            `${label} idle for ${idleTimeoutMs}ms`,
+            'TimeoutError'
+          )
+        ),
+      idleTimeoutMs
+    )
+  }
+  return { arm, clear }
+}
+
+/**
+ * Wrap a streaming response body so its pooled connection is released when the
+ * stream is fully read, cancelled, errors, or stays idle for too long.
+ *
+ * Clears the handshake timeout from {@link setupRequestController} (so
+ * consuming the body isn't killed by it) and replaces it with an idle-read
+ * timeout that bounds only the wire: it's armed while waiting on a network
+ * read and cleared the moment a chunk arrives, so a slow or paused consumer
+ * never trips it (only a server that stops sending mid-stream does). On expiry
+ * it aborts `controller`, tearing down the fetch and releasing the connection.
+ * Pass `0`/`undefined` to disable. Call once the handshake has succeeded.
+ *
+ * @internal
+ */
+export function wrapStreamWithConnectionCleanup(
+  body: ReadableStream<Uint8Array> | null,
+  {
+    clearStartTimeout,
+    cleanup,
+    controller,
+    idleTimeoutMs,
+  }: {
+    clearStartTimeout: () => void
+    cleanup: () => void
+    controller: AbortController
+    idleTimeoutMs?: number
+  }
+): ReadableStream<Uint8Array> {
+  clearStartTimeout()
+
+  if (!body) {
+    cleanup()
+    return new Blob([]).stream()
+  }
+
+  const reader = body.getReader()
+  const idle = createIdleAbort(controller, idleTimeoutMs, 'Stream')
+
+  // Idempotent: safe to call from multiple stream callbacks.
+  const release = () => {
+    idle.clear()
+    cleanup()
+  }
+
+  return new ReadableStream<Uint8Array>({
+    async pull(streamController) {
+      // Bound only the wire: arm before reading from the network and clear the
+      // moment a chunk (or EOF) arrives, so a slow or paused consumer never
+      // counts against the idle timeout. A consumer that holds the stream but
+      // stops reading is never pulled here, so nothing arms—that case is
+      // reclaimed server-side, not by this timer.
+      idle.arm()
+      try {
+        const { done, value } = await reader.read()
+        idle.clear()
+        if (done) {
+          release()
+          streamController.close()
+        } else {
+          streamController.enqueue(value)
+        }
+      } catch (err) {
+        release()
+        streamController.error(err)
+      }
+    },
+    async cancel(reason) {
+      try {
+        await reader.cancel(reason)
+      } finally {
+        release()
+      }
+    },
+  })
+}
+
 function buildUserAgent(integration?: string) {
   const userAgentParts = [`e2b-js-sdk/${version}`]
 

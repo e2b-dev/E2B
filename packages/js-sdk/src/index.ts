@@ -110,10 +110,14 @@ export type {
   VolumeInfo,
   VolumeAndToken,
   VolumeEntryStat,
-  VolumeMetadataOptions,
-  VolumeWriteOptions,
+  VolumeMetadataOpts,
+  VolumeReadOpts,
+  VolumeWriteOpts,
   VolumeApiOpts,
   VolumeConnectionConfig,
+  // Deprecated aliases, kept for backwards compatibility.
+  VolumeMetadataOptions,
+  VolumeWriteOptions,
 } from './volume'
 
 export { Sandbox }
