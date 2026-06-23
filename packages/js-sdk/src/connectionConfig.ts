@@ -265,13 +265,6 @@ export class ConnectionConfig {
     this.sandboxUrl = opts?.sandboxUrl || ConnectionConfig.sandboxUrl
   }
 
-  withIntegration(integration: string): ConnectionConfig {
-    return new ConnectionConfig({
-      ...this,
-      integration,
-    })
-  }
-
   private static get domain() {
     return getEnvVar('E2B_DOMAIN') || 'e2b.app'
   }

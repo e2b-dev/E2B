@@ -195,7 +195,9 @@ test('integration option is appended to the user agent', () => {
 })
 
 test('integration option survives config rebuilds', () => {
-  const config = new ConnectionConfig().withIntegration('testing/version')
+  const config = new ConnectionConfig({
+    integration: 'testing/version',
+  })
   const rebuiltConfig = new ConnectionConfig({ ...config })
 
   assert.equal(
