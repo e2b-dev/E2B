@@ -170,7 +170,11 @@ export async function uploadFile(
         )
       }
     } finally {
-      await cleanup()
+      // Cleanup is best-effort: a temp-removal failure (e.g. the read
+      // stream still holds the file) must not mask a successful upload as
+      // a FileUploadError, nor overwrite a real upload error. A leaked
+      // temp dir is non-fatal — the OS reclaims it.
+      await cleanup().catch(() => {})
     }
   } catch (error) {
     if (error instanceof FileUploadError) {

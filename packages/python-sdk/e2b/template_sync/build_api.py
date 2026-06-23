@@ -124,7 +124,13 @@ def upload_file(
                 response = client.put(url, content=tar_file)
             response.raise_for_status()
         finally:
-            tar_file.close()
+            # Closing the spooled temp file is best-effort: a failure here
+            # must not mask a successful upload as a FileUploadException,
+            # nor overwrite a real upload error.
+            try:
+                tar_file.close()
+            except Exception:
+                pass
     except httpx.HTTPStatusError as e:
         raise FileUploadException(f"Failed to upload file: {e}").with_traceback(
             stack_trace

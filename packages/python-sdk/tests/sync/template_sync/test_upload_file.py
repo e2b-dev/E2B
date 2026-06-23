@@ -1,7 +1,9 @@
 import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
+from unittest import mock
 
 from e2b.api.client.client import AuthenticatedClient
+from e2b.template import utils as template_utils
 from e2b.template_sync.build_api import upload_file
 
 
@@ -71,3 +73,61 @@ def test_upload_file_sets_content_length_and_no_chunked_encoding(tmp_path):
     if transfer_encoding is not None:
         assert "chunked" not in transfer_encoding.lower()
     assert "Authorization" not in state["headers"]
+
+
+def test_upload_file_ignores_post_upload_close_failure(tmp_path):
+    # Regression test: once S3 has accepted the archive, closing the spooled
+    # temp file in the `finally` block can raise. That failure must not be
+    # wrapped as a FileUploadException — the upload already succeeded.
+    (tmp_path / "hello.txt").write_text("hello world")
+
+    server, thread, state = _make_server()
+    host, port = server.server_address
+    url = f"http://{host}:{port}/upload"
+
+    real_tar_file_stream = template_utils.tar_file_stream
+
+    class _FailingCloseFile:
+        # Proxies a real spooled temp file but raises on close(). The
+        # underlying file object is a C type whose `close` attribute can't
+        # be reassigned, so we wrap it instead.
+        def __init__(self, inner):
+            self._inner = inner
+
+        def __getattr__(self, name):
+            return getattr(self._inner, name)
+
+        def __iter__(self):
+            return iter(self._inner)
+
+        def close(self):
+            # Run the real close so we don't leak the temp file, then
+            # simulate a close failure surfacing from the `finally`.
+            self._inner.close()
+            raise OSError("close failed")
+
+    def failing_close_stream(*args, **kwargs):
+        return _FailingCloseFile(real_tar_file_stream(*args, **kwargs))
+
+    try:
+        client = AuthenticatedClient(base_url="http://test", token="test")
+        with mock.patch(
+            "e2b.template_sync.build_api.tar_file_stream",
+            side_effect=failing_close_stream,
+        ):
+            # Must not raise despite close() failing after a 200 response.
+            upload_file(
+                api_client=client,
+                file_name="*.txt",
+                context_path=str(tmp_path),
+                url=url,
+                ignore_patterns=[],
+                resolve_symlinks=False,
+                stack_trace=None,
+            )
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=5)
+
+    assert state["headers"] is not None
