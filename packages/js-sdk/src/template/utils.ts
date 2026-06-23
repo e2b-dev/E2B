@@ -4,7 +4,6 @@ import path from 'node:path'
 import { dynamicImport, dynamicRequire } from '../utils'
 import { TemplateError } from '../errors'
 import { BASE_STEP_NAME, FINALIZE_STEP_NAME } from './consts'
-import type { Path } from 'glob'
 import type { BuildOptions } from './types'
 
 /**
@@ -140,9 +139,12 @@ export async function getAllFilesInPath(
   includeDirectories: boolean = true
 ) {
   const { glob } = await dynamicImport<typeof import('glob')>('glob')
-  const files = new Map<string, Path>()
 
-  const globFiles = await glob(src, {
+  // Match the pattern itself plus everything underneath any directory it
+  // matches, so a directory pattern expands to its full recursive contents.
+  // glob distributes the `/**/*` suffix across every match of `src` and
+  // returns a deduplicated, file-typed result set in one pass.
+  const matches = await glob([src, normalizePath(`${src}/**/*`)], {
     ignore: ignorePatterns,
     withFileTypes: true,
     dot: true,
@@ -150,35 +152,14 @@ export async function getAllFilesInPath(
     cwd: contextPath,
   })
 
-  for (const file of globFiles) {
-    if (file.isDirectory()) {
-      // For directories, add the directory itself and all files inside it
-      if (includeDirectories) {
-        files.set(file.fullpath(), file)
-      }
-      const dirPattern = normalizePath(
-        // When the matched directory is '.', `file.relative()` can be an empty string.
-        // In that case, we want to match all files under the current directory instead of
-        // creating an absolute glob like '/**/*' which would traverse the entire filesystem.
-        path.join(file.relative() || '.', '**/*')
-      )
-      const dirFiles = await glob(dirPattern, {
-        ignore: ignorePatterns,
-        withFileTypes: true,
-        dot: true,
-        cwd: contextPath,
-      })
-      dirFiles.forEach((f) => files.set(f.fullpath(), f))
-    } else {
-      // For files, just add the file
-      files.set(file.fullpath(), file)
-    }
-  }
+  const files = includeDirectories
+    ? matches
+    : matches.filter((f) => !f.isDirectory())
 
   // Sort by full path for a deterministic order — the default sort() would
   // stringify the Path objects to '[object Object]' and keep glob order,
   // making the files hash dependent on filesystem traversal order.
-  return Array.from(files.values()).sort((a, b) =>
+  return files.sort((a, b) =>
     a.fullpath() < b.fullpath() ? -1 : a.fullpath() > b.fullpath() ? 1 : 0
   )
 }
