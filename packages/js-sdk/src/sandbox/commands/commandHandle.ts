@@ -97,6 +97,12 @@ export class CommandHandle
   private result?: CommandResult
   private iterationError?: Error
 
+  private disconnected = false
+  private notifyDisconnected!: () => void
+  private readonly disconnectedPromise = new Promise<void>((resolve) => {
+    this.notifyDisconnected = resolve
+  })
+
   private readonly _wait: Promise<void>
 
   /**
@@ -184,9 +190,16 @@ export class CommandHandle
    *
    * The command is not killed, but SDK stops receiving events from the command.
    * You can reconnect to the command using {@link Commands.connect}.
+   *
+   * Resolves after event handling has fully ended: once it returns, the
+   * `onStdout`/`onStderr`/`onPty` callbacks are guaranteed not to fire again.
+   * An in-flight callback is abandoned, its result ignored.
    */
   async disconnect() {
+    this.disconnected = true
+    this.notifyDisconnected()
     this.handleDisconnect()
+    await this._wait
   }
 
   /**
@@ -327,12 +340,56 @@ export class CommandHandle
   private async handleEvents() {
     try {
       for await (const [stdout, stderr, pty] of this.iterateEvents()) {
+        // The handle was disconnected — stop dispatching to the callbacks even
+        // if late output still arrives on the stream before the underlying
+        // abort tears it down.
+        if (this.disconnected) {
+          break
+        }
+
+        let callback: void | Promise<void> | undefined
         if (stdout !== null) {
-          await this.onStdout?.(stdout)
+          callback = this.onStdout?.(stdout)
         } else if (stderr !== null) {
-          await this.onStderr?.(stderr)
+          callback = this.onStderr?.(stderr)
         } else if (pty) {
-          await this.onPty?.(pty)
+          callback = this.onPty?.(pty)
+        }
+
+        if (callback) {
+          // Track the callback's settlement so a callback that has already
+          // resolved or rejected always wins over a concurrent disconnect();
+          // only a callback that is still pending when disconnect() wins is
+          // abandoned. The tracking promise never rejects (both outcomes are
+          // handled), so an abandoned callback's later rejection cannot crash
+          // the process.
+          let settled = false
+          let callbackError: Error | undefined
+          const tracked = Promise.resolve(callback).then(
+            () => {
+              settled = true
+            },
+            (err) => {
+              settled = true
+              callbackError = err as Error
+            }
+          )
+
+          await Promise.race([tracked, this.disconnectedPromise])
+
+          if (settled) {
+            if (callbackError) {
+              // Surface a callback error the same way as before: route it
+              // through the stream error handling so `wait()` re-throws it.
+              throw callbackError
+            }
+          } else {
+            // Disconnected while the callback was still in flight — abandon it
+            // (the JS equivalent of the cancelled handler task in the Python
+            // SDK). Awaiting it here could deadlock when disconnect() is
+            // awaited from inside the callback itself.
+            break
+          }
         }
       }
     } catch (e) {

@@ -82,6 +82,54 @@ function endEvent(exitCode = 0) {
   }
 }
 
+// An async iterable whose events are delivered on demand. Lets a test hold the
+// handle's event loop blocked on `next()` (idle between bursts) and then push a
+// late event to simulate stdout arriving after `disconnect()` — the transport
+// condition that triggers the production leak. `return()` (called when the
+// handle's `for await` breaks) unblocks any pending read, mirroring the stream
+// being torn down from the client side.
+function createControllableEvents() {
+  const queue: any[] = []
+  let pending: ((result: IteratorResult<any>) => void) | undefined
+  let closed = false
+
+  const iterator: AsyncIterator<any> = {
+    next() {
+      if (queue.length > 0) {
+        return Promise.resolve({ value: queue.shift(), done: false })
+      }
+      if (closed) {
+        return Promise.resolve({ value: undefined, done: true })
+      }
+      return new Promise((resolve) => {
+        pending = resolve
+      })
+    },
+    return() {
+      closed = true
+      if (pending) {
+        const resolve = pending
+        pending = undefined
+        resolve({ value: undefined, done: true })
+      }
+      return Promise.resolve({ value: undefined, done: true })
+    },
+  }
+
+  return {
+    events: { [Symbol.asyncIterator]: () => iterator } as AsyncIterable<any>,
+    push(event: any) {
+      if (pending) {
+        const resolve = pending
+        pending = undefined
+        resolve({ value: event, done: false })
+      } else {
+        queue.push(event)
+      }
+    },
+  }
+}
+
 describe('CommandHandle', () => {
   it.each<EventKind>(['stdout', 'stderr', 'pty'])(
     'wait awaits async %s callbacks',
@@ -256,5 +304,113 @@ describe('CommandHandle', () => {
     await expect(handle.wait()).rejects.toThrow()
 
     expect(stdoutChunks.join('')).toBe('a�')
+  })
+
+  it('onStdout stops firing after await disconnect()', async () => {
+    const controllable = createControllableEvents()
+    const chunks: string[] = []
+
+    const handle = new CommandHandle(
+      1,
+      () => {},
+      async () => true,
+      controllable.events,
+      (out) => {
+        chunks.push(out)
+      }
+    )
+
+    // First burst is delivered to the live subscriber.
+    controllable.push(dataEvent('stdout', new TextEncoder().encode('a')))
+    await vi.waitFor(() => {
+      expect(chunks).toEqual(['a'])
+    })
+
+    // Disconnect while the event loop is idle (blocked on the next read), then
+    // push a late event — as if stdout arrived after the abort but before the
+    // stream was torn down. disconnect() must not resolve until handling has
+    // ended, and the late event must never reach the callback.
+    const disconnected = handle.disconnect()
+    controllable.push(dataEvent('stdout', new TextEncoder().encode('b')))
+    await disconnected
+
+    expect(chunks).toEqual(['a'])
+
+    // Any further output is ignored too.
+    controllable.push(dataEvent('stdout', new TextEncoder().encode('c')))
+    await new Promise((r) => setTimeout(r, 0))
+    expect(chunks).toEqual(['a'])
+  })
+
+  it('disconnect() abandons an in-flight callback instead of deadlocking', async () => {
+    const controllable = createControllableEvents()
+    let callbackStarted = false
+    let releaseCallback: (() => void) | undefined
+    const callbackBlocked = new Promise<void>((resolve) => {
+      releaseCallback = resolve
+    })
+
+    const handle = new CommandHandle(
+      1,
+      () => {},
+      async () => true,
+      controllable.events,
+      async () => {
+        callbackStarted = true
+        await callbackBlocked
+      }
+    )
+
+    controllable.push(dataEvent('stdout', new TextEncoder().encode('a')))
+    await vi.waitFor(() => {
+      expect(callbackStarted).toBe(true)
+    })
+
+    // The callback is still in flight; disconnect() must resolve without
+    // waiting for it to settle.
+    await handle.disconnect()
+
+    // Releasing the abandoned callback afterwards is harmless.
+    releaseCallback?.()
+  })
+
+  it('disconnect() resolves when awaited from inside a callback', async () => {
+    const controllable = createControllableEvents()
+    let disconnectReturned = false
+
+    const handle: CommandHandle = new CommandHandle(
+      1,
+      () => {},
+      async () => true,
+      controllable.events,
+      async () => {
+        await handle.disconnect()
+        disconnectReturned = true
+      }
+    )
+
+    controllable.push(dataEvent('stdout', new TextEncoder().encode('a')))
+    await vi.waitFor(() => {
+      expect(disconnectReturned).toBe(true)
+    })
+  })
+
+  it('surfaces an async callback error through wait()', async () => {
+    async function* events() {
+      yield dataEvent('stdout', new TextEncoder().encode('a'))
+      yield endEvent()
+    }
+
+    const handle = new CommandHandle(
+      1,
+      () => {},
+      async () => true,
+      events(),
+      async () => {
+        throw new Error('callback failed')
+      }
+    )
+
+    await expect(handle.wait()).rejects.toThrow('callback failed')
   })
 })
