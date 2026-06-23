@@ -1,5 +1,5 @@
 import datetime
-from io import BytesIO
+from io import BytesIO, StringIO
 
 import pytest
 
@@ -47,6 +47,16 @@ class TestWriteFileAndReadFile:
         async for chunk in read_stream:
             chunks.append(chunk)
         read_content = b"".join(chunks).decode("utf-8")
+
+        assert read_content == content
+
+    async def test_write_and_read_text_stream(self, async_volume: AsyncVolume):
+        path = "/test-text-stream.txt"
+        content = "Test text stream content"
+        stream = StringIO(content)
+
+        await async_volume.write_file(path, stream)
+        read_content = await async_volume.read_file(path, format="text")
 
         assert read_content == content
 

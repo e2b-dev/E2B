@@ -45,14 +45,14 @@ class AsyncCommandHandle:
         """
         Command stdout output.
         """
-        return self._stdout
+        return "".join(self._stdout_chunks)
 
     @property
     def stderr(self):
         """
         Command stderr output.
         """
-        return self._stderr
+        return "".join(self._stderr_chunks)
 
     @property
     def error(self):
@@ -101,8 +101,8 @@ class AsyncCommandHandle:
         self._check_health = check_health
         self._events = events
 
-        self._stdout: str = ""
-        self._stderr: str = ""
+        self._stdout_chunks: List[str] = []
+        self._stderr_chunks: List[str] = []
 
         self._stdout_decoder = codecs.getincrementaldecoder("utf-8")(errors="replace")
         self._stderr_decoder = codecs.getincrementaldecoder("utf-8")(errors="replace")
@@ -128,11 +128,11 @@ class AsyncCommandHandle:
         events: List[Union[Tuple[Stdout, None, None], Tuple[None, Stderr, None]]] = []
         out = self._stdout_decoder.decode(b"", final=True)
         if out:
-            self._stdout += out
+            self._stdout_chunks.append(out)
             events.append((out, None, None))
         err = self._stderr_decoder.decode(b"", final=True)
         if err:
-            self._stderr += err
+            self._stderr_chunks.append(err)
             events.append((None, err, None))
         return events
 
@@ -152,12 +152,12 @@ class AsyncCommandHandle:
                     if event.event.data.stdout:
                         out = self._stdout_decoder.decode(event.event.data.stdout)
                         if out:
-                            self._stdout += out
+                            self._stdout_chunks.append(out)
                             yield out, None, None
                     if event.event.data.stderr:
                         out = self._stderr_decoder.decode(event.event.data.stderr)
                         if out:
-                            self._stderr += out
+                            self._stderr_chunks.append(out)
                             yield None, out, None
                     if event.event.data.pty:
                         yield None, None, event.event.data.pty
@@ -165,8 +165,8 @@ class AsyncCommandHandle:
                     for flushed in self._flush_decoders():
                         yield flushed
                     self._result = CommandResult(
-                        stdout=self._stdout,
-                        stderr=self._stderr,
+                        stdout="".join(self._stdout_chunks),
+                        stderr="".join(self._stderr_chunks),
                         exit_code=event.event.end.exit_code,
                         error=event.event.end.error,
                     )
@@ -240,8 +240,8 @@ class AsyncCommandHandle:
 
         if self._result.exit_code != 0:
             raise CommandExitException(
-                stdout=self._stdout,
-                stderr=self._stderr,
+                stdout="".join(self._stdout_chunks),
+                stderr="".join(self._stderr_chunks),
                 exit_code=self._result.exit_code,
                 error=self._result.error,
             )

@@ -1,3 +1,4 @@
+import io
 from typing import IO, Iterator, List, Literal, Optional, Union, cast, overload
 from http import HTTPStatus
 
@@ -46,6 +47,7 @@ from e2b.volume.types import (
     VolumeInfo,
     VolumeEntryStat,
 )
+from e2b.io_utils import iter_io_chunks
 from e2b.volume.utils import DualMethod, convert_volume_entry_stat
 
 
@@ -442,6 +444,7 @@ class Volume:
         self,
         path: str,
         format: Literal["stream"],
+        stream_idle_timeout: Optional[float] = None,
         **opts: Unpack[VolumeApiParams],
     ) -> Iterator[bytes]: ...
 
@@ -449,6 +452,7 @@ class Volume:
         self,
         path: str,
         format: Literal["text", "bytes", "stream"] = "text",
+        stream_idle_timeout: Optional[float] = None,
         **opts: Unpack[VolumeApiParams],
     ) -> Union[str, bytes, Iterator[bytes]]:
         """
@@ -458,6 +462,11 @@ class Volume:
 
         :param path: Path to the file
         :param format: Format of the file content—`text` by default
+        :param stream_idle_timeout: Idle timeout in **seconds** for a streamed
+            read (`format="stream"`)—abort if no chunk arrives within this
+            window while reading. Resets on every chunk, so it bounds a stalled
+            stream without limiting total transfer time. Defaults to the request
+            timeout; pass `0` to disable.
         :param opts: Connection options
 
         :return: File content as string, bytes, or iterator of bytes
@@ -471,13 +480,23 @@ class Volume:
         )
 
         if format == "stream":
+            # The request timeout bounds connection setup, not total transfer;
+            # consuming the body must not be killed by it. httpx's per-chunk
+            # `read` timeout becomes the idle-read timeout for the body
+            # (defaults to the request timeout), bounding a stalled stream
+            # without limiting total transfer time. Pass `0` to disable.
+            # Mirrors the sandbox files stream path.
+            idle_timeout = (
+                timeout if stream_idle_timeout is None else stream_idle_timeout
+            )
+            stream_timeout = httpx.Timeout(timeout, read=idle_timeout or None)
 
             def stream_file() -> Iterator[bytes]:
                 with api_client.get_httpx_client().stream(
                     method="GET",
                     url=f"/volumecontent/{self._volume_id}/file",
                     params=params,
-                    timeout=timeout,
+                    timeout=stream_timeout,
                 ) as response:
                     if response.status_code == 404:
                         raise NotFoundException(f"Path {path} not found")
@@ -522,7 +541,7 @@ class Volume:
     def write_file(
         self,
         path: str,
-        data: Union[str, bytes, IO[bytes]],
+        data: Union[str, bytes, IO],
         uid: Optional[int] = None,
         gid: Optional[int] = None,
         mode: Optional[int] = None,
@@ -536,7 +555,7 @@ class Volume:
         Writing to a file that already exists overwrites the file.
 
         :param path: Path to the file
-        :param data: Data to write to the file. Data can be a string, bytes, or IO.
+        :param data: Data to write to the file. Data can be a string, bytes, or IO. File-like objects are streamed in chunks instead of being buffered in memory.
         :param uid: User ID of the created file
         :param gid: Group ID of the created file
         :param mode: Mode of the created file
@@ -553,22 +572,23 @@ class Volume:
         if upload_timeout is not None:
             api_client = api_client.with_timeout(httpx.Timeout(upload_timeout))
 
+        content: Union[bytes, IO[bytes], Iterator[bytes]]
         if isinstance(data, str):
-            data_bytes = data.encode("utf-8")
+            content = data.encode("utf-8")
         elif isinstance(data, bytes):
-            data_bytes = data
+            content = data
+        elif isinstance(data, io.TextIOBase):
+            # Text-mode IO yields str chunks—encode them while streaming.
+            content = iter_io_chunks(data)
         elif hasattr(data, "read"):
-            content = data.read()
-            if isinstance(content, bytes):
-                data_bytes = content
-            else:
-                data_bytes = content.encode("utf-8")
+            # httpx streams file-like objects in chunks without buffering.
+            content = data
         else:
             raise ValueError(f"Unsupported data type: {type(data)}")
 
         res = put_file.sync_detailed(
             self._volume_id,
-            body=FilePayload(payload=data_bytes),  # type: ignore[arg-type]  # Pass bytes directly for sync httpx compatibility
+            body=FilePayload(payload=content),  # type: ignore[arg-type]  # httpx accepts bytes and streamable content directly
             path=path,
             uid=uid if uid is not None else UNSET,
             gid=gid if gid is not None else UNSET,
