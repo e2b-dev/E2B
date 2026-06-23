@@ -78,6 +78,10 @@ export interface FilesystemEvent {
  */
 export class WatchHandle {
   private stopped = false
+  // True only while `handleEvents` is awaiting the `onExit` callback. Lets
+  // `stop()` detect a re-entrant call from inside `onExit` and skip awaiting
+  // `handlingEvents`, which would otherwise deadlock.
+  private inOnExit = false
   private notifyStopped!: () => void
   private readonly stoppedPromise = new Promise<void>((resolve) => {
     this.notifyStopped = resolve
@@ -104,11 +108,22 @@ export class WatchHandle {
    * Resolves after the watching has fully ended and the `onExit` callback (if
    * any) has completed; errors thrown by `onExit` are re-thrown here. An
    * in-flight `onEvent` callback is abandoned, its result ignored.
+   *
+   * Safe to call (and `await`) from within an `onEvent` or `onExit` callback:
+   * such a re-entrant call returns once the teardown it triggered is underway
+   * instead of awaiting `handlingEvents`, which would otherwise deadlock.
    */
   async stop() {
     this.stopped = true
     this.notifyStopped()
     this.handleStop()
+    // When `stop()` is called from inside `onExit`, awaiting `handlingEvents`
+    // would deadlock: it cannot settle until `onExit` returns, and `onExit` is
+    // blocked awaiting this call. `onExit` already received the exit error as
+    // its argument, so returning early loses nothing.
+    if (this.inOnExit) {
+      return
+    }
     await this.handlingEvents
   }
 
@@ -187,9 +202,11 @@ export class WatchHandle {
       }
     }
 
+    this.inOnExit = true
     try {
       await this.onExit?.(error)
     } finally {
+      this.inOnExit = false
       this.handleStop()
     }
   }

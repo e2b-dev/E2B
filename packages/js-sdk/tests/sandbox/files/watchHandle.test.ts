@@ -173,6 +173,47 @@ describe('WatchHandle', () => {
     expect(exitError).toBeUndefined()
   })
 
+  test('stop can be awaited from inside onExit without deadlocking', async () => {
+    const finished = deferred()
+    let reentrantStopResolved = false
+
+    const handle = new WatchHandle(
+      () => {},
+      stream(filesystemEvent('a')),
+      undefined,
+      async () => {
+        // A re-entrant stop() from within onExit must not await handlingEvents
+        // (which can only settle once this callback returns) or it deadlocks.
+        await handle.stop()
+        reentrantStopResolved = true
+        finished.resolve()
+      }
+    )
+
+    await finished.promise
+    expect(reentrantStopResolved).toBe(true)
+  })
+
+  test('stop rethrows onExit error when called after the watch already ended', async () => {
+    const exited = deferred()
+
+    const handle = new WatchHandle(
+      () => {},
+      stream(),
+      undefined,
+      () => {
+        exited.resolve()
+        throw new Error('onExit failed')
+      }
+    )
+
+    // Let the watch end on its own and onExit settle before stopping.
+    await exited.promise
+    await new Promise((r) => setTimeout(r, 0))
+
+    await expect(handle.stop()).rejects.toThrow('onExit failed')
+  })
+
   test('stop rethrows errors raised by onExit', async () => {
     let abort!: (err: Error) => void
     const aborted = new Promise<never>((_, reject) => {
