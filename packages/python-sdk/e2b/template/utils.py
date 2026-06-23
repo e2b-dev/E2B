@@ -293,7 +293,12 @@ def tar_file_stream(
         tar_file.seek(0)
         return tar_file
     except Exception:
-        tar_file.close()
+        # Best-effort cleanup: a close failure must not replace the real
+        # archive-creation error.
+        try:
+            tar_file.close()
+        except Exception:
+            pass
         raise
 
 
