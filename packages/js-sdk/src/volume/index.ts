@@ -13,7 +13,7 @@ import {
   wrapStreamWithConnectionCleanup,
 } from '../connectionConfig'
 import { NotFoundError, VolumeError } from '../errors'
-import { runtime, toBlob } from '../utils'
+import { toUploadBody } from '../utils'
 import { VolumeFileType } from './types'
 import type {
   VolumeAndToken,
@@ -661,9 +661,10 @@ export class Volume {
     })
     const client = new VolumeApiClient(config)
 
-    // Browsers don't support streaming request bodies, so buffer there.
-    const isStream = data instanceof ReadableStream && runtime !== 'browser'
-    const body = isStream ? data : await toBlob(data)
+    // `toUploadBody` returns a `ReadableStream` only when the body should be
+    // streamed (non-browser stream input); otherwise it buffers into a Blob.
+    const body = await toUploadBody(data)
+    const isStream = body instanceof ReadableStream
 
     // A streamed upload carries no client-side timeout: the socket-write
     // "wire" isn't observable through fetch, and a stalled producer is the
