@@ -128,6 +128,27 @@ def test_sync_has_no_background_subscription():
     assert consumed == []
 
 
+def test_sync_records_result_before_yielding_flushed_chunk():
+    # A consumer that stops iterating right after the end event's flushed chunk
+    # must still observe the exit code: the result is recorded before the
+    # flushed chunk is yielded.
+    def events():
+        yield _stdout_event(b"a" + EMOJI_BYTES[:2])
+        yield _end_event(0)
+
+    handle = CommandHandle(pid=1, handle_kill=lambda: True, events=events())
+    iterator = iter(handle)
+    assert next(iterator) == ("a", None, None)
+    # The end event flushes a trailing replacement character; pull just that
+    # chunk and then stop iterating.
+    next(iterator)
+    iterator.close()
+
+    assert handle._result is not None
+    assert handle._result.exit_code == 0
+    assert handle._result.stdout == "a�"
+
+
 def test_sync_decodes_multibyte_chars_split_across_chunks():
     def events():
         yield _stdout_event(b"a" + EMOJI_BYTES[:2])

@@ -302,12 +302,21 @@ export class CommandHandle
             }
             break
           case 'end': {
-            yield* this.flushDecoders()
+            // Flush trailing decoder bytes into the accumulators and record the
+            // result *before* yielding the flushed chunks. A disconnected
+            // consumer breaks out of `handleEvents` on the first yielded chunk,
+            // which would otherwise abort this generator before `this.result`
+            // is assigned and make `wait()` fail as if the process never
+            // produced a result.
+            const flushed = [...this.flushDecoders()]
             this.result = {
               exitCode: e.value.exitCode,
               error: e.value.error,
               stdout: this.stdout,
               stderr: this.stderr,
+            }
+            for (const chunk of flushed) {
+              yield chunk
             }
             break
           }

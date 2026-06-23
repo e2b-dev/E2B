@@ -412,6 +412,50 @@ describe('CommandHandle', () => {
     })
   })
 
+  it('records the exit code when disconnected before an end event with trailing bytes', async () => {
+    const controllable = createControllableEvents()
+    const emojiBytes = new TextEncoder().encode('😀')
+    const chunks: string[] = []
+
+    const handle = new CommandHandle(
+      1,
+      () => {},
+      async () => true,
+      controllable.events,
+      (out) => {
+        chunks.push(out)
+      }
+    )
+
+    // First chunk leaves an incomplete multibyte sequence buffered in the
+    // decoder, so the end event will flush a trailing replacement character.
+    controllable.push(
+      dataEvent(
+        'stdout',
+        new Uint8Array([
+          ...new TextEncoder().encode('a'),
+          ...emojiBytes.slice(0, 2),
+        ])
+      )
+    )
+    await vi.waitFor(() => {
+      expect(chunks).toEqual(['a'])
+    })
+
+    // Disconnect, then the process exits. The end event carries a flushed
+    // chunk; wait() must still surface the exit code instead of failing as if
+    // the process never produced a result.
+    await handle.disconnect()
+    controllable.push(endEvent(0))
+
+    const result = await handle.wait()
+    expect(result.exitCode).toBe(0)
+    expect(result.stdout).toBe('a�')
+    // The flushed chunk was produced after disconnect, so it must not reach
+    // the live callback.
+    expect(chunks).toEqual(['a'])
+  })
+
   it('surfaces an async callback error through wait()', async () => {
     async function* events() {
       yield dataEvent('stdout', new TextEncoder().encode('a'))
