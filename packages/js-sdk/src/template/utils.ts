@@ -403,7 +403,9 @@ export async function tarFileToTempFile(
     const { size } = await fs.promises.stat(tarPath)
     return { path: tarPath, size, cleanup }
   } catch (err) {
-    await cleanup()
+    // Best-effort cleanup: a temp-removal failure must not replace the real
+    // archive-creation error with a generic rm error.
+    await cleanup().catch(() => {})
     throw err
   }
 }
