@@ -8,40 +8,28 @@ export let apiKey = process.env.E2B_API_KEY
 export let accessToken = process.env.E2B_ACCESS_TOKEN
 export const teamId = process.env.E2B_TEAM_ID
 
-const authErrorBox = (keyName: string) => {
-  let link
-  let msg
-  switch (keyName) {
-    case 'E2B_API_KEY':
-      link = 'https://e2b.dev/dashboard?tab=keys'
-      msg = 'API key'
-      break
-    case 'E2B_ACCESS_TOKEN':
-      link = 'https://e2b.dev/dashboard?tab=personal'
-      msg = 'access token'
-      break
-  }
-  // throwing error in default in switch statement results in unreachable code,
-  // so we need to check if link and msg are defined here instead
-  if (!link || !msg) {
-    throw new Error(`Unknown key name: ${keyName}`)
-  }
-  return boxen.default(
-    `You must be logged in to use this command. Run ${asBold('e2b auth login')}.
+const authErrorBox = (keyName: 'E2B_API_KEY' | 'E2B_ACCESS_TOKEN') => {
+  const link =
+    keyName === 'E2B_API_KEY'
+      ? 'https://e2b.dev/dashboard?tab=keys'
+      : 'https://e2b.dev/dashboard?tab=personal'
+  const msg = keyName === 'E2B_API_KEY' ? 'API key' : 'access token'
+  const body = `You must be logged in to use this command. Run ${asBold(
+    'e2b auth login'
+  )}.
 
 If you are seeing this message in CI/CD you may need to set the ${asBold(
-      `${keyName}`
-    )} environment variable.
-Visit ${asPrimary(link)} to get the ${msg}.`,
-    {
-      width: 70,
-      float: 'center',
-      padding: 0.5,
-      margin: 1,
-      borderStyle: 'round',
-      borderColor: 'redBright',
-    }
-  )
+    keyName
+  )} environment variable.
+Visit ${asPrimary(link)} to get the ${msg}.`
+  return boxen.default(body, {
+    width: 70,
+    float: 'center',
+    padding: 0.5,
+    margin: 1,
+    borderStyle: 'round',
+    borderColor: 'redBright',
+  })
 }
 
 export function ensureAPIKey() {
@@ -107,8 +95,17 @@ export function resolveTeamId(
 
 const userConfig = getUserConfig()
 
+const resolvedAccessToken =
+  process.env.E2B_ACCESS_TOKEN || userConfig?.accessToken
+
 export const connectionConfig = new e2b.ConnectionConfig({
-  accessToken: process.env.E2B_ACCESS_TOKEN || userConfig?.accessToken,
   apiKey: process.env.E2B_API_KEY || userConfig?.teamApiKey,
+  apiHeaders: resolvedAccessToken
+    ? { Authorization: `Bearer ${resolvedAccessToken}` }
+    : undefined,
 })
-export const client = new e2b.ApiClient(connectionConfig)
+// The CLI authenticates team-scoped endpoints (e.g. `/teams`) with the access
+// token instead of an API key, so don't require an API key here.
+export const client = new e2b.ApiClient(connectionConfig, {
+  requireApiKey: false,
+})

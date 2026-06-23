@@ -12,10 +12,12 @@ import {
   formatSandboxTimeoutError,
   AuthenticationError,
   RateLimitError,
+  TimeoutError,
 } from '../errors'
 import { StartResponse, ConnectResponse } from './process/process_pb'
 import { Code, ConnectError } from '@connectrpc/connect'
 import { WatchDirResponse } from './filesystem/filesystem_pb'
+import { isConnectionTerminatedMessage, SandboxHealthCheck } from './rpc'
 
 type ApiError = { message?: string } | string
 
@@ -27,6 +29,65 @@ const DEFAULT_ERROR_MAP: Record<number, (message: string) => Error> = {
     new RateLimitError(`${message}: The requests are being rate limited.`),
   502: formatSandboxTimeoutError,
   507: (message) => new NotEnoughSpaceError(message),
+}
+
+const HEALTH_CHECK_TIMEOUT_MS = 5_000
+
+/**
+ * Probes the sandbox's envd health endpoint.
+ *
+ * @param envdApi - The envd API client of the sandbox.
+ * @returns `true` if the sandbox is running, `false` if it is not, `undefined` if its state could not be determined.
+ */
+export async function checkSandboxHealth(
+  envdApi: EnvdApiClient
+): Promise<boolean | undefined> {
+  try {
+    const res = await envdApi.api.GET('/health', {
+      signal: AbortSignal.timeout(HEALTH_CHECK_TIMEOUT_MS),
+    })
+
+    if (res.response.status === 502) {
+      return false
+    }
+    if (res.response.ok) {
+      return true
+    }
+
+    return undefined
+  } catch {
+    return undefined
+  }
+}
+
+/**
+ * Handles transport-level fetch failures from envd API calls. When the connection was
+ * dropped mid-request, probes the sandbox health to tell apart the sandbox being killed
+ * from a transient network failure (e.g. a load balancer dropping the connection).
+ *
+ * @param err - The caught error, expected to be a fetch transport failure.
+ * @param checkHealth - Probe returning whether the sandbox is running, or `undefined` when unknown.
+ * @returns A `TimeoutError` when the connection was terminated mid-request and the sandbox is confirmed gone, or the original error otherwise.
+ */
+export async function handleEnvdApiFetchError(
+  err: unknown,
+  checkHealth?: SandboxHealthCheck
+): Promise<Error> {
+  // A connection dropped mid-body surfaces as a fetch failure whose message varies
+  // by runtime (e.g. undici's 'terminated'); match every known variant.
+  if (err instanceof Error && isConnectionTerminatedMessage(err.message)) {
+    const running = checkHealth
+      ? await checkHealth().catch(() => undefined)
+      : undefined
+
+    if (running === false) {
+      return new TimeoutError(
+        `${err.message}: The sandbox was killed or reached its end of life while the request was in flight.`
+      )
+    }
+  }
+
+  return err as Error
 }
 
 /**
@@ -134,7 +195,11 @@ class EnvdApiClient {
   readonly version: string
 
   constructor(
-    config: Pick<ConnectionConfig, 'apiUrl' | 'logger' | 'accessToken'> & {
+    config: Pick<ConnectionConfig, 'apiUrl' | 'logger'> & {
+      /**
+       * Sandbox-scoped envd access token, sent as the `X-Access-Token` header.
+       */
+      envdAccessToken?: string
       fetch?: (request: Request) => ReturnType<typeof fetch>
       headers?: Record<string, string>
     },
@@ -145,7 +210,12 @@ class EnvdApiClient {
     this.api = createClient({
       baseUrl: config.apiUrl,
       fetch: config?.fetch,
-      headers: config?.headers,
+      headers: {
+        ...config?.headers,
+        ...(config.envdAccessToken && {
+          'X-Access-Token': config.envdAccessToken,
+        }),
+      },
       // In HTTP 1.1, all connections are considered persistent unless declared otherwise
       // keepalive: true,
     })

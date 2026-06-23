@@ -1,7 +1,29 @@
-import { assert, test, expect } from 'vitest'
+import { assert, test, expect, vi } from 'vitest'
 
 import { Sandbox } from '../../src'
 import { isDebug, sandboxTest, template } from '../setup.js'
+
+test('connect in debug mode does not call the API', async () => {
+  const fetchSpy = vi.fn(() => {
+    throw new Error('unexpected request in debug mode')
+  })
+  vi.stubGlobal('fetch', fetchSpy)
+
+  try {
+    const sbx = await Sandbox.connect('debug-sandbox-id', {
+      debug: true,
+      apiKey: 'test-api-key',
+    })
+    assert.equal(sbx.sandboxId, 'debug-sandbox-id')
+
+    const sameSbx = await sbx.connect()
+    assert.strictEqual(sameSbx, sbx)
+
+    expect(fetchSpy).not.toHaveBeenCalled()
+  } finally {
+    vi.unstubAllGlobals()
+  }
+})
 
 test.skipIf(isDebug)('connect', async () => {
   const sbx = await Sandbox.create(template, { timeoutMs: 10_000 })

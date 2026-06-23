@@ -1,9 +1,31 @@
+import asyncio
 import json
 
+import httpx
 import pytest
 
 from e2b import SandboxNetworkOpts
 from e2b.sandbox.commands.command_handle import CommandExitException
+
+
+async def wait_for_status(
+    client: httpx.AsyncClient,
+    url: str,
+    status_code: int,
+    headers: dict[str, str] | None = None,
+    timeout: float = 15,
+) -> httpx.Response:
+    deadline = asyncio.get_running_loop().time() + timeout
+    response: httpx.Response | None = None
+
+    while asyncio.get_running_loop().time() < deadline:
+        response = await client.get(url, headers=headers, follow_redirects=True)
+        if response.status_code == status_code:
+            return response
+        await asyncio.sleep(1)
+
+    assert response is not None
+    return response
 
 
 @pytest.mark.skip_debug()
@@ -104,10 +126,6 @@ async def test_allow_public_traffic_false(async_sandbox_factory):
         secure=True, network=SandboxNetworkOpts(allow_public_traffic=False)
     )
 
-    import asyncio
-
-    import httpx
-
     # Verify the sandbox was created successfully and has a traffic access token
     assert async_sandbox.traffic_access_token is not None
 
@@ -130,7 +148,7 @@ async def test_allow_public_traffic_false(async_sandbox_factory):
 
         # Test 2: Request with valid traffic access token should succeed
         headers = {"e2b-traffic-access-token": async_sandbox.traffic_access_token}
-        response = await client.get(sandbox_url, headers=headers, follow_redirects=True)
+        response = await wait_for_status(client, sandbox_url, 200, headers=headers)
         assert response.status_code == 200
 
 
@@ -140,10 +158,6 @@ async def test_allow_public_traffic_true(async_sandbox_factory):
     async_sandbox = await async_sandbox_factory(
         network=SandboxNetworkOpts(allow_public_traffic=True)
     )
-
-    import asyncio
-
-    import httpx
 
     # Start a simple HTTP server in the sandbox
     port = 8080
@@ -159,7 +173,7 @@ async def test_allow_public_traffic_true(async_sandbox_factory):
 
     async with httpx.AsyncClient() as client:
         # Request without traffic access token should succeed (public access enabled)
-        response = await client.get(sandbox_url, follow_redirects=True)
+        response = await wait_for_status(client, sandbox_url, 200)
         assert response.status_code == 200
 
 

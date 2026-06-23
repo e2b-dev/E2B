@@ -1,23 +1,18 @@
 name: Build and push prepared templates
 
 on:
-  push:
-    paths:
-      - 'templates/**'
-      - '.github/workflows/templates.yml'
-    branches:
-      - main
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  buildAndPublish:
+  buildAndPushImage:
     defaults:
       run:
         working-directory: ./templates/base
 
-    name: Build and Push Images
+    name: Build and Push Image to DockerHub
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout repository
@@ -39,3 +34,19 @@ jobs:
             --platform linux/amd64,linux/arm64 \
             --push \
             --tag ${{ secrets.DOCKERHUB_USERNAME }}/base:latest .
+
+  buildTemplate:
+    name: Build and Publish E2B Template
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build and install E2B CLI
+        uses: ./.github/actions/build-cli
+
+      - name: Build and publish base template
+        working-directory: ./templates/base
+        env:
+          E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+        run: e2b template create base --memory-mb 512

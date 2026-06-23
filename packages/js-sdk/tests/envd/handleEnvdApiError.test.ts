@@ -1,5 +1,5 @@
 import { assert, test, describe } from 'vitest'
-import { handleEnvdApiError } from '../../src/envd/api'
+import { handleEnvdApiError, handleEnvdApiFetchError } from '../../src/envd/api'
 import {
   AuthenticationError,
   InvalidArgumentError,
@@ -100,5 +100,53 @@ describe('handleEnvdApiError', () => {
     const err = await handleEnvdApiError(res)
     assert.instanceOf(err, SandboxError)
     assert.include(err?.message, '500')
+  })
+})
+
+describe('handleEnvdApiFetchError', () => {
+  test('returns the original error for terminated fetch without a health check', async () => {
+    const original = new TypeError('terminated')
+    const err = await handleEnvdApiFetchError(original)
+    assert.strictEqual(err, original)
+  })
+
+  test('returns a TimeoutError when the health check says the sandbox is not running', async () => {
+    const err = await handleEnvdApiFetchError(
+      new TypeError('terminated'),
+      async () => false
+    )
+    assert.instanceOf(err, TimeoutError)
+    assert.include(err.message, 'sandbox was killed or reached its end of life')
+  })
+
+  // Each JS runtime surfaces a dropped connection with different wording, and not
+  // always as a TypeError (Bun raises a plain Error), so match by message
+  const runtimeTerminatedErrors = {
+    Node: new TypeError('terminated'),
+    Bun: new Error('The socket connection was closed unexpectedly'),
+    Deno: new TypeError('error reading a body from connection'),
+  }
+
+  for (const [runtime, error] of Object.entries(runtimeTerminatedErrors)) {
+    test(`treats the ${runtime} dropped-connection error as terminated`, async () => {
+      const err = await handleEnvdApiFetchError(error, async () => false)
+      assert.instanceOf(err, TimeoutError)
+      assert.include(
+        err.message,
+        'sandbox was killed or reached its end of life'
+      )
+    })
+  }
+
+  test('returns the original error when the health check says the sandbox is running', async () => {
+    const original = new TypeError('terminated')
+    const err = await handleEnvdApiFetchError(original, async () => true)
+    assert.strictEqual(err, original)
+  })
+
+  test('returns the original error for other fetch failures', async () => {
+    const original = new TypeError('fetch failed')
+    const err = await handleEnvdApiFetchError(original)
+    assert.strictEqual(err, original)
   })
 })

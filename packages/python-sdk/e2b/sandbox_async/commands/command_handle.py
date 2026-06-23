@@ -1,16 +1,19 @@
 import asyncio
+import codecs
 import inspect
 from typing import (
     Optional,
     Callable,
     Any,
     AsyncGenerator,
+    List,
+    Awaitable,
     Union,
     Tuple,
     Coroutine,
 )
 
-from e2b.envd.rpc import handle_rpc_exception
+from e2b.envd.rpc import ahandle_rpc_exception_with_health
 from e2b.envd.process import process_pb2
 from e2b.exceptions import SandboxException
 from e2b.sandbox.commands.command_handle import (
@@ -42,14 +45,14 @@ class AsyncCommandHandle:
         """
         Command stdout output.
         """
-        return self._stdout
+        return "".join(self._stdout_chunks)
 
     @property
     def stderr(self):
         """
         Command stderr output.
         """
-        return self._stderr
+        return "".join(self._stderr_chunks)
 
     @property
     def error(self):
@@ -89,15 +92,20 @@ class AsyncCommandHandle:
         handle_close_stdin: Optional[
             Callable[[Optional[float]], Coroutine[Any, Any, None]]
         ] = None,
+        check_health: Optional[Callable[[], Awaitable[Optional[bool]]]] = None,
     ):
         self._pid = pid
         self._handle_kill = handle_kill
         self._handle_send_stdin = handle_send_stdin
         self._handle_close_stdin = handle_close_stdin
+        self._check_health = check_health
         self._events = events
 
-        self._stdout: str = ""
-        self._stderr: str = ""
+        self._stdout_chunks: List[str] = []
+        self._stderr_chunks: List[str] = []
+
+        self._stdout_decoder = codecs.getincrementaldecoder("utf-8")(errors="replace")
+        self._stderr_decoder = codecs.getincrementaldecoder("utf-8")(errors="replace")
 
         self._on_stdout = on_stdout
         self._on_stderr = on_stderr
@@ -107,6 +115,26 @@ class AsyncCommandHandle:
         self._iteration_exception: Optional[Exception] = None
 
         self._wait = asyncio.create_task(self._handle_events())
+
+    def _flush_decoders(
+        self,
+    ) -> List[Union[Tuple[Stdout, None, None], Tuple[None, Stderr, None]]]:
+        """
+        Flush any bytes still buffered in the stream decoders.
+
+        Incomplete trailing UTF-8 sequences are emitted as replacement
+        characters, matching the per-chunk decoding behavior.
+        """
+        events: List[Union[Tuple[Stdout, None, None], Tuple[None, Stderr, None]]] = []
+        out = self._stdout_decoder.decode(b"", final=True)
+        if out:
+            self._stdout_chunks.append(out)
+            events.append((out, None, None))
+        err = self._stderr_decoder.decode(b"", final=True)
+        if err:
+            self._stderr_chunks.append(err)
+            events.append((None, err, None))
+        return events
 
     async def _iterate_events(
         self,
@@ -118,25 +146,47 @@ class AsyncCommandHandle:
         ],
         None,
     ]:
-        async for event in self._events:
-            if event.event.HasField("data"):
-                if event.event.data.stdout:
-                    out = event.event.data.stdout.decode("utf-8", "replace")
-                    self._stdout += out
-                    yield out, None, None
-                if event.event.data.stderr:
-                    out = event.event.data.stderr.decode("utf-8", "replace")
-                    self._stderr += out
-                    yield None, out, None
-                if event.event.data.pty:
-                    yield None, None, event.event.data.pty
-            if event.event.HasField("end"):
-                self._result = CommandResult(
-                    stdout=self._stdout,
-                    stderr=self._stderr,
-                    exit_code=event.event.end.exit_code,
-                    error=event.event.end.error,
-                )
+        try:
+            async for event in self._events:
+                if event.event.HasField("data"):
+                    if event.event.data.stdout:
+                        out = self._stdout_decoder.decode(event.event.data.stdout)
+                        if out:
+                            self._stdout_chunks.append(out)
+                            yield out, None, None
+                    if event.event.data.stderr:
+                        out = self._stderr_decoder.decode(event.event.data.stderr)
+                        if out:
+                            self._stderr_chunks.append(out)
+                            yield None, out, None
+                    if event.event.data.pty:
+                        yield None, None, event.event.data.pty
+                if event.event.HasField("end"):
+                    for flushed in self._flush_decoders():
+                        yield flushed
+                    self._result = CommandResult(
+                        stdout="".join(self._stdout_chunks),
+                        stderr="".join(self._stderr_chunks),
+                        exit_code=event.event.end.exit_code,
+                        error=event.event.end.error,
+                    )
+        except Exception:
+            # The stream raised before an end event (e.g. disconnect or RPC
+            # failure). Flush any bytes still buffered in the decoders so
+            # incomplete trailing sequences surface as replacement characters
+            # instead of being silently dropped, then re-raise so the error is
+            # still surfaced by the consumer.
+            for flushed in self._flush_decoders():
+                yield flushed
+            raise
+
+        # If the stream closed without an end event (e.g. disconnect or a
+        # dropped connection), flush any bytes still buffered in the decoders
+        # so incomplete trailing sequences surface as replacement characters
+        # instead of being silently dropped.
+        if self._result is None:
+            for flushed in self._flush_decoders():
+                yield flushed
 
     async def disconnect(self) -> None:
         """
@@ -170,7 +220,9 @@ class AsyncCommandHandle:
         except StopAsyncIteration:
             pass
         except Exception as e:
-            self._iteration_exception = handle_rpc_exception(e)
+            self._iteration_exception = await ahandle_rpc_exception_with_health(
+                e, self._check_health
+            )
 
     async def wait(self) -> CommandResult:
         """
@@ -188,8 +240,8 @@ class AsyncCommandHandle:
 
         if self._result.exit_code != 0:
             raise CommandExitException(
-                stdout=self._stdout,
-                stderr=self._stderr,
+                stdout="".join(self._stdout_chunks),
+                stderr="".join(self._stderr_chunks),
                 exit_code=self._result.exit_code,
                 error=self._result.error,
             )

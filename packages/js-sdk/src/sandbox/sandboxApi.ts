@@ -232,6 +232,7 @@ export interface SandboxApiOpts
     Pick<
       ConnectionOpts,
       | 'apiKey'
+      | 'validateApiKey'
       | 'headers'
       | 'apiHeaders'
       | 'debug'
@@ -798,6 +799,8 @@ export class SandboxApi {
       params: {
         path: {
           sandboxID: sandboxId,
+        },
+        query: {
           start,
           end,
         },

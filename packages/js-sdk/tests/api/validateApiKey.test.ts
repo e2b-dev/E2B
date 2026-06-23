@@ -1,5 +1,6 @@
-import { assert, test, describe } from 'vitest'
-import { validateApiKey } from '../../src/api'
+import { assert, test, describe, vi, afterEach } from 'vitest'
+import { ApiClient, validateApiKey } from '../../src/api'
+import { ConnectionConfig } from '../../src/connectionConfig'
 import { AuthenticationError } from '../../src/errors'
 
 describe('validateApiKey', () => {
@@ -49,5 +50,42 @@ describe('validateApiKey', () => {
         'expected example token in error message'
       )
     }
+  })
+})
+
+describe('ApiClient API key validation', () => {
+  test('throws on a malformed key by default', () => {
+    const config = new ConnectionConfig({ apiKey: 'not-a-valid-key' })
+    assert.throws(() => new ApiClient(config), AuthenticationError)
+  })
+
+  test('skips validation when validateApiKey is false', () => {
+    const config = new ConnectionConfig({
+      apiKey: 'not-a-valid-key',
+      validateApiKey: false,
+    })
+    assert.doesNotThrow(() => new ApiClient(config))
+  })
+})
+
+describe('ApiClient API key requirement', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs()
+  })
+
+  test('throws when no API key is supplied', () => {
+    vi.stubEnv('E2B_API_KEY', '')
+    const config = new ConnectionConfig({})
+    assert.throws(
+      () => new ApiClient(config),
+      AuthenticationError,
+      /API key is required/
+    )
+  })
+
+  test('does not require an API key when requireApiKey is false', () => {
+    vi.stubEnv('E2B_API_KEY', '')
+    const config = new ConnectionConfig({})
+    assert.doesNotThrow(() => new ApiClient(config, { requireApiKey: false }))
   })
 })

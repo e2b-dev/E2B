@@ -4,9 +4,10 @@ import logging
 import os
 import re
 import threading
+import weakref
 from dataclasses import dataclass
 from types import TracebackType
-from typing import Callable, Dict, Optional, Protocol, Union
+from typing import Callable, Optional, Protocol, Union
 
 import httpx
 from httpx import AsyncBaseTransport, BaseTransport, Limits, Timeout
@@ -104,8 +105,6 @@ class ApiClient(AuthenticatedClient):
     def __init__(
         self,
         config: ConnectionConfig,
-        require_api_key: bool = True,
-        require_access_token: bool = False,
         transport: Optional[Union[BaseTransport, AsyncBaseTransport]] = None,
         transport_factory: Optional[Callable[[], BaseTransport]] = None,
         async_transport_factory: Optional[Callable[[], AsyncBaseTransport]] = None,
@@ -120,45 +119,39 @@ class ApiClient(AuthenticatedClient):
         self._transport_factory = transport_factory
         self._async_transport_factory = async_transport_factory
         self._thread_local = threading.local()
-        self._async_clients: Dict[int, httpx.AsyncClient] = {}
+        # Keyed weakly by the event loop object itself, not id(loop) —
+        # CPython reuses object ids, so a new loop could otherwise inherit
+        # a client bound to a previous, closed loop.
+        self._async_clients: weakref.WeakKeyDictionary[
+            asyncio.AbstractEventLoop, httpx.AsyncClient
+        ] = weakref.WeakKeyDictionary()
         self._proxy = config.proxy
 
-        if require_api_key and require_access_token:
+        if config.api_key is None:
             raise AuthenticationException(
-                "Only one of api_key or access_token can be required, not both",
+                "API key is required, please visit the API Keys tab at https://e2b.dev/dashboard?tab=keys to get your API key. "
+                "You can either set the environment variable `E2B_API_KEY` "
+                'or you can pass it directly to the method like api_key="e2b_..."',
             )
 
-        if not require_api_key and not require_access_token:
-            raise AuthenticationException(
-                "Either api_key or access_token is required",
-            )
-
-        token = None
-        if require_api_key:
-            if config.api_key is None:
-                raise AuthenticationException(
-                    "API key is required, please visit the Team tab at https://e2b.dev/dashboard to get your API key. "
-                    "You can either set the environment variable `E2B_API_KEY` "
-                    'or you can pass it directly to the method like api_key="e2b_..."',
-                )
-            token = config.api_key
-
-        if config.api_key is not None:
+        if config.api_key is not None and config.validate_api_key:
             validate_api_key(config.api_key)
 
-        if require_access_token:
-            if config.access_token is None:
-                raise AuthenticationException(
-                    "Access token is required, please visit the Personal tab at https://e2b.dev/dashboard to get your access token. "
-                    "You can set the environment variable `E2B_ACCESS_TOKEN` or pass the `access_token` in options.",
-                )
-            token = config.access_token
-
-        auth_header_name = "X-API-KEY" if require_api_key else "Authorization"
-        prefix = "" if require_api_key else "Bearer"
+        token = config.api_key
+        auth_header_name = "X-API-KEY"
+        prefix = ""
 
         headers = {
             **default_headers,
+            # Deprecated: send the access token alongside the API key when one
+            # is available, mirroring the JS SDK. Prefer `api_headers` instead.
+            # Spread before `config.headers` so a custom `Authorization` in
+            # `api_headers` wins over the deprecated access token, matching JS.
+            **(
+                {"Authorization": f"Bearer {config.access_token}"}
+                if config.access_token is not None
+                else {}
+            ),
             **(config.headers or {}),
         }
 
@@ -231,8 +224,8 @@ class ApiClient(AuthenticatedClient):
         if self._async_client is not None or self._async_transport_factory is None:
             return super().get_async_httpx_client()
 
-        loop_id = id(asyncio.get_running_loop())
-        client = self._async_clients.get(loop_id)
+        loop = asyncio.get_running_loop()
+        client = self._async_clients.get(loop)
         if client is None:
             client = httpx.AsyncClient(
                 base_url=self._base_url,
@@ -244,7 +237,7 @@ class ApiClient(AuthenticatedClient):
                 event_hooks=self._httpx_args.get("event_hooks"),
                 transport=self._async_transport_factory(),
             )
-            self._async_clients[loop_id] = client
+            self._async_clients[loop] = client
         return client
 
     def _log_request(self, request):

@@ -28,7 +28,7 @@ import {
 } from './sandboxApi'
 import { getSignature } from './signature'
 import { compareVersions } from 'compare-versions'
-import { TemplateError } from '../errors'
+import { InvalidArgumentError, TemplateError } from '../errors'
 import { ENVD_DEBUG_FALLBACK, ENVD_DEFAULT_USER } from '../envd/versions'
 import { shellQuote } from '../utils'
 
@@ -200,13 +200,10 @@ export class Sandbox extends SandboxApi {
       {
         apiUrl: this.envdApiUrl,
         logger: opts?.logger,
-        accessToken: this.envdAccessToken,
+        envdAccessToken: this.envdAccessToken,
         headers: {
           'User-Agent': this.connectionConfig.headers?.['User-Agent'] ?? '',
           ...sandboxHeaders,
-          ...(this.envdAccessToken
-            ? { 'X-Access-Token': this.envdAccessToken }
-            : {}),
         },
         fetch: (request) => envdFetch(request),
       },
@@ -219,12 +216,12 @@ export class Sandbox extends SandboxApi {
       this.envdApi,
       this.connectionConfig
     )
-    this.commands = new Commands(rpcTransport, this.connectionConfig, {
-      version: opts.envdVersion,
-    })
-    this.pty = new Pty(rpcTransport, this.connectionConfig, {
-      version: opts.envdVersion,
-    })
+    this.commands = new Commands(
+      rpcTransport,
+      this.envdApi,
+      this.connectionConfig
+    )
+    this.pty = new Pty(rpcTransport, this.envdApi, this.connectionConfig)
     this.git = new Git(this.commands)
   }
 
@@ -357,8 +354,16 @@ export class Sandbox extends SandboxApi {
     sandboxId: string,
     opts?: SandboxConnectOpts
   ): Promise<InstanceType<S>> {
-    const sandbox = await SandboxApi.connectSandbox(sandboxId, opts)
     const config = new ConnectionConfig(opts)
+    if (config.debug) {
+      return new this({
+        sandboxId,
+        envdVersion: ENVD_DEBUG_FALLBACK,
+        ...config,
+      }) as InstanceType<S>
+    }
+
+    const sandbox = await SandboxApi.connectSandbox(sandboxId, opts)
 
     return new this({
       sandboxId,
@@ -390,6 +395,11 @@ export class Sandbox extends SandboxApi {
    * ```
    */
   async connect(opts?: SandboxConnectOpts): Promise<this> {
+    if (this.connectionConfig.debug) {
+      // Skip connecting to the sandbox in debug mode
+      return this
+    }
+
     await SandboxApi.connectSandbox(this.sandboxId, this.resolveApiOpts(opts))
 
     return this
@@ -633,7 +643,7 @@ export class Sandbox extends SandboxApi {
     const useSignature = !!this.envdAccessToken
 
     if (!useSignature && opts.useSignatureExpiration != undefined) {
-      throw new Error(
+      throw new InvalidArgumentError(
         'Signature expiration can be used only when sandbox is created as secured.'
       )
     }
@@ -685,7 +695,7 @@ export class Sandbox extends SandboxApi {
     const useSignature = !!this.envdAccessToken
 
     if (!useSignature && opts.useSignatureExpiration != undefined) {
-      throw new Error(
+      throw new InvalidArgumentError(
         'Signature expiration can be used only when sandbox is created as secured.'
       )
     }

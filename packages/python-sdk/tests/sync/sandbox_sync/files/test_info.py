@@ -19,6 +19,7 @@ def test_get_info_of_file(sandbox: Sandbox):
     assert info.owner == "user"
     assert info.group == "user"
     assert info.modified_time is not None
+    assert info.modified_time.tzinfo is not None
 
 
 def test_get_info_of_nonexistent_file(sandbox: Sandbox):
@@ -44,6 +45,7 @@ def test_get_info_of_directory(sandbox: Sandbox):
     assert info.owner == "user"
     assert info.group == "user"
     assert info.modified_time is not None
+    assert info.modified_time.tzinfo is not None
 
 
 def test_get_info_of_nonexistent_directory(sandbox: Sandbox):

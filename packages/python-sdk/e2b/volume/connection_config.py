@@ -8,6 +8,10 @@ from typing_extensions import Unpack
 from e2b.api.metadata import package_version
 
 REQUEST_TIMEOUT: float = 60.0  # 60 seconds
+
+# Timeout for volume file transfers, which stream large bodies and so must not
+# inherit the short REQUEST_TIMEOUT. (Sandbox filesystem streaming instead
+# bounds each chunk by the request timeout and leaves the total to the server.)
 FILE_TIMEOUT: float = 3600.0  # 1 hour
 
 

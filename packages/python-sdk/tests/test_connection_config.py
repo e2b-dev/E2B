@@ -28,6 +28,27 @@ def test_api_url_has_correct_priority(monkeypatch):
     assert config.api_url == "http://localhost:8080"
 
 
+def test_validate_api_key_defaults_to_true(monkeypatch):
+    monkeypatch.delenv("E2B_VALIDATE_API_KEY", raising=False)
+
+    config = ConnectionConfig()
+    assert config.validate_api_key is True
+
+
+def test_validate_api_key_disabled_via_env_var(monkeypatch):
+    monkeypatch.setenv("E2B_VALIDATE_API_KEY", "false")
+
+    config = ConnectionConfig()
+    assert config.validate_api_key is False
+
+
+def test_validate_api_key_arg_has_priority_over_env_var(monkeypatch):
+    monkeypatch.setenv("E2B_VALIDATE_API_KEY", "true")
+
+    config = ConnectionConfig(validate_api_key=False)
+    assert config.validate_api_key is False
+
+
 def test_sandbox_url_uses_stable_host_for_supported_domain():
     config = ConnectionConfig(domain="e2b.app")
 
@@ -108,6 +129,20 @@ def test_debug_defaults_to_env_var(monkeypatch):
 
     config = ConnectionConfig()
     assert config.debug is True
+
+
+def test_integration_options_are_appended_to_user_agent():
+    config = ConnectionConfig(integration="testing/version")
+
+    assert config.headers["User-Agent"].startswith("e2b-python-sdk/")
+    assert config.headers["User-Agent"].endswith(" testing/version")
+
+
+def test_integration_option_survives_api_param_rebuilds():
+    config = ConnectionConfig(integration="testing/version")
+    rebuilt_config = ConnectionConfig(**config.get_api_params())
+
+    assert rebuilt_config.headers["User-Agent"].endswith(" testing/version")
 
 
 def test_request_timeout_zero_means_no_timeout():

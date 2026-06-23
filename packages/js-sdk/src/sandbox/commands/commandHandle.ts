@@ -1,4 +1,7 @@
-import { handleRpcError } from '../../envd/rpc'
+import {
+  handleRpcErrorWithHealthCheck,
+  SandboxHealthCheck,
+} from '../../envd/rpc'
 import { SandboxError } from '../../errors'
 import { ConnectResponse, StartResponse } from '../../envd/process/process_pb'
 import type { CommandRequestOpts } from '.'
@@ -88,6 +91,9 @@ export class CommandHandle
   private _stdout = ''
   private _stderr = ''
 
+  private readonly stdoutDecoder = new TextDecoder()
+  private readonly stderrDecoder = new TextDecoder()
+
   private result?: CommandResult
   private iterationError?: Error
 
@@ -112,7 +118,8 @@ export class CommandHandle
     ) => Promise<void>,
     private readonly handleCloseStdin?: (
       opts?: CommandRequestOpts
-    ) => Promise<void>
+    ) => Promise<void>,
+    private readonly checkHealth?: SandboxHealthCheck
   ) {
     this._wait = this.handleEvents()
   }
@@ -231,41 +238,89 @@ export class CommandHandle
     await this.handleCloseStdin(opts)
   }
 
+  /**
+   * Flush any bytes still buffered in the stream decoders.
+   *
+   * Incomplete trailing UTF-8 sequences are emitted as replacement
+   * characters, matching the per-chunk decoding behavior.
+   */
+  private *flushDecoders(): Generator<
+    [Stdout, null, null] | [null, Stderr, null]
+  > {
+    const stdoutRest = this.stdoutDecoder.decode()
+    if (stdoutRest) {
+      this._stdout += stdoutRest
+      yield [stdoutRest as Stdout, null, null]
+    }
+    const stderrRest = this.stderrDecoder.decode()
+    if (stderrRest) {
+      this._stderr += stderrRest
+      yield [null, stderrRest as Stderr, null]
+    }
+  }
+
   private async *iterateEvents(): AsyncGenerator<
     [Stdout, null, null] | [null, Stderr, null] | [null, null, PtyOutput]
   > {
-    for await (const event of this.events) {
-      const e = event?.event?.event
-      let out: string | undefined
+    try {
+      for await (const event of this.events) {
+        const e = event?.event?.event
+        let out: string | undefined
 
-      switch (e?.case) {
-        case 'data':
-          switch (e.value.output.case) {
-            case 'stdout':
-              out = new TextDecoder().decode(e.value.output.value)
-              this._stdout += out
-              yield [out as Stdout, null, null]
-              break
-            case 'stderr':
-              out = new TextDecoder().decode(e.value.output.value)
-              this._stderr += out
-              yield [null, out as Stderr, null]
-              break
-            case 'pty':
-              yield [null, null, e.value.output.value as PtyOutput]
-              break
+        switch (e?.case) {
+          case 'data':
+            switch (e.value.output.case) {
+              case 'stdout':
+                out = this.stdoutDecoder.decode(e.value.output.value, {
+                  stream: true,
+                })
+                if (out) {
+                  this._stdout += out
+                  yield [out as Stdout, null, null]
+                }
+                break
+              case 'stderr':
+                out = this.stderrDecoder.decode(e.value.output.value, {
+                  stream: true,
+                })
+                if (out) {
+                  this._stderr += out
+                  yield [null, out as Stderr, null]
+                }
+                break
+              case 'pty':
+                yield [null, null, e.value.output.value as PtyOutput]
+                break
+            }
+            break
+          case 'end': {
+            yield* this.flushDecoders()
+            this.result = {
+              exitCode: e.value.exitCode,
+              error: e.value.error,
+              stdout: this.stdout,
+              stderr: this.stderr,
+            }
+            break
           }
-          break
-        case 'end':
-          this.result = {
-            exitCode: e.value.exitCode,
-            error: e.value.error,
-            stdout: this.stdout,
-            stderr: this.stderr,
-          }
-          break
+        }
+        // TODO: Handle empty events like in python SDK
       }
-      // TODO: Handle empty events like in python SDK
+    } catch (e) {
+      // The stream raised before an `end` event (e.g. disconnect or RPC
+      // failure). Flush any bytes still buffered in the decoders so incomplete
+      // trailing sequences surface as replacement characters instead of being
+      // silently dropped, then re-raise so the error is still surfaced.
+      yield* this.flushDecoders()
+      throw e
+    }
+
+    // If the stream closed without an `end` event (e.g. disconnect or a
+    // dropped connection), flush any bytes still buffered in the decoders so
+    // incomplete trailing sequences surface as replacement characters instead
+    // of being silently dropped.
+    if (this.result === undefined) {
+      yield* this.flushDecoders()
     }
   }
 
@@ -281,7 +336,10 @@ export class CommandHandle
         }
       }
     } catch (e) {
-      this.iterationError = handleRpcError(e)
+      this.iterationError = await handleRpcErrorWithHealthCheck(
+        e,
+        this.checkHealth
+      )
     } finally {
       this.handleDisconnect()
     }

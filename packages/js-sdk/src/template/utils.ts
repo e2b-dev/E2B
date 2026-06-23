@@ -176,7 +176,12 @@ export async function getAllFilesInPath(
     }
   }
 
-  return Array.from(files.values()).sort()
+  // Sort by full path for a deterministic order — the default sort() would
+  // stringify the Path objects to '[object Object]' and keep glob order,
+  // making the files hash dependent on filesystem traversal order.
+  return Array.from(files.values()).sort((a, b) =>
+    a.fullpath() < b.fullpath() ? -1 : a.fullpath() > b.fullpath() ? 1 : 0
+  )
 }
 
 /**

@@ -5,9 +5,9 @@ import pytest
 from packaging.version import Version
 
 from e2b import AsyncSandbox
+from e2b.api import SandboxCreateResponse
 from e2b.connection_config import ConnectionConfig
 import e2b.sandbox_async.main as sandbox_async_main
-
 
 BASE_DOMAIN = "base.e2b.dev"
 BASE_REQUEST_TIMEOUT = 11
@@ -93,9 +93,9 @@ async def test_pause_applies_overrides(monkeypatch, test_api_key):
 @pytest.mark.skip_debug()
 async def test_connect_sets_stable_host_routing_headers(monkeypatch, test_api_key):
     mock_connect = AsyncMock(
-        return_value=SimpleNamespace(
+        return_value=SandboxCreateResponse(
             sandbox_id="sbx-test",
-            domain="e2b.app",
+            sandbox_domain="e2b.app",
             envd_version="0.4.0",
             envd_access_token="tok",
             traffic_access_token="traffic",
@@ -104,11 +104,20 @@ async def test_connect_sets_stable_host_routing_headers(monkeypatch, test_api_ke
     monkeypatch.setattr(sandbox_async_main.SandboxApi, "_cls_connect", mock_connect)
 
     sandbox = await AsyncSandbox.connect(
-        "sbx-test", api_key=test_api_key, headers=BASE_HEADERS
+        "sbx-test",
+        api_key=test_api_key,
+        headers=BASE_HEADERS,
+        integration="testing/version",
     )
 
     assert sandbox.envd_api_url == "https://sandbox.e2b.app"
     assert "X-Test" not in sandbox.connection_config.sandbox_headers
+    assert sandbox.connection_config.sandbox_headers["User-Agent"].startswith(
+        "e2b-python-sdk/"
+    )
+    assert sandbox.connection_config.sandbox_headers["User-Agent"].endswith(
+        " testing/version"
+    )
     assert sandbox.connection_config.sandbox_headers["E2b-Sandbox-Id"] == "sbx-test"
     assert sandbox.connection_config.sandbox_headers["E2b-Sandbox-Port"] == str(
         ConnectionConfig.envd_port

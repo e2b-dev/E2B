@@ -153,5 +153,11 @@ def test_write_rejects_invalid_metadata(sandbox):
     with pytest.raises(InvalidArgumentException):
         sandbox.files.write(filename, "x", metadata={"good": "bad\nvalue"})
 
+    # Trailing newline (Python's `$` would accept it; `\Z` must not).
+    with pytest.raises(InvalidArgumentException):
+        sandbox.files.write(filename, "x", metadata={"good": "value\n"})
+    with pytest.raises(InvalidArgumentException):
+        sandbox.files.write(filename, "x", metadata={"key\n": "value"})
+
     # The file must not have been created by a rejected write.
     assert not sandbox.files.exists(filename)

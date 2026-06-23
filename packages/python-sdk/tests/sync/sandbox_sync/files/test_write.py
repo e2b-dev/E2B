@@ -1,7 +1,7 @@
 import io
 import uuid
 
-from e2b.sandbox.filesystem.filesystem import WriteInfo, WriteEntry
+from e2b.sandbox.filesystem.filesystem import FileType, WriteInfo, WriteEntry
 
 
 def test_write_text_file(sandbox, debug):
@@ -10,6 +10,7 @@ def test_write_text_file(sandbox, debug):
 
     info = sandbox.files.write(filename, content)
     assert info.path == f"/home/user/{filename}"
+    assert info.type == FileType.FILE
 
     exists = sandbox.files.exists(filename)
     assert exists
@@ -81,6 +82,7 @@ def test_write_multiple_files(sandbox, debug):
     for i, info in enumerate(infos):
         assert isinstance(info, WriteInfo)
         assert info.path == f"/home/user/test_write_{i}.txt"
+        assert info.type == FileType.FILE
         exists = sandbox.files.exists(path)
         assert exists
 
@@ -172,3 +174,45 @@ def test_write_files_with_different_data_types(sandbox, debug):
     if debug:
         for file in files:
             sandbox.files.remove(file["path"])
+
+
+def test_write_io_with_octet_stream(sandbox, debug):
+    filename = "test_write_octet_io.bin"
+    text = "Streamed octet-stream upload. " * 10_000
+    content = io.BytesIO(text.encode("utf-8"))
+
+    info = sandbox.files.write(filename, content, use_octet_stream=True)
+    assert info.path == f"/home/user/{filename}"
+
+    read_content = sandbox.files.read(filename)
+    assert read_content == text
+
+    if debug:
+        sandbox.files.remove(filename)
+
+
+def test_write_text_io_with_octet_stream(sandbox, debug):
+    filename = "test_write_octet_text_io.txt"
+    text = "Streamed text octet-stream upload."
+
+    sandbox.files.write(filename, io.StringIO(text), use_octet_stream=True)
+
+    read_content = sandbox.files.read(filename)
+    assert read_content == text
+
+    if debug:
+        sandbox.files.remove(filename)
+
+
+def test_write_io_with_octet_stream_and_gzip(sandbox, debug):
+    filename = "test_write_octet_io_gzip.bin"
+    text = "Streamed gzipped octet-stream upload. " * 10_000
+    content = io.BytesIO(text.encode("utf-8"))
+
+    sandbox.files.write(filename, content, use_octet_stream=True, gzip=True)
+
+    read_content = sandbox.files.read(filename)
+    assert read_content == text
+
+    if debug:
+        sandbox.files.remove(filename)

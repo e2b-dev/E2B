@@ -22,7 +22,18 @@ export interface ConnectionOpts {
    */
   apiKey?: string
   /**
+   * Whether to validate the format of the E2B API key on the client side.
+   * Disable this when your deployment issues API keys that don't match the
+   * default `e2b_` format.
+   *
+   * @default E2B_VALIDATE_API_KEY // environment variable or `true`
+   */
+  validateApiKey?: boolean
+  /**
    * E2B access token to use for authentication.
+   *
+   * @deprecated Pass the token through `apiHeaders` instead, e.g.
+   * `apiHeaders: { Authorization: \`Bearer ${token}\` }`.
    *
    * @default E2B_ACCESS_TOKEN // environment variable
    */
@@ -81,6 +92,13 @@ export interface ConnectionOpts {
    * Additional headers to send with E2B API requests.
    */
   apiHeaders?: Record<string, string>
+
+  /**
+   * Integration wrapping the E2B SDK, appended to the `User-Agent`.
+   *
+   * @example 'e2b-code-interpreter/0.1.0'
+   */
+  integration?: string
 
   /**
    * An optional `AbortSignal` that can be used to cancel the in-flight request.
@@ -184,6 +202,128 @@ export function setupRequestController(
 }
 
 /**
+ * Create a resettable idle-timeout that aborts `controller` when no progress is
+ * made within `idleTimeoutMs`. `arm` (re)starts the timer; call it on each
+ * chunk. `clear` stops it. `0`/`undefined` disables it (both are no-ops).
+ *
+ * @internal
+ */
+function createIdleAbort(
+  controller: AbortController,
+  idleTimeoutMs: number | undefined,
+  label: string
+): { arm: () => void; clear: () => void } {
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const clear = () => {
+    if (timer) {
+      clearTimeout(timer)
+      timer = undefined
+    }
+  }
+  const arm = () => {
+    if (!idleTimeoutMs) return
+    clear()
+    timer = setTimeout(
+      () =>
+        controller.abort(
+          new DOMException(
+            `${label} idle for ${idleTimeoutMs}ms`,
+            'TimeoutError'
+          )
+        ),
+      idleTimeoutMs
+    )
+  }
+  return { arm, clear }
+}
+
+/**
+ * Wrap a streaming response body so its pooled connection is released when the
+ * stream is fully read, cancelled, errors, or stays idle for too long.
+ *
+ * Clears the handshake timeout from {@link setupRequestController} (so
+ * consuming the body isn't killed by it) and replaces it with an idle-read
+ * timeout that bounds only the wire: it's armed while waiting on a network
+ * read and cleared the moment a chunk arrives, so a slow or paused consumer
+ * never trips it (only a server that stops sending mid-stream does). On expiry
+ * it aborts `controller`, tearing down the fetch and releasing the connection.
+ * Pass `0`/`undefined` to disable. Call once the handshake has succeeded.
+ *
+ * @internal
+ */
+export function wrapStreamWithConnectionCleanup(
+  body: ReadableStream<Uint8Array> | null,
+  {
+    clearStartTimeout,
+    cleanup,
+    controller,
+    idleTimeoutMs,
+  }: {
+    clearStartTimeout: () => void
+    cleanup: () => void
+    controller: AbortController
+    idleTimeoutMs?: number
+  }
+): ReadableStream<Uint8Array> {
+  clearStartTimeout()
+
+  if (!body) {
+    cleanup()
+    return new Blob([]).stream()
+  }
+
+  const reader = body.getReader()
+  const idle = createIdleAbort(controller, idleTimeoutMs, 'Stream')
+
+  // Idempotent: safe to call from multiple stream callbacks.
+  const release = () => {
+    idle.clear()
+    cleanup()
+  }
+
+  return new ReadableStream<Uint8Array>({
+    async pull(streamController) {
+      // Bound only the wire: arm before reading from the network and clear the
+      // moment a chunk (or EOF) arrives, so a slow or paused consumer never
+      // counts against the idle timeout. A consumer that holds the stream but
+      // stops reading is never pulled here, so nothing arms—that case is
+      // reclaimed server-side, not by this timer.
+      idle.arm()
+      try {
+        const { done, value } = await reader.read()
+        idle.clear()
+        if (done) {
+          release()
+          streamController.close()
+        } else {
+          streamController.enqueue(value)
+        }
+      } catch (err) {
+        release()
+        streamController.error(err)
+      }
+    },
+    async cancel(reason) {
+      try {
+        await reader.cancel(reason)
+      } finally {
+        release()
+      }
+    },
+  })
+}
+
+function buildUserAgent(integration?: string) {
+  const userAgentParts = [`e2b-js-sdk/${version}`]
+
+  if (integration) {
+    userAgentParts.push(integration)
+  }
+
+  return userAgentParts.join(' ')
+}
+
+/**
  * Configuration for connecting to the API.
  */
 export class ConnectionConfig {
@@ -198,7 +338,13 @@ export class ConnectionConfig {
   readonly requestTimeoutMs: number
 
   readonly apiKey?: string
+  readonly validateApiKey: boolean
+  /**
+   * @deprecated Pass the token through `apiHeaders` instead.
+   */
   readonly accessToken?: string
+
+  readonly integration?: string
 
   readonly headers?: Record<string, string>
 
@@ -206,13 +352,16 @@ export class ConnectionConfig {
 
   constructor(opts?: ConnectionOpts) {
     this.apiKey = opts?.apiKey || ConnectionConfig.apiKey
+    this.validateApiKey =
+      opts?.validateApiKey ?? ConnectionConfig.validateApiKey
     this.debug = opts?.debug ?? ConnectionConfig.debug
     this.domain = opts?.domain || ConnectionConfig.domain
     this.accessToken = opts?.accessToken || ConnectionConfig.accessToken
     this.requestTimeoutMs = opts?.requestTimeoutMs ?? REQUEST_TIMEOUT_MS
     this.logger = opts?.logger
+    this.integration = opts?.integration
     this.headers = { ...(opts?.headers ?? {}), ...(opts?.apiHeaders ?? {}) }
-    this.headers['User-Agent'] = `e2b-js-sdk/${version}`
+    this.headers['User-Agent'] = buildUserAgent(this.integration)
     this.proxy = opts?.proxy
 
     this.apiUrl =
@@ -241,6 +390,12 @@ export class ConnectionConfig {
 
   private static get apiKey() {
     return getEnvVar('E2B_API_KEY')
+  }
+
+  private static get validateApiKey() {
+    return (
+      (getEnvVar('E2B_VALIDATE_API_KEY') || 'true').toLowerCase() !== 'false'
+    )
   }
 
   private static get accessToken() {

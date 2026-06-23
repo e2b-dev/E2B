@@ -14,6 +14,56 @@ import {
 } from '../errors'
 import { ENVD_DEFAULT_USER } from './versions'
 
+/**
+ * Result of a sandbox health probe: `true` if the sandbox is running, `false` if it is not,
+ * `undefined` if its state could not be determined.
+ */
+export type SandboxHealthCheck = () => Promise<boolean | undefined>
+
+/**
+ * Message fragments different JS runtimes use when the connection to the sandbox
+ * is dropped mid-request. The transport surfaces a dropped connection (e.g. an
+ * HTTP/2 stream reset) with runtime- and version-specific wording, so we match
+ * every known variant:
+ *   - Node (undici): `terminated`
+ *   - Bun:           `The socket connection was closed unexpectedly`
+ *   - Deno:          `error reading a body from connection`
+ */
+const CONNECTION_TERMINATED_MESSAGES = [
+  'terminated',
+  'The socket connection was closed unexpectedly',
+  'error reading a body from connection',
+]
+
+/**
+ * Checks whether a message matches any known runtime variant of the connection to
+ * the sandbox being dropped mid-request (see {@link CONNECTION_TERMINATED_MESSAGES}).
+ */
+export function isConnectionTerminatedMessage(
+  message: string | undefined
+): boolean {
+  if (!message) {
+    return false
+  }
+
+  return CONNECTION_TERMINATED_MESSAGES.some((fragment) =>
+    message.includes(fragment)
+  )
+}
+
+/**
+ * Checks whether the error is the signature of the connection to the sandbox being
+ * dropped mid-request — an HTTP/2 stream reset surfaced by connect as `Code.Unknown`
+ * with one of the runtime-specific connection-dropped messages.
+ */
+export function isConnectionTerminatedError(err: unknown): boolean {
+  return (
+    err instanceof ConnectError &&
+    err.code === Code.Unknown &&
+    isConnectionTerminatedMessage(err.rawMessage)
+  )
+}
+
 const DEFAULT_ERROR_MAP: Partial<Record<Code, (message: string) => Error>> = {
   [Code.InvalidArgument]: (message) => new InvalidArgumentError(message),
   [Code.Unauthenticated]: (message) => new AuthenticationError(message),
@@ -60,6 +110,36 @@ export function handleRpcError(
   }
 
   return err as Error
+}
+
+/**
+ * Like {@link handleRpcError}, but when the connection to the sandbox was dropped
+ * mid-request it probes the sandbox health to tell apart the sandbox being killed
+ * from a transient network failure (e.g. a load balancer dropping the connection).
+ * When the probe confirms the sandbox is gone, a `TimeoutError` is returned —
+ * consistent with how requests to an already-dead sandbox surface.
+ *
+ * @param err - The caught error, expected to be a `ConnectError` from the gRPC transport.
+ * @param checkHealth - Probe returning whether the sandbox is running, or `undefined` when unknown.
+ * @param errorMap - Optional map of gRPC `Code` values to error factory functions that override the defaults.
+ * @returns The corresponding `Error` instance.
+ */
+export async function handleRpcErrorWithHealthCheck(
+  err: unknown,
+  checkHealth?: SandboxHealthCheck,
+  errorMap?: Partial<Record<Code, (message: string) => Error>>
+): Promise<Error> {
+  if (isConnectionTerminatedError(err) && checkHealth) {
+    const running = await checkHealth().catch(() => undefined)
+
+    if (running === false) {
+      return new TimeoutError(
+        `${(err as ConnectError).message}: The sandbox was killed or reached its end of life while the request was in flight.`
+      )
+    }
+  }
+
+  return handleRpcError(err, errorMap)
 }
 
 function encode64(value: string): string {

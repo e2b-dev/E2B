@@ -7,8 +7,36 @@ permissions:
   contents: read
 
 jobs:
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      generated: ${{ steps.filter.outputs.generated }}
+    steps:
+      - name: Filter changed paths
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          # `**/!(*.md)` excludes Markdown so docs-only changes don't trigger codegen checks.
+          filters: |
+            generated:
+              - 'spec/**/!(*.md)'
+              - 'codegen.Dockerfile'
+              - 'Makefile'
+              - 'packages/**/!(*.md)'
+              - 'pnpm-lock.yaml'
+              - 'pnpm-workspace.yaml'
+              - 'package.json'
+              - '.tool-versions'
+              - '.github/workflows/generated_files.yml'
+
   check-generated:
     name: Generated files
+    needs: changes
+    if: ${{ needs.changes.outputs.generated == 'true' }}
     runs-on: ubuntu-latest
 
     steps:

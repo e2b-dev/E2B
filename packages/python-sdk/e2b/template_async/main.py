@@ -237,8 +237,6 @@ class AsyncTemplate(TemplateBase):
             config = ConnectionConfig(**opts)
             api_client = get_api_client(
                 config,
-                require_api_key=True,
-                require_access_token=False,
             )
 
             data = await AsyncTemplate._build(
@@ -328,8 +326,6 @@ class AsyncTemplate(TemplateBase):
         config = ConnectionConfig(**opts)
         api_client = get_api_client(
             config,
-            require_api_key=True,
-            require_access_token=False,
         )
 
         return await AsyncTemplate._build(
@@ -367,8 +363,6 @@ class AsyncTemplate(TemplateBase):
         config = ConnectionConfig(**opts)
         api_client = get_api_client(
             config,
-            require_api_key=True,
-            require_access_token=False,
         )
         return await get_build_status(
             api_client,
@@ -425,8 +419,6 @@ class AsyncTemplate(TemplateBase):
         config = ConnectionConfig(**opts)
         api_client = get_api_client(
             config,
-            require_api_key=True,
-            require_access_token=False,
         )
 
         return await check_alias_exists(api_client, alias)
@@ -458,8 +450,6 @@ class AsyncTemplate(TemplateBase):
         config = ConnectionConfig(**opts)
         api_client = get_api_client(
             config,
-            require_api_key=True,
-            require_access_token=False,
         )
 
         normalized_tags = [tags] if isinstance(tags, str) else tags
@@ -491,8 +481,6 @@ class AsyncTemplate(TemplateBase):
         config = ConnectionConfig(**opts)
         api_client = get_api_client(
             config,
-            require_api_key=True,
-            require_access_token=False,
         )
 
         normalized_tags = [tags] if isinstance(tags, str) else tags
@@ -521,8 +509,6 @@ class AsyncTemplate(TemplateBase):
         config = ConnectionConfig(**opts)
         api_client = get_api_client(
             config,
-            require_api_key=True,
-            require_access_token=False,
         )
 
         return await get_template_tags(api_client, template_id)
