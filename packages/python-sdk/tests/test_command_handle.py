@@ -1,4 +1,5 @@
 import asyncio
+from typing import Any, cast
 
 import pytest
 
@@ -81,7 +82,9 @@ async def test_async_disconnect_stops_callbacks():
     handle = AsyncCommandHandle(
         pid=1,
         handle_kill=_kill,
-        events=events,
+        # The handle only async-iterates and aclose()s the stream; this stand-in
+        # satisfies both without being a real async generator.
+        events=cast(Any, events),
         on_stdout=chunks.append,
     )
 
