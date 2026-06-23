@@ -71,7 +71,12 @@ jobs:
 
       - name: Run tests
         if: ${{ inputs.run }}
-        run: poetry run pytest --verbose --numprocesses=4
+        run: |
+          if [ "${{ matrix.os }}" = "windows-latest" ]; then
+            poetry run pytest --verbose
+          else
+            poetry run pytest --verbose --numprocesses=4
+          fi
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
           E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
