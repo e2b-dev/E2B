@@ -328,11 +328,10 @@ describe('CommandHandle', () => {
 
     // Disconnect while the event loop is idle (blocked on the next read), then
     // push a late event — as if stdout arrived after the abort but before the
-    // stream was torn down. disconnect() must not resolve until handling has
-    // ended, and the late event must never reach the callback.
-    const disconnected = handle.disconnect()
+    // stream was torn down. The late event must never reach the callback.
+    await handle.disconnect()
     controllable.push(dataEvent('stdout', new TextEncoder().encode('b')))
-    await disconnected
+    await new Promise((r) => setTimeout(r, 0))
 
     expect(chunks).toEqual(['a'])
 
@@ -342,7 +341,25 @@ describe('CommandHandle', () => {
     expect(chunks).toEqual(['a'])
   })
 
-  it('disconnect() abandons an in-flight callback instead of deadlocking', async () => {
+  it('disconnect() resolves promptly when a stream is idle', async () => {
+    // An idle long-running command (e.g. `sleep`) produces no further output,
+    // so the event handler stays blocked on the next read. disconnect() must
+    // not wait for that read and must resolve right away.
+    const controllable = createControllableEvents()
+    const handle = new CommandHandle(
+      1,
+      () => {},
+      async () => true,
+      controllable.events,
+      () => {}
+    )
+
+    // No event is ever pushed; this would hang if disconnect() awaited the
+    // event handler.
+    await handle.disconnect()
+  })
+
+  it('disconnect() does not block on an in-flight callback', async () => {
     const controllable = createControllableEvents()
     let callbackStarted = false
     let releaseCallback: (() => void) | undefined
@@ -370,11 +387,11 @@ describe('CommandHandle', () => {
     // waiting for it to settle.
     await handle.disconnect()
 
-    // Releasing the abandoned callback afterwards is harmless.
+    // Releasing the callback afterwards is harmless.
     releaseCallback?.()
   })
 
-  it('disconnect() resolves when awaited from inside a callback', async () => {
+  it('disconnect() resolves when called from inside a callback', async () => {
     const controllable = createControllableEvents()
     let disconnectReturned = false
 
