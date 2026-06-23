@@ -386,8 +386,7 @@ export async function tarFileToTempFile(
     path.join(os.tmpdir(), 'e2b-template-')
   )
   const tarPath = path.join(tmpDir, 'context.tar.gz')
-  const cleanup = () =>
-    fs.promises.rm(tmpDir, { recursive: true, force: true })
+  const cleanup = () => fs.promises.rm(tmpDir, { recursive: true, force: true })
 
   try {
     await create(
