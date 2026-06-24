@@ -11,7 +11,12 @@ export const logoutCommand = new commander.Command('logout')
       return
     }
 
-    const config = getUserConfig()
+    let config
+    try {
+      config = getUserConfig()
+    } catch {
+      // Malformed config file — proceed to delete it below
+    }
     if (config) {
       const revokeEndpoint = config.oauth.token_endpoint.replace(
         '/token',

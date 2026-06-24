@@ -104,7 +104,7 @@ export async function ensureValidAccessToken(): Promise<string> {
     return refreshed.access_token
   } catch (err) {
     if (err instanceof TokenRefreshError && err.errorCode === 'invalid_grant') {
-      fs.unlinkSync(USER_CONFIG_PATH)
+      fs.rmSync(USER_CONFIG_PATH, { force: true })
       throw new Error(
         'Your session has expired. Please run `e2b auth login` again.'
       )
