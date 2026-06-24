@@ -76,8 +76,12 @@ describe('listSandboxTemplates pagination', () => {
     expect(templates.map((t) => t.templateID)).toEqual(['t1', 't2'])
     expect(hasMore).toBe(false)
     expect(paginator.nextItems).toHaveBeenCalledTimes(1)
-    // Uses the SDK paginator with the default page size.
-    expect(mocks.list).toHaveBeenCalledWith({ teamId: undefined, limit: 100 })
+    // Uses the SDK paginator with the default page size and resolved API key.
+    expect(mocks.list).toHaveBeenCalledWith({
+      apiKey: 'test-api-key',
+      teamId: undefined,
+      limit: 100,
+    })
   })
 
   test('accumulates across pages until the paginator is exhausted', async () => {
@@ -121,7 +125,11 @@ describe('listSandboxTemplates pagination', () => {
 
     await listSandboxTemplates({ limit: 5000 })
 
-    expect(mocks.list).toHaveBeenCalledWith({ teamId: undefined, limit: 100 })
+    expect(mocks.list).toHaveBeenCalledWith({
+      apiKey: 'test-api-key',
+      teamId: undefined,
+      limit: 100,
+    })
   })
 
   test('uses the requested limit as the page size when below the page cap', async () => {
@@ -134,7 +142,11 @@ describe('listSandboxTemplates pagination', () => {
 
     await listSandboxTemplates({ limit: 3 })
 
-    expect(mocks.list).toHaveBeenCalledWith({ teamId: undefined, limit: 3 })
+    expect(mocks.list).toHaveBeenCalledWith({
+      apiKey: 'test-api-key',
+      teamId: undefined,
+      limit: 3,
+    })
   })
 
   test('hasMore is false when the last page exactly fills without more pages', async () => {
@@ -153,7 +165,11 @@ describe('listSandboxTemplates pagination', () => {
 
     await listSandboxTemplates({ teamID: 'team-123' })
 
-    expect(mocks.list).toHaveBeenCalledWith({ teamId: 'team-123', limit: 100 })
+    expect(mocks.list).toHaveBeenCalledWith({
+      apiKey: 'test-api-key',
+      teamId: 'team-123',
+      limit: 100,
+    })
   })
 
   test('returns an empty list when there are no templates', async () => {

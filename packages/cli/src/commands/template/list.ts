@@ -137,12 +137,22 @@ export async function listSandboxTemplates({
   teamID?: string
   limit?: number
 }): Promise<ListSandboxTemplatesResult> {
+  // Resolve the API key here (env var or ~/.e2b/config.json) and pass it to the
+  // SDK paginator. The paginator builds its own ConnectionConfig, so without
+  // this the config-file login (`e2b auth login`) would be treated as
+  // unauthenticated. This also covers the delete/publish select flows.
+  const apiKey = ensureAPIKey()
+
   let pageLimit = limit
   if (!limit || limit > PAGE_LIMIT) {
     pageLimit = PAGE_LIMIT
   }
 
-  const paginator = e2b.Template.list({ teamId: teamID, limit: pageLimit })
+  const paginator = e2b.Template.list({
+    apiKey,
+    teamId: teamID,
+    limit: pageLimit,
+  })
 
   const templates: e2b.components['schemas']['Template'][] = []
   while (paginator.hasNext && (!limit || templates.length < limit)) {
