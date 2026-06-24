@@ -5,6 +5,7 @@ from typing_extensions import Unpack
 
 from e2b.api.client.api.sandboxes import get_v2_sandboxes
 from e2b.api.client.api.snapshots import get_snapshots
+from e2b.api.client.api.templates import get_v2_templates
 from e2b.api.client.types import UNSET
 from e2b.connection_config import ApiParams, ConnectionConfig
 from e2b.exceptions import SandboxException
@@ -13,6 +14,8 @@ from e2b.sandbox.sandbox_api import (
     SandboxInfo,
     SnapshotPaginatorBase,
     SnapshotInfo,
+    TemplatePaginatorBase,
+    TemplateInfo,
 )
 from e2b.api import handle_api_exception
 from e2b.api.client.models.error import Error
@@ -140,3 +143,56 @@ class AsyncSnapshotPaginator(SnapshotPaginatorBase):
             )
             for snapshot in res.parsed
         ]
+
+
+class AsyncTemplatePaginator(TemplatePaginatorBase):
+    """
+    Paginator for listing templates.
+
+    Example:
+    ```python
+    paginator = AsyncTemplate.list()
+
+    while paginator.has_next:
+        templates = await paginator.next_items()
+        print(templates)
+    ```
+    """
+
+    async def next_items(self, **opts: Unpack[ApiParams]) -> List[TemplateInfo]:
+        """
+        Returns the next page of templates.
+
+        Call this method only if `has_next` is `True`, otherwise it will raise an exception.
+
+        :param opts: Per-call connection options (e.g. `api_key`, `domain`,
+            `headers`, `request_timeout`). When provided, this call uses these
+            options instead of the ones the paginator was constructed with.
+
+        :returns: List of templates
+        """
+        if not self.has_next:
+            raise Exception("No more items to fetch")
+
+        config = ConnectionConfig(**{**self._opts, **opts})
+        api_client = get_api_client(config)
+        res = await get_v2_templates.asyncio_detailed(
+            client=api_client,
+            team_id=self.team_id if self.team_id else UNSET,
+            limit=self.limit if self.limit else UNSET,
+            next_token=self._next_token if self._next_token else UNSET,
+        )
+
+        if res.status_code >= 300:
+            raise handle_api_exception(res)
+
+        self._next_token = res.headers.get("x-next-token")
+        self._has_next = bool(self._next_token)
+
+        if res.parsed is None:
+            return []
+
+        if isinstance(res.parsed, Error):
+            raise SandboxException(f"{res.parsed.message}: Request failed")
+
+        return [TemplateInfo._from_template(template) for template in res.parsed]

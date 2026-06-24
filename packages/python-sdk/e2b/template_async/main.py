@@ -10,6 +10,7 @@ from e2b.template.logger import LogEntry, LogEntryEnd, LogEntryStart
 from e2b.template.main import TemplateBase, TemplateClass
 from e2b.template.types import BuildInfo, InstructionType, TemplateTag, TemplateTagInfo
 from e2b.template.utils import normalize_build_arguments, read_dockerignore
+from e2b.sandbox_async.paginator import AsyncTemplatePaginator
 
 from .build_api import (
     assign_tags,
@@ -512,3 +513,35 @@ class AsyncTemplate(TemplateBase):
         )
 
         return await get_template_tags(api_client, template_id)
+
+    @staticmethod
+    def list(
+        team_id: Optional[str] = None,
+        limit: Optional[int] = None,
+        next_token: Optional[str] = None,
+        **opts: Unpack[ApiParams],
+    ) -> AsyncTemplatePaginator:
+        """
+        List templates.
+
+        :param team_id: Identifier of the team whose templates should be listed. Defaults to the team the API key belongs to.
+        :param limit: Maximum number of templates to return per page
+        :param next_token: Token for pagination
+        :return: Paginator for listing templates
+
+        Example
+        ```python
+        from e2b import AsyncTemplate
+
+        paginator = AsyncTemplate.list()
+        while paginator.has_next:
+            templates = await paginator.next_items()
+            print(templates)
+        ```
+        """
+        return AsyncTemplatePaginator(
+            team_id=team_id,
+            limit=limit,
+            next_token=next_token,
+            **opts,
+        )

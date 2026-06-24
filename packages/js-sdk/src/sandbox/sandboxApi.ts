@@ -1157,7 +1157,7 @@ export class SandboxApi {
   }
 }
 
-abstract class BasePaginator<T> {
+export abstract class BasePaginator<T> {
   protected readonly opts?: SandboxApiOpts
   protected readonly limit?: number
 

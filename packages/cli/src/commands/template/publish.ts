@@ -70,7 +70,7 @@ async function templateAction(
     } else if (opts.select) {
       teamId = resolveTeamId(teamId)
 
-      const allTemplates = await listSandboxTemplates({
+      const { templates: allTemplates } = await listSandboxTemplates({
         teamID: teamId,
       })
 
