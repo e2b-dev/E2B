@@ -13,7 +13,6 @@ import { ensureValidAccessToken } from 'src/utils/token-refresh'
 import { asBold, asFormattedTeam } from '../../utils/format'
 import { throwE2BRequestError } from '../../utils/errors'
 
-type TeamsGetInit = { signal: AbortSignal | undefined }
 type TeamsGetResponseData =
   e2b.paths['/teams']['get']['responses'][200]['content']['application/json']
 
@@ -40,14 +39,14 @@ export const configureCommand = new commander.Command('configure')
     })
     const authClient = new e2b.ApiClient(config, { requireApiKey: false })
 
-    const res = await authClient.api.GET<'/teams', TeamsGetInit>('/teams', {
+    const res = await authClient.api.GET('/teams', {
       signal: config.getSignal(),
     })
 
     if (res.error) {
       throwE2BRequestError(res.error, 'Error getting teams')
     }
-    const teams: TeamsGetResponseData = res.data
+    const teams = res.data as TeamsGetResponseData
 
     const team = (
       await inquirer.default.prompt([

@@ -17,7 +17,6 @@ import { openUrlInBrowser } from 'src/utils/openBrowser'
 import { connectionConfig } from 'src/api'
 import { throwE2BRequestError } from '../../utils/errors'
 
-type TeamsGetInit = { signal: AbortSignal | undefined }
 type TeamsGetResponseData =
   e2b.paths['/teams']['get']['responses'][200]['content']['application/json']
 
@@ -53,14 +52,14 @@ export const loginCommand = new commander.Command('login')
         apiHeaders: { Authorization: `Bearer ${accessToken}` },
       })
       const client = new e2b.ApiClient(config, { requireApiKey: false })
-      const res = await client.api.GET<'/teams', TeamsGetInit>('/teams', {
+      const res = await client.api.GET('/teams', {
         signal,
       })
 
       if (res.error) {
         throwE2BRequestError(res.error, 'Error getting teams')
       }
-      const teams: TeamsGetResponseData = res.data
+      const teams = res.data as TeamsGetResponseData
 
       const defaultTeam = teams.find((team) => team.isDefault)
       if (!defaultTeam) {
