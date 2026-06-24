@@ -2,15 +2,20 @@ import * as commander from 'commander'
 import * as fs from 'fs'
 import * as chalk from 'chalk'
 import * as e2b from 'e2b'
-import { USER_CONFIG_PATH, writeUserConfig } from 'src/user'
+
 import {
-  client,
-  connectionConfig,
-  ensureAccessToken,
-  ensureUserConfig,
-} from 'src/api'
+  USER_CONFIG_PATH,
+  getConfigRefreshTimestamp,
+  writeUserConfig,
+} from 'src/user'
+import { ensureUserConfig } from 'src/api'
+import { ensureValidAccessToken } from 'src/utils/token-refresh'
 import { asBold, asFormattedTeam } from '../../utils/format'
-import { handleE2BRequestError } from '../../utils/errors'
+import { throwE2BRequestError } from '../../utils/errors'
+
+type TeamsGetInit = { signal: AbortSignal | undefined }
+type TeamsGetResponseData =
+  e2b.paths['/teams']['get']['responses'][200]['content']['application/json']
 
 export const configureCommand = new commander.Command('configure')
   .description('configure user')
@@ -25,12 +30,22 @@ export const configureCommand = new commander.Command('configure')
     }
 
     const userConfig = ensureUserConfig()
-    ensureAccessToken()
-    const signal = connectionConfig.getSignal()
 
-    const res = await client.api.GET('/teams', { signal })
+    const accessToken = await ensureValidAccessToken()
 
-    handleE2BRequestError(res, 'Error getting teams')
+    const config = new e2b.ConnectionConfig({
+      apiHeaders: { Authorization: `Bearer ${accessToken}` },
+    })
+    const authClient = new e2b.ApiClient(config, { requireApiKey: false })
+
+    const res = await authClient.api.GET<'/teams', TeamsGetInit>('/teams', {
+      signal: config.getSignal(),
+    })
+
+    if (res.error) {
+      throwE2BRequestError(res.error, 'Error getting teams')
+    }
+    const teams: TeamsGetResponseData = res.data
 
     const team = (
       await inquirer.default.prompt([
@@ -39,7 +54,7 @@ export const configureCommand = new commander.Command('configure')
           message: chalk.default.underline('Select team'),
           type: 'list',
           pageSize: 50,
-          choices: res.data.map((team: e2b.components['schemas']['Team']) => ({
+          choices: teams.map((team) => ({
             name: asFormattedTeam(team, userConfig.teamId),
             value: team,
           })),
@@ -50,6 +65,7 @@ export const configureCommand = new commander.Command('configure')
     userConfig.teamName = team.name
     userConfig.teamId = team.teamID
     userConfig.teamApiKey = team.apiKey
+    userConfig.last_refresh = getConfigRefreshTimestamp()
     writeUserConfig(USER_CONFIG_PATH, userConfig)
 
     console.log(`Team ${asBold(team.name)} (${team.teamID}) selected.\n`)

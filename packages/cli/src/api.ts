@@ -60,7 +60,7 @@ export function ensureAccessToken() {
   // If accessToken is not already set (either from env var or from user config), try to get it from config file
   if (!accessToken) {
     const userConfig = getUserConfig()
-    accessToken = userConfig?.accessToken
+    accessToken = userConfig?.tokens.access_token
   }
 
   if (!accessToken) {
@@ -96,7 +96,7 @@ export function resolveTeamId(
 const userConfig = getUserConfig()
 
 const resolvedAccessToken =
-  process.env.E2B_ACCESS_TOKEN || userConfig?.accessToken
+  process.env.E2B_ACCESS_TOKEN || userConfig?.tokens.access_token
 
 export const connectionConfig = new e2b.ConnectionConfig({
   apiKey: process.env.E2B_API_KEY || userConfig?.teamApiKey,

@@ -6,15 +6,20 @@ import * as e2b from 'e2b'
 import { pkg } from 'src'
 import {
   DOCS_BASE,
+  getConfigRefreshTimestamp,
   getUserConfig,
+  writeUserConfig,
   USER_CONFIG_PATH,
   UserConfig,
-  writeUserConfig,
 } from 'src/user'
 import { asBold, asFormattedConfig, asFormattedError } from 'src/utils/format'
 import { openUrlInBrowser } from 'src/utils/openBrowser'
 import { connectionConfig } from 'src/api'
-import { handleE2BRequestError } from '../../utils/errors'
+import { throwE2BRequestError } from '../../utils/errors'
+
+type TeamsGetInit = { signal: AbortSignal | undefined }
+type TeamsGetResponseData =
+  e2b.paths['/teams']['get']['responses'][200]['content']['application/json']
 
 export const loginCommand = new commander.Command('login')
   .description('log in to CLI')
@@ -41,21 +46,23 @@ export const loginCommand = new commander.Command('login')
         return
       }
 
-      const accessToken =
-        process.env.E2B_ACCESS_TOKEN || signInResponse.accessToken
+      const accessToken = signInResponse.accessToken
 
       const signal = connectionConfig.getSignal()
       const config = new e2b.ConnectionConfig({
         apiHeaders: { Authorization: `Bearer ${accessToken}` },
       })
       const client = new e2b.ApiClient(config, { requireApiKey: false })
-      const res = await client.api.GET('/teams', { signal })
+      const res = await client.api.GET<'/teams', TeamsGetInit>('/teams', {
+        signal,
+      })
 
-      handleE2BRequestError(res, 'Error getting teams')
+      if (res.error) {
+        throwE2BRequestError(res.error, 'Error getting teams')
+      }
+      const teams: TeamsGetResponseData = res.data
 
-      const defaultTeam = res.data.find(
-        (team: e2b.components['schemas']['Team']) => team.isDefault
-      )
+      const defaultTeam = teams.find((team) => team.isDefault)
       if (!defaultTeam) {
         console.error(
           asFormattedError('No default team found, please contact support')
@@ -64,8 +71,19 @@ export const loginCommand = new commander.Command('login')
       }
 
       userConfig = {
-        email: signInResponse.email,
-        accessToken,
+        version: 1,
+        identity: {
+          email: signInResponse.email,
+        },
+        oauth: {
+          token_endpoint: signInResponse.oryTokenEndpoint,
+          client_id: signInResponse.cliClientId,
+        },
+        tokens: {
+          access_token: accessToken,
+          refresh_token: signInResponse.refreshToken,
+        },
+        last_refresh: getConfigRefreshTimestamp(),
         teamName: defaultTeam.name,
         teamId: defaultTeam.teamID,
         teamApiKey: defaultTeam.apiKey,
@@ -75,9 +93,9 @@ export const loginCommand = new commander.Command('login')
     }
 
     console.log(
-      `Logged in as ${asBold(userConfig.email)} with selected team ${asBold(
-        userConfig.teamName
-      )}`
+      `Logged in as ${asBold(
+        userConfig.identity.email
+      )} with selected team ${asBold(userConfig.teamName)}`
     )
     process.exit(0)
   })
@@ -85,7 +103,9 @@ export const loginCommand = new commander.Command('login')
 interface SignInWithBrowserResponse {
   email: string
   accessToken: string
-  defaultTeamId: string
+  refreshToken: string
+  oryTokenEndpoint: string
+  cliClientId: string
 }
 
 async function signInWithBrowser(): Promise<SignInWithBrowserResponse> {
