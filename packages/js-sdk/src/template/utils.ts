@@ -5,6 +5,7 @@ import path from 'node:path'
 import { dynamicImport, dynamicRequire } from '../utils'
 import { TemplateError } from '../errors'
 import { BASE_STEP_NAME, FINALIZE_STEP_NAME } from './consts'
+import type { Readable } from 'node:stream'
 import type { Path } from 'glob'
 import type { BuildOptions } from './types'
 
@@ -353,25 +354,33 @@ export function padOctal(mode: number): string {
 }
 
 /**
- * Create a gzipped tar archive of files matching a pattern in a temporary
- * file.
+ * Create a gzipped tar archive of files matching a pattern and return a
+ * readable stream over it.
  *
- * The archive is spooled to disk so it can be uploaded as a stream with a
- * known `Content-Length` instead of being buffered in memory.
+ * The archive is spooled to a temporary file on disk so it can be uploaded as
+ * a stream with a known `Content-Length` instead of being buffered in memory.
+ * The temporary file is removed automatically once the returned stream is
+ * closed — whether it was fully read, errored, or destroyed. This mirrors the
+ * Python SDK's `tar_file_stream`, where closing the temp-file handle deletes
+ * it (Node has no portable delete-on-close, so cleanup is tied to the stream's
+ * `close` event instead).
  *
  * @param fileName Glob pattern for files to include
  * @param fileContextPath Base directory for resolving file paths
  * @param ignorePatterns Ignore patterns to exclude from the archive
  * @param resolveSymlinks Whether to follow symbolic links
- * @returns The archive path, its size in bytes, and a `cleanup` callback that removes it
+ * @returns The readable stream and the archive size in bytes
  */
-export async function tarFileToTempFile(
+export async function tarFileToStream(
   fileName: string,
   fileContextPath: string,
   ignorePatterns: string[],
   resolveSymlinks: boolean
-): Promise<{ path: string; size: number; cleanup: () => Promise<void> }> {
+): Promise<{ stream: Readable; size: number }> {
   const { create } = await dynamicImport<typeof import('tar')>('tar')
+  // Dynamically import so the browser bundle doesn't pull in node:fs.
+  const { createReadStream } =
+    await dynamicImport<typeof import('node:fs')>('node:fs')
 
   const allFiles = await getAllFilesInPath(
     fileName,
@@ -386,7 +395,10 @@ export async function tarFileToTempFile(
     path.join(os.tmpdir(), 'e2b-template-')
   )
   const tarPath = path.join(tmpDir, 'context.tar.gz')
-  const cleanup = () => fs.promises.rm(tmpDir, { recursive: true, force: true })
+  // Best-effort removal so it can never mask the archive-creation error or the
+  // upload result. A leaked temp dir is non-fatal — the OS reclaims it.
+  const removeTmpDir = () =>
+    fs.promises.rm(tmpDir, { recursive: true, force: true }).catch(() => {})
 
   try {
     await create(
@@ -401,11 +413,14 @@ export async function tarFileToTempFile(
     )
 
     const { size } = await fs.promises.stat(tarPath)
-    return { path: tarPath, size, cleanup }
+
+    const stream = createReadStream(tarPath)
+    // Remove the spooled archive once the stream is done — `close` fires after
+    // the fd is released on every path (end, error, or destroy).
+    stream.once('close', removeTmpDir)
+    return { stream, size }
   } catch (err) {
-    // Best-effort cleanup: a temp-removal failure must not replace the real
-    // archive-creation error with a generic rm error.
-    await cleanup().catch(() => {})
+    await removeTmpDir()
     throw err
   }
 }

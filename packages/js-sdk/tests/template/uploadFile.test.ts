@@ -1,11 +1,10 @@
-import { describe, test, expect, beforeAll, afterAll, vi } from 'vitest'
+import { describe, test, expect, beforeAll, afterAll } from 'vitest'
 import { writeFile, mkdtemp, rm } from 'fs/promises'
 import { join } from 'path'
 import { tmpdir } from 'os'
 import { createServer, type IncomingMessage, type Server } from 'http'
 import { AddressInfo } from 'net'
 import { uploadFile } from '../../src/template/buildApi'
-import * as templateUtils from '../../src/template/utils'
 
 // Regression test for e2b-dev/e2b#1243 — uploadFile used to pass a Node
 // Readable directly to fetch, which made undici fall back to
@@ -67,46 +66,4 @@ describe('uploadFile transfer encoding', () => {
       expect(transferEncoding.toLowerCase()).not.toContain('chunked')
     }
   })
-
-  // Regression test: after S3 has accepted the archive, the temp-file
-  // cleanup running in the `finally` block can throw (e.g. removal fails
-  // while a read stream still holds the file). Such a cleanup failure must
-  // not be wrapped as a FileUploadError — the upload already succeeded.
-  test('does not surface a post-upload cleanup failure as an error', async () => {
-    const spy = vi
-      .spyOn(templateUtils, 'tarFileToTempFile')
-      .mockImplementation(async (...args) => {
-        const real = await actualTarFileToTempFile(...args)
-        return {
-          ...real,
-          cleanup: async () => {
-            // Run the real cleanup so we don't leak the temp dir, then
-            // simulate a removal failure surfacing from the `finally`.
-            await real.cleanup()
-            throw new Error('cleanup failed')
-          },
-        }
-      })
-
-    try {
-      await expect(
-        uploadFile(
-          {
-            fileName: '*.txt',
-            fileContextPath: testDir,
-            url: baseUrl,
-            ignorePatterns: [],
-            resolveSymlinks: false,
-          },
-          undefined
-        )
-      ).resolves.toBeUndefined()
-    } finally {
-      spy.mockRestore()
-    }
-  })
 })
-
-// Captured before any spy is installed so the mock can delegate to the
-// genuine archive-spooling implementation.
-const actualTarFileToTempFile = templateUtils.tarFileToTempFile
