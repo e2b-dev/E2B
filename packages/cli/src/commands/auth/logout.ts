@@ -18,11 +18,7 @@ export const logoutCommand = new commander.Command('logout')
       // Malformed config file — proceed to delete it below
     }
     if (config) {
-      const revokeEndpoint = config.oauth.token_endpoint.replace(
-        '/token',
-        '/revoke'
-      )
-      await fetch(revokeEndpoint, {
+      await fetch(config.oauth.revoke_endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({

@@ -11,6 +11,7 @@ export interface UserIdentityConfig {
 
 export interface UserOAuthConfig {
   token_endpoint: string
+  revoke_endpoint: string
   client_id: string
 }
 
@@ -78,6 +79,7 @@ function isUserConfig(config: unknown): config is UserConfig {
     isString(config.identity.email) &&
     isObject(config.oauth) &&
     isString(config.oauth.token_endpoint) &&
+    isString(config.oauth.revoke_endpoint) &&
     isString(config.oauth.client_id) &&
     isObject(config.tokens) &&
     isString(config.tokens.access_token) &&

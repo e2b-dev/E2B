@@ -25,6 +25,7 @@ describe('writeUserConfig', () => {
       },
       oauth: {
         token_endpoint: 'https://hydra.example.com/oauth2/token',
+        revoke_endpoint: 'https://hydra.example.com/oauth2/revoke',
         client_id: 'cli-client-id',
       },
       tokens: {
