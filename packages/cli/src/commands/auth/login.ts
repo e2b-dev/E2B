@@ -132,6 +132,18 @@ async function signInWithBrowser(): Promise<SignInWithBrowserResponse> {
         reject(new Error(error))
         followUpUrl.searchParams.set('state', 'error')
         followUpUrl.searchParams.set('error', error)
+      } else if (
+        !searchParamsObj.accessToken ||
+        !searchParamsObj.refreshToken ||
+        !searchParamsObj.oryTokenEndpoint ||
+        !searchParamsObj.cliClientId
+      ) {
+        reject(new Error('Incomplete login response from server'))
+        followUpUrl.searchParams.set('state', 'error')
+        followUpUrl.searchParams.set(
+          'error',
+          'Incomplete login response from server'
+        )
       } else {
         resolve(searchParamsObj)
         followUpUrl.searchParams.set('state', 'success')

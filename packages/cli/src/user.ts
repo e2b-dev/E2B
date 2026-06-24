@@ -66,13 +66,22 @@ function isObject(value: unknown): value is UnknownRecord {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
+function isString(value: unknown): value is string {
+  return typeof value === 'string'
+}
+
 function isUserConfig(config: unknown): config is UserConfig {
   if (!isObject(config)) return false
   if (config.version !== 1) return false
   return (
     isObject(config.identity) &&
+    isString(config.identity.email) &&
     isObject(config.oauth) &&
-    isObject(config.tokens)
+    isString(config.oauth.token_endpoint) &&
+    isString(config.oauth.client_id) &&
+    isObject(config.tokens) &&
+    isString(config.tokens.access_token) &&
+    isString(config.tokens.refresh_token)
   )
 }
 
