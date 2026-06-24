@@ -162,14 +162,19 @@ class AsyncCommandHandle:
                     if event.event.data.pty:
                         yield None, None, event.event.data.pty
                 if event.event.HasField("end"):
-                    for flushed in self._flush_decoders():
-                        yield flushed
+                    # Flush trailing decoder bytes into the accumulators and
+                    # record the result before yielding the flushed chunks, so a
+                    # consumer that stops iterating on the first flushed chunk
+                    # still observes the exit code.
+                    flushed = list(self._flush_decoders())
                     self._result = CommandResult(
                         stdout="".join(self._stdout_chunks),
                         stderr="".join(self._stderr_chunks),
                         exit_code=event.event.end.exit_code,
                         error=event.event.end.error,
                     )
+                    for f in flushed:
+                        yield f
         except Exception:
             # The stream raised before an end event (e.g. disconnect or RPC
             # failure). Flush any bytes still buffered in the decoders so
