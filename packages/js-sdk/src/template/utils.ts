@@ -371,7 +371,7 @@ export function padOctal(mode: number): string {
  * @param resolveSymlinks Whether to follow symbolic links
  * @returns The readable stream and the archive size in bytes
  */
-export async function tarFileToStream(
+export async function tarFileStream(
   fileName: string,
   fileContextPath: string,
   ignorePatterns: string[],

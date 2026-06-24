@@ -13,11 +13,11 @@ import { Readable } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
 import { join } from 'path'
 import { tmpdir } from 'os'
-import { tarFileToStream } from '../../../src/template/utils'
+import { tarFileStream } from '../../../src/template/utils'
 import * as tar from 'tar'
 import { ReadEntry } from 'tar'
 
-describe('tarFileToStream', () => {
+describe('tarFileStream', () => {
   const testDir = join(__dirname, 'tar-test-folder')
 
   beforeAll(async () => {
@@ -126,7 +126,7 @@ describe('tarFileToStream', () => {
     await writeFile(join(testDir, 'file1.txt'), 'content1')
     await writeFile(join(testDir, 'file2.txt'), 'content2')
 
-    const { stream, size } = await tarFileToStream('*.txt', testDir, [], false)
+    const { stream, size } = await tarFileStream('*.txt', testDir, [], false)
     expect(size).toBeGreaterThan(0)
 
     const contents = await extractTarContents(stream)
@@ -142,7 +142,7 @@ describe('tarFileToStream', () => {
     await writeFile(join(testDir, 'temp.txt'), 'temp content')
     await writeFile(join(testDir, 'backup.txt'), 'backup content')
 
-    const { stream } = await tarFileToStream(
+    const { stream } = await tarFileStream(
       '*.txt',
       testDir,
       ['temp*', 'backup*'],
@@ -165,7 +165,7 @@ describe('tarFileToStream', () => {
     await writeFile(join(testDir, 'src', 'index.ts'), 'index content')
     await writeFile(join(nestedDir, 'Button.tsx'), 'button content')
 
-    const { stream } = await tarFileToStream('src', testDir, [], false)
+    const { stream } = await tarFileStream('src', testDir, [], false)
 
     const contents = await extractTarContents(stream)
     const paths = Array.from(contents.keys())
@@ -187,7 +187,7 @@ describe('tarFileToStream', () => {
       throw error
     }
 
-    const { stream } = await tarFileToStream('*.txt', testDir, [], true)
+    const { stream } = await tarFileStream('*.txt', testDir, [], true)
 
     const contents = await extractTarContents(stream)
     expect(contents.get('original.txt')?.toString()).toBe('original content')
@@ -208,7 +208,7 @@ describe('tarFileToStream', () => {
       throw error
     }
 
-    const { stream } = await tarFileToStream('*.txt', testDir, [], false)
+    const { stream } = await tarFileStream('*.txt', testDir, [], false)
 
     const members = await getTarMembers(stream)
     expect(members.get('original.txt')?.type).toBe('File')
@@ -232,7 +232,7 @@ describe('tarFileToStream', () => {
       })
 
     try {
-      const { stream } = await tarFileToStream('*.txt', testDir, [], false)
+      const { stream } = await tarFileStream('*.txt', testDir, [], false)
       expect(tmpDir).toBeDefined()
       await access(tmpDir!)
 
@@ -259,7 +259,7 @@ describe('tarFileToStream', () => {
       })
 
     try {
-      const { stream } = await tarFileToStream('*.txt', testDir, [], false)
+      const { stream } = await tarFileStream('*.txt', testDir, [], false)
       await access(tmpDir!)
 
       // Destroying without reading still fires `close` and removes the file.

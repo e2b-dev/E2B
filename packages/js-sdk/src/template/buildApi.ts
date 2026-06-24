@@ -5,7 +5,7 @@ import { dynamicImport } from '../utils'
 import { BuildError, FileUploadError, TemplateError } from '../errors'
 import { FILE_UPLOAD_TIMEOUT_MS } from './consts'
 import { LogEntry } from './logger'
-import { getBuildStepIndex, tarFileToStream } from './utils'
+import { getBuildStepIndex, tarFileStream } from './utils'
 import {
   BuildStatusReason,
   TemplateBuildStatus,
@@ -129,23 +129,23 @@ export async function uploadFile(
   // The spooled file deletes itself once the stream is consumed, so there is
   // no cleanup to manage here. The Python SDK takes the same approach
   // (build_api.py:upload_file).
-  let stream: Readable | undefined
+  let uploadStream: Readable | undefined
   try {
     // Dynamically import so the browser bundle doesn't pull in node:stream.
     const { Readable } =
       await dynamicImport<typeof import('node:stream')>('node:stream')
 
-    const tar = await tarFileToStream(
+    const tar = await tarFileStream(
       fileName,
       fileContextPath,
       ignorePatterns,
       resolveSymlinks
     )
-    stream = tar.stream
+    uploadStream = tar.stream
 
     const res = await fetch(url, {
       method: 'PUT',
-      body: Readable.toWeb(stream) as ReadableStream<Uint8Array>,
+      body: Readable.toWeb(uploadStream) as ReadableStream<Uint8Array>,
       headers: {
         'Content-Length': tar.size.toString(),
       },
@@ -167,7 +167,7 @@ export async function uploadFile(
     // Ensure the spooled archive is removed even if fetch never consumed the
     // stream (e.g. it threw before reading the body). Destroying the stream
     // fires its `close` handler, which deletes the temp file.
-    stream?.destroy()
+    uploadStream?.destroy()
     if (error instanceof FileUploadError) {
       throw error
     }
