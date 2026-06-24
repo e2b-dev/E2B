@@ -176,3 +176,45 @@ async def test_write_files_with_different_data_types(
     if debug:
         for file in files:
             await async_sandbox.files.remove(file["path"])
+
+
+async def test_write_io_with_octet_stream(async_sandbox: AsyncSandbox, debug):
+    filename = "test_write_octet_io.bin"
+    text = "Streamed octet-stream upload. " * 10_000
+    content = io.BytesIO(text.encode("utf-8"))
+
+    info = await async_sandbox.files.write(filename, content, use_octet_stream=True)
+    assert info.path == f"/home/user/{filename}"
+
+    read_content = await async_sandbox.files.read(filename)
+    assert read_content == text
+
+    if debug:
+        await async_sandbox.files.remove(filename)
+
+
+async def test_write_text_io_with_octet_stream(async_sandbox: AsyncSandbox, debug):
+    filename = "test_write_octet_text_io.txt"
+    text = "Streamed text octet-stream upload."
+
+    await async_sandbox.files.write(filename, io.StringIO(text), use_octet_stream=True)
+
+    read_content = await async_sandbox.files.read(filename)
+    assert read_content == text
+
+    if debug:
+        await async_sandbox.files.remove(filename)
+
+
+async def test_write_io_with_octet_stream_and_gzip(async_sandbox: AsyncSandbox, debug):
+    filename = "test_write_octet_io_gzip.bin"
+    text = "Streamed gzipped octet-stream upload. " * 10_000
+    content = io.BytesIO(text.encode("utf-8"))
+
+    await async_sandbox.files.write(filename, content, use_octet_stream=True, gzip=True)
+
+    read_content = await async_sandbox.files.read(filename)
+    assert read_content == text
+
+    if debug:
+        await async_sandbox.files.remove(filename)
