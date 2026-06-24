@@ -29,9 +29,11 @@ export const configureCommand = new commander.Command('configure')
       return
     }
 
-    const userConfig = ensureUserConfig()
-
+    // ensureValidAccessToken may refresh tokens and write them to disk.
+    // Re-read the config afterwards so we persist the refreshed tokens
+    // instead of overwriting them with stale in-memory copies.
     const accessToken = await ensureValidAccessToken()
+    const userConfig = ensureUserConfig()
 
     const config = new e2b.ConnectionConfig({
       apiHeaders: { Authorization: `Bearer ${accessToken}` },
