@@ -69,15 +69,8 @@ jobs:
         if: ${{ inputs.run }}
         run: poetry build
 
-      - name: Run tests (Windows)
-        if: ${{ inputs.run && matrix.os == 'windows-latest' }}
-        run: poetry run pytest --verbose
-        env:
-          E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
-          E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
-
-      - name: Run tests (Linux)
-        if: ${{ inputs.run && matrix.os != 'windows-latest' }}
+      - name: Run tests
+        if: ${{ inputs.run }}
         run: poetry run pytest --verbose --numprocesses=4
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
