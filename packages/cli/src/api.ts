@@ -4,7 +4,8 @@ import * as e2b from 'e2b'
 import { getUserConfig, UserConfig } from './user'
 import { asBold, asPrimary } from './utils/format'
 
-export type Teams = e2b.paths['/teams']['get']['responses'][200]['content']['application/json']
+export type Teams =
+  e2b.paths['/teams']['get']['responses'][200]['content']['application/json']
 
 export let apiKey = process.env.E2B_API_KEY
 export let accessToken = process.env.E2B_ACCESS_TOKEN
