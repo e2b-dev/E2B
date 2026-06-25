@@ -24,6 +24,11 @@ class NewSandbox:
         allow_internet_access (Union[Unset, bool]): Allow sandbox to access the internet. When set to false, it behaves
             the same as specifying denyOut to 0.0.0.0/0 in the network config.
         auto_pause (Union[Unset, bool]): Automatically pauses the sandbox after the timeout Default: False.
+        auto_pause_memory (Union[Unset, bool]): Controls the snapshot kind taken when the sandbox auto-pauses on timeout
+            (only relevant when autoPause is true). When false, the auto-pause drops the in-memory state and persists only
+            the filesystem (a filesystem-only snapshot); resuming it cold-boots (reboots) the sandbox from disk. Such a
+            snapshot cannot be auto-resumed by traffic and must be resumed explicitly, so it cannot be combined with
+            autoResume. Defaults to true (full memory snapshot). Default: True.
         auto_resume (Union[Unset, SandboxAutoResumeConfig]): Auto-resume configuration for paused sandboxes.
         env_vars (Union[Unset, Any]):
         mcp (Union['McpType0', None, Unset]): MCP configuration for the sandbox
@@ -37,6 +42,7 @@ class NewSandbox:
     template_id: str
     allow_internet_access: Union[Unset, bool] = UNSET
     auto_pause: Union[Unset, bool] = False
+    auto_pause_memory: Union[Unset, bool] = True
     auto_resume: Union[Unset, "SandboxAutoResumeConfig"] = UNSET
     env_vars: Union[Unset, Any] = UNSET
     mcp: Union["McpType0", None, Unset] = UNSET
@@ -55,6 +61,8 @@ class NewSandbox:
         allow_internet_access = self.allow_internet_access
 
         auto_pause = self.auto_pause
+
+        auto_pause_memory = self.auto_pause_memory
 
         auto_resume: Union[Unset, dict[str, Any]] = UNSET
         if not isinstance(self.auto_resume, Unset):
@@ -98,6 +106,8 @@ class NewSandbox:
             field_dict["allow_internet_access"] = allow_internet_access
         if auto_pause is not UNSET:
             field_dict["autoPause"] = auto_pause
+        if auto_pause_memory is not UNSET:
+            field_dict["autoPauseMemory"] = auto_pause_memory
         if auto_resume is not UNSET:
             field_dict["autoResume"] = auto_resume
         if env_vars is not UNSET:
@@ -130,6 +140,8 @@ class NewSandbox:
         allow_internet_access = d.pop("allow_internet_access", UNSET)
 
         auto_pause = d.pop("autoPause", UNSET)
+
+        auto_pause_memory = d.pop("autoPauseMemory", UNSET)
 
         _auto_resume = d.pop("autoResume", UNSET)
         auto_resume: Union[Unset, SandboxAutoResumeConfig]
@@ -181,6 +193,7 @@ class NewSandbox:
             template_id=template_id,
             allow_internet_access=allow_internet_access,
             auto_pause=auto_pause,
+            auto_pause_memory=auto_pause_memory,
             auto_resume=auto_resume,
             env_vars=env_vars,
             mcp=mcp,
