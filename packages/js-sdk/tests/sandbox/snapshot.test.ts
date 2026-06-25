@@ -162,3 +162,42 @@ sandboxTest.skipIf(isDebug)(
     assert.equal(response2.status, 200)
   }
 )
+
+sandboxTest.skipIf(isDebug)(
+  'filesystem-only pause reboots on resume but keeps the filesystem',
+  async ({ sandbox }) => {
+    // Absolute path: a cold boot may not restore the template's default
+    // user/cwd, so a relative path could resolve differently after resume.
+    const filename = '/home/user/fs_only_snapshot.txt'
+    const content = 'This is a filesystem-only snapshot test file.'
+
+    await sandbox.files.write(filename, content)
+
+    // Kernel boot id before the pause; it changes only across a real (cold) boot.
+    const bootBefore = (
+      await sandbox.files.read('/proc/sys/kernel/random/boot_id')
+    ).trim()
+
+    // Filesystem-only snapshot: no memory is captured, so resuming cold-boots.
+    await sandbox.pause({ keepMemory: false })
+    assert.isFalse(await sandbox.isRunning())
+
+    // Resume the paused sandbox; a filesystem-only pause keeps no memory, so
+    // connect() cold-boots (reboots) it. connect() returns the same handle, and
+    // its credentials stay valid across the resume (the backend re-binds the
+    // same envd access token on the cold boot).
+    const resumedSandbox = await sandbox.connect()
+    assert.equal(resumedSandbox.sandboxId, sandbox.sandboxId)
+    assert.isTrue(await resumedSandbox.isRunning())
+
+    // The filesystem survives the cold boot.
+    assert.isTrue(await resumedSandbox.files.exists(filename))
+    assert.equal(await resumedSandbox.files.read(filename), content)
+
+    // A fresh boot id proves the guest rebooted rather than restoring memory.
+    const bootAfter = (
+      await resumedSandbox.files.read('/proc/sys/kernel/random/boot_id')
+    ).trim()
+    assert.notEqual(bootAfter, bootBefore)
+  }
+)

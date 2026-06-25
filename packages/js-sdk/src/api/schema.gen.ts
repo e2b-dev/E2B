@@ -350,7 +350,11 @@ export interface paths {
                 };
                 cookie?: never;
             };
-            requestBody?: never;
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["SandboxPauseRequest"];
+                };
+            };
             responses: {
                 /** @description The sandbox was paused successfully and can be resumed */
                 204: {
@@ -2379,6 +2383,13 @@ export interface components {
          * @enum {string}
          */
         SandboxOnTimeout: "kill" | "pause";
+        SandboxPauseRequest: {
+            /**
+             * @description Whether to capture a full memory snapshot. When false, only the filesystem is persisted and resuming the sandbox cold-boots (reboots) it from disk, losing in-memory state, running processes, and open connections. Resume it with an explicit request (connect or resume); auto-resume, which can be triggered by arbitrary traffic, refuses such a sandbox. Defaults to true.
+             * @default true
+             */
+            memory?: boolean;
+        };
         /**
          * @description State of the sandbox
          * @enum {string}
