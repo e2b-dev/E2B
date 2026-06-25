@@ -700,5 +700,8 @@ class Filesystem:
         return WatchHandle(
             lambda: self._rpc,
             r.watcher_id,
+            self._connection_config,
+            self._envd_version,
+            user,
             lambda: check_sandbox_health(self._envd_api),
         )
