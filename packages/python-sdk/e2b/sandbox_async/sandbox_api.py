@@ -218,7 +218,7 @@ class SandboxApi(SandboxBase):
         # bypass the type.
         if keep_memory_provided and on_timeout != "pause":
             raise InvalidArgumentException(
-                "keep_memory is not allowed when on_timeout action is 'kill'."
+                "keep_memory is only allowed when on_timeout action is 'pause'."
             )
 
         # A missing or explicit None keep_memory defaults to True (full memory),
@@ -229,13 +229,14 @@ class SandboxApi(SandboxBase):
 
         if auto_resume and on_timeout != "pause":
             raise InvalidArgumentException(
-                "auto_resume can only be True when the resolved on_timeout is 'pause'."
+                "auto_resume can only be True when on_timeout action is 'pause'."
             )
 
         if not keep_memory and auto_resume:
             raise InvalidArgumentException(
-                "keep_memory=False (filesystem-only auto-pause) cannot be combined with auto_resume: "
-                "a filesystem-only snapshot cannot be auto-resumed by traffic and must be resumed explicitly."
+                "auto_resume: True is not a valid value when keep_memory: False - "
+                "a filesystem-only snapshot cannot be auto-resumed by traffic and "
+                "must be resumed explicitly using Sandbox.connect()."
             )
 
         network_body = build_network_config(network)

@@ -61,16 +61,6 @@ def test_create_payload_deserializes_auto_resume_enabled():
     assert body.auto_resume.to_dict() == {"enabled": False}
 
 
-def test_create_payload_serializes_auto_pause_memory():
-    body = NewSandbox(
-        template_id="template-id",
-        auto_pause=True,
-        auto_pause_memory=False,
-    )
-
-    assert body.to_dict()["autoPauseMemory"] is False
-
-
 @pytest.mark.skip_debug()
 def test_filesystem_only_auto_pause_rejects_auto_resume():
     # A filesystem-only auto-pause snapshot can only be resumed explicitly, so

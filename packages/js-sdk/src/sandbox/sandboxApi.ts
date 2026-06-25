@@ -1137,19 +1137,19 @@ export class SandboxApi {
 
     if (hasKeepMemory && action !== 'pause') {
       throw new InvalidArgumentError(
-        "onTimeout.keepMemory is not allowed when action is 'kill'."
+        "onTimeout.keepMemory is only allowed when action is 'pause'."
       )
     }
 
     if (autoResume && action !== 'pause') {
       throw new InvalidArgumentError(
-        "autoResume can only be true when the resolved onTimeout action is 'pause'."
+        "autoResume can only be true when onTimeout action is 'pause'."
       )
     }
 
     if (!keepMemory && autoResume) {
       throw new InvalidArgumentError(
-        'onTimeout keepMemory=false (filesystem-only auto-pause) cannot be combined with autoResume: a filesystem-only snapshot cannot be auto-resumed by traffic and must be resumed explicitly.'
+        'autoResume: true is not a valid value when keepMemory: false - a filesystem-only snapshot cannot be auto-resumed by traffic and must be resumed explicitly using Sandbox.connect().'
       )
     }
 
