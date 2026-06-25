@@ -131,6 +131,7 @@ async function signInWithBrowser(): Promise<SignInWithBrowserResponse> {
         followUpUrl.searchParams.set('state', 'error')
         followUpUrl.searchParams.set('error', error)
       } else if (
+        !searchParamsObj.email ||
         !searchParamsObj.accessToken ||
         !searchParamsObj.refreshToken ||
         !searchParamsObj.tokenEndpoint ||
