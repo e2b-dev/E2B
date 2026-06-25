@@ -58,7 +58,7 @@ async def test_upload_file_sets_content_length_and_no_chunked_encoding(tmp_path)
             url=url,
             ignore_patterns=[],
             resolve_symlinks=False,
-            compression=True,
+            gzip=True,
             stack_trace=None,
         )
     finally:

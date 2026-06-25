@@ -259,7 +259,7 @@ def tar_file_stream(
     file_context_path: str,
     ignore_patterns: List[str],
     resolve_symlinks: bool,
-    compression: bool,
+    gzip: bool,
 ) -> io.BytesIO:
     """
     Create a tar stream of files matching a pattern.
@@ -268,14 +268,14 @@ def tar_file_stream(
     :param file_context_path: Base directory for resolving file paths
     :param ignore_patterns: Ignore patterns
     :param resolve_symlinks: Whether to resolve symbolic links
-    :param compression: Whether to gzip the archive
+    :param gzip: Whether to gzip the archive
 
     :return: Tar stream
     """
     tar_buffer = io.BytesIO()
     with tarfile.open(
         fileobj=tar_buffer,
-        mode="w:gz" if compression else "w",
+        mode="w:gz" if gzip else "w",
         dereference=resolve_symlinks,
     ) as tar:
         files = get_all_files_in_path(

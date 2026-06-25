@@ -110,7 +110,7 @@ export async function uploadFile(
     url: string
     ignorePatterns: string[]
     resolveSymlinks: boolean
-    compression: boolean
+    gzip: boolean
   },
   stackTrace: string | undefined,
   // Uploads (PUT to S3 presigned URL) can take a long time for large
@@ -126,7 +126,7 @@ export async function uploadFile(
     fileContextPath,
     ignorePatterns,
     resolveSymlinks,
-    compression,
+    gzip,
   } = options
   try {
     const uploadStream = await tarFileStreamUpload(
@@ -134,7 +134,7 @@ export async function uploadFile(
       fileContextPath,
       ignorePatterns,
       resolveSymlinks,
-      compression
+      gzip
     )
 
     // Buffer the archive before uploading so fetch sets Content-Length.

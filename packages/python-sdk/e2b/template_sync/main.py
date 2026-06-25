@@ -7,7 +7,7 @@ from e2b.api.client.client import AuthenticatedClient
 from e2b.connection_config import ApiParams, ConnectionConfig
 
 from e2b.api.client_sync import get_api_client
-from e2b.template.consts import COMPRESSION, RESOLVE_SYMLINKS
+from e2b.template.consts import GZIP, RESOLVE_SYMLINKS
 from e2b.template.logger import LogEntry, LogEntryEnd, LogEntryStart
 from e2b.template.main import TemplateBase, TemplateClass
 from e2b.template.types import BuildInfo, InstructionType, TemplateTag, TemplateTagInfo
@@ -101,9 +101,9 @@ class Template(TemplateBase):
             force_upload = file_upload.get("forceUpload")
             files_hash = file_upload.get("filesHash", None)
             resolve_symlinks = file_upload.get("resolveSymlinks", RESOLVE_SYMLINKS)
-            compression = file_upload.get("compression")
-            if compression is None:
-                compression = COMPRESSION
+            gzip = file_upload.get("gzip")
+            if gzip is None:
+                gzip = GZIP
 
             if src is None or files_hash is None:
                 raise ValueError("Source path and files hash are required")
@@ -129,7 +129,7 @@ class Template(TemplateBase):
                         *read_dockerignore(template._template._file_context_path),
                     ],
                     resolve_symlinks,
-                    compression,
+                    gzip,
                     stack_trace,
                 )
                 if on_build_logs:

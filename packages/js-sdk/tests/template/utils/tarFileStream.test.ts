@@ -121,7 +121,7 @@ describe('tarFileStream', () => {
     expect(contents.get('file2.txt')?.toString()).toBe('content2')
   })
 
-  test('should create an uncompressed tar when compression is disabled', async () => {
+  test('should create an uncompressed tar when gzip is disabled', async () => {
     await writeFile(join(testDir, 'file1.txt'), 'content1')
     await writeFile(join(testDir, 'file2.txt'), 'content2')
 

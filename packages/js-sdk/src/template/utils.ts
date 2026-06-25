@@ -358,7 +358,7 @@ export function padOctal(mode: number): string {
  * @param fileContextPath Base directory for resolving file paths
  * @param ignorePatterns Ignore patterns to exclude from the archive
  * @param resolveSymlinks Whether to follow symbolic links
- * @param compression Whether to gzip the archive
+ * @param gzip Whether to gzip the archive
  * @returns A readable stream of the (optionally gzipped) tar archive
  */
 export async function tarFileStream(
@@ -366,7 +366,7 @@ export async function tarFileStream(
   fileContextPath: string,
   ignorePatterns: string[],
   resolveSymlinks: boolean,
-  compression: boolean
+  gzip: boolean
 ) {
   const { create } = await dynamicImport<typeof import('tar')>('tar')
 
@@ -382,7 +382,7 @@ export async function tarFileStream(
   // gzip.portable ensures deterministic gzip header without affecting file modes
   return create(
     {
-      gzip: compression,
+      gzip,
       cwd: fileContextPath,
       follow: resolveSymlinks,
       noDirRecurse: true,
@@ -397,7 +397,7 @@ export async function tarFileStream(
  * @param fileName Glob pattern for files to include
  * @param fileContextPath Base directory for resolving file paths
  * @param resolveSymlinks Whether to follow symbolic links
- * @param compression Whether to gzip the archive
+ * @param gzip Whether to gzip the archive
  * @returns A readable stream of the (optionally gzipped) tar archive
  */
 export async function tarFileStreamUpload(
@@ -405,14 +405,14 @@ export async function tarFileStreamUpload(
   fileContextPath: string,
   ignorePatterns: string[],
   resolveSymlinks: boolean,
-  compression: boolean
+  gzip: boolean
 ) {
   return tarFileStream(
     fileName,
     fileContextPath,
     ignorePatterns,
     resolveSymlinks,
-    compression
+    gzip
   )
 }
 

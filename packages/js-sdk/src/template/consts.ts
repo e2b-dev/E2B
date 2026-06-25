@@ -34,11 +34,11 @@ export const STACK_TRACE_DEPTH = 3
 export const RESOLVE_SYMLINKS = false
 
 /**
- * Default setting for whether to compress files when copying them into the
+ * Default setting for whether to gzip files when copying them into the
  * template. When true, the upload archive is gzipped before being uploaded.
  * @internal
  */
-export const COMPRESSION = true
+export const GZIP = true
 
 /**
  * Default per-request timeout (in milliseconds) for the file-upload phase

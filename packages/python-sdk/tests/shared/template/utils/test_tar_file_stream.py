@@ -49,8 +49,8 @@ class TestTarFileStream:
         assert contents["file1.txt"] == b"content1"
         assert contents["file2.txt"] == b"content2"
 
-    def test_should_create_uncompressed_tar_when_compression_disabled(self, test_dir):
-        """Test that function creates an uncompressed tar when compression=False."""
+    def test_should_create_uncompressed_tar_when_gzip_disabled(self, test_dir):
+        """Test that function creates an uncompressed tar when gzip=False."""
         file1_path = os.path.join(test_dir, "file1.txt")
         file2_path = os.path.join(test_dir, "file2.txt")
 

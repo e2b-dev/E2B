@@ -46,7 +46,7 @@ class TemplateBuilder:
         user: Optional[str] = None,
         mode: Optional[int] = None,
         resolve_symlinks: Optional[bool] = None,
-        compression: Optional[bool] = None,
+        gzip: Optional[bool] = None,
     ) -> "TemplateBuilder":
         """
         Copy files or directories from the local filesystem into the template.
@@ -57,7 +57,7 @@ class TemplateBuilder:
         :param user: User and optionally group (user:group) to own the files
         :param mode: File permissions in octal format (e.g., 0o755)
         :param resolve_symlinks: Whether to resolve symlinks
-        :param compression: Whether to compress (gzip) the files before upload (default: True)
+        :param gzip: Whether to gzip the files before upload (default: True)
 
         :return: `TemplateBuilder` class
 
@@ -92,7 +92,7 @@ class TemplateBuilder:
                 "force": force_upload or self._template._force_next_layer,
                 "forceUpload": force_upload,
                 "resolveSymlinks": resolve_symlinks,
-                "compression": compression,
+                "gzip": gzip,
             }
 
             self._template._instructions.append(instruction)
@@ -134,7 +134,7 @@ class TemplateBuilder:
                         item.get("user"),
                         item.get("mode"),
                         item.get("resolveSymlinks"),
-                        item.get("compression"),
+                        item.get("gzip"),
                     )
                 except Exception as error:
                     # Re-raise the error with the captured stack trace
@@ -1282,7 +1282,7 @@ class TemplateBase:
                 "force": instruction["force"],
                 "forceUpload": instruction.get("forceUpload"),
                 "resolveSymlinks": instruction.get("resolveSymlinks"),
-                "compression": instruction.get("compression"),
+                "gzip": instruction.get("gzip"),
             }
 
             if instruction["type"] == InstructionType.COPY:

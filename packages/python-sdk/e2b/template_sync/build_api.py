@@ -104,12 +104,12 @@ def upload_file(
     url: str,
     ignore_patterns: List[str],
     resolve_symlinks: bool,
-    compression: bool,
+    gzip: bool,
     stack_trace: Optional[TracebackType],
 ):
     try:
         tar_buffer = tar_file_stream(
-            file_name, context_path, ignore_patterns, resolve_symlinks, compression
+            file_name, context_path, ignore_patterns, resolve_symlinks, gzip
         )
         with httpx.Client(
             timeout=api_client._timeout,
