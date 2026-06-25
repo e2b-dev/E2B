@@ -39,7 +39,7 @@ type RefreshedTokens = {
   refresh_token: string
 }
 
-export async function refreshHydraToken(
+export async function refreshOAuthToken(
   refreshToken: string,
   clientId: string,
   tokenEndpoint: string
@@ -86,7 +86,7 @@ export async function ensureValidAccessToken(): Promise<string> {
   }
 
   try {
-    const refreshed = await refreshHydraToken(
+    const refreshed = await refreshOAuthToken(
       config.tokens.refresh_token,
       config.oauth.client_id,
       config.oauth.token_endpoint

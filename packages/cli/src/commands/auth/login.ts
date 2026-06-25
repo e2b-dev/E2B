@@ -75,8 +75,8 @@ export const loginCommand = new commander.Command('login')
           email: signInResponse.email,
         },
         oauth: {
-          token_endpoint: signInResponse.oryTokenEndpoint,
-          revoke_endpoint: signInResponse.oryRevokeEndpoint,
+          token_endpoint: signInResponse.tokenEndpoint,
+          revoke_endpoint: signInResponse.revokeEndpoint,
           client_id: signInResponse.cliClientId,
         },
         tokens: {
@@ -104,8 +104,8 @@ interface SignInWithBrowserResponse {
   email: string
   accessToken: string
   refreshToken: string
-  oryTokenEndpoint: string
-  oryRevokeEndpoint: string
+  tokenEndpoint: string
+  revokeEndpoint: string
   cliClientId: string
 }
 
@@ -136,8 +136,8 @@ async function signInWithBrowser(): Promise<SignInWithBrowserResponse> {
       } else if (
         !searchParamsObj.accessToken ||
         !searchParamsObj.refreshToken ||
-        !searchParamsObj.oryTokenEndpoint ||
-        !searchParamsObj.oryRevokeEndpoint ||
+        !searchParamsObj.tokenEndpoint ||
+        !searchParamsObj.revokeEndpoint ||
         !searchParamsObj.cliClientId
       ) {
         reject(new Error('Incomplete login response from server'))
