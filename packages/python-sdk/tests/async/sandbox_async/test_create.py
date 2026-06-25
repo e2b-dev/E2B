@@ -96,6 +96,31 @@ async def test_filesystem_only_auto_pause_requires_pause():
 
 
 @pytest.mark.skip_debug()
+async def test_keep_memory_none_defaults_to_full_memory(async_sandbox_factory):
+    # An explicit None keep_memory must default to full memory (not filesystem-only):
+    # the timeout auto-pause then resumes the SAME sandbox in place (memory restore),
+    # so the boot id is unchanged. A changed boot id would mean None was wrongly
+    # treated as filesystem-only (cold boot).
+    sbx = await async_sandbox_factory(
+        timeout=60,
+        lifecycle={"on_timeout": "pause", "keep_memory": None},
+    )
+    boot_before = (await sbx.files.read("/proc/sys/kernel/random/boot_id")).strip()
+
+    await sbx.set_timeout(0)  # force the timeout auto-pause now
+    for _ in range(150):
+        if not await sbx.is_running():
+            break
+        await asyncio.sleep(0.2)
+    assert not await sbx.is_running()
+
+    resumed = await sbx.connect()
+    assert resumed.sandbox_id == sbx.sandbox_id  # same sandbox
+    boot_after = (await resumed.files.read("/proc/sys/kernel/random/boot_id")).strip()
+    assert boot_after == boot_before  # memory restore in place, not a cold boot
+
+
+@pytest.mark.skip_debug()
 async def test_auto_pause_filesystem_only_reboots(async_sandbox_factory):
     # keep_memory=False makes the timeout auto-pause filesystem-only, so resuming
     # cold-boots the sandbox from disk.
