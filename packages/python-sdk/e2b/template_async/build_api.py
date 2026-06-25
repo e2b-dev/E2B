@@ -39,6 +39,7 @@ from e2b.template.types import (
     TemplateTag,
     TemplateTagInfo,
 )
+from e2b.template.consts import FILE_UPLOAD_TIMEOUT_SECONDS
 from e2b.template.utils import get_build_step_index, tar_file_stream
 
 
@@ -107,7 +108,15 @@ async def upload_file(
     ignore_patterns: List[str],
     resolve_symlinks: bool,
     stack_trace: Optional[TracebackType],
+    request_timeout: Optional[float] = None,
 ):
+    # Uploading a large build-context archive can take far longer than the 60s
+    # general API timeout, so default to a 1-hour upload timeout unless the
+    # caller set an explicit request_timeout. Matches the JS SDK
+    # (FILE_UPLOAD_TIMEOUT_MS).
+    upload_timeout = (
+        request_timeout if request_timeout is not None else FILE_UPLOAD_TIMEOUT_SECONDS
+    )
     try:
         tar_file = tar_file_stream(
             file_name, context_path, ignore_patterns, resolve_symlinks
@@ -116,7 +125,7 @@ async def upload_file(
             size = os.fstat(tar_file.fileno()).st_size
 
             async with httpx.AsyncClient(
-                timeout=api_client._timeout,
+                timeout=httpx.Timeout(upload_timeout),
                 verify=api_client._verify_ssl,
                 follow_redirects=api_client._follow_redirects,
                 proxy=getattr(api_client, "_proxy", None),

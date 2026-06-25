@@ -2,8 +2,11 @@ import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from unittest import mock
 
+import httpx
+
 from e2b.api.client.client import AuthenticatedClient
 from e2b.template import utils as template_utils
+from e2b.template.consts import FILE_UPLOAD_TIMEOUT_SECONDS
 from e2b.template_async.build_api import upload_file
 
 
@@ -77,6 +80,60 @@ async def test_upload_file_sets_content_length_and_no_chunked_encoding(tmp_path)
     if transfer_encoding is not None:
         assert "chunked" not in transfer_encoding.lower()
     assert "Authorization" not in state["headers"]
+
+
+async def _capture_upload_timeout(tmp_path, request_timeout=None):
+    """Run upload_file against a local server, capturing the httpx timeout."""
+    (tmp_path / "hello.txt").write_text("hello world")
+
+    server, thread, state = _make_server()
+    host, port = server.server_address
+    url = f"http://{host}:{port}/upload"
+
+    captured = {}
+    real_client = httpx.AsyncClient
+
+    def spy_client(*args, **kwargs):
+        captured["timeout"] = kwargs.get("timeout")
+        return real_client(*args, **kwargs)
+
+    try:
+        client = AuthenticatedClient(base_url="http://test", token="test")
+        kwargs = {}
+        if request_timeout is not None:
+            kwargs["request_timeout"] = request_timeout
+        with mock.patch(
+            "e2b.template_async.build_api.httpx.AsyncClient", side_effect=spy_client
+        ):
+            await upload_file(
+                api_client=client,
+                file_name="*.txt",
+                context_path=str(tmp_path),
+                url=url,
+                ignore_patterns=[],
+                resolve_symlinks=False,
+                stack_trace=None,
+                **kwargs,
+            )
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=5)
+
+    return captured["timeout"]
+
+
+async def test_upload_file_defaults_to_one_hour_timeout(tmp_path):
+    # Uploads of large archives need far longer than the 60s general API
+    # timeout, so the default upload timeout is 1 hour (matches the JS SDK).
+    timeout = await _capture_upload_timeout(tmp_path)
+    assert timeout == httpx.Timeout(FILE_UPLOAD_TIMEOUT_SECONDS)
+
+
+async def test_upload_file_honors_explicit_request_timeout(tmp_path):
+    # An explicitly set request_timeout overrides the 1-hour upload default.
+    timeout = await _capture_upload_timeout(tmp_path, request_timeout=5.0)
+    assert timeout == httpx.Timeout(5.0)
 
 
 async def test_upload_file_ignores_post_upload_close_failure(tmp_path):
