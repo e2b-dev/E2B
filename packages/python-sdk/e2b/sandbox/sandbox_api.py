@@ -253,9 +253,13 @@ class SandboxOnTimeoutPause(TypedDict):
     Whether the timeout auto-pause keeps a full memory snapshot. Defaults to `True`.
     When `False`, the auto-pause drops the in-memory state and persists only the
     filesystem (a filesystem-only snapshot); resuming such a sandbox cold-boots
-    (reboots) it from disk, losing running processes and open connections. Cannot
-    be combined with `auto_resume` (a filesystem-only snapshot must be resumed
-    explicitly).
+    (reboots) it from disk, losing running processes and open connections.
+
+    Cannot be combined with `auto_resume`: auto-resume wakes a paused sandbox on
+    inbound traffic by restoring its memory snapshot in place, so the request that
+    woke it hits an already-running process. A filesystem-only snapshot has no
+    memory to restore — resuming cold-boots it — so it can't be woken transparently
+    by traffic and must be resumed explicitly via `connect()`.
     """
 
 

@@ -15,8 +15,10 @@ untyped callers). When `keepMemory` is `false`, a timeout auto-pause drops the
 in-memory state and persists only the filesystem (a filesystem-only snapshot);
 resuming such a sandbox cold-boots (reboots) it from disk, losing running
 processes and open connections. Defaults to `true` (full memory snapshot). It
-cannot be combined with auto-resume (a filesystem-only snapshot must be resumed
-explicitly). The bare string form is unchanged.
+cannot be combined with auto-resume: auto-resume wakes a paused sandbox on
+inbound traffic by restoring its memory snapshot in place, and a filesystem-only
+snapshot has no memory to restore (resuming cold-boots it), so it must be resumed
+explicitly. The bare string form is unchanged.
 
 ```python
 # Python
