@@ -16,7 +16,7 @@ filesystem-only snapshot must be resumed explicitly).
 
 ```python
 # Python
-sbx = Sandbox(lifecycle={"on_timeout": "pause", "keep_memory": False})
+sbx = Sandbox.create(lifecycle={"on_timeout": "pause", "keep_memory": False})
 ```
 
 ```ts
