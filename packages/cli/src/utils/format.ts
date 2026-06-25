@@ -9,7 +9,7 @@ import { UserConfig } from '../user'
 export const primaryColor = '#FFB766'
 
 export function asFormattedConfig(config: UserConfig) {
-  const email = asBold(config.email)
+  const email = asBold(config.identity.email)
   const team = config.teamName
     ? asBold(config.teamName)
     : asRed('Log out and log in to get team name')
