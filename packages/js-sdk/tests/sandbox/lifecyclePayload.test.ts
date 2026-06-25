@@ -3,18 +3,21 @@ import { assert, expect, test } from 'vitest'
 import { InvalidArgumentError, Sandbox } from '../../src'
 import { isDebug, template, wait } from '../setup.js'
 
-test('filesystem-only auto-pause cannot be combined with auto-resume', async () => {
-  // A filesystem-only auto-pause snapshot can only be resumed explicitly, so
-  // keepMemory:false with autoResume is rejected client-side.
-  await expect(
-    Sandbox.create(template, {
-      timeoutMs: 3_000,
-      lifecycle: { onTimeout: 'pause', autoResume: true, keepMemory: false },
-    })
-  ).rejects.toThrowError(InvalidArgumentError)
-})
+test.skipIf(isDebug)(
+  'filesystem-only auto-pause cannot be combined with auto-resume',
+  async () => {
+    // A filesystem-only auto-pause snapshot can only be resumed explicitly, so
+    // keepMemory:false with autoResume is rejected client-side.
+    await expect(
+      Sandbox.create(template, {
+        timeoutMs: 3_000,
+        lifecycle: { onTimeout: 'pause', autoResume: true, keepMemory: false },
+      })
+    ).rejects.toThrowError(InvalidArgumentError)
+  }
+)
 
-test('keepMemory=false requires onTimeout pause', async () => {
+test.skipIf(isDebug)('keepMemory=false requires onTimeout pause', async () => {
   // keepMemory only governs a timeout auto-pause, so keepMemory:false without
   // onTimeout:'pause' is rejected client-side.
   await expect(

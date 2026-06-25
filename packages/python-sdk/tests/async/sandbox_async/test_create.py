@@ -69,6 +69,7 @@ def test_create_payload_serializes_auto_pause_memory():
     assert body.to_dict()["autoPauseMemory"] is False
 
 
+@pytest.mark.skip_debug()
 async def test_filesystem_only_auto_pause_rejects_auto_resume():
     # A filesystem-only auto-pause snapshot can only be resumed explicitly, so
     # combining keep_memory=False with auto_resume is rejected client-side.
@@ -83,6 +84,7 @@ async def test_filesystem_only_auto_pause_rejects_auto_resume():
         )
 
 
+@pytest.mark.skip_debug()
 async def test_filesystem_only_auto_pause_requires_pause():
     # keep_memory only governs a timeout auto-pause, so keep_memory=False without
     # on_timeout="pause" is rejected client-side.
