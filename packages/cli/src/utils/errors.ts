@@ -22,10 +22,7 @@ type E2BResponse<TData> =
       error: E2BResponseError
     }
 
-export function throwE2BRequestError(
-  error: E2BResponseError,
-  errMsg?: string
-): never {
+function throwE2BRequestError(error: E2BResponseError, errMsg?: string): never {
   let message: string
   const code = error.code ?? 0
   switch (code) {

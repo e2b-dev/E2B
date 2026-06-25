@@ -11,7 +11,7 @@ import {
 import { ensureUserConfig, Teams } from 'src/api'
 import { ensureValidAccessToken } from 'src/utils/token-refresh'
 import { asBold, asFormattedTeam } from '../../utils/format'
-import { throwE2BRequestError } from '../../utils/errors'
+import { handleE2BRequestError } from '../../utils/errors'
 
 export const configureCommand = new commander.Command('configure')
   .description('configure user')
@@ -40,9 +40,7 @@ export const configureCommand = new commander.Command('configure')
       signal: config.getSignal(),
     })
 
-    if (res.error) {
-      throwE2BRequestError(res.error, 'Error getting teams')
-    }
+    handleE2BRequestError(res, 'Error getting teams')
     const teams = res.data as Teams
 
     const team = (

@@ -15,7 +15,7 @@ import {
 import { asBold, asFormattedConfig, asFormattedError } from 'src/utils/format'
 import { openUrlInBrowser } from 'src/utils/openBrowser'
 import { connectionConfig, Teams } from 'src/api'
-import { throwE2BRequestError } from '../../utils/errors'
+import { handleE2BRequestError } from '../../utils/errors'
 
 export const loginCommand = new commander.Command('login')
   .description('log in to CLI')
@@ -53,9 +53,7 @@ export const loginCommand = new commander.Command('login')
         signal,
       })
 
-      if (res.error) {
-        throwE2BRequestError(res.error, 'Error getting teams')
-      }
+      handleE2BRequestError(res, 'Error getting teams')
       const teams = res.data as Teams
 
       const defaultTeam = teams.find((team) => team.isDefault)
