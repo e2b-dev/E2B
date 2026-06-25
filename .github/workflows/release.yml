@@ -3,7 +3,8 @@ name: Release
 on:
   workflow_dispatch: {}
 
-concurrency: ${{ github.workflow }}-${{ github.ref }}
+# Shared literal group so production and candidate releases on the same ref serialize.
+concurrency: release-${{ github.ref }}
 
 permissions:
   id-token: write
