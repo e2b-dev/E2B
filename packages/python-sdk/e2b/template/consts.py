@@ -28,3 +28,9 @@ Default setting for whether to resolve symbolic links when copying files.
 When False, symlinks are copied as symlinks rather than following them.
 """
 RESOLVE_SYMLINKS = False
+
+"""
+Default setting for whether to compress files when copying them into the
+template. When True, the upload archive is gzipped before being uploaded.
+"""
+COMPRESSION = True

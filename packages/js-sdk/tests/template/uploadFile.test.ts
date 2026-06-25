@@ -51,6 +51,7 @@ describe('uploadFile transfer encoding', () => {
         url: baseUrl,
         ignorePatterns: [],
         resolveSymlinks: false,
+        compression: true,
       },
       undefined
     )

@@ -197,6 +197,7 @@ export type Instruction = {
   forceUpload?: true
   filesHash?: string
   resolveSymlinks?: boolean
+  compression?: boolean
 }
 
 /**
@@ -209,6 +210,7 @@ export type CopyItem = {
   user?: string
   mode?: number
   resolveSymlinks?: boolean
+  compression?: boolean
 }
 
 /**
@@ -412,6 +414,7 @@ export interface TemplateBuilder {
       user?: string
       mode?: number
       resolveSymlinks?: boolean
+      compression?: boolean
     }
   ): TemplateBuilder
 
