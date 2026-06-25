@@ -203,15 +203,18 @@ class SandboxApi(SandboxBase):
         config = ConnectionConfig(**opts)
 
         # on_timeout accepts a bare action or {"action", "keep_memory"}; normalize.
+        # Only the object form carries keep_memory; anything else (a bare action
+        # string, or an unexpected value from an untyped caller) passes through as
+        # the action, so a non-"pause" value resolves to kill instead of crashing.
         on_timeout_raw = lifecycle.get("on_timeout", "kill") if lifecycle else "kill"
-        if isinstance(on_timeout_raw, str):
-            on_timeout = on_timeout_raw
-            keep_memory = None
-            keep_memory_provided = False
-        else:
+        if isinstance(on_timeout_raw, dict):
             on_timeout = on_timeout_raw.get("action", "kill")
             keep_memory_provided = "keep_memory" in on_timeout_raw
             keep_memory = on_timeout_raw.get("keep_memory")
+        else:
+            on_timeout = on_timeout_raw
+            keep_memory = None
+            keep_memory_provided = False
 
         # keep_memory only governs a pause action. The discriminated union type
         # forbids it on action="kill"; re-check at runtime for callers that

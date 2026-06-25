@@ -89,6 +89,16 @@ async def test_keep_memory_not_allowed_with_kill():
 
 
 @pytest.mark.skip_debug()
+async def test_invalid_on_timeout_type_does_not_crash(async_sandbox_factory):
+    # An untyped/invalid on_timeout (e.g. None) must not crash create; it falls
+    # back to kill semantics like a missing on_timeout (the sandbox just starts).
+    sbx = await async_sandbox_factory(
+        timeout=10, lifecycle=cast(Any, {"on_timeout": None})
+    )
+    assert await sbx.is_running()
+
+
+@pytest.mark.skip_debug()
 async def test_keep_memory_none_defaults_to_full_memory(async_sandbox_factory):
     # An explicit None keep_memory must default to full memory (not filesystem-only):
     # the timeout auto-pause then resumes the SAME sandbox in place (memory restore),
