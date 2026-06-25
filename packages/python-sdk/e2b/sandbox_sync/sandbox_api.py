@@ -203,7 +203,12 @@ class SandboxApi(SandboxBase):
 
         on_timeout = lifecycle.get("on_timeout", "kill") if lifecycle else "kill"
         auto_resume = lifecycle.get("auto_resume", False) if lifecycle else False
-        keep_memory = lifecycle.get("keep_memory", True) if lifecycle else True
+        # A missing or explicit None keep_memory defaults to True (full memory),
+        # mirroring the JS SDK's `?? true`. .get(key, True) would keep an explicit
+        # None, which would wrongly read as filesystem-only and send null on the wire.
+        keep_memory = lifecycle.get("keep_memory") if lifecycle else None
+        if keep_memory is None:
+            keep_memory = True
 
         if auto_resume and on_timeout != "pause":
             raise InvalidArgumentException(
