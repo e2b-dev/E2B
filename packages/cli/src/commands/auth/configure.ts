@@ -8,13 +8,10 @@ import {
   getConfigRefreshTimestamp,
   writeUserConfig,
 } from 'src/user'
-import { ensureUserConfig } from 'src/api'
+import { ensureUserConfig, Teams } from 'src/api'
 import { ensureValidAccessToken } from 'src/utils/token-refresh'
 import { asBold, asFormattedTeam } from '../../utils/format'
 import { throwE2BRequestError } from '../../utils/errors'
-
-type TeamsGetResponseData =
-  e2b.paths['/teams']['get']['responses'][200]['content']['application/json']
 
 export const configureCommand = new commander.Command('configure')
   .description('configure user')
@@ -46,7 +43,7 @@ export const configureCommand = new commander.Command('configure')
     if (res.error) {
       throwE2BRequestError(res.error, 'Error getting teams')
     }
-    const teams = res.data as TeamsGetResponseData
+    const teams = res.data as Teams
 
     const team = (
       await inquirer.default.prompt([

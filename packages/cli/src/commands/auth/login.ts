@@ -14,11 +14,8 @@ import {
 } from 'src/user'
 import { asBold, asFormattedConfig, asFormattedError } from 'src/utils/format'
 import { openUrlInBrowser } from 'src/utils/openBrowser'
-import { connectionConfig } from 'src/api'
+import { connectionConfig, Teams } from 'src/api'
 import { throwE2BRequestError } from '../../utils/errors'
-
-type TeamsGetResponseData =
-  e2b.paths['/teams']['get']['responses'][200]['content']['application/json']
 
 export const loginCommand = new commander.Command('login')
   .description('log in to CLI')
@@ -59,7 +56,7 @@ export const loginCommand = new commander.Command('login')
       if (res.error) {
         throwE2BRequestError(res.error, 'Error getting teams')
       }
-      const teams = res.data as TeamsGetResponseData
+      const teams = res.data as Teams
 
       const defaultTeam = teams.find((team) => team.isDefault)
       if (!defaultTeam) {
@@ -77,7 +74,7 @@ export const loginCommand = new commander.Command('login')
         oauth: {
           token_endpoint: signInResponse.tokenEndpoint,
           revoke_endpoint: signInResponse.revokeEndpoint,
-          client_id: signInResponse.cliClientId,
+          client_id: signInResponse.clientId,
         },
         tokens: {
           access_token: accessToken,
@@ -106,7 +103,7 @@ interface SignInWithBrowserResponse {
   refreshToken: string
   tokenEndpoint: string
   revokeEndpoint: string
-  cliClientId: string
+  clientId: string
 }
 
 async function signInWithBrowser(): Promise<SignInWithBrowserResponse> {
@@ -138,7 +135,7 @@ async function signInWithBrowser(): Promise<SignInWithBrowserResponse> {
         !searchParamsObj.refreshToken ||
         !searchParamsObj.tokenEndpoint ||
         !searchParamsObj.revokeEndpoint ||
-        !searchParamsObj.cliClientId
+        !searchParamsObj.clientId
       ) {
         reject(new Error('Incomplete login response from server'))
         followUpUrl.searchParams.set('state', 'error')

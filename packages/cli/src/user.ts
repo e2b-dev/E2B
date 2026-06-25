@@ -5,26 +5,26 @@ import * as fs from 'fs'
 /**
  * User configuration stored in ~/.e2b/config.json
  */
-export interface UserIdentityConfig {
+export interface UserIdentity {
   email: string
 }
 
-export interface UserOAuthConfig {
+export interface UserOAuth {
   token_endpoint: string
   revoke_endpoint: string
   client_id: string
 }
 
-export interface UserTokensConfig {
+export interface UserTokens {
   access_token: string
   refresh_token: string
 }
 
 export interface UserConfig {
   version: 1
-  identity: UserIdentityConfig
-  oauth: UserOAuthConfig
-  tokens: UserTokensConfig
+  identity: UserIdentity
+  oauth: UserOAuth
+  tokens: UserTokens
   last_refresh: string
   teamName: string
   teamId: string
