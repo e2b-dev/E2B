@@ -1,4 +1,5 @@
 import datetime
+import logging
 from typing import Any, Dict, List, Optional, cast
 
 from packaging.version import Version
@@ -197,9 +198,10 @@ class SandboxApi(SandboxBase):
         network: Optional[SandboxNetworkOpts] = None,
         lifecycle: Optional[SandboxLifecycle] = None,
         volume_mounts: Optional[List[SandboxVolumeMountAPI]] = None,
+        logger: Optional[logging.Logger] = None,
         **opts: Unpack[ApiParams],
     ) -> SandboxCreateResponse:
-        config = ConnectionConfig(**opts)
+        config = ConnectionConfig(logger=logger, **opts)
 
         # on_timeout accepts a bare action or {"action", "keep_memory"}; normalize.
         # Only the object form carries keep_memory; anything else (a bare action
@@ -352,11 +354,12 @@ class SandboxApi(SandboxBase):
         cls,
         sandbox_id: str,
         timeout: Optional[int] = None,
+        logger: Optional[logging.Logger] = None,
         **opts: Unpack[ApiParams],
     ) -> SandboxCreateResponse:
         timeout = timeout or SandboxBase.default_sandbox_timeout
 
-        config = ConnectionConfig(**opts)
+        config = ConnectionConfig(logger=logger, **opts)
 
         api_client = get_api_client(config)
         res = post_sandboxes_sandbox_id_connect.sync_detailed(
