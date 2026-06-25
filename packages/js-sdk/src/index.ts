@@ -53,6 +53,7 @@ export type {
   SandboxApiOpts,
   SandboxConnectOpts,
   SandboxMetricsOpts,
+  SandboxPauseOpts,
   SandboxState,
   SandboxListOpts,
   SandboxPaginator,

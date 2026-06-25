@@ -182,8 +182,10 @@ sandboxTest.skipIf(isDebug)(
     await sandbox.pause({ keepMemory: false })
     assert.isFalse(await sandbox.isRunning())
 
-    // Use the resumed handle for guest (envd) operations: the cold boot
-    // re-initializes envd, so the pre-pause handle's connection is stale.
+    // Resume the paused sandbox; a filesystem-only pause keeps no memory, so
+    // connect() cold-boots (reboots) it. connect() returns the same handle, and
+    // its credentials stay valid across the resume (the backend re-binds the
+    // same envd access token on the cold boot).
     const resumedSandbox = await sandbox.connect()
     assert.equal(resumedSandbox.sandboxId, sandbox.sandboxId)
     assert.isTrue(await resumedSandbox.isRunning())

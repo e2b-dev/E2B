@@ -541,7 +541,7 @@ export class Sandbox extends SandboxApi {
    * a sandbox cold-boots (reboots) it from disk, losing running processes and
    * open connections. Defaults to `true` (full memory snapshot).
    *
-   * @returns sandbox ID that can be used to resume the sandbox.
+   * @returns `true` if the sandbox got paused, `false` if the sandbox was already paused.
    *
    * @example
    * ```ts

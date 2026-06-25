@@ -19,9 +19,9 @@ def test_pause_filesystem_only(sandbox: Sandbox):
     assert resumed.is_running()
     assert resumed.sandbox_id == sandbox.sandbox_id
 
-    # Use the resumed handle for guest (envd) operations: the cold boot
-    # re-initializes envd, so the pre-pause handle's connection is stale.
-    # The rootfs survives the reboot...
+    # connect() returns the same handle, and its credentials stay valid across
+    # the resume (the backend re-binds the same envd access token on the cold
+    # boot). The rootfs survives the reboot...
     marker = resumed.commands.run("cat /home/user/fs-only-marker.txt").stdout.strip()
     assert marker == "persisted"
 
