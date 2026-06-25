@@ -272,11 +272,15 @@ class SandboxOnTimeoutKill(TypedDict):
     """Kill the sandbox when the timeout is reached."""
 
 
-SandboxOnTimeout = Union[SandboxOnTimeoutPause, SandboxOnTimeoutKill]
+SandboxOnTimeout = Union[
+    Literal["pause", "kill"], SandboxOnTimeoutPause, SandboxOnTimeoutKill
+]
 """
-Object form of `on_timeout`. A discriminated union on `action`: `keep_memory` is
-only accepted alongside `action: "pause"`. Passing `keep_memory` with
-`action: "kill"` is a static type error.
+What should happen to the sandbox when the timeout is reached. Either the bare
+action (`"pause"` / `"kill"`) or the object form. The object form is a
+discriminated union on `action`: `keep_memory` is only accepted alongside
+`action: "pause"`. Passing `keep_memory` with `action: "kill"` is a static type
+error.
 """
 
 
@@ -286,7 +290,7 @@ class SandboxLifecycle(TypedDict):
     Defaults to `on_timeout="kill"` and `auto_resume=False`.
     """
 
-    on_timeout: Union[Literal["pause", "kill"], SandboxOnTimeout]
+    on_timeout: SandboxOnTimeout
     """
     What should happen to the sandbox when timeout is reached. `"kill"` terminates
     the sandbox; `"pause"` pauses it for later resume. Accepts either the bare
@@ -298,7 +302,9 @@ class SandboxLifecycle(TypedDict):
     auto_resume: NotRequired[bool]
     """
     Whether activity should cause the sandbox to resume when paused. Defaults to `False`.
-    Can be `True` only when the resolved timeout action is `pause`.
+    Can be `True` only when `on_timeout` is `pause`. Not supported when
+    `keep_memory` is `False` (a filesystem-only snapshot must be resumed
+    explicitly via `connect()`).
     """
 
 

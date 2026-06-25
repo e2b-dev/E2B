@@ -248,7 +248,9 @@ export type SandboxLifecycle = {
   /**
    * Auto-resume enabled flag.
    * @default false
-   * Can be `true` only when the resolved timeout action is `pause`.
+   * Can be `true` only when `onTimeout` is `pause`. Not supported when
+   * `keepMemory` is `false` (a filesystem-only snapshot must be resumed
+   * explicitly via `connect()`).
    */
   autoResume?: boolean
 }
@@ -1161,8 +1163,6 @@ export class SandboxApi {
       allow_internet_access: opts?.allowInternetAccess ?? true,
       network: buildNetworkBody(opts?.network),
       autoPause: action === 'pause',
-      // Only relevant to a timeout auto-pause; omit it otherwise so the body
-      // matches the field's contract (keepMemory is forced true when not pause).
       autoPauseMemory: action === 'pause' ? keepMemory : undefined,
       autoResume: { enabled: autoResume },
     }

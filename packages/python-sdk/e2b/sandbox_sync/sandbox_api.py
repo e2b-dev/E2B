@@ -241,9 +241,6 @@ class SandboxApi(SandboxBase):
         body = NewSandbox(
             template_id=template,
             auto_pause=on_timeout == "pause",
-            # Only relevant to a timeout auto-pause; leave it unset otherwise so the
-            # body matches the field's contract (keep_memory is forced True when
-            # on_timeout is not "pause").
             auto_pause_memory=keep_memory if on_timeout == "pause" else UNSET,
             auto_resume=SandboxAutoResumeConfig(enabled=auto_resume),
             metadata=metadata or {},

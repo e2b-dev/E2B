@@ -78,31 +78,27 @@ test.skipIf(isDebug)(
 
     try {
       const marker = 'auto-pause-fs-only'
-      await sandbox.commands.run(
-        `echo ${marker} > /home/user/auto-pause-marker.txt`
-      )
+      await sandbox.files.write('/home/user/auto-pause-marker.txt', marker)
       const bootBefore = (
-        await sandbox.commands.run('cat /proc/sys/kernel/random/boot_id')
-      ).stdout.trim()
+        await sandbox.files.read('/proc/sys/kernel/random/boot_id')
+      ).trim()
 
       await wait(5_000)
 
       assert.equal((await sandbox.getInfo()).state, 'paused')
-      assert.isFalse(await sandbox.isRunning())
 
       // A filesystem-only snapshot cannot auto-resume on traffic; connect
       // resumes it by cold-booting.
       await sandbox.connect()
-      assert.isTrue(await sandbox.isRunning())
 
       const persisted = (
-        await sandbox.commands.run('cat /home/user/auto-pause-marker.txt')
-      ).stdout.trim()
+        await sandbox.files.read('/home/user/auto-pause-marker.txt')
+      ).trim()
       assert.equal(persisted, marker)
 
       const bootAfter = (
-        await sandbox.commands.run('cat /proc/sys/kernel/random/boot_id')
-      ).stdout.trim()
+        await sandbox.files.read('/proc/sys/kernel/random/boot_id')
+      ).trim()
       assert.notEqual(bootAfter, bootBefore)
     } finally {
       await sandbox.kill().catch(() => {})

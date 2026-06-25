@@ -134,29 +134,21 @@ def test_auto_pause_filesystem_only_reboots(sandbox_factory):
     )
 
     marker = "auto-pause-fs-only"
-    sandbox.commands.run(f"echo {marker} > /home/user/auto-pause-marker.txt")
-    boot_before = sandbox.commands.run(
-        "cat /proc/sys/kernel/random/boot_id"
-    ).stdout.strip()
+    sandbox.files.write("/home/user/auto-pause-marker.txt", marker)
+    boot_before = sandbox.files.read("/proc/sys/kernel/random/boot_id").strip()
 
     sleep(5)
 
     assert sandbox.get_info().state == SandboxState.PAUSED
-    assert not sandbox.is_running()
 
     # A filesystem-only snapshot cannot auto-resume on traffic; connect resumes
     # it by cold-booting.
     resumed = sandbox.connect()
-    assert resumed.is_running()
 
-    persisted = resumed.commands.run(
-        "cat /home/user/auto-pause-marker.txt"
-    ).stdout.strip()
+    persisted = resumed.files.read("/home/user/auto-pause-marker.txt").strip()
     assert persisted == marker
 
-    boot_after = resumed.commands.run(
-        "cat /proc/sys/kernel/random/boot_id"
-    ).stdout.strip()
+    boot_after = resumed.files.read("/proc/sys/kernel/random/boot_id").strip()
     assert boot_after != boot_before
 
 

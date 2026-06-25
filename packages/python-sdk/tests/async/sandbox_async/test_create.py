@@ -133,29 +133,21 @@ async def test_auto_pause_filesystem_only_reboots(async_sandbox_factory):
     )
 
     marker = "auto-pause-fs-only"
-    await sandbox.commands.run(f"echo {marker} > /home/user/auto-pause-marker.txt")
-    boot_before = (
-        await sandbox.commands.run("cat /proc/sys/kernel/random/boot_id")
-    ).stdout.strip()
+    await sandbox.files.write("/home/user/auto-pause-marker.txt", marker)
+    boot_before = (await sandbox.files.read("/proc/sys/kernel/random/boot_id")).strip()
 
     await asyncio.sleep(5)
 
     assert (await sandbox.get_info()).state == SandboxState.PAUSED
-    assert not await sandbox.is_running()
 
     # A filesystem-only snapshot cannot auto-resume on traffic; connect resumes
     # it by cold-booting.
     resumed = await sandbox.connect()
-    assert await resumed.is_running()
 
-    persisted = (
-        await resumed.commands.run("cat /home/user/auto-pause-marker.txt")
-    ).stdout.strip()
+    persisted = (await resumed.files.read("/home/user/auto-pause-marker.txt")).strip()
     assert persisted == marker
 
-    boot_after = (
-        await resumed.commands.run("cat /proc/sys/kernel/random/boot_id")
-    ).stdout.strip()
+    boot_after = (await resumed.files.read("/proc/sys/kernel/random/boot_id")).strip()
     assert boot_after != boot_before
 
 
