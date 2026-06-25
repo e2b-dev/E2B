@@ -19,5 +19,6 @@ export const infoCommand = new commander.Command('info')
     }
 
     console.log(asFormattedConfig(userConfig))
+
     process.exit(0)
   })
