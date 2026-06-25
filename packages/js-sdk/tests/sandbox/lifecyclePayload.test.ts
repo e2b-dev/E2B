@@ -11,22 +11,32 @@ test.skipIf(isDebug)(
     await expect(
       Sandbox.create(template, {
         timeoutMs: 3_000,
-        lifecycle: { onTimeout: 'pause', autoResume: true, keepMemory: false },
+        lifecycle: {
+          onTimeout: { action: 'pause', keepMemory: false },
+          autoResume: true,
+        },
       })
     ).rejects.toThrowError(InvalidArgumentError)
   }
 )
 
-test.skipIf(isDebug)('keepMemory=false requires onTimeout pause', async () => {
-  // keepMemory only governs a timeout auto-pause, so keepMemory:false without
-  // onTimeout:'pause' is rejected client-side.
-  await expect(
-    Sandbox.create(template, {
-      timeoutMs: 3_000,
-      lifecycle: { onTimeout: 'kill', keepMemory: false },
-    })
-  ).rejects.toThrowError(InvalidArgumentError)
-})
+test.skipIf(isDebug)(
+  'keepMemory is not allowed when onTimeout action is kill',
+  async () => {
+    // The discriminated union forbids keepMemory on `action: 'kill'` at compile
+    // time (asserted by @ts-expect-error). The runtime guard below additionally
+    // rejects it for untyped (JS) callers that bypass the type.
+    await expect(
+      Sandbox.create(template, {
+        timeoutMs: 3_000,
+        lifecycle: {
+          // @ts-expect-error keepMemory is not allowed with action: 'kill'
+          onTimeout: { action: 'kill', keepMemory: false },
+        },
+      })
+    ).rejects.toThrowError(InvalidArgumentError)
+  }
+)
 
 test.skipIf(isDebug)(
   'auto-pause without auto-resume requires connect to wake',
@@ -63,7 +73,7 @@ test.skipIf(isDebug)(
     // cold-boots the sandbox from disk.
     const sandbox = await Sandbox.create(template, {
       timeoutMs: 3_000,
-      lifecycle: { onTimeout: 'pause', keepMemory: false },
+      lifecycle: { onTimeout: { action: 'pause', keepMemory: false } },
     })
 
     try {

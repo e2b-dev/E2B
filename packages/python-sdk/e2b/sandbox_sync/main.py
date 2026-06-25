@@ -184,7 +184,7 @@ class Sandbox(SandboxApi):
         :param allow_internet_access: Allow sandbox to access the internet, defaults to `True`. If set to `False`, it works the same as setting network `deny_out` to `[0.0.0.0/0]`.
         :param mcp: MCP server to enable in the sandbox
         :param network: Sandbox network configuration. ``allow_out``/``deny_out`` may also be a callable receiving a :class:`SandboxNetworkSelectorContext` (``ctx.all_traffic``, ``ctx.rules``) and returning a list of strings. Per-host transform rules are nested under ``network.rules``.
-        :param lifecycle: Sandbox lifecycle configuration — ``on_timeout``: ``"kill"`` (default) or ``"pause"``; ``auto_resume``: ``False`` (default) or ``True`` (only when ``on_timeout="pause"``); ``keep_memory``: ``True`` (default) or ``False`` for a filesystem-only auto-pause (cold-boots on resume; cannot be combined with ``auto_resume``). Example: ``{"on_timeout": "pause", "keep_memory": False}``
+        :param lifecycle: Sandbox lifecycle configuration — ``on_timeout``: ``"kill"`` (default) or ``"pause"``, or an object ``{"action": "pause"|"kill", "keep_memory": bool}`` where ``keep_memory`` (default ``True``) set to ``False`` makes a timeout auto-pause filesystem-only (cold-boots on resume; cannot be combined with ``auto_resume``); ``auto_resume``: ``False`` (default) or ``True`` (only when the resolved action is ``"pause"``). Example: ``{"on_timeout": {"action": "pause", "keep_memory": False}}``
         :param volume_mounts: Dictionary mapping mount paths to Volume instances or volume names
 
         :return: A Sandbox instance for the new sandbox

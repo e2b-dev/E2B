@@ -201,23 +201,34 @@ class SandboxApi(SandboxBase):
     ) -> SandboxCreateResponse:
         config = ConnectionConfig(**opts)
 
-        on_timeout = lifecycle.get("on_timeout", "kill") if lifecycle else "kill"
-        auto_resume = lifecycle.get("auto_resume", False) if lifecycle else False
+        # on_timeout accepts a bare action or {"action", "keep_memory"}; normalize.
+        on_timeout_raw = lifecycle.get("on_timeout", "kill") if lifecycle else "kill"
+        if isinstance(on_timeout_raw, str):
+            on_timeout = on_timeout_raw
+            keep_memory = None
+            keep_memory_provided = False
+        else:
+            on_timeout = on_timeout_raw.get("action", "kill")
+            keep_memory_provided = "keep_memory" in on_timeout_raw
+            keep_memory = on_timeout_raw.get("keep_memory")
+
+        # keep_memory only governs a pause action. The discriminated union type
+        # forbids it on action="kill"; re-check at runtime for callers that
+        # bypass the type.
+        if keep_memory_provided and on_timeout != "pause":
+            raise InvalidArgumentException(
+                "keep_memory is not allowed when on_timeout action is 'kill'."
+            )
+
         # A missing or explicit None keep_memory defaults to True (full memory),
-        # mirroring the JS SDK's `?? true`. .get(key, True) would keep an explicit
-        # None, which would wrongly read as filesystem-only and send null on the wire.
-        keep_memory = lifecycle.get("keep_memory") if lifecycle else None
+        # mirroring the JS SDK; sending null would wrongly read as filesystem-only.
         if keep_memory is None:
             keep_memory = True
+        auto_resume = lifecycle.get("auto_resume", False) if lifecycle else False
 
         if auto_resume and on_timeout != "pause":
             raise InvalidArgumentException(
                 "auto_resume can only be True when the resolved on_timeout is 'pause'."
-            )
-
-        if not keep_memory and on_timeout != "pause":
-            raise InvalidArgumentException(
-                "keep_memory=False only applies when on_timeout is 'pause'."
             )
 
         if not keep_memory and auto_resume:

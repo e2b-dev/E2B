@@ -239,31 +239,62 @@ class SandboxNetworkInfo(TypedDict, total=False):
     mask_request_host: str
 
 
+class SandboxOnTimeoutPause(TypedDict):
+    """
+    Object form of `on_timeout` that auto-pauses the sandbox when the timeout is
+    reached, optionally controlling the pause snapshot kind via `keep_memory`.
+    """
+
+    action: Literal["pause"]
+    """Auto-pause the sandbox when the timeout is reached."""
+
+    keep_memory: NotRequired[bool]
+    """
+    Whether the timeout auto-pause keeps a full memory snapshot. Defaults to `True`.
+    When `False`, the auto-pause drops the in-memory state and persists only the
+    filesystem (a filesystem-only snapshot); resuming such a sandbox cold-boots
+    (reboots) it from disk, losing running processes and open connections. Cannot
+    be combined with `auto_resume` (a filesystem-only snapshot must be resumed
+    explicitly).
+    """
+
+
+class SandboxOnTimeoutKill(TypedDict):
+    """
+    Object form of `on_timeout` that kills the sandbox when the timeout is reached.
+    """
+
+    action: Literal["kill"]
+    """Kill the sandbox when the timeout is reached."""
+
+
+SandboxOnTimeout = Union[SandboxOnTimeoutPause, SandboxOnTimeoutKill]
+"""
+Object form of `on_timeout`. A discriminated union on `action`: `keep_memory` is
+only accepted alongside `action: "pause"`. Passing `keep_memory` with
+`action: "kill"` is a static type error.
+"""
+
+
 class SandboxLifecycle(TypedDict):
     """
     Sandbox lifecycle configuration; defines post-timeout behavior and auto-resume settings.
     Defaults to `on_timeout="kill"` and `auto_resume=False`.
     """
 
-    on_timeout: Literal["pause", "kill"]
+    on_timeout: Union[Literal["pause", "kill"], SandboxOnTimeout]
     """
-    What should happen to the sandbox when timeout is reached. `"kill"` means the sandbox will be terminated, while `"pause"` means the sandbox will be paused and can be resumed later. Defaults to `"kill"`.
+    What should happen to the sandbox when timeout is reached. `"kill"` terminates
+    the sandbox; `"pause"` pauses it for later resume. Accepts either the bare
+    action or an object `{"action": "pause", "keep_memory": ...}` /
+    `{"action": "kill"}` to also control the pause snapshot kind. Defaults to
+    `"kill"`.
     """
 
     auto_resume: NotRequired[bool]
     """
     Whether activity should cause the sandbox to resume when paused. Defaults to `False`.
-    Can be `True` only when `on_timeout` is `pause`.
-    """
-
-    keep_memory: NotRequired[bool]
-    """
-    Whether a timeout auto-pause keeps a full memory snapshot. Defaults to `True`.
-    When `False`, the auto-pause drops the in-memory state and persists only the
-    filesystem (a filesystem-only snapshot); resuming such a sandbox cold-boots
-    (reboots) it from disk, losing running processes and open connections. Only
-    relevant when `on_timeout` is `pause`, and cannot be combined with
-    `auto_resume` (a filesystem-only snapshot must be resumed explicitly).
+    Can be `True` only when the resolved timeout action is `pause`.
     """
 
 

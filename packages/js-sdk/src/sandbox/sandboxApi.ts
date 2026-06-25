@@ -197,32 +197,54 @@ export type SandboxNetworkUpdate = {
   allowInternetAccess?: boolean
 }
 
+/**
+ * What happens when the sandbox timeout is reached. Either the bare action
+ * (`'pause'` / `'kill'`), or an object form that also controls the pause
+ * snapshot kind via `keepMemory`.
+ *
+ * The object form is a discriminated union on `action`: `keepMemory` is only
+ * accepted alongside `action: 'pause'`. Passing `keepMemory` with
+ * `action: 'kill'` is a compile-time type error.
+ */
+export type SandboxOnTimeout =
+  | 'pause'
+  | 'kill'
+  | {
+      /** Auto-pause the sandbox when the timeout is reached. */
+      action: 'pause'
+
+      /**
+       * Whether the timeout auto-pause keeps a full memory snapshot.
+       *
+       * When `false`, the auto-pause drops the in-memory state and persists only
+       * the filesystem (a filesystem-only snapshot); resuming such a sandbox
+       * cold-boots (reboots) it from disk, losing running processes and open
+       * connections. Cannot be combined with `autoResume` (a filesystem-only
+       * snapshot must be resumed explicitly).
+       *
+       * @default true
+       */
+      keepMemory?: boolean
+    }
+  | {
+      /** Kill the sandbox when the timeout is reached. */
+      action: 'kill'
+    }
+
 export type SandboxLifecycle = {
   /**
-   * Action to take when sandbox timeout is reached.
+   * Action to take when sandbox timeout is reached. Accepts either `'pause'` /
+   * `'kill'`, or `{ action, keepMemory }` to also control the pause snapshot kind.
    * @default "kill"
    */
-  onTimeout: 'pause' | 'kill'
+  onTimeout: SandboxOnTimeout
 
   /**
    * Auto-resume enabled flag.
    * @default false
-   * Can be `true` only when `onTimeout` is `pause`.
+   * Can be `true` only when the resolved timeout action is `pause`.
    */
   autoResume?: boolean
-
-  /**
-   * Whether a timeout auto-pause keeps a full memory snapshot.
-   *
-   * When `false`, the auto-pause drops the in-memory state and persists only the
-   * filesystem (a filesystem-only snapshot); resuming such a sandbox cold-boots
-   * (reboots) it from disk, losing running processes and open connections. Only
-   * relevant when `onTimeout` is `pause`, and cannot be combined with
-   * `autoResume` (a filesystem-only snapshot must be resumed explicitly).
-   *
-   * @default true
-   */
-  keepMemory?: boolean
 }
 
 export type SandboxInfoLifecycle = {
@@ -1092,25 +1114,34 @@ export class SandboxApi {
   ) {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
+    // onTimeout accepts a bare action (`'pause'` / `'kill'`) or the object form
+    // `{ action, keepMemory }`. The discriminated union type forbids `keepMemory`
+    // on `action: 'kill'`; re-check at runtime for untyped (JS) callers.
     const onTimeout = opts?.lifecycle?.onTimeout ?? 'kill'
+    const action = typeof onTimeout === 'string' ? onTimeout : onTimeout.action
+    const hasKeepMemory =
+      typeof onTimeout !== 'string' && 'keepMemory' in onTimeout
+    const keepMemory =
+      typeof onTimeout !== 'string' && 'keepMemory' in onTimeout
+        ? (onTimeout.keepMemory ?? true)
+        : true
     const autoResume = opts?.lifecycle?.autoResume ?? false
-    const keepMemory = opts?.lifecycle?.keepMemory ?? true
 
-    if (autoResume && onTimeout !== 'pause') {
+    if (hasKeepMemory && action !== 'pause') {
       throw new InvalidArgumentError(
-        "autoResume can only be true when the resolved onTimeout is 'pause'."
+        "onTimeout.keepMemory is not allowed when action is 'kill'."
       )
     }
 
-    if (!keepMemory && onTimeout !== 'pause') {
+    if (autoResume && action !== 'pause') {
       throw new InvalidArgumentError(
-        "lifecycle.keepMemory=false only applies when onTimeout is 'pause'."
+        "autoResume can only be true when the resolved onTimeout action is 'pause'."
       )
     }
 
     if (!keepMemory && autoResume) {
       throw new InvalidArgumentError(
-        'lifecycle.keepMemory=false (filesystem-only auto-pause) cannot be combined with autoResume: a filesystem-only snapshot cannot be auto-resumed by traffic and must be resumed explicitly.'
+        'onTimeout keepMemory=false (filesystem-only auto-pause) cannot be combined with autoResume: a filesystem-only snapshot cannot be auto-resumed by traffic and must be resumed explicitly.'
       )
     }
 
@@ -1123,10 +1154,10 @@ export class SandboxApi {
       secure: opts?.secure ?? true,
       allow_internet_access: opts?.allowInternetAccess ?? true,
       network: buildNetworkBody(opts?.network),
-      autoPause: onTimeout === 'pause',
+      autoPause: action === 'pause',
       // Only relevant to a timeout auto-pause; omit it otherwise so the body
       // matches the field's contract (keepMemory is forced true when not pause).
-      autoPauseMemory: onTimeout === 'pause' ? keepMemory : undefined,
+      autoPauseMemory: action === 'pause' ? keepMemory : undefined,
       autoResume: { enabled: autoResume },
     }
 

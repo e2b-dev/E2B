@@ -3,25 +3,31 @@
 "@e2b/python-sdk": minor
 ---
 
-Add a `keepMemory` (`keep_memory` in Python) option to the sandbox `lifecycle`
-config, controlling the snapshot kind taken when a sandbox auto-pauses on
-timeout.
+Add an object form to the sandbox `lifecycle.onTimeout` (`on_timeout` in Python)
+that controls the snapshot kind taken when a sandbox auto-pauses on timeout, via
+`keepMemory` (`keep_memory`).
 
-When `keepMemory` is `false`, a timeout auto-pause drops the in-memory state and
-persists only the filesystem (a filesystem-only snapshot); resuming such a
-sandbox cold-boots (reboots) it from disk, losing running processes and open
-connections. Defaults to `true` (full memory snapshot). It only applies when
-`onTimeout`/`on_timeout` is `pause`, and cannot be combined with auto-resume (a
-filesystem-only snapshot must be resumed explicitly).
+`onTimeout` now accepts either the existing bare action (`'pause'` / `'kill'`) or
+the object form. The object form is a discriminated union on `action`:
+`keepMemory` is only accepted alongside `action: 'pause'` — pairing it with
+`action: 'kill'` is a compile-time type error (and is rejected at runtime for
+untyped callers). When `keepMemory` is `false`, a timeout auto-pause drops the
+in-memory state and persists only the filesystem (a filesystem-only snapshot);
+resuming such a sandbox cold-boots (reboots) it from disk, losing running
+processes and open connections. Defaults to `true` (full memory snapshot). It
+cannot be combined with auto-resume (a filesystem-only snapshot must be resumed
+explicitly). The bare string form is unchanged.
 
 ```python
 # Python
-sbx = Sandbox.create(lifecycle={"on_timeout": "pause", "keep_memory": False})
+sbx = Sandbox.create(
+    lifecycle={"on_timeout": {"action": "pause", "keep_memory": False}}
+)
 ```
 
 ```ts
 // JS/TS
 const sbx = await Sandbox.create({
-  lifecycle: { onTimeout: 'pause', keepMemory: false },
+  lifecycle: { onTimeout: { action: 'pause', keepMemory: false } },
 })
 ```

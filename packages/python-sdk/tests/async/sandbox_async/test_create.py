@@ -1,4 +1,5 @@
 import asyncio
+from typing import Any, cast
 
 import httpx
 import pytest
@@ -77,21 +78,23 @@ async def test_filesystem_only_auto_pause_rejects_auto_resume():
         await AsyncSandbox.create(
             timeout=3,
             lifecycle={
-                "on_timeout": "pause",
+                "on_timeout": {"action": "pause", "keep_memory": False},
                 "auto_resume": True,
-                "keep_memory": False,
             },
         )
 
 
 @pytest.mark.skip_debug()
-async def test_filesystem_only_auto_pause_requires_pause():
-    # keep_memory only governs a timeout auto-pause, so keep_memory=False without
-    # on_timeout="pause" is rejected client-side.
+async def test_keep_memory_not_allowed_with_kill():
+    # The discriminated union forbids keep_memory on action="kill" at type-check
+    # time; the runtime guard rejects it for callers that bypass the type
+    # (cast(Any, ...) feeds the deliberately type-invalid input).
     with pytest.raises(InvalidArgumentException):
         await AsyncSandbox.create(
             timeout=3,
-            lifecycle={"on_timeout": "kill", "keep_memory": False},
+            lifecycle=cast(
+                Any, {"on_timeout": {"action": "kill", "keep_memory": False}}
+            ),
         )
 
 
@@ -103,7 +106,7 @@ async def test_keep_memory_none_defaults_to_full_memory(async_sandbox_factory):
     # treated as filesystem-only (cold boot).
     sbx = await async_sandbox_factory(
         timeout=60,
-        lifecycle={"on_timeout": "pause", "keep_memory": None},
+        lifecycle={"on_timeout": {"action": "pause", "keep_memory": None}},
     )
     boot_before = (await sbx.files.read("/proc/sys/kernel/random/boot_id")).strip()
 
@@ -126,7 +129,7 @@ async def test_auto_pause_filesystem_only_reboots(async_sandbox_factory):
     # cold-boots the sandbox from disk.
     sandbox = await async_sandbox_factory(
         timeout=3,
-        lifecycle={"on_timeout": "pause", "keep_memory": False},
+        lifecycle={"on_timeout": {"action": "pause", "keep_memory": False}},
     )
 
     marker = "auto-pause-fs-only"

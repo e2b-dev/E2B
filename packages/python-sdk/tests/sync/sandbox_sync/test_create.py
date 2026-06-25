@@ -1,4 +1,5 @@
 from time import sleep
+from typing import Any, cast
 
 import httpx
 import pytest
@@ -78,21 +79,23 @@ def test_filesystem_only_auto_pause_rejects_auto_resume():
         Sandbox.create(
             timeout=3,
             lifecycle={
-                "on_timeout": "pause",
+                "on_timeout": {"action": "pause", "keep_memory": False},
                 "auto_resume": True,
-                "keep_memory": False,
             },
         )
 
 
 @pytest.mark.skip_debug()
-def test_filesystem_only_auto_pause_requires_pause():
-    # keep_memory only governs a timeout auto-pause, so keep_memory=False without
-    # on_timeout="pause" is rejected client-side.
+def test_keep_memory_not_allowed_with_kill():
+    # The discriminated union forbids keep_memory on action="kill" at type-check
+    # time; the runtime guard rejects it for callers that bypass the type
+    # (cast(Any, ...) feeds the deliberately type-invalid input).
     with pytest.raises(InvalidArgumentException):
         Sandbox.create(
             timeout=3,
-            lifecycle={"on_timeout": "kill", "keep_memory": False},
+            lifecycle=cast(
+                Any, {"on_timeout": {"action": "kill", "keep_memory": False}}
+            ),
         )
 
 
@@ -104,7 +107,7 @@ def test_keep_memory_none_defaults_to_full_memory(sandbox_factory):
     # treated as filesystem-only (cold boot).
     sbx = sandbox_factory(
         timeout=60,
-        lifecycle={"on_timeout": "pause", "keep_memory": None},
+        lifecycle={"on_timeout": {"action": "pause", "keep_memory": None}},
     )
     boot_before = sbx.files.read("/proc/sys/kernel/random/boot_id").strip()
 
@@ -127,7 +130,7 @@ def test_auto_pause_filesystem_only_reboots(sandbox_factory):
     # cold-boots the sandbox from disk.
     sandbox = sandbox_factory(
         timeout=3,
-        lifecycle={"on_timeout": "pause", "keep_memory": False},
+        lifecycle={"on_timeout": {"action": "pause", "keep_memory": False}},
     )
 
     marker = "auto-pause-fs-only"
