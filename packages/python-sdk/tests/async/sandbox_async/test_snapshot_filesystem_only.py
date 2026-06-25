@@ -5,10 +5,10 @@ from e2b import AsyncSandbox
 @pytest.mark.skip_debug()
 async def test_pause_filesystem_only(async_sandbox: AsyncSandbox):
     # A marker on the persisted rootfs and the kernel boot id before pausing.
-    await async_sandbox.commands.run("echo persisted > /home/user/fs-only-marker.txt")
+    await async_sandbox.files.write("/home/user/fs-only-marker.txt", "persisted")
     boot_before = (
-        await async_sandbox.commands.run("cat /proc/sys/kernel/random/boot_id")
-    ).stdout.strip()
+        await async_sandbox.files.read("/proc/sys/kernel/random/boot_id")
+    ).strip()
 
     # Filesystem-only pause: only the rootfs is persisted, no memory snapshot.
     assert await async_sandbox.pause(keep_memory=False)
@@ -22,14 +22,10 @@ async def test_pause_filesystem_only(async_sandbox: AsyncSandbox):
     # connect() returns the same handle, and its credentials stay valid across
     # the resume (the backend re-binds the same envd access token on the cold
     # boot). The rootfs survives the reboot...
-    marker = (
-        await resumed.commands.run("cat /home/user/fs-only-marker.txt")
-    ).stdout.strip()
+    marker = (await resumed.files.read("/home/user/fs-only-marker.txt")).strip()
     assert marker == "persisted"
 
     # ...while a fresh kernel boot id proves the guest cold-booted rather than
     # being restored from a memory snapshot.
-    boot_after = (
-        await resumed.commands.run("cat /proc/sys/kernel/random/boot_id")
-    ).stdout.strip()
+    boot_after = (await resumed.files.read("/proc/sys/kernel/random/boot_id")).strip()
     assert boot_after != boot_before

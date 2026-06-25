@@ -175,8 +175,8 @@ sandboxTest.skipIf(isDebug)(
 
     // Kernel boot id before the pause; it changes only across a real (cold) boot.
     const bootBefore = (
-      await sandbox.commands.run('cat /proc/sys/kernel/random/boot_id')
-    ).stdout.trim()
+      await sandbox.files.read('/proc/sys/kernel/random/boot_id')
+    ).trim()
 
     // Filesystem-only snapshot: no memory is captured, so resuming cold-boots.
     await sandbox.pause({ keepMemory: false })
@@ -196,8 +196,8 @@ sandboxTest.skipIf(isDebug)(
 
     // A fresh boot id proves the guest rebooted rather than restoring memory.
     const bootAfter = (
-      await resumedSandbox.commands.run('cat /proc/sys/kernel/random/boot_id')
-    ).stdout.trim()
+      await resumedSandbox.files.read('/proc/sys/kernel/random/boot_id')
+    ).trim()
     assert.notEqual(bootAfter, bootBefore)
   }
 )
