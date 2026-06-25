@@ -379,7 +379,6 @@ export async function tarFileStream(
 
   const filePaths = allFiles.map((file) => file.relativePosix())
 
-  // gzip.portable ensures deterministic gzip header without affecting file modes
   return create(
     {
       gzip,
@@ -392,10 +391,11 @@ export async function tarFileStream(
 }
 
 /**
- * Create a tar stream for upload using chunked transfer encoding.
+ * Create a tar stream for upload.
  *
  * @param fileName Glob pattern for files to include
  * @param fileContextPath Base directory for resolving file paths
+ * @param ignorePatterns Ignore patterns to exclude from the archive
  * @param resolveSymlinks Whether to follow symbolic links
  * @param gzip Whether to gzip the archive
  * @returns A readable stream of the (optionally gzipped) tar archive

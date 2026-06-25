@@ -100,7 +100,9 @@ class AsyncTemplate(TemplateBase):
             src = args[0] if len(args) > 0 else None
             force_upload = file_upload.get("forceUpload")
             files_hash = file_upload.get("filesHash", None)
-            resolve_symlinks = file_upload.get("resolveSymlinks", RESOLVE_SYMLINKS)
+            resolve_symlinks = file_upload.get("resolveSymlinks")
+            if resolve_symlinks is None:
+                resolve_symlinks = RESOLVE_SYMLINKS
             gzip = file_upload.get("gzip")
             if gzip is None:
                 gzip = GZIP
