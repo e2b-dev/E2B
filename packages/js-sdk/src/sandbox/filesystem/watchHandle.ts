@@ -109,6 +109,7 @@ export class WatchHandle {
   }
 
   private async handleEvents() {
+    let iterationError: Error | undefined
     try {
       for await (const event of this.iterateEvents()) {
         const eventType = mapEventType(event.value.type)
@@ -116,7 +117,11 @@ export class WatchHandle {
           continue
         }
 
-        this.onEvent?.({
+        // Await the callback so an async `onEvent` that rejects is routed to
+        // `onExit` below (instead of becoming an unhandled promise rejection
+        // that can crash Node) and so the user can apply backpressure. Mirrors
+        // `CommandHandle.handleEvents`.
+        await this.onEvent?.({
           name: event.value.name,
           type: eventType,
           entry: event.value.entry
@@ -124,9 +129,22 @@ export class WatchHandle {
             : undefined,
         })
       }
-      this.onExit?.()
     } catch (err) {
-      this.onExit?.(err as Error)
+      iterationError = err as Error
+    }
+
+    try {
+      // Invoke `onExit` exactly once: with the error when the watch ended
+      // because of one, or with no argument on a clean end.
+      if (iterationError) {
+        await this.onExit?.(iterationError)
+      } else {
+        await this.onExit?.()
+      }
+    } catch {
+      // `onExit` is the terminal callback; an error it throws has nowhere to
+      // propagate in this detached handler, so it's swallowed to avoid an
+      // unhandled promise rejection (the failure mode this guards against).
     } finally {
       this.handleStop()
     }

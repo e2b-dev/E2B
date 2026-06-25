@@ -9,6 +9,8 @@ import httpx
 from packaging.version import Version
 from typing_extensions import Self, Unpack
 
+from e2b.api import make_async_logging_event_hooks
+from e2b.api.client.types import Unset
 from e2b.api.client_async import get_envd_transport as get_transport
 from e2b.connection_config import ApiParams, ConnectionConfig
 from e2b.envd.api import ENVD_API_HEALTH_ROUTE, ahandle_envd_api_exception
@@ -108,6 +110,7 @@ class AsyncSandbox(SandboxApi):
             base_url=self.envd_api_url,
             transport=self._transport,
             headers=self.connection_config.sandbox_headers,
+            event_hooks=make_async_logging_event_hooks(self.connection_config.logger),
         )
         self._filesystem = Filesystem(
             self.envd_api_url,
@@ -181,6 +184,7 @@ class AsyncSandbox(SandboxApi):
         network: Optional[SandboxNetworkOpts] = None,
         lifecycle: Optional[SandboxLifecycle] = None,
         volume_mounts: Optional[SandboxAsyncVolumeMount] = None,
+        logger: Optional[logging.Logger] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
         """
@@ -196,8 +200,9 @@ class AsyncSandbox(SandboxApi):
         :param allow_internet_access: Allow sandbox to access the internet, defaults to `True`. If set to `False`, it works the same as setting network `deny_out` to `[0.0.0.0/0]`.
         :param mcp: MCP server to enable in the sandbox
         :param network: Sandbox network configuration. ``allow_out``/``deny_out`` may also be a callable receiving a :class:`SandboxNetworkSelectorContext` (``ctx.all_traffic``, ``ctx.rules``) and returning a list of strings. Per-host transform rules are nested under ``network.rules``.
-        :param lifecycle: Sandbox lifecycle configuration — ``on_timeout``: ``"kill"`` (default) or ``"pause"``; ``auto_resume``: ``False`` (default) or ``True`` (only when ``on_timeout="pause"``). Example: ``{"on_timeout": "pause", "auto_resume": True}``
+        :param lifecycle: Sandbox lifecycle configuration — ``on_timeout``: ``"kill"`` (default) or ``"pause"``, or an object ``{"action": "pause"|"kill", "keep_memory": bool}`` where ``keep_memory`` (default ``True``) set to ``False`` makes a timeout auto-pause filesystem-only (cold-boots on resume; cannot be combined with ``auto_resume``); ``auto_resume``: ``False`` (default) or ``True`` (only when ``on_timeout`` action is ``"pause"``). Example: ``{"on_timeout": {"action": "pause", "keep_memory": False}}``
         :param volume_mounts: Dictionary mapping mount paths to AsyncVolume instances or volume names
+        :param logger: Logger used for request and response logging for this sandbox. Accepts any standard library `logging.Logger`. When omitted, no request/response logging is emitted.
 
         :return: A Sandbox instance for the new sandbox
 
@@ -229,6 +234,7 @@ class AsyncSandbox(SandboxApi):
             network=network,
             lifecycle=lifecycle,
             volume_mounts=transformed_mounts,
+            logger=logger,
             **opts,
         )
 
@@ -278,6 +284,7 @@ class AsyncSandbox(SandboxApi):
     async def connect(
         sandbox_id: str,
         timeout: Optional[int] = None,
+        logger: Optional[logging.Logger] = None,
         **opts: Unpack[ApiParams],
     ) -> "AsyncSandbox":
         """
@@ -289,6 +296,7 @@ class AsyncSandbox(SandboxApi):
         :param sandbox_id: Sandbox ID
         :param timeout: Timeout for the sandbox in **seconds**
             For running sandboxes, the timeout will update only if the new timeout is longer than the existing one.
+        :param logger: Logger used for request and response logging for this sandbox. Accepts any standard library `logging.Logger`. When omitted, no request/response logging is emitted.
         :return: A running sandbox instance
 
         @example
@@ -863,6 +871,7 @@ class AsyncSandbox(SandboxApi):
         cls,
         sandbox_id: str,
         timeout: Optional[int] = None,
+        logger: Optional[logging.Logger] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
         debug = ConnectionConfig(**opts).debug
@@ -875,6 +884,7 @@ class AsyncSandbox(SandboxApi):
             sandbox = await SandboxApi._cls_connect(
                 sandbox_id=sandbox_id,
                 timeout=timeout,
+                logger=logger,
                 **opts,
             )
 
@@ -888,11 +898,12 @@ class AsyncSandbox(SandboxApi):
             "E2b-Sandbox-Id": sandbox_id,
             "E2b-Sandbox-Port": str(ConnectionConfig.envd_port),
         }
-        if envd_access_token is not None:
+        if envd_access_token is not None and not isinstance(envd_access_token, Unset):
             sandbox_headers["X-Access-Token"] = envd_access_token
 
         connection_config = ConnectionConfig(
             extra_sandbox_headers=sandbox_headers,
+            logger=logger,
             **opts,
         )
 
@@ -918,6 +929,7 @@ class AsyncSandbox(SandboxApi):
         network: Optional[SandboxNetworkOpts] = None,
         lifecycle: Optional[SandboxLifecycle] = None,
         volume_mounts: Optional[list] = None,
+        logger: Optional[logging.Logger] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
         extra_sandbox_headers = {}
@@ -941,6 +953,7 @@ class AsyncSandbox(SandboxApi):
                 network=network,
                 lifecycle=lifecycle,
                 volume_mounts=volume_mounts,
+                logger=logger,
                 **opts,
             )
 
@@ -950,7 +963,9 @@ class AsyncSandbox(SandboxApi):
             envd_access_token = response.envd_access_token
             traffic_access_token = response.traffic_access_token
 
-            if envd_access_token is not None:
+            if envd_access_token is not None and not isinstance(
+                envd_access_token, Unset
+            ):
                 extra_sandbox_headers["X-Access-Token"] = envd_access_token
 
         extra_sandbox_headers["E2b-Sandbox-Id"] = sandbox_id
@@ -958,6 +973,7 @@ class AsyncSandbox(SandboxApi):
 
         connection_config = ConnectionConfig(
             extra_sandbox_headers=extra_sandbox_headers,
+            logger=logger,
             **opts,
         )
 

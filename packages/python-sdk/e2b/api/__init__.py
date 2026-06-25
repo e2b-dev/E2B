@@ -22,7 +22,45 @@ from e2b.exceptions import (
     SandboxException,
 )
 
-logger = logging.getLogger(__name__)
+
+def make_logging_event_hooks(log: Optional[logging.Logger]) -> dict:
+    """Build synchronous httpx ``event_hooks`` that log requests and responses
+    to the given ``logging.Logger``. Requests log at ``INFO``, successful
+    responses at ``INFO`` and responses with status >= 400 at ``ERROR``.
+
+    Returns no hooks when ``log`` is ``None`` so that nothing is logged unless a
+    logger was explicitly supplied."""
+    if log is None:
+        return {}
+
+    def on_request(request) -> None:
+        log.info(f"Request {request.method} {request.url}")
+
+    def on_response(response: Response) -> None:
+        if response.status_code >= 400:
+            log.error(f"Response {response.status_code}")
+        else:
+            log.info(f"Response {response.status_code}")
+
+    return {"request": [on_request], "response": [on_response]}
+
+
+def make_async_logging_event_hooks(log: Optional[logging.Logger]) -> dict:
+    """Asynchronous counterpart of :func:`make_logging_event_hooks`."""
+    if log is None:
+        return {}
+
+    async def on_request(request) -> None:
+        log.info(f"Request {request.method} {request.url}")
+
+    async def on_response(response: Response) -> None:
+        if response.status_code >= 400:
+            log.error(f"Response {response.status_code}")
+        else:
+            log.info(f"Response {response.status_code}")
+
+    return {"request": [on_request], "response": [on_response]}
+
 
 limits = Limits(
     max_keepalive_connections=int(os.getenv("E2B_MAX_KEEPALIVE_CONNECTIONS", "20")),
@@ -141,6 +179,8 @@ class ApiClient(AuthenticatedClient):
         auth_header_name = "X-API-KEY"
         prefix = ""
 
+        self._logger = config.logger
+
         headers = {
             **default_headers,
             # Deprecated: send the access token alongside the API key when one
@@ -164,10 +204,7 @@ class ApiClient(AuthenticatedClient):
         kwargs.pop("prefix", None)
 
         httpx_args = {
-            "event_hooks": {
-                "request": [self._log_request],
-                "response": [self._log_response],
-            },
+            "event_hooks": self._logging_event_hooks(),
         }
         if transport is not None:
             httpx_args["transport"] = transport
@@ -192,6 +229,9 @@ class ApiClient(AuthenticatedClient):
             *args,
             **kwargs,
         )
+
+    def _logging_event_hooks(self) -> dict:
+        return make_logging_event_hooks(self._logger)
 
     def _headers_with_auth(self) -> dict:
         return {
@@ -240,23 +280,8 @@ class ApiClient(AuthenticatedClient):
             self._async_clients[loop] = client
         return client
 
-    def _log_request(self, request):
-        logger.info(f"Request {request.method} {request.url}")
-
-    def _log_response(self, response: Response):
-        if response.status_code >= 400:
-            logger.error(f"Response {response.status_code}")
-        else:
-            logger.info(f"Response {response.status_code}")
-
 
 # We need to override the logging hooks for the async usage
 class AsyncApiClient(ApiClient):
-    async def _log_request(self, request):
-        logger.info(f"Request {request.method} {request.url}")
-
-    async def _log_response(self, response: Response):
-        if response.status_code >= 400:
-            logger.error(f"Response {response.status_code}")
-        else:
-            logger.info(f"Response {response.status_code}")
+    def _logging_event_hooks(self) -> dict:
+        return make_async_logging_event_hooks(self._logger)

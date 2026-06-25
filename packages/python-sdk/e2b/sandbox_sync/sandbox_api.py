@@ -1,4 +1,5 @@
 import datetime
+import logging
 from typing import Any, Dict, List, Optional, cast
 
 from packaging.version import Version
@@ -197,22 +198,56 @@ class SandboxApi(SandboxBase):
         network: Optional[SandboxNetworkOpts] = None,
         lifecycle: Optional[SandboxLifecycle] = None,
         volume_mounts: Optional[List[SandboxVolumeMountAPI]] = None,
+        logger: Optional[logging.Logger] = None,
         **opts: Unpack[ApiParams],
     ) -> SandboxCreateResponse:
-        config = ConnectionConfig(**opts)
+        config = ConnectionConfig(logger=logger, **opts)
 
-        on_timeout = lifecycle.get("on_timeout", "kill") if lifecycle else "kill"
+        # on_timeout accepts a bare action or {"action", "keep_memory"}; normalize.
+        # Only the object form carries keep_memory; anything else (a bare action
+        # string, or an unexpected value from an untyped caller) passes through as
+        # the action, so a non-"pause" value resolves to kill instead of crashing.
+        on_timeout_raw = lifecycle.get("on_timeout", "kill") if lifecycle else "kill"
+        if isinstance(on_timeout_raw, dict):
+            on_timeout = on_timeout_raw.get("action", "kill")
+            keep_memory_provided = "keep_memory" in on_timeout_raw
+            keep_memory = on_timeout_raw.get("keep_memory")
+        else:
+            on_timeout = on_timeout_raw
+            keep_memory = None
+            keep_memory_provided = False
+
+        # keep_memory only governs a pause action. The discriminated union type
+        # forbids it on action="kill"; re-check at runtime for callers that
+        # bypass the type.
+        if keep_memory_provided and on_timeout != "pause":
+            raise InvalidArgumentException(
+                "keep_memory is only allowed when on_timeout action is 'pause'."
+            )
+
+        # A missing or explicit None keep_memory defaults to True (full memory),
+        # mirroring the JS SDK; sending null would wrongly read as filesystem-only.
+        if keep_memory is None:
+            keep_memory = True
         auto_resume = lifecycle.get("auto_resume", False) if lifecycle else False
 
         if auto_resume and on_timeout != "pause":
             raise InvalidArgumentException(
-                "auto_resume can only be True when the resolved on_timeout is 'pause'."
+                "auto_resume can only be True when on_timeout action is 'pause'."
+            )
+
+        if not keep_memory and auto_resume:
+            raise InvalidArgumentException(
+                "auto_resume: True is not a valid value when keep_memory: False - "
+                "a filesystem-only snapshot cannot be auto-resumed by traffic and "
+                "must be resumed explicitly using Sandbox.connect()."
             )
 
         network_body = build_network_config(network)
         body = NewSandbox(
             template_id=template,
             auto_pause=on_timeout == "pause",
+            auto_pause_memory=keep_memory if on_timeout == "pause" else UNSET,
             auto_resume=SandboxAutoResumeConfig(enabled=auto_resume),
             metadata=metadata or {},
             timeout=timeout,
@@ -319,11 +354,12 @@ class SandboxApi(SandboxBase):
         cls,
         sandbox_id: str,
         timeout: Optional[int] = None,
+        logger: Optional[logging.Logger] = None,
         **opts: Unpack[ApiParams],
     ) -> SandboxCreateResponse:
         timeout = timeout or SandboxBase.default_sandbox_timeout
 
-        config = ConnectionConfig(**opts)
+        config = ConnectionConfig(logger=logger, **opts)
 
         api_client = get_api_client(config)
         res = post_sandboxes_sandbox_id_connect.sync_detailed(

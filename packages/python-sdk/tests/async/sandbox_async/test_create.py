@@ -1,4 +1,5 @@
 import asyncio
+from typing import Any, cast
 
 import httpx
 import pytest
@@ -8,6 +9,7 @@ from e2b.api.client.models import (
     NewSandbox,
     SandboxAutoResumeConfig,
 )
+from e2b.exceptions import InvalidArgumentException
 
 
 @pytest.mark.skip_debug()
@@ -56,6 +58,97 @@ def test_create_payload_deserializes_auto_resume_enabled():
 
     assert isinstance(body.auto_resume, SandboxAutoResumeConfig)
     assert body.auto_resume.to_dict() == {"enabled": False}
+
+
+@pytest.mark.skip_debug()
+async def test_filesystem_only_auto_pause_rejects_auto_resume():
+    # A filesystem-only auto-pause snapshot can only be resumed explicitly, so
+    # combining keep_memory=False with auto_resume is rejected client-side.
+    with pytest.raises(InvalidArgumentException):
+        await AsyncSandbox.create(
+            timeout=3,
+            lifecycle={
+                "on_timeout": {"action": "pause", "keep_memory": False},
+                "auto_resume": True,
+            },
+        )
+
+
+@pytest.mark.skip_debug()
+async def test_keep_memory_not_allowed_with_kill():
+    # The discriminated union forbids keep_memory on action="kill" at type-check
+    # time; the runtime guard rejects it for callers that bypass the type
+    # (cast(Any, ...) feeds the deliberately type-invalid input).
+    with pytest.raises(InvalidArgumentException):
+        await AsyncSandbox.create(
+            timeout=3,
+            lifecycle=cast(
+                Any, {"on_timeout": {"action": "kill", "keep_memory": False}}
+            ),
+        )
+
+
+@pytest.mark.skip_debug()
+async def test_invalid_on_timeout_type_does_not_crash(async_sandbox_factory):
+    # An untyped/invalid on_timeout (e.g. None) must not crash create; it falls
+    # back to kill semantics like a missing on_timeout (the sandbox just starts).
+    sbx = await async_sandbox_factory(
+        timeout=10, lifecycle=cast(Any, {"on_timeout": None})
+    )
+    assert await sbx.is_running()
+
+
+@pytest.mark.skip_debug()
+async def test_keep_memory_none_defaults_to_full_memory(async_sandbox_factory):
+    # An explicit None keep_memory must default to full memory (not filesystem-only):
+    # the timeout auto-pause then resumes the SAME sandbox in place (memory restore),
+    # so the boot id is unchanged. A changed boot id would mean None was wrongly
+    # treated as filesystem-only (cold boot).
+    sbx = await async_sandbox_factory(
+        timeout=60,
+        lifecycle={"on_timeout": {"action": "pause", "keep_memory": None}},
+    )
+    boot_before = (await sbx.files.read("/proc/sys/kernel/random/boot_id")).strip()
+
+    await sbx.set_timeout(0)  # force the timeout auto-pause now
+    for _ in range(150):
+        if not await sbx.is_running():
+            break
+        await asyncio.sleep(0.2)
+    assert not await sbx.is_running()
+
+    resumed = await sbx.connect()
+    assert resumed.sandbox_id == sbx.sandbox_id  # same sandbox
+    boot_after = (await resumed.files.read("/proc/sys/kernel/random/boot_id")).strip()
+    assert boot_after == boot_before  # memory restore in place, not a cold boot
+
+
+@pytest.mark.skip_debug()
+async def test_auto_pause_filesystem_only_reboots(async_sandbox_factory):
+    # keep_memory=False makes the timeout auto-pause filesystem-only, so resuming
+    # cold-boots the sandbox from disk.
+    sandbox = await async_sandbox_factory(
+        timeout=3,
+        lifecycle={"on_timeout": {"action": "pause", "keep_memory": False}},
+    )
+
+    marker = "auto-pause-fs-only"
+    await sandbox.files.write("/home/user/auto-pause-marker.txt", marker)
+    boot_before = (await sandbox.files.read("/proc/sys/kernel/random/boot_id")).strip()
+
+    await asyncio.sleep(5)
+
+    assert (await sandbox.get_info()).state == SandboxState.PAUSED
+
+    # A filesystem-only snapshot cannot auto-resume on traffic; connect resumes
+    # it by cold-booting.
+    resumed = await sandbox.connect()
+
+    persisted = (await resumed.files.read("/home/user/auto-pause-marker.txt")).strip()
+    assert persisted == marker
+
+    boot_after = (await resumed.files.read("/proc/sys/kernel/random/boot_id")).strip()
+    assert boot_after != boot_before
 
 
 @pytest.mark.skip_debug()

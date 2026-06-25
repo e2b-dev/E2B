@@ -86,7 +86,7 @@ jobs:
         working-directory: packages/python-sdk
         run: |
           BASE_VERSION=$(poetry version -s)
-          poetry version "${BASE_VERSION}rc${{ github.run_number }}"
+          poetry version "${BASE_VERSION}rc${{ github.run_id }}"
           poetry build
           poetry config pypi-token.pypi ${PYPI_TOKEN} && poetry publish --skip-existing
         env:
@@ -103,7 +103,7 @@ jobs:
           RC_PREID: ${{ inputs.preid }}
           RC_TAG: ${{ inputs.tag }}
         run: |
-          npm version prerelease --preid="${RC_PREID}.${{ github.run_number }}" --no-git-tag-version
+          npm version prerelease --preid="${RC_PREID}.${{ github.run_id }}" --no-git-tag-version
           npm publish --tag "$RC_TAG" --provenance
 
       - name: Reinstall dependencies
@@ -117,5 +117,5 @@ jobs:
           RC_PREID: ${{ inputs.preid }}
           RC_TAG: ${{ inputs.tag }}
         run: |
-          npm version prerelease --preid="${RC_PREID}.${{ github.run_number }}" --no-git-tag-version
+          npm version prerelease --preid="${RC_PREID}.${{ github.run_id }}" --no-git-tag-version
           npm publish --tag "$RC_TAG" --provenance

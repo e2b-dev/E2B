@@ -1,14 +1,14 @@
 import hashlib
 import os
-import io
 import tarfile
+import tempfile
 import json
 import stat
 from wcmatch import glob
 import re
 import inspect
 from types import TracebackType, FrameType
-from typing import List, Optional, Union
+from typing import IO, List, Optional, Union
 
 from e2b.exceptions import TemplateException
 from e2b.template.consts import BASE_STEP_NAME, FINALIZE_STEP_NAME
@@ -260,9 +260,12 @@ def tar_file_stream(
     ignore_patterns: List[str],
     resolve_symlinks: bool,
     gzip: bool,
-) -> io.BytesIO:
+) -> IO[bytes]:
     """
-    Create a tar stream of files matching a pattern.
+    Create a tar archive of files matching a pattern in a temporary file.
+
+    The archive is spooled to disk so it can be uploaded as a stream instead
+    of being buffered in memory. The temporary file is deleted when closed.
 
     :param file_name: Glob pattern for files to include
     :param file_context_path: Base directory for resolving file paths
@@ -270,23 +273,35 @@ def tar_file_stream(
     :param resolve_symlinks: Whether to resolve symbolic links
     :param gzip: Whether to gzip the archive
 
-    :return: Tar stream
+    :return: Binary file object positioned at the start of the archive
     """
-    tar_buffer = io.BytesIO()
-    with tarfile.open(
-        fileobj=tar_buffer,
-        mode="w:gz" if gzip else "w",
-        dereference=resolve_symlinks,
-    ) as tar:
-        files = get_all_files_in_path(
-            file_name, file_context_path, ignore_patterns, True
-        )
-        for file in files:
-            tar.add(
-                file, arcname=os.path.relpath(file, file_context_path), recursive=False
+    tar_file = tempfile.TemporaryFile()
+    try:
+        with tarfile.open(
+            fileobj=tar_file,
+            mode="w:gz" if gzip else "w",
+            dereference=resolve_symlinks,
+        ) as tar:
+            files = get_all_files_in_path(
+                file_name, file_context_path, ignore_patterns, True
             )
+            for file in files:
+                tar.add(
+                    file,
+                    arcname=os.path.relpath(file, file_context_path),
+                    recursive=False,
+                )
 
-    return tar_buffer
+        tar_file.seek(0)
+        return tar_file
+    except Exception:
+        # Best-effort cleanup: a close failure must not replace the real
+        # archive-creation error.
+        try:
+            tar_file.close()
+        except Exception:
+            pass
+        raise
 
 
 def strip_ansi_escape_codes(text: str) -> str:

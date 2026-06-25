@@ -1,8 +1,8 @@
 import os
 import tempfile
 import tarfile
-import io
 import pytest
+from typing import IO
 from e2b.template.utils import tar_file_stream
 
 
@@ -14,7 +14,7 @@ class TestTarFileStream:
         yield tmpdir.name
         tmpdir.cleanup()
 
-    def _extract_tar_contents(self, tar_buffer: io.BytesIO) -> dict:
+    def _extract_tar_contents(self, tar_buffer: IO[bytes]) -> dict:
         """Extract tar contents into a dictionary mapping paths to file contents."""
         tar_buffer.seek(0)
         contents = {}
@@ -62,16 +62,11 @@ class TestTarFileStream:
         tar_buffer = tar_file_stream("*.txt", test_dir, [], False, False)
 
         # gzip streams start with the magic bytes 0x1f 0x8b — a plain tar must not
-        assert tar_buffer.getvalue()[:2] != b"\x1f\x8b"
-
-        # The archive must be readable as an uncompressed tar
         tar_buffer.seek(0)
-        with tarfile.open(fileobj=tar_buffer, mode="r:") as tar:
-            contents = {
-                m.name: tar.extractfile(m).read()
-                for m in tar.getmembers()
-                if m.isfile()
-            }
+        assert tar_buffer.read(2) != b"\x1f\x8b"
+
+        # The archive must still be readable and contain the original files
+        contents = self._extract_tar_contents(tar_buffer)
         assert contents["file1.txt"] == b"content1"
         assert contents["file2.txt"] == b"content2"
 

@@ -34,3 +34,12 @@ Default setting for whether to gzip files when copying them into the
 template. When True, the upload archive is gzipped before being uploaded.
 """
 GZIP = True
+
+"""
+Default timeout (in seconds) for uploading the build-context archive to the
+S3 presigned URL. Uploads of large archives can take far longer than the 60s
+general API request timeout, so the upload uses a 1-hour default unless the
+caller passes an explicit ``request_timeout``. This matches the JS SDK's
+``FILE_UPLOAD_TIMEOUT_MS``.
+"""
+FILE_UPLOAD_TIMEOUT_SECONDS = 3600

@@ -92,6 +92,7 @@ class Volume:
             api_url=opts.get("api_url"),
             request_timeout=opts.get("request_timeout"),
             headers=opts.get("headers"),
+            logger=opts.get("logger"),
             proxy=opts.get("proxy") if opts.get("proxy") is not None else self._proxy,
         )
 
