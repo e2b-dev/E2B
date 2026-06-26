@@ -99,6 +99,24 @@ export const migrateCommand = new commander.Command('migrate')
     'override the template name used in the generated files. Defaults to the template name or ID from the config file.'
   )
   .option(
+    '-c, --cmd <start-command>',
+    'override the command that will be executed when the sandbox is started.'
+  )
+  .option(
+    '--ready-cmd <ready-command>',
+    'override the command that will need to exit 0 for the template to be ready.'
+  )
+  .option(
+    '--cpu-count <cpu-count>',
+    'override the number of CPUs that will be used to run the sandbox.',
+    parseInt
+  )
+  .option(
+    '--memory-mb <memory-mb>',
+    'override the amount of memory in megabytes that will be used to run the sandbox. Must be an even number.',
+    parseInt
+  )
+  .option(
     '-l, --language <language>',
     `specify target language: ${Object.values(Language).join(', ')}`,
     (value) => {
@@ -120,10 +138,23 @@ export const migrateCommand = new commander.Command('migrate')
       path?: string
       language?: Language
       name?: string
+      cmd?: string
+      readyCmd?: string
+      cpuCount?: number
+      memoryMb?: number
     }) => {
       let success = false
       try {
         console.log('\n🔄 Migrating template configuration to SDK format...\n')
+
+        // Validate memory override
+        if (opts.memoryMb && opts.memoryMb % 2 !== 0) {
+          throw new Error(
+            `The memory in megabytes must be an even number. You provided ${asLocal(
+              opts.memoryMb.toFixed(0)
+            )}.`
+          )
+        }
 
         const root = getRoot(opts.path)
         const configPath = getConfigPath(root, opts.config)
@@ -145,6 +176,20 @@ export const migrateCommand = new commander.Command('migrate')
               path.relative(root, configPath)
             )} not found. Using defaults.`
           )
+        }
+
+        // Apply command-line overrides on top of the loaded config
+        if (opts.cmd !== undefined) {
+          config.start_cmd = opts.cmd
+        }
+        if (opts.readyCmd !== undefined) {
+          config.ready_cmd = opts.readyCmd
+        }
+        if (opts.cpuCount !== undefined) {
+          config.cpu_count = opts.cpuCount
+        }
+        if (opts.memoryMb !== undefined) {
+          config.memory_mb = opts.memoryMb
         }
 
         // Determine target language

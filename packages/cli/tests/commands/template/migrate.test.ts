@@ -197,6 +197,57 @@ dockerfile = "e2b.Dockerfile"`
       expect(buildProdFile).toContain("'overridden-name'")
       expect(buildProdFile).not.toContain("'config-name'")
     })
+
+    test('should override start/ready commands and resources', async () => {
+      const dockerfile = 'FROM node:18'
+      await fs.writeFile(path.join(testDir, 'e2b.Dockerfile'), dockerfile)
+
+      const config = `template_id = "resources"
+dockerfile = "e2b.Dockerfile"
+cpu_count = 2
+memory_mb = 512`
+      await fs.writeFile(path.join(testDir, 'e2b.toml'), config)
+
+      execSync(
+        `node ${cliPath} template migrate --language typescript --cmd "node server.js" --ready-cmd "curl localhost:3000" --cpu-count 4 --memory-mb 2048`,
+        {
+          cwd: testDir,
+        }
+      )
+
+      const templateFile = await fs.readFile(
+        path.join(testDir, 'template.ts'),
+        'utf-8'
+      )
+      expect(templateFile).toContain(
+        ".setStartCmd('sudo node server.js', 'curl localhost:3000')"
+      )
+
+      const buildProdFile = await fs.readFile(
+        path.join(testDir, 'build.prod.ts'),
+        'utf-8'
+      )
+      expect(buildProdFile).toContain('cpuCount: 4')
+      expect(buildProdFile).toContain('memoryMB: 2048')
+    })
+
+    test('should reject an odd memory override', async () => {
+      const dockerfile = 'FROM node:18'
+      await fs.writeFile(path.join(testDir, 'e2b.Dockerfile'), dockerfile)
+
+      const config = `template_id = "resources"
+dockerfile = "e2b.Dockerfile"`
+      await fs.writeFile(path.join(testDir, 'e2b.toml'), config)
+
+      expect(() => {
+        execSync(
+          `node ${cliPath} template migrate --language typescript --memory-mb 1023`,
+          {
+            cwd: testDir,
+          }
+        )
+      }).toThrow()
+    })
   })
 
   describe('Error Cases', () => {
