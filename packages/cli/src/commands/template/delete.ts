@@ -85,7 +85,7 @@ export const deleteCommand = new commander.Command('delete')
         } else if (opts.select) {
           teamId = resolveTeamId(teamId)
 
-          const allTemplates = await listSandboxTemplates({
+          const { templates: allTemplates } = await listSandboxTemplates({
             teamID: teamId,
           })
 
