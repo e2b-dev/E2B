@@ -277,22 +277,24 @@ def test_sync_pty_rpc_clients_are_bound_per_calling_thread(monkeypatch, test_api
     assert pty._rpc is main_rpc
 
 
-def test_sync_watch_handle_uses_calling_thread_rpc():
+def test_sync_watch_handle_uses_calling_thread_rpc(test_api_key):
     class FakeRpc:
         def __init__(self, name):
             self.name = name
             self.calls = []
 
-        def remove_watcher(self, request):
+        def remove_watcher(self, request, **opts):
             self.calls.append(("remove", request.watcher_id))
+
+    config = ConnectionConfig(api_key=test_api_key)
 
     main_rpc = FakeRpc("main")
     worker_rpc = FakeRpc("worker")
-    handle = WatchHandle(lambda: main_rpc, "watcher-id")
+    handle = WatchHandle(lambda: main_rpc, "watcher-id", config, ENVD_VERSION)
 
     handle.stop()
     assert main_rpc.calls == [("remove", "watcher-id")]
 
-    handle = WatchHandle(lambda: worker_rpc, "watcher-id")
+    handle = WatchHandle(lambda: worker_rpc, "watcher-id", config, ENVD_VERSION)
     run_in_worker_thread(handle.stop)
     assert worker_rpc.calls == [("remove", "watcher-id")]

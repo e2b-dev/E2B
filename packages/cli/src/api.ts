@@ -4,6 +4,9 @@ import * as e2b from 'e2b'
 import { getUserConfig, UserConfig } from './user'
 import { asBold, asPrimary } from './utils/format'
 
+export type Teams =
+  e2b.paths['/teams']['get']['responses'][200]['content']['application/json']
+
 export let apiKey = process.env.E2B_API_KEY
 export let accessToken = process.env.E2B_ACCESS_TOKEN
 export const teamId = process.env.E2B_TEAM_ID
@@ -60,7 +63,7 @@ export function ensureAccessToken() {
   // If accessToken is not already set (either from env var or from user config), try to get it from config file
   if (!accessToken) {
     const userConfig = getUserConfig()
-    accessToken = userConfig?.accessToken
+    accessToken = userConfig?.tokens.access_token
   }
 
   if (!accessToken) {
@@ -96,7 +99,7 @@ export function resolveTeamId(
 const userConfig = getUserConfig()
 
 const resolvedAccessToken =
-  process.env.E2B_ACCESS_TOKEN || userConfig?.accessToken
+  process.env.E2B_ACCESS_TOKEN || userConfig?.tokens.access_token
 
 export const connectionConfig = new e2b.ConnectionConfig({
   apiKey: process.env.E2B_API_KEY || userConfig?.teamApiKey,

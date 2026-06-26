@@ -1,3 +1,4 @@
+import logging
 import os
 
 from typing import cast, Optional, Dict, TypedDict
@@ -56,6 +57,18 @@ class ApiParams(TypedDict, total=False):
 
     sandbox_url: Optional[str]
     """URL to connect to sandbox, defaults to `E2B_SANDBOX_URL` environment variable."""
+
+
+class ApiParamsWithLogger(ApiParams, total=False):
+    """:class:`ApiParams` plus the construction-time ``logger``.
+
+    Internal type returned by :meth:`ConnectionConfig.get_api_params` so that the
+    logger a sandbox was created/connected with keeps propagating to the
+    throwaway ``ConnectionConfig`` that instance control-plane methods rebuild.
+    Unlike :class:`ApiParams`, ``logger`` is not a public per-request option.
+    """
+
+    logger: Optional[logging.Logger]
 
 
 class ConnectionConfig:
@@ -119,7 +132,9 @@ class ConnectionConfig:
         integration: Optional[str] = None,
         extra_sandbox_headers: Optional[Dict[str, str]] = None,
         proxy: Optional[ProxyTypes] = None,
+        logger: Optional[logging.Logger] = None,
     ):
+        self.logger = logger
         self.domain = domain or ConnectionConfig._domain()
         self.debug = debug if debug is not None else ConnectionConfig._debug()
         self.api_key = api_key or ConnectionConfig._api_key()
@@ -245,8 +260,14 @@ class ConnectionConfig:
                 integration,
             )
 
+        # `logger` is a construction-time option rather than a per-request
+        # ApiParams field, but it must propagate to the throwaway
+        # ConnectionConfig that instance control-plane methods (kill, pause,
+        # set_timeout, get_info, connect, ...) rebuild from these params, so
+        # those requests keep logging with the logger the sandbox was created
+        # or connected with.
         return dict(
-            ApiParams(
+            ApiParamsWithLogger(
                 api_key=api_key if api_key is not None else self.api_key,
                 validate_api_key=(
                     validate_api_key
@@ -265,6 +286,7 @@ class ConnectionConfig:
                     if sandbox_url is not None
                     else cast(Optional[str], self._sandbox_url)
                 ),
+                logger=self.logger,
             )
         )
 

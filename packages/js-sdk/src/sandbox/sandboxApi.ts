@@ -11,6 +11,7 @@ import {
   SandboxNotFoundError,
   TemplateError,
 } from '../errors'
+import { Paginator } from '../paginator'
 import { timeoutToSeconds } from '../utils'
 import type { Volume } from '../volume'
 import type { McpServer as BaseMcpServer } from './mcp'
@@ -197,17 +198,60 @@ export type SandboxNetworkUpdate = {
   allowInternetAccess?: boolean
 }
 
+/**
+ * What happens when the sandbox timeout is reached. Either the bare action
+ * (`'pause'` / `'kill'`), or an object form that also controls the pause
+ * snapshot kind via `keepMemory`.
+ *
+ * The object form is a discriminated union on `action`: `keepMemory` is only
+ * accepted alongside `action: 'pause'`. Passing `keepMemory` with
+ * `action: 'kill'` is a compile-time type error.
+ */
+export type SandboxOnTimeout =
+  | 'pause'
+  | 'kill'
+  | {
+      /** Auto-pause the sandbox when the timeout is reached. */
+      action: 'pause'
+
+      /**
+       * Whether the timeout auto-pause keeps a full memory snapshot.
+       *
+       * When `false`, the auto-pause drops the in-memory state and persists only
+       * the filesystem (a filesystem-only snapshot); resuming such a sandbox
+       * cold-boots (reboots) it from disk, losing running processes and open
+       * connections.
+       *
+       * Cannot be combined with `autoResume`: auto-resume wakes a paused sandbox
+       * on inbound traffic by restoring its memory snapshot in place, so the
+       * request that woke it hits an already-running process. A filesystem-only
+       * snapshot has no memory to restore — resuming cold-boots it — so it can't
+       * be woken transparently by traffic and must be resumed explicitly via
+       * `connect()`.
+       *
+       * @default true
+       */
+      keepMemory?: boolean
+    }
+  | {
+      /** Kill the sandbox when the timeout is reached. */
+      action: 'kill'
+    }
+
 export type SandboxLifecycle = {
   /**
-   * Action to take when sandbox timeout is reached.
+   * Action to take when sandbox timeout is reached. Accepts either `'pause'` /
+   * `'kill'`, or `{ action, keepMemory }` to also control the pause snapshot kind.
    * @default "kill"
    */
-  onTimeout: 'pause' | 'kill'
+  onTimeout: SandboxOnTimeout
 
   /**
    * Auto-resume enabled flag.
    * @default false
-   * Can be `true` only when `onTimeout` is `pause`.
+   * Can be `true` only when `onTimeout` is `pause`. Not supported when
+   * `keepMemory` is `false` (a filesystem-only snapshot must be resumed
+   * explicitly via `connect()`).
    */
   autoResume?: boolean
 }
@@ -241,6 +285,22 @@ export interface SandboxApiOpts
       | 'signal'
     >
   > {}
+
+/**
+ * Options for pausing a sandbox.
+ */
+export interface SandboxPauseOpts extends SandboxApiOpts {
+  /**
+   * Whether to keep a full memory snapshot.
+   *
+   * When `false`, the in-memory state is dropped and only the filesystem is
+   * persisted (a filesystem-only snapshot); resuming such a sandbox cold-boots
+   * (reboots) it from disk, losing running processes and open connections.
+   *
+   * @default true
+   */
+  keepMemory?: boolean
+}
 
 /**
  * Options for creating a new Sandbox.
@@ -915,13 +975,13 @@ export class SandboxApi {
    * Pause the sandbox specified by sandbox ID.
    *
    * @param sandboxId sandbox ID.
-   * @param opts connection options.
+   * @param opts pause options, including `keepMemory` and connection options.
    *
    * @returns `true` if the sandbox got paused, `false` if the sandbox was already paused.
    */
   static async pause(
     sandboxId: string,
-    opts?: SandboxApiOpts
+    opts?: SandboxPauseOpts
   ): Promise<boolean> {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
@@ -931,6 +991,9 @@ export class SandboxApi {
         path: {
           sandboxID: sandboxId,
         },
+      },
+      body: {
+        memory: opts?.keepMemory ?? true,
       },
       signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
     })
@@ -957,7 +1020,7 @@ export class SandboxApi {
    */
   static async betaPause(
     sandboxId: string,
-    opts?: SandboxApiOpts
+    opts?: SandboxPauseOpts
   ): Promise<boolean> {
     return this.pause(sandboxId, opts)
   }
@@ -1060,12 +1123,34 @@ export class SandboxApi {
   ) {
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
+    // onTimeout accepts a bare action (`'pause'` / `'kill'`) or the object form
+    // `{ action, keepMemory }`. The discriminated union type forbids `keepMemory`
+    // on `action: 'kill'`; re-check at runtime for untyped (JS) callers.
     const onTimeout = opts?.lifecycle?.onTimeout ?? 'kill'
+    const action = typeof onTimeout === 'string' ? onTimeout : onTimeout.action
+    const hasKeepMemory =
+      typeof onTimeout !== 'string' && 'keepMemory' in onTimeout
+    const keepMemory =
+      typeof onTimeout !== 'string' && 'keepMemory' in onTimeout
+        ? (onTimeout.keepMemory ?? true)
+        : true
     const autoResume = opts?.lifecycle?.autoResume ?? false
 
-    if (autoResume && onTimeout !== 'pause') {
+    if (hasKeepMemory && action !== 'pause') {
       throw new InvalidArgumentError(
-        "autoResume can only be true when the resolved onTimeout is 'pause'."
+        "onTimeout.keepMemory is only allowed when action is 'pause'."
+      )
+    }
+
+    if (autoResume && action !== 'pause') {
+      throw new InvalidArgumentError(
+        "autoResume can only be true when onTimeout action is 'pause'."
+      )
+    }
+
+    if (!keepMemory && autoResume) {
+      throw new InvalidArgumentError(
+        'autoResume: true is not a valid value when keepMemory: false - a filesystem-only snapshot cannot be auto-resumed by traffic and must be resumed explicitly using Sandbox.connect().'
       )
     }
 
@@ -1078,7 +1163,8 @@ export class SandboxApi {
       secure: opts?.secure ?? true,
       allow_internet_access: opts?.allowInternetAccess ?? true,
       network: buildNetworkBody(opts?.network),
-      autoPause: onTimeout === 'pause',
+      autoPause: action === 'pause',
+      autoPauseMemory: action === 'pause' ? keepMemory : undefined,
       autoResume: { enabled: autoResume },
     }
 
@@ -1157,56 +1243,6 @@ export class SandboxApi {
   }
 }
 
-export abstract class BasePaginator<T> {
-  protected readonly opts?: SandboxApiOpts
-  protected readonly limit?: number
-
-  private _hasNext: boolean
-  private _nextToken?: string
-
-  constructor(opts?: SandboxApiOpts, limit?: number, nextToken?: string) {
-    this.opts = opts
-    this.limit = limit
-
-    this._hasNext = true
-    this._nextToken = nextToken
-  }
-
-  /**
-   * Returns true if there are more items to fetch.
-   */
-  get hasNext(): boolean {
-    return this._hasNext
-  }
-
-  /**
-   * Returns the next token to use for pagination.
-   */
-  get nextToken(): string | undefined {
-    return this._nextToken
-  }
-
-  protected updatePagination(response: Response) {
-    this._nextToken = response.headers.get('x-next-token') || undefined
-    this._hasNext = !!this._nextToken
-  }
-
-  /**
-   * Get the next page of items.
-   *
-   * @param opts per-call connection options. When provided, this call uses
-   * these options (e.g. `apiKey`, `domain`, `headers`, `requestTimeoutMs`,
-   * `signal`) instead of the ones the paginator was constructed with.
-   * Aborting a page via `signal` does not affect subsequent {@link BasePaginator.nextItems}
-   * calls — pass a fresh signal each call you want to be cancellable.
-   *
-   * @throws Error if there are no more items to fetch. Call this method only if `hasNext` is `true`.
-   *
-   * @returns List of items
-   */
-  abstract nextItems(opts?: SandboxApiOpts): Promise<T[]>
-}
-
 /**
  * Paginator for listing sandboxes.
  *
@@ -1219,7 +1255,7 @@ export abstract class BasePaginator<T> {
  * }
  * ```
  */
-export class SandboxPaginator extends BasePaginator<SandboxInfo> {
+export class SandboxPaginator extends Paginator<SandboxInfo, SandboxApiOpts> {
   private query: SandboxListOpts['query']
 
   constructor(opts?: SandboxListOpts) {
@@ -1297,7 +1333,7 @@ export class SandboxPaginator extends BasePaginator<SandboxInfo> {
  * }
  * ```
  */
-export class SnapshotPaginator extends BasePaginator<SnapshotInfo> {
+export class SnapshotPaginator extends Paginator<SnapshotInfo, SandboxApiOpts> {
   private readonly sandboxId?: string
 
   constructor(opts?: SnapshotListOpts) {

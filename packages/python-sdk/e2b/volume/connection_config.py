@@ -1,3 +1,4 @@
+import logging
 import os
 
 from typing import Dict, Optional, TypedDict
@@ -41,6 +42,9 @@ class VolumeApiParams(TypedDict, total=False):
     proxy: Optional[ProxyTypes]
     """Proxy to use for the request."""
 
+    logger: Optional[logging.Logger]
+    """Logger used for request and response logging. Accepts a standard library `logging.Logger`."""
+
 
 class VolumeConnectionConfig:
     """
@@ -82,7 +86,9 @@ class VolumeConnectionConfig:
         request_timeout: Optional[float] = None,
         headers: Optional[Dict[str, str]] = None,
         proxy: Optional[ProxyTypes] = None,
+        logger: Optional[logging.Logger] = None,
     ):
+        self.logger = logger
         self.domain = domain or self._domain()
         self.debug = debug if debug is not None else self._debug()
 
@@ -119,6 +125,7 @@ class VolumeConnectionConfig:
         token = opts.get("token")
         api_url = opts.get("api_url")
         proxy = opts.get("proxy")
+        logger = opts.get("logger")
 
         req_headers = self.headers.copy()
         if headers is not None:
@@ -133,5 +140,6 @@ class VolumeConnectionConfig:
                 request_timeout=self.get_request_timeout(request_timeout),
                 headers=req_headers,
                 proxy=proxy if proxy is not None else self.proxy,
+                logger=logger if logger is not None else self.logger,
             )
         )

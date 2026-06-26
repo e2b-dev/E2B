@@ -350,7 +350,11 @@ export interface paths {
                 };
                 cookie?: never;
             };
-            requestBody?: never;
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["SandboxPauseRequest"];
+                };
+            };
             responses: {
                 /** @description The sandbox was paused successfully and can be resumed */
                 204: {
@@ -2037,6 +2041,11 @@ export interface components {
              * @default false
              */
             autoPause?: boolean;
+            /**
+             * @description Controls the snapshot kind taken when the sandbox auto-pauses on timeout (only relevant when autoPause is true). When false, the auto-pause drops the in-memory state and persists only the filesystem (a filesystem-only snapshot); resuming it cold-boots (reboots) the sandbox from disk. Such a snapshot cannot be auto-resumed by traffic and must be resumed explicitly, so it cannot be combined with autoResume. Defaults to true (full memory snapshot).
+             * @default true
+             */
+            autoPauseMemory?: boolean;
             autoResume?: components["schemas"]["SandboxAutoResumeConfig"];
             envVars?: components["schemas"]["EnvVars"];
             mcp?: components["schemas"]["Mcp"];
@@ -2407,6 +2416,13 @@ export interface components {
          * @enum {string}
          */
         SandboxOnTimeout: "kill" | "pause";
+        SandboxPauseRequest: {
+            /**
+             * @description Whether to capture a full memory snapshot. When false, only the filesystem is persisted and resuming the sandbox cold-boots (reboots) it from disk, losing in-memory state, running processes, and open connections. Resume it with an explicit request (connect or resume); auto-resume, which can be triggered by arbitrary traffic, refuses such a sandbox. Defaults to true.
+             * @default true
+             */
+            memory?: boolean;
+        };
         /**
          * @description State of the sandbox
          * @enum {string}

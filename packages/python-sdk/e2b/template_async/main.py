@@ -42,6 +42,7 @@ class AsyncTemplate(TemplateBase):
         memory_mb: int = 1024,
         skip_cache: bool = False,
         on_build_logs: Optional[Callable[[LogEntry], None]] = None,
+        request_timeout: Optional[float] = None,
     ) -> BuildInfo:
         """
         Internal implementation of the template build process
@@ -128,6 +129,7 @@ class AsyncTemplate(TemplateBase):
                     ],
                     resolve_symlinks,
                     stack_trace,
+                    request_timeout=request_timeout,
                 )
                 if on_build_logs:
                     on_build_logs(
@@ -249,6 +251,9 @@ class AsyncTemplate(TemplateBase):
                 memory_mb=memory_mb,
                 skip_cache=skip_cache,
                 on_build_logs=on_build_logs,
+                # Only honor an explicitly set request_timeout for uploads;
+                # otherwise upload_file applies its 1-hour default.
+                request_timeout=opts.get("request_timeout"),
             )
 
             if on_build_logs:
@@ -338,6 +343,9 @@ class AsyncTemplate(TemplateBase):
             memory_mb=memory_mb,
             skip_cache=skip_cache,
             on_build_logs=on_build_logs,
+            # Only honor an explicitly set request_timeout for uploads;
+            # otherwise upload_file applies its 1-hour default.
+            request_timeout=opts.get("request_timeout"),
         )
 
     @staticmethod

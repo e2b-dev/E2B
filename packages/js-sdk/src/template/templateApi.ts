@@ -1,6 +1,7 @@
 import { ApiClient, components, handleApiError } from '../api'
 import { ConnectionConfig } from '../connectionConfig'
-import { BasePaginator, SandboxApiOpts } from '../sandbox/sandboxApi'
+import { Paginator } from '../paginator'
+import { SandboxApiOpts } from '../sandbox/sandboxApi'
 
 /**
  * Information about a sandbox template.
@@ -124,7 +125,7 @@ export interface TemplateListOpts extends Omit<SandboxApiOpts, 'signal'> {
  * }
  * ```
  */
-export class TemplatePaginator extends BasePaginator<TemplateInfo> {
+export class TemplatePaginator extends Paginator<TemplateInfo, SandboxApiOpts> {
   private readonly teamId?: string
 
   constructor(opts?: TemplateListOpts) {
