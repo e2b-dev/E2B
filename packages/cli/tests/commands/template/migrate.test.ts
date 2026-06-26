@@ -174,7 +174,7 @@ describe('Template Migration', () => {
     }
   })
 
-  describe('Name Override', () => {
+  describe('Override Options', () => {
     test('should apply name, command and resource overrides', async () => {
       const dockerfile = 'FROM node:18'
       await fs.writeFile(path.join(testDir, 'e2b.Dockerfile'), dockerfile)

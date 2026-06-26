@@ -9,12 +9,12 @@ import { configOption, parsePositiveInt, pathOption } from '../../options'
 import { getRoot } from '../../utils/filesystem'
 import { asLocal, asLocalRelative, asPrimary } from '../../utils/format'
 import { getDockerfile } from './dockerfile'
+import { validateTemplateName } from '../../utils/templateName'
 import {
   generateAndWriteTemplateFiles,
   Language,
   languageDisplay,
 } from './generators'
-import { validateTemplateName } from './init'
 
 /**
  * Migrate Dockerfile to a specific target language using SDK
