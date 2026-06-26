@@ -1,4 +1,5 @@
 import asyncio
+from datetime import datetime
 from types import TracebackType
 from typing import Callable, Optional, List, Union
 
@@ -210,11 +211,31 @@ async def wait_for_build_finish(
 ):
     logs_offset = 0
     status = TemplateBuildStatus.BUILDING
+    max_consecutive_errors = 30
+    consecutive_errors = 0
 
     while status in [TemplateBuildStatus.BUILDING, TemplateBuildStatus.WAITING]:
-        build_status = await get_build_status(
-            client, template_id, build_id, logs_offset
-        )
+        try:
+            build_status = await get_build_status(
+                client, template_id, build_id, logs_offset
+            )
+            consecutive_errors = 0
+        except BuildException:
+            raise
+        except Exception as e:
+            consecutive_errors += 1
+            if consecutive_errors >= max_consecutive_errors:
+                raise BuildException(
+                    f"Failed to poll build status after {max_consecutive_errors} consecutive errors: {e}"
+                )
+            if on_build_logs:
+                on_build_logs(LogEntry(
+                    timestamp=datetime.now(),
+                    level="warn",
+                    message=f"Connection error while polling build status (attempt {consecutive_errors}/{max_consecutive_errors}), retrying: {e}",
+                ))
+            await asyncio.sleep(2)
+            continue
 
         logs_offset += len(build_status.log_entries)
 
