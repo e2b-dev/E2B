@@ -174,6 +174,31 @@ describe('Template Migration', () => {
     }
   })
 
+  describe('Name Override', () => {
+    test('should use --name to override the template name', async () => {
+      const dockerfile = 'FROM node:18'
+      await fs.writeFile(path.join(testDir, 'e2b.Dockerfile'), dockerfile)
+
+      const config = `template_id = "config-name"
+dockerfile = "e2b.Dockerfile"`
+      await fs.writeFile(path.join(testDir, 'e2b.toml'), config)
+
+      execSync(
+        `node ${cliPath} template migrate --language typescript --name overridden-name`,
+        {
+          cwd: testDir,
+        }
+      )
+
+      const buildProdFile = await fs.readFile(
+        path.join(testDir, 'build.prod.ts'),
+        'utf-8'
+      )
+      expect(buildProdFile).toContain("'overridden-name'")
+      expect(buildProdFile).not.toContain("'config-name'")
+    })
+  })
+
   describe('Error Cases', () => {
     test('should succeed with warning when config file is missing', async () => {
       // Create only Dockerfile, no config

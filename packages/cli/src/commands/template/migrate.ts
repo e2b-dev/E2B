@@ -22,7 +22,8 @@ async function migrateToLanguage(
   root: string,
   config: E2BConfig,
   dockerfileContent: string,
-  language: Language
+  language: Language,
+  nameOverride?: string
 ): Promise<void> {
   // Initialize template with file context
   const template = Template({
@@ -66,7 +67,7 @@ async function migrateToLanguage(
     parsedTemplate = baseTemplate.setReadyCmd(config.ready_cmd)
   }
 
-  const name = config.template_name || config.template_id
+  const name = nameOverride || config.template_name || config.template_id
   if (!name) {
     throw new Error('Template name or ID is required')
   }
@@ -94,6 +95,10 @@ export const migrateCommand = new commander.Command('migrate')
   )
   .addOption(configOption)
   .option(
+    '-n, --name <name>',
+    'override the template name used in the generated files. Defaults to the template name or ID from the config file.'
+  )
+  .option(
     '-l, --language <language>',
     `specify target language: ${Object.values(Language).join(', ')}`,
     (value) => {
@@ -114,6 +119,7 @@ export const migrateCommand = new commander.Command('migrate')
       config?: string
       path?: string
       language?: Language
+      name?: string
     }) => {
       let success = false
       try {
@@ -173,7 +179,13 @@ export const migrateCommand = new commander.Command('migrate')
         }
 
         // Perform migration
-        await migrateToLanguage(root, config, dockerfileContent, language)
+        await migrateToLanguage(
+          root,
+          config,
+          dockerfileContent,
+          language,
+          opts.name
+        )
 
         // Rename old files to .old extensions
         const oldFilesRenamed: { oldPath: string; newPath: string }[] = []
