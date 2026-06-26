@@ -7,6 +7,7 @@ import {
   fallbackDockerfileName,
 } from 'src/docker/constants'
 import { parsePositiveInt, pathOption } from 'src/options'
+import { validateTemplateName } from 'src/utils/templateName'
 import { getRoot } from 'src/utils/filesystem'
 import {
   asFormattedSandboxTemplate,
@@ -71,11 +72,13 @@ export const createCommand = new commander.Command('create')
         process.stdout.write('\n')
 
         // Validate template name
-        if (!/^[a-z0-9-_]+$/.test(templateName)) {
+        try {
+          validateTemplateName(templateName)
+        } catch (err) {
           console.error(
-            `Template name ${asLocal(
-              templateName
-            )} is not valid. Template name can only contain lowercase letters, numbers, dashes and underscores.`
+            `Template name ${asLocal(templateName)} is not valid. ${
+              err instanceof Error ? err.message : String(err)
+            }`
           )
           process.exit(1)
         }

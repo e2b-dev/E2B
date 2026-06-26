@@ -1,17 +1,18 @@
 /**
- * Check template name format
+ * Allowed template name (alias) format, matching the server-side validation in
+ * e2b-dev/infra (`id.identifierRegex`): the name is trimmed and lowercased,
+ * then must contain only lowercase letters, numbers, dashes and underscores.
  */
-function templateNameRegex(name: string): boolean {
-  return /^[a-z0-9][a-z0-9_-]*[a-z0-9]$|^[a-z0-9]$/.test(name)
-}
+const templateNameRegex = /^[a-z0-9-_]+$/
 
 export function validateTemplateName(name: string) {
-  if (!name || name.trim().length === 0) {
+  const cleaned = name?.trim()
+  if (!cleaned) {
     throw new Error('Template name cannot be empty')
   }
-  if (!templateNameRegex(name.trim())) {
+  if (!templateNameRegex.test(cleaned)) {
     throw new Error(
-      'Template name must contain only lowercase letters, numbers, hyphens, and underscores, and cannot start or end with a hyphen or underscore'
+      'Template name must contain only lowercase letters, numbers, dashes and underscores'
     )
   }
 }
