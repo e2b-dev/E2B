@@ -1,7 +1,7 @@
 import pytest
 
 from e2b.connection_config import ApiParams
-from e2b.utils import PaginatorBase
+from e2b.paginator import PaginatorBase
 
 
 class FakePaginator(PaginatorBase[str, ApiParams]):

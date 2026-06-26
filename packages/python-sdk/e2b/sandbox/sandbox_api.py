@@ -48,7 +48,7 @@ from e2b.api.client.types import Unset
 from e2b.connection_config import ApiParams
 from e2b.sandbox.mcp import McpServer as BaseMcpServer
 from e2b.sandbox.network import ALL_TRAFFIC
-from e2b.utils import PaginatorBase
+from e2b.paginator import PaginatorBase
 
 
 class GitHubMcpServerConfig(TypedDict):

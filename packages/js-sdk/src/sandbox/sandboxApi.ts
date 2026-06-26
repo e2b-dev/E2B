@@ -11,7 +11,8 @@ import {
   SandboxNotFoundError,
   TemplateError,
 } from '../errors'
-import { Paginator, timeoutToSeconds } from '../utils'
+import { Paginator } from '../paginator'
+import { timeoutToSeconds } from '../utils'
 import type { Volume } from '../volume'
 import type { McpServer as BaseMcpServer } from './mcp'
 
