@@ -84,6 +84,21 @@ async function migrateToLanguage(
   )
 }
 
+/**
+ * Parse a CLI option as a positive integer, rejecting non-numeric values.
+ */
+function parsePositiveInt(label: string): (value: string) => number {
+  return (value) => {
+    const parsed = Number(value)
+    if (!Number.isInteger(parsed) || parsed < 1) {
+      throw new commander.InvalidArgumentError(
+        `${label} must be a positive integer. You provided ${asLocal(value)}.`
+      )
+    }
+    return parsed
+  }
+}
+
 export const migrateCommand = new commander.Command('migrate')
   .description(
     `migrate ${asLocal('e2b.Dockerfile')} and ${asLocal(
@@ -121,12 +136,12 @@ export const migrateCommand = new commander.Command('migrate')
   .option(
     '--cpu-count <cpu-count>',
     'override the number of CPUs that will be used to run the sandbox.',
-    parseInt
+    parsePositiveInt('CPU count')
   )
   .option(
     '--memory-mb <memory-mb>',
     'override the amount of memory in megabytes that will be used to run the sandbox. Must be an even number.',
-    parseInt
+    parsePositiveInt('Memory in megabytes')
   )
   .option(
     '-l, --language <language>',

@@ -228,6 +228,33 @@ dockerfile = "e2b.Dockerfile"`
       }).toThrow()
     })
 
+    test('should reject non-numeric resource overrides', async () => {
+      const dockerfile = 'FROM node:18'
+      await fs.writeFile(path.join(testDir, 'e2b.Dockerfile'), dockerfile)
+
+      const config = `template_id = "config-name"
+dockerfile = "e2b.Dockerfile"`
+      await fs.writeFile(path.join(testDir, 'e2b.toml'), config)
+
+      expect(() => {
+        execSync(
+          `node ${cliPath} template migrate --language typescript --cpu-count abc`,
+          {
+            cwd: testDir,
+          }
+        )
+      }).toThrow()
+
+      expect(() => {
+        execSync(
+          `node ${cliPath} template migrate --language typescript --memory-mb abc`,
+          {
+            cwd: testDir,
+          }
+        )
+      }).toThrow()
+    })
+
     test('should reject an odd memory override', async () => {
       const dockerfile = 'FROM node:18'
       await fs.writeFile(path.join(testDir, 'e2b.Dockerfile'), dockerfile)
