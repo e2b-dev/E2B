@@ -57,6 +57,7 @@ export type {
   SandboxApiOpts,
   SandboxConnectOpts,
   SandboxMetricsOpts,
+  SandboxPauseOpts,
   SandboxState,
   SandboxListOpts,
   SandboxPaginator,
@@ -69,6 +70,7 @@ export type {
   SandboxNetworkRules,
   SandboxNetworkTransform,
   SandboxNetworkUpdate,
+  SandboxOnTimeout,
   SandboxLifecycle,
   SandboxInfoLifecycle,
   SnapshotInfo,
@@ -114,10 +116,14 @@ export type {
   VolumeInfo,
   VolumeAndToken,
   VolumeEntryStat,
-  VolumeMetadataOptions,
-  VolumeWriteOptions,
+  VolumeMetadataOpts,
+  VolumeReadOpts,
+  VolumeWriteOpts,
   VolumeApiOpts,
   VolumeConnectionConfig,
+  // Deprecated aliases, kept for backwards compatibility.
+  VolumeMetadataOptions,
+  VolumeWriteOptions,
 } from './volume'
 
 export { Sandbox }

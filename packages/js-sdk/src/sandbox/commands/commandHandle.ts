@@ -97,6 +97,8 @@ export class CommandHandle
   private result?: CommandResult
   private iterationError?: Error
 
+  private disconnected = false
+
   private readonly _wait: Promise<void>
 
   /**
@@ -184,8 +186,14 @@ export class CommandHandle
    *
    * The command is not killed, but SDK stops receiving events from the command.
    * You can reconnect to the command using {@link Commands.connect}.
+   *
+   * Once it returns, the `onStdout`/`onStderr`/`onPty` callbacks are guaranteed
+   * not to fire for output produced after this call. It does not wait for the
+   * event handler to drain, so it returns promptly even for an idle command
+   * whose stream produces no further output.
    */
   async disconnect() {
+    this.disconnected = true
     this.handleDisconnect()
   }
 
@@ -294,12 +302,21 @@ export class CommandHandle
             }
             break
           case 'end': {
-            yield* this.flushDecoders()
+            // Flush trailing decoder bytes into the accumulators and record the
+            // result *before* yielding the flushed chunks. A disconnected
+            // consumer breaks out of `handleEvents` on the first yielded chunk,
+            // which would otherwise abort this generator before `this.result`
+            // is assigned and make `wait()` fail as if the process never
+            // produced a result.
+            const flushed = [...this.flushDecoders()]
             this.result = {
               exitCode: e.value.exitCode,
               error: e.value.error,
               stdout: this.stdout,
               stderr: this.stderr,
+            }
+            for (const chunk of flushed) {
+              yield chunk
             }
             break
           }
@@ -327,6 +344,17 @@ export class CommandHandle
   private async handleEvents() {
     try {
       for await (const [stdout, stderr, pty] of this.iterateEvents()) {
+        // The handle was disconnected — stop dispatching to the callbacks. The
+        // flag is checked before every dispatch, so no callback fires for
+        // output that arrives (or was buffered) after disconnect() was called,
+        // even if the underlying abort hasn't torn the stream down yet. There
+        // is no synchronous suspension point between this check and the
+        // dispatch below, so disconnect() cannot interleave to let a late event
+        // slip through.
+        if (this.disconnected) {
+          break
+        }
+
         if (stdout !== null) {
           await this.onStdout?.(stdout)
         } else if (stderr !== null) {

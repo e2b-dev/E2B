@@ -2,6 +2,7 @@ import { assert, test, beforeEach, afterEach } from 'vitest'
 import {
   ConnectionConfig,
   setupRequestController,
+  wrapStreamWithConnectionCleanup,
 } from '../src/connectionConfig'
 
 // Store original env vars to restore after tests
@@ -330,4 +331,172 @@ test('setupRequestController user signal still cancels after clearStartTimeout',
   assert.equal(controller.signal.aborted, false)
   userController.abort()
   assert.equal(controller.signal.aborted, true)
+})
+
+// Builds a source ReadableStream that records whether its underlying reader was
+// cancelled, standing in for a fetch response body backed by a pooled
+// connection. `cancel` being invoked is what releases that connection.
+function trackedSource() {
+  const state: { cancelled: boolean; cancelReason: unknown } = {
+    cancelled: false,
+    cancelReason: undefined,
+  }
+  const chunks = ['a', 'b'].map((s) => new TextEncoder().encode(s))
+  let i = 0
+  const body = new ReadableStream<Uint8Array>({
+    pull(controller) {
+      if (i < chunks.length) {
+        controller.enqueue(chunks[i++])
+      } else {
+        controller.close()
+      }
+    },
+    cancel(reason) {
+      state.cancelled = true
+      state.cancelReason = reason
+    },
+  })
+  return { body, state }
+}
+
+async function readAll(stream: ReadableStream<Uint8Array>): Promise<string> {
+  const reader = stream.getReader()
+  let out = ''
+  const decoder = new TextDecoder()
+  for (;;) {
+    const { done, value } = await reader.read()
+    if (done) break
+    out += decoder.decode(value, { stream: true })
+  }
+  return out
+}
+
+// Builds a source ReadableStream that never produces a chunk and errors its
+// pending read when `signal` aborts, standing in for a stalled fetch response
+// body whose connection is torn down by aborting the request controller.
+function stallingSource(signal: AbortSignal) {
+  const state: { cancelled: boolean } = { cancelled: false }
+  const body = new ReadableStream<Uint8Array>({
+    start(controller) {
+      signal.addEventListener('abort', () => controller.error(signal.reason), {
+        once: true,
+      })
+    },
+    cancel() {
+      state.cancelled = true
+    },
+  })
+  return { body, state }
+}
+
+test('wrapStreamWithConnectionCleanup releases once on full read', async () => {
+  const { body } = trackedSource()
+  let cleanups = 0
+  const stream = wrapStreamWithConnectionCleanup(body, {
+    clearStartTimeout: () => {},
+    cleanup: () => {
+      cleanups++
+    },
+    controller: new AbortController(),
+  })
+  assert.equal(await readAll(stream), 'ab')
+  assert.equal(cleanups, 1)
+})
+
+test('wrapStreamWithConnectionCleanup cancel cancels the underlying reader', async () => {
+  const { body, state } = trackedSource()
+  let cleanups = 0
+  const stream = wrapStreamWithConnectionCleanup(body, {
+    clearStartTimeout: () => {},
+    cleanup: () => {
+      cleanups++
+    },
+    controller: new AbortController(),
+  })
+  await stream.cancel('done')
+  assert.equal(state.cancelled, true)
+  assert.equal(state.cancelReason, 'done')
+  assert.equal(cleanups, 1)
+})
+
+test('wrapStreamWithConnectionCleanup handles a null body', async () => {
+  let cleanups = 0
+  let cleared = 0
+  const stream = wrapStreamWithConnectionCleanup(null, {
+    clearStartTimeout: () => {
+      cleared++
+    },
+    cleanup: () => {
+      cleanups++
+    },
+    controller: new AbortController(),
+  })
+  assert.equal(cleared, 1)
+  assert.equal(cleanups, 1)
+  assert.equal(await readAll(stream), '')
+})
+
+test('wrapStreamWithConnectionCleanup aborts and releases an idle stream', async () => {
+  const controller = new AbortController()
+  const { body } = stallingSource(controller.signal)
+  let cleanups = 0
+  const stream = wrapStreamWithConnectionCleanup(body, {
+    clearStartTimeout: () => {},
+    cleanup: () => {
+      cleanups++
+    },
+    controller,
+    idleTimeoutMs: 20,
+  })
+
+  // No chunk ever arrives, so the idle timer fires, aborts the controller,
+  // and the read rejects with the TimeoutError reason.
+  let error: unknown
+  try {
+    await readAll(stream)
+  } catch (err) {
+    error = err
+  }
+  assert.equal((error as DOMException)?.name, 'TimeoutError')
+  assert.equal(cleanups, 1)
+  assert.equal(controller.signal.aborted, true)
+})
+
+test('wrapStreamWithConnectionCleanup with idle timeout 0 never auto-aborts', async () => {
+  const { body } = trackedSource()
+  let cleanups = 0
+  const stream = wrapStreamWithConnectionCleanup(body, {
+    clearStartTimeout: () => {},
+    cleanup: () => {
+      cleanups++
+    },
+    controller: new AbortController(),
+    idleTimeoutMs: 0,
+  })
+  assert.equal(await readAll(stream), 'ab')
+  assert.equal(cleanups, 1)
+})
+
+test('wrapStreamWithConnectionCleanup does not abort a slow consumer (wire-only)', async () => {
+  // Source has both chunks ready immediately; the consumer pauses far longer
+  // than the idle timeout between reads. Because the timer is armed only around
+  // the network read and cleared as soon as a chunk arrives, the consumer's
+  // pace must not trip it.
+  const controller = new AbortController()
+  const { body } = trackedSource()
+  const stream = wrapStreamWithConnectionCleanup(body, {
+    clearStartTimeout: () => {},
+    cleanup: () => {},
+    controller,
+    idleTimeoutMs: 20,
+  })
+  const reader = stream.getReader()
+  const decoder = new TextDecoder()
+
+  const first = await reader.read()
+  assert.equal(decoder.decode(first.value), 'a')
+  await new Promise((resolve) => setTimeout(resolve, 50))
+  const second = await reader.read()
+  assert.equal(decoder.decode(second.value), 'b')
+  assert.equal(controller.signal.aborted, false)
 })

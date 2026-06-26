@@ -1,5 +1,9 @@
 <p align="center">
-  <img width="100" src="https://raw.githubusercontent.com/e2b-dev/E2B/refs/heads/main/readme-assets/logo-circle.png" alt="e2b logo">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/e2b-dev/E2B/refs/heads/main/readme-assets/logo-white.png">
+    <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/e2b-dev/E2B/refs/heads/main/readme-assets/logo-black.png">
+    <img alt="E2B Logo" src="https://raw.githubusercontent.com/e2b-dev/E2B/refs/heads/main/readme-assets/logo-black.png" width="200">
+  </picture>
 </p>
 
 <h4 align="center">  

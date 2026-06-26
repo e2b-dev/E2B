@@ -1,6 +1,6 @@
 {
   "name": "@e2b/cli",
-  "version": "2.12.0",
+  "version": "2.13.0",
   "description": "CLI for managing e2b sandbox templates",
   "homepage": "https://e2b.dev",
   "license": "MIT",
@@ -81,7 +81,7 @@
     "commander": "^11.1.0",
     "console-table-printer": "^2.11.2",
     "dockerfile-ast": "^0.6.1",
-    "e2b": "^2.30.1",
+    "e2b": "^2.30.6",
     "handlebars": "^4.7.9",
     "inquirer": "^12.10.0",
     "simple-update-notifier": "^2.0.0",

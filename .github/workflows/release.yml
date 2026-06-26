@@ -1,63 +1,25 @@
 name: Release
 
 on:
-  workflow_dispatch:
-    inputs:
-      mode:
-        description: 'Release mode'
-        type: choice
-        options:
-          - release
-          - candidate
-        default: release
-      js-sdk:
-        description: 'Release JS SDK (candidate only)'
-        required: false
-        default: false
-        type: boolean
-      python-sdk:
-        description: 'Release Python SDK (candidate only)'
-        required: false
-        default: false
-        type: boolean
-      cli:
-        description: 'Release CLI (candidate only)'
-        required: false
-        default: false
-        type: boolean
-      tag:
-        description: 'Dist-tag for candidate (e.g. rc, beta, snapshot)'
-        required: false
-        default: 'rc'
-        type: string
-      preid:
-        description: 'Prerelease identifier (defaults to branch name, candidate only)'
-        required: false
-        default: ''
-        type: string
-      skip-tests:
-        description: 'Skip tests (candidate only)'
-        required: false
-        default: false
-        type: boolean
+  workflow_dispatch: {}
 
-concurrency: ${{ github.workflow }}-${{ github.ref }}
+# Shared literal group so production and candidate releases on the same ref serialize.
+concurrency: release-${{ github.ref }}
 
 permissions:
   id-token: write
   contents: write
 
 jobs:
-  # ── Production release ───────────────────────────────────
   preflight:
     name: Release preflight
-    if: github.event.inputs.mode != 'candidate'
     runs-on: ubuntu-latest
     outputs:
       release: ${{ steps.version.outputs.release }}
       js-sdk: ${{ steps.js.outputs.release }}
       python-sdk: ${{ steps.python.outputs.release }}
       cli: ${{ steps.cli.outputs.release }}
+      itinerary: ${{ steps.itinerary.outputs.itinerary }}
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v3
@@ -118,6 +80,26 @@ jobs:
           IS_RELEASE=$(./.github/scripts/is_release_for_package.sh "@e2b/cli")
           echo "release=$IS_RELEASE" >> "$GITHUB_OUTPUT"
 
+      - name: Build release itinerary
+        id: itinerary
+        if: steps.version.outputs.release == 'true'
+        run: |
+          pnpm changeset status --output=.cs-status.json
+          ITINERARY=$(node -e '
+            const data = require("./.cs-status.json");
+            const labels = { "e2b": "JS SDK (e2b)", "@e2b/python-sdk": "Python SDK (e2b)", "@e2b/cli": "CLI (@e2b/cli)" };
+            const order = ["e2b", "@e2b/python-sdk", "@e2b/cli"];
+            const byName = Object.fromEntries(data.releases.map(r => [r.name, r]));
+            const lines = order.filter(n => byName[n]).map(n => `• ${labels[n]} v${byName[n].newVersion}`);
+            process.stdout.write(lines.join("\n") || "• No packages were published");
+          ')
+          rm -f .cs-status.json
+          {
+            echo "itinerary<<EOF"
+            echo "$ITINERARY"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
   python-tests:
     name: Python SDK Tests
     needs: [preflight]
@@ -146,6 +128,25 @@ jobs:
     uses: ./.github/workflows/publish_packages.yml
     secrets: inherit
 
+  report-start:
+    needs: [preflight]
+    if: needs.preflight.outputs.release == 'true'
+    name: Release Started - Slack Notification
+    runs-on: ubuntu-latest
+    steps:
+      - name: Release Started - Slack Notification
+        uses: rtCamp/action-slack-notify@33ca3be66c6f378fe1610fd1d5258632dbed5e58 # v2.4.0
+        env:
+          SLACK_COLOR: '#3aa3e3'
+          SLACK_MESSAGE: |
+            :rocket: A new release has been triggered :hourglass_flowing_sand:
+
+            *Releasing:*
+            ${{ needs.preflight.outputs.itinerary }}
+          SLACK_TITLE: Release Started
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          SLACK_CHANNEL: 'monitoring-releases'
+
   report-failure:
     needs: [python-tests, js-tests, cli-tests, publish]
     if: failure()
@@ -153,7 +154,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Release Failed - Slack Notification
-        uses: rtCamp/action-slack-notify@v2
+        uses: rtCamp/action-slack-notify@33ca3be66c6f378fe1610fd1d5258632dbed5e58 # v2.4.0
         env:
           SLACK_COLOR: '#ff0000'
           SLACK_MESSAGE: ':here-we-go-again: :bob-the-destroyer: We need :fix-parrot: ASAP :pray:'
@@ -161,67 +162,21 @@ jobs:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
           SLACK_CHANNEL: 'monitoring-releases'
 
-  # ── Release candidate ────────────────────────────────────
-  rc-validate:
-    name: Validate RC inputs
-    if: github.event.inputs.mode == 'candidate'
+  report-success:
+    needs: [preflight, publish]
+    if: needs.publish.result == 'success'
+    name: Release Succeeded - Slack Notification
     runs-on: ubuntu-latest
-    outputs:
-      preid: ${{ steps.preid.outputs.preid }}
-      tag: ${{ steps.tag.outputs.tag }}
     steps:
-      - name: Sanitize tag
-        id: tag
+      - name: Release Succeeded - Slack Notification
+        uses: rtCamp/action-slack-notify@33ca3be66c6f378fe1610fd1d5258632dbed5e58 # v2.4.0
         env:
-          RAW_TAG: ${{ github.event.inputs.tag }}
-        run: |
-          SAFE_TAG="$(echo "$RAW_TAG" | sed 's/[^0-9A-Za-z-]/-/g')"
-          echo "tag=$SAFE_TAG" >> "$GITHUB_OUTPUT"
+          SLACK_COLOR: '#36a64f'
+          SLACK_MESSAGE: |
+            :tada: A new version has been released successfully! :ship-it-parrot:
 
-      - name: Block production tags
-        run: |
-          if [ "${{ steps.tag.outputs.tag }}" = "latest" ]; then
-            echo "::error::Publishing with the 'latest' tag is not allowed for candidates. Use 'release' mode instead."
-            exit 1
-          fi
-
-      - name: Sanitize preid
-        id: preid
-        env:
-          RAW_PREID: ${{ github.event.inputs.preid || github.ref_name }}
-        run: |
-          echo "preid=$(echo "$RAW_PREID" | sed 's/[^0-9A-Za-z-]/-/g')" >> "$GITHUB_OUTPUT"
-
-  rc-python-tests:
-    name: RC Python Tests
-    needs: [rc-validate]
-    if: github.event.inputs.python-sdk == 'true' && github.event.inputs.skip-tests != 'true'
-    uses: ./.github/workflows/python_sdk_tests.yml
-    secrets: inherit
-
-  rc-js-tests:
-    name: RC JS Tests
-    needs: [rc-validate]
-    if: github.event.inputs.js-sdk == 'true' && github.event.inputs.skip-tests != 'true'
-    uses: ./.github/workflows/js_sdk_tests.yml
-    secrets: inherit
-
-  rc-cli-tests:
-    name: RC CLI Tests
-    needs: [rc-validate]
-    if: github.event.inputs.cli == 'true' && github.event.inputs.skip-tests != 'true'
-    uses: ./.github/workflows/cli_tests.yml
-    secrets: inherit
-
-  rc-publish:
-    name: Publish RC
-    needs: [rc-validate, rc-python-tests, rc-js-tests, rc-cli-tests]
-    if: (!cancelled()) && !contains(needs.*.result, 'failure') && needs.rc-validate.result == 'success'
-    uses: ./.github/workflows/publish_candidates.yml
-    with:
-      js-sdk: ${{ github.event.inputs.js-sdk == 'true' }}
-      python-sdk: ${{ github.event.inputs.python-sdk == 'true' }}
-      cli: ${{ github.event.inputs.cli == 'true' }}
-      tag: ${{ needs.rc-validate.outputs.tag }}
-      preid: ${{ needs.rc-validate.outputs.preid }}
-    secrets: inherit
+            *Released:*
+            ${{ needs.preflight.outputs.itinerary }}
+          SLACK_TITLE: Release Succeeded
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          SLACK_CHANNEL: 'monitoring-releases'

@@ -48,8 +48,8 @@ class CommandHandle:
         self._check_health = check_health
         self._events = events
 
-        self._stdout: str = ""
-        self._stderr: str = ""
+        self._stdout_chunks: List[str] = []
+        self._stderr_chunks: List[str] = []
 
         self._stdout_decoder = codecs.getincrementaldecoder("utf-8")(errors="replace")
         self._stderr_decoder = codecs.getincrementaldecoder("utf-8")(errors="replace")
@@ -77,11 +77,11 @@ class CommandHandle:
         events: List[Union[Tuple[Stdout, None, None], Tuple[None, Stderr, None]]] = []
         out = self._stdout_decoder.decode(b"", final=True)
         if out:
-            self._stdout += out
+            self._stdout_chunks.append(out)
             events.append((out, None, None))
         err = self._stderr_decoder.decode(b"", final=True)
         if err:
-            self._stderr += err
+            self._stderr_chunks.append(err)
             events.append((None, err, None))
         return events
 
@@ -102,23 +102,28 @@ class CommandHandle:
                     if event.event.data.stdout:
                         out = self._stdout_decoder.decode(event.event.data.stdout)
                         if out:
-                            self._stdout += out
+                            self._stdout_chunks.append(out)
                             yield out, None, None
                     if event.event.data.stderr:
                         out = self._stderr_decoder.decode(event.event.data.stderr)
                         if out:
-                            self._stderr += out
+                            self._stderr_chunks.append(out)
                             yield None, out, None
                     if event.event.data.pty:
                         yield None, None, event.event.data.pty
                 if event.event.HasField("end"):
-                    yield from self._flush_decoders()
+                    # Flush trailing decoder bytes into the accumulators and
+                    # record the result before yielding the flushed chunks, so a
+                    # consumer that stops iterating on the first flushed chunk
+                    # still observes the exit code.
+                    flushed = list(self._flush_decoders())
                     self._result = CommandResult(
-                        stdout=self._stdout,
-                        stderr=self._stderr,
+                        stdout="".join(self._stdout_chunks),
+                        stderr="".join(self._stderr_chunks),
                         exit_code=event.event.end.exit_code,
                         error=event.event.end.error,
                     )
+                    yield from flushed
 
             # If the stream closed without an end event (e.g. disconnect or a
             # dropped connection), flush any bytes still buffered in the
@@ -182,8 +187,8 @@ class CommandHandle:
 
         if self._result.exit_code != 0:
             raise CommandExitException(
-                stdout=self._stdout,
-                stderr=self._stderr,
+                stdout="".join(self._stdout_chunks),
+                stderr="".join(self._stderr_chunks),
                 exit_code=self._result.exit_code,
                 error=self._result.error,
             )

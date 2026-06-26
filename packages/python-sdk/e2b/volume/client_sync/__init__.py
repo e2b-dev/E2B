@@ -1,4 +1,3 @@
-import logging
 import os
 import threading
 from typing import Dict, Optional
@@ -7,12 +6,11 @@ import httpx
 from httpx import Limits
 from httpx._types import ProxyTypes
 
+from e2b.api import make_logging_event_hooks
 from e2b.api.metadata import default_headers
 from e2b.exceptions import AuthenticationException
 from e2b.volume.client.client import AuthenticatedClient as VolumeApiClient
 from e2b.volume.connection_config import VolumeConnectionConfig
-
-logger = logging.getLogger(__name__)
 
 limits = Limits(
     max_keepalive_connections=int(os.getenv("E2B_MAX_KEEPALIVE_CONNECTIONS", "20")),
@@ -47,20 +45,17 @@ def get_api_client(config: VolumeConnectionConfig, **kwargs) -> VolumeApiClient:
         timeout=(
             httpx.Timeout(request_timeout) if request_timeout is not None else None
         ),
-        httpx_args={"proxy": config.proxy, "transport": get_transport(config)},
+        httpx_args={
+            "proxy": config.proxy,
+            "transport": get_transport(config),
+            "event_hooks": make_logging_event_hooks(config.logger),
+        },
         **kwargs,
     )
 
 
 class TransportWithLogger(httpx.HTTPTransport):
     _thread_local = threading.local()
-
-    def handle_request(self, request):
-        url = f"{request.url.scheme}://{request.url.host}{request.url.path}"
-        logger.info(f"Request: {request.method} {url}")
-        response = super().handle_request(request)
-        logger.info(f"Response: {response.status_code} {url}")
-        return response
 
     @property
     def pool(self):
