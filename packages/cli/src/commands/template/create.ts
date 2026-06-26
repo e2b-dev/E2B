@@ -6,7 +6,7 @@ import {
   defaultDockerfileName,
   fallbackDockerfileName,
 } from 'src/docker/constants'
-import { pathOption } from 'src/options'
+import { parsePositiveInt, pathOption } from 'src/options'
 import { getRoot } from 'src/utils/filesystem'
 import {
   asFormattedSandboxTemplate,
@@ -45,12 +45,12 @@ export const createCommand = new commander.Command('create')
   .option(
     '--cpu-count <cpu-count>',
     'specify the number of CPUs that will be used to run the sandbox. The default value is 2.',
-    parseInt
+    parsePositiveInt('CPU count')
   )
   .option(
     '--memory-mb <memory-mb>',
     'specify the amount of memory in megabytes that will be used to run the sandbox. Must be an even number. The default value is 512.',
-    parseInt
+    parsePositiveInt('Memory in megabytes')
   )
   .option('--no-cache', 'skip cache when building the template.')
   .alias('ct')

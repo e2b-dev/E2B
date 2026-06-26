@@ -5,7 +5,7 @@ import * as fs from 'fs'
 import * as path from 'path'
 import { E2BConfig, getConfigPath, loadConfig } from '../../config'
 import { defaultDockerfileName } from '../../docker/constants'
-import { configOption, pathOption } from '../../options'
+import { configOption, parsePositiveInt, pathOption } from '../../options'
 import { getRoot } from '../../utils/filesystem'
 import { asLocal, asLocalRelative, asPrimary } from '../../utils/format'
 import { getDockerfile } from './dockerfile'
@@ -82,21 +82,6 @@ async function migrateToLanguage(
     config.cpu_count,
     config.memory_mb
   )
-}
-
-/**
- * Parse a CLI option as a positive integer, rejecting non-numeric values.
- */
-function parsePositiveInt(label: string): (value: string) => number {
-  return (value) => {
-    const parsed = Number(value)
-    if (!Number.isInteger(parsed) || parsed < 1) {
-      throw new commander.InvalidArgumentError(
-        `${label} must be a positive integer. You provided ${asLocal(value)}.`
-      )
-    }
-    return parsed
-  }
 }
 
 export const migrateCommand = new commander.Command('migrate')
