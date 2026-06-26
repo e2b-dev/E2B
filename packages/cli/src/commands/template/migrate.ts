@@ -14,6 +14,7 @@ import {
   Language,
   languageDisplay,
 } from './generators'
+import { resolveTemplateBuildName } from './resolveBuildName'
 
 /**
  * Migrate Dockerfile to a specific target language using SDK
@@ -22,7 +23,8 @@ async function migrateToLanguage(
   root: string,
   config: E2BConfig,
   dockerfileContent: string,
-  language: Language
+  language: Language,
+  opts?: { alias?: string }
 ): Promise<void> {
   // Initialize template with file context
   const template = Template({
@@ -66,7 +68,9 @@ async function migrateToLanguage(
     parsedTemplate = baseTemplate.setReadyCmd(config.ready_cmd)
   }
 
-  const name = config.template_name || config.template_id
+  const name = await resolveTemplateBuildName(config, {
+    alias: opts?.alias,
+  })
   if (!name) {
     throw new Error('Template name or ID is required')
   }
@@ -94,6 +98,10 @@ export const migrateCommand = new commander.Command('migrate')
   )
   .addOption(configOption)
   .option(
+    '--alias <name>',
+    'template alias to use in generated build scripts when e2b.toml has no template_name'
+  )
+  .option(
     '-l, --language <language>',
     `specify target language: ${Object.values(Language).join(', ')}`,
     (value) => {
@@ -114,6 +122,7 @@ export const migrateCommand = new commander.Command('migrate')
       config?: string
       path?: string
       language?: Language
+      alias?: string
     }) => {
       let success = false
       try {
@@ -173,7 +182,9 @@ export const migrateCommand = new commander.Command('migrate')
         }
 
         // Perform migration
-        await migrateToLanguage(root, config, dockerfileContent, language)
+        await migrateToLanguage(root, config, dockerfileContent, language, {
+          alias: opts.alias,
+        })
 
         // Rename old files to .old extensions
         const oldFilesRenamed: { oldPath: string; newPath: string }[] = []
