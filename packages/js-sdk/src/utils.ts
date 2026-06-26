@@ -1,4 +1,5 @@
 import platform from 'platform'
+import type { ConnectionOpts } from './connectionConfig'
 
 declare let window: any
 
@@ -88,7 +89,7 @@ export function timeoutToSeconds(timeout: number): number {
  * }
  * ```
  */
-export abstract class Paginator<T, O = unknown> {
+export abstract class Paginator<T, O extends ConnectionOpts = ConnectionOpts> {
   protected readonly opts?: O
   protected readonly limit?: number
 

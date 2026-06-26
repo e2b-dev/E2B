@@ -1,6 +1,6 @@
 import { assert, expect, test } from 'vitest'
 
-import { Paginator } from '../src'
+import { Paginator } from '../src/utils'
 
 // Build a fake HTTP Response carrying only the `x-next-token` header.
 function fakeResponse(nextToken?: string): Response {

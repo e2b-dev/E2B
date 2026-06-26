@@ -127,8 +127,6 @@ import { Sandbox } from './sandbox'
 
 export default Sandbox
 
-export { Paginator } from './utils'
-
 export * from './template'
 
 export {

@@ -1,11 +1,13 @@
-from typing import Mapping, Optional
+from typing import Generic, Mapping, Optional, TypeVar
 
 from typing_extensions import Unpack
 
 from e2b.connection_config import ApiParams
 
+T = TypeVar("T")
 
-class PaginatorBase:
+
+class PaginatorBase(Generic[T]):
     """
     Shared pagination state for cursor-based list endpoints.
 

@@ -3,7 +3,7 @@ import pytest
 from e2b.utils import PaginatorBase
 
 
-class FakePaginator(PaginatorBase):
+class FakePaginator(PaginatorBase[str]):
     """Minimal paginator that returns canned pages and drives the shared state."""
 
     def __init__(self, pages):

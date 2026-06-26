@@ -600,7 +600,7 @@ class SnapshotInfo:
     """Full names of the snapshot template including team namespace and tag (e.g. team-slug/my-snapshot:v2)."""
 
 
-class SnapshotPaginatorBase(PaginatorBase):
+class SnapshotPaginatorBase(PaginatorBase[SnapshotInfo]):
     def __init__(
         self,
         sandbox_id: Optional[str] = None,
@@ -612,7 +612,7 @@ class SnapshotPaginatorBase(PaginatorBase):
         self.sandbox_id = sandbox_id
 
 
-class SandboxPaginatorBase(PaginatorBase):
+class SandboxPaginatorBase(PaginatorBase[SandboxInfo]):
     def __init__(
         self,
         query: Optional[SandboxQuery] = None,
