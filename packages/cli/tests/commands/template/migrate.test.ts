@@ -174,6 +174,106 @@ describe('Template Migration', () => {
     }
   })
 
+  describe('Override Options', () => {
+    test('should apply name, command and resource overrides', async () => {
+      const dockerfile = 'FROM node:18'
+      await fs.writeFile(path.join(testDir, 'e2b.Dockerfile'), dockerfile)
+
+      const config = `template_id = "config-name"
+dockerfile = "e2b.Dockerfile"
+cpu_count = 2
+memory_mb = 512`
+      await fs.writeFile(path.join(testDir, 'e2b.toml'), config)
+
+      execSync(
+        `node ${cliPath} template migrate --language typescript --name "  overridden-name  " --cmd "node server.js" --ready-cmd "curl localhost:3000" --cpu-count 4 --memory-mb 2048`,
+        {
+          cwd: testDir,
+        }
+      )
+
+      const templateFile = await fs.readFile(
+        path.join(testDir, 'template.ts'),
+        'utf-8'
+      )
+      expect(templateFile).toContain(
+        ".setStartCmd('sudo node server.js', 'curl localhost:3000')"
+      )
+
+      const buildProdFile = await fs.readFile(
+        path.join(testDir, 'build.prod.ts'),
+        'utf-8'
+      )
+      expect(buildProdFile).toContain("'overridden-name'")
+      expect(buildProdFile).not.toContain("'config-name'")
+      expect(buildProdFile).toContain('cpuCount: 4')
+      expect(buildProdFile).toContain('memoryMB: 2048')
+    })
+
+    test('should reject an invalid --name', async () => {
+      const dockerfile = 'FROM node:18'
+      await fs.writeFile(path.join(testDir, 'e2b.Dockerfile'), dockerfile)
+
+      const config = `template_id = "config-name"
+dockerfile = "e2b.Dockerfile"`
+      await fs.writeFile(path.join(testDir, 'e2b.toml'), config)
+
+      expect(() => {
+        execSync(
+          `node ${cliPath} template migrate --language typescript --name "Invalid Name"`,
+          {
+            cwd: testDir,
+          }
+        )
+      }).toThrow()
+    })
+
+    test('should reject non-numeric resource overrides', async () => {
+      const dockerfile = 'FROM node:18'
+      await fs.writeFile(path.join(testDir, 'e2b.Dockerfile'), dockerfile)
+
+      const config = `template_id = "config-name"
+dockerfile = "e2b.Dockerfile"`
+      await fs.writeFile(path.join(testDir, 'e2b.toml'), config)
+
+      expect(() => {
+        execSync(
+          `node ${cliPath} template migrate --language typescript --cpu-count abc`,
+          {
+            cwd: testDir,
+          }
+        )
+      }).toThrow()
+
+      expect(() => {
+        execSync(
+          `node ${cliPath} template migrate --language typescript --memory-mb abc`,
+          {
+            cwd: testDir,
+          }
+        )
+      }).toThrow()
+    })
+
+    test('should reject an odd memory override', async () => {
+      const dockerfile = 'FROM node:18'
+      await fs.writeFile(path.join(testDir, 'e2b.Dockerfile'), dockerfile)
+
+      const config = `template_id = "resources"
+dockerfile = "e2b.Dockerfile"`
+      await fs.writeFile(path.join(testDir, 'e2b.toml'), config)
+
+      expect(() => {
+        execSync(
+          `node ${cliPath} template migrate --language typescript --memory-mb 1023`,
+          {
+            cwd: testDir,
+          }
+        )
+      }).toThrow()
+    })
+  })
+
   describe('Error Cases', () => {
     test('should succeed with warning when config file is missing', async () => {
       // Create only Dockerfile, no config

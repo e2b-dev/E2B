@@ -6,7 +6,8 @@ import {
   defaultDockerfileName,
   fallbackDockerfileName,
 } from 'src/docker/constants'
-import { pathOption } from 'src/options'
+import { parsePositiveInt, pathOption } from 'src/options'
+import { validateTemplateName } from 'src/utils/templateName'
 import { getRoot } from 'src/utils/filesystem'
 import {
   asFormattedSandboxTemplate,
@@ -45,12 +46,12 @@ export const createCommand = new commander.Command('create')
   .option(
     '--cpu-count <cpu-count>',
     'specify the number of CPUs that will be used to run the sandbox. The default value is 2.',
-    parseInt
+    parsePositiveInt('CPU count')
   )
   .option(
     '--memory-mb <memory-mb>',
     'specify the amount of memory in megabytes that will be used to run the sandbox. Must be an even number. The default value is 512.',
-    parseInt
+    parsePositiveInt('Memory in megabytes')
   )
   .option('--no-cache', 'skip cache when building the template.')
   .alias('ct')
@@ -71,11 +72,13 @@ export const createCommand = new commander.Command('create')
         process.stdout.write('\n')
 
         // Validate template name
-        if (!/^[a-z0-9-_]+$/.test(templateName)) {
+        try {
+          validateTemplateName(templateName)
+        } catch (err) {
           console.error(
-            `Template name ${asLocal(
-              templateName
-            )} is not valid. Template name can only contain lowercase letters, numbers, dashes and underscores.`
+            `Template name ${asLocal(templateName)} is not valid. ${
+              err instanceof Error ? err.message : String(err)
+            }`
           )
           process.exit(1)
         }
