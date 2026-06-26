@@ -111,6 +111,16 @@ export class GitAuthError extends AuthenticationError {
 }
 
 /**
+ * Thrown when git fails because the repository path is not writable.
+ */
+export class GitPermissionError extends SandboxError {
+  constructor(message: string, stackTrace?: string) {
+    super(message, stackTrace)
+    this.name = 'GitPermissionError'
+  }
+}
+
+/**
  * Thrown when git upstream tracking is missing.
  */
 export class GitUpstreamError extends SandboxError {

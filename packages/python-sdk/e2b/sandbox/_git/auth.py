@@ -67,11 +67,48 @@ def is_auth_failure(err: Exception) -> bool:
         "terminal prompts disabled",
         "could not read username",
         "invalid username or password",
+        "permission denied (",
+        "permission denied (publickey",
+        "permission denied (keyboard-interactive",
+        "permission to ",
+        "requested url returned error: 403",
         "access denied",
-        "permission denied",
         "not authorized",
     ]
     return any(snippet in message for snippet in auth_snippets)
+
+
+def is_permission_failure(err: Exception) -> bool:
+    """
+    Check whether a git command failed because the target path is not writable.
+
+    :param err: Exception raised by a git command
+    :return: True when the error matches common filesystem permission failures
+    """
+    if not isinstance(err, CommandExitException):
+        return False
+
+    message = f"{err.stderr}\n{err.stdout}".lower()
+    permission_signals = [
+        "permission denied",
+        "operation not permitted",
+        "read-only file system",
+    ]
+    filesystem_contexts = [
+        "could not create work tree dir",
+        "repository database",
+        ".git/index.lock",
+        ".git/config.lock",
+        ".git/fetch_head",
+        ".git/head.lock",
+    ]
+    direct_snippets = [
+        "insufficient permission for adding an object to repository database",
+    ]
+    return any(snippet in message for snippet in direct_snippets) or (
+        any(signal in message for signal in permission_signals)
+        and any(context in message for context in filesystem_contexts)
+    )
 
 
 def is_missing_upstream(err: Exception) -> bool:
@@ -109,6 +146,25 @@ def build_auth_error_message(action: str, missing_password: bool) -> str:
     if missing_password:
         return f"Git {action} requires a password/token for private repositories."
     return f"Git {action} requires credentials for private repositories."
+
+
+def build_permission_error_message(action: str) -> str:
+    """
+    Build a git filesystem permission error message for the given action.
+
+    :param action: Git action name
+    :return: Error message string
+    """
+    if action == "clone":
+        return (
+            "Git clone failed because the target path is not writable by the current user. "
+            "Try using a writable path or running the command as the user that owns that path."
+        )
+
+    return (
+        f"Git {action} failed because the repository path is not writable by the current user. "
+        "Try using a writable path or running the command as the user that owns the repository files."
+    )
 
 
 def build_upstream_error_message(action: str) -> str:

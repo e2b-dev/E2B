@@ -6,6 +6,7 @@ from e2b.sandbox._git import (
     GitStatus,
     build_add_args,
     build_auth_error_message,
+    build_permission_error_message,
     build_branches_args,
     build_checkout_branch_args,
     build_clone_plan,
@@ -27,6 +28,7 @@ from e2b.sandbox._git import (
     build_status_args,
     build_upstream_error_message,
     is_auth_failure,
+    is_permission_failure,
     is_missing_upstream,
     parse_git_branches,
     parse_git_status,
@@ -36,6 +38,7 @@ from e2b.sandbox._git import (
 )
 from e2b.exceptions import (
     GitAuthException,
+    GitPermissionException,
     GitUpstreamException,
     InvalidArgumentException,
 )
@@ -321,6 +324,10 @@ class Git:
             if is_auth_failure(err):
                 raise GitAuthException(
                     build_auth_error_message("clone", bool(username) and not password)
+                ) from err
+            if is_permission_failure(err):
+                raise GitPermissionException(
+                    build_permission_error_message("clone")
                 ) from err
             raise
 
@@ -790,6 +797,10 @@ class Git:
                 raise GitAuthException(
                     build_auth_error_message("push", bool(username) and not password)
                 ) from err
+            if is_permission_failure(err):
+                raise GitPermissionException(
+                    build_permission_error_message("push")
+                ) from err
             if is_missing_upstream(err):
                 raise GitUpstreamException(
                     build_upstream_error_message("push")
@@ -872,6 +883,10 @@ class Git:
             if is_auth_failure(err):
                 raise GitAuthException(
                     build_auth_error_message("pull", bool(username) and not password)
+                ) from err
+            if is_permission_failure(err):
+                raise GitPermissionException(
+                    build_permission_error_message("pull")
                 ) from err
             if is_missing_upstream(err):
                 raise GitUpstreamException(
