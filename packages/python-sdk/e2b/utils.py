@@ -5,9 +5,10 @@ from typing_extensions import Unpack
 from e2b.connection_config import ApiParams
 
 T = TypeVar("T")
+OptsT = TypeVar("OptsT", bound=ApiParams)
 
 
-class PaginatorBase(Generic[T]):
+class PaginatorBase(Generic[T, OptsT]):
     """
     Shared pagination state for cursor-based list endpoints.
 
@@ -16,15 +17,18 @@ class PaginatorBase(Generic[T]):
     paginator implements `next_items` to do the actual fetching for its
     endpoint, so any model can expose pagination by subclassing this without
     reimplementing the bookkeeping.
+
+    `T` is the item type returned by `next_items`; `OptsT` is the connection
+    options type accepted by the paginator (an `ApiParams`-compatible TypedDict).
     """
 
     def __init__(
         self,
         limit: Optional[int] = None,
         next_token: Optional[str] = None,
-        **opts: Unpack[ApiParams],
+        **opts: Unpack[OptsT],
     ):
-        self._opts: ApiParams = opts
+        self._opts: OptsT = opts
         self.limit = limit
         self._has_next = True
         self._next_token = next_token

@@ -1,9 +1,10 @@
 import pytest
 
+from e2b.connection_config import ApiParams
 from e2b.utils import PaginatorBase
 
 
-class FakePaginator(PaginatorBase[str]):
+class FakePaginator(PaginatorBase[str, ApiParams]):
     """Minimal paginator that returns canned pages and drives the shared state."""
 
     def __init__(self, pages):
