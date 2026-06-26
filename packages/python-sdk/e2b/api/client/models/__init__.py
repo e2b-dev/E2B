@@ -61,6 +61,7 @@ from .sandbox_network_transform_headers import SandboxNetworkTransformHeaders
 from .sandbox_network_update_config import SandboxNetworkUpdateConfig
 from .sandbox_network_update_config_rules import SandboxNetworkUpdateConfigRules
 from .sandbox_on_timeout import SandboxOnTimeout
+from .sandbox_pause_request import SandboxPauseRequest
 from .sandbox_state import SandboxState
 from .sandbox_volume_mount import SandboxVolumeMount
 from .sandboxes_with_metrics import SandboxesWithMetrics
@@ -151,6 +152,7 @@ __all__ = (
     "SandboxNetworkUpdateConfig",
     "SandboxNetworkUpdateConfigRules",
     "SandboxOnTimeout",
+    "SandboxPauseRequest",
     "SandboxState",
     "SandboxVolumeMount",
     "SnapshotInfo",

@@ -1,5 +1,4 @@
 import asyncio
-import logging
 import weakref
 from typing import Dict, Optional, Tuple
 
@@ -9,8 +8,6 @@ from httpx._types import ProxyTypes
 
 from e2b.api import AsyncApiClient, connection_retries, limits
 from e2b.connection_config import ConnectionConfig
-
-logger = logging.getLogger(__name__)
 
 TransportKey = Tuple[bool, Optional[ProxyTypes]]
 
@@ -31,16 +28,6 @@ class AsyncTransportWithLogger(httpx.AsyncHTTPTransport):
         asyncio.AbstractEventLoop,
         Dict[TransportKey, "AsyncTransportWithLogger"],
     ] = weakref.WeakKeyDictionary()
-
-    async def handle_async_request(self, request):
-        url = f"{request.url.scheme}://{request.url.host}{request.url.path}"
-        logger.info(f"Request: {request.method} {url}")
-        response = await super().handle_async_request(request)
-
-        # data = connect.GzipCompressor.decompress(response.read()).decode()
-        logger.info(f"Response: {response.status_code} {url}")
-
-        return response
 
     @property
     def pool(self):

@@ -25,6 +25,7 @@ import {
   SnapshotInfo,
   SnapshotPaginator,
   CreateSnapshotOpts,
+  SandboxPauseOpts,
 } from './sandboxApi'
 import { getSignature } from './signature'
 import { compareVersions } from 'compare-versions'
@@ -534,24 +535,31 @@ export class Sandbox extends SandboxApi {
   /**
    * Pause a sandbox by its ID.
    *
-   * @param opts connection options.
+   * @param opts connection options, plus `keepMemory` to control the snapshot
+   * kind. When `opts.keepMemory` is `false`, the in-memory state is dropped and
+   * only the filesystem is persisted (a filesystem-only snapshot); resuming such
+   * a sandbox cold-boots (reboots) it from disk, losing running processes and
+   * open connections. Defaults to `true` (full memory snapshot).
    *
-   * @returns sandbox ID that can be used to resume the sandbox.
+   * @returns `true` if the sandbox got paused, `false` if the sandbox was already paused.
    *
    * @example
    * ```ts
    * const sandbox = await Sandbox.create()
    * await sandbox.pause()
+   *
+   * // filesystem-only snapshot (resume reboots the sandbox)
+   * await sandbox.pause({ keepMemory: false })
    * ```
    */
-  async pause(opts?: ConnectionOpts): Promise<boolean> {
+  async pause(opts?: SandboxPauseOpts): Promise<boolean> {
     return await SandboxApi.pause(this.sandboxId, this.resolveApiOpts(opts))
   }
 
   /**
    * @deprecated Use {@link Sandbox.pause} instead.
    */
-  async betaPause(opts?: ConnectionOpts): Promise<boolean> {
+  async betaPause(opts?: SandboxPauseOpts): Promise<boolean> {
     return await SandboxApi.betaPause(this.sandboxId, this.resolveApiOpts(opts))
   }
 

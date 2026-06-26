@@ -1,8 +1,8 @@
 import os
 import tempfile
 import tarfile
-import io
 import pytest
+from typing import IO
 from e2b.template.utils import tar_file_stream
 
 
@@ -14,7 +14,7 @@ class TestTarFileStream:
         yield tmpdir.name
         tmpdir.cleanup()
 
-    def _extract_tar_contents(self, tar_buffer: io.BytesIO) -> dict:
+    def _extract_tar_contents(self, tar_buffer: IO[bytes]) -> dict:
         """Extract tar contents into a dictionary mapping paths to file contents."""
         tar_buffer.seek(0)
         contents = {}

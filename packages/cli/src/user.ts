@@ -5,16 +5,39 @@ import * as fs from 'fs'
 /**
  * User configuration stored in ~/.e2b/config.json
  */
-export interface UserConfig {
+export interface UserIdentity {
   email: string
-  accessToken: string
+}
+
+export interface UserOAuth {
+  token_endpoint: string
+  revoke_endpoint: string
+  client_id: string
+}
+
+export interface UserTokens {
+  access_token: string
+  refresh_token: string
+}
+
+export interface UserConfig {
+  version: 1
+  identity: UserIdentity
+  oauth: UserOAuth
+  tokens: UserTokens
+  last_refresh: string
   teamName: string
   teamId: string
   teamApiKey: string
   dockerProxySet?: boolean
 }
 
+type UnknownRecord = Record<string, unknown>
+
 export const USER_CONFIG_PATH = path.join(os.homedir(), '.e2b', 'config.json') // TODO: Keep in Keychain
+
+export const DEPRECATED_USER_CONFIG_MESSAGE =
+  'Your CLI authentication config is deprecated. You have been signed out. Please run `e2b auth login` again.'
 
 export const DOCS_BASE =
   process.env.E2B_DOCS_BASE ||
@@ -29,7 +52,43 @@ export const SANDBOX_INSPECT_URL = (sandboxId: string) =>
 
 export function getUserConfig(): UserConfig | null {
   if (!fs.existsSync(USER_CONFIG_PATH)) return null
-  return JSON.parse(fs.readFileSync(USER_CONFIG_PATH, 'utf8'))
+  const config = JSON.parse(fs.readFileSync(USER_CONFIG_PATH, 'utf8'))
+
+  if (!isUserConfig(config)) {
+    fs.unlinkSync(USER_CONFIG_PATH)
+    console.error(DEPRECATED_USER_CONFIG_MESSAGE)
+    return null
+  }
+
+  return config
+}
+
+function isObject(value: unknown): value is UnknownRecord {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+function isString(value: unknown): value is string {
+  return typeof value === 'string'
+}
+
+function isUserConfig(config: unknown): config is UserConfig {
+  if (!isObject(config)) return false
+  if (config.version !== 1) return false
+  return (
+    isObject(config.identity) &&
+    isString(config.identity.email) &&
+    isObject(config.oauth) &&
+    isString(config.oauth.token_endpoint) &&
+    isString(config.oauth.revoke_endpoint) &&
+    isString(config.oauth.client_id) &&
+    isObject(config.tokens) &&
+    isString(config.tokens.access_token) &&
+    isString(config.tokens.refresh_token)
+  )
+}
+
+export function getConfigRefreshTimestamp(): string {
+  return new Date().toISOString()
 }
 
 /**
