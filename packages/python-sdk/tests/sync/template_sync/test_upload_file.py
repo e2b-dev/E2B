@@ -1,15 +1,20 @@
 import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
+from unittest import mock
+
+import httpx
 
 from e2b.api.client.client import AuthenticatedClient
+from e2b.template import utils as template_utils
+from e2b.template.consts import FILE_UPLOAD_TIMEOUT_SECONDS
 from e2b.template_sync.build_api import upload_file
 
 
 # Regression test for e2b-dev/e2b#1243 — upload_file must set Content-Length
 # and must not fall back to Transfer-Encoding: chunked. S3 presigned PUT URLs
-# reject chunked encoding with 501 NotImplemented. httpx sets Content-Length
-# automatically when we pass bytes (tar_buffer.getvalue()); this test guards
-# against someone swapping the bytes for a generator/stream later.
+# reject chunked encoding with 501 NotImplemented. The archive is streamed
+# from a temporary file on disk with a known Content-Length instead of being
+# buffered in memory; this test guards that contract.
 
 
 def _make_server():
@@ -71,3 +76,115 @@ def test_upload_file_sets_content_length_and_no_chunked_encoding(tmp_path):
     if transfer_encoding is not None:
         assert "chunked" not in transfer_encoding.lower()
     assert "Authorization" not in state["headers"]
+
+
+def _capture_upload_timeout(tmp_path, request_timeout=None):
+    """Run upload_file against a local server, capturing the httpx timeout."""
+    (tmp_path / "hello.txt").write_text("hello world")
+
+    server, thread, state = _make_server()
+    host, port = server.server_address
+    url = f"http://{host}:{port}/upload"
+
+    captured = {}
+    real_client = httpx.Client
+
+    def spy_client(*args, **kwargs):
+        captured["timeout"] = kwargs.get("timeout")
+        return real_client(*args, **kwargs)
+
+    try:
+        client = AuthenticatedClient(base_url="http://test", token="test")
+        kwargs = {}
+        if request_timeout is not None:
+            kwargs["request_timeout"] = request_timeout
+        with mock.patch(
+            "e2b.template_sync.build_api.httpx.Client", side_effect=spy_client
+        ):
+            upload_file(
+                api_client=client,
+                file_name="*.txt",
+                context_path=str(tmp_path),
+                url=url,
+                ignore_patterns=[],
+                resolve_symlinks=False,
+                stack_trace=None,
+                **kwargs,
+            )
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=5)
+
+    return captured["timeout"]
+
+
+def test_upload_file_defaults_to_one_hour_timeout(tmp_path):
+    # Uploads of large archives need far longer than the 60s general API
+    # timeout, so the default upload timeout is 1 hour (matches the JS SDK).
+    timeout = _capture_upload_timeout(tmp_path)
+    assert timeout == httpx.Timeout(FILE_UPLOAD_TIMEOUT_SECONDS)
+
+
+def test_upload_file_honors_explicit_request_timeout(tmp_path):
+    # An explicitly set request_timeout overrides the 1-hour upload default.
+    timeout = _capture_upload_timeout(tmp_path, request_timeout=5.0)
+    assert timeout == httpx.Timeout(5.0)
+
+
+def test_upload_file_ignores_post_upload_close_failure(tmp_path):
+    # Regression test: once S3 has accepted the archive, closing the spooled
+    # temp file in the `finally` block can raise. That failure must not be
+    # wrapped as a FileUploadException — the upload already succeeded.
+    (tmp_path / "hello.txt").write_text("hello world")
+
+    server, thread, state = _make_server()
+    host, port = server.server_address
+    url = f"http://{host}:{port}/upload"
+
+    real_tar_file_stream = template_utils.tar_file_stream
+
+    class _FailingCloseFile:
+        # Proxies a real spooled temp file but raises on close(). The
+        # underlying file object is a C type whose `close` attribute can't
+        # be reassigned, so we wrap it instead.
+        def __init__(self, inner):
+            self._inner = inner
+
+        def __getattr__(self, name):
+            return getattr(self._inner, name)
+
+        def __iter__(self):
+            return iter(self._inner)
+
+        def close(self):
+            # Run the real close so we don't leak the temp file, then
+            # simulate a close failure surfacing from the `finally`.
+            self._inner.close()
+            raise OSError("close failed")
+
+    def failing_close_stream(*args, **kwargs):
+        return _FailingCloseFile(real_tar_file_stream(*args, **kwargs))
+
+    try:
+        client = AuthenticatedClient(base_url="http://test", token="test")
+        with mock.patch(
+            "e2b.template_sync.build_api.tar_file_stream",
+            side_effect=failing_close_stream,
+        ):
+            # Must not raise despite close() failing after a 200 response.
+            upload_file(
+                api_client=client,
+                file_name="*.txt",
+                context_path=str(tmp_path),
+                url=url,
+                ignore_patterns=[],
+                resolve_symlinks=False,
+                stack_trace=None,
+            )
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=5)
+
+    assert state["headers"] is not None

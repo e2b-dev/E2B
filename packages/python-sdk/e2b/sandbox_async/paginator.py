@@ -70,8 +70,7 @@ class AsyncSandboxPaginator(SandboxPaginatorBase):
         if res.status_code >= 300:
             raise handle_api_exception(res)
 
-        self._next_token = res.headers.get("x-next-token")
-        self._has_next = bool(self._next_token)
+        self._update_pagination(res.headers)
 
         if res.parsed is None:
             return []
@@ -124,8 +123,7 @@ class AsyncSnapshotPaginator(SnapshotPaginatorBase):
         if res.status_code >= 300:
             raise handle_api_exception(res)
 
-        self._next_token = res.headers.get("x-next-token")
-        self._has_next = bool(self._next_token)
+        self._update_pagination(res.headers)
 
         if res.parsed is None:
             return []

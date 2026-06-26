@@ -9,6 +9,7 @@ import httpx
 from packaging.version import Version
 from typing_extensions import Self, Unpack
 
+from e2b.api.client.types import Unset
 from e2b.connection_config import ApiParams, ConnectionConfig
 from e2b.envd.api import ENVD_API_HEALTH_ROUTE, handle_envd_api_exception
 from e2b.envd.versions import ENVD_DEBUG_FALLBACK
@@ -169,6 +170,7 @@ class Sandbox(SandboxApi):
         network: Optional[SandboxNetworkOpts] = None,
         lifecycle: Optional[SandboxLifecycle] = None,
         volume_mounts: Optional[SandboxVolumeMount] = None,
+        logger: Optional[logging.Logger] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
         """
@@ -184,8 +186,9 @@ class Sandbox(SandboxApi):
         :param allow_internet_access: Allow sandbox to access the internet, defaults to `True`. If set to `False`, it works the same as setting network `deny_out` to `[0.0.0.0/0]`.
         :param mcp: MCP server to enable in the sandbox
         :param network: Sandbox network configuration. ``allow_out``/``deny_out`` may also be a callable receiving a :class:`SandboxNetworkSelectorContext` (``ctx.all_traffic``, ``ctx.rules``) and returning a list of strings. Per-host transform rules are nested under ``network.rules``.
-        :param lifecycle: Sandbox lifecycle configuration — ``on_timeout``: ``"kill"`` (default) or ``"pause"``; ``auto_resume``: ``False`` (default) or ``True`` (only when ``on_timeout="pause"``). Example: ``{"on_timeout": "pause", "auto_resume": True}``
+        :param lifecycle: Sandbox lifecycle configuration — ``on_timeout``: ``"kill"`` (default) or ``"pause"``, or an object ``{"action": "pause"|"kill", "keep_memory": bool}`` where ``keep_memory`` (default ``True``) set to ``False`` makes a timeout auto-pause filesystem-only (cold-boots on resume; cannot be combined with ``auto_resume``); ``auto_resume``: ``False`` (default) or ``True`` (only when ``on_timeout`` action is ``"pause"``). Example: ``{"on_timeout": {"action": "pause", "keep_memory": False}}``
         :param volume_mounts: Dictionary mapping mount paths to Volume instances or volume names
+        :param logger: Logger used for request and response logging for this sandbox. Accepts any standard library `logging.Logger`. When omitted, no request/response logging is emitted.
 
         :return: A Sandbox instance for the new sandbox
 
@@ -217,6 +220,7 @@ class Sandbox(SandboxApi):
             network=network,
             lifecycle=lifecycle,
             volume_mounts=transformed_mounts,
+            logger=logger,
             **opts,
         )
 
@@ -267,6 +271,7 @@ class Sandbox(SandboxApi):
     def connect(
         sandbox_id: str,
         timeout: Optional[int] = None,
+        logger: Optional[logging.Logger] = None,
         **opts: Unpack[ApiParams],
     ) -> "Sandbox":
         """
@@ -278,6 +283,7 @@ class Sandbox(SandboxApi):
         :param sandbox_id: Sandbox ID
         :param timeout: Timeout for the sandbox in **seconds**.
             For running sandboxes, the timeout will update only if the new timeout is longer than the existing one.
+        :param logger: Logger used for request and response logging for this sandbox. Accepts any standard library `logging.Logger`. When omitted, no request/response logging is emitted.
         :return: A running sandbox instance
 
         @example
@@ -608,10 +614,13 @@ class Sandbox(SandboxApi):
     @overload
     def pause(
         self,
+        keep_memory: bool = True,
         **opts: Unpack[ApiParams],
     ) -> bool:
         """
         Pause the sandbox.
+
+        :param keep_memory: When `False`, the in-memory state is dropped and only the filesystem is persisted (no memory snapshot); resuming such a sandbox cold-boots (reboots) it from disk. Defaults to `True`.
 
         :return: `True` if the sandbox got paused, `False` if the sandbox was already paused
         """
@@ -621,12 +630,14 @@ class Sandbox(SandboxApi):
     @staticmethod
     def pause(
         sandbox_id: str,
+        keep_memory: bool = True,
         **opts: Unpack[ApiParams],
     ) -> bool:
         """
         Pause the sandbox specified by sandbox ID.
 
         :param sandbox_id: Sandbox ID
+        :param keep_memory: When `False`, the in-memory state is dropped and only the filesystem is persisted (no memory snapshot); resuming such a sandbox cold-boots (reboots) it from disk. Defaults to `True`.
 
         :return: `True` if the sandbox got paused, `False` if the sandbox was already paused
         """
@@ -635,22 +646,27 @@ class Sandbox(SandboxApi):
     @class_method_variant("_cls_pause")
     def pause(
         self,
+        keep_memory: bool = True,
         **opts: Unpack[ApiParams],
     ) -> bool:
         """
         Pause the sandbox.
+
+        :param keep_memory: When `False`, the in-memory state is dropped and only the filesystem is persisted (no memory snapshot); resuming such a sandbox cold-boots (reboots) it from disk, losing running processes and open connections. Defaults to `True` (full memory snapshot).
 
         :return: `True` if the sandbox got paused, `False` if the sandbox was already paused
         """
 
         return SandboxApi._cls_pause(
             sandbox_id=self.sandbox_id,
+            keep_memory=keep_memory,
             **self.connection_config.get_api_params(**opts),
         )
 
     @overload
     def beta_pause(
         self,
+        keep_memory: bool = True,
         **opts: Unpack[ApiParams],
     ) -> bool: ...
 
@@ -658,12 +674,14 @@ class Sandbox(SandboxApi):
     @staticmethod
     def beta_pause(
         sandbox_id: str,
+        keep_memory: bool = True,
         **opts: Unpack[ApiParams],
     ) -> bool: ...
 
     @class_method_variant("_cls_pause")
     def beta_pause(
         self,
+        keep_memory: bool = True,
         **opts: Unpack[ApiParams],
     ) -> bool:
         """
@@ -671,7 +689,7 @@ class Sandbox(SandboxApi):
 
         :return: `True` if the sandbox got paused, `False` if the sandbox was already paused
         """
-        return self.pause(**opts)
+        return self.pause(keep_memory=keep_memory, **opts)
 
     @overload
     def create_snapshot(
@@ -841,6 +859,7 @@ class Sandbox(SandboxApi):
         cls,
         sandbox_id: str,
         timeout: Optional[int] = None,
+        logger: Optional[logging.Logger] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
         debug = ConnectionConfig(**opts).debug
@@ -853,6 +872,7 @@ class Sandbox(SandboxApi):
             sandbox = SandboxApi._cls_connect(
                 sandbox_id=sandbox_id,
                 timeout=timeout,
+                logger=logger,
                 **opts,
             )
 
@@ -866,11 +886,12 @@ class Sandbox(SandboxApi):
             "E2b-Sandbox-Id": sandbox_id,
             "E2b-Sandbox-Port": str(ConnectionConfig.envd_port),
         }
-        if envd_access_token is not None:
+        if envd_access_token is not None and not isinstance(envd_access_token, Unset):
             sandbox_headers["X-Access-Token"] = envd_access_token
 
         connection_config = ConnectionConfig(
             extra_sandbox_headers=sandbox_headers,
+            logger=logger,
             **opts,
         )
 
@@ -896,6 +917,7 @@ class Sandbox(SandboxApi):
         network: Optional[SandboxNetworkOpts] = None,
         lifecycle: Optional[SandboxLifecycle] = None,
         volume_mounts: Optional[list] = None,
+        logger: Optional[logging.Logger] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
         extra_sandbox_headers = {}
@@ -919,6 +941,7 @@ class Sandbox(SandboxApi):
                 network=network,
                 lifecycle=lifecycle,
                 volume_mounts=volume_mounts,
+                logger=logger,
                 **opts,
             )
 
@@ -928,7 +951,9 @@ class Sandbox(SandboxApi):
             envd_access_token = response.envd_access_token
             traffic_access_token = response.traffic_access_token
 
-            if envd_access_token is not None:
+            if envd_access_token is not None and not isinstance(
+                envd_access_token, Unset
+            ):
                 extra_sandbox_headers["X-Access-Token"] = envd_access_token
 
         extra_sandbox_headers["E2b-Sandbox-Id"] = sandbox_id
@@ -936,6 +961,7 @@ class Sandbox(SandboxApi):
 
         connection_config = ConnectionConfig(
             extra_sandbox_headers=extra_sandbox_headers,
+            logger=logger,
             **opts,
         )
 

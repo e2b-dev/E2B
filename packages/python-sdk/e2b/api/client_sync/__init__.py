@@ -1,15 +1,12 @@
 from typing import Dict, Optional, Tuple
 
 import httpx
-import logging
 import threading
 
 from httpx._types import ProxyTypes
 
 from e2b.api import ApiClient, connection_retries, limits
 from e2b.connection_config import ConnectionConfig
-
-logger = logging.getLogger(__name__)
 
 TransportKey = Tuple[bool, Optional[ProxyTypes]]
 
@@ -24,16 +21,6 @@ def get_api_client(config: ConnectionConfig, **kwargs) -> ApiClient:
 
 class TransportWithLogger(httpx.HTTPTransport):
     _thread_local = threading.local()
-
-    def handle_request(self, request):
-        url = f"{request.url.scheme}://{request.url.host}{request.url.path}"
-        logger.info(f"Request: {request.method} {url}")
-        response = super().handle_request(request)
-
-        # data = connect.GzipCompressor.decompress(response.read()).decode()
-        logger.info(f"Response: {response.status_code} {url}")
-
-        return response
 
     @property
     def pool(self):

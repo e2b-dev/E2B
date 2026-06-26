@@ -1,10 +1,11 @@
+import type { Readable } from 'node:stream'
 import { ApiClient, handleApiError, components } from '../api'
 import { buildRequestSignal } from '../connectionConfig'
 import { dynamicImport } from '../utils'
 import { BuildError, FileUploadError, TemplateError } from '../errors'
 import { FILE_UPLOAD_TIMEOUT_MS } from './consts'
 import { LogEntry } from './logger'
-import { getBuildStepIndex, tarFileStreamUpload } from './utils'
+import { getBuildStepIndex, tarFileStream } from './utils'
 import {
   BuildStatusReason,
   TemplateBuildStatus,
@@ -121,38 +122,40 @@ export async function uploadFile(
 ) {
   const { fileName, url, fileContextPath, ignorePatterns, resolveSymlinks } =
     options
+  // Spool the archive to a temporary file and stream it from disk instead of
+  // buffering in memory. S3 presigned PUT URLs reject Transfer-Encoding:
+  // chunked with 501 NotImplemented (see e2b-dev/e2b#1243), so the upload
+  // sends an explicit Content-Length, which fetch honors for stream bodies.
+  // The spooled file deletes itself once the stream is consumed, so there is
+  // no cleanup to manage here. The Python SDK takes the same approach
+  // (build_api.py:upload_file).
+  let uploadStream: Readable | undefined
   try {
-    const uploadStream = await tarFileStreamUpload(
+    // Dynamically import so the browser bundle doesn't pull in node:stream.
+    const { Readable } =
+      await dynamicImport<typeof import('node:stream')>('node:stream')
+
+    const tar = await tarFileStream(
       fileName,
       fileContextPath,
       ignorePatterns,
       resolveSymlinks
     )
-
-    // Buffer the archive before uploading so fetch sets Content-Length.
-    // S3 presigned PUT URLs reject Transfer-Encoding: chunked with 501
-    // NotImplemented, which is what Node's fetch falls back to when the
-    // body is a Readable without a known length. See e2b-dev/e2b#1243.
-    // The Python SDK takes the same approach (build_api.py:upload_file).
-    // Dynamically import so the browser bundle doesn't pull in node:stream.
-    // tar's Pack extends Minipass and is iterable as AsyncIterable<Buffer> at
-    // runtime, but the cli's tsconfig (preserveSymlinks) doesn't surface that
-    // through the type chain — cast via unknown.
-    const { buffer } = await dynamicImport<
-      typeof import('node:stream/consumers')
-    >('node:stream/consumers')
-    const uploadBody = await buffer(
-      uploadStream as unknown as AsyncIterable<Buffer>
-    )
+    uploadStream = tar.stream
 
     const res = await fetch(url, {
       method: 'PUT',
-      body: uploadBody,
+      body: Readable.toWeb(uploadStream) as ReadableStream<Uint8Array>,
+      headers: {
+        'Content-Length': tar.size.toString(),
+      },
+      // Streaming request bodies require half-duplex mode.
+      duplex: 'half',
       signal: buildRequestSignal(
         abortOpts?.requestTimeoutMs ?? FILE_UPLOAD_TIMEOUT_MS,
         abortOpts?.signal
       ),
-    })
+    } as RequestInit)
 
     if (!res.ok) {
       throw new FileUploadError(
@@ -161,6 +164,10 @@ export async function uploadFile(
       )
     }
   } catch (error) {
+    // Ensure the spooled archive is removed even if fetch never consumed the
+    // stream (e.g. it threw before reading the body). Destroying the stream
+    // fires its `close` handler, which deletes the temp file.
+    uploadStream?.destroy()
     if (error instanceof FileUploadError) {
       throw error
     }

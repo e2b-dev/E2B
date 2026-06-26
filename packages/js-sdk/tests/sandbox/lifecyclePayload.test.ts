@@ -1,7 +1,42 @@
-import { assert, test } from 'vitest'
+import { assert, expect, test } from 'vitest'
 
-import { Sandbox } from '../../src'
+import { InvalidArgumentError, Sandbox } from '../../src'
 import { isDebug, template, wait } from '../setup.js'
+
+test.skipIf(isDebug)(
+  'filesystem-only auto-pause cannot be combined with auto-resume',
+  async () => {
+    // A filesystem-only auto-pause snapshot can only be resumed explicitly, so
+    // keepMemory:false with autoResume is rejected client-side.
+    await expect(
+      Sandbox.create(template, {
+        timeoutMs: 3_000,
+        lifecycle: {
+          onTimeout: { action: 'pause', keepMemory: false },
+          autoResume: true,
+        },
+      })
+    ).rejects.toThrowError(InvalidArgumentError)
+  }
+)
+
+test.skipIf(isDebug)(
+  'keepMemory is not allowed when onTimeout action is kill',
+  async () => {
+    // The discriminated union forbids keepMemory on `action: 'kill'` at compile
+    // time (asserted by @ts-expect-error). The runtime guard below additionally
+    // rejects it for untyped (JS) callers that bypass the type.
+    await expect(
+      Sandbox.create(template, {
+        timeoutMs: 3_000,
+        lifecycle: {
+          // @ts-expect-error keepMemory is not allowed with action: 'kill'
+          onTimeout: { action: 'kill', keepMemory: false },
+        },
+      })
+    ).rejects.toThrowError(InvalidArgumentError)
+  }
+)
 
 test.skipIf(isDebug)(
   'auto-pause without auto-resume requires connect to wake',
@@ -24,6 +59,47 @@ test.skipIf(isDebug)(
 
       assert.equal((await sandbox.getInfo()).state, 'running')
       assert.isTrue(await sandbox.isRunning())
+    } finally {
+      await sandbox.kill().catch(() => {})
+    }
+  },
+  60_000
+)
+
+test.skipIf(isDebug)(
+  'filesystem-only auto-pause reboots on connect',
+  async () => {
+    // keepMemory:false makes the timeout auto-pause filesystem-only, so resuming
+    // cold-boots the sandbox from disk.
+    const sandbox = await Sandbox.create(template, {
+      timeoutMs: 3_000,
+      lifecycle: { onTimeout: { action: 'pause', keepMemory: false } },
+    })
+
+    try {
+      const marker = 'auto-pause-fs-only'
+      await sandbox.files.write('/home/user/auto-pause-marker.txt', marker)
+      const bootBefore = (
+        await sandbox.files.read('/proc/sys/kernel/random/boot_id')
+      ).trim()
+
+      await wait(5_000)
+
+      assert.equal((await sandbox.getInfo()).state, 'paused')
+
+      // A filesystem-only snapshot cannot auto-resume on traffic; connect
+      // resumes it by cold-booting.
+      await sandbox.connect()
+
+      const persisted = (
+        await sandbox.files.read('/home/user/auto-pause-marker.txt')
+      ).trim()
+      assert.equal(persisted, marker)
+
+      const bootAfter = (
+        await sandbox.files.read('/proc/sys/kernel/random/boot_id')
+      ).trim()
+      assert.notEqual(bootAfter, bootBefore)
     } finally {
       await sandbox.kill().catch(() => {})
     }

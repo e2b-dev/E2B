@@ -79,6 +79,7 @@ from .sandbox.sandbox_api import (
     SandboxInfoLifecycle,
     SandboxMetrics,
     SandboxLifecycle,
+    SandboxOnTimeout,
     SandboxNetworkInfo,
     SandboxNetworkOpts,
     SandboxNetworkRule,
@@ -201,6 +202,7 @@ __all__ = [
     "SandboxNetworkTransform",
     "SandboxNetworkUpdate",
     "SandboxLifecycle",
+    "SandboxOnTimeout",
     "ALL_TRAFFIC",
     # Snapshot
     "SnapshotInfo",
