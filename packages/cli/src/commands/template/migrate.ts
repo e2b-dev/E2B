@@ -107,7 +107,7 @@ export const migrateCommand = new commander.Command('migrate')
         )
       }
 
-      return value
+      return value.trim()
     }
   )
   .option(
