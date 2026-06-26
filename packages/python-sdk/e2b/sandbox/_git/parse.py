@@ -132,7 +132,7 @@ def parse_git_status(output: str) -> GitStatus:
         if is_detached or normalized_branch.startswith("HEAD"):
             detached = True
         elif "..." in normalized_branch:
-            branch, upstream_branch = normalized_branch.split("...")
+            branch, upstream_branch = normalized_branch.split("...", 1)
             current_branch = branch or None
             upstream = upstream_branch or None
         else:
