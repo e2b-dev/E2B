@@ -144,7 +144,7 @@ function templateNameRegex(name: string): boolean {
   return /^[a-z0-9][a-z0-9_-]*[a-z0-9]$|^[a-z0-9]$/.test(name)
 }
 
-function validateTemplateName(name: string) {
+export function validateTemplateName(name: string) {
   if (!name || name.trim().length === 0) {
     throw new Error('Template name cannot be empty')
   }

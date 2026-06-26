@@ -210,6 +210,24 @@ memory_mb = 512`
       expect(buildProdFile).toContain('memoryMB: 2048')
     })
 
+    test('should reject an invalid --name', async () => {
+      const dockerfile = 'FROM node:18'
+      await fs.writeFile(path.join(testDir, 'e2b.Dockerfile'), dockerfile)
+
+      const config = `template_id = "config-name"
+dockerfile = "e2b.Dockerfile"`
+      await fs.writeFile(path.join(testDir, 'e2b.toml'), config)
+
+      expect(() => {
+        execSync(
+          `node ${cliPath} template migrate --language typescript --name "Invalid Name"`,
+          {
+            cwd: testDir,
+          }
+        )
+      }).toThrow()
+    })
+
     test('should reject an odd memory override', async () => {
       const dockerfile = 'FROM node:18'
       await fs.writeFile(path.join(testDir, 'e2b.Dockerfile'), dockerfile)

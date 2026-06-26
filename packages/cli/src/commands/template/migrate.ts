@@ -14,6 +14,7 @@ import {
   Language,
   languageDisplay,
 } from './generators'
+import { validateTemplateName } from './init'
 
 /**
  * Migrate Dockerfile to a specific target language using SDK
@@ -96,7 +97,18 @@ export const migrateCommand = new commander.Command('migrate')
   .addOption(configOption)
   .option(
     '-n, --name <name>',
-    'override the template name used in the generated files. Defaults to the template name or ID from the config file.'
+    'override the template name used in the generated files. Defaults to the template name or ID from the config file.',
+    (value) => {
+      try {
+        validateTemplateName(value)
+      } catch (err) {
+        throw new commander.InvalidArgumentError(
+          err instanceof Error ? err.message : String(err)
+        )
+      }
+
+      return value
+    }
   )
   .option(
     '-c, --cmd <start-command>',
