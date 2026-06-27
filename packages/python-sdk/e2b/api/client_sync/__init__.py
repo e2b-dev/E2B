@@ -1,6 +1,10 @@
 from typing import Dict, Optional, Tuple
 
+
 import httpx
+import httpcore
+import time
+
 import threading
 
 from httpx._types import ProxyTypes
@@ -25,6 +29,16 @@ class TransportWithLogger(httpx.HTTPTransport):
     @property
     def pool(self):
         return self._pool
+
+    def handle_request(self, request: httpx.Request) -> httpx.Response:
+        for attempt in range(connection_retries + 1):
+            try:
+                return super().handle_request(request)
+            except (httpcore.RemoteProtocolError, httpcore.LocalProtocolError):
+                if attempt == connection_retries:
+                    raise
+                time.sleep(0.1)
+
 
 
 def get_transport(config: ConnectionConfig, http2: bool = True) -> TransportWithLogger:

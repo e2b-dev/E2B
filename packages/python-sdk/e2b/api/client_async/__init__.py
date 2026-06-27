@@ -2,7 +2,10 @@ import asyncio
 import weakref
 from typing import Dict, Optional, Tuple
 
+
 import httpx
+import httpcore
+
 
 from httpx._types import ProxyTypes
 
@@ -32,6 +35,16 @@ class AsyncTransportWithLogger(httpx.AsyncHTTPTransport):
     @property
     def pool(self):
         return self._pool
+
+    async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
+        for attempt in range(connection_retries + 1):
+            try:
+                return await super().handle_async_request(request)
+            except (httpcore.RemoteProtocolError, httpcore.LocalProtocolError):
+                if attempt == connection_retries:
+                    raise
+                await asyncio.sleep(0.1)
+
 
 
 def _get_cached_transport(cls, config: ConnectionConfig, http2: bool):
