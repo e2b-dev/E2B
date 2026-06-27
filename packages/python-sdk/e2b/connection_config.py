@@ -31,9 +31,6 @@ class ApiParams(TypedDict, total=False):
     api_headers: Optional[Dict[str, str]]
     """Additional headers to send with E2B API requests."""
 
-    integration: Optional[str]
-    """Integration wrapping the E2B SDK, appended to the User-Agent."""
-
     api_key: Optional[str]
     """E2B API Key to use for authentication, defaults to `E2B_API_KEY` environment variable."""
 
@@ -148,9 +145,10 @@ class ConnectionConfig:
         self.access_token = access_token or ConnectionConfig._access_token()
         self.integration = integration
         self.headers = {**(headers or {}), **(api_headers or {})}
-        self.headers["User-Agent"] = self._build_user_agent(
-            self.integration,
-        )
+        if self.integration is not None or "User-Agent" not in self.headers:
+            self.headers["User-Agent"] = self._build_user_agent(
+                self.integration,
+            )
         self.__extra_sandbox_headers = extra_sandbox_headers or {}
 
         self.proxy = proxy
@@ -240,7 +238,6 @@ class ConnectionConfig:
         """
         headers = opts.get("headers")
         api_headers = opts.get("api_headers")
-        integration = opts.get("integration", self.integration)
         request_timeout = opts.get("request_timeout")
         api_key = opts.get("api_key")
         validate_api_key = opts.get("validate_api_key")
@@ -255,9 +252,9 @@ class ConnectionConfig:
             req_headers.update(headers)
         if api_headers is not None:
             req_headers.update(api_headers)
-        if integration is not None:
+        if self.integration is not None:
             req_headers["User-Agent"] = self._build_user_agent(
-                integration,
+                self.integration,
             )
 
         # `logger` is a construction-time option rather than a per-request
@@ -279,7 +276,6 @@ class ConnectionConfig:
                 debug=debug if debug is not None else self.debug,
                 request_timeout=self.get_request_timeout(request_timeout),
                 headers=req_headers,
-                integration=integration,
                 proxy=proxy if proxy is not None else self.proxy,
                 sandbox_url=(
                     sandbox_url

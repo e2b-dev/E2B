@@ -131,7 +131,7 @@ def test_debug_defaults_to_env_var(monkeypatch):
     assert config.debug is True
 
 
-def test_integration_options_are_appended_to_user_agent():
+def test_integration_option_is_appended_to_user_agent():
     config = ConnectionConfig(integration="testing/version")
 
     assert config.headers["User-Agent"].startswith("e2b-python-sdk/")
@@ -143,6 +143,9 @@ def test_integration_option_survives_api_param_rebuilds():
     rebuilt_config = ConnectionConfig(**config.get_api_params())
 
     assert rebuilt_config.headers["User-Agent"].endswith(" testing/version")
+    assert rebuilt_config.get_api_params(api_headers={"X-Test": "1"})["headers"][
+        "User-Agent"
+    ].endswith(" testing/version")
 
 
 def test_request_timeout_zero_means_no_timeout():
