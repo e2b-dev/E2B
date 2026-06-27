@@ -70,13 +70,32 @@ async function buildEnvdFetcher(
     init?: UndiciRequestInit
   ) => Promise<Response>
 
-  const wrapped: typeof fetch = ((input, init) => {
+  const wrapped: typeof fetch = (async (input, init) => {
     const request = toUndiciRequestInput(input, init)
 
-    return fetchWithDispatcher(request.input, {
-      ...request.init,
-      dispatcher,
-    })
+    let retries = 3;
+    while (true) {
+      try {
+        return await fetchWithDispatcher(request.input, {
+          ...request.init,
+          dispatcher,
+        })
+      } catch (e: any) {
+        if (
+          retries > 0 &&
+          e &&
+          (e.code === 'UND_ERR_SOCKET' ||
+           e.message?.includes('socket') ||
+           e.message?.includes('closed unexpectedly') ||
+           e.message?.includes('terminated'))
+        ) {
+          retries--;
+          await new Promise(r => setTimeout(r, 100));
+          continue;
+        }
+        throw e;
+      }
+    }
   }) as typeof fetch
 
   return limitConcurrency(wrapped, inflightLimit)
