@@ -37,6 +37,7 @@ class AsyncTransportWithLogger(httpx.AsyncHTTPTransport):
         return self._pool
 
     async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
+        connection_retries = 3
         for attempt in range(connection_retries + 1):
             try:
                 return await super().handle_async_request(request)

@@ -87,8 +87,8 @@ async function buildApiFetcher(options: {
   const wrapped: typeof fetch = (async (input, init) => {
     const request = toUndiciRequestInput(input, init)
 
-    let retries = 3;
-    while (true) {
+    const maxRetries = 3
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
       try {
         return await fetchWithDispatcher(request.input, {
           ...request.init,
@@ -96,18 +96,17 @@ async function buildApiFetcher(options: {
         })
       } catch (e: any) {
         if (
-          retries > 0 &&
+          attempt < maxRetries &&
           e &&
           (e.code === 'UND_ERR_SOCKET' ||
            e.message?.includes('socket') ||
            e.message?.includes('closed unexpectedly') ||
            e.message?.includes('terminated'))
         ) {
-          retries--;
-          await new Promise(r => setTimeout(r, 100));
-          continue;
+          await new Promise(r => setTimeout(r, 100))
+          continue
         }
-        throw e;
+        throw e
       }
     }
   }) as typeof fetch

@@ -31,6 +31,7 @@ class TransportWithLogger(httpx.HTTPTransport):
         return self._pool
 
     def handle_request(self, request: httpx.Request) -> httpx.Response:
+        connection_retries = 3
         for attempt in range(connection_retries + 1):
             try:
                 return super().handle_request(request)
