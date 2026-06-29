@@ -125,6 +125,15 @@ describe('Template Migration', () => {
         'utf-8'
       )
       expect(buildProdFile.trim()).toEqual(expectedBuildProd.trim())
+      if (
+        language === Language.PythonSync ||
+        language === Language.PythonAsync
+      ) {
+        for (const content of [buildDevFile, buildProdFile]) {
+          expect(content).toContain('from template import template')
+          expect(content).not.toContain('from .template import template')
+        }
+      }
 
       // Check that old files are renamed to .old extensions
       const oldDockerfilePath = path.join(testDir, 'e2b.Dockerfile.old')
