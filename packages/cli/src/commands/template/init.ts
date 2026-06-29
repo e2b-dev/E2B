@@ -7,6 +7,7 @@ import * as path from 'path'
 import { pathOption } from 'src/options'
 import { getRoot } from 'src/utils/filesystem'
 import { asPrimary } from 'src/utils/format'
+import { validateTemplateName } from 'src/utils/templateName'
 import {
   generateAndWriteTemplateFiles,
   GeneratedFiles,
@@ -137,37 +138,17 @@ async function addPackageJsonScripts(
   }
 }
 
-/**
- * Check template name format
- */
-function templateNameRegex(name: string): boolean {
-  return /^[a-z0-9][a-z0-9_-]*[a-z0-9]$|^[a-z0-9]$/.test(name)
-}
-
-function validateTemplateName(name: string) {
-  if (!name || name.trim().length === 0) {
-    throw new Error('Template name cannot be empty')
-  }
-  if (!templateNameRegex(name.trim())) {
-    throw new Error(
-      'Template name must contain only lowercase letters, numbers, hyphens, and underscores, and cannot start or end with a hyphen or underscore'
-    )
-  }
-}
-
 export const initCommand = new commander.Command('init')
   .description('initialize a new sandbox template using the SDK')
   .addOption(pathOption)
   .option('-n, --name <name>', 'template name', (value) => {
     try {
-      validateTemplateName(value)
+      return validateTemplateName(value)
     } catch (err) {
       throw new commander.InvalidArgumentError(
         err instanceof Error ? err.message : String(err)
       )
     }
-
-    return value
   })
   .option(
     '-l, --language <language>',
@@ -210,7 +191,7 @@ export const initCommand = new commander.Command('init')
             },
           })
         }
-        templateName = templateName.trim()
+        templateName = validateTemplateName(templateName)
         console.log(`Using template name: ${templateName}`)
 
         // Step 2: Get language (from CLI or prompt)
