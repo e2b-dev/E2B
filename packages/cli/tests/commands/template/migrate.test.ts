@@ -186,7 +186,7 @@ memory_mb = 512`
       await fs.writeFile(path.join(testDir, 'e2b.toml'), config)
 
       execSync(
-        `node ${cliPath} template migrate --language typescript --name "  overridden-name  " --cmd "node server.js" --ready-cmd "curl localhost:3000" --cpu-count 4 --memory-mb 2048`,
+        `node ${cliPath} template migrate --language typescript --name "  Overridden-Name  " --cmd "node server.js" --ready-cmd "curl localhost:3000" --cpu-count 4 --memory-mb 2048`,
         {
           cwd: testDir,
         }

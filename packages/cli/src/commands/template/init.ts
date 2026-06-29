@@ -143,14 +143,12 @@ export const initCommand = new commander.Command('init')
   .addOption(pathOption)
   .option('-n, --name <name>', 'template name', (value) => {
     try {
-      validateTemplateName(value)
+      return validateTemplateName(value)
     } catch (err) {
       throw new commander.InvalidArgumentError(
         err instanceof Error ? err.message : String(err)
       )
     }
-
-    return value
   })
   .option(
     '-l, --language <language>',
@@ -193,7 +191,7 @@ export const initCommand = new commander.Command('init')
             },
           })
         }
-        templateName = templateName.trim()
+        templateName = validateTemplateName(templateName)
         console.log(`Using template name: ${templateName}`)
 
         // Step 2: Get language (from CLI or prompt)

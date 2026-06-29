@@ -100,14 +100,12 @@ export const migrateCommand = new commander.Command('migrate')
     'override the template name used in the generated files. Defaults to the template name or ID from the config file.',
     (value) => {
       try {
-        validateTemplateName(value)
+        return validateTemplateName(value)
       } catch (err) {
         throw new commander.InvalidArgumentError(
           err instanceof Error ? err.message : String(err)
         )
       }
-
-      return value.trim()
     }
   )
   .option(

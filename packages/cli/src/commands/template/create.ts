@@ -71,9 +71,9 @@ export const createCommand = new commander.Command('create')
       try {
         process.stdout.write('\n')
 
-        // Validate template name
+        // Validate and normalize template name
         try {
-          validateTemplateName(templateName)
+          templateName = validateTemplateName(templateName)
         } catch (err) {
           console.error(
             `Template name ${asLocal(templateName)} is not valid. ${

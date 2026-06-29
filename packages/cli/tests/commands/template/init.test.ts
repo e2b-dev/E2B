@@ -61,7 +61,6 @@ describe('Template Init', () => {
       // Matches the server-side rule in e2b-dev/infra (id.identifierRegex):
       // only lowercase letters, numbers, dashes and underscores are allowed.
       const invalidNames = [
-        'My-Template', // uppercase
         'invalid space', // contains space
         'invalid.dot', // contains a dot
         '', // empty
