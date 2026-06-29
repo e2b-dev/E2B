@@ -65,6 +65,7 @@ describe('Template Init', () => {
         'invalid space', // contains space
         'invalid.dot', // contains a dot
         '', // empty
+        'a'.repeat(129), // exceeds the 128 character limit
       ]
 
       for (const invalidName of invalidNames) {
