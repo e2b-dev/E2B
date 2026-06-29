@@ -2,7 +2,7 @@ import e2b_connect
 import httpx
 import threading
 
-from typing import Dict, Optional
+from typing import Dict, Optional, Union
 
 from packaging.version import Version
 from e2b.api import make_logging_event_hooks
@@ -110,7 +110,7 @@ class Pty:
     def send_stdin(
         self,
         pid: int,
-        data: bytes,
+        data: Union[str, bytes],
         request_timeout: Optional[float] = None,
     ) -> None:
         """
@@ -125,7 +125,7 @@ class Pty:
                 process_pb2.SendInputRequest(
                     process=process_pb2.ProcessSelector(pid=pid),
                     input=process_pb2.ProcessInput(
-                        pty=data,
+                        pty=data.encode() if isinstance(data, str) else data,
                     ),
                 ),
                 request_timeout=self._connection_config.get_request_timeout(
@@ -190,10 +190,14 @@ class Pty:
                     f"Failed to start process: expected start event, got {start_event}"
                 )
 
+            pid = start_event.event.start.pid
             return CommandHandle(
-                pid=start_event.event.start.pid,
-                handle_kill=lambda: self.kill(start_event.event.start.pid),
+                pid=pid,
+                handle_kill=lambda: self.kill(pid),
                 events=events,
+                handle_send_stdin=lambda data, request_timeout=None: self.send_stdin(
+                    pid, data, request_timeout
+                ),
                 check_health=self._check_health,
             )
         except Exception as e:
@@ -239,10 +243,14 @@ class Pty:
                     f"Failed to connect to process: expected start event, got {start_event}"
                 )
 
+            pid = start_event.event.start.pid
             return CommandHandle(
-                pid=start_event.event.start.pid,
-                handle_kill=lambda: self.kill(start_event.event.start.pid),
+                pid=pid,
+                handle_kill=lambda: self.kill(pid),
                 events=events,
+                handle_send_stdin=lambda data, request_timeout=None: self.send_stdin(
+                    pid, data, request_timeout
+                ),
                 check_health=self._check_health,
             )
         except Exception as e:
