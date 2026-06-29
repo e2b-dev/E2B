@@ -26,7 +26,7 @@ export async function spawnConnectedTerminal(sandbox: e2b.Sandbox) {
 
   const inputQueue = new BatchedQueue<Buffer>(async (batch) => {
     const combined = Buffer.concat(batch)
-    await sandbox.pty.sendInput(terminalSession.pid, combined)
+    await sandbox.pty.sendStdin(terminalSession.pid, combined)
   }, FLUSH_INPUT_INTERVAL_MS)
 
   const resizeListener = process.stdout.on('resize', () =>
