@@ -9,7 +9,16 @@ function getStdoutSize() {
   }
 }
 
-export async function spawnConnectedTerminal(sandbox: e2b.Sandbox) {
+export interface TerminalOpts {
+  user?: e2b.Username
+  cwd?: string
+  envs?: Record<string, string>
+}
+
+export async function spawnConnectedTerminal(
+  sandbox: e2b.Sandbox,
+  opts: TerminalOpts = {}
+) {
   // Clear local terminal emulator before starting terminal
   // process.stdout.write('\x1b[2J\x1b[0f')
 
@@ -22,6 +31,9 @@ export async function spawnConnectedTerminal(sandbox: e2b.Sandbox) {
     },
     ...getStdoutSize(),
     timeoutMs: 0,
+    ...(opts.user !== undefined ? { user: opts.user } : {}),
+    ...(opts.cwd !== undefined ? { cwd: opts.cwd } : {}),
+    ...(opts.envs !== undefined ? { envs: opts.envs } : {}),
   })
 
   const inputQueue = new BatchedQueue<Buffer>(async (batch) => {
