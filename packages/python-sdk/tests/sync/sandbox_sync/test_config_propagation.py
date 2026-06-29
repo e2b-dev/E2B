@@ -90,11 +90,14 @@ def test_connect_sets_stable_host_routing_headers(monkeypatch, test_api_key):
     )
     monkeypatch.setattr(sandbox_sync_main.SandboxApi, "_cls_connect", mock_connect)
 
-    sandbox = Sandbox.connect(
-        "sbx-test",
+    config = ConnectionConfig(
         api_key=test_api_key,
         headers=BASE_HEADERS,
         integration="testing/version",
+    )
+    sandbox = Sandbox.connect(
+        "sbx-test",
+        **config.get_api_params(),
     )
 
     assert sandbox.envd_api_url == "https://sandbox.e2b.app"

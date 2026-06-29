@@ -48,6 +48,7 @@ from e2b.api.client.types import Unset
 from e2b.connection_config import ApiParams
 from e2b.sandbox.mcp import McpServer as BaseMcpServer
 from e2b.sandbox.network import ALL_TRAFFIC
+from e2b.paginator import PaginatorBase
 
 
 class GitHubMcpServerConfig(TypedDict):
@@ -599,34 +600,7 @@ class SnapshotInfo:
     """Full names of the snapshot template including team namespace and tag (e.g. team-slug/my-snapshot:v2)."""
 
 
-class PaginatorBase:
-    def __init__(
-        self,
-        limit: Optional[int] = None,
-        next_token: Optional[str] = None,
-        **opts: Unpack[ApiParams],
-    ):
-        self._opts: ApiParams = opts
-        self.limit = limit
-        self._has_next = True
-        self._next_token = next_token
-
-    @property
-    def has_next(self) -> bool:
-        """
-        Returns True if there are more items to fetch.
-        """
-        return self._has_next
-
-    @property
-    def next_token(self) -> Optional[str]:
-        """
-        Returns the next token to use for pagination.
-        """
-        return self._next_token
-
-
-class SnapshotPaginatorBase(PaginatorBase):
+class SnapshotPaginatorBase(PaginatorBase[SnapshotInfo, ApiParams]):
     def __init__(
         self,
         sandbox_id: Optional[str] = None,
@@ -638,7 +612,7 @@ class SnapshotPaginatorBase(PaginatorBase):
         self.sandbox_id = sandbox_id
 
 
-class SandboxPaginatorBase(PaginatorBase):
+class SandboxPaginatorBase(PaginatorBase[SandboxInfo, ApiParams]):
     def __init__(
         self,
         query: Optional[SandboxQuery] = None,

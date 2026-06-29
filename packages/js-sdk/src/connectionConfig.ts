@@ -94,18 +94,23 @@ export interface ConnectionOpts {
   apiHeaders?: Record<string, string>
 
   /**
-   * Integration wrapping the E2B SDK, appended to the `User-Agent`.
-   *
-   * @example 'e2b-code-interpreter/0.1.0'
-   */
-  integration?: string
-
-  /**
    * An optional `AbortSignal` that can be used to cancel the in-flight request.
    * When the signal is aborted, the underlying `fetch` is aborted and the
    * returned promise rejects with an `AbortError`.
    */
   signal?: AbortSignal
+}
+
+/**
+ * Options accepted by `ConnectionConfig`.
+ */
+export interface ConnectionConfigOpts extends ConnectionOpts {
+  /**
+   * Integration wrapping the E2B SDK, appended to the `User-Agent`.
+   *
+   * @example 'e2b-code-interpreter/0.1.0'
+   */
+  integration?: string
 }
 
 /**
@@ -350,7 +355,7 @@ export class ConnectionConfig {
 
   readonly proxy?: string
 
-  constructor(opts?: ConnectionOpts) {
+  constructor(opts?: ConnectionConfigOpts) {
     this.apiKey = opts?.apiKey || ConnectionConfig.apiKey
     this.validateApiKey =
       opts?.validateApiKey ?? ConnectionConfig.validateApiKey
