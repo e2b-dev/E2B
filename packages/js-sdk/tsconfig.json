@@ -25,6 +25,6 @@
   "exclude": [
     "dist",
     "node_modules",
-    "tsup.config.js"
+    "tsdown.config.ts"
   ]
 }

@@ -36,8 +36,8 @@
   "sideEffects": false,
   "scripts": {
     "prepublishOnly": "pnpm build",
-    "build": "tsc --noEmit --skipLibCheck && tsup --minify",
-    "dev": "tsup --watch",
+    "build": "tsc --noEmit --skipLibCheck && tsdown --minify",
+    "dev": "tsdown --watch",
     "typecheck": "tsc --noEmit --skipLibCheck",
     "lint": "eslint src",
     "format": "prettier --write src",
@@ -57,7 +57,7 @@
     "@vitest/coverage-v8": "^4.1.0",
     "json2md": "^2.0.1",
     "knip": "^5.43.6",
-    "tsup": "^8.4.0",
+    "tsdown": "^0.22.3",
     "typescript": "^5.4.5",
     "vitest": "^4.1.8"
   },
