@@ -68,7 +68,7 @@ class SandboxApi(SandboxBase):
         By default (no `query.state` set), returns sandboxes in both `running`
         and `paused` states. To filter by state, pass `query=SandboxQuery(state=[...])`.
 
-        :param query: Filter the list of sandboxes by metadata or state, e.g. `SandboxListQuery(metadata={"key": "value"})` or `SandboxListQuery(state=[SandboxState.RUNNING])`
+        :param query: Filter the list of sandboxes by metadata or state, e.g. `SandboxQuery(metadata={"key": "value"})` or `SandboxQuery(state=[SandboxState.RUNNING])`
         :param limit: Maximum number of sandboxes to return per page
         :param next_token: Token for pagination
 
