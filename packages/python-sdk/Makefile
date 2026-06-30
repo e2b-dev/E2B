@@ -27,9 +27,6 @@ generate-envd:
 
 generate: generate-api generate-envd generate-mcp generate-volume-api
 
-init:
-	pip install openapi-python-client datamodel-code-generator
-
 typecheck:
 	ty check
 
