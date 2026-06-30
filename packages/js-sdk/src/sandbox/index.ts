@@ -227,11 +227,18 @@ export class Sandbox extends SandboxApi {
   }
 
   /**
-   * List all sandboxes.
+   * List sandboxes.
    *
-   * @param opts connection options.
+   * By default (no `query.state` set in `opts`), returns sandboxes in both
+   * `running` and `paused` states. To filter by state, pass
+   * `opts.query.state = [...]`.
    *
-   * @returns paginator for listing sandboxes.
+   * @param opts connection options, plus optional `query` to filter by
+   *   metadata / state and `limit` / `nextToken` for pagination.
+   *
+   * @returns a {@link SandboxPaginator} that yields pages of sandboxes
+   *   (running and paused by default). Iterate pages via
+   *   `await paginator.nextItems()` while `paginator.hasNext` is `true`.
    */
   static list(opts?: SandboxListOpts): SandboxPaginator {
     return new SandboxPaginator(opts)

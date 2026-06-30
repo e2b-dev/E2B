@@ -63,13 +63,16 @@ class SandboxApi(SandboxBase):
         **opts: Unpack[ApiParams],
     ) -> AsyncSandboxPaginator:
         """
-        List all running sandboxes.
+        List sandboxes.
+
+        By default (no `query.state` set), returns sandboxes in both `running`
+        and `paused` states. To filter by state, pass `query=SandboxQuery(state=[...])`.
 
         :param query: Filter the list of sandboxes by metadata or state, e.g. `SandboxListQuery(metadata={"key": "value"})` or `SandboxListQuery(state=[SandboxState.RUNNING])`
         :param limit: Maximum number of sandboxes to return per page
         :param next_token: Token for pagination
 
-        :return: List of running sandboxes
+        :return: An `AsyncSandboxPaginator` that yields pages of sandboxes (running and paused by default). Iterate pages via `await paginator.next_items()` while `paginator.has_next` is True.
         """
         return AsyncSandboxPaginator(
             query=query,
