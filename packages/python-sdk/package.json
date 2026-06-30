@@ -6,7 +6,7 @@
     "example": "uv run python example.py",
     "test": "uv run pytest -n 4 --verbose -x",
     "postVersion": "uv version $(pnpm pkg get version --workspaces=false | tr -d \\\")",
-    "postPublish": "uv build && uv publish --token ${PYPI_TOKEN} --check-url https://pypi.org/simple/e2b/",
+    "postPublish": "uv build && uv publish --token ${PYPI_TOKEN} --check-url https://pypi.org/simple/",
     "typecheck": "uv run make typecheck",
     "lint": "uv run make lint",
     "format": "uv run make format"

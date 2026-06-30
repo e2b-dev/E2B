@@ -86,7 +86,7 @@ jobs:
           BASE_VERSION=$(uv version --short)
           uv version "${BASE_VERSION}rc${{ github.run_id }}"
           uv build
-          uv publish --token ${PYPI_TOKEN} --check-url https://pypi.org/simple/e2b/
+          uv publish --token ${PYPI_TOKEN} --check-url https://pypi.org/simple/
         env:
           PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
 
