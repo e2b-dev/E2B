@@ -108,6 +108,7 @@ from .template.logger import (
     LogEntryLevel,
     LogEntryStart,
     default_build_logger,
+    handle_build_error,
 )
 from .template.main import TemplateBase, TemplateClass
 from .template.readycmd import (
@@ -244,6 +245,7 @@ __all__ = [
     "LogEntryEnd",
     "LogEntryLevel",
     "default_build_logger",
+    "handle_build_error",
     # MCP
     "McpServer",
     "GitHubMcpServer",

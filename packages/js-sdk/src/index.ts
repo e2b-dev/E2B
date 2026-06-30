@@ -148,4 +148,5 @@ export {
   LogEntryEnd,
   type LogEntryLevel,
   defaultBuildLogger,
+  handleBuildError,
 } from './template/logger'

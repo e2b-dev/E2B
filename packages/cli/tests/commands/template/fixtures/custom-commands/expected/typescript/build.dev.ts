@@ -1,4 +1,4 @@
-import { Template, defaultBuildLogger } from 'e2b'
+import { Template, defaultBuildLogger, handleBuildError } from 'e2b'
 import { template } from './template'
 
 async function main() {
@@ -7,4 +7,4 @@ async function main() {
   });
 }
 
-main().catch(console.error);
+main().catch(handleBuildError);

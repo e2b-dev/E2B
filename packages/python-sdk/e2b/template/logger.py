@@ -3,12 +3,17 @@ import threading
 import time
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Optional, TypedDict, Callable, Dict, Literal
+from typing import Optional, TypedDict, Callable, Dict, Literal, NoReturn
 
 from rich.console import Console
 from rich.style import Style
 from rich.text import Text
 
+from e2b.exceptions import (
+    AuthenticationException,
+    BuildException,
+    SandboxException,
+)
 from e2b.template.utils import strip_ansi_escape_codes
 
 """Log entry severity levels."""
@@ -230,3 +235,17 @@ def default_build_logger(
     build_logger = DefaultBuildLogger(min_level)
 
     return build_logger.logger
+
+
+def handle_build_error(err: BaseException) -> NoReturn:
+    """
+    Print an error raised by ``Template.build`` and exit with a non-zero status.
+
+    Known errors (missing/invalid API key, invalid argument, rate limit, ...)
+    are printed as a single message; unexpected errors are re-raised with their
+    full traceback.
+    """
+    if isinstance(err, (SandboxException, AuthenticationException, BuildException)):
+        Console(stderr=True).print(f"\n✗ Build failed: {err}\n", style="red")
+        sys.exit(1)
+    raise err

@@ -1,20 +1,23 @@
 import asyncio
-from e2b import AsyncTemplate, default_build_logger
+from e2b import AsyncTemplate, default_build_logger, handle_build_error
 from template import template
 
 
 async def main():
-    await AsyncTemplate.build(
-        template,
-        "{{name}}",
+    try:
+        await AsyncTemplate.build(
+            template,
+            "{{name}}",
 {{#if cpuCount}}
-        cpu_count={{cpuCount}},
+            cpu_count={{cpuCount}},
 {{/if}}
 {{#if memoryMB}}
-        memory_mb={{memoryMB}},
+            memory_mb={{memoryMB}},
 {{/if}}
-        on_build_logs=default_build_logger(),
-    )
+            on_build_logs=default_build_logger(),
+        )
+    except Exception as err:
+        handle_build_error(err)
 
 
 if __name__ == "__main__":

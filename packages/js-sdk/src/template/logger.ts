@@ -1,5 +1,6 @@
 import chalk from 'chalk'
 import { stripAnsi } from '../utils'
+import { AuthenticationError, BuildError, SandboxError } from '../errors'
 
 /**
  * Log entry severity levels.
@@ -213,4 +214,28 @@ export function defaultBuildLogger(options?: {
   const buildLogger = new DefaultBuildLogger(options?.minLevel)
 
   return buildLogger.logger.bind(buildLogger)
+}
+
+/**
+ * Print an error thrown by `Template.build` and exit with a non-zero status.
+ *
+ * Known errors (missing/invalid API key, invalid argument, rate limit, ...)
+ * are printed as a single message; unexpected errors keep their full stack.
+ *
+ * @example
+ * ```ts
+ * main().catch(handleBuildError)
+ * ```
+ */
+export function handleBuildError(err: unknown): never {
+  if (
+    err instanceof SandboxError ||
+    err instanceof AuthenticationError ||
+    err instanceof BuildError
+  ) {
+    console.error(chalk.red(`\n✗ Build failed: ${err.message}\n`))
+  } else {
+    console.error(err)
+  }
+  process.exit(1)
 }
