@@ -6,28 +6,17 @@ import { listAliases } from '../../utils/format'
 import { sortTemplatesAliases } from 'src/utils/templateSort'
 import { ensureAPIKey } from 'src/api'
 
-const DEFAULT_LIMIT = 1000
-const PAGE_LIMIT = 100
-
 export const listCommand = new commander.Command('list')
   .description('list sandbox templates')
   .alias('ls')
-  .option(
-    '-l, --limit <limit>',
-    `limit the number of templates returned (default: ${DEFAULT_LIMIT}, 0 for no limit)`,
-    (value) => parseInt(value)
-  )
   .option('-f, --format <format>', 'output format, eg. json, pretty')
-  .action(async (opts: { format: string; limit?: number }) => {
+  .action(async (opts: { format: string }) => {
     try {
       const format = opts.format || 'pretty'
-      const limit = opts.limit === 0 ? undefined : (opts.limit ?? DEFAULT_LIMIT)
       ensureAPIKey()
       process.stdout.write('\n')
 
-      const templates = await listSandboxTemplates({
-        limit,
-      })
+      const templates = await listSandboxTemplates()
 
       for (const template of templates) {
         sortTemplatesAliases(template.aliases)
@@ -117,11 +106,9 @@ function renderTable(templates: e2b.components['schemas']['Template'][]) {
   process.stdout.write('\n')
 }
 
-export async function listSandboxTemplates({
-  limit,
-}: {
-  limit?: number
-} = {}): Promise<e2b.components['schemas']['Template'][]> {
+export async function listSandboxTemplates(): Promise<
+  e2b.components['schemas']['Template'][]
+> {
   // Resolve the API key here (env var or ~/.e2b/config.json) and pass it to the
   // SDK paginator. The paginator builds its own ConnectionConfig, so without
   // this the config-file login (`e2b auth login`) would be treated as
@@ -129,23 +116,17 @@ export async function listSandboxTemplates({
   // The API key is team-scoped, so listing never needs a team identifier.
   const apiKey = ensureAPIKey()
 
-  let pageLimit = limit
-  if (!limit || limit > PAGE_LIMIT) {
-    pageLimit = PAGE_LIMIT
-  }
-
-  const paginator = e2b.Template.list({
-    apiKey,
-    limit: pageLimit,
-  })
+  // Auto-paginate the whole list. There's no good way to paginate from the CLI
+  // (output is often piped into other tools), and fetching every page is cheap.
+  const paginator = e2b.Template.list({ apiKey })
 
   const templates: e2b.components['schemas']['Template'][] = []
-  while (paginator.hasNext && (!limit || templates.length < limit)) {
+  while (paginator.hasNext) {
     const batch = await paginator.nextItems()
     templates.push(...batch.map(toTemplateSchema))
   }
 
-  return limit ? templates.slice(0, limit) : templates
+  return templates
 }
 
 // Adapt the SDK's TemplateInfo back to the raw API schema shape the rest of the
