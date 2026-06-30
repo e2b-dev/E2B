@@ -1,6 +1,7 @@
 import * as boxen from 'boxen'
 import * as e2b from 'e2b'
 
+import * as packageJSON from '../package.json'
 import { getUserConfig, UserConfig } from './user'
 import { asBold, asPrimary } from './utils/format'
 
@@ -106,6 +107,9 @@ export const connectionConfig = new e2b.ConnectionConfig({
   apiHeaders: resolvedAccessToken
     ? { Authorization: `Bearer ${resolvedAccessToken}` }
     : undefined,
+  // Identify CLI traffic to the API via the User-Agent header so CLI usage
+  // (and version distribution) can be tracked server-side.
+  integration: `e2b-cli/${packageJSON.version}`,
 })
 // The CLI authenticates team-scoped endpoints (e.g. `/teams`) with the access
 // token instead of an API key, so don't require an API key here.
