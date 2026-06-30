@@ -66,17 +66,12 @@ jobs:
           npm install -g npm@^11.6
           npm --version
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        if: ${{ inputs.python-sdk }}
-        with:
-          python-version: '${{ env.TOOL_VERSION_PYTHON }}'
-
       - name: Install uv
         uses: astral-sh/setup-uv@v6
         if: ${{ inputs.python-sdk }}
         with:
           version: '${{ env.TOOL_VERSION_UV }}'
+          python-version: '${{ env.TOOL_VERSION_PYTHON }}'
           enable-cache: true
 
       - name: Publish Python RC

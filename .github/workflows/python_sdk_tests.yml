@@ -37,15 +37,11 @@ jobs:
           uppercase: 'true'
           prefix: 'tool_version_'
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '${{ env.TOOL_VERSION_PYTHON }}'
-
       - name: Install uv
         uses: astral-sh/setup-uv@v6
         with:
           version: '${{ env.TOOL_VERSION_UV }}'
+          python-version: '${{ env.TOOL_VERSION_PYTHON }}'
           enable-cache: true
 
       - name: Install dependencies
