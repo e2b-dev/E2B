@@ -80,7 +80,6 @@
     "cli-highlight": "^2.1.11",
     "commander": "^11.1.0",
     "console-table-printer": "^2.11.2",
-    "dockerfile-ast": "^0.6.1",
     "e2b": "^2.30.6",
     "handlebars": "^4.7.9",
     "inquirer": "^12.10.0",

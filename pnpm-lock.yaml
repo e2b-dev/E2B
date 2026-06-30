@@ -77,9 +77,6 @@ importers:
       console-table-printer:
         specifier: ^2.11.2
         version: 2.11.2
-      dockerfile-ast:
-        specifier: ^0.6.1
-        version: 0.6.1
       e2b:
         specifier: ^2.30.6
         version: 2.30.6
@@ -1773,9 +1770,6 @@ packages:
   dir-glob@3.0.1:
     resolution: {integrity: sha512-WkrWp9GR4KXfKGYzOLmTuGVi1UWFfws377n9cc55/tb6DuqyF6pcQ5AbiHEshaDpY9v6oaSr2XCDidGmMwdzIA==}
     engines: {node: '>=8'}
-
-  dockerfile-ast@0.6.1:
-    resolution: {integrity: sha512-m3rH2qHHU2pSTCppXgJT+1KLxhvkdROOxVPof5Yz4IPGSw6K+x0B0/RFdYgXN5zsIUTlbOSRyfDCv3/uVhnNmg==}
 
   dockerfile-ast@0.7.1:
     resolution: {integrity: sha512-oX/A4I0EhSkGqrFv0YuvPkBUSYp1XiY8O8zAKc8Djglx8ocz+JfOr8gP0ryRMC2myqvDLagmnZaU9ot1vG2ijw==}
@@ -5222,11 +5216,6 @@ snapshots:
   dir-glob@3.0.1:
     dependencies:
       path-type: 4.0.0
-
-  dockerfile-ast@0.6.1:
-    dependencies:
-      vscode-languageserver-textdocument: 1.0.12
-      vscode-languageserver-types: 3.17.5
 
   dockerfile-ast@0.7.1:
     dependencies:
