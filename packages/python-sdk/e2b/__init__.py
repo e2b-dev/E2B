@@ -92,7 +92,6 @@ from .sandbox.sandbox_api import (
     SandboxQuery,
     SandboxState,
     SnapshotInfo,
-    TemplateInfo,
 )
 from .sandbox_async.commands.command_handle import AsyncCommandHandle
 from .sandbox_async.filesystem.watch_handle import AsyncWatchHandle
@@ -100,7 +99,6 @@ from .sandbox_async.main import AsyncSandbox
 from .sandbox_async.paginator import (
     AsyncSandboxPaginator,
     AsyncSnapshotPaginator,
-    AsyncTemplatePaginator,
 )
 from .sandbox_async.utils import OutputHandler
 from .sandbox_sync.commands.command_handle import CommandHandle
@@ -109,8 +107,10 @@ from .sandbox_sync.main import Sandbox
 from .sandbox_sync.paginator import (
     SandboxPaginator,
     SnapshotPaginator,
-    TemplatePaginator,
 )
+from .template.template_api import TemplateInfo
+from .template_async.paginator import AsyncTemplatePaginator
+from .template_sync.paginator import TemplatePaginator
 from .template.logger import (
     LogEntry,
     LogEntryEnd,

@@ -10,7 +10,7 @@ from e2b.template.logger import LogEntry, LogEntryEnd, LogEntryStart
 from e2b.template.main import TemplateBase, TemplateClass
 from e2b.template.types import BuildInfo, InstructionType, TemplateTag, TemplateTagInfo
 from e2b.template.utils import normalize_build_arguments, read_dockerignore
-from e2b.sandbox_async.paginator import AsyncTemplatePaginator
+from e2b.template_async.paginator import AsyncTemplatePaginator
 
 from .build_api import (
     assign_tags,
