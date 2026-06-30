@@ -24,8 +24,8 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "prepublishOnly": "pnpm build",
-    "build": "tsc --noEmit && tsup",
-    "dev": "tsup --watch",
+    "build": "tsc --noEmit && tsdown",
+    "dev": "tsdown --watch",
     "example": "tsx example.mts",
     "test": "vitest run",
     "generate": "npm-run-all generate:* && pnpm run format",
@@ -62,7 +62,7 @@
     "playwright": "^1.55.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "tsup": "^8.4.0",
+    "tsdown": "^0.22.3",
     "typescript": "^5.4.5",
     "vitest": "^4.1.8",
     "vitest-browser-react": "^2.2.0"
@@ -100,7 +100,7 @@
     "undici": "^7.28.0"
   },
   "engines": {
-    "node": ">=20.18.1"
+    "node": ">=20.18.1 <21 || >=22"
   },
   "browserslist": [
     "defaults"
