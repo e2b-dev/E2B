@@ -1,7 +1,6 @@
 import { ApiClient, components, handleApiError } from '../api'
-import { ConnectionConfig } from '../connectionConfig'
+import { ConnectionConfig, ConnectionOpts } from '../connectionConfig'
 import { Paginator } from '../paginator'
-import { SandboxApiOpts } from '../sandbox/sandboxApi'
 
 /**
  * Information about a sandbox template.
@@ -93,7 +92,7 @@ export interface TemplateInfo {
 /**
  * Options for listing templates.
  */
-export interface TemplateListOpts extends Omit<SandboxApiOpts, 'signal'> {
+export interface TemplateListOpts extends Omit<ConnectionOpts, 'signal'> {
   /**
    * Number of templates to return per page.
    *
@@ -119,12 +118,12 @@ export interface TemplateListOpts extends Omit<SandboxApiOpts, 'signal'> {
  * }
  * ```
  */
-export class TemplatePaginator extends Paginator<TemplateInfo, SandboxApiOpts> {
+export class TemplatePaginator extends Paginator<TemplateInfo, ConnectionOpts> {
   constructor(opts?: TemplateListOpts) {
     super(opts, opts?.limit, opts?.nextToken)
   }
 
-  async nextItems(opts?: SandboxApiOpts): Promise<TemplateInfo[]> {
+  async nextItems(opts?: ConnectionOpts): Promise<TemplateInfo[]> {
     // An exhausted paginator returns an empty list rather than throwing. The
     // sandbox and snapshot paginators currently throw here instead; they'll be
     // aligned to this behaviour.
