@@ -102,12 +102,13 @@ test('Template.list forwards the limit as the page size', async () => {
   expect(calls[0].limit).toBe('25')
 })
 
-test('Template.list throws once exhausted', async () => {
+test('Template.list returns an empty list once exhausted', async () => {
   pages = [{ ids: ['t1'], nextToken: undefined }]
 
   const paginator = Template.list({ apiKey: TEST_API_KEY })
   await paginator.nextItems()
 
   expect(paginator.hasNext).toBe(false)
-  await expect(paginator.nextItems()).rejects.toThrow('No more items to fetch')
+  // An exhausted paginator returns [] rather than throwing.
+  await expect(paginator.nextItems()).resolves.toEqual([])
 })

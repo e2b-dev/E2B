@@ -169,8 +169,11 @@ class TemplatePaginator(TemplatePaginatorBase):
 
         :returns: List of templates
         """
+        # An exhausted paginator returns an empty list rather than raising. The
+        # sandbox and snapshot paginators currently raise here instead; they'll
+        # be aligned to this behaviour.
         if not self.has_next:
-            raise Exception("No more items to fetch")
+            return []
 
         config = ConnectionConfig(**{**self._opts, **opts})
         api_client = get_api_client(config)

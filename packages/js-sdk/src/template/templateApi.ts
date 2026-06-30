@@ -125,8 +125,11 @@ export class TemplatePaginator extends Paginator<TemplateInfo, SandboxApiOpts> {
   }
 
   async nextItems(opts?: SandboxApiOpts): Promise<TemplateInfo[]> {
+    // An exhausted paginator returns an empty list rather than throwing. The
+    // sandbox and snapshot paginators currently throw here instead; they'll be
+    // aligned to this behaviour.
     if (!this.hasNext) {
-      throw new Error('No more items to fetch')
+      return []
     }
 
     const config = new ConnectionConfig({ ...this.opts, ...opts })
