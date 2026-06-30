@@ -29,6 +29,12 @@ def test_build_exception_exits(capsys):
     assert "Build failed: build failed" in capsys.readouterr().err
 
 
+def test_message_with_brackets_is_printed_literally(capsys):
+    with pytest.raises(SystemExit):
+        handle_build_error(BuildException("pip failed: [Errno 2] no such file"))
+    assert "[Errno 2] no such file" in capsys.readouterr().err
+
+
 def test_unexpected_errors_are_reraised():
     err = TypeError("unexpected")
     with pytest.raises(TypeError, match="unexpected"):

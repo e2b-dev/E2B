@@ -246,6 +246,8 @@ def handle_build_error(err: BaseException) -> NoReturn:
     full traceback.
     """
     if isinstance(err, (SandboxException, AuthenticationException, BuildException)):
-        Console(stderr=True).print(f"\n✗ Build failed: {err}\n", style="red")
+        Console(stderr=True).print(
+            f"\n✗ Build failed: {err}\n", style="red", markup=False
+        )
         sys.exit(1)
     raise err
