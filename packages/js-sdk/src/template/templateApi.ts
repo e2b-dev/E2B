@@ -152,25 +152,20 @@ export class TemplatePaginator extends Paginator<TemplateInfo, ConnectionOpts> {
     this.updatePagination(res.response)
 
     return (res.data ?? []).map(
-      (template: components['schemas']['Template']) => ({
-        templateId: template.templateID,
-        buildId: template.buildID,
-        cpuCount: template.cpuCount,
-        memoryMB: template.memoryMB,
-        diskSizeMB: template.diskSizeMB,
-        public: template.public,
-        aliases: template.aliases ?? [],
-        names: template.names ?? [],
-        createdAt: new Date(template.createdAt),
-        updatedAt: new Date(template.updatedAt),
-        lastSpawnedAt: template.lastSpawnedAt
-          ? new Date(template.lastSpawnedAt)
-          : null,
-        spawnCount: template.spawnCount,
-        buildCount: template.buildCount,
-        envdVersion: template.envdVersion,
-        createdBy: template.createdBy ?? null,
-        buildStatus: template.buildStatus,
+      ({
+        templateID,
+        buildID,
+        createdAt,
+        updatedAt,
+        lastSpawnedAt,
+        ...rest
+      }: components['schemas']['Template']) => ({
+        ...rest,
+        templateId: templateID,
+        buildId: buildID,
+        createdAt: new Date(createdAt),
+        updatedAt: new Date(updatedAt),
+        lastSpawnedAt: lastSpawnedAt ? new Date(lastSpawnedAt) : null,
       })
     )
   }
