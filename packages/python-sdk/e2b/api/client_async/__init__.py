@@ -6,7 +6,7 @@ import httpx
 
 from httpx._types import ProxyTypes
 
-from e2b.api import AsyncApiClient, connection_retries, limits, request_retries, RETRYABLE_STATUS_CODES
+from e2b.api import AsyncApiClient, connection_retries, limits, request_retries, RETRYABLE_STATUS_CODES, _retry_logger
 from e2b.connection_config import ConnectionConfig
 
 TransportKey = Tuple[bool, Optional[ProxyTypes]]
@@ -41,7 +41,13 @@ class AsyncTransportWithLogger(httpx.AsyncHTTPTransport):
                 if response.status_code in RETRYABLE_STATUS_CODES and attempt < request_retries:
                     await response.aread()
                     await response.aclose()
-                    await asyncio.sleep(min(2 ** attempt, 8))
+                    delay = min(2 ** attempt, 8)
+                    _retry_logger.warning(
+                        "Retrying %s %s (attempt %d/%d, backoff %ds): server returned %d",
+                        request.method, request.url, attempt + 1, request_retries, delay,
+                        response.status_code,
+                    )
+                    await asyncio.sleep(delay)
                     continue
                 return response
             except httpx.TimeoutException:
@@ -49,7 +55,13 @@ class AsyncTransportWithLogger(httpx.AsyncHTTPTransport):
             except Exception as exc:
                 last_exc = exc
                 if attempt < request_retries:
-                    await asyncio.sleep(min(2 ** attempt, 8))
+                    delay = min(2 ** attempt, 8)
+                    _retry_logger.warning(
+                        "Retrying %s %s (attempt %d/%d, backoff %ds): %s",
+                        request.method, request.url, attempt + 1, request_retries, delay,
+                        exc,
+                    )
+                    await asyncio.sleep(delay)
                     continue
                 raise
         raise last_exc  # type: ignore[misc]

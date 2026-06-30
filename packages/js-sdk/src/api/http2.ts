@@ -114,7 +114,12 @@ export function withRetry(baseFetch: typeof fetch): typeof fetch {
         if (RETRYABLE_STATUS_CODES.has(response.status) && attempt < maxRetries) {
           // Consume the body before retrying
           await response.text().catch(() => { })
-          await sleep(Math.min(2 ** attempt * 1000, 8000))
+          const delay = Math.min(2 ** attempt * 1000, 8000)
+          const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
+          console.warn(
+            `[e2b] Retrying ${init?.method ?? 'GET'} ${url} (attempt ${attempt + 1}/${maxRetries}, backoff ${delay}ms): server returned ${response.status}`
+          )
+          await sleep(delay)
           continue
         }
         return response
@@ -123,7 +128,12 @@ export function withRetry(baseFetch: typeof fetch): typeof fetch {
         // Don't retry abort/timeout errors
         if (error instanceof DOMException && error.name === 'AbortError') throw error
         if (attempt < maxRetries) {
-          await sleep(Math.min(2 ** attempt * 1000, 8000))
+          const delay = Math.min(2 ** attempt * 1000, 8000)
+          const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
+          console.warn(
+            `[e2b] Retrying ${init?.method ?? 'GET'} ${url} (attempt ${attempt + 1}/${maxRetries}, backoff ${delay}ms): ${error}`
+          )
+          await sleep(delay)
           continue
         }
         throw error

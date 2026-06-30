@@ -6,7 +6,7 @@ import threading
 
 from httpx._types import ProxyTypes
 
-from e2b.api import ApiClient, connection_retries, limits, request_retries, RETRYABLE_STATUS_CODES
+from e2b.api import ApiClient, connection_retries, limits, request_retries, RETRYABLE_STATUS_CODES, _retry_logger
 from e2b.connection_config import ConnectionConfig
 
 TransportKey = Tuple[bool, Optional[ProxyTypes]]
@@ -36,7 +36,13 @@ class TransportWithLogger(httpx.HTTPTransport):
                     # Read and close the response before retrying
                     response.read()
                     response.close()
-                    time.sleep(min(2 ** attempt, 8))
+                    delay = min(2 ** attempt, 8)
+                    _retry_logger.warning(
+                        "Retrying %s %s (attempt %d/%d, backoff %ds): server returned %d",
+                        request.method, request.url, attempt + 1, request_retries, delay,
+                        response.status_code,
+                    )
+                    time.sleep(delay)
                     continue
                 return response
             except httpx.TimeoutException:
@@ -44,7 +50,13 @@ class TransportWithLogger(httpx.HTTPTransport):
             except Exception as exc:
                 last_exc = exc
                 if attempt < request_retries:
-                    time.sleep(min(2 ** attempt, 8))
+                    delay = min(2 ** attempt, 8)
+                    _retry_logger.warning(
+                        "Retrying %s %s (attempt %d/%d, backoff %ds): %s",
+                        request.method, request.url, attempt + 1, request_retries, delay,
+                        exc,
+                    )
+                    time.sleep(delay)
                     continue
                 raise
         raise last_exc  # type: ignore[misc]
