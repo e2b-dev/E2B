@@ -1,7 +1,7 @@
 import { wait } from '../../utils/wait'
 import { asBold } from '../../utils/format'
 import { Sandbox } from 'e2b'
-import { ensureAPIKey } from 'src/api'
+import { ensureAPIKey, withCliIntegration } from 'src/api'
 
 export function formatEnum(e: { [key: string]: string }) {
   return Object.values(e)
@@ -49,9 +49,10 @@ export function waitForSandboxEnd(sandboxID: string) {
 export async function isRunning(sandboxID: string) {
   try {
     const apiKey = ensureAPIKey()
-    const info = await Sandbox.getInfo(sandboxID, {
-      apiKey,
-    })
+    const info = await Sandbox.getInfo(
+      sandboxID,
+      withCliIntegration({ apiKey })
+    )
     return info.state === 'running'
   } catch (err) {
     console.error(`Failed to check sandbox status: ${err}`)

@@ -1,7 +1,7 @@
 import * as boxen from 'boxen'
 import * as commander from 'commander'
 import { defaultBuildLogger, Template, TemplateClass } from 'e2b'
-import { connectionConfig, ensureAPIKey } from 'src/api'
+import { connectionConfig, ensureAPIKey, withCliIntegration } from 'src/api'
 import {
   defaultDockerfileName,
   fallbackDockerfileName,
@@ -138,15 +138,18 @@ export const createCommand = new commander.Command('create')
 
         // Build the template using SDK
         try {
-          await Template.build(finalTemplate, {
-            alias: templateName,
-            cpuCount: cpuCount,
-            memoryMB: memoryMB,
-            skipCache: opts.noCache,
-            apiKey: apiKey,
-            domain: domain,
-            onBuildLogs: defaultBuildLogger(),
-          })
+          await Template.build(
+            finalTemplate,
+            withCliIntegration({
+              alias: templateName,
+              cpuCount: cpuCount,
+              memoryMB: memoryMB,
+              skipCache: opts.noCache,
+              apiKey: apiKey,
+              domain: domain,
+              onBuildLogs: defaultBuildLogger(),
+            })
+          )
         } catch (error) {
           console.error('\n❌ Template build failed.')
           if (error instanceof Error) {

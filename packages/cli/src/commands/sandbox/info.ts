@@ -1,7 +1,7 @@
 import * as commander from 'commander'
 import { NotFoundError, Sandbox } from 'e2b'
 
-import { ensureAPIKey } from 'src/api'
+import { ensureAPIKey, withCliIntegration } from 'src/api'
 import { asBold } from 'src/utils/format'
 
 const fieldLabels: Partial<Record<string, string>> = {
@@ -50,7 +50,10 @@ export const infoCommand = new commander.Command('info')
     try {
       const format = options.format || 'pretty'
       const apiKey = ensureAPIKey()
-      const info = await Sandbox.getInfo(sandboxID, { apiKey })
+      const info = await Sandbox.getInfo(
+        sandboxID,
+        withCliIntegration({ apiKey })
+      )
 
       if (format === 'pretty') {
         renderPrettyInfo(info as unknown as Record<string, unknown>)

@@ -48,6 +48,10 @@ vi.mock('e2b', () => {
 
 vi.mock('../../../src/api', () => ({
   ensureAPIKey: mocks.ensureAPIKey,
+  withCliIntegration: (opts: object) => ({
+    ...opts,
+    integration: 'e2b-cli/test',
+  }),
 }))
 
 vi.mock('src/utils/signal', () => ({

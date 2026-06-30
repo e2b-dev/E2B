@@ -2,7 +2,7 @@ import * as tablePrinter from 'console-table-printer'
 import * as commander from 'commander'
 import { components, Sandbox, SandboxInfo } from 'e2b'
 
-import { ensureAPIKey } from 'src/api'
+import { ensureAPIKey, withCliIntegration } from 'src/api'
 import { parseMetadata } from './utils'
 
 const DEFAULT_LIMIT = 1000
@@ -159,11 +159,13 @@ export async function listSandboxes({
   }
 
   const sandboxes: SandboxInfo[] = []
-  const iterator = Sandbox.list({
-    apiKey: apiKey,
-    limit: pageLimit,
-    query: { state, metadata },
-  })
+  const iterator = Sandbox.list(
+    withCliIntegration({
+      apiKey: apiKey,
+      limit: pageLimit,
+      query: { state, metadata },
+    })
+  )
 
   while (iterator.hasNext && (!limit || sandboxes.length < limit)) {
     const batch = await iterator.nextItems()

@@ -12,6 +12,31 @@ export let apiKey = process.env.E2B_API_KEY
 export let accessToken = process.env.E2B_ACCESS_TOKEN
 export const teamId = process.env.E2B_TEAM_ID
 
+/**
+ * Integration identifier the CLI appends to the SDK `User-Agent` header so CLI
+ * traffic (and its version) can be tracked server-side.
+ */
+export const CLI_INTEGRATION = `e2b-cli/${packageJSON.version}`
+
+/**
+ * Tag SDK call options with the CLI integration.
+ *
+ * The SDK builds a fresh `ConnectionConfig` from the options passed to each
+ * `Sandbox.*` / `Template.*` static method, so there is no single client to
+ * configure—the integration has to be threaded through every call site. The
+ * `integration` field is accepted at runtime by every `ConnectionConfig`, even
+ * though it is not part of the narrower option types those methods declare,
+ * hence the cast.
+ */
+export function withCliIntegration<T extends e2b.ConnectionConfigOpts>(
+  opts?: T
+): T & { integration: string } {
+  return {
+    ...opts,
+    integration: CLI_INTEGRATION,
+  } as T & { integration: string }
+}
+
 const authErrorBox = (keyName: 'E2B_API_KEY' | 'E2B_ACCESS_TOKEN') => {
   const link =
     keyName === 'E2B_API_KEY'
@@ -109,7 +134,7 @@ export const connectionConfig = new e2b.ConnectionConfig({
     : undefined,
   // Identify CLI traffic to the API via the User-Agent header so CLI usage
   // (and version distribution) can be tracked server-side.
-  integration: `e2b-cli/${packageJSON.version}`,
+  integration: CLI_INTEGRATION,
 })
 // The CLI authenticates team-scoped endpoints (e.g. `/teams`) with the access
 // token instead of an API key, so don't require an API key here.
