@@ -6,25 +6,18 @@
     "allowJs": true,
     "declaration": true,
     "declarationMap": true,
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "sourceMap": true,
     "strict": true,
-    "strictNullChecks": true,
-    "strictFunctionTypes": true,
-    "strictBindCallApply": true,
-    "strictPropertyInitialization": true,
-    "noImplicitThis": true,
-    "alwaysStrict": true,
     "esModuleInterop": true,
     "preserveSymlinks": true,
-    "downlevelIteration": true,
     "resolveJsonModule": true,
     "forceConsistentCasingInFileNames": true,
     "allowSyntheticDefaultImports": true,
-    "outDir": "dist",
-    "baseUrl": ".",
     "rootDirs": ["src"],
     "paths": {
+      "src": ["./src/index.ts"],
+      "src/*": ["./src/*"],
       "e2b": ["../js-sdk/src"]
     }
   }

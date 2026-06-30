@@ -1,23 +1,25 @@
 {
   "compilerOptions": {
     "outDir": "dist",
-    "target": "es6",
+    "target": "es2022",
+    "module": "esnext",
     "lib": [
       "dom",
-      "ESNext"
+      "es2022"
     ],
     "sourceMap": true,
-    "allowJs": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
     "strict": true,
     "forceConsistentCasingInFileNames": true,
     "noFallthroughCasesInSwitch": true,
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "declaration": true,
+    // tsup's d.ts builder always injects `baseUrl` (deprecated in TS 6.0). This
+    // silences that deprecation; remove once we migrate off tsup (tsdown).
+    "ignoreDeprecations": "6.0",
   },
   "include": [
     "src"
