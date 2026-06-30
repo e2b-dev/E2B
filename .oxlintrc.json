@@ -1,0 +1,10 @@
+{
+  "$schema": "https://raw.githubusercontent.com/oxc-project/oxc/main/npm/oxlint/configuration_schema.json",
+  "ignorePatterns": ["**/dist/**", "**/node_modules/**", "**/*.gen.ts"],
+  "rules": {
+    "no-unused-vars": ["error", { "caughtErrors": "none" }],
+    "typescript/no-explicit-any": "off",
+    "typescript/ban-ts-comment": "off",
+    "unicorn/no-useless-fallback-in-spread": "off"
+  }
+}
