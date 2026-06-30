@@ -83,7 +83,7 @@ jobs:
       - name: Install Python dependencies
         working-directory: packages/python-sdk
         run: |
-          uv sync
+          uv sync --locked
 
       - name: Run linting
         run: |
