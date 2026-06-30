@@ -60,7 +60,7 @@ async function templateAction(
         template_id: template,
       })
     } else if (opts.select) {
-      const allTemplates = await listSandboxTemplates()
+      const { templates: allTemplates } = await listSandboxTemplates()
 
       const filteredTemplates = allTemplates.filter(
         (e) => !e.public === publish
