@@ -85,20 +85,18 @@ jobs:
         with:
           python-version: '${{ env.TOOL_VERSION_PYTHON }}'
 
-      - name: Install and configure Poetry
-        uses: snok/install-poetry@v1
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
         with:
-          version: '${{ env.TOOL_VERSION_POETRY }}'
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-          installer-parallel: true
+          version: '${{ env.TOOL_VERSION_UV }}'
+          enable-cache: true
 
       - name: Build Python SDK
         working-directory: packages/python-sdk
         run: |
-          BASE_VERSION=$(poetry version -s)
-          poetry version "${BASE_VERSION}+${BRANCH_ID}"
-          poetry build
+          BASE_VERSION=$(uv version --short)
+          uv version "${BASE_VERSION}+${BRANCH_ID}"
+          uv build
 
       - name: Upload Python SDK artifact
         uses: actions/upload-artifact@v4

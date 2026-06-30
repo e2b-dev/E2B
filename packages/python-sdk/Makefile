@@ -52,10 +52,6 @@ generate-mcp:
 			--disable-timestamp \
 			--extra-fields forbid
 
-.PHONY: setup
-setup:
-	poetry install
-
 .PHONY: test
-test: setup
-	poetry run pytest --verbose --numprocesses=4
+test:
+	uv run pytest --verbose --numprocesses=4
