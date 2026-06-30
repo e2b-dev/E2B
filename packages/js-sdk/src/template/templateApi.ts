@@ -95,12 +95,6 @@ export interface TemplateInfo {
  */
 export interface TemplateListOpts extends Omit<SandboxApiOpts, 'signal'> {
   /**
-   * Identifier of the team whose templates should be listed. Defaults to the
-   * team the API key belongs to.
-   */
-  teamId?: string
-
-  /**
    * Number of templates to return per page.
    *
    * @default 100
@@ -126,12 +120,8 @@ export interface TemplateListOpts extends Omit<SandboxApiOpts, 'signal'> {
  * ```
  */
 export class TemplatePaginator extends Paginator<TemplateInfo, SandboxApiOpts> {
-  private readonly teamId?: string
-
   constructor(opts?: TemplateListOpts) {
     super(opts, opts?.limit, opts?.nextToken)
-
-    this.teamId = opts?.teamId
   }
 
   async nextItems(opts?: SandboxApiOpts): Promise<TemplateInfo[]> {
@@ -145,7 +135,6 @@ export class TemplatePaginator extends Paginator<TemplateInfo, SandboxApiOpts> {
     const res = await client.api.GET('/v2/templates', {
       params: {
         query: {
-          teamID: this.teamId,
           limit: this.limit,
           nextToken: this.nextToken,
         },

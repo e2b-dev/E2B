@@ -15,7 +15,6 @@ vi.mock('e2b', async (importOriginal: () => Promise<typeof import('e2b')>) => {
 
 vi.mock('src/api', () => ({
   ensureAPIKey: vi.fn(() => 'test-api-key'),
-  resolveTeamId: vi.fn((team?: string) => team),
 }))
 
 import { listSandboxTemplates } from '../../../src/commands/template/list'
@@ -79,7 +78,6 @@ describe('listSandboxTemplates pagination', () => {
     // Uses the SDK paginator with the default page size and resolved API key.
     expect(mocks.list).toHaveBeenCalledWith({
       apiKey: 'test-api-key',
-      teamId: undefined,
       limit: 100,
     })
   })
@@ -127,7 +125,6 @@ describe('listSandboxTemplates pagination', () => {
 
     expect(mocks.list).toHaveBeenCalledWith({
       apiKey: 'test-api-key',
-      teamId: undefined,
       limit: 100,
     })
   })
@@ -144,7 +141,6 @@ describe('listSandboxTemplates pagination', () => {
 
     expect(mocks.list).toHaveBeenCalledWith({
       apiKey: 'test-api-key',
-      teamId: undefined,
       limit: 3,
     })
   })
@@ -158,18 +154,6 @@ describe('listSandboxTemplates pagination', () => {
 
     expect(templates.map((t) => t.templateID)).toEqual(['t1', 't2'])
     expect(hasMore).toBe(false)
-  })
-
-  test('forwards the team id to the paginator', async () => {
-    mocks.list.mockReturnValue(makePaginator([{ ids: [], last: true }]))
-
-    await listSandboxTemplates({ teamID: 'team-123' })
-
-    expect(mocks.list).toHaveBeenCalledWith({
-      apiKey: 'test-api-key',
-      teamId: 'team-123',
-      limit: 100,
-    })
   })
 
   test('returns an empty list when there are no templates', async () => {

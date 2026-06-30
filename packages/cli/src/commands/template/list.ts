@@ -4,8 +4,7 @@ import * as e2b from 'e2b'
 
 import { listAliases } from '../../utils/format'
 import { sortTemplatesAliases } from 'src/utils/templateSort'
-import { ensureAPIKey, resolveTeamId } from 'src/api'
-import { teamOption } from '../../options'
+import { ensureAPIKey } from 'src/api'
 
 const DEFAULT_LIMIT = 1000
 const PAGE_LIMIT = 100
@@ -13,14 +12,13 @@ const PAGE_LIMIT = 100
 export const listCommand = new commander.Command('list')
   .description('list sandbox templates')
   .alias('ls')
-  .addOption(teamOption)
   .option(
     '-l, --limit <limit>',
     `limit the number of templates returned (default: ${DEFAULT_LIMIT}, 0 for no limit)`,
     (value) => parseInt(value)
   )
   .option('-f, --format <format>', 'output format, eg. json, pretty')
-  .action(async (opts: { team: string; format: string; limit?: number }) => {
+  .action(async (opts: { format: string; limit?: number }) => {
     try {
       const format = opts.format || 'pretty'
       const limit = opts.limit === 0 ? undefined : (opts.limit ?? DEFAULT_LIMIT)
@@ -28,7 +26,6 @@ export const listCommand = new commander.Command('list')
       process.stdout.write('\n')
 
       const { templates, hasMore } = await listSandboxTemplates({
-        teamID: resolveTeamId(opts.team),
         limit,
       })
 
@@ -131,16 +128,15 @@ type ListSandboxTemplatesResult = {
 }
 
 export async function listSandboxTemplates({
-  teamID,
   limit,
 }: {
-  teamID?: string
   limit?: number
-}): Promise<ListSandboxTemplatesResult> {
+} = {}): Promise<ListSandboxTemplatesResult> {
   // Resolve the API key here (env var or ~/.e2b/config.json) and pass it to the
   // SDK paginator. The paginator builds its own ConnectionConfig, so without
   // this the config-file login (`e2b auth login`) would be treated as
   // unauthenticated. This also covers the delete/publish select flows.
+  // The API key is team-scoped, so listing never needs a team identifier.
   const apiKey = ensureAPIKey()
 
   let pageLimit = limit
@@ -150,7 +146,6 @@ export async function listSandboxTemplates({
 
   const paginator = e2b.Template.list({
     apiKey,
-    teamId: teamID,
     limit: pageLimit,
   })
 

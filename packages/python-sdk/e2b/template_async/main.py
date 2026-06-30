@@ -524,7 +524,6 @@ class AsyncTemplate(TemplateBase):
 
     @staticmethod
     def list(
-        team_id: Optional[str] = None,
         limit: Optional[int] = None,
         next_token: Optional[str] = None,
         **opts: Unpack[ApiParams],
@@ -532,7 +531,6 @@ class AsyncTemplate(TemplateBase):
         """
         List templates.
 
-        :param team_id: Identifier of the team whose templates should be listed. Defaults to the team the API key belongs to.
         :param limit: Maximum number of templates to return per page
         :param next_token: Token for pagination
         :return: Paginator for listing templates
@@ -548,7 +546,6 @@ class AsyncTemplate(TemplateBase):
         ```
         """
         return AsyncTemplatePaginator(
-            team_id=team_id,
             limit=limit,
             next_token=next_token,
             **opts,

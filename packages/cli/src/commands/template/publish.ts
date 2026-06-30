@@ -9,18 +9,13 @@ import {
   asLocal,
   asLocalRelative,
 } from 'src/utils/format'
-import {
-  configOption,
-  pathOption,
-  selectMultipleOption,
-  teamOption,
-} from 'src/options'
+import { configOption, pathOption, selectMultipleOption } from 'src/options'
 import { configName, E2BConfig, getConfigPath, loadConfig } from 'src/config'
 import { getRoot } from 'src/utils/filesystem'
 import { listSandboxTemplates } from './list'
 import { getPromptTemplates } from 'src/utils/templatePrompt'
 import { confirm } from 'src/utils/confirm'
-import { client, resolveTeamId } from 'src/api'
+import { client } from 'src/api'
 import { handleE2BRequestError } from '../../utils/errors'
 
 async function publishTemplate(templateID: string, publish: boolean) {
@@ -51,12 +46,9 @@ async function templateAction(
     config?: string
     yes?: boolean
     select?: boolean
-    team?: string
   }
 ) {
   try {
-    let teamId = opts.team
-
     const root = getRoot(opts.path)
 
     const templates: (Pick<E2BConfig, 'template_id'> & {
@@ -68,11 +60,7 @@ async function templateAction(
         template_id: template,
       })
     } else if (opts.select) {
-      teamId = resolveTeamId(teamId)
-
-      const { templates: allTemplates } = await listSandboxTemplates({
-        teamID: teamId,
-      })
+      const { templates: allTemplates } = await listSandboxTemplates()
 
       const filteredTemplates = allTemplates.filter(
         (e) => !e.public === publish
@@ -206,7 +194,6 @@ export const publishCommand = new commander.Command('publish')
   .addOption(pathOption)
   .addOption(configOption)
   .addOption(selectMultipleOption)
-  .addOption(teamOption)
   .alias('pb')
   .option('-y, --yes', 'skip manual publish confirmation')
   .action(templateAction.bind(null, true))
@@ -226,7 +213,6 @@ export const unPublishCommand = new commander.Command('unpublish')
   .addOption(pathOption)
   .addOption(configOption)
   .addOption(selectMultipleOption)
-  .addOption(teamOption)
   .alias('upb')
   .option('-y, --yes', 'skip manual unpublish confirmation')
   .action(templateAction.bind(null, false))

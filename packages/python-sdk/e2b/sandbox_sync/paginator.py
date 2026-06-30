@@ -176,7 +176,6 @@ class TemplatePaginator(TemplatePaginatorBase):
         api_client = get_api_client(config)
         res = get_v2_templates.sync_detailed(
             client=api_client,
-            team_id=self.team_id if self.team_id else UNSET,
             limit=self.limit if self.limit else UNSET,
             next_token=self._next_token if self._next_token else UNSET,
         )

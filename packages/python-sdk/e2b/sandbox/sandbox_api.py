@@ -697,10 +697,8 @@ class SandboxPaginatorBase(PaginatorBase[SandboxInfo, ApiParams]):
 class TemplatePaginatorBase(PaginatorBase[TemplateInfo, ApiParams]):
     def __init__(
         self,
-        team_id: Optional[str] = None,
         limit: Optional[int] = None,
         next_token: Optional[str] = None,
         **opts: Unpack[ApiParams],
     ):
         super().__init__(limit=limit, next_token=next_token, **opts)
-        self.team_id = team_id
