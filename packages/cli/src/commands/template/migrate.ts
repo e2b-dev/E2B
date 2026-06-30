@@ -5,10 +5,11 @@ import * as fs from 'fs'
 import * as path from 'path'
 import { E2BConfig, getConfigPath, loadConfig } from '../../config'
 import { defaultDockerfileName } from '../../docker/constants'
-import { configOption, pathOption } from '../../options'
+import { configOption, parsePositiveInt, pathOption } from '../../options'
 import { getRoot } from '../../utils/filesystem'
 import { asLocal, asLocalRelative, asPrimary } from '../../utils/format'
 import { getDockerfile } from './dockerfile'
+import { validateTemplateName } from '../../utils/templateName'
 import {
   generateAndWriteTemplateFiles,
   Language,
@@ -22,7 +23,8 @@ async function migrateToLanguage(
   root: string,
   config: E2BConfig,
   dockerfileContent: string,
-  language: Language
+  language: Language,
+  nameOverride?: string
 ): Promise<void> {
   // Initialize template with file context
   const template = Template({
@@ -66,7 +68,7 @@ async function migrateToLanguage(
     parsedTemplate = baseTemplate.setReadyCmd(config.ready_cmd)
   }
 
-  const name = config.template_name || config.template_id
+  const name = nameOverride || config.template_name || config.template_id
   if (!name) {
     throw new Error('Template name or ID is required')
   }
@@ -94,6 +96,37 @@ export const migrateCommand = new commander.Command('migrate')
   )
   .addOption(configOption)
   .option(
+    '-n, --name <name>',
+    'override the template name used in the generated files. Defaults to the template name or ID from the config file.',
+    (value) => {
+      try {
+        return validateTemplateName(value)
+      } catch (err) {
+        throw new commander.InvalidArgumentError(
+          err instanceof Error ? err.message : String(err)
+        )
+      }
+    }
+  )
+  .option(
+    '-c, --cmd <start-command>',
+    'override the command that will be executed when the sandbox is started.'
+  )
+  .option(
+    '--ready-cmd <ready-command>',
+    'override the command that will need to exit 0 for the template to be ready.'
+  )
+  .option(
+    '--cpu-count <cpu-count>',
+    'override the number of CPUs that will be used to run the sandbox.',
+    parsePositiveInt('CPU count')
+  )
+  .option(
+    '--memory-mb <memory-mb>',
+    'override the amount of memory in megabytes that will be used to run the sandbox. Must be an even number.',
+    parsePositiveInt('Memory in megabytes')
+  )
+  .option(
     '-l, --language <language>',
     `specify target language: ${Object.values(Language).join(', ')}`,
     (value) => {
@@ -114,10 +147,24 @@ export const migrateCommand = new commander.Command('migrate')
       config?: string
       path?: string
       language?: Language
+      name?: string
+      cmd?: string
+      readyCmd?: string
+      cpuCount?: number
+      memoryMb?: number
     }) => {
       let success = false
       try {
         console.log('\n🔄 Migrating template configuration to SDK format...\n')
+
+        // Validate memory override
+        if (opts.memoryMb && opts.memoryMb % 2 !== 0) {
+          throw new Error(
+            `The memory in megabytes must be an even number. You provided ${asLocal(
+              opts.memoryMb.toFixed(0)
+            )}.`
+          )
+        }
 
         const root = getRoot(opts.path)
         const configPath = getConfigPath(root, opts.config)
@@ -139,6 +186,20 @@ export const migrateCommand = new commander.Command('migrate')
               path.relative(root, configPath)
             )} not found. Using defaults.`
           )
+        }
+
+        // Apply command-line overrides on top of the loaded config
+        if (opts.cmd !== undefined) {
+          config.start_cmd = opts.cmd
+        }
+        if (opts.readyCmd !== undefined) {
+          config.ready_cmd = opts.readyCmd
+        }
+        if (opts.cpuCount !== undefined) {
+          config.cpu_count = opts.cpuCount
+        }
+        if (opts.memoryMb !== undefined) {
+          config.memory_mb = opts.memoryMb
         }
 
         // Determine target language
@@ -173,7 +234,13 @@ export const migrateCommand = new commander.Command('migrate')
         }
 
         // Perform migration
-        await migrateToLanguage(root, config, dockerfileContent, language)
+        await migrateToLanguage(
+          root,
+          config,
+          dockerfileContent,
+          language,
+          opts.name
+        )
 
         // Rename old files to .old extensions
         const oldFilesRenamed: { oldPath: string; newPath: string }[] = []
