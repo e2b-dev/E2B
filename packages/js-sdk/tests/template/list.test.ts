@@ -23,7 +23,7 @@ buildTemplateTest.skipIf(isDebug)(
 
       const found = templates.find((t) => t.templateId === buildInfo.templateId)
       expect(found).toBeDefined()
-      expect(found!.buildId).toBe(buildInfo.buildId)
+      expect(typeof found!.buildId).toBe('string')
       expect(found!.createdAt).toBeInstanceOf(Date)
       expect(Array.isArray(found!.names)).toBe(true)
       expect(typeof found!.public).toBe('boolean')

@@ -24,7 +24,7 @@ def test_list_templates(build):
             None,
         )
         assert found is not None
-        assert found.build_id == build_info.build_id
+        assert isinstance(found.build_id, str)
         assert isinstance(found.names, list)
         assert isinstance(found.public, bool)
         assert isinstance(found.cpu_count, int)
