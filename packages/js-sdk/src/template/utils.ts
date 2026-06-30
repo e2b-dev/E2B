@@ -300,6 +300,8 @@ export function callsites(depth: number): NodeJS.CallSite[] {
       return callSitesWithoutCurrent
     }
 
+    // Accessing `.stack` triggers `Error.prepareStackTrace` for its side effect.
+    // oxlint-disable-next-line no-unused-expressions
     new Error().stack
     return result
   } finally {
