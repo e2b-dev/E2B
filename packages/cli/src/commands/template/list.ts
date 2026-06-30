@@ -25,7 +25,7 @@ export const listCommand = new commander.Command('list')
       ensureAPIKey()
       process.stdout.write('\n')
 
-      const { templates, hasMore } = await listSandboxTemplates({
+      const templates = await listSandboxTemplates({
         limit,
       })
 
@@ -35,11 +35,6 @@ export const listCommand = new commander.Command('list')
 
       if (format === 'pretty') {
         renderTable(templates)
-        if (hasMore) {
-          console.log(
-            `Showing first ${limit} templates. Use --limit to change.`
-          )
-        }
       } else if (format === 'json') {
         console.log(JSON.stringify(templates, null, 2))
       } else {
@@ -122,16 +117,11 @@ function renderTable(templates: e2b.components['schemas']['Template'][]) {
   process.stdout.write('\n')
 }
 
-type ListSandboxTemplatesResult = {
-  templates: e2b.components['schemas']['Template'][]
-  hasMore: boolean
-}
-
 export async function listSandboxTemplates({
   limit,
 }: {
   limit?: number
-} = {}): Promise<ListSandboxTemplatesResult> {
+} = {}): Promise<e2b.components['schemas']['Template'][]> {
   // Resolve the API key here (env var or ~/.e2b/config.json) and pass it to the
   // SDK paginator. The paginator builds its own ConnectionConfig, so without
   // this the config-file login (`e2b auth login`) would be treated as
@@ -155,12 +145,7 @@ export async function listSandboxTemplates({
     templates.push(...batch.map(toTemplateSchema))
   }
 
-  return {
-    templates: limit ? templates.slice(0, limit) : templates,
-    // We can't change the page size during iteration, so we may have to check
-    // if we have more templates than the limit.
-    hasMore: paginator.hasNext || (limit ? templates.length > limit : false),
-  }
+  return limit ? templates.slice(0, limit) : templates
 }
 
 // Adapt the SDK's TemplateInfo back to the raw API schema shape the rest of the

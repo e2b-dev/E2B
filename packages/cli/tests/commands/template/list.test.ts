@@ -70,10 +70,9 @@ describe('listSandboxTemplates pagination', () => {
     const paginator = makePaginator([{ ids: ['t1', 't2'], last: true }])
     mocks.list.mockReturnValue(paginator)
 
-    const { templates, hasMore } = await listSandboxTemplates({})
+    const templates = await listSandboxTemplates({})
 
     expect(templates.map((t) => t.templateID)).toEqual(['t1', 't2'])
-    expect(hasMore).toBe(false)
     expect(paginator.nextItems).toHaveBeenCalledTimes(1)
     // Uses the SDK paginator with the default page size and resolved API key.
     expect(mocks.list).toHaveBeenCalledWith({
@@ -90,7 +89,7 @@ describe('listSandboxTemplates pagination', () => {
     ])
     mocks.list.mockReturnValue(paginator)
 
-    const { templates, hasMore } = await listSandboxTemplates({})
+    const templates = await listSandboxTemplates({})
 
     expect(templates.map((t) => t.templateID)).toEqual([
       't1',
@@ -99,21 +98,19 @@ describe('listSandboxTemplates pagination', () => {
       't4',
       't5',
     ])
-    expect(hasMore).toBe(false)
     expect(paginator.nextItems).toHaveBeenCalledTimes(3)
   })
 
-  test('caps results at the requested limit and reports hasMore', async () => {
+  test('caps results at the requested limit', async () => {
     const paginator = makePaginator([
       { ids: ['t1', 't2', 't3'], last: false },
       { ids: ['t4', 't5', 't6'], last: false },
     ])
     mocks.list.mockReturnValue(paginator)
 
-    const { templates, hasMore } = await listSandboxTemplates({ limit: 4 })
+    const templates = await listSandboxTemplates({ limit: 4 })
 
     expect(templates.map((t) => t.templateID)).toEqual(['t1', 't2', 't3', 't4'])
-    expect(hasMore).toBe(true)
     // Stops fetching once the collected count reaches the limit.
     expect(paginator.nextItems).toHaveBeenCalledTimes(2)
   })
@@ -145,23 +142,21 @@ describe('listSandboxTemplates pagination', () => {
     })
   })
 
-  test('hasMore is false when the last page exactly fills without more pages', async () => {
+  test('returns the whole last page when it fits within the limit', async () => {
     mocks.list.mockReturnValue(
       makePaginator([{ ids: ['t1', 't2'], last: true }])
     )
 
-    const { templates, hasMore } = await listSandboxTemplates({ limit: 1000 })
+    const templates = await listSandboxTemplates({ limit: 1000 })
 
     expect(templates.map((t) => t.templateID)).toEqual(['t1', 't2'])
-    expect(hasMore).toBe(false)
   })
 
   test('returns an empty list when there are no templates', async () => {
     mocks.list.mockReturnValue(makePaginator([{ ids: [], last: true }]))
 
-    const { templates, hasMore } = await listSandboxTemplates({})
+    const templates = await listSandboxTemplates({})
 
     expect(templates).toEqual([])
-    expect(hasMore).toBe(false)
   })
 })
