@@ -21,9 +21,7 @@ buildTemplateTest.skipIf(isDebug)(
         templates.push(...(await paginator.nextItems()))
       }
 
-      const found = templates.find(
-        (t) => t.templateId === buildInfo.templateId
-      )
+      const found = templates.find((t) => t.templateId === buildInfo.templateId)
       expect(found).toBeDefined()
       expect(found!.buildId).toBe(buildInfo.buildId)
       expect(found!.createdAt).toBeInstanceOf(Date)
