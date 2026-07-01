@@ -18,7 +18,8 @@ class TestTarFileStream:
         """Extract tar contents into a dictionary mapping paths to file contents."""
         tar_buffer.seek(0)
         contents = {}
-        with tarfile.open(fileobj=tar_buffer, mode="r:gz") as tar:
+        # "r:*" auto-detects compressed vs. uncompressed archives
+        with tarfile.open(fileobj=tar_buffer, mode="r:*") as tar:
             for member in tar.getmembers():
                 if member.isfile():
                     file_obj = tar.extractfile(member)
@@ -39,12 +40,33 @@ class TestTarFileStream:
         with open(file2_path, "w") as f:
             f.write("content2")
 
-        tar_buffer = tar_file_stream("*.txt", test_dir, [], False)
+        tar_buffer = tar_file_stream("*.txt", test_dir, [], False, True)
         contents = self._extract_tar_contents(tar_buffer)
 
         assert len(contents) == 2
         assert "file1.txt" in contents
         assert "file2.txt" in contents
+        assert contents["file1.txt"] == b"content1"
+        assert contents["file2.txt"] == b"content2"
+
+    def test_should_create_uncompressed_tar_when_gzip_disabled(self, test_dir):
+        """Test that function creates an uncompressed tar when gzip=False."""
+        file1_path = os.path.join(test_dir, "file1.txt")
+        file2_path = os.path.join(test_dir, "file2.txt")
+
+        with open(file1_path, "w") as f:
+            f.write("content1")
+        with open(file2_path, "w") as f:
+            f.write("content2")
+
+        tar_buffer = tar_file_stream("*.txt", test_dir, [], False, False)
+
+        # gzip streams start with the magic bytes 0x1f 0x8b — a plain tar must not
+        tar_buffer.seek(0)
+        assert tar_buffer.read(2) != b"\x1f\x8b"
+
+        # The archive must still be readable and contain the original files
+        contents = self._extract_tar_contents(tar_buffer)
         assert contents["file1.txt"] == b"content1"
         assert contents["file2.txt"] == b"content2"
 
@@ -60,7 +82,9 @@ class TestTarFileStream:
         with open(os.path.join(test_dir, "backup.txt"), "w") as f:
             f.write("backup content")
 
-        tar_buffer = tar_file_stream("*.txt", test_dir, ["temp*", "backup*"], False)
+        tar_buffer = tar_file_stream(
+            "*.txt", test_dir, ["temp*", "backup*"], False, True
+        )
         contents = self._extract_tar_contents(tar_buffer)
 
         assert len(contents) == 2
@@ -82,7 +106,7 @@ class TestTarFileStream:
         with open(os.path.join(nested_dir, "Button.tsx"), "w") as f:
             f.write("button content")
 
-        tar_buffer = tar_file_stream("src", test_dir, [], False)
+        tar_buffer = tar_file_stream("src", test_dir, [], False, True)
         contents = self._extract_tar_contents(tar_buffer)
 
         # Should include the directory and files
@@ -104,7 +128,7 @@ class TestTarFileStream:
         os.symlink("original.txt", symlink_path)
 
         # Test with resolve_symlinks=True
-        tar_buffer = tar_file_stream("*.txt", test_dir, [], True)
+        tar_buffer = tar_file_stream("*.txt", test_dir, [], True, True)
         contents = self._extract_tar_contents(tar_buffer)
 
         # Both files should be in tar
@@ -129,7 +153,7 @@ class TestTarFileStream:
         os.symlink("original.txt", symlink_path)
 
         # Test with resolve_symlinks=False
-        tar_buffer = tar_file_stream("*.txt", test_dir, [], False)
+        tar_buffer = tar_file_stream("*.txt", test_dir, [], False, True)
         tar_buffer.seek(0)
 
         with tarfile.open(fileobj=tar_buffer, mode="r:gz") as tar:
