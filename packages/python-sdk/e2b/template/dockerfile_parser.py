@@ -28,6 +28,7 @@ class DockerfileParserInterface(Protocol):
         user: Optional[str] = None,
         mode: Optional[int] = None,
         resolve_symlinks: Optional[bool] = None,
+        gzip: Optional[bool] = None,
     ) -> "DockerfileParserInterface":
         """Handle COPY instruction."""
         ...
