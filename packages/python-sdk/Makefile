@@ -27,9 +27,6 @@ generate-envd:
 
 generate: generate-api generate-envd generate-mcp generate-volume-api
 
-init:
-	pip install openapi-python-client datamodel-code-generator
-
 typecheck:
 	ty check
 
@@ -52,10 +49,6 @@ generate-mcp:
 			--disable-timestamp \
 			--extra-fields forbid
 
-.PHONY: setup
-setup:
-	poetry install
-
 .PHONY: test
-test: setup
-	poetry run pytest --verbose --numprocesses=4
+test:
+	uv run pytest --verbose --numprocesses=4
