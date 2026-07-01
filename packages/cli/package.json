@@ -51,7 +51,7 @@
     "@types/handlebars": "^4.1.0",
     "@types/inquirer": "^9.0.7",
     "@types/json2md": "^1.5.4",
-    "@types/node": "^20.19.19",
+    "@types/node": "^22.20.0",
     "@types/npmcli__package-json": "^4.0.4",
     "@types/statuses": "^2.0.5",
     "@vitest/coverage-v8": "^4.1.0",
@@ -88,6 +88,6 @@
     "yup": "^1.3.2"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22.19.0"
   }
 }

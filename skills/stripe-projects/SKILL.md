@@ -67,7 +67,7 @@ if ! e2b --version >/dev/null 2>&1; then
 fi
 ```
 
-The CLI package requires Node 20 or newer.
+The CLI package requires Node 22.19.0 or newer.
 
 Prefer detached sandboxes for non-interactive work so the command returns a sandbox ID and does not attach an interactive terminal:
 
