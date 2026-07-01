@@ -24,6 +24,7 @@ from e2b.template_sync.build_api import (
     wait_for_build_finish,
 )
 from e2b.template.utils import normalize_build_arguments, read_dockerignore
+from e2b.template_sync.paginator import TemplatePaginator
 
 
 class Template(TemplateBase):
@@ -527,3 +528,32 @@ class Template(TemplateBase):
         )
 
         return get_template_tags(api_client, template_id)
+
+    @staticmethod
+    def list(
+        limit: Optional[int] = None,
+        next_token: Optional[str] = None,
+        **opts: Unpack[ApiParams],
+    ) -> TemplatePaginator:
+        """
+        List templates.
+
+        :param limit: Maximum number of templates to return per page
+        :param next_token: Token for pagination
+        :return: Paginator for listing templates
+
+        Example
+        ```python
+        from e2b import Template
+
+        paginator = Template.list()
+        while paginator.has_next:
+            templates = paginator.next_items()
+            print(templates)
+        ```
+        """
+        return TemplatePaginator(
+            limit=limit,
+            next_token=next_token,
+            **opts,
+        )

@@ -17,6 +17,7 @@ import {
   waitForBuildFinish,
 } from './buildApi'
 import { GZIP, RESOLVE_SYMLINKS, STACK_TRACE_DEPTH } from './consts'
+import { TemplateListOpts, TemplatePaginator } from './templateApi'
 import { parseDockerfile } from './dockerfileParser'
 import { LogEntry, LogEntryEnd, LogEntryStart } from './logger'
 import { ReadyCmd, waitForFile } from './readycmd'
@@ -417,6 +418,25 @@ export class TemplateBase
       { templateID: templateId },
       config.getSignal(undefined, options?.signal)
     )
+  }
+
+  /**
+   * List templates.
+   *
+   * @param opts connection options and pagination settings.
+   * @returns Paginator for listing templates.
+   *
+   * @example
+   * ```ts
+   * const paginator = Template.list()
+   * while (paginator.hasNext) {
+   *   const templates = await paginator.nextItems()
+   *   console.log(templates)
+   * }
+   * ```
+   */
+  static list(opts?: TemplateListOpts): TemplatePaginator {
+    return new TemplatePaginator(opts)
   }
 
   fromDebianImage(variant: string = 'stable'): TemplateBuilder {
@@ -1358,6 +1378,10 @@ Template.removeTags = TemplateBase.removeTags
 Template.getTags = TemplateBase.getTags
 Template.toJSON = TemplateBase.toJSON
 Template.toDockerfile = TemplateBase.toDockerfile
+Template.list = TemplateBase.list
+
+export { TemplatePaginator } from './templateApi'
+export type { TemplateInfo, TemplateListOpts } from './templateApi'
 
 export type {
   BuildInfo,

@@ -2668,6 +2668,39 @@ paths:
           $ref: '#/components/responses/500'
 
   /v2/templates:
+    get:
+      description: List all templates
+      tags: [templates]
+      security:
+        - ApiKeyAuth: []
+        - AccessTokenAuth: []
+        - Supabase1TokenAuth: []
+          Supabase2TeamAuth: []
+        - AuthProviderBearerAuth: []
+          AuthProviderTeamAuth: []
+      parameters:
+        - in: query
+          required: false
+          name: teamID
+          schema:
+            type: string
+            description: Identifier of the team
+        - $ref: '#/components/parameters/paginationNextToken'
+        - $ref: '#/components/parameters/paginationLimit'
+      responses:
+        '200':
+          description: Successfully returned all templates
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  allOf:
+                    - $ref: '#/components/schemas/Template'
+        '401':
+          $ref: '#/components/responses/401'
+        '500':
+          $ref: '#/components/responses/500'
     post:
       description: Create a new template
       deprecated: true
