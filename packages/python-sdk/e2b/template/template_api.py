@@ -28,7 +28,7 @@ class TemplateInfo:
     public: bool
     """Whether the template is public or only accessible by the team."""
     aliases: List[str]
-    """Aliases of the template."""
+    """Aliases of the template. Deprecated: use `names` instead."""
     names: List[str]
     """Names of the template (namespace/alias format when namespaced)."""
     created_at: datetime

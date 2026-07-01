@@ -52,7 +52,7 @@ class TemplatePaginator(PaginatorBase[TemplateInfo, ApiParams]):
         )
 
         if res.status_code >= 300:
-            raise handle_api_exception(res)
+            raise handle_api_exception(res, TemplateException)
 
         self._update_pagination(res.headers)
 

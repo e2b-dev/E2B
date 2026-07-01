@@ -1,5 +1,6 @@
 import { ApiClient, components, handleApiError } from '../api'
 import { ConnectionConfig, ConnectionOpts } from '../connectionConfig'
+import { TemplateError } from '../errors'
 import { Paginator } from '../paginator'
 
 /**
@@ -144,7 +145,7 @@ export class TemplatePaginator extends Paginator<TemplateInfo, ConnectionOpts> {
       signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
     })
 
-    const err = handleApiError(res)
+    const err = handleApiError(res, TemplateError)
     if (err) {
       throw err
     }
