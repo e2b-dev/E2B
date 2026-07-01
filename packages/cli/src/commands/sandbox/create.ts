@@ -3,12 +3,13 @@ import * as commander from 'commander'
 import * as path from 'path'
 
 import { ensureAPIKey } from 'src/api'
-import { spawnConnectedTerminal } from 'src/terminal'
+import { spawnConnectedTerminal, TerminalOpts } from 'src/terminal'
 import { asBold, asFormattedSandboxTemplate } from 'src/utils/format'
 import { getRoot } from '../../utils/filesystem'
 import { getConfigPath, loadConfig } from '../../config'
 import fs from 'fs'
 import { configOption, pathOption } from '../../options'
+import { parseEnv } from '../../utils/env'
 import { printDashboardSandboxInspectUrl } from 'src/utils/urls'
 
 type SandboxLifecycle = {
@@ -42,6 +43,14 @@ export function createCommand(
       'enable sandbox auto-resume, requires --lifecycle.ontimeout pause'
     )
     .option('--timeout <seconds>', 'sandbox timeout in seconds', parseTimeout)
+    .option('-u, --user <user>', 'user to start the terminal session as')
+    .option('-c, --cwd <dir>', 'working directory for the terminal session')
+    .option(
+      '-e, --env <KEY=VALUE>',
+      'set environment variable for the terminal session (repeatable)',
+      parseEnv,
+      {} as Record<string, string>
+    )
     .alias(alias)
     .action(
       async (
@@ -54,6 +63,9 @@ export function createCommand(
           'lifecycle.ontimeout'?: SandboxLifecycle['onTimeout']
           'lifecycle.autoresume'?: boolean
           timeout?: number
+          user?: string
+          cwd?: string
+          env?: Record<string, string>
         }
       ) => {
         if (deprecated) {
@@ -109,6 +121,14 @@ export function createCommand(
               sandbox,
               template: { templateID },
               timeoutMs: opts.timeout,
+              terminal: {
+                user: opts.user,
+                cwd: opts.cwd,
+                envs:
+                  opts.env && Object.keys(opts.env).length > 0
+                    ? opts.env
+                    : undefined,
+              },
             })
           } else {
             console.log(
@@ -177,10 +197,12 @@ export async function connectSandbox({
   sandbox,
   template,
   timeoutMs,
+  terminal,
 }: {
   sandbox: e2b.Sandbox
   template: Pick<e2b.components['schemas']['Template'], 'templateID'>
   timeoutMs?: number
+  terminal?: TerminalOpts
 }) {
   // keep-alive loop — track the in-flight promise so we can await it on shutdown
   let pendingKeepAlive: Promise<void> = Promise.resolve()
@@ -195,7 +217,7 @@ export async function connectSandbox({
     )} with sandbox ID ${asBold(`${sandbox.sandboxId}`)}`
   )
   try {
-    await spawnConnectedTerminal(sandbox)
+    await spawnConnectedTerminal(sandbox, terminal)
   } finally {
     clearInterval(intervalId)
     await pendingKeepAlive.catch(() => {})
