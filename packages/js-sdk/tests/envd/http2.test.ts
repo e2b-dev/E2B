@@ -5,6 +5,7 @@ afterEach(() => {
   vi.resetModules()
   vi.doUnmock('undici')
   vi.doUnmock('../../src/utils')
+  delete process.env.E2B_ENVD_CONNECTIONS
   delete process.env.E2B_ENVD_RPC_CONNECTIONS
   delete process.env.E2B_ENVD_INFLIGHT_REQUESTS
   delete process.env.E2B_ENVD_RPC_INFLIGHT_REQUESTS
@@ -156,6 +157,22 @@ test('can create a bounded dispatcher for RPC streams', async () => {
   await fetcher('https://example.com/rpc')
 
   expect(agents).toEqual([{ allowH2: true, connections: 100 }])
+})
+
+test('reads envd connection limit from env', async () => {
+  process.env.E2B_ENVD_CONNECTIONS = '50'
+
+  const { getEnvdConnectionLimit } = await import('../../src/envd/http2')
+
+  expect(getEnvdConnectionLimit()).toBe(50)
+})
+
+test('getEnvdConnectionLimit throws on malformed env value', async () => {
+  process.env.E2B_ENVD_CONNECTIONS = 'bogus'
+
+  const { getEnvdConnectionLimit } = await import('../../src/envd/http2')
+
+  expect(() => getEnvdConnectionLimit()).toThrow(/E2B_ENVD_CONNECTIONS/)
 })
 
 test('reads RPC stream dispatcher connection limit from env', async () => {
