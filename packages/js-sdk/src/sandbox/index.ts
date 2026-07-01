@@ -289,17 +289,17 @@ export class Sandbox extends SandboxApi {
     const { template, sandboxOpts } =
       typeof templateOrOpts === 'string'
         ? {
-            template: templateOrOpts,
-            sandboxOpts: opts,
-          }
+          template: templateOrOpts,
+          sandboxOpts: opts,
+        }
         : {
-            template:
-              templateOrOpts?.template ??
-              (templateOrOpts?.mcp
-                ? this.defaultMcpTemplate
-                : this.defaultTemplate),
-            sandboxOpts: templateOrOpts,
-          }
+          template:
+            templateOrOpts?.template ??
+            (templateOrOpts?.mcp
+              ? this.defaultMcpTemplate
+              : this.defaultTemplate),
+          sandboxOpts: templateOrOpts,
+        }
 
     const config = new ConnectionConfig(sandboxOpts)
     if (config.debug) {
@@ -320,17 +320,22 @@ export class Sandbox extends SandboxApi {
 
     if (sandboxOpts?.mcp) {
       sandbox.mcpToken = crypto.randomUUID()
-      const res = await sandbox.commands.run(
-        `mcp-gateway --config ${shellQuote(JSON.stringify(sandboxOpts.mcp))}`,
-        {
-          user: 'root',
-          envs: {
-            GATEWAY_ACCESS_TOKEN: sandbox.mcpToken ?? '',
-          },
+      try {
+        const res = await sandbox.commands.run(
+          `mcp-gateway --config ${shellQuote(JSON.stringify(sandboxOpts.mcp))}`,
+          {
+            user: 'root',
+            envs: {
+              GATEWAY_ACCESS_TOKEN: sandbox.mcpToken ?? '',
+            },
+          }
+        )
+        if (res.exitCode !== 0) {
+          throw new Error(`Failed to start MCP gateway: ${res.stderr}`)
         }
-      )
-      if (res.exitCode !== 0) {
-        throw new Error(`Failed to start MCP gateway: ${res.stderr}`)
+      } catch (err) {
+        await sandbox.kill().catch(() => { })
+        throw err
       }
     }
 
