@@ -1,6 +1,5 @@
 ---
 "@e2b/python-sdk": patch
-"e2b": patch
 ---
 
 Fix URL encoding of namespaced template IDs and aliases in the Python SDK.
