@@ -1,13 +1,13 @@
 import * as commander from 'commander'
 
-import { ensureAPIKey } from 'src/api'
+import { ensureAPIKey, withCliIntegration } from 'src/api'
 import { asBold } from 'src/utils/format'
 import * as e2b from 'e2b'
 import { NotFoundError } from 'e2b'
 
 async function resumeSandbox(sandboxID: string, apiKey: string) {
   try {
-    await e2b.Sandbox.connect(sandboxID, { apiKey })
+    await e2b.Sandbox.connect(sandboxID, withCliIntegration({ apiKey }))
     console.log(`Sandbox ${asBold(sandboxID)} has been resumed`)
   } catch (err: unknown) {
     if (err instanceof NotFoundError) {

@@ -14,7 +14,7 @@ import {
 } from 'src/user'
 import { asBold, asFormattedConfig, asFormattedError } from 'src/utils/format'
 import { openUrlInBrowser } from 'src/utils/openBrowser'
-import { connectionConfig, Teams } from 'src/api'
+import { CLI_INTEGRATION, connectionConfig, Teams } from 'src/api'
 import { handleE2BRequestError } from '../../utils/errors'
 
 export const loginCommand = new commander.Command('login')
@@ -47,6 +47,7 @@ export const loginCommand = new commander.Command('login')
       const signal = connectionConfig.getSignal()
       const config = new e2b.ConnectionConfig({
         apiHeaders: { Authorization: `Bearer ${accessToken}` },
+        integration: CLI_INTEGRATION,
       })
       const client = new e2b.ApiClient(config, { requireApiKey: false })
       const res = await client.api.GET('/teams', {

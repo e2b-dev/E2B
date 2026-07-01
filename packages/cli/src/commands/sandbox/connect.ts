@@ -3,7 +3,7 @@ import * as commander from 'commander'
 
 import { spawnConnectedTerminal } from 'src/terminal'
 import { asBold, asPrimary } from 'src/utils/format'
-import { ensureAPIKey } from '../../api'
+import { ensureAPIKey, withCliIntegration } from '../../api'
 import { printDashboardSandboxInspectUrl } from 'src/utils/urls'
 
 export const connectCommand = new commander.Command('connect')
@@ -36,7 +36,10 @@ async function connectToSandbox({
   apiKey: string
   sandboxID: string
 }) {
-  const sandbox = await e2b.Sandbox.connect(sandboxID, { apiKey })
+  const sandbox = await e2b.Sandbox.connect(
+    sandboxID,
+    withCliIntegration({ apiKey })
+  )
 
   printDashboardSandboxInspectUrl(sandbox.sandboxId)
 

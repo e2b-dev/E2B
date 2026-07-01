@@ -20,6 +20,10 @@ vi.mock('e2b', () => ({
 
 vi.mock('../../../src/api', () => ({
   ensureAPIKey: mocks.ensureAPIKey,
+  withCliIntegration: (opts: object) => ({
+    ...opts,
+    integration: 'e2b-cli/test',
+  }),
 }))
 
 vi.mock('src/utils/urls', () => ({
@@ -72,6 +76,7 @@ describe('sandbox create lifecycle options', () => {
         onTimeout: 'pause',
         autoResume: true,
       },
+      integration: 'e2b-cli/test',
     })
     expect(exitSpy).toHaveBeenCalledWith(0)
   })
@@ -94,6 +99,7 @@ describe('sandbox create lifecycle options', () => {
       lifecycle: {
         onTimeout: 'kill',
       },
+      integration: 'e2b-cli/test',
     })
     expect(exitSpy).toHaveBeenCalledWith(0)
   })
@@ -114,6 +120,7 @@ describe('sandbox create lifecycle options', () => {
     expect(mocks.create).toHaveBeenCalledWith('base', {
       apiKey: 'test-api-key',
       timeoutMs: 120_000,
+      integration: 'e2b-cli/test',
     })
     expect(exitSpy).toHaveBeenCalledWith(0)
   })
@@ -258,6 +265,7 @@ describe('sandbox create lifecycle options', () => {
         autoResume: true,
       },
       timeoutMs: 120_000,
+      integration: 'e2b-cli/test',
     })
     expect(exitSpy).toHaveBeenCalledWith(0)
   })

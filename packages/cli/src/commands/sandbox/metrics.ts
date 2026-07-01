@@ -5,7 +5,7 @@ import { asBold, asTimestamp, withUnderline } from 'src/utils/format'
 import { wait } from 'src/utils/wait'
 import { formatEnum, Format, isRunning } from './utils'
 import { Sandbox } from 'e2b'
-import { ensureAPIKey } from '../../api'
+import { ensureAPIKey, withCliIntegration } from '../../api'
 
 export const metricsCommand = new commander.Command('metrics')
   .description('show metrics for sandbox')
@@ -46,7 +46,10 @@ export const metricsCommand = new commander.Command('metrics')
         const isRunningPromise = isRunning(sandboxID)
 
         do {
-          const metrics = await Sandbox.getMetrics(sandboxID, { start, apiKey })
+          const metrics = await Sandbox.getMetrics(
+            sandboxID,
+            withCliIntegration({ start, apiKey })
+          )
 
           if (metrics.length !== 0 && !firstMetricsPrinted) {
             firstMetricsPrinted = true

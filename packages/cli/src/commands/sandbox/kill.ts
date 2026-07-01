@@ -1,13 +1,16 @@
 import * as commander from 'commander'
 
-import { ensureAPIKey } from 'src/api'
+import { ensureAPIKey, withCliIntegration } from 'src/api'
 import { asBold } from 'src/utils/format'
 import * as e2b from 'e2b'
 import { Sandbox, components } from 'e2b'
 import { parseMetadata } from './utils'
 
 async function killSandbox(sandboxID: string, apiKey: string) {
-  const killed = await e2b.Sandbox.kill(sandboxID, { apiKey })
+  const killed = await e2b.Sandbox.kill(
+    sandboxID,
+    withCliIntegration({ apiKey })
+  )
   if (killed) {
     console.log(`Sandbox ${asBold(sandboxID)} has been killed`)
   } else {
@@ -70,13 +73,15 @@ export const killCommand = new commander.Command('kill')
 
         if (all) {
           let total = 0
-          const iterator = Sandbox.list({
-            apiKey,
-            query: {
-              state: sandboxesState,
-              metadata: sandboxesMetadata,
-            },
-          })
+          const iterator = Sandbox.list(
+            withCliIntegration({
+              apiKey,
+              query: {
+                state: sandboxesState,
+                metadata: sandboxesMetadata,
+              },
+            })
+          )
 
           while (iterator.hasNext) {
             const sandboxes = await iterator.nextItems()

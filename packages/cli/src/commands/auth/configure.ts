@@ -8,7 +8,7 @@ import {
   getConfigRefreshTimestamp,
   writeUserConfig,
 } from 'src/user'
-import { ensureUserConfig, Teams } from 'src/api'
+import { CLI_INTEGRATION, ensureUserConfig, Teams } from 'src/api'
 import { ensureValidAccessToken } from 'src/utils/token-refresh'
 import { asBold, asFormattedTeam } from '../../utils/format'
 import { handleE2BRequestError } from '../../utils/errors'
@@ -33,6 +33,7 @@ export const configureCommand = new commander.Command('configure')
 
     const config = new e2b.ConnectionConfig({
       apiHeaders: { Authorization: `Bearer ${accessToken}` },
+      integration: CLI_INTEGRATION,
     })
     const authClient = new e2b.ApiClient(config, { requireApiKey: false })
 

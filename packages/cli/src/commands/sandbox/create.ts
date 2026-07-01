@@ -2,7 +2,7 @@ import * as e2b from 'e2b'
 import * as commander from 'commander'
 import * as path from 'path'
 
-import { ensureAPIKey } from 'src/api'
+import { ensureAPIKey, withCliIntegration } from 'src/api'
 import { spawnConnectedTerminal } from 'src/terminal'
 import { asBold, asFormattedSandboxTemplate } from 'src/utils/format'
 import { getRoot } from '../../utils/filesystem'
@@ -96,11 +96,11 @@ export function createCommand(
             opts['lifecycle.ontimeout'],
             opts['lifecycle.autoresume']
           )
-          const sandboxOpts = {
+          const sandboxOpts = withCliIntegration({
             apiKey,
             ...(lifecycle ? { lifecycle } : {}),
             ...(opts.timeout !== undefined ? { timeoutMs: opts.timeout } : {}),
-          }
+          })
           const sandbox = await e2b.Sandbox.create(templateID, sandboxOpts)
           printDashboardSandboxInspectUrl(sandbox.sandboxId)
 

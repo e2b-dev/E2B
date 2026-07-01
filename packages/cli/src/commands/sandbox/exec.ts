@@ -5,7 +5,7 @@
 import { Sandbox, CommandExitError, NotFoundError } from 'e2b'
 import * as commander from 'commander'
 
-import { ensureAPIKey } from '../../api'
+import { ensureAPIKey, withCliIntegration } from '../../api'
 import { setupSignalHandlers } from 'src/utils/signal'
 import { buildCommand, isPipedStdin, streamStdinChunks } from './exec_helpers'
 
@@ -44,7 +44,10 @@ export const execCommand = new commander.Command('exec')
       const command = buildCommand(commandParts)
       try {
         const apiKey = ensureAPIKey()
-        const sandbox = await Sandbox.connect(sandboxID, { apiKey })
+        const sandbox = await Sandbox.connect(
+          sandboxID,
+          withCliIntegration({ apiKey })
+        )
 
         if (hasPipedStdin && !sandbox.commands.supportsStdinClose) {
           console.error(
