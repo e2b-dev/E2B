@@ -25,7 +25,7 @@ export const listCommand = new commander.Command('list')
       ensureAPIKey()
       process.stdout.write('\n')
 
-      const { templates, hasMore } = await listSandboxTemplates({ limit })
+      const templates = await listSandboxTemplates({ limit })
 
       for (const template of templates) {
         sortTemplatesAliases(template.aliases)
@@ -33,11 +33,6 @@ export const listCommand = new commander.Command('list')
 
       if (format === 'pretty') {
         renderTable(templates)
-        if (hasMore) {
-          console.log(
-            `Showing first ${limit} templates. Use --limit to change.`
-          )
-        }
       } else if (format === 'json') {
         console.log(JSON.stringify(templates, null, 2))
       } else {
@@ -120,16 +115,11 @@ function renderTable(templates: e2b.components['schemas']['Template'][]) {
   process.stdout.write('\n')
 }
 
-type ListSandboxTemplatesResult = {
-  templates: e2b.components['schemas']['Template'][]
-  hasMore: boolean
-}
-
 export async function listSandboxTemplates({
   limit,
 }: {
   limit?: number
-} = {}): Promise<ListSandboxTemplatesResult> {
+} = {}): Promise<e2b.components['schemas']['Template'][]> {
   // Resolve the API key here (env var or ~/.e2b/config.json) and pass it to the
   // SDK paginator. The paginator builds its own ConnectionConfig, so without
   // this the config-file login (`e2b auth login`) would be treated as
@@ -150,36 +140,25 @@ export async function listSandboxTemplates({
     templates.push(...batch.map(toTemplateSchema))
   }
 
-  return {
-    templates: limit ? templates.slice(0, limit) : templates,
-    // We can't change the page size during iteration, so we may have to check if we have more templates than the limit
-    hasMore: paginator.hasNext || (limit ? templates.length > limit : false),
-  }
+  return limit ? templates.slice(0, limit) : templates
 }
 
 // Adapt the SDK's TemplateInfo back to the raw API schema shape the rest of the
 // CLI (table rendering, selection prompts, `--format json`) is built around.
-function toTemplateSchema(
-  template: e2b.TemplateInfo
-): e2b.components['schemas']['Template'] {
+function toTemplateSchema({
+  templateId,
+  buildId,
+  createdAt,
+  updatedAt,
+  lastSpawnedAt,
+  ...rest
+}: e2b.TemplateInfo): e2b.components['schemas']['Template'] {
   return {
-    templateID: template.templateId,
-    buildID: template.buildId,
-    cpuCount: template.cpuCount,
-    memoryMB: template.memoryMB,
-    diskSizeMB: template.diskSizeMB,
-    public: template.public,
-    aliases: template.aliases,
-    names: template.names,
-    createdAt: template.createdAt.toISOString(),
-    updatedAt: template.updatedAt.toISOString(),
-    lastSpawnedAt: template.lastSpawnedAt
-      ? template.lastSpawnedAt.toISOString()
-      : null,
-    spawnCount: template.spawnCount,
-    buildCount: template.buildCount,
-    envdVersion: template.envdVersion,
-    createdBy: template.createdBy,
-    buildStatus: template.buildStatus,
+    ...rest,
+    templateID: templateId,
+    buildID: buildId,
+    createdAt: createdAt.toISOString(),
+    updatedAt: updatedAt.toISOString(),
+    lastSpawnedAt: lastSpawnedAt ? lastSpawnedAt.toISOString() : null,
   }
 }

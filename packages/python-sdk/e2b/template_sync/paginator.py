@@ -10,7 +10,7 @@ from e2b.api.client_sync import get_api_client
 from e2b.connection_config import ApiParams, ConnectionConfig
 from e2b.exceptions import TemplateException
 from e2b.paginator import PaginatorBase
-from e2b.template.template_api import TemplateInfo
+from e2b.template.types import TemplateInfo
 
 
 class TemplatePaginator(PaginatorBase[TemplateInfo, ApiParams]):

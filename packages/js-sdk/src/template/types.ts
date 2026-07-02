@@ -2,6 +2,7 @@ import { ReadyCmd } from './readycmd'
 import type { PathLike } from 'node:fs'
 import type { LogEntry } from './logger'
 import type { McpServer } from '../sandbox/mcp'
+import type { components } from '../api'
 import { ConnectionOpts } from '../connectionConfig'
 
 /**
@@ -827,3 +828,107 @@ export type RegistryConfig = GenericDockerRegistry | AWSRegistry | GCPRegistry
  * Type representing a template in any state (builder or final).
  */
 export type TemplateClass = TemplateBuilder | TemplateFinal
+
+/**
+ * Information about a sandbox template.
+ */
+export interface TemplateInfo {
+  /**
+   * Identifier of the template.
+   */
+  templateId: string
+
+  /**
+   * Identifier of the last successful build for the template.
+   */
+  buildId: string
+
+  /**
+   * Number of CPUs the template is configured with.
+   */
+  cpuCount: number
+
+  /**
+   * Amount of memory in MiB the template is configured with.
+   */
+  memoryMB: number
+
+  /**
+   * Disk size of the template in MiB.
+   */
+  diskSizeMB: number
+
+  /**
+   * Whether the template is public or only accessible by the team.
+   */
+  public: boolean
+
+  /**
+   * Aliases of the template.
+   *
+   * @deprecated Use {@link TemplateInfo.names} instead.
+   */
+  aliases: string[]
+
+  /**
+   * Names of the template (namespace/alias format when namespaced).
+   */
+  names: string[]
+
+  /**
+   * Time when the template was created.
+   */
+  createdAt: Date
+
+  /**
+   * Time when the template was last updated.
+   */
+  updatedAt: Date
+
+  /**
+   * Time when the template was last used, or `null` if it was never used.
+   */
+  lastSpawnedAt: Date | null
+
+  /**
+   * Number of times a sandbox was spawned from the template.
+   */
+  spawnCount: number
+
+  /**
+   * Number of times the template was built.
+   */
+  buildCount: number
+
+  /**
+   * Version of envd the template was built with.
+   */
+  envdVersion: string
+
+  /**
+   * User who created the template, or `null` if not available.
+   */
+  createdBy: components['schemas']['TeamUser'] | null
+
+  /**
+   * Status of the last build for the template.
+   */
+  buildStatus: components['schemas']['TemplateBuildStatus']
+}
+
+/**
+ * Options for listing templates.
+ */
+export interface TemplateListOpts extends Omit<ConnectionOpts, 'signal'> {
+  /**
+   * Number of templates to return per page.
+   *
+   * @default 100
+   */
+  limit?: number
+
+  /**
+   * Token to the next page.
+   */
+  nextToken?: string
+}

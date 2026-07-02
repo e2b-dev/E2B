@@ -17,7 +17,8 @@ import {
   waitForBuildFinish,
 } from './buildApi'
 import { GZIP, RESOLVE_SYMLINKS, STACK_TRACE_DEPTH } from './consts'
-import { TemplateListOpts, TemplatePaginator } from './templateApi'
+import { TemplatePaginator } from './paginator'
+import { TemplateListOpts } from './types'
 import { parseDockerfile } from './dockerfileParser'
 import { LogEntry, LogEntryEnd, LogEntryStart } from './logger'
 import { ReadyCmd, waitForFile } from './readycmd'
@@ -1380,8 +1381,8 @@ Template.toJSON = TemplateBase.toJSON
 Template.toDockerfile = TemplateBase.toDockerfile
 Template.list = TemplateBase.list
 
-export { TemplatePaginator } from './templateApi'
-export type { TemplateInfo, TemplateListOpts } from './templateApi'
+export { TemplatePaginator } from './paginator'
+export type { TemplateInfo, TemplateListOpts } from './types'
 
 export type {
   BuildInfo,

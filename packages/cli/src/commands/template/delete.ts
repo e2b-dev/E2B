@@ -74,7 +74,7 @@ export const deleteCommand = new commander.Command('delete')
             template_id: template,
           })
         } else if (opts.select) {
-          const { templates: allTemplates } = await listSandboxTemplates()
+          const allTemplates = await listSandboxTemplates()
 
           const selectedTemplates = await getPromptTemplates(
             allTemplates,

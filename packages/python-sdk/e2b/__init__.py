@@ -108,7 +108,7 @@ from .sandbox_sync.paginator import (
     SandboxPaginator,
     SnapshotPaginator,
 )
-from .template.template_api import TemplateInfo
+from .template.types import TemplateInfo
 from .template_async.paginator import AsyncTemplatePaginator
 from .template_sync.paginator import TemplatePaginator
 from .template.logger import (
