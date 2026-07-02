@@ -6,7 +6,7 @@ import { listAliases } from '../../utils/format'
 import { sortTemplatesAliases } from 'src/utils/templateSort'
 import { ensureAPIKey } from 'src/api'
 
-const DEFAULT_LIMIT = 1000
+const DEFAULT_LIMIT = 0
 const PAGE_LIMIT = 100
 
 export const listCommand = new commander.Command('list')
@@ -15,13 +15,15 @@ export const listCommand = new commander.Command('list')
   .option(
     '-l, --limit <limit>',
     `limit the number of templates returned (default: ${DEFAULT_LIMIT}, 0 for no limit)`,
-    (value) => parseInt(value)
+    (value) => parseInt(value),
+    DEFAULT_LIMIT
   )
   .option('-f, --format <format>', 'output format, eg. json, pretty')
-  .action(async (opts: { format: string; limit?: number }) => {
+  .action(async (opts: { format: string; limit: number }) => {
     try {
       const format = opts.format || 'pretty'
-      const limit = opts.limit === 0 ? undefined : (opts.limit ?? DEFAULT_LIMIT)
+      // 0 (the default) means no limit — return the whole list.
+      const limit = opts.limit || undefined
       ensureAPIKey()
       process.stdout.write('\n')
 
