@@ -87,7 +87,8 @@ def sync_detailed(
 
     Args:
         sandbox_id (Union[Unset, str]): Filter snapshots by source sandbox ID
-        name (Union[Unset, str]): Filter snapshots by name or ID, optionally tag-qualified (e.g. "my-snapshot", "my-team/my-snapshot" or "my-snapshot:v1").
+        name (Union[Unset, str]): Filter snapshots by name or ID, optionally tag-qualified (e.g.
+            "my-snapshot", "my-team/my-snapshot" or "my-snapshot:v1").
         limit (Union[Unset, int]):  Default: 100.
         next_token (Union[Unset, str]):
 
@@ -125,7 +126,8 @@ def sync(
 
     Args:
         sandbox_id (Union[Unset, str]): Filter snapshots by source sandbox ID
-        name (Union[Unset, str]): Filter snapshots by name or ID, optionally tag-qualified (e.g. "my-snapshot", "my-team/my-snapshot" or "my-snapshot:v1").
+        name (Union[Unset, str]): Filter snapshots by name or ID, optionally tag-qualified (e.g.
+            "my-snapshot", "my-team/my-snapshot" or "my-snapshot:v1").
         limit (Union[Unset, int]):  Default: 100.
         next_token (Union[Unset, str]):
 
@@ -158,7 +160,8 @@ async def asyncio_detailed(
 
     Args:
         sandbox_id (Union[Unset, str]): Filter snapshots by source sandbox ID
-        name (Union[Unset, str]): Filter snapshots by name or ID, optionally tag-qualified (e.g. "my-snapshot", "my-team/my-snapshot" or "my-snapshot:v1").
+        name (Union[Unset, str]): Filter snapshots by name or ID, optionally tag-qualified (e.g.
+            "my-snapshot", "my-team/my-snapshot" or "my-snapshot:v1").
         limit (Union[Unset, int]):  Default: 100.
         next_token (Union[Unset, str]):
 
@@ -194,7 +197,8 @@ async def asyncio(
 
     Args:
         sandbox_id (Union[Unset, str]): Filter snapshots by source sandbox ID
-        name (Union[Unset, str]): Filter snapshots by name or ID, optionally tag-qualified (e.g. "my-snapshot", "my-team/my-snapshot" or "my-snapshot:v1").
+        name (Union[Unset, str]): Filter snapshots by name or ID, optionally tag-qualified (e.g.
+            "my-snapshot", "my-team/my-snapshot" or "my-snapshot:v1").
         limit (Union[Unset, int]):  Default: 100.
         next_token (Union[Unset, str]):
 
