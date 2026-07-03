@@ -1,5 +1,5 @@
 import pytest
-from e2b import AsyncSandbox, SnapshotQuery
+from e2b import AsyncSandbox
 
 
 @pytest.mark.skip_debug()
@@ -86,7 +86,7 @@ async def test_list_snapshots_for_sandbox(async_sandbox: AsyncSandbox):
 
     try:
         paginator = AsyncSandbox.list_snapshots(
-            query=SnapshotQuery(sandbox_id=async_sandbox.sandbox_id),
+            sandbox_id=async_sandbox.sandbox_id,
         )
         snapshots = await paginator.next_items()
 
@@ -105,14 +105,14 @@ async def test_list_snapshots_filtered_by_name(
     snapshot = await async_sandbox.create_snapshot(name=snapshot_name)
 
     try:
-        paginator = AsyncSandbox.list_snapshots(query=SnapshotQuery(name=snapshot_name))
+        paginator = AsyncSandbox.list_snapshots(name=snapshot_name)
         snapshots = await paginator.next_items()
 
         found = any(s.snapshot_id == snapshot.snapshot_id for s in snapshots)
         assert found
 
         empty_paginator = AsyncSandbox.list_snapshots(
-            query=SnapshotQuery(name=f"{snapshot_name}-does-not-exist")
+            name=f"{snapshot_name}-does-not-exist"
         )
         empty_snapshots = await empty_paginator.next_items()
         assert isinstance(empty_snapshots, list)

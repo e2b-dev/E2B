@@ -600,37 +600,22 @@ class SnapshotInfo:
     """Full names of the snapshot template including team namespace and tag (e.g. team-slug/my-snapshot:v2)."""
 
 
-@dataclass
-class SnapshotQuery:
-    """
-    Query parameters for listing snapshots.
-
-    `sandbox_id` and `name` are mutually exclusive — provide at most one.
-    """
-
-    sandbox_id: Optional[str] = None
-    """Filter snapshots by source sandbox ID."""
-
-    name: Optional[str] = None
-    """Filter snapshots by name or ID, optionally tag-qualified (e.g. "my-snapshot", "my-team/my-snapshot" or "my-snapshot:v1")."""
-
-    def __post_init__(self):
-        if self.sandbox_id is not None and self.name is not None:
-            raise ValueError(
-                "SnapshotQuery accepts either `sandbox_id` or `name`, not both."
-            )
-
-
 class SnapshotPaginatorBase(PaginatorBase[SnapshotInfo, ApiParams]):
     def __init__(
         self,
-        query: Optional[SnapshotQuery] = None,
+        sandbox_id: Optional[str] = None,
+        name: Optional[str] = None,
         limit: Optional[int] = None,
         next_token: Optional[str] = None,
         **opts: Unpack[ApiParams],
     ):
         super().__init__(limit=limit, next_token=next_token, **opts)
-        self.query = query
+        if sandbox_id is not None and name is not None:
+            raise ValueError(
+                "list_snapshots accepts either `sandbox_id` or `name`, not both."
+            )
+        self.sandbox_id = sandbox_id
+        self.name = name
 
 
 class SandboxPaginatorBase(PaginatorBase[SandboxInfo, ApiParams]):

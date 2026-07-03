@@ -1,7 +1,13 @@
-import { assert } from 'vitest'
+import { assert, test } from 'vitest'
 
 import { sandboxTest, isDebug } from '../setup.js'
 import { Sandbox } from '../../src'
+
+test('listSnapshots rejects both sandboxId and name', () => {
+  assert.throws(() =>
+    Sandbox.listSnapshots({ sandboxId: 'sandbox-id', name: 'my-snapshot' })
+  )
+})
 
 sandboxTest.skipIf(isDebug)(
   'create a snapshot from sandbox',
@@ -168,7 +174,7 @@ sandboxTest.skipIf(isDebug)(
 
     try {
       // Filtering by the snapshot name should return the snapshot
-      const paginator = Sandbox.listSnapshots({ query: { name: snapshotName } })
+      const paginator = Sandbox.listSnapshots({ name: snapshotName })
       const snapshots = await paginator.nextItems()
 
       const found = snapshots.find((s) => s.snapshotId === snapshot.snapshotId)
@@ -176,7 +182,7 @@ sandboxTest.skipIf(isDebug)(
 
       // Filtering by an unknown name should return an empty list
       const emptyPaginator = Sandbox.listSnapshots({
-        query: { name: `${snapshotName}-does-not-exist` },
+        name: `${snapshotName}-does-not-exist`,
       })
       const emptySnapshots = await emptyPaginator.nextItems()
       assert.isArray(emptySnapshots)

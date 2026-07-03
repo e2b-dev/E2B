@@ -446,26 +446,19 @@ export interface SandboxMetricsOpts extends SandboxApiOpts {
  */
 export interface SnapshotListOpts extends Omit<SandboxApiOpts, 'signal'> {
   /**
-   * Filter the list of snapshots by source sandbox ID or by name.
+   * Filter snapshots by source sandbox ID.
    *
-   * These filters are mutually exclusive — provide at most one of them.
+   * Mutually exclusive with `name`.
    */
-  query?:
-    | {
-        /**
-         * Filter snapshots by source sandbox ID.
-         */
-        sandboxId?: string
-        name?: never
-      }
-    | {
-        /**
-         * Filter snapshots by name or ID, optionally tag-qualified
-         * (e.g. "my-snapshot", "my-team/my-snapshot" or "my-snapshot:v1").
-         */
-        name?: string
-        sandboxId?: never
-      }
+  sandboxId?: string
+
+  /**
+   * Filter snapshots by name or ID, optionally tag-qualified
+   * (e.g. "my-snapshot", "my-team/my-snapshot" or "my-snapshot:v1").
+   *
+   * Mutually exclusive with `sandboxId`.
+   */
+  name?: string
 
   /**
    * Number of snapshots to return per page.
@@ -1351,12 +1344,20 @@ export class SandboxPaginator extends Paginator<SandboxInfo, SandboxApiOpts> {
  * ```
  */
 export class SnapshotPaginator extends Paginator<SnapshotInfo, SandboxApiOpts> {
-  private readonly query: SnapshotListOpts['query']
+  private readonly sandboxId?: string
+  private readonly name?: string
 
   constructor(opts?: SnapshotListOpts) {
     super(opts, opts?.limit, opts?.nextToken)
 
-    this.query = opts?.query
+    if (opts?.sandboxId && opts?.name) {
+      throw new Error(
+        'listSnapshots accepts either `sandboxId` or `name`, not both.'
+      )
+    }
+
+    this.sandboxId = opts?.sandboxId
+    this.name = opts?.name
   }
 
   async nextItems(opts?: SandboxApiOpts): Promise<SnapshotInfo[]> {
@@ -1370,8 +1371,8 @@ export class SnapshotPaginator extends Paginator<SnapshotInfo, SandboxApiOpts> {
     const res = await client.api.GET('/snapshots', {
       params: {
         query: {
-          sandboxID: this.query?.sandboxId,
-          name: this.query?.name,
+          sandboxID: this.sandboxId,
+          name: this.name,
           limit: this.limit,
           nextToken: this.nextToken,
         },

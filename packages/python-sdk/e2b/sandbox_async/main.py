@@ -27,7 +27,6 @@ from e2b.sandbox.sandbox_api import (
     SandboxNetworkOpts,
     SandboxNetworkUpdate,
     SnapshotInfo,
-    SnapshotQuery,
 )
 from e2b.sandbox.utils import class_method_variant
 from e2b.sandbox_async.commands.command import Commands
@@ -787,7 +786,8 @@ class AsyncSandbox(SandboxApi):
     @overload
     @staticmethod
     def list_snapshots(
-        query: Optional[SnapshotQuery] = None,
+        sandbox_id: Optional[str] = None,
+        name: Optional[str] = None,
         limit: Optional[int] = None,
         next_token: Optional[str] = None,
         **opts: Unpack[ApiParams],
@@ -795,7 +795,8 @@ class AsyncSandbox(SandboxApi):
         """
         List all snapshots.
 
-        :param query: Filter the list of snapshots by source sandbox ID or name (mutually exclusive), e.g. `SnapshotQuery(name="my-snapshot")`
+        :param sandbox_id: Filter snapshots by source sandbox ID (mutually exclusive with `name`)
+        :param name: Filter snapshots by name or ID, optionally tag-qualified (e.g. "my-snapshot", "my-team/my-snapshot" or "my-snapshot:v1") (mutually exclusive with `sandbox_id`)
         :param limit: Maximum number of snapshots to return per page
         :param next_token: Token for pagination
 
@@ -819,7 +820,7 @@ class AsyncSandbox(SandboxApi):
         :return: Paginator for listing snapshots
         """
         return AsyncSnapshotPaginator(
-            query=SnapshotQuery(sandbox_id=self.sandbox_id),
+            sandbox_id=self.sandbox_id,
             limit=limit,
             next_token=next_token,
             **self.connection_config.get_api_params(**opts),
@@ -827,13 +828,15 @@ class AsyncSandbox(SandboxApi):
 
     @staticmethod
     def _cls_list_snapshots(
-        query: Optional[SnapshotQuery] = None,
+        sandbox_id: Optional[str] = None,
+        name: Optional[str] = None,
         limit: Optional[int] = None,
         next_token: Optional[str] = None,
         **opts: Unpack[ApiParams],
     ) -> AsyncSnapshotPaginator:
         return AsyncSnapshotPaginator(
-            query=query,
+            sandbox_id=sandbox_id,
+            name=name,
             limit=limit,
             next_token=next_token,
             **opts,
