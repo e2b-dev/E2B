@@ -27,6 +27,11 @@ generate-envd:
 
 generate: generate-api generate-envd generate-mcp generate-volume-api
 
+# Install the code-generation toolchain into the uv env. After this, run the
+# generators locally with e.g. `uv run make generate-api`.
+init:
+	uv sync --group codegen
+
 typecheck:
 	ty check
 
