@@ -162,7 +162,14 @@ class ConnectionConfig:
         self.access_token = access_token or ConnectionConfig._access_token()
         integration = ConnectionConfig._integration
         self.headers = {**(headers or {}), **(api_headers or {})}
-        if integration is not None or "User-Agent" not in self.headers:
+        # A user-supplied User-Agent is only kept when no integration is set;
+        # remember which case applied so get_api_params can keep an SDK-built
+        # User-Agent in sync with the current integration (e.g. after it is
+        # cleared) without ever touching a custom one.
+        self._user_agent_is_sdk_built = (
+            integration is not None or "User-Agent" not in self.headers
+        )
+        if self._user_agent_is_sdk_built:
             self.headers["User-Agent"] = self._build_user_agent(
                 integration,
             )
@@ -269,7 +276,10 @@ class ConnectionConfig:
             req_headers.update(headers)
         if api_headers is not None:
             req_headers.update(api_headers)
-        if ConnectionConfig._integration is not None:
+        per_call_user_agent = (headers or {}).get("User-Agent") or (
+            api_headers or {}
+        ).get("User-Agent")
+        if self._user_agent_is_sdk_built and not per_call_user_agent:
             req_headers["User-Agent"] = self._build_user_agent(
                 ConnectionConfig._integration,
             )

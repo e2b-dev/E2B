@@ -172,6 +172,45 @@ def test_integration_survives_api_param_rebuilds(monkeypatch):
     ].endswith(" testing/version")
 
 
+def test_cleared_integration_does_not_leak_into_api_param_rebuilds():
+    ConnectionConfig.set_integration("testing/version")
+    try:
+        config = ConnectionConfig()
+    finally:
+        ConnectionConfig.set_integration(None)
+
+    params = config.get_api_params()
+    assert not params["headers"]["User-Agent"].endswith(" testing/version")
+
+    rebuilt_config = ConnectionConfig(**params)
+    assert not rebuilt_config.headers["User-Agent"].endswith(" testing/version")
+
+
+def test_custom_user_agent_survives_api_param_rebuilds(monkeypatch):
+    monkeypatch.setattr(ConnectionConfig, "_integration", "testing/version")
+
+    config = ConnectionConfig(api_headers={"User-Agent": "custom/1.0"})
+    rebuilt_config = ConnectionConfig(**config.get_api_params())
+
+    # The integration overrides the custom User-Agent at construction time,
+    # so the SDK-built value keeps propagating through rebuilds.
+    assert rebuilt_config.headers["User-Agent"].endswith(" testing/version")
+
+    monkeypatch.setattr(ConnectionConfig, "_integration", None)
+
+    config = ConnectionConfig(api_headers={"User-Agent": "custom/1.0"})
+    rebuilt_config = ConnectionConfig(**config.get_api_params())
+    assert rebuilt_config.headers["User-Agent"] == "custom/1.0"
+
+
+def test_per_call_user_agent_override_wins_in_api_params(monkeypatch):
+    monkeypatch.setattr(ConnectionConfig, "_integration", "testing/version")
+
+    config = ConnectionConfig()
+    params = config.get_api_params(api_headers={"User-Agent": "custom/1.0"})
+    assert params["headers"]["User-Agent"] == "custom/1.0"
+
+
 def test_request_timeout_zero_means_no_timeout():
     config = ConnectionConfig(request_timeout=0)
     assert config.request_timeout is None
