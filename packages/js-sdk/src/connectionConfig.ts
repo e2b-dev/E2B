@@ -313,16 +313,6 @@ export function wrapStreamWithConnectionCleanup(
   })
 }
 
-function buildUserAgent(integration?: string) {
-  const userAgentParts = [`e2b-js-sdk/${version}`]
-
-  if (integration) {
-    userAgentParts.push(integration)
-  }
-
-  return userAgentParts.join(' ')
-}
-
 /**
  * Configuration for connecting to the API.
  */
@@ -330,6 +320,16 @@ export class ConnectionConfig {
   public static envdPort = 49983
 
   private static integration?: string
+
+  private static buildUserAgent() {
+    const userAgentParts = [`e2b-js-sdk/${version}`]
+
+    if (ConnectionConfig.integration) {
+      userAgentParts.push(ConnectionConfig.integration)
+    }
+
+    return userAgentParts.join(' ')
+  }
 
   /**
    * Identify traffic from an integration wrapping the E2B SDK by appending
@@ -376,7 +376,7 @@ export class ConnectionConfig {
     this.requestTimeoutMs = opts?.requestTimeoutMs ?? REQUEST_TIMEOUT_MS
     this.logger = opts?.logger
     this.headers = { ...(opts?.headers ?? {}), ...(opts?.apiHeaders ?? {}) }
-    this.headers['User-Agent'] = buildUserAgent(ConnectionConfig.integration)
+    this.headers['User-Agent'] = ConnectionConfig.buildUserAgent()
     this.proxy = opts?.proxy
 
     this.apiUrl =

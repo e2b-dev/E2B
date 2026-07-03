@@ -151,13 +151,12 @@ def test_custom_user_agent_is_preserved_without_integration():
     assert config.headers["User-Agent"] == "custom/1.0"
 
 
-def test_integration_overrides_custom_user_agent(monkeypatch):
+def test_custom_user_agent_wins_over_integration(monkeypatch):
     monkeypatch.setattr(ConnectionConfig, "_integration", "testing/version")
 
     config = ConnectionConfig(api_headers={"User-Agent": "custom/1.0"})
 
-    assert config.headers["User-Agent"].startswith("e2b-python-sdk/")
-    assert config.headers["User-Agent"].endswith(" testing/version")
+    assert config.headers["User-Agent"] == "custom/1.0"
 
 
 def test_integration_survives_api_param_rebuilds(monkeypatch):
@@ -192,9 +191,7 @@ def test_custom_user_agent_survives_api_param_rebuilds(monkeypatch):
     config = ConnectionConfig(api_headers={"User-Agent": "custom/1.0"})
     rebuilt_config = ConnectionConfig(**config.get_api_params())
 
-    # The integration overrides the custom User-Agent at construction time,
-    # so the SDK-built value keeps propagating through rebuilds.
-    assert rebuilt_config.headers["User-Agent"].endswith(" testing/version")
+    assert rebuilt_config.headers["User-Agent"] == "custom/1.0"
 
     monkeypatch.setattr(ConnectionConfig, "_integration", None)
 

@@ -122,15 +122,33 @@ class ConnectionConfig:
         return os.getenv("E2B_ACCESS_TOKEN")
 
     @staticmethod
-    def _build_user_agent(
-        integration: Optional[str] = None,
-    ) -> str:
+    def _build_user_agent() -> str:
         user_agent_parts = [f"e2b-python-sdk/{package_version}"]
 
-        if integration:
-            user_agent_parts.append(integration)
+        if ConnectionConfig._integration:
+            user_agent_parts.append(ConnectionConfig._integration)
 
         return " ".join(user_agent_parts)
+
+    def _apply_user_agent(
+        self,
+        headers: Dict[str, str],
+        user_agent_override: Optional[str],
+    ) -> bool:
+        """
+        Set the ``User-Agent`` on ``headers``: an explicitly provided value
+        always wins; otherwise the SDK-built one, tagged with the current
+        integration.
+
+        Returns whether the SDK-built value was applied, so callers can keep
+        it in sync with the current integration on later rebuilds.
+        """
+        if user_agent_override is not None:
+            headers["User-Agent"] = user_agent_override
+            return False
+
+        headers["User-Agent"] = self._build_user_agent()
+        return True
 
     def __init__(
         self,
@@ -160,19 +178,11 @@ class ConnectionConfig:
         # Deprecated: pass the token through `api_headers` instead, e.g.
         # api_headers={"Authorization": f"Bearer {token}"}.
         self.access_token = access_token or ConnectionConfig._access_token()
-        integration = ConnectionConfig._integration
         self.headers = {**(headers or {}), **(api_headers or {})}
-        # A user-supplied User-Agent is only kept when no integration is set;
-        # remember which case applied so get_api_params can keep an SDK-built
-        # User-Agent in sync with the current integration (e.g. after it is
-        # cleared) without ever touching a custom one.
-        self._user_agent_is_sdk_built = (
-            integration is not None or "User-Agent" not in self.headers
+        self._user_agent_is_sdk_built = self._apply_user_agent(
+            self.headers,
+            self.headers.get("User-Agent"),
         )
-        if self._user_agent_is_sdk_built:
-            self.headers["User-Agent"] = self._build_user_agent(
-                integration,
-            )
         self.__extra_sandbox_headers = extra_sandbox_headers or {}
 
         self.proxy = proxy
@@ -276,13 +286,11 @@ class ConnectionConfig:
             req_headers.update(headers)
         if api_headers is not None:
             req_headers.update(api_headers)
-        per_call_user_agent = (headers or {}).get("User-Agent") or (
-            api_headers or {}
-        ).get("User-Agent")
-        if self._user_agent_is_sdk_built and not per_call_user_agent:
-            req_headers["User-Agent"] = self._build_user_agent(
-                ConnectionConfig._integration,
-            )
+        if self._user_agent_is_sdk_built:
+            per_call_user_agent = (headers or {}).get("User-Agent") or (
+                api_headers or {}
+            ).get("User-Agent")
+            self._apply_user_agent(req_headers, per_call_user_agent)
 
         # `logger` is a construction-time option rather than a per-request
         # ApiParams field, but it must propagate to the throwaway
