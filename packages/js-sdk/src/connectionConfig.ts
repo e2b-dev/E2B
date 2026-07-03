@@ -103,15 +103,10 @@ export interface ConnectionOpts {
 
 /**
  * Options accepted by `ConnectionConfig`.
+ *
+ * @deprecated Use `ConnectionOpts` instead.
  */
-export interface ConnectionConfigOpts extends ConnectionOpts {
-  /**
-   * Integration wrapping the E2B SDK, appended to the `User-Agent`.
-   *
-   * @example 'e2b-code-interpreter/0.1.0'
-   */
-  integration?: string
-}
+export type ConnectionConfigOpts = ConnectionOpts
 
 /**
  * Build an `AbortSignal` that combines an optional request-timeout signal
@@ -334,6 +329,24 @@ function buildUserAgent(integration?: string) {
 export class ConnectionConfig {
   public static envdPort = 49983
 
+  private static integration?: string
+
+  /**
+   * Identify traffic from an integration wrapping the E2B SDK by appending
+   * `integration` (e.g. `'e2b-code-interpreter/0.1.0'`) to the `User-Agent`
+   * header of every request.
+   *
+   * Call once at startup, before any `ConnectionConfig` is constructed —
+   * configs read the value at construction time. Pass `undefined` to clear.
+   *
+   * @internal
+   * @hidden
+   * @hide
+   */
+  static setIntegration(integration: string | undefined) {
+    ConnectionConfig.integration = integration
+  }
+
   readonly debug: boolean
   readonly domain: string
   readonly apiUrl: string
@@ -349,13 +362,11 @@ export class ConnectionConfig {
    */
   readonly accessToken?: string
 
-  readonly integration?: string
-
   readonly headers?: Record<string, string>
 
   readonly proxy?: string
 
-  constructor(opts?: ConnectionConfigOpts) {
+  constructor(opts?: ConnectionOpts) {
     this.apiKey = opts?.apiKey || ConnectionConfig.apiKey
     this.validateApiKey =
       opts?.validateApiKey ?? ConnectionConfig.validateApiKey
@@ -364,9 +375,8 @@ export class ConnectionConfig {
     this.accessToken = opts?.accessToken || ConnectionConfig.accessToken
     this.requestTimeoutMs = opts?.requestTimeoutMs ?? REQUEST_TIMEOUT_MS
     this.logger = opts?.logger
-    this.integration = opts?.integration
     this.headers = { ...(opts?.headers ?? {}), ...(opts?.apiHeaders ?? {}) }
-    this.headers['User-Agent'] = buildUserAgent(this.integration)
+    this.headers['User-Agent'] = buildUserAgent(ConnectionConfig.integration)
     this.proxy = opts?.proxy
 
     this.apiUrl =

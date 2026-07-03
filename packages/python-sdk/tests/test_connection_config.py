@@ -131,15 +131,24 @@ def test_debug_defaults_to_env_var(monkeypatch):
     assert config.debug is True
 
 
-def test_integration_option_is_appended_to_user_agent():
-    config = ConnectionConfig(integration="testing/version")
+def test_set_integration_appends_to_user_agent():
+    ConnectionConfig.set_integration("testing/version")
+    try:
+        config = ConnectionConfig()
 
-    assert config.headers["User-Agent"].startswith("e2b-python-sdk/")
-    assert config.headers["User-Agent"].endswith(" testing/version")
+        assert config.headers["User-Agent"].startswith("e2b-python-sdk/")
+        assert config.headers["User-Agent"].endswith(" testing/version")
+    finally:
+        ConnectionConfig.set_integration(None)
+
+    config = ConnectionConfig()
+    assert "testing" not in config.headers["User-Agent"]
 
 
-def test_integration_option_survives_api_param_rebuilds():
-    config = ConnectionConfig(integration="testing/version")
+def test_integration_survives_api_param_rebuilds(monkeypatch):
+    monkeypatch.setattr(ConnectionConfig, "_integration", "testing/version")
+
+    config = ConnectionConfig()
     rebuilt_config = ConnectionConfig(**config.get_api_params())
 
     assert rebuilt_config.headers["User-Agent"].endswith(" testing/version")

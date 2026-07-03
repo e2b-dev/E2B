@@ -27,6 +27,9 @@ afterEach(() => {
       process.env[key] = originalEnv[key]
     }
   })
+
+  // Clear the process-wide integration attribution
+  ConnectionConfig.setIntegration(undefined)
 })
 
 test('api_url defaults correctly', () => {
@@ -183,10 +186,9 @@ test('debug defaults to E2B_DEBUG env var', () => {
   assert.equal(config.debug, true)
 })
 
-test('integration option is appended to the user agent', () => {
-  const config = new ConnectionConfig({
-    integration: 'testing/version',
-  })
+test('setIntegration appends the integration to the user agent', () => {
+  ConnectionConfig.setIntegration('testing/version')
+  const config = new ConnectionConfig()
 
   assert.equal(config.headers?.['User-Agent']?.startsWith('e2b-js-sdk/'), true)
   assert.equal(
@@ -195,16 +197,24 @@ test('integration option is appended to the user agent', () => {
   )
 })
 
-test('integration option survives config rebuilds', () => {
-  const config = new ConnectionConfig({
-    integration: 'testing/version',
-  })
+test('integration survives config rebuilds', () => {
+  ConnectionConfig.setIntegration('testing/version')
+  const config = new ConnectionConfig()
   const rebuiltConfig = new ConnectionConfig({ ...config })
 
   assert.equal(
     rebuiltConfig.headers?.['User-Agent']?.endsWith(' testing/version'),
     true
   )
+})
+
+test('clearing the integration restores the plain user agent', () => {
+  ConnectionConfig.setIntegration('testing/version')
+  ConnectionConfig.setIntegration(undefined)
+  const config = new ConnectionConfig()
+
+  assert.equal(config.headers?.['User-Agent']?.startsWith('e2b-js-sdk/'), true)
+  assert.equal(config.headers?.['User-Agent']?.includes('testing'), false)
 })
 
 test('getSignal returns user signal when no timeout is set', () => {

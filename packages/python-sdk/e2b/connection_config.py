@@ -75,6 +75,24 @@ class ConnectionConfig:
 
     envd_port = 49983
 
+    _integration: Optional[str] = None
+
+    @classmethod
+    def set_integration(cls, integration: Optional[str]) -> None:
+        """
+        Identify traffic from an integration wrapping the E2B SDK by appending
+        ``integration`` (e.g. ``"e2b-code-interpreter/0.1.0"``) to the
+        ``User-Agent`` header of every request.
+
+        Call once at startup, before any ``ConnectionConfig`` is constructed —
+        configs read the value at construction time. Pass ``None`` to clear.
+
+        Internal use only — not part of the public, stable API.
+
+        :meta private:
+        """
+        ConnectionConfig._integration = integration
+
     @staticmethod
     def _domain():
         return os.getenv("E2B_DOMAIN") or "e2b.app"
@@ -126,7 +144,6 @@ class ConnectionConfig:
         request_timeout: Optional[float] = None,
         headers: Optional[Dict[str, str]] = None,
         api_headers: Optional[Dict[str, str]] = None,
-        integration: Optional[str] = None,
         extra_sandbox_headers: Optional[Dict[str, str]] = None,
         proxy: Optional[ProxyTypes] = None,
         logger: Optional[logging.Logger] = None,
@@ -143,11 +160,11 @@ class ConnectionConfig:
         # Deprecated: pass the token through `api_headers` instead, e.g.
         # api_headers={"Authorization": f"Bearer {token}"}.
         self.access_token = access_token or ConnectionConfig._access_token()
-        self.integration = integration
+        integration = ConnectionConfig._integration
         self.headers = {**(headers or {}), **(api_headers or {})}
-        if self.integration is not None or "User-Agent" not in self.headers:
+        if integration is not None or "User-Agent" not in self.headers:
             self.headers["User-Agent"] = self._build_user_agent(
-                self.integration,
+                integration,
             )
         self.__extra_sandbox_headers = extra_sandbox_headers or {}
 
@@ -252,9 +269,9 @@ class ConnectionConfig:
             req_headers.update(headers)
         if api_headers is not None:
             req_headers.update(api_headers)
-        if self.integration is not None:
+        if ConnectionConfig._integration is not None:
             req_headers["User-Agent"] = self._build_user_agent(
-                self.integration,
+                ConnectionConfig._integration,
             )
 
         # `logger` is a construction-time option rather than a per-request

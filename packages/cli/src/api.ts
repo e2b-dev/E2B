@@ -1,8 +1,15 @@
 import * as boxen from 'boxen'
 import * as e2b from 'e2b'
 
+import * as packageJSON from '../package.json'
 import { getUserConfig, UserConfig } from './user'
 import { asBold, asPrimary } from './utils/format'
+
+// Identify CLI traffic to the API via the User-Agent header so CLI usage
+// (and version distribution) can be tracked server-side. Applies to every
+// ConnectionConfig the SDK builds after this module is evaluated, which
+// happens before any command runs.
+e2b.ConnectionConfig.setIntegration(`e2b-cli/${packageJSON.version}`)
 
 export type Teams =
   e2b.paths['/teams']['get']['responses'][200]['content']['application/json']
