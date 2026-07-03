@@ -24,7 +24,7 @@ jobs:
             code:
               - 'packages/**/!(*.md)'
               - 'spec/**/!(*.md)'
-              - '.eslintrc.cjs'
+              - '.oxlintrc.json'
               - '.prettierrc'
               - '.prettierignore'
               - '.editorconfig'

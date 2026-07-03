@@ -300,6 +300,8 @@ export function callsites(depth: number): NodeJS.CallSite[] {
       return callSitesWithoutCurrent
     }
 
+    // Accessing `.stack` triggers `Error.prepareStackTrace` for its side effect.
+    // oxlint-disable-next-line no-unused-expressions
     new Error().stack
     return result
   } finally {
@@ -369,13 +371,15 @@ export function padOctal(mode: number): string {
  * @param fileContextPath Base directory for resolving file paths
  * @param ignorePatterns Ignore patterns to exclude from the archive
  * @param resolveSymlinks Whether to follow symbolic links
+ * @param gzip Whether to gzip the archive
  * @returns The readable stream and the archive size in bytes
  */
 export async function tarFileStream(
   fileName: string,
   fileContextPath: string,
   ignorePatterns: string[],
-  resolveSymlinks: boolean
+  resolveSymlinks: boolean,
+  gzip: boolean
 ): Promise<{ stream: Readable; size: number }> {
   const { create } = await dynamicImport<typeof import('tar')>('tar')
   // Dynamically import so the browser bundle doesn't pull in node:fs.
@@ -403,7 +407,7 @@ export async function tarFileStream(
   try {
     await create(
       {
-        gzip: true,
+        gzip,
         cwd: fileContextPath,
         follow: resolveSymlinks,
         noDirRecurse: true,
