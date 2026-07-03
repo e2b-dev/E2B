@@ -1,8 +1,15 @@
 import * as boxen from 'boxen'
 import * as e2b from 'e2b'
 
+import * as packageJSON from '../package.json'
 import { getUserConfig, UserConfig } from './user'
 import { asBold, asPrimary } from './utils/format'
+
+// Attribute CLI traffic in the User-Agent header of every request. Configs
+// capture the User-Agent when constructed, so this must run before the shared
+// `connectionConfig` below (built at import time) or any other
+// ConnectionConfig.
+e2b.ConnectionConfig.setIntegration(`e2b-cli/${packageJSON.version}`)
 
 export type Teams =
   e2b.paths['/teams']['get']['responses'][200]['content']['application/json']
