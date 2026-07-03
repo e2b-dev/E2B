@@ -145,6 +145,21 @@ def test_set_integration_appends_to_user_agent():
     assert "testing" not in config.headers["User-Agent"]
 
 
+def test_custom_user_agent_is_preserved_without_integration():
+    config = ConnectionConfig(api_headers={"User-Agent": "custom/1.0"})
+
+    assert config.headers["User-Agent"] == "custom/1.0"
+
+
+def test_integration_overrides_custom_user_agent(monkeypatch):
+    monkeypatch.setattr(ConnectionConfig, "_integration", "testing/version")
+
+    config = ConnectionConfig(api_headers={"User-Agent": "custom/1.0"})
+
+    assert config.headers["User-Agent"].startswith("e2b-python-sdk/")
+    assert config.headers["User-Agent"].endswith(" testing/version")
+
+
 def test_integration_survives_api_param_rebuilds(monkeypatch):
     monkeypatch.setattr(ConnectionConfig, "_integration", "testing/version")
 

@@ -208,6 +208,18 @@ test('integration survives config rebuilds', () => {
   )
 })
 
+test('setIntegration does not retro-tag configs built earlier', () => {
+  const before = new ConnectionConfig()
+  ConnectionConfig.setIntegration('testing/version')
+  const after = new ConnectionConfig()
+
+  assert.equal(before.headers?.['User-Agent']?.includes('testing'), false)
+  assert.equal(
+    after.headers?.['User-Agent']?.endsWith(' testing/version'),
+    true
+  )
+})
+
 test('clearing the integration restores the plain user agent', () => {
   ConnectionConfig.setIntegration('testing/version')
   ConnectionConfig.setIntegration(undefined)
