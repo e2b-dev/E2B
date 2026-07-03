@@ -2,11 +2,6 @@ import pytest
 from e2b import Sandbox
 
 
-def test_list_snapshots_rejects_both_filters():
-    with pytest.raises(ValueError):
-        Sandbox.list_snapshots(sandbox_id="sandbox-id", name="my-snapshot")
-
-
 @pytest.mark.skip_debug()
 def test_create_snapshot(sandbox: Sandbox):
     snapshot = sandbox.create_snapshot()

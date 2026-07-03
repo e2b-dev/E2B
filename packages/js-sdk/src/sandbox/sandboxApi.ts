@@ -447,16 +447,12 @@ export interface SandboxMetricsOpts extends SandboxApiOpts {
 export interface SnapshotListOpts extends Omit<SandboxApiOpts, 'signal'> {
   /**
    * Filter snapshots by source sandbox ID.
-   *
-   * Mutually exclusive with `name`.
    */
   sandboxId?: string
 
   /**
    * Filter snapshots by name or ID, optionally tag-qualified
    * (e.g. "my-snapshot", "my-team/my-snapshot" or "my-snapshot:v1").
-   *
-   * Mutually exclusive with `sandboxId`.
    */
   name?: string
 
@@ -1349,12 +1345,6 @@ export class SnapshotPaginator extends Paginator<SnapshotInfo, SandboxApiOpts> {
 
   constructor(opts?: SnapshotListOpts) {
     super(opts, opts?.limit, opts?.nextToken)
-
-    if (opts?.sandboxId && opts?.name) {
-      throw new Error(
-        'listSnapshots accepts either `sandboxId` or `name`, not both.'
-      )
-    }
 
     this.sandboxId = opts?.sandboxId
     this.name = opts?.name

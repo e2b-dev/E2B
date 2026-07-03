@@ -7,10 +7,8 @@ Add a `name` filter to `Sandbox.listSnapshots()` / `Sandbox.list_snapshots()`.
 
 The filter accepts a snapshot name or ID, optionally tag-qualified (e.g.
 `"my-snapshot"`, `"my-team/my-snapshot"` or `"my-snapshot:v1"`). Unknown names
-return an empty list rather than an error.
-
-The `sandboxId` / `sandbox_id` and `name` filters are mutually exclusive —
-passing both raises an error.
+return an empty list rather than an error. It can be combined with the existing
+`sandboxId` / `sandbox_id` filter (results must match both).
 
 ```ts
 // JS/TS

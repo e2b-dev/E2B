@@ -610,10 +610,6 @@ class SnapshotPaginatorBase(PaginatorBase[SnapshotInfo, ApiParams]):
         **opts: Unpack[ApiParams],
     ):
         super().__init__(limit=limit, next_token=next_token, **opts)
-        if sandbox_id is not None and name is not None:
-            raise ValueError(
-                "list_snapshots accepts either `sandbox_id` or `name`, not both."
-            )
         self.sandbox_id = sandbox_id
         self.name = name
 

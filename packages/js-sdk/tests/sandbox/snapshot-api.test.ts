@@ -1,13 +1,7 @@
-import { assert, test } from 'vitest'
+import { assert } from 'vitest'
 
 import { sandboxTest, isDebug } from '../setup.js'
 import { Sandbox } from '../../src'
-
-test('listSnapshots rejects both sandboxId and name', () => {
-  assert.throws(() =>
-    Sandbox.listSnapshots({ sandboxId: 'sandbox-id', name: 'my-snapshot' })
-  )
-})
 
 sandboxTest.skipIf(isDebug)(
   'create a snapshot from sandbox',
