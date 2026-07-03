@@ -759,17 +759,17 @@ class Sandbox(SandboxApi):
     @overload
     def list_snapshots(
         self,
-        name: Optional[str] = None,
         limit: Optional[int] = None,
         next_token: Optional[str] = None,
+        name: Optional[str] = None,
         **opts: Unpack[ApiParams],
     ) -> SnapshotPaginator:
         """
         List snapshots for this sandbox.
 
-        :param name: Filter snapshots by name or ID, optionally tag-qualified (e.g. "my-snapshot", "my-team/my-snapshot" or "my-snapshot:v1")
         :param limit: Maximum number of snapshots to return per page
         :param next_token: Token for pagination
+        :param name: Filter snapshots by name or ID, optionally tag-qualified (e.g. "my-snapshot", "my-team/my-snapshot" or "my-snapshot:v1")
 
         :return: Paginator for listing snapshots
         """
@@ -779,18 +779,18 @@ class Sandbox(SandboxApi):
     @staticmethod
     def list_snapshots(
         sandbox_id: Optional[str] = None,
-        name: Optional[str] = None,
         limit: Optional[int] = None,
         next_token: Optional[str] = None,
+        name: Optional[str] = None,
         **opts: Unpack[ApiParams],
     ) -> SnapshotPaginator:
         """
         List all snapshots.
 
         :param sandbox_id: Filter snapshots by source sandbox ID
-        :param name: Filter snapshots by name or ID, optionally tag-qualified (e.g. "my-snapshot", "my-team/my-snapshot" or "my-snapshot:v1")
         :param limit: Maximum number of snapshots to return per page
         :param next_token: Token for pagination
+        :param name: Filter snapshots by name or ID, optionally tag-qualified (e.g. "my-snapshot", "my-team/my-snapshot" or "my-snapshot:v1")
 
         :return: Paginator for listing snapshots
         """
@@ -799,17 +799,17 @@ class Sandbox(SandboxApi):
     @class_method_variant("_cls_list_snapshots")
     def list_snapshots(
         self,
-        name: Optional[str] = None,
         limit: Optional[int] = None,
         next_token: Optional[str] = None,
+        name: Optional[str] = None,
         **opts: Unpack[ApiParams],
     ) -> SnapshotPaginator:
         """
         List snapshots for this sandbox.
 
-        :param name: Filter snapshots by name or ID, optionally tag-qualified (e.g. "my-snapshot", "my-team/my-snapshot" or "my-snapshot:v1")
         :param limit: Maximum number of snapshots to return per page
         :param next_token: Token for pagination
+        :param name: Filter snapshots by name or ID, optionally tag-qualified (e.g. "my-snapshot", "my-team/my-snapshot" or "my-snapshot:v1")
 
         :return: Paginator for listing snapshots
         """
@@ -824,9 +824,9 @@ class Sandbox(SandboxApi):
     @staticmethod
     def _cls_list_snapshots(
         sandbox_id: Optional[str] = None,
-        name: Optional[str] = None,
         limit: Optional[int] = None,
         next_token: Optional[str] = None,
+        name: Optional[str] = None,
         **opts: Unpack[ApiParams],
     ) -> SnapshotPaginator:
         return SnapshotPaginator(
