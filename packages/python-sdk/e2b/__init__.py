@@ -92,6 +92,7 @@ from .sandbox.sandbox_api import (
     SandboxQuery,
     SandboxState,
     SnapshotInfo,
+    SnapshotQuery,
 )
 from .sandbox_async.commands.command_handle import AsyncCommandHandle
 from .sandbox_async.filesystem.watch_handle import AsyncWatchHandle
@@ -206,6 +207,7 @@ __all__ = [
     "ALL_TRAFFIC",
     # Snapshot
     "SnapshotInfo",
+    "SnapshotQuery",
     "SnapshotPaginator",
     "AsyncSnapshotPaginator",
     # Signature

@@ -1,5 +1,5 @@
 import pytest
-from e2b import Sandbox
+from e2b import Sandbox, SnapshotQuery
 
 
 @pytest.mark.skip_debug()
@@ -85,7 +85,9 @@ def test_list_snapshots_for_sandbox(sandbox: Sandbox):
     snapshot = sandbox.create_snapshot()
 
     try:
-        paginator = Sandbox.list_snapshots(sandbox_id=sandbox.sandbox_id)
+        paginator = Sandbox.list_snapshots(
+            query=SnapshotQuery(sandbox_id=sandbox.sandbox_id)
+        )
         snapshots = paginator.next_items()
 
         found = any(s.snapshot_id == snapshot.snapshot_id for s in snapshots)
@@ -101,13 +103,15 @@ def test_list_snapshots_filtered_by_name(sandbox: Sandbox, sandbox_test_id: str)
     snapshot = sandbox.create_snapshot(name=snapshot_name)
 
     try:
-        paginator = Sandbox.list_snapshots(name=snapshot_name)
+        paginator = Sandbox.list_snapshots(query=SnapshotQuery(name=snapshot_name))
         snapshots = paginator.next_items()
 
         found = any(s.snapshot_id == snapshot.snapshot_id for s in snapshots)
         assert found
 
-        empty_paginator = Sandbox.list_snapshots(name=f"{snapshot_name}-does-not-exist")
+        empty_paginator = Sandbox.list_snapshots(
+            query=SnapshotQuery(name=f"{snapshot_name}-does-not-exist")
+        )
         empty_snapshots = empty_paginator.next_items()
         assert isinstance(empty_snapshots, list)
         assert len(empty_snapshots) == 0

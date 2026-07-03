@@ -168,7 +168,7 @@ sandboxTest.skipIf(isDebug)(
 
     try {
       // Filtering by the snapshot name should return the snapshot
-      const paginator = Sandbox.listSnapshots({ name: snapshotName })
+      const paginator = Sandbox.listSnapshots({ query: { name: snapshotName } })
       const snapshots = await paginator.nextItems()
 
       const found = snapshots.find((s) => s.snapshotId === snapshot.snapshotId)
@@ -176,7 +176,7 @@ sandboxTest.skipIf(isDebug)(
 
       // Filtering by an unknown name should return an empty list
       const emptyPaginator = Sandbox.listSnapshots({
-        name: `${snapshotName}-does-not-exist`,
+        query: { name: `${snapshotName}-does-not-exist` },
       })
       const emptySnapshots = await emptyPaginator.nextItems()
       assert.isArray(emptySnapshots)

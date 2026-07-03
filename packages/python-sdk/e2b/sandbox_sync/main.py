@@ -25,6 +25,7 @@ from e2b.sandbox.sandbox_api import (
     SandboxNetworkOpts,
     SandboxNetworkUpdate,
     SnapshotInfo,
+    SnapshotQuery,
 )
 from e2b.sandbox.utils import class_method_variant
 from e2b.sandbox_sync.commands.command import Commands
@@ -759,7 +760,7 @@ class Sandbox(SandboxApi):
     @overload
     def list_snapshots(
         self,
-        name: Optional[str] = None,
+        query: Optional[SnapshotQuery] = None,
         limit: Optional[int] = None,
         next_token: Optional[str] = None,
         **opts: Unpack[ApiParams],
@@ -767,7 +768,7 @@ class Sandbox(SandboxApi):
         """
         List snapshots for this sandbox.
 
-        :param name: Filter snapshots by name or ID, optionally tag-qualified (e.g. "my-snapshot", "my-team/my-snapshot" or "my-snapshot:v1")
+        :param query: Filter the list of snapshots, e.g. `SnapshotQuery(name="my-snapshot")`. The `sandbox_id` filter is ignored — snapshots are always scoped to this sandbox.
         :param limit: Maximum number of snapshots to return per page
         :param next_token: Token for pagination
 
@@ -778,8 +779,7 @@ class Sandbox(SandboxApi):
     @overload
     @staticmethod
     def list_snapshots(
-        sandbox_id: Optional[str] = None,
-        name: Optional[str] = None,
+        query: Optional[SnapshotQuery] = None,
         limit: Optional[int] = None,
         next_token: Optional[str] = None,
         **opts: Unpack[ApiParams],
@@ -787,8 +787,7 @@ class Sandbox(SandboxApi):
         """
         List all snapshots.
 
-        :param sandbox_id: Filter snapshots by source sandbox ID
-        :param name: Filter snapshots by name or ID, optionally tag-qualified (e.g. "my-snapshot", "my-team/my-snapshot" or "my-snapshot:v1")
+        :param query: Filter the list of snapshots by source sandbox ID or name, e.g. `SnapshotQuery(name="my-snapshot")`
         :param limit: Maximum number of snapshots to return per page
         :param next_token: Token for pagination
 
@@ -799,7 +798,7 @@ class Sandbox(SandboxApi):
     @class_method_variant("_cls_list_snapshots")
     def list_snapshots(
         self,
-        name: Optional[str] = None,
+        query: Optional[SnapshotQuery] = None,
         limit: Optional[int] = None,
         next_token: Optional[str] = None,
         **opts: Unpack[ApiParams],
@@ -807,15 +806,17 @@ class Sandbox(SandboxApi):
         """
         List snapshots for this sandbox.
 
-        :param name: Filter snapshots by name or ID, optionally tag-qualified (e.g. "my-snapshot", "my-team/my-snapshot" or "my-snapshot:v1")
+        :param query: Filter the list of snapshots, e.g. `SnapshotQuery(name="my-snapshot")`. The `sandbox_id` filter is ignored — snapshots are always scoped to this sandbox.
         :param limit: Maximum number of snapshots to return per page
         :param next_token: Token for pagination
 
         :return: Paginator for listing snapshots
         """
         return SnapshotPaginator(
-            sandbox_id=self.sandbox_id,
-            name=name,
+            query=SnapshotQuery(
+                sandbox_id=self.sandbox_id,
+                name=query.name if query else None,
+            ),
             limit=limit,
             next_token=next_token,
             **self.connection_config.get_api_params(**opts),
@@ -823,15 +824,13 @@ class Sandbox(SandboxApi):
 
     @staticmethod
     def _cls_list_snapshots(
-        sandbox_id: Optional[str] = None,
-        name: Optional[str] = None,
+        query: Optional[SnapshotQuery] = None,
         limit: Optional[int] = None,
         next_token: Optional[str] = None,
         **opts: Unpack[ApiParams],
     ) -> SnapshotPaginator:
         return SnapshotPaginator(
-            sandbox_id=sandbox_id,
-            name=name,
+            query=query,
             limit=limit,
             next_token=next_token,
             **opts,

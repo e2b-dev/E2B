@@ -446,15 +446,20 @@ export interface SandboxMetricsOpts extends SandboxApiOpts {
  */
 export interface SnapshotListOpts extends Omit<SandboxApiOpts, 'signal'> {
   /**
-   * Filter snapshots by source sandbox ID.
+   * Filter the list of snapshots. If there are multiple filters they are combined with AND.
    */
-  sandboxId?: string
+  query?: {
+    /**
+     * Filter snapshots by source sandbox ID.
+     */
+    sandboxId?: string
 
-  /**
-   * Filter snapshots by name or ID, optionally tag-qualified
-   * (e.g. "my-snapshot", "my-team/my-snapshot" or "my-snapshot:v1").
-   */
-  name?: string
+    /**
+     * Filter snapshots by name or ID, optionally tag-qualified
+     * (e.g. "my-snapshot", "my-team/my-snapshot" or "my-snapshot:v1").
+     */
+    name?: string
+  }
 
   /**
    * Number of snapshots to return per page.
@@ -1340,14 +1345,12 @@ export class SandboxPaginator extends Paginator<SandboxInfo, SandboxApiOpts> {
  * ```
  */
 export class SnapshotPaginator extends Paginator<SnapshotInfo, SandboxApiOpts> {
-  private readonly sandboxId?: string
-  private readonly name?: string
+  private readonly query: SnapshotListOpts['query']
 
   constructor(opts?: SnapshotListOpts) {
     super(opts, opts?.limit, opts?.nextToken)
 
-    this.sandboxId = opts?.sandboxId
-    this.name = opts?.name
+    this.query = opts?.query
   }
 
   async nextItems(opts?: SandboxApiOpts): Promise<SnapshotInfo[]> {
@@ -1361,8 +1364,8 @@ export class SnapshotPaginator extends Paginator<SnapshotInfo, SandboxApiOpts> {
     const res = await client.api.GET('/snapshots', {
       params: {
         query: {
-          sandboxID: this.sandboxId,
-          name: this.name,
+          sandboxID: this.query?.sandboxId,
+          name: this.query?.name,
           limit: this.limit,
           nextToken: this.nextToken,
         },
