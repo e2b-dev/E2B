@@ -602,13 +602,23 @@ class SnapshotInfo:
 
 @dataclass
 class SnapshotQuery:
-    """Query parameters for listing snapshots."""
+    """
+    Query parameters for listing snapshots.
+
+    `sandbox_id` and `name` are mutually exclusive — provide at most one.
+    """
 
     sandbox_id: Optional[str] = None
     """Filter snapshots by source sandbox ID."""
 
     name: Optional[str] = None
     """Filter snapshots by name or ID, optionally tag-qualified (e.g. "my-snapshot", "my-team/my-snapshot" or "my-snapshot:v1")."""
+
+    def __post_init__(self):
+        if self.sandbox_id is not None and self.name is not None:
+            raise ValueError(
+                "SnapshotQuery accepts either `sandbox_id` or `name`, not both."
+            )
 
 
 class SnapshotPaginatorBase(PaginatorBase[SnapshotInfo, ApiParams]):

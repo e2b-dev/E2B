@@ -2,6 +2,11 @@ import pytest
 from e2b import Sandbox, SnapshotQuery
 
 
+def test_snapshot_query_rejects_both_filters():
+    with pytest.raises(ValueError):
+        SnapshotQuery(sandbox_id="sandbox-id", name="my-snapshot")
+
+
 @pytest.mark.skip_debug()
 def test_create_snapshot(sandbox: Sandbox):
     snapshot = sandbox.create_snapshot()

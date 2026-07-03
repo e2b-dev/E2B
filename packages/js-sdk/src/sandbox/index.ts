@@ -609,14 +609,10 @@ export class Sandbox extends SandboxApi {
    *
    * @returns paginator for listing snapshots from this sandbox.
    */
-  listSnapshots(
-    opts?: Omit<SnapshotListOpts, 'query'> & {
-      query?: Omit<NonNullable<SnapshotListOpts['query']>, 'sandboxId'>
-    }
-  ): SnapshotPaginator {
+  listSnapshots(opts?: Omit<SnapshotListOpts, 'query'>): SnapshotPaginator {
     return SandboxApi.listSnapshots({
       ...this.resolveApiOpts(opts),
-      query: { ...opts?.query, sandboxId: this.sandboxId },
+      query: { sandboxId: this.sandboxId },
     })
   }
 

@@ -770,7 +770,6 @@ class AsyncSandbox(SandboxApi):
     @overload
     def list_snapshots(
         self,
-        query: Optional[SnapshotQuery] = None,
         limit: Optional[int] = None,
         next_token: Optional[str] = None,
         **opts: Unpack[ApiParams],
@@ -778,7 +777,6 @@ class AsyncSandbox(SandboxApi):
         """
         List snapshots for this sandbox.
 
-        :param query: Filter the list of snapshots, e.g. `SnapshotQuery(name="my-snapshot")`. The `sandbox_id` filter is ignored — snapshots are always scoped to this sandbox.
         :param limit: Maximum number of snapshots to return per page
         :param next_token: Token for pagination
 
@@ -797,7 +795,7 @@ class AsyncSandbox(SandboxApi):
         """
         List all snapshots.
 
-        :param query: Filter the list of snapshots by source sandbox ID or name, e.g. `SnapshotQuery(name="my-snapshot")`
+        :param query: Filter the list of snapshots by source sandbox ID or name (mutually exclusive), e.g. `SnapshotQuery(name="my-snapshot")`
         :param limit: Maximum number of snapshots to return per page
         :param next_token: Token for pagination
 
@@ -808,7 +806,6 @@ class AsyncSandbox(SandboxApi):
     @class_method_variant("_cls_list_snapshots")
     def list_snapshots(
         self,
-        query: Optional[SnapshotQuery] = None,
         limit: Optional[int] = None,
         next_token: Optional[str] = None,
         **opts: Unpack[ApiParams],
@@ -816,17 +813,13 @@ class AsyncSandbox(SandboxApi):
         """
         List snapshots for this sandbox.
 
-        :param query: Filter the list of snapshots, e.g. `SnapshotQuery(name="my-snapshot")`. The `sandbox_id` filter is ignored — snapshots are always scoped to this sandbox.
         :param limit: Maximum number of snapshots to return per page
         :param next_token: Token for pagination
 
         :return: Paginator for listing snapshots
         """
         return AsyncSnapshotPaginator(
-            query=SnapshotQuery(
-                sandbox_id=self.sandbox_id,
-                name=query.name if query else None,
-            ),
+            query=SnapshotQuery(sandbox_id=self.sandbox_id),
             limit=limit,
             next_token=next_token,
             **self.connection_config.get_api_params(**opts),

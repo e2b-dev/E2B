@@ -446,20 +446,26 @@ export interface SandboxMetricsOpts extends SandboxApiOpts {
  */
 export interface SnapshotListOpts extends Omit<SandboxApiOpts, 'signal'> {
   /**
-   * Filter the list of snapshots. If there are multiple filters they are combined with AND.
+   * Filter the list of snapshots by source sandbox ID or by name.
+   *
+   * These filters are mutually exclusive — provide at most one of them.
    */
-  query?: {
-    /**
-     * Filter snapshots by source sandbox ID.
-     */
-    sandboxId?: string
-
-    /**
-     * Filter snapshots by name or ID, optionally tag-qualified
-     * (e.g. "my-snapshot", "my-team/my-snapshot" or "my-snapshot:v1").
-     */
-    name?: string
-  }
+  query?:
+    | {
+        /**
+         * Filter snapshots by source sandbox ID.
+         */
+        sandboxId?: string
+        name?: never
+      }
+    | {
+        /**
+         * Filter snapshots by name or ID, optionally tag-qualified
+         * (e.g. "my-snapshot", "my-team/my-snapshot" or "my-snapshot:v1").
+         */
+        name?: string
+        sandboxId?: never
+      }
 
   /**
    * Number of snapshots to return per page.

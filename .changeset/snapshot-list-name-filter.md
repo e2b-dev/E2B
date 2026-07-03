@@ -11,6 +11,8 @@ The filter accepts a snapshot name or ID, optionally tag-qualified (e.g.
 `"my-snapshot"`, `"my-team/my-snapshot"` or `"my-snapshot:v1"`). Unknown names
 return an empty list rather than an error.
 
+The `sandboxId` and `name` filters are mutually exclusive — provide at most one.
+
 Note: this reshapes the recently added snapshot list filter — the `sandboxId`
 filter now lives inside `query` instead of being a top-level option.
 
