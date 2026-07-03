@@ -759,6 +759,7 @@ class Sandbox(SandboxApi):
     @overload
     def list_snapshots(
         self,
+        name: Optional[str] = None,
         limit: Optional[int] = None,
         next_token: Optional[str] = None,
         **opts: Unpack[ApiParams],
@@ -766,6 +767,7 @@ class Sandbox(SandboxApi):
         """
         List snapshots for this sandbox.
 
+        :param name: Filter snapshots by name or ID, optionally tag-qualified (e.g. "my-snapshot", "my-team/my-snapshot" or "my-snapshot:v1")
         :param limit: Maximum number of snapshots to return per page
         :param next_token: Token for pagination
 
@@ -777,6 +779,7 @@ class Sandbox(SandboxApi):
     @staticmethod
     def list_snapshots(
         sandbox_id: Optional[str] = None,
+        name: Optional[str] = None,
         limit: Optional[int] = None,
         next_token: Optional[str] = None,
         **opts: Unpack[ApiParams],
@@ -785,6 +788,7 @@ class Sandbox(SandboxApi):
         List all snapshots.
 
         :param sandbox_id: Filter snapshots by source sandbox ID
+        :param name: Filter snapshots by name or ID, optionally tag-qualified (e.g. "my-snapshot", "my-team/my-snapshot" or "my-snapshot:v1")
         :param limit: Maximum number of snapshots to return per page
         :param next_token: Token for pagination
 
@@ -795,6 +799,7 @@ class Sandbox(SandboxApi):
     @class_method_variant("_cls_list_snapshots")
     def list_snapshots(
         self,
+        name: Optional[str] = None,
         limit: Optional[int] = None,
         next_token: Optional[str] = None,
         **opts: Unpack[ApiParams],
@@ -802,6 +807,7 @@ class Sandbox(SandboxApi):
         """
         List snapshots for this sandbox.
 
+        :param name: Filter snapshots by name or ID, optionally tag-qualified (e.g. "my-snapshot", "my-team/my-snapshot" or "my-snapshot:v1")
         :param limit: Maximum number of snapshots to return per page
         :param next_token: Token for pagination
 
@@ -809,6 +815,7 @@ class Sandbox(SandboxApi):
         """
         return SnapshotPaginator(
             sandbox_id=self.sandbox_id,
+            name=name,
             limit=limit,
             next_token=next_token,
             **self.connection_config.get_api_params(**opts),
@@ -817,12 +824,14 @@ class Sandbox(SandboxApi):
     @staticmethod
     def _cls_list_snapshots(
         sandbox_id: Optional[str] = None,
+        name: Optional[str] = None,
         limit: Optional[int] = None,
         next_token: Optional[str] = None,
         **opts: Unpack[ApiParams],
     ) -> SnapshotPaginator:
         return SnapshotPaginator(
             sandbox_id=sandbox_id,
+            name=name,
             limit=limit,
             next_token=next_token,
             **opts,

@@ -622,6 +622,8 @@ export interface paths {
                 query?: {
                     /** @description Maximum number of items to return per page */
                     limit?: components["parameters"]["paginationLimit"];
+                    /** @description Filter snapshots by name or ID, optionally tag-qualified (e.g. "my-snapshot", "my-team/my-snapshot" or "my-snapshot:v1"). */
+                    name?: string;
                     /** @description Cursor to start the list from */
                     nextToken?: components["parameters"]["paginationNextToken"];
                     sandboxID?: string;
