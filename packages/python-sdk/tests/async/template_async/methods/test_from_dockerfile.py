@@ -67,6 +67,24 @@ async def test_from_dockerfile_with_custom_user_and_workdir():
 
 
 @pytest.mark.skip_debug()
+async def test_from_dockerfile_strips_uppercase_as_alias():
+    dockerfile = "FROM python:3.11 AS builder\nRUN echo hi"
+
+    template = AsyncTemplate().from_dockerfile(dockerfile)
+
+    assert template._template._base_image == "python:3.11"
+
+
+@pytest.mark.skip_debug()
+async def test_from_dockerfile_strips_lowercase_as_alias():
+    dockerfile = "FROM python:3.11 as builder\nRUN echo hi"
+
+    template = AsyncTemplate().from_dockerfile(dockerfile)
+
+    assert template._template._base_image == "python:3.11"
+
+
+@pytest.mark.skip_debug()
 async def test_from_dockerfile_with_multi_source_copy():
     dockerfile = """FROM node:24
 COPY file1.txt file2.txt file3.txt /dest/"""
