@@ -425,7 +425,7 @@ export class Sandbox extends SandboxApi {
    * ```ts
    * const sandbox = await Sandbox.create()
    * // Start an HTTP server
-   * await sandbox.commands.exec('python3 -m http.server 3000')
+   * await sandbox.commands.run('python3 -m http.server 3000', { background: true })
    * // Get the hostname of the HTTP server
    * const serverURL = sandbox.getHost(3000)
    * ```
