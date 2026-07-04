@@ -27,3 +27,18 @@ def test_strips_colon_curly_underline():
 
 def test_leaves_plain_text_unchanged():
     assert strip_ansi_escape_codes("no escape codes here") == "no escape codes here"
+
+
+def test_strips_osc_set_terminal_title():
+    assert strip_ansi_escape_codes("\x1b]0;my title\x07AFTER") == "AFTER"
+
+
+def test_strips_osc_hyperlink():
+    assert (
+        strip_ansi_escape_codes("\x1b]8;;http://example.com\x07link\x1b]8;;\x07")
+        == "link"
+    )
+
+
+def test_strips_osc_with_st_terminator():
+    assert strip_ansi_escape_codes("\x1b]0;my title\x1b\\AFTER") == "AFTER"
