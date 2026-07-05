@@ -133,6 +133,25 @@ class GitBranches:
 
 
 @dataclass
+class GitCommit:
+    """
+    Parsed entry from git log.
+
+    :param hash: Full commit hash
+    :param author_name: Commit author name
+    :param author_email: Commit author email
+    :param date: Author date in strict ISO 8601 format
+    :param message: Commit subject line
+    """
+
+    hash: str
+    author_name: str
+    author_email: str
+    date: str
+    message: str
+
+
+@dataclass
 class ClonePlan:
     """
     Prepared arguments and metadata for git clone.

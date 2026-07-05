@@ -196,6 +196,23 @@ def build_status_args() -> List[str]:
     return ["status", "--porcelain=1", "-b"]
 
 
+# Unit separator between fields, so subjects containing spaces parse cleanly.
+GIT_LOG_FORMAT = "%H%x1f%an%x1f%ae%x1f%aI%x1f%s"
+
+
+def build_log_args(max_count: Optional[int] = None) -> List[str]:
+    """
+    Build arguments for ``git log`` using a machine-readable format.
+
+    :param max_count: Maximum number of commits to return (newest first)
+    :return: Command arguments for git log
+    """
+    args = ["log", f"--pretty=format:{GIT_LOG_FORMAT}"]
+    if max_count is not None:
+        args.extend(["-n", str(max_count)])
+    return args
+
+
 def build_branches_args() -> List[str]:
     """
     Build arguments for a git branch listing command.

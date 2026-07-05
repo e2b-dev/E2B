@@ -9,6 +9,7 @@ from e2b.sandbox.commands.command_handle import CommandExitException
 from e2b.sandbox._git import (
     GitBranches,
     GitResetMode,
+    GitCommit,
     GitStatus,
     build_add_args,
     build_auth_error_message,
@@ -30,11 +31,13 @@ from e2b.sandbox._git import (
     build_remote_set_url_args,
     build_reset_args,
     build_restore_args,
+    build_log_args,
     build_status_args,
     build_upstream_error_message,
     is_auth_failure,
     is_missing_upstream,
     parse_git_branches,
+    parse_git_log,
     parse_git_status,
     parse_remote_url,
     resolve_config_scope,
@@ -472,6 +475,39 @@ class Git:
             request_timeout,
         )
         return parse_git_status(result.stdout)
+
+    async def log(
+        self,
+        path: str,
+        max_count: Optional[int] = None,
+        envs: Optional[Dict[str, str]] = None,
+        user: Optional[str] = None,
+        cwd: Optional[str] = None,
+        timeout: Optional[float] = None,
+        request_timeout: Optional[float] = None,
+    ) -> List[GitCommit]:
+        """
+        Get the commit history of a repository.
+
+        :param path: Repository path
+        :param max_count: Maximum number of commits to return (newest first)
+        :param envs: Environment variables used for the command
+        :param user: User to run the command as
+        :param cwd: Working directory to run the command
+        :param timeout: Timeout for the command connection in **seconds**
+        :param request_timeout: Timeout for the request in **seconds**
+        :return: List of parsed commits, newest first
+        """
+        result = await self._run_git(
+            build_log_args(max_count),
+            path,
+            envs,
+            user,
+            cwd,
+            timeout,
+            request_timeout,
+        )
+        return parse_git_log(result.stdout)
 
     async def branches(
         self,
