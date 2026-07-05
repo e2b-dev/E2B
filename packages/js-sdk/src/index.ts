@@ -107,6 +107,8 @@ export type {
   GitConfigOpts,
   GitConfigScope,
   GitBranches,
+  GitCommit,
+  GitLogOpts,
   GitFileStatus,
   GitStatus,
 } from './sandbox/git'

@@ -136,6 +136,55 @@ export interface GitBranches {
 }
 
 /**
+ * Parsed entry from git log.
+ */
+export interface GitCommit {
+  /** Full commit hash. */
+  hash: string
+  /** Commit author name. */
+  authorName: string
+  /** Commit author email. */
+  authorEmail: string
+  /** Author date in strict ISO 8601 format. */
+  date: string
+  /** Commit subject line. */
+  message: string
+}
+
+/**
+ * Pretty format for `git log`, using a unit separator between fields so
+ * subjects containing spaces parse cleanly.
+ */
+export const GIT_LOG_FORMAT = '%H%x1f%an%x1f%ae%x1f%aI%x1f%s'
+
+/**
+ * Parse machine-readable `git log` output into commit entries.
+ *
+ * @param output Raw stdout produced with the pipeline log format.
+ * @returns List of parsed commits, newest first.
+ */
+export function parseGitLog(output: string): GitCommit[] {
+  const commits: GitCommit[] = []
+  for (const line of output.split('\n')) {
+    if (!line.trim()) {
+      continue
+    }
+    const parts = line.split('\x1f')
+    if (parts.length < 5) {
+      continue
+    }
+    commits.push({
+      hash: parts[0],
+      authorName: parts[1],
+      authorEmail: parts[2],
+      date: parts[3],
+      message: parts[4],
+    })
+  }
+  return commits
+}
+
+/**
  * Add HTTP(S) credentials to a Git URL.
  *
  * @param url Git repository URL.

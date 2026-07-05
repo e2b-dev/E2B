@@ -14,12 +14,15 @@ import {
   buildUpstreamErrorMessage,
   GitBranches,
   GitConfigScope,
+  GitCommit,
   GitStatus,
+  GIT_LOG_FORMAT,
   getRepoPathForScope,
   getScopeFlag,
   isAuthFailure,
   isMissingUpstream,
   parseGitBranches,
+  parseGitLog,
   parseGitStatus,
   stripCredentials,
   deriveRepoDirFromUrl,
@@ -44,6 +47,13 @@ export interface GitRequestOpts
 /**
  * Options for cloning a repository.
  */
+export interface GitLogOpts extends GitRequestOpts {
+  /**
+   * Maximum number of commits to return (newest first).
+   */
+  maxCount?: number
+}
+
 export interface GitCloneOpts extends GitRequestOpts {
   /**
    * Destination path for the clone.
@@ -469,6 +479,23 @@ export class Git {
       opts
     )
     return parseGitStatus(result.stdout)
+  }
+
+  /**
+   * Get the commit history of a repository.
+   *
+   * @param path Repository path.
+   * @param opts Command execution options, including `maxCount`.
+   * @returns List of parsed commits, newest first.
+   */
+  async log(path: string, opts?: GitLogOpts): Promise<GitCommit[]> {
+    const { maxCount, ...rest } = opts ?? {}
+    const args = ['log', `--pretty=format:${GIT_LOG_FORMAT}`]
+    if (maxCount != null) {
+      args.push('-n', String(maxCount))
+    }
+    const result = await this.runGit(args, path, rest)
+    return parseGitLog(result.stdout)
   }
 
   /**
@@ -1048,6 +1075,7 @@ export class Git {
 
 export type {
   GitBranches,
+  GitCommit,
   GitConfigScope,
   GitFileStatus,
   GitStatus,
