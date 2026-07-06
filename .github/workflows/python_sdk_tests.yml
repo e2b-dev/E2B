@@ -37,27 +37,21 @@ jobs:
           uppercase: 'true'
           prefix: 'tool_version_'
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
         with:
+          version: '${{ env.TOOL_VERSION_UV }}'
           python-version: '${{ env.TOOL_VERSION_PYTHON }}'
-
-      - name: Install and configure Poetry
-        uses: snok/install-poetry@v1
-        with:
-          version: '${{ env.TOOL_VERSION_POETRY }}'
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-          installer-parallel: true
+          enable-cache: true
 
       - name: Install dependencies
-        run: poetry install
+        run: uv sync --locked
 
       - name: Test build
-        run: poetry build
+        run: uv build
 
       - name: Run tests
-        run: poetry run pytest --verbose --numprocesses=4
+        run: uv run pytest --verbose --numprocesses=4
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
           E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
