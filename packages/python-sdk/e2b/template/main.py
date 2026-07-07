@@ -478,7 +478,7 @@ class TemplateBuilder:
         Install system packages using apt-get.
 
         :param packages: Package name(s) to install
-        :param no_install_recommends: Whether to install recommended packages
+        :param no_install_recommends: Whether to skip installing recommended packages
         :param fix_missing: Whether to fix missing packages
 
         :return: `TemplateBuilder` class
