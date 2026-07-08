@@ -66,29 +66,22 @@ jobs:
           npm install -g npm@^11.6
           npm --version
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
         if: ${{ inputs.python-sdk }}
         with:
+          version: '${{ env.TOOL_VERSION_UV }}'
           python-version: '${{ env.TOOL_VERSION_PYTHON }}'
-
-      - name: Install and configure Poetry
-        uses: snok/install-poetry@v1
-        if: ${{ inputs.python-sdk }}
-        with:
-          version: '${{ env.TOOL_VERSION_POETRY }}'
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-          installer-parallel: true
+          enable-cache: true
 
       - name: Publish Python RC
         if: ${{ inputs.python-sdk }}
         working-directory: packages/python-sdk
         run: |
-          BASE_VERSION=$(poetry version -s)
-          poetry version "${BASE_VERSION}rc${{ github.run_id }}"
-          poetry build
-          poetry config pypi-token.pypi ${PYPI_TOKEN} && poetry publish --skip-existing
+          BASE_VERSION=$(uv version --short)
+          uv version "${BASE_VERSION}rc${{ github.run_id }}"
+          uv build
+          uv publish --token ${PYPI_TOKEN} --check-url https://pypi.org/simple/
         env:
           PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
 
