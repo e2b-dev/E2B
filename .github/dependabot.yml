@@ -35,8 +35,8 @@ updates:
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
 
-  # Python SDK (pyproject.toml managed with uv)
-  - package-ecosystem: "pip"
+  # Python SDK (uv.lock managed with uv)
+  - package-ecosystem: "uv"
     directory: "/packages/python-sdk"
     schedule:
       interval: "weekly"
