@@ -37,7 +37,7 @@ ENV PATH="/go/bin:${PATH}"
 RUN pip install black==26.3.1 pyyaml==6.0.2 e2b-openapi-python-client==0.26.2 datamodel-code-generator==0.34.0
 
 # Install Node.js (pinned to match .tool-versions)
-ENV NODE_VERSION=20.19.5
+ENV NODE_VERSION=22.18.0
 RUN ARCH=$(uname -m) && \
     case "$ARCH" in \
         x86_64) NODE_ARCH="x64" ;; \
