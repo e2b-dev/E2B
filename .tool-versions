@@ -1,5 +1,5 @@
 deno 1.46.3
-nodejs 22.23.1
+nodejs 20.19.5
 pnpm 9.15.5
 python 3.10
 uv 0.10.0
