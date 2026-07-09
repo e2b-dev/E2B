@@ -1,20 +1,25 @@
 {
   "compilerOptions": {
     "outDir": "dist",
-    "target": "es6",
+    "target": "es2022",
+    "module": "esnext",
+    // Keep assignment (not `[[Define]]`) semantics for class fields. `target:
+    // es2022` would default this to `true`, which changes class-field emit and
+    // shifts stack frames — breaking the template builder's fixed-depth caller
+    // resolution (getCallerDirectory / per-step stack traces). Adopting define
+    // semantics should be a separate, deliberately tested change.
+    "useDefineForClassFields": false,
     "lib": [
       "dom",
-      "ESNext"
+      "es2022"
     ],
     "sourceMap": true,
-    "allowJs": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
     "strict": true,
     "forceConsistentCasingInFileNames": true,
     "noFallthroughCasesInSwitch": true,
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "declaration": true,

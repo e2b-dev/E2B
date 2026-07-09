@@ -54,11 +54,12 @@
     "@types/node": "^20.19.19",
     "@types/npmcli__package-json": "^4.0.4",
     "@types/statuses": "^2.0.5",
+    "@typescript/native": "npm:typescript@^7.0.2",
     "@vitest/coverage-v8": "^4.1.0",
     "json2md": "^2.0.1",
     "knip": "^5.43.6",
     "tsdown": "^0.22.3",
-    "typescript": "^5.4.5",
+    "typescript": "npm:@typescript/typescript6@^6.0.2",
     "vitest": "^4.1.8"
   },
   "files": [
