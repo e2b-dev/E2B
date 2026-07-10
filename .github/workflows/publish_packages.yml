@@ -35,18 +35,12 @@ jobs:
           uppercase: 'true'
           prefix: 'tool_version_'
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
         with:
+          version: '${{ env.TOOL_VERSION_UV }}'
           python-version: '${{ env.TOOL_VERSION_PYTHON }}'
-
-      - name: Install and configure Poetry
-        uses: snok/install-poetry@v1
-        with:
-          version: '${{ env.TOOL_VERSION_POETRY }}'
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-          installer-parallel: true
+          enable-cache: true
 
       - uses: pnpm/action-setup@v4
         with:

@@ -1,15 +1,14 @@
 {
   "name": "@e2b/python-sdk",
   "private": true,
-  "version": "2.30.0",
+  "version": "2.31.0",
   "scripts": {
-    "example": "poetry run python example.py",
-    "test": "poetry run pytest -n 4 --verbose -x",
-    "postVersion": "poetry version $(pnpm pkg get version --workspaces=false | tr -d \\\")",
-    "postPublish": "poetry build && poetry config pypi-token.pypi ${PYPI_TOKEN} && poetry publish --skip-existing",
-    "pretest": "poetry install",
-    "typecheck": "poetry run make typecheck",
-    "lint": "poetry run make lint",
-    "format": "poetry run make format"
+    "example": "uv run python example.py",
+    "test": "uv run pytest -n 4 --verbose -x",
+    "postVersion": "uv version $(pnpm pkg get version --workspaces=false | tr -d \\\")",
+    "postPublish": "uv build && uv publish --token ${PYPI_TOKEN} --check-url https://pypi.org/simple/",
+    "typecheck": "uv run make typecheck",
+    "lint": "uv run make lint",
+    "format": "uv run make format"
   }
 }
