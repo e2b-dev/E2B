@@ -229,6 +229,50 @@ test('clearing the integration restores the plain user agent', () => {
   assert.equal(config.headers?.['User-Agent']?.includes('testing'), false)
 })
 
+test('custom user agent is preserved without integration', () => {
+  const config = new ConnectionConfig({
+    apiHeaders: { 'User-Agent': 'my-app/1.0' },
+  })
+
+  assert.equal(config.headers?.['User-Agent'], 'my-app/1.0')
+})
+
+test('custom user agent wins over integration', () => {
+  ConnectionConfig.setIntegration('testing/version')
+
+  const config = new ConnectionConfig({
+    headers: { 'User-Agent': 'my-app/1.0' },
+  })
+
+  assert.equal(config.headers?.['User-Agent'], 'my-app/1.0')
+})
+
+test('custom user agent survives config rebuilds', () => {
+  ConnectionConfig.setIntegration('testing/version')
+  const config = new ConnectionConfig({
+    apiHeaders: { 'User-Agent': 'my-app/1.0' },
+  })
+  const rebuiltConfig = new ConnectionConfig({ ...config })
+
+  assert.equal(rebuiltConfig.headers?.['User-Agent'], 'my-app/1.0')
+})
+
+test('clearing the integration propagates to config rebuilds', () => {
+  ConnectionConfig.setIntegration('testing/version')
+  const config = new ConnectionConfig()
+  ConnectionConfig.setIntegration(undefined)
+  const rebuiltConfig = new ConnectionConfig({ ...config })
+
+  assert.equal(
+    rebuiltConfig.headers?.['User-Agent']?.startsWith('e2b-js-sdk/'),
+    true
+  )
+  assert.equal(
+    rebuiltConfig.headers?.['User-Agent']?.includes('testing'),
+    false
+  )
+})
+
 test('getSignal returns user signal when no timeout is set', () => {
   const config = new ConnectionConfig({ requestTimeoutMs: 0 })
   const controller = new AbortController()

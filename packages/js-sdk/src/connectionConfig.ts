@@ -321,14 +321,37 @@ export class ConnectionConfig {
 
   private static integration?: string
 
+  private static readonly sdkUserAgentPrefix = 'e2b-js-sdk/'
+
   private static buildUserAgent() {
-    const userAgentParts = [`e2b-js-sdk/${version}`]
+    const userAgentParts = [`${ConnectionConfig.sdkUserAgentPrefix}${version}`]
 
     if (ConnectionConfig.integration) {
       userAgentParts.push(ConnectionConfig.integration)
     }
 
     return userAgentParts.join(' ')
+  }
+
+  /**
+   * Set the `User-Agent` on `headers`: an explicitly provided value always
+   * wins; otherwise the SDK-built one, tagged with the current integration.
+   *
+   * An SDK-built value carried over from an earlier config (configs are
+   * rebuilt via `new ConnectionConfig({ ...config })`) is recognized by its
+   * prefix and rebuilt, so it stays in sync with the current integration.
+   */
+  private static applyUserAgent(headers: Record<string, string>) {
+    const userAgent = headers['User-Agent']
+
+    if (
+      userAgent !== undefined &&
+      !userAgent.startsWith(ConnectionConfig.sdkUserAgentPrefix)
+    ) {
+      return
+    }
+
+    headers['User-Agent'] = ConnectionConfig.buildUserAgent()
   }
 
   /**
@@ -376,7 +399,7 @@ export class ConnectionConfig {
     this.requestTimeoutMs = opts?.requestTimeoutMs ?? REQUEST_TIMEOUT_MS
     this.logger = opts?.logger
     this.headers = { ...(opts?.headers ?? {}), ...(opts?.apiHeaders ?? {}) }
-    this.headers['User-Agent'] = ConnectionConfig.buildUserAgent()
+    ConnectionConfig.applyUserAgent(this.headers)
     this.proxy = opts?.proxy
 
     this.apiUrl =
