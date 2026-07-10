@@ -208,6 +208,15 @@ def test_per_call_user_agent_override_wins_in_api_params(monkeypatch):
     assert params["headers"]["User-Agent"] == "custom/1.0"
 
 
+def test_per_call_api_headers_user_agent_wins_over_headers():
+    config = ConnectionConfig()
+    params = config.get_api_params(
+        headers={"User-Agent": "from-headers/1.0"},
+        api_headers={"User-Agent": "from-api-headers/1.0"},
+    )
+    assert params["headers"]["User-Agent"] == "from-api-headers/1.0"
+
+
 def test_request_timeout_zero_means_no_timeout():
     config = ConnectionConfig(request_timeout=0)
     assert config.request_timeout is None

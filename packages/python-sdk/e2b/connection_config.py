@@ -287,9 +287,10 @@ class ConnectionConfig:
         if api_headers is not None:
             req_headers.update(api_headers)
         if self._user_agent_is_sdk_built:
-            per_call_user_agent = (headers or {}).get("User-Agent") or (
-                api_headers or {}
-            ).get("User-Agent")
+            # Same precedence as the merge above: api_headers wins over headers.
+            per_call_user_agent = {**(headers or {}), **(api_headers or {})}.get(
+                "User-Agent"
+            )
             self._apply_user_agent(req_headers, per_call_user_agent)
 
         # `logger` is a construction-time option rather than a per-request
